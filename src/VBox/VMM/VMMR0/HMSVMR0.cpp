@@ -313,6 +313,8 @@ static FNSVMEXITHANDLER hmR0SvmExitVmload;
 static FNSVMEXITHANDLER hmR0SvmExitVmsave;
 static FNSVMEXITHANDLER hmR0SvmExitInvlpga;
 static FNSVMEXITHANDLER hmR0SvmExitVmrun;
+static FNSVMEXITHANDLER hmR0SvmNestedExitIret;
+static FNSVMEXITHANDLER hmR0SvmNestedExitVIntr;
 #endif
 /** @} */
 
@@ -3025,7 +3027,13 @@ static void hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCtx)
         if (fBlockNmi)
             hmR0SvmSetIretIntercept(pVmcbNstGst);
         else if (fIntShadow)
+        {
+            /** @todo Figure this out, how we shall manage virt. intercept if the
+             *        nested-guest already has one set and/or if we really need it? */
+#if 0
             hmR0SvmSetVirtIntrIntercept(pVmcbNstGst);
+#endif
+        }
         else
         {
             Log4(("Pending NMI\n"));
@@ -3078,7 +3086,13 @@ static void hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCtx)
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
         }
         else
+        {
+            /** @todo Figure this out, how we shall manage virt. intercept if the
+             *        nested-guest already has one set and/or if we really need it? */
+#if 0
             hmR0SvmSetVirtIntrIntercept(pVmcbNstGst);
+#endif
+        }
     }
     /*
      * Check if the nested-guest can receive virtual interrupts.
@@ -3139,6 +3153,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
             hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
             hmR0SvmSetIretIntercept(pVmcb);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+            return;
         }
     }
     else if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
@@ -4627,7 +4642,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         {
             if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR)
                 return hmR0SvmExecVmexit(pVCpu, pCtx);
-            return hmR0SvmExitVIntr(pVCpu, pCtx, pSvmTransient);
+            return hmR0SvmNestedExitVIntr(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_INTR:
@@ -4740,7 +4755,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 {
                     if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_IRET)
                         return hmR0SvmExecVmexit(pVCpu, pCtx);
-                    return hmR0SvmExitIret(pVCpu, pCtx, pSvmTransient);
+                    return hmR0SvmNestedExitIret(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_SHUTDOWN:
@@ -7460,6 +7475,48 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 #endif
     return VBOXSTRICTRC_VAL(rcStrict);
 }
+
+/**
+ * Nested-guest \#VMEXIT handler for IRET (SVM_EXIT_VMRUN). Conditional \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmNestedExitIret(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    /* Clear NMI blocking. */
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+
+    /* Indicate that we no longer need to #VMEXIT when the guest is ready to receive NMIs, it is now ready. */
+    PSVMVMCB pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    hmR0SvmClearIretIntercept(pVmcbNstGst);
+
+    /* Deliver the pending NMI via hmR0SvmEvaluatePendingEventNested() and resume guest execution. */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * \#VMEXIT handler for virtual interrupt (SVM_EXIT_VINTR). Conditional
+ * \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmNestedExitVIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    /* No virtual interrupts pending, we'll inject the current one/NMI before reentry. */
+    PSVMVMCB pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    pVmcbNstGst->ctrl.IntCtrl.n.u1VIrqPending = 0;
+    pVmcbNstGst->ctrl.IntCtrl.n.u8VIntrVector = 0;
+
+    /* Indicate that we no longer need to #VMEXIT when the nested-guest is ready to receive interrupts/NMIs, it is now ready. */
+    pVmcbNstGst->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_VINTR;
+    pVmcbNstGst->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
+
+    /* Deliver the pending interrupt/NMI via hmR0SvmEvaluatePendingEventNested() and resume guest execution. */
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIntWindow);
+    return VINF_SUCCESS;
+}
+
 #endif /* VBOX_WITH_NESTED_HWVIRT */
 
 
