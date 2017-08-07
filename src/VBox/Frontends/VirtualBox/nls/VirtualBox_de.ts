@@ -339,7 +339,7 @@
     </message>
     <message>
         <source>&amp;Group</source>
-        <translation>&amp;Gruppieren</translation>
+        <translation type="unfinished">&amp;Gruppe</translation>
     </message>
     <message>
         <source>S&amp;tart</source>
