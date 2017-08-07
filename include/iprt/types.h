@@ -2161,6 +2161,13 @@ typedef RTFSISOMAKER                               *PRTFSISOMAKER;
 /** NIL ISO maker handle. */
 #define NIL_RTFSISOMAKER                           ((RTFSISOMAKER)0)
 
+/** INI-file handle. */
+typedef struct RTINIFILEINT                        *RTINIFILE;
+/** Pointer to an INI-file handle. */
+typedef RTINIFILE                                  *PRTINIFILE;
+/** NIL INI-file handle. */
+#define NIL_RTINIFILE                              ((RTINIFILE)0)
+
 /** Loader module handle. */
 typedef R3R0PTRTYPE(struct RTLDRMODINTERNAL *)      RTLDRMOD;
 /** Pointer to a loader module handle. */
