@@ -669,7 +669,7 @@ void UIMediumDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
     if (!pWidget || pWidget == m_pErrorPaneSize)
     {
         /* Always valid for now: */
-        const bool fError = false;
+        const bool fError = m_newData.m_options.m_uLogicalSize < m_oldData.m_options.m_uLogicalSize;
         m_pErrorPaneSize->setVisible(fError);
         if (fError)
             m_fValid = false;
@@ -679,7 +679,7 @@ void UIMediumDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
     retranslateValidation(pWidget);
 }
 
-void UIMediumDetailsWidget::retranslateValidation(QWidget * /* pWidget = 0 */)
+void UIMediumDetailsWidget::retranslateValidation(QWidget *pWidget /* = 0 */)
 {
     /* Translate 'Interface' tab content: */
 //    if (!pWidget || pWidget == m_pErrorPaneType)
@@ -691,9 +691,9 @@ void UIMediumDetailsWidget::retranslateValidation(QWidget * /* pWidget = 0 */)
 //    if (!pWidget || pWidget == m_pErrorPaneDescription)
 //        m_pErrorPaneDescription->setToolTip(tr("Cannot change medium description from <b>%1</b> to <b>%2</b>.")
 //                                               .arg(m_oldData.m_options.m_strDescription).arg(m_newData.m_options.m_strDescription));
-//    if (!pWidget || pWidget == m_pErrorPaneSize)
-//        m_pErrorPaneSize->setToolTip(tr("Cannot change medium size from <b>%1</b> to <b>%2</b>.")
-//                                         .arg(m_oldData.m_options.m_uLogicalSize).arg(m_newData.m_options.m_uLogicalSize));
+    if (!pWidget || pWidget == m_pErrorPaneSize)
+        m_pErrorPaneSize->setToolTip(tr("Cannot change medium size from <b>%1</b> to <b>%2</b> as storage shrinking is currently forbidden.")
+                                         .arg(m_oldData.m_options.m_uLogicalSize).arg(m_newData.m_options.m_uLogicalSize));
 }
 
 void UIMediumDetailsWidget::updateButtonStates()
