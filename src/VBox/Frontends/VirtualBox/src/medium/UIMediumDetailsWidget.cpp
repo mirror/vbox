@@ -409,6 +409,13 @@ void UIMediumDetailsWidget::prepareTabOptions()
             {
                 /* Configure layout: */
                 pLayoutSize->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+                // WORKAROUND:
+                // Using adjusted vertical stretch because there is special widget
+                // which requires more care and attention, UIMediumSizeEditor.
+                pLayoutSize->setRowStretch(0, 3);
+                pLayoutSize->setRowStretch(1, 2);
+#endif
 
                 /* Create size editor: */
                 m_pEditorSize = new UIMediumSizeEditor;
