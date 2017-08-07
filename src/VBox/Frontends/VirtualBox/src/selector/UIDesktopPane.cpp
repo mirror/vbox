@@ -132,8 +132,6 @@ public:
       * @param  pRefreshAction  Brings the refresh action reference. */
     UIDesktopPanePrivate(QWidget *pParent, QAction *pRefreshAction);
 
-    /** Assigns @a strText and switches to text pane. */
-    void setText(const QString &strText);
     /** Assigns @a strError and switches to error pane. */
     void setError(const QString &strError);
 
@@ -153,8 +151,6 @@ protected:
     /** Handles translation event. */
     void retranslateUi();
 
-    /** Prepares text pane. */
-    void prepareTextPane();
     /** Prepares error pane. */
     void prepareErrorPane();
 
@@ -162,9 +158,6 @@ protected:
     void prepareToolsPane();
 
 private:
-
-    /** Holds the text pane instance. */
-    QRichTextBrowser *m_pText;
 
     /** Holds the error pane container. */
     QWidget *m_pErrBox;
@@ -466,25 +459,12 @@ void UIToolWidget::prepare()
 
 UIDesktopPanePrivate::UIDesktopPanePrivate(QWidget *pParent, QAction *pRefreshAction)
     : QIWithRetranslateUI<QStackedWidget>(pParent)
-    , m_pText(0)
     , m_pErrBox(0), m_pErrLabel(0), m_pErrText(0)
     , m_pRefreshButton(0), m_pRefreshAction(pRefreshAction)
     , m_pToolsPane(0), m_pLayoutWidget(0), m_pLabelToolsPaneText(0), m_pLabelToolsPaneIcon(0)
 {
     /* Translate finally: */
     retranslateUi();
-}
-
-void UIDesktopPanePrivate::setText(const QString &strText)
-{
-    /* Prepare text pane if necessary: */
-    prepareTextPane();
-
-    /* Assign corresponding text: */
-    m_pText->setText(strText);
-
-    /* Raise corresponding widget: */
-    setCurrentIndex(indexOf(m_pText));
 }
 
 void UIDesktopPanePrivate::setError(const QString &strError)
@@ -570,27 +550,6 @@ void UIDesktopPanePrivate::retranslateUi()
         m_pRefreshButton->setIcon(m_pRefreshAction->icon());
         m_pRefreshButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     }
-}
-
-void UIDesktopPanePrivate::prepareTextPane()
-{
-    if (m_pText)
-        return;
-
-    /* Create text pane: */
-    m_pText = new QRichTextBrowser(this);
-    m_pText->setFocusPolicy(Qt::StrongFocus);
-    m_pText->document()->setDefaultStyleSheet("a { text-decoration: none; }");
-    /* Make text pane transparent: */
-    m_pText->setFrameShape(QFrame::NoFrame);
-    m_pText->viewport()->setAutoFillBackground(false);
-    m_pText->setOpenLinks(false);
-
-    /* Add into the stack: */
-    addWidget(m_pText);
-
-    /* Retranslate finally: */
-    retranslateUi();
 }
 
 void UIDesktopPanePrivate::prepareErrorPane()
@@ -739,11 +698,6 @@ UIDesktopPane::UIDesktopPane(QAction *pRefreshAction /* = 0 */, QWidget *pParent
 
     /* Add it to the layout: */
     pMainLayout->addWidget(m_pDesktopPrivate);
-}
-
-void UIDesktopPane::updateDetailsText(const QString &strText)
-{
-    m_pDesktopPrivate->setText(strText);
 }
 
 void UIDesktopPane::updateDetailsError(const QString &strError)

@@ -42,8 +42,6 @@ public:
       * @param  pRefreshAction  Brings the refresh action reference. */
     UIDesktopPane(QAction *pRefreshAction = 0, QWidget *pParent = 0);
 
-    /** Updates @a strText details and switches to text details pane. */
-    void updateDetailsText(const QString &strText);
     /** Updates @a strError details and switches to error details pane. */
     void updateDetailsError(const QString &strError);
 
