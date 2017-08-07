@@ -387,7 +387,8 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
     if (pSink->Con.Parms.enmType == AVRECCONTAINERTYPE_WEBM)
     {
         pSink->Con.WebM.pWebM = new WebMWriter();
-        rc = pSink->Con.WebM.pWebM->Create("/tmp/acap.webm", RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE, /** @todo Fix path! */
+        rc = pSink->Con.WebM.pWebM->Create(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "DrvAudioVideoRec.webm", /** @todo Make this configurable. */
+                                           RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
                                            WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
         if (RT_SUCCESS(rc))
             rc = pSink->Con.WebM.pWebM->AddAudioTrack(pSink->Codec.Parms.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cBits,
