@@ -44,9 +44,7 @@
 
 /* Qt includes: */
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-# if QT_VERSION >= 0x050000
-#  include <QAbstractNativeEventFilter>
-# endif /* QT_VERSION >= 0x050000 */
+# include <QAbstractNativeEventFilter>
 #endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 
 /* GUI includes: */
@@ -70,16 +68,7 @@
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
 # include <X11/keysym.h>
-# if QT_VERSION >= 0x050000
-#  include <xcb/xcb.h>
-# else /* QT_VERSION < 0x050000 */
-#  ifdef KeyPress
-const int XKeyPress = KeyPress;
-const int XKeyRelease = KeyRelease;
-#   undef KeyPress
-#   undef KeyRelease
-#  endif /* KeyPress */
-# endif /* QT_VERSION < 0x050000 */
+# include <xcb/xcb.h>
 #endif /* VBOX_WS_X11 */
 
 /* Namespaces: */
@@ -87,7 +76,6 @@ using namespace UIExtraDataDefs;
 
 
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-# if QT_VERSION >= 0x050000
 /** QAbstractNativeEventFilter extension
   * allowing to handle native platform events.
   * Why do we need it? It's because Qt5 have unhandled
@@ -118,7 +106,6 @@ private:
     /** Holds the passed parent reference. */
     UIHostComboEditorPrivate *m_pParent;
 };
-# endif /* QT_VERSION >= 0x050000 */
 #endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 
 
@@ -545,9 +532,7 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     : m_pReleaseTimer(0)
     , m_fStartNewSequence(true)
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-# if QT_VERSION >= 0x050000
     , m_pPrivateEventFilter(0)
-# endif /* QT_VERSION >= 0x050000 */
 #endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 #ifdef VBOX_WS_WIN
     , m_pAltGrMonitor(0)
@@ -565,19 +550,13 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     connect(m_pReleaseTimer, SIGNAL(timeout()), this, SLOT(sltReleasePendingKeys()));
 
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-# if QT_VERSION >= 0x050000
     /* Prepare private event filter: */
     m_pPrivateEventFilter = new ComboEditorEventFilter(this);
     qApp->installNativeEventFilter(m_pPrivateEventFilter);
-# endif /* QT_VERSION >= 0x050000 */
 #endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 
 #if defined(VBOX_WS_MAC)
     m_uDarwinKeyModifiers = 0;
-# if QT_VERSION < 0x050000
-    UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
-    ::DarwinGrabKeyboard(false /* just modifiers */);
-# endif /* QT_VERSION < 0x050000 */
 #elif defined(VBOX_WS_WIN)
     /* Prepare AltGR monitor: */
     m_pAltGrMonitor = new WinAltGrMonitor;
@@ -589,24 +568,17 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
 
 UIHostComboEditorPrivate::~UIHostComboEditorPrivate()
 {
-#if defined(VBOX_WS_MAC)
-# if QT_VERSION < 0x050000
-    ::DarwinReleaseKeyboard();
-    UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
-# endif /* QT_VERSION < 0x050000 */
-#elif defined(VBOX_WS_WIN)
+#if defined(VBOX_WS_WIN)
     /* Cleanup AltGR monitor: */
     delete m_pAltGrMonitor;
     m_pAltGrMonitor = 0;
 #endif /* VBOX_WS_WIN */
 
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-# if QT_VERSION >= 0x050000
     /* Cleanup private event filter: */
     qApp->removeNativeEventFilter(m_pPrivateEventFilter);
     delete m_pPrivateEventFilter;
     m_pPrivateEventFilter = 0;
-# endif /* QT_VERSION >= 0x050000 */
 #endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 }
 
@@ -650,8 +622,6 @@ void UIHostComboEditorPrivate::sltClear()
     /* Notify data changed: */
     emit sigDataChanged();
 }
-
-#if QT_VERSION >= 0x050000
 
 bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)
 {
@@ -798,141 +768,6 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
     /* Call to base-class: */
     return QLineEdit::nativeEvent(eventType, pMessage, pResult);
 }
-
-#else /* QT_VERSION < 0x050000 */
-
-# if defined(VBOX_WS_MAC)
-
-/* static */
-bool UIHostComboEditorPrivate::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
-{
-    UIHostComboEditorPrivate *pEditor = static_cast<UIHostComboEditorPrivate*>(pvUser);
-    EventRef inEvent = (EventRef)pvCarbonEvent;
-    UInt32 EventClass = ::GetEventClass(inEvent);
-    if (EventClass == kEventClassKeyboard)
-        return pEditor->darwinKeyboardEvent(pvCocoaEvent, inEvent);
-    return false;
-}
-
-bool UIHostComboEditorPrivate::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent)
-{
-    /* Ignore key changes unless we're the focus widget: */
-    if (!hasFocus())
-        return false;
-
-    UInt32 eventKind = ::GetEventKind(inEvent);
-    switch (eventKind)
-    {
-        //case kEventRawKeyDown:
-        //case kEventRawKeyUp:
-        //case kEventRawKeyRepeat:
-        case kEventRawKeyModifiersChanged:
-        {
-            /* Get modifier mask: */
-            UInt32 modifierMask = 0;
-            ::GetEventParameter(inEvent, kEventParamKeyModifiers, typeUInt32, NULL,
-                                sizeof(modifierMask), NULL, &modifierMask);
-            modifierMask = ::DarwinAdjustModifierMask(modifierMask, pvCocoaEvent);
-            UInt32 changed = m_uDarwinKeyModifiers ^ modifierMask;
-
-            if (!changed)
-                break;
-
-            /* Convert to keycode: */
-            unsigned uKeyCode = ::DarwinModifierMaskToDarwinKeycode(changed);
-
-            if (!uKeyCode || uKeyCode == ~0U)
-                return false;
-
-            /* Process the key event: */
-            if (processKeyEvent(uKeyCode, changed & modifierMask))
-            {
-                /* Save the new modifier mask state. */
-                m_uDarwinKeyModifiers = modifierMask;
-                return true;
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    return false;
-}
-
-# elif defined(VBOX_WS_WIN)
-
-bool UIHostComboEditorPrivate::winEvent(MSG *pMsg, long* /* pResult */)
-{
-    switch (pMsg->message)
-    {
-        case WM_KEYDOWN:
-        case WM_SYSKEYDOWN:
-        case WM_KEYUP:
-        case WM_SYSKEYUP:
-        {
-            /* Get key-code: */
-            int iKeyCode = UINativeHotKey::distinguishModifierVKey((int)pMsg->wParam, (int)pMsg->lParam);
-            unsigned iDownScanCode = (pMsg->lParam >> 16) & 0x7F;
-            bool fPressed = !(pMsg->lParam & 0x80000000);
-            bool fExtended = pMsg->lParam & 0x1000000;
-
-            /* If present - why not just assert this? */
-            if (m_pAltGrMonitor)
-            {
-                /* Update AltGR monitor state from key-event: */
-                m_pAltGrMonitor->updateStateFromKeyEvent(iDownScanCode, fPressed, fExtended);
-                /* And release left Ctrl key early (if required): */
-                if (m_pAltGrMonitor->isLeftControlReleaseNeeded())
-                {
-                    m_pressedKeys.remove(VK_LCONTROL);
-                    m_shownKeys.remove(VK_LCONTROL);
-                }
-                /* Fake LCtrl release events can also end up in the released
-                 * key set.  Detect them on the immediately following RAlt up. */
-                if (!m_pressedKeys.contains(VK_LCONTROL))
-                    m_releasedKeys.remove(VK_LCONTROL);
-            }
-
-            /* Process the key event: */
-            return processKeyEvent(iKeyCode, pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN);
-        }
-        default:
-            break;
-    }
-
-    return false;
-}
-
-# elif defined(VBOX_WS_X11)
-
-bool UIHostComboEditorPrivate::x11Event(XEvent *pEvent)
-{
-    switch (pEvent->type)
-    {
-        case XKeyPress:
-        case XKeyRelease:
-        {
-            /* Get key-code: */
-            XKeyEvent *pKeyEvent = (XKeyEvent*)pEvent;
-            RT_GCC_NO_WARN_DEPRECATED_BEGIN
-            KeySym ks = ::XKeycodeToKeysym(pKeyEvent->display, pKeyEvent->keycode, 0);
-            RT_GCC_NO_WARN_DEPRECATED_END
-
-            int iKeySym = (int)ks;
-
-            /* Process the key event: */
-            return processKeyEvent(iKeySym, pEvent->type == XKeyPress);
-        }
-        default:
-            break;
-    }
-
-    return false;
-}
-
-# endif /* VBOX_WS_X11 */
-
-#endif /* QT_VERSION < 0x050000 */
 
 void UIHostComboEditorPrivate::keyPressEvent(QKeyEvent *pEvent)
 {

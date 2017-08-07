@@ -216,11 +216,11 @@ bool UIMachineWindowScale::event(QEvent *pEvent)
     {
         case QEvent::Resize:
         {
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
             /* Prevent handling if fake screen detected: */
             if (gpDesktop->isFakeScreenDetected())
                 break;
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
 
             QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
             if (!isMaximizedChecked())
@@ -235,11 +235,11 @@ bool UIMachineWindowScale::event(QEvent *pEvent)
         }
         case QEvent::Move:
         {
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
             /* Prevent handling if fake screen detected: */
             if (gpDesktop->isFakeScreenDetected())
                 break;
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
 
             if (!isMaximizedChecked())
             {
@@ -256,55 +256,6 @@ bool UIMachineWindowScale::event(QEvent *pEvent)
     }
     return UIMachineWindow::event(pEvent);
 }
-
-#ifdef VBOX_WS_WIN
-# if QT_VERSION < 0x050000
-bool UIMachineWindowScale::winEvent(MSG *pMessage, long *pResult)
-{
-    /* Try to keep aspect ratio during window resize if:
-     * 1. machine view exists and 2. event-type is WM_SIZING and 3. shift key is NOT pressed: */
-    if (machineView() && pMessage->message == WM_SIZING && !(QApplication::keyboardModifiers() & Qt::ShiftModifier))
-    {
-        double dAspectRatio = machineView()->aspectRatio();
-        if (dAspectRatio)
-        {
-            RECT *pRect = reinterpret_cast<RECT*>(pMessage->lParam);
-            switch (pMessage->wParam)
-            {
-                case WMSZ_LEFT:
-                case WMSZ_RIGHT:
-                {
-                    pRect->bottom = pRect->top + (double)(pRect->right - pRect->left) / dAspectRatio;
-                    break;
-                }
-                case WMSZ_TOP:
-                case WMSZ_BOTTOM:
-                {
-                    pRect->right = pRect->left + (double)(pRect->bottom - pRect->top) * dAspectRatio;
-                    break;
-                }
-                case WMSZ_BOTTOMLEFT:
-                case WMSZ_BOTTOMRIGHT:
-                {
-                    pRect->bottom = pRect->top + (double)(pRect->right - pRect->left) / dAspectRatio;
-                    break;
-                }
-                case WMSZ_TOPLEFT:
-                case WMSZ_TOPRIGHT:
-                {
-                    pRect->top = pRect->bottom - (double)(pRect->right - pRect->left) / dAspectRatio;
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-    }
-    /* Call to base-class: */
-    return UIMachineWindow::winEvent(pMessage, pResult);
-}
-# endif /* QT_VERSION < 0x050000 */
-#endif /* VBOX_WS_WIN */
 
 bool UIMachineWindowScale::isMaximizedChecked()
 {

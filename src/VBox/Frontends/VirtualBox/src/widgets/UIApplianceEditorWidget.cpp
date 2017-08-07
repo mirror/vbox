@@ -1344,11 +1344,7 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
                     m_pTreeViewSettings->setAllColumnsShowFocus(true);
                     m_pTreeViewSettings->header()->setStretchLastSection(true);
                     m_pTreeViewSettings->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::MinimumExpanding);
-#if QT_VERSION < 0x050000
-                    m_pTreeViewSettings->header()->setResizeMode(QHeaderView::ResizeToContents);
-#else
                     m_pTreeViewSettings->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-#endif
 
                     /* Add tree-view into information layout: */
                     pLayoutInformation->addWidget(m_pTreeViewSettings);

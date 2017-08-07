@@ -29,9 +29,7 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QContextMenuEvent>
-#if QT_VERSION >= 0x050000
-# include <QtMac>
-#endif /* QT_VERSION >= 0x050000 */
+#include <QtMac>
 
 #include <Carbon/Carbon.h>
 
@@ -328,11 +326,7 @@ CGImageRef darwinToCGImageRef(const QPixmap *pPixmap)
                                               cs,
                                               kCGImageAlphaPremultipliedFirst);
     /* Get the CGImageRef from Qt */
-#if QT_VERSION < 0x050000
-    CGImageRef qtPixmap = pPixmap->toMacCGImageRef();
-#else /* QT_VERSION >= 0x050000 */
     CGImageRef qtPixmap = QtMac::toCGImageRef(*pPixmap);
-#endif /* QT_VERSION >= 0x050000 */
     /* Draw the image from Qt & convert the context back to a new CGImageRef. */
     CGContextDrawImage(ctx, CGRectMake(0, 0, pPixmap->width(), pPixmap->height()), qtPixmap);
     CGImageRef newImage = CGBitmapContextCreateImage(ctx);

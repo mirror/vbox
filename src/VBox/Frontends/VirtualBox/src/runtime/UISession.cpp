@@ -74,9 +74,7 @@
 
 /* Qt includes: */
 #ifdef VBOX_WS_WIN
-# if QT_VERSION >= 0x050000
-#  include <QtWin>
-# endif /* QT_VERSION >= 0x050000 */
+# include <QtWin>
 #endif /* VBOX_WS_WIN */
 
 #ifdef VBOX_WS_X11
@@ -1540,7 +1538,7 @@ static void renderCursorPixels(const uint32_t *pu32XOR, const uint8_t *pu8AND,
     }
 }
 
-#if defined(VBOX_WS_WIN) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_WIN
 static bool isPointer1bpp(const uint8_t *pu8XorMask,
                           uint uWidth,
                           uint uHeight)
@@ -1564,7 +1562,7 @@ static bool isPointer1bpp(const uint8_t *pu8XorMask,
 
     return true;
 }
-#endif
+#endif /* VBOX_WS_WIN */
 
 void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
                                 uint uXHot, uint uYHot, uint uWidth, uint uHeight)
@@ -1579,131 +1577,6 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 
 #if defined (VBOX_WS_WIN)
 
-# if QT_VERSION < 0x050000
-    BITMAPV5HEADER bi;
-    HBITMAP hBitmap;
-    void *lpBits;
-
-    ::ZeroMemory(&bi, sizeof (BITMAPV5HEADER));
-    bi.bV5Size = sizeof(BITMAPV5HEADER);
-    bi.bV5Width = uWidth;
-    bi.bV5Height = - (LONG)uHeight;
-    bi.bV5Planes = 1;
-    bi.bV5BitCount = 32;
-    bi.bV5Compression = BI_BITFIELDS;
-    bi.bV5RedMask   = 0x00FF0000;
-    bi.bV5GreenMask = 0x0000FF00;
-    bi.bV5BlueMask  = 0x000000FF;
-    if (fHasAlpha)
-        bi.bV5AlphaMask = 0xFF000000;
-    else
-        bi.bV5AlphaMask = 0;
-
-    HDC hdc = GetDC(NULL);
-
-    /* Create the DIB section with an alpha channel: */
-    hBitmap = CreateDIBSection(hdc, (BITMAPINFO *)&bi, DIB_RGB_COLORS, (void **)&lpBits, NULL, (DWORD) 0);
-
-    ReleaseDC(NULL, hdc);
-
-    HBITMAP hMonoBitmap = NULL;
-    if (fHasAlpha)
-    {
-        /* Create an empty mask bitmap: */
-        hMonoBitmap = CreateBitmap(uWidth, uHeight, 1, 1, NULL);
-    }
-    else
-    {
-        /* Word aligned AND mask. Will be allocated and created if necessary. */
-        uint8_t *pu8AndMaskWordAligned = NULL;
-
-        /* Width in bytes of the original AND mask scan line. */
-        uint32_t cbAndMaskScan = (uWidth + 7) / 8;
-
-        if (cbAndMaskScan & 1)
-        {
-            /* Original AND mask is not word aligned. */
-
-            /* Allocate memory for aligned AND mask. */
-            pu8AndMaskWordAligned = (uint8_t *)RTMemTmpAllocZ((cbAndMaskScan + 1) * uHeight);
-
-            Assert(pu8AndMaskWordAligned);
-
-            if (pu8AndMaskWordAligned)
-            {
-                /* According to MSDN the padding bits must be 0.
-                 * Compute the bit mask to set padding bits to 0 in the last byte of original AND mask. */
-                uint32_t u32PaddingBits = cbAndMaskScan * 8  - uWidth;
-                Assert(u32PaddingBits < 8);
-                uint8_t u8LastBytesPaddingMask = (uint8_t)(0xFF << u32PaddingBits);
-
-                Log(("u8LastBytesPaddingMask = %02X, aligned w = %d, width = %d, cbAndMaskScan = %d\n",
-                      u8LastBytesPaddingMask, (cbAndMaskScan + 1) * 8, uWidth, cbAndMaskScan));
-
-                uint8_t *src = (uint8_t *)srcAndMaskPtr;
-                uint8_t *dst = pu8AndMaskWordAligned;
-
-                unsigned i;
-                for (i = 0; i < uHeight; i++)
-                {
-                    memcpy(dst, src, cbAndMaskScan);
-
-                    dst[cbAndMaskScan - 1] &= u8LastBytesPaddingMask;
-
-                    src += cbAndMaskScan;
-                    dst += cbAndMaskScan + 1;
-                }
-            }
-        }
-
-        /* Create the AND mask bitmap: */
-        hMonoBitmap = ::CreateBitmap(uWidth, uHeight, 1, 1,
-                                     pu8AndMaskWordAligned? pu8AndMaskWordAligned: srcAndMaskPtr);
-
-        if (pu8AndMaskWordAligned)
-        {
-            RTMemTmpFree(pu8AndMaskWordAligned);
-        }
-    }
-
-    Assert(hBitmap);
-    Assert(hMonoBitmap);
-    if (hBitmap && hMonoBitmap)
-    {
-        DWORD *dstShapePtr = (DWORD *) lpBits;
-
-        for (uint y = 0; y < uHeight; y ++)
-        {
-            memcpy(dstShapePtr, srcShapePtr, srcShapePtrScan);
-            srcShapePtr += srcShapePtrScan;
-            dstShapePtr += uWidth;
-        }
-
-        ICONINFO ii;
-        ii.fIcon = FALSE;
-        ii.xHotspot = uXHot;
-        ii.yHotspot = uYHot;
-        ii.hbmMask = hMonoBitmap;
-        ii.hbmColor = hBitmap;
-
-        HCURSOR hAlphaCursor = CreateIconIndirect(&ii);
-        Assert(hAlphaCursor);
-        if (hAlphaCursor)
-        {
-            /* Set the new cursor: */
-            m_cursor = QCursor(hAlphaCursor);
-            if (m_alphaCursor)
-                DestroyIcon(m_alphaCursor);
-            m_alphaCursor = hAlphaCursor;
-            m_fIsValidPointerShapePresent = true;
-        }
-    }
-
-    if (hMonoBitmap)
-        DeleteObject(hMonoBitmap);
-    if (hBitmap)
-        DeleteObject(hBitmap);
-# else /* QT_VERSION >= 0x050000 */
     /* Create a ARGB image out of the shape data: */
 
     /*
@@ -1848,7 +1721,6 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 
     m_fIsValidPointerShapePresent = true;
     NOREF(srcShapePtrScan);
-# endif /* QT_VERSION >= 0x050000 */
 
 #elif defined(VBOX_WS_X11) || defined(VBOX_WS_MAC)
 

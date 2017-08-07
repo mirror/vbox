@@ -35,9 +35,7 @@
 /* Other VBox includes: */
 #include "VBox/com/ptr.h"
 #ifdef VBOX_WS_MAC
-# if QT_VERSION >= 0x050000
 #  include <ApplicationServices/ApplicationServices.h>
-# endif /* QT_VERSION >= 0x050000 */
 #endif /* VBOX_WS_MAC */
 
 /* External includes: */
@@ -51,21 +49,14 @@ class UISession;
 class UIMachineLogic;
 class UIMachineWindow;
 class UIFrameBuffer;
+class UINativeEventFilter;
 class CConsole;
 class CDisplay;
 class CGuest;
 class CMachine;
 class CSession;
-#ifdef VBOX_WS_X11
-# if QT_VERSION < 0x050000
-typedef union _XEvent XEvent;
-# endif /* QT_VERSION < 0x050000 */
-#endif /* VBOX_WS_X11 */
 #ifdef VBOX_WITH_DRAG_AND_DROP
- class CDnDTarget;
-#endif /* VBOX_WITH_DRAG_AND_DROP */
-#if QT_VERSION >= 0x050000
-class UINativeEventFilter;
+class CDnDTarget;
 #endif
 
 
@@ -270,12 +261,10 @@ protected:
     void moveEvent(QMoveEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
 
-#if QT_VERSION >= 0x050000
     /** Handles focus-in @a pEvent. */
     void focusInEvent(QFocusEvent *pEvent);
     /** Handles focus-out @a pEvent. */
     void focusOutEvent(QFocusEvent *pEvent);
-#endif
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
     /**
@@ -343,30 +332,8 @@ protected:
     void dropEvent(QDropEvent *pEvent);
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
-#if QT_VERSION < 0x050000
-# if defined(VBOX_WS_MAC)
-    /** Qt4: Mac: Performs pre-processing of all the native events.
-      * @note     Take into account this function is _not_ called by
-      *           the Qt itself because it has another signature,
-      *           only by the keyboard-hook of the keyboard-handler. */
-    virtual bool macEvent(const void *pvCocoaEvent, EventRef event);
-# elif defined(VBOX_WS_WIN)
-    /** Qt4: Win: Performs pre-processing of all the native events.
-      * @note     Take into account this function is called by
-      *           the Qt as well opposing to other host (Mac)
-      *           because it has required signature. */
-    virtual bool winEvent(MSG *pMsg, long *piResult);
-# elif defined(VBOX_WS_X11)
-    /** Qt4: X11: Performs pre-processing of all the native events.
-      * @note     Take into account this function is called by
-      *           the Qt as well opposing to other host (Mac)
-      *           because it has required signature. */
-    virtual bool x11Event(XEvent *pEvent);
-# endif /* VBOX_WS_X11 */
-#else /* QT_VERSION >= 0x050000 */
     /** Qt5: Performs pre-processing of all the native events. */
     virtual bool nativeEventPreprocessor(const QByteArray &eventType, void *pMessage);
-#endif /* QT_VERSION >= 0x050000 */
 
     /** Scales passed size forward. */
     QSize scaledForward(QSize size) const;
@@ -423,13 +390,11 @@ protected:
 # endif
 #endif
 
-#if QT_VERSION >= 0x050000
     /** Holds the native event filter instance. */
     UINativeEventFilter *m_pNativeEventFilter;
     /** Allows the native event filter to redirect
       * events directly to nativeEventPreprocessor(). */
     friend class UINativeEventFilter;
-#endif
 
     /* Friend classes: */
     friend class UIKeyboardHandler;

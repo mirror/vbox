@@ -31,9 +31,7 @@
 class QIToolButton;
 class UIHostComboEditorPrivate;
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-# if QT_VERSION >= 0x050000
 class ComboEditorEventFilter;
-# endif /* QT_VERSION >= 0x050000 */
 #endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 #ifdef VBOX_WS_WIN
 class WinAltGrMonitor;
@@ -154,23 +152,8 @@ public slots:
 
 protected:
 
-#if QT_VERSION >= 0x050000
     /** Qt5: Handles all native events. */
     bool nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult);
-#else /* QT_VERSION < 0x050000 */
-# if defined(VBOX_WS_MAC)
-    /** Mac: Qt4: Handles all native events (static callback). */
-    static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
-    /** Mac: Qt4: Handles all native events. */
-    bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
-# elif defined(VBOX_WS_WIN)
-    /** Win: Qt4: Handles all native events. */
-    bool winEvent(MSG *pMsg, long *pResult);
-# elif defined(VBOX_WS_X11)
-    /** X11: Qt4: Handles all native events. */
-    bool x11Event(XEvent *pEvent);
-# endif /* VBOX_WS_X11 */
-#endif /* QT_VERSION < 0x050000 */
 
     void keyPressEvent(QKeyEvent *pEvent);
     void keyReleaseEvent(QKeyEvent *pEvent);
@@ -194,13 +177,11 @@ private:
     bool m_fStartNewSequence;
 
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-# if QT_VERSION >= 0x050000
     /** Mac, Win: Holds the native event filter instance. */
     ComboEditorEventFilter *m_pPrivateEventFilter;
     /** Mac, Win: Allows the native event filter to
       * redirect events directly to nativeEvent handler. */
     friend class ComboEditorEventFilter;
-# endif /* QT_VERSION >= 0x050000 */
 #endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 
 #if defined(VBOX_WS_MAC)

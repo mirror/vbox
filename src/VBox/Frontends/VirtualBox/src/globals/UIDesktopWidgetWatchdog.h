@@ -100,24 +100,17 @@ public:
     /** Returns overall region unifying all the host-screen available-geometries. */
     const QRegion overallAvailableRegion() const;
 
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
     /** Qt5: X11: Returns whether no or fake screen detected. */
     bool isFakeScreenDetected() const;
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif
 
 private slots:
 
 #if QT_VERSION == 0
     /** Stupid moc does not warn if it cannot find headers! */
     void QT_VERSION_NOT_DEFINED
-#elif QT_VERSION < 0x050000
-    /** Handles host-screen count change to @a cHostScreenCount. */
-    void sltHandleHostScreenCountChanged(int cHostScreenCount);
-    /** Handles resize for the host-screen with @a iHostScreenIndex. */
-    void sltHandleHostScreenResized(int iHostScreenIndex);
-    /** Handles work-area resize for the host-screen with @a iHostScreenIndex. */
-    void sltHandleHostScreenWorkAreaResized(int iHostScreenIndex);
-#else /* QT_VERSION >= 0x050000 */
+#else
     /** Handles @a pHostScreen adding. */
     void sltHostScreenAdded(QScreen *pHostScreen);
     /** Handles @a pHostScreen removing. */
@@ -126,7 +119,7 @@ private slots:
     void sltHandleHostScreenResized(const QRect &geometry);
     /** Handles host-screen work-area resize to passed @a availableGeometry. */
     void sltHandleHostScreenWorkAreaResized(const QRect &availableGeometry);
-#endif /* QT_VERSION >= 0x050000 */
+#endif
 
 #ifdef VBOX_WS_X11
     /** Handles @a availableGeometry calculation result for the host-screen with @a iHostScreenIndex. */

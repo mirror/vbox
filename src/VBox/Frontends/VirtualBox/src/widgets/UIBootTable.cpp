@@ -70,9 +70,6 @@ void UIBootTable::adjustSizeToFitContent()
 {
     int h = 2 * frameWidth();
     int w = h;
-#if QT_VERSION < 0x040700
-    w += 4; // WTF?
-#endif /* QT_VERSION < 0x040700 */
     setFixedSize(sizeHintForColumn(0) + w,
                  sizeHintForRow(0) * count() + h);
 }

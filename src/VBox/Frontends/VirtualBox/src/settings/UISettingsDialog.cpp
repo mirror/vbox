@@ -189,22 +189,6 @@ void UISettingsDialog::sltCategoryChanged(int cId)
 {
     int index = m_pages[cId];
 #ifdef VBOX_WS_MAC
-# if QT_VERSION < 0x050000
-    QSize cs = size();
-    if (index < m_sizeList.count())
-    {
-        QSize ss = m_sizeList.at(index);
-        /* Switch to the new page first if we are shrinking: */
-        if (cs.height() > ss.height())
-            m_pStack->setCurrentIndex(index);
-        /* Do the animation: */
-        ::darwinWindowAnimateResize(this, QRect (x(), y(), ss.width(), ss.height()));
-        /* Switch to the new page last if we are zooming: */
-        if (cs.height() <= ss.height())
-            m_pStack->setCurrentIndex(index);
-    }
-    ::darwinSetShowsResizeIndicator(this, false);
-# else /* QT_VERSION >= 0x050000 */
     /* If index is within the stored size list bounds: */
     if (index < m_sizeList.count())
     {
@@ -233,7 +217,6 @@ void UISettingsDialog::sltCategoryChanged(int cId)
             pLayout->activate();
         }
     }
-# endif /* QT_VERSION >= 0x050000 */
 #else
     m_pStack->setCurrentIndex(index);
 #endif
@@ -631,34 +614,6 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
     /* Remove all title bar buttons (Buggy Qt): */
     ::darwinSetHidesAllTitleButtons(this);
 
-# if QT_VERSION < 0x050000
-    /* Set all size policies to ignored: */
-    for (int i = 0; i < m_pStack->count(); ++i)
-        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Ignored);
-    /* Activate every single page to get the optimal size: */
-    for (int i = m_pStack->count() - 1; i >= 0; --i)
-    {
-        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-        /* Prevent this widgets to go in the Small/Mini size state which is
-         * available on Mac OS X. Not sure why this happens but this seems to help
-         * against. */
-        QList <QWidget*> list = m_pStack->widget(i)->findChildren<QWidget*>();
-        for (int a = 0; a < list.size(); ++a)
-        {
-            QWidget *w = list.at(a);
-            if (w->parent() == m_pStack->widget(i))
-                w->setFixedHeight(w->sizeHint().height());
-        }
-        m_pStack->setCurrentIndex(i);
-        /* Now make sure the layout is freshly calculated. */
-        layout()->activate();
-        QSize s = minimumSize();
-        if (iMinWidth > s.width())
-            s.setWidth(iMinWidth);
-        m_sizeList.insert(0, s);
-        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Ignored);
-    }
-# else /* QT_VERSION >= 0x050000 */
     /* Unlock all page policies initially: */
     for (int i = 0; i < m_pStack->count(); ++i)
         m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Ignored);
@@ -694,7 +649,6 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
         /* Unlock the policy for current page again: */
         m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Ignored);
     }
-# endif /* QT_VERSION >= 0x050000 */
 
     sltCategoryChanged(m_pSelector->currentId());
 #else /* VBOX_WS_MAC */

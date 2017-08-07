@@ -166,7 +166,7 @@ void UISelectorWindow::sltHandlePolishEvent()
     }
 }
 
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
 void UISelectorWindow::sltHandleHostScreenAvailableAreaChange()
 {
     /* Prevent handling if fake screen detected: */
@@ -177,7 +177,7 @@ void UISelectorWindow::sltHandleHostScreenAvailableAreaChange()
     resize(m_geometry.size());
     move(m_geometry.topLeft());
 }
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
 
 void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
 {
@@ -1052,11 +1052,7 @@ void UISelectorWindow::sltPerformCreateMachineShortcut()
         /* Create shortcut for this VM: */
         const CMachine &machine = pItem->machine();
         UIDesktopServices::createMachineShortcut(machine.GetSettingsFilePath(),
-#if QT_VERSION >= 0x050000
                                                  QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),
-#else /* QT_VERSION < 0x050000 */
-                                                 QDesktopServices::storageLocation(QDesktopServices::DesktopLocation),
-#endif /* QT_VERSION < 0x050000 */
                                                  machine.GetName(), machine.GetId());
     }
 }
@@ -1179,8 +1175,12 @@ void UISelectorWindow::retranslateUi()
     /* Make sure details and snapshot panes are updated: */
     sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */);
 
-#if defined(VBOX_WS_MAC) && QT_VERSION < 0x050000
-    /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
+#ifdef VBOX_WS_MAC
+    // WORKAROUND:
+    // There is a bug in Qt Cocoa which result in showing a "more arrow" when
+    // the necessary size of the toolbar is increased. Also for some languages
+    // the with doesn't match if the text increase. So manually adjust the size
+    // after changing the text.
     m_pToolBar->updateLayout();
 #endif
 }
@@ -1193,11 +1193,11 @@ bool UISelectorWindow::event(QEvent *pEvent)
         /* Handle every Resize and Move we keep track of the geometry. */
         case QEvent::Resize:
         {
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
             /* Prevent handling if fake screen detected: */
             if (gpDesktop->isFakeScreenDetected())
                 break;
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
 
             if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
             {
@@ -1208,11 +1208,11 @@ bool UISelectorWindow::event(QEvent *pEvent)
         }
         case QEvent::Move:
         {
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
             /* Prevent handling if fake screen detected: */
             if (gpDesktop->isFakeScreenDetected())
                 break;
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
 
             if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
             {
@@ -1968,10 +1968,10 @@ void UISelectorWindow::prepareWidgets()
 
 void UISelectorWindow::prepareConnections()
 {
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
     /* Desktop event handlers: */
     connect(gpDesktop, SIGNAL(sigHostScreenWorkAreaResized(int)), this, SLOT(sltHandleHostScreenAvailableAreaChange()));
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
 
     /* Medium enumeration connections: */
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltHandleMediumEnumerationFinish()));
@@ -2376,8 +2376,12 @@ void UISelectorWindow::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->retranslateUi();
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->blockSignals(false);
 
-#if defined(VBOX_WS_MAC) && QT_VERSION < 0x050000
-    /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
+#ifdef VBOX_WS_MAC
+    // WORKAROUND:
+    // There is a bug in Qt Cocoa which result in showing a "more arrow" when
+    // the necessary size of the toolbar is increased. Also for some languages
+    // the with doesn't match if the text increase. So manually adjust the size
+    // after changing the text.
     m_pToolBar->updateLayout();
 #endif
 }

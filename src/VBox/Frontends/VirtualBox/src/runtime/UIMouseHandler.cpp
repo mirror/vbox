@@ -22,7 +22,7 @@
 /* Qt includes: */
 # include <QMouseEvent>
 # include <QTimer>
-# if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+# ifdef VBOX_WS_X11
 #  include <QX11Info>
 # endif
 
@@ -58,7 +58,7 @@
 #include <QTouchEvent>
 
 /* GUI includes: */
-#if defined(VBOX_WS_MAC) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_MAC
 # include "CocoaEventHelper.h"
 #endif
 
@@ -67,15 +67,7 @@
 
 /* External includes: */
 #ifdef VBOX_WS_X11
-# if QT_VERSION < 0x050000
-#  include <X11/Xlib.h>
-#  ifdef FocusOut
-const int XFocusOut = FocusOut;
-#   undef FocusOut
-#  endif /* FocusOut */
-# else
-#  include <xcb/xcb.h>
-# endif
+# include <xcb/xcb.h>
 #endif
 
 
@@ -273,40 +265,6 @@ int UIMouseHandler::state() const
            (uisession()->isMouseIntegrated() ? 0 : UIMouseStateType_MouseAbsoluteDisabled);
 }
 
-#if QT_VERSION < 0x050000
-# ifdef VBOX_WS_X11
-
-bool UIMouseHandler::x11EventFilter(XEvent *pEvent, ulong /* uScreenId */)
-{
-    /* Check if some system event should be filtered-out.
-     * Returning 'true' means filtering-out,
-     * Returning 'false' means passing event to Qt. */
-    bool fResult = false; /* Pass to Qt by default: */
-    switch (pEvent->type)
-    {
-        /* We have to handle XFocusOut right here as this event is not passed to UIMachineView::event().
-         * Handling this event is important for releasing the keyboard before the screen saver gets active.
-         * See public ticket #3894: Apparently this makes problems with newer versions of Qt
-         * and this hack is probably not necessary anymore. So disable it for Qt >= 4.5.0. */
-        case XFocusOut:
-        {
-            if (uisession()->isRunning())
-            {
-                if (VBoxGlobal::qtRTVersion() < ((4 << 16) | (5 << 8) | 0))
-                    releaseMouse();
-            }
-            fResult = false;
-        }
-        default:
-            break;
-    }
-    /* Return result: */
-    return fResult;
-}
-
-# endif /* VBOX_WS_X11 */
-#else /* QT_VERSION >= 0x050000 */
-
 bool UIMouseHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
 {
     /* Make sure view with passed index exists: */
@@ -412,8 +370,6 @@ bool UIMouseHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
     /* Return result: */
     return fResult;
 }
-
-#endif /* QT_VERSION >= 0x050000 */
 
 /* Machine state-change handler: */
 void UIMouseHandler::sltMachineStateChanged()
@@ -773,7 +729,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                 case QEvent::MouseButtonDblClick:
                 {
                     QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
                     /* When the keyboard is captured, we also capture mouse button
                      * events, and release the keyboard and re-capture it delayed
                      * on every mouse click. When the click is inside our window
@@ -782,7 +738,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                      * capture is in progress and has no effect if not: */
                     if (pEvent->type() == QEvent::MouseButtonPress)
                         machineLogic()->keyboardHandler()->finaliseCaptureKeyboard();
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
                     m_iLastMouseWheelDelta = 0;
                     if (mouseEvent(pMouseEvent->type(), uScreenId,
                                    pMouseEvent->pos(), pMouseEvent->globalPos(),

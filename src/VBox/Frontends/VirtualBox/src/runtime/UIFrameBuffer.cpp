@@ -63,9 +63,7 @@
 /* X11 includes: */
 # include <QX11Info>
 # include <X11/Xlib.h>
-# if QT_VERSION >= 0x050000
-#  undef Bool // Qt5 vs Xlib gift..
-# endif /* QT_VERSION >= 0x050000 */
+# undef Bool // Qt5 vs Xlib gift..
 #endif /* VBOX_WS_X11 */
 
 
@@ -1383,7 +1381,6 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     QPainter painter(m_pMachineView->viewport());
 
 #ifdef VBOX_WS_MAC
-# if QT_VERSION >= 0x050000
     /* On OSX for Qt5 we need to erase backing store first: */
     QRect eraseRect = paintRect;
     /* Take the backing-scale-factor into account: */
@@ -1396,7 +1393,6 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     painter.setCompositionMode(QPainter::CompositionMode_Source);
     painter.fillRect(eraseRect, QColor(Qt::black));
     painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
-# endif /* QT_VERSION >= 0x050000 */
 #endif /* VBOX_WS_MAC */
 
     /* Draw image rectangle: */
@@ -1469,7 +1465,6 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
 #if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS)
-# if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11) || QT_VERSION >= 0x050000
     /* On OSX for Qt5 we need to erase backing store first: */
     QRect eraseRect = paintRect;
     /* Take the backing-scale-factor into account: */
@@ -1482,7 +1477,6 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     painter.setCompositionMode(QPainter::CompositionMode_Source);
     painter.fillRect(eraseRect, QColor(Qt::black));
     painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
-# endif /* VBOX_WS_WIN || VBOX_WS_X11 || QT_VERSION >= 0x050000 */
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
     /* Draw image rectangle: */

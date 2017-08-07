@@ -86,9 +86,6 @@ void UIInformationModel::prepare()
     roleNames[Qt::DecorationRole] = "";
     roleNames[Qt::UserRole + 1] = "";
     roleNames[Qt::UserRole + 2] = "";
-    # if QT_VERSION < 0x050000
-    setRoleNames(roleNames);
-    # endif /* QT_VERSION < 0x050000 */
 
     /* Register meta-type: */
     qRegisterMetaType<InformationElementType>();

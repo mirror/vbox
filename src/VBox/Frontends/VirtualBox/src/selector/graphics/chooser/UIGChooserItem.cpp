@@ -400,9 +400,7 @@ void UIGChooserItem::hoverMoveEvent(QGraphicsSceneHoverEvent*)
     {
         m_fHovered = true;
         emit sigHoverEnter();
-#if QT_VERSION >= 0x050000
         update();
-#endif /* QT_VERSION >= 0x050000 */
     }
 }
 
@@ -412,9 +410,7 @@ void UIGChooserItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*)
     {
         m_fHovered = false;
         emit sigHoverLeave();
-#if QT_VERSION >= 0x050000
         update();
-#endif /* QT_VERSION >= 0x050000 */
     }
 }
 

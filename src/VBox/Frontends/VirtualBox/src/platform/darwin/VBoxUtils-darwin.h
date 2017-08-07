@@ -253,9 +253,6 @@ void darwinSetShowsResizeIndicator(QWidget *pWidget, bool fEnabled);
 void darwinSetHidesAllTitleButtons(QWidget *pWidget);
 void darwinSetShowsWindowTransparent(QWidget *pWidget, bool fEnabled);
 void darwinSetWindowHasShadow(QWidget *pWidget, bool fEnabled);
-#if QT_VERSION < 0x050000
-void darwinSetDockIconMenu(QMenu *pMenu);
-#endif /* QT_VERSION < 0x050000 */
 void darwinDisableIconsInMenus(void);
 
 void darwinTest(QWidget *pWidget1, QWidget *pWidget2, int h);

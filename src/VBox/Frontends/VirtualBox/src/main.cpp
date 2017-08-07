@@ -52,11 +52,6 @@
 
 /* Qt includes: */
 #ifdef VBOX_WS_X11
-# ifdef Q_OS_SOLARIS
-#  if QT_VERSION < 0x050000
-#   include <QPlastiqueStyle>
-#  endif /* QT_VERSION < 0x050000 */
-# endif /* Q_OS_SOLARIS */
 # ifndef Q_OS_SOLARIS
 #  include <QFontDatabase>
 # endif /* !Q_OS_SOLARIS */
@@ -227,7 +222,6 @@ static void InstallSignalHandler()
 # endif /* RT_OS_LINUX && DEBUG */
 #endif /* VBOX_WS_X11 */
 
-#if QT_VERSION >= 0x050000
 /** Qt5 message handler, function that prints out
   * debug, warning, critical, fatal and system error messages.
   * @param  type        Holds the type of the message.
@@ -271,44 +265,6 @@ static void QtMessageOutput(QtMsgType type, const QMessageLogContext &context, c
 # endif
     }
 }
-#else /* QT_VERSION < 0x050000 */
-/** Qt4 message handler, function that prints out
-  * debug, warning, critical, fatal and system error messages.
-  * @param  type  Holds the type of the message.
-  * @param  pMsg  Holds the message body. */
-static void QtMessageOutput(QtMsgType type, const char *pMsg)
-{
-# ifndef VBOX_WS_X11
-    NOREF(pMsg);
-# endif /* !VBOX_WS_X11 */
-    switch (type)
-    {
-        case QtDebugMsg:
-            Log(("Qt DEBUG: %s\n", pMsg));
-            break;
-        case QtWarningMsg:
-            Log(("Qt WARNING: %s\n", pMsg));
-# ifdef VBOX_WS_X11
-            /* Needed for instance for the message ``cannot connect to X server'': */
-            RTStrmPrintf(g_pStdErr, "Qt WARNING: %s\n", pMsg);
-# endif /* VBOX_WS_X11 */
-            break;
-        case QtCriticalMsg:
-            Log(("Qt CRITICAL: %s\n", pMsg));
-# ifdef VBOX_WS_X11
-            /* Needed for instance for the message ``cannot connect to X server'': */
-            RTStrmPrintf(g_pStdErr, "Qt CRITICAL: %s\n", pMsg);
-# endif /* VBOX_WS_X11 */
-            break;
-        case QtFatalMsg:
-            Log(("Qt FATAL: %s\n", pMsg));
-# ifdef VBOX_WS_X11
-            /* Needed for instance for the message ``cannot connect to X server'': */
-            RTStrmPrintf(g_pStdErr, "Qt FATAL: %s\n", pMsg);
-# endif /* VBOX_WS_X11 */
-    }
-}
-#endif /* QT_VERSION < 0x050000 */
 
 /** Shows all available command line parameters. */
 static void ShowHelp()
@@ -438,13 +394,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 # endif /* RT_OS_LINUX && DEBUG */
 #endif /* VBOX_WS_X11 */
 
-#if QT_VERSION >= 0x050000
         /* Install Qt console message handler: */
         qInstallMessageHandler(QtMessageOutput);
-#else /* QT_VERSION < 0x050000 */
-        /* Install Qt console message handler: */
-        qInstallMsgHandler(QtMessageOutput);
-#endif /* QT_VERSION < 0x050000 */
 
         /* Create application: */
         QApplication a(argc, argv);
@@ -479,12 +430,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         a.setAttribute(Qt::AA_NativeWindows);
 
 # ifdef Q_OS_SOLARIS
-#  if QT_VERSION < 0x050000
-        /* Use plastique look&feel for Solaris instead of the default motif (Qt 4.7.x): */
-        QApplication::setStyle(new QPlastiqueStyle);
-#  else /* QT_VERSION >= 0x050000 */
         a.setStyle("fusion");
-#  endif /* QT_VERSION >= 0x050000 */
 # endif /* Q_OS_SOLARIS */
 
 # ifndef Q_OS_SOLARIS
@@ -495,11 +441,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         QString subFamily(QFont::substitute(currentFamily));
         bool isSubScaleable = fontDataBase.isScalable(subFamily);
         if (isCurrentScaleable && !isSubScaleable)
-#  if QT_VERSION >= 0x050000
             QFont::removeSubstitutions(currentFamily);
-#  else /* QT_VERSION < 0x050000 */
-            QFont::removeSubstitution(currentFamily);
-#  endif /* QT_VERSION < 0x050000 */
 # endif /* !Q_OS_SOLARIS */
 
         /* Qt version check (major.minor are sensitive, fix number is ignored): */
@@ -568,11 +510,11 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 
 int main(int argc, char **argv, char **envp)
 {
-#ifdef VBOX_WS_X11
+# ifdef VBOX_WS_X11
     /* Make sure multi-threaded environment is safe: */
     if (!MakeSureMultiThreadingIsSafe())
         return 1;
-#endif /* VBOX_WS_X11 */
+# endif /* VBOX_WS_X11 */
 
     /* Initialize VBox Runtime.
      * Initialize the SUPLib as well only if we are really about to start a VM.
@@ -608,14 +550,9 @@ int main(int argc, char **argv, char **envp)
         QApplication a(argc, &argv[0]);
         Q_UNUSED(a);
 
-#ifdef Q_OS_SOLARIS
-# if QT_VERSION < 0x050000
-        /* Use plastique look&feel for Solaris instead of the default motif (Qt 4.7.x): */
-        QApplication::setStyle(new QPlastiqueStyle);
-#else /* QT_VERSION >= 0x050000 */
+# ifdef Q_OS_SOLARIS
         a.setStyle("fusion");
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_OS_SOLARIS */
+# endif /* Q_OS_SOLARIS */
 
         /* Prepare the error-message: */
         QString strTitle = QApplication::tr("VirtualBox - Runtime Error");

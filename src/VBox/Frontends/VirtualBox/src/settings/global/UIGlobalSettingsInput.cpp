@@ -821,13 +821,8 @@ void UIHotKeyTable::prepare()
     verticalHeader()->hide();
     verticalHeader()->setDefaultSectionSize((int)(verticalHeader()->minimumSectionSize() * 1.33));
     horizontalHeader()->setStretchLastSection(false);
-#if QT_VERSION >= 0x050000
     horizontalHeader()->setSectionResizeMode(UIHotKeyColumnIndex_Description, QHeaderView::Interactive);
     horizontalHeader()->setSectionResizeMode(UIHotKeyColumnIndex_Sequence, QHeaderView::Stretch);
-#else /* QT_VERSION < 0x050000 */
-    horizontalHeader()->setResizeMode(UIHotKeyColumnIndex_Description, QHeaderView::Interactive);
-    horizontalHeader()->setResizeMode(UIHotKeyColumnIndex_Sequence, QHeaderView::Stretch);
-#endif /* QT_VERSION < 0x050000 */
 
     /* Connect model: */
     connect(model(), SIGNAL(sigShortcutsLoaded()), this, SLOT(sltHandleShortcutsLoaded()));

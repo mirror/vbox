@@ -44,14 +44,10 @@ class UIMachineView;
 class CKeyboard;
 #ifdef VBOX_WS_WIN
 class WinAltGrMonitor;
-#endif /* VBOX_WS_WIN */
+#endif
 #ifdef VBOX_WS_X11
-# if QT_VERSION < 0x050000
-typedef union _XEvent XEvent;
-#else
 #  include <xcb/xcb.h>
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* VBOX_WS_X11 */
+#endif
 
 
 /* Delegate to control VM keyboard functionality: */
@@ -73,13 +69,6 @@ public:
     /* Prepare/cleanup listeners: */
     void prepareListener(ulong uScreenId, UIMachineWindow *pMachineWindow);
     void cleanupListener(ulong uScreenId);
-
-    /* Commands to capture/release keyboard: */
-#ifdef VBOX_WS_X11
-# if QT_VERSION < 0x050000
-    bool checkForX11FocusEvents(unsigned long hWindow);
-# endif /* QT_VERSION < 0x050000 */
-#endif /* VBOX_WS_X11 */
 
     /** Captures the keyboard for @a uScreenId. */
     void captureKeyboard(ulong uScreenId);
@@ -112,33 +101,20 @@ public:
     void winSkipKeyboardEvents(bool fSkip);
 #endif /* VBOX_WS_WIN */
 
-#if QT_VERSION < 0x050000
-# if defined(VBOX_WS_MAC)
-    /** Qt4: Mac: Performs pre-processing of all the native events. */
-    bool macEventFilter(const void *pvCocoaEvent, EventRef event, ulong uScreenId);
-# elif defined(VBOX_WS_WIN)
-    /** Qt4: Win: Performs pre-processing of all the native events. */
-    bool winEventFilter(MSG *pMsg, ulong uScreenId);
-# elif defined(VBOX_WS_X11)
-    /** Qt4: X11: Performs pre-processing of all the native events. */
-    bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
-# endif /* VBOX_WS_X11 */
-#else
     /** Qt5: Performs pre-processing of all the native events. */
     bool nativeEventFilter(void *pMessage, ulong uScreenId);
-#endif
 
 protected slots:
 
     /* Machine state-change handler: */
     virtual void sltMachineStateChanged();
 
-#if QT_VERSION >= 0x050000
-    /** Finalises keyboard capture. */
-    void sltFinaliseCaptureKeyboard();
-#elif QT_VERSION == 0
+#if QT_VERSION == 0
     /** Stupid moc does not warn if it cannot find headers! */
     void QT_VERSION_NOT_DEFINED
+#else
+    /** Finalises keyboard capture. */
+    void sltFinaliseCaptureKeyboard();
 #endif
 
 protected:
@@ -243,10 +219,8 @@ protected:
     /** Win: Holds the keyboard handler reference to be accessible from the keyboard hook. */
     static UIKeyboardHandler *m_spKeyboardHandler;
 #elif defined(VBOX_WS_X11)
-# if QT_VERSION >= 0x050000
     /** The root window at the time we grab the mouse buttons. */
     xcb_window_t m_hButtonGrabWindow;
-# endif
 #endif /* VBOX_WS_X11 */
 
     ULONG m_cMonitors;

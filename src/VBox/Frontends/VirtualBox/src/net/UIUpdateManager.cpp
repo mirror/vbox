@@ -23,10 +23,8 @@
 # include <QTimer>
 # include <QDir>
 # include <QPointer>
-# if QT_VERSION >= 0x050000
-#  include <QUrl>
-#  include <QUrlQuery>
-# endif /* QT_VERSION >= 0x050000 */
+# include <QUrl>
+# include <QUrlQuery>
 
 /* GUI includes: */
 # include "UIUpdateDefs.h"
@@ -180,11 +178,7 @@ private:
     void prepareNetworkRequest()
     {
         /* Compose query: */
-#if QT_VERSION >= 0x050000
         QUrlQuery url;
-#else /* QT_VERSION < 0x050000 */
-        QUrl url(m_url);
-#endif /* QT_VERSION < 0x050000 */
         url.addQueryItem("platform", vboxGlobal().virtualBox().GetPackageType());
         /* Check if branding is active: */
         if (vboxGlobal().brandingIsActive())
@@ -208,13 +202,9 @@ private:
         /* Send GET request: */
         UserDictionary headers;
         headers["User-Agent"] = strUserAgent;
-#if QT_VERSION >= 0x050000
         QUrl fullUrl(m_url);
         fullUrl.setQuery(url);
         createNetworkRequest(UINetworkRequestType_GET, QList<QUrl>() << fullUrl, headers);
-#else /* QT_VERSION < 0x050000 */
-        createNetworkRequest(UINetworkRequestType_GET, QList<QUrl>() << url, headers);
-#endif /* QT_VERSION < 0x050000 */
     }
 
     /* Handle network reply canceled: */

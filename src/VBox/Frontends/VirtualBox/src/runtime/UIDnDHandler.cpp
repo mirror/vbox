@@ -286,7 +286,6 @@ void UIDnDHandler::dragLeave(ulong screenID)
 #ifdef DEBUG_DND_QT
 QTextStream *g_pStrmLogQt = NULL; /* Output stream for Qt debug logging. */
 
-# if QT_VERSION >= 0x050000
 /* static */
 void UIDnDHandler::debugOutputQt(QtMsgType type, const QMessageLogContext &context, const QString &strMessage)
 {
@@ -311,34 +310,6 @@ void UIDnDHandler::debugOutputQt(QtMsgType type, const QMessageLogContext &conte
     if (g_pStrmLogQt)
         (*g_pStrmLogQt) << strMsg << " " << strMessage << endl;
 }
-# else /* QT_VERSION < 0x050000 */
-/* static */
-void UIDnDHandler::debugOutputQt(QtMsgType type, const char *pszMsg)
-{
-    AssertPtr(pszMsg);
-
-    QString strMsg;
-    switch (type)
-    {
-    case QtWarningMsg:
-        strMsg += "[W]";
-        break;
-    case QtCriticalMsg:
-        strMsg += "[C]";
-        break;
-    case QtFatalMsg:
-        strMsg += "[F]";
-        break;
-    case QtDebugMsg:
-    default:
-        strMsg += "[D]";
-        break;
-    }
-
-    if (g_pStrmLogQt)
-        (*g_pStrmLogQt) << strMsg << " " << pszMsg << endl;
-}
-# endif /* QT_VERSION < 0x050000 */
 #endif /* DEBUG_DND_QT */
 
 /*
@@ -366,11 +337,7 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
     {
         g_pStrmLogQt = new QTextStream(pFileDebugQt);
 
-#if QT_VERSION >= 0x050000
         qInstallMessageHandler(UIDnDHandler::debugOutputQt);
-#else /* QT_VERSION < 0x050000 */
-        qInstallMsgHandler(UIDnDHandler::debugOutputQt);
-#endif /* QT_VERSION < 0x050000 */
         qDebug("========================================================================");
     }
 # endif
@@ -437,11 +404,7 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
     Qt::DropAction dropAction;
 #  ifdef RT_OS_DARWIN
 #    ifdef VBOX_WITH_DRAG_AND_DROP_PROMISES
-#     if QT_VERSION < 0x050000
-        dropAction = pDrag->exec(actions, defAction, true /* fUsePromises */);
-#     else /* QT_VERSION >= 0x050000 */
         dropAction = pDrag->exec(actions, defAction);
-#     endif /* QT_VERSION >= 0x050000 */
 #    else
         /* Without having VBOX_WITH_DRAG_AND_DROP_PROMISES enabled drag and drop
          * will not work on OS X! It also requires some handcrafted patches within Qt

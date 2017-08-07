@@ -37,11 +37,6 @@ class UIMachineWindow;
 class UIMachineView;
 class CDisplay;
 class CMouse;
-#ifdef VBOX_WS_X11
-# if QT_VERSION < 0x050000
-typedef union _XEvent XEvent;
-# endif /* QT_VERSION < 0x050000 */
-#endif /* VBOX_WS_X11 */
 
 
 /* Delegate to control VM mouse functionality: */
@@ -74,15 +69,8 @@ public:
     /* Current mouse state: */
     int state() const;
 
-#if QT_VERSION < 0x050000
-# ifdef VBOX_WS_X11
-    /** Qt4: X11: Performs pre-processing of all the native events. */
-    bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
-# endif
-#else
     /** Qt5: Performs pre-processing of all the native events. */
     bool nativeEventFilter(void *pMessage, ulong uScreenId);
-#endif
 
 protected slots:
 

@@ -1527,23 +1527,11 @@ void UIMediumManagerWidget::prepareTreeWidget(UIMediumType type, int iColumns)
         pTreeWidget->setColumnCount(iColumns);
         pTreeWidget->sortItems(0, Qt::AscendingOrder);
         if (iColumns > 0)
-#if QT_VERSION >= 0x050000
             pTreeWidget->header()->setSectionResizeMode(0, QHeaderView::Fixed);
-#else /* QT_VERSION < 0x050000 */
-            pTreeWidget->header()->setResizeMode(0, QHeaderView::Fixed);
-#endif /* QT_VERSION < 0x050000 */
         if (iColumns > 1)
-#if QT_VERSION >= 0x050000
             pTreeWidget->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-#else /* QT_VERSION < 0x050000 */
-            pTreeWidget->header()->setResizeMode(1, QHeaderView::ResizeToContents);
-#endif /* QT_VERSION < 0x050000 */
         if (iColumns > 2)
-#if QT_VERSION >= 0x050000
             pTreeWidget->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-#else /* QT_VERSION < 0x050000 */
-            pTreeWidget->header()->setResizeMode(2, QHeaderView::ResizeToContents);
-#endif /* QT_VERSION < 0x050000 */
         pTreeWidget->header()->setStretchLastSection(false);
         pTreeWidget->setSortingEnabled(true);
         connect(pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),

@@ -23,9 +23,7 @@
 # include <QFileDialog>
 # include <QToolTip>
 # include <QTranslator>
-# if QT_VERSION >= 0x050000
 #  include <QStandardPaths>
-# endif /* QT_VERSION >= 0x050000 */
 # include <QDesktopServices>
 # include <QMutex>
 # include <QToolButton>
@@ -47,10 +45,9 @@
 # ifdef VBOX_GUI_WITH_PIDFILE
 #  include <QTextStream>
 # endif /* VBOX_GUI_WITH_PIDFILE */
-# if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+# ifdef VBOX_WS_X11
 #  include <QScreen>
-#  include <xcb/xcb.h>
-# endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+# endif
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -131,7 +128,10 @@
 /* External includes: */
 # ifdef VBOX_WS_WIN
 #  include <iprt/win/shlobj.h>
-# endif /* VBOX_WS_WIN */
+# endif
+# ifdef VBOX_WS_X11
+#  include <xcb/xcb.h>
+# endif
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -1803,11 +1803,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     }
 
     /* Try to load the corresponding Qt translation */
-#if QT_VERSION < 0x050000
-    if (sLoadedLangId != gVBoxBuiltInLangName)
-#else /* QT_VERSION >= 0x050000 */
     if (sLoadedLangId != gVBoxBuiltInLangName && sLoadedLangId != "en")
-#endif /* QT_VERSION >= 0x050000 */
     {
 #ifdef Q_OS_UNIX
         /* We use system installations of Qt on Linux systems, so first, try
@@ -3121,11 +3117,7 @@ QList <QPair <QString, QString> > VBoxGlobal::FloppyBackends()
 /* static */
 QString VBoxGlobal::documentsPath()
 {
-#if QT_VERSION >= 0x050000
     QString path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-#else /* QT_VERSION < 0x050000 */
-    QString path = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
-#endif /* QT_VERSION < 0x050000 */
     QDir dir(path);
     if (dir.exists())
         return QDir::cleanPath(dir.canonicalPath());
@@ -3242,7 +3234,7 @@ void VBoxGlobal::setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCo
     pSpinBox->setMinimumWidth(iTextWidth + iSpinBoxDelta);
 }
 
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
 typedef struct {
 /** User specified flags */
 uint32_t flags;
@@ -3265,13 +3257,13 @@ int32_t base_width, base_height;
 /** Program-specified window gravity */
 uint32_t win_gravity;
 } xcb_size_hints_t;
-#endif /* defined(VBOX_WS_X11) && QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
 
 /* static */
 void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int h)
 {
     AssertPtrReturnVoid(pWidget);
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
 # define QWINDOWSIZE_MAX ((1<<24)-1)
     if (pWidget->isWindow() && pWidget->isVisible())
     {
@@ -3319,9 +3311,9 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int 
         /* Call the Qt method if the window is not visible as otherwise no
          * Configure event will arrive to tell Qt what geometry we want. */
         pWidget->setGeometry(x, y, w, h);
-# else /* !defined(VBOX_WS_X11) && QT_VERSION >= 0x050000 */
+# else /* !VBOX_WS_X11 */
     pWidget->setGeometry(x, y, w, h);
-# endif /* !defined(VBOX_WS_X11) && QT_VERSION >= 0x050000 */
+# endif /* !VBOX_WS_X11 */
 }
 
 /* static */
@@ -3653,21 +3645,13 @@ void VBoxGlobal::prepare()
     bool fSeparateProcess = false;
     QString vmNameOrUuid;
 
-#if QT_VERSION >= 0x050000
     const QStringList arguments = qApp->arguments();
     const int argc = arguments.size();
-#else /* QT_VERSION < 0x050000 */
-    int argc = qApp->argc();
-#endif /* QT_VERSION < 0x050000 */
     int i = 1;
     while (i < argc)
     {
-#if QT_VERSION >= 0x050000
         QByteArray  argBytes = arguments.at(i).toUtf8();
         const char *arg = argBytes.constData();
-#else /* QT_VERSION < 0x050000 */
-        const char *arg = qApp->argv() [i];
-#endif /* QT_VERSION < 0x050000 */
         /* NOTE: the check here must match the corresponding check for the
          * options to start a VM in main.cpp and hardenedmain.cpp exactly,
          * otherwise there will be weird error messages. */
@@ -3676,11 +3660,7 @@ void VBoxGlobal::prepare()
         {
             if (++i < argc)
             {
-#if QT_VERSION >= 0x050000
                 vmNameOrUuid = arguments.at(i);
-#else /* QT_VERSION < 0x050000 */
-                vmNameOrUuid = QString (qApp->argv() [i]);
-#endif /* QT_VERSION < 0x050000 */
                 startVM = true;
             }
         }
@@ -3692,11 +3672,7 @@ void VBoxGlobal::prepare()
         else if (!::strcmp(arg, "-pidfile") || !::strcmp(arg, "--pidfile"))
         {
             if (++i < argc)
-# if QT_VERSION >= 0x050000
                 m_strPidfile = arguments.at(i);
-# else /* QT_VERSION < 0x050000 */
-                m_strPidfile = QString(qApp->argv()[i]);
-# endif /* QT_VERSION < 0x050000 */
         }
 #endif /* VBOX_GUI_WITH_PIDFILE */
         /* Visual state type options: */
@@ -3713,11 +3689,7 @@ void VBoxGlobal::prepare()
         {
             if (++i < argc)
             {
-#if QT_VERSION >= 0x050000
                 RTStrCopy(mSettingsPw, sizeof(mSettingsPw), arguments.at(i).toLocal8Bit().constData());
-#else /* QT_VERSION < 0x050000 */
-                RTStrCopy(mSettingsPw, sizeof(mSettingsPw), qApp->argv() [i]);
-#endif /* QT_VERSION < 0x050000 */
                 mSettingsPwSet = true;
             }
         }
@@ -3726,11 +3698,7 @@ void VBoxGlobal::prepare()
             if (++i < argc)
             {
                 size_t cbFile;
-#if QT_VERSION >= 0x050000
                 const char *pszFile = arguments.at(i).toLocal8Bit().constData();
-#else /* QT_VERSION < 0x050000 */
-                char *pszFile = qApp->argv() [i];
-#endif /* QT_VERSION < 0x050000 */
                 bool fStdIn = !::strcmp(pszFile, "stdin");
                 int vrc = VINF_SUCCESS;
                 PRTSTREAM pStrm;
@@ -3774,20 +3742,12 @@ void VBoxGlobal::prepare()
         else if (!::strcmp(arg, "--fda"))
         {
             if (++i < argc)
-# if QT_VERSION >= 0x050000
                 m_strFloppyImage = arguments.at(i);
-# else /* QT_VERSION < 0x050000 */
-                m_strFloppyImage = qApp->argv()[i];
-# endif /* QT_VERSION < 0x050000 */
         }
         else if (!::strcmp(arg, "--dvd") || !::strcmp(arg, "--cdrom"))
         {
             if (++i < argc)
-# if QT_VERSION >= 0x050000
                 m_strDvdImage = arguments.at(i);
-# else /* QT_VERSION < 0x050000 */
-                m_strDvdImage = qApp->argv()[i];
-# endif /* QT_VERSION < 0x050000 */
         }
         /* VMM Options: */
         else if (!::strcmp(arg, "--disable-patm"))
@@ -3805,11 +3765,7 @@ void VBoxGlobal::prepare()
         else if (!::strcmp(arg, "--warp-pct"))
         {
             if (++i < argc)
-#if QT_VERSION >= 0x050000
                 mWarpPct = RTStrToUInt32(arguments.at(i).toLocal8Bit().constData());
-#else /* QT_VERSION < 0x050000 */
-                mWarpPct = RTStrToUInt32(qApp->argv() [i]);
-#endif /* QT_VERSION < 0x050000 */
         }
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /* Debugger/Debugging options: */

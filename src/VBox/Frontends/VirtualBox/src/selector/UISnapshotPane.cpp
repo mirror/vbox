@@ -51,11 +51,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Qt includes: */
-#if QT_VERSION < 0x050000
-# include <QWindowsStyle>
-#endif /* QT_VERSION < 0x050000 */
-
 
 /** Snapshot tree column tags. */
 enum
