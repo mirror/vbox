@@ -202,7 +202,18 @@ private:
     //internal functions
 
     /**
-     * Worker for reconfigureVM.
+     * Worker for detectIsoOs().
+     *
+     * @returns COM status code.
+     * @retval  S_OK if detected.
+     * @retval  S_FALSE if not detected.
+     *
+     * @param   hVfsIso     The ISO file system handle.
+     */
+    HRESULT i_innerDetectIsoOS(RTVFS hVfsIso);
+
+    /**
+     * Worker for reconfigureVM().
      * The caller makes sure to close the session whatever happens.
      */
     HRESULT i_innerReconfigureVM(AutoMultiWriteLock2 &rAutoLock, StorageBus_T enmRecommendedStorageBus,

@@ -1325,7 +1325,8 @@ RTEXITCODE handleUnattendedDetect(HandlerArg *a)
     ComPtr<IUnattended> ptrUnattended;
     CHECK_ERROR2_RET(hrc, a->virtualBox, CreateUnattendedInstaller(ptrUnattended.asOutParam()), RTEXITCODE_FAILURE);
     CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(IsoPath)(Bstr(szIsoPath).raw()), RTEXITCODE_FAILURE);
-    CHECK_ERROR2_RET(hrc, ptrUnattended, DetectIsoOS(), RTEXITCODE_FAILURE);
+    CHECK_ERROR2(hrc, ptrUnattended, DetectIsoOS());
+    RTEXITCODE rcExit = SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 
     /*
      * Retrieve the results.
@@ -1366,7 +1367,7 @@ RTEXITCODE handleUnattendedDetect(HandlerArg *a)
                  bstrDetectedHints.raw());
     }
 
-    return RTEXITCODE_SUCCESS;
+    return rcExit;
 }
 
 RTEXITCODE handleUnattendedInstall(HandlerArg *a)

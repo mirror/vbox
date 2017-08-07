@@ -32,10 +32,17 @@
 #include <VBox/err.h>
 #include <iprt/ctype.h>
 #include <iprt/file.h>
+#include <iprt/fsvfs.h>
+#include <iprt/inifile.h>
 #include <iprt/locale.h>
 #include <iprt/path.h>
 
 using namespace std;
+
+/* XPCOM doesn't define S_FALSE. */
+#ifndef S_FALSE
+# define S_FALSE ((HRESULT)1)
+#endif
 
 
 /*********************************************************************************************************************************
@@ -230,7 +237,40 @@ HRESULT Unattended::initUnattended(VirtualBox *aParent)
 
 HRESULT Unattended::detectIsoOS()
 {
+    HRESULT       hrc;
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+/** @todo once UDF is implemented properly and we've tested this code a lot
+ *        more, replace E_NOTIMPL with E_FAIL. */
+
+
+    /*
+     * Open the ISO.
+     */
+    RTVFSFILE hVfsFileIso;
+    int vrc = RTVfsFileOpenNormal(mStrIsoPath.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFileIso);
+    if (RT_FAILURE(vrc))
+        return setErrorBoth(E_NOTIMPL, vrc, tr("Failed to open '%s' (%Rrc)"), mStrIsoPath.c_str(), vrc);
+
+    RTERRINFOSTATIC ErrInfo;
+    RTVFS hVfsIso;
+    vrc = RTFsIso9660VolOpen(hVfsFileIso, 0 /*fFlags*/, &hVfsIso, RTErrInfoInitStatic(&ErrInfo));
+    if (RT_SUCCESS(vrc))
+    {
+        /*
+         * Try do the detection.  Repeat for different file system variations (nojoliet, noudf).
+         */
+        hrc = i_innerDetectIsoOS(hVfsIso);
+
+        RTVfsRelease(hVfsIso);
+        hrc = E_NOTIMPL;
+    }
+    else if (RTErrInfoIsSet(&ErrInfo.Core))
+        hrc = setErrorBoth(E_NOTIMPL, vrc, tr("Failed to open '%s' as ISO FS (%Rrc) - %s"),
+                           mStrIsoPath.c_str(), vrc, ErrInfo.Core.pszMsg);
+    else
+        hrc = setErrorBoth(E_NOTIMPL, vrc, tr("Failed to open '%s' as ISO FS (%Rrc)"), mStrIsoPath.c_str(), vrc);
+    RTVfsFileRelease(hVfsFileIso);
 
     /*
      * Just fake up some windows installation media locale (for <UILanguage>).
@@ -302,8 +342,91 @@ HRESULT Unattended::detectIsoOS()
     }
 
     /** @todo implement actual detection logic. */
-    return E_NOTIMPL;
+    return hrc;
 }
+
+HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
+{
+    union
+    {
+        char sz[4096];
+    } uBuf;
+
+    // globalinstallorder.xml - vista beta2
+    // sources/idwbinfo.txt   - ditto.
+    // sources/lang.ini       - ditto.
+
+    VBOXOSTYPE enmOsType = VBOXOSTYPE_Unknown;
+
+    /*
+     * Try look for the 'sources/idwbinfo.txt' file containing windows build info.
+     * This file appeared with Vista beta 2 from what we can tell.  Before windows 10
+     * it contains easily decodable branch names, after that things goes weird.
+     */
+    /** @todo This requires UDF reader support, since vista beta 2 and later seems
+     *        all to use UDF rather than joliet.  Sigh. */
+    RTVFSFILE hVfsFile;
+    int vrc = RTVfsFileOpen(hVfsIso, "sources/idwbinfo.txt", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+    if (RT_SUCCESS(vrc))
+    {
+        enmOsType = VBOXOSTYPE_WinNT_x64;
+
+        RTINIFILE hIniFile;
+        vrc = RTIniFileCreateFromVfsFile(&hIniFile, hVfsFile, RTINIFILE_F_READONLY);
+        RTVfsFileRelease(hVfsFile);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTIniFileQueryValue(hIniFile, "BUILDINFO", "BuildArch", uBuf.sz, sizeof(uBuf), NULL);
+            if (RT_SUCCESS(vrc))
+            {
+                LogRelFlow(("Unattended: sources/idwbinfo.txt: BuildArch=%s\n", uBuf.sz));
+                if (   RTStrNICmp(uBuf.sz, RT_STR_TUPLE("amd64")) == 0
+                    || RTStrNICmp(uBuf.sz, RT_STR_TUPLE("x64"))   == 0 /* just in case */ )
+                    enmOsType = VBOXOSTYPE_WinNT_x64;
+                else if (RTStrNICmp(uBuf.sz, RT_STR_TUPLE("x86")) == 0)
+                    enmOsType = VBOXOSTYPE_WinNT;
+                else
+                {
+                    LogRel(("Unattended: sources/idwbinfo.txt: Unknown: BuildArch=%s\n", uBuf.sz));
+                    enmOsType = VBOXOSTYPE_WinNT_x64;
+                }
+            }
+
+            vrc = RTIniFileQueryValue(hIniFile, "BUILDINFO", "BuildBranch", uBuf.sz, sizeof(uBuf), NULL);
+            if (RT_SUCCESS(vrc))
+            {
+                LogRelFlow(("Unattended: sources/idwbinfo.txt: BuildBranch=%s\n", uBuf.sz));
+                if (   RTStrNICmp(uBuf.sz, RT_STR_TUPLE("vista")) == 0
+                    || RTStrNICmp(uBuf.sz, RT_STR_TUPLE("winmain_beta")) == 0)
+                    enmOsType = (VBOXOSTYPE)((enmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinVista);
+                else if (RTStrNICmp(uBuf.sz, RT_STR_TUPLE("win7")) == 0)
+                    enmOsType = (VBOXOSTYPE)((enmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win7);
+                else if (   RTStrNICmp(uBuf.sz, RT_STR_TUPLE("winblue")) == 0
+                         || RTStrNICmp(uBuf.sz, RT_STR_TUPLE("winmain_blue")) == 0
+                         || RTStrNICmp(uBuf.sz, RT_STR_TUPLE("win81")) == 0 /* not seen, but just in case its out there */ )
+                    enmOsType = (VBOXOSTYPE)((enmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win81);
+                else if (   RTStrNICmp(uBuf.sz, RT_STR_TUPLE("win8")) == 0
+                         || RTStrNICmp(uBuf.sz, RT_STR_TUPLE("winmain_win8")) == 0 )
+                    enmOsType = (VBOXOSTYPE)((enmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win8);
+                else
+                    LogRel(("Unattended: sources/idwbinfo.txt: Unknown: BuildBranch=%s\n", uBuf.sz));
+            }
+            RTIniFileRelease(hIniFile);
+        }
+    }
+
+    /*
+     *
+     */
+    if (   enmOsType != VBOXOSTYPE_Unknown
+        && enmOsType != VBOXOSTYPE_Unknown_x64)
+    {
+        mStrDetectedOSTypeId = Global::OSTypeId(enmOsType);
+    }
+
+    return S_FALSE;
+}
+
 
 HRESULT Unattended::prepare()
 {
