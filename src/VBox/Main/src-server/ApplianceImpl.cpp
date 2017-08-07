@@ -148,6 +148,8 @@ g_osTypes[] =
     { ovf::CIMOSType_CIMOS_MACOS,                                VBOXOSTYPE_MacOS109_x64 },
     { ovf::CIMOSType_CIMOS_MACOS,                                VBOXOSTYPE_MacOS1010_x64 },
     { ovf::CIMOSType_CIMOS_MACOS,                                VBOXOSTYPE_MacOS1011_x64 },
+    { ovf::CIMOSType_CIMOS_MACOS,                                VBOXOSTYPE_MacOS1012_x64 },
+    { ovf::CIMOSType_CIMOS_MACOS,                                VBOXOSTYPE_MacOS1013_x64 },
 
     // Linuxes
     { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux,                VBOXOSTYPE_RedHat },

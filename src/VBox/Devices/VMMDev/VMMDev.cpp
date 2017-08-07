@@ -229,6 +229,8 @@ static void vmmdevLogGuestOsInfo(VBoxGuestInfo *pGuestInfo)
         case VBOXOSTYPE_MacOS109_x64 & ~VBOXOSTYPE_x64:   pszOs = "Mac OS X 10.9";  break;
         case VBOXOSTYPE_MacOS1010_x64 & ~VBOXOSTYPE_x64:  pszOs = "Mac OS X 10.10"; break;
         case VBOXOSTYPE_MacOS1011_x64 & ~VBOXOSTYPE_x64:  pszOs = "Mac OS X 10.11"; break;
+        case VBOXOSTYPE_MacOS1012_x64 & ~VBOXOSTYPE_x64:  pszOs = "macOS 10.12";    break;
+        case VBOXOSTYPE_MacOS1013_x64 & ~VBOXOSTYPE_x64:  pszOs = "macOS 10.13";    break;
         case VBOXOSTYPE_Haiku:                            pszOs = "Haiku";          break;
         default:                                          pszOs = "unknown";        break;
     }
