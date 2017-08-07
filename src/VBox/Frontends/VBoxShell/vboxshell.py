@@ -2212,7 +2212,7 @@ def createHddCmd(ctx, args):
     else:
         fmt = "vdi"
 
-    hdd = ctx['vb'].createMedium(format, loc, ctx['global'].constants.AccessMode_ReadWrite, ctx['global'].constants.DeviceType_HardDisk)
+    hdd = ctx['vb'].createMedium(fmt, loc, ctx['global'].constants.AccessMode_ReadWrite, ctx['global'].constants.DeviceType_HardDisk)
     progress = hdd.createBaseStorage(size, (ctx['global'].constants.MediumVariant_Standard, ))
     if progressBar(ctx,progress) and hdd.id:
         print("created HDD at %s as %s" % (colPath(ctx,hdd.location), hdd.id))
