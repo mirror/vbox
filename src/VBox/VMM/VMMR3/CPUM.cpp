@@ -804,7 +804,7 @@ static int cpumR3AllocHwVirtState(PVM pVM)
          */
         Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3);
         rc = SUPR3PageAllocEx(SVM_VMCB_PAGES, 0 /* fFlags */, (void **)&pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3,
-                              (PRTR0PTR)pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR0, NULL /* paPages */);
+                              &pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR0, NULL /* paPages */);
         if (RT_FAILURE(rc))
         {
             Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3);
@@ -1268,7 +1268,9 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
      * Hardware virtualization state.
      */
     /* SVM. */
-    memset(&pCtx->hwvirt.svm, 0, sizeof(pCtx->hwvirt.svm));
+    memset(pCtx->hwvirt.svm.CTX_SUFF(pVmcb), 0, sizeof(SVMVMCB));
+    pCtx->hwvirt.svm.uMsrHSavePa = 0;
+    pCtx->hwvirt.svm.GCPhysVmcb = 0;
     pCtx->hwvirt.svm.fGif = 1;
 }
 
