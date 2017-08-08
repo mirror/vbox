@@ -1190,12 +1190,20 @@ static int supR3HardenedVerifyPathSanity(const char *pszPath, PRTERRINFO pErrInf
         || pszSrc[2] == '\0')
         return supR3HardenedSetError3(VERR_SUPLIB_PATH_TOO_SHORT, pErrInfo, "The path is too short: '", pszPath, "'");
 
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_UNIX
+    /*
+     * Skip double slashes.
+     */
+    while (RTPATH_IS_SLASH(*pszSrc))
+        pszSrc++;
+#else
     /*
      * The root slash should be alone to avoid UNC confusion.
      */
     if (RTPATH_IS_SLASH(pszSrc[0]))
         return supR3HardenedSetError3(VERR_SUPLIB_PATH_NOT_CLEAN, pErrInfo,
                                       "The path is not clean of leading double slashes: '", pszPath, "'");
+#endif
     /*
      * Check each component.  No parent references.
      */
