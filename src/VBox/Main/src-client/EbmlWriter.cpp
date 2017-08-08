@@ -53,8 +53,12 @@ private:
         EbmlSubElement(uint64_t offs, EbmlClassId cid) : offset(offs), classId(cid) {}
     };
 
+    /** Stack of EBML sub elements. */
     std::stack<EbmlSubElement> m_Elements;
-    RTFILE m_File;
+    /** The file's handle. */
+    RTFILE                     m_File;
+    /** The file's name (path). */
+    Utf8Str                    m_strFile;
 
 public:
 
@@ -68,7 +72,19 @@ public:
     /** Creates EBML output file. */
     inline int create(const char *a_pszFilename, uint64_t fOpen)
     {
-        return RTFileOpen(&m_File, a_pszFilename, fOpen);
+        int rc = RTFileOpen(&m_File, a_pszFilename, fOpen);
+        if (RT_SUCCESS(rc))
+        {
+            m_strFile = a_pszFilename;
+        }
+
+        return rc;
+    }
+
+    /** Returns the file name. */
+    inline const Utf8Str& getFileName(void)
+    {
+        return m_strFile;
     }
 
     /** Returns file size. */
@@ -103,6 +119,8 @@ public:
 
         RTFileClose(m_File);
         m_File = NIL_RTFILE;
+
+        m_strFile = "";
     }
 
     /**
@@ -1103,6 +1121,11 @@ int WebMWriter::WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData)
         rc = rc2;
     }
     return rc;
+}
+
+const Utf8Str& WebMWriter::GetFileName(void)
+{
+    return m_pImpl->m_Ebml.getFileName();
 }
 
 uint64_t WebMWriter::GetFileSize(void)

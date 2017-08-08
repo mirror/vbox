@@ -31,6 +31,10 @@
 
 #include <iprt/file.h>
 
+#include <VBox/com/string.h> /* For Utf8Str. */
+
+using namespace com;
+
 class WebMWriter_Impl;
 
 class WebMWriter
@@ -120,6 +124,13 @@ public:
      * @returns VBox status code.
      */
     int WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData);
+
+    /**
+     * Gets file name.
+     *
+     * @returns File name as UTF-8 string.
+     */
+    const Utf8Str& GetFileName(void);
 
     /**
      * Gets current output file size.
