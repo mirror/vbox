@@ -49,12 +49,14 @@
 #include <drm/ttm/ttm_module.h>
 
 #if defined(RHEL_MAJOR) && defined(RHEL_MINOR)
-# if RHEL_MAJOR == 7 && RHEL_MINOR >= 3
-#  define RHEL_7
+# if RHEL_MAJOR == 7 && RHEL_MINOR >= 4
+#  define RHEL_74
+# elif RHEL_MAJOR == 7 && RHEL_MINOR >= 3
+#  define RHEL_73
 # endif
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_7)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_73)
 #include <drm/drm_gem.h>
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
@@ -212,7 +214,7 @@ void vbox_mode_fini(struct drm_device *dev);
 #define DRM_MODE_FB_CMD drm_mode_fb_cmd2
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0) && !defined(RHEL_7)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0) && !defined(RHEL_73)
 #define CRTC_FB(crtc) ((crtc)->fb)
 #else
 #define CRTC_FB(crtc) ((crtc)->primary->fb)
@@ -228,7 +230,7 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
 
 int vbox_framebuffer_init(struct drm_device *dev,
 			  struct vbox_framebuffer *vbox_fb,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0) || defined(RHEL_7)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0) || defined(RHEL_73)
 			  const
 #endif
 			  struct DRM_MODE_FB_CMD *mode_cmd,
@@ -244,7 +246,7 @@ struct vbox_bo {
 	struct ttm_placement placement;
 	struct ttm_bo_kmap_obj kmap;
 	struct drm_gem_object gem;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0) && !defined(RHEL_7)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0) && !defined(RHEL_73)
 	u32 placements[3];
 #else
 	struct ttm_place placements[3];
@@ -264,7 +266,7 @@ static inline struct vbox_bo *vbox_bo(struct ttm_buffer_object *bo)
 int vbox_dumb_create(struct drm_file *file,
 		     struct drm_device *dev,
 		     struct drm_mode_create_dumb *args);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && !defined(RHEL_7)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && !defined(RHEL_73)
 int vbox_dumb_destroy(struct drm_file *file,
 		      struct drm_device *dev, u32 handle);
 #endif
@@ -292,7 +294,7 @@ static inline int vbox_bo_reserve(struct vbox_bo *bo, bool no_wait)
 {
 	int ret;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0) || defined(RHEL_74)
 	ret = ttm_bo_reserve(&bo->bo, true, no_wait, NULL);
 #else
 	ret = ttm_bo_reserve(&bo->bo, true, no_wait, false, 0);
@@ -319,7 +321,7 @@ int vbox_gem_prime_pin(struct drm_gem_object *obj);
 void vbox_gem_prime_unpin(struct drm_gem_object *obj);
 struct sg_table *vbox_gem_prime_get_sg_table(struct drm_gem_object *obj);
 struct drm_gem_object *vbox_gem_prime_import_sg_table(struct drm_device *dev,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0) && !defined(RHEL_7)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0) && !defined(RHEL_73)
 						      size_t size,
 #else
 						      struct dma_buf_attachment
