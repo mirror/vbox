@@ -204,9 +204,9 @@ static int vbox_bo_move(struct ttm_buffer_object *bo,
 {
 	int r;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0) && !defined(RHEL_74)
 	r = ttm_bo_move_memcpy(bo, evict, no_wait_gpu, new_mem);
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0) && !defined(RHEL_74)
 	r = ttm_bo_move_memcpy(bo, evict, interruptible, no_wait_gpu, new_mem);
 #else
 	r = ttm_bo_move_memcpy(bo, interruptible, no_wait_gpu, new_mem);
@@ -259,7 +259,7 @@ struct ttm_bo_driver vbox_bo_driver = {
 	.ttm_tt_populate = vbox_ttm_tt_populate,
 	.ttm_tt_unpopulate = vbox_ttm_tt_unpopulate,
 	.init_mem_type = vbox_bo_init_mem_type,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0) || defined(RHEL_74)
 	.eviction_valuable = ttm_bo_eviction_valuable,
 #endif
 	.evict_flags = vbox_bo_evict_flags,
@@ -270,7 +270,8 @@ struct ttm_bo_driver vbox_bo_driver = {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
 	.io_mem_pfn = ttm_bo_default_io_mem_pfn,
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)) \
+    || defined(RHEL_74)
 	.lru_tail = &ttm_bo_default_lru_tail,
 	.swap_lru_tail = &ttm_bo_default_swap_lru_tail,
 #endif
