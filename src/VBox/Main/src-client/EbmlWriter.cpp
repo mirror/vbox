@@ -582,7 +582,7 @@ public:
         WebMTrack *pTrack = new WebMTrack(WebMTrackType_Audio, uTrack, RTFileTell(m_Ebml.getFile()));
 
         pTrack->Audio.uHz     = uHz;
-        pTrack->Audio.csFrame = pTrack->Audio.uHz / 50; /** @todo 20 ms of audio data. Make this configurable? */
+        pTrack->Audio.csFrame = pTrack->Audio.uHz / (1000 /* s in ms */ / 20); /** @todo 20 ms of audio data. Make this configurable? */
 
         OpusPrivData opusPrivData(uHz, cChannels);
 
@@ -593,7 +593,7 @@ public:
               .serializeString(MkvElem_CodecID,               "A_OPUS")
               .serializeData(MkvElem_CodecPrivate,            &opusPrivData, sizeof(opusPrivData))
               .serializeUnsignedInteger(MkvElem_CodecDelay,   0)
-              .serializeUnsignedInteger(MkvElem_SeekPreRoll,  80000000) /* 80ms in ns. */
+              .serializeUnsignedInteger(MkvElem_SeekPreRoll,  80 * 1000000) /* 80ms in ns. */
               .subStart(MkvElem_Audio)
                   .serializeFloat(MkvElem_SamplingFrequency,  (float)uHz)
                   .serializeUnsignedInteger(MkvElem_Channels, cChannels)
