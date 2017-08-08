@@ -863,6 +863,7 @@ template<> QString toInternalString(const ToolTypeMachine &enmToolTypeMachine)
     QString strResult;
     switch (enmToolTypeMachine)
     {
+        case ToolTypeMachine_Invalid:   strResult = "None"; break;
         case ToolTypeMachine_Details:   strResult = "Details"; break;
         case ToolTypeMachine_Snapshots: strResult = "Snapshots"; break;
         default:
@@ -880,6 +881,7 @@ template<> ToolTypeMachine fromInternalString<ToolTypeMachine>(const QString &st
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;    QList<ToolTypeMachine> values;
+    keys << "None";      values << ToolTypeMachine_Invalid;
     keys << "Details";   values << ToolTypeMachine_Details;
     keys << "Snapshots"; values << ToolTypeMachine_Snapshots;
     /* Invalid type for unknown words: */

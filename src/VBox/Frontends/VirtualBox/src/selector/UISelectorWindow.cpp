@@ -160,7 +160,8 @@ void UISelectorWindow::sltHandlePolishEvent()
         mapActionsMachine[ToolTypeMachine_Details] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details);
         mapActionsMachine[ToolTypeMachine_Snapshots] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots);
         for (int i = m_orderMachine.size() - 1; i >= 0; --i)
-            mapActionsMachine.value(m_orderMachine.at(i))->trigger();
+            if (m_orderMachine.at(i) != ToolTypeMachine_Invalid)
+                mapActionsMachine.value(m_orderMachine.at(i))->trigger();
         /* Make sure further action triggering cause tool type switch as well: */
         actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->setProperty("watch_child_activation", true);
     }
@@ -2132,7 +2133,8 @@ void UISelectorWindow::loadSettings()
         mapActionsGlobal[ToolTypeGlobal_VirtualMedia] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_VirtualMediaManager);
         mapActionsGlobal[ToolTypeGlobal_HostNetwork] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_HostNetworkManager);
         for (int i = m_orderGlobal.size() - 1; i >= 0; --i)
-            mapActionsGlobal.value(m_orderGlobal.at(i))->trigger();
+            if (m_orderGlobal.at(i) != ToolTypeGlobal_Invalid)
+                mapActionsGlobal.value(m_orderGlobal.at(i))->trigger();
         /* Make sure further action triggering cause tool type switch as well: */
         actionPool()->action(UIActionIndexST_M_Tools_T_Global)->setProperty("watch_child_activation", true);
 
