@@ -125,21 +125,30 @@ void UIFilePathSelector::setEditable(bool fEditable)
     if (m_fEditable)
     {
         QIComboBox::setEditable(true);
+
+        /* Install combo-box event-filter: */
+        Assert(comboBox());
+        comboBox()->installEventFilter(this);
+
+        /* Install line-edit connection/event-filter: */
         Assert(lineEdit());
         connect(lineEdit(), SIGNAL(textEdited(const QString &)),
                 this, SLOT(onTextEdited(const QString &)));
-
-        /* Installing necessary event filters: */
         lineEdit()->installEventFilter(this);
     }
     else
     {
         if (lineEdit())
         {
-            /* Installing necessary event filters: */
-            lineEdit()->installEventFilter(this);
+            /* Remove line-edit event-filter/connection: */
+            lineEdit()->removeEventFilter(this);
             disconnect(lineEdit(), SIGNAL(textEdited(const QString &)),
                        this, SLOT(onTextEdited(const QString &)));
+        }
+        if (comboBox())
+        {
+            /* Remove combo-box event-filter: */
+            comboBox()->removeEventFilter(this);
         }
         QIComboBox::setEditable(false);
     }
@@ -176,9 +185,26 @@ void UIFilePathSelector::setPath(const QString &strPath, bool fRefreshText /* = 
 
 bool UIFilePathSelector::eventFilter(QObject *pObject, QEvent *pEvent)
 {
-    if (m_fMouseAwaited && (pEvent->type() == QEvent::MouseButtonPress))
-        QMetaObject::invokeMethod(this, "refreshText", Qt::QueuedConnection);
+    /* If the object is private combo-box: */
+    if (pObject == comboBox())
+    {
+        /* Handle focus events related to private child: */
+        switch (pEvent->type())
+        {
+            case QEvent::FocusIn:  focusInEvent(static_cast<QFocusEvent*>(pEvent)); break;
+            case QEvent::FocusOut: focusOutEvent(static_cast<QFocusEvent*>(pEvent)); break;
+            default: break;
+        }
+    }
 
+    /* If the object is private line-edit: */
+    if (pObject == lineEdit())
+    {
+        if (m_fMouseAwaited && (pEvent->type() == QEvent::MouseButtonPress))
+            QMetaObject::invokeMethod(this, "refreshText", Qt::QueuedConnection);
+    }
+
+    /* Call to base-class: */
     return QIWithRetranslateUI<QIComboBox>::eventFilter(pObject, pEvent);
 }
 

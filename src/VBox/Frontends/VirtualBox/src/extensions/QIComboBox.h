@@ -112,6 +112,11 @@ public slots:
     /** Defines the @a strText for the item with the given @a iIndex. */
     void setItemText(int iIndex, const QString &strText) const;
 
+protected:
+
+    /** Returns the embedded combo-box reference. */
+    QComboBox *comboBox() const;
+
 private:
 
     /** Prepares all. */
