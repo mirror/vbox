@@ -380,7 +380,8 @@ void UIMediumItem::refresh()
         setToolTip(i, strToolTip);
 
     /* Gather medium data: */
-    m_fValid = !m_guiMedium.isNull();
+    m_fValid =    !m_guiMedium.isNull()
+               && m_guiMedium.state() != KMediumState_Inaccessible;
     m_enmType = m_guiMedium.type();
     m_enmVariant = m_guiMedium.mediumVariant();
     /* Gather medium options data: */
