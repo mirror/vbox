@@ -56,14 +56,14 @@ private:
     /** Stack of EBML sub elements. */
     std::stack<EbmlSubElement> m_Elements;
     /** The file's handle. */
-    RTFILE                     m_File;
+    RTFILE                     m_hFile;
     /** The file's name (path). */
     Utf8Str                    m_strFile;
 
 public:
 
     Ebml(void)
-        : m_File(NIL_RTFILE) { }
+        : m_hFile(NIL_RTFILE) { }
 
     virtual ~Ebml(void) { close(); }
 
@@ -72,7 +72,7 @@ public:
     /** Creates EBML output file. */
     inline int create(const char *a_pszFilename, uint64_t fOpen)
     {
-        int rc = RTFileOpen(&m_File, a_pszFilename, fOpen);
+        int rc = RTFileOpen(&m_hFile, a_pszFilename, fOpen);
         if (RT_SUCCESS(rc))
         {
             m_strFile = a_pszFilename;
@@ -90,20 +90,20 @@ public:
     /** Returns file size. */
     inline uint64_t getFileSize(void)
     {
-        return RTFileTell(m_File);
+        return RTFileTell(m_hFile);
     }
 
     /** Get reference to file descriptor */
     inline const RTFILE &getFile(void)
     {
-        return m_File;
+        return m_hFile;
     }
 
     /** Returns available space on storage. */
     inline uint64_t getAvailableSpace(void)
     {
         RTFOFF pcbFree;
-        int rc = RTFileQueryFsSizes(m_File, NULL, &pcbFree, 0, 0);
+        int rc = RTFileQueryFsSizes(m_hFile, NULL, &pcbFree, 0, 0);
         return (RT_SUCCESS(rc)? (uint64_t)pcbFree : UINT64_MAX);
     }
 
@@ -117,8 +117,8 @@ public:
                   ("%zu elements are not closed yet (next element to close is 0x%x)\n",
                    m_Elements.size(), m_Elements.top().classId));
 
-        RTFileClose(m_File);
-        m_File = NIL_RTFILE;
+        RTFileClose(m_hFile);
+        m_hFile = NIL_RTFILE;
 
         m_strFile = "";
     }
@@ -130,7 +130,7 @@ public:
      */
     inline bool isOpen(void)
     {
-        return RTFileIsValid(m_File);
+        return RTFileIsValid(m_hFile);
     }
 
     /** Starts an EBML sub-element. */
@@ -138,7 +138,7 @@ public:
     {
         writeClassId(classId);
         /* store the current file offset. */
-        m_Elements.push(EbmlSubElement(RTFileTell(m_File), classId));
+        m_Elements.push(EbmlSubElement(RTFileTell(m_hFile), classId));
         /* Indicates that size of the element
          * is unkown (as according to EBML specs).
          */
@@ -160,13 +160,13 @@ public:
         RT_NOREF(classId);
 #endif
 
-        uint64_t uPos = RTFileTell(m_File);
+        uint64_t uPos = RTFileTell(m_hFile);
         uint64_t uSize = uPos - m_Elements.top().offset - 8;
-        RTFileSeek(m_File, m_Elements.top().offset, RTFILE_SEEK_BEGIN, NULL);
+        RTFileSeek(m_hFile, m_Elements.top().offset, RTFILE_SEEK_BEGIN, NULL);
 
         /* Make sure that size will be serialized as uint64_t. */
         writeUnsignedInteger(uSize | UINT64_C(0x0100000000000000));
-        RTFileSeek(m_File, uPos, RTFILE_SEEK_BEGIN, NULL);
+        RTFileSeek(m_hFile, uPos, RTFILE_SEEK_BEGIN, NULL);
         m_Elements.pop();
         return *this;
     }
@@ -229,7 +229,7 @@ public:
     /** Writes raw data to file. */
     inline int write(const void *data, size_t size)
     {
-        return RTFileWrite(m_File, data, size, NULL);
+        return RTFileWrite(m_hFile, data, size, NULL);
     }
 
     /** Writes an unsigned integer of variable of fixed size. */
