@@ -3980,7 +3980,31 @@ bool UIMachineSettingsStorage::saveStorageData()
                 fSuccess = removeStorageController(controllerCache);
         }
 
+        /* For each controller ('updating' step): */
+        // We need to separately update controllers first because
+        // attachments should be removed/updated/created same separate way.
+        for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_pCache->childCount(); ++iControllerIndex)
+        {
+            /* Get controller cache: */
+            const UISettingsCacheMachineStorageController &controllerCache = m_pCache->child(iControllerIndex);
+
+            /* Update controller marked for 'update' (if it can be updated): */
+            if (controllerCache.wasUpdated() && isControllerCouldBeUpdated(controllerCache))
+                fSuccess = updateStorageController(controllerCache, true);
+        }
+        for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_pCache->childCount(); ++iControllerIndex)
+        {
+            /* Get controller cache: */
+            const UISettingsCacheMachineStorageController &controllerCache = m_pCache->child(iControllerIndex);
+
+            /* Update controller marked for 'update' (if it can be updated): */
+            if (controllerCache.wasUpdated() && isControllerCouldBeUpdated(controllerCache))
+                fSuccess = updateStorageController(controllerCache, false);
+        }
+
         /* For each controller ('creating' step): */
+        // Finally we are creating new controllers,
+        // with attachments which were released for sure.
         for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_pCache->childCount(); ++iControllerIndex)
         {
             /* Get controller cache: */
@@ -3989,12 +4013,6 @@ bool UIMachineSettingsStorage::saveStorageData()
             /* Create controller marked for 'create' or 'update' (if it can't be updated): */
             if (controllerCache.wasCreated() || (controllerCache.wasUpdated() && !isControllerCouldBeUpdated(controllerCache)))
                 fSuccess = createStorageController(controllerCache);
-
-            else
-
-            /* Update controller marked for 'update' (if it can be updated): */
-            if (controllerCache.wasUpdated() && isControllerCouldBeUpdated(controllerCache))
-                fSuccess = updateStorageController(controllerCache);
         }
     }
     /* Return result: */
@@ -4116,7 +4134,8 @@ bool UIMachineSettingsStorage::createStorageController(const UISettingsCacheMach
     return fSuccess;
 }
 
-bool UIMachineSettingsStorage::updateStorageController(const UISettingsCacheMachineStorageController &controllerCache)
+bool UIMachineSettingsStorage::updateStorageController(const UISettingsCacheMachineStorageController &controllerCache,
+                                                       bool fRemovingStep)
 {
     /* Prepare result: */
     bool fSuccess = true;
@@ -4178,34 +4197,39 @@ bool UIMachineSettingsStorage::updateStorageController(const UISettingsCacheMach
             if (!fSuccess)
                 notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comController));
 
-            /* For each attachment ('removing' step): */
             // We need to separately remove attachments first because
-            // there could be limited amount of attachments available.
-            for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
+            // there could be limited amount of attachments or media available.
+            if (fRemovingStep)
             {
-                /* Get attachment cache: */
-                const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+                /* For each attachment ('removing' step): */
+                for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
+                {
+                    /* Get attachment cache: */
+                    const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
 
-                /* Remove attachment marked for 'remove' or 'update' (if it can't be updated): */
-                if (attachmentCache.wasRemoved() || (attachmentCache.wasUpdated() && !isAttachmentCouldBeUpdated(attachmentCache)))
-                    fSuccess = removeStorageAttachment(controllerCache, attachmentCache);
+                    /* Remove attachment marked for 'remove' or 'update' (if it can't be updated): */
+                    if (attachmentCache.wasRemoved() || (attachmentCache.wasUpdated() && !isAttachmentCouldBeUpdated(attachmentCache)))
+                        fSuccess = removeStorageAttachment(controllerCache, attachmentCache);
+                }
             }
-
-            /* For each attachment ('creating' step): */
-            for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
+            else
             {
-                /* Get attachment cache: */
-                const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+                /* For each attachment ('creating' step): */
+                for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
+                {
+                    /* Get attachment cache: */
+                    const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
 
-                /* Create attachment marked for 'create' or 'update' (if it can't be updated): */
-                if (attachmentCache.wasCreated() || (attachmentCache.wasUpdated() && !isAttachmentCouldBeUpdated(attachmentCache)))
-                    fSuccess = createStorageAttachment(controllerCache, attachmentCache);
+                    /* Create attachment marked for 'create' or 'update' (if it can't be updated): */
+                    if (attachmentCache.wasCreated() || (attachmentCache.wasUpdated() && !isAttachmentCouldBeUpdated(attachmentCache)))
+                        fSuccess = createStorageAttachment(controllerCache, attachmentCache);
 
-                else
+                    else
 
-                /* Update attachment marked for 'update' (if it can be updated): */
-                if (attachmentCache.wasUpdated() && isAttachmentCouldBeUpdated(attachmentCache))
-                    fSuccess = updateStorageAttachment(controllerCache, attachmentCache);
+                    /* Update attachment marked for 'update' (if it can be updated): */
+                    if (attachmentCache.wasUpdated() && isAttachmentCouldBeUpdated(attachmentCache))
+                        fSuccess = updateStorageAttachment(controllerCache, attachmentCache);
+                }
             }
         }
     }

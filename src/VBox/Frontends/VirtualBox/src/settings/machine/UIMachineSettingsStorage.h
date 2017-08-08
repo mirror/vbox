@@ -774,7 +774,8 @@ private:
     /** Creates existing storage controller described by the @a controllerCache. */
     bool createStorageController(const UISettingsCacheMachineStorageController &controllerCache);
     /** Updates existing storage controller described by the @a controllerCache. */
-    bool updateStorageController(const UISettingsCacheMachineStorageController &controllerCache);
+    bool updateStorageController(const UISettingsCacheMachineStorageController &controllerCache,
+                                 bool fRemovingStep);
     /** Removes existing storage attachment described by the @a controllerCache and @a attachmentCache. */
     bool removeStorageAttachment(const UISettingsCacheMachineStorageController &controllerCache,
                                  const UISettingsCacheMachineStorageAttachment &attachmentCache);
