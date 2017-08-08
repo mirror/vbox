@@ -50,6 +50,7 @@
 
 #if defined(RHEL_MAJOR) && defined(RHEL_MINOR)
 # if RHEL_MAJOR == 7 && RHEL_MINOR >= 4
+#  define RHEL_73
 #  define RHEL_74
 # elif RHEL_MAJOR == 7 && RHEL_MINOR >= 3
 #  define RHEL_73
