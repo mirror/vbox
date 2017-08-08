@@ -1857,7 +1857,7 @@ void UISelectorWindow::prepareToolbar()
         if (pSpace)
         {
             if (vboxGlobal().isBeta())
-                pSpace->setFixedSize(28, 1);
+                pSpace->setFixedSize(60, 1);
             else
                 pSpace->setFixedSize(1, 1);
             m_pToolBar->addWidget(pSpace);
