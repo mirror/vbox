@@ -1290,7 +1290,7 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
 
         if (cfToPlay)
         {
-            uint8_t auBuf[256]; /** @todo Get rid of this here. */
+            uint8_t auBuf[_4K]; /** @todo Get rid of this here. */
 
             uint32_t cbLeft  = AUDIOMIXBUF_F2B(&pHstStream->MixBuf, cfToPlay);
             uint32_t cbChunk = sizeof(auBuf);
@@ -1384,7 +1384,7 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
         if (cfToPlay > cfWritable) /* More frames available than we can write? Limit. */
             cfToPlay = cfWritable;
 
-        PDMAUDIOFRAME aFrameBuf[256]; /** @todo Get rid of this here. */
+        PDMAUDIOFRAME aFrameBuf[_4K]; /** @todo Get rid of this here. */
 
         uint32_t cfLeft = cfToPlay;
         while (cfLeft)
