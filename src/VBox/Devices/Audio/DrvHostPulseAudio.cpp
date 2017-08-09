@@ -65,6 +65,7 @@ RT_C_DECLS_END
 #define PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface) \
     ( (PDRVHOSTPULSEAUDIO)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTPULSEAUDIO, IHostAudio)) )
 
+#define PULSEAUDIO_ASYNC
 
 /*********************************************************************************************************************************
 *   Structures                                                                                                                   *
@@ -123,8 +124,12 @@ typedef struct PULSEAUDIOSTREAM
     uint32_t               cUnderflows;
     /** Current latency (in us). */
     uint64_t               curLatencyUs;
+#ifdef LOG_ENABLED
     /** Start time stamp (in us) of stream playback / recording. */
     pa_usec_t              tsStartUs;
+    /** Time stamp (in us) when last read from / written to the stream. */
+    pa_usec_t              tsLastReadWrittenUs;
+#endif
 } PULSEAUDIOSTREAM, *PPULSEAUDIOSTREAM;
 
 /* The desired buffer length in milliseconds. Will be the target total stream
@@ -589,8 +594,9 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
             }
         }
 
+#ifdef LOG_ENABLED
         pStreamPA->tsStartUs = pa_rtclock_now();
-
+#endif
         if (RT_FAILURE(rc))
             break;
 
@@ -744,16 +750,16 @@ static int paCreateStreamOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStream
     pStreamPA->SampleSpec.rate     = pCfgReq->Props.uHz;
     pStreamPA->SampleSpec.channels = pCfgReq->Props.cChannels;
 
-    pStreamPA->curLatencyUs        = 100 * 1000; /** 100ms latency by default. @todo Make this configurable. */
+    pStreamPA->curLatencyUs        = 100 * 1000; /** 10ms latency by default. @todo Make this configurable. */
 
-    LogRel2(("PulseAudio: Initial output latency is %RU64ms\n", pStreamPA->curLatencyUs / 1000 /* ms */));
+    const uint32_t cbLatency = pa_usec_to_bytes(pStreamPA->curLatencyUs, &pStreamPA->SampleSpec);
 
-    const uint32_t mixsize = pa_usec_to_bytes(pStreamPA->curLatencyUs, &pStreamPA->SampleSpec);
+    LogRel2(("PulseAudio: Initial output latency is %RU64ms (%RU32 bytes)\n", pStreamPA->curLatencyUs / 1000 /* ms */, cbLatency));
 
-    pStreamPA->BufAttr.maxlength   = mixsize * 4;
-    pStreamPA->BufAttr.tlength     = mixsize;
-    pStreamPA->BufAttr.prebuf      = mixsize * 2;
-    pStreamPA->BufAttr.minreq      = mixsize;
+    pStreamPA->BufAttr.tlength     = cbLatency;
+    pStreamPA->BufAttr.maxlength   = (pStreamPA->BufAttr.tlength * 3) / 2;
+    pStreamPA->BufAttr.prebuf      = cbLatency;
+    pStreamPA->BufAttr.minreq      = (uint32_t)-1;                 /* PulseAudio should set something sensible for minreq on it's own. */
 
     LogFunc(("BufAttr tlength=%RU32, maxLength=%RU32, minReq=%RU32\n",
              pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
@@ -950,7 +956,6 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
                                                      PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cxBuf,
                                                      uint32_t *pcxWritten)
 {
-    RT_NOREF(pvBuf, cxBuf);
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
@@ -966,6 +971,15 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
 
     pa_threaded_mainloop_lock(pThis->pMainLoop);
 
+#ifdef LOG_ENABLED
+    const pa_usec_t tsNowUs         = pa_rtclock_now();
+    const pa_usec_t tsDeltaPlayedUs = tsNowUs - pPAStream->tsLastReadWrittenUs;
+
+    Log3Func(("tsDeltaPlayedMs=%RU64\n", tsDeltaPlayedUs / 1000 /* ms */));
+
+    pPAStream->tsLastReadWrittenUs  = tsNowUs;
+#endif
+
     do
     {
         size_t cbWriteable = pa_stream_writable_size(pPAStream->pStream);
@@ -976,23 +990,22 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
         }
 
         size_t cbLeft = RT_MIN(cbWriteable, cxBuf);
+        Assert(cbLeft); /* At this point we better have *something* to write. */
 
         while (cbLeft)
         {
-            size_t cbToWrite = RT_MIN(cbLeft, pa_stream_writable_size(pPAStream->pStream));
-            if (cbToWrite <= (size_t)0)
-                break;
+            uint32_t cbChunk = cbLeft; /* Write all at once for now. */
 
-            if (pa_stream_write(pPAStream->pStream, (uint8_t *)pvBuf + cbWrittenTotal, cbToWrite, NULL /* Cleanup callback */,
+            if (pa_stream_write(pPAStream->pStream, (uint8_t *)pvBuf + cbWrittenTotal, cbChunk, NULL /* Cleanup callback */,
                                 0, PA_SEEK_RELATIVE) < 0)
             {
                 rc = paError(pPAStream->pDrv, "Failed to write to output stream");
                 break;
             }
 
-            Assert(cbLeft  >= cbToWrite);
-            cbLeft         -= cbToWrite;
-            cbWrittenTotal += cbToWrite;
+            Assert(cbLeft  >= cbChunk);
+            cbLeft         -= cbChunk;
+            cbWrittenTotal += cbChunk;
         }
 
     } while (0);
@@ -1284,7 +1297,8 @@ static int paControlStreamOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStrea
             }
             else
             {
-                rc = paWaitFor(pThis, pa_stream_cork(pStreamPA->pStream, 0, paStreamCbSuccess, pStreamPA));
+                /* Uncork (resume) stream. */
+                rc = paWaitFor(pThis, pa_stream_cork(pStreamPA->pStream, 0 /* Uncork */, paStreamCbSuccess, pStreamPA));
             }
 
             pa_threaded_mainloop_unlock(pThis->pMainLoop);
