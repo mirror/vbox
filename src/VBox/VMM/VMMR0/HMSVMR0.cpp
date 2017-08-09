@@ -3131,67 +3131,80 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu, pCtx);
     bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
     bool const fBlockNmi  = VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS);
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    bool const fGlobalIF  = pCtx->hwvirt.svm.fGif
+#else
+    bool const fGlobalIF  = true;
+#endif
     PSVMVMCB pVmcb        = pVCpu->hm.s.svm.pVmcb;
 
     SVMEVENT Event;
     Event.u = 0;
-                                                              /** @todo SMI. SMIs take priority over NMIs. */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))   /* NMI. NMIs take priority over regular interrupts. */
-    {
-        if (fBlockNmi)
-            hmR0SvmSetIretIntercept(pVmcb);
-        else if (fIntShadow)
-            hmR0SvmSetVirtIntrIntercept(pVmcb);
-        else
-        {
-            Log4(("Pending NMI\n"));
 
-            Event.n.u1Valid  = 1;
-            Event.n.u8Vector = X86_XCPT_NMI;
-            Event.n.u3Type   = SVM_EVENT_NMI;
-
-            hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-            hmR0SvmSetIretIntercept(pVmcb);
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
-            return;
-        }
-    }
-    else if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
-             && !pVCpu->hm.s.fSingleInstruction)
+    /*
+     * If the global interrupt flag (GIF) isn't set, even NMIs are blocked.
+     * Only relevant when SVM capability is exposed to the guest.
+     */
+    if (fGlobalIF)
     {
-        /*
-         * Check if the guest can receive external interrupts (PIC/APIC). Once PDMGetInterrupt() returns
-         * a valid interrupt we -must- deliver the interrupt. We can no longer re-request it from the APIC.
-         */
-        if (   !fBlockInt
-            && !fIntShadow)
+        /** @todo SMI. SMIs take priority over NMIs. */
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))   /* NMI. NMIs take priority over regular interrupts. */
         {
-            uint8_t u8Interrupt;
-            int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-            if (RT_SUCCESS(rc))
+            if (fBlockNmi)
+                hmR0SvmSetIretIntercept(pVmcb);
+            else if (fIntShadow)
+                hmR0SvmSetVirtIntrIntercept(pVmcb);
+            else
             {
-                Log4(("Injecting external interrupt u8Interrupt=%#x\n", u8Interrupt));
+                Log4(("Pending NMI\n"));
 
                 Event.n.u1Valid  = 1;
-                Event.n.u8Vector = u8Interrupt;
-                Event.n.u3Type   = SVM_EVENT_EXTERNAL_IRQ;
+                Event.n.u8Vector = X86_XCPT_NMI;
+                Event.n.u3Type   = SVM_EVENT_NMI;
 
                 hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+                hmR0SvmSetIretIntercept(pVmcb);
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+                return;
             }
-            else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
+        }
+        else if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+                 && !pVCpu->hm.s.fSingleInstruction)
+        {
+            /*
+             * Check if the guest can receive external interrupts (PIC/APIC). Once PDMGetInterrupt() returns
+             * a valid interrupt we -must- deliver the interrupt. We can no longer re-request it from the APIC.
+             */
+            if (   !fBlockInt
+                && !fIntShadow)
             {
-                /*
-                 * AMD-V has no TPR thresholding feature. We just avoid posting the interrupt.
-                 * We just avoid delivering the TPR-masked interrupt here. TPR will be updated
-                 * always via hmR0SvmLoadGuestState() -> hmR0SvmLoadGuestApicState().
-                 */
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchTprMaskedIrq);
+                uint8_t u8Interrupt;
+                int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
+                if (RT_SUCCESS(rc))
+                {
+                    Log4(("Injecting external interrupt u8Interrupt=%#x\n", u8Interrupt));
+
+                    Event.n.u1Valid  = 1;
+                    Event.n.u8Vector = u8Interrupt;
+                    Event.n.u3Type   = SVM_EVENT_EXTERNAL_IRQ;
+
+                    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+                }
+                else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
+                {
+                    /*
+                     * AMD-V has no TPR thresholding feature. We just avoid posting the interrupt.
+                     * We just avoid delivering the TPR-masked interrupt here. TPR will be updated
+                     * always via hmR0SvmLoadGuestState() -> hmR0SvmLoadGuestApicState().
+                     */
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchTprMaskedIrq);
+                }
+                else
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
             }
             else
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
+                hmR0SvmSetVirtIntrIntercept(pVmcb);
         }
-        else
-            hmR0SvmSetVirtIntrIntercept(pVmcb);
     }
 }
 
