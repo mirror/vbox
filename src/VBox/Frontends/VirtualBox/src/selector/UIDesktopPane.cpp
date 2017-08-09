@@ -32,7 +32,6 @@
 # include <QVBoxLayout>
 
 /* GUI includes */
-# include "QILabel.h"
 # include "QIWithRetranslateUI.h"
 # include "UIDesktopPane.h"
 # include "VBoxUtils.h"
@@ -54,6 +53,38 @@ class QVBoxLayout;
 class QWidget;
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+/** Wrappable QLabel extension for tools pane of the desktop widget.
+  * The main idea behind this stuff is to allow dynamically calculate
+  * [minimum] size hint for changeable one-the-fly widget width.
+  * That's a "white unicorn" task for QLabel which never worked since
+  * the beginning, because out-of-the-box version just uses static
+  * hints calculation which is very stupid taking into account
+  * QLayout "eats it raw" and tries to be dynamical on it's basis. */
+class UILabel : public QLabel
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs scroll-area passing @a pParent to the base-class. */
+    UILabel(QWidget *pParent = 0);
+
+protected:
+
+    /** Handles resize @a pEvent. */
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+
+    /** Returns whether the widget's preferred height depends on its width. */
+    virtual bool hasHeightForWidth() const /* override */;
+
+    /** Holds the minimum widget size. */
+    virtual QSize minimumSizeHint() const /* override */;
+
+    /** Holds the preferred widget size. */
+    virtual QSize sizeHint() const /* override */;
+};
 
 
 /** Our own skinnable implementation of tool widget header for UIDesktopPane. */
@@ -114,7 +145,7 @@ private:
     /** Holds the name label instance. */
     QLabel      *m_pLabelName;
     /** Holds the description label instance. */
-    QILabel     *m_pLabelDescription;
+    QLabel      *m_pLabelDescription;
 };
 
 
@@ -175,10 +206,59 @@ private:
     /** Holds the tools pane widget layout instance. */
     QVBoxLayout *m_pLayoutWidget;
     /** Holds the tools pane text label instance. */
-    QILabel     *m_pLabelToolsPaneText;
+    QLabel      *m_pLabelToolsPaneText;
     /** Holds the tools pane icon label instance. */
     QLabel      *m_pLabelToolsPaneIcon;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UILabel implementation.                                                                                                *
+*********************************************************************************************************************************/
+
+UILabel::UILabel(QWidget *pParent /* = 0 */)
+    : QLabel(pParent)
+{
+}
+
+void UILabel::resizeEvent(QResizeEvent *pEvent)
+{
+    /* Call to base-class: */
+    QLabel::resizeEvent(pEvent);
+
+    // WORKAROUND:
+    // That's not cheap procedure but we need it to
+    // make sure geometry is updated after width changed.
+    if (minimumWidth() > 0)
+        updateGeometry();
+}
+
+bool UILabel::hasHeightForWidth() const
+{
+    // WORKAROUND:
+    // No need to panic, we do it ourselves in resizeEvent() and
+    // this 'false' here to prevent automatic layout fighting for it.
+    return   minimumWidth() > 0
+           ? false
+           : QLabel::hasHeightForWidth();
+}
+
+QSize UILabel::minimumSizeHint() const /* override */
+{
+    // WORKAROUND:
+    // We should calculate hint height on the basis of width,
+    // keeping the hint width equal to minimum we have set.
+    return   minimumWidth() > 0
+           ? QSize(minimumWidth(), heightForWidth(width()))
+           : QLabel::minimumSizeHint();
+}
+
+QSize UILabel::sizeHint() const /* override */
+{
+    // WORKAROUND:
+    // Keep widget always minimal.
+    return minimumSizeHint();
+}
 
 
 /*********************************************************************************************************************************
@@ -423,13 +503,13 @@ void UIToolWidget::prepare()
         }
 
         /* Create description label: */
-        m_pLabelDescription = new QILabel;
+        m_pLabelDescription = new UILabel;
         AssertPtrReturnVoid(m_pLabelDescription);
         {
             /* Configure label: */
             m_pLabelDescription->setAttribute(Qt::WA_TransparentForMouseEvents);
             m_pLabelDescription->setWordWrap(true);
-            m_pLabelDescription->useSizeHintForWidth(400);
+            m_pLabelDescription->setMinimumWidth(400);
             m_pLabelDescription->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
             m_pLabelDescription->setText(m_strDescription);
 
@@ -635,14 +715,14 @@ void UIDesktopPanePrivate::prepareToolsPane()
                 pLayoutWelcome->setSpacing(10);
 
                 /* Create welcome text label: */
-                m_pLabelToolsPaneText = new QILabel;
+                m_pLabelToolsPaneText = new UILabel;
                 AssertPtrReturnVoid(m_pLabelToolsPaneText);
                 {
                     /* Configure label: */
                     m_pLabelToolsPaneText->setWordWrap(true);
-                    m_pLabelToolsPaneText->useSizeHintForWidth(200);
+                    m_pLabelToolsPaneText->setMinimumWidth(200);
                     m_pLabelToolsPaneText->setAlignment(Qt::AlignLeading | Qt::AlignTop);
-                    m_pLabelToolsPaneText->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+                    m_pLabelToolsPaneText->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
 
                     /* Add into layout: */
                     pLayoutWelcome->addWidget(m_pLabelToolsPaneText);
