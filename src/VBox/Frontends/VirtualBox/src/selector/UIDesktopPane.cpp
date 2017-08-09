@@ -25,6 +25,8 @@
 # include <QHBoxLayout>
 # include <QLabel>
 # include <QPainter>
+# include <QScrollArea>
+# include <QScrollBar>
 # include <QStackedWidget>
 # include <QStyle>
 # include <QToolButton>
@@ -47,12 +49,30 @@ class QIcon;
 class QLabel;
 class QPaintEvent;
 class QResizeEvent;
+class QScrollArea;
 class QString;
 class QUuid;
 class QVBoxLayout;
 class QWidget;
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+/** QScrollArea extension to wrap a tools pane. */
+class UIToolScrollArea : public QScrollArea
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs scroll-area passing @a pParent to the base-class. */
+    UIToolScrollArea(QWidget *pParent = 0);
+
+protected:
+
+    /** Holds the minimum widget size. */
+    virtual QSize minimumSizeHint() const /* override */;
+};
 
 
 /** Wrappable QLabel extension for tools pane of the desktop widget.
@@ -201,15 +221,39 @@ private:
     /** Holds the VM refresh action reference. */
     QAction *m_pRefreshAction;
 
+    /** Holds the tools pane scroll-area instance. */
+    UIToolScrollArea *m_pScrollArea;
     /** Holds the tools pane instance. */
-    QWidget     *m_pToolsPane;
+    QWidget          *m_pToolsPane;
     /** Holds the tools pane widget layout instance. */
-    QVBoxLayout *m_pLayoutWidget;
+    QVBoxLayout      *m_pLayoutWidget;
     /** Holds the tools pane text label instance. */
-    QLabel      *m_pLabelToolsPaneText;
+    QLabel           *m_pLabelToolsPaneText;
     /** Holds the tools pane icon label instance. */
-    QLabel      *m_pLabelToolsPaneIcon;
+    QLabel           *m_pLabelToolsPaneIcon;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIToolScrollArea implementation.                                                                                       *
+*********************************************************************************************************************************/
+
+UIToolScrollArea::UIToolScrollArea(QWidget *pParent /* = 0 */)
+    : QScrollArea(pParent)
+{
+}
+
+QSize UIToolScrollArea::minimumSizeHint() const
+{
+    // WORKAROUND:
+    // The idea is simple, hold the minimum size hint to
+    // avoid horizontal scroll-bar, but allow vertical one.
+    return   widget()
+           ? QSize(  widget()->minimumSizeHint().width()
+                   + verticalScrollBar()->height(),
+                   200 /* what about something more dynamical? */)
+           : QScrollArea::minimumSizeHint();
+}
 
 
 /*********************************************************************************************************************************
@@ -509,7 +553,7 @@ void UIToolWidget::prepare()
             /* Configure label: */
             m_pLabelDescription->setAttribute(Qt::WA_TransparentForMouseEvents);
             m_pLabelDescription->setWordWrap(true);
-            m_pLabelDescription->setMinimumWidth(400);
+            m_pLabelDescription->setMinimumWidth(315);
             m_pLabelDescription->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
             m_pLabelDescription->setText(m_strDescription);
 
@@ -541,7 +585,7 @@ UIDesktopPanePrivate::UIDesktopPanePrivate(QWidget *pParent, QAction *pRefreshAc
     : QIWithRetranslateUI<QStackedWidget>(pParent)
     , m_pErrBox(0), m_pErrLabel(0), m_pErrText(0)
     , m_pRefreshButton(0), m_pRefreshAction(pRefreshAction)
-    , m_pToolsPane(0), m_pLayoutWidget(0), m_pLabelToolsPaneText(0), m_pLabelToolsPaneIcon(0)
+    , m_pScrollArea(0), m_pToolsPane(0), m_pLayoutWidget(0), m_pLabelToolsPaneText(0), m_pLabelToolsPaneIcon(0)
 {
     /* Translate finally: */
     retranslateUi();
@@ -692,72 +736,84 @@ void UIDesktopPanePrivate::prepareErrorPane()
 void UIDesktopPanePrivate::prepareToolsPane()
 {
     /* Do nothing if already exists: */
-    if (m_pToolsPane)
+    if (m_pScrollArea)
         return;
 
-    /* Create tool pane: */
-    m_pToolsPane = new QWidget;
-    AssertPtrReturnVoid(m_pToolsPane);
+    /* Create scroll-area: */
+    m_pScrollArea = new UIToolScrollArea;
+    AssertPtrReturnVoid(m_pScrollArea);
     {
-        /* Create main layout: */
-        QVBoxLayout *pMainLayout = new QVBoxLayout(m_pToolsPane);
-        AssertPtrReturnVoid(pMainLayout);
+        /* Configure scroll-area: */
+        m_pScrollArea->setFrameShape(QFrame::NoFrame);
+        m_pScrollArea->setWidgetResizable(true);
+
+        /* Create tool pane: */
+        m_pToolsPane = new QWidget;
+        AssertPtrReturnVoid(m_pToolsPane);
         {
-            /* Create welcome layout: */
-            QHBoxLayout *pLayoutWelcome = new QHBoxLayout;
-            AssertPtrReturnVoid(pLayoutWelcome);
+            /* Create main layout: */
+            QVBoxLayout *pMainLayout = new QVBoxLayout(m_pToolsPane);
+            AssertPtrReturnVoid(pMainLayout);
             {
-                /* Invent pixel metric: */
-                const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
-
-                /* Configure layout: */
-                pLayoutWelcome->setContentsMargins(iMetric, 0, 0, 0);
-                pLayoutWelcome->setSpacing(10);
-
-                /* Create welcome text label: */
-                m_pLabelToolsPaneText = new UILabel;
-                AssertPtrReturnVoid(m_pLabelToolsPaneText);
+                /* Create welcome layout: */
+                QHBoxLayout *pLayoutWelcome = new QHBoxLayout;
+                AssertPtrReturnVoid(pLayoutWelcome);
                 {
-                    /* Configure label: */
-                    m_pLabelToolsPaneText->setWordWrap(true);
-                    m_pLabelToolsPaneText->setMinimumWidth(200);
-                    m_pLabelToolsPaneText->setAlignment(Qt::AlignLeading | Qt::AlignTop);
-                    m_pLabelToolsPaneText->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
+                    /* Invent pixel metric: */
+                    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+
+                    /* Configure layout: */
+                    pLayoutWelcome->setContentsMargins(iMetric, 0, 0, 0);
+                    pLayoutWelcome->setSpacing(10);
+
+                    /* Create welcome text label: */
+                    m_pLabelToolsPaneText = new UILabel;
+                    AssertPtrReturnVoid(m_pLabelToolsPaneText);
+                    {
+                        /* Configure label: */
+                        m_pLabelToolsPaneText->setWordWrap(true);
+                        m_pLabelToolsPaneText->setMinimumWidth(160);
+                        m_pLabelToolsPaneText->setAlignment(Qt::AlignLeading | Qt::AlignTop);
+                        m_pLabelToolsPaneText->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
+
+                        /* Add into layout: */
+                        pLayoutWelcome->addWidget(m_pLabelToolsPaneText);
+                    }
+
+                    /* Create welcome picture label: */
+                    m_pLabelToolsPaneIcon = new QLabel;
+                    AssertPtrReturnVoid(m_pLabelToolsPaneIcon);
+                    {
+                        /* Configure label: */
+                        m_pLabelToolsPaneIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+                        /* Add into layout: */
+                        pLayoutWelcome->addWidget(m_pLabelToolsPaneIcon);
+                        pLayoutWelcome->setAlignment(m_pLabelToolsPaneIcon, Qt::AlignHCenter | Qt::AlignTop);
+                    }
 
                     /* Add into layout: */
-                    pLayoutWelcome->addWidget(m_pLabelToolsPaneText);
+                    pMainLayout->addLayout(pLayoutWelcome);
                 }
 
-                /* Create welcome picture label: */
-                m_pLabelToolsPaneIcon = new QLabel;
-                AssertPtrReturnVoid(m_pLabelToolsPaneIcon);
+                /* Create widget layout: */
+                m_pLayoutWidget = new QVBoxLayout;
+                AssertPtrReturnVoid(m_pLayoutWidget);
                 {
-                    /* Configure label: */
-                    m_pLabelToolsPaneIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
                     /* Add into layout: */
-                    pLayoutWelcome->addWidget(m_pLabelToolsPaneIcon);
-                    pLayoutWelcome->setAlignment(m_pLabelToolsPaneIcon, Qt::AlignHCenter | Qt::AlignTop);
+                    pMainLayout->addLayout(m_pLayoutWidget);
                 }
 
-                /* Add into layout: */
-                pMainLayout->addLayout(pLayoutWelcome);
+                /* Add stretch: */
+                pMainLayout->addStretch();
             }
 
-            /* Create widget layout: */
-            m_pLayoutWidget = new QVBoxLayout;
-            AssertPtrReturnVoid(m_pLayoutWidget);
-            {
-                /* Add into layout: */
-                pMainLayout->addLayout(m_pLayoutWidget);
-            }
-
-            /* Add stretch: */
-            pMainLayout->addStretch();
+            /* Add into the scroll-area: */
+            m_pScrollArea->setWidget(m_pToolsPane);
         }
 
         /* Add into the stack: */
-        addWidget(m_pToolsPane);
+        addWidget(m_pScrollArea);
     }
 }
 
