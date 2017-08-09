@@ -805,31 +805,33 @@
 
           <para>Vous avez alors les choix suivants&#xA0;:</para>
 
-          <para><itemizedlist>
-              <listitem>
-                <para>Pour créer un nouveau disque dur virtuel vierge, appuyez 
-                sur le bouton <emphasis role="bold">"Nouveau"</emphasis>.</para>
-              </listitem>
+          <itemizedlist>
+            <listitem>
+              <para>Pour créer un nouveau disque dur virtuel vierge, appuyez 
+              sur le bouton <emphasis role="bold">"Nouveau"</emphasis>.</para>
+            </listitem>
 
-              <listitem>
-                <para>Vous pouvez utiliser un fichier image de disque <emphasis
-                role="bold">existant</emphasis>.</para>
+            <listitem>
+              <para>Vous pouvez utiliser un fichier image de disque <emphasis
+              role="bold">existant</emphasis>.</para>
 
-                <para>La <emphasis role="bold">boîte à liste déroulante</emphasis>
-                affichée dans la fenêtre contient toutes les images de disque
-                dont se souvient VirtualBox, probablement parce qu'elles sont
-                actuellement attachées à une machine virtuelle (ou elles l'ont
-                jadis été).</para>
+              <para>La <emphasis role="bold">boîte à liste déroulante</emphasis>
+              affichée dans la fenêtre contient toutes les images de disque
+              dont se souvient VirtualBox, probablement parce qu'elles sont
+              actuellement attachées à une machine virtuelle (ou elles l'ont
+              jadis été).</para>
 
-                <para>Vous pouvez aussi cliquer sur le petit bouton<emphasis
-                role="bold">dossier</emphasis> à côté de la boîte à liste
-                déroulante pour ouvrir une boîte de dialogue de fichier standard
-                qui vous permet de choisir un fichier image de disque sur le
-                disque de votre hôte.</para>
-              </listitem>
-x            </itemizedlist>Vraisemblablement, si vous utilisez VirtualBox pour
-             la première fois, vous voudrez créer une nouvelle image de disque.
-             Appuyez donc sur le bouton "Nouveau".</para>
+              <para>Vous pouvez aussi cliquer sur le petit bouton<emphasis
+              role="bold">dossier</emphasis> à côté de la boîte à liste
+              déroulante pour ouvrir une boîte de dialogue de fichier standard
+              qui vous permet de choisir un fichier image de disque sur le
+              disque de votre hôte.</para>
+            </listitem>
+          </itemizedlist>
+
+          <para>Vraisemblablement, si vous utilisez VirtualBox pour la première
+          fois, vous voudrez créer une nouvelle image de disque. Appuyez donc
+          sur le bouton "Nouveau".</para>
 
           <para>Ceci ouvre une nouvelle fenêtre, celle <emphasis
           role="bold">"Assistant Créer un nouveau disque virtuel",</emphasis>
@@ -1623,8 +1625,8 @@ x            </itemizedlist>Vraisemblablement, si vous utilisez VirtualBox pour
 
     <para>Pour expérimenter une configuration de VM, tester différents niveaux
     d'OS invité ou sauvegarder une VM, VirtualBox peut créer une copie complète
-    ou liée d'une VM existante.<footnote>Le support du clonage a été introduit
-    avec VirtualBox 4.1.</footnote></para>
+    ou liée d'une VM existante.<footnote><para>Le support du clonage a été
+    introduit avec VirtualBox 4.1.</para></footnote></para>
     
     <para>Un assistant vous guidera dans le processus de clonage&#xA0;:</para>
 

@@ -5,155 +5,149 @@
   <title>Guide de sécurité</title>
 
   <sect1>
-    <title>Aperçu</title>
-    <para>
+    <title>Principes généraux de sécurité</title>
+
+    <para>Les principes suivants sont fondamentaux pour utiliser une application
+      en toute sécurité.
+      <glosslist>
+        <glossentry>
+          <glossterm>Maintenir à jour le logiciel</glossterm>
+          <glossdef>
+            <para>
+              Une des bonnes pratiques de sécurité est d'avoir des versions de
+              logiciel et des correctifs à jour. Activez la notification de
+              mise à jour de VirtualBox pour être averti quand une nouvelle
+              version de VirtualBox est disponible. Quand vous mettez à jour
+              VirtualBox, n'oubliez pas de mettre à jour aussi les suppléments
+              invité. Maintenez à jour le système d'exploitation hôte ainsi
+              que l'invité.
+            </para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>Restreindre l'accès réseau des services critiques</glossterm>
+          <glossdef>
+            <para>
+              Utilisez les moyens, tels qu'un pare-feu, pour protéger votre
+              ordinateur et vo(s) invité(s) de l'extérieur. Choisir le bon mode
+              de réseau pour les VMs permet de distinguer le réseau de l'hôte
+              de l'invité et vice versa.
+            </para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>Suivre le principe du privilège le plus restreint</glossterm>
+          <glossdef>
+            <para>
+              Le principe du privilège le plus restreint dispose qu'il faut
+              donner aux utilisateurs les privilèges strictement nécessaires
+              pour accomplir leurs tâches. Exécutez toujours VirtualBox en
+              tant qu'utilisateur ordinaire. Nous déconseillons fortement
+              d'exécuter VirtualBox avec des privilèges système.
+            </para>
+            <para>
+              Choisissez des droits restrictifs quand vous créez des fichiers
+              de configuration, par exemple quand vous créez
+              /etc/default/virtualbox, voir
+              <xref linkend="linux_install_opts"/>. Le mode 0600 serait
+              idéal. 
+            </para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>Surveiller l'activité du système</glossterm>
+          <glossdef>
+            <para>
+              La sécurité du système repose sur trois piliers&#xA0;: de bons
+              protocoles de sécurité, une bonne configuration du système et
+              la surveillance du système. L'évaluation et la lecture des
+              fruits de l'évaluation constituent la troisième exigence. Chaque
+              composant d'un système a un certain degré de capacité à être
+              surveillé. Suivez les conseils d'évaluation de ce document et
+              surveillez régulièrement les fruits de l'évaluation.
+            </para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>Garder à jour les informations de sécurité</glossterm>
+          <glossdef>
+            <para>
+              Oracle améliore en permanence ses logiciels et sa documentation.
+              Vérifiez ce passage chaque année pour trouver les révisions.
+            </para>
+          </glossdef>
+        </glossentry>
+
+      </glosslist>
     </para>
-
-    <sect2>
-      <title>Principes généraux de sécurité</title>
-
-      <para>Les principes suivants sont fondamentaux pour utiliser une application
-        en toute sécurité.
-        <glosslist>
-          <glossentry>
-            <glossterm>Maintenir à jour le logiciel</glossterm>
-            <glossdef>
-              <para>
-                Une des bonnes pratiques de sécurité est d'avoir des versions de
-                logiciel et des correctifs à jour. Activez la notification de
-                mise à jour de VirtualBox pour être averti quand une nouvelle
-                version de VirtualBox est disponible. Quand vous mettez à jour
-                VirtualBox, n'oubliez pas de mettre à jour aussi les suppléments
-                invité. Maintenez à jour le système d'exploitation hôte ainsi
-                que l'invité.
-              </para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm>Restreindre l'accès réseau des services critiques</glossterm>
-            <glossdef>
-              <para>
-                Utilisez les moyens, tels qu'un pare-feu, pour protéger votre
-                ordinateur et vo(s) invité(s) de l'extérieur. Choisir le bon mode
-                de réseau pour les VMs permet de distinguer le réseau de l'hôte
-                de l'invité et vice versa.
-              </para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm>Suivre le principe du privilège le plus restreint</glossterm>
-            <glossdef>
-              <para>
-                Le principe du privilège le plus restreint dispose qu'il faut
-                donner aux utilisateurs les privilèges strictement nécessaires
-                pour accomplir leurs tâches. Exécutez toujours VirtualBox en
-                tant qu'utilisateur ordinaire. Nous déconseillons fortement
-                d'exécuter VirtualBox avec des privilèges système.
-              </para>
-              <para>
-                Choisissez des droits restrictifs quand vous créez des fichiers
-                de configuration, par exemple quand vous créez
-                /etc/default/virtualbox, voir
-                <xref linkend="linux_install_opts"/>. Le mode 0600 serait
-                idéal. 
-              </para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm>Surveiller l'activité du système</glossterm>
-            <glossdef>
-              <para>
-                La sécurité du système repose sur trois piliers&#xA0;: de bons
-                protocoles de sécurité, une bonne configuration du système et
-                la surveillance du système. L'évaluation et la lecture des
-                fruits de l'évaluation constituent la troisième exigence. Chaque
-                composant d'un système a un certain degré de capacité à être
-                surveillé. Suivez les conseils d'évaluation de ce document et
-                surveillez régulièrement les fruits de l'évaluation.
-              </para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm>Garder à jour les informations de sécurité</glossterm>
-            <glossdef>
-              <para>
-                Oracle améliore en permanence ses logiciels et sa documentation.
-                Vérifiez ce passage chaque année pour trouver les révisions.
-              </para>
-            </glossdef>
-          </glossentry>
-
-        </glosslist>
-      </para>
-    </sect2>
   </sect1>
 
   <sect1>
     <title>Installation et configuration sécurisées</title>
+
+    <sect2>
+      <title>Aperçu de l'installation</title>
+      <para>
+        Vous ne devriez télécharger le paquet de base de VirtualBox qu'à partir d'une
+        source de confiance, telle que le site Internet officiel 
+        <ulink url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>.
+        Vous devriez vérifier l'intégrité du paquet avec la somme de contrôle 
+        SHA256 fournie sur le site officiel.
+      </para>
+      <para>
+        Vous pouvez trouver des instructions générales d'installation de VirtualBox
+        pour les hôtes supportés au <xref linkend="installation"/>.
+      </para>
+      <para>
+        Sur les hôtes Windows, l'installeur permet de désactiver le support USB,
+        le support du réseau bridgé, le support du réseau host-only et les bindings
+        du langage Python, voir <xref linkend="installation_windows"/>. Toutes ces
+        fonctionnalités sont activées par défaut mais la désactivation de certaines
+        d'entre elles pourrait être adaptée si vous n'avez pas besoin des
+        fonctionnalités correspondantes sur une machine virtuelle. Les bindings du
+        langage Python ne sont nécessaires que si vous devez utiliser l'API de
+        VirtualBox avec des applications Python externes. En particulier, le
+        support USB et le support des deux modes réseaux nécessitent d'installer
+        des pilotes du noyau Windows sur l'hôte. Donc, la désactivation de ces
+        fonctions peut non seulement permettre d'encadrer l'utilisateur dans
+        certaines fonctionnalités, mais aussi de minimiser le champ d'attaque d'un
+        pirate potentiel.</para>
+      <para>
+        En général, on installe tout le paquet VirtualBox. Il faut faire
+        l'installation avec les privilèges système. Tous les binaires de VirtualBox
+        devraient être lancés en tant qu'utilisateur ordinaire et jamais en tant
+        qu'utilisateur privilégié.
+      </para>
+      <para>
+        Le pack d'extension d'Oracle VM VirtualBox apporte des fonctionnalités
+        supplémentaires et il doit être téléchargé et installé à part, voir
+        <xref linkend="intro-installing"/>. Comme pour le paquet de base, vous devriez vérifier
+        la somme de contrôle SHA256 du pack d'extension. Comme le système d'installation
+        exige des privilèges systèmes, VirtualBox vous demandera le mot de passe
+        système pendant l'installation du pack d'extension.
+      </para>
+    </sect2>
+
+    <sect2>
+      <title>Configuration post installation</title>
+      <para>
+        Normalement, aucune configuration post installation d'un composant de
+        VirtualBox n'est nécessaire. Cependant, sur les hôtes Solaris et Linux,
+        il faut configurer les droits adaptés pour que les utilisateurs exécutent
+        des VMs et puissent accéder à certaines ressources de l'hôte. Par exemple,
+        les utilisateurs Linux doivent faire partie du groupe <emphasis>vboxusers</emphasis> 
+        pour pouvoir donner des périphériques USB à un invité. Si vous devriez
+        accéder à une interface série à partir d'une VM, il faut donner les bons
+        droits à l'utilisateur pour qu'il puisse accéder à ce périphérique. La
+        même chose s'applique à d'autres ressources comme la partition brute, les
+        lecteurs DVD/CD et les périphériques de son.
+      </para>
+    </sect2>
   </sect1>
-
-  <sect2>
-    <title>Aperçu de l'installation</title>
-    <para>
-      Vous ne devriez télécharger le paquet de base de VirtualBox qu'à partir d'une
-      source de confiance, telle que le site Internet officiel 
-      <ulink url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>.
-      Vous devriez vérifier l'intégrité du paquet avec la somme de contrôle 
-      SHA256 fournie sur le site officiel.
-    </para>
-    <para>
-      Vous pouvez trouver des instructions générales d'installation de VirtualBox
-      pour les hôtes supportés au <xref linkend="installation"/>.
-    </para>
-    <para>
-      Sur les hôtes Windows, l'installeur permet de désactiver le support USB,
-      le support du réseau bridgé, le support du réseau host-only et les bindings
-      du langage Python, voir <xref linkend="installation_windows"/>. Toutes ces
-      fonctionnalités sont activées par défaut mais la désactivation de certaines
-      d'entre elles pourrait être adaptée si vous n'avez pas besoin des
-      fonctionnalités correspondantes sur une machine virtuelle. Les bindings du
-      langage Python ne sont nécessaires que si vous devez utiliser l'API de
-      VirtualBox avec des applications Python externes. En particulier, le
-      support USB et le support des deux modes réseaux nécessitent d'installer
-      des pilotes du noyau Windows sur l'hôte. Donc, la désactivation de ces
-      fonctions peut non seulement permettre d'encadrer l'utilisateur dans
-      certaines fonctionnalités, mais aussi de minimiser le champ d'attaque d'un
-      pirate potentiel.</para>
-    <para>
-      En général, on installe tout le paquet VirtualBox. Il faut faire
-      l'installation avec les privilèges système. Tous les binaires de VirtualBox
-      devraient être lancés en tant qu'utilisateur ordinaire et jamais en tant
-      qu'utilisateur privilégié.
-    </para>
-    <para>
-      Le pack d'extension d'Oracle VM VirtualBox apporte des fonctionnalités
-      supplémentaires et il doit être téléchargé et installé à part, voir
-      <xref linkend="intro-installing"/>. Comme pour le paquet de base, vous devriez vérifier
-      la somme de contrôle SHA256 du pack d'extension. Comme le système d'installation
-      exige des privilèges systèmes, VirtualBox vous demandera le mot de passe
-      système pendant l'installation du pack d'extension.
-    </para>
-  </sect2>
-
-  <sect2>
-    <title>Configuration post installation</title>
-    <para>
-      Normalement, aucune configuration post installation d'un composant de
-      VirtualBox n'est nécessaire. Cependant, sur les hôtes Solaris et Linux,
-      il faut configurer les droits adaptés pour que les utilisateurs exécutent
-      des VMs et puissent accéder à certaines ressources de l'hôte. Par exemple,
-      les utilisateurs Linux doivent faire partie du groupe <emphasis>vboxusers</emphasis> 
-      pour pouvoir donner des périphériques USB à un invité. Si vous devriez
-      accéder à une interface série à partir d'une VM, il faut donner les bons
-      droits à l'utilisateur pour qu'il puisse accéder à ce périphérique. La
-      même chose s'applique à d'autres ressources comme la partition brute, les
-      lecteurs DVD/CD et les périphériques de son.
-    </para>
-  </sect2>
 
   <sect1>
     <title>Fonctions de sécurité</title>

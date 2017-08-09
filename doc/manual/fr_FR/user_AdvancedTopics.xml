@@ -643,20 +643,20 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
       <para>Les suppléments invité de VirtualBox sont fournis avec les pilotes
       pour les versions X.Org <itemizedlist>
           <listitem>
-            X11R6.8/X11R6.9 et XFree86 version 4.3 (vboxvideo_drv_68.o et vboxmouse_drv_68.o)
+            <para>X11R6.8/X11R6.9 et XFree86 version 4.3 (vboxvideo_drv_68.o et vboxmouse_drv_68.o)</para>
           </listitem>
 
           <listitem>
-            X11R7.0 (vboxvideo_drv_70.so and vboxmouse_drv_70.so)
+            <para>X11R7.0 (vboxvideo_drv_70.so and vboxmouse_drv_70.so)</para>
           </listitem>
 
           <listitem>
-            X11R7.1 (vboxvideo_drv_71.so and vboxmouse_drv_71.so)
+            <para>X11R7.1 (vboxvideo_drv_71.so and vboxmouse_drv_71.so)</para>
           </listitem>
 
           <listitem>
-            Serveur X.Org versions 1.3 et later (vboxvideo_drv_13.so et vboxmouse_drv_13.so et 
-            ainsi de suite).
+            <para>Serveur X.Org versions 1.3 et later (vboxvideo_drv_13.so et vboxmouse_drv_13.so et 
+            ainsi de suite).</para>
           </listitem>
         </itemizedlist> Par défaut, vous pouvez trouver ces pilotes dans le
       répertoire</para>
@@ -872,24 +872,24 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
     <para>Si la machine virtuelle a un périphérique PCI attaché, certaines
     limitations s'appliquent&#xA0;: <orderedlist>
         <listitem>
-           Seules les cartes PCI aux interruptions non partagées (telles que 
-           l'utilisation de MSI sur l'hôte) sont supportées pour le moment.
+           <para>Seules les cartes PCI aux interruptions non partagées (telles que 
+           l'utilisation de MSI sur l'hôte) sont supportées pour le moment.</para>
         </listitem>
 
         <listitem>
-           On ne peut pas sauvegarder/restaurer de façon fiable l'état de l'invité
-           (car l'état interne de la carte PCI ne pourrait pas être récupéré).
+           <para>On ne peut pas sauvegarder/restaurer de façon fiable l'état de l'invité
+           (car l'état interne de la carte PCI ne pourrait pas être récupéré).</para>
         </listitem>
 
         <listitem>
-           La téléportation (migration en direct) ne fonctionne pas (pour la même
-           raison).
+           <para>La téléportation (migration en direct) ne fonctionne pas (pour la même
+           raison).</para>
         </listitem>
 
         <listitem>
-           Aucune couche d'affectation de mémoire physique. L'hôte préaffectera
+           <para>Aucune couche d'affectation de mémoire physique. L'hôte préaffectera
            toute la RAM nécessaire au démarrage de la VM (vu que nous ne pouvons
-           pas relier les accès physiques au matériel à la mémoire physique).
+           pas relier les accès physiques au matériel à la mémoire physique).</para>
         </listitem>
       </orderedlist></para>
   </sect1>
@@ -941,27 +941,27 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
             <computeroutput>settings</computeroutput> est une chaîne 
             <computeroutput>Paramètre1=Valeur1;Paramètre2=Valeur2</computeroutput>, qui
             permet de configurer la webcam émulée. Les paramètres suivants
-            sont supportés :
+            sont supportés :</para>
             <itemizedlist>
               <listitem>
-                <computeroutput>MaxFramerate</computeroutput> La vitesse maximale
+                <para><computeroutput>MaxFramerate</computeroutput> La vitesse maximale
                 d'envoi des plans graphiques à l'invité. Une vitesse élevée
                 demande beaucoup de puissance de processeur. Donc, parfois, il
                 vaut mieux mettre une limite plus basse. Par défaut, il n'y a
                 aucune limite et l'invité peut utiliser tous les ratios graphiques
-                supportés par la webcam de l'hôte.
+                supportés par la webcam de l'hôte.</para>
               </listitem>
               <listitem>
-                <computeroutput>MaxPayloadTransferSize</computeroutput> Combien d'octets
+                <para><computeroutput>MaxPayloadTransferSize</computeroutput> Combien d'octets
                 à la fois peut envoyer la webcam à l'invité. La valeur par défaut
                 est de 3060 octets, ce qu'utilisent certaines 
                 webcams. Des valeurs supérieures réduisent légèrement la charge du
                 processeur si l'invité peut utiliser des tampons plus gros. Cependant,
                 il se pourrait qu'un <computeroutput>MaxPayloadTransferSize</computeroutput>
-                ne soit pas supporté par certains invités.
+                ne soit pas supporté par certains invités.</para>
               </listitem>
             </itemizedlist>
-          </para></listitem>
+          </listitem>
           <listitem><para>Déconnecter une webcam d'une VM en fonction :
             <screen>VBoxManage controlvm "nom VM" webcam detach [chemin_hôte|alias]</screen>
           </para></listitem>
@@ -1554,9 +1554,12 @@ VBoxManage setextradata "nom VM" \
     EFI, vous devez remplacer <code>pcbios</code> par <code>efi</code> dans les
     clés.</para>
 
-    <sect2>
-      <title>Informations DMI du BIOS (type 0)</title>
-      <screen>VBoxManage setextradata "nom VM"
+    <glosslist>
+      <glossentry>
+        <glossterm>Informations DMI du BIOS</glossterm>
+        <glossdef>
+          <para>(type 0)</para>
+          <screen>VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBIOSVendor"        "fabricant BIOS"
 VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBIOSVersion"       "Version BIOS"
@@ -1570,10 +1573,14 @@ VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBIOSFirmwareMajor" 3
 VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBIOSFirmwareMinor" 4</screen>
-    </sect2>
-    <sect2>
-      <title>Informations système DMI (type 1)</title>
-      <screen>VBoxManage setextradata "nom VM"
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>Informations système DMI</glossterm>
+        <glossdef>
+          <para>(type 1)</para>
+          <screen>VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiSystemVendor"      "Fabricant Système"
 VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiSystemProduct"     "Produit système"
@@ -1588,10 +1595,14 @@ VBoxManage setextradata "nom VM"
 VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiSystemUuid"
                                                "9852bf98-b83c-49db-a8de-182c42c7226b"</screen>
-    </sect2>
-    <sect2>
-      <title>Informations carte mère DMI (type 2)</title>
-      <screen>VBoxManage setextradata "nom VM"
+        </glossdef>
+      </glossentry>
+ 
+      <glossentry>
+        <glossterm>Informations carte mère DMI</glossterm>
+        <glossdef>
+          <para>(type 2)</para>
+          <screen>VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBoardVendor"       "Fabricant carte"
 VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBoardProduct"      "Produit carte"
@@ -1605,10 +1616,14 @@ VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBoardLocInChass"   "Emplacement carte"
 VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBoardBoardType"    10</screen>
-    </sect2>
-    <sect2>
-      <title>Boîtier système DMI ou chassis (type 3)</title>
-      <screen>VBoxManage setextradata "nom VM"
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>Boîtier système DMI ou chassis</glossterm>
+        <glossdef>
+          <para>(type 3)</para>
+          <screen>VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiChassisVendor"     "Fabricant Chassis"
 VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiChassisType"       3
@@ -1618,21 +1633,32 @@ VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiChassisSerial"     "Série Chassis"
 VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiChassisAssetTag"   "Tag Chassis"</screen>
-    </sect2>
-    <sect2>
-      <title>Informatiions DMI du processeur (type 4)</title>
-      <screen>VBoxManage setextradata "nom VM"
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>Informatiions DMI du processeur</glossterm>
+        <glossdef>
+          <para>(type 4)</para>
+          <screen>VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiProcManufacturer"  "GenuineIntel"
 VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiProcVersion"       "Pentium(R) III"</screen>
-    </sect2>
-    <sect2>
-      <title>Chaînes OEM DMI (type 11)</title>
-      <screen>VBoxManage setextradata "nom VM"
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>Chaînes OEM DMI</glossterm>
+        <glossdef>
+          <para>(type 11)</para>
+          <screen>VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiOEMVBoxVer"        "vboxVer_1.2.3"
 VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiOEMVBoxRev"        "vboxRev_12345"</screen>
-    </sect2>
+        </glossdef>
+      </glossentry>
+    </glosslist>
+
     <para>Si une chaîne DMI n'est pas définie, la valeur par défaut de VirtualBox
     est utilisée. Pour définir une chaîne vide, utilisez
     <computeroutput>"&lt;EMPTY&gt;"</computeroutput>.</para>

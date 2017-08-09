@@ -12,35 +12,35 @@
         des fonctions expérimentales&#xA0;:</para>
         <itemizedlist>
             <listitem>
-                Pilote graphique WDDM Direct3D pour les invités Windows
+              <para>Pilote graphique WDDM Direct3D pour les invités Windows</para>
             </listitem>
             <listitem>
-                Support de l'accélération matérielle 3D pour les invités Windows,
-                Linux, et Solaris 
+              <para>Support de l'accélération matérielle 3D pour les invités Windows,
+                Linux, et Solaris</para>
             </listitem>
             <listitem>
-                Support de l'accélération 2D pour les invités Windows 
+              <para>Support de l'accélération 2D pour les invités Windows</para>
             </listitem>
             <listitem>
-                PCI pass-through (hôtes Linux uniquement)
+              <para>PCI pass-through (hôtes Linux uniquement)</para>
             </listitem>
             <listitem>
-                Invités Mac OS X (hôtes Mac uniquement)
+              <para>Invités Mac OS X (hôtes Mac uniquement)</para>
             </listitem>
             <listitem>
-                Émulation du chipset ICH9
+              <para>Émulation du chipset ICH9</para>
             </listitem>
             <listitem>
-                firmware EFI
+              <para>firmware EFI</para>
             </listitem>
             <listitem>
-                Pass-through lecteur CD/DVD de l'hôte
+              <para>Pass-through lecteur CD/DVD de l'hôte</para>
             </listitem>
             <listitem>
-                Support d'iSCSI par le réseau interne
+              <para>Support d'iSCSI par le réseau interne</para>
             </listitem>
             <listitem>
-                Signalement synthétique du processeur
+              <para>Signalement synthétique du processeur</para>
             </listitem>
         </itemizedlist>
     </sect1>

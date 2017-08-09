@@ -402,14 +402,14 @@
               n'a aucun effet sans cela&#xA0;; voir <xref linkend="guestadditions" /> pour
               les détails.</para>
 
-            <para>Le presse-papier partagé est désactivé par défaut. Voir
+              <para>Le presse-papier partagé est désactivé par défaut. Voir
               <xref linkend="security_clipboard"/> pour une explication. On peut
               changer ce paramètre n'importe quand en utilisant le menu "Presse-papier"
               du menu "Périphériques" de la machine virtuelle.</para>
             </glossdef>
           </glossentry>
 
-       <glossentry>
+          <glossentry>
             <glossterm>Drag'n'Drop</glossterm>
             <glossdef>
               <para>Ce paramètre permet d'activer le support du glisser/déplacer : sélectionnez
@@ -421,14 +421,14 @@
               <para>Pour que le glisser/déplacer fonctionne, les suppléments
               invité doivent être installés sur l'invité.</para>
 
-              <note>Le glisser/déplacer est désactivé par défaut. Vous pouvez
-              changer ce réglage n'importe quand en utilisant l'icône Glisser/déplacer
-              du menu "Périphériques" de la machine virtuelle.</note>
+              <para><note><para>Le glisser/déplacer est désactivé par défaut.
+              Vous pouvez changer ce réglage n'importe quand en utilisant
+              l'icône Glisser/déplacer du menu "Périphériques" de la machine
+              virtuelle.</para></note></para>
 
-              <para>Voir <xref linkend="guestadd-dnd"/> pour plus d'informations.</para>
-
+              <para>Voir <xref linkend="guestadd-dnd"/> pour plus d'informations.
               <footnote><para>Le support expérimental du glisser/déplacer a été.
-              introduit avec VirtualBox 4.2.</para></footnote>
+              introduit avec VirtualBox 4.2.</para></footnote></para>
             </glossdef>
           </glossentry>
 

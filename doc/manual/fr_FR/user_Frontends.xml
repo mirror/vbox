@@ -586,21 +586,21 @@
             Authority (CA)). L'exemple suivant montre comment générer un
             certificat de serveur.<orderedlist>
                 <listitem>
-                Créez un certificat CA auto-signé&#xA0;:
+                <para>Créez un certificat CA auto-signé&#xA0;:
                 <screen>openssl req -new -x509 -days 365 -extensions v3_ca \
-  -keyout ca_key_private.pem -out ca_cert.pem</screen>
+  -keyout ca_key_private.pem -out ca_cert.pem</screen></para>
                 </listitem>
 
                 <listitem>
-                Générez une clé privée du serveur et une demande de signature&#xA0;:
+                <para>Générez une clé privée du serveur et une demande de signature&#xA0;:
                 <screen>openssl genrsa -out server_key_private.pem
-openssl req -new -key server_key_private.pem -out server_req.pem</screen>
+openssl req -new -key server_key_private.pem -out server_req.pem</screen></para>
                 </listitem>
 
                 <listitem>
-                Générez le certificat du serveur&#xA0;:
+                <para>Générez le certificat du serveur&#xA0;:
                 <screen>openssl x509 -req -days 365 -in server_req.pem \
-  -CA ca_cert.pem -CAkey ca_key_private.pem -set_serial 01 -out server_cert.pem</screen>
+  -CA ca_cert.pem -CAkey ca_key_private.pem -set_serial 01 -out server_cert.pem</screen></para>
                 </listitem>
             </orderedlist>
             Le serveur doit être configuré pour accéder aux fichiers requis&#xA0;:

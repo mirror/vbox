@@ -378,9 +378,10 @@
         fenêtres d'intervention de l'utilisateur qui contrarieront une
         installation silencieuse.</para>
 
-        <note>Sur certaines versions de Windows comme Windows 2000 et Windows XP 
-        les fenêtres d'intervention de l'utilisateur mentionnées ci-dessus
-        s'afficheront toujours, même après avoir importé les certificats d'Oracle.</note>
+        <para><note><para>Sur certaines versions de Windows comme Windows 2000
+        et Windows XP les fenêtres d'intervention de l'utilisateur mentionnées
+        ci-dessus s'afficheront toujours, même après avoir importé les
+        certificats d'Oracle.</para></note></para>
 
         <para>Depuis VirtualBox 4.2, vous pouvez installer ces certificats CA
         sur un invité Windows de façon automatisée en utilisant l'outil
@@ -423,71 +424,73 @@
         <para>Dans l'exemple suivant, les ertificats nécessaires seront extraits
         de l'installeur des suppléments invité pour Windows sur le CD-ROM&#xA0;:</para>
 
-        <sect4>
-          <title>VeriSign Code Signing CA</title>
-          <itemizedlist>
-            <listitem>
+        <glosslist>
+          <glossentry>
+            <glossterm>VeriSign Code Signing CA</glossterm>
+            <glossdef>
               <para>Dans l'explorateur Windows, faites un clic droit sur 
               VBoxWindowsAdditions-&lt;Architecture&gt;.exe, cliquez sur 
               "Propriétés"</para>
-            </listitem>
-            <listitem>
-              <para>Allez sur l'onglet "Signatures numériques", choisissez
-              "Oracle Corporation" et cliquez sur "Détails"</para>
-            </listitem>
-            <listitem>
-              <para>Dans l'onglet "Général" cliquez sur "Afficher le Certificat"</para>
-            </listitem>
-            <listitem>
-              <para>Dans l'onglet "Chemin de Certification", sélectionnez
-              "VeriSign Class 3 Public Primary CA"</para>
-            </listitem>
-            <listitem>
-              <para>Cliquez sur "Afficher le certificat"</para>
-            </listitem>
-            <listitem>
-              <para>Dans l'onglet "Détails" cliquez sur "Copier vers le fichier..."</para>
-            </listitem>
-            <listitem>
-              <para>Dans l'assistant qui apparaît, choisissez "DER encoded binary (binaire
-              encodé DER X.509 (.CER)" et enregistrez le fichier du certificat
-              dans un chemin local, puis terminez l'assistant</para>
-            </listitem>
-            <listitem>
-              <para>Fermez la boîte de dialogue du certificat "Verisign Class 3 Code Signing
-              2010 CA"</para>
-            </listitem>
-          </itemizedlist>
-        </sect4>
+              <itemizedlist>
+                <listitem>
+                  <para>Allez sur l'onglet "Signatures numériques", choisissez
+                  "Oracle Corporation" et cliquez sur "Détails"</para>
+                </listitem>
+                <listitem>
+                  <para>Dans l'onglet "Général" cliquez sur "Afficher le Certificat"</para>
+                </listitem>
+                <listitem>
+                  <para>Dans l'onglet "Chemin de Certification", sélectionnez
+                  "VeriSign Class 3 Public Primary CA"</para>
+                </listitem>
+                <listitem>
+                  <para>Cliquez sur "Afficher le certificat"</para>
+                </listitem>
+                <listitem>
+                  <para>Dans l'onglet "Détails" cliquez sur "Copier vers le fichier..."</para>
+                </listitem>
+                <listitem>
+                  <para>Dans l'assistant qui apparaît, choisissez "DER encoded binary (binaire
+                  encodé DER X.509 (.CER)" et enregistrez le fichier du certificat
+                  dans un chemin local, puis terminez l'assistant</para>
+                </listitem>
+                <listitem>
+                  <para>Fermez la boîte de dialogue du certificat "Verisign Class 3 Code Signing
+                  2010 CA"</para>
+                </listitem>
+              </itemizedlist>
+            </glossdef>
+          </glossentry>
 
-        <sect4>
-          <title>Oracle Corporation</title>
-          <itemizedlist>
-            <listitem>
+          <glossentry>
+            <glossterm>Oracle Corporation</glossterm>
+            <glossdef>
               <para>Dans l'explorateur Windows, effectuez un clic droit sur
               VBoxWindowsAdditions-&lt;Architecture&gt;.exe, cliquez sur
               "Propriétés"</para>
-            </listitem>
-            <listitem>
-              <para>Allez sur l'onglet "Signatures numériques", choisissez
-              "Oracle Corporation" et cliquez sur "Détails"</para>
-            </listitem>
-            <listitem>
-              <para>Dans l'onglet "Général", cliquez sur "Afficher le Certificat"</para>
-            </listitem>
-            <listitem>
-              <para>Dans l'onglet "Détails" cliquez sur "Copier vers le fichier ..."</para>
-            </listitem>
-            <listitem>
-              <para>Dans l'assistant qui apparaît, choisissez "DER encoded binary X.509 (.CER)"
-              et enregistrez le fichier du certificat dans un chemin local, terminez
-              l'assistant</para>
-            </listitem>
-            <listitem>
-              <para>Fermez la boîte du dialogue du certificat "Oracle Corporation"</para>
-            </listitem>
-          </itemizedlist>
-        </sect4>
+              <itemizedlist>
+                <listitem>
+                  <para>Allez sur l'onglet "Signatures numériques", choisissez
+                  "Oracle Corporation" et cliquez sur "Détails"</para>
+                </listitem>
+                <listitem>
+                  <para>Dans l'onglet "Général", cliquez sur "Afficher le Certificat"</para>
+                </listitem>
+                <listitem>
+                  <para>Dans l'onglet "Détails" cliquez sur "Copier vers le fichier ..."</para>
+                </listitem>
+                <listitem>
+                  <para>Dans l'assistant qui apparaît, choisissez "DER encoded binary X.509 (.CER)"
+                  et enregistrez le fichier du certificat dans un chemin local, terminez
+                  l'assistant</para>
+                </listitem>
+                <listitem>
+                  <para>Fermez la boîte du dialogue du certificat "Oracle Corporation"</para>
+                </listitem>
+              </itemizedlist>
+            </glossdef>
+          </glossentry>
+        </glosslist>
 
         <para>Après avoir exporté les deux certificats ci-dessus, vous pouvez
         les importer dans le trousseau des certificats en utilisant l'outil
@@ -505,17 +508,17 @@
         <para>Ceci installe automatiquement les bons fichiers et les bons pilotes
         pour la plateforme correspondante (32 ou 64 bits).</para>
 
-        <note><para>Par défaut, sur une installation sans efforts sur un invité
+        <para><note><para>Par défaut, sur une installation sans efforts sur un invité
         Windows 7 ou 8, un pilote graphique XPDM va s'installer. Ce pilote
         graphique ne supporte pas Windows Aero / Direct3D de l'invité - il faut
         donc installer à la place le pilote graphique expérimental WDDM. Pour
         sélectionner ce pilote par défaut, ajoutez le paramètre 
         <computeroutput>/with_wddm</computeroutput> de la ligne de commande quand
-        vous appelez l'installeur des suppléments invité Windows.</para></note>
+        vous appelez l'installeur des suppléments invité Windows.</para></note></para>
 
-        <note><para>Pour que Windows Aero fonctionne correctement sur un invité,
+        <para><note><para>Pour que Windows Aero fonctionne correctement sur un invité,
         la taille de la mémoire graphique de l'invité doit être configurée pour
-        être d'au moins 128 Mo.</para></note>
+        être d'au moins 128 Mo.</para></note></para>
 
         <para>Pour plus d'options concernant les installations d'invité sans efforts,
         consultez l'aide en ligne de commande en utilisant la commande&#xA0;:</para>
@@ -682,7 +685,7 @@
           <para><orderedlist>
               <listitem>
                 <para>Afin de mettre à jour complètement votre système invité, ouvrez un
-                terminal et lancez <screen>yum update</screen></para> en tant qu'administrateur.
+                terminal et lancez <screen>yum update</screen> en tant qu'administrateur.</para>
               </listitem>
 
               <listitem>
@@ -704,8 +707,8 @@
           <para><orderedlist>
               <listitem>
                 <para>Afin de mettre à jour complètement votre système invité, ouvrez un
-                terminal et lancez <screen>zypper update</screen></para> en tant
-                qu'administrateur.
+                terminal et lancez <screen>zypper update</screen> en tant
+                qu'administrateur.</para>
               </listitem>
 
               <listitem>
@@ -743,8 +746,8 @@
           <para><orderedlist>
               <listitem>
                 <para>Afin de mettre à jour complètement votre système invité, ouvrez un
-                terminal et lancez <screen>zypper update</screen></para> en tant
-                qu'administrateur.
+                terminal et lancez <screen>zypper update</screen> en tant
+                qu'administrateur.</para>
               </listitem>
 
               <listitem>
@@ -818,8 +821,8 @@
 
               <listitem>
                 <para>Afin de mettre à jour complètement votre système invité, ouvrez un
-                terminal et lancez <screen>yum update</screen></para> en tant
-                qu'administrateur.
+                terminal et lancez <screen>yum update</screen> en tant
+                qu'administrateur.</para>
               </listitem>
 
               <listitem>
@@ -1325,7 +1328,7 @@ $</screen>
     <para>Pour des raisons de sécurité, le glisser/déplacer peut se configurer
     lors de l'exécution, individuellement pour chaque VM, en utilisant soit
     l'élément "Glisser/déplacer" du menu "Périphériques" de la machine virtuelle
-    ou VBoxManage : Les quatre modes suivants sont disponibles :
+    ou VBoxManage. Les quatre modes suivants sont disponibles :</para>
 
 <para><mediaobject>
       <imageobject>
@@ -1353,7 +1356,7 @@ $</screen>
         glisser/déplacer dans les deux sens, de l'hôte vers l'invité et
         vice versa.</para>
       </listitem>
-    </itemizedlist></para>
+    </itemizedlist>
 
     <note><para>Le support du glisser/déplacer dépend de l'interface
      utilisée ; pour le moment, seule celle du gestionnaire VirtualBox offre
@@ -1493,23 +1496,27 @@ $</screen>
       défaut et il faut <emphasis role="bold">le sélectionner à la main</emphasis> 
       dans l'installeur des suppléments invité en répondant "Non" dans la boîte
       de dialogue "Voulez-vous installer le support Direct3D de base" qui s'affiche
-      quand la fonction Direct3D est sélectionnée.
-      <note><para>Contrairement au support Direct3D de base actuel, l'installation
+      quand la fonction Direct3D est sélectionnée.</para>
+
+      <para><note><para>Contrairement au support Direct3D de base actuel, l'installation
       du pilote graphique WDDM <emphasis role="bold">n'exige pas</emphasis> 
-      le "Mode sans échec".</para></note>
-      <para>Le thème Aero n'est pas activé par défaut. Pour l'activer<itemizedlist>
+      le "Mode sans échec".</para></note></para>
+
+      <para>Le thème Aero n'est pas activé par défaut. Pour l'activer
+        <itemizedlist>
           <listitem>
             <para>Dans l'invité Windows Vista, effectuez un clic droit sur le
             bureau, dans le menu contextuel, sélectionnez "Personnaliser" et sélectionnez
             "Couleur de fenêtre et Apparance" dans la fenêtre "Personnalisation",
             dans la boîte de dialogue "Paramètres de l'apparence", sélectionnez
-            "Windows Aero" et appuyez sur "OK"</para></listitem>
+            "Windows Aero" et appuyez sur "OK"</para>
+          </listitem>
           <listitem>
             <para>Dans l'invité Windows 7, effectuez un clic droit sur le bureau,
             dans le menu contextuel, sélectionnez "Personnaliser" et sélectionnez
-            un thème Aero dans la fenêtre "Personnalisation"</para></listitem>
-          </itemizedlist>
-        </para>
+            un thème Aero dans la fenêtre "Personnalisation"</para>
+          </listitem>
+        </itemizedlist>
       </para>
 
       <para>Techniquement, VirtualBox implémente cela en installant un pilote 3D

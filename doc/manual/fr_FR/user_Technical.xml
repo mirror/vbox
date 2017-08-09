@@ -198,11 +198,11 @@
     <sect2>
       <title>Résumé des modifications de la configuration de 4.0</title>
 
-      <table>
-        <title>Changements de configuration en 4.0 et ultérieure</title>
-
       <para>La table suivante donne un bref apperçu des changements de configuration
       entre les versions anciennes et la 4.0 ou ultérieure&#xA0;:</para>
+
+      <table>
+        <title>Changements de configuration en 4.0 et ultérieure</title>
 
         <tgroup cols="3">
           <tbody>

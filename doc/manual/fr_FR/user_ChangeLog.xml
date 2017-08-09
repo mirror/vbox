@@ -11936,9 +11936,12 @@ on quitte le mode plein écran avec des
 
   </sect1>
 
-  <para>Avec VirtualBox 3.2, les informations d'historique des changements pour
-  les versions inférieures à la 2.0 ont été supprimées pour gagner de la place.
-  Pour accéder à ces informations, merci de consulter le manuel de l'utilisateur
-  de VirtualBox version 3.1 ou inférieur.</para>
+  <sect1>
+    <title>Détails du anciennes changements</title>
+    <para>Avec VirtualBox 3.2, les informations d'historique des changements
+    pour les versions inférieures à la 2.0 ont été supprimées pour gagner de la
+    place. Pour accéder à ces informations, merci de consulter le manuel de
+    l'utilisateur de VirtualBox version 3.1 ou inférieur.</para>
+  </sect1>
 
 </chapter>

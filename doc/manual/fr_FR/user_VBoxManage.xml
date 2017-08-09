@@ -2564,13 +2564,15 @@ Value: 2006.01.01</screen>
 
         <glossentry>
           <glossterm><computeroutput>hwvirtexclusive</computeroutput></glossterm>
-          <para>Ceci spécife si VirtualBox utilisera en exclusivité les
-          extensions de virtualisation matérielle (Intel VT-x ou AMD-V) du
-          processeur du système hôte ; voir <xref linkend="hwvirt" />. Si
-          vous souhaitez partager ces extensions avec d'autres hyperviseurs en
-          fonction en même temps, vous devez désactiver ce paramètre.
-          Cela a des implications négatives en termes de performance.
-          </para>
+          <glossdef>
+            <para>Ceci spécife si VirtualBox utilisera en exclusivité les
+            extensions de virtualisation matérielle (Intel VT-x ou AMD-V) du
+            processeur du système hôte ; voir <xref linkend="hwvirt" />. Si
+            vous souhaitez partager ces extensions avec d'autres hyperviseurs en
+            fonction en même temps, vous devez désactiver ce paramètre.
+            Cela a des implications négatives en termes de performance.
+            </para>
+          </glossdef>
         </glossentry>
 
 
@@ -2861,7 +2863,6 @@ Value: 2006.01.01</screen>
 
               <glossentry>
                 <glossterm><computeroutput>--passwordfile &lt;fichier&gt;</computeroutput></glossterm>
-                  <glossterm><computeroutput>--password &lt;motdepasse&gt;</computeroutput></glossterm>
 
                 <glossdef>
                   <para>Mot de passe du compte utilisateur spécifié, à lire dans
@@ -2884,8 +2885,9 @@ Value: 2006.01.01</screen>
                 <glossterm><computeroutput>--dos2unix</computeroutput></glossterm>
 
                 <glossdef>
-                  Convertit les fins de lignes de la sortie des invités DOS/Windows
-                  en fins compatibles UNIX (CR + LF -> LF). Pas encore implémenté.
+                  <para>Convertit les fins de lignes de la sortie des invités
+                  DOS/Windows en fins compatibles UNIX (CR + LF -> LF). Pas
+                  encore implémenté.</para>
                 </glossdef>
               </glossentry>
 
@@ -2929,8 +2931,9 @@ Value: 2006.01.01</screen>
                 <glossterm><computeroutput>--unix2dos</computeroutput></glossterm>
 
                 <glossdef>
-                  Convertit les fins de lignes de la sortie des invités DOS/Windows
-                  en fins compatibles UNIX (CR + LF -> LF). Pas encore implémenté.
+                  <para>Convertit les fins de lignes de la sortie des invités
+                  DOS/Windows en fins compatibles UNIX (CR + LF -> LF). Pas
+                  encore implémenté.</para>
                 </glossdef>
               </glossentry>
 
@@ -3907,7 +3910,7 @@ Value: 2006.01.01</screen>
                 <glossterm>[-- [&lt;argument1s&gt;] ... [&lt;argumentNs&gt;]]</glossterm>
 
                 <glossdef>
-.                  <para>Arguments en ligne de commandes à utiliser avec l'installeur
+                  <para>Arguments en ligne de commandes à utiliser avec l'installeur
                   des suppléments invité. Sert à ajouter des fonctions non
                   installées précédemment sur l'invité.</para>
                   <para>Vous devez entourer les arguments contenant des espaces
@@ -4012,11 +4015,11 @@ Value: 2006.01.01</screen>
           La commande prend une liste des registres, chacun ayant une des
           formes suivantes&#xA0;:
           <itemizedlist>
-            <listitem><computeroutput>réglage-registre.nom-registre.sous-champ</computeroutput></listitem>
-            <listitem><computeroutput>réglage-registre.nom-registre</computeroutput></listitem>
-            <listitem><computeroutput>nom-registre-processeur.sous-champ</computeroutput></listitem>
-            <listitem><computeroutput>nom-registre-processeur</computeroutput></listitem>
-            <listitem><computeroutput>all</computeroutput></listitem>
+            <listitem><para><computeroutput>réglage-registre.nom-registre.sous-champ</computeroutput></para></listitem>
+            <listitem><para><computeroutput>réglage-registre.nom-registre</computeroutput></para></listitem>
+            <listitem><para><computeroutput>nom-registre-processeur.sous-champ</computeroutput></para></listitem>
+            <listitem><para><computeroutput>nom-registre-processeur</computeroutput></para></listitem>
+            <listitem><para><computeroutput>all</computeroutput></para></listitem>
           </itemizedlist>
           La forme <computeroutput>all</computeroutput> affichera tous les
           registres (pas les sous-champs). Les noms des registres sont indifférents
@@ -4033,10 +4036,10 @@ Value: 2006.01.01</screen>
           La commande prend une liste d'affectations de registres, chacune ayant
           une des formes suivantes&#xA0;:
           <itemizedlist>
-            <listitem><computeroutput>réglage-registre.nom-registre.sous-champ=valeur</computeroutput></listitem>
-            <listitem><computeroutput>réglage-registre.nom-registre=valeur</computeroutput></listitem>
-            <listitem><computeroutput>nom-registre-processeur.sous-champ=valeur</computeroutput></listitem>
-            <listitem><computeroutput>nom-registre-processeur=valeur</computeroutput></listitem>
+            <listitem><para><computeroutput>réglage-registre.nom-registre.sous-champ=valeur</computeroutput></para></listitem>
+            <listitem><para><computeroutput>réglage-registre.nom-registre=valeur</computeroutput></para></listitem>
+            <listitem><para><computeroutput>nom-registre-processeur.sous-champ=valeur</computeroutput></para></listitem>
+            <listitem><para><computeroutput>nom-registre-processeur=valeur</computeroutput></para></listitem>
           </itemizedlist>
           Le format de la valeur devrait être du même genre que ce qu'affiche
           <computeroutput>getregisters</computeroutput>, sauf qu'on peut utiliser
