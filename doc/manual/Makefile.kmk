@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for the VBox User Manual.
+# Sub-Makefile for the VirtualBox User Manual, SDK reference and other manuals.
 #
 
 #
@@ -204,14 +204,20 @@ BLDDIRS += $(VBOX_PATH_MANUAL_OUTBASE) $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/,
 
 if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
  if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_DOCS_SDKREF)
-  ## @todo make this an install target, drop the BLDDIRS.
-  OTHERS += \
-  	$(VBOX_PATH_SDK)/docs/SDKRef.pdf
-  BLDDIRS += \
-  	$(VBOX_PATH_SDK)/docs
+  INSTALLS += VBox-sdkref-docs
+  VBox-sdkref-docs_INST = $(INST_SDK)docs/
+  VBox-sdkref-docs_MODE = a+r,u+w
+  VBox-sdkref-docs_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.pdf
+  VBox-sdkref-docs_CLEAN = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.pdf
  endif
 
  ifdef VBOX_WITH_DOCS_CHM
+  INSTALLS += VBox-usermanual-chm-docs
+  VBox-usermanual-chm-docs_INST = $(INST_BIN)
+  VBox-usermanual-chm-docs_MODE = a+r,u+w
+  VBox-usermanual-chm-docs_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.chm
+  VBox-usermanual-chm-docs_CLEAN = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.chm
+
   VBOX_PATH_BIN_CHM = $(PATH_STAGE_BIN)/VirtualBox.chm
  else  # Do not build chm.
   VBOX_PATH_BIN_CHM =
@@ -221,21 +227,28 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   VBOX_MANUAL_PACK += \
   		$(PATH_STAGE_BIN)/UserManual.pdf \
   		$(VBOX_PATH_BIN_CHM)
-  OTHERS += \
-  	$(PATH_STAGE_BIN)/UserManual.pdf
-  OTHERS.win += \
-  	$(VBOX_PATH_BIN_CHM)
-  OTHERS.linux += \
-  	$(VBOX_PATH_BIN_CHM)
+  INSTALLS += VBox-usermanual-docs
+  VBox-usermanual-docs_INST = $(INST_BIN)
+  VBox-usermanual-docs_MODE = a+r,u+w
+  VBox-usermanual-docs_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf
+  VBox-usermanual-docs_CLEAN = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf
 
   ifdef VBOX_WITH_DOCS_TRANSLATIONS
-   OTHERS += \
-   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf)
+   INSTALLS += VBox-usermanual-add-docs
+   VBox-usermanual-add-docs_INST = $(INST_BIN)
+   VBox-usermanual-add-docs_MODE = a+r,u+w
+   VBox-usermanual-add-docs_SOURCES = $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(f)/UserManual.pdf=>UserManual_$(f).pdf)
+   VBox-usermanual-add-docs_CLEAN = $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(f)/UserManual.pdf)
+   VBOX_MANUAL_PACK += \
+ 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf)
    ifdef VBOX_WITH_DOCS_CHM
-   OTHERS.win += \
-   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm)
-   OTHERS.linux += \
-   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm)
+    INSTALLS += VBox-usermanual-add-chm-docs
+   VBox-usermanual-add-chm-docs_INST = $(INST_BIN)
+   VBox-usermanual-add-chm-docs_MODE = a+r,u+w
+   VBox-usermanual-add-chm-docs_SOURCES = $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(f)/VirtualBox.chm=>VirtualBox_$(f).chm)
+   VBox-usermanual-add-chm-docs_CLEAN = $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(f)/VirtualBox.chm)
+    VBOX_MANUAL_PACK += \
+ 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm)
    endif
   endif
  endif # !VBOX_ONLY_SDK
@@ -298,11 +311,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$(addsuffix /HTMLHelp/images, $(VBOX_MANUAL_LANGUAGES)) \
  	)
 
- ifdef VBOX_WITH_DOCS_CHM
- VBOX_MANUAL_PACK += \
- 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf $(PATH_STAGE_BIN)/VirtualBox_$(f).chm)
- endif
-
  OTHER_CLEAN += \
  	$(VBOX_XML_CATALOG) \
  	$(VBOX_XML_CATALOG_DOCBOOK) \
@@ -331,27 +339,19 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
                HTMLHelp/toc.hhc \
                HTMLHelp/htmlhelp.hhp \
  		titlepage-htmlhelp.xsl \
-		UserManual.pdf \
-		VirtualBox.chm \
-               ChangeLog.html \
-               validatemanual.run \
+		ChangeLog.html \
+		validatemanual.run \
 		)) \
  	$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG) \
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
  	$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml \
- 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf) \
- 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm) \
- 	$(PATH_STAGE_BIN)/UserManual.pdf \
- 	$(PATH_STAGE_BIN)/VirtualBox.chm \
        \
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/, \
 		$(VBOX_SDKREF_XML_FILES) \
 		$(VBOX_SDKREF_LATEX_FILES_TARGET) \
-		SDKRef.pdf \
 		) \
 	$(VBOX_DOC_XIDL_SRC_TMP) \
-	$(VBOX_MANUAL_APIREF_TMP) \
- 	$(PATH_STAGE_BIN)/sdk/docs/SDKRef.pdf
+	$(VBOX_MANUAL_APIREF_TMP)
 
 endif # if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
 
@@ -556,16 +556,6 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_cp_images_pdf))
 #
 ##########################################################################################
 
-## @todo INSTALLS target for this!
-$(PATH_STAGE_BIN)/UserManual.pdf: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf | $$(dir $$@)
-	$(QUIET)$(CP) $< $@
-	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
-
-$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf): \
-	$(PATH_STAGE_BIN)/UserManual_%.pdf : $(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.pdf
-	$(QUIET)$(CP) $< $@
-	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
-
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.pdf): \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.pdf : \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.tex \
@@ -582,8 +572,7 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.p
 	$(QUIET)$(SED) -n \
 		-e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
 		$(basename $@).log
-
-##@todo restore this when above has been converted to INSTALLS target.	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
+	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
 
 # generate temporary LaTeX source from processed XML
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.tex): \
@@ -678,7 +667,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex: \
 	$(QUIET)$(RM) -f $@.tmp
 
 # Turn SDKRef.tex into a PDF.
-$(VBOX_PATH_SDK)/docs/SDKRef.pdf: \
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.pdf: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex \
 		$(if $(VBOX_OSE),,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/ucs.sty) \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) | $$(dir $$@)
@@ -691,7 +680,6 @@ $(VBOX_PATH_SDK)/docs/SDKRef.pdf: \
 	$(QUIET)$(SED) -n \
 		-e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
 		$(basename $<).log
-	$(QUIET)$(CP) $(<D)/SDKRef.pdf $@
 	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
 
 
@@ -715,15 +703,6 @@ ifdef VBOX_WITH_DOCS_CHM
  	$(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl \
  	$(VBOX_PATH_MANUAL_SRC)/common-html-formatcfg.xsl
 
- $(PATH_STAGE_BIN)/VirtualBox.chm: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.chm
-	$(QUIET)$(CP) $< $@
-	$(call MSG_L1,Fresh CHM is now at $@)
-
- $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm): \
-	$(PATH_STAGE_BIN)/VirtualBox_%.chm : $(VBOX_PATH_MANUAL_OUTBASE)/%/VirtualBox.chm
-	$(QUIET)$(CP) $< $@
-	$(call MSG_L1,Fresh CHM is now at $@)
-
  $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/VirtualBox.chm): \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/VirtualBox.chm: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/HTMLHelp/htmlhelp.hhp \
@@ -731,6 +710,7 @@ ifdef VBOX_WITH_DOCS_CHM
 	$(call MSG_L1,hhc $<,=> $@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(VBOX_HHC) $(subst /,\\,$<)
+	$(call MSG_L1,Fresh CHM is now at $@)
 
  # Prepare the XSL file for our title page, htmlhelp variant.
  $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/titlepage-htmlhelp.xsl): \
