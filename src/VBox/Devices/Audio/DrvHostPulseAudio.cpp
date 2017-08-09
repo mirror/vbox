@@ -362,22 +362,22 @@ static void paStreamCbDrain(pa_stream *pStream, int fSuccess, void *pvUser)
 {
     AssertPtrReturnVoid(pStream);
 
-    PPULSEAUDIOSTREAM pStrm = (PPULSEAUDIOSTREAM)pvUser;
-    AssertPtrReturnVoid(pStrm);
+    PPULSEAUDIOSTREAM pStreamPA = (PPULSEAUDIOSTREAM)pvUser;
+    AssertPtrReturnVoid(pStreamPA);
 
-    pStrm->fOpSuccess = fSuccess;
+    pStreamPA->fOpSuccess = fSuccess;
     if (fSuccess)
     {
         pa_operation_unref(pa_stream_cork(pStream, 1,
                                           paStreamCbSuccess, pvUser));
     }
     else
-        paError(pStrm->pDrv, "Failed to drain stream");
+        paError(pStreamPA->pDrv, "Failed to drain stream");
 
-    if (pStrm->pDrainOp)
+    if (pStreamPA->pDrainOp)
     {
-        pa_operation_unref(pStrm->pDrainOp);
-        pStrm->pDrainOp = NULL;
+        pa_operation_unref(pStreamPA->pDrainOp);
+        pStreamPA->pDrainOp = NULL;
     }
 }
 
