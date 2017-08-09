@@ -192,11 +192,11 @@ void UIExtraDataEventHandler::prepareListener()
 void UIExtraDataEventHandler::prepareConnections()
 {
     /* Create direct (sync) connections for signals of main listener: */
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigExtraDataCanChange(QString, QString, QString, bool&, QString&)),
-            this, SLOT(sltPreprocessExtraDataCanChange(QString, QString, QString, bool&, QString&)),
+    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigExtraDataCanChange,
+            this, &UIExtraDataEventHandler::sltPreprocessExtraDataCanChange,
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigExtraDataChange(QString, QString, QString)),
-            this, SLOT(sltPreprocessExtraDataChange(QString, QString, QString)),
+    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigExtraDataChange,
+            this, &UIExtraDataEventHandler::sltPreprocessExtraDataChange,
             Qt::DirectConnection);
 }
 
@@ -475,16 +475,22 @@ public:
         void showAndRaise(QWidget *pCenterWidget);
     /** @} */
 
+public slots:
+
+    /** @name General
+      * @{ */
+        /** Handles extra-data map acknowledging. */
+        void sltExtraDataMapAcknowledging(QString strID);
+        /** Handles extra-data change. */
+        void sltExtraDataChange(QString strID, QString strKey, QString strValue);
+    /** @} */
+
 private slots:
 
     /** @name General
       * @{ */
         /** Handles machine (un)registration. */
         void sltMachineRegistered(QString strID, bool fAdded);
-        /** Handles extra-data map acknowledging. */
-        void sltExtraDataMapAcknowledging(QString strID);
-        /** Handles extra-data change. */
-        void sltExtraDataChange(QString strID, QString strKey, QString strValue);
     /** @} */
 
     /** @name Chooser-pane
@@ -1006,16 +1012,16 @@ void UIExtraDataManagerWindow::sltAdd()
                     AssertPtrReturnVoid(pKeyPropertySetter);
                     {
                         /* Configure key-editor property setter: */
-                        connect(pEditorKey, SIGNAL(editTextChanged(const QString&)),
-                                pKeyPropertySetter, SLOT(sltAssignProperty(const QString&)));
+                        connect(pEditorKey, &QComboBox::editTextChanged,
+                                pKeyPropertySetter, &QObjectPropertySetter::sltAssignProperty);
                     }
                     /* Create key-editor validator: */
                     QObjectValidator *pKeyValidator = new QObjectValidator(new QRegExpValidator(QRegExp("[\\s\\S]+"), this));
                     AssertPtrReturnVoid(pKeyValidator);
                     {
                         /* Configure key-editor validator: */
-                        connect(pEditorKey, SIGNAL(editTextChanged(const QString&)),
-                                pKeyValidator, SLOT(sltValidate(QString)));
+                        connect(pEditorKey, &QComboBox::editTextChanged,
+                                pKeyValidator, &QObjectValidator::sltValidate);
                         /* Add key-editor validator into dialog validator group: */
                         pValidatorGroup->addObjectValidator(pKeyValidator);
                     }
@@ -1040,16 +1046,16 @@ void UIExtraDataManagerWindow::sltAdd()
                     AssertPtrReturnVoid(pValuePropertySetter);
                     {
                         /* Configure value-editor property setter: */
-                        connect(pEditorValue, SIGNAL(textEdited(const QString&)),
-                                pValuePropertySetter, SLOT(sltAssignProperty(const QString&)));
+                        connect(pEditorValue, &QLineEdit::textEdited,
+                                pValuePropertySetter, &QObjectPropertySetter::sltAssignProperty);
                     }
                     /* Create value-editor validator: */
                     QObjectValidator *pValueValidator = new QObjectValidator(new QRegExpValidator(QRegExp("[\\s\\S]+"), this));
                     AssertPtrReturnVoid(pValueValidator);
                     {
                         /* Configure value-editor validator: */
-                        connect(pEditorValue, SIGNAL(textEdited(const QString&)),
-                                pValueValidator, SLOT(sltValidate(QString)));
+                        connect(pEditorValue, &QLineEdit::textEdited,
+                                pValueValidator, &QObjectValidator::sltValidate);
                         /* Add value-editor validator into dialog validator group: */
                         pValidatorGroup->addObjectValidator(pValueValidator);
                     }
@@ -1070,10 +1076,10 @@ void UIExtraDataManagerWindow::sltAdd()
                 pButtonBox->button(QDialogButtonBox::Ok)->setAutoDefault(true);
                 pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(pValidatorGroup->result());
                 pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
-                connect(pValidatorGroup, SIGNAL(sigValidityChange(bool)),
-                        pButtonBox->button(QDialogButtonBox::Ok), SLOT(setEnabled(bool)));
-                connect(pButtonBox, SIGNAL(accepted()), pInputDialog, SLOT(accept()));
-                connect(pButtonBox, SIGNAL(rejected()), pInputDialog, SLOT(reject()));
+                connect(pValidatorGroup, &QObjectValidatorGroup::sigValidityChange,
+                        pButtonBox->button(QDialogButtonBox::Ok), &QPushButton::setEnabled);
+                connect(pButtonBox, &QIDialogButtonBox::accepted, pInputDialog, &QIDialog::accept);
+                connect(pButtonBox, &QIDialogButtonBox::rejected, pInputDialog, &QIDialog::reject);
                 /* Add button-box into main-layout: */
                 pMainLayout->addWidget(pButtonBox);
             }
@@ -1364,8 +1370,8 @@ void UIExtraDataManagerWindow::prepareThis()
 void UIExtraDataManagerWindow::prepareConnections()
 {
     /* Prepare connections: */
-    connect(gVBoxEvents, SIGNAL(sigMachineRegistered(QString, bool)),
-            this, SLOT(sltMachineRegistered(QString, bool)));
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
+            this, &UIExtraDataManagerWindow::sltMachineRegistered);
 }
 
 void UIExtraDataManagerWindow::prepareMenu()
@@ -1382,7 +1388,7 @@ void UIExtraDataManagerWindow::prepareMenu()
             m_pActionAdd->setIcon(UIIconPool::iconSetFull(":/edata_add_22px.png", ":/edata_add_16px.png",
                                                           ":/edata_add_disabled_22px.png", ":/edata_add_disabled_16px.png"));
             m_pActionAdd->setShortcut(QKeySequence("Ctrl+T"));
-            connect(m_pActionAdd, SIGNAL(triggered(bool)), this, SLOT(sltAdd()));
+            connect(m_pActionAdd, &QAction::triggered, this, &UIExtraDataManagerWindow::sltAdd);
         }
         /* Create 'Del' action: */
         m_pActionDel = pActionsMenu->addAction("Remove");
@@ -1392,7 +1398,7 @@ void UIExtraDataManagerWindow::prepareMenu()
             m_pActionDel->setIcon(UIIconPool::iconSetFull(":/edata_remove_22px.png", ":/edata_remove_16px.png",
                                                           ":/edata_remove_disabled_22px.png", ":/edata_remove_disabled_16px.png"));
             m_pActionDel->setShortcut(QKeySequence("Ctrl+R"));
-            connect(m_pActionDel, SIGNAL(triggered(bool)), this, SLOT(sltDel()));
+            connect(m_pActionDel, &QAction::triggered, this, &UIExtraDataManagerWindow::sltDel);
         }
 
         /* Add separator: */
@@ -1406,7 +1412,7 @@ void UIExtraDataManagerWindow::prepareMenu()
             m_pActionLoad->setIcon(UIIconPool::iconSetFull(":/edata_load_22px.png", ":/edata_load_16px.png",
                                                            ":/edata_load_disabled_22px.png", ":/edata_load_disabled_16px.png"));
             m_pActionLoad->setShortcut(QKeySequence("Ctrl+L"));
-            connect(m_pActionLoad, SIGNAL(triggered(bool)), this, SLOT(sltLoad()));
+            connect(m_pActionLoad, &QAction::triggered, this, &UIExtraDataManagerWindow::sltLoad);
         }
         /* Create 'Save' action: */
         m_pActionSave = pActionsMenu->addAction("Save As...");
@@ -1416,7 +1422,7 @@ void UIExtraDataManagerWindow::prepareMenu()
             m_pActionSave->setIcon(UIIconPool::iconSetFull(":/edata_save_22px.png", ":/edata_save_16px.png",
                                                            ":/edata_save_disabled_22px.png", ":/edata_save_disabled_16px.png"));
             m_pActionSave->setShortcut(QKeySequence("Ctrl+S"));
-            connect(m_pActionSave, SIGNAL(triggered(bool)), this, SLOT(sltSave()));
+            connect(m_pActionSave, &QAction::triggered, this, &UIExtraDataManagerWindow::sltSave);
         }
     }
 }
@@ -1505,17 +1511,14 @@ void UIExtraDataManagerWindow::preparePanes()
     /* Prepare data-pane: */
     preparePaneData();
     /* Link chooser and data panes: */
-    connect(m_pViewOfChooser->selectionModel(),
-            SIGNAL(currentChanged(const QModelIndex&, const QModelIndex&)),
-            this, SLOT(sltChooserHandleCurrentChanged(const QModelIndex&)));
-    connect(m_pViewOfChooser->selectionModel(),
-            SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-            this, SLOT(sltChooserHandleSelectionChanged(const QItemSelection&, const QItemSelection&)));
-    connect(m_pViewOfData->selectionModel(),
-            SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-            this, SLOT(sltDataHandleSelectionChanged(const QItemSelection&, const QItemSelection&)));
-    connect(m_pModelSourceOfData, SIGNAL(itemChanged(QStandardItem*)),
-            this, SLOT(sltDataHandleItemChanged(QStandardItem*)));
+    connect(m_pViewOfChooser->selectionModel(), &QItemSelectionModel::currentChanged,
+            this, &UIExtraDataManagerWindow::sltChooserHandleCurrentChanged);
+    connect(m_pViewOfChooser->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &UIExtraDataManagerWindow::sltChooserHandleSelectionChanged);
+    connect(m_pViewOfData->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &UIExtraDataManagerWindow::sltDataHandleSelectionChanged);
+    connect(m_pModelSourceOfData, &QStandardItemModel::itemChanged,
+            this, &UIExtraDataManagerWindow::sltDataHandleItemChanged);
     /* Make sure chooser have current-index if possible: */
     makeSureChooserHaveCurrentIndexIfPossible();
 }
@@ -1538,8 +1541,8 @@ void UIExtraDataManagerWindow::preparePaneChooser()
             {
                 /* Configure chooser-filter: */
                 m_pFilterOfChooser->setPlaceholderText("Search..");
-                connect(m_pFilterOfChooser, SIGNAL(textChanged(const QString&)),
-                        this, SLOT(sltChooserApplyFilter(const QString&)));
+                connect(m_pFilterOfChooser, &QLineEdit::textChanged,
+                        this, &UIExtraDataManagerWindow::sltChooserApplyFilter);
                 /* Add chooser-filter into layout: */
                 pLayout->addWidget(m_pFilterOfChooser);
             }
@@ -1603,8 +1606,8 @@ void UIExtraDataManagerWindow::preparePaneData()
             {
                 /* Configure data-filter: */
                 m_pFilterOfData->setPlaceholderText("Search..");
-                connect(m_pFilterOfData, SIGNAL(textChanged(const QString&)),
-                        this, SLOT(sltDataApplyFilter(const QString&)));
+                connect(m_pFilterOfData, &QLineEdit::textChanged,
+                        this, &UIExtraDataManagerWindow::sltDataApplyFilter);
                 /* Add data-filter into layout: */
                 pLayout->addWidget(m_pFilterOfData);
             }
@@ -1635,8 +1638,8 @@ void UIExtraDataManagerWindow::preparePaneData()
                 m_pViewOfData->setContextMenuPolicy(Qt::CustomContextMenu);
                 m_pViewOfData->setSelectionMode(QAbstractItemView::ExtendedSelection);
                 m_pViewOfData->setSelectionBehavior(QAbstractItemView::SelectRows);
-                connect(m_pViewOfData, SIGNAL(customContextMenuRequested(const QPoint&)),
-                        this, SLOT(sltDataHandleCustomContextMenuRequested(const QPoint&)));
+                connect(m_pViewOfData, &QTableView::customContextMenuRequested,
+                        this, &UIExtraDataManagerWindow::sltDataHandleCustomContextMenuRequested);
                 QHeaderView *pVHeader = m_pViewOfData->verticalHeader();
                 QHeaderView *pHHeader = m_pViewOfData->horizontalHeader();
                 pVHeader->hide();
@@ -1661,8 +1664,8 @@ void UIExtraDataManagerWindow::prepareButtonBox()
         /* Configure button-box: */
         m_pButtonBox->setStandardButtons(QDialogButtonBox::Help | QDialogButtonBox::Close);
         m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
-        connect(m_pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
-        connect(m_pButtonBox, SIGNAL(rejected()), this, SLOT(close()));
+        connect(m_pButtonBox, &QIDialogButtonBox::helpRequested, &msgCenter(), &UIMessageCenter::sltShowHelpHelpDialog);
+        connect(m_pButtonBox, &QIDialogButtonBox::rejected,      this, &UIExtraDataManagerWindow::close);
         /* Add button-box into main layout: */
         m_pMainLayout->addWidget(m_pButtonBox);
     }
@@ -4339,8 +4342,8 @@ void UIExtraDataManager::prepareExtraDataEventHandler()
     AssertPtrReturnVoid(m_pHandler);
     {
         /* Create queued (async) connections for signals of event proxy object: */
-        connect(m_pHandler, SIGNAL(sigExtraDataChange(QString, QString, QString)),
-                this, SLOT(sltExtraDataChange(QString, QString, QString)),
+        connect(m_pHandler, &UIExtraDataEventHandler::sigExtraDataChange,
+                this, &UIExtraDataManager::sltExtraDataChange,
                 Qt::QueuedConnection);
     }
 }
@@ -4378,10 +4381,10 @@ void UIExtraDataManager::open(QWidget *pCenterWidget)
         /* Create window: */
         m_pWindow = new UIExtraDataManagerWindow;
         /* Configure window connections: */
-        connect(this, SIGNAL(sigExtraDataMapAcknowledging(QString)),
-                m_pWindow, SLOT(sltExtraDataMapAcknowledging(QString)));
-        connect(this, SIGNAL(sigExtraDataChange(QString, QString, QString)),
-                m_pWindow, SLOT(sltExtraDataChange(QString, QString, QString)));
+        connect(this, &UIExtraDataManager::sigExtraDataMapAcknowledging,
+                m_pWindow, &UIExtraDataManagerWindow::sltExtraDataMapAcknowledging);
+        connect(this, &UIExtraDataManager::sigExtraDataChange,
+                m_pWindow, &UIExtraDataManagerWindow::sltExtraDataChange);
     }
     /* Show and raise window: */
     m_pWindow->showAndRaise(pCenterWidget);
