@@ -45,9 +45,6 @@ RT_C_DECLS_END
 *********************************************************************************************************************************/
 #define VBOX_PULSEAUDIO_MAX_LOG_REL_ERRORS 32 /** @todo Make this configurable thru driver options. */
 
-/* Whether to use PulseAudio's asynchronous handling or not. */
-//#define PULSEAUDIO_ASYNC /** @todo Make this configurable thru driver options. */
-
 #ifndef PA_STREAM_NOFLAGS
 # define PA_STREAM_NOFLAGS (pa_context_flags_t)0x0000U /* since 0.9.19 */
 #endif
@@ -65,7 +62,6 @@ RT_C_DECLS_END
 #define PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface) \
     ( (PDRVHOSTPULSEAUDIO)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTPULSEAUDIO, IHostAudio)) )
 
-#define PULSEAUDIO_ASYNC
 
 /*********************************************************************************************************************************
 *   Structures                                                                                                                   *
@@ -190,9 +186,9 @@ static inline int PA_STREAM_IS_GOOD(pa_stream_state_t x) {
 
 static int  paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint32_t fEnum);
 static int  paError(PDRVHOSTPULSEAUDIO pThis, const char *szMsg);
+#ifdef DEBUG
 static void paStreamCbUnderflow(pa_stream *pStream, void *pvContext);
-#ifdef PULSEAUDIO_ASYNC
- static void paStreamCbReqWrite(pa_stream *pStream, size_t cbLen, void *pvContext);
+static void paStreamCbReqWrite(pa_stream *pStream, size_t cbLen, void *pvContext);
 #endif
 static void paStreamCbSuccess(pa_stream *pStream, int fSuccess, void *pvContext);
 
@@ -406,7 +402,7 @@ static void paStreamCbStateChanged(pa_stream *pStream, void *pvUser)
 }
 
 
-#ifdef PULSEAUDIO_ASYNC
+#ifdef DEBUG
 static void paStreamCbReqWrite(pa_stream *pStream, size_t cbLen, void *pvContext)
 {
     RT_NOREF(cbLen, pvContext);
@@ -420,7 +416,6 @@ static void paStreamCbReqWrite(pa_stream *pStream, size_t cbLen, void *pvContext
 
     Log2Func(("Requested %zu bytes -- Current latency is %RU64ms\n", cbLen, usec / 1000));
 }
-#endif /* PULSEAUDIO_ASYNC */
 
 
 static void paStreamCbUnderflow(pa_stream *pStream, void *pvContext)
@@ -447,7 +442,7 @@ static void paStreamCbUnderflow(pa_stream *pStream, void *pvContext)
         pStrm->cUnderflows = 0;
     }
 
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
     pa_usec_t curLatencyUs = 0;
     pa_stream_get_latency(pStream, &curLatencyUs, NULL /* Neg */);
 
@@ -459,18 +454,17 @@ static void paStreamCbUnderflow(pa_stream *pStream, void *pvContext)
 
     Log2Func(("curPosWrite=%RU64ms, curTs=%RU64ms, curDelta=%RI64ms, curLatency=%RU64ms\n",
               curPosWritesUs / 1000, curTsUs / 1000, (((int64_t)curPosWritesUs - (int64_t)curTsUs) / 1000), curLatencyUs / 1000));
-#endif
+# endif
 }
 
 
-#ifdef VBOX_STRICT
 static void paStreamCbOverflow(pa_stream *pStream, void *pvContext)
 {
     RT_NOREF(pStream, pvContext);
 
     Log2Func(("Warning: Hit overflow\n"));
 }
-#endif
+#endif /* DEBUG */
 
 
 static void paStreamCbSuccess(pa_stream *pStream, int fSuccess, void *pvUser)
@@ -527,11 +521,9 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
             break;
         }
 
-#ifdef PULSEAUDIO_ASYNC
+#ifdef DEBUG
         pa_stream_set_write_callback       (pStream, paStreamCbReqWrite,     pStreamPA);
-#endif
         pa_stream_set_underflow_callback   (pStream, paStreamCbUnderflow,    pStreamPA);
-#ifdef VBOX_STRICT
         if (!fIn) /* Only for output streams. */
             pa_stream_set_overflow_callback(pStream, paStreamCbOverflow,     pStreamPA);
 #endif
