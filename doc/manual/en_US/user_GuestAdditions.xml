@@ -1067,7 +1067,7 @@ $</screen>
 
     <para>For security reasons drag and drop can be configured at runtime on a
     per-VM basis either using the "Drag and Drop" menu item in the "Devices" menu
-    of the virtual machine or VBoxManage: The following four modes are
+    of the virtual machine or VBoxManage. The following four modes are
     available:</para>
 
     <para><mediaobject>
