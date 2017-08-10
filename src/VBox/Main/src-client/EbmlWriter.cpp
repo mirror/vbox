@@ -304,6 +304,10 @@ private:
 /** The block marks a key frame. */
 #define VBOX_WEBM_BLOCK_FLAG_KEY_FRAME      0x80
 
+/** The default timecode scale factor for WebM -- all timecodes in the segments are expressed in ms.
+ *  This allows every cluster to have blocks with positive values up to 32.767 seconds. */
+#define VBOX_WEBM_TIMECODESCALE_FACTOR_MS   1000000
+
 class WebMWriter_Impl
 {
     /**
@@ -430,16 +434,12 @@ class WebMWriter_Impl
             , offTracks(0)
             , offCues(0)
         {
-            /* This is the default for WebM -- all timecodes in the segments are expressed in ms.
-             * This allows every cluster to have blocks with positive values up to 32.767 seconds. */
-            uTimecodeScaleFactor = 1000000;
-            //m_uTimecodeScaleFactor = lround(1000000000 /* ns */ / 48000);
+            uTimecodeScaleFactor = VBOX_WEBM_TIMECODESCALE_FACTOR_MS;
 
             LogFunc(("Default timecode scale is: %RU64ns\n", uTimecodeScaleFactor));
         }
 
-        /** The timecode scale factor of this segment.
-         *  By default this is 1000000, which is 1ms per timecode unit. */
+        /** The timecode scale factor of this segment. */
         uint64_t                        uTimecodeScaleFactor;
 
         /** Timecode when starting this segment. */
