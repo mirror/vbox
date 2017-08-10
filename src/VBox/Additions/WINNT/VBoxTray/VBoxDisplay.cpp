@@ -444,6 +444,82 @@ DWORD VBoxDisplayGetConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD 
     return NO_ERROR;
 }
 
+static void ResizeDisplayDeviceNT4(DWORD dwNewXRes, DWORD dwNewYRes, DWORD dwNewBpp)
+{
+    DEVMODE devMode;
+
+    RT_ZERO(devMode);
+    devMode.dmSize = sizeof(DEVMODE);
+
+    /* get the current screen setup */
+    if (!EnumDisplaySettings(NULL, ENUM_REGISTRY_SETTINGS, &devMode))
+    {
+        LogFlowFunc(("error from EnumDisplaySettings: %d\n", GetLastError()));
+        return;
+    }
+
+    LogFlowFunc(("Current mode: %d x %d x %d at %d,%d\n",
+        devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel, devMode.dmPosition.x, devMode.dmPosition.y));
+
+    /* Check whether a mode reset or a change is requested. */
+    if (dwNewXRes || dwNewYRes || dwNewBpp)
+    {
+        /* A change is requested.
+        * Set values which are not to be changed to the current values.
+        */
+        if (!dwNewXRes)
+            dwNewXRes = devMode.dmPelsWidth;
+        if (!dwNewYRes)
+            dwNewYRes = devMode.dmPelsHeight;
+        if (!dwNewBpp)
+            dwNewBpp = devMode.dmBitsPerPel;
+    }
+    else
+    {
+        /* All zero values means a forced mode reset. Do nothing. */
+        LogFlowFunc(("Forced mode reset\n"));
+    }
+
+    /* Verify that the mode is indeed changed. */
+    if (devMode.dmPelsWidth == dwNewXRes
+        && devMode.dmPelsHeight == dwNewYRes
+        && devMode.dmBitsPerPel == dwNewBpp)
+    {
+        LogFlowFunc(("already at desired resolution\n"));
+        return;
+    }
+
+    // without this, Windows will not ask the miniport for its
+    // mode table but uses an internal cache instead
+    DEVMODE tempDevMode = { 0 };
+    tempDevMode.dmSize = sizeof(DEVMODE);
+    EnumDisplaySettings(NULL, 0xffffff, &tempDevMode);
+
+    /* adjust the values that are supposed to change */
+    if (dwNewXRes)
+        devMode.dmPelsWidth = dwNewXRes;
+    if (dwNewYRes)
+        devMode.dmPelsHeight = dwNewYRes;
+    if (dwNewBpp)
+        devMode.dmBitsPerPel = dwNewBpp;
+
+    LogFlowFunc(("setting new mode %d x %d, %d BPP\n",
+        devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel));
+
+    /* set the new mode */
+    LONG status = ChangeDisplaySettings(&devMode, CDS_UPDATEREGISTRY);
+    if (status != DISP_CHANGE_SUCCESSFUL)
+    {
+        LogFlowFunc(("error from ChangeDisplaySettings: %d\n", status));
+
+        if (status == DISP_CHANGE_BADMODE)
+        {
+            /* Our driver can not set the requested mode. Stop trying. */
+            return;
+        }
+    }
+}
+
 /* Returns TRUE to try again. */
 /** @todo r=andy Why not using the VMMDevDisplayChangeRequestEx structure for all those parameters here? */
 static BOOL ResizeDisplayDevice(PVBOXDISPLAYCONTEXT pCtx,
@@ -745,7 +821,7 @@ DECLCALLBACK(int) VBoxDisplayWorker(void *pInstance, bool volatile *pfShutdown)
 
     int rc = VINF_SUCCESS;
 
-    for (;;)
+    while (*pfShutdown == false)
     {
         BOOL fExtDispSup = TRUE;
         /* Wait for a display change event. */
@@ -829,12 +905,18 @@ DECLCALLBACK(int) VBoxDisplayWorker(void *pInstance, bool volatile *pfShutdown)
                 if (fDisplayChangeQueried)
                 {
                     /* Try to set the requested video mode. Repeat until it is successful or is rejected by the driver. */
+                    LogFlowFunc(("DisplayChangeReqEx parameters  aDisplay=%d x xRes=%d x yRes=%d x bpp=%d x SecondayMonEnb=%d x NewOriginX=%d x NewOriginY=%d x ChangeOrigin=%d\n",
+                        displayChangeRequest.display,
+                        displayChangeRequest.xres,
+                        displayChangeRequest.yres,
+                        displayChangeRequest.bpp,
+                        displayChangeRequest.fEnabled,
+                        displayChangeRequest.cxOrigin,
+                        displayChangeRequest.cyOrigin,
+                        displayChangeRequest.fChangeOrigin));
+
                     for (;;)
                     {
-                        LogFlowFunc(("VMMDevReq_GetDisplayChangeRequest2: %dx%dx%d at %d\n", displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
-
-                        /* Only try to change video mode if the active display driver is VBox additions. */
-
                         VBOXDISPLAY_DRIVER_TYPE enmDriverType = getVBoxDisplayDriverType (pCtx);
 
                         if (enmDriverType == VBOXDISPLAY_DRIVER_TYPE_UNKNOWN)
@@ -846,16 +928,6 @@ DECLCALLBACK(int) VBoxDisplayWorker(void *pInstance, bool volatile *pfShutdown)
                         if (pCtx->pfnChangeDisplaySettingsEx != 0)
                         {
                             LogFlowFunc(("Detected W2K or later\n"));
-                            /* W2K or later. */
-                            LogFlowFunc(("DisplayChangeReqEx parameters  aDisplay=%d x xRes=%d x yRes=%d x bpp=%d x SecondayMonEnb=%d x NewOriginX=%d x NewOriginY=%d x ChangeOrigin=%d\n",
-                                    displayChangeRequest.display,
-                                    displayChangeRequest.xres,
-                                    displayChangeRequest.yres,
-                                    displayChangeRequest.bpp,
-                                    displayChangeRequest.fEnabled,
-                                    displayChangeRequest.cxOrigin,
-                                    displayChangeRequest.cyOrigin,
-                                    displayChangeRequest.fChangeOrigin));
                             if (!ResizeDisplayDevice(pCtx,
                                                         displayChangeRequest.display,
                                                         displayChangeRequest.xres,
@@ -876,102 +948,18 @@ DECLCALLBACK(int) VBoxDisplayWorker(void *pInstance, bool volatile *pfShutdown)
                         else
                         {
                             LogFlowFunc(("Detected NT\n"));
-
-                            /* Single monitor NT. */
-                            DEVMODE devMode;
-                            RT_ZERO(devMode);
-                            devMode.dmSize = sizeof(DEVMODE);
-
-                            /* get the current screen setup */
-                            if (EnumDisplaySettings(NULL, ENUM_REGISTRY_SETTINGS, &devMode))
-                            {
-                                LogFlowFunc(("Current mode: %d x %d x %d at %d,%d\n",
-                                        devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel, devMode.dmPosition.x, devMode.dmPosition.y));
-
-                                /* Check whether a mode reset or a change is requested. */
-                                if (displayChangeRequest.xres || displayChangeRequest.yres || displayChangeRequest.bpp)
-                                {
-                                    /* A change is requested.
-                                        * Set values which are not to be changed to the current values.
-                                        */
-                                    if (!displayChangeRequest.xres)
-                                        displayChangeRequest.xres = devMode.dmPelsWidth;
-                                    if (!displayChangeRequest.yres)
-                                        displayChangeRequest.yres = devMode.dmPelsHeight;
-                                    if (!displayChangeRequest.bpp)
-                                        displayChangeRequest.bpp = devMode.dmBitsPerPel;
-                                }
-                                else
-                                {
-                                    /* All zero values means a forced mode reset. Do nothing. */
-                                    LogFlowFunc(("Forced mode reset\n"));
-                                }
-
-                                /* Verify that the mode is indeed changed. */
-                                if (   devMode.dmPelsWidth  == displayChangeRequest.xres
-                                    && devMode.dmPelsHeight == displayChangeRequest.yres
-                                    && devMode.dmBitsPerPel == displayChangeRequest.bpp)
-                                {
-                                    LogFlowFunc(("already at desired resolution\n"));
-                                    break;
-                                }
-
-                                // without this, Windows will not ask the miniport for its
-                                // mode table but uses an internal cache instead
-                                DEVMODE tempDevMode = {0};
-                                tempDevMode.dmSize = sizeof(DEVMODE);
-                                EnumDisplaySettings(NULL, 0xffffff, &tempDevMode);
-
-                                /* adjust the values that are supposed to change */
-                                if (displayChangeRequest.xres)
-                                    devMode.dmPelsWidth  = displayChangeRequest.xres;
-                                if (displayChangeRequest.yres)
-                                    devMode.dmPelsHeight = displayChangeRequest.yres;
-                                if (displayChangeRequest.bpp)
-                                    devMode.dmBitsPerPel = displayChangeRequest.bpp;
-
-                                LogFlowFunc(("setting new mode %d x %d, %d BPP\n",
-                                                devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel));
-
-                                /* set the new mode */
-                                LONG status = ChangeDisplaySettings(&devMode, CDS_UPDATEREGISTRY);
-                                if (status != DISP_CHANGE_SUCCESSFUL)
-                                {
-                                    LogFlowFunc(("error from ChangeDisplaySettings: %d\n", status));
-
-                                    if (status == DISP_CHANGE_BADMODE)
-                                    {
-                                        /* Our driver can not set the requested mode. Stop trying. */
-                                        break;
-                                    }
-                                }
-                                else
-                                {
-                                    /* Successfully set new video mode. */
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                LogFlowFunc(("error from EnumDisplaySettings: %d\n", GetLastError ()));
-                                break;
-                            }
+                            ResizeDisplayDeviceNT4(
+                                displayChangeRequest.xres,
+                                displayChangeRequest.yres,
+                                displayChangeRequest.bpp);
+                            break;
                         }
   
                         /* Retry the change a bit later. */
                         RTThreadSleep(1000);
                     }
                 }
-                else
-                {
-                    /* sleep a bit to not eat too much CPU while retrying */
-                    RTThreadSleep(50);
-                }
-            }
-
-            /* are we supposed to stop? */
-            if (*pfShutdown)
-                break;
+            } // if (fDisplayChangeQueried)
 
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED)
                 hlpReloadCursor();
@@ -993,9 +981,6 @@ DECLCALLBACK(int) VBoxDisplayWorker(void *pInstance, bool volatile *pfShutdown)
             }
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             RTThreadSleep(10);
-
-            if (*pfShutdown)
-                break;
         }
     }
 
