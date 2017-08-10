@@ -229,7 +229,7 @@ void UIToolsPaneMachine::retranslateUi()
     }
     else
     {
-        m_pPaneDesktop->setToolsPaneIcon(UIIconPool::iconSet(":/tools_200px.png"));
+        m_pPaneDesktop->setToolsPaneIcon(UIIconPool::iconSet(":/tools_banner_machine_200px.png"));
         m_pPaneDesktop->setToolsPaneText(
             tr("<h3>Welcome to VirtualBox!</h3>"
                "<p>The left part of this window is a list of all virtual "

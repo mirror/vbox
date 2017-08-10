@@ -176,7 +176,7 @@ void UIToolsPaneGlobal::setDetailsError(const QString &strError)
 void UIToolsPaneGlobal::retranslateUi()
 {
     /* Translate Global Tools welcome screen: */
-    m_pPaneDesktop->setToolsPaneIcon(UIIconPool::iconSet(":/tools_200px.png"));
+    m_pPaneDesktop->setToolsPaneIcon(UIIconPool::iconSet(":/tools_banner_global_200px.png"));
     m_pPaneDesktop->setToolsPaneText(
         tr("<h3>Welcome to VirtualBox!</h3>"
            "<p>This window represents a set of global tools "
