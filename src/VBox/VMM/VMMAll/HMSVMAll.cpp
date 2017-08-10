@@ -341,26 +341,25 @@ VMM_INT_DECL(bool) HMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, 
  */
 VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst)
 {
-    PSVMVMCBCTRL        pVmcbCtrl        = &pVmcbNstGst->ctrl;
-    PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
-
     /*
      * Restore the nested-guest VMCB fields which have been modified for executing
      * the nested-guest under SVM R0.
      */
+    PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     if (pNstGstVmcbCache->fValid)
     {
-        pVmcbCtrl->u16InterceptRdCRx        = pNstGstVmcbCache->u16InterceptRdCRx;
-        pVmcbCtrl->u16InterceptWrCRx        = pNstGstVmcbCache->u16InterceptWrCRx;
-        pVmcbCtrl->u16InterceptRdCRx        = pNstGstVmcbCache->u16InterceptRdCRx;
-        pVmcbCtrl->u16InterceptWrDRx        = pNstGstVmcbCache->u16InterceptWrDRx;
-        pVmcbCtrl->u32InterceptXcpt         = pNstGstVmcbCache->u32InterceptXcpt;
-        pVmcbCtrl->u64InterceptCtrl         = pNstGstVmcbCache->u64InterceptCtrl;
-        pVmcbCtrl->u64VmcbCleanBits         = pNstGstVmcbCache->u64VmcbCleanBits;
-        pVmcbCtrl->u64IOPMPhysAddr          = pNstGstVmcbCache->u64IOPMPhysAddr;
-        pVmcbCtrl->u64MSRPMPhysAddr         = pNstGstVmcbCache->u64MSRPMPhysAddr;
-        pVmcbCtrl->IntCtrl.n.u1VIntrMasking = pNstGstVmcbCache->fVIntrMasking;
-        pVmcbCtrl->TLBCtrl                  = pNstGstVmcbCache->TLBCtrl;
+        PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
+        pVmcbNstGstCtrl->u16InterceptRdCRx        = pNstGstVmcbCache->u16InterceptRdCRx;
+        pVmcbNstGstCtrl->u16InterceptWrCRx        = pNstGstVmcbCache->u16InterceptWrCRx;
+        pVmcbNstGstCtrl->u16InterceptRdCRx        = pNstGstVmcbCache->u16InterceptRdCRx;
+        pVmcbNstGstCtrl->u16InterceptWrDRx        = pNstGstVmcbCache->u16InterceptWrDRx;
+        pVmcbNstGstCtrl->u32InterceptXcpt         = pNstGstVmcbCache->u32InterceptXcpt;
+        pVmcbNstGstCtrl->u64InterceptCtrl         = pNstGstVmcbCache->u64InterceptCtrl;
+        pVmcbNstGstCtrl->u64VmcbCleanBits         = pNstGstVmcbCache->u64VmcbCleanBits;
+        pVmcbNstGstCtrl->u64IOPMPhysAddr          = pNstGstVmcbCache->u64IOPMPhysAddr;
+        pVmcbNstGstCtrl->u64MSRPMPhysAddr         = pNstGstVmcbCache->u64MSRPMPhysAddr;
+        pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking = pNstGstVmcbCache->fVIntrMasking;
+        pVmcbNstGstCtrl->TLBCtrl                  = pNstGstVmcbCache->TLBCtrl;
         pNstGstVmcbCache->fValid = false;
     }
     pNstGstVmcbCache->fVmrunEmulatedInR0 = false;
