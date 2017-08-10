@@ -590,9 +590,10 @@ static VOID vboxDispIfOpEnd(VBOXDISPIF_OP *pOp)
  * with WDDM we can not use ExtEscape to communicate with our driver
  * because we do not have XPDM display driver any more, i.e. escape requests are handled by cdd
  * that knows nothing about us */
-DWORD VBoxDispIfInit(PVBOXDISPIF pIf)
+DWORD VBoxDispIfInit(PVBOXDISPIF pDispIf)
 {
-    pIf->enmMode = VBOXDISPIF_MODE_XPDM;
+    VBoxDispIfSwitchMode(pDispIf, VBOXDISPIF_MODE_XPDM, NULL);
+
     return NO_ERROR;
 }
 
