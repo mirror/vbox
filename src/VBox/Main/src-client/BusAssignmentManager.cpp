@@ -46,6 +46,10 @@ struct DeviceAliasRule
 };
 
 /* Those rules define PCI slots assignment */
+/** @note
+ * The EFI takes assumptions about PCI slot assignments which are different
+ * from the following tables in certain cases, for example the IDE device
+ * is assumed to be 00:01.1! */
 
 /* Device           Bus  Device Function Priority */
 
