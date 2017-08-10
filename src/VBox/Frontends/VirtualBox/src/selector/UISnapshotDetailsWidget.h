@@ -29,6 +29,7 @@
 #include "CSnapshot.h"
 
 /* Forward declarations: */
+class CNetworkAdapter;
 class QGridLayout;
 class QLabel;
 class QLineEdit;
@@ -142,6 +143,9 @@ private:
 
     /** Returns a details report on a given @a comMachine. */
     QString detailsReport(const CMachine &comMachine, DetailsElementType enmType);
+
+    /** Summarizes generic properties. */
+    static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
 
     /** Holds the snapshot object to load data from. */
     CSnapshot  m_comSnapshot;
