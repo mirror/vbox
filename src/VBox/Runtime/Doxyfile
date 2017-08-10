@@ -242,6 +242,13 @@ ALIASES                = "note=@remark" \
                          "ticketref{3}=http://www.virtualbox.org/ticket/\1, http://www.virtualbox.org/ticket/\2, http://www.virtualbox.org/ticket/\3" \
                          "ticketref{4}=http://www.virtualbox.org/ticket/\1, http://www.virtualbox.org/ticket/\2, http://www.virtualbox.org/ticket/\3, http://www.virtualbox.org/ticket/\4"
 
+# UDF spec reference - 1=section, 2=page
+ALIASES += udf260{2}="<a href=\"http://www.osta.org/specs/pdf/udf260.pdf#page=\2\">UDF-2.60:\1</a>"
+# Generic ECMA spec reference - 1=spec-number 2=section, 3=page
+ALIASES += ecma{3}="<a href=\"https://www.ecma-international.org/publications/files/ECMA-ST/Ecma-\1.pdf#page=\3\">ECMA-\1:\2</a>"
+# ECMA-167 spec reference - 1=part 2=section, 3=page
+ALIASES += ecma167{3}=\ecma{167,Part\1/\2,\3}
+
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding "class=itcl::class"
 # will allow you to use the command class in the itcl::class meaning.
