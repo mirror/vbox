@@ -204,20 +204,11 @@ BLDDIRS += $(VBOX_PATH_MANUAL_OUTBASE) $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/,
 
 if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
  if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_DOCS_SDKREF)
-  INSTALLS += VBox-sdkref-docs
-  VBox-sdkref-docs_INST = $(INST_SDK)docs/
-  VBox-sdkref-docs_MODE = a+r,u+w
-  VBox-sdkref-docs_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.pdf
-  VBox-sdkref-docs_CLEAN = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.pdf
+  INSTALLS += VBox-docs-sdkref
  endif
 
  ifdef VBOX_WITH_DOCS_CHM
-  INSTALLS += VBox-usermanual-chm-docs
-  VBox-usermanual-chm-docs_INST = $(INST_BIN)
-  VBox-usermanual-chm-docs_MODE = a+r,u+w
-  VBox-usermanual-chm-docs_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.chm
-  VBox-usermanual-chm-docs_CLEAN = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.chm
-
+  INSTALLS += VBox-docs-usermanual-chm
   VBOX_PATH_BIN_CHM = $(PATH_STAGE_BIN)/VirtualBox.chm
  else  # Do not build chm.
   VBOX_PATH_BIN_CHM =
@@ -227,31 +218,25 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   VBOX_MANUAL_PACK += \
   		$(PATH_STAGE_BIN)/UserManual.pdf \
   		$(VBOX_PATH_BIN_CHM)
-  INSTALLS += VBox-usermanual-docs
-  VBox-usermanual-docs_INST = $(INST_BIN)
-  VBox-usermanual-docs_MODE = a+r,u+w
-  VBox-usermanual-docs_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf
-  VBox-usermanual-docs_CLEAN = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf
+  INSTALLS += VBox-docs-usermanual
 
   ifdef VBOX_WITH_DOCS_TRANSLATIONS
-   INSTALLS += VBox-usermanual-add-docs
-   VBox-usermanual-add-docs_INST = $(INST_BIN)
-   VBox-usermanual-add-docs_MODE = a+r,u+w
-   VBox-usermanual-add-docs_SOURCES = $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(f)/UserManual.pdf=>UserManual_$(f).pdf)
-   VBox-usermanual-add-docs_CLEAN = $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(f)/UserManual.pdf)
+   INSTALLS += VBox-docs-usermanual-l10n
    VBOX_MANUAL_PACK += \
  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf)
    ifdef VBOX_WITH_DOCS_CHM
-    INSTALLS += VBox-usermanual-add-chm-docs
-   VBox-usermanual-add-chm-docs_INST = $(INST_BIN)
-   VBox-usermanual-add-chm-docs_MODE = a+r,u+w
-   VBox-usermanual-add-chm-docs_SOURCES = $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(f)/VirtualBox.chm=>VirtualBox_$(f).chm)
-   VBox-usermanual-add-chm-docs_CLEAN = $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(f)/VirtualBox.chm)
+    INSTALLS += VBox-docs-usermanual-l10n-chm
     VBOX_MANUAL_PACK += \
  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm)
    endif
   endif
  endif # !VBOX_ONLY_SDK
+
+ ifdef VBOX_WITH_DOCS_ACCESSIBILITY
+  INSTALLS += VBox-docs-accessibility
+  INSTALLS += VBox-docs-accessibility-html
+ endif
+
  ifdef VBOX_ONLY_DOCS
   PACKING += $(PATH_STAGE_BIN)/VBoxDocumentation.zip
  endif
@@ -289,6 +274,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  VBOX_SDKREF_XML_FILES = \
  	SDKRef.xml
 
+ VBOX_ACCESSIBILITY_XML_FILES = \
+ 	Accessibility.xml
+
  # Wildcard the images path for every supported language
  $(foreach f,$(VBOX_MANUAL_LANGUAGES), \
  	$(eval VBOX_MANUAL_PNG_FILES_$$(f) := $$(patsubst $$(VBOX_PATH_MANUAL_SRC)/$$(f)/%,%,$$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$$(f)/images/*.png))))
@@ -302,6 +290,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  VBOX_SDKREF_LATEX_FILES_TARGET = \
  	$(addprefix SDKRef.,aux log out toc tex)
 
+ VBOX_ACCESSIBILITY_LATEX_FILES_TARGET = \
+ 	$(addprefix Accessibility.,aux log out toc tex)
+
  BLDDIRS += \
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/,\
  		$(addsuffix /images, $(VBOX_MANUAL_LANGUAGES)) \
@@ -311,6 +302,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$(addsuffix /HTMLHelp/images, $(VBOX_MANUAL_LANGUAGES)) \
  	)
 
+ # Explicit cleaning has some overlap with default cleaning rules, since this
+ # Makefile is using very complex conditionals for selectively creating
+ # specific files, and not everyone remembers to use the same with "kmk clean".
  OTHER_CLEAN += \
  	$(VBOX_XML_CATALOG) \
  	$(VBOX_XML_CATALOG_DOCBOOK) \
@@ -339,22 +333,88 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
                HTMLHelp/toc.hhc \
                HTMLHelp/htmlhelp.hhp \
  		titlepage-htmlhelp.xsl \
+		UserManual.pdf \
+		VirtualBox.chm \
 		ChangeLog.html \
 		validatemanual.run \
 		)) \
  	$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG) \
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
  	$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml \
-       \
+	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf) \
+	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm) \
+	$(PATH_STAGE_BIN)/UserManual.pdf \
+	$(PATH_STAGE_BIN)/VirtualBox.chm \
+	\
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/, \
 		$(VBOX_SDKREF_XML_FILES) \
 		$(VBOX_SDKREF_LATEX_FILES_TARGET) \
+		SDKRef.pdf \
 		) \
+    $(PATH_STAGE_BIN)/sdk/docs/SDKRef.pdf \
+	\
+ 	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/, \
+		$(VBOX_ACCESSIBILITY_XML_FILES) \
+		$(VBOX_ACCESSIBILITY_LATEX_FILES_TARGET) \
+		html-single/Accessibility.html \
+		Accessibility.pdf \
+		) \
+	$(PATH_STAGE_BIN)/Accessibility.html \
+	$(PATH_STAGE_BIN)/Accessibility.pdf \
+	\
 	$(VBOX_DOC_XIDL_SRC_TMP) \
 	$(VBOX_MANUAL_APIREF_TMP)
 
 endif # if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
 
+#
+# target for installing UserManual.pdf
+#
+VBox-docs-usermanual_INST = $(INST_BIN)
+VBox-docs-usermanual_MODE = a+r,u+w
+VBox-docs-usermanual_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf
+
+#
+# target for installing translated UserManual_*.pdf
+#
+VBox-docs-usermanual-l10n_INST = $(INST_BIN)
+VBox-docs-usermanual-l10n_MODE = a+r,u+w
+VBox-docs-usermanual-l10n_SOURCES = $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(f)/UserManual.pdf=>UserManual_$(f).pdf)
+
+#
+# target for installing VirtualBox.chm
+#
+VBox-docs-usermanual-chm_INST = $(INST_BIN)
+VBox-docs-usermanual-chm_MODE = a+r,u+w
+VBox-docs-usermanual-chm_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.chm
+
+#
+# target for installing translated VirtualBox_*.chm
+#
+VBox-docs-usermanual-l10n-chm_INST = $(INST_BIN)
+VBox-docs-usermanual-l10n-chm_MODE = a+r,u+w
+VBox-docs-usermanual-l10n-chm_SOURCES = $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(f)/VirtualBox.chm=>VirtualBox_$(f).chm)
+
+#
+# target for installing SDKRef.pdf
+#
+VBox-docs-sdkref_INST = $(INST_SDK)docs/
+VBox-docs-sdkref_MODE = a+r,u+w
+VBox-docs-sdkref_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.pdf
+
+#
+# target for installing Accessibility.pdf
+#
+VBox-docs-accessibility_INST = $(INST_BIN)
+VBox-docs-accessibility_MODE = a+r,u+w
+VBox-docs-accessibility_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/Accessibility.pdf
+
+#
+# target for installing Accessibility.html
+#
+VBox-docs-accessibility-html_INST = $(INST_BIN)
+VBox-docs-accessibility-html_MODE = a+r,u+w
+VBox-docs-accessibility-html_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/Accessibility.html
 
 
 #
@@ -671,7 +731,6 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.pdf: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex \
 		$(if $(VBOX_OSE),,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/ucs.sty) \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) | $$(dir $$@)
-	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/docs
 	$(call MSG_L1,pdflatex $< (three passes))
 	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) SDKRef.tex
 	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) SDKRef.tex
@@ -686,6 +745,68 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.pdf: \
 # Handy aliases.
 validate-sdkref:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.xml
 sdkref:: $(VBOX_PATH_SDK)/docs/SDKRef.pdf
+
+
+
+#
+# Accessibility.pdf
+#
+
+$(evalcall2 def_vbox_replace_stuff_in_xml,/en_US/Accessibility.xml,/en_US)
+
+# Turn Accessibility.xml into latex.
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/Accessibility.tex: \
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_ACCESSIBILITY_XML_FILES)) \
+		$(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl \
+		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_TOOL,xsltproc $(notdir $(filter %.xsl,$^)),,$(firstword $(filter %.xml,$^)),$@)
+	$(QUIET)$(RM) -f $(addprefix $(@D/),$(VBOX_ACCESSIBILITY_LATEX_FILES_TARGET))
+#	check it for validity first.
+ifdef VBOX_HAVE_XMLLINT
+	$(QUIET)$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd $<
+endif
+#	generate TeX source from processed docbook and store it in Accessibility.tex.tmp
+	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) --stringparam TARGETLANG en_US \
+		-o $@.tmp $(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $<
+#	for pretty quotes, replace " with `` or '' depending on whether it's at the start of a word;
+#   the \QUOTE{} was inserted by docbook2latex.xsl for all quotes _outside_ of screen sections
+	$(QUIET)$(SED) \
+		-e 's|^\\QUOTE{}|\\OQ{}|g' \
+		-e 's|\(\W\)\\QUOTE{}|\1\\OQ{}|g' \
+		-e 's|\(\w\)\\QUOTE{}|\1\\CQ{}|g' \
+		--output $@ $@.tmp
+	$(QUIET)$(RM) -f $@.tmp
+
+# Turn Accessibility.tex into a PDF.
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/Accessibility.pdf: \
+		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/Accessibility.tex \
+		$(if $(VBOX_OSE),,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/ucs.sty) \
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) | $$(dir $$@)
+	$(call MSG_L1,pdflatex $< (three passes))
+	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) Accessibility.tex
+	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) Accessibility.tex
+	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) Accessibility.tex
+	$(QUIET)$(SED) -ne '/Warning: Hyper reference/p' $(basename $<).log
+	$(QUIET)$(SED) -n \
+		-e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
+		$(basename $<).log
+	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
+
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/Accessibility.html: \
+		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl \
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_ACCESSIBILITY_XML_FILES)) \
+		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,xsltproc $(notdir $(firstword $(filter %.xsl,$^))),,$(firstword $(filter %.xml,$^)),$@)
+	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) \
+		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/Accessibility.html \
+		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl \
+		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/Accessibility.xml
+
+# Handy aliases.
+validate-accessibility:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/Accessibility.xml
+accessibility:: $(PATH_STAGE_BIN)/Accessibility.pdf
+accessibility-html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/Accessibility.html
 
 
 ifdef VBOX_WITH_DOCS_CHM
@@ -837,7 +958,7 @@ endif # if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX
 
 
 #
-# VBoxManage man pages (parts also required by VBoxManage build-in help).
+# VBoxManage man pages (parts also required by VBoxManage built-in help).
 #
 $(evalcall2 def_vbox_replace_paths_in_xslt,docbook-refentry-to-manpage.xsl,)
 

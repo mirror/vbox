@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+"http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<book>
+  <bookinfo>
+    <title>@VBOX_PRODUCT@<superscript>®</superscript></title>
+
+    <subtitle>Accessibility Reference</subtitle>
+
+    <edition>Version @VBOX_VERSION_STRING@</edition>
+
+    <corpauthor>@VBOX_VENDOR@</corpauthor>
+
+    <address>http://www.virtualbox.org</address>
+
+    <copyright>
+      <year>2016-@VBOX_C_YEAR@</year>
+
+      <holder>@VBOX_VENDOR@</holder>
+    </copyright>
+  </bookinfo>
+
+  <chapter>
+    <title>Introduction</title>
+
+    <para>Add text here.</para>
+
+    <sect1>
+      <title>Sample section</title>
+
+      <para>Add more text.</para>
+    </sect1>
+  </chapter>
+</book>
+<!-- vim: set shiftwidth=2 tabstop=2 expandtab: -->
