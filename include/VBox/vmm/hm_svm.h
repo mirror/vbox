@@ -967,6 +967,7 @@ AssertCompileSize(SVMVMCB, 0x1000);
  *  A state structure for holding information across AMD-V VMRUN/\#VMEXIT
  *  operation during execution of the nested-guest, restored on \#VMEXIT.
  */
+#pragma pack(1)
 typedef struct SVMNESTEDVMCBCACHE
 {
     /** @name Nested-guest VMCB controls.
@@ -981,6 +982,9 @@ typedef struct SVMNESTEDVMCBCACHE
     uint16_t            u16InterceptWrDRx;
     /** Cache of exception intercepts. */
     uint32_t            u32InterceptXcpt;
+    /** Alignment. */
+    uint32_t            u32Padding0;
+
     /** Cache of control intercepts. */
     uint64_t            u64InterceptCtrl;
     /** Cache of IOPM nested-guest physical address. */
@@ -989,6 +993,8 @@ typedef struct SVMNESTEDVMCBCACHE
     uint64_t            u64MSRPMPhysAddr;
     /** Cache of the VMCB clean bits. */
     uint64_t            u64VmcbCleanBits;
+    /** Cache of the TLB control. */
+    SVMTLBCTRL          TLBCtrl;
     /** Cache of V_INTR_MASKING bit. */
     bool                fVIntrMasking;
     /** @} */
@@ -1002,13 +1008,18 @@ typedef struct SVMNESTEDVMCBCACHE
     /** Whether the VMCB exit code and info fields are updated during \#VMEXIT
      *  processing. */
     bool                fExitCodeAndInfoUpdated;
+    /** Alignment. */
+    bool                afPadding0[4];
     /** @} */
 } SVMNESTEDVMCBCACHE;
+#pragma pack()
 /** Pointer to the SVMNESTEDVMCBCACHE structure. */
 typedef SVMNESTEDVMCBCACHE *PSVMNESTEDVMCBCACHE;
 /** Pointer to a const SVMNESTEDVMCBCACHE structure. */
 typedef const SVMNESTEDVMCBCACHE *PCSVMNESTEDVMCBCACHE;
 /** @} */
+AssertCompileMemberAlignment(SVMNESTEDVMCBCACHE, fVIntrMasking, 8);
+AssertCompileSizeAlignment(SVMNESTEDVMCBCACHE, 8);
 
 #ifdef IN_RING0
 VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);

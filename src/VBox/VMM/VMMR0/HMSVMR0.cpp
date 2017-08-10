@@ -408,7 +408,7 @@ VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, R
     pCpu->fFlushAsidBeforeUse = true;
 
     /*
-     * Ensure each VCPU scheduled on this CPU gets a new VPID on resume. See @bugref{6255}.
+     * Ensure each VCPU scheduled on this CPU gets a new ASID on resume. See @bugref{6255}.
      */
     ++pCpu->cTlbFlushes;
 
@@ -876,12 +876,13 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
 /**
  * Flushes the appropriate tagged-TLB entries.
  *
- * @param    pVCpu      The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pCtx    Pointer to the guest-CPU or nested-guest-CPU context.
+ * @param   pVmcb   Pointer to the VM control block.
  */
-static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
+static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
 {
-    PVM pVM              = pVCpu->CTX_SUFF(pVM);
-    PSVMVMCB pVmcb       = pVCpu->hm.s.svm.pVmcb;
+    PVM pVM               = pVCpu->CTX_SUFF(pVM);
     PHMGLOBALCPUINFO pCpu = hmR0GetCurrentCpu();
 
     /*
@@ -910,7 +911,23 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
     }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    /*
+     * Only if the nested hypervisor says it does not need to flush anything in the TLB,
+     * can we possibly apply it on the host. Otherwise, the nested-guest TLB flush setting
+     * should be used and then the host settings be added on top.
+     */
+    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+    {
+        PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+        if (pVmcbNstGstCache->TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_NOTHING)
+            pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_NOTHING;
+        else
+            pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = pVmcbNstGstCache->TLBCtrl.n.u8TLBFlush;
+    }
+#else
     pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_NOTHING;
+#endif
 
     if (pVM->hm.s.svm.fAlwaysFlushTLB)
     {
@@ -940,9 +957,9 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
             bool fHitASIDLimit = false;
             if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
             {
-                pCpu->uCurrentAsid        = 1;      /* Wraparound at 1; host uses 0 */
-                pCpu->cTlbFlushes++;                /* All VCPUs that run on this host CPU must use a new VPID. */
-                fHitASIDLimit             = true;
+                pCpu->uCurrentAsid = 1;      /* Wraparound at 1; host uses 0 */
+                pCpu->cTlbFlushes++;         /* All VCPUs that run on this host CPU must use a new ASID. */
+                fHitASIDLimit      = true;
 
                 if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
                 {
@@ -989,6 +1006,10 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
         pVmcb->ctrl.TLBCtrl.n.u32ASID = pVCpu->hm.s.uCurrentAsid;
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_ASID;
     }
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    Assert(pVmcb->ctrl.TLBCtrl.n.u8TLBFlush != SVM_TLB_FLUSH_NOTHING);
+#endif
 
     AssertMsg(pVCpu->hm.s.idLastCpu == pCpu->idCpu,
               ("vcpu idLastCpu=%u pcpu idCpu=%u\n", pVCpu->hm.s.idLastCpu, pCpu->idCpu));
@@ -2014,6 +2035,7 @@ static void hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
     pNstGstVmcbCache->u64MSRPMPhysAddr  = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
     pNstGstVmcbCache->u64VmcbCleanBits  = pVmcbNstGstCtrl->u64VmcbCleanBits;
     pNstGstVmcbCache->fVIntrMasking     = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
+    pNstGstVmcbCache->TLBCtrl           = pVmcbNstGstCtrl->TLBCtrl;
     pNstGstVmcbCache->fValid            = true;
 }
 
@@ -3128,25 +3150,25 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!pVCpu->hm.s.Event.fPending);
     Log4Func(("\n"));
 
-    bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu, pCtx);
-    bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
-    bool const fBlockNmi  = VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS);
 #ifdef VBOX_WITH_NESTED_HWVIRT
-    bool const fGlobalIF  = pCtx->hwvirt.svm.fGif
+    bool const fGif       = pCtx->hwvirt.svm.fGif;
 #else
-    bool const fGlobalIF  = true;
+    bool const fGif       = true;
 #endif
-    PSVMVMCB pVmcb        = pVCpu->hm.s.svm.pVmcb;
-
-    SVMEVENT Event;
-    Event.u = 0;
-
     /*
-     * If the global interrupt flag (GIF) isn't set, even NMIs are blocked.
-     * Only relevant when SVM capability is exposed to the guest.
+     * If the global interrupt flag (GIF) isn't set, even NMIs and other events are blocked.
+     * See AMD spec. Table 15-10. "Effect of the GIF on Interrupt Handling".
      */
-    if (fGlobalIF)
+    if (fGif)
     {
+        bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu, pCtx);
+        bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
+        bool const fBlockNmi  = VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        PSVMVMCB pVmcb        = pVCpu->hm.s.svm.pVmcb;
+
+        SVMEVENT Event;
+        Event.u = 0;
+
         /** @todo SMI. SMIs take priority over NMIs. */
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))   /* NMI. NMIs take priority over regular interrupts. */
         {
@@ -3210,8 +3232,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
- * Injects any pending events into the guest if the guest is in a state to
- * receive them.
+ * Injects any pending events into the guest or nested-guest.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
@@ -3223,14 +3244,23 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmc
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
     bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu, pCtx);
+
+    /*
+     * When executing the nested-guest, we avoid assertions on whether the
+     * event injection is valid purely based on EFLAGS, as V_INTR_MASKING
+     * affects the interpretation of interruptibility (see CPUMCanSvmNstGstTakePhysIntr).
+     */
+#ifndef VBOX_WITH_NESTED_HWVIRT
     bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
+#endif
 
     if (pVCpu->hm.s.Event.fPending)                                /* First, inject any pending HM events. */
     {
         SVMEVENT Event;
         Event.u = pVCpu->hm.s.Event.u64IntInfo;
-
         Assert(Event.n.u1Valid);
+
+#ifndef VBOX_WITH_NESTED_HWVIRT
         if (Event.n.u3Type == SVM_EVENT_EXTERNAL_IRQ)
         {
             Assert(!fBlockInt);
@@ -3239,6 +3269,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmc
         else if (Event.n.u3Type == SVM_EVENT_NMI)
             Assert(!fIntShadow);
         NOREF(fBlockInt);
+#endif
 
         Log4(("Injecting pending HM event\n"));
         hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
@@ -3252,7 +3283,12 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmc
 #endif
     }
 
-    /* Update the guest interrupt shadow in the VMCB. */
+    /*
+     * Update the guest interrupt shadow in the guest or nested-guest VMCB.
+     *
+     * For nested-guests: We need to update it too for the scenario where IEM executes
+     * the nested-guest but execution later continues here with an interrupt shadow active.
+     */
     pVmcb->ctrl.u64IntShadow = !!fIntShadow;
 }
 
@@ -3813,6 +3849,7 @@ static void hmR0SvmPreRunGuestCommittedNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
 
     /* The TLB flushing would've already been setup by the nested-hypervisor. */
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
+    hmR0SvmFlushTaggedTlb(pVCpu, pCtx, pVmcbNstGst);
     Assert(hmR0GetCurrentCpu()->idCpu == pVCpu->hm.s.idLastCpu);
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
@@ -3923,7 +3960,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
 
     /* Flush the appropriate tagged-TLB entries. */
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
-    hmR0SvmFlushTaggedTlb(pVCpu);
+    hmR0SvmFlushTaggedTlb(pVCpu, pCtx, pVmcb);
     Assert(hmR0GetCurrentCpu()->idCpu == pVCpu->hm.s.idLastCpu);
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
@@ -5741,6 +5778,9 @@ static int hmR0SvmExecVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
     PSVMVMCB pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     HMSvmNstGstVmExitNotify(pVCpu, pVmcbNstGst);
 
+    Log4(("hmR0SvmExecVmexit: uExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", pVmcbNstGst->ctrl.u64ExitCode,
+          pVmcbNstGst->ctrl.u64ExitInfo1, pVmcbNstGst->ctrl.u64ExitInfo2));
+
     /*
      * Write the nested-guest VMCB back to nested-guest memory.
      */
@@ -5759,15 +5799,19 @@ static int hmR0SvmExecVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
      * things up that are required for executing the nested-guest using hardware-assisted SVM.
      */
     pVCpu->hm.s.svm.NstGstVmcbCache.fVmrunEmulatedInR0 = false;
+    HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 
     if (RT_SUCCESS(rc))
     {
         rc = hmR0SvmNstGstWorldSwitch(pVCpu, pCtx);
         if (rc == VINF_SUCCESS)
             rc = VINF_SVM_VMEXIT;
-    }
 
-    Log(("hmR0SvmExecVmexit: Failed to write guest-VMCB at %#RGp\n", GCPhysVmcb));
+        Log4(("hmR0SvmExecVmexit: #VMEXIT success! rc=%d\n", rc));
+    }
+    else
+        Log(("hmR0SvmExecVmexit: Failed to write guest-VMCB at %#RGp, rc=%d\n", GCPhysVmcb, rc));
+
     return rc;
 }
 
@@ -5885,7 +5929,7 @@ static int hmR0SvmExecVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPhysVmcb, ui
                                          &uValidEfer);
         if (RT_FAILURE(rc))
         {
-            Log(("iemSvmVmrun: EFER invalid uOldEfer=%#RX64 -> #VMEXIT\n", pVmcbNstGstState->u64EFER));
+            Log(("hmR0SvmExecVmrun: EFER invalid uOldEfer=%#RX64 -> #VMEXIT\n", pVmcbNstGstState->u64EFER));
             pVmcbNstGstCtrl->u64ExitCode = SVM_EXIT_INVALID;
             return hmR0SvmExecVmexit(pVCpu, pCtx);
         }
