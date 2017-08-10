@@ -95,11 +95,6 @@ DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExitCode, uint64_t uExitInfo1, uint64_t uExitInfo2)
 {
-#ifndef IN_RING3
-    RT_NOREF(pVCpu, pCtx, uExitCode, uExitInfo1, uExitInfo2);
-    AssertMsgFailed(("iemSvmVmexit: Bad context\n"));
-    return VERR_INTERNAL_ERROR_5;
-#else
     if (   CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
         || uExitCode == SVM_EXIT_INVALID)
     {
@@ -260,7 +255,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
          uExitInfo1, uExitInfo2));
     AssertMsgFailed(("iemSvmVmexit: Unexpected SVM-exit failure uExitCode=%#RX64\n", uExitCode));
     return VERR_SVM_IPE_5;
-#endif
 }
 
 
@@ -281,10 +275,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
  */
 IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr, RTGCPHYS GCPhysVmcb)
 {
-#ifndef IN_RING3
-    RT_NOREF(pVCpu, pCtx, cbInstr, GCPhysVmcb);
-    return VINF_EM_RESCHEDULE_REM;
-#else
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     LogFlow(("iemSvmVmrun\n"));
 
@@ -636,7 +626,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
     /* Shouldn't really happen as the caller should've validated the physical address already. */
     Log(("iemSvmVmrun: Failed to read nested-guest VMCB at %#RGp (rc=%Rrc) -> #VMEXIT\n", GCPhysVmcb, rc));
     return rc;
-#endif
 }
 
 
@@ -933,7 +922,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
 
     Log3(("iemSvmHandleIOIntercept: u16Port=%#x (%u)\n", u16Port, u16Port));
 
-#if 1
     SVMIOIOEXITINFO IoExitInfo;
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     void *pvIoBitmap = pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
@@ -944,52 +932,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
         Log3(("iemSvmHandleIOIntercept: u16Port=%#x (%u) -> #VMEXIT\n", u16Port, u16Port));
         return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_IOIO, IoExitInfo.u, pCtx->rip + cbInstr);
     }
-#else
-    /*
-     * The IOPM layout:
-     * Each bit represents one 8-bit port. That makes a total of 0..65535 bits or
-     * two 4K pages.
-     *
-     * For IO instructions that access more than a single byte, the permission bits
-     * for all bytes are checked; if any bit is set to 1, the IO access is intercepted.
-     *
-     * Since it's possible to do a 32-bit IO access at port 65534 (accessing 4 bytes),
-     * we need 3 extra bits beyond the second 4K page.
-     */
-    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
-    static const uint16_t s_auSizeMasks[] = { 0, 1, 3, 0, 0xf, 0, 0, 0 };
-
-    uint16_t const offIopm   = u16Port >> 3;
-    uint16_t const fSizeMask = s_auSizeMasks[(cAddrSizeBits >> SVM_IOIO_OP_SIZE_SHIFT) & 7];
-    uint8_t  const cShift    = u16Port - (offIopm << 3);
-    uint16_t const fIopmMask = (1 << cShift) | (fSizeMask << cShift);
-
-    uint8_t const *pbIopm = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
-    Assert(pbIopm);
-    pbIopm += offIopm;
-    uint16_t const u16Iopm = *(uint16_t *)pbIopm;
-    if (u16Iopm & fIopmMask)
-    {
-        static const uint32_t s_auIoOpSize[] =
-        { SVM_IOIO_32_BIT_OP, SVM_IOIO_8_BIT_OP, SVM_IOIO_16_BIT_OP, 0, SVM_IOIO_32_BIT_OP, 0, 0, 0 };
-
-        static const uint32_t s_auIoAddrSize[] =
-        { 0, SVM_IOIO_16_BIT_ADDR, SVM_IOIO_32_BIT_ADDR, 0, SVM_IOIO_64_BIT_ADDR, 0, 0, 0 };
-
-        SVMIOIOEXITINFO IoExitInfo;
-        IoExitInfo.u         = s_auIoOpSize[cbReg & 7];
-        IoExitInfo.u        |= s_auIoAddrSize[(cAddrSizeBits >> 4) & 7];
-        IoExitInfo.n.u1STR   = iemSvmVmexitfStrIo;
-        IoExitInfo.n.u1REP   = fRep;
-        IoExitInfo.n.u3SEG   = iEffSeg & 7;
-        IoExitInfo.n.u1Type  = enmIoType;
-        IoExitInfo.n.u16Port = u16Port;
-
-        Log3(("iemSvmHandleIOIntercept: u16Port=%#x (%u) offIoPm=%u fSizeMask=%#x cShift=%u fIopmMask=%#x -> #VMEXIT\n",
-              u16Port, u16Port, offIopm, fSizeMask, cShift, fIopmMask));
-        return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_IOIO, IoExitInfo.u, pCtx->rip + cbInstr);
-    }
-#endif
 
     /** @todo remove later (for debugging as VirtualBox always traps all IO
      *        intercepts). */
@@ -1065,9 +1007,9 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, ui
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmrun)
 {
-#ifndef IN_RING3
+#if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
     RT_NOREF2(pVCpu, cbInstr);
-    return VINF_EM_RESCHEDULE_REM;
+    return VINF_EM_RAW_EMULATE_INSTR;
 #else
     LogFlow(("iemCImpl_vmrun\n"));
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
@@ -1128,7 +1070,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmmcall)
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmload)
 {
-#ifndef IN_RING3
+#if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
     RT_NOREF2(pVCpu, cbInstr);
     return VINF_EM_RAW_EMULATE_INSTR;
 #else
@@ -1183,7 +1125,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmsave)
 {
-#ifndef IN_RING3
+#if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
     RT_NOREF2(pVCpu, cbInstr);
     return VINF_EM_RAW_EMULATE_INSTR;
 #else
@@ -1241,9 +1183,9 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
  */
 IEM_CIMPL_DEF_0(iemCImpl_clgi)
 {
-#ifndef IN_RING3
+#if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
     RT_NOREF2(pVCpu, cbInstr);
-    return VINF_EM_RESCHEDULE_REM;
+    return VINF_EM_RAW_EMULATE_INSTR;
 #else
     LogFlow(("iemCImpl_clgi\n"));
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
@@ -1256,7 +1198,8 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
 
     pCtx->hwvirt.svm.fGif = 0;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-# if defined(VBOX_WITH_NESTED_HWVIRT) && defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
+
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
     return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
 # else
     return VINF_SUCCESS;
@@ -1270,9 +1213,9 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
  */
 IEM_CIMPL_DEF_0(iemCImpl_stgi)
 {
-#ifndef IN_RING3
+#if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
     RT_NOREF2(pVCpu, cbInstr);
-    return VINF_EM_RESCHEDULE_REM;
+    return VINF_EM_RAW_EMULATE_INSTR;
 #else
     LogFlow(("iemCImpl_stgi\n"));
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
@@ -1285,7 +1228,8 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
 
     pCtx->hwvirt.svm.fGif = 1;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-# if defined(VBOX_WITH_NESTED_HWVIRT) && defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
+
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
     return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false);
 # else
     return VINF_SUCCESS;
