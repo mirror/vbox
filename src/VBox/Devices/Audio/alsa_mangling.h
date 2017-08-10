@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2013-2016 Oracle Corporation
+ * Copyright (C) 2013-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -44,6 +44,7 @@
 #define snd_pcm_writei                          ALSA_MANGLER(snd_pcm_writei)
 #define snd_pcm_readi                           ALSA_MANGLER(snd_pcm_readi)
 #define snd_strerror                            ALSA_MANGLER(snd_strerror)
+#define snd_pcm_start                           ALSA_MANGLER(snd_pcm_start)
 #define snd_pcm_drop                            ALSA_MANGLER(snd_pcm_drop)
 #define snd_pcm_resume                          ALSA_MANGLER(snd_pcm_resume)
 #define snd_pcm_hw_params_get_buffer_size       ALSA_MANGLER(snd_pcm_hw_params_get_buffer_size)

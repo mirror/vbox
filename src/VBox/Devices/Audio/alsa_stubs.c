@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -88,6 +88,7 @@ PROXY_STUB(snd_pcm_readi, snd_pcm_sframes_t,
            (snd_pcm_t *pcm, void *buffer, snd_pcm_uframes_t size),
            (pcm, buffer, size))
 PROXY_STUB(snd_strerror, const char *, (int errnum), (errnum))
+PROXY_STUB(snd_pcm_start, int, (snd_pcm_t *pcm), (pcm))
 PROXY_STUB(snd_pcm_drop, int, (snd_pcm_t *pcm), (pcm))
 PROXY_STUB(snd_pcm_resume, int, (snd_pcm_t *pcm), (pcm))
 PROXY_STUB(snd_pcm_hw_params_get_buffer_size, int,
@@ -153,6 +154,7 @@ static SHARED_FUNC SharedFuncs[] =
     ELEMENT(snd_pcm_writei),
     ELEMENT(snd_pcm_readi),
     ELEMENT(snd_strerror),
+    ELEMENT(snd_pcm_start),
     ELEMENT(snd_pcm_drop),
     ELEMENT(snd_pcm_resume),
     ELEMENT(snd_pcm_hw_params_get_buffer_size),
