@@ -280,6 +280,9 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
     /* Update Tools-pane: */
     m_pPaneToolsMachine->setCurrentItem(pItem);
 
+    /* Update Machine tab-bar visibility */
+    m_pTabBarMachine->setEnabled(pItem && pItem->accessible());
+
     /* If current item exists & accessible: */
     if (pItem && pItem->accessible())
     {
@@ -288,10 +291,10 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
         {
             /* Make sure Details or Snapshot pane is chosen if opened: */
             if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-                m_pPaneToolsMachine->openTool(ToolTypeMachine_Details);
+                actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details)->trigger();
             else
             if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
-                m_pPaneToolsMachine->openTool(ToolTypeMachine_Snapshots);
+                actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots)->trigger();
         }
 
         /* Update Details-pane (if requested): */
@@ -1090,6 +1093,9 @@ void UISelectorWindow::sltHandleToolsTypeSwitch()
 
     /* Update action visibility: */
     updateActionsVisibility();
+
+    /* Make sure chosen item fetched: */
+    sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */);
 }
 
 void UISelectorWindow::sltHandleShowTabBarMachine()
@@ -1173,7 +1179,7 @@ void UISelectorWindow::retranslateUi()
 #endif /* VBOX_BLEEDING_EDGE */
     setWindowTitle(strTitle);
 
-    /* Make sure details and snapshot panes are updated: */
+    /* Make sure chosen item fetched: */
     sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */);
 
 #ifdef VBOX_WS_MAC
@@ -2378,6 +2384,11 @@ void UISelectorWindow::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->retranslateUi();
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->blockSignals(false);
 
+    /* Enable/disable tools actions: */
+    actionPool()->action(UIActionIndexST_M_Tools_M_Machine)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine, items));
+    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_Details, items));
+    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_Snapshots, items));
+
 #ifdef VBOX_WS_MAC
     // WORKAROUND:
     // There is a bug in Qt Cocoa which result in showing a "more arrow" when
@@ -2511,6 +2522,12 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         case UIActionIndexST_M_Machine_M_Close_S_PowerOff:
         {
             return isActionEnabled(UIActionIndexST_M_Machine_M_Close, items);
+        }
+        case UIActionIndexST_M_Tools_M_Machine:
+        case UIActionIndexST_M_Tools_M_Machine_Details:
+        case UIActionIndexST_M_Tools_M_Machine_Snapshots:
+        {
+            return pItem->accessible();
         }
         default:
             break;
