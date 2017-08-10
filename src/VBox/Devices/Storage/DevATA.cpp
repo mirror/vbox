@@ -7371,6 +7371,18 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             AssertMsgFailed(("Unsupported IDE chipset type: %d\n", pThis->u8Type));
     }
 
+    /** @todo
+     * This is the job of the BIOS / EFI!
+     *
+     * The same is done in DevPCI.cpp / pci_bios_init_device() but there is no
+     * corresponding function in DevPciIch9.cpp. The EFI has corresponding code
+     * in OvmfPkg/Library/PlatformBdsLib/BdsPlatform.c: NotifyDev() but this
+     * function assumes that the IDE controller is located at PCI 00:01.1 which
+     * is not true if the ICH9 chipset is used.
+     */
+    PCIDevSetWord(&pThis->dev, 0x40, 0x8000); /* enable IDE0 */
+    PCIDevSetWord(&pThis->dev, 0x42, 0x8000); /* enable IDE1 */
+
     PCIDevSetCommand(   &pThis->dev, PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS | PCI_COMMAND_BUSMASTER);
     PCIDevSetClassProg( &pThis->dev, 0x8a); /* programming interface = PCI_IDE bus master is supported */
     PCIDevSetClassSub(  &pThis->dev, 0x01); /* class_sub = PCI_IDE */
