@@ -1319,6 +1319,10 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine, Detai
         }
         case DetailsElementType_Display:
         {
+            // WORKAROUND:
+            // IMachine::GetExtraData still non-const..
+            CMachine comExtraDataMachine = comMachine;
+
             /* Video Memory: */
             int iRowCount = 1;
             QString strItem = QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Video Memory", "details (display)"),
@@ -1334,7 +1338,6 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine, Detai
             }
 
             /* Scale-factor? */
-            CMachine comExtraDataMachine = comMachine;
             const QString strScaleFactor = comExtraDataMachine.GetExtraData(UIExtraDataDefs::GUI_ScaleFactor);
             {
                 /* Try to convert loaded data to double: */
@@ -1354,7 +1357,7 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine, Detai
 
 #ifdef VBOX_WS_MAC
             /* Unscaled HiDPI Video Output? */
-            const QString strUnscaledHiDPIMode = machine.GetExtraData(UIExtraDataDefs::GUI_HiDPI_UnscaledOutput);
+            const QString strUnscaledHiDPIMode = comExtraDataMachine.GetExtraData(UIExtraDataDefs::GUI_HiDPI_UnscaledOutput);
             {
                 /* Try to convert loaded data to bool: */
                 const bool fEnabled  = strUnscaledHiDPIMode.compare("true", Qt::CaseInsensitive) == 0 ||
