@@ -926,6 +926,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
             pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = pVmcbNstGstCache->TLBCtrl.n.u8TLBFlush;
     }
 #else
+    RT_NOREF(pCtx);
     pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_NOTHING;
 #endif
 
