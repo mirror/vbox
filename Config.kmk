@@ -350,7 +350,7 @@ VBOX_WITH_DOCS = 1
 # Include documentation in the package
 VBOX_WITH_DOCS_PACKING = 1
 # Include CHM when building docs (unset in LocalConfig.kmk to suppress CHM)
-ifn1of ($(KBUILD_TARGET), linux)
+if1of ($(KBUILD_TARGET), win)
  VBOX_WITH_DOCS_CHM = 1
 endif
 # By default only include translations in documentation-only builds
