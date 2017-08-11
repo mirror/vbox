@@ -1037,7 +1037,7 @@ typedef struct UDFALLOCATIONEXTENTDESC
      *  partition). */
     uint32_t        offPrevExtent;
     /** 0x14: Size of the following allocation descriptors (in bytes). */
-    uint32_t        cbAllocationDescriptors;
+    uint32_t        cbAllocDescs;
     /** 0x18: Allocation descriptors.
      * @todo verify format...  */
     union
@@ -1187,9 +1187,276 @@ typedef UDFINDIRECTENTRY *PUDFINDIRECTENTRY;
 /** Pointer to a const UDF indirect entry. */
 typedef UDFINDIRECTENTRY const *PCUDFINDIRECTENTRY;
 
-//#define UDF_TAG_ID_TERMINAL_ENTRY                   UINT16_C(0x0104)
-//#define UDF_TAG_ID_FILE_ENTRY                       UINT16_C(0x0105)
-//#define UDF_TAG_ID_EXTENDED_ATTRIB_HDR_DESC         UINT16_C(0x0106)
+
+/**
+ * UDF terminal entry (@ecma167{4,14.8,97}).
+ */
+typedef struct UDFTERMINALENTRY
+{
+    /** 0x00: The descriptor tag (UDF_TAG_ID_TERMINAL_ENTRY). */
+    UDFTAG          Tag;
+    /** 0x10: ICB Tag (UDF_FILE_TYPE_TERMINAL_ENTRY). */
+    UDFICBTAG       IcbTag;
+} UDFTERMINALENTRY;
+AssertCompileSize(UDFTERMINALENTRY, 36);
+/** Pointer to an UDF terminal entry. */
+typedef UDFTERMINALENTRY *PUDFTERMINALENTRY;
+/** Pointer to a const UDF terminal entry. */
+typedef UDFTERMINALENTRY const *PCUDFTERMINALENTRY;
+
+
+/**
+ * UDF file entry (FE) (@ecma167{4,14.8,97}, @udf260{}).
+ *
+ * @note Total length shall not exceed one logical block.
+ */
+typedef struct UDFFILENTRY
+{
+    /** 0x00: The descriptor tag (UDF_TAG_ID_FILE_ENTRY). */
+    UDFTAG          Tag;
+    /** 0x10: ICB Tag. */
+    UDFICBTAG       IcbTag;
+    /** 0x24: User ID (UNIX). */
+    uint32_t        uid;
+    /** 0x28: Group ID (UNIX). */
+    uint32_t        gid;
+    /** 0x2c: Permission (UDF_PERM_XXX). */
+    uint32_t        fPermissions;
+    /** 0x30: Number hard links. */
+    uint16_t        cHardlinks;
+    /** 0x32: Record format (UDF_REC_FMT_XXX).   */
+    uint8_t         uRecordFormat;
+    /** 0x33: Record format (UDF_REC_FMT_XXX).   */
+    uint8_t         fRecordDisplayAttribs;
+    /** 0x34: Record length (in bytes).
+     * @note  Must be zero according to the UDF specification. */
+    uint32_t        cbRecord;
+    /** 0x38: Information length in bytes (file size). */
+    uint64_t        cbData;
+    /** 0x40: Number of logical blocks allocated (for file data). */
+    uint64_t        cLogicalBlocks;
+    /** 0x48: Time of last access (prior to recording the file entry). */
+    UDFTIMESTAMP    AccessTime;
+    /** 0x54: Time of last data modification. */
+    UDFTIMESTAMP    ModificationTime;
+    /** 0x60: Time of last attribute/status modification. */
+    UDFTIMESTAMP    ChangeTime;
+    /** 0x6c: Checkpoint number (defaults to 1). */
+    uint32_t        uCheckpoint;
+    /** 0x70: Extended attribute information control block location. */
+    UDFLONGAD       ExtAttribIcb;
+    /** 0x80: Implementation identifier (UDF_ENTITY_ID_FE_IMPLEMENTATION). */
+    UDFENTITYID     idImplementation;
+    /** 0xa0: Unique ID. */
+    uint64_t        INodeId;
+    /** 0xa8: Length of extended attributes in bytes, multiple of four. */
+    uint32_t        cbExtAttribs;
+    /** 0xac: Length of allocation descriptors in bytes, multiple of four. */
+    uint32_t        cbAllocDescs;
+    /** 0xb0: Two variable sized fields.  First @a cbExtAttribs bytes of extended
+     *  attributes, then @a cbAllocDescs bytes of allocation descriptors. */
+    uint8_t         abExtAttribs[RT_FLEXIBLE_ARRAY];
+} UDFFILENTRY;
+AssertCompileMemberOffset(UDFFILENTRY, abExtAttribs, 0xb0);
+/** Pointer to an UDF file entry. */
+typedef UDFFILENTRY *PUDFFILENTRY;
+/** Pointer to a const UDF file entry. */
+typedef UDFFILENTRY const *PCUDFFILENTRY;
+
+/** @name UDF_PERM_XXX - UDFFILENTRY::fPermissions
+ * See @ecma167{4,14.9.5,99}.
+ * @{ */
+#define UDF_PERM_OTH_EXEC          UINT32_C(0x00000001)
+#define UDF_PERM_OTH_WRITE         UINT32_C(0x00000002)
+#define UDF_PERM_OTH_READ          UINT32_C(0x00000004)
+#define UDF_PERM_OTH_ATTRIB        UINT32_C(0x00000008)
+#define UDF_PERM_OTH_DELETE        UINT32_C(0x00000010)
+#define UDF_PERM_OTH_MASK          UINT32_C(0x0000001f)
+
+#define UDF_PERM_GRP_EXEC          UINT32_C(0x00000020)
+#define UDF_PERM_GRP_WRITE         UINT32_C(0x00000040)
+#define UDF_PERM_GRP_READ          UINT32_C(0x00000080)
+#define UDF_PERM_GRP_ATTRIB        UINT32_C(0x00000100)
+#define UDF_PERM_GRP_DELETE        UINT32_C(0x00000200)
+#define UDF_PERM_GRP_MASK          UINT32_C(0x000003e0)
+
+#define UDF_PERM_USR_EXEC          UINT32_C(0x00000400)
+#define UDF_PERM_USR_WRITE         UINT32_C(0x00000800)
+#define UDF_PERM_USR_READ          UINT32_C(0x00001000)
+#define UDF_PERM_USR_ATTRIB        UINT32_C(0x00002000)
+#define UDF_PERM_USR_DELETE        UINT32_C(0x00004000)
+#define UDF_PERM_USR_MASK          UINT32_C(0x00007c00)
+
+#define UDF_PERM_USR_RESERVED_MASK UINT32_C(0xffff8000)
+/** @} */
+
+/** @namd UDF_REC_FMT_XXX - Record format.
+ * See @ecma167{4,14.9.7,100}.
+ * @{ */
+/** Not record format specified.
+ * @note The only allowed value according to the UDF specification. */
+#define UDF_REC_FMT_NOT_SPECIFIED       UINT8_C(0x00)
+/** @} */
+
+/** @namd UDF_REC_ATTR_XXX - Record display attributes.
+ * See @ecma167{4,14.9.8,100}.
+ * @{ */
+/** Manner of record display not specified.
+ * @note The only allowed value according to the UDF specification. */
+#define UDF_REC_ATTR_NOT_SPECIFIED      UINT8_C(0x00)
+/** @} */
+
+
+/**
+ * UDF extended attribute header descriptor (@ecma167{4,14.10.1,102},
+ * @udf260{3.3.4,79}).
+ */
+typedef struct UDFEXTATTRIBHDRDESC
+{
+    /** 0x00: The descriptor tag (UDF_TAG_ID_EXTENDED_ATTRIB_HDR_DESC). */
+    UDFTAG          Tag;
+    /** 0x10: Implementation attributes location (byte offset) into the EA space.
+     * This typically set to UINT32_MAX if not present, though any value larger
+     * than the EA space will do. */
+    uint32_t        offImplementationAttribs;
+    /** 0x14: Application attributes location (byte offset) into the EA space.
+     * This typically set to UINT32_MAX if not present, though any value larger
+     * than the EA space will do. */
+    uint32_t        offApplicationAttribs;
+} UDFEXTATTRIBHDRDESC;
+AssertCompileSize(UDFEXTATTRIBHDRDESC, 24);
+/** Pointer to an UDF extended attribute header descriptor.  */
+typedef UDFEXTATTRIBHDRDESC *PUDFEXTATTRIBHDRDESC;
+/** Pointer to a const UDF extended attribute header descriptor.  */
+typedef UDFEXTATTRIBHDRDESC const *PCUDFEXTATTRIBHDRDESC;
+
+/**
+ * UDF generic extended attribute (@ecma167{4,14.10.2,103}).
+ */
+typedef struct UDFGEA
+{
+    /** 0x00: Attribute type. */
+    uint32_t        uAttribType;
+    /** 0x04: Attribute subtype. */
+    uint8_t         uAttribSubtype;
+    /** 0x05: Reserved padding bytes, MBZ. */
+    uint8_t         abReserved[3];
+    /** 0x08: Size of the whole extended attribute.
+     * Multiple of four is recommended. */
+    uint32_t        cbAttrib;
+    /** 0x0c: Attribute data union. */
+    union
+    {
+        /** Generic byte view (variable size). */
+        uint8_t         abData[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+
+        /** Alternate permissions (@ecma167{4,14.10.4,105}, @udf260{3.3.4.2,80}).
+         * @note Not recorded according to the UDF specification.  */
+        struct
+        {
+            /** 0x0c: Alternative owner ID. */
+            uint16_t        idOwner;
+            /** 0x0e: Alternative group ID. */
+            uint16_t        idGroup;
+            /** 0x10: Alternative permissions.   */
+            uint16_t        fPermission;
+        } AltPerm;
+
+        /** File times (@ecma167{4,14.10.5,108}, @udf260{3.3.4.3,80}).
+         * (This is a bit reminiscent of ISO9660RRIPTF.) */
+        struct
+        {
+            /** 0x0c: Timestamp length. */
+            uint32_t        cbTimestamps;
+            /** 0x10: Indicates which timestamps are present (UDF_FILE_TIMES_EA_F_XXX). */
+            uint32_t        fFlags;
+            /** 0x14: Timestamps. */
+            UDFTIMESTAMP    aTimestamps[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        } FileTimes;
+
+        /** Information times (@ecma167{4,14.10.6,109}). */
+        struct
+        {
+            /** 0x0c: Timestamp length. */
+            uint32_t        cbTimestamps;
+            /** 0x10: Indicates which timestamps are present (UDF_INFO_TIMES_EA_F_XXX). */
+            uint32_t        fFlags;
+            /** 0x14: Timestamps. */
+            UDFTIMESTAMP    aTimestamps[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        } InfoTimes;
+
+        /** Device specification (@ecma167{4,14.10.7,110}, @udf260{3.3.4.4,81}). */
+        struct
+        {
+            /** 0x0c: Length of implementation use field. */
+            uint32_t        cbImplementationUse;
+            /** 0x10: Major device number. */
+            uint32_t        uMajorDeviceNo;
+            /** 0x14: Minor device number. */
+            uint32_t        uMinorDeviceNo;
+            /** 0x18: Implementation use field (variable length).
+             * UDF specficiation expects UDFENTITYID with
+             * UDF_ENTITY_ID_DSEA_IMPLEMENTATION_USE as first part here. */
+            uint8_t         abImplementationUse[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        } DeviceSpec;
+
+        /** Implementation use (@ecma167{4,14.10.8,111}, @udf260{3.3.4.5,82}). */
+        struct
+        {
+            /** 0x0c: Length uData in bytes. */
+            uint32_t        cbData;
+            /** 0x10: Implementation identifier (UDF_ENTITY_ID_IUEA_XXX). */
+            UDFENTITYID     idImplementation;
+            /** 0x30: Implementation use field (variable length). */
+            union
+            {
+                /** Generic byte view. */
+                uint8_t     ab[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+                /** @todo Lots more here later.   */
+            } uData;
+        } ImplUse;
+
+        /** Application use (@ecma167{4,14.10.9,112}, @udf260{3.3.4.6,88}). */
+        struct
+        {
+            /** 0x0c: Length uData in bytes. */
+            uint32_t        cbData;
+            /** 0x10: Application identifier (UDF_ENTITY_ID_AUEA_FREE_EA_SPACE). */
+            UDFENTITYID     idApplication;
+            /** 0x30: Application use field (variable length). */
+            union
+            {
+                /** Generic byte view. */
+                uint8_t     ab[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+                /** @todo One more here later.   */
+            } uData;
+        } AppUse;
+
+    } u;
+} UDFGEA;
+
+
+/** @name UDF_FILE_TIMES_EA_F_XXX - File times existence flags.
+ * See @ecma167{4,14.10.5.6,109}
+ * @{ */
+#define UDF_FILE_TIMES_EA_F_BIRTH           UINT8_C(0x01) /**< Birth (creation) timestamp is recorded. */
+#define UDF_FILE_TIMES_EA_F_DELETE          UINT8_C(0x04) /**< Deletion timestamp is recorded. */
+#define UDF_FILE_TIMES_EA_F_EFFECTIVE       UINT8_C(0x08) /**< Effective timestamp is recorded. */
+#define UDF_FILE_TIMES_EA_F_BACKUP          UINT8_C(0x20) /**< Backup timestamp is recorded. */
+#define UDF_FILE_TIMES_EA_F_RESERVED_MASK   UINT8_C(0xd2)
+/** @} */
+
+/** @name UDF_INFO_TIMES_EA_F_XXX - Information times existence flags.
+ * See @ecma167{4,14.10.6.6,110}
+ * @{ */
+#define UDF_INFO_TIMES_EA_F_BIRTH           UINT8_C(0x01) /**< Birth (creation) timestamp is recorded. */
+#define UDF_INFO_TIMES_EA_F_MODIFIED        UINT8_C(0x02) /**< Last (data) modified timestamp is recorded. */
+#define UDF_INFO_TIMES_EA_F_EXPIRE          UINT8_C(0x04) /**< Expiration (deletion) timestamp is recorded. */
+#define UDF_INFO_TIMES_EA_F_EFFECTIVE       UINT8_C(0x08) /**< Effective timestamp is recorded. */
+#define UDF_INFO_TIMES_EA_F_RESERVED_MASK   UINT8_C(0xf0)
+/** @} */
+
+
 //#define UDF_TAG_ID_UNALLOCATED_SPACE_ENTRY          UINT16_C(0x0107)
 //#define UDF_TAG_ID_SPACE_BITMAP_DESC                UINT16_C(0x0108)
 //#define UDF_TAG_ID_PARTITION_INTEGERITY_DESC        UINT16_C(0x0109)

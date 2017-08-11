@@ -254,9 +254,9 @@ typedef ISO9660PATHREC const *PCISO9660PATHREC;
  */
 typedef struct ISO9660EXATTRREC
 {
-    /** 0x000: The owener ID. */
+    /** 0x000: The owner ID. */
     ISO9660U16          idOwner;
-    /** 0x004: The owener ID. */
+    /** 0x004: The group ID. */
     ISO9660U16          idGroup;
     /** 0x008: File permissions (ISO9660_PERM_XXX). */
     ISO9660U16BE        fPermissions;
@@ -298,7 +298,7 @@ AssertCompileMemberOffset(ISO9660EXATTRREC, cbAppUse, 0x0f6);
 
 /** @name ISO9660_PERM_XXX - ISO9660EXATTRREC::fPermissions
  * @{ */
-/** @todo figure out this wird permission stuff...   */
+/** @todo figure out this weird permission stuff...   */
 /** @} */
 
 
