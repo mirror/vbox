@@ -1027,7 +1027,7 @@ typedef UDFFILEIDDESC *PUDFFILEIDDESC;
 
 
 /**
- * UDF allocation extent descriptor (@ecma167{4,14.5,93}, @udf256{2.3.11,67}).
+ * UDF allocation extent descriptor (@ecma167{4,14.5,93}, @udf260{2.3.11,67}).
  */
 typedef struct UDFALLOCATIONEXTENTDESC
 {
