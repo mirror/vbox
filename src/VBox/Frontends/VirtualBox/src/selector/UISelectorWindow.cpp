@@ -2348,15 +2348,6 @@ void UISelectorWindow::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Tools_M_Machine)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine, items));
     actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_Details, items));
     actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_Snapshots, items));
-
-#ifdef VBOX_WS_MAC
-    // WORKAROUND:
-    // There is a bug in Qt Cocoa which result in showing a "more arrow" when
-    // the necessary size of the toolbar is increased. Also for some languages
-    // the with doesn't match if the text increase. So manually adjust the size
-    // after changing the text.
-    m_pToolBar->updateLayout();
-#endif
 }
 
 bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items)
