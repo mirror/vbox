@@ -1970,8 +1970,7 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
             break;
         }
 
-        /* Include the driver's LUN in the stream name for easier identification. */
-        RTStrPrintf(pStreamCfg->szName, RT_ELEMENTS(pStreamCfg->szName), "[LUN#%RU8] %s", pDrv->uLUN, pCfg->szName);
+        RTStrPrintf(pStreamCfg->szName, RT_ELEMENTS(pStreamCfg->szName), "%s", pCfg->szName);
 
         if (pStreamCfg->enmDir == PDMAUDIODIR_IN)
         {

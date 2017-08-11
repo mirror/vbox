@@ -1462,7 +1462,7 @@ static int ichac97MixerAddDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPD
             break;
         }
 
-        if (!RTStrPrintf(pStreamCfg->szName, sizeof(pStreamCfg->szName), "[LUN#%RU8] %s", pDrv->uLUN, pCfg->szName))
+        if (!RTStrPrintf(pStreamCfg->szName, sizeof(pStreamCfg->szName), "%s", pCfg->szName))
         {
             RTMemFree(pStreamCfg);
 
@@ -1470,7 +1470,7 @@ static int ichac97MixerAddDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPD
             break;
         }
 
-        LogFunc(("%s\n", pStreamCfg->szName));
+        LogFunc(("[LUN#%RU8] %s\n", pDrv->uLUN, pStreamCfg->szName));
 
         int rc2 = VINF_SUCCESS;
 
