@@ -945,10 +945,12 @@ PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(const PPDMAUDIOSTREAMCFG pCfg)
  */
 void DrvAudioHlpStreamCfgPrint(const PPDMAUDIOSTREAMCFG pCfg)
 {
-    AssertPtrReturnVoid(pCfg);
+    if (!pCfg)
+        return;
 
-    LogFlowFunc(("uHz=%RU32, cChannels=%RU8, cBits=%RU8%s",
-                 pCfg->Props.uHz, pCfg->Props.cChannels, pCfg->Props.cBits, pCfg->Props.fSigned ? "S" : "U"));
+    LogFunc(("szName=%s, enmDir=%RU32 (uHz=%RU32, cBits=%RU8%s, cChannels=%RU8)\n",
+             pCfg->szName, pCfg->enmDir,
+             pCfg->Props.uHz, pCfg->Props.cBits, pCfg->Props.fSigned ? "S" : "U", pCfg->Props.cChannels));
 }
 
 /**
