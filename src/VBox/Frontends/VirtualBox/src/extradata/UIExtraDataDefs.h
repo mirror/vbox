@@ -572,7 +572,6 @@ enum MachineSettingsPageType
     MachineSettingsPageType_Network,
     MachineSettingsPageType_Ports,
     MachineSettingsPageType_Serial,
-    MachineSettingsPageType_Parallel,
     MachineSettingsPageType_USB,
     MachineSettingsPageType_SF,
     MachineSettingsPageType_Interface,
@@ -634,9 +633,6 @@ enum DetailsElementType
     DetailsElementType_Audio,
     DetailsElementType_Network,
     DetailsElementType_Serial,
-#ifdef VBOX_WITH_PARALLEL_PORTS
-    DetailsElementType_Parallel,
-#endif /* VBOX_WITH_PARALLEL_PORTS */
     DetailsElementType_USB,
     DetailsElementType_SF,
     DetailsElementType_UI,
@@ -753,9 +749,6 @@ enum InformationElementType
     InformationElementType_Audio,
     InformationElementType_Network,
     InformationElementType_Serial,
-#ifdef VBOX_WITH_PARALLEL_PORTS
-    InformationElementType_Parallel,
-#endif /* VBOX_WITH_PARALLEL_PORTS */
     InformationElementType_USB,
     InformationElementType_SharedFolders,
     InformationElementType_UI,

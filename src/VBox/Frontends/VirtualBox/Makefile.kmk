@@ -417,7 +417,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/settings/machine/UIMachineSettingsGeneral.h \
 	src/settings/machine/UIMachineSettingsInterface.h \
 	src/settings/machine/UIMachineSettingsNetwork.h \
-	src/settings/machine/UIMachineSettingsParallel.h \
 	src/settings/machine/UIMachineSettingsPortForwardingDlg.h \
 	src/settings/machine/UIMachineSettingsSF.h \
 	src/settings/machine/UIMachineSettingsSFDetails.h \
@@ -559,7 +558,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/selector/UISnapshotPane.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
-	src/settings/machine/UIMachineSettingsParallel.cpp \
 	src/settings/machine/UIMachineSettingsSerial.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
@@ -735,7 +733,6 @@ VirtualBox_SOURCES = \
 	src/settings/machine/UIMachineSettingsGeneral.cpp \
 	src/settings/machine/UIMachineSettingsInterface.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
-	src/settings/machine/UIMachineSettingsParallel.cpp \
 	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
 	src/settings/machine/UIMachineSettingsSF.cpp \
 	src/settings/machine/UIMachineSettingsSFDetails.cpp \

@@ -52,9 +52,6 @@
 # include "CMedium.h"
 # include "CMediumAttachment.h"
 # include "CNetworkAdapter.h"
-# ifdef VBOX_WITH_PARALLEL_PORTS
-#  include "CParallelPort.h"
-# endif
 # include "CSerialPort.h"
 # include "CSharedFolder.h"
 # include "CStorageController.h"
@@ -963,13 +960,6 @@ void UISnapshotDetailsWidget::prepareTabDetails()
                     AssertPtrReturnVoid(m_details[DetailsElementType_Serial]);
                     pLayout2->addWidget(m_details[DetailsElementType_Serial]);
 
-#ifdef VBOX_WITH_PARALLEL_PORTS
-                    /* Create 'Parallel' element: */
-                    m_details[DetailsElementType_Parallel] = createDetailsElement(DetailsElementType_Parallel);
-                    AssertPtrReturnVoid(m_details[DetailsElementType_Parallel]);
-                    pLayout2->addWidget(m_details[DetailsElementType_Parallel]);
-#endif
-
                     /* Create 'USB' element: */
                     m_details[DetailsElementType_USB] = createDetailsElement(DetailsElementType_USB);
                     AssertPtrReturnVoid(m_details[DetailsElementType_USB]);
@@ -1668,50 +1658,6 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine, Detai
 
             break;
         }
-#ifdef VBOX_WITH_PARALLEL_PORTS
-        case DetailsElementType_Parallel:
-        {
-            /* Nothing: */
-            int iRowCount = 0;
-            QString strItem;
-
-            /* Enumerate all the serial ports (up to acquired/limited count): */
-            const ulong iCount = vboxGlobal().virtualBox().GetSystemProperties().GetParallelPortCount();
-            for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
-            {
-                /* Get current parallel port: */
-                const CParallelPort &comParallel = comMachine.GetParallelPort(iSlot);
-                if (comParallel.GetEnabled())
-                {
-                    /* Compose the data: */
-                    QString strData = toLPTPortName(comParallel.GetIRQ(), comParallel.GetIOBase())
-                                    + QString(" (<nobr>%1</nobr>)").arg(QDir::toNativeSeparators(comParallel.GetPath()));
-                    /* Here goes the record: */
-                    ++iRowCount;
-                    strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Port %1", "details (parallel)")
-                                                                .arg(comParallel.GetSlot() + 1),
-                                                             strData);
-                }
-            }
-
-            /* Handle side-case: */
-            if (strItem.isNull())
-            {
-                ++iRowCount;
-                strItem = QString(sSectionItemTpl1).arg(QApplication::translate("UIGDetails", "Disabled", "details (parallel)"));
-            }
-
-            /* Append report: */
-            strReport += strSectionTpl
-                .arg(1 + iRowCount) /* rows */
-                .arg("details://parallelPorts", /* icon */
-                     QString::number(iIconArea), /* icon area */
-                     gpConverter->toString(enmType), /* title */
-                     strItem); /* items */
-
-            break;
-        }
-#endif /* VBOX_WITH_PARALLEL_PORTS */
         case DetailsElementType_USB:
         {
             /* Acquire USB filters object: */

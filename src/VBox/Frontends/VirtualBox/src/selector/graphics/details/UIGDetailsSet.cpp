@@ -384,9 +384,6 @@ int UIGDetailsSet::minimumWidthHint() const
             case DetailsElementType_Audio:
             case DetailsElementType_Network:
             case DetailsElementType_Serial:
-#ifdef VBOX_WITH_PARALLEL_PORTS
-            case DetailsElementType_Parallel:
-#endif
             case DetailsElementType_USB:
             case DetailsElementType_SF:
             case DetailsElementType_UI:
@@ -445,9 +442,6 @@ int UIGDetailsSet::minimumHeightHint() const
             case DetailsElementType_Audio:
             case DetailsElementType_Network:
             case DetailsElementType_Serial:
-#ifdef VBOX_WITH_PARALLEL_PORTS
-            case DetailsElementType_Parallel:
-#endif
             case DetailsElementType_USB:
             case DetailsElementType_SF:
             case DetailsElementType_UI:
@@ -501,9 +495,6 @@ void UIGDetailsSet::updateLayout()
             case DetailsElementType_Audio:
             case DetailsElementType_Network:
             case DetailsElementType_Serial:
-#ifdef VBOX_WITH_PARALLEL_PORTS
-            case DetailsElementType_Parallel:
-#endif
             case DetailsElementType_USB:
             case DetailsElementType_SF:
             case DetailsElementType_UI:
@@ -591,9 +582,6 @@ UIGDetailsElement* UIGDetailsSet::createElement(DetailsElementType elementType, 
         case DetailsElementType_Audio:       return new UIGDetailsElementAudio(this, fOpen);
         case DetailsElementType_Network:     return new UIGDetailsElementNetwork(this, fOpen);
         case DetailsElementType_Serial:      return new UIGDetailsElementSerial(this, fOpen);
-#ifdef VBOX_WITH_PARALLEL_PORTS
-        case DetailsElementType_Parallel:    return new UIGDetailsElementParallel(this, fOpen);
-#endif
         case DetailsElementType_USB:         return new UIGDetailsElementUSB(this, fOpen);
         case DetailsElementType_SF:          return new UIGDetailsElementSF(this, fOpen);
         case DetailsElementType_UI:          return new UIGDetailsElementUI(this, fOpen);

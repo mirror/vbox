@@ -37,7 +37,6 @@
 # include "CSerialPort.h"
 # include "CVRDEServer.h"
 # include "CAudioAdapter.h"
-# include "CParallelPort.h"
 # include "CSharedFolder.h"
 # include "CUSBController.h"
 # include "CNetworkAdapter.h"
@@ -503,52 +502,6 @@ QVariant UIInformationDataSerialPorts::data(const QModelIndex &index, int role) 
     /* Call to base-class: */
     return UIInformationDataItem::data(index, role);
 }
-
-
-#ifdef VBOX_WITH_PARALLEL_PORTS
-/*********************************************************************************************************************************
-*   Class UIInformationDataParallelPorts implementation.                                                                         *
-*********************************************************************************************************************************/
-
-UIInformationDataParallelPorts::UIInformationDataParallelPorts(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
-    : UIInformationDataItem(InformationElementType_Parallel, machine, console, pModel)
-{
-}
-
-QVariant UIInformationDataParallelPorts::data(const QModelIndex &index, int role) const
-{
-    /* For particular role: */
-    switch (role)
-    {
-        case Qt::DecorationRole:
-        {
-            return QString(":/parallel_port_16px.png");
-        }
-
-        case Qt::UserRole + 1:
-        {
-            ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetParallelPortCount();
-            for (ulong slot = 0; slot < count; slot ++)
-            {
-                CParallelPort port = m_machine.GetParallelPort(slot);
-                if (port.GetEnabled())
-                {
-                    QString data = vboxGlobal().toLPTPortName(port.GetIRQ(), port.GetIOBase()) +
-                        QString(" (<nobr>%1</nobr>)")
-                               .arg(QDir::toNativeSeparators(port.GetPath()));
-                    p_text << UITextTableLine(tr("Port %1", "details report (parallel ports)").arg(port.GetSlot() + 1), data);
-                }
-            }
-            if (p_text.count() == 0)
-                p_text << UITextTableLine(tr("Disabled", "details report (parallel ports)"), QString());
-        }
-
-        default:
-            break;
-    }
-    return QVariant();
-}
-#endif /* VBOX_WITH_PARALLEL_PORTS */
 
 
 /*********************************************************************************************************************************

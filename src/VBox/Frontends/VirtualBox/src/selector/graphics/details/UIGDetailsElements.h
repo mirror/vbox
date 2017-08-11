@@ -367,44 +367,6 @@ private:
 };
 
 
-#ifdef VBOX_WITH_PARALLEL_PORTS
-/** UITask extension used as update task for the details-element type 'Parallel'. */
-class UIGDetailsUpdateTaskParallel : public UIGDetailsUpdateTask
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs update task passing @a machine to the base-class. */
-    UIGDetailsUpdateTaskParallel(const CMachine &machine)
-        : UIGDetailsUpdateTask(machine) {}
-
-private:
-
-    /** Contains update task body. */
-    void run();
-};
-
-/** UIGDetailsElementInterface extension for the details-element type 'Parallel'. */
-class UIGDetailsElementParallel : public UIGDetailsElementInterface
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs details-element object for passed @a pParent set.
-      * @param fOpened brings whether the details-element should be visually opened. */
-    UIGDetailsElementParallel(UIGDetailsSet *pParent, bool fOpened)
-        : UIGDetailsElementInterface(pParent, DetailsElementType_Parallel, fOpened) {}
-
-private:
-
-    /** Creates update task for this element. */
-    UITask* createUpdateTask() { return new UIGDetailsUpdateTaskParallel(machine()); }
-};
-#endif /* VBOX_WITH_PARALLEL_PORTS */
-
-
 /** UITask extension used as update task for the details-element type 'USB'. */
 class UIGDetailsUpdateTaskUSB : public UIGDetailsUpdateTask
 {

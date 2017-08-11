@@ -102,7 +102,6 @@
 # include "CAudioAdapter.h"
 # include "CNetworkAdapter.h"
 # include "CSerialPort.h"
-# include "CParallelPort.h"
 # include "CUSBController.h"
 # include "CHostUSBDevice.h"
 # include "CHostVideoInputDevice.h"

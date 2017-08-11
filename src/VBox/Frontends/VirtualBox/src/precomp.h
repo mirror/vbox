@@ -384,7 +384,6 @@
 #include "CNATNetwork.h"
 #include "CNetworkAdapter.h"
 //#include "CNetworkAdapterChangedEvent.h" - only used once
-#include "CParallelPort.h"
 #include "CProgress.h"
 //#include "CRuntimeErrorEvent.h" - only used once
 #include "CSerialPort.h"
@@ -516,7 +515,6 @@
 #include "UIMachineSettingsGeneral.h"
 #include "UIMachineSettingsInterface.h"
 #include "UIMachineSettingsNetwork.h"
-#include "UIMachineSettingsParallel.h"
 #include "UIMachineSettingsPortForwardingDlg.h"
 #include "UIMachineSettingsSF.h"
 #include "UIMachineSettingsSFDetails.h"

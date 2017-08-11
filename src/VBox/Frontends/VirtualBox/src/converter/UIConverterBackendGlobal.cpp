@@ -975,9 +975,6 @@ template<> QString toString(const DetailsElementType &detailsElementType)
         case DetailsElementType_Audio:       strResult = QApplication::translate("VBoxGlobal", "Audio", "DetailsElementType"); break;
         case DetailsElementType_Network:     strResult = QApplication::translate("VBoxGlobal", "Network", "DetailsElementType"); break;
         case DetailsElementType_Serial:      strResult = QApplication::translate("VBoxGlobal", "Serial ports", "DetailsElementType"); break;
-#ifdef VBOX_WITH_PARALLEL_PORTS
-        case DetailsElementType_Parallel:    strResult = QApplication::translate("VBoxGlobal", "Parallel ports", "DetailsElementType"); break;
-#endif /* VBOX_WITH_PARALLEL_PORTS */
         case DetailsElementType_USB:         strResult = QApplication::translate("VBoxGlobal", "USB", "DetailsElementType"); break;
         case DetailsElementType_SF:          strResult = QApplication::translate("VBoxGlobal", "Shared folders", "DetailsElementType"); break;
         case DetailsElementType_UI:          strResult = QApplication::translate("VBoxGlobal", "User interface", "DetailsElementType"); break;
@@ -1005,9 +1002,6 @@ template<> DetailsElementType fromString<DetailsElementType>(const QString &strD
     keys << QApplication::translate("VBoxGlobal", "Audio", "DetailsElementType");          values << DetailsElementType_Audio;
     keys << QApplication::translate("VBoxGlobal", "Network", "DetailsElementType");        values << DetailsElementType_Network;
     keys << QApplication::translate("VBoxGlobal", "Serial ports", "DetailsElementType");   values << DetailsElementType_Serial;
-#ifdef VBOX_WITH_PARALLEL_PORTS
-    keys << QApplication::translate("VBoxGlobal", "Parallel ports", "DetailsElementType"); values << DetailsElementType_Parallel;
-#endif /* VBOX_WITH_PARALLEL_PORTS */
     keys << QApplication::translate("VBoxGlobal", "USB", "DetailsElementType");            values << DetailsElementType_USB;
     keys << QApplication::translate("VBoxGlobal", "Shared folders", "DetailsElementType"); values << DetailsElementType_SF;
     keys << QApplication::translate("VBoxGlobal", "User interface", "DetailsElementType"); values << DetailsElementType_UI;
@@ -1033,9 +1027,6 @@ template<> QString toInternalString(const DetailsElementType &detailsElementType
         case DetailsElementType_Audio:       strResult = "audio"; break;
         case DetailsElementType_Network:     strResult = "network"; break;
         case DetailsElementType_Serial:      strResult = "serialPorts"; break;
-#ifdef VBOX_WITH_PARALLEL_PORTS
-        case DetailsElementType_Parallel:    strResult = "parallelPorts"; break;
-#endif /* VBOX_WITH_PARALLEL_PORTS */
         case DetailsElementType_USB:         strResult = "usb"; break;
         case DetailsElementType_SF:          strResult = "sharedFolders"; break;
         case DetailsElementType_UI:          strResult = "userInterface"; break;
@@ -1063,9 +1054,6 @@ template<> DetailsElementType fromInternalString<DetailsElementType>(const QStri
     keys << "audio";         values << DetailsElementType_Audio;
     keys << "network";       values << DetailsElementType_Network;
     keys << "serialPorts";   values << DetailsElementType_Serial;
-#ifdef VBOX_WITH_PARALLEL_PORTS
-    keys << "parallelPorts"; values << DetailsElementType_Parallel;
-#endif /* VBOX_WITH_PARALLEL_PORTS */
     keys << "usb";           values << DetailsElementType_USB;
     keys << "sharedFolders"; values << DetailsElementType_SF;
     keys << "userInterface"; values << DetailsElementType_UI;
@@ -1090,9 +1078,6 @@ template<> QIcon toIcon(const DetailsElementType &detailsElementType)
         case DetailsElementType_Audio:       return UIIconPool::iconSet(":/sound_16px.png");
         case DetailsElementType_Network:     return UIIconPool::iconSet(":/nw_16px.png");
         case DetailsElementType_Serial:      return UIIconPool::iconSet(":/serial_port_16px.png");
-#ifdef VBOX_WITH_PARALLEL_PORTS
-        case DetailsElementType_Parallel:    return UIIconPool::iconSet(":/parallel_port_16px.png");
-#endif /* VBOX_WITH_PARALLEL_PORTS */
         case DetailsElementType_USB:         return UIIconPool::iconSet(":/usb_16px.png");
         case DetailsElementType_SF:          return UIIconPool::iconSet(":/sf_16px.png");
         case DetailsElementType_UI:          return UIIconPool::iconSet(":/interface_16px.png");
@@ -1316,7 +1301,6 @@ template<> QString toInternalString(const MachineSettingsPageType &machineSettin
         case MachineSettingsPageType_Network:   strResult = "Network"; break;
         case MachineSettingsPageType_Ports:     strResult = "Ports"; break;
         case MachineSettingsPageType_Serial:    strResult = "Serial"; break;
-        case MachineSettingsPageType_Parallel:  strResult = "Parallel"; break;
         case MachineSettingsPageType_USB:       strResult = "USB"; break;
         case MachineSettingsPageType_SF:        strResult = "SharedFolders"; break;
         case MachineSettingsPageType_Interface: strResult = "Interface"; break;
@@ -1343,7 +1327,6 @@ template<> MachineSettingsPageType fromInternalString<MachineSettingsPageType>(c
     keys << "Network";       values << MachineSettingsPageType_Network;
     keys << "Ports";         values << MachineSettingsPageType_Ports;
     keys << "Serial";        values << MachineSettingsPageType_Serial;
-    keys << "Parallel";      values << MachineSettingsPageType_Parallel;
     keys << "USB";           values << MachineSettingsPageType_USB;
     keys << "SharedFolders"; values << MachineSettingsPageType_SF;
     keys << "Interface";     values << MachineSettingsPageType_Interface;
@@ -1367,7 +1350,6 @@ template<> QPixmap toWarningPixmap(const MachineSettingsPageType &type)
         case MachineSettingsPageType_Network:   return UIIconPool::pixmap(":/nw_warning_16px.png");
         case MachineSettingsPageType_Ports:     return UIIconPool::pixmap(":/serial_port_warning_16px.png");
         case MachineSettingsPageType_Serial:    return UIIconPool::pixmap(":/serial_port_warning_16px.png");
-        case MachineSettingsPageType_Parallel:  return UIIconPool::pixmap(":/parallel_port_warning_16px.png");
         case MachineSettingsPageType_USB:       return UIIconPool::pixmap(":/usb_warning_16px.png");
         case MachineSettingsPageType_SF:        return UIIconPool::pixmap(":/sf_warning_16px.png");
         case MachineSettingsPageType_Interface: return UIIconPool::pixmap(":/interface_warning_16px.png");
@@ -1731,9 +1713,6 @@ template<> QString toString(const InformationElementType &informationElementType
         case InformationElementType_Audio:             strResult = QApplication::translate("VBoxGlobal", "Audio", "InformationElementType"); break;
         case InformationElementType_Network:           strResult = QApplication::translate("VBoxGlobal", "Network", "InformationElementType"); break;
         case InformationElementType_Serial:            strResult = QApplication::translate("VBoxGlobal", "Serial ports", "InformationElementType"); break;
-#ifdef VBOX_WITH_PARALLEL_PORTS
-        case InformationElementType_Parallel:          strResult = QApplication::translate("VBoxGlobal", "Parallel ports", "InformationElementType"); break;
-#endif /* VBOX_WITH_PARALLEL_PORTS */
         case InformationElementType_USB:               strResult = QApplication::translate("VBoxGlobal", "USB", "InformationElementType"); break;
         case InformationElementType_SharedFolders:     strResult = QApplication::translate("VBoxGlobal", "Shared folders", "InformationElementType"); break;
         case InformationElementType_UI:                strResult = QApplication::translate("VBoxGlobal", "User interface", "InformationElementType"); break;
@@ -1764,9 +1743,6 @@ template<> InformationElementType fromString<InformationElementType>(const QStri
     keys << QApplication::translate("VBoxGlobal", "Audio", "InformationElementType");              values << InformationElementType_Audio;
     keys << QApplication::translate("VBoxGlobal", "Network", "InformationElementType");            values << InformationElementType_Network;
     keys << QApplication::translate("VBoxGlobal", "Serial ports", "InformationElementType");       values << InformationElementType_Serial;
-#ifdef VBOX_WITH_PARALLEL_PORTS
-    keys << QApplication::translate("VBoxGlobal", "Parallel ports", "InformationElementType");     values << InformationElementType_Parallel;
-#endif /* VBOX_WITH_PARALLEL_PORTS */
     keys << QApplication::translate("VBoxGlobal", "USB", "InformationElementType");                values << InformationElementType_USB;
     keys << QApplication::translate("VBoxGlobal", "Shared folders", "InformationElementType");     values << InformationElementType_SharedFolders;
     keys << QApplication::translate("VBoxGlobal", "User interface", "InformationElementType");     values << InformationElementType_UI;
@@ -1795,9 +1771,6 @@ template<> QString toInternalString(const InformationElementType &informationEle
         case InformationElementType_Audio:             strResult = "audio"; break;
         case InformationElementType_Network:           strResult = "network"; break;
         case InformationElementType_Serial:            strResult = "serialPorts"; break;
-#ifdef VBOX_WITH_PARALLEL_PORTS
-        case InformationElementType_Parallel:          strResult = "parallelPorts"; break;
-#endif /* VBOX_WITH_PARALLEL_PORTS */
         case InformationElementType_USB:               strResult = "usb"; break;
         case InformationElementType_SharedFolders:     strResult = "sharedFolders"; break;
         case InformationElementType_UI:                strResult = "userInterface"; break;
@@ -1826,9 +1799,6 @@ template<> InformationElementType fromInternalString<InformationElementType>(con
     keys << "audio";              values << InformationElementType_Audio;
     keys << "network";            values << InformationElementType_Network;
     keys << "serialPorts";        values << InformationElementType_Serial;
-#ifdef VBOX_WITH_PARALLEL_PORTS
-    keys << "parallelPorts";      values << InformationElementType_Parallel;
-#endif /* VBOX_WITH_PARALLEL_PORTS */
     keys << "usb";                values << InformationElementType_USB;
     keys << "sharedFolders";      values << InformationElementType_SharedFolders;
     keys << "userInterface";      values << InformationElementType_UI;
@@ -1854,9 +1824,6 @@ template<> QIcon toIcon(const InformationElementType &informationElementType)
         case InformationElementType_Audio:             return UIIconPool::iconSet(":/sound_16px.png");
         case InformationElementType_Network:           return UIIconPool::iconSet(":/nw_16px.png");
         case InformationElementType_Serial:            return UIIconPool::iconSet(":/serial_port_16px.png");
-#ifdef VBOX_WITH_PARALLEL_PORTS
-        case InformationElementType_Parallel:          return UIIconPool::iconSet(":/parallel_port_16px.png");
-#endif /* VBOX_WITH_PARALLEL_PORTS */
         case InformationElementType_USB:               return UIIconPool::iconSet(":/usb_16px.png");
         case InformationElementType_SharedFolders:     return UIIconPool::iconSet(":/sf_16px.png");
         case InformationElementType_UI:                return UIIconPool::iconSet(":/interface_16px.png");

@@ -28,10 +28,6 @@
         <file alias="os_winxp_64.png">images/os_winxp_64.png</file>
         <file alias="os_xandros.png">images/os_xandros.png</file>
         <file alias="os_xandros_64.png">images/os_xandros_64.png</file>
-        <file alias="parallel_port_16px.png">images/parallel_port_16px.png</file>
-        <file alias="parallel_port_24px.png">images/parallel_port_24px.png</file>
-        <file alias="parallel_port_32px.png">images/parallel_port_32px.png</file>
-        <file alias="parallel_port_warning_16px.png">images/parallel_port_warning_16px.png</file>
         <file alias="pin_16px.png">images/pin_16px.png</file>
         <file alias="preview_empty_16to10_242x167px.png">images/preview_empty_16to10_242x167px.png</file>
         <file alias="preview_empty_16to9_242x155px.png">images/preview_empty_16to9_242x155px.png</file>

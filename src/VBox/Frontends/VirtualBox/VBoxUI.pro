@@ -39,7 +39,6 @@ FORMS = \
     src/settings/machine/UIMachineSettingsAudio.ui \
     src/settings/machine/UIMachineSettingsNetwork.ui \
     src/settings/machine/UIMachineSettingsSerial.ui \
-    src/settings/machine/UIMachineSettingsParallel.ui \
     src/settings/machine/UIMachineSettingsUSB.ui \
     src/settings/machine/UIMachineSettingsUSBFilterDetails.ui \
     src/settings/machine/UIMachineSettingsSF.ui \

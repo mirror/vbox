@@ -202,26 +202,6 @@ public:
 };
 
 
-#ifdef VBOX_WITH_PARALLEL_PORTS
-/** UIInformationDataItem extension for the details-element type 'Parallel ports'. */
-class UIInformationDataParallelPorts : public UIInformationDataItem
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs details-element object.
-      * @param  machine  Brings the machine reference.
-      * @param  console  Brings the machine console reference.
-      * @param  pModel   Brings the information model this item belings to. */
-    UIInformationDataParallelPorts(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
-
-    /** Returns data for item specified by @a index for the @a iRole. */
-    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
-};
-#endif /* VBOX_WITH_PARALLEL_PORTS */
-
-
 /** UIInformationDataItem extension for the details-element type 'USB'. */
 class UIInformationDataUSB : public UIInformationDataItem
 {

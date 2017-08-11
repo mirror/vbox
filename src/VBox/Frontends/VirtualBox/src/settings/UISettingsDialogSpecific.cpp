@@ -50,7 +50,6 @@
 # include "UIMachineSettingsAudio.h"
 # include "UIMachineSettingsNetwork.h"
 # include "UIMachineSettingsSerial.h"
-# include "UIMachineSettingsParallel.h"
 # include "UIMachineSettingsUSB.h"
 # include "UIMachineSettingsSF.h"
 # include "UIMachineSettingsInterface.h"
@@ -418,14 +417,6 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                             iPageIndex, "#serialPorts", pSettingsPage, MachineSettingsPageType_Ports);
                     break;
                 }
-                /* Parallel page: */
-                case MachineSettingsPageType_Parallel:
-                {
-                    pSettingsPage = new UIMachineSettingsParallelPage;
-                    addItem(":/parallel_port_32px.png", ":/parallel_port_24px.png", ":/parallel_port_16px.png",
-                            iPageIndex, "#parallelPorts", pSettingsPage, MachineSettingsPageType_Ports);
-                    break;
-                }
                 /* USB page: */
                 case MachineSettingsPageType_USB:
                 {
@@ -597,15 +588,13 @@ void UISettingsDialogMachine::retranslateUi()
     /* Selector itself: */
     m_pSelector->widget()->setWhatsThis(tr("Allows to navigate through VM Settings categories"));
 
-    /* We have to make sure that the Network, Serial & Parallel pages are retranslated
+    /* We have to make sure that the Network, Serial pages are retranslated
      * before they are revalidated. Cause: They do string comparing within
      * vboxGlobal which is retranslated at that point already: */
     QEvent event(QEvent::LanguageChange);
     if (QWidget *pPage = m_pSelector->idToPage(MachineSettingsPageType_Network))
         qApp->sendEvent(pPage, &event);
     if (QWidget *pPage = m_pSelector->idToPage(MachineSettingsPageType_Serial))
-        qApp->sendEvent(pPage, &event);
-    if (QWidget *pPage = m_pSelector->idToPage(MachineSettingsPageType_Parallel))
         qApp->sendEvent(pPage, &event);
 
     /* General page: */
@@ -631,9 +620,6 @@ void UISettingsDialogMachine::retranslateUi()
 
     /* Serial page: */
     m_pSelector->setItemText(MachineSettingsPageType_Serial, tr("Serial Ports"));
-
-    /* Parallel page: */
-    m_pSelector->setItemText(MachineSettingsPageType_Parallel, tr("Parallel Ports"));
 
     /* USB page: */
     m_pSelector->setItemText(MachineSettingsPageType_USB, tr("USB"));
@@ -843,14 +829,6 @@ bool UISettingsDialogMachine::isPageAvailable(int iPageId)
             if (!isPageAvailable(MachineSettingsPageType_Ports))
                 return false;
             break;
-        }
-        case MachineSettingsPageType_Parallel:
-        {
-            /* Depends on ports availability: */
-            if (!isPageAvailable(MachineSettingsPageType_Ports))
-                return false;
-            /* But for now this page is always disabled: */
-            return false;
         }
         case MachineSettingsPageType_USB:
         {

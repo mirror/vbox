@@ -37,10 +37,6 @@
         <file alias="os_winxp_hidpi.png">images/hidpi/os_winxp_hidpi.png</file>
         <file alias="os_xandros_64_hidpi.png">images/hidpi/os_xandros_64_hidpi.png</file>
         <file alias="os_xandros_hidpi.png">images/hidpi/os_xandros_hidpi.png</file>
-        <file alias="parallel_port_16px_hidpi.png">images/hidpi/parallel_port_16px_hidpi.png</file>
-        <file alias="parallel_port_24px_hidpi.png">images/hidpi/parallel_port_24px_hidpi.png</file>
-        <file alias="parallel_port_32px_hidpi.png">images/hidpi/parallel_port_32px_hidpi.png</file>
-        <file alias="parallel_port_warning_16px_hidpi.png">images/hidpi/parallel_port_warning_16px_hidpi.png</file>
         <file alias="pin_16px_hidpi.png">images/hidpi/pin_16px_hidpi.png</file>
         <file alias="preview_empty_16to10_242x167px_hidpi.png">images/hidpi/preview_empty_16to10_242x167px_hidpi.png</file>
         <file alias="preview_empty_16to9_242x155px_hidpi.png">images/hidpi/preview_empty_16to9_242x155px_hidpi.png</file>

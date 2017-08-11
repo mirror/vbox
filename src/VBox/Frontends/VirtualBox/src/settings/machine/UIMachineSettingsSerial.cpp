@@ -352,7 +352,7 @@ void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old parallel data: */
+    /* Prepare old serial data: */
     UIDataSettingsMachineSerial oldSerialData;
 
     /* For each port: */

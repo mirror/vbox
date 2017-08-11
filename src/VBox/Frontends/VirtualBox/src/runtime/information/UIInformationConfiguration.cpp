@@ -126,16 +126,6 @@ void UIInformationConfiguration::prepareModel()
             m_pModel->addItem(pSerialPorts);
         }
 
-#ifdef VBOX_WITH_PARALLEL_PORTS
-        /* Create parallel-ports data-item: */
-        UIInformationDataItem *pParallelPorts = new UIInformationDataParallelPorts(m_machine, m_console, m_pModel);
-        AssertPtrReturnVoid(pParallelPorts);
-        {
-            /* Add parallel-ports data-item to model: */
-            m_pModel->addItem(pParallelPorts);
-        }
-#endif /* VBOX_WITH_PARALLEL_PORTS */
-
         /* Create usb data-item: */
         UIInformationDataItem *pUSB = new UIInformationDataUSB(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pUSB);

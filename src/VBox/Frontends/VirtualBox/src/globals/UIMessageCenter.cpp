@@ -60,7 +60,6 @@
 # include "CDHCPServer.h"
 # include "CAudioAdapter.h"
 # include "CNATEngine.h"
-# include "CParallelPort.h"
 # include "CSerialPort.h"
 # include "CSharedFolder.h"
 # include "CSnapshot.h"
