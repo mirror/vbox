@@ -138,6 +138,7 @@ typedef UDFSHORTAD const *PCUDFSHORTAD;
 /**
  * UDF long allocation descriptor (@ecma167{4,14.14.2,116}).
  */
+#pragma pack(2)
 typedef struct UDFLONGAD
 {
 #ifdef RT_BIG_ENDIAN
@@ -154,13 +155,37 @@ typedef struct UDFLONGAD
     /** Extent location. */
     UDFLBADDR       Location;
     /** Implementation use area. */
-    uint8_t         abImplementationUse[6];
+    union
+    {
+        /** Generic view. */
+        uint8_t     ab[6];
+        /** Used in FIDs.
+         * See @udf260{2.3.10.1,66}, @udf260{2.3.4.3,58}.
+         */
+        struct
+        {
+            /** Flags (UDF_AD_IMP_USE_FLAGS_XXX).   */
+            uint16_t    fFlags;
+            /** Unique ID. */
+            uint32_t    idUnique;
+        } Fid;
+    } ImplementationUse;
 } UDFLONGAD;
+#pragma pack()
 AssertCompileSize(UDFLONGAD, 16);
 /** Pointer to an UDF long allocation descriptor. */
 typedef UDFLONGAD *PUDFLONGAD;
 /** Pointer to a const UDF long allocation descriptor. */
 typedef UDFLONGAD const *PCUDFLONGAD;
+
+/** @name UDF_AD_IMP_USE_FLAGS_XXX - UDFLONGAD::ImplementationUse::Fid::fFlags values
+ * See @udf260{2.3.10.1,66}.
+ * @{ */
+/** Set if erased and the extend is of the type UDF_AD_TYPE_ONLY_ALLOCATED. */
+#define UDF_AD_IMP_USE_FLAGS_ERASED         UINT16_C(0x0001)
+/** Valid mask.   */
+#define UDF_AD_IMP_USE_FLAGS_VALID_MASK     UINT16_C(0x0001)
+/** @} */
 
 /**
  * UDF extended allocation descriptor (@ecma167{4,14.14.3,117}).
@@ -470,15 +495,26 @@ typedef UDFTAG const *PCUDFTAG;
 
 /** @name UDF_TAG_ID_XXX - UDF descriptor tag IDs.
  * @{ */
-#define UDF_TAG_ID_PRIMARY_VOL_DESC                 UINT16_C(0x0001)
+#define UDF_TAG_ID_PRIMARY_VOL_DESC                 UINT16_C(0x0001) /**< UDFPRIMARYVOLUMEDESC */
 #define UDF_TAG_ID_ANCHOR_VOLUME_DESC_PTR           UINT16_C(0x0002) /**< UDFANCHORVOLUMEDESCPTR */
-#define UDF_TAG_ID_VOLUME_DESC_PTR                  UINT16_C(0x0003)
-#define UDF_TAG_ID_IMPLEMENATION_USE_VOLUME_DESC    UINT16_C(0x0004)
-#define UDF_TAG_ID_PARTITION_DESC                   UINT16_C(0x0005)
-#define UDF_TAG_ID_LOGICAL_VOLUME_DESC              UINT16_C(0x0006)
-#define UDF_TAG_ID_UNALLOCATED_SPACE_DESC           UINT16_C(0x0007)
-#define UDF_TAG_ID_TERMINATING_DESC                 UINT16_C(0x0008)
-#define UDF_TAG_ID_LOGICAL_VOLUME_INTEGRITY_DESC    UINT16_C(0x0009)
+#define UDF_TAG_ID_VOLUME_DESC_PTR                  UINT16_C(0x0003) /**< UDFVOLUMEDESCPTR */
+#define UDF_TAG_ID_IMPLEMENATION_USE_VOLUME_DESC    UINT16_C(0x0004) /**< UDFIMPLEMENTATIONUSEVOLUMEDESC */
+#define UDF_TAG_ID_PARTITION_DESC                   UINT16_C(0x0005) /**< UDFPARTITIONDESC */
+#define UDF_TAG_ID_LOGICAL_VOLUME_DESC              UINT16_C(0x0006) /**< UDFLOGICALVOLUMEDESC */
+#define UDF_TAG_ID_UNALLOCATED_SPACE_DESC           UINT16_C(0x0007) /**< UDFUNALLOCATEDSPACEDESC */
+#define UDF_TAG_ID_TERMINATING_DESC                 UINT16_C(0x0008) /**< UDFTERMINATINGDESC */
+#define UDF_TAG_ID_LOGICAL_VOLUME_INTEGRITY_DESC    UINT16_C(0x0009) /**< UDFLOGICALVOLINTEGRITYDESC */
+#define UDF_TAG_ID_FILE_SET_DESC                    UINT16_C(0x0100)
+#define UDF_TAG_ID_FILE_ID_DESC                     UINT16_C(0x0101)
+#define UDF_TAG_ID_ALLOCATION_EXTENT_DESC           UINT16_C(0x0102)
+#define UDF_TAG_ID_INDIRECT_ENTRY                   UINT16_C(0x0103)
+#define UDF_TAG_ID_TERMINAL_ENTRY                   UINT16_C(0x0104)
+#define UDF_TAG_ID_FILE_ENTRY                       UINT16_C(0x0105)
+#define UDF_TAG_ID_EXTENDED_ATTRIB_HDR_DESC         UINT16_C(0x0106)
+#define UDF_TAG_ID_UNALLOCATED_SPACE_ENTRY          UINT16_C(0x0107)
+#define UDF_TAG_ID_SPACE_BITMAP_DESC                UINT16_C(0x0108)
+#define UDF_TAG_ID_PARTITION_INTEGERITY_DESC        UINT16_C(0x0109)
+#define UDF_TAG_ID_EXTENDED_FILE_ENTRY              UINT16_C(0x010a)
 /** @} */
 
 
@@ -814,7 +850,7 @@ typedef UDFUNALLOCATEDSPACEDESC const *PCUDFUNALLOCATEDSPACEDESC;
 
 
 /**
- * UDF terminating descriptor (@ecma167{3,10.9,62}).
+ * UDF terminating descriptor (@ecma167{3,10.9,62}, @ecma167{4,14.2,62}).
  */
 typedef struct UDFTERMINATINGDESC
 {
@@ -868,6 +904,297 @@ typedef UDFLOGICALVOLINTEGRITYDESC const *PCUDFLOGICALVOLINTEGRITYDESC;
 #define UDF_LVID_TYPE_OPEN          UINT32_C(0x00000000)
 #define UDF_LVID_TYPE_CLOSE         UINT32_C(0x00000001)
 /** @} */
+
+/**
+ * UDF file set descriptor (FSD) (@ecma167{4,14.1,86}, @udf260{2.3.2,54}).
+ */
+typedef struct UDFFILESETDESC
+{
+    /** 0x000: The descriptor tag (UDF_TAG_ID_FILE_SET_DESC). */
+    UDFTAG          Tag;
+    /** 0x010: Recording timestamp. */
+    UDFTIMESTAMP    RecordingTimestamp;
+    /** 0x01c: Interchange level. */
+    uint16_t        uInterchangeLevel;
+    /** 0x01e: Maximum interchange level. */
+    uint16_t        uMaxInterchangeLevel;
+    /** 0x020: Character set bitmask (aka list).  Each bit correspond to a
+     * character set number. */
+    uint32_t        fCharacterSets;
+    /** 0x024: Maximum character set bitmask (aka list). */
+    uint32_t        fMaxCharacterSets;
+    /** 0x028: File set number. */
+    uint32_t        uFileSetNo;
+    /** 0x02c: File set descriptor number. */
+    uint32_t        uFileSetDescNo;
+    /** 0x030: Logical volume identifier character set. */
+    UDFCHARSPEC     LogicalVolumeIDCharSet;
+    /** 0x070: Logical volume identifier string. */
+    UDFDSTRING      achLogicalVolumeID[128];
+    /** 0x0e0: File set character set. */
+    UDFCHARSPEC     FileSetCharSet;
+    /** 0x130: Identifier string for this file set. */
+    UDFDSTRING      achFileSetID[32];
+    /** 0x150: Names a root file containing copyright info.  Optional. */
+    UDFDSTRING      achCopyrightFile[32];
+    /** 0x170: Names a root file containing an abstract for the file set.  Optional. */
+    UDFDSTRING      achAbstractFile[32];
+    /** 0x190: Root directory information control block location (ICB).
+     * An ICB is a sequence made up of UDF_TAG_ID_FILE_ENTRY,
+     * UDF_TAG_ID_INDIRECT_ENTRY, and UDF_TAG_ID_TERMINAL_ENTRY descriptors. */
+    UDFLONGAD       RootDirIcb;
+    /** 0x1a0: Domain identifier (UDF_ENTITY_FSD_LVD_DOMAIN).  Optional. */
+    UDFENTITYID     idDomain;
+    /** 0x1c0: Next location with file set descriptors location, 0 if none. */
+    UDFLONGAD       NextExtent;
+    /** 0x1d0: Location of the system stream directory associated with the
+     * file set.  Optional. */
+    UDFLONGAD       SystemStreamDirIcb;
+    /** 0x1e0: Reserved, MBZ. */
+    uint8_t         abReserved[32];
+} UDFFILESETDESC;
+AssertCompileSize(UDFFILESETDESC, 512);
+/** Pointer to an UDF file set descriptor. */
+typedef UDFFILESETDESC *PUDFFILESETDESC;
+/** Pointer to a const UDF file set descriptor. */
+typedef UDFFILESETDESC const *PCUDFFILESETDESC;
+
+
+/**
+ * UDF file identifier descriptor (FID) (@ecma167{4,14.4,91}, @udf260{2.3.4,57}).
+ */
+typedef struct UDFFILEIDDESC
+{
+    /** 0x00: The descriptor tag (UDF_TAG_ID_FILE_ID_DESC). */
+    UDFTAG          Tag;
+    /** 0x10: File version number (1..32767).  Always set to 1. */
+    uint16_t        uVersion;
+    /** 0x12: File characteristics (UDF_FILE_FLAGS_XXX). */
+    uint8_t         fFlags;
+    /** 0x13: File identifier (name) length. */
+    uint8_t         cbName;
+    /** 0x14: Location of an information control block describing the file.
+     * Can be null if marked deleted.  The implementation defined part of
+     * this contains additional flags and a unique ID. */
+    UDFLONGAD       Icb;
+    /** 0x24: Length of implementation use field (in bytes).  This can be zero.
+     *
+     * It can be used to prevent the following FID from spanning a block
+     * boundrary, in which case it will be 32 bytes or more, and the it will
+     * start with an UDFENTITYID identifying who last wrote it.
+     *
+     * The latter padding fun is a requirement from write-once media. */
+    uint16_t        cbImplementationUse;
+    /** 0x26: Two variable sized fields followed by padding to make the
+     * actual structure size 4 byte aligned.  The first field in an
+     * implementation use field with length given by @a cbImplementationUse.
+     * After that is a d-string field with the name of the file, length
+     * specified by @a cbName. */
+    uint8_t         abImplementationUse[RT_FLEXIBLE_ARRAY];
+} UDFFILEIDDESC;
+AssertCompileMemberOffset(UDFFILEIDDESC, fFlags,              0x12);
+AssertCompileMemberOffset(UDFFILEIDDESC, cbName,              0x13);
+AssertCompileMemberOffset(UDFFILEIDDESC, Icb,                 0x14);
+AssertCompileMemberOffset(UDFFILEIDDESC, abImplementationUse, 0x26);
+/** Pointer to an UDF file set descriptor   */
+typedef UDFFILEIDDESC *PUDFFILEIDDESC;
+
+/** Get the pointer to the name field. */
+#define UDFFILEIDDESC_2_NAME(a_pFid)        ((char *)(&(a_pFid)->abImplementationUse[(a_pFid)->cbImplementationUse]))
+/** Calculates the total size the size of a record.  */
+#define UDFFILEIDDESC_CALC_SIZE_EX(cbImplementationUse, cbName) \
+    RT_ALIGN_Z(RT_UOFFSETOF(UDFFILEIDDESC, abImplementationUse) + cbImplementationUse + cbName, 4)
+/** Gets the actual size of a record. */
+#define UDFFILEIDDESC_GET_SIZE(a_pFid)      UDFFILEIDDESC_CALC_SIZE_EX((a_pFid)->cbImplementationUse + (a_pFid)->cbName)
+
+/** @name UDF_FILE_FLAGS_XXX
+ * @{ */
+/** Existence - Hide the file from the user. */
+#define UDF_FILE_FLAGS_HIDDEN               UINT8_C(0x01)
+/** Directory - Indicates a directory as apposed to some kind of file or symlink or something  (0). */
+#define UDF_FILE_FLAGS_DIRECTORY            UINT8_C(0x02)
+/** Deleted - Indicate that the file has been deleted.  Assoicated descriptors may still be valid, though. */
+#define UDF_FILE_FLAGS_DELETED              UINT8_C(0x04)
+/** Parent - Indicate the ICB field refers to the parent directory (or mabye
+ * a file in case of streaming directory). */
+#define UDF_FILE_FLAGS_PARENT               UINT8_C(0x08)
+/** Metadata - Zero means user data, one means implementation specific metadata.
+ *  Only allowed used in stream directory. */
+#define UDF_FILE_FLAGS_METADATA             UINT8_C(0x10)
+/** Reserved bits that should be zer.   */
+#define UDF_FILE_FLAGS_RESERVED_MASK        UINT8_C(0xe0)
+/** @} */
+
+
+/**
+ * UDF allocation extent descriptor (@ecma167{4,14.5,93}, @udf256{2.3.11,67}).
+ */
+typedef struct UDFALLOCATIONEXTENTDESC
+{
+    /** 0x00: The descriptor tag (UDF_TAG_ID_ALLOCATION_EXTENT_DESC). */
+    UDFTAG          Tag;
+    /** 0x10: Previous allocation extent location (logical block in current
+     *  partition). */
+    uint32_t        offPrevExtent;
+    /** 0x14: Size of the following allocation descriptors (in bytes). */
+    uint32_t        cbAllocationDescriptors;
+    /** 0x18: Allocation descriptors.
+     * @todo verify format...  */
+    union
+    {
+        UDFSHORTAD  aShortADs[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        UDFLONGAD   aLongADs[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        UDFEXTAD    aExtADs[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+    } u;
+} UDFALLOCATIONEXTENTDESC;
+AssertCompileMemberOffset(UDFALLOCATIONEXTENTDESC, u, 0x18);
+/** Pointer to an UDF allocation extent descriptor. */
+typedef UDFALLOCATIONEXTENTDESC *PUDFALLOCATIONEXTENTDESC;
+/** Pointer to a const UDF allocation extent descriptor. */
+typedef UDFALLOCATIONEXTENTDESC const *PCUDFALLOCATIONEXTENTDESC;
+
+/**
+ * UDF information control block tag (@ecma167{4,14.6,93}, @udf260{2.3.5,60}).
+ */
+typedef struct UDFICBTAG
+{
+    /** 0x00: Number of direct entries in this ICB prior to this one. */
+    uint32_t        cEntiresBeforeThis;
+    /** 0x04: ICB hierarchy building strategy type (UDF_ICB_STRATEGY_TYPE_XXX). */
+    uint16_t        uStrategyType;
+    /** 0x06: Type specific parameters. */
+    uint8_t         abStrategyParams[2];
+    /** 0x08: Max number of direct and indirect entries that MAY be recorded in this ICB. */
+    uint16_t        cMaxEntries;
+    /** 0x0a: Reserved, MBZ. */
+    uint8_t         bReserved;
+    /** 0x0b: File type (UDF_FILE_TYPE_XXX). */
+    uint8_t         bFileType;
+    /** 0x0c: Parent ICB location. */
+    UDFLBADDR       ParentIcb;
+    /** 0x12: Parent ICB location (UDF_ICB_FLAGS_XXX). */
+    uint16_t        fFlags;
+} UDFICBTAG;
+AssertCompileSize(UDFICBTAG, 20);
+typedef UDFICBTAG *PUDFICBTAG;
+typedef UDFICBTAG const *PCUDFICBTAG;
+
+/** @name UDF_ICB_STRATEGY_TYPE_XXX - ICB hierarchy building strategies
+ *
+ * See @ecma167{4,14.6.2,94}, @udf260{6.6,121}
+ *
+ * @{ */
+/** Strategy not specified. */
+#define UDF_ICB_STRATEGY_TYPE_NOT_SPECIFIED     UINT16_C(0x0000)
+/** See @ecma167{4,A.2,129}. */
+#define UDF_ICB_STRATEGY_TYPE_1                 UINT16_C(0x0001)
+/** See @ecma167{4,A.3,131}. */
+#define UDF_ICB_STRATEGY_TYPE_2                 UINT16_C(0x0002)
+/** See @ecma167{4,A.4,131}. */
+#define UDF_ICB_STRATEGY_TYPE_3                 UINT16_C(0x0003)
+/** See @ecma167{4,A.5,131}. */
+#define UDF_ICB_STRATEGY_TYPE_4                 UINT16_C(0x0004)
+/** Defined by the UDF spec, see @udf260{6.6,121}. */
+#define UDF_ICB_STRATEGY_TYPE_4096              UINT16_C(0x1000)
+/** @} */
+
+/** @name UDF_ICB_FLAGS_XXX - ICB flags
+ *
+ * See @ecma167{4,14.6.8,95}, @udf260{2.3.5.4,61}
+ *
+ *  @{ */
+/** Using UDFSHORTAD. */
+#define UDF_ICB_FLAGS_AD_TYPE_SHORT             UINT16_C(0x0000)
+/** Using UDFLONGAD. */
+#define UDF_ICB_FLAGS_AD_TYPE_LONG              UINT16_C(0x0001)
+/** Using UDFEXTAD. */
+#define UDF_ICB_FLAGS_AD_TYPE_EXTENDED          UINT16_C(0x0002)
+/** Single descriptor. */
+#define UDF_ICB_FLAGS_AD_TYPE_SINGLE            UINT16_C(0x0003)
+/** Allocation type mask. */
+#define UDF_ICB_FLAGS_AD_TYPE_MASK              UINT16_C(0x0007)
+/** Set on directories that are sorted (according to @ecma167{4,8.6.1,78}).
+ * @note Directories are never sorted in UDF.  */
+#define UDF_ICB_FLAGS_SORTED_DIRECTORY          UINT16_C(0x0008)
+/** Not relocatable. */
+#define UDF_ICB_FLAGS_NON_RELOCATABLE           UINT16_C(0x0010)
+/** Indicate that the file needs backing up (DOS attribute). */
+#define UDF_ICB_FLAGS_ARCHIVE                   UINT16_C(0x0020)
+/** Set UID bit (UNIX). */
+#define UDF_ICB_FLAGS_SET_UID                   UINT16_C(0x0040)
+/** Set GID bit (UNIX). */
+#define UDF_ICB_FLAGS_SET_GID                   UINT16_C(0x0080)
+/** Set sticky bit (UNIX). */
+#define UDF_ICB_FLAGS_STICKY                    UINT16_C(0x0100)
+/** Extents are contiguous. */
+#define UDF_ICB_FLAGS_CONTIGUOUS                UINT16_C(0x0200)
+/** System bit, reserved for implementation use. */
+#define UDF_ICB_FLAGS_SYSTEM                    UINT16_C(0x0400)
+/** Data has been transformed in some way.
+ * @note UDF shall not set this bit.  */
+#define UDF_ICB_FLAGS_TRANSFORMED               UINT16_C(0x0800)
+/** Directory may contain multi-versioned files.
+ * @note UDF shall not set this bit.  */
+#define UDF_ICB_FLAGS_MULTI_VERSIONS            UINT16_C(0x1000)
+/** Is a stream in a stream directory. */
+#define UDF_ICB_FLAGS_STREAM                    UINT16_C(0x2000)
+/** Reserved mask. */
+#define UDF_ICB_FLAGS_RESERVED_MASK             UINT16_C(0xc000)
+/** @} */
+
+/** @name UDF_FILE_TYPE_XXX - File types
+ *
+ * See @ecma167{4,14.6.6,94}, @udf260{2.3.5.2,60}
+ *
+ *  @{ */
+#define UDF_FILE_TYPE_NOT_SPECIFIED             UINT8_C(0x00) /**< Not specified by this field. */
+#define UDF_FILE_TYPE_UNALLOCATED_SPACE_ENTRY   UINT8_C(0x01)
+#define UDF_FILE_TYPE_PARTITION_INTEGRITY_ENTRY UINT8_C(0x02)
+#define UDF_FILE_TYPE_INDIRECT_ENTRY            UINT8_C(0x03)
+#define UDF_FILE_TYPE_DIRECTORY                 UINT8_C(0x04)
+#define UDF_FILE_TYPE_REGULAR_FILE              UINT8_C(0x05)
+#define UDF_FILE_TYPE_BLOCK_DEVICE              UINT8_C(0x06)
+#define UDF_FILE_TYPE_CHARACTER_DEVICE          UINT8_C(0x07)
+#define UDF_FILE_TYPE_EXTENDED_ATTRIBUTES       UINT8_C(0x08)
+#define UDF_FILE_TYPE_FIFO                      UINT8_C(0x09)
+#define UDF_FILE_TYPE_SOCKET                    UINT8_C(0x0a)
+#define UDF_FILE_TYPE_TERMINAL_ENTRY            UINT8_C(0x0b)
+#define UDF_FILE_TYPE_SYMBOLIC_LINK             UINT8_C(0x0c)
+#define UDF_FILE_TYPE_STREAM_DIRECTORY          UINT8_C(0x0d)
+#define UDF_FILE_TYPE_VAT                       UINT8_C(0xf8)
+#define UDF_FILE_TYPE_REAL_TIME_FILE            UINT8_C(0xf9)
+#define UDF_FILE_TYPE_METADATA_FILE             UINT8_C(0xfa)
+#define UDF_FILE_TYPE_METADATA_MIRROR_FILE      UINT8_C(0xfb)
+#define UDF_FILE_TYPE_METADATA_BITMAP_FILE      UINT8_C(0xfc)
+/** @} */
+
+
+/**
+ * UDF indirect entry (@ecma167{4,14.7,96}).
+ */
+typedef struct UDFINDIRECTENTRY
+{
+    /** 0x00: The descriptor tag (UDF_TAG_ID_INDIRECT_ENTRY). */
+    UDFTAG          Tag;
+    /** 0x10: ICB Tag. */
+    UDFICBTAG       IcbTag;
+    /** 0x24: Indirect ICB location. */
+    UDFLONGAD       IndirectIcb;
+} UDFINDIRECTENTRY;
+AssertCompileSize(UDFINDIRECTENTRY, 52);
+/** Pointer to an UDF indirect entry. */
+typedef UDFINDIRECTENTRY *PUDFINDIRECTENTRY;
+/** Pointer to a const UDF indirect entry. */
+typedef UDFINDIRECTENTRY const *PCUDFINDIRECTENTRY;
+
+//#define UDF_TAG_ID_TERMINAL_ENTRY                   UINT16_C(0x0104)
+//#define UDF_TAG_ID_FILE_ENTRY                       UINT16_C(0x0105)
+//#define UDF_TAG_ID_EXTENDED_ATTRIB_HDR_DESC         UINT16_C(0x0106)
+//#define UDF_TAG_ID_UNALLOCATED_SPACE_ENTRY          UINT16_C(0x0107)
+//#define UDF_TAG_ID_SPACE_BITMAP_DESC                UINT16_C(0x0108)
+//#define UDF_TAG_ID_PARTITION_INTEGERITY_DESC        UINT16_C(0x0109)
+//#define UDF_TAG_ID_EXTENDED_FILE_ENTRY              UINT16_C(0x010a)
+
 
 
 /** @name UDF Volume Recognition Sequence (VRS)
