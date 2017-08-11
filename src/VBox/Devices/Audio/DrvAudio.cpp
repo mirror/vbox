@@ -2977,7 +2977,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_NOT_SUPPORTED)
-            LogRel2(("Audio: Creating stream '%s' in backend not supported, skipping\n", pHstStream->szName, rc));
+            LogRel2(("Audio: Creating stream '%s' in backend not supported, skipping\n", pHstStream->szName));
         else
             LogRel2(("Audio: Creating stream '%s' in backend failed with %Rrc\n", pHstStream->szName, rc));
 
