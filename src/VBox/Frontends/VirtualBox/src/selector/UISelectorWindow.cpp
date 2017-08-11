@@ -43,7 +43,6 @@
 # include "UISelectorWindow.h"
 # include "UISettingsDialogSpecific.h"
 # include "UISlidingWidget.h"
-# include "UISpacerWidgets.h"
 # include "UITabBar.h"
 # include "UIToolBar.h"
 # include "UIVMLogViewer.h"
@@ -1793,9 +1792,6 @@ void UISelectorWindow::prepareToolbar()
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-
-        /* Create/add horizontal spacer widget to align subsequent controls right: */
-        m_pToolBar->addWidget(new UIHorizontalSpacerWidget);
 
         /* Create Machine tab-bar: */
         m_pTabBarMachine = new UITabBar;

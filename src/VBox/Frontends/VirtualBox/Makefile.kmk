@@ -445,7 +445,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIPortForwardingTable.h \
 	src/widgets/UIProgressDialog.h \
 	src/widgets/UISlidingWidget.h \
-	src/widgets/UISpacerWidgets.h \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UITabBar.h \
 	src/widgets/UIToolBar.h \

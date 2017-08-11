@@ -574,7 +574,6 @@
 #include "UISettingsPage.h"
 #include "UIShortcutPool.h"
 #include "UISlidingToolBar.h"
-#include "UISpacerWidgets.h"
 #include "UISpecialControls.h"
 #include "UIStatusBarEditorWindow.h"
 #include "UIThreadPool.h"
