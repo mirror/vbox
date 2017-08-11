@@ -28,7 +28,6 @@ void blurImageHorizontal(const QImage &source, QImage &dest, int r);
 void blurImageVertical(const QImage &source, QImage &dest, int r);
 
 QPixmap betaLabel(const QSize &ls = QSize(80, 16));
-QPixmap betaLabelSleeve(const QSize &ls = QSize(80, 16));
 
 #endif /* !__UIImageTools_h__ */
 

@@ -35,9 +35,6 @@ class QISplitter;
 class UIAction;
 class UIActionPool;
 class UIGChooser;
-#ifndef VBOX_WS_MAC
-class UIMainBar;
-#endif
 class UISlidingWidget;
 class UITabBar;
 class UIToolBar;
@@ -336,10 +333,6 @@ private:
     /** Holds the central splitter instance. */
     QISplitter *m_pSplitter;
 
-#ifndef VBOX_WS_MAC
-    /** Holds the main bar instance. */
-    UIMainBar *m_pBar;
-#endif
     /** Holds the main toolbar instance. */
     UIToolBar *m_pToolBar;
 

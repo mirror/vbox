@@ -31,7 +31,6 @@
 # include "QIFileDialog.h"
 # include "QISplitter.h"
 # include "UIActionPoolSelector.h"
-# include "UIBar.h"
 # include "UIDesktopServices.h"
 # include "UIExtraDataManager.h"
 # include "UIGChooser.h"
@@ -66,6 +65,9 @@
 # endif /* VBOX_WS_MAC */
 # ifdef VBOX_WS_X11
 #  include "UIDesktopWidgetWatchdog.h"
+# endif
+# ifndef VBOX_WS_MAC
+#  include "UIMenuBar.h"
 # endif
 
 /* Other VBox stuff: */
@@ -114,9 +116,6 @@ UISelectorWindow::UISelectorWindow()
     , m_pActionPool(0)
     , m_pSlidingWidget(0)
     , m_pSplitter(0)
-#ifndef VBOX_WS_MAC
-    , m_pBar(0)
-#endif
     , m_pToolBar(0)
     , m_pTabBarMachine(0)
     , m_pTabBarGlobal(0)
@@ -191,11 +190,7 @@ void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
     {
         /* Configure action: */
         pShowToolBar->setCheckable(true);
-#ifdef VBOX_WS_MAC
         pShowToolBar->setChecked(m_pToolBar->isVisible());
-#else /* VBOX_WS_MAC */
-        pShowToolBar->setChecked(m_pBar->isVisible());
-#endif /* !VBOX_WS_MAC */
 
         /* Add into action list: */
         actions << pShowToolBar;
@@ -234,21 +229,9 @@ void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
     if (pResult == pShowToolBar)
     {
         if (pResult->isChecked())
-        {
-#ifdef VBOX_WS_MAC
             m_pToolBar->show();
-#else /* VBOX_WS_MAC */
-            m_pBar->show();
-#endif /* !VBOX_WS_MAC */
-        }
         else
-        {
-#ifdef VBOX_WS_MAC
             m_pToolBar->hide();
-#else /* VBOX_WS_MAC */
-            m_pBar->hide();
-#endif /* !VBOX_WS_MAC */
-        }
     }
     else if (pResult == pShowToolBarText)
     {
@@ -1344,8 +1327,8 @@ void UISelectorWindow::prepare()
     /* Beta label? */
     if (vboxGlobal().isBeta())
     {
-        QPixmap betaLabel = ::betaLabelSleeve(QSize(107, 16));
-        ::darwinLabelWindow(this, &betaLabel, false);
+        QPixmap betaLabel = ::betaLabel(QSize(100, 16));
+        ::darwinLabelWindow(this, &betaLabel, true);
     }
 
     /* General event filter: */
@@ -1372,6 +1355,11 @@ void UISelectorWindow::prepareIcon()
 
 void UISelectorWindow::prepareMenuBar()
 {
+#ifndef VBOX_WS_MAC
+    /* Create menu-bar: */
+    setMenuBar(new UIMenuBar);
+#endif
+
     /* Create action-pool: */
     m_pActionPool = UIActionPool::create(UIActionPoolType_Selector);
 
@@ -1792,7 +1780,7 @@ void UISelectorWindow::prepareToolbar()
     AssertPtrReturnVoid(m_pToolBar);
     {
         /* Configure toolbar: */
-        m_pToolBar->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        m_pToolBar->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
         m_pToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         // TODO: Get rid of hard-coded stuff:
@@ -1859,17 +1847,6 @@ void UISelectorWindow::prepareToolbar()
             m_pToolBar->addWidget(m_pToolbarTools);
         }
 
-        /* Create/add horizontal spacer widget of fixed size for the beta label: */
-        QWidget *pSpace = new QWidget;
-        if (pSpace)
-        {
-            if (vboxGlobal().isBeta())
-                pSpace->setFixedSize(60, 1);
-            else
-                pSpace->setFixedSize(1, 1);
-            m_pToolBar->addWidget(pSpace);
-        }
-
 #ifdef VBOX_WS_MAC
         // WORKAROUND:
         // There is a bug in Qt Cocoa which result in showing a "more arrow" when
@@ -1899,25 +1876,12 @@ void UISelectorWindow::prepareWidgets()
             pLayout->setContentsMargins(0, 0, 0, 0);
 
 #ifdef VBOX_WS_MAC
-
             /* Native toolbar on MAC: */
             addToolBar(m_pToolBar);
-
-#else /* !VBOX_WS_MAC */
-
-            /* Create main bar: */
-            m_pBar = new UIMainBar;
-            AssertPtrReturnVoid(m_pBar);
-            if (m_pBar)
-            {
-                /* Configure main bar: */
-                m_pBar->setContentWidget(m_pToolBar);
-
-                /* Add into layout: */
-                pLayout->addWidget(m_pBar);
-            }
-
-#endif /* !VBOX_WS_MAC */
+#else
+            /* Add into layout: */
+            pLayout->addWidget(m_pToolBar);
+#endif
 
             /* Create sliding-widget: */
             m_pSlidingWidget = new UISlidingWidget;
@@ -2119,9 +2083,9 @@ void UISelectorWindow::loadSettings()
         // have to hide toolbar asynchronously to avoid that.
         if (!gEDataManager->selectorWindowToolBarVisible())
             QMetaObject::invokeMethod(m_pToolBar, "hide", Qt::QueuedConnection);
-#else /* VBOX_WS_MAC */
-        m_pBar->setHidden(!gEDataManager->selectorWindowToolBarVisible());
-#endif /* !VBOX_WS_MAC */
+#else
+        m_pToolBar->setHidden(!gEDataManager->selectorWindowToolBarVisible());
+#endif
         m_pToolBar->setToolButtonStyle(gEDataManager->selectorWindowToolBarTextVisible()
                                        ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
         m_pToolbarTools->setToolButtonStyle(gEDataManager->selectorWindowToolBarTextVisible()
@@ -2159,11 +2123,7 @@ void UISelectorWindow::saveSettings()
 
     /* Save toolbar and statusbar visibility: */
     {
-#ifdef VBOX_WS_MAC
         gEDataManager->setSelectorWindowToolBarVisible(!m_pToolBar->isHidden());
-#else /* VBOX_WS_MAC */
-        gEDataManager->setSelectorWindowToolBarVisible(!m_pBar->isHidden());
-#endif /* !VBOX_WS_MAC */
         gEDataManager->setSelectorWindowToolBarTextVisible(m_pToolBar->toolButtonStyle() == Qt::ToolButtonTextUnderIcon);
         gEDataManager->setSelectorWindowStatusBarVisible(!statusBar()->isHidden());
     }

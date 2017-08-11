@@ -427,7 +427,6 @@
 #include "UIApplianceEditorWidget.h"
 #include "UIApplianceExportEditorWidget.h"
 #include "UIApplianceImportEditorWidget.h"
-#include "UIBar.h"
 #include "UIBootTable.h"
 #ifdef RT_OS_DARWIN
 # include "UICocoaApplication.h"
