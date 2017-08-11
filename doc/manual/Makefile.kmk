@@ -711,7 +711,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex: \
 	$(call MSG_TOOL,xsltproc $(notdir $(filter %.xsl,$^)),,$(firstword $(filter %.xml,$^)),$@)
 	$(QUIET)$(RM) -f $(addprefix $(@D/),$(VBOX_SDKREF_LATEX_FILES_TARGET))
 ##      check it for validity first.
-#ifdef VBOX_HAVE_XMLLINT
+#if defined(VBOX_HAVE_XMLLINT) && defined(VBOX_PATH_DOCBOOK_DTD)
 #	$(QUIET)$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd $<
 #endif
 #	generate TeX source from processed docbook and store it in SDKRef.tex.tmp
@@ -762,7 +762,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/Accessibility.tex: \
 	$(call MSG_TOOL,xsltproc $(notdir $(filter %.xsl,$^)),,$(firstword $(filter %.xml,$^)),$@)
 	$(QUIET)$(RM) -f $(addprefix $(@D/),$(VBOX_ACCESSIBILITY_LATEX_FILES_TARGET))
 #	check it for validity first.
-ifdef VBOX_HAVE_XMLLINT
+if defined(VBOX_HAVE_XMLLINT) && defined(VBOX_PATH_DOCBOOK_DTD)
 	$(QUIET)$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd $<
 endif
 #	generate TeX source from processed docbook and store it in Accessibility.tex.tmp
