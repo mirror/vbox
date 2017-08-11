@@ -29,6 +29,8 @@
 #define LOG_GROUP LOG_GROUP_DEV_HDA
 #include <VBox/log.h>
 
+#include <iprt/asm-math.h> /* For ASMMultU64ByU32DivByU32(). */
+
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
 
@@ -251,8 +253,8 @@ uint64_t hdaStreamPeriodFramesToWalClk(PHDASTREAMPERIOD pPeriod, uint32_t uFrame
     /* Prevent division by zero. */
     const uint32_t uHz = (pPeriod->u32Hz ? pPeriod->u32Hz : 1);
 
-    /* 24 MHz WallClock (WALCLK): 42ns resolution. */
-    return ((uFrames * 24000 /* 24 MHz */) / uHz) * 1000;
+    /* 24 MHz wall clock (WALCLK): 42ns resolution. */
+    return ASMMultU64ByU32DivByU32(uFrames, 24000000, uHz);
 }
 
 /**
