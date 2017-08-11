@@ -2515,11 +2515,25 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
         pGstStrm->enmCtx = PDMAUDIOSTREAMCTX_GUEST;
         pGstStrm->enmDir = pCfgGuest->enmDir;
 
+        /* Retrieve host driver name for easier identification. */
+        AssertPtr(pThis->pHostDrvAudio);
+        PPDMDRVINS pDrvAudioInst = PDMIBASE_2_PDMDRV(pThis->pDrvIns->pDownBase);
+        AssertPtr(pDrvAudioInst);
+        AssertPtr(pDrvAudioInst->pReg);
+
+        char szDriver[64];
+        RTStrPrintf(szDriver, RT_ELEMENTS(szDriver), "%s", pDrvAudioInst->pReg->szName);
+        if (!strlen(szDriver))
+        {
+            RTStrPrintf(szDriver, RT_ELEMENTS(szDriver), "Untitled");
+            AssertFailed(); /* Should never happen. */
+        }
+
         /*
          * Init host stream.
          */
-        RTStrPrintf(pHstStrm->szName, RT_ELEMENTS(pHstStrm->szName), "%s (Host)",
-                    strlen(pCfgHost->szName) ? pCfgHost->szName : "<Untitled>");
+        RTStrPrintf(pHstStrm->szName, RT_ELEMENTS(pHstStrm->szName), "[%s] %s (Host)",
+                    szDriver, strlen(pCfgHost->szName) ? pCfgHost->szName : "<Untitled>");
 
         rc = drvAudioStreamLinkToInternal(pHstStrm, pGstStrm);
         AssertRCBreak(rc);
@@ -2527,8 +2541,8 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
         /*
          * Init guest stream.
          */
-        RTStrPrintf(pGstStrm->szName, RT_ELEMENTS(pGstStrm->szName), "%s (Guest)",
-                    strlen(pCfgGuest->szName) ? pCfgGuest->szName : "<Untitled>");
+        RTStrPrintf(pGstStrm->szName, RT_ELEMENTS(pGstStrm->szName), "[%s] %s (Guest)",
+                    szDriver, strlen(pCfgGuest->szName) ? pCfgGuest->szName : "<Untitled>");
 
         pGstStrm->fStatus = pHstStrm->fStatus; /* Reflect the host stream's status. */
 
