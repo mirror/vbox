@@ -1606,11 +1606,17 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
     {
         uint32_t cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pHstStream->pvBackend);
         if (!cbReadable)
+        {
+            Log2Func(("[%s] No readable data available, skipping\n", pHstStream->szName));
             break;
+        }
 
         uint32_t cbFree = AUDIOMIXBUF_F2B(&pHstStream->MixBuf, AudioMixBufFree(&pHstStream->MixBuf));
         if (!cbFree)
+        {
+            Log2Func(("[%s] Host buffer full, skipping\n", pHstStream->szName));
             break;
+        }
 
         if (cbFree < cbReadable) /* More data captured than we can read? */
         {
@@ -1650,7 +1656,13 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
             break;
     }
 
-    Log2Func(("[%s] %RU32 frames captured, rc=%Rrc\n", pHstStream->szName, cfCapturedTotal, rc));
+    if (RT_SUCCESS(rc))
+    {
+        if (cfCapturedTotal)
+            Log2Func(("[%s] %RU32 frames captured, rc=%Rrc\n", pHstStream->szName, cfCapturedTotal, rc));
+    }
+    else
+        LogFunc(("[%s] Capturing failed with rc=%Rrc\n", pHstStream->szName, rc));
 
     if (pcfCaptured)
         *pcfCaptured = cfCapturedTotal;
