@@ -68,8 +68,8 @@ typedef struct VRDESTREAM
     {
         struct
         {
-            /** Number of samples this stream can handle at once. */
-            uint32_t    csMax;
+            /** Number of audio frames this stream can handle at once. */
+            uint32_t    cfMax;
             /** Circular buffer for holding the recorded audio samples from the host. */
             PRTCIRCBUF  pCircBuf;
         } In;
@@ -89,9 +89,9 @@ AssertCompileSize(PDMAUDIOFRAME, sizeof(int64_t) * 2 /* st_sample_t using by VRD
 
 static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    pStreamVRDE->In.csMax = _1K; /** @todo Make this configurable. */
+    pStreamVRDE->In.cfMax = _1K; /** @todo Make this configurable. */
 
-    int rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, pStreamVRDE->In.csMax * (pCfgReq->Props.cBits / 8) /* Bytes */);
+    int rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, pStreamVRDE->In.cfMax * (pCfgReq->Props.cBits / 8) /* Bytes */);
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
@@ -103,8 +103,8 @@ static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgRe
              * As the audio connector also uses this format, set the layout to "raw" and just let pass through
              * the data without any layout modification needed.
              */
-            pCfgAcq->enmLayout         = PDMAUDIOSTREAMLAYOUT_RAW;
-            pCfgAcq->cFrameBufferHint = pStreamVRDE->In.csMax;
+            pCfgAcq->enmLayout        = PDMAUDIOSTREAMLAYOUT_RAW;
+            pCfgAcq->cFrameBufferHint = pStreamVRDE->In.cfMax;
         }
     }
 
@@ -157,7 +157,7 @@ static int vrdeControlStreamIn(PDRVAUDIOVRDE pDrv, PVRDESTREAM pStreamVRDE, PDMA
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
-            rc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pStreamVRDE, pStreamVRDE->In.csMax,
+            rc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pStreamVRDE, pStreamVRDE->In.cfMax,
                                                                pStreamVRDE->pCfg->Props.uHz, pStreamVRDE->pCfg->Props.cChannels,
                                                                pStreamVRDE->pCfg->Props.cBits);
             if (rc == VERR_NOT_SUPPORTED)
