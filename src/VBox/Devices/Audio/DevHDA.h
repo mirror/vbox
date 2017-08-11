@@ -191,14 +191,21 @@ typedef struct HDASTATE
     /** Audio mixer sink for microphone input. */
     HDAMIXERSINK                       SinkMicIn;
 #endif
-    /** Last updated WALCLK counter. */
+    /** Last updated wall clock (WALCLK) counter. */
     uint64_t                           u64WalClk;
+#ifdef DEBUG
+    /** Wall clock (WALCLK) stale count.
+     *  This indicates the number of set wall clock
+     *  values which do not actually move the counter forward (stale). */
+    uint8_t                            u8WalClkStaleCnt;
+    uint8_t                            au8Padding2[7];
+#endif
     /** Response Interrupt Count (RINTCNT). */
     uint8_t                            u8RespIntCnt;
     /** Current IRQ level. */
     uint8_t                            u8IRQL;
     /** Padding for alignment. */
-    uint8_t                            au8Padding2[6];
+    uint8_t                            au8Padding3[6];
 #ifdef DEBUG
     HDASTATEDBGINFO                    Dbg;
 #endif

@@ -211,9 +211,18 @@ bool hdaWalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce)
 #ifdef VBOX_WITH_HDA_MIC_IN
             u64WalClk = RT_MAX(u64WalClkSet, u64MicInAbsWalClk);
 #endif
-            AssertMsg(u64WalClkSet > u64WalClkCur,
-                      ("Setting WALCLK to a stale or backward value (%RU64 -> %RU64) isn't a good idea really. "
-                       "Good luck with stuck audio stuff.\n", u64WalClkCur, u64WalClkSet));
+
+#ifdef VBOX_STRICT
+            Assert(u64WalClkSet >= u64WalClkCur); /* Setting WALCLK to a value going backwards does not make any sense. */
+            if (u64WalClkSet == u64WalClkCur)     /* Setting a stale value? */
+            {
+                if (pThis->u8WalClkStaleCnt++ > 3)
+                    AssertMsgFailed(("Setting WALCLK to a stale value (%RU64) too often isn't a good idea really. "
+                                     "Good luck with stuck audio stuff.\n", u64WalClkSet));
+            }
+            else
+                pThis->u8WalClkStaleCnt = 0;
+#endif
         }
 
         /* Set the new WALCLK value. */
