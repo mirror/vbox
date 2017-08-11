@@ -44,6 +44,16 @@
  * @{
  */
 
+/**
+ * UDF d-character string (@ecma167{1,7.2.12,25}).
+ *
+ * This is mainly to mark what's d-strings and what's not.
+ */
+typedef char UDFDSTRING;
+/** Pointer to an UDF dstring. */
+typedef UDFDSTRING *PUDFDSTRING;
+/** Pointer to a const UDF dstring. */
+typedef UDFDSTRING const *PCUDFDSTRING;
 
 /**
  * UDF extent allocation descriptor (AD) (@ecma167{3,7.1,42}).
@@ -485,7 +495,7 @@ typedef struct UDFPRIMARYVOLUMEDESC
     /** 0x014: Primary volume descriptor number. */
     uint32_t        uPrimaryVolumeDescNo;
     /** 0x018: Volume identifier (dstring). */
-    char            achVolumeID[32];
+    UDFDSTRING      achVolumeID[32];
     /** 0x038: Volume sequence number. */
     uint16_t        uVolumeSeqNo;
     /** 0x03a: Maximum volume sequence number. */
@@ -501,7 +511,7 @@ typedef struct UDFPRIMARYVOLUMEDESC
     uint32_t        fMaxCharacterSets;
     /** 0x048: Volume set identifier (dstring).  This starts with 16 unique
      *  characters, the first 8 being the hex represenation of a time value. */
-    char            achVolumeSetID[128];
+    UDFDSTRING      achVolumeSetID[128];
     /** 0x0c8: Descriptor character set.
      * For achVolumeSetID and achVolumeID. */
     UDFCHARSPEC     DescCharSet;
@@ -605,19 +615,19 @@ typedef struct UDFIMPLEMENTATIONUSEVOLUMEDESC
     {
         /** Generic view. */
         uint8_t     ab[460];
-        /** Logical volume information. */
+        /** Logical volume information (@udf260{2.2.7.2,35}). */
         struct
         {
             /** 0x034: The character set used in this sub-structure. */
             UDFCHARSPEC     Charset;
             /** 0x074: Logical volume identifier. */
-            char            achVolumeID[128];
+            UDFDSTRING      achVolumeID[128];
             /** 0x0f4: Info string \#1. */
-            char            achInfo1[36];
+            UDFDSTRING      achInfo1[36];
             /** 0x118: Info string \#2. */
-            char            achInfo2[36];
+            UDFDSTRING      achInfo2[36];
             /** 0x13c: Info string \#3. */
-            char            achInfo3[36];
+            UDFDSTRING      achInfo3[36];
             /** 0x160: The implementation identifier
              * (UDF_ENTITY_ID_IUVD_USE_IMPLEMENTATION). */
             UDFENTITYID     idImplementation;
@@ -730,29 +740,134 @@ AssertCompileSize(UDFPARTITIONDESC, 512);
 
 
 /**
- * Logical volume descriptor (LVD).
+ * Logical volume descriptor (LVD) (@ecma167{3,10.6,58}, @udf260{2.2.4,30}).
+ *
+ * @note Variable length.
  */
 typedef struct UDFLOGICALVOLUMEDESC
 {
-    /** 0x00: The descriptor tag (UDF_TAG_ID_LOGICAL_VOLUME_DESC). */
+    /** 0x000: The descriptor tag (UDF_TAG_ID_LOGICAL_VOLUME_DESC). */
+    UDFTAG          Tag;
+    /** 0x010: Volume descriptor sequence number. */
+    uint32_t        uVolumeDescSeqNo;
+    /** 0x014: Character set used in the achLogicalVolumeID field.   */
+    UDFCHARSPEC     DescriptorCharSet;
+    /** 0x054: The logical volume ID (label). */
+    UDFDSTRING      achLogicalVolumeID[128];
+    /** 0x0d4: Logical block size (in bytes). */
+    uint32_t        cbLogicalBlock;
+    /** 0x0d8: Domain identifier (UDF_ENTITY_ID_LVD_DOMAIN). */
+    UDFENTITYID     idDomain;
+    /** 0x0f8: Logical volume contents use. */
+    union
+    {
+        /** Byte view. */
+        uint8_t     ab[16];
+        /** The extent containing the file set descriptor. */
+        UDFLONGAD   FileSetDescriptor;
+    } ContentsUse;
+    /** 0x108: Map table length (in bytes). */
+    uint32_t        cbMapTable;
+    /** 0x10c: Number of partition maps. */
+    uint32_t        cPartitionMaps;
+    /** 0x110: Implementation identifier (UDF_ENTITY_ID_LVD_IMPLEMENTATION). */
+    UDFENTITYID     idImplementation;
+    /** 0x130: Implementation use. */
+    union
+    {
+        /** Byte view. */
+        uint8_t     ab[128];
+    } ImplementationUse;
+    /** 0x1b0: Integrity sequence extent. Can be zero if cPartitionMaps is zero. */
+    UDFEXTENTAD     IntegritySeqExtent;
+    /** 0x1b8: Partition maps (length given by @a cPartitionMaps). */
+    uint8_t         abPartitionMaps[RT_FLEXIBLE_ARRAY];
+} UDFLOGICALVOLUMEDESC;
+AssertCompileMemberOffset(UDFLOGICALVOLUMEDESC, abPartitionMaps, 0x1b8);
+/** Pointer to an UDF logical volume descriptor. */
+typedef UDFLOGICALVOLUMEDESC *PUDFLOGICALVOLUMEDESC;
+/** Pointer to a const UDF logical volume descriptor. */
+typedef UDFLOGICALVOLUMEDESC const *PCUDFLOGICALVOLUMEDESC;
+
+
+/**
+ * UDF unallocated space descriptor (USD) (@ecma167{3,10.8,61}, @udf260{2.2.5,32}).
+ *
+ * @note Variable length.
+ */
+typedef struct UDFUNALLOCATEDSPACEDESC
+{
+    /** 0x00: The descriptor tag (UDF_TAG_ID_UNALLOCATED_SPACE_DESC). */
     UDFTAG          Tag;
     /** 0x10: Volume descriptor sequence number. */
     uint32_t        uVolumeDescSeqNo;
-    /** 0x14: Character set used in the achLogicalVolumeID field.   */
-    UDFCHARSPEC     DescriptorCharSet;
-    /** 0x54: The logical volume ID (label). */
-    char            achLogicalVolumeID[128];
+    /** 0x14: Number of allocation descriptors in the array below. */
+    uint32_t        cAllocationDescriptors;
+    /** 0x18: Allocation descriptors (variable length). */
+    UDFEXTENTAD     aAllocationDescriptors[RT_FLEXIBLE_ARRAY];
+} UDFUNALLOCATEDSPACEDESC;
+AssertCompileMemberOffset(UDFUNALLOCATEDSPACEDESC, aAllocationDescriptors, 0x18);
+/** Pointer to an UDF unallocated space descriptor. */
+typedef UDFUNALLOCATEDSPACEDESC *PUDFUNALLOCATEDSPACEDESC;
+/** Pointer to a const UDF unallocated space descriptor. */
+typedef UDFUNALLOCATEDSPACEDESC const *PCUDFUNALLOCATEDSPACEDESC;
 
-    // continue here...
-    // continue here...
-    // continue here...
 
-} UDFLOGICALVOLUMEDESC;
+/**
+ * UDF terminating descriptor (@ecma167{3,10.9,62}).
+ */
+typedef struct UDFTERMINATINGDESC
+{
+    /** 0x00: The descriptor tag (UDF_TAG_ID_TERMINATING_DESC). */
+    UDFTAG          Tag;
+    /** 0x10: Reserved, MBZ. */
+    uint8_t         abReserved[496];
+} UDFTERMINATINGDESC;
+/** Pointer to an UDF terminating descriptor. */
+typedef UDFTERMINATINGDESC *PUDFTERMINATINGDESC;
+/** Pointer to a const UDF terminating descriptor. */
+typedef UDFTERMINATINGDESC const *PCUDFTERMINATINGDESC;
 
-//#define UDF_TAG_ID_UNALLOCATED_SPACE_DESC           UINT16_C(0x0007)
-//#define UDF_TAG_ID_TERMINATING_DESC                 UINT16_C(0x0008)
-//#define UDF_TAG_ID_LOGICAL_VOLUME_INTEGRITY_DESC    UINT16_C(0x0009)
 
+/**
+ * UDF logical volume integrity descriptor (LVID) (@ecma167{3,10.10,62},
+ * @udf260{2.2.6,32}).
+ */
+typedef struct UDFLOGICALVOLINTEGRITYDESC
+{
+    /** 0x00: The descriptor tag (UDF_TAG_ID_TERMINATING_DESC). */
+    UDFTAG          Tag;
+    /** 0x10: Recording timestamp. */
+    UDFTIMESTAMP    RecordingTimestamp;
+    /** 0x1c: Integrity type (UDF_LVID_TYPE_XXX). */
+    uint32_t        uIntegrityType;
+    /** 0x20: The next integrity extent. */
+    UDFEXTENTAD     NextIntegrityExtent;
+    /** 0x28: Number of partitions. */
+    uint32_t        cPartitions;
+    /** 0x2c: Length of implementation use. */
+    uint32_t        cbImplementationUse;
+    /**
+     * There are two tables each @a cPartitions in size.  The first is the free
+     * space table.  The second the size table.
+     *
+     * Following these tables there are @a cbImplemenationUse bytes of space for
+     * the implementation to use.
+     */
+    uint32_t        aTables[RT_FLEXIBLE_ARRAY];
+} UDFLOGICALVOLINTEGRITYDESC;
+AssertCompileMemberOffset(UDFLOGICALVOLINTEGRITYDESC, cbImplementationUse, 0x2c);
+AssertCompileMemberOffset(UDFLOGICALVOLINTEGRITYDESC, aTables, 0x30);
+/** Pointer to an UDF logical volume integrity descriptor.   */
+typedef UDFLOGICALVOLINTEGRITYDESC *PUDFLOGICALVOLINTEGRITYDESC;
+/** Pointer to a const UDF logical volume integrity descriptor.   */
+typedef UDFLOGICALVOLINTEGRITYDESC const *PCUDFLOGICALVOLINTEGRITYDESC;
+
+/** @name UDF_LVID_TYPE_XXX - Integirty types.
+ * @{ */
+#define UDF_LVID_TYPE_OPEN          UINT32_C(0x00000000)
+#define UDF_LVID_TYPE_CLOSE         UINT32_C(0x00000001)
+/** @} */
 
 
 /** @name UDF Volume Recognition Sequence (VRS)
