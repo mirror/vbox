@@ -70,16 +70,16 @@ typedef struct VRDESTREAM
         {
             /** Number of audio frames this stream can handle at once. */
             uint32_t    cfMax;
-            /** Circular buffer for holding the recorded audio samples from the host. */
+            /** Circular buffer for holding the recorded audio frames from the host. */
             PRTCIRCBUF  pCircBuf;
         } In;
         struct
         {
             /** Timestamp (in virtual time ticks) of the last audio playback (of the VRDP server). */
             uint64_t    ticksPlayedLast;
-            /** Internal counter (in audio samples) to track if and how much we can write to the VRDP server
+            /** Internal counter (in audio frames) to track if and how much we can write to the VRDP server
              *  for the current time period. */
-            uint64_t    csToWrite;
+            uint64_t    cfToWrite;
         } Out;
     };
 } VRDESTREAM, *PVRDESTREAM;
@@ -268,9 +268,9 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
     if (!pDrv->pConsoleVRDPServer)
         return VERR_NOT_AVAILABLE;
 
-    /* Note: We get the number of *samples* in cbBuf
+    /* Note: We get the number of *frames* in cxBuf
      *       (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout) on stream creation. */
-    uint32_t csLive           = cxBuf;
+    uint32_t cfLive           = cxBuf;
 
     PPDMAUDIOPCMPROPS pProps  = &pStreamVRDE->pCfg->Props;
 
@@ -281,13 +281,13 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
 
     /* Use the internal counter to track if we (still) can write to the VRDP server
      * or if we need to wait another round (time slot). */
-    uint32_t csToWrite = pStreamVRDE->Out.csToWrite;
+    uint32_t cfToWrite = pStreamVRDE->Out.cfToWrite;
 
-    Log3Func(("csLive=%RU32, csToWrite=%RU32\n", csLive, csToWrite));
+    Log3Func(("cfLive=%RU32, cfToWrite=%RU32\n", cfLive, cfToWrite));
 
     /* Don't play more than available. */
-    if (csToWrite > csLive)
-        csToWrite = csLive;
+    if (cfToWrite > cfLive)
+        cfToWrite = cfLive;
 
     int rc = VINF_SUCCESS;
 
@@ -297,38 +297,38 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
     /*
      * Call the VRDP server with the data.
      */
-    uint32_t csWritten = 0;
-    while (csToWrite)
+    uint32_t cfWritten = 0;
+    while (cfToWrite)
     {
-        uint32_t csChunk = csToWrite; /** @todo For now write all at once. */
+        uint32_t cfChunk = cfToWrite; /** @todo For now write all at once. */
 
-        if (!csChunk) /* Nothing to send. Bail out. */
+        if (!cfChunk) /* Nothing to send. Bail out. */
             break;
 
         /* Note: The VRDP server expects int64_t samples per channel, regardless of the actual
          *       sample bits (e.g 8 or 16 bits). */
-        pDrv->pConsoleVRDPServer->SendAudioSamples(paSampleBuf + csWritten, csChunk /* Samples */, format);
+        pDrv->pConsoleVRDPServer->SendAudioSamples(paSampleBuf + cfWritten, cfChunk /* Frames */, format);
 
-        csWritten += csChunk;
-        Assert(csWritten <= csLive);
+        cfWritten += cfChunk;
+        Assert(cfWritten <= cfLive);
 
-        Assert(csToWrite >= csChunk);
-        csToWrite -= csChunk;
+        Assert(cfToWrite >= cfChunk);
+        cfToWrite -= cfChunk;
     }
 
     if (RT_SUCCESS(rc))
     {
-        /* Subtract written samples from the counter. */
-        Assert(pStreamVRDE->Out.csToWrite >= csWritten);
-        pStreamVRDE->Out.csToWrite      -= csWritten;
+        /* Subtract written frames from the counter. */
+        Assert(pStreamVRDE->Out.cfToWrite >= cfWritten);
+        pStreamVRDE->Out.cfToWrite      -= cfWritten;
 
-        /* Remember when samples were consumed. */
+        /* Remember when frames were consumed. */
         pStreamVRDE->Out.ticksPlayedLast = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
 
-        /* Return samples instead of bytes here
+        /* Return frames instead of bytes here
          * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
         if (pcxWritten)
-            *pcxWritten = csWritten;
+            *pcxWritten = cfWritten;
     }
 
     return rc;
@@ -498,7 +498,7 @@ static DECLCALLBACK(uint32_t) drvAudioVRDEStreamGetReadable(PPDMIHOSTAUDIO pInte
 
     if (pStreamVRDE->pCfg->enmDir == PDMAUDIODIR_IN)
     {
-        /* Return samples instead of bytes here
+        /* Return frames instead of bytes here
          * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
         return (uint32_t)PDMAUDIOSTREAMCFG_B2F(pStreamVRDE->pCfg, RTCircBufUsed(pStreamVRDE->In.pCircBuf));
     }
@@ -521,12 +521,12 @@ static DECLCALLBACK(uint32_t) drvAudioVRDEStreamGetWritable(PPDMIHOSTAUDIO pInte
 
     PPDMAUDIOPCMPROPS pProps  = &pStreamVRDE->pCfg->Props;
 
-    /* Minimize the rounding error: samples = int((ticks * freq) / ticks_per_second + 0.5). */
-    pStreamVRDE->Out.csToWrite = (int)((2 * ticksElapsed * pProps->uHz + ticksPerSec) / ticksPerSec / 2);
+    /* Minimize the rounding error: frames = int((ticks * freq) / ticks_per_second + 0.5). */
+    pStreamVRDE->Out.cfToWrite = (int)((2 * ticksElapsed * pProps->uHz + ticksPerSec) / ticksPerSec / 2);
 
-    /* Return samples instead of bytes here
+    /* Return frames instead of bytes here
      * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
-    return pStreamVRDE->Out.csToWrite;
+    return pStreamVRDE->Out.cfToWrite;
 }
 
 
