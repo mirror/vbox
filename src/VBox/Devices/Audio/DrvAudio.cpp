@@ -1840,9 +1840,6 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
         }
         else if (RT_UNLIKELY(RT_FAILURE(rc)))
         {
-#ifdef DEBUG_andy
-            AssertFailed();
-#endif
             LogRel2(("Audio: Capturing stream '%s' failed with %Rrc\n", pHstStream->szName, rc));
         }
 
@@ -2979,7 +2976,11 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     rc = pThis->pHostDrvAudio->pfnStreamCreate(pThis->pHostDrvAudio, pHstStream->pvBackend, pCfgReq, &CfgAcq);
     if (RT_FAILURE(rc))
     {
-        LogRel(("Audio: Creating stream '%s' in backend failed with %Rrc\n", pHstStream->szName, rc));
+        if (rc == VERR_NOT_SUPPORTED)
+            LogRel2(("Audio: Creating stream '%s' in backend not supported, skipping\n", pHstStream->szName, rc));
+        else
+            LogRel2(("Audio: Creating stream '%s' in backend failed with %Rrc\n", pHstStream->szName, rc));
+
         return rc;
     }
 
