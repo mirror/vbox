@@ -952,6 +952,13 @@ DECLINLINE(void) rtFsIsoMakerDestroyName(PRTFSISOMAKERNAME pName)
         RTMemFree(pName->pszTransNm);
         pName->pszTransNm = NULL;
     }
+    PRTFSISOMAKERNAMEDIR pDir = pName->pDir;
+    if (pDir != NULL)
+    {
+        Assert(pDir->cChildren == 0);
+        RTMemFree(pDir->papChildren);
+        pDir->papChildren = NULL;
+    }
     RTMemFree(pName);
 }
 
