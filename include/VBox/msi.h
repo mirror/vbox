@@ -106,8 +106,7 @@
 /* Pending interrupts (PBA) */
 #define VBOX_MSIX_PAGE_PENDING                (VBOX_MSIX_PAGE_SIZE / 2)
 /* Maximum number of vectors, per device/function */
-#define VBOX_MSIX_MAX_ENTRIES                 32
-#define VBOX_MSIX_ENTRY_SIZE                  16
+#define VBOX_MSIX_MAX_ENTRIES                 2048
 /* Size of MSI-X PCI capability */
 #define VBOX_MSIX_CAP_SIZE                    12
 /* Offsets in MSI-X PCI capability structure (VBOX_PCI_CAP_ID_MSIX) */
