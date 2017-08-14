@@ -164,7 +164,6 @@ public:
     /* API: Global warnings: */
     void cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const;
     void cannotLoadLanguage(const QString &strLangFile) const;
-    void cannotSaveGlobalConfig(const CVirtualBox &vbox) const;
     void cannotFindMachineByName(const CVirtualBox &vbox, const QString &strName) const;
     void cannotFindMachineById(const CVirtualBox &vbox, const QString &strId) const;
     void cannotOpenSession(const CSession &session) const;
@@ -221,8 +220,6 @@ public:
 
     /* API: Global settings warnings: */
     bool confirmNATNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
-    void cannotCreateNATNetwork(const CVirtualBox &vbox, QWidget *pParent = 0);
-    void cannotRemoveNATNetwork(const CVirtualBox &vbox, const QString &strNetworkName, QWidget *pParent = 0);
     void cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent = 0) const;
 
     /* API: Machine settings warnings: */

@@ -482,15 +482,6 @@ void UIMessageCenter::cannotLoadLanguage(const QString &strLangFile) const
              .arg(strLangFile));
 }
 
-void UIMessageCenter::cannotSaveGlobalConfig(const CVirtualBox &vbox) const
-{
-    error(0, MessageType_Critical,
-          tr("<p>Failed to save the global GUI configuration to <b><nobr>%1</nobr></b>.</p>"
-             "<p>The application will now terminate.</p>")
-             .arg(CVirtualBox(vbox).GetSettingsFilePath()),
-          formatErrorInfo(vbox));
-}
-
 void UIMessageCenter::cannotFindMachineByName(const CVirtualBox &vbox, const QString &strName) const
 {
     error(0, MessageType_Error,
@@ -1011,21 +1002,6 @@ bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *
                           tr("Remove") /* ok button text */,
                           QString() /* cancel button text */,
                           false /* ok button by default? */);
-}
-
-void UIMessageCenter::cannotCreateNATNetwork(const CVirtualBox &vbox, QWidget *pParent /* = 0*/)
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create NAT network."),
-          formatErrorInfo(vbox));
-}
-
-void UIMessageCenter::cannotRemoveNATNetwork(const CVirtualBox &vbox, const QString &strNetworkName, QWidget *pParent /* = 0*/)
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to remove NAT network <b>%1</b>.")
-             .arg(strNetworkName),
-          formatErrorInfo(vbox));
 }
 
 void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent /* = 0*/) const
