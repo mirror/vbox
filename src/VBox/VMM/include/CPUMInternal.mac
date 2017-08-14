@@ -248,6 +248,7 @@ struc CPUMCPU
     .Guest.hwvirt.svm.pvMsrBitmapR3          RTR3PTR_RES  1
     .Guest.hwvirt.svm.pvIoBitmapR0           RTR0PTR_RES  1
     .Guest.hwvirt.svm.pvIoBitmapR3           RTR3PTR_RES  1
+    .Guest.hwvirt.svm.HCPhysVmcb             RTHCPHYS_RES 1
 %if HC_ARCH_BITS == 32
     .Guest.hwvirt.svm.abPadding2             resb         16
 %endif
@@ -533,6 +534,7 @@ struc CPUMCPU
     .Hyper.hwvirt.svm.pvMsrBitmapR3          RTR3PTR_RES  1
     .Hyper.hwvirt.svm.pvIoBitmapR0           RTR0PTR_RES  1
     .Hyper.hwvirt.svm.pvIoBitmapR3           RTR3PTR_RES  1
+    .Hyper.hwvirt.svm.HCPhysVmcb             RTHCPHYS_RES 1
 %if HC_ARCH_BITS == 32
     .Hyper.hwvirt.svm.abPadding2             resb         16
 %endif

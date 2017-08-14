@@ -275,6 +275,7 @@ struc CPUMCTX
     .hwvirt.svm.pvMsrBitmapR3          RTR3PTR_RES   1
     .hwvirt.svm.pvIoBitmapR0           RTR0PTR_RES   1
     .hwvirt.svm.pvIoBitmapR3           RTR3PTR_RES   1
+    .hwvirt.svm.HCPhysVmcb             RTHCPHYS_RES  1
 %if HC_ARCH_BITS == 32
     .hwvirt.svm.abPadding2             resb          16
 %endif

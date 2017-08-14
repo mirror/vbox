@@ -508,9 +508,11 @@ typedef struct CPUMCTX
                 R0PTRTYPE(void *)   pvIoBitmapR0;
                 /** 976 / 964 - IO permission bitmap - R3 ptr. */
                 R3PTRTYPE(void *)   pvIoBitmapR3;
+                /** 984 / 968 - Host physical address of the nested-guest VMCB.  */
+                RTHCPHYS            HCPhysVmcb;
 #if HC_ARCH_BITS == 32
-                /** NA / 968 - Padding. */
-                uint8_t             abPadding2[16];
+                /** NA / 972 - Padding. */
+                uint8_t             abPadding2[20];
 #endif
             } svm;
 #if 0
@@ -520,11 +522,11 @@ typedef struct CPUMCTX
 #endif
         } CPUM_UNION_NM(s);
 
-        /** 984 - A subset of force flags that are preserved while running
+        /** 992 - A subset of force flags that are preserved while running
          *  the nested-guest. */
         uint32_t                fLocalForcedActions;
-        /** 1212 - Padding. */
-        uint8_t                 abPadding1[36];
+        /** 996 - Padding. */
+        uint8_t                 abPadding1[28];
     } hwvirt;
     /** @} */
 } CPUMCTX;
@@ -593,7 +595,8 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0,  
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR3,          HC_ARCH_BITS == 64 ? 960 : 956);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,           HC_ARCH_BITS == 64 ? 968 : 960);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR3,           HC_ARCH_BITS == 64 ? 976 : 964);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) fLocalForcedActions,        984);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HCPhysVmcb,             HC_ARCH_BITS == 64 ? 984 : 968);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) fLocalForcedActions,        992);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR0,       8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0, 8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,  8);

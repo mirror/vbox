@@ -144,6 +144,7 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.pvMsrBitmapR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.pvIoBitmapR0);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.pvIoBitmapR3);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.HCPhysVmcb);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fLocalForcedActions);
     /** @todo add rest of hwvirt fields when code is more
      *        finalized. */

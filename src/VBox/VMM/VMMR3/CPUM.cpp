@@ -766,6 +766,7 @@ static void cpumR3FreeHwVirtState(PVM pVM)
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3, SVM_VMCB_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3 = NULL;
         }
+        pVCpu->cpum.s.Guest.hwvirt.svm.HCPhysVmcb = NIL_RTHCPHYS;
 
         if (pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3)
         {
@@ -802,15 +803,20 @@ static int cpumR3AllocHwVirtState(PVM pVM)
         /*
          * Allocate the nested-guest VMCB.
          */
+        SUPPAGE SupNstGstVmcbPage;
+        RT_ZERO(SupNstGstVmcbPage);
+        SupNstGstVmcbPage.Phys = NIL_RTHCPHYS;
+        Assert(SVM_VMCB_PAGES == 1);
         Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3);
         rc = SUPR3PageAllocEx(SVM_VMCB_PAGES, 0 /* fFlags */, (void **)&pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3,
-                              &pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR0, NULL /* paPages */);
+                              &pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR0, &SupNstGstVmcbPage);
         if (RT_FAILURE(rc))
         {
             Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3);
             LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's VMCB\n", pVCpu->idCpu, SVM_VMCB_PAGES));
             break;
         }
+        pVCpu->cpum.s.Guest.hwvirt.svm.HCPhysVmcb = SupNstGstVmcbPage.Phys;
 
         /*
          * Allocate the MSRPM (MSR Permission bitmap).
