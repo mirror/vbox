@@ -911,30 +911,12 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
     }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
     /*
-     * Only if the nested hypervisor says it does not need to flush anything in the TLB,
-     * can we possibly apply it on the host. Otherwise, the nested-guest TLB flush setting
-     * should be used and then the host settings be added on top.
+     * If the AMD CPU erratum 170, We need to flush the entire TLB for each world switch. Sad.
+     * This Host CPU requirement takes precedence.
      */
-    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-    {
-        PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
-        if (pVmcbNstGstCache->TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_NOTHING)
-            pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_NOTHING;
-        else
-            pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = pVmcbNstGstCache->TLBCtrl.n.u8TLBFlush;
-    }
-#else
-    RT_NOREF(pCtx);
-    pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_NOTHING;
-#endif
-
     if (pVM->hm.s.svm.fAlwaysFlushTLB)
     {
-        /*
-         * This is the AMD erratum 170. We need to flush the entire TLB for each world switch. Sad.
-         */
         pCpu->uCurrentAsid               = 1;
         pVCpu->hm.s.uCurrentAsid         = 1;
         pVCpu->hm.s.cTlbFlushes          = pCpu->cTlbFlushes;
@@ -947,58 +929,79 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
         if (fNewAsid)
             pVCpu->hm.s.idLastCpu = pCpu->idCpu;
     }
-    else if (pVCpu->hm.s.fForceTLBFlush)
+    else
     {
-        /* Clear the VMCB Clean Bit for NP while flushing the TLB. See @bugref{7152}. */
-        pVmcb->ctrl.u64VmcbCleanBits    &= ~HMSVM_VMCB_CLEAN_NP;
-
-        if (fNewAsid)
+#ifdef VBOX_WITH_NESTED_HWVIRT
+        /*
+         * Only if the nested hypervisor says it does not need to flush anything in the TLB,
+         * can we possibly apply it on the host. Otherwise, the nested-guest TLB flush setting
+         * should be used and then the host settings be added on top.
+         */
+        if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
         {
-            ++pCpu->uCurrentAsid;
-            bool fHitASIDLimit = false;
-            if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
-            {
-                pCpu->uCurrentAsid = 1;      /* Wraparound at 1; host uses 0 */
-                pCpu->cTlbFlushes++;         /* All VCPUs that run on this host CPU must use a new ASID. */
-                fHitASIDLimit      = true;
-
-                if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
-                {
-                    pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
-                    pCpu->fFlushAsidBeforeUse = true;
-                }
-                else
-                {
-                    pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
-                    pCpu->fFlushAsidBeforeUse = false;
-                }
-            }
-
-            if (   !fHitASIDLimit
-                && pCpu->fFlushAsidBeforeUse)
-            {
-                if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
-                    pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
-                else
-                {
-                    pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
-                    pCpu->fFlushAsidBeforeUse = false;
-                }
-            }
-
-            pVCpu->hm.s.uCurrentAsid = pCpu->uCurrentAsid;
-            pVCpu->hm.s.idLastCpu    = pCpu->idCpu;
-            pVCpu->hm.s.cTlbFlushes  = pCpu->cTlbFlushes;
-        }
-        else
-        {
-            if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
-                pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
+            PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+            if (pVmcbNstGstCache->TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_NOTHING)
+                pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_NOTHING;
             else
-                pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+                pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = pVmcbNstGstCache->TLBCtrl.n.u8TLBFlush;
         }
+#else
+        RT_NOREF(pCtx);
+        pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_NOTHING;
+#endif
+        if (pVCpu->hm.s.fForceTLBFlush)
+        {
+            /* Clear the VMCB Clean Bit for NP while flushing the TLB. See @bugref{7152}. */
+            pVmcb->ctrl.u64VmcbCleanBits    &= ~HMSVM_VMCB_CLEAN_NP;
 
-        pVCpu->hm.s.fForceTLBFlush = false;
+            if (fNewAsid)
+            {
+                ++pCpu->uCurrentAsid;
+                bool fHitASIDLimit = false;
+                if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
+                {
+                    pCpu->uCurrentAsid = 1;      /* Wraparound at 1; host uses 0 */
+                    pCpu->cTlbFlushes++;         /* All VCPUs that run on this host CPU must use a new ASID. */
+                    fHitASIDLimit      = true;
+
+                    if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
+                    {
+                        pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
+                        pCpu->fFlushAsidBeforeUse = true;
+                    }
+                    else
+                    {
+                        pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+                        pCpu->fFlushAsidBeforeUse = false;
+                    }
+                }
+
+                if (   !fHitASIDLimit
+                    && pCpu->fFlushAsidBeforeUse)
+                {
+                    if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
+                        pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
+                    else
+                    {
+                        pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+                        pCpu->fFlushAsidBeforeUse = false;
+                    }
+                }
+
+                pVCpu->hm.s.uCurrentAsid = pCpu->uCurrentAsid;
+                pVCpu->hm.s.idLastCpu    = pCpu->idCpu;
+                pVCpu->hm.s.cTlbFlushes  = pCpu->cTlbFlushes;
+            }
+            else
+            {
+                if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
+                    pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
+                else
+                    pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+            }
+
+            pVCpu->hm.s.fForceTLBFlush = false;
+        }
     }
 
     /* Update VMCB with the ASID. */
@@ -1009,7 +1012,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
     }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
-    Assert(pVmcb->ctrl.TLBCtrl.n.u8TLBFlush != SVM_TLB_FLUSH_NOTHING);
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx) || pVmcb->ctrl.TLBCtrl.n.u8TLBFlush != SVM_TLB_FLUSH_NOTHING);
 #endif
 
     AssertMsg(pVCpu->hm.s.idLastCpu == pCpu->idCpu,
@@ -1341,6 +1344,16 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
  */
 static void hmR0SvmLoadGuestControlRegsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst, PCPUMCTX pCtx)
 {
+    /*
+     * Guest CR0.
+     */
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR0))
+    {
+        pVmcbNstGst->guest.u64CR0 = pCtx->cr0;
+        pVmcbNstGst->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR0);
+    }
+
     /*
      * Guest CR2.
      */
@@ -2005,7 +2018,8 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
               ||  HMCPU_CF_IS_PENDING_ONLY(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE),
                ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
-    Log4(("Load: CS:RIP=%04x:%RX64 EFL=%#x SS:RSP=%04x:%RX64\n", pCtx->cs.Sel, pCtx->rip, pCtx->eflags.u, pCtx->ss.Sel, pCtx->rsp));
+    Log4(("hmR0SvmLoadGuestState: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX32 CR3=%#RX32 CR4=%#RX32\n", pCtx->cs.Sel, pCtx->rip,
+          pCtx->eflags.u, pCtx->cr0, pCtx->cr3, pCtx->cr4));
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
 }
@@ -2056,14 +2070,15 @@ static void hmR0SvmLoadGuestVmcbNested(PVMCPU pVCpu, PCPUMCTX pCtx)
          */
         hmR0SvmVmRunCacheVmcb(pVCpu, pCtx);
 
+        PSVMVMCB     pVmcbNstGst     = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+        PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
+
         /*
          * The IOPM of the nested-guest can be ignored because the the guest always
          * intercepts all IO port accesses. Thus, we'll swap to the guest IOPM rather
          * into the nested-guest one and swap it back on the #VMEXIT.
          */
-        PSVMVMCB     pVmcbNstGst     = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-        PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
-        pVmcbNstGstCtrl->u64IOPMPhysAddr  = g_HCPhysIOBitmap;
+        pVmcbNstGstCtrl->u64IOPMPhysAddr = g_HCPhysIOBitmap;
 
         /*
          * Load the host-physical address into the MSRPM rather than the nested-guest
@@ -2137,7 +2152,8 @@ static int hmR0SvmLoadGuestStateNested(PVMCPU pVCpu, PCPUMCTX pCtx)
               ||  HMCPU_CF_IS_PENDING_ONLY(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE),
                ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
-    Log4(("Load: CS:RIP=%04x:%RX64 EFL=%#x SS:RSP=%04x:%RX64\n", pCtx->cs.Sel, pCtx->rip, pCtx->eflags.u, pCtx->ss.Sel, pCtx->rsp));
+    Log4(("hmR0SvmLoadGuestStateNested: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX32 CR3=%#RX32 CR4=%#RX32\n", pCtx->cs.Sel, pCtx->rip,
+          pCtx->eflags.u, pCtx->cr0, pCtx->cr3, pCtx->cr4));
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
 }
@@ -2165,6 +2181,8 @@ static void hmR0SvmLoadSharedState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
         /* We use nested-guest CR0 unmodified, hence nothing to do here. */
         if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
             hmR0SvmLoadSharedCR0(pVCpu, pVmcb, pCtx);
+        else
+            Assert(pVmcb->guest.u64CR0 == pCtx->cr0);
 #else
         hmR0SvmLoadSharedCR0(pVCpu, pVmcb, pCtx);
 #endif
@@ -2226,9 +2244,9 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pV
      */
     if (CPUMIsGuestInNestedHwVirtMode(pMixedCtx))
     {
-        pMixedCtx->cr3        = pVmcb->guest.u64CR3;
-        pMixedCtx->cr4        = pVmcb->guest.u64CR4;
-        pMixedCtx->cr0        = pVmcb->guest.u64CR0;
+        pMixedCtx->cr3    = pVmcb->guest.u64CR3;
+        pMixedCtx->cr4    = pVmcb->guest.u64CR4;
+        pMixedCtx->cr0    = pVmcb->guest.u64CR0;
     }
 #endif
 
@@ -4026,6 +4044,32 @@ DECLINLINE(int) hmR0SvmRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
 /**
+ * Wrapper for running the nested-guest code in AMD-V.
+ *
+ * @returns VBox strict status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+DECLINLINE(int) hmR0SvmRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    /*
+     * 64-bit Windows uses XMM registers in the kernel as the Microsoft compiler expresses floating-point operations
+     * using SSE instructions. Some XMM registers (XMM6-XMM15) are callee-saved and thus the need for this XMM wrapper.
+     * Refer MSDN docs. "Configuring Programs for 64-bit / x64 Software Conventions / Register Usage" for details.
+     */
+#ifdef VBOX_WITH_KERNEL_USING_XMM
+    return hmR0SVMRunWrapXMM(pVCpu->hm.s.svm.HCPhysVmcbHost, pCtx->hwvirt.svm.HCPhysVmcb, pCtx, pVM, pVCpu,
+                             pVCpu->hm.s.svm.pfnVMRun);
+#else
+    return pVCpu->hm.s.svm.pfnVMRun(pVCpu->hm.s.svm.HCPhysVmcbHost, pCtx->hwvirt.svm.HCPhysVmcb, pCtx, pVM, pVCpu);
+#endif
+}
+
+
+/**
  * Performs some essential restoration of state after running nested-guest code in
  * AMD-V.
  *
@@ -4392,12 +4436,15 @@ static int hmR0SvmRunGuestCodeNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint3
          * This also disables flushing of the R0-logger instance (if any).
          */
         hmR0SvmPreRunGuestCommittedNested(pVM, pVCpu, pCtx, &SvmTransient);
-        rc = hmR0SvmRunGuest(pVM, pVCpu, pCtx);
+
+        rc = hmR0SvmRunGuestNested(pVM, pVCpu, pCtx);
 
         /* Restore any residual host-state and save any bits shared between host
            and guest into the guest-CPU state.  Re-enables interrupts! */
         hmR0SvmPostRunGuestNested(pVM, pVCpu, pCtx, &SvmTransient, rc);
 
+        /** @todo This needs some work... we probably should cause a \#VMEXIT on
+         *        SVM_EXIT_INVALID and handle rc != VINF_SUCCESS differently. */
         if (RT_UNLIKELY(   rc != VINF_SUCCESS                               /* Check for VMRUN errors. */
                         || SvmTransient.u64ExitCode == SVM_EXIT_INVALID))   /* Check for invalid guest-state errors. */
         {
@@ -4698,8 +4745,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
         case SVM_EXIT_INTR:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_INTR)
-                return hmR0SvmExecVmexit(pVCpu, pCtx);
+            /* We shouldn't direct physical interrupts to the nested-guest. */
             return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
         }
 
@@ -5753,6 +5799,29 @@ static int hmR0SvmNstGstWorldSwitch(PVMCPU pVCpu, PCPUMCTX pCtx)
 static int hmR0SvmExecVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /*
+     * Restore the modifications we did to the nested-guest VMCB in order
+     * to execute the nested-guest in SVM R0.
+     */
+    PSVMVMCB pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    HMSvmNstGstVmExitNotify(pVCpu, pVmcbNstGst);
+
+    Log4(("hmR0SvmExecVmexit: uExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", pVmcbNstGst->ctrl.u64ExitCode,
+          pVmcbNstGst->ctrl.u64ExitInfo1, pVmcbNstGst->ctrl.u64ExitInfo2));
+
+    /*
+     * Write the nested-guest VMCB back to guest memory.
+     */
+    RTGCPHYS const GCPhysVmcb = pCtx->hwvirt.svm.GCPhysVmcb;
+    int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVmcb, pVmcbNstGst, sizeof(*pVmcbNstGst));
+
+    /*
+     * Clear our cache of the nested-guest VMCB controls.
+     */
+    PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
+    memset(pVmcbNstGstCtrl, 0, sizeof(*pVmcbNstGstCtrl));
+    Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+
+    /*
      * Disable the global interrupt flag to not cause any interrupts or NMIs
      * in the guest.
      */
@@ -5771,29 +5840,6 @@ static int hmR0SvmExecVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
         VMCPU_FF_SET(pVCpu, pCtx->hwvirt.fLocalForcedActions);
         pCtx->hwvirt.fLocalForcedActions = 0;
     }
-
-    /*
-     * Restore the modifications we did to the nested-guest VMCB in order
-     * to execute the nested-guest in SVM R0.
-     */
-    PSVMVMCB pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    HMSvmNstGstVmExitNotify(pVCpu, pVmcbNstGst);
-
-    Log4(("hmR0SvmExecVmexit: uExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", pVmcbNstGst->ctrl.u64ExitCode,
-          pVmcbNstGst->ctrl.u64ExitInfo1, pVmcbNstGst->ctrl.u64ExitInfo2));
-
-    /*
-     * Write the nested-guest VMCB back to nested-guest memory.
-     */
-    RTGCPHYS const GCPhysVmcb = pCtx->hwvirt.svm.GCPhysVmcb;
-    int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVmcb, pVmcbNstGst, sizeof(*pVmcbNstGst));
-
-    /*
-     * Clear our cache of the nested-guest VMCB controls.
-     */
-    PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
-    memset(pVmcbNstGstCtrl, 0, sizeof(*pVmcbNstGstCtrl));
-    Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
     /*
      * Make sure if VMRUN happens outside this SVM R0 code, we  don't skip setting
@@ -5913,11 +5959,12 @@ static int hmR0SvmExecVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPhysVmcb, ui
         /*
          * IO permission bitmap (IOPM).
          */
-        RTHCPHYS HCPhysNstGstMsrpm;
-        rc = PGMPhysGCPhys2HCPhys(pVM, pVmcbNstGstCtrl->u64MSRPMPhysAddr, &HCPhysNstGstMsrpm);
+        RTGCPHYS const GCPhysIOBitmap = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
+        rc = PGMPhysSimpleReadGCPhys(pVM, pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap), GCPhysIOBitmap,
+                                     SVM_IOPM_PAGES * X86_PAGE_4K_SIZE);
         if (RT_FAILURE(rc))
         {
-            Log(("hmR0SvmExecVmrun: Failed reading the MSR permission bitmap at %#RGp. rc=%Rrc\n", GCPhysMsrBitmap, rc));
+            Log(("hmR0SvmExecVmrun: Failed reading the IO permission bitmap at %#RGp. rc=%Rrc\n", GCPhysIOBitmap, rc));
             pVmcbNstGstCtrl->u64ExitCode = SVM_EXIT_INVALID;
             return hmR0SvmExecVmexit(pVCpu, pCtx);
         }
@@ -6033,6 +6080,7 @@ static int hmR0SvmExecVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPhysVmcb, ui
          */
         pCtx->hwvirt.svm.fGif = 1;
 
+        Log4(("hmR0SvmExecVmrun: CR0=%#RX32 CR3=%#RX64 CR4=%#RX32\n", pCtx->cr0, pCtx->cr3, pCtx->cr4));
         return hmR0SvmNstGstWorldSwitch(pVCpu, pCtx);
     }
 
