@@ -1218,11 +1218,16 @@ static void ichac97StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable)
  */
 static void ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInTimer)
 {
+    ichac97StreamLock(pStream);
+
     PAUDMIXSINK pSink = ichac97IndexToSink(pThis, pStream->u8SD);
     AssertPtr(pSink);
 
     if (!AudioMixerSinkIsActive(pSink)) /* No sink available? Bail out. */
+    {
+        ichac97StreamUnlock(pStream);
         return;
+    }
 
     int rc2;
 
@@ -1334,6 +1339,8 @@ static void ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInT
         }
 #endif
     }
+
+    ichac97StreamUnlock(pStream);
 }
 
 /**
