@@ -511,8 +511,8 @@ typedef struct CPUMCTX
                 /** 984 / 968 - Host physical address of the nested-guest VMCB.  */
                 RTHCPHYS            HCPhysVmcb;
 #if HC_ARCH_BITS == 32
-                /** NA / 972 - Padding. */
-                uint8_t             abPadding2[20];
+                /** NA / 976 - Padding. */
+                uint8_t             abPadding2[16];
 #endif
             } svm;
 #if 0
@@ -550,7 +550,7 @@ AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r12,  9
 AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r13, 104);
 AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r14, 112);
 AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r15, 120);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) es, 128);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s@g++ -c -O2 -g -pipe -pedantic -Wshadow -Wall -Wextra -Wno-missing-field-initializers -Wno-unused -Wno-trigraphs -fdiagnostics-show-option -Wno-unused-parameter       -Wno-variadic-macros -Wno-long-long -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter  -Wno-overloaded-virtual -Wno-variadic-macros -O2 -fno-omit-frame-pointer -fno-strict-aliasing -m32 -I/home/vbox/tinderbox/lnx32-rel/include -I/home/vbox/tinderbox/lnx32-rel/out/linux.x86/release -DVBOX -DVBOX_WITH_64_BITS_GUESTS -DVBOX_WITH_REM -DVBOX_WITH_RAW_MODE -DRT_OS_LINUX -D_FILE_OFFSET_BITS=64 -DRT_ARCH_X86 -D__X86__ -DVBOX_WITH_DEBUGGER -DVBOX_WITH_HARDENING -DRTPATH_APP_PRIVATE=\"/opt/VirtualBox\" -DRTPATH_APP_PRIVATE_ARCH=\"/opt/VirtualBox\" -DRTPATH_SHARED_LIBS=\"/opt/VirtualBox\" -DRTPATH_APP_DOCS=\"/opt/VirtualBox\" -DIN_RING3 -DLOG_DISABLED -DIN_BLD_PROG -DIN_RT_R3 -DIN_ADV_BLD_PROG -DIN_DIS -Wp,-MD,/home/vbox/tinderbox/lnx32-rel/out/linux.x86/release/obj/DisasmBldProg/DisasmReg.o.dep -Wp,-MT,/home/vbox/tinderbox/lnx32-rel/out/linux.x86/release/obj/DisasmBldProg/DisasmReg.o -Wp,-MP -o /home/vbox/tinderbox/lnx32-rel/out/linux.x86/release/obj/DisasmBldProg/DisasmReg.o /home/vbox/tinderbox/lnx32-rel/src/VBox/Disassembler/DisasmReg.cpp.) CPUM_STRUCT_NM(n.) es, 128);
 AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) cs, 152);
 AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) ss, 176);
 AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) ds, 200);
