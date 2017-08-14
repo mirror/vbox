@@ -1289,7 +1289,7 @@ typedef UDFFILEENTRY const *PCUDFFILEENTRY;
 #define UDF_PERM_USR_RESERVED_MASK UINT32_C(0xffff8000)
 /** @} */
 
-/** @namd UDF_REC_FMT_XXX - Record format.
+/** @name UDF_REC_FMT_XXX - Record format.
  * See @ecma167{4,14.9.7,100}.
  * @{ */
 /** Not record format specified.
@@ -1297,7 +1297,7 @@ typedef UDFFILEENTRY const *PCUDFFILEENTRY;
 #define UDF_REC_FMT_NOT_SPECIFIED       UINT8_C(0x00)
 /** @} */
 
-/** @namd UDF_REC_ATTR_XXX - Record display attributes.
+/** @name UDF_REC_ATTR_XXX - Record display attributes.
  * See @ecma167{4,14.9.8,100}.
  * @{ */
 /** Manner of record display not specified.
