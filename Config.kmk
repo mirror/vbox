@@ -3809,7 +3809,7 @@ endif
 
 ifdef VBOX_WITH_LIBOPUS
  SDK_VBOX_OPUS       = .
- SDK_VBOX_OPUS_INCS ?= $(PATH_ROOT)/src/libs/libopus-1.1.3/include
+ SDK_VBOX_OPUS_INCS ?= $(PATH_ROOT)/src/libs/libopus-1.2.1/include
  SDK_VBOX_OPUS_LIBS ?= $(PATH_STAGE_LIB)/VBox-libopus$(VBOX_SUFF_LIB)
 endif
 
