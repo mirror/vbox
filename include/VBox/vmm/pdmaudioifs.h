@@ -309,6 +309,11 @@ typedef struct PDMAUDIOBACKENDCFG
  * A single audio frame.
  *
  * Currently only two (2) channels, left and right, are supported.
+ *
+ * Note: When changing this structure, make sure to also handle
+ *       VRDP's input / output processing in DrvAudioVRDE, as VRDP
+ *       expects audio data in st_sample_t format (historical reasons)
+ *       which happens to be the same as PDMAUDIOFRAME for now.
  */
 typedef struct PDMAUDIOFRAME
 {
