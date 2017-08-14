@@ -1038,8 +1038,7 @@ typedef struct UDFALLOCATIONEXTENTDESC
     uint32_t        offPrevExtent;
     /** 0x14: Size of the following allocation descriptors (in bytes). */
     uint32_t        cbAllocDescs;
-    /** 0x18: Allocation descriptors.
-     * @todo verify format...  */
+    /** 0x18: Allocation descriptors. */
     union
     {
         UDFSHORTAD  aShortADs[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
@@ -1206,11 +1205,11 @@ typedef UDFTERMINALENTRY const *PCUDFTERMINALENTRY;
 
 
 /**
- * UDF file entry (FE) (@ecma167{4,14.8,97}, @udf260{}).
+ * UDF file entry (FE) (@ecma167{4,14.8,97}, @udf260{2.3.6,62}).
  *
  * @note Total length shall not exceed one logical block.
  */
-typedef struct UDFFILENTRY
+typedef struct UDFFILEENTRY
 {
     /** 0x00: The descriptor tag (UDF_TAG_ID_FILE_ENTRY). */
     UDFTAG          Tag;
@@ -1256,14 +1255,14 @@ typedef struct UDFFILENTRY
     /** 0xb0: Two variable sized fields.  First @a cbExtAttribs bytes of extended
      *  attributes, then @a cbAllocDescs bytes of allocation descriptors. */
     uint8_t         abExtAttribs[RT_FLEXIBLE_ARRAY];
-} UDFFILENTRY;
-AssertCompileMemberOffset(UDFFILENTRY, abExtAttribs, 0xb0);
+} UDFFILEENTRY;
+AssertCompileMemberOffset(UDFFILEENTRY, abExtAttribs, 0xb0);
 /** Pointer to an UDF file entry. */
-typedef UDFFILENTRY *PUDFFILENTRY;
+typedef UDFFILEENTRY *PUDFFILEENTRY;
 /** Pointer to a const UDF file entry. */
-typedef UDFFILENTRY const *PCUDFFILENTRY;
+typedef UDFFILEENTRY const *PCUDFFILEENTRY;
 
-/** @name UDF_PERM_XXX - UDFFILENTRY::fPermissions
+/** @name UDF_PERM_XXX - UDFFILEENTRY::fPermissions
  * See @ecma167{4,14.9.5,99}.
  * @{ */
 #define UDF_PERM_OTH_EXEC          UINT32_C(0x00000001)
@@ -1331,110 +1330,72 @@ typedef UDFEXTATTRIBHDRDESC *PUDFEXTATTRIBHDRDESC;
 typedef UDFEXTATTRIBHDRDESC const *PCUDFEXTATTRIBHDRDESC;
 
 /**
- * UDF generic extended attribute (@ecma167{4,14.10.2,103}).
+ * UDF character set info EA data (@ecma167{4,14.10.3,104}).
+ *
+ * Not needed by UDF.
  */
-typedef struct UDFGEA
+typedef struct UDFEADATACHARSETINFO
 {
-    /** 0x00: Attribute type. */
-    uint32_t        uAttribType;
-    /** 0x04: Attribute subtype. */
-    uint8_t         uAttribSubtype;
-    /** 0x05: Reserved padding bytes, MBZ. */
-    uint8_t         abReserved[3];
-    /** 0x08: Size of the whole extended attribute.
-     * Multiple of four is recommended. */
-    uint32_t        cbAttrib;
-    /** 0x0c: Attribute data union. */
-    union
-    {
-        /** Generic byte view (variable size). */
-        uint8_t         abData[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+    /** 0x00/0x0c: The length of the escape sequences (in bytes). */
+    uint32_t        cbEscSeqs;
+    /** 0x04/0x10: The character set type (UDF_CHAR_SET_TYPE_XXX). */
+    uint8_t         bType;
+    /** 0x05/0x11: Escape sequences. */
+    uint8_t         abEscSeqs[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+} UDFEADATACHARSETINFO;
+/** Pointer to UDF character set info EA data. */
+typedef UDFEADATACHARSETINFO *PUDFEADATACHARSETINFO;
+/** Pointer to const UDF character set info EA data. */
+typedef UDFEADATACHARSETINFO const *PCUDFEADATACHARSETINFO;
+/** UDFGEA::uAttribType value for UDFEADATACHARSETINFO.*/
+#define UDFEADATACHARSETINFO_ATTRIB_TYPE        UINT32_C(0x00000001)
+/** UDFGEA::uAttribSubtype value for UDFEADATACHARSETINFO.   */
+#define UDFEADATACHARSETINFO_ATTRIB_SUBTYPE     UINT32_C(0x00000001)
 
-        /** Alternate permissions (@ecma167{4,14.10.4,105}, @udf260{3.3.4.2,80}).
-         * @note Not recorded according to the UDF specification.  */
-        struct
-        {
-            /** 0x0c: Alternative owner ID. */
-            uint16_t        idOwner;
-            /** 0x0e: Alternative group ID. */
-            uint16_t        idGroup;
-            /** 0x10: Alternative permissions.   */
-            uint16_t        fPermission;
-        } AltPerm;
+/**
+ * UDF alternate permissions EA data (@ecma167{4,14.10.4,105}, @udf260{3.3.4.2,80}).
+ * @note Not recorded according to the UDF specification.
+ */
+typedef struct UDFEADATAALTPERM
+{
+    /** 0x00/0x0c: Alternative owner ID. */
+    uint16_t        idOwner;
+    /** 0x02/0x0e: Alternative group ID. */
+    uint16_t        idGroup;
+    /** 0x04/0x10: Alternative permissions.   */
+    uint16_t        fPermission;
+} UDFEADATAALTPERM;
+/** Pointer to UDF alternative permissions EA data. */
+typedef UDFEADATAALTPERM *PUDFEADATAALTPERM;
+/** Pointer to const UDF alternative permissions EA data. */
+typedef UDFEADATAALTPERM const *PCUDFEADATAALTPERM;
+/** UDFGEA::uAttribType value for UDFEADATAALTPERM.   */
+#define UDFEADATAALTPERM_ATTRIB_TYPE            UINT32_C(0x00000003)
+/** UDFGEA::uAttribSubtype value for UDFEADATAALTPERM.   */
+#define UDFEADATAALTPERM_ATTRIB_SUBTYPE         UINT32_C(0x00000001)
 
-        /** File times (@ecma167{4,14.10.5,108}, @udf260{3.3.4.3,80}).
-         * (This is a bit reminiscent of ISO9660RRIPTF.) */
-        struct
-        {
-            /** 0x0c: Timestamp length. */
-            uint32_t        cbTimestamps;
-            /** 0x10: Indicates which timestamps are present (UDF_FILE_TIMES_EA_F_XXX). */
-            uint32_t        fFlags;
-            /** 0x14: Timestamps. */
-            UDFTIMESTAMP    aTimestamps[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
-        } FileTimes;
-
-        /** Information times (@ecma167{4,14.10.6,109}). */
-        struct
-        {
-            /** 0x0c: Timestamp length. */
-            uint32_t        cbTimestamps;
-            /** 0x10: Indicates which timestamps are present (UDF_INFO_TIMES_EA_F_XXX). */
-            uint32_t        fFlags;
-            /** 0x14: Timestamps. */
-            UDFTIMESTAMP    aTimestamps[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
-        } InfoTimes;
-
-        /** Device specification (@ecma167{4,14.10.7,110}, @udf260{3.3.4.4,81}). */
-        struct
-        {
-            /** 0x0c: Length of implementation use field. */
-            uint32_t        cbImplementationUse;
-            /** 0x10: Major device number. */
-            uint32_t        uMajorDeviceNo;
-            /** 0x14: Minor device number. */
-            uint32_t        uMinorDeviceNo;
-            /** 0x18: Implementation use field (variable length).
-             * UDF specficiation expects UDFENTITYID with
-             * UDF_ENTITY_ID_DSEA_IMPLEMENTATION_USE as first part here. */
-            uint8_t         abImplementationUse[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
-        } DeviceSpec;
-
-        /** Implementation use (@ecma167{4,14.10.8,111}, @udf260{3.3.4.5,82}). */
-        struct
-        {
-            /** 0x0c: Length uData in bytes. */
-            uint32_t        cbData;
-            /** 0x10: Implementation identifier (UDF_ENTITY_ID_IUEA_XXX). */
-            UDFENTITYID     idImplementation;
-            /** 0x30: Implementation use field (variable length). */
-            union
-            {
-                /** Generic byte view. */
-                uint8_t     ab[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
-                /** @todo Lots more here later.   */
-            } uData;
-        } ImplUse;
-
-        /** Application use (@ecma167{4,14.10.9,112}, @udf260{3.3.4.6,88}). */
-        struct
-        {
-            /** 0x0c: Length uData in bytes. */
-            uint32_t        cbData;
-            /** 0x10: Application identifier (UDF_ENTITY_ID_AUEA_FREE_EA_SPACE). */
-            UDFENTITYID     idApplication;
-            /** 0x30: Application use field (variable length). */
-            union
-            {
-                /** Generic byte view. */
-                uint8_t     ab[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
-                /** @todo One more here later.   */
-            } uData;
-        } AppUse;
-
-    } u;
-} UDFGEA;
-
+/**
+ * UDF file times EA data (@ecma167{4,14.10.5,108}, @udf260{3.3.4.3,80}).
+ * (This is a bit reminiscent of ISO9660RRIPTF.)
+ */
+typedef struct UDFEADATAFILETIMES
+{
+    /** 0x00/0x0c: Timestamp length. */
+    uint32_t        cbTimestamps;
+    /** 0x04/0x10: Indicates which timestamps are present
+     * (UDF_FILE_TIMES_EA_F_XXX). */
+    uint32_t        fFlags;
+    /** 0x08/0x14: Timestamps. */
+    UDFTIMESTAMP    aTimestamps[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+} UDFEADATAFILETIMES;
+/** Pointer to UDF file times EA data. */
+typedef UDFEADATAFILETIMES *PUDFEADATAFILETIMES;
+/** Pointer to const UDF file times EA data. */
+typedef UDFEADATAFILETIMES const *PCUDFEADATAFILETIMES;
+/** UDFGEA::uAttribType value for UDFEADATAFILETIMES.   */
+#define UDFEADATAFILETIMES_ATTRIB_TYPE          UINT32_C(0x00000005)
+/** UDFGEA::uAttribSubtype value for UDFEADATAFILETIMES.   */
+#define UDFEADATAFILETIMES_ATTRIB_SUBTYPE       UINT32_C(0x00000001)
 
 /** @name UDF_FILE_TIMES_EA_F_XXX - File times existence flags.
  * See @ecma167{4,14.10.5.6,109}
@@ -1446,6 +1407,28 @@ typedef struct UDFGEA
 #define UDF_FILE_TIMES_EA_F_RESERVED_MASK   UINT8_C(0xd2)
 /** @} */
 
+/**
+ * UDF information times EA data (@ecma167{4,14.10.6,109}).
+ */
+typedef struct UDFEADATAINFOTIMES
+{
+    /** 0x00/0x0c: Timestamp length. */
+    uint32_t        cbTimestamps;
+    /** 0x04/0x10: Indicates which timestamps are present
+     * (UDF_INFO_TIMES_EA_F_XXX). */
+    uint32_t        fFlags;
+    /** 0x08/0x14: Timestamps. */
+    UDFTIMESTAMP    aTimestamps[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+} UDFEADATAINFOTIMES;
+/** Pointer to UDF information times EA data. */
+typedef UDFEADATAINFOTIMES *PUDFEADATAINFOTIMES;
+/** Pointer to const UDF information times EA data. */
+typedef UDFEADATAINFOTIMES const *PCUDFEADATAINFOTIMES;
+/** UDFGEA::uAttribType value for UDFEADATAINFOTIMES.   */
+#define UDFEADATAINFOTIMES_ATTRIB_TYPE          UINT32_C(0x00000006)
+/** UDFGEA::uAttribSubtype value for UDFEADATAINFOTIMES.   */
+#define UDFEADATAINFOTIMES_ATTRIB_SUBTYPE       UINT32_C(0x00000001)
+
 /** @name UDF_INFO_TIMES_EA_F_XXX - Information times existence flags.
  * See @ecma167{4,14.10.6.6,110}
  * @{ */
@@ -1456,11 +1439,537 @@ typedef struct UDFGEA
 #define UDF_INFO_TIMES_EA_F_RESERVED_MASK   UINT8_C(0xf0)
 /** @} */
 
+/**
+ * UDF device specification EA data (@ecma167{4,14.10.7,110}, @udf260{3.3.4.4,81}).
+ */
+typedef struct UDFEADATADEVICESPEC
+{
+    /** 0x00/0x0c: Length of implementation use field. */
+    uint32_t        cbImplementationUse;
+    /** 0x04/0x10: Major device number. */
+    uint32_t        uMajorDeviceNo;
+    /** 0x08/0x14: Minor device number. */
+    uint32_t        uMinorDeviceNo;
+    /** 0x0c/0x18: Implementation use field (variable length).
+     * UDF specficiation expects UDFENTITYID with
+     * UDF_ENTITY_ID_DSEA_IMPLEMENTATION_USE as first part here. */
+    uint8_t         abImplementationUse[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+} UDFEADATADEVICESPEC;
+/** Pointer to UDF device specification EA data. */
+typedef UDFEADATADEVICESPEC *PUDFEADATADEVICESPEC;
+/** Pointer to const UDF device specification EA data. */
+typedef UDFEADATADEVICESPEC const *PCUDFEADATADEVICESPEC;
+/** UDFGEA::uAttribType value for UDFEADATADEVICESPEC.   */
+#define UDFEADATADEVICESPEC_ATTRIB_TYPE         UINT32_C(0x0000000c)
+/** UDFGEA::uAttribSubtype value for UDFEADATADEVICESPEC.   */
+#define UDFEADATADEVICESPEC_ATTRIB_SUBTYPE      UINT32_C(0x00000001)
 
-//#define UDF_TAG_ID_UNALLOCATED_SPACE_ENTRY          UINT16_C(0x0107)
-//#define UDF_TAG_ID_SPACE_BITMAP_DESC                UINT16_C(0x0108)
-//#define UDF_TAG_ID_PARTITION_INTEGERITY_DESC        UINT16_C(0x0109)
-//#define UDF_TAG_ID_EXTENDED_FILE_ENTRY              UINT16_C(0x010a)
+/**
+ * UDF free EA space payload for implementation and application use EAs
+ * (@udf260{3.3.4.5.1.1,82}, @udf260{3.3.4.6.1.1,88}).
+ *
+ * UDFEADATAIMPLUSE::idImplementation is UDF_ENTITY_ID_IUEA_FREE_EA_SPACE.
+ * UDFEADATAAPPUSE::idImplementation is UDF_ENTITY_ID_AUEA_FREE_EA_SPACE.
+ */
+typedef struct UDFFREEEASPACE
+{
+    /** 0x00/0x30: Header checksum.
+     * @note 16-bit checksum of UDFGEA up thru u.ImplUse.idImplementation. */
+    uint16_t        uChecksum;
+    /** 0x02/0x32: Free space. */
+    uint8_t         abFree[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+} UDFFREEEASPACE;
+/** Pointer to UDF free EA space impl/app use payload. */
+typedef UDFFREEEASPACE *PUDFFREEEASPACE;
+/** Pointer to const UDF free EA space impl/app use payload. */
+typedef UDFFREEEASPACE const *PCUDFFREEEASPACE;
+
+/**
+ * UDF DVD copyright management information implementation use EA payload
+ * (@udf260{3.3.4.5.1.2,83}).
+ *
+ * UDFEADATAIMPLUSE::idImplementation is UDF_ENTITY_ID_IUEA_DVD_CGMS_INFO.
+ */
+typedef struct UDFIUEADVDCGMSINFO
+{
+    /** 0x00/0x30: Header checksum.
+     * @note 16-bit checksum of UDFGEA up thru u.ImplUse.idImplementation. */
+    uint16_t        uChecksum;
+    /** 0x02/0x32: The CGMS information (whatever that is). */
+    uint8_t         bInfo;
+    /** 0x03/0x33: Data structure type (whatever that is). */
+    uint8_t         bType;
+    /** 0x04/0x34: Production system information, probably dependend on the
+     * values of previous fields. */
+    uint8_t         abProtSysInfo[4];
+} UDFIUEADVDCGMSINFO;
+/** Pointer to UDF DVD copyright management information implementation use EA payload. */
+typedef UDFIUEADVDCGMSINFO *PUDFIUEADVDCGMSINFO;
+/** Pointer to const UDF DVD copyright management information implementation use EA payload. */
+typedef UDFIUEADVDCGMSINFO const *PCUDFIUEADVDCGMSINFO;
+
+/**
+ * UDF OS/2 EA length implementation use EA payload (@udf260{3.3.4.5.3.1,84}).
+ *
+ * UDFEADATAIMPLUSE::idImplementation is UDF_ENTITY_ID_IUEA_OS2_EA_LENGTH.
+ */
+#pragma pack(2)
+typedef struct UDFIUEAOS2EALENGTH
+{
+    /** 0x00/0x30: Header checksum.
+     * @note 16-bit checksum of UDFGEA up thru u.ImplUse.idImplementation. */
+    uint16_t        uChecksum;
+    /** 0x02/0x32: The CGMS information (whatever that is). */
+    uint32_t        cbEAs;
+} UDFIUEAOS2EALENGTH;
+#pragma pack()
+AssertCompileMemberOffset(UDFIUEAOS2EALENGTH, cbEAs, 2);
+/** Pointer to UDF OS/2 EA length implementation use EA payload. */
+typedef UDFIUEAOS2EALENGTH *PUDFIUEAOS2EALENGTH;
+/** Pointer to const UDF OS/2 EA length implementation use EA payload. */
+typedef UDFIUEAOS2EALENGTH const *PCUDFIUEAOS2EALENGTH;
+
+/**
+ * UDF Mac volume info implementation use EA payload (@udf260{3.3.4.5.4.1,84}).
+ *
+ * UDFEADATAIMPLUSE::idImplementation is UDF_ENTITY_ID_IUEA_MAC_VOLUME_INFO.
+ */
+#pragma pack(2)
+typedef struct UDFIUEAMACVOLINFO
+{
+    /** 0x00/0x30: Header checksum.
+     * @note 16-bit checksum of UDFGEA up thru u.ImplUse.idImplementation. */
+    uint16_t        uChecksum;
+    /** 0x02/0x32: Last modification time. */
+    UDFTIMESTAMP    LastModificationTime;
+    /** 0x0e/0x3e: Last backup time. */
+    UDFTIMESTAMP    LastBackupTime;
+    /** 0x1a/0x4e: Volume finder information. */
+    uint32_t        au32FinderInfo[8];
+} UDFIUEAMACVOLINFO;
+#pragma pack()
+AssertCompileMemberOffset(UDFIUEAMACVOLINFO, au32FinderInfo, 0x1a);
+/** Pointer to UDF Mac volume info implementation use EA payload. */
+typedef UDFIUEAMACVOLINFO *PUDFIUEAMACVOLINFO;
+/** Pointer to const UDF Mac volume info implementation use EA payload. */
+typedef UDFIUEAMACVOLINFO const *PCUDFIUEAMACVOLINFO;
+
+/**
+ * UDF point for use in Mac EAs (@udf260{3.3.4.5.4.2,86}).
+ */
+typedef struct UDFMACPOINT
+{
+    /** X coordinate. */
+    int16_t         x;
+    /** Y coordinate. */
+    int16_t         y;
+} UDFMACPOINT;
+
+/**
+ * UDF rectangle for using Mac EAs (@udf260{3.3.4.5.4.2,86}).
+ */
+typedef struct UDFMACRECT
+{
+    /** top Y coordinate. */
+    int16_t         yTop;
+    /** left X coordinate. */
+    int16_t         xLeft;
+    /** bottom Y coordinate. (exclusive?) */
+    int16_t         yBottom;
+    /** right X coordinate. (exclusive?) */
+    int16_t         xRight;
+} UDFMACRECT;
+
+/**
+ * UDF finder directory info for Mac EAs (@udf260{3.3.4.5.4.2,86}).
+ */
+typedef struct UDFMACFDINFO
+{
+    UDFMACRECT      FrRect;
+    int16_t         FrFlags;
+    UDFMACPOINT     FrLocation;
+    int16_t         FrView;
+} UDFMACFDINFO;
+AssertCompileSize(UDFMACFDINFO, 16);
+
+/**
+ * UDF finder directory extended info for Mac EAs (@udf260{3.3.4.5.4.2,86}).
+ */
+typedef struct UDFMACFDXINFO
+{
+    UDFMACPOINT     FrScroll;
+    int32_t         FrOpenChain;
+    uint8_t         FrScript;
+    uint8_t         FrXFlags;
+    uint16_t        FrComment;
+    uint32_t        FrPutAway;
+} UDFMACFDXINFO;
+AssertCompileSize(UDFMACFDXINFO, 16);
+
+/**
+ * UDF Mac finder info implementation use EA payload (@udf260{3.3.4.5.4.1,84}),
+ * directory edition.
+ *
+ * UDFEADATAIMPLUSE::idImplementation is UDF_ENTITY_ID_IUEA_MAC_FINDER_INFO.
+ */
+typedef struct UDFIUEAMACFINDERINFODIR
+{
+    /** 0x00/0x30: Header checksum.
+     * @note 16-bit checksum of UDFGEA up thru u.ImplUse.idImplementation. */
+    uint16_t        uChecksum;
+    /** 0x02/0x32: Explicit alignment padding, MBZ. */
+    uint16_t        uPadding;
+    /** 0x04/0x34: Parent directory ID. */
+    uint32_t        idParentDir;
+    /** 0x08/0x38: Dir information. */
+    UDFMACFDINFO    DirInfo;
+    /** 0x18/0x48: Dir extended information. */
+    UDFMACFDXINFO   DirExInfo;
+} UDFIUEAMACFINDERINFODIR;
+AssertCompileMemberOffset(UDFIUEAMACFINDERINFODIR, DirInfo, 0x08);
+AssertCompileMemberOffset(UDFIUEAMACFINDERINFODIR, DirExInfo, 0x18);
+AssertCompileSize(UDFIUEAMACFINDERINFODIR, 0x28);
+/** Pointer to UDF Mac finder info for dir implementation use EA payload. */
+typedef UDFIUEAMACFINDERINFODIR *PUDFIUEAMACFINDERINFODIR;
+/** Pointer to const UDF Mac finder info for dir implementation use EA payload. */
+typedef UDFIUEAMACFINDERINFODIR const *PCUDFIUEAMACFINDERINFODIR;
+
+/**
+ * UDF finder file info for Mac EAs (@udf260{3.3.4.5.4.2,86}).
+ */
+typedef struct UDFMACFFINFO
+{
+    uint32_t        FrType;
+    uint32_t        FrCreator;
+    uint16_t        FrFlags;
+    UDFMACPOINT     FrLocation;
+    int16_t         FrFldr;
+} UDFMACFFINFO;
+AssertCompileSize(UDFMACFFINFO, 16);
+
+/**
+ * UDF finder file extended info for Mac EAs (@udf260{3.3.4.5.4.2,86}).
+ */
+typedef struct UDFMACFFXINFO
+{
+    int16_t         FrIconID;
+    uint8_t         FdUnused[6];
+    uint8_t         FrScript;
+    uint8_t         FrXFlags;
+    uint16_t        FrComment;
+    uint32_t        FrPutAway;
+} UDFMACFFXINFO;
+AssertCompileSize(UDFMACFFXINFO, 16);
+
+/**
+ * UDF Mac finder info implementation use EA payload (@udf260{3.3.4.5.4.1,84}),
+ * file edition.
+ *
+ * UDFEADATAIMPLUSE::idImplementation is UDF_ENTITY_ID_IUEA_MAC_FINDER_INFO.
+ */
+typedef struct UDFIUEAMACFINDERINFOFILE
+{
+    /** 0x00/0x30: Header checksum.
+     * @note 16-bit checksum of UDFGEA up thru u.ImplUse.idImplementation. */
+    uint16_t        uChecksum;
+    /** 0x02/0x32: Explicit alignment padding, MBZ. */
+    uint16_t        uPadding;
+    /** 0x04/0x34: Parent directory ID. */
+    uint32_t        idParentDir;
+    /** 0x08/0x38: File information. */
+    UDFMACFFINFO    FileInfo;
+    /** 0x18/0x48: File extended information. */
+    UDFMACFFXINFO   FileExInfo;
+    /** 0x28/0x58: The size of the fork data (in bytes). */
+    uint32_t        cbForkData;
+    /** 0x2c/0x5c: The size of the fork allocation (in bytes). */
+    uint32_t        cbForkAlloc;
+} UDFIUEAMACFINDERINFOFILE;
+AssertCompileMemberOffset(UDFIUEAMACFINDERINFOFILE, FileInfo, 0x08);
+AssertCompileMemberOffset(UDFIUEAMACFINDERINFOFILE, FileExInfo, 0x18);
+AssertCompileMemberOffset(UDFIUEAMACFINDERINFOFILE, cbForkData, 0x28);
+AssertCompileSize(UDFIUEAMACFINDERINFOFILE, 0x30);
+/** Pointer to UDF Mac finder info for file implementation use EA payload. */
+typedef UDFIUEAMACFINDERINFOFILE *PUDFIUEAMACFINDERINFOFILE;
+/** Pointer to const UDF Mac finder info for file implementation use EA payload. */
+typedef UDFIUEAMACFINDERINFOFILE const *PCUDFIUEAMACFINDERINFOFILE;
+
+/**
+ * UDF OS/400 directory info implementation use EA payload (@udf260{3.3.4.5.6.1,87})
+ *
+ * UDFEADATAIMPLUSE::idImplementation is UDF_ENTITY_ID_IUEA_OS400_DIR_INFO.
+ */
+typedef struct UDFIUEAOS400DIRINFO
+{
+    /** 0x00/0x30: Header checksum.
+     * @note 16-bit checksum of UDFGEA up thru u.ImplUse.idImplementation. */
+    uint16_t        uChecksum;
+    /** 0x02/0x32: Explicit alignment padding, MBZ. */
+    uint16_t        uPadding;
+    /** 0x04/0x34: The directory info, format documented elsewhere. */
+    uint8_t         abDirInfo[44];
+} UDFIUEAOS400DIRINFO;
+AssertCompileSize(UDFIUEAOS400DIRINFO, 0x30);
+/** Pointer to UDF Mac finder info for file implementation use EA payload. */
+typedef UDFIUEAOS400DIRINFO *PUDFIUEAOS400DIRINFO;
+/** Pointer to const UDF Mac finder info for file implementation use EA payload. */
+typedef UDFIUEAOS400DIRINFO const *PCUDFIUEAOS400DIRINFO;
+
+
+/**
+ * UDF implementation use EA data (@ecma167{4,14.10.8,111}, @udf260{3.3.4.5,82}).
+ */
+typedef struct UDFEADATAIMPLUSE
+{
+    /** 0x00/0x0c: Length uData in bytes. */
+    uint32_t        cbData;
+    /** 0x04/0x10: Implementation identifier (UDF_ENTITY_ID_IUEA_XXX). */
+    UDFENTITYID     idImplementation;
+    /** 0x24/0x30: Implementation use field (variable length). */
+    union
+    {
+        /** Generic byte view. */
+        uint8_t                     abData[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        /** Free EA space (UDF_ENTITY_ID_IUEA_FREE_EA_SPACE). */
+        UDFFREEEASPACE              FreeEaSpace;
+        /** DVD copyright management information (UDF_ENTITY_ID_IUEA_DVD_CGMS_INFO). */
+        UDFIUEADVDCGMSINFO          DvdCgmsInfo;
+        /** OS/2 EA length (UDF_ENTITY_ID_IUEA_OS2_EA_LENGTH). */
+        UDFIUEAOS2EALENGTH          Os2EaLength;
+        /** Mac volume info (UDF_ENTITY_ID_IUEA_MAC_VOLUME_INFO). */
+        UDFIUEAMACVOLINFO           MacVolInfo;
+        /** Mac finder info, directory edition (UDF_ENTITY_ID_IUEA_MAC_FINDER_INFO). */
+        UDFIUEAMACFINDERINFODIR     MacFinderInfoDir;
+        /** Mac finder info, file edition (UDF_ENTITY_ID_IUEA_MAC_FINDER_INFO). */
+        UDFIUEAMACFINDERINFOFILE    MacFinderInfoFile;
+        /** OS/400 directory info (UDF_ENTITY_ID_IUEA_OS400_DIR_INFO). */
+        UDFIUEAOS400DIRINFO         Os400DirInfo;
+    } u;
+} UDFEADATAIMPLUSE;
+/** Pointer to UDF implementation use EA data. */
+typedef UDFEADATAIMPLUSE *PUDFEADATAIMPLUSE;
+/** Pointer to const UDF implementation use EA data. */
+typedef UDFEADATAIMPLUSE const *PCUDFEADATAIMPLUSE;
+/** UDFGEA::uAttribType value for UDFEADATAIMPLUSE.   */
+#define UDFEADATAIMPLUSE_ATTRIB_TYPE            UINT32_C(0x00000800)
+/** UDFGEA::uAttribSubtype value for UDFEADATAIMPLUSE.   */
+#define UDFEADATAIMPLUSE_ATTRIB_SUBTYPE         UINT32_C(0x00000001)
+
+/**
+ * UDF application use EA data (@ecma167{4,14.10.9,112}, @udf260{3.3.4.6,88}).
+ */
+typedef struct UDFEADATAAPPUSE
+{
+    /** 0x0c: Length uData in bytes. */
+    uint32_t        cbData;
+    /** 0x10: Application identifier (UDF_ENTITY_ID_AUEA_FREE_EA_SPACE). */
+    UDFENTITYID     idApplication;
+    /** 0x30: Application use field (variable length). */
+    union
+    {
+        /** Generic byte view. */
+        uint8_t             ab[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        /** Free EA space (UDF_ENTITY_ID_AUEA_FREE_EA_SPACE). */
+        UDFFREEEASPACE      FreeEaSpace;
+    } uData;
+} UDFEADATAAPPUSE;
+/** Pointer to UDF application use EA data. */
+typedef UDFEADATAAPPUSE *PUDFEADATAAPPUSE;
+/** Pointer to const UDF application use EA data. */
+typedef UDFEADATAAPPUSE const *PCUDFEADATAAPPUSE;
+/** UDFGEA::uAttribType value for UDFEADATAAPPUSE.   */
+#define UDFEADATAAPPUSE_ATTRIB_TYPE             UINT32_C(0x00010000)
+/** UDFGEA::uAttribSubtype value for UDFEADATAAPPUSE.   */
+#define UDFEADATAAPPUSE_ATTRIB_SUBTYPE          UINT32_C(0x00000001)
+
+/**
+ * UDF generic extended attribute (@ecma167{4,14.10.2,103}).
+ */
+typedef struct UDFGEA
+{
+    /** 0x00: Attribute type (UDFXXX_ATTRIB_TYPE). */
+    uint32_t        uAttribType;
+    /** 0x04: Attribute subtype (UDFXXX_ATTRIB_SUBTYPE). */
+    uint8_t         uAttribSubtype;
+    /** 0x05: Reserved padding bytes, MBZ. */
+    uint8_t         abReserved[3];
+    /** 0x08: Size of the whole extended attribute.
+     * Multiple of four is recommended. */
+    uint32_t        cbAttrib;
+    /** 0x0c: Attribute data union. */
+    union
+    {
+        /** Generic byte view (variable size). */
+        uint8_t                 abData[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        /** Character set information (@ecma167{4,14.10.3,104}). */
+        UDFEADATACHARSETINFO    CharSetInfo;
+        /** Alternate permissions (@ecma167{4,14.10.4,105}, @udf260{3.3.4.2,80}).
+         * @note Not recorded according to the UDF specification.  */
+        UDFEADATAALTPERM        AltPerm;
+        /** File times (@ecma167{4,14.10.5,108}, @udf260{3.3.4.3,80}).
+         * (This is a bit reminiscent of ISO9660RRIPTF.) */
+        UDFEADATAFILETIMES      FileTimes;
+        /** Information times (@ecma167{4,14.10.6,109}). */
+        UDFEADATAINFOTIMES      InfoTimes;
+        /** Device specification (@ecma167{4,14.10.7,110}, @udf260{3.3.4.4,81}). */
+        UDFEADATADEVICESPEC     DeviceSpec;
+        /** Implementation use (@ecma167{4,14.10.8,111}, @udf260{3.3.4.5,82}). */
+        UDFEADATAIMPLUSE        ImplUse;
+        /** Application use (@ecma167{4,14.10.9,112}, @udf260{3.3.4.6,88}). */
+        UDFEADATAAPPUSE         AppUse;
+    } u;
+} UDFGEA;
+AssertCompileMemberOffset(UDFGEA, u, 0x0c);
+/** Pointer to a UDF extended attribute. */
+typedef UDFGEA *PUDFGEA;
+/** Pointer to a const UDF extended attribute. */
+typedef UDFGEA const *PCUDFGEA;
+
+
+/**
+ * UDF unallocated space entry (@ecma167{4,14.11,113}, @udf260{2.3.7,64}).
+ *
+ * @note Total length shall not exceed one logical block.
+ */
+typedef struct UDFUNALLOCATEDSPACEENTRY
+{
+    /** 0x00: The descriptor tag (UDF_TAG_ID_UNALLOCATED_SPACE_ENTRY). */
+    UDFTAG          Tag;
+    /** 0x10: ICB Tag. */
+    UDFICBTAG       IcbTag;
+    /** 0x24: Size of the allocation desciptors in bytes. */
+    uint32_t        cbAllocDescs;
+    /** 0x28: Allocation desciptors, type given by IcbTag::fFlags. */
+    union
+    {
+        UDFSHORTAD  aShortADs[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        UDFLONGAD   aLongADs[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        UDFEXTAD    aExtADs[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        UDFEXTENTAD SingleAD;
+    } u;
+} UDFUNALLOCATEDSPACEENTRY;
+AssertCompileMemberOffset(UDFUNALLOCATEDSPACEENTRY, u, 0x28);
+/** Pointer to an UDF unallocated space entry. */
+typedef UDFUNALLOCATEDSPACEENTRY *PUDFUNALLOCATEDSPACEENTRY;
+/** Pointer to a const UDF unallocated space entry. */
+typedef UDFUNALLOCATEDSPACEENTRY const *PCUDFUNALLOCATEDSPACEENTRY;
+
+
+/**
+ * UDF space bitmap descriptor (SBD) (@ecma167{4,14.12,114}, @udf260{2.3.8,65}).
+ */
+typedef struct UDFSPACEBITMAPDESC
+{
+    /** 0x00: The descriptor tag (UDF_TAG_ID_SPACE_BITMAP_DESC). */
+    UDFTAG          Tag;
+    /** 0x10: Number of bits in the bitmap. */
+    uint32_t        cBits;
+    /** 0x14: The bitmap size in bytes. */
+    uint32_t        cbBitmap;
+    /** 0x18: The bitmap. */
+    uint8_t         abBitmap[RT_FLEXIBLE_ARRAY];
+} UDFSPACEBITMAPDESC;
+AssertCompileMemberOffset(UDFSPACEBITMAPDESC, abBitmap, 0x18);
+/** Pointer to an UDF space bitmap descriptor. */
+typedef UDFSPACEBITMAPDESC *PUDFSPACEBITMAPDESC;
+/** Pointer to a const UDF space bitmap descriptor. */
+typedef UDFSPACEBITMAPDESC const *PCUDFSPACEBITMAPDESC;
+
+
+/**
+ * UDF partition integrity descriptor (@ecma167{4,14.3,115}, @udf260{2.3.9,65}).
+ *
+ * @note Not needed by UDF.
+ */
+typedef struct UDFPARTITIONINTEGRITYDESC
+{
+    /** 0x000: The descriptor tag (UDF_TAG_ID_PARTITION_INTEGERITY_DESC). */
+    UDFTAG          Tag;
+    /** 0x010: ICB Tag. */
+    UDFICBTAG       IcbTag;
+    /** 0x024: Recording timestamp. */
+    UDFTIMESTAMP    RecordingTimestamp;
+    /** 0x030: Interity type (UDF_PARTITION_INTEGRITY_TYPE_XXX). */
+    uint8_t         bType;
+    /** 0x031: Reserved. */
+    uint8_t         abReserved[175];
+    /** 0x0e0: Implementation identifier. */
+    UDFENTITYID     idImplementation;
+    /** 0x100: Implementation use data. */
+    uint8_t         abImplementationUse[RT_FLEXIBLE_ARRAY];
+} UDFPARTITIONINTEGRITYDESC;
+AssertCompileMemberOffset(UDFPARTITIONINTEGRITYDESC, abImplementationUse, 0x100);
+/** Pointer to an UDF partition integrity descriptor. */
+typedef UDFPARTITIONINTEGRITYDESC *PUDFPARTITIONINTEGRITYDESC;
+/** Pointer to a const UDF partition integrity descriptor. */
+typedef UDFPARTITIONINTEGRITYDESC const *PCUDFPARTITIONINTEGRITYDESC;
+
+
+/**
+ * UDF extended file entry (EFE) (@ecma167{4,14.17,120}, @udf260{3.3.5,83}).
+ *
+ * @note Total length shall not exceed one logical block.
+ */
+typedef struct UDFEXFILEENTRY
+{
+    /** 0x00: The descriptor tag (UDF_TAG_ID_EXTENDED_FILE_ENTRY). */
+    UDFTAG          Tag;
+    /** 0x10: ICB Tag. */
+    UDFICBTAG       IcbTag;
+    /** 0x24: User ID (UNIX). */
+    uint32_t        uid;
+    /** 0x28: Group ID (UNIX). */
+    uint32_t        gid;
+    /** 0x2c: Permission (UDF_PERM_XXX). */
+    uint32_t        fPermissions;
+    /** 0x30: Number hard links. */
+    uint16_t        cHardlinks;
+    /** 0x32: Record format (UDF_REC_FMT_XXX).   */
+    uint8_t         uRecordFormat;
+    /** 0x33: Record format (UDF_REC_FMT_XXX).   */
+    uint8_t         fRecordDisplayAttribs;
+    /** 0x34: Record length (in bytes).
+     * @note  Must be zero according to the UDF specification. */
+    uint32_t        cbRecord;
+    /** 0x38: Information length in bytes (file size). */
+    uint64_t        cbData;
+    /** 0x40: The size of all streams. Same as cbData if no additional streams. */
+    uint64_t        cbObject;
+    /** 0x48: Number of logical blocks allocated (for file data). */
+    uint64_t        cLogicalBlocks;
+    /** 0x50: Time of last access (prior to recording the file entry). */
+    UDFTIMESTAMP    AccessTime;
+    /** 0x5c: Time of last data modification. */
+    UDFTIMESTAMP    ModificationTime;
+    /** 0x68: Birth (creation) time. */
+    UDFTIMESTAMP    BirthTime;
+    /** 0x74: Time of last attribute/status modification. */
+    UDFTIMESTAMP    ChangeTime;
+    /** 0x80: Checkpoint number (defaults to 1). */
+    uint32_t        uCheckpoint;
+    /** 0x84: Reserved, MBZ. */
+    uint32_t        uReserved;
+    /** 0x88: Extended attribute information control block location. */
+    UDFLONGAD       ExtAttribIcb;
+    /** 0x98: Stream directory information control block location. */
+    UDFLONGAD       StreamDirIcb;
+    /** 0xa8: Implementation identifier (UDF_ENTITY_ID_FE_IMPLEMENTATION). */
+    UDFENTITYID     idImplementation;
+    /** 0xc8: Unique ID. */
+    uint64_t        INodeId;
+    /** 0xd0: Length of extended attributes in bytes, multiple of four. */
+    uint32_t        cbExtAttribs;
+    /** 0xd4: Length of allocation descriptors in bytes, multiple of four. */
+    uint32_t        cbAllocDescs;
+    /** 0xd8: Two variable sized fields.  First @a cbExtAttribs bytes of extended
+     *  attributes, then @a cbAllocDescs bytes of allocation descriptors. */
+    uint8_t         abExtAttribs[RT_FLEXIBLE_ARRAY];
+} UDFEXFILEENTRY;
+AssertCompileMemberOffset(UDFEXFILEENTRY, abExtAttribs, 0xd8);
+/** Pointer to an UDF extended file entry. */
+typedef UDFEXFILEENTRY *PUDFEXFILEENTRY;
+/** Pointer to a const UDF extended file entry. */
+typedef UDFEXFILEENTRY const *PCUDFEXFILEENTRY;
 
 
 
