@@ -471,6 +471,7 @@ static void               ichac97StreamUnlock(PAC97STREAM pStream);
 static uint32_t           ichac97StreamGetUsed(PAC97STREAM pStream);
 static uint32_t           ichac97StreamGetFree(PAC97STREAM pStream);
 static int                ichac97StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbToProcessMax);
+static void               ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInTimer);
 
 static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns);
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
@@ -1015,37 +1016,7 @@ static DECLCALLBACK(int) ichac97StreamAsyncIOThread(RTTHREAD hThreadSelf, void *
                 continue;
             }
 
-            uint32_t cbToProcess;
-            uint32_t cbProcessed = 0;
-
-            switch (pStream->u8SD)
-            {
-                /* Input. */
-                case AC97SOUNDSOURCE_PI_INDEX:
-                case AC97SOUNDSOURCE_MC_INDEX:
-                {
-                    cbToProcess = (uint32_t)RTCircBufFree(pCircBuf);
-                    if (cbToProcess)
-                        rc2 = ichac97StreamWrite(pThis, pStream, pMixSink, (uint32_t)cbToProcess, &cbProcessed);
-                    break;
-                }
-
-                /* Output. */
-                case AC97SOUNDSOURCE_PO_INDEX:
-                {
-                    cbToProcess = (uint32_t)RTCircBufUsed(pCircBuf);
-                    if (cbToProcess)
-                        rc2 = ichac97StreamRead(pThis, pStream, pMixSink, (uint32_t)cbToProcess, &cbProcessed);
-                    break;
-                }
-
-                default:
-                    AssertFailedStmt(rc2 = VERR_NOT_SUPPORTED);
-                    break;
-            }
-
-            if (RT_SUCCESS(rc2))
-                rc2 = AudioMixerSinkUpdate(pMixSink);
+            ichac97StreamUpdate(pThis, pStream, false /* fInTimer */);
 
             int rc3 = RTCritSectLeave(&pAIO->CritSect);
             AssertRC(rc3);
@@ -1218,16 +1189,11 @@ static void ichac97StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable)
  */
 static void ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInTimer)
 {
-    ichac97StreamLock(pStream);
-
     PAUDMIXSINK pSink = ichac97IndexToSink(pThis, pStream->u8SD);
     AssertPtr(pSink);
 
     if (!AudioMixerSinkIsActive(pSink)) /* No sink available? Bail out. */
-    {
-        ichac97StreamUnlock(pStream);
         return;
-    }
 
     int rc2;
 
@@ -1339,8 +1305,6 @@ static void ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInT
         }
 #endif
     }
-
-    ichac97StreamUnlock(pStream);
 }
 
 /**
@@ -2187,6 +2151,8 @@ static int ichac97StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32_t
     AssertPtrReturn(pStream,     VERR_INVALID_POINTER);
     AssertReturn(cbToProcessMax, VERR_INVALID_PARAMETER);
 
+    ichac97StreamLock(pStream);
+
     PAC97BMREGS pRegs = &pStream->Regs;
 
     if (pRegs->sr & AC97_SR_DCH) /* Controller halted? */
@@ -2204,6 +2170,7 @@ static int ichac97StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32_t
             }
         }
 
+        ichac97StreamUnlock(pStream);
         return VINF_SUCCESS;
     }
 
@@ -2211,6 +2178,8 @@ static int ichac97StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32_t
     if (pRegs->sr & AC97_SR_BCIS)
     {
         Log3Func(("[SD%RU8] BCIS set\n", pStream->u8SD));
+
+        ichac97StreamUnlock(pStream);
         return VINF_SUCCESS;
     }
 
@@ -2374,6 +2343,8 @@ static int ichac97StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32_t
             break;
         }
     }
+
+    ichac97StreamUnlock(pStream);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
