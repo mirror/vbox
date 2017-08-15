@@ -33,11 +33,11 @@
           </listitem>
 
           <listitem>
-            <para>or by entering <screen>VirtualBox.exe -extract</screen></para>
+            <para>or by entering <screen>VirtualBox-&lt;version&gt;-&lt;revision&gt;-Win.exe -extract</screen></para>
 
             <para>on the command line. This will extract both installers into
             a temporary directory in which you'll then find the usual .MSI
-            files. Then you can do a <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi</screen>
+            files. Then you can do a <screen>msiexec /i VirtualBox-&lt;version&gt;-&lt;revision&gt;-MultiArch_&lt;x86|amd64&gt;.msi</screen>
             to perform the installation.</para>
           </listitem>
         </itemizedlist></para>
