@@ -1439,7 +1439,8 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSS
         if (DevTmp.Int.s.u8MsixCapSize != 0)
         {
             Assert(pDev->Int.s.pMsixPageR3 != NULL);
-            memcpy(pDev->Int.s.pMsixPageR3, pvMsixPage, 0x1000);
+            Assert(pDev->Int.s.cbMsixRegion != 0);
+            memcpy(pDev->Int.s.pMsixPageR3, pvMsixPage, pDev->Int.s.cbMsixRegion);
         }
     }
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -87,7 +87,7 @@ DECLINLINE(uint32_t)  msixIsVectorMasked(PPDMPCIDEV pDev, uint32_t iVector)
 
 DECLINLINE(uint8_t*)  msixPendingByte(PPDMPCIDEV pDev, uint32_t iVector)
 {
-    return msixGetPageOffset(pDev, 0x800 + iVector / 8);
+    return msixGetPageOffset(pDev, pDev->Int.s.offMsixPba + iVector / 8);
 }
 
 DECLINLINE(void)      msixSetPending(PPDMPCIDEV pDev, uint32_t iVector)
@@ -115,36 +115,42 @@ static void msixCheckPendingVector(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDM
 
 PDMBOTHCBDECL(int) msixMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
+    LogFlowFunc(("\n"));
+
+    uint32_t off = (uint32_t)(GCPhysAddr & 0xffff);
+    PPDMPCIDEV pPciDev = (PPDMPCIDEV)pvUser;
+
     /// @todo qword accesses?
-    NOREF(pDevIns);
+    RT_NOREF(pDevIns);
     AssertMsgReturn(cb == 4,
                     ("MSI-X must be accessed with 4-byte reads"),
                     VERR_INTERNAL_ERROR);
-
-    uint32_t off = (uint32_t)(GCPhysAddr & 0xfff);
-    PPDMPCIDEV pPciDev = (PPDMPCIDEV)pvUser;
+    AssertMsgReturn(off < pPciDev->Int.s.cbMsixRegion,
+                    ("Out of bounds access for the MSI-X region\n"),
+                    VINF_IOM_MMIO_UNUSED_FF);
 
     *(uint32_t*)pv = *(uint32_t*)msixGetPageOffset(pPciDev, off);
-
     return VINF_SUCCESS;
 }
 
 PDMBOTHCBDECL(int) msixMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
+    LogFlowFunc(("\n"));
+
+    PPDMPCIDEV pPciDev = (PPDMPCIDEV)pvUser;
+    uint32_t off = (uint32_t)(GCPhysAddr & 0xffff);
+
     /// @todo qword accesses?
     AssertMsgReturn(cb == 4,
                     ("MSI-X must be accessed with 4-byte reads"),
                     VERR_INTERNAL_ERROR);
-    PPDMPCIDEV pPciDev = (PPDMPCIDEV)pvUser;
-
-    uint32_t off = (uint32_t)(GCPhysAddr & 0xfff);
-
-    AssertMsgReturn(off < 0x800, ("Trying to write to PBA\n"), VINF_SUCCESS);
+    AssertMsgReturn(off < pPciDev->Int.s.offMsixPba,
+                    ("Trying to write to PBA\n"),
+                    VINF_IOM_MMIO_UNUSED_FF);
 
     *(uint32_t*)msixGetPageOffset(pPciDev, off) = *(uint32_t*)pv;
 
     msixCheckPendingVector(pDevIns, (PCPDMPCIHLP)pPciDev->Int.s.pPciBusPtrR3, pPciDev, off / VBOX_MSIX_ENTRY_SIZE);
-
     return VINF_SUCCESS;
 }
 
@@ -180,40 +186,44 @@ int MsixInit(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
     uint8_t    iNextOffset = pMsiReg->iMsixNextOffset;
     uint8_t    iBar        = pMsiReg->iMsixBar;
 
-    if (cVectors > VBOX_MSIX_MAX_ENTRIES)
-    {
-        AssertMsgFailed(("Too many MSI-X vectors: %d\n", cVectors));
-        return VERR_TOO_MUCH_DATA;
-    }
-
-    if (iBar > 5)
-    {
-        AssertMsgFailed(("Using wrong BAR for MSI-X: %d\n", iBar));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsgReturn(cVectors <= VBOX_MSIX_MAX_ENTRIES,
+                    ("Too many MSI-X vectors: %d\n", cVectors),
+                    VERR_TOO_MUCH_DATA);
+    AssertMsgReturn(iBar <= 5,
+                    ("Using wrong BAR for MSI-X: %d\n", iBar),
+                    VERR_INVALID_PARAMETER);
 
     Assert(iCapOffset != 0 && iCapOffset < 0xff && iNextOffset < 0xff);
 
     int rc = VINF_SUCCESS;
+    uint16_t cbPba = cVectors / 8;
+    if (cVectors % 8)
+        cbPba++;
+    uint16_t cbMsixRegion = RT_ALIGN_T(cVectors * sizeof(MsixTableRecord) + cbPba, _4K, uint16_t);
 
     /* If device is passthrough, BAR is registered using common mechanism. */
     if (!pciDevIsPassthrough(pDev))
     {
-        rc = PDMDevHlpPCIIORegionRegister(pDev->Int.s.CTX_SUFF(pDevIns), iBar, 0x1000, PCI_ADDRESS_SPACE_MEM, msixMap);
+        rc = PDMDevHlpPCIIORegionRegister(pDev->Int.s.CTX_SUFF(pDevIns), iBar, cbMsixRegion, PCI_ADDRESS_SPACE_MEM, msixMap);
         if (RT_FAILURE (rc))
             return rc;
     }
 
+    uint16_t offTable = 0;
+    uint16_t offPBA   = cVectors * sizeof(MsixTableRecord);
+
     pDev->Int.s.u8MsixCapOffset = iCapOffset;
     pDev->Int.s.u8MsixCapSize   = VBOX_MSIX_CAP_SIZE;
+    pDev->Int.s.cbMsixRegion    = cbMsixRegion;
+    pDev->Int.s.offMsixPba      = offPBA;
     PVM pVM = PDMDevHlpGetVM(pDev->Int.s.CTX_SUFF(pDevIns));
 
     pDev->Int.s.pMsixPageR3     = NULL;
 
-    rc = MMHyperAlloc(pVM, 0x1000, 1, MM_TAG_PDM_DEVICE_USER, (void **)&pDev->Int.s.pMsixPageR3);
+    rc = MMHyperAlloc(pVM, cbMsixRegion, 1, MM_TAG_PDM_DEVICE_USER, (void **)&pDev->Int.s.pMsixPageR3);
     if (RT_FAILURE(rc) || (pDev->Int.s.pMsixPageR3 == NULL))
         return VERR_NO_VM_MEMORY;
-    RT_BZERO(pDev->Int.s.pMsixPageR3, 0x1000);
+    RT_BZERO(pDev->Int.s.pMsixPageR3, cbMsixRegion);
     pDev->Int.s.pMsixPageR0     = MMHyperR3ToR0(pVM, pDev->Int.s.pMsixPageR3);
     pDev->Int.s.pMsixPageRC     = MMHyperR3ToRC(pVM, pDev->Int.s.pMsixPageR3);
 
@@ -223,8 +233,6 @@ int MsixInit(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
     PCIDevSetByte(pDev,  iCapOffset + 0, VBOX_PCI_CAP_ID_MSIX);
     PCIDevSetByte(pDev,  iCapOffset + 1, iNextOffset); /* next */
     PCIDevSetWord(pDev,  iCapOffset + VBOX_MSIX_CAP_MESSAGE_CONTROL, cVectors - 1);
-
-    uint32_t offTable = 0, offPBA = 0x800;
 
     PCIDevSetDWord(pDev,  iCapOffset + VBOX_MSIX_TABLE_BIROFFSET, offTable | iBar);
     PCIDevSetDWord(pDev,  iCapOffset + VBOX_MSIX_PBA_BIROFFSET,   offPBA   | iBar);

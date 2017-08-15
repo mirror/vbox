@@ -202,10 +202,10 @@ typedef struct PDMPCIDEVINT
     /** Size of MSI-X PCI capability in config space, or 0.
      * @todo fix non-standard naming.  */
     uint8_t                         u8MsixCapSize;
-#if HC_ARCH_BITS == 64
-    /** Explicit alignment padding.   */
-    uint8_t                         abPadding1[HC_ARCH_BITS == 32 ? 0 : 4];
-#endif
+    /** Size of the MSI-X region. */
+    uint16_t                        cbMsixRegion;
+    /** Offset to the PBA for MSI-X.   */
+    uint16_t                        offMsixPba;
 
     /** Pointer to bus specific data. (R3 ptr) */
     R3PTRTYPE(const void *)         pPciBusPtrR3;
@@ -215,7 +215,7 @@ typedef struct PDMPCIDEVINT
     /** @}  */
 } PDMPCIDEVINT;
 AssertCompileMemberAlignment(PDMPCIDEVINT, aIORegions, 8);
-AssertCompileSize(PDMPCIDEVINT, HC_ARCH_BITS == 32 ? 264 : 384);
+AssertCompileSize(PDMPCIDEVINT, HC_ARCH_BITS == 32 ? 268 : 384);
 
 /** Indicate that PDMPCIDEV::Int.s can be declared. */
 #define PDMPCIDEVINT_DECLARED
