@@ -967,8 +967,8 @@ void UIHostNetworkDetailsWidget::retranslateValidation(QWidget *pWidget /* = 0 *
 {
     /* Translate 'Interface' tab content: */
     if (!pWidget || pWidget == m_pErrorPaneAutomatic)
-        m_pErrorPaneAutomatic->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> is set to obtain address automatically "
-                                             "but its DHCP server is not enabled.").arg(m_newData.m_interface.m_strName));
+        m_pErrorPaneAutomatic->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> is set to obtain the address automatically "
+                                             "but the corresponding DHCP server is not enabled.").arg(m_newData.m_interface.m_strName));
     if (!pWidget || pWidget == m_pErrorPaneIPv4)
         m_pErrorPaneIPv4->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
                                         "IPv4 address.").arg(m_newData.m_interface.m_strName));

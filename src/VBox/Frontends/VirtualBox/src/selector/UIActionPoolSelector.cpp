@@ -969,7 +969,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Machine Tools Menu"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open machine tools menu"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the machine tools menu"));
     }
 };
 
@@ -994,7 +994,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Details"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open machine details pane"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the machine details pane"));
     }
 };
 
@@ -1019,7 +1019,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Snapshots"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open machine snapshots pane"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the machine snapshots pane"));
     }
 };
 
@@ -1066,7 +1066,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Global Tools Menu"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open global tools menu"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the global tools menu"));
     }
 };
 
@@ -1091,7 +1091,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Virtual Media Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open Virtual Media Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the Virtual Media Manager"));
     }
 };
 
@@ -1116,7 +1116,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Host Network Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open Host Network Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the Host Network Manager"));
     }
 };
 

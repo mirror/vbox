@@ -222,7 +222,7 @@ void UIGDetailsSet::sltUpdateAppearance()
 
 QString UIGDetailsSet::description() const
 {
-    return tr("Contains details set of Virtual Machine '%1'").arg(m_pMachineItem->name());
+    return tr("Contains the details of virtual machine '%1'").arg(m_pMachineItem->name());
 }
 
 QVariant UIGDetailsSet::data(int iKey) const

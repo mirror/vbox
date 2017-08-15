@@ -215,7 +215,7 @@ void UIToolsPaneMachine::retranslateUi()
         m_pPaneDesktop->setToolsPaneIcon(UIIconPool::iconSet(":/welcome_200px.png"));
         m_pPaneDesktop->setToolsPaneText(
             tr("<h3>Welcome to VirtualBox!</h3>"
-               "<p>The left part of this window is a list of all virtual "
+               "<p>The left part of this window lists all virtual "
                "machines and virtual machine groups on your computer. "
                "The list is empty now because you haven't created any "
                "virtual machines yet.</p>"
@@ -224,7 +224,7 @@ void UIToolsPaneMachine::retranslateUi()
                "top of the window.</p>"
                "<p>You can press the <b>%1</b> key to get instant help, or visit "
                "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
-               "for the latest information and news.</p>")
+               "for more information and latest news.</p>")
                .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
     }
     else
@@ -232,17 +232,17 @@ void UIToolsPaneMachine::retranslateUi()
         m_pPaneDesktop->setToolsPaneIcon(UIIconPool::iconSet(":/tools_banner_machine_200px.png"));
         m_pPaneDesktop->setToolsPaneText(
             tr("<h3>Welcome to VirtualBox!</h3>"
-               "<p>The left part of this window is a list of all virtual "
+               "<p>The left part of this window lists all virtual "
                "machines and virtual machine groups on your computer.</p>"
                "<p>The right part of this window represents a set of "
                "tools which are currently opened (or can be opened) for "
-               "the currently chosen machine. For list of currently "
+               "the currently chosen machine. For a list of currently "
                "available tools check the corresponding menu at the right "
                "side of the main tool bar located at the top of the window. "
-               "This list will be extended with new tools in the future releases.</p>"
+               "This list will be extended with new tools in future releases.</p>"
                "<p>You can press the <b>%1</b> key to get instant help, or visit "
                "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
-               "for the latest information and news.</p>")
+               "for more information and latest news.</p>")
                .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
     }
 
@@ -256,12 +256,12 @@ void UIToolsPaneMachine::retranslateUi()
         m_pPaneDesktop->addToolDescription(pAction1,
                                            tr("Tool to observe virtual machine (VM) details. "
                                               "Reflects groups of <u>properties</u> for the currently chosen VM and allows "
-                                              "for basic manipulations on few of them (like the machine storage devices)."));
+                                              "basic operations on certain properties (like the machine storage devices)."));
         QAction *pAction2 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_Snapshots);
         m_pPaneDesktop->addToolDescription(pAction2,
                                            tr("Tool to control virtual machine (VM) snapshots. "
-                                              "Reflects <u>snapshots</u> created for the currently chosen VM and allows "
-                                              "for snapshot manipulations like possibility to <u>create</u>, <u>remove</u>, "
+                                              "Reflects <u>snapshots</u> created for the currently selected VM and allows "
+                                              "snapshot operations like <u>create</u>, <u>remove</u>, "
                                               "<u>restore</u> (make current) and observe their properties. Allows to "
                                               "<u>edit</u> snapshot attributes like <u>name</u> and <u>description</u>."));
     }
