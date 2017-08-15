@@ -4,7 +4,7 @@
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
   <sect1>
-    <title>Version 5.2.0 Beta 1 (2017-08-03)</title>
+    <title>Version 5.2.0 Beta 2 (2017-08-15)</title>
 
     <para>This is a major update. The following major new features
       were added:</para>
