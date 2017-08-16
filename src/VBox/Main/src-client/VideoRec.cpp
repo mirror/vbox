@@ -831,7 +831,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
                 uAudioBits     = 16;
                 uAudioChannels = 1;
             }
-            else if (value.compare("med" /* "med[ium]" */, Utf8Str::CaseInsensitive) == 0)
+            else if (value.startsWith("med" /* "med[ium]" */, Utf8Str::CaseInsensitive) == 0)
             {
                 uAudioHz       = 22050;
                 uAudioBits     = 16;
