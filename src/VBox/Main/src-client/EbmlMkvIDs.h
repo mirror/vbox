@@ -50,6 +50,10 @@ enum MkvElem
     MkvElem_TrackUID                = 0x73C5,
     MkvElem_TrackType               = 0x83,
 
+    MkvElem_Language                = 0x22B59C,
+
+    MkvElem_FlagLacing              = 0x9C,
+
     MkvElem_Cluster                 = 0x1F43B675,
     MkvElem_Timecode                = 0xE7,
 
