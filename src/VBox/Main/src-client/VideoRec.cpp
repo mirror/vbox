@@ -901,13 +901,14 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
         char szWhat[32] = { 0 };
         if (fHasVideoTrack)
             RTStrCat(szWhat, sizeof(szWhat), "video");
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
         if (fHasAudioTrack)
         {
             if (fHasVideoTrack)
                 RTStrCat(szWhat, sizeof(szWhat), " + ");
             RTStrCat(szWhat, sizeof(szWhat), "audio");
         }
-
+#endif
         LogRel(("Recording %s to '%s'\n", szWhat, pszFile));
     }
 
