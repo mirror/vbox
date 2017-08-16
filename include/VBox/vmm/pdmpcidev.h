@@ -145,7 +145,7 @@ typedef struct PDMPCIDEV
 #ifdef PDMPCIDEVINT_DECLARED
         PDMPCIDEVINT        s;
 #endif
-        uint8_t             padding[HC_ARCH_BITS == 32 ? 272 : 384];
+        uint8_t             padding[HC_ARCH_BITS == 32 ? 288 : 384];
     } Int;
 
     /** @name Read only data.

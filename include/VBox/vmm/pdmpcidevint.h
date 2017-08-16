@@ -208,7 +208,7 @@ typedef struct PDMPCIDEVINT
     uint16_t                        offMsixPba;
 #if HC_ARCH_BITS == 32
     /** Add padding to align aIORegions to an 8 byte boundary. */
-    uint8_t                         abPadding1[4];
+    uint8_t                         abPadding1[12];
 #endif
 
     /** Pointer to bus specific data. (R3 ptr) */
@@ -219,7 +219,7 @@ typedef struct PDMPCIDEVINT
     /** @}  */
 } PDMPCIDEVINT;
 AssertCompileMemberAlignment(PDMPCIDEVINT, aIORegions, 8);
-AssertCompileSize(PDMPCIDEVINT, HC_ARCH_BITS == 32 ? 272 : 384);
+AssertCompileSize(PDMPCIDEVINT, HC_ARCH_BITS == 32 ? 280 : 384);
 
 /** Indicate that PDMPCIDEV::Int.s can be declared. */
 #define PDMPCIDEVINT_DECLARED
