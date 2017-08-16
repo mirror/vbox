@@ -873,8 +873,8 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
             return rc;
         }
 
-        LogRel(("VideoRec: Recording screen #%u with %ux%u @ %u kbps, %u fps to '%s'\n",
-                uScreen, uWidth, uHeight, uRate, uFPS, pszFile));
+        LogRel(("VideoRec: Recording screen #%u with %ux%u @ %u kbps, %u FPS\n",
+                uScreen, uWidth, uHeight, uRate, uFPS));
     }
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
@@ -891,6 +891,24 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
                 uAudioHz, uAudioBits, uAudioChannels, uAudioChannels == 1 ? "channel" : "channels"));
     }
 #endif
+
+    if (   fHasVideoTrack
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+        || fHasAudioTrack)
+#endif
+    {
+        char szWhat[32] = { 0 };
+        if (fHasVideoTrack)
+            RTStrCat(szWhat, sizeof(szWhat), "video");
+        if (fHasAudioTrack)
+        {
+            if (fHasVideoTrack)
+                RTStrCat(szWhat, sizeof(szWhat), " + ");
+            RTStrCat(szWhat, sizeof(szWhat), "audio");
+        }
+
+        LogRel(("Recording %s to '%s'\n", szWhat, pszFile));
+    }
 
 #ifdef VBOX_WITH_LIBVPX
     /* Target bitrate in kilobits per second. */
