@@ -894,8 +894,9 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
 
     if (   fHasVideoTrack
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-        || fHasAudioTrack)
+        || fHasAudioTrack
 #endif
+       )
     {
         char szWhat[32] = { 0 };
         if (fHasVideoTrack)
