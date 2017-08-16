@@ -768,7 +768,11 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     /* By default we enable everything (if available). */
     bool fHasVideoTrack = true;
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-    bool fHasAudioTrack = true;
+    bool     fHasAudioTrack = true;
+    /* By default we use 48kHz, 16-bit, stereo for the audio track. */
+    uint16_t uAudioHz       = 48000;
+    uint8_t  uAudioBits     = 16;
+    uint8_t  uAudioChannels = 2;
 #endif
 
     com::Utf8Str key, value;
@@ -818,6 +822,27 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
             }
 #endif
         }
+        else if (key.compare("ac_profile", Utf8Str::CaseInsensitive) == 0)
+        {
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+            if (value.compare("low", Utf8Str::CaseInsensitive) == 0)
+            {
+                uAudioHz       = 8000;
+                uAudioBits     = 16;
+                uAudioChannels = 1;
+            }
+            else if (value.compare("med" /* "med[ium]" */, Utf8Str::CaseInsensitive) == 0)
+            {
+                uAudioHz       = 22050;
+                uAudioBits     = 16;
+                uAudioChannels = 2;
+            }
+            else if (value.compare("high", Utf8Str::CaseInsensitive) == 0)
+            {
+                /* Stay with the default set above. */
+            }
+#endif
+        }
         else
             LogRel(("VideoRec: Unknown option '%s' (value '%s'), skipping\n", key.c_str(), value.c_str()));
 
@@ -855,14 +880,15 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
     if (fHasAudioTrack)
     {
-        rc = pStream->pEBML->AddAudioTrack(48000, 2, 16, &pStream->uTrackAudio); /** @todo Make this configurable. */
+        rc = pStream->pEBML->AddAudioTrack(uAudioHz, uAudioChannels, uAudioBits, &pStream->uTrackAudio);
         if (RT_FAILURE(rc))
         {
             LogRel(("VideoRec: Failed to add audio track to output file '%s' (%Rrc)\n", pszFile, rc));
             return rc;
         }
 
-        LogRel(("VideoRec: Recording audio enabled\n"));
+        LogRel(("VideoRec: Recording audio in %RU16Hz, %RU8 bit, %RU8 %s\n",
+                uAudioHz, uAudioBits, uAudioChannels, uAudioChannels == 1 ? "channel" : "channels"));
     }
 #endif
 
