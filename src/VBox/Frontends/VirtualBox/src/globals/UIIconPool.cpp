@@ -356,6 +356,8 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     m_guestOSTypeIconNames.insert("MacOS109_64",     ":/os_macosx_64.png");
     m_guestOSTypeIconNames.insert("MacOS1010_64",    ":/os_macosx_64.png");
     m_guestOSTypeIconNames.insert("MacOS1011_64",    ":/os_macosx_64.png");
+    m_guestOSTypeIconNames.insert("MacOS1012_64",    ":/os_macosx_64.png");
+    m_guestOSTypeIconNames.insert("MacOS1013_64",    ":/os_macosx_64.png");
     m_guestOSTypeIconNames.insert("JRockitVE",       ":/os_jrockitve.png");
     m_guestOSTypeIconNames.insert("VBoxBS_64",       ":/os_other_64.png");
 }
