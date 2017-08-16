@@ -348,13 +348,15 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst)
     PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     if (pNstGstVmcbCache->fValid)
     {
-        PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
+        PSVMVMCBCTRL      pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
+        PSVMVMCBSTATESAVE pVmcbNstGstState =&pVmcbNstGst->guest;
         pVmcbNstGstCtrl->u16InterceptRdCRx        = pNstGstVmcbCache->u16InterceptRdCRx;
         pVmcbNstGstCtrl->u16InterceptWrCRx        = pNstGstVmcbCache->u16InterceptWrCRx;
         pVmcbNstGstCtrl->u16InterceptRdCRx        = pNstGstVmcbCache->u16InterceptRdCRx;
         pVmcbNstGstCtrl->u16InterceptWrDRx        = pNstGstVmcbCache->u16InterceptWrDRx;
         pVmcbNstGstCtrl->u32InterceptXcpt         = pNstGstVmcbCache->u32InterceptXcpt;
         pVmcbNstGstCtrl->u64InterceptCtrl         = pNstGstVmcbCache->u64InterceptCtrl;
+        pVmcbNstGstState->u64CR3                  = pNstGstVmcbCache->u64CR3;
         pVmcbNstGstCtrl->u64VmcbCleanBits         = pNstGstVmcbCache->u64VmcbCleanBits;
         pVmcbNstGstCtrl->u64IOPMPhysAddr          = pNstGstVmcbCache->u64IOPMPhysAddr;
         pVmcbNstGstCtrl->u64MSRPMPhysAddr         = pNstGstVmcbCache->u64MSRPMPhysAddr;

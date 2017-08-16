@@ -1370,7 +1370,8 @@ static void hmR0SvmLoadGuestControlRegsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR3))
     {
         Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fSvmNestedPaging);
-        pVmcbNstGst->guest.u64CR3 = pCtx->cr3;
+        int rc = PGMPhysGCPhys2HCPhys(pVCpu->CTX_SUFF(pVM), pCtx->cr3, &pVmcbNstGst->guest.u64CR3);
+        AssertRC(rc);
         pVmcbNstGst->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR3);
     }
@@ -2038,6 +2039,7 @@ static void hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     PSVMVMCBCTRL        pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
+    PSVMVMCBSTATESAVE   pVmcbNstGstState = &pVmcbNstGst->guest;
     PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
 
     pNstGstVmcbCache->u16InterceptRdCRx = pVmcbNstGstCtrl->u16InterceptRdCRx;
@@ -2046,6 +2048,7 @@ static void hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
     pNstGstVmcbCache->u16InterceptWrCRx = pVmcbNstGstCtrl->u16InterceptWrDRx;
     pNstGstVmcbCache->u32InterceptXcpt  = pVmcbNstGstCtrl->u32InterceptXcpt;
     pNstGstVmcbCache->u64InterceptCtrl  = pVmcbNstGstCtrl->u64InterceptCtrl;
+    pNstGstVmcbCache->u64CR3            = pVmcbNstGstState->u64CR3;
     pNstGstVmcbCache->u64IOPMPhysAddr   = pVmcbNstGstCtrl->u64IOPMPhysAddr;
     pNstGstVmcbCache->u64MSRPMPhysAddr  = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
     pNstGstVmcbCache->u64VmcbCleanBits  = pVmcbNstGstCtrl->u64VmcbCleanBits;
@@ -2127,7 +2130,9 @@ static int hmR0SvmLoadGuestStateNested(PVMCPU pVCpu, PCPUMCTX pCtx)
      */
     if (!pVCpu->hm.s.svm.NstGstVmcbCache.fVmrunEmulatedInR0)
     {
+        /* hmR0SvmLoadGuestVmcbNested needs to be called first which caches the VMCB fields and adjusts others. */
         hmR0SvmLoadGuestVmcbNested(pVCpu, pCtx);
+
         hmR0SvmLoadGuestControlRegsNested(pVCpu, pVmcbNstGst, pCtx);
         hmR0SvmLoadGuestSegmentRegs(pVCpu, pVmcbNstGst, pCtx);
         hmR0SvmLoadGuestMsrs(pVCpu, pVmcbNstGst, pCtx);

@@ -995,19 +995,25 @@ typedef struct SVMNESTEDVMCBCACHE
     uint64_t            u64VmcbCleanBits;
     /** Cache of the TLB control. */
     SVMTLBCTRL          TLBCtrl;
-    /** Cache of V_INTR_MASKING bit. */
-    bool                fVIntrMasking;
+    /** @} */
+
+    /** @name Nested-guest VMCB guest state.
+     * @{ */
+    /** Cache of CR3. */
+    uint64_t            u64CR3;
     /** @} */
 
     /** @name Other miscellaneous state.
      * @{ */
-    /** Whether the fields above are updated or not. */
-    bool                fValid;
     /** Whether a VMRUN was just emulated in R0 and the VMCB is up to date. */
     bool                fVmrunEmulatedInR0;
     /** Whether the VMCB exit code and info fields are updated during \#VMEXIT
      *  processing. */
     bool                fExitCodeAndInfoUpdated;
+    /** Cache of V_INTR_MASKING bit. */
+    bool                fVIntrMasking;
+    /** Whether the fields above are updated or not. */
+    bool                fValid;
     /** Alignment. */
     bool                afPadding0[4];
     /** @} */
@@ -1018,7 +1024,6 @@ typedef SVMNESTEDVMCBCACHE *PSVMNESTEDVMCBCACHE;
 /** Pointer to a const SVMNESTEDVMCBCACHE structure. */
 typedef const SVMNESTEDVMCBCACHE *PCSVMNESTEDVMCBCACHE;
 /** @} */
-AssertCompileMemberAlignment(SVMNESTEDVMCBCACHE, fVIntrMasking, 8);
 AssertCompileSizeAlignment(SVMNESTEDVMCBCACHE, 8);
 
 #ifdef IN_RING0
