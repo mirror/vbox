@@ -67,6 +67,9 @@ private:
     /** Prepares close-button. */
     void prepareCloseButton();
 
+    /** Holds the pseudo parent reference. */
+    QObject *m_pPseudoParent;
+
     /** Holds the About-VirtualBox text. */
     QString m_strAboutText;
 

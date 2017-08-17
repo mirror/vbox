@@ -41,7 +41,20 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
-    : QIWithRetranslateUI2<QIDialog>(pParent)
+#ifdef VBOX_WS_MAC
+    // No need for About dialog parent on macOS.
+    // First of all, non of other native apps (Safari, App Store, iTunes) centers About dialog according the app itself, they do
+    // it according to screen instead, we should do it as well.  Besides that since About dialog is not modal, it will be in
+    // conflict with modal dialogs if there will be a parent passed, because the dialog will not have own event-loop in that case.
+    : QIWithRetranslateUI2<QIDialog>(0)
+    , m_pPseudoParent(pParent)
+#else
+    // On other hosts we will keep the current behavior for now.
+    // First of all it's quite difficult to find native (Metro UI) Windows app which have About dialog at all.  But non-native
+    // cross-platform apps (Qt Creator, VLC) centers About dialog according the app exactly.
+    : QIWithRetranslateUI2<QDialog>(pParent)
+    , m_pPseudoParent(0)
+#endif
     , m_strVersion(strVersion)
     , m_pLabel(0)
 {
@@ -91,6 +104,9 @@ void VBoxAboutDlg::prepare()
 {
     /* Delete dialog on close: */
     setAttribute(Qt::WA_DeleteOnClose);
+
+    /* Make sure the dialog is deleted on pseudo-parent destruction: */
+    connect(m_pPseudoParent, &QObject::destroyed, this, &VBoxAboutDlg::close);
 
     /* Choose default image: */
     QString strPath(":/about.png");
