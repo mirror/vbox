@@ -155,6 +155,7 @@
  *  - Validation Kit:
  *      - @ref pg_validationkit_guideline
  *      - @ref pg_bs3kit
+ *  - @ref pg_vbox_guideline
  *
  * @todo Make links to the components.
  *
