@@ -148,7 +148,7 @@ typedef struct AVRECCODEC
             OpusEncoder    *pEnc;
             /** Time (in ms) an (encoded) frame takes.
              *
-             *  For Opus, valid frame size are:
+             *  For Opus, valid frame sizes are:
              *  ms           Frame size
              *  2.5          120
              *  5            240
@@ -232,7 +232,7 @@ typedef struct DRVAUDIOVIDEOREC
 static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAINERPARMS pConParms, PAVRECCODECPARMS pCodecParms)
 {
     uint32_t uHz       = pCodecParms->uHz;
-    uint8_t  cBits     = 16; /** @ŧodo Make this configurable? */
+    uint8_t  cBits     = pCodecParms->cBits;
     uint8_t  cChannels = pCodecParms->cChannels;
     uint32_t uBitrate  = pCodecParms->uBitrate;
 
@@ -296,8 +296,6 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
                                     VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "DrvAudioVideoRec.webm" /** @todo Make this configurable. */))
                     {
                         /** @todo Add sink name / number to file name. */
-
-                        LogRel2(("VideoRec: Recording audio to file '%s'\n", szFile));
 
                         pSink->Con.WebM.pWebM = new WebMWriter();
                         rc = pSink->Con.WebM.pWebM->Create(szFile,
@@ -533,11 +531,12 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
     PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
 
     AVRECCONTAINERPARMS ContainerParms;
-    ContainerParms.enmType = AVRECCONTAINERTYPE_WEBM; /** @todo Make this configurable. */
+    ContainerParms.enmType = AVRECCONTAINERTYPE_MAIN_CONSOLE; /** @todo Make this configurable. */
 
     AVRECCODECPARMS CodecParms;
     CodecParms.uHz       = AVREC_OPUS_HZ_MAX;  /** @todo Make this configurable. */
     CodecParms.cChannels = 2;                  /** @todo Make this configurable. */
+    CodecParms.cBits     = 16;                 /** @todo Make this configurable. */
     CodecParms.uBitrate  = 196000;             /** @todo Make this configurable. */
 
     int rc = avRecSinkInit(pThis, &pThis->Sink, &ContainerParms, &CodecParms);
@@ -636,6 +635,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
     const uint32_t csFrame = pSink->Codec.Parms.uHz / (1000 /* s in ms */ / pSink->Codec.Opus.msFrame);
     const uint32_t cbFrame = csFrame * pSink->Codec.Parms.cChannels * (pSink->Codec.Parms.cBits / 8 /* Bytes */);
 
+    /* Only encode data if we have data for the given time period (or more). */
     while (RTCircBufUsed(pCircBuf) >= cbFrame)
     {
         cbSrc = 0;
@@ -685,16 +685,13 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
         {
 # ifdef VBOX_WITH_STATISTICS
             /* Get overall frames encoded. */
-            uint32_t cEncFrames          = opus_packet_get_nb_frames(abDst, cbDst);
-            uint32_t cEncSamplesPerFrame = opus_packet_get_samples_per_frame(abDst, pSink->Codec.Parms.uHz);
-            uint32_t csEnc               = cEncFrames * cEncSamplesPerFrame;
+            const uint32_t cEncFrames     = opus_packet_get_nb_frames(abDst, cbWritten);
 
             pSink->Codec.STAM.cEncFrames += cEncFrames;
-            pSink->Codec.STAM.msEncTotal += 20 /* Default 20 ms */ * cEncFrames;
+            pSink->Codec.STAM.msEncTotal += pSink->Codec.Opus.msFrame * cEncFrames;
 
-            LogFunc(("%RU64ms [%RU64 frames]: cbSrc=%zu, cbDst=%zu, cEncFrames=%RU32, cEncSamplesPerFrame=%RU32, csEnc=%RU32\n",
-                     pSink->Codec.STAM.msEncTotal, pSink->Codec.STAM.cEncFrames,
-                     cbSrc, cbDst, cEncFrames, cEncSamplesPerFrame, csEnc));
+            LogFunc(("%RU64ms [%RU64 frames]: cbSrc=%zu, cbDst=%zu, cEncFrames=%RU32\n",
+                     pSink->Codec.STAM.msEncTotal, pSink->Codec.STAM.cEncFrames, cbSrc, cbDst, cEncFrames));
 # endif
             Assert((uint32_t)cbWritten <= cbDst);
             cbDst = RT_MIN((uint32_t)cbWritten, cbDst); /* Update cbDst to actual bytes encoded (written). */
