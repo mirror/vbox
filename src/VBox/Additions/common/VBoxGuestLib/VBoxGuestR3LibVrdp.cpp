@@ -29,12 +29,14 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/time.h>
+#include <iprt/string.h>
 #include "VBGLR3Internal.h"
 
 
 VBGLR3DECL(int) VbglR3VrdpGetChangeRequest(bool *pfActive, uint32_t *puExperienceLevel)
 {
-    VMMDevVRDPChangeRequest Req = {0};
+    VMMDevVRDPChangeRequest Req;
+    RT_ZERO(Req); /* implicit padding */
     vmmdevInitRequest(&Req.header, VMMDevReq_GetVRDPChangeRequest); //VMMDEV_REQ_HDR_INIT(&Req.header, sizeof(Req), VMMDevReq_GetVRDPChangeRequest);
     int rc = vbglR3GRPerform(&Req.header);
     if (RT_SUCCESS(rc))
