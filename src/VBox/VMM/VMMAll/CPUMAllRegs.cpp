@@ -2631,7 +2631,7 @@ VMM_INT_DECL(uint8_t) CPUMGetSvmNstGstInterrupt(PCCPUMCTX pCtx)
  */
 VMM_INT_DECL(void) CPUMSvmVmExitRestoreHostState(PCPUMCTX pCtx)
 {
-   /*
+    /*
      * Reload the guest's "host state".
      */
     PSVMHOSTSTATE pHostState = &pCtx->hwvirt.svm.HostState;
