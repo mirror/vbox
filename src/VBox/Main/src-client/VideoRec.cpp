@@ -24,6 +24,7 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/critsect.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
@@ -44,10 +45,27 @@
 # define DEFAULTCODEC (vpx_codec_vp8_cx())
 #endif /* VBOX_WITH_LIBVPX */
 
-static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStrm);
-static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm);
+struct VIDEORECVIDEOFRAME;
+typedef struct VIDEORECVIDEOFRAME *PVIDEORECVIDEOFRAME;
+
+static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, PVIDEORECVIDEOFRAME pFrame);
+static int videoRecRGBToYUV(uint32_t uPixelFormat,
+                            uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
+                            uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight);
+
+int videoRecStreamLock(PVIDEORECSTREAM pStream);
+int videoRecStreamUnlock(PVIDEORECSTREAM pStream);
 
 using namespace com;
+
+#if 0
+/** Enables support for encoding multiple audio / video data frames at once. */
+#define VBOX_VIDEOREC_WITH_QUEUE
+#endif
+#ifdef DEBUG_andy
+/** Enables dumping audio / video data for debugging reasons. */
+# define VBOX_VIDEOREC_DUMP
+#endif
 
 /**
  * Enumeration for a video recording state.
@@ -56,10 +74,8 @@ enum VIDEORECSTS
 {
     /** Not initialized. */
     VIDEORECSTS_UNINITIALIZED = 0,
-    /** Initialized, idle. */
-    VIDEORECSTS_IDLE          = 1,
-    /** Currently busy, delay termination. */
-    VIDEORECSTS_BUSY          = 2,
+    /** Initialized. */
+    VIDEORECSTS_INITIALIZED   = 1,
     /** The usual 32-bit hack. */
     VIDEORECSTS_32BIT_HACK    = 0x7fffffff
 };
@@ -70,19 +86,21 @@ enum VIDEORECSTS
 enum VIDEORECPIXELFMT
 {
     /** Unknown pixel format. */
-    VIDEORECPIXELFMT_UNKNOWN = 0,
+    VIDEORECPIXELFMT_UNKNOWN    = 0,
     /** RGB 24. */
-    VIDEORECPIXELFMT_RGB24   = 1,
+    VIDEORECPIXELFMT_RGB24      = 1,
     /** RGB 24. */
-    VIDEORECPIXELFMT_RGB32   = 2,
+    VIDEORECPIXELFMT_RGB32      = 2,
     /** RGB 565. */
-    VIDEORECPIXELFMT_RGB565  = 3
+    VIDEORECPIXELFMT_RGB565     = 3,
+    /** The usual 32-bit hack. */
+    VIDEORECPIXELFMT_32BIT_HACK = 0x7fffffff
 };
 
 /**
  * Structure for keeping specific video recording codec data.
  */
-typedef struct VIDEORECCODEC
+typedef struct VIDEORECVIDEOCODEC
 {
     union
     {
@@ -90,15 +108,49 @@ typedef struct VIDEORECCODEC
         struct
         {
             /** VPX codec context. */
-            vpx_codec_ctx_t     CodecCtx;
+            vpx_codec_ctx_t     Ctx;
             /** VPX codec configuration. */
-            vpx_codec_enc_cfg_t Config;
+            vpx_codec_enc_cfg_t Cfg;
             /** VPX image context. */
             vpx_image_t         RawImage;
+            /** Encoder deadline. */
+            unsigned int        uEncoderDeadline;
         } VPX;
 #endif /* VBOX_WITH_LIBVPX */
     };
-} VIDEORECCODEC, *PVIDEORECCODEC;
+} VIDEORECVIDEOCODEC, *PVIDEORECVIDEOCODEC;
+
+/**
+ * Structure for keeping a single video recording video frame.
+ */
+typedef struct VIDEORECVIDEOFRAME
+{
+    /** X resolution of this frame. */
+    uint32_t            uWidth;
+    /** Y resolution of this frame. */
+    uint32_t            uHeight;
+    /** Pixel format of this frame. */
+    uint32_t            uPixelFormat;
+    /** Time stamp (in ms). */
+    uint64_t            uTimeStampMs;
+    /** RGB buffer containing the unmodified frame buffer data from Main's display. */
+    uint8_t            *pu8RGBBuf;
+    /** Size (in bytes) of the RGB buffer. */
+    size_t              cbRGBBuf;
+} VIDEORECVIDEOFRAME, *PVIDEORECVIDEOFRAME;
+
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+/**
+ * Structure for keeping a single video recording audio frame.
+ */
+typedef struct VIDEORECAUDIOFRAME
+{
+    uint8_t             abBuf[_64K]; /** @todo Fix! */
+    uint32_t            cbBuf;
+    /** Time stamp (in ms). */
+    uint64_t            uTimeStampMs;
+} VIDEORECAUDIOFRAME, *PVIDEORECAUDIOFRAME;
+#endif
 
 /**
  * Strucutre for maintaining a video recording stream.
@@ -113,52 +165,35 @@ typedef struct VIDEORECSTREAM
 #endif
     /** Track number of video stream. */
     uint8_t             uTrackVideo;
-    /** Codec data. */
-    VIDEORECCODEC       Codec;
     /** Screen ID. */
-    uint16_t            uScreen;
+    uint16_t            uScreenID;
     /** Whether video recording is enabled or not. */
     bool                fEnabled;
-    /** Time stamp (in ms) of the last frame we encoded. */
-    uint64_t            uLastTimeStampMs;
-    /** Time stamp (in ms) of the current frame. */
-    uint64_t            uCurTimeStampMs;
-
-    /** Whether the RGB buffer is filled or not. */
-    bool                fHasVideoData;
+    /** Critical section to serialize access. */
+    RTCRITSECT          CritSect;
 
     struct
     {
-        /** Target X resolution (in pixels). */
-        uint32_t            uDstWidth;
-        /** Target Y resolution (in pixels). */
-        uint32_t            uDstHeight;
-        /** X resolution of the last encoded frame. */
-        uint32_t            uSrcLastWidth;
-        /** Y resolution of the last encoded frame. */
-        uint32_t            uSrcLastHeight;
-        /** RGB buffer containing the most recent frame of Main's framebuffer. */
-        uint8_t            *pu8RgbBuf;
-        /** YUV buffer the encode function fetches the frame from. */
-        uint8_t            *pu8YuvBuf;
-        /** Pixel format of the current frame. */
-        uint32_t            uPixelFormat;
+        /** Codec-specific data. */
+        VIDEORECVIDEOCODEC  Codec;
         /** Minimal delay (in ms) between two frames. */
         uint32_t            uDelayMs;
-        /** Encoder deadline. */
-        unsigned int        uEncoderDeadline;
+        /** Target X resolution (in pixels). */
+        uint32_t            uWidth;
+        /** Target Y resolution (in pixels). */
+        uint32_t            uHeight;
+        /** Time stamp (in ms) of the last video frame we encoded. */
+        uint64_t            uLastTimeStampMs;
+        /** Pointer to the codec's internal YUV buffer. */
+        uint8_t            *pu8YuvBuf;
+#ifdef VBOX_VIDEOREC_WITH_QUEUE
+# error "Implement me!"
+#else
+        VIDEORECVIDEOFRAME  Frame;
+        bool                fHasVideoData;
+#endif
     } Video;
 } VIDEORECSTREAM, *PVIDEORECSTREAM;
-
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-typedef struct VIDEORECAUDIOFRAME
-{
-    uint8_t             abBuf[_64K]; /** @todo Fix! */
-    uint32_t            cbBuf;
-    /** Time stamp (in ms). */
-    uint64_t            uTimeStampMs;
-} VIDEORECAUDIOFRAME, *PVIDEORECAUDIOFRAME;
-#endif
 
 /** Vector of video recording streams. */
 typedef std::vector <PVIDEORECSTREAM> VideoRecStreams;
@@ -170,9 +205,11 @@ typedef struct VIDEORECCONTEXT
 {
     /** The current state. */
     uint32_t            enmState;
+    /** Critical section to serialize access. */
+    RTCRITSECT          CritSect;
     /** Semaphore to signal the encoding worker thread. */
     RTSEMEVENT          WaitEvent;
-    /** Whether video recording is enabled or not. */
+    /** Whether recording is enabled or not. */
     bool                fEnabled;
     /** Shutdown indicator. */
     bool                fShutdown;
@@ -182,14 +219,48 @@ typedef struct VIDEORECCONTEXT
     uint64_t            uMaxTimeMs;
     /** Maximal file size (in MB) to record. */
     uint32_t            uMaxSizeMB;
-    /** Vector of current video recording stream contexts. */
+    /** Vector of current recording stream contexts. */
     VideoRecStreams     vecStreams;
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-    bool                fHasAudioData;
-    VIDEORECAUDIOFRAME  Audio;
+    struct
+    {
+        bool                fHasAudioData;
+        VIDEORECAUDIOFRAME  Frame;
+    } Audio;
 #endif
 } VIDEORECCONTEXT, *PVIDEORECCONTEXT;
 
+#ifdef VBOX_VIDEOREC_DUMP
+#pragma pack(push)
+#pragma pack(1)
+typedef struct
+{
+    uint16_t u16Magic;
+    uint32_t u32Size;
+    uint16_t u16Reserved1;
+    uint16_t u16Reserved2;
+    uint32_t u32OffBits;
+} VIDEORECBMPHDR, *PVIDEORECBMPHDR;
+AssertCompileSize(VIDEORECBMPHDR, 14);
+
+typedef struct
+{
+    uint32_t u32Size;
+    uint32_t u32Width;
+    uint32_t u32Height;
+    uint16_t u16Planes;
+    uint16_t u16BitCount;
+    uint32_t u32Compression;
+    uint32_t u32SizeImage;
+    uint32_t u32XPelsPerMeter;
+    uint32_t u32YPelsPerMeter;
+    uint32_t u32ClrUsed;
+    uint32_t u32ClrImportant;
+} VIDEORECBMPDIBHDR, *PVIDEORECBMPDIBHDR;
+AssertCompileSize(VIDEORECBMPDIBHDR, 40);
+
+#pragma pack(pop)
+#endif /* VBOX_VIDEOREC_DUMP */
 
 /**
  * Iterator class for running through a BGRA32 image buffer and converting
@@ -354,29 +425,35 @@ private:
 };
 
 /**
- * Convert an image to YUV420p format
- * @returns true on success, false on failure
- * @param aWidth    width of image
- * @param aHeight   height of image
- * @param aDestBuf  an allocated memory buffer large enough to hold the
- *                  destination image (i.e. width * height * 12bits)
- * @param aSrcBuf   the source image as an array of bytes
+ * Convert an image to YUV420p format.
+ *
+ * @return true on success, false on failure.
+ * @param  aDstBuf              The destination image buffer.
+ * @param  aDstWidth            Width (in pixel) of destination buffer.
+ * @param  aDstHeight           Height (in pixel) of destination buffer.
+ * @param  aSrcBuf              The source image buffer.
+ * @param  aSrcWidth            Width (in pixel) of source buffer.
+ * @param  aSrcHeight           Height (in pixel) of source buffer.
  */
 template <class T>
-inline bool colorConvWriteYUV420p(unsigned aWidth, unsigned aHeight, uint8_t *aDestBuf, uint8_t *aSrcBuf)
+inline bool colorConvWriteYUV420p(uint8_t *aDstBuf, unsigned aDstWidth, unsigned aDstHeight,
+                                  uint8_t *aSrcBuf, unsigned aSrcWidth, unsigned aSrcHeight)
 {
-    AssertReturn(!(aWidth & 1), false);
-    AssertReturn(!(aHeight & 1), false);
+    RT_NOREF(aDstWidth, aDstHeight);
+
+    AssertReturn(!(aSrcWidth & 1),  false);
+    AssertReturn(!(aSrcHeight & 1), false);
+
     bool fRc = true;
-    T iter1(aWidth, aHeight, aSrcBuf);
+    T iter1(aSrcWidth, aSrcHeight, aSrcBuf);
     T iter2 = iter1;
-    iter2.skip(aWidth);
-    unsigned cPixels = aWidth * aHeight;
+    iter2.skip(aSrcWidth);
+    unsigned cPixels = aSrcWidth * aSrcHeight;
     unsigned offY = 0;
     unsigned offU = cPixels;
     unsigned offV = cPixels + cPixels / 4;
-    unsigned const cyHalf = aHeight / 2;
-    unsigned const cxHalf = aWidth  / 2;
+    unsigned const cyHalf = aSrcHeight / 2;
+    unsigned const cxHalf = aSrcWidth  / 2;
     for (unsigned i = 0; i < cyHalf && fRc; ++i)
     {
         for (unsigned j = 0; j < cxHalf; ++j)
@@ -384,38 +461,38 @@ inline bool colorConvWriteYUV420p(unsigned aWidth, unsigned aHeight, uint8_t *aD
             unsigned red, green, blue;
             fRc = iter1.getRGB(&red, &green, &blue);
             AssertReturn(fRc, false);
-            aDestBuf[offY] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
+            aDstBuf[offY] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
             unsigned u = (((-38 * red - 74 * green + 112 * blue + 128) >> 8) + 128) / 4;
             unsigned v = (((112 * red - 94 * green -  18 * blue + 128) >> 8) + 128) / 4;
 
             fRc = iter1.getRGB(&red, &green, &blue);
             AssertReturn(fRc, false);
-            aDestBuf[offY + 1] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
+            aDstBuf[offY + 1] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
             u += (((-38 * red - 74 * green + 112 * blue + 128) >> 8) + 128) / 4;
             v += (((112 * red - 94 * green -  18 * blue + 128) >> 8) + 128) / 4;
 
             fRc = iter2.getRGB(&red, &green, &blue);
             AssertReturn(fRc, false);
-            aDestBuf[offY + aWidth] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
+            aDstBuf[offY + aSrcWidth] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
             u += (((-38 * red - 74 * green + 112 * blue + 128) >> 8) + 128) / 4;
             v += (((112 * red - 94 * green -  18 * blue + 128) >> 8) + 128) / 4;
 
             fRc = iter2.getRGB(&red, &green, &blue);
             AssertReturn(fRc, false);
-            aDestBuf[offY + aWidth + 1] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
+            aDstBuf[offY + aSrcWidth + 1] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
             u += (((-38 * red - 74 * green + 112 * blue + 128) >> 8) + 128) / 4;
             v += (((112 * red - 94 * green -  18 * blue + 128) >> 8) + 128) / 4;
 
-            aDestBuf[offU] = u;
-            aDestBuf[offV] = v;
+            aDstBuf[offU] = u;
+            aDstBuf[offV] = v;
             offY += 2;
             ++offU;
             ++offV;
         }
 
-        iter1.skip(aWidth);
-        iter2.skip(aWidth);
-        offY += aWidth;
+        iter1.skip(aSrcWidth);
+        iter2.skip(aSrcWidth);
+        offY += aSrcWidth;
     }
 
     return true;
@@ -475,8 +552,31 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
             break;
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-        const bool fHasAudioData = ASMAtomicReadBool(&pCtx->fHasAudioData);
+        PVIDEORECAUDIOFRAME pAudioFrame;
+
+        int rc2 = RTCritSectEnter(&pCtx->CritSect);
+        AssertRC(rc2);
+
+        const bool fEncodeAudio = pCtx->Audio.fHasAudioData;
+        if (fEncodeAudio)
+        {
+            /*
+             * Every recording stream needs to get the same audio data at a certain point in time.
+             * Do the multiplexing here to not block EMT for too long.
+             *
+             * For now just doing a simple copy of the current audio frame should be good enough.
+             */
+            VIDEORECAUDIOFRAME audioFrame;
+            memcpy(&audioFrame, &pCtx->Audio.Frame, sizeof(VIDEORECAUDIOFRAME));
+            pAudioFrame = &audioFrame;
+
+            pCtx->Audio.fHasAudioData = false;
+        }
+
+        rc2 = RTCritSectLeave(&pCtx->CritSect);
+        AssertRC(rc2);
 #endif
+
         /** @todo r=andy This is inefficient -- as we already wake up this thread
          *               for every screen from Main, we here go again (on every wake up) through
          *               all screens.  */
@@ -484,43 +584,55 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
         {
             PVIDEORECSTREAM pStream = (*it);
 
+            videoRecStreamLock(pStream);
+
             if (!pStream->fEnabled)
-                continue;
-
-            if (ASMAtomicReadBool(&pStream->fHasVideoData))
             {
-                rc = videoRecRGBToYUV(pStream);
+                videoRecStreamUnlock(pStream);
+                continue;
+            }
 
-                ASMAtomicWriteBool(&pStream->fHasVideoData, false);
+            PVIDEORECVIDEOFRAME pVideoFrame = &pStream->Video.Frame;
+            const bool fEncodeVideo = pStream->Video.fHasVideoData;
 
-                if (RT_SUCCESS(rc))
-                    rc = videoRecEncodeAndWrite(pStream);
+            if (fEncodeVideo)
+            {
+                pStream->Video.fHasVideoData = false;
 
-                if (RT_FAILURE(rc))
+                rc = videoRecRGBToYUV(pVideoFrame->uPixelFormat,
+                                      /* Destination */
+                                      pStream->Video.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
+                                      /* Source */
+                                      pVideoFrame->pu8RGBBuf, pStream->Video.uWidth, pStream->Video.uHeight);
+            }
+
+            if (   fEncodeVideo
+                && RT_SUCCESS(rc))
+            {
+                rc = videoRecEncodeAndWrite(pStream, pVideoFrame);
+            }
+
+            videoRecStreamUnlock(pStream);
+
+            if (RT_FAILURE(rc))
+            {
+                static unsigned s_cErrEnc = 100;
+                if (s_cErrEnc > 0)
                 {
-                    static unsigned s_cErrEnc = 100;
-                    if (s_cErrEnc > 0)
-                    {
-                        LogRel(("VideoRec: Error %Rrc encoding / writing video frame\n", rc));
-                        s_cErrEnc--;
-                    }
+                    LogRel(("VideoRec: Error %Rrc encoding / writing video frame\n", rc));
+                    s_cErrEnc--;
                 }
             }
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-            /* Each (enabled) screen has to get the audio data. */
-            if (fHasAudioData)
+            /* Each (enabled) screen has to get the same audio data. */
+            if (fEncodeAudio)
             {
-                WebMWriter::BlockData_Opus blockData = { pCtx->Audio.abBuf, pCtx->Audio.cbBuf, pCtx->Audio.uTimeStampMs };
+                WebMWriter::BlockData_Opus blockData = { pAudioFrame->abBuf, pAudioFrame->cbBuf, pAudioFrame->uTimeStampMs };
                 rc = pStream->pEBML->WriteBlock(pStream->uTrackAudio, &blockData, sizeof(blockData));
             }
 #endif
-        } /* for */
-
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-        if (fHasAudioData)
-            ASMAtomicWriteBool(&pCtx->fHasAudioData, false);
-#endif
+        }
     }
 
     return VINF_SUCCESS;
@@ -538,11 +650,13 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
     AssertReturn(cScreens, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppCtx, VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
-
     PVIDEORECCONTEXT pCtx = (PVIDEORECCONTEXT)RTMemAllocZ(sizeof(VIDEORECCONTEXT));
     if (!pCtx)
         return VERR_NO_MEMORY;
+
+    int rc = RTCritSectInit(&pCtx->CritSect);
+    if (RT_FAILURE(rc))
+        return rc;
 
     for (uint32_t uScreen = 0; uScreen < cScreens; uScreen++)
     {
@@ -553,9 +667,13 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
             break;
         }
 
+        rc = RTCritSectInit(&pStream->CritSect);
+        if (RT_FAILURE(rc))
+            break;
+
         try
         {
-            pStream->uScreen = uScreen;
+            pStream->uScreenID = uScreen;
 
             pCtx->vecStreams.push_back(pStream);
 
@@ -584,7 +702,7 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
 
         if (RT_SUCCESS(rc))
         {
-            pCtx->enmState = VIDEORECSTS_IDLE;
+            pCtx->enmState = VIDEORECSTS_INITIALIZED;
             pCtx->fEnabled = true;
 
             if (ppCtx)
@@ -650,17 +768,26 @@ int VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
             AssertPtr(pStream->pEBML);
             pStream->pEBML->Close();
 
-            vpx_img_free(&pStream->Codec.VPX.RawImage);
-            vpx_codec_err_t rcv = vpx_codec_destroy(&pStream->Codec.VPX.CodecCtx);
+            vpx_img_free(&pStream->Video.Codec.VPX.RawImage);
+            vpx_codec_err_t rcv = vpx_codec_destroy(&pStream->Video.Codec.VPX.Ctx);
             Assert(rcv == VPX_CODEC_OK); RT_NOREF(rcv);
 
-            if (pStream->Video.pu8RgbBuf)
+#ifdef VBOX_VIDEOREC_WITH_QUEUE
+# error "Implement me!"
+#else
+            PVIDEORECVIDEOFRAME pFrame = &pStream->Video.Frame;
+#endif
+            if (pFrame->pu8RGBBuf)
             {
-                RTMemFree(pStream->Video.pu8RgbBuf);
-                pStream->Video.pu8RgbBuf = NULL;
+                Assert(pFrame->cbRGBBuf);
+
+                RTMemFree(pFrame->pu8RGBBuf);
+                pFrame->pu8RGBBuf = NULL;
             }
 
-            LogRel(("VideoRec: Recording screen #%u stopped\n", pStream->uScreen));
+            pFrame->cbRGBBuf = 0;
+
+            LogRel(("VideoRec: Recording screen #%u stopped\n", pStream->uScreenID));
         }
 
         if (pStream->pEBML)
@@ -671,11 +798,15 @@ int VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
 
         it = pCtx->vecStreams.erase(it);
 
+        RTCritSectDelete(&pStream->CritSect);
+
         RTMemFree(pStream);
         pStream = NULL;
     }
 
     Assert(pCtx->vecStreams.empty());
+
+    RTCritSectDelete(&pCtx->CritSect);
 
     RTMemFree(pCtx);
     pCtx = NULL;
@@ -706,6 +837,34 @@ DECLINLINE(PVIDEORECSTREAM) videoRecStreamGet(PVIDEORECCONTEXT pCtx, uint32_t uS
     }
 
     return pStream;
+}
+
+/**
+ * Locks a recording stream.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             Recording stream to lock.
+ */
+int videoRecStreamLock(PVIDEORECSTREAM pStream)
+{
+    int rc = RTCritSectEnter(&pStream->CritSect);
+    AssertRC(rc);
+
+    return rc;
+}
+
+/**
+ * Unlocks a locked recording stream.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             Recording stream to unlock.
+ */
+int videoRecStreamUnlock(PVIDEORECSTREAM pStream)
+{
+    int rc = RTCritSectLeave(&pStream->CritSect);
+    AssertRC(rc);
+
+    return rc;
 }
 
 /**
@@ -742,19 +901,30 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     pCtx->uMaxTimeMs = (uMaxTimeS > 0 ? RTTimeProgramMilliTS() + uMaxTimeS * 1000 : 0);
     pCtx->uMaxSizeMB = uMaxSizeMB;
 
-    pStream->Video.uDstWidth  = uWidth;
-    pStream->Video.uDstHeight = uHeight;
-    pStream->Video.pu8RgbBuf = (uint8_t *)RTMemAllocZ(uWidth * uHeight * 4);
-    AssertReturn(pStream->Video.pu8RgbBuf, VERR_NO_MEMORY);
+    pStream->Video.uWidth  = uWidth;
+    pStream->Video.uHeight = uHeight;
 
-    /* Play safe: the file must not exist, overwriting is potentially
-     * hazardous as nothing prevents the user from picking a file name of some
-     * other important file, causing unintentional data loss. */
+#ifndef VBOX_VIDEOREC_WITH_QUEUE
+    /* When not using a queue, we only use one frame per stream at once.
+     * So do the initialization here. */
+    PVIDEORECVIDEOFRAME pFrame = &pStream->Video.Frame;
+
+    const size_t cbRGBBuf =   pStream->Video.uWidth
+                            * pStream->Video.uHeight
+                            * 4 /* 32 BPP maximum */;
+    AssertReturn(cbRGBBuf, VERR_INVALID_PARAMETER);
+
+    pFrame->pu8RGBBuf = (uint8_t *)RTMemAllocZ(cbRGBBuf);
+    AssertReturn(pFrame->pu8RGBBuf, VERR_NO_MEMORY);
+    pFrame->cbRGBBuf  = cbRGBBuf;
+#endif
+
+    PVIDEORECVIDEOCODEC pVC = &pStream->Video.Codec;
 
 #ifdef VBOX_WITH_LIBVPX
-    pStream->Video.uEncoderDeadline = VPX_DL_REALTIME;
+    pVC->VPX.uEncoderDeadline = VPX_DL_REALTIME;
 
-    vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pStream->Codec.VPX.Config, 0);
+    vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pVC->VPX.Cfg, 0);
     if (rcv != VPX_CODEC_OK)
     {
         LogRel(("VideoRec: Failed to get default configuration for VPX codec: %s\n", vpx_codec_err_to_string(rcv)));
@@ -766,7 +936,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     size_t pos = 0;
 
     /* By default we enable everything (if available). */
-    bool fHasVideoTrack = true;
+    bool     fHasVideoTrack = true;
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
     bool     fHasAudioTrack = true;
     /* By default we use 48kHz, 16-bit, stereo for the audio track. */
@@ -783,29 +953,29 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
             if (value.compare("realtime", Utf8Str::CaseInsensitive) == 0)
             {
 #ifdef VBOX_WITH_LIBVPX
-                pStream->Video.uEncoderDeadline = VPX_DL_REALTIME;
+                pVC->VPX.uEncoderDeadline = VPX_DL_REALTIME;
 #endif
             }
             else if (value.compare("good", Utf8Str::CaseInsensitive) == 0)
             {
-                pStream->Video.uEncoderDeadline = 1000000 / uFPS;
+                pVC->VPX.uEncoderDeadline = 1000000 / uFPS;
             }
             else if (value.compare("best", Utf8Str::CaseInsensitive) == 0)
             {
 #ifdef VBOX_WITH_LIBVPX
-                pStream->Video.uEncoderDeadline = VPX_DL_BEST_QUALITY;
+                pVC->VPX.uEncoderDeadline = VPX_DL_BEST_QUALITY;
 #endif
             }
             else
             {
                 LogRel(("VideoRec: Setting quality deadline to '%s'\n", value.c_str()));
-                pStream->Video.uEncoderDeadline = value.toUInt32();
+                pVC->VPX.uEncoderDeadline = value.toUInt32();
             }
         }
         else if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
         {
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-            if (value.compare("false", Utf8Str::CaseInsensitive) == 0) /* Disable audio. */
+            if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
             {
                 fHasVideoTrack = false;
                 LogRel(("VideoRec: Only audio will be recorded\n"));
@@ -815,7 +985,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
         else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
         {
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-            if (value.compare("false", Utf8Str::CaseInsensitive)) /* Disable audio. */
+            if (value.compare("false", Utf8Str::CaseInsensitive))
             {
                 fHasAudioTrack = false;
                 LogRel(("VideoRec: Only video will be recorded\n"));
@@ -852,10 +1022,19 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
 #ifdef DEBUG
     fOpen |= RTFILE_O_CREATE_REPLACE;
 #else
+    /* Play safe: the file must not exist, overwriting is potentially
+     * hazardous as nothing prevents the user from picking a file name of some
+     * other important file, causing unintentional data loss. */
     fOpen |= RTFILE_O_CREATE;
 #endif
 
-    int rc = pStream->pEBML->Create(pszFile, fOpen, WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_VP8);
+    int rc = pStream->pEBML->Create(pszFile, fOpen,
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+                                    fHasAudioTrack ? WebMWriter::AudioCodec_Opus : WebMWriter::AudioCodec_None,
+#else
+                                    WebMWriter::AudioCodec_None,
+#endif
+                                    fHasVideoTrack ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
     if (RT_FAILURE(rc))
     {
         LogRel(("VideoRec: Failed to create the video capture output file '%s' (%Rrc)\n", pszFile, rc));
@@ -914,32 +1093,33 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
 
 #ifdef VBOX_WITH_LIBVPX
     /* Target bitrate in kilobits per second. */
-    pStream->Codec.VPX.Config.rc_target_bitrate = uRate;
+    pVC->VPX.Cfg.rc_target_bitrate = uRate;
     /* Frame width. */
-    pStream->Codec.VPX.Config.g_w = uWidth;
+    pVC->VPX.Cfg.g_w = uWidth;
     /* Frame height. */
-    pStream->Codec.VPX.Config.g_h = uHeight;
+    pVC->VPX.Cfg.g_h = uHeight;
     /* 1ms per frame. */
-    pStream->Codec.VPX.Config.g_timebase.num = 1;
-    pStream->Codec.VPX.Config.g_timebase.den = 1000;
+    pVC->VPX.Cfg.g_timebase.num = 1;
+    pVC->VPX.Cfg.g_timebase.den = 1000;
     /* Disable multithreading. */
-    pStream->Codec.VPX.Config.g_threads = 0;
+    pVC->VPX.Cfg.g_threads = 0;
 
     /* Initialize codec. */
-    rcv = vpx_codec_enc_init(&pStream->Codec.VPX.CodecCtx, DEFAULTCODEC, &pStream->Codec.VPX.Config, 0);
+    rcv = vpx_codec_enc_init(&pVC->VPX.Ctx, DEFAULTCODEC, &pVC->VPX.Cfg, 0);
     if (rcv != VPX_CODEC_OK)
     {
         LogFlow(("Failed to initialize VP8 encoder %s", vpx_codec_err_to_string(rcv)));
         return VERR_INVALID_PARAMETER;
     }
 
-    if (!vpx_img_alloc(&pStream->Codec.VPX.RawImage, VPX_IMG_FMT_I420, uWidth, uHeight, 1))
+    if (!vpx_img_alloc(&pVC->VPX.RawImage, VPX_IMG_FMT_I420, uWidth, uHeight, 1))
     {
         LogFlow(("Failed to allocate image %dx%d", uWidth, uHeight));
         return VERR_NO_MEMORY;
     }
 
-    pStream->Video.pu8YuvBuf = pStream->Codec.VPX.RawImage.planes[0];
+    /* Save a pointer to the first raw YUV plane. */
+    pStream->Video.pu8YuvBuf = pVC->VPX.RawImage.planes[0];
 #endif
     pStream->fEnabled = true;
 
@@ -957,10 +1137,7 @@ bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx)
     if (!pCtx)
         return false;
 
-    uint32_t enmState = ASMAtomicReadU32(&pCtx->enmState);
-
-    return (   enmState == VIDEORECSTS_IDLE
-            || enmState == VIDEORECSTS_BUSY);
+    return ASMAtomicReadBool(&pCtx->fEnabled);
 }
 
 /**
@@ -976,8 +1153,7 @@ bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t uTimeStam
 {
     AssertPtrReturn(pCtx, false);
 
-    uint32_t enmState = ASMAtomicReadU32(&pCtx->enmState);
-    if (enmState != VIDEORECSTS_IDLE)
+    if (ASMAtomicReadU32(&pCtx->enmState) != VIDEORECSTS_INITIALIZED)
         return false;
 
     PVIDEORECSTREAM pStream = videoRecStreamGet(pCtx, uScreen);
@@ -987,18 +1163,10 @@ bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t uTimeStam
         return false;
     }
 
-    if (uTimeStampMs < pStream->uLastTimeStampMs + pStream->Video.uDelayMs)
-        return false;
+    PVIDEORECVIDEOFRAME pLastFrame = &pStream->Video.Frame;
 
-    if (   ASMAtomicReadBool(&pStream->fHasVideoData)
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-        /* Check if we have audio data left for the current frame. */
-        || ASMAtomicReadBool(&pCtx->fHasAudioData)
-#endif
-       )
-    {
+    if (uTimeStampMs < pLastFrame->uTimeStampMs + pStream->Video.uDelayMs)
         return false;
-    }
 
     return true;
 }
@@ -1034,8 +1202,10 @@ bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t ts
         if(sizeInMB >= pCtx->uMaxSizeMB)
             return true;
     }
+
     /* Check for available free disk space */
-    if (pStream->pEBML->GetAvailableSpace() < 0x100000)
+    if (   pStream->pEBML
+        && pStream->pEBML->GetAvailableSpace() < 0x100000) /**@todo r=andy WTF? Fix this. */
     {
         LogRel(("VideoRec: Not enough free storage space available, stopping video capture\n"));
         return true;
@@ -1049,21 +1219,24 @@ bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t ts
  * image to target file.
  *
  * @returns IPRT status code.
- * @param   pStream             Stream to encode and write.
+ * @param   pStream             Stream to encode and submit to.
+ * @param   pFrame              Frame to encode and submit.
  */
-static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
+static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, PVIDEORECVIDEOFRAME pFrame)
 {
     int rc;
 
+    PVIDEORECVIDEOCODEC pVC = &pStream->Video.Codec;
+
 #ifdef VBOX_WITH_LIBVPX
     /* Presentation Time Stamp (PTS). */
-    vpx_codec_pts_t pts = pStream->uCurTimeStampMs;
-    vpx_codec_err_t rcv = vpx_codec_encode(&pStream->Codec.VPX.CodecCtx,
-                                           &pStream->Codec.VPX.RawImage,
-                                           pts                           /* Time stamp */,
-                                           pStream->Video.uDelayMs               /* How long to show this frame */,
-                                           0                             /* Flags */,
-                                           pStream->Video.uEncoderDeadline     /* Quality setting */);
+    vpx_codec_pts_t pts = pFrame->uTimeStampMs;
+    vpx_codec_err_t rcv = vpx_codec_encode(&pVC->VPX.Ctx,
+                                           &pVC->VPX.RawImage,
+                                           pts                       /* Time stamp */,
+                                           pStream->Video.uDelayMs   /* How long to show this frame */,
+                                           0                         /* Flags */,
+                                           pVC->VPX.uEncoderDeadline /* Quality setting */);
     if (rcv != VPX_CODEC_OK)
     {
         LogFunc(("Failed to encode video frame: %s\n", vpx_codec_err_to_string(rcv)));
@@ -1074,7 +1247,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
     rc = VERR_NO_DATA;
     for (;;)
     {
-        const vpx_codec_cx_pkt_t *pPacket = vpx_codec_get_cx_data(&pStream->Codec.VPX.CodecCtx, &iter);
+        const vpx_codec_cx_pkt_t *pPacket = vpx_codec_get_cx_data(&pVC->VPX.Ctx, &iter);
         if (!pPacket)
             break;
 
@@ -1082,7 +1255,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
         {
             case VPX_CODEC_CX_FRAME_PKT:
             {
-                WebMWriter::BlockData_VP8 blockData = { &pStream->Codec.VPX.Config, pPacket };
+                WebMWriter::BlockData_VP8 blockData = { &pVC->VPX.Cfg, pPacket };
                 rc = pStream->pEBML->WriteBlock(pStream->uTrackVideo, &blockData, sizeof(blockData));
                 break;
             }
@@ -1104,37 +1277,31 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
  * VideoRec utility function to convert RGB to YUV.
  *
  * @returns IPRT status code.
- * @param   pStream             Recording stream to convert RGB to YUV video frame buffer for.
+ * TODO
  */
-static int videoRecRGBToYUV(PVIDEORECSTREAM pStream)
+static int videoRecRGBToYUV(uint32_t uPixelFormat,
+                            uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
+                            uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight)
 {
-    switch (pStream->Video.uPixelFormat)
+    switch (uPixelFormat)
     {
         case VIDEORECPIXELFMT_RGB32:
-            LogFlow(("32 bit\n"));
-            if (!colorConvWriteYUV420p<ColorConvBGRA32Iter>(pStream->Video.uDstWidth,
-                                                            pStream->Video.uDstHeight,
-                                                            pStream->Video.pu8YuvBuf,
-                                                            pStream->Video.pu8RgbBuf))
+            if (!colorConvWriteYUV420p<ColorConvBGRA32Iter>(paDst, uDstWidth, uDstHeight,
+                                                            paSrc, uSrcWidth, uSrcHeight))
                 return VERR_INVALID_PARAMETER;
             break;
         case VIDEORECPIXELFMT_RGB24:
-            LogFlow(("24 bit\n"));
-            if (!colorConvWriteYUV420p<ColorConvBGR24Iter>(pStream->Video.uDstWidth,
-                                                           pStream->Video.uDstHeight,
-                                                           pStream->Video.pu8YuvBuf,
-                                                           pStream->Video.pu8RgbBuf))
+            if (!colorConvWriteYUV420p<ColorConvBGR24Iter>(paDst, uDstWidth, uDstHeight,
+                                                           paSrc, uSrcWidth, uSrcHeight))
                 return VERR_INVALID_PARAMETER;
             break;
         case VIDEORECPIXELFMT_RGB565:
-            LogFlow(("565 bit\n"));
-            if (!colorConvWriteYUV420p<ColorConvBGR565Iter>(pStream->Video.uDstWidth,
-                                                            pStream->Video.uDstHeight,
-                                                            pStream->Video.pu8YuvBuf,
-                                                            pStream->Video.pu8RgbBuf))
+            if (!colorConvWriteYUV420p<ColorConvBGR565Iter>(paDst, uDstWidth, uDstHeight,
+                                                            paSrc, uSrcWidth, uSrcHeight))
                 return VERR_INVALID_PARAMETER;
             break;
         default:
+            AssertFailed();
             return VERR_NOT_SUPPORTED;
     }
     return VINF_SUCCESS;
@@ -1156,30 +1323,33 @@ int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbD
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
     AssertReturn(cbData <= _64K, VERR_INVALID_PARAMETER);
 
-    /* Do not execute during termination and guard against termination. */
-    if (!ASMAtomicCmpXchgU32(&pCtx->enmState, VIDEORECSTS_BUSY, VIDEORECSTS_IDLE))
-        return VINF_TRY_AGAIN;
+    int rc = RTCritSectEnter(&pCtx->CritSect);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /* To save time spent in EMT, do the required audio multiplexing in the encoding thread.
      *
      * The multiplexing is needed to supply all recorded (enabled) screens with the same
      * audio data at the same given point in time.
      */
+    PVIDEORECAUDIOFRAME pFrame = &pCtx->Audio.Frame;
 
-    if (ASMAtomicReadBool(&pCtx->fHasAudioData))
-        return VERR_TRY_AGAIN; /* Previous frame not yet encoded. */
+    memcpy(pFrame->abBuf, pvData, RT_MIN(_64K /** @todo Fix! */, cbData));
 
-    memcpy(pCtx->Audio.abBuf, pvData, RT_MIN(_64K, cbData));
+    pFrame->cbBuf        = cbData;
+    pFrame->uTimeStampMs = uTimeStampMs;
 
-    pCtx->Audio.cbBuf        = cbData;
-    pCtx->Audio.uTimeStampMs = uTimeStampMs;
+    pCtx->Audio.fHasAudioData = true;
 
-    ASMAtomicWriteBool(&pCtx->fHasAudioData, true);
-    RTSemEventSignal(pCtx->WaitEvent);
+    rc = RTCritSectLeave(&pCtx->CritSect);
+    if (RT_SUCCESS(rc))
+        rc = RTSemEventSignal(pCtx->WaitEvent);
+
+    return rc;
 #else
     RT_NOREF(pCtx, pvData, cbData, uTimeStampMs);
-#endif
     return VINF_SUCCESS;
+#endif
 }
 
 /**
@@ -1206,46 +1376,36 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
                            uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData,
                            uint64_t uTimeStampMs)
 {
-    /* Do not execute during termination and guard against termination. */
-    if (!ASMAtomicCmpXchgU32(&pCtx->enmState, VIDEORECSTS_BUSY, VIDEORECSTS_IDLE))
-        return VINF_TRY_AGAIN;
+    AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
+    AssertReturn(uSrcWidth,  VERR_INVALID_PARAMETER);
+    AssertReturn(uSrcHeight, VERR_INVALID_PARAMETER);
+    AssertReturn(puSrcData,  VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
+    PVIDEORECSTREAM pStream = videoRecStreamGet(pCtx, uScreen);
+    if (!pStream)
+        return VERR_NOT_FOUND;
+
+    int rc = RTCritSectEnter(&pStream->CritSect);
+    if (RT_FAILURE(rc))
+        return rc;
+
     do
     {
-        AssertPtrBreakStmt(pCtx,      rc = VERR_INVALID_POINTER);
-        AssertBreakStmt(uSrcWidth,    rc = VERR_INVALID_PARAMETER);
-        AssertBreakStmt(uSrcHeight,   rc = VERR_INVALID_PARAMETER);
-        AssertPtrBreakStmt(puSrcData, rc = VERR_INVALID_POINTER);
-
-        PVIDEORECSTREAM pStream = videoRecStreamGet(pCtx, uScreen);
-        if (!pStream)
-        {
-            rc = VERR_NOT_FOUND;
-            break;
-        }
-
         if (!pStream->fEnabled)
         {
             rc = VINF_TRY_AGAIN; /* Not (yet) enabled. */
             break;
         }
 
-        if (uTimeStampMs < pStream->uLastTimeStampMs + pStream->Video.uDelayMs)
+        if (uTimeStampMs < pStream->Video.uLastTimeStampMs + pStream->Video.uDelayMs)
         {
             rc = VINF_TRY_AGAIN; /* Respect maximum frames per second. */
             break;
         }
 
-        if (ASMAtomicReadBool(&pStream->fHasVideoData))
-        {
-            rc = VERR_TRY_AGAIN; /* Previous frame not yet encoded. */
-            break;
-        }
+        pStream->Video.uLastTimeStampMs = uTimeStampMs;
 
-        pStream->uLastTimeStampMs = uTimeStampMs;
-
-        int xDiff = ((int)pStream->Video.uDstWidth - (int)uSrcWidth) / 2;
+        int xDiff = ((int)pStream->Video.uWidth - (int)uSrcWidth) / 2;
         uint32_t w = uSrcWidth;
         if ((int)w + xDiff + (int)x <= 0)  /* Nothing visible. */
         {
@@ -1264,7 +1424,7 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
             destX = x + xDiff;
 
         uint32_t h = uSrcHeight;
-        int yDiff = ((int)pStream->Video.uDstHeight - (int)uSrcHeight) / 2;
+        int yDiff = ((int)pStream->Video.uHeight - (int)uSrcHeight) / 2;
         if ((int)h + yDiff + (int)y <= 0)  /* Nothing visible. */
         {
             rc = VERR_INVALID_PARAMETER;
@@ -1281,79 +1441,135 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
         else
             destY = y + yDiff;
 
-        if (   destX > pStream->Video.uDstWidth
-            || destY > pStream->Video.uDstHeight)
+        if (   destX > pStream->Video.uWidth
+            || destY > pStream->Video.uHeight)
         {
             rc = VERR_INVALID_PARAMETER;  /* Nothing visible. */
             break;
         }
 
-        if (destX + w > pStream->Video.uDstWidth)
-            w = pStream->Video.uDstWidth - destX;
+        if (destX + w > pStream->Video.uWidth)
+            w = pStream->Video.uWidth - destX;
 
-        if (destY + h > pStream->Video.uDstHeight)
-            h = pStream->Video.uDstHeight - destY;
+        if (destY + h > pStream->Video.uHeight)
+            h = pStream->Video.uHeight - destY;
 
-        /* Calculate bytes per pixel. */
-        uint32_t bpp = 1;
+#ifdef VBOX_VIDEOREC_WITH_QUEUE
+# error "Implement me!"
+#else
+        PVIDEORECVIDEOFRAME pFrame = &pStream->Video.Frame;
+#endif
+        /* Calculate bytes per pixel and set pixel format. */
+        const unsigned uBytesPerPixel = uBPP / 8;
         if (uPixelFormat == BitmapFormat_BGR)
         {
             switch (uBPP)
             {
                 case 32:
-                    pStream->Video.uPixelFormat = VIDEORECPIXELFMT_RGB32;
-                    bpp = 4;
+                    pFrame->uPixelFormat = VIDEORECPIXELFMT_RGB32;
                     break;
                 case 24:
-                    pStream->Video.uPixelFormat = VIDEORECPIXELFMT_RGB24;
-                    bpp = 3;
+                    pFrame->uPixelFormat = VIDEORECPIXELFMT_RGB24;
                     break;
                 case 16:
-                    pStream->Video.uPixelFormat = VIDEORECPIXELFMT_RGB565;
-                    bpp = 2;
+                    pFrame->uPixelFormat = VIDEORECPIXELFMT_RGB565;
                     break;
                 default:
-                    AssertMsgFailed(("Unknown color depth! mBitsPerPixel=%d\n", uBPP));
+                    AssertMsgFailed(("Unknown color depth (%RU32)\n", uBPP));
                     break;
             }
         }
         else
-            AssertMsgFailed(("Unknown pixel format! mPixelFormat=%d\n", pStream->Video.uPixelFormat));
+            AssertMsgFailed(("Unknown pixel format (%RU32)\n", uPixelFormat));
 
-        /* One of the dimensions of the current frame is smaller than before so
-         * clear the entire buffer to prevent artifacts from the previous frame. */
-        if (   uSrcWidth  < pStream->Video.uSrcLastWidth
-            || uSrcHeight < pStream->Video.uSrcLastHeight)
-            memset(pStream->Video.pu8RgbBuf, 0, pStream->Video.uDstWidth * pStream->Video.uDstHeight * 4);
-
-        pStream->Video.uSrcLastWidth  = uSrcWidth;
-        pStream->Video.uSrcLastHeight = uSrcHeight;
-
+#ifndef VBOX_VIDEOREC_WITH_QUEUE
+        /* If we don't use a queue then we have to compare the dimensions
+         * of the current frame with the previous frame:
+         *
+         * If it's smaller than before then clear the entire buffer to prevent artifacts
+         * from the previous frame. */
+        if (   uSrcWidth  < pFrame->uWidth
+            || uSrcHeight < pFrame->uHeight)
+        {
+            /** @todo r=andy Only clear dirty areas. */
+            RT_BZERO(pFrame->pu8RGBBuf, pFrame->cbRGBBuf);
+        }
+#endif
         /* Calculate start offset in source and destination buffers. */
-        uint32_t offSrc = y * uBytesPerLine + x * bpp;
-        uint32_t offDst = (destY * pStream->Video.uDstWidth + destX) * bpp;
+        uint32_t offSrc = y * uBytesPerLine + x * uBytesPerPixel;
+        uint32_t offDst = (destY * pStream->Video.uWidth + destX) * uBytesPerPixel;
+
+#ifdef VBOX_VIDEOREC_DUMP
+        VIDEORECBMPHDR bmpHdr;
+        RT_ZERO(bmpHdr);
+
+        VIDEORECBMPDIBHDR bmpDIBHdr;
+        RT_ZERO(bmpDIBHdr);
+
+        bmpHdr.u16Magic   = 0x4d42; /* Magic */
+        bmpHdr.u32Size    = (uint32_t)(sizeof(VIDEORECBMPHDR) + sizeof(VIDEORECBMPDIBHDR) + (w * h * uBytesPerPixel));
+        bmpHdr.u32OffBits = (uint32_t)(sizeof(VIDEORECBMPHDR) + sizeof(VIDEORECBMPDIBHDR));
+
+        bmpDIBHdr.u32Size          = sizeof(VIDEORECBMPDIBHDR);
+        bmpDIBHdr.u32Width         = w;
+        bmpDIBHdr.u32Height        = h;
+        bmpDIBHdr.u16Planes        = 1;
+        bmpDIBHdr.u16BitCount      = uBPP;
+        bmpDIBHdr.u32XPelsPerMeter = 5000;
+        bmpDIBHdr.u32YPelsPerMeter = 5000;
+
+        RTFILE fh;
+        int rc2 = RTFileOpen(&fh, "/tmp/VideoRecFrame.bmp",
+                             RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+        if (RT_SUCCESS(rc2))
+        {
+            RTFileWrite(fh, &bmpHdr,    sizeof(bmpHdr),    NULL);
+            RTFileWrite(fh, &bmpDIBHdr, sizeof(bmpDIBHdr), NULL);
+        }
+#endif
+        Assert(pFrame->cbRGBBuf >= w * h * uBytesPerPixel);
 
         /* Do the copy. */
         for (unsigned int i = 0; i < h; i++)
         {
             /* Overflow check. */
-            Assert(offSrc + w * bpp <= uSrcHeight * uBytesPerLine);
-            Assert(offDst + w * bpp <= pStream->Video.uDstHeight * pStream->Video.uDstWidth * bpp);
+            Assert(offSrc + w * uBytesPerPixel <= uSrcHeight * uBytesPerLine);
+            Assert(offDst + w * uBytesPerPixel <= pStream->Video.uHeight * pStream->Video.uWidth * uBytesPerPixel);
 
-            memcpy(pStream->Video.pu8RgbBuf + offDst, puSrcData + offSrc, w * bpp);
+            memcpy(pFrame->pu8RGBBuf + offDst, puSrcData + offSrc, w * uBytesPerPixel);
 
+#ifdef VBOX_VIDEOREC_DUMP
+            if (RT_SUCCESS(rc2))
+                RTFileWrite(fh, pFrame->pu8RGBBuf + offDst, w * uBytesPerPixel, NULL);
+#endif
             offSrc += uBytesPerLine;
-            offDst += pStream->Video.uDstWidth * bpp;
+            offDst += pStream->Video.uWidth * uBytesPerPixel;
         }
 
-        pStream->uCurTimeStampMs = uTimeStampMs;
+#ifdef VBOX_VIDEOREC_DUMP
+        if (RT_SUCCESS(rc2))
+            RTFileClose(fh);
+#endif
+        pFrame->uTimeStampMs = uTimeStampMs;
+        pFrame->uWidth       = uSrcWidth;
+        pFrame->uHeight      = uSrcHeight;
 
-        ASMAtomicWriteBool(&pStream->fHasVideoData, true);
-        RTSemEventSignal(pCtx->WaitEvent);
+        pStream->Video.fHasVideoData = true;
 
     } while (0);
 
-    ASMAtomicCmpXchgU32(&pCtx->enmState, VIDEORECSTS_IDLE, VIDEORECSTS_BUSY);
+    int rc2 = RTCritSectLeave(&pStream->CritSect);
+    if (RT_SUCCESS(rc2))
+    {
+        if (   RT_SUCCESS(rc)
+            && rc != VINF_TRY_AGAIN) /* Only signal the thread if operation was successful. */
+        {
+            rc2 = RTSemEventSignal(pCtx->WaitEvent);
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
     return rc;
 }
