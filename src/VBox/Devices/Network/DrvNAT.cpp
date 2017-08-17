@@ -1655,14 +1655,13 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
         slirp_set_dhcp_dns_proxy(pThis->pNATState, !!fDNSProxy);
         slirp_set_mtu(pThis->pNATState, MTU);
         slirp_set_somaxconn(pThis->pNATState, i32SoMaxConn);
+
         char *pszBindIP = NULL;
         GET_STRING_ALLOC(rc, pThis, pCfg, "BindIP", pszBindIP);
-        rc = slirp_set_binding_address(pThis->pNATState, pszBindIP);
-        if (rc != 0 && pszBindIP && *pszBindIP)
-            LogRel(("NAT: Value of BindIP has been ignored\n"));
-
-        if(pszBindIP != NULL)
+        slirp_set_binding_address(pThis->pNATState, pszBindIP);
+        if (pszBindIP != NULL)
             MMR3HeapFree(pszBindIP);
+
 #define SLIRP_SET_TUNING_VALUE(name, setter)                    \
             do                                                  \
             {                                                   \

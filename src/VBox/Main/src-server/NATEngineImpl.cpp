@@ -402,7 +402,21 @@ HRESULT NATEngine::getNetwork(com::Utf8Str &aNetwork)
 
 HRESULT NATEngine::setHostIP(const com::Utf8Str &aHostIP)
 {
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    if (aHostIP.isNotEmpty())
+    {
+        RTNETADDRIPV4 addr;
+
+        /* parses as an IPv4 address */
+        int rc = RTNetStrToIPv4Addr(aHostIP.c_str(), &addr);
+        if (RT_FAILURE(rc))
+            return E_INVALIDARG;
+
+        /* is a unicast address */
+        if ((addr.u & RT_N2H_U32_C(0xe0000000)) == RT_N2H_U32_C(0xe0000000))
+            return E_INVALIDARG;
+    }
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);    
     if (mData->m->strBindIP != aHostIP)
     {
         mData->m.backup();

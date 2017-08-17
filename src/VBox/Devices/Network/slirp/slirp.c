@@ -1693,12 +1693,32 @@ void slirp_set_dhcp_next_server(PNATState pData, const char *next_server)
 
 int slirp_set_binding_address(PNATState pData, char *addr)
 {
-    if (addr == NULL || (inet_aton(addr, &pData->bindIP) == 0))
+    int ok;
+
+    pData->bindIP.s_addr = INADDR_ANY;
+
+    if (addr == NULL || *addr == '\0')
+        return VINF_SUCCESS;
+
+    ok = inet_aton(addr, &pData->bindIP);
+    if (!ok)
     {
-        pData->bindIP.s_addr = INADDR_ANY;
-        return 1;
+        LogRel(("NAT: Unable to parse binding address: %s\n", addr));
+        return VERR_INVALID_PARAMETER;
     }
-    return 0;
+
+    if (pData->bindIP.s_addr == INADDR_ANY)
+        return VINF_SUCCESS;
+
+    if ((pData->bindIP.s_addr & RT_N2H_U32_C(0xe0000000)) == RT_N2H_U32_C(0xe0000000))
+    {
+        LogRel(("NAT: Ignoring multicast binding address %RTnaipv4\n", pData->bindIP.s_addr));
+        pData->bindIP.s_addr = INADDR_ANY;
+        return VERR_INVALID_PARAMETER;
+    }
+
+    LogRel(("NAT: Binding address %RTnaipv4\n", pData->bindIP.s_addr));
+    return VINF_SUCCESS;
 }
 
 void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy)
