@@ -372,55 +372,64 @@ VBGLR3DECL(int) VbglR3VideoModeGetHighestSavedScreen(unsigned *pcScreen)
 VBGLR3DECL(int) VbglR3SaveVideoMode(unsigned idScreen, unsigned cx, unsigned cy, unsigned cBits,
                                     unsigned x, unsigned y, bool fEnabled)
 {
-#if defined(VBOX_WITH_GUEST_PROPS)
+#ifdef VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
 
-    HGCMCLIENTID idClient = 0;
-    unsigned cx2, cy2, cBits2, x2, y2, cHighestScreen, cHighestScreen2;
-    bool fEnabled2;
-    int rc;
-    int rc2 = VERR_INTERNAL_ERROR;
-
-    rc = VbglR3VideoModeGetHighestSavedScreen(&cHighestScreen);
-    if (RT_SUCCESS(rc))
-        rc = VbglR3GuestPropConnect(&idClient);
+    unsigned cHighestScreen = 0;
+    int rc = VbglR3VideoModeGetHighestSavedScreen(&cHighestScreen);
     if (RT_SUCCESS(rc))
     {
-        char szModeName[MAX_NAME_LEN];
-        char szModeParms[MAX_VALUE_LEN];
-        RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX "%u", idScreen);
-        RTStrPrintf(szModeParms, sizeof(szModeParms), "%ux%ux%u,%ux%u,%u", cx, cy, cBits, x, y, (unsigned) fEnabled);
-
-        rc = VbglR3GuestPropWriteValue(idClient, szModeName, szModeParms);
-        /* Write out the mode using the legacy name too, in case the user
-         * re-installs older Additions. */
-        if (idScreen == 0)
+        HGCMCLIENTID idClient = 0;
+        rc = VbglR3GuestPropConnect(&idClient);
+        if (RT_SUCCESS(rc))
         {
-            RTStrPrintf(szModeParms, sizeof(szModeParms), "%ux%ux%u", cx, cy, cBits);
-            VbglR3GuestPropWriteValue(idClient, VIDEO_PROP_PREFIX "SavedMode", szModeParms);
+            int rc2;
+            char szModeName[MAX_NAME_LEN];
+            char szModeParms[MAX_VALUE_LEN];
+            RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX "%u", idScreen);
+            RTStrPrintf(szModeParms, sizeof(szModeParms), "%ux%ux%u,%ux%u,%u", cx, cy, cBits, x, y, (unsigned) fEnabled);
+
+            rc = VbglR3GuestPropWriteValue(idClient, szModeName, szModeParms);
+            /* Write out the mode using the legacy name too, in case the user
+             * re-installs older Additions. */
+            if (idScreen == 0)
+            {
+                RTStrPrintf(szModeParms, sizeof(szModeParms), "%ux%ux%u", cx, cy, cBits);
+                VbglR3GuestPropWriteValue(idClient, VIDEO_PROP_PREFIX "SavedMode", szModeParms);
+            }
+
+            rc2 = VbglR3GuestPropDisconnect(idClient);
+            if (rc != VINF_PERMISSION_DENIED)
+            {
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+                if (RT_SUCCESS(rc))
+                {
+                    /* Sanity check 1.  We do not try to make allowance for someone else
+                     * changing saved settings at the same time as us. */
+                    bool     fEnabled2 = false;
+                    unsigned cx2       = 0;
+                    unsigned cy2       = 0;
+                    unsigned cBits2    = 0;
+                    unsigned x2        = 0;
+                    unsigned y2        = 0;
+                    rc = VbglR3RetrieveVideoMode(idScreen, &cx2, &cy2, &cBits2, &x2, &y2, &fEnabled2);
+                    if (   RT_SUCCESS(rc)
+                        && (cx != cx2 || cy != cy2 || cBits != cBits2 || x != x2 || y != y2 || fEnabled != fEnabled2))
+                        rc = VERR_WRITE_ERROR;
+                    /* Sanity check 2.  Same comment. */
+                    else if (RT_SUCCESS(rc))
+                    {
+                        unsigned cHighestScreen2 = 0;
+                        rc = VbglR3VideoModeGetHighestSavedScreen(&cHighestScreen2);
+                        if (RT_SUCCESS(rc))
+                            if (cHighestScreen2 != RT_MAX(cHighestScreen, idScreen))
+                                rc = VERR_INTERNAL_ERROR;
+                    }
+                }
+            }
         }
     }
-    if (idClient != 0)
-        rc2 = VbglR3GuestPropDisconnect(idClient);
-    if (rc == VINF_PERMISSION_DENIED)
-        return rc;
-    if (RT_SUCCESS(rc))
-        rc = rc2;
-    /* Sanity check 1.  We do not try to make allowance for someone else
-     * changing saved settings at the same time as us. */
-    if (RT_SUCCESS(rc))
-    {
-        rc = VbglR3RetrieveVideoMode(idScreen, &cx2, &cy2, &cBits2, &x2, &y2, &fEnabled2);
-        if (   RT_SUCCESS(rc)
-            && (cx != cx2 || cy != cy2 || cBits != cBits2 || x != x2 || y != y2 || fEnabled != fEnabled2))
-            rc = VERR_WRITE_ERROR;
-    }
-    /* Sanity check 2.  Same comment. */
-    if (RT_SUCCESS(rc))
-        rc = VbglR3VideoModeGetHighestSavedScreen(&cHighestScreen2);
-    if (RT_SUCCESS(rc))
-        if (cHighestScreen2 != RT_MAX(cHighestScreen, idScreen))
-            rc = VERR_INTERNAL_ERROR;
     return rc;
 #else /* !VBOX_WITH_GUEST_PROPS */
     return VERR_NOT_SUPPORTED;
@@ -446,30 +455,22 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned idScreen,
                                         unsigned *px, unsigned *py,
                                         bool *pfEnabled)
 {
-#if defined(VBOX_WITH_GUEST_PROPS)
+#ifdef VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
 
     /*
      * First we retrieve the video mode which is saved as a string in the
      * guest property store.
      */
-    /* The buffer for VbglR3GuestPropReadValue.  If this is too small then
-     * something is wrong with the data stored in the property. */
-    char szModeParms[1024];
     HGCMCLIENTID idClient = 0;
-    int cMatches;
-    unsigned cx, cy, cBits;
-    unsigned x = 0;
-    unsigned y = 0;
-    unsigned fEnabled = 1;
-    int rc;
-    int rc2 = VERR_UNRESOLVED_ERROR;
-
-    rc = VbglR3GuestPropConnect(&idClient);
+    int rc = VbglR3GuestPropConnect(&idClient);
     if (RT_SUCCESS(rc))
     {
-        /** @todo add a VbglR3GuestPropReadValueF/FV that does the RTStrPrintf for you. */
-        char szModeName[MAX_NAME_LEN];
+        int rc2;
+        /* The buffer for VbglR3GuestPropReadValue.  If this is too small then
+         * something is wrong with the data stored in the property. */
+        char szModeParms[1024];
+        char szModeName[MAX_NAME_LEN]; /** @todo add a VbglR3GuestPropReadValueF/FV that does the RTStrPrintf for you. */
         RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX "%u", idScreen);
         rc = VbglR3GuestPropReadValue(idClient, szModeName, szModeParms, sizeof(szModeParms), NULL);
         /* Try legacy single screen name. */
@@ -478,45 +479,48 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned idScreen,
                                           VIDEO_PROP_PREFIX"SavedMode",
                                           szModeParms, sizeof(szModeParms),
                                           NULL);
-    }
-    if (idClient != 0)
         rc2 = VbglR3GuestPropDisconnect(idClient);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+        if (RT_SUCCESS(rc))
+            rc = rc2;
 
-    /*
-     * Now we convert the string returned to numeric values.
-     */
-    if (RT_SUCCESS(rc))
-    {
-        char c1, c2;
-        cMatches = sscanf(szModeParms, "%5ux%5ux%2u%c%5ux%5u,%1u%c", &cx, &cy, &cBits, &c1, &x, &y, &fEnabled, &c2);
-        if ((cMatches == 7 && c1 == ',') || cMatches == 3)
-            rc = VINF_SUCCESS;
-        else if (cMatches < 0)
-            rc = VERR_READ_ERROR;
-        else
-            rc = VERR_PARSE_ERROR;
+        /*
+         * Now we convert the string returned to numeric values.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            unsigned        cx       = 0;
+            unsigned        cy       = 0;
+            unsigned        cBits    = 0;
+            unsigned        x        = 0;
+            unsigned        y        = 0;
+            unsigned        fEnabled = 1;
+            char            ch1      = 0;
+            char            ch2      = 0;
+            int cMatches = sscanf(szModeParms, "%5ux%5ux%2u%c%5ux%5u,%1u%c", &cx, &cy, &cBits, &ch1, &x, &y, &fEnabled, &ch2);
+            if (   (cMatches == 7 && ch1 == ',')
+                ||  cMatches == 3)
+            {
+                if (pcx)
+                    *pcx = cx;
+                if (pcy)
+                    *pcy = cy;
+                if (pcBits)
+                    *pcBits = cBits;
+                if (px)
+                    *px = x;
+                if (py)
+                    *py = y;
+                if (pfEnabled)
+                    *pfEnabled = RT_BOOL(fEnabled);
+                rc = VINF_SUCCESS;
+            }
+            else if (cMatches < 0)
+                rc = VERR_READ_ERROR;
+            else
+                rc = VERR_PARSE_ERROR;
+        }
     }
 
-    /*
-     * And clean up and return the values if we successfully obtained them.
-     */
-    if (RT_SUCCESS(rc))
-    {
-        if (pcx)
-            *pcx = cx;
-        if (pcy)
-            *pcy = cy;
-        if (pcBits)
-            *pcBits = cBits;
-        if (px)
-            *px = x;
-        if (py)
-            *py = y;
-        if (pfEnabled)
-            *pfEnabled = RT_BOOL(fEnabled);
-    }
     return rc;
 #else /* !VBOX_WITH_GUEST_PROPS */
     return VERR_NOT_SUPPORTED;
