@@ -27,7 +27,7 @@
       a reference to help people who are interested in our project accessibility support and will describe how to use VirtualBox
       user interface step-by-step. Since whole the application navigation will be explained here, this document will also be
       helpful for those who are not familiar with our product user interface and wish to learn more. It will be written in a bit
-      excessive manner so that many obvious things will be explained too precicely to make it easier to understand by ear for a
+      excessive manner so that many obvious things will be explained too precisely to make it easier to understand by ear for a
       blind users. The document will be periodically updated with recent changes and test-cases allowing us to more strictly
       follow the required guidelines and make our product fully accessible.
     </para>
