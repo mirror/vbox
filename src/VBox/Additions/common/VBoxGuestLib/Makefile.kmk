@@ -122,13 +122,14 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibStat.cpp \
 	VBoxGuestR3LibTime.cpp \
  	VBoxGuestR3LibModule.cpp \
- 	VBoxGuestR3LibPidFile.cpp
-ifneq ($(KBUILD_TARGET),win) ## @todo get rid of this hack (as soon as it's all implemented / #defined).
- VBoxGuestR3Lib_SOURCES   += \
- 	VBoxGuestR3LibDaemonize.cpp \
+ 	VBoxGuestR3LibPidFile.cpp \
+ 	VBoxGuestR3LibVrdp.cpp \
  	VBoxGuestR3LibMouse.cpp \
  	VBoxGuestR3LibSeamless.cpp \
  	VBoxGuestR3LibVideo.cpp
+ifneq ($(KBUILD_TARGET),win)
+ VBoxGuestR3Lib_SOURCES   += \
+ 	VBoxGuestR3LibDaemonize.cpp
 endif
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxGuestR3Lib_SOURCES   += \

@@ -526,6 +526,11 @@ VBGLR3DECL(int)     VbglR3RetrieveVideoMode(unsigned cScreen, unsigned *pcx, uns
                                             unsigned *px, unsigned *py, bool *pfEnabled);
 /** @}  */
 
+/** @name VRDP
+ * @{ */
+VBGLR3DECL(int)     VbglR3VrdpGetChangeRequest(bool *pfActive, uint32_t *puExperienceLevel);
+/** @} */
+
 /** @name VM Statistics
  * @{ */
 VBGLR3DECL(int)     VbglR3StatQueryInterval(uint32_t *pu32Interval);

@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions, GR.
+ * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions, VRDP.
  */
 
 /*
- * Copyright (C) 2007-2016 Oracle Corporation
+ * Copyright (C) 2007-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,47 +28,25 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <iprt/mem.h>
-#include <iprt/assert.h>
-#include <iprt/string.h>
-#include <iprt/err.h>
+#include <iprt/time.h>
 #include "VBGLR3Internal.h"
 
 
-int vbglR3GRAlloc(VMMDevRequestHeader **ppReq, size_t cb, VMMDevRequestType enmReqType)
+VBGLR3DECL(int) VbglR3VrdpGetChangeRequest(bool *pfActive, uint32_t *puExperienceLevel)
 {
-    VMMDevRequestHeader *pReq;
-
-    AssertPtrReturn(ppReq, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(cb >= sizeof(VMMDevRequestHeader) && cb < _1G, ("%#zx vs %#zx\n", cb, sizeof(VMMDevRequestHeader)),
-                    VERR_INVALID_PARAMETER);
-
-    pReq = (VMMDevRequestHeader *)RTMemTmpAlloc(cb);
-    if (RT_LIKELY(pReq))
+    VMMDevVRDPChangeRequest Req = {0};
+    vmmdevInitRequest(&Req.header, VMMDevReq_GetVRDPChangeRequest); //VMMDEV_REQ_HDR_INIT(&Req.header, sizeof(Req), VMMDevReq_GetVRDPChangeRequest);
+    int rc = vbglR3GRPerform(&Req.header);
+    if (RT_SUCCESS(rc))
     {
-        pReq->size        = (uint32_t)cb;
-        pReq->version     = VMMDEV_REQUEST_HEADER_VERSION;
-        pReq->requestType = enmReqType;
-        pReq->rc          = VERR_GENERAL_FAILURE;
-        pReq->reserved1   = 0;
-        pReq->reserved2   = 0;
-
-        *ppReq = pReq;
-
-        return VINF_SUCCESS;
+        *pfActive          = Req.u8VRDPActive != 0;
+        *puExperienceLevel = Req.u32VRDPExperienceLevel;
     }
-    return VERR_NO_MEMORY;
-}
-
-
-int vbglR3GRPerform(VMMDevRequestHeader *pReq)
-{
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_VMMREQUEST(pReq->size), pReq, pReq->size);
-}
-
-
-void vbglR3GRFree(VMMDevRequestHeader *pReq)
-{
-    RTMemTmpFree(pReq);
+    else
+    {
+        *pfActive          = false;
+        *puExperienceLevel = 0;
+    }
+    return rc;
 }
 

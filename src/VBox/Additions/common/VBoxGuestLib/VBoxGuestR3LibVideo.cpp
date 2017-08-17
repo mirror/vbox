@@ -105,8 +105,7 @@ VBGLR3DECL(int) VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t y
     AssertReturn(   !pvImg
                  || cbReq == RT_OFFSETOF(VMMDevReqMousePointer, pointerData) + cbImg,
                  VERR_INVALID_PARAMETER);
-    int rc = vbglR3GRAlloc((VMMDevRequestHeader **)&pReq, cbReq,
-                           VMMDevReq_SetPointerShape);
+    int rc = vbglR3GRAlloc((VMMDevRequestHeader **)&pReq, cbReq, VMMDevReq_SetPointerShape);
     if (RT_SUCCESS(rc))
     {
         pReq->fFlags = fFlags;
