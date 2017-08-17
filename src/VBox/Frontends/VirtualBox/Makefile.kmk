@@ -639,6 +639,7 @@ VirtualBox_SOURCES = \
 	src/globals/UIImageTools.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIMessageCenter.cpp \
+	src/globals/UIErrorString.cpp \
 	src/globals/UIModalWindowManager.cpp \
 	src/globals/UIPopupCenter.cpp \
 	src/globals/UIShortcutPool.cpp \

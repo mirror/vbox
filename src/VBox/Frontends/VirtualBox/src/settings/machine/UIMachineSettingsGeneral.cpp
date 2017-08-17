@@ -27,7 +27,7 @@
 # include "QIWidgetValidator.h"
 # include "UIConverter.h"
 # include "UIMachineSettingsGeneral.h"
-# include "UIMessageCenter.h"
+# include "UIErrorString.h"
 # include "UIModalWindowManager.h"
 # include "UIProgressDialog.h"
 
@@ -36,6 +36,7 @@
 # include "CExtPackManager.h"
 # include "CMedium.h"
 # include "CMediumAttachment.h"
+# include "CProgress.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -716,7 +717,7 @@ bool UIMachineSettingsGeneral::saveBasicData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -763,7 +764,7 @@ bool UIMachineSettingsGeneral::saveAdvancedData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -790,7 +791,7 @@ bool UIMachineSettingsGeneral::saveDescriptionData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -833,7 +834,7 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+                notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
 
             /* For each attachment: */
             for (int iIndex = 0; fSuccess && iIndex < attachments.size(); ++iIndex)
@@ -858,7 +859,7 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
 
                 /* Show error message if necessary: */
                 if (!fSuccess)
-                    notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comAttachment));
+                    notifyOperationProgressError(UIErrorString::formatErrorInfo(comAttachment));
                 else
                 {
                     /* Pass hard-drives only: */
@@ -936,7 +937,7 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
 
                     /* Show error message if necessary: */
                     if (!fSuccess)
-                        notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comMedium));
+                        notifyOperationProgressError(UIErrorString::formatErrorInfo(comMedium));
                 }
             }
         }

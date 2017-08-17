@@ -26,7 +26,7 @@
 # include "UIConverter.h"
 # include "UIIconPool.h"
 # include "UIMachineSettingsNetwork.h"
-# include "UIMessageCenter.h"
+# include "UIErrorString.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -1498,7 +1498,7 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
         else
         {
             /* Save whether the adapter is enabled: */
@@ -1600,7 +1600,7 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comAdapter));
+                notifyOperationProgressError(UIErrorString::formatErrorInfo(comAdapter));
             else
             {
                 /* Save adapter port forwarding rules: */
@@ -1637,7 +1637,7 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
 
                     /* Show error message if necessary: */
                     if (!fSuccess)
-                        notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comEngine));
+                        notifyOperationProgressError(UIErrorString::formatErrorInfo(comEngine));
                 }
             }
         }

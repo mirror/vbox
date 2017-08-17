@@ -26,6 +26,7 @@
 # include "VBoxGlobal.h"
 # include "UIIconPool.h"
 # include "UIConverter.h"
+# include "UIErrorString.h"
 # include "UIMessageCenter.h"
 # include "UIGlobalSettingsNetwork.h"
 # include "UIGlobalSettingsNetworkDetailsNAT.h"
@@ -708,7 +709,7 @@ bool UIGlobalSettingsNetwork::removeNATNetwork(const UISettingsCacheGlobalNetwor
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comVBox));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(comVBox));
     }
     /* Return result: */
     return fSuccess;
@@ -734,7 +735,7 @@ bool UIGlobalSettingsNetwork::createNATNetwork(const UISettingsCacheGlobalNetwor
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comVBox));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(comVBox));
         else
         {
             /* Save whether NAT network is enabled: */
@@ -810,7 +811,7 @@ bool UIGlobalSettingsNetwork::createNATNetwork(const UISettingsCacheGlobalNetwor
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comNetwork));
+                notifyOperationProgressError(UIErrorString::formatErrorInfo(comNetwork));
         }
     }
     /* Return result: */
@@ -837,7 +838,7 @@ bool UIGlobalSettingsNetwork::updateNATNetwork(const UISettingsCacheGlobalNetwor
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comVBox));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(comVBox));
         else
         {
             /* Save whether NAT network is enabled: */
@@ -939,7 +940,7 @@ bool UIGlobalSettingsNetwork::updateNATNetwork(const UISettingsCacheGlobalNetwor
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comNetwork));
+                notifyOperationProgressError(UIErrorString::formatErrorInfo(comNetwork));
         }
     }
     /* Return result: */

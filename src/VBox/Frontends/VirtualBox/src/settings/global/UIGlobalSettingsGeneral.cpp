@@ -25,7 +25,7 @@
 /* GUI includes: */
 # include "UIGlobalSettingsGeneral.h"
 # include "UIExtraDataManager.h"
-# include "UIMessageCenter.h"
+# include "UIErrorString.h"
 # include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -210,7 +210,7 @@ bool UIGlobalSettingsGeneral::saveGeneralData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_properties));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_properties));
 
         /* Save new general data from the cache: */
         if (newGeneralData.m_fHostScreenSaverDisabled != oldGeneralData.m_fHostScreenSaverDisabled)

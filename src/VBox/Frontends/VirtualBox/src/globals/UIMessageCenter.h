@@ -382,15 +382,6 @@ public:
     bool confirmOverridingFileIfExists(const QString &strPath, QWidget *pParent = 0) const;
     bool confirmOverridingFilesIfExists(const QVector<QString> &strPaths, QWidget *pParent = 0) const;
 
-    /* API: Static helpers: */
-    static QString formatRC(HRESULT rc);
-    static QString formatRCFull(HRESULT rc);
-    static QString formatErrorInfo(const CProgress &progress);
-    static QString formatErrorInfo(const COMErrorInfo &info, HRESULT wrapperRC = S_OK);
-    static QString formatErrorInfo(const CVirtualBoxErrorInfo &info);
-    static QString formatErrorInfo(const COMBaseWithEI &wrapper);
-    static QString formatErrorInfo(const COMResult &rc);
-
 public slots:
 
     /* Handlers: Help menu stuff: */
@@ -421,9 +412,6 @@ private:
     /* Helpers: Prepare/cleanup stuff: */
     void prepare();
     void cleanup();
-
-    /* Helper: */
-    static QString errorInfoToString(const COMErrorInfo &info, HRESULT wrapperRC = S_OK);
 
     /* Helper: Message-box stuff: */
     int showMessageBox(QWidget *pParent, MessageType type,

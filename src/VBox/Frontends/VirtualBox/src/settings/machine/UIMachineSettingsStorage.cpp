@@ -33,6 +33,7 @@
 # include "UIWizardNewVD.h"
 # include "VBoxGlobal.h"
 # include "QIFileDialog.h"
+# include "UIErrorString.h"
 # include "UIMessageCenter.h"
 # include "UIMachineSettingsStorage.h"
 # include "UIConverter.h"
@@ -4043,7 +4044,7 @@ bool UIMachineSettingsStorage::removeStorageController(const UISettingsCacheMach
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -4075,7 +4076,7 @@ bool UIMachineSettingsStorage::createStorageController(const UISettingsCacheMach
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
         else
         {
             /* Save controller type: */
@@ -4116,7 +4117,7 @@ bool UIMachineSettingsStorage::createStorageController(const UISettingsCacheMach
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comController));
+                notifyOperationProgressError(UIErrorString::formatErrorInfo(comController));
 
             /* For each attachment: */
             for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
@@ -4153,7 +4154,7 @@ bool UIMachineSettingsStorage::updateStorageController(const UISettingsCacheMach
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
         else
         {
             /* Save controller type: */
@@ -4195,7 +4196,7 @@ bool UIMachineSettingsStorage::updateStorageController(const UISettingsCacheMach
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comController));
+                notifyOperationProgressError(UIErrorString::formatErrorInfo(comController));
 
             // We need to separately remove attachments first because
             // there could be limited amount of attachments or media available.
@@ -4268,7 +4269,7 @@ bool UIMachineSettingsStorage::removeStorageAttachment(const UISettingsCacheMach
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -4358,7 +4359,7 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UISettingsCacheMach
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -4446,7 +4447,7 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UISettingsCacheMach
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;

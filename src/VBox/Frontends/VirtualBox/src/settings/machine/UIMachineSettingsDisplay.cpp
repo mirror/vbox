@@ -25,7 +25,7 @@
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UIMachineSettingsDisplay.h"
-# include "UIMessageCenter.h"
+# include "UIErrorString.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -1274,7 +1274,7 @@ bool UIMachineSettingsDisplay::saveScreenData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
 
         /* Save guest-screen scale-factor: */
         if (fSuccess && newDisplayData.m_dScaleFactor != oldDisplayData.m_dScaleFactor)
@@ -1307,7 +1307,7 @@ bool UIMachineSettingsDisplay::saveRemoteDisplayData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
         else
         {
             /* Save whether remote display server is enabled: */
@@ -1345,7 +1345,7 @@ bool UIMachineSettingsDisplay::saveRemoteDisplayData()
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comServer));
+                notifyOperationProgressError(UIErrorString::formatErrorInfo(comServer));
         }
     }
     /* Return result: */
@@ -1484,7 +1484,7 @@ bool UIMachineSettingsDisplay::saveVideoCaptureData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;

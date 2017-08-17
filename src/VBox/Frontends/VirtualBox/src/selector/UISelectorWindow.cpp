@@ -32,6 +32,7 @@
 # include "QISplitter.h"
 # include "UIActionPoolSelector.h"
 # include "UIDesktopServices.h"
+# include "UIErrorString.h"
 # include "UIExtraDataManager.h"
 # include "UIGChooser.h"
 # include "UIGlobalSettingsExtension.h"
@@ -298,7 +299,7 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
         if (pItem)
         {
             /* The VM is inaccessible: */
-            m_pPaneToolsMachine->setDetailsError(UIMessageCenter::formatErrorInfo(pItem->accessError()));
+            m_pPaneToolsMachine->setDetailsError(UIErrorString::formatErrorInfo(pItem->accessError()));
         }
 
         /* Update Details-pane (in any case): */
