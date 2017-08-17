@@ -48,9 +48,9 @@ public:
     enum AudioCodec
     {
         /** No audio codec specified. */
-        AudioCodec_Unknown = 0,
+        AudioCodec_None = 0,
         /** Opus. */
-        AudioCodec_Opus    = 1
+        AudioCodec_Opus = 1
     };
 
     /**

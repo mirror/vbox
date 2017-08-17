@@ -15,6 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/**
+ * For more information, see:
+ * - https://w3c.github.io/media-source/webm-byte-stream-format.html
+ * - https://www.webmproject.org/docs/container/#muxer-guidelines
+ */
+
 #define LOG_GROUP LOG_GROUP_MAIN_DISPLAY
 #include "LoggingNew.h"
 
@@ -308,20 +314,15 @@ private:
  *  This allows every cluster to have blocks with positive values up to 32.767 seconds. */
 #define VBOX_WEBM_TIMECODESCALE_FACTOR_MS   1000000
 
+/** Maximum time (in ms) a cluster can store. */
+#define VBOX_WEBM_CLUSTER_MAX_LEN_MS        INT16_MAX
+
+/** Maximum time a block can store.
+ *  With signed 16-bit timecodes and a default timecode scale of 1ms per unit this makes 65536ms. */
+#define VBOX_WEBM_BLOCK_MAX_LEN_MS          UINT16_MAX
+
 class WebMWriter_Impl
 {
-    /**
-     * Structure for keeping a cue entry.
-     */
-    struct WebMCueEntry
-    {
-        WebMCueEntry(uint32_t t, uint64_t l)
-            : time(t), loc(l) {}
-
-        uint32_t    time;
-        uint64_t    loc;
-    };
-
     /**
      * Track type enumeration.
      */
@@ -370,7 +371,9 @@ class WebMWriter_Impl
                  *  40           1920
                  *  60           2880
                  */
-                uint16_t csFrame;
+                uint16_t framesPerBlock;
+                /** How many milliseconds (ms) one written (simple) block represents. */
+                uint16_t msPerBlock;
             } Audio;
         };
         /** This track's track number. Also used as key in track map. */
@@ -388,6 +391,23 @@ class WebMWriter_Impl
     };
 
     /**
+     * Structure for keeping a cue point.
+     */
+    struct WebMCuePoint
+    {
+        WebMCuePoint(WebMTrack *a_pTrack, uint32_t a_tcClusterStart, uint64_t a_offClusterStart)
+            : pTrack(a_pTrack)
+            , tcClusterStart(a_tcClusterStart), offClusterStart(a_offClusterStart) {}
+
+        /** Associated track. */
+        WebMTrack *pTrack;
+        /** Start time code of the related cluster. */
+        uint32_t   tcClusterStart;
+        /** Start offset of the related cluster. */
+        uint64_t   offClusterStart;
+    };
+
+    /**
      * Structure for keeping a WebM cluster entry.
      */
     struct WebMCluster
@@ -396,10 +416,9 @@ class WebMWriter_Impl
             : uID(0)
             , offCluster(0)
             , fOpen(false)
-            , tcStart(0)
-            , tcLast(0)
-            , cBlocks(0)
-            , cbData(0) { }
+            , tcStartMs(0)
+            , tcEndMs(0)
+            , cBlocks(0) { }
 
         /** This cluster's ID. */
         uint64_t      uID;
@@ -408,14 +427,12 @@ class WebMWriter_Impl
         uint64_t      offCluster;
         /** Whether this cluster element is opened currently. */
         bool          fOpen;
-        /** Timecode when starting this cluster. */
-        uint64_t      tcStart;
-        /** Timecode when this cluster was last touched. */
-        uint64_t      tcLast;
+        /** Timecode (in ms) when starting this cluster. */
+        uint64_t      tcStartMs;
+        /** Timecode (in ms) when this cluster ends. */
+        uint64_t      tcEndMs;
         /** Number of (simple) blocks in this cluster. */
         uint64_t      cBlocks;
-        /** Size (in bytes) of data already written. */
-        uint64_t      cbData;
     };
 
     /**
@@ -458,7 +475,7 @@ class WebMWriter_Impl
         /** Absolute offset (in bytes) of cues table. */
         uint64_t                        offCues;
         /** List of cue points. Needed for seeking table. */
-        std::list<WebMCueEntry>         lstCues;
+        std::list<WebMCuePoint>         lstCues;
 
         /** Map of tracks.
          *  The key marks the track number (*not* the UUID!). */
@@ -573,20 +590,24 @@ public:
         if (RT_FAILURE(rc))
             return rc;
 
-        m_Ebml.subStart(MkvElem_TrackEntry);
-        m_Ebml.serializeUnsignedInteger(MkvElem_TrackNumber, (uint8_t)CurSeg.mapTracks.size());
-        /** @todo Implement track's "Language" property? Currently this defaults to English ("eng"). */
+        const uint8_t uTrack = (uint8_t)CurSeg.mapTracks.size();
 
-        uint8_t uTrack = (uint8_t)CurSeg.mapTracks.size();
+        m_Ebml.subStart(MkvElem_TrackEntry);
+
+        m_Ebml.serializeUnsignedInteger(MkvElem_TrackNumber, (uint8_t)uTrack);
+        m_Ebml.serializeString         (MkvElem_Language,    "und" /* "Undefined"; see ISO-639-2. */);
+        m_Ebml.serializeUnsignedInteger(MkvElem_FlagLacing,  (uint8_t)0);
 
         WebMTrack *pTrack = new WebMTrack(WebMTrackType_Audio, uTrack, RTFileTell(m_Ebml.getFile()));
 
-        pTrack->Audio.uHz     = uHz;
-        pTrack->Audio.csFrame = pTrack->Audio.uHz / (1000 /* s in ms */ / 20 /* ms */); /** @todo 20 ms of audio data. Make this configurable? */
+        pTrack->Audio.uHz            = uHz;
+        pTrack->Audio.msPerBlock     = 20; /** Opus uses 20ms by default. Make this configurable? */
+        pTrack->Audio.framesPerBlock = uHz / (1000 /* s in ms */ / pTrack->Audio.msPerBlock);
 
         OpusPrivData opusPrivData(uHz, cChannels);
 
-        LogFunc(("Opus @ %RU16Hz (Frame size is %RU16 samples / channel))\n", pTrack->Audio.uHz, pTrack->Audio.csFrame));
+        LogFunc(("Opus @ %RU16Hz (%RU16ms + %RU16 frames per block)\n",
+                 pTrack->Audio.uHz, pTrack->Audio.msPerBlock, pTrack->Audio.framesPerBlock));
 
         m_Ebml.serializeUnsignedInteger(MkvElem_TrackUID,     pTrack->uUUID, 4)
               .serializeUnsignedInteger(MkvElem_TrackType,    2 /* Audio */)
@@ -616,10 +637,15 @@ public:
     int AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS, uint8_t *puTrack)
     {
 #ifdef VBOX_WITH_LIBVPX
-        m_Ebml.subStart(MkvElem_TrackEntry);
-        m_Ebml.serializeUnsignedInteger(MkvElem_TrackNumber, (uint8_t)CurSeg.mapTracks.size());
+        RT_NOREF(dbFPS);
 
-        uint8_t uTrack = (uint8_t)CurSeg.mapTracks.size();
+        const uint8_t uTrack = (uint8_t)CurSeg.mapTracks.size();
+
+        m_Ebml.subStart(MkvElem_TrackEntry);
+
+        m_Ebml.serializeUnsignedInteger(MkvElem_TrackNumber, (uint8_t)uTrack);
+        m_Ebml.serializeString         (MkvElem_Language,    "und" /* "Undefined"; see ISO-639-2. */);
+        m_Ebml.serializeUnsignedInteger(MkvElem_FlagLacing,  (uint8_t)0);
 
         WebMTrack *pTrack = new WebMTrack(WebMTrackType_Video, uTrack, RTFileTell(m_Ebml.getFile()));
 
@@ -628,11 +654,11 @@ public:
               .serializeUnsignedInteger(MkvElem_TrackType,   1 /* Video */)
               .serializeString(MkvElem_CodecID,              "V_VP8")
               .subStart(MkvElem_Video)
-              .serializeUnsignedInteger(MkvElem_PixelWidth,  uWidth)
-              .serializeUnsignedInteger(MkvElem_PixelHeight, uHeight)
-              .serializeFloat(MkvElem_FrameRate,             dbFPS)
-              .subEnd(MkvElem_Video)
-              .subEnd(MkvElem_TrackEntry);
+                  .serializeUnsignedInteger(MkvElem_PixelWidth,  uWidth)
+                  .serializeUnsignedInteger(MkvElem_PixelHeight, uHeight)
+              .subEnd(MkvElem_Video);
+
+        m_Ebml.subEnd(MkvElem_TrackEntry);
 
         CurSeg.mapTracks[uTrack] = pTrack;
 
@@ -712,29 +738,31 @@ public:
     {
         RT_NOREF(a_pTrack);
 
-        /* Calculate the PTS of this frame in milliseconds. */
-        uint64_t tcPTS = a_pPkt->data.frame.pts * 1000
+        WebMCluster &Cluster = CurSeg.CurCluster;
+
+        /* Calculate the PTS of this frame (in ms). */
+        uint64_t tcPTSMs = a_pPkt->data.frame.pts * 1000
                          * (uint64_t) a_pCfg->g_timebase.num / a_pCfg->g_timebase.den;
 
-        if (tcPTS <= CurSeg.CurCluster.tcLast)
-            tcPTS = CurSeg.CurCluster.tcLast + 1;
-
-        CurSeg.CurCluster.tcLast = tcPTS;
-
-        if (CurSeg.CurCluster.tcStart == UINT64_MAX)
-            CurSeg.CurCluster.tcStart = CurSeg.CurCluster.tcLast;
-
-        /* Calculate the relative time of this block. */
-        uint16_t tcBlock       = 0;
-        bool     fClusterStart = false;
-
-        /* Did we reach the maximum our timecode can hold? Use a new cluster then. */
-        if (tcPTS - CurSeg.CurCluster.tcStart > m_uTimecodeMax)
-            fClusterStart = true;
-        else
+        if (   tcPTSMs
+            && tcPTSMs <= CurSeg.CurCluster.tcEndMs)
         {
-            /* Calculate the block's timecode, which is relative to the current cluster's starting timecode. */
-            tcBlock = static_cast<uint16_t>(tcPTS - CurSeg.CurCluster.tcStart);
+            tcPTSMs = CurSeg.CurCluster.tcEndMs + 1;
+        }
+
+        /* Whether to start a new cluster or not. */
+        bool fClusterStart = false;
+
+        /* No blocks written yet? Start a new cluster. */
+        if (a_pTrack->cTotalBlocks == 0)
+            fClusterStart = true;
+
+        /* Did we reach the maximum a cluster can hold? Use a new cluster then. */
+        if (tcPTSMs > VBOX_WEBM_CLUSTER_MAX_LEN_MS)
+        {
+            tcPTSMs = 0;
+
+            fClusterStart = true;
         }
 
         const bool fKeyframe = RT_BOOL(a_pPkt->data.frame.flags & VPX_FRAME_IS_KEY);
@@ -742,39 +770,44 @@ public:
         if (   fClusterStart
             || fKeyframe)
         {
-            WebMCluster &Cluster = CurSeg.CurCluster;
-
-            a_pTrack->cTotalClusters++;
-
             if (Cluster.fOpen) /* Close current cluster first. */
             {
                 m_Ebml.subEnd(MkvElem_Cluster);
                 Cluster.fOpen = false;
             }
 
-            tcBlock = 0;
-
-            /* Open a new cluster. */
             Cluster.fOpen      = true;
-            Cluster.tcStart    = tcPTS;
+            Cluster.uID        = a_pTrack->cTotalClusters;
+            Cluster.tcStartMs  = tcPTSMs;
             Cluster.offCluster = RTFileTell(m_Ebml.getFile());
             Cluster.cBlocks    = 0;
-            Cluster.cbData     = 0;
 
-            LogFunc(("[C%RU64] Start @ tc=%RU64 off=%RU64\n", a_pTrack->cTotalClusters, Cluster.tcStart, Cluster.offCluster));
+            LogFunc(("[T%RU8C%RU64] Start @ %RU64ms / %RU64 bytes\n",
+                     a_pTrack->uTrack, Cluster.uID, Cluster.tcStartMs, Cluster.offCluster));
 
             m_Ebml.subStart(MkvElem_Cluster)
-                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcStart);
+                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcStartMs);
 
             /* Save a cue point if this is a keyframe. */
             if (fKeyframe)
             {
-                WebMCueEntry cue(Cluster.tcStart, Cluster.offCluster);
+                WebMCuePoint cue(a_pTrack, Cluster.tcStartMs, Cluster.offCluster);
                 CurSeg.lstCues.push_back(cue);
             }
+
+            a_pTrack->cTotalClusters++;
         }
 
-        LogFunc(("tcPTS=%RU64, s=%RU64, e=%RU64\n", tcPTS, CurSeg.CurCluster.tcStart, CurSeg.CurCluster.tcLast));
+        Cluster.tcEndMs = tcPTSMs;
+        Cluster.cBlocks++;
+
+        /* Calculate the block's timecode, which is relative to the cluster's starting timecode. */
+        uint16_t tcBlockMs = static_cast<uint16_t>(tcPTSMs - Cluster.tcStartMs);
+
+        Log2Func(("tcPTSMs=%RU64, tcBlockMs=%RU64\n", tcPTSMs, tcBlockMs));
+
+        Log2Func(("[C%RU64] cBlocks=%RU64, tcStartMs=%RU64, tcEndMs=%RU64 (%zums)\n",
+                  Cluster.uID, Cluster.cBlocks, Cluster.tcStartMs, Cluster.tcEndMs, Cluster.tcEndMs - Cluster.tcStartMs));
 
         uint8_t fFlags = 0;
         if (fKeyframe)
@@ -782,7 +815,7 @@ public:
         if (a_pPkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE)
             fFlags |= VBOX_WEBM_BLOCK_FLAG_INVISIBLE;
 
-        return writeSimpleBlockInternal(a_pTrack, tcBlock, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags);
+        return writeSimpleBlockInternal(a_pTrack, tcBlockMs, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags);
     }
 #endif /* VBOX_WITH_LIBVPX */
 
@@ -791,77 +824,70 @@ public:
     int writeBlockOpus(WebMTrack *a_pTrack, const void *pvData, size_t cbData, uint64_t uTimeStampMs)
     {
         AssertPtrReturn(a_pTrack, VERR_INVALID_POINTER);
-        AssertPtrReturn(pvData, VERR_INVALID_POINTER);
-        AssertReturn(cbData, VERR_INVALID_PARAMETER);
+        AssertPtrReturn(pvData,   VERR_INVALID_POINTER);
+        AssertReturn(cbData,      VERR_INVALID_PARAMETER);
 
         RT_NOREF(uTimeStampMs);
 
         WebMCluster &Cluster = CurSeg.CurCluster;
 
-        /* Calculate the PTS. */
-        /* Make sure to round the result. This is very important! */
-        uint64_t tcPTSRaw = lround((CurSeg.uTimecodeScaleFactor * 1000 * Cluster.cbData) / a_pTrack->Audio.uHz);
+        /* Calculate the PTS of the current block:
+         *
+         * The "raw PTS" is the exact time of an object represented in nanoseconds):
+         *     Raw Timecode = (Block timecode + Cluster timecode) * TimecodeScaleFactor
+         */
+        uint64_t tcPTSMs  = Cluster.tcStartMs + (Cluster.cBlocks * 20 /*ms */);
 
-        /* Calculate the absolute PTS. */
-        uint64_t tcPTS = lround(tcPTSRaw / CurSeg.uTimecodeScaleFactor);
-
-        if (Cluster.tcStart == UINT64_MAX)
-            Cluster.tcStart = tcPTS;
-
-        Cluster.tcLast = tcPTS;
-
-        uint16_t tcBlock;
-        bool     fClusterStart = false;
+        /* Whether to start a new cluster or not. */
+        bool fClusterStart = false;
 
         if (a_pTrack->cTotalBlocks == 0)
             fClusterStart = true;
 
-        /* Did we reach the maximum our timecode can hold? Use a new cluster then. */
-        if (tcPTS - Cluster.tcStart > m_uTimecodeMax)
-        {
-            tcBlock = 0;
-
+        /* Did we reach the maximum a cluster can hold? Use a new cluster then. */
+        if (tcPTSMs > VBOX_WEBM_CLUSTER_MAX_LEN_MS)
             fClusterStart = true;
-        }
-        else
-        {
-            /* Calculate the block's timecode, which is relative to the Cluster timecode. */
-            tcBlock = static_cast<uint16_t>(tcPTS - Cluster.tcStart);
-        }
 
         if (fClusterStart)
         {
-            if (Cluster.fOpen) /* Close current cluster first. */
+            if (Cluster.fOpen) /* Close current clusters first. */
             {
                 m_Ebml.subEnd(MkvElem_Cluster);
                 Cluster.fOpen = false;
             }
 
-            tcBlock = 0;
-
             Cluster.fOpen      = true;
             Cluster.uID        = a_pTrack->cTotalClusters;
-            Cluster.tcStart    = tcPTS;
-            Cluster.tcLast     = Cluster.tcStart;
+            Cluster.tcStartMs  = Cluster.tcEndMs;
             Cluster.offCluster = RTFileTell(m_Ebml.getFile());
             Cluster.cBlocks    = 0;
-            Cluster.cbData     = 0;
 
-            LogFunc(("[C%RU64] Start @ tc=%RU64 off=%RU64\n", Cluster.uID, Cluster.tcStart, Cluster.offCluster));
+            LogFunc(("[T%RU8C%RU64] Start @ %RU64ms / %RU64 bytes\n",
+                     a_pTrack->uTrack, Cluster.uID, Cluster.tcStartMs, Cluster.offCluster));
+
+            /* As all audio frame as key frames, insert a new cue point when a new cluster starts. */
+            WebMCuePoint cue(a_pTrack, Cluster.tcStartMs, Cluster.offCluster);
+            CurSeg.lstCues.push_back(cue);
 
             m_Ebml.subStart(MkvElem_Cluster)
-                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcStart);
+                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcStartMs);
 
             a_pTrack->cTotalClusters++;
         }
 
-        Cluster.cBlocks += 1;
-        Cluster.cbData  += cbData;
+        Cluster.tcEndMs = tcPTSMs;
+        Cluster.cBlocks++;
 
-        Log2Func(("[C%RU64] tcBlock=%RU64, tcClusterStart=%RU64, tcClusterLast=%RU64, cbData=%zu\n",
-                  Cluster.uID, tcBlock, CurSeg.CurCluster.tcStart, CurSeg.CurCluster.tcLast, CurSeg.CurCluster.cbData));
+        /* Calculate the block's timecode, which is relative to the cluster's starting timecode. */
+        uint16_t tcBlockMs = static_cast<uint16_t>(tcPTSMs - Cluster.tcStartMs);
 
-        return writeSimpleBlockInternal(a_pTrack, tcBlock, pvData, cbData, VBOX_WEBM_BLOCK_FLAG_KEY_FRAME);
+        Log2Func(("tcPTSMs=%RU64, tcBlockMs=%RU64\n", tcPTSMs, tcBlockMs));
+
+        Log2Func(("[C%RU64] cBlocks=%RU64, tcStartMs=%RU64, tcEndMs=%RU64 (%zums)\n",
+                  Cluster.uID, Cluster.cBlocks, Cluster.tcStartMs, Cluster.tcEndMs, Cluster.tcEndMs - Cluster.tcStartMs));
+
+        return writeSimpleBlockInternal(a_pTrack, tcBlockMs,
+                                        pvData, cbData, VBOX_WEBM_BLOCK_FLAG_KEY_FRAME);
     }
 #endif /* VBOX_WITH_LIBOPUS */
 
@@ -942,33 +968,35 @@ public:
         /*
          * Write Cues element.
          */
-        if (CurSeg.lstCues.size())
+        LogFunc(("Cues @ %RU64\n", RTFileTell(m_Ebml.getFile())));
+
+        CurSeg.offCues = RTFileTell(m_Ebml.getFile());
+
+        m_Ebml.subStart(MkvElem_Cues);
+
+        std::list<WebMCuePoint>::iterator itCuePoint = CurSeg.lstCues.begin();
+        while (itCuePoint != CurSeg.lstCues.end())
         {
-            LogFunc(("Cues @ %RU64\n", RTFileTell(m_Ebml.getFile())));
+            /* Sanity. */
+            AssertPtr(itCuePoint->pTrack);
 
-            CurSeg.offCues = RTFileTell(m_Ebml.getFile());
+            const uint64_t uClusterPos = itCuePoint->offClusterStart - CurSeg.offStart;
 
-            m_Ebml.subStart(MkvElem_Cues);
+            LogFunc(("CuePoint @ %RU64: Track #%RU8 (Time %RU64, Pos %RU64)\n",
+                     RTFileTell(m_Ebml.getFile()), itCuePoint->pTrack->uTrack, itCuePoint->tcClusterStart, uClusterPos));
 
-            std::list<WebMCueEntry>::iterator itCuePoint = CurSeg.lstCues.begin();
-            while (itCuePoint != CurSeg.lstCues.end())
-            {
-                LogFunc(("CuePoint @ %RU64\n", RTFileTell(m_Ebml.getFile())));
-
-                m_Ebml.subStart(MkvElem_CuePoint)
-                      .serializeUnsignedInteger(MkvElem_CueTime, itCuePoint->time)
+            m_Ebml.subStart(MkvElem_CuePoint)
+                      .serializeUnsignedInteger(MkvElem_CueTime, itCuePoint->tcClusterStart)
                       .subStart(MkvElem_CueTrackPositions)
-                      .serializeUnsignedInteger(MkvElem_CueTrack, 1)
-                      .serializeUnsignedInteger(MkvElem_CueClusterPosition, itCuePoint->loc - CurSeg.offStart, 8)
-                      .subEnd(MkvElem_CueTrackPositions)
-                      .subEnd(MkvElem_CuePoint);
+                          .serializeUnsignedInteger(MkvElem_CueTrack,           itCuePoint->pTrack->uTrack)
+                          .serializeUnsignedInteger(MkvElem_CueClusterPosition, uClusterPos, 8)
+                  .subEnd(MkvElem_CueTrackPositions)
+                  .subEnd(MkvElem_CuePoint);
 
-                itCuePoint++;
-            }
-
-            m_Ebml.subEnd(MkvElem_Cues);
+            itCuePoint++;
         }
 
+        m_Ebml.subEnd(MkvElem_Cues);
         m_Ebml.subEnd(MkvElem_Segment);
 
         /*
@@ -1022,15 +1050,12 @@ private:
               .serializeUnsignedInteger(MkvElem_SeekPosition, CurSeg.offTracks - CurSeg.offStart, 8)
               .subEnd(MkvElem_Seek);
 
-        if (CurSeg.lstCues.size())
-        {
-            Assert(CurSeg.offCues - CurSeg.offStart > 0); /* Sanity. */
+        Assert(CurSeg.offCues - CurSeg.offStart > 0); /* Sanity. */
 
-            m_Ebml.subStart(MkvElem_Seek)
-                  .serializeUnsignedInteger(MkvElem_SeekID, MkvElem_Cues)
-                  .serializeUnsignedInteger(MkvElem_SeekPosition, CurSeg.offCues - CurSeg.offStart, 8)
-                  .subEnd(MkvElem_Seek);
-        }
+        m_Ebml.subStart(MkvElem_Seek)
+              .serializeUnsignedInteger(MkvElem_SeekID, MkvElem_Cues)
+              .serializeUnsignedInteger(MkvElem_SeekPosition, CurSeg.offCues - CurSeg.offStart, 8)
+              .subEnd(MkvElem_Seek);
 
         m_Ebml.subStart(MkvElem_Seek)
               .serializeUnsignedInteger(MkvElem_SeekID, MkvElem_Info)
@@ -1058,7 +1083,7 @@ private:
 
         m_Ebml.subStart(MkvElem_Info)
               .serializeUnsignedInteger(MkvElem_TimecodeScale, CurSeg.uTimecodeScaleFactor)
-              .serializeFloat(MkvElem_Segment_Duration, CurSeg.tcEnd /*+ iFrameTime*/ - CurSeg.tcStart)
+              .serializeFloat(MkvElem_Segment_Duration, CurSeg.tcEnd - CurSeg.tcStart)
               .serializeString(MkvElem_MuxingApp, szMux)
               .serializeString(MkvElem_WritingApp, szApp)
               .subEnd(MkvElem_Info);
