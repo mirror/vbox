@@ -106,7 +106,8 @@ void VBoxAboutDlg::prepare()
     setAttribute(Qt::WA_DeleteOnClose);
 
     /* Make sure the dialog is deleted on pseudo-parent destruction: */
-    connect(m_pPseudoParent, &QObject::destroyed, this, &VBoxAboutDlg::close);
+    if (m_pPseudoParent)
+        connect(m_pPseudoParent, &QObject::destroyed, this, &VBoxAboutDlg::close);
 
     /* Choose default image: */
     QString strPath(":/about.png");
