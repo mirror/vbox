@@ -409,11 +409,11 @@ HRESULT NATEngine::setHostIP(const com::Utf8Str &aHostIP)
         /* parses as an IPv4 address */
         int rc = RTNetStrToIPv4Addr(aHostIP.c_str(), &addr);
         if (RT_FAILURE(rc))
-            return E_INVALIDARG;
+            return setError(E_INVALIDARG, "Invalid IPv4 address \"%s\"", aHostIP.c_str());
 
         /* is a unicast address */
         if ((addr.u & RT_N2H_U32_C(0xe0000000)) == RT_N2H_U32_C(0xe0000000))
-            return E_INVALIDARG;
+            return setError(E_INVALIDARG, "Cannot bind to a multicast address %s", aHostIP.c_str());
     }
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);    
