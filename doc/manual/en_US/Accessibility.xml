@@ -22,14 +22,50 @@
 
   <chapter>
     <title>Introduction</title>
-
-    <para>Add text here.</para>
-
-    <sect1>
-      <title>Sample section</title>
-
-      <para>Add more text.</para>
-    </sect1>
+    <para>
+      Welcome to the <emphasis role="strong">VirtualBox Accessibility Support</emphasis> documentation! This document is primarily
+      a reference to help people who are interested in our project accessibility support and will describe how to use VirtualBox
+      user interface step-by-step. Since whole the application navigation will be explained here, this document will also be
+      helpful for those who are not familiar with our product user interface and wish to learn more. It will be written in a bit
+      excessive manner so that many obvious things will be explained too precicely to make it easier to understand by ear for a
+      blind users. The document will be periodically updated with recent changes and test-cases allowing us to more strictly
+      follow the required guidelines and make our product fully accessible.
+    </para>
+    <para>
+      Our application is based on Qt5, a powerful cross-platform library which allows to visualize various user interface ideas
+      the most flexible and native way. This also means that the library we use is responsible for many navigation and
+      accessibility aspects (like fonts, size hints, colors, look&amp;feel patterns and many other things), but not for all of
+      them. Nativity as one of the main ideas of the Qt-based application sometimes brings additional complexity because there is
+      always at least one host which uses unique combination of fonts and colors which breaks accessibility support in an
+      unpredictable way.
+    </para>
+    <para>
+      Independently on platform we are supporting screen-reader applications which can communicate with Qt5 accessibility
+      interface which supports Microsoft Active Accessibility (MSAA), OS X Accessibility, and the Unix/X11 AT-SPI standard.
+    </para>
+    <para>
+      Our application user interface is able to be started in two modes:
+      <itemizedlist>
+        <listitem>
+          <para>
+            First of them is <emphasis role="strong">VirtualBox Manager</emphasis> user interface, the main application window
+            which allows to manage and configure virtual machines and their groups. Besides that, this window provides user with
+            access to various global and machine related tools allowing to administrate some of VirtualBox objects and their
+            settings.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Second application mode is <emphasis role="strong">Virtual Machine</emphasis> user interface, which allows to control
+            virtual machine guest screens as separate application windows. Besides that, this interface allows to access some of
+            machine tools and adjust guest screens up to your needs, by changing their resolution and toggling full-screen,
+            seamless and scaled modes.
+          </para>
+        </listitem>
+      </itemizedlist>
+      But first of all we should start from the <emphasis role="strong">General Concept</emphasis> which is related to whole the
+      GUI and summarizes the navigation and accessibility aspects we are using for whole application.
+    </para>
   </chapter>
 </book>
 <!-- vim: set shiftwidth=2 tabstop=2 expandtab: -->
