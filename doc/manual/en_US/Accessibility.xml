@@ -67,5 +67,159 @@
       GUI and summarizes the navigation and accessibility aspects we are using for whole application.
     </para>
   </chapter>
+
+  <chapter>
+    <title>General concept</title>
+    <para>
+      This chapter describes the general navigation and accessibility concept. We should note that not every detail of this
+      concept is already implemented and not every widget in our project already follows that concept. There is still large work
+      to be done in that regard. But in the end whole the project should correspond to this concept.
+    </para>
+    <para>
+      In short, every application window of our project should be navigated using the following approaches:
+      <itemizedlist>
+        <listitem><para>Mouse Navigation</para></listitem>
+        <listitem><para>Keyboard Navigation</para></listitem>
+        <listitem><para>Screen-reader Navigation</para></listitem>
+      </itemizedlist>
+    </para>
+    <sect1>
+      <title>Mouse Navigation</title>
+      <itemizedlist>
+        <listitem>
+          <para>
+            Each interactable widget can be focused with mouse (if that is not restricted by underlying host OS).
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Each hovered interactable widget causes own tool-tip to appear.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Each tool-tip is given either in imperative mood (ex. "Create new virtual machine") or in short form (ex. "New").
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Short tool-tip form is only used if context is obvious for a user.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Tool-tip can contain shortcut mentioned in parentheses.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Each hovered menu bar / toolbar action causes own status-tip to appear (if window have status-bar).
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Each status-tip is given in imperative mood only.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            TBD...
+          </para>
+        </listitem>
+      </itemizedlist>
+    </sect1>
+    <sect1>
+      <title>Keyboard Navigation</title>
+      <itemizedlist>
+        <listitem>
+          <para>
+            Each interactable widget can be focused with keyboard (if that is not restricted by underlying host OS).
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Focusing is possible through tabbing or mnemonic navigation.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Each button and menu bar / toolbar action can be directly activated with keyboard.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Activation is possible via shortcut or mnemonic.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Each shortcut is configurable through application preferences.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Mnemonic mentioned above is underlined alphanumeric character which is a part of widget label (if widget has label).
+            Mnemonic being triggered in conjunction with the Alt key.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Each mnemonic is unique within the visible part of current application window, there are no collisions.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            TBD...
+          </para>
+        </listitem>
+      </itemizedlist>
+    </sect1>
+    <sect1>
+      <title>Screen-reader Navigation</title>
+      <itemizedlist>
+        <listitem>
+          <para>
+            Each interactable widget can be focused with screen-reader cursor.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Each focused widget have clear name (or full description) in native user language.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Each button and menu bar / toolbar action can be directly activated through the screen-reader cursor functionality.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Each complex widget which has children (like list, tree, table and similar) is represented as closed group which
+            encapsulates it's children clearly.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            While navigating user is able to skip any group without forcing to be entered inside.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Each group child can be a group itself with the same rules as above applicable.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Each text-field can be directly edited through the screen-reader cursor functionality.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            TBD...
+          </para>
+        </listitem>
+      </itemizedlist>
+    </sect1>
+  </chapter>
 </book>
 <!-- vim: set shiftwidth=2 tabstop=2 expandtab: -->
