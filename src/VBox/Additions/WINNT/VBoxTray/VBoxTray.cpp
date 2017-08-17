@@ -135,7 +135,6 @@ static int VBoxAcquireGuestCaps(uint32_t fOr, uint32_t fNot, bool fCfg);
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-HANDLE                g_hVBoxDriver;
 HANDLE                g_hStopSem;
 HANDLE                g_hSeamlessWtNotifyEvent = 0;
 HANDLE                g_hSeamlessKmNotifyEvent = 0;
@@ -470,34 +469,6 @@ static bool vboxTrayHandleGlobalMessages(PVBOXGLOBALMESSAGE pTable, UINT uMsg,
     return false;
 }
 
-static int vboxTrayOpenBaseDriver(void)
-{
-    /* Open VBox guest driver. */
-    DWORD dwErr = ERROR_SUCCESS;
-    g_hVBoxDriver = CreateFile(VBOXGUEST_DEVICE_NAME,
-                             GENERIC_READ | GENERIC_WRITE,
-                             FILE_SHARE_READ | FILE_SHARE_WRITE,
-                             NULL,
-                             OPEN_EXISTING,
-                             FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-                             NULL);
-    if (g_hVBoxDriver == INVALID_HANDLE_VALUE)
-    {
-        dwErr = GetLastError();
-        LogRel(("Could not open VirtualBox Guest Additions driver! Please install / start it first! Error = %08X\n", dwErr));
-    }
-    return RTErrConvertFromWin32(dwErr);
-}
-
-static void vboxTrayCloseBaseDriver(void)
-{
-    if (g_hVBoxDriver)
-    {
-        CloseHandle(g_hVBoxDriver);
-        g_hVBoxDriver = NULL;
-    }
-}
-
 /**
  * Release logger callback.
  *
@@ -820,7 +791,6 @@ static int vboxTrayServiceMain(void)
          */
         VBOXSERVICEENV svcEnv;
         svcEnv.hInstance = g_hInstance;
-        svcEnv.hDriver   = g_hVBoxDriver;
 
         /* Initializes disp-if to default (XPDM) mode. */
         VBoxDispIfInit(&svcEnv.dispIf); /* Cannot fail atm. */
@@ -1002,12 +972,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         rc = vboxTrayLogCreate(NULL /* pszLogFile */);
 
     if (RT_SUCCESS(rc))
-    {
         rc = VbglR3Init();
-        if (RT_SUCCESS(rc))
-            rc = vboxTrayOpenBaseDriver();
-    }
-
     if (RT_SUCCESS(rc))
     {
         /* Save instance handle. */
@@ -1072,7 +1037,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         hlpReportStatus(VBoxGuestFacilityStatus_Failed);
     }
     LogRel(("Ended\n"));
-    vboxTrayCloseBaseDriver();
 
     /* Release instance mutex. */
     if (hMutexAppRunning != NULL)
@@ -1623,27 +1587,10 @@ static BOOL vboxDtIsInputDesktop()
  * */
 static int VBoxAcquireGuestCaps(uint32_t fOr, uint32_t fNot, bool fCfg)
 {
-    DWORD cbReturned = 0;
-    VBoxGuestCapsAquire Info;
     Log(("VBoxAcquireGuestCaps or(0x%x), not(0x%x), cfx(%d)\n", fOr, fNot, fCfg));
-    Info.enmFlags = fCfg ? VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE : VBOXGUESTCAPSACQUIRE_FLAGS_NONE;
-    Info.rc = VERR_NOT_IMPLEMENTED;
-    Info.u32OrMask = fOr;
-    Info.u32NotMask = fNot;
-    if (!DeviceIoControl(g_hVBoxDriver, VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE, &Info, sizeof(Info), &Info, sizeof(Info), &cbReturned, NULL))
-    {
-        DWORD LastErr = GetLastError();
-        LogFlowFunc(("DeviceIoControl VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed LastErr %d\n", LastErr));
-        return RTErrConvertFromWin32(LastErr);
-    }
-
-    int rc = Info.rc;
-    if (!RT_SUCCESS(rc))
-    {
-        LogFlowFunc(("VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed rc %d\n", rc));
-        return rc;
-    }
-
+    int rc = VbglR3AcquireGuestCaps(fOr, fNot, fCfg);
+    if (RT_FAILURE(rc))
+        LogFlowFunc(("VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed: %Rrc\n", rc));
     return rc;
 }
 

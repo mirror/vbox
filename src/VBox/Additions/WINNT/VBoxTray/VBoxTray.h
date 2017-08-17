@@ -81,8 +81,6 @@ typedef struct _VBOXSERVICEENV
 {
     /** hInstance of VBoxTray. */
     HINSTANCE hInstance;
-    /** Handle of guest driver. */
-    HANDLE    hDriver;
     /* Display driver interface, XPDM - WDDM abstraction see VBOXDISPIF** definitions above */
     /** @todo r=andy Argh. Needed by the "display" + "seamless" services (which in turn get called
      *               by the VBoxCaps facility. See #8037. */

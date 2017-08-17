@@ -370,105 +370,102 @@ void VBoxSeamlessCheckWindows(bool fForce)
  * Thread function to wait for and process seamless mode change
  * requests
  */
-static DECLCALLBACK(int) VBoxSeamlessWorker(void *pInstance, bool volatile *pfShutdown)
+static DECLCALLBACK(int) VBoxSeamlessWorker(void *pvInstance, bool volatile *pfShutdown)
 {
-    AssertPtrReturn(pInstance, VERR_INVALID_POINTER);
-    LogFlowFunc(("pInstance=%p\n", pInstance));
+    AssertPtrReturn(pvInstance, VERR_INVALID_POINTER);
+    LogFlowFunc(("pvInstance=%p\n", pvInstance));
 
     /*
-     * Tell the control thread that it can continue
-     * spawning services.
+     * Tell the control thread that it can continue spawning services.
      */
     RTThreadUserSignal(RTThreadSelf());
 
-    PVBOXSEAMLESSCONTEXT pCtx = (PVBOXSEAMLESSCONTEXT)pInstance;
-
-    HANDLE gVBoxDriver = pCtx->pEnv->hDriver;
-    VBoxGuestFilterMaskInfo maskInfo;
-    DWORD cbReturned;
-    BOOL fWasScreenSaverActive = FALSE, fRet;
-
-    maskInfo.u32OrMask = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
-    maskInfo.u32NotMask = 0;
-    if (!DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    int rc = VbglR3CtlFilterMask(VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST, 0 /*fNot*/);
+    if (RT_FAILURE(rc))
     {
-        DWORD dwErr = GetLastError();
-        LogRel(("Seamless: DeviceIOControl(CtlMask) failed with %ld, exiting ...\n", dwErr));
-        return RTErrConvertFromWin32(dwErr);
+        LogRel(("Seamless: VbglR3CtlFilterMask(VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST,0) failed with %Rrc, exiting ...\n", rc));
+        return rc;
     }
 
-    int rc = VINF_SUCCESS;
-
+    BOOL fWasScreenSaverActive = FALSE;
     for (;;)
     {
-        /* wait for a seamless change event */
-        VBoxGuestWaitEventInfo waitEvent;
-        waitEvent.u32TimeoutIn = 5000;
-        waitEvent.u32EventMaskIn = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
-        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
+        /*
+         * Wait for a seamless change event, check for shutdown both before and after.
+         */
+        if (*pfShutdown)
         {
-            /* are we supposed to stop? */
-            if (*pfShutdown)
-                break;
+            rc = VINF_SUCCESS;
+            break;
+        }
 
+        uint32_t fEvent = 0;
+        rc = VbglR3WaitEvent(VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST, 5000 /*ms*/, &fEvent);
+
+        if (*pfShutdown)
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
             /* did we get the right event? */
-            if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
+            if (fEvent & VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
             {
-                /* We got at least one event. Read the requested resolution
+                /*
+                 * We got at least one event. Read the requested resolution
                  * and try to set it until success. New events will not be seen
                  * but a new resolution will be read in this poll loop.
                  */
                 for (;;)
                 {
                     /* get the seamless change request */
-                    VMMDevSeamlessChangeRequest seamlessChangeRequest = {0};
-                    vmmdevInitRequest((VMMDevRequestHeader*)&seamlessChangeRequest, VMMDevReq_GetSeamlessChangeRequest);
-                    seamlessChangeRequest.eventAck = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
-
-                    BOOL fSeamlessChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(seamlessChangeRequest)), &seamlessChangeRequest, sizeof(seamlessChangeRequest),
-                                                                 &seamlessChangeRequest, sizeof(seamlessChangeRequest), &cbReturned, NULL);
-                    if (fSeamlessChangeQueried)
+                    VMMDevSeamlessMode enmMode = (VMMDevSeamlessMode)-1;
+                    rc = VbglR3SeamlessGetLastEvent(&enmMode);
+                    if (RT_SUCCESS(rc))
                     {
-                        LogFlowFunc(("Mode changed to %d\n", seamlessChangeRequest.mode));
+                        LogFlowFunc(("Mode changed to %d\n", enmMode));
 
-                        switch(seamlessChangeRequest.mode)
+                        BOOL fRet;
+                        switch (enmMode)
                         {
-                        case VMMDev_Seamless_Disabled:
-                            if (fWasScreenSaverActive)
-                            {
-                                LogRel(("Seamless: Re-enabling the screensaver\n"));
-                                fRet = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, TRUE, NULL, 0);
+                            case VMMDev_Seamless_Disabled:
+                                if (fWasScreenSaverActive)
+                                {
+                                    LogRel(("Seamless: Re-enabling the screensaver\n"));
+                                    fRet = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, TRUE, NULL, 0);
+                                    if (!fRet)
+                                        LogRel(("Seamless: SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %ld\n", GetLastError()));
+                                }
+                                PostMessage(g_hwndToolWindow, WM_VBOX_SEAMLESS_DISABLE, 0, 0);
+                                break;
+
+                            case VMMDev_Seamless_Visible_Region:
+                                fRet = SystemParametersInfo(SPI_GETSCREENSAVEACTIVE, 0, &fWasScreenSaverActive, 0);
+                                if (!fRet)
+                                    LogRel(("Seamless: SystemParametersInfo SPI_GETSCREENSAVEACTIVE failed with %ld\n", GetLastError()));
+
+                                if (fWasScreenSaverActive)
+                                    LogRel(("Seamless: Disabling the screensaver\n"));
+
+                                fRet = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
                                 if (!fRet)
                                     LogRel(("Seamless: SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %ld\n", GetLastError()));
-                            }
-                            PostMessage(g_hwndToolWindow, WM_VBOX_SEAMLESS_DISABLE, 0, 0);
-                            break;
+                                PostMessage(g_hwndToolWindow, WM_VBOX_SEAMLESS_ENABLE, 0, 0);
+                                break;
 
-                        case VMMDev_Seamless_Visible_Region:
-                            fRet = SystemParametersInfo(SPI_GETSCREENSAVEACTIVE, 0, &fWasScreenSaverActive, 0);
-                            if (!fRet)
-                                LogRel(("Seamless: SystemParametersInfo SPI_GETSCREENSAVEACTIVE failed with %ld\n", GetLastError()));
+                            case VMMDev_Seamless_Host_Window:
+                                break;
 
-                            if (fWasScreenSaverActive)
-                                LogRel(("Seamless: Disabling the screensaver\n"));
-
-                            fRet = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
-                            if (!fRet)
-                                LogRel(("Seamless: SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %ld\n", GetLastError()));
-                            PostMessage(g_hwndToolWindow, WM_VBOX_SEAMLESS_ENABLE, 0, 0);
-                            break;
-
-                        case VMMDev_Seamless_Host_Window:
-                            break;
-
-                        default:
-                            AssertFailed();
-                            break;
+                            default:
+                                AssertFailed();
+                                break;
                         }
                         break;
                     }
-                    else
-                        LogRel(("Seamless: DeviceIoControl(ChangeReq) failed with %ld\n", GetLastError()));
+
+                    LogRel(("Seamless: VbglR3SeamlessGetLastEvent() failed with %Rrc\n", rc));
 
                     if (*pfShutdown)
                         break;
@@ -478,20 +475,14 @@ static DECLCALLBACK(int) VBoxSeamlessWorker(void *pInstance, bool volatile *pfSh
                 }
             }
         }
-        else
-        {
-            /* sleep a bit to not eat too much CPU in case the above call always fails */
+        /* sleep a bit to not eat too much CPU in case the above call always fails */
+        else if (rc != VERR_TIMEOUT)
             RTThreadSleep(10);
-        }
-
-        if (*pfShutdown)
-            break;
     }
 
-    maskInfo.u32OrMask = 0;
-    maskInfo.u32NotMask = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
-    if (!DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
-        LogRel(("Seamless: DeviceIOControl(CtlMask) failed with %ld\n", GetLastError()));
+    int rc2 = VbglR3CtlFilterMask(0 /*fOk*/, VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST);
+    if (RT_FAILURE(rc2))
+        LogRel(("Seamless: VbglR3CtlFilterMask(0, VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST) failed with %Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;

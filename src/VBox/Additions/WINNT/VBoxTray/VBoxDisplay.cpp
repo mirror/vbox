@@ -528,12 +528,12 @@ static BOOL ResizeDisplayDevice(PVBOXDISPLAYCONTEXT pCtx,
                                 BOOL fExtDispSup)
 {
     BOOL fDispAlreadyEnabled = false; /* check whether the monitor with ID is already enabled. */
-    BOOL fModeReset = (Width == 0 && Height == 0 && BitsPerPixel == 0 &&
-                       dwNewPosX == 0 && dwNewPosY == 0 && !fChangeOrigin);
+    BOOL fModeReset = (   Width == 0 && Height == 0 && BitsPerPixel == 0
+                       && dwNewPosX == 0 && dwNewPosY == 0 && !fChangeOrigin);
     DWORD dmFields = 0;
 
     LogFlowFunc(("[%d] %dx%d at %d,%d fChangeOrigin %d fEnabled %d fExtDisSup %d\n",
-          Id, Width, Height, dwNewPosX, dwNewPosY, fChangeOrigin, fEnabled, fExtDispSup));
+                 Id, Width, Height, dwNewPosX, dwNewPosY, fChangeOrigin, fEnabled, fExtDispSup));
 
     if (!pCtx->fAnyX)
         Width &= 0xFFF8;
@@ -565,8 +565,7 @@ static BOOL ResizeDisplayDevice(PVBOXDISPLAYCONTEXT pCtx,
     if (NumDevices != DevNum)
         LogFlowFunc(("ResizeDisplayDevice: NumDevices(%d) != DevNum(%d)\n", NumDevices, DevNum));
 
-    DWORD i = 0;
-
+    DWORD i;
     for (i = 0; i < DevNum; ++i)
     {
         if (fExtDispSup)
@@ -648,7 +647,8 @@ static BOOL ResizeDisplayDevice(PVBOXDISPLAYCONTEXT pCtx,
      * been requested AND fEnabled is 1 and fDispAlreadyEnabled is also 1 AND
      * all rect conditions are true. Thus in this case nothing has to be done.
      */
-    if (   !fModeReset && (!fEnabled == !fDispAlreadyEnabled)
+    if (   !fModeReset
+        && (!fEnabled == !fDispAlreadyEnabled)
         && paRects[Id].left                      == dwNewPosX
         && paRects[Id].top                       == dwNewPosY
         && paRects[Id].right  - paRects[Id].left == (LONG)Width
@@ -769,9 +769,8 @@ static BOOL ResizeDisplayDevice(PVBOXDISPLAYCONTEXT pCtx,
         NOREF(status);
     }
 
-    LogFlowFunc(("Enable And Resize Device. Id = %d, Width=%d Height=%d, \
-         dwNewPosX = %d, dwNewPosY = %d fEnabled=%d & fExtDispSupport = %d \n",
-         Id, Width, Height, dwNewPosX, dwNewPosY, fEnabled, fExtDispSup));
+    LogFlowFunc(("Enable And Resize Device. Id = %d, Width=%d Height=%d, dwNewPosX = %d, dwNewPosY = %d fEnabled=%d & fExtDispSupport = %d \n",
+                 Id, Width, Height, dwNewPosX, dwNewPosY, fEnabled, fExtDispSup));
     dwStatus = EnableAndResizeDispDev(paDeviceModes, paDisplayDevices, DevNum, Id, Width, Height, BitsPerPixel,
                                       dwNewPosX, dwNewPosY, fEnabled, fExtDispSup);
     if (dwStatus == DISP_CHANGE_SUCCESSFUL || dwStatus == DISP_CHANGE_BADMODE)
@@ -786,13 +785,14 @@ static BOOL ResizeDisplayDevice(PVBOXDISPLAYCONTEXT pCtx,
 }
 
 /**
- * Thread function to wait for and process display change
- * requests
+ * Thread function to wait for and process display change requests.
  */
-DECLCALLBACK(int) VBoxDisplayWorker(void *pInstance, bool volatile *pfShutdown)
+static DECLCALLBACK(int) VBoxDisplayWorker(void *pvInstance, bool volatile *pfShutdown)
 {
-    AssertPtr(pInstance);
-    LogFlowFunc(("pInstance=%p\n", pInstance));
+    AssertPtr(pvInstance);
+    PVBOXDISPLAYCONTEXT pCtx = (PVBOXDISPLAYCONTEXT)pvInstance;
+    AssertPtr(pCtx->pEnv);
+    LogFlowFunc(("pvInstance=%p\n", pvInstance));
 
     /*
      * Tell the control thread that it can continue
@@ -800,125 +800,74 @@ DECLCALLBACK(int) VBoxDisplayWorker(void *pInstance, bool volatile *pfShutdown)
      */
     RTThreadUserSignal(RTThreadSelf());
 
-    PVBOXDISPLAYCONTEXT pCtx = (PVBOXDISPLAYCONTEXT)pInstance;
-
-    HANDLE gVBoxDriver = pCtx->pEnv->hDriver;
-    VBoxGuestFilterMaskInfo maskInfo;
-    DWORD cbReturned;
-
-    maskInfo.u32OrMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
-    maskInfo.u32NotMask = 0;
-    if (!DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    int rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED, 0 /*fNot*/);
+    if (RT_FAILURE(rc))
     {
-        DWORD dwErr = GetLastError();
-        LogFlowFunc(("DeviceIOControl(CtlMask - or) failed with %ld, exiting\n", dwErr));
-        return RTErrConvertFromWin32(dwErr);
+        LogFlowFunc(("VbglR3CtlFilterMask(mask,0): %Rrc\n", rc));
+        return rc;
     }
 
     PostMessage(g_hwndToolWindow, WM_VBOX_GRAPHICS_SUPPORTED, 0, 0);
 
     VBoxDispIfResizeStarted(&pCtx->pEnv->dispIf);
 
-    int rc = VINF_SUCCESS;
-
-    while (*pfShutdown == false)
+    for (;;)
     {
-        BOOL fExtDispSup = TRUE;
-        /* Wait for a display change event. */
-        VBoxGuestWaitEventInfo waitEvent;
-        waitEvent.u32TimeoutIn   = 1000;
-        waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
-        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
+        /*
+         * Wait for a display change event, checking for shutdown both before and after.
+         */
+        if (*pfShutdown)
         {
-            /*LogFlowFunc(("DeviceIOControl succeeded\n"));*/
+            rc = VINF_SUCCESS;
+            break;
+        }
 
-            if (NULL == pCtx) {
-                LogFlowFunc(("Invalid context detected!\n"));
-                break;
-            }
+        uint32_t fEvents = 0;
+        rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED, 1000 /*ms*/, &fEvents);
 
-            if (NULL == pCtx->pEnv) {
-                LogFlowFunc(("Invalid context environment detected!\n"));
-                break;
-            }
+        if (*pfShutdown)
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
 
-            /* are we supposed to stop? */
-            if (*pfShutdown)
-                break;
-
-            /* did we get the right event? */
-            if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
+        if (RT_SUCCESS(rc))
+        {
+            if (fEvents & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
             {
                 LogFlowFunc(("going to get display change information\n"));
-                BOOL fDisplayChangeQueried;
 
-
-                /* We got at least one event. Read the requested resolution
-                 * and try to set it until success. New events will not be seen
-                 * but a new resolution will be read in this poll loop.
+                /*
+                 * We got at least one event. (bird: What does that mean actually?  The driver wakes us up immediately upon
+                 * receiving the event.  Or are we refering to mouse & display?  In the latter case it's misleading.)
+                 *
+                 * Read the requested resolution and try to set it until success.
+                 * New events will not be seen but a new resolution will be read in
+                 * this poll loop.
+                 *
+                 * Note! The interface we're using here was added in VBox 4.2.4.  As of 2017-08-16, this
+                 *       version has been unsupported for a long time and we therefore don't bother
+                 *       implementing fallbacks using VMMDevDisplayChangeRequest2 and VMMDevDisplayChangeRequest.
                  */
-                /* Try if extended mode display information is available from the host. */
-                VMMDevDisplayChangeRequestEx displayChangeRequest = {0};
-                fExtDispSup                             = TRUE;
-                displayChangeRequest.header.size        = sizeof(VMMDevDisplayChangeRequestEx);
-                displayChangeRequest.header.version     = VMMDEV_REQUEST_HEADER_VERSION;
-                displayChangeRequest.header.requestType = VMMDevReq_GetDisplayChangeRequestEx;
-                displayChangeRequest.eventAck           = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-                fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevDisplayChangeRequestEx)), &displayChangeRequest, sizeof(VMMDevDisplayChangeRequestEx),
-                                                                 &displayChangeRequest, sizeof(VMMDevDisplayChangeRequestEx), &cbReturned, NULL);
-
-               if (!fDisplayChangeQueried)
-               {
-                    LogFlowFunc(("Extended Display Not Supported. Trying VMMDevDisplayChangeRequest2\n"));
-                    fExtDispSup = FALSE; /* Extended display Change request is not supported */
-
-                    displayChangeRequest.header.size        = sizeof(VMMDevDisplayChangeRequest2);
-                    displayChangeRequest.header.version     = VMMDEV_REQUEST_HEADER_VERSION;
-                    displayChangeRequest.header.requestType = VMMDevReq_GetDisplayChangeRequest2;
-                    displayChangeRequest.eventAck           = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-                    fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevDisplayChangeRequest2)), &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2),
-                                                             &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2), &cbReturned, NULL);
-                    displayChangeRequest.cxOrigin = 0;
-                    displayChangeRequest.cyOrigin = 0;
-                    displayChangeRequest.fChangeOrigin = 0;
-                    displayChangeRequest.fEnabled = 1; /* Always Enabled for old VMs on Host.*/
-                }
-
-                if (!fDisplayChangeQueried)
-                {
-                    LogFlowFunc(("Extended Display Not Supported. Trying VMMDevDisplayChangeRequest\n"));
-                    fExtDispSup = FALSE; /*Extended display Change request is not supported */
-                    /* Try the old version of the request for old VBox hosts. */
-                    displayChangeRequest.header.size        = sizeof(VMMDevDisplayChangeRequest);
-                    displayChangeRequest.header.version     = VMMDEV_REQUEST_HEADER_VERSION;
-                    displayChangeRequest.header.requestType = VMMDevReq_GetDisplayChangeRequest;
-                    displayChangeRequest.eventAck           = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-                    fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevDisplayChangeRequest)), &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest),
-                                                             &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest), &cbReturned, NULL);
-                    displayChangeRequest.display = 0;
-                    displayChangeRequest.cxOrigin = 0;
-                    displayChangeRequest.cyOrigin = 0;
-                    displayChangeRequest.fChangeOrigin = 0;
-                    displayChangeRequest.fEnabled = 1; /* Always Enabled for old VMs on Host.*/
-                }
-
-                if (fDisplayChangeQueried)
+                uint32_t cx             = 0;
+                uint32_t cy             = 0;
+                uint32_t cBits          = 0;
+                uint32_t iDisplay       = 0;
+                uint32_t cxOrigin       = 0;
+                uint32_t cyOrigin       = 0;
+                bool     fChangeOrigin  = false;
+                bool     fEnabled       = false;
+                rc = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBits, &iDisplay, &cxOrigin, &cyOrigin, &fEnabled, &fChangeOrigin,
+                                                   true /*fAck*/);
+                if (RT_SUCCESS(rc))
                 {
                     /* Try to set the requested video mode. Repeat until it is successful or is rejected by the driver. */
-                    LogFlowFunc(("DisplayChangeReqEx parameters  aDisplay=%d x xRes=%d x yRes=%d x bpp=%d x SecondayMonEnb=%d x NewOriginX=%d x NewOriginY=%d x ChangeOrigin=%d\n",
-                        displayChangeRequest.display,
-                        displayChangeRequest.xres,
-                        displayChangeRequest.yres,
-                        displayChangeRequest.bpp,
-                        displayChangeRequest.fEnabled,
-                        displayChangeRequest.cxOrigin,
-                        displayChangeRequest.cyOrigin,
-                        displayChangeRequest.fChangeOrigin));
+                    LogFlowFunc(("DisplayChangeReqEx parameters  iDisplay=%d x cx=%d x cy=%d x cBits=%d x SecondayMonEnb=%d x NewOriginX=%d x NewOriginY=%d x ChangeOrigin=%d\n",
+                                 iDisplay, cx, cy, cBits, fEnabled, cxOrigin, cyOrigin, fChangeOrigin));
 
                     for (;;)
                     {
-                        VBOXDISPLAY_DRIVER_TYPE enmDriverType = getVBoxDisplayDriverType (pCtx);
-
+                        VBOXDISPLAY_DRIVER_TYPE enmDriverType = getVBoxDisplayDriverType(pCtx);
                         if (enmDriverType == VBOXDISPLAY_DRIVER_TYPE_UNKNOWN)
                         {
                             LogFlowFunc(("vboxDisplayDriver is not active\n"));
@@ -929,16 +878,15 @@ DECLCALLBACK(int) VBoxDisplayWorker(void *pInstance, bool volatile *pfShutdown)
                         {
                             LogFlowFunc(("Detected W2K or later\n"));
                             if (!ResizeDisplayDevice(pCtx,
-                                                        displayChangeRequest.display,
-                                                        displayChangeRequest.xres,
-                                                        displayChangeRequest.yres,
-                                                        displayChangeRequest.bpp,
-                                                        displayChangeRequest.fEnabled,
-                                                        displayChangeRequest.cxOrigin,
-                                                        displayChangeRequest.cyOrigin,
-                                                        displayChangeRequest.fChangeOrigin,
-                                                        fExtDispSup
-                                                        ))
+                                                     iDisplay,
+                                                     cx,
+                                                     cy,
+                                                     cBits,
+                                                     fEnabled,
+                                                     cxOrigin,
+                                                     cyOrigin,
+                                                     fChangeOrigin,
+                                                     true /*fExtDispSup*/ ))
                             {
                                 LogFlowFunc(("ResizeDipspalyDevice return 0\n"));
                                 break;
@@ -948,10 +896,7 @@ DECLCALLBACK(int) VBoxDisplayWorker(void *pInstance, bool volatile *pfShutdown)
                         else
                         {
                             LogFlowFunc(("Detected NT\n"));
-                            ResizeDisplayDeviceNT4(
-                                displayChangeRequest.xres,
-                                displayChangeRequest.yres,
-                                displayChangeRequest.bpp);
+                            ResizeDisplayDeviceNT4(cx, cy, cBits);
                             break;
                         }
   
@@ -961,7 +906,7 @@ DECLCALLBACK(int) VBoxDisplayWorker(void *pInstance, bool volatile *pfShutdown)
                 }
             } // if (fDisplayChangeQueried)
 
-            if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED)
+            if (fEvents & VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED)
                 hlpReloadCursor();
         }
         else
@@ -979,18 +924,19 @@ DECLCALLBACK(int) VBoxDisplayWorker(void *pInstance, bool volatile *pfShutdown)
                     LogFlowFunc(("VBoxDispIfEscapeInOut returned %d\n", err)); NOREF(err);
                 }
             }
+
             /* sleep a bit to not eat too much CPU in case the above call always fails */
-            RTThreadSleep(10);
+            if (rc != VERR_TIMEOUT)
+                RTThreadSleep(10);
         }
     }
 
     /*
      * Remove event filter and graphics capability report.
      */
-    maskInfo.u32OrMask = 0;
-    maskInfo.u32NotMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
-    if (!DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
-        LogFlowFunc(("DeviceIOControl(CtlMask - not) failed\n"));
+    int rc2 = VbglR3CtlFilterMask(0 /*fOr*/, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED /*fNot*/);
+    if (RT_FAILURE(rc2))
+        LogFlowFunc(("VbglR3CtlFilterMask failed: %Rrc\n", rc2));
     PostMessage(g_hwndToolWindow, WM_VBOX_GRAPHICS_UNSUPPORTED, 0, 0);
 
     LogFlowFuncLeaveRC(rc);

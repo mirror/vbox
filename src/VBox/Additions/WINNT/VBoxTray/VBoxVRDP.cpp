@@ -329,73 +329,60 @@ static DECLCALLBACK(void) VBoxVRDPDestroy(void *pInstance)
 /**
  * Thread function to wait for and process mode change requests
  */
-static DECLCALLBACK(int) VBoxVRDPWorker(void *pInstance, bool volatile *pfShutdown)
+static DECLCALLBACK(int) VBoxVRDPWorker(void *pvInstance, bool volatile *pfShutdown)
 {
-    AssertPtrReturn(pInstance, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvInstance, VERR_INVALID_POINTER);
+    PVBOXVRDPCONTEXT pCtx = (PVBOXVRDPCONTEXT)pvInstance;
 
     LogFlowFuncEnter();
 
     /*
-     * Tell the control thread that it can continue
-     * spawning services.
+     * Tell the control thread that it can continue spawning services.
      */
     RTThreadUserSignal(RTThreadSelf());
 
-    PVBOXVRDPCONTEXT pCtx = (PVBOXVRDPCONTEXT)pInstance;
-    AssertPtr(pCtx);
-
-    HANDLE gVBoxDriver = pCtx->pEnv->hDriver;
-    VBoxGuestFilterMaskInfo maskInfo;
-    DWORD cbReturned;
-
-    maskInfo.u32OrMask = VMMDEV_EVENT_VRDP;
-    maskInfo.u32NotMask = 0;
-    if (!DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    int rc = VbglR3CtlFilterMask(VMMDEV_EVENT_VRDP, 0 /*fNot*/);
+    if (RT_FAILURE(rc))
     {
-        DWORD dwErr = GetLastError();
-        LogFlowFunc(("DeviceIOControl(CtlMask) failed with %ld, exiting\n", dwErr));
-        return RTErrConvertFromWin32(dwErr);
+        LogRel(("VbglR3CtlFilterMask(VMMDEV_EVENT_VRDP, 0) failed with %Rrc, exiting...\n"));
+        return rc;
     }
-
-    int rc = VINF_SUCCESS;
 
     for (;;)
     {
-        /* wait for the event */
-        VBoxGuestWaitEventInfo waitEvent;
-        waitEvent.u32TimeoutIn   = 5000;
-        waitEvent.u32EventMaskIn = VMMDEV_EVENT_VRDP;
-        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
+        /*
+         * Wait for the event, checking the shutdown flag both before and after the call.
+         */
+        if (*pfShutdown)
         {
-            /* are we supposed to stop? */
-            if (*pfShutdown)
-                break;
+            rc = VINF_SUCCESS;
+            break;
+        }
 
+        uint32_t fEvent = 0;
+        rc = VbglR3WaitEvent(VMMDEV_EVENT_VRDP, 5000 /*ms*/, &fEvent);
+
+        if (*pfShutdown)
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
             /* did we get the right event? */
-            if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_VRDP)
+            if (fEvent & VMMDEV_EVENT_VRDP)
             {
-                /* Call the host to get VRDP status and the experience level. */
-                VMMDevVRDPChangeRequest vrdpChangeRequest = {0};
-
-                vrdpChangeRequest.header.size            = sizeof(VMMDevVRDPChangeRequest);
-                vrdpChangeRequest.header.version         = VMMDEV_REQUEST_HEADER_VERSION;
-                vrdpChangeRequest.header.requestType     = VMMDevReq_GetVRDPChangeRequest;
-                vrdpChangeRequest.u8VRDPActive           = 0;
-                vrdpChangeRequest.u32VRDPExperienceLevel = 0;
-
-                if (DeviceIoControl (gVBoxDriver,
-                                     VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevVRDPChangeRequest)),
-                                     &vrdpChangeRequest,
-                                     sizeof(VMMDevVRDPChangeRequest),
-                                     &vrdpChangeRequest,
-                                     sizeof(VMMDevVRDPChangeRequest),
-                                     &cbReturned, NULL))
+                bool     fActive = false;
+                uint32_t uExperienceLevel = 0;
+                rc = VbglR3VrdpGetChangeRequest(&fActive, &uExperienceLevel);
+                if (RT_SUCCESS(rc))
                 {
-                    LogFlowFunc(("u8VRDPActive = %d, level %d\n", vrdpChangeRequest.u8VRDPActive, vrdpChangeRequest.u32VRDPExperienceLevel));
+                    LogFlowFunc(("u8VRDPActive = %d, level %d\n", fActive, uExperienceLevel));
 
-                    if (vrdpChangeRequest.u8VRDPActive)
+                    if (fActive)
                     {
-                        pCtx->level = vrdpChangeRequest.u32VRDPExperienceLevel;
+                        pCtx->level = uExperienceLevel;
                         vboxExperienceSet (pCtx->level);
 
                         if (pCtx->level == VRDP_EXPERIENCE_LEVEL_ZERO
@@ -436,26 +423,17 @@ static DECLCALLBACK(int) VBoxVRDPWorker(void *pInstance, bool volatile *pfShutdo
                 {
                     /* sleep a bit to not eat too much CPU in case the above call always fails */
                     RTThreadSleep(10);
-
-                    if (*pfShutdown)
-                        break;
                 }
             }
         }
+        /* sleep a bit to not eat too much CPU in case the above call always fails */
         else
-        {
-            /* sleep a bit to not eat too much CPU in case the above call always fails */
             RTThreadSleep(50);
-
-            if (*pfShutdown)
-                break;
-        }
     }
 
-    maskInfo.u32OrMask  = 0;
-    maskInfo.u32NotMask = VMMDEV_EVENT_VRDP;
-    if (!DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
-        LogFlowFunc(("DeviceIOControl(CtlMask) failed\n"));
+    int rc2 = VbglR3CtlFilterMask(0 /*fOr*/, VMMDEV_EVENT_VRDP);
+    if (RT_FAILURE(rc2))
+        LogRel(("VbglR3CtlFilterMask(0 /*fOr*/, VMMDEV_EVENT_VRDP) failed with %Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
