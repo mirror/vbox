@@ -304,23 +304,28 @@ DECLVBGL(int) VbglR0HGCMTerminate(void);
 /**
  * Connect to a service.
  *
- * @param pHandle     Pointer to variable that will hold a handle to be used
- *                    further in VbglHGCMCall and VbglHGCMClose.
- * @param pData       Connection information structure.
+ * @param pHandle           Pointer to variable that will hold a handle to be used
+ *                          further in VbglHGCMCall and VbglHGCMClose.
+ * @param pszServiceName    The service to connect to.
+ * @param pidClient         Where to return the client ID for the connection.
  *
  * @return VBox status code.
+ *
+ * @todo consider baking the client Id into the handle.
  */
-DECLVBGL(int) VbglHGCMConnect (VBGLHGCMHANDLE *pHandle, VBoxGuestHGCMConnectInfo *pData);
+DECLVBGL(int) VbglR0HGCMConnect(VBGLHGCMHANDLE *pHandle, const char *pszServiceName, HGCMCLIENTID *pidClient);
 
 /**
  * Connect to a service.
  *
  * @param handle      Handle of the connection.
- * @param pData       Disconnect request information structure.
+ * @param idClient    The ID of the client connection.
  *
  * @return VBox status code.
+ *
+ * @todo consider baking the client Id into the handle.
  */
-DECLVBGL(int) VbglHGCMDisconnect (VBGLHGCMHANDLE handle, VBoxGuestHGCMDisconnectInfo *pData);
+DECLVBGL(int) VbglR0HGCMDisconnect(VBGLHGCMHANDLE handle, HGCMCLIENTID idClient);
 
 /**
  * Call to a service.
@@ -331,7 +336,7 @@ DECLVBGL(int) VbglHGCMDisconnect (VBGLHGCMHANDLE handle, VBoxGuestHGCMDisconnect
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglHGCMCall (VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
+DECLVBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
 
 /**
  * Call to a service with user-mode data received by the calling driver from the User-Mode process.
@@ -343,7 +348,7 @@ DECLVBGL(int) VbglHGCMCall (VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData,
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglHGCMCallUserData (VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
+DECLVBGL(int) VbglR0HGCMCallUserData(VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
 
 /**
  * Call to a service with timeout.
@@ -355,7 +360,7 @@ DECLVBGL(int) VbglHGCMCallUserData (VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglHGCMCallTimed(VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfoTimed *pData, uint32_t cbData);
+DECLVBGL(int) VbglR0HGCMCallTimed(VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfoTimed *pData, uint32_t cbData);
 /** @} */
 
 /** @name Undocumented helpers for talking to the Chromium OpenGL Host Service
