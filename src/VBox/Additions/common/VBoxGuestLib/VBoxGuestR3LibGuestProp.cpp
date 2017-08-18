@@ -168,18 +168,14 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(HGCMCLIENTID idClient, const char *pszName,
         VbglHGCMParmPtrSetString(&Msg.name,  pszName);
         VbglHGCMParmPtrSetString(&Msg.value, pszValue);
         VbglHGCMParmPtrSetString(&Msg.flags, pszFlags);
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-        if (RT_SUCCESS(rc))
-            rc = Msg.hdr.result;
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     }
     else
     {
         DelProperty Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, DEL_PROP, 1);
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-        if (RT_SUCCESS(rc))
-            rc = Msg.hdr.result;
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     }
     return rc;
 }
@@ -208,18 +204,14 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(HGCMCLIENTID idClient, const char *psz
         VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, SET_PROP_VALUE, 2);
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
         VbglHGCMParmPtrSetString(&Msg.value, pszValue);
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-        if (RT_SUCCESS(rc))
-            rc = Msg.hdr.result;
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     }
     else
     {
         DelProperty Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, DEL_PROP, 1);
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-        if (RT_SUCCESS(rc))
-            rc = Msg.hdr.result;
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     }
     return rc;
 }
@@ -311,9 +303,7 @@ VBGLR3DECL(int) VbglR3GuestPropRead(HGCMCLIENTID idClient, const char *pszName,
     VbglHGCMParmUInt64Set(&Msg.timestamp, 0);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-        rc = Msg.hdr.result;
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 
     /*
      * The cbBufActual parameter is also returned on overflow so the call can
@@ -516,9 +506,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(HGCMCLIENTID idClient,
     VbglHGCMParmPtrSet(&Msg.strings, pcBuf, cbBuf);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-        rc = Msg.hdr.result;
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (   pcbBufActual
         && (    RT_SUCCESS(rc)
             ||  rc == VERR_BUFFER_OVERFLOW))
@@ -772,11 +760,7 @@ VBGLR3DECL(int) VbglR3GuestPropDelete(HGCMCLIENTID idClient, const char *pszName
     DelProperty Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, DEL_PROP, 1);
     VbglHGCMParmPtrSetString(&Msg.name, pszName);
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-        rc = Msg.hdr.result;
-
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 

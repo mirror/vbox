@@ -80,3 +80,25 @@ VBGLR3DECL(int) VbglR3HGCMDisconnect(HGCMCLIENTID idClient)
         rc = Info.result;
     return rc;
 }
+
+/**
+ * Makes a fully prepared HGCM call.
+ *
+ * @returns VBox status code.
+ * @param   pInfo           Fully prepared HGCM call info.
+ * @param   cbInfo          Size of the info.  This may sometimes be larger than
+ *                          what the parameter count indicates because of
+ *                          parameter changes between versions and such.
+ */
+VBGLR3DECL(int) VbglR3HGCMCall(VBoxGuestHGCMCallInfo *pInfo, size_t cbInfo)
+{
+    /* Expect caller to have filled in pInfo. */
+    Assert(sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter) <= cbInfo);
+    Assert(pInfo->u32ClientID != 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(cbInfo), pInfo, cbInfo);
+    if (RT_SUCCESS(rc))
+        rc = pInfo->result;
+    return rc;
+}
+

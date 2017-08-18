@@ -145,23 +145,19 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(HGCMCLIENTID idClient, bool fAutoM
         VbglHGCMParmUInt32Set(&Msg.numberOfMappings, cMappings);
         VbglHGCMParmPtrSet(&Msg.mappings, ppaMappingsTemp, cbSize);
 
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+        rc = VbglR3HGCMCall(&Msg.callInfo, sizeof(Msg));
         if (RT_SUCCESS(rc))
         {
-            rc = Msg.callInfo.result;
-            if (RT_SUCCESS(rc))
-            {
-                VbglHGCMParmUInt32Get(&Msg.numberOfMappings, pcMappings);
+            VbglHGCMParmUInt32Get(&Msg.numberOfMappings, pcMappings);
 
-                /* Do we have more mappings than we have allocated space for? */
-                if (rc == VINF_BUFFER_OVERFLOW)
-                {
-                    cMappings = *pcMappings;
-                    cbSize = cMappings * sizeof(VBGLR3SHAREDFOLDERMAPPING);
-                    void *pvNew = RTMemRealloc(ppaMappingsTemp, cbSize);
-                    AssertPtrBreakStmt(pvNew, rc = VERR_NO_MEMORY);
-                    ppaMappingsTemp = (PVBGLR3SHAREDFOLDERMAPPING)pvNew;
-                }
+            /* Do we have more mappings than we have allocated space for? */
+            if (rc == VINF_BUFFER_OVERFLOW)
+            {
+                cMappings = *pcMappings;
+                cbSize = cMappings * sizeof(VBGLR3SHAREDFOLDERMAPPING);
+                void *pvNew = RTMemRealloc(ppaMappingsTemp, cbSize);
+                AssertPtrBreakStmt(pvNew, rc = VERR_NO_MEMORY);
+                ppaMappingsTemp = (PVBGLR3SHAREDFOLDERMAPPING)pvNew;
             }
         }
     } while (rc == VINF_BUFFER_OVERFLOW);
@@ -227,15 +223,11 @@ VBGLR3DECL(int) VbglR3SharedFolderGetName(HGCMCLIENTID idClient, uint32_t u32Roo
         VbglHGCMParmUInt32Set(&Msg.root, u32Root);
         VbglHGCMParmPtrSet(&Msg.name, pString, cbString);
 
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+        rc = VbglR3HGCMCall(&Msg.callInfo, sizeof(Msg));
         if (RT_SUCCESS(rc))
         {
-            rc = Msg.callInfo.result;
-            if (RT_SUCCESS(rc))
-            {
-                *ppszName = NULL;
-                rc = RTUtf16ToUtf8(&pString->String.ucs2[0], ppszName);
-            }
+            *ppszName = NULL;
+            rc = RTUtf16ToUtf8(&pString->String.ucs2[0], ppszName);
         }
         RTMemFree(pString);
     }

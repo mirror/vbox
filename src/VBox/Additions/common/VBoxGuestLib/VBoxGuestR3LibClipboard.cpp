@@ -80,24 +80,20 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pMsg,
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.formats, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.hdr.result;
+        uint32_t u32Msg;
+        rc = VbglHGCMParmUInt32Get(&Msg.msg, &u32Msg);
         if (RT_SUCCESS(rc))
         {
-            uint32_t u32Msg;
-            rc = VbglHGCMParmUInt32Get(&Msg.msg, &u32Msg);
+            uint32_t fFormats;
+            rc = VbglHGCMParmUInt32Get(&Msg.formats, &fFormats);
             if (RT_SUCCESS(rc))
             {
-                uint32_t fFormats;
-                rc = VbglHGCMParmUInt32Get(&Msg.formats, &fFormats);
-                if (RT_SUCCESS(rc))
-                {
-                    *pMsg = u32Msg;
-                    *pfFormats = fFormats;
-                    return Msg.hdr.result;
-                }
+                *pMsg = u32Msg;
+                *pfFormats = fFormats;
+                return Msg.hdr.result;
             }
         }
     }
@@ -127,22 +123,19 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat,
     VbglHGCMParmPtrSet(&Msg.ptr, pv, cb);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.hdr.result;
-        if (RT_SUCCESS(rc))
+        uint32_t cbActual;
+        int rc2 = VbglHGCMParmUInt32Get(&Msg.size, &cbActual);
+        if (RT_SUCCESS(rc2))
         {
-            uint32_t cbActual;
-            rc = VbglHGCMParmUInt32Get(&Msg.size, &cbActual);
-            if (RT_SUCCESS(rc))
-            {
-                *pcb = cbActual;
-                if (cbActual > cb)
-                    return VINF_BUFFER_OVERFLOW;
-                return Msg.hdr.result;
-            }
+            *pcb = cbActual;
+            if (cbActual > cb)
+                return VINF_BUFFER_OVERFLOW;
+            return rc;
         }
+        rc = rc2;
     }
     return rc;
 }
@@ -162,10 +155,7 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFo
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_FORMATS, 1);
     VbglHGCMParmUInt32Set(&Msg.formats, fFormats);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-        rc = Msg.hdr.result;
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -188,9 +178,6 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat
     VbglHGCMParmUInt32Set(&Msg.format, fFormat);
     VbglHGCMParmPtrSet(&Msg.ptr, pv, cb);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-        rc = Msg.hdr.result;
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 

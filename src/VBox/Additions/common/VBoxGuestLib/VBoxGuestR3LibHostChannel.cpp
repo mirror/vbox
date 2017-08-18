@@ -83,16 +83,10 @@ VBGLR3DECL(int) VbglR3HostChannelAttach(uint32_t *pu32ChannelHandle,
     VbglHGCMParmUInt32Set(&parms.flags, u32Flags);
     VbglHGCMParmUInt32Set(&parms.handle, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(parms)), &parms, sizeof(parms));
+    int rc = VbglR3HGCMCall(&parms.hdr, sizeof(parms));
 
     if (RT_SUCCESS(rc))
-    {
-        rc = parms.hdr.result;
-        if (RT_SUCCESS(rc))
-        {
-            *pu32ChannelHandle = parms.handle.u.value32;
-        }
-    }
+        *pu32ChannelHandle = parms.handle.u.value32;
 
     RTMemFree(pszCopy);
 
@@ -106,7 +100,7 @@ VBGLR3DECL(void) VbglR3HostChannelDetach(uint32_t u32ChannelHandle,
     VBGL_HGCM_HDR_INIT(&parms.hdr, u32HGCMClientId, VBOX_HOST_CHANNEL_FN_DETACH, 1);
     VbglHGCMParmUInt32Set(&parms.handle, u32ChannelHandle);
 
-    vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(parms)), &parms, sizeof(parms));
+    VbglR3HGCMCall(&parms.hdr, sizeof(parms));
 }
 
 VBGLR3DECL(int) VbglR3HostChannelSend(uint32_t u32ChannelHandle,
@@ -119,14 +113,7 @@ VBGLR3DECL(int) VbglR3HostChannelSend(uint32_t u32ChannelHandle,
     VbglHGCMParmUInt32Set(&parms.handle, u32ChannelHandle);
     VbglHGCMParmPtrSet(&parms.data, pvData, cbData);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(parms)), &parms, sizeof(parms));
-
-    if (RT_SUCCESS(rc))
-    {
-        rc = parms.hdr.result;
-    }
-
-    return rc;
+    return VbglR3HGCMCall(&parms.hdr, sizeof(parms));
 }
 
 VBGLR3DECL(int) VbglR3HostChannelRecv(uint32_t u32ChannelHandle,
@@ -143,17 +130,12 @@ VBGLR3DECL(int) VbglR3HostChannelRecv(uint32_t u32ChannelHandle,
     VbglHGCMParmUInt32Set(&parms.sizeReceived, 0);
     VbglHGCMParmUInt32Set(&parms.sizeRemaining, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(parms)), &parms, sizeof(parms));
+    int rc = VbglR3HGCMCall(&parms.hdr, sizeof(parms));
 
     if (RT_SUCCESS(rc))
     {
-        rc = parms.hdr.result;
-
-        if (RT_SUCCESS(rc))
-        {
-            *pu32SizeReceived = parms.sizeReceived.u.value32;
-            *pu32SizeRemaining = parms.sizeRemaining.u.value32;
-        }
+        *pu32SizeReceived = parms.sizeReceived.u.value32;
+        *pu32SizeRemaining = parms.sizeRemaining.u.value32;
     }
 
     return rc;
@@ -176,16 +158,11 @@ VBGLR3DECL(int) VbglR3HostChannelControl(uint32_t u32ChannelHandle,
     VbglHGCMParmPtrSet(&parms.data, pvData, cbData);
     VbglHGCMParmUInt32Set(&parms.sizeDataReturned, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(parms)), &parms, sizeof(parms));
+    int rc = VbglR3HGCMCall(&parms.hdr, sizeof(parms));
 
     if (RT_SUCCESS(rc))
     {
-        rc = parms.hdr.result;
-
-        if (RT_SUCCESS(rc))
-        {
-            *pu32SizeDataReturned = parms.sizeDataReturned.u.value32;
-        }
+        *pu32SizeDataReturned = parms.sizeDataReturned.u.value32;
     }
 
     return rc;
@@ -205,18 +182,13 @@ VBGLR3DECL(int) VbglR3HostChannelEventWait(uint32_t *pu32ChannelHandle,
     VbglHGCMParmPtrSet(&parms.parm, pvParm, cbParm);
     VbglHGCMParmUInt32Set(&parms.sizeReturned, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(parms)), &parms, sizeof(parms));
+    int rc = VbglR3HGCMCall(&parms.hdr, sizeof(parms));
 
     if (RT_SUCCESS(rc))
     {
-        rc = parms.hdr.result;
-
-        if (RT_SUCCESS(rc))
-        {
-            *pu32ChannelHandle = parms.handle.u.value32;
-            *pu32EventId = parms.id.u.value32;
-            *pu32SizeReturned = parms.sizeReturned.u.value32;
-        }
+        *pu32ChannelHandle = parms.handle.u.value32;
+        *pu32EventId = parms.id.u.value32;
+        *pu32SizeReturned = parms.sizeReturned.u.value32;
     }
 
     return rc;
@@ -230,14 +202,7 @@ VBGLR3DECL(int) VbglR3HostChannelEventCancel(uint32_t u32ChannelHandle,
     VBoxHostChannelEventCancel parms;
     VBGL_HGCM_HDR_INIT(&parms.hdr, u32HGCMClientId, VBOX_HOST_CHANNEL_FN_EVENT_CANCEL, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(parms)), &parms, sizeof(parms));
-
-    if (RT_SUCCESS(rc))
-    {
-        rc = parms.hdr.result;
-    }
-
-    return rc;
+    return VbglR3HGCMCall(&parms.hdr, sizeof(parms));
 }
 
 VBGLR3DECL(int) VbglR3HostChannelQuery(const char *pszName,
@@ -267,16 +232,11 @@ VBGLR3DECL(int) VbglR3HostChannelQuery(const char *pszName,
     VbglHGCMParmPtrSet(&parms.data, pvData, cbData);
     VbglHGCMParmUInt32Set(&parms.sizeDataReturned, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(parms)), &parms, sizeof(parms));
+    int rc = VbglR3HGCMCall(&parms.hdr, sizeof(parms));
 
     if (RT_SUCCESS(rc))
     {
-        rc = parms.hdr.result;
-
-        if (RT_SUCCESS(rc))
-        {
-            *pu32SizeDataReturned = parms.sizeDataReturned.u.value32;
-        }
+        *pu32SizeDataReturned = parms.sizeDataReturned.u.value32;
     }
 
     RTMemFree(pszCopy);

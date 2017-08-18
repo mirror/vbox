@@ -20,7 +20,6 @@
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/HostServices/VBoxCrOpenGLSvc.h>
-#include "../../common/VBoxGuestLib/VBGLR3Internal.h" /* HACK ALERT! Using vbglR3DoIOCtl directly!! */
 
 #include <stdlib.h>
 
@@ -46,8 +45,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     VBGL_HGCM_HDR_INIT(&caps.hdr, idClient, SHCRGL_GUEST_FN_GET_CAPS_LEGACY, SHCRGL_CPARMS_GET_CAPS_LEGACY);
     caps.Caps.type       = VMMDevHGCMParmType_32bit;
     caps.Caps.u.value32  = 0;
-
-    rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(caps)), &caps, sizeof(caps));
+    rc = VbglR3HGCMCall(&caps.hdr, sizeof(caps));
     if (RT_FAILURE(rc))
         exit(1);
     if (caps.Caps.u.value32 & CR_VBOX_CAP_HOST_CAPS_NOT_SUFFICIENT)

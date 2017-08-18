@@ -88,7 +88,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *puMsg, u
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.num_parms, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
         rc = VbglHGCMParmUInt32Get(&Msg.msg, puMsg);
@@ -127,10 +127,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId, uint32_t uValue,
     VbglHGCMParmUInt32Set(&Msg.mask_remove, uMaskRemove);
     VbglHGCMParmUInt32Set(&Msg.flags, 0 /* Flags, unused */);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-        rc = Msg.hdr.result;
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -147,10 +144,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterUnset(uint32_t uClientId)
     VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_MSG_FILTER_UNSET, 1);
     VbglHGCMParmUInt32Set(&Msg.flags, 0 /* Flags, unused */);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-        rc = Msg.hdr.result;
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -176,14 +170,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgReplyEx(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.type, uType);
     VbglHGCMParmPtrSet(&Msg.payload, pvPayload, cbPayload);
 
-    int rc2 = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc3 = Msg.hdr.result;
-        if (RT_FAILURE(rc3))
-            rc2 = rc3;
-    }
-    return rc2;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -202,7 +189,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t uClientId)
     VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_MSG_SKIP, 1);
     VbglHGCMParmUInt32Set(&Msg.flags, 0 /* Flags, unused */);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
 
@@ -220,14 +207,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t uClientId)
 {
     HGCMMsgCancelPendingWaits Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_CANCEL_PENDING_WAITS, 0);
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-            rc = rc2;
-    }
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -249,15 +229,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.flags, fFlags);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-            rc = rc2;
-    }
-
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -271,14 +243,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32
     VbglHGCMParmUInt32Set(&Msg.type, uType);
     VbglHGCMParmUInt32Set(&Msg.result, uResult);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-            rc = rc2;
-    }
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -313,23 +278,15 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmPtrSet(&Msg.domain, pszDomain, cbDomain);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.protocol.GetUInt32(puProtocol);
-            Msg.flags.GetUInt32(pfFlags);
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.protocol.GetUInt32(puProtocol);
+        Msg.flags.GetUInt32(pfFlags);
 
-            if (pidSession)
-                *pidSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
-        }
+        if (pidSession)
+            *pidSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
     }
 
     return rc;
@@ -354,22 +311,14 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.flags.GetUInt32(pfFlags);
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.flags.GetUInt32(pfFlags);
 
-            if (pidSession)
-                *pidSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
-        }
+        if (pidSession)
+            *pidSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
     }
 
     return rc;
@@ -397,19 +346,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
     VbglHGCMParmPtrSet(&Msg.dest, pszDest, cbDest);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.flags.GetUInt32(pfFlags);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.flags.GetUInt32(pfFlags);
     }
     return rc;
 }
@@ -478,31 +419,23 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX    pCtx,
         VbglHGCMParmPtrSet(&Msg.u.v2.affinity, puAffinity, cbAffinity);
     }
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.flags.GetUInt32(pfFlags);
+        Msg.num_args.GetUInt32(pcArgs);
+        Msg.num_env.GetUInt32(pcEnvVars);
+        Msg.cb_env.GetUInt32(pcbEnv);
+        if (pCtx->uProtocol < 2)
         {
-            rc = rc2;
+            Msg.u.v1.timeout.GetUInt32(puTimeoutMS);
         }
         else
         {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.flags.GetUInt32(pfFlags);
-            Msg.num_args.GetUInt32(pcArgs);
-            Msg.num_env.GetUInt32(pcEnvVars);
-            Msg.cb_env.GetUInt32(pcbEnv);
-            if (pCtx->uProtocol < 2)
-            {
-                Msg.u.v1.timeout.GetUInt32(puTimeoutMS);
-            }
-            else
-            {
-                Msg.u.v2.timeout.GetUInt32(puTimeoutMS);
-                Msg.u.v2.priority.GetUInt32(puPriority);
-                Msg.u.v2.num_affinity.GetUInt32(pcAffinity);
-            }
+            Msg.u.v2.timeout.GetUInt32(puTimeoutMS);
+            Msg.u.v2.priority.GetUInt32(puPriority);
+            Msg.u.v2.num_affinity.GetUInt32(pcAffinity);
         }
     }
     return rc;
@@ -534,21 +467,13 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.pid.GetUInt32(puPID);
-            Msg.handle.GetUInt32(puHandle);
-            Msg.flags.GetUInt32(pfFlags);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.pid.GetUInt32(puPID);
+        Msg.handle.GetUInt32(puHandle);
+        Msg.flags.GetUInt32(pfFlags);
     }
     return rc;
 }
@@ -584,21 +509,13 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX  pCtx,
     VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.pid.GetUInt32(puPID);
-            Msg.flags.GetUInt32(pfFlags);
-            Msg.size.GetUInt32(pcbSize);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.pid.GetUInt32(puPID);
+        Msg.flags.GetUInt32(pfFlags);
+        Msg.size.GetUInt32(pcbSize);
     }
     return rc;
 }
@@ -621,19 +538,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetRemove(PVBGLR3GUESTCTRLCMDCTX     pCtx,
     VbglHGCMParmPtrSet(&Msg.path, pszPath, cbPath);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.flags.GetUInt32(pfFlags);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.flags.GetUInt32(pfFlags);
     }
     return rc;
 }
@@ -671,20 +580,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLCMDCTX      pCtx,
     VbglHGCMParmUInt32Set(&Msg.creationmode, 0);
     VbglHGCMParmUInt64Set(&Msg.offset, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.creationmode.GetUInt32(puCreationMode);
-            Msg.offset.GetUInt64(poffAt);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.creationmode.GetUInt32(puCreationMode);
+        Msg.offset.GetUInt64(poffAt);
     }
     return rc;
 }
@@ -702,19 +603,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.handle.GetUInt32(puHandle);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.handle.GetUInt32(puHandle);
     }
     return rc;
 }
@@ -735,20 +628,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.handle.GetUInt32(puHandle);
-            Msg.size.GetUInt32(puToRead);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.handle.GetUInt32(puHandle);
+        Msg.size.GetUInt32(puToRead);
     }
     return rc;
 }
@@ -770,21 +655,13 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetReadAt(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.offset, 0);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.handle.GetUInt32(puHandle);
-            Msg.offset.GetUInt64(poffAt);
-            Msg.size.GetUInt32(puToRead);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.handle.GetUInt32(puHandle);
+        Msg.offset.GetUInt64(poffAt);
+        Msg.size.GetUInt32(puToRead);
     }
     return rc;
 }
@@ -808,20 +685,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWrite(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_
     VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.handle.GetUInt32(puHandle);
-            Msg.size.GetUInt32(pcbSize);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.handle.GetUInt32(puHandle);
+        Msg.size.GetUInt32(pcbSize);
     }
     return rc;
 }
@@ -846,21 +715,13 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLCMDCTX pCtx, uint3
     VbglHGCMParmUInt32Set(&Msg.size, 0);
     VbglHGCMParmUInt32Set(&Msg.offset, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.handle.GetUInt32(puHandle);
-            Msg.size.GetUInt32(pcbSize);
-            Msg.offset.GetUInt64(poffAt);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.handle.GetUInt32(puHandle);
+        Msg.size.GetUInt32(pcbSize);
+        Msg.offset.GetUInt64(poffAt);
     }
     return rc;
 }
@@ -883,21 +744,13 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetSeek(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.method, 0);
     VbglHGCMParmUInt64Set(&Msg.offset, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.handle.GetUInt32(puHandle);
-            Msg.method.GetUInt32(puSeekMethod);
-            Msg.offset.GetUInt64(poffAt);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.handle.GetUInt32(puHandle);
+        Msg.method.GetUInt32(puSeekMethod);
+        Msg.offset.GetUInt64(poffAt);
     }
     return rc;
 }
@@ -915,19 +768,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetTell(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.handle.GetUInt32(puHandle);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.handle.GetUInt32(puHandle);
     }
     return rc;
 }
@@ -945,19 +790,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetTerminate(PVBGLR3GUESTCTRLCMDCTX pCtx, uin
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.pid.GetUInt32(puPID);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.pid.GetUInt32(puPID);
     }
     return rc;
 }
@@ -978,21 +815,13 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetWaitFor(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
     VbglHGCMParmUInt32Set(&Msg.timeout, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-        {
-            rc = rc2;
-        }
-        else
-        {
-            Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.pid.GetUInt32(puPID);
-            Msg.flags.GetUInt32(puWaitFlags);
-            Msg.timeout.GetUInt32(puTimeoutMS);
-        }
+        Msg.context.GetUInt32(&pCtx->uContextID);
+        Msg.pid.GetUInt32(puPID);
+        Msg.flags.GetUInt32(puWaitFlags);
+        Msg.timeout.GetUInt32(puTimeoutMS);
     }
     return rc;
 }
@@ -1010,14 +839,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
     VbglHGCMParmUInt32Set(&Msg.u.open.handle, uFileHandle);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-            rc = rc2;
-    }
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -1032,14 +854,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbClose(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_CLOSE);
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-            rc = rc2;
-    }
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -1053,14 +868,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbError(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
     VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_ERROR);
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-            rc = rc2;
-    }
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -1077,14 +885,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbRead(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
     VbglHGCMParmPtrSet(&Msg.u.read.data, pvData, cbData);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-            rc = rc2;
-    }
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -1100,14 +901,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbWrite(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
     VbglHGCMParmUInt32Set(&Msg.u.write.written, uWritten);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-            rc = rc2;
-    }
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -1123,14 +917,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbSeek(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
     VbglHGCMParmUInt64Set(&Msg.u.seek.offset, uOffActual);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-            rc = rc2;
-    }
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -1146,14 +933,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbTell(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
     VbglHGCMParmUInt64Set(&Msg.u.tell.offset, uOffActual);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-            rc = rc2;
-    }
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -1177,14 +957,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatus(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.flags, fFlags);
     VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-            rc = rc2;
-    }
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -1208,14 +981,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcCbOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.flags, fFlags);
     VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-            rc = rc2;
-    }
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
@@ -1239,13 +1005,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatusInput(PVBGLR3GUESTCTRLCMDCTX pCtx,
     VbglHGCMParmUInt32Set(&Msg.flags, fFlags);
     VbglHGCMParmUInt32Set(&Msg.written, cbWritten);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = Msg.hdr.result;
-        if (RT_FAILURE(rc2))
-            rc = rc2;
-    }
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
