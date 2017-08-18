@@ -50,21 +50,7 @@ using namespace guestControl;
  */
 VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *pidClient)
 {
-    VBoxGuestHGCMConnectInfo Info;
-    Info.result = VERR_WRONG_ORDER;
-    Info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-    RT_ZERO(Info.Loc.u);
-    strcpy(Info.Loc.u.host.achName, "VBoxGuestControlSvc");
-    Info.u32ClientID = UINT32_MAX;  /* try make valgrind shut up. */
-
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CONNECT, &Info, sizeof(Info));
-    if (RT_SUCCESS(rc))
-    {
-        rc = Info.result;
-        if (RT_SUCCESS(rc))
-            *pidClient = Info.u32ClientID;
-    }
-    return rc;
+    return VbglR3HGCMConnect("VBoxGuestControlSvc", pidClient);
 }
 
 

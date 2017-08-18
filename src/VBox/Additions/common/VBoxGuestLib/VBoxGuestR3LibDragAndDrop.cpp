@@ -1275,32 +1275,13 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     /* Initialize header */
-    VBoxGuestHGCMConnectInfo Info;
-    RT_ZERO(Info.Loc.u);
-    Info.result      = VERR_WRONG_ORDER;
-    Info.u32ClientID = UINT32_MAX;  /* try make valgrind shut up. */
-    Info.Loc.type    = VMMDevHGCMLoc_LocalHost_Existing;
-
-    int rc = RTStrCopy(Info.Loc.u.host.achName, sizeof(Info.Loc.u.host.achName), "VBoxDragAndDropSvc");
+    int rc = VbglR3HGCMConnect("VBoxDragAndDropSvc", &pCtx->uClientID);
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CONNECT, &Info, sizeof(Info));
-    if (RT_SUCCESS(rc))
-    {
-        rc = Info.result;
-        if (RT_SUCCESS(rc))
-        {
-            /* Set the default protocol version to use. */
-            pCtx->uProtocol = 3;
-
-            Assert(Info.u32ClientID);
-            pCtx->uClientID = Info.u32ClientID;
-        }
-    }
-
-    if (RT_FAILURE(rc))
-        return rc;
+    /* Set the default protocol version to use. */
+    pCtx->uProtocol = 3;
+    Assert(pCtx->uClientID);
 
     /*
      * Get the VM's session ID.
