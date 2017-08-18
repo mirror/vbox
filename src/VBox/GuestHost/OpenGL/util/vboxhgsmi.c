@@ -15,6 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#error "Unused? If so, it's out of date wrt I/O controls."
+
 //#define IN_GUEST
 #ifdef IN_GUEST /* entire file */
 
