@@ -1505,14 +1505,14 @@ VBGLR3DECL(int) VbglR3DnDHGSendProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uSt
     RT_ZERO(Msg);
     if (pCtx->uProtocol < 3)
     {
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, uStatus, 3); /** @todo r=bird: Do we really mean to execute 'uStatus' here? */
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_HG_EVT_PROGRESS, 3);
         Msg.u.v1.uStatus.SetUInt32(uStatus);
         Msg.u.v1.uPercent.SetUInt32(uPercent);
         Msg.u.v1.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
     }
     else
     {
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, uStatus, 4); /** @todo r=bird: Do we really mean to execute 'uStatus' here? */
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_HG_EVT_PROGRESS, 4);
         /** @todo Context ID not used yet. */
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.uStatus.SetUInt32(uStatus);
