@@ -583,10 +583,10 @@ static bool _crVBoxHGCMWriteBytes(CRConnection *conn, const void *buf, uint32_t 
 static int crVBoxHGCMCall(CRConnection *conn, VBoxGuestHGCMCallInfo *pData, unsigned cbData)
 {
 #ifdef IN_GUEST
+    int rc;
 # ifndef VBOX_WITH_CRHGSMI
     RT_NOREF(conn);
 # else
-    int rc;
     PCRVBOXHGSMI_CLIENT pClient = g_crvboxhgcm.bHgsmiOn ? _crVBoxHGSMIClientGet(conn) : NULL;
     if (pClient)
         rc = VBoxCrHgsmiCtlConCall(pClient->pHgsmi, pData, cbData);
@@ -599,7 +599,7 @@ static int crVBoxHGCMCall(CRConnection *conn, VBoxGuestHGCMCallInfo *pData, unsi
         else
         {
             crWarning("vboxCall failed with VBox status code %Rrc\n", rc);
-# if 1//ndef RT_OS_WINDOWS
+# ifndef RT_OS_WINDOWS
             if (rc == VERR_INTERRUPTED)
             {
                 /* Not sure why we're doing the sleep stuff here.  The original coder didn't
