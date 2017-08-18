@@ -1056,7 +1056,7 @@ static DECLCALLBACK(OSStatus) coreAudioDefaultDeviceChangedCb(AudioObjectID prop
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
     if (pfnCallback)
-        /* Ignore rc */ pfnCallback(pThis->pDrvIns, PDMAUDIOCBTYPE_DEVICES_CHANGED, NULL, 0);
+        /* Ignore rc */ pfnCallback(pThis->pDrvIns, PDMAUDIOBACKENDCBTYPE_DEVICES_CHANGED, NULL, 0);
 #endif
 
     return noErr;
