@@ -2648,7 +2648,7 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
 
 #else /* VBOX_WITH_AUDIO_HDA_CALLBACKS */
 
-static DECLCALLBACK(int) hdaCallbackInput(PDMAUDIOCBTYPE enmType, void *pvCtx, size_t cbCtx, void *pvUser, size_t cbUser)
+static DECLCALLBACK(int) hdaCallbackInput(PDMAUDIOBACKENDCBTYPE enmType, void *pvCtx, size_t cbCtx, void *pvUser, size_t cbUser)
 {
     Assert(enmType == PDMAUDIOCALLBACKTYPE_INPUT);
     AssertPtrReturn(pvCtx,  VERR_INVALID_POINTER);
@@ -2665,7 +2665,7 @@ static DECLCALLBACK(int) hdaCallbackInput(PDMAUDIOCBTYPE enmType, void *pvCtx, s
     return hdaStreamDoDMA(pCtx->pThis, PI_INDEX, UINT32_MAX, &pData->cbOutRead);
 }
 
-static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOCBTYPE enmType, void *pvCtx, size_t cbCtx, void *pvUser, size_t cbUser)
+static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOBACKENDCBTYPE enmType, void *pvCtx, size_t cbCtx, void *pvUser, size_t cbUser)
 {
     Assert(enmType == PDMAUDIOCALLBACKTYPE_OUTPUT);
     AssertPtrReturn(pvCtx,  VERR_INVALID_POINTER);
@@ -4770,7 +4770,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             if (pDrv->fFlags != PDMAUDIODRVFLAGS_PRIMARY)
                 continue;
 
-            PDMAUDIOCALLBACK AudioCallbacks[2];
+            PDMAUDIOCBRECORD AudioCallbacks[2];
 
             HDACALLBACKCTX Ctx = { pThis, pDrv };
 

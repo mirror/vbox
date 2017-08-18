@@ -3695,7 +3695,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
                 continue;
 
-            PDMAUDIOCALLBACK AudioCallbacks[2];
+            PDMAUDIOCBRECORD AudioCallbacks[2];
 
             AC97CALLBACKCTX Ctx = { pThis, pDrv };
 

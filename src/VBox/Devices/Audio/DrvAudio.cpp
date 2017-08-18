@@ -1858,18 +1858,18 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
     return rc;
 }
 
-#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
 /**
  * Duplicates an audio callback.
  *
  * @returns Pointer to duplicated callback, or NULL on failure.
  * @param   pCB                 Callback to duplicate.
  */
-static PPDMAUDIOCALLBACK drvAudioCallbackDuplicate(PPDMAUDIOCALLBACK pCB)
+static PPDMAUDIOCBRECORD drvAudioCallbackDuplicate(PPDMAUDIOCBRECORD pCB)
 {
     AssertPtrReturn(pCB, NULL);
 
-    PPDMAUDIOCALLBACK pCBCopy = (PPDMAUDIOCALLBACK)RTMemDup((void *)pCB, sizeof(PDMAUDIOCALLBACK));
+    PPDMAUDIOCBRECORD pCBCopy = (PPDMAUDIOCBRECORD)RTMemDup((void *)pCB, sizeof(PDMAUDIOCBRECORD));
     if (!pCBCopy)
         return NULL;
 
@@ -1893,7 +1893,7 @@ static PPDMAUDIOCALLBACK drvAudioCallbackDuplicate(PPDMAUDIOCALLBACK pCB)
  *
  * @param   pCB                 Callback to destroy.
  */
-static void drvAudioCallbackDestroy(PPDMAUDIOCALLBACK pCB)
+static void drvAudioCallbackDestroy(PPDMAUDIOCBRECORD pCB)
 {
     if (!pCB)
         return;
@@ -1911,7 +1911,7 @@ static void drvAudioCallbackDestroy(PPDMAUDIOCALLBACK pCB)
  * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnRegisterCallbacks}
  */
 static DECLCALLBACK(int) drvAudioRegisterCallbacks(PPDMIAUDIOCONNECTOR pInterface,
-                                                   PPDMAUDIOCALLBACK paCallbacks, size_t cCallbacks)
+                                                   PPDMAUDIOCBRECORD paCallbacks, size_t cCallbacks)
 {
     AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
     AssertPtrReturn(paCallbacks, VERR_INVALID_POINTER);
@@ -1925,26 +1925,38 @@ static DECLCALLBACK(int) drvAudioRegisterCallbacks(PPDMIAUDIOCONNECTOR pInterfac
 
     for (size_t i = 0; i < cCallbacks; i++)
     {
-        PPDMAUDIOCALLBACK pCB = drvAudioCallbackDuplicate(&paCallbacks[i]);
+        PPDMAUDIOCBRECORD pCB = drvAudioCallbackDuplicate(&paCallbacks[i]);
         if (!pCB)
         {
             rc = VERR_NO_MEMORY;
             break;
         }
 
-        switch (pCB->enmType)
+        switch (pCB->enmSource)
         {
-            case PDMAUDIOCBTYPE_DATA_INPUT:
-                RTListAppend(&pThis->lstCBIn, &pCB->Node);
-                break;
+            case PDMAUDIOCBSOURCE_DEVICE:
+            {
+                switch (pCB->Device.enmType)
+                {
+                    case PDMAUDIODEVICECBTYPE_DATA_INPUT:
+                        RTListAppend(&pThis->lstCBIn, &pCB->Node);
+                        break;
 
-            case PDMAUDIOCBTYPE_DATA_OUTPUT:
-                RTListAppend(&pThis->lstCBOut, &pCB->Node);
+                    case PDMAUDIODEVICECBTYPE_DATA_OUTPUT:
+                        RTListAppend(&pThis->lstCBOut, &pCB->Node);
+                        break;
+
+                    default:
+                        AssertMsgFailed(("Not supported\n"));
+                        break;
+                }
+
                 break;
+            }
 
             default:
-                AssertMsgFailed(("Not supported\n"));
-                break;
+               AssertMsgFailed(("Not supported\n"));
+               break;
         }
     }
 
@@ -1956,52 +1968,7 @@ static DECLCALLBACK(int) drvAudioRegisterCallbacks(PPDMIAUDIOCONNECTOR pInterfac
 
     return rc;
 }
-
-/**
- * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnCallback}
- */
-static DECLCALLBACK(int) drvAudioCallback(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIOCBTYPE enmType,
-                                          void *pvUser, size_t cbUser)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvUser,     VERR_INVALID_POINTER);
-    AssertReturn(cbUser,        VERR_INVALID_PARAMETER);
-
-    PDRVAUDIO     pThis       = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-    PRTLISTANCHOR pListAnchor = NULL;
-
-    switch (enmType)
-    {
-        case PDMAUDIOCBTYPE_DATA_INPUT:
-            pListAnchor = &pThis->lstCBIn;
-            break;
-
-        case PDMAUDIOCBTYPE_DATA_OUTPUT:
-            pListAnchor = &pThis->lstCBOut;
-            break;
-
-        default:
-            AssertMsgFailed(("Not supported\n"));
-            break;
-    }
-
-    if (pListAnchor)
-    {
-        PPDMAUDIOCALLBACK pCB;
-        RTListForEach(pListAnchor, pCB, PDMAUDIOCALLBACK, Node)
-        {
-            Assert(pCB->enmType == enmType);
-            int rc2 = pCB->pfnCallback(enmType, pCB->pvCtx, pCB->cbCtx, pvUser, cbUser);
-            if (RT_FAILURE(rc2))
-                LogFunc(("Failed with %Rrc\n", rc2));
-        }
-
-        return VINF_SUCCESS;
-    }
-
-    return VERR_NOT_SUPPORTED;
-}
-#endif /* VBOX_WITH_AUDIO_DEVICE_CALLBACKS */
+#endif /* VBOX_WITH_AUDIO_CALLBACKS */
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
 /**
@@ -2014,7 +1981,7 @@ static DECLCALLBACK(int) drvAudioCallback(PPDMIAUDIOCONNECTOR pInterface, PDMAUD
  * @copydoc FNPDMHOSTAUDIOCALLBACK
  */
 static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns,
-                                                 PDMAUDIOCBTYPE enmType, void *pvUser, size_t cbUser)
+                                                 PDMAUDIOBACKENDCBTYPE enmType, void *pvUser, size_t cbUser)
 {
     AssertPtrReturn(pDrvIns, VERR_INVALID_POINTER);
     RT_NOREF(pvUser, cbUser);
@@ -2033,7 +2000,7 @@ static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns,
 
     switch (enmType)
     {
-        case PDMAUDIOCBTYPE_DEVICES_CHANGED:
+        case PDMAUDIOBACKENDCBTYPE_DEVICES_CHANGED:
             LogRel(("Audio: Host audio device configuration has changed\n"));
             rc = drvAudioScheduleReInitInternal(pThis);
             break;
@@ -3178,7 +3145,7 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
 
     RTListInit(&pThis->lstHstStreams);
     RTListInit(&pThis->lstGstStreams);
-#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
     RTListInit(&pThis->lstCBIn);
     RTListInit(&pThis->lstCBOut);
 #endif
@@ -3206,9 +3173,8 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     pThis->IAudioConnector.pfnStreamSetVolume   = drvAudioStreamSetVolume;
     pThis->IAudioConnector.pfnStreamPlay        = drvAudioStreamPlay;
     pThis->IAudioConnector.pfnStreamCapture     = drvAudioStreamCapture;
-#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
     pThis->IAudioConnector.pfnRegisterCallbacks = drvAudioRegisterCallbacks;
-    pThis->IAudioConnector.pfnCallback          = drvAudioCallback;
 #endif
 
     /*
@@ -3338,15 +3304,15 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
     /* Sanity. */
     Assert(RTListIsEmpty(&pThis->lstGstStreams));
 
-#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
     /*
-     * Destroy device callbacks, if any.
+     * Destroy callbacks, if any.
      */
-    PPDMAUDIOCALLBACK pCB, pCBNext;
-    RTListForEachSafe(&pThis->lstCBIn, pCB, pCBNext, PDMAUDIOCALLBACK, Node)
+    PPDMAUDIOCBRECORD pCB, pCBNext;
+    RTListForEachSafe(&pThis->lstCBIn, pCB, pCBNext, PDMAUDIOCBRECORD, Node)
         drvAudioCallbackDestroy(pCB);
 
-    RTListForEachSafe(&pThis->lstCBOut, pCB, pCBNext, PDMAUDIOCALLBACK, Node)
+    RTListForEachSafe(&pThis->lstCBOut, pCB, pCBNext, PDMAUDIOCBRECORD, Node)
         drvAudioCallbackDestroy(pCB);
 #endif
 

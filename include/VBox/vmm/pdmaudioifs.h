@@ -932,51 +932,83 @@ typedef struct PDMAUDIOSTREAM
 typedef struct PDMIAUDIOCONNECTOR *PPDMIAUDIOCONNECTOR;
 
 /**
- * Audio callback types.
- * Those callbacks are being sent from the backends to the audio connector.
+ * Enumeration for an audio callback source.
  */
-typedef enum PDMAUDIOCBTYPE
+typedef enum PDMAUDIOCBSOURCE
 {
     /** Invalid, do not use. */
-    PDMAUDIOCBTYPE_INVALID = 0,
-    /** The backend's status has changed. */
-    PDMAUDIOCBTYPE_STATUS,
-    /** One or more host audio devices have changed. */
-    PDMAUDIOCBTYPE_DEVICES_CHANGED,
-    /** Data is availabe as input for passing to the device emulation. */
-    PDMAUDIOCBTYPE_DATA_INPUT,
-    /** Free data for the device emulation to write to the backend. */
-    PDMAUDIOCBTYPE_DATA_OUTPUT
-} PDMAUDIOCBTYPE;
+    PDMAUDIOCBSOURCE_INVALID    = 0,
+    /** Device emulation. */
+    PDMAUDIOCBSOURCE_DEVICE     = 1,
+    /** Audio connector interface. */
+    PDMAUDIOCBSOURCE_CONNECTOR  = 2,
+    /** Backend (lower). */
+    PDMAUDIOCBSOURCE_BACKEND    = 3,
+    /** Hack to blow the type up to 32-bit. */
+    PDMAUDIOCBSOURCE_32BIT_HACK = 0x7fffffff
+} PDMAUDIOCBSOURCE;
 
 /**
- * Callback data for audio input.
+ * Audio device callback types.
+ * Those callbacks are being sent from the audio connector ->  device emulation.
  */
-typedef struct PDMAUDIOCBDATA_DATA_INPUT
+typedef enum PDMAUDIODEVICECBTYPE
+{
+    /** Invalid, do not use. */
+    PDMAUDIODEVICECBTYPE_INVALID = 0,
+    /** Data is availabe as input for passing to the device emulation. */
+    PDMAUDIODEVICECBTYPE_DATA_INPUT,
+    /** Free data for the device emulation to write to the backend. */
+    PDMAUDIODEVICECBTYPE_DATA_OUTPUT,
+    /** Hack to blow the type up to 32-bit. */
+    PDMAUDIODEVICECBTYPE_32BIT_HACK = 0x7fffffff
+} PDMAUDIODEVICECBTYPE;
+
+/**
+ * Device callback data for audio input.
+ */
+typedef struct PDMAUDIODEVICECBDATA_DATA_INPUT
 {
     /** Input: How many bytes are availabe as input for passing
      *         to the device emulation. */
     uint32_t cbInAvail;
     /** Output: How many bytes have been read. */
     uint32_t cbOutRead;
-} PDMAUDIOCBDATA_DATA_INPUT, *PPDMAUDIOCBDATA_DATA_INPUT;
+} PDMAUDIODEVICECBDATA_DATA_INPUT, *PPDMAUDIODEVICECBDATA_DATA_INPUT;
 
 /**
- * Callback data for audio output.
+ * Device callback data for audio output.
  */
-typedef struct PDMAUDIOCBDATA_DATA_OUTPUT
+typedef struct PDMAUDIODEVICECBDATA_DATA_OUTPUT
 {
     /** Input:  How many bytes are free for the device emulation to write. */
     uint32_t cbInFree;
     /** Output: How many bytes were written by the device emulation. */
     uint32_t cbOutWritten;
-} PDMAUDIOCBDATA_DATA_OUTPUT, *PPDMAUDIOCBDATA_DATA_OUTPUT;
+} PDMAUDIODEVICECBDATA_DATA_OUTPUT, *PPDMAUDIODEVICECBDATA_DATA_OUTPUT;
+
+/**
+ * Audio backend callback types.
+ * Those callbacks are being sent from the backend -> audio connector.
+ */
+typedef enum PDMAUDIOBACKENDCBTYPE
+{
+    /** Invalid, do not use. */
+    PDMAUDIOBACKENDCBTYPE_INVALID = 0,
+    /** The backend's status has changed. */
+    PDMAUDIOBACKENDCBTYPE_STATUS,
+    /** One or more host audio devices have changed. */
+    PDMAUDIOBACKENDCBTYPE_DEVICES_CHANGED,
+    /** Hack to blow the type up to 32-bit. */
+    PDMAUDIOBACKENDCBTYPE_32BIT_HACK = 0x7fffffff
+} PDMAUDIOBACKENDCBTYPE;
 
 /** Pointer to a host audio interface. */
 typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
 
 /**
- * Host audio (backend) callback function.
+ * Host audio callback function.
+ * This function will be called from a backend to communicate with the host audio interface.
  *
  * @returns IPRT status code.
  * @param   pDrvIns             Pointer to driver instance which called us.
@@ -984,29 +1016,34 @@ typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
  * @param   pvUser              User argument.
  * @param   cbUser              Size (in bytes) of user argument.
  */
-typedef DECLCALLBACK(int) FNPDMHOSTAUDIOCALLBACK(PPDMDRVINS pDrvIns, PDMAUDIOCBTYPE enmType, void *pvUser, size_t cbUser);
+typedef DECLCALLBACK(int) FNPDMHOSTAUDIOCALLBACK(PPDMDRVINS pDrvIns, PDMAUDIOBACKENDCBTYPE enmType, void *pvUser, size_t cbUser);
 /** Pointer to a FNPDMHOSTAUDIOCALLBACK(). */
 typedef FNPDMHOSTAUDIOCALLBACK *PFNPDMHOSTAUDIOCALLBACK;
 
-#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
 /**
- * Structure for keeping a registered audio callback around.
+ * Audio callback registration record.
  */
-typedef struct PDMAUDIOCALLBACK
+typedef struct PDMAUDIOCBRECORD
 {
     /** List node. */
     RTLISTANCHOR        Node;
-    /** Callback type. */
-    PDMAUDIOCBTYPE      enmType;
+    /** Callback source. */
+    PDMAUDIOCBSOURCE    enmSource;
+    /** Callback type, based on the given source. */
+    union
+    {
+        /** Device callback stuff. */
+        struct
+        {
+            PDMAUDIODEVICECBTYPE enmType;
+        } Device;
+    };
     /** Pointer to context data. Optional. */
     void               *pvCtx;
     /** Size (in bytes) of context data.
      *  Must be 0 if pvCtx is NULL. */
     size_t              cbCtx;
-    /** Actual callback function to call. */
-    PFNPDMAUDIOCALLBACK pFn;
-} PDMAUDIOCALLBACK, *PPDMAUDIOCALLBACK;
-#endif /* VBOX_WITH_AUDIO_DEVICE_CALLBACKS */
+} PDMAUDIOCBRECORD, *PPDMAUDIOCBRECORD;
 
 #define PPDMAUDIOBACKENDSTREAM void *
 
@@ -1170,15 +1207,22 @@ typedef struct PDMIAUDIOCONNECTOR
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcFramesCaptured));
 
-#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
-    DECLR3CALLBACKMEMBER(int, pfnRegisterCallbacks, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOCALLBACK paCallbacks, size_t cCallbacks));
-    DECLR3CALLBACKMEMBER(int, pfnCallback, (PPDMIAUDIOCONNECTOR pInterface, PDMAUDIOCBTYPE enmType, void *pvUser, size_t cbUser));
-#endif
+    /**
+     * Registers (device) callbacks.
+     * This is handy for letting the device emulation know of certain events, e.g. processing input / output data
+     * or configuration changes.
+     *
+     * @returns VBox status code.
+     * @param   pInterface           Pointer to the interface structure containing the called function pointer.
+     * @param   paCallbacks          Pointer to array of callbacks to register.
+     * @param   cCallbacks           Number of callbacks to register.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRegisterCallbacks, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOCBRECORD paCallbacks, size_t cCallbacks));
 
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "FF2044D1-F8D9-4F42-BE9E-0E9AD14F4552"
+#define PDMIAUDIOCONNECTOR_IID                  "344ABC57-659E-4B21-8C25-69ED9FAD490D"
 
 /**
  * Assigns all needed interface callbacks for an audio backend.

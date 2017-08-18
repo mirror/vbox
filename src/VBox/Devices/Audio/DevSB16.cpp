@@ -2523,7 +2523,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             if (pDrv->fFlags != PDMAUDIODRVFLAGS_PRIMARY)
                 continue;
 
-            PDMAUDIOCALLBACK AudioCallbacks[2];
+            PDMAUDIOCBRECORD AudioCallbacks[2];
 
             SB16CALLBACKCTX Ctx = { pThis, pDrv };
 

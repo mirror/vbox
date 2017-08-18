@@ -120,7 +120,7 @@ typedef struct DRVAUDIO
 #endif
     /** Audio configuration settings retrieved from the backend. */
     PDMAUDIOBACKENDCFG      BackendCfg;
-#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
     /** @todo Use a map with primary key set to the callback type? */
     RTLISTANCHOR            lstCBIn;
     RTLISTANCHOR            lstCBOut;
