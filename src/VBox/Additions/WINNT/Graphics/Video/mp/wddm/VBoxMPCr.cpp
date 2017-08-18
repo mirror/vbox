@@ -839,10 +839,7 @@ static int vboxMpCrCtlConSetVersion(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32Clie
     CRVBOXHGCMSETVERSION parms;
     int rc;
 
-    parms.hdr.result      = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = u32ClientID;
-    parms.hdr.u32Function = SHCRGL_GUEST_FN_SET_VERSION;
-    parms.hdr.cParms      = SHCRGL_CPARMS_SET_VERSION;
+    VBGL_HGCM_HDR_INIT(&parms.hdr, u32ClientID, SHCRGL_GUEST_FN_SET_VERSION, SHCRGL_CPARMS_SET_VERSION);
 
     parms.vMajor.type      = VMMDevHGCMParmType_32bit;
     parms.vMajor.u.value32 = vMajor;
@@ -869,10 +866,7 @@ static int vboxMpCrCtlConGetCapsLegacy(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32C
     CRVBOXHGCMGETCAPS parms;
     int rc;
 
-    parms.hdr.result      = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = u32ClientID;
-    parms.hdr.u32Function = SHCRGL_GUEST_FN_GET_CAPS_LEGACY;
-    parms.hdr.cParms      = SHCRGL_CPARMS_GET_CAPS_LEGACY;
+    VBGL_HGCM_HDR_INIT(&parms.hdr, u32ClientID, SHCRGL_GUEST_FN_GET_CAPS_LEGACY, SHCRGL_CPARMS_GET_CAPS_LEGACY);
 
     parms.Caps.type      = VMMDevHGCMParmType_32bit;
     parms.Caps.u.value32 = 0;
@@ -909,10 +903,7 @@ static int vboxMpCrCtlConGetCapsNew(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32Clie
     CRVBOXHGCMGETCAPS parms;
     int rc;
 
-    parms.hdr.result      = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = u32ClientID;
-    parms.hdr.u32Function = SHCRGL_GUEST_FN_GET_CAPS_NEW;
-    parms.hdr.cParms      = SHCRGL_CPARMS_GET_CAPS_NEW;
+    VBGL_HGCM_HDR_INIT(&parms.hdr, u32ClientID, SHCRGL_GUEST_FN_GET_CAPS_NEW, SHCRGL_CPARMS_GET_CAPS_NEW);
 
     parms.Caps.type      = VMMDevHGCMParmType_LinAddr;
     parms.Caps.u.Pointer.u.linearAddr = (uintptr_t)pCapsInfo;
@@ -947,10 +938,7 @@ static int vboxMpCrCtlConSetPID(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID
     CRVBOXHGCMSETPID parms;
     int rc;
 
-    parms.hdr.result      = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = u32ClientID;
-    parms.hdr.u32Function = SHCRGL_GUEST_FN_SET_PID;
-    parms.hdr.cParms      = SHCRGL_CPARMS_SET_PID;
+    VBGL_HGCM_HDR_INIT(&parms.hdr, u32ClientID, SHCRGL_GUEST_FN_SET_PID, SHCRGL_CPARMS_SET_PID);
 
     parms.u64PID.type     = VMMDevHGCMParmType_64bit;
     parms.u64PID.u.value64 = (uintptr_t)PsGetCurrentProcessId();

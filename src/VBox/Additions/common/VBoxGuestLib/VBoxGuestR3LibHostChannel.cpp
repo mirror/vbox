@@ -82,12 +82,7 @@ VBGLR3DECL(int) VbglR3HostChannelAttach(uint32_t *pu32ChannelHandle,
     memcpy(pszCopy, pszName, cbName);
 
     VBoxHostChannelAttach parms;
-
-    parms.hdr.result = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = u32HGCMClientId;
-    parms.hdr.u32Function = VBOX_HOST_CHANNEL_FN_ATTACH;
-    parms.hdr.cParms = 3;
-
+    VBGL_HGCM_HDR_INIT(&parms.hdr, u32HGCMClientId, VBOX_HOST_CHANNEL_FN_ATTACH, 3);
     VbglHGCMParmPtrSet(&parms.name, pszCopy, (uint32_t)cbName);
     VbglHGCMParmUInt32Set(&parms.flags, u32Flags);
     VbglHGCMParmUInt32Set(&parms.handle, 0);
@@ -112,12 +107,7 @@ VBGLR3DECL(void) VbglR3HostChannelDetach(uint32_t u32ChannelHandle,
                                          uint32_t u32HGCMClientId)
 {
     VBoxHostChannelDetach parms;
-
-    parms.hdr.result = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = u32HGCMClientId;
-    parms.hdr.u32Function = VBOX_HOST_CHANNEL_FN_DETACH;
-    parms.hdr.cParms = 1;
-
+    VBGL_HGCM_HDR_INIT(&parms.hdr, u32HGCMClientId, VBOX_HOST_CHANNEL_FN_DETACH, 1);
     VbglHGCMParmUInt32Set(&parms.handle, u32ChannelHandle);
 
     vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(parms)), &parms, sizeof(parms));
@@ -129,12 +119,7 @@ VBGLR3DECL(int) VbglR3HostChannelSend(uint32_t u32ChannelHandle,
                                       uint32_t cbData)
 {
     VBoxHostChannelSend parms;
-
-    parms.hdr.result = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = u32HGCMClientId;
-    parms.hdr.u32Function = VBOX_HOST_CHANNEL_FN_SEND;
-    parms.hdr.cParms = 2;
-
+    VBGL_HGCM_HDR_INIT(&parms.hdr, u32HGCMClientId, VBOX_HOST_CHANNEL_FN_SEND, 2);
     VbglHGCMParmUInt32Set(&parms.handle, u32ChannelHandle);
     VbglHGCMParmPtrSet(&parms.data, pvData, cbData);
 
@@ -156,12 +141,7 @@ VBGLR3DECL(int) VbglR3HostChannelRecv(uint32_t u32ChannelHandle,
                                       uint32_t *pu32SizeRemaining)
 {
     VBoxHostChannelRecv parms;
-
-    parms.hdr.result = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = u32HGCMClientId;
-    parms.hdr.u32Function = VBOX_HOST_CHANNEL_FN_RECV;
-    parms.hdr.cParms = 4;
-
+    VBGL_HGCM_HDR_INIT(&parms.hdr, u32HGCMClientId, VBOX_HOST_CHANNEL_FN_RECV, 4);
     VbglHGCMParmUInt32Set(&parms.handle, u32ChannelHandle);
     VbglHGCMParmPtrSet(&parms.data, pvData, cbData);
     VbglHGCMParmUInt32Set(&parms.sizeReceived, 0);
@@ -193,12 +173,7 @@ VBGLR3DECL(int) VbglR3HostChannelControl(uint32_t u32ChannelHandle,
                                          uint32_t *pu32SizeDataReturned)
 {
     VBoxHostChannelControl parms;
-
-    parms.hdr.result = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = u32HGCMClientId;
-    parms.hdr.u32Function = VBOX_HOST_CHANNEL_FN_CONTROL;
-    parms.hdr.cParms = 5;
-
+    VBGL_HGCM_HDR_INIT(&parms.hdr, u32HGCMClientId, VBOX_HOST_CHANNEL_FN_CONTROL, 5);
     VbglHGCMParmUInt32Set(&parms.handle, u32ChannelHandle);
     VbglHGCMParmUInt32Set(&parms.code, u32Code);
     VbglHGCMParmPtrSet(&parms.parm, pvParm, cbParm);
@@ -228,12 +203,7 @@ VBGLR3DECL(int) VbglR3HostChannelEventWait(uint32_t *pu32ChannelHandle,
                                            uint32_t *pu32SizeReturned)
 {
     VBoxHostChannelEventWait parms;
-
-    parms.hdr.result = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = u32HGCMClientId;
-    parms.hdr.u32Function = VBOX_HOST_CHANNEL_FN_EVENT_WAIT;
-    parms.hdr.cParms = 4;
-
+    VBGL_HGCM_HDR_INIT(&parms.hdr, u32HGCMClientId, VBOX_HOST_CHANNEL_FN_EVENT_WAIT, 4);
     VbglHGCMParmUInt32Set(&parms.handle, 0);
     VbglHGCMParmUInt32Set(&parms.id, 0);
     VbglHGCMParmPtrSet(&parms.parm, pvParm, cbParm);
@@ -259,13 +229,10 @@ VBGLR3DECL(int) VbglR3HostChannelEventWait(uint32_t *pu32ChannelHandle,
 VBGLR3DECL(int) VbglR3HostChannelEventCancel(uint32_t u32ChannelHandle,
                                              uint32_t u32HGCMClientId)
 {
-    VBoxHostChannelEventCancel parms;
     RT_NOREF1(u32ChannelHandle);
 
-    parms.hdr.result = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = u32HGCMClientId;
-    parms.hdr.u32Function = VBOX_HOST_CHANNEL_FN_EVENT_CANCEL;
-    parms.hdr.cParms = 0;
+    VBoxHostChannelEventCancel parms;
+    VBGL_HGCM_HDR_INIT(&parms.hdr, u32HGCMClientId, VBOX_HOST_CHANNEL_FN_EVENT_CANCEL, 0);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(parms)), &parms, sizeof(parms));
 
@@ -297,12 +264,7 @@ VBGLR3DECL(int) VbglR3HostChannelQuery(const char *pszName,
     memcpy(pszCopy, pszName, cbName);
 
     VBoxHostChannelQuery parms;
-
-    parms.hdr.result = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = u32HGCMClientId;
-    parms.hdr.u32Function = VBOX_HOST_CHANNEL_FN_QUERY;
-    parms.hdr.cParms = 5;
-
+    VBGL_HGCM_HDR_INIT(&parms.hdr, u32HGCMClientId, VBOX_HOST_CHANNEL_FN_QUERY, 5);
     VbglHGCMParmPtrSet(&parms.name, pszCopy, (uint32_t)cbName);
     VbglHGCMParmUInt32Set(&parms.code, u32Code);
     VbglHGCMParmPtrSet(&parms.parm, pvParm, cbParm);

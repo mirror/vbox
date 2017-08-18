@@ -1145,10 +1145,7 @@ static int crVBoxHGSMISetVersion(CRConnection *conn, unsigned int vMajor, unsign
     CRVBOXHGCMSETVERSION parms;
     int rc;
 
-    parms.hdr.result      = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = conn->u32ClientID;
-    parms.hdr.u32Function = SHCRGL_GUEST_FN_SET_VERSION;
-    parms.hdr.cParms      = SHCRGL_CPARMS_SET_VERSION;
+    VBGL_HGCM_HDR_INIT(&parms.hdr, conn->u32ClientID, SHCRGL_GUEST_FN_SET_VERSION, SHCRGL_CPARMS_SET_VERSION);
 
     parms.vMajor.type      = VMMDevHGCMParmType_32bit;
     parms.vMajor.u.value32 = CR_PROTOCOL_VERSION_MAJOR;
@@ -1177,10 +1174,7 @@ static int crVBoxHGSMISetPID(CRConnection *conn, unsigned long long pid)
     CRVBOXHGCMSETPID parms;
     int rc;
 
-    parms.hdr.result      = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = conn->u32ClientID;
-    parms.hdr.u32Function = SHCRGL_GUEST_FN_SET_PID;
-    parms.hdr.cParms      = SHCRGL_CPARMS_SET_PID;
+    VBGL_HGCM_HDR_INIT(&parms.hdr, conn->u32ClientID, SHCRGL_GUEST_FN_SET_PID, SHCRGL_CPARMS_SET_PID);
 
     parms.u64PID.type     = VMMDevHGCMParmType_64bit;
     parms.u64PID.u.value64 = pid;

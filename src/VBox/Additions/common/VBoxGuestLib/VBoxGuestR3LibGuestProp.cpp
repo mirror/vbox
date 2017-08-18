@@ -184,11 +184,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(HGCMCLIENTID idClient, const char *pszName,
     if (pszValue != NULL)
     {
         SetProperty Msg;
-
-        Msg.hdr.result = VERR_WRONG_ORDER;
-        Msg.hdr.u32ClientID = idClient;
-        Msg.hdr.u32Function = SET_PROP_VALUE;
-        Msg.hdr.cParms = 3;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, SET_PROP_VALUE, 3);
         VbglHGCMParmPtrSetString(&Msg.name,  pszName);
         VbglHGCMParmPtrSetString(&Msg.value, pszValue);
         VbglHGCMParmPtrSetString(&Msg.flags, pszFlags);
@@ -199,11 +195,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(HGCMCLIENTID idClient, const char *pszName,
     else
     {
         DelProperty Msg;
-
-        Msg.hdr.result = VERR_WRONG_ORDER;
-        Msg.hdr.u32ClientID = idClient;
-        Msg.hdr.u32Function = DEL_PROP;
-        Msg.hdr.cParms = 1;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, DEL_PROP, 1);
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
@@ -233,11 +225,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(HGCMCLIENTID idClient, const char *psz
     if (pszValue != NULL)
     {
         SetPropertyValue Msg;
-
-        Msg.hdr.result = VERR_WRONG_ORDER;
-        Msg.hdr.u32ClientID = idClient;
-        Msg.hdr.u32Function = SET_PROP_VALUE;
-        Msg.hdr.cParms = 2;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, SET_PROP_VALUE, 2);
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
         VbglHGCMParmPtrSetString(&Msg.value, pszValue);
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -247,11 +235,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(HGCMCLIENTID idClient, const char *psz
     else
     {
         DelProperty Msg;
-
-        Msg.hdr.result = VERR_WRONG_ORDER;
-        Msg.hdr.u32ClientID = idClient;
-        Msg.hdr.u32Function = DEL_PROP;
-        Msg.hdr.cParms = 1;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, DEL_PROP, 1);
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
@@ -341,11 +325,7 @@ VBGLR3DECL(int) VbglR3GuestPropRead(HGCMCLIENTID idClient, const char *pszName,
      * Create the GET_PROP message and call the host.
      */
     GetProperty Msg;
-
-    Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = idClient;
-    Msg.hdr.u32Function = GET_PROP;
-    Msg.hdr.cParms = 4;
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GET_PROP, 4);
     VbglHGCMParmPtrSetString(&Msg.name, pszName);
     VbglHGCMParmPtrSet(&Msg.buffer, pvBuf, cbBuf);
     VbglHGCMParmUInt64Set(&Msg.timestamp, 0);
@@ -543,11 +523,8 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(HGCMCLIENTID idClient,
                                        uint32_t *pcbBufActual)
 {
     EnumProperties Msg;
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, ENUM_PROPS, 3);
 
-    Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = idClient;
-    Msg.hdr.u32Function = ENUM_PROPS;
-    Msg.hdr.cParms = 3;
     /* Get the length of the patterns array... */
     size_t cchPatterns = 0;
     for (size_t cchCurrent = strlen(pszzPatterns); cchCurrent != 0;
@@ -813,11 +790,7 @@ VBGLR3DECL(int) VbglR3GuestPropDelete(HGCMCLIENTID idClient, const char *pszName
     AssertPtrReturn(pszName,  VERR_INVALID_POINTER);
 
     DelProperty Msg;
-
-    Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = idClient;
-    Msg.hdr.u32Function = DEL_PROP;
-    Msg.hdr.cParms = 1;
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, DEL_PROP, 1);
     VbglHGCMParmPtrSetString(&Msg.name, pszName);
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -923,13 +896,8 @@ VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
      * Create the GET_NOTIFICATION message and call the host.
      */
     GetNotification Msg;
+    VBGL_HGCM_HDR_INIT_TIMED(&Msg.hdr, idClient, GET_NOTIFICATION, 4, cMillies);
 
-    Msg.hdr.u32Timeout = cMillies;
-    Msg.hdr.fInterruptible = true;
-    Msg.hdr.info.result = VERR_WRONG_ORDER;
-    Msg.hdr.info.u32ClientID = idClient;
-    Msg.hdr.info.u32Function = GET_NOTIFICATION;
-    Msg.hdr.info.cParms = 4;
     VbglHGCMParmPtrSetString(&Msg.patterns, pszPatterns);
     Msg.buffer.SetPtr(pvBuf, cbBuf);
     Msg.timestamp.SetUInt64(u64Timestamp);

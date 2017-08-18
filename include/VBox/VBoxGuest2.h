@@ -84,6 +84,22 @@ typedef struct VBoxGuestHGCMCallInfo
 } VBoxGuestHGCMCallInfo;
 AssertCompileSize(VBoxGuestHGCMCallInfo, 16);
 
+/**
+ * Initialize a HGCM header (VBoxGuestHGCMCallInfo).
+ *
+ * @param   a_pHdr          The header to initalize.
+ * @param   a_idClient      The client connection ID to call thru.
+ * @param   a_idFunction    The function we're calling
+ * @param   a_cParameters   Number of parameters.
+ */
+# define VBGL_HGCM_HDR_INIT(a_pHdr, a_idClient, a_idFunction, a_cParameters) \
+    do { \
+        (a_pHdr)->result         = VERR_INTERNAL_ERROR; \
+        (a_pHdr)->u32ClientID    = (a_idClient); \
+        (a_pHdr)->u32Function    = (a_idFunction); \
+        (a_pHdr)->cParms         = (a_cParameters); \
+    } while (0)
+
 
 /**
  * HGCM call info structure.
@@ -103,6 +119,25 @@ typedef struct VBoxGuestHGCMCallInfoTimed
 } VBoxGuestHGCMCallInfoTimed;
 AssertCompileSize(VBoxGuestHGCMCallInfoTimed, 8+16);
 # pragma pack()
+
+/**
+ * Initialize a HGCM header (VBoxGuestHGCMCallInfo), with timeout (interruptible).
+ *
+ * @param   a_pHdr          The header to initalize.
+ * @param   a_idClient      The client connection ID to call thru.
+ * @param   a_idFunction    The function we're calling
+ * @param   a_cParameters   Number of parameters.
+ * @param   a_cMsTimeout    The timeout in milliseconds.
+ */
+# define VBGL_HGCM_HDR_INIT_TIMED(a_pHdr, a_idClient, a_idFunction, a_cParameters, a_cMsTimeout) \
+    do { \
+        (a_pHdr)->u32Timeout        = (a_cMsTimeout); \
+        (a_pHdr)->fInterruptible    = true; \
+        (a_pHdr)->info.result       = VERR_INTERNAL_ERROR; \
+        (a_pHdr)->info.u32ClientID  = (a_idClient); \
+        (a_pHdr)->info.u32Function  = (a_idFunction); \
+        (a_pHdr)->info.cParms       = (a_cParameters); \
+    } while (0)
 
 /** @} */
 

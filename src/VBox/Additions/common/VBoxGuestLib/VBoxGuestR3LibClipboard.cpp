@@ -96,10 +96,7 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pMsg,
 {
     VBoxClipboardGetHostMsg Msg;
 
-    Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = idClient;
-    Msg.hdr.u32Function = VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG;
-    Msg.hdr.cParms = 2;
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG, 2);
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.formats, 0);
 
@@ -145,10 +142,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat,
 {
     VBoxClipboardReadData Msg;
 
-    Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = idClient;
-    Msg.hdr.u32Function = VBOX_SHARED_CLIPBOARD_FN_READ_DATA;
-    Msg.hdr.cParms = 3;
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_READ_DATA, 3);
     VbglHGCMParmUInt32Set(&Msg.format, fFormat);
     VbglHGCMParmPtrSet(&Msg.ptr, pv, cb);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
@@ -185,10 +179,7 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFo
 {
     VBoxClipboardFormats Msg;
 
-    Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = idClient;
-    Msg.hdr.u32Function = VBOX_SHARED_CLIPBOARD_FN_FORMATS;
-    Msg.hdr.cParms = 1;
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_FORMATS, 1);
     VbglHGCMParmUInt32Set(&Msg.formats, fFormats);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -213,10 +204,7 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFo
 VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb)
 {
     VBoxClipboardWriteData Msg;
-    Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = idClient;
-    Msg.hdr.u32Function = VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA;
-    Msg.hdr.cParms = 2;
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA, 2);
     VbglHGCMParmUInt32Set(&Msg.format, fFormat);
     VbglHGCMParmPtrSet(&Msg.ptr, pv, cb);
 

@@ -756,10 +756,7 @@ static void _crVBoxHGCMWriteExact(CRConnection *conn, const void *buf, unsigned 
     {
         CRVBOXHGCMINJECT parms;
 
-        parms.hdr.result      = VERR_WRONG_ORDER;
-        parms.hdr.u32ClientID = conn->u32ClientID;
-        parms.hdr.u32Function = SHCRGL_GUEST_FN_INJECT;
-        parms.hdr.cParms      = SHCRGL_CPARMS_INJECT;
+        VBGL_HGCM_HDR_INIT(&parms.hdr, conn->u32ClientID, SHCRGL_GUEST_FN_INJECT, SHCRGL_CPARMS_INJECT);
 
         parms.u32ClientID.type       = VMMDevHGCMParmType_32bit;
         parms.u32ClientID.u.value32  = conn->u32InjectClientID;
@@ -776,10 +773,7 @@ static void _crVBoxHGCMWriteExact(CRConnection *conn, const void *buf, unsigned 
     {
         CRVBOXHGCMWRITE parms;
 
-        parms.hdr.result      = VERR_WRONG_ORDER;
-        parms.hdr.u32ClientID = conn->u32ClientID;
-        parms.hdr.u32Function = SHCRGL_GUEST_FN_WRITE;
-        parms.hdr.cParms      = SHCRGL_CPARMS_WRITE;
+        VBGL_HGCM_HDR_INIT(&parms.hdr, conn->u32ClientID, SHCRGL_GUEST_FN_WRITE, SHCRGL_CPARMS_WRITE);
 
         parms.pBuffer.type                   = VMMDevHGCMParmType_LinAddr_In;
         parms.pBuffer.u.Pointer.size         = len;
@@ -814,10 +808,7 @@ static void crVBoxHGCMReadExact( CRConnection *conn, const void *buf, unsigned i
     int rc;
     RT_NOREF(buf, len);
 
-    parms.hdr.result      = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = conn->u32ClientID;
-    parms.hdr.u32Function = SHCRGL_GUEST_FN_READ;
-    parms.hdr.cParms      = SHCRGL_CPARMS_READ;
+    VBGL_HGCM_HDR_INIT(&parms.hdr, conn->u32ClientID, SHCRGL_GUEST_FN_READ, SHCRGL_CPARMS_READ);
 
     CRASSERT(!conn->pBuffer); /* make sure there's no data to process */
     parms.pBuffer.type                   = VMMDevHGCMParmType_LinAddr_Out;
@@ -857,10 +848,7 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
     CRVBOXHGCMWRITEREAD parms;
     int rc;
 
-    parms.hdr.result      = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = conn->u32ClientID;
-    parms.hdr.u32Function = SHCRGL_GUEST_FN_WRITE_READ;
-    parms.hdr.cParms      = SHCRGL_CPARMS_WRITE_READ;
+    VBGL_HGCM_HDR_INIT(&parms.hdr, conn->u32ClientID, SHCRGL_GUEST_FN_WRITE_READ, SHCRGL_CPARMS_WRITE_READ);
 
     parms.pBuffer.type                   = VMMDevHGCMParmType_LinAddr_In;
     parms.pBuffer.u.Pointer.size         = len;
@@ -882,10 +870,7 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
         /*Buffer is too big, so send it in split chunks*/
         CRVBOXHGCMWRITEBUFFER wbParms;
 
-        wbParms.hdr.result = VERR_WRONG_ORDER;
-        wbParms.hdr.u32ClientID = conn->u32ClientID;
-        wbParms.hdr.u32Function = SHCRGL_GUEST_FN_WRITE_BUFFER;
-        wbParms.hdr.cParms = SHCRGL_CPARMS_WRITE_BUFFER;
+        VBGL_HGCM_HDR_INIT(&wbParms.hdr, conn->u32ClientID, SHCRGL_GUEST_FN_WRITE_BUFFER, SHCRGL_CPARMS_WRITE_BUFFER);
 
         wbParms.iBufferID.type = VMMDevHGCMParmType_32bit;
         wbParms.iBufferID.u.value32 = 0;
@@ -926,10 +911,7 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
         {
             CRVBOXHGCMWRITEREADBUFFERED wrbParms;
 
-            wrbParms.hdr.result = VERR_WRONG_ORDER;
-            wrbParms.hdr.u32ClientID = conn->u32ClientID;
-            wrbParms.hdr.u32Function = SHCRGL_GUEST_FN_WRITE_READ_BUFFERED;
-            wrbParms.hdr.cParms = SHCRGL_CPARMS_WRITE_READ_BUFFERED;
+            VBGL_HGCM_HDR_INIT(&wrbParms.hdr, conn->u32ClientID, SHCRGL_GUEST_FN_WRITE_READ_BUFFERED, SHCRGL_CPARMS_WRITE_READ_BUFFERED);
 
             crMemcpy(&wrbParms.iBufferID, &wbParms.iBufferID, sizeof(HGCMFunctionParameter));
             crMemcpy(&wrbParms.pWriteback, &parms.pWriteback, sizeof(HGCMFunctionParameter));
@@ -1059,10 +1041,7 @@ static void crVBoxHGCMPollHost(CRConnection *conn)
 
     CRASSERT(!conn->pBuffer);
 
-    parms.hdr.result      = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = conn->u32ClientID;
-    parms.hdr.u32Function = SHCRGL_GUEST_FN_READ;
-    parms.hdr.cParms      = SHCRGL_CPARMS_READ;
+    VBGL_HGCM_HDR_INIT(&parms.hdr, conn->u32ClientID, SHCRGL_GUEST_FN_READ, SHCRGL_CPARMS_READ);
 
     parms.pBuffer.type                   = VMMDevHGCMParmType_LinAddr_Out;
     parms.pBuffer.u.Pointer.size         = conn->cbHostBufferAllocated;
@@ -1265,10 +1244,7 @@ static int crVBoxHGCMSetVersion(CRConnection *conn, unsigned int vMajor, unsigne
     int rc;
     RT_NOREF(vMajor, vMinor);
 
-    parms.hdr.result      = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = conn->u32ClientID;
-    parms.hdr.u32Function = SHCRGL_GUEST_FN_SET_VERSION;
-    parms.hdr.cParms      = SHCRGL_CPARMS_SET_VERSION;
+    VBGL_HGCM_HDR_INIT(&parms.hdr, conn->u32ClientID, SHCRGL_GUEST_FN_SET_VERSION, SHCRGL_CPARMS_SET_VERSION);
 
     parms.vMajor.type      = VMMDevHGCMParmType_32bit;
     parms.vMajor.u.value32 = CR_PROTOCOL_VERSION_MAJOR;
@@ -1302,10 +1278,7 @@ static int crVBoxHGCMGetHostCapsLegacy(CRConnection *conn, uint32_t *pu32HostCap
     CRVBOXHGCMGETCAPS caps;
     int rc;
 
-    caps.hdr.result      = VERR_WRONG_ORDER;
-    caps.hdr.u32ClientID = conn->u32ClientID;
-    caps.hdr.u32Function = SHCRGL_GUEST_FN_GET_CAPS_LEGACY;
-    caps.hdr.cParms      = SHCRGL_CPARMS_GET_CAPS_LEGACY;
+    VBGL_HGCM_HDR_INIT(&caps.hdr, conn->u32ClientID, SHCRGL_GUEST_FN_GET_CAPS_LEGACY, SHCRGL_CPARMS_GET_CAPS_LEGACY);
 
     caps.Caps.type       = VMMDevHGCMParmType_32bit;
     caps.Caps.u.value32  = 0;
@@ -1337,10 +1310,7 @@ static int crVBoxHGCMSetPID(CRConnection *conn, unsigned long long pid)
     CRVBOXHGCMSETPID parms;
     int rc;
 
-    parms.hdr.result      = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = conn->u32ClientID;
-    parms.hdr.u32Function = SHCRGL_GUEST_FN_SET_PID;
-    parms.hdr.cParms      = SHCRGL_CPARMS_SET_PID;
+    VBGL_HGCM_HDR_INIT(&parms.hdr, conn->u32ClientID, SHCRGL_GUEST_FN_SET_PID, SHCRGL_CPARMS_SET_PID);
 
     parms.u64PID.type     = VMMDevHGCMParmType_64bit;
     parms.u64PID.u.value64 = pid;

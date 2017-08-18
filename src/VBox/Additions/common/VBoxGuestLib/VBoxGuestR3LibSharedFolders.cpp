@@ -143,11 +143,7 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(HGCMCLIENTID idClient, bool fAutoM
     *ppaMappings = NULL;
 
     VBoxSFQueryMappings Msg;
-
-    Msg.callInfo.result = VERR_WRONG_ORDER;
-    Msg.callInfo.u32ClientID = idClient;
-    Msg.callInfo.u32Function = SHFL_FN_QUERY_MAPPINGS;
-    Msg.callInfo.cParms = 3;
+    VBGL_HGCM_HDR_INIT(&Msg.callInfo, idClient, SHFL_FN_QUERY_MAPPINGS, 3);
 
     /* Set the mapping flags. */
     uint32_t u32Flags = 0; /** @todo SHFL_MF_UTF8 is not implemented yet. */
@@ -236,11 +232,7 @@ VBGLR3DECL(int) VbglR3SharedFolderGetName(HGCMCLIENTID idClient, uint32_t u32Roo
     AssertPtr(ppszName);
 
     VBoxSFQueryMapName Msg;
-
-    Msg.callInfo.result = VERR_WRONG_ORDER;
-    Msg.callInfo.u32ClientID = idClient;
-    Msg.callInfo.u32Function = SHFL_FN_QUERY_MAP_NAME;
-    Msg.callInfo.cParms = 2;
+    VBGL_HGCM_HDR_INIT(&Msg.callInfo, idClient, SHFL_FN_QUERY_MAP_NAME, 2);
 
     int         rc;
     uint32_t    cbString = SHFLSTRING_HEADER_SIZE + SHFL_MAX_LEN;

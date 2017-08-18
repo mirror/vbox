@@ -55,7 +55,7 @@ using namespace DragAndDropSvc;
 /*********************************************************************************************************************************
 *   Forward declarations                                                                                                         *
 *********************************************************************************************************************************/
-
+/** @todo r=bird: What's this? publicly accessible symbol that's not in a header? Shouldn't this be a static function perhaps? */
 VBGLR3DECL(int) VbglR3DnDHGSendProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uStatus, uint8_t uPercent, int rcErr);
 
 
@@ -71,11 +71,7 @@ static int vbglR3DnDGetNextMsgType(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puMsg, 
 
     VBOXDNDNEXTMSGMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_DND_GET_NEXT_HOST_MSG;
-    Msg.hdr.cParms      = 3;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GET_NEXT_HOST_MSG, 3);
     Msg.uMsg.SetUInt32(0);
     Msg.cParms.SetUInt32(0);
     Msg.fBlock.SetUInt32(fWait ? 1 : 0);
@@ -118,14 +114,9 @@ static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
 
     VBOXDNDHGACTIONMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = uMsg;
-
     if (pCtx->uProtocol < 3)
     {
-        Msg.hdr.cParms = 7;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, uMsg, 7);
         Msg.u.v1.uScreenId.SetUInt32(0);
         Msg.u.v1.uX.SetUInt32(0);
         Msg.u.v1.uY.SetUInt32(0);
@@ -136,8 +127,7 @@ static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
     }
     else
     {
-        Msg.hdr.cParms = 8;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, uMsg, 8);
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.uScreenId.SetUInt32(0);
         Msg.u.v3.uX.SetUInt32(0);
@@ -187,17 +177,11 @@ static int vbglR3DnDHGRecvLeave(PVBGLR3GUESTDNDCMDCTX pCtx)
 
     VBOXDNDHGLEAVEMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = HOST_DND_HG_EVT_LEAVE;
-
     if (pCtx->uProtocol < 3)
-    {
-        Msg.hdr.cParms = 0;
-    }
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_EVT_LEAVE, 0);
     else
     {
-        Msg.hdr.cParms = 1;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_EVT_LEAVE, 1);
         /** @todo Context ID not used yet. */
         Msg.u.v3.uContext.SetUInt32(0);
     }
@@ -215,18 +199,11 @@ static int vbglR3DnDHGRecvCancel(PVBGLR3GUESTDNDCMDCTX pCtx)
 
     VBOXDNDHGCANCELMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = HOST_DND_HG_EVT_CANCEL;
-
     if (pCtx->uProtocol < 3)
-    {
-        Msg.hdr.cParms = 0;
-    }
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_EVT_CANCEL, 0);
     else
     {
-        Msg.hdr.cParms = 1;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_EVT_CANCEL, 1);
         /** @todo Context ID not used yet. */
         Msg.u.v3.uContext.SetUInt32(0);
     }
@@ -252,22 +229,16 @@ static int vbglR3DnDHGRecvDir(PVBGLR3GUESTDNDCMDCTX pCtx,
 
     VBOXDNDHGSENDDIRMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = HOST_DND_HG_SND_DIR;
-
     if (pCtx->uProtocol < 3)
     {
-        Msg.hdr.cParms = 3;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_DIR, 3);
         Msg.u.v1.pvName.SetPtr(pszDirname, cbDirname);
         Msg.u.v1.cbName.SetUInt32(cbDirname);
         Msg.u.v1.fMode.SetUInt32(0);
     }
     else
     {
-        Msg.hdr.cParms = 4;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_DIR, 4);
         /** @todo Context ID not used yet. */
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.pvName.SetPtr(pszDirname, cbDirname);
@@ -320,37 +291,30 @@ static int vbglR3DnDHGRecvFileData(PVBGLR3GUESTDNDCMDCTX pCtx,
 
     VBOXDNDHGSENDFILEDATAMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = HOST_DND_HG_SND_FILE_DATA;
-
     if (pCtx->uProtocol <= 1)
     {
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_FILE_DATA, 5);
         Msg.u.v1.pvName.SetPtr(pszFilename, cbFilename);
         Msg.u.v1.cbName.SetUInt32(0);
         Msg.u.v1.pvData.SetPtr(pvData, cbData);
         Msg.u.v1.cbData.SetUInt32(0);
         Msg.u.v1.fMode.SetUInt32(0);
-
-        Msg.hdr.cParms = 5;
     }
     else if (pCtx->uProtocol == 2)
     {
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_FILE_DATA, 3);
         Msg.u.v2.uContext.SetUInt32(0);
         Msg.u.v2.pvData.SetPtr(pvData, cbData);
         Msg.u.v2.cbData.SetUInt32(cbData);
-
-        Msg.hdr.cParms = 3;
     }
     else if (pCtx->uProtocol >= 3)
     {
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_FILE_DATA, 5);
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.pvData.SetPtr(pvData, cbData);
         Msg.u.v3.cbData.SetUInt32(0);
         Msg.u.v3.pvChecksum.SetPtr(NULL, 0);
         Msg.u.v3.cbChecksum.SetUInt32(0);
-
-        Msg.hdr.cParms = 5;
     }
     else
         AssertMsgFailed(("Protocol %RU32 not implemented\n", pCtx->uProtocol));
@@ -407,20 +371,12 @@ static int vbglR3DnDHGRecvFileHdr(PVBGLR3GUESTDNDCMDCTX  pCtx,
 
     VBOXDNDHGSENDFILEHDRMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = HOST_DND_HG_SND_FILE_HDR;
-
     int rc;
-
     if (pCtx->uProtocol <= 1)
-    {
         rc = VERR_NOT_SUPPORTED;
-    }
     else
     {
-        Msg.hdr.cParms = 6;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_FILE_HDR, 6);
         Msg.uContext.SetUInt32(0); /** @todo Not used yet. */
         Msg.pvName.SetPtr(pszFilename, cbFilename);
         Msg.cbName.SetUInt32(cbFilename);
@@ -779,15 +735,10 @@ static int vbglR3DnDHGRecvDataRaw(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
 
     VBOXDNDHGSENDDATAMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = HOST_DND_HG_SND_DATA;
-
     int rc;
     if (pCtx->uProtocol < 3)
     {
-        Msg.hdr.cParms  = 5;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_DATA, 5);
         Msg.u.v1.uScreenId.SetUInt32(0);
         Msg.u.v1.pvFormat.SetPtr(pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt);
         Msg.u.v1.cbFormat.SetUInt32(0);
@@ -848,8 +799,7 @@ static int vbglR3DnDHGRecvDataRaw(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     }
     else /* Protocol v3 and up. */
     {
-        Msg.hdr.cParms = 5;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_DATA, 5);
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.pvData.SetPtr(pvData, cbData);
         Msg.u.v3.cbData.SetUInt32(0);
@@ -892,11 +842,7 @@ static int vbglR3DnDHGRecvDataHdr(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
 
     VBOXDNDHGSENDDATAHDRMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = HOST_DND_HG_SND_DATA_HDR;
-    Msg.hdr.cParms      = 12;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_DATA_HDR, 12);
     Msg.uContext.SetUInt32(0);
     Msg.uFlags.SetUInt32(0);
     Msg.uScreenId.SetUInt32(0);
@@ -943,11 +889,7 @@ static int vbglR3DnDHGRecvMoreData(PVBGLR3GUESTDNDCMDCTX pCtx, void *pvData, uin
 
     VBOXDNDHGSENDMOREDATAMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = HOST_DND_HG_SND_MORE_DATA;
-    Msg.hdr.cParms      = 2;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_MORE_DATA, 2);
     Msg.pvData.SetPtr(pvData, cbData);
     Msg.cbData.SetUInt32(0);
 
@@ -1234,20 +1176,14 @@ static int vbglR3DnDGHRecvPending(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puScreen
 
     VBOXDNDGHREQPENDINGMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = HOST_DND_GH_REQ_PENDING;
-
     if (pCtx->uProtocol < 3)
     {
-        Msg.hdr.cParms = 1;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_GH_REQ_PENDING, 1);
         Msg.u.v1.uScreenId.SetUInt32(0);
     }
     else
     {
-        Msg.hdr.cParms = 2;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_GH_REQ_PENDING, 2);
         /** @todo Context ID not used yet. */
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.uScreenId.SetUInt32(0);
@@ -1288,22 +1224,16 @@ static int vbglR3DnDGHRecvDropped(PVBGLR3GUESTDNDCMDCTX pCtx,
 
     VBOXDNDGHDROPPEDMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = HOST_DND_GH_EVT_DROPPED;
-
     if (pCtx->uProtocol < 3)
     {
-        Msg.hdr.cParms = 3;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_GH_EVT_DROPPED, 3);
         Msg.u.v1.pvFormat.SetPtr(pszFormat, cbFormat);
         Msg.u.v1.cbFormat.SetUInt32(0);
         Msg.u.v1.uAction.SetUInt32(0);
     }
     else
     {
-        Msg.hdr.cParms = 4;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_GH_EVT_DROPPED, 4);
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.pvFormat.SetPtr(pszFormat, cbFormat);
         Msg.u.v3.cbFormat.SetUInt32(0);
@@ -1416,21 +1346,15 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
          */
         VBOXDNDCONNECTMSG Msg;
         RT_ZERO(Msg);
-        Msg.hdr.result      = VERR_WRONG_ORDER;
-        Msg.hdr.u32ClientID = pCtx->uClientID;
-        Msg.hdr.u32Function = GUEST_DND_CONNECT;
-
         if (pCtx->uProtocol < 3)
         {
-            Msg.hdr.cParms = 2;
-
+            VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_CONNECT, 2);
             Msg.u.v2.uProtocol.SetUInt32(pCtx->uProtocol);
             Msg.u.v2.uFlags.SetUInt32(0); /* Unused at the moment. */
         }
         else
         {
-            Msg.hdr.cParms = 3;
-
+            VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_CONNECT, 3);
             /** @todo Context ID not used yet. */
             Msg.u.v3.uContext.SetUInt32(0);
             Msg.u.v3.uProtocol.SetUInt32(pCtx->uProtocol);
@@ -1608,22 +1532,15 @@ VBGLR3DECL(int) VbglR3DnDHGSendAckOp(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uActio
 
     VBOXDNDHGACKOPMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_DND_HG_ACK_OP;
-
     LogFlowFunc(("uProto=%RU32\n", pCtx->uProtocol));
-
     if (pCtx->uProtocol < 3)
     {
-        Msg.hdr.cParms = 1;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_HG_ACK_OP, 1);
         Msg.u.v1.uAction.SetUInt32(uAction);
     }
     else
     {
-        Msg.hdr.cParms = 2;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_HG_ACK_OP, 2);
         /** @todo Context ID not used yet. */
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.uAction.SetUInt32(uAction);
@@ -1640,28 +1557,21 @@ VBGLR3DECL(int) VbglR3DnDHGSendReqData(PVBGLR3GUESTDNDCMDCTX pCtx, const char* p
 {
     AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
     AssertPtrReturn(pcszFormat, VERR_INVALID_POINTER);
-
-    VBOXDNDHGREQDATAMSG Msg;
-    RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_DND_HG_REQ_DATA;
-
     if (!RTStrIsValidEncoding(pcszFormat))
         return VERR_INVALID_PARAMETER;
 
     const uint32_t cbFormat = (uint32_t)strlen(pcszFormat) + 1; /* Include termination */
 
+    VBOXDNDHGREQDATAMSG Msg;
+    RT_ZERO(Msg);
     if (pCtx->uProtocol < 3)
     {
-        Msg.hdr.cParms = 1;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_HG_REQ_DATA, 1);
         Msg.u.v1.pvFormat.SetPtr((void*)pcszFormat, cbFormat);
     }
     else
     {
-        Msg.hdr.cParms = 3;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_HG_REQ_DATA, 3);
         /** @todo Context ID not used yet. */
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.pvFormat.SetPtr((void*)pcszFormat, cbFormat);
@@ -1682,22 +1592,16 @@ VBGLR3DECL(int) VbglR3DnDHGSendProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uSt
 
     VBOXDNDHGEVTPROGRESSMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = uStatus;
-
     if (pCtx->uProtocol < 3)
     {
-        Msg.hdr.cParms = 3;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, uStatus, 3); /** @todo r=bird: Do we really mean to execute 'uStatus' here? */
         Msg.u.v1.uStatus.SetUInt32(uStatus);
         Msg.u.v1.uPercent.SetUInt32(uPercent);
         Msg.u.v1.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
     }
     else
     {
-        Msg.hdr.cParms = 4;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, uStatus, 4); /** @todo r=bird: Do we really mean to execute 'uStatus' here? */
         /** @todo Context ID not used yet. */
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.uStatus.SetUInt32(uStatus);
@@ -1713,6 +1617,7 @@ VBGLR3DECL(int) VbglR3DnDHGSendProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uSt
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
+
 VBGLR3DECL(int) VbglR3DnDGHSendAckPending(PVBGLR3GUESTDNDCMDCTX pCtx,
                                           uint32_t uDefAction, uint32_t uAllActions, const char* pcszFormats, uint32_t cbFormats)
 {
@@ -1725,22 +1630,16 @@ VBGLR3DECL(int) VbglR3DnDGHSendAckPending(PVBGLR3GUESTDNDCMDCTX pCtx,
 
     VBOXDNDGHACKPENDINGMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_DND_GH_ACK_PENDING;
-
     if (pCtx->uProtocol < 3)
     {
-        Msg.hdr.cParms = 3;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_ACK_PENDING, 3);
         Msg.u.v1.uDefAction.SetUInt32(uDefAction);
         Msg.u.v1.uAllActions.SetUInt32(uAllActions);
         Msg.u.v1.pvFormats.SetPtr((void*)pcszFormats, cbFormats);
     }
     else
     {
-        Msg.hdr.cParms = 5;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_ACK_PENDING, 5);
         /** @todo Context ID not used yet. */
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.uDefAction.SetUInt32(uDefAction);
@@ -1774,11 +1673,7 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
 
         VBOXDNDGHSENDDATAHDRMSG Msg;
         RT_ZERO(Msg);
-        Msg.hdr.result      = VERR_WRONG_ORDER;
-        Msg.hdr.u32ClientID = pCtx->uClientID;
-        Msg.hdr.u32Function = GUEST_DND_GH_SND_DATA_HDR;
-        Msg.hdr.cParms      = 12;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_SND_DATA_HDR, 12);
         Msg.uContext.SetUInt32(0);                           /** @todo Not used yet. */
         Msg.uFlags.SetUInt32(0);                             /** @todo Not used yet. */
         Msg.uScreenId.SetUInt32(0);                          /** @todo Not used for guest->host (yet). */
@@ -1804,21 +1699,16 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
     {
         VBOXDNDGHSENDDATAMSG Msg;
         RT_ZERO(Msg);
-        Msg.hdr.result      = VERR_WRONG_ORDER;
-        Msg.hdr.u32ClientID = pCtx->uClientID;
-        Msg.hdr.u32Function = GUEST_DND_GH_SND_DATA;
-
         if (pCtx->uProtocol >= 3)
         {
-            Msg.hdr.cParms = 5;
-
+            VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_SND_DATA, 5);
             Msg.u.v3.uContext.SetUInt32(0);      /** @todo Not used yet. */
             Msg.u.v3.pvChecksum.SetPtr(NULL, 0); /** @todo Not used yet. */
             Msg.u.v3.cbChecksum.SetUInt32(0);    /** @todo Not used yet. */
         }
         else
         {
-            Msg.hdr.cParms = 2;
+            VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_SND_DATA, 2);
 
             /* Total amount of bytes to send (meta data + all directory/file objects). */
             /* Note: Only supports uint32_t, so this is *not* a typo. */
@@ -1877,22 +1767,16 @@ static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
 
     VBOXDNDGHSENDDIRMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_DND_GH_SND_DIR;
-
     if (pCtx->uProtocol < 3)
     {
-        Msg.hdr.cParms = 3;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_SND_DIR, 3);
         Msg.u.v1.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)cbPath);
         Msg.u.v1.cbName.SetUInt32((uint32_t)cbPath);
         Msg.u.v1.fMode.SetUInt32(pObj->GetMode());
     }
     else
     {
-        Msg.hdr.cParms = 4;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_SND_DIR, 4);
         /** @todo Context ID not used yet. */
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)cbPath);
@@ -1932,11 +1816,7 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
     {
         VBOXDNDGHSENDFILEHDRMSG MsgHdr;
         RT_ZERO(MsgHdr);
-        MsgHdr.hdr.result      = VERR_WRONG_ORDER;
-        MsgHdr.hdr.u32ClientID = pCtx->uClientID;
-        MsgHdr.hdr.u32Function = GUEST_DND_GH_SND_FILE_HDR;
-        MsgHdr.hdr.cParms      = 6;
-
+        VBGL_HGCM_HDR_INIT(&MsgHdr.hdr, pCtx->uClientID, GUEST_DND_GH_SND_FILE_HDR, 6);
         MsgHdr.uContext.SetUInt32(0);                                                    /* Context ID; unused at the moment. */
         MsgHdr.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)(strPath.length() + 1));
         MsgHdr.cbName.SetUInt32((uint32_t)(strPath.length() + 1));
@@ -1960,16 +1840,11 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
          */
         VBOXDNDGHSENDFILEDATAMSG Msg;
         RT_ZERO(Msg);
-        Msg.hdr.result      = VERR_WRONG_ORDER;
-        Msg.hdr.u32ClientID = pCtx->uClientID;
-        Msg.hdr.u32Function = GUEST_DND_GH_SND_FILE_DATA;
-
         switch (pCtx->uProtocol)
         {
             case 3:
             {
-                Msg.hdr.cParms = 5;
-
+                VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_SND_FILE_DATA, 5);
                 Msg.u.v3.uContext.SetUInt32(0);
                 Msg.u.v3.pvChecksum.SetPtr(NULL, 0);
                 Msg.u.v3.cbChecksum.SetUInt32(0);
@@ -1978,16 +1853,14 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
 
             case 2:
             {
-                Msg.hdr.cParms  = 3;
-
+                VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_SND_FILE_DATA, 3);
                 Msg.u.v2.uContext.SetUInt32(0);
                 break;
             }
 
             default: /* Protocol v1 */
             {
-                Msg.hdr.cParms  = 5;
-
+                VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_SND_FILE_DATA, 5);
                 Msg.u.v1.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)(strPath.length() + 1));
                 Msg.u.v1.cbName.SetUInt32((uint32_t)(strPath.length() + 1));
                 Msg.u.v1.fMode.SetUInt32(pObj->GetMode());
@@ -2202,20 +2075,14 @@ VBGLR3DECL(int) VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcErr)
 
     VBOXDNDGHEVTERRORMSG Msg;
     RT_ZERO(Msg);
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_DND_GH_EVT_ERROR;
-
     if (pCtx->uProtocol < 3)
     {
-        Msg.hdr.cParms = 1;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_EVT_ERROR, 1);
         Msg.u.v1.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
     }
     else
     {
-        Msg.hdr.cParms = 2;
-
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_EVT_ERROR, 2);
         /** @todo Context ID not used yet. */
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
@@ -2237,5 +2104,6 @@ VBGLR3DECL(int) VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcErr)
 
     return rc;
 }
+
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 

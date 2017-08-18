@@ -103,12 +103,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *puMsg, u
     AssertPtrReturn(puNumParms, VERR_INVALID_POINTER);
 
     HGCMMsgCmdWaitFor Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = uClientId;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT; /* Tell the host we want our next command. */
-    Msg.hdr.cParms      = 2;              /* Just peek for the next message! */
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId,
+                       GUEST_MSG_WAIT,      /* Tell the host we want our next command. */
+                       2);                  /* Just peek for the next message! */
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.num_parms, 0);
 
@@ -144,11 +141,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId, uint32_t uValue,
 {
     HGCMMsgCmdFilterSet Msg;
 
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = uClientId;
-    Msg.hdr.u32Function = GUEST_MSG_FILTER_SET; /* Tell the host we want to set a filter. */
-    Msg.hdr.cParms      = 4;
-
+    /* Tell the host we want to set a filter. */
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_MSG_FILTER_SET, 4);
     VbglHGCMParmUInt32Set(&Msg.value, uValue);
     VbglHGCMParmUInt32Set(&Msg.mask_add, uMaskAdd);
     VbglHGCMParmUInt32Set(&Msg.mask_remove, uMaskRemove);
@@ -169,13 +163,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId, uint32_t uValue,
  */
 VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterUnset(uint32_t uClientId)
 {
+    /* Tell the host we want to unset the filter. */
     HGCMMsgCmdFilterUnset Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = uClientId;
-    Msg.hdr.u32Function = GUEST_MSG_FILTER_UNSET; /* Tell the host we want to unset the filter. */
-    Msg.hdr.cParms      = 1;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_MSG_FILTER_UNSET, 1);
     VbglHGCMParmUInt32Set(&Msg.flags, 0 /* Flags, unused */);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -201,12 +191,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgReplyEx(PVBGLR3GUESTCTRLCMDCTX pCtx,
     /* Everything else is optional. */
 
     HGCMMsgCmdReply Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_REPLY;
-    Msg.hdr.cParms      = 4;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_REPLY, 4);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.rc, (uint32_t)rc); /* int vs. uint32_t */
     VbglHGCMParmUInt32Set(&Msg.type, uType);
@@ -234,12 +219,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t uClientId)
 {
     HGCMMsgCmdSkip Msg;
 
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = uClientId;
-    Msg.hdr.u32Function = GUEST_MSG_SKIP; /* Tell the host we want to skip
-                                             the current assigned command. */
-    Msg.hdr.cParms      = 1;
-
+    /* Tell the host we want to skip the current assigned command. */
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_MSG_SKIP, 1);
     VbglHGCMParmUInt32Set(&Msg.flags, 0 /* Flags, unused */);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -259,12 +240,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t uClientId)
 VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t uClientId)
 {
     HGCMMsgCancelPendingWaits Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = uClientId;
-    Msg.hdr.u32Function = GUEST_CANCEL_PENDING_WAITS;
-    Msg.hdr.cParms      = 0;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_CANCEL_PENDING_WAITS, 0);
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
@@ -290,12 +266,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_
     AssertReturn(pCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
 
     HGCMMsgSessionClose Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_SESSION_CLOSE;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_SESSION_CLOSE, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.flags, fFlags);
 
@@ -316,12 +287,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMMsgSessionNotify Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_SESSION_NOTIFY;
-    Msg.hdr.cParms      = 3;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_SESSION_NOTIFY, 3);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.type, uType);
     VbglHGCMParmUInt32Set(&Msg.result, uResult);
@@ -360,12 +326,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
     HGCMMsgSessionOpen Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.protocol, 0);
     VbglHGCMParmPtrSet(&Msg.username, pszUser, cbUser);
@@ -410,12 +371,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
     AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
     HGCMMsgSessionClose Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
@@ -456,12 +412,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
     AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
     HGCMMsgPathRename Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmPtrSet(&Msg.source, pszSource, cbSource);
     VbglHGCMParmPtrSet(&Msg.dest, pszDest, cbDest);
@@ -517,12 +468,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX    pCtx,
     AssertPtrReturn(puTimeoutMS, VERR_INVALID_POINTER);
 
     HGCMMsgProcExec Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmPtrSet(&Msg.cmd, pszCmd, cbCmd);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
@@ -603,12 +549,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
     HGCMMsgProcOutput Msg;
-
-    Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
@@ -657,12 +598,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX  pCtx,
     AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
 
     HGCMMsgProcInput Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
@@ -701,12 +637,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetRemove(PVBGLR3GUESTCTRLCMDCTX     pCtx,
     AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
     HGCMMsgDirRemove Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmPtrSet(&Msg.path, pszPath, cbPath);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
@@ -752,12 +683,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLCMDCTX      pCtx,
     AssertPtrReturn(poffAt, VERR_INVALID_POINTER);
 
     HGCMMsgFileOpen Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmPtrSet(&Msg.filename, pszFileName, cbFileName);
     VbglHGCMParmPtrSet(&Msg.openmode, pszAccess, cbAccess);
@@ -793,12 +719,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
 
     HGCMMsgFileClose Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
 
@@ -830,12 +751,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(puToRead, VERR_INVALID_POINTER);
 
     HGCMMsgFileRead Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
@@ -869,12 +785,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetReadAt(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(puToRead, VERR_INVALID_POINTER);
 
     HGCMMsgFileReadAt Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
     VbglHGCMParmUInt32Set(&Msg.offset, 0);
@@ -912,12 +823,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWrite(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_
     AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
 
     HGCMMsgFileWrite Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
     VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
@@ -954,12 +860,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLCMDCTX pCtx, uint3
     AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
 
     HGCMMsgFileWriteAt Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
     VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
@@ -997,12 +898,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetSeek(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(poffAt, VERR_INVALID_POINTER);
 
     HGCMMsgFileSeek Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
     VbglHGCMParmUInt32Set(&Msg.method, 0);
@@ -1036,12 +932,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetTell(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
 
     HGCMMsgFileTell Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
 
@@ -1071,12 +962,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetTerminate(PVBGLR3GUESTCTRLCMDCTX pCtx, uin
     AssertPtrReturn(puPID, VERR_INVALID_POINTER);
 
     HGCMMsgProcTerminate Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
 
@@ -1107,12 +993,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetWaitFor(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(puPID, VERR_INVALID_POINTER);
 
     HGCMMsgProcWaitFor Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pCtx->uNumParms;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
@@ -1144,16 +1025,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMReplyFileNotify Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
-    Msg.hdr.cParms      = 4;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_FILE_NOTIFY, 4);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_OPEN);
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
-
     VbglHGCMParmUInt32Set(&Msg.u.open.handle, uFileHandle);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -1173,12 +1048,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbClose(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMReplyFileNotify Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
-    Msg.hdr.cParms      = 3;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_FILE_NOTIFY, 3);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_CLOSE);
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
@@ -1199,12 +1069,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbError(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMReplyFileNotify Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
-    Msg.hdr.cParms      = 3;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_FILE_NOTIFY, 3);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_ERROR);
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
@@ -1227,16 +1092,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbRead(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMReplyFileNotify Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
-    Msg.hdr.cParms      = 4;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_FILE_NOTIFY, 4);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_READ);
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
-
     VbglHGCMParmPtrSet(&Msg.u.read.data, pvData, cbData);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -1256,16 +1115,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbWrite(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMReplyFileNotify Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
-    Msg.hdr.cParms      = 4;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_FILE_NOTIFY, 4);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_WRITE);
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
-
     VbglHGCMParmUInt32Set(&Msg.u.write.written, uWritten);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -1285,16 +1138,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbSeek(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMReplyFileNotify Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
-    Msg.hdr.cParms      = 4;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_FILE_NOTIFY, 4);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_SEEK);
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
-
     VbglHGCMParmUInt64Set(&Msg.u.seek.offset, uOffActual);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -1314,16 +1161,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbTell(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMReplyFileNotify Msg;
-
-    Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
-    Msg.hdr.cParms      = 4;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_FILE_NOTIFY, 4);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_TELL);
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
-
     VbglHGCMParmUInt64Set(&Msg.u.tell.offset, uOffActual);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -1350,12 +1191,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatus(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMMsgProcStatus Msg;
-
-    Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_EXEC_STATUS;
-    Msg.hdr.cParms = 5;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_EXEC_STATUS, 5);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.pid, uPID);
     VbglHGCMParmUInt32Set(&Msg.status, uStatus);
@@ -1386,12 +1222,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcCbOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMMsgProcOutput Msg;
-
-    Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_EXEC_OUTPUT;
-    Msg.hdr.cParms = 5;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_EXEC_OUTPUT, 5);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.pid, uPID);
     VbglHGCMParmUInt32Set(&Msg.handle, uHandle);
@@ -1422,12 +1253,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatusInput(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMMsgProcStatusInput Msg;
-
-    Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pCtx->uClientID;
-    Msg.hdr.u32Function = GUEST_EXEC_INPUT_STATUS;
-    Msg.hdr.cParms = 5;
-
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_EXEC_INPUT_STATUS, 5);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.pid, uPID);
     VbglHGCMParmUInt32Set(&Msg.status, uStatus);
