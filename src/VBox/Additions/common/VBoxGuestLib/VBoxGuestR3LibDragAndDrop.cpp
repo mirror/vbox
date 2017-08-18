@@ -53,13 +53,6 @@ using namespace DragAndDropSvc;
 
 
 /*********************************************************************************************************************************
-*   Forward declarations                                                                                                         *
-*********************************************************************************************************************************/
-/** @todo r=bird: What's this? publicly accessible symbol that's not in a header? Shouldn't this be a static function perhaps? */
-VBGLR3DECL(int) VbglR3DnDHGSendProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uStatus, uint8_t uPercent, int rcErr);
-
-
-/*********************************************************************************************************************************
 *   Private internal functions                                                                                                   *
 *********************************************************************************************************************************/
 
