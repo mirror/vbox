@@ -558,8 +558,8 @@ void UISnapshotDetailsWidget::clearData()
 void UISnapshotDetailsWidget::retranslateUi()
 {
     /* Translate labels: */
-    m_pEmptyWidgetLabel->setText("<p>You have the <b>Current State</b> item selected.<br>"
-                                 "Press <b>Take</b> button if you wish to take a new snapshot.</p>");
+    m_pEmptyWidgetLabel->setText(tr("<p>You have the <b>Current State</b> item selected.<br>"
+                                    "Press the <b>Take</b> button if you wish to take a new snapshot.</p>"));
     m_pTabWidget->setTabText(0, tr("&Attributes"));
     m_pTabWidget->setTabText(1, tr("&Information"));
     m_pLabelName->setText(tr("&Name:"));
