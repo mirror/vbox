@@ -1713,7 +1713,7 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
         MsgHdr.fMode.SetUInt32(pObj->GetMode());                                         /* File mode */
         MsgHdr.cbTotal.SetUInt64(pObj->GetSize());                                       /* File size (in bytes). */
 
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(MsgHdr)), &MsgHdr, sizeof(MsgHdr));
+        rc = VbglR3HGCMCall(&MsgHdr.hdr, sizeof(MsgHdr));
 
         LogFlowFunc(("Sending file header resulted in %Rrc\n", rc));
     }
