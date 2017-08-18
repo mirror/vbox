@@ -206,6 +206,26 @@ static DECLCALLBACK(void) pdmRCDevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, in
 }
 
 
+/** @interface_method_impl{PDMDEVHLPRC,pfnIoApicSendMsi} */
+static DECLCALLBACK(void) pdmRCDevHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmRCDevHlp_IoApicSendMsi: caller=%p/%d: GCPhys=%RGp uValue=%#x\n", pDevIns, pDevIns->iInstance, GCPhys, uValue));
+    PVM pVM = pDevIns->Internal.s.pVMRC;
+
+    uint32_t uTagSrc;
+    pDevIns->Internal.s.uLastIrqTag = uTagSrc = pdmCalcIrqTag(pVM, pDevIns->idTracing);
+    VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+
+    if (pVM->pdm.s.IoApic.pDevInsRC)
+        pVM->pdm.s.IoApic.pfnSendMsiRC(pVM->pdm.s.IoApic.pDevInsRC, GCPhys, uValue, uTagSrc);
+    else
+        AssertFatalMsgFailed(("Lazy bastards!"));
+
+    LogFlow(("pdmRCDevHlp_IoApicSendMsi: caller=%p/%d: returns void; uTagSrc=%#x\n", pDevIns, pDevIns->iInstance, uTagSrc));
+}
+
+
 /** @interface_method_impl{PDMDEVHLPRC,pfnPhysRead} */
 static DECLCALLBACK(int) pdmRCDevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
@@ -404,7 +424,7 @@ extern DECLEXPORT(const PDMDEVHLPRC) g_pdmRCDevHlp =
     pdmRCDevHlp_TMTimeVirtGetFreq,
     pdmRCDevHlp_TMTimeVirtGetNano,
     pdmRCDevHlp_DBGFTraceBuf,
-    NULL,
+    pdmRCDevHlp_IoApicSendMsi,
     NULL,
     NULL,
     NULL,
@@ -586,7 +606,7 @@ static DECLCALLBACK(void) pdmRCPciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS
     if (pVM->pdm.s.IoApic.pDevInsRC)
         pVM->pdm.s.IoApic.pfnSendMsiRC(pVM->pdm.s.IoApic.pDevInsRC, GCPhys, uValue, uTagSrc);
     else
-        AssertFatalMsgFailed(("Lazy bastarts!"));
+        AssertFatalMsgFailed(("Lazy bastards!"));
 }
 
 

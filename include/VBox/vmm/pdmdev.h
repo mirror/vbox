@@ -498,7 +498,7 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 /** @} */
 
 /**
- * Registration record for MSI.
+ * Registration record for MSI/MSI-X emulation.
  */
 typedef struct PDMMSIREG
 {
@@ -552,12 +552,24 @@ typedef struct PDMPCIBUSREG
                                              uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName));
 
     /**
-     * Initialize MSI support in a PCI device.
+     * Initialize MSI or MSI-X emulation support in a PCI device.
+     *
+     * This cannot handle all corner cases of the MSI/MSI-X spec, but for the
+     * vast majority of device emulation it covers everything necessary. It's
+     * fully automatic, taking care of all BAR and config space requirements,
+     * and interrupt delivery is done using PDMDevHlpPCISetIrq and friends.
+     * When MSI/MSI-X is enabled then the iIrq parameter is redefined to take
+     * the vector number (otherwise it has the usual INTA-D meaning for PCI).
+     *
+     * A device not using this can still offer MSI/MSI-X. In this case it's
+     * completely up to the device (in the MSI-X case) to create/register the
+     * necessary MMIO BAR, handle all config space/BAR updating and take care
+     * of delivering the interrupts appropriately.
      *
      * @returns VBox status code.
      * @param   pDevIns         Device instance of the PCI Bus.
      * @param   pPciDev         The PCI device structure.
-     * @param   pMsiReg         MSI registration structure
+     * @param   pMsiReg         MSI emulation registration structure
      * @remarks Caller enters the PDM critical section.
      */
     DECLR3CALLBACKMEMBER(int, pfnRegisterMsiR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, PPDMMSIREG pMsiReg));
@@ -1866,8 +1878,9 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 
 /** Current PDMDEVHLPR3 version number.
  * @todo Next major revision should add piBus to pfnPCIBusRegister, and move
- *       pfnMMIOExReduce up to after pfnMMIOExUnmap. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 19, 2)
+ *       pfnMMIOExReduce up to after pfnMMIOExUnmap, and move
+ *       pfnIoApicSendMsi/pfnIoApicSendMsiNoWait up to after pfnISASetIrqNoWait. */
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 19, 3)
 //#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
 
 /**
@@ -2677,13 +2690,15 @@ typedef struct PDMDEVHLPR3
                                               uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName));
 
     /**
-     * Initialize MSI support for the given PCI device.
+     * Initialize MSI or MSI-X emulation support for the given PCI device.
+     *
+     * @see PDMPCIBUSREG::pfnRegisterMsiR3 for details.
      *
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
      * @param   pPciDev             The PCI device.  NULL is an alias for the first
      *                              one registered.
-     * @param   pMsiReg             MSI registartion structure.
+     * @param   pMsiReg             MSI emulation registration structure.
      */
     DECLR3CALLBACKMEMBER(int, pfnPCIRegisterMsi,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, PPDMMSIREG pMsiReg));
 
@@ -2806,7 +2821,7 @@ typedef struct PDMDEVHLPR3
     /**
      * Attaches a driver (chain) to the device.
      *
-     * The first call for a LUN this will serve as a registartion of the LUN. The pBaseInterface and
+     * The first call for a LUN this will serve as a registration of the LUN. The pBaseInterface and
      * the pszDesc string will be registered with that LUN and kept around for PDMR3QueryDeviceLun().
      *
      * @returns VBox status code.
@@ -3275,10 +3290,29 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnMMIOExReduce,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion));
 
+    /**
+     * Send an MSI straight to the I/O APIC.
+     *
+     * @param   pDevIns         PCI device instance.
+     * @param   GCPhys          Physical address MSI request was written.
+     * @param   uValue          Value written.
+     * @thread  Any thread, but will involve the emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue));
+
+    /**
+     * Send an MSI straight to the I/O APIC, but don't wait for EMT to process
+     * the request when not called from EMT.
+     *
+     * @param   pDevIns         PCI device instance.
+     * @param   GCPhys          Physical address MSI request was written.
+     * @param   uValue          Value written.
+     * @thread  Any thread, but will involve the emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void,  pfnIoApicSendMsiNoWait,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue));
+
     /** Space reserved for future members.
      * @{ */
-    DECLR3CALLBACKMEMBER(void, pfnReserved2,(void));
-    DECLR3CALLBACKMEMBER(void, pfnReserved3,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved4,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved5,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved6,(void));
@@ -3709,9 +3743,18 @@ typedef struct PDMDEVHLPRC
      */
     DECLRCCALLBACKMEMBER(RTTRACEBUF, pfnDBGFTraceBuf,(PPDMDEVINS pDevIns));
 
+    /**
+     * Send an MSI straight to the I/O APIC.
+     *
+     * @param   pDevIns         PCI device instance.
+     * @param   GCPhys          Physical address MSI request was written.
+     * @param   uValue          Value written.
+     * @thread  Any thread, but will involve the emulation thread.
+     */
+    DECLRCCALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue));
+
     /** Space reserved for future members.
      * @{ */
-    DECLRCCALLBACKMEMBER(void, pfnReserved1,(void));
     DECLRCCALLBACKMEMBER(void, pfnReserved2,(void));
     DECLRCCALLBACKMEMBER(void, pfnReserved3,(void));
     DECLRCCALLBACKMEMBER(void, pfnReserved4,(void));
@@ -3731,8 +3774,9 @@ typedef RCPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 /** Pointer PDM Device RC API. */
 typedef RCPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
-/** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 5, 0)
+/** Current PDMDEVHLP version number.
+ * @todo Next major revision should move pfnIoApicSendMsi up to after pfnISASetIrq. */
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 5, 1)
 
 
 /**
@@ -3968,9 +4012,18 @@ typedef struct PDMDEVHLPR0
      */
     DECLR0CALLBACKMEMBER(RTTRACEBUF, pfnDBGFTraceBuf,(PPDMDEVINS pDevIns));
 
+    /**
+     * Send an MSI straight to the I/O APIC.
+     *
+     * @param   pDevIns         PCI device instance.
+     * @param   GCPhys          Physical address MSI request was written.
+     * @param   uValue          Value written.
+     * @thread  Any thread, but will involve the emulation thread.
+     */
+    DECLR0CALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue));
+
     /** Space reserved for future members.
      * @{ */
-    DECLR0CALLBACKMEMBER(void, pfnReserved1,(void));
     DECLR0CALLBACKMEMBER(void, pfnReserved2,(void));
     DECLR0CALLBACKMEMBER(void, pfnReserved3,(void));
     DECLR0CALLBACKMEMBER(void, pfnReserved4,(void));
@@ -3990,8 +4043,9 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 /** Pointer PDM Device GC API. */
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
-/** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 5, 0)
+/** Current PDMDEVHLP version number.
+ * @todo Next major revision should move pfnIoApicSendMsi up to after pfnISASetIrq. */
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 5, 1)
 
 
 
@@ -4779,11 +4833,11 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegisterEx(PPDMDEVINS pDevIns, PPDMPCIDEV pP
 }
 
 /**
- * Initialize MSI support for the first PCI device.
+ * Initialize MSI or MSI-X emulation support for the first PCI device.
  *
  * @returns VBox status code.
  * @param   pDevIns             The device instance.
- * @param   pMsiReg             MSI registartion structure.
+ * @param   pMsiReg             MSI emulation registration structure.
  */
 DECLINLINE(int) PDMDevHlpPCIRegisterMsi(PPDMDEVINS pDevIns, PPDMMSIREG pMsiReg)
 {
@@ -4915,6 +4969,22 @@ DECLINLINE(void) PDMDevHlpISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 DECLINLINE(void) PDMDevHlpISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     pDevIns->CTX_SUFF(pHlp)->pfnISASetIrq(pDevIns, iIrq, iLevel);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnIoApicSendMsi
+ */
+DECLINLINE(void) PDMDevHlpIoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue)
+{
+    pDevIns->CTX_SUFF(pHlp)->pfnIoApicSendMsi(pDevIns, GCPhys, uValue);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnIoApicSendMsiNoWait
+ */
+DECLINLINE(void) PDMDevHlpIoApicSendMsiNoWait(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue)
+{
+    pDevIns->CTX_SUFF(pHlp)->pfnIoApicSendMsi(pDevIns, GCPhys, uValue);
 }
 
 #ifdef IN_RING3
