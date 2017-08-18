@@ -662,7 +662,7 @@ typedef struct VBGLR3GUESTCTRLCMDCTX
 
 /* General message handling on the guest. */
 VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *pidClient);
-VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t uClientId);
+VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t idClient);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId, uint32_t uValue, uint32_t uMaskAdd, uint32_t uMaskRemove);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterUnset(uint32_t uClientId);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgReply(PVBGLR3GUESTCTRLCMDCTX pCtx, int rc);

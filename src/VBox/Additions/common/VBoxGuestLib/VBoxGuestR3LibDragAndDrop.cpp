@@ -1384,15 +1384,9 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
 VBGLR3DECL(int) VbglR3DnDDisconnect(PVBGLR3GUESTDNDCMDCTX pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-
-    VBoxGuestHGCMDisconnectInfo Info;
-    Info.result      = VERR_WRONG_ORDER;
-    Info.u32ClientID = pCtx->uClientID;
-
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_DISCONNECT, &Info, sizeof(Info));
+    int rc = VbglR3HGCMDisconnect(pCtx->uClientID);
     if (RT_SUCCESS(rc))
-        rc = Info.result;
-
+        pCtx->uClientID = 0;
     return rc;
 }
 

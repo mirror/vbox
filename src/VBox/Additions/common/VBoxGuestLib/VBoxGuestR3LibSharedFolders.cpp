@@ -74,14 +74,7 @@ VBGLR3DECL(int) VbglR3SharedFolderConnect(HGCMCLIENTID *pidClient)
  */
 VBGLR3DECL(int) VbglR3SharedFolderDisconnect(HGCMCLIENTID idClient)
 {
-    VBoxGuestHGCMDisconnectInfo Info;
-    Info.result = VERR_WRONG_ORDER;
-    Info.u32ClientID = idClient;
-
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_DISCONNECT, &Info, sizeof(Info));
-    if (RT_SUCCESS(rc))
-        rc = Info.result;
-    return rc;
+    return VbglR3HGCMDisconnect(idClient);
 }
 
 

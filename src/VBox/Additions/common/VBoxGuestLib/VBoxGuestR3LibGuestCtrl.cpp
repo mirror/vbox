@@ -45,10 +45,10 @@ using namespace guestControl;
  * Connects to the guest control service.
  *
  * @returns VBox status code
- * @param   puClientId    Where to put The client ID on success. The client ID
+ * @param   pidClient     Where to put The client ID on success. The client ID
  *                        must be passed to all the other calls to the service.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *puClientId)
+VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *pidClient)
 {
     VBoxGuestHGCMConnectInfo Info;
     Info.result = VERR_WRONG_ORDER;
@@ -62,7 +62,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *puClientId)
     {
         rc = Info.result;
         if (RT_SUCCESS(rc))
-            *puClientId = Info.u32ClientID;
+            *pidClient = Info.u32ClientID;
     }
     return rc;
 }
@@ -72,18 +72,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *puClientId)
  * Disconnect from the guest control service.
  *
  * @returns VBox status code.
- * @param   uClientId     The client ID returned by VbglR3GuestCtrlConnect().
+ * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
  */
-VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t uClientId)
+VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t idClient)
 {
-    VBoxGuestHGCMDisconnectInfo Info;
-    Info.result = VERR_WRONG_ORDER;
-    Info.u32ClientID = uClientId;
-
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_DISCONNECT, &Info, sizeof(Info));
-    if (RT_SUCCESS(rc))
-        rc = Info.result;
-    return rc;
+    return VbglR3HGCMDisconnect(idClient);
 }
 
 
