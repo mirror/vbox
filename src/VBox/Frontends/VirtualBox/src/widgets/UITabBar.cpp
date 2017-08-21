@@ -201,26 +201,152 @@ void UITabBarItem::setCurrent(bool fCurrent)
 {
     /* Remember the state: */
     m_fCurrent = fCurrent;
+
+#ifdef VBOX_WS_MAC
+    /* Adjust name color: */
+    QPalette pal = qApp->palette();
+    if (m_fCurrent)
+        pal.setColor(QPalette::ButtonText, pal.color(QPalette::BrightText));
+    m_pLabelName->setPalette(pal);
+#endif
+
     /* And call for repaint: */
     update();
 }
 
 void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
 {
+#ifdef VBOX_WS_MAC
+
     /* Prepare painter: */
     QPainter painter(this);
 
     /* Prepare palette colors: */
     const QPalette pal = palette();
-#ifdef VBOX_WS_MAC
-    const QColor color0 = m_fCurrent ? pal.color(QPalette::Highlight).lighter(110)
-                        : m_fHovered ? pal.color(QPalette::Highlight).lighter(120)
-                        :              pal.color(QPalette::Window);
+    const QColor color0 = m_fCurrent
+                        ? pal.color(QPalette::Shadow).darker(110)
+                        : pal.color(QPalette::Window).lighter(105);
+    const QColor color1 = pal.color(QPalette::Window);
+    const QColor color2 = color0.darker(120);
+    const QColor color3 = color0.darker(130);
+
+    /* Invent pixel metric: */
+    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+
+    /* Top-left corner: */
+    QRadialGradient grad1(QPointF(iMetric, iMetric), iMetric);
+    {
+        grad1.setColorAt(0, color0);
+        grad1.setColorAt(.8, color0);
+        grad1.setColorAt(.81, color2);
+        grad1.setColorAt(1, color1);
+    }
+    /* Top-right corner: */
+    QRadialGradient grad2(QPointF(width() - iMetric, iMetric), iMetric);
+    {
+        grad2.setColorAt(0, color0);
+        grad2.setColorAt(.8, color0);
+        grad2.setColorAt(.81, color2);
+        grad2.setColorAt(1, color1);
+    }
+    /* Bottom-left corner: */
+    QRadialGradient grad3(QPointF(iMetric, height() - iMetric), iMetric);
+    {
+        grad3.setColorAt(0, color0);
+        grad3.setColorAt(.8, color0);
+        grad3.setColorAt(.81, color3);
+        grad3.setColorAt(1, color1);
+    }
+    /* Botom-right corner: */
+    QRadialGradient grad4(QPointF(width() - iMetric, height() - iMetric), iMetric);
+    {
+        grad4.setColorAt(0, color0);
+        grad4.setColorAt(.8, color0);
+        grad4.setColorAt(.81, color3);
+        grad4.setColorAt(1, color1);
+    }
+
+    /* Top line: */
+    QLinearGradient grad5(QPointF(iMetric, 0), QPointF(iMetric, iMetric));
+    {
+        grad5.setColorAt(0, color1);
+        grad5.setColorAt(.19, color2);
+        grad5.setColorAt(.2, color0);
+        grad5.setColorAt(1, color0);
+    }
+    /* Bottom line: */
+    QLinearGradient grad6(QPointF(iMetric, height()), QPointF(iMetric, height() - iMetric));
+    {
+        grad6.setColorAt(0, color1);
+        grad6.setColorAt(.19, color3);
+        grad6.setColorAt(.2, color0);
+        grad6.setColorAt(1, color0);
+    }
+    /* Left line: */
+    QLinearGradient grad7(QPointF(0, height() - iMetric), QPointF(iMetric, height() - iMetric));
+    {
+        grad7.setColorAt(0, color1);
+        grad7.setColorAt(.19, color2);
+        grad7.setColorAt(.2, color0);
+        grad7.setColorAt(1, color0);
+    }
+    /* Right line: */
+    QLinearGradient grad8(QPointF(width(), height() - iMetric), QPointF(width() - iMetric, height() - iMetric));
+    {
+        grad8.setColorAt(0, color1);
+        grad8.setColorAt(.19, color2);
+        grad8.setColorAt(.2, color0);
+        grad8.setColorAt(1, color0);
+    }
+
+    /* Paint: */
+    painter.fillRect(QRect(iMetric,           iMetric,            width() - iMetric * 2, height() - iMetric * 2), color0);
+
+    if (m_enmPosition == PositionStyle_Left || m_enmPosition == PositionStyle_Single)
+    {
+        painter.fillRect(QRect(0,                  0,                  iMetric,            iMetric),           grad1);
+        painter.fillRect(QRect(0,                  height() - iMetric, iMetric,            iMetric),           grad3);
+    }
+    if (m_enmPosition == PositionStyle_Right || m_enmPosition == PositionStyle_Single)
+    {
+        painter.fillRect(QRect(width() - iMetric,  0,                  iMetric,            iMetric),           grad2);
+        painter.fillRect(QRect(width() - iMetric,  height() - iMetric, iMetric,            iMetric),           grad4);
+    }
+
+    int iX = 0;
+    int iYL = 0;
+    int iYR = 0;
+    int iWid = width();
+    int iHeiL = height();
+    int iHeiR = height();
+    if (m_enmPosition == PositionStyle_Left || m_enmPosition == PositionStyle_Single)
+    {
+        iX = iMetric;
+        iYL = iMetric;
+        iWid -= iMetric;
+        iHeiL -= iMetric * 2;
+    }
+    if (m_enmPosition == PositionStyle_Right || m_enmPosition == PositionStyle_Single)
+    {
+        iYR = iMetric;
+        iWid -= iMetric;
+        iHeiR -= iMetric * 2;
+    }
+    painter.fillRect(QRect(0,                  iYL,                iMetric,            iHeiL),             grad7);
+    painter.fillRect(QRect(width() - iMetric,  iYR,                iMetric,            iHeiR),             grad8);
+    painter.fillRect(QRect(iX,                 0,                  iWid,               iMetric),           grad5);
+    painter.fillRect(QRect(iX,                 height() - iMetric, iWid,               iMetric),           grad6);
+
 #else /* !VBOX_WS_MAC */
+
+    /* Prepare painter: */
+    QPainter painter(this);
+
+    /* Prepare palette colors: */
+    const QPalette pal = palette();
     const QColor color0 = m_fCurrent ? pal.color(QPalette::Highlight).lighter(150)
                         : m_fHovered ? pal.color(QPalette::Highlight).lighter(170)
                         :              pal.color(QPalette::Window);
-#endif /* !VBOX_WS_MAC */
     QColor color1 = pal.color(QPalette::Window).lighter(110);
     color1.setAlpha(0);
     QColor color2 = pal.color(QPalette::Window).darker(200);
@@ -288,6 +414,8 @@ void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
     painter.fillRect(QRect(iMetric,           height() - iMetric, width() - iMetric * 2, iMetric),                grad6);
     painter.fillRect(QRect(0,                 iMetric,            iMetric,               height() - iMetric * 2), grad7);
     painter.fillRect(QRect(width() - iMetric, iMetric,            iMetric,               height() - iMetric * 2), grad8);
+
+#endif /* !VBOX_WS_MAC */
 }
 
 void UITabBarItem::mousePressEvent(QMouseEvent *pEvent)
@@ -384,7 +512,11 @@ void UITabBarItem::prepare()
     {
         /* Invent pixel metric: */
         const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+#ifdef VBOX_WS_MAC
+        const int iMargin = iMetric / 4;
+#else
         const int iMargin = iMetric / 2;
+#endif
         const int iSpacing = iMargin / 2;
 #ifdef VBOX_WS_MAC
         const int iMetricCloseButton = iMetric * 3 / 4;
