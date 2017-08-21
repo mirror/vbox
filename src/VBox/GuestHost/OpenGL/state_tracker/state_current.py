@@ -364,6 +364,7 @@ void crStateCurrentRecoverNew(CRContext *g, CRCurrentStatePointers  *current)
     (void) __convert_Nub3;
     (void) __convert_Nub4;
 
+    DIRTY(nbitID, g->neg_bitid);
 
 ''')
 
