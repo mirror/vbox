@@ -51,6 +51,11 @@
       </listitem>
 
       <listitem>
+        <para>Audio: implemented ability to enable or disable audio 
+          input / output on-the-fly</para>
+      </listitem>
+
+      <listitem>
         <para>EFI: better video mode handling</para>
       </listitem>
 
