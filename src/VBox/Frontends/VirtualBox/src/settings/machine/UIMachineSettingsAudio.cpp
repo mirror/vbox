@@ -38,6 +38,8 @@ struct UIDataSettingsMachineAudio
         : m_fAudioEnabled(false)
         , m_audioDriverType(KAudioDriverType_Null)
         , m_audioControllerType(KAudioControllerType_AC97)
+        , m_fAudioOutputEnabled(false)
+        , m_fAudioInputEnabled(false)
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -47,6 +49,8 @@ struct UIDataSettingsMachineAudio
                && (m_fAudioEnabled == other.m_fAudioEnabled)
                && (m_audioDriverType == other.m_audioDriverType)
                && (m_audioControllerType == other.m_audioControllerType)
+               && (m_fAudioOutputEnabled == other.m_fAudioOutputEnabled)
+               && (m_fAudioInputEnabled == other.m_fAudioInputEnabled)
                ;
     }
 
@@ -61,6 +65,10 @@ struct UIDataSettingsMachineAudio
     KAudioDriverType      m_audioDriverType;
     /** Holds the audio controller type. */
     KAudioControllerType  m_audioControllerType;
+    /** Holds whether the audio output is enabled. */
+    bool                  m_fAudioOutputEnabled;
+    /** Holds whether the audio input is enabled. */
+    bool                  m_fAudioInputEnabled;
 };
 
 
@@ -101,6 +109,8 @@ void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
         oldAudioData.m_fAudioEnabled = comAdapter.GetEnabled();
         oldAudioData.m_audioDriverType = comAdapter.GetAudioDriver();
         oldAudioData.m_audioControllerType = comAdapter.GetAudioController();
+        oldAudioData.m_fAudioOutputEnabled = comAdapter.GetEnabledOut();
+        oldAudioData.m_fAudioInputEnabled = comAdapter.GetEnabledIn();
     }
 
     /* Cache old audio data: */
@@ -119,6 +129,8 @@ void UIMachineSettingsAudio::getFromCache()
     m_pCheckBoxAudio->setChecked(oldAudioData.m_fAudioEnabled);
     m_pComboAudioDriver->setCurrentIndex(m_pComboAudioDriver->findData((int)oldAudioData.m_audioDriverType));
     m_pComboAudioController->setCurrentIndex(m_pComboAudioController->findData((int)oldAudioData.m_audioControllerType));
+    m_pCheckBoxAudioOutput->setChecked(oldAudioData.m_fAudioOutputEnabled);
+    m_pCheckBoxAudioInput->setChecked(oldAudioData.m_fAudioInputEnabled);
 
     /* Polish page finally: */
     polishPage();
@@ -133,6 +145,8 @@ void UIMachineSettingsAudio::putToCache()
     newAudioData.m_fAudioEnabled = m_pCheckBoxAudio->isChecked();
     newAudioData.m_audioDriverType = static_cast<KAudioDriverType>(m_pComboAudioDriver->itemData(m_pComboAudioDriver->currentIndex()).toInt());
     newAudioData.m_audioControllerType = static_cast<KAudioControllerType>(m_pComboAudioController->itemData(m_pComboAudioController->currentIndex()).toInt());
+    newAudioData.m_fAudioOutputEnabled = m_pCheckBoxAudioOutput->isChecked();
+    newAudioData.m_fAudioInputEnabled = m_pCheckBoxAudioInput->isChecked();
 
     /* Cache new audio data: */
     m_pCache->cacheCurrentData(newAudioData);
@@ -291,6 +305,18 @@ bool UIMachineSettingsAudio::saveAudioData()
             if (fSuccess && isMachineOffline() && newAudioData.m_audioControllerType != oldAudioData.m_audioControllerType)
             {
                 comAdapter.SetAudioController(newAudioData.m_audioControllerType);
+                fSuccess = comAdapter.isOk();
+            }
+            /* Save whether audio output is enabled: */
+            if (fSuccess && isMachineOffline() && newAudioData.m_fAudioOutputEnabled != oldAudioData.m_fAudioOutputEnabled)
+            {
+                comAdapter.SetEnabledOut(newAudioData.m_fAudioOutputEnabled);
+                fSuccess = comAdapter.isOk();
+            }
+            /* Save whether audio input is enabled: */
+            if (fSuccess && isMachineOffline() && newAudioData.m_fAudioInputEnabled != oldAudioData.m_fAudioInputEnabled)
+            {
+                comAdapter.SetEnabledIn(newAudioData.m_fAudioInputEnabled);
                 fSuccess = comAdapter.isOk();
             }
 
