@@ -86,6 +86,7 @@ private:
     HRESULT uninitialize();
     HRESULT onNetworkAdapterChange(const ComPtr<INetworkAdapter> &aNetworkAdapter,
                                    BOOL aChangeAdapter);
+    HRESULT onAudioAdapterChange(const ComPtr<IAudioAdapter> &aAudioAdapter);
     HRESULT onSerialPortChange(const ComPtr<ISerialPort> &aSerialPort);
     HRESULT onParallelPortChange(const ComPtr<IParallelPort> &aParallelPort);
     HRESULT onStorageControllerChange();

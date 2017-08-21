@@ -102,6 +102,7 @@
 #include <VBox/vmm/vmapi.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmasynccompletion.h>
 #include <VBox/vmm/pdmnetifs.h>
 #include <VBox/vmm/pdmstorageifs.h>
@@ -4963,6 +4964,107 @@ DECLCALLBACK(int) Console::i_changeNetworkAttachment(Console *pThis,
     return rc;
 }
 
+/**
+ * Called by IInternalSessionControl::OnAudioAdapterChange().
+ */
+HRESULT Console::i_onAudioAdapterChange(IAudioAdapter *aAudioAdapter)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hrc = S_OK;
+
+    /* don't trigger audio changes if the VM isn't running */
+    SafeVMPtrQuiet ptrVM(this);
+    if (ptrVM.isOk())
+    {
+        BOOL fEnabledIn, fEnabledOut;
+        hrc = aAudioAdapter->COMGETTER(EnabledIn)(&fEnabledIn);
+        AssertComRC(hrc);
+        if (SUCCEEDED(hrc))
+        {
+            hrc = aAudioAdapter->COMGETTER(EnabledOut)(&fEnabledOut);
+            AssertComRC(hrc);
+            if (SUCCEEDED(hrc))
+            {
+                AudioControllerType_T audioController;
+                hrc = aAudioAdapter->COMGETTER(AudioController)(&audioController);
+                AssertComRC(hrc);
+                if (SUCCEEDED(hrc))
+                {
+                    Utf8Str strDevice;
+
+                    switch (audioController)
+                    {
+                        case AudioControllerType_AC97: strDevice = "ichac97"; break;
+                        case AudioControllerType_SB16: strDevice = "sb16";    break;
+                        case AudioControllerType_HDA:  strDevice = "hda";     break;
+                        default:
+                            AssertFailed(); break; /* Should never happen. */
+                    }
+
+                    int rc = VINF_SUCCESS;
+
+                    for (ULONG ulLUN = 0; ulLUN < 16 /** @todo Use a define */; ulLUN++)
+                    {
+                        PPDMIBASE pBase;
+                        int rc2 = PDMR3QueryDriverOnLun(ptrVM.rawUVM(),
+                                                        strDevice.c_str(), 0 /* iInstance */, ulLUN, "AUDIO", &pBase);
+                        if (RT_FAILURE(rc2))
+                            continue;
+
+                        Log(("%s: LUN#%RU32\n", strDevice.c_str(), ulLUN));
+
+                        if (pBase)
+                        {
+                            PPDMIAUDIOCONNECTOR pAudioCon =
+                                 (PPDMIAUDIOCONNECTOR)pBase->pfnQueryInterface(pBase, PDMIAUDIOCONNECTOR_IID);
+
+                            if (   pAudioCon
+                                && pAudioCon->pfnEnable)
+                            {
+                                int rcIn = pAudioCon->pfnEnable(pAudioCon, PDMAUDIODIR_IN, RT_BOOL(fEnabledIn));
+                                if (RT_FAILURE(rcIn))
+                                    LogRel(("Audio: Failed to %s input of LUN#%RU32, rc=%Rrc\n",
+                                            fEnabledIn ? "enable" : "disable", ulLUN, rcIn));
+
+                                if (RT_SUCCESS(rc))
+                                    rc = rcIn;
+
+                                int rcOut = pAudioCon->pfnEnable(pAudioCon, PDMAUDIODIR_OUT, RT_BOOL(fEnabledOut));
+                                if (RT_FAILURE(rcOut))
+                                    LogRel(("Audio: Failed to %s output of LUN#%RU32, rc=%Rrc\n",
+                                            fEnabledIn ? "enable" : "disable", ulLUN, rcOut));
+
+                                if (RT_SUCCESS(rc))
+                                    rc = rcOut;
+                            }
+                        }
+                    }
+
+                    if (RT_SUCCESS(rc))
+                        LogRel(("Audio: Status has changed (input is %s, output is %s)\n",
+                                fEnabledIn  ? "enabled" : "disabled", fEnabledOut ? "enabled" : "disabled"));
+                }
+            }
+        }
+
+        ptrVM.release();
+    }
+
+    alock.release();
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED(hrc))
+        fireAudioAdapterChangedEvent(mEventSource, aAudioAdapter);
+
+    LogFlowThisFunc(("Leaving rc=%#x\n", S_OK));
+    return S_OK;
+}
 
 /**
  * Called by IInternalSessionControl::OnSerialPortChange().

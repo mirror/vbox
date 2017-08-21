@@ -587,6 +587,24 @@ HRESULT Session::onNetworkAdapterChange(const ComPtr<INetworkAdapter> &aNetworkA
 #endif
 }
 
+HRESULT Session::onAudioAdapterChange(const ComPtr<IAudioAdapter> &aAudioAdapter)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
+    AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
+    AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
+
+    return mConsole->i_onAudioAdapterChange(aAudioAdapter);
+#else
+    RT_NOREF(aAudioAdapter);
+    return S_OK;
+#endif
+
+}
+
 HRESULT Session::onSerialPortChange(const ComPtr<ISerialPort> &aSerialPort)
 {
     LogFlowThisFunc(("\n"));

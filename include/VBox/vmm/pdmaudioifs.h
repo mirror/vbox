@@ -1053,6 +1053,28 @@ typedef struct PDMAUDIOCBRECORD
 typedef struct PDMIAUDIOCONNECTOR
 {
     /**
+     * Enables or disables the given audio direction for this driver.
+     *
+     * When disabled, assiociated output streams consume written audio without passing them further down to the backends.
+     * Associated input streams then return silence when read from those.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   enmDir          Audio direction to enable or disable driver for.
+     * @param   fEnable         Whether to enable or disable the specified audio direction.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnEnable, (PPDMIAUDIOCONNECTOR pInterface, PDMAUDIODIR enmDir, bool fEnable));
+
+    /**
+     * Returns whether the given audio direction for this driver is enabled or not.
+     *
+     * @returns True if audio is enabled for the given direction, false if not.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   enmDir          Audio direction to retrieve enabled status for.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsEnabled, (PPDMIAUDIOCONNECTOR pInterface, PDMAUDIODIR enmDir));
+
+    /**
      * Retrieves the current configuration of the host audio backend.
      *
      * @returns VBox status code.
@@ -1219,10 +1241,10 @@ typedef struct PDMIAUDIOCONNECTOR
      */
     DECLR3CALLBACKMEMBER(int, pfnRegisterCallbacks, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOCBRECORD paCallbacks, size_t cCallbacks));
 
-} PDMIAUDIOCONNECTOR;
+} PDMIAUDIOCONNECTOR, *PPDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "344ABC57-659E-4B21-8C25-69ED9FAD490D"
+#define PDMIAUDIOCONNECTOR_IID                  "A643B40C-733F-4307-9549-070AF0EE0ED6"
 
 /**
  * Assigns all needed interface callbacks for an audio backend.
@@ -1435,7 +1457,7 @@ typedef struct PDMIHOSTAUDIO
      */
     DECLR3CALLBACKMEMBER(void, pfnStreamCaptureEnd, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
-} PDMIHOSTAUDIO;
+} PDMIHOSTAUDIO, *PPDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
 #define PDMIHOSTAUDIO_IID                           "378A5C7F-A45A-4B8B-C1DA-CB49E84894AA"

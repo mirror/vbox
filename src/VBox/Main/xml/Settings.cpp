@@ -2546,6 +2546,8 @@ bool ParallelPort::operator==(const ParallelPort &s) const
  */
 AudioAdapter::AudioAdapter() :
     fEnabled(true), // default for old VMs, for new ones it's false
+    fEnabledIn(true),
+    fEnabledOut(true),
     controllerType(AudioControllerType_AC97),
     codecType(AudioCodecType_STAC9700),
     driverType(AudioDriverType_Null)
@@ -2558,6 +2560,8 @@ AudioAdapter::AudioAdapter() :
 bool AudioAdapter::areDefaultSettings(SettingsVersion_T sv) const
 {
     return (sv < SettingsVersion_v1_16 ? false : !fEnabled)
+        && fEnabledIn == true
+        && fEnabledOut == true
         && controllerType == AudioControllerType_AC97
         && codecType == AudioCodecType_STAC9700
         && properties.size() == 0;
@@ -2572,6 +2576,8 @@ bool AudioAdapter::operator==(const AudioAdapter &a) const
 {
     return (this == &a)
         || (   fEnabled        == a.fEnabled
+            && fEnabledIn      == a.fEnabledIn
+            && fEnabledOut     == a.fEnabledOut
             && controllerType  == a.controllerType
             && codecType       == a.codecType
             && driverType      == a.driverType
@@ -3679,6 +3685,8 @@ void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter
     }
 
     elmAudioAdapter.getAttributeValue("enabled", aa.fEnabled);
+    elmAudioAdapter.getAttributeValue("enabledIn", aa.fEnabledIn);
+    elmAudioAdapter.getAttributeValue("enabledOut", aa.fEnabledOut);
 
     Utf8Str strTemp;
     if (elmAudioAdapter.getAttributeValue("controller", strTemp))
@@ -6029,6 +6037,12 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
         if (hw.audioAdapter.fEnabled || m->sv < SettingsVersion_v1_16)
             pelmAudio->setAttribute("enabled", hw.audioAdapter.fEnabled);
+
+        if (!hw.audioAdapter.fEnabledIn)
+            pelmAudio->setAttribute("enabledIn", hw.audioAdapter.fEnabledIn);
+
+        if (!hw.audioAdapter.fEnabledOut)
+            pelmAudio->setAttribute("enabledOut", hw.audioAdapter.fEnabledOut);
 
         if (m->sv >= SettingsVersion_v1_15 && hw.audioAdapter.properties.size() > 0)
         {

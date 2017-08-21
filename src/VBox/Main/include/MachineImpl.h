@@ -505,6 +505,7 @@ public:
     virtual HRESULT i_onNATRedirectRuleChange(ULONG /* slot */, BOOL /* fRemove */ , IN_BSTR /* name */,
                                               NATProtocol_T /* protocol */, IN_BSTR /* host ip */, LONG /* host port */,
                                               IN_BSTR /* guest port */, LONG /* guest port */ ) { return S_OK; }
+    virtual HRESULT i_onAudioAdapterChange(IAudioAdapter * /* audioAdapter */) { return S_OK; }
     virtual HRESULT i_onSerialPortChange(ISerialPort * /* serialPort */) { return S_OK; }
     virtual HRESULT i_onParallelPortChange(IParallelPort * /* parallelPort */) { return S_OK; }
     virtual HRESULT i_onVRDEServerChange(BOOL /* aRestart */) { return S_OK; }
@@ -1324,6 +1325,7 @@ public:
                                       IN_BSTR aGuestIp, LONG aGuestPort);
     HRESULT i_onStorageControllerChange();
     HRESULT i_onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);
+    HRESULT i_onAudioAdapterChange(IAudioAdapter *audioAdapter);
     HRESULT i_onSerialPortChange(ISerialPort *serialPort);
     HRESULT i_onParallelPortChange(IParallelPort *parallelPort);
     HRESULT i_onCPUChange(ULONG aCPU, BOOL aRemove);

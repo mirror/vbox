@@ -14045,6 +14045,30 @@ HRESULT SessionMachine::i_onNATRedirectRuleChange(ULONG ulSlot, BOOL aNatRuleRem
 /**
  *  @note Locks this object for reading.
  */
+HRESULT SessionMachine::i_onAudioAdapterChange(IAudioAdapter *audioAdapter)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    ComPtr<IInternalSessionControl> directControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnAudioAdapterChange(audioAdapter);
+}
+
+/**
+ *  @note Locks this object for reading.
+ */
 HRESULT SessionMachine::i_onSerialPortChange(ISerialPort *serialPort)
 {
     LogFlowThisFunc(("\n"));

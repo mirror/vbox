@@ -157,6 +157,7 @@ public:
 
     // events from IInternalSessionControl
     HRESULT i_onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL changeAdapter);
+    HRESULT i_onAudioAdapterChange(IAudioAdapter *aAudioAdapter);
     HRESULT i_onSerialPortChange(ISerialPort *aSerialPort);
     HRESULT i_onParallelPortChange(IParallelPort *aParallelPort);
     HRESULT i_onStorageControllerChange();

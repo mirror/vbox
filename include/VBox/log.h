@@ -341,6 +341,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_APPLIANCE,
     /** Main group, IAudioAdapter. */
     LOG_GROUP_MAIN_AUDIOADAPTER,
+    /** Main group, IAudioAdapterChangedEvent. */
+    LOG_GROUP_MAIN_AUDIOADAPTERCHANGEDEVENT,
     /** Main group, IBandwidthControl. */
     LOG_GROUP_MAIN_BANDWIDTHCONTROL,
     /** Main group, IBandwidthGroup. */
@@ -959,6 +961,7 @@ typedef enum LOGGROUP
     "MAIN_ADDITIONSSTATECHANGEDEVENT", \
     "MAIN_APPLIANCE", \
     "MAIN_AUDIOADAPTER", \
+    "MAIN_AUDIOADAPTERCHANGEDEVENT", \
     "MAIN_BANDWIDTHCONTROL", \
     "MAIN_BANDWIDTHGROUP", \
     "MAIN_BANDWIDTHGROUPCHANGEDEVENT", \

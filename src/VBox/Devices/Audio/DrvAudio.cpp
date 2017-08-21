@@ -889,7 +889,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
               ("Stream '%s' is not an output stream and therefore cannot be written to (direction is 0x%x)\n",
                pStream->szName, pStream->enmDir));
 
-    uint32_t cbWritten = 0;
+    uint32_t cbWrittenTotal = 0;
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_FAILURE(rc))
@@ -906,6 +906,12 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
 
     do
     {
+        if (!pThis->Out.fEnabled)
+        {
+            cbWrittenTotal = cbBuf;
+            break;
+        }
+
         if (   pThis->pHostDrvAudio
             && pThis->pHostDrvAudio->pfnGetStatus
             && pThis->pHostDrvAudio->pfnGetStatus(pThis->pHostDrvAudio, PDMAUDIODIR_OUT) != PDMAUDIOBACKENDSTS_RUNNING)
@@ -933,11 +939,17 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
         AssertPtr(pszGstSts);
 #endif
 
-#ifdef LOG_ENABLED
-        AssertMsg(pGstStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_ENABLED,
-                  ("Writing to disabled guest output stream \"%s\" not possible (status is %s, host status %s)\n",
-                   pGstStream->szName, pszGstSts, pszHstSts));
+        if (!(pGstStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_ENABLED))
+        {
+            Log3Func(("[%s] Writing to disabled guest output stream not possible (status is %s, host status %s)\n",
+                      pGstStream->szName, pszGstSts, pszHstSts));
+#ifdef DEBUG_andy
+            AssertFailed();
 #endif
+            rc = VERR_NOT_AVAILABLE;
+            break;
+        }
+
         const uint32_t cbFree = AudioMixBufFreeBytes(&pGstStream->MixBuf);
         if (!cbFree) /* No free guest side buffer space, bail out. */
         {
@@ -987,14 +999,14 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
             if (RT_SUCCESS(rc))
                 rc = rc2;
 
-            cbWritten = AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cfWritten);
+            cbWrittenTotal = AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cfWritten);
 
 #ifdef VBOX_WITH_STATISTICS
             STAM_COUNTER_ADD(&pThis->Stats.TotalFramesMixedOut,      cfMixed);
             Assert(cfWritten >= cfMixed);
             STAM_COUNTER_ADD(&pThis->Stats.TotalFramesLostOut,       cfWritten - cfMixed);
-            STAM_COUNTER_ADD(&pThis->Stats.TotalBytesWritten,        cbWritten);
-            STAM_COUNTER_ADD(&pGstStream->Out.StatBytesTotalWritten, cbWritten);
+            STAM_COUNTER_ADD(&pThis->Stats.TotalBytesWritten,        cbWrittenTotal);
+            STAM_COUNTER_ADD(&pGstStream->Out.StatBytesTotalWritten, cbWrittenTotal);
 #endif
         }
 
@@ -1016,7 +1028,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
     if (RT_SUCCESS(rc))
     {
         if (pcbWritten)
-            *pcbWritten = cbWritten;
+            *pcbWritten = cbWrittenTotal;
     }
 
     return rc;
@@ -2273,12 +2285,36 @@ static int drvAudioInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     LogRel2(("Audio: Verbose logging enabled\n"));
 
     PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
-    LogFlowFunc(("pThis=%p, pDrvIns=%p\n", pThis, pDrvIns));
 
     int rc = RTCritSectInit(&pThis->CritSect);
     AssertRCReturn(rc, rc);
 
-    /** @todo Add audio driver options. */
+    /*
+     * Configure driver from CFGM stuff.
+     */
+#ifdef DEBUG
+    CFGMR3Dump(pCfgHandle);
+#endif
+
+    int rc2 = CFGMR3QueryString(pCfgHandle, "DriverName", pThis->szName, sizeof(pThis->szName));
+    if (RT_FAILURE(rc2))
+        RTStrPrintf(pThis->szName, sizeof(pThis->szName), "Untitled");
+
+    /* By default we don't enable anything if wrongly / not set-up. */
+    pThis->In.fEnabled  = false;
+    pThis->Out.fEnabled = false;
+
+    uint64_t u64Temp;
+    rc2 = CFGMR3QueryInteger(pCfgHandle, "InputEnabled",  &u64Temp);
+    if (RT_SUCCESS(rc2))
+        pThis->In.fEnabled  = RT_BOOL(u64Temp);
+
+    rc2 = CFGMR3QueryInteger(pCfgHandle, "OutputEnabled", &u64Temp);
+    if (RT_SUCCESS(rc2))
+        pThis->Out.fEnabled = RT_BOOL(u64Temp);
+
+    LogRel(("Audio: Initial status for driver '%s': Input is %s, output is %s\n",
+            pThis->szName, pThis->In.fEnabled ? "enabled" : "disabled", pThis->Out.fEnabled ? "enabled" : "disabled"));
 
     /*
      * If everything went well, initialize the lower driver.
@@ -2315,6 +2351,13 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
 
     do
     {
+        if (!pThis->In.fEnabled)
+        {
+            RT_BZERO(pvBuf, cbBuf);
+            cbReadTotal = cbBuf;
+            break;
+        }
+
         if (   pThis->pHostDrvAudio
             && pThis->pHostDrvAudio->pfnGetStatus
             && pThis->pHostDrvAudio->pfnGetStatus(pThis->pHostDrvAudio, PDMAUDIODIR_IN) != PDMAUDIOBACKENDSTS_RUNNING)
@@ -2617,6 +2660,87 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnEnable}
+ */
+static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIODIR enmDir, bool fEnable)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+
+    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    bool *pfEnabled;
+    if (enmDir == PDMAUDIODIR_IN)
+        pfEnabled = &pThis->In.fEnabled;
+    else if (enmDir == PDMAUDIODIR_OUT)
+        pfEnabled = &pThis->Out.fEnabled;
+    else
+        AssertFailedReturn(VERR_INVALID_PARAMETER);
+
+    if (fEnable != *pfEnabled)
+    {
+        PPDMAUDIOSTREAM pStream;
+        RTListForEach(&pThis->lstHstStreams, pStream, PDMAUDIOSTREAM, Node)
+        {
+            if (pStream->enmDir != enmDir) /* Skip unwanted streams. */
+                continue;
+
+            int rc2 = drvAudioStreamControlInternal(pThis, pStream,
+                                                    fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE);
+            if (RT_FAILURE(rc2))
+                LogRel2(("Audio: Failed to %s %s stream, rc=%Rrc\n",
+                         fEnable ? "enable" : "disable", enmDir == PDMAUDIODIR_IN ? "input" : "output", rc2));
+
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+
+            /* Keep going. */
+        }
+
+        *pfEnabled = fEnable;
+    }
+
+    int rc3 = RTCritSectLeave(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+        rc = rc3;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnIsEnabled}
+ */
+static DECLCALLBACK(bool) drvAudioIsEnabled(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIODIR enmDir)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+
+    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
+
+    int rc2 = RTCritSectEnter(&pThis->CritSect);
+    if (RT_FAILURE(rc2))
+        return false;
+
+    bool *pfEnabled;
+    if (enmDir == PDMAUDIODIR_IN)
+        pfEnabled = &pThis->In.fEnabled;
+    else if (enmDir == PDMAUDIODIR_OUT)
+        pfEnabled = &pThis->Out.fEnabled;
+    else
+        AssertFailedReturn(VERR_INVALID_PARAMETER);
+
+    const bool fIsEnabled = *pfEnabled;
+
+    rc2 = RTCritSectLeave(&pThis->CritSect);
+    AssertRC(rc2);
+
+    return fIsEnabled;
 }
 
 /**
@@ -3157,6 +3281,8 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface            = drvAudioQueryInterface;
     /* IAudioConnector. */
+    pThis->IAudioConnector.pfnEnable            = drvAudioEnable;
+    pThis->IAudioConnector.pfnIsEnabled         = drvAudioIsEnabled;
     pThis->IAudioConnector.pfnGetConfig         = drvAudioGetConfig;
     pThis->IAudioConnector.pfnGetStatus         = drvAudioGetStatus;
     pThis->IAudioConnector.pfnStreamCreate      = drvAudioStreamCreate;

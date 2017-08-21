@@ -634,6 +634,8 @@ struct AudioAdapter
     bool operator==(const AudioAdapter &a) const;
 
     bool                    fEnabled;
+    bool                    fEnabledIn;
+    bool                    fEnabledOut;
     AudioControllerType_T   controllerType;
     AudioCodecType_T        codecType;
     AudioDriverType_T       driverType;

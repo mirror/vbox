@@ -92,8 +92,8 @@ typedef struct DRVAUDIOSTATS
  */
 typedef struct DRVAUDIO
 {
-    /** Input/output processing thread. */
-    RTTHREAD                hThread;
+    /** Friendly name of the driver. */
+    char                    szName[64];
     /** Critical section for serializing access. */
     RTCRITSECT              CritSect;
     /** Shutdown indicator. */
@@ -129,6 +129,18 @@ typedef struct DRVAUDIO
     /** Statistics for the statistics manager (STAM). */
     DRVAUDIOSTATS           Stats;
 #endif
+    struct
+    {
+        /** Whether this driver's input streams are enabled or not.
+         *  This flag overrides all the attached stream statuses. */
+        bool                fEnabled;
+    } In;
+    struct
+    {
+        /** Whether this driver's output streams are enabled or not.
+         *  This flag overrides all the attached stream statuses. */
+        bool                fEnabled;
+    } Out;
 } DRVAUDIO, *PDRVAUDIO;
 
 /** Makes a PDRVAUDIO out of a PPDMIAUDIOCONNECTOR. */

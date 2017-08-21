@@ -19769,6 +19769,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="changeAdapter" type="boolean" dir="in"/>
     </method>
 
+    <method name="onAudioAdapterChange">
+      <desc>
+        Triggerd when settings of the audio adapter of the
+        associated virtual machine have changed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
+      </desc>
+      <param name="audioAdapter" type="IAudioAdapter" dir="in"/>
+    </method>
+
     <method name="onSerialPortChange">
       <desc>
         Triggered when settings of a serial port of the
@@ -22132,8 +22148,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IMediumConfigChangedEvent">IMediumConfigChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnAudioAdapterChanged" value="97">
+      <desc>
+        See <link to="IAudioAdapterChangedEvent">IAudioAdapterChangedEvent</link>.
+      </desc>
+    </const>
     <!-- Last event marker -->
-    <const name="Last" value="97">
+    <const name="Last" value="98">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -22847,6 +22868,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="networkAdapter" type="INetworkAdapter" readonly="yes">
       <desc>
         Network adapter that is subject to change.
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IAudioAdapterChangedEvent" extends="IEvent"
+    uuid="D5ABC823-04D0-4DB6-8D66-DC2F033120E1"
+    wsmap="managed" autogen="VBoxEvent" id="OnAudioAdapterChanged"
+    >
+    <desc>
+      Notification when a property of the audio adapter changes.
+      Interested callees should use IAudioAdapter methods and attributes
+      to find out what has changed.
+    </desc>
+    <attribute name="audioAdapter" type="IAudioAdapter" readonly="yes">
+      <desc>
+        Audio adapter that is subject to change.
       </desc>
     </attribute>
   </interface>

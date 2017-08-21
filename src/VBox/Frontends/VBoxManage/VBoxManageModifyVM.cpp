@@ -149,6 +149,8 @@ enum
     MODIFYVM_AUDIOCONTROLLER,
     MODIFYVM_AUDIOCODEC,
     MODIFYVM_AUDIO,
+    MODIFYVM_AUDIOIN,
+    MODIFYVM_AUDIOOUT,
     MODIFYVM_CLIPBOARD,
     MODIFYVM_DRAGANDDROP,
     MODIFYVM_VRDPPORT,                /* VRDE: deprecated */
@@ -328,6 +330,8 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--audiocontroller",          MODIFYVM_AUDIOCONTROLLER,           RTGETOPT_REQ_STRING },
     { "--audiocodec",               MODIFYVM_AUDIOCODEC,                RTGETOPT_REQ_STRING },
     { "--audio",                    MODIFYVM_AUDIO,                     RTGETOPT_REQ_STRING },
+    { "--audioin",                  MODIFYVM_AUDIOIN,                   RTGETOPT_REQ_BOOL_ONOFF },
+    { "--audioout",                 MODIFYVM_AUDIOOUT,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--clipboard",                MODIFYVM_CLIPBOARD,                 RTGETOPT_REQ_STRING },
     { "--draganddrop",              MODIFYVM_DRAGANDDROP,               RTGETOPT_REQ_STRING },
     { "--vrdpport",                 MODIFYVM_VRDPPORT,                  RTGETOPT_REQ_STRING },     /* deprecated */
@@ -2321,6 +2325,26 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     errorArgument("Invalid --audio argument '%s'", ValueUnion.psz);
                     rc = E_FAIL;
                 }
+                break;
+            }
+
+            case MODIFYVM_AUDIOIN:
+            {
+                ComPtr<IAudioAdapter> audioAdapter;
+                sessionMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+                ASSERT(audioAdapter);
+
+                CHECK_ERROR(audioAdapter, COMSETTER(EnabledIn)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_AUDIOOUT:
+            {
+                ComPtr<IAudioAdapter> audioAdapter;
+                sessionMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+                ASSERT(audioAdapter);
+
+                CHECK_ERROR(audioAdapter, COMSETTER(EnabledIn)(ValueUnion.f));
                 break;
             }
 

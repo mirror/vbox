@@ -452,6 +452,66 @@ RTEXITCODE handleControlVM(HandlerArg *a)
 
             CHECK_ERROR_BREAK(sessionMachine, COMSETTER(CPUExecutionCap)(n));
         }
+        else if (!strcmp(a->argv[1], "audioin"))
+        {
+            ComPtr<IAudioAdapter> adapter;
+            CHECK_ERROR_BREAK(sessionMachine, GetAudioAdapter(adapter.asOutParam()));
+            if (adapter)
+            {
+                if (!strcmp(a->argv[2], "on"))
+                {
+                    CHECK_ERROR_RET(adapter, COMSETTER(EnabledIn)(TRUE), RTEXITCODE_FAILURE);
+                }
+                else if (!strcmp(a->argv[2], "off"))
+                {
+                    CHECK_ERROR_RET(adapter, COMSETTER(EnabledIn)(FALSE), RTEXITCODE_FAILURE);
+                }
+                else
+                {
+                    errorArgument("Invalid value '%s'", Utf8Str(a->argv[2]).c_str());
+                    rc = E_FAIL;
+                    break;
+                }
+                if (SUCCEEDED(rc))
+                    fNeedsSaving = true;
+            }
+            else
+            {
+                errorArgument("audio adapter not enabled in VM configuration");
+                rc = E_FAIL;
+                break;
+            }
+        }
+        else if (!strcmp(a->argv[1], "audioout"))
+        {
+            ComPtr<IAudioAdapter> adapter;
+            CHECK_ERROR_BREAK(sessionMachine, GetAudioAdapter(adapter.asOutParam()));
+            if (adapter)
+            {
+                if (!strcmp(a->argv[2], "on"))
+                {
+                    CHECK_ERROR_RET(adapter, COMSETTER(EnabledOut)(TRUE), RTEXITCODE_FAILURE);
+                }
+                else if (!strcmp(a->argv[2], "off"))
+                {
+                    CHECK_ERROR_RET(adapter, COMSETTER(EnabledOut)(FALSE), RTEXITCODE_FAILURE);
+                }
+                else
+                {
+                    errorArgument("Invalid value '%s'", Utf8Str(a->argv[2]).c_str());
+                    rc = E_FAIL;
+                    break;
+                }
+                if (SUCCEEDED(rc))
+                    fNeedsSaving = true;
+            }
+            else
+            {
+                errorArgument("audio adapter not enabled in VM configuration");
+                rc = E_FAIL;
+                break;
+            }
+        }
         else if (!strcmp(a->argv[1], "clipboard"))
         {
             if (a->argc <= 1 + 1)

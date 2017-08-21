@@ -834,6 +834,8 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
         }
         RTStrmPrintf(pStrm, "]\n");
         RTStrmPrintf(pStrm,
+                     "                            [--audioin on|off]\n"
+                     "                            [--audioout on|off]\n"
                      "                            [--audiocontroller ac97|hda|sb16]\n"
                      "                            [--audiocodec stac9700|ad1980|stac9221|sb16]\n"
                      "                            [--clipboard disabled|hosttoguest|guesttohost|\n"
@@ -982,6 +984,8 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            usbattach <uuid>|<address>\n"
                      "                                      [--capturefile <filename>] |\n"
                      "                            usbdetach <uuid>|<address> |\n"
+                     "                            audioin on|off |\n"
+                     "                            audioout on|off |\n"
                      "                            clipboard disabled|hosttoguest|guesttohost|\n"
                      "                                      bidirectional |\n"
                      "                            draganddrop disabled|hosttoguest |\n"
