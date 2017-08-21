@@ -121,7 +121,7 @@
             </sizepolicy>
            </property>
            <property name="whatsThis">
-            <string>When checked, a virtual PCI audio card output will be enabled.</string>
+            <string>When checked, output to the virtual audio device will reach the host. Otherwise the guest is muted.</string>
            </property>
            <property name="text">
             <string>Enable Audio &amp;Output</string>
@@ -137,7 +137,7 @@
             </sizepolicy>
            </property>
            <property name="whatsThis">
-            <string>When checked, a virtual PCI audio card input will be enabled.</string>
+            <string>When checked, the guest will be able to capture audio input from the host. Otherwise the guest will capture only silence.</string>
            </property>
            <property name="text">
             <string>Enable Audio &amp;Input</string>
