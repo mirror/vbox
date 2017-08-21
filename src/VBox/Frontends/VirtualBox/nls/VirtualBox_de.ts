@@ -499,7 +499,7 @@
     </message>
     <message>
         <source>Show Menu &amp;Bar</source>
-        <translation>Zeige &amp;Menüleiste</translation>
+        <translation>&amp;Menüleiste zeigen</translation>
     </message>
     <message>
         <source>&amp;Status Bar</source>
@@ -511,7 +511,7 @@
     </message>
     <message>
         <source>Show Status &amp;Bar</source>
-        <translation>Zeige &amp;Statusleiste</translation>
+        <translation>&amp;Statusleiste zeigen</translation>
     </message>
     <message>
         <source>&amp;Input</source>
@@ -1030,7 +1030,7 @@
     </message>
     <message>
         <source>Open the Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet eine Liste der registrierten virtuellen Medien</translation>
     </message>
     <message>
         <source>&amp;Host Network Manager</source>
@@ -1038,7 +1038,7 @@
     </message>
     <message>
         <source>Open the Host Network Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet eine Liste der Host-only Netzwerke</translation>
     </message>
 </context>
 <context>
@@ -1527,7 +1527,7 @@
     <name>UIGChooserView</name>
     <message>
         <source>Contains a tree of Virtual Machines and their groups</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt alle virtuellen Maschinen innerhalb ihrer jeweiligen Gruppen</translation>
     </message>
 </context>
 <context>
@@ -1937,14 +1937,14 @@
     <message>
         <source>%1 details</source>
         <comment>like &apos;General details&apos; or &apos;Storage details&apos;</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 Eigenschaften</translation>
     </message>
 </context>
 <context>
     <name>UIGDetailsSet</name>
     <message>
         <source>Contains the details of virtual machine &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Eigenschaften der virtuellen Maschine &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
@@ -2896,7 +2896,7 @@
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die IPv6-Präfixlänge für diesen Adapter falls IPv6 unterstützt wird.</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -2908,11 +2908,11 @@
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished"></translation>
+        <translation>Änderungen zurücksetzen</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished"></translation>
+        <translation>Änderungen sichern</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
@@ -3140,11 +3140,11 @@
     </message>
     <message>
         <source>Refresh Host-only Networks (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only Netzwerke aktualisieren (%1)</translation>
     </message>
     <message>
         <source>Refresh the list of host-only networks</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktualisiert die Liste der Host-only-Netzwerke</translation>
     </message>
     <message>
         <source>Name</source>
@@ -7449,7 +7449,7 @@
     </message>
     <message>
         <source>Show Statusbar</source>
-        <translation>Statusleiste-Zeigen</translation>
+        <translation>Statusleiste zeigen</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
