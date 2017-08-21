@@ -99,6 +99,9 @@ private:
     /** Prepares all. */
     void prepare();
 
+    /** Updates children styles. */
+    void updateChildrenStyles();
+
     /** @name Contents: Widgets
       * @{ */
         /** Holds the main layout instance. */

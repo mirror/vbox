@@ -80,6 +80,9 @@ signals:
 
 public:
 
+    /** Position styles. */
+    enum PositionStyle { PositionStyle_Left, PositionStyle_Middle, PositionStyle_Right, PositionStyle_Single };
+
     /** Holds the mime-type for the D&D system. */
     static const QString MimeType;
 
@@ -92,6 +95,9 @@ public:
     const QIcon icon() const { return m_icon; }
     /** Returns item name. */
     const QString name() const { return m_strName; }
+
+    /** Defines the item @a enmPositionStyle. */
+    void setPositionStyle(PositionStyle enmPositionStyle);
 
     /** Marks item @a fCurrent. */
     void setCurrent(bool fCurrent);
@@ -129,6 +135,9 @@ private:
     /** Holds the item name. */
     QString      m_strName;
 
+    /** Holds the item position style. */
+    PositionStyle m_enmPosition;
+
     /** Holds whether the item is current. */
     bool  m_fCurrent;
     /** Holds whether the item is hovered. */
@@ -164,6 +173,7 @@ UITabBarItem::UITabBarItem(const QUuid &uuid, const QIcon &icon /* = QIcon() */,
     : m_uuid(uuid)
     , m_icon(icon)
     , m_strName(strName)
+    , m_enmPosition(PositionStyle_Single)
     , m_fCurrent(false)
     , m_fHovered(false)
     , m_pLayout(0)
@@ -176,6 +186,15 @@ UITabBarItem::UITabBarItem(const QUuid &uuid, const QIcon &icon /* = QIcon() */,
 {
     /* Prepare: */
     prepare();
+}
+
+void UITabBarItem::setPositionStyle(PositionStyle enmPosition)
+{
+    /* Remember the position: */
+    m_enmPosition = enmPosition;
+
+    /* And call for repaint: */
+    update();
 }
 
 void UITabBarItem::setCurrent(bool fCurrent)
@@ -474,6 +493,8 @@ QUuid UITabBar::addTab(const QIcon &icon /* = QIcon() */, const QString &strName
         /* Add item into layout and list: */
         m_pLayoutTab->insertWidget(0, pItem);
         m_aItems.prepend(pItem);
+        /* Update children styles: */
+        updateChildrenStyles();
         /* Return unique ID: */
         return uuid;
     }
@@ -513,6 +534,9 @@ bool UITabBar::removeTab(const QUuid &uuid)
         if (!m_aItems.isEmpty())
             sltHandleMakeChildCurrent(m_aItems.first());
     }
+
+    /* Update children styles: */
+    updateChildrenStyles();
 
     /* Return result: */
     return fSuccess;
@@ -686,6 +710,9 @@ void UITabBar::dropEvent(QDropEvent *pEvent)
         ++iPosition;
     m_aItems.insert(iPosition, pItemDropped);
     m_pLayoutTab->insertWidget(iPosition, pItemDropped);
+
+    /* Update children styles: */
+    updateChildrenStyles();
 }
 
 void UITabBar::sltHandleMakeChildCurrent(UITabBarItem *pItem)
@@ -753,6 +780,25 @@ void UITabBar::prepare()
             m_pLayoutMain->addLayout(m_pLayoutTab);
         }
     }
+}
+
+void UITabBar::updateChildrenStyles()
+{
+    /* Single child has corresponding (rounded) style: */
+    if (m_aItems.size() == 1)
+        m_aItems.first()->setPositionStyle(UITabBarItem::PositionStyle_Single);
+    /* If there are more than one child: */
+    else if (m_aItems.size() > 1)
+    {
+        /* First make all children have no rounded sides: */
+        foreach (UITabBarItem *pItem, m_aItems)
+            pItem->setPositionStyle(UITabBarItem::PositionStyle_Middle);
+        /* Then make first child rounded left, while last rounded right: */
+        m_aItems.first()->setPositionStyle(UITabBarItem::PositionStyle_Left);
+        m_aItems.last()->setPositionStyle(UITabBarItem::PositionStyle_Right);
+    }
+    /* Repaint: */
+    update();
 }
 
 #include "UITabBar.moc"
