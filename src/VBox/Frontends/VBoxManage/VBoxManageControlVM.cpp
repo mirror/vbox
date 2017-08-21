@@ -455,7 +455,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         else if (!strcmp(a->argv[1], "audioin"))
         {
             ComPtr<IAudioAdapter> adapter;
-            CHECK_ERROR_BREAK(sessionMachine, GetAudioAdapter(adapter.asOutParam()));
+            CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioAdapter)(adapter.asOutParam()));
             if (adapter)
             {
                 if (!strcmp(a->argv[2], "on"))
@@ -485,7 +485,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         else if (!strcmp(a->argv[1], "audioout"))
         {
             ComPtr<IAudioAdapter> adapter;
-            CHECK_ERROR_BREAK(sessionMachine, GetAudioAdapter(adapter.asOutParam()));
+            CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioAdapter)(adapter.asOutParam()));
             if (adapter)
             {
                 if (!strcmp(a->argv[2], "on"))
