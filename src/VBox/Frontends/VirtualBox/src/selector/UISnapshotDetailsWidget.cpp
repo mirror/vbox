@@ -1513,6 +1513,22 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine, Detai
                                                         gpConverter->toString(comAudio.GetAudioDriver()))
                         + QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Controller", "details (audio)"),
                                                         gpConverter->toString(comAudio.GetAudioController()));
+
+#ifdef VBOX_WITH_AUDIO_INOUT_INFO
+                /* Output: */
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Audio Output", "details (audio)"),
+                                                         comAudio.GetEnabledOut() ?
+                                                         QApplication::translate("UIGDetails", "Enabled", "details (audio/output)") :
+                                                         QApplication::translate("UIGDetails", "Disabled", "details (audio/output)"));
+
+                /* Input: */
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Audio Input", "details (audio)"),
+                                                         comAudio.GetEnabledIn() ?
+                                                         QApplication::translate("UIGDetails", "Enabled", "details (audio/input)") :
+                                                         QApplication::translate("UIGDetails", "Disabled", "details (audio/input)"));
+#endif /* VBOX_WITH_AUDIO_INOUT_INFO */
             }
             else
             {
