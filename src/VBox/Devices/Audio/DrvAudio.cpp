@@ -1951,11 +1951,11 @@ static DECLCALLBACK(int) drvAudioRegisterCallbacks(PPDMIAUDIOCONNECTOR pInterfac
                 switch (pCB->Device.enmType)
                 {
                     case PDMAUDIODEVICECBTYPE_DATA_INPUT:
-                        RTListAppend(&pThis->lstCBIn, &pCB->Node);
+                        RTListAppend(&pThis->In.lstCB, &pCB->Node);
                         break;
 
                     case PDMAUDIODEVICECBTYPE_DATA_OUTPUT:
-                        RTListAppend(&pThis->lstCBOut, &pCB->Node);
+                        RTListAppend(&pThis->Out.lstCB, &pCB->Node);
                         break;
 
                     default:
@@ -2214,14 +2214,14 @@ static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
         return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
-    pThis->cStreamsFreeIn  = pThis->BackendCfg.cMaxStreamsIn;
-    pThis->cStreamsFreeOut = pThis->BackendCfg.cMaxStreamsOut;
+    pThis->In.cStreamsFree  = pThis->BackendCfg.cMaxStreamsIn;
+    pThis->Out.cStreamsFree = pThis->BackendCfg.cMaxStreamsOut;
 
-    LogFlowFunc(("cStreamsFreeIn=%RU8, cStreamsFreeOut=%RU8\n", pThis->cStreamsFreeIn, pThis->cStreamsFreeOut));
+    LogFlowFunc(("cStreamsFreeIn=%RU8, cStreamsFreeOut=%RU8\n", pThis->In.cStreamsFree, pThis->Out.cStreamsFree));
 
     LogRel2(("Audio: Host audio backend supports %RU32 input streams and %RU32 output streams at once\n",
              /* Clamp for logging. Unlimited streams are defined by UINT32_MAX. */
-             RT_MIN(64, pThis->cStreamsFreeIn), RT_MIN(64, pThis->cStreamsFreeOut)));
+             RT_MIN(64, pThis->In.cStreamsFree), RT_MIN(64, pThis->Out.cStreamsFree)));
 
 #ifdef VBOX_WITH_AUDIO_ENUM
     int rc2 = drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
@@ -2489,14 +2489,14 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
         size_t cbHstStrm = 0;
         if (pCfgHost->enmDir == PDMAUDIODIR_IN)
         {
-            if (!pThis->cStreamsFreeIn)
+            if (!pThis->In.cStreamsFree)
                 LogFunc(("Warning: No more input streams free to use\n"));
 
             cbHstStrm = pThis->BackendCfg.cbStreamIn;
         }
         else /* Out */
         {
-            if (!pThis->cStreamsFreeOut)
+            if (!pThis->Out.cStreamsFree)
             {
                 LogFlowFunc(("Maximum number of host output streams reached\n"));
                 RC_BREAK(VERR_AUDIO_NO_FREE_OUTPUT_STREAMS);
@@ -2638,13 +2638,13 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
         if (pCfgHost->enmDir == PDMAUDIODIR_IN)
         {
-            if (pThis->cStreamsFreeIn)
-                pThis->cStreamsFreeIn--;
+            if (pThis->In.cStreamsFree)
+                pThis->In.cStreamsFree--;
         }
         else /* Out */
         {
-            if (pThis->cStreamsFreeOut)
-                pThis->cStreamsFreeOut--;
+            if (pThis->Out.cStreamsFree)
+                pThis->Out.cStreamsFree--;
         }
 
 #ifdef VBOX_WITH_STATISTICS
@@ -3028,11 +3028,11 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
     {
         if (enmDir == PDMAUDIODIR_IN)
         {
-            pThis->cStreamsFreeIn++;
+            pThis->In.cStreamsFree++;
         }
         else /* Out */
         {
-            pThis->cStreamsFreeOut++;
+            pThis->Out.cStreamsFree++;
         }
     }
 
@@ -3270,8 +3270,8 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     RTListInit(&pThis->lstHstStreams);
     RTListInit(&pThis->lstGstStreams);
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
-    RTListInit(&pThis->lstCBIn);
-    RTListInit(&pThis->lstCBOut);
+    RTListInit(&pThis->In.lstCB);
+    RTListInit(&pThis->Out.lstCB);
 #endif
 
     /*
@@ -3435,10 +3435,10 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
      * Destroy callbacks, if any.
      */
     PPDMAUDIOCBRECORD pCB, pCBNext;
-    RTListForEachSafe(&pThis->lstCBIn, pCB, pCBNext, PDMAUDIOCBRECORD, Node)
+    RTListForEachSafe(&pThis->In.lstCB, pCB, pCBNext, PDMAUDIOCBRECORD, Node)
         drvAudioCallbackDestroy(pCB);
 
-    RTListForEachSafe(&pThis->lstCBOut, pCB, pCBNext, PDMAUDIOCBRECORD, Node)
+    RTListForEachSafe(&pThis->Out.lstCB, pCB, pCBNext, PDMAUDIOCBRECORD, Node)
         drvAudioCallbackDestroy(pCB);
 #endif
 

@@ -108,23 +108,12 @@ typedef struct DRVAUDIO
     RTLISTANCHOR            lstHstStreams;
     /** List of guest input/output audio streams. */
     RTLISTANCHOR            lstGstStreams;
-    /** Max. number of free input streams.
-     *  UINT32_MAX for unlimited streams. */
-    uint32_t                cStreamsFreeIn;
-    /** Max. number of free output streams.
-     *  UINT32_MAX for unlimited streams. */
-    uint32_t                cStreamsFreeOut;
 #ifdef VBOX_WITH_AUDIO_ENUM
     /** Flag indicating to perform an (re-)enumeration of the host audio devices. */
     bool                    fEnumerateDevices;
 #endif
     /** Audio configuration settings retrieved from the backend. */
     PDMAUDIOBACKENDCFG      BackendCfg;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    /** @todo Use a map with primary key set to the callback type? */
-    RTLISTANCHOR            lstCBIn;
-    RTLISTANCHOR            lstCBOut;
-#endif
 #ifdef VBOX_WITH_STATISTICS
     /** Statistics for the statistics manager (STAM). */
     DRVAUDIOSTATS           Stats;
@@ -134,12 +123,24 @@ typedef struct DRVAUDIO
         /** Whether this driver's input streams are enabled or not.
          *  This flag overrides all the attached stream statuses. */
         bool                fEnabled;
+        /** Max. number of free input streams.
+         *  UINT32_MAX for unlimited streams. */
+        uint32_t            cStreamsFree;
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+        RTLISTANCHOR        lstCB;
+#endif
     } In;
     struct
     {
         /** Whether this driver's output streams are enabled or not.
          *  This flag overrides all the attached stream statuses. */
         bool                fEnabled;
+        /** Max. number of free output streams.
+         *  UINT32_MAX for unlimited streams. */
+    uint32_t                cStreamsFree;
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+        RTLISTANCHOR        lstCB;
+#endif
     } Out;
 } DRVAUDIO, *PDRVAUDIO;
 
