@@ -2572,7 +2572,7 @@ static int rtFsIso9660VolTryInit(PRTFSISO9660VOL pThis, RTVFS hVfsSelf, RTVFSFIL
         kStateStart = 0,
         kStateNoSeq,
         kStateCdSeq,
-        kStateUdfSeq,
+        kStateUdfSeq
     }               enmState = kStateStart;
     for (uint32_t iVolDesc = 0; ; iVolDesc++, offVolDesc += cbSector)
     {
