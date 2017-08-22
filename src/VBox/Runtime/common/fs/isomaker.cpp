@@ -1104,6 +1104,18 @@ static void rtFsIsoMakerDestroy(PRTFSISOMAKERINT pThis)
         pThis->paCommonSources = NULL;
     }
 
+    if (pThis->pbVolDescs)
+    {
+        RTMemFree(pThis->pbVolDescs);
+        pThis->pbVolDescs = NULL;
+    }
+
+    if (pThis->pbSysArea)
+    {
+        RTMemFree(pThis->pbSysArea);
+        pThis->pbSysArea = NULL;
+    }
+
     pThis->uMagic = ~RTFSISOMAKERINT_MAGIC;
     RTMemFree(pThis);
 }
