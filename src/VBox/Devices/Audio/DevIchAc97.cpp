@@ -2591,7 +2591,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                         /* Make sure that Run/Pause Bus Master bit (RPBM) is cleared (0). */
                         Assert((pRegs->cr & AC97_CR_RPBM) == 0);
 
-                        ichac97StreamEnable(pThis, pStream, false /* Disable */);
+                        ichac97StreamEnable(pThis, pStream, false /* fEnable */);
                         ichac97StreamReset(pThis, pStream);
 
                         ichac97StreamUpdateSR(pThis, pStream, AC97_SR_DCH); /** @todo Do we need to do that? */
@@ -3177,13 +3177,13 @@ static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns)
     /*
      * Reset all streams.
      */
-    ichac97StreamEnable(pThis, &pThis->StreamLineIn, false /* Disable */);
+    ichac97StreamEnable(pThis, &pThis->StreamLineIn, false /* fEnable */);
     ichac97StreamReset(pThis, &pThis->StreamLineIn);
 
-    ichac97StreamEnable(pThis, &pThis->StreamMicIn, false /* Disable */);
+    ichac97StreamEnable(pThis, &pThis->StreamMicIn, false /* fEnable */);
     ichac97StreamReset(pThis, &pThis->StreamMicIn);
 
-    ichac97StreamEnable(pThis, &pThis->StreamOut, false /* Disable */);
+    ichac97StreamEnable(pThis, &pThis->StreamOut, false /* fEnable */);
     ichac97StreamReset(pThis, &pThis->StreamOut);
 
     /*
