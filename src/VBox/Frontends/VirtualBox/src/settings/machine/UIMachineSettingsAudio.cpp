@@ -203,8 +203,14 @@ void UIMachineSettingsAudio::retranslateUi()
 void UIMachineSettingsAudio::polishPage()
 {
     /* Polish audio page availability: */
-    m_pContainerAudioOptions->setEnabled(isMachineOffline());
-    m_pContainerAudioSubOptions->setEnabled(m_pCheckBoxAudio->isChecked());
+    m_pCheckBoxAudio->setEnabled(isMachineOffline());
+    m_pLabelAudioDriver->setEnabled(isMachineOffline() && m_pCheckBoxAudio->isChecked());
+    m_pComboAudioDriver->setEnabled(isMachineOffline() && m_pCheckBoxAudio->isChecked());
+    m_pLabelAudioController->setEnabled(isMachineOffline() && m_pCheckBoxAudio->isChecked());
+    m_pComboAudioController->setEnabled(isMachineOffline() && m_pCheckBoxAudio->isChecked());
+    m_pLabelAudioExtended->setEnabled(isMachineInValidMode() && m_pCheckBoxAudio->isChecked());
+    m_pCheckBoxAudioOutput->setEnabled(isMachineInValidMode() && m_pCheckBoxAudio->isChecked());
+    m_pCheckBoxAudioInput->setEnabled(isMachineInValidMode() && m_pCheckBoxAudio->isChecked());
 }
 
 void UIMachineSettingsAudio::prepare()
@@ -308,13 +314,13 @@ bool UIMachineSettingsAudio::saveAudioData()
                 fSuccess = comAdapter.isOk();
             }
             /* Save whether audio output is enabled: */
-            if (fSuccess && isMachineOffline() && newAudioData.m_fAudioOutputEnabled != oldAudioData.m_fAudioOutputEnabled)
+            if (fSuccess && isMachineInValidMode() && newAudioData.m_fAudioOutputEnabled != oldAudioData.m_fAudioOutputEnabled)
             {
                 comAdapter.SetEnabledOut(newAudioData.m_fAudioOutputEnabled);
                 fSuccess = comAdapter.isOk();
             }
             /* Save whether audio input is enabled: */
-            if (fSuccess && isMachineOffline() && newAudioData.m_fAudioInputEnabled != oldAudioData.m_fAudioInputEnabled)
+            if (fSuccess && isMachineInValidMode() && newAudioData.m_fAudioInputEnabled != oldAudioData.m_fAudioInputEnabled)
             {
                 comAdapter.SetEnabledIn(newAudioData.m_fAudioInputEnabled);
                 fSuccess = comAdapter.isOk();
