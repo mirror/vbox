@@ -1973,7 +1973,7 @@ VBGLR3DECL(int) VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcErr)
         Msg.u.v3.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
     }
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3HGCMCallRaw(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
         if (RT_FAILURE(Msg.hdr.result))

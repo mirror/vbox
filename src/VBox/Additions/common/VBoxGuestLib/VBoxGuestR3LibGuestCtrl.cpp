@@ -88,7 +88,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *puMsg, u
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.num_parms, 0);
 
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    int rc = VbglR3HGCMCallRaw(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
         rc = VbglHGCMParmUInt32Get(&Msg.msg, puMsg);

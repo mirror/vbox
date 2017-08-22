@@ -872,6 +872,7 @@ VBGLR3DECL(int) VbglR3WriteVideoMode(unsigned cDisplay, unsigned cx,
 VBGLR3DECL(int)     VbglR3HGCMConnect(const char *pszServiceName, HGCMCLIENTID *pidClient);
 VBGLR3DECL(int)     VbglR3HGCMDisconnect(HGCMCLIENTID idClient);
 struct VBoxGuestHGCMCallInfo;
+VBGLR3DECL(int)     VbglR3HGCMCallRaw(VBoxGuestHGCMCallInfo *pInfo, size_t cbInfo);
 VBGLR3DECL(int)     VbglR3HGCMCall(struct VBoxGuestHGCMCallInfo *pInfo, size_t cbInfo);
 /** @} */
 

@@ -80,7 +80,7 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pMsg,
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.formats, 0);
 
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    int rc = VbglR3HGCMCallRaw(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
         uint32_t u32Msg;
