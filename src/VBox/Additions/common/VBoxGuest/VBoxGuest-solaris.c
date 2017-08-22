@@ -845,7 +845,7 @@ static int vgdrvSolarisAddIRQ(dev_info_t *pDip)
                         {
                             /* Check if the interrupt priority is scheduler level or above, if so we need to use a high-level
                                and low-level interrupt handlers with corresponding mutexes. */
-                            cmn_err(CE_NOTE,  "vboxguest: uIntrPriority=%d hilevel_pri=%d\n", uIntrPriority, ddi_intr_get_hilevel_pri());
+                            cmn_err(CE_CONT, "!vboxguest: uIntrPriority=%d hilevel_pri=%d\n", uIntrPriority, ddi_intr_get_hilevel_pri());
                             if (uIntrPriority >= ddi_intr_get_hilevel_pri())
                             {
                                 /* Initialize the high-level mutex. */
