@@ -120,12 +120,14 @@ RTDECL(int) RTFsFatVolFormat144(RTVFSFILE hVfsFile, bool fQuick);
 
 /** @name RTFSISO9660_F_XXX - ISO 9660 mount flags.
  * @{ */
+/** Do not use the UDF part if present. */
+#define RTFSISO9660_F_NO_UDF        RT_BIT_32(0)
 /** Do not use the joliet part. */
-#define RTFSISO9660_F_NO_JOLIET     RT_BIT_32(0)
+#define RTFSISO9660_F_NO_JOLIET     RT_BIT_32(1)
 /** Do not use the rock ridge extensions if present. */
-#define RTFSISO9660_F_NO_ROCK       RT_BIT_32(0)
+#define RTFSISO9660_F_NO_ROCK       RT_BIT_32(2)
 /** Valid ISO 9660 mount option mask.   */
-#define RTFSISO9660_F_VALID_MASK    UINT32_C(0x00000003)
+#define RTFSISO9660_F_VALID_MASK    UINT32_C(0x00000007)
 /** @}  */
 
 /**

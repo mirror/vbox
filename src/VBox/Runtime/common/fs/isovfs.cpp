@@ -45,6 +45,7 @@
 #include <iprt/vfs.h>
 #include <iprt/vfslowlevel.h>
 #include <iprt/formats/iso9660.h>
+#include <iprt/formats/udf.h>
 
 
 
@@ -188,6 +189,9 @@ typedef struct RTFSISO9660VOL
     uint32_t                fFlags;
     /** The sector size (in bytes). */
     uint32_t                cbSector;
+
+    /** @name ISO 9660 specific data
+     *  @{ */
     /** The size of a logical block in bytes. */
     uint32_t                cbBlock;
     /** The primary volume space size in blocks. */
@@ -200,6 +204,7 @@ typedef struct RTFSISO9660VOL
     uint32_t                idPrimaryVol;
     /** Set if using UTF16-2 (joliet). */
     bool                    fIsUtf16;
+    /** @} */
 
     /** The root directory shared data. */
     PRTFSISO9660DIRSHRD     pRootDir;
@@ -2555,74 +2560,154 @@ static int rtFsIso9660VolTryInit(PRTFSISO9660VOL pThis, RTVFS hVfsSelf, RTVFSFIL
     ISO9660DIRREC   JolietRootDir;
     RT_ZERO(JolietRootDir);
 
+    uint8_t         uUdfLevel               = 0;
+    uint64_t        offUdfBootVolDesc       = UINT64_MAX;
+
     uint32_t        cPrimaryVolDescs        = 0;
     uint32_t        cSupplementaryVolDescs  = 0;
     uint32_t        cBootRecordVolDescs     = 0;
     uint32_t        offVolDesc              = 16 * cbSector;
+    enum
+    {
+        kStateStart = 0,
+        kStateNoSeq,
+        kStateCdSeq,
+        kStateUdfSeq,
+    }               enmState = kStateStart;
     for (uint32_t iVolDesc = 0; ; iVolDesc++, offVolDesc += cbSector)
     {
         if (iVolDesc > 32)
-            return RTErrInfoSet(pErrInfo, rc, "More than 32 volume descriptors, doesn't seem right...");
+            return RTErrInfoSet(pErrInfo, VERR_VFS_BOGUS_FORMAT, "More than 32 volume descriptors, doesn't seem right...");
 
         /* Read the next one and check the signature. */
         rc = RTVfsFileReadAt(hVfsBacking, offVolDesc, &Buf, cbSector, NULL);
         if (RT_FAILURE(rc))
             return RTErrInfoSetF(pErrInfo, rc, "Unable to read volume descriptor #%u", iVolDesc);
 
-        if (   Buf.VolDescHdr.achStdId[0] != ISO9660VOLDESC_STD_ID_0
-            || Buf.VolDescHdr.achStdId[1] != ISO9660VOLDESC_STD_ID_1
-            || Buf.VolDescHdr.achStdId[2] != ISO9660VOLDESC_STD_ID_2
-            || Buf.VolDescHdr.achStdId[3] != ISO9660VOLDESC_STD_ID_3
-            || Buf.VolDescHdr.achStdId[4] != ISO9660VOLDESC_STD_ID_4)
-        {
-            if (!iVolDesc)
-                return RTErrInfoSetF(pErrInfo, VERR_VFS_UNKNOWN_FORMAT,
-                                     "No ISO 9660 CD001 signature, instead found: %.5Rhxs", Buf.VolDescHdr.achStdId);
-            return RTErrInfoSet(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Missing terminator volume descriptor?");
-        }
+#define MATCH_STD_ID(a_achStdId1, a_szStdId2) \
+            (   (a_achStdId1)[0] == (a_szStdId2)[0] \
+             && (a_achStdId1)[1] == (a_szStdId2)[1] \
+             && (a_achStdId1)[2] == (a_szStdId2)[2] \
+             && (a_achStdId1)[3] == (a_szStdId2)[3] \
+             && (a_achStdId1)[4] == (a_szStdId2)[4] )
+#define MATCH_HDR(a_pStd, a_bType2, a_szStdId2, a_bVer2) \
+            (    MATCH_STD_ID((a_pStd)->achStdId, a_szStdId2) \
+             && (a_pStd)->bDescType    == (a_bType2) \
+             && (a_pStd)->bDescVersion == (a_bVer2) )
 
-        /* Do type specific handling. */
-        Log(("ISO9660: volume desc #%u: type=%#x\n", iVolDesc, Buf.VolDescHdr.bDescType));
-        if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_PRIMARY)
+        /*
+         * ISO 9660 ("CD001").
+         */
+        if (   (   enmState == kStateStart
+                || enmState == kStateCdSeq
+                || enmState == kStateNoSeq)
+            && MATCH_STD_ID(Buf.VolDescHdr.achStdId, ISO9660VOLDESC_STD_ID) )
         {
-            cPrimaryVolDescs++;
-            if (Buf.VolDescHdr.bDescVersion != ISO9660PRIMARYVOLDESC_VERSION)
-                return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                                     "Unsupported primary volume descriptor version: %#x", Buf.VolDescHdr.bDescVersion);
+            enmState = kStateCdSeq;
+
+            /* Do type specific handling. */
+            Log(("ISO9660: volume desc #%u: type=%#x\n", iVolDesc, Buf.VolDescHdr.bDescType));
+            if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_PRIMARY)
+            {
+                cPrimaryVolDescs++;
+                if (Buf.VolDescHdr.bDescVersion != ISO9660PRIMARYVOLDESC_VERSION)
+                    return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                         "Unsupported primary volume descriptor version: %#x", Buf.VolDescHdr.bDescVersion);
 #ifdef LOG_ENABLED
-            rtFsIso9660VolLogPrimarySupplementaryVolDesc(&Buf.SupVolDesc);
+                rtFsIso9660VolLogPrimarySupplementaryVolDesc(&Buf.SupVolDesc);
 #endif
-            if (cPrimaryVolDescs > 1)
-                return RTErrInfoSet(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "More than one primary volume descriptor");
-            rc = rtFsIso9660VolHandlePrimaryVolDesc(pThis, &Buf.PrimaryVolDesc, offVolDesc, &RootDir, &offRootDirRec, pErrInfo);
-        }
-        else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_SUPPLEMENTARY)
-        {
-            cSupplementaryVolDescs++;
-            if (Buf.VolDescHdr.bDescVersion != ISO9660SUPVOLDESC_VERSION)
-                return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                                     "Unsupported supplemental volume descriptor version: %#x", Buf.VolDescHdr.bDescVersion);
+                if (cPrimaryVolDescs > 1)
+                    return RTErrInfoSet(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "More than one primary volume descriptor");
+                rc = rtFsIso9660VolHandlePrimaryVolDesc(pThis, &Buf.PrimaryVolDesc, offVolDesc, &RootDir, &offRootDirRec, pErrInfo);
+            }
+            else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_SUPPLEMENTARY)
+            {
+                cSupplementaryVolDescs++;
+                if (Buf.VolDescHdr.bDescVersion != ISO9660SUPVOLDESC_VERSION)
+                    return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                         "Unsupported supplemental volume descriptor version: %#x", Buf.VolDescHdr.bDescVersion);
 #ifdef LOG_ENABLED
-            rtFsIso9660VolLogPrimarySupplementaryVolDesc(&Buf.SupVolDesc);
+                rtFsIso9660VolLogPrimarySupplementaryVolDesc(&Buf.SupVolDesc);
 #endif
-            rc = rtFsIso9660VolHandleSupplementaryVolDesc(pThis, &Buf.SupVolDesc, offVolDesc, &bJolietUcs2Level, &JolietRootDir,
-                                                          &offJolietRootDirRec, pErrInfo);
+                rc = rtFsIso9660VolHandleSupplementaryVolDesc(pThis, &Buf.SupVolDesc, offVolDesc, &bJolietUcs2Level, &JolietRootDir,
+                                                              &offJolietRootDirRec, pErrInfo);
+            }
+            else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_BOOT_RECORD)
+            {
+                cBootRecordVolDescs++;
+            }
+            else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_TERMINATOR)
+            {
+                if (!cPrimaryVolDescs)
+                    return RTErrInfoSet(pErrInfo, VERR_VFS_BOGUS_FORMAT, "No primary volume descriptor");
+                enmState = kStateNoSeq;
+            }
+            else
+                return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                     "Unknown volume descriptor: %#x", Buf.VolDescHdr.bDescType);
         }
-        else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_BOOT_RECORD)
+        /*
+         * UDF volume recognition sequence (VRS).
+         */
+        else if (   (   enmState == kStateNoSeq
+                     || enmState == kStateStart)
+                 && MATCH_HDR(&Buf.VolDescHdr, UDF_EXT_VOL_DESC_TYPE, UDF_EXT_VOL_DESC_STD_ID_BEGIN, UDF_EXT_VOL_DESC_VERSION) )
         {
-            cBootRecordVolDescs++;
+            if (uUdfLevel == 0)
+                enmState = kStateUdfSeq;
+            else
+                return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Only one BEA01 sequence is supported");
         }
-        else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_TERMINATOR)
+        else if (   enmState == kStateUdfSeq
+                 && MATCH_HDR(&Buf.VolDescHdr, UDF_EXT_VOL_DESC_TYPE, UDF_EXT_VOL_DESC_STD_ID_NSR_02, UDF_EXT_VOL_DESC_VERSION) )
+            uUdfLevel = 2;
+        else if (   enmState == kStateUdfSeq
+                 && MATCH_HDR(&Buf.VolDescHdr, UDF_EXT_VOL_DESC_TYPE, UDF_EXT_VOL_DESC_STD_ID_NSR_03, UDF_EXT_VOL_DESC_VERSION) )
+            uUdfLevel = 3;
+        else if (   enmState == kStateUdfSeq
+                 && MATCH_HDR(&Buf.VolDescHdr, UDF_EXT_VOL_DESC_TYPE, UDF_EXT_VOL_DESC_STD_ID_BOOT, UDF_EXT_VOL_DESC_VERSION) )
         {
-            if (!cPrimaryVolDescs)
-                return RTErrInfoSet(pErrInfo, VERR_VFS_BOGUS_FORMAT, "No primary volume descriptor");
+            if (offUdfBootVolDesc == UINT64_MAX)
+                offUdfBootVolDesc = iVolDesc * cbSector;
+            else
+                return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Only one BOOT2 descriptor is supported");
+        }
+        else if (   enmState == kStateUdfSeq
+                 && MATCH_HDR(&Buf.VolDescHdr, UDF_EXT_VOL_DESC_TYPE, UDF_EXT_VOL_DESC_STD_ID_TERM, UDF_EXT_VOL_DESC_VERSION) )
+        {
+            if (uUdfLevel != 0)
+                enmState = kStateNoSeq;
+            else
+                return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Found BEA01 & TEA01, but no NSR02 or NSR03 descriptors");
+        }
+        /*
+         * Unknown, probably the end.
+         */
+        else if (enmState == kStateNoSeq)
             break;
-        }
+        else if (enmState == kStateStart)
+                return RTErrInfoSetF(pErrInfo, VERR_VFS_UNKNOWN_FORMAT,
+                                     "Not ISO? Unable to recognize volume descriptor signature: %.5Rhxs", Buf.VolDescHdr.achStdId);
+        else if (enmState == kStateCdSeq)
+            return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                 "Missing ISO 9660 terminator volume descriptor? (Found %.5Rhxs)", Buf.VolDescHdr.achStdId);
+        else if (enmState == kStateUdfSeq)
+            return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                 "Missing UDF terminator volume descriptor? (Found %.5Rhxs)", Buf.VolDescHdr.achStdId);
         else
-            return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                                 "Unknown volume descriptor: %#x", Buf.VolDescHdr.bDescType);
+            return RTErrInfoSetF(pErrInfo, VERR_VFS_UNKNOWN_FORMAT,
+                                 "Unknown volume descriptor signature found at sector %u: %.5Rhxs",
+                                 16 + iVolDesc, Buf.VolDescHdr.achStdId);
         if (RT_FAILURE(rc))
             return rc;
+    }
+
+    /*
+     * If we found a UDF VRS and are interested in UDF, we have more work to do here.
+     */
+    if (uUdfLevel > 0)
+    {
+        Log(("rtFsIso9660VolTryInit: uUdfLevel=%d - TODO\n", uUdfLevel));
     }
 
     /*
@@ -2719,6 +2804,8 @@ static DECLCALLBACK(int) rtVfsChainIso9660Vol_Validate(PCRTVFSCHAINELEMENTREG pP
                     fFlags |= RTFSISO9660_F_NO_JOLIET;
                 else if (!strcmp(psz, "norock"))
                     fFlags |= RTFSISO9660_F_NO_ROCK;
+                else if (!strcmp(psz, "noudf"))
+                    fFlags |= RTFSISO9660_F_NO_UDF;
                 else
                 {
                     *poffError = pElement->paArgs[iArg].offSpec;
@@ -2787,6 +2874,7 @@ static RTVFSCHAINELEMENTREG g_rtVfsChainIso9660VolReg =
     /* pszName = */             "isofs",
     /* ListEntry = */           { NULL, NULL },
     /* pszHelp = */             "Open a ISO 9660 file system, requires a file object on the left side.\n"
+                                "The 'noudf' option make it ignore any UDF.\n"
                                 "The 'nojoliet' option make it ignore any joliet supplemental volume.\n"
                                 "The 'norock' option make it ignore any rock ridge info.\n",
     /* pfnValidate = */         rtVfsChainIso9660Vol_Validate,
