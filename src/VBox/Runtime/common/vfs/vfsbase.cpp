@@ -928,6 +928,11 @@ static void rtVfsObjDestroy(RTVFSOBJINTERNAL *pThis)
             rtVfsObjRelease(&pThis->hVfs->Base);
         pThis->hVfs = NIL_RTVFS;
     }
+    if (pThis->hLock != NIL_RTVFSLOCK)
+    {
+        RTVfsLockRelease(pThis->hLock);
+        pThis->hLock = NIL_RTVFSLOCK;
+    }
     RTMemFree(pvToFree);
 }
 
