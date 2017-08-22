@@ -311,6 +311,34 @@
     </message>
 </context>
 <context>
+    <name>QObject</name>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Cod&amp;nbsp;rezultat: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Componentă: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Interfață: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Callee: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Callee&amp;nbsp;RC: </translation>
+    </message>
+</context>
+<context>
     <name>SFTreeViewItem</name>
     <message>
         <source>%1, %2: %3, %4: %5, %6: %7</source>
@@ -1618,17 +1646,6 @@
     <message>
         <source>Edit (Ctrl+E)</source>
         <translation type="obsolete">Editare (Ctrl+E)</translation>
-    </message>
-</context>
-<context>
-    <name>UIDesktopPane</name>
-    <message>
-        <source>&amp;Details</source>
-        <translation type="obsolete">&amp;Detalii</translation>
-    </message>
-    <message>
-        <source>&amp;Snapshots</source>
-        <translation type="obsolete">In&amp;stantaneu</translation>
     </message>
 </context>
 <context>
@@ -3095,6 +3112,36 @@
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Audio Output</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (audio/output)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (audio/output)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio Input</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (audio/input)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (audio/input)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGDetailsElement</name>
@@ -3622,7 +3669,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="vanished">Adresă IPv6</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask Length</source>
+        <source>IPv6 Prefix Length</source>
         <translation type="vanished">Lungime mască rețea IPv6</translation>
     </message>
     <message>
@@ -3843,11 +3890,11 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">Afișează adresa IPv6 pentru această placă de rețea, dacă IPv6 este suportat.</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
+        <source>IPv6 Prefix &amp;Length:</source>
         <translation type="obsolete">&amp;Lungime mască rețea IPv6:</translation>
     </message>
     <message>
-        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Afișează lungimea prefixului măștii de rețea IPv6 pentru această placă de rețea, dacă IPv6 este suportat.</translation>
     </message>
     <message>
@@ -3918,11 +3965,11 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">Afișează adresa IPv6 pentru această placă de rețea, dacă IPv6 este suportat.</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
+        <source>IPv6 Prefix &amp;Length:</source>
         <translation type="obsolete">&amp;Lungime mască rețea IPv6:</translation>
     </message>
     <message>
-        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Afișează lungimea prefixului măștii de rețea IPv6 pentru această placă de rețea, dacă IPv6 este suportat.</translation>
     </message>
     <message>
@@ -4272,11 +4319,11 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Lungime mască rețea IPv6:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Afișează lungimea prefixului măștii de rețea IPv6 pentru această placă de rețea, dacă IPv6 este suportat.</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -4432,7 +4479,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Lungime mască rețea IPv6</translation>
     </message>
     <message>
         <source>Not set</source>
@@ -5589,6 +5636,26 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Selects the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Funcții avansate:</translation>
+    </message>
+    <message>
+        <source>When checked, output to the virtual audio device will reach the host. Otherwise the guest is muted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Audio &amp;Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the guest will be able to capture audio input from the host. Otherwise the guest will capture only silence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Audio &amp;Input</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8001,156 +8068,9 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Actions</source>
-        <translation type="vanished">&amp;Acțiuni</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Nou...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Adaugă...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation type="vanished">Ște&amp;rge</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation type="vanished">E&amp;liberează</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Reî&amp;mprospătează</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Crează un nou disc fix virtual</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Adaugă un mediu existent</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation type="vanished">Șterge mediul selectat</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation type="vanished">Eliberează mediul selectat prin deconectarea de la mașină</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Reîmprospătează lista mediilor</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Amplasare</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Tip (Format)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Conectat la</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Verificare accesibilitate</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Selectare</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Toate imaginile de disc (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Toate fișierele (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Selectați un fișier imagine disc fix</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Imagini CD/DVD (*.iso);;Toate fișierele (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Selectați un fișier imagine CD/DVD</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Imagini dischetă (*.img);;Toate fișierele (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Selectați un fișier imagine dischetă</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Nimic&amp;nbsp;atașat&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Gestionar medii virtuale</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">&amp;Discuri fixe</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nume</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Dimensiune virtuală</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Dimensiune reală</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">Imagini &amp;CD/DVD</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Dimensiune</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">Imagini &amp;dischetă</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Conectat la</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Conectată la</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Conectată la</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation type="obsolete">Amplasare:</translation>
+        <source>%1, %2: %3, %4: %5</source>
+        <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Format:</source>
@@ -8165,14 +8085,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished">Conectat la:</translation>
     </message>
     <message>
-        <source>&amp;Copy...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Encrypted with key:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8181,12 +8093,24 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1, %2: %3, %4: %5</source>
-        <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation type="unfinished">--</translation>
+    </message>
+    <message>
         <source>&amp;Medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8218,8 +8142,40 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Re&amp;fresh</source>
+        <translation type="unfinished">Reî&amp;mprospătează</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="unfinished">Reîmprospătează lista mediilor</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Nume</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation type="unfinished">Dimensiune virtuală</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">Dimensiune</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation type="unfinished">Verificare accesibilitate</translation>
+    </message>
+    <message>
         <source>Moving medium...</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation type="unfinished">Gestionar medii virtuale</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -8654,27 +8610,27 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>Cod&amp;nbsp;rezultat: </translation>
+        <translation type="vanished">Cod&amp;nbsp;rezultat: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>Componentă: </translation>
+        <translation type="vanished">Componentă: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>Interfață: </translation>
+        <translation type="vanished">Interfață: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>Callee: </translation>
+        <translation type="vanished">Callee: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>Callee&amp;nbsp;RC: </translation>
+        <translation type="vanished">Callee&amp;nbsp;RC: </translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -9231,6 +9187,11 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <source>&amp;Create</source>
         <comment>medium</comment>
         <translation type="obsolete">&amp;Creează</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <comment>medium</comment>
+        <translation type="obsolete">&amp;Selectează</translation>
     </message>
     <message>
         <source>Force Unmount</source>
@@ -9886,7 +9847,28 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Delete</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Șterge</translation>
+    </message>
+    <message>
+        <source>Do you want to delete the downloaded file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to delete following list of files &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p&gt;The reason for this error are most likely wrong permissions of the IPC daemon socket due to an installation problem. Please check the permissions of &lt;font color=blue&gt;&apos;/tmp&apos;&lt;/font&gt; and &lt;font color=blue&gt;&apos;/tmp/.vbox-*-ipc/&apos;&lt;/font&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9947,27 +9929,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Failed to save DHCP server parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Do you want to delete the downloaded file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>extension pack</comment>
-        <translation type="unfinished">Șterge</translation>
-    </message>
-    <message>
-        <source>Do you want to delete following list of files &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11044,15 +11005,15 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <name>UIScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
-        <translation>Captură de ecran a %1 (%2)</translation>
+        <translation type="unfinished">Captură de ecran a %1 (%2)</translation>
     </message>
     <message>
         <source>Click to view non-scaled screenshot.</source>
-        <translation>Faceți clic pentru a vedea captura de ecran la dimensiunea reală</translation>
+        <translation type="unfinished">Faceți clic pentru a vedea captura de ecran la dimensiunea reală</translation>
     </message>
     <message>
         <source>Click to view scaled screenshot.</source>
-        <translation>Faceți clic pentru a vedea captura de ecran scalată</translation>
+        <translation type="unfinished">Faceți clic pentru a vedea captura de ecran scalată</translation>
     </message>
 </context>
 <context>
@@ -11261,72 +11222,8 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
 <context>
     <name>UISnapshotDetailsWidget</name>
     <message>
-        <source>UISnapshotDetailsWidget</source>
-        <translation type="obsolete">UISnapshotDetailsWidget</translation>
-    </message>
-    <message>
-        <source> Snapshot Details </source>
-        <translation type="obsolete"> Detalii instantaneu </translation>
-    </message>
-    <message>
-        <source>&amp;Name</source>
-        <translation type="obsolete">&amp;Nume</translation>
-    </message>
-    <message>
-        <source>&amp;Description</source>
-        <translation type="obsolete">&amp;Descriere</translation>
-    </message>
-    <message>
-        <source>&amp;Machine Details</source>
-        <translation type="obsolete">Detalii &amp;Mașină</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="obsolete">Ajutor</translation>
-    </message>
-    <message>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Revocare</translation>
-    </message>
-    <message>
-        <source>Details of %1 (%2)</source>
-        <translation type="vanished">Detalii despre %1 (%2)</translation>
-    </message>
-    <message>
-        <source>Snapshot Details</source>
-        <translation type="obsolete"> Detalii instantaneu </translation>
-    </message>
-    <message>
-        <source>Click to enlarge the screenshot.</source>
-        <translation>Faceți clic pentru a mări captura de ecran.</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>&amp;Nume:</translation>
-    </message>
-    <message>
-        <source>Taken:</source>
-        <translation type="vanished">Luat:</translation>
-    </message>
-    <message>
-        <source>&amp;Description:</source>
-        <translation>&amp;Descriere:</translation>
-    </message>
-    <message>
-        <source>D&amp;etails:</source>
-        <translation type="vanished">&amp;Detalii:</translation>
+        <source>&lt;p&gt;You have the &lt;b&gt;Current State&lt;/b&gt; item selected.&lt;br&gt;Press the &lt;b&gt;Take&lt;/b&gt; button if you wish to take a new snapshot.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Attributes</source>
@@ -11335,6 +11232,14 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <source>&amp;Information</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Nume:</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="unfinished">&amp;Descriere:</translation>
     </message>
     <message>
         <source>Holds the snapshot name.</source>
@@ -11369,6 +11274,10 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Click to enlarge the screenshot.</source>
+        <translation type="unfinished">Faceți clic pentru a mări captura de ecran.</translation>
+    </message>
+    <message>
         <source>Snapshot name is empty</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11376,221 +11285,32 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
 <context>
     <name>UISnapshotPane</name>
     <message>
-        <source>[snapshot]</source>
-        <translation type="obsolete">[isntantaneu]</translation>
-    </message>
-    <message>
-        <source>UISnapshotPane</source>
-        <translation type="vanished">UISnapshotPane</translation>
-    </message>
-    <message>
-        <source>snapshotActionGroup</source>
-        <translation type="obsolete">snapshotActionGroup</translation>
-    </message>
-    <message>
-        <source>Discard Snapshot</source>
-        <translation type="obsolete">Renunță la instantaneu</translation>
-    </message>
-    <message>
-        <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Renunță la instantaneu</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+D</source>
-        <translation type="obsolete">Ctrl+Shift+D</translation>
-    </message>
-    <message>
-        <source>curStateActionGroup</source>
-        <translation type="obsolete">curStateActionGroup</translation>
-    </message>
-    <message>
-        <source>Take Snapshot</source>
-        <translation type="obsolete">Salvează instantaneu</translation>
-    </message>
-    <message>
-        <source>Take &amp;Snapshot</source>
-        <translation type="vanished">&amp;Salvează instantaneu</translation>
-    </message>
-    <message>
-        <source>Ctrl+Alt+S</source>
-        <translation type="obsolete">Ctrl+Alt+S</translation>
-    </message>
-    <message>
-        <source>Discard Current State</source>
-        <translation type="obsolete">Renunță la starea curentă</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Current State</source>
-        <translation type="obsolete">Re&amp;nunță la starea curentă</translation>
-    </message>
-    <message>
-        <source>Ctrl+Alt+D</source>
-        <translation type="obsolete">Ctrl+Alt+D</translation>
-    </message>
-    <message>
-        <source>Discard Current Snapshot and State</source>
-        <translation type="obsolete">Renunță la instantaneu și stare curente</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">Renunță la &amp;instantaneu și starea curentă</translation>
-    </message>
-    <message>
-        <source>Ctrl+Alt+Shift+D</source>
-        <translation type="obsolete">Ctrl+Alt+Shift+D</translation>
-    </message>
-    <message>
-        <source>Show Details</source>
-        <translation type="obsolete">Afișează detalii</translation>
-    </message>
-    <message>
-        <source>S&amp;how Details</source>
-        <translation type="vanished">A&amp;fișează detalii</translation>
-    </message>
-    <message>
-        <source>Space</source>
-        <translation type="obsolete">Spațiu</translation>
-    </message>
-    <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation>Stare curentă (schimbată)</translation>
+        <translation type="unfinished">Stare curentă (schimbată)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation>Stare curentă</translation>
+        <translation type="unfinished">Stare curentă</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation>Starea curentă diferă de starea salvată în instantaneul curent</translation>
+        <translation type="unfinished">Starea curentă diferă de starea salvată în instantaneul curent</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>Starea curentă este identică starea salvată în instantaneul curent</translation>
-    </message>
-    <message>
-        <source> (current, </source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished"> (curent, </translation>
-    </message>
-    <message>
-        <source>online)</source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished">online)</translation>
-    </message>
-    <message>
-        <source>offline)</source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished">offline)</translation>
-    </message>
-    <message>
-        <source>Taken at %1</source>
-        <comment>Snapshot (time)</comment>
-        <translation>Luat la data %1</translation>
-    </message>
-    <message>
-        <source>Taken on %1</source>
-        <comment>Snapshot (date + time)</comment>
-        <translation>Luat la %1</translation>
-    </message>
-    <message>
-        <source>%1 since %2</source>
-        <comment>Current State (time or date + time)</comment>
-        <translation>din %1 până in %2</translation>
-    </message>
-    <message>
-        <source>Snapshot %1</source>
-        <translation>Instantaneu %1</translation>
-    </message>
-    <message>
-        <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Renunță la instantaneul selectat al mașinii virtuale</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
-        <translation type="obsolete">Ctrl+Shift+S</translation>
-    </message>
-    <message>
-        <source>Take a snapshot of the current virtual machine state</source>
-        <translation>Salvează un instantaneu al stării curente a mașinii virtuale</translation>
-    </message>
-    <message>
-        <source>Revert to Current Snapshot</source>
-        <translation type="obsolete">Restaureză la instantaneul curent</translation>
-    </message>
-    <message>
-        <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Restaureză la instantaneul curent</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+R</source>
-        <translation type="obsolete">Ctrl+Shift+R</translation>
-    </message>
-    <message>
-        <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Restaurează starea mașinii virtuale din starea salvată în instantaneul curent</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+B</source>
-        <translation type="obsolete">Ctrl+Shift+B</translation>
-    </message>
-    <message>
-        <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Elimină instantaneul curent și întoarce mașina în starea dinaintea instantaneului</translation>
-    </message>
-    <message>
-        <source>Show the details of the selected snapshot</source>
-        <translation type="obsolete">Arată detalii despre instantaneul selectat</translation>
-    </message>
-    <message>
-        <source>Ctrl+Space</source>
-        <translation type="obsolete">Ctrl+Spațiu</translation>
-    </message>
-    <message>
-        <source> (%1)</source>
-        <translation type="vanished"> (%1)</translation>
-    </message>
-    <message>
-        <source>&amp;Restore Snapshot</source>
-        <translation type="vanished">&amp;Restabilește instantaneu</translation>
-    </message>
-    <message>
-        <source>&amp;Delete Snapshot</source>
-        <translation type="vanished">Ș&amp;terge instantaneu</translation>
-    </message>
-    <message>
-        <source>Restore the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Restabilește instantaneul selectat al mașinii virtuale</translation>
-    </message>
-    <message>
-        <source>Delete the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Șterge instantaneul selectat al mașinii virtuale</translation>
-    </message>
-    <message>
-        <source> (%1 ago)</source>
-        <translation type="vanished"> (acum %1)</translation>
-    </message>
-    <message>
-        <source>&amp;Clone...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Restore selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clone selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Starea curentă este identică starea salvată în instantaneul curent</translation>
     </message>
     <message>
         <source>%1 (%2 ago)</source>
         <comment>date time (how long ago)</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 since %2</source>
+        <comment>Current State (time or date + time)</comment>
+        <translation type="unfinished">din %1 până in %2</translation>
     </message>
     <message>
         <source>current</source>
@@ -11606,6 +11326,16 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <source>offline</source>
         <comment>snapshot</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Taken at %1</source>
+        <comment>Snapshot (time)</comment>
+        <translation type="unfinished">Luat la data %1</translation>
+    </message>
+    <message>
+        <source>Taken on %1</source>
+        <comment>Snapshot (date + time)</comment>
+        <translation type="unfinished">Luat la %1</translation>
     </message>
     <message>
         <source>Contains the snapshot tree of the current virtual machine</source>
@@ -11625,6 +11355,10 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&amp;Properties...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Clone...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11648,7 +11382,23 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="unfinished">Salvează un instantaneu al stării curente a mașinii virtuale</translation>
+    </message>
+    <message>
+        <source>Delete selected snapshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore selected snapshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Open pane with the selected snapshot properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone selected virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11660,6 +11410,10 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <source>Taken</source>
         <comment>snapshot</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="unfinished">Instantaneu %1</translation>
     </message>
 </context>
 <context>
@@ -11681,35 +11435,15 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation>Salvează instantaneu al mașinii virtuale</translation>
+        <translation type="unfinished">Salvează instantaneu al mașinii virtuale</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
-        <translation>&amp;Nume instantaneu</translation>
+        <translation type="unfinished">&amp;Nume instantaneu</translation>
     </message>
     <message>
         <source>Snapshot &amp;Description</source>
-        <translation>&amp;Descriere instantaneu</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="obsolete">Ajutor</translation>
-    </message>
-    <message>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Revocare</translation>
+        <translation type="unfinished">&amp;Descriere instantaneu</translation>
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
@@ -11990,6 +11724,17 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <source>&lt;p&gt;Close the virtual machine windows but keep the virtual machine running.&lt;/p&gt;&lt;p&gt;You can use the VirtualBox Manager to return to running the virtual machine in a window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMDesktop</name>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="obsolete">&amp;Detalii</translation>
+    </message>
+    <message>
+        <source>&amp;Snapshots</source>
+        <translation type="obsolete">In&amp;stantaneu</translation>
     </message>
 </context>
 <context>
@@ -16831,6 +16576,165 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
     </message>
 </context>
 <context>
+    <name>VBoxMediaManagerDlg</name>
+    <message>
+        <source>&amp;Actions</source>
+        <translation type="vanished">&amp;Acțiuni</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Nou...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Adaugă...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation type="vanished">Ște&amp;rge</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation type="vanished">E&amp;liberează</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation type="vanished">Reî&amp;mprospătează</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Crează un nou disc fix virtual</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Adaugă un mediu existent</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation type="vanished">Șterge mediul selectat</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation type="vanished">Eliberează mediul selectat prin deconectarea de la mașină</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="vanished">Reîmprospătează lista mediilor</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Amplasare</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Tip (Format)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Conectat la</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation type="vanished">Verificare accesibilitate</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Selectare</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Toate imaginile de disc (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Toate fișierele (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Selectați un fișier imagine disc fix</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">Imagini CD/DVD (*.iso);;Toate fișierele (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Selectați un fișier imagine CD/DVD</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Imagini dischetă (*.img);;Toate fișierele (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Selectați un fișier imagine dischetă</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation type="vanished">&lt;i&gt;Nimic&amp;nbsp;atașat&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation type="vanished">--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation type="vanished">Gestionar medii virtuale</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">&amp;Discuri fixe</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="vanished">Nume</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation type="vanished">Dimensiune virtuală</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation type="vanished">Dimensiune reală</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">Imagini &amp;CD/DVD</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="vanished">Dimensiune</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">Imagini &amp;dischetă</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Conectat la</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Conectată la</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Conectată la</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation type="obsolete">Amplasare:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="obsolete">Conectat la:</translation>
+    </message>
+</context>
+<context>
     <name>VBoxMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
@@ -17050,6 +16954,21 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
     <message>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxScreenshotViewer</name>
+    <message>
+        <source>Screenshot of %1 (%2)</source>
+        <translation type="vanished">Captură de ecran a %1 (%2)</translation>
+    </message>
+    <message>
+        <source>Click to view non-scaled screenshot.</source>
+        <translation type="vanished">Faceți clic pentru a vedea captura de ecran la dimensiunea reală</translation>
+    </message>
+    <message>
+        <source>Click to view scaled screenshot.</source>
+        <translation type="vanished">Faceți clic pentru a vedea captura de ecran scalată</translation>
     </message>
 </context>
 <context>
@@ -17526,6 +17445,276 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
     </message>
 </context>
 <context>
+    <name>VBoxSnapshotDetailsDlg</name>
+    <message>
+        <source>VBoxSnapshotDetailsDlg</source>
+        <translation type="obsolete">VBoxSnapshotDetailsDlg</translation>
+    </message>
+    <message>
+        <source> Snapshot Details </source>
+        <translation type="obsolete"> Detalii instantaneu </translation>
+    </message>
+    <message>
+        <source>&amp;Name</source>
+        <translation type="obsolete">&amp;Nume</translation>
+    </message>
+    <message>
+        <source>&amp;Description</source>
+        <translation type="obsolete">&amp;Descriere</translation>
+    </message>
+    <message>
+        <source>&amp;Machine Details</source>
+        <translation type="obsolete">Detalii &amp;Mașină</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation type="obsolete">Ajutor</translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="obsolete">F1</translation>
+    </message>
+    <message>
+        <source>&amp;OK</source>
+        <translation type="obsolete">&amp;OK</translation>
+    </message>
+    <message>
+        <source>Alt+O</source>
+        <translation type="obsolete">Alt+O</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Revocare</translation>
+    </message>
+    <message>
+        <source>Details of %1 (%2)</source>
+        <translation type="vanished">Detalii despre %1 (%2)</translation>
+    </message>
+    <message>
+        <source>Snapshot Details</source>
+        <translation type="obsolete"> Detalii instantaneu </translation>
+    </message>
+    <message>
+        <source>Click to enlarge the screenshot.</source>
+        <translation type="vanished">Faceți clic pentru a mări captura de ecran.</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="vanished">&amp;Nume:</translation>
+    </message>
+    <message>
+        <source>Taken:</source>
+        <translation type="vanished">Luat:</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="vanished">&amp;Descriere:</translation>
+    </message>
+    <message>
+        <source>D&amp;etails:</source>
+        <translation type="vanished">&amp;Detalii:</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxSnapshotsWgt</name>
+    <message>
+        <source>[snapshot]</source>
+        <translation type="obsolete">[isntantaneu]</translation>
+    </message>
+    <message>
+        <source>VBoxSnapshotsWgt</source>
+        <translation type="vanished">VBoxSnapshotsWgt</translation>
+    </message>
+    <message>
+        <source>snapshotActionGroup</source>
+        <translation type="obsolete">snapshotActionGroup</translation>
+    </message>
+    <message>
+        <source>Discard Snapshot</source>
+        <translation type="obsolete">Renunță la instantaneu</translation>
+    </message>
+    <message>
+        <source>&amp;Discard Snapshot</source>
+        <translation type="obsolete">&amp;Renunță la instantaneu</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+D</source>
+        <translation type="obsolete">Ctrl+Shift+D</translation>
+    </message>
+    <message>
+        <source>curStateActionGroup</source>
+        <translation type="obsolete">curStateActionGroup</translation>
+    </message>
+    <message>
+        <source>Take Snapshot</source>
+        <translation type="obsolete">Salvează instantaneu</translation>
+    </message>
+    <message>
+        <source>Take &amp;Snapshot</source>
+        <translation type="vanished">&amp;Salvează instantaneu</translation>
+    </message>
+    <message>
+        <source>Ctrl+Alt+S</source>
+        <translation type="obsolete">Ctrl+Alt+S</translation>
+    </message>
+    <message>
+        <source>Discard Current State</source>
+        <translation type="obsolete">Renunță la starea curentă</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Current State</source>
+        <translation type="obsolete">Re&amp;nunță la starea curentă</translation>
+    </message>
+    <message>
+        <source>Ctrl+Alt+D</source>
+        <translation type="obsolete">Ctrl+Alt+D</translation>
+    </message>
+    <message>
+        <source>Discard Current Snapshot and State</source>
+        <translation type="obsolete">Renunță la instantaneu și stare curente</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Current Snapshot and State</source>
+        <translation type="obsolete">Renunță la &amp;instantaneu și starea curentă</translation>
+    </message>
+    <message>
+        <source>Ctrl+Alt+Shift+D</source>
+        <translation type="obsolete">Ctrl+Alt+Shift+D</translation>
+    </message>
+    <message>
+        <source>Show Details</source>
+        <translation type="obsolete">Afișează detalii</translation>
+    </message>
+    <message>
+        <source>S&amp;how Details</source>
+        <translation type="vanished">A&amp;fișează detalii</translation>
+    </message>
+    <message>
+        <source>Space</source>
+        <translation type="obsolete">Spațiu</translation>
+    </message>
+    <message>
+        <source>Current State (changed)</source>
+        <comment>Current State (Modified)</comment>
+        <translation type="vanished">Stare curentă (schimbată)</translation>
+    </message>
+    <message>
+        <source>Current State</source>
+        <comment>Current State (Unmodified)</comment>
+        <translation type="vanished">Stare curentă</translation>
+    </message>
+    <message>
+        <source>The current state differs from the state stored in the current snapshot</source>
+        <translation type="vanished">Starea curentă diferă de starea salvată în instantaneul curent</translation>
+    </message>
+    <message>
+        <source>The current state is identical to the state stored in the current snapshot</source>
+        <translation type="vanished">Starea curentă este identică starea salvată în instantaneul curent</translation>
+    </message>
+    <message>
+        <source> (current, </source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished"> (curent, </translation>
+    </message>
+    <message>
+        <source>online)</source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished">online)</translation>
+    </message>
+    <message>
+        <source>offline)</source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished">offline)</translation>
+    </message>
+    <message>
+        <source>Taken at %1</source>
+        <comment>Snapshot (time)</comment>
+        <translation type="vanished">Luat la data %1</translation>
+    </message>
+    <message>
+        <source>Taken on %1</source>
+        <comment>Snapshot (date + time)</comment>
+        <translation type="vanished">Luat la %1</translation>
+    </message>
+    <message>
+        <source>%1 since %2</source>
+        <comment>Current State (time or date + time)</comment>
+        <translation type="vanished">din %1 până in %2</translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="vanished">Instantaneu %1</translation>
+    </message>
+    <message>
+        <source>Discard the selected snapshot of the virtual machine</source>
+        <translation type="obsolete">Renunță la instantaneul selectat al mașinii virtuale</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <translation type="obsolete">Ctrl+Shift+S</translation>
+    </message>
+    <message>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="vanished">Salvează un instantaneu al stării curente a mașinii virtuale</translation>
+    </message>
+    <message>
+        <source>Revert to Current Snapshot</source>
+        <translation type="obsolete">Restaureză la instantaneul curent</translation>
+    </message>
+    <message>
+        <source>&amp;Revert to Current Snapshot</source>
+        <translation type="obsolete">&amp;Restaureză la instantaneul curent</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+R</source>
+        <translation type="obsolete">Ctrl+Shift+R</translation>
+    </message>
+    <message>
+        <source>Restore the virtual machine state from the state stored in the current snapshot</source>
+        <translation type="obsolete">Restaurează starea mașinii virtuale din starea salvată în instantaneul curent</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+B</source>
+        <translation type="obsolete">Ctrl+Shift+B</translation>
+    </message>
+    <message>
+        <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
+        <translation type="obsolete">Elimină instantaneul curent și întoarce mașina în starea dinaintea instantaneului</translation>
+    </message>
+    <message>
+        <source>Show the details of the selected snapshot</source>
+        <translation type="obsolete">Arată detalii despre instantaneul selectat</translation>
+    </message>
+    <message>
+        <source>Ctrl+Space</source>
+        <translation type="obsolete">Ctrl+Spațiu</translation>
+    </message>
+    <message>
+        <source> (%1)</source>
+        <translation type="vanished"> (%1)</translation>
+    </message>
+    <message>
+        <source>&amp;Restore Snapshot</source>
+        <translation type="vanished">&amp;Restabilește instantaneu</translation>
+    </message>
+    <message>
+        <source>&amp;Delete Snapshot</source>
+        <translation type="vanished">Ș&amp;terge instantaneu</translation>
+    </message>
+    <message>
+        <source>Restore the selected snapshot of the virtual machine</source>
+        <translation type="obsolete">Restabilește instantaneul selectat al mașinii virtuale</translation>
+    </message>
+    <message>
+        <source>Delete the selected snapshot of the virtual machine</source>
+        <translation type="obsolete">Șterge instantaneul selectat al mașinii virtuale</translation>
+    </message>
+    <message>
+        <source> (%1 ago)</source>
+        <translation type="vanished"> (acum %1)</translation>
+    </message>
+</context>
+<context>
     <name>VBoxSwitchMenu</name>
     <message>
         <source>Disable</source>
@@ -17538,6 +17727,45 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
     <message>
         <source>%1 %2</source>
         <translation type="obsolete">%1 %2</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxTakeSnapshotDlg</name>
+    <message>
+        <source>Take Snapshot of Virtual Machine</source>
+        <translation type="vanished">Salvează instantaneu al mașinii virtuale</translation>
+    </message>
+    <message>
+        <source>Snapshot &amp;Name</source>
+        <translation type="vanished">&amp;Nume instantaneu</translation>
+    </message>
+    <message>
+        <source>Snapshot &amp;Description</source>
+        <translation type="vanished">&amp;Descriere instantaneu</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation type="obsolete">Ajutor</translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="obsolete">F1</translation>
+    </message>
+    <message>
+        <source>&amp;OK</source>
+        <translation type="obsolete">&amp;OK</translation>
+    </message>
+    <message>
+        <source>Alt+O</source>
+        <translation type="obsolete">Alt+O</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Revocare</translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="obsolete">Instantaneu %1</translation>
     </message>
 </context>
 <context>

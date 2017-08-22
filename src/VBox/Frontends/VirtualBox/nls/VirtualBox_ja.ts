@@ -312,6 +312,34 @@
     </message>
 </context>
 <context>
+    <name>QObject</name>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">終了コード&amp;nbsp;: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">コンポーネント: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">インターフェース: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">呼び出し先: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">呼び出し先&amp;nbsp;RC: </translation>
+    </message>
+</context>
+<context>
     <name>SFTreeViewItem</name>
     <message>
         <source>%1, %2: %3, %4: %5, %6: %7</source>
@@ -1981,17 +2009,6 @@
     <message>
         <source>Edit (Ctrl+E)</source>
         <translation type="obsolete">編集(Ctrl+E)</translation>
-    </message>
-</context>
-<context>
-    <name>UIDesktopPane</name>
-    <message>
-        <source>&amp;Details</source>
-        <translation type="vanished">詳細(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Snapshots</source>
-        <translation type="vanished">スナップショット(&amp;S)</translation>
     </message>
 </context>
 <context>
@@ -3770,6 +3787,36 @@ p, li { white-space: pre-wrap; }
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
         <translation type="unfinished">無効</translation>
     </message>
+    <message>
+        <source>Audio Output</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (audio/output)</comment>
+        <translation type="unfinished">有効</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (audio/output)</comment>
+        <translation type="unfinished">無効</translation>
+    </message>
+    <message>
+        <source>Audio Input</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (audio/input)</comment>
+        <translation type="unfinished">有効</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (audio/input)</comment>
+        <translation type="unfinished">無効</translation>
+    </message>
 </context>
 <context>
     <name>UIGDetailsElement</name>
@@ -4548,7 +4595,7 @@ p, li { white-space: pre-wrap; }
         <translation type="vanished">IPv6 アドレス</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask Length</source>
+        <source>IPv6 Prefix Length</source>
         <translation type="vanished">IPv6 ネットマスク</translation>
     </message>
     <message>
@@ -4710,7 +4757,7 @@ p, li { white-space: pre-wrap; }
         <translation type="vanished">選択したホストオンリーネットワークを編集します。</translation>
     </message>
     <message>
-        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 network mask prefix length.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 prefix length.</source>
         <translation type="vanished">ホストインターフェース &lt;b&gt;%1&lt;/b&gt; は正しいIPv6ネットワークマスクプレフィックス長ではありません。</translation>
     </message>
 </context>
@@ -4757,11 +4804,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">IPv6がサポートされるとき、このアダプターのホスト IPv6 アドレスを指定します。</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
+        <source>IPv6 Prefix &amp;Length:</source>
         <translation type="obsolete">IPv6 ネットマスク長(&amp;L):</translation>
     </message>
     <message>
-        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">IPv6がサポートされるとき、このアダプターのホスト IPv6 ネットマスクのプレフィックス長を指定します。</translation>
     </message>
     <message>
@@ -4852,11 +4899,11 @@ p, li { white-space: pre-wrap; }
         <translation type="vanished">IPv6がサポートされるとき、このアダプターのホスト IPv6 アドレスを指定します。</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
+        <source>IPv6 Prefix &amp;Length:</source>
         <translation type="vanished">IPv6 ネットマスク長(&amp;L):</translation>
     </message>
     <message>
-        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
         <translation type="vanished">IPv6がサポートされるとき、このアダプターのホスト IPv6 ネットマスクのプレフィックス長を指定します。</translation>
     </message>
     <message>
@@ -5298,11 +5345,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">IPv6 ネットマスク長(&amp;L):</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">IPv6がサポートされるとき、このアダプターのホスト IPv6 ネットマスクのプレフィックス長を指定します。</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -5458,7 +5505,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">IPv6 ネットマスク</translation>
     </message>
     <message>
         <source>Not set</source>
@@ -6799,6 +6846,26 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Selects the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
         <translation>オーディオ出力ドライバーを選択します。&lt;b&gt;Null Audio Driver&lt;/b&gt;はゲストOSからオーディオカードとして認識されますが、デバイスへのすべてのアクセスは無視されます。</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">拡張機能:</translation>
+    </message>
+    <message>
+        <source>When checked, output to the virtual audio device will reach the host. Otherwise the guest is muted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Audio &amp;Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the guest will be able to capture audio input from the host. Otherwise the guest will capture only silence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Audio &amp;Input</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9861,225 +9928,50 @@ p, li { white-space: pre-wrap; }
         <translation>ハードディスク(&amp;H)</translation>
     </message>
     <message>
-        <source>&amp;Actions</source>
-        <translation type="vanished">動作(&amp;A)</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">新規(&amp;N)...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">追加(&amp;A)...</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>コピー(&amp;C)...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation type="vanished">変更(&amp;M)...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation type="vanished">除去(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation type="vanished">解放(&amp;L)</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>最新の情報に更新(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">新規仮想ハードドライブの作成</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">新規仮想ハードディスクの作成</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">既存のメディアを追加</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation type="vanished">既存のメディアをコピー</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation type="vanished">選択したメディアの属性を変更</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation type="vanished">選択したメディアを除去</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation type="vanished">選択したメディアを仮想マシンから割り当て解除して解放する</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>メディアリストを最新の情報に更新</translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">CD/DVDディスク</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">ハードディスク</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">場所</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">タイプ(形式)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">割り当て</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>アクセス可否を確認</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">すべてのハードディスクイメージ(%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">すべてのファイル(*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">ハードディスクイメージファイルを選択</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVDイメージ(*.iso);;すべてのファイル(*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">CD/DVDディスクイメージファイルを選択</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">フロッピーイメージ(*.img);;すべてのファイル(*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">フロッピーディスクイメージファイルを選択</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">フロッピーディスク</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">すべての%1イメージ(%2)</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;未割り当て&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>仮想メディアマネージャー</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">ハードディスク(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>名前</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>仮想的なサイズ</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>実際のサイズ</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation type="vanished">タイプ:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation type="vanished">場所:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>フォーマット:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>ストレージの詳細:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>割り当て:</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">CD/DVDイメージ(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>サイズ</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">フロッピーイメージ(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">割り当て</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">割り当て</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">割り当て</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;暗号化なし&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>暗号化の鍵:</translation>
-    </message>
-    <message>
         <source>%1, %2: %3, %4: %5</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Format:</source>
+        <translation type="unfinished">フォーマット:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="unfinished">ストレージの詳細:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="unfinished">割り当て:</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished">暗号化の鍵:</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="unfinished">UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation type="unfinished">&lt;i&gt;未割り当て&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished">&lt;i&gt;暗号化なし&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation type="unfinished">--</translation>
+    </message>
+    <message>
         <source>&amp;Medium</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation type="unfinished">コピー(&amp;C)...</translation>
     </message>
     <message>
         <source>Copy selected disk image file</source>
@@ -10110,8 +10002,40 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Re&amp;fresh</source>
+        <translation type="unfinished">最新の情報に更新(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="unfinished">メディアリストを最新の情報に更新</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">名前</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation type="unfinished">仮想的なサイズ</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation type="unfinished">実際のサイズ</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">サイズ</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation type="unfinished">アクセス可否を確認</translation>
+    </message>
+    <message>
         <source>Moving medium...</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation type="unfinished">仮想メディアマネージャー</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -10820,27 +10744,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>終了コード&amp;nbsp;: </translation>
+        <translation type="vanished">終了コード&amp;nbsp;: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>コンポーネント: </translation>
+        <translation type="vanished">コンポーネント: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>インターフェース: </translation>
+        <translation type="vanished">インターフェース: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>呼び出し先: </translation>
+        <translation type="vanished">呼び出し先: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>呼び出し先&amp;nbsp;RC: </translation>
+        <translation type="vanished">呼び出し先&amp;nbsp;RC: </translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -12180,7 +12104,28 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;VirtualBox COMオブジェクトの作成に失敗しました。&lt;/p&gt;&lt;p&gt;アプリケーションを終了します。&lt;/p&gt;</translation>
     </message>
     <message>
+        <source>Delete</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">削除</translation>
+    </message>
+    <message>
+        <source>Do you want to delete the downloaded file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to delete following list of files &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p&gt;The reason for this error are most likely wrong permissions of the IPC daemon socket due to an installation problem. Please check the permissions of &lt;font color=blue&gt;&apos;/tmp&apos;&lt;/font&gt; and &lt;font color=blue&gt;&apos;/tmp/.vbox-*-ipc/&apos;&lt;/font&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -12241,27 +12186,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to save DHCP server parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Do you want to delete the downloaded file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>extension pack</comment>
-        <translation type="unfinished">削除</translation>
-    </message>
-    <message>
-        <source>Do you want to delete following list of files &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -13384,15 +13308,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>UIScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
-        <translation>%1(%2)のスクリーンショット</translation>
+        <translation type="unfinished">%1(%2)のスクリーンショット</translation>
     </message>
     <message>
         <source>Click to view non-scaled screenshot.</source>
-        <translation>クリックして実寸のスクリーンショットを表示します。</translation>
+        <translation type="unfinished">クリックして実寸のスクリーンショットを表示します。</translation>
     </message>
     <message>
         <source>Click to view scaled screenshot.</source>
-        <translation>クリックしてスクリーンショットを表示します。</translation>
+        <translation type="unfinished">クリックしてスクリーンショットを表示します。</translation>
     </message>
 </context>
 <context>
@@ -13633,68 +13557,8 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
 <context>
     <name>UISnapshotDetailsWidget</name>
     <message>
-        <source>UISnapshotDetailsWidget</source>
-        <translation type="obsolete">UISnapshotDetailsWidget</translation>
-    </message>
-    <message>
-        <source> Snapshot Details </source>
-        <translation type="obsolete">スナップショット詳細</translation>
-    </message>
-    <message>
-        <source>&amp;Name</source>
-        <translation type="obsolete">名前(&amp;N)</translation>
-    </message>
-    <message>
-        <source>&amp;Description</source>
-        <translation type="obsolete">説明(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Machine Details</source>
-        <translation type="obsolete">仮想マシン詳細(&amp;M)</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="obsolete">ヘルプ</translation>
-    </message>
-    <message>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="obsolete">OK(&amp;O)</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">キャンセル</translation>
-    </message>
-    <message>
-        <source>Details of %1 (%2)</source>
-        <translation type="vanished">%1 (%2)の詳細</translation>
-    </message>
-    <message>
-        <source>Snapshot Details</source>
-        <translation type="obsolete">スナップショット詳細</translation>
-    </message>
-    <message>
-        <source>Click to enlarge the screenshot.</source>
-        <translation>クリックしてスクリーンショットを拡大します。</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>名前(&amp;N):</translation>
-    </message>
-    <message>
-        <source>Taken:</source>
-        <translation type="vanished">作成:</translation>
-    </message>
-    <message>
-        <source>&amp;Description:</source>
-        <translation>説明(&amp;D):</translation>
-    </message>
-    <message>
-        <source>D&amp;etails:</source>
-        <translation type="vanished">詳細(&amp;E):</translation>
+        <source>&lt;p&gt;You have the &lt;b&gt;Current State&lt;/b&gt; item selected.&lt;br&gt;Press the &lt;b&gt;Take&lt;/b&gt; button if you wish to take a new snapshot.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Attributes</source>
@@ -13703,6 +13567,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&amp;Information</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">名前(&amp;N):</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="unfinished">説明(&amp;D):</translation>
     </message>
     <message>
         <source>Holds the snapshot name.</source>
@@ -13737,6 +13609,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Click to enlarge the screenshot.</source>
+        <translation type="unfinished">クリックしてスクリーンショットを拡大します。</translation>
+    </message>
+    <message>
         <source>Snapshot name is empty</source>
         <translation type="unfinished"></translation>
     </message>
@@ -13744,229 +13620,32 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
 <context>
     <name>UISnapshotPane</name>
     <message>
-        <source>[snapshot]</source>
-        <translation type="obsolete">[snapshot]</translation>
-    </message>
-    <message>
-        <source>UISnapshotPane</source>
-        <translation type="vanished">UISnapshotPane</translation>
-    </message>
-    <message>
-        <source>snapshotActionGroup</source>
-        <translation type="obsolete">snapshotActionGroup</translation>
-    </message>
-    <message>
-        <source>Discard Snapshot</source>
-        <translation type="obsolete">スナップショットを破棄</translation>
-    </message>
-    <message>
-        <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">スナップショットを破棄(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+D</source>
-        <translation type="obsolete">Ctrl+Shift+D</translation>
-    </message>
-    <message>
-        <source>curStateActionGroup</source>
-        <translation type="obsolete">curStateActionGroup</translation>
-    </message>
-    <message>
-        <source>Take Snapshot</source>
-        <translation type="obsolete">スナップショット作成</translation>
-    </message>
-    <message>
-        <source>Take &amp;Snapshot</source>
-        <translation type="vanished">スナップショット作成(&amp;S)</translation>
-    </message>
-    <message>
-        <source>Discard Current Snapshot and State</source>
-        <translation type="obsolete">最新のスナップショットと状態を破棄</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">最新のスナップショットと状態を破棄(&amp;I)</translation>
-    </message>
-    <message>
-        <source>Show Details</source>
-        <translation type="obsolete">詳細を表示</translation>
-    </message>
-    <message>
-        <source>S&amp;how Details</source>
-        <translation type="vanished">詳細を表示(&amp;H)</translation>
-    </message>
-    <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation>最新の状態(変更)</translation>
+        <translation type="unfinished">最新の状態(変更)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation>最新の状態</translation>
+        <translation type="unfinished">最新の状態</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation>最新の状態は最新のスナップショットに保存されている状態と異なります</translation>
+        <translation type="unfinished">最新の状態は最新のスナップショットに保存されている状態と異なります</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>最新の状態は最新のスナップショットに保存されている状態と同じです</translation>
-    </message>
-    <message>
-        <source> (%1 ago)</source>
-        <translation type="vanished">(%1前)</translation>
-    </message>
-    <message>
-        <source> (current, </source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished">(最新,</translation>
-    </message>
-    <message>
-        <source>online)</source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished">オンライン)</translation>
-    </message>
-    <message>
-        <source>offline)</source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished">オフライン)</translation>
-    </message>
-    <message>
-        <source>Taken at %1</source>
-        <comment>Snapshot (time)</comment>
-        <translation>作成時刻 %1</translation>
-    </message>
-    <message>
-        <source>Taken on %1</source>
-        <comment>Snapshot (date + time)</comment>
-        <translation>作成日時 %1</translation>
-    </message>
-    <message>
-        <source>%1 since %2</source>
-        <comment>Current State (time or date + time)</comment>
-        <translation>%2からの状態 %1</translation>
-    </message>
-    <message>
-        <source>&amp;Clone...</source>
-        <translation>クローン(&amp;C)...</translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation type="obsolete">選択した仮想マシンをクローン</translation>
-    </message>
-    <message>
-        <source>Snapshot %1</source>
-        <translation>スナップショット %1</translation>
-    </message>
-    <message>
-        <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">選択した仮想マシンのスナップショットを破棄</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
-        <translation type="obsolete">Ctrl+Shift+S</translation>
-    </message>
-    <message>
-        <source>Take a snapshot of the current virtual machine state</source>
-        <translation>現在の仮想マシンの状態のスナップショットを作成</translation>
-    </message>
-    <message>
-        <source>Revert to Current Snapshot</source>
-        <translation type="obsolete">最新のスナップショットの状態に戻す</translation>
-    </message>
-    <message>
-        <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">最新のスナップショットの状態に戻す(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+R</source>
-        <translation type="obsolete">Ctrl+Shift+R</translation>
-    </message>
-    <message>
-        <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">仮想マシンの状態を最新のスナップショットに保存された状態に復元</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+B</source>
-        <translation type="obsolete">Ctrl+Shift+B</translation>
-    </message>
-    <message>
-        <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">最新のスナップショットを破棄し、スナップショットを作成する前の状態に戻す</translation>
-    </message>
-    <message>
-        <source>Show the details of the selected snapshot</source>
-        <translation type="obsolete">選択したスナップショットの詳細を表示</translation>
-    </message>
-    <message>
-        <source>Ctrl+Space</source>
-        <translation type="obsolete">Ctrl+スペース</translation>
-    </message>
-    <message>
-        <source> (%1)</source>
-        <translation type="vanished"> (%1)</translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n day(s) ago)</source>
-        <translation type="obsolete">
-            <numerusform> (%n 日前)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n hour(s) ago)</source>
-        <translation type="obsolete">
-            <numerusform> (%n 時間前)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n minute(s) ago)</source>
-        <translation type="obsolete">
-            <numerusform> (%n 分前)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n second(s) ago)</source>
-        <translation type="obsolete">
-            <numerusform> (%n 秒前)</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>&amp;Restore Snapshot</source>
-        <translation type="vanished">スナップショットに復元(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&amp;Delete Snapshot</source>
-        <translation type="vanished">スナップショットを削除(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Restore the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">選択した仮想マシンのスナップショットに復元</translation>
-    </message>
-    <message>
-        <source>Delete the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">選択した仮想マシンのスナップショットを削除</translation>
-    </message>
-    <message>
-        <source>Restore selected snapshot of the virtual machine</source>
-        <translation>選択した仮想マシンのスナップショットに復元</translation>
-    </message>
-    <message>
-        <source>Delete selected snapshot of the virtual machine</source>
-        <translation>選択した仮想マシンのスナップショットを削除</translation>
-    </message>
-    <message>
-        <source>Display a window with selected snapshot details</source>
-        <translation type="vanished">選択したスナップショットの詳細をウィンドウ表示</translation>
-    </message>
-    <message>
-        <source>Clone selected virtual machine</source>
-        <translation>選択した仮想マシンをクローン</translation>
+        <translation type="unfinished">最新の状態は最新のスナップショットに保存されている状態と同じです</translation>
     </message>
     <message>
         <source>%1 (%2 ago)</source>
         <comment>date time (how long ago)</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 since %2</source>
+        <comment>Current State (time or date + time)</comment>
+        <translation type="unfinished">%2からの状態 %1</translation>
     </message>
     <message>
         <source>current</source>
@@ -13982,6 +13661,16 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>offline</source>
         <comment>snapshot</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Taken at %1</source>
+        <comment>Snapshot (time)</comment>
+        <translation type="unfinished">作成時刻 %1</translation>
+    </message>
+    <message>
+        <source>Taken on %1</source>
+        <comment>Snapshot (date + time)</comment>
+        <translation type="unfinished">作成日時 %1</translation>
     </message>
     <message>
         <source>Contains the snapshot tree of the current virtual machine</source>
@@ -14004,6 +13693,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&amp;Clone...</source>
+        <translation type="unfinished">クローン(&amp;C)...</translation>
+    </message>
+    <message>
         <source>Take Snapshot (%1)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -14024,8 +13717,24 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="unfinished">現在の仮想マシンの状態のスナップショットを作成</translation>
+    </message>
+    <message>
+        <source>Delete selected snapshot of the virtual machine</source>
+        <translation type="unfinished">選択した仮想マシンのスナップショットを削除</translation>
+    </message>
+    <message>
+        <source>Restore selected snapshot of the virtual machine</source>
+        <translation type="unfinished">選択した仮想マシンのスナップショットに復元</translation>
+    </message>
+    <message>
         <source>Open pane with the selected snapshot properties</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone selected virtual machine</source>
+        <translation type="unfinished">選択した仮想マシンをクローン</translation>
     </message>
     <message>
         <source>Name</source>
@@ -14036,6 +13745,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>Taken</source>
         <comment>snapshot</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="unfinished">スナップショット %1</translation>
     </message>
 </context>
 <context>
@@ -14064,41 +13777,25 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation>仮想マシンのスナップショット作成</translation>
+        <translation type="unfinished">仮想マシンのスナップショット作成</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
-        <translation>スナップショットの名前(&amp;N)</translation>
+        <translation type="unfinished">スナップショットの名前(&amp;N)</translation>
     </message>
     <message>
         <source>Snapshot &amp;Description</source>
-        <translation>スナップショットの説明(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="obsolete">ヘルプ</translation>
-    </message>
-    <message>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="obsolete">OK(&amp;O)</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">キャンセル</translation>
+        <translation type="unfinished">スナップショットの説明(&amp;D)</translation>
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation>
+        <translation type="unfinished">
             <numerusform>警告：%n 個の変更不可の仮想ディスクを割り当てた仮想マシンのスナップショットを作成しています。データ喪失を避けるため、このスナップショットから起動する限り、仮想ディスクはリセットされません。</numerusform>
         </translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>スナップショット %1</translation>
+        <translation type="unfinished">スナップショット %1</translation>
     </message>
 </context>
 <context>
@@ -14332,6 +14029,17 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&lt;p&gt;Close the virtual machine windows but keep the virtual machine running.&lt;/p&gt;&lt;p&gt;You can use the VirtualBox Manager to return to running the virtual machine in a window.&lt;/p&gt;</source>
         <translation>&lt;P&gt;仮想マシンのウィンドウを閉じても、仮想マシンを実行し続けます。&lt;/p&gt;&lt;p&gt;VirtualBox マネージャーで仮想マシンのウィンドウ表示を戻せます。&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMDesktop</name>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="vanished">詳細(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Snapshots</source>
+        <translation type="vanished">スナップショット(&amp;S)</translation>
     </message>
 </context>
 <context>
@@ -19474,6 +19182,225 @@ USB フィルターを追加または除去するにはコンテキストメニ�
     </message>
 </context>
 <context>
+    <name>VBoxMediaManagerDlg</name>
+    <message>
+        <source>&amp;Actions</source>
+        <translation type="vanished">動作(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">新規(&amp;N)...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">追加(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation type="vanished">コピー(&amp;C)...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation type="vanished">変更(&amp;M)...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation type="vanished">除去(&amp;E)</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation type="vanished">解放(&amp;L)</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation type="vanished">最新の情報に更新(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="obsolete">新規仮想ハードドライブの作成</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">新規仮想ハードディスクの作成</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">既存のメディアを追加</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation type="vanished">既存のメディアをコピー</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation type="vanished">選択したメディアの属性を変更</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation type="vanished">選択したメディアを除去</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation type="vanished">選択したメディアを仮想マシンから割り当て解除して解放する</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="vanished">メディアリストを最新の情報に更新</translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">CD/DVDディスク</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">ハードディスク</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">場所</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">タイプ(形式)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">割り当て</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation type="vanished">アクセス可否を確認</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">選択(&amp;S)</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">すべてのハードディスクイメージ(%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">すべてのファイル(*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">ハードディスクイメージファイルを選択</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVDイメージ(*.iso);;すべてのファイル(*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">CD/DVDディスクイメージファイルを選択</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">フロッピーイメージ(*.img);;すべてのファイル(*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">フロッピーディスクイメージファイルを選択</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">フロッピーディスク</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">すべての%1イメージ(%2)</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation type="vanished">&lt;i&gt;未割り当て&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation type="vanished">--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation type="vanished">仮想メディアマネージャー</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">ハードディスク(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="vanished">名前</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation type="vanished">仮想的なサイズ</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation type="vanished">実際のサイズ</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation type="vanished">タイプ:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation type="vanished">場所:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation type="vanished">フォーマット:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="vanished">ストレージの詳細:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="vanished">割り当て:</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">CD/DVDイメージ(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="vanished">サイズ</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">フロッピーイメージ(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">割り当て</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">割り当て</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">割り当て</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="vanished">UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="vanished">&lt;i&gt;暗号化なし&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="vanished">暗号化の鍵:</translation>
+    </message>
+</context>
+<context>
     <name>VBoxMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
@@ -19693,6 +19620,21 @@ USB フィルターを追加または除去するにはコンテキストメニ�
     <message>
         <source>&amp;OK</source>
         <translation type="obsolete">OK(&amp;O)</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxScreenshotViewer</name>
+    <message>
+        <source>Screenshot of %1 (%2)</source>
+        <translation type="vanished">%1(%2)のスクリーンショット</translation>
+    </message>
+    <message>
+        <source>Click to view non-scaled screenshot.</source>
+        <translation type="vanished">クリックして実寸のスクリーンショットを表示します。</translation>
+    </message>
+    <message>
+        <source>Click to view scaled screenshot.</source>
+        <translation type="vanished">クリックしてスクリーンショットを表示します。</translation>
     </message>
 </context>
 <context>
@@ -20191,6 +20133,296 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
 </context>
 <context>
+    <name>VBoxSnapshotDetailsDlg</name>
+    <message>
+        <source>VBoxSnapshotDetailsDlg</source>
+        <translation type="obsolete">VBoxSnapshotDetailsDlg</translation>
+    </message>
+    <message>
+        <source> Snapshot Details </source>
+        <translation type="obsolete">スナップショット詳細</translation>
+    </message>
+    <message>
+        <source>&amp;Name</source>
+        <translation type="obsolete">名前(&amp;N)</translation>
+    </message>
+    <message>
+        <source>&amp;Description</source>
+        <translation type="obsolete">説明(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Machine Details</source>
+        <translation type="obsolete">仮想マシン詳細(&amp;M)</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation type="obsolete">ヘルプ</translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="obsolete">F1</translation>
+    </message>
+    <message>
+        <source>&amp;OK</source>
+        <translation type="obsolete">OK(&amp;O)</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">キャンセル</translation>
+    </message>
+    <message>
+        <source>Details of %1 (%2)</source>
+        <translation type="vanished">%1 (%2)の詳細</translation>
+    </message>
+    <message>
+        <source>Snapshot Details</source>
+        <translation type="obsolete">スナップショット詳細</translation>
+    </message>
+    <message>
+        <source>Click to enlarge the screenshot.</source>
+        <translation type="vanished">クリックしてスクリーンショットを拡大します。</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="vanished">名前(&amp;N):</translation>
+    </message>
+    <message>
+        <source>Taken:</source>
+        <translation type="vanished">作成:</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="vanished">説明(&amp;D):</translation>
+    </message>
+    <message>
+        <source>D&amp;etails:</source>
+        <translation type="vanished">詳細(&amp;E):</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxSnapshotsWgt</name>
+    <message>
+        <source>[snapshot]</source>
+        <translation type="obsolete">[snapshot]</translation>
+    </message>
+    <message>
+        <source>VBoxSnapshotsWgt</source>
+        <translation type="vanished">VBoxSnapshotsWgt</translation>
+    </message>
+    <message>
+        <source>snapshotActionGroup</source>
+        <translation type="obsolete">snapshotActionGroup</translation>
+    </message>
+    <message>
+        <source>Discard Snapshot</source>
+        <translation type="obsolete">スナップショットを破棄</translation>
+    </message>
+    <message>
+        <source>&amp;Discard Snapshot</source>
+        <translation type="obsolete">スナップショットを破棄(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+D</source>
+        <translation type="obsolete">Ctrl+Shift+D</translation>
+    </message>
+    <message>
+        <source>curStateActionGroup</source>
+        <translation type="obsolete">curStateActionGroup</translation>
+    </message>
+    <message>
+        <source>Take Snapshot</source>
+        <translation type="obsolete">スナップショット作成</translation>
+    </message>
+    <message>
+        <source>Take &amp;Snapshot</source>
+        <translation type="vanished">スナップショット作成(&amp;S)</translation>
+    </message>
+    <message>
+        <source>Discard Current Snapshot and State</source>
+        <translation type="obsolete">最新のスナップショットと状態を破棄</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Current Snapshot and State</source>
+        <translation type="obsolete">最新のスナップショットと状態を破棄(&amp;I)</translation>
+    </message>
+    <message>
+        <source>Show Details</source>
+        <translation type="obsolete">詳細を表示</translation>
+    </message>
+    <message>
+        <source>S&amp;how Details</source>
+        <translation type="vanished">詳細を表示(&amp;H)</translation>
+    </message>
+    <message>
+        <source>Current State (changed)</source>
+        <comment>Current State (Modified)</comment>
+        <translation type="vanished">最新の状態(変更)</translation>
+    </message>
+    <message>
+        <source>Current State</source>
+        <comment>Current State (Unmodified)</comment>
+        <translation type="vanished">最新の状態</translation>
+    </message>
+    <message>
+        <source>The current state differs from the state stored in the current snapshot</source>
+        <translation type="vanished">最新の状態は最新のスナップショットに保存されている状態と異なります</translation>
+    </message>
+    <message>
+        <source>The current state is identical to the state stored in the current snapshot</source>
+        <translation type="vanished">最新の状態は最新のスナップショットに保存されている状態と同じです</translation>
+    </message>
+    <message>
+        <source> (%1 ago)</source>
+        <translation type="vanished">(%1前)</translation>
+    </message>
+    <message>
+        <source> (current, </source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished">(最新,</translation>
+    </message>
+    <message>
+        <source>online)</source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished">オンライン)</translation>
+    </message>
+    <message>
+        <source>offline)</source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished">オフライン)</translation>
+    </message>
+    <message>
+        <source>Taken at %1</source>
+        <comment>Snapshot (time)</comment>
+        <translation type="vanished">作成時刻 %1</translation>
+    </message>
+    <message>
+        <source>Taken on %1</source>
+        <comment>Snapshot (date + time)</comment>
+        <translation type="vanished">作成日時 %1</translation>
+    </message>
+    <message>
+        <source>%1 since %2</source>
+        <comment>Current State (time or date + time)</comment>
+        <translation type="vanished">%2からの状態 %1</translation>
+    </message>
+    <message>
+        <source>&amp;Clone...</source>
+        <translation type="vanished">クローン(&amp;C)...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="obsolete">選択した仮想マシンをクローン</translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="vanished">スナップショット %1</translation>
+    </message>
+    <message>
+        <source>Discard the selected snapshot of the virtual machine</source>
+        <translation type="obsolete">選択した仮想マシンのスナップショットを破棄</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <translation type="obsolete">Ctrl+Shift+S</translation>
+    </message>
+    <message>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="vanished">現在の仮想マシンの状態のスナップショットを作成</translation>
+    </message>
+    <message>
+        <source>Revert to Current Snapshot</source>
+        <translation type="obsolete">最新のスナップショットの状態に戻す</translation>
+    </message>
+    <message>
+        <source>&amp;Revert to Current Snapshot</source>
+        <translation type="obsolete">最新のスナップショットの状態に戻す(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+R</source>
+        <translation type="obsolete">Ctrl+Shift+R</translation>
+    </message>
+    <message>
+        <source>Restore the virtual machine state from the state stored in the current snapshot</source>
+        <translation type="obsolete">仮想マシンの状態を最新のスナップショットに保存された状態に復元</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+B</source>
+        <translation type="obsolete">Ctrl+Shift+B</translation>
+    </message>
+    <message>
+        <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
+        <translation type="obsolete">最新のスナップショットを破棄し、スナップショットを作成する前の状態に戻す</translation>
+    </message>
+    <message>
+        <source>Show the details of the selected snapshot</source>
+        <translation type="obsolete">選択したスナップショットの詳細を表示</translation>
+    </message>
+    <message>
+        <source>Ctrl+Space</source>
+        <translation type="obsolete">Ctrl+スペース</translation>
+    </message>
+    <message>
+        <source> (%1)</source>
+        <translation type="vanished"> (%1)</translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n day(s) ago)</source>
+        <translation type="obsolete">
+            <numerusform> (%n 日前)</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n hour(s) ago)</source>
+        <translation type="obsolete">
+            <numerusform> (%n 時間前)</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n minute(s) ago)</source>
+        <translation type="obsolete">
+            <numerusform> (%n 分前)</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n second(s) ago)</source>
+        <translation type="obsolete">
+            <numerusform> (%n 秒前)</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>&amp;Restore Snapshot</source>
+        <translation type="vanished">スナップショットに復元(&amp;R)</translation>
+    </message>
+    <message>
+        <source>&amp;Delete Snapshot</source>
+        <translation type="vanished">スナップショットを削除(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Restore the selected snapshot of the virtual machine</source>
+        <translation type="obsolete">選択した仮想マシンのスナップショットに復元</translation>
+    </message>
+    <message>
+        <source>Delete the selected snapshot of the virtual machine</source>
+        <translation type="obsolete">選択した仮想マシンのスナップショットを削除</translation>
+    </message>
+    <message>
+        <source>Restore selected snapshot of the virtual machine</source>
+        <translation type="vanished">選択した仮想マシンのスナップショットに復元</translation>
+    </message>
+    <message>
+        <source>Delete selected snapshot of the virtual machine</source>
+        <translation type="vanished">選択した仮想マシンのスナップショットを削除</translation>
+    </message>
+    <message>
+        <source>Display a window with selected snapshot details</source>
+        <translation type="vanished">選択したスナップショットの詳細をウィンドウ表示</translation>
+    </message>
+    <message>
+        <source>Clone selected virtual machine</source>
+        <translation type="vanished">選択した仮想マシンをクローン</translation>
+    </message>
+</context>
+<context>
     <name>VBoxSwitchMenu</name>
     <message>
         <source>Disable</source>
@@ -20203,6 +20435,47 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     <message>
         <source>%1 %2</source>
         <translation type="obsolete">%1 %2</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxTakeSnapshotDlg</name>
+    <message>
+        <source>Take Snapshot of Virtual Machine</source>
+        <translation type="vanished">仮想マシンのスナップショット作成</translation>
+    </message>
+    <message>
+        <source>Snapshot &amp;Name</source>
+        <translation type="vanished">スナップショットの名前(&amp;N)</translation>
+    </message>
+    <message>
+        <source>Snapshot &amp;Description</source>
+        <translation type="vanished">スナップショットの説明(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation type="obsolete">ヘルプ</translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="obsolete">F1</translation>
+    </message>
+    <message>
+        <source>&amp;OK</source>
+        <translation type="obsolete">OK(&amp;O)</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">キャンセル</translation>
+    </message>
+    <message numerus="yes">
+        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
+        <translation type="vanished">
+            <numerusform>警告：%n 個の変更不可の仮想ディスクを割り当てた仮想マシンのスナップショットを作成しています。データ喪失を避けるため、このスナップショットから起動する限り、仮想ディスクはリセットされません。</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="vanished">スナップショット %1</translation>
     </message>
 </context>
 <context>

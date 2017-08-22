@@ -282,6 +282,34 @@
     </message>
 </context>
 <context>
+    <name>QObject</name>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Tulos&amp;nbsp;koodi:</translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Komponetti:</translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Sovitin:</translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Kutsuja:</translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Kutsujan&amp;nbsp;RC:</translation>
+    </message>
+</context>
+<context>
     <name>SFTreeViewItem</name>
     <message>
         <source>%1, %2: %3, %4: %5, %6: %7</source>
@@ -1571,17 +1599,6 @@
     <message>
         <source>Edit (Ctrl+E)</source>
         <translation type="obsolete">Muokkaa (Ctrl+M)</translation>
-    </message>
-</context>
-<context>
-    <name>UIDesktopPane</name>
-    <message>
-        <source>&amp;Details</source>
-        <translation type="obsolete">&amp;Yksityiskohdat</translation>
-    </message>
-    <message>
-        <source>&amp;Snapshots</source>
-        <translation type="obsolete">&amp;Palautuspisteet</translation>
     </message>
 </context>
 <context>
@@ -2904,6 +2921,36 @@ p, li { white-space: pre-wrap; }
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
         <translation type="unfinished">Ei käytössä</translation>
     </message>
+    <message>
+        <source>Audio Output</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (audio/output)</comment>
+        <translation type="unfinished">Käytössä</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (audio/output)</comment>
+        <translation type="unfinished">Ei käytössä</translation>
+    </message>
+    <message>
+        <source>Audio Input</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (audio/input)</comment>
+        <translation type="unfinished">Käytössä</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (audio/input)</comment>
+        <translation type="unfinished">Ei käytössä</translation>
+    </message>
 </context>
 <context>
     <name>UIGDetailsElement</name>
@@ -3453,7 +3500,7 @@ p, li { white-space: pre-wrap; }
         <translation type="vanished">IPv6-osoite</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask Length</source>
+        <source>IPv6 Prefix Length</source>
         <translation type="vanished">IPv6-verkkopeitteen pituus</translation>
     </message>
     <message>
@@ -3674,11 +3721,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Näyttää tämän sovittimen IPv6-osoitteen, jos IPv6 on tuettu.</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
+        <source>IPv6 Prefix &amp;Length:</source>
         <translation type="obsolete">IPv6-verkkopeitteen &amp;pituus:</translation>
     </message>
     <message>
-        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Näyttää tämän sovittimen IPv6-verkkopeitteen pituuden, jos IPv6 on tuettu.</translation>
     </message>
     <message>
@@ -3765,11 +3812,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Näyttää tämän sovittimen IPv6-osoitteen, jos IPv6 on tuettu.</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
+        <source>IPv6 Prefix &amp;Length:</source>
         <translation type="obsolete">IPv6-verkkopeitteen &amp;pituus:</translation>
     </message>
     <message>
-        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Näyttää tämän sovittimen IPv6-verkkopeitteen pituuden, jos IPv6 on tuettu.</translation>
     </message>
     <message>
@@ -4143,11 +4190,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">IPv6-verkkopeitteen &amp;pituus:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Näyttää tämän sovittimen IPv6-verkkopeitteen pituuden, jos IPv6 on tuettu.</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -4303,7 +4350,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">IPv6-verkkopeitteen pituus</translation>
     </message>
     <message>
         <source>Not set</source>
@@ -5471,6 +5518,26 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Laajennetut ominaisuudet:</translation>
+    </message>
+    <message>
+        <source>When checked, output to the virtual audio device will reach the host. Otherwise the guest is muted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Audio &amp;Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the guest will be able to capture audio input from the host. Otherwise the guest will capture only silence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Audio &amp;Input</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7829,152 +7896,9 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Actions</source>
-        <translation type="vanished">&amp;Toiminnot</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Uusi...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Lisää...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation type="vanished">&amp;Poista</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation type="vanished">&amp;Vapauta</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Pä&amp;ivitä</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Luo uusi virtuaalikiintolevy</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Lisää olemassaoleva media</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation type="vanished">Poista valittu media</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation type="vanished">Vapauta valittu media irrottamalla se virtuaalikoneista</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Päivitä medialuettelo</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Sijainti</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Tyyppi (muoto)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Liitetty kohteeseen</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Tarkistetaan saatavuutta</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Kaikki levykuvatiedostot (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Kaikki tiedostot (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Valitse kiintolevyn levykuvatiedosto</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD-levykuvat (*.iso);;Kaikki tiedostot (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Valitse CD/DVD-levykuvatiedosto</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Levykkeiden levykuvat (*.img);;Kaikki tiedostot (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Valitse levykkeen levykuvatiedosto</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Ei&amp;nbsp;liitetty&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Virtuaalimedian hallinta</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">Kiinto&amp;levyt</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nimi</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Virtuaalinen koko</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Todellinen koko</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">&amp;CD/DVD-levykuvat</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Koko</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">&amp;Levykelevykuvat</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Liitetty kohteeseen</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Liitetty kohteeseen</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Liitetty kohteeseen</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">kiintolevy</translation>
+        <source>%1, %2: %3, %4: %5</source>
+        <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Format:</source>
@@ -7989,14 +7913,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Copy...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Encrypted with key:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8005,12 +7921,24 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1, %2: %3, %4: %5</source>
-        <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation type="unfinished">&lt;i&gt;Ei&amp;nbsp;liitetty&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8042,8 +7970,40 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Re&amp;fresh</source>
+        <translation type="unfinished">Pä&amp;ivitä</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="unfinished">Päivitä medialuettelo</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Nimi</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation type="unfinished">Virtuaalinen koko</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation type="unfinished">Todellinen koko</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">Koko</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Moving medium...</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation type="unfinished">Virtuaalimedian hallinta</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -8482,27 +8442,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>Tulos&amp;nbsp;koodi:</translation>
+        <translation type="vanished">Tulos&amp;nbsp;koodi:</translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>Komponetti:</translation>
+        <translation type="vanished">Komponetti:</translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>Sovitin:</translation>
+        <translation type="vanished">Sovitin:</translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>Kutsuja:</translation>
+        <translation type="vanished">Kutsuja:</translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>Kutsujan&amp;nbsp;RC:</translation>
+        <translation type="vanished">Kutsujan&amp;nbsp;RC:</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -9685,7 +9645,28 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Delete</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Poista</translation>
+    </message>
+    <message>
+        <source>Do you want to delete the downloaded file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to delete following list of files &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p&gt;The reason for this error are most likely wrong permissions of the IPC daemon socket due to an installation problem. Please check the permissions of &lt;font color=blue&gt;&apos;/tmp&apos;&lt;/font&gt; and &lt;font color=blue&gt;&apos;/tmp/.vbox-*-ipc/&apos;&lt;/font&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9746,27 +9727,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to save DHCP server parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Do you want to delete the downloaded file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>extension pack</comment>
-        <translation type="unfinished">Poista</translation>
-    </message>
-    <message>
-        <source>Do you want to delete following list of files &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10880,63 +10840,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
 <context>
     <name>UISnapshotDetailsWidget</name>
     <message>
-        <source>UISnapshotDetailsWidget</source>
-        <translation type="obsolete">UISnapshotDetailsWidget</translation>
-    </message>
-    <message>
-        <source> Snapshot Details </source>
-        <translation type="obsolete"> Palautuspisteen yksityiskohdat </translation>
-    </message>
-    <message>
-        <source>&amp;Name</source>
-        <translation type="obsolete">&amp;Nimi</translation>
-    </message>
-    <message>
-        <source>&amp;Description</source>
-        <translation type="obsolete">&amp;Kuvaus</translation>
-    </message>
-    <message>
-        <source>&amp;Machine Details</source>
-        <translation type="obsolete">&amp;Koneen yksityiskohdat</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="obsolete">Ohje</translation>
-    </message>
-    <message>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Peru</translation>
-    </message>
-    <message>
-        <source>Details of %1 (%2)</source>
-        <translation type="vanished">Palautuspisteen %1 tiedot (%2)</translation>
-    </message>
-    <message>
-        <source>Snapshot Details</source>
-        <translation type="obsolete">Palautuspisteen tiedot</translation>
-    </message>
-    <message>
-        <source>Click to enlarge the screenshot.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Nimi:</translation>
-    </message>
-    <message>
-        <source>&amp;Description:</source>
+        <source>&lt;p&gt;You have the &lt;b&gt;Current State&lt;/b&gt; item selected.&lt;br&gt;Press the &lt;b&gt;Take&lt;/b&gt; button if you wish to take a new snapshot.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10945,6 +10849,14 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
     </message>
     <message>
         <source>&amp;Information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Nimi:</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10980,6 +10892,10 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Click to enlarge the screenshot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Snapshot name is empty</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10987,157 +10903,32 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
 <context>
     <name>UISnapshotPane</name>
     <message>
-        <source>[snapshot]</source>
-        <translation type="obsolete">[palautuspiste]</translation>
-    </message>
-    <message>
-        <source>UISnapshotPane</source>
-        <translation type="vanished">UISnapshotPane</translation>
-    </message>
-    <message>
-        <source>Discard Snapshot</source>
-        <translation type="obsolete">Hylkää palautuspiste</translation>
-    </message>
-    <message>
-        <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Hylkää palautuspiste</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+D</source>
-        <translation type="obsolete">Ctrl+Shift+P</translation>
-    </message>
-    <message>
-        <source>Take Snapshot</source>
-        <translation type="obsolete">Luo palautuspiste</translation>
-    </message>
-    <message>
-        <source>Take &amp;Snapshot</source>
-        <translation type="vanished">Luo &amp;palautuspiste</translation>
-    </message>
-    <message>
-        <source>Ctrl+Alt+S</source>
-        <translation type="obsolete">Ctrl+Alt+P</translation>
-    </message>
-    <message>
-        <source>Show Details</source>
-        <translation type="obsolete">Näytä yksityiskohdat</translation>
-    </message>
-    <message>
-        <source>S&amp;how Details</source>
-        <translation type="vanished">Näy&amp;tä yksityiskohdat</translation>
-    </message>
-    <message>
-        <source>Space</source>
-        <translation type="obsolete">Välilyönti</translation>
-    </message>
-    <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation>Nykyinen tila (muuttunut)</translation>
+        <translation type="unfinished">Nykyinen tila (muuttunut)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation>Nykyinen tila</translation>
+        <translation type="unfinished">Nykyinen tila</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation>Nykyinen tila eroaa tämänhetkiseen palautuspisteeseen tallennetusta tilasta</translation>
+        <translation type="unfinished">Nykyinen tila eroaa tämänhetkiseen palautuspisteeseen tallennetusta tilasta</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>Tämänhetkinen tila on identtinen palautuspisteeseen tallennetun tilan kanssa</translation>
-    </message>
-    <message>
-        <source> (current, </source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished"> (nykyinen, </translation>
-    </message>
-    <message>
-        <source>online)</source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished">online)</translation>
-    </message>
-    <message>
-        <source>offline)</source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished">offline)</translation>
-    </message>
-    <message>
-        <source>Taken at %1</source>
-        <comment>Snapshot (time)</comment>
-        <translation>Luotu %1</translation>
-    </message>
-    <message>
-        <source>Taken on %1</source>
-        <comment>Snapshot (date + time)</comment>
-        <translation>Luotu %1</translation>
-    </message>
-    <message>
-        <source>%1 since %2</source>
-        <comment>Current State (time or date + time)</comment>
-        <translation>%1 %2 jälkeen</translation>
-    </message>
-    <message>
-        <source>Snapshot %1</source>
-        <translation>Palautuspiste %1</translation>
-    </message>
-    <message>
-        <source>Revert to Current Snapshot</source>
-        <translation type="obsolete">Palauta nykyiseen palautuspisteeseen</translation>
-    </message>
-    <message>
-        <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Palauta nykyiseen palautuspisteeseen</translation>
-    </message>
-    <message>
-        <source>Show the details of the selected snapshot</source>
-        <translation type="obsolete">Näytä valitun palautuspisteen tiedot</translation>
-    </message>
-    <message>
-        <source>Ctrl+Space</source>
-        <translation type="obsolete">Ctrl+välilyönti</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">&amp;Hylkää nykyinen palautuspiste ja tila</translation>
-    </message>
-    <message>
-        <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Hylkää valittu virtuaalikoneen palautuspiste</translation>
-    </message>
-    <message>
-        <source>Take a snapshot of the current virtual machine state</source>
-        <translation>Luo uusi palautuspiste virtuaalikoneesta</translation>
-    </message>
-    <message>
-        <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Palauta tämänhetkiseen palautuspisteeseen tallennettu virtuaalikoneen tila </translation>
-    </message>
-    <message>
-        <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Hylkää tämänhetkinen palautuspiste ja palauta virtuaalikone tilaan, jossa se oli ennen palautuspisteen luomista</translation>
-    </message>
-    <message>
-        <source>&amp;Clone...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Restore selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clone selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Tämänhetkinen tila on identtinen palautuspisteeseen tallennetun tilan kanssa</translation>
     </message>
     <message>
         <source>%1 (%2 ago)</source>
         <comment>date time (how long ago)</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 since %2</source>
+        <comment>Current State (time or date + time)</comment>
+        <translation type="unfinished">%1 %2 jälkeen</translation>
     </message>
     <message>
         <source>current</source>
@@ -11153,6 +10944,16 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <source>offline</source>
         <comment>snapshot</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Taken at %1</source>
+        <comment>Snapshot (time)</comment>
+        <translation type="unfinished">Luotu %1</translation>
+    </message>
+    <message>
+        <source>Taken on %1</source>
+        <comment>Snapshot (date + time)</comment>
+        <translation type="unfinished">Luotu %1</translation>
     </message>
     <message>
         <source>Contains the snapshot tree of the current virtual machine</source>
@@ -11172,6 +10973,10 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
     </message>
     <message>
         <source>&amp;Properties...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Clone...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11195,7 +11000,23 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="unfinished">Luo uusi palautuspiste virtuaalikoneesta</translation>
+    </message>
+    <message>
+        <source>Delete selected snapshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore selected snapshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Open pane with the selected snapshot properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone selected virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11207,6 +11028,10 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <source>Taken</source>
         <comment>snapshot</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="unfinished">Palautuspiste %1</translation>
     </message>
 </context>
 <context>
@@ -11228,35 +11053,15 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation>Luo palautuspiste virtuaalikoneesta</translation>
+        <translation type="unfinished">Luo palautuspiste virtuaalikoneesta</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
-        <translation>Palautuspisteen &amp;nimi</translation>
+        <translation type="unfinished">Palautuspisteen &amp;nimi</translation>
     </message>
     <message>
         <source>Snapshot &amp;Description</source>
-        <translation>Palautuspisteen &amp;kuvaus</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="obsolete">Ohje</translation>
-    </message>
-    <message>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Peru</translation>
+        <translation type="unfinished">Palautuspisteen &amp;kuvaus</translation>
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
@@ -11487,6 +11292,17 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
     <message>
         <source>&lt;p&gt;Close the virtual machine windows but keep the virtual machine running.&lt;/p&gt;&lt;p&gt;You can use the VirtualBox Manager to return to running the virtual machine in a window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMDesktop</name>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="obsolete">&amp;Yksityiskohdat</translation>
+    </message>
+    <message>
+        <source>&amp;Snapshots</source>
+        <translation type="obsolete">&amp;Palautuspisteet</translation>
     </message>
 </context>
 <context>
@@ -15676,6 +15492,161 @@ Version %1</source>
     </message>
 </context>
 <context>
+    <name>VBoxMediaManagerDlg</name>
+    <message>
+        <source>&amp;Actions</source>
+        <translation type="vanished">&amp;Toiminnot</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Uusi...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Lisää...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation type="vanished">&amp;Poista</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation type="vanished">&amp;Vapauta</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation type="vanished">Pä&amp;ivitä</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Luo uusi virtuaalikiintolevy</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Lisää olemassaoleva media</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation type="vanished">Poista valittu media</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation type="vanished">Vapauta valittu media irrottamalla se virtuaalikoneista</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="vanished">Päivitä medialuettelo</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Sijainti</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Tyyppi (muoto)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Liitetty kohteeseen</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation type="vanished">Tarkistetaan saatavuutta</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Valitse</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Kaikki levykuvatiedostot (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Kaikki tiedostot (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Valitse kiintolevyn levykuvatiedosto</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVD-levykuvat (*.iso);;Kaikki tiedostot (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Valitse CD/DVD-levykuvatiedosto</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Levykkeiden levykuvat (*.img);;Kaikki tiedostot (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Valitse levykkeen levykuvatiedosto</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation type="vanished">&lt;i&gt;Ei&amp;nbsp;liitetty&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation type="vanished">--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation type="vanished">Virtuaalimedian hallinta</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">Kiinto&amp;levyt</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="vanished">Nimi</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation type="vanished">Virtuaalinen koko</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation type="vanished">Todellinen koko</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">&amp;CD/DVD-levykuvat</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="vanished">Koko</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">&amp;Levykelevykuvat</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Liitetty kohteeseen</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Liitetty kohteeseen</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Liitetty kohteeseen</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">kiintolevy</translation>
+    </message>
+</context>
+<context>
     <name>VBoxMiniToolBar</name>
     <message>
         <source>Close VM</source>
@@ -16250,6 +16221,196 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
 </context>
 <context>
+    <name>VBoxSnapshotDetailsDlg</name>
+    <message>
+        <source>VBoxSnapshotDetailsDlg</source>
+        <translation type="obsolete">VBoxSnapshotDetailsDlg</translation>
+    </message>
+    <message>
+        <source> Snapshot Details </source>
+        <translation type="obsolete"> Palautuspisteen yksityiskohdat </translation>
+    </message>
+    <message>
+        <source>&amp;Name</source>
+        <translation type="obsolete">&amp;Nimi</translation>
+    </message>
+    <message>
+        <source>&amp;Description</source>
+        <translation type="obsolete">&amp;Kuvaus</translation>
+    </message>
+    <message>
+        <source>&amp;Machine Details</source>
+        <translation type="obsolete">&amp;Koneen yksityiskohdat</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation type="obsolete">Ohje</translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="obsolete">F1</translation>
+    </message>
+    <message>
+        <source>&amp;OK</source>
+        <translation type="obsolete">&amp;OK</translation>
+    </message>
+    <message>
+        <source>Alt+O</source>
+        <translation type="obsolete">Alt+O</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Peru</translation>
+    </message>
+    <message>
+        <source>Details of %1 (%2)</source>
+        <translation type="vanished">Palautuspisteen %1 tiedot (%2)</translation>
+    </message>
+    <message>
+        <source>Snapshot Details</source>
+        <translation type="obsolete">Palautuspisteen tiedot</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="obsolete">&amp;Nimi:</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxSnapshotsWgt</name>
+    <message>
+        <source>[snapshot]</source>
+        <translation type="obsolete">[palautuspiste]</translation>
+    </message>
+    <message>
+        <source>VBoxSnapshotsWgt</source>
+        <translation type="vanished">VBoxSnapshotsWgt</translation>
+    </message>
+    <message>
+        <source>Discard Snapshot</source>
+        <translation type="obsolete">Hylkää palautuspiste</translation>
+    </message>
+    <message>
+        <source>&amp;Discard Snapshot</source>
+        <translation type="obsolete">&amp;Hylkää palautuspiste</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+D</source>
+        <translation type="obsolete">Ctrl+Shift+P</translation>
+    </message>
+    <message>
+        <source>Take Snapshot</source>
+        <translation type="obsolete">Luo palautuspiste</translation>
+    </message>
+    <message>
+        <source>Take &amp;Snapshot</source>
+        <translation type="vanished">Luo &amp;palautuspiste</translation>
+    </message>
+    <message>
+        <source>Ctrl+Alt+S</source>
+        <translation type="obsolete">Ctrl+Alt+P</translation>
+    </message>
+    <message>
+        <source>Show Details</source>
+        <translation type="obsolete">Näytä yksityiskohdat</translation>
+    </message>
+    <message>
+        <source>S&amp;how Details</source>
+        <translation type="vanished">Näy&amp;tä yksityiskohdat</translation>
+    </message>
+    <message>
+        <source>Space</source>
+        <translation type="obsolete">Välilyönti</translation>
+    </message>
+    <message>
+        <source>Current State (changed)</source>
+        <comment>Current State (Modified)</comment>
+        <translation type="vanished">Nykyinen tila (muuttunut)</translation>
+    </message>
+    <message>
+        <source>Current State</source>
+        <comment>Current State (Unmodified)</comment>
+        <translation type="vanished">Nykyinen tila</translation>
+    </message>
+    <message>
+        <source>The current state differs from the state stored in the current snapshot</source>
+        <translation type="vanished">Nykyinen tila eroaa tämänhetkiseen palautuspisteeseen tallennetusta tilasta</translation>
+    </message>
+    <message>
+        <source>The current state is identical to the state stored in the current snapshot</source>
+        <translation type="vanished">Tämänhetkinen tila on identtinen palautuspisteeseen tallennetun tilan kanssa</translation>
+    </message>
+    <message>
+        <source> (current, </source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished"> (nykyinen, </translation>
+    </message>
+    <message>
+        <source>online)</source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished">online)</translation>
+    </message>
+    <message>
+        <source>offline)</source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished">offline)</translation>
+    </message>
+    <message>
+        <source>Taken at %1</source>
+        <comment>Snapshot (time)</comment>
+        <translation type="vanished">Luotu %1</translation>
+    </message>
+    <message>
+        <source>Taken on %1</source>
+        <comment>Snapshot (date + time)</comment>
+        <translation type="vanished">Luotu %1</translation>
+    </message>
+    <message>
+        <source>%1 since %2</source>
+        <comment>Current State (time or date + time)</comment>
+        <translation type="vanished">%1 %2 jälkeen</translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="vanished">Palautuspiste %1</translation>
+    </message>
+    <message>
+        <source>Revert to Current Snapshot</source>
+        <translation type="obsolete">Palauta nykyiseen palautuspisteeseen</translation>
+    </message>
+    <message>
+        <source>&amp;Revert to Current Snapshot</source>
+        <translation type="obsolete">&amp;Palauta nykyiseen palautuspisteeseen</translation>
+    </message>
+    <message>
+        <source>Show the details of the selected snapshot</source>
+        <translation type="obsolete">Näytä valitun palautuspisteen tiedot</translation>
+    </message>
+    <message>
+        <source>Ctrl+Space</source>
+        <translation type="obsolete">Ctrl+välilyönti</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Current Snapshot and State</source>
+        <translation type="obsolete">&amp;Hylkää nykyinen palautuspiste ja tila</translation>
+    </message>
+    <message>
+        <source>Discard the selected snapshot of the virtual machine</source>
+        <translation type="obsolete">Hylkää valittu virtuaalikoneen palautuspiste</translation>
+    </message>
+    <message>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="vanished">Luo uusi palautuspiste virtuaalikoneesta</translation>
+    </message>
+    <message>
+        <source>Restore the virtual machine state from the state stored in the current snapshot</source>
+        <translation type="obsolete">Palauta tämänhetkiseen palautuspisteeseen tallennettu virtuaalikoneen tila </translation>
+    </message>
+    <message>
+        <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
+        <translation type="obsolete">Hylkää tämänhetkinen palautuspiste ja palauta virtuaalikone tilaan, jossa se oli ennen palautuspisteen luomista</translation>
+    </message>
+</context>
+<context>
     <name>VBoxSwitchMenu</name>
     <message>
         <source>Disable</source>
@@ -16262,6 +16423,45 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>%1 %2</source>
         <translation type="obsolete">%1 %2</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxTakeSnapshotDlg</name>
+    <message>
+        <source>Take Snapshot of Virtual Machine</source>
+        <translation type="vanished">Luo palautuspiste virtuaalikoneesta</translation>
+    </message>
+    <message>
+        <source>Snapshot &amp;Name</source>
+        <translation type="vanished">Palautuspisteen &amp;nimi</translation>
+    </message>
+    <message>
+        <source>Snapshot &amp;Description</source>
+        <translation type="vanished">Palautuspisteen &amp;kuvaus</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation type="obsolete">Ohje</translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="obsolete">F1</translation>
+    </message>
+    <message>
+        <source>&amp;OK</source>
+        <translation type="obsolete">&amp;OK</translation>
+    </message>
+    <message>
+        <source>Alt+O</source>
+        <translation type="obsolete">Alt+O</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Peru</translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="obsolete">Palautuspiste %1</translation>
     </message>
 </context>
 <context>

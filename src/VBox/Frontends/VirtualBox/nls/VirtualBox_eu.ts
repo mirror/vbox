@@ -172,7 +172,7 @@
     <name>QIMessageBox</name>
     <message>
         <location filename="../src/extensions/QIMessageBox.cpp" line="+302"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="+1852"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="+1853"/>
         <location filename="../src/widgets/UIPopupPaneButtonPane.cpp" line="+180"/>
         <source>OK</source>
         <translation>Ongi</translation>
@@ -237,6 +237,40 @@
     <message>
         <source>&lt;qt&gt;One of the values on the &lt;b&gt;%1&lt;/b&gt; page is %2.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Balioetako bat &lt;b&gt;%1&lt;/b&gt; orrialdean da %2.&lt;/qt&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>QObject</name>
+    <message>
+        <location filename="../src/globals/UIErrorString.cpp" line="+126"/>
+        <location line="+71"/>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Emaitz&amp;nbsp;Kodea: </translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Osagaia: </translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Interfazea: </translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Deitua: </translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Deitua&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -1997,17 +2031,6 @@
     </message>
 </context>
 <context>
-    <name>UIDesktopPane</name>
-    <message>
-        <source>&amp;Details</source>
-        <translation type="vanished">&amp;Xehetasunak</translation>
-    </message>
-    <message>
-        <source>&amp;Snapshots</source>
-        <translation type="vanished">&amp;Berehalakoak</translation>
-    </message>
-</context>
-<context>
     <name>UIDetailsBlock</name>
     <message>
         <source>Name</source>
@@ -2550,7 +2573,7 @@
 <context>
     <name>UIGChooserModel</name>
     <message>
-        <location filename="../src/selector/graphics/chooser/UIGChooserModel.cpp" line="+532"/>
+        <location filename="../src/selector/graphics/chooser/UIGChooserModel.cpp" line="+533"/>
         <source>New group</source>
         <translation>Talde berria</translation>
     </message>
@@ -2740,8 +2763,8 @@
         <translation>Kontrolatzailea</translation>
     </message>
     <message>
-        <location line="+6"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+4"/>
+        <location line="+22"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+18"/>
         <source>Disabled</source>
         <comment>details (audio)</comment>
         <translation>Ezgaituta</translation>
@@ -2900,8 +2923,8 @@
         <translation>Ezer ez</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-576"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-677"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-592"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-691"/>
         <source>Operating System</source>
         <comment>details (general)</comment>
         <translation>Sistema Eragilea</translation>
@@ -2911,7 +2934,7 @@
         <location line="+102"/>
         <location line="+104"/>
         <location line="+80"/>
-        <location line="+36"/>
+        <location line="+50"/>
         <location line="+81"/>
         <location line="+59"/>
         <location line="+50"/>
@@ -2924,7 +2947,7 @@
     </message>
     <message>
         <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+37"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-636"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-650"/>
         <source>Base Memory</source>
         <comment>details (system)</comment>
         <translation>Ohinarri Oroimena</translation>
@@ -3034,8 +3057,50 @@
         <translation>Hostalari Gidagailua</translation>
     </message>
     <message>
-        <location line="+45"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+48"/>
+        <location line="+8"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+9"/>
+        <source>Audio Output</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+2"/>
+        <source>Enabled</source>
+        <comment>details (audio/output)</comment>
+        <translation type="unfinished">Gaituta</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+1"/>
+        <source>Disabled</source>
+        <comment>details (audio/output)</comment>
+        <translation type="unfinished">Ezgaituta</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+3"/>
+        <source>Audio Input</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+2"/>
+        <source>Enabled</source>
+        <comment>details (audio/input)</comment>
+        <translation type="unfinished">Gaituta</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+1"/>
+        <source>Disabled</source>
+        <comment>details (audio/input)</comment>
+        <translation type="unfinished">Ezgaituta</translation>
+    </message>
+    <message>
+        <location line="+43"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+44"/>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
         <translation>Zubi egokitzailea, %1</translation>
@@ -3569,7 +3634,7 @@
         <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt;-ren DHCP goi helbide muga okerra da</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="+165"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="+166"/>
         <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Ez da izen berririk adierazi NAT sarerako, lehengo izena: &lt;b&gt;%1&lt;/b&gt; da.</translation>
     </message>
@@ -3716,7 +3781,7 @@
         <translation type="vanished">IPv6 Helbidea</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask Length</source>
+        <source>IPv6 Prefix Length</source>
         <translation type="vanished">IPv6 Sare Mozorro Luzera</translation>
     </message>
     <message>
@@ -3923,7 +3988,7 @@
         <translation type="obsolete">Hostalariaren IPv6 helbidea erakusten du egokitzaile honentzat IPv6 sostengatzen bada.</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
+        <source>IPv6 Prefix &amp;Length:</source>
         <translation type="obsolete">IPv6 Sare Mozorro &amp;Luzera:</translation>
     </message>
     <message>
@@ -4002,11 +4067,11 @@
         <translation type="vanished">Hostalariaren IPv6 helbidea zehazten du egokitzaile honentzat IPv6 sostengatzen bada.</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
+        <source>IPv6 Prefix &amp;Length:</source>
         <translation type="vanished">IPv6 Sare Mozorro &amp;Luzera:</translation>
     </message>
     <message>
-        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
         <translation type="vanished">Hostalariaren IPv6 sare mozorro aurrizki luzera erakusten du egokitzaile honentzat IPv6 sostengatzen bada.</translation>
     </message>
     <message>
@@ -4515,12 +4580,12 @@
     <message>
         <location line="+1"/>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">IPv6 Sare Mozorro &amp;Luzera:</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Hostalariaren IPv6 sare mozorro aurrizki luzera erakusten du egokitzaile honentzat IPv6 sostengatzen bada.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -4720,7 +4785,7 @@
     <message>
         <location line="+4"/>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">IPv6 Sare Mozorro Luzera</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -5962,6 +6027,31 @@
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
         <translation>Soinu txartel birutala hautatzen du. Balio honen arabera, VirtualBox-ek audio hardware ezberdina hornituko dio makina birtualari.</translation>
     </message>
+    <message>
+        <location line="+7"/>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Ezaugarri Hedatuak:</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>When checked, output to the virtual audio device will reach the host. Otherwise the guest is muted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Enable Audio &amp;Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>When checked, the guest will be able to capture audio input from the host. Otherwise the guest will capture only silence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Enable Audio &amp;Input</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsDisplay</name>
@@ -6506,7 +6596,7 @@
         <translation>Gonbidatuaren eta hostalari SE-ren artean arrastatu-eta-askatuz zein datu kopiatuko diren hautatzen du. Ezaugarri honek Gonbidatu Gehigarriak ezarrita behar ditu gonbidatu SE-an.</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsGeneral.cpp" line="+366"/>
+        <location filename="../src/settings/machine/UIMachineSettingsGeneral.cpp" line="+367"/>
         <source>No name specified for the virtual machine.</source>
         <translation>Ez da izenik adierazi makina birtualarentzat.</translation>
     </message>
@@ -7298,7 +7388,7 @@
 <context>
     <name>UIMachineSettingsStorage</name>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="+869"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="+870"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Busa:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Mota:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
@@ -7813,8 +7903,8 @@
         <translation>Biltegi Zuhaitzean hautatutako SATA biltegiratze kontrolatzailearen ataka kopurua hautatzen du. Hau gutxienez izan behar da erabiltzea behar duzun ataka zenbateko gehiena baino bat gehiago.</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-279"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-304"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-295"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-318"/>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="-1600"/>
         <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="-243"/>
         <location line="+723"/>
@@ -8645,7 +8735,57 @@
         <translation type="obsolete">Diska &amp;gogorrak</translation>
     </message>
     <message>
-        <location filename="../src/medium/UIMediumManager.cpp" line="+605"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+364"/>
+        <source>%1, %2: %3, %4: %5</source>
+        <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Format:</source>
+        <translation type="unfinished">Heuskarria:</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Storage details:</source>
+        <translation type="unfinished">Biltegi xehetasunak:</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+19"/>
+        <source>Attached to:</source>
+        <translation type="unfinished">Hona Erantsita:</translation>
+    </message>
+    <message>
+        <location line="-18"/>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished">Enkriptaketa giltza:</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+18"/>
+        <source>UUID:</source>
+        <translation type="unfinished">UUID:</translation>
+    </message>
+    <message>
+        <location line="-13"/>
+        <location line="+16"/>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation type="unfinished">&lt;i&gt;Ez&amp;nbsp;Erantsita&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <location line="-13"/>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished">&lt;i&gt;Ez&amp;nbsp;Enkriptatuta&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <location line="+61"/>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation type="unfinished">--</translation>
+    </message>
+    <message>
+        <location line="+134"/>
         <source>Removing medium...</source>
         <translation>Medioak kentzen...</translation>
     </message>
@@ -8655,7 +8795,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+5"/>
+        <source>&amp;Copy...</source>
+        <translation type="unfinished">K&amp;opiatu...</translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Copy selected disk image file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8690,7 +8835,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+4"/>
+        <source>Re&amp;fresh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Refresh the list of disk image files</source>
+        <translation type="unfinished">Berritu diska irudi agiri zerrenda</translation>
+    </message>
+    <message>
+        <location line="+17"/>
         <source>&amp;Hard disks</source>
         <translation>Diska &amp;gogorrak</translation>
     </message>
@@ -8705,7 +8860,46 @@
         <translation>Diskete &amp;diskak</translation>
     </message>
     <message>
-        <location line="+1429"/>
+        <location line="+7"/>
+        <location line="+9"/>
+        <location line="+8"/>
+        <source>Name</source>
+        <translation type="unfinished">Izena</translation>
+    </message>
+    <message>
+        <location line="-16"/>
+        <source>Virtual Size</source>
+        <translation type="unfinished">Neurri Birtuala</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Actual Size</source>
+        <translation type="unfinished">Oraingo Neurria</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <location line="+8"/>
+        <source>Size</source>
+        <translation type="unfinished">Neurria</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Checking accessibility</source>
+        <translation type="unfinished">Sarbidetasuna egiaztatzen</translation>
+    </message>
+    <message>
+        <location line="+75"/>
+        <location line="+29"/>
+        <source>Moving medium...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1291"/>
+        <source>Virtual Media Manager</source>
+        <translation type="unfinished">Multimedia Birtual Kudeatzailea</translation>
+    </message>
+    <message>
+        <location line="+3"/>
         <source>Reset</source>
         <translation type="unfinished">Berrezarri</translation>
     </message>
@@ -8757,172 +8951,11 @@
         <source>C&amp;lose</source>
         <translation type="obsolete">It&amp;xi</translation>
     </message>
-    <message>
-        <source>&amp;Actions</source>
-        <translation type="vanished">&amp;Ekintzak</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Berria...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Gehitu...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation type="vanished">&amp;Kendu</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation type="vanished">&amp;Argitaratu</translation>
-    </message>
-    <message>
-        <location line="-1461"/>
-        <source>Re&amp;fresh</source>
-        <translation>B&amp;erritu</translation>
-    </message>
-    <message>
-        <location line="+52"/>
-        <source>Checking accessibility</source>
-        <translation>Sarbidetasuna egiaztatzen</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Agiri guztiak (*)</translation>
-    </message>
-    <message>
-        <location line="-468"/>
-        <location line="+16"/>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Ez&amp;nbsp;Erantsita&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <location line="+48"/>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <location line="+479"/>
-        <location line="+29"/>
-        <source>Moving medium...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1291"/>
-        <source>Virtual Media Manager</source>
-        <translation>Multimedia Birtual Kudeatzailea</translation>
-    </message>
-    <message>
-        <location line="-1860"/>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Ez&amp;nbsp;Enkriptatuta&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation type="vanished">Kopiatu dagoen diska irudi agiri bat</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation type="vanished">Aldatu hautaturiko diska irudi agiriaren ezaugarriak</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation type="vanished">Kendu hautaturiko diska irudi agiria</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation type="vanished">Askatu hautaturiko diska irudi agiria hura makinetatik deserantsiz</translation>
-    </message>
-    <message>
-        <location line="+415"/>
-        <source>Refresh the list of disk image files</source>
-        <translation>Berritu diska irudi agiri zerrenda</translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <location line="+9"/>
-        <location line="+8"/>
-        <source>Name</source>
-        <translation>Izena</translation>
-    </message>
-    <message>
-        <location line="-16"/>
-        <source>Virtual Size</source>
-        <translation>Neurri Birtuala</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Actual Size</source>
-        <translation>Oraingo Neurria</translation>
-    </message>
-    <message>
-        <location line="-452"/>
-        <source>Encrypted with key:</source>
-        <translation>Enkriptaketa giltza:</translation>
-    </message>
-    <message>
-        <location line="-37"/>
-        <source>%1, %2: %3, %4: %5</source>
-        <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+38"/>
-        <location line="+18"/>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
-        <location line="+441"/>
-        <location line="+8"/>
-        <source>Size</source>
-        <translation>Neurria</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation type="vanished">Mota:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation type="vanished">Kokalekua:</translation>
-    </message>
-    <message>
-        <location line="-471"/>
-        <source>Format:</source>
-        <translation>Heuskarria:</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Storage details:</source>
-        <translation>Biltegi xehetasunak:</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <location line="+19"/>
-        <source>Attached to:</source>
-        <translation>Hona Erantsita:</translation>
-    </message>
-    <message>
-        <location line="+380"/>
-        <source>&amp;Copy...</source>
-        <translation>K&amp;opiatu...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation type="vanished">A&amp;ldatu...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">Sortu diska gogor birtual berri bat
-</translation>
-    </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
     <message>
-        <location line="+1"/>
+        <location line="-1484"/>
         <source>Copy Disk Image File (%1)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9051,41 +9084,41 @@
     <name>UIMessageCenter</name>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="-1562"/>
-        <location line="+2712"/>
+        <location line="+2508"/>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Argibideak</translation>
     </message>
     <message>
-        <location line="-2708"/>
-        <location line="+2712"/>
+        <location line="-2504"/>
+        <location line="+2508"/>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Galdera</translation>
     </message>
     <message>
-        <location line="-2708"/>
-        <location line="+2712"/>
+        <location line="-2504"/>
+        <location line="+2508"/>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Ohartarazpena</translation>
     </message>
     <message>
-        <location line="-2708"/>
-        <location line="+2712"/>
+        <location line="-2504"/>
+        <location line="+2508"/>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Akatsa</translation>
     </message>
     <message>
-        <location line="-2708"/>
-        <location line="+2712"/>
+        <location line="-2504"/>
+        <location line="+2508"/>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Akats Larria</translation>
     </message>
     <message>
-        <location line="-2571"/>
+        <location line="-2367"/>
         <source>&lt;p&gt;Failed to create the VirtualBoxClient COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Hutsegitea VirtualBox COM objetua sortzerakoan.&lt;/p&gt;&lt;p&gt;Orain aplikazioak amaitu egingo du.&lt;/p&gt;</translation>
     </message>
@@ -9095,7 +9128,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+89"/>
+        <location line="+4"/>
+        <source>&lt;p&gt;The reason for this error are most likely wrong permissions of the IPC daemon socket due to an installation problem. Please check the permissions of &lt;font color=blue&gt;&apos;/tmp&apos;&lt;/font&gt; and &lt;font color=blue&gt;&apos;/tmp/.vbox-*-ipc/&apos;&lt;/font&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+85"/>
         <source>Failed to set the global VirtualBox extra data for key &lt;i&gt;%1&lt;/i&gt; to value &lt;i&gt;{%2}&lt;/i&gt;.</source>
         <translation>Hutsegitea VirtualBox gain datuak ezartzerakoan &lt;i&gt;%1&lt;/i&gt;-rako &lt;i&gt;{%2}&lt;/i&gt; balioan.</translation>
     </message>
@@ -9424,13 +9462,23 @@
         <translation>&lt;p&gt;VirtualBox Erabiltzaile Eskuliburua ongi jeitsi da hemendik, &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; eta tokian bertan gorde da honela &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+766"/>
+        <location line="+62"/>
+        <source>Do you want to delete the downloaded file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Do you want to delete following list of files &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+491"/>
         <source>Do not show this message again</source>
         <comment>msg box flag</comment>
         <translation>Ez erakutsi mezu hau berriro</translation>
     </message>
     <message>
-        <location line="-2502"/>
+        <location line="-2298"/>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
         <translation>Hutsegitea &lt;tt&gt;%1&lt;/tt&gt; irekitzerakoan. Zihurtatu zure mahaigin inguruak mota honetako URL-ak egoki kudeatu ditzakeela.</translation>
     </message>
@@ -9539,12 +9587,7 @@
         <translation>&lt;p&gt;Zihur zaude gailu optikoa ezabatzea nahi duzula?&lt;/p&gt;&lt;p&gt;Ezingo duzu diska optikorik edo ISO irudirik txertatu edo Gonbidatu Gehigarririk ezarri bera gabe!&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="-630"/>
-        <source>&lt;p&gt;The reason for this error are most likely wrong permissions of the IPC daemon socket due to an installation problem. Please check the permissions of &lt;font color=blue&gt;&apos;/tmp&apos;&lt;/font&gt; and &lt;font color=blue&gt;&apos;/tmp/.vbox-*-ipc/&apos;&lt;/font&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+386"/>
+        <location line="-244"/>
         <source>&lt;p&gt;You are about to start all of the following virtual machines:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This could take some time and consume a lot of host system resources. Do you wish to proceed?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9759,24 +9802,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Do you want to delete the downloaded file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
+        <location line="+14"/>
         <location line="+9"/>
         <source>Delete</source>
         <comment>extension pack</comment>
         <translation type="unfinished">Ezabatu</translation>
     </message>
     <message>
-        <location line="-3"/>
-        <source>Do you want to delete following list of files &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+11"/>
+        <location line="+8"/>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
         <translation type="unfinished">&lt;p&gt;VirtualBox hedapen pakete bat ezartzear zaude. Hedapen paketeek VirtualBox-en eginkizunak osatzen dituzte eta zure sistemarentzat potentzialki kaltergarria izan daitekeen sistema mailako softwarea eduki dezakete. Mesedez berrikusi azpiko azalpena eta jarraitu hedapen paketea iturri fidagarri batetik lortu baduzu bakarrik.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt; {0 ?} {5&gt;?} {1&lt;?} {2&lt;?} {3&lt;?}</translation>
     </message>
@@ -9813,35 +9846,29 @@
         <translation>Hutsegitea hostalaritik gonbidaturako arrastatu eta askatu eragiketan.</translation>
     </message>
     <message>
-        <location line="+160"/>
-        <location line="+239"/>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>Emaitz&amp;nbsp;Kodea: </translation>
+        <translation type="vanished">Emaitz&amp;nbsp;Kodea: </translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>Osagaia: </translation>
+        <translation type="vanished">Osagaia: </translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>Interfazea: </translation>
+        <translation type="vanished">Interfazea: </translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>Deitua: </translation>
+        <translation type="vanished">Deitua: </translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>Deitua&amp;nbsp;RC: </translation>
+        <translation type="vanished">Deitua&amp;nbsp;RC: </translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -9864,7 +9891,7 @@
         <translation type="obsolete">Hutsegitea baimen agiriak aurkitzerakoan, &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <location line="-422"/>
+        <location line="+8"/>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
         <translation>Hutsegitea &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; baimen agiria irekitzerakoan. Egiaztatu agiri baimenak.</translation>
     </message>
@@ -10530,7 +10557,7 @@
         <translation type="obsolete">Barkatu, zenbati akats generiko gertatu dira.</translation>
     </message>
     <message>
-        <location line="+2011"/>
+        <location line="+1890"/>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
         <translation>Ezin da Hostalari USB Proxy Zerbitzua gertatu (VERR_FILE_NOT_FOUND). Badaiteke zerbitzua hostalari ordenagailuan ezarrita ez egotea</translation>
     </message>
@@ -10555,7 +10582,7 @@
         <translation>Ezin da Hostalari USB Proxy zerbitzua gertatu</translation>
     </message>
     <message>
-        <location line="-1912"/>
+        <location line="-1791"/>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Ezin da&lt;b&gt;%1&lt;/b&gt; izeneko berehalakoa aurkitu.</translation>
     </message>
@@ -11117,23 +11144,23 @@
     <message>
         <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-1085"/>
         <source>Screenshot of %1 (%2)</source>
-        <translation>Ikusleiho-argazkiak %1 (%2)</translation>
+        <translation type="unfinished">Ikusleiho-argazkiak %1 (%2)</translation>
     </message>
     <message>
         <location line="+141"/>
         <source>Click to view non-scaled screenshot.</source>
-        <translation>Klikatu ez-neurriratutako ikusleiho-argazkia ikusteko.</translation>
+        <translation type="unfinished">Klikatu ez-neurriratutako ikusleiho-argazkia ikusteko.</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Click to view scaled screenshot.</source>
-        <translation>Klikatu neurriratutako ikusleiho-argazkia ikusteko.</translation>
+        <translation type="unfinished">Klikatu neurriratutako ikusleiho-argazkia ikusteko.</translation>
     </message>
 </context>
 <context>
     <name>UISelectorWindow</name>
     <message>
-        <location filename="../src/selector/UISelectorWindow.cpp" line="+187"/>
+        <location filename="../src/selector/UISelectorWindow.cpp" line="+188"/>
         <source>Show Toolbar</source>
         <translation>Erakutsi Tresnabarra</translation>
     </message>
@@ -11148,7 +11175,7 @@
         <translation>Erakutsi Egoerabarra</translation>
     </message>
     <message>
-        <location line="+364"/>
+        <location line="+379"/>
         <source>Select a virtual machine file</source>
         <translation>Hautatu makina birtual agiria</translation>
     </message>
@@ -11162,7 +11189,7 @@
         <translation type="vanished">&lt;h3&gt;Ongi etorri VirtualBox-era!&lt;/h3&gt;&lt;p&gt;Leiho honetako ezker aldea zure ordenagailuko makina birtualen zerrenda bat da. Zerrenda orain hutsik dago oraindik ez duzulako makina birtualik sortu.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Makina birtual berri bat sortzeko, sakatu &lt;b&gt;Berria&lt;/b&gt; botoia leihoaren goialdeko tresna barra nagusian.&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; tekla sakatu dezakezu berehalako laguntza lortzeko, edo ikusi &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; azken argibideak eta berriak jasotzeko.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+575"/>
+        <location line="+583"/>
         <source>Manager</source>
         <comment>Note: main window title which is pretended by the product name.</comment>
         <translation>Kudeatzailea</translation>
@@ -11375,11 +11402,12 @@
 <context>
     <name>UISnapshotDetailsWidget</name>
     <message>
-        <source>Details of %1 (%2)</source>
-        <translation type="vanished">Xehetasunak %1 (%2)</translation>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+55"/>
+        <source>&lt;p&gt;You have the &lt;b&gt;Current State&lt;/b&gt; item selected.&lt;br&gt;Press the &lt;b&gt;Take&lt;/b&gt; button if you wish to take a new snapshot.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+57"/>
+        <location line="+2"/>
         <source>&amp;Attributes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11389,7 +11417,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+1"/>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Izena:</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&amp;Description:</source>
+        <translation type="unfinished">&amp;Azalpena:</translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>Holds the snapshot name.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11431,95 +11469,40 @@
     <message>
         <location line="+9"/>
         <source>Click to enlarge the screenshot.</source>
-        <translation>Klikatu ikusleiho-argazkia handitzeko.</translation>
+        <translation type="unfinished">Klikatu ikusleiho-argazkia handitzeko.</translation>
     </message>
     <message>
         <location line="+502"/>
         <source>Snapshot name is empty</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <location line="-524"/>
-        <source>&amp;Name:</source>
-        <translation>&amp;Izena:</translation>
-    </message>
-    <message>
-        <source>Taken:</source>
-        <translation type="vanished">Hartua:</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>&amp;Description:</source>
-        <translation>&amp;Azalpena:</translation>
-    </message>
-    <message>
-        <source>D&amp;etails:</source>
-        <translation type="vanished">&amp;Xehetasunak:</translation>
-    </message>
 </context>
 <context>
     <name>UISnapshotPane</name>
     <message>
-        <source>UISnapshotPane</source>
-        <translation type="vanished">VBoxBerehalakoWgta</translation>
-    </message>
-    <message>
         <location filename="../src/selector/UISnapshotPane.cpp" line="+278"/>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation>Oraingo Egoera (aldatuta)</translation>
+        <translation type="unfinished">Oraingo Egoera (aldatuta)</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation>Oraingo Egoera</translation>
+        <translation type="unfinished">Oraingo Egoera</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation>Oraingo egoera oraingo berehalakoan biltegiratutako egoeraren ezberdina da</translation>
+        <translation type="unfinished">Oraingo egoera oraingo berehalakoan biltegiratutako egoeraren ezberdina da</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>Oraingo egoera oraingo berehalakoan biltegiratutako egoeraren berdina da</translation>
+        <translation type="unfinished">Oraingo egoera oraingo berehalakoan biltegiratutako egoeraren berdina da</translation>
     </message>
     <message>
-        <source> (current, </source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished"> (orain, </translation>
-    </message>
-    <message>
-        <source>online)</source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished">online)</translation>
-    </message>
-    <message>
-        <source>offline)</source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished">lineaz-kanpo)</translation>
-    </message>
-    <message>
-        <location line="+127"/>
-        <source>Taken at %1</source>
-        <comment>Snapshot (time)</comment>
-        <translation>Hartua %1</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Taken on %1</source>
-        <comment>Snapshot (date + time)</comment>
-        <translation>Hartua %1</translation>
-    </message>
-    <message>
-        <location line="-18"/>
-        <source>%1 since %2</source>
-        <comment>Current State (time or date + time)</comment>
-        <translation>%1 %2-tik</translation>
-    </message>
-    <message>
-        <location line="-47"/>
+        <location line="+64"/>
         <location line="+6"/>
         <location line="+6"/>
         <location line="+6"/>
@@ -11528,7 +11511,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="+29"/>
+        <source>%1 since %2</source>
+        <comment>Current State (time or date + time)</comment>
+        <translation type="unfinished">%1 %2-tik</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>current</source>
         <comment>snapshot</comment>
         <translation type="unfinished"></translation>
@@ -11546,7 +11535,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+105"/>
+        <location line="+5"/>
+        <source>Taken at %1</source>
+        <comment>Snapshot (time)</comment>
+        <translation type="unfinished">Hartua %1</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Taken on %1</source>
+        <comment>Snapshot (date + time)</comment>
+        <translation type="unfinished">Hartua %1</translation>
+    </message>
+    <message>
+        <location line="+98"/>
         <source>Contains the snapshot tree of the current virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11571,7 +11572,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+1"/>
+        <source>&amp;Clone...</source>
+        <translation type="unfinished">&amp;Klonatu...</translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Take Snapshot (%1)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11596,9 +11602,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+3"/>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="unfinished">Hautu oraingo makina birtualaren egoera berehalako bat</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete selected snapshot of the virtual machine</source>
+        <translation type="unfinished">Ezabatu hautaturiko makina birtualaren berehalakoa</translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>Restore selected snapshot of the virtual machine</source>
-        <translation>Leheneratu hautaturiko makina birtualaren berehalakoa</translation>
+        <translation type="unfinished">Leheneratu hautaturiko makina birtualaren berehalakoa</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -11606,18 +11622,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2"/>
-        <source>Delete selected snapshot of the virtual machine</source>
-        <translation>Ezabatu hautaturiko makina birtualaren berehalakoa</translation>
-    </message>
-    <message>
-        <source>Display a window with selected snapshot details</source>
-        <translation type="vanished">Leiho bat erakusten hautaturiko berehalakoaren xehetasunekin</translation>
-    </message>
-    <message>
-        <location line="+3"/>
+        <location line="+1"/>
         <source>Clone selected virtual machine</source>
-        <translation>Klonatu hautaturiko makina birtuala</translation>
+        <translation type="unfinished">Klonatu hautaturiko makina birtuala</translation>
     </message>
     <message>
         <location line="+15"/>
@@ -11634,57 +11641,7 @@
     <message>
         <location line="+934"/>
         <source>Snapshot %1</source>
-        <translation>Berehalakoa %1</translation>
-    </message>
-    <message>
-        <source>Take &amp;Snapshot</source>
-        <translation type="vanished">Hartu &amp;Berehalakoa</translation>
-    </message>
-    <message>
-        <source>S&amp;how Details</source>
-        <translation type="vanished">&amp;Erakutsi Xehetasunak</translation>
-    </message>
-    <message>
-        <location line="-954"/>
-        <source>Take a snapshot of the current virtual machine state</source>
-        <translation>Hautu oraingo makina birtualaren egoera berehalako bat</translation>
-    </message>
-    <message>
-        <source>Show the details of the selected snapshot</source>
-        <translation type="obsolete">Erakutsi hautaturiko berehalakoaren xehetasunak</translation>
-    </message>
-    <message>
-        <source> (%1)</source>
-        <translation type="vanished"> (%1)</translation>
-    </message>
-    <message>
-        <source>&amp;Restore Snapshot</source>
-        <translation type="vanished">&amp;Leheneratu Berehalakoa</translation>
-    </message>
-    <message>
-        <source>&amp;Delete Snapshot</source>
-        <translation type="vanished">E&amp;zabatu Berehalakoa</translation>
-    </message>
-    <message>
-        <source>Restore the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Leheneratu hautaturiko makina birtualaren berehalakoa</translation>
-    </message>
-    <message>
-        <source>Delete the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Ezabatu hautaturiko makina birtualaren berehalakoa</translation>
-    </message>
-    <message>
-        <source> (%1 ago)</source>
-        <translation type="vanished"> (duela %1)</translation>
-    </message>
-    <message>
-        <location line="-13"/>
-        <source>&amp;Clone...</source>
-        <translation>&amp;Klonatu...</translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation type="obsolete">Klonatu hautaturiko makina birtuala</translation>
+        <translation type="unfinished">Berehalakoa %1</translation>
     </message>
 </context>
 <context>
@@ -11710,22 +11667,22 @@
     <message>
         <location filename="../src/UITakeSnapshotDialog.cpp" line="+82"/>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation>Hartu Makina Birtualaren Berehalako bat</translation>
+        <translation type="unfinished">Hartu Makina Birtualaren Berehalako bat</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Snapshot &amp;Name</source>
-        <translation>Berehalako &amp;Izena</translation>
+        <translation type="unfinished">Berehalako &amp;Izena</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Snapshot &amp;Description</source>
-        <translation>Berehalakoaren &amp;Azalpena</translation>
+        <translation type="unfinished">Berehalakoaren &amp;Azalpena</translation>
     </message>
     <message numerus="yes">
         <location line="+1"/>
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation>
+        <translation type="unfinished">
             <numerusform>Kontuz: Ekinean dagoen makina baten berehalako bat hartzen ari zara berari %n irudi aldaezin erantsita dituela. Berehalako honetatik lanean ari zaren bitartean irudi aldaezinak ez dira berrezarriko datuak galtzea saihesteko.</numerusform>
             <numerusform>Kontuz: Ekinean dagoen makina baten berehalako bat hartzen ari zara berari %n irudi aldaezin erantsita dituela. Berehalako honetatik lanean ari zaren bitartean irudi aldaezinak ez dira berrezarriko datuak galtzea saihesteko.</numerusform>
         </translation>
@@ -11733,7 +11690,7 @@
     <message>
         <location filename="../src/runtime/UIMachineLogic.cpp" line="-246"/>
         <source>Snapshot %1</source>
-        <translation>Berehalakoa %1</translation>
+        <translation type="unfinished">Berehalakoa %1</translation>
     </message>
 </context>
 <context>
@@ -11952,6 +11909,17 @@
         <location line="-2"/>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
         <translation>&amp;Leheneratu oraingo berehalakoa &apos;%1&apos;</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMDesktop</name>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="vanished">&amp;Xehetasunak</translation>
+    </message>
+    <message>
+        <source>&amp;Snapshots</source>
+        <translation type="vanished">&amp;Berehalakoak</translation>
     </message>
 </context>
 <context>
@@ -13261,7 +13229,7 @@
 <context>
     <name>VBoxAboutDlg</name>
     <message>
-        <location filename="../src/VBoxAboutDlg.cpp" line="+70"/>
+        <location filename="../src/VBoxAboutDlg.cpp" line="+83"/>
         <source>VirtualBox - About</source>
         <translation>VirtualBox - Honi buruz</translation>
     </message>
@@ -15446,6 +15414,135 @@
     </message>
 </context>
 <context>
+    <name>VBoxMediaManagerDlg</name>
+    <message>
+        <source>&amp;Actions</source>
+        <translation type="vanished">&amp;Ekintzak</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Berria...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Gehitu...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation type="vanished">&amp;Kendu</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation type="vanished">&amp;Argitaratu</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation type="vanished">B&amp;erritu</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation type="vanished">Sarbidetasuna egiaztatzen</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Agiri guztiak (*)</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation type="vanished">&lt;i&gt;Ez&amp;nbsp;Erantsita&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation type="vanished">--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation type="vanished">Multimedia Birtual Kudeatzailea</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="vanished">&lt;i&gt;Ez&amp;nbsp;Enkriptatuta&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation type="vanished">Kopiatu dagoen diska irudi agiri bat</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation type="vanished">Aldatu hautaturiko diska irudi agiriaren ezaugarriak</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation type="vanished">Kendu hautaturiko diska irudi agiria</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation type="vanished">Askatu hautaturiko diska irudi agiria hura makinetatik deserantsiz</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="vanished">Berritu diska irudi agiri zerrenda</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="vanished">Izena</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation type="vanished">Neurri Birtuala</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation type="vanished">Oraingo Neurria</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="vanished">Enkriptaketa giltza:</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="vanished">UUID:</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="vanished">Neurria</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation type="vanished">Mota:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation type="vanished">Kokalekua:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation type="vanished">Heuskarria:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="vanished">Biltegi xehetasunak:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="vanished">Hona Erantsita:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation type="vanished">K&amp;opiatu...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation type="vanished">A&amp;ldatu...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="obsolete">Sortu diska gogor birtual berri bat
+</translation>
+    </message>
+</context>
+<context>
     <name>VBoxMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
@@ -15462,6 +15559,197 @@
     <message>
         <source>Minimize Window</source>
         <translation type="obsolete">Txikiengotu Leihoa</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxScreenshotViewer</name>
+    <message>
+        <source>Screenshot of %1 (%2)</source>
+        <translation type="vanished">Ikusleiho-argazkiak %1 (%2)</translation>
+    </message>
+    <message>
+        <source>Click to view non-scaled screenshot.</source>
+        <translation type="vanished">Klikatu ez-neurriratutako ikusleiho-argazkia ikusteko.</translation>
+    </message>
+    <message>
+        <source>Click to view scaled screenshot.</source>
+        <translation type="vanished">Klikatu neurriratutako ikusleiho-argazkia ikusteko.</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxSnapshotDetailsDlg</name>
+    <message>
+        <source>Details of %1 (%2)</source>
+        <translation type="vanished">Xehetasunak %1 (%2)</translation>
+    </message>
+    <message>
+        <source>Click to enlarge the screenshot.</source>
+        <translation type="vanished">Klikatu ikusleiho-argazkia handitzeko.</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="vanished">&amp;Izena:</translation>
+    </message>
+    <message>
+        <source>Taken:</source>
+        <translation type="vanished">Hartua:</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="vanished">&amp;Azalpena:</translation>
+    </message>
+    <message>
+        <source>D&amp;etails:</source>
+        <translation type="vanished">&amp;Xehetasunak:</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxSnapshotsWgt</name>
+    <message>
+        <source>VBoxSnapshotsWgt</source>
+        <translation type="vanished">VBoxBerehalakoWgta</translation>
+    </message>
+    <message>
+        <source>Current State (changed)</source>
+        <comment>Current State (Modified)</comment>
+        <translation type="vanished">Oraingo Egoera (aldatuta)</translation>
+    </message>
+    <message>
+        <source>Current State</source>
+        <comment>Current State (Unmodified)</comment>
+        <translation type="vanished">Oraingo Egoera</translation>
+    </message>
+    <message>
+        <source>The current state differs from the state stored in the current snapshot</source>
+        <translation type="vanished">Oraingo egoera oraingo berehalakoan biltegiratutako egoeraren ezberdina da</translation>
+    </message>
+    <message>
+        <source>The current state is identical to the state stored in the current snapshot</source>
+        <translation type="vanished">Oraingo egoera oraingo berehalakoan biltegiratutako egoeraren berdina da</translation>
+    </message>
+    <message>
+        <source> (current, </source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished"> (orain, </translation>
+    </message>
+    <message>
+        <source>online)</source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished">online)</translation>
+    </message>
+    <message>
+        <source>offline)</source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished">lineaz-kanpo)</translation>
+    </message>
+    <message>
+        <source>Taken at %1</source>
+        <comment>Snapshot (time)</comment>
+        <translation type="vanished">Hartua %1</translation>
+    </message>
+    <message>
+        <source>Taken on %1</source>
+        <comment>Snapshot (date + time)</comment>
+        <translation type="vanished">Hartua %1</translation>
+    </message>
+    <message>
+        <source>%1 since %2</source>
+        <comment>Current State (time or date + time)</comment>
+        <translation type="vanished">%1 %2-tik</translation>
+    </message>
+    <message>
+        <source>Restore selected snapshot of the virtual machine</source>
+        <translation type="vanished">Leheneratu hautaturiko makina birtualaren berehalakoa</translation>
+    </message>
+    <message>
+        <source>Delete selected snapshot of the virtual machine</source>
+        <translation type="vanished">Ezabatu hautaturiko makina birtualaren berehalakoa</translation>
+    </message>
+    <message>
+        <source>Display a window with selected snapshot details</source>
+        <translation type="vanished">Leiho bat erakusten hautaturiko berehalakoaren xehetasunekin</translation>
+    </message>
+    <message>
+        <source>Clone selected virtual machine</source>
+        <translation type="vanished">Klonatu hautaturiko makina birtuala</translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="vanished">Berehalakoa %1</translation>
+    </message>
+    <message>
+        <source>Take &amp;Snapshot</source>
+        <translation type="vanished">Hartu &amp;Berehalakoa</translation>
+    </message>
+    <message>
+        <source>S&amp;how Details</source>
+        <translation type="vanished">&amp;Erakutsi Xehetasunak</translation>
+    </message>
+    <message>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="vanished">Hautu oraingo makina birtualaren egoera berehalako bat</translation>
+    </message>
+    <message>
+        <source>Show the details of the selected snapshot</source>
+        <translation type="obsolete">Erakutsi hautaturiko berehalakoaren xehetasunak</translation>
+    </message>
+    <message>
+        <source> (%1)</source>
+        <translation type="vanished"> (%1)</translation>
+    </message>
+    <message>
+        <source>&amp;Restore Snapshot</source>
+        <translation type="vanished">&amp;Leheneratu Berehalakoa</translation>
+    </message>
+    <message>
+        <source>&amp;Delete Snapshot</source>
+        <translation type="vanished">E&amp;zabatu Berehalakoa</translation>
+    </message>
+    <message>
+        <source>Restore the selected snapshot of the virtual machine</source>
+        <translation type="obsolete">Leheneratu hautaturiko makina birtualaren berehalakoa</translation>
+    </message>
+    <message>
+        <source>Delete the selected snapshot of the virtual machine</source>
+        <translation type="obsolete">Ezabatu hautaturiko makina birtualaren berehalakoa</translation>
+    </message>
+    <message>
+        <source> (%1 ago)</source>
+        <translation type="vanished"> (duela %1)</translation>
+    </message>
+    <message>
+        <source>&amp;Clone...</source>
+        <translation type="vanished">&amp;Klonatu...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="obsolete">Klonatu hautaturiko makina birtuala</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxTakeSnapshotDlg</name>
+    <message>
+        <source>Take Snapshot of Virtual Machine</source>
+        <translation type="vanished">Hartu Makina Birtualaren Berehalako bat</translation>
+    </message>
+    <message>
+        <source>Snapshot &amp;Name</source>
+        <translation type="vanished">Berehalako &amp;Izena</translation>
+    </message>
+    <message>
+        <source>Snapshot &amp;Description</source>
+        <translation type="vanished">Berehalakoaren &amp;Azalpena</translation>
+    </message>
+    <message numerus="yes">
+        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
+        <translation type="vanished">
+            <numerusform>Kontuz: Ekinean dagoen makina baten berehalako bat hartzen ari zara berari %n irudi aldaezin erantsita dituela. Berehalako honetatik lanean ari zaren bitartean irudi aldaezinak ez dira berrezarriko datuak galtzea saihesteko.</numerusform>
+            <numerusform>Kontuz: Ekinean dagoen makina baten berehalako bat hartzen ari zara berari %n irudi aldaezin erantsita dituela. Berehalako honetatik lanean ari zaren bitartean irudi aldaezinak ez dira berrezarriko datuak galtzea saihesteko.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="vanished">Berehalakoa %1</translation>
     </message>
 </context>
 <context>

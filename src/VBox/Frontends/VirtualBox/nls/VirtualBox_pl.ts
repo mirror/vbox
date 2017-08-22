@@ -26,7 +26,7 @@
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Dawid Wrobel, Adrian Lubik, Wiktor Wandachowicz, hawkeye116477</translation>
+        <translation>Dawid Wrobel, Adrian Lubik, Wiktor Wandachowicz, Bartosz</translation>
     </message>
 </context>
 <context>
@@ -304,6 +304,34 @@
     </message>
 </context>
 <context>
+    <name>QObject</name>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Kod&amp;nbsp;wyniku&amp;nbsp;(RC): </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Komponent: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Interfejs: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Wywołana funkcja: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Kod&amp;nbsp;wyniku&amp;nbsp;(RC)&amp;nbsp;wywołanej&amp;nbsp;funkcji: </translation>
+    </message>
+</context>
+<context>
     <name>SFTreeViewItem</name>
     <message>
         <source>%1, %2: %3, %4: %5, %6: %7</source>
@@ -471,7 +499,7 @@
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation type="obsolete">W&amp;spółdzielone folderi...</translation>
+        <translation type="obsolete">W&amp;spółdzielone foldery...</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
@@ -600,7 +628,7 @@
     </message>
     <message>
         <source>Session I&amp;nformation...</source>
-        <translation>I&amp;nformacje o sesji</translation>
+        <translation>I&amp;nformacje o sesji...</translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
@@ -780,7 +808,7 @@
     <message>
         <source>&amp;Add Machine...</source>
         <translatorcomment>&amp;Dodaj maszynę...</translatorcomment>
-        <translation>Dodaj maszynę...</translation>
+        <translation>&amp;Dodaj maszynę...</translation>
     </message>
     <message>
         <source>Gro&amp;up</source>
@@ -943,7 +971,7 @@
     </message>
     <message>
         <source>Show Menu &amp;Bar</source>
-        <translation>Wyświetl pasek menu</translation>
+        <translation>Wyświetl &amp;pasek menu</translation>
     </message>
     <message>
         <source>Enable menu-bar</source>
@@ -963,7 +991,7 @@
     </message>
     <message>
         <source>Show Status &amp;Bar</source>
-        <translation>Wyświetl pasek stanu</translation>
+        <translation>Wyświetl &amp;pasek stanu</translation>
     </message>
     <message>
         <source>Enable status-bar</source>
@@ -1016,7 +1044,7 @@
     </message>
     <message>
         <source>&amp;Hard Disk Settings...</source>
-        <translation>&amp;ustawienia dysków twardych...</translation>
+        <translation>&amp;Ustawienia dysków twardych...</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure hard disks</source>
@@ -1404,8 +1432,8 @@
         <source>&lt;nobr&gt;Used by the following %n hard disk(s):&lt;/nobr&gt;&lt;br&gt;%1</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many hard drives are in the tool-tip and doesn&apos;t need to be told).</comment>
         <translation>
-            <numerusform>&lt;nobr&gt;Używany przez następujący %n twardy dysk:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
-            <numerusform>&lt;nobr&gt;Używany przez następujące %n twarde dyski:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
+            <numerusform>&lt;nobr&gt;Używany przez następujący twardy dysk:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
+            <numerusform>&lt;nobr&gt;Używany przez następujące twarde dyski:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -1545,7 +1573,7 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation>Po zaznaczeniu tej opcji, zostanie przydzielony nowy unikalny adres MAC do skonfigurowanych kart sieciowych</translation>
+        <translation>Po zaznaczeniu tej opcji, zostanie przydzielony nowy unikalny adres MAC do skonfigurowanych kart sieciowych.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
@@ -1725,17 +1753,6 @@
     </message>
 </context>
 <context>
-    <name>UIDesktopPane</name>
-    <message>
-        <source>&amp;Details</source>
-        <translation type="vanished">&amp;Szczegóły</translation>
-    </message>
-    <message>
-        <source>&amp;Snapshots</source>
-        <translation type="vanished">&amp;Migawki</translation>
-    </message>
-</context>
-<context>
     <name>UIDetailsBlock</name>
     <message>
         <source>Name</source>
@@ -1869,7 +1886,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation type="obsolete">Współdzielone folderi</translation>
+        <translation type="obsolete">Współdzielone foldery</translation>
     </message>
     <message>
         <source>None</source>
@@ -2021,7 +2038,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation type="obsolete">Współdzielone folderi</translation>
+        <translation type="obsolete">Współdzielone foldery</translation>
     </message>
     <message>
         <source>None</source>
@@ -2085,7 +2102,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="obsolete">Współdzielone folderi</translation>
+        <translation type="obsolete">Współdzielone foldery</translation>
     </message>
     <message>
         <source>Description</source>
@@ -2164,7 +2181,7 @@
     </message>
     <message>
         <source>Verifying %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>Weryfikowanie %1...</translation>
     </message>
 </context>
 <context>
@@ -2579,7 +2596,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays a window to select a different file.</source>
-        <translation>Wyświetla okno, by wybrać inny plik</translation>
+        <translation>Wyświetla okno, by wybrać inny plik.</translation>
     </message>
     <message>
         <source>Resets the file path to the default value.</source>
@@ -2603,11 +2620,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the folder path.</source>
-        <translation>Przechowuje ścieżkę do folderu</translation>
+        <translation>Przechowuje ścieżkę do folderu.</translation>
     </message>
     <message>
         <source>Holds the file path.</source>
-        <translation>Przechowuje ścieżkę do pliku</translation>
+        <translation>Przechowuje ścieżkę do pliku.</translation>
     </message>
 </context>
 <context>
@@ -3137,17 +3154,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
-        <translation>Mostkowana karta sieciowa</translation>
+        <translation>Mostkowana karta sieciowa, %1</translation>
     </message>
     <message>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Sieć wewnętrzna</translation>
+        <translation>Sieć wewnętrzna, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Karta sieci izolowanej</translation>
+        <translation>Karta sieci izolowanej, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos;</source>
@@ -3321,6 +3338,36 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio Output</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (audio/output)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (audio/output)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio Input</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (audio/input)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (audio/input)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3545,7 +3592,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Do not attempt to limit the size of the guest screen.</source>
-        <translation>Nie próbuje ograniczać wymiarów ekranu gościa</translation>
+        <translation>Nie próbuje ograniczać wymiarów ekranu gościa.</translation>
     </message>
     <message>
         <source>Hint</source>
@@ -3621,11 +3668,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adds new package.</source>
-        <translation>Dodaje nową paczkę</translation>
+        <translation>Dodaje nową paczkę.</translation>
     </message>
     <message>
         <source>Removes selected package.</source>
-        <translation>Usuwa wybraną paczkę</translation>
+        <translation>Usuwa wybraną paczkę.</translation>
     </message>
 </context>
 <context>
@@ -3731,11 +3778,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Lists all available shortcuts which can be configured.</source>
-        <translation>Wyświetla wszystkie dostępne konfigurowalne skróty</translation>
+        <translation>Wyświetla wszystkie dostępne konfigurowalne skróty.</translation>
     </message>
     <message>
         <source>Holds a sequence to filter the shortcut list.</source>
-        <translation>Utrzymuje sekwencję do filtrowania listy skrótów</translation>
+        <translation>Przechowuje sekwencję do filtrowania listy skrótów.</translation>
     </message>
 </context>
 <context>
@@ -3869,7 +3916,7 @@ p, li { white-space: pre-wrap; }
         <translation type="vanished">Adres IPv6</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask Length</source>
+        <source>IPv6 Prefix Length</source>
         <translation type="vanished">Długość maski sieci IPv6</translation>
     </message>
     <message>
@@ -3951,7 +3998,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Lists all available NAT networks.</source>
-        <translation>Wyświetla wszystkie dostępne sieci NAT</translation>
+        <translation>Wyświetla wszystkie dostępne sieci NAT.</translation>
     </message>
     <message>
         <source>&amp;Host-only Networks</source>
@@ -3959,7 +4006,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Brak określonej nowej nazwy dla wcześniej przywołanej sieci NAT</translation>
+        <translation>Brak określonej nowej nazwy dla wcześniej przywołanej sieci NAT&lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -4084,7 +4131,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add Host-only Network</source>
-        <translation type="vanished">Dodaj sieć izolowaną.</translation>
+        <translation type="vanished">Dodaj sieć izolowaną</translation>
     </message>
     <message>
         <source>Remove Host-only Network</source>
@@ -4107,7 +4154,7 @@ p, li { white-space: pre-wrap; }
         <translation type="vanished">Edytuje wybraną sieć izolowaną.</translation>
     </message>
     <message>
-        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 network mask prefix length.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 prefix length.</source>
         <translation type="vanished">Interfejs gospodarza &lt;b&gt;%1&lt;/b&gt; nie posiada obecnie ważnego prefiksu maski sieci IPv6.</translation>
     </message>
 </context>
@@ -4154,11 +4201,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Przechowuje adres IPv6 gospodarza dla tej karty, jeśli IPv6 jest dostępne.</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
+        <source>IPv6 Prefix &amp;Length:</source>
         <translation type="obsolete">Dł&amp;ugość maski sieci IPv6:</translation>
     </message>
     <message>
-        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Przechowuje długość prefiksu maski sieci IPv6 gospodarza dla tej karty, jeśli IPv6 jest dostępne.</translation>
     </message>
     <message>
@@ -4249,11 +4296,11 @@ p, li { white-space: pre-wrap; }
         <translation type="vanished">Przechowuje adres IPv6 gospodarza dla tej karty, jeśli IPv6 jest dostępne.</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
+        <source>IPv6 Prefix &amp;Length:</source>
         <translation type="vanished">Dł&amp;ugość maski sieci IPv6:</translation>
     </message>
     <message>
-        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
         <translation type="vanished">Przechowuje długość prefiksu maski sieci IPv6 gospodarza dla tej karty, jeśli IPv6 jest obsługiwane.</translation>
     </message>
     <message>
@@ -4325,7 +4372,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation>Przechowuje nazwę dla tej sieci</translation>
+        <translation>Przechowuje nazwę dla tej sieci.</translation>
     </message>
     <message>
         <source>Network &amp;CIDR:</source>
@@ -4635,7 +4682,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Dł&amp;ugość maski sieci IPv6:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
@@ -4795,7 +4842,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Długość maski sieci IPv6</translation>
     </message>
     <message>
         <source>Not set</source>
@@ -5299,7 +5346,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation type="vanished">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Wskaźnik aktywności interfejsów sieciowych:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Wskazuje aktywność interfejsów sieciowych:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
@@ -5324,7 +5371,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="vanished">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Wskaźnik aktywności podłączonych urządzeń USB:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Wskazuje aktywność podłączonych urządzeń USB:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -5339,7 +5386,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation type="vanished">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Wskaźnik aktywności udostępnianych folderów maszyny:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Wskazuje aktywność udostępnianych folderów maszyny:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -5366,7 +5413,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="vanished">Wskazuje, czy kursor myszy gospodarza jest przechwycony przez goszczony system operacyjny:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;kursor nie jest przechwycony&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;kursor jest przechwycony&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integracja myszy (IM) jest włączona&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM wyłączona, kursor przechwycony&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM wyłączona, kursor nie jest przechwycony&lt;/nobr&gt;&lt;br&gt;Uwaga:  funkcja integracji kursora myszy wymaga zainstalowania Dodatków gościa w goszczonym systemie operacyjnym.</translation>
+        <translation type="vanished">Wskazuje, czy kursor myszy gospodarza jest przechwytywany przez goszczony system operacyjny:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;kursor nie jest przechwytywany&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;kursor jest przechwytywany&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integracja myszy (IM) jest włączona&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM wyłączona, kursor przechwytywany&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM wyłączona, kursor nie jest przechwytywany&lt;/nobr&gt;&lt;br&gt;Uwaga:  funkcja integracji kursora myszy wymaga zainstalowania Dodatków gościa w goszczonym systemie operacyjnym.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
@@ -6114,6 +6161,26 @@ p, li { white-space: pre-wrap; }
         <source>Selects the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
         <translation>Pozwala wybrać sterownik wyjścia audio. &lt;b&gt;Zerowy sterownik audio&lt;/b&gt; sprawia, że gość widzi kartę dzwiękową, jednakże każdy dostęp do niej będzie ignorowany.</translation>
     </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Rozszerzone właściwości:</translation>
+    </message>
+    <message>
+        <source>When checked, output to the virtual audio device will reach the host. Otherwise the guest is muted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Audio &amp;Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the guest will be able to capture audio input from the host. Otherwise the guest will capture only silence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Audio &amp;Input</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsDisplay</name>
@@ -6247,7 +6314,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Frame Rate:</source>
-        <translation>&amp;Częstotliwość wyświetlania klatek</translation>
+        <translation>&amp;Częstotliwość wyświetlania klatek:</translation>
     </message>
     <message>
         <source>&amp;Quality:</source>
@@ -6322,7 +6389,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the guest screen scale factor.</source>
-        <translation>Kontroluje współczynnik skali ekranu gościa</translation>
+        <translation>Kontroluje współczynnik skali ekranu gościa.</translation>
     </message>
     <message>
         <source>%</source>
@@ -6673,7 +6740,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>D&amp;rag&apos;n&apos;Drop:</source>
-        <translation>Przeciąganie i upuszczanie</translation>
+        <translation>P&amp;rzeciąganie i upuszczanie:</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
@@ -6749,7 +6816,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Mini ToolBar:</source>
-        <translation>Mini pasek narzędziowy</translation>
+        <translation>Mini pasek narzędziowy:</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar in full-screen and seamless modes.</source>
@@ -6757,7 +6824,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show in &amp;Full-screen/Seamless</source>
-        <translation>Wyświetl w trybie pełnego ekranu/Seamless</translation>
+        <translation>Wyświetl w &amp;trybie pełnego ekranu/Seamless</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
@@ -6765,7 +6832,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show at &amp;Top of Screen</source>
-        <translation>Pokaż u &amp;góry ekranu</translation>
+        <translation>Wyświetl u &amp;góry ekranu</translation>
     </message>
     <message>
         <source>Allows to modify VM status-bar contents.</source>
@@ -7255,7 +7322,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> Transient Folders</source>
-        <translation> folderi tymczasowe</translation>
+        <translation>Foldery tymczasowe</translation>
     </message>
     <message>
         <source>Full</source>
@@ -7283,7 +7350,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> Global Folders</source>
-        <translation type="obsolete">folderi globalne</translation>
+        <translation type="obsolete">foldery globalne</translation>
     </message>
     <message>
         <source>&amp;Add Shared Folder</source>
@@ -7335,7 +7402,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Shared &amp;Folders</source>
-        <translation type="unfinished">W&amp;spółdzielone folderi</translation>
+        <translation type="unfinished">W&amp;spółdzielone foldery</translation>
     </message>
 </context>
 <context>
@@ -7470,11 +7537,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will assume that the pipe or socket specified in the &lt;b&gt;Path/Address&lt;/b&gt; field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
-        <translation>Po zaznaczeniu tej opcji, maszyna wirtualna będzie zakładać, że rura lub gniazdo określone w  &lt;b&gt;Ścieżka/Adres&lt;/b&gt; istnieje i spróbuje je użyć. W przeciwnym wypadku, rura lub gniazdo zostanie utworzone przez wirtualną maszynę, gdy wystartuje.</translation>
+        <translation>Po zaznaczeniu tej opcji, maszyna wirtualna będzie zakładać, że łącze komunikacyjne lub gniazdo określone w  &lt;b&gt;Ścieżka/Adres&lt;/b&gt; istnieje i spróbuje je użyć. W przeciwnym wypadku, łącze komunikacyjne lub gniazdo zostanie utworzone przez wirtualną maszynę, gdy wystartuje.</translation>
     </message>
     <message>
         <source>&amp;Connect to existing pipe/socket</source>
-        <translation>&amp;Podłącz do istniejącej rury/gniazda</translation>
+        <translation>&amp;Podłącz do istniejącego łącza komunikacyjnego/gniazda</translation>
     </message>
     <message>
         <source>&amp;Path/Address:</source>
@@ -7482,7 +7549,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;In &lt;b&gt;Host Pipe&lt;/b&gt; mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Host Device&lt;/b&gt; mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Raw File&lt;/b&gt; mode: Holds the file-path on the host system, where the serial output will be dumped.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;TCP&lt;/b&gt; mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
-        <translation>&lt;p&gt;W &lt;b&gt;trybie Host Pipe&lt;/b&gt;: przechowuje ścieżkę do portu szeregowego rury na hoście. Przykładowo: &quot;\\.\pipe\myvbox&quot; lub &quot;/tmp/myvbox&quot;, odpowiednio dla systemów Windows i UNIX.&lt;/p&gt;&lt;p&gt;W &lt;b&gt;trybie urządzenia gospodarza&lt;/b&gt;: przechowuje seryjną nazwę gospodarza. Przykładowo: &quot;COM1&quot; lub &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;W &lt;b&gt;trybie plików RAW&lt;/b&gt;: przechowuje ścieżkę do pliku w systemie gospodarza, gdzie wyjście szeregowe będzie zrzucane.&lt;/p&gt;&lt;p&gt;W &lt;b&gt;trybie TCP&lt;/b&gt;: przechowuje &quot;port&quot; TCP kiedy jest w trybie serwera lub &quot;nazwa hosta:port&quot; w trybie klienta.</translation>
+        <translatorcomment>pipe - łącze komunikacyjne</translatorcomment>
+        <translation>&lt;p&gt;W &lt;b&gt;trybie Łącze komunikacyjne gospodarza&lt;/b&gt;: przechowuje ścieżkę do portu szeregowego łącza komunikacyjnego na hoście. Przykładowo: &quot;\\.\pipe\myvbox&quot; lub &quot;/tmp/myvbox&quot;, odpowiednio dla systemów Windows i UNIX.&lt;/p&gt;&lt;p&gt;W &lt;b&gt;trybie urządzenia gospodarza&lt;/b&gt;: przechowuje seryjną nazwę gospodarza. Przykładowo: &quot;COM1&quot; lub &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;W &lt;b&gt;trybie plików RAW&lt;/b&gt;: przechowuje ścieżkę do pliku w systemie gospodarza, gdzie wyjście szeregowe będzie zrzucane.&lt;/p&gt;&lt;p&gt;W &lt;b&gt;trybie TCP&lt;/b&gt;: przechowuje &quot;port&quot; TCP kiedy jest w trybie serwera lub &quot;nazwa hosta:port&quot; w trybie klienta.</translation>
     </message>
     <message>
         <source>No IRQ is currently specified.</source>
@@ -8004,7 +8072,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose Virtual Floppy Disk File...</source>
-        <translation>Wybierz plik wirtualnej dyskietki</translation>
+        <translation>Wybierz plik wirtualnej dyskietki...</translation>
     </message>
     <message>
         <source>Add NVMe Controller</source>
@@ -8056,7 +8124,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Base &amp;Memory:</source>
-        <translation>Pamięć p&amp;odstawowa:</translation>
+        <translation>R&amp;AM:</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
@@ -8221,11 +8289,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation>Ze względu na wydajność, liczba procesorów wirtualnych podłączonych do maszyny wirtualnej nie może być większa niż dwukrotność liczby procesorów fizycznych na systemie gospodarza (&lt;b&gt;% 1 &lt;/ b&gt;). Należy zmniejszyć liczbę wirtualnych procesorów.</translation>
+        <translation>Ze względu na wydajność, liczba procesorów wirtualnych podłączonych do maszyny wirtualnej nie może być większa niż dwukrotność liczby procesorów fizycznych na systemie gospodarza (&lt;b&gt;%1 &lt;/b&gt;). Należy zmniejszyć liczbę wirtualnych procesorów.</translation>
     </message>
     <message>
         <source>More virtual CPUs are assigned to the virtual machine than the number of physical CPUs on the host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation>Więcej wirtualnych procesorów jest przydzielonych do maszyny wirtualnej niż liczba procesorów fizycznych w systemie gospodarza (&lt;b&gt;% 1 &lt;/ b&gt;). To prawdopodobnie obniży wydajność maszyny wirtualnej. Proszę rozważyć zmniejszenie liczby wirtualnych procesorów.</translation>
+        <translation>Więcej wirtualnych procesorów jest przydzielonych do maszyny wirtualnej niż liczba procesorów fizycznych w systemie gospodarza (&lt;b&gt;%1&lt;/b&gt;). To prawdopodobnie obniży wydajność maszyny wirtualnej. Proszę rozważyć zmniejszenie liczby wirtualnych procesorów.</translation>
     </message>
     <message>
         <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
@@ -8740,205 +8808,50 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Dyski twarde</translation>
     </message>
     <message>
-        <source>&amp;Actions</source>
-        <translation type="vanished">&amp;Akcje</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Nowy...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Dodaj...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation type="vanished">&amp;Usuń</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation type="vanished">&amp;Wysuń</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;Odśwież</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Tworzy nowy wirtualny dysk twardy</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Dodaje istniejący nośnik</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation type="vanished">Usuwa wybrany nośnik</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation type="vanished">Wysuwa wybrany nośnik poprzez odłączenie go od maszyn</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Odświeża listę nośników</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Ścieżka</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Typ (format)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Podłączony do</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Sprawdzanie dostępności</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Wszystkie obrazy dysków twardych (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Wszystkie pliki (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Wybierz plik obrazu dysku twardego</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Obrazy CD/DVD (*.iso);;Wszystkie pliki (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Wybierz plik obrazu dysku CD/DVD</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Obrazy dyskietek (*.img);;Wszystkie pliki (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Wybierz plik obrazu dyskietki</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Niepodłączony&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Menedżer nośników wirtualnych</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">&amp;Dyski twarde</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nazwa</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Rozmiar wirtualny</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Rozmiar aktualny</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">O&amp;brazy CD/DVD</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Rozmiar</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">Ob&amp;razy dyskietek</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Podłączony do</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Podłączona do</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Podłączona do</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation type="vanished">Typ:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation type="vanished">Położenie:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Format:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Szczegóły pamięci:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Podłączony do:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>&amp;Kopiuj...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation type="vanished">&amp;Modyfikuj...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation type="vanished">Kopiuje istniejący plik obrazu dysku</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation type="vanished">Modyfikuje parametry wybranego pliku z obrazem dysku</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Nie&amp;nbsp;zaszyfrowane&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>Zaszyfrowane kluczem:</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
         <source>%1, %2: %3, %4: %5</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Format:</source>
+        <translation type="unfinished">Format:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="unfinished">Szczegóły pamięci:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="unfinished">UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation type="unfinished">&lt;i&gt;Niepodłączony&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished">&lt;i&gt;Nie&amp;nbsp;zaszyfrowane&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation type="unfinished">--</translation>
+    </message>
+    <message>
         <source>&amp;Medium</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation type="unfinished">&amp;Kopiuj...</translation>
     </message>
     <message>
         <source>Copy selected disk image file</source>
@@ -8969,8 +8882,40 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Re&amp;fresh</source>
+        <translation type="unfinished">&amp;Odśwież</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="unfinished">Odświeża listę nośników</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Nazwa</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation type="unfinished">Rozmiar wirtualny</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation type="unfinished">Rozmiar aktualny</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">Rozmiar</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation type="unfinished">Sprawdzanie dostępności</translation>
+    </message>
+    <message>
         <source>Moving medium...</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation type="unfinished">Menedżer nośników wirtualnych</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -9199,7 +9144,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nie udało się wsPrzechowujeć pracy maszyny wirtualnej &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nie udało się wstrzymać wykonywanie maszyny wirtualnej &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -9351,7 +9296,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Maszyna Wirtualna jest aktualnie w stanie &lt;b&gt;WsPrzechowujenia&lt;/b&gt; i tym samym nie obsłuży żadnych danych wejściowych pochodzących od klawiatury lub myszy. Aby kontynuować pracę w maszynie wirtualnej, należy ją najpierw wznowić poprzez wybranie odpowiedniej opcji z menu &lt;i&gt;Maszyna&lt;/i&gt; w oknie maszyny.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Maszyna Wirtualna jest aktualnie w stanie &lt;b&gt;wstrzymania&lt;/b&gt; i tym samym nie obsłuży żadnych danych wejściowych pochodzących od klawiatury lub myszy. Aby kontynuować pracę w maszynie wirtualnej, należy ją najpierw wznowić poprzez wybranie odpowiedniej opcji z menu &lt;i&gt;Maszyna&lt;/i&gt; w oknie maszyny.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
@@ -9392,27 +9337,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>Kod&amp;nbsp;wyniku&amp;nbsp;(RC): </translation>
+        <translation type="vanished">Kod&amp;nbsp;wyniku&amp;nbsp;(RC): </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>Komponent: </translation>
+        <translation type="vanished">Komponent: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>Interfejs: </translation>
+        <translation type="vanished">Interfejs: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>Wywołana funkcja: </translation>
+        <translation type="vanished">Wywołana funkcja: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>Kod&amp;nbsp;wyniku&amp;nbsp;(RC)&amp;nbsp;wywołanej&amp;nbsp;funkcji: </translation>
+        <translation type="vanished">Kod&amp;nbsp;wyniku&amp;nbsp;(RC)&amp;nbsp;wywołanej&amp;nbsp;funkcji: </translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -10242,7 +10187,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation>Nie udało się dodać maszyny wirtualnej zlokalizowanej w&lt;b&gt;%1&lt;/b&gt;, ponieważ już istnieje.</translation>
+        <translation>Nie udało się dodać maszyny wirtualnej &lt;b&gt;%1&lt;/b&gt; zlokalizowanej w&lt;i&gt;%2&lt;/i&gt;, ponieważ już istnieje.</translation>
     </message>
     <message>
         <source>Delete all files</source>
@@ -10395,23 +10340,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation>Nie można załadować usługi Host USB Proxy (VERR_FILE_NOT_FOUND). Usługa ta być może nie została zainstalowana na komputerze gospodarza.</translation>
+        <translation>Nie można załadować usługi Host USB Proxy (VERR_FILE_NOT_FOUND). Usługa ta być może nie została zainstalowana na komputerze gospodarza</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox aktualnie nie ma dostępu do urządzeń USB. Można to zmienić, dodając użytkownika do grupy vboxusers&apos;. Proszę zapoznać się z instrukcją obsługi w celu bardziej szczegółowego wyjaśnienia.</translation>
+        <translation>VirtualBox aktualnie nie ma dostępu do urządzeń USB. Można to zmienić, dodając użytkownika do grupy vboxusers&apos;. Proszę zapoznać się z instrukcją obsługi w celu bardziej szczegółowego wyjaśnienia</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox aktualnie nie ma dostępu do urządzeń USB. Można to zmienić, zezwalając na dostęp użytkownika do folderu &apos;usbfs&apos; i plików. Proszę zapoznać się z instrukcją obsługi w celu bardziej szczegółowego wyjaśnienia.</translation>
+        <translation>VirtualBox aktualnie nie ma dostępu do urządzeń USB. Można to zmienić, zezwalając na dostęp użytkownika do folderu &apos;usbfs&apos; i plików. Proszę zapoznać się z instrukcją obsługi w celu bardziej szczegółowego wyjaśnienia</translation>
     </message>
     <message>
         <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation>Usługa USB Proxy nie została jeszcze przeniesiona do tego hosta.</translation>
+        <translation>Usługa USB Proxy nie została jeszcze przeniesiona do tego hosta</translation>
     </message>
     <message>
         <source>Could not load the Host USB Proxy service</source>
-        <translation>Nie można załadować usługi Host USB Proxy.</translation>
+        <translation>Nie można załadować usługi Host USB Proxy</translation>
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -10880,8 +10825,29 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Nie powiodło się otrzymanie obiektu VirtualBox COM.&lt;/p&gt;&lt;p&gt;Aplikacja zostanie teraz zakończona.&lt;/p&gt;</translation>
     </message>
     <message>
+        <source>Delete</source>
+        <comment>extension pack</comment>
+        <translation>Usuń</translation>
+    </message>
+    <message>
+        <source>Do you want to delete the downloaded file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
+        <translation>Czy chcesz usunąć pobrany plik &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</translation>
+    </message>
+    <message>
+        <source>Do you want to delete following list of files &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
+        <translation>Czy chcesz usunąć następującą listę plików &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</translation>
+    </message>
+    <message>
         <source>&lt;p&gt;The reason for this error are most likely wrong permissions of the IPC daemon socket due to an installation problem. Please check the permissions of &lt;font color=blue&gt;&apos;/tmp&apos;&lt;/font&gt; and &lt;font color=blue&gt;&apos;/tmp/.vbox-*-ipc/&apos;&lt;/font&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Przyczyną tego błędu najprawdopodobniej są złe uprawnienia gniazda demona IPC z powodu problemów z instalacją. Proszę sprawdzić uprawnienia &lt;font color=blue&gt;&apos;/tmp&apos;&lt;/font&gt; i &lt;font color=blue&gt;&apos;/tmp/.vbox-*-ipc/&apos;&lt;/font&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Plik obrazu dysku&lt;b&gt;Dodatki gościa VirtualBox&lt;/b&gt; został pomyślnie pobrany z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; i zapisany lokalnie jako &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;ale nie powiodła się weryfikacja sum kontrolnych SHA-256.&lt;/p&gt;&lt;p&gt;Proszę ręcznie pobrać, zainstalować i zweryfikować.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; został pomyślnie pobrany z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; i zapisany lokalnie jako &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;ale nie powiodła się weryfikacja sum kontrolnych SHA-256.&lt;/p&gt;&lt;p&gt;Proszę ręcznie pobrać, zainstalować i zweryfikować.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to start all of the following virtual machines:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This could take some time and consume a lot of host system resources. Do you wish to proceed?&lt;/p&gt;</source>
@@ -10941,27 +10907,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to save DHCP server parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Do you want to delete the downloaded file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>extension pack</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Do you want to delete following list of files &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11084,7 +11029,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>N&amp;ame:</source>
-        <translation>&amp;Nazwa</translation>
+        <translation>&amp;Nazwa:</translation>
     </message>
     <message>
         <source>Holds the location of the virtual machine.</source>
@@ -11988,11 +11933,11 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     </message>
     <message>
         <source>Adds new port forwarding rule.</source>
-        <translation>Dodaje nową regułę przekierowania portu</translation>
+        <translation>Dodaje nową regułę przekierowania portu.</translation>
     </message>
     <message>
         <source>Copies selected port forwarding rule.</source>
-        <translation>Kopiuje wybraną regułę przekierowania portu</translation>
+        <translation>Kopiuje wybraną regułę przekierowania portu.</translation>
     </message>
     <message>
         <source>Removes selected port forwarding rule.</source>
@@ -12032,15 +11977,15 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     <name>UIScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
-        <translation>Zrzut ekranu %1 (%2)</translation>
+        <translation type="unfinished">Zrzut ekranu %1 (%2)</translation>
     </message>
     <message>
         <source>Click to view non-scaled screenshot.</source>
-        <translation>Kliknij aby wyświetlić nieskalowany zrzut ekranu.</translation>
+        <translation type="unfinished">Kliknij aby wyświetlić nieskalowany zrzut ekranu.</translation>
     </message>
     <message>
         <source>Click to view scaled screenshot.</source>
-        <translation>Kliknij aby wyświetlić skalowany zrzut ekranu.</translation>
+        <translation type="unfinished">Kliknij aby wyświetlić skalowany zrzut ekranu.</translation>
     </message>
 </context>
 <context>
@@ -12094,7 +12039,7 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     <name>UISettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information.&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Proszę wybrać kategorię ustawień z listy po lewej i przesunąć kursor myszy nad wybraną pozycję, aby uzyskać więcej informacji&lt;i&gt;.</translation>
+        <translation>&lt;i&gt;Proszę wybrać kategorię ustawień z listy po lewej i przesunąć kursor myszy nad wybraną pozycję, aby uzyskać więcej informacji.&lt;/i&gt;</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
@@ -12261,64 +12206,8 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
 <context>
     <name>UISnapshotDetailsWidget</name>
     <message>
-        <source>UISnapshotDetailsWidget</source>
-        <translation type="obsolete">UISnapshotDetailsWidget</translation>
-    </message>
-    <message>
-        <source> Snapshot Details </source>
-        <translation type="obsolete"> Szczegóły migawki </translation>
-    </message>
-    <message>
-        <source>&amp;Name</source>
-        <translation type="obsolete">&amp;Nazwa</translation>
-    </message>
-    <message>
-        <source>&amp;Description</source>
-        <translation type="obsolete">Opi&amp;s</translation>
-    </message>
-    <message>
-        <source>&amp;Machine Details</source>
-        <translation type="obsolete">Szczegóły &amp;maszyny</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="obsolete">Pomoc</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;OK</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Anuluj</translation>
-    </message>
-    <message>
-        <source>Details of %1 (%2)</source>
-        <translation type="vanished">Szczegóły %1 (%2)</translation>
-    </message>
-    <message>
-        <source>Snapshot Details</source>
-        <translation type="obsolete">Szczegóły migawki</translation>
-    </message>
-    <message>
-        <source>Click to enlarge the screenshot.</source>
-        <translation>Kliknij aby powiększyć zrzut ekranu.</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>&amp;Nazwa:</translation>
-    </message>
-    <message>
-        <source>Taken:</source>
-        <translation type="vanished">Utworzony:</translation>
-    </message>
-    <message>
-        <source>&amp;Description:</source>
-        <translation>&amp;Opis:</translation>
-    </message>
-    <message>
-        <source>D&amp;etails:</source>
-        <translation type="vanished">&amp;Szczegóły:</translation>
+        <source>&lt;p&gt;You have the &lt;b&gt;Current State&lt;/b&gt; item selected.&lt;br&gt;Press the &lt;b&gt;Take&lt;/b&gt; button if you wish to take a new snapshot.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Attributes</source>
@@ -12327,6 +12216,14 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     <message>
         <source>&amp;Information</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Nazwa:</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="unfinished">&amp;Opis:</translation>
     </message>
     <message>
         <source>Holds the snapshot name.</source>
@@ -12361,6 +12258,10 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Click to enlarge the screenshot.</source>
+        <translation type="unfinished">Kliknij aby powiększyć zrzut ekranu.</translation>
+    </message>
+    <message>
         <source>Snapshot name is empty</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12368,189 +12269,32 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
 <context>
     <name>UISnapshotPane</name>
     <message>
-        <source>[snapshot]</source>
-        <translation type="obsolete">[migawka]</translation>
-    </message>
-    <message>
-        <source>UISnapshotPane</source>
-        <translation type="vanished">UISnapshotPane</translation>
-    </message>
-    <message>
-        <source>Discard Snapshot</source>
-        <translation type="obsolete">Odrzuć migawkę</translation>
-    </message>
-    <message>
-        <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">O&amp;drzuć migawkę</translation>
-    </message>
-    <message>
-        <source>Take Snapshot</source>
-        <translation type="obsolete">Zrób migawkę</translation>
-    </message>
-    <message>
-        <source>Take &amp;Snapshot</source>
-        <translation type="vanished">Zrób &amp;migawkę</translation>
-    </message>
-    <message>
-        <source>Discard Current State</source>
-        <translation type="obsolete">Odrzuć aktualny stan</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Current State</source>
-        <translation type="obsolete">Odrz&amp;uć aktualny stan</translation>
-    </message>
-    <message>
-        <source>Discard Current Snapshot and State</source>
-        <translation type="obsolete">Odrzuć aktualną migawkę oraz stan</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">Odrzuć a&amp;ktualną migawkę oraz stan</translation>
-    </message>
-    <message>
-        <source>Show Details</source>
-        <translation type="obsolete">Pokaż szczegóły</translation>
-    </message>
-    <message>
-        <source>S&amp;how Details</source>
-        <translation type="vanished">&amp;Pokaż szczegóły</translation>
-    </message>
-    <message>
-        <source>Space</source>
-        <translation type="obsolete">Miejsce</translation>
-    </message>
-    <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation>Aktualny stan (zmieniony)</translation>
+        <translation type="unfinished">Aktualny stan (zmieniony)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation>Aktualny stan</translation>
+        <translation type="unfinished">Aktualny stan</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation>Aktualny stan różni się od stanu zapisanego w aktualnej migawce</translation>
+        <translation type="unfinished">Aktualny stan różni się od stanu zapisanego w aktualnej migawce</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>Aktualny stan jest identyczny ze stanem zapisanym w aktualnej migawce</translation>
-    </message>
-    <message>
-        <source> (current, </source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished"> (aktualny, </translation>
-    </message>
-    <message>
-        <source>online)</source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished">online)</translation>
-    </message>
-    <message>
-        <source>offline)</source>
-        <comment>Snapshot details</comment>
-        <translation type="vanished">offline)</translation>
-    </message>
-    <message>
-        <source>Taken at %1</source>
-        <comment>Snapshot (time)</comment>
-        <translation>Zrobiona o %1</translation>
-    </message>
-    <message>
-        <source>Taken on %1</source>
-        <comment>Snapshot (date + time)</comment>
-        <translation>Zrobiona %1</translation>
-    </message>
-    <message>
-        <source>%1 since %2</source>
-        <comment>Current State (time or date + time)</comment>
-        <translation>%1 od %2</translation>
-    </message>
-    <message>
-        <source>Snapshot %1</source>
-        <translation>Migawka %1</translation>
-    </message>
-    <message>
-        <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Odrzuca wybraną migawkę maszyny wirtualnej</translation>
-    </message>
-    <message>
-        <source>Take a snapshot of the current virtual machine state</source>
-        <translation>Zrób migawkę aktualnego stanu maszyny wirtualnej</translation>
-    </message>
-    <message>
-        <source>Revert to Current Snapshot</source>
-        <translation type="obsolete">Powróć do aktualnej migawki</translation>
-    </message>
-    <message>
-        <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Powróć do aktualnej migawki</translation>
-    </message>
-    <message>
-        <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Przywraca stan maszyny wirtualnej do stanu zapisanego w bieżącej migawce</translation>
-    </message>
-    <message>
-        <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Odrzuca aktualną migawkę i przywraca stan maszyny do stanu sprzed wykonania migawki</translation>
-    </message>
-    <message>
-        <source>Show the details of the selected snapshot</source>
-        <translation type="obsolete">Pokazuje szczegóły wybranej migawki</translation>
-    </message>
-    <message>
-        <source>Ctrl+Space</source>
-        <translation type="obsolete">Ctrl+Spacja</translation>
-    </message>
-    <message>
-        <source> (%1)</source>
-        <translation type="vanished"> (%1)</translation>
-    </message>
-    <message>
-        <source>&amp;Restore Snapshot</source>
-        <translation type="vanished">P&amp;rzywróć migawkę</translation>
-    </message>
-    <message>
-        <source>&amp;Delete Snapshot</source>
-        <translation type="vanished">&amp;Usuń migawkę</translation>
-    </message>
-    <message>
-        <source>Restore the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Przywraca maszynę wirtualną do stanu z wybranej migawki</translation>
-    </message>
-    <message>
-        <source>Delete the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Usuwa wybraną migawkę maszyny wirtualnej</translation>
-    </message>
-    <message>
-        <source> (%1 ago)</source>
-        <translation type="vanished"> (%1 temu)</translation>
-    </message>
-    <message>
-        <source>&amp;Clone...</source>
-        <translation>&amp;Sklonuj...</translation>
-    </message>
-    <message>
-        <source>Restore selected snapshot of the virtual machine</source>
-        <translation>Przywróć wybraną migawkę maszyny wirtualnej</translation>
-    </message>
-    <message>
-        <source>Delete selected snapshot of the virtual machine</source>
-        <translation>Usuń wybraną migawkę maszyny wirtualnej</translation>
-    </message>
-    <message>
-        <source>Display a window with selected snapshot details</source>
-        <translation type="vanished">Wyświetl okno z wybranymi szczegółami migawki</translation>
-    </message>
-    <message>
-        <source>Clone selected virtual machine</source>
-        <translation>Sklonuj wybraną maszynę wirtualną</translation>
+        <translation type="unfinished">Aktualny stan jest identyczny ze stanem zapisanym w aktualnej migawce</translation>
     </message>
     <message>
         <source>%1 (%2 ago)</source>
         <comment>date time (how long ago)</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 since %2</source>
+        <comment>Current State (time or date + time)</comment>
+        <translation type="unfinished">%1 od %2</translation>
     </message>
     <message>
         <source>current</source>
@@ -12566,6 +12310,16 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
         <source>offline</source>
         <comment>snapshot</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Taken at %1</source>
+        <comment>Snapshot (time)</comment>
+        <translation type="unfinished">Zrobiona o %1</translation>
+    </message>
+    <message>
+        <source>Taken on %1</source>
+        <comment>Snapshot (date + time)</comment>
+        <translation type="unfinished">Zrobiona %1</translation>
     </message>
     <message>
         <source>Contains the snapshot tree of the current virtual machine</source>
@@ -12588,6 +12342,10 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&amp;Clone...</source>
+        <translation type="unfinished">&amp;Sklonuj...</translation>
+    </message>
+    <message>
         <source>Take Snapshot (%1)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12608,7 +12366,23 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="unfinished">Zrób migawkę aktualnego stanu maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>Delete selected snapshot of the virtual machine</source>
+        <translation type="unfinished">Usuń wybraną migawkę maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>Restore selected snapshot of the virtual machine</source>
+        <translation type="unfinished">Przywróć wybraną migawkę maszyny wirtualnej</translation>
+    </message>
+    <message>
         <source>Open pane with the selected snapshot properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone selected virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -12620,6 +12394,10 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
         <source>Taken</source>
         <comment>snapshot</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="unfinished">Migawka %1</translation>
     </message>
 </context>
 <context>
@@ -12641,31 +12419,19 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation>Tworzenie migawki maszyny wirtualnej</translation>
+        <translation type="unfinished">Tworzenie migawki maszyny wirtualnej</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
-        <translation>&amp;Nazwa migawki</translation>
+        <translation type="unfinished">&amp;Nazwa migawki</translation>
     </message>
     <message>
         <source>Snapshot &amp;Description</source>
-        <translation>Opis &amp;migawki</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="obsolete">Pomoc</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;OK</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Anuluj</translation>
+        <translation type="unfinished">Opis &amp;migawki</translation>
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation>
+        <translation type="unfinished">
             <numerusform>Ostrzeżenie: robiona jest migawka działającej maszyny wirtualnej, która ma dołączony %n niezmienny obraz. Podczas pracy z tą migawką ten niezmienny obraz nie zostanie zresetowany aby zapobiec utracie danych.</numerusform>
             <numerusform>Ostrzeżenie: robiona jest migawka działającej maszyny wirtualnej, która ma dołączone %n niezmienne obrazy. Podczas pracy z tą migawką te niezmienne obrazy nie zostaną zresetowane aby zapobiec utracie danych.</numerusform>
             <numerusform>Ostrzeżenie: robiona jest migawka działającej maszyny wirtualnej, która ma dołączonych %n niezmiennych obrazów. Podczas pracy z tą migawką te niezmienne obrazy nie zostaną zresetowane aby zapobiec utracie danych.</numerusform>
@@ -12673,7 +12439,7 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Migawka %1</translation>
+        <translation type="unfinished">Migawka %1</translation>
     </message>
 </context>
 <context>
@@ -12868,7 +12634,7 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation>Wysłanie &amp;sygnału wyłączenia</translation>
+        <translation>Wyślij &amp;sygnał wyłączenia</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
@@ -12876,7 +12642,7 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     </message>
     <message>
         <source>&amp;Power off the machine</source>
-        <translation>&amp;Wyłączenie maszyny</translation>
+        <translation>&amp;Wyłącz maszynę</translation>
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
@@ -12897,6 +12663,17 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     <message>
         <source>&lt;p&gt;Close the virtual machine windows but keep the virtual machine running.&lt;/p&gt;&lt;p&gt;You can use the VirtualBox Manager to return to running the virtual machine in a window.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Zamyka okno wirtualnej maszyny, ale próbuje utrzymać wirtualną maszynę uruchomioną.&lt;/p&gt;&lt;p&gt;Możesz skorzystać z Menedżera VirtualBox, by uruchomić maszynę wirtualną w oknie.&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMDesktop</name>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="vanished">&amp;Szczegóły</translation>
+    </message>
+    <message>
+        <source>&amp;Snapshots</source>
+        <translation type="vanished">&amp;Migawki</translation>
     </message>
 </context>
 <context>
@@ -13196,7 +12973,7 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     </message>
     <message>
         <source>Choose a virtual hard disk file to copy...</source>
-        <translation>Wybierz plik dysku wirtualnego, który chcesz skopiować</translation>
+        <translation>Wybierz plik dysku wirtualnego, który chcesz skopiować...</translation>
     </message>
     <message>
         <source>Hard disk file type</source>
@@ -13228,7 +13005,7 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation>Wybierz lokalizację dla pliku nowego wirtualnego dysku twardego.</translation>
+        <translation>Wybierz lokalizację dla pliku nowego wirtualnego dysku twardego</translation>
     </message>
     <message>
         <source>New hard disk to create</source>
@@ -13466,7 +13243,7 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     </message>
     <message>
         <source>Virtual &amp;machines to export</source>
-        <translation>Wirtualne maszyny do wyeksportowania</translation>
+        <translation>Wirtualne &amp;maszyny do wyeksportowania</translation>
     </message>
     <message>
         <source>Appliance &amp;settings</source>
@@ -14222,7 +13999,7 @@ Wersja %1</translation>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation type="obsolete">W&amp;spółdzielone folderi...</translation>
+        <translation type="obsolete">W&amp;spółdzielone foldery...</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
@@ -15379,7 +15156,7 @@ Wersja %1</translation>
     <message>
         <source>Paused</source>
         <comment>MachineState</comment>
-        <translation>WsPrzechowujena</translation>
+        <translation>Wstrzymana</translation>
     </message>
     <message>
         <source>Starting</source>
@@ -15702,7 +15479,8 @@ Wersja %1</translation>
     <message>
         <source>Host Pipe</source>
         <comment>PortMode</comment>
-        <translation>Host Pipe</translation>
+        <translatorcomment>Pipe - łącze komunikacyjne</translatorcomment>
+        <translation>Łącze komunikacyjne gospodarza</translation>
     </message>
     <message>
         <source>Host Device</source>
@@ -16175,7 +15953,7 @@ Wersja %1</translation>
     <message>
         <source>Teleporting</source>
         <comment>MachineState</comment>
-        <translation>Teleportacja</translation>
+        <translation>Teleportowanie</translation>
     </message>
     <message>
         <source>Taking Live Snapshot</source>
@@ -16185,7 +15963,7 @@ Wersja %1</translation>
     <message>
         <source>Teleporting Paused VM</source>
         <comment>MachineState</comment>
-        <translation>Teleportacja wsPrzechowujenej maszyny</translation>
+        <translation>Teleportowanie wstrzymanej maszyny</translation>
     </message>
     <message>
         <source>Restoring Snapshot</source>
@@ -17247,7 +17025,7 @@ Wersja %1</translation>
     </message>
     <message>
         <source>Default &amp;Folders</source>
-        <translation type="obsolete">&amp;folderi domyślne</translation>
+        <translation type="obsolete">&amp;foldery domyślne</translation>
     </message>
     <message>
         <source>Machines</source>
@@ -17811,6 +17589,205 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
     </message>
 </context>
 <context>
+    <name>VBoxMediaManagerDlg</name>
+    <message>
+        <source>&amp;Actions</source>
+        <translation type="vanished">&amp;Akcje</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Nowy...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Dodaj...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation type="vanished">&amp;Usuń</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation type="vanished">&amp;Wysuń</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation type="vanished">&amp;Odśwież</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Tworzy nowy wirtualny dysk twardy</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Dodaje istniejący nośnik</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation type="vanished">Usuwa wybrany nośnik</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation type="vanished">Wysuwa wybrany nośnik poprzez odłączenie go od maszyn</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="vanished">Odświeża listę nośników</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Ścieżka</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Typ (format)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Podłączony do</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation type="vanished">Sprawdzanie dostępności</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Wybierz</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Wszystkie obrazy dysków twardych (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Wszystkie pliki (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Wybierz plik obrazu dysku twardego</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">Obrazy CD/DVD (*.iso);;Wszystkie pliki (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Wybierz plik obrazu dysku CD/DVD</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Obrazy dyskietek (*.img);;Wszystkie pliki (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Wybierz plik obrazu dyskietki</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation type="vanished">&lt;i&gt;Niepodłączony&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation type="vanished">--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation type="vanished">Menedżer nośników wirtualnych</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">&amp;Dyski twarde</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="vanished">Nazwa</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation type="vanished">Rozmiar wirtualny</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation type="vanished">Rozmiar aktualny</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">O&amp;brazy CD/DVD</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="vanished">Rozmiar</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">Ob&amp;razy dyskietek</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Podłączony do</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Podłączona do</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Podłączona do</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation type="vanished">Typ:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation type="vanished">Położenie:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation type="vanished">Format:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="vanished">Szczegóły pamięci:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="vanished">Podłączony do:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation type="vanished">&amp;Kopiuj...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation type="vanished">&amp;Modyfikuj...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation type="vanished">Kopiuje istniejący plik obrazu dysku</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation type="vanished">Modyfikuje parametry wybranego pliku z obrazem dysku</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="vanished">&lt;i&gt;Nie&amp;nbsp;zaszyfrowane&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="vanished">Zaszyfrowane kluczem:</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="vanished">UUID:</translation>
+    </message>
+</context>
+<context>
     <name>VBoxMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
@@ -18009,7 +17986,7 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
     <name>VBoxSFDialog</name>
     <message>
         <source>Shared Folders</source>
-        <translation type="obsolete">Współdzielone folderi</translation>
+        <translation type="obsolete">Współdzielone foldery</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -18022,6 +17999,21 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
     <message>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxScreenshotViewer</name>
+    <message>
+        <source>Screenshot of %1 (%2)</source>
+        <translation type="vanished">Zrzut ekranu %1 (%2)</translation>
+    </message>
+    <message>
+        <source>Click to view non-scaled screenshot.</source>
+        <translation type="vanished">Kliknij aby wyświetlić nieskalowany zrzut ekranu.</translation>
+    </message>
+    <message>
+        <source>Click to view scaled screenshot.</source>
+        <translation type="vanished">Kliknij aby wyświetlić skalowany zrzut ekranu.</translation>
     </message>
 </context>
 <context>
@@ -18342,7 +18334,7 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
     </message>
     <message>
         <source>Shared &amp;Folders</source>
-        <translation type="obsolete">W&amp;spółdzielone folderi</translation>
+        <translation type="obsolete">W&amp;spółdzielone foldery</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Lists all shared folders accessible to this machine.
@@ -18394,11 +18386,11 @@ Uwaga: funkcja ta wymaga zainstalowania Dodatków gościa.&lt;/qt&gt;</translati
     </message>
     <message>
         <source> Machine Folders</source>
-        <translation type="obsolete"> folderi maszyny</translation>
+        <translation type="obsolete"> foldery maszyny</translation>
     </message>
     <message>
         <source> Transient Folders</source>
-        <translation type="obsolete"> folderi tymczasowe</translation>
+        <translation type="obsolete"> foldery tymczasowe</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
@@ -18446,6 +18438,252 @@ Uwaga: funkcja ta wymaga zainstalowania Dodatków gościa.&lt;/qt&gt;</translati
     </message>
 </context>
 <context>
+    <name>VBoxSnapshotDetailsDlg</name>
+    <message>
+        <source>VBoxSnapshotDetailsDlg</source>
+        <translation type="obsolete">VBoxSnapshotDetailsDlg</translation>
+    </message>
+    <message>
+        <source> Snapshot Details </source>
+        <translation type="obsolete"> Szczegóły migawki </translation>
+    </message>
+    <message>
+        <source>&amp;Name</source>
+        <translation type="obsolete">&amp;Nazwa</translation>
+    </message>
+    <message>
+        <source>&amp;Description</source>
+        <translation type="obsolete">Opi&amp;s</translation>
+    </message>
+    <message>
+        <source>&amp;Machine Details</source>
+        <translation type="obsolete">Szczegóły &amp;maszyny</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation type="obsolete">Pomoc</translation>
+    </message>
+    <message>
+        <source>&amp;OK</source>
+        <translation type="obsolete">&amp;OK</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Anuluj</translation>
+    </message>
+    <message>
+        <source>Details of %1 (%2)</source>
+        <translation type="vanished">Szczegóły %1 (%2)</translation>
+    </message>
+    <message>
+        <source>Snapshot Details</source>
+        <translation type="obsolete">Szczegóły migawki</translation>
+    </message>
+    <message>
+        <source>Click to enlarge the screenshot.</source>
+        <translation type="vanished">Kliknij aby powiększyć zrzut ekranu.</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="vanished">&amp;Nazwa:</translation>
+    </message>
+    <message>
+        <source>Taken:</source>
+        <translation type="vanished">Utworzony:</translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="vanished">&amp;Opis:</translation>
+    </message>
+    <message>
+        <source>D&amp;etails:</source>
+        <translation type="vanished">&amp;Szczegóły:</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxSnapshotsWgt</name>
+    <message>
+        <source>[snapshot]</source>
+        <translation type="obsolete">[migawka]</translation>
+    </message>
+    <message>
+        <source>VBoxSnapshotsWgt</source>
+        <translation type="vanished">VBoxSnapshotsWgt</translation>
+    </message>
+    <message>
+        <source>Discard Snapshot</source>
+        <translation type="obsolete">Odrzuć migawkę</translation>
+    </message>
+    <message>
+        <source>&amp;Discard Snapshot</source>
+        <translation type="obsolete">O&amp;drzuć migawkę</translation>
+    </message>
+    <message>
+        <source>Take Snapshot</source>
+        <translation type="obsolete">Zrób migawkę</translation>
+    </message>
+    <message>
+        <source>Take &amp;Snapshot</source>
+        <translation type="vanished">Zrób &amp;migawkę</translation>
+    </message>
+    <message>
+        <source>Discard Current State</source>
+        <translation type="obsolete">Odrzuć aktualny stan</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Current State</source>
+        <translation type="obsolete">Odrz&amp;uć aktualny stan</translation>
+    </message>
+    <message>
+        <source>Discard Current Snapshot and State</source>
+        <translation type="obsolete">Odrzuć aktualną migawkę oraz stan</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Current Snapshot and State</source>
+        <translation type="obsolete">Odrzuć a&amp;ktualną migawkę oraz stan</translation>
+    </message>
+    <message>
+        <source>Show Details</source>
+        <translation type="obsolete">Pokaż szczegóły</translation>
+    </message>
+    <message>
+        <source>S&amp;how Details</source>
+        <translation type="vanished">&amp;Pokaż szczegóły</translation>
+    </message>
+    <message>
+        <source>Space</source>
+        <translation type="obsolete">Miejsce</translation>
+    </message>
+    <message>
+        <source>Current State (changed)</source>
+        <comment>Current State (Modified)</comment>
+        <translation type="vanished">Aktualny stan (zmieniony)</translation>
+    </message>
+    <message>
+        <source>Current State</source>
+        <comment>Current State (Unmodified)</comment>
+        <translation type="vanished">Aktualny stan</translation>
+    </message>
+    <message>
+        <source>The current state differs from the state stored in the current snapshot</source>
+        <translation type="vanished">Aktualny stan różni się od stanu zapisanego w aktualnej migawce</translation>
+    </message>
+    <message>
+        <source>The current state is identical to the state stored in the current snapshot</source>
+        <translation type="vanished">Aktualny stan jest identyczny ze stanem zapisanym w aktualnej migawce</translation>
+    </message>
+    <message>
+        <source> (current, </source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished"> (aktualny, </translation>
+    </message>
+    <message>
+        <source>online)</source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished">online)</translation>
+    </message>
+    <message>
+        <source>offline)</source>
+        <comment>Snapshot details</comment>
+        <translation type="vanished">offline)</translation>
+    </message>
+    <message>
+        <source>Taken at %1</source>
+        <comment>Snapshot (time)</comment>
+        <translation type="vanished">Zrobiona o %1</translation>
+    </message>
+    <message>
+        <source>Taken on %1</source>
+        <comment>Snapshot (date + time)</comment>
+        <translation type="vanished">Zrobiona %1</translation>
+    </message>
+    <message>
+        <source>%1 since %2</source>
+        <comment>Current State (time or date + time)</comment>
+        <translation type="vanished">%1 od %2</translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="vanished">Migawka %1</translation>
+    </message>
+    <message>
+        <source>Discard the selected snapshot of the virtual machine</source>
+        <translation type="obsolete">Odrzuca wybraną migawkę maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="vanished">Zrób migawkę aktualnego stanu maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>Revert to Current Snapshot</source>
+        <translation type="obsolete">Powróć do aktualnej migawki</translation>
+    </message>
+    <message>
+        <source>&amp;Revert to Current Snapshot</source>
+        <translation type="obsolete">&amp;Powróć do aktualnej migawki</translation>
+    </message>
+    <message>
+        <source>Restore the virtual machine state from the state stored in the current snapshot</source>
+        <translation type="obsolete">Przywraca stan maszyny wirtualnej do stanu zapisanego w bieżącej migawce</translation>
+    </message>
+    <message>
+        <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
+        <translation type="obsolete">Odrzuca aktualną migawkę i przywraca stan maszyny do stanu sprzed wykonania migawki</translation>
+    </message>
+    <message>
+        <source>Show the details of the selected snapshot</source>
+        <translation type="obsolete">Pokazuje szczegóły wybranej migawki</translation>
+    </message>
+    <message>
+        <source>Ctrl+Space</source>
+        <translation type="obsolete">Ctrl+Spacja</translation>
+    </message>
+    <message>
+        <source> (%1)</source>
+        <translation type="vanished"> (%1)</translation>
+    </message>
+    <message>
+        <source>&amp;Restore Snapshot</source>
+        <translation type="vanished">P&amp;rzywróć migawkę</translation>
+    </message>
+    <message>
+        <source>&amp;Delete Snapshot</source>
+        <translation type="vanished">&amp;Usuń migawkę</translation>
+    </message>
+    <message>
+        <source>Restore the selected snapshot of the virtual machine</source>
+        <translation type="obsolete">Przywraca maszynę wirtualną do stanu z wybranej migawki</translation>
+    </message>
+    <message>
+        <source>Delete the selected snapshot of the virtual machine</source>
+        <translation type="obsolete">Usuwa wybraną migawkę maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source> (%1 ago)</source>
+        <translation type="vanished"> (%1 temu)</translation>
+    </message>
+    <message>
+        <source>&amp;Clone...</source>
+        <translation type="vanished">&amp;Sklonuj...</translation>
+    </message>
+    <message>
+        <source>Restore selected snapshot of the virtual machine</source>
+        <translation type="vanished">Przywróć wybraną migawkę maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>Delete selected snapshot of the virtual machine</source>
+        <translation type="vanished">Usuń wybraną migawkę maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>Display a window with selected snapshot details</source>
+        <translation type="vanished">Wyświetl okno z wybranymi szczegółami migawki</translation>
+    </message>
+    <message>
+        <source>Clone selected virtual machine</source>
+        <translation type="vanished">Sklonuj wybraną maszynę wirtualną</translation>
+    </message>
+</context>
+<context>
     <name>VBoxSwitchMenu</name>
     <message>
         <source>Disable</source>
@@ -18454,6 +18692,45 @@ Uwaga: funkcja ta wymaga zainstalowania Dodatków gościa.&lt;/qt&gt;</translati
     <message>
         <source>Enable</source>
         <translation type="obsolete">Włącz</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxTakeSnapshotDlg</name>
+    <message>
+        <source>Take Snapshot of Virtual Machine</source>
+        <translation type="vanished">Tworzenie migawki maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>Snapshot &amp;Name</source>
+        <translation type="vanished">&amp;Nazwa migawki</translation>
+    </message>
+    <message>
+        <source>Snapshot &amp;Description</source>
+        <translation type="vanished">Opis &amp;migawki</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation type="obsolete">Pomoc</translation>
+    </message>
+    <message>
+        <source>&amp;OK</source>
+        <translation type="obsolete">&amp;OK</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Anuluj</translation>
+    </message>
+    <message numerus="yes">
+        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
+        <translation type="vanished">
+            <numerusform>Ostrzeżenie: robiona jest migawka działającej maszyny wirtualnej, która ma dołączony %n niezmienny obraz. Podczas pracy z tą migawką ten niezmienny obraz nie zostanie zresetowany aby zapobiec utracie danych.</numerusform>
+            <numerusform>Ostrzeżenie: robiona jest migawka działającej maszyny wirtualnej, która ma dołączone %n niezmienne obrazy. Podczas pracy z tą migawką te niezmienne obrazy nie zostaną zresetowane aby zapobiec utracie danych.</numerusform>
+            <numerusform>Ostrzeżenie: robiona jest migawka działającej maszyny wirtualnej, która ma dołączonych %n niezmiennych obrazów. Podczas pracy z tą migawką te niezmienne obrazy nie zostaną zresetowane aby zapobiec utracie danych.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation type="vanished">Migawka %1</translation>
     </message>
 </context>
 <context>
@@ -19292,7 +19569,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source> Shared Folders </source>
-        <translation type="obsolete"> Współdzielone folderi </translation>
+        <translation type="obsolete"> Współdzielone foldery </translation>
     </message>
     <message>
         <source>&amp;Identification</source>
@@ -20146,7 +20423,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation type="obsolete">Współdzielone folderi</translation>
+        <translation type="obsolete">Współdzielone foldery</translation>
     </message>
     <message>
         <source>Remote Display</source>
