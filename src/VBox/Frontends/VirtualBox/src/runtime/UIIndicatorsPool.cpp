@@ -40,6 +40,7 @@
 # include "VBoxGlobal.h"
 
 /* COM includes: */
+# include "CAudioAdapter.h"
 # include "CConsole.h"
 # include "CMachine.h"
 # include "CSystemProperties.h"
@@ -383,6 +384,83 @@ private:
         setToolTip(strToolTip.arg(s_strTable.arg(strFullData)));
         /* Update indicator state: */
         setState(fAttachmentsMounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
+    }
+};
+
+
+/** UISessionStateStatusBarIndicator extension for Runtime UI: Audio indicator. */
+class UIIndicatorAudio : public UISessionStateStatusBarIndicator
+{
+    Q_OBJECT;
+
+public:
+
+    /** Audio states. */
+    enum AudioState
+    {
+        AudioState_AllOff   = 0,
+        AudioState_OutputOn = RT_BIT(0),
+        AudioState_InputOn  = RT_BIT(1),
+        AudioState_AllOn    = AudioState_InputOn | AudioState_OutputOn
+    };
+
+    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    UIIndicatorAudio(UISession *pSession)
+        : UISessionStateStatusBarIndicator(IndicatorType_Audio, pSession)
+    {
+        /* Assign state-icons: */
+        setStateIcon(AudioState_AllOff, UIIconPool::iconSet(":/audio_all_off_16px.png"));
+        setStateIcon(AudioState_OutputOn, UIIconPool::iconSet(":/audio_input_off_16px.png"));
+        setStateIcon(AudioState_InputOn, UIIconPool::iconSet(":/audio_output_off_16px.png"));
+        setStateIcon(AudioState_AllOn, UIIconPool::iconSet(":/audio_16px.png"));
+        /* Translate finally: */
+        retranslateUi();
+    }
+
+private:
+
+    /** Update routine. */
+    void updateAppearance()
+    {
+        /* Get machine: */
+        const CMachine comMachine = m_pSession->machine();
+
+        /* Prepare tool-tip: */
+        QString strToolTip = QApplication::translate("UIIndicatorsPool",
+                                                     "<nobr>Indicates the activity of the "
+                                                     "audio:</nobr>%1", "Audio tooltip");
+        QString strFullData;
+
+        /* Get audio adapter: */
+        const CAudioAdapter comAdapter = comMachine.GetAudioAdapter();
+        const bool fAudioEnabled = comAdapter.GetEnabled();
+        if (fAudioEnabled)
+        {
+            const bool fEnabledOutput = comAdapter.GetEnabledOut();
+            const bool fEnabledInput = comAdapter.GetEnabledIn();
+            strFullData = QString(s_strTableRow2).arg(QApplication::translate("UIGDetails", "Audio Output", "details (audio)"),
+                                                      fEnabledOutput ?
+                                                      QApplication::translate("UIGDetails", "Enabled", "details (audio/output)") :
+                                                      QApplication::translate("UIGDetails", "Disabled", "details (audio/output)"))
+                        + QString(s_strTableRow2).arg(QApplication::translate("UIGDetails", "Audio Input", "details (audio)"),
+                                                      fEnabledInput ?
+                                                      QApplication::translate("UIGDetails", "Enabled", "details (audio/input)") :
+                                                      QApplication::translate("UIGDetails", "Disabled", "details (audio/input)"));
+            AudioState enmState = AudioState_AllOff;
+            if (fEnabledOutput)
+                enmState = (AudioState)(enmState | AudioState_OutputOn);
+            if (fEnabledInput)
+                enmState = (AudioState)(enmState | AudioState_InputOn);
+            setState(enmState);
+        }
+        else
+        {
+            strFullData = QString(s_strTableRow2).arg(QApplication::translate("UIGDetails", "Disabled", "details (audio)"));
+            setState(AudioState_AllOff);
+        }
+
+        /* Update tool-tip: */
+        setToolTip(strToolTip.arg(s_strTable.arg(strFullData)));
     }
 };
 
@@ -1321,6 +1399,7 @@ void UIIndicatorsPool::updatePool()
                 case IndicatorType_HardDisks:         m_pool[indicatorType] = new UIIndicatorHardDrive(m_pSession);     break;
                 case IndicatorType_OpticalDisks:      m_pool[indicatorType] = new UIIndicatorOpticalDisks(m_pSession);  break;
                 case IndicatorType_FloppyDisks:       m_pool[indicatorType] = new UIIndicatorFloppyDisks(m_pSession);   break;
+                case IndicatorType_Audio:             m_pool[indicatorType] = new UIIndicatorAudio(m_pSession);         break;
                 case IndicatorType_Network:           m_pool[indicatorType] = new UIIndicatorNetwork(m_pSession);       break;
                 case IndicatorType_USB:               m_pool[indicatorType] = new UIIndicatorUSB(m_pSession);           break;
                 case IndicatorType_SharedFolders:     m_pool[indicatorType] = new UIIndicatorSharedFolders(m_pSession); break;

@@ -98,6 +98,9 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Devices_M_HardDrives_S_Settings,
     UIActionIndexRT_M_Devices_M_OpticalDevices,
     UIActionIndexRT_M_Devices_M_FloppyDevices,
+    UIActionIndexRT_M_Devices_M_Audio,
+    UIActionIndexRT_M_Devices_M_Audio_T_Output,
+    UIActionIndexRT_M_Devices_M_Audio_T_Input,
     UIActionIndexRT_M_Devices_M_Network,
     UIActionIndexRT_M_Devices_M_Network_S_Settings,
     UIActionIndexRT_M_Devices_M_USBDevices,
@@ -260,6 +263,8 @@ protected:
     void updateMenuDevices();
     /** Update 'Devices' : 'Hard Drives' menu routine. */
     void updateMenuDevicesHardDrives();
+    /** Update 'Devices' : 'Audio' menu routine. */
+    void updateMenuDevicesAudio();
     /** Update 'Devices' : 'Network' menu routine. */
     void updateMenuDevicesNetwork();
     /** Update 'Devices' : 'USB' menu routine. */

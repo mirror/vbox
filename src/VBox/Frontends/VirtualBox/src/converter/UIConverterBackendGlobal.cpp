@@ -731,6 +731,9 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDevice
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings:    strResult = "HardDrivesSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices:        strResult = "OpticalDevices"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices:         strResult = "FloppyDevices"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio:                 strResult = "Audio"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput:           strResult = "AudioOutput"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput:            strResult = "AudioInput"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network:               strResult = "Network"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings:       strResult = "NetworkSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices:            strResult = "USBDevices"; break;
@@ -762,6 +765,9 @@ template<> UIExtraDataMetaDefs::RuntimeMenuDevicesActionType fromInternalString<
     keys << "HardDrivesSettings";    values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings;
     keys << "OpticalDevices";        values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices;
     keys << "FloppyDevices";         values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices;
+    keys << "Audio";                 values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio;
+    keys << "AudioOutput";           values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput;
+    keys << "AudioInput";            values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput;
     keys << "Network";               values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network;
     keys << "NetworkSettings";       values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings;
     keys << "USBDevices";            values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices;
@@ -1409,6 +1415,7 @@ template<> QString toInternalString(const IndicatorType &indicatorType)
         case IndicatorType_HardDisks:     strResult = "HardDisks"; break;
         case IndicatorType_OpticalDisks:  strResult = "OpticalDisks"; break;
         case IndicatorType_FloppyDisks:   strResult = "FloppyDisks"; break;
+        case IndicatorType_Audio:         strResult = "Audio"; break;
         case IndicatorType_Network:       strResult = "Network"; break;
         case IndicatorType_USB:           strResult = "USB"; break;
         case IndicatorType_SharedFolders: strResult = "SharedFolders"; break;
@@ -1435,6 +1442,7 @@ template<> IndicatorType fromInternalString<IndicatorType>(const QString &strInd
     keys << "HardDisks";     values << IndicatorType_HardDisks;
     keys << "OpticalDisks";  values << IndicatorType_OpticalDisks;
     keys << "FloppyDisks";   values << IndicatorType_FloppyDisks;
+    keys << "Audio";         values << IndicatorType_Audio;
     keys << "Network";       values << IndicatorType_Network;
     keys << "USB";           values << IndicatorType_USB;
     keys << "SharedFolders"; values << IndicatorType_SharedFolders;
@@ -1459,6 +1467,7 @@ template<> QString toString(const IndicatorType &indicatorType)
         case IndicatorType_HardDisks:     strResult = QApplication::translate("VBoxGlobal", "Hard Disks", "IndicatorType"); break;
         case IndicatorType_OpticalDisks:  strResult = QApplication::translate("VBoxGlobal", "Optical Disks", "IndicatorType"); break;
         case IndicatorType_FloppyDisks:   strResult = QApplication::translate("VBoxGlobal", "Floppy Disks", "IndicatorType"); break;
+        case IndicatorType_Audio:         strResult = QApplication::translate("VBoxGlobal", "Audio", "IndicatorType"); break;
         case IndicatorType_Network:       strResult = QApplication::translate("VBoxGlobal", "Network", "IndicatorType"); break;
         case IndicatorType_USB:           strResult = QApplication::translate("VBoxGlobal", "USB", "IndicatorType"); break;
         case IndicatorType_SharedFolders: strResult = QApplication::translate("VBoxGlobal", "Shared Folders", "IndicatorType"); break;
@@ -1484,6 +1493,7 @@ template<> QIcon toIcon(const IndicatorType &indicatorType)
         case IndicatorType_HardDisks:     return UIIconPool::iconSet(":/hd_16px.png");
         case IndicatorType_OpticalDisks:  return UIIconPool::iconSet(":/cd_16px.png");
         case IndicatorType_FloppyDisks:   return UIIconPool::iconSet(":/fd_16px.png");
+        case IndicatorType_Audio:         return UIIconPool::iconSet(":/audio_16px.png");
         case IndicatorType_Network:       return UIIconPool::iconSet(":/nw_16px.png");
         case IndicatorType_USB:           return UIIconPool::iconSet(":/usb_16px.png");
         case IndicatorType_SharedFolders: return UIIconPool::iconSet(":/sf_16px.png");

@@ -256,6 +256,10 @@ public:
     void updateStatusVRDE() { sltVRDEChange(); }
     /** Updates Video Capture action state. */
     void updateStatusVideoCapture() { sltVideoCaptureChange(); }
+    /** Updates Audio output action state. */
+    void updateAudioOutput() { sltAudioAdapterChange(); }
+    /** Updates Audio input action state. */
+    void updateAudioInput() { sltAudioAdapterChange(); }
 
     /** @name CPU hardware virtualization features for VM.
      ** @{ */
@@ -301,6 +305,7 @@ signals:
 #endif /* RT_OS_DARWIN */
     void sigCPUExecutionCapChange();
     void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+    void sigAudioAdapterChange();
 
     /** Notifies about host-screen count change. */
     void sigHostScreenCountChange();
@@ -346,6 +351,8 @@ private slots:
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
     /** Handles storage device change for @a attachment, which was @a fRemoved and it was @a fSilent for guest. */
     void sltHandleStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent);
+    /** Handles audio adapter change. */
+    void sltAudioAdapterChange();
 
     /* Handlers: Display reconfiguration stuff: */
 #ifdef RT_OS_DARWIN

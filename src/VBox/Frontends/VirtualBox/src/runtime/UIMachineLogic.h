@@ -288,6 +288,8 @@ private slots:
     /* "Device" menu functionality: */
     void sltOpenVMSettingsDialog(const QString &strCategory = QString(), const QString &strControl = QString());
     void sltOpenStorageSettingsDialog();
+    void sltToggleAudioOutput(bool fEnabled);
+    void sltToggleAudioInput(bool fEnabled);
     void sltOpenNetworkSettingsDialog();
     void sltOpenUSBDevicesSettingsDialog();
     void sltOpenSharedFoldersSettingsDialog();

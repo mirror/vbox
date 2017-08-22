@@ -14,6 +14,14 @@
         <file alias="attachment_add_disabled_16px.png">images/attachment_add_disabled_16px.png</file>
         <file alias="attachment_remove_16px.png">images/attachment_remove_16px.png</file>
         <file alias="attachment_remove_disabled_16px.png">images/attachment_remove_disabled_16px.png</file>
+        <file alias="audio_16px.png">images/audio_16px.png</file>
+        <file alias="audio_all_off_16px.png">images/audio_all_off_16px.png</file>
+        <file alias="audio_input_16px.png">images/audio_input_16px.png</file>
+        <file alias="audio_input_off_16px.png">images/audio_input_off_16px.png</file>
+        <file alias="audio_input_on_16px.png">images/audio_input_on_16px.png</file>
+        <file alias="audio_output_16px.png">images/audio_output_16px.png</file>
+        <file alias="audio_output_off_16px.png">images/audio_output_off_16px.png</file>
+        <file alias="audio_output_on_16px.png">images/audio_output_on_16px.png</file>
         <file alias="auto_resize_on_16px.png">images/auto_resize_on_16px.png</file>
         <file alias="auto_resize_on_disabled_16px.png">images/auto_resize_on_disabled_16px.png</file>
         <file alias="auto_resize_on_on_16px.png">images/auto_resize_on_on_16px.png</file>

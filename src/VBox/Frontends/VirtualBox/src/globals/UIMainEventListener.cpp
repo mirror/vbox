@@ -398,10 +398,11 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
             es.SetWinId(winId);
             break;
         }
-//        case KVBoxEventType_OnSerialPortChanged:
-//        case KVBoxEventType_OnParallelPortChanged:
-//        case KVBoxEventType_OnStorageControllerChanged:
-//        case KVBoxEventType_OnCPUChange:
+        case KVBoxEventType_OnAudioAdapterChanged:
+        {
+            emit sigAudioAdapterChange();
+            break;
+        }
 
         default: break;
     }

@@ -77,6 +77,8 @@ signals:
     /** Notifies about VM window should be shown. */
     void sigShowWindow();
 #endif /* RT_OS_DARWIN */
+    /** Notifies about audio adapter state change. */
+    void sigAudioAdapterChange();
 
 public:
 

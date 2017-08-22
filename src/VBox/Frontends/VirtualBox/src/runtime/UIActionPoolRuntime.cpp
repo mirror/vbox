@@ -1441,6 +1441,94 @@ protected:
     }
 };
 
+class UIActionMenuAudio : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuAudio(UIActionPool *pParent)
+        : UIActionMenu(pParent, ":/audio_16px.png", ":/audio_all_off_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio); }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Audio"));
+    }
+};
+
+class UIActionToggleAudioOutput : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionToggleAudioOutput(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/audio_output_on_16px.png", ":/audio_output_16px.png",
+                         ":/audio_output_on_16px.png", ":/audio_output_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("ToggleAudioOutput");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "Audio Output"));
+        setStatusTip(QApplication::translate("UIActionPool", "Enable audio output"));
+    }
+};
+
+class UIActionToggleAudioInput : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionToggleAudioInput(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/audio_input_on_16px.png", ":/audio_input_16px.png",
+                         ":/audio_input_on_16px.png", ":/audio_input_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("ToggleAudioInput");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "Audio Input"));
+        setStatusTip(QApplication::translate("UIActionPool", "Enable audio input"));
+    }
+};
+
 class UIActionMenuNetworkAdapters : public UIActionMenu
 {
     Q_OBJECT;
@@ -2215,6 +2303,9 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Devices_M_HardDrives_S_Settings] = new UIActionSimpleShowHardDrivesSettingsDialog(this);
     m_pool[UIActionIndexRT_M_Devices_M_OpticalDevices] = new UIActionMenuOpticalDevices(this);
     m_pool[UIActionIndexRT_M_Devices_M_FloppyDevices] = new UIActionMenuFloppyDevices(this);
+    m_pool[UIActionIndexRT_M_Devices_M_Audio] = new UIActionMenuAudio(this);
+    m_pool[UIActionIndexRT_M_Devices_M_Audio_T_Output] = new UIActionToggleAudioOutput(this);
+    m_pool[UIActionIndexRT_M_Devices_M_Audio_T_Input] = new UIActionToggleAudioInput(this);
     m_pool[UIActionIndexRT_M_Devices_M_Network] = new UIActionMenuNetworkAdapters(this);
     m_pool[UIActionIndexRT_M_Devices_M_Network_S_Settings] = new UIActionSimpleShowNetworkSettingsDialog(this);
     m_pool[UIActionIndexRT_M_Devices_M_USBDevices] = new UIActionMenuUSBDevices(this);
@@ -2257,6 +2348,7 @@ void UIActionPoolRuntime::preparePool()
     m_menuUpdateHandlers[UIActionIndexRT_M_Input_M_Mouse].ptfr =           &UIActionPoolRuntime::updateMenuInputMouse;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices].ptfr =                 &UIActionPoolRuntime::updateMenuDevices;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_HardDrives].ptfr =    &UIActionPoolRuntime::updateMenuDevicesHardDrives;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_Audio].ptfr =         &UIActionPoolRuntime::updateMenuDevicesAudio;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_Network].ptfr =       &UIActionPoolRuntime::updateMenuDevicesNetwork;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_USBDevices].ptfr =    &UIActionPoolRuntime::updateMenuDevicesUSBDevices;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_SharedFolders].ptfr = &UIActionPoolRuntime::updateMenuDevicesSharedFolders;
@@ -2971,6 +3063,9 @@ void UIActionPoolRuntime::updateMenuDevices()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_OpticalDevices)) || fSeparator;
     /* 'Floppy Devices' submenu: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_FloppyDevices)) || fSeparator;
+    /* 'Audio' submenu: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_Audio)) || fSeparator;
+    updateMenuDevicesAudio();
     /* 'Network' submenu: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_Network)) || fSeparator;
     updateMenuDevicesNetwork();
@@ -2979,9 +3074,6 @@ void UIActionPoolRuntime::updateMenuDevices()
     updateMenuDevicesUSBDevices();
     /* 'Web Cams' submenu: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_WebCams)) || fSeparator;
-    /* 'Shared Folders' submenu: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_SharedFolders)) || fSeparator;
-    updateMenuDevicesSharedFolders();
 
     /* Separator: */
     if (fSeparator)
@@ -2990,6 +3082,9 @@ void UIActionPoolRuntime::updateMenuDevices()
         fSeparator = false;
     }
 
+    /* 'Shared Folders' submenu: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_SharedFolders)) || fSeparator;
+    updateMenuDevicesSharedFolders();
     /* 'Shared Clipboard' submenu: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_SharedClipboard)) || fSeparator;
     /* 'Drag&Drop' submenu: */
@@ -3022,6 +3117,23 @@ void UIActionPoolRuntime::updateMenuDevicesHardDrives()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Devices_M_HardDrives);
+}
+
+void UIActionPoolRuntime::updateMenuDevicesAudio()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndexRT_M_Devices_M_Audio)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* 'Output' action: */
+    addAction(pMenu, action(UIActionIndexRT_M_Devices_M_Audio_T_Output));
+    /* 'Input' action: */
+    addAction(pMenu, action(UIActionIndexRT_M_Devices_M_Audio_T_Input));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_Devices_M_Audio);
 }
 
 void UIActionPoolRuntime::updateMenuDevicesNetwork()

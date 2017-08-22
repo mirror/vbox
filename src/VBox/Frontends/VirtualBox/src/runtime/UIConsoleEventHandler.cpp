@@ -81,6 +81,8 @@ signals:
     /** Notifies about VM window should be shown. */
     void sigShowWindow();
 #endif /* RT_OS_DARWIN */
+    /** Notifies about audio adapter state change. */
+    void sigAudioAdapterChange();
 
 public:
 
@@ -193,7 +195,8 @@ void UIConsoleEventHandlerProxy::prepareListener()
         << KVBoxEventType_OnGuestMonitorChanged
         << KVBoxEventType_OnRuntimeError
         << KVBoxEventType_OnCanShowWindow
-        << KVBoxEventType_OnShowWindow;
+        << KVBoxEventType_OnShowWindow
+        << KVBoxEventType_OnAudioAdapterChanged;
 
     /* Register event listener for console event source: */
     comEventSourceConsole.RegisterListener(m_comEventListener, eventTypes,
@@ -264,6 +267,9 @@ void UIConsoleEventHandlerProxy::prepareConnections()
             Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), SIGNAL(sigShowWindow(qint64 &)),
             this, SLOT(sltShowWindow(qint64 &)),
+            Qt::DirectConnection);
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigAudioAdapterChange()),
+            this, SIGNAL(sigAudioAdapterChange()),
             Qt::DirectConnection);
 }
 
@@ -420,6 +426,9 @@ void UIConsoleEventHandler::prepareConnections()
             this, SIGNAL(sigShowWindow(qint64 &)),
             Qt::QueuedConnection);
 #endif /* RT_OS_DARWIN */
+    connect(m_pProxy, SIGNAL(sigAudioAdapterChange()),
+            this, SIGNAL(sigAudioAdapterChange()),
+            Qt::QueuedConnection);
 }
 
 #include "UIConsoleEventHandler.moc"

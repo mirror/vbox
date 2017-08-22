@@ -97,6 +97,12 @@ void UIMachineWindowNormal::sltUSBDeviceStateChange()
     updateAppearanceOf(UIVisualElement_USBStuff);
 }
 
+void UIMachineWindowNormal::sltAudioAdapterChange()
+{
+    /* Update audio stuff: */
+    updateAppearanceOf(UIVisualElement_AudioStuff);
+}
+
 void UIMachineWindowNormal::sltNetworkAdapterChange()
 {
     /* Update network stuff: */
@@ -207,6 +213,7 @@ void UIMachineWindowNormal::sltHandleIndicatorContextMenuRequest(IndicatorType i
         case IndicatorType_HardDisks:     pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives);     break;
         case IndicatorType_OpticalDisks:  pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices); break;
         case IndicatorType_FloppyDisks:   pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_FloppyDevices);  break;
+        case IndicatorType_Audio:         pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_Audio);          break;
         case IndicatorType_Network:       pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_Network);        break;
         case IndicatorType_USB:           pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices);     break;
         case IndicatorType_SharedFolders: pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders);  break;
@@ -241,6 +248,8 @@ void UIMachineWindowNormal::prepareSessionConnections()
             this, SLOT(sltUSBControllerChange()));
     connect(machineLogic()->uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
             this, SLOT(sltUSBDeviceStateChange()));
+    connect(machineLogic()->uisession(), &UISession::sigAudioAdapterChange,
+            this, &UIMachineWindowNormal::sltAudioAdapterChange);
     connect(machineLogic()->uisession(), SIGNAL(sigNetworkAdapterChange(const CNetworkAdapter &)),
             this, SLOT(sltNetworkAdapterChange()));
     connect(machineLogic()->uisession(), SIGNAL(sigSharedFolderChange()),
@@ -450,6 +459,8 @@ void UIMachineWindowNormal::cleanupSessionConnections()
                this, SLOT(sltUSBDeviceStateChange()));
     disconnect(machineLogic()->uisession(), SIGNAL(sigNetworkAdapterChange(const CNetworkAdapter &)),
                this, SLOT(sltNetworkAdapterChange()));
+    disconnect(machineLogic()->uisession(), &UISession::sigAudioAdapterChange,
+               this, &UIMachineWindowNormal::sltAudioAdapterChange);
     disconnect(machineLogic()->uisession(), SIGNAL(sigSharedFolderChange()),
                this, SLOT(sltSharedFolderChange()));
     disconnect(machineLogic()->uisession(), SIGNAL(sigVideoCaptureChange()),
@@ -608,6 +619,8 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
             m_pIndicatorsPool->updateAppearance(IndicatorType_OpticalDisks);
         if (iElement & UIVisualElement_FDStuff)
             m_pIndicatorsPool->updateAppearance(IndicatorType_FloppyDisks);
+        if (iElement & UIVisualElement_AudioStuff)
+            m_pIndicatorsPool->updateAppearance(IndicatorType_Audio);
         if (iElement & UIVisualElement_NetworkStuff)
             m_pIndicatorsPool->updateAppearance(IndicatorType_Network);
         if (iElement & UIVisualElement_USBStuff)

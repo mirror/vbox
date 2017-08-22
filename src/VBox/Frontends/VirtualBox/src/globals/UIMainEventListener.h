@@ -118,6 +118,8 @@ signals:
     void sigCanShowWindow(bool &fVeto, QString &strReason); /* use Qt::DirectConnection */
     /** Notifies about VM window with specified @a winId should be shown. */
     void sigShowWindow(qint64 &winId); /* use Qt::DirectConnection */
+    /** Notifies about audio adapter state change. */
+    void sigAudioAdapterChange();
 
 public:
 

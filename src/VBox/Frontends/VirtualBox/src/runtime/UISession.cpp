@@ -58,6 +58,7 @@
 # endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
 
 /* COM includes: */
+# include "CAudioAdapter.h"
 # include "CSystemProperties.h"
 # include "CStorageController.h"
 # include "CMediumAttachment.h"
@@ -757,6 +758,26 @@ void UISession::sltHandleStorageDeviceChange(const CMediumAttachment &attachment
     emit sigStorageDeviceChange(attachment, fRemoved, fSilent);
 }
 
+void UISession::sltAudioAdapterChange()
+{
+    /* Make sure Audio adapter is present: */
+    const CAudioAdapter comAdapter = machine().GetAudioAdapter();
+    AssertMsgReturnVoid(machine().isOk() && comAdapter.isNotNull(),
+                        ("Audio adapter should NOT be null!\n"));
+
+    /* Check/Uncheck Audio adapter output/input actions depending on features status: */
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(true);
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->setChecked(comAdapter.GetEnabledOut());
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(false);
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(true);
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->setChecked(comAdapter.GetEnabledIn());
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(false);
+
+    /* Notify listeners about Audio adapter change: */
+    emit sigAudioAdapterChange();
+
+}
+
 #ifdef RT_OS_DARWIN
 /**
  * MacOS X: Restarts display-reconfiguration watchdog timer from the beginning.
@@ -1137,6 +1158,9 @@ void UISession::prepareConsoleEventHandlers()
 
     connect(gConsoleEvents, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
             this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
+
+    connect(gConsoleEvents, SIGNAL(sigAudioAdapterChange()),
+            this, SLOT(sltAudioAdapterChange()));
 }
 
 void UISession::prepareScreens()
@@ -1277,6 +1301,17 @@ void UISession::loadSessionSettings()
 
         /* Input options: */
         actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration)->setChecked(isMouseIntegrated());
+
+        /* Devices options: */
+        {
+            const CAudioAdapter comAudio = m_machine.GetAudioAdapter();
+            actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(true);
+            actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->setChecked(comAudio.GetEnabledOut());
+            actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(false);
+            actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(true);
+            actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->setChecked(comAudio.GetEnabledIn());
+            actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(false);
+        }
 
         /* What is the default close action and the restricted are? */
         m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(strMachineID);
