@@ -166,8 +166,8 @@ typedef struct RTMANIFESTEQUALS
 typedef RTMANIFESTEQUALS *PRTMANIFESTEQUALS;
 
 /**
- * Argument package used by rtMainfestQueryAttrWorker to pass its search
- * criteria to rtMainfestQueryAttrEnumCallback and get a result back.
+ * Argument package used by rtManifestQueryAttrWorker to pass its search
+ * criteria to rtManifestQueryAttrEnumCallback and get a result back.
  */
 typedef struct RTMANIFESTQUERYATTRARGS
 {
@@ -176,7 +176,7 @@ typedef struct RTMANIFESTQUERYATTRARGS
     /** What we've found. */
     PRTMANIFESTATTR pAttr;
 } RTMANIFESTQUERYATTRARGS;
-/** Pointer to a rtMainfestQueryAttrEnumCallback argument packet. */
+/** Pointer to a rtManifestQueryAttrEnumCallback argument packet. */
 typedef RTMANIFESTQUERYATTRARGS *PRTMANIFESTQUERYATTRARGS;
 
 
@@ -794,7 +794,7 @@ RTDECL(int) RTManifestUnsetAttr(RTMANIFEST hManifest, const char *pszAttr)
  * @param   pStr                The attribute string node.
  * @param   pvUser              The argument package.
  */
-static DECLCALLBACK(int) rtMainfestQueryAttrEnumCallback(PRTSTRSPACECORE pStr, void *pvUser)
+static DECLCALLBACK(int) rtManifestQueryAttrEnumCallback(PRTSTRSPACECORE pStr, void *pvUser)
 {
     PRTMANIFESTATTR             pAttr = (PRTMANIFESTATTR)pStr;
     PRTMANIFESTQUERYATTRARGS    pArgs = (PRTMANIFESTQUERYATTRARGS)pvUser;
@@ -845,7 +845,7 @@ static int rtManifestQueryAttrWorker(PRTMANIFESTENTRY pEntry, const char *pszAtt
         RTMANIFESTQUERYATTRARGS Args;
         Args.fType = fType;
         Args.pAttr = NULL;
-        int rc = RTStrSpaceEnumerate(&pEntry->Attributes, rtMainfestQueryAttrEnumCallback, &Args);
+        int rc = RTStrSpaceEnumerate(&pEntry->Attributes, rtManifestQueryAttrEnumCallback, &Args);
         AssertRCReturn(rc, rc);
         pAttr = Args.pAttr;
         if (!pAttr)
@@ -890,7 +890,7 @@ RTDECL(int) RTManifestQueryAttr(RTMANIFEST hManifest, const char *pszAttr, uint3
  * @param   pStr                The attribute string node.
  * @param   pvUser              Pointer to type flags (uint32_t).
  */
-static DECLCALLBACK(int) rtMainfestQueryAllAttrTypesEnumAttrCallback(PRTSTRSPACECORE pStr, void *pvUser)
+static DECLCALLBACK(int) rtManifestQueryAllAttrTypesEnumAttrCallback(PRTSTRSPACECORE pStr, void *pvUser)
 {
     PRTMANIFESTATTR pAttr   = (PRTMANIFESTATTR)pStr;
     uint32_t       *pfTypes = (uint32_t *)pvUser;
@@ -907,10 +907,10 @@ static DECLCALLBACK(int) rtMainfestQueryAllAttrTypesEnumAttrCallback(PRTSTRSPACE
  * @param   pStr                The attribute string node.
  * @param   pvUser              Pointer to type flags (uint32_t).
  */
-static DECLCALLBACK(int) rtMainfestQueryAllAttrTypesEnumEntryCallback(PRTSTRSPACECORE pStr, void *pvUser)
+static DECLCALLBACK(int) rtManifestQueryAllAttrTypesEnumEntryCallback(PRTSTRSPACECORE pStr, void *pvUser)
 {
     PRTMANIFESTENTRY pEntry = RT_FROM_MEMBER(pStr, RTMANIFESTENTRY, StrCore);
-    return RTStrSpaceEnumerate(&pEntry->Attributes, rtMainfestQueryAllAttrTypesEnumAttrCallback, pvUser);
+    return RTStrSpaceEnumerate(&pEntry->Attributes, rtManifestQueryAllAttrTypesEnumAttrCallback, pvUser);
 }
 
 
@@ -922,9 +922,9 @@ RTDECL(int) RTManifestQueryAllAttrTypes(RTMANIFEST hManifest, bool fEntriesOnly,
     AssertPtr(pfTypes);
 
     *pfTypes = 0;
-    int rc = RTStrSpaceEnumerate(&pThis->Entries, rtMainfestQueryAllAttrTypesEnumEntryCallback, pfTypes);
+    int rc = RTStrSpaceEnumerate(&pThis->Entries, rtManifestQueryAllAttrTypesEnumEntryCallback, pfTypes);
     if (RT_SUCCESS(rc) && fEntriesOnly)
-        rc = rtMainfestQueryAllAttrTypesEnumAttrCallback(&pThis->SelfEntry.StrCore, pfTypes);
+        rc = rtManifestQueryAllAttrTypesEnumAttrCallback(&pThis->SelfEntry.StrCore, pfTypes);
     return VINF_SUCCESS;
 }
 
