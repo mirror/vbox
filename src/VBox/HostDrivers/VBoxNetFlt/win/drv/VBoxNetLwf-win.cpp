@@ -1395,8 +1395,12 @@ static PNET_BUFFER_LIST vboxNetLwfWinSGtoNB(PVBOXNETLWF_MODULE pModule, PINTNETS
         LogFlow(("<==vboxNetLwfWinSGtoNB: return NULL\n"));
         return NULL;
     }
+    const ULONG cbAlignmentMask = sizeof(USHORT) - 1; /* Microsoft LB/FO provider expects packets to be aligned at word boundary. */
+    ULONG cbAlignedFrame = (pSG->cbTotal + cbAlignmentMask) & ~cbAlignmentMask;
+    Assert(cbAlignedFrame >= pSG->cbTotal);
+    Assert(cbFrame >= cbAlignedFrame);
     NET_BUFFER *pBuffer = NET_BUFFER_LIST_FIRST_NB(pBufList);
-    NDIS_STATUS Status = NdisRetreatNetBufferDataStart(pBuffer, pSG->cbTotal, 0 /** @todo DataBackfill */, NULL);
+    NDIS_STATUS Status = NdisRetreatNetBufferDataStart(pBuffer, cbAlignedFrame, 0 /** @todo DataBackfill */, NULL);
     if (Status == NDIS_STATUS_SUCCESS)
     {
         uint8_t *pDst = (uint8_t*)NdisGetDataBuffer(pBuffer, pSG->cbTotal, NULL, 1, 0);
@@ -1407,13 +1411,18 @@ static PNET_BUFFER_LIST vboxNetLwfWinSGtoNB(PVBOXNETLWF_MODULE pModule, PINTNETS
                 NdisMoveMemory(pDst, pSG->aSegs[i].pv, pSG->aSegs[i].cb);
                 pDst += pSG->aSegs[i].cb;
             }
+            if (cbAlignedFrame > pSG->cbTotal)
+            {
+                Log4(("vboxNetLwfWinSGtoNB: padding %d-byte packet with %d zero bytes", pSG->cbTotal, cbAlignedFrame - pSG->cbTotal));
+                NdisZeroMemory(pDst, cbAlignedFrame - pSG->cbTotal);
+            }
             Log4(("vboxNetLwfWinSGtoNB: allocated NBL+NB 0x%p\n", pBufList));
             pBufList->SourceHandle = pModule->hFilter;
         }
         else
         {
             LogError(("vboxNetLwfWinSGtoNB: failed to obtain the buffer pointer (size=%u)\n", pSG->cbTotal));
-            NdisAdvanceNetBufferDataStart(pBuffer, pSG->cbTotal, false, NULL); /** @todo why bother? */
+            NdisAdvanceNetBufferDataStart(pBuffer, cbAlignedFrame, false, NULL); /** @todo why bother? */
             NdisFreeNetBufferList(pBufList);
             pBufList = NULL;
         }
