@@ -970,11 +970,11 @@
     </message>
     <message>
         <source>&amp;Host Network Manager...</source>
-        <translation>&amp;Host-Netzwerk-Manager...</translation>
+        <translation>&amp;Host-only Netzwerk-Manager...</translation>
     </message>
     <message>
         <source>Display the Host Network Manager window</source>
-        <translation>Host-Netzwerk-Manager anzeigen</translation>
+        <translation>Host-only Netzwerk-Manager anzeigen</translation>
     </message>
     <message>
         <source>&amp;Machine Tools</source>
@@ -1034,7 +1034,7 @@
     </message>
     <message>
         <source>&amp;Host Network Manager</source>
-        <translation>&amp;Host-Netzwerke</translation>
+        <translation>&amp;Host-only Netzwerke</translation>
     </message>
     <message>
         <source>Open the Host Network Manager</source>
@@ -3160,7 +3160,7 @@
     </message>
     <message>
         <source>Host Network Manager</source>
-        <translation>Host-Netzwerk-Manager3</translation>
+        <translation>Host-only Netzwerk-Manager</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -4520,7 +4520,7 @@
     </message>
     <message>
         <source>No host-only network adapter is currently selected.</source>
-        <translation>Es wurde kein Host-Netzinterface-Adapter ausgewählt.</translation>
+        <translation>Es wurde kein Host-only Netzwerkadapter ausgewählt.</translation>
     </message>
     <message>
         <source>No generic driver is currently selected.</source>
@@ -7660,15 +7660,15 @@
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Informationen</translation>
     </message>
     <message>
         <source>Holds the snapshot name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Namen des Sicherungspunktes.</translation>
     </message>
     <message>
         <source>Holds the snapshot description.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die Beschreibung des Sicherungspunktes.</translation>
     </message>
     <message>
         <source>Apply</source>
@@ -7963,7 +7963,7 @@
     <name>UIToolsPaneMachine</name>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window lists all virtual machines and virtual machine groups on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for more information and latest news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Willkommen zu VirtualBox!&lt;/h3&gt;&lt;p&gt;Der linke Teil dieses Fensters zeigt eine Liste aller virtuellen Maschinen auf Ihrem Computer. Diese Liste ist momentan leer, da Sie noch keine virtuelle Maschine erstellt haben.&lt;/p&gt;&lt;p&gt;Um eine virtuelle Maschine anzulegen, wählen Sie &lt;b&gt;Neu&lt;/b&gt; in der Symbolleiste am oberen Rand des Fensters.&lt;/p&gt;&lt;p&gt;Die Taste &lt;b&gt;%1&lt;/b&gt; öffnet das Hilfefenster. Für aktuelle Produktinformationen aus dem Internet öffnen Sie &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window lists all virtual machines and virtual machine groups on your computer.&lt;/p&gt;&lt;p&gt;The right part of this window represents a set of tools which are currently opened (or can be opened) for the currently chosen machine. For a list of currently available tools check the corresponding menu at the right side of the main tool bar located at the top of the window. This list will be extended with new tools in future releases.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for more information and latest news.&lt;/p&gt;</source>
