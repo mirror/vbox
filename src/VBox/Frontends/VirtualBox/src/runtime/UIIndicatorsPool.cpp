@@ -428,7 +428,7 @@ private:
         /* Prepare tool-tip: */
         QString strToolTip = QApplication::translate("UIIndicatorsPool",
                                                      "<nobr>Indicates the activity of the "
-                                                     "audio:</nobr>%1", "Audio tooltip");
+                                                     "audio device:</nobr>%1", "Audio tooltip");
         QString strFullData;
 
         /* Get audio adapter: */
