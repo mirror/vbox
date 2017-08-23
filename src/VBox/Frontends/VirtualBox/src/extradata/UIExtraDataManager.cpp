@@ -3776,6 +3776,38 @@ QList<IndicatorType> UIExtraDataManager::statusBarIndicatorOrder(const QString &
         if (value != IndicatorType_Invalid && !result.contains(value))
             result << value;
     }
+
+    /* We should update the list with missing indicators: */
+    for (int i = (int)IndicatorType_Invalid; i < (int)IndicatorType_Max; ++i)
+    {
+        /* Skip the IndicatorType_Invalid (we used it as start of this loop): */
+        if (i == (int)IndicatorType_Invalid)
+            continue;
+        /* Skip the IndicatorType_KeyboardExtension (special handling): */
+        if (i == (int)IndicatorType_KeyboardExtension)
+            continue;
+
+        /* Get the current one: */
+        const IndicatorType enmCurrent = (IndicatorType)i;
+
+        /* Skip the current one if it's present: */
+        if (result.contains(enmCurrent))
+            continue;
+
+        /* Let's find the first of those which stays before it and is not missing: */
+        IndicatorType enmPrevious = (IndicatorType)(enmCurrent - 1);
+        while (enmPrevious != IndicatorType_Invalid && !result.contains(enmPrevious))
+            enmPrevious = (IndicatorType)(enmPrevious - 1);
+
+        /* Calculate position to insert missing one: */
+        const int iInsertPosition = enmPrevious != IndicatorType_Invalid
+                                  ? result.indexOf(enmPrevious) + 1
+                                  : 0;
+
+        /* Finally insert missing indicator at required position: */
+        result.insert(iInsertPosition, enmCurrent);
+    }
+
     /* Return result: */
     return result;
 }
