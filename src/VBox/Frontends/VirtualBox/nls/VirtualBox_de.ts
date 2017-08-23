@@ -1042,23 +1042,23 @@
     </message>
     <message>
         <source>&amp;Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Audio</translation>
     </message>
     <message>
         <source>Audio Output</source>
-        <translation type="unfinished">Audioausgabe</translation>
+        <translation>Audioausgabe</translation>
     </message>
     <message>
         <source>Enable audio output</source>
-        <translation type="unfinished"></translation>
+        <translation>Audioausgabe aktivieren</translation>
     </message>
     <message>
         <source>Audio Input</source>
-        <translation type="unfinished">Audioeingabe</translation>
+        <translation>Audioeingabe</translation>
     </message>
     <message>
         <source>Enable audio input</source>
-        <translation type="unfinished"></translation>
+        <translation>Audioeingabe aktivieren</translation>
     </message>
 </context>
 <context>
@@ -3537,7 +3537,7 @@
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the audio device:&lt;/nobr&gt;%1</source>
         <comment>Audio tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Zeigt die Aktivität der Audiokarte:&lt;/nobr&gt;%1</translation>
     </message>
 </context>
 <context>
@@ -5862,7 +5862,7 @@
     </message>
     <message>
         <source>Copy selected disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausgewähltes Plattenabbild kopieren</translation>
     </message>
     <message>
         <source>&amp;Remove...</source>
@@ -5870,7 +5870,7 @@
     </message>
     <message>
         <source>Remove selected disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausgewähltes Plattenabbild löschen</translation>
     </message>
     <message>
         <source>Re&amp;lease...</source>
@@ -5878,7 +5878,7 @@
     </message>
     <message>
         <source>Release selected disk image file by detaching it from machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Bindung des ausgewählten Plattenabbildes von allen Maschinen lösen</translation>
     </message>
     <message>
         <source>&amp;Properties...</source>
@@ -5886,7 +5886,7 @@
     </message>
     <message>
         <source>Open pane with selected disk image file properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet Einstellungen des ausgewählten Plattenabbildes</translation>
     </message>
     <message>
         <source>Moving medium...</source>
@@ -5956,11 +5956,11 @@
     <name>UIMediumSizeEditor</name>
     <message>
         <source>Holds the size of this medium.</source>
-        <translation type="unfinished">Zeigt die Größe des Mediums.</translation>
+        <translation>Zeigt die Größe des Mediums.</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -5995,7 +5995,7 @@
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Medium ist direkt angeschlossen und kann von mehreren Maschinen benutzt werden.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
@@ -7093,7 +7093,7 @@
     </message>
     <message>
         <source>Failed to move the storage unit of the disk image &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Datencontainer konnte nicht von &lt;b&gt;%1&lt;/b&gt; nach &lt;b&gt;%2&lt;/b&gt; verschoben werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Error changing the description of the disk image &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -7105,15 +7105,15 @@
     </message>
     <message>
         <source>Failed to acquire host network interfaces.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Host-Netzwerkinterfaces konnten nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>Unable to find the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Host-Netzwerkinterface &lt;b&gt;%1&lt;/b&gt; konnte nicht gefunden werden.</translation>
     </message>
     <message>
         <source>Failed to create a host network interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Host-Netzwerkinterface konnte nicht erzeugt werden.</translation>
     </message>
     <message>
         <source>Failed to acquire host network interface parameter.</source>
@@ -7129,15 +7129,15 @@
     </message>
     <message>
         <source>Failed to remove the DHCP server for the network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der DHCP-server für das Netzwerkinterface &lt;b&gt;%1&lt;/b&gt; konnte nicht gelöscht werden.</translation>
     </message>
     <message>
         <source>Failed to acquire DHCP server parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die DHCP-Server-Parameter konnten nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>Failed to save DHCP server parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die DHCP-Parameter konnten nicht gesichert werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
@@ -7178,19 +7178,19 @@
     </message>
     <message>
         <source>Failed to enable the audio adapter output for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Audioausgabe für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht aktiviert werden.</translation>
     </message>
     <message>
         <source>Failed to disable the audio adapter output for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Audioausgabe für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht deaktiviert werden.</translation>
     </message>
     <message>
         <source>Failed to enable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Audioeingabe für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht aktiviert werden.</translation>
     </message>
     <message>
         <source>Failed to disable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Audioeingabe für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht deaktiviert werden.</translation>
     </message>
 </context>
 <context>
@@ -7655,7 +7655,7 @@
     </message>
     <message>
         <source>Allows to navigate through VM Settings categories</source>
-        <translation type="unfinished"></translation>
+        <translation>Zu den Kategorien der VM-Einstellungen navigieren</translation>
     </message>
 </context>
 <context>
@@ -7697,7 +7697,7 @@
     </message>
     <message>
         <source>&amp;Attributes</source>
-        <translation type="unfinished">&amp;Attribute</translation>
+        <translation>&amp;Attribute</translation>
     </message>
     <message>
         <source>&amp;Information</source>
@@ -10624,7 +10624,7 @@
     <message>
         <source>Audio</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">Audio</translation>
+        <translation>Audio</translation>
     </message>
 </context>
 <context>
