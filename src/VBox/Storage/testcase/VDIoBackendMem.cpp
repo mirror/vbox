@@ -160,7 +160,7 @@ int VDIoBackendMemTransfer(PVDIOBACKENDMEM pIoBackend, PVDMEMDISK pMemDisk,
         return VERR_NO_MEMORY;
 
     RTCircBufAcquireWriteBlock(pIoBackend->pRequestRing, sizeof(PVDIOBACKENDREQ), (void **)&ppReq, &cbData);
-    if (!pReq)
+    if (!ppReq)
     {
         RTMemFree(pReq);
         return VERR_NO_MEMORY;
