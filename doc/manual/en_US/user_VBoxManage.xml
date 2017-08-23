@@ -6,7 +6,7 @@
       This XML document is also be used for generating the help text
       built into VBoxManage as well as manpages (hacking in progress).
 
-    Copyright (C) 2006-2015 Oracle Corporation
+    Copyright (C) 2006-2017 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -1294,6 +1294,18 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
         </listitem>
 
         <listitem>
+          <para><computeroutput>--audioin on</computeroutput>: With
+          this setting, you can specify whether capturing audio from the 
+          host is enabled or disabled.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>--audioout on</computeroutput>: With
+          this setting, you can specify whether audio playback from the guest
+          is enabled or disabled.</para>
+        </listitem>
+
+        <listitem>
           <para><computeroutput>--clipboard
           disabled|hosttoguest|guesttohost|bidirectional</computeroutput>:
           With this setting, you can select if and how the guest or host
@@ -2249,6 +2261,18 @@ Virtual system 0:
 
         <para>You can use <computeroutput>VBoxManage list
         usbhost</computeroutput> to locate this information.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>audioin on</computeroutput>: With
+        this setting, you can select whether capturing audio from the 
+        host is enabled or disabled.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>audioout on</computeroutput>: With
+        this setting, you can select whether audio playback from the guest
+        is enabled or disabled.</para>
       </listitem>
 
       <listitem>
