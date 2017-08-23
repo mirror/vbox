@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1630,6 +1630,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     else
                         pszCtrl = "HDA";
                     break;
+                default:
+                    break;
             }
             AudioCodecType_T enmCodecType;
             rc = AudioAdapter->COMGETTER(AudioCodec)(&enmCodecType);
@@ -1648,16 +1650,27 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     pszCodec = "STAC9221";
                     break;
                 case AudioCodecType_Null: break; /* Shut up MSC. */
+                default:                  break;
             }
         }
         else
             fEnabled = FALSE;
+
+        BOOL fEnabledIn = false;
+        CHECK_ERROR(AudioAdapter, COMGETTER(EnabledIn)(&fEnabledIn));
+
+        BOOL fEnabledOut = false;
+        CHECK_ERROR(AudioAdapter,  COMGETTER(EnabledOut)(&fEnabledOut));
+
         if (details == VMINFO_MACHINEREADABLE)
         {
             if (fEnabled)
                 RTPrintf("audio=\"%s\"\n", pszDrv);
             else
                 RTPrintf("audio=\"none\"\n");
+
+            RTPrintf("audio_in=\"%s\"\n",  fEnabledIn  ? "true" : "false");
+            RTPrintf("audio_out=\"%s\"\n", fEnabledOut ? "true" : "false");
         }
         else
         {
@@ -1667,6 +1680,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 RTPrintf(" (Driver: %s, Controller: %s, Codec: %s)",
                     pszDrv, pszCtrl, pszCodec);
             RTPrintf("\n");
+
+            RTPrintf("Audio playback:  %s\n", fEnabledIn  ? "enabled" : "disabled");
+            RTPrintf("Audio capturing: %s\n", fEnabledOut ? "enabled" : "disabled");
         }
     }
 
