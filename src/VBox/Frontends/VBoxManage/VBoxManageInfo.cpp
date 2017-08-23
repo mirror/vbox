@@ -1682,7 +1682,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             RTPrintf("\n");
 
             RTPrintf("Audio playback:  %s\n", fEnabledIn  ? "enabled" : "disabled");
-            RTPrintf("Audio capturing: %s\n", fEnabledOut ? "enabled" : "disabled");
+            RTPrintf("Audio capture: %s\n", fEnabledOut ? "enabled" : "disabled");
         }
     }
 
