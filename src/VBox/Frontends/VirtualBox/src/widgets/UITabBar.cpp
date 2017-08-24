@@ -358,32 +358,32 @@ void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
     QRadialGradient grad1(QPointF(iMetric, iMetric), iMetric);
     {
         grad1.setColorAt(0, color0);
-        grad1.setColorAt(.6, color1);
-        grad1.setColorAt(.8, color2);
+        grad1.setColorAt(.8, color1);
+        grad1.setColorAt(.9, color2);
         grad1.setColorAt(1, color1);
     }
     /* Bottom-left corner: */
     QRadialGradient grad2(QPointF(iMetric, height() - iMetric), iMetric);
     {
         grad2.setColorAt(0, color0);
-        grad2.setColorAt(.6, color1);
-        grad2.setColorAt(.8, color2);
+        grad2.setColorAt(.8, color1);
+        grad2.setColorAt(.9, color2);
         grad2.setColorAt(1, color1);
     }
     /* Top-right corner: */
     QRadialGradient grad3(QPointF(width() - iMetric, iMetric), iMetric);
     {
         grad3.setColorAt(0, color0);
-        grad3.setColorAt(.6, color1);
-        grad3.setColorAt(.8, color2);
+        grad3.setColorAt(.8, color1);
+        grad3.setColorAt(.9, color2);
         grad3.setColorAt(1, color1);
     }
     /* Botom-right corner: */
     QRadialGradient grad4(QPointF(width() - iMetric, height() - iMetric), iMetric);
     {
         grad4.setColorAt(0, color0);
-        grad4.setColorAt(.6, color1);
-        grad4.setColorAt(.8, color2);
+        grad4.setColorAt(.8, color1);
+        grad4.setColorAt(.9, color2);
         grad4.setColorAt(1, color1);
     }
 
@@ -391,32 +391,32 @@ void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
     QLinearGradient grad5(QPointF(0, height() - iMetric), QPointF(iMetric, height() - iMetric));
     {
         grad5.setColorAt(0, color1);
-        grad5.setColorAt(.2, color2);
-        grad5.setColorAt(.4, color1);
+        grad5.setColorAt(.1, color2);
+        grad5.setColorAt(.2, color1);
         grad5.setColorAt(1, color0);
     }
     /* Right line: */
     QLinearGradient grad6(QPointF(width(), height() - iMetric), QPointF(width() - iMetric, height() - iMetric));
     {
         grad6.setColorAt(0, color1);
-        grad6.setColorAt(.2, color2);
-        grad6.setColorAt(.4, color1);
+        grad6.setColorAt(.1, color2);
+        grad6.setColorAt(.2, color1);
         grad6.setColorAt(1, color0);
     }
     /* Top line: */
     QLinearGradient grad7(QPointF(iMetric, 0), QPointF(iMetric, iMetric));
     {
         grad7.setColorAt(0, color1);
-        grad7.setColorAt(.2, color2);
-        grad7.setColorAt(.4, color1);
+        grad7.setColorAt(.1, color2);
+        grad7.setColorAt(.2, color1);
         grad7.setColorAt(1, color0);
     }
     /* Bottom line: */
     QLinearGradient grad8(QPointF(iMetric, height()), QPointF(iMetric, height() - iMetric));
     {
         grad8.setColorAt(0, color1);
-        grad8.setColorAt(.2, color2);
-        grad8.setColorAt(.4, color1);
+        grad8.setColorAt(.1, color2);
+        grad8.setColorAt(.2, color1);
         grad8.setColorAt(1, color0);
     }
 
