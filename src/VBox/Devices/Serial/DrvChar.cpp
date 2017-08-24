@@ -205,6 +205,60 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD hThreadSelf, void *pvUser)
  * @returns 0 on success.
  * @param   hThreadSelf Thread handle to this thread.
  * @param   pvUser      User argument.
+ *
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ * @todo    This thread isn't managed correctly wrt to the VM state.
+ *
+ *          It's possible to end up in the APIC code while the VM is being destroyed!
+ * 0:018> k
+ # Child-SP          RetAddr           Call Site
+00 00000000`2061f1b0 00007ffe`42a889d9 VBoxVMM!apicReadRaw32+0x78 [e:\vbox\svn\trunk\src\vbox\vmm\vmmall\apicall.cpp @ 462]
+01 00000000`2061f1f0 00007ffe`42916fc2 VBoxVMM!APICLocalInterrupt+0x189 [e:\vbox\svn\trunk\src\vbox\vmm\vmmall\apicall.cpp @ 2524]
+02 00000000`2061f320 00007ffe`41b96937 VBoxVMM!pdmR3PicHlp_ClearInterruptFF+0x172 [e:\vbox\svn\trunk\src\vbox\vmm\vmmr3\pdmdevmischlp.cpp @ 67]
+03 00000000`2061f360 00007ffe`41b961a8 VBoxDD!pic_update_irq+0x327 [e:\vbox\svn\trunk\src\vbox\devices\pc\devpic.cpp @ 318]
+04 00000000`2061f3f0 00007ffe`42bcbaa3 VBoxDD!picSetIrq+0x2b8 [e:\vbox\svn\trunk\src\vbox\devices\pc\devpic.cpp @ 352]
+05 00000000`2061f450 00007ffe`42905dff VBoxVMM!PDMIsaSetIrq+0xe3 [e:\vbox\svn\trunk\src\vbox\vmm\vmmall\pdmall.cpp @ 138]
+06 00000000`2061f490 00007ffe`41c06db4 VBoxVMM!pdmR3DevHlp_ISASetIrq+0x2df [e:\vbox\svn\trunk\src\vbox\vmm\vmmr3\pdmdevhlp.cpp @ 1804]
+07 00000000`2061f500 00007ffe`41c08d39 VBoxDD!PDMDevHlpISASetIrqNoWait+0x44 [e:\vbox\svn\trunk\include\vbox\vmm\pdmdev.h @ 4972]
+08 00000000`2061f530 00007ffe`41c08a44 VBoxDD!serial_update_irq+0x1c9 [e:\vbox\svn\trunk\src\vbox\devices\serial\devserial.cpp @ 326]
+09 00000000`2061f590 00007ffe`41c08814 VBoxDD!serial_receive+0x134 [e:\vbox\svn\trunk\src\vbox\devices\serial\devserial.cpp @ 718]
+0a 00000000`2061f5d0 00007ffe`41c1d894 VBoxDD!serialNotifyRead+0x124 [e:\vbox\svn\trunk\src\vbox\devices\serial\devserial.cpp @ 744]
+0b 00000000`2061f630 00007ffe`43a6250f VBoxDD!drvCharReceiveLoop+0x194 [e:\vbox\svn\trunk\src\vbox\devices\serial\drvchar.cpp @ 241]
+0c 00000000`2061f800 00007ffe`43b8ddbf VBoxRT!rtThreadMain+0x1bf [e:\vbox\svn\trunk\src\vbox\runtime\common\misc\thread.cpp @ 717]
+0d 00000000`2061f880 00000000`52971d9f VBoxRT!rtThreadNativeMain+0xcf [e:\vbox\svn\trunk\src\vbox\runtime\r3\win\thread-win.cpp @ 252]
+0e 00000000`2061f8d0 00000000`52971e3b MSVCR100!endthreadex+0x43
+
+ *
  */
 static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD hThreadSelf, void *pvUser)
 {
