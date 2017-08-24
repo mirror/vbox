@@ -72,14 +72,14 @@ VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t idClient)
  *
  * @returns VBox status code.
  * @param   uClientId       The client ID returned by VbglR3GuestCtrlConnect().
- * @param   puMsg           Where to store the message id.
- * @param   puNumParms      Where to store the number  of parameters which will be received
- *                          in a second call to the host.
+ * @param   pidMsg          Where to store the message id.
+ * @param   pcParameters    Where to store the number  of parameters which will
+ *                          be received in a second call to the host.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *puMsg, uint32_t *puNumParms)
+VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *pidMsg, uint32_t *pcParameters)
 {
-    AssertPtrReturn(puMsg, VERR_INVALID_POINTER);
-    AssertPtrReturn(puNumParms, VERR_INVALID_POINTER);
+    AssertPtrReturn(pidMsg, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcParameters, VERR_INVALID_POINTER);
 
     HGCMMsgCmdWaitFor Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId,
@@ -88,18 +88,35 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *puMsg, u
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.num_parms, 0);
 
-    int rc = VbglR3HGCMCallRaw(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    /*
+     * We should always get a VERR_TOO_MUCH_DATA response here, see
+     * guestControl::HostCommand::Peek() and its caller ClientState::SendReply().
+     * We accept success too here, in case someone decide to make the protocol
+     * slightly more sane.
+     *
+     * Note! A really sane protocol design would have a separate call for getting
+     *       info about a pending message (returning VINF_SUCCESS), and a separate
+     *       one for retriving the actual message parameters.  Not this weird
+     *       stuff, to put it rather bluntly.
+     */
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    if (   rc == VERR_TOO_MUCH_DATA
+        || RT_SUCCESS(rc))
     {
-        rc = VbglHGCMParmUInt32Get(&Msg.msg, puMsg);
-        if (RT_SUCCESS(rc))
+        int rc2 = VbglHGCMParmUInt32Get(&Msg.msg, pidMsg);
+        if (RT_SUCCESS(rc2))
         {
-            rc = VbglHGCMParmUInt32Get(&Msg.num_parms, puNumParms);
-            if (RT_SUCCESS(rc))
-                rc = Msg.hdr.result;
+            rc2 = VbglHGCMParmUInt32Get(&Msg.num_parms, pcParameters);
+            if (RT_SUCCESS(rc2))
+            {
                 /* Ok, so now we know what message type and how much parameters there are. */
+                return rc;
+            }
         }
+        rc = rc2;
     }
+    *pidMsg       = UINT32_MAX - 1;
+    *pcParameters = UINT32_MAX - 2;
     return rc;
 }
 
@@ -188,12 +205,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t uClientId)
     /* Tell the host we want to skip the current assigned command. */
     VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_MSG_SKIP, 1);
     VbglHGCMParmUInt32Set(&Msg.flags, 0 /* Flags, unused */);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-        rc = Msg.hdr.result;
-
-    return rc;
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
 
