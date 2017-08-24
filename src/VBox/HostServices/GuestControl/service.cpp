@@ -593,6 +593,9 @@ typedef struct ClientState
         return fWant;
     }
 
+    /**
+     * Set to inidicate that a client call (GUEST_MSG_WAIT) is pending.
+     */
     int SetPending(const ClientConnection *pConnection)
     {
         AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
@@ -852,28 +855,27 @@ typedef struct ClientState
     uint32_t mFilterValue;
     /** Host command list to process. */
     HostCmdList mHostCmdList;
-    /** Last (most recent) rc after handling the
-     *  host command. */
+    /** Last (most recent) rc after handling the host command. */
     int mHostCmdRc;
-    /** How many times the host service has tried to deliver this
-     *  command to the according client. */
+    /** How many GUEST_MSG_WAIT calls the client has issued to retrieve one command.
+     *
+     * This is used as a heuristic to remove a message that the client appears not
+     * to be able to successfully retrieve.  */
     uint32_t mHostCmdTries;
     /** Timestamp (us) of last host command processed. */
     uint64_t mHostCmdTS;
-    /**
-     * Flag indicating whether the client currently is pending.
-     * This means the client waits for a new host command to reply
-     * and won't return from the waiting call until a new host
-     * command is available.
+    /** Flag indicating whether a client call (GUEST_MSG_WAIT) currently is pending.
+     *
+     * This means the client waits for a new host command to reply and won't return
+     * from the waiting call until a new host command is available.
      */
     bool mIsPending;
-    /**
-     * This is necessary for being compatible with older
-     * Guest Additions. In case there are commands which only
-     * have two (2) parameters and therefore would fit into the
-     * GUEST_MSG_WAIT reply immediately, we now can make sure
-     * that the client first gets back the GUEST_MSG_WAIT results
-     * first.
+    /** Number of times we've peeked at a pending message.
+     *
+     * This is necessary for being compatible with older Guest Additions.  In case
+     * there are commands which only have two (2) parameters and therefore would fit
+     * into the GUEST_MSG_WAIT reply immediately, we now can make sure that the
+     * client first gets back the GUEST_MSG_WAIT results first.
      */
     uint32_t mPeekCount;
     /** The client's pending connection. */
