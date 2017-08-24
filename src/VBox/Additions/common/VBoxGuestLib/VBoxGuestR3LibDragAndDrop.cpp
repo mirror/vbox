@@ -1973,19 +1973,21 @@ VBGLR3DECL(int) VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcErr)
         Msg.u.v3.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
     }
 
-    int rc = VbglR3HGCMCallRaw(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        if (RT_FAILURE(Msg.hdr.result))
-        {
-            LogFlowFunc(("Sending error %Rrc failed with rc=%Rrc\n", rcErr, Msg.hdr.result));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 
-            /* Never return an error if the host did not accept the error at
-             * the current time. This can be due to the host not having any appropriate
-             * callbacks set which would handle that error. */
-            rc = VINF_SUCCESS;
-        }
-    }
+    /*
+     * Never return an error if the host did not accept the error at the current
+     * time.  This can be due to the host not having any appropriate callbacks
+     * set which would handle that error.
+     *
+     * bird: Looks like VERR_NOT_SUPPORTED is what the host will return if it
+     *       doesn't an appropriate callback.  The code used to ignore ALL errors
+     *       the host would return, also relevant ones.
+     */
+    if (RT_FAILURE(rc))
+        LogFlowFunc(("Sending error %Rrc failed with rc=%Rrc\n", rcErr, rc));
+    if (rc == VERR_NOT_SUPPORTED)
+        rc = VINF_SUCCESS;
 
     return rc;
 }
