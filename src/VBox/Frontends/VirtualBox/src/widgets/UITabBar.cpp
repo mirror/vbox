@@ -300,7 +300,7 @@ void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
     }
 
     /* Paint: */
-    painter.fillRect(QRect(iMetric,           iMetric,            width() - iMetric * 2, height() - iMetric * 2), color0);
+    painter.fillRect(QRect(iMetric, iMetric, width() - iMetric * 2, height() - iMetric * 2), color0);
 
     if (m_enmPosition == PositionStyle_Left || m_enmPosition == PositionStyle_Single)
     {
@@ -344,76 +344,155 @@ void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
 
     /* Prepare palette colors: */
     const QPalette pal = palette();
-    const QColor color0 = m_fCurrent ? pal.color(QPalette::Highlight).lighter(150)
-                        : m_fHovered ? pal.color(QPalette::Highlight).lighter(170)
-                        :              pal.color(QPalette::Window);
-    QColor color1 = pal.color(QPalette::Window).lighter(110);
+    const QColor color0 = m_fCurrent ? pal.color(QPalette::Base)
+                        : m_fHovered ? pal.color(QPalette::Base).darker(102)
+                        :              pal.color(QPalette::Button).darker(102);
+    QColor color1 = color0;
     color1.setAlpha(0);
-    QColor color2 = pal.color(QPalette::Window).darker(200);
+    QColor color2 = pal.color(QPalette::Shadow);
 
     /* Invent pixel metric: */
-    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
 
     /* Top-left corner: */
     QRadialGradient grad1(QPointF(iMetric, iMetric), iMetric);
     {
-        grad1.setColorAt(0, color2);
+        grad1.setColorAt(0, color0);
+        grad1.setColorAt(.6, color1);
+        grad1.setColorAt(.8, color2);
         grad1.setColorAt(1, color1);
     }
-    /* Top-right corner: */
-    QRadialGradient grad2(QPointF(width() - iMetric, iMetric), iMetric);
+    /* Bottom-left corner: */
+    QRadialGradient grad2(QPointF(iMetric, height() - iMetric), iMetric);
     {
-        grad2.setColorAt(0, color2);
+        grad2.setColorAt(0, color0);
+        grad2.setColorAt(.6, color1);
+        grad2.setColorAt(.8, color2);
         grad2.setColorAt(1, color1);
     }
-    /* Bottom-left corner: */
-    QRadialGradient grad3(QPointF(iMetric, height() - iMetric), iMetric);
+    /* Top-right corner: */
+    QRadialGradient grad3(QPointF(width() - iMetric, iMetric), iMetric);
     {
-        grad3.setColorAt(0, color2);
+        grad3.setColorAt(0, color0);
+        grad3.setColorAt(.6, color1);
+        grad3.setColorAt(.8, color2);
         grad3.setColorAt(1, color1);
     }
     /* Botom-right corner: */
     QRadialGradient grad4(QPointF(width() - iMetric, height() - iMetric), iMetric);
     {
-        grad4.setColorAt(0, color2);
+        grad4.setColorAt(0, color0);
+        grad4.setColorAt(.6, color1);
+        grad4.setColorAt(.8, color2);
         grad4.setColorAt(1, color1);
     }
 
-    /* Top line: */
-    QLinearGradient grad5(QPointF(iMetric, 0), QPointF(iMetric, iMetric));
+    /* Left line: */
+    QLinearGradient grad5(QPointF(0, height() - iMetric), QPointF(iMetric, height() - iMetric));
     {
         grad5.setColorAt(0, color1);
-        grad5.setColorAt(1, color2);
-    }
-    /* Bottom line: */
-    QLinearGradient grad6(QPointF(iMetric, height()), QPointF(iMetric, height() - iMetric));
-    {
-        grad6.setColorAt(0, color1);
-        grad6.setColorAt(1, color2);
-    }
-    /* Left line: */
-    QLinearGradient grad7(QPointF(0, height() - iMetric), QPointF(iMetric, height() - iMetric));
-    {
-        grad7.setColorAt(0, color1);
-        grad7.setColorAt(1, color2);
+        grad5.setColorAt(.2, color2);
+        grad5.setColorAt(.4, color1);
+        grad5.setColorAt(1, color0);
     }
     /* Right line: */
-    QLinearGradient grad8(QPointF(width(), height() - iMetric), QPointF(width() - iMetric, height() - iMetric));
+    QLinearGradient grad6(QPointF(width(), height() - iMetric), QPointF(width() - iMetric, height() - iMetric));
+    {
+        grad6.setColorAt(0, color1);
+        grad6.setColorAt(.2, color2);
+        grad6.setColorAt(.4, color1);
+        grad6.setColorAt(1, color0);
+    }
+    /* Top line: */
+    QLinearGradient grad7(QPointF(iMetric, 0), QPointF(iMetric, iMetric));
+    {
+        grad7.setColorAt(0, color1);
+        grad7.setColorAt(.2, color2);
+        grad7.setColorAt(.4, color1);
+        grad7.setColorAt(1, color0);
+    }
+    /* Bottom line: */
+    QLinearGradient grad8(QPointF(iMetric, height()), QPointF(iMetric, height() - iMetric));
     {
         grad8.setColorAt(0, color1);
-        grad8.setColorAt(1, color2);
+        grad8.setColorAt(.2, color2);
+        grad8.setColorAt(.4, color1);
+        grad8.setColorAt(1, color0);
     }
 
-    /* Paint shape/shadow: */
-    painter.fillRect(QRect(iMetric,           iMetric,            width() - iMetric * 2, height() - iMetric * 2), color0);
-    painter.fillRect(QRect(0,                 0,                  iMetric,               iMetric),                grad1);
-    painter.fillRect(QRect(width() - iMetric, 0,                  iMetric,               iMetric),                grad2);
-    painter.fillRect(QRect(0,                 height() - iMetric, iMetric,               iMetric),                grad3);
-    painter.fillRect(QRect(width() - iMetric, height() - iMetric, iMetric,               iMetric),                grad4);
-    painter.fillRect(QRect(iMetric,           0,                  width() - iMetric * 2, iMetric),                grad5);
-    painter.fillRect(QRect(iMetric,           height() - iMetric, width() - iMetric * 2, iMetric),                grad6);
-    painter.fillRect(QRect(0,                 iMetric,            iMetric,               height() - iMetric * 2), grad7);
-    painter.fillRect(QRect(width() - iMetric, iMetric,            iMetric,               height() - iMetric * 2), grad8);
+    /* Paint: */
+    painter.fillRect(QRect(iMetric, iMetric, width() - iMetric * 2, height() - iMetric * 2), color0);
+
+    if (m_enmPosition == PositionStyle_Left || m_enmPosition == PositionStyle_Single)
+    {
+        painter.fillRect(QRect(0,                  0,                  iMetric,            iMetric),           grad1);
+        painter.fillRect(QRect(0,                  height() - iMetric, iMetric,            iMetric),           grad2);
+    }
+    if (m_enmPosition == PositionStyle_Right || m_enmPosition == PositionStyle_Single)
+    {
+        painter.fillRect(QRect(width() - iMetric,  0,                  iMetric,            iMetric),           grad3);
+        painter.fillRect(QRect(width() - iMetric,  height() - iMetric, iMetric,            iMetric),           grad4);
+    }
+
+    int iX = 0;
+    int iYL = 0;
+    int iYR = 0;
+    int iWid = width();
+    int iHeiL = height();
+    int iHeiR = height();
+    if (m_enmPosition == PositionStyle_Left || m_enmPosition == PositionStyle_Single)
+    {
+        iX = iMetric;
+        iYL = iMetric;
+        iWid -= iMetric;
+        iHeiL -= iMetric * 2;
+    }
+    if (m_enmPosition == PositionStyle_Right || m_enmPosition == PositionStyle_Single)
+    {
+        iYR = iMetric;
+        iWid -= iMetric;
+        iHeiR -= iMetric * 2;
+    }
+
+    QPainterPath path5;
+    path5.moveTo(0, 0);
+    path5.lineTo(iMetric, iMetric);
+    path5.lineTo(iMetric, height() - iMetric);
+    path5.lineTo(0, height());
+    path5.closeSubpath();
+    painter.setClipPath(path5);
+    painter.fillRect(QRect(0,                  iYL,                iMetric,            iHeiL),             grad5);
+    painter.setClipping(false);
+
+    QPainterPath path6;
+    path6.moveTo(width(), 0);
+    path6.lineTo(width() - iMetric, iMetric);
+    path6.lineTo(width() - iMetric, height() - iMetric);
+    path6.lineTo(width(), height());
+    path6.closeSubpath();
+    painter.setClipPath(path6);
+    painter.fillRect(QRect(width() - iMetric,  iYR,                iMetric,            iHeiR),             grad6);
+    painter.setClipping(false);
+
+    QPainterPath path7;
+    path7.moveTo(0, 0);
+    path7.lineTo(iMetric, iMetric);
+    path7.lineTo(width() - iMetric, iMetric);
+    path7.lineTo(width(), 0);
+    path7.closeSubpath();
+    painter.setClipPath(path7);
+    painter.fillRect(QRect(iX,                 0,                  iWid,               iMetric),           grad7);
+    painter.setClipping(false);
+
+    QPainterPath path8;
+    path8.moveTo(0, height());
+    path8.lineTo(iMetric, height() - iMetric);
+    path8.lineTo(width() - iMetric, height() - iMetric);
+    path8.lineTo(width(), height());
+    path8.closeSubpath();
+    painter.setClipPath(path8);
+    painter.fillRect(QRect(iX,                 height() - iMetric, iWid,               iMetric),           grad8);
+    painter.setClipping(false);
 
 #endif /* !VBOX_WS_MAC */
 }
