@@ -684,7 +684,7 @@ typedef struct ClientState
         LogFlowFunc(("[Client %RU32] Tried pHostCmd=%p for %RU32 times, (last result=%Rrc, fRemove=%RTbool)\n",
                      mID, pHostCmd, mHostCmdTries, mHostCmdRc, fRemove));
 
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(rc)) /** @todo r=bird: confusing statement+state, rc hasn't been touched since the top and is always VINF_SUCCESS. */
             rc = mHostCmdRc;
 
         if (fRemove)
