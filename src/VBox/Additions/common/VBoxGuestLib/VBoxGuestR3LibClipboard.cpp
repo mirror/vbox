@@ -72,7 +72,7 @@ VBGLR3DECL(int) VbglR3ClipboardDisconnect(HGCMCLIENTID idClient)
  * @param   pMsg            Where to store the message id.
  * @param   pfFormats       Where to store the format(s) the message applies to.
  */
-VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pMsg, uint32_t *pfFormats)
+VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pidMsg, uint32_t *pfFormats)
 {
     VBoxClipboardGetHostMsg Msg;
 
@@ -80,24 +80,20 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pMsg,
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.formats, 0);
 
-    int rc = VbglR3HGCMCallRaw(&Msg.hdr, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        uint32_t u32Msg;
-        rc = VbglHGCMParmUInt32Get(&Msg.msg, &u32Msg);
+        int rc2 = VbglHGCMParmUInt32Get(&Msg.msg, pidMsg);
         if (RT_SUCCESS(rc))
         {
-            uint32_t fFormats;
-            rc = VbglHGCMParmUInt32Get(&Msg.formats, &fFormats);
-            if (RT_SUCCESS(rc))
-            {
-                *pMsg = u32Msg;
-                *pfFormats = fFormats;
-                return Msg.hdr.result;
-            }
+            rc2 = VbglHGCMParmUInt32Get(&Msg.formats, pfFormats);
+            if (RT_SUCCESS(rc2))
+                return rc;
         }
+        rc = rc2;
     }
-
+    *pidMsg    = UINT32_MAX - 1;
+    *pfFormats = UINT32_MAX;
     return rc;
 }
 
