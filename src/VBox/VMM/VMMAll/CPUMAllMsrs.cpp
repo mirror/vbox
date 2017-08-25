@@ -1851,13 +1851,13 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelPkgCStConfigControl(PVMCPU pVCp
 
     if (pVCpu->cpum.s.GuestMsrs.msr.PkgCStateCfgCtrl & RT_BIT_64(15))
     {
-        Log(("CPUM: WRMDR %#x (%s), %#llx: Write protected -> #GP\n", idMsr, pRange->szName, uValue));
+        Log(("CPUM: WRMSR %#x (%s), %#llx: Write protected -> #GP\n", idMsr, pRange->szName, uValue));
         return VERR_CPUM_RAISE_GP_0;
     }
 #if 0 /** @todo check what real (old) hardware does. */
     if ((uValue & 7) >= 5)
     {
-        Log(("CPUM: WRMDR %#x (%s), %#llx: Invalid limit (%d) -> #GP\n", idMsr, pRange->szName, uValue, (uint32_t)(uValue & 7)));
+        Log(("CPUM: WRMSR %#x (%s), %#llx: Invalid limit (%d) -> #GP\n", idMsr, pRange->szName, uValue, (uint32_t)(uValue & 7)));
         return VERR_CPUM_RAISE_GP_0;
     }
 #endif
