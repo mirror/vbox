@@ -979,6 +979,10 @@ NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 /**
  * Clean up file handle entry point.
  *
+ * This is called when the last handle reference is released, or something like
+ * that.  In the case of IoGetDeviceObjectPointer, this is called as it closes
+ * the handle, however it will go on using the file object afterwards...
+ *
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
@@ -1342,7 +1346,7 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 static int VBoxDrvNtDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PIRP pIrp, PIO_STACK_LOCATION pStack)
 {
     NTSTATUS    rcNt;
-    unsigned    cbOut = 0;
+    uint32_t    cbOut = 0;
     int         rc = 0;
     Log2(("VBoxDrvNtDeviceControlSlow(%p,%p): ioctl=%#x pBuf=%p cbIn=%#x cbOut=%#x pSession=%p\n",
           pDevExt, pIrp, pStack->Parameters.DeviceIoControl.IoControlCode,
@@ -1379,7 +1383,7 @@ static int VBoxDrvNtDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSes
                     if (cbOut > pStack->Parameters.DeviceIoControl.OutputBufferLength)
                     {
                         cbOut = pStack->Parameters.DeviceIoControl.OutputBufferLength;
-                        OSDBGPRINT(("VBoxDrvLinuxIOCtl: too much output! %#x > %#x; uCmd=%#x!\n",
+                        OSDBGPRINT(("VBoxDrvNtDeviceControlSlow: too much output! %#x > %#x; uCmd=%#x!\n",
                                     pHdr->cbOut, cbOut, pStack->Parameters.DeviceIoControl.IoControlCode));
                     }
                 }

@@ -27,9 +27,6 @@
 #ifndef ___SUPDrvIOC_h___
 #define ___SUPDrvIOC_h___
 
-/*
- * Basic types.
- */
 #include <iprt/types.h>
 #include <VBox/sup.h>
 
