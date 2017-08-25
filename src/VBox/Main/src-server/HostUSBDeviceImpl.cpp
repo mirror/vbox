@@ -2132,7 +2132,7 @@ bool HostUSBDevice::i_setState(HostUSBDeviceState aNewState,
                 case kHostUSBDeviceState_HeldByProxy:
                     Assert(aNewPendingState == kHostUSBDeviceState_Invalid);
                     Assert(aNewSubState == kHostUSBDeviceSubState_Default);
-                    Assert(mPendingUniState == kHostUSBDeviceState_Unused);
+                    Assert(mPendingUniState == kHostUSBDeviceState_UsedByVM);
                     break;
 
                 /* Success */
