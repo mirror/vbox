@@ -124,8 +124,9 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_Intel_Core_Yonah,        /**< Core, also known as Enhanced Pentium M. */
 
     kCpumMicroarch_Intel_Core2_First,
-    kCpumMicroarch_Intel_Core2_Merom = kCpumMicroarch_Intel_Core2_First,
-    kCpumMicroarch_Intel_Core2_Penryn,
+    kCpumMicroarch_Intel_Core2_Merom = kCpumMicroarch_Intel_Core2_First,    /**< 65nm, Merom/Conroe/Kentsfield/Tigerton */
+    kCpumMicroarch_Intel_Core2_Penryn,      /**< 45nm, Penryn/Wolfdale/Yorkfield/Harpertown */
+    kCpumMicroarch_Intel_Core2_End,
 
     kCpumMicroarch_Intel_Core7_First,
     kCpumMicroarch_Intel_Core7_Nehalem = kCpumMicroarch_Intel_Core7_First,
@@ -256,6 +257,10 @@ typedef enum CPUMMICROARCH
 /** Predicate macro for catching Core7 CPUs. */
 #define CPUMMICROARCH_IS_INTEL_CORE7(a_enmMicroarch) \
     ((a_enmMicroarch) >= kCpumMicroarch_Intel_Core7_First && (a_enmMicroarch) <= kCpumMicroarch_Intel_Core7_End)
+
+/** Predicate macro for catching Core 2 CPUs. */
+#define CPUMMICROARCH_IS_INTEL_CORE2(a_enmMicroarch) \
+    ((a_enmMicroarch) >= kCpumMicroarch_Intel_Core2_First && (a_enmMicroarch) <= kCpumMicroarch_Intel_Core2_End)
 
 /** Predicate macro for catching Atom CPUs, Silvermont and upwards. */
 #define CPUMMICROARCH_IS_INTEL_SILVERMONT_PLUS(a_enmMicroarch) \

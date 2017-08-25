@@ -528,6 +528,7 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
 #undef CASE_RET_STR
         case kCpumMicroarch_Invalid:
         case kCpumMicroarch_Intel_End:
+        case kCpumMicroarch_Intel_Core2_End:
         case kCpumMicroarch_Intel_Core7_End:
         case kCpumMicroarch_Intel_Atom_End:
         case kCpumMicroarch_Intel_P6_Core_Atom_End:

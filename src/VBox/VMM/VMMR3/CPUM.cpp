@@ -1269,6 +1269,12 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
 
     /* C-state control. Guesses. */
     pVCpu->cpum.s.GuestMsrs.msr.PkgCStateCfgCtrl = 1 /*C1*/ | RT_BIT_32(25) | RT_BIT_32(26) | RT_BIT_32(27) | RT_BIT_32(28);
+    /* For Nehalem+ and Atoms, the 0xE2 MSR (MSR_PKG_CST_CONFIG_CONTROL) is documented. For Core 2,
+     * it's undocumented but exists as MSR_PMG_CST_CONFIG_CONTROL and has similar but not identical
+     * functionality. The default value must be different due to incompatible write mask.
+     */
+    if (CPUMMICROARCH_IS_INTEL_CORE2(pVM->cpum.s.GuestFeatures.enmMicroarch))
+        pVCpu->cpum.s.GuestMsrs.msr.PkgCStateCfgCtrl = 0x202a01;    /* From Mac Pro Harpertown, unlocked. */
 
     /*
      * Hardware virtualization state.
