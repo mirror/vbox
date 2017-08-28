@@ -1283,7 +1283,7 @@ int main()
     GEN_CHECK_OFF(AHCIPort, GCPhysAddrFb);
     GEN_CHECK_OFF(AHCIPort, fPoweredOn);
     GEN_CHECK_OFF(AHCIPort, fSpunUp);
-    GEN_CHECK_OFF(AHCIPort, fFirstD2HFisSend);
+    GEN_CHECK_OFF(AHCIPort, fFirstD2HFisSent);
     GEN_CHECK_OFF(AHCIPort, fATAPI);
     GEN_CHECK_OFF(AHCIPort, fPortReset);
     GEN_CHECK_OFF(AHCIPort, fTrimEnabled);
