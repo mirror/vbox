@@ -85,6 +85,8 @@ HRESULT AudioAdapter::init(Machine *aParent)
 
     mData.allocate();
     mData->driverType = defaultAudioDriver;
+    mData->fEnabledIn = false;
+    mData->fEnabledOut = false;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();

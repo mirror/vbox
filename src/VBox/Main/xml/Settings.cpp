@@ -2546,8 +2546,8 @@ bool ParallelPort::operator==(const ParallelPort &s) const
  */
 AudioAdapter::AudioAdapter() :
     fEnabled(true), // default for old VMs, for new ones it's false
-    fEnabledIn(true),
-    fEnabledOut(true),
+    fEnabledIn(true), // default for old VMs, for new ones it's false
+    fEnabledOut(true), // default for old VMs, for new ones it's false
     controllerType(AudioControllerType_AC97),
     codecType(AudioCodecType_STAC9700),
     driverType(AudioDriverType_Null)
@@ -2560,7 +2560,8 @@ AudioAdapter::AudioAdapter() :
 bool AudioAdapter::areDefaultSettings(SettingsVersion_T sv) const
 {
     return (sv < SettingsVersion_v1_16 ? false : !fEnabled)
-        && fEnabledIn == true
+        && (sv <= SettingsVersion_v1_16 ? fEnabledIn : !fEnabledIn)
+        && (sv <= SettingsVersion_v1_16 ? fEnabledOut : !fEnabledOut)
         && fEnabledOut == true
         && controllerType == AudioControllerType_AC97
         && codecType == AudioCodecType_STAC9700
@@ -3824,6 +3825,10 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         hw.vrdeSettings.fEnabled = false;
         /* The new default is disabled, before it was enabled by default. */
         hw.audioAdapter.fEnabled = false;
+        /* The new default is disabled, before it was enabled by default. */
+        hw.audioAdapter.fEnabledIn = false;
+        /* The new default is disabled, before it was enabled by default. */
+        hw.audioAdapter.fEnabledOut = false;
     }
 
     if (!elmHardware.getAttributeValue("version", hw.strVersion))
@@ -6038,10 +6043,12 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         if (hw.audioAdapter.fEnabled || m->sv < SettingsVersion_v1_16)
             pelmAudio->setAttribute("enabled", hw.audioAdapter.fEnabled);
 
-        if (!hw.audioAdapter.fEnabledIn)
+        if (   (m->sv <= SettingsVersion_v1_16 && !hw.audioAdapter.fEnabledIn)
+            || (m->sv > SettingsVersion_v1_16 && hw.audioAdapter.fEnabledIn))
             pelmAudio->setAttribute("enabledIn", hw.audioAdapter.fEnabledIn);
 
-        if (!hw.audioAdapter.fEnabledOut)
+        if (   (m->sv <= SettingsVersion_v1_16 && !hw.audioAdapter.fEnabledOut)
+            || (m->sv > SettingsVersion_v1_16 && hw.audioAdapter.fEnabledOut))
             pelmAudio->setAttribute("enabledOut", hw.audioAdapter.fEnabledOut);
 
         if (m->sv >= SettingsVersion_v1_15 && hw.audioAdapter.properties.size() > 0)
