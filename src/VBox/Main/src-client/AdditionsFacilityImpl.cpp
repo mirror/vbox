@@ -36,6 +36,7 @@ const AdditionsFacility::FacilityInfo AdditionsFacility::s_aFacilityInfo[8] =
     { "VirtualBox Desktop Integration", AdditionsFacilityType_VBoxTrayClient, AdditionsFacilityClass_Program },
     { "Seamless Mode", AdditionsFacilityType_Seamless, AdditionsFacilityClass_Feature },
     { "Graphics Mode", AdditionsFacilityType_Graphics, AdditionsFacilityClass_Feature },
+    { "Guest Monitor Attach", AdditionsFacilityType_MonitorAttach, AdditionsFacilityClass_Feature },
 };
 
 // constructor / destructor

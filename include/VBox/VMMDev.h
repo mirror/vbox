@@ -720,6 +720,7 @@ typedef enum
     VBoxGuestFacilityType_VBoxTrayClient  = 101, /* VBoxTray (Windows), VBoxClient (Linux, Unix). */
     VBoxGuestFacilityType_Seamless        = 1000,
     VBoxGuestFacilityType_Graphics        = 1100,
+    VBoxGuestFacilityType_MonitorAttach   = 1101,
     VBoxGuestFacilityType_All             = 0x7ffffffe,
     VBoxGuestFacilityType_SizeHack        = 0x7fffffff
 } VBoxGuestFacilityType;

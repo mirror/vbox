@@ -290,6 +290,7 @@ private:
     virtual HRESULT notifyHiDPIOutputPolicyChange(BOOL fUnscaledHiDPI);
     virtual HRESULT setScreenLayout(ScreenLayoutMode_T aScreenLayoutMode,
                                     const std::vector<ComPtr<IGuestScreenInfo> > &aGuestScreenInfo);
+    virtual HRESULT detachScreens(const std::vector<LONG> &aScreenIds);
 
     // Wrapped IEventListener properties
 

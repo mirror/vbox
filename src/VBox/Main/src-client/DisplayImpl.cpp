@@ -3054,6 +3054,12 @@ HRESULT Display::setScreenLayout(ScreenLayoutMode_T aScreenLayoutMode,
     return E_NOTIMPL;
 }
 
+HRESULT Display::detachScreens(const std::vector<LONG> &aScreenIds)
+{
+    NOREF(aScreenIds);
+    return E_NOTIMPL;
+}
+
 // wrapped IEventListener method
 HRESULT Display::handleEvent(const ComPtr<IEvent> &aEvent)
 {

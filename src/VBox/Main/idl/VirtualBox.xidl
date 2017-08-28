@@ -10314,7 +10314,7 @@ and "VAR" for unsetting. -->
 
   <enum
     name="AdditionsFacilityType"
-    uuid="98f7f957-89fb-49b6-a3b1-31e3285eb1d8"
+    uuid="c4b10d74-dd48-4ff4-9a40-785a2a389ade"
     >
     <desc>
       Guest Additions facility IDs.
@@ -10342,6 +10342,10 @@ and "VAR" for unsetting. -->
       <desc>Guest graphics mode. If not enabled, seamless rendering will not work, resize hints
         are not immediately acted on and guest display resizes are probably not initiated by
         the guest additions.
+      </desc>
+    </const>
+    <const name="MonitorAttach"         value="1101">
+      <desc>Guest supports monitor hotplug.
       </desc>
     </const>
     <const name="All"                   value="2147483646">
@@ -17152,7 +17156,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="ScreenLayoutMode"
-    uuid="9a982f4f-b815-4802-8539-d0b46435a7b7"
+    uuid="c7a9ee66-cfed-438b-9f8c-d3adf7588a4d"
     wsmap="managed"
     >
     <desc>
@@ -17170,11 +17174,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Always set the new mode even if the guest is already at desired mode.
       </desc>
     </const>
+
+    <const name="Attach" value="2">
+      <desc>
+        Attach new screens and always set the new mode for existing screens.
+      </desc>
+    </const>
   </enum>
 
   <interface
     name="IGuestScreenInfo" extends="$unknown"
-    uuid="5f99cd4d-bbd2-49ba-b24d-4b5b42fb4c3a"
+    uuid="6b2f98f8-9641-4397-854a-040439d0114b"
     wsmap="managed"
     >
     <attribute name="screenId" type="unsigned long" readonly="yes"/>
@@ -17186,11 +17196,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="width" type="unsigned long" readonly="yes"/>
     <attribute name="height" type="unsigned long" readonly="yes"/>
     <attribute name="bitsPerPixel" type="unsigned long" readonly="yes"/>
+    <attribute name="extendedInfo" type="wstring" readonly="yes"/>
   </interface>
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="02326f63-bcb3-4481-96e0-30d1c2ee97f6"
+    uuid="76eed314-3c72-4bbb-95cf-5eb4947a4041"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IEventListener"
     reservedMethods="4" reservedAttributes="2"
@@ -17535,6 +17546,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="screenLayoutMode" type="ScreenLayoutMode" dir="in"/>
       <param name="guestScreenInfo" type="IGuestScreenInfo" safearray="yes" dir="in"/>
+    </method>
+
+    <method name="detachScreens">
+      <desc>
+        Unplugs monitors from the virtual graphics card.
+      </desc>
+      <param name="screenIds" type="long" safearray="yes" dir="in"/>
     </method>
 
   </interface>
