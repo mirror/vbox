@@ -342,8 +342,8 @@ typedef struct AHCIPort
     bool                            fPoweredOn;
     /** Device has spun up. */
     bool                            fSpunUp;
-    /** First D2H FIS was send. */
-    bool                            fFirstD2HFisSend;
+    /** First D2H FIS was sent. */
+    bool                            fFirstD2HFisSent;
     /** Attached device is a CD/DVD drive. */
     bool                            fATAPI;
     /** Flag whether this port is in a reset state. */
@@ -956,6 +956,8 @@ static DECLCALLBACK(void) ahciCccTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
  */
 static void ahciPortResetFinish(PAHCIPort pAhciPort)
 {
+    ahciLog(("%s: Initiated.\n", __FUNCTION__));
+
     /* Cancel all tasks first. */
     bool fAllTasksCanceled = ahciCancelActiveTasks(pAhciPort);
     Assert(fAllTasksCanceled); NOREF(fAllTasksCanceled);
@@ -971,7 +973,7 @@ static void ahciPortResetFinish(PAHCIPort pAhciPort)
     pAhciPort->regSERR |= AHCI_PORT_SERR_X;
     pAhciPort->regTFD  |= ATA_STAT_BUSY;
 
-    if ((pAhciPort->regCMD & AHCI_PORT_CMD_FRE) && (!pAhciPort->fFirstD2HFisSend))
+    if ((pAhciPort->regCMD & AHCI_PORT_CMD_FRE) && (!pAhciPort->fFirstD2HFisSent))
     {
         ahciPostFirstD2HFisIntoMemory(pAhciPort);
         ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_DHRS);
@@ -1055,7 +1057,11 @@ static int PortCmdIssue_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint3
         /* Send a notification to R3 if u32TasksNew was 0 before our write. */
         if (ASMAtomicReadBool(&pAhciPort->fWrkThreadSleeping))
             ahciIoThreadKick(pAhci, pAhciPort);
+        else
+            ahciLog(("%s: Worker thread busy, no need to kick.\n", __FUNCTION__));
     }
+    else
+        ahciLog(("%s: Nothing to do (CMD=%08x).\n", __FUNCTION__, pAhciPort->regCMD));
 
     pAhciPort->regCI |= u32Value;
 
@@ -1150,7 +1156,7 @@ static int PortSControl_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint3
         pAhciPort->regSSTS = 0;
         pAhciPort->regSIG  = UINT32_MAX;
         pAhciPort->regTFD  = 0x7f;
-        pAhciPort->fFirstD2HFisSend = false;
+        pAhciPort->fFirstD2HFisSent = false;
         pAhciPort->regSCTL = u32Value;
     }
     else if (   (u32Value & AHCI_PORT_SCTL_DET) == AHCI_PORT_SCTL_DET_NINIT
@@ -1308,7 +1314,14 @@ static int PortCmd_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u
                 }
             }
             else
+            {
+                if (!pAhciPort->pDrvBase)
+                    ahciLog(("%s: No pDrvBase, clearing PxCMD.CR!\n", __FUNCTION__));
+                else
+                    ahciLog(("%s: PxIS.PCS set (PxIS=%#010x), clearing PxCMD.CR!\n", __FUNCTION__, pAhciPort->regIS));
+
                 u32Value &= ~AHCI_PORT_CMD_CR;
+            }
         }
         else
         {
@@ -1362,6 +1375,8 @@ static int PortCmd_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u
             pAhciPort->fSpunUp = true;
         }
     }
+    else
+        ahciLog(("%s: No pDrvBase, no fPoweredOn + fSpunUp, doing nothing!\n", __FUNCTION__));
 
     if (u32Value & AHCI_PORT_CMD_FRE)
     {
@@ -1369,15 +1384,15 @@ static int PortCmd_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u
 
         u32Value |= AHCI_PORT_CMD_FR;
 
-        /* Send the first D2H FIS only if it wasn't already send. */
-        if (   !pAhciPort->fFirstD2HFisSend
+        /* Send the first D2H FIS only if it wasn't already sent. */
+        if (   !pAhciPort->fFirstD2HFisSent
             && pAhciPort->pDrvBase)
         {
 #ifndef IN_RING3
             return VINF_IOM_R3_MMIO_WRITE;
 #else
             ahciPostFirstD2HFisIntoMemory(pAhciPort);
-            pAhciPort->fFirstD2HFisSend = true;
+            pAhciPort->fFirstD2HFisSent = true;
 #endif
         }
     }
@@ -2730,7 +2745,7 @@ static void ahciPostFirstD2HFisIntoMemory(PAHCIPort pAhciPort)
 {
     uint8_t d2hFis[AHCI_CMDFIS_TYPE_D2H_SIZE];
 
-    pAhciPort->fFirstD2HFisSend = true;
+    pAhciPort->fFirstD2HFisSent = true;
 
     ahciLog(("%s: Sending First D2H FIS from FIFO\n", __FUNCTION__));
     memset(&d2hFis[0], 0, sizeof(d2hFis));
@@ -4778,7 +4793,7 @@ static DECLCALLBACK(void) ahciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "PortActTasksActive=%u\n", pThisPort->cTasksActive);
         pHlp->pfnPrintf(pHlp, "PortPoweredOn=%RTbool\n", pThisPort->fPoweredOn);
         pHlp->pfnPrintf(pHlp, "PortSpunUp=%RTbool\n", pThisPort->fSpunUp);
-        pHlp->pfnPrintf(pHlp, "PortFirstD2HFisSend=%RTbool\n", pThisPort->fFirstD2HFisSend);
+        pHlp->pfnPrintf(pHlp, "PortFirstD2HFisSent=%RTbool\n", pThisPort->fFirstD2HFisSent);
         pHlp->pfnPrintf(pHlp, "PortATAPI=%RTbool\n", pThisPort->fATAPI);
         pHlp->pfnPrintf(pHlp, "PortTasksFinished=%#x\n", pThisPort->u32TasksFinished);
         pHlp->pfnPrintf(pHlp, "PortQueuedTasksFinished=%#x\n", pThisPort->u32QueuedTasksFinished);
