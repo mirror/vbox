@@ -1060,6 +1060,8 @@ VBoxCOM_INTERMEDIATES   = $(VBOX_MAIN_PREREQS) \
                           $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 VBoxCOM_SOURCES         = \
 	glue/com.cpp \
+	glue/VBoxLogRelCreate.cpp \
+	glue/GetVBoxUserHomeDirectory.cpp \
 	glue/initterm.cpp \
 	glue/string.cpp \
 	glue/AutoLock.cpp \
@@ -1096,8 +1098,7 @@ else # !win
 	glue/xpcom/helpers.cpp
 endif # !win
 
-glue/com.cpp_DEFS = \
-	KBUILD_TYPE=\"$(KBUILD_TYPE)\"
+glue/VBoxLogRelCreate.cpp_DEFS = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
 
 # 32-bit version of VBoxCOM.
 ifdef VBOX_WITH_32_ON_64_MAIN_API
