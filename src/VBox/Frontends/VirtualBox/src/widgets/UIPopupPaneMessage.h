@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIPopupPaneTextPane class declaration.
+ * VBox Qt GUI - UIPopupPaneMessage class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIPopupPaneTextPane_h__
-#define __UIPopupPaneTextPane_h__
+#ifndef ___UIPopupPaneMessage_h___
+#define ___UIPopupPaneMessage_h___
 
 /* Qt includes: */
 #include <QWidget>
@@ -26,7 +26,7 @@ class QLabel;
 class UIAnimation;
 
 /* Popup-pane text-pane prototype class: */
-class UIPopupPaneTextPane : public QWidget
+class UIPopupPaneMessage : public QWidget
 {
     Q_OBJECT;
     Q_PROPERTY(QSize collapsedSizeHint READ collapsedSizeHint);
@@ -45,7 +45,7 @@ signals:
 public:
 
     /* Constructor: */
-    UIPopupPaneTextPane(QWidget *pParent, const QString &strText, bool fFocused);
+    UIPopupPaneMessage(QWidget *pParent, const QString &strText, bool fFocused);
 
     /* API: Text stuff: */
     void setText(const QString &strText);
@@ -54,6 +54,10 @@ public:
     QSize minimumSizeHint() const;
     void setMinimumSizeHint(const QSize &minimumSizeHint);
     void layoutContent();
+
+    /* Property: Focus stuff: */
+    QSize collapsedSizeHint() const { return m_collapsedSizeHint; }
+    QSize expandedSizeHint() const { return m_expandedSizeHint; }
 
 private slots:
 
@@ -73,10 +77,6 @@ private:
 
     /* Helper: Layout stuff: */
     void updateSizeHint();
-
-    /* Property: Focus stuff: */
-    QSize collapsedSizeHint() const { return m_collapsedSizeHint; }
-    QSize expandedSizeHint() const { return m_expandedSizeHint; }
 
     /* Static helper: Font stuff: */
     static QFont tuneFont(QFont font);
@@ -99,4 +99,5 @@ private:
     UIAnimation *m_pAnimation;
 };
 
-#endif /* __UIPopupPaneTextPane_h__ */
+#endif /* !___UIPopupPaneMessage_h___ */
+

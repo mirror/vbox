@@ -57,7 +57,7 @@ void UIPopupStackViewport::createPopupPane(const QString &strPopupPaneID,
                                                                         buttonDescriptions);
 
     /* Attach popup-pane connection: */
-    connect(this, SIGNAL(sigProposePopupPaneWidth(int)), pPopupPane, SLOT(sltHandleProposalForWidth(int)));
+    connect(this, &UIPopupStackViewport::sigProposePopupPaneSize, pPopupPane, &UIPopupPane::sltHandleProposalForSize);
     connect(pPopupPane, SIGNAL(sigSizeHintChanged()), this, SLOT(sltAdjustGeometry()));
     connect(pPopupPane, SIGNAL(sigDone(int)), this, SLOT(sltPopupPaneDone(int)));
 
@@ -99,13 +99,14 @@ void UIPopupStackViewport::recallPopupPane(const QString &strPopupPaneID)
     pPopupPane->recall();
 }
 
-void UIPopupStackViewport::sltHandleProposalForWidth(int iWidth)
+void UIPopupStackViewport::sltHandleProposalForSize(QSize newSize)
 {
     /* Subtract layout margins: */
-    iWidth -= 2 * m_iLayoutMargin;
+    newSize.setWidth(newSize.width() - 2 * m_iLayoutMargin);
+    newSize.setHeight(newSize.height() - 2 * m_iLayoutMargin);
 
-    /* Propagate resulting width to popups: */
-    emit sigProposePopupPaneWidth(iWidth);
+    /* Propagate resulting size to popups: */
+    emit sigProposePopupPaneSize(newSize);
 }
 
 void UIPopupStackViewport::sltAdjustGeometry()

@@ -33,7 +33,7 @@ class UIPopupStackViewport : public QWidget
 signals:
 
     /* Notifiers: Layout stuff: */
-    void sigProposePopupPaneWidth(int iWidth);
+    void sigProposePopupPaneSize(QSize newSize);
     void sigSizeHintChanged();
 
     /* Notifiers: Popup-pane stuff: */
@@ -58,10 +58,14 @@ public:
     /* API: Layout stuff: */
     QSize minimumSizeHint() const { return m_minimumSizeHint; }
 
+public slots:
+
+    /* Handler: Layout stuff: */
+    void sltHandleProposalForSize(QSize newSize);
+
 private slots:
 
-    /* Handlers: Layout stuff: */
-    void sltHandleProposalForWidth(int iWidth);
+    /* Handler: Layout stuff: */
     void sltAdjustGeometry();
 
     /* Handler: Popup-pane stuff: */

@@ -26,7 +26,8 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declaration: */
-class UIPopupPaneTextPane;
+class UIPopupPaneMessage;
+class UIPopupPaneDetails;
 class UIPopupPaneButtonPane;
 class UIAnimation;
 
@@ -58,7 +59,8 @@ signals:
     void sigFocusLeave();
 
     /* Notifiers: Layout stuff: */
-    void sigProposeTextPaneWidth(int iWidth);
+    void sigProposePaneWidth(int iWidth);
+    void sigProposeDetailsPaneHeight(int iHeight);
     void sigSizeHintChanged();
 
     /* Notifier: Complete stuff: */
@@ -83,19 +85,27 @@ public:
     void setMinimumSizeHint(const QSize &minimumSizeHint);
     void layoutContent();
 
+public slots:
+
+    /* Handler: Layout stuff: */
+    void sltHandleProposalForSize(QSize newSize);
+
 private slots:
 
     /* Handler: Show/hide stuff: */
     void sltMarkAsShown();
 
-    /* Handlers: Layout stuff: */
-    void sltHandleProposalForWidth(int iWidth);
+    /* Handler: Layout stuff: */
     void sltUpdateSizeHint();
 
     /* Handler: Button stuff: */
     void sltButtonClicked(int iButtonID);
 
 private:
+
+    /* Type definitions: */
+    typedef QPair<QString, QString> QStringPair;
+    typedef QList<QStringPair> QStringPairList;
 
     /* Helpers: Prepare stuff: */
     void prepare();
@@ -133,6 +143,10 @@ private:
     int opacity() const { return m_iOpacity; }
     void setOpacity(int iOpacity) { m_iOpacity = iOpacity; update(); }
 
+    /* Helpers: Details stuff: */
+    QString prepareDetailsText() const;
+    void prepareDetailsList(QStringPairList &aDetailsList) const;
+
     /* Variables: General stuff: */
     bool m_fPolished;
     const QString m_strId;
@@ -163,7 +177,8 @@ private:
     int m_iOpacity;
 
     /* Widgets: */
-    UIPopupPaneTextPane *m_pTextPane;
+    UIPopupPaneMessage    *m_pMessagePane;
+    UIPopupPaneDetails    *m_pDetailsPane;
     UIPopupPaneButtonPane *m_pButtonPane;
 };
 

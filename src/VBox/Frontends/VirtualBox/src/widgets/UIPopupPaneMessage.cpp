@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIPopupPaneTextPane class implementation.
+ * VBox Qt GUI - UIPopupPaneMessage class implementation.
  */
 
 /*
@@ -23,13 +23,13 @@
 # include <QCheckBox>
 
 /* GUI includes: */
-# include "UIPopupPaneTextPane.h"
+# include "UIPopupPaneMessage.h"
 # include "UIAnimationFramework.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIPopupPaneTextPane::UIPopupPaneTextPane(QWidget *pParent, const QString &strText, bool fFocused)
+UIPopupPaneMessage::UIPopupPaneMessage(QWidget *pParent, const QString &strText, bool fFocused)
     : QWidget(pParent)
     , m_iLayoutMargin(0)
     , m_iLayoutSpacing(10)
@@ -43,10 +43,10 @@ UIPopupPaneTextPane::UIPopupPaneTextPane(QWidget *pParent, const QString &strTex
     prepare();
 }
 
-void UIPopupPaneTextPane::setText(const QString &strText)
+void UIPopupPaneMessage::setText(const QString &strText)
 {
     /* Make sure the text has changed: */
-    if (m_pLabel->text() == strText)
+    if (m_strText == strText)
         return;
 
     /* Fetch new text: */
@@ -57,7 +57,7 @@ void UIPopupPaneTextPane::setText(const QString &strText)
     updateSizeHint();
 }
 
-QSize UIPopupPaneTextPane::minimumSizeHint() const
+QSize UIPopupPaneMessage::minimumSizeHint() const
 {
     /* Check if desired-width set: */
     if (m_iDesiredLabelWidth >= 0)
@@ -67,7 +67,7 @@ QSize UIPopupPaneTextPane::minimumSizeHint() const
     return QWidget::minimumSizeHint();
 }
 
-void UIPopupPaneTextPane::setMinimumSizeHint(const QSize &minimumSizeHint)
+void UIPopupPaneMessage::setMinimumSizeHint(const QSize &minimumSizeHint)
 {
     /* Make sure the size-hint has changed: */
     if (m_minimumSizeHint == minimumSizeHint)
@@ -80,7 +80,7 @@ void UIPopupPaneTextPane::setMinimumSizeHint(const QSize &minimumSizeHint)
     emit sigSizeHintChanged();
 }
 
-void UIPopupPaneTextPane::layoutContent()
+void UIPopupPaneMessage::layoutContent()
 {
     /* Variables: */
     const int iWidth = width();
@@ -93,7 +93,7 @@ void UIPopupPaneTextPane::layoutContent()
     m_pLabel->resize(qMin(iWidth, iLabelWidth), qMin(iHeight, iLabelHeight));
 }
 
-void UIPopupPaneTextPane::sltHandleProposalForWidth(int iWidth)
+void UIPopupPaneMessage::sltHandleProposalForWidth(int iWidth)
 {
     /* Make sure the desired-width has changed: */
     if (m_iDesiredLabelWidth == iWidth)
@@ -106,7 +106,7 @@ void UIPopupPaneTextPane::sltHandleProposalForWidth(int iWidth)
     updateSizeHint();
 }
 
-void UIPopupPaneTextPane::sltFocusEnter()
+void UIPopupPaneMessage::sltFocusEnter()
 {
     /* Ignore if already focused: */
     if (m_fFocused)
@@ -119,7 +119,7 @@ void UIPopupPaneTextPane::sltFocusEnter()
     emit sigFocusEnter();
 }
 
-void UIPopupPaneTextPane::sltFocusLeave()
+void UIPopupPaneMessage::sltFocusLeave()
 {
     /* Ignore if already unfocused: */
     if (!m_fFocused)
@@ -132,7 +132,7 @@ void UIPopupPaneTextPane::sltFocusLeave()
     emit sigFocusLeave();
 }
 
-void UIPopupPaneTextPane::prepare()
+void UIPopupPaneMessage::prepare()
 {
     /* Prepare content: */
     prepareContent();
@@ -143,12 +143,12 @@ void UIPopupPaneTextPane::prepare()
     updateSizeHint();
 }
 
-void UIPopupPaneTextPane::prepareContent()
+void UIPopupPaneMessage::prepareContent()
 {
     /* Create label: */
     m_pLabel = new QLabel(this);
     {
-        /* Prepare label: */
+        /* Configure label: */
         m_pLabel->setFont(tuneFont(m_pLabel->font()));
         m_pLabel->setWordWrap(true);
         m_pLabel->setFocusPolicy(Qt::NoFocus);
@@ -156,7 +156,7 @@ void UIPopupPaneTextPane::prepareContent()
     }
 }
 
-void UIPopupPaneTextPane::prepareAnimation()
+void UIPopupPaneMessage::prepareAnimation()
 {
     /* Propagate parent signals: */
     connect(parent(), SIGNAL(sigFocusEnter()), this, SLOT(sltFocusEnter()));
@@ -166,7 +166,7 @@ void UIPopupPaneTextPane::prepareAnimation()
                                                          SIGNAL(sigFocusEnter()), SIGNAL(sigFocusLeave()), m_fFocused);
 }
 
-void UIPopupPaneTextPane::updateSizeHint()
+void UIPopupPaneMessage::updateSizeHint()
 {
     /* Recalculate collapsed size-hint: */
     {
@@ -195,7 +195,7 @@ void UIPopupPaneTextPane::updateSizeHint()
 }
 
 /* static */
-QFont UIPopupPaneTextPane::tuneFont(QFont font)
+QFont UIPopupPaneMessage::tuneFont(QFont font)
 {
 #if defined(VBOX_WS_MAC)
     font.setPointSize(font.pointSize() - 2);

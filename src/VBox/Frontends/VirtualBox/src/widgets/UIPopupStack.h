@@ -38,7 +38,7 @@ class UIPopupStack : public QWidget
 signals:
 
     /* Notifier: Layout stuff: */
-    void sigProposeStackViewportWidth(int iWidth);
+    void sigProposeStackViewportSize(QSize newSize);
 
     /* Notifier: Popup-pane stuff: */
     void sigPopupPaneDone(QString strPopupPaneID, int iResultCode);
@@ -87,7 +87,7 @@ private:
     void showEvent(QShowEvent *pEvent);
 
     /* Helper: Layout stuff: */
-    void propagateWidth();
+    void propagateSize();
 
     /* Static helpers: Prepare stuff: */
     static int parentMenuBarHeight(QWidget *pParent);

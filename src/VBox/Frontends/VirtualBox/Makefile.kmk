@@ -438,7 +438,8 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIMenuBar.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIPopupPane.h \
-	src/widgets/UIPopupPaneTextPane.h \
+	src/widgets/UIPopupPaneMessage.h \
+	src/widgets/UIPopupPaneDetails.h \
 	src/widgets/UIPopupPaneButtonPane.h \
 	src/widgets/UIPopupStack.h \
 	src/widgets/UIPopupStackViewport.h \
@@ -754,7 +755,8 @@ VirtualBox_SOURCES = \
 	src/widgets/UIMenuBar.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIPopupPane.cpp \
-	src/widgets/UIPopupPaneTextPane.cpp \
+	src/widgets/UIPopupPaneMessage.cpp \
+	src/widgets/UIPopupPaneDetails.cpp \
 	src/widgets/UIPopupPaneButtonPane.cpp \
 	src/widgets/UIPopupStack.cpp \
 	src/widgets/UIPopupStackViewport.cpp \

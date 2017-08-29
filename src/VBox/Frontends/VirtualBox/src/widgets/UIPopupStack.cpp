@@ -61,8 +61,8 @@ void UIPopupStack::createPopupPane(const QString &strPopupPaneID,
                                        strMessage, strDetails,
                                        buttonDescriptions);
 
-    /* Propagate width: */
-    propagateWidth();
+    /* Propagate size: */
+    propagateSize();
 }
 
 void UIPopupStack::updatePopupPane(const QString &strPopupPaneID,
@@ -229,8 +229,8 @@ void UIPopupStack::prepareContent()
                 /* Configure scroll-viewport: */
                 m_pScrollViewport->setCursor(Qt::ArrowCursor);
                 /* Connect scroll-viewport: */
-                connect(this, SIGNAL(sigProposeStackViewportWidth(int)),
-                        m_pScrollViewport, SLOT(sltHandleProposalForWidth(int)));
+                connect(this, &UIPopupStack::sigProposeStackViewportSize,
+                        m_pScrollViewport, &UIPopupStackViewport::sltHandleProposalForSize);
                 connect(m_pScrollViewport, SIGNAL(sigSizeHintChanged()),
                         this, SLOT(sltAdjustGeometry()));
                 connect(m_pScrollViewport, SIGNAL(sigPopupPaneDone(QString, int)),
@@ -259,8 +259,8 @@ bool UIPopupStack::eventFilter(QObject *pWatched, QEvent *pEvent)
     {
         case QEvent::Resize:
         {
-            /* Propagate width: */
-            propagateWidth();
+            /* Propagate size: */
+            propagateSize();
             /* Adjust geometry: */
             sltAdjustGeometry();
             break;
@@ -280,35 +280,38 @@ bool UIPopupStack::eventFilter(QObject *pWatched, QEvent *pEvent)
 
 void UIPopupStack::showEvent(QShowEvent*)
 {
-    /* Propagate width: */
-    propagateWidth();
+    /* Propagate size: */
+    propagateSize();
     /* Adjust geometry: */
     sltAdjustGeometry();
 }
 
-void UIPopupStack::propagateWidth()
+void UIPopupStack::propagateSize()
 {
     /* Make sure parent is currently set: */
     if (!parent())
         return;
 
-    /* Get parent width: */
-    int iWidth = parentWidget()->width();
+    /* Get parent size: */
+    QSize newSize = parentWidget()->size();
     /* Subtract left/right layout margins: */
     if (m_pMainLayout)
     {
         int iLeft, iTop, iRight, iBottom;
         m_pMainLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
-        iWidth -= (iLeft + iRight);
+        newSize.setWidth(newSize.width() - (iLeft + iRight));
+        newSize.setHeight(newSize.height() - (iTop + iBottom));
     }
     /* Subtract scroll-area frame-width: */
     if (m_pScrollArea)
     {
-        iWidth -= 2 * m_pScrollArea->frameWidth();
+        newSize.setWidth(newSize.width() - (2 * m_pScrollArea->frameWidth()));
+        newSize.setHeight(newSize.height() - (2 * m_pScrollArea->frameWidth()));
     }
+    newSize.setHeight(newSize.height() - (m_iParentMenuBarHeight + m_iParentStatusBarHeight));
 
-    /* Propose resulting width to viewport: */
-    emit sigProposeStackViewportWidth(iWidth);
+    /* Propose resulting size to viewport: */
+    emit sigProposeStackViewportSize(newSize);
 }
 
 /* static */
@@ -338,7 +341,9 @@ int UIPopupStack::parentStatusBarHeight(QWidget *pParent)
         {
             /* Search for existing status-bar child: */
             if (QStatusBar *pStatusBar = pMainWindow->findChild<QStatusBar*>())
-                return pStatusBar->height();
+                if(pStatusBar->isVisible())
+                    return pStatusBar->height();
+
         }
     }
     /* Zero by default: */

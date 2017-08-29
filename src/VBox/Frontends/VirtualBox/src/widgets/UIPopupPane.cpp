@@ -20,13 +20,18 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Qt includes: */
 # include <QPainter>
+# include <QTextEdit>
 
 /* GUI includes: */
 # include "UIPopupPane.h"
-# include "UIPopupPaneTextPane.h"
+# include "UIPopupPaneMessage.h"
+# include "UIPopupPaneDetails.h"
 # include "UIPopupPaneButtonPane.h"
 # include "UIAnimationFramework.h"
 # include "QIMessageBox.h"
+
+/* Other VBox includes: */
+# include <iprt/assert.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -47,7 +52,7 @@ UIPopupPane::UIPopupPane(QWidget *pParent,
     , m_iDefaultOpacity(180)
     , m_iHoveredOpacity(250)
     , m_iOpacity(m_fHovered ? m_iHoveredOpacity : m_iDefaultOpacity)
-    , m_pTextPane(0), m_pButtonPane(0)
+    , m_pMessagePane(0), m_pDetailsPane(0), m_pButtonPane(0)
 {
     /* Prepare: */
     prepare();
@@ -67,7 +72,7 @@ void UIPopupPane::setMessage(const QString &strMessage)
 
     /* Fetch new message: */
     m_strMessage = strMessage;
-    m_pTextPane->setText(m_strMessage);
+    m_pMessagePane->setText(m_strMessage);
 }
 
 void UIPopupPane::setDetails(const QString &strDetails)
@@ -78,6 +83,7 @@ void UIPopupPane::setDetails(const QString &strDetails)
 
     /* Fetch new details: */
     m_strDetails = strDetails;
+    m_pDetailsPane->setText(prepareDetailsText());
 }
 
 void UIPopupPane::setMinimumSizeHint(const QSize &minimumSizeHint)
@@ -102,24 +108,33 @@ void UIPopupPane::layoutContent()
     const int iButtonPaneMinimumWidth = buttonPaneMinimumSizeHint.width();
     const int iButtonPaneMinimumHeight = buttonPaneMinimumSizeHint.height();
     const int iTextPaneWidth = iWidth - 2 * m_iLayoutMargin - m_iLayoutSpacing - iButtonPaneMinimumWidth;
-    const int iTextPaneHeight = m_pTextPane->minimumSizeHint().height();
+    const int iTextPaneHeight = m_pMessagePane->minimumSizeHint().height();
     const int iMaximumHeight = qMax(iTextPaneHeight, iButtonPaneMinimumHeight);
     const int iMinimumHeight = qMin(iTextPaneHeight, iButtonPaneMinimumHeight);
     const int iHeightShift = (iMaximumHeight - iMinimumHeight) / 2;
     const bool fTextPaneShifted = iTextPaneHeight < iButtonPaneMinimumHeight;
+    const int iTextPaneYOffset = fTextPaneShifted ? m_iLayoutMargin + iHeightShift : m_iLayoutMargin;
 
-    /* Text-pane: */
-    m_pTextPane->move(m_iLayoutMargin,
-                      fTextPaneShifted ? m_iLayoutMargin + iHeightShift : m_iLayoutMargin);
-    m_pTextPane->resize(iTextPaneWidth,
-                        iTextPaneHeight);
-    m_pTextPane->layoutContent();
+    /* Message-pane: */
+    m_pMessagePane->move(m_iLayoutMargin, iTextPaneYOffset);
+    m_pMessagePane->resize(iTextPaneWidth, iTextPaneHeight);
+    m_pMessagePane->layoutContent();
 
     /* Button-pane: */
     m_pButtonPane->move(m_iLayoutMargin + iTextPaneWidth + m_iLayoutSpacing,
                         m_iLayoutMargin);
     m_pButtonPane->resize(iButtonPaneMinimumWidth,
-                          iHeight - 2 * m_iLayoutMargin);
+                          iHeight - m_iLayoutSpacing);
+
+    /* Details-pane: */
+    if(m_pDetailsPane->isVisible())
+    {
+        m_pDetailsPane->move(m_iLayoutMargin,
+                             iTextPaneYOffset + iTextPaneHeight + m_iLayoutSpacing);
+        m_pDetailsPane->resize(iTextPaneWidth + iButtonPaneMinimumWidth,
+                               m_pDetailsPane->minimumSizeHint().height() -  m_iLayoutMargin);
+        m_pDetailsPane->layoutContent();
+    }
 }
 
 void UIPopupPane::sltMarkAsShown()
@@ -128,11 +143,10 @@ void UIPopupPane::sltMarkAsShown()
     m_fShown = true;
 }
 
-void UIPopupPane::sltHandleProposalForWidth(int iWidth)
+void UIPopupPane::sltHandleProposalForSize(QSize newSize)
 {
-    /* Make sure text-pane exists: */
-    if (!m_pTextPane)
-        return;
+    /* Prepare the width: */
+    int iWidth = newSize.width();
 
     /* Subtract layout margins: */
     iWidth -= 2 * m_iLayoutMargin;
@@ -141,8 +155,24 @@ void UIPopupPane::sltHandleProposalForWidth(int iWidth)
     /* Subtract button-pane width: */
     iWidth -= m_pButtonPane->minimumSizeHint().width();
 
-    /* Propose resulting width to text-pane: */
-    emit sigProposeTextPaneWidth(iWidth);
+    /* Propose resulting width to the panes: */
+    emit sigProposePaneWidth(iWidth);
+
+    /* Prepare the height: */
+    int iHeight = newSize.height();
+    /* Determine maximum height of the message-pane / button-pane: */
+    int iExtraHeight = qMax(m_pMessagePane->expandedSizeHint().height(),
+                            m_pButtonPane->minimumSizeHint().height());
+
+    /* Subtract height of the message pane: */
+    iHeight -= iExtraHeight;
+    /* Subtract layout margins: */
+    iHeight -= 2 * m_iLayoutMargin;
+    /* Subtract layout spacing: */
+    iHeight -= m_iLayoutSpacing;
+
+    /* Propose resulting height to details-pane: */
+    emit sigProposeDetailsPaneHeight(iHeight);
 }
 
 void UIPopupPane::sltUpdateSizeHint()
@@ -154,7 +184,7 @@ void UIPopupPane::sltUpdateSizeHint()
         iMinimumWidthHint += 2 * m_iLayoutMargin;
         {
             /* Take into account widgets: */
-            iMinimumWidthHint += m_pTextPane->minimumSizeHint().width();
+            iMinimumWidthHint += m_pMessagePane->minimumSizeHint().width();
             iMinimumWidthHint += m_iLayoutSpacing;
             iMinimumWidthHint += m_pButtonPane->minimumSizeHint().width();
         }
@@ -167,9 +197,12 @@ void UIPopupPane::sltUpdateSizeHint()
         iMinimumHeightHint += 2 * m_iLayoutMargin;
         {
             /* Take into account widgets: */
-            const int iTextPaneHeight = m_pTextPane->minimumSizeHint().height();
+            const int iTextPaneHeight = m_pMessagePane->minimumSizeHint().height();
             const int iButtonBoxHeight = m_pButtonPane->minimumSizeHint().height();
             iMinimumHeightHint += qMax(iTextPaneHeight, iButtonBoxHeight);
+            /* Add the height of details-pane only if it is visible: */
+            if (m_pDetailsPane->isVisible())
+                iMinimumHeightHint += m_pDetailsPane->minimumSizeHint().height();
         }
     }
 
@@ -217,30 +250,42 @@ void UIPopupPane::prepareBackground()
 
 void UIPopupPane::prepareContent()
 {
-    /* Create message-label: */
-    m_pTextPane = new UIPopupPaneTextPane(this, m_strMessage, m_fFocused);
+    /* Create message-pane: */
+    m_pMessagePane = new UIPopupPaneMessage(this, m_strMessage, m_fFocused);
     {
-        /* Prepare label: */
-        connect(this, SIGNAL(sigProposeTextPaneWidth(int)), m_pTextPane, SLOT(sltHandleProposalForWidth(int)));
-        connect(m_pTextPane, SIGNAL(sigSizeHintChanged()), this, SLOT(sltUpdateSizeHint()));
-        m_pTextPane->installEventFilter(this);
+        /* Configure message-pane: */
+        connect(this, SIGNAL(sigProposePaneWidth(int)), m_pMessagePane, SLOT(sltHandleProposalForWidth(int)));
+        connect(m_pMessagePane, SIGNAL(sigSizeHintChanged()), this, SLOT(sltUpdateSizeHint()));
+        m_pMessagePane->installEventFilter(this);
     }
 
     /* Create button-box: */
     m_pButtonPane = new UIPopupPaneButtonPane(this);
     {
-        /* Prepare button-box: */
+        /* Configure button-box: */
         connect(m_pButtonPane, SIGNAL(sigButtonClicked(int)), this, SLOT(sltButtonClicked(int)));
         m_pButtonPane->installEventFilter(this);
         m_pButtonPane->setButtons(m_buttonDescriptions);
     }
 
+    /* Create details-pane: */
+    m_pDetailsPane = new UIPopupPaneDetails(this, prepareDetailsText(), m_fFocused);
+    {
+        /* Configure details-pane: */
+        connect(this, &UIPopupPane::sigProposePaneWidth,         m_pDetailsPane, &UIPopupPaneDetails::sltHandleProposalForWidth);
+        connect(this, &UIPopupPane::sigProposeDetailsPaneHeight, m_pDetailsPane, &UIPopupPaneDetails::sltHandleProposalForHeight);
+        connect(m_pDetailsPane, &UIPopupPaneDetails::sigSizeHintChanged, this, &UIPopupPane::sltUpdateSizeHint);
+        m_pDetailsPane->installEventFilter(this);
+    }
+
     /* Prepare focus rules: */
     setFocusPolicy(Qt::StrongFocus);
-    m_pTextPane->setFocusPolicy(Qt::StrongFocus);
+    m_pMessagePane->setFocusPolicy(Qt::StrongFocus);
     m_pButtonPane->setFocusPolicy(Qt::StrongFocus);
+    m_pDetailsPane->setFocusPolicy(Qt::StrongFocus);
     setFocusProxy(m_pButtonPane);
-    m_pTextPane->setFocusProxy(m_pButtonPane);
+    m_pMessagePane->setFocusProxy(m_pButtonPane);
+    m_pDetailsPane->setFocusProxy(m_pButtonPane);
 
     /* Translate UI finally: */
     retranslateUi();
@@ -267,16 +312,16 @@ void UIPopupPane::retranslateUi()
 
 void UIPopupPane::retranslateToolTips()
 {
-    /* Translate pane & text-pane tool-tips: */
+    /* Translate pane & message-pane tool-tips: */
     if (m_fFocused)
     {
         setToolTip(QString());
-        m_pTextPane->setToolTip(QString());
+        m_pMessagePane->setToolTip(QString());
     }
     else
     {
         setToolTip(QApplication::translate("UIPopupCenter", "Click for full details"));
-        m_pTextPane->setToolTip(QApplication::translate("UIPopupCenter", "Click for full details"));
+        m_pMessagePane->setToolTip(QApplication::translate("UIPopupCenter", "Click for full details"));
     }
 }
 
@@ -440,5 +485,54 @@ void UIPopupPane::done(int iResultCode)
 {
     /* Notify listeners: */
     emit sigDone(iResultCode);
+}
+
+QString UIPopupPane::prepareDetailsText() const
+{
+    if (m_strDetails.isEmpty())
+        return QString();
+
+    QStringPairList aDetailsList;
+    prepareDetailsList(aDetailsList);
+    if (aDetailsList.isEmpty())
+        return QString();
+
+    if (aDetailsList.size() == 1)
+        return tr("<p><b>Details:</b>") + m_strDetails + "</p>";
+
+    QString strResultText;
+    for (int iListIdx = 0; iListIdx < aDetailsList.size(); ++iListIdx)
+    {
+        strResultText += tr("<p><b>Details:</b> (%1 of %2)").arg(iListIdx + 1).arg(aDetailsList.size());
+        const QString strFirstPart = aDetailsList.at(iListIdx).first;
+        const QString strSecondPart = aDetailsList.at(iListIdx).second;
+        if (strFirstPart.isEmpty())
+            strResultText += strSecondPart + "</p>";
+        else
+            strResultText += QString("%1<br>%2").arg(strFirstPart, strSecondPart) + "</p>";
+    }
+    return strResultText;
+}
+
+void UIPopupPane::prepareDetailsList(QStringPairList &aDetailsList) const
+{
+    if (m_strDetails.isEmpty())
+        return;
+
+    /* Split details into paragraphs: */
+    QStringList aParagraphs(m_strDetails.split("<!--EOP-->", QString::SkipEmptyParts));
+    /* Make sure details-text has at least one paragraph: */
+    AssertReturnVoid(!aParagraphs.isEmpty());
+
+    /* Enumerate all the paragraphs: */
+    foreach (const QString &strParagraph, aParagraphs)
+    {
+        /* Split each paragraph into pairs: */
+        QStringList aParts(strParagraph.split("<!--EOM-->", QString::KeepEmptyParts));
+        /* Make sure each paragraph consist of 2 parts: */
+        AssertReturnVoid(aParts.size() == 2);
+        /* Append each pair into details-list: */
+        aDetailsList << QStringPair(aParts.at(0), aParts.at(1));
+    }
 }
 
