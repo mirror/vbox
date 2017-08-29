@@ -455,7 +455,7 @@ private:
         }
         else
         {
-            strFullData = QString(s_strTableRow2).arg(QApplication::translate("UIGDetails", "Disabled", "details (audio)"));
+            strFullData = QString(s_strTableRow1).arg(QApplication::translate("UIGDetails", "Disabled", "details (audio)"));
             setState(AudioState_AllOff);
         }
 
