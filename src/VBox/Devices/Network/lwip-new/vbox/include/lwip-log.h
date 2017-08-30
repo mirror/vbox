@@ -27,9 +27,10 @@
  *          the  lwIP XXXX_DEBUG macros are used in \#if XXXX_DEBUG
  *          tests around the place.  This make MSC raise complaint
  *          C4668, that e.g. 'LOG_GROUP_LWIP_IP4' is not defined as a
- *          preprocessor macro and therefore placed with '0'.  However,
- *          that works just fine because we or LWIP_DB_ON so the test
- *          is true despite the warning. Thus the pragma below
+ *          preprocessor macro and therefore replaced with '0'.
+ *          However, that works just fine because we or LWIP_DBG_ON so
+ *          the test is true despite the warning. Thus the pragma
+ *          below.
  */
 # ifdef _MSC_VER
 #  pragma warning(disable:4668)
