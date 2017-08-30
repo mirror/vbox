@@ -1336,6 +1336,27 @@ static int vboxNetNATLogInit(int argc, char **argv)
                                0 /* uHistoryFileTime */,
                                0 /* uHistoryFileSize */,
                                szError, sizeof(szError));
+
+    /*
+     * Provide immediate feedback if corresponding LogRel level is
+     * enabled.  It's frustrating when you chase some rare event and
+     * discover you didn't actually have the corresponding log level
+     * enabled because of a typo in the environment variable name or
+     * its content.
+     */
+#define LOG_PING(_log) _log((#_log " enabled\n"))
+    LOG_PING(LogRel2);
+    LOG_PING(LogRel3);
+    LOG_PING(LogRel4);
+    LOG_PING(LogRel5);
+    LOG_PING(LogRel6);
+    LOG_PING(LogRel7);
+    LOG_PING(LogRel8);
+    LOG_PING(LogRel9);
+    LOG_PING(LogRel10);
+    LOG_PING(LogRel11);
+    LOG_PING(LogRel12);
+
     return rc;
 }
 
