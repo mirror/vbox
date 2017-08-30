@@ -239,18 +239,18 @@ fwtcp_pmgr_listen(struct pollmgr_handler *handler, SOCKET fd, int revents)
     }
 
 
-#ifdef LOG_ENABLED
     if (ss.ss_family == PF_INET) {
         struct sockaddr_in *peer4 = (struct sockaddr_in *)&ss;
+        RT_NOREF(peer4);
         DPRINTF(("<--- TCP %RTnaipv4:%d\n",
                  peer4->sin_addr.s_addr, ntohs(peer4->sin_port)));
     }
     else { /* PF_INET6 */
         struct sockaddr_in6 *peer6 = (struct sockaddr_in6 *)&ss;
+        RT_NOREF(peer6);
         DPRINTF(("<--- TCP %RTnaipv6:%d\n",
                  &peer6->sin6_addr, ntohs(peer6->sin6_port)));
     }
-#endif
 
     pxtcp = pxtcp_create_forwarded(newsock);
     if (pxtcp == NULL) {
