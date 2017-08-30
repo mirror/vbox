@@ -4781,7 +4781,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot have an Effective Boolean Value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un valore di tipo %1 non può essere un Effective Boolean Value.</translation>
     </message>
     <message>
         <source>Effective Boolean Value cannot be calculated for a sequence containing two or more atomic values.</source>
@@ -5035,7 +5035,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The initialization of variable %1 depends on itself</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;inizializzazione della variabile %1 dipende da se stessa</translation>
     </message>
     <message>
         <source>No variable by name %1 exists</source>
@@ -5051,7 +5051,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The encoding %1 is invalid. It must contain Latin characters only, must not contain whitespace, and must match the regular expression %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>La codifica %1 non è valida. Deve contenere solo caratteri Latin, non deve contenere spazi bianchi e deve verificare l&apos;espressione regolare %2.</translation>
     </message>
     <message>
         <source>No function with signature %1 is available</source>

@@ -104,7 +104,7 @@ have libgstreamer-plugins-base installed.</source>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
         <translation>
-            <numerusform>遺失所需的轉碼器。 您需要安裝以下轉碼器以播放這個內容: %0</numerusform>
+            <numerusform>缺少所需的轉碼器。 您需要安裝以下轉碼器來播放這個內容: %0</numerusform>
         </translation>
     </message>
     <message>
@@ -154,11 +154,11 @@ have libgstreamer-plugins-base installed.</source>
     <name>Q3DataTable</name>
     <message>
         <source>True</source>
-        <translation>True</translation>
+        <translation>是</translation>
     </message>
     <message>
         <source>False</source>
-        <translation>False</translation>
+        <translation>否</translation>
     </message>
     <message>
         <source>Insert</source>
@@ -763,7 +763,7 @@ to
     </message>
     <message>
         <source>A&amp;lpha channel:</source>
-        <translation>Alpha 通道(&amp;L):</translation>
+        <translation>Alpha 色板(&amp;L):</translation>
     </message>
     <message>
         <source>&amp;Basic colors</source>
@@ -790,11 +790,11 @@ to
     </message>
     <message>
         <source>False</source>
-        <translation>False</translation>
+        <translation>否</translation>
     </message>
     <message>
         <source>True</source>
-        <translation>True</translation>
+        <translation>是</translation>
     </message>
     <message>
         <source>Close</source>
@@ -1336,7 +1336,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Light</source>
-        <translation>Light</translation>
+        <translation>亮</translation>
     </message>
     <message>
         <source>Italic</source>
@@ -3404,7 +3404,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Return</source>
-        <translation>返回</translation>
+        <translation>Enter</translation>
     </message>
     <message>
         <source>Enter</source>
@@ -3464,11 +3464,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>CapsLock</source>
-        <translation>CapsLock</translation>
+        <translation>大寫鎖定</translation>
     </message>
     <message>
         <source>NumLock</source>
-        <translation>NumLock</translation>
+        <translation>數字鎖</translation>
     </message>
     <message>
         <source>ScrollLock</source>
@@ -3656,7 +3656,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Num Lock</source>
-        <translation>Num Lock</translation>
+        <translation>數字鎖</translation>
     </message>
     <message>
         <source>Number Lock</source>
@@ -4906,7 +4906,7 @@ Please choose a different file name.</source>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
         <translation>
-            <numerusform>%1 取得最多 %n 個引數。 因此 %2 無效。</numerusform>
+            <numerusform>%1 最多佔有 %n 個引數。 因此 %2 無效。</numerusform>
         </translation>
     </message>
     <message numerus="yes">

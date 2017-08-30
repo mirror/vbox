@@ -1994,36 +1994,8 @@
         <translation>%1%</translation>
     </message>
     <message>
-        <location line="+22"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+18"/>
-        <source>Chipset Type</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+12"/>
-        <source>Enabled</source>
-        <comment>details (system/EFI)</comment>
-        <translation type="unfinished">Omogočeno</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-1"/>
-        <source>EFI</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+7"/>
-        <source>Disabled</source>
-        <comment>details (system/EFI)</comment>
-        <translation type="unfinished">Onemogočeno</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+12"/>
+        <location line="+56"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+48"/>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
         <translation>VT-x/AMD-V</translation>
@@ -2050,13 +2022,7 @@
         <translation>Zasloni</translation>
     </message>
     <message>
-        <location line="+41"/>
-        <source>Disabled</source>
-        <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation type="unfinished">Onemogočeno</translation>
-    </message>
-    <message>
-        <location line="+15"/>
+        <location line="+56"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+42"/>
         <source>3D</source>
         <comment>details (display)</comment>
@@ -2249,8 +2215,36 @@
         <translation>Vrstni red zagona</translation>
     </message>
     <message>
-        <location line="+45"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+38"/>
+        <location line="+8"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+5"/>
+        <source>Chipset Type</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+12"/>
+        <source>Enabled</source>
+        <comment>details (system/EFI)</comment>
+        <translation type="unfinished">Omogočeno</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-1"/>
+        <source>EFI</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+7"/>
+        <source>Disabled</source>
+        <comment>details (system/EFI)</comment>
+        <translation type="unfinished">Onemogočeno</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+15"/>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
         <translation>Ugnezdeno odstranjevanje</translation>
@@ -2263,7 +2257,13 @@
         <translation>Grafični pomnilnik</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+49"/>
+        <source>Disabled</source>
+        <comment>details (display/Unscaled HiDPI Video Output)</comment>
+        <translation type="unfinished">Onemogočeno</translation>
+    </message>
+    <message>
+        <location line="+11"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+44"/>
         <source>2D Video</source>
         <comment>details (display)</comment>
@@ -2911,7 +2911,7 @@
         <translation type="vanished">Naslov IPv6</translation>
     </message>
     <message>
-        <source>IPv6 Prefix Length</source>
+        <source>IPv6 Network Mask Length</source>
         <translation type="vanished">Dolžina maske omrežja IPv6</translation>
     </message>
     <message>
@@ -3158,7 +3158,7 @@
         <translation type="vanished">Uredi izbrano omrežje samo za gostitelja.</translation>
     </message>
     <message>
-        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 prefix length.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 network mask prefix length.</source>
         <translation type="vanished">Vmesnik gostitelja &lt;b&gt;%1&lt;/b&gt; trenutno nima veljavne dolžine predpone maske omrežja IPv6.</translation>
     </message>
 </context>
@@ -3201,11 +3201,11 @@
         <translation type="vanished">Vsebuje naslov IPv6 gostitelja za ta vmesnik, če je podprt.</translation>
     </message>
     <message>
-        <source>IPv6 Prefix &amp;Length:</source>
+        <source>IPv6 Network Mask &amp;Length:</source>
         <translation type="vanished">&amp;Dolžina maske omrežja IPv6:</translation>
     </message>
     <message>
-        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="vanished">Vsebuje dolžino predpone maske omrežja IPv6 gostitelja za ta vmesnik, če je IPv6 podprt.</translation>
     </message>
     <message>
@@ -3662,12 +3662,12 @@
     <message>
         <location line="+1"/>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished">&amp;Dolžina maske omrežja IPv6:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">Vsebuje dolžino predpone maske omrežja IPv6 gostitelja za ta vmesnik, če je IPv6 podprt.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
@@ -3867,7 +3867,7 @@
     <message>
         <location line="+4"/>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished">Dolžina maske omrežja IPv6</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+2"/>
