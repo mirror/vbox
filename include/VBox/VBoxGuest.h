@@ -327,7 +327,8 @@ typedef struct VBGLIOCDRIVERVERSIONINFO
     } u;
 } VBGLIOCDRIVERVERSIONINFO, RT_FAR *PVBGLIOCDRIVERVERSIONINFO;
 AssertCompileSize(VBGLIOCDRIVERVERSIONINFO, 24 + 20);
-#ifndef __GNUC__ /* Some GCC versions can't handle the complicated RT_UOFFSET_AFTER macro, it seems. */
+#if  !defined(__GNUC__) /* Some GCC versions can't handle the complicated RT_UOFFSET_AFTER macro, it seems. */ \
+  && (!defined(RT_OS_OS2) || (!defined(__IBMC__) && !defined(__IBMCPP__)))
 AssertCompile(VBGL_IOCTL_DRIVER_VERSION_INFO_SIZE_IN == 24 + 16);
 #endif
 /** @} */
@@ -404,7 +405,8 @@ typedef struct VBGLIOCHGCMCONNECT
     } u;
 } VBGLIOCHGCMCONNECT, RT_FAR *PVBGLIOCHGCMCONNECT;
 AssertCompileSize(VBGLIOCHGCMCONNECT, 24 + 132);
-#ifndef __GNUC__ /* Some GCC versions can't handle the complicated RT_UOFFSET_AFTER macro, it seems. */
+#if !defined(__GNUC__)  /* Some GCC versions can't handle the complicated RT_UOFFSET_AFTER macro, it seems. */ \
+  && (!defined(RT_OS_OS2) || (!defined(__IBMC__) && !defined(__IBMCPP__)))
 AssertCompile(VBGL_IOCTL_HGCM_CONNECT_SIZE_OUT == 24 + 4);
 #endif
 /** @} */
@@ -1043,7 +1045,8 @@ typedef struct VBGLIOCIDCCONNECT
     } u;
 } VBGLIOCIDCCONNECT, RT_FAR *PVBGLIOCIDCCONNECT;
 AssertCompileSize(VBGLIOCIDCCONNECT, 24 + 16 + (ARCH_BITS == 64 ? 8 : 4) * 2);
-#ifndef __GNUC__ /* Some GCC versions can't handle the complicated RT_UOFFSET_AFTER macro, it seems. */
+#if  !defined(__GNUC__) /* Some GCC versions can't handle the complicated RT_UOFFSET_AFTER macro, it seems. */ \
+  && (!defined(RT_OS_OS2) || (!defined(__IBMC__) && !defined(__IBMCPP__)))
 AssertCompile(VBGL_IOCTL_IDC_CONNECT_SIZE_IN == 24 + 16);
 #endif
 #define VBGL_IOCTL_IDC_CONNECT_MAGIC_COOKIE         UINT32_C(0x55aa4d5a) /**< Magic value for doing an IDC connect. */
