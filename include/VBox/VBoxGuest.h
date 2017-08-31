@@ -489,6 +489,29 @@ typedef VBGLIOCHGCMCALL const *PCVBGLIOCHGCMCALL;
     } while (0)
 
 /**
+ * Initialize a HGCM header (VBGLIOCHGCMCALL) for a non-timed call, custom size.
+ *
+ * This is usually only needed when appending page lists to the call.
+ *
+ * @param   a_pHdr          The header to initalize.
+ * @param   a_idClient      The client connection ID to call thru.
+ * @param   a_idFunction    The function we're calling
+ * @param   a_cParameters   Number of parameters.
+ * @param   a_cbReq         The request size.
+ */
+# define VBGL_HGCM_HDR_INIT_EX(a_pHdr, a_idClient, a_idFunction, a_cParameters, a_cbReq) \
+    do { \
+        Assert((a_cbReq) >= sizeof(VBGLIOCHGCMCALL) + (a_cParameters) * sizeof(HGCMFunctionParameter)); \
+        VBGLREQHDR_INIT_EX(&(a_pHdr)->Hdr, (a_cbReq), (a_cbReq)); \
+        (a_pHdr)->u32ClientID    = (a_idClient); \
+        (a_pHdr)->u32Function    = (a_idFunction); \
+        (a_pHdr)->cMsTimeout     = RT_INDEFINITE_WAIT; \
+        (a_pHdr)->fInterruptible = true; \
+        (a_pHdr)->bReserved      = 0; \
+        (a_pHdr)->cParms         = (a_cParameters); \
+    } while (0)
+
+/**
  * Initialize a HGCM header (VBGLIOCHGCMCALL), with timeout (interruptible).
  *
  * @param   a_pHdr          The header to initalize.

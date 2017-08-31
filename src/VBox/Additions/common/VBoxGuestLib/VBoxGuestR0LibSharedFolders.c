@@ -51,6 +51,11 @@
     VBGL_HGCM_HDR_INIT(a, (c)->idClient, SHFL_FN_##b, SHFL_CPARMS_##b); \
     (a)->fInterruptible = false /* Currently we do like nfs with -o hard (default). */
 
+#define VBOX_INIT_CALL_EX(a, b, c, a_cbReq) \
+    LogFunc(("%s, idClient=%d\n", "SHFL_FN_" # b, (c)->idClient)); \
+    VBGL_HGCM_HDR_INIT_EX(a, (c)->idClient, SHFL_FN_##b, SHFL_CPARMS_##b, a_cbReq); \
+    (a)->fInterruptible = false /* Currently we do like nfs with -o hard (default). */
+
 
 
 /** @todo We only need HGCM, not physical memory, so other guests should also
@@ -346,7 +351,7 @@ DECLVBGL(int) VbglR0SfReadPageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLH
     if (RT_UNLIKELY(!pData))
         return VERR_NO_TMP_MEMORY;
 
-    VBOX_INIT_CALL(&pData->callInfo, READ, pClient);
+    VBOX_INIT_CALL_EX(&pData->callInfo, READ, pClient, cbData);
 
     pData->root.type                      = VMMDevHGCMParmType_32bit;
     pData->root.u.value32                 = pMap->root;
@@ -424,7 +429,7 @@ DECLVBGL(int) VbglR0SfWritePhysCont(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFL
     if (RT_UNLIKELY(!pData))
         return VERR_NO_TMP_MEMORY;
 
-    VBOX_INIT_CALL(&pData->callInfo, WRITE, pClient);
+    VBOX_INIT_CALL_EX(&pData->callInfo, WRITE, pClient, cbData);
 
     pData->root.type                      = VMMDevHGCMParmType_32bit;
     pData->root.u.value32                 = pMap->root;
@@ -472,7 +477,7 @@ DECLVBGL(int) VbglR0SfWritePageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFL
     if (RT_UNLIKELY(!pData))
         return VERR_NO_TMP_MEMORY;
 
-    VBOX_INIT_CALL(&pData->callInfo, WRITE, pClient);
+    VBOX_INIT_CALL_EX(&pData->callInfo, WRITE, pClient, cbData);
 
     pData->root.type                      = VMMDevHGCMParmType_32bit;
     pData->root.u.value32                 = pMap->root;
