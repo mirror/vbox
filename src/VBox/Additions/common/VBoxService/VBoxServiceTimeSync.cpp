@@ -618,8 +618,6 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
     }
 
     vgsvcTimeSyncCancelAdjust();
-    RTSemEventMultiDestroy(g_TimeSyncEvent);
-    g_TimeSyncEvent = NIL_RTSEMEVENTMULTI;
     return rc;
 }
 
@@ -629,7 +627,8 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
  */
 static DECLCALLBACK(void) vgsvcTimeSyncStop(void)
 {
-    RTSemEventMultiSignal(g_TimeSyncEvent);
+    if (g_TimeSyncEvent != NIL_RTSEMEVENTMULTI)
+        RTSemEventMultiSignal(g_TimeSyncEvent);
 }
 
 
