@@ -73,7 +73,6 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/include/VBox/version.h=>include/VBox/version.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/VBoxGuest.cpp=>VBoxGuest.c \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/VBoxGuest-linux.c=>VBoxGuest-linux.c \
-    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/VBoxGuestIDC-unix.c.h=>VBoxGuestIDC-unix.c.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/VBoxGuestInternal.h=>VBoxGuestInternal.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/linux/Makefile=>Makefile \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/GenericRequest.cpp=>GenericRequest.c \
