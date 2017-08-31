@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VirtualBox Guest Service:
- * Linux guest.
+ * VirtualBox Guest Additions - X11 Client.
  */
 
 /*
@@ -65,7 +63,11 @@ RTCRITSECT g_critSect;
 /** Counter of how often our deamon has been respawned. */
 unsigned cRespawn = 0;
 
-/** Exit with a fatal error. */
+/**
+ * Exit with a fatal error.
+ *
+ * This is used by the VBClFatalError macro and thus needs to be external.
+ */
 void vbclFatalError(char *pszMessage)
 {
     char *pszCommand;
@@ -91,12 +93,15 @@ void vbclFatalError(char *pszMessage)
             }
         }
     }
-    _exit(1);
+    _exit(RTEXITCODE_FAILURE);
 }
 
-/** Clean up if we get a signal or something.  This is extern so that we
- * can call it from other compilation units. */
-void VBClCleanUp()
+/**
+ * Clean up if we get a signal or something.
+ *
+ * This is extern so that we can call it from other compilation units.
+ */
+void VBClCleanUp(bool fExit /*=true*/)
 {
     /* We never release this, as we end up with a call to exit(3) which is not
      * async-safe.  Unless we fix this application properly, we should be sure
@@ -108,7 +113,8 @@ void VBClCleanUp()
         (*g_pService)->cleanup(g_pService);
     if (g_szPidFile[0] && g_hPidFile)
         VbglR3ClosePidFile(g_szPidFile, g_hPidFile);
-    exit(0);
+    if (fExit)
+        exit(RTEXITCODE_SUCCESS);
 }
 
 /**
@@ -172,7 +178,7 @@ static void vboxClientSetSignalHandlers(void)
 /**
  * Print out a usage message and exit with success.
  */
-void vboxClientUsage(const char *pcszFileName)
+static void vboxClientUsage(const char *pcszFileName)
 {
     RTPrintf("Usage: %s --clipboard|"
 #ifdef VBOX_WITH_DRAG_AND_DROP
@@ -197,11 +203,22 @@ void vboxClientUsage(const char *pcszFileName)
     RTPrintf("  --check3d          tests whether 3D pass-through is enabled\n");
     RTPrintf("  --seamless         starts the seamless windows service\n");
     RTPrintf("  --vmsvga           starts VMSVGA dynamic resizing for DRM or for X11\n");
+    RTPrintf("  -f, --foreground   run in the foreground (no daemonizing)\n");
     RTPrintf("  -d, --nodaemon     continues running as a system service\n");
     RTPrintf("  -h, --help         shows this help text\n");
     RTPrintf("  -V, --version      shows version information\n");
     RTPrintf("\n");
-    exit(0);
+}
+
+/**
+ * Complains about seeing more than one service specification.
+ *
+ * @returns RTEXITCODE_SYNTAX.
+ */
+static int vbclSyntaxOnlyOneService(void)
+{
+    RTMsgError("More than one service specified! Only one, please.");
+    return RTEXITCODE_SYNTAX;
 }
 
 /**
@@ -210,39 +227,48 @@ void vboxClientUsage(const char *pcszFileName)
  */
 int main(int argc, char *argv[])
 {
-    bool fDaemonise = true, fRespawn = true;
-    int rc;
-    const char *pcszFileName;
-
     /* Initialise our runtime before all else. */
-    rc = RTR3InitExe(argc, &argv, 0);
+    int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
+
     /* This should never be called twice in one process - in fact one Display
      * object should probably never be used from multiple threads anyway. */
     if (!XInitThreads())
         VBClFatalError(("Failed to initialize X11 threads\n"));
-    /* Get our file name for error output. */
-    pcszFileName = RTPathFilename(argv[0]);
+
+    /* Get our file name for usage info and hints. */
+    const char *pcszFileName = RTPathFilename(argv[0]);
     if (!pcszFileName)
         pcszFileName = "VBoxClient";
 
     /* Parse our option(s) */
     /** @todo Use RTGetOpt() if the arguments become more complex. */
+    bool fDaemonise = true;
+    bool fRespawn = true;
     for (int i = 1; i < argc; ++i)
     {
-        rc = VERR_INVALID_PARAMETER;
-        if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--nodaemon"))
+        if (   !strcmp(argv[i], "-f")
+            || !strcmp(argv[i], "--foreground")
+            || !strcmp(argv[i], "-d")
+            || !strcmp(argv[i], "--nodaemon"))
         {
             /* If the user is running in "no daemon" mode anyway, send critical
              * logging to stdout as well. */
+            /** @todo r=bird: Since the release logger isn't created until the service
+             *        calls VbglR3InitUser or VbglR3Init or RTLogCreate, this whole
+             *        exercise is pointless.  Added --init-vbgl-user and --init-vbgl-full
+             *        for getting some work done. */
             PRTLOGGER pReleaseLog = RTLogRelGetDefaultInstance();
             if (pReleaseLog)
                 rc = RTLogDestinations(pReleaseLog, "stdout");
             if (pReleaseLog && RT_FAILURE(rc))
-                RTPrintf("%s: failed to redivert error output, rc=%Rrc\n",
-                         pcszFileName, rc);
+                return RTMsgErrorExitFailure("failed to redivert error output, rc=%Rrc", rc);
+
             fDaemonise = false;
+            if (   !strcmp(argv[i], "-f")
+                || !strcmp(argv[i], "--foreground"))
+                fRespawn = false;
         }
         else if (!strcmp(argv[i], "--no-respawn"))
         {
@@ -251,46 +277,59 @@ int main(int argc, char *argv[])
         else if (!strcmp(argv[i], "--clipboard"))
         {
             if (g_pService)
-                break;
+                return vbclSyntaxOnlyOneService();
             g_pService = VBClGetClipboardService();
         }
         else if (!strcmp(argv[i], "--display"))
         {
             if (g_pService)
-                break;
+                return vbclSyntaxOnlyOneService();
             g_pService = VBClGetDisplayService();
         }
         else if (!strcmp(argv[i], "--seamless"))
         {
             if (g_pService)
-                break;
+                return vbclSyntaxOnlyOneService();
             g_pService = VBClGetSeamlessService();
         }
         else if (!strcmp(argv[i], "--checkhostversion"))
         {
             if (g_pService)
-                break;
+                return vbclSyntaxOnlyOneService();
             g_pService = VBClGetHostVersionService();
         }
 #ifdef VBOX_WITH_DRAG_AND_DROP
         else if (!strcmp(argv[i], "--draganddrop"))
         {
             if (g_pService)
-                break;
+                return vbclSyntaxOnlyOneService();
             g_pService = VBClGetDragAndDropService();
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP */
         else if (!strcmp(argv[i], "--check3d"))
         {
             if (g_pService)
-                break;
+                return vbclSyntaxOnlyOneService();
             g_pService = VBClCheck3DService();
         }
         else if (!strcmp(argv[i], "--vmsvga"))
         {
             if (g_pService)
-                break;
+                return vbclSyntaxOnlyOneService();
             g_pService = VBClDisplaySVGAService();
+        }
+        /* bird: this is just a quick hack to get something out of the LogRel statements in the code. */
+        else if (!strcmp(argv[i], "--init-vbgl-user"))
+        {
+            rc = VbglR3InitUser();
+            if (RT_FAILURE(rc))
+                return RTMsgErrorExitFailure("VbglR3InitUser failed: %Rrc", rc);
+        }
+        else if (!strcmp(argv[i], "--init-vbgl-full"))
+        {
+            rc = VbglR3Init();
+            if (RT_FAILURE(rc))
+                return RTMsgErrorExitFailure("VbglR3Init failed: %Rrc", rc);
         }
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
@@ -304,15 +343,14 @@ int main(int argc, char *argv[])
         }
         else
         {
-            RTPrintf("%s: unrecognized option `%s'\n", pcszFileName, argv[i]);
-            RTPrintf("Try `%s --help' for more information\n", pcszFileName);
+            RTMsgError("unrecognized option `%s'", argv[i]);
+            RTMsgInfo("Try `%s --help' for more information", pcszFileName);
             return RTEXITCODE_SYNTAX;
         }
-        rc = VINF_SUCCESS;
     }
-    if (RT_FAILURE(rc) || !g_pService)
+    if (!g_pService)
     {
-        vboxClientUsage(pcszFileName);
+        RTMsgError("No service specified. Quitting because nothing to do!");
         return RTEXITCODE_SYNTAX;
     }
 
@@ -362,7 +400,7 @@ int main(int argc, char *argv[])
          *               Must be tested carefully with our init scripts first. */
         LogRel2(("Initializing service failed: %Rrc\n", rc));
     }
-    VBClCleanUp();
+    VBClCleanUp(false /*fExit*/);
     return RTEXITCODE_SUCCESS;
 }
 

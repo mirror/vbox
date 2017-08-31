@@ -35,7 +35,7 @@ do { \
 extern DECLNORETURN(void) vbclFatalError(char *pszMessage);
 
 /** Call clean-up for the current service and exit. */
-extern void VBClCleanUp();
+extern void VBClCleanUp(bool fExit = true);
 
 /** A simple interface describing a service.  VBoxClient will run exactly one
  * service per invocation. */
