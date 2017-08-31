@@ -86,7 +86,7 @@ int main(int argc, char **argv)
                 printf("info: Successfully cached '%s'.\n", argv[i]);
             else
             {
-                fprintf(stderr, "error: DosReplaceModule failed with rc=%u on  '%s'.\n", rc, argv[i]);
+                fprintf(stderr, "error: DosReplaceModule failed with rc=%lu on  '%s'.\n", rc, argv[i]);
                 return 1;
             }
             cProcessed++;
