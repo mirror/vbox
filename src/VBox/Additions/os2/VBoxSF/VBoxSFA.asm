@@ -330,11 +330,11 @@ GLOBALNAME g_VBoxGuestAttachDD
 ;;
 ; The AttachDD name of the VBoxGuest.sys driver.
 GLOBALNAME g_szVBoxGuestName
-    db VBOXGUEST_DEVICE_NAME, 0
+    db VBOXGUEST_DEVICE_NAME_SHORT, 0
 ;;
 ; The VBoxGuest IDC connection data.
 GLOBALNAME g_VBoxGuestIDC
-    times VBGOS2IDC_size db 0
+    times VBGLOS2ATTACHDD_size db 0
 
 ;;
 ; This must be present, we've got fixups against it.
