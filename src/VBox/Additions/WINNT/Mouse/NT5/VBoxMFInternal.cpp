@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
- * VBox Mouse filter internal functions
+ * VBox Mouse Filter Driver - Internal functions.
+ *
+ * @todo r=bird: Would be better to merge this file into VBoxMFDriver.cpp...
  */
 
 /*
@@ -15,6 +17,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #undef WIN9X_COMPAT_SPINLOCK
 #define WIN9X_COMPAT_SPINLOCK /* Avoid duplicate _KeInitializeSpinLock@4 error on x86. */
 #include <iprt/asm.h>
@@ -22,13 +27,12 @@
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/VBoxGuest.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
 
-typedef struct VBOXGDC
-{
-    PDEVICE_OBJECT pDo;
-    PFILE_OBJECT pFo;
-} VBOXGDC, *PVBOXGDC;
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 typedef struct _VBoxGlobalContext
 {
     volatile LONG cDevicesStarted;
@@ -36,92 +40,50 @@ typedef struct _VBoxGlobalContext
     volatile LONG fVBGLInitFailed;
     volatile LONG fHostInformed;
     volatile LONG fHostMouseFound;
-    VBOXGDC Gdc;
+    VBGLIDCHANDLE IdcHandle;
     KSPIN_LOCK SyncLock;
     volatile PVBOXMOUSE_DEVEXT pCurrentDevExt;
     LIST_ENTRY DevExtList;
-    BOOLEAN fIsNewProtEnabled;
+    bool fIsNewProtEnabled;
     MOUSE_INPUT_DATA LastReportedData;
 } VBoxGlobalContext;
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 static VBoxGlobalContext g_ctx = {};
 
-/* Guest Device Communication API */
-NTSTATUS VBoxGdcInit()
+
+/**
+ * Called from DriverEntry to initialize g_ctx.
+ */
+void VBoxMouFltInitGlobals(void)
 {
-    UNICODE_STRING UniName;
-    RtlInitUnicodeString(&UniName, VBOXGUEST_DEVICE_NAME_NT);
-    NTSTATUS Status = IoGetDeviceObjectPointer(&UniName, FILE_ALL_ACCESS, &g_ctx.Gdc.pFo, &g_ctx.Gdc.pDo);
-    if (!NT_SUCCESS(Status))
-    {
-        WARN(("IoGetDeviceObjectPointer failed Status(0x%x)", Status));
-        memset(&g_ctx.Gdc, 0, sizeof (g_ctx.Gdc));
-    }
-    return Status;
+    RT_ZERO(g_ctx);
+    KeInitializeSpinLock(&g_ctx.SyncLock);
+    InitializeListHead(&g_ctx.DevExtList);
 }
 
-BOOLEAN VBoxGdcIsInitialized()
+
+/**
+ * Called on driver unload to clean up g_ctx.
+ */
+void VBoxMouFltDeleteGlobals(void)
 {
-    return !!g_ctx.Gdc.pDo;
+    Assert(IsListEmpty(&g_ctx.DevExtList));
 }
 
-NTSTATUS VBoxGdcTerm()
+
+/**
+ * @callback_method_impl{FNVBOXGUESTMOUSENOTIFY}
+ */
+static DECLCALLBACK(void) vboxNewProtMouseEventCb(void *pvUser)
 {
-    if (!g_ctx.Gdc.pFo)
-        return STATUS_SUCCESS;
-    /* this will dereference device object as well */
-    ObDereferenceObject(g_ctx.Gdc.pFo);
-    return STATUS_SUCCESS;
-}
-
-static NTSTATUS vboxGdcSubmitAsync(ULONG uCtl, PVOID pvBuffer, SIZE_T cbBuffer, PKEVENT pEvent, PIO_STATUS_BLOCK pIoStatus)
-{
-    NTSTATUS Status;
-    PIRP pIrp;
-    Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
-
-    pIrp = IoBuildDeviceIoControlRequest(uCtl, g_ctx.Gdc.pDo, NULL, 0, NULL, 0, TRUE, pEvent, pIoStatus);
-    if (!pIrp)
-    {
-        WARN(("IoBuildDeviceIoControlRequest failed!!\n"));
-        pIoStatus->Status = STATUS_INSUFFICIENT_RESOURCES;
-        pIoStatus->Information = 0;
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-
-    PIO_STACK_LOCATION pSl = IoGetNextIrpStackLocation(pIrp);
-    pSl->Parameters.Others.Argument1 = (PVOID)pvBuffer;
-    pSl->Parameters.Others.Argument2 = (PVOID)cbBuffer;
-    Status = IoCallDriver(g_ctx.Gdc.pDo, pIrp);
-
-    return Status;
-}
-
-static NTSTATUS vboxGdcSubmit(ULONG uCtl, PVOID pvBuffer, SIZE_T cbBuffer)
-{
-    IO_STATUS_BLOCK IoStatus = {0};
-    KEVENT Event;
-    NTSTATUS Status;
-
-    KeInitializeEvent(&Event, NotificationEvent, FALSE);
-
-    Status = vboxGdcSubmitAsync(uCtl, pvBuffer, cbBuffer, &Event, &IoStatus);
-    if (Status == STATUS_PENDING)
-    {
-        KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
-        Status = IoStatus.Status;
-    }
-
-    return Status;
-}
-
-static DECLCALLBACK(void) vboxNewProtMouseEventCb(void *pvContext)
-{
-    RT_NOREF(pvContext);
+    RT_NOREF(pvUser);
     PVBOXMOUSE_DEVEXT pDevExt = (PVBOXMOUSE_DEVEXT)ASMAtomicUoReadPtr((void * volatile *)&g_ctx.pCurrentDevExt);
     if (pDevExt)
     {
-#define VBOXMOUSE_POLLERTAG 'PMBV'
         NTSTATUS Status = IoAcquireRemoveLock(&pDevExt->RemoveLock, pDevExt);
         if (NT_SUCCESS(Status))
         {
@@ -130,156 +92,128 @@ static DECLCALLBACK(void) vboxNewProtMouseEventCb(void *pvContext)
             IoReleaseRemoveLock(&pDevExt->RemoveLock, pDevExt);
         }
         else
-        {
             WARN(("IoAcquireRemoveLock failed, Status (0x%x)", Status));
-        }
     }
     else
-    {
         WARN(("no current pDevExt specified"));
-    }
 }
 
-static BOOLEAN vboxNewProtIsEnabled()
+/**
+ * Lazy init callback.
+ *
+ * We don't have control over when VBoxGuest.sys is loaded and therefore cannot
+ * be sure it is already around when we are started or our devices instantiated.
+ * So, we try lazily attaching to the device when we have a chance.
+ *
+ * @returns true on success, false on failure.
+ */
+static bool vboxNewProtLazyRegister(void)
 {
-    return g_ctx.fIsNewProtEnabled;
-}
-
-static NTSTATUS vboxNewProtRegisterMouseEventCb(BOOLEAN fRegister)
-{
-    VBGLIOCSETMOUSENOTIFYCALLBACK Info;
-    VBGLREQHDR_INIT(&Info.Hdr, SET_MOUSE_NOTIFY_CALLBACK);
-    Info.u.In.pfnNotify = fRegister ? vboxNewProtMouseEventCb : NULL;
-    Info.u.In.pvUser    = NULL;
-
-    NTSTATUS Status = vboxGdcSubmit(VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK, &Info, sizeof(Info));
-    if (!NT_SUCCESS(Status))
-        WARN(("vboxGdcSubmit failed Status(0x%x)", Status));
-    else if (RT_FAILURE(Info.Hdr.rc))
+    if (g_ctx.fIsNewProtEnabled)
+        return true;
+    int rc = VbglSetMouseNotifyCallback(vboxNewProtMouseEventCb, NULL);
+    if (RT_SUCCESS(rc))
     {
-        WARN(("VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK failed: rc=%Rrc", Info.Hdr.rc));
-        Status = STATUS_UNSUCCESSFUL;
+        g_ctx.fIsNewProtEnabled = true;
+        LOG(("Successfully register mouse event callback with VBoxGuest."));
+        return true;
     }
-    return Status;
+    WARN(("VbglSetMouseNotifyCallback failed: %Rrc", rc));
+    return false;
 }
 
-
-NTSTATUS VBoxNewProtInit()
-{
-    NTSTATUS Status = VBoxGdcInit();
-    if (NT_SUCCESS(Status))
-    {
-        KeInitializeSpinLock(&g_ctx.SyncLock);
-        InitializeListHead(&g_ctx.DevExtList);
-        /* we assume the new prot data in g_ctx is zero-initialized (see g_ctx definition) */
-
-        Status = vboxNewProtRegisterMouseEventCb(TRUE);
-        if (NT_SUCCESS(Status))
-        {
-            g_ctx.fIsNewProtEnabled = TRUE;
-            return STATUS_SUCCESS;
-        }
-        VBoxGdcTerm();
-    }
-
-    return Status;
-}
-
-NTSTATUS VBoxNewProtTerm()
+/**
+ * This is called when the last device instance is destroyed.
+ *
+ * @returns NT status.
+ */
+static void vboxNewProtTerm(void)
 {
     Assert(IsListEmpty(&g_ctx.DevExtList));
-    if (!vboxNewProtIsEnabled())
+    if (g_ctx.fIsNewProtEnabled)
     {
-        WARN(("New Protocol is disabled"));
-        return STATUS_SUCCESS;
+        g_ctx.fIsNewProtEnabled = false;
+        int rc = VbglSetMouseNotifyCallback(NULL, NULL);
+        if (RT_FAILURE(rc))
+            WARN(("VbglSetMouseNotifyCallback failed: %Rrc", rc));
     }
-
-    g_ctx.fIsNewProtEnabled = FALSE;
-
-    NTSTATUS Status = vboxNewProtRegisterMouseEventCb(FALSE);
-    if (!NT_SUCCESS(Status))
-    {
-        WARN(("KeWaitForSingleObject failed, Status (0x%x)", Status));
-        return Status;
-    }
-
-    VBoxGdcTerm();
-
-    return STATUS_SUCCESS;
 }
 
-static NTSTATUS vboxNewProtDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
+/**
+ * Worker for VBoxDeviceAdded that enables callback processing of pDevExt.
+ *
+ * @param   pDevExt             The device instance that was added.
+ */
+static void vboxNewProtDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
 {
-    if (!vboxNewProtIsEnabled())
-    {
-        WARN(("New Protocol is disabled"));
-        return STATUS_UNSUCCESSFUL;
-    }
-
-    NTSTATUS Status = STATUS_SUCCESS;
+    /*
+     * Always add the device to the list.
+     */
     KIRQL Irql;
     KeAcquireSpinLock(&g_ctx.SyncLock, &Irql);
+
     InsertHeadList(&g_ctx.DevExtList, &pDevExt->ListEntry);
+
     /* g_ctx.pCurrentDevExt must be associated with the i8042prt device. */
-    if (pDevExt->bHostMouse && !g_ctx.pCurrentDevExt)
+    if (   pDevExt->bHostMouse
+        && ASMAtomicCmpXchgPtr(&g_ctx.pCurrentDevExt, pDevExt, NULL))
     {
-        ASMAtomicWritePtr(&g_ctx.pCurrentDevExt, pDevExt);
         /* ensure the object is not deleted while it is being used by a poller thread */
         ObReferenceObject(pDevExt->pdoSelf);
     }
+
     KeReleaseSpinLock(&g_ctx.SyncLock, Irql);
 
-    return Status;
+    /*
+     * Do lazy callback registration.
+     */
+    vboxNewProtLazyRegister();
 }
 
-#define PVBOXMOUSE_DEVEXT_FROM_LE(_pLe) ( (PVBOXMOUSE_DEVEXT)(((uint8_t*)(_pLe)) - RT_OFFSETOF(VBOXMOUSE_DEVEXT, ListEntry)) )
-
-static NTSTATUS vboxNewProtDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt)
+/**
+ * Worker for VBoxDeviceRemoved that disables callback processing of pDevExt.
+ *
+ * @param   pDevExt             The device instance that is being removed.
+ */
+static void vboxNewProtDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt)
 {
-    if (!vboxNewProtIsEnabled())
-    {
-        WARN(("New Protocol is disabled"));
-        return STATUS_UNSUCCESSFUL;
-    }
-
+    /*
+     * Remove the device from the list.
+     */
     KIRQL Irql;
-    NTSTATUS Status = STATUS_SUCCESS;
     KeAcquireSpinLock(&g_ctx.SyncLock, &Irql);
+
     RemoveEntryList(&pDevExt->ListEntry);
-    if (g_ctx.pCurrentDevExt == pDevExt)
-    {
-        /* The PS/2 mouse is being removed. Usually never happens. */
+
+    /* Check if the PS/2 mouse is being removed. Usually never happens. */
+    if (ASMAtomicCmpXchgPtr(&g_ctx.pCurrentDevExt, NULL, pDevExt))
         ObDereferenceObject(pDevExt->pdoSelf);
-        g_ctx.pCurrentDevExt = NULL;
-    }
 
     KeReleaseSpinLock(&g_ctx.SyncLock, Irql);
-
-    return Status;
 }
 
-VOID VBoxDrvNotifyServiceCB(PVBOXMOUSE_DEVEXT pDevExt, PMOUSE_INPUT_DATA InputDataStart, PMOUSE_INPUT_DATA InputDataEnd, PULONG  InputDataConsumed)
+VOID VBoxDrvNotifyServiceCB(PVBOXMOUSE_DEVEXT pDevExt, PMOUSE_INPUT_DATA InputDataStart, PMOUSE_INPUT_DATA InputDataEnd,
+                            PULONG InputDataConsumed)
 {
-    KIRQL Irql;
     /* we need to avoid concurrency between the poller thread and our ServiceCB.
      * this is perhaps not the best way of doing things, but the most easiest to avoid concurrency
      * and to ensure the pfnServiceCB is invoked at DISPATCH_LEVEL */
+    KIRQL Irql;
     KeAcquireSpinLock(&g_ctx.SyncLock, &Irql);
     if (pDevExt->pSCReq)
     {
         int rc = VbglGRPerform(&pDevExt->pSCReq->header);
-
         if (RT_SUCCESS(rc))
         {
             if (pDevExt->pSCReq->mouseFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE)
             {
                 PMOUSE_INPUT_DATA pData = InputDataStart;
-                while (pData<InputDataEnd)
+                while (pData < InputDataEnd)
                 {
                     pData->LastX = pDevExt->pSCReq->pointerXPos;
                     pData->LastY = pDevExt->pSCReq->pointerYPos;
                     pData->Flags = MOUSE_MOVE_ABSOLUTE;
-                    if (vboxNewProtIsEnabled())
+                    if (g_ctx.fIsNewProtEnabled)
                         pData->Flags |= MOUSE_VIRTUAL_DESKTOP;
                     pData++;
                 }
@@ -291,13 +225,12 @@ VOID VBoxDrvNotifyServiceCB(PVBOXMOUSE_DEVEXT pDevExt, PMOUSE_INPUT_DATA InputDa
         }
         else
         {
-            WARN(("VbglGRPerform failed with rc=%#x", rc));
+            WARN(("VbglGRPerform failed with rc=%Rrc", rc));
         }
     }
 
     /* Call original callback */
-    pDevExt->OriginalConnectData.pfnServiceCB(pDevExt->OriginalConnectData.pDO,
-                                              InputDataStart, InputDataEnd, InputDataConsumed);
+    pDevExt->OriginalConnectData.pfnServiceCB(pDevExt->OriginalConnectData.pDO, InputDataStart, InputDataEnd, InputDataConsumed);
     KeReleaseSpinLock(&g_ctx.SyncLock, Irql);
 }
 
@@ -306,7 +239,7 @@ static BOOLEAN vboxIsVBGLInited(void)
    return InterlockedCompareExchange(&g_ctx.fVBGLInited, TRUE, TRUE) == TRUE;
 }
 
-static BOOLEAN vboxIsVBGLInitFailed (void)
+static BOOLEAN vboxIsVBGLInitFailed(void)
 {
    return InterlockedCompareExchange(&g_ctx.fVBGLInitFailed, TRUE, TRUE) == TRUE;
 }
@@ -321,14 +254,17 @@ static BOOLEAN vboxIsHostMouseFound(void)
    return InterlockedCompareExchange(&g_ctx.fHostMouseFound, TRUE, TRUE) == TRUE;
 }
 
-VOID VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
+void VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
 {
     LOGF_ENTER();
-    LONG callCnt = InterlockedIncrement(&g_ctx.cDevicesStarted);
+    LONG cCalls = InterlockedIncrement(&g_ctx.cDevicesStarted);
 
     /* One time Vbgl initialization */
-    if (callCnt == 1)
+    if (cCalls == 1)
     {
+        KeInitializeSpinLock(&g_ctx.SyncLock);
+        InitializeListHead(&g_ctx.DevExtList);
+
         if (!vboxIsVBGLInited() && !vboxIsVBGLInitFailed())
         {
             int rc = VbglR0InitClient();
@@ -336,11 +272,12 @@ VOID VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
             {
                 InterlockedExchange(&g_ctx.fVBGLInited, TRUE);
                 LOG(("VBGL init OK"));
+                vboxNewProtLazyRegister();
             }
             else
             {
-                InterlockedExchange (&g_ctx.fVBGLInitFailed, TRUE);
-                WARN(("VBGL init failed with rc=%#x", rc));
+                InterlockedExchange(&g_ctx.fVBGLInitFailed, TRUE);
+                WARN(("VBGL init failed with rc=%Rrc", rc));
             }
         }
     }
@@ -413,6 +350,8 @@ VOID VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
             /* It's the emulated 8042 PS/2 mouse/kbd device, so mark it as the Host one.
              * For this device the filter will query absolute mouse coords from the host.
              */
+            /** @todo r=bird: The g_ctx.fHostMouseFound needs to be cleared
+             *        when the device is removed... */
             InterlockedExchange(&g_ctx.fHostMouseFound, TRUE);
 
             pDevExt->bHostMouse = TRUE;
@@ -426,67 +365,55 @@ VOID VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
     LOGF_LEAVE();
 }
 
-VOID VBoxInformHost(PVBOXMOUSE_DEVEXT pDevExt)
+void VBoxInformHost(PVBOXMOUSE_DEVEXT pDevExt)
 {
     LOGF_ENTER();
-
-    if (!vboxIsVBGLInited())
+    if (vboxIsVBGLInited())
     {
-        WARN(("!vboxIsVBGLInited"));
-        return;
-    }
+        /* Do lazy callback installation. */
+        vboxNewProtLazyRegister();
 
-    /* Inform host we support absolute coordinates */
-    if (pDevExt->bHostMouse && !vboxIsHostInformed())
-    {
-        VMMDevReqMouseStatus *req = NULL;
-        int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
-
-        if (RT_SUCCESS(rc))
+        /* Inform host we support absolute coordinates */
+        if (pDevExt->bHostMouse && !vboxIsHostInformed())
         {
-            req->mouseFeatures = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
-            if (vboxNewProtIsEnabled())
-                req->mouseFeatures |= VMMDEV_MOUSE_NEW_PROTOCOL;
-
-            req->pointerXPos = 0;
-            req->pointerYPos = 0;
-
-            rc = VbglGRPerform(&req->header);
-
+            VMMDevReqMouseStatus *req = NULL;
+            int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
             if (RT_SUCCESS(rc))
             {
-                InterlockedExchange(&g_ctx.fHostInformed, TRUE);
+                req->mouseFeatures = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
+                if (g_ctx.fIsNewProtEnabled)
+                    req->mouseFeatures |= VMMDEV_MOUSE_NEW_PROTOCOL;
+
+                req->pointerXPos = 0;
+                req->pointerYPos = 0;
+
+                rc = VbglGRPerform(&req->header);
+                if (RT_SUCCESS(rc))
+                    InterlockedExchange(&g_ctx.fHostInformed, TRUE);
+                else
+                    WARN(("VbglGRPerform failed with rc=%Rrc", rc));
+
+                VbglGRFree(&req->header);
             }
             else
+                WARN(("VbglGRAlloc failed with rc=%Rrc", rc));
+        }
+
+        /* Preallocate request to be used in VBoxServiceCB*/
+        if (pDevExt->bHostMouse && !pDevExt->pSCReq)
+        {
+            VMMDevReqMouseStatus *req = NULL;
+            int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevReqMouseStatus), VMMDevReq_GetMouseStatus);
+            if (RT_SUCCESS(rc))
+                InterlockedExchangePointer((PVOID volatile *)&pDevExt->pSCReq, req);
+            else
             {
-                WARN(("VbglGRPerform failed with rc=%#x", rc));
+                WARN(("VbglGRAlloc for service callback failed with rc=%Rrc", rc));
             }
-
-            VbglGRFree(&req->header);
-        }
-        else
-        {
-            WARN(("VbglGRAlloc failed with rc=%#x", rc));
         }
     }
-
-    /* Preallocate request to be used in VBoxServiceCB*/
-    if (pDevExt->bHostMouse && !pDevExt->pSCReq)
-    {
-        VMMDevReqMouseStatus *req = NULL;
-
-        int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevReqMouseStatus), VMMDevReq_GetMouseStatus);
-
-        if (RT_SUCCESS(rc))
-        {
-            InterlockedExchangePointer((PVOID volatile *)&pDevExt->pSCReq, req);
-        }
-        else
-        {
-            WARN(("VbglGRAlloc for service callback failed with rc=%#x", rc));
-        }
-    }
-
+    else
+        WARN(("!vboxIsVBGLInited"));
     LOGF_LEAVE();
 }
 
@@ -494,16 +421,13 @@ VOID VBoxDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt)
 {
     LOGF_ENTER();
 
-    /* Save the allocated request pointer and clear the devExt. */
-    VMMDevReqMouseStatus *pSCReq = (VMMDevReqMouseStatus *) InterlockedExchangePointer((PVOID volatile *)&pDevExt->pSCReq, NULL);
-
+    /*
+     * Tell the host that from now on we can't handle absolute coordinates anymore.
+     */
     if (pDevExt->bHostMouse && vboxIsHostInformed())
     {
-        // tell the VMM that from now on we can't handle absolute coordinates anymore
         VMMDevReqMouseStatus *req = NULL;
-
         int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
-
         if (RT_SUCCESS(rc))
         {
             req->mouseFeatures = 0;
@@ -511,38 +435,48 @@ VOID VBoxDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt)
             req->pointerYPos = 0;
 
             rc = VbglGRPerform(&req->header);
-
             if (RT_FAILURE(rc))
-            {
-                WARN(("VbglGRPerform failed with rc=%#x", rc));
-            }
+                WARN(("VbglGRPerform failed with rc=%Rrc", rc));
 
             VbglGRFree(&req->header);
         }
         else
-        {
-            WARN(("VbglGRAlloc failed with rc=%#x", rc));
-        }
+            WARN(("VbglGRAlloc failed with rc=%Rrc", rc));
 
         InterlockedExchange(&g_ctx.fHostInformed, FALSE);
     }
 
-    if (pSCReq)
-    {
-        VbglGRFree(&pSCReq->header);
-    }
-
-    LONG callCnt = InterlockedDecrement(&g_ctx.cDevicesStarted);
-
+    /*
+     * Remove the device from the list so we won't get callouts any more.
+     */
     vboxNewProtDeviceRemoved(pDevExt);
 
-    if (callCnt == 0)
+    /*
+     * Free the preallocated request.
+     * Note! This could benefit from merging with vboxNewProtDeviceRemoved to
+     *       avoid taking the spinlock twice in a row.
+     */
+    KIRQL Irql;
+    KeAcquireSpinLock(&g_ctx.SyncLock, &Irql);
+    VMMDevReqMouseStatus *pSCReq = ASMAtomicXchgPtrT(&pDevExt->pSCReq, NULL, VMMDevReqMouseStatus *);
+    KeReleaseSpinLock(&g_ctx.SyncLock, Irql);
+    if (pSCReq)
+        VbglGRFree(&pSCReq->header);
+
+    /*
+     * Do init ref count handling.
+     * Note! This sequence could potentially be racing VBoxDeviceAdded, depending
+     *       on what the OS allows to run in parallel...
+     */
+    LONG cCalls = InterlockedDecrement(&g_ctx.cDevicesStarted);
+    if (cCalls == 0)
     {
         if (vboxIsVBGLInited())
         {
             /* Set the flag to prevent reinitializing of the VBGL. */
             InterlockedExchange(&g_ctx.fVBGLInitFailed, TRUE);
 
+            vboxNewProtTerm();
             VbglR0TerminateClient();
 
             /* The VBGL is now in the not initialized state. */
@@ -553,3 +487,4 @@ VOID VBoxDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt)
 
     LOGF_LEAVE();
 }
+

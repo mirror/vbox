@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Mouse filter header
+ * VBox Mouse Filter Driver - Internal Header.
  */
 
 /*
@@ -73,12 +73,11 @@ NTSTATUS VBoxIrpPnP(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 NTSTATUS VBoxIrpPower(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 
 /* Internal functions */
-VOID VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt);
-VOID VBoxInformHost(PVBOXMOUSE_DEVEXT pDevExt);
-VOID VBoxDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt);
-
-NTSTATUS VBoxNewProtInit();
-NTSTATUS VBoxNewProtTerm();
+void VBoxMouFltInitGlobals(void);
+void VBoxMouFltDeleteGlobals(void);
+void VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt);
+void VBoxInformHost(PVBOXMOUSE_DEVEXT pDevExt);
+void VBoxDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt);
 
 VOID VBoxDrvNotifyServiceCB(PVBOXMOUSE_DEVEXT pDevExt, PMOUSE_INPUT_DATA InputDataStart, PMOUSE_INPUT_DATA InputDataEnd, PULONG  InputDataConsumed);
 

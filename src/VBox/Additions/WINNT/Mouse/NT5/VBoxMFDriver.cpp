@@ -29,6 +29,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 {
     NOREF(RegistryPath);
     PAGED_CODE();
+LOGREL(("DriverEntry:"));
 
     int irc = RTR0Init(0);
     if (RT_FAILURE(irc))
@@ -41,21 +42,13 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
     DriverObject->DriverUnload = VBoxDrvUnload;
     DriverObject->DriverExtension->AddDevice = VBoxDrvAddDevice;
 
-    for (int i=0; i<=IRP_MJ_MAXIMUM_FUNCTION; ++i)
-    {
+    for (int i = 0; i <= IRP_MJ_MAXIMUM_FUNCTION; ++i)
         DriverObject->MajorFunction[i] = VBoxIrpPassthrough;
-    }
-
     DriverObject->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL] = VBoxIrpInternalIOCTL;
-    DriverObject->MajorFunction[IRP_MJ_PNP] = VBoxIrpPnP;
-    DriverObject->MajorFunction[IRP_MJ_POWER] = VBoxIrpPower;
+    DriverObject->MajorFunction[IRP_MJ_PNP]                     = VBoxIrpPnP;
+    DriverObject->MajorFunction[IRP_MJ_POWER]                   = VBoxIrpPower;
 
-    NTSTATUS tmpStatus = VBoxNewProtInit();
-    if (!NT_SUCCESS(tmpStatus))
-    {
-        WARN(("VBoxNewProtInit failed Status (0x%x)", tmpStatus));
-    }
-
+    VBoxMouFltInitGlobals();
     LOGF_LEAVE();
     return STATUS_SUCCESS;
 }
@@ -66,13 +59,7 @@ VOID VBoxDrvUnload(IN PDRIVER_OBJECT Driver)
     PAGED_CODE();
     LOGF_ENTER();
 
-    NTSTATUS tmpStatus = VBoxNewProtTerm();
-    if (!NT_SUCCESS(tmpStatus))
-    {
-        WARN(("VBoxNewProtTerm failed Status (0x%x)", tmpStatus));
-    }
-
-
+    VBoxMouFltDeleteGlobals();
     RTR0Term();
 }
 
