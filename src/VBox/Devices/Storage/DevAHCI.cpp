@@ -4759,7 +4759,7 @@ static DECLCALLBACK(void) ahciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     pHlp->pfnPrintf(pHlp, "HbaCap=%#x\n", pThis->regHbaCap);
     pHlp->pfnPrintf(pHlp, "HbaCtrl=%#x\n", pThis->regHbaCtrl);
     pHlp->pfnPrintf(pHlp, "HbaIs=%#x\n", pThis->regHbaIs);
-    pHlp->pfnPrintf(pHlp, "HbaPi=%#x", pThis->regHbaPi);
+    pHlp->pfnPrintf(pHlp, "HbaPi=%#x\n", pThis->regHbaPi);
     pHlp->pfnPrintf(pHlp, "HbaVs=%#x\n", pThis->regHbaVs);
     pHlp->pfnPrintf(pHlp, "HbaCccCtl=%#x\n", pThis->regHbaCccCtl);
     pHlp->pfnPrintf(pHlp, "HbaCccPorts=%#x\n", pThis->regHbaCccPorts);
