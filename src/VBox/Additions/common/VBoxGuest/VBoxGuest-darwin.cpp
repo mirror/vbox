@@ -33,13 +33,14 @@
 
 #include <VBox/version.h>
 #include <iprt/asm.h>
-#include <iprt/initterm.h>
 #include <iprt/assert.h>
-#include <iprt/spinlock.h>
-#include <iprt/semaphore.h>
+#include <iprt/initterm.h>
+#include <iprt/mem.h>
 #include <iprt/process.h>
-#include <iprt/alloc.h>
 #include <iprt/power.h>
+#include <iprt/semaphore.h>
+#include <iprt/spinlock.h>
+#include <iprt/string.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 
@@ -420,7 +421,7 @@ static int vgdrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pP
  * @returns Darwin for slow IOCtls and VBox status code for the fast ones.
  * @param   Dev         The device number (major+minor).
  * @param   iCmd        The IOCtl command.
- * @param   pData       Pointer to the data (if any it's a VBOXGUESTIOCTLDATA (kernel copy)).
+ * @param   pData     Pointer to the request data.
  * @param   fFlags      Flag saying we're a character device (like we didn't know already).
  * @param   pProcess    The process issuing this request.
  */
@@ -447,21 +448,23 @@ static int vgdrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, s
     }
 
     /*
-     * No high speed IOCtls here yet.
+     * Deal with the high-speed IOCtl.
      */
+    if (VBGL_IOCTL_IS_FAST(iCmd))
+        return VGDrvCommonIoCtlFast(iCmd, &g_DevExt, pSession);
 
     return vgdrvDarwinIOCtlSlow(pSession, iCmd, pData, pProcess);
 }
 
 
 /**
- * Worker for vgdrvDarwinIOCtl that takes the slow IOCtl functions.
+ * Worker for VBoxDrvDarwinIOCtl that takes the slow IOCtl functions.
  *
  * @returns Darwin errno.
  *
  * @param pSession  The session.
  * @param iCmd      The IOCtl command.
- * @param pData     Pointer to the kernel copy of the data buffer.
+ * @param pData     Pointer to the request data.
  * @param pProcess  The calling process.
  */
 static int vgdrvDarwinIOCtlSlow(PVBOXGUESTSESSION pSession, u_long iCmd, caddr_t pData, struct proc *pProcess)
@@ -473,65 +476,82 @@ static int vgdrvDarwinIOCtlSlow(PVBOXGUESTSESSION pSession, u_long iCmd, caddr_t
     /*
      * Buffered or unbuffered?
      */
-    void *pvReqData;
+    PVBGLREQHDR pHdr;
     user_addr_t pUser = 0;
     void *pvPageBuf = NULL;
     uint32_t cbReq = IOCPARM_LEN(iCmd);
     if ((IOC_DIRMASK & iCmd) == IOC_INOUT)
     {
-        /*
-         * Raw buffered request data, common code validates it.
-         */
-        pvReqData = pData;
+        pHdr = (PVBGLREQHDR)pData;
+        if (RT_UNLIKELY(cbReq < sizeof(*pHdr)))
+        {
+            LogRel(("vgdrvDarwinIOCtlSlow: cbReq=%#x < %#x; iCmd=%#lx\n", cbReq, (int)sizeof(*pHdr), iCmd));
+            return EINVAL;
+        }
+        if (RT_UNLIKELY(pHdr->uVersion != VBGLREQHDR_VERSION))
+        {
+            LogRel(("vgdrvDarwinIOCtlSlow: bad uVersion=%#x; iCmd=%#lx\n", pHdr->uVersion, iCmd));
+            return EINVAL;
+        }
+        if (RT_UNLIKELY(   RT_MAX(pHdr->cbIn, pHdr->cbOut) != cbReq
+                        || pHdr->cbIn < sizeof(*pHdr)
+                        || (pHdr->cbOut < sizeof(*pHdr) && pHdr->cbOut != 0)))
+        {
+            LogRel(("vgdrvDarwinIOCtlSlow: max(%#x,%#x) != %#x; iCmd=%#lx\n", pHdr->cbIn, pHdr->cbOut, cbReq, iCmd));
+            return EINVAL;
+        }
     }
     else if ((IOC_DIRMASK & iCmd) == IOC_VOID && !cbReq)
     {
         /*
          * Get the header and figure out how much we're gonna have to read.
          */
-        VBGLBIGREQ Hdr;
+        VBGLREQHDR Hdr;
         pUser = (user_addr_t)*(void **)pData;
         int rc = copyin(pUser, &Hdr, sizeof(Hdr));
         if (RT_UNLIKELY(rc))
         {
-            Log(("vgdrvDarwinIOCtlSlow: copyin(%llx,Hdr,) -> %#x; iCmd=%#lx\n", (unsigned long long)pUser, rc, iCmd));
+            LogRel(("vgdrvDarwinIOCtlSlow: copyin(%llx,Hdr,) -> %#x; iCmd=%#lx\n", (unsigned long long)pUser, rc, iCmd));
             return rc;
         }
-        if (RT_UNLIKELY(Hdr.u32Magic != VBGLBIGREQ_MAGIC))
+        if (RT_UNLIKELY(Hdr.uVersion != VBGLREQHDR_VERSION))
         {
-            Log(("vgdrvDarwinIOCtlSlow: bad magic u32Magic=%#x; iCmd=%#lx\n", Hdr.u32Magic, iCmd));
+            LogRel(("vgdrvDarwinIOCtlSlow: bad uVersion=%#x; iCmd=%#lx\n", Hdr.uVersion, iCmd));
             return EINVAL;
         }
-        cbReq = Hdr.cbData;
-        if (RT_UNLIKELY(cbReq > _1M*16))
+        cbReq = RT_MAX(Hdr.cbIn, Hdr.cbOut);
+        if (RT_UNLIKELY(   Hdr.cbIn < sizeof(Hdr)
+                        || (Hdr.cbOut < sizeof(Hdr) && Hdr.cbOut != 0)
+                        || cbReq > _1M*16))
         {
-            Log(("vgdrvDarwinIOCtlSlow: %#x; iCmd=%#lx\n", Hdr.cbData, iCmd));
+            LogRel(("vgdrvDarwinIOCtlSlow: max(%#x,%#x); iCmd=%#lx\n", Hdr.cbIn, Hdr.cbOut, iCmd));
             return EINVAL;
         }
-        pUser = Hdr.pvDataR3;
 
         /*
          * Allocate buffer and copy in the data.
          */
-        pvReqData = RTMemTmpAlloc(cbReq);
-        if (!pvReqData)
-            pvPageBuf = pvReqData = IOMallocAligned(RT_ALIGN_Z(cbReq, PAGE_SIZE), 8);
-        if (RT_UNLIKELY(!pvReqData))
+        pHdr = (PVBGLREQHDR)RTMemTmpAlloc(cbReq);
+        if (!pHdr)
+            pvPageBuf = pHdr = (PVBGLREQHDR)IOMallocAligned(RT_ALIGN_Z(cbReq, PAGE_SIZE), 8);
+        if (RT_UNLIKELY(!pHdr))
         {
-            Log(("vgdrvDarwinIOCtlSlow: failed to allocate buffer of %d bytes; iCmd=%#lx\n", cbReq, iCmd));
+            LogRel(("vgdrvDarwinIOCtlSlow: failed to allocate buffer of %d bytes; iCmd=%#lx\n", cbReq, iCmd));
             return ENOMEM;
         }
-        rc = copyin(pUser, pvReqData, Hdr.cbData);
+        rc = copyin(pUser, pHdr, Hdr.cbIn);
         if (RT_UNLIKELY(rc))
         {
-            Log(("vgdrvDarwinIOCtlSlow: copyin(%llx,%p,%#x) -> %#x; iCmd=%#lx\n",
-                 (unsigned long long)pUser, pvReqData, Hdr.cbData, rc, iCmd));
+            LogRel(("vgdrvDarwinIOCtlSlow: copyin(%llx,%p,%#x) -> %#x; iCmd=%#lx\n",
+                    (unsigned long long)pUser, pHdr, Hdr.cbIn, rc, iCmd));
             if (pvPageBuf)
                 IOFreeAligned(pvPageBuf, RT_ALIGN_Z(cbReq, PAGE_SIZE));
             else
-                RTMemTmpFree(pvReqData);
+                RTMemTmpFree(pHdr);
             return rc;
         }
+        if (Hdr.cbIn < cbReq)
+            RT_BZERO((uint8_t *)pHdr + Hdr.cbIn, cbReq - Hdr.cbIn);
     }
     else
     {
@@ -542,33 +562,31 @@ static int vgdrvDarwinIOCtlSlow(PVBOXGUESTSESSION pSession, u_long iCmd, caddr_t
     /*
      * Process the IOCtl.
      */
-    size_t cbReqRet = 0;
-    int rc = VGDrvCommonIoCtl(iCmd, &g_DevExt, pSession, pvReqData, cbReq, &cbReqRet);
-    if (RT_SUCCESS(rc))
+    int rc = VGDrvCommonIoCtl(iCmd, &g_DevExt, pSession, pHdr, cbReq);
+    if (RT_LIKELY(!rc))
     {
         /*
          * If not buffered, copy back the buffer before returning.
          */
         if (pUser)
         {
-            if (cbReqRet > cbReq)
+            uint32_t cbOut = pHdr->cbOut;
+            if (cbOut > cbReq)
             {
-                Log(("vgdrvDarwinIOCtlSlow: too much output! %#x > %#x; uCmd=%#lx!\n", cbReqRet, cbReq, iCmd));
-                cbReqRet = cbReq;
+                LogRel(("vgdrvDarwinIOCtlSlow: too much output! %#x > %#x; uCmd=%#lx!\n", cbOut, cbReq, iCmd));
+                cbOut = cbReq;
             }
-            rc = copyout(pvReqData, pUser, cbReqRet);
+            rc = copyout(pHdr, pUser, cbOut);
             if (RT_UNLIKELY(rc))
-                Log(("vgdrvDarwinIOCtlSlow: copyout(%p,%llx,%#x) -> %d; uCmd=%#lx!\n",
-                     pvReqData, (unsigned long long)pUser, cbReqRet, rc, iCmd));
+                LogRel(("vgdrvDarwinIOCtlSlow: copyout(%p,%llx,%#x) -> %d; uCmd=%#lx!\n",
+                        pHdr, (unsigned long long)pUser, cbOut, rc, iCmd));
 
             /* cleanup */
             if (pvPageBuf)
                 IOFreeAligned(pvPageBuf, RT_ALIGN_Z(cbReq, PAGE_SIZE));
             else
-                RTMemTmpFree(pvReqData);
+                RTMemTmpFree(pHdr);
         }
-        else
-            rc = 0;
     }
     else
     {
@@ -580,7 +598,7 @@ static int vgdrvDarwinIOCtlSlow(PVBOXGUESTSESSION pSession, u_long iCmd, caddr_t
             if (pvPageBuf)
                 IOFreeAligned(pvPageBuf, RT_ALIGN_Z(cbReq, PAGE_SIZE));
             else
-                RTMemTmpFree(pvReqData);
+                RTMemTmpFree(pHdr);
         }
 
         Log(("vgdrvDarwinIOCtlSlow: pid=%d iCmd=%lx pData=%p failed, rc=%d\n", proc_pid(pProcess), iCmd, (void *)pData, rc));
@@ -592,12 +610,48 @@ static int vgdrvDarwinIOCtlSlow(PVBOXGUESTSESSION pSession, u_long iCmd, caddr_t
 }
 
 
-/*
- * The VBoxGuest IDC entry points.
- *
- * This code is shared with the other unixy OSes.
+/**
+ * @note This code is duplicated on other platforms with variations, so please
+ *       keep them all up to date when making changes!
  */
-#include "VBoxGuestIDC-unix.c.h"
+int VBOXCALL VBoxGuestIDC(void *pvSession, uintptr_t uReq, PVBGLREQHDR pReqHdr, size_t cbReq)
+{
+    /*
+     * Simple request validation (common code does the rest).
+     */
+    int rc;
+    if (   RT_VALID_PTR(pReqHdr)
+        && cbReq >= sizeof(*pReqHdr))
+    {
+        /*
+         * All requests except the connect one requires a valid session.
+         */
+        PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
+        if (pSession)
+        {
+            if (   RT_VALID_PTR(pSession)
+                && pSession->pDevExt == &g_DevExt)
+                rc = VGDrvCommonIoCtl(uReq, &g_DevExt, pSession, pReqHdr, cbReq);
+            else
+                rc = VERR_INVALID_HANDLE;
+        }
+        else if (uReq == VBGL_IOCTL_IDC_CONNECT)
+        {
+            rc = VGDrvCommonCreateKernelSession(&g_DevExt, &pSession);
+            if (RT_SUCCESS(rc))
+            {
+                rc = VGDrvCommonIoCtl(uReq, &g_DevExt, pSession, pReqHdr, cbReq);
+                if (RT_FAILURE(rc))
+                    VGDrvCommonCloseSession(&g_DevExt, pSession);
+            }
+        }
+        else
+            rc = VERR_INVALID_HANDLE;
+    }
+    else
+        rc = VERR_INVALID_POINTER;
+    return rc;
+}
 
 
 void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
