@@ -1846,13 +1846,6 @@ static DECLCALLBACK(void) pdmR3DevHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnIoApicSendMsiNoWait} */
-static DECLCALLBACK(void) pdmR3DevHlp_IoApicSendMsiNoWait(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue)
-{
-    pdmR3DevHlp_IoApicSendMsi(pDevIns, GCPhys, uValue);
-}
-
-
 /** @interface_method_impl{PDMDEVHLPR3,pfnDriverAttach} */
 static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, uint32_t iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc)
 {
@@ -2637,29 +2630,17 @@ static DECLCALLBACK(VMCPUID) pdmR3DevHlp_GetCurrentCpuId(PPDMDEVINS pDevIns)
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCIBusRegister} */
-#if PDM_DEVHLPR3_VERSION >= PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
 static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg,
                                                     PCPDMPCIHLPR3 *ppPciHlpR3, uint32_t *piBus)
-#else
-static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3)
-#endif
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
-#if PDM_DEVHLPR3_VERSION >= PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
     LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: pPciBusReg=%p:{.u32Version=%#x, .pfnRegisterR3=%p, .pfnIORegionRegisterR3=%p, "
              ".pfnSetIrqR3=%p, .pszSetIrqRC=%p:{%s}, .pszSetIrqR0=%p:{%s}} ppPciHlpR3=%p piBus=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pPciBusReg, pPciBusReg->u32Version, pPciBusReg->pfnRegisterR3,
              pPciBusReg->pfnIORegionRegisterR3, pPciBusReg->pfnSetIrqR3, pPciBusReg->pszSetIrqRC, pPciBusReg->pszSetIrqRC,
              pPciBusReg->pszSetIrqR0, pPciBusReg->pszSetIrqR0, ppPciHlpR3, piBus));
-#else
-    LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: pPciBusReg=%p:{.u32Version=%#x, .pfnRegisterR3=%p, .pfnIORegionRegisterR3=%p, "
-             ".pfnSetIrqR3=%p, .pszSetIrqRC=%p:{%s}, .pszSetIrqR0=%p:{%s}} ppPciHlpR3=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciBusReg, pPciBusReg->u32Version, pPciBusReg->pfnRegisterR3,
-             pPciBusReg->pfnIORegionRegisterR3, pPciBusReg->pfnSetIrqR3, pPciBusReg->pszSetIrqRC, pPciBusReg->pszSetIrqRC,
-             pPciBusReg->pszSetIrqR0, pPciBusReg->pszSetIrqR0, ppPciHlpR3));
-#endif
 
     /*
      * Validate the structure.
@@ -2700,11 +2681,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
         LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Rrc (ppPciHlpR3)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
-#if PDM_DEVHLPR3_VERSION >= PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
     AssertLogRelMsgReturn(RT_VALID_PTR(piBus) || !piBus,
                           ("caller='%s'/%d: piBus=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, piBus),
                           VERR_INVALID_POINTER);
-#endif
 
     /*
      * Find free PCI bus entry.
@@ -2776,15 +2755,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
 
     /* set the helper pointer and return. */
     *ppPciHlpR3 = &g_pdmR3DevPciHlp;
-#if PDM_DEVHLPR3_VERSION >= PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
     if (piBus)
         *piBus = iBus;
     LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Rrc *piBus=%u\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS, iBus));
     return VINF_SUCCESS;
-#else
-    LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %u\n", pDevIns->pReg->szName, pDevIns->iInstance, iBus));
-    return (int)iBus;
-#endif
 }
 
 
@@ -3649,6 +3623,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_MMIOExDeregister,
     pdmR3DevHlp_MMIOExMap,
     pdmR3DevHlp_MMIOExUnmap,
+    pdmR3DevHlp_MMIOExReduce,
     pdmR3DevHlp_MMHyperMapMMIO2,
     pdmR3DevHlp_MMIO2MapKernel,
     pdmR3DevHlp_ROMRegister,
@@ -3690,6 +3665,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PCISetIrqNoWait,
     pdmR3DevHlp_ISASetIrq,
     pdmR3DevHlp_ISASetIrqNoWait,
+    pdmR3DevHlp_IoApicSendMsi,
     pdmR3DevHlp_DriverAttach,
     pdmR3DevHlp_DriverDetach,
     pdmR3DevHlp_QueueCreate,
@@ -3724,9 +3700,9 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_CallR0,
     pdmR3DevHlp_VMGetSuspendReason,
     pdmR3DevHlp_VMGetResumeReason,
-    pdmR3DevHlp_MMIOExReduce,
-    pdmR3DevHlp_IoApicSendMsi,
-    pdmR3DevHlp_IoApicSendMsiNoWait,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -3906,6 +3882,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_MMIOExDeregister,
     pdmR3DevHlp_MMIOExMap,
     pdmR3DevHlp_MMIOExUnmap,
+    pdmR3DevHlp_MMIOExReduce,
     pdmR3DevHlp_MMHyperMapMMIO2,
     pdmR3DevHlp_MMIO2MapKernel,
     pdmR3DevHlp_ROMRegister,
@@ -3947,6 +3924,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PCISetIrqNoWait,
     pdmR3DevHlp_ISASetIrq,
     pdmR3DevHlp_ISASetIrqNoWait,
+    pdmR3DevHlp_IoApicSendMsi,
     pdmR3DevHlp_DriverAttach,
     pdmR3DevHlp_DriverDetach,
     pdmR3DevHlp_QueueCreate,
@@ -3981,9 +3959,9 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_CallR0,
     pdmR3DevHlp_VMGetSuspendReason,
     pdmR3DevHlp_VMGetResumeReason,
-    pdmR3DevHlp_MMIOExReduce,
-    pdmR3DevHlp_IoApicSendMsi,
-    pdmR3DevHlp_IoApicSendMsiNoWait,
+    0,
+    0,
+    0,
     0,
     0,
     0,
