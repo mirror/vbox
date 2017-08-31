@@ -65,7 +65,6 @@ VBoxGuestR0Lib_SOURCES      = \
 	VBoxGuestR0LibSharedFolders.c \
 	VBoxGuestR0LibCrOgl.cpp \
 	GenericRequest.cpp \
-	SysHlp.cpp \
 	PhysHeap.cpp \
 	Init.cpp \
 	Mouse.cpp \
@@ -90,7 +89,6 @@ VBoxGuestR0LibBase_INCS     = $(VBoxGuestR0Lib_INCS)
 VBoxGuestR0LibBase_INCS.win = $(VBoxGuestR0Lib_INCS.win)
 VBoxGuestR0LibBase_SOURCES  = \
 	GenericRequest.cpp \
-	SysHlp.cpp \
 	PhysHeap.cpp \
 	Init.cpp \
 	VMMDev.cpp \
