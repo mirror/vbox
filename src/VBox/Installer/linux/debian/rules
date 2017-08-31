@@ -208,7 +208,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	$(if $(NOQT),,cd $(archdir)/icons; for i in *; do \
         for j in $$i/virtualbox.*; do \
 	        if [ -f $$j ]; then \
-	            if [ -d $(prefix)/usr/share/icons/hicolor/$$i/apps ]; then \
+	            if [ ! -d $(prefix)/usr/share/icons/hicolor/$$i/apps ]; then \
 	                install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor/$$i/apps; \
 	            fi; \
 	            mv $$j $(prefix)/usr/share/icons/hicolor/$$i/apps; \
