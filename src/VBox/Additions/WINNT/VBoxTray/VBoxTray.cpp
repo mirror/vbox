@@ -952,6 +952,9 @@ static int vboxTrayServiceMain(void)
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     RT_NOREF(hPrevInstance, lpCmdLine, nCmdShow);
+    int rc = RTR3InitExeNoArguments(0);
+    if (RT_FAILURE(rc))
+        return RTEXITCODE_INIT;
 
     /* Note: Do not use a global namespace ("Global\\") for mutex name here,
      * will blow up NT4 compatibility! */
@@ -967,76 +970,78 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     LogRel(("%s r%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr()));
 
-    int rc = RTR3InitExeNoArguments(0);
-    if (RT_SUCCESS(rc))
-        rc = vboxTrayLogCreate(NULL /* pszLogFile */);
-
-    if (RT_SUCCESS(rc))
-        rc = VbglR3Init();
+    rc = vboxTrayLogCreate(NULL /* pszLogFile */);
     if (RT_SUCCESS(rc))
     {
-        /* Save instance handle. */
-        g_hInstance = hInstance;
-
-        hlpReportStatus(VBoxGuestFacilityStatus_Init);
-        rc = vboxTrayCreateToolWindow();
+        rc = VbglR3Init();
         if (RT_SUCCESS(rc))
         {
-            VBoxCapsInit();
+            /* Save instance handle. */
+            g_hInstance = hInstance;
 
-            rc = vboxStInit(g_hwndToolWindow);
-            if (!RT_SUCCESS(rc))
-            {
-                LogFlowFunc(("vboxStInit failed, rc=%Rrc\n", rc));
-                /* ignore the St Init failure. this can happen for < XP win that do not support WTS API
-                 * in that case the session is treated as active connected to the physical console
-                 * (i.e. fallback to the old behavior that was before introduction of VBoxSt) */
-                Assert(vboxStIsActiveConsole());
-            }
-
-            rc = vboxDtInit();
-            if (!RT_SUCCESS(rc))
-            {
-                LogFlowFunc(("vboxDtInit failed, rc=%Rrc\n", rc));
-                /* ignore the Dt Init failure. this can happen for < XP win that do not support WTS API
-                 * in that case the session is treated as active connected to the physical console
-                 * (i.e. fallback to the old behavior that was before introduction of VBoxSt) */
-                Assert(vboxDtIsInputDesktop());
-            }
-
-            rc = VBoxAcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_SEAMLESS | VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, true);
-            if (!RT_SUCCESS(rc))
-                LogFlowFunc(("VBoxAcquireGuestCaps failed with rc=%Rrc, ignoring ...\n", rc));
-
-            rc = vboxTraySetupSeamless(); /** @todo r=andy Do we really want to be this critical for the whole application? */
+            hlpReportStatus(VBoxGuestFacilityStatus_Init);
+            rc = vboxTrayCreateToolWindow();
             if (RT_SUCCESS(rc))
             {
-                rc = vboxTrayServiceMain();
+                VBoxCapsInit();
+
+                rc = vboxStInit(g_hwndToolWindow);
+                if (!RT_SUCCESS(rc))
+                {
+                    LogFlowFunc(("vboxStInit failed, rc=%Rrc\n", rc));
+                    /* ignore the St Init failure. this can happen for < XP win that do not support WTS API
+                     * in that case the session is treated as active connected to the physical console
+                     * (i.e. fallback to the old behavior that was before introduction of VBoxSt) */
+                    Assert(vboxStIsActiveConsole());
+                }
+
+                rc = vboxDtInit();
+                if (!RT_SUCCESS(rc))
+                {
+                    LogFlowFunc(("vboxDtInit failed, rc=%Rrc\n", rc));
+                    /* ignore the Dt Init failure. this can happen for < XP win that do not support WTS API
+                     * in that case the session is treated as active connected to the physical console
+                     * (i.e. fallback to the old behavior that was before introduction of VBoxSt) */
+                    Assert(vboxDtIsInputDesktop());
+                }
+
+                rc = VBoxAcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_SEAMLESS | VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, true);
+                if (!RT_SUCCESS(rc))
+                    LogFlowFunc(("VBoxAcquireGuestCaps failed with rc=%Rrc, ignoring ...\n", rc));
+
+                rc = vboxTraySetupSeamless(); /** @todo r=andy Do we really want to be this critical for the whole application? */
                 if (RT_SUCCESS(rc))
-                    hlpReportStatus(VBoxGuestFacilityStatus_Terminating);
-                vboxTrayShutdownSeamless();
+                {
+                    rc = vboxTrayServiceMain();
+                    if (RT_SUCCESS(rc))
+                        hlpReportStatus(VBoxGuestFacilityStatus_Terminating);
+                    vboxTrayShutdownSeamless();
+                }
+
+                /* it should be safe to call vboxDtTerm even if vboxStInit above failed */
+                vboxDtTerm();
+
+                /* it should be safe to call vboxStTerm even if vboxStInit above failed */
+                vboxStTerm();
+
+                VBoxCapsTerm();
+
+                vboxTrayDestroyToolWindow();
+            }
+            if (RT_SUCCESS(rc))
+                hlpReportStatus(VBoxGuestFacilityStatus_Terminated);
+            else
+            {
+                LogRel(("Error while starting, rc=%Rrc\n", rc));
+                hlpReportStatus(VBoxGuestFacilityStatus_Failed);
             }
 
-            /* it should be safe to call vboxDtTerm even if vboxStInit above failed */
-            vboxDtTerm();
-
-            /* it should be safe to call vboxStTerm even if vboxStInit above failed */
-            vboxStTerm();
-
-            VBoxCapsTerm();
-
-            vboxTrayDestroyToolWindow();
+            LogRel(("Ended\n"));
+            VbglR3Term();
         }
-        if (RT_SUCCESS(rc))
-            hlpReportStatus(VBoxGuestFacilityStatus_Terminated);
+        else
+            LogRel(("VbglR3Init failed: %Rrc\n", rc));
     }
-
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("Error while starting, rc=%Rrc\n", rc));
-        hlpReportStatus(VBoxGuestFacilityStatus_Failed);
-    }
-    LogRel(("Ended\n"));
 
     /* Release instance mutex. */
     if (hMutexAppRunning != NULL)
@@ -1044,8 +1049,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         CloseHandle(hMutexAppRunning);
         hMutexAppRunning = NULL;
     }
-
-    VbglR3Term();
 
     vboxTrayLogDestroy();
 
