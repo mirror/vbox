@@ -166,7 +166,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     if (!pTimer->fSuspended)
         return VERR_TIMER_ACTIVE;
     if (   pTimer->fSpecificCpu
-        && !RTMpIsCpuOnline(pTimer->idCpu))
+        && !RTMpIsCpuOnline(RTMpCpuIdFromSetIndex(pTimer->iCpu)))
         return VERR_CPU_OFFLINE;
 
     /*
