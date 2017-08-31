@@ -180,7 +180,7 @@ int VBOXCALL vbglR0IdcNativeClose(PVBGLIDCHANDLE pHandle, PVBGLIOCIDCDISCONNECT 
  * @param   pReqHdr             The request header.
  * @param   cbReq               The request size.
  */
-DECLR0VBGL(int) VbglR0IdcCallRaw(PVBGLIDCHANDLE pHandle, size_t uReq, PVBGLREQHDR pReqHdr, uint32_t cbReq)
+DECLR0VBGL(int) VbglR0IdcCallRaw(PVBGLIDCHANDLE pHandle, uintptr_t uReq, PVBGLREQHDR pReqHdr, uint32_t cbReq)
 {
     NOREF(cbReq);
     return vbglR0IdcNtCallInternal(pHandle->s.pDeviceObject, pHandle->s.pFileObject, (uint32_t)uReq, pReqHdr);

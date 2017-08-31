@@ -148,8 +148,8 @@ typedef VBGLIDCHANDLE *PVBGLIDCHANDLE;
 
 DECLR0VBGL(int) VbglR0IdcOpen(PVBGLIDCHANDLE pHandle, uint32_t uReqVersion, uint32_t uMinVersion,
                               uint32_t *puSessionVersion, uint32_t *puDriverVersion, uint32_t *puDriverRevision);
-DECLR0VBGL(int) VbglR0IdcCallRaw(PVBGLIDCHANDLE pHandle, uintptr_t iReq, PVBGLREQHDR pReqHdr, uint32_t cbReq);
-DECLR0VBGL(int) VbglR0IdcCall(PVBGLIDCHANDLE pHandle, uintptr_t iReq, PVBGLREQHDR pReqHdr, uint32_t cbReq);
+DECLR0VBGL(int) VbglR0IdcCallRaw(PVBGLIDCHANDLE pHandle, uintptr_t uReq, PVBGLREQHDR pReqHdr, uint32_t cbReq);
+DECLR0VBGL(int) VbglR0IdcCall(PVBGLIDCHANDLE pHandle, uintptr_t uReq, PVBGLREQHDR pReqHdr, uint32_t cbReq);
 DECLR0VBGL(int) VbglR0IdcClose(PVBGLIDCHANDLE pHandle);
 
 /** @} */

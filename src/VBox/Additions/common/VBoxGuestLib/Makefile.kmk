@@ -73,6 +73,10 @@ VBoxGuestR0Lib_SOURCES      = \
 	HGCM.cpp \
 	VbglR0CanUsePhysPageList.cpp
 VBoxGuestR0Lib_SOURCES.win = VBoxGuestR0LibIdc-win.cpp
+VBoxGuestR0Lib_SOURCES.os2 = VBoxGuestR0LibIdc-os2.cpp
+ifn1of ($(KBUILD_TARGET), win os2)
+ VBoxGuestR0Lib_SOURCES += VBoxGuestR0LibIdc-unix.cpp
+endif
 
 #
 # VBoxGuestR0LibBase

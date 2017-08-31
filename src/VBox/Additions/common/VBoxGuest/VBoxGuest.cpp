@@ -1510,7 +1510,7 @@ void VGDrvCommonWaitDoWakeUps(PVBOXGUESTDEVEXT pDevExt)
  * @param   pDevExt     The device extension.
  * @param   pSession    The session.
  */
-int VGDrvCommonIoCtlFast(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
+int VGDrvCommonIoCtlFast(uintptr_t iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
     LogFlow(("VGDrvCommonIoCtlFast: iFunction=%#x pDevExt=%p pSession=%p\n", iFunction, pDevExt, pSession));
 
@@ -3926,8 +3926,8 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
                 fMousePositionChanged = true;
                 fEvents &= ~VMMDEV_EVENT_MOUSE_POSITION_CHANGED;
 #if !defined(VBOXGUEST_MOUSE_NOTIFY_CAN_PREEMPT)
-                if (pDevExt->MouseNotifyCallback.pfnNotify)
-                    pDevExt->MouseNotifyCallback.pfnNotify(pDevExt->MouseNotifyCallback.pvUser);
+                if (pDevExt->pfnMouseNotifyCallback)
+                    pDevExt->pfnMouseNotifyCallback(pDevExt->pvMouseNotifyCallbackArg);
 #endif
             }
 

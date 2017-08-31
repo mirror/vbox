@@ -142,6 +142,7 @@ DECLEXPORT(int) VBOXCALL VBoxGuestIDCCall(void *pvSession, unsigned iCmd, void *
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertMsgReturn(pSession->pDevExt == &g_DevExt, ("SC: %p != %p\n", pSession->pDevExt, &g_DevExt), VERR_INVALID_HANDLE);
 
-    return VGDrvCommonIoCtl(iCmd, &g_DevExt, pSession, pvData, cbData, pcbDataReturned);
+    //return VGDrvCommonIoCtl(iCmd, &g_DevExt, pSession, pvData, cbData, pcbDataReturned);
+    return -1; /// @todo fixme
 }
 

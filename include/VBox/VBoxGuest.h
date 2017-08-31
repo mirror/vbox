@@ -354,7 +354,7 @@ AssertCompileSize(VBGLIOCGETVMMDEVIOINFO, 24 + (HC_ARCH_BITS == 32 ? 8 : 16));
  * IOCTL to VBoxGuest to perform a VMM Device request less than 1KB in size.
  * @{
  */
-#define VBGL_IOCTL_VMMDEV_REQUEST(a_cb)             VBGL_IOCTL_CODE_SIZE(2, (Size))
+#define VBGL_IOCTL_VMMDEV_REQUEST(a_cb)             VBGL_IOCTL_CODE_SIZE(2, (a_cb))
 /** @} */
 
 
@@ -966,7 +966,7 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
  *
  * @note ring-0 only.
  */
-#define VBGL_IOCTL_IDC_CONNECT                      VBGL_IOCTL_CODE_SIZE(63 | VBGL_IOCTL_FLAG_CC, VBGL_IOCL_IDC_CONNECT_SIZE)
+#define VBGL_IOCTL_IDC_CONNECT                      VBGL_IOCTL_CODE_SIZE(63 | VBGL_IOCTL_FLAG_CC, VBGL_IOCTL_IDC_CONNECT_SIZE)
 #define VBGL_IOCTL_IDC_CONNECT_SIZE                 sizeof(VBGLIOCIDCCONNECT)
 #define VBGL_IOCTL_IDC_CONNECT_SIZE_IN              RT_UOFFSET_AFTER(VBGLIOCIDCCONNECT, u.In)
 #define VBGL_IOCTL_IDC_CONNECT_SIZE_OUT             sizeof(VBGLIOCIDCCONNECT)
@@ -1020,7 +1020,7 @@ AssertCompile(VBGL_IOCTL_IDC_CONNECT_SIZE_IN == 24 + 16);
  *
  * @note ring-0 only.
  */
-#define VBGL_IOCTL_IDC_DISCONNECT                   VBGL_IOCTL_CODE_SIZE(62 | VBGL_IOCTL_FLAG_CC, VBGL_IOCL_IDC_DISCONNECT_SIZE)
+#define VBGL_IOCTL_IDC_DISCONNECT                   VBGL_IOCTL_CODE_SIZE(62 | VBGL_IOCTL_FLAG_CC, VBGL_IOCTL_IDC_DISCONNECT_SIZE)
 #define VBGL_IOCTL_IDC_DISCONNECT_SIZE              sizeof(VBGLIOCIDCDISCONNECT)
 #define VBGL_IOCTL_IDC_DISCONNECT_SIZE_IN           sizeof(VBGLIOCIDCDISCONNECT)
 #define VBGL_IOCTL_IDC_DISCONNECT_SIZE_OUT          sizeof(VBGLREQHDR)
@@ -1039,6 +1039,22 @@ typedef struct VBGLIOCIDCDISCONNECT
 } VBGLIOCIDCDISCONNECT, *PVBGLIOCIDCDISCONNECT;
 AssertCompileSize(VBGLIOCIDCDISCONNECT, 24 + ARCH_BITS / 8);
 /** @} */
+
+
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+RT_C_DECLS_BEGIN
+/**
+ * The VBoxGuest IDC entry point.
+ *
+ * @returns VBox status code.
+ * @param   pvSession   The session.
+ * @param   uReq        The request code.
+ * @param   pReq        The request.
+ * @param   cbReq       The request size.
+ */
+int VBOXCALL VBoxGuestIDC(void *pvSession, uintptr_t uReq, PVBGLREQHDR pReq, size_t cbReq);
+RT_C_DECLS_END
+#endif
 
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
