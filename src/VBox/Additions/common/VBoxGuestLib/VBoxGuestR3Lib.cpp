@@ -428,7 +428,7 @@ int vbglR3DoIOCtlRaw(uintptr_t uFunction, PVBGLREQHDR pHdr, size_t cbReq)
 #else
     if (g_File != NIL_RTFILE)
     {
-        if (RT_LIKELY(ioctl((int)g_File, uFunction, pHdr) >= 0))
+        if (RT_LIKELY(ioctl((int)(intptr_t)g_File, uFunction, pHdr) >= 0))
             return VINF_SUCCESS;
         return RTErrConvertFromErrno(errno);
     }
