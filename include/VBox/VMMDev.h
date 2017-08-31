@@ -232,7 +232,7 @@ typedef enum
 # ifndef VBOX_HGCM_HOST_CODE
 #  if ARCH_BITS == 64
 #   define VMMDevReq_HGCMCall VMMDevReq_HGCMCall64
-#  elif ARCH_BITS == 32
+#  elif ARCH_BITS == 32 || ARCH_BITS == 16
 #   define VMMDevReq_HGCMCall VMMDevReq_HGCMCall32
 #  else
 #   error "Unsupported ARCH_BITS"
@@ -1490,9 +1490,9 @@ typedef struct
 typedef struct
 {
     /** Header */
-    VMMDevRequestHeader header;
+    VMMDevRequestHeader         header;
     /** OUT: unique session id; the id will be different after each start, reset or restore of the VM */
-    uint64_t            idSession;
+    uint64_t                    idSession;
 } VMMDevReqSessionId;
 AssertCompileSize(VMMDevReqSessionId, 24+8);
 
@@ -1505,9 +1505,9 @@ AssertCompileSize(VMMDevReqSessionId, 24+8);
 typedef struct
 {
     /** Header. */
-    VMMDevRequestHeader header;
+    VMMDevRequestHeader         header;
     /** Flags (reserved, MBZ). */
-    uint32_t            fFlags;
+    uint32_t                    fFlags;
 } VMMDevReqWriteCoreDump;
 AssertCompileSize(VMMDevReqWriteCoreDump, 24+4);
 
@@ -1516,11 +1516,11 @@ AssertCompileSize(VMMDevReqWriteCoreDump, 24+4);
 typedef struct
 {
     /** Header. */
-    VMMDevRequestHeader header;
+    VMMDevRequestHeader         header;
     /** OUT: Guest heartbeat interval in nanosec. */
-    uint64_t    cNsInterval;
+    uint64_t                    cNsInterval;
     /** Heartbeat check flag. */
-    bool fEnabled;
+    bool                        fEnabled;
 } VMMDevReqHeartbeat;
 AssertCompileSize(VMMDevReqHeartbeat, 24+12);
 
@@ -1641,7 +1641,7 @@ typedef struct
         u.value32 = u32;
     }
 
-    int GetUInt32(uint32_t *pu32)
+    int GetUInt32(uint32_t RT_FAR *pu32)
     {
         if (type == VMMDevHGCMParmType_32bit)
         {
@@ -1657,7 +1657,7 @@ typedef struct
         u.value64 = u64;
     }
 
-    int GetUInt64(uint64_t *pu64)
+    int GetUInt64(uint64_t RT_FAR *pu64)
     {
         if (type == VMMDevHGCMParmType_64bit)
         {
@@ -1667,7 +1667,7 @@ typedef struct
         return VERR_INVALID_PARAMETER;
     }
 
-    void SetPtr(void *pv, uint32_t cb)
+    void SetPtr(void RT_FAR *pv, uint32_t cb)
     {
         type                    = VMMDevHGCMParmType_LinAddr;
         u.Pointer.size          = cb;
@@ -1711,7 +1711,7 @@ typedef struct
         u.value32 = u32;
     }
 
-    int GetUInt32(uint32_t *pu32)
+    int GetUInt32(uint32_t RT_FAR *pu32)
     {
         if (type == VMMDevHGCMParmType_32bit)
         {
@@ -1727,7 +1727,7 @@ typedef struct
         u.value64 = u64;
     }
 
-    int GetUInt64(uint64_t *pu64)
+    int GetUInt64(uint64_t RT_FAR *pu64)
     {
         if (type == VMMDevHGCMParmType_64bit)
         {
@@ -1737,7 +1737,7 @@ typedef struct
         return VERR_INVALID_PARAMETER;
     }
 
-    void SetPtr(void *pv, uint32_t cb)
+    void SetPtr(void RT_FAR *pv, uint32_t cb)
     {
         type                    = VMMDevHGCMParmType_LinAddr;
         u.Pointer.size          = cb;
@@ -2115,6 +2115,7 @@ typedef struct VMMDEVVBVARECORD
 } VMMDEVVBVARECORD;
 AssertCompileSize(VMMDEVVBVARECORD, 4);
 
+#if ARCH_BITS >= 32
 
 /**
  * VBVA memory layout.
@@ -2184,7 +2185,9 @@ AssertCompileSize(VMMDevMemory, 8+8 + (12 + (_4M-_1K) + 4*64 + 12) );
 AssertCompileMemberOffset(VMMDevMemory, vbvaMemory, 16);
 
 /** Version of VMMDevMemory structure (VMMDevMemory::u32Version). */
-#define VMMDEV_MEMORY_VERSION   (1)
+# define VMMDEV_MEMORY_VERSION   (1)
+
+#endif /* ARCH_BITS >= 32 */
 
 /** @} */
 
