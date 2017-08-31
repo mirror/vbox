@@ -3112,6 +3112,12 @@ DECLINLINE(int) drvvdMediaExIoReqBufAlloc(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
     int rc = VERR_NOT_SUPPORTED;
     LogFlowFunc(("pThis=%#p pIoReq=%#p cb=%zu\n", pThis, pIoReq, cb));
 
+/** @todo: This does not work at all with encryption enabled because the encryption plugin
+ *         encrypts the data in place trashing guest memory and causing data corruption later on!
+ *
+ * DO NOT ENABLE UNLESS YOU WANT YOUR DATA SHREDDED!!!
+ */
+#if 0
     if (   cb == _4K
         && pThis->pDrvMediaExPort->pfnIoReqQueryBuf)
     {
@@ -3133,6 +3139,7 @@ DECLINLINE(int) drvvdMediaExIoReqBufAlloc(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
             pIoReq->ReadWrite.pSgBuf = &pIoReq->ReadWrite.Direct.SgBuf;
         }
     }
+#endif
 
     if (RT_FAILURE(rc))
     {
