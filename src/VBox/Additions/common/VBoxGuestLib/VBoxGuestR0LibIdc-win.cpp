@@ -28,29 +28,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <iprt/nt/nt.h>
 #include "VBoxGuestR0LibInternal.h"
 #include <VBox/VBoxGuest.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
-
-
-/**
- * Implementation of a IO_COMPLETION_ROUTINE.
- *
- * @returns STATUS_MORE_PROCESSING_REQUIRED
- * @param   pDeviceObject   The device object.
- * @param   pIrp            The request.
- * @param   pvUser          The event object.
- */
-static NTSTATUS vbglR0NtDriverIoCtlCompletion(IN PDEVICE_OBJECT pDeviceObject, IN PIRP pIrp, IN PVOID pvUser)
-{
-    PKEVENT pEvent = (PKEVENT )pvUser;
-    Log(("vbglR0NtDriverIoCtlCompletion: pIrp=%p pEvent=%p\n", pIrp, pEvent));
-    RT_NOREF2(pDeviceObject, pIrp);
-
-    KeSetEvent(pEvent, IO_NO_INCREMENT, FALSE /*fWait*/);
-    return STATUS_MORE_PROCESSING_REQUIRED;
-}
 
 
 /**
@@ -64,46 +46,67 @@ static NTSTATUS vbglR0NtDriverIoCtlCompletion(IN PDEVICE_OBJECT pDeviceObject, I
  */
 static int vbglR0IdcNtCallInternal(PDEVICE_OBJECT pDeviceObject, PFILE_OBJECT pFileObject, uint32_t uReq, PVBGLREQHDR pReq)
 {
-    int                 rc;
-    IO_STATUS_BLOCK     IoStatusBlock;
-    KEVENT              Event;
-    PIRP                pIrp;
-    NTSTATUS            rcNt;
+    int      rc;
+    NTSTATUS rcNt;
 
     /*
      * Build the request.
+     *
+     * We want to avoid double buffering of the request, therefore we don't
+     * specify any request pointers or sizes when asking the kernel to build
+     * the IRP for us, but instead do that part our selves.
      */
+    KEVENT Event;
     KeInitializeEvent(&Event, NotificationEvent, FALSE);
-    pIrp = IoBuildDeviceIoControlRequest(uReq,              /* IoControlCode */
-                                         pDeviceObject,
-                                         pReq,              /* InputBuffer */
-                                         pReq->cbIn,        /* InputBufferLength */
-                                         pReq,              /* OutputBuffer */
-                                         pReq->cbOut,       /* OutputBufferLength */
-                                         TRUE,              /* InternalDeviceIoControl (=> IRP_MJ_INTERNAL_DEVICE_CONTROL) */
-                                         &Event,            /* Event */
-                                         &IoStatusBlock);   /* IoStatusBlock */
+
+    IO_STATUS_BLOCK IoStatusBlock = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+#if 0
+    PIRP pIrp = IoBuildDeviceIoControlRequest(uReq,              /* IoControlCode */
+                                              pDeviceObject,
+                                              pReq,              /* InputBuffer */
+                                              pReq->cbIn,        /* InputBufferLength */
+                                              pReq,              /* OutputBuffer */
+                                              pReq->cbOut,       /* OutputBufferLength */
+                                              TRUE,              /* InternalDeviceIoControl (=> IRP_MJ_INTERNAL_DEVICE_CONTROL) */
+                                              &Event,            /* Event */
+                                              &IoStatusBlock);   /* IoStatusBlock */
+#else
+    PIRP pIrp = IoBuildDeviceIoControlRequest(uReq,              /* IoControlCode */
+                                              pDeviceObject,
+                                              NULL,              /* InputBuffer */
+                                              0,                 /* InputBufferLength */
+                                              NULL,              /* OutputBuffer */
+                                              0,                 /* OutputBufferLength */
+                                              TRUE,              /* InternalDeviceIoControl (=> IRP_MJ_INTERNAL_DEVICE_CONTROL) */
+                                              &Event,            /* Event */
+                                              &IoStatusBlock);   /* IoStatusBlock */
+#endif
     if (pIrp)
     {
+#if 0
         IoGetNextIrpStackLocation(pIrp)->FileObject = pFileObject;
-
-        /* A completion routine is required to signal the Event. */
-        IoSetCompletionRoutine(pIrp, vbglR0NtDriverIoCtlCompletion, &Event,
-                               TRUE /* InvokeOnSuccess */, TRUE /* InvokeOnError */, TRUE /* InvokeOnCancel */);
+#else
+        pIrp->Flags                                          |= IRP_SYNCHRONOUS_API;
+        pIrp->UserBuffer                                      = pReq;
+        pIrp->AssociatedIrp.SystemBuffer                      = pReq;
+        PIO_STACK_LOCATION pStack = IoGetNextIrpStackLocation(pIrp);
+        pStack->FileObject                                    = pFileObject;
+        pStack->Parameters.DeviceIoControl.OutputBufferLength = pReq->cbOut;
+        pStack->Parameters.DeviceIoControl.InputBufferLength  = pReq->cbIn;
+#endif
 
         /*
          * Call the driver, wait for an async request to complete (should never happen).
          */
         rcNt = IoCallDriver(pDeviceObject, pIrp);
         if (rcNt == STATUS_PENDING)
-        {
             rcNt = KeWaitForSingleObject(&Event,            /* Object */
                                          Executive,         /* WaitReason */
                                          KernelMode,        /* WaitMode */
                                          FALSE,             /* Alertable */
                                          NULL);             /* TimeOut */
+        if (NT_SUCCESS(rcNt))
             rcNt = IoStatusBlock.Status;
-        }
         if (NT_SUCCESS(rcNt))
             rc = pReq->rc;
         else
