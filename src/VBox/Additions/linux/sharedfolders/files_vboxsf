@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2007-2010 Oracle Corporation
+# Copyright (C) 2007-2017 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -57,8 +57,9 @@ FILES_VBOXSF_NOBIN=" \
     ${PATH_ROOT}/include/VBox/VMMDev.h=>include/VBox/VMMDev.h \
     ${PATH_ROOT}/include/VBox/VMMDev2.h=>include/VBox/VMMDev2.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/HGCM.cpp=>HGCM.c \
-    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/SysHlp.cpp=>SysHlp.c \
-    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/SysHlp.h=>SysHlp.h \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBoxGuestR0LibInternal.h=>VBoxGuestR0LibInternal.h \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBoxGuestR0LibIdc.cpp=>VBoxGuestR0LibIdc.c \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBoxGuestR0LibIdc-unix.cpp=>VBoxGuestR0LibIdc-unix.c \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBGLInternal.h=>VBGLInternal.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBoxGuestR0LibSharedFolders.c=>VBoxGuestR0LibSharedFolders.c \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBoxGuestLog.h=>VBoxGuestLog.h \

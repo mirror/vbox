@@ -25,8 +25,9 @@ MOD_OBJS   = \
 	lnkops.o \
 	regops.o \
 	utils.o \
-	SysHlp.o \
 	HGCM.o \
+	VBoxGuestR0LibIdc.o \
+	VBoxGuestR0LibIdc-unix.o \
 	VBoxGuestR0LibSharedFolders.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
 MOD_OBJS  += \
