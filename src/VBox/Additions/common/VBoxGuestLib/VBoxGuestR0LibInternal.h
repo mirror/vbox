@@ -32,6 +32,11 @@
 
 #ifdef RT_OS_WINDOWS
 # include <iprt/nt/ntddk.h>
+#elif defined(RT_OS_SOLARIS)
+# include <sys/conf.h>
+# include <sys/sunldi.h>
+# include <sys/file.h>
+# undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 #endif
 
 
@@ -42,12 +47,15 @@ struct VBGLIDCHANDLEPRIVATE
 {
     /** Pointer to the session handle. */
     void           *pvSession;
-# ifdef RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
     /** Pointer to the NT device object. */
     PDEVICE_OBJECT  pDeviceObject;
     /** Pointer to the NT file object. */
     PFILE_OBJECT    pFileObject;
-# endif
+#elif defined(RT_OS_SOLARIS)
+    /** LDI device handle to keep the device attached. */
+    ldi_handle_t    hDev;
+#endif
 };
 /** Indicate that the structure is present. */
 #define VBGLIDCHANDLEPRIVATE_DECLARED 1

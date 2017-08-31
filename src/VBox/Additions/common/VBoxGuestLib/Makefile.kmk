@@ -72,10 +72,11 @@ VBoxGuestR0Lib_SOURCES      = \
 	VMMDev.cpp \
 	HGCM.cpp \
 	VbglR0CanUsePhysPageList.cpp
-VBoxGuestR0Lib_SOURCES.win = VBoxGuestR0LibIdc-win.cpp
-VBoxGuestR0Lib_SOURCES.os2 = VBoxGuestR0LibIdc-os2.cpp
-ifn1of ($(KBUILD_TARGET), win os2)
- VBoxGuestR0Lib_SOURCES += VBoxGuestR0LibIdc-unix.cpp
+VBoxGuestR0Lib_SOURCES.os2     = VBoxGuestR0LibIdc-os2.cpp
+VBoxGuestR0Lib_SOURCES.solaris = VBoxGuestR0LibIdc-solaris.cpp
+VBoxGuestR0Lib_SOURCES.win     = VBoxGuestR0LibIdc-win.cpp
+ifn1of ($(KBUILD_TARGET), os2 solaris win)
+ VBoxGuestR0Lib_SOURCES       += VBoxGuestR0LibIdc-unix.cpp
 endif
 
 #

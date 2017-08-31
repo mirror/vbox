@@ -189,12 +189,6 @@ static pollhead_t           g_PollHead;
 static kmutex_t             g_IrqMtx;
 /** The IRQ high-level Mutex. */
 static kmutex_t             g_HighLevelIrqMtx;
-/** Layered device handle for kernel keep-attached opens */
-static ldi_handle_t         g_LdiHandle = NULL;
-/** Ref counting for IDCOpen calls */
-static uint64_t             g_cLdiOpens = 0;
-/** The Mutex protecting the LDI handle in IDC opens */
-static kmutex_t             g_LdiMtx;
 /** Whether soft-ints are setup. */
 static bool                 g_fSoftIntRegistered = false;
 
@@ -218,8 +212,6 @@ int _init(void)
             RTLogRelSetDefaultInstance(pRelLogger);
         else
             cmn_err(CE_NOTE, "failed to initialize driver logging rc=%d!\n", rc);
-
-        mutex_init(&g_LdiMtx, NULL, MUTEX_DRIVER, NULL);
 
         /*
          * Prevent module autounloading.
@@ -259,10 +251,7 @@ int _fini(void)
     RTLogDestroy(RTLogSetDefaultInstance(NULL));
 
     if (!rc)
-    {
-        mutex_destroy(&g_LdiMtx);
         RTR0Term();
-    }
     return rc;
 }
 
@@ -785,62 +774,16 @@ int VBOXCALL VBoxGuestIDC(void *pvSession, uintptr_t uReq, PVBGLREQHDR pReqHdr, 
         }
         else if (uReq == VBGL_IOCTL_IDC_CONNECT)
         {
-            /* Reference ourselves to make sure we don't go away.
-               Note! Would be better if the IDC code did this. */
-            mutex_enter(&g_LdiMtx);
-            if (g_LdiHandle)
-            {
-                ++g_cLdiOpens;
-                rc = VINF_SUCCESS;
-            }
-            else
-            {
-                ldi_ident_t DevIdent = ldi_ident_from_anon();
-                rc = ldi_open_by_name(VBOXGUEST_DEVICE_NAME, FREAD, kcred, &g_LdiHandle, DevIdent);
-                ldi_ident_release(DevIdent);
-                if (!rc)
-                    ++g_cLdiOpens;
-                else
-                {
-                    LogRel(("VBoxGuestIDCOpen: ldi_open_by_name failed. rc=%d\n", rc));
-                    rc = VERR_OPEN_FAILED;
-                }
-            }
-            mutex_exit(&g_LdiMtx);
-
+            rc = VGDrvCommonCreateKernelSession(&g_DevExt, &pSession);
             if (RT_SUCCESS(rc))
             {
-                rc = VGDrvCommonCreateKernelSession(&g_DevExt, &pSession);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = VGDrvCommonIoCtl(uReq, &g_DevExt, pSession, pReqHdr, cbReq);
-                    if (RT_FAILURE(rc))
-                        VGDrvCommonCloseSession(&g_DevExt, pSession);
-                }
+                rc = VGDrvCommonIoCtl(uReq, &g_DevExt, pSession, pReqHdr, cbReq);
+                if (RT_FAILURE(rc))
+                    VGDrvCommonCloseSession(&g_DevExt, pSession);
             }
         }
         else
             rc = VERR_INVALID_HANDLE;
-
-        /*
-         * Dereference the driver on disconnect and failed connect.
-         */
-        if (RT_UNLIKELY(   (   uReq == VBGL_IOCTL_IDC_CONNECT
-                            && RT_FAILURE(rc))
-                        || (   uReq == VBGL_IOCTL_IDC_DISCONNECT
-                            && RT_SUCCESS(rc)) ))
-        {
-            mutex_enter(&g_LdiMtx);
-            if (g_cLdiOpens > 0)
-                --g_cLdiOpens;
-            if (   g_cLdiOpens == 0
-                && g_LdiHandle)
-            {
-                ldi_close(g_LdiHandle, FREAD, kcred);
-                g_LdiHandle = NULL;
-            }
-            mutex_exit(&g_LdiMtx);
-        }
     }
     else
         rc = VERR_INVALID_POINTER;
