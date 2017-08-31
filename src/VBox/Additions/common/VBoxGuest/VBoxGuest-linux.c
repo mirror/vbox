@@ -48,6 +48,7 @@
 #include <iprt/process.h>
 #include <iprt/spinlock.h>
 #include <iprt/semaphore.h>
+#include <iprt/string.h>
 #include <VBox/log.h>
 
 
@@ -891,14 +892,14 @@ static int vgdrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned l
  * @note This code is duplicated on other platforms with variations, so please
  *       keep them all up to date when making changes!
  */
-int VBOXCALL VBoxGuestIDC(void *pvSession, uint32_t uReq, PVBGLREQHDR pReq, size_t cbReq)
+int VBOXCALL VBoxGuestIDC(void *pvSession, uintptr_t uReq, PVBGLREQHDR pReqHdr, size_t cbReq)
 {
     /*
      * Simple request validation (common code does the rest).
      */
     int rc;
-    if (   RT_VALID_PTR(pReq)
-        && cbReq >= sizeof(*pReq))
+    if (   RT_VALID_PTR(pReqHdr)
+        && cbReq >= sizeof(*pReqHdr))
     {
         /*
          * All requests except the connect one requires a valid session.
@@ -908,7 +909,7 @@ int VBOXCALL VBoxGuestIDC(void *pvSession, uint32_t uReq, PVBGLREQHDR pReq, size
         {
             if (   RT_VALID_PTR(pSession)
                 && pSession->pDevExt == &g_DevExt)
-                rc = VGDrvCommonIoCtl(uReq, &g_DevExt, pSession, pReq, cbReq);
+                rc = VGDrvCommonIoCtl(uReq, &g_DevExt, pSession, pReqHdr, cbReq);
             else
                 rc = VERR_INVALID_HANDLE;
         }
@@ -917,7 +918,7 @@ int VBOXCALL VBoxGuestIDC(void *pvSession, uint32_t uReq, PVBGLREQHDR pReq, size
             rc = VGDrvCommonCreateKernelSession(&g_DevExt, &pSession);
             if (RT_SUCCESS(rc))
             {
-                rc = VGDrvCommonIoCtl(uReq, &g_DevExt, pSession, pReq, cbReq);
+                rc = VGDrvCommonIoCtl(uReq, &g_DevExt, pSession, pReqHdr, cbReq);
                 if (RT_FAILURE(rc))
                     VGDrvCommonCloseSession(&g_DevExt, pSession);
             }

@@ -3977,8 +3977,8 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
      */
 #if defined(VBOXGUEST_MOUSE_NOTIFY_CAN_PREEMPT) && !defined(RT_OS_WINDOWS) /* (Windows does this in the Dpc callback) */
     if (   fMousePositionChanged
-        && pDevExt->MouseNotifyCallback.pfnNotify)
-        pDevExt->MouseNotifyCallback.pfnNotify(pDevExt->MouseNotifyCallback.pvUser);
+        && pDevExt->pfnMouseNotifyCallback)
+        pDevExt->pfnMouseNotifyCallback(pDevExt->pvMouseNotifyCallbackArg);
 #endif
 
 #if defined(VBOXGUEST_USE_DEFERRED_WAKE_UP) && !defined(RT_OS_DARWIN) && !defined(RT_OS_WINDOWS)

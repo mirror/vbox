@@ -138,17 +138,18 @@
 #elif defined(RT_OS_SOLARIS)
   /* No automatic buffering, size limited to 255 bytes => use VBGLBIGREQ for everything. */
 # include <sys/ioccom.h>
-# define SUP_CTL_CODE_SIZE(Function, Size)          _IOWRN('V', (Function), sizeof(SUPREQHDR))
-# define SUP_CTL_CODE_BIG(Function)                 _IOWRN('V', (Function), sizeof(SUPREQHDR))
-# define SUP_CTL_CODE_FAST(Function)                _IO(   'V', (Function))
+# define VBGL_IOCTL_CODE_SIZE(Function, Size)       _IOWRN('V', (Function), sizeof(VBGLREQHDR))
+# define VBGL_IOCTL_CODE_BIG(Function)              _IOWRN('V', (Function), sizeof(VBGLREQHDR))
+# define VBGL_IOCTL_CODE_FAST(Function)             _IO(   'F', (Function))
 # define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         ((a_uIOCtl) & ~VBGL_IOCTL_FLAG_BIT_MASK)
+# define VBGL_IOCTL_IS_FAST(a_uIOCtl)               ( ((a_uIOCtl) & 0x0000ff00) == ('F' << 8) )
 
 #elif defined(RT_OS_LINUX)
   /* No automatic buffering, size limited to 16KB. */
 # include <linux/ioctl.h>
 # define VBGL_IOCTL_CODE_SIZE(Function, Size)       _IOC(_IOC_READ | _IOC_WRITE, 'V', (Function), (Size))
 # define VBGL_IOCTL_CODE_BIG(Function)              _IO('V', (Function))
-# define VBGL_IOCTL_CODE_FAST(Function)             _IO('V', (Function))
+# define VBGL_IOCTL_CODE_FAST(Function)             _IO('F', (Function))
 # define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         (_IOC_NR((a_uIOCtl)) & ~VBGL_IOCTL_FLAG_BIT_MASK)
 # define VBOXGUEST_USER_DEVICE_NAME                 "/dev/vboxuser"
 
@@ -165,8 +166,8 @@
   /* Automatic buffering, size limited to 4KB on *BSD and 8KB on Darwin - commands the limit, 4KB. */
 # include <sys/ioccom.h>
 # define VBGL_IOCTL_CODE_SIZE(Function, Size)       _IOC(IOC_INOUT, 'V', (Function), (Size))
-# define VBGL_IOCTL_CODE_BIG(Function)              _IO('V', (Function) | SUP_IOCTL_FLAG)
-# define VBGL_IOCTL_CODE_FAST(Function)             _IO('V', (Function))
+# define VBGL_IOCTL_CODE_BIG(Function)              _IO('V', (Function))
+# define VBGL_IOCTL_CODE_FAST(Function)             _IO('F', (Function))
 # define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         ((a_uIOCtl) & ~(_IOC(0,0,0,IOCPARM_MASK) | VBGL_IOCTL_FLAG_BIT_MASK))
 #endif
 
@@ -1049,10 +1050,10 @@ RT_C_DECLS_BEGIN
  * @returns VBox status code.
  * @param   pvSession   The session.
  * @param   uReq        The request code.
- * @param   pReq        The request.
+ * @param   pReqHdr     The request.
  * @param   cbReq       The request size.
  */
-int VBOXCALL VBoxGuestIDC(void *pvSession, uintptr_t uReq, PVBGLREQHDR pReq, size_t cbReq);
+int VBOXCALL VBoxGuestIDC(void *pvSession, uintptr_t uReq, PVBGLREQHDR pReqHdr, size_t cbReq);
 RT_C_DECLS_END
 #endif
 
