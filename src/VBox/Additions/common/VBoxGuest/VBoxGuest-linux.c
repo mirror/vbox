@@ -401,7 +401,7 @@ static int vgdrvLinuxSetMouseStatus(uint32_t fStatus)
     VBGLIOCSETMOUSESTATUS Req;
     VBGLREQHDR_INIT(&Req.Hdr, SET_MOUSE_STATUS);
     Req.u.In.fStatus = fStatus;
-    rc = VGDrvCommonIoCtl(VBGL_IOCTL_SET_MOUSE_STATUS, &g_DevExt, g_pKernelSession, &Req.Hdr, sizeof(Req), NULL);
+    rc = VGDrvCommonIoCtl(VBGL_IOCTL_SET_MOUSE_STATUS, &g_DevExt, g_pKernelSession, &Req.Hdr, sizeof(Req));
     if (RT_SUCCESS(rc))
         rc = Req.Hdr.rc;
     return rc;
