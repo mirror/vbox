@@ -39,7 +39,7 @@
 *********************************************************************************************************************************/
 /* This is defined in some assembly file.  The AttachDD operation
    is done in the driver init code. */
-extern VBOXGUESTOS2IDCCONNECT g_VBoxGuestIDC;
+extern VBGLOS2ATTACHDD g_VBoxGuestIDC;
 
 
 
