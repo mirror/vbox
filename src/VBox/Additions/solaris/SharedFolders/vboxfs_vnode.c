@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VirtualBox File System for Solaris Guests, vnode implementation.
  * Portions contributed by: Ronald.
@@ -85,13 +86,15 @@
 #include <vm/seg_kpm.h>
 #include <vm/pvn.h>
 #if !defined(VBOX_VFS_SOLARIS_10U6)
-#include <sys/vfs_opreg.h>
+# include <sys/vfs_opreg.h>
 #endif
 #include <sys/pathname.h>
 #include <sys/dirent.h>
 #include <sys/fs_subr.h>
 #include <sys/time.h>
 #include <sys/cmn_err.h>
+#undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
+
 #include "vboxfs_prov.h"
 #include "vboxfs_vnode.h"
 #include "vboxfs_vfs.h"
