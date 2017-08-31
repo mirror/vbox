@@ -1,6 +1,8 @@
 /** @file
  * VBoxGuest - VirtualBox Guest Additions Driver Interface. (ADD,DEV)
  *
+ * @note    This file is used by 16-bit compilers too (OpenWatcom).
+ *
  * @remarks This is in the process of being split up and usage cleaned up.
  */
 
@@ -92,6 +94,8 @@
  *       testing!
  * @internal */
 #define VBGL_IOCTL_FLAG_32BIT                       UINT32_C(0)
+/** 16-bit specific I/O control flag. */
+#define VBGL_IOCTL_FLAG_16BIT                       UINT32_C(64)
 /** Check if the I/O control is a 64-bit one.   */
 #define VBGL_IOCTL_IS_64BIT(a_uIOCtl)               RT_BOOL((a_uIOCtl) & VBGL_IOCTL_FLAG_64BIT)
 
@@ -102,6 +106,8 @@
 # define VBGL_IOCTL_FLAG_CC                         VBGL_IOCTL_FLAG_64BIT
 #elif ARCH_BITS == 32
 # define VBGL_IOCTL_FLAG_CC                         VBGL_IOCTL_FLAG_32BIT
+#elif ARCH_BITS == 16
+# define VBGL_IOCTL_FLAG_CC                         VBGL_IOCTL_FLAG_16BIT
 #else
 # error "dunno which arch this is!"
 #endif
@@ -219,7 +225,7 @@ typedef struct VBGLREQHDR
 } VBGLREQHDR;
 AssertCompileSize(VBGLREQHDR, 24);
 /** Pointer to a IOC header. */
-typedef VBGLREQHDR *PVBGLREQHDR;
+typedef VBGLREQHDR RT_FAR *PVBGLREQHDR;
 
 /** Version of VMMDevRequestHeader structure. */
 #define VBGLREQHDR_VERSION          UINT32_C(0x10001)
@@ -316,7 +322,7 @@ typedef struct VBGLIOCDRIVERVERSIONINFO
             uint32_t        uReserved2;
         } Out;
     } u;
-} VBGLIOCDRIVERVERSIONINFO, *PVBGLIOCDRIVERVERSIONINFO;
+} VBGLIOCDRIVERVERSIONINFO, RT_FAR *PVBGLIOCDRIVERVERSIONINFO;
 AssertCompileSize(VBGLIOCDRIVERVERSIONINFO, 24 + 20);
 #ifndef RT_OS_OS2 /* figure this one out... */
 AssertCompile(VBGL_IOCTL_DRIVER_VERSION_INFO_SIZE_IN == 24 + 16);
@@ -342,15 +348,15 @@ typedef struct VBGLIOCGETVMMDEVIOINFO
         struct
         {
             /** The MMIO mapping.  NULL if no MMIO region. */
-            struct VMMDevMemory volatile   *pvVmmDevMapping;
+            struct VMMDevMemory volatile RT_FAR *pvVmmDevMapping;
             /** The I/O port address. */
             RTIOPORT                        IoPort;
             /** Padding, ignore. */
-            RTIOPORT                        auPadding[HC_ARCH_BITS == 32 ? 1 : 3];
+            RTIOPORT                        auPadding[HC_ARCH_BITS == 64 ? 3 : 1];
         } Out;
     } u;
-} VBGLIOCGETVMMDEVIOINFO, *PVBGLIOCGETVMMDEVIOINFO;
-AssertCompileSize(VBGLIOCGETVMMDEVIOINFO, 24 + (HC_ARCH_BITS == 32 ? 8 : 16));
+} VBGLIOCGETVMMDEVIOINFO, RT_FAR *PVBGLIOCGETVMMDEVIOINFO;
+AssertCompileSize(VBGLIOCGETVMMDEVIOINFO, 24 + (HC_ARCH_BITS == 64 ? 16 : 8));
 /** @} */
 
 
@@ -393,7 +399,7 @@ typedef struct VBGLIOCHGCMCONNECT
             uint32_t            idClient;
         } Out;
     } u;
-} VBGLIOCHGCMCONNECT, *PVBGLIOCHGCMCONNECT;
+} VBGLIOCHGCMCONNECT, RT_FAR *PVBGLIOCHGCMCONNECT;
 AssertCompileSize(VBGLIOCHGCMCONNECT, 24 + 132);
 #ifndef RT_OS_OS2 /* figure this one out... */
 AssertCompile(VBGL_IOCTL_HGCM_CONNECT_SIZE_OUT == 24 + 4);
@@ -420,7 +426,7 @@ typedef struct VBGLIOCHGCMDISCONNECT
             uint32_t    idClient;
         } In;
     } u;
-} VBGLIOCHGCMDISCONNECT, *PVBGLIOCHGCMDISCONNECT;
+} VBGLIOCHGCMDISCONNECT, RT_FAR *PVBGLIOCHGCMDISCONNECT;
 AssertCompileSize(VBGLIOCHGCMDISCONNECT, 24 + 4);
 /** @} */
 
@@ -469,9 +475,9 @@ typedef struct VBGLIOCHGCMCALL
      *       work to eliminate this. */
     uint16_t    cParms;
     /* Parameters follow in form HGCMFunctionParameter aParms[cParms] */
-} VBGLIOCHGCMCALL, *PVBGLIOCHGCMCALL;
+} VBGLIOCHGCMCALL, RT_FAR *PVBGLIOCHGCMCALL;
 AssertCompileSize(VBGLIOCHGCMCALL, 24 + 16);
-typedef VBGLIOCHGCMCALL const *PCVBGLIOCHGCMCALL;
+typedef VBGLIOCHGCMCALL const RT_FAR *PCVBGLIOCHGCMCALL;
 
 /**
  * Initialize a HGCM header (VBGLIOCHGCMCALL) for a non-timed call.
@@ -566,7 +572,7 @@ typedef struct VBGLIOCLOG
             char                    szMsg[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
         } In;
     } u;
-} VBGLIOCLOG, *PVBGLIOCLOG;
+} VBGLIOCLOG, RT_FAR *PVBGLIOCLOG;
 /** @} */
 
 
@@ -597,7 +603,7 @@ typedef struct VBGLIOCWAITFOREVENTS
             uint32_t                fEvents;
         } Out;
     } u;
-} VBGLIOCWAITFOREVENTS, *PVBGLIOCWAITFOREVENTS;
+} VBGLIOCWAITFOREVENTS, RT_FAR *PVBGLIOCWAITFOREVENTS;
 AssertCompileSize(VBGLIOCWAITFOREVENTS, 24 + 8);
 /** @} */
 
@@ -642,7 +648,7 @@ typedef struct VBGLIOCCHANGEFILTERMASK
             uint32_t fNotMask;
         } In;
     } u;
-} VBGLIOCCHANGEFILTERMASK, *PVBGLIOCCHANGEFILTERMASK;
+} VBGLIOCCHANGEFILTERMASK, RT_FAR *PVBGLIOCCHANGEFILTERMASK;
 AssertCompileSize(VBGLIOCCHANGEFILTERMASK, 24 + 8);
 /** @} */
 
@@ -697,7 +703,7 @@ typedef struct VBGLIOCACQUIREGUESTCAPS
             uint32_t        fNotMask;
         } In;
     } u;
-} VBGLIOCACQUIREGUESTCAPS, *PVBGLIOCACQUIREGUESTCAPS;
+} VBGLIOCACQUIREGUESTCAPS, RT_FAR *PVBGLIOCACQUIREGUESTCAPS;
 AssertCompileSize(VBGLIOCACQUIREGUESTCAPS, 24 + 12);
 /** @} */
 
@@ -730,7 +736,7 @@ typedef struct VBGLIOCSETGUESTCAPS
             uint32_t        fGlobalCaps;
         } Out;
     } u;
-} VBGLIOCSETGUESTCAPS, *PVBGLIOCSETGUESTCAPS;
+} VBGLIOCSETGUESTCAPS, RT_FAR *PVBGLIOCSETGUESTCAPS;
 AssertCompileSize(VBGLIOCSETGUESTCAPS, 24 + 8);
 typedef VBGLIOCSETGUESTCAPS VBoxGuestSetCapabilitiesInfo;
 /** @} */
@@ -755,7 +761,7 @@ typedef struct VBGLIOCSETMOUSESTATUS
             uint32_t    fStatus;
         } In;
     } u;
-} VBGLIOCSETMOUSESTATUS, *PVBGLIOCSETMOUSESTATUS;
+} VBGLIOCSETMOUSESTATUS, RT_FAR *PVBGLIOCSETMOUSESTATUS;
 /** @} */
 
 
@@ -789,10 +795,10 @@ typedef struct VBGLIOCSETMOUSENOTIFYCALLBACK
             /** Mouse notification callback function. */
             PFNVBOXGUESTMOUSENOTIFY     pfnNotify;
             /** The callback argument. */
-            void                       *pvUser;
+            void                RT_FAR *pvUser;
         } In;
     } u;
-} VBGLIOCSETMOUSENOTIFYCALLBACK, *PVBGLIOCSETMOUSENOTIFYCALLBACK;
+} VBGLIOCSETMOUSENOTIFYCALLBACK, RT_FAR *PVBGLIOCSETMOUSENOTIFYCALLBACK;
 /** @} */
 
 
@@ -824,7 +830,7 @@ typedef struct VBGLIOCCHECKBALLOON
             bool                    afPadding[3];
         } Out;
     } u;
-} VBGLIOCCHECKBALLOON, *PVBGLIOCCHECKBALLOON;
+} VBGLIOCCHECKBALLOON, RT_FAR *PVBGLIOCCHECKBALLOON;
 AssertCompileSize(VBGLIOCCHECKBALLOON, 24 + 8);
 typedef VBGLIOCCHECKBALLOON VBoxGuestCheckBalloonInfo;
 /** @} */
@@ -853,12 +859,12 @@ typedef struct VBGLIOCCHANGEBALLOON
             /** Address of the chunk (user space address). */
             RTR3PTR     pvChunk;
             /** Explicit alignment padding, MBZ. */
-            uint8_t     abPadding[ARCH_BITS == 32 ? 4 + 7 : 0 + 7];
+            uint8_t     abPadding[ARCH_BITS == 64 ? 0 + 7 : 4 + 7];
             /** true = inflate, false = deflate. */
             bool        fInflate;
         } In;
     } u;
-} VBGLIOCCHANGEBALLOON, *PVBGLIOCCHANGEBALLOON;
+} VBGLIOCCHANGEBALLOON, RT_FAR *PVBGLIOCCHANGEBALLOON;
 AssertCompileSize(VBGLIOCCHANGEBALLOON, 24+16);
 /** @} */
 
@@ -882,7 +888,7 @@ typedef struct VBGLIOCWRITECOREDUMP
             uint32_t    fFlags;
         } In;
     } u;
-} VBGLIOCWRITECOREDUMP, *PVBGLIOCWRITECOREDUMP;
+} VBGLIOCWRITECOREDUMP, RT_FAR *PVBGLIOCWRITECOREDUMP;
 AssertCompileSize(VBGLIOCWRITECOREDUMP, 24 + 4);
 typedef VBGLIOCWRITECOREDUMP VBoxGuestWriteCoreDump;
 /** @} */
@@ -928,7 +934,11 @@ typedef struct VBOXGUESTOS2IDCCONNECT
      *                              input or produces output, apssing NULL is okay.
      * @param   cbReq               The size of the data buffer.
      */
+# if ARCH_BITS == 32 || defined(DOXYGEN_RUNNING)
     DECLCALLBACKMEMBER(int, pfnServiceEP)(uint32_t u32Session, unsigned iFunction, PVBGLREQHDR pReqHdr, size_t cbReq);
+# else
+    uint32_t pfnServiceEP;
+#endif
 
     /** The 16-bit service entry point for C code (cdecl).
      *
@@ -941,7 +951,11 @@ typedef struct VBOXGUESTOS2IDCCONNECT
      *                          PVBGLREQHDR fpvData, uint16_t cbData);
      * @endcode
      */
+# if ARCH_BITS == 16 || defined(DOXYGEN_RUNNING)
+    DECLCALLBACKMEMBER(int, fpfnServiceEP)(uint32_t u32Session, uint16_t iFunction, PVBGLREQHDR fpvData, uint16_t cbData);
+# else
     RTFAR16 fpfnServiceEP;
+# endif
 
     /** The 16-bit service entry point for Assembly code (register).
      *
@@ -958,7 +972,7 @@ typedef struct VBOXGUESTOS2IDCCONNECT
     RTFAR16 fpfnServiceAsmEP;
 } VBOXGUESTOS2IDCCONNECT;
 /** Pointer to VBOXGUESTOS2IDCCONNECT buffer. */
-typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
+typedef VBOXGUESTOS2IDCCONNECT RT_FAR *PVBOXGUESTOS2IDCCONNECT;
 #endif /* RT_OS_OS2 */
 
 
@@ -995,7 +1009,7 @@ typedef struct VBGLIOCIDCCONNECT
         struct
         {
             /** The session handle (opaque). */
-            void           *pvSession;
+            void    RT_FAR *pvSession;
             /** The version of the I/O control interface for this session
              * (typically VBGL_IOC_VERSION). */
             uint32_t        uSessionVersion;
@@ -1007,11 +1021,11 @@ typedef struct VBGLIOCIDCCONNECT
             /** Reserved \#1 (will be returned as zero until defined). */
             uint32_t        uReserved1;
             /** Reserved \#2 (will be returned as NULL until defined). */
-            void           *pvReserved2;
+            void    RT_FAR *pvReserved2;
         } Out;
     } u;
-} VBGLIOCIDCCONNECT, *PVBGLIOCIDCCONNECT;
-AssertCompileSize(VBGLIOCIDCCONNECT, 24 + 16 + ARCH_BITS / 8 * 2);
+} VBGLIOCIDCCONNECT, RT_FAR *PVBGLIOCIDCCONNECT;
+AssertCompileSize(VBGLIOCIDCCONNECT, 24 + 16 + (ARCH_BITS == 64 ? 8 : 4) * 2);
 #ifndef RT_OS_OS2 /* figure this one out... */
 AssertCompile(VBGL_IOCTL_IDC_CONNECT_SIZE_IN == 24 + 16);
 #endif
@@ -1039,11 +1053,11 @@ typedef struct VBGLIOCIDCDISCONNECT
         struct
         {
             /** The session handle for platforms where this is needed. */
-            void       *pvSession;
+            void RT_FAR *pvSession;
         } In;
     } u;
-} VBGLIOCIDCDISCONNECT, *PVBGLIOCIDCDISCONNECT;
-AssertCompileSize(VBGLIOCIDCDISCONNECT, 24 + ARCH_BITS / 8);
+} VBGLIOCIDCDISCONNECT, RT_FAR *PVBGLIOCIDCDISCONNECT;
+AssertCompileSize(VBGLIOCIDCDISCONNECT, 24 + (ARCH_BITS == 64 ? 8 : 4));
 /** @} */
 
 
@@ -1058,7 +1072,7 @@ RT_C_DECLS_BEGIN
  * @param   pReqHdr     The request.
  * @param   cbReq       The request size.
  */
-int VBOXCALL VBoxGuestIDC(void *pvSession, uintptr_t uReq, PVBGLREQHDR pReqHdr, size_t cbReq);
+int VBOXCALL VBoxGuestIDC(void RT_FAR *pvSession, uintptr_t uReq, PVBGLREQHDR pReqHdr, size_t cbReq);
 RT_C_DECLS_END
 #endif
 
