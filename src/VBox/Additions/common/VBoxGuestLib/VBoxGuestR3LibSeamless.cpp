@@ -66,19 +66,15 @@ VBGLR3DECL(int) VbglR3SeamlessSetCap(bool fState)
  */
 VBGLR3DECL(int) VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
 {
-    VBoxGuestWaitEventInfo waitEvent;
+    uint32_t fEvent = 0;
     int rc;
 
     AssertPtrReturn(pMode, VERR_INVALID_PARAMETER);
-    waitEvent.u32TimeoutIn = RT_INDEFINITE_WAIT;
-    waitEvent.u32EventMaskIn = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
-    waitEvent.u32Result = VBOXGUEST_WAITEVENT_ERROR;
-    waitEvent.u32EventFlagsOut = 0;
-    rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
+    rc = VbglR3WaitEvent(VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST, RT_INDEFINITE_WAIT, &fEvent);
     if (RT_SUCCESS(rc))
     {
         /* did we get the right event? */
-        if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
+        if (fEvent & VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
         {
             VMMDevSeamlessChangeRequest seamlessChangeRequest;
 
@@ -96,6 +92,9 @@ VBGLR3DECL(int) VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
         else
             rc = VERR_TRY_AGAIN;
     }
+    else if (   rc == VERR_INTERRUPTED
+             || rc == VERR_TIMEOUT /* just in case */)
+        rc = VERR_TRY_AGAIN;
     return rc;
 }
 

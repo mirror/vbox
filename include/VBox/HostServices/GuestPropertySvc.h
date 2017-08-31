@@ -29,7 +29,7 @@
 
 #include <VBox/types.h>
 #include <VBox/VMMDev.h>
-#include <VBox/VBoxGuest2.h>
+#include <VBox/VBoxGuest.h>
 #include <VBox/hgcmsvc.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
@@ -318,7 +318,7 @@ enum
 /** The guest is requesting the value of a property */
 typedef struct _GetProperty
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     /**
      * The property name (IN pointer)
@@ -353,7 +353,7 @@ typedef struct _GetProperty
 /** The guest is requesting to change a property */
 typedef struct _SetProperty
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     /**
      * The property name.  (IN pointer)
@@ -383,7 +383,7 @@ typedef struct _SetProperty
 /** The guest is requesting to change the value of a property */
 typedef struct _SetPropertyValue
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     /**
      * The property name.  (IN pointer)
@@ -405,7 +405,7 @@ typedef struct _SetPropertyValue
 /** The guest is requesting to remove a property */
 typedef struct _DelProperty
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     /**
      * The property name.  This must fit to a number of criteria, namely
@@ -419,7 +419,7 @@ typedef struct _DelProperty
 /** The guest is requesting to enumerate properties */
 typedef struct _EnumProperties
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     /**
      * Array of patterns to match the properties against, separated by '|'
@@ -469,7 +469,7 @@ typedef struct _EnumProperties
  */
 typedef struct _GetNotification
 {
-    VBoxGuestHGCMCallInfoTimed hdr;
+    VBGLIOCHGCMCALL hdr;
 
     /**
      * A list of patterns to match the guest event name against, separated by

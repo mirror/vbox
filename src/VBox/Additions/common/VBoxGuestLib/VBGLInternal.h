@@ -27,12 +27,13 @@
 #ifndef ___VBoxGuestLib_VBGLInternal_h
 #define ___VBoxGuestLib_VBGLInternal_h
 
+#include "SysHlp.h"                     /* before VBoxGuest.h because of windows  */
+
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 
 #include <VBox/log.h>
-
 
 #ifdef RT_OS_WINDOWS /** @todo dprintf() -> Log() */
 # if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)
@@ -44,7 +45,6 @@
 # define dprintf(a) Log(a)
 #endif
 
-#include "SysHlp.h"
 
 struct _VBGLPHYSHEAPBLOCK;
 typedef struct _VBGLPHYSHEAPBLOCK VBGLPHYSHEAPBLOCK;
@@ -55,7 +55,7 @@ typedef struct _VBGLPHYSHEAPCHUNK VBGLPHYSHEAPCHUNK;
 struct VBGLHGCMHANDLEDATA
 {
     uint32_t fAllocated;
-    VBGLDRIVER driver;
+    VBGLIDCHANDLE IdcHandle;
 };
 #endif
 
@@ -97,16 +97,10 @@ typedef struct VBGLDATA
 
 
 #ifndef VBGL_VBOXGUEST
-    /**
-     * Handle for the main driver instance.
-     * @{
-     */
-
-    RTSEMMUTEX mutexDriverInit;
-
-    VBGLDRIVER driver;
-
-    /** @} */
+    /** The IDC handle.  This is used for talking to the main driver. */
+    VBGLIDCHANDLE IdcHandle;
+    /** Mutex used to serialize IDC setup.   */
+    RTSEMMUTEX hMtxIdcSetup;
 #endif
 } VBGLDATA;
 
@@ -144,10 +138,10 @@ void                        vbglR0HGCMHandleFree(struct VBGLHGCMHANDLEDATA *pHan
 
 #ifndef VBGL_VBOXGUEST
 /**
- * Get a handle to the main VBoxGuest driver.
+ * Get the IDC handle to the main VBoxGuest driver.
  * @returns VERR_TRY_AGAIN if the main driver has not yet been loaded.
  */
-int vbglGetDriver(VBGLDRIVER **ppDriver);
+int VBOXCALL vbglR0QueryIdcHandle(PVBGLIDCHANDLE *ppIdcHandle);
 #endif
 
 #endif /* !___VBoxGuestLib_VBGLInternal_h */

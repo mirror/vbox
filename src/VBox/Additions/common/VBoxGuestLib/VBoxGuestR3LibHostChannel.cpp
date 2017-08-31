@@ -32,34 +32,14 @@
 #include "VBGLR3Internal.h"
 
 
-VBGLR3DECL(int) VbglR3HostChannelInit(uint32_t *pu32HGCMClientId)
+VBGLR3DECL(int) VbglR3HostChannelInit(uint32_t *pidClient)
 {
-    VBoxGuestHGCMConnectInfo connectInfo;
-    RT_ZERO(connectInfo);
-
-    connectInfo.result = VERR_WRONG_ORDER;
-    connectInfo.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-    strcpy(connectInfo.Loc.u.host.achName, "VBoxHostChannel");
-    connectInfo.u32ClientID = 0;
-
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CONNECT, &connectInfo, sizeof(connectInfo));
-
-    if (RT_SUCCESS(rc))
-    {
-        rc = connectInfo.result;
-
-        if (RT_SUCCESS(rc))
-        {
-            *pu32HGCMClientId = connectInfo.u32ClientID;
-        }
-    }
-
-    return rc;
+    return VbglR3HGCMConnect("VBoxHostChannel", pidClient);
 }
 
-VBGLR3DECL(void) VbglR3HostChannelTerm(uint32_t u32HGCMClientId)
+VBGLR3DECL(void) VbglR3HostChannelTerm(uint32_t idClient)
 {
-    VbglR3HGCMDisconnect(u32HGCMClientId);
+    VbglR3HGCMDisconnect(idClient);
 }
 
 VBGLR3DECL(int) VbglR3HostChannelAttach(uint32_t *pu32ChannelHandle,

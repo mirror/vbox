@@ -30,10 +30,9 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "VBGLR3Internal.h"
-
 #include <VBox/VBoxGuestLib.h>
-
 #include <iprt/string.h>
+
 
 /**
  * Connects to an HGCM service.
@@ -45,20 +44,15 @@
  */
 VBGLR3DECL(int) VbglR3HGCMConnect(const char *pszServiceName, HGCMCLIENTID *pidClient)
 {
-    VBoxGuestHGCMConnectInfo Info;
-    Info.result = VERR_WRONG_ORDER;
-    Info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-    RT_ZERO(Info.Loc.u);
-    strcpy(Info.Loc.u.host.achName, pszServiceName);
-    Info.u32ClientID = UINT32_MAX;  /* try make valgrind shut up. */
+    VBGLIOCHGCMCONNECT Info;
+    RT_ZERO(Info);
+    VBGLREQHDR_INIT(&Info.Hdr, HGCM_CONNECT);
+    Info.u.In.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
+    strcpy(Info.u.In.Loc.u.host.achName, pszServiceName);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CONNECT, &Info, sizeof(Info));
+    int rc = vbglR3DoIOCtl(VBGL_IOCTL_HGCM_CONNECT, &Info.Hdr, sizeof(Info));
     if (RT_SUCCESS(rc))
-    {
-        rc = Info.result;
-        if (RT_SUCCESS(rc))
-            *pidClient = Info.u32ClientID;
-    }
+        *pidClient = Info.u.Out.idClient;
     return rc;
 }
 
@@ -71,34 +65,13 @@ VBGLR3DECL(int) VbglR3HGCMConnect(const char *pszServiceName, HGCMCLIENTID *pidC
  */
 VBGLR3DECL(int) VbglR3HGCMDisconnect(HGCMCLIENTID idClient)
 {
-    VBoxGuestHGCMDisconnectInfo Info;
-    Info.result = VERR_WRONG_ORDER;
-    Info.u32ClientID = idClient;
+    VBGLIOCHGCMDISCONNECT Info;
+    VBGLREQHDR_INIT(&Info.Hdr, HGCM_DISCONNECT);
+    Info.u.In.idClient = idClient;
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_DISCONNECT, &Info, sizeof(Info));
-    if (RT_SUCCESS(rc))
-        rc = Info.result;
-    return rc;
+    return vbglR3DoIOCtl(VBGL_IOCTL_HGCM_DISCONNECT, &Info.Hdr, sizeof(Info));
 }
 
-
-/**
- * Makes a fully prepared HGCM call, but don't return the result.
- *
- * @returns VBox status code.
- * @param   pInfo           Fully prepared HGCM call info.
- * @param   cbInfo          Size of the info.  This may sometimes be larger than
- *                          what the parameter count indicates because of
- *                          parameter changes between versions and such.
- */
-VBGLR3DECL(int) VbglR3HGCMCallRaw(VBoxGuestHGCMCallInfo *pInfo, size_t cbInfo)
-{
-    /* Expect caller to have filled in pInfo. */
-    Assert(sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter) <= cbInfo);
-    Assert(pInfo->u32ClientID != 0);
-
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(cbInfo), pInfo, cbInfo);
-}
 
 /**
  * Makes a fully prepared HGCM call.
@@ -109,11 +82,14 @@ VBGLR3DECL(int) VbglR3HGCMCallRaw(VBoxGuestHGCMCallInfo *pInfo, size_t cbInfo)
  *                          what the parameter count indicates because of
  *                          parameter changes between versions and such.
  */
-VBGLR3DECL(int) VbglR3HGCMCall(VBoxGuestHGCMCallInfo *pInfo, size_t cbInfo)
+VBGLR3DECL(int) VbglR3HGCMCall(PVBGLIOCHGCMCALL pInfo, size_t cbInfo)
 {
-    int rc = VbglR3HGCMCallRaw(pInfo, cbInfo);
-    if (RT_SUCCESS(rc))
-        rc = pInfo->result;
-    return rc;
+    /* Expect caller to have filled in pInfo. */
+    AssertMsg(pInfo->Hdr.cbIn  == cbInfo, ("cbIn=%#x cbInfo=%#zx\n", pInfo->Hdr.cbIn, cbInfo));
+    AssertMsg(pInfo->Hdr.cbOut == cbInfo, ("cbOut=%#x cbInfo=%#zx\n", pInfo->Hdr.cbOut, cbInfo));
+    Assert(sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter) <= cbInfo);
+    Assert(pInfo->u32ClientID != 0);
+
+    return vbglR3DoIOCtl(VBGL_IOCTL_HGCM_CALL(cbInfo), &pInfo->Hdr, cbInfo);
 }
 

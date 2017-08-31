@@ -28,7 +28,7 @@
 
 #include <VBox/types.h>
 #include <VBox/VMMDev.h>
-#include <VBox/VBoxGuest2.h>
+#include <VBox/VBoxGuest.h>
 #include <VBox/hgcmsvc.h>
 
 /*
@@ -78,7 +78,7 @@
 #pragma pack (1)
 typedef struct _VBoxClipboardGetHostMsg
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     /* VBOX_SHARED_CLIPBOARD_HOST_MSG_* */
     HGCMFunctionParameter msg;     /* OUT uint32_t */
@@ -91,7 +91,7 @@ typedef struct _VBoxClipboardGetHostMsg
 
 typedef struct _VBoxClipboardFormats
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     /* VBOX_SHARED_CLIPBOARD_FMT_* */
     HGCMFunctionParameter formats; /* OUT uint32_t */
@@ -101,7 +101,7 @@ typedef struct _VBoxClipboardFormats
 
 typedef struct _VBoxClipboardReadData
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     /* Requested format. */
     HGCMFunctionParameter format; /* IN uint32_t */
@@ -120,7 +120,7 @@ typedef struct _VBoxClipboardReadData
 
 typedef struct _VBoxClipboardWriteData
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     /* Returned format as requested in the VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA message. */
     HGCMFunctionParameter format; /* IN uint32_t */

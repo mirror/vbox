@@ -27,10 +27,12 @@
 /* Entire file is ifdef'ed with !VBGL_VBOXGUEST */
 #ifdef VBGL_VBOXGUEST
 # error "VBGL_VBOXGUEST should not be defined"
-#else
+#endif
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <iprt/string.h>
-
 #include "VBGLInternal.h"
 
 
@@ -41,11 +43,12 @@ DECLVBGL(int) VbglR0CrCtlCreate(VBGLCRCTLHANDLE *phCtl)
     if (phCtl)
     {
         struct VBGLHGCMHANDLEDATA *pHandleData = vbglR0HGCMHandleAlloc();
-
         if (pHandleData)
         {
-            rc = vbglDriverOpen(&pHandleData->driver);
-
+            rc = VbglR0IdcOpen(&pHandleData->IdcHandle,
+                               VBGL_IOC_VERSION /*uReqVersion*/,
+                               VBGL_IOC_VERSION & UINT32_C(0xffff0000) /*uMinVersion*/,
+                               NULL /*puSessionVersion*/, NULL /*puDriverVersion*/, NULL /*uDriverRevision*/);
             if (RT_SUCCESS(rc))
             {
                 *phCtl = pHandleData;
@@ -67,7 +70,7 @@ DECLVBGL(int) VbglR0CrCtlCreate(VBGLCRCTLHANDLE *phCtl)
 
 DECLVBGL(int) VbglR0CrCtlDestroy(VBGLCRCTLHANDLE hCtl)
 {
-    vbglDriverClose(&hCtl->driver);
+    VbglR0IdcClose(&hCtl->IdcHandle);
 
     vbglR0HGCMHandleFree(hCtl);
 
@@ -76,25 +79,22 @@ DECLVBGL(int) VbglR0CrCtlDestroy(VBGLCRCTLHANDLE hCtl)
 
 DECLVBGL(int) VbglR0CrCtlConConnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID *pidClient)
 {
-    VBoxGuestHGCMConnectInfo info;
+    VBGLIOCHGCMCONNECT info;
     int rc;
 
     if (!hCtl || !pidClient)
         return VERR_INVALID_PARAMETER;
 
     RT_ZERO(info);
-    info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-    RTStrCopy(info.Loc.u.host.achName, sizeof(info.Loc.u.host.achName), "VBoxSharedCrOpenGL");
-    rc = vbglDriverIOCtl(&hCtl->driver, VBOXGUEST_IOCTL_HGCM_CONNECT, &info, sizeof(info));
+    VBGLREQHDR_INIT(&info.Hdr, HGCM_CONNECT);
+    info.u.In.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
+    RTStrCopy(info.u.In.Loc.u.host.achName, sizeof(info.u.In.Loc.u.host.achName), "VBoxSharedCrOpenGL");
+    rc = VbglR0IdcCall(&hCtl->IdcHandle, VBGL_IOCTL_HGCM_CONNECT, &info.Hdr, sizeof(info));
     if (RT_SUCCESS(rc))
     {
-        rc = info.result;
-        if (RT_SUCCESS(rc))
-        {
-            Assert(info.u32ClientID);
-            *pidClient = info.u32ClientID;
-            return rc;
-        }
+        Assert(info.u.Out.idClient);
+        *pidClient = info.u.Out.idClient;
+        return rc;
     }
 
     AssertRC(rc);
@@ -104,20 +104,27 @@ DECLVBGL(int) VbglR0CrCtlConConnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID *pidClien
 
 DECLVBGL(int) VbglR0CrCtlConDisconnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID idClient)
 {
-    VBoxGuestHGCMDisconnectInfo info;
-    RT_ZERO(info);
-    info.u32ClientID = idClient;
-    return vbglDriverIOCtl(&hCtl->driver, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &info, sizeof(info));
+    VBGLIOCHGCMDISCONNECT info;
+    VBGLREQHDR_INIT(&info.Hdr, HGCM_DISCONNECT);
+    info.u.In.idClient = idClient;
+    return VbglR0IdcCall(&hCtl->IdcHandle, VBGL_IOCTL_HGCM_DISCONNECT, &info.Hdr, sizeof(info));
 }
 
-DECLVBGL(int) VbglR0CrCtlConCall(VBGLCRCTLHANDLE hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo)
+DECLVBGL(int) VbglR0CrCtlConCallRaw(VBGLCRCTLHANDLE hCtl, PVBGLIOCHGCMCALL pCallInfo, int cbCallInfo)
 {
-    return vbglDriverIOCtl(&hCtl->driver, VBOXGUEST_IOCTL_HGCM_CALL(cbCallInfo), pCallInfo, cbCallInfo);
+    return VbglR0IdcCallRaw(&hCtl->IdcHandle, VBGL_IOCTL_HGCM_CALL(cbCallInfo), &pCallInfo->Hdr, cbCallInfo);
 }
 
-DECLVBGL(int) VbglR0CrCtlConCallUserData(VBGLCRCTLHANDLE hCtl, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo)
+DECLVBGL(int) VbglR0CrCtlConCall(VBGLCRCTLHANDLE hCtl, PVBGLIOCHGCMCALL pCallInfo, int cbCallInfo)
 {
-    return vbglDriverIOCtl(&hCtl->driver, VBOXGUEST_IOCTL_HGCM_CALL_USERDATA(cbCallInfo), pCallInfo, cbCallInfo);
+    int rc = VbglR0IdcCallRaw(&hCtl->IdcHandle, VBGL_IOCTL_HGCM_CALL(cbCallInfo), &pCallInfo->Hdr, cbCallInfo);
+    if (RT_SUCCESS(rc))
+        rc = pCallInfo->Hdr.rc;
+    return rc;
 }
 
-#endif /* #ifndef VBGL_VBOXGUEST */
+DECLVBGL(int) VbglR0CrCtlConCallUserDataRaw(VBGLCRCTLHANDLE hCtl, PVBGLIOCHGCMCALL pCallInfo, int cbCallInfo)
+{
+    return VbglR0IdcCallRaw(&hCtl->IdcHandle, VBGL_IOCTL_HGCM_CALL_WITH_USER_DATA(cbCallInfo), &pCallInfo->Hdr, cbCallInfo);
+}
+

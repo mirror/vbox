@@ -45,7 +45,8 @@ extern "C" xf86size_t xf86strlen(const char*);
 
 RT_C_DECLS_BEGIN
 
-int     vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData);
+int     vbglR3DoIOCtl(uintptr_t uFunction, PVBGLREQHDR pReq, size_t cbReq);
+int     vbglR3DoIOCtlRaw(uintptr_t uFunction, PVBGLREQHDR pReq, size_t cbReq);
 int     vbglR3GRAlloc(VMMDevRequestHeader **ppReq, size_t cb, VMMDevRequestType enmReqType);
 int     vbglR3GRPerform(VMMDevRequestHeader *pReq);
 void    vbglR3GRFree(VMMDevRequestHeader *pReq);

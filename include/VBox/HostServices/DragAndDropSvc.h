@@ -60,7 +60,7 @@
 
 #include <VBox/hgcmsvc.h>
 #include <VBox/VMMDev.h>
-#include <VBox/VBoxGuest2.h>
+#include <VBox/VBoxGuest.h>
 
 /*
  * The mode of operations.
@@ -286,7 +286,7 @@ typedef enum DNDPROGRESS
  */
 typedef struct VBOXDNDHGACTIONMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     union
     {
@@ -323,7 +323,7 @@ typedef struct VBOXDNDHGACTIONMSG
  */
 typedef struct VBOXDNDHGLEAVEMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
     union
     {
         struct
@@ -342,7 +342,7 @@ typedef struct VBOXDNDHGLEAVEMSG
  */
 typedef struct VBOXDNDHGCANCELMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
     union
     {
         struct
@@ -364,7 +364,7 @@ typedef struct VBOXDNDHGCANCELMSG
  */
 typedef struct VBOXDNDHGSENDDATAHDRMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     /** Context ID. Unused at the moment. */
     HGCMFunctionParameter uContext;        /* OUT uint32_t */
@@ -405,7 +405,7 @@ typedef struct VBOXDNDHGSENDDATAHDRMSG
  */
 typedef struct VBOXDNDHGSENDDATAMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     union
     {
@@ -446,7 +446,7 @@ typedef struct VBOXDNDHGSENDDATAMSG
  */
 typedef struct VBOXDNDHGSENDMOREDATAMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     HGCMFunctionParameter pvData;       /* OUT ptr */
     HGCMFunctionParameter cbData;       /* OUT uint32_t */
@@ -461,7 +461,7 @@ typedef struct VBOXDNDHGSENDMOREDATAMSG
  */
 typedef struct VBOXDNDHGSENDDIRMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     union
     {
@@ -498,7 +498,7 @@ typedef struct VBOXDNDHGSENDDIRMSG
  */
 typedef struct VBOXDNDHGSENDFILEHDRMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     /** Context ID. Unused at the moment. */
     HGCMFunctionParameter uContext;     /* OUT uint32_t */
@@ -522,7 +522,7 @@ typedef struct VBOXDNDHGSENDFILEHDRMSG
  */
 typedef struct VBOXDNDHGSENDFILEDATAMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     union
     {
@@ -578,7 +578,7 @@ typedef struct VBOXDNDHGSENDFILEDATAMSG
  */
 typedef struct VBOXDNDGHREQPENDINGMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     union
     {
@@ -606,7 +606,7 @@ typedef struct VBOXDNDGHREQPENDINGMSG
  */
 typedef struct VBOXDNDGHDROPPEDMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     union
     {
@@ -647,7 +647,7 @@ typedef struct VBOXDNDGHDROPPEDMSG
  */
 typedef struct VBOXDNDNEXTMSGMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     /** Message ID. */
     HGCMFunctionParameter uMsg;      /* OUT uint32_t */
@@ -667,7 +667,7 @@ typedef struct VBOXDNDNEXTMSGMSG
  */
 typedef struct VBOXDNDCONNECTMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     union
     {
@@ -699,7 +699,7 @@ typedef struct VBOXDNDCONNECTMSG
  */
 typedef struct VBOXDNDHGACKOPMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     union
     {
@@ -724,7 +724,7 @@ typedef struct VBOXDNDHGACKOPMSG
  */
 typedef struct VBOXDNDHGREQDATAMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     union
     {
@@ -744,7 +744,7 @@ typedef struct VBOXDNDHGREQDATAMSG
 
 typedef struct VBOXDNDHGEVTPROGRESSMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     union
     {
@@ -774,7 +774,7 @@ typedef struct VBOXDNDHGEVTPROGRESSMSG
  */
 typedef struct VBOXDNDGHACKPENDINGMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     union
     {
@@ -815,7 +815,7 @@ typedef struct VBOXDNDHGSENDDATAHDRMSG VBOXDNDGHSENDDATAHDRMSG;
  */
 typedef struct VBOXDNDGHSENDDATAMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     union
     {
@@ -877,7 +877,7 @@ typedef struct VBOXDNDHGSENDFILEDATAMSG VBOXDNDGHSENDFILEDATAMSG;
  */
 typedef struct VBOXDNDGHEVTERRORMSG
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBGLIOCHGCMCALL hdr;
 
     union
     {

@@ -123,7 +123,8 @@ status_t VBoxDisplayService::_ServiceThread()
     {
         uint32_t events;
         int rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 5000, &events);
-        if (rc == -6) // timed out?
+        if (   rc == VERR_TIMEOUT
+            || rc == VERR_INTERRUPTED)
             continue;
 
         if (RT_SUCCESS(rc))

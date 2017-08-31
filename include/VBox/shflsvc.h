@@ -27,7 +27,7 @@
 #define ___VBox_shflsvc_h
 
 #include <VBox/types.h>
-#include <VBox/VBoxGuest2.h>
+#include <VBox/VBoxGuest.h>
 #include <VBox/VMMDev.h>
 #include <VBox/hgcmsvc.h>
 #include <iprt/fs.h>
@@ -779,7 +779,7 @@ typedef struct _SHFLVOLINFO
 /** Parameters structure. */
 typedef struct _VBoxSFQueryMappings
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** 32bit, in:
      * Flags describing various client needs.
@@ -812,7 +812,7 @@ typedef struct _VBoxSFQueryMappings
 /** Parameters structure. */
 typedef struct _VBoxSFQueryMapName
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** 32bit, in: SHFLROOT
      * Root handle of the mapping which name is queried.
@@ -836,7 +836,7 @@ typedef struct _VBoxSFQueryMapName
 /** Parameters structure. */
 typedef struct _VBoxSFMapFolder_Old
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in:
      * Points to SHFLSTRING buffer.
@@ -865,7 +865,7 @@ typedef struct _VBoxSFMapFolder_Old
 /** Parameters structure. */
 typedef struct _VBoxSFMapFolder
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in:
      * Points to SHFLSTRING buffer.
@@ -899,7 +899,7 @@ typedef struct _VBoxSFMapFolder
 /** Parameters structure. */
 typedef struct _VBoxSFUnmapFolder
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in: SHFLROOT
      * Root handle of the mapping which name is queried.
@@ -919,7 +919,7 @@ typedef struct _VBoxSFUnmapFolder
 /** Parameters structure. */
 typedef struct _VBoxSFCreate
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in: SHFLROOT
      * Root handle of the mapping which name is queried.
@@ -949,7 +949,7 @@ typedef struct _VBoxSFCreate
 /** Parameters structure. */
 typedef struct _VBoxSFClose
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in: SHFLROOT
      * Root handle of the mapping which name is queried.
@@ -975,7 +975,7 @@ typedef struct _VBoxSFClose
 /** Parameters structure. */
 typedef struct _VBoxSFRead
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in: SHFLROOT
      * Root handle of the mapping which name is queried.
@@ -1016,7 +1016,7 @@ typedef struct _VBoxSFRead
 /** Parameters structure. */
 typedef struct _VBoxSFWrite
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in: SHFLROOT
      * Root handle of the mapping which name is queried.
@@ -1078,7 +1078,7 @@ typedef struct _VBoxSFWrite
 /** Parameters structure. */
 typedef struct _VBoxSFLock
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in: SHFLROOT
      * Root handle of the mapping which name is queried.
@@ -1119,7 +1119,7 @@ typedef struct _VBoxSFLock
 /** Parameters structure. */
 typedef struct _VBoxSFFlush
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in: SHFLROOT
      * Root handle of the mapping which name is queried.
@@ -1149,7 +1149,7 @@ typedef struct _VBoxSFFlush
 /** Parameters structure. */
 typedef struct _VBoxSFList
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in: SHFLROOT
      * Root handle of the mapping which name is queried.
@@ -1207,7 +1207,7 @@ typedef struct _VBoxSFList
 /** Parameters structure. */
 typedef struct _VBoxSFReadLink
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in: SHFLROOT
      * Root handle of the mapping which name is queried.
@@ -1257,7 +1257,7 @@ typedef struct _VBoxSFReadLink
 /** Parameters structure. */
 typedef struct _VBoxSFInformation
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in: SHFLROOT
      * Root handle of the mapping which name is queried.
@@ -1302,7 +1302,7 @@ typedef struct _VBoxSFInformation
 /** Parameters structure. */
 typedef struct _VBoxSFRemove
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in: SHFLROOT
      * Root handle of the mapping which name is queried.
@@ -1335,7 +1335,7 @@ typedef struct _VBoxSFRemove
 /** Parameters structure. */
 typedef struct _VBoxSFRename
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in: SHFLROOT
      * Root handle of the mapping which name is queried.
@@ -1369,7 +1369,7 @@ typedef struct _VBoxSFRename
 /** Parameters structure. */
 typedef struct _VBoxSFSymlink
 {
-    VBoxGuestHGCMCallInfo callInfo;
+    VBGLIOCHGCMCALL callInfo;
 
     /** pointer, in: SHFLROOT
      * Root handle of the mapping which name is queried.

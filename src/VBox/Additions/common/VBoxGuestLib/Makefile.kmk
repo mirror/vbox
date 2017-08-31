@@ -61,6 +61,9 @@ VBoxGuestR0Lib_DEFS         = VBOX_WITH_HGCM \
 VBoxGuestR0Lib_INCS         = \
 	$(VBoxGuestR0Lib_0_OUTDIR)
 VBoxGuestR0Lib_SOURCES      = \
+	VBoxGuestR0LibIdc.cpp \
+	VBoxGuestR0LibSharedFolders.c \
+	VBoxGuestR0LibCrOgl.cpp \
 	GenericRequest.cpp \
 	SysHlp.cpp \
 	PhysHeap.cpp \
@@ -68,9 +71,8 @@ VBoxGuestR0Lib_SOURCES      = \
 	Mouse.cpp \
 	VMMDev.cpp \
 	HGCM.cpp \
-	VBoxGuestR0LibSharedFolders.c \
-	VBoxGuestR0LibCrOgl.cpp \
 	VbglR0CanUsePhysPageList.cpp
+VBoxGuestR0Lib_SOURCES.win = VBoxGuestR0LibIdc-win.cpp
 
 #
 # VBoxGuestR0LibBase

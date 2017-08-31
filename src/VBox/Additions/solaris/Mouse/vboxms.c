@@ -470,7 +470,7 @@ int vbmsSolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
          * Initialize IPRT R0 driver, which internally calls OS-specific r0
          * init, and create a new session.
          */
-        rc = VbglInitClient();
+        rc = VbglR0InitClient();
         if (RT_SUCCESS(rc))
         {
             rc = VbglGRAlloc((VMMDevRequestHeader **)
@@ -478,7 +478,7 @@ int vbmsSolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
                              sizeof(*pState->pMouseStatusReq),
                              VMMDevReq_GetMouseStatus);
             if (RT_FAILURE(rc))
-                VbglTerminate();
+                VbglR0TerminateClient();
             else
             {
                 int rc2;
@@ -602,7 +602,7 @@ int vbmsSolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
         ASMAtomicWriteNullPtr(&pState->pWriteQueue);
         pReadQueue->q_ptr = NULL;
         VbglGRFree(&pState->pMouseStatusReq->header);
-        VbglTerminate();
+        VbglR0TerminateClient();
     }
     mutex_exit(&pState->InitMtx);
     return 0;

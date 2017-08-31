@@ -48,7 +48,8 @@ static NTSTATUS vgdrvNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
 static void     vgdrvNtUnload(PDRIVER_OBJECT pDrvObj);
 static NTSTATUS vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vgdrvNtIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS vgdrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS vgdrvNtDeviceControlSlow(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, PIRP pIrp, PIO_STACK_LOCATION pStack);
 static NTSTATUS vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtRegistryReadDWORD(ULONG ulRoot, PCWSTR pwszPath, PWSTR pwszName, PULONG puValue);
 static NTSTATUS vgdrvNtSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
@@ -201,7 +202,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
         pDrvObj->DriverUnload                                  = vgdrvNtUnload;
         pDrvObj->MajorFunction[IRP_MJ_CREATE]                  = vgdrvNtCreate;
         pDrvObj->MajorFunction[IRP_MJ_CLOSE]                   = vgdrvNtClose;
-        pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]          = vgdrvNtIOCtl;
+        pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]          = vgdrvNtDeviceControl;
         pDrvObj->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL] = vgdrvNtInternalIOCtl;
         pDrvObj->MajorFunction[IRP_MJ_SHUTDOWN]                = vgdrvNtShutdown;
         pDrvObj->MajorFunction[IRP_MJ_READ]                    = vgdrvNtNotSupportedStub;
@@ -522,17 +523,6 @@ NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_ST
             LogFunc(("No interrupt vector found!\n"));
     }
 
-
-#ifdef VBOX_WITH_HGCM
-    LogFunc(("Allocating kernel session data ...\n"));
-    int vrc = VGDrvCommonCreateKernelSession(&pDevExt->Core, &pDevExt->pKernelSession);
-    if (RT_FAILURE(vrc))
-    {
-        LogFunc(("Failed to allocated kernel session data, vrc=%Rrc\n", vrc));
-        rcNt = STATUS_UNSUCCESSFUL;
-    }
-#endif
-
     if (NT_SUCCESS(rcNt))
     {
         ULONG uValue = 0;
@@ -647,6 +637,37 @@ static void vgdrvNtUnload(PDRIVER_OBJECT pDrvObj)
 
 
 /**
+ * For simplifying request completion into a simple return statement, extended
+ * version.
+ *
+ * @returns rcNt
+ * @param   rcNt                The status code.
+ * @param   uInfo               Extra info value.
+ * @param   pIrp                The IRP.
+ */
+DECLINLINE(NTSTATUS) vgdrvNtCompleteRequestEx(NTSTATUS rcNt, ULONG_PTR uInfo, PIRP pIrp)
+{
+    pIrp->IoStatus.Status       = rcNt;
+    pIrp->IoStatus.Information  = uInfo;
+    IoCompleteRequest(pIrp, IO_NO_INCREMENT);
+    return rcNt;
+}
+
+
+/**
+ * For simplifying request completion into a simple return statement.
+ *
+ * @returns rcNt
+ * @param   rcNt                The status code.
+ * @param   pIrp                The IRP.
+ */
+DECLINLINE(NTSTATUS) vgdrvNtCompleteRequest(NTSTATUS rcNt, PIRP pIrp)
+{
+    return vgdrvNtCompleteRequestEx(rcNt, 0 /*uInfo*/, pIrp);
+}
+
+
+/**
  * Create (i.e. Open) file entry point.
  *
  * @param   pDevObj     Device object.
@@ -654,62 +675,54 @@ static void vgdrvNtUnload(PDRIVER_OBJECT pDrvObj)
  */
 static NTSTATUS vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    /** @todo AssertPtrReturn(pIrp); */
+    Log(("vgdrvNtCreate: RequestorMode=%d\n", pIrp->RequestorMode));
     PIO_STACK_LOCATION  pStack   = IoGetCurrentIrpStackLocation(pIrp);
-    /** @todo AssertPtrReturn(pStack); */
     PFILE_OBJECT        pFileObj = pStack->FileObject;
     PVBOXGUESTDEVEXTWIN pDevExt  = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
-    NTSTATUS            rc       = STATUS_SUCCESS;
 
+    Assert(pFileObj->FsContext == NULL);
+
+    /*
+     * We are not remotely similar to a directory...
+     * (But this is possible.)
+     */
+    if (pStack->Parameters.Create.Options & FILE_DIRECTORY_FILE)
+    {
+        LogFlow(("vgdrvNtCreate: Failed. FILE_DIRECTORY_FILE set\n"));
+        return vgdrvNtCompleteRequest(STATUS_NOT_A_DIRECTORY, pIrp);
+    }
+
+    /*
+     * Check the device state.
+     */
     if (pDevExt->enmDevState != VGDRVNTDEVSTATE_WORKING)
     {
-        LogFunc(("Device is not working currently, state=%d\n", pDevExt->enmDevState));
-        rc = STATUS_UNSUCCESSFUL;
+        LogFlow(("vgdrvNtCreate: Failed. Device is not in 'working' state: %d\n", pDevExt->enmDevState));
+        return vgdrvNtCompleteRequest(STATUS_DEVICE_NOT_READY, pIrp);
     }
-    else if (pStack->Parameters.Create.Options & FILE_DIRECTORY_FILE)
-    {
-        /*
-         * We are not remotely similar to a directory...
-         * (But this is possible.)
-         */
-        LogFlowFunc(("Uhm, we're not a directory!\n"));
-        rc = STATUS_NOT_A_DIRECTORY;
-    }
+
+    /*
+     * Create a client session.
+     */
+    int                 rc;
+    PVBOXGUESTSESSION   pSession;
+    if (pIrp->RequestorMode == KernelMode)
+        rc = VGDrvCommonCreateKernelSession(&pDevExt->Core, &pSession);
     else
+        rc = VGDrvCommonCreateUserSession(&pDevExt->Core, &pSession);
+    if (RT_SUCCESS(rc))
     {
-#ifdef VBOX_WITH_HGCM
-        if (pFileObj)
-        {
-            LogFlowFunc(("File object type=%d\n", pFileObj->Type));
-
-            int vrc;
-            PVBOXGUESTSESSION pSession;
-            if (pFileObj->Type == 5 /* File Object */)
-            {
-                /*
-                 * Create a session object if we have a valid file object. This session object
-                 * exists for every R3 process.
-                 */
-                vrc = VGDrvCommonCreateUserSession(&pDevExt->Core, &pSession);
-            }
-            else
-            {
-                /* ... otherwise we've been called from R0! */
-                vrc = VGDrvCommonCreateKernelSession(&pDevExt->Core, &pSession);
-            }
-            if (RT_SUCCESS(vrc))
-                pFileObj->FsContext = pSession;
-        }
-#endif
+        pFileObj->FsContext = pSession;
+        Log(("vgdrvNtCreate: Successfully created %s session %p\n",
+             pIrp->RequestorMode == KernelMode ? "kernel" : "user", pSession));
+        return vgdrvNtCompleteRequestEx(STATUS_SUCCESS, FILE_OPENED, pIrp);
     }
 
-    /* Complete the request! */
-    pIrp->IoStatus.Information  = 0;
-    pIrp->IoStatus.Status = rc;
-    IoCompleteRequest(pIrp, IO_NO_INCREMENT);
-
-    LogFlowFunc(("Returning rc=%#x\n", rc));
-    return rc;
+    Log(("vgdrvNtCreate: Failed to create session: rc=%Rrc\n", rc));
+    /* Note. the IoStatus is completely ignored on error. */
+    if (rc == VERR_NO_MEMORY)
+        return vgdrvNtCompleteRequest(STATUS_NO_MEMORY, pIrp);
+    return vgdrvNtCompleteRequest(STATUS_UNSUCCESSFUL, pIrp);
 }
 
 
@@ -749,149 +762,149 @@ static NTSTATUS vgdrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
-static NTSTATUS vgdrvNtIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+NTSTATUS _stdcall vgdrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    NTSTATUS            Status   = STATUS_SUCCESS;
     PVBOXGUESTDEVEXTWIN pDevExt  = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
     PIO_STACK_LOCATION  pStack   = IoGetCurrentIrpStackLocation(pIrp);
-    unsigned int        uCmd     = (unsigned int)pStack->Parameters.DeviceIoControl.IoControlCode;
+    PVBOXGUESTSESSION   pSession = pStack->FileObject ? (PVBOXGUESTSESSION)pStack->FileObject->FsContext : NULL;
 
-    char               *pBuf     = (char *)pIrp->AssociatedIrp.SystemBuffer; /* All requests are buffered. */
-    size_t              cbData   = pStack->Parameters.DeviceIoControl.InputBufferLength;
-    size_t              cbOut    = 0;
+    if (!RT_VALID_PTR(pSession))
+        return vgdrvNtCompleteRequest(STATUS_TRUST_FAILURE, pIrp);
 
-    /* Do we have a file object associated?*/
-    PFILE_OBJECT        pFileObj = pStack->FileObject;
-    PVBOXGUESTSESSION   pSession = NULL;
-    if (pFileObj) /* ... then we might have a session object as well! */
-        pSession = (PVBOXGUESTSESSION)pFileObj->FsContext;
-
-    LogFlowFunc(("uCmd=%u, pDevExt=0x%p, pSession=0x%p\n", uCmd, pDevExt, pSession));
-
-    /* We don't have a session associated with the file object? So this seems
-     * to be a kernel call then. */
-    /** @todo r=bird: What on earth is this supposed to be? Each kernel session
-     *        shall have its own context of course, no hacks, pleeease. */
-    if (pSession == NULL)
+#if 0 /* No fast I/O controls defined yet. */
+    /*
+     * Deal with the 2-3 high-speed IOCtl that takes their arguments from
+     * the session and iCmd, and does not return anything.
+     */
+    if (pSession->fUnrestricted)
     {
-        LogFunc(("XXX: BUGBUG: FIXME: Using ugly kernel session data hack ...\n"));
-#ifdef DEBUG_andy
-        RTLogBackdoorPrintf("XXX: BUGBUG: FIXME: Using ugly kernel session data hack ... Please don't forget to fix this one, Andy!\n");
-#endif
-        pSession = pDevExt->pKernelSession;
-    }
-
-    /* Verify that it's a buffered CTL. */
-    if ((pStack->Parameters.DeviceIoControl.IoControlCode & 0x3) == METHOD_BUFFERED)
-    {
-        /*
-         * Process the common IOCtls.
-         */
-        size_t cbDataReturned;
-        int vrc = VGDrvCommonIoCtl(uCmd, &pDevExt->Core, pSession, pBuf, cbData, &cbDataReturned);
-
-        LogFlowFunc(("rc=%Rrc, pBuf=0x%p, cbData=%u, cbDataReturned=%u\n",
-                     vrc, pBuf, cbData, cbDataReturned));
-
-        if (RT_SUCCESS(vrc))
+        ULONG ulCmd = pStack->Parameters.DeviceIoControl.IoControlCode;
+        if (   ulCmd == SUP_IOCTL_FAST_DO_RAW_RUN
+            || ulCmd == SUP_IOCTL_FAST_DO_HM_RUN
+            || ulCmd == SUP_IOCTL_FAST_DO_NOP)
         {
-            if (RT_UNLIKELY(   cbDataReturned > cbData
-                            || cbDataReturned > pStack->Parameters.DeviceIoControl.OutputBufferLength))
+            int rc = supdrvIOCtlFast(ulCmd, (unsigned)(uintptr_t)pIrp->UserBuffer /* VMCPU id */, pDevExt, pSession);
+
+            /* Complete the I/O request. */
+            supdrvSessionRelease(pSession);
+            return vgdrvNtCompleteRequest(RT_SUCCESS(rc) ? STATUS_SUCCESS : STATUS_INVALID_PARAMETER, pIrp);
+        }
+    }
+#endif
+
+    return vgdrvNtDeviceControlSlow(&pDevExt->Core, pSession, pIrp, pStack);
+}
+
+
+/**
+ * Device I/O Control entry point.
+ *
+ * @param   pDevExt     The device extension.
+ * @param   pSession    The session.
+ * @param   pIrp        Request packet.
+ * @param   pStack      The request stack pointer.
+ */
+static NTSTATUS vgdrvNtDeviceControlSlow(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
+                                         PIRP pIrp, PIO_STACK_LOCATION pStack)
+{
+    NTSTATUS    rcNt;
+    uint32_t    cbOut = 0;
+    int         rc = 0;
+    Log2(("vgdrvNtDeviceControlSlow(%p,%p): ioctl=%#x pBuf=%p cbIn=%#x cbOut=%#x pSession=%p\n",
+          pDevExt, pIrp, pStack->Parameters.DeviceIoControl.IoControlCode,
+          pIrp->AssociatedIrp.SystemBuffer, pStack->Parameters.DeviceIoControl.InputBufferLength,
+          pStack->Parameters.DeviceIoControl.OutputBufferLength, pSession));
+
+#if 0 /*def RT_ARCH_AMD64*/
+    /* Don't allow 32-bit processes to do any I/O controls. */
+    if (!IoIs32bitProcess(pIrp))
+#endif
+    {
+        /* Verify that it's a buffered CTL. */
+        if ((pStack->Parameters.DeviceIoControl.IoControlCode & 0x3) == METHOD_BUFFERED)
+        {
+            /* Verify that the sizes in the request header are correct. */
+            PVBGLREQHDR pHdr = (PVBGLREQHDR)pIrp->AssociatedIrp.SystemBuffer;
+            if (   pStack->Parameters.DeviceIoControl.InputBufferLength  >= sizeof(*pHdr)
+                && pStack->Parameters.DeviceIoControl.InputBufferLength  == pHdr->cbIn
+                && pStack->Parameters.DeviceIoControl.OutputBufferLength == pHdr->cbOut)
             {
-                LogFunc(("Too much output data %u - expected %u!\n", cbDataReturned, cbData));
-                cbDataReturned = cbData;
-                Status = STATUS_BUFFER_TOO_SMALL;
+                /* Zero extra output bytes to make sure we don't leak anything. */
+                if (pHdr->cbIn < pHdr->cbOut)
+                    RtlZeroMemory((uint8_t *)pHdr + pHdr->cbIn, pHdr->cbOut - pHdr->cbIn);
+
+                /*
+                 * Do the job.
+                 */
+                rc = VGDrvCommonIoCtl(pStack->Parameters.DeviceIoControl.IoControlCode, pDevExt, pSession, pHdr,
+                                      RT_MAX(pHdr->cbIn, pHdr->cbOut));
+                if (RT_SUCCESS(rc))
+                {
+                    rcNt  = STATUS_SUCCESS;
+                    cbOut = pHdr->cbOut;
+                    if (cbOut > pStack->Parameters.DeviceIoControl.OutputBufferLength)
+                    {
+                        cbOut = pStack->Parameters.DeviceIoControl.OutputBufferLength;
+                        LogRel(("vgdrvNtDeviceControlSlow: too much output! %#x > %#x; uCmd=%#x!\n",
+                                pHdr->cbOut, cbOut, pStack->Parameters.DeviceIoControl.IoControlCode));
+                    }
+
+                    /* If IDC successful disconnect request, we must set the context pointer to NULL. */
+                    if (   pStack->Parameters.DeviceIoControl.IoControlCode == VBGL_IOCTL_IDC_DISCONNECT
+                        && RT_SUCCESS(pHdr->rc))
+                        pStack->FileObject->FsContext = NULL;
+                }
+                else if (rc == VERR_NOT_SUPPORTED)
+                    rcNt = STATUS_NOT_SUPPORTED;
+                else
+                    rcNt = STATUS_INVALID_PARAMETER;
+                Log2(("vgdrvNtDeviceControlSlow: returns %#x cbOut=%d rc=%#x\n", rcNt, cbOut, rc));
             }
-            if (cbDataReturned > 0)
-                cbOut = cbDataReturned;
+            else
+            {
+                Log(("vgdrvNtDeviceControlSlow: Mismatching sizes (%#x) - Hdr=%#lx/%#lx Irp=%#lx/%#lx!\n",
+                     pStack->Parameters.DeviceIoControl.IoControlCode,
+                     pStack->Parameters.DeviceIoControl.InputBufferLength >= sizeof(*pHdr) ? pHdr->cbIn  : 0,
+                     pStack->Parameters.DeviceIoControl.InputBufferLength >= sizeof(*pHdr) ? pHdr->cbOut : 0,
+                     pStack->Parameters.DeviceIoControl.InputBufferLength,
+                     pStack->Parameters.DeviceIoControl.OutputBufferLength));
+                rcNt = STATUS_INVALID_PARAMETER;
+            }
         }
         else
         {
-            if (   vrc == VERR_NOT_SUPPORTED
-                || vrc == VERR_INVALID_PARAMETER)
-                Status = STATUS_INVALID_PARAMETER;
-            else if (vrc == VERR_OUT_OF_RANGE)
-                Status = STATUS_INVALID_BUFFER_SIZE;
-            else
-                Status = STATUS_UNSUCCESSFUL;
+            Log(("vgdrvNtDeviceControlSlow: not buffered request (%#x) - not supported\n",
+                 pStack->Parameters.DeviceIoControl.IoControlCode));
+            rcNt = STATUS_NOT_SUPPORTED;
         }
     }
+#if 0 /*def RT_ARCH_AMD64*/
     else
     {
-        LogFunc(("Not buffered request (%#x) - not supported\n", pStack->Parameters.DeviceIoControl.IoControlCode));
-        Status = STATUS_NOT_SUPPORTED;
+        Log(("VBoxDrvNtDeviceControlSlow: WOW64 req - not supported\n"));
+        rcNt = STATUS_NOT_SUPPORTED;
     }
+#endif
 
-    pIrp->IoStatus.Status = Status;
+    /* complete the request. */
+    pIrp->IoStatus.Status = rcNt;
     pIrp->IoStatus.Information = cbOut;
-
+    //supdrvSessionRelease(pSession);
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
-
-    //LogFlowFunc(("Returned cbOut=%d rc=%#x\n", cbOut, Status));
-    return Status;
+    return rcNt;
 }
 
+
 /**
- * Internal Device I/O Control entry point.
+ * Internal Device I/O Control entry point (for IDC).
  *
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
 static NTSTATUS vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    NTSTATUS            Status      = STATUS_SUCCESS;
-    PVBOXGUESTDEVEXTWIN pDevExt     = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
-    PIO_STACK_LOCATION  pStack      = IoGetCurrentIrpStackLocation(pIrp);
-    unsigned int        uCmd        = (unsigned int)pStack->Parameters.DeviceIoControl.IoControlCode;
-    bool                fProcessed  = false;
-    unsigned            Info        = 0;
-
-    /*
-     * Override common behavior of some operations.
-     */
-    /** @todo r=bird: Better to add dedicated worker functions for this! */
-    switch (uCmd)
-    {
-        case VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK:
-        {
-            PVOID pvBuf = pStack->Parameters.Others.Argument1;
-            size_t cbData = (size_t)pStack->Parameters.Others.Argument2;
-            fProcessed = true;
-            if (cbData != sizeof(VBoxGuestMouseSetNotifyCallback))
-            {
-                AssertFailed();
-                Status = STATUS_INVALID_PARAMETER;
-                break;
-            }
-
-            VBoxGuestMouseSetNotifyCallback *pInfo = (VBoxGuestMouseSetNotifyCallback*)pvBuf;
-
-            /* we need a lock here to avoid concurrency with the set event functionality */
-            KIRQL OldIrql;
-            KeAcquireSpinLock(&pDevExt->MouseEventAccessLock, &OldIrql);
-            pDevExt->Core.MouseNotifyCallback = *pInfo;
-            KeReleaseSpinLock(&pDevExt->MouseEventAccessLock, OldIrql);
-
-            Status = STATUS_SUCCESS;
-            break;
-        }
-
-        default:
-            break;
-    }
-    if (fProcessed)
-    {
-        pIrp->IoStatus.Status = Status;
-        pIrp->IoStatus.Information = Info;
-
-        IoCompleteRequest(pIrp, IO_NO_INCREMENT);
-        return Status;
-    }
-
-    /*
-     * No override, go to common code.
-     */
-    return vgdrvNtIOCtl(pDevObj, pIrp);
+    /* Currently no special code here. */
+    return vgdrvNtDeviceControl(pDevObj, pIrp);
 }
 
 
@@ -967,6 +980,26 @@ static NTSTATUS vgdrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
 
 /**
+ * Sets the mouse notification callback.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt   Pointer to the device extension.
+ * @param   pNotify   Pointer to the mouse notify struct.
+ */
+int VGDrvNativeSetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, PVBGLIOCSETMOUSENOTIFYCALLBACK pNotify)
+{
+    PVBOXGUESTDEVEXTWIN pDevExtWin = (PVBOXGUESTDEVEXTWIN)pDevExt;
+    /* we need a lock here to avoid concurrency with the set event functionality */
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pDevExtWin->MouseEventAccessLock, &OldIrql);
+    pDevExtWin->Core.pfnMouseNotifyCallback   = pNotify->u.In.pfnNotify;
+    pDevExtWin->Core.pvMouseNotifyCallbackArg = pNotify->u.In.pvUser;
+    KeReleaseSpinLock(&pDevExtWin->MouseEventAccessLock, OldIrql);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * DPC handler.
  *
  * @param   pDPC        DPC descriptor.
@@ -988,8 +1021,8 @@ static void vgdrvNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVO
         Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
         KeAcquireSpinLockAtDpcLevel(&pDevExt->MouseEventAccessLock);
 
-        if (pDevExt->Core.MouseNotifyCallback.pfnNotify)
-            pDevExt->Core.MouseNotifyCallback.pfnNotify(pDevExt->Core.MouseNotifyCallback.pvUser);
+        if (pDevExt->Core.pfnMouseNotifyCallback)
+            pDevExt->Core.pfnMouseNotifyCallback(pDevExt->Core.pvMouseNotifyCallbackArg);
 
         KeReleaseSpinLockFromDpcLevel(&pDevExt->MouseEventAccessLock);
     }
@@ -1479,6 +1512,7 @@ AssertCompileMemberAlignment(DPCDATA, aSamples, 64);
 static VOID vgdrvNtDpcLatencyCallback(PKDPC pDpc, PVOID pvDeferredContext, PVOID SystemArgument1, PVOID SystemArgument2)
 {
     DPCDATA *pData = (DPCDATA *)pvDeferredContext;
+    RT_NOREF(pDpc, SystemArgument1, SystemArgument2);
 
     KeAcquireSpinLockAtDpcLevel(&pData->SpinLock);
 

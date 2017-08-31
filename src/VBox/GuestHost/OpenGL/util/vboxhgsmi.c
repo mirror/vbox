@@ -172,11 +172,6 @@ typedef struct {
     CRNetReceiveFuncList *recv_list;
     CRNetCloseFuncList   *close_list;
     CRBufferPool *mempool;
-#ifdef RT_OS_WINDOWS
-    HANDLE               hGuestDrv;
-#else
-    int                  iGuestDrv;
-#endif
 } CRVBOXHGSMIDATA;
 
 #define CR_VBOXHGSMI_BUFFER_MAGIC 0xEDCBA123
@@ -1199,84 +1194,26 @@ static int crVBoxHGSMISetPID(CRConnection *conn, unsigned long long pid)
  * guests in vbox case.
  * Servers go through crVBoxHGCMAccept;
  */
-/*@todo use vbglR3Something here */
 static int crVBoxHGSMIDoConnect( CRConnection *conn )
 {
 #ifdef IN_GUEST
-    VBoxGuestHGCMConnectInfo info;
-
-#ifdef RT_OS_WINDOWS
-    DWORD cbReturned;
+    int rc;
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
-
-    if (g_crvboxhgsmi.hGuestDrv == INVALID_HANDLE_VALUE)
+    rc = VbglR3InitUser();
+    if (RT_SUCCESS(rc))
     {
-        /* open VBox guest driver */
-        g_crvboxhgsmi.hGuestDrv = CreateFile(VBOXGUEST_DEVICE_NAME,
-                                        GENERIC_READ | GENERIC_WRITE,
-                                        FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                        NULL,
-                                        OPEN_EXISTING,
-                                        FILE_ATTRIBUTE_NORMAL,
-                                        NULL);
-
-        /* @todo check if we could rollback to softwareopengl */
-        if (g_crvboxhgsmi.hGuestDrv == INVALID_HANDLE_VALUE)
+        uint32_t idClient;
+        rc = VbglR3HGCMConnect("VBoxSharedCrOpenGL", &idClient);
+        if (RT_SUCCESS(rc))
         {
-            Assert(0);
-            crDebug("could not open VBox Guest Additions driver! rc = %d\n", GetLastError());
-            VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
-            return FALSE;
-        }
-    }
-#else
-    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
-
-    if (g_crvboxhgsmi.iGuestDrv == INVALID_HANDLE_VALUE)
-    {
-        g_crvboxhgsmi.iGuestDrv = open(VBOXGUEST_USER_DEVICE_NAME, O_RDWR, 0);
-        if (g_crvboxhgsmi.iGuestDrv == INVALID_HANDLE_VALUE)
-        {
-            crDebug("could not open Guest Additions kernel module! rc = %d\n", errno);
-            VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
-            return FALSE;
-        }
-    }
-#endif
-
-    memset (&info, 0, sizeof (info));
-    info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-    strcpy (info.Loc.u.host.achName, "VBoxSharedCrOpenGL");
-
-#ifdef RT_OS_WINDOWS
-    if (DeviceIoControl(g_crvboxhgsmi.hGuestDrv,
-                        VBOXGUEST_IOCTL_HGCM_CONNECT,
-                        &info, sizeof (info),
-                        &info, sizeof (info),
-                        &cbReturned,
-                        NULL))
-#elif defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
-    VBGLBIGREQ Hdr;
-    Hdr.u32Magic = VBGLBIGREQ_MAGIC;
-    Hdr.cbData = sizeof(info);
-    Hdr.pvDataR3 = &info;
-# if HC_ARCH_BITS == 32
-    Hdr.u32Padding = 0;
-# endif
-    if (ioctl(g_crvboxhgsmi.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CONNECT, &Hdr) >= 0)
-#else
-    if (ioctl(g_crvboxhgsmi.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CONNECT, &info, sizeof (info)) >= 0)
-#endif
-    {
-        if (info.result == VINF_SUCCESS)
-        {
-            int rc;
-            conn->u32ClientID = info.u32ClientID;
+            conn->u32ClientID = idClient;
             crDebug("HGCM connect was successful: client id =0x%x\n", conn->u32ClientID);
 
-            rc = crVBoxHGSMISetVersion(conn, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR);
-            if (!rc)
+            rc = crVBoxHGCMSetVersion(conn, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR);
+            if (RT_FAILURE(rc))
             {
+                WARN(("crVBoxHGCMSetVersion failed %d", rc));
+/** @todo r=bird: Someone else messed up the return values here, not me.   */
                 return rc;
             }
 #ifdef RT_OS_WINDOWS
@@ -1284,27 +1221,22 @@ static int crVBoxHGSMIDoConnect( CRConnection *conn )
 #else
             rc = crVBoxHGCMSetPID(conn, crGetPID());
 #endif
+            if (RT_FAILURE(rc))
+                WARN(("crVBoxHGCMSetPID failed %Rrc", rc));
+/** @todo r=bird: Someone else messed up the return values here, not me.   */
             VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
             return rc;
         }
-        else
-        {
-            Assert(0);
-            crDebug("HGCM connect failed with rc=0x%x\n", info.result);
-        }
+
+        crDebug("HGCM connect failed: %Rrc\n", rc);
+        VbglR3Term();
     }
     else
-    {
-#ifdef RT_OS_WINDOWS
-        crDebug("IOCTL for HGCM connect failed with rc=0x%x\n", GetLastError());
-#else
-        crDebug("IOCTL for HGCM connect failed with rc=0x%x\n", errno);
-#endif
-    }
+        crDebug("Failed to initialize VbglR3 library: %Rrc\n", rc);
 
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
-
     return FALSE;
+
 #else /*#ifdef IN_GUEST*/
     crError("crVBoxHGSMIDoConnect called on host side!");
     CRASSERT(FALSE);
@@ -1315,13 +1247,6 @@ static int crVBoxHGSMIDoConnect( CRConnection *conn )
 /*@todo same, replace DeviceIoControl with vbglR3DoIOCtl */
 static void crVBoxHGSMIDoDisconnect( CRConnection *conn )
 {
-#ifdef IN_GUEST
-    VBoxGuestHGCMDisconnectInfo info;
-# ifdef RT_OS_WINDOWS
-    DWORD cbReturned;
-# endif
-    int i;
-#endif
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
 
     if (conn->pHostBuffer)
@@ -1354,54 +1279,14 @@ static void crVBoxHGSMIDoDisconnect( CRConnection *conn )
 #else /* IN_GUEST */
     if (conn->u32ClientID)
     {
-        memset (&info, 0, sizeof (info));
-        info.u32ClientID = conn->u32ClientID;
-
-# ifdef RT_OS_WINDOWS
-        if ( !DeviceIoControl(g_crvboxhgsmi.hGuestDrv,
-                               VBOXGUEST_IOCTL_HGCM_DISCONNECT,
-                               &info, sizeof (info),
-                               &info, sizeof (info),
-                               &cbReturned,
-                               NULL) )
-        {
-            crDebug("Disconnect failed with %x\n", GetLastError());
-        }
-# elif defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
-        VBGLBIGREQ Hdr;
-        Hdr.u32Magic = VBGLBIGREQ_MAGIC;
-        Hdr.cbData = sizeof(info);
-        Hdr.pvDataR3 = &info;
-#  if HC_ARCH_BITS == 32
-        Hdr.u32Padding = 0;
-#  endif
-        if (ioctl(g_crvboxhgsmi.iGuestDrv, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &Hdr) >= 0)
-# else
-        if (ioctl(g_crvboxhgsmi.iGuestDrv, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &info, sizeof (info)) < 0)
-        {
-            crDebug("Disconnect failed with %x\n", errno);
-        }
-# endif
-
+        int rc = VbglR3HGCMDisconnect(conn->u32ClientID);
+        if (RT_FAILURE(rc))
+            crDebug("Disconnect failed with %Rrc\n", rc);
         conn->u32ClientID = 0;
+
+        VbglR3Term();
     }
 
-    /* see if any connections remain */
-    for (i = 0; i < g_crvboxhgsmi.num_conns; i++)
-        if (g_crvboxhgsmi.conns[i] && g_crvboxhgsmi.conns[i]->type != CR_NO_CONNECTION)
-            break;
-
-    /* close guest additions driver*/
-    if (i>=g_crvboxhgsmi.num_conns)
-    {
-# ifdef RT_OS_WINDOWS
-        CloseHandle(g_crvboxhgsmi.hGuestDrv);
-        g_crvboxhgsmi.hGuestDrv = INVALID_HANDLE_VALUE;
-# else
-        close(g_crvboxhgsmi.iGuestDrv);
-        g_crvboxhgsmi.iGuestDrv = INVALID_HANDLE_VALUE;
-# endif
-    }
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 #endif /* IN_GUEST */
 }

@@ -1,10 +1,9 @@
 /* $Id$ */
 /** @file
- * VBox WDDM Miniport driver
+ * VBox WDDM Miniport driver.
  *
- * Contains base definitions of constants & structures used
- * to control & perform rendering,
- * such as DMA commands types, allocation types, escape codes, etc.
+ * Contains base definitions of constants & structures used to control & perform
+ * rendering, such as DMA commands types, allocation types, escape codes, etc.
  * used by both miniport & display drivers.
  *
  * The latter uses these and only these defs to communicate with the former
@@ -30,32 +29,32 @@
 #include "../../../../include/VBoxDisplay.h"
 #include "../VBoxVideoTools.h"
 #include <VBoxUhgsmi.h>
-#include <VBox/VBoxGuest2.h>
+#include <VBox/VBoxGuest.h>
 
 /* One would increase this whenever definitions in this file are changed */
 #define VBOXVIDEOIF_VERSION 20
 
-#define VBOXWDDM_NODE_ID_SYSTEM           0
-#define VBOXWDDM_NODE_ID_3D               (VBOXWDDM_NODE_ID_SYSTEM)
-#define VBOXWDDM_NODE_ID_3D_KMT           (VBOXWDDM_NODE_ID_3D)
-#define VBOXWDDM_NODE_ID_2D_VIDEO         (VBOXWDDM_NODE_ID_3D_KMT+1)
-#define VBOXWDDM_NUM_NODES                (VBOXWDDM_NODE_ID_2D_VIDEO+1)
+#define VBOXWDDM_NODE_ID_SYSTEM             0
+#define VBOXWDDM_NODE_ID_3D                 (VBOXWDDM_NODE_ID_SYSTEM)
+#define VBOXWDDM_NODE_ID_3D_KMT             (VBOXWDDM_NODE_ID_3D)
+#define VBOXWDDM_NODE_ID_2D_VIDEO           (VBOXWDDM_NODE_ID_3D_KMT + 1)
+#define VBOXWDDM_NUM_NODES                  (VBOXWDDM_NODE_ID_2D_VIDEO + 1)
 
-#define VBOXWDDM_ENGINE_ID_SYSTEM         0
+#define VBOXWDDM_ENGINE_ID_SYSTEM           0
 #if (VBOXWDDM_NODE_ID_3D == VBOXWDDM_NODE_ID_SYSTEM)
-# define VBOXWDDM_ENGINE_ID_3D            (VBOXWDDM_ENGINE_ID_SYSTEM+1)
+# define VBOXWDDM_ENGINE_ID_3D              (VBOXWDDM_ENGINE_ID_SYSTEM + 1)
 #else
-# define VBOXWDDM_ENGINE_ID_3D            0
+# define VBOXWDDM_ENGINE_ID_3D              0
 #endif
 #if (VBOXWDDM_NODE_ID_3D_KMT == VBOXWDDM_NODE_ID_3D)
-# define VBOXWDDM_ENGINE_ID_3D_KMT     VBOXWDDM_ENGINE_ID_3D
+# define VBOXWDDM_ENGINE_ID_3D_KMT          VBOXWDDM_ENGINE_ID_3D
 #else
-# define VBOXWDDM_ENGINE_ID_3D_KMT     0
+# define VBOXWDDM_ENGINE_ID_3D_KMT          0
 #endif
 #if (VBOXWDDM_NODE_ID_2D_VIDEO == VBOXWDDM_NODE_ID_3D)
-# define VBOXWDDM_ENGINE_ID_2D_VIDEO       VBOXWDDM_ENGINE_ID_3D
+# define VBOXWDDM_ENGINE_ID_2D_VIDEO        VBOXWDDM_ENGINE_ID_3D
 #else
-# define VBOXWDDM_ENGINE_ID_2D_VIDEO       0
+# define VBOXWDDM_ENGINE_ID_2D_VIDEO        0
 #endif
 
 
@@ -488,7 +487,7 @@ typedef struct VBOXDISPIFESCAPE_SETALLOCHOSTID
 typedef struct VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL
 {
     VBOXDISPIFESCAPE EscapeHdr;
-    VBoxGuestHGCMCallInfo CallInfo;
+    VBGLIOCHGCMCALL CallInfo;
 } VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL, *PVBOXDISPIFESCAPE_CRHGSMICTLCON_CALL;
 
 /* query info func */

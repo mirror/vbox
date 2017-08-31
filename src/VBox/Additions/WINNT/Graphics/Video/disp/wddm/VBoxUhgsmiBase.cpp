@@ -220,7 +220,7 @@ typedef struct VBOXCRHGSMI_CALLDATA
     HGCMFunctionParameter aArgs[3];
 } VBOXCRHGSMI_CALLDATA, *PVBOXCRHGSMI_CALLDATA;
 
-int vboxCrHgsmiPrivateCtlConCall(struct VBOXUHGSMI_PRIVATE_BASE *pHgsmi, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo)
+int vboxCrHgsmiPrivateCtlConCall(struct VBOXUHGSMI_PRIVATE_BASE *pHgsmi, struct VBGLIOCHGCMCALL *pCallInfo, int cbCallInfo)
 {
     VBOXCRHGSMI_CALLDATA Buf;
     PVBOXCRHGSMI_CALLDATA pBuf;

@@ -547,74 +547,44 @@ DECLASM(int) vgdrvOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, void *
      * Verify the category and dispatch the IOCtl.
      *
      * The IOCtl call uses the parameter buffer as generic data input/output
-     * buffer similar to the one unix ioctl buffer argument. While the data
-     * buffer is used for passing the VBox status code back to the caller
-     * since the status codes that OS/2 accepts thru the DosDevIOCtl API is
-     * severely restricted.
+     * buffer similar to the one unix ioctl buffer argument.  While the data
+     * buffer is not used.
      */
-    if (RT_LIKELY(iCat == VBOXGUEST_IOCTL_CATEGORY))
+    if (RT_LIKELY(iCat == VBGL_IOCTL_CATEGORY))
     {
         Log(("vgdrvOS2IOCtl: pSession=%p iFunction=%#x pvParm=%p pvData=%p *pcbParm=%d *pcbData=%d\n", pSession, iFunction, pvParm, pvData, *pcbParm, *pcbData));
-        Assert(pvParm || !*pcbData);
-        Assert(pvData);
-        Assert(*pcbData == sizeof(int32_t)); /* the return code */
-
-        /*
-         * Lock the buffers.
-         */
-        int32_t rc;
-        KernVMLock_t ParmLock;
-        if (pvParm)
+        if (   pvParm
+            && *pcbParm >= sizeof(VBGLREQHDR)
+            && *pcbData == 0)
         {
-            Assert(*pcbData);
-            rc = KernVMLock(VMDHL_WRITE, pvParm, *pcbParm, &ParmLock, (KernPageList_t *)-1, NULL);
-            AssertMsgReturn(!rc, ("KernVMLock(VMDHL_WRITE, %p, %#x, &p, NULL, NULL) -> %d\n", pvParm, *pcbParm, &ParmLock, rc), VERR_LOCK_FAILED);
-        }
-
-#if 0 /* don't bother locking it since it's only 4 bytes (the return code). */
-        KernVMLock_t DataLock;
-        if (pvData)
-        {
-            Assert(*pcbData);
-            rc = KernVMLock(VMDHL_WRITE, pvData, *pcbData, &DataLock, (KernPageList_t *)-1, NULL);
-            if (rc)
+            /*
+             * Lock the buffer.
+             */
+            KernVMLock_t ParmLock;
+            int32_t rc = KernVMLock(VMDHL_WRITE, pvParm, *pcbParm, &ParmLock, (KernPageList_t *)-1, NULL);
+            if (rc == 0)
             {
-                AssertMsgFailed(("KernVMLock(VMDHL_WRITE, %p, %#x, &p, NULL, NULL) -> %d\n", pvData, *pcbData, &DataLock, rc));
-                KernVMUnlock(&ParmLock);
-                return VERR_LOCK_FAILED;
+                /*
+                 * Process the IOCtl.
+                 */
+                PVBGLREQHDR pReqHdr = (PVBGLREQHDR)pvParm;
+                rc = VGDrvCommonIoCtl(iFunction, &g_DevExt, pSession, pvParm, *pcbParm);
+
+                /*
+                 * Unlock the buffer.
+                 */
+                *pcbParm = RT_SUCCESS(rc) ? pReqHdr->cbOut : sizeof(*pReqHdr);
+                int rc2 = KernVMUnlock(&ParmLock);
+                AssertMsg(rc2 == 0, ("rc2=%d\n", rc2)); NOREF(rc2);
+
+                Log2(("vgdrvOS2IOCtl: returns %d\n", rc));
+                return rc;
             }
+            AssertFailedMsg(("KernVMLock(VMDHL_WRITE, %p, %#x, &p, NULL, NULL) -> %d\n", pvParm,*pcbParm,&ParmLock, rc));
+            return VERR_LOCK_FAILED;
         }
-#endif
-
-        /*
-         * Process the IOCtl.
-         */
-        size_t cbDataReturned;
-        rc = VGDrvCommonIoCtl(iFunction, &g_DevExt, pSession, pvParm, *pcbParm, &cbDataReturned);
-
-        /*
-         * Unlock the buffers.
-         */
-        if (pvParm)
-        {
-            int rc2 = KernVMUnlock(&ParmLock);
-            AssertMsg(!rc2, ("rc2=%d\n", rc2)); NOREF(rc2);
-            AssertMsg(cbDataReturned < _64K, ("cbDataReturned=%d\n", cbDataReturned));
-            *pcbParm = cbDataReturned;
-        }
-#if 0
-        if (pvData)
-        {
-            int rc2 = KernVMUnlock(&DataLock);
-            AssertMsg(!rc2, ("rc2=%d\n", rc2));
-        }
-#else
-        rc = KernCopyOut(pvData, &rc, sizeof(int32_t));
-        AssertMsgReturn(!rc, ("KernCopyOut(%p, %p, sizeof(int32_t)) -> %d\n", pvData, &rc, rc), VERR_LOCK_FAILED);
-#endif
-
-        Log2(("vgdrvOS2IOCtl: returns VINF_SUCCESS / %d\n", rc));
-        return VINF_SUCCESS;
+        Log2(("vgdrvOS2IOCtl: returns VERR_INVALID_PARAMETER (iFunction=%#x)\n", iFunction));
+        return VERR_INVALID_PARAMETER;
     }
     return VERR_NOT_SUPPORTED;
 }

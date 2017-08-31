@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #if defined(RT_OS_WINDOWS)
-# include <iprt/win/windows.h>
+# include <iprt/nt/nt-and-windows.h>
 
 #elif defined(RT_OS_OS2)
 # define INCL_BASE
@@ -116,6 +116,7 @@ static io_connect_t g_uConnection = 0;
  */
 static int vbglR3Init(const char *pszDeviceName)
 {
+    int      rc2;
     uint32_t cInits = ASMAtomicIncU32(&g_cInits);
     Assert(cInits > 0);
     if (cInits > 1)
@@ -263,14 +264,31 @@ static int vbglR3Init(const char *pszDeviceName)
 
 #endif
 
+    /*
+     * Adjust the I/O control interface version.
+     */
+    {
+        VBGLIOCDRIVERVERSIONINFO VerInfo;
+        VBGLREQHDR_INIT(&VerInfo.Hdr, DRIVER_VERSION_INFO);
+        VerInfo.u.In.uMinVersion    = VBGL_IOC_VERSION & UINT32_C(0xffff0000);
+        VerInfo.u.In.uReqVersion    = VBGL_IOC_VERSION;
+        VerInfo.u.In.uReserved1     = 0;
+        VerInfo.u.In.uReserved2     = 0;
+        rc2 = vbglR3DoIOCtl(VBGL_IOCTL_DRIVER_VERSION_INFO, &VerInfo.Hdr, sizeof(VerInfo));
+#ifndef VBOX_VBGLR3_XSERVER
+        AssertRC(rc2); /* otherwise ignored for now*/
+#endif
+    }
+
+
 #ifndef VBOX_VBGLR3_XSERVER
     /*
      * Create release logger
      */
     PRTLOGGER pReleaseLogger;
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-    int rc2 = RTLogCreate(&pReleaseLogger, 0, "all", "VBOX_RELEASE_LOG",
-                          RT_ELEMENTS(s_apszGroups), &s_apszGroups[0], RTLOGDEST_USER, NULL);
+    rc2 = RTLogCreate(&pReleaseLogger, 0, "all", "VBOX_RELEASE_LOG",
+                      RT_ELEMENTS(s_apszGroups), &s_apszGroups[0], RTLOGDEST_USER, NULL);
     /* This may legitimately fail if we are using the mini-runtime. */
     if (RT_SUCCESS(rc2))
         RTLogRelSetDefaultInstance(pReleaseLogger);
@@ -359,91 +377,82 @@ VBGLR3DECL(void) VbglR3Term(void)
  * @returns VBox status code as returned by VBoxGuestCommonIOCtl, or
  *          an failure returned by the OS specific ioctl APIs.
  *
- * @param   iFunction   The requested function.
- * @param   pvData      The input and output data buffer.
- * @param   cbData      The size of the buffer.
- *
- * @remark  Exactly how the VBoxGuestCommonIOCtl is ferried back
- *          here is OS specific. On BSD and Darwin we can use errno,
- *          while on OS/2 we use the 2nd buffer of the IOCtl.
+ * @param   uFunction   The requested function.
+ * @param   pHdr        The input and output request buffer.
+ * @param   cbReq       The size of the request buffer.
  */
-int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
+int vbglR3DoIOCtlRaw(uintptr_t uFunction, PVBGLREQHDR pHdr, size_t cbReq)
 {
-#if defined(RT_OS_WINDOWS)
-    DWORD cbReturned = 0;
-    if (!DeviceIoControl(g_hFile, iFunction, pvData, (DWORD)cbData, pvData, (DWORD)cbData, &cbReturned, NULL))
-    {
-/** @todo The passing of error codes needs to be tested and fixed (as does *all* the other hosts except for
- * OS/2).  The idea is that the VBox status codes in ring-0 should be transferred without loss down to
- * ring-3. However, it's not vitally important right now (obviously, since the other guys has been
- * ignoring it for 1+ years now).  On Linux and Solaris the transfer is done, but it is currently not
- * lossless, so still needs fixing. */
-        DWORD LastErr = GetLastError();
-        return RTErrConvertFromWin32(LastErr);
-    }
+    Assert(cbReq == RT_MAX(pHdr->cbIn, pHdr->cbOut)); RT_NOREF1(cbReq);
 
-    return VINF_SUCCESS;
+#if defined(RT_OS_WINDOWS)
+# if 0 /*def USE_NT_DEVICE_IO_CONTROL_FILE*/
+    IO_STATUS_BLOCK Ios;
+    Ios.Status      = -1;
+    Ios.Information = 0;
+    NTSTATUS rcNt = NtDeviceIoControlFile(g_hFile, NULL /*hEvent*/, NULL /*pfnApc*/, NULL /*pvApcCtx*/, &Ios,
+                                          (ULONG)uFunction,
+                                          pHdr /*pvInput */, pHdr->cbIn /* cbInput */,
+                                          pHdr /*pvOutput*/, pHdr->cbOut /* cbOutput */);
+    if (NT_SUCCESS(rcNt))
+    {
+        if (NT_SUCCESS(Ios.Status))
+            return VINF_SUCCESS;
+        rcNt = Ios.Status;
+    }
+    return RTErrConvertFromNtStatus(rcNt);
+
+# else
+    DWORD cbReturned = (ULONG)pHdr->cbOut;
+    if (DeviceIoControl(g_hFile, uFunction, pHdr, pHdr->cbIn, pHdr, cbReturned, &cbReturned, NULL))
+        return 0;
+    return RTErrConvertFromWin32(GetLastError());
+# endif
 
 #elif defined(RT_OS_OS2)
-    ULONG cbOS2Parm = cbData;
-    int32_t vrc = VERR_INTERNAL_ERROR;
-    ULONG cbOS2Data = sizeof(vrc);
-    APIRET rc = DosDevIOCtl((uintptr_t)g_File, VBOXGUEST_IOCTL_CATEGORY, iFunction,
-                            pvData, cbData, &cbOS2Parm,
-                            &vrc, sizeof(vrc), &cbOS2Data);
-    if (RT_LIKELY(!rc))
-        return vrc;
+    ULONG cbOS2Parm = cbReq;
+    APIRET rc = DosDevIOCtl((uintptr_t)g_File, VBGL_IOCTL_CATEGORY, uFunction, pHdr, cbReq, &cbOS2Parm, NULL, 0, NULL);
+    if (RT_LIKELY(rc == NO_ERROR))
+        return VINF_SUCCESS;
     return RTErrConvertFromOS2(rc);
 
+#else defined(VBOX_VBGLR3_XSERVER)
+    if (g_File != NIL_RTFILE)
+    {
+        if (RT_LIKELY(xf86ioctl((int)g_File, uFunction, pvData) >= 0))
+            return VINF_SUCCESS;
+        return VERR_FILE_IO_ERROR;
+    }
+    return VERR_INVALID_HANDLE;
+
 #else
-# if defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
-    VBGLBIGREQ Hdr;
-    Hdr.u32Magic = VBGLBIGREQ_MAGIC;
-    Hdr.cbData = cbData;
-    Hdr.pvDataR3 = pvData;
-#  if HC_ARCH_BITS == 32
-    Hdr.u32Padding = 0;
-#  endif
-    pvData = &Hdr;
-
-/** @todo test status code passing! Check that the kernel doesn't do any
- *        error checks using specific errno values, and just pass an VBox
- *        error instead of an errno.h one. Alternatively, extend/redefine the
- *        header with an error code return field (much better alternative
- *        actually). */
-# elif defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
-    NOREF(cbData);
-# endif
-
-# if defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD) || defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
-#  ifdef VBOX_VBGLR3_XSERVER
-    int rc = xf86ioctl((int)g_File, iFunction, pvData);
-#  else
-    if (g_File == NIL_RTFILE)
-        return VERR_INVALID_HANDLE;
-    int rc = ioctl(RTFileToNative(g_File), iFunction, pvData);
-#  endif
-# elif defined(RT_OS_HAIKU)
-    /* The ioctl hook in Haiku does take the len parameter when specified,
-     * so just use it. */
-    int rc = ioctl((int)g_File, iFunction, pvData, cbData);
-# else
-#  error Port me!
-# endif
-    if (RT_LIKELY(rc == 0))
-        return VINF_SUCCESS;
-
-    /* Positive values are negated VBox error status codes. */
-    if (rc > 0)
-        rc = -rc;
-    else
-# ifdef VBOX_VBGLR3_XSERVER
-        rc = VERR_FILE_IO_ERROR;
-#  else
-        rc = RTErrConvertFromErrno(errno);
-# endif
-    return rc;
-
+    if (g_File != NIL_RTFILE)
+    {
+        if (RT_LIKELY(ioctl((int)g_File, uFunction, pvReq) >= 0))
+            return VINF_SUCCESS;
+        return RTErrConvertFromErrno(errno);
+    }
+    return VERR_INVALID_HANDLE;
 #endif
+}
+
+
+/**
+ * Internal wrapper around various OS specific ioctl implementations, that
+ * returns the status from the header.
+ *
+ * @returns VBox status code as returned by VBoxGuestCommonIOCtl, or
+ *          an failure returned by the OS specific ioctl APIs.
+ *
+ * @param   uFunction   The requested function.
+ * @param   pHdr        The input and output request buffer.
+ * @param   cbReq       The size of the request buffer.
+ */
+int vbglR3DoIOCtl(uintptr_t uFunction, PVBGLREQHDR pHdr, size_t cbReq)
+{
+    int rc = vbglR3DoIOCtlRaw(uFunction, pHdr, cbReq);
+    if (RT_SUCCESS(rc))
+        rc = pHdr->rc;
+    return rc;
 }
 

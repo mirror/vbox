@@ -19,7 +19,6 @@
 #include <iprt/asm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
-#include <VBox/VBoxGuestLib.h>
 
 #include <stdarg.h>
 #include <string.h>
@@ -30,6 +29,8 @@ RT_C_DECLS_BEGIN
 #include <ntddkbd.h>
 #include <ntddmou.h>
 RT_C_DECLS_END
+
+#include <VBox/VBoxGuestLib.h>
 
 /* not available on NT4 */
 #undef ExFreePool
@@ -2129,7 +2130,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING RegistryPath)
 
     ASSERT(status == STATUS_SUCCESS);
 
-    int rcVBox = VbglInitClient();
+    int rcVBox = VbglR0InitClient();
     if (RT_FAILURE(rcVBox))
     {
         Log(("VBoxMouseNT::DriverEntry: could not initialize guest library, rc = %Rrc\n", rcVBox));
@@ -2158,7 +2159,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING RegistryPath)
         }
         else
         {
-            VbglTerminate();
+            VbglR0TerminateClient();
             Log(("VBoxMouseNT::DriverEntry: could not allocate request buffer, rc = %Rrc\n", rcVBox));
             /* Continue working in non-VBox mode. */
         }

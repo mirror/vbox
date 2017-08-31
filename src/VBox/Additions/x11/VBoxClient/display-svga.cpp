@@ -392,7 +392,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
                 afEnabled[idx] = fEnabled;
             }
             rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0, &events);
-            if (RT_FAILURE(rc) && rc != VERR_TIMEOUT)
+            if (RT_FAILURE(rc) && rc != VERR_TIMEOUT && rc != VERR_INTERRUPTED)
                 VBClFatalError(("Failure waiting for event, rc=%Rrc\n", rc));
         }
         for (i = 0, cHeads = 0; i < VMW_MAX_HEADS; ++i)

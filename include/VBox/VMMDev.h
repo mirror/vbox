@@ -116,7 +116,9 @@ RT_C_DECLS_BEGIN
 
 /** Maximum request packet size. */
 #define VMMDEV_MAX_VMMDEVREQ_SIZE           _1M
-/** Maximum number of HGCM parameters. */
+/** Maximum number of HGCM parameters.
+ * @todo r=bird: This is wrong wrt user land calls. For them it iss 61.
+ *       See comments on VBGLIOCHGCMCALL::cParms. */
 #define VMMDEV_MAX_HGCM_PARMS               1024
 /** Maximum total size of hgcm buffers in one call. */
 #define VMMDEV_MAX_HGCM_DATA_SIZE           UINT32_C(0x7FFFFFFF)
@@ -136,15 +138,15 @@ typedef enum
     VMMDevReq_GetHostTime                = 10,
     VMMDevReq_GetHypervisorInfo          = 20,
     VMMDevReq_SetHypervisorInfo          = 21,
-    VMMDevReq_RegisterPatchMemory        = 22, /* since version 3.0.6 */
-    VMMDevReq_DeregisterPatchMemory      = 23, /* since version 3.0.6 */
+    VMMDevReq_RegisterPatchMemory        = 22, /**< @since version 3.0.6 */
+    VMMDevReq_DeregisterPatchMemory      = 23, /**< @since version 3.0.6 */
     VMMDevReq_SetPowerStatus             = 30,
     VMMDevReq_AcknowledgeEvents          = 41,
     VMMDevReq_CtlGuestFilterMask         = 42,
     VMMDevReq_ReportGuestInfo            = 50,
-    VMMDevReq_ReportGuestInfo2           = 58, /* since version 3.2.0 */
-    VMMDevReq_ReportGuestStatus          = 59, /* since version 3.2.8 */
-    VMMDevReq_ReportGuestUserState       = 74, /* since version 4.3 */
+    VMMDevReq_ReportGuestInfo2           = 58, /**< @since version 3.2.0 */
+    VMMDevReq_ReportGuestStatus          = 59, /**< @since version 3.2.8 */
+    VMMDevReq_ReportGuestUserState       = 74, /**< @since version 4.3 */
     /**
      * Retrieve a display resize request sent by the host using
      * @a IDisplay:setVideoModeHint.  Deprecated.
@@ -176,8 +178,8 @@ typedef enum
     VMMDevReq_GetDisplayChangeRequest2   = 54,
     VMMDevReq_ReportGuestCapabilities    = 55,
     VMMDevReq_SetGuestCapabilities       = 56,
-    VMMDevReq_VideoModeSupported2        = 57, /* since version 3.2.0 */
-    VMMDevReq_GetDisplayChangeRequestEx  = 80, /* since version 4.2.4 */
+    VMMDevReq_VideoModeSupported2        = 57, /**< @since version 3.2.0 */
+    VMMDevReq_GetDisplayChangeRequestEx  = 80, /**< @since version 4.2.4 */
 #ifdef VBOX_WITH_HGCM
     VMMDevReq_HGCMConnect                = 60,
     VMMDevReq_HGCMDisconnect             = 61,
@@ -209,7 +211,7 @@ typedef enum
     VMMDevReq_CheckSharedModules         = 214,
     VMMDevReq_GetPageSharingStatus       = 215,
     VMMDevReq_DebugIsPageShared          = 216,
-    VMMDevReq_GetSessionId               = 217, /* since version 3.2.8 */
+    VMMDevReq_GetSessionId               = 217, /**< @since version 3.2.8 */
     VMMDevReq_WriteCoreDump              = 218,
     VMMDevReq_GuestHeartbeat             = 219,
     VMMDevReq_HeartbeatConfigure         = 220,
@@ -244,23 +246,44 @@ typedef enum
 
 /**
  * Generic VMMDev request header.
+ *
+ * This structure is copied/mirrored by VBGLREQHDR in the VBoxGuest I/O control
+ * interface.  Changes there needs to be mirrored in it.
+ *
+ * @sa VBGLREQHDR
  */
 typedef struct
 {
-    /** IN: Size of the structure in bytes (including body). */
+    /** IN: Size of the structure in bytes (including body).
+     * (VBGLREQHDR uses this for input size and output if reserved1 is zero). */
     uint32_t size;
     /** IN: Version of the structure.  */
     uint32_t version;
-    /** IN: Type of the request. */
+    /** IN: Type of the request.
+     * @note VBGLREQHDR uses this for optional output size. */
     VMMDevRequestType requestType;
-    /** OUT: Return code. */
+    /** OUT: VBox status code. */
     int32_t  rc;
-    /** Reserved field no.1. MBZ. */
+    /** Reserved field no.1. MBZ.
+     * @note VBGLREQHDR uses this for optional output size, however never for a
+     *       real VMMDev request, only in the I/O control interface. */
     uint32_t reserved1;
     /** Reserved field no.2. MBZ. */
     uint32_t reserved2;
 } VMMDevRequestHeader;
 AssertCompileSize(VMMDevRequestHeader, 24);
+
+/** Initialize a VMMDevRequestHeader structure.
+ * Same as VBGLREQHDR_INIT_VMMDEV(). */
+#define VMMDEV_REQ_HDR_INIT(a_pHdr, a_cb, a_enmType) \
+    do { \
+        (a_pHdr)->size        = (a_cb); \
+        (a_pHdr)->version     = VMMDEV_REQUEST_HEADER_VERSION; \
+        (a_pHdr)->requestType = (a_enmType); \
+        (a_pHdr)->rc          = VERR_INTERNAL_ERROR; \
+        (a_pHdr)->reserved1   = 0; \
+        (a_pHdr)->reserved2   = 0; \
+    } while (0)
 
 
 /**

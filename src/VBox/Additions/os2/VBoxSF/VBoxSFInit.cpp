@@ -63,7 +63,7 @@ RT_C_DECLS_END
  *
  * The caller will do the necessary AttachDD and calling of the 16 bit
  * IDC to initialize the g_VBoxGuestIDC global. Perhaps we should move
- * this bit to VbglInitClient? It's just that it's so much simpler to do it
+ * this bit to VbglR0InitClient? It's just that it's so much simpler to do it
  * while we're on the way here...
  *
  */
@@ -82,7 +82,7 @@ DECLASM(void) VBoxSFR0Init(void)
         int rc = RTR0Init(0);
         if (RT_SUCCESS(rc))
         {
-            rc = VbglInitClient();
+            rc = VbglR0InitClient();
             if (RT_SUCCESS(rc))
             {
 #ifndef DONT_LOCK_SEGMENTS

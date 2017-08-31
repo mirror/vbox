@@ -47,45 +47,36 @@
 VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cch)
 {
     /*
-     * Quietly skip NULL strings.
+     * Quietly skip empty strings.
      * (Happens in the RTLogBackdoorPrintf case.)
      */
-    if (!cch)
-        return VINF_SUCCESS;
-    if (!VALID_PTR(pch))
-        return VERR_INVALID_POINTER;
-
-#ifdef RT_OS_WINDOWS
-    /*
-     * Duplicate the string as it may be read only (a C string).
-     */
-    void *pvTmp = RTMemDup(pch, cch);
-    if (!pvTmp)
-        return VERR_NO_MEMORY;
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cch), pvTmp, cch);
-    RTMemFree(pvTmp);
-    return rc;
-
-#elif 0 /** @todo Several OSes could take this route (solaris and freebsd for instance). */
-    /*
-     * Handle the entire request in one go.
-     */
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cch), pvTmp, cch);
-
-#else
-    /*
-     * *BSD does not accept more than 4KB per ioctl request, while
-     * Linux can't express sizes above 8KB, so, split it up into 2KB chunks.
-     */
-# define STEP 2048
-    int rc = VINF_SUCCESS;
-    for (size_t off = 0; off < cch && RT_SUCCESS(rc); off += STEP)
+    int rc;
+    if (cch > 0)
     {
-        size_t cbStep = RT_MIN(cch - off, STEP);
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cbStep), (char *)pch + off, cbStep);
+        if (RT_VALID_PTR(pch))
+        {
+            /*
+             * We need to repackage the string for ring-0.
+             */
+            size_t      cbMsg = VBGL_IOCTL_LOG_SIZE(cch);
+            PVBGLIOCLOG pMsg  = (PVBGLIOCLOG)RTMemTmpAlloc(cbMsg);
+            if (pMsg)
+            {
+                VBGLREQHDR_INIT_EX(&pMsg->Hdr, VBGL_IOCTL_LOG_SIZE_IN(cch), VBGL_IOCTL_LOG_SIZE_OUT);
+                memcpy(pMsg->u.In.szMsg, pch, cch);
+                pMsg->u.In.szMsg[cch] = '\0';
+                rc = vbglR3DoIOCtl(VBGL_IOCTL_LOG(cch), &pMsg->Hdr, cbMsg);
+
+                RTMemTmpFree(pMsg);
+            }
+            else
+                rc = VERR_NO_TMP_MEMORY;
+        }
+        else
+            rc = VERR_INVALID_POINTER;
     }
-# undef STEP
+    else
+        rc = VINF_SUCCESS;
     return rc;
-#endif
 }
 

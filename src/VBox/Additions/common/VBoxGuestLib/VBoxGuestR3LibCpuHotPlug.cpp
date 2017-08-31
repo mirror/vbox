@@ -88,16 +88,12 @@ VBGLR3DECL(int) VbglR3CpuHotPlugWaitForEvent(VMMDevCpuEventType *penmEventType, 
     AssertPtrReturn(pidCpuCore, VERR_INVALID_POINTER);
     AssertPtrReturn(pidCpuPackage, VERR_INVALID_POINTER);
 
-    VBoxGuestWaitEventInfo waitEvent;
-    waitEvent.u32TimeoutIn = RT_INDEFINITE_WAIT;
-    waitEvent.u32EventMaskIn = VMMDEV_EVENT_CPU_HOTPLUG;
-    waitEvent.u32Result = VBOXGUEST_WAITEVENT_ERROR;
-    waitEvent.u32EventFlagsOut = 0;
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
+    uint32_t fEvents = 0;
+    int rc = VbglR3WaitEvent(VMMDEV_EVENT_CPU_HOTPLUG, RT_INDEFINITE_WAIT, &fEvents);
     if (RT_SUCCESS(rc))
     {
         /* did we get the right event? */
-        if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_CPU_HOTPLUG)
+        if (fEvents & VMMDEV_EVENT_CPU_HOTPLUG)
         {
             VMMDevGetCpuHotPlugRequest Req;
 
@@ -118,6 +114,8 @@ VBGLR3DECL(int) VbglR3CpuHotPlugWaitForEvent(VMMDevCpuEventType *penmEventType, 
         else
             rc = VERR_TRY_AGAIN;
     }
+    else if (rc == VERR_TIMEOUT) /* just in case */
+        rc = VERR_TRY_AGAIN;
     return rc;
 }
 

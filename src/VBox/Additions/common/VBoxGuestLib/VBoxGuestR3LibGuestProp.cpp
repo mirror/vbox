@@ -867,9 +867,7 @@ VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
     Msg.timestamp.SetUInt64(u64Timestamp);
     Msg.size.SetUInt32(0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL_TIMED(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-        rc = Msg.hdr.info.result;
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 
     /*
      * The cbBufActual parameter is also returned on overflow so the caller can

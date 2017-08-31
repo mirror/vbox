@@ -1026,11 +1026,12 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
  * @param   pDevExt   Pointer to the device extension.
  * @param   pNotify   Pointer to the mouse notify struct.
  */
-int VGDrvNativeSetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, VBoxGuestMouseSetNotifyCallback *pNotify)
+int VGDrvNativeSetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, PVBGLIOCSETMOUSENOTIFYCALLBACK pNotify)
 {
     /* Take the mutex here so as to not race with VGDrvCommonISR() which invokes the mouse notify callback. */
     mutex_enter(&g_IrqMtx);
-    pDevExt->MouseNotifyCallback = *pNotify;
+    pDevExt->pfnMouseNotifyCallback   = pNotify->u.In.pfnNotify;
+    pDevExt->pvMouseNotifyCallbackArg = pNotify->u.In.pvUser;
     mutex_exit(&g_IrqMtx);
     return VINF_SUCCESS;
 }

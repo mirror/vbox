@@ -1,3 +1,4 @@
+#if 0 /* dead */
 /* $Id$ */
 /** @file
  * VBoxGuestLibR0 - IDC with VBoxGuest and HGCM helpers.
@@ -27,127 +28,12 @@
 #define LOG_GROUP LOG_GROUP_HGCM
 #include <VBox/log.h>
 
+#include "SysHlp.h"   /* Must be included before VBoxGuest.h */
 #include <VBox/VBoxGuestLib.h>
-#include "SysHlp.h"
 
 #include <iprt/assert.h>
 
-#ifdef VBGL_VBOXGUEST
-
-#if !defined (RT_OS_WINDOWS)
-# include <iprt/memobj.h>
-# include <iprt/mem.h>
-#endif
-
-
-/**
- * Internal worker for locking a range of linear addresses.
- *
- * @returns VBox status code.
- * @param   ppvCtx          Where to store context data.
- * @param   pv              The start of the range.
- * @param   u32Size         The size of the range.
- * @param   fWriteAccess    Lock for read-write (true) or readonly (false).
- * @param   fFlags          HGCM call flags, VBGLR0_HGCM_F_XXX.
- */
-int vbglLockLinear(void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess, uint32_t fFlags)
-{
-    int         rc      = VINF_SUCCESS;
-#ifndef RT_OS_WINDOWS
-    RTR0MEMOBJ  MemObj  = NIL_RTR0MEMOBJ;
-    uint32_t    fAccess = RTMEM_PROT_READ | (fWriteAccess ? RTMEM_PROT_WRITE : 0);
-#endif
-
-    /* Zero size buffers shouldn't be locked. */
-    if (u32Size == 0)
-    {
-        Assert(pv == NULL);
-#ifdef RT_OS_WINDOWS
-        *ppvCtx = NULL;
-#else
-        *ppvCtx = NIL_RTR0MEMOBJ;
-#endif
-        return VINF_SUCCESS;
-    }
-
-    /** @todo just use IPRT here. the extra allocation shouldn't matter much...
-     *        Then we can move all this up one level even. */
-#ifdef RT_OS_WINDOWS
-    PMDL pMdl = IoAllocateMdl(pv, u32Size, FALSE, FALSE, NULL);
-
-    if (pMdl == NULL)
-    {
-        rc = VERR_NOT_SUPPORTED;
-        AssertMsgFailed(("IoAllocateMdl %p %x failed!!\n", pv, u32Size));
-    }
-    else
-    {
-        __try {
-            /* Calls to MmProbeAndLockPages must be enclosed in a try/except block. */
-            RT_NOREF1(fFlags);  /** @todo fFlags on windows */
-            MmProbeAndLockPages(pMdl,
-                                /** @todo (fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER? UserMode: KernelMode */
-                                KernelMode,
-                                (fWriteAccess) ? IoModifyAccess : IoReadAccess);
-
-            *ppvCtx = pMdl;
-
-        } __except(EXCEPTION_EXECUTE_HANDLER) {
-
-            IoFreeMdl(pMdl);
-            /** @todo  */
-            rc = VERR_INVALID_PARAMETER;
-            AssertMsgFailed(("MmProbeAndLockPages %p %x failed!!\n", pv, u32Size));
-        }
-    }
-
-#else
-    /*
-     * Lock depending on context.
-     *
-     * Note: We will later use the memory object here to convert the HGCM
-     *       linear buffer parameter into a physical page list. This is why
-     *       we lock both kernel pages on all systems, even those where we
-     *       know they aren't pageable.
-     */
-    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
-        rc = RTR0MemObjLockUser(&MemObj, (RTR3PTR)pv, u32Size, fAccess, NIL_RTR0PROCESS);
-    else
-        rc = RTR0MemObjLockKernel(&MemObj, pv, u32Size, fAccess);
-    if (RT_SUCCESS(rc))
-        *ppvCtx = MemObj;
-    else
-        *ppvCtx = NIL_RTR0MEMOBJ;
-
-#endif
-
-    return rc;
-}
-
-void vbglUnlockLinear(void *pvCtx, void *pv, uint32_t u32Size)
-{
-#ifdef RT_OS_WINDOWS
-    PMDL pMdl = (PMDL)pvCtx;
-
-    Assert(pMdl);
-    if (pMdl != NULL)
-    {
-        MmUnlockPages(pMdl);
-        IoFreeMdl(pMdl);
-    }
-
-#else
-    RTR0MEMOBJ MemObj = (RTR0MEMOBJ)pvCtx;
-    int rc = RTR0MemObjFree(MemObj, false);
-    AssertRC(rc);
-
-#endif
-
-    NOREF(pv);
-    NOREF(u32Size);
-}
-
-#else  /* !VBGL_VBOXGUEST */
+#ifndef VBGL_VBOXGUEST
 
 # ifdef RT_OS_OS2
 #  include <VBox/VBoxGuest.h> /* for VBOXGUESTOS2IDCCONNECT */
@@ -342,4 +228,4 @@ void vbglDriverClose(VBGLDRIVER *pDriver)
 }
 
 #endif /* !VBGL_VBOXGUEST */
-
+#endif

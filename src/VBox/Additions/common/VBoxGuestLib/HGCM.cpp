@@ -141,29 +141,29 @@ DECLVBGL(int) VbglR0HGCMConnect(VBGLHGCMHANDLE *pHandle, const char *pszServiceN
         struct VBGLHGCMHANDLEDATA *pHandleData = vbglR0HGCMHandleAlloc();
         if (pHandleData)
         {
-            rc = vbglDriverOpen(&pHandleData->driver);
+            rc = VbglR0IdcOpen(&pHandleData->IdcHandle,
+                               VBGL_IOC_VERSION /*uReqVersion*/,
+                               VBGL_IOC_VERSION & UINT32_C(0xffff0000) /*uMinVersion*/,
+                               NULL /*puSessionVersion*/, NULL /*puDriverVersion*/, NULL /*uDriverRevision*/);
             if (RT_SUCCESS(rc))
             {
-                VBoxGuestHGCMConnectInfo Info;
+                VBGLIOCHGCMCONNECT Info;
                 RT_ZERO(Info);
-                Info.result       = VINF_SUCCESS;
-                Info.u32ClientID  = 0;
-                Info.Loc.type     = VMMDevHGCMLoc_LocalHost_Existing;
-                rc = RTStrCopy(Info.Loc.u.host.achName, sizeof(Info.Loc.u.host.achName), pszServiceName);
+                VBGLREQHDR_INIT(&Info.Hdr, HGCM_CONNECT);
+                Info.u.In.Loc.type     = VMMDevHGCMLoc_LocalHost_Existing;
+                rc = RTStrCopy(Info.u.In.Loc.u.host.achName, sizeof(Info.u.In.Loc.u.host.achName), pszServiceName);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = vbglDriverIOCtl(&pHandleData->driver, VBOXGUEST_IOCTL_HGCM_CONNECT, &Info, sizeof(Info));
-                    if (RT_SUCCESS(rc))
-                        rc = Info.result;
+                    rc = VbglR0IdcCall(&pHandleData->IdcHandle, VBGL_IOCTL_HGCM_CONNECT, &Info.Hdr, sizeof(Info));
                     if (RT_SUCCESS(rc))
                     {
-                        *pidClient = Info.u32ClientID;
+                        *pidClient = Info.u.Out.idClient;
                         *pHandle   = pHandleData;
                         return rc;
                     }
                 }
 
-                vbglDriverClose(&pHandleData->driver);
+                VbglR0IdcClose(&pHandleData->IdcHandle);
             }
 
             vbglR0HGCMHandleFree(pHandleData);
@@ -179,48 +179,44 @@ DECLVBGL(int) VbglR0HGCMConnect(VBGLHGCMHANDLE *pHandle, const char *pszServiceN
 DECLVBGL(int) VbglR0HGCMDisconnect(VBGLHGCMHANDLE handle, HGCMCLIENTID idClient)
 {
     int rc;
-    VBoxGuestHGCMDisconnectInfo Info;
+    VBGLIOCHGCMDISCONNECT Info;
 
     RT_ZERO(Info);
-    Info.result      = VINF_SUCCESS;
-    Info.u32ClientID = idClient;
-    rc = vbglDriverIOCtl(&handle->driver, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &Info, sizeof(Info));
+    VBGLREQHDR_INIT(&Info.Hdr, HGCM_DISCONNECT);
+    Info.u.In.idClient = idClient;
+    rc = VbglR0IdcCall(&handle->IdcHandle, VBGL_IOCTL_HGCM_DISCONNECT, &Info.Hdr, sizeof(Info));
 
-    vbglDriverClose(&handle->driver);
+    VbglR0IdcClose(&handle->IdcHandle);
 
     vbglR0HGCMHandleFree(handle);
 
     return rc;
 }
 
-DECLVBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData, uint32_t cbData)
+DECLVBGL(int) VbglR0HGCMCallRaw(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint32_t cbData)
 {
-    VBGL_HGCM_ASSERT_MSG(cbData >= sizeof(VBoxGuestHGCMCallInfo) + pData->cParms * sizeof(HGCMFunctionParameter),
+    VBGL_HGCM_ASSERT_MSG(cbData >= sizeof(VBGLIOCHGCMCALL) + pData->cParms * sizeof(HGCMFunctionParameter),
                          ("cbData = %d, cParms = %d (calculated size %d)\n", cbData, pData->cParms,
-                          sizeof(VBoxGuestHGCMCallInfo) + pData->cParms * sizeof(VBoxGuestHGCMCallInfo)));
+                          sizeof(VBGLIOCHGCMCALL) + pData->cParms * sizeof(VBGLIOCHGCMCALL)));
 
-    return vbglDriverIOCtl(&handle->driver, VBOXGUEST_IOCTL_HGCM_CALL(cbData), pData, cbData);
+    return VbglR0IdcCallRaw(&handle->IdcHandle, VBGL_IOCTL_HGCM_CALL(cbData), &pData->Hdr, cbData);
 }
 
-DECLVBGL(int) VbglR0HGCMCallUserData(VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData, uint32_t cbData)
+DECLVBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint32_t cbData)
 {
-    VBGL_HGCM_ASSERT_MSG(cbData >= sizeof(VBoxGuestHGCMCallInfo) + pData->cParms * sizeof(HGCMFunctionParameter),
-                         ("cbData = %d, cParms = %d (calculated size %d)\n", cbData, pData->cParms,
-                          sizeof(VBoxGuestHGCMCallInfo) + pData->cParms * sizeof(VBoxGuestHGCMCallInfo)));
-
-    return vbglDriverIOCtl(&handle->driver, VBOXGUEST_IOCTL_HGCM_CALL_USERDATA(cbData), pData, cbData);
+    int rc = VbglR0HGCMCallRaw(handle, pData, cbData);
+    if (RT_SUCCESS(rc))
+        rc = pData->Hdr.rc;
+    return rc;
 }
 
-
-DECLVBGL(int) VbglR0HGCMCallTimed(VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfoTimed *pData, uint32_t cbData)
+DECLVBGL(int) VbglR0HGCMCallUserDataRaw(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint32_t cbData)
 {
-    uint32_t cbExpected = sizeof(VBoxGuestHGCMCallInfoTimed)
-                        + pData->info.cParms * sizeof(HGCMFunctionParameter);
-    VBGL_HGCM_ASSERT_MSG(cbData >= cbExpected,
-                         ("cbData = %d, cParms = %d (calculated size %d)\n", cbData, pData->info.cParms, cbExpected));
-    NOREF(cbExpected);
+    VBGL_HGCM_ASSERT_MSG(cbData >= sizeof(VBGLIOCHGCMCALL) + pData->cParms * sizeof(HGCMFunctionParameter),
+                         ("cbData = %d, cParms = %d (calculated size %d)\n", cbData, pData->cParms,
+                          sizeof(VBGLIOCHGCMCALL) + pData->cParms * sizeof(VBGLIOCHGCMCALL)));
 
-    return vbglDriverIOCtl(&handle->driver, VBOXGUEST_IOCTL_HGCM_CALL_TIMED(cbData), pData, cbData);
+    return VbglR0IdcCallRaw(&handle->IdcHandle, VBGL_IOCTL_HGCM_CALL_WITH_USER_DATA(cbData), &pData->Hdr, cbData);
 }
 
 #endif /* !VBGL_VBOXGUEST */

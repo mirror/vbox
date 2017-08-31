@@ -29,6 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "VBGLR3Internal.h"
+#include <iprt/string.h>
 
 
 /**
@@ -40,13 +41,13 @@
  */
 VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pcChunks, bool *pfHandleInR3)
 {
-    VBoxGuestCheckBalloonInfo Info;
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_CHECK_BALLOON, &Info, sizeof(Info));
+    VBGLIOCCHECKBALLOON Info;
+    VBGLREQHDR_INIT(&Info.Hdr, CHECK_BALLOON);
+    int rc = vbglR3DoIOCtl(VBGL_IOCTL_CHECK_BALLOON, &Info.Hdr, sizeof(Info));
     if (RT_SUCCESS(rc))
     {
-        *pcChunks = Info.cBalloonChunks;
-        Assert(Info.fHandleInR3 == (uint32_t)false || Info.fHandleInR3 == (uint32_t)true || RT_FAILURE(rc));
-        *pfHandleInR3 = Info.fHandleInR3 != false;
+        *pcChunks = Info.u.Out.cBalloonChunks;
+        *pfHandleInR3 = Info.u.Out.fHandleInR3 != false;
     }
     return rc;
 }
@@ -62,9 +63,11 @@ VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pcChunks, bool *pfHandleInR3)
  */
 VBGLR3DECL(int) VbglR3MemBalloonChange(void *pv, bool fInflate)
 {
-    VBoxGuestChangeBalloonInfo Info;
-    Info.u64ChunkAddr = (uint64_t)((uintptr_t)pv);
-    Info.fInflate = fInflate;
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CHANGE_BALLOON, &Info, sizeof(Info));
+    VBGLIOCCHANGEBALLOON Info;
+    VBGLREQHDR_INIT(&Info.Hdr, CHANGE_BALLOON);
+    Info.u.In.pvChunk  = pv;
+    Info.u.In.fInflate = fInflate;
+    RT_ZERO(Info.u.In.abPadding);
+    return vbglR3DoIOCtl(VBGL_IOCTL_CHANGE_BALLOON, &Info.Hdr, sizeof(Info));
 }
 

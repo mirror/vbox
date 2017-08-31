@@ -1698,17 +1698,19 @@ static DECLCALLBACK(RTEXITCODE) handleWriteCoreDump(int argc, char *argv[])
  */
 static DECLCALLBACK(RTEXITCODE) handleDpc(int argc, char *argv[])
 {
+    RT_NOREF(argc,  argv);
+    int rc = VERR_NOT_IMPLEMENTED;
 # ifndef VBOX_CONTROL_TEST
-    int rc;
     for (int i = 0; i < 30; i++)
     {
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_DPC_LATENCY_CHECKER, NULL, 0);
-        if (RT_FAILURE(rc))
+        VBGLREQHDR Req;
+        VBGLREQHDR_INIT(&Req, DPC_LATENCY_CHECKER);
+        rc = vbglR3DoIOCtl(VBGL_IOCTL_DPC_LATENCY_CHECKER, &Req, sizeof(Req));
+        if (RT_SUCCESS(rc))
+            RTPrintf("%d\n", i);
+        else
             break;
-        RTPrintf("%d\n", i);
     }
-# else
-    int rc = VERR_NOT_IMPLEMENTED;
 # endif
     if (RT_FAILURE(rc))
         return VBoxControlError("Error. rc=%Rrc\n", rc);

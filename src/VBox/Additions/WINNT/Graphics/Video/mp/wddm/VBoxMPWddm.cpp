@@ -2131,7 +2131,7 @@ VOID DxgkDdiUnload(
 
     vboxVDbgBreakFv();
 
-    VbglTerminate();
+    VbglR0TerminateClient();
 
 #ifdef VBOX_WITH_CROGL
     VBoxVrTerm();
@@ -7607,7 +7607,7 @@ DriverEntry(
 
     NTSTATUS Status = STATUS_SUCCESS;
     /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
-    int rc = VbglInitClient();
+    int rc = VbglR0InitClient();
     if (RT_SUCCESS(rc))
     {
         if (major > 6)
@@ -7717,11 +7717,11 @@ DriverEntry(
         else
             LOGREL(("Aborting the video driver load due to 3D support missing"));
 
-        VbglTerminate();
+        VbglR0TerminateClient();
     }
     else
     {
-        WARN(("VbglInitClient failed, rc(%d)", rc));
+        WARN(("VbglR0InitClient failed, rc(%d)", rc));
         Status = STATUS_UNSUCCESSFUL;
     }
 

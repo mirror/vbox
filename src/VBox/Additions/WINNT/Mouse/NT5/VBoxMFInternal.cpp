@@ -147,13 +147,18 @@ static BOOLEAN vboxNewProtIsEnabled()
 
 static NTSTATUS vboxNewProtRegisterMouseEventCb(BOOLEAN fRegister)
 {
-    VBoxGuestMouseSetNotifyCallback CbInfo = {};
-    CbInfo.pfnNotify = fRegister ? vboxNewProtMouseEventCb : NULL;
+    VBGLIOCSETMOUSENOTIFYCALLBACK Info;
+    VBGLREQHDR_INIT(&Info.Hdr, SET_MOUSE_NOTIFY_CALLBACK);
+    Info.u.In.pfnNotify = fRegister ? vboxNewProtMouseEventCb : NULL;
+    Info.u.In.pvUser    = NULL;
 
-    NTSTATUS Status = vboxGdcSubmit(VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK, &CbInfo, sizeof (CbInfo));
+    NTSTATUS Status = vboxGdcSubmit(VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK, &Info, sizeof(Info));
     if (!NT_SUCCESS(Status))
-    {
         WARN(("vboxGdcSubmit failed Status(0x%x)", Status));
+    else if (RT_FAILURE(Info.Hdr.rc))
+    {
+        WARN(("VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK failed: rc=%Rrc", Info.Hdr.rc));
+        Status = STATUS_UNSUCCESSFUL;
     }
     return Status;
 }
@@ -326,8 +331,7 @@ VOID VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
     {
         if (!vboxIsVBGLInited() && !vboxIsVBGLInitFailed())
         {
-            int rc = VbglInitClient();
-
+            int rc = VbglR0InitClient();
             if (RT_SUCCESS(rc))
             {
                 InterlockedExchange(&g_ctx.fVBGLInited, TRUE);
@@ -539,7 +543,7 @@ VOID VBoxDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt)
             /* Set the flag to prevent reinitializing of the VBGL. */
             InterlockedExchange(&g_ctx.fVBGLInitFailed, TRUE);
 
-            VbglTerminate();
+            VbglR0TerminateClient();
 
             /* The VBGL is now in the not initialized state. */
             InterlockedExchange(&g_ctx.fVBGLInited, FALSE);

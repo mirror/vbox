@@ -230,7 +230,7 @@ static void WriteLog(const char *pszFormat, ...)
         __debugbreak();
 
     DWORD cbReturned;
-    DeviceIoControl(hVBoxGuest, VBOXGUEST_IOCTL_VMMREQUEST(s_uBuf.Req.size),
+    DeviceIoControl(hVBoxGuest, VBGL_IOCTL_VMMDEV_REQUEST(s_uBuf.Req.size),
                     &s_uBuf.Req, s_uBuf.Req.header.size,
                     &s_uBuf.Req, s_uBuf.Req.header.size,
                     &cbReturned, NULL);

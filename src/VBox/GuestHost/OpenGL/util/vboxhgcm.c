@@ -580,7 +580,7 @@ static bool _crVBoxHGCMWriteBytes(CRConnection *conn, const void *buf, uint32_t 
  * @param   pvData      Data pointer
  * @param   cbData      Data size
  */
-static int crVBoxHGCMCall(CRConnection *conn, VBoxGuestHGCMCallInfo *pData, unsigned cbData)
+static int crVBoxHGCMCall(CRConnection *conn, PVBGLIOCHGCMCALL pData, unsigned cbData)
 {
 #ifdef IN_GUEST
     int rc;
@@ -704,7 +704,7 @@ static void _crVBoxHGCMWriteExact(CRConnection *conn, const void *buf, unsigned 
         parms.pBuffer.u.Pointer.u.linearAddr = (uintptr_t) buf;
 
         rc = crVBoxHGCMCall(conn, &parms.hdr, sizeof(parms));
-        callRes = parms.hdr.result;
+        callRes = parms.hdr.Hdr.rc;
     }
     else
 #endif
@@ -718,7 +718,7 @@ static void _crVBoxHGCMWriteExact(CRConnection *conn, const void *buf, unsigned 
         parms.pBuffer.u.Pointer.u.linearAddr = (uintptr_t) buf;
 
         rc = crVBoxHGCMCall(conn, &parms.hdr, sizeof(parms));
-        callRes = parms.hdr.result;
+        callRes = parms.hdr.Hdr.rc;
     }
 
     if (RT_FAILURE(rc) || RT_FAILURE(callRes))
@@ -758,9 +758,9 @@ static void crVBoxHGCMReadExact( CRConnection *conn, const void *buf, unsigned i
 
     rc = crVBoxHGCMCall(conn, &parms.hdr, sizeof(parms));
 
-    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
+    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.Hdr.rc))
     {
-        crWarning("SHCRGL_GUEST_FN_READ failed with %x %x\n", rc, parms.hdr.result);
+        crWarning("SHCRGL_GUEST_FN_READ failed with %x %x\n", rc, parms.hdr.Hdr.rc);
         return;
     }
 
@@ -834,9 +834,9 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
             crDebug("SHCRGL_GUEST_FN_WRITE_BUFFER, offset=%u, size=%u", wbParms.ui32Offset.u.value32, wbParms.pBuffer.u.Pointer.size);
 
             rc = crVBoxHGCMCall(conn, &wbParms.hdr, sizeof(wbParms));
-            if (RT_FAILURE(rc) || RT_FAILURE(wbParms.hdr.result))
+            if (RT_FAILURE(rc) || RT_FAILURE(wbParms.hdr.Hdr.rc))
             {
-                crError("SHCRGL_GUEST_FN_WRITE_BUFFER (%i) failed with %x %x\n", wbParms.pBuffer.u.Pointer.size, rc, wbParms.hdr.result);
+                crError("SHCRGL_GUEST_FN_WRITE_BUFFER (%i) failed with %x %x\n", wbParms.pBuffer.u.Pointer.size, rc, wbParms.hdr.Hdr.rc);
                 return;
             }
 
@@ -858,17 +858,17 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
             rc = crVBoxHGCMCall(conn, &wrbParms.hdr, sizeof(wrbParms));
 
             /*bit of hack to reuse code below*/
-            parms.hdr.result = wrbParms.hdr.result;
+            parms.hdr.Hdr.rc = wrbParms.hdr.Hdr.rc;
             crMemcpy(&parms.cbWriteback, &wrbParms.cbWriteback, sizeof(HGCMFunctionParameter));
             crMemcpy(&parms.pWriteback, &wrbParms.pWriteback, sizeof(HGCMFunctionParameter));
         }
     }
 #endif
 
-    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
+    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.Hdr.rc))
     {
 
-        if ((VERR_BUFFER_OVERFLOW == parms.hdr.result) && RT_SUCCESS(rc))
+        if ((VERR_BUFFER_OVERFLOW == parms.hdr.Hdr.rc) && RT_SUCCESS(rc))
         {
             /* reallocate buffer and retry */
 
@@ -886,7 +886,7 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
         }
         else
         {
-            crWarning("SHCRGL_GUEST_FN_WRITE_READ (%i) failed with %x %x\n", len, rc, parms.hdr.result);
+            crWarning("SHCRGL_GUEST_FN_WRITE_READ (%i) failed with %x %x\n", len, rc, parms.hdr.Hdr.rc);
             return;
         }
     }
@@ -990,9 +990,9 @@ static void crVBoxHGCMPollHost(CRConnection *conn)
 
     rc = crVBoxHGCMCall(conn, &parms.hdr, sizeof(parms));
 
-    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
+    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.Hdr.rc))
     {
-        crDebug("SHCRGL_GUEST_FN_READ failed with %x %x\n", rc, parms.hdr.result);
+        crDebug("SHCRGL_GUEST_FN_READ failed with %x %x\n", rc, parms.hdr.Hdr.rc);
         return;
     }
 
@@ -1193,7 +1193,7 @@ static int crVBoxHGCMSetVersion(CRConnection *conn, unsigned int vMajor, unsigne
 
     if (RT_SUCCESS(rc))
     {
-        rc =  parms.hdr.result;
+        rc =  parms.hdr.Hdr.rc;
         if (RT_SUCCESS(rc))
         {
             conn->vMajor = CR_PROTOCOL_VERSION_MAJOR;
@@ -1225,7 +1225,7 @@ static int crVBoxHGCMGetHostCapsLegacy(CRConnection *conn, uint32_t *pu32HostCap
 
     if (RT_SUCCESS(rc))
     {
-        rc =  caps.hdr.result;
+        rc = caps.hdr.Hdr.rc;
         if (RT_SUCCESS(rc))
         {
             *pu32HostCaps = caps.Caps.u.value32;
@@ -1250,12 +1250,12 @@ static int crVBoxHGCMSetPID(CRConnection *conn, unsigned long long pid)
 
     VBGL_HGCM_HDR_INIT(&parms.hdr, conn->u32ClientID, SHCRGL_GUEST_FN_SET_PID, SHCRGL_CPARMS_SET_PID);
 
-    parms.u64PID.type     = VMMDevHGCMParmType_64bit;
+    parms.u64PID.type      = VMMDevHGCMParmType_64bit;
     parms.u64PID.u.value64 = pid;
 
     rc = crVBoxHGCMCall(conn, &parms.hdr, sizeof(parms));
 
-    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
+    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.Hdr.rc))
     {
         crWarning("SHCRGL_GUEST_FN_SET_PID failed!");
         return FALSE;
@@ -1272,7 +1272,7 @@ static int crVBoxHGCMSetPID(CRConnection *conn, unsigned long long pid)
 static int crVBoxHGCMDoConnect( CRConnection *conn )
 {
 #ifdef IN_GUEST
-            int rc;
+    int rc;
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
     rc = VbglR3InitUser();
     if (RT_SUCCESS(rc))
@@ -1740,7 +1740,7 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
             rc = parms->hdr.result;
 #ifdef DEBUG_misha
             /* catch it here to test the buffer */
-            Assert(RT_SUCCESS(parms->hdr.result) || parms->hdr.result == VERR_BUFFER_OVERFLOW);
+            Assert(RT_SUCCESS(parms->hdr.Hdr.rc) || parms->hdr.Hdr.rc == VERR_BUFFER_OVERFLOW);
 #endif
             _crVBoxHGSMICmdBufferUnlock(pClient);
 #ifdef DEBUG

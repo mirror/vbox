@@ -50,43 +50,34 @@
  */
 VBGLR3DECL(int) VbglR3WaitEvent(uint32_t fMask, uint32_t cMillies, uint32_t *pfEvents)
 {
-    LogFlow(("VbglR3WaitEvent: fMask=0x%x, cMillies=%u, pfEvents=%p\n",
-             fMask, cMillies, pfEvents));
+    LogFlow(("VbglR3WaitEvent: fMask=%#x, cMillies=%u, pfEvents=%p\n", fMask, cMillies, pfEvents));
     AssertReturn((fMask & ~VMMDEV_EVENT_VALID_EVENT_MASK) == 0, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pfEvents, VERR_INVALID_POINTER);
 
-    VBoxGuestWaitEventInfo waitEvent;
-    waitEvent.u32TimeoutIn = cMillies;
-    waitEvent.u32EventMaskIn = fMask;
-    waitEvent.u32Result = VBOXGUEST_WAITEVENT_ERROR;
-    waitEvent.u32EventFlagsOut = 0;
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
-    if (RT_SUCCESS(rc))
+    VBGLIOCWAITFOREVENTS WaitEvents;
+    VBGLREQHDR_INIT(&WaitEvents.Hdr, WAIT_FOR_EVENTS);
+    WaitEvents.u.In.fEvents     = fMask;
+    WaitEvents.u.In.cMsTimeOut  = cMillies;
+    int rc = vbglR3DoIOCtl(VBGL_IOCTL_WAIT_FOR_EVENTS, &WaitEvents.Hdr, sizeof(WaitEvents));
+    if (pfEvents)
     {
-        /*
-         * If a guest requests for an event which is not available on the host side
-         * (because of an older host version, a disabled feature or older Guest Additions),
-         * don't trigger an assertion here even in debug builds - would be annoying.
-         */
-#if 0
-        AssertMsg(waitEvent.u32Result == VBOXGUEST_WAITEVENT_OK, ("%d rc=%Rrc\n", waitEvent.u32Result, rc));
-#endif
-        if (pfEvents)
-            *pfEvents = waitEvent.u32EventFlagsOut;
+        if (RT_SUCCESS(rc))
+            *pfEvents = WaitEvents.u.Out.fEvents;
+        else
+            *pfEvents = 0;
     }
 
-    LogFlow(("VbglR3WaitEvent: rc=%Rrc, u32EventFlagsOut=0x%x. u32Result=%d\n",
-             rc, waitEvent.u32EventFlagsOut, waitEvent.u32Result));
+    LogFlow(("VbglR3WaitEvent: rc=%Rrc fEvents=%#x\n", rc, WaitEvents.u.Out.fEvents));
     return rc;
 }
 
 
 /**
- * Cause any pending WaitEvent calls (VBOXGUEST_IOCTL_WAITEVENT) to return
- * with a VERR_INTERRUPTED status.
+ * Causes any pending VbglR3WaitEvent calls (VBGL_IOCTL_WAIT_FOR_EVENTS) to
+ * return with a VERR_INTERRUPTED status.
  *
  * Can be used in combination with a termination flag variable for interrupting
- * event loops.  After calling this, VBOXGUEST_IOCTL_WAITEVENT should no longer
+ * event loops.  After calling this, VBGL_IOCTL_WAIT_FOR_EVENTS should no longer
  * be called in the same session.  At the time of writing this is not enforced;
  * at the time of reading it may be.
  *
@@ -94,6 +85,8 @@ VBGLR3DECL(int) VbglR3WaitEvent(uint32_t fMask, uint32_t cMillies, uint32_t *pfE
  */
 VBGLR3DECL(int) VbglR3InterruptEventWaits(void)
 {
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS, 0, 0);
+    VBGLREQHDR Req;
+    VBGLREQHDR_INIT(&Req, INTERRUPT_ALL_WAIT_FOR_EVENTS);
+    return vbglR3DoIOCtl(VBGL_IOCTL_INTERRUPT_ALL_WAIT_FOR_EVENTS, &Req, sizeof(Req));
 }
 

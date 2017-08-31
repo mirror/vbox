@@ -848,17 +848,8 @@ static int vboxMpCrCtlConSetVersion(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32Clie
 
     rc = VbglR0CrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
     if (RT_FAILURE(rc))
-    {
-        WARN(("vboxCrCtlConCall failed, rc (%d)", rc));
-        return rc;
-    }
-
-    if (RT_FAILURE(parms.hdr.result))
-    {
-        WARN(("version validation failed, rc (%d)", parms.hdr.result));
-        return parms.hdr.result;
-    }
-    return VINF_SUCCESS;
+        WARN(("vboxCrCtlConCall/SET_VERSION failed, rc = %Rrc", rc));
+    return rc;
 }
 
 static int vboxMpCrCtlConGetCapsLegacy(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID, uint32_t *pu32Caps)
@@ -876,14 +867,8 @@ static int vboxMpCrCtlConGetCapsLegacy(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32C
     rc = VbglR0CrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
     if (RT_FAILURE(rc))
     {
-        WARN(("vboxCrCtlConCall failed, rc (%d)", rc));
+        WARN(("vboxCrCtlConCall/GET_CAPS_LEAGCY failed, rc=%Rrc", rc));
         return rc;
-    }
-
-    if (RT_FAILURE(parms.hdr.result))
-    {
-        WARN(("SHCRGL_GUEST_FN_GET_CAPS_LEGACY failed, rc (%d)", parms.hdr.result));
-        return parms.hdr.result;
     }
 
     /* if host reports it supports CR_VBOX_CAP_CMDVBVA, clean it up,
@@ -912,14 +897,8 @@ static int vboxMpCrCtlConGetCapsNew(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32Clie
     rc = VbglR0CrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
     if (RT_FAILURE(rc))
     {
-        WARN(("vboxCrCtlConCall failed, rc (%d)", rc));
+        WARN(("vboxCrCtlConCall/GET_CAPS_NEW failed, rc=%Rrc", rc));
         return rc;
-    }
-
-    if (RT_FAILURE(parms.hdr.result))
-    {
-        WARN(("SHCRGL_GUEST_FN_GET_CAPS_NEW failed, rc (%d)", parms.hdr.result));
-        return parms.hdr.result;
     }
 
     if (pCapsInfo->u32CmdVbvaVersion != CR_CMDVBVA_VERSION)
@@ -947,17 +926,8 @@ static int vboxMpCrCtlConSetPID(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID
 
     rc = VbglR0CrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
     if (RT_FAILURE(rc))
-    {
-        WARN(("vboxCrCtlConCall failed, rc (%d)", rc));
-        return rc;
-    }
-
-    if (RT_FAILURE(parms.hdr.result))
-    {
-        WARN(("set PID failed, rc (%d)", parms.hdr.result));
-        return parms.hdr.result;
-    }
-    return VINF_SUCCESS;
+        WARN(("vboxCrCtlConCall/SET_PIDfailed, rc=%Rrc", rc));
+    return rc;
 }
 
 int VBoxMpCrCtlConConnectHgcm(PVBOXMP_CRCTLCON pCrCtlCon,
@@ -1065,9 +1035,9 @@ int VBoxMpCrCtlConDisconnect(PVBOXMP_DEVEXT pDevExt, PVBOXMP_CRCTLCON pCrCtlCon,
     return VBoxMpCrCtlConDisconnectHgcm(pCrCtlCon, u32ClientID);
 }
 
-int VBoxMpCrCtlConCall(PVBOXMP_CRCTLCON pCrCtlCon, VBoxGuestHGCMCallInfo *pData, uint32_t cbData)
+int VBoxMpCrCtlConCall(PVBOXMP_CRCTLCON pCrCtlCon, PVBGLIOCHGCMCALL pData, uint32_t cbData)
 {
-    int rc = VbglR0CrCtlConCall(pCrCtlCon->hCrCtl, pData, cbData);
+    int rc = VbglR0CrCtlConCallRaw(pCrCtlCon->hCrCtl, pData, cbData);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 
@@ -1075,9 +1045,9 @@ int VBoxMpCrCtlConCall(PVBOXMP_CRCTLCON pCrCtlCon, VBoxGuestHGCMCallInfo *pData,
     return rc;
 }
 
-int VBoxMpCrCtlConCallUserData(PVBOXMP_CRCTLCON pCrCtlCon, VBoxGuestHGCMCallInfo *pData, uint32_t cbData)
+int VBoxMpCrCtlConCallUserData(PVBOXMP_CRCTLCON pCrCtlCon, PVBGLIOCHGCMCALL pData, uint32_t cbData)
 {
-    int rc = VbglR0CrCtlConCallUserData(pCrCtlCon->hCrCtl, pData, cbData);
+    int rc = VbglR0CrCtlConCallUserDataRaw(pCrCtlCon->hCrCtl, pData, cbData);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 

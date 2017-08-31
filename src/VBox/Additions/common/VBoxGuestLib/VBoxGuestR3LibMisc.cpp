@@ -41,10 +41,11 @@
  */
 VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
 {
-    VBoxGuestFilterMaskInfo Info;
-    Info.u32OrMask = fOr;
-    Info.u32NotMask = fNot;
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_FILTER_MASK, &Info, sizeof(Info));
+    VBGLIOCCHANGEFILTERMASK Info;
+    VBGLREQHDR_INIT(&Info.Hdr, CHANGE_FILTER_MASK);
+    Info.u.In.fOrMask  = fOr;
+    Info.u.In.fNotMask = fNot;
+    return vbglR3DoIOCtl(VBGL_IOCTL_CHANGE_FILTER_MASK, &Info.Hdr, sizeof(Info));
 }
 
 
@@ -59,23 +60,24 @@ VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
  */
 VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
 {
-    VBoxGuestSetCapabilitiesInfo Info;
-    Info.u32OrMask = fOr;
-    Info.u32NotMask = fNot;
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_SET_GUEST_CAPABILITIES, &Info,
-                         sizeof(Info));
+    VBGLIOCSETGUESTCAPS Info;
+    VBGLREQHDR_INIT(&Info.Hdr, CHANGE_GUEST_CAPABILITIES);
+    Info.u.In.fOrMask  = fOr;
+    Info.u.In.fNotMask = fNot;
+    return vbglR3DoIOCtl(VBGL_IOCTL_CHANGE_GUEST_CAPABILITIES, &Info.Hdr, sizeof(Info));
 }
 
 
 /**
- * Acquire capabilities to report to the host.  The capabilities which can be
- * acquired are the same as those reported by @a VbglR3SetGuestCaps, and once
- * a capability has been acquired once is is switched to "acquire mode" and can
- * no longer be set using @a VbglR3SetGuestCaps.  Capabilities can also be
- * switched to acquire mode without actually being acquired.  A client can not
- * acquire a capability which has been acquired and not released by another
- * client.  Capabilities acquired are automatically released on session
- * termination.
+ * Acquire capabilities to report to the host.
+ *
+ * The capabilities which can be acquired are the same as those reported by
+ * VbglR3SetGuestCaps, and once a capability has been acquired once is is
+ * switched to "acquire mode" and can no longer be set using VbglR3SetGuestCaps.
+ * Capabilities can also be switched to acquire mode without actually being
+ * acquired.  A client can not acquire a capability which has been acquired and
+ * not released by another client.  Capabilities acquired are automatically
+ * released on session termination.
  *
  * @returns IPRT status code
  * @returns VERR_RESOURCE_BUSY and acquires nothing if another client has
@@ -83,21 +85,17 @@ VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
  * @param   fOr      Capabilities to acquire or to switch to acquire mode
  * @param   fNot     Capabilities to release
  * @param   fConfig  if set, capabilities in @a fOr are switched to acquire mode
- *                   but not acquired, and @a fNot is ignored.
+ *                   but not acquired, and @a fNot is ignored.  See
+ *                   VBGL_IOC_AGC_FLAGS_CONFIG_ACQUIRE_MODE for details.
  */
 VBGLR3DECL(int) VbglR3AcquireGuestCaps(uint32_t fOr, uint32_t fNot, bool fConfig)
 {
-    VBoxGuestCapsAquire Info;
-    int rc;
-
-    Info.u32OrMask = fOr;
-    Info.u32NotMask = fNot;
-    Info.enmFlags = fConfig ? VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE
-                            : VBOXGUESTCAPSACQUIRE_FLAGS_NONE;
-    rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE, &Info, sizeof(Info));
-    if (RT_FAILURE(rc))
-        return rc;
-    return Info.rc;
+    VBGLIOCACQUIREGUESTCAPS Info;
+    VBGLREQHDR_INIT(&Info.Hdr, ACQUIRE_GUEST_CAPABILITIES);
+    Info.u.In.fFlags   = fConfig ? VBGL_IOC_AGC_FLAGS_CONFIG_ACQUIRE_MODE : VBGL_IOC_AGC_FLAGS_DEFAULT;
+    Info.u.In.fOrMask  = fOr;
+    Info.u.In.fNotMask = fNot;
+    return vbglR3DoIOCtl(VBGL_IOCTL_ACQUIRE_GUEST_CAPABILITIES, &Info.Hdr, sizeof(Info));
 }
 
 

@@ -63,7 +63,13 @@ int vbglR3GRAlloc(VMMDevRequestHeader **ppReq, size_t cb, VMMDevRequestType enmR
 
 int vbglR3GRPerform(VMMDevRequestHeader *pReq)
 {
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_VMMREQUEST(pReq->size), pReq, pReq->size);
+    PVBGLREQHDR    pReqHdr = (PVBGLREQHDR)pReq;
+    uint32_t const cbReq   = pReqHdr->cbIn;
+    Assert(pReqHdr->cbOut == 0 || pReqHdr->cbOut == cbReq);
+    pReqHdr->cbOut = cbReq;
+    if (pReq->size < _1K)
+        return vbglR3DoIOCtl(VBGL_IOCTL_VMMDEV_REQUEST(cbReq), pReqHdr, cbReq);
+    return vbglR3DoIOCtl(VBGL_IOCTL_VMMDEV_REQUEST_BIG, pReqHdr, cbReq);
 }
 
 

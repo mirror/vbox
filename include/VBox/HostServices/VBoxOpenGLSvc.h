@@ -84,7 +84,7 @@ typedef struct
 /** Parameters structure. */
 typedef struct
 {
-    VBoxGuestHGCMCallInfo   hdr;
+    VBGLIOCHGCMCALL   hdr;
 
     /** 32bit, in: name
      * GLenum name parameter
@@ -109,7 +109,7 @@ typedef struct
 /** Parameters structure. */
 typedef struct
 {
-    VBoxGuestHGCMCallInfo   hdr;
+    VBGLIOCHGCMCALL   hdr;
 
     /** pointer, in
      * Command buffer
@@ -143,7 +143,7 @@ typedef struct
 /** Parameters structure. */
 typedef struct
 {
-    VBoxGuestHGCMCallInfo   hdr;
+    VBGLIOCHGCMCALL   hdr;
 
     /** pointer, in
      * Command buffer
@@ -183,7 +183,7 @@ typedef struct
 /** Parameters structure. */
 typedef struct
 {
-    VBoxGuestHGCMCallInfo   hdr;
+    VBGLIOCHGCMCALL   hdr;
 
     /** pointer, in
      * Extension function name

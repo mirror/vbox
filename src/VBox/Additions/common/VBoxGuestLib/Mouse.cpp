@@ -42,14 +42,17 @@
  */
 DECLVBGL(int) VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify, void *pvUser)
 {
-    VBoxGuestMouseSetNotifyCallback NotifyCallback;
-    VBGLDRIVER *pDriver;
-    int rc = vbglGetDriver(&pDriver);
-    if (RT_FAILURE(rc))
-        return rc;
-    NotifyCallback.pfnNotify = pfnNotify;
-    NotifyCallback.pvUser    = pvUser;
-    return vbglDriverIOCtl(pDriver, VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK, &NotifyCallback, sizeof(NotifyCallback));
+    PVBGLIDCHANDLE pIdcHandle;
+    int rc = vbglR0QueryIdcHandle(&pIdcHandle);
+    if (RT_SUCCESS(rc))
+    {
+        VBGLIOCSETMOUSENOTIFYCALLBACK NotifyCallback;
+        VBGLREQHDR_INIT(&NotifyCallback.Hdr, SET_MOUSE_NOTIFY_CALLBACK);
+        NotifyCallback.u.In.pfnNotify = pfnNotify;
+        NotifyCallback.u.In.pvUser    = pvUser;
+        rc = VbglR0IdcCall(pIdcHandle, VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK, &NotifyCallback.Hdr, sizeof(NotifyCallback));
+    }
+    return rc;
 }
 
 /**
@@ -64,29 +67,27 @@ DECLVBGL(int) VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify, void
  */
 DECLVBGL(int) VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py)
 {
-    VMMDevReqMouseStatus Req;
-    VBGLDRIVER *pDriver;
-    int rc;
-
-    rc = vbglGetDriver(&pDriver);
-    if (RT_FAILURE(rc))
-        return rc;
-    vmmdevInitRequest(&Req.header, VMMDevReq_GetMouseStatus);
-    Req.mouseFeatures = 0;
-    Req.pointerXPos = 0;
-    Req.pointerYPos = 0;
-    rc = vbglDriverIOCtl(pDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(Req)), &Req.header, sizeof(Req));
-    if (RT_FAILURE(rc))
-        return rc;
-    if (RT_FAILURE(Req.header.rc))
-        return Req.header.rc;
-    if (pfFeatures)
-        *pfFeatures = Req.mouseFeatures;
-    if (px)
-        *px = Req.pointerXPos;
-    if (py)
-        *py = Req.pointerYPos;
-    return VINF_SUCCESS;
+    PVBGLIDCHANDLE pIdcHandle;
+    int rc = vbglR0QueryIdcHandle(&pIdcHandle);
+    if (RT_SUCCESS(rc))
+    {
+        VMMDevReqMouseStatus Req;
+        VMMDEV_REQ_HDR_INIT(&Req.header, sizeof(Req), VMMDevReq_GetMouseStatus);
+        Req.mouseFeatures = 0;
+        Req.pointerXPos = 0;
+        Req.pointerYPos = 0;
+        rc = VbglR0IdcCall(pIdcHandle, VBGL_IOCTL_VMMDEV_REQUEST(sizeof(Req)), (PVBGLREQHDR)&Req.header, sizeof(Req));
+        if (RT_SUCCESS(rc))
+        {
+            if (pfFeatures)
+                *pfFeatures = Req.mouseFeatures;
+            if (px)
+                *px = Req.pointerXPos;
+            if (py)
+                *py = Req.pointerYPos;
+        }
+    }
+    return rc;
 }
 
 /**
@@ -101,12 +102,15 @@ DECLVBGL(int) VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *p
  */
 DECLVBGL(int) VbglSetMouseStatus(uint32_t fFeatures)
 {
-    VBGLDRIVER *pDriver;
-    int rc;
-
-    rc = vbglGetDriver(&pDriver);
-    if (RT_FAILURE(rc))
-        return rc;
-    return vbglDriverIOCtl(pDriver, VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &fFeatures, sizeof(fFeatures));
+    PVBGLIDCHANDLE pIdcHandle;
+    int rc = vbglR0QueryIdcHandle(&pIdcHandle);
+    if (RT_SUCCESS(rc))
+    {
+        VBGLIOCSETMOUSESTATUS Req;
+        VBGLREQHDR_INIT(&Req.Hdr, SET_MOUSE_STATUS);
+        Req.u.In.fStatus = fFeatures;
+        rc = VbglR0IdcCall(pIdcHandle, VBGL_IOCTL_SET_MOUSE_STATUS, &Req.Hdr, sizeof(Req));
+    }
+    return rc;
 }
 

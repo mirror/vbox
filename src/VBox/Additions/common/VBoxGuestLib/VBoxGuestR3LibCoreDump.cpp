@@ -38,7 +38,9 @@
  */
 VBGLR3DECL(int) VbglR3WriteCoreDump(void)
 {
-    VBoxGuestWriteCoreDump Req;
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_WRITE_CORE_DUMP, &Req, sizeof(Req));
+    VBGLIOCWRITECOREDUMP Req;
+    VBGLREQHDR_INIT(&Req.Hdr, WRITE_CORE_DUMP);
+    Req.u.In.fFlags = 0;
+    return vbglR3DoIOCtl(VBGL_IOCTL_WRITE_CORE_DUMP, &Req.Hdr, sizeof(Req));
 }
 

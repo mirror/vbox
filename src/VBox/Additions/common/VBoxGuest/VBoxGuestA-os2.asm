@@ -183,7 +183,7 @@ endstruc
 %define DevHlp_PhysToVirt       015h
 
 ; Fast IOCtl category, also defined in VBoxGuest.h
-%define VBOXGUEST_IOCTL_CATEGORY_FAST   0c3h
+%define VBGL_IOCTL_CATEGORY_FAST    0c3h
 
 ;;
 ; Got some nasm/link trouble, so emit the stuff ourselves.
@@ -400,7 +400,7 @@ BEGINPROC VGDrvOS2Entrypoint
 vgdrvOS2EP_GenIOCtl:
 
     ; Fast IOCtl?
-    cmp     byte [es:bx + PKTIOCTL.cat], VBOXGUEST_IOCTL_CATEGORY_FAST
+    cmp     byte [es:bx + PKTIOCTL.cat], VBGL_IOCTL_CATEGORY_FAST
     jne     vgdrvOS2EP_GenIOCtl_Other
 
     ;
