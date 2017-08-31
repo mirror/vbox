@@ -534,7 +534,7 @@ DECLINLINE(int64_t) ASMAtomicXchgS64(volatile int64_t *pi64, int64_t i64)
  */
 DECLINLINE(void *) ASMAtomicXchgPtr(void * volatile *ppv, const void *pv)
 {
-#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
     return (void *)ASMAtomicXchgU32((volatile uint32_t *)(void *)ppv, (uint32_t)pv);
 #elif ARCH_BITS == 64
     return (void *)ASMAtomicXchgU64((volatile uint64_t *)(void *)ppv, (uint64_t)pv);
@@ -589,7 +589,7 @@ DECLINLINE(RTRCPTR) ASMAtomicXchgRCPtr(RTRCPTR volatile *ppvRC, RTRCPTR pvRC)
  */
 DECLINLINE(RTR0PTR) ASMAtomicXchgR0Ptr(RTR0PTR volatile *ppvR0, RTR0PTR pvR0)
 {
-#if R0_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if R0_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
     return (RTR0PTR)ASMAtomicXchgU32((volatile uint32_t *)(void *)ppvR0, (uint32_t)pvR0);
 #elif R0_ARCH_BITS == 64
     return (RTR0PTR)ASMAtomicXchgU64((volatile uint64_t *)(void *)ppvR0, (uint64_t)pvR0);
@@ -608,7 +608,7 @@ DECLINLINE(RTR0PTR) ASMAtomicXchgR0Ptr(RTR0PTR volatile *ppvR0, RTR0PTR pvR0)
  */
 DECLINLINE(RTR3PTR) ASMAtomicXchgR3Ptr(RTR3PTR volatile *ppvR3, RTR3PTR pvR3)
 {
-#if R3_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if R3_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
     return (RTR3PTR)ASMAtomicXchgU32((volatile uint32_t *)(void *)ppvR3, (uint32_t)pvR3);
 #elif R3_ARCH_BITS == 64
     return (RTR3PTR)ASMAtomicXchgU64((volatile uint64_t *)(void *)ppvR3, (uint64_t)pvR3);
@@ -627,7 +627,7 @@ DECLINLINE(RTR3PTR) ASMAtomicXchgR3Ptr(RTR3PTR volatile *ppvR3, RTR3PTR pvR3)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
 # define ASMAtomicXchgHandle(ph, hNew, phRes) \
    do { \
        AssertCompile(sizeof(*(ph))    == sizeof(uint32_t)); \
@@ -962,7 +962,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t *pi64, const int64_t i64, 
  */
 DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void * volatile *ppv, const void *pvNew, const void *pvOld)
 {
-#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
     return ASMAtomicCmpXchgU32((volatile uint32_t *)(void *)ppv, (uint32_t)pvNew, (uint32_t)pvOld);
 #elif ARCH_BITS == 64
     return ASMAtomicCmpXchgU64((volatile uint64_t *)(void *)ppv, (uint64_t)pvNew, (uint64_t)pvOld);
@@ -1013,7 +1013,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void * volatile *ppv, const void *pvNew
  * @remarks This doesn't currently work for all handles (like RTFILE).
  * @remarks x86: Requires a 486 or later.
  */
-#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
 # define ASMAtomicCmpXchgHandle(ph, hNew, hOld, fRc) \
    do { \
        AssertCompile(sizeof(*(ph)) == sizeof(uint32_t)); \
@@ -1272,7 +1272,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t *pi64, const int64_t i64
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
 # define ASMAtomicCmpXchgExHandle(ph, hNew, hOld, fRc, phOldVal) \
     do { \
         AssertCompile(sizeof(*ph)       == sizeof(uint32_t)); \
@@ -1334,7 +1334,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t *pi64, const int64_t i64
  */
 DECLINLINE(bool) ASMAtomicCmpXchgExPtrVoid(void * volatile *ppv, const void *pvNew, const void *pvOld, void **ppvOld)
 {
-#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
     return ASMAtomicCmpXchgExU32((volatile uint32_t *)(void *)ppv, (uint32_t)pvNew, (uint32_t)pvOld, (uint32_t *)ppvOld);
 #elif ARCH_BITS == 64
     return ASMAtomicCmpXchgExU64((volatile uint64_t *)(void *)ppv, (uint64_t)pvNew, (uint64_t)pvOld, (uint64_t *)ppvOld);
@@ -1944,7 +1944,7 @@ DECLINLINE(size_t) ASMAtomicReadZ(size_t volatile *pcb)
  */
 DECLINLINE(size_t) ASMAtomicUoReadZ(size_t volatile *pcb)
 {
-#if ARCH_BITS == 64 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if ARCH_BITS == 64 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
     return ASMAtomicUoReadU64((uint64_t volatile *)pcb);
 #elif ARCH_BITS == 32
     return ASMAtomicUoReadU32((uint32_t volatile *)pcb);
@@ -1968,7 +1968,7 @@ DECLINLINE(size_t) ASMAtomicUoReadZ(size_t volatile *pcb)
  */
 DECLINLINE(void *) ASMAtomicReadPtr(void * volatile *ppv)
 {
-#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
     return (void *)ASMAtomicReadU32((volatile uint32_t *)(void *)ppv);
 #elif ARCH_BITS == 64
     return (void *)ASMAtomicReadU64((volatile uint64_t *)(void *)ppv);
@@ -2009,7 +2009,7 @@ DECLINLINE(void *) ASMAtomicReadPtr(void * volatile *ppv)
  */
 DECLINLINE(void *) ASMAtomicUoReadPtr(void * volatile *ppv)
 {
-#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
     return (void *)ASMAtomicUoReadU32((volatile uint32_t *)(void *)ppv);
 #elif ARCH_BITS == 64
     return (void *)ASMAtomicUoReadU64((volatile uint64_t *)(void *)ppv);
@@ -2073,7 +2073,7 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
 # define ASMAtomicReadHandle(ph, phRes) \
     do { \
         AssertCompile(sizeof(*(ph))    == sizeof(uint32_t)); \
@@ -2100,7 +2100,7 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
 # define ASMAtomicUoReadHandle(ph, phRes) \
     do { \
         AssertCompile(sizeof(*(ph))    == sizeof(uint32_t)); \
@@ -2403,7 +2403,7 @@ DECLINLINE(void) ASMAtomicUoWriteBool(volatile bool *pf, bool f)
  */
 DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
 {
-#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
     ASMAtomicWriteU32((volatile uint32_t *)(void *)ppv, (uint32_t)pv);
 #elif ARCH_BITS == 64
     ASMAtomicWriteU64((volatile uint64_t *)(void *)ppv, (uint64_t)pv);
@@ -2547,7 +2547,7 @@ DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
 # define ASMAtomicWriteHandle(ph, hNew) \
     do { \
         AssertCompile(sizeof(*(ph)) == sizeof(uint32_t)); \
@@ -2572,7 +2572,7 @@ DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_DATA_IS_FAR)
 # define ASMAtomicUoWriteHandle(ph, hNew) \
     do { \
         AssertCompile(sizeof(*(ph)) == sizeof(uint32_t)); \

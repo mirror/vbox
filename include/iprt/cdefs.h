@@ -1293,7 +1293,7 @@
  * How to declare an call back function type.
  * @param   type    The return type of the function declaration.
  */
-#define DECLCALLBACK(type)      type RTCALL
+#define DECLCALLBACK(type)      type RT_FAR_CODE RTCALL
 
 /** @def DECLCALLBACKPTR
  * How to declare an call back function pointer.
@@ -1303,7 +1303,7 @@
 #if defined(__IBMC__) || defined(__IBMCPP__)
 # define DECLCALLBACKPTR(type, name)    type (* RTCALL name)
 #else
-# define DECLCALLBACKPTR(type, name)    type (RTCALL * name)
+# define DECLCALLBACKPTR(type, name)    type (RT_FAR_CODE RTCALL * name)
 #endif
 
 /** @def DECLCALLBACKMEMBER
@@ -1314,7 +1314,7 @@
 #if defined(__IBMC__) || defined(__IBMCPP__)
 # define DECLCALLBACKMEMBER(type, name) type (* RTCALL name)
 #else
-# define DECLCALLBACKMEMBER(type, name) type (RTCALL * name)
+# define DECLCALLBACKMEMBER(type, name) type (RT_FAR_CODE RTCALL * name)
 #endif
 
 /** @def DECLR3CALLBACKMEMBER
@@ -3639,15 +3639,45 @@
 /* 4.5 or later, I think, if in ++11 mode... */
 #endif
 
-/** @def RT_FAR_DATA
+/** @def RT_DATA_IS_FAR
  * Set to 1 if we're in 16-bit mode and use far pointers.
  */
 #if ARCH_BITS == 16 && defined(__WATCOMC__) \
   && (defined(__COMPACT__) || defined(__LARGE__))
-# define RT_FAR_DATA 1
+# define RT_DATA_IS_FAR 1
 #else
-# define RT_FAR_DATA 0
+# define RT_DATA_IS_FAR 0
 #endif
+
+/** @def RT_FAR
+ * For indicating far pointers in 16-bit code.
+ * Does nothing in 32-bit and 64-bit code. */
+/** @def RT_NEAR
+ * For indicating near pointers in 16-bit code.
+ * Does nothing in 32-bit and 64-bit code. */
+/** @def RT_FAR_CODE
+ * For indicating far 16-bit functions.
+ * Does nothing in 32-bit and 64-bit code. */
+/** @def RT_NEAR_CODE
+ * For indicating near 16-bit functions.
+ * Does nothing in 32-bit and 64-bit code. */
+/** @def RT_FAR_DATA
+ * For indicating far 16-bit external data, i.e. in a segment other than DATA16.
+ * Does nothing in 32-bit and 64-bit code. */
+#if ARCH_BITS == 16
+# define RT_FAR            __far
+# define RT_NEAR           __near
+# define RT_FAR_CODE       __far
+# define RT_NEAR_CODE      __near
+# define RT_FAR_DATA       __far
+#else
+# define RT_FAR
+# define RT_NEAR
+# define RT_FAR_CODE
+# define RT_NEAR_CODE
+# define RT_FAR_DATA
+#endif
+
 
 /** @} */
 
