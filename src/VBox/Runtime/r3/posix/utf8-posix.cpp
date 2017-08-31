@@ -76,6 +76,21 @@ AssertCompile(sizeof(iconv_t) <= sizeof(void *));
 #endif
 
 
+/* There are different opinions about the constness of the input buffer. */
+#if defined(RT_OS_LINUX) || defined(RT_OS_HAIKU) || defined(RT_OS_SOLARIS) \
+  || (defined(RT_OS_DARWIN) && defined(_DARWIN_FEATURE_UNIX_CONFORMANCE))
+# define NON_CONST_ICONV_INPUT
+#endif
+#ifdef RT_OS_FREEBSD
+# include <sys/param.h>
+# if __FreeBSD_version >= 1002000 /* Changed around 10.2.2 (https://svnweb.freebsd.org/base?view=revision&revision=281550) */
+#  define NON_CONST_ICONV_INPUT
+# else
+# error __FreeBSD_version__
+# endif
+#endif
+
+
 /**
  * Gets the codeset of the current locale (LC_CTYPE).
  *
@@ -194,7 +209,7 @@ static int rtstrConvertCached(const void *pvInput, size_t cbInput, const char *p
             const void *pvInputLeft = pvInput;
             void       *pvOutputLeft = pvOutput;
             size_t      cchNonRev;
-#if defined(RT_OS_LINUX) || defined(RT_OS_HAIKU) || defined(RT_OS_SOLARIS) || (defined(RT_OS_DARWIN) && defined(_DARWIN_FEATURE_UNIX_CONFORMANCE)) /* there are different opinions about the constness of the input buffer. */
+#ifdef NON_CONST_ICONV_INPUT
             cchNonRev = iconv(hIconv, (char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft);
 #else
             cchNonRev = iconv(hIconv, (const char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft);
@@ -324,7 +339,7 @@ static int rtStrConvertUncached(const void *pvInput, size_t cbInput, const char 
             const void *pvInputLeft = pvInput;
             void       *pvOutputLeft = pvOutput;
             size_t      cchNonRev;
-#if defined(RT_OS_LINUX) || defined(RT_OS_HAIKU) || defined(RT_OS_SOLARIS) || (defined(RT_OS_DARWIN) && defined(_DARWIN_FEATURE_UNIX_CONFORMANCE)) /* there are different opinions about the constness of the input buffer. */
+#ifdef NON_CONST_ICONV_INPUT
             cchNonRev = iconv(icHandle, (char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft);
 #else
             cchNonRev = iconv(icHandle, (const char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft);
