@@ -294,7 +294,10 @@ void VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
                                  sizeof(buffer), &buffer[0], &cbWritten);
         if (!NT_SUCCESS(rc))
         {
-            WARN(("IoGetDeviceProperty failed with rc=%#x", rc));
+            if (rc == STATUS_OBJECT_NAME_NOT_FOUND) /* This happen when loading on a running system, don't want the assertion. */
+                LOG(("IoGetDeviceProperty failed with STATUS_OBJECT_NAME_NOT_FOUND"));
+            else
+                WARN(("IoGetDeviceProperty failed with rc=%#x", rc));
             return;
         }
 
