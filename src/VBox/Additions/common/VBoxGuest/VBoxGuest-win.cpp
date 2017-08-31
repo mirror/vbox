@@ -886,12 +886,7 @@ static NTSTATUS vgdrvNtDeviceControlSlow(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
     }
 #endif
 
-    /* complete the request. */
-    pIrp->IoStatus.Status = rcNt;
-    pIrp->IoStatus.Information = cbOut;
-    //supdrvSessionRelease(pSession);
-    IoCompleteRequest(pIrp, IO_NO_INCREMENT);
-    return rcNt;
+    return vgdrvNtCompleteRequestEx(rcNt, cbOut, pIrp);
 }
 
 
