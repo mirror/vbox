@@ -41,6 +41,17 @@ endstruc
 
 %endif ; RT_OS_OS2
 
+struc VBGLREQHDR
+    .cbIn               resd 1
+    .uVersion           resd 1
+    .uType              resd 1
+    .rc                 resd 1
+    .cbOut              resd 1
+    .uReserved          resd 1
+endstruc
+
+%define VBGL_IOC_VERSION        000010000h
+
 ; From VMMDev.h
 %define VMMDEV_VERSION_MAJOR    1
 %define VMMDEV_VERSION_MINOR    4

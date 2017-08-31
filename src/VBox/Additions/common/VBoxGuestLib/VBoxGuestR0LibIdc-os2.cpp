@@ -48,14 +48,10 @@ int VBOXCALL vbglR0IdcNativeOpen(PVBGLIDCHANDLE pHandle, PVBGLIOCIDCCONNECT pReq
     /*
      * Just check whether the connection was made or not.
      */
-    if (   g_VBoxGuestIDC.u32Version == VMMDEV_VERSION
+    if (   g_VBoxGuestIDC.u32Version == VBGL_IOC_VERSION
         && RT_VALID_PTR(g_VBoxGuestIDC.u32Session)
         && RT_VALID_PTR(g_VBoxGuestIDC.pfnServiceEP))
-    {
-        pHandle->s.pvSession = (void *)g_VBoxGuestIDC.u32Session;
-        return vbglR0IdcNativeCall(pHandle, VBGL_IOCTL_IDC_CONNECT, pReq);
-    }
-    pHandle->s.pvSession = NULL;
+        return g_VBoxGuestIDC.pfnServiceEP(g_VBoxGuestIDC.u32Session, VBGL_IOCTL_IDC_CONNECT, &pReq->Hdr, sizeof(*pReq));
     Log(("vbglDriverOpen: failed\n"));
     return VERR_FILE_NOT_FOUND;
 }
@@ -78,7 +74,6 @@ int VBOXCALL vbglR0IdcNativeClose(PVBGLIDCHANDLE pHandle, PVBGLIOCIDCDISCONNECT 
  */
 DECLR0VBGL(int) VbglR0IdcCallRaw(PVBGLIDCHANDLE pHandle, uintptr_t uReq, PVBGLREQHDR pReqHdr, uint32_t cbReq)
 {
-    size_t cbRetIgn;
-    return g_VBoxGuestIDC.pfnServiceEP((uintptr_t)pHandle->s.pvSession, uReq, pReqHdr, cbReq, &cbRetIgn);
+    return g_VBoxGuestIDC.pfnServiceEP((uintptr_t)pHandle->s.pvSession, uReq, pReqHdr, cbReq);
 }
 

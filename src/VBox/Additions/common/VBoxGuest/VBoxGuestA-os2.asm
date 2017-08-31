@@ -825,7 +825,7 @@ GLOBALNAME VGDrvOS2IDC_32
     mov     ds, cx
     movzx   ebx, word [ebp + 08h]
 
-    mov     dword [ebx + VBGOS2IDC.u32Version       ], VMMDEV_VERSION
+    mov     dword [ebx + VBGOS2IDC.u32Version       ], VBGL_IOC_VERSION
     mov     dword [ebx + VBGOS2IDC.u32Session       ], eax
     mov     dword [ebx + VBGOS2IDC.pfnServiceEP     ], NAME(VGDrvOS2IDCService)
     mov     word  [ebx + VBGOS2IDC.fpfnServiceEP    ], NAME(VGDrvOS2IDCService16) wrt CODE16
@@ -866,15 +866,13 @@ ENDPROC VGDrvOS2IDC
 ; @returns VBox status code.
 ; @param   u32Session          bp +  8h - The above session handle.
 ; @param   iFunction           bp + 0ch - The requested function.
-; @param   pvData              bp + 0eh - The input/output data buffer. The caller ensures that this
+; @param   fpReqHdr            bp + 0eh - The input/output data buffer. The caller ensures that this
 ;                                         cannot be swapped out, or that it's acceptable to take a
 ;                                         page in fault in the current context. If the request doesn't
 ;                                         take input or produces output, passing NULL is okay.
-; @param   cbData              bp + 12h - The size of the data buffer.
-; @param   pcbDataReturned     bp + 14h - Where to store the amount of data that's returned.
-;                                         This can be NULL if pvData is NULL.
+; @param   cbReq               bp + 12h - The size of the data buffer.
 ;
-; @cproto long far __cdecl VGDrvOS2IDCService16(uint32_t u32Session, uint16_t iFunction, void far *fpvData, uint16_t cbData, uint16_t far *pcbDataReturned);
+; @cproto long far __cdecl VGDrvOS2IDCService16(uint32_t u32Session, uint16_t iFunction, void far *fpReqHdr, uint16_t cbReq);
 ;
 GLOBALNAME VGDrvOS2IDCService16
     push    ebp                         ; bp -  0h
@@ -896,7 +894,6 @@ GLOBALNAME VGDrvOS2IDCService16
     ;
     ; Create the call frame before switching.
     ;
-    push    dword 0                     ; esp + 14h:    &cbDataReturned (filled in after stack switch)
     movzx   ecx, word [bp + 12h]         
     push    ecx                         ; esp + 10h:    cbData
 
@@ -928,10 +925,6 @@ GLOBALNAME VGDrvOS2IDCService16_32
     mov     es, ax
     call    KernThunkStackTo32
 
-    ; update the cbDataReturned pointer
-    lea     eax, [esp + 18h]
-    mov     [esp + 14h], eax
-
     ; call the C code (don't cleanup the stack).
     call    NAME(VGDrvOS2IDCService)
 
@@ -943,16 +936,6 @@ GLOBALNAME VGDrvOS2IDCService16_32
     JMP32TO16 VGDrvOS2IDCService16_16
 segment CODE16
 GLOBALNAME VGDrvOS2IDCService16_16
-
-    ; Set *pcbDataReturned.
-    cmp     word [bp + 14h + 2], 3
-    jbe     .no_pcbDataReturned
-    xchg    dx, bx
-    mov     cx, [esp + 18h]
-    les     bx, [bp + 14h]
-    mov     word [es:bx], cx
-    xchg    dx, bx
-.no_pcbDataReturned:
 
 VGDrvOS2IDCService16_Done:
     lea     sp, [bp - 10h]
@@ -987,26 +970,15 @@ GLOBALNAME VGDrvOS2IDCService16Asm
     push    ebp                         ; bp - 0h
     mov     ebp, esp
     push    edx                         ; bp - 4h
-    lea     sp, [bp - 18h]              ; allocate the call frame.
 
-                                        ; bp - 06h (dw): oops...
-    mov     [bp - 08h], word 0          ; bp - 08h (dw): cbDataReturned
-
-    mov     [bp - 0eh], cx              ; bp - 0eh (dw): cbData     (NOTE: out of order to free up CX)
-    lea     cx, [bp - 08h]              ; bp - 0ch (dd): &cbDataReturned
-    mov     [bp - 0ah], cx
-    mov     cx, ss
-    mov     [bp - 0ch], cx
-    mov     [bp - 10h], bx              ; bp - 10h (dd): pvData
-    mov     cx, es
-    mov     [bp - 12h], cx
-    mov     [bp - 14h], dl              ; bp - 14h (dw): iFunction
-    mov     [bp - 13h], byte 0
-    mov     [bp - 18h], eax             ; bp - 18h (dd): u32Session
-
+    push    cx                          ; cbData
+    push    es
+    xor     dh, dh
+    push    dx
+    push    eax
     call    NAME(VGDrvOS2IDCService16)
 
-    mov     cx, [bp - 08h]              ; cbDataReturned.
+    mov     cx, [es:bx + VBGLREQHDR.cbOut]
 
     mov     edx, [bp - 4]
     mov     esp, ebp

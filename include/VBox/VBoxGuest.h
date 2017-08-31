@@ -130,6 +130,7 @@
   /* No automatic buffering, size not encoded. */
 # define VBGL_IOCTL_CATEGORY                        0xc2
 # define VBGL_IOCTL_CODE_SIZE(Function, Size)       ((unsigned char)(Function))
+# define VBGL_IOCTL_CODE_BIG(Function)              ((unsigned char)(Function))
 # define VBGL_IOCTL_CATEGORY_FAST                   0xc3 /**< Also defined in VBoxGuestA-os2.asm. */
 # define VBGL_IOCTL_CODE_FAST(Function)             ((unsigned char)(Function))
 # define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         ((a_uIOCtl) & ~VBGL_IOCTL_FLAG_BIT_MASK)
@@ -317,7 +318,9 @@ typedef struct VBGLIOCDRIVERVERSIONINFO
     } u;
 } VBGLIOCDRIVERVERSIONINFO, *PVBGLIOCDRIVERVERSIONINFO;
 AssertCompileSize(VBGLIOCDRIVERVERSIONINFO, 24 + 20);
+#ifndef RT_OS_OS2 /* figure this one out... */
 AssertCompile(VBGL_IOCTL_DRIVER_VERSION_INFO_SIZE_IN == 24 + 16);
+#endif
 /** @} */
 
 
@@ -392,7 +395,9 @@ typedef struct VBGLIOCHGCMCONNECT
     } u;
 } VBGLIOCHGCMCONNECT, *PVBGLIOCHGCMCONNECT;
 AssertCompileSize(VBGLIOCHGCMCONNECT, 24 + 132);
+#ifndef RT_OS_OS2 /* figure this one out... */
 AssertCompile(VBGL_IOCTL_HGCM_CONNECT_SIZE_OUT == 24 + 4);
+#endif
 /** @} */
 
 
@@ -905,7 +910,7 @@ typedef VBGLIOCWRITECOREDUMP VBoxGuestWriteCoreDump;
  */
 typedef struct VBOXGUESTOS2IDCCONNECT
 {
-    /** VMMDEV_VERSION. */
+    /** VBGL_IOC_VERSION. */
     uint32_t u32Version;
     /** Opaque session handle. */
     uint32_t u32Session;
@@ -914,18 +919,16 @@ typedef struct VBOXGUESTOS2IDCCONNECT
      * The 32-bit service entry point.
      *
      * @returns VBox status code.
-     * @param   u32Session          The above session handle.
+     * @param   u32Session          The session handle (PVBOXGUESTSESSION).
      * @param   iFunction           The requested function.
-     * @param   pvData              The input/output data buffer. The caller ensures that this
-     *                              cannot be swapped out, or that it's acceptable to take a
-     *                              page in fault in the current context. If the request doesn't
-     *                              take input or produces output, apssing NULL is okay.
-     * @param   cbData              The size of the data buffer.
-     * @param   pcbDataReturned     Where to store the amount of data that's returned.
-     *                              This can be NULL if pvData is NULL.
-     * @todo fix parameters
+     * @param   pReqHdr             The input/output data buffer.  The caller
+     *                              ensures that this cannot be swapped out, or that
+     *                              it's acceptable to take a page in fault in the
+     *                              current context.  If the request doesn't take
+     *                              input or produces output, apssing NULL is okay.
+     * @param   cbReq               The size of the data buffer.
      */
-    DECLCALLBACKMEMBER(int, pfnServiceEP)(uint32_t u32Session, unsigned iFunction, void *pvData, size_t cbData, size_t *pcbDataReturned);
+    DECLCALLBACKMEMBER(int, pfnServiceEP)(uint32_t u32Session, unsigned iFunction, PVBGLREQHDR pReqHdr, size_t cbReq);
 
     /** The 16-bit service entry point for C code (cdecl).
      *
@@ -935,7 +938,7 @@ typedef struct VBOXGUESTOS2IDCCONNECT
      * @code
      * int far cdecl
      * VBoxGuestOs2IDCService16(uint32_t u32Session, uint16_t iFunction,
-     *                          void far *fpvData, uint16_t cbData, uint16_t far *pcbDataReturned);
+     *                          PVBGLREQHDR fpvData, uint16_t cbData);
      * @endcode
      */
     RTFAR16 fpfnServiceEP;
@@ -1009,7 +1012,9 @@ typedef struct VBGLIOCIDCCONNECT
     } u;
 } VBGLIOCIDCCONNECT, *PVBGLIOCIDCCONNECT;
 AssertCompileSize(VBGLIOCIDCCONNECT, 24 + 16 + ARCH_BITS / 8 * 2);
+#ifndef RT_OS_OS2 /* figure this one out... */
 AssertCompile(VBGL_IOCTL_IDC_CONNECT_SIZE_IN == 24 + 16);
+#endif
 #define VBGL_IOCTL_IDC_CONNECT_MAGIC_COOKIE         UINT32_C(0x55aa4d5a) /**< Magic value for doing an IDC connect. */
 /** @} */
 

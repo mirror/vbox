@@ -51,15 +51,15 @@
 
 #include "VBoxGuestInternal.h"
 #include <VBox/version.h>
-#include <iprt/initterm.h>
-#include <iprt/string.h>
-#include <iprt/spinlock.h>
-#include <iprt/process.h>
 #include <iprt/assert.h>
+#include <iprt/initterm.h>
 #include <iprt/log.h>
 #include <iprt/memobj.h>
 #include <iprt/mem.h>
 #include <iprt/param.h>
+#include <iprt/process.h>
+#include <iprt/spinlock.h>
+#include <iprt/string.h>
 
 
 /*********************************************************************************************************************************
@@ -465,37 +465,23 @@ DECLASM(int) vgdrvOS2IOCtlFast(uint16_t sfn, uint8_t iFunction, int32_t *prc)
  * @returns VBox status code.
  * @param   u32Session          The session handle (PVBOXGUESTSESSION).
  * @param   iFunction           The requested function.
- * @param   pvData              The input/output data buffer. The caller ensures that this
- *                              cannot be swapped out, or that it's acceptable to take a
- *                              page in fault in the current context. If the request doesn't
- *                              take input or produces output, apssing NULL is okay.
- * @param   cbData              The size of the data buffer.
- * @param   pcbDataReturned     Where to store the amount of data that's returned.
- *                              This can be NULL if pvData is NULL.
+ * @param   pReqHdr             The input/output data buffer.  The caller
+ *                              ensures that this cannot be swapped out, or that
+ *                              it's acceptable to take a page in fault in the
+ *                              current context.  If the request doesn't take
+ *                              input or produces output, apssing NULL is okay.
+ * @param   cbReq               The size of the data buffer.
  *
  * @remark  This is called from the 16-bit thunker as well as directly from the 32-bit clients.
  */
-DECLASM(int) VGDrvOS2IDCService(uint32_t u32Session, unsigned iFunction, void *pvData, size_t cbData, size_t *pcbDataReturned)
+DECLASM(int) VGDrvOS2IDCService(uint32_t u32Session, unsigned iFunction, PVBGLREQHDR pReqHdr, size_t cbReq)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)u32Session;
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertMsgReturn(pSession->sfn == 0xffff, ("%RX16\n", pSession->sfn), VERR_INVALID_HANDLE);
     AssertMsgReturn(pSession->pDevExt == &g_DevExt, ("%p != %p\n", pSession->pDevExt, &g_DevExt), VERR_INVALID_HANDLE);
 
-    int rc;
-    switch (iFunction)
-    {
-        default:
-            rc = VGDrvCommonIoCtl(iFunction, &g_DevExt, pSession, pvData, cbData, pcbDataReturned);
-            break;
-
-        case VBOXGUEST_IOCTL_OS2_IDC_DISCONNECT:
-            pSession->sfn = 0;
-            VGDrvCommonCloseSession(&g_DevExt, pSession);
-            rc = VINF_SUCCESS;
-            break;
-    }
-    return rc;
+    return VGDrvCommonIoCtl(iFunction, &g_DevExt, pSession, pReqHdr, cbReq);
 }
 
 
@@ -568,7 +554,7 @@ DECLASM(int) vgdrvOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, void *
                  * Process the IOCtl.
                  */
                 PVBGLREQHDR pReqHdr = (PVBGLREQHDR)pvParm;
-                rc = VGDrvCommonIoCtl(iFunction, &g_DevExt, pSession, pvParm, *pcbParm);
+                rc = VGDrvCommonIoCtl(iFunction, &g_DevExt, pSession, pReqHdr, *pcbParm);
 
                 /*
                  * Unlock the buffer.
@@ -580,7 +566,7 @@ DECLASM(int) vgdrvOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, void *
                 Log2(("vgdrvOS2IOCtl: returns %d\n", rc));
                 return rc;
             }
-            AssertFailedMsg(("KernVMLock(VMDHL_WRITE, %p, %#x, &p, NULL, NULL) -> %d\n", pvParm,*pcbParm,&ParmLock, rc));
+            AssertMsgFailed(("KernVMLock(VMDHL_WRITE, %p, %#x, &p, NULL, NULL) -> %d\n", pvParm, *pcbParm, &ParmLock, rc));
             return VERR_LOCK_FAILED;
         }
         Log2(("vgdrvOS2IOCtl: returns VERR_INVALID_PARAMETER (iFunction=%#x)\n", iFunction));
