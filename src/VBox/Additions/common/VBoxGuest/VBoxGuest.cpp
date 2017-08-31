@@ -1556,14 +1556,14 @@ static int vgdrvIoCtl_DriverVersionInfo(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESS
             rc = VINF_SUCCESS;
         else
         {
-            LogRel(("VBGL_IOCTL_IDC_CONNECT: Version mismatch. Requested: %#x  Min: %#x  Current: %#x\n",
+            LogRel(("VBGL_IOCTL_DRIVER_VERSION_INFO: Version mismatch. Requested: %#x  Min: %#x  Current: %#x\n",
                     pReq->u.In.uReqVersion, pReq->u.In.uMinVersion, VBGL_IOC_VERSION));
             rc = VERR_VERSION_MISMATCH;
         }
     }
     else
     {
-        LogRel(("VBGL_IOCTL_IDC_CONNECT: uMinVersion=%#x uMaxVersion=%#x doesn't match!\n",
+        LogRel(("VBGL_IOCTL_DRIVER_VERSION_INFO: uMinVersion=%#x uMaxVersion=%#x doesn't match!\n",
                 pReq->u.In.uMinVersion, pReq->u.In.uReqVersion));
         rc = VERR_INVALID_PARAMETER;
     }
