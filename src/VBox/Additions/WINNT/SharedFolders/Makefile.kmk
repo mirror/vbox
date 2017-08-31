@@ -22,4 +22,9 @@ include $(KBUILD_PATH)/subheader.kmk
 include $(PATH_SUB_CURRENT)/np/Makefile.kmk
 include $(PATH_SUB_CURRENT)/driver/Makefile.kmk
 
+INSTALLS += VBoxSFScripts
+VBoxSFScripts_TEMPLATE = VBoxGuestR3Exe
+VBoxSFScripts_SOURCES  = VBoxSFInst.cmd
+
 include $(FILE_KBUILD_SUB_FOOTER)
+
