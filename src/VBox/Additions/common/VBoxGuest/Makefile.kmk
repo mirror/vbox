@@ -84,6 +84,9 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
   else
    VBoxGuest_SOURCES    = VBoxGuest-$(KBUILD_TARGET).c
    VBoxGuest_$(KBUILD_TARGET).c_DEPS = $(VBOX_SVN_REV_HEADER)
+   ifeq ($(KBUILD_TARGET),freebsd)
+    VBoxGuest-$(KBUILD_TARGET).c_CFLAGS = -Wno-sign-compare # /usr/src/sys/sys/vmmeter.h: In function 'vm_paging_needed'
+   endif
   endif
   VBoxGuest_SOURCES     += \
   	VBoxGuest.cpp

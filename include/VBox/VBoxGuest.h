@@ -178,6 +178,7 @@
 # define VBGL_IOCTL_CODE_BIG(Function)              _IO('V', (Function))
 # define VBGL_IOCTL_CODE_FAST(Function)             _IO('F', (Function))
 # define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         ((a_uIOCtl) & ~(_IOC(0,0,0,IOCPARM_MASK) | VBGL_IOCTL_FLAG_BIT_MASK))
+# define VBGL_IOCTL_IS_FAST(a_uIOCtl)               ( IOCGROUP(a_uIOCtl) == 'F' )
 #endif
 
 

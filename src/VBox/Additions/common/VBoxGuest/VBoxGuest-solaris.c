@@ -681,7 +681,7 @@ static int vgdrvSolarisIOCtlSlow(PVBOXGUESTSESSION pSession, int iCmd, int Mode,
     }
     cbBuf = RT_MAX(StackBuf.Hdr.cbIn, StackBuf.Hdr.cbOut);
     if (RT_UNLIKELY(   StackBuf.Hdr.cbIn < sizeof(StackBuf.Hdr)
-                    || StackBuf.Hdr.cbOut < sizeof(StackBuf.Hdr)
+                    || (StackBuf.Hdr.cbOut < sizeof(StackBuf.Hdr) && StackBuf.Hdr.cbOut != 0)
                     || cbBuf > _1M*16))
     {
         LogRel(("vgdrvSolarisIOCtlSlow: max(%#x,%#x); iCmd=%#x\n", StackBuf.Hdr.cbIn, StackBuf.Hdr.cbOut, iCmd));
