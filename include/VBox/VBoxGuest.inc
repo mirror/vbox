@@ -2,8 +2,8 @@
 ; VBoxGuest - VirtualBox Guest Additions Interface, MASM/ALP header.
 ;
 
-;/*
-; Copyright (C) 2006-2015 Oracle Corporation
+;
+; Copyright (C) 2006-2017 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -22,22 +22,30 @@
 ; You may elect to license modified versions of this file under the
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
-; */
+;
 
 
 ;; ASSUMES OS/2 for now.
-VBOXGUEST_DEVICE_NAME   EQU     "VBoxGst$"
+VBOXGUEST_DEVICE_NAME_SHORT EQU "VBoxGst$"
 
-
-;; aka VBOXGUESTOS2IDCCONNECT
-VBGOS2IDC STRUC
+VBGLOS2ATTACHDD STRUC
 u32Version         DD ?
 u32Session         DD ?
 pfnServiceEP       DD ?
 fpfnServiceEP      DD ?
 fpfnServiceAsmEP   DD ?
-VBGOS2IDC ENDS
+VBGLOS2ATTACHDD ENDS
 
+VBGLREQHDR STRUC
+cbIn               DD ?
+uVersion           DD ?
+uType              DD ?
+rc                 DD ?
+cbOut              DD ?
+uReserved          DD ?
+VBGLREQHDR ENDS
+
+VBGL_IOC_VERSION        EQU     000010000h
 
 ; From VMMDev.h
 VMMDEV_VERSION_MAJOR    EQU     1

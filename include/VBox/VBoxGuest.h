@@ -141,6 +141,8 @@
 # define VBGL_IOCTL_CODE_FAST(Function)             ((unsigned char)(Function))
 # define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         ((a_uIOCtl) & ~VBGL_IOCTL_FLAG_BIT_MASK)
 # define VBOXGUEST_DEVICE_NAME                      "\\Dev\\VBoxGst$"
+/** Short device name for AttachDD. */
+# define VBOXGUEST_DEVICE_NAME_SHORT                "VBoxGst$"
 
 #elif defined(RT_OS_SOLARIS)
   /* No automatic buffering, size limited to 255 bytes => use VBGLBIGREQ for everything. */
@@ -914,7 +916,7 @@ typedef VBGLIOCWRITECOREDUMP VBoxGuestWriteCoreDump;
  * @remark  This is defined in multiple 16-bit headers / sources.
  *          Some places it's called VBGOS2IDC to short things a bit.
  */
-typedef struct VBOXGUESTOS2IDCCONNECT
+typedef struct VBGLOS2ATTACHDD
 {
     /** VBGL_IOC_VERSION. */
     uint32_t u32Version;
@@ -970,9 +972,15 @@ typedef struct VBOXGUESTOS2IDCCONNECT
      * @param   cbData              cx    - The size of the data buffer.
      */
     RTFAR16 fpfnServiceAsmEP;
-} VBOXGUESTOS2IDCCONNECT;
+} VBGLOS2ATTACHDD;
 /** Pointer to VBOXGUESTOS2IDCCONNECT buffer. */
-typedef VBOXGUESTOS2IDCCONNECT RT_FAR *PVBOXGUESTOS2IDCCONNECT;
+typedef VBGLOS2ATTACHDD RT_FAR *PVBGLOS2ATTACHDD;
+
+/**
+ * Prototype for the 16-bit callback returned by AttachDD on OS/2.
+ * @param   pAttachInfo     Pointer to structure to fill in.
+ */
+typedef void (__cdecl RT_FAR_CODE *PFNVBGLOS2ATTACHDD)(PVBGLOS2ATTACHDD pAttachInfo);
 #endif /* RT_OS_OS2 */
 
 
@@ -1009,7 +1017,11 @@ typedef struct VBGLIOCIDCCONNECT
         struct
         {
             /** The session handle (opaque). */
+#if ARCH_BITS >= 32
             void    RT_FAR *pvSession;
+#else
+            uint32_t        pvSession;
+#endif
             /** The version of the I/O control interface for this session
              * (typically VBGL_IOC_VERSION). */
             uint32_t        uSessionVersion;
@@ -1053,7 +1065,11 @@ typedef struct VBGLIOCIDCDISCONNECT
         struct
         {
             /** The session handle for platforms where this is needed. */
+#if ARCH_BITS >= 32
             void RT_FAR *pvSession;
+#else
+            uint32_t     pvSession;
+#endif
         } In;
     } u;
 } VBGLIOCIDCDISCONNECT, RT_FAR *PVBGLIOCIDCDISCONNECT;

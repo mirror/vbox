@@ -28,10 +28,9 @@
 %define ___VBox_VBoxGuest_mac___
 
 %ifdef RT_OS_OS2
-%define VBOXGUEST_DEVICE_NAME   "vboxgst$"
+%define VBOXGUEST_DEVICE_NAME_SHORT "vboxgst$"
 
-;; aka VBOXGUESTOS2IDCCONNECT
-struc VBGOS2IDC
+struc VBGLOS2ATTACHDD
     .u32Version         resd 1
     .u32Session         resd 1
     .pfnServiceEP       resd 1
