@@ -743,10 +743,9 @@ static void clipStopEventThreadWorker(void *pUserData, void *)
 /** Setup the XFixes library and load the XFixesSelectSelectionInput symbol */
 static int clipLoadXFixes(Display *pDisplay, CLIPBACKEND *pCtx)
 {
-    int dummy1 = 0, dummy2 = 0, rc = VINF_SUCCESS;
-    void *hFixesLib;
+    int rc;
 
-    hFixesLib = dlopen("libXfixes.so.1", RTLD_LAZY);
+    void *hFixesLib = dlopen("libXfixes.so.1", RTLD_LAZY);
     if (!hFixesLib)
         hFixesLib = dlopen("libXfixes.so.2", RTLD_LAZY);
     if (!hFixesLib)
@@ -754,18 +753,41 @@ static int clipLoadXFixes(Display *pDisplay, CLIPBACKEND *pCtx)
     if (!hFixesLib)
         hFixesLib = dlopen("libXfixes.so.4", RTLD_LAZY);
     if (hFixesLib)
-        pCtx->fixesSelectInput =
-            (void (*)(Display *, Window, Atom, long unsigned int))
-                (uintptr_t)dlsym(hFixesLib, "XFixesSelectSelectionInput");
-    /* For us, a NULL function pointer is a failure */
-    if (!hFixesLib || !pCtx->fixesSelectInput)
+    {
+        /* For us, a NULL function pointer is a failure */
+        pCtx->fixesSelectInput = (void (*)(Display *, Window, Atom, long unsigned int))
+                                 (uintptr_t)dlsym(hFixesLib, "XFixesSelectSelectionInput");
+        if (pCtx->fixesSelectInput)
+        {
+            int dummy1 = 0;
+            int dummy2 = 0;
+            if (XQueryExtension(pDisplay, "XFIXES", &dummy1, &pCtx->fixesEventBase, &dummy2) != 0)
+            {
+                if (pCtx->fixesEventBase >= 0)
+                    rc = VINF_SUCCESS;
+                else
+                {
+                    LogRel(("clipLoadXFixes: fixesEventBase is less than zero: %d\n", pCtx->fixesEventBase));
+                    rc = VERR_NOT_SUPPORTED;
+                }
+            }
+            else
+            {
+                LogRel(("clipLoadXFixes: XQueryExtension failed\n"));
+                rc = VERR_NOT_SUPPORTED;
+            }
+        }
+        else
+        {
+            LogRel(("clipLoadXFixes: Symbol XFixesSelectSelectionInput not found!\n"));
+            rc = VERR_NOT_SUPPORTED;
+        }
+    }
+    else
+    {
+        LogRel(("clipLoadXFixes: libxFixes.so.* not found!\n"));
         rc = VERR_NOT_SUPPORTED;
-    if (   RT_SUCCESS(rc)
-        && !XQueryExtension(pDisplay, "XFIXES", &dummy1,
-                            &pCtx->fixesEventBase, &dummy2))
-        rc = VERR_NOT_SUPPORTED;
-    if (RT_SUCCESS(rc) && pCtx->fixesEventBase < 0)
-        rc = VERR_NOT_SUPPORTED;
+    }
     return rc;
 }
 #endif
