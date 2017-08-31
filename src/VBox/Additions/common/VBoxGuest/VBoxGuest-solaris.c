@@ -758,6 +758,97 @@ static int vgdrvSolarisIOCtlSlow(PVBOXGUESTSESSION pSession, int iCmd, int Mode,
 }
 
 
+/**
+ * @note This code is duplicated on other platforms with variations, so please
+ *       keep them all up to date when making changes!
+ */
+int VBOXCALL VBoxGuestIDC(void *pvSession, uintptr_t uReq, PVBGLREQHDR pReqHdr, size_t cbReq)
+{
+    /*
+     * Simple request validation (common code does the rest).
+     */
+    int rc;
+    if (   RT_VALID_PTR(pReqHdr)
+        && cbReq >= sizeof(*pReqHdr))
+    {
+        /*
+         * All requests except the connect one requires a valid session.
+         */
+        PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
+        if (pSession)
+        {
+            if (   RT_VALID_PTR(pSession)
+                && pSession->pDevExt == &g_DevExt)
+                rc = VGDrvCommonIoCtl(uReq, &g_DevExt, pSession, pReqHdr, cbReq);
+            else
+                rc = VERR_INVALID_HANDLE;
+        }
+        else if (uReq == VBGL_IOCTL_IDC_CONNECT)
+        {
+            /* Reference ourselves to make sure we don't go away.
+               Note! Would be better if the IDC code did this. */
+            mutex_enter(&g_LdiMtx);
+            if (g_LdiHandle)
+            {
+                ++g_cLdiOpens;
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                ldi_ident_t DevIdent = ldi_ident_from_anon();
+                rc = ldi_open_by_name(VBOXGUEST_DEVICE_NAME, FREAD, kcred, &g_LdiHandle, DevIdent);
+                ldi_ident_release(DevIdent);
+                if (!rc)
+                    ++g_cLdiOpens;
+                else
+                {
+                    LogRel(("VBoxGuestIDCOpen: ldi_open_by_name failed. rc=%d\n", rc));
+                    rc = VERR_OPEN_FAILED;
+                }
+            }
+            mutex_exit(&g_LdiMtx);
+
+            if (RT_SUCCESS(rc))
+            {
+                rc = VGDrvCommonCreateKernelSession(&g_DevExt, &pSession);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = VGDrvCommonIoCtl(uReq, &g_DevExt, pSession, pReqHdr, cbReq);
+                    if (RT_FAILURE(rc))
+                        VGDrvCommonCloseSession(&g_DevExt, pSession);
+                }
+            }
+        }
+        else
+            rc = VERR_INVALID_HANDLE;
+
+        /*
+         * Dereference the driver on disconnect and failed connect.
+         */
+        if (RT_UNLIKELY(   (   uReq == VBGL_IOCTL_IDC_CONNECT
+                            && RT_FAILURE(rc))
+                        || (   uReq == VBGL_IOCTL_IDC_DISCONNECT
+                            && RT_SUCCESS(rc)) ))
+        {
+            mutex_enter(&g_LdiMtx);
+            if (g_cLdiOpens > 0)
+                --g_cLdiOpens;
+            if (   g_cLdiOpens == 0
+                && g_LdiHandle)
+            {
+                ldi_close(g_LdiHandle, FREAD, kcred);
+                g_LdiHandle = NULL;
+            }
+            mutex_exit(&g_LdiMtx);
+        }
+    }
+    else
+        rc = VERR_INVALID_POINTER;
+    return rc;
+}
+
+
+
 static int vgdrvSolarisPoll(dev_t Dev, short fEvents, int fAnyYet, short *pReqEvents, struct pollhead **ppPollHead)
 {
     LogFlow(("vgdrvSolarisPoll: fEvents=%d fAnyYet=%d\n", fEvents, fAnyYet));
@@ -781,11 +872,9 @@ static int vgdrvSolarisPoll(dev_t Dev, short fEvents, int fAnyYet, short *pReqEv
 
         return 0;
     }
-    else
-    {
-        Log(("vgdrvSolarisPoll: no state data for %d\n", getminor(Dev)));
-        return EINVAL;
-    }
+
+    Log(("vgdrvSolarisPoll: no state data for %d\n", getminor(Dev)));
+    return EINVAL;
 }
 
 
@@ -1021,8 +1110,4 @@ int VGDrvNativeSetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, PVBGLIOCSETMOUSE
     mutex_exit(&g_IrqMtx);
     return VINF_SUCCESS;
 }
-
-
-/* Common code that depend on g_DevExt. */
-#include "VBoxGuestIDC-unix.c.h"
 
