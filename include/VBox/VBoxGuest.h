@@ -980,7 +980,11 @@ typedef VBGLOS2ATTACHDD RT_FAR *PVBGLOS2ATTACHDD;
  * Prototype for the 16-bit callback returned by AttachDD on OS/2.
  * @param   pAttachInfo     Pointer to structure to fill in.
  */
+# if defined(__IBMC__) || defined(__IBMCPP__)
+typedef void (* __cdecl RT_FAR_CODE PFNVBGLOS2ATTACHDD)(PVBGLOS2ATTACHDD pAttachInfo);
+# else
 typedef void (__cdecl RT_FAR_CODE *PFNVBGLOS2ATTACHDD)(PVBGLOS2ATTACHDD pAttachInfo);
+# endif
 #endif /* RT_OS_OS2 */
 
 
