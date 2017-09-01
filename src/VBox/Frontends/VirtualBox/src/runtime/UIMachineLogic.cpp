@@ -740,9 +740,9 @@ void UIMachineLogic::sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsA
     if (!error.isNull())
     {
         if (fIsAttached)
-            msgCenter().cannotAttachUSBDevice(error, vboxGlobal().details(device), machineName());
+            popupCenter().cannotAttachUSBDevice(activeMachineWindow(), error, vboxGlobal().details(device), machineName());
         else
-            msgCenter().cannotDetachUSBDevice(error, vboxGlobal().details(device), machineName());
+            popupCenter().cannotDetachUSBDevice(activeMachineWindow(), error, vboxGlobal().details(device), machineName());
     }
 }
 
@@ -1868,7 +1868,7 @@ void UIMachineLogic::sltToggleVideoCapture(bool fEnabled)
         /* Make sure action is updated: */
         uisession()->updateStatusVideoCapture();
         /* Notify about the error: */
-        return msgCenter().cannotToggleVideoCapture(machine(), fEnabled);
+        return popupCenter().cannotToggleVideoCapture(activeMachineWindow(), machine(), fEnabled);
     }
 
     /* Save machine-settings: */
@@ -1904,7 +1904,7 @@ void UIMachineLogic::sltToggleVRDE(bool fEnabled)
         /* Make sure action is updated: */
         uisession()->updateStatusVRDE();
         /* Notify about the error: */
-        return msgCenter().cannotToggleVRDEServer(server, machineName(), fEnabled);
+        return popupCenter().cannotToggleVRDEServer(activeMachineWindow(), server, machineName(), fEnabled);
     }
 
     /* Save machine-settings: */
@@ -1975,7 +1975,7 @@ void UIMachineLogic::sltToggleAudioOutput(bool fEnabled)
         /* Make sure action is updated: */
         uisession()->updateAudioOutput();
         /* Notify about the error: */
-        return msgCenter().cannotToggleAudioOutput(comAdapter, machineName(), fEnabled);
+        return popupCenter().cannotToggleAudioOutput(activeMachineWindow(), comAdapter, machineName(), fEnabled);
     }
 
     /* Save machine-settings: */
@@ -2011,7 +2011,7 @@ void UIMachineLogic::sltToggleAudioInput(bool fEnabled)
         /* Make sure action is updated: */
         uisession()->updateAudioInput();
         /* Notify about the error: */
-        return msgCenter().cannotToggleAudioInput(comAdapter, machineName(), fEnabled);
+        return popupCenter().cannotToggleAudioInput(activeMachineWindow(), comAdapter, machineName(), fEnabled);
     }
 
     /* Save machine-settings: */
@@ -2041,7 +2041,7 @@ void UIMachineLogic::sltOpenSharedFoldersSettingsDialog()
 {
     /* Do not process if additions are not loaded! */
     if (!uisession()->isGuestAdditionsActive())
-        msgCenter().remindAboutGuestAdditionsAreNotActive();
+        popupCenter().remindAboutGuestAdditionsAreNotActive(activeMachineWindow());
 
     /* Open VM settings : Shared folders page: */
     sltOpenVMSettingsDialog("#sharedFolders");
@@ -2084,7 +2084,7 @@ void UIMachineLogic::sltAttachUSBDevice()
             /* Get USB device from host USB device: */
             CUSBDevice device(hostDevice);
             /* Show a message about procedure failure: */
-            msgCenter().cannotAttachUSBDevice(console(), vboxGlobal().details(device));
+            popupCenter().cannotAttachUSBDevice(activeMachineWindow(), console(), vboxGlobal().details(device));
         }
     }
     /* Detach USB device: */
@@ -2098,7 +2098,7 @@ void UIMachineLogic::sltAttachUSBDevice()
         if (!console().isOk())
         {
             /* Show a message about procedure failure: */
-            msgCenter().cannotDetachUSBDevice(console(), vboxGlobal().details(device));
+            popupCenter().cannotDetachUSBDevice(activeMachineWindow(), console(), vboxGlobal().details(device));
         }
     }
 }
@@ -2122,7 +2122,7 @@ void UIMachineLogic::sltAttachWebCamDevice()
         dispatcher.WebcamAttach(target.path, "");
         /* Check if dispatcher is OK: */
         if (!dispatcher.isOk())
-            msgCenter().cannotAttachWebCam(dispatcher, target.name, machineName());
+            popupCenter().cannotAttachWebCam(activeMachineWindow(), dispatcher, target.name, machineName());
     }
     /* Detach webcam device: */
     else
@@ -2131,7 +2131,7 @@ void UIMachineLogic::sltAttachWebCamDevice()
         dispatcher.WebcamDetach(target.path);
         /* Check if dispatcher is OK: */
         if (!dispatcher.isOk())
-            msgCenter().cannotDetachWebCam(dispatcher, target.name, machineName());
+            popupCenter().cannotDetachWebCam(activeMachineWindow(), dispatcher, target.name, machineName());
     }
 }
 
@@ -2161,7 +2161,7 @@ void UIMachineLogic::sltToggleNetworkAdapterConnection()
     const bool fConnect = !adapter.GetCableConnected();
     adapter.SetCableConnected(fConnect);
     if (!adapter.isOk())
-        return msgCenter().cannotToggleNetworkAdapterCable(adapter, machineName(), fConnect);
+        return popupCenter().cannotToggleNetworkAdapterCable(activeMachineWindow(), adapter, machineName(), fConnect);
 
     /* Save machine-settings: */
     machine().SaveSettings();

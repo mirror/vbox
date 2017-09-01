@@ -59,15 +59,11 @@
 /* COM includes: */
 # include "CNATNetwork.h"
 # include "CDHCPServer.h"
-# include "CAudioAdapter.h"
 # include "CNATEngine.h"
 # include "CSerialPort.h"
 # include "CSharedFolder.h"
 # include "CSnapshot.h"
 # include "CStorageController.h"
-# include "CUSBController.h"
-# include "CUSBDeviceFilters.h"
-# include "CUSBDeviceFilter.h"
 # include "CConsole.h"
 # include "CMachine.h"
 # include "CSystemProperties.h"
@@ -78,9 +74,6 @@
 # include "CExtPackManager.h"
 # include "CExtPackFile.h"
 # include "CHostNetworkInterface.h"
-# include "CVRDEServer.h"
-# include "CNetworkAdapter.h"
-# include "CEmulatedUSB.h"
 # ifdef VBOX_WITH_DRAG_AND_DROP
 #  include "CGuest.h"
 #  include "CDnDSource.h"
@@ -2039,112 +2032,6 @@ void UIMessageCenter::cannotSwitchScreenInSeamless(quint64 uMinVRAM) const
              "<p>You should configure the virtual machine to have at "
              "least <b>%1</b> of video memory.</p>")
              .arg(VBoxGlobal::formatSize(uMinVRAM)));
-}
-
-void UIMessageCenter::cannotAttachUSBDevice(const CConsole &console, const QString &strDevice) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to attach the USB device <b>%1</b> to the virtual machine <b>%2</b>.")
-             .arg(strDevice, CConsole(console).GetMachine().GetName()),
-          UIErrorString::formatErrorInfo(console));
-}
-
-void UIMessageCenter::cannotAttachUSBDevice(const CVirtualBoxErrorInfo &errorInfo, const QString &strDevice, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to attach the USB device <b>%1</b> to the virtual machine <b>%2</b>.")
-             .arg(strDevice, strMachineName),
-          UIErrorString::formatErrorInfo(errorInfo));
-}
-
-void UIMessageCenter::cannotDetachUSBDevice(const CConsole &console, const QString &strDevice) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to detach the USB device <b>%1</b> from the virtual machine <b>%2</b>.")
-             .arg(strDevice, CConsole(console).GetMachine().GetName()),
-          UIErrorString::formatErrorInfo(console));
-}
-
-void UIMessageCenter::cannotDetachUSBDevice(const CVirtualBoxErrorInfo &errorInfo, const QString &strDevice, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to detach the USB device <b>%1</b> from the virtual machine <b>%2</b>.")
-             .arg(strDevice, strMachineName),
-          UIErrorString::formatErrorInfo(errorInfo));
-}
-
-void UIMessageCenter::cannotAttachWebCam(const CEmulatedUSB &dispatcher, const QString &strWebCamName, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to attach the webcam <b>%1</b> to the virtual machine <b>%2</b>.")
-             .arg(strWebCamName, strMachineName),
-          UIErrorString::formatErrorInfo(dispatcher));
-}
-
-void UIMessageCenter::cannotDetachWebCam(const CEmulatedUSB &dispatcher, const QString &strWebCamName, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to detach the webcam <b>%1</b> from the virtual machine <b>%2</b>.")
-             .arg(strWebCamName, strMachineName),
-          UIErrorString::formatErrorInfo(dispatcher));
-}
-
-void UIMessageCenter::cannotToggleVideoCapture(const CMachine &machine, bool fEnable)
-{
-    /* Get machine-name preserving error-info: */
-    QString strMachineName(CMachine(machine).GetName());
-    error(0, MessageType_Error,
-          fEnable ?
-              tr("Failed to enable video capturing for the virtual machine <b>%1</b>.").arg(strMachineName) :
-              tr("Failed to disable video capturing for the virtual machine <b>%1</b>.").arg(strMachineName),
-          UIErrorString::formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotToggleVRDEServer(const CVRDEServer &server, const QString &strMachineName, bool fEnable)
-{
-    error(0, MessageType_Error,
-          fEnable ?
-              tr("Failed to enable the remote desktop server for the virtual machine <b>%1</b>.").arg(strMachineName) :
-              tr("Failed to disable the remote desktop server for the virtual machine <b>%1</b>.").arg(strMachineName),
-          UIErrorString::formatErrorInfo(server));
-}
-
-void UIMessageCenter::cannotToggleAudioOutput(const CAudioAdapter &comAdapter, const QString &strMachineName, bool fEnable)
-{
-    error(0, MessageType_Error,
-          fEnable ?
-              tr("Failed to enable the audio adapter output for the virtual machine <b>%1</b>.").arg(strMachineName) :
-              tr("Failed to disable the audio adapter output for the virtual machine <b>%1</b>.").arg(strMachineName),
-          UIErrorString::formatErrorInfo(comAdapter));
-}
-
-void UIMessageCenter::cannotToggleAudioInput(const CAudioAdapter &comAdapter, const QString &strMachineName, bool fEnable)
-{
-    error(0, MessageType_Error,
-          fEnable ?
-              tr("Failed to enable the audio adapter input for the virtual machine <b>%1</b>.").arg(strMachineName) :
-              tr("Failed to disable the audio adapter input for the virtual machine <b>%1</b>.").arg(strMachineName),
-          UIErrorString::formatErrorInfo(comAdapter));
-}
-
-void UIMessageCenter::cannotToggleNetworkAdapterCable(const CNetworkAdapter &adapter, const QString &strMachineName, bool fConnect)
-{
-    error(0, MessageType_Error,
-          fConnect ?
-              tr("Failed to connect the network adapter cable of the virtual machine <b>%1</b>.").arg(strMachineName) :
-              tr("Failed to disconnect the network adapter cable of the virtual machine <b>%1</b>.").arg(strMachineName),
-          UIErrorString::formatErrorInfo(adapter));
-}
-
-void UIMessageCenter::remindAboutGuestAdditionsAreNotActive() const
-{
-    alert(0, MessageType_Warning,
-          tr("<p>The VirtualBox Guest Additions do not appear to be available on this virtual machine, "
-             "and shared folders cannot be used without them. To use shared folders inside the virtual machine, "
-             "please install the Guest Additions if they are not installed, or re-install them if they are "
-             "not working correctly, by selecting <b>Insert Guest Additions CD image</b> from the <b>Devices</b> menu. "
-             "If they are installed but the machine is not yet fully started then shared folders will be available once it is.</p>"),
-          "remindAboutGuestAdditionsAreNotActive");
 }
 
 void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName) const

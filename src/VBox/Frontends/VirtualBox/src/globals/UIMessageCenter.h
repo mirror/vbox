@@ -311,18 +311,6 @@ public:
     void cannotEnterSeamlessMode(ULONG uWidth, ULONG uHeight, ULONG uBpp, ULONG64 uMinVRAM) const;
     bool cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const;
     void cannotSwitchScreenInSeamless(quint64 uMinVRAM) const;
-    void cannotAttachUSBDevice(const CConsole &console, const QString &strDevice) const;
-    void cannotAttachUSBDevice(const CVirtualBoxErrorInfo &errorInfo, const QString &strDevice, const QString &strMachineName) const;
-    void cannotDetachUSBDevice(const CConsole &console, const QString &strDevice) const;
-    void cannotDetachUSBDevice(const CVirtualBoxErrorInfo &errorInfo, const QString &strDevice, const QString &strMachineName) const;
-    void cannotAttachWebCam(const CEmulatedUSB &dispatcher, const QString &strWebCamName, const QString &strMachineName) const;
-    void cannotDetachWebCam(const CEmulatedUSB &dispatcher, const QString &strWebCamName, const QString &strMachineName) const;
-    void cannotToggleVideoCapture(const CMachine &machine, bool fEnable);
-    void cannotToggleVRDEServer(const CVRDEServer &server, const QString &strMachineName, bool fEnable);
-    void cannotToggleAudioOutput(const CAudioAdapter &comAdapter, const QString &strMachineName, bool fEnable);
-    void cannotToggleAudioInput(const CAudioAdapter &comAdapter, const QString &strMachineName, bool fEnable);
-    void cannotToggleNetworkAdapterCable(const CNetworkAdapter &adapter, const QString &strMachineName, bool fConnect);
-    void remindAboutGuestAdditionsAreNotActive() const;
     void cannotMountGuestAdditions(const QString &strMachineName) const;
     void cannotAddDiskEncryptionPassword(const CConsole &console);
 
