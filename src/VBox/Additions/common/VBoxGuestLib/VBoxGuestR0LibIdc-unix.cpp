@@ -34,6 +34,7 @@
 
 int VBOXCALL vbglR0IdcNativeOpen(PVBGLIDCHANDLE pHandle, PVBGLIOCIDCCONNECT pReq)
 {
+    RT_NOREF(pHandle);
     return VBoxGuestIDC(NULL /*pvSession*/, VBGL_IOCTL_IDC_CONNECT, &pReq->Hdr, sizeof(*pReq));
 }
 
