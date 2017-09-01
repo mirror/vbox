@@ -2305,15 +2305,9 @@ static void hdaTimerStop(PHDASTATE pThis)
     /* Set timer flag. */
     ASMAtomicXchgBool(&pThis->fTimerActive, false);
 
-    /*
-     * Stop the timer, if any.
-     */
-    if (   pThis->pTimer
-        && TMTimerIsActive(pThis->pTimer))
-    {
-        int rc2 = TMTimerStop(pThis->pTimer);
-        AssertRC(rc2);
-    }
+    /* Don't stop the timer via TMTimerStop() here, as this function
+     * might be called with an MMIO handler which then in case triggers
+     * a lock order violation. */
 }
 
 /**
