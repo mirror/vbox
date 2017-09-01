@@ -34,6 +34,10 @@
 ; @param    AX:BX:CX:DX Value to shift.
 ; @param    SI          Shift count.
 ;
+ifdef BS3KIT_WITH_REAL_WATCOM_INTRINSIC_NAMES
+global __U8RS
+__U8RS:
+endif
 global $_?U8RS
 $_?U8RS:
         push    si
