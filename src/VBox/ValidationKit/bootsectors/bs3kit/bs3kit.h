@@ -28,11 +28,14 @@
 #define ___bs3kit_h
 
 #ifndef DOXYGEN_RUNNING
+# undef  IN_RING0
 # define IN_RING0
 #endif
+
 #define RT_NO_STRICT            /* Don't drag in IPRT assertion code in inline code we may use (asm.h). */
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+
 #ifndef DOXYGEN_RUNNING
 # undef  IN_RING0
 #endif
@@ -1559,7 +1562,7 @@ BS3_CMN_PROTO_STUB(size_t, Bs3Printf,(const char BS3_FAR *pszFormat, ...));
  * @param   pszFormat       The format string.
  * @param   va              Format arguments.
  */
-BS3_CMN_PROTO_STUB(size_t, Bs3PrintfV,(const char BS3_FAR *pszFormat, va_list va));
+BS3_CMN_PROTO_STUB(size_t, Bs3PrintfV,(const char BS3_FAR *pszFormat, va_list BS3_FAR va));
 
 /**
  * Prints a string to the screen.
@@ -1615,7 +1618,7 @@ typedef FNBS3STRFORMATOUTPUT *PFNBS3STRFORMATOUTPUT;
  * @param   pfnOutput   The output function.
  * @param   pvUser      The user argument for the output function.
  */
-BS3_CMN_PROTO_STUB(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list va,
+BS3_CMN_PROTO_STUB(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list BS3_FAR va,
                                           PFNBS3STRFORMATOUTPUT pfnOutput, void BS3_FAR *pvUser));
 
 /**
@@ -1630,7 +1633,7 @@ BS3_CMN_PROTO_STUB(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list
  * @param   pszFormat   The format string.
  * @param   va          Format arguments.
  */
-BS3_CMN_PROTO_STUB(size_t, Bs3StrPrintfV,(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, va_list va));
+BS3_CMN_PROTO_STUB(size_t, Bs3StrPrintfV,(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, va_list BS3_FAR va));
 
 /**
  * Formats a string into a buffer.
@@ -3107,7 +3110,7 @@ BS3_CMN_PROTO_STUB(void, Bs3TestSubF,(const char BS3_FAR *pszFormat, ...));
 /**
  * Equivalent to RTTestISubV.
  */
-BS3_CMN_PROTO_STUB(void, Bs3TestSubV,(const char BS3_FAR *pszFormat, va_list va));
+BS3_CMN_PROTO_STUB(void, Bs3TestSubV,(const char BS3_FAR *pszFormat, va_list BS3_FAR va));
 
 /**
  * Equivalent to RTTestISubDone.
@@ -3133,7 +3136,7 @@ BS3_CMN_PROTO_STUB(void, Bs3TestPrintf,(const char BS3_FAR *pszFormat, ...));
  * @param   pszFormat   What to print, format string.  Explicit newline char.
  * @param   va          String format arguments.
  */
-BS3_CMN_PROTO_STUB(void, Bs3TestPrintfV,(const char BS3_FAR *pszFormat, va_list va));
+BS3_CMN_PROTO_STUB(void, Bs3TestPrintfV,(const char BS3_FAR *pszFormat, va_list BS3_FAR va));
 
 /**
  * Equivalent to RTTestIFailed.
@@ -3151,7 +3154,7 @@ BS3_CMN_PROTO_STUB(bool, Bs3TestFailedF,(const char BS3_FAR *pszFormat, ...));
  * Equivalent to RTTestIFailedV.
  * @returns false.
  */
-BS3_CMN_PROTO_STUB(bool, Bs3TestFailedV,(const char BS3_FAR *pszFormat, va_list va));
+BS3_CMN_PROTO_STUB(bool, Bs3TestFailedV,(const char BS3_FAR *pszFormat, va_list BS3_FAR va));
 
 /**
  * Equivalent to RTTestISkipped.
@@ -3174,7 +3177,7 @@ BS3_CMN_PROTO_STUB(void, Bs3TestSkippedF,(const char BS3_FAR *pszFormat, ...));
  * @param   pszFormat       Optional reason why it's being skipped.
  * @param   va              Format arguments.
  */
-BS3_CMN_PROTO_STUB(void, Bs3TestSkippedV,(const char BS3_FAR *pszFormat, va_list va));
+BS3_CMN_PROTO_STUB(void, Bs3TestSkippedV,(const char BS3_FAR *pszFormat, va_list BS3_FAR va));
 
 /**
  * Compares two register contexts, with PC and SP adjustments.

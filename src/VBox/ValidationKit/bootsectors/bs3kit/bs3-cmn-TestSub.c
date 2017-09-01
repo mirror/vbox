@@ -37,7 +37,7 @@
  * Equivalent to RTTestISubV.
  */
 #undef Bs3TestSubV
-BS3_CMN_DEF(void, Bs3TestSubV,(const char *pszFormat, va_list va))
+BS3_CMN_DEF(void, Bs3TestSubV,(const char *pszFormat, va_list BS3_FAR va))
 {
     size_t cch;
 

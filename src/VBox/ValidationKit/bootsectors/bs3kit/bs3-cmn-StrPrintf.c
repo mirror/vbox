@@ -73,7 +73,7 @@ static BS3_DECL_CALLBACK(size_t) bs3StrPrintfFmtOutput(char ch, void BS3_FAR *pv
 
 
 #undef Bs3StrPrintfV
-BS3_CMN_DEF(size_t, Bs3StrPrintfV,(char BS3_FAR *pszBuf, size_t cchBuf, const char BS3_FAR *pszFormat, va_list va))
+BS3_CMN_DEF(size_t, Bs3StrPrintfV,(char BS3_FAR *pszBuf, size_t cchBuf, const char BS3_FAR *pszFormat, va_list BS3_FAR va))
 {
     BS3STRPRINTFSTATE State;
     State.pchBuf  = pszBuf;

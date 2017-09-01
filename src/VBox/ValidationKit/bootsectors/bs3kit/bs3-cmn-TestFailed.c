@@ -95,7 +95,7 @@ BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput(char ch, void BS3_FAR *pvUser)
  * Equivalent to RTTestIFailedV.
  */
 #undef Bs3TestFailedV
-BS3_CMN_DEF(bool, Bs3TestFailedV,(const char *pszFormat, va_list va))
+BS3_CMN_DEF(bool, Bs3TestFailedV,(const char *pszFormat, va_list BS3_FAR va))
 {
     BS3TESTFAILEDBUF Buf;
 

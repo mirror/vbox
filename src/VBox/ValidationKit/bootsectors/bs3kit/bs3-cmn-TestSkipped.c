@@ -37,7 +37,7 @@
  * Equivalent to RTTestSkippedV.
  */
 #undef Bs3TestSkippedV
-BS3_CMN_DEF(void, Bs3TestSkippedV,(const char *pszFormat, va_list va))
+BS3_CMN_DEF(void, Bs3TestSkippedV,(const char *pszFormat, va_list BS3_FAR va))
 {
     if (g_cusBs3TestErrors == g_cusBs3SubTestAtErrors)
     {

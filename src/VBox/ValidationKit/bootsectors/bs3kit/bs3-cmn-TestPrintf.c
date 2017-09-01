@@ -115,7 +115,7 @@ static BS3_DECL_CALLBACK(size_t) bs3TestPrintfStrOutput(char ch, void BS3_FAR *p
 
 
 #undef Bs3TestPrintfV
-BS3_CMN_DEF(void, Bs3TestPrintfV,(const char BS3_FAR *pszFormat, va_list va))
+BS3_CMN_DEF(void, Bs3TestPrintfV,(const char BS3_FAR *pszFormat, va_list BS3_FAR va))
 {
     BS3TESTPRINTBUF Buf;
     Buf.fNewCmd = true;
