@@ -435,7 +435,7 @@ int hdaStreamWrite(PHDASTREAM pStream, uint32_t cbToWrite, uint32_t *pcbWritten)
 
         uint32_t cbRead = 0;
 
-        RTCircBufAcquireWriteBlock(pCircBuf, cbToWrite, &pvDst, &cbDst);
+        RTCircBufAcquireWriteBlock(pCircBuf, cbLeft, &pvDst, &cbDst);
 
         if (cbDst)
         {
@@ -443,7 +443,7 @@ int hdaStreamWrite(PHDASTREAM pStream, uint32_t cbToWrite, uint32_t *pcbWritten)
             AssertRC(rc);
 
             Assert(cbDst >= cbRead);
-            Log2Func(("[SD%RU8]: %zu/%zu bytes read\n", pStream->u8SD, cbRead, cbDst));
+            Log2Func(("[SD%RU8]: %RU32/%zu bytes read\n", pStream->u8SD, cbRead, cbDst));
 
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
             RTFILE fh;
