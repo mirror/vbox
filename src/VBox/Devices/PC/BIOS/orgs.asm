@@ -617,7 +617,12 @@ endif
 
 ifdef VBOX_WITH_AHCI
                 ; AHCI driver setup
+                ;; TODO: AHCI initialization needs timer, but enabling
+                ;; interrupts elsewhere may be risky. Just do it around
+                ;; the AHCI init.
+                sti
                 call    _ahci_init
+                cli
 endif
 
 ifdef VBOX_WITH_SCSI

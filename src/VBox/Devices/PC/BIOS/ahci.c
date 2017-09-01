@@ -636,10 +636,18 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     return ahci->aCmdHdr[1] == 0 ? 4 : 0;
 }
 
+/* Wait for the specified number of BIOS timer ticks or data bytes. */
+void wait_ticks_device_init( unsigned wait_ticks, unsigned wait_bytes )
+{
+}
+
 void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
 {
-    uint32_t            val;
-    bio_dsk_t __far     *bios_dsk;
+    uint32_t                val;
+    bio_dsk_t __far         *bios_dsk;
+    volatile uint32_t __far *ticks;
+    uint32_t                end_tick;
+    int                     device_found = 0;
 
     ahci_port_init(ahci, u8Port);
 
@@ -653,15 +661,31 @@ void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
      */
     VBOXAHCI_PORT_WRITE_REG(ahci->iobase, u8Port, AHCI_REG_PORT_SCTL, 0);
 
-    /* Check if there is a device on the port. */
-    VBOXAHCI_PORT_READ_REG(ahci->iobase, u8Port, AHCI_REG_PORT_SSTS, val);
-    if (ahci_ctrl_extract_bits(val, 0xfL, 0) == 0)
-        return; /* No device detected. */
+    /*
+     * We do however have to wait for the device to initialize (the port reset
+     * to complete). That can take up to 10ms according to the SATA spec (device
+     * must send COMINIT within 10ms of COMRESET). We should be generous with
+     * the wait because in the typical case there are no ports without a device
+     * attached.
+     */
+    ticks = MK_FP( 0x40, 0x6C );
+    end_tick = *ticks + 3;  /* Wait up to five BIOS ticks, something in 150ms range. */
 
-    do
+    while( *ticks < end_tick )
     {
+        /* If PxSSTS.DET is 3, everything went fine. */
         VBOXAHCI_PORT_READ_REG(ahci->iobase, u8Port, AHCI_REG_PORT_SSTS, val);
-    } while (ahci_ctrl_extract_bits(val, 0xfL, 0) == 0x1);
+        if (ahci_ctrl_extract_bits(val, 0xfL, 0) == 3) {
+            device_found = 1;
+            break;
+        }
+    }
+
+    /* Timed out, no device detected. */
+    if (!device_found) {
+        DBG_AHCI("AHCI: Timed out, no device detected on port %d\n", u8Port);
+        return;
+    }
 
     if (ahci_ctrl_extract_bits(val, 0xfL, 0) == 0x3)
     {
