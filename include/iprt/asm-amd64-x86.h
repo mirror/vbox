@@ -113,7 +113,7 @@ typedef struct RTIDTR
 #else
     uint64_t    pIdt;
 #endif
-} RTIDTR, *PRTIDTR;
+} RTIDTR, RT_FAR *PRTIDTR;
 #pragma pack()
 
 #pragma pack(1)
@@ -137,7 +137,7 @@ typedef union RTIDTRALIGNED
 } RTIDTRALIGNED;
 AssertCompileSize(RTIDTRALIGNED, ((ARCH_BITS == 64) + 1) * 8);
 /** Pointer to a an RTIDTR alignment wrapper. */
-typedef RTIDTRALIGNED *PRIDTRALIGNED;
+typedef RTIDTRALIGNED RT_FAR *PRIDTRALIGNED;
 
 
 #pragma pack(1)
@@ -152,7 +152,7 @@ typedef struct RTGDTR
 #else
     uint64_t    pGdt;
 #endif
-} RTGDTR, *PRTGDTR;
+} RTGDTR, RT_FAR *PRTGDTR;
 #pragma pack()
 
 #pragma pack(1)
@@ -176,7 +176,7 @@ typedef union RTGDTRALIGNED
 } RTGDTRALIGNED;
 AssertCompileSize(RTIDTRALIGNED, ((ARCH_BITS == 64) + 1) * 8);
 /** Pointer to a an RTGDTR alignment wrapper. */
-typedef RTGDTRALIGNED *PRGDTRALIGNED;
+typedef RTGDTRALIGNED RT_FAR *PRGDTRALIGNED;
 
 
 /**
@@ -234,9 +234,9 @@ DECLINLINE(uint16_t) ASMGetIdtrLimit(void)
  * @param   pIdtr   Where to load the IDTR contents from
  */
 #if RT_INLINE_ASM_EXTERNAL
-DECLASM(void) ASMSetIDTR(const RTIDTR *pIdtr);
+DECLASM(void) ASMSetIDTR(const RTIDTR RT_FAR *pIdtr);
 #else
-DECLINLINE(void) ASMSetIDTR(const RTIDTR *pIdtr)
+DECLINLINE(void) ASMSetIDTR(const RTIDTR RT_FAR *pIdtr)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lidt %0" : : "m" (*pIdtr));
@@ -288,9 +288,9 @@ DECLINLINE(void) ASMGetGDTR(PRTGDTR pGdtr)
  * @param   pGdtr   Where to load the GDTR contents from
  */
 #if RT_INLINE_ASM_EXTERNAL
-DECLASM(void) ASMSetGDTR(const RTGDTR *pGdtr);
+DECLASM(void) ASMSetGDTR(const RTGDTR RT_FAR *pGdtr);
 #else
-DECLINLINE(void) ASMSetGDTR(const RTGDTR *pGdtr)
+DECLINLINE(void) ASMSetGDTR(const RTGDTR RT_FAR *pGdtr)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lgdt %0" : : "m" (*pGdtr));
@@ -836,9 +836,9 @@ DECLINLINE(uint64_t) ASMReadTSC(void)
  * @param   puAux   Where to store the AUX value.
  */
 #if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15
-DECLASM(uint64_t) ASMReadTscWithAux(uint32_t *puAux);
+DECLASM(uint64_t) ASMReadTscWithAux(uint32_t RT_FAR *puAux);
 #else
-DECLINLINE(uint64_t) ASMReadTscWithAux(uint32_t *puAux)
+DECLINLINE(uint64_t) ASMReadTscWithAux(uint32_t RT_FAR *puAux)
 {
     RTUINT64U u;
 # if RT_INLINE_ASM_GNU_STYLE
@@ -875,9 +875,9 @@ DECLINLINE(uint64_t) ASMReadTscWithAux(uint32_t *puAux)
  * @remark  We're using void pointers to ease the use of special bitfield structures and such.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX);
+DECLASM(void) ASMCpuId(uint32_t uOperator, void RT_FAR *pvEAX, void RT_FAR *pvEBX, void RT_FAR *pvECX, void RT_FAR *pvEDX);
 #else
-DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX)
+DECLINLINE(void) ASMCpuId(uint32_t uOperator, void RT_FAR *pvEAX, void RT_FAR *pvEBX, void RT_FAR *pvECX, void RT_FAR *pvEDX)
 {
 # if RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_AMD64
@@ -888,10 +888,10 @@ DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pv
                             "=c" (uRCX),
                             "=d" (uRDX)
              : "0" (uOperator), "2" (0));
-    *(uint32_t *)pvEAX = (uint32_t)uRAX;
-    *(uint32_t *)pvEBX = (uint32_t)uRBX;
-    *(uint32_t *)pvECX = (uint32_t)uRCX;
-    *(uint32_t *)pvEDX = (uint32_t)uRDX;
+    *(uint32_t RT_FAR *)pvEAX = (uint32_t)uRAX;
+    *(uint32_t RT_FAR *)pvEBX = (uint32_t)uRBX;
+    *(uint32_t RT_FAR *)pvECX = (uint32_t)uRCX;
+    *(uint32_t RT_FAR *)pvEDX = (uint32_t)uRDX;
 #  else
     __asm__ __volatile__ ("xchgl %%ebx, %1\n\t"
                           "cpuid\n\t"
@@ -906,10 +906,10 @@ DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pv
 # elif RT_INLINE_ASM_USES_INTRIN
     int aInfo[4];
     __cpuid(aInfo, uOperator);
-    *(uint32_t *)pvEAX = aInfo[0];
-    *(uint32_t *)pvEBX = aInfo[1];
-    *(uint32_t *)pvECX = aInfo[2];
-    *(uint32_t *)pvEDX = aInfo[3];
+    *(uint32_t RT_FAR *)pvEAX = aInfo[0];
+    *(uint32_t RT_FAR *)pvEBX = aInfo[1];
+    *(uint32_t RT_FAR *)pvECX = aInfo[2];
+    *(uint32_t RT_FAR *)pvEDX = aInfo[3];
 
 # else
     uint32_t    uEAX;
@@ -927,10 +927,10 @@ DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pv
         mov     [uEDX], edx
         pop     ebx
     }
-    *(uint32_t *)pvEAX = uEAX;
-    *(uint32_t *)pvEBX = uEBX;
-    *(uint32_t *)pvECX = uECX;
-    *(uint32_t *)pvEDX = uEDX;
+    *(uint32_t RT_FAR *)pvEAX = uEAX;
+    *(uint32_t RT_FAR *)pvEBX = uEBX;
+    *(uint32_t RT_FAR *)pvECX = uECX;
+    *(uint32_t RT_FAR *)pvEDX = uEDX;
 # endif
 }
 #endif
@@ -949,9 +949,9 @@ DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pv
  * @remark  We're using void pointers to ease the use of special bitfield structures and such.
  */
 #if RT_INLINE_ASM_EXTERNAL || RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX);
+DECLASM(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void RT_FAR *pvEAX, void RT_FAR *pvEBX, void RT_FAR *pvECX, void RT_FAR *pvEDX);
 #else
-DECLINLINE(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX)
+DECLINLINE(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void RT_FAR *pvEAX, void RT_FAR *pvEBX, void RT_FAR *pvECX, void RT_FAR *pvEDX)
 {
 # if RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_AMD64
@@ -963,10 +963,10 @@ DECLINLINE(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void *pv
                "=d" (uRDX)
              : "0" (uOperator),
                "2" (uIdxECX));
-    *(uint32_t *)pvEAX = (uint32_t)uRAX;
-    *(uint32_t *)pvEBX = (uint32_t)uRBX;
-    *(uint32_t *)pvECX = (uint32_t)uRCX;
-    *(uint32_t *)pvEDX = (uint32_t)uRDX;
+    *(uint32_t RT_FAR *)pvEAX = (uint32_t)uRAX;
+    *(uint32_t RT_FAR *)pvEBX = (uint32_t)uRBX;
+    *(uint32_t RT_FAR *)pvECX = (uint32_t)uRCX;
+    *(uint32_t RT_FAR *)pvEDX = (uint32_t)uRDX;
 #  else
     __asm__ ("xchgl %%ebx, %1\n\t"
              "cpuid\n\t"
@@ -982,10 +982,10 @@ DECLINLINE(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void *pv
 # elif RT_INLINE_ASM_USES_INTRIN
     int aInfo[4];
     __cpuidex(aInfo, uOperator, uIdxECX);
-    *(uint32_t *)pvEAX = aInfo[0];
-    *(uint32_t *)pvEBX = aInfo[1];
-    *(uint32_t *)pvECX = aInfo[2];
-    *(uint32_t *)pvEDX = aInfo[3];
+    *(uint32_t RT_FAR *)pvEAX = aInfo[0];
+    *(uint32_t RT_FAR *)pvEBX = aInfo[1];
+    *(uint32_t RT_FAR *)pvECX = aInfo[2];
+    *(uint32_t RT_FAR *)pvEDX = aInfo[3];
 
 # else
     uint32_t    uEAX;
@@ -1004,10 +1004,10 @@ DECLINLINE(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void *pv
         mov     [uEDX], edx
         pop     ebx
     }
-    *(uint32_t *)pvEAX = uEAX;
-    *(uint32_t *)pvEBX = uEBX;
-    *(uint32_t *)pvECX = uECX;
-    *(uint32_t *)pvEDX = uEDX;
+    *(uint32_t RT_FAR *)pvEAX = uEAX;
+    *(uint32_t RT_FAR *)pvEBX = uEBX;
+    *(uint32_t RT_FAR *)pvECX = uECX;
+    *(uint32_t RT_FAR *)pvEDX = uEDX;
 # endif
 }
 #endif
@@ -1027,7 +1027,7 @@ DECLINLINE(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void *pv
  * @param   pvEDX       Where to store edx. Optional.
  */
 DECLASM(uint32_t) ASMCpuIdExSlow(uint32_t uOperator, uint32_t uInitEBX, uint32_t uInitECX, uint32_t uInitEDX,
-                                 void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX);
+                                 void RT_FAR *pvEAX, void RT_FAR *pvEBX, void RT_FAR *pvECX, void RT_FAR *pvEDX);
 
 
 /**
@@ -1039,9 +1039,9 @@ DECLASM(uint32_t) ASMCpuIdExSlow(uint32_t uOperator, uint32_t uInitEBX, uint32_t
  * @remark  We're using void pointers to ease the use of special bitfield structures and such.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMCpuId_ECX_EDX(uint32_t uOperator, void *pvECX, void *pvEDX);
+DECLASM(void) ASMCpuId_ECX_EDX(uint32_t uOperator, void RT_FAR *pvECX, void RT_FAR *pvEDX);
 #else
-DECLINLINE(void) ASMCpuId_ECX_EDX(uint32_t uOperator, void *pvECX, void *pvEDX)
+DECLINLINE(void) ASMCpuId_ECX_EDX(uint32_t uOperator, void RT_FAR *pvECX, void RT_FAR *pvEDX)
 {
     uint32_t uEBX;
     ASMCpuId(uOperator, &uOperator, &uEBX, pvECX, pvEDX);
@@ -1949,14 +1949,14 @@ struct X86XSAVEAREA;
  * @param   pXStateArea     Where to save the state.
  * @param   fComponents     Which state components to save.
  */
-DECLASM(void) ASMXSave(struct X86XSAVEAREA *pXStateArea, uint64_t fComponents);
+DECLASM(void) ASMXSave(struct X86XSAVEAREA RT_FAR *pXStateArea, uint64_t fComponents);
 
 /**
  * Loads extended CPU state.
  * @param   pXStateArea     Where to load the state from.
  * @param   fComponents     Which state components to load.
  */
-DECLASM(void) ASMXRstor(struct X86XSAVEAREA const *pXStateArea, uint64_t fComponents);
+DECLASM(void) ASMXRstor(struct X86XSAVEAREA const RT_FAR *pXStateArea, uint64_t fComponents);
 
 
 struct X86FXSTATE;
@@ -1964,13 +1964,13 @@ struct X86FXSTATE;
  * Save FPU and SSE CPU state.
  * @param   pXStateArea     Where to save the state.
  */
-DECLASM(void) ASMFxSave(struct X86FXSTATE *pXStateArea);
+DECLASM(void) ASMFxSave(struct X86FXSTATE RT_FAR *pXStateArea);
 
 /**
  * Load FPU and SSE CPU state.
  * @param   pXStateArea     Where to load the state from.
  */
-DECLASM(void) ASMFxRstor(struct X86FXSTATE const *pXStateArea);
+DECLASM(void) ASMFxRstor(struct X86FXSTATE const RT_FAR *pXStateArea);
 
 
 /**
@@ -2968,9 +2968,9 @@ DECLINLINE(uint32_t) ASMInU32(RTIOPORT Port)
  * @param   c       The number of items to write.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMOutStrU8(RTIOPORT Port, uint8_t const *pau8, size_t c);
+DECLASM(void) ASMOutStrU8(RTIOPORT Port, uint8_t const RT_FAR *pau8, size_t c);
 #else
-DECLINLINE(void) ASMOutStrU8(RTIOPORT Port, uint8_t const *pau8, size_t c)
+DECLINLINE(void) ASMOutStrU8(RTIOPORT Port, uint8_t const RT_FAR *pau8, size_t c)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("rep; outsb\n\t"
@@ -2979,7 +2979,7 @@ DECLINLINE(void) ASMOutStrU8(RTIOPORT Port, uint8_t const *pau8, size_t c)
                          : "d" (Port));
 
 # elif RT_INLINE_ASM_USES_INTRIN
-    __outbytestring(Port, (unsigned char *)pau8, (unsigned long)c);
+    __outbytestring(Port, (unsigned char RT_FAR *)pau8, (unsigned long)c);
 
 # else
     __asm
@@ -3004,9 +3004,9 @@ DECLINLINE(void) ASMOutStrU8(RTIOPORT Port, uint8_t const *pau8, size_t c)
  * @param   c       The number of items to read.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMInStrU8(RTIOPORT Port, uint8_t *pau8, size_t c);
+DECLASM(void) ASMInStrU8(RTIOPORT Port, uint8_t RT_FAR *pau8, size_t c);
 #else
-DECLINLINE(void) ASMInStrU8(RTIOPORT Port, uint8_t *pau8, size_t c)
+DECLINLINE(void) ASMInStrU8(RTIOPORT Port, uint8_t RT_FAR *pau8, size_t c)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("rep; insb\n\t"
@@ -3040,9 +3040,9 @@ DECLINLINE(void) ASMInStrU8(RTIOPORT Port, uint8_t *pau8, size_t c)
  * @param   c       The number of items to write.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMOutStrU16(RTIOPORT Port, uint16_t const *pau16, size_t c);
+DECLASM(void) ASMOutStrU16(RTIOPORT Port, uint16_t const RT_FAR *pau16, size_t c);
 #else
-DECLINLINE(void) ASMOutStrU16(RTIOPORT Port, uint16_t const *pau16, size_t c)
+DECLINLINE(void) ASMOutStrU16(RTIOPORT Port, uint16_t const RT_FAR *pau16, size_t c)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("rep; outsw\n\t"
@@ -3051,7 +3051,7 @@ DECLINLINE(void) ASMOutStrU16(RTIOPORT Port, uint16_t const *pau16, size_t c)
                          : "d" (Port));
 
 # elif RT_INLINE_ASM_USES_INTRIN
-    __outwordstring(Port, (unsigned short *)pau16, (unsigned long)c);
+    __outwordstring(Port, (unsigned short RT_FAR *)pau16, (unsigned long)c);
 
 # else
     __asm
@@ -3076,9 +3076,9 @@ DECLINLINE(void) ASMOutStrU16(RTIOPORT Port, uint16_t const *pau16, size_t c)
  * @param   c       The number of items to read.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMInStrU16(RTIOPORT Port, uint16_t *pau16, size_t c);
+DECLASM(void) ASMInStrU16(RTIOPORT Port, uint16_t RT_FAR *pau16, size_t c);
 #else
-DECLINLINE(void) ASMInStrU16(RTIOPORT Port, uint16_t *pau16, size_t c)
+DECLINLINE(void) ASMInStrU16(RTIOPORT Port, uint16_t RT_FAR *pau16, size_t c)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("rep; insw\n\t"
@@ -3112,9 +3112,9 @@ DECLINLINE(void) ASMInStrU16(RTIOPORT Port, uint16_t *pau16, size_t c)
  * @param   c       The number of items to write.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMOutStrU32(RTIOPORT Port, uint32_t const *pau32, size_t c);
+DECLASM(void) ASMOutStrU32(RTIOPORT Port, uint32_t const RT_FAR *pau32, size_t c);
 #else
-DECLINLINE(void) ASMOutStrU32(RTIOPORT Port, uint32_t const *pau32, size_t c)
+DECLINLINE(void) ASMOutStrU32(RTIOPORT Port, uint32_t const RT_FAR *pau32, size_t c)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("rep; outsl\n\t"
@@ -3123,7 +3123,7 @@ DECLINLINE(void) ASMOutStrU32(RTIOPORT Port, uint32_t const *pau32, size_t c)
                          : "d" (Port));
 
 # elif RT_INLINE_ASM_USES_INTRIN
-    __outdwordstring(Port, (unsigned long *)pau32, (unsigned long)c);
+    __outdwordstring(Port, (unsigned long RT_FAR *)pau32, (unsigned long)c);
 
 # else
     __asm
@@ -3148,9 +3148,9 @@ DECLINLINE(void) ASMOutStrU32(RTIOPORT Port, uint32_t const *pau32, size_t c)
  * @param   c       The number of items to read.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMInStrU32(RTIOPORT Port, uint32_t *pau32, size_t c);
+DECLASM(void) ASMInStrU32(RTIOPORT Port, uint32_t RT_FAR *pau32, size_t c);
 #else
-DECLINLINE(void) ASMInStrU32(RTIOPORT Port, uint32_t *pau32, size_t c)
+DECLINLINE(void) ASMInStrU32(RTIOPORT Port, uint32_t RT_FAR *pau32, size_t c)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("rep; insl\n\t"
@@ -3159,7 +3159,7 @@ DECLINLINE(void) ASMInStrU32(RTIOPORT Port, uint32_t *pau32, size_t c)
                          : "d" (Port));
 
 # elif RT_INLINE_ASM_USES_INTRIN
-    __indwordstring(Port, (unsigned long *)pau32, (unsigned long)c);
+    __indwordstring(Port, (unsigned long RT_FAR *)pau32, (unsigned long)c);
 
 # else
     __asm
@@ -3187,11 +3187,11 @@ DECLASM(void) ASMInvalidatePage(RTCCUINTXREG uPtr);
 DECLINLINE(void) ASMInvalidatePage(RTCCUINTXREG uPtr)
 {
 # if RT_INLINE_ASM_USES_INTRIN
-    __invlpg((void *)uPtr);
+    __invlpg((void RT_FAR *)uPtr);
 
 # elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("invlpg %0\n\t"
-                         : : "m" (*(uint8_t *)(uintptr_t)uPtr));
+                         : : "m" (*(uint8_t RT_FAR *)(uintptr_t)uPtr));
 # else
     __asm
     {

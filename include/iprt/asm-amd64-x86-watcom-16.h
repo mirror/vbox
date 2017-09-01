@@ -29,10 +29,6 @@
 #ifndef ___iprt_asm_amd64_x86_watcom_16_h
 #define ___iprt_asm_amd64_x86_watcom_16_h
 
-#if !RT_DATA_IS_FAR
-# error "Only works with far data pointers!"
-#endif
-
 /*
  * Turns out we cannot use 'ds' for segment stuff here because the compiler
  * seems to insists on loading the DGROUP segment into 'ds' before calling
