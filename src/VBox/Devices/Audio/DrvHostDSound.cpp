@@ -205,6 +205,8 @@ typedef struct DSOUNDDEV
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static HRESULT  directSoundPlayRestore(PDRVHOSTDSOUND pThis, LPDIRECTSOUNDBUFFER8 pDSB);
+static HRESULT  directSoundCaptureStop(PDSOUNDSTREAM pStreamDS);
+
 static void     dsoundDeviceRemove(PDSOUNDDEV pDev);
 static int      dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDCFG pCfg);
 #ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
@@ -1032,7 +1034,7 @@ static HRESULT directSoundCaptureClose(PDSOUNDSTREAM pStreamDS)
 
     if (pStreamDS->In.pDSCB)
     {
-        hr = IDirectSoundCaptureBuffer_Stop(pStreamDS->In.pDSCB);
+        hr = directSoundCaptureStop(pStreamDS);
         if (SUCCEEDED(hr))
         {
             IDirectSoundCaptureBuffer8_Release(pStreamDS->In.pDSCB);
@@ -1192,12 +1194,9 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
 }
 
 
-static HRESULT directSoundCaptureStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
+static HRESULT directSoundCaptureStop(PDSOUNDSTREAM pStreamDS)
 {
-    AssertPtrReturn(pThis,     E_POINTER);
     AssertPtrReturn(pStreamDS, E_POINTER);
-
-    RT_NOREF(pThis);
 
     HRESULT hr = S_OK;
 
@@ -1208,14 +1207,14 @@ static HRESULT directSoundCaptureStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
             DSLOG(("DSound: Stopping capture\n"));
 
             hr = IDirectSoundCaptureBuffer_Stop(pStreamDS->In.pDSCB);
-            if (FAILED(hr))
-                DSLOGREL(("DSound: Stopping capture buffer failed with %Rhrc\n", hr));
-
-            pStreamDS->fEnabled = false;
+            if (SUCCEEDED(hr))
+                pStreamDS->fEnabled = false;
         }
     }
 
-    LogFlowFunc(("Returning %Rhrc\n", hr));
+    if (FAILED(hr))
+        DSLOGREL(("DSound: Stopping capture buffer failed with %Rhrc\n", hr));
+
     return hr;
 }
 
@@ -1778,7 +1777,7 @@ static int dsoundControlStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, 
         case PDMAUDIOSTREAMCMD_DISABLE:
         case PDMAUDIOSTREAMCMD_PAUSE:
         {
-            hr = directSoundCaptureStop(pThis, pStreamDS);
+            hr = directSoundCaptureStop(pStreamDS);
             if (FAILED(hr))
                 rc = VERR_NOT_SUPPORTED;
             break;
