@@ -141,8 +141,9 @@
 # define VBGL_IOCTL_CODE_FAST(Function)             ((unsigned char)(Function))
 # define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         ((a_uIOCtl) & ~VBGL_IOCTL_FLAG_BIT_MASK)
 # define VBOXGUEST_DEVICE_NAME                      "\\Dev\\VBoxGst$"
-/** Short device name for AttachDD. */
-# define VBOXGUEST_DEVICE_NAME_SHORT                "VBoxGst$"
+/** Short device name for AttachDD.
+ * @note Case sensitive. Must match what VBoxGuestA-os2.asm says! */
+# define VBOXGUEST_DEVICE_NAME_SHORT                "vboxgst$"
 
 #elif defined(RT_OS_SOLARIS)
   /* No automatic buffering, size limited to 255 bytes => use VBGLBIGREQ for everything. */
