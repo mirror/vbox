@@ -37,10 +37,10 @@
 ;
 ; @uses     Nothing.
 ;
-ifdef BS3KIT_WITH_REAL_WATCOM_INTRINSIC_NAMES
+%ifdef BS3KIT_WITH_REAL_WATCOM_INTRINSIC_NAMES
 global __U4D
 __U4D:
-endif
+%endif
 global $_?U4D
 $_?U4D:
 %if TMPL_BITS >= 32
