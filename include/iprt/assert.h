@@ -331,6 +331,8 @@ RT_C_DECLS_END
 # endif
 #elif (defined(__IBMC__) || defined(__IBMCPP__)) && defined(RT_OS_OS2)
 # define RTASSERT_OFFSET_OF(a_Type, a_Member)   __offsetof(a_Type, a_Member)
+#elif (defined(__WATCOMC__) && defined(__cplusplus))
+# define RTASSERT_OFFSET_OF(a_Type, a_Member)   __offsetof(a_Type, a_Member)
 #else
 # define RTASSERT_OFFSET_OF(a_Type, a_Member)   RT_OFFSETOF(a_Type, a_Member)
 #endif
