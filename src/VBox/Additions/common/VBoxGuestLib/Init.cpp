@@ -80,7 +80,11 @@ static void vbglR0QueryHostVersion(void)
  */
 static void vbglQueryDriverInfo(void)
 {
+# ifdef VBGLDATA_USE_FAST_MUTEX
+    int rc = RTSemFastMutexRequest(g_vbgldata.hMtxIdcSetup);
+# else
     int rc = RTSemMutexRequest(g_vbgldata.hMtxIdcSetup, RT_INDEFINITE_WAIT);
+# endif
     if (RT_SUCCESS(rc))
     {
         if (g_vbgldata.status == VbglStatusReady)
@@ -115,7 +119,11 @@ static void vbglQueryDriverInfo(void)
             dprintf(("vbglQueryDriverInfo rc = %Rrc\n", rc));
         }
 
+# ifdef VBGLDATA_USE_FAST_MUTEX
+        RTSemFastMutexRelease(g_vbgldata.hMtxIdcSetup);
+# else
         RTSemMutexRelease(g_vbgldata.hMtxIdcSetup);
+# endif
     }
 }
 #endif /* !VBGL_VBOXGUEST */
@@ -227,7 +235,11 @@ DECLVBGL(int) VbglR0InitClient(void)
     rc = vbglInitCommon();
     if (RT_SUCCESS(rc))
     {
+# ifdef VBGLDATA_USE_FAST_MUTEX
+        rc = RTSemFastMutexCreate(&g_vbgldata.hMtxIdcSetup);
+# else
         rc = RTSemMutexCreate(&g_vbgldata.hMtxIdcSetup);
+# endif
         if (RT_SUCCESS(rc))
         {
             /* Try to obtain VMMDev port via IOCTL to VBoxGuest main driver. */
@@ -239,8 +251,13 @@ DECLVBGL(int) VbglR0InitClient(void)
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;
 
+# ifdef VBGLDATA_USE_FAST_MUTEX
+            RTSemFastMutexDestroy(g_vbgldata.hMtxIdcSetup);
+            g_vbgldata.hMtxIdcSetup = NIL_RTSEMFASTMUTEX;
+# else
             RTSemMutexDestroy(g_vbgldata.hMtxIdcSetup);
             g_vbgldata.hMtxIdcSetup = NIL_RTSEMMUTEX;
+# endif
         }
         vbglTerminateCommon();
     }
@@ -257,8 +274,13 @@ DECLVBGL(void) VbglR0TerminateClient(void)
     /* driver open could fail, which does not prevent VbglInit from succeeding,
      * close the driver only if it is opened */
     VbglR0IdcClose(&g_vbgldata.IdcHandle);
+# ifdef VBGLDATA_USE_FAST_MUTEX
+    RTSemFastMutexDestroy(g_vbgldata.hMtxIdcSetup);
+    g_vbgldata.hMtxIdcSetup = NIL_RTSEMFASTMUTEX;
+# else
     RTSemMutexDestroy(g_vbgldata.hMtxIdcSetup);
     g_vbgldata.hMtxIdcSetup = NIL_RTSEMMUTEX;
+# endif
 
     /* note: do vbglTerminateCommon as a last step since it zeroez up the g_vbgldata
      * conceptually, doing vbglTerminateCommon last is correct
