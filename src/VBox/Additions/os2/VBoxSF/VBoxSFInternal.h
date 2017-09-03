@@ -34,6 +34,7 @@
 
 #define INCL_BASE
 #define INCL_ERROR
+#define INCL_LONGLONG
 #include <os2.h>
 #include <os2ddk/bsekee.h>
 #include <os2ddk/devhlp.h>

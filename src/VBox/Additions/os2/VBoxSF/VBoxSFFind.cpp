@@ -40,26 +40,31 @@
 
 
 DECLASM(int)
-FS32_FINDFIRST(PCDFSI pcdfsi, PVBOXSFCD pcdfsd, PCSZ pszName, USHORT iCurDirEnd, USHORT attr,
+FS32_FINDFIRST(PCDFSI pcdfsi, PVBOXSFCD pcdfsd, PCSZ pszName, USHORT iCurDirEnd, USHORT fAttr,
                PFSFSI pfsfsi, PVBOXSFFS pfsfsd, PBYTE pbData, USHORT cbData, PUSHORT pcMatch,
-               USHORT level, USHORT flags)
+               USHORT uLevel, USHORT fFlags)
 {
+    NOREF(pcdfsi); NOREF(pcdfsd); NOREF(pszName); NOREF(iCurDirEnd); NOREF(fAttr); NOREF(pfsfsi); NOREF(pfsfsd); NOREF(pbData);
+    NOREF(cbData); NOREF(pcMatch); NOREF(uLevel); NOREF(fFlags);
     return ERROR_NOT_SUPPORTED;
 }
 
 
 DECLASM(int)
 FS32_FINDFROMNAME(PFSFSI pfsfsi, PVBOXSFFS pfsfsd, PBYTE pbData, USHORT cbData, PUSHORT pcMatch,
-                  USHORT level, ULONG position, PCSZ pszName, USHORT flag)
+                  USHORT uLevel, ULONG position, PCSZ pszName, USHORT fFlags)
 {
+    NOREF(pfsfsi); NOREF(pfsfsd); NOREF(pbData); NOREF(cbData); NOREF(pcMatch); NOREF(uLevel); NOREF(position); NOREF(pszName);
+    NOREF(fFlags);
     return ERROR_NOT_SUPPORTED;
 }
 
 
 DECLASM(int)
 FS32_FINDNEXT(PFSFSI pfsfsi, PVBOXSFFS pfsfsd, PBYTE pbData, USHORT cbData, PUSHORT pcMatch,
-              USHORT level, USHORT flag)
+              USHORT uLevel, USHORT fFlags)
 {
+    NOREF(pfsfsi); NOREF(pfsfsd); NOREF(pbData); NOREF(cbData); NOREF(pcMatch); NOREF(uLevel); NOREF(fFlags);
     return ERROR_NOT_SUPPORTED;
 }
 
@@ -67,6 +72,7 @@ FS32_FINDNEXT(PFSFSI pfsfsi, PVBOXSFFS pfsfsd, PBYTE pbData, USHORT cbData, PUSH
 DECLASM(int)
 FS32_FINDCLOSE(PFSFSI pfsfsi, PVBOXSFFS pfsfsd)
 {
+    NOREF(pfsfsi); NOREF(pfsfsd);
     return ERROR_NOT_SUPPORTED;
 }
 
@@ -75,25 +81,29 @@ FS32_FINDCLOSE(PFSFSI pfsfsi, PVBOXSFFS pfsfsd)
 
 
 DECLASM(int)
-FS32_FINDNOTIFYFIRST(PCDFSI pcdfsi, PVBOXSFCD pcdfsd, PCSZ pszName, USHORT iCurDirEnd, USHORT attr,
-                     PUSHORT pHandle, PBYTE pbData, USHORT cbData, PUSHORT pcMatch,
-                     USHORT level, USHORT flags)
+FS32_FINDNOTIFYFIRST(PCDFSI pcdfsi, PVBOXSFCD pcdfsd, PCSZ pszName, USHORT iCurDirEnd, USHORT fAtt,
+                     PUSHORT phHandle, PBYTE pbData, USHORT cbData, PUSHORT pcMatch,
+                     USHORT uLevel, USHORT fFlags)
 {
+    NOREF(pcdfsi); NOREF(pcdfsd); NOREF(pszName); NOREF(iCurDirEnd); NOREF(fAtt); NOREF(phHandle); NOREF(pbData); NOREF(cbData);
+    NOREF(pcMatch); NOREF(uLevel); NOREF(fFlags);
     return ERROR_NOT_SUPPORTED;
 }
 
 
 DECLASM(int)
-FS32_FINDNOTIFYNEXT(USHORT handle, PBYTE pbData, USHORT cbData, PUSHORT pcMatch,
-                    USHORT level, ULONG timeout)
+FS32_FINDNOTIFYNEXT(USHORT hHandle, PBYTE pbData, USHORT cbData, PUSHORT pcMatch,
+                    USHORT uLevel, ULONG cMsTimeout)
 {
+    NOREF(hHandle); NOREF(pbData); NOREF(cbData); NOREF(pcMatch); NOREF(uLevel); NOREF(cMsTimeout);
     return ERROR_NOT_SUPPORTED;
 }
 
 
 DECLASM(int)
-FS32_FINDNOTIFYCLOSE(USHORT handle)
+FS32_FINDNOTIFYCLOSE(USHORT hHandle)
 {
+    NOREF(hHandle);
     return ERROR_NOT_SUPPORTED;
 }
 
