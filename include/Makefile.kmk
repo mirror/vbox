@@ -64,7 +64,6 @@ hdrs := $(filter-out \
 	VBox/HostServices/glext.h \
 	VBox/HostServices/glxext.h \
 	VBox/HostServices/wglext.h \
-	VBox/VBoxGuest16.h \
 	VBox/VBoxGL2D.h \
 	VBox/WinNetConfig.h \
 	VBox/usblib-win.h \
