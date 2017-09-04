@@ -228,7 +228,7 @@ check_root()
     fi
 }
 
-# get_sysinfo_other()
+# get_unofficial_sysinfo()
 # cannot fail
 get_unofficial_sysinfo()
 {
@@ -236,17 +236,32 @@ get_unofficial_sysinfo()
     HOST_OS_MINORVERSION="151"
 }
 
+# get_s11_4_sysinfo()
+# cannot fail
+get_s11_4_sysinfo()
+{
+    # See check in plumb_net for why this is > 174. The alternative is we declare 11.4 as S12 with
+    # a more accurate minor (build) version number. For now this is sufficient to workaround the ever
+    # changing version numbering policy.
+    HOST_OS_MAJORVERSION="11"
+    HOST_OS_MINORVERSION="175"
+}
+
 # get_sysinfo()
 # cannot fail
 get_sysinfo()
 {
-    # First check 'uname -v' and weed out the recognized, unofficial distros of Solaris
     STR_OSVER=`uname -v`
     case "$STR_OSVER" in
+	# First check 'uname -v' and weed out the recognized, unofficial distros of Solaris
         omnios*|oi_*|illumos*)
             get_unofficial_sysinfo
             return 0
             ;;
+	# Quick escape workaround for Solaris 11.4, changes the pkg FMRI (yet again). See BugDB #26494983.
+        11.4.*)
+	    get_s11_4_sysinfo
+	    return 0
     esac
 
     BIN_PKG=`which pkg 2> /dev/null`
