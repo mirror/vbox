@@ -204,13 +204,14 @@ void UIMachineSettingsAudio::polishPage()
 {
     /* Polish audio page availability: */
     m_pCheckBoxAudio->setEnabled(isMachineOffline());
-    m_pLabelAudioDriver->setEnabled(isMachineOffline() && m_pCheckBoxAudio->isChecked());
-    m_pComboAudioDriver->setEnabled(isMachineOffline() && m_pCheckBoxAudio->isChecked());
-    m_pLabelAudioController->setEnabled(isMachineOffline() && m_pCheckBoxAudio->isChecked());
-    m_pComboAudioController->setEnabled(isMachineOffline() && m_pCheckBoxAudio->isChecked());
-    m_pLabelAudioExtended->setEnabled(isMachineInValidMode() && m_pCheckBoxAudio->isChecked());
-    m_pCheckBoxAudioOutput->setEnabled(isMachineInValidMode() && m_pCheckBoxAudio->isChecked());
-    m_pCheckBoxAudioInput->setEnabled(isMachineInValidMode() && m_pCheckBoxAudio->isChecked());
+    m_pLabelAudioDriver->setEnabled(isMachineOffline());
+    m_pComboAudioDriver->setEnabled(isMachineOffline());
+    m_pLabelAudioController->setEnabled(isMachineOffline());
+    m_pComboAudioController->setEnabled(isMachineOffline());
+    m_pLabelAudioExtended->setEnabled(isMachineInValidMode());
+    m_pCheckBoxAudioOutput->setEnabled(isMachineInValidMode());
+    m_pCheckBoxAudioInput->setEnabled(isMachineInValidMode());
+    m_pContainerAudioSubOptions->setEnabled(m_pCheckBoxAudio->isChecked());
 }
 
 void UIMachineSettingsAudio::prepare()
