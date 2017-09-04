@@ -87,6 +87,7 @@ portfwd_rule_add_del(struct fwspec *fwspec, int add)
 
     msg = (struct portfwd_msg *)malloc(sizeof(*msg));
     if (msg == NULL) {
+        DPRINTF0(("%s: failed to allocate message\n", __func__));
         return -1;
     }
 
