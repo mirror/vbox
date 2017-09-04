@@ -47,10 +47,9 @@
  *
  * @note This is considered internal in ring-3, please use the VbglR3 functions.
  *
- * - The 7th bit (128) is reserved for distinguishing between 32-bit and 64-bit
- *   processes in future 64-bit guest additions, where it matters.
- * - The 6th bit is reserved for future hacks.
- * - IDC specific requests descends from 63.
+ * - I/O controls for user and/or kernel mode starts at 0.
+ * - IDC specific requests descends from 127.
+ * - Bits 7 and 6 are currently reserved for future hacks.
  *
  * @remarks When creating new IOCtl interfaces keep in mind that not all OSes supports
  *          reporting back the output size. (This got messed up a little bit in VBoxDrv.)
@@ -84,34 +83,6 @@
 # define VBOXGUEST_DARWIN_IOSERVICE_COOKIE          UINT32_C(0x56426f78) /* 'VBox' */
 #endif
 
-/** The bit-count indicator mask. */
-#define VBGL_IOCTL_FLAG_BIT_MASK                    UINT32_C(128)
-/** 64-bit specific I/O control flag. */
-#define VBGL_IOCTL_FLAG_64BIT                       UINT32_C(128)
-/** 32-bit specific I/O control flag.
- * @note Just for complementing VBGL_IOCTL_FLAG_64BIT.  It is also the same
- *       value we use for bit-count agnostic requests, so don't ever use for
- *       testing!
- * @internal */
-#define VBGL_IOCTL_FLAG_32BIT                       UINT32_C(0)
-/** 16-bit specific I/O control flag. */
-#define VBGL_IOCTL_FLAG_16BIT                       UINT32_C(64)
-/** Check if the I/O control is a 64-bit one.   */
-#define VBGL_IOCTL_IS_64BIT(a_uIOCtl)               RT_BOOL((a_uIOCtl) & VBGL_IOCTL_FLAG_64BIT)
-
-/** @def VBGL_IOCTL_FLAG_CC
- * The context specific bit-count flag to include in the bit-count sensitive
- * I/O controls. */
-#if ARCH_BITS == 64
-# define VBGL_IOCTL_FLAG_CC                         VBGL_IOCTL_FLAG_64BIT
-#elif ARCH_BITS == 32
-# define VBGL_IOCTL_FLAG_CC                         VBGL_IOCTL_FLAG_32BIT
-#elif ARCH_BITS == 16
-# define VBGL_IOCTL_FLAG_CC                         VBGL_IOCTL_FLAG_16BIT
-#else
-# error "dunno which arch this is!"
-#endif
-
 
 #if defined(RT_OS_WINDOWS)
 # ifndef CTL_CODE
@@ -121,7 +92,7 @@
 # define VBGL_IOCTL_CODE_SIZE(Function, Size)       CTL_CODE(FILE_DEVICE_UNKNOWN, 2048 + (Function), METHOD_BUFFERED, FILE_WRITE_ACCESS)
 # define VBGL_IOCTL_CODE_BIG(Function)              CTL_CODE(FILE_DEVICE_UNKNOWN, 2048 + (Function), METHOD_BUFFERED, FILE_WRITE_ACCESS)
 # define VBGL_IOCTL_CODE_FAST(Function)             CTL_CODE(FILE_DEVICE_UNKNOWN, 2048 + (Function), METHOD_NEITHER,  FILE_WRITE_ACCESS)
-# define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         ((a_uIOCtl) & ~VBGL_IOCTL_FLAG_BIT_MASK)
+# define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         (a_uIOCtl)
 # define VBOXGUEST_DEVICE_NAME                      "\\\\.\\VBoxGuest"
 /** The support service name. */
 # define VBOXGUEST_SERVICE_NAME                     "VBoxGuest"
@@ -139,7 +110,7 @@
 # define VBGL_IOCTL_CODE_BIG(Function)              ((unsigned char)(Function))
 # define VBGL_IOCTL_CATEGORY_FAST                   0xc3 /**< Also defined in VBoxGuestA-os2.asm. */
 # define VBGL_IOCTL_CODE_FAST(Function)             ((unsigned char)(Function))
-# define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         ((a_uIOCtl) & ~VBGL_IOCTL_FLAG_BIT_MASK)
+# define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         (a_uIOCtl)
 # define VBOXGUEST_DEVICE_NAME                      "\\Dev\\VBoxGst$"
 /** Short device name for AttachDD.
  * @note Case sensitive. Must match what VBoxGuestA-os2.asm says! */
@@ -151,7 +122,7 @@
 # define VBGL_IOCTL_CODE_SIZE(Function, Size)       _IOWRN('V', (Function), sizeof(VBGLREQHDR))
 # define VBGL_IOCTL_CODE_BIG(Function)              _IOWRN('V', (Function), sizeof(VBGLREQHDR))
 # define VBGL_IOCTL_CODE_FAST(Function)             _IO(   'F', (Function))
-# define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         ((a_uIOCtl) & ~VBGL_IOCTL_FLAG_BIT_MASK)
+# define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         (a_uIOCtl)
 # define VBGL_IOCTL_IS_FAST(a_uIOCtl)               ( ((a_uIOCtl) & 0x0000ff00) == ('F' << 8) )
 
 #elif defined(RT_OS_LINUX)
@@ -160,7 +131,7 @@
 # define VBGL_IOCTL_CODE_SIZE(Function, Size)       _IOC(_IOC_READ | _IOC_WRITE, 'V', (Function), (Size))
 # define VBGL_IOCTL_CODE_BIG(Function)              _IO('V', (Function))
 # define VBGL_IOCTL_CODE_FAST(Function)             _IO('F', (Function))
-# define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         (_IOC_NR((a_uIOCtl)) & ~VBGL_IOCTL_FLAG_BIT_MASK)
+# define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         _IOC_NR((a_uIOCtl))
 # define VBOXGUEST_USER_DEVICE_NAME                 "/dev/vboxuser"
 
 #elif defined(RT_OS_HAIKU)
@@ -169,7 +140,7 @@
 # define VBGL_IOCTL_CODE_SIZE(Function, Size)       (0x56420000 | (Function))
 # define VBGL_IOCTL_CODE_BIG(Function)              (0x56420000 | (Function))
 # define VBGL_IOCTL_CODE_FAST(Function)             (0x56420000 | (Function))
-# define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         ((a_uIOCtl) & ~VBGL_IOCTL_FLAG_BIT_MASK)
+# define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         (a_uIOCtl)
 # define VBOXGUEST_DEVICE_NAME                      "/dev/misc/vboxguest"
 
 #else /* BSD Like */
@@ -178,7 +149,7 @@
 # define VBGL_IOCTL_CODE_SIZE(Function, Size)       _IOC(IOC_INOUT, 'V', (Function), (Size))
 # define VBGL_IOCTL_CODE_BIG(Function)              _IO('V', (Function))
 # define VBGL_IOCTL_CODE_FAST(Function)             _IO('F', (Function))
-# define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         ((a_uIOCtl) & ~(_IOC(0,0,0,IOCPARM_MASK) | VBGL_IOCTL_FLAG_BIT_MASK))
+# define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         ((a_uIOCtl) & ~(_IOC(0,0,0,IOCPARM_MASK)))
 # define VBGL_IOCTL_IS_FAST(a_uIOCtl)               ( IOCGROUP(a_uIOCtl) == 'F' )
 #endif
 
@@ -340,7 +311,7 @@ AssertCompile(VBGL_IOCTL_DRIVER_VERSION_INFO_SIZE_IN == 24 + 16);
  * @remarks Ring-0 only.
  * @{
  */
-#define VBGL_IOCTL_GET_VMMDEV_IO_INFO               VBGL_IOCTL_CODE_SIZE(1 | VBGL_IOCTL_FLAG_CC, VBGL_IOCTL_GET_VMMDEV_IO_INFO_SIZE)
+#define VBGL_IOCTL_GET_VMMDEV_IO_INFO               VBGL_IOCTL_CODE_SIZE(1, VBGL_IOCTL_GET_VMMDEV_IO_INFO_SIZE)
 #define VBGL_IOCTL_GET_VMMDEV_IO_INFO_SIZE          sizeof(VBGLIOCGETVMMDEVIOINFO)
 #define VBGL_IOCTL_GET_VMMDEV_IO_INFO_SIZE_IN       sizeof(VBGLREQHDR)
 #define VBGL_IOCTL_GET_VMMDEV_IO_INFO_SIZE_OUT      sizeof(VBGLIOCGETVMMDEVIOINFO)
@@ -446,10 +417,14 @@ AssertCompileSize(VBGLIOCHGCMDISCONNECT, 24 + 4);
  * data.  These calls are always interruptible.
  *
  * @{ */
-# define VBGL_IOCTL_HGCM_CALL(a_cb)                 VBGL_IOCTL_CODE_SIZE(6 | VBGL_IOCTL_FLAG_CC,    (a_cb))
-# define VBGL_IOCTL_HGCM_CALL_32(a_cb)              VBGL_IOCTL_CODE_SIZE(6 | VBGL_IOCTL_FLAG_32BIT, (a_cb))
-# define VBGL_IOCTL_HGCM_CALL_64(a_cb)              VBGL_IOCTL_CODE_SIZE(6 | VBGL_IOCTL_FLAG_64BIT, (a_cb))
-# define VBGL_IOCTL_HGCM_CALL_WITH_USER_DATA(a_cb)  VBGL_IOCTL_CODE_SIZE(7 | VBGL_IOCTL_FLAG_CC,    (a_cb))
+# define VBGL_IOCTL_HGCM_CALL_32(a_cb)              VBGL_IOCTL_CODE_SIZE(6, (a_cb))
+# define VBGL_IOCTL_HGCM_CALL_64(a_cb)              VBGL_IOCTL_CODE_SIZE(7, (a_cb))
+# if ARCH_BITS == 64
+#  define VBGL_IOCTL_HGCM_CALL(a_cb)                VBGL_IOCTL_HGCM_CALL_64(a_cb)
+# else
+#  define VBGL_IOCTL_HGCM_CALL(a_cb)                VBGL_IOCTL_HGCM_CALL_32(a_cb)
+# endif
+# define VBGL_IOCTL_HGCM_CALL_WITH_USER_DATA(a_cb)  VBGL_IOCTL_CODE_SIZE(8, (a_cb))
 /** @note This is used by alot of HGCM call structures. */
 typedef struct VBGLIOCHGCMCALL
 {
@@ -561,7 +536,7 @@ typedef VBGLIOCHGCMCALL const RT_FAR *PCVBGLIOCHGCMCALL;
  * IOCTL to VBoxGuest to perform backdoor logging.
  * @{ */
 #define VBOXGUEST_IOCTL_LOG(Size)
-#define VBGL_IOCTL_LOG(a_cchMsg)                    VBGL_IOCTL_CODE_BIG(8)
+#define VBGL_IOCTL_LOG(a_cchMsg)                    VBGL_IOCTL_CODE_BIG(9)
 #define VBGL_IOCTL_LOG_SIZE(a_cchMsg)               (sizeof(VBGLREQHDR) + (a_cchMsg) + 1)
 #define VBGL_IOCTL_LOG_SIZE_IN(a_cchMsg)            (sizeof(VBGLREQHDR) + (a_cchMsg) + 1)
 #define VBGL_IOCTL_LOG_SIZE_OUT                     sizeof(VBGLREQHDR)
@@ -586,7 +561,7 @@ typedef struct VBGLIOCLOG
  * Wait for a VMMDev host event notification.
  * @{
  */
-#define VBGL_IOCTL_WAIT_FOR_EVENTS                  VBGL_IOCTL_CODE_SIZE(9, VBGL_IOCTL_GET_VMMDEV_IO_INFO_SIZE)
+#define VBGL_IOCTL_WAIT_FOR_EVENTS                  VBGL_IOCTL_CODE_SIZE(10, VBGL_IOCTL_GET_VMMDEV_IO_INFO_SIZE)
 #define VBGL_IOCTL_WAIT_FOR_EVENTS_SIZE             sizeof(VBGLIOCWAITFOREVENTS)
 #define VBGL_IOCTL_WAIT_FOR_EVENTS_SIZE_IN          sizeof(VBGLIOCWAITFOREVENTS)
 #define VBGL_IOCTL_WAIT_FOR_EVENTS_SIZE_OUT         RT_UOFFSET_AFTER(VBGLIOCWAITFOREVENTS, u.Out)
@@ -626,7 +601,7 @@ AssertCompileSize(VBGLIOCWAITFOREVENTS, 24 + 8);
  *
  * @{
  */
-#define VBGL_IOCTL_INTERRUPT_ALL_WAIT_FOR_EVENTS    VBGL_IOCTL_CODE_SIZE(10, VBGL_IOCTL_INTERRUPT_ALL_WAIT_FOR_EVENTS_SIZE)
+#define VBGL_IOCTL_INTERRUPT_ALL_WAIT_FOR_EVENTS    VBGL_IOCTL_CODE_SIZE(11, VBGL_IOCTL_INTERRUPT_ALL_WAIT_FOR_EVENTS_SIZE)
 #define VBGL_IOCTL_INTERRUPT_ALL_WAIT_FOR_EVENTS_SIZE       sizeof(VBGLREQHDR)
 #define VBGL_IOCTL_INTERRUPT_ALL_WAIT_FOR_EVENTS_SIZE_IN    sizeof(VBGLREQHDR)
 #define VBGL_IOCTL_INTERRUPT_ALL_WAIT_FOR_EVENTS_SIZE_OUT   sizeof(VBGLREQHDR)
@@ -636,7 +611,7 @@ AssertCompileSize(VBGLIOCWAITFOREVENTS, 24 + 8);
 /** @name VBGL_IOCTL_CHANGE_FILTER_MASK
  * IOCTL to VBoxGuest to control the event filter mask.
  * @{ */
-#define VBGL_IOCTL_CHANGE_FILTER_MASK               VBGL_IOCTL_CODE_SIZE(11, VBGL_IOCTL_CHANGE_FILTER_MASK_SIZE)
+#define VBGL_IOCTL_CHANGE_FILTER_MASK               VBGL_IOCTL_CODE_SIZE(12, VBGL_IOCTL_CHANGE_FILTER_MASK_SIZE)
 #define VBGL_IOCTL_CHANGE_FILTER_MASK_SIZE          sizeof(VBGLIOCCHANGEFILTERMASK)
 #define VBGL_IOCTL_CHANGE_FILTER_MASK_SIZE_IN       sizeof(VBGLIOCCHANGEFILTERMASK)
 #define VBGL_IOCTL_CHANGE_FILTER_MASK_SIZE_OUT      sizeof(VBGLREQHDR)
@@ -679,7 +654,7 @@ AssertCompileSize(VBGLIOCCHANGEFILTERMASK, 24 + 8);
  *
  * @{
  */
-#define VBGL_IOCTL_ACQUIRE_GUEST_CAPABILITIES           VBGL_IOCTL_CODE_SIZE(12, VBGL_IOCTL_ACQUIRE_GUEST_CAPABILITIES_SIZE)
+#define VBGL_IOCTL_ACQUIRE_GUEST_CAPABILITIES           VBGL_IOCTL_CODE_SIZE(13, VBGL_IOCTL_ACQUIRE_GUEST_CAPABILITIES_SIZE)
 #define VBGL_IOCTL_ACQUIRE_GUEST_CAPABILITIES_SIZE      sizeof(VBGLIOCACQUIREGUESTCAPS)
 #define VBGL_IOCTL_ACQUIRE_GUEST_CAPABILITIES_SIZE_IN   sizeof(VBGLIOCACQUIREGUESTCAPS)
 #define VBGL_IOCTL_ACQUIRE_GUEST_CAPABILITIES_SIZE_OUT  sizeof(VBGLREQHDR)
@@ -717,7 +692,7 @@ AssertCompileSize(VBGLIOCACQUIREGUESTCAPS, 24 + 12);
 /** @name VBGL_IOCTL_CHANGE_GUEST_CAPABILITIES
  * IOCTL to VBoxGuest to set guest capabilities.
  * @{ */
-#define VBGL_IOCTL_CHANGE_GUEST_CAPABILITIES            VBGL_IOCTL_CODE_SIZE(13, VBGL_IOCTL_CHANGE_GUEST_CAPABILITIES_SIZE)
+#define VBGL_IOCTL_CHANGE_GUEST_CAPABILITIES            VBGL_IOCTL_CODE_SIZE(14, VBGL_IOCTL_CHANGE_GUEST_CAPABILITIES_SIZE)
 #define VBGL_IOCTL_CHANGE_GUEST_CAPABILITIES_SIZE       sizeof(VBGLIOCSETGUESTCAPS)
 #define VBGL_IOCTL_CHANGE_GUEST_CAPABILITIES_SIZE_IN    sizeof(VBGLIOCSETGUESTCAPS)
 #define VBGL_IOCTL_CHANGE_GUEST_CAPABILITIES_SIZE_OUT   sizeof(VBGLIOCSETGUESTCAPS)
@@ -751,7 +726,7 @@ typedef VBGLIOCSETGUESTCAPS VBoxGuestSetCapabilitiesInfo;
 /** @name VBGL_IOCTL_SET_MOUSE_STATUS
  * IOCTL to VBoxGuest to update the mouse status features.
  * @{ */
-#define VBGL_IOCTL_SET_MOUSE_STATUS                 VBGL_IOCTL_CODE_SIZE(14, VBGL_IOCTL_SET_MOUSE_STATUS_SIZE)
+#define VBGL_IOCTL_SET_MOUSE_STATUS                 VBGL_IOCTL_CODE_SIZE(15, VBGL_IOCTL_SET_MOUSE_STATUS_SIZE)
 #define VBGL_IOCTL_SET_MOUSE_STATUS_SIZE            sizeof(VBGLIOCSETMOUSESTATUS)
 #define VBGL_IOCTL_SET_MOUSE_STATUS_SIZE_IN         sizeof(VBGLIOCSETMOUSESTATUS)
 #define VBGL_IOCTL_SET_MOUSE_STATUS_SIZE_OUT        sizeof(VBGLREQHDR)
@@ -779,7 +754,7 @@ typedef struct VBGLIOCSETMOUSESTATUS
  * @note ring-0 only.
  *
  * @{ */
-#define VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK            VBGL_IOCTL_CODE_SIZE(15, VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK_SIZE)
+#define VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK            VBGL_IOCTL_CODE_SIZE(16, VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK_SIZE)
 #define VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK_SIZE       sizeof(VBGLIOCSETMOUSENOTIFYCALLBACK)
 #define VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK_SIZE_IN    sizeof(VBGLIOCSETMOUSENOTIFYCALLBACK)
 #define VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK_SIZE_OUT   sizeof(VBGLREQHDR)
@@ -815,7 +790,7 @@ typedef struct VBGLIOCSETMOUSENOTIFYCALLBACK
  * the balloon and adjust the size. Or it will set fHandledInR0 = false and R3 is
  * responsible for allocating memory and calling R0 (VBGL_IOCTL_CHANGE_BALLOON).
  * @{ */
-#define VBGL_IOCTL_CHECK_BALLOON                    VBGL_IOCTL_CODE_SIZE(16, VBGL_IOCTL_CHECK_BALLOON_SIZE)
+#define VBGL_IOCTL_CHECK_BALLOON                    VBGL_IOCTL_CODE_SIZE(17, VBGL_IOCTL_CHECK_BALLOON_SIZE)
 #define VBGL_IOCTL_CHECK_BALLOON_SIZE               sizeof(VBGLIOCCHECKBALLOON)
 #define VBGL_IOCTL_CHECK_BALLOON_SIZE_IN            sizeof(VBGLREQHDR)
 #define VBGL_IOCTL_CHECK_BALLOON_SIZE_OUT           sizeof(VBGLIOCCHECKBALLOON)
@@ -850,7 +825,7 @@ typedef VBGLIOCCHECKBALLOON VBoxGuestCheckBalloonInfo;
  * changed balloon chunk to the host.
  *
  * @{ */
-#define VBGL_IOCTL_CHANGE_BALLOON                   VBGL_IOCTL_CODE_SIZE(17, VBGL_IOCTL_CHANGE_BALLOON_SIZE)
+#define VBGL_IOCTL_CHANGE_BALLOON                   VBGL_IOCTL_CODE_SIZE(18, VBGL_IOCTL_CHANGE_BALLOON_SIZE)
 #define VBGL_IOCTL_CHANGE_BALLOON_SIZE              sizeof(VBGLIOCCHANGEBALLOON)
 #define VBGL_IOCTL_CHANGE_BALLOON_SIZE_IN           sizeof(VBGLIOCCHANGEBALLOON)
 #define VBGL_IOCTL_CHANGE_BALLOON_SIZE_OUT          sizeof(VBGLREQHDR)
@@ -878,7 +853,7 @@ AssertCompileSize(VBGLIOCCHANGEBALLOON, 24+16);
 /** @name VBGL_IOCTL_WRITE_CORE_DUMP
  * IOCTL to VBoxGuest to write guest core.
  * @{ */
-#define VBGL_IOCTL_WRITE_CORE_DUMP                  VBGL_IOCTL_CODE_SIZE(18, VBGL_IOCTL_WRITE_CORE_DUMP_SIZE)
+#define VBGL_IOCTL_WRITE_CORE_DUMP                  VBGL_IOCTL_CODE_SIZE(19, VBGL_IOCTL_WRITE_CORE_DUMP_SIZE)
 #define VBGL_IOCTL_WRITE_CORE_DUMP_SIZE             sizeof(VBGLIOCWRITECOREDUMP)
 #define VBGL_IOCTL_WRITE_CORE_DUMP_SIZE_IN          sizeof(VBGLIOCWRITECOREDUMP)
 #define VBGL_IOCTL_WRITE_CORE_DUMP_SIZE_OUT         sizeof(VBGLREQHDR)
@@ -905,7 +880,7 @@ typedef VBGLIOCWRITECOREDUMP VBoxGuestWriteCoreDump;
  * IOCTL to VBoxGuest to perform DPC latency tests, printing the result in
  * the release log on the host.  Takes no data, returns no data.
  * @{ */
-# define VBGL_IOCTL_DPC_LATENCY_CHECKER             VBGL_IOCTL_CODE_SIZE(19, VBGL_IOCTL_DPC_LATENCY_CHECKER_SIZE)
+# define VBGL_IOCTL_DPC_LATENCY_CHECKER             VBGL_IOCTL_CODE_SIZE(20, VBGL_IOCTL_DPC_LATENCY_CHECKER_SIZE)
 # define VBGL_IOCTL_DPC_LATENCY_CHECKER_SIZE        sizeof(VBGLREQHDR)
 # define VBGL_IOCTL_DPC_LATENCY_CHECKER_SIZE_IN     sizeof(VBGLREQHDR)
 # define VBGL_IOCTL_DPC_LATENCY_CHECKER_SIZE_OUT    sizeof(VBGLREQHDR)
@@ -1000,7 +975,7 @@ typedef void (__cdecl RT_FAR_CODE *PFNVBGLOS2ATTACHDD)(PVBGLOS2ATTACHDD pAttachI
  *
  * @note ring-0 only.
  */
-#define VBGL_IOCTL_IDC_CONNECT                      VBGL_IOCTL_CODE_SIZE(63 | (ARCH_BITS >= 32 ? VBGL_IOCTL_FLAG_CC : VBGL_IOCTL_FLAG_32BIT), VBGL_IOCTL_IDC_CONNECT_SIZE)
+#define VBGL_IOCTL_IDC_CONNECT                      VBGL_IOCTL_CODE_SIZE(63, VBGL_IOCTL_IDC_CONNECT_SIZE)
 #define VBGL_IOCTL_IDC_CONNECT_SIZE                 sizeof(VBGLIOCIDCCONNECT)
 #define VBGL_IOCTL_IDC_CONNECT_SIZE_IN              RT_UOFFSET_AFTER(VBGLIOCIDCCONNECT, u.In)
 #define VBGL_IOCTL_IDC_CONNECT_SIZE_OUT             sizeof(VBGLIOCIDCCONNECT)
@@ -1061,7 +1036,7 @@ AssertCompile(VBGL_IOCTL_IDC_CONNECT_SIZE_IN == 24 + 16);
  *
  * @note ring-0 only.
  */
-#define VBGL_IOCTL_IDC_DISCONNECT                   VBGL_IOCTL_CODE_SIZE(62 | (ARCH_BITS >= 32 ? VBGL_IOCTL_FLAG_CC : VBGL_IOCTL_FLAG_32BIT), VBGL_IOCTL_IDC_DISCONNECT_SIZE)
+#define VBGL_IOCTL_IDC_DISCONNECT                   VBGL_IOCTL_CODE_SIZE(62, VBGL_IOCTL_IDC_DISCONNECT_SIZE)
 #define VBGL_IOCTL_IDC_DISCONNECT_SIZE              sizeof(VBGLIOCIDCDISCONNECT)
 #define VBGL_IOCTL_IDC_DISCONNECT_SIZE_IN           sizeof(VBGLIOCIDCDISCONNECT)
 #define VBGL_IOCTL_IDC_DISCONNECT_SIZE_OUT          sizeof(VBGLREQHDR)
