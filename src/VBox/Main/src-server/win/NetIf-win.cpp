@@ -1516,60 +1516,73 @@ static int netIfGetUnboundHostOnlyAdapters(INetCfg *pNetCfg, std::list<BoundAdap
 
 static BOOL netIfIsWireless(INetCfgComponent *pAdapter)
 {
-    HRESULT hr;
-    wchar_t * pswzBindName;
-    wchar_t FileName[MAX_PATH];
-    bool    fWireless = false;
+    bool fWireless = false;
 
-    hr = pAdapter->GetBindName(&pswzBindName);
-    wcscpy(FileName, DEVNAME_PREFIX);
-    wcscpy((wchar_t*)(((char*)FileName) + sizeof(DEVNAME_PREFIX) - sizeof(FileName[0])), pswzBindName);
-
-    /* open the device */
-    HANDLE hDevice = CreateFile(FileName,
-                                GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                NULL,
-                                OPEN_EXISTING,
-                                FILE_ATTRIBUTE_NORMAL,
-                                NULL);
-
-    if (hDevice != INVALID_HANDLE_VALUE)
+    /* Construct a device name. */
+    LPWSTR  pwszBindName = NULL;
+    HRESULT hrc = pAdapter->GetBindName(&pwszBindName);
+    if (SUCCEEDED(hrc) && pwszBindName)
     {
-
-        /* now issue the OID_GEN_PHYSICAL_MEDIUM query */
-        DWORD Oid = OID_GEN_PHYSICAL_MEDIUM;
-        NDIS_PHYSICAL_MEDIUM PhMedium;
-        DWORD cbResult;
-        if (DeviceIoControl(hDevice,
-                            IOCTL_NDIS_QUERY_GLOBAL_STATS,
-                            &Oid,
-                            sizeof(Oid),
-                            &PhMedium,
-                            sizeof(PhMedium),
-                            &cbResult,
-                            NULL))
+        WCHAR wszFileName[MAX_PATH];
+        int vrc = RTUtf16Copy(wszFileName, MAX_PATH, DEVNAME_PREFIX);
+        if (RT_SUCCESS(vrc))
+            vrc = RTUtf16Cat(wszFileName, MAX_PATH, pwszBindName);
+        if (RT_SUCCESS(vrc))
         {
-            /* that was simple, now examine PhMedium */
-            fWireless = PhMedium == NdisPhysicalMediumWirelessWan
-                     || PhMedium == NdisPhysicalMediumWirelessLan
-                     || PhMedium == NdisPhysicalMediumNative802_11
-                     || PhMedium == NdisPhysicalMediumBluetooth;
+            /* open the device */
+            HANDLE hDevice = CreateFileW(wszFileName,
+                                         GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                         NULL,
+                                         OPEN_EXISTING,
+                                         FILE_ATTRIBUTE_NORMAL,
+                                         NULL);
+            if (hDevice != INVALID_HANDLE_VALUE)
+            {
+                /* now issue the OID_GEN_PHYSICAL_MEDIUM query */
+                DWORD Oid = OID_GEN_PHYSICAL_MEDIUM;
+                NDIS_PHYSICAL_MEDIUM PhMedium = NdisPhysicalMediumUnspecified;
+                DWORD cbResultIgn = 0;
+                if (DeviceIoControl(hDevice,
+                                    IOCTL_NDIS_QUERY_GLOBAL_STATS,
+                                    &Oid,
+                                    sizeof(Oid),
+                                    &PhMedium,
+                                    sizeof(PhMedium),
+                                    &cbResultIgn,
+                                    NULL))
+                {
+                    /* that was simple, now examine PhMedium */
+                    fWireless = PhMedium == NdisPhysicalMediumWirelessWan
+                             || PhMedium == NdisPhysicalMediumWirelessLan
+                             || PhMedium == NdisPhysicalMediumNative802_11
+                             || PhMedium == NdisPhysicalMediumBluetooth;
+                }
+                else
+                {
+                    DWORD rcWin = GetLastError();
+                    LogRel(("netIfIsWireless: DeviceIoControl to '%ls' failed with rcWin=%u (%#x) - ignoring\n",
+                            wszFileName, rcWin, rcWin));
+                    Assert(rcWin == ERROR_INVALID_PARAMETER || rcWin == ERROR_NOT_SUPPORTED || rcWin == ERROR_BAD_COMMAND);
+                }
+                CloseHandle(hDevice);
+            }
+            else
+            {
+                DWORD rcWin = GetLastError();
+#if 0 /* bird: Triggers on each VBoxSVC startup so, disabled.  Whoever want it, can enable using DEBUG_xxxx. */
+                AssertLogRelMsgFailed(("netIfIsWireless: CreateFile on '%ls' failed with rcWin=%u (%#x) - ignoring\n",
+                                       wszFileName, rcWin, rcWin));
+#else
+                LogRel(("netIfIsWireless: CreateFile on '%ls' failed with rcWin=%u (%#x) - ignoring\n",
+                        wszFileName, rcWin, rcWin));
+#endif
+            }
         }
-        else
-        {
-            int winEr = GetLastError();
-            LogRel(("netIfIsWireless: DeviceIoControl failed, err (0x%x), ignoring\n", winEr));
-            Assert(winEr == ERROR_INVALID_PARAMETER || winEr == ERROR_NOT_SUPPORTED || winEr == ERROR_BAD_COMMAND);
-        }
-        CloseHandle(hDevice);
+        CoTaskMemFree(pwszBindName);
     }
     else
-    {
-        int winEr = GetLastError();
-        AssertLogRelMsgFailed(("netIfIsWireless: CreateFile failed, err (0x%x), ignoring\n", winEr));
-    }
+        LogRel(("netIfIsWireless: GetBindName failed hrc=%Rhrc\n", hrc));
 
-    CoTaskMemFree(pswzBindName);
     return fWireless;
 }
 
