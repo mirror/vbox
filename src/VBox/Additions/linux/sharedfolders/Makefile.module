@@ -25,7 +25,7 @@ MOD_OBJS   = \
 	lnkops.o \
 	regops.o \
 	utils.o \
-	HGCM.o \
+	VBoxGuestR0LibHGCM.o \
 	VBoxGuestR0LibIdc.o \
 	VBoxGuestR0LibIdc-unix.o \
 	VBoxGuestR0LibSharedFolders.o

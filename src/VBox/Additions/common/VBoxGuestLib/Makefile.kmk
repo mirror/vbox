@@ -61,16 +61,17 @@ VBoxGuestR0Lib_DEFS         = VBOX_WITH_HGCM \
 VBoxGuestR0Lib_INCS         = \
 	$(VBoxGuestR0Lib_0_OUTDIR)
 VBoxGuestR0Lib_SOURCES      = \
+	VBoxGuestR0LibInit.cpp \
+	VBoxGuestR0LibPhysHeap.cpp \
+	VBoxGuestR0LibGenericRequest.cpp \
+	VBoxGuestR0LibVMMDev.cpp \
+	VBoxGuestR0LibHGCM.cpp \
+	VbglR0CanUsePhysPageList.cpp \
+       \
 	VBoxGuestR0LibIdc.cpp \
 	VBoxGuestR0LibSharedFolders.c \
 	VBoxGuestR0LibCrOgl.cpp \
-	GenericRequest.cpp \
-	PhysHeap.cpp \
-	Init.cpp \
-	Mouse.cpp \
-	VMMDev.cpp \
-	HGCM.cpp \
-	VbglR0CanUsePhysPageList.cpp
+	VBoxGuestR0LibMouse.cpp
 VBoxGuestR0Lib_SOURCES.os2     = VBoxGuestR0LibIdc-os2.cpp
 VBoxGuestR0Lib_SOURCES.solaris = VBoxGuestR0LibIdc-solaris.cpp
 VBoxGuestR0Lib_SOURCES.win     = VBoxGuestR0LibIdc-win.cpp
@@ -88,11 +89,11 @@ VBoxGuestR0LibBase_DEFS     = VBOX_WITH_HGCM VBGL_VBOXGUEST \
 VBoxGuestR0LibBase_INCS     = $(VBoxGuestR0Lib_INCS)
 VBoxGuestR0LibBase_INCS.win = $(VBoxGuestR0Lib_INCS.win)
 VBoxGuestR0LibBase_SOURCES  = \
-	GenericRequest.cpp \
-	PhysHeap.cpp \
-	Init.cpp \
-	VMMDev.cpp \
-	HGCMInternal.cpp \
+	VBoxGuestR0LibInit.cpp \
+	VBoxGuestR0LibPhysHeap.cpp \
+	VBoxGuestR0LibGenericRequest.cpp \
+	VBoxGuestR0LibVMMDev.cpp \
+	VBoxGuestR0LibHGCMInternal.cpp \
 	VbglR0CanUsePhysPageList.cpp
 
 #
