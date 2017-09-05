@@ -30,11 +30,54 @@
 #define ___VBox_VMMDevCoreTypes_h
 
 #include <iprt/assert.h>
+#ifdef __cplusplus
+# include <iprt/err.h>
+#endif
 
 
 /** @addtogroup grp_vmmdev
  * @{
  */
+
+/** @name VMMDev events.
+ *
+ * Used mainly by VMMDevReq_AcknowledgeEvents/VMMDevEvents and version 1.3 of
+ * VMMDevMemory.
+ *
+ * @{
+ */
+/** Host mouse capabilities has been changed. */
+#define VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED             RT_BIT(0)
+/** HGCM event. */
+#define VMMDEV_EVENT_HGCM                                   RT_BIT(1)
+/** A display change request has been issued. */
+#define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST                 RT_BIT(2)
+/** Credentials are available for judgement. */
+#define VMMDEV_EVENT_JUDGE_CREDENTIALS                      RT_BIT(3)
+/** The guest has been restored. */
+#define VMMDEV_EVENT_RESTORED                               RT_BIT(4)
+/** Seamless mode state changed. */
+#define VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST           RT_BIT(5)
+/** Memory balloon size changed. */
+#define VMMDEV_EVENT_BALLOON_CHANGE_REQUEST                 RT_BIT(6)
+/** Statistics interval changed. */
+#define VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST     RT_BIT(7)
+/** VRDP status changed. */
+#define VMMDEV_EVENT_VRDP                                   RT_BIT(8)
+/** New mouse position data available. */
+#define VMMDEV_EVENT_MOUSE_POSITION_CHANGED                 RT_BIT(9)
+/** CPU hotplug event occurred. */
+#define VMMDEV_EVENT_CPU_HOTPLUG                            RT_BIT(10)
+/** The mask of valid events, for sanity checking. */
+#define VMMDEV_EVENT_VALID_EVENT_MASK                       UINT32_C(0x000007ff)
+/** @} */
+
+
+/** @name The ballooning chunk size which VMMDev works at.
+ * @{ */
+#define VMMDEV_MEMORY_BALLOON_CHUNK_PAGES            (_1M/4096)
+#define VMMDEV_MEMORY_BALLOON_CHUNK_SIZE             (VMMDEV_MEMORY_BALLOON_CHUNK_PAGES*4096)
+/** @} */
 
 
 /**
@@ -60,6 +103,7 @@ typedef enum
     VMMDev_Seamless_Host_Window      = 2      /**< windowed mode; each top-level guest window is represented in a host window. */
 } VMMDevSeamlessMode;
 
+
 /**
  * CPU event types.
  *
@@ -75,6 +119,9 @@ typedef enum
     VMMDevCpuEventType_Unplug   = 3,
     VMMDevCpuEventType_SizeHack = 0x7fffffff
 } VMMDevCpuEventType;
+
+
+
 
 /**
  * HGCM service location types.
@@ -114,6 +161,265 @@ typedef struct HGCMSERVICELOCATION
     } u;
 } HGCMServiceLocation;
 AssertCompileSize(HGCMServiceLocation, 128+4);
+
+
+/**
+ * HGCM parameter type.
+ */
+typedef enum
+{
+    VMMDevHGCMParmType_Invalid            = 0,
+    VMMDevHGCMParmType_32bit              = 1,
+    VMMDevHGCMParmType_64bit              = 2,
+    VMMDevHGCMParmType_PhysAddr           = 3,  /**< @deprecated Doesn't work, use PageList. */
+    VMMDevHGCMParmType_LinAddr            = 4,  /**< In and Out */
+    VMMDevHGCMParmType_LinAddr_In         = 5,  /**< In  (read;  host<-guest) */
+    VMMDevHGCMParmType_LinAddr_Out        = 6,  /**< Out (write; host->guest) */
+    VMMDevHGCMParmType_LinAddr_Locked     = 7,  /**< Locked In and Out */
+    VMMDevHGCMParmType_LinAddr_Locked_In  = 8,  /**< Locked In  (read;  host<-guest) */
+    VMMDevHGCMParmType_LinAddr_Locked_Out = 9,  /**< Locked Out (write; host->guest) */
+    VMMDevHGCMParmType_PageList           = 10, /**< Physical addresses of locked pages for a buffer. */
+    VMMDevHGCMParmType_SizeHack           = 0x7fffffff
+} HGCMFunctionParameterType;
+AssertCompileSize(HGCMFunctionParameterType, 4);
+
+
+# ifdef VBOX_WITH_64_BITS_GUESTS
+/**
+ * HGCM function parameter, 32-bit client.
+ */
+#  pragma pack(4) /* We force structure dword packing here for hysterical raisins.  Saves us 4 bytes, at the cost of
+                     misaligning the value64 member of every other parameter structure. */
+typedef struct
+{
+    HGCMFunctionParameterType type;
+    union
+    {
+        uint32_t   value32;
+        uint64_t   value64;
+        struct
+        {
+            uint32_t size;
+
+            union
+            {
+                RTGCPHYS32 physAddr;
+                RTGCPTR32  linearAddr;
+            } u;
+        } Pointer;
+        struct
+        {
+            uint32_t size;   /**< Size of the buffer described by the page list. */
+            uint32_t offset; /**< Relative to the request header, valid if size != 0. */
+        } PageList;
+    } u;
+#  ifdef __cplusplus
+    void SetUInt32(uint32_t u32)
+    {
+        type = VMMDevHGCMParmType_32bit;
+        u.value64 = 0; /* init unused bits to 0 */
+        u.value32 = u32;
+    }
+
+    int GetUInt32(uint32_t RT_FAR *pu32)
+    {
+        if (type == VMMDevHGCMParmType_32bit)
+        {
+            *pu32 = u.value32;
+            return VINF_SUCCESS;
+        }
+        return VERR_INVALID_PARAMETER;
+    }
+
+    void SetUInt64(uint64_t u64)
+    {
+        type      = VMMDevHGCMParmType_64bit;
+        u.value64 = u64;
+    }
+
+    int GetUInt64(uint64_t RT_FAR *pu64)
+    {
+        if (type == VMMDevHGCMParmType_64bit)
+        {
+            *pu64 = u.value64;
+            return VINF_SUCCESS;
+        }
+        return VERR_INVALID_PARAMETER;
+    }
+
+    void SetPtr(void RT_FAR *pv, uint32_t cb)
+    {
+        type                    = VMMDevHGCMParmType_LinAddr;
+        u.Pointer.size          = cb;
+        u.Pointer.u.linearAddr  = (RTGCPTR32)(uintptr_t)pv;
+    }
+#  endif /* __cplusplus */
+} HGCMFunctionParameter32;
+#  pragma pack()
+AssertCompileSize(HGCMFunctionParameter32, 4+8);
+
+/**
+ * HGCM function parameter, 64-bit client.
+ */
+#  pragma pack(4)/* We force structure dword packing here for hysterical raisins.  Saves us 4 bytes, at the cost of
+                    misaligning the value64, physAddr and linearAddr members of every other parameter structure. */
+typedef struct
+{
+    HGCMFunctionParameterType type;
+    union
+    {
+        uint32_t   value32;
+        uint64_t   value64;
+        struct
+        {
+            uint32_t size;
+
+            union
+            {
+                RTGCPHYS64 physAddr;
+                RTGCPTR64  linearAddr;
+            } u;
+        } Pointer;
+        struct
+        {
+            uint32_t size;   /**< Size of the buffer described by the page list. */
+            uint32_t offset; /**< Relative to the request header, valid if size != 0. */
+        } PageList;
+    } u;
+#  ifdef __cplusplus
+    void SetUInt32(uint32_t u32)
+    {
+        type = VMMDevHGCMParmType_32bit;
+        u.value64 = 0; /* init unused bits to 0 */
+        u.value32 = u32;
+    }
+
+    int GetUInt32(uint32_t RT_FAR *pu32)
+    {
+        if (type == VMMDevHGCMParmType_32bit)
+        {
+            *pu32 = u.value32;
+            return VINF_SUCCESS;
+        }
+        return VERR_INVALID_PARAMETER;
+    }
+
+    void SetUInt64(uint64_t u64)
+    {
+        type      = VMMDevHGCMParmType_64bit;
+        u.value64 = u64;
+    }
+
+    int GetUInt64(uint64_t RT_FAR *pu64)
+    {
+        if (type == VMMDevHGCMParmType_64bit)
+        {
+            *pu64 = u.value64;
+            return VINF_SUCCESS;
+        }
+        return VERR_INVALID_PARAMETER;
+    }
+
+    void SetPtr(void RT_FAR *pv, uint32_t cb)
+    {
+        type                    = VMMDevHGCMParmType_LinAddr;
+        u.Pointer.size          = cb;
+        u.Pointer.u.linearAddr  = (uintptr_t)pv;
+    }
+#  endif /** __cplusplus */
+} HGCMFunctionParameter64;
+#  pragma pack()
+AssertCompileSize(HGCMFunctionParameter64, 4+12);
+
+/* Redefine the structure type for the guest code. */
+#  ifndef VBOX_HGCM_HOST_CODE
+#   if ARCH_BITS == 64
+#     define HGCMFunctionParameter  HGCMFunctionParameter64
+#   elif ARCH_BITS == 32
+#     define HGCMFunctionParameter  HGCMFunctionParameter32
+#   else
+#    error "Unsupported sizeof (void *)"
+#   endif
+#  endif /* !VBOX_HGCM_HOST_CODE */
+
+# else /* !VBOX_WITH_64_BITS_GUESTS */
+
+/**
+ * HGCM function parameter, 32-bit client.
+ *
+ * @todo If this is the same as HGCMFunctionParameter32, why the duplication?
+ */
+#  pragma pack(4) /* We force structure dword packing here for hysterical raisins.  Saves us 4 bytes, at the cost of
+                     misaligning the value64 member of every other parameter structure. */
+typedef struct
+{
+    HGCMFunctionParameterType type;
+    union
+    {
+        uint32_t   value32;
+        uint64_t   value64;
+        struct
+        {
+            uint32_t size;
+
+            union
+            {
+                RTGCPHYS32 physAddr;
+                RTGCPTR32  linearAddr;
+            } u;
+        } Pointer;
+        struct
+        {
+            uint32_t size;   /**< Size of the buffer described by the page list. */
+            uint32_t offset; /**< Relative to the request header, valid if size != 0. */
+        } PageList;
+    } u;
+#  ifdef __cplusplus
+    void SetUInt32(uint32_t u32)
+    {
+        type = VMMDevHGCMParmType_32bit;
+        u.value64 = 0; /* init unused bits to 0 */
+        u.value32 = u32;
+    }
+
+    int GetUInt32(uint32_t *pu32)
+    {
+        if (type == VMMDevHGCMParmType_32bit)
+        {
+            *pu32 = u.value32;
+            return VINF_SUCCESS;
+        }
+        return VERR_INVALID_PARAMETER;
+    }
+
+    void SetUInt64(uint64_t u64)
+    {
+        type      = VMMDevHGCMParmType_64bit;
+        u.value64 = u64;
+    }
+
+    int GetUInt64(uint64_t *pu64)
+    {
+        if (type == VMMDevHGCMParmType_64bit)
+        {
+            *pu64 = u.value64;
+            return VINF_SUCCESS;
+        }
+        return VERR_INVALID_PARAMETER;
+    }
+
+    void SetPtr(void *pv, uint32_t cb)
+    {
+        type                    = VMMDevHGCMParmType_LinAddr;
+        u.Pointer.size          = cb;
+        u.Pointer.u.linearAddr  = (uintptr_t)pv;
+    }
+#  endif /* __cplusplus */
+} HGCMFunctionParameter;
+#  pragma pack()
+AssertCompileSize(HGCMFunctionParameter, 4+8);
+# endif /* !VBOX_WITH_64_BITS_GUESTS */
+
 
 
 /** @name Guest capability bits.
