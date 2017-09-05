@@ -61,7 +61,6 @@ FILES_VBOXSF_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR0LibIdc.cpp=>VBoxGuestR0LibIdc.c \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR0LibIdc-unix.cpp=>VBoxGuestR0LibIdc-unix.c \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR0LibSharedFolders.c=>VBoxGuestR0LibSharedFolders.c \
-    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestLog.h=>VBoxGuestLog.h \
     ${PATH_ROOT}/src/VBox/Installer/linux/Makefile.include.header=>Makefile.include.header \
     ${PATH_ROOT}/src/VBox/Installer/linux/Makefile.include.footer=>Makefile.include.footer \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/divdi3.c=>divdi3.c \

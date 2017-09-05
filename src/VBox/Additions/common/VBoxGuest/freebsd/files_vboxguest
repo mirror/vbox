@@ -84,7 +84,6 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR0LibHGCMInternal.cpp=>VBoxGuestR0LibHGCMInternal.c \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR0LibInit.cpp=>VBoxGuestR0LibInit.c \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR0LibPhysHeap.cpp=>VBoxGuestR0LibPhysHeap.c \
-    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestLog.h=>VBoxGuestLog.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR0LibVMMDev.cpp=>VBoxGuestR0LibVMMDev.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/alloc/heapsimple.cpp=>alloc/heapsimple.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/err/RTErrConvertFromErrno.cpp=>common/err/RTErrConvertFromErrno.c \
