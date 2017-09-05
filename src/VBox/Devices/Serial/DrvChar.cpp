@@ -240,7 +240,8 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD hThreadSelf, void *pvUser)
  * @todo    This thread isn't managed correctly wrt to the VM state.
  *
  *          It's possible to end up in the APIC code while the VM is being destroyed!
- * 0:018> k
+ * @code
+0:018> k
  # Child-SP          RetAddr           Call Site
 00 00000000`2061f1b0 00007ffe`42a889d9 VBoxVMM!apicReadRaw32+0x78 [e:\vbox\svn\trunk\src\vbox\vmm\vmmall\apicall.cpp @ 462]
 01 00000000`2061f1f0 00007ffe`42916fc2 VBoxVMM!APICLocalInterrupt+0x189 [e:\vbox\svn\trunk\src\vbox\vmm\vmmall\apicall.cpp @ 2524]
@@ -257,7 +258,7 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD hThreadSelf, void *pvUser)
 0c 00000000`2061f800 00007ffe`43b8ddbf VBoxRT!rtThreadMain+0x1bf [e:\vbox\svn\trunk\src\vbox\runtime\common\misc\thread.cpp @ 717]
 0d 00000000`2061f880 00000000`52971d9f VBoxRT!rtThreadNativeMain+0xcf [e:\vbox\svn\trunk\src\vbox\runtime\r3\win\thread-win.cpp @ 252]
 0e 00000000`2061f8d0 00000000`52971e3b MSVCR100!endthreadex+0x43
-
+@endcode
  *
  */
 static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD hThreadSelf, void *pvUser)
