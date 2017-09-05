@@ -32,6 +32,7 @@
 #include <VBox/hgcmsvc.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#include <iprt/log.h>
 
 /** Everything defined in this file lives in this namespace. */
 namespace guestProp {
