@@ -54,6 +54,7 @@
 #include "VBoxServiceUtils.h"
 
 #ifdef RT_OS_LINUX
+# include <iprt/param.h>
 # include <sys/mman.h>
 # ifndef MADV_DONTFORK
 #  define MADV_DONTFORK 10
