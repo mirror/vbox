@@ -28,6 +28,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
+#include "VBoxGuestR0LibInternal.h"
 #include <VBox/VBoxGuestLibSharedFolders.h>
 #include <VBox/log.h>
 #include <iprt/time.h>

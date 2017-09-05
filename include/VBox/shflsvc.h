@@ -26,8 +26,8 @@
 #ifndef ___VBox_shflsvc_h
 #define ___VBox_shflsvc_h
 
+#include <VBox/VMMDevCoreTypes.h>
 #include <VBox/VBoxGuestCoreTypes.h>
-#include <VBox/VMMDev.h>
 #include <VBox/hgcmsvc.h>
 #include <iprt/fs.h>
 #include <iprt/assert.h>
