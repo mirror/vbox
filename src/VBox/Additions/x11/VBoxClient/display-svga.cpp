@@ -40,6 +40,7 @@
 #include "VBoxClient.h"
 
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/VMMDev.h> /* for VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST */
 
 #include <iprt/assert.h>
 #include <iprt/file.h>

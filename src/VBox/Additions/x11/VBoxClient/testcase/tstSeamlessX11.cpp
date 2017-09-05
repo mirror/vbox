@@ -17,6 +17,7 @@
 
 #include <stdlib.h> /* exit() */
 
+#include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/semaphore.h>
 #include <iprt/stream.h>
