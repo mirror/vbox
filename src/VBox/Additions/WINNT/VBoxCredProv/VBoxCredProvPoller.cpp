@@ -21,7 +21,6 @@
 *********************************************************************************************************************************/
 #include <iprt/win/windows.h>
 
-#include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 #include <iprt/string.h>
 

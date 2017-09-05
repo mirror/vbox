@@ -44,8 +44,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __VBOXGUESTTRAYVIEW__H
-#define __VBOXGUESTTRAYVIEW__H
+#ifndef ___VBOXGUESTTRAYVIEW__H
+#define ___VBOXGUESTTRAYVIEW__H
 
 #include <Bitmap.h>
 #include <View.h>
@@ -92,5 +92,5 @@ class VBoxGuestDeskbarView : public BView
         VBoxDisplayService *fDisplayService;
 };
 
-#endif /* __VBOXGUESTTRAYVIEW__H */
+#endif /* !___VBOXGUESTTRAYVIEW__H */
 

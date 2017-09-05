@@ -29,7 +29,7 @@
 #include "../../../../include/VBoxDisplay.h"
 #include "../VBoxVideoTools.h"
 #include <VBoxUhgsmi.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestCoreTypes.h> /* for VBGLIOCHGCMCALL */
 
 /* One would increase this whenever definitions in this file are changed */
 #define VBOXVIDEOIF_VERSION 20

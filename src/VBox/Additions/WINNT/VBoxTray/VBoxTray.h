@@ -48,7 +48,6 @@
 #include <iprt/thread.h>
 
 #include <VBox/version.h>
-#include <VBox/VBoxGuest.h> /** @todo use the VbglR3 interface! */
 #include <VBox/VBoxGuestLib.h>
 #include <VBoxDisplay.h>
 

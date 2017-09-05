@@ -25,7 +25,6 @@
 #include <iprt/asm.h>
 #include "VBoxMF.h"
 #include <VBox/VBoxGuestLib.h>
-#include <VBox/VBoxGuest.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 

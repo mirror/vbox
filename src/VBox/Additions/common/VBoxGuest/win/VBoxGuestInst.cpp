@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuest.h> /* for VBOXGUEST_SERVICE_NAME */
 
 
 //#define TESTMODE
