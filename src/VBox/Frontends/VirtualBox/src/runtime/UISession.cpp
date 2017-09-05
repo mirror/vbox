@@ -2154,6 +2154,14 @@ void UISession::updateActionRestrictions()
             restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices);
     }
 
+    /* Audio stuff: */
+    {
+        /* Check whether audio controller is enabled. */
+        const CAudioAdapter &comAdapter = machine().GetAudioAdapter();
+        if (comAdapter.isNull() || !comAdapter.GetEnabled())
+            restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio);
+    }
+
     /* Network stuff: */
     {
         /* Initialize Network menu: */

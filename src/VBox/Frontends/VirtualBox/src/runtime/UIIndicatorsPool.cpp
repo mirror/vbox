@@ -453,11 +453,10 @@ private:
                 enmState = (AudioState)(enmState | AudioState_InputOn);
             setState(enmState);
         }
-        else
-        {
-            strFullData = QString(s_strTableRow1).arg(QApplication::translate("UIGDetails", "Disabled", "details (audio)"));
-            setState(AudioState_AllOff);
-        }
+
+        /* Hide indicator if adapter is disabled: */
+        if (!fAudioEnabled)
+            hide();
 
         /* Update tool-tip: */
         setToolTip(strToolTip.arg(s_strTable.arg(strFullData)));
