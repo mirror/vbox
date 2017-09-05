@@ -27,9 +27,6 @@
 #ifndef ___VBoxGuestR3LibInternal_h
 #define ___VBoxGuestR3LibInternal_h
 
-#if defined(RT_OS_WINDOWS) /** @todo explain why this is here. */
-# include <iprt/win/windows.h>
-#endif
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
