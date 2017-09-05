@@ -56,7 +56,6 @@
 #include "VBoxMouseFilter.h"
 #include <VBox/VBoxGuestLib.h>
 #include <VBoxGuestInternal.h>
-#include <VBox/VMMDev.h>
 #include <VBox/log.h>
 #include <iprt/err.h>
 

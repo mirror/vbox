@@ -54,7 +54,7 @@
  */
 
 #include "vboxvideo.h"
-#include <VBox/VMMDev.h> /* for VBOX_DEVICEID and VBOX_VENDORID */
+#include <VBox/param.h> /* for VBOX_DEVICEID and VBOX_VENDORID */
 #include <VBox/VBoxGuestLib.h>
 #include <VBoxVideoVBE.h>
 #include "version-generated.h"

@@ -16,7 +16,7 @@
  */
 
 #include "VBoxDispD3DCmn.h"
-#include <VBox/VMMDev.h>  /* for HGCMFunctionParameter */
+#include <VBox/VMMDevCoreTypes.h>
 
 
 DECLCALLBACK(int) vboxUhgsmiBaseEscBufferLock(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock, uint32_t cbLock,

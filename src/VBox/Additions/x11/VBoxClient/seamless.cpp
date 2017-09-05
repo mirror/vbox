@@ -21,11 +21,9 @@
 /*********************************************************************************************************************************
 *   Header files                                                                                                                 *
 *********************************************************************************************************************************/
-
 #include <X11/Xlib.h>
 
 #include <VBox/log.h>
-#include <VBox/VMMDev.h> /* for VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST */
 #include <VBox/VBoxGuestLib.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>

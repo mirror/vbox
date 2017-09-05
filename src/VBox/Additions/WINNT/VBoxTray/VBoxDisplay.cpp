@@ -34,7 +34,6 @@
 # define LOG_GROUP LOG_GROUP_DEFAULT
 #endif
 #include <VBox/log.h>
-#include <VBox/VMMDev.h> /* for VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST & VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED */
 
 #include <VBoxDisplay.h>
 #include <VBoxHook.h>
