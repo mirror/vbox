@@ -64,7 +64,7 @@ fi
 
 # make, cleanup if success
 cd "$tmpdir"
-if make "-j${MAKE_JOBS}" "$@"; then
+if make "-j`echo ${MAKE_JOBS}`" "$@"; then  # strip leading space from "MAKE_JOBS"
   if [ -n "$SAVE_MOD_SYMVERS" ]; then
     if [ -f Module.symvers ]; then
       cp -f Module.symvers $SAVE_MOD_SYMVERS
