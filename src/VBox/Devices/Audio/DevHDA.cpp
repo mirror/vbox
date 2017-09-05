@@ -281,8 +281,8 @@ static void                       hdaDoTransfers(PHDASTATE pThis);
  * @{
  */
 #if !defined(VBOX_WITH_AUDIO_HDA_CALLBACKS) && defined(IN_RING3)
-static void          hdaTimerMaybeStart(PHDASTATE pThis);
-static void          hdaTimerMaybeStop(PHDASTATE pThis);
+static int           hdaTimerMaybeStart(PHDASTATE pThis);
+static int           hdaTimerMaybeStop(PHDASTATE pThis);
 static void          hdaTimerMain(PHDASTATE pThis);
 #endif
 /** @} */
@@ -458,6 +458,48 @@ static uint32_t const g_afMasks[5] =
     UINT32_C(0), UINT32_C(0x000000ff), UINT32_C(0x0000ffff), UINT32_C(0x00ffffff), UINT32_C(0xffffffff)
 };
 
+#ifdef IN_RING3
+/**
+ * Acquires the HDA lock or returns.
+ */
+# define DEVHDA_LOCK(a_pThis) \
+    do { \
+        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
+        AssertRC(rcLock); \
+    } while (0)
+#endif
+
+/**
+ * Releases the HDA lock.
+ */
+#define DEVHDA_UNLOCK(a_pThis) \
+    do { PDMCritSectLeave(&(a_pThis)->CritSect); } while (0)
+
+/**
+ * Acquires the TM lock and HDA lock, returns on failure.
+ */
+#define DEVHDA_LOCK_BOTH_RETURN(a_pThis, a_rcBusy)  \
+    do { \
+        int rcLock = TMTimerLock((a_pThis)->pTimer, (a_rcBusy)); \
+        if (rcLock != VINF_SUCCESS) \
+            return rcLock; \
+        rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, (a_rcBusy)); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            TMTimerUnlock((a_pThis)->pTimer); \
+            return rcLock; \
+        } \
+    } while (0)
+
+
+/**
+ * Releases the HDA lock and TM lock.
+ */
+#define DEVHDA_UNLOCK_BOTH(a_pThis) \
+    do { \
+        PDMCritSectLeave(&(a_pThis)->CritSect); \
+        TMTimerUnlock((a_pThis)->pTimer); \
+    } while (0)
 
 #ifdef IN_RING3
 /**
@@ -2268,12 +2310,12 @@ static DECLCALLBACK(int) hdaMixerSetVolume(PHDASTATE pThis,
  *
  * @param   pThis               HDA state.
  */
-static void hdaTimerMaybeStart(PHDASTATE pThis)
+static int hdaTimerMaybeStart(PHDASTATE pThis)
 {
     LogFlowFuncEnter();
 
     if (!pThis->pTimer)
-        return;
+        return VERR_WRONG_ORDER;
 
     pThis->cStreamsActive++;
 
@@ -2285,12 +2327,18 @@ static void hdaTimerMaybeStart(PHDASTATE pThis)
         /* Set timer flag. */
         ASMAtomicXchgBool(&pThis->fTimerActive, true);
 
+        DEVHDA_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
         /* Update current time timestamp. */
         pThis->tsTimerExpire = TMTimerGet(pThis->pTimer) + pThis->cTimerTicks;
 
         /* Start transfers. */
         hdaTimerMain(pThis);
+
+        DEVHDA_UNLOCK_BOTH(pThis);
     }
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2298,16 +2346,28 @@ static void hdaTimerMaybeStart(PHDASTATE pThis)
  *
  * @param   pThis               HDA state.
  */
-static void hdaTimerStop(PHDASTATE pThis)
+static int hdaTimerStop(PHDASTATE pThis)
 {
     LogFlowFuncEnter();
+
+    if (!ASMAtomicReadBool(&pThis->fTimerActive))
+        return VINF_SUCCESS;
+
+    LogRel2(("HDA: Stopping transfers ...\n"));
 
     /* Set timer flag. */
     ASMAtomicXchgBool(&pThis->fTimerActive, false);
 
-    /* Don't stop the timer via TMTimerStop() here, as this function
-     * might be called with an MMIO handler which then in case triggers
-     * a lock order violation. */
+    if (pThis->pTimer)
+    {
+        DEVHDA_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
+        TMTimerStop(pThis->pTimer);
+
+        DEVHDA_UNLOCK_BOTH(pThis);
+    }
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2317,20 +2377,22 @@ static void hdaTimerStop(PHDASTATE pThis)
  *
  * @param   pThis               HDA state.
  */
-static void hdaTimerMaybeStop(PHDASTATE pThis)
+static int hdaTimerMaybeStop(PHDASTATE pThis)
 {
     LogFlowFuncEnter();
 
     if (!pThis->pTimer)
-        return;
+        return VERR_WRONG_ORDER;
 
     if (pThis->cStreamsActive) /* Disable can be called mupltiple times. */
     {
         pThis->cStreamsActive--;
 
         if (pThis->cStreamsActive == 0)
-            hdaTimerStop(pThis);
+            return hdaTimerStop(pThis);
     }
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2344,6 +2406,8 @@ static void hdaTimerMain(PHDASTATE pThis)
     AssertPtrReturnVoid(pThis);
 
     STAM_PROFILE_START(&pThis->StatTimer, a);
+
+    DEVHDA_LOCK(pThis);
 
     /* Flag indicating whether to kick the timer again for a
      * new data processing round. */
@@ -2371,10 +2435,13 @@ static void hdaTimerMain(PHDASTATE pThis)
     {
         /* Kick the timer again. */
         pThis->tsTimerExpire += pThis->cTimerTicks;
+
         TMTimerSet(pThis->pTimer, pThis->tsTimerExpire);
     }
     else
-        LogRel2(("HDA: Stopping transfers\n"));
+        LogRel2(("HDA: Stopped transfers\n"));
+
+    DEVHDA_UNLOCK(pThis);
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
@@ -4323,6 +4390,17 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 #endif
 
     /*
+     * Use an own critical section for the device instead of the default
+     * one provided by PDM. This allows fine-grained locking in combination
+     * with TM when timer-specific stuff is being called in e.g. the MMIO handlers.
+     */
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "HDA");
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    /*
      * Initialize data (most of it anyway).
      */
     pThis->pDevInsR3                = pDevIns;
@@ -4744,14 +4822,16 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
          *        instead of the LPIB registers.
          */
         rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hdaTimer, pThis,
-                                    TMTIMER_FLAGS_NO_CRIT_SECT, "DevHDA", &pThis->pTimer);
+                                    TMTIMER_FLAGS_NO_CRIT_SECT, "HDA Timer", &pThis->pTimer);
         AssertRCReturn(rc, rc);
 
-        if (RT_SUCCESS(rc))
-        {
-            pThis->cTimerTicks = TMTimerGetFreq(pThis->pTimer) / uTimerHz;
-            LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicks, uTimerHz));
-        }
+        /* Use our own critcal section for the device timer.
+         * That way we can control more fine-grained when to lock what. */
+        rc = TMR3TimerSetCritSect(pThis->pTimer, &pThis->CritSect);
+        AssertRCReturn(rc, rc);
+
+        pThis->cTimerTicks = TMTimerGetFreq(pThis->pTimer) / uTimerHz;
+        LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicks, uTimerHz));
     }
 # else
     if (RT_SUCCESS(rc))

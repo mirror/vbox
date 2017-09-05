@@ -117,6 +117,8 @@ typedef struct HDASTATE
     PPDMDEVINSRC                       pDevInsRC;
     /** Padding for alignment. */
     uint32_t                           u32Padding;
+    /** Critical section protecting the HDA state. */
+    PDMCRITSECT                        CritSect;
     /** The base interface for LUN\#0. */
     PDMIBASE                           IBase;
     RTGCPHYS                           MMIOBaseAddr;
