@@ -30,6 +30,7 @@ RT_C_DECLS_BEGIN
 #include <ntddmou.h>
 RT_C_DECLS_END
 
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestLib.h>
 
 /* not available on NT4 */
