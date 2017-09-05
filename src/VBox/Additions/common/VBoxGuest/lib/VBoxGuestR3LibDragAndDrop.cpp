@@ -49,7 +49,7 @@
 
 using namespace DragAndDropSvc;
 
-#include "VBGLR3Internal.h"
+#include "VBoxGuestR3LibInternal.h"
 
 
 /*********************************************************************************************************************************

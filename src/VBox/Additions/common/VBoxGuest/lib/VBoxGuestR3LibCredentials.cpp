@@ -34,7 +34,7 @@
 #include <iprt/string.h>
 #include <VBox/log.h>
 
-#include "VBGLR3Internal.h"
+#include "VBoxGuestR3LibInternal.h"
 
 
 /**

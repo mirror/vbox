@@ -32,7 +32,7 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/err.h>
-#include "VBGLR3Internal.h"
+#include "VBoxGuestR3LibInternal.h"
 
 
 int vbglR3GRAlloc(VMMDevRequestHeader **ppReq, size_t cb, VMMDevRequestType enmReqType)

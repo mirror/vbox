@@ -36,7 +36,7 @@
 #include <VBox/log.h>
 #include <VBox/HostServices/GuestControlSvc.h>
 
-#include "VBGLR3Internal.h"
+#include "VBoxGuestR3LibInternal.h"
 
 using namespace guestControl;
 

@@ -29,7 +29,7 @@
 
 #include <VBox/HostServices/VBoxHostChannel.h>
 
-#include "VBGLR3Internal.h"
+#include "VBoxGuestR3LibInternal.h"
 
 
 VBGLR3DECL(int) VbglR3HostChannelInit(uint32_t *pidClient)

@@ -32,7 +32,7 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/process.h>
-#include "VBGLR3Internal.h"
+#include "VBoxGuestR3LibInternal.h"
 
 /**
  * Creates a PID File and returns the open file descriptor.

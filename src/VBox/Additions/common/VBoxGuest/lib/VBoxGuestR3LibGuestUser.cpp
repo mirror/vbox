@@ -34,7 +34,7 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
-#include "VBGLR3Internal.h"
+#include "VBoxGuestR3LibInternal.h"
 
 
 /**

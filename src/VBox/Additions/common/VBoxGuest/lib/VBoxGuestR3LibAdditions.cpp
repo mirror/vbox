@@ -33,7 +33,7 @@
 #include <iprt/string.h>
 #include <VBox/log.h>
 #include <VBox/version.h>
-#include "VBGLR3Internal.h"
+#include "VBoxGuestR3LibInternal.h"
 
 
 

@@ -63,7 +63,7 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <VBox/log.h>
-#include "VBGLR3Internal.h"
+#include "VBoxGuestR3LibInternal.h"
 
 #ifdef VBOX_VBGLR3_XFREE86
 /* Rather than try to resolve all the header file conflicts, I will just

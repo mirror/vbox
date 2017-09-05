@@ -33,7 +33,7 @@
 # include <iprt/win/windows.h>
 #endif
 
-#include "VBGLR3Internal.h"
+#include "VBoxGuestR3LibInternal.h"
 
 
 /**

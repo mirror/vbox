@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/time.h>
 #include <iprt/string.h>
-#include "VBGLR3Internal.h"
+#include "VBoxGuestR3LibInternal.h"
 
 
 VBGLR3DECL(int) VbglR3VrdpGetChangeRequest(bool *pfActive, uint32_t *puExperienceLevel)

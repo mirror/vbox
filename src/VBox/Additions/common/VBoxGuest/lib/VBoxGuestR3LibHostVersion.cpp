@@ -37,7 +37,7 @@
  #include <iprt/win/windows.h>
 #endif
 
-#include "VBGLR3Internal.h"
+#include "VBoxGuestR3LibInternal.h"
 
 /**
  * Checks for a Guest Additions update by comparing the installed version on the
