@@ -26,9 +26,9 @@
 #ifndef ___VBox_HostService_VBoxOpenGLSvc_h
 #define ___VBox_HostService_VBoxOpenGLSvc_h
 
+#include <VBox/VMMDevCoreTypes.h>
 #include <VBox/VBoxGuestCoreTypes.h>
 #include <VBox/hgcmsvc.h>
-#include <VBox/VMMDev.h>
 
 /* OpenGL command buffer size */
 #define VBOX_OGL_MAX_CMD_BUFFER                     (128*1024)

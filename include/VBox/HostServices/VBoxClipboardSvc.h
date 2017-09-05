@@ -26,7 +26,7 @@
 #ifndef ___VBox_HostService_VBoxClipboardSvc_h
 #define ___VBox_HostService_VBoxClipboardSvc_h
 
-#include <VBox/VMMDev.h>
+#include <VBox/VMMDevCoreTypes.h>
 #include <VBox/VBoxGuestCoreTypes.h>
 #include <VBox/hgcmsvc.h>
 

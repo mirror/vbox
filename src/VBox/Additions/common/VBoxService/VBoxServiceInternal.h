@@ -26,6 +26,7 @@
 
 #include <iprt/list.h>
 #include <iprt/critsect.h>
+#include <iprt/path.h> /* RTPATH_MAX */
 
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/HostServices/GuestControlSvc.h>

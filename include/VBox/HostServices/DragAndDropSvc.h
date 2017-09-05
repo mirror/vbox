@@ -59,7 +59,7 @@
 #define ___VBox_HostService_DragAndDropSvc_h
 
 #include <VBox/hgcmsvc.h>
-#include <VBox/VMMDev.h>
+#include <VBox/VMMDevCoreTypes.h>
 #include <VBox/VBoxGuestCoreTypes.h>
 
 /*
