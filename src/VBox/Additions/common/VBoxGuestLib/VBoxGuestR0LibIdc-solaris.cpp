@@ -30,6 +30,7 @@
 *********************************************************************************************************************************/
 #include "VBoxGuestR0LibInternal.h"
 #include <VBox/VBoxGuest.h>
+#include <VBox/err.h>
 
 
 int VBOXCALL vbglR0IdcNativeOpen(PVBGLIDCHANDLE pHandle, PVBGLIOCIDCCONNECT pReq)
