@@ -23,7 +23,6 @@
 
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
-#include <VBox/VMMDev.h>
 #include <iprt/string.h>
 
 #include "VBoxCredProvProvider.h"

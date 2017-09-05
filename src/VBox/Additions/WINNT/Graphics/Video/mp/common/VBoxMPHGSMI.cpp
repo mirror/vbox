@@ -17,7 +17,6 @@
 
 #include "VBoxMPHGSMI.h"
 #include "VBoxMPCommon.h"
-#include <VBox/VMMDev.h>
 #include <iprt/alloc.h>
 
 static DECLCALLBACK(void *) hgsmiEnvAlloc(void *pvEnv, HGSMISIZE cb)

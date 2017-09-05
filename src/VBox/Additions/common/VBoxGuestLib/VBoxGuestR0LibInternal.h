@@ -60,6 +60,7 @@ struct VBGLIDCHANDLEPRIVATE
 /** Indicate that the structure is present. */
 #define VBGLIDCHANDLEPRIVATE_DECLARED 1
 
+#include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 AssertCompile(RT_SIZEOFMEMB(VBGLIDCHANDLE, apvPadding) >= sizeof(struct VBGLIDCHANDLEPRIVATE));
 

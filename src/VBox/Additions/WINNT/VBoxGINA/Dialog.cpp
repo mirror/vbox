@@ -20,6 +20,7 @@
 #include <stdio.h>      /* Needed for swprintf() */
 
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/err.h>
 
 #include "Dialog.h"
 #include "WinWlx.h"

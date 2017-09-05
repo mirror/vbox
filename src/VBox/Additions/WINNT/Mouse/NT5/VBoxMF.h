@@ -30,7 +30,7 @@ RT_C_DECLS_BEGIN
 #include <ntddkbd.h>
 #include <ntdd8042.h>
 RT_C_DECLS_END
-#include <VBox/VMMDev.h>
+#include <VBox/VMMDev.h> /* for VMMDevReqMouseStatus */
 
 #define IOCTL_INTERNAL_MOUSE_CONNECT CTL_CODE(FILE_DEVICE_MOUSE, 0x0080, METHOD_NEITHER, FILE_ANY_ACCESS)
 

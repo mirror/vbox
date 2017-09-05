@@ -50,6 +50,7 @@ FILES_VBOXSF_NOBIN=" \
     ${PATH_ROOT}/include/VBox/shflsvc.h=>include/VBox/shflsvc.h \
     ${PATH_ROOT}/include/VBox/types.h=>include/VBox/types.h \
     ${PATH_ROOT}/include/VBox/VBoxGuest.h=>include/VBox/VBoxGuest.h \
+    ${PATH_ROOT}/include/VBox/VBoxGuestCoreTypes.h=>include/VBox/VBoxGuestCoreTypes.h \
     ${PATH_ROOT}/include/VBox/VBoxGuestLib.h=>include/VBox/VBoxGuestLib.h \
     ${PATH_ROOT}/include/VBox/VBoxGuestLibSharedFolders.h=>include/VBox/VBoxGuestLibSharedFolders.h \
     ${PATH_ROOT}/include/VBox/VBoxGuestMangling.h=>include/VBox/VBoxGuestMangling.h \

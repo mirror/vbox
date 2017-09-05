@@ -22,9 +22,10 @@
 #include "VBoxMPVidPn.h"
 
 #include <iprt/asm.h>
-//#include <iprt/initterm.h>
+#include <iprt/param.h>
 
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/VMMDev.h> /* for VMMDevVideoSetVisibleRegion */
 #include <VBoxVideo.h>
 #include <wingdi.h> /* needed for RGNDATA definition */
 #include <VBoxDisplay.h> /* this is from Additions/WINNT/include/ to include escape codes */

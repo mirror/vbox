@@ -14,29 +14,35 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"
 #include "VBoxSeamless.h"
 
-#include <malloc.h>
-
+#include <iprt/alloca.h>
 #include <iprt/assert.h>
 #ifdef VBOX_WITH_WDDM
 # include <iprt/asm.h>
 #endif
 
-#ifdef DEBUG
+#ifdef DEBUG /** @todo r=bird: these are all default values. sigh. */
 # define LOG_ENABLED
 # define LOG_GROUP LOG_GROUP_DEFAULT
 #endif
 #include <VBox/log.h>
-#include <VBox/VMMDev.h>
+#include <VBox/VMMDev.h> /* for VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST & VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED */
 
 #include <VBoxDisplay.h>
 #include <VBoxHook.h>
 
 
-
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 typedef struct _VBOXDISPLAYCONTEXT
 {
     const VBOXSERVICEENV *pEnv;
@@ -49,8 +55,6 @@ typedef struct _VBOXDISPLAYCONTEXT
     VBOXDISPIF dispIf;
 } VBOXDISPLAYCONTEXT, *PVBOXDISPLAYCONTEXT;
 
-static VBOXDISPLAYCONTEXT g_Ctx = { 0 };
-
 typedef enum
 {
     VBOXDISPLAY_DRIVER_TYPE_UNKNOWN = 0,
@@ -58,7 +62,18 @@ typedef enum
     VBOXDISPLAY_DRIVER_TYPE_WDDM    = 2
 } VBOXDISPLAY_DRIVER_TYPE;
 
-static VBOXDISPLAY_DRIVER_TYPE getVBoxDisplayDriverType (VBOXDISPLAYCONTEXT *pCtx);
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static VBOXDISPLAYCONTEXT g_Ctx = { 0 };
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static VBOXDISPLAY_DRIVER_TYPE getVBoxDisplayDriverType(VBOXDISPLAYCONTEXT *pCtx);
+
 
 static DECLCALLBACK(int) VBoxDisplayInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
 {
@@ -550,8 +565,8 @@ static BOOL ResizeDisplayDevice(PVBOXDISPLAYCONTEXT pCtx,
 
     LogFlowFunc(("ResizeDisplayDevice: Found total %d devices. err %d\n", NumDevices, GetLastError ()));
 
-    DISPLAY_DEVICE *paDisplayDevices = (DISPLAY_DEVICE *)alloca (sizeof (DISPLAY_DEVICE) * NumDevices);
-    DEVMODE *paDeviceModes = (DEVMODE *)alloca (sizeof (DEVMODE) * NumDevices);
+    DISPLAY_DEVICE *paDisplayDevices = (DISPLAY_DEVICE *)alloca(sizeof (DISPLAY_DEVICE) * NumDevices);
+    DEVMODE *paDeviceModes = (DEVMODE *)alloca(sizeof (DEVMODE) * NumDevices);
     RECTL *paRects = (RECTL *)alloca (sizeof (RECTL) * NumDevices);
     DWORD DevNum = 0;
     DWORD DevPrimaryNum = 0;

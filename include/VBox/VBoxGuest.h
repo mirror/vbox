@@ -2,8 +2,6 @@
  * VBoxGuest - VirtualBox Guest Additions Driver Interface. (ADD,DEV)
  *
  * @note    This file is used by 16-bit compilers too (OpenWatcom).
- *
- * @remarks This is in the process of being split up and usage cleaned up.
  */
 
 /*
@@ -33,6 +31,7 @@
 #include <VBox/types.h>
 #include <iprt/assert.h>
 #include <VBox/VMMDevCoreTypes.h>
+#include <VBox/VBoxGuestCoreTypes.h>
 
 
 
@@ -758,13 +757,6 @@ typedef struct VBGLIOCSETMOUSESTATUS
 #define VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK_SIZE       sizeof(VBGLIOCSETMOUSENOTIFYCALLBACK)
 #define VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK_SIZE_IN    sizeof(VBGLIOCSETMOUSENOTIFYCALLBACK)
 #define VBGL_IOCTL_SET_MOUSE_NOTIFY_CALLBACK_SIZE_OUT   sizeof(VBGLREQHDR)
-/**
- * Mouse event noticification callback function.
- * @param   pvUser      Argument given when setting the callback.
- */
-typedef DECLCALLBACK(void) FNVBOXGUESTMOUSENOTIFY(void *pvUser);
-/** Pointer to a mouse event notification callback function. */
-typedef FNVBOXGUESTMOUSENOTIFY *PFNVBOXGUESTMOUSENOTIFY; /**< @todo fix type prefix */
 typedef struct VBGLIOCSETMOUSENOTIFYCALLBACK
 {
     /** The header. */

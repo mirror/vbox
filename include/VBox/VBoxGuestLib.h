@@ -28,10 +28,7 @@
 
 #include <VBox/types.h>
 #include <VBox/VMMDevCoreTypes.h>
-#include <VBox/VMMDev.h>     /* grumble */
-#ifdef IN_RING0
-# include <VBox/VBoxGuest.h>
-#endif
+#include <VBox/VBoxGuestCoreTypes.h>
 
 
 /** @defgroup grp_vboxguest_lib     VirtualBox Guest Additions Library
@@ -148,8 +145,9 @@ typedef VBGLIDCHANDLE *PVBGLIDCHANDLE;
 
 DECLR0VBGL(int) VbglR0IdcOpen(PVBGLIDCHANDLE pHandle, uint32_t uReqVersion, uint32_t uMinVersion,
                               uint32_t *puSessionVersion, uint32_t *puDriverVersion, uint32_t *puDriverRevision);
-DECLR0VBGL(int) VbglR0IdcCallRaw(PVBGLIDCHANDLE pHandle, uintptr_t uReq, PVBGLREQHDR pReqHdr, uint32_t cbReq);
-DECLR0VBGL(int) VbglR0IdcCall(PVBGLIDCHANDLE pHandle, uintptr_t uReq, PVBGLREQHDR pReqHdr, uint32_t cbReq);
+struct VBGLREQHDR;
+DECLR0VBGL(int) VbglR0IdcCallRaw(PVBGLIDCHANDLE pHandle, uintptr_t uReq, struct VBGLREQHDR *pReqHdr, uint32_t cbReq);
+DECLR0VBGL(int) VbglR0IdcCall(PVBGLIDCHANDLE pHandle, uintptr_t uReq, struct VBGLREQHDR *pReqHdr, uint32_t cbReq);
 DECLR0VBGL(int) VbglR0IdcClose(PVBGLIDCHANDLE pHandle);
 
 /** @} */
@@ -167,7 +165,11 @@ DECLR0VBGL(int) VbglR0IdcClose(PVBGLIDCHANDLE pHandle);
  * @param   cbReq       Size of memory block required for the request.
  * @param   enmReqType  the generic request type.
  */
-DECLVBGL(int) VbglGRAlloc(VMMDevRequestHeader **ppReq, size_t cbReq, VMMDevRequestType enmReqType);
+# if defined(___VBox_VMMDev_h) || defined(DOXYGEN_RUNNING)
+DECLVBGL(int) VbglGRAlloc(struct VMMDevRequestHeader **ppReq, size_t cbReq, VMMDevRequestType enmReqType);
+# else
+DECLVBGL(int) VbglGRAlloc(struct VMMDevRequestHeader **ppReq, size_t cbReq, int32_t enmReqType);
+# endif
 
 /**
  * Perform the generic request.
@@ -176,7 +178,7 @@ DECLVBGL(int) VbglGRAlloc(VMMDevRequestHeader **ppReq, size_t cbReq, VMMDevReque
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq);
+DECLVBGL(int) VbglGRPerform(struct VMMDevRequestHeader *pReq);
 
 /**
  * Free the generic request memory.
@@ -185,7 +187,7 @@ DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq);
  *
  * @return VBox status code.
  */
-DECLVBGL(void) VbglGRFree (VMMDevRequestHeader *pReq);
+DECLVBGL(void) VbglGRFree(struct VMMDevRequestHeader *pReq);
 
 /**
  * Verify the generic request header.
@@ -197,10 +199,12 @@ DECLVBGL(void) VbglGRFree (VMMDevRequestHeader *pReq);
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglGRVerify (const VMMDevRequestHeader *pReq, size_t cbReq);
+DECLVBGL(int) VbglGRVerify(const struct VMMDevRequestHeader *pReq, size_t cbReq);
+
 /** @} */
 
 # ifdef VBOX_WITH_HGCM
+struct VBGLIOCHGCMCALL;
 
 #  ifdef VBGL_VBOXGUEST
 
@@ -273,7 +277,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalDisconnect(HGCMCLIENTID idClient,
  *
  * @return VBox status code.
  */
-DECLR0VBGL(int) VbglR0HGCMInternalCall(VBGLIOCHGCMCALL *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
+DECLR0VBGL(int) VbglR0HGCMInternalCall(struct VBGLIOCHGCMCALL *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
                                        PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 /** Call a HGCM service. (32 bits packet structure in a 64 bits guest)
@@ -290,7 +294,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(VBGLIOCHGCMCALL *pCallInfo, uint32_t cbCa
  *
  * @return  VBox status code.
  */
-DECLR0VBGL(int) VbglR0HGCMInternalCall32(VBGLIOCHGCMCALL *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
+DECLR0VBGL(int) VbglR0HGCMInternalCall32(struct VBGLIOCHGCMCALL *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
                                          PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 /** @name VbglR0HGCMInternalCall flags
@@ -367,7 +371,7 @@ DECLVBGL(int) VbglR0HGCMDisconnect(VBGLHGCMHANDLE handle, HGCMCLIENTID idClient)
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglR0HGCMCallRaw(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint32_t cbData);
+DECLVBGL(int) VbglR0HGCMCallRaw(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pData, uint32_t cbData);
 
 /**
  * Call to a service, returning the HGCM status code.
@@ -379,7 +383,7 @@ DECLVBGL(int) VbglR0HGCMCallRaw(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, u
  * @return VBox status code.  Either the I/O control status code if that failed,
  *         or the HGCM status code (pData->Hdr.rc).
  */
-DECLVBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint32_t cbData);
+DECLVBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pData, uint32_t cbData);
 
 /**
  * Call to a service with user-mode data received by the calling driver from the User-Mode process.
@@ -391,7 +395,7 @@ DECLVBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglR0HGCMCallUserDataRaw(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint32_t cbData);
+DECLVBGL(int) VbglR0HGCMCallUserDataRaw(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pData, uint32_t cbData);
 
 /** @} */
 
@@ -402,9 +406,10 @@ DECLVBGL(int) VbglR0CrCtlCreate(VBGLCRCTLHANDLE *phCtl);
 DECLVBGL(int) VbglR0CrCtlDestroy(VBGLCRCTLHANDLE hCtl);
 DECLVBGL(int) VbglR0CrCtlConConnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID *pidClient);
 DECLVBGL(int) VbglR0CrCtlConDisconnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID idClient);
-DECLVBGL(int) VbglR0CrCtlConCallRaw(VBGLCRCTLHANDLE hCtl, PVBGLIOCHGCMCALL pCallInfo, int cbCallInfo);
-DECLVBGL(int) VbglR0CrCtlConCall(VBGLCRCTLHANDLE hCtl, PVBGLIOCHGCMCALL pCallInfo, int cbCallInfo);
-DECLVBGL(int) VbglR0CrCtlConCallUserDataRaw(VBGLCRCTLHANDLE hCtl, PVBGLIOCHGCMCALL pCallInfo, int cbCallInfo);
+struct VBGLIOCHGCMCALL;
+DECLVBGL(int) VbglR0CrCtlConCallRaw(VBGLCRCTLHANDLE hCtl, struct VBGLIOCHGCMCALL *pCallInfo, int cbCallInfo);
+DECLVBGL(int) VbglR0CrCtlConCall(VBGLCRCTLHANDLE hCtl, struct VBGLIOCHGCMCALL *pCallInfo, int cbCallInfo);
+DECLVBGL(int) VbglR0CrCtlConCallUserDataRaw(VBGLCRCTLHANDLE hCtl, struct VBGLIOCHGCMCALL *pCallInfo, int cbCallInfo);
 /** @} */
 
 #  endif /* !VBGL_VBOXGUEST */
@@ -453,15 +458,15 @@ DECLVBGL(uint32_t)  VbglPhysHeapGetPhysAddr(void *pv);
  */
 DECLVBGL(void)      VbglPhysHeapFree(void *pv);
 
-DECLVBGL(int) VbglQueryVMMDevMemory (VMMDevMemory **ppVMMDevMemory);
-DECLR0VBGL(bool) VbglR0CanUsePhysPageList(void);
+DECLVBGL(int)       VbglQueryVMMDevMemory(struct VMMDevMemory **ppVMMDevMemory);
+DECLR0VBGL(bool)    VbglR0CanUsePhysPageList(void);
 
 # ifndef VBOX_GUEST
 /** @name Mouse
  * @{ */
-DECLVBGL(int)     VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify, void *pvUser);
-DECLVBGL(int)     VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py);
-DECLVBGL(int)     VbglSetMouseStatus(uint32_t fFeatures);
+DECLVBGL(int)       VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify, void *pvUser);
+DECLVBGL(int)       VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py);
+DECLVBGL(int)       VbglSetMouseStatus(uint32_t fFeatures);
 /** @}  */
 # endif /* VBOX_GUEST */
 
@@ -572,7 +577,9 @@ VBGLR3DECL(int)     VbglR3VrdpGetChangeRequest(bool *pfActive, uint32_t *puExper
 /** @name VM Statistics
  * @{ */
 VBGLR3DECL(int)     VbglR3StatQueryInterval(uint32_t *pu32Interval);
+# if defined(___VBox_VMMDev_h) || defined(DOXYGEN_RUNNING)
 VBGLR3DECL(int)     VbglR3StatReport(VMMDevReportGuestStats *pReq);
+# endif
 /** @}  */
 
 /** @name Memory ballooning
@@ -791,8 +798,9 @@ VBGLR3DECL(int)     VbglR3CpuHotPlugWaitForEvent(VMMDevCpuEventType *penmEventTy
 
 /** @name Page sharing
  * @{ */
+struct VMMDEVSHAREDREGIONDESC;
 VBGLR3DECL(int)     VbglR3RegisterSharedModule(char *pszModuleName, char *pszVersion, RTGCPTR64  GCBaseAddr, uint32_t cbModule,
-                                               unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions);
+                                               unsigned cRegions, struct VMMDEVSHAREDREGIONDESC *pRegions);
 VBGLR3DECL(int)     VbglR3UnregisterSharedModule(char *pszModuleName, char *pszVersion, RTGCPTR64  GCBaseAddr, uint32_t cbModule);
 VBGLR3DECL(int)     VbglR3CheckSharedModules(void);
 VBGLR3DECL(bool)    VbglR3PageSharingIsEnabled(void);

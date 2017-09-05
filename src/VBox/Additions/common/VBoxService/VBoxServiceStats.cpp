@@ -60,6 +60,7 @@
 #include <iprt/system.h>
 #include <iprt/time.h>
 #include <iprt/thread.h>
+#include <VBox/VMMDev.h> /* For VMMDevReportGuestStats and indirectly VbglR3StatReport. */
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"

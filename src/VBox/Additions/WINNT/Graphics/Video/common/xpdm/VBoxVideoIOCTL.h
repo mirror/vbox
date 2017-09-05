@@ -19,7 +19,7 @@
 #ifndef VBOXVIDEOIOCTL_H
 #define VBOXVIDEOIOCTL_H
 
-#include <VBox/VMMDev.h>
+#include <VBox/VMMDev.h> /* VBVAMEMORY */
 #include <HGSMI.h>
 
 /* ==================== Virtual Box specific VRP's ==================== */

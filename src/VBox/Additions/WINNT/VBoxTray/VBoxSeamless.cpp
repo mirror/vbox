@@ -29,7 +29,7 @@
 # define LOG_GROUP LOG_GROUP_DEFAULT
 #endif
 #include <VBox/log.h>
-#include <VBox/VMMDev.h>
+#include <VBox/VMMDev.h> /* for VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST */
 
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"

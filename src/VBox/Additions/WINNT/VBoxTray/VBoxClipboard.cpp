@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"
 
@@ -24,14 +27,17 @@
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <strsafe.h>
 
-#include <VBox/VMMDev.h>
-#ifdef DEBUG
+#ifdef DEBUG /** @todo r=bird: these are all default values. sigh. */
 # define LOG_ENABLED
 # define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #endif
 #include <VBox/log.h>
 
- /* Dynamically load clipboard functions from User32.dll. */
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/* Dynamically load clipboard functions from User32.dll. */
 typedef BOOL WINAPI FNADDCLIPBOARDFORMATLISTENER(HWND);
 typedef FNADDCLIPBOARDFORMATLISTENER *PFNADDCLIPBOARDFORMATLISTENER;
 
@@ -55,12 +61,17 @@ typedef struct _VBOXCLIPBOARDCONTEXT
     PFNREMOVECLIPBOARDFORMATLISTENER pfnRemoveClipboardFormatListener;
 } VBOXCLIPBOARDCONTEXT, *PVBOXCLIPBOARDCONTEXT;
 
+enum { CBCHAIN_TIMEOUT = 5000 /* ms */ };
+
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 /** Static since it is the single instance. Directly used in the windows proc. */
 static VBOXCLIPBOARDCONTEXT g_Ctx = { NULL };
 
 static char s_szClipWndClassName[] = "VBoxSharedClipboardClass";
 
-enum { CBCHAIN_TIMEOUT = 5000 /* ms */ };
 
 static void vboxClipboardInitNewAPI(VBOXCLIPBOARDCONTEXT *pCtx)
 {

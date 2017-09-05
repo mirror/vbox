@@ -44,6 +44,7 @@
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/ldr.h>
+#include <iprt/path.h>
 #include <iprt/process.h>
 #include <iprt/system.h>
 #include <iprt/time.h>

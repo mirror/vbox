@@ -26,4 +26,4 @@ void VBoxSetupDisplaysHGSMI(PVBOXMP_COMMON pCommon, PHYSICAL_ADDRESS phVRAM, uin
 void VBoxFreeDisplaysHGSMI(PVBOXMP_COMMON pCommon);
 RT_C_DECLS_END
 
-#endif /*VBOXMPHGSMI_H*/
+#endif /*!VBOXMPHGSMI_H*/

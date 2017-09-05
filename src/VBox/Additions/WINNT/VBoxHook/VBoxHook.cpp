@@ -22,7 +22,9 @@
 #include <iprt/win/windows.h>
 #include <VBoxHook.h>
 #include <VBox/VBoxGuestLib.h>
-#include <stdio.h>
+#ifdef DEBUG
+# include <stdio.h>
+#endif
 
 
 /*********************************************************************************************************************************

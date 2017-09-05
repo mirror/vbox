@@ -17,8 +17,9 @@
 
 #include "VBoxMPWddm.h"
 #include "common/VBoxMPCommon.h"
+#include <iprt/param.h> /* PAGE_OFFSET_MASK */
 
-#include <stdio.h>
+#include <stdio.h> /* for swprintf */
 
 
 int VBoxVModesInit(VBOX_VMODES *pModes, uint32_t cTargets)
