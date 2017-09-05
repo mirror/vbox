@@ -20,7 +20,6 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefile.
 ifndef VBOX_ONLY_VALIDATIONKIT
- include $(PATH_SUB_CURRENT)/VBoxGuestLib/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBoxControl/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBoxGuest/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBoxService/Makefile.kmk

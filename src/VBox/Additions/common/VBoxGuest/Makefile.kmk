@@ -18,6 +18,9 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+# Include sub-makefile.
+include $(PATH_SUB_CURRENT)/lib/Makefile.kmk
+
 
 if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
  #

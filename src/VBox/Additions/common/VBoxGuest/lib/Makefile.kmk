@@ -24,7 +24,7 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
-SUB_DEPTH = ../../../../..
+SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 #
