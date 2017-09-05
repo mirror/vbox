@@ -29,7 +29,6 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "VBoxGuestR0LibInternal.h"
-#include <VBox/VBoxGuest.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 

@@ -24,7 +24,7 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#include "VBGLInternal.h"
+#include "VBoxGuestR0LibInternal.h"
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>

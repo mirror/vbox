@@ -33,7 +33,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_HGCM
 
-#include "VBGLInternal.h"
+#include "VBoxGuestR0LibInternal.h"
 #include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>

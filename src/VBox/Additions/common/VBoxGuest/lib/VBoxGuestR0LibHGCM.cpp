@@ -33,7 +33,7 @@
 /* Entire file is ifdef'ed with !VBGL_VBOXGUEST */
 #ifndef VBGL_VBOXGUEST
 
-#include "VBGLInternal.h"
+#include "VBoxGuestR0LibInternal.h"
 
 #include <iprt/assert.h>
 #include <iprt/semaphore.h>
