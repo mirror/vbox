@@ -253,17 +253,17 @@
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Sąsaja: </translation>
+        <translation>Sąsaja: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Iššaukė: </translation>
+        <translation>Iššaukė: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Iššaukė&amp;nbsp;RC: </translation>
+        <translation>Iššaukė&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -271,7 +271,7 @@
     <message>
         <source>%1, %2: %3, %4: %5, %6: %7</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text, col.4 name: col.4 text</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1, %2: %3, %4: %5, %6: %7</translation>
     </message>
 </context>
 <context>
@@ -1061,11 +1061,11 @@
     <message>
         <source>&amp;Insert %1</source>
         <comment>that means send the %1 key sequence to the virtual machine</comment>
-        <translation type="unfinished"></translation>
+        <translation>Į&amp;terpti %1</translation>
     </message>
     <message>
         <source>Send the %1 sequence to the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtualioje mašinoje nuspausti %1</translation>
     </message>
     <message>
         <source>&amp;Mouse</source>
@@ -1077,7 +1077,7 @@
     </message>
     <message>
         <source>Enable host mouse pointer integration</source>
-        <translation type="unfinished"></translation>
+        <translation>Įgalinti pagrindinio kompiuterio pelės žymeklio integravimą</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
@@ -1166,11 +1166,11 @@
     </message>
     <message>
         <source>&amp;Connect Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Prijungti tinklo plokštę</translation>
     </message>
     <message>
         <source>Connect Network Adapter &amp;%1</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijungti tinklo plokštę &amp;%1</translation>
     </message>
     <message>
         <source>No USB Devices Connected</source>
@@ -1178,7 +1178,7 @@
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation type="unfinished"></translation>
+        <translation>Nėra prie pagrindinio kompiuterio prijungtų palaikomų įrenginių</translation>
     </message>
     <message>
         <source>No Webcams Connected</source>
@@ -1186,11 +1186,11 @@
     </message>
     <message>
         <source>No supported webcams connected to the host PC</source>
-        <translation type="unfinished"></translation>
+        <translation>Nėra prie pagrindinio kompiuterio prijungtų palaikomų internetinių kamerų</translation>
     </message>
     <message>
         <source>E&amp;xtra Data Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Papildomų &amp;duomenų tvarkytuvė...</translation>
     </message>
     <message>
         <source>Display the Extra Data Manager window</source>
@@ -1238,11 +1238,11 @@
     </message>
     <message>
         <source>Start selected virtual machines</source>
-        <translation>Paleisti pasirinktą virtualią mašiną</translation>
+        <translation>Paleisti pasirinktas virtualias mašinas</translation>
     </message>
     <message>
         <source>Switch to the windows of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Pereiti į pasirinktų virtualių mašinų langus</translation>
     </message>
     <message>
         <source>&amp;Normal Start</source>
@@ -1254,7 +1254,7 @@
     </message>
     <message>
         <source>Start selected virtual machines in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleisti pasirinktas virtualias mašinas fone</translation>
     </message>
     <message>
         <source>&amp;Detachable Start</source>
@@ -1270,7 +1270,7 @@
     </message>
     <message>
         <source>Reset selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Iš naujo paleisti pasirinktas virtualias mašinas</translation>
     </message>
     <message>
         <source>D&amp;iscard Saved State...</source>
@@ -1282,7 +1282,7 @@
     </message>
     <message>
         <source>Show log files of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Parodyti pasirinktų virtualių mašinų žurnalus</translation>
     </message>
     <message>
         <source>Refresh accessibility state of selected virtual machines</source>
@@ -1294,7 +1294,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Finder</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox mašinos apibrėžties rinkmenų katalogą atverti su Finder</translation>
     </message>
     <message>
         <source>S&amp;how in Explorer</source>
@@ -1302,7 +1302,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox mašinos apibrėžties rinkmenų katalogą atverti su Explorer</translation>
     </message>
     <message>
         <source>S&amp;how in File Manager</source>
@@ -1310,7 +1310,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in the File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox mašinos apibrėžties rinkmenų katalogą atverti su rinkmenų tvarkytuve</translation>
     </message>
     <message>
         <source>Cr&amp;eate Alias on Desktop</source>
@@ -1334,23 +1334,23 @@
     </message>
     <message>
         <source>Save state of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Įsiminti pasirinktų virtualių mašinų dabartinius būvius ir išjungti mašinas</translation>
     </message>
     <message>
         <source>Send ACPI Shutdown signal to selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtualiose mašinose nuspausti kompiuterio išjungimo mygtuką</translation>
     </message>
     <message>
         <source>Power off selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Išjungti pasirinktas virtualias mašinas</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Bug Tracker...</source>
-        <translation type="unfinished">Pranešimų apie &amp;VirtualBox klaidas sistema...</translation>
+        <translation>Pranešimų apie &amp;VirtualBox klaidas sistema...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product bug tracker</source>
-        <translation type="unfinished"></translation>
+        <translation>Atverti naršyklę ir eiti į VirtualBox klaidų registravimo puslapį</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Forums...</source>
@@ -1358,7 +1358,7 @@
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product forums</source>
-        <translation type="unfinished"></translation>
+        <translation>Atverti naršyklę ir eiti į VirtualBox diskusijų puslapį</translation>
     </message>
     <message>
         <source>&amp;Oracle Web Site...</source>
@@ -1366,7 +1366,7 @@
     </message>
     <message>
         <source>Open the browser and go to the Oracle web site</source>
-        <translation type="unfinished"></translation>
+        <translation>Atverti naršyklę ir eiti į Oracle svetainę</translation>
     </message>
     <message>
         <source>&amp;Detach GUI</source>
@@ -1381,26 +1381,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Audio</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Audio Output</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable audio output</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Audio Input</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable audio input</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Host Network Manager...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1410,23 +1390,23 @@
     </message>
     <message>
         <source>&amp;Machine Tools</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mašinos įrankiai</translation>
     </message>
     <message>
         <source>Switch to machine tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Pereiti prie mašinos įrankių</translation>
     </message>
     <message>
         <source>&amp;Machine Tools Menu</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mašinos įrankių meniu</translation>
     </message>
     <message>
         <source>Open the machine tools menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Atverti mašinos įrankių meniu</translation>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Išsamiau</translation>
     </message>
     <message>
         <source>Open the machine details pane</source>
@@ -1434,7 +1414,7 @@
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation type="unfinished">&amp;Momentiniai būviai</translation>
+        <translation>&amp;Momentiniai būviai</translation>
     </message>
     <message>
         <source>Open the machine snapshots pane</source>
@@ -1442,11 +1422,11 @@
     </message>
     <message>
         <source>&amp;Global Tools</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Visuotiniai įrankiai</translation>
     </message>
     <message>
         <source>Switch to global tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Pereiti prie visuotinių įrankių</translation>
     </message>
     <message>
         <source>&amp;Global Tools Menu</source>
@@ -1454,15 +1434,15 @@
     </message>
     <message>
         <source>Open the global tools menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Atverti visuotinių įrankių meniu</translation>
     </message>
     <message>
         <source>&amp;Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Virtualių laikmenų tvarkytuvė</translation>
     </message>
     <message>
         <source>Open the Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Atverti virtualių laikmenų tvarkytuvę</translation>
     </message>
     <message>
         <source>&amp;Host Network Manager</source>
@@ -1471,6 +1451,26 @@
     <message>
         <source>Open the Host Network Manager</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Audio</source>
+        <translation>&amp;Garsas</translation>
+    </message>
+    <message>
+        <source>Audio Output</source>
+        <translation>Garso išvedimas</translation>
+    </message>
+    <message>
+        <source>Enable audio output</source>
+        <translation>Įgalinti garso išėjimą</translation>
+    </message>
+    <message>
+        <source>Audio Input</source>
+        <translation>Garso įėjimas</translation>
+    </message>
+    <message>
+        <source>Enable audio input</source>
+        <translation>Įgalinti garso įėjimą</translation>
     </message>
 </context>
 <context>
@@ -1488,10 +1488,10 @@
     <message numerus="yes">
         <source>&lt;nobr&gt;Used by the following %n hard disk(s):&lt;/nobr&gt;&lt;br&gt;%1</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many hard drives are in the tool-tip and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>&lt;nobr&gt;Naudojama %n diske:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
+            <numerusform>&lt;nobr&gt;Naudojama %n diskuose:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
+            <numerusform>&lt;nobr&gt;Naudojama %n diskų:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
         </translation>
     </message>
     <message>
@@ -1665,12 +1665,12 @@
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1% {1?}</translation>
+        <translation>%1</translation>
     </message>
     <message>
         <source>%1: %2</source>
         <comment>col.1 text: col.2 text</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation>%1: %2</translation>
     </message>
 </context>
 <context>
@@ -1689,11 +1689,11 @@
     </message>
     <message>
         <source>True</source>
-        <translation type="unfinished"></translation>
+        <translation>Taip</translation>
     </message>
     <message>
         <source>False</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</source>
@@ -1735,7 +1735,7 @@
     <message>
         <source>%1 (%2)</source>
         <comment>value (clarification)</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 (%2)</translation>
     </message>
     <message>
         <source>Signature Algorithm</source>
@@ -2691,12 +2691,12 @@
     <message>
         <source>%1, %2: %3, %4</source>
         <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1, %2: %3, %4</translation>
     </message>
     <message>
         <source>%1, %2: %3</source>
         <comment>col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1, %2: %3</translation>
     </message>
 </context>
 <context>
@@ -2915,14 +2915,14 @@
     </message>
     <message>
         <source>Virtual Machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtualių mašinų grupė</translation>
     </message>
 </context>
 <context>
     <name>UIGChooserItemMachine</name>
     <message>
         <source>Virtual Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuali mašina</translation>
     </message>
 </context>
 <context>
@@ -3072,11 +3072,6 @@
         <translation type="vanished">%1 prievadas</translation>
     </message>
     <message>
-        <source>Disabled</source>
-        <comment>details (parallel)</comment>
-        <translation type="vanished">Uždraustas</translation>
-    </message>
-    <message>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
         <translation>%1 (%2 veikiantis)</translation>
@@ -3223,17 +3218,17 @@
     <message>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Minimali paravirtualizacija</translation>
     </message>
     <message>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Hyper-V paravirtualizacija</translation>
     </message>
     <message>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>KVM paravirtualizacija</translation>
     </message>
     <message>
         <source>Scale-factor</source>
@@ -3321,59 +3316,64 @@
         <translation>Uždrausta</translation>
     </message>
     <message>
-        <source>Audio Output</source>
-        <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>details (audio/output)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (audio/output)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Audio Input</source>
-        <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>details (audio/input)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (audio/input)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Chipset Type</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lustų rinkinio tipas</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Įgalinta</translation>
     </message>
     <message>
         <source>EFI</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>EFI</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Uždrausta</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Uždraustas</translation>
+    </message>
+    <message>
+        <source>Audio Output</source>
+        <comment>details (audio)</comment>
+        <translation>Garso išvedimas</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (audio/output)</comment>
+        <translation>Įgalintas</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (audio/output)</comment>
+        <translation>Uždraustas</translation>
+    </message>
+    <message>
+        <source>Audio Input</source>
+        <comment>details (audio)</comment>
+        <translation>Garso įėjimas</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (audio/input)</comment>
+        <translation>Įgalintas</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (audio/input)</comment>
+        <translation>Uždraustas</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (parallel)</comment>
+        <translation type="vanished">Uždraustas</translation>
     </message>
 </context>
 <context>
@@ -3381,14 +3381,14 @@
     <message>
         <source>%1 details</source>
         <comment>like &apos;General details&apos; or &apos;Storage details&apos;</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 išsamiau</translation>
     </message>
 </context>
 <context>
     <name>UIGDetailsSet</name>
     <message>
         <source>Contains the details of virtual machine &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsamiau apie „%1“ virtualią mašiną</translation>
     </message>
 </context>
 <context>
@@ -3671,7 +3671,7 @@
     <message>
         <source>None</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nėra</translation>
     </message>
     <message>
         <source>Do not attempt to limit the size of the guest screen.</source>
@@ -3688,7 +3688,7 @@
     </message>
     <message>
         <source>Machine Windows:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mašinų langai:</translation>
     </message>
     <message>
         <source>&amp;Raise Window Under Mouse</source>
@@ -3861,7 +3861,7 @@
     </message>
     <message>
         <source>Some items have the same shortcuts assigned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kai kurios klavišų kompinacijos priskirtos keliems veiksmams.</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Manager</source>
@@ -4018,7 +4018,7 @@
         <translation type="vanished">IPv6 adresas</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask Length</source>
+        <source>IPv6 Prefix Length</source>
         <translation type="vanished">IPv6 tinklo kaukės ilgis</translation>
     </message>
     <message>
@@ -4127,7 +4127,7 @@
     </message>
     <message>
         <source>Network CIDR</source>
-        <translation type="unfinished"></translation>
+        <translation>Tinklo CIDR</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
@@ -4147,7 +4147,7 @@
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished"></translation>
+        <translation>Numatytasis IPv6 maršrutas</translation>
     </message>
     <message>
         <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
@@ -4181,6 +4181,10 @@
     <message>
         <source>Edits selected NAT network.</source>
         <translation>Keičia pasirinktą NAT tinklą.</translation>
+    </message>
+    <message>
+        <source>IPv6 Network Mask Length</source>
+        <translation type="vanished">IPv6 tinklo kaukės ilgis</translation>
     </message>
 </context>
 <context>
@@ -4226,11 +4230,11 @@
         <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 adresą šiai plokštei, jei palaikomas IPv6.</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
+        <source>IPv6 Prefix &amp;Length:</source>
         <translation type="obsolete">IPv6 tinklo kaukės i&amp;lgis:</translation>
     </message>
     <message>
-        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 tinklo kaukės prefikso ilgį šiai plokštei, jei palaikomas IPv6.</translation>
     </message>
     <message>
@@ -4277,6 +4281,14 @@
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Rodo adreso viršutinę ribą to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
+    <message>
+        <source>IPv6 Network Mask &amp;Length:</source>
+        <translation type="obsolete">IPv6 tinklo kaukės i&amp;lgis:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 tinklo kaukės prefikso ilgį šiai plokštei, jei palaikomas IPv6.</translation>
+    </message>
 </context>
 <context>
     <name>UIGlobalSettingsNetworkDetailsHost</name>
@@ -4317,11 +4329,11 @@
         <translation type="vanished">&amp;IPv6 adresas:</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
-        <translation type="vanished">IPv6 tinklo kaukės i&amp;lgis:</translation>
+        <source>IPv6 Prefix &amp;Length:</source>
+        <translation type="obsolete">IPv6 tinklo kaukės i&amp;lgis:</translation>
     </message>
     <message>
-        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 tinklo kaukės prefikso ilgį šiai plokštei, jei palaikomas IPv6.</translation>
     </message>
     <message>
@@ -4368,6 +4380,14 @@
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Rodo adreso viršutinę ribą to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
+    <message>
+        <source>IPv6 Network Mask &amp;Length:</source>
+        <translation type="vanished">IPv6 tinklo kaukės i&amp;lgis:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 tinklo kaukės prefikso ilgį šiai plokštei, jei palaikomas IPv6.</translation>
+    </message>
 </context>
 <context>
     <name>UIGlobalSettingsNetworkDetailsNAT</name>
@@ -4389,7 +4409,7 @@
     </message>
     <message>
         <source>Network &amp;CIDR:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tinklo &amp;CIDR:</translation>
     </message>
     <message>
         <source>Holds the CIDR for this network.</source>
@@ -4527,7 +4547,7 @@
     </message>
     <message>
         <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Automatiškai aptikti pagrindinio kompiuterio įgaliotojo serverio nuostatas</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
@@ -4606,7 +4626,7 @@
     <message>
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation>%1: %2</translation>
     </message>
 </context>
 <context>
@@ -4688,22 +4708,22 @@
     </message>
     <message>
         <source>Left %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kairysis %1</translation>
     </message>
     <message>
         <source>Right %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Dešinysis %1</translation>
     </message>
 </context>
 <context>
     <name>UIHostNetworkDetailsWidget</name>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">&amp;Plokštė</translation>
+        <translation>&amp;Plokštė</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">&amp;DHCP serveris</translation>
+        <translation>&amp;DHCP serveris</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Automatically</source>
@@ -4715,7 +4735,7 @@
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished">&amp;IPv4 adresas:</translation>
+        <translation>&amp;IPv4 adresas:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 address for this adapter.</source>
@@ -4723,7 +4743,7 @@
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">IPv4 tinklo &amp;kaukė:</translation>
+        <translation>IPv4 tinklo &amp;kaukė:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 network mask for this adapter.</source>
@@ -4731,7 +4751,7 @@
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished">&amp;IPv6 adresas:</translation>
+        <translation>&amp;IPv6 adresas:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
@@ -4739,19 +4759,19 @@
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">IPv6 tinklo kaukės i&amp;lgis:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Rodo šio pagrindinio kompiuterio IPv4 tinklo kaukės prefikso ilgį šiai plokštei, jei palaikomas IPv6.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Nustatyti iš naujo</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>Pritaikyti</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
@@ -4763,15 +4783,15 @@
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Atmesti pakeitimus (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pritaikyti pakeitimus (%1)</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">Į&amp;galinti serverį</translation>
+        <translation>Į&amp;galinti serverį</translation>
     </message>
     <message>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
@@ -4779,7 +4799,7 @@
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">Serve&amp;rio adresas:</translation>
+        <translation>Serve&amp;rio adresas:</translation>
     </message>
     <message>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
@@ -4787,7 +4807,7 @@
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">Serverio &amp;kaukė:</translation>
+        <translation>Serverio &amp;kaukė:</translation>
     </message>
     <message>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
@@ -4795,7 +4815,7 @@
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">Adreso &amp;apatinė riba:</translation>
+        <translation>Adreso &amp;apatinė riba:</translation>
     </message>
     <message>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
@@ -4859,95 +4879,95 @@
     <message>
         <source>Enable</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Įgalinti</translation>
+        <translation>Įgalinti</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished">Plokštė</translation>
+        <translation>Plokštė</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sukonfigūruota automatiškai</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sukonfikūruota rankiniu būdu</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished">IPv4 adresas</translation>
+        <translation>IPv4 adresas</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished">nesukonfigūruota</translation>
+        <translation>nenustatytas</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished">IPv4 tinklo kaukė</translation>
+        <translation>IPv4 tinklo kaukė</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished">nesukonfigūruota</translation>
+        <translation>nenustatyta</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished">IPv6 adresas</translation>
+        <translation>IPv6 adresas</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">IPv6 tinklo kaukės ilgis</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished">nesukonfigūruota</translation>
+        <translation>nenustatytas</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation type="unfinished">DHCP serveris</translation>
+        <translation>DHCP serveris</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>Įgalintas</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>Uždraustas</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished">Adresas</translation>
+        <translation>Adresas</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished">Tinklo kaukė</translation>
+        <translation>Tinklo kaukė</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished">Apatinė riba</translation>
+        <translation>Apatinė riba</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished">nesukonfigūruota</translation>
+        <translation>nenustatyta</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished">Viršutinė riba</translation>
+        <translation>Viršutinė riba</translation>
     </message>
     <message>
         <source>&amp;Network</source>
-        <translation type="unfinished">&amp;Tinklas</translation>
+        <translation>&amp;Tinklas</translation>
     </message>
     <message>
         <source>&amp;Create</source>
-        <translation type="unfinished">Su&amp;kurti</translation>
+        <translation>Su&amp;kurti</translation>
     </message>
     <message>
         <source>Create Host-only Network (%1)</source>
@@ -4959,7 +4979,7 @@
     </message>
     <message>
         <source>&amp;Remove...</source>
-        <translation type="unfinished">Paša&amp;linti...</translation>
+        <translation>Paša&amp;linti...</translation>
     </message>
     <message>
         <source>Remove Host-only Network (%1)</source>
@@ -4971,7 +4991,7 @@
     </message>
     <message>
         <source>&amp;Properties...</source>
-        <translation type="unfinished"></translation>
+        <translation>Sa&amp;vybės...</translation>
     </message>
     <message>
         <source>Open Host-only Network Properties (%1)</source>
@@ -4983,7 +5003,7 @@
     </message>
     <message>
         <source>&amp;Refresh...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Atnaujinti...</translation>
     </message>
     <message>
         <source>Refresh Host-only Networks (%1)</source>
@@ -4995,15 +5015,15 @@
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Pavadinimas</translation>
+        <translation>Pavadinimas</translation>
     </message>
     <message>
         <source>IPv4 Address/Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 adresas/kaukė</translation>
     </message>
     <message>
         <source>IPv6 Address/Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 adresas/kaukė</translation>
     </message>
     <message>
         <source>Host Network Manager</source>
@@ -5011,15 +5031,15 @@
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Nustatyti iš naujo</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>Pritaikyti</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Užverti</translation>
+        <translation>Užverti</translation>
     </message>
     <message>
         <source>Reset changes in current host network details</source>
@@ -5031,19 +5051,19 @@
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Užverti neįrašant</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Atmesti pakeitimus (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pritaikyti pakeitimus (%1)</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Užverti langą (%1)</translation>
     </message>
 </context>
 <context>
@@ -5541,11 +5561,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the audio device:&lt;/nobr&gt;%1</source>
-        <comment>Audio tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1</source>
         <comment>Network tooltip</comment>
         <translation type="unfinished"></translation>
@@ -5553,27 +5568,27 @@
     <message>
         <source>Adapter %1 (%2)</source>
         <comment>Network tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 tinklo plokštė (%2)</translation>
     </message>
     <message>
         <source>IP</source>
         <comment>Network tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>IP</translation>
     </message>
     <message>
         <source>Cable</source>
         <comment>Network tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kabelis</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>cable (Network tooltip)</comment>
-        <translation type="unfinished"></translation>
+        <translation>prijungtas</translation>
     </message>
     <message>
         <source>Disconnected</source>
         <comment>cable (Network tooltip)</comment>
-        <translation type="unfinished">Atjungta</translation>
+        <translation>atjungtas</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1</source>
@@ -5593,7 +5608,7 @@
     <message>
         <source>No shared folders</source>
         <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bendrųjų aplankų nėra</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1</source>
@@ -5603,17 +5618,17 @@
     <message>
         <source>Video memory</source>
         <comment>Display tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vaizdo atmintis</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>Display tooltip</comment>
-        <translation type="unfinished">Ekranai</translation>
+        <translation>Ekranai</translation>
     </message>
     <message>
         <source>3D acceleration</source>
         <comment>Display tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>3D spartinimas</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;%1</source>
@@ -5623,12 +5638,12 @@
     <message>
         <source>Video capture disabled</source>
         <comment>Video capture tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nefilmuojama</translation>
     </message>
     <message>
         <source>Video capture file</source>
         <comment>Video capture tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nufilmuoto įrašo rinkmena</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the additional features:&lt;/nobr&gt;%1</source>
@@ -5683,6 +5698,11 @@
     <message>
         <source>keyboard is captured</source>
         <comment>Keyboard tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Indicates the activity of the audio device:&lt;/nobr&gt;%1</source>
+        <comment>Audio tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5870,7 +5890,7 @@
     <message>
         <source>Not Available</source>
         <comment>details report (VRDE server port)</comment>
-        <translation type="unfinished">Neprieinama</translation>
+        <translation>Neprieinama</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
@@ -5906,7 +5926,7 @@
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Paravirtualizacijos sąsaja</translation>
     </message>
     <message>
         <source>Guest Additions</source>
@@ -5984,7 +6004,7 @@
     </message>
     <message>
         <source>Requests</source>
-        <translation type="unfinished"></translation>
+        <translation>Užklausos</translation>
     </message>
 </context>
 <context>
@@ -6092,7 +6112,7 @@
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Paravirtualizacijos sąsaja</translation>
     </message>
 </context>
 <context>
@@ -6123,12 +6143,12 @@
     <message>
         <source>%1, %2</source>
         <comment>col.2 text, col.1 name</comment>
-        <translation type="unfinished">%1: %2 {1,?}</translation>
+        <translation>%1, %2</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.2 text</comment>
-        <translation type="unfinished">%1% {1?}</translation>
+        <translation>%1</translation>
     </message>
 </context>
 <context>
@@ -6233,7 +6253,7 @@
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Papildomos savybės:</translation>
+        <translation>Papildomos savybės:</translation>
     </message>
     <message>
         <source>When checked, output to the virtual audio device will reach the host. Otherwise the guest is muted.</source>
@@ -6241,7 +6261,7 @@
     </message>
     <message>
         <source>Enable Audio &amp;Output</source>
-        <translation type="unfinished"></translation>
+        <translation>Įga&amp;linti garso išėjimą</translation>
     </message>
     <message>
         <source>When checked, the guest will be able to capture audio input from the host. Otherwise the guest will capture only silence.</source>
@@ -6249,7 +6269,7 @@
     </message>
     <message>
         <source>Enable Audio &amp;Input</source>
-        <translation type="unfinished"></translation>
+        <translation>Įga&amp;linti garso įėjimą</translation>
     </message>
 </context>
 <context>
@@ -7127,7 +7147,7 @@
     </message>
     <message>
         <source>Shared &amp;Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bendrieji aplankai</translation>
     </message>
 </context>
 <context>
@@ -7670,7 +7690,7 @@
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished">Užšifruotas raktu:</translation>
+        <translation>Užšifruota naudojant raktą:</translation>
     </message>
     <message>
         <source>Choose disk image...</source>
@@ -7999,7 +8019,7 @@
     </message>
     <message>
         <source>&amp;Paravirtualization Interface:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Paravirtualizacijos sąsaja:</translation>
     </message>
     <message>
         <source>Selects the paravirtualization guest interface provider to be used by this virtual machine.</source>
@@ -8386,7 +8406,7 @@
     <name>UIMachineWindow</name>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation type="unfinished"> EKSPERIMENTINĖ kompiliacija %1r%2 - %3</translation>
+        <translation> EKSPERIMENTINĖ kompiliacija %1r%2 - %3</translation>
     </message>
 </context>
 <context>
@@ -8404,11 +8424,11 @@
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Informacija</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation type="unfinished">&amp;Tipas:</translation>
+        <translation>&amp;Tipas:</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
@@ -8416,11 +8436,11 @@
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation type="unfinished">&amp;Aprašas:</translation>
+        <translation>&amp;Aprašas:</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dydis:</translation>
     </message>
     <message>
         <source>Holds the type of this medium.</source>
@@ -8440,11 +8460,11 @@
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Nustatyti iš naujo</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>Pritaikyti</translation>
     </message>
     <message>
         <source>Reset changes in current medium details</source>
@@ -8456,11 +8476,11 @@
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Atmesti pakeitimus (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pritaikyti pakeitimus (%1)</translation>
     </message>
     <message>
         <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
@@ -8496,31 +8516,31 @@
     <message>
         <source>%1, %2: %3, %4: %5</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1, %2: %3, %4: %5</translation>
     </message>
     <message>
         <source>Format:</source>
-        <translation type="unfinished">Formatas:</translation>
+        <translation>Formatas:</translation>
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="unfinished">Informacija apie atminties įtaisą:</translation>
+        <translation>Informacija apie atminties įtaisą:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished">Susietas su:</translation>
+        <translation>Susietas su:</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished">Užšifruotas raktu:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>UUID:</source>
-        <translation type="unfinished">UUID:</translation>
+        <translation>UUID:</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;nesusieta&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;nesusieta&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
@@ -8529,7 +8549,7 @@
     <message>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished"></translation>
+        <translation>--</translation>
     </message>
     <message>
         <source>&amp;Medium</source>
@@ -8537,7 +8557,7 @@
     </message>
     <message>
         <source>&amp;Copy...</source>
-        <translation type="unfinished">&amp;Kopijuoti...</translation>
+        <translation>&amp;Kopijuoti...</translation>
     </message>
     <message>
         <source>Copy selected disk image file</source>
@@ -8545,15 +8565,15 @@
     </message>
     <message>
         <source>&amp;Remove...</source>
-        <translation type="unfinished">Paša&amp;linti...</translation>
+        <translation>Paša&amp;linti...</translation>
     </message>
     <message>
         <source>Remove selected disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Pašalinti pasirinktą disko atvaizdžio rinkmeną</translation>
     </message>
     <message>
         <source>Re&amp;lease...</source>
-        <translation type="unfinished"></translation>
+        <translation>At&amp;laisvinti...</translation>
     </message>
     <message>
         <source>Release selected disk image file by detaching it from machines</source>
@@ -8561,7 +8581,7 @@
     </message>
     <message>
         <source>&amp;Properties...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sa&amp;vybės...</translation>
     </message>
     <message>
         <source>Open pane with selected disk image file properties</source>
@@ -8569,31 +8589,31 @@
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">&amp;Atnaujinti</translation>
+        <translation>&amp;Atnaujinti</translation>
     </message>
     <message>
         <source>Refresh the list of disk image files</source>
-        <translation type="unfinished">Atnaujinti laikmenų sąrašą</translation>
+        <translation>Atnaujinti laikmenų sąrašą</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Pavadinimas</translation>
+        <translation>Pavadinimas</translation>
     </message>
     <message>
         <source>Virtual Size</source>
-        <translation type="unfinished">Virtualus dydis</translation>
+        <translation>Virtualus dydis</translation>
     </message>
     <message>
         <source>Actual Size</source>
-        <translation type="unfinished">Tikras dydis</translation>
+        <translation>Tikras dydis</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished">Dydis</translation>
+        <translation>Dydis</translation>
     </message>
     <message>
         <source>Checking accessibility</source>
-        <translation type="unfinished">Tikrinamas prieinamumas</translation>
+        <translation>Tikrinamas prieinamumas</translation>
     </message>
     <message>
         <source>Moving medium...</source>
@@ -8601,19 +8621,19 @@
     </message>
     <message>
         <source>Virtual Media Manager</source>
-        <translation type="unfinished">Virtualių laikmenų tvarkytuvė</translation>
+        <translation>Virtualių laikmenų tvarkytuvė</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Nustatyti iš naujo</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>Pritaikyti</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Užverti</translation>
+        <translation>Užverti</translation>
     </message>
     <message>
         <source>Reset changes in current medium details</source>
@@ -8625,34 +8645,34 @@
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Užverti neįrašant</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Atmesti pakeitimus (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pritaikyti pakeitimus (%1)</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Užverti langą (%1)</translation>
     </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopijuoti disko atvaizdžio rinkmeną (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pašalinti disko atvaizdžio rinkmeną (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Atlaisvinti disko atvaizdžio rinkmeną (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
@@ -8660,7 +8680,7 @@
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Atnaujinti disko atvaizdžio rinkmeną (%1)</translation>
     </message>
 </context>
 <context>
@@ -8671,7 +8691,7 @@
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -8717,7 +8737,7 @@
     <name>UIMenuBarEditorWidget</name>
     <message>
         <source>Virtual Screen Resize</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtulaus ekrano dydžio keitimas</translation>
     </message>
     <message>
         <source>Virtual Screen Mapping</source>
@@ -8741,7 +8761,7 @@
     </message>
     <message>
         <source>Popup menu %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Iškylantis meniu %1</translation>
     </message>
 </context>
 <context>
@@ -9931,7 +9951,7 @@
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Regis šioje virtualioje mašinoje neprieinami VirtualBox svečio papildiniai, tad negalite naudoti bendrųjų aplankų. Norėdami naudoti bendruosius aplankus virtualioje mašinoje, įdiekite papildinius svečio sistemai (jei jie neįdiegti) arba iš naujo įdiekite juos (jei jie veikia netinkamai) pasirinkdami &lt;b&gt;Prijungti svečio papildinius&lt;/b&gt; iš &lt;b&gt;Įtaisų&lt;/b&gt; meniu. Jei jie įdiegti, bet mašina dar pilnai nepasileido, tuomet luktelėkite.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Regis šioje virtualioje mašinoje neprieinami VirtualBox svečio papildiniai, tad negalite naudoti bendrųjų aplankų. Norėdami naudoti bendruosius aplankus virtualioje mašinoje, įdiekite papildinius svečio sistemai (jei jie neįdiegti) arba juos įdiekite iš naujo (jei jie veikia netinkamai) pasirinkdami &lt;b&gt;Prijungti svečio papildinius&lt;/b&gt; iš &lt;b&gt;Įtaisų&lt;/b&gt; meniu. Jei jie įdiegti, bet mašina dar pilnai nepasileido, tuomet luktelėkite.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -10205,7 +10225,7 @@
     </message>
     <message>
         <source>Change Network Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Keisti tinklo nuostatas</translation>
     </message>
     <message>
         <source>Close Virtual Machine</source>
@@ -10225,23 +10245,11 @@
     </message>
     <message>
         <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nėra virtualios mašinos su tokiu identifikatoriumi: &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Ignore</source>
         <translation>Nepaisyti</translation>
-    </message>
-    <message>
-        <source>Failed to create NAT network.</source>
-        <translation type="vanished">Nepavyko sukurti naujo NAT tinklo.</translation>
-    </message>
-    <message>
-        <source>Failed to remove NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Nepavyko pašalinti NAT tinklo &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create DHCP server.</source>
-        <translation type="vanished">Nepavyko sukurti DHCP serverio.</translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -10624,6 +10632,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Ketinate įdiegti VirtualBox papildinių paketą. Papildinių paketai papildo esamas VirtualBox funkcijas, bet juose esanti sisteminio lygio programinė įranga gali padaryti žalos visai sistemai. Peržiūrėkite žemiau pateiktą papildinių paketų aprašą ir tęskite tik tuomet, jei papildinių paketą gavote iš patikimų šaltinių.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt; {0 ?} {5&gt;?} {1&lt;?} {2&lt;?} {3&lt;?}</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Jau yra įdiegta senesnė papildinių paketo versija. Atnaujinti? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nauja versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Dabartinė versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt; {1&lt;?} {0 ?} {5&gt;?} {2&lt;?} {3&lt;?} {4&lt;?} {5&lt;?}</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Jau yra įdiegta naujesnė papildinių paketo versija. Pakeisti į senesnę versiją? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nauja versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Dabartinė versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt; {1&lt;?} {0 ?} {5&gt;?} {2&lt;?} {3&lt;?} {4&lt;?} {5&lt;?}</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Jau yra įdiegta tokia pati papildinių paketo versija. Iš naujo įdiegti? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt; {1&lt;?} {0 ?} {5&gt;?} {2&lt;?} {3&lt;?} {4&lt;?}</translation>
+    </message>
+    <message>
         <source>Failed to enable the audio adapter output for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10640,20 +10664,16 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Ketinate įdiegti VirtualBox papildinių paketą. Papildinių paketai papildo esamas VirtualBox funkcijas, bet juose esanti sisteminio lygio programinė įranga gali padaryti žalos visai sistemai. Peržiūrėkite žemiau pateiktą papildinių paketų aprašą ir tęskite tik tuomet, jei papildinių paketą gavote iš patikimų šaltinių.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt; {0 ?} {5&gt;?} {1&lt;?} {2&lt;?} {3&lt;?}</translation>
+        <source>Failed to create NAT network.</source>
+        <translation type="vanished">Nepavyko sukurti naujo NAT tinklo.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Jau yra įdiegta senesnė papildinių paketo versija. Atnaujinti? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nauja versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Dabartinė versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt; {1&lt;?} {0 ?} {5&gt;?} {2&lt;?} {3&lt;?} {4&lt;?} {5&lt;?}</translation>
+        <source>Failed to remove NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="vanished">Nepavyko pašalinti NAT tinklo &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Jau yra įdiegta naujesnė papildinių paketo versija. Pakeisti į senesnę versiją? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nauja versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Dabartinė versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt; {1&lt;?} {0 ?} {5&gt;?} {2&lt;?} {3&lt;?} {4&lt;?} {5&lt;?}</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Jau yra įdiegta tokia pati papildinių paketo versija. Iš naujo įdiegti? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt; {1&lt;?} {0 ?} {5&gt;?} {2&lt;?} {3&lt;?} {4&lt;?}</translation>
+        <source>Failed to create DHCP server.</source>
+        <translation type="vanished">Nepavyko sukurti DHCP serverio.</translation>
     </message>
 </context>
 <context>
@@ -10829,7 +10849,7 @@
     </message>
     <message>
         <source>Double-click for more information.</source>
-        <translation type="unfinished"></translation>
+        <translation>Daugiau informacijos matysite dukart spragtelėję.</translation>
     </message>
 </context>
 <context>
@@ -10873,11 +10893,11 @@
     </message>
     <message>
         <source>Content moved</source>
-        <translation type="unfinished"></translation>
+        <translation>Turinys pašalintas</translation>
     </message>
     <message>
         <source>Proxy not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Įgaliotasis serveris nerastas</translation>
     </message>
     <message>
         <source>Url not found on the server</source>
@@ -11391,6 +11411,17 @@
     <name>UIPopupCenter</name>
     <message>
         <source>Click for full details</source>
+        <translation>Išsamesnę informaciją matysite spragtelėję</translation>
+    </message>
+</context>
+<context>
+    <name>UIPopupPane</name>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt; (%1 of %2)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -11509,22 +11540,22 @@
     <name>UIScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
-        <translation type="unfinished">%1 nuotrauka (%2)</translation>
+        <translation>%1 ekranvaizdžio nuotrauka (%2)</translation>
     </message>
     <message>
         <source>Click to view non-scaled screenshot.</source>
-        <translation type="unfinished">Spragtelėkite, norėdami matyti tikro dydžio nuotrauką.</translation>
+        <translation>Spragtelėkite, norėdami matyti tikro dydžio ekranvaizdžio nuotrauką.</translation>
     </message>
     <message>
         <source>Click to view scaled screenshot.</source>
-        <translation type="unfinished">Spragtelėkite, norėdami matyti pritaikyto dydžio nuotrauką.</translation>
+        <translation>Spragtelėkite, norėdami matyti pritaikyto dydžio nuotrauką.</translation>
     </message>
 </context>
 <context>
     <name>UISelectorWindow</name>
     <message>
         <source>Show Toolbar</source>
-        <translation type="unfinished">Rodyti įrankių juostą</translation>
+        <translation>Rodyti įrankių juostą</translation>
     </message>
     <message>
         <source>Show Statusbar</source>
@@ -11549,7 +11580,7 @@
     </message>
     <message>
         <source>Show Toolbar Text</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti tekstą įrankių juostoje</translation>
     </message>
 </context>
 <context>
@@ -11763,15 +11794,15 @@
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Informacija</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Pavadinimas:</translation>
+        <translation>&amp;Pavadinimas:</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation type="unfinished">&amp;Aprašas:</translation>
+        <translation>&amp;Aprašas:</translation>
     </message>
     <message>
         <source>Holds the snapshot name.</source>
@@ -11783,11 +11814,11 @@
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>Pritaikyti</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Nustatyti iš naujo</translation>
     </message>
     <message>
         <source>Apply changes in current snapshot details</source>
@@ -11799,15 +11830,15 @@
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pritaikyti pakeitimus (%1)</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Atmesti pakeitimus (%1)</translation>
     </message>
     <message>
         <source>Click to enlarge the screenshot.</source>
-        <translation type="unfinished">Norėdami padidinti nuotrauką, spragtelėkite.</translation>
+        <translation>Norėdami padidinti nuotrauką, spragtelėkite.</translation>
     </message>
     <message>
         <source>Snapshot name is empty</source>
@@ -11819,35 +11850,35 @@
     <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation type="unfinished">Dabartinė būsena (pakeista)</translation>
+        <translation>Dabartinė būsena (pakeista)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation type="unfinished">Dabartinė būsena</translation>
+        <translation>Dabartinė būsena</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation type="unfinished">Dabartinė būsena skiriasi nuo išsaugotosios momentinio būvio kopijoje</translation>
+        <translation>Dabartinė būsena skiriasi nuo išsaugotosios momentinio būvio kopijoje</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation type="unfinished">Dabartinė būsena yra tokia pati kaip ir išsaugotoji momentinio būvio kopijoje</translation>
+        <translation>Dabartinė būsena yra tokia pati kaip ir išsaugotoji momentinio būvio kopijoje</translation>
     </message>
     <message>
         <source>%1 (%2 ago)</source>
         <comment>date time (how long ago)</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 (prieš %2)</translation>
     </message>
     <message>
         <source>%1 since %2</source>
         <comment>Current State (time or date + time)</comment>
-        <translation type="unfinished">%1 nuo %2</translation>
+        <translation>%1 nuo %2</translation>
     </message>
     <message>
         <source>current</source>
         <comment>snapshot</comment>
-        <translation type="unfinished"></translation>
+        <translation>dabar</translation>
     </message>
     <message>
         <source>online</source>
@@ -11862,12 +11893,12 @@
     <message>
         <source>Taken at %1</source>
         <comment>Snapshot (time)</comment>
-        <translation type="unfinished">Sukurta %1</translation>
+        <translation>Sukurta %1</translation>
     </message>
     <message>
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
-        <translation type="unfinished">Sukurta %1</translation>
+        <translation>Sukurta %1</translation>
     </message>
     <message>
         <source>Contains the snapshot tree of the current virtual machine</source>
@@ -11875,31 +11906,31 @@
     </message>
     <message>
         <source>&amp;Take...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sukurti...</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation type="unfinished">Paša&amp;linti</translation>
+        <translation>Paša&amp;linti</translation>
     </message>
     <message>
         <source>&amp;Restore</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Atkurti</translation>
     </message>
     <message>
         <source>&amp;Properties...</source>
-        <translation type="unfinished"></translation>
+        <translation>Sa&amp;vybės...</translation>
     </message>
     <message>
         <source>&amp;Clone...</source>
-        <translation type="unfinished">&amp;Klonuoti...</translation>
+        <translation>&amp;Klonuoti...</translation>
     </message>
     <message>
         <source>Take Snapshot (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Sukurti dabartinio būvio kopiją (%1)</translation>
     </message>
     <message>
         <source>Delete Snapshot (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pašalinti momentinį būvį (%1)</translation>
     </message>
     <message>
         <source>Restore Snapshot (%1)</source>
@@ -11911,11 +11942,11 @@
     </message>
     <message>
         <source>Clone Virtual Machine (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Klonuoti virtualią mašiną (%1)</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="unfinished">Padaryti virtualios mašinos dabartinio būvio kopiją</translation>
+        <translation>Sukurti virtualios mašinos dabartinio būvio kopiją</translation>
     </message>
     <message>
         <source>Delete selected snapshot of the virtual machine</source>
@@ -11931,7 +11962,7 @@
     </message>
     <message>
         <source>Clone selected virtual machine</source>
-        <translation type="unfinished">Klonuoti pasirinktą virtualią mašiną</translation>
+        <translation>Klonuoti pasirinktą virtualią mašiną</translation>
     </message>
     <message>
         <source>Name</source>
@@ -11941,11 +11972,11 @@
     <message>
         <source>Taken</source>
         <comment>snapshot</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sukurta</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation type="unfinished">Momentinė kopija Nr. %1</translation>
+        <translation>Momentinė kopija Nr. %1</translation>
     </message>
 </context>
 <context>
@@ -11967,15 +11998,15 @@
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation type="unfinished">Padaryti virtualios mašinos dabartinio būvio momentinę kopiją</translation>
+        <translation>Sukurti virtualios mašinos dabartinio būvio momentinę kopiją</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
-        <translation type="unfinished">Momentinio būvio &amp;pavadinimas</translation>
+        <translation>Momentinio būvio &amp;pavadinimas</translation>
     </message>
     <message>
         <source>Snapshot &amp;Description</source>
-        <translation type="unfinished">Momentinio būvio &amp;aprašas</translation>
+        <translation>Momentinio būvio &amp;aprašas</translation>
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
@@ -11987,7 +12018,7 @@
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation type="unfinished">Momentinė kopija Nr. %1</translation>
+        <translation>Momentinė kopija Nr. %1</translation>
     </message>
 </context>
 <context>
@@ -12052,12 +12083,12 @@
     <message>
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1, aktyvus</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1% {1?}</translation>
+        <translation>%1</translation>
     </message>
 </context>
 <context>
@@ -12227,10 +12258,6 @@
         <translation type="vanished">%1 - informacija apie seansą</translation>
     </message>
     <message>
-        <source>Configuration &amp;Details</source>
-        <translation type="vanished">&amp;Išsami konfigūracija</translation>
-    </message>
-    <message>
         <source>DMA Transfers</source>
         <translation type="vanished">DMA perdavimai</translation>
     </message>
@@ -12278,14 +12305,6 @@
         <translation type="vanished">Ekrano skiriamoji geba</translation>
     </message>
     <message>
-        <source>Clipboard Mode</source>
-        <translation type="vanished">Iškarpinės veiksena</translation>
-    </message>
-    <message>
-        <source>Drag and Drop Mode</source>
-        <translation type="vanished">Rinkmenų vilkimo pele veiksena</translation>
-    </message>
-    <message>
         <source>Guest Additions</source>
         <translation type="vanished">Papildiniai svečio sistemai</translation>
     </message>
@@ -12308,6 +12327,18 @@
     <message>
         <source>No Network Adapters</source>
         <translation type="vanished">Tinklo plokščių nėra</translation>
+    </message>
+    <message>
+        <source>Configuration &amp;Details</source>
+        <translation type="vanished">&amp;Išsami konfigūracija</translation>
+    </message>
+    <message>
+        <source>Clipboard Mode</source>
+        <translation type="vanished">Iškarpinės veiksena</translation>
+    </message>
+    <message>
+        <source>Drag and Drop Mode</source>
+        <translation type="vanished">Rinkmenų vilkimo pele veiksena</translation>
     </message>
 </context>
 <context>
@@ -12699,7 +12730,7 @@
     </message>
     <message>
         <source>New machine &amp;name</source>
-        <translation type="unfinished"></translation>
+        <translation>Naujos mašinos pa&amp;vadinimas</translation>
     </message>
     <message>
         <source>&amp;Full Clone</source>
@@ -12842,7 +12873,7 @@
     </message>
     <message>
         <source>Storage settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Atminties įtaiso nuostatos</translation>
     </message>
     <message>
         <source>Please choose a file to export the virtual appliance to</source>
@@ -12851,6 +12882,42 @@
     <message>
         <source>F&amp;ormat:</source>
         <translation>&amp;Formatas:</translation>
+    </message>
+    <message>
+        <source>Write in standard OVF 1.0 format.</source>
+        <translation>Įrašyti standartiniu OVF 1.0 formatu.</translation>
+    </message>
+    <message>
+        <source>&amp;Storage settings</source>
+        <translation>Atminties įtaiso &amp;nuostatos</translation>
+    </message>
+    <message>
+        <source>Oracle Public Cloud Format Archive (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format 0.9</source>
+        <translation>Atviras virtualizavimo formatas 0.9</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format 1.0</source>
+        <translation>Atviras virtualizavimo formatas 1.0</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format 2.0</source>
+        <translation>Atviras virtualizavimo formatas 2.0</translation>
+    </message>
+    <message>
+        <source>Oracle Public Cloud Format 1.0</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write in new OVF 2.0 format.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write in Oracle Public Cloud 1.0 format.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>OVF 0.9</source>
@@ -12865,44 +12932,8 @@
         <translation type="vanished">OVF 2.0</translation>
     </message>
     <message>
-        <source>Write in standard OVF 1.0 format.</source>
-        <translation>Įrašyti standartiniu OVF 1.0 formatu.</translation>
-    </message>
-    <message>
         <source>Write in new experimental OVF 2.0 format.</source>
         <translation type="vanished">Įrašyti nauju eksperimentiniu OVF 2.0 formatu.</translation>
-    </message>
-    <message>
-        <source>&amp;Storage settings</source>
-        <translation>Atminties įtaiso &amp;nuostatos</translation>
-    </message>
-    <message>
-        <source>Oracle Public Cloud Format Archive (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format 0.9</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format 1.0</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format 2.0</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Oracle Public Cloud Format 1.0</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Write in new OVF 2.0 format.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Write in Oracle Public Cloud 1.0 format.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13549,7 +13580,7 @@
         <translation type="obsolete">IPv6 adresas</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask Length</source>
+        <source>IPv6 Prefix Length</source>
         <translation type="obsolete">IPv6 tinklo kaukės ilgis</translation>
     </message>
     <message>
@@ -13626,6 +13657,10 @@
         <source>Name</source>
         <translation type="obsolete">Pavadinimas</translation>
     </message>
+    <message>
+        <source>IPv6 Network Mask Length</source>
+        <translation type="obsolete">IPv6 tinklo kaukės ilgis</translation>
+    </message>
 </context>
 <context>
     <name>VBoxGLSettingsNetworkDetails</name>
@@ -13671,11 +13706,11 @@
 IPv6.</translation>
     </message>
     <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
+        <source>IPv6 Prefix &amp;Length:</source>
         <translation type="obsolete">IPv6 tinklo kaukės i&amp;lgis:</translation>
     </message>
     <message>
-        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 tinklo kaukės prefikso ilgį šiai plokštei, jei palaikomas IPv6.</translation>
     </message>
     <message>
@@ -13721,6 +13756,14 @@ IPv6.</translation>
     <message>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Rodo adreso viršutinę ribą to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
+    </message>
+    <message>
+        <source>IPv6 Network Mask &amp;Length:</source>
+        <translation type="obsolete">IPv6 tinklo kaukės i&amp;lgis:</translation>
+    </message>
+    <message>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 tinklo kaukės prefikso ilgį šiai plokštei, jei palaikomas IPv6.</translation>
     </message>
 </context>
 <context>
@@ -15472,7 +15515,7 @@ IPv6.</translation>
     <message>
         <source>Running</source>
         <comment>MachineState</comment>
-        <translation>Veikia</translation>
+        <translation>Paleista</translation>
     </message>
     <message>
         <source>Paused</source>
@@ -16091,7 +16134,7 @@ IPv6.</translation>
     <message>
         <source>Dynamically allocated compressed storage</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kintamo dydžio suglaudintas diskas</translation>
     </message>
     <message>
         <source>Dynamically allocated differencing compressed storage</source>
@@ -16101,12 +16144,12 @@ IPv6.</translation>
     <message>
         <source>Fixed size ESX storage</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pastovaus dydžio ESX tomas</translation>
     </message>
     <message>
         <source>Fixed size storage on raw disk</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pastovaus dydžio tomas tikrame diskas</translation>
     </message>
     <message>
         <source>Deny</source>
@@ -16224,11 +16267,6 @@ IPv6.</translation>
         <translation>Nuoseklieji prievadai</translation>
     </message>
     <message>
-        <source>Parallel ports</source>
-        <comment>DetailsElementType</comment>
-        <translation type="vanished">Lygiagretieji prievadai</translation>
-    </message>
-    <message>
         <source>USB</source>
         <comment>DetailsElementType</comment>
         <translation>USB</translation>
@@ -16328,11 +16366,6 @@ IPv6.</translation>
         <translation>NAT tinklas</translation>
     </message>
     <message>
-        <source>NAT network, &apos;%1&apos;</source>
-        <comment>details report (network)</comment>
-        <translation type="vanished">NAT tinklas, „%1“</translation>
-    </message>
-    <message>
         <source>You can create or add disk image files in the virtual machine settings.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16379,7 +16412,7 @@ IPv6.</translation>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Paravirtualizacijos sąsaja</translation>
     </message>
     <message>
         <source>Taking Snapshot</source>
@@ -16460,10 +16493,6 @@ IPv6.</translation>
         <source>User interface</source>
         <comment>DetailsElementType</comment>
         <translation>Naudotojo sąsaja</translation>
-    </message>
-    <message>
-        <source>(Optical Drive)</source>
-        <translation type="vanished">(Optinis diskas)</translation>
     </message>
     <message>
         <source>Please choose a virtual hard disk file</source>
@@ -16548,11 +16577,6 @@ IPv6.</translation>
         <translation>Nuoseklieji prievadai</translation>
     </message>
     <message>
-        <source>Parallel ports</source>
-        <comment>InformationElementType</comment>
-        <translation type="vanished">Lygiagretieji prievadai</translation>
-    </message>
-    <message>
         <source>USB</source>
         <comment>InformationElementType</comment>
         <translation>USB</translation>
@@ -16590,67 +16614,86 @@ IPv6.</translation>
     <message>
         <source>Hard Disks</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">Standieji diskai</translation>
+        <translation>Standieji diskai</translation>
     </message>
     <message>
         <source>Optical Disks</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Optiniai diskai</translation>
     </message>
     <message>
         <source>Floppy Disks</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Audio</source>
-        <comment>IndicatorType</comment>
-        <translation type="unfinished">Garsas</translation>
+        <translation>Diskeliai</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">Tinklas</translation>
+        <translation>Tinklas</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">Bendrieji aplankai</translation>
+        <translation>Bendrieji aplankai</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">Ekranas</translation>
+        <translation>Ekranas</translation>
     </message>
     <message>
         <source>Video Capture</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">Filmavimas</translation>
+        <translation>Filmavimas</translation>
     </message>
     <message>
         <source>Features</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Savybės</translation>
     </message>
     <message>
         <source>Mouse</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pelė</translation>
     </message>
     <message>
         <source>Keyboard</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Klaviatūra</translation>
     </message>
     <message>
         <source>Differencing</source>
         <comment>MediumType</comment>
         <translation type="unfinished">Vedinys</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>IndicatorType</comment>
+        <translation>Garsas</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>DetailsElementType</comment>
+        <translation type="vanished">Lygiagretieji prievadai</translation>
+    </message>
+    <message>
+        <source>NAT network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="vanished">NAT tinklas, „%1“</translation>
+    </message>
+    <message>
+        <source>(Optical Drive)</source>
+        <translation type="vanished">(Optinis diskas)</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="vanished">Lygiagretieji prievadai</translation>
     </message>
 </context>
 <context>
@@ -17570,6 +17613,10 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     <message>
         <source>Clone the selected virtual machine</source>
         <translation type="obsolete">Klonuoti pasirinktą virtualią mašiną</translation>
+    </message>
+    <message>
+        <source>Clone selected virtual machine</source>
+        <translation type="vanished">Klonuoti pasirinktą virtualią mašiną</translation>
     </message>
 </context>
 <context>

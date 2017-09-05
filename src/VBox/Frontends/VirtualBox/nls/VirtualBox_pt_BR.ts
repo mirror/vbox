@@ -13878,6 +13878,17 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
+    <name>UIPopupPane</name>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt; (%1 of %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIPortForwardingModel</name>
     <message>
         <source>Name</source>

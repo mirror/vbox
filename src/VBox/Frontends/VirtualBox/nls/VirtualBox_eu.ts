@@ -172,7 +172,7 @@
     <name>QIMessageBox</name>
     <message>
         <location filename="../src/extensions/QIMessageBox.cpp" line="+302"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="+1853"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="+1846"/>
         <location filename="../src/widgets/UIPopupPaneButtonPane.cpp" line="+180"/>
         <source>OK</source>
         <translation>Ongi</translation>
@@ -9122,41 +9122,41 @@
     <name>UIMessageCenter</name>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="-1562"/>
-        <location line="+2526"/>
+        <location line="+2420"/>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Argibideak</translation>
     </message>
     <message>
-        <location line="-2522"/>
-        <location line="+2526"/>
+        <location line="-2416"/>
+        <location line="+2420"/>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Galdera</translation>
     </message>
     <message>
-        <location line="-2522"/>
-        <location line="+2526"/>
+        <location line="-2416"/>
+        <location line="+2420"/>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Ohartarazpena</translation>
     </message>
     <message>
-        <location line="-2522"/>
-        <location line="+2526"/>
+        <location line="-2416"/>
+        <location line="+2420"/>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Akatsa</translation>
     </message>
     <message>
-        <location line="-2522"/>
-        <location line="+2526"/>
+        <location line="-2416"/>
+        <location line="+2420"/>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Akats Larria</translation>
     </message>
     <message>
-        <location line="-2385"/>
+        <location line="-2279"/>
         <source>&lt;p&gt;Failed to create the VirtualBoxClient COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Hutsegitea VirtualBox COM objetua sortzerakoan.&lt;/p&gt;&lt;p&gt;Orain aplikazioak amaitu egingo du.&lt;/p&gt;</translation>
     </message>
@@ -9409,17 +9409,17 @@
         <translation>&lt;p&gt;Makina birtualaren leihoa orain &lt;b&gt;Eskalatua&lt;/b&gt; modura aldatuko da. Leihotu modura itzuli zaitezke &lt;b&gt;%1&lt;/b&gt; sakatuz.&lt;/p&gt;&lt;p&gt;Ohartu &lt;i&gt;Host&lt;/i&gt; tekla &lt;b&gt;%2&lt;/b&gt; bezala zehaztua dagoela.&lt;/p&gt;&lt;p&gt;Ohartu ere menu barra nagusia ezkutatu egiten dela eskalatua moduan. Bertara &lt;b&gt;Host+Home&lt;/b&gt; sakatuz sartu zaitezke.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+87"/>
+        <location filename="../src/globals/UIPopupCenter.cpp" line="+557"/>
         <source>Failed to attach the webcam &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; webkamera &lt;b&gt;%2&lt;/b&gt;makina birtualera eransterakoan.</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>Failed to detach the webcam &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; webkamera &lt;b&gt;%2&lt;/b&gt;makina birtualetik deseransterakoan.</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+21"/>
         <source>Failed to enable the remote desktop server for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualarentzako hurruneko mahaigain zerbitzaria gaitzerakoan.</translation>
     </message>
@@ -9439,12 +9439,12 @@
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualaren bideo harpena ezgaitzerakoan.</translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+25"/>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox Gonbidatu Gehigarriak ez dira eskuragarri bezala agertzen makina birtual honetan, eta elkarbanatutako agiritegiak ezingo dira erabili horiek gabe. Elkarbanatutako agiritegiak makina birtualaren barnean erabiltzeko, mesedez ezarri Gonbidatu Gehigarriak ezarrita ez badaude, edo ber-ezarri zuzen lan egiten ez badute, &lt;b&gt;Txertatu Gonbidatu Gehigarriak CD irudia&lt;/b&gt; hautatuz &lt;b&gt;Gailuak&lt;/b&gt; menuan. Ezarrita badaude baina makina oraindik ez badago erabat abiatuta elkarbanatutako agiritegiak behin egindakoan egongo dira eskuragarri.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="+102"/>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ezin da&lt;b&gt;VirtualBox Gonbidatu Gehigarriak&lt;/b&gt; diska irudi agiria aurkitu.&lt;/p&gt;&lt;p&gt;Nahi duzu diska irudi agiria Internetetik jeistea?&lt;/p&gt;</translation>
     </message>
@@ -9516,7 +9516,7 @@
         <translation>Ez erakutsi mezu hau berriro</translation>
     </message>
     <message>
-        <location line="-2316"/>
+        <location line="-2210"/>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
         <translation>Hutsegitea &lt;tt&gt;%1&lt;/tt&gt; irekitzerakoan. Zihurtatu zure mahaigin inguruak mota honetako URL-ak egoki kudeatu ditzakeela.</translation>
     </message>
@@ -9696,12 +9696,12 @@
     </message>
     <message>
         <location line="+180"/>
-        <location line="+428"/>
+        <location line="+322"/>
         <source>Bad password or authentication failure.</source>
         <translation>Sarhitz okerra edo egiaztapen hutsegitea.</translation>
     </message>
     <message>
-        <location line="-302"/>
+        <location line="-196"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Akats larri bat gertatu da makina birtualaren jardunean eta makinaren exekuzioa gelditu egin da.&lt;/p&gt;&lt;p&gt;Laguntza lortzeko, mesedez ikusi Herkidegoa atala &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; edo zure sostengu itunean. Mesedez hornitu &lt;tt&gt;VBox.log&lt;/tt&gt; ohar agiriaren edukiak, hau makina birtualaren ohar zuzenbidean aurkitu dezakezu, eta baita azalpen bat akatsa gertatu denean egiten ari zinenaz. Ohartu gaineko agirietara &lt;b&gt;Erakutsi Oharra&lt;/b&gt; bidez sartu zaitezkeela VirtualBox leiho nagusiaren &lt;b&gt;Makina&lt;/b&gt; menutik.&lt;/p&gt;&lt;p&gt;Sakatu &lt;b&gt;Ongi&lt;/b&gt; makina itzaltzeko.&lt;/p&gt;</translation>
     </message>
@@ -9716,14 +9716,14 @@
         <translation>&lt;p&gt;Ezin da gonbidatu erakuspena ikusleiho-osoko modura aldatu gonbidatuak ez duelako nahikoa bideo oroimen.&lt;/p&gt;&lt;p&gt;Makina birtuala gutxienez &lt;b&gt;%1&lt;/b&gt; bideo oroimenarekin itxuratu behar duzu.&lt;/p&gt;&lt;p&gt;Sakatu &lt;b&gt;Ezikusi&lt;/b&gt; edonola ikusleiho-osoko modura aldatzeko edo sakatu&lt;b&gt;Ezeztatu&lt;/b&gt; eragiketa ezeztatzeko.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+42"/>
-        <location line="+8"/>
+        <location filename="../src/globals/UIPopupCenter.cpp" line="-87"/>
+        <location line="+10"/>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; USB gailua &lt;b&gt;%2&lt;/b&gt;makina birtualera eransterakoan.</translation>
     </message>
     <message>
-        <location line="+8"/>
-        <location line="+8"/>
+        <location line="+9"/>
+        <location line="+10"/>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; USB gailua &lt;b&gt;%2&lt;/b&gt;makina birtualetik deseransterakoan.</translation>
     </message>
@@ -9736,7 +9736,8 @@
         <translation type="obsolete">Hutsegitea &lt;b&gt;%1&lt;/b&gt; agiritegi elkarbanatua kentzerakoan (zuzentzen &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;-ra) &lt;b&gt;%3&lt;/b&gt; makina birtualerako.</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIPopupCenter.cpp" line="+201"/>
+        <location line="-337"/>
+        <location line="+11"/>
         <source>Close</source>
         <translation>Itxi</translation>
     </message>
@@ -9765,7 +9766,7 @@
         <translation type="obsolete">&lt;p&gt;Ezin da VirtualBox&lt;i&gt;MB Hautatzailea&lt;/i&gt;n moduan ekin tokiko murrizpenengaitik.&lt;/p&gt;&lt;p&gt;Orain aplikazioa amaitu egingo da.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="-308"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="-242"/>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;Akats Larria&lt;/nobr&gt;</translation>
@@ -9810,7 +9811,7 @@
         <translation>&lt;p&gt;Makina birtualaren exekuzioa akats baldintza batean exekutatu daiteke behean azaldu bezala. Akatsa saihesteko ekintza egokia burutzea gomendatzen dugu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+300"/>
+        <location filename="../src/globals/UIPopupCenter.cpp" line="+114"/>
         <source>Failed to enable the audio adapter output for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9830,7 +9831,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="-30"/>
         <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualaren sare egokitzaile kablea elkartzerkoan.</translation>
     </message>
@@ -9840,7 +9841,7 @@
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualaren sare egokitzaile kablea etetzerakoan.</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="+231"/>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ezin da &lt;b&gt;VirtualBox Gonbidatu Gehigarriak&lt;/b&gt; diska irudi agiria txertatu &lt;b&gt;%1&lt;/b&gt; makina birtualean, makinak ez duelako gidagailu optikorik. Mesedez gehitu gidagailu bat biltegia orrialdea erabiliz makina birtualaren ezarpenak leihoan.&lt;/p&gt;</translation>
     </message>
@@ -9954,7 +9955,7 @@
         <translation>Hutsegitea &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; baimen agiria irekitzerakoan. Egiaztatu agiri baimenak.</translation>
     </message>
     <message>
-        <location line="-1728"/>
+        <location line="-1622"/>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Hutsegitea ACPI Indar Botoi sakatze gertaera &lt;b&gt;%1&lt;/b&gt; makina birtualera bildatzerakoan.</translation>
     </message>
@@ -9997,7 +9998,7 @@
     </message>
     <message>
         <location line="+1207"/>
-        <location filename="../src/globals/UIPopupCenter.cpp" line="-49"/>
+        <location filename="../src/globals/UIPopupCenter.cpp" line="-144"/>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
         <translation>&lt;p&gt;Hostalari tekla orain &lt;b&gt;%1&lt;/b&gt; bezala zehaztuta dago.&lt;/p&gt;</translation>
@@ -10048,12 +10049,12 @@
         <translation>&lt;p&gt;Ezin da irudizko modura sartu gonbidatuan ez dagoela nahikoa bideo oroimen.&lt;/p&gt;&lt;p&gt;Makina birtuala itxuratu behar duzu gutxienez&lt;b&gt;%1&lt;/b&gt; bideo oroimen izateko.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+170"/>
+        <location line="+64"/>
         <source>You are already running the most recent version of VirtualBox.</source>
         <translation>Jadanik VirtualBox bertsio berriena duzu.</translation>
     </message>
     <message>
-        <location line="-245"/>
+        <location line="-139"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Makina Birtualaren erakusleiho barnean &lt;b&gt;sagua klikatuta&lt;/b&gt; edo &lt;b&gt;hostalari tekla&lt;/b&gt; sakatuta  duzu. Honek Makina Birtualak hostalariaren sagu punta (sagu punta baterapena sostengatua ez badago gonbidatu SE-n) eta teklatua, zure hostalari makinan ekinean dauden beste aplikazioentzat eskuraezina egingo duena &lt;b&gt;hartzea&lt;/b&gt; eragiten du.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Hostalari tekla&lt;/b&gt; sakatu dezakezu edonoiz teklatua eta sagua (hartuta badago) &lt;b&gt;deshartzeko&lt;/b&gt; eta eragiketa modu arruntera itzularazi. Orain esleitutako hostalari tekla egoera barran erakusten da Makina Birtualaren beheren, &amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ikurretik hurbil. Ikur honek, hurbil dagoen sagu ikurrarekin batera, teklatuaren eta saguaren uneko hartze egoera adierazten du.&lt;/p&gt;</translation>
     </message>
@@ -10068,12 +10069,12 @@
         <translation>&lt;p&gt;&lt;p&gt;Makina Birtualak jakinarazi du gonbidatu SE-k ez duela &lt;b&gt;sagu punta baterapena&lt;/b&gt; sostengatzen. Honek esanahi du sagu punta &lt;i&gt;hartu&lt;/i&gt;  egin behar duzula gonbidatu SE-ren barnean erabiltzeko.&lt;/p&gt; -- Makina Birtualaren erakusleihoaren gainean egiten dituzun sagu punta ekintza guztiak zuzenean bidaltzen dira gonbidatu SE-ra. Sagua hartuta badago, berezgaitasunez deshartuko da.&lt;/p&gt;&lt;p&gt;Sagu ikurra egoera barran honelakoa da&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;sagu punta baterapena gonbidatu SE-n sostengatua eta piztuta dagoela jakinarazteko.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Oharra&lt;/b&gt;: Zenbait aplikazioek badaiteke jokabide okerra izatea sagu punta baterapen moduan. Betik ezgaitu dezakezu oraingo saiorako (eta berriro gaitu) dagokion ekintza hautatuz menu barratik.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="+235"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="+129"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox bertsio berri bat argitaratu da! &lt;b&gt;%1&lt;/b&gt; bertsioa eskuragari dago hemen, &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Bertsioa hau hurrengo lotura erabiliz jeitsi dezakezu:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="-937"/>
+        <location line="-831"/>
         <source>Release</source>
         <comment>detach medium</comment>
         <translation>Argitaratu</translation>
@@ -10136,12 +10137,12 @@
         <translation>&lt;p&gt;Akats larri bat gertatu da makina birtualaren jardunean eta makinaren exekuzioa gelditu egin da.&lt;/p&gt;&lt;p&gt;Laguntza lortzeko, mesedez ikusi Herkidegoa atala &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; edo zure sostengu itunean. Mesedez hornitu &lt;tt&gt;VBox.log&lt;/tt&gt; ohar agiriaren edukiak eta &lt;tt&gt;VBox.png&lt;/tt&gt; irudi agiria, hauek &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; zuzenbidean aurkitu ditzakezu, eta baita azalpen bat akatsa gertatu denean egiten ari zinenaz. Ohartu gaineko agirietara &lt;b&gt;Erakutsi Oharra&lt;/b&gt; bidez sartu zaitezkeela VirtualBox leiho nagusiaren &lt;b&gt;Makina&lt;/b&gt; menutik.&lt;/p&gt;&lt;p&gt;Sakatu &lt;b&gt;Ongi&lt;/b&gt; makina itzaltzea nahi baduzu edo sakatu &lt;b&gt;Ezikusi&lt;/b&gt; dagoen bezala uztea nahi baduzu garbiketarako. Mesedez ohartu garbiketak ezagupen eta tresna bereziak behar dituela, hortaz orain &lt;b&gt;Ongi&lt;/b&gt; sakatzea gomendatzen dugu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+739"/>
+        <location line="+633"/>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
         <translation>Jadanik badaude hurrengo agiriak:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Zihur zaude ordeztea nahi dituzula? Hauek ordezteak beren edukiak gainidaztea eragingo du.</translation>
     </message>
     <message>
-        <location line="-2159"/>
+        <location line="-2053"/>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
         <translation>VirtualBox aurreargitalpen bertsio bat ari zara erabiltzen. Bertsio hau ez da ekoizpen erabilpenerako.</translation>
     </message>
@@ -10223,12 +10224,12 @@
         <translation>&lt;p&gt;Hostalaria-bakarrik sare hau ezabatzeak sare honek ohinarri duen hostalaria-bakarrik interfazea kenduko du. &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; (hostalaria-bakarrik sarea) interfazea kentzea nahi duzu?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Oharra:&lt;/b&gt; egokitzaile birtual bat baino gehiago egon daiteke interfaze hau erabiltzen zure MB-etan. Kendu ondoren, egokitzaile hauek ezingo dira gehiago erabili beren ezarpenak zuzentzen dituzun arte beste interfaze izen bat edo egokitzaile eranspen mota ezberdin bat hautatuz.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+1109"/>
+        <location line="+1003"/>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
         <translation>Jadanik badago &lt;b&gt;%1&lt;/b&gt; izeneko agiri bat. Zihur zaude ordeztea nahi duzula? Ordezteak bere edukiak gainidaztea eragingo du.</translation>
     </message>
     <message>
-        <location line="-658"/>
+        <location line="-552"/>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VT-x/AMD-V hardware bizkorpena gaitu egin da, baina ez dago eraginkor. Zenbait gonbidatuk (adib. OS/2 eta QNX) ezaugarri hau behar dute.&lt;/p&gt;&lt;p&gt;Mesedez zihurtatu VT-x/AMD-V egoki gaituta duzula zure hostalari ordenagailuaren BIOS-ean.&lt;/p&gt;</translation>
     </message>
@@ -10466,7 +10467,7 @@
         <translation>Hutsegitea (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) diska gogorra &lt;b&gt;%3&lt;/b&gt; makinaren &lt;i&gt;%2&lt;/i&gt; eslotetik deseranstearakoan.</translation>
     </message>
     <message>
-        <location line="+1120"/>
+        <location line="+1014"/>
         <location line="+8"/>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; Hedapen Paketea ezartzerakoan.</translation>
@@ -10483,7 +10484,7 @@
         <translation>&amp;Kendu</translation>
     </message>
     <message>
-        <location line="-1318"/>
+        <location line="-1212"/>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
         <translation>Oraingo berbidalketa ataka arauak ez dira baliozkoak. Hostalari edo gonbidatu ataka balioetako bat ere ezin daiteke hutsean ezarri.</translation>
     </message>
@@ -10514,7 +10515,7 @@
         <translation type="obsolete">Aldatu</translation>
     </message>
     <message>
-        <location line="+480"/>
+        <location line="+374"/>
         <location line="+7"/>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; Hedapen Paketea irekitzerakoan.</translation>
@@ -10570,7 +10571,7 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; hedapen paketea ongi ezarri da.</translation>
     </message>
     <message>
-        <location line="-856"/>
+        <location line="-750"/>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ezin da makinaren &lt;b&gt;%1&lt;/b&gt; agiritegia sortu gaineko &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; agiritegian.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Mesedez egiaztatu gainekoa egitan dagoela eta makina agiritegia sortzeko baimena duzula.&lt;/p&gt;</translation>
     </message>
@@ -10615,7 +10616,7 @@
         <translation type="obsolete">Barkatu, zenbati akats generiko gertatu dira.</translation>
     </message>
     <message>
-        <location line="+1908"/>
+        <location line="+1802"/>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
         <translation>Ezin da Hostalari USB Proxy Zerbitzua gertatu (VERR_FILE_NOT_FOUND). Badaiteke zerbitzua hostalari ordenagailuan ezarrita ez egotea</translation>
     </message>
@@ -10640,7 +10641,7 @@
         <translation>Ezin da Hostalari USB Proxy zerbitzua gertatu</translation>
     </message>
     <message>
-        <location line="-1809"/>
+        <location line="-1703"/>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Ezin da&lt;b&gt;%1&lt;/b&gt; izeneko berehalakoa aurkitu.</translation>
     </message>
@@ -10649,7 +10650,7 @@
         <translation type="obsolete">&lt;p&gt;Hutsegitea jeitsitako agiria gordetzerakoan,&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+1337"/>
+        <location line="+1231"/>
         <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
         <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;-ren bertsio zahar bat (%1) duzu ezarrita.&lt;/p&gt;&lt;p&gt;Nahi duzu azkenengoa Internetetik jeistea?&lt;/p&gt;</translation>
     </message>
@@ -10691,7 +10692,7 @@
         <translation type="obsolete">Ongi</translation>
     </message>
     <message>
-        <location line="-1764"/>
+        <location line="-1658"/>
         <source>&lt;p&gt;Failed to initialize COM because the VirtualBox global configuration directory &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; is not accessible. Please check the permissions of this directory and of its parent directory.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Hutsegitea COM abiarazterakoan &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; VirtualBox-en itxurapen orokorraren zuzenbidea ez dagoelako eskuragarri. Mesedez egiaztatu zuzenbide honen eta bere gaineko zuzenbidearen baimenak.&lt;/p&gt;&lt;p&gt;Aplikazioak orain amaitu egingo du.&lt;/p&gt;</translation>
     </message>
@@ -10716,12 +10717,12 @@
         <translation>&lt;p&gt;Hurrengo makina birtualak kentzear zaude makina zerrendatik:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Makina birtuala duten agiriak zure diska gogorretik ere ezabatzea nahi dituzu?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+1489"/>
+        <location line="+1383"/>
         <source>Do you wish to cancel all current network operations?</source>
         <translation>Une honetako sare eragiketa guztiak ezeztatzea nahi duzu?</translation>
     </message>
     <message>
-        <location line="-1406"/>
+        <location line="-1300"/>
         <source>ACPI Shutdown</source>
         <comment>machine</comment>
         <translation>ACPI Itzalketa</translation>
@@ -11061,10 +11062,23 @@
 <context>
     <name>UIPopupCenter</name>
     <message>
-        <location filename="../src/widgets/UIPopupPane.cpp" line="+278"/>
+        <location filename="../src/widgets/UIPopupPane.cpp" line="+323"/>
         <location line="+1"/>
         <source>Click for full details</source>
         <translation>Klikatu xehetasun guztietarako</translation>
+    </message>
+</context>
+<context>
+    <name>UIPopupPane</name>
+    <message>
+        <location line="+177"/>
+        <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt; (%1 of %2)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
