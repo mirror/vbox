@@ -1,6 +1,5 @@
 /** @file
- * Shared Clipboard:
- * Common header for the service extension.
+ * Shared Clipboard - Common header for the service extension.
  */
 
 /*

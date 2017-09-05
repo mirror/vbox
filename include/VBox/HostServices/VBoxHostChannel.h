@@ -28,7 +28,7 @@
 #define ___VBox_HostService_VBoxHostChannel_h
 
 #include <VBox/VMMDev.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestCoreTypes.h>
 #include <VBox/hgcmsvc.h>
 
 /*

@@ -32,6 +32,7 @@
 #define ___VBoxGuestCoreTypes_h
 
 #include <iprt/types.h>
+#include <iprt/assert.h>
 
 /** @addtogroup grp_vboxguest
  * @{ */

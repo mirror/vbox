@@ -60,7 +60,7 @@
 
 #include <VBox/hgcmsvc.h>
 #include <VBox/VMMDev.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestCoreTypes.h>
 
 /*
  * The mode of operations.
