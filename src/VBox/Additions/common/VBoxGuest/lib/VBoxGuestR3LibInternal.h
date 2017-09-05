@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBGLR3Internal_h
-#define ___VBGLR3Internal_h
+#ifndef ___VBoxGuestR3LibInternal_h
+#define ___VBoxGuestR3LibInternal_h
 
 #if defined(RT_OS_WINDOWS) /** @todo explain why this is here. */
 # include <iprt/win/windows.h>
@@ -116,4 +116,5 @@ DECLINLINE(void) VbglHGCMParmPtrSetString(HGCMFunctionParameter *pParm, const ch
 RT_C_DECLS_END
 
 #endif
+
 
