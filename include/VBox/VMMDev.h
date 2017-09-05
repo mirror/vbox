@@ -31,7 +31,7 @@
 #include <VBox/types.h>
 #include <VBox/err.h>
 #include <VBox/ostypes.h>
-#include <VBox/VMMDev2.h>
+#include <VBox/VMMDevCoreTypes.h>
 #include <iprt/assert.h>
 
 

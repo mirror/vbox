@@ -32,7 +32,7 @@
 
 #include <VBox/types.h>
 #include <iprt/assert.h>
-#include <VBox/VMMDev2.h>
+#include <VBox/VMMDevCoreTypes.h>
 
 
 

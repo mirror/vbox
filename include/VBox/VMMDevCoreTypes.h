@@ -1,5 +1,8 @@
 /** @file
- * Virtual Device for Guest <-> VMM/Host communication, Mixed Up Mess. (ADD,DEV)
+ * Virtual Device for Guest <-> VMM/Host communication, Core Types. (ADD,DEV)
+ *
+ * These types are needed by several headers VBoxGuestLib.h and are kept
+ * separate to avoid having to include the whole VMMDev.h fun.
  */
 
 /*
@@ -23,8 +26,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_VMMDev2_h
-#define ___VBox_VMMDev2_h
+#ifndef ___VBox_VMMDevCoreTypes_h
+#define ___VBox_VMMDevCoreTypes_h
 
 #include <iprt/assert.h>
 

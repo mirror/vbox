@@ -27,7 +27,7 @@
 #define ___VBox_VBoxGuestLib_h
 
 #include <VBox/types.h>
-#include <VBox/VMMDev2.h>
+#include <VBox/VMMDevCoreTypes.h>
 #include <VBox/VMMDev.h>     /* grumble */
 #ifdef IN_RING0
 # include <VBox/VBoxGuest.h>
@@ -545,7 +545,7 @@ VBGLR3DECL(int)     VbglR3SetPointerShapeReq(struct VMMDevReqMousePointer *pReq)
  * @{ */
 /** The folder for the video mode hint unix domain socket on Unix-like guests.
  * @note This can be safely changed as all users are rebuilt in lock-step. */
-#define VBGLR3HOSTDISPSOCKETPATH "/tmp/.VBoxService"
+#define VBGLR3HOSTDISPSOCKETPATH    "/tmp/.VBoxService"
 /** The path to the video mode hint unix domain socket on Unix-like guests. */
 #define VBGLR3HOSTDISPSOCKET        VBGLR3VIDEOMODEHINTSOCKETPATH "/VideoModeHint"
 
