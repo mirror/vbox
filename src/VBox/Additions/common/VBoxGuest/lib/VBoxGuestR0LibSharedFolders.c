@@ -24,10 +24,6 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-/* Entire file is ifdef'ed with !VBGL_VBOXGUEST */
-#ifndef VBGL_VBOXGUEST
-
-
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -38,6 +34,10 @@
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+
+#ifdef VBGL_VBOXGUEST
+# error "This file shouldn't be part of the VBoxGuestR0LibBase library that is linked into VBoxGuest.  It's client code."
+#endif
 
 
 /*********************************************************************************************************************************
@@ -703,5 +703,3 @@ DECLVBGL(int) VbglR0SfSetSymlinks(PVBGLSFCLIENT pClient)
     return rc;
 }
 
-
-#endif /* !VBGL_VBOXGUEST */

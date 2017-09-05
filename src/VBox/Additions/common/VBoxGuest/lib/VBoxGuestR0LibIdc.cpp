@@ -33,6 +33,11 @@
 #include <VBox/VBoxGuest.h>
 /*#include <iprt/asm.h>*/
 
+#ifdef VBGL_VBOXGUEST
+# error "This file shouldn't be part of the VBoxGuestR0LibBase library that is linked into VBoxGuest.  It's client code."
+#endif
+
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *

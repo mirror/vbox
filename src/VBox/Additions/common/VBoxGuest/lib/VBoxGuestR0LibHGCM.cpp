@@ -30,15 +30,20 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-/* Entire file is ifdef'ed with !VBGL_VBOXGUEST */
-#ifndef VBGL_VBOXGUEST
-
 #include "VBoxGuestR0LibInternal.h"
 
 #include <iprt/assert.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 
+#ifdef VBGL_VBOXGUEST
+# error "This file shouldn't be part of the VBoxGuestR0LibBase library that is linked into VBoxGuest.  It's client code."
+#endif
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define VBGL_HGCM_ASSERT_MSG AssertReleaseMsg
 
 /*********************************************************************************************************************************
@@ -218,6 +223,4 @@ DECLVBGL(int) VbglR0HGCMCallUserDataRaw(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL 
 
     return VbglR0IdcCallRaw(&handle->IdcHandle, VBGL_IOCTL_HGCM_CALL_WITH_USER_DATA(cbData), &pData->Hdr, cbData);
 }
-
-#endif /* !VBGL_VBOXGUEST */
 

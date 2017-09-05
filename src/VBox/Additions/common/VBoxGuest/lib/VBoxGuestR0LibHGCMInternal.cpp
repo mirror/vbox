@@ -24,9 +24,6 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-/* Entire file is ifdef'ed with VBGL_VBOXGUEST */
-#ifdef VBGL_VBOXGUEST
-
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
@@ -42,6 +39,10 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
+
+#ifndef VBGL_VBOXGUEST
+# error "This file should only be part of the VBoxGuestR0LibBase library that is linked into VBoxGuest."
+#endif
 
 
 /*********************************************************************************************************************************
@@ -1070,6 +1071,4 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32(PVBGLIOCHGCMCALL pCallInfo, uint32_t cb
     return rc;
 }
 #endif /* ARCH_BITS == 64 */
-
-#endif /* VBGL_VBOXGUEST */
 
