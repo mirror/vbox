@@ -44,7 +44,7 @@
  *      Adam Jackson (ajax@redhat.com)
  */
 
-#include <VBox/VMMDev.h>
+#include <VBox/VMMDev.h> /* for VMMDEV_MOUSE_XXX */
 #include <VBox/VBoxGuestLib.h>
 #include <iprt/err.h>
 #include <xf86.h>

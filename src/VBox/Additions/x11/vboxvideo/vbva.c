@@ -15,7 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestLib.h>
 
 #include <iprt/string.h>

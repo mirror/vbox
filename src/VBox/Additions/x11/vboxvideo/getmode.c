@@ -16,7 +16,6 @@
  */
 
 #include "vboxvideo.h"
-#include <VBox/VMMDev.h>
 
 #define NEED_XF86_TYPES
 #include <iprt/string.h>
