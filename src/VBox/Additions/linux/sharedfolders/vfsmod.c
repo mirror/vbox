@@ -32,7 +32,7 @@
 #include "version-generated.h"
 #include "revision-generated.h"
 #include "product-generated.h"
-#include "VBGLInternal.h"
+#include "VBoxGuestR0LibInternal.h"
 
 MODULE_DESCRIPTION(VBOX_PRODUCT " VFS Module for Host File System Access");
 MODULE_AUTHOR(VBOX_VENDOR);
