@@ -30,8 +30,8 @@
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestCoreTypes.h>
 #include <VBox/hgcmsvc.h>
-#include <VBoxVideo.h>
-#include <VBoxVideoHost3D.h>
+#include <VBox/Graphics/VBoxVideo.h>
+#include <VBox/Graphics/VBoxVideoHost3D.h>
 
 /* crOpenGL host functions */
 #define SHCRGL_HOST_FN_SET_CONSOLE (1)

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBox_VBoxVideoIPRT_h
-#define ___VBox_VBoxVideoIPRT_h
+#ifndef ___VBox_Graphics_VBoxVideoIPRT_h
+#define ___VBox_Graphics_VBoxVideoIPRT_h
 
 #ifndef RT_OS_OS2
 # include <iprt/asm.h>
@@ -111,4 +111,5 @@
 
 /** @}  */
 
-#endif /* ___VBox_VBoxVideoIPRT_h */
+#endif
+
