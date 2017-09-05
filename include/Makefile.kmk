@@ -26,8 +26,10 @@ cpp_features_hdrs := \
 	VBox/vmm/hm.h \
 	VBox/vmm/hm_vmx.h \
 	VBox/HostServices/GuestControlSvc.h \
+	VBox/HostServices/DragAndDropSvc.h \
 	VBox/VBoxCrHgsmi.h \
-	VBox/VBoxUhgsmi.h
+	VBox/VBoxUhgsmi.h \
+       VBox/dbus.h
 
 # Omit headers that are C++ and ring-3.
 r3_cpp_hdrs := \

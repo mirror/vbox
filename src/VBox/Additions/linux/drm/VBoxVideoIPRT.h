@@ -25,8 +25,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___VBox_VBoxVideoIPRT_h
-#define ___VBox_VBoxVideoIPRT_h
+#ifndef ___VBox_Graphic_VBoxVideoIPRT_h
+#define ___VBox_Graphic_VBoxVideoIPRT_h
 
 #include <asm/io.h>
 #include <linux/string.h>
@@ -78,7 +78,7 @@ extern int RTASSERTVAR[1];
 #define AssertCompileSize(type, size) \
     AssertCompile(sizeof(type) == (size))
 
-#define VALID_PTR(p) (p != NULL)
+#define VALID_PTR(p) ((p) != NULL)
 
 /** @}  */
 
@@ -130,4 +130,5 @@ typedef void RTRECT;
 
 /** @}  */
 
-#endif /* ___VBox_VBoxVideoIPRT_h */
+#endif /* !___VBox_Graphic_VBoxVideoIPRT_h */
+
