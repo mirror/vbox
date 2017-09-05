@@ -24,13 +24,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#define LOG_GROUP LOG_GROUP_DRV_MOUSE
-
-
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-
+#define LOG_GROUP LOG_GROUP_DRV_MOUSE
+#include <VBox/VMMDev.>
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/log.h>
 #include <VBox/version.h>
