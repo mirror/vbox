@@ -1464,7 +1464,7 @@ static BOOLEAN MouIntHandler(PKINTERRUPT Interrupt, PVOID pCtx)
                     VMMDevReqMouseStatus *pReq = pDevExt->pReq;
                     if (pReq)
                     {
-                        int rc = VbglGRPerform (&pReq->header);
+                        int rc = VbglR0GRPerform (&pReq->header);
                         if (RT_SUCCESS(rc))
                         {
                             if (pReq->mouseFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE)
@@ -1506,7 +1506,7 @@ static BOOLEAN MouIntHandler(PKINTERRUPT Interrupt, PVOID pCtx)
                 VMMDevReqMouseStatus *pReq = pDevExt->pReq;
                 if (pReq)
                 {
-                    int rc = VbglGRPerform(&pReq->header);
+                    int rc = VbglR0GRPerform(&pReq->header);
                     if (RT_SUCCESS(rc))
                     {
                         if (pReq->mouseFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE)
@@ -2141,14 +2141,14 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING RegistryPath)
     {
         VMMDevReqMouseStatus *pReq = NULL;
 
-        rcVBox = VbglGRAlloc((VMMDevRequestHeader**)&pReq, sizeof(VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
+        rcVBox = VbglR0GRAlloc((VMMDevRequestHeader**)&pReq, sizeof(VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
         if (RT_SUCCESS(rcVBox))
         {
             /* Inform host that we support absolute */
             pReq->mouseFeatures = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
             pReq->pointerXPos = 0;
             pReq->pointerYPos = 0;
-            rcVBox = VbglGRPerform(&pReq->header);
+            rcVBox = VbglR0GRPerform(&pReq->header);
             if (RT_FAILURE(rcVBox))
                 Log(("VBoxMouseNT::DriverEntry: ERROR communicating new mouse capabilities to VMMDev. rc = %Rrc\n", rcVBox));
             else

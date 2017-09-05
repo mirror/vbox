@@ -440,7 +440,7 @@ static void vboxguestCloseInputDevice(struct input_dev *pDev)
  */
 static int __init vgdrvLinuxCreateInputDevice(void)
 {
-    int rc = VbglGRAlloc((VMMDevRequestHeader **)&g_pMouseStatusReq, sizeof(*g_pMouseStatusReq), VMMDevReq_GetMouseStatus);
+    int rc = VbglR0GRAlloc((VMMDevRequestHeader **)&g_pMouseStatusReq, sizeof(*g_pMouseStatusReq), VMMDevReq_GetMouseStatus);
     if (RT_SUCCESS(rc))
     {
         g_pInputDevice = input_allocate_device();
@@ -478,7 +478,7 @@ static int __init vgdrvLinuxCreateInputDevice(void)
         }
         else
             rc = -ENOMEM;
-        VbglGRFree(&g_pMouseStatusReq->header);
+        VbglR0GRFree(&g_pMouseStatusReq->header);
         g_pMouseStatusReq = NULL;
     }
     else
@@ -492,7 +492,7 @@ static int __init vgdrvLinuxCreateInputDevice(void)
  */
 static void vgdrvLinuxTermInputDevice(void)
 {
-    VbglGRFree(&g_pMouseStatusReq->header);
+    VbglR0GRFree(&g_pMouseStatusReq->header);
     g_pMouseStatusReq = NULL;
 
     /* See documentation of input_register_device(): input_free_device()
@@ -1030,7 +1030,7 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
     g_pMouseStatusReq->mouseFeatures = 0;
     g_pMouseStatusReq->pointerXPos = 0;
     g_pMouseStatusReq->pointerYPos = 0;
-    rc = VbglGRPerform(&g_pMouseStatusReq->header);
+    rc = VbglR0GRPerform(&g_pMouseStatusReq->header);
     if (RT_SUCCESS(rc))
     {
         input_report_abs(g_pInputDevice, ABS_X,

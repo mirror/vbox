@@ -346,9 +346,9 @@ extern int vboxguestSolarisInfo(struct modinfo *pModInfo);
 #define VBoxGuestDeleteDevExt(...) do {} while(0)
 #define VBoxGuestCommonIOCtl(...) VINF_SUCCESS
 #define VBoxGuestCommonISR(...) true
-#define VbglGRAlloc(...) VINF_SUCCESS
-#define VbglGRPerform(...) VINF_SUCCESS
-#define VbglGRFree(...) do {} while(0)
+#define VbglR0GRAlloc(...) VINF_SUCCESS
+#define VbglR0GRPerform(...) VINF_SUCCESS
+#define VbglR0GRFree(...) do {} while(0)
 #endif
 #define VbglR0InitClient(...) VINF_SUCCESS
 #define vbglDriverOpen(...) VINF_SUCCESS

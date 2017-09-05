@@ -200,7 +200,7 @@ static DECLCALLBACK(void) VBoxVbvaFlush(void *pvFlush)
 
         if (req)
         {
-            int rc = VbglGRPerform (&req->header);
+            int rc = VbglR0GRPerform (&req->header);
 
             if (RT_FAILURE(rc))
             {
@@ -218,10 +218,10 @@ int VBoxVbvaEnable(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, VBVAENABLERESULT *pResu
 
     VMMDevMemory *pVMMDevMemory = NULL;
 
-    rc = VbglQueryVMMDevMemory (&pVMMDevMemory);
+    rc = VbglR0QueryVMMDevMemory(&pVMMDevMemory);
     if (RT_FAILURE(rc))
     {
-        WARN(("VbglQueryVMMDevMemory rc = %#xrc", rc));
+        WARN(("VbglR0QueryVMMDevMemory rc = %#xrc", rc));
         LOGF_LEAVE();
         return rc;
     }
@@ -251,7 +251,7 @@ int VBoxVbvaEnable(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, VBVAENABLERESULT *pResu
     {
         VMMDevVideoAccelFlush *req = NULL;
 
-        rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevVideoAccelFlush), VMMDevReq_VideoAccelFlush);
+        rc = VbglR0GRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevVideoAccelFlush), VMMDevReq_VideoAccelFlush);
 
         if (RT_SUCCESS(rc))
         {
@@ -259,7 +259,7 @@ int VBoxVbvaEnable(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, VBVAENABLERESULT *pResu
         }
         else
         {
-            WARN(("VbglGRAlloc(VMMDevVideoAccelFlush) rc = %#xrc", rc));
+            WARN(("VbglR0GRAlloc(VMMDevVideoAccelFlush) rc = %#xrc", rc));
             LOGF_LEAVE();
             return rc;
         }
@@ -268,7 +268,7 @@ int VBoxVbvaEnable(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, VBVAENABLERESULT *pResu
     ULONG ulEnabled = 0;
 
     VMMDevVideoAccelEnable *req = NULL;
-    rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevVideoAccelEnable), VMMDevReq_VideoAccelEnable);
+    rc = VbglR0GRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevVideoAccelEnable), VMMDevReq_VideoAccelEnable);
 
     if (RT_SUCCESS(rc))
     {
@@ -276,7 +276,7 @@ int VBoxVbvaEnable(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, VBVAENABLERESULT *pResu
         req->cbRingBuffer = VBVA_RING_BUFFER_SIZE;
         req->fu32Status   = 0;
 
-        rc = VbglGRPerform(&req->header);
+        rc = VbglR0GRPerform(&req->header);
         if (RT_SUCCESS(rc))
         {
             if (req->fu32Status & VBVA_F_STATUS_ACCEPTED)
@@ -305,7 +305,7 @@ int VBoxVbvaEnable(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, VBVAENABLERESULT *pResu
                 req->cbRingBuffer = VBVA_RING_BUFFER_SIZE;
                 req->fu32Status = 0;
 
-                VbglGRPerform(&req->header);
+                VbglR0GRPerform(&req->header);
 
                 rc = VERR_NOT_SUPPORTED;
             }
@@ -315,11 +315,11 @@ int VBoxVbvaEnable(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, VBVAENABLERESULT *pResu
             WARN(("rc = %#xrc", rc));
         }
 
-        VbglGRFree(&req->header);
+        VbglR0GRFree(&req->header);
     }
     else
     {
-        WARN(("VbglGRAlloc(VMMDevVideoAccelEnable) rc = %#xrc", rc));
+        WARN(("VbglR0GRAlloc(VMMDevVideoAccelEnable) rc = %#xrc", rc));
     }
 
     pExt->u.primary.ulVbvaEnabled = ulEnabled;

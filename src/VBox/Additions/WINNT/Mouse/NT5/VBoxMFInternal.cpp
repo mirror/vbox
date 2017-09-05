@@ -110,14 +110,14 @@ static bool vboxNewProtLazyRegister(void)
 {
     if (g_ctx.fIsNewProtEnabled)
         return true;
-    int rc = VbglSetMouseNotifyCallback(vboxNewProtMouseEventCb, NULL);
+    int rc = VbglR0SetMouseNotifyCallback(vboxNewProtMouseEventCb, NULL);
     if (RT_SUCCESS(rc))
     {
         g_ctx.fIsNewProtEnabled = true;
         LOG(("Successfully register mouse event callback with VBoxGuest."));
         return true;
     }
-    WARN(("VbglSetMouseNotifyCallback failed: %Rrc", rc));
+    WARN(("VbglR0SetMouseNotifyCallback failed: %Rrc", rc));
     return false;
 }
 
@@ -132,9 +132,9 @@ static void vboxNewProtTerm(void)
     if (g_ctx.fIsNewProtEnabled)
     {
         g_ctx.fIsNewProtEnabled = false;
-        int rc = VbglSetMouseNotifyCallback(NULL, NULL);
+        int rc = VbglR0SetMouseNotifyCallback(NULL, NULL);
         if (RT_FAILURE(rc))
-            WARN(("VbglSetMouseNotifyCallback failed: %Rrc", rc));
+            WARN(("VbglR0SetMouseNotifyCallback failed: %Rrc", rc));
     }
 }
 
@@ -201,7 +201,7 @@ VOID VBoxDrvNotifyServiceCB(PVBOXMOUSE_DEVEXT pDevExt, PMOUSE_INPUT_DATA InputDa
     KeAcquireSpinLock(&g_ctx.SyncLock, &Irql);
     if (pDevExt->pSCReq)
     {
-        int rc = VbglGRPerform(&pDevExt->pSCReq->header);
+        int rc = VbglR0GRPerform(&pDevExt->pSCReq->header);
         if (RT_SUCCESS(rc))
         {
             if (pDevExt->pSCReq->mouseFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE)
@@ -224,7 +224,7 @@ VOID VBoxDrvNotifyServiceCB(PVBOXMOUSE_DEVEXT pDevExt, PMOUSE_INPUT_DATA InputDa
         }
         else
         {
-            WARN(("VbglGRPerform failed with rc=%Rrc", rc));
+            WARN(("VbglR0GRPerform failed with rc=%Rrc", rc));
         }
     }
 
@@ -379,7 +379,7 @@ void VBoxInformHost(PVBOXMOUSE_DEVEXT pDevExt)
         if (pDevExt->bHostMouse && !vboxIsHostInformed())
         {
             VMMDevReqMouseStatus *req = NULL;
-            int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
+            int rc = VbglR0GRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
             if (RT_SUCCESS(rc))
             {
                 req->mouseFeatures = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
@@ -389,28 +389,28 @@ void VBoxInformHost(PVBOXMOUSE_DEVEXT pDevExt)
                 req->pointerXPos = 0;
                 req->pointerYPos = 0;
 
-                rc = VbglGRPerform(&req->header);
+                rc = VbglR0GRPerform(&req->header);
                 if (RT_SUCCESS(rc))
                     InterlockedExchange(&g_ctx.fHostInformed, TRUE);
                 else
-                    WARN(("VbglGRPerform failed with rc=%Rrc", rc));
+                    WARN(("VbglR0GRPerform failed with rc=%Rrc", rc));
 
-                VbglGRFree(&req->header);
+                VbglR0GRFree(&req->header);
             }
             else
-                WARN(("VbglGRAlloc failed with rc=%Rrc", rc));
+                WARN(("VbglR0GRAlloc failed with rc=%Rrc", rc));
         }
 
         /* Preallocate request to be used in VBoxServiceCB*/
         if (pDevExt->bHostMouse && !pDevExt->pSCReq)
         {
             VMMDevReqMouseStatus *req = NULL;
-            int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevReqMouseStatus), VMMDevReq_GetMouseStatus);
+            int rc = VbglR0GRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevReqMouseStatus), VMMDevReq_GetMouseStatus);
             if (RT_SUCCESS(rc))
                 InterlockedExchangePointer((PVOID volatile *)&pDevExt->pSCReq, req);
             else
             {
-                WARN(("VbglGRAlloc for service callback failed with rc=%Rrc", rc));
+                WARN(("VbglR0GRAlloc for service callback failed with rc=%Rrc", rc));
             }
         }
     }
@@ -429,21 +429,21 @@ VOID VBoxDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt)
     if (pDevExt->bHostMouse && vboxIsHostInformed())
     {
         VMMDevReqMouseStatus *req = NULL;
-        int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
+        int rc = VbglR0GRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
         if (RT_SUCCESS(rc))
         {
             req->mouseFeatures = 0;
             req->pointerXPos = 0;
             req->pointerYPos = 0;
 
-            rc = VbglGRPerform(&req->header);
+            rc = VbglR0GRPerform(&req->header);
             if (RT_FAILURE(rc))
-                WARN(("VbglGRPerform failed with rc=%Rrc", rc));
+                WARN(("VbglR0GRPerform failed with rc=%Rrc", rc));
 
-            VbglGRFree(&req->header);
+            VbglR0GRFree(&req->header);
         }
         else
-            WARN(("VbglGRAlloc failed with rc=%Rrc", rc));
+            WARN(("VbglR0GRAlloc failed with rc=%Rrc", rc));
 
         InterlockedExchange(&g_ctx.fHostInformed, FALSE);
     }
@@ -463,7 +463,7 @@ VOID VBoxDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt)
     VMMDevReqMouseStatus *pSCReq = ASMAtomicXchgPtrT(&pDevExt->pSCReq, NULL, VMMDevReqMouseStatus *);
     KeReleaseSpinLock(&g_ctx.SyncLock, Irql);
     if (pSCReq)
-        VbglGRFree(&pSCReq->header);
+        VbglR0GRFree(&pSCReq->header);
 
     /*
      * Do init ref count handling.

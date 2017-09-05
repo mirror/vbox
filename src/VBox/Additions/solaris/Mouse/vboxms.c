@@ -471,7 +471,7 @@ int vbmsSolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
         rc = VbglR0InitClient();
         if (RT_SUCCESS(rc))
         {
-            rc = VbglGRAlloc((VMMDevRequestHeader **)
+            rc = VbglR0GRAlloc((VMMDevRequestHeader **)
                              &pState->pMouseStatusReq,
                              sizeof(*pState->pMouseStatusReq),
                              VMMDevReq_GetMouseStatus);
@@ -487,8 +487,7 @@ int vbmsSolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
                 pReadQueue->q_ptr = (char *)pState;
                 qprocson(pReadQueue);
                 /* Enable our IRQ handler. */
-                rc2 = VbglSetMouseNotifyCallback(vbmsSolNotify,
-                                                 (void *)pState);
+                rc2 = VbglR0SetMouseNotifyCallback(vbmsSolNotify, (void *)pState);
                 if (RT_FAILURE(rc2))
                     /* Log the failure.  I may well have not understood what
                      * is going on here, and the logging may help me. */
@@ -524,7 +523,7 @@ void vbmsSolNotify(void *pvState)
     pState->pMouseStatusReq->mouseFeatures = 0;
     pState->pMouseStatusReq->pointerXPos = 0;
     pState->pMouseStatusReq->pointerYPos = 0;
-    rc = VbglGRPerform(&pState->pMouseStatusReq->header);
+    rc = VbglR0GRPerform(&pState->pMouseStatusReq->header);
     if (RT_SUCCESS(rc))
     {
         int cMaxScreenX  = pState->cMaxScreenX;
@@ -589,9 +588,9 @@ int vbmsSolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
     --pState->cInits;
     if (!pState->cInits)
     {
-        VbglSetMouseStatus(0);
+        VbglR0SetMouseStatus(0);
         /* Disable our IRQ handler. */
-        VbglSetMouseNotifyCallback(NULL, NULL);
+        VbglR0SetMouseNotifyCallback(NULL, NULL);
         qprocsoff(pReadQueue);
 
         /*
@@ -599,7 +598,7 @@ int vbmsSolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
          */
         ASMAtomicWriteNullPtr(&pState->pWriteQueue);
         pReadQueue->q_ptr = NULL;
-        VbglGRFree(&pState->pMouseStatusReq->header);
+        VbglR0GRFree(&pState->pMouseStatusReq->header);
         VbglR0TerminateClient();
     }
     mutex_exit(&pState->InitMtx);
@@ -1375,8 +1374,8 @@ static int vbmsSolVUIDIOCtl(PVBMSSTATE pState, int iCmd, void *pvData,
             pState->cMaxScreenX = pResolution->width  - 1;
             pState->cMaxScreenY = pResolution->height - 1;
             /* Note: we don't disable this again until session close. */
-            rc = VbglSetMouseStatus(  VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
-                                    | VMMDEV_MOUSE_NEW_PROTOCOL);
+            rc = VbglR0SetMouseStatus(  VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
+                                      | VMMDEV_MOUSE_NEW_PROTOCOL);
             if (RT_SUCCESS(rc))
                 return 0;
             pState->cMaxScreenX = 0;

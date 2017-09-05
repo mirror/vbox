@@ -464,25 +464,25 @@ BOOLEAN VBoxMPSetVisibleRegion(uint32_t cRects, RTRECT *pRects, PSTATUS_BLOCK pS
     LOGF_ENTER();
 
     VMMDevVideoSetVisibleRegion *req = NULL;
-    rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevVideoSetVisibleRegion) + (cRects-1)*sizeof(RTRECT),
+    rc = VbglR0GRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevVideoSetVisibleRegion) + (cRects-1)*sizeof(RTRECT),
                       VMMDevReq_VideoSetVisibleRegion);
 
     if (RT_SUCCESS(rc))
     {
         req->cRect = cRects;
         memcpy(&req->Rect, pRects, cRects*sizeof(RTRECT));
-        rc = VbglGRPerform(&req->header);
+        rc = VbglR0GRPerform(&req->header);
 
         if (RT_SUCCESS(rc))
         {
             bRC=TRUE;
         }
 
-        VbglGRFree(&req->header);
+        VbglR0GRFree(&req->header);
     }
     else
     {
-        WARN(("VbglGRAlloc rc = %#xrc", rc));
+        WARN(("VbglR0GRAlloc rc = %#xrc", rc));
     }
 
     if (!bRC)

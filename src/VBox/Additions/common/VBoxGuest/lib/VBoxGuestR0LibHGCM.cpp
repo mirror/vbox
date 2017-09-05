@@ -63,7 +63,7 @@ static struct VBGLHGCMHANDLEDATA g_aHGCMHandleData[64];
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglR0HGCMInit(void)
+DECLR0VBGL(int) VbglR0HGCMInit(void)
 {
     AssertReturn(g_hMtxHGCMHandleData == NIL_RTSEMFASTMUTEX, VINF_ALREADY_INITIALIZED);
     return RTSemFastMutexCreate(&g_hMtxHGCMHandleData);
@@ -74,7 +74,7 @@ DECLVBGL(int) VbglR0HGCMInit(void)
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglR0HGCMTerminate(void)
+DECLR0VBGL(int) VbglR0HGCMTerminate(void)
 {
     RTSemFastMutexDestroy(g_hMtxHGCMHandleData);
     g_hMtxHGCMHandleData = NIL_RTSEMFASTMUTEX;
@@ -138,7 +138,7 @@ void vbglR0HGCMHandleFree(struct VBGLHGCMHANDLEDATA *pHandle)
     }
 }
 
-DECLVBGL(int) VbglR0HGCMConnect(VBGLHGCMHANDLE *pHandle, const char *pszServiceName, HGCMCLIENTID *pidClient)
+DECLR0VBGL(int) VbglR0HGCMConnect(VBGLHGCMHANDLE *pHandle, const char *pszServiceName, HGCMCLIENTID *pidClient)
 {
     int rc;
     if (pHandle && pszServiceName && pidClient)
@@ -181,7 +181,7 @@ DECLVBGL(int) VbglR0HGCMConnect(VBGLHGCMHANDLE *pHandle, const char *pszServiceN
     return rc;
 }
 
-DECLVBGL(int) VbglR0HGCMDisconnect(VBGLHGCMHANDLE handle, HGCMCLIENTID idClient)
+DECLR0VBGL(int) VbglR0HGCMDisconnect(VBGLHGCMHANDLE handle, HGCMCLIENTID idClient)
 {
     int rc;
     VBGLIOCHGCMDISCONNECT Info;
@@ -198,7 +198,7 @@ DECLVBGL(int) VbglR0HGCMDisconnect(VBGLHGCMHANDLE handle, HGCMCLIENTID idClient)
     return rc;
 }
 
-DECLVBGL(int) VbglR0HGCMCallRaw(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint32_t cbData)
+DECLR0VBGL(int) VbglR0HGCMCallRaw(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint32_t cbData)
 {
     VBGL_HGCM_ASSERT_MSG(cbData >= sizeof(VBGLIOCHGCMCALL) + pData->cParms * sizeof(HGCMFunctionParameter),
                          ("cbData = %d, cParms = %d (calculated size %d)\n", cbData, pData->cParms,
@@ -207,7 +207,7 @@ DECLVBGL(int) VbglR0HGCMCallRaw(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, u
     return VbglR0IdcCallRaw(&handle->IdcHandle, VBGL_IOCTL_HGCM_CALL(cbData), &pData->Hdr, cbData);
 }
 
-DECLVBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint32_t cbData)
+DECLR0VBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint32_t cbData)
 {
     int rc = VbglR0HGCMCallRaw(handle, pData, cbData);
     if (RT_SUCCESS(rc))
@@ -215,7 +215,7 @@ DECLVBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint
     return rc;
 }
 
-DECLVBGL(int) VbglR0HGCMCallUserDataRaw(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint32_t cbData)
+DECLR0VBGL(int) VbglR0HGCMCallUserDataRaw(VBGLHGCMHANDLE handle, PVBGLIOCHGCMCALL pData, uint32_t cbData)
 {
     VBGL_HGCM_ASSERT_MSG(cbData >= sizeof(VBGLIOCHGCMCALL) + pData->cParms * sizeof(HGCMFunctionParameter),
                          ("cbData = %d, cParms = %d (calculated size %d)\n", cbData, pData->cParms,

@@ -92,14 +92,14 @@ uint32_t VBoxGetHeightReduction()
 
     VMMDevGetHeightReductionRequest *req = NULL;
 
-    rc = VbglGRAlloc((VMMDevRequestHeader**)&req, sizeof(VMMDevGetHeightReductionRequest), VMMDevReq_GetHeightReduction);
+    rc = VbglR0GRAlloc((VMMDevRequestHeader**)&req, sizeof(VMMDevGetHeightReductionRequest), VMMDevReq_GetHeightReduction);
     if (RT_FAILURE(rc))
     {
         WARN(("ERROR allocating request, rc = %#xrc", rc));
     }
     else
     {
-        rc = VbglGRPerform(&req->header);
+        rc = VbglR0GRPerform(&req->header);
         if (RT_SUCCESS(rc))
         {
             retHeight = req->heightReduction;
@@ -108,7 +108,7 @@ uint32_t VBoxGetHeightReduction()
         {
             WARN(("ERROR querying height reduction value from VMMDev. rc = %#xrc", rc));
         }
-        VbglGRFree(&req->header);
+        VbglR0GRFree(&req->header);
     }
 
     LOGF_LEAVE();
@@ -121,7 +121,7 @@ bool VBoxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, uint3
 
     VMMDevVideoModeSupportedRequest2 *req2 = NULL;
 
-    int rc = VbglGRAlloc((VMMDevRequestHeader**)&req2, sizeof(VMMDevVideoModeSupportedRequest2), VMMDevReq_VideoModeSupported2);
+    int rc = VbglR0GRAlloc((VMMDevRequestHeader**)&req2, sizeof(VMMDevVideoModeSupportedRequest2), VMMDevReq_VideoModeSupported2);
     if (RT_FAILURE(rc))
     {
         LOG(("ERROR allocating request, rc = %#xrc", rc));
@@ -136,7 +136,7 @@ bool VBoxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, uint3
         req2->width  = width;
         req2->height = height;
         req2->bpp    = bpp;
-        rc = VbglGRPerform(&req2->header);
+        rc = VbglR0GRPerform(&req2->header);
         if (RT_SUCCESS(rc))
         {
             bRC = req2->fSupported;
@@ -156,7 +156,7 @@ bool VBoxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, uint3
             req->height = height;
             req->bpp    = bpp;
 
-            rc = VbglGRPerform(&req->header);
+            rc = VbglR0GRPerform(&req->header);
             if (RT_SUCCESS(rc))
             {
                 bRC = req->fSupported;
@@ -166,7 +166,7 @@ bool VBoxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, uint3
                 WARN(("ERROR querying video mode supported status from VMMDev. rc = %#xrc", rc));
             }
         }
-        VbglGRFree(&req2->header);
+        VbglR0GRFree(&req2->header);
     }
 
     LOG(("width: %d, height: %d, bpp: %d -> %s", width, height, bpp, (bRC == 1) ? "OK" : "FALSE"));
@@ -181,7 +181,7 @@ bool VBoxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp, uint
 
     LOGF_ENTER();
 
-    int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevDisplayChangeRequest2), VMMDevReq_GetDisplayChangeRequest2);
+    int rc = VbglR0GRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevDisplayChangeRequest2), VMMDevReq_GetDisplayChangeRequest2);
 
     if (RT_FAILURE(rc))
     {
@@ -191,7 +191,7 @@ bool VBoxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp, uint
     {
         req->eventAck = 0;
 
-        rc = VbglGRPerform (&req->header);
+        rc = VbglR0GRPerform (&req->header);
 
         if (RT_SUCCESS(rc))
         {
@@ -211,7 +211,7 @@ bool VBoxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp, uint
             WARN(("ERROR querying display request from VMMDev. rc = %#xrc", rc));
         }
 
-        VbglGRFree (&req->header);
+        VbglR0GRFree (&req->header);
     }
 
     LOGF_LEAVE();
@@ -224,7 +224,7 @@ static bool VBoxQueryPointerPosInternal(uint16_t *pPosX, uint16_t *pPosY)
 
     VMMDevReqMouseStatus *req = NULL;
 
-    int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevReqMouseStatus), VMMDevReq_GetMouseStatus);
+    int rc = VbglR0GRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevReqMouseStatus), VMMDevReq_GetMouseStatus);
 
     if (RT_FAILURE(rc))
     {
@@ -232,7 +232,7 @@ static bool VBoxQueryPointerPosInternal(uint16_t *pPosX, uint16_t *pPosY)
     }
     else
     {
-        rc = VbglGRPerform(&req->header);
+        rc = VbglR0GRPerform(&req->header);
 
         if (RT_SUCCESS(rc))
         {
@@ -256,7 +256,7 @@ static bool VBoxQueryPointerPosInternal(uint16_t *pPosX, uint16_t *pPosY)
             LOG(("ERROR querying mouse capabilities from VMMDev. rc = %#xrc", rc));
         }
 
-        VbglGRFree(&req->header);
+        VbglR0GRFree(&req->header);
     }
 
     return bRC;

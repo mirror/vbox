@@ -396,7 +396,7 @@ void vbglPhysHeapChunkDelete (VBGLPHYSHEAPCHUNK *pChunk)
 }
 
 
-DECLVBGL(void *) VbglPhysHeapAlloc (uint32_t cbSize)
+DECLR0VBGL(void *) VbglR0PhysHeapAlloc (uint32_t cbSize)
 {
     VBGLPHYSHEAPBLOCK *pBlock, *iter;
     int rc = vbglPhysHeapEnter ();
@@ -493,12 +493,12 @@ DECLVBGL(void *) VbglPhysHeapAlloc (uint32_t cbSize)
     dumpheap ("post alloc");
 
     vbglPhysHeapLeave ();
-    VBGL_PH_dprintf(("VbglPhysHeapAlloc %x size %x\n", vbglPhysHeapBlock2Data (pBlock), pBlock->cbDataSize));
+    VBGL_PH_dprintf(("VbglR0PhysHeapAlloc %x size %x\n", vbglPhysHeapBlock2Data (pBlock), pBlock->cbDataSize));
 
     return vbglPhysHeapBlock2Data (pBlock);
 }
 
-DECLVBGL(uint32_t) VbglPhysHeapGetPhysAddr (void *p)
+DECLR0VBGL(uint32_t) VbglR0PhysHeapGetPhysAddr (void *p)
 {
     uint32_t physAddr = 0;
     VBGLPHYSHEAPBLOCK *pBlock = vbglPhysHeapData2Block (p);
@@ -515,7 +515,7 @@ DECLVBGL(uint32_t) VbglPhysHeapGetPhysAddr (void *p)
     return physAddr;
 }
 
-DECLVBGL(void) VbglPhysHeapFree(void *p)
+DECLR0VBGL(void) VbglR0PhysHeapFree(void *p)
 {
     VBGLPHYSHEAPBLOCK *pBlock;
     VBGLPHYSHEAPBLOCK *pNeighbour;
@@ -542,7 +542,7 @@ DECLVBGL(void) VbglPhysHeapFree(void *p)
 
     dumpheap ("post exclude");
 
-    VBGL_PH_dprintf(("VbglPhysHeapFree %x size %x\n", p, pBlock->cbDataSize));
+    VBGL_PH_dprintf(("VbglR0PhysHeapFree %x size %x\n", p, pBlock->cbDataSize));
 
     /* Mark as free */
     pBlock->fu32Flags &= ~VBGL_PH_BF_ALLOCATED;
@@ -612,7 +612,7 @@ DECLVBGL(void) VbglPhysHeapFree(void *p)
     vbglPhysHeapLeave ();
 }
 
-DECLVBGL(int) VbglPhysHeapInit (void)
+DECLR0VBGL(int) VbglR0PhysHeapInit (void)
 {
     int rc = VINF_SUCCESS;
 
@@ -627,7 +627,7 @@ DECLVBGL(int) VbglPhysHeapInit (void)
     return rc;
 }
 
-DECLVBGL(void) VbglPhysHeapTerminate (void)
+DECLR0VBGL(void) VbglR0PhysHeapTerminate (void)
 {
     while (g_vbgldata.pChunkHead)
     {

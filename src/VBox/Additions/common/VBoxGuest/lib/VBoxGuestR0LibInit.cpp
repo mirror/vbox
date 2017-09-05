@@ -43,8 +43,8 @@ VBGLDATA g_vbgldata;
 
 
 /**
- * Used by vbglQueryDriverInfo and VbglInit to try get the host feature mask and
- * version information (g_vbgldata::hostVersion).
+ * Used by vbglR0QueryDriverInfo and VbglInit to try get the host feature mask
+ * and version information (g_vbgldata::hostVersion).
  *
  * This was first implemented by the host in 3.1 and we quietly ignore failures
  * for that reason.
@@ -52,10 +52,10 @@ VBGLDATA g_vbgldata;
 static void vbglR0QueryHostVersion(void)
 {
     VMMDevReqHostVersion *pReq;
-    int rc = VbglGRAlloc((VMMDevRequestHeader **) &pReq, sizeof (*pReq), VMMDevReq_GetHostVersion);
+    int rc = VbglR0GRAlloc((VMMDevRequestHeader **) &pReq, sizeof (*pReq), VMMDevReq_GetHostVersion);
     if (RT_SUCCESS(rc))
     {
-        rc = VbglGRPerform(&pReq->header);
+        rc = VbglR0GRPerform(&pReq->header);
         if (RT_SUCCESS(rc))
         {
             g_vbgldata.hostVersion = *pReq;
@@ -63,7 +63,7 @@ static void vbglR0QueryHostVersion(void)
                  pReq->major, pReq->minor, pReq->build, pReq->revision, pReq->features));
         }
 
-        VbglGRFree(&pReq->header);
+        VbglR0GRFree(&pReq->header);
     }
 }
 
@@ -77,7 +77,7 @@ static void vbglR0QueryHostVersion(void)
  * The VbglEnter checks the current library status, tries to retrieve these
  * values and fails if they are unavailable.
  */
-static void vbglQueryDriverInfo(void)
+static void vbglR0QueryDriverInfo(void)
 {
 # ifdef VBGLDATA_USE_FAST_MUTEX
     int rc = RTSemFastMutexRequest(g_vbgldata.hMtxIdcSetup);
@@ -142,7 +142,7 @@ int vbglR0Enter(void)
 #ifndef VBGL_VBOXGUEST
     if (g_vbgldata.status == VbglStatusInitializing)
     {
-        vbglQueryDriverInfo();
+        vbglR0QueryDriverInfo();
         if (g_vbgldata.status == VbglStatusReady)
             return VINF_SUCCESS;
     }
@@ -151,35 +151,35 @@ int vbglR0Enter(void)
 }
 
 
-static int vbglInitCommon(void)
+static int vbglR0InitCommon(void)
 {
     int rc;
 
     RT_ZERO(g_vbgldata);
     g_vbgldata.status = VbglStatusInitializing;
 
-    rc = VbglPhysHeapInit();
+    rc = VbglR0PhysHeapInit();
     if (RT_SUCCESS(rc))
     {
-        dprintf(("vbglInitCommon: returns rc = %d\n", rc));
+        dprintf(("vbglR0InitCommon: returns rc = %d\n", rc));
         return rc;
     }
 
-    LogRel(("vbglInitCommon: VbglPhysHeapInit failed: rc=%Rrc\n", rc));
+    LogRel(("vbglR0InitCommon: VbglR0PhysHeapInit failed: rc=%Rrc\n", rc));
     g_vbgldata.status = VbglStatusNotInitialized;
     return rc;
 }
 
 
-static void vbglTerminateCommon(void)
+static void vbglR0TerminateCommon(void)
 {
-    VbglPhysHeapTerminate();
+    VbglR0PhysHeapTerminate();
     g_vbgldata.status = VbglStatusNotInitialized;
 }
 
 #ifdef VBGL_VBOXGUEST
 
-DECLVBGL(int) VbglInitPrimary(RTIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory)
+DECLVBGL(int) VbglR0InitPrimary(RTIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory)
 {
     int rc;
 
@@ -196,7 +196,7 @@ DECLVBGL(int) VbglInitPrimary(RTIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory)
     dprintf(("vbglInit: starts\n"));
 # endif
 
-    rc = vbglInitCommon();
+    rc = vbglR0InitCommon();
     if (RT_SUCCESS(rc))
     {
         g_vbgldata.portVMMDev    = portVMMDev;
@@ -213,7 +213,7 @@ DECLVBGL(int) VbglInitPrimary(RTIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory)
 
 DECLVBGL(void) VbglR0TerminatePrimary(void)
 {
-    vbglTerminateCommon();
+    vbglR0TerminateCommon();
 }
 
 
@@ -231,7 +231,7 @@ DECLVBGL(int) VbglR0InitClient(void)
         return VINF_SUCCESS;
     }
 
-    rc = vbglInitCommon();
+    rc = vbglR0InitCommon();
     if (RT_SUCCESS(rc))
     {
 # ifdef VBGLDATA_USE_FAST_MUTEX
@@ -242,7 +242,7 @@ DECLVBGL(int) VbglR0InitClient(void)
         if (RT_SUCCESS(rc))
         {
             /* Try to obtain VMMDev port via IOCTL to VBoxGuest main driver. */
-            vbglQueryDriverInfo();
+            vbglR0QueryDriverInfo();
 
 # ifdef VBOX_WITH_HGCM
             rc = VbglR0HGCMInit();
@@ -258,7 +258,7 @@ DECLVBGL(int) VbglR0InitClient(void)
             g_vbgldata.hMtxIdcSetup = NIL_RTSEMMUTEX;
 # endif
         }
-        vbglTerminateCommon();
+        vbglR0TerminateCommon();
     }
 
     return rc;
@@ -281,10 +281,10 @@ DECLVBGL(void) VbglR0TerminateClient(void)
     g_vbgldata.hMtxIdcSetup = NIL_RTSEMMUTEX;
 # endif
 
-    /* note: do vbglTerminateCommon as a last step since it zeroez up the g_vbgldata
-     * conceptually, doing vbglTerminateCommon last is correct
+    /* note: do vbglR0TerminateCommon as a last step since it zeroez up the g_vbgldata
+     * conceptually, doing vbglR0TerminateCommon last is correct
      * since this is the reverse order to how init is done */
-    vbglTerminateCommon();
+    vbglR0TerminateCommon();
 }
 
 
@@ -294,7 +294,7 @@ int VBOXCALL vbglR0QueryIdcHandle(PVBGLIDCHANDLE *ppIdcHandle)
     { /* likely */ }
     else
     {
-        vbglQueryDriverInfo();
+        vbglR0QueryDriverInfo();
         if (g_vbgldata.status != VbglStatusReady)
         {
             *ppIdcHandle = NULL;
@@ -307,3 +307,4 @@ int VBOXCALL vbglR0QueryIdcHandle(PVBGLIDCHANDLE *ppIdcHandle)
 }
 
 #endif /* !VBGL_VBOXGUEST */
+

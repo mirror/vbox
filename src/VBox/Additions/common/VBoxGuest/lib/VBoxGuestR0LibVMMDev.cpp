@@ -30,7 +30,7 @@
 #include "VBoxGuestR0LibInternal.h"
 
 
-DECLVBGL(int) VbglQueryVMMDevMemory(VMMDevMemory **ppVMMDevMemory)
+DECLVBGL(int) VbglR0QueryVMMDevMemory(VMMDevMemory **ppVMMDevMemory)
 {
     int rc = vbglR0Enter();
     if (RT_FAILURE(rc))

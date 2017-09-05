@@ -47,7 +47,7 @@
  * @param   pfnNotify  the function to call back.  NULL to disable call backs.
  * @param   pvUser     user supplied data/cookie to be passed to the function.
  */
-DECLVBGL(int) VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify, void *pvUser)
+DECLR0VBGL(int) VbglR0SetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify, void *pvUser)
 {
     PVBGLIDCHANDLE pIdcHandle;
     int rc = vbglR0QueryIdcHandle(&pIdcHandle);
@@ -62,6 +62,7 @@ DECLVBGL(int) VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify, void
     return rc;
 }
 
+
 /**
  * Retrieve mouse coordinates and features from the host.
  *
@@ -72,7 +73,7 @@ DECLVBGL(int) VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify, void
  * @param   px          Where to store the X co-ordinate.
  * @param   py          Where to store the Y co-ordinate.
  */
-DECLVBGL(int) VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py)
+DECLR0VBGL(int) VbglR0GetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py)
 {
     PVBGLIDCHANDLE pIdcHandle;
     int rc = vbglR0QueryIdcHandle(&pIdcHandle);
@@ -97,6 +98,7 @@ DECLVBGL(int) VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *p
     return rc;
 }
 
+
 /**
  * Send mouse features to the host.
  *
@@ -107,7 +109,7 @@ DECLVBGL(int) VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *p
  *                     will mediate different callers and show the host any
  *                     feature enabled by any guest caller.
  */
-DECLVBGL(int) VbglSetMouseStatus(uint32_t fFeatures)
+DECLR0VBGL(int) VbglR0SetMouseStatus(uint32_t fFeatures)
 {
     PVBGLIDCHANDLE pIdcHandle;
     int rc = vbglR0QueryIdcHandle(&pIdcHandle);

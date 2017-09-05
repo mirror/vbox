@@ -36,7 +36,7 @@
 #endif
 
 
-DECLVBGL(int) VbglR0CrCtlCreate(VBGLCRCTLHANDLE *phCtl)
+DECLR0VBGL(int) VbglR0CrCtlCreate(VBGLCRCTLHANDLE *phCtl)
 {
     int rc;
 
@@ -68,7 +68,7 @@ DECLVBGL(int) VbglR0CrCtlCreate(VBGLCRCTLHANDLE *phCtl)
     return rc;
 }
 
-DECLVBGL(int) VbglR0CrCtlDestroy(VBGLCRCTLHANDLE hCtl)
+DECLR0VBGL(int) VbglR0CrCtlDestroy(VBGLCRCTLHANDLE hCtl)
 {
     VbglR0IdcClose(&hCtl->IdcHandle);
 
@@ -77,7 +77,7 @@ DECLVBGL(int) VbglR0CrCtlDestroy(VBGLCRCTLHANDLE hCtl)
     return VINF_SUCCESS;
 }
 
-DECLVBGL(int) VbglR0CrCtlConConnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID *pidClient)
+DECLR0VBGL(int) VbglR0CrCtlConConnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID *pidClient)
 {
     VBGLIOCHGCMCONNECT info;
     int rc;
@@ -102,7 +102,7 @@ DECLVBGL(int) VbglR0CrCtlConConnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID *pidClien
     return rc;
 }
 
-DECLVBGL(int) VbglR0CrCtlConDisconnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID idClient)
+DECLR0VBGL(int) VbglR0CrCtlConDisconnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID idClient)
 {
     VBGLIOCHGCMDISCONNECT info;
     VBGLREQHDR_INIT(&info.Hdr, HGCM_DISCONNECT);
@@ -110,12 +110,12 @@ DECLVBGL(int) VbglR0CrCtlConDisconnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID idClie
     return VbglR0IdcCall(&hCtl->IdcHandle, VBGL_IOCTL_HGCM_DISCONNECT, &info.Hdr, sizeof(info));
 }
 
-DECLVBGL(int) VbglR0CrCtlConCallRaw(VBGLCRCTLHANDLE hCtl, PVBGLIOCHGCMCALL pCallInfo, int cbCallInfo)
+DECLR0VBGL(int) VbglR0CrCtlConCallRaw(VBGLCRCTLHANDLE hCtl, PVBGLIOCHGCMCALL pCallInfo, int cbCallInfo)
 {
     return VbglR0IdcCallRaw(&hCtl->IdcHandle, VBGL_IOCTL_HGCM_CALL(cbCallInfo), &pCallInfo->Hdr, cbCallInfo);
 }
 
-DECLVBGL(int) VbglR0CrCtlConCall(VBGLCRCTLHANDLE hCtl, PVBGLIOCHGCMCALL pCallInfo, int cbCallInfo)
+DECLR0VBGL(int) VbglR0CrCtlConCall(VBGLCRCTLHANDLE hCtl, PVBGLIOCHGCMCALL pCallInfo, int cbCallInfo)
 {
     int rc = VbglR0IdcCallRaw(&hCtl->IdcHandle, VBGL_IOCTL_HGCM_CALL(cbCallInfo), &pCallInfo->Hdr, cbCallInfo);
     if (RT_SUCCESS(rc))
@@ -123,7 +123,7 @@ DECLVBGL(int) VbglR0CrCtlConCall(VBGLCRCTLHANDLE hCtl, PVBGLIOCHGCMCALL pCallInf
     return rc;
 }
 
-DECLVBGL(int) VbglR0CrCtlConCallUserDataRaw(VBGLCRCTLHANDLE hCtl, PVBGLIOCHGCMCALL pCallInfo, int cbCallInfo)
+DECLR0VBGL(int) VbglR0CrCtlConCallUserDataRaw(VBGLCRCTLHANDLE hCtl, PVBGLIOCHGCMCALL pCallInfo, int cbCallInfo)
 {
     return VbglR0IdcCallRaw(&hCtl->IdcHandle, VBGL_IOCTL_HGCM_CALL_WITH_USER_DATA(cbCallInfo), &pCallInfo->Hdr, cbCallInfo);
 }

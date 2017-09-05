@@ -100,14 +100,14 @@ typedef uint32_t HGCMCLIENTID;
  *
  * @return VBox status code.
  */
-DECLR0VBGL(int) VbglInitPrimary(RTIOPORT portVMMDev, struct VMMDevMemory *pVMMDevMemory);
+DECLR0VBGL(int)     VbglR0InitPrimary(RTIOPORT portVMMDev, struct VMMDevMemory *pVMMDevMemory);
 
 /**
  * The library termination function to be used by the main VBoxGuest driver.
  *
  * @author bird (2017-08-23)
  */
-DECLR0VBGL(void) VbglR0TerminatePrimary(void);
+DECLR0VBGL(void)    VbglR0TerminatePrimary(void);
 
 /**
  * The library initialization function to be used by all drivers
@@ -115,12 +115,12 @@ DECLR0VBGL(void) VbglR0TerminatePrimary(void);
  *
  * @return VBox status code.
  */
-DECLR0VBGL(int) VbglR0InitClient(void);
+DECLR0VBGL(int)     VbglR0InitClient(void);
 
 /**
  * The library termination function.
  */
-DECLR0VBGL(void) VbglR0TerminateClient(void);
+DECLR0VBGL(void)    VbglR0TerminateClient(void);
 
 
 /** @name The IDC Client Interface
@@ -166,9 +166,9 @@ DECLR0VBGL(int) VbglR0IdcClose(PVBGLIDCHANDLE pHandle);
  * @param   enmReqType  the generic request type.
  */
 # if defined(___VBox_VMMDev_h) || defined(DOXYGEN_RUNNING)
-DECLVBGL(int) VbglGRAlloc(struct VMMDevRequestHeader **ppReq, size_t cbReq, VMMDevRequestType enmReqType);
+DECLR0VBGL(int) VbglR0GRAlloc(struct VMMDevRequestHeader **ppReq, size_t cbReq, VMMDevRequestType enmReqType);
 # else
-DECLVBGL(int) VbglGRAlloc(struct VMMDevRequestHeader **ppReq, size_t cbReq, int32_t enmReqType);
+DECLR0VBGL(int) VbglR0GRAlloc(struct VMMDevRequestHeader **ppReq, size_t cbReq, int32_t enmReqType);
 # endif
 
 /**
@@ -178,7 +178,7 @@ DECLVBGL(int) VbglGRAlloc(struct VMMDevRequestHeader **ppReq, size_t cbReq, int3
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglGRPerform(struct VMMDevRequestHeader *pReq);
+DECLR0VBGL(int) VbglR0GRPerform(struct VMMDevRequestHeader *pReq);
 
 /**
  * Free the generic request memory.
@@ -187,7 +187,7 @@ DECLVBGL(int) VbglGRPerform(struct VMMDevRequestHeader *pReq);
  *
  * @return VBox status code.
  */
-DECLVBGL(void) VbglGRFree(struct VMMDevRequestHeader *pReq);
+DECLR0VBGL(void) VbglR0GRFree(struct VMMDevRequestHeader *pReq);
 
 /**
  * Verify the generic request header.
@@ -199,7 +199,7 @@ DECLVBGL(void) VbglGRFree(struct VMMDevRequestHeader *pReq);
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglGRVerify(const struct VMMDevRequestHeader *pReq, size_t cbReq);
+DECLR0VBGL(int) VbglGR0Verify(const struct VMMDevRequestHeader *pReq, size_t cbReq);
 
 /** @} */
 
@@ -327,14 +327,14 @@ typedef struct VBGLHGCMHANDLEDATA *VBGLHGCMHANDLE;
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglR0HGCMInit(void);
+DECLR0VBGL(int) VbglR0HGCMInit(void);
 
 /**
  * Terminates HGCM in the R0 guest library.  Is called by VbglTerminate().
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglR0HGCMTerminate(void);
+DECLR0VBGL(int) VbglR0HGCMTerminate(void);
 
 /**
  * Connect to a service.
@@ -348,7 +348,7 @@ DECLVBGL(int) VbglR0HGCMTerminate(void);
  *
  * @todo consider baking the client Id into the handle.
  */
-DECLVBGL(int) VbglR0HGCMConnect(VBGLHGCMHANDLE *pHandle, const char *pszServiceName, HGCMCLIENTID *pidClient);
+DECLR0VBGL(int) VbglR0HGCMConnect(VBGLHGCMHANDLE *pHandle, const char *pszServiceName, HGCMCLIENTID *pidClient);
 
 /**
  * Connect to a service.
@@ -360,7 +360,7 @@ DECLVBGL(int) VbglR0HGCMConnect(VBGLHGCMHANDLE *pHandle, const char *pszServiceN
  *
  * @todo consider baking the client Id into the handle.
  */
-DECLVBGL(int) VbglR0HGCMDisconnect(VBGLHGCMHANDLE handle, HGCMCLIENTID idClient);
+DECLR0VBGL(int) VbglR0HGCMDisconnect(VBGLHGCMHANDLE handle, HGCMCLIENTID idClient);
 
 /**
  * Call to a service, returning only the I/O control status code.
@@ -371,7 +371,7 @@ DECLVBGL(int) VbglR0HGCMDisconnect(VBGLHGCMHANDLE handle, HGCMCLIENTID idClient)
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglR0HGCMCallRaw(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pData, uint32_t cbData);
+DECLR0VBGL(int) VbglR0HGCMCallRaw(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pData, uint32_t cbData);
 
 /**
  * Call to a service, returning the HGCM status code.
@@ -383,7 +383,7 @@ DECLVBGL(int) VbglR0HGCMCallRaw(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pD
  * @return VBox status code.  Either the I/O control status code if that failed,
  *         or the HGCM status code (pData->Hdr.rc).
  */
-DECLVBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pData, uint32_t cbData);
+DECLR0VBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pData, uint32_t cbData);
 
 /**
  * Call to a service with user-mode data received by the calling driver from the User-Mode process.
@@ -395,21 +395,21 @@ DECLVBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pData
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglR0HGCMCallUserDataRaw(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pData, uint32_t cbData);
+DECLR0VBGL(int) VbglR0HGCMCallUserDataRaw(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pData, uint32_t cbData);
 
 /** @} */
 
 /** @name Undocumented helpers for talking to the Chromium OpenGL Host Service
  * @{ */
 typedef VBGLHGCMHANDLE VBGLCRCTLHANDLE;
-DECLVBGL(int) VbglR0CrCtlCreate(VBGLCRCTLHANDLE *phCtl);
-DECLVBGL(int) VbglR0CrCtlDestroy(VBGLCRCTLHANDLE hCtl);
-DECLVBGL(int) VbglR0CrCtlConConnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID *pidClient);
-DECLVBGL(int) VbglR0CrCtlConDisconnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID idClient);
+DECLR0VBGL(int) VbglR0CrCtlCreate(VBGLCRCTLHANDLE *phCtl);
+DECLR0VBGL(int) VbglR0CrCtlDestroy(VBGLCRCTLHANDLE hCtl);
+DECLR0VBGL(int) VbglR0CrCtlConConnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID *pidClient);
+DECLR0VBGL(int) VbglR0CrCtlConDisconnect(VBGLCRCTLHANDLE hCtl, HGCMCLIENTID idClient);
 struct VBGLIOCHGCMCALL;
-DECLVBGL(int) VbglR0CrCtlConCallRaw(VBGLCRCTLHANDLE hCtl, struct VBGLIOCHGCMCALL *pCallInfo, int cbCallInfo);
-DECLVBGL(int) VbglR0CrCtlConCall(VBGLCRCTLHANDLE hCtl, struct VBGLIOCHGCMCALL *pCallInfo, int cbCallInfo);
-DECLVBGL(int) VbglR0CrCtlConCallUserDataRaw(VBGLCRCTLHANDLE hCtl, struct VBGLIOCHGCMCALL *pCallInfo, int cbCallInfo);
+DECLR0VBGL(int) VbglR0CrCtlConCallRaw(VBGLCRCTLHANDLE hCtl, struct VBGLIOCHGCMCALL *pCallInfo, int cbCallInfo);
+DECLR0VBGL(int) VbglR0CrCtlConCall(VBGLCRCTLHANDLE hCtl, struct VBGLIOCHGCMCALL *pCallInfo, int cbCallInfo);
+DECLR0VBGL(int) VbglR0CrCtlConCallUserDataRaw(VBGLCRCTLHANDLE hCtl, struct VBGLIOCHGCMCALL *pCallInfo, int cbCallInfo);
 /** @} */
 
 #  endif /* !VBGL_VBOXGUEST */
@@ -422,12 +422,12 @@ DECLVBGL(int) VbglR0CrCtlConCallUserDataRaw(VBGLCRCTLHANDLE hCtl, struct VBGLIOC
  *
  * @returns VBox status code.
  */
-DECLVBGL(int) VbglPhysHeapInit (void);
+DECLR0VBGL(int)     VbglR0PhysHeapInit(void);
 
 /**
  * Shutdown the heap.
  */
-DECLVBGL(void) VbglPhysHeapTerminate (void);
+DECLR0VBGL(void)    VbglR0PhysHeapTerminate(void);
 
 /**
  * Allocate a memory block.
@@ -435,7 +435,7 @@ DECLVBGL(void) VbglPhysHeapTerminate (void);
  * @returns Virtual address of the allocated memory block.
  * @param cbSize    Size of block to be allocated.
  */
-DECLVBGL(void *) VbglPhysHeapAlloc (uint32_t cbSize);
+DECLR0VBGL(void *)  VbglR0PhysHeapAlloc(uint32_t cbSize);
 
 /**
  * Get physical address of memory block pointed by the virtual address.
@@ -449,24 +449,24 @@ DECLVBGL(void *) VbglPhysHeapAlloc (uint32_t cbSize);
  * @param   pv      Virtual address of memory block.
  * @returns Physical address of the memory block.
  */
-DECLVBGL(uint32_t)  VbglPhysHeapGetPhysAddr(void *pv);
+DECLR0VBGL(uint32_t) VbglR0PhysHeapGetPhysAddr(void *pv);
 
 /**
  * Free a memory block.
  *
  * @param   pv    Virtual address of memory block.
  */
-DECLVBGL(void)      VbglPhysHeapFree(void *pv);
+DECLR0VBGL(void)    VbglR0PhysHeapFree(void *pv);
 
-DECLVBGL(int)       VbglQueryVMMDevMemory(struct VMMDevMemory **ppVMMDevMemory);
+DECLR0VBGL(int)     VbglR0QueryVMMDevMemory(struct VMMDevMemory **ppVMMDevMemory);
 DECLR0VBGL(bool)    VbglR0CanUsePhysPageList(void);
 
 # ifndef VBOX_GUEST
 /** @name Mouse
  * @{ */
-DECLVBGL(int)       VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify, void *pvUser);
-DECLVBGL(int)       VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py);
-DECLVBGL(int)       VbglSetMouseStatus(uint32_t fFeatures);
+DECLR0VBGL(int)     VbglR0SetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify, void *pvUser);
+DECLR0VBGL(int)     VbglR0GetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py);
+DECLR0VBGL(int)     VbglR0SetMouseStatus(uint32_t fFeatures);
 /** @}  */
 # endif /* VBOX_GUEST */
 

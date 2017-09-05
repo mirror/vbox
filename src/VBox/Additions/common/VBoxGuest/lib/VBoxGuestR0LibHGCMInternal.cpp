@@ -93,7 +93,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalConnect(HGCMServiceLocation const *pLoc, HGCMC
     {
         /* Allocate request */
         VMMDevHGCMConnect *pHGCMConnect = NULL;
-        rc = VbglGRAlloc((VMMDevRequestHeader **)&pHGCMConnect, sizeof(VMMDevHGCMConnect), VMMDevReq_HGCMConnect);
+        rc = VbglR0GRAlloc((VMMDevRequestHeader **)&pHGCMConnect, sizeof(VMMDevHGCMConnect), VMMDevReq_HGCMConnect);
         if (RT_SUCCESS(rc))
         {
             /* Initialize request memory */
@@ -103,7 +103,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalConnect(HGCMServiceLocation const *pLoc, HGCMC
             pHGCMConnect->u32ClientID = 0;
 
             /* Issue request */
-            rc = VbglGRPerform (&pHGCMConnect->header.header);
+            rc = VbglR0GRPerform (&pHGCMConnect->header.header);
             if (RT_SUCCESS(rc))
             {
                 /* Check if host decides to process the request asynchronously. */
@@ -117,7 +117,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalConnect(HGCMServiceLocation const *pLoc, HGCMC
                 if (RT_SUCCESS(rc))
                     *pidClient = pHGCMConnect->u32ClientID;
             }
-            VbglGRFree(&pHGCMConnect->header.header);
+            VbglR0GRFree(&pHGCMConnect->header.header);
         }
     }
     else
@@ -135,7 +135,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalDisconnect(HGCMCLIENTID idClient,
     {
         /* Allocate request */
         VMMDevHGCMDisconnect *pHGCMDisconnect = NULL;
-        rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMDisconnect, sizeof (VMMDevHGCMDisconnect), VMMDevReq_HGCMDisconnect);
+        rc = VbglR0GRAlloc ((VMMDevRequestHeader **)&pHGCMDisconnect, sizeof (VMMDevHGCMDisconnect), VMMDevReq_HGCMDisconnect);
         if (RT_SUCCESS(rc))
         {
             /* Initialize request memory */
@@ -144,7 +144,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalDisconnect(HGCMCLIENTID idClient,
             pHGCMDisconnect->u32ClientID = idClient;
 
             /* Issue request */
-            rc = VbglGRPerform(&pHGCMDisconnect->header.header);
+            rc = VbglR0GRPerform(&pHGCMDisconnect->header.header);
             if (RT_SUCCESS(rc))
             {
                 /* Check if host decides to process the request asynchronously. */
@@ -157,7 +157,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalDisconnect(HGCMCLIENTID idClient,
                 rc = pHGCMDisconnect->header.result;
             }
 
-            VbglGRFree(&pHGCMDisconnect->header.header);
+            VbglR0GRFree(&pHGCMDisconnect->header.header);
         }
     }
     else
@@ -630,9 +630,9 @@ static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, PFNVBGLHGCMCALLBA
 {
     int rc;
 
-    Log(("calling VbglGRPerform\n"));
-    rc = VbglGRPerform(&pHGCMCall->header.header);
-    Log(("VbglGRPerform rc = %Rrc (header rc=%d)\n", rc, pHGCMCall->header.result));
+    Log(("calling VbglR0GRPerform\n"));
+    rc = VbglR0GRPerform(&pHGCMCall->header.header);
+    Log(("VbglR0GRPerform rc = %Rrc (header rc=%d)\n", rc, pHGCMCall->header.result));
 
     /*
      * If the call failed, but as a result of the request itself, then pretend
@@ -671,12 +671,12 @@ static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, PFNVBGLHGCMCALLBA
              *  waiting in case of a completion race. If it wasn't for WINNT having its own
              *  version of all that stuff, I would've done it already. */
             VMMDevHGCMCancel2 *pCancelReq;
-            int rc2 = VbglGRAlloc((VMMDevRequestHeader **)&pCancelReq, sizeof(*pCancelReq), VMMDevReq_HGCMCancel2);
+            int rc2 = VbglR0GRAlloc((VMMDevRequestHeader **)&pCancelReq, sizeof(*pCancelReq), VMMDevReq_HGCMCancel2);
             if (RT_SUCCESS(rc2))
             {
-                pCancelReq->physReqToCancel = VbglPhysHeapGetPhysAddr(pHGCMCall);
-                rc2 = VbglGRPerform(&pCancelReq->header);
-                VbglGRFree(&pCancelReq->header);
+                pCancelReq->physReqToCancel = VbglR0PhysHeapGetPhysAddr(pHGCMCall);
+                rc2 = VbglR0GRPerform(&pCancelReq->header);
+                VbglR0GRFree(&pCancelReq->header);
             }
 #if 1 /** @todo ADDVER: Remove this on next minor version change. */
             if (rc2 == VERR_NOT_IMPLEMENTED)
@@ -684,7 +684,7 @@ static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, PFNVBGLHGCMCALLBA
                 /* host is too old, or we're out of heap. */
                 pHGCMCall->header.fu32Flags |= VBOX_HGCM_REQ_CANCELLED;
                 pHGCMCall->header.header.requestType = VMMDevReq_HGCMCancel;
-                rc2 = VbglGRPerform(&pHGCMCall->header.header);
+                rc2 = VbglR0GRPerform(&pHGCMCall->header.header);
                 if (rc2 == VERR_INVALID_PARAMETER)
                     rc2 = VERR_NOT_FOUND;
                 else if (RT_SUCCESS(rc))
@@ -889,7 +889,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(PVBGLIOCHGCMCALL pCallInfo, uint32_t cbCa
          * Allocate the request buffer and recreate the call request.
          */
         VMMDevHGCMCall *pHGCMCall;
-        rc = VbglGRAlloc((VMMDevRequestHeader **)&pHGCMCall,
+        rc = VbglR0GRAlloc((VMMDevRequestHeader **)&pHGCMCall,
                          sizeof(VMMDevHGCMCall) + pCallInfo->cParms * sizeof(HGCMFunctionParameter) + cbExtra,
                          VMMDevReq_HGCMCall);
         if (RT_SUCCESS(rc))
@@ -920,7 +920,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(PVBGLIOCHGCMCALL pCallInfo, uint32_t cbCa
             }
 
             if (!fLeakIt)
-                VbglGRFree(&pHGCMCall->header.header);
+                VbglR0GRFree(&pHGCMCall->header.header);
         }
     }
     else

@@ -664,7 +664,7 @@ VBoxDrvResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
         /* ResetHW is not the place to do such cleanup. See MSDN. */
         if (pExt->u.primary.pvReqFlush != NULL)
         {
-            VbglGRFree((VMMDevRequestHeader *)pExt->u.primary.pvReqFlush);
+            VbglR0GRFree((VMMDevRequestHeader *)pExt->u.primary.pvReqFlush);
             pExt->u.primary.pvReqFlush = NULL;
         }
 
