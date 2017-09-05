@@ -3148,7 +3148,7 @@ static int vgdrvUpdateCapabilitiesOnHostWithReqAndLock(PVBOXGUESTDEVEXT pDevExt,
  * @param   fOrMask             The capabilities to add .
  * @param   fNotMask            The capabilities to remove.  Ignored in
  *                              VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE.
- * @param   enmFlags            Confusing operation modifier.
+ * @param   fFlags              Confusing operation modifier.
  *                              VBOXGUESTCAPSACQUIRE_FLAGS_NONE means to both
  *                              configure and acquire/release the capabilities.
  *                              VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE

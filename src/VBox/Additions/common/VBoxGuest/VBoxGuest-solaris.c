@@ -69,7 +69,7 @@ static int vgdrvSolarisClose(dev_t Dev, int fFlag, int fType, cred_t *pCred);
 static int vgdrvSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred);
 static int vgdrvSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred);
 static int vgdrvSolarisIOCtl(dev_t Dev, int iCmd, intptr_t pArg, int Mode, cred_t *pCred, int *pVal);
-static int vgdrvSolarisIOCtlSlow(PVBOXGUESTSESSION pSession, int iCmd, int Mode, intptr_t pArgs);
+static int vgdrvSolarisIOCtlSlow(PVBOXGUESTSESSION pSession, int iCmd, int Mode, intptr_t iArgs);
 static int vgdrvSolarisPoll(dev_t Dev, short fEvents, int fAnyYet, short *pReqEvents, struct pollhead **ppPollHead);
 
 static int vgdrvSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult);
@@ -590,14 +590,14 @@ static int vgdrvSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
  *
  * @param   Dev             Device number
  * @param   iCmd            Operation identifier
- * @param   pArg            Arguments from user to driver
+ * @param   iArgs           Arguments from user to driver
  * @param   Mode            Information bitfield (read/write, address space etc.)
  * @param   pCred           User credentials
  * @param   pVal            Return value for calling process.
  *
  * @return  corresponding solaris error code.
  */
-static int vgdrvSolarisIOCtl(dev_t Dev, int iCmd, intptr_t pArgs, int Mode, cred_t *pCred, int *pVal)
+static int vgdrvSolarisIOCtl(dev_t Dev, int iCmd, intptr_t iArgs, int Mode, cred_t *pCred, int *pVal)
 {
     /*
      * Get the session from the soft state item.
@@ -625,7 +625,7 @@ static int vgdrvSolarisIOCtl(dev_t Dev, int iCmd, intptr_t pArgs, int Mode, cred
         return 0;
     }
 
-    return vgdrvSolarisIOCtlSlow(pSession, iCmd, Mode, pArgs);
+    return vgdrvSolarisIOCtlSlow(pSession, iCmd, Mode, iArgs);
 }
 
 

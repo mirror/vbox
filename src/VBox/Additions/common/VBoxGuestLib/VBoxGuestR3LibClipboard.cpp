@@ -69,7 +69,7 @@ VBGLR3DECL(int) VbglR3ClipboardDisconnect(HGCMCLIENTID idClient)
  *
  * @returns VBox status code.
  * @param   idClient        The client id returned by VbglR3ClipboardConnect().
- * @param   pMsg            Where to store the message id.
+ * @param   pidMsg          Where to store the message id.
  * @param   pfFormats       Where to store the format(s) the message applies to.
  */
 VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pidMsg, uint32_t *pfFormats)
