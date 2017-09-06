@@ -2788,15 +2788,14 @@
         <translation>Kontrolatzailea</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+458"/>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+22"/>
+        <location line="+22"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+18"/>
         <source>Disabled</source>
         <comment>details (audio)</comment>
         <translation>Ezgaituta</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+53"/>
+        <location line="+53"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+61"/>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
@@ -3083,7 +3082,7 @@
         <translation>Hostalari Gidagailua</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-17"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+441"/>
         <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+8"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+9"/>
         <source>Audio Output</source>
@@ -5289,7 +5288,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+107"/>
+        <location line="+106"/>
         <source>&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1</source>
         <comment>Network tooltip</comment>
         <translation type="unfinished"></translation>
@@ -11278,7 +11277,7 @@
 <context>
     <name>UISessionStateStatusBarIndicator</name>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-988"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-987"/>
         <source>%1 status-bar indicator</source>
         <comment>like &apos;hard-disk status-bar indicator&apos;</comment>
         <translation type="unfinished"></translation>
@@ -13523,7 +13522,7 @@
         <translation>itzalita</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+796"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+795"/>
         <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="+26"/>
         <source>Active</source>
         <comment>details report (VT-x/AMD-V)</comment>

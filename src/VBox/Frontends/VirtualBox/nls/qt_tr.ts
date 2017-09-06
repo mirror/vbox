@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="tr">
+<TS version="2.0" language="tr">
 <context>
     <name>AudioOutput</name>
     <message>
         <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;Ses çalma aygıtı &lt;b&gt;%1&lt;/b&gt; çalışmıyor.&lt;br/&gt;&lt;b&gt;%2&lt;/b&gt; aygıtına geri çekiliyor.&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;Ses çalma aygıtı &lt;b&gt;%1&lt;/b&gt; çalışmıyor.&lt;br/&gt;&lt;b&gt;%2&lt;/b&gt; aygıtına geri çekiliyor.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;Henüz kullanılabilir olan ve yüksek tercihe sahip&lt;br/&gt;&lt;b&gt;%1&lt;/b&gt; ses çalma aygıtına değiştiriliyor.&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;Henüz kullanılabilir olan ve yüksek tercihe sahip&lt;br/&gt;&lt;b&gt;%1&lt;/b&gt; ses çalma aygıtına değiştiriliyor.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Revert back to device &apos;%1&apos;</source>
-        <translation type="vanished">&apos;%1&apos; aygıtına geri döndür</translation>
+        <translation>&apos;%1&apos; aygıtına geri döndür</translation>
     </message>
 </context>
 <context>
     <name>CloseButton</name>
     <message>
         <source>Close Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Sekmeyi Kapat</translation>
     </message>
 </context>
 <context>
@@ -58,27 +58,27 @@
     <name>Phonon::</name>
     <message>
         <source>Notifications</source>
-        <translation type="vanished">Bildirimler</translation>
+        <translation>Bildirimler</translation>
     </message>
     <message>
         <source>Music</source>
-        <translation type="vanished">Müzik</translation>
+        <translation>Müzik</translation>
     </message>
     <message>
         <source>Video</source>
-        <translation type="vanished">Görüntü</translation>
+        <translation>Görüntü</translation>
     </message>
     <message>
         <source>Communication</source>
-        <translation type="vanished">İletişim</translation>
+        <translation>İletişim</translation>
     </message>
     <message>
         <source>Games</source>
-        <translation type="vanished">Oyunlar</translation>
+        <translation>Oyunlar</translation>
     </message>
     <message>
         <source>Accessibility</source>
-        <translation type="vanished">Erişebilirlik</translation>
+        <translation>Erişebilirlik</translation>
     </message>
 </context>
 <context>
@@ -86,13 +86,13 @@
     <message>
         <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
           Some video features have been disabled.</source>
-        <translation type="vanished">Uyarı: Yüklenmiş gstreamer0.10-plugins-good paketine sahip görünmüyorsunuz.
+        <translation>Uyarı: Yüklenmiş gstreamer0.10-plugins-good paketine sahip görünmüyorsunuz.
           Bazı görüntü özellikleri etkisizleştirildi.</translation>
     </message>
     <message>
         <source>Warning: You do not seem to have the base GStreamer plugins installed.
           All audio and video support has been disabled</source>
-        <translation type="vanished">Uyarı: Yüklenmiş ana GStreame eklentilerine sahip görünmüyorsunuz.
+        <translation>Uyarı: Yüklenmiş ana GStreame eklentilerine sahip görünmüyorsunuz.
           Tüm ses ve görüntü desteği etkisizleştirildi</translation>
     </message>
 </context>
@@ -103,322 +103,322 @@
 
 Check your Gstreamer installation and make sure you 
 have libgstreamer-plugins-base installed.</source>
-        <translation type="vanished">Çalma başlatılamıyor. 
+        <translation>Çalma başlatılamıyor. 
 
 Gstreamer kurulumunuzu kontrol edin ve yüklenmiş 
  libgstreamer-plugins-base&apos;e sahip olduğunuzdan emin olun.</translation>
     </message>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
-        <translation type="vanished">
+        <translation>
             <numerusform>Gereken bir kodek eksik. Bu içeriği çalmak için aşağıdaki kodek(ler)i yüklemeniz gerek: %0</numerusform>
         </translation>
     </message>
     <message>
         <source>Could not open media source.</source>
-        <translation type="vanished">Ortam kaynağı açılamadı.</translation>
+        <translation>Ortam kaynağı açılamadı.</translation>
     </message>
     <message>
         <source>Invalid source type.</source>
-        <translation type="vanished">Geçersiz kaynak türü.</translation>
+        <translation>Geçersiz kaynak türü.</translation>
     </message>
     <message>
         <source>Could not locate media source.</source>
-        <translation type="vanished">Ortam kaynağının yeri bulunamadı.</translation>
+        <translation>Ortam kaynağının yeri bulunamadı.</translation>
     </message>
     <message>
         <source>Could not open audio device. The device is already in use.</source>
-        <translation type="vanished">Ses aygıtı açılamadı. Aygıt zaten kullanımda.</translation>
+        <translation>Ses aygıtı açılamadı. Aygıt zaten kullanımda.</translation>
     </message>
     <message>
         <source>Could not decode media source.</source>
-        <translation type="vanished">Ortam kaynağı çözülemedi.</translation>
+        <translation>Ortam kaynağı çözülemedi.</translation>
     </message>
 </context>
 <context>
     <name>Phonon::VolumeSlider</name>
     <message>
         <source>Volume: %1%</source>
-        <translation type="vanished">Ses: %1%</translation>
+        <translation>Ses: %1%</translation>
     </message>
     <message>
         <source>Use this slider to adjust the volume. The leftmost position is 0%, the rightmost is %1%</source>
-        <translation type="vanished">Sesi ayarlamak için bu kaydırma çuğunu kullanın. En sol konum % 0, en sağ konum %1%</translation>
+        <translation>Sesi ayarlamak için bu kaydırma çuğunu kullanın. En sol konum % 0, en sağ konum %1%</translation>
     </message>
 </context>
 <context>
     <name>Q3Accel</name>
     <message>
         <source>%1, %2 not defined</source>
-        <translation type="vanished">%1, %2 tanımlanmamış</translation>
+        <translation>%1, %2 tanımlanmamış</translation>
     </message>
     <message>
         <source>Ambiguous %1 not handled</source>
-        <translation type="vanished">Belirsiz %1 yürütülemedi</translation>
+        <translation>Belirsiz %1 yürütülemedi</translation>
     </message>
 </context>
 <context>
     <name>Q3DataTable</name>
     <message>
         <source>True</source>
-        <translation type="vanished">Doğru</translation>
+        <translation>Doğru</translation>
     </message>
     <message>
         <source>False</source>
-        <translation type="vanished">Yanlış</translation>
+        <translation>Yanlış</translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation type="vanished">Ekle</translation>
+        <translation>Ekle</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation type="vanished">Güncelle</translation>
+        <translation>Güncelle</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="vanished">Sil</translation>
+        <translation>Sil</translation>
     </message>
 </context>
 <context>
     <name>Q3FileDialog</name>
     <message>
         <source>Copy or Move a File</source>
-        <translation type="vanished">Dosyayı Kopyala ya da Taşı</translation>
+        <translation>Dosyayı Kopyala ya da Taşı</translation>
     </message>
     <message>
         <source>Read: %1</source>
-        <translation type="vanished">Okuma: %1</translation>
+        <translation>Okuma: %1</translation>
     </message>
     <message>
         <source>Write: %1</source>
-        <translation type="vanished">Yazma: %1</translation>
+        <translation>Yazma: %1</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">İptal</translation>
+        <translation>İptal</translation>
     </message>
     <message>
         <source>All Files (*)</source>
-        <translation type="vanished">Tüm Dosyalar (*)</translation>
+        <translation>Tüm Dosyalar (*)</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="vanished">Adı</translation>
+        <translation>Adı</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="vanished">Boyut</translation>
+        <translation>Boyut</translation>
     </message>
     <message>
         <source>Type</source>
-        <translation type="vanished">Türü</translation>
+        <translation>Türü</translation>
     </message>
     <message>
         <source>Date</source>
-        <translation type="vanished">Tarih</translation>
+        <translation>Tarih</translation>
     </message>
     <message>
         <source>Attributes</source>
-        <translation type="vanished">Öznitelikleri</translation>
+        <translation>Öznitelikleri</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="vanished">&amp;TAMAM</translation>
+        <translation>&amp;TAMAM</translation>
     </message>
     <message>
         <source>Look &amp;in:</source>
-        <translation type="vanished">Bakılan &amp;yer:</translation>
+        <translation>Bakılan &amp;yer:</translation>
     </message>
     <message>
         <source>File &amp;name:</source>
-        <translation type="vanished">Dosya &amp;adı:</translation>
+        <translation>Dosya &amp;adı:</translation>
     </message>
     <message>
         <source>File &amp;type:</source>
-        <translation type="vanished">Dosya &amp;türü:</translation>
+        <translation>Dosya &amp;türü:</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="vanished">Geri</translation>
+        <translation>Geri</translation>
     </message>
     <message>
         <source>One directory up</source>
-        <translation type="vanished">Bir dizin yukarı</translation>
+        <translation>Bir dizin yukarı</translation>
     </message>
     <message>
         <source>Create New Folder</source>
-        <translation type="vanished">Yeni Klasör Oluştur</translation>
+        <translation>Yeni Klasör Oluştur</translation>
     </message>
     <message>
         <source>List View</source>
-        <translation type="vanished">Liste Görünümü</translation>
+        <translation>Liste Görünümü</translation>
     </message>
     <message>
         <source>Detail View</source>
-        <translation type="vanished">Ayrıntılı Görünüm</translation>
+        <translation>Ayrıntılı Görünüm</translation>
     </message>
     <message>
         <source>Preview File Info</source>
-        <translation type="vanished">Dosya Bilgisini Önizle</translation>
+        <translation>Dosya Bilgisini Önizle</translation>
     </message>
     <message>
         <source>Preview File Contents</source>
-        <translation type="vanished">Dosya İçeriklerini Önizle</translation>
+        <translation>Dosya İçeriklerini Önizle</translation>
     </message>
     <message>
         <source>Read-write</source>
-        <translation type="vanished">Okuma-yazma</translation>
+        <translation>Okuma-yazma</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation type="vanished">Salt-okunur</translation>
+        <translation>Salt-okunur</translation>
     </message>
     <message>
         <source>Write-only</source>
-        <translation type="vanished">Sadece-yazma</translation>
+        <translation>Sadece-yazma</translation>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="vanished">Erişilemez</translation>
+        <translation>Erişilemez</translation>
     </message>
     <message>
         <source>Symlink to File</source>
-        <translation type="vanished">Dosyaya sembolik bağlantı</translation>
+        <translation>Dosyaya sembolik bağlantı</translation>
     </message>
     <message>
         <source>Symlink to Directory</source>
-        <translation type="vanished">Dizine sembolik bağlantı</translation>
+        <translation>Dizine sembolik bağlantı</translation>
     </message>
     <message>
         <source>Symlink to Special</source>
-        <translation type="vanished">Özel konuma sembolik bağlantı</translation>
+        <translation>Özel konuma sembolik bağlantı</translation>
     </message>
     <message>
         <source>File</source>
-        <translation type="vanished">Dosya</translation>
+        <translation>Dosya</translation>
     </message>
     <message>
         <source>Dir</source>
-        <translation type="vanished">Dizin</translation>
+        <translation>Dizin</translation>
     </message>
     <message>
         <source>Special</source>
-        <translation type="vanished">Özel</translation>
+        <translation>Özel</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="vanished">Aç</translation>
+        <translation>Aç</translation>
     </message>
     <message>
         <source>Save As</source>
-        <translation type="vanished">Farklı Kaydet</translation>
+        <translation>Farklı Kaydet</translation>
     </message>
     <message>
         <source>&amp;Open</source>
-        <translation type="vanished">&amp;Aç</translation>
+        <translation>&amp;Aç</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="vanished">&amp;Kaydet</translation>
+        <translation>&amp;Kaydet</translation>
     </message>
     <message>
         <source>&amp;Rename</source>
-        <translation type="vanished">&amp;Yeniden Adlandır</translation>
+        <translation>&amp;Yeniden Adlandır</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation type="vanished">&amp;Sil</translation>
+        <translation>&amp;Sil</translation>
     </message>
     <message>
         <source>R&amp;eload</source>
-        <translation type="vanished">Y&amp;eniden Yükle</translation>
+        <translation>Y&amp;eniden Yükle</translation>
     </message>
     <message>
         <source>Sort by &amp;Name</source>
-        <translation type="vanished">İs&amp;me göre Sırala</translation>
+        <translation>İs&amp;me göre Sırala</translation>
     </message>
     <message>
         <source>Sort by &amp;Size</source>
-        <translation type="vanished">B&amp;oyuta göre Sırala</translation>
+        <translation>B&amp;oyuta göre Sırala</translation>
     </message>
     <message>
         <source>Sort by &amp;Date</source>
-        <translation type="vanished">Ta&amp;rihe göre Sırala</translation>
+        <translation>Ta&amp;rihe göre Sırala</translation>
     </message>
     <message>
         <source>&amp;Unsorted</source>
-        <translation type="vanished">&amp;Sıralanmamış</translation>
+        <translation>&amp;Sıralanmamış</translation>
     </message>
     <message>
         <source>Sort</source>
-        <translation type="vanished">Sırala</translation>
+        <translation>Sırala</translation>
     </message>
     <message>
         <source>Show &amp;hidden files</source>
-        <translation type="vanished">Gizli &amp;dosyaları göster</translation>
+        <translation>Gizli &amp;dosyaları göster</translation>
     </message>
     <message>
         <source>the file</source>
-        <translation type="vanished">dosya</translation>
+        <translation>dosya</translation>
     </message>
     <message>
         <source>the directory</source>
-        <translation type="vanished">dizin</translation>
+        <translation>dizin</translation>
     </message>
     <message>
         <source>the symlink</source>
-        <translation type="vanished">sembolik bağlantı</translation>
+        <translation>sembolik bağlantı</translation>
     </message>
     <message>
         <source>Delete %1</source>
-        <translation type="vanished">%1 öğesini sil</translation>
+        <translation>%1 öğesini sil</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation type="vanished">&lt;qt&gt;%1 &quot;%2&quot; ögesini silmek istediğinizden emin misiniz?&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1 &quot;%2&quot; ögesini silmek istediğinizden emin misiniz?&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation type="vanished">&amp;Evet</translation>
+        <translation>&amp;Evet</translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation type="vanished">&amp;Hayır</translation>
+        <translation>&amp;Hayır</translation>
     </message>
     <message>
         <source>New Folder 1</source>
-        <translation type="vanished">Yeni Klasör 1</translation>
+        <translation>Yeni Klasör 1</translation>
     </message>
     <message>
         <source>New Folder</source>
-        <translation type="vanished">Yeni Klasör</translation>
+        <translation>Yeni Klasör</translation>
     </message>
     <message>
         <source>New Folder %1</source>
-        <translation type="vanished">Yeni Klasör %1</translation>
+        <translation>Yeni Klasör %1</translation>
     </message>
     <message>
         <source>Find Directory</source>
-        <translation type="vanished">Dizin Bul</translation>
+        <translation>Dizin Bul</translation>
     </message>
     <message>
         <source>Directories</source>
-        <translation type="vanished">Dizinler</translation>
+        <translation>Dizinler</translation>
     </message>
     <message>
         <source>Directory:</source>
-        <translation type="vanished">Dizin:</translation>
+        <translation>Dizin:</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation type="vanished">Hata</translation>
+        <translation>Hata</translation>
     </message>
     <message>
         <source>%1
 File not found.
 Check path and filename.</source>
-        <translation type="vanished">%1
+        <translation>%1
 Dosya bulunamadı.
 Yolu ve dosya adını kontrol edin.</translation>
     </message>
@@ -428,19 +428,19 @@ Yolu ve dosya adını kontrol edin.</translation>
     <message>
         <source>Could not read directory
 %1</source>
-        <translation type="vanished">Okunamayan dizin
+        <translation>Okunamayan dizin
 %1</translation>
     </message>
     <message>
         <source>Could not create directory
 %1</source>
-        <translation type="vanished">Oluşturulamayan dizin
+        <translation>Oluşturulamayan dizin
 %1</translation>
     </message>
     <message>
         <source>Could not remove file or directory
 %1</source>
-        <translation type="vanished">Kaldırılamayan dosya ya da dizin
+        <translation>Kaldırılamayan dosya ya da dizin
 %1</translation>
     </message>
     <message>
@@ -448,20 +448,20 @@ Yolu ve dosya adını kontrol edin.</translation>
 %1
 to
 %2</source>
-        <translation type="vanished">Yeniden adlandırılamadı;
+        <translation>Yeniden adlandırılamadı;
 %1 adından
 %2 adına</translation>
     </message>
     <message>
         <source>Could not open
 %1</source>
-        <translation type="vanished">Açılamayan
+        <translation>Açılamayan
 %1</translation>
     </message>
     <message>
         <source>Could not write
 %1</source>
-        <translation type="vanished">Yazılamayan
+        <translation>Yazılamayan
 %1</translation>
     </message>
 </context>
@@ -469,203 +469,203 @@ to
     <name>Q3MainWindow</name>
     <message>
         <source>Line up</source>
-        <translation type="vanished">Sıraya sok</translation>
+        <translation>Sıraya sok</translation>
     </message>
     <message>
         <source>Customize...</source>
-        <translation type="vanished">Özelleştir...</translation>
+        <translation>Özelleştir...</translation>
     </message>
 </context>
 <context>
     <name>Q3NetworkProtocol</name>
     <message>
         <source>Operation stopped by the user</source>
-        <translation type="vanished">İşlem kullanıcı tarafından durduruldu</translation>
+        <translation>İşlem kullanıcı tarafından durduruldu</translation>
     </message>
 </context>
 <context>
     <name>Q3ProgressDialog</name>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">İptal</translation>
+        <translation>İptal</translation>
     </message>
 </context>
 <context>
     <name>Q3TabDialog</name>
     <message>
         <source>OK</source>
-        <translation type="vanished">TAMAM</translation>
+        <translation>TAMAM</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="vanished">Uygula</translation>
+        <translation>Uygula</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="vanished">Yardım</translation>
+        <translation>Yardım</translation>
     </message>
     <message>
         <source>Defaults</source>
-        <translation type="vanished">Varsayılanlar</translation>
+        <translation>Varsayılanlar</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">İptal</translation>
+        <translation>İptal</translation>
     </message>
 </context>
 <context>
     <name>Q3TextEdit</name>
     <message>
         <source>&amp;Undo</source>
-        <translation type="vanished">&amp;Geri Al</translation>
+        <translation>&amp;Geri Al</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation type="vanished">&amp;Yinele</translation>
+        <translation>&amp;Yinele</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation type="vanished">K&amp;es</translation>
+        <translation>K&amp;es</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation type="vanished">&amp;Kopyala</translation>
+        <translation>&amp;Kopyala</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation type="vanished">&amp;Yapıştır</translation>
+        <translation>&amp;Yapıştır</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="vanished">Temizle</translation>
+        <translation>Temizle</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="vanished">Tümünü Seç</translation>
+        <translation>Tümünü Seç</translation>
     </message>
 </context>
 <context>
     <name>Q3TitleBar</name>
     <message>
         <source>System</source>
-        <translation type="vanished">Sistem</translation>
+        <translation>Sistem</translation>
     </message>
     <message>
         <source>Restore up</source>
-        <translation type="vanished">Yukarı geri yükle</translation>
+        <translation>Yukarı geri yükle</translation>
     </message>
     <message>
         <source>Minimize</source>
-        <translation type="vanished">Simge Durumuna</translation>
+        <translation>Simge Durumuna</translation>
     </message>
     <message>
         <source>Restore down</source>
-        <translation type="vanished">Aşağı geri yükle</translation>
+        <translation>Aşağı geri yükle</translation>
     </message>
     <message>
         <source>Maximize</source>
-        <translation type="vanished">Ekranı Kapla</translation>
+        <translation>Ekranı Kapla</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="vanished">Kapat</translation>
+        <translation>Kapat</translation>
     </message>
     <message>
         <source>Contains commands to manipulate the window</source>
-        <translation type="vanished">Pencereyi değiştiren komutları içerir</translation>
+        <translation>Pencereyi değiştiren komutları içerir</translation>
     </message>
     <message>
         <source>Puts a minimized back to normal</source>
-        <translation type="vanished">Küçültülmüş bir pencereyi normal haline getirir</translation>
+        <translation>Küçültülmüş bir pencereyi normal haline getirir</translation>
     </message>
     <message>
         <source>Moves the window out of the way</source>
-        <translation type="vanished">Pencereyi uzağa taşır</translation>
+        <translation>Pencereyi uzağa taşır</translation>
     </message>
     <message>
         <source>Puts a maximized window back to normal</source>
-        <translation type="vanished">Büyütülmüş bir pencereyi normal haline getirir</translation>
+        <translation>Büyütülmüş bir pencereyi normal haline getirir</translation>
     </message>
     <message>
         <source>Makes the window full screen</source>
-        <translation type="vanished">Pencereyi tam ekran yapar</translation>
+        <translation>Pencereyi tam ekran yapar</translation>
     </message>
     <message>
         <source>Closes the window</source>
-        <translation type="vanished">Pencereyi kapatır</translation>
+        <translation>Pencereyi kapatır</translation>
     </message>
     <message>
         <source>Holds the name of the window and contains controls to manipulate it</source>
-        <translation type="vanished">Pencerenin adını gösterir ve pencereyi değiştiren kontrolleri içerir</translation>
+        <translation>Pencerenin adını gösterir ve pencereyi değiştiren kontrolleri içerir</translation>
     </message>
 </context>
 <context>
     <name>Q3ToolBar</name>
     <message>
         <source>More...</source>
-        <translation type="vanished">Daha Fazlası...</translation>
+        <translation>Daha Fazlası...</translation>
     </message>
 </context>
 <context>
     <name>Q3UrlOperator</name>
     <message>
         <source>The protocol `%1&apos; is not supported</source>
-        <translation type="vanished">`%1&apos; protokolü desteklenmiyor</translation>
+        <translation>`%1&apos; protokolü desteklenmiyor</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation type="vanished">`%1&apos; protokolü dizinleri listelemeyi desteklemiyor</translation>
+        <translation>`%1&apos; protokolü dizinleri listelemeyi desteklemiyor</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation type="vanished">`%1&apos; protokolü yeni dizinleri oluşturmayı desteklemiyor</translation>
+        <translation>`%1&apos; protokolü yeni dizinleri oluşturmayı desteklemiyor</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation type="vanished">`%1&apos; protokolü dosya veya dizinleri kaldırmayı desteklemiyor</translation>
+        <translation>`%1&apos; protokolü dosya veya dizinleri kaldırmayı desteklemiyor</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation type="vanished">`%1&apos; protokolü dosya veya dizinleri yeniden adlandırmayı desteklemiyor</translation>
+        <translation>`%1&apos; protokolü dosya veya dizinleri yeniden adlandırmayı desteklemiyor</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support getting files</source>
-        <translation type="vanished">`%1&apos; protokolü dosyaları almayı desteklemiyor</translation>
+        <translation>`%1&apos; protokolü dosyaları almayı desteklemiyor</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support putting files</source>
-        <translation type="vanished">`%1&apos; protokolü dosyaları koymayı desteklemiyor</translation>
+        <translation>`%1&apos; protokolü dosyaları koymayı desteklemiyor</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation type="vanished">`%1&apos; protokolü dosya veya dizinleri kopyalamyı veya taşımayı desteklemiyor</translation>
+        <translation>`%1&apos; protokolü dosya veya dizinleri kopyalamyı veya taşımayı desteklemiyor</translation>
     </message>
     <message>
         <source>(unknown)</source>
-        <translation type="vanished">(bilinmiyor)</translation>
+        <translation>(bilinmiyor)</translation>
     </message>
 </context>
 <context>
     <name>Q3Wizard</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="vanished">&amp;İptal</translation>
+        <translation>&amp;İptal</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="vanished">&lt; &amp;Geri</translation>
+        <translation>&lt; &amp;Geri</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="vanished">&amp;İleri &gt;</translation>
+        <translation>&amp;İleri &gt;</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation type="vanished">&amp;Bitti</translation>
+        <translation>&amp;Bitti</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation type="vanished">&amp;Yardım</translation>
+        <translation>&amp;Yardım</translation>
     </message>
 </context>
 <context>
@@ -821,26 +821,26 @@ to
     <name>QAndroidPlatformTheme</name>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">Evet</translation>
+        <translation>Evet</translation>
     </message>
     <message>
         <source>Yes to All</source>
-        <translation type="unfinished"></translation>
+        <translation>Tümüne Evet</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished">Hayır</translation>
+        <translation>Hayır</translation>
     </message>
     <message>
         <source>No to All</source>
-        <translation type="unfinished"></translation>
+        <translation>Tümüne Hayır</translation>
     </message>
 </context>
 <context>
     <name>QApplication</name>
     <message>
         <source>Activate</source>
-        <translation type="vanished">Etkinleştir</translation>
+        <translation>Etkinleştir</translation>
     </message>
     <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
@@ -853,26 +853,26 @@ to
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation type="vanished">LTR</translation>
+        <translation>LTR</translation>
     </message>
     <message>
         <source>Activates the program&apos;s main window</source>
-        <translation type="vanished">Programın ana penceresini etkinleştirir</translation>
+        <translation>Programın ana penceresini etkinleştirir</translation>
     </message>
 </context>
 <context>
     <name>QCheckBox</name>
     <message>
         <source>Uncheck</source>
-        <translation type="vanished">İşaretleme</translation>
+        <translation>İşaretleme</translation>
     </message>
     <message>
         <source>Check</source>
-        <translation type="vanished">İşaretle</translation>
+        <translation>İşaretle</translation>
     </message>
     <message>
         <source>Toggle</source>
-        <translation type="vanished">Değiştir</translation>
+        <translation>Değiştir</translation>
     </message>
 </context>
 <context>
@@ -981,7 +981,7 @@ to
     </message>
     <message>
         <source>Select color</source>
-        <translation type="vanished">Renk seç</translation>
+        <translation>Renk seç</translation>
     </message>
     <message>
         <source>&amp;HTML:</source>
@@ -1005,7 +1005,7 @@ Press ESC to cancel</source>
     <name>QComboBox</name>
     <message>
         <source>Open</source>
-        <translation type="vanished">Aç</translation>
+        <translation>Aç</translation>
     </message>
     <message>
         <source>False</source>
@@ -1017,7 +1017,7 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Close</source>
-        <translation type="vanished">Kapat</translation>
+        <translation>Kapat</translation>
     </message>
     <message>
         <source>Open the combo box selection popup</source>
@@ -1072,27 +1072,27 @@ Press ESC to cancel</source>
     <message>
         <source>%1: permission denied</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: izin reddedildi</translation>
+        <translation>%1: izin reddedildi</translation>
     </message>
     <message>
         <source>%1: already exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: zaten mevcut</translation>
+        <translation>%1: zaten mevcut</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: mevcut değil</translation>
+        <translation>%1: mevcut değil</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: yetersiz kaynak</translation>
+        <translation>%1: yetersiz kaynak</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: bilinmeyen hata %2</translation>
+        <translation>%1: bilinmeyen hata %2</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
@@ -1271,19 +1271,19 @@ Press ESC to cancel</source>
     <name>QDateTimeEdit</name>
     <message>
         <source>AM</source>
-        <translation type="vanished">ÖÖ</translation>
+        <translation>ÖÖ</translation>
     </message>
     <message>
         <source>am</source>
-        <translation type="vanished">öö</translation>
+        <translation>öö</translation>
     </message>
     <message>
         <source>PM</source>
-        <translation type="vanished">ÖS</translation>
+        <translation>ÖS</translation>
     </message>
     <message>
         <source>pm</source>
-        <translation type="vanished">ös</translation>
+        <translation>ös</translation>
     </message>
 </context>
 <context>
@@ -1309,15 +1309,15 @@ Press ESC to cancel</source>
     <name>QDial</name>
     <message>
         <source>QDial</source>
-        <translation type="vanished">HAra</translation>
+        <translation>HAra</translation>
     </message>
     <message>
         <source>SpeedoMeter</source>
-        <translation type="vanished">Hız Ölçer</translation>
+        <translation>Hız Ölçer</translation>
     </message>
     <message>
         <source>SliderHandle</source>
-        <translation type="vanished">Kaydırma Çubuğu Tutucu</translation>
+        <translation>Kaydırma Çubuğu Tutucu</translation>
     </message>
 </context>
 <context>
@@ -1328,7 +1328,7 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Done</source>
-        <translation type="vanished">Bitti</translation>
+        <translation>Bitti</translation>
     </message>
 </context>
 <context>
@@ -1339,83 +1339,83 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Save</source>
-        <translation type="vanished">Kaydet</translation>
+        <translation>Kaydet</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="vanished">Aç</translation>
+        <translation>Aç</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">İptal</translation>
+        <translation>İptal</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="vanished">Kapat</translation>
+        <translation>Kapat</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="vanished">Uygula</translation>
+        <translation>Uygula</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="vanished">Sıfırla</translation>
+        <translation>Sıfırla</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="vanished">Yardım</translation>
+        <translation>Yardım</translation>
     </message>
     <message>
         <source>Don&apos;t Save</source>
-        <translation type="vanished">Kaydetme</translation>
+        <translation>Kaydetme</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="vanished">Vazgeç</translation>
+        <translation>Vazgeç</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation type="vanished">&amp;Evet</translation>
+        <translation>&amp;Evet</translation>
     </message>
     <message>
         <source>Yes to &amp;All</source>
-        <translation type="vanished">&amp;Tümüne Evet</translation>
+        <translation>&amp;Tümüne Evet</translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation type="vanished">&amp;Hayır</translation>
+        <translation>&amp;Hayır</translation>
     </message>
     <message>
         <source>N&amp;o to All</source>
-        <translation type="vanished">Tümüne &amp;Hayır</translation>
+        <translation>Tümüne &amp;Hayır</translation>
     </message>
     <message>
         <source>Save All</source>
-        <translation type="vanished">Tümünü Kaydet</translation>
+        <translation>Tümünü Kaydet</translation>
     </message>
     <message>
         <source>Abort</source>
-        <translation type="vanished">Durdur</translation>
+        <translation>Durdur</translation>
     </message>
     <message>
         <source>Retry</source>
-        <translation type="vanished">Yeniden Dene</translation>
+        <translation>Yeniden Dene</translation>
     </message>
     <message>
         <source>Ignore</source>
-        <translation type="vanished">Yoksay</translation>
+        <translation>Yoksay</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="vanished">Varsayılanları Geri Yükle</translation>
+        <translation>Varsayılanları Geri Yükle</translation>
     </message>
     <message>
         <source>Close without Saving</source>
-        <translation type="vanished">Kaydetmeden Kapat</translation>
+        <translation>Kaydetmeden Kapat</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="vanished">&amp;TAMAM</translation>
+        <translation>&amp;TAMAM</translation>
     </message>
 </context>
 <context>
@@ -1558,7 +1558,7 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="vanished">Yapışık</translation>
+        <translation>Yapışık</translation>
     </message>
     <message>
         <source>Float</source>
@@ -1578,11 +1578,11 @@ Press ESC to cancel</source>
     <name>QDoubleSpinBox</name>
     <message>
         <source>More</source>
-        <translation type="vanished">Daha Fazla</translation>
+        <translation>Daha Fazla</translation>
     </message>
     <message>
         <source>Less</source>
-        <translation type="vanished">Daha Az</translation>
+        <translation>Daha Az</translation>
     </message>
 </context>
 <context>
@@ -1754,7 +1754,7 @@ Yine de silmek istiyor musunuz?</translation>
     </message>
     <message>
         <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation type="vanished">&apos;%1&apos; dizinini silmek istediğinize emin misiniz?</translation>
+        <translation>&apos;%1&apos; dizinini silmek istediğinize emin misiniz?</translation>
     </message>
     <message>
         <source>Could not delete directory.</source>
@@ -1975,7 +1975,7 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QFontDatabase</name>
     <message>
         <source>Normal</source>
-        <translation type="vanished">Normal</translation>
+        <translation>Normal</translation>
     </message>
     <message>
         <source>Bold</source>
@@ -2229,7 +2229,7 @@ Yine de silmek istiyor musunuz?</translation>
     </message>
     <message>
         <source>Connection refused for data connection</source>
-        <translation type="vanished">Veri bağlantısı için bağlantı reddedildi</translation>
+        <translation>Veri bağlantısı için bağlantı reddedildi</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -2295,19 +2295,19 @@ Yine de silmek istiyor musunuz?</translation>
     </message>
     <message>
         <source>Host %1 found</source>
-        <translation type="vanished">%1 anamakinesi bulundu</translation>
+        <translation>%1 anamakinesi bulundu</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation type="vanished">%1 makinesine yapılan bağlantı kapatıldı</translation>
+        <translation>%1 makinesine yapılan bağlantı kapatıldı</translation>
     </message>
     <message>
         <source>Host found</source>
-        <translation type="vanished">Anamakine bulundu</translation>
+        <translation>Anamakine bulundu</translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation type="vanished">Anamakineye bağlanıldı</translation>
+        <translation>Anamakineye bağlanıldı</translation>
     </message>
     <message>
         <source>Connection timed out to host %1</source>
@@ -2322,23 +2322,23 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QGnomeTheme</name>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;TAMAM</translation>
+        <translation>&amp;TAMAM</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="unfinished">&amp;Kaydet</translation>
+        <translation>&amp;Kaydet</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">&amp;İptal</translation>
+        <translation>İ&amp;ptal</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished">&amp;Kapat</translation>
+        <translation>&amp;Kapat</translation>
     </message>
     <message>
         <source>Close without Saving</source>
-        <translation type="unfinished">Kaydetmeden Kapat</translation>
+        <translation>Kaydetmeden Kapat</translation>
     </message>
 </context>
 <context>
@@ -2391,23 +2391,23 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QHttp</name>
     <message>
         <source>Unknown error</source>
-        <translation type="vanished">Bilinmeyen hata</translation>
+        <translation>Bilinmeyen hata</translation>
     </message>
     <message>
         <source>Request aborted</source>
-        <translation type="vanished">İstek iptal edildi</translation>
+        <translation>İstek iptal edildi</translation>
     </message>
     <message>
         <source>No server set to connect to</source>
-        <translation type="vanished">Bağlanmaya ayarlanmış sunucu yok</translation>
+        <translation>Bağlanmaya ayarlanmış sunucu yok</translation>
     </message>
     <message>
         <source>Wrong content length</source>
-        <translation type="vanished">Yanlış içerik uzunluğu</translation>
+        <translation>Yanlış içerik uzunluğu</translation>
     </message>
     <message>
         <source>Server closed connection unexpectedly</source>
-        <translation type="vanished">Sunucu bağlantıyı beklenmedik şekilde kapattı</translation>
+        <translation>Sunucu bağlantıyı beklenmedik şekilde kapattı</translation>
     </message>
     <message>
         <source>Connection refused</source>
@@ -2419,35 +2419,35 @@ Yine de silmek istiyor musunuz?</translation>
     </message>
     <message>
         <source>HTTP request failed</source>
-        <translation type="vanished">HTTP isteği başarısız oldu</translation>
+        <translation>HTTP isteği başarısız oldu</translation>
     </message>
     <message>
         <source>Invalid HTTP response header</source>
-        <translation type="vanished">Geçersiz HTTP yanıt başlığı</translation>
+        <translation>Geçersiz HTTP yanıt başlığı</translation>
     </message>
     <message>
         <source>Invalid HTTP chunked body</source>
-        <translation type="vanished">Geçersiz HTTP yığın gövdesi</translation>
+        <translation>Geçersiz HTTP yığın gövdesi</translation>
     </message>
     <message>
         <source>Host %1 found</source>
-        <translation type="vanished">%1 anamakinesi bulundu</translation>
+        <translation>%1 anamakinesi bulundu</translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation type="vanished">%1 anamakinesine bağlanıldı</translation>
+        <translation>%1 anamakinesine bağlanıldı</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation type="vanished">%1 makinesine yapılan bağlantı kapatıldı</translation>
+        <translation>%1 makinesine yapılan bağlantı kapatıldı</translation>
     </message>
     <message>
         <source>Host found</source>
-        <translation type="vanished">Anamakine bulundu</translation>
+        <translation>Anamakine bulundu</translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation type="vanished">Anamakineye bağlanıldı</translation>
+        <translation>Anamakineye bağlanıldı</translation>
     </message>
     <message>
         <source>Connection closed</source>
@@ -2455,19 +2455,19 @@ Yine de silmek istiyor musunuz?</translation>
     </message>
     <message>
         <source>Proxy authentication required</source>
-        <translation type="vanished">Proksi kimlik doğrulaması gerekli</translation>
+        <translation>Proksi kimlik doğrulaması gerekli</translation>
     </message>
     <message>
         <source>Authentication required</source>
-        <translation type="vanished">Kimlik doğrulaması gerekli</translation>
+        <translation>Kimlik doğrulaması gerekli</translation>
     </message>
     <message>
         <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation type="vanished">HTTPS bağlantısı istendi ama SSL desteği ile derlenmiş değil</translation>
+        <translation>HTTPS bağlantısı istendi ama SSL desteği ile derlenmiş değil</translation>
     </message>
     <message>
         <source>Connection refused (or timed out)</source>
-        <translation type="vanished">Bağlantı reddedildi (ya da zaman aşıldı)</translation>
+        <translation>Bağlantı reddedildi (ya da zaman aşıldı)</translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
@@ -2700,19 +2700,19 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QInputContext</name>
     <message>
         <source>XIM</source>
-        <translation type="vanished">XIM</translation>
+        <translation>XIM</translation>
     </message>
     <message>
         <source>XIM input method</source>
-        <translation type="vanished">XIM girdi yöntemi</translation>
+        <translation>XIM girdi yöntemi</translation>
     </message>
     <message>
         <source>Windows input method</source>
-        <translation type="vanished">Windows girdi yöntemi</translation>
+        <translation>Windows girdi yöntemi</translation>
     </message>
     <message>
         <source>Mac OS X input method</source>
-        <translation type="vanished">Mac OS X girdi yöntemi</translation>
+        <translation>Mac OS X girdi yöntemi</translation>
     </message>
 </context>
 <context>
@@ -2801,27 +2801,27 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QLibrary</name>
     <message>
         <source>QLibrary::load_sys: Cannot load %1 (%2)</source>
-        <translation type="vanished">QLibrary::load_sys: %1 (%2) yüklenemedi</translation>
+        <translation>QLibrary::load_sys: %1 (%2) yüklenemedi</translation>
     </message>
     <message>
         <source>QLibrary::unload_sys: Cannot unload %1 (%2)</source>
-        <translation type="vanished">QLibrary::unload_sys: %1 (%2) kaldırılamadı</translation>
+        <translation>QLibrary::unload_sys: %1 (%2) kaldırılamadı</translation>
     </message>
     <message>
         <source>QLibrary::resolve_sys: Symbol &quot;%1&quot; undefined in %2 (%3)</source>
-        <translation type="vanished">QLibrary::resolve_sys: Sembol &quot;%1&quot;, %2 (%3) içerisinde tanımlanmamış</translation>
+        <translation>QLibrary::resolve_sys: Sembol &quot;%1&quot;, %2 (%3) içerisinde tanımlanmamış</translation>
     </message>
     <message>
         <source>Could not mmap &apos;%1&apos;: %2</source>
-        <translation type="vanished">mmap &apos;%1&apos; yapılamadı: %2</translation>
+        <translation>mmap &apos;%1&apos; yapılamadı: %2</translation>
     </message>
     <message>
         <source>Plugin verification data mismatch in &apos;%1&apos;</source>
-        <translation type="vanished">&apos;%1&apos; içerisindeki eklenti doğrulama verisi uyuşmuyor</translation>
+        <translation>&apos;%1&apos; içerisindeki eklenti doğrulama verisi uyuşmuyor</translation>
     </message>
     <message>
         <source>Could not unmap &apos;%1&apos;: %2</source>
-        <translation type="vanished">unmap &apos;%1&apos; yapılamadı: %2</translation>
+        <translation>unmap &apos;%1&apos; yapılamadı: %2</translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
@@ -2829,7 +2829,7 @@ Yine de silmek istiyor musunuz?</translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
-        <translation type="vanished">&apos;%1&apos; eklentisi uyumsuz Qt kütüphanesi kullanıyor. Beklenen yapım anahtarı &quot;%2&quot;, alınan &quot;%3&quot;</translation>
+        <translation>&apos;%1&apos; eklentisi uyumsuz Qt kütüphanesi kullanıyor. Beklenen yapım anahtarı &quot;%2&quot;, alınan &quot;%3&quot;</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -3021,7 +3021,7 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QMYSQLDriver</name>
     <message>
         <source>Unable to open database &apos;</source>
-        <translation type="vanished">Veritabanı açılamaz &apos;</translation>
+        <translation>Veritabanı açılamaz &apos;</translation>
     </message>
     <message>
         <source>Unable to connect</source>
@@ -3181,15 +3181,15 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QMenu</name>
     <message>
         <source>Close</source>
-        <translation type="vanished">Kapat</translation>
+        <translation>Kapat</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="vanished">Aç</translation>
+        <translation>Aç</translation>
     </message>
     <message>
         <source>Execute</source>
-        <translation type="vanished">Çalıştır</translation>
+        <translation>Çalıştır</translation>
     </message>
 </context>
 <context>
@@ -3208,7 +3208,7 @@ Yine de silmek istiyor musunuz?</translation>
     </message>
     <message>
         <source>&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Bu program Qt %1 sürümünü kullanır.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Bu program Qt %1 sürümünü kullanır.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Show Details...</source>
@@ -3220,11 +3220,11 @@ Yine de silmek istiyor musunuz?</translation>
     </message>
     <message>
         <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Bu program Qt Açık Kaynak Yayını %1 sürümünü kullanır.&lt;/p&gt;&lt;p&gt;Qt Açık Kaynak Yayını, Açık Kaynak uygulamaların geliştirilmesi için tasarlanır. Tescilli (kapalı kaynak) uygulamaların geliştirilmesi için ticari Qt lisansına ihtiyacınız var.&lt;/p&gt;&lt;p&gt;Lütfen Qt lisanslamasını gözden geçirmek için &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; adresine bakın.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Bu program Qt Açık Kaynak Yayını %1 sürümünü kullanır.&lt;/p&gt;&lt;p&gt;Qt Açık Kaynak Yayını, Açık Kaynak uygulamaların geliştirilmesi için tasarlanır. Tescilli (kapalı kaynak) uygulamaların geliştirilmesi için ticari Qt lisansına ihtiyacınız var.&lt;/p&gt;&lt;p&gt;Lütfen Qt lisanslamasını gözden geçirmek için &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; adresine bakın.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;h3&gt;Qt Hakkında&lt;/h3&gt;%1&lt;p&gt;Qt birden fazla platformda uygulama geliştirilmesi için bir C++ araç takımıdır.&lt;/p&gt;&lt;p&gt;Qt, MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, ve tüm ticari Unix çeşitleri arasında tek-kaynak taşınabilirliği sağlar. Qt ayrıca Gömülü Linux için Qt ve Windows CE için Qt gibi gömülü aygıtlar için mevcuttur.&lt;/p&gt;&lt;p&gt;Qt bir Nokia ürünüdür. Daha fazla bilgi için &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; adresine bakın.&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;Qt Hakkında&lt;/h3&gt;%1&lt;p&gt;Qt birden fazla platformda uygulama geliştirilmesi için bir C++ araç takımıdır.&lt;/p&gt;&lt;p&gt;Qt, MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, ve tüm ticari Unix çeşitleri arasında tek-kaynak taşınabilirliği sağlar. Qt ayrıca Gömülü Linux için Qt ve Windows CE için Qt gibi gömülü aygıtlar için mevcuttur.&lt;/p&gt;&lt;p&gt;Qt bir Nokia ürünüdür. Daha fazla bilgi için &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; adresine bakın.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
@@ -3239,18 +3239,18 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QMultiInputContext</name>
     <message>
         <source>Select IM</source>
-        <translation type="vanished">Çoklu Girdi Seç</translation>
+        <translation>Çoklu Girdi Seç</translation>
     </message>
 </context>
 <context>
     <name>QMultiInputContextPlugin</name>
     <message>
         <source>Multiple input method switcher</source>
-        <translation type="vanished">Çoklu girdi yöntemi değiştirici</translation>
+        <translation>Çoklu girdi yöntemi değiştirici</translation>
     </message>
     <message>
         <source>Multiple input method switcher that uses the context menu of the text widgets</source>
-        <translation type="vanished">Çoklu girdi yöntemi değiştirici metin parçacıklarının sağ tıklama menüsünü kullanır</translation>
+        <translation>Çoklu girdi yöntemi değiştirici metin parçacıklarının sağ tıklama menüsünü kullanır</translation>
     </message>
 </context>
 <context>
@@ -3390,15 +3390,15 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QNetworkAccessDebugPipeBackend</name>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation type="unfinished">%1 dosyasına yazarken yazma hatası oldu: %2</translation>
+        <translation>%1 dosyasına yazarken yazma hatası oldu: %2</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
-        <translation type="unfinished">%1 üzerinde soket hatası oldu: %2</translation>
+        <translation>%1 üzerinde soket hatası oldu: %2</translation>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
-        <translation type="unfinished">Uzak anamakine %1 üzerindeki bağlantıyı erken kapadı</translation>
+        <translation>Uzak anamakine %1 üzerindeki bağlantıyı erken kapadı</translation>
     </message>
 </context>
 <context>
@@ -3458,7 +3458,7 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QNetworkReply</name>
     <message>
         <source>Error downloading %1 - server replied: %2</source>
-        <translation type="vanished">%1 indiriliyorken hata oldu - sunucunun yanıtı: %2</translation>
+        <translation>%1 indiriliyorken hata oldu - sunucunun yanıtı: %2</translation>
     </message>
     <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
@@ -3585,7 +3585,7 @@ Yine de silmek istiyor musunuz?</translation>
     </message>
     <message>
         <source>Unable to execute select statement</source>
-        <translation type="vanished">Select ifadesi çalıştırılamaz</translation>
+        <translation>Select ifadesi çalıştırılamaz</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
@@ -3604,7 +3604,7 @@ Yine de silmek istiyor musunuz?</translation>
     </message>
     <message>
         <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
-        <translation type="vanished">Bağlanılamaz - Sürücü gereken tüm işlevleri desteklemiyor</translation>
+        <translation>Bağlanılamaz - Sürücü gereken tüm işlevleri desteklemiyor</translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
@@ -3670,42 +3670,42 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QObject</name>
     <message>
         <source>Operation not supported on %1</source>
-        <translation type="vanished">İşlem %1 üzerinde desteklenmedi</translation>
+        <translation>İşlem %1 üzerinde desteklenmedi</translation>
     </message>
     <message>
         <source>Invalid URI: %1</source>
-        <translation type="vanished">Geçersiz URI: %1</translation>
+        <translation>Geçersiz URI: %1</translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation type="vanished">%1 dosyasına yazarken yazma hatası oldu: %2</translation>
+        <translation>%1 dosyasına yazarken yazma hatası oldu: %2</translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation type="vanished">%1 dosyasından okurken okuma hatası oldu: %2</translation>
+        <translation>%1 dosyasından okurken okuma hatası oldu: %2</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
-        <translation type="vanished">%1 üzerinde soket hatası oldu: %2</translation>
+        <translation>%1 üzerinde soket hatası oldu: %2</translation>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
-        <translation type="vanished">Uzak anamakine %1 üzerindeki bağlantıyı erken kapadı</translation>
+        <translation>Uzak anamakine %1 üzerindeki bağlantıyı erken kapadı</translation>
     </message>
     <message>
         <source>Protocol error: packet of size 0 received</source>
-        <translation type="vanished">Protokol hatası: alınan paket boyutu 0</translation>
+        <translation>Protokol hatası: alınan paket boyutu 0</translation>
     </message>
 </context>
 <context>
     <name>QPPDOptionsModel</name>
     <message>
         <source>Name</source>
-        <translation type="vanished">Adı</translation>
+        <translation>Adı</translation>
     </message>
     <message>
         <source>Value</source>
-        <translation type="vanished">Değer</translation>
+        <translation>Değer</translation>
     </message>
 </context>
 <context>
@@ -3750,7 +3750,7 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QPageSetupWidget</name>
     <message>
         <source>Centimeters (cm)</source>
-        <translation type="vanished">Santimetre (cm)</translation>
+        <translation>Santimetre (cm)</translation>
     </message>
     <message>
         <source>Millimeters (mm)</source>
@@ -4369,75 +4369,75 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QPlatformTheme</name>
     <message>
         <source>OK</source>
-        <translation type="unfinished">TAMAM</translation>
+        <translation>TAMAM</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished">Kaydet</translation>
+        <translation>Kaydet</translation>
     </message>
     <message>
         <source>Save All</source>
-        <translation type="unfinished">Tümünü Kaydet</translation>
+        <translation>Tümünü Kaydet</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished">Aç</translation>
+        <translation>Aç</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation type="unfinished">&amp;Evet</translation>
+        <translation>&amp;Evet</translation>
     </message>
     <message>
         <source>Yes to &amp;All</source>
-        <translation type="unfinished">&amp;Tümüne Evet</translation>
+        <translation>&amp;Tümüne Evet</translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation type="unfinished">&amp;Hayır</translation>
+        <translation>&amp;Hayır</translation>
     </message>
     <message>
         <source>N&amp;o to All</source>
-        <translation type="unfinished">Tümüne &amp;Hayır</translation>
+        <translation>Tümüne &amp;Hayır</translation>
     </message>
     <message>
         <source>Abort</source>
-        <translation type="unfinished">Durdur</translation>
+        <translation>Durdur</translation>
     </message>
     <message>
         <source>Retry</source>
-        <translation type="unfinished">Yeniden Dene</translation>
+        <translation>Yeniden Dene</translation>
     </message>
     <message>
         <source>Ignore</source>
-        <translation type="unfinished">Yoksay</translation>
+        <translation>Yoksay</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Kapat</translation>
+        <translation>Kapat</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">İptal</translation>
+        <translation>İptal</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">Vazgeç</translation>
+        <translation>Vazgeç</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Yardım</translation>
+        <translation>Yardım</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Uygula</translation>
+        <translation>Uygula</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">Sıfırla</translation>
+        <translation>Sıfırla</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished">Varsayılanları Geri Yükle</translation>
+        <translation>Varsayılanları Geri Yükle</translation>
     </message>
 </context>
 <context>
@@ -4455,15 +4455,15 @@ Yine de silmek istiyor musunuz?</translation>
     <name>QPrintDialog</name>
     <message>
         <source>locally connected</source>
-        <translation type="vanished">yerel olarak bağlı</translation>
+        <translation>yerel olarak bağlı</translation>
     </message>
     <message>
         <source>Aliases: %1</source>
-        <translation type="vanished">Takma adlar: %1</translation>
+        <translation>Takma adlar: %1</translation>
     </message>
     <message>
         <source>unknown</source>
-        <translation type="vanished">bilinmiyor</translation>
+        <translation>bilinmiyor</translation>
     </message>
     <message>
         <source>Print To File ...</source>
@@ -4489,123 +4489,123 @@ Lütfen farklı bir dosya adı seçin.</translation>
     </message>
     <message>
         <source>A0</source>
-        <translation type="vanished">A0</translation>
+        <translation>A0</translation>
     </message>
     <message>
         <source>A1</source>
-        <translation type="vanished">A1</translation>
+        <translation>A1</translation>
     </message>
     <message>
         <source>A2</source>
-        <translation type="vanished">A2</translation>
+        <translation>A2</translation>
     </message>
     <message>
         <source>A3</source>
-        <translation type="vanished">A3</translation>
+        <translation>A3</translation>
     </message>
     <message>
         <source>A4</source>
-        <translation type="vanished">A4</translation>
+        <translation>A4</translation>
     </message>
     <message>
         <source>A5</source>
-        <translation type="vanished">A5</translation>
+        <translation>A5</translation>
     </message>
     <message>
         <source>A6</source>
-        <translation type="vanished">A6</translation>
+        <translation>A6</translation>
     </message>
     <message>
         <source>A7</source>
-        <translation type="vanished">A7</translation>
+        <translation>A7</translation>
     </message>
     <message>
         <source>A8</source>
-        <translation type="vanished">A8</translation>
+        <translation>A8</translation>
     </message>
     <message>
         <source>A9</source>
-        <translation type="vanished">A9</translation>
+        <translation>A9</translation>
     </message>
     <message>
         <source>B0</source>
-        <translation type="vanished">B0</translation>
+        <translation>B0</translation>
     </message>
     <message>
         <source>B1</source>
-        <translation type="vanished">B1</translation>
+        <translation>B1</translation>
     </message>
     <message>
         <source>B3</source>
-        <translation type="vanished">B3</translation>
+        <translation>B3</translation>
     </message>
     <message>
         <source>B4</source>
-        <translation type="vanished">B4</translation>
+        <translation>B4</translation>
     </message>
     <message>
         <source>B5</source>
-        <translation type="vanished">B5</translation>
+        <translation>B5</translation>
     </message>
     <message>
         <source>B6</source>
-        <translation type="vanished">B6</translation>
+        <translation>B6</translation>
     </message>
     <message>
         <source>B7</source>
-        <translation type="vanished">B7</translation>
+        <translation>B7</translation>
     </message>
     <message>
         <source>B8</source>
-        <translation type="vanished">B8</translation>
+        <translation>B8</translation>
     </message>
     <message>
         <source>B9</source>
-        <translation type="vanished">B9</translation>
+        <translation>B9</translation>
     </message>
     <message>
         <source>B10</source>
-        <translation type="vanished">B10</translation>
+        <translation>B10</translation>
     </message>
     <message>
         <source>C5E</source>
-        <translation type="vanished">C5E</translation>
+        <translation>C5E</translation>
     </message>
     <message>
         <source>DLE</source>
-        <translation type="vanished">DLE</translation>
+        <translation>DLE</translation>
     </message>
     <message>
         <source>Executive</source>
-        <translation type="vanished">Executive</translation>
+        <translation>Executive</translation>
     </message>
     <message>
         <source>Folio</source>
-        <translation type="vanished">Folio</translation>
+        <translation>Folio</translation>
     </message>
     <message>
         <source>Ledger</source>
-        <translation type="vanished">Ledger</translation>
+        <translation>Ledger</translation>
     </message>
     <message>
         <source>Legal</source>
-        <translation type="vanished">Legal</translation>
+        <translation>Legal</translation>
     </message>
     <message>
         <source>Letter</source>
-        <translation type="vanished">Letter</translation>
+        <translation>Letter</translation>
     </message>
     <message>
         <source>Tabloid</source>
-        <translation type="vanished">Tabloid</translation>
+        <translation>Tabloid</translation>
     </message>
     <message>
         <source>US Common #10 Envelope</source>
-        <translation type="vanished">US Common #10 Zarf</translation>
+        <translation>US Common #10 Zarf</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="vanished">Özel</translation>
+        <translation>Özel</translation>
     </message>
     <message>
         <source>&amp;Options &gt;&gt;</source>
@@ -4625,7 +4625,7 @@ Lütfen farklı bir dosya adı seçin.</translation>
     </message>
     <message>
         <source>Print to File (Postscript)</source>
-        <translation type="vanished">Dosyaya Yazdır (Postscript)</translation>
+        <translation>Dosyaya Yazdır (Postscript)</translation>
     </message>
     <message>
         <source>Local file</source>
@@ -4633,7 +4633,7 @@ Lütfen farklı bir dosya adı seçin.</translation>
     </message>
     <message>
         <source>Write %1 file</source>
-        <translation type="vanished">%1 dosyasını yaz</translation>
+        <translation>%1 dosyasını yaz</translation>
     </message>
     <message>
         <source>Print</source>
@@ -4801,7 +4801,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Close</source>
-        <translation type="vanished">Kapat</translation>
+        <translation>Kapat</translation>
     </message>
     <message>
         <source>%1%</source>
@@ -4835,7 +4835,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Advanced</source>
-        <translation type="vanished">Gelişmiş</translation>
+        <translation>Gelişmiş</translation>
     </message>
 </context>
 <context>
@@ -5018,7 +5018,7 @@ Please turn one of those options off.</source>
     <name>QPushButton</name>
     <message>
         <source>Open</source>
-        <translation type="vanished">Aç</translation>
+        <translation>Aç</translation>
     </message>
 </context>
 <context>
@@ -5039,7 +5039,7 @@ Please turn one of those options off.</source>
     <name>QRadioButton</name>
     <message>
         <source>Check</source>
-        <translation type="vanished">İşaretle</translation>
+        <translation>İşaretle</translation>
     </message>
 </context>
 <context>
@@ -5432,7 +5432,7 @@ Please turn one of those options off.</source>
     <name>QSQLite2Driver</name>
     <message>
         <source>Error to open database</source>
-        <translation type="vanished">Veritabanı açma hatası</translation>
+        <translation>Veritabanı açma hatası</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
@@ -5444,7 +5444,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Unable to rollback Transaction</source>
-        <translation type="vanished">İşlem geri alınamaz</translation>
+        <translation>İşlem geri alınamaz</translation>
     </message>
     <message>
         <source>Error opening database</source>
@@ -5591,15 +5591,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Line up</source>
-        <translation type="vanished">Satır yukarı</translation>
+        <translation>Satır yukarı</translation>
     </message>
     <message>
         <source>Position</source>
-        <translation type="vanished">Konum</translation>
+        <translation>Konum</translation>
     </message>
     <message>
         <source>Line down</source>
-        <translation type="vanished">Satır aşağı</translation>
+        <translation>Satır aşağı</translation>
     </message>
 </context>
 <context>
@@ -5630,7 +5630,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
-        <translation type="vanished">%1: mevcut değil</translation>
+        <translation>%1: mevcut değil</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
@@ -5646,7 +5646,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>%1: unix key file doesn&apos;t exists</source>
-        <translation type="vanished">%1: unix anahtar dosyası mevcut değil</translation>
+        <translation>%1: unix anahtar dosyası mevcut değil</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
@@ -6178,7 +6178,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished">Temizle</translation>
+        <translation>Temizle</translation>
     </message>
     <message>
         <source>Clear Grab</source>
@@ -6186,15 +6186,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Kapat</translation>
+        <translation>Kapat</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Kopyala</translation>
+        <translation>Kopyala</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished">Kes</translation>
+        <translation>Kes</translation>
     </message>
     <message>
         <source>Display</source>
@@ -6690,30 +6690,30 @@ Please turn one of those options off.</source>
     <name>QSlider</name>
     <message>
         <source>Page left</source>
-        <translation type="vanished">Sayfa sola</translation>
+        <translation>Sayfa sola</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation type="vanished">Sayfa yukarı</translation>
+        <translation>Sayfa yukarı</translation>
     </message>
     <message>
         <source>Position</source>
-        <translation type="vanished">Konum</translation>
+        <translation>Konum</translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation type="vanished">Sayfa sağa</translation>
+        <translation>Sayfa sağa</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation type="vanished">Sayfa aşağı</translation>
+        <translation>Sayfa aşağı</translation>
     </message>
 </context>
 <context>
     <name>QSocks5SocketEngine</name>
     <message>
         <source>Socks5 timeout error connecting to socks server</source>
-        <translation type="vanished">Socks sunucusuna bağlanırken Socks5 zaman aşımı hatası oldu</translation>
+        <translation>Socks sunucusuna bağlanırken Socks5 zaman aşımı hatası oldu</translation>
     </message>
     <message>
         <source>Network operation timed out</source>
@@ -7136,54 +7136,54 @@ Role of an accessible object</extracomment>
     <name>QSpinBox</name>
     <message>
         <source>More</source>
-        <translation type="vanished">Daha Fazla</translation>
+        <translation>Daha Fazla</translation>
     </message>
     <message>
         <source>Less</source>
-        <translation type="vanished">Daha Az</translation>
+        <translation>Daha Az</translation>
     </message>
 </context>
 <context>
     <name>QSql</name>
     <message>
         <source>Delete</source>
-        <translation type="vanished">Sil</translation>
+        <translation>Sil</translation>
     </message>
     <message>
         <source>Delete this record?</source>
-        <translation type="vanished">Bu kayıt silinsin mi?</translation>
+        <translation>Bu kayıt silinsin mi?</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="vanished">Evet</translation>
+        <translation>Evet</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="vanished">Hayır</translation>
+        <translation>Hayır</translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation type="vanished">Ekle</translation>
+        <translation>Ekle</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation type="vanished">Güncelle</translation>
+        <translation>Güncelle</translation>
     </message>
     <message>
         <source>Save edits?</source>
-        <translation type="vanished">Düzenlemeler kaydedilsin mi?</translation>
+        <translation>Düzenlemeler kaydedilsin mi?</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">İptal</translation>
+        <translation>İptal</translation>
     </message>
     <message>
         <source>Confirm</source>
-        <translation type="vanished">Onayla</translation>
+        <translation>Onayla</translation>
     </message>
     <message>
         <source>Cancel your edits?</source>
-        <translation type="vanished">Düzenlemeler iptal edilsin mi?</translation>
+        <translation>Düzenlemeler iptal edilsin mi?</translation>
     </message>
 </context>
 <context>
@@ -7230,7 +7230,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Private key does not certificate public key, %1</source>
-        <translation type="vanished">Özel anahtar ortak anahtarı belgelemez, %1</translation>
+        <translation>Özel anahtar ortak anahtarı belgelemez, %1</translation>
     </message>
     <message>
         <source>Error when setting the elliptic curves (%1)</source>
@@ -7507,82 +7507,82 @@ Role of an accessible object</extracomment>
     <name>QTextControl</name>
     <message>
         <source>&amp;Undo</source>
-        <translation type="vanished">&amp;Geri Al</translation>
+        <translation>&amp;Geri Al</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation type="vanished">&amp;Yinele</translation>
+        <translation>&amp;Yinele</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation type="vanished">K&amp;es</translation>
+        <translation>K&amp;es</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation type="vanished">&amp;Kopyala</translation>
+        <translation>&amp;Kopyala</translation>
     </message>
     <message>
         <source>Copy &amp;Link Location</source>
-        <translation type="vanished">Bağlantı Yerini Kopya&amp;la</translation>
+        <translation>Bağlantı Yerini Kopya&amp;la</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation type="vanished">&amp;Yapıştır</translation>
+        <translation>&amp;Yapıştır</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="vanished">Sil</translation>
+        <translation>Sil</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="vanished">Tümünü Seç</translation>
+        <translation>Tümünü Seç</translation>
     </message>
 </context>
 <context>
     <name>QToolButton</name>
     <message>
         <source>Press</source>
-        <translation type="vanished">Bas</translation>
+        <translation>Bas</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="vanished">Aç</translation>
+        <translation>Aç</translation>
     </message>
 </context>
 <context>
     <name>QUdpSocket</name>
     <message>
         <source>This platform does not support IPv6</source>
-        <translation type="vanished">Bu platform IPv6 desteklemiyor</translation>
+        <translation>Bu platform IPv6 desteklemiyor</translation>
     </message>
 </context>
 <context>
     <name>QUndoGroup</name>
     <message>
         <source>Undo</source>
-        <translation type="vanished">Geri Al</translation>
+        <translation>Geri Al</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation type="vanished">Yinele</translation>
+        <translation>Yinele</translation>
     </message>
     <message>
         <source>Undo %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 Geri Al</translation>
     </message>
     <message>
         <source>Undo</source>
         <comment>Default text for undo action</comment>
-        <translation type="unfinished">Geri Al</translation>
+        <translation>Geri Al</translation>
     </message>
     <message>
         <source>Redo %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 Yinele</translation>
     </message>
     <message>
         <source>Redo</source>
         <comment>Default text for redo action</comment>
-        <translation type="unfinished">Yinele</translation>
+        <translation>Yinele</translation>
     </message>
 </context>
 <context>
@@ -7596,29 +7596,29 @@ Role of an accessible object</extracomment>
     <name>QUndoStack</name>
     <message>
         <source>Undo</source>
-        <translation type="vanished">Geri Al</translation>
+        <translation>Geri Al</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation type="vanished">Yinele</translation>
+        <translation>Yinele</translation>
     </message>
     <message>
         <source>Undo %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 Geri Al</translation>
     </message>
     <message>
         <source>Undo</source>
         <comment>Default text for undo action</comment>
-        <translation type="unfinished">Geri Al</translation>
+        <translation>Geri Al</translation>
     </message>
     <message>
         <source>Redo %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 Yinele</translation>
     </message>
     <message>
         <source>Redo</source>
         <comment>Default text for redo action</comment>
-        <translation type="unfinished">Yinele</translation>
+        <translation>Yinele</translation>
     </message>
 </context>
 <context>
@@ -7688,278 +7688,278 @@ Role of an accessible object</extracomment>
     <name>QWebFrame</name>
     <message>
         <source>Request cancelled</source>
-        <translation type="vanished">İstek iptal edildi</translation>
+        <translation>İstek iptal edildi</translation>
     </message>
     <message>
         <source>Request blocked</source>
-        <translation type="vanished">İstek engellendi</translation>
+        <translation>İstek engellendi</translation>
     </message>
     <message>
         <source>Cannot show URL</source>
-        <translation type="vanished">URL gösterilemiyor</translation>
+        <translation>URL gösterilemiyor</translation>
     </message>
     <message>
         <source>Frame load interruped by policy change</source>
-        <translation type="vanished">Politika değişimi yüzünden çerçeve yükleme kesildi</translation>
+        <translation>Politika değişimi yüzünden çerçeve yükleme kesildi</translation>
     </message>
     <message>
         <source>Cannot show mimetype</source>
-        <translation type="vanished">Mime türleri gösterilemiyor</translation>
+        <translation>Mime türleri gösterilemiyor</translation>
     </message>
     <message>
         <source>File does not exist</source>
-        <translation type="vanished">Dosya mevcut değil</translation>
+        <translation>Dosya mevcut değil</translation>
     </message>
 </context>
 <context>
     <name>QWebPage</name>
     <message>
         <source>Bad HTTP request</source>
-        <translation type="vanished">Kötü HTTP isteği</translation>
+        <translation>Kötü HTTP isteği</translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>default label for Submit buttons in forms on web pages</comment>
-        <translation type="vanished">Gönder</translation>
+        <translation>Gönder</translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>Submit (input element) alt text for &lt;input&gt; elements with no alt, title, or value</comment>
-        <translation type="vanished">Gönder</translation>
+        <translation>Gönder</translation>
     </message>
     <message>
         <source>Reset</source>
         <comment>default label for Reset buttons in forms on web pages</comment>
-        <translation type="vanished">Sıfırla</translation>
+        <translation>Sıfırla</translation>
     </message>
     <message>
         <source>This is a searchable index. Enter search keywords: </source>
         <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
-        <translation type="vanished">Bu aranabilir bir indekstir. Aranacak anahtar kelimeleri girin:</translation>
+        <translation>Bu aranabilir bir indekstir. Aranacak anahtar kelimeleri girin:</translation>
     </message>
     <message>
         <source>Choose File</source>
         <comment>title for file button used in HTML forms</comment>
-        <translation type="vanished">Dosya Seçin</translation>
+        <translation>Dosya Seçin</translation>
     </message>
     <message>
         <source>No file selected</source>
         <comment>text to display in file button used in HTML forms when no file is selected</comment>
-        <translation type="vanished">Seçilen dosya yok</translation>
+        <translation>Seçilen dosya yok</translation>
     </message>
     <message>
         <source>Open in New Window</source>
         <comment>Open in New Window context menu item</comment>
-        <translation type="vanished">Yeni Pencerede Aç</translation>
+        <translation>Yeni Pencerede Aç</translation>
     </message>
     <message>
         <source>Save Link...</source>
         <comment>Download Linked File context menu item</comment>
-        <translation type="vanished">Bağlantıyı Kaydet...</translation>
+        <translation>Bağlantıyı Kaydet...</translation>
     </message>
     <message>
         <source>Copy Link</source>
         <comment>Copy Link context menu item</comment>
-        <translation type="vanished">Bağlantıyı Kopyala</translation>
+        <translation>Bağlantıyı Kopyala</translation>
     </message>
     <message>
         <source>Open Image</source>
         <comment>Open Image in New Window context menu item</comment>
-        <translation type="vanished">Resimi Aç</translation>
+        <translation>Resimi Aç</translation>
     </message>
     <message>
         <source>Save Image</source>
         <comment>Download Image context menu item</comment>
-        <translation type="vanished">Resimi Kaydet</translation>
+        <translation>Resimi Kaydet</translation>
     </message>
     <message>
         <source>Copy Image</source>
         <comment>Copy Link context menu item</comment>
-        <translation type="vanished">Resimi Kopyala</translation>
+        <translation>Resimi Kopyala</translation>
     </message>
     <message>
         <source>Open Frame</source>
         <comment>Open Frame in New Window context menu item</comment>
-        <translation type="vanished">Çerçeve Aç</translation>
+        <translation>Çerçeve Aç</translation>
     </message>
     <message>
         <source>Copy</source>
         <comment>Copy context menu item</comment>
-        <translation type="vanished">Kopyala</translation>
+        <translation>Kopyala</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>Back context menu item</comment>
-        <translation type="vanished">Geri Git</translation>
+        <translation>Geri Git</translation>
     </message>
     <message>
         <source>Go Forward</source>
         <comment>Forward context menu item</comment>
-        <translation type="vanished">İleri Git</translation>
+        <translation>İleri Git</translation>
     </message>
     <message>
         <source>Stop</source>
         <comment>Stop context menu item</comment>
-        <translation type="vanished">Durdur</translation>
+        <translation>Durdur</translation>
     </message>
     <message>
         <source>Reload</source>
         <comment>Reload context menu item</comment>
-        <translation type="vanished">Yeniden Yükle</translation>
+        <translation>Yeniden Yükle</translation>
     </message>
     <message>
         <source>Cut</source>
         <comment>Cut context menu item</comment>
-        <translation type="vanished">Kes</translation>
+        <translation>Kes</translation>
     </message>
     <message>
         <source>Paste</source>
         <comment>Paste context menu item</comment>
-        <translation type="vanished">Yapıştır</translation>
+        <translation>Yapıştır</translation>
     </message>
     <message>
         <source>No Guesses Found</source>
         <comment>No Guesses Found context menu item</comment>
-        <translation type="vanished">Bulunan Tahminler Yok</translation>
+        <translation>Bulunan Tahminler Yok</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>Ignore Spelling context menu item</comment>
-        <translation type="vanished">Yoksay</translation>
+        <translation>Yoksay</translation>
     </message>
     <message>
         <source>Add To Dictionary</source>
         <comment>Learn Spelling context menu item</comment>
-        <translation type="vanished">Sözlüğe Ekle</translation>
+        <translation>Sözlüğe Ekle</translation>
     </message>
     <message>
         <source>Search The Web</source>
         <comment>Search The Web context menu item</comment>
-        <translation type="vanished">Web&apos;i Ara</translation>
+        <translation>Web&apos;i Ara</translation>
     </message>
     <message>
         <source>Look Up In Dictionary</source>
         <comment>Look Up in Dictionary context menu item</comment>
-        <translation type="vanished">Sözlükte Ara</translation>
+        <translation>Sözlükte Ara</translation>
     </message>
     <message>
         <source>Open Link</source>
         <comment>Open Link context menu item</comment>
-        <translation type="vanished">Bağlantıyı Aç</translation>
+        <translation>Bağlantıyı Aç</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>Ignore Grammar context menu item</comment>
-        <translation type="vanished">Yoksay</translation>
+        <translation>Yoksay</translation>
     </message>
     <message>
         <source>Spelling</source>
         <comment>Spelling and Grammar context sub-menu item</comment>
-        <translation type="vanished">Yazım</translation>
+        <translation>Yazım</translation>
     </message>
     <message>
         <source>Show Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation type="vanished">Yazımı ve Dilbilgisini Göster</translation>
+        <translation>Yazımı ve Dilbilgisini Göster</translation>
     </message>
     <message>
         <source>Hide Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation type="vanished">Yazımı ve Dilbilgisini Gizle</translation>
+        <translation>Yazımı ve Dilbilgisini Gizle</translation>
     </message>
     <message>
         <source>Check Spelling</source>
         <comment>Check spelling context menu item</comment>
-        <translation type="vanished">Yazımı Kontrol Et</translation>
+        <translation>Yazımı Kontrol Et</translation>
     </message>
     <message>
         <source>Check Spelling While Typing</source>
         <comment>Check spelling while typing context menu item</comment>
-        <translation type="vanished">Yazımı Yazarken Kontrol Et</translation>
+        <translation>Yazımı Yazarken Kontrol Et</translation>
     </message>
     <message>
         <source>Check Grammar With Spelling</source>
         <comment>Check grammar with spelling context menu item</comment>
-        <translation type="vanished">Dilbilgisini Yazımla Kontrol Et</translation>
+        <translation>Dilbilgisini Yazımla Kontrol Et</translation>
     </message>
     <message>
         <source>Fonts</source>
         <comment>Font context sub-menu item</comment>
-        <translation type="vanished">Yazı Tipleri</translation>
+        <translation>Yazı Tipleri</translation>
     </message>
     <message>
         <source>Bold</source>
         <comment>Bold context menu item</comment>
-        <translation type="vanished">Kalın</translation>
+        <translation>Kalın</translation>
     </message>
     <message>
         <source>Italic</source>
         <comment>Italic context menu item</comment>
-        <translation type="vanished">İtalik</translation>
+        <translation>İtalik</translation>
     </message>
     <message>
         <source>Underline</source>
         <comment>Underline context menu item</comment>
-        <translation type="vanished">Altı Çizili</translation>
+        <translation>Altı Çizili</translation>
     </message>
     <message>
         <source>Outline</source>
         <comment>Outline context menu item</comment>
-        <translation type="vanished">Üstü Çizili</translation>
+        <translation>Üstü Çizili</translation>
     </message>
     <message>
         <source>Direction</source>
         <comment>Writing direction context sub-menu item</comment>
-        <translation type="vanished">Yön</translation>
+        <translation>Yön</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Default writing direction context menu item</comment>
-        <translation type="vanished">Varsayılan</translation>
+        <translation>Varsayılan</translation>
     </message>
     <message>
         <source>LTR</source>
         <comment>Left to Right context menu item</comment>
-        <translation type="vanished">LTR</translation>
+        <translation>LTR</translation>
     </message>
     <message>
         <source>RTL</source>
         <comment>Right to Left context menu item</comment>
-        <translation type="vanished">RTL</translation>
+        <translation>RTL</translation>
     </message>
     <message>
         <source>Inspect</source>
         <comment>Inspect Element context menu item</comment>
-        <translation type="vanished">Denetle</translation>
+        <translation>Denetle</translation>
     </message>
     <message>
         <source>No recent searches</source>
         <comment>Label for only item in menu that appears when clicking on the search field image, when no searches have been performed</comment>
-        <translation type="vanished">Son aramalar yok</translation>
+        <translation>Son aramalar yok</translation>
     </message>
     <message>
         <source>Recent searches</source>
         <comment>label for first item in the menu that appears when clicking on the search field image, used as embedded menu title</comment>
-        <translation type="vanished">Son aramalar</translation>
+        <translation>Son aramalar</translation>
     </message>
     <message>
         <source>Clear recent searches</source>
         <comment>menu item in Recent Searches menu that empties menu&apos;s contents</comment>
-        <translation type="vanished">Son aramaları temizle</translation>
+        <translation>Son aramaları temizle</translation>
     </message>
     <message>
         <source>Unknown</source>
         <comment>Unknown filesize FTP directory listing item</comment>
-        <translation type="vanished">Bilinmiyor</translation>
+        <translation>Bilinmiyor</translation>
     </message>
     <message>
         <source>%1 (%2x%3 pixels)</source>
         <comment>Title string for images</comment>
-        <translation type="vanished">%1 (%2x%3 piksel)</translation>
+        <translation>%1 (%2x%3 piksel)</translation>
     </message>
     <message>
         <source>Web Inspector - %2</source>
-        <translation type="vanished">Web Denetleyicisi - %2</translation>
+        <translation>Web Denetleyicisi - %2</translation>
     </message>
 </context>
 <context>
@@ -7980,35 +7980,35 @@ Role of an accessible object</extracomment>
     <name>QWidgetTextControl</name>
     <message>
         <source>&amp;Undo</source>
-        <translation type="unfinished">&amp;Geri Al</translation>
+        <translation>&amp;Geri Al</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation type="unfinished">&amp;Yinele</translation>
+        <translation>&amp;Yinele</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation type="unfinished">K&amp;es</translation>
+        <translation>K&amp;es</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished">&amp;Kopyala</translation>
+        <translation>&amp;Kopyala</translation>
     </message>
     <message>
         <source>Copy &amp;Link Location</source>
-        <translation type="unfinished">Bağlantı Yerini Kopya&amp;la</translation>
+        <translation>Bağlantı Yerini Kopya&amp;la</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation type="unfinished">&amp;Yapıştır</translation>
+        <translation>&amp;Yapıştır</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Sil</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="unfinished">Tümünü Seç</translation>
+        <translation>Tümünü Seç</translation>
     </message>
 </context>
 <context>
@@ -8044,7 +8044,7 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Quit</source>
-        <translation type="vanished">Çık</translation>
+        <translation>Çık</translation>
     </message>
     <message>
         <source>Help</source>
@@ -8079,55 +8079,55 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <name>QWorkspace</name>
     <message>
         <source>&amp;Restore</source>
-        <translation type="vanished">&amp;Geri Yükle</translation>
+        <translation>&amp;Geri Yükle</translation>
     </message>
     <message>
         <source>&amp;Move</source>
-        <translation type="vanished">&amp;Taşı</translation>
+        <translation>&amp;Taşı</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="vanished">&amp;Boyut</translation>
+        <translation>&amp;Boyut</translation>
     </message>
     <message>
         <source>Mi&amp;nimize</source>
-        <translation type="vanished">Simge Durumu&amp;na</translation>
+        <translation>Simge Durumu&amp;na</translation>
     </message>
     <message>
         <source>Ma&amp;ximize</source>
-        <translation type="vanished">Ekranı Ka&amp;pla</translation>
+        <translation>Ekranı Ka&amp;pla</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="vanished">&amp;Kapat</translation>
+        <translation>&amp;Kapat</translation>
     </message>
     <message>
         <source>Stay on &amp;Top</source>
-        <translation type="vanished">&amp;Her Zaman Üstte</translation>
+        <translation>&amp;Her Zaman Üstte</translation>
     </message>
     <message>
         <source>Sh&amp;ade</source>
-        <translation type="vanished">G&amp;ölgele</translation>
+        <translation>G&amp;ölgele</translation>
     </message>
     <message>
         <source>%1 - [%2]</source>
-        <translation type="vanished">%1 - [%2]</translation>
+        <translation>%1 - [%2]</translation>
     </message>
     <message>
         <source>Minimize</source>
-        <translation type="vanished">Simge Durumuna</translation>
+        <translation>Simge Durumuna</translation>
     </message>
     <message>
         <source>Restore Down</source>
-        <translation type="vanished">Aşağı Geri Yükle</translation>
+        <translation>Aşağı Geri Yükle</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="vanished">Kapat</translation>
+        <translation>Kapat</translation>
     </message>
     <message>
         <source>&amp;Unshade</source>
-        <translation type="vanished">Gölgele&amp;me</translation>
+        <translation>Gölgele&amp;me</translation>
     </message>
 </context>
 <context>
@@ -8249,7 +8249,7 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Attribute redefined.</source>
-        <translation type="vanished">Öznitelik yeniden tanımlandı.</translation>
+        <translation>Öznitelik yeniden tanımlandı.</translation>
     </message>
     <message>
         <source>Unexpected character &apos;%1&apos; in public id literal.</source>
@@ -8376,209 +8376,209 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <name>QtXmlPatterns</name>
     <message>
         <source>An %1-attribute with value %2 has already been declared.</source>
-        <translation type="vanished">%2 değeriyle birlikte %1 özniteliği zaten bildirilmiş.</translation>
+        <translation>%2 değeriyle birlikte %1 özniteliği zaten bildirilmiş.</translation>
     </message>
     <message>
         <source>An %1-attribute must have a valid %2 as value, which %3 isn&apos;t.</source>
-        <translation type="vanished">%1 özniteliği değer olarak %3 olmayan geçerli bir %2 sahip olmalıdır.</translation>
+        <translation>%1 özniteliği değer olarak %3 olmayan geçerli bir %2 sahip olmalıdır.</translation>
     </message>
     <message>
         <source>Network timeout.</source>
-        <translation type="vanished">Ağ zaman aşımı.</translation>
+        <translation>Ağ zaman aşımı.</translation>
     </message>
     <message>
         <source>Element %1 can&apos;t be serialized because it appears outside the document element.</source>
-        <translation type="vanished">Öğe %1 serileştirilemiyor çünkü belge öğesinin dışında görünüyor.</translation>
+        <translation>Öğe %1 serileştirilemiyor çünkü belge öğesinin dışında görünüyor.</translation>
     </message>
     <message>
         <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
-        <translation type="vanished">Öznitelik %1 serileştirilemiyor çünkü en üst seviyede görünüyor.</translation>
+        <translation>Öznitelik %1 serileştirilemiyor çünkü en üst seviyede görünüyor.</translation>
     </message>
     <message>
         <source>Year %1 is invalid because it begins with %2.</source>
-        <translation type="vanished">Yıl %1 geçersiz çünkü %2 ile başlıyor.</translation>
+        <translation>Yıl %1 geçersiz çünkü %2 ile başlıyor.</translation>
     </message>
     <message>
         <source>Day %1 is outside the range %2..%3.</source>
-        <translation type="vanished">Gün %1, %2..%3 aralığı dışında.</translation>
+        <translation>Gün %1, %2..%3 aralığı dışında.</translation>
     </message>
     <message>
         <source>Month %1 is outside the range %2..%3.</source>
-        <translation type="vanished">Ay %1, %2..%3 aralığı dışında.</translation>
+        <translation>Ay %1, %2..%3 aralığı dışında.</translation>
     </message>
     <message>
         <source>Overflow: Can&apos;t represent date %1.</source>
-        <translation type="vanished">Dışa Taşma: %1 tarihini ifade edemiyor.</translation>
+        <translation>Dışa Taşma: %1 tarihini ifade edemiyor.</translation>
     </message>
     <message>
         <source>Day %1 is invalid for month %2.</source>
-        <translation type="vanished">Gün %1, %2 ayı için geçersiz.</translation>
+        <translation>Gün %1, %2 ayı için geçersiz.</translation>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation type="vanished">24&apos;lük Zaman:%1:%2.%3 geçersiz. Saat 24&apos;lük ama dakika, saniye ve milisaniyenin tümü 0 değildir; </translation>
+        <translation>24&apos;lük Zaman:%1:%2.%3 geçersiz. Saat 24&apos;lük ama dakika, saniye ve milisaniyenin tümü 0 değildir; </translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>
-        <translation type="vanished">Zaman:%1:%2:%3.%4 geçersiz.</translation>
+        <translation>Zaman:%1:%2:%3.%4 geçersiz.</translation>
     </message>
     <message>
         <source>Overflow: Date can&apos;t be represented.</source>
-        <translation type="vanished">Dışa Taşma: Tarih ifade edilemez.</translation>
+        <translation>Dışa Taşma: Tarih ifade edilemez.</translation>
     </message>
     <message>
         <source>At least one component must be present.</source>
-        <translation type="vanished">En az bir bileşen olmak zorundadır.</translation>
+        <translation>En az bir bileşen olmak zorundadır.</translation>
     </message>
     <message>
         <source>At least one time component must appear after the %1-delimiter.</source>
-        <translation type="vanished">En az bir defa bileşen %1-sınırlayıcısından sonra görünmek zorundadır.</translation>
+        <translation>En az bir defa bileşen %1-sınırlayıcısından sonra görünmek zorundadır.</translation>
     </message>
     <message>
         <source>No operand in an integer division, %1, can be %2.</source>
-        <translation type="vanished">Bir tam sayı bölmede matematik işlemci yok, %1, %2 olabilir.</translation>
+        <translation>Bir tam sayı bölmede matematik işlemci yok, %1, %2 olabilir.</translation>
     </message>
     <message>
         <source>The first operand in an integer division, %1, cannot be infinity (%2).</source>
-        <translation type="vanished">Bir tam sayı bölmede ilk matematik işlemci, %1, sonsuz olamaz (%2).</translation>
+        <translation>Bir tam sayı bölmede ilk matematik işlemci, %1, sonsuz olamaz (%2).</translation>
     </message>
     <message>
         <source>The second operand in a division, %1, cannot be zero (%2).</source>
-        <translation type="vanished">Bir bölmede ikinci matematik işlemci, %1, sıfır olamaz (%2).</translation>
+        <translation>Bir bölmede ikinci matematik işlemci, %1, sıfır olamaz (%2).</translation>
     </message>
     <message>
         <source>%1 is not a valid value of type %2.</source>
-        <translation type="vanished">%1, %2 türünün geçerli bir değeri değildir.</translation>
+        <translation>%1, %2 türünün geçerli bir değeri değildir.</translation>
     </message>
     <message>
         <source>A comment cannot contain %1</source>
-        <translation type="vanished">Yorum %1 içeremez</translation>
+        <translation>Yorum %1 içeremez</translation>
     </message>
     <message>
         <source>A comment cannot end with a %1.</source>
-        <translation type="vanished">Yorum %1 ile bitemez.</translation>
+        <translation>Yorum %1 ile bitemez.</translation>
     </message>
     <message>
         <source>%1 is an invalid %2</source>
-        <translation type="vanished">%1 bir geçersiz %2</translation>
+        <translation>%1 bir geçersiz %2</translation>
     </message>
     <message>
         <source>%1 was called.</source>
-        <translation type="vanished">%1 iptal edildi.</translation>
+        <translation>%1 iptal edildi.</translation>
     </message>
     <message>
         <source>%1 matches newline characters</source>
-        <translation type="vanished">%1 satır başı karakterleriyle eşleşiyor</translation>
+        <translation>%1 satır başı karakterleriyle eşleşiyor</translation>
     </message>
     <message>
         <source>Matches are case insensitive</source>
-        <translation type="vanished">Eşleşenler büyük küçük harfe duyarlı</translation>
+        <translation>Eşleşenler büyük küçük harfe duyarlı</translation>
     </message>
     <message>
         <source>Whitespace characters are removed, except when they appear in character classes</source>
-        <translation type="vanished">Boşluk karakterleri kaldırıldı, karakter sınıflarında göründüklerinde hariç</translation>
+        <translation>Boşluk karakterleri kaldırıldı, karakter sınıflarında göründüklerinde hariç</translation>
     </message>
     <message>
         <source>%1 cannot be retrieved</source>
-        <translation type="vanished">%1 geri alınamaz</translation>
+        <translation>%1 geri alınamaz</translation>
     </message>
     <message>
         <source>The variable %1 is unused</source>
-        <translation type="vanished">%1 değişkeni kullanılmıyor</translation>
+        <translation>%1 değişkeni kullanılmıyor</translation>
     </message>
     <message>
         <source>Version %1 is not supported. The supported XQuery version is 1.0.</source>
-        <translation type="vanished">Sürüm %1 desteklenmiyor. Desteklenen XQuery sürümü 1.0.</translation>
+        <translation>Sürüm %1 desteklenmiyor. Desteklenen XQuery sürümü 1.0.</translation>
     </message>
     <message>
         <source>empty</source>
-        <translation type="vanished">boş</translation>
+        <translation>boş</translation>
     </message>
     <message>
         <source>zero or one</source>
-        <translation type="vanished">sıfır veya bir</translation>
+        <translation>sıfır veya bir</translation>
     </message>
     <message>
         <source>exactly one</source>
-        <translation type="vanished">kesinlikle bir</translation>
+        <translation>kesinlikle bir</translation>
     </message>
     <message>
         <source>one or more</source>
-        <translation type="vanished">bir veya daha fazlası</translation>
+        <translation>bir veya daha fazlası</translation>
     </message>
     <message>
         <source>zero or more</source>
-        <translation type="vanished">sıfır veya daha fazlası</translation>
+        <translation>sıfır veya daha fazlası</translation>
     </message>
     <message>
         <source>Required type is %1, but %2 was found.</source>
-        <translation type="vanished">Gereken tür %1 ama %2 bulundu.</translation>
+        <translation>Gereken tür %1 ama %2 bulundu.</translation>
     </message>
 </context>
 <context>
     <name>VolumeSlider</name>
     <message>
         <source>Muted</source>
-        <translation type="vanished">Sessiz</translation>
+        <translation>Sessiz</translation>
     </message>
     <message>
         <source>Volume: %1%</source>
-        <translation type="vanished">Ses: %1%</translation>
+        <translation>Ses: %1%</translation>
     </message>
 </context>
 <context>
     <name>WebCore::PlatformScrollbar</name>
     <message>
         <source>Scroll here</source>
-        <translation type="vanished">Buraya kaydır</translation>
+        <translation>Buraya kaydır</translation>
     </message>
     <message>
         <source>Left edge</source>
-        <translation type="vanished">Sol kenara</translation>
+        <translation>Sol kenara</translation>
     </message>
     <message>
         <source>Top</source>
-        <translation type="vanished">En Üste</translation>
+        <translation>En Üste</translation>
     </message>
     <message>
         <source>Right edge</source>
-        <translation type="vanished">Sağ kenera</translation>
+        <translation>Sağ kenera</translation>
     </message>
     <message>
         <source>Bottom</source>
-        <translation type="vanished">En Alta</translation>
+        <translation>En Alta</translation>
     </message>
     <message>
         <source>Page left</source>
-        <translation type="vanished">Sayfa sola</translation>
+        <translation>Sayfa sola</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation type="vanished">Sayfa yukarı</translation>
+        <translation>Sayfa yukarı</translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation type="vanished">Sayfa sağa</translation>
+        <translation>Sayfa sağa</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation type="vanished">Sayfa aşağı</translation>
+        <translation>Sayfa aşağı</translation>
     </message>
     <message>
         <source>Scroll left</source>
-        <translation type="vanished">Sola kaydır</translation>
+        <translation>Sola kaydır</translation>
     </message>
     <message>
         <source>Scroll up</source>
-        <translation type="vanished">Yukarı kaydır</translation>
+        <translation>Yukarı kaydır</translation>
     </message>
     <message>
         <source>Scroll right</source>
-        <translation type="vanished">Sağa kaydır</translation>
+        <translation>Sağa kaydır</translation>
     </message>
     <message>
         <source>Scroll down</source>
-        <translation type="vanished">Aşağı kaydır</translation>
+        <translation>Aşağı kaydır</translation>
     </message>
 </context>
 </TS>

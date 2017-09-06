@@ -3383,11 +3383,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Network dropped connection on reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Connessione di rete interrotta alla chiusura</translation>
     </message>
     <message>
         <source>Connection reset by peer</source>
-        <translation type="unfinished">Connessione annullata dalla controparte</translation>
+        <translation>Connessione chiusa dalla controparte</translation>
     </message>
 </context>
 <context>
@@ -6480,7 +6480,7 @@ Disattiva una di queste opzioni.</translation>
     </message>
     <message>
         <source>Power Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Spegni</translation>
     </message>
     <message>
         <source>Microphone Mute</source>
@@ -6504,11 +6504,11 @@ Disattiva una di queste opzioni.</translation>
     </message>
     <message>
         <source>Channel Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Canale su</translation>
     </message>
     <message>
         <source>Channel Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Canale giù</translation>
     </message>
     <message>
         <source>Guide</source>
@@ -6721,15 +6721,15 @@ Disattiva una di queste opzioni.</translation>
     </message>
     <message>
         <source>Touchpad Toggle</source>
-        <translation type="unfinished"></translation>
+        <translation>Commuta Touchpad</translation>
     </message>
     <message>
         <source>Touchpad On</source>
-        <translation type="unfinished"></translation>
+        <translation>Touchpad attivato</translation>
     </message>
     <message>
         <source>Touchpad Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Touchpad disattivato</translation>
     </message>
     <message>
         <source>Num</source>
@@ -7723,43 +7723,43 @@ Role of an accessible object</extracomment>
     <name>QUnicodeControlCharacterMenu</name>
     <message>
         <source>LRM Left-to-right mark</source>
-        <translation>LRM indicatore di direzione da sinistra a destra</translation>
+        <translation>LRM Left-to-right mark</translation>
     </message>
     <message>
         <source>RLM Right-to-left mark</source>
-        <translation>RLM indicatore di direzione da destra a sinistra</translation>
+        <translation>RLM Right-to-left mark</translation>
     </message>
     <message>
         <source>ZWJ Zero width joiner</source>
-        <translation>ZWJ carattere congiungente di ampiezza zero</translation>
+        <translation>ZWJ Zero width joiner</translation>
     </message>
     <message>
         <source>ZWNJ Zero width non-joiner</source>
-        <translation>ZWNJ carattere non congiungente di ampiezza zero</translation>
+        <translation>ZWNJ Zero width non-joiner</translation>
     </message>
     <message>
         <source>ZWSP Zero width space</source>
-        <translation>ZWSP spazio di ampiezza zero</translation>
+        <translation>ZWSP Zero width space</translation>
     </message>
     <message>
         <source>LRE Start of left-to-right embedding</source>
-        <translation>LRE inizio incorporamento da sinistra a destra</translation>
+        <translation>LRE Start of left-to-right embedding</translation>
     </message>
     <message>
         <source>RLE Start of right-to-left embedding</source>
-        <translation>RLE inizio incorporamento da destra a sinistra</translation>
+        <translation>RLE Start of right-to-left embedding</translation>
     </message>
     <message>
         <source>LRO Start of left-to-right override</source>
-        <translation>LRO inizio forzatura da sinistra a destra</translation>
+        <translation>LRO Start of left-to-right override</translation>
     </message>
     <message>
         <source>RLO Start of right-to-left override</source>
-        <translation>RLO inizio forzatura da destra a sinistra</translation>
+        <translation>RLO Start of right-to-left override</translation>
     </message>
     <message>
         <source>PDF Pop directional formatting</source>
-        <translation>PDF ripristina impostazioni di direzione del testo</translation>
+        <translation>PDF Pop directional formatting</translation>
     </message>
     <message>
         <source>Insert Unicode control character</source>
@@ -7767,19 +7767,19 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>LRI Left-to-right isolate</source>
-        <translation>LRI Isolato da sinistra a destra</translation>
+        <translation>LRI Left-to-right isolate</translation>
     </message>
     <message>
         <source>RLI Right-to-left isolate</source>
-        <translation>RLI Isolato da destra a sinistra</translation>
+        <translation>RLI Right-to-left isolate</translation>
     </message>
     <message>
         <source>FSI First strong isolate</source>
-        <translation type="unfinished"></translation>
+        <translation>FSI First strong isolate</translation>
     </message>
     <message>
         <source>PDI Pop directional isolate</source>
-        <translation type="unfinished"></translation>
+        <translation>PDI Pop directional isolate</translation>
     </message>
 </context>
 <context>

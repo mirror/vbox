@@ -2098,7 +2098,6 @@
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+10"/>
         <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+6"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+4"/>
         <source>Disabled</source>
@@ -2106,7 +2105,7 @@
         <translation>Onemogočeno</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+67"/>
+        <location line="+67"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+77"/>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
@@ -4227,7 +4226,7 @@
         <translation type="vanished">Nakazuje, ali je gostujoči operacijski sistem zajel tipkovnico gostitelja:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;Tipkovnica ni zajeta&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;Tipkovnica je zajeta&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-250"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-240"/>
         <source>&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1</source>
         <comment>HD tooltip</comment>
         <translation type="unfinished"></translation>
@@ -4251,7 +4250,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+107"/>
+        <location line="+106"/>
         <source>&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1</source>
         <comment>Network tooltip</comment>
         <translation type="unfinished"></translation>
@@ -9334,7 +9333,7 @@
 <context>
     <name>UISessionStateStatusBarIndicator</name>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-988"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-987"/>
         <source>%1 status-bar indicator</source>
         <comment>like &apos;hard-disk status-bar indicator&apos;</comment>
         <translation type="unfinished"></translation>
@@ -11623,7 +11622,7 @@
         <translation>Uporabniško določeno</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+820"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+819"/>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
         <translation>VT-x/AMD-V</translation>
