@@ -2420,7 +2420,7 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
-    HRESULT hr = CoInitializeEx(NULL, 0);
+    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (FAILED(hr))
     {
         DSLOGREL(("DSound: CoInitializeEx failed with %Rhrc\n", hr));
