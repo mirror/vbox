@@ -650,6 +650,8 @@ DECLINLINE(int) vdIfIoFileFlushSync(PVDINTERFACEIO pIfIo, void *pStorage)
  */
 VBOXDDU_DECL(int) VDIfCreateVfsStream(PVDINTERFACEIO pVDIfsIo, void *pvStorage, uint32_t fFlags, PRTVFSIOSTREAM phVfsIos);
 
+struct VDINTERFACEIOINT;
+
 /**
  * Create a VFS file handle around a VD I/O interface.
  *
@@ -667,7 +669,8 @@ VBOXDDU_DECL(int) VDIfCreateVfsStream(PVDINTERFACEIO pVDIfsIo, void *pvStorage, 
  * @param   fFlags          RTFILE_O_XXX, access mask requied.
  * @param   phVfsFile       Where to return the VFS file handle on success.
  */
-VBOXDDU_DECL(int) VDIfCreateVfsFile(PVDINTERFACEIO pVDIfs, struct VDINTERFACEIOINT *pVDIfsInt, void *pvStorage, uint32_t fFlags, PRTVFSFILE phVfsFile);
+VBOXDDU_DECL(int) VDIfCreateVfsFile(PVDINTERFACEIO pVDIfs, struct VDINTERFACEIOINT *pVDIfsInt, void *pvStorage,
+                                    uint32_t fFlags, PRTVFSFILE phVfsFile);
 
 /**
  * Creates an VD I/O interface wrapper around an IPRT VFS I/O stream.

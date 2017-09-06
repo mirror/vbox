@@ -285,9 +285,9 @@ typedef struct VDISKRAW
  */
 DECLINLINE(uint32_t) VDOpenFlagsToFileOpenFlags(unsigned fOpenFlags, bool fCreate)
 {
+    uint32_t fOpen;
     AssertMsg(!(fOpenFlags & VD_OPEN_FLAGS_READONLY) || !fCreate, ("Image can't be opened readonly while being created\n"));
 
-    uint32_t fOpen;
     if (fOpenFlags & VD_OPEN_FLAGS_READONLY)
         fOpen = RTFILE_O_READ | RTFILE_O_DENY_NONE;
     else
@@ -1513,7 +1513,7 @@ typedef VDIOBUF *PVDIOBUF;
 /** Pointer to VD I/O buffer callbacks. */
 typedef struct VDIOBUFCALLBACKS *PVDIOBUFCALLBACKS;
 /** Pointer to const VD I/O buffer callbacks. */
-typedef const VDIOBUFCALLBACKS *PCVDIOBUFCALLBACKS;
+typedef const struct VDIOBUFCALLBACKS *PCVDIOBUFCALLBACKS;
 
 /**
  * VD I/O buffer callbacks.

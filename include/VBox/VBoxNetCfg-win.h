@@ -41,6 +41,7 @@
 #include <Netcfgn.h>
 #include <iprt/win/Setupapi.h>
 #include <VBox/cdefs.h>
+#include <iprt/types.h>
 
 /** @defgroup grp_vboxnetcfgwin     The Windows Network Configration Library
  * @{ */

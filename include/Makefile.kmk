@@ -29,7 +29,8 @@ cpp_features_hdrs := \
 	VBox/HostServices/DragAndDropSvc.h \
 	VBox/VBoxCrHgsmi.h \
 	VBox/VBoxUhgsmi.h \
-       VBox/dbus.h
+       VBox/dbus.h \
+       VBox/VBoxPktDmp.h
 
 # Omit headers that are C++ and ring-3.
 r3_cpp_hdrs := \
@@ -42,15 +43,22 @@ r3_cpp_hdrs := \
 # Ring-3 only headers.
 r3_only_hdrs := \
 	VBox/vrdpapi.h \
-        VBox/vrdpusb.h \
+	VBox/vrdpusb.h \
 	VBox/VBoxHDD.h \
 	VBox/VBoxHDD-Plugin.h \
 	VBox/VBoxCrHgsmi.h \
 	VBox/VBoxUhgsmi.h \
+	VBox/VBoxNetCfg-win.h \
 	VBox/dbus.h \
+	VBox/usblib-win.h \
 	VBox/vd.h \
+	VBox/vd-cache-backend.h \
+	VBox/vd-ifs.h \
+	VBox/vd-ifs-internal.h \
+	VBox/vd-image-backend.h \
 	VBox/vd-plugin.h \
-	VBox/vd-cache-plugin.h \
+	VBox/vd-filter-backend.h \
+	VBox/vddbg.h \
 	VBox/vmm/uvm.h \
 	VBox/vscsi.h \
 	$(wildcard VBox/ExtPack/*.h ) \
@@ -61,6 +69,10 @@ r3_only_hdrs := \
 	iprt/linux/sysfs.h \
 	iprt/socket.h
 
+# Ring-0 only headers.
+r0_only_hdrs := \
+	VBox/VBoxGuestLibSharedFolders.h
+
 # We omit a few headers which have platform specific issues or are templates.
 hdrs := $(filter-out \
 	VBox/HostServices/glext.h \
@@ -68,16 +80,17 @@ hdrs := $(filter-out \
 	VBox/HostServices/wglext.h \
 	VBox/VBoxGL2D.h \
 	VBox/WinNetConfig.h \
-	VBox/usblib-win.h \
 	VBox/usblib-solaris.h \
 	VBox/VDEPlug.h \
+	VBox/VDEPlugSymDefs.h \
+	VBox/VBoxNetCmn-win.h \
 	$(if-expr "$(KBUILD_TARGET)" != "win", \
 		VBox/VBoxDrvCfg-win.h \
 		VBox/VBoxNetCfg-win.h \
+		VBox/usblib-win.h \
 	,) \
 	\
 	VBox/dbus-calls.h \
-	VBox/VDEPlugSymDefs.h \
 	VBox/VBoxKeyboard.h \
 	VBox/vmm/pdmpcidevint.h \
 	iprt/runtime-loader.h \
@@ -88,8 +101,8 @@ hdrs := $(filter-out \
 	, $(wildcard VBox/*.h VBox/*/*.h iprt/*.h iprt/*/*.h))
 
 # ring-3, ring-0 and raw-mode context specific exclusions.
-hdrs.r3   := $(filter-out , $(hdrs))
-hdrs-c.r3 := $(filter-out $(cpp_features_hdrs) $(r3_cpp_hdrs), $(hdrs.r3))
+hdrs.r3   := $(filter-out $(r0_only_hdrs), $(hdrs))
+hdrs-c.r3 := $(filter-out $(cpp_features_hdrs) $(r3_cpp_hdrs) $(r0_only_hdrs), $(hdrs.r3))
 hdrs.r0   := $(filter-out $(r3_cpp_hdrs) $(r3_only_hdrs), $(hdrs))
 hdrs-c.r0 := $(filter-out $(cpp_features_hdrs), $(hdrs.r0))
 hdrs.rc   := $(filter-out \
@@ -101,6 +114,7 @@ hdrs.rc   := $(filter-out \
 	iprt/alloc.h \
 	$(r3_cpp_hdrs) \
 	$(r3_only_hdrs) \
+	$(r0_only_hdrs) \
 	, $(hdrs))
 hdrs-c.rc := $(filter-out $(cpp_features_hdrs), $(hdrs.rc))
 

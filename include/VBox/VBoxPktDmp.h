@@ -27,6 +27,13 @@
 #ifndef ___VBox_vboxpktdmp_h
 #define ___VBox_vboxpktdmp_h
 
+#include <iprt/net.h>
+#include <iprt/log.h>
+#if defined(LOG_ENABLED) && !defined(VBOX_DEVICE_STRUCT_TESTCASE)
+# include <iprt/asm.h>
+#endif
+
+
 DECLINLINE(const char *) vboxEthTypeStr(uint16_t uType)
 {
     switch (uType)

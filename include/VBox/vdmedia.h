@@ -22,8 +22,11 @@
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
  */
+
 #ifndef ___VBox_vdmedia_h
 #define ___VBox_vdmedia_h
+
+#include <iprt/types.h>
 
 /** @name VD container type.
  * @{
@@ -207,3 +210,4 @@ typedef PVDREGIONLIST *PPVDREGIONLIST;
 /** @} */
 
 #endif /* !___VBox_vdmedia_h */
+

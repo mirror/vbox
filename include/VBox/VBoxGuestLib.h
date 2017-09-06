@@ -30,7 +30,6 @@
 #include <VBox/VMMDevCoreTypes.h>
 #include <VBox/VBoxGuestCoreTypes.h>
 
-
 /** @defgroup grp_vboxguest_lib     VirtualBox Guest Additions Library
  * @ingroup grp_vboxguest
  * @{
@@ -83,7 +82,7 @@ typedef uint32_t HGCMCLIENTID;
 /** @defgroup grp_vboxguest_lib_r0     Ring-0 interface.
  * @{
  */
-#if defined(IN_RING0) && !defined(IN_RING0_AGNOSTIC)
+#ifdef IN_RING0
 /** @def DECLR0VBGL
  * Declare a VBGL ring-0 API with the right calling convention and visibilitiy.
  * @param type      Return type.  */
@@ -470,7 +469,7 @@ DECLR0VBGL(int)     VbglR0SetMouseStatus(uint32_t fFeatures);
 /** @}  */
 # endif /* VBOX_GUEST */
 
-#endif /* IN_RING0 && !IN_RING0_AGNOSTIC */
+#endif /* IN_RING0 */
 
 /** @} */
 

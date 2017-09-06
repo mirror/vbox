@@ -30,6 +30,10 @@
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/shflsvc.h>
 
+#ifndef IN_RING0
+# error "ring-0 only"
+#endif
+
 RT_C_DECLS_BEGIN
 
 
