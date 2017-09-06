@@ -335,7 +335,7 @@ AssertCompileSize(HGCMFunctionParameter64, 4+12);
 #  ifndef VBOX_HGCM_HOST_CODE
 #   if ARCH_BITS == 64
 #     define HGCMFunctionParameter  HGCMFunctionParameter64
-#   elif ARCH_BITS == 32
+#   elif ARCH_BITS == 32 || ARCH_BITS == 16
 #     define HGCMFunctionParameter  HGCMFunctionParameter32
 #   else
 #    error "Unsupported sizeof (void *)"
