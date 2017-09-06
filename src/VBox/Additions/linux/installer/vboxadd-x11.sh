@@ -216,7 +216,8 @@ setup()
             blacklist_vboxvideo="yes"
     esac
     if test -n "${blacklist_vboxvideo}"; then
-        echo "blacklist vboxvideo" > /etc/modprobe.d/blacklist-vboxvideo.conf
+        test -d /etc/modprobe.d &&
+            echo "blacklist vboxvideo" > /etc/modprobe.d/blacklist-vboxvideo.conf
     else
         test -f /etc/modprobe.d/blacklist-vboxvideo.conf &&
             rm -f /etc/modprobe.d/blacklist-vboxvideo.conf
