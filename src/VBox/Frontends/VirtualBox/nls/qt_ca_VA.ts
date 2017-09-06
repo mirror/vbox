@@ -20,7 +20,7 @@
     <name>CloseButton</name>
     <message>
         <source>Close Tab</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Tanca pestanya</translation>
     </message>
 </context>
 <context>
@@ -673,6 +673,14 @@ a
 <context>
     <name>QAbstractSocket</name>
     <message>
+        <source>Socket operation timed out</source>
+        <translation>S&apos;ha excedit el temps d&apos;espera en l&apos;operació del sòcol</translation>
+    </message>
+    <message>
+        <source>Operation on socket is not supported</source>
+        <translation type="unfinished">Operació no implementada en el sòcol</translation>
+    </message>
+    <message>
         <source>Host not found</source>
         <translation>No s&apos;ha trobat l&apos;amfitrió</translation>
     </message>
@@ -681,32 +689,28 @@ a
         <translation>S&apos;ha rebutjat la connexió</translation>
     </message>
     <message>
-        <source>Socket operation timed out</source>
-        <translation>S&apos;ha excedit el temps d&apos;espera en l&apos;operació del sòcol</translation>
+        <source>Connection timed out</source>
+        <translation type="unfinished">Temps de connexió excedit</translation>
+    </message>
+    <message>
+        <source>Trying to connect while connection is in progress</source>
+        <translation type="unfinished">S&apos;intenta connectar mentre la connexió és en curs</translation>
     </message>
     <message>
         <source>Socket is not connected</source>
         <translation>No s&apos;ha connectat el sòcol</translation>
     </message>
     <message>
-        <source>Operation on socket is not supported</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Connection timed out</source>
-        <translation type="unfinished">La connexió ha excedit el temps</translation>
-    </message>
-    <message>
-        <source>Trying to connect while connection is in progress</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Network unreachable</source>
-        <translation type="unfinished">La xarxa no és accessible</translation>
+        <translation type="unfinished">Xarxa no accessible</translation>
     </message>
 </context>
 <context>
     <name>QAbstractSpinBox</name>
+    <message>
+        <source>&amp;Select All</source>
+        <translation>&amp;Selecciona-ho tot</translation>
+    </message>
     <message>
         <source>&amp;Step up</source>
         <translation>Pa&amp;s amunt</translation>
@@ -715,32 +719,28 @@ a
         <source>Step &amp;down</source>
         <translation>Pas a&amp;vall</translation>
     </message>
-    <message>
-        <source>&amp;Select All</source>
-        <translation>&amp;Selecciona-ho tot</translation>
-    </message>
 </context>
 <context>
     <name>QAccessibleActionInterface</name>
     <message>
         <source>Press</source>
-        <translation type="unfinished">Premeu</translation>
+        <translation type="unfinished">Prem</translation>
     </message>
     <message>
         <source>Increase</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Augmenta</translation>
     </message>
     <message>
         <source>Decrease</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Disminueix</translation>
     </message>
     <message>
         <source>ShowMenu</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mostra el menú</translation>
     </message>
     <message>
         <source>SetFocus</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Estableix el focus</translation>
     </message>
     <message>
         <source>Toggle</source>
@@ -748,75 +748,75 @@ a
     </message>
     <message>
         <source>Scroll Left</source>
-        <translation type="unfinished">Desplaça a l&apos;esquerra</translation>
+        <translation type="unfinished">Desplaçament a l&apos;esquerra</translation>
     </message>
     <message>
         <source>Scroll Right</source>
-        <translation type="unfinished">Desplaça a la dreta</translation>
+        <translation type="unfinished">Desplaçament a la dreta</translation>
     </message>
     <message>
         <source>Scroll Up</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Desplaçament cap amunt</translation>
     </message>
     <message>
         <source>Scroll Down</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Desplaçament cap avall</translation>
     </message>
     <message>
         <source>Previous Page</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Pàgina anterior</translation>
     </message>
     <message>
         <source>Next Page</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Pàgina següent</translation>
     </message>
     <message>
         <source>Triggers the action</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Activa l&apos;acció</translation>
     </message>
     <message>
         <source>Increase the value</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Augmenta el valor</translation>
     </message>
     <message>
         <source>Decrease the value</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Disminueix el valor</translation>
     </message>
     <message>
         <source>Shows the menu</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mostra el menú</translation>
     </message>
     <message>
         <source>Sets the focus</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Estableix el focus</translation>
     </message>
     <message>
         <source>Toggles the state</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Commuta l&apos;estat</translation>
     </message>
     <message>
         <source>Scrolls to the left</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Desplaça a l&apos;esquerra</translation>
     </message>
     <message>
         <source>Scrolls to the right</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Desplaça a la dreta</translation>
     </message>
     <message>
         <source>Scrolls up</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Desplaça amunt</translation>
     </message>
     <message>
         <source>Scrolls down</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Desplaça avall</translation>
     </message>
     <message>
         <source>Goes back a page</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Retrocedeix una pàgina</translation>
     </message>
     <message>
         <source>Goes to the next page</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Avança a la pàgina següent</translation>
     </message>
 </context>
 <context>
@@ -827,7 +827,7 @@ a
     </message>
     <message>
         <source>Yes to All</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sí a tot</translation>
     </message>
     <message>
         <source>No</source>
@@ -835,15 +835,11 @@ a
     </message>
     <message>
         <source>No to All</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No a tot</translation>
     </message>
 </context>
 <context>
     <name>QApplication</name>
-    <message>
-        <source>Activate</source>
-        <translation type="vanished">Activa</translation>
-    </message>
     <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
         <translation>L&apos;executable &apos;%1&apos; requereix Qt %2, però s&apos;ha trobat Qt %3.</translation>
@@ -851,6 +847,10 @@ a
     <message>
         <source>Incompatible Qt Library Error</source>
         <translation>S&apos;ha produït un error de biblioteca Qt incompatible</translation>
+    </message>
+    <message>
+        <source>Activate</source>
+        <translation type="vanished">Activa</translation>
     </message>
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
@@ -881,19 +881,19 @@ a
     <name>QCocoaMenuItem</name>
     <message>
         <source>About Qt</source>
-        <translation type="unfinished">Quant al Qt</translation>
+        <translation type="unfinished">Quant a les Qt</translation>
     </message>
     <message>
         <source>About</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Quant a</translation>
     </message>
     <message>
         <source>Config</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Configuració</translation>
     </message>
     <message>
         <source>Preference</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Preferències</translation>
     </message>
     <message>
         <source>Options</source>
@@ -901,19 +901,19 @@ a
     </message>
     <message>
         <source>Setting</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Paràmetre</translation>
     </message>
     <message>
         <source>Setup</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Configuració</translation>
     </message>
     <message>
         <source>Quit</source>
-        <translation type="unfinished">Ix</translation>
+        <translation type="unfinished">Surt</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Surt</translation>
     </message>
     <message>
         <source>Cut</source>
@@ -936,7 +936,7 @@ a
     <name>QCocoaTheme</name>
     <message>
         <source>Don&apos;t Save</source>
-        <translation type="unfinished">No ho alces</translation>
+        <translation type="unfinished">No desis</translation>
     </message>
 </context>
 <context>
@@ -970,6 +970,34 @@ a
         <translation>Canal a&amp;lfa:</translation>
     </message>
     <message>
+        <source>&amp;HTML:</source>
+        <translation type="unfinished">&amp;HTML:</translation>
+    </message>
+    <message>
+        <source>Cursor at %1, %2
+Press ESC to cancel</source>
+        <translation type="unfinished">Cursor a %1, %2
+Premeu ESC per cancel·lar</translation>
+    </message>
+    <message>
+        <source>&amp;Pick Screen Color</source>
+        <translation type="unfinished">Selecció de color de la &amp;pantalla</translation>
+    </message>
+    <message>
+        <source>Cursor at %1, %2, color: %3
+Press ESC to cancel</source>
+        <translation type="obsolete">Cursor en %1, %2, color: %3
+Premeu Esc per cancel·lar</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation type="unfinished">Selecció de color</translation>
+    </message>
+    <message>
+        <source>Pick Screen Color</source>
+        <translation type="obsolete">Selecció de color de la pantalla</translation>
+    </message>
+    <message>
         <source>&amp;Basic colors</source>
         <translation>Colors &amp;bàsics</translation>
     </message>
@@ -985,30 +1013,9 @@ a
         <source>Select color</source>
         <translation type="vanished">Selecciona el color</translation>
     </message>
-    <message>
-        <source>&amp;HTML:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cursor at %1, %2
-Press ESC to cancel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select Color</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Pick Screen Color</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QComboBox</name>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">Obri</translation>
-    </message>
     <message>
         <source>False</source>
         <translation>Fals</translation>
@@ -1018,59 +1025,78 @@ Press ESC to cancel</source>
         <translation>Vertader</translation>
     </message>
     <message>
-        <source>Close</source>
-        <translation type="vanished">Tanca</translation>
+        <source>Open the combo box selection popup</source>
+        <translation type="unfinished">Obre el quadre combinat emergent</translation>
     </message>
     <message>
-        <source>Open the combo box selection popup</source>
-        <translation type="unfinished"></translation>
+        <source>Open</source>
+        <translation type="vanished">Obri</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="vanished">Tanca</translation>
     </message>
 </context>
 <context>
     <name>QCommandLineParser</name>
     <message>
         <source>Displays version information.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mostra la informació de la versió.</translation>
     </message>
     <message>
         <source>Displays this help.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mostra aquesta ajuda.</translation>
     </message>
     <message>
         <source>Unknown option &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Opció «%1» desconeguda.</translation>
     </message>
     <message>
         <source>Unknown options: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Opcions desconegudes: «%1».</translation>
     </message>
     <message>
         <source>Missing value after &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Manca un valor després de «%1».</translation>
     </message>
     <message>
         <source>Unexpected value after &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Valor inesperat després de «%1».</translation>
     </message>
     <message>
         <source>[options]</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">[opcions]</translation>
     </message>
     <message>
         <source>Usage: %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ús: %1</translation>
     </message>
     <message>
         <source>Options:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Opcions:</translation>
     </message>
     <message>
         <source>Arguments:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Arguments:</translation>
     </message>
 </context>
 <context>
     <name>QCoreApplication</name>
+    <message>
+        <source>%1: key is empty</source>
+        <comment>QSystemSemaphore</comment>
+        <translation>%1: la clau és buida</translation>
+    </message>
+    <message>
+        <source>%1: unable to make key</source>
+        <comment>QSystemSemaphore</comment>
+        <translation>%1: no es pot crear la clau</translation>
+    </message>
+    <message>
+        <source>%1: ftok failed</source>
+        <comment>QSystemSemaphore</comment>
+        <translation>%1: ha fallat ftok</translation>
+    </message>
     <message>
         <source>%1: permission denied</source>
         <comment>QSystemSemaphore</comment>
@@ -1096,89 +1122,74 @@ Press ESC to cancel</source>
         <comment>QSystemSemaphore</comment>
         <translation type="vanished">%1: error desconegut %2</translation>
     </message>
-    <message>
-        <source>%1: key is empty</source>
-        <comment>QSystemSemaphore</comment>
-        <translation>%1: la clau és buida</translation>
-    </message>
-    <message>
-        <source>%1: unable to make key</source>
-        <comment>QSystemSemaphore</comment>
-        <translation>%1: no es pot crear la clau</translation>
-    </message>
-    <message>
-        <source>%1: ftok failed</source>
-        <comment>QSystemSemaphore</comment>
-        <translation>%1: ha fallat ftok</translation>
-    </message>
 </context>
 <context>
     <name>QCupsJobWidget</name>
     <message>
         <source>Job</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Treball</translation>
     </message>
     <message>
         <source>Job Control</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Control de treballs</translation>
     </message>
     <message>
         <source>Scheduled printing:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Impressió planificada:</translation>
     </message>
     <message>
         <source>Billing information:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Informació de facturació:</translation>
     </message>
     <message>
         <source>Job priority:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Prioritat del treball:</translation>
     </message>
     <message>
         <source>Banner Pages</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Pàgines de bàner</translation>
     </message>
     <message>
         <source>End:</source>
         <comment>Banner page at end</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Final:</translation>
     </message>
     <message>
         <source>Start:</source>
         <comment>Banner page at start</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Inici:</translation>
     </message>
     <message>
         <source>Print Immediately</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Imprimeix immediatament</translation>
     </message>
     <message>
         <source>Hold Indefinitely</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Retén indefinidament</translation>
     </message>
     <message>
         <source>Day (06:00 to 17:59)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Diürn (06:00 a 17:59)</translation>
     </message>
     <message>
         <source>Night (18:00 to 05:59)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Nocturn (18:00 a 05:59)</translation>
     </message>
     <message>
         <source>Second Shift (16:00 to 23:59)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Segon torn (16:00 a 23:59)</translation>
     </message>
     <message>
         <source>Third Shift (00:00 to 07:59)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Tercer torn (00:00 a 07:59)</translation>
     </message>
     <message>
         <source>Weekend (Saturday to Sunday)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Cap de setmana (Dissabte a diumenge)</translation>
     </message>
     <message>
         <source>Specific Time</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Hora específica</translation>
     </message>
     <message>
         <source>None</source>
@@ -1188,32 +1199,32 @@ Press ESC to cancel</source>
     <message>
         <source>Standard</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Estàndard</translation>
     </message>
     <message>
         <source>Unclassified</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sense classificar</translation>
     </message>
     <message>
         <source>Confidential</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Confidencial</translation>
     </message>
     <message>
         <source>Classified</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Classificat</translation>
     </message>
     <message>
         <source>Secret</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Secret</translation>
     </message>
     <message>
         <source>Top Secret</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Secret</translation>
     </message>
 </context>
 <context>
@@ -1449,97 +1460,101 @@ Press ESC to cancel</source>
     <name>QDnsLookup</name>
     <message>
         <source>Operation cancelled</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Operació cancel·lada</translation>
     </message>
 </context>
 <context>
     <name>QDnsLookupRunnable</name>
     <message>
-        <source>IPv6 addresses for nameservers are currently not supported</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Invalid domain name</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Nom de domini no vàlid</translation>
     </message>
     <message>
         <source>Not yet supported on Android</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Encara no està implementat a l&apos;Android</translation>
     </message>
     <message>
         <source>Resolver functions not found</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha trobat les funcions del resolutor</translation>
     </message>
     <message>
         <source>Resolver initialization failed</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">La inicialització del resolutor ha fallat</translation>
+    </message>
+    <message>
+        <source>IPv6 addresses for nameservers is currently not supported</source>
+        <translation type="obsolete">Actualment les adreces IPv6 no estan implementades pels servidors de noms</translation>
     </message>
     <message>
         <source>Server could not process query</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El servidor no ha pogut processar la consulta</translation>
     </message>
     <message>
         <source>Server failure</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Fallada del servidor</translation>
     </message>
     <message>
         <source>Non existent domain</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Domini no existent</translation>
     </message>
     <message>
         <source>Server refused to answer</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El servidor ha refusat respondre</translation>
     </message>
     <message>
         <source>Invalid reply received</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">S&apos;ha rebut una resposta no vàlida</translation>
     </message>
     <message>
         <source>Could not expand domain name</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha pogut expandir el nom de domini</translation>
     </message>
     <message>
         <source>Invalid IPv4 address record</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Registre no vàlid d&apos;adreça IPv4</translation>
     </message>
     <message>
         <source>Invalid IPv6 address record</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Registre no vàlid d&apos;adreça IPv6</translation>
     </message>
     <message>
         <source>Invalid canonical name record</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Registre no vàlid de nom canònic</translation>
     </message>
     <message>
         <source>Invalid name server record</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Registre no vàlid de servidor de noms</translation>
     </message>
     <message>
         <source>Invalid pointer record</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Registre no vàlid de punter de noms</translation>
     </message>
     <message>
         <source>Invalid mail exchange record</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Registre no vàlid d&apos;intercanvi de correu</translation>
     </message>
     <message>
         <source>Invalid service record</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Registre no vàlid de servei</translation>
     </message>
     <message>
         <source>Invalid text record</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Registre no vàlid de text</translation>
     </message>
     <message>
         <source>Resolver library can&apos;t be loaded: No runtime library loading support</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha pogut carregar la biblioteca de resolució: No s&apos;ha implementat la càrrega de biblioteques en execució</translation>
     </message>
     <message>
         <source>No hostname given</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha indicat cap nom d&apos;ordinador</translation>
     </message>
     <message>
         <source>Invalid hostname</source>
+        <translation type="unfinished">Nom d&apos;ordinador no vàlid</translation>
+    </message>
+    <message>
+        <source>IPv6 addresses for nameservers are currently not supported</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1554,26 +1569,26 @@ Press ESC to cancel</source>
 <context>
     <name>QDockWidget</name>
     <message>
-        <source>Close</source>
-        <extracomment>Accessible name for button closing a dock widget</extracomment>
-        <translation>Tanca</translation>
-    </message>
-    <message>
-        <source>Dock</source>
-        <translation type="vanished">Acoblador</translation>
-    </message>
-    <message>
         <source>Float</source>
         <extracomment>Accessible name for button undocking a dock widget (floating state)</extracomment>
         <translation>Float</translation>
     </message>
     <message>
         <source>Undocks and re-attaches the dock widget</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Desacobla i torna a enganxar l&apos;estri acoblador</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <extracomment>Accessible name for button closing a dock widget</extracomment>
+        <translation>Tanca</translation>
     </message>
     <message>
         <source>Closes the dock widget</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Tanca l&apos;estri acoblador</translation>
+    </message>
+    <message>
+        <source>Dock</source>
+        <translation type="vanished">Acoblador</translation>
     </message>
 </context>
 <context>
@@ -1614,77 +1629,209 @@ Press ESC to cancel</source>
     <name>QFile</name>
     <message>
         <source>Destination file is the same file.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El fitxer de destinació és el mateix fitxer.</translation>
     </message>
     <message>
         <source>Source file does not exist.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El fitxer origen no existeix.</translation>
     </message>
     <message>
         <source>Destination file exists</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El fitxer de destinació existeix</translation>
     </message>
     <message>
         <source>Error while renaming.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Error en canviar de nom.</translation>
     </message>
     <message>
         <source>Unable to restore from %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha pogut restaurar des de %1: %2</translation>
     </message>
     <message>
         <source>Will not rename sequential file using block copy</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No es pot canviar de nom un fitxer seqüencial utilitzant la còpia de blocs</translation>
     </message>
     <message>
         <source>Cannot remove source file</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha pogut eliminar el fitxer origen</translation>
     </message>
     <message>
         <source>Cannot open %1 for input</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha pogut obrir %1 per entrada</translation>
     </message>
     <message>
         <source>Cannot open for output</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha pogut obrir per sortida</translation>
     </message>
     <message>
         <source>Failure to write block</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ha fallat en escriure un bloc</translation>
     </message>
     <message>
         <source>Cannot create %1 for output</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha pogut crear %1 per sortida</translation>
     </message>
 </context>
 <context>
     <name>QFileDevice</name>
     <message>
         <source>No file engine available or engine does not support UnMapExtension</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No hi ha disponible cap motor de fitxers o el motor no accepta «UnMapExtension»</translation>
     </message>
 </context>
 <context>
     <name>QFileDialog</name>
     <message>
-        <source>All Files (*)</source>
-        <translation>Tots els fitxers (*)</translation>
+        <source>Look in:</source>
+        <translation>Cerca a:</translation>
     </message>
     <message>
-        <source>Directories</source>
-        <translation>Directoris</translation>
+        <source>Back</source>
+        <translation>Arrere</translation>
+    </message>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished">Retrocedeix</translation>
+    </message>
+    <message>
+        <source>Alt+Left</source>
+        <translation type="unfinished">Alt+Esquerra</translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation>Avant</translation>
+    </message>
+    <message>
+        <source>Go forward</source>
+        <translation type="unfinished">Avança</translation>
+    </message>
+    <message>
+        <source>Alt+Right</source>
+        <translation type="unfinished">Alt+Dreta</translation>
+    </message>
+    <message>
+        <source>Parent Directory</source>
+        <translation>Directori pare</translation>
+    </message>
+    <message>
+        <source>Go to the parent directory</source>
+        <translation type="unfinished">Va al directori superior</translation>
+    </message>
+    <message>
+        <source>Alt+Up</source>
+        <translation type="unfinished">Alt+Amunt</translation>
+    </message>
+    <message>
+        <source>Create New Folder</source>
+        <translation>Crea una carpeta nova</translation>
+    </message>
+    <message>
+        <source>Create a New Folder</source>
+        <translation type="unfinished">Crea una carpeta nova</translation>
+    </message>
+    <message>
+        <source>List View</source>
+        <translation>Visualitza com a llista</translation>
+    </message>
+    <message>
+        <source>Change to list view mode</source>
+        <translation type="unfinished">Canvia al mode de vista de llista</translation>
+    </message>
+    <message>
+        <source>Detail View</source>
+        <translation>Vista detallada</translation>
+    </message>
+    <message>
+        <source>Change to detail view mode</source>
+        <translation type="unfinished">Canvia al mode de vista de detall</translation>
+    </message>
+    <message>
+        <source>Sidebar</source>
+        <translation type="unfinished">Barra lateral</translation>
+    </message>
+    <message>
+        <source>List of places and bookmarks</source>
+        <translation type="unfinished">Llista de llocs i adreces d&apos;interès</translation>
+    </message>
+    <message>
+        <source>Files</source>
+        <translation type="unfinished">Fitxers</translation>
+    </message>
+    <message>
+        <source>Files of type:</source>
+        <translation>Fitxers del tipus:</translation>
+    </message>
+    <message>
+        <source>Find Directory</source>
+        <translation>Cerca al directori</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Obri</translation>
+    </message>
+    <message>
+        <source>Save As</source>
+        <translation>Anomena i alça</translation>
+    </message>
+    <message>
+        <source>Directory:</source>
+        <translation>Directori:</translation>
+    </message>
+    <message>
+        <source>File &amp;name:</source>
+        <translation>&amp;Nom de fitxer:</translation>
     </message>
     <message>
         <source>&amp;Open</source>
         <translation>&amp;Obri</translation>
     </message>
     <message>
+        <source>&amp;Choose</source>
+        <translation>&amp;Tria</translation>
+    </message>
+    <message>
         <source>&amp;Save</source>
         <translation>&amp;Alça</translation>
     </message>
     <message>
-        <source>Open</source>
-        <translation>Obri</translation>
+        <source>All Files (*)</source>
+        <translation>Tots els fitxers (*)</translation>
+    </message>
+    <message>
+        <source>Show </source>
+        <translation>Mostra </translation>
+    </message>
+    <message>
+        <source>&amp;Rename</source>
+        <translation>&amp;Canvia el nom</translation>
+    </message>
+    <message>
+        <source>&amp;Delete</source>
+        <translation>&amp;Suprimeix</translation>
+    </message>
+    <message>
+        <source>Show &amp;hidden files</source>
+        <translation>Mostra els fitxers &amp;ocults</translation>
+    </message>
+    <message>
+        <source>&amp;New Folder</source>
+        <translation>Carpeta &amp;nova</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="unfinished">Tots els fitxers (*)</translation>
+    </message>
+    <message>
+        <source>Directories</source>
+        <translation>Directoris</translation>
+    </message>
+    <message>
+        <source>%1
+Directory not found.
+Please verify the correct directory name was given.</source>
+        <translation>%1
+No s&apos;ha trobat el directori.
+Comproveu que el nom del directori es correcte.</translation>
     </message>
     <message>
         <source>%1 already exists.
@@ -1701,52 +1848,12 @@ No s&apos;ha trobat el fitxer.
 Comproveu que el nom del fitxer es correcte.</translation>
     </message>
     <message>
-        <source>My Computer</source>
-        <translation>El meu ordinador</translation>
+        <source>New Folder</source>
+        <translation>Carpeta nova</translation>
     </message>
     <message>
-        <source>&amp;Rename</source>
-        <translation>&amp;Canvia el nom</translation>
-    </message>
-    <message>
-        <source>&amp;Delete</source>
-        <translation>&amp;Suprimeix</translation>
-    </message>
-    <message>
-        <source>Show &amp;hidden files</source>
-        <translation>Mostra els fitxers &amp;ocults</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Arrere</translation>
-    </message>
-    <message>
-        <source>Parent Directory</source>
-        <translation>Directori pare</translation>
-    </message>
-    <message>
-        <source>List View</source>
-        <translation>Visualitza com a llista</translation>
-    </message>
-    <message>
-        <source>Detail View</source>
-        <translation>Vista detallada</translation>
-    </message>
-    <message>
-        <source>Files of type:</source>
-        <translation>Fitxers del tipus:</translation>
-    </message>
-    <message>
-        <source>Directory:</source>
-        <translation>Directori:</translation>
-    </message>
-    <message>
-        <source>%1
-Directory not found.
-Please verify the correct directory name was given.</source>
-        <translation>%1
-No s&apos;ha trobat el directori.
-Comproveu que el nom del directori es correcte.</translation>
+        <source>Delete</source>
+        <translation type="unfinished">Suprimeix</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is write protected.
@@ -1754,161 +1861,94 @@ Do you want to delete it anyway?</source>
         <translation>&apos;%1&apos; està protegit contra escriptura.Voleu suprimir-lo igualment?</translation>
     </message>
     <message>
-        <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation type="vanished">Esteu segur que voleu suprimir &apos;%1&apos;?</translation>
+        <source>Are you sure you want to delete &apos;%1&apos;?</source>
+        <translation type="unfinished">Esteu segur que voleu suprimir «%1»?</translation>
     </message>
     <message>
         <source>Could not delete directory.</source>
         <translation>No s&apos;ha pogut suprimir el directori.</translation>
     </message>
     <message>
-        <source>Save As</source>
-        <translation>Anomena i alça</translation>
-    </message>
-    <message>
-        <source>Drive</source>
-        <translation>Unitat</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation>Fitxer</translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <translation>Desconegut</translation>
-    </message>
-    <message>
-        <source>Find Directory</source>
-        <translation>Cerca al directori</translation>
-    </message>
-    <message>
-        <source>Show </source>
-        <translation>Mostra </translation>
-    </message>
-    <message>
-        <source>Forward</source>
-        <translation>Avant</translation>
-    </message>
-    <message>
-        <source>New Folder</source>
-        <translation>Carpeta nova</translation>
-    </message>
-    <message>
-        <source>&amp;New Folder</source>
-        <translation>Carpeta &amp;nova</translation>
-    </message>
-    <message>
-        <source>&amp;Choose</source>
-        <translation>&amp;Tria</translation>
+        <source>Recent Places</source>
+        <translation type="unfinished">Llocs recents</translation>
     </message>
     <message>
         <source>Remove</source>
         <translation>Elimina</translation>
     </message>
     <message>
-        <source>File &amp;name:</source>
-        <translation>&amp;Nom de fitxer:</translation>
+        <source>My Computer</source>
+        <translation>El meu ordinador</translation>
     </message>
     <message>
-        <source>Look in:</source>
-        <translation>Cerca a:</translation>
-    </message>
-    <message>
-        <source>Create New Folder</source>
-        <translation>Crea una carpeta nova</translation>
-    </message>
-    <message>
-        <source>Go back</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+Left</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go forward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+Right</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go to the parent directory</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+Up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a New Folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change to list view mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change to detail view mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sidebar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>List of places and bookmarks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Files</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="unfinished">Suprimeix</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to delete &apos;%1&apos;?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recent Places</source>
-        <translation type="unfinished"></translation>
+        <source>Drive</source>
+        <translation>Unitat</translation>
     </message>
     <message>
         <source>%1 File</source>
         <extracomment>%1 is a file name suffix, for example txt</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Fitxer %1</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>Fitxer</translation>
     </message>
     <message>
         <source>File Folder</source>
         <comment>Match Windows Explorer</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Carpeta de fitxers</translation>
     </message>
     <message>
         <source>Folder</source>
         <comment>All other platforms</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Carpeta</translation>
     </message>
     <message>
         <source>Alias</source>
-        <comment>OS X Finder</comment>
-        <translation type="unfinished"></translation>
+        <comment>Mac OS X Finder</comment>
+        <translation type="obsolete">Àlies</translation>
     </message>
     <message>
         <source>Shortcut</source>
         <comment>All other platforms</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Drecera</translation>
+    </message>
+    <message>
+        <source>Unknown</source>
+        <translation>Desconegut</translation>
+    </message>
+    <message>
+        <source>Are sure you want to delete &apos;%1&apos;?</source>
+        <translation type="vanished">Esteu segur que voleu suprimir &apos;%1&apos;?</translation>
+    </message>
+    <message>
+        <source>Alias</source>
+        <comment>OS X Finder</comment>
+        <translation type="unfinished">Àlies</translation>
     </message>
 </context>
 <context>
     <name>QFileSystemModel</name>
+    <message>
+        <source>%1 TB</source>
+        <translation>%1 TB</translation>
+    </message>
+    <message>
+        <source>%1 GB</source>
+        <translation>%1 GB</translation>
+    </message>
+    <message>
+        <source>%1 MB</source>
+        <translation>%1 MB</translation>
+    </message>
+    <message>
+        <source>%1 KB</source>
+        <translation>%1 KB</translation>
+    </message>
+    <message>
+        <source>%1 bytes</source>
+        <translation>%1 bytes</translation>
+    </message>
     <message>
         <source>Invalid filename</source>
         <translation>Nom de fitxer no vàlid</translation>
@@ -1948,28 +1988,8 @@ Do you want to delete it anyway?</source>
         <translation>Ordinador</translation>
     </message>
     <message>
-        <source>%1 TB</source>
-        <translation>%1 TB</translation>
-    </message>
-    <message>
-        <source>%1 GB</source>
-        <translation>%1 GB</translation>
-    </message>
-    <message>
-        <source>%1 MB</source>
-        <translation>%1 MB</translation>
-    </message>
-    <message>
-        <source>%1 KB</source>
-        <translation>%1 KB</translation>
-    </message>
-    <message>
-        <source>%1 bytes</source>
-        <translation>%1 bytes</translation>
-    </message>
-    <message>
         <source>%1 byte(s)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1 byte(s)</translation>
     </message>
 </context>
 <context>
@@ -1998,6 +2018,33 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Light</source>
         <translation>Lleuger</translation>
+    </message>
+    <message>
+        <source>Normal</source>
+        <comment>The Normal or Regular font weight</comment>
+        <translation type="unfinished">Normal</translation>
+    </message>
+    <message>
+        <source>Medium</source>
+        <comment>The Medium font weight</comment>
+        <translation type="unfinished">Mig</translation>
+    </message>
+    <message>
+        <source>Thin</source>
+        <translation type="unfinished">Fi</translation>
+    </message>
+    <message>
+        <source>Extra Light</source>
+        <translation type="unfinished">Extra fi</translation>
+    </message>
+    <message>
+        <source>Extra Bold</source>
+        <translation type="unfinished">Extra negreta</translation>
+    </message>
+    <message>
+        <source>Extra</source>
+        <extracomment>The word for &quot;Extra&quot; as in &quot;Extra Bold, Extra Thin&quot; used as a pattern for string searches</extracomment>
+        <translation type="unfinished">Extra</translation>
     </message>
     <message>
         <source>Italic</source>
@@ -2140,39 +2187,16 @@ Do you want to delete it anyway?</source>
         <translation>Rúnic</translation>
     </message>
     <message>
-        <source>Normal</source>
-        <comment>The Normal or Regular font weight</comment>
-        <translation type="unfinished">Normal</translation>
-    </message>
-    <message>
-        <source>Medium</source>
-        <comment>The Medium font weight</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Thin</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Extra Light</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Extra Bold</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Extra</source>
-        <extracomment>The word for &quot;Extra&quot; as in &quot;Extra Bold, Extra Thin&quot; used as a pattern for string searches</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>N&apos;Ko</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Nko</translation>
     </message>
 </context>
 <context>
     <name>QFontDialog</name>
+    <message>
+        <source>Select Font</source>
+        <translation>Seleccioneu el tipus de lletra</translation>
+    </message>
     <message>
         <source>&amp;Font</source>
         <translation>&amp;Tipus de lletra</translation>
@@ -2205,10 +2229,6 @@ Do you want to delete it anyway?</source>
         <source>Wr&amp;iting System</source>
         <translation>S&amp;istema d&apos;escriptura</translation>
     </message>
-    <message>
-        <source>Select Font</source>
-        <translation>Seleccioneu el tipus de lletra</translation>
-    </message>
 </context>
 <context>
     <name>QFtp</name>
@@ -2225,12 +2245,16 @@ Do you want to delete it anyway?</source>
         <translation>S&apos;ha rebutjat la connexió a l&apos;amfitrió %1</translation>
     </message>
     <message>
+        <source>Connection timed out to host %1</source>
+        <translation type="unfinished">Temps de connexió excedit al servidor %1</translation>
+    </message>
+    <message>
         <source>Connected to host %1</source>
         <translation>Connectat a l&apos;amfitrió %1</translation>
     </message>
     <message>
-        <source>Connection refused for data connection</source>
-        <translation type="vanished">S&apos;ha rebutjat la connexió per connexió de dades</translation>
+        <source>Data Connection refused</source>
+        <translation type="unfinished">S&apos;ha rebutjat la connexió de dades</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -2295,6 +2319,10 @@ Do you want to delete it anyway?</source>
         <translation>S&apos;ha tancat la connexió</translation>
     </message>
     <message>
+        <source>Connection refused for data connection</source>
+        <translation type="vanished">S&apos;ha rebutjat la connexió per connexió de dades</translation>
+    </message>
+    <message>
         <source>Host %1 found</source>
         <translation type="vanished">S&apos;ha trobat l&apos;amfitrió %1</translation>
     </message>
@@ -2310,24 +2338,16 @@ Do you want to delete it anyway?</source>
         <source>Connected to host</source>
         <translation type="vanished">Connectat a l&apos;amfitrió</translation>
     </message>
-    <message>
-        <source>Connection timed out to host %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Data Connection refused</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QGnomeTheme</name>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;D&apos;acord</translation>
+        <translation type="unfinished">D&apos;ac&amp;ord</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="unfinished">&amp;Alça</translation>
+        <translation type="unfinished">&amp;Desa</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
@@ -2339,7 +2359,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Close without Saving</source>
-        <translation type="unfinished">Tanca sense alçar</translation>
+        <translation type="unfinished">Tanca sense desar</translation>
     </message>
 </context>
 <context>
@@ -2353,43 +2373,75 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QHostInfo</name>
     <message>
-        <source>Unknown error</source>
-        <translation>Error desconegut</translation>
+        <source>No host name given</source>
+        <translation type="unfinished">No s&apos;ha proporcionat cap nom d&apos;ordinador</translation>
     </message>
     <message>
-        <source>No host name given</source>
-        <translation type="unfinished"></translation>
+        <source>Unknown error</source>
+        <translation>Error desconegut</translation>
     </message>
 </context>
 <context>
     <name>QHostInfoAgent</name>
     <message>
-        <source>Host not found</source>
-        <translation>No s&apos;ha trobat l&apos;amfitrió</translation>
+        <source>No host name given</source>
+        <translation type="unfinished">No s&apos;ha proporcionat cap nom d&apos;ordinador</translation>
+    </message>
+    <message>
+        <source>Invalid hostname</source>
+        <translation type="unfinished">Nom d&apos;ordinador no vàlid</translation>
     </message>
     <message>
         <source>Unknown address type</source>
         <translation>Tipus d&apos;adreça desconegut</translation>
     </message>
     <message>
+        <source>Host not found</source>
+        <translation>No s&apos;ha trobat l&apos;amfitrió</translation>
+    </message>
+    <message>
         <source>Unknown error</source>
         <translation>Error desconegut</translation>
     </message>
     <message>
-        <source>No host name given</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Invalid hostname</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Unknown error (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Error desconegut (%1)</translation>
     </message>
 </context>
 <context>
     <name>QHttp</name>
+    <message>
+        <source>Host %1 not found</source>
+        <translation>No s&apos;ha trobat l&apos;amfitrió %1</translation>
+    </message>
+    <message>
+        <source>Connection refused</source>
+        <translation>S&apos;ha rebutjat la connexió</translation>
+    </message>
+    <message>
+        <source>Connection closed</source>
+        <translation>S&apos;ha tancat la connexió</translation>
+    </message>
+    <message>
+        <source>Proxy requires authentication</source>
+        <translation>Es requereix autenticació del servidor intermediari</translation>
+    </message>
+    <message>
+        <source>Host requires authentication</source>
+        <translation>Es requereix autenticació de l&apos;amfitrió</translation>
+    </message>
+    <message>
+        <source>Data corrupted</source>
+        <translation>Dades no vàlides</translation>
+    </message>
+    <message>
+        <source>Unknown protocol specified</source>
+        <translation>El protocol esfecificat és desconegut</translation>
+    </message>
+    <message>
+        <source>SSL handshake failed</source>
+        <translation>S&apos;ha produït un error en la conformitat de connexió SSL</translation>
+    </message>
     <message>
         <source>Unknown error</source>
         <translation type="vanished">Error desconegut</translation>
@@ -2409,14 +2461,6 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Server closed connection unexpectedly</source>
         <translation type="vanished">El servidor s&apos;ha tancat inesperadament</translation>
-    </message>
-    <message>
-        <source>Connection refused</source>
-        <translation>S&apos;ha rebutjat la connexió</translation>
-    </message>
-    <message>
-        <source>Host %1 not found</source>
-        <translation>No s&apos;ha trobat l&apos;amfitrió %1</translation>
     </message>
     <message>
         <source>HTTP request failed</source>
@@ -2451,10 +2495,6 @@ Do you want to delete it anyway?</source>
         <translation type="vanished">Connectat a l&apos;amfitrió</translation>
     </message>
     <message>
-        <source>Connection closed</source>
-        <translation>S&apos;ha tancat la connexió</translation>
-    </message>
-    <message>
         <source>Proxy authentication required</source>
         <translation type="vanished">Es requereix autenticació del servidor intermediari</translation>
     </message>
@@ -2471,26 +2511,6 @@ Do you want to delete it anyway?</source>
         <translation type="vanished">S&apos;ha rebutjat la connexió (temps d&apos;espera excedit)</translation>
     </message>
     <message>
-        <source>Proxy requires authentication</source>
-        <translation>Es requereix autenticació del servidor intermediari</translation>
-    </message>
-    <message>
-        <source>Host requires authentication</source>
-        <translation>Es requereix autenticació de l&apos;amfitrió</translation>
-    </message>
-    <message>
-        <source>Data corrupted</source>
-        <translation>Dades no vàlides</translation>
-    </message>
-    <message>
-        <source>Unknown protocol specified</source>
-        <translation>El protocol esfecificat és desconegut</translation>
-    </message>
-    <message>
-        <source>SSL handshake failed</source>
-        <translation>S&apos;ha produït un error en la conformitat de connexió SSL</translation>
-    </message>
-    <message>
         <source>Too many redirects</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2502,40 +2522,40 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QHttpSocketEngine</name>
     <message>
+        <source>Did not receive HTTP response from proxy</source>
+        <translation type="unfinished">No s&apos;ha rebut cap resposta HTTP del servidor intermediari</translation>
+    </message>
+    <message>
+        <source>Error parsing authentication request from proxy</source>
+        <translation type="unfinished">Error en analitzar la sol·licitud d&apos;autenticació del servidor intermediari</translation>
+    </message>
+    <message>
         <source>Authentication required</source>
         <translation>Es requreix autenticació</translation>
     </message>
     <message>
-        <source>Did not receive HTTP response from proxy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error parsing authentication request from proxy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Proxy denied connection</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El servidor intermediari ha denegat la connexió</translation>
     </message>
     <message>
         <source>Error communicating with HTTP proxy</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Error en comunicar amb el servidor intermediari HTTP</translation>
     </message>
     <message>
         <source>Proxy server not found</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha trobat el servidor intermediari</translation>
     </message>
     <message>
         <source>Proxy connection refused</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">S&apos;ha rebutjat la connexió al servidor intermediari</translation>
     </message>
     <message>
         <source>Proxy server connection timed out</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Temps de connexió excedit al servidor intermediari</translation>
     </message>
     <message>
         <source>Proxy connection closed prematurely</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">La connexió al servidor intermediari s&apos;ha tancat abans d&apos;hora</translation>
     </message>
 </context>
 <context>
@@ -2647,31 +2667,31 @@ Do you want to delete it anyway?</source>
         <translation>No hi ha espai lliure en el dispositiu</translation>
     </message>
     <message>
-        <source>Unknown error</source>
-        <translation>Error desconegut</translation>
+        <source>file to open is a directory</source>
+        <translation type="unfinished">el fitxer a obrir és un directori</translation>
     </message>
     <message>
-        <source>file to open is a directory</source>
-        <translation type="unfinished"></translation>
+        <source>Unknown error</source>
+        <translation>Error desconegut</translation>
     </message>
 </context>
 <context>
     <name>QImageReader</name>
     <message>
         <source>Invalid device</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Dispositiu no vàlid</translation>
     </message>
     <message>
         <source>File not found</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha trobat el fitxer</translation>
     </message>
     <message>
         <source>Unsupported image format</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Format d&apos;imatge no implementat</translation>
     </message>
     <message>
         <source>Unable to read image data</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;han pogut llegir les dades de la imatge</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -2686,15 +2706,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Device is not set</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha definit cap dispositiu</translation>
     </message>
     <message>
         <source>Device not writable</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No es pot escriure en el dispositiu</translation>
     </message>
     <message>
         <source>Unsupported image format</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Format d&apos;imatge no implementat</translation>
     </message>
 </context>
 <context>
@@ -2720,86 +2740,166 @@ Do you want to delete it anyway?</source>
     <name>QInputDialog</name>
     <message>
         <source>Enter a value:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Introduïu un valor:</translation>
     </message>
 </context>
 <context>
     <name>QJsonParseError</name>
     <message>
         <source>no error occurred</source>
-        <translation type="unfinished">no s&apos;ha produït cap error</translation>
+        <translation type="unfinished">sense errors</translation>
     </message>
     <message>
         <source>unterminated object</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">objecte sense finalitzar</translation>
     </message>
     <message>
         <source>missing name separator</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">manca separador de nom</translation>
     </message>
     <message>
         <source>unterminated array</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">matriu sense finalitzar</translation>
     </message>
     <message>
         <source>missing value separator</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">manca separador de valor</translation>
     </message>
     <message>
         <source>illegal value</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">valor il·legal</translation>
     </message>
     <message>
         <source>invalid termination by number</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">finalització no vàlida per nombre</translation>
     </message>
     <message>
         <source>illegal number</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">nombre il·legal</translation>
     </message>
     <message>
         <source>invalid escape sequence</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">seqüència d&apos;escapada no vàlida</translation>
     </message>
     <message>
         <source>invalid UTF8 string</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">cadena UTF8 no vàlida</translation>
     </message>
     <message>
         <source>unterminated string</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">cadena sense finalitzar</translation>
     </message>
     <message>
         <source>object is missing after a comma</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">manca un objecte després d&apos;una coma</translation>
     </message>
     <message>
         <source>too deeply nested document</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">document imbricat amb massa profunditat</translation>
     </message>
     <message>
         <source>too large document</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">document massa gran</translation>
     </message>
     <message>
         <source>garbage at the end of the document</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">brutícia al final del document</translation>
     </message>
 </context>
 <context>
     <name>QKeySequenceEdit</name>
     <message>
         <source>Press shortcut</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Premeu drecera</translation>
     </message>
     <message>
         <source>%1, ...</source>
         <extracomment>This text is an &quot;unfinished&quot; shortcut, expands like &quot;Ctrl+A, ...&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1, ...</translation>
     </message>
 </context>
 <context>
     <name>QLibrary</name>
+    <message>
+        <source>&apos;%1&apos; is not an ELF object (%2)</source>
+        <translation type="unfinished">«%1» no és cap objecte ELF (%2)</translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos; is not an ELF object</source>
+        <translation type="unfinished">«%1» no és cap objecte ELF</translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos; is an invalid ELF object (%2)</source>
+        <translation type="unfinished">«%1» és un objecte ELF no vàlid (%2)</translation>
+    </message>
+    <message>
+        <source>Plugin verification data mismatch in &apos;%1&apos;</source>
+        <translation type="vanished">Les dades de verificació del connector són diferents en &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>The shared library was not found.</source>
+        <translation>No s&apos;ha trobat la biblioteca compartida.</translation>
+    </message>
+    <message>
+        <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
+        <translation>El fitxer &apos;%1&apos; no és un connector Qt vàlid.</translation>
+    </message>
+    <message>
+        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
+        <translation>El connector &apos;%1&apos; usa biblioteca Qt incompatible. (%2.%3.%4) [%5]</translation>
+    </message>
+    <message>
+        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
+        <translation>El connector &apos;%1&apos; fa servir una biblioteca Qt incompatible. (No es poden barrejar les biblioteques de depuració i llançament.)</translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation>Error desconegut</translation>
+    </message>
+    <message>
+        <source>Cannot load library %1: %2</source>
+        <translation type="unfinished">No s&apos;ha pogut carregar la biblioteca %1: %2</translation>
+    </message>
+    <message>
+        <source>Cannot unload library %1: %2</source>
+        <translation type="unfinished">No s&apos;ha pogut descarregar la biblioteca %1: %2</translation>
+    </message>
+    <message>
+        <source>Cannot resolve symbol &quot;%1&quot; in %2: %3</source>
+        <translation type="unfinished">No s&apos;ha pogut resoldre el símbol «%1» en %2: %3</translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos; is not a valid Mach-O binary (%2)</source>
+        <translation type="unfinished">«%1» no és cap binari Mach-O vàlid (%2)</translation>
+    </message>
+    <message>
+        <source>file is corrupt</source>
+        <translation type="unfinished">el fitxer està malmès</translation>
+    </message>
+    <message>
+        <source>file too small</source>
+        <translation type="unfinished">el fitxer és massa petit</translation>
+    </message>
+    <message>
+        <source>no suitable architecture in fat binary</source>
+        <translation type="unfinished">no hi ha cap arquitectura apropiada en el «fat binary»</translation>
+    </message>
+    <message>
+        <source>invalid magic %1</source>
+        <translation type="unfinished">màgic %1 no vàlid</translation>
+    </message>
+    <message>
+        <source>wrong architecture</source>
+        <translation type="unfinished">arquitectura incorrecta</translation>
+    </message>
+    <message>
+        <source>not a dynamic library</source>
+        <translation type="unfinished">no és cap biblioteca dinàmica</translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos; is not a Qt plugin</source>
+        <translation type="unfinished">«%1» no és cap connector Qt</translation>
+    </message>
     <message>
         <source>QLibrary::load_sys: Cannot load %1 (%2)</source>
         <translation type="vanished">QLibrary::load_sys: No es pot carregar %1 (%2)</translation>
@@ -2817,95 +2917,15 @@ Do you want to delete it anyway?</source>
         <translation type="vanished">No s&apos;ha pogut mmap &apos;%1&apos;: %2</translation>
     </message>
     <message>
-        <source>Plugin verification data mismatch in &apos;%1&apos;</source>
-        <translation type="vanished">Les dades de verificació del connector són diferents en &apos;%1&apos;</translation>
-    </message>
-    <message>
         <source>Could not unmap &apos;%1&apos;: %2</source>
         <translation type="vanished">No s&apos;ha pogut desmapar &apos;%1&apos;: %2</translation>
-    </message>
-    <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
-        <translation>El connector &apos;%1&apos; usa biblioteca Qt incompatible. (%2.%3.%4) [%5]</translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
         <translation type="vanished">El connector &apos;%1&apos; usa una bilioteca Qt incompatible. S&apos;esperava build key &quot;%2&quot;, got &quot;%3&quot;</translation>
     </message>
     <message>
-        <source>Unknown error</source>
-        <translation>Error desconegut</translation>
-    </message>
-    <message>
-        <source>The shared library was not found.</source>
-        <translation>No s&apos;ha trobat la biblioteca compartida.</translation>
-    </message>
-    <message>
-        <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
-        <translation>El fitxer &apos;%1&apos; no és un connector Qt vàlid.</translation>
-    </message>
-    <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
-        <translation>El connector &apos;%1&apos; fa servir una biblioteca Qt incompatible. (No es poden barrejar les biblioteques de depuració i llançament.)</translation>
-    </message>
-    <message>
-        <source>&apos;%1&apos; is not an ELF object (%2)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&apos;%1&apos; is not an ELF object</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&apos;%1&apos; is an invalid ELF object (%2)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to extract plugin meta data from &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cannot load library %1: %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cannot unload library %1: %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cannot resolve symbol &quot;%1&quot; in %2: %3</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&apos;%1&apos; is not a valid Mach-O binary (%2)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>file is corrupt</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>file too small</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>no suitable architecture in fat binary</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>invalid magic %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>wrong architecture</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>not a dynamic library</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&apos;%1&apos; is not a Qt plugin</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2998,31 +3018,31 @@ Do you want to delete it anyway?</source>
         <translation>%1: L&apos;operació de sòcol no és compatible</translation>
     </message>
     <message>
+        <source>%1: Operation not permitted when socket is in this state</source>
+        <translation type="unfinished">%1: Operació no permesa quan el sòcol és en aquest estat</translation>
+    </message>
+    <message>
+        <source>%1: Unknown error</source>
+        <translation type="unfinished">%1: Error desconegut</translation>
+    </message>
+    <message>
+        <source>Trying to connect while connection is in progress</source>
+        <translation type="unfinished">S&apos;intenta connectar mentre la connexió és en curs</translation>
+    </message>
+    <message>
         <source>%1: Unknown error %2</source>
         <translation>%1: error desconegut %2</translation>
     </message>
     <message>
-        <source>%1: Operation not permitted when socket is in this state</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1: Unknown error</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Trying to connect while connection is in progress</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1: Access denied</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1: S&apos;ha denegat l&apos;accés</translation>
     </message>
 </context>
 <context>
     <name>QMYSQLDriver</name>
     <message>
-        <source>Unable to open database &apos;</source>
-        <translation type="vanished">No es pot obrir la base de dades &apos;</translation>
+        <source>Unable to open database &apos;%1&apos;</source>
+        <translation type="unfinished">No s&apos;ha pogut obrir la base de dades «%1»</translation>
     </message>
     <message>
         <source>Unable to connect</source>
@@ -3041,11 +3061,11 @@ Do you want to delete it anyway?</source>
         <translation>No es pot fer arrere la transacció</translation>
     </message>
     <message>
-        <source>Unable to allocate a MYSQL object</source>
-        <translation type="unfinished"></translation>
+        <source>Unable to open database &apos;</source>
+        <translation type="vanished">No es pot obrir la base de dades &apos;</translation>
     </message>
     <message>
-        <source>Unable to open database &apos;%1&apos;</source>
+        <source>Unable to allocate a MYSQL object</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3062,6 +3082,14 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Unable to store result</source>
         <translation>No es pot emmagatzemar el resultat</translation>
+    </message>
+    <message>
+        <source>Unable to execute next query</source>
+        <translation>No es pot executar la següent consulta</translation>
+    </message>
+    <message>
+        <source>Unable to store next result</source>
+        <translation>No es pot emmagatzemar el següent resultat</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -3087,14 +3115,6 @@ Do you want to delete it anyway?</source>
         <source>Unable to store statement results</source>
         <translation>No es poden emmagatzemar els resultats de la declaracio</translation>
     </message>
-    <message>
-        <source>Unable to execute next query</source>
-        <translation>No es pot executar la següent consulta</translation>
-    </message>
-    <message>
-        <source>Unable to store next result</source>
-        <translation>No es pot emmagatzemar el següent resultat</translation>
-    </message>
 </context>
 <context>
     <name>QMdiArea</name>
@@ -3106,20 +3126,48 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QMdiSubWindow</name>
     <message>
-        <source>%1 - [%2]</source>
-        <translation>%1 - [%2]</translation>
+        <source>- [%1]</source>
+        <translation>- [%1]</translation>
     </message>
     <message>
-        <source>Close</source>
-        <translation>Tanca</translation>
+        <source>%1 - [%2]</source>
+        <translation>%1 - [%2]</translation>
     </message>
     <message>
         <source>Minimize</source>
         <translation>Minimitza</translation>
     </message>
     <message>
+        <source>Maximize</source>
+        <translation>Maximitza</translation>
+    </message>
+    <message>
+        <source>Unshade</source>
+        <translation>Desenfosqueix</translation>
+    </message>
+    <message>
+        <source>Shade</source>
+        <translation>Enfosqueix</translation>
+    </message>
+    <message>
         <source>Restore Down</source>
         <translation>Restaura a sota</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>Restaura</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Tanca</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation>Ajuda</translation>
+    </message>
+    <message>
+        <source>Menu</source>
+        <translation>Menú</translation>
     </message>
     <message>
         <source>&amp;Restore</source>
@@ -3149,34 +3197,6 @@ Do you want to delete it anyway?</source>
         <source>&amp;Close</source>
         <translation>&amp;Tanca</translation>
     </message>
-    <message>
-        <source>- [%1]</source>
-        <translation>- [%1]</translation>
-    </message>
-    <message>
-        <source>Maximize</source>
-        <translation>Maximitza</translation>
-    </message>
-    <message>
-        <source>Unshade</source>
-        <translation>Desenfosqueix</translation>
-    </message>
-    <message>
-        <source>Shade</source>
-        <translation>Enfosqueix</translation>
-    </message>
-    <message>
-        <source>Restore</source>
-        <translation>Restaura</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation>Ajuda</translation>
-    </message>
-    <message>
-        <source>Menu</source>
-        <translation>Menú</translation>
-    </message>
 </context>
 <context>
     <name>QMenu</name>
@@ -3196,12 +3216,37 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QMessageBox</name>
     <message>
-        <source>Help</source>
-        <translation>Ajuda</translation>
+        <source>Show Details...</source>
+        <translation>Mostra els detalls...</translation>
+    </message>
+    <message>
+        <source>Hide Details...</source>
+        <translation>Oculta els detalls...</translation>
     </message>
     <message>
         <source>OK</source>
         <translation>D&apos;acord</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation>Ajuda</translation>
+    </message>
+    <message>
+        <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;h3&gt;Quant a les Qt&lt;/h3&gt;&lt;p&gt;Aquest programa utilitza la versió %1 de les Qt.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Les Qt són un conjunt d&apos;eines C++ pel desenvolupament d&apos;aplicacions multiplataforma.&lt;/p&gt;&lt;p&gt;Les Qt proporcionen portabilitat amb un codi font únic entre els principals sistemes operatius. Les Qt també són disponibles per a Linux incrustat i sistemes operatius incrustats i mòbils.&lt;/p&gt;&lt;p&gt;Les Qt estan disponibles en tres opcions de llicència diferents dissenyades per adaptar-se a les necessitats dels diversos usuaris.&lt;/p&gt;&lt;p&gt;Les Qt llicenciades sota el nostre acord de llicència comercial són apropiades per al desenvolupament de programari propietari/comercial a on no voleu compartir cap codi font amb terceres parts o no podeu complir amb els termes de la versió 3 de la LGPL de la GNU o de la versió 2.1 de la LGPL de la GNU.&lt;/p&gt;&lt;p&gt;Les Qt llicenciades sota la versió 3 de la LGPL de la GNU són apropiades per al desenvolupament d&apos;aplicacions Qt quan podeu complir amb els termes i condicions de la versió 3 de la LGPL de la GNU.&lt;/p&gt;&lt;p&gt;Les Qt llicenciades sota la versió 2.1 de la LGPL de la GNU són apropiades per al desenvolupament d&apos;aplicacions Qt perquè pugueu complir amb els termes i condicions de la versió 2.1 de la LGPL de la GNU.&lt;/p&gt;&lt;p&gt;Si us plau, vegeu a &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; un resum de les llicències de les Qt.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd i altres col·laboradors.&lt;/p&gt;&lt;p&gt;Les Qt i el logotip de les Qt són marques comercials de The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Les Qt són un producte de The Qt Company Ltd desenvolupat com un projecte de codi font obert. Vegeu &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; per a més informació.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 Digia Plc and/or its subsidiary(-ies) and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of Digia Plc and/or its subsidiary(-ies).&lt;/p&gt;&lt;p&gt;Qt is a Digia product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Les Qt són un conjunt d&apos;eines C++ pel desenvolupament d&apos;aplicacions multiplataforma.&lt;/p&gt;&lt;p&gt;Les Qt proporcionen portabilitat amb un codi font únic entre els principals sistemes operatius. Les Qt també són disponibles per a Linux incrustat i sistemes operatius incrustats i mòbils.&lt;/p&gt;&lt;p&gt;Les Qt estan disponibles en tres opcions de llicència diferents dissenyades per a adaptar-se a les necessitats dels diversos usuaris.&lt;/p&gt;&lt;p&gt;Les Qt llicenciades sota el nostre acord de llicència comercial són apropiades per al desenvolupament de programari propietari/comercial a on no voleu compartir cap codi font amb terceres parts o no podeu complir amb els termes de la versió 3 de la LGPL de la GNU o de la versió 2.1 de la LGPL de la GNU.&lt;/p&gt;&lt;p&gt;Les Qt llicenciades sota la versió 3 de la LGPL de la GNU són apropiades per al desenvolupament d&apos;aplicacions Qt quan podeu complir amb els termes i condicions de la versió 3 de la LGPL de la GNU.&lt;/p&gt;&lt;p&gt;Les Qt llicenciades sota la versió 2.1 de la LGPL de la GNU són apropiades per al desenvolupament d&apos;aplicacions Qt perquè pugueu complir amb els termes i condicions de la versió 2.1 de la LGPL de la GNU.&lt;/p&gt;&lt;p&gt;Si us plau, vegeu a &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; un resum de les llicències de les Qt.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 Digia Plc i/o les seves filials i altres col·laboradors.&lt;/p&gt;&lt;p&gt;Les Qt i el logotip de les Qt són marques comercials de Digia Plc i/o les seves filials.&lt;/p&gt;&lt;p&gt;Les Qt són un producte de Digia desenvolupat com un projecte de codi font obert. Vegeu &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; per a més informació.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 2.1 or GNU GPL version 3.0.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU General Public License version 3.0 is appropriate for the development of Qt 
+applications where you wish to use such applications in combination with software subject to the terms of the GNU GPL version 3.0 or where you are otherwise willing to comply with the terms of the GNU GPL version 3.0.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://qt.io/licensing/&quot;&gt;qt.io/licensing&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) 2015 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of Digia Plc and/or its subsidiary(-ies).&lt;/p&gt;&lt;p&gt;Qt is developed as an open source project on &lt;a href=&quot;http://qt-project.org/&quot;&gt;qt-project.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Qt is a Digia product. See &lt;a href=&quot;http://qt.io/&quot;&gt;qt.io&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Les Qt són un conjunt d&apos;eines C++ pel desenvolupament d&apos;aplicacions multiplataforma.&lt;/p&gt;&lt;p&gt;Les Qt proporcionen portabilitat amb un codi font únic entre els principals sistemes operatius. Les Qt també són disponibles per a Linux incrustat i sistemes operatius incrustats i mòbils.&lt;/p&gt;&lt;p&gt;Les Qt estan disponibles en tres opcions de llicència diferents dissenyades per a adaptar-se a les necessitats dels diversos usuaris.&lt;/p&gt;&lt;p&gt;Les Qt llicenciades sota el nostre acord de llicència comercial són apropiades per al desenvolupament de programari propietari/comercial a on no voleu compartir cap codi font amb terceres parts o no podeu complir amb els termes de la versió 2.1 de la LGPL de la GNU o la versió 3.0 de la GPL de la GNU.&lt;/p&gt;&lt;p&gt;Les Qt llicenciades sota la versió 2.1 de la LGPL de la GNU són apropiades per al desenvolupament d&apos;aplicacions Qt perquè pugueu complir amb els termes i condicions de la versió 2.1 de la LGPL de la GNU.&lt;/p&gt;&lt;p&gt;Les Qt llicenciades sota la versió 3.0 de la Llicència Pública General de la GNU són apropiades per al desenvolupament d&apos;aplicacions Qt quan voleu utilitzar aquestes aplicacions en combinació amb programari sotmès als termes de la versió 3.0 de la GPL de la GNU o quan esteu disposat a complir amb els termes de la versió 3.0 de la GPL de la GNU.&lt;/p&gt;&lt;p&gt;Si us plau, vegeu a &lt;a href=&quot;http://qt.io/licensing/&quot;&gt;qt.io/licensing&lt;/a&gt; un resum de les llicències de les Qt.&lt;/p&gt;&lt;p&gt;Copyright (C) 2015 The Qt Company Ltd i altres col·laboradors.&lt;/p&gt;&lt;p&gt;Les Qt i el logotip de les Qt són marques comercials de Digia Plc i/o les seves filials.&lt;/p&gt;&lt;p&gt;Les Qt es desenvolupen com un projecte de codi font obert a &lt;a href=&quot;http://qt-project.org/&quot;&gt;qt-project.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Les Qt són un producte de Digia. Vegeu &lt;a href=&quot;http://qt.io/&quot;&gt;qt.io&lt;/a&gt; per a més informació.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>About Qt</source>
@@ -3212,28 +3257,12 @@ Do you want to delete it anyway?</source>
         <translation type="vanished">&lt;p&gt;Este programa usa Qt versió %1.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Show Details...</source>
-        <translation>Mostra els detalls...</translation>
-    </message>
-    <message>
-        <source>Hide Details...</source>
-        <translation>Oculta els detalls...</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
         <translation type="vanished">&lt;p&gt;Este programa usa Qt Open Source Edition versió %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition està pensat per al desenvolupament d&apos;aplicacions de codi obert. Necessiteu una llicència comercial de Qt per al desenvolupament d&apos;aplicacions de propietat (codi tancat).&lt;/p&gt;&lt;p&gt;Vegeu &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; per a més informació sobre les llicències Qt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
         <translation type="vanished">&lt;h3&gt;Quant a Qt&lt;/h3&gt;%1&lt;p&gt;Qt és un toolkit C++ multiplataforma per al desenvolupament d&apos;aplicacions.&lt;/p&gt;&lt;p&gt;Qt proveeix portabilitat a MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux i la gran part de totes les variants Unix comercials. Qt també es troba disponible per a dispositius empotrats.&lt;/p&gt;&lt;p&gt;Qt és un producte de Nokia. Vegeu &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; per a més informació.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3257,6 +3286,18 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QNativeSocketEngine</name>
     <message>
+        <source>Unable to initialize non-blocking socket</source>
+        <translation>No es pot inicialitzar el sòcol no bloquejat</translation>
+    </message>
+    <message>
+        <source>Unable to initialize broadcast socket</source>
+        <translation>No es pot inicialitzar el sòcol de difusió</translation>
+    </message>
+    <message>
+        <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
+        <translation>S&apos;està provant de fer servir un sòcol IPv6 en una plataforma que no admet IPv6</translation>
+    </message>
+    <message>
         <source>The remote host closed the connection</source>
         <translation>L&apos;amfitrió remot ha tancat la connexió</translation>
     </message>
@@ -3279,6 +3320,10 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Invalid socket descriptor</source>
         <translation>Descriptor de sòcol no vàlid</translation>
+    </message>
+    <message>
+        <source>Host unreachable</source>
+        <translation>L&apos;amfitrió no és accessible</translation>
     </message>
     <message>
         <source>Network unreachable</source>
@@ -3309,6 +3354,10 @@ Do you want to delete it anyway?</source>
         <translation>L&apos;adreça està protegida</translation>
     </message>
     <message>
+        <source>Datagram was too large to send</source>
+        <translation>El datagrama era massa llarg i no s&apos;ha pogut enviar</translation>
+    </message>
+    <message>
         <source>Unable to send a message</source>
         <translation>No es pot enviar un missatge</translation>
     </message>
@@ -3329,32 +3378,8 @@ Do you want to delete it anyway?</source>
         <translation>Un altre sòcol ja està escoltant el mateix port</translation>
     </message>
     <message>
-        <source>Unable to initialize non-blocking socket</source>
-        <translation>No es pot inicialitzar el sòcol no bloquejat</translation>
-    </message>
-    <message>
-        <source>Unable to initialize broadcast socket</source>
-        <translation>No es pot inicialitzar el sòcol de difusió</translation>
-    </message>
-    <message>
-        <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
-        <translation>S&apos;està provant de fer servir un sòcol IPv6 en una plataforma que no admet IPv6</translation>
-    </message>
-    <message>
-        <source>Host unreachable</source>
-        <translation>L&apos;amfitrió no és accessible</translation>
-    </message>
-    <message>
-        <source>Datagram was too large to send</source>
-        <translation>El datagrama era massa llarg i no s&apos;ha pogut enviar</translation>
-    </message>
-    <message>
         <source>Operation on non-socket</source>
         <translation>L&apos;operació no té un sòcol</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation>Error desconegut</translation>
     </message>
     <message>
         <source>The proxy type is invalid for this operation</source>
@@ -3362,7 +3387,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Temporary error</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Error temporal</translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation>Error desconegut</translation>
     </message>
     <message>
         <source>Network dropped connection on reset</source>
@@ -3377,21 +3406,21 @@ Do you want to delete it anyway?</source>
     <name>QNetworkAccessCacheBackend</name>
     <message>
         <source>Error opening %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Error en obrir %1</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessDataBackend</name>
     <message>
         <source>Invalid URI: %1</source>
-        <translation type="unfinished">URI no vàlida: %1</translation>
+        <translation type="unfinished">URI no vàlid: %1</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessDebugPipeBackend</name>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation type="unfinished">S&apos;ha produït un error d&apos;escriptura a %1: %2</translation>
+        <translation type="unfinished">Error d&apos;escriptura en escriure a %1: %2</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
@@ -3399,7 +3428,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
-        <translation type="unfinished">L&apos;amfitrió remot ha tancat la connexió en %1</translation>
+        <translation type="unfinished">L&apos;ordinador remot ha tancat la connexió prematurament a %1</translation>
     </message>
 </context>
 <context>
@@ -3428,6 +3457,10 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QNetworkAccessFtpBackend</name>
     <message>
+        <source>No suitable proxy found</source>
+        <translation type="unfinished">No s&apos;ha trobat cap servidor intermediari adequat</translation>
+    </message>
+    <message>
         <source>Cannot open %1: is a directory</source>
         <translation>No es pot obrir %1: és un directori</translation>
     </message>
@@ -3443,16 +3476,12 @@ Do you want to delete it anyway?</source>
         <source>Error while uploading %1: %2</source>
         <translation>S&apos;ha produït un error mentre es pujava %1: %2</translation>
     </message>
-    <message>
-        <source>No suitable proxy found</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QNetworkAccessManager</name>
     <message>
         <source>Network access is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">L&apos;accés a la xarxa està desactivat.</translation>
     </message>
 </context>
 <context>
@@ -3462,6 +3491,22 @@ Do you want to delete it anyway?</source>
         <translation type="vanished">S&apos;ha produït un error en baixar %1 - el servidor va respondre: %2</translation>
     </message>
     <message>
+        <source>Background request not allowed.</source>
+        <translation type="unfinished">Sol·licitud en segon pla no permesa.</translation>
+    </message>
+    <message>
+        <source>Network session error.</source>
+        <translation type="unfinished">Error de sessió de xarxa.</translation>
+    </message>
+    <message>
+        <source>backend start error.</source>
+        <translation type="unfinished">error d&apos;inici del dorsal.</translation>
+    </message>
+    <message>
+        <source>Temporary network failure.</source>
+        <translation type="unfinished">Fallada temporal de xarxa.</translation>
+    </message>
+    <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
         <translation>El protocol &quot;%1&quot; és desconegut</translation>
     </message>
@@ -3469,32 +3514,16 @@ Do you want to delete it anyway?</source>
         <source>Error transferring %1 - server replied: %2</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Background request not allowed.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Network session error.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>backend start error.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Temporary network failure.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QNetworkReplyHttpImpl</name>
     <message>
         <source>Operation canceled</source>
-        <translation type="unfinished">S&apos;ha cancel·lat l&apos;operació</translation>
+        <translation type="unfinished">Operació cancel·lada</translation>
     </message>
     <message>
         <source>No suitable proxy found</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha trobat cap servidor intermediari adequat</translation>
     </message>
 </context>
 <context>
@@ -3508,42 +3537,42 @@ Do you want to delete it anyway?</source>
     <name>QNetworkSession</name>
     <message>
         <source>Invalid configuration.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Configuració no vàlida.</translation>
     </message>
 </context>
 <context>
     <name>QNetworkSessionPrivateImpl</name>
     <message>
         <source>Unknown session error.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Error desconegut de sessió.</translation>
     </message>
     <message>
         <source>The session was aborted by the user or system.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sessió interrompuda per l&apos;usuari o el sistema.</translation>
     </message>
     <message>
         <source>The requested operation is not supported by the system.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">L&apos;operació sol·licitada no està implementada en el sistema.</translation>
     </message>
     <message>
         <source>The specified configuration cannot be used.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No es pot utilitzar la configuració especificada.</translation>
     </message>
     <message>
         <source>Roaming was aborted or is not possible.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">S&apos;ha interromput la itinerància o no és possible.</translation>
     </message>
 </context>
 <context>
     <name>QOCIDriver</name>
     <message>
-        <source>Unable to logon</source>
-        <translation>No es pot iniciar la sessió</translation>
-    </message>
-    <message>
         <source>Unable to initialize</source>
         <comment>QOCIDriver</comment>
         <translation>No es pot inicialitzar</translation>
+    </message>
+    <message>
+        <source>Unable to logon</source>
+        <translation>No es pot iniciar la sessió</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
@@ -3581,20 +3610,20 @@ Do you want to delete it anyway?</source>
         <translation>No es pot preparar la declaració</translation>
     </message>
     <message>
-        <source>Unable to bind value</source>
-        <translation>No es pot vincular el valor</translation>
+        <source>Unable to get statement type</source>
+        <translation type="unfinished">No s&apos;ha pogut obtenir el tipus de sentència</translation>
     </message>
     <message>
-        <source>Unable to execute select statement</source>
-        <translation type="vanished">No es pot executar la declaració select</translation>
+        <source>Unable to bind value</source>
+        <translation>No es pot vincular el valor</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
         <translation>No es pot executar la declaració</translation>
     </message>
     <message>
-        <source>Unable to get statement type</source>
-        <translation type="unfinished"></translation>
+        <source>Unable to execute select statement</source>
+        <translation type="vanished">No es pot executar la declaració select</translation>
     </message>
 </context>
 <context>
@@ -3604,8 +3633,8 @@ Do you want to delete it anyway?</source>
         <translation>No es pot connectar</translation>
     </message>
     <message>
-        <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
-        <translation type="vanished">No es pot connectar - El programa de control no permet tota la funcionalitat necessària</translation>
+        <source>Unable to connect - Driver doesn&apos;t support all functionality required</source>
+        <translation type="unfinished">No s&apos;ha pogut connectar - El controlador no implementa totes les funcionalitats requerides</translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
@@ -3624,12 +3653,16 @@ Do you want to delete it anyway?</source>
         <translation>No es pot habilitar l&apos;autovalidació</translation>
     </message>
     <message>
-        <source>Unable to connect - Driver doesn&apos;t support all functionality required</source>
-        <translation type="unfinished"></translation>
+        <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
+        <translation type="vanished">No es pot connectar - El programa de control no permet tota la funcionalitat necessària</translation>
     </message>
 </context>
 <context>
     <name>QODBCResult</name>
+    <message>
+        <source>Unable to fetch last</source>
+        <translation>No es pot recollir l&apos;últim</translation>
+    </message>
     <message>
         <source>QODBCResult::reset: Unable to set &apos;SQL_CURSOR_STATIC&apos; as statement attribute. Please check your ODBC driver configuration</source>
         <translation>QODBCResult::reset: No es pot establir &apos;SQL_CURSOR_STATIC&apos; com a atribut de la declaració. Comproveu la configuració del programa de control ODBC</translation>
@@ -3639,24 +3672,12 @@ Do you want to delete it anyway?</source>
         <translation>No es pot executar la declaració</translation>
     </message>
     <message>
-        <source>Unable to fetch next</source>
-        <translation>No es pot recollir el següent</translation>
-    </message>
-    <message>
-        <source>Unable to prepare statement</source>
-        <translation>No es pot preparar la declaració</translation>
-    </message>
-    <message>
-        <source>Unable to bind variable</source>
-        <translation>No es pot vincular la variable</translation>
-    </message>
-    <message>
-        <source>Unable to fetch last</source>
-        <translation>No es pot recollir l&apos;últim</translation>
-    </message>
-    <message>
         <source>Unable to fetch</source>
         <translation>No es pot recollir</translation>
+    </message>
+    <message>
+        <source>Unable to fetch next</source>
+        <translation>No es pot recollir el següent</translation>
     </message>
     <message>
         <source>Unable to fetch first</source>
@@ -3665,6 +3686,14 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Unable to fetch previous</source>
         <translation>No es pot recollir l&apos;anterior</translation>
+    </message>
+    <message>
+        <source>Unable to prepare statement</source>
+        <translation>No es pot preparar la declaració</translation>
+    </message>
+    <message>
+        <source>Unable to bind variable</source>
+        <translation>No es pot vincular la variable</translation>
     </message>
 </context>
 <context>
@@ -3750,22 +3779,6 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QPageSetupWidget</name>
     <message>
-        <source>Centimeters (cm)</source>
-        <translation type="vanished">Centímetres (cm)</translation>
-    </message>
-    <message>
-        <source>Millimeters (mm)</source>
-        <translation>Milímetres (mm)</translation>
-    </message>
-    <message>
-        <source>Inches (in)</source>
-        <translation>Polçades (in)</translation>
-    </message>
-    <message>
-        <source>Points (pt)</source>
-        <translation>Punts (pt)</translation>
-    </message>
-    <message>
         <source>Form</source>
         <translation>Formulari</translation>
     </message>
@@ -3831,61 +3844,77 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Page Layout</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Disposició de la pàgina</translation>
     </message>
     <message>
         <source>Page order:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ordre de les pàgines:</translation>
     </message>
     <message>
         <source>Pages per sheet:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Pàgines per full:</translation>
+    </message>
+    <message>
+        <source>Millimeters (mm)</source>
+        <translation>Milímetres (mm)</translation>
+    </message>
+    <message>
+        <source>Inches (in)</source>
+        <translation>Polçades (in)</translation>
+    </message>
+    <message>
+        <source>Points (pt)</source>
+        <translation>Punts (pt)</translation>
     </message>
     <message>
         <source>Pica (P̸)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Pica (P̸)</translation>
     </message>
     <message>
         <source>Didot (DD)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Didot (DD)</translation>
     </message>
     <message>
         <source>Cicero (CC)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Cicero (CC)</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished">Personalitzat</translation>
+        <translation type="unfinished">Personalitzada</translation>
     </message>
     <message>
         <source>mm</source>
         <extracomment>Unit &apos;Millimeter&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">mm</translation>
     </message>
     <message>
         <source>pt</source>
         <extracomment>Unit &apos;Points&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">pt</translation>
     </message>
     <message>
         <source>in</source>
         <extracomment>Unit &apos;Inch&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">in</translation>
     </message>
     <message>
         <source>P̸</source>
         <extracomment>Unit &apos;Pica&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">P̸</translation>
     </message>
     <message>
         <source>DD</source>
         <extracomment>Unit &apos;Didot&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">DD</translation>
     </message>
     <message>
         <source>CC</source>
         <extracomment>Unit &apos;Cicero&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">CC</translation>
+    </message>
+    <message>
+        <source>Centimeters (cm)</source>
+        <translation type="vanished">Centímetres (cm)</translation>
     </message>
 </context>
 <context>
@@ -3893,37 +3922,37 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Custom (%1mm x %2mm)</source>
         <extracomment>Custom size name in millimeters</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Personalitzada (%1mm x %2mm)</translation>
     </message>
     <message>
         <source>Custom (%1pt x %2pt)</source>
         <extracomment>Custom size name in points</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Personalitzada (%1pt x %2pt)</translation>
     </message>
     <message>
         <source>Custom (%1in x %2in)</source>
         <extracomment>Custom size name in inches</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Personalitzada (%1in x %2in)</translation>
     </message>
     <message>
         <source>Custom (%1pc x %2pc)</source>
         <extracomment>Custom size name in picas</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Personalitzada (%1pc x %2pc)</translation>
     </message>
     <message>
         <source>Custom (%1DD x %2DD)</source>
         <extracomment>Custom size name in didots</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Personalitzada (%1DD x %2DD)</translation>
     </message>
     <message>
         <source>Custom (%1CC x %2CC)</source>
         <extracomment>Custom size name in ciceros</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Personalitzada (%1CC x %2CC)</translation>
     </message>
     <message>
         <source>%1 x %2 in</source>
         <extracomment>Page size in &apos;Inch&apos;.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1 x %2 in</translation>
     </message>
     <message>
         <source>A0</source>
@@ -4015,15 +4044,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Executive (7.5 x 10 in)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Executiu (7,5 x 10 in)</translation>
     </message>
     <message>
         <source>Executive (7.25 x 10.5 in)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Executiu (7,25 x 10,5 in)</translation>
     </message>
     <message>
         <source>Folio (8.27 x 13 in)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Foli (8,27 x 13 in)</translation>
     </message>
     <message>
         <source>Legal</source>
@@ -4031,339 +4060,339 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Letter / ANSI A</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Carta / ANSI A</translation>
     </message>
     <message>
         <source>Tabloid / ANSI B</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Tabloide / ANSI B</translation>
     </message>
     <message>
         <source>Ledger / ANSI B</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Llibre major / ANSI B</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished">Personalitzat</translation>
+        <translation type="unfinished">Personalitzada</translation>
     </message>
     <message>
         <source>A3 Extra</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">A3 extra</translation>
     </message>
     <message>
         <source>A4 Extra</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">A4 extra</translation>
     </message>
     <message>
         <source>A4 Plus</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">A4 plus</translation>
     </message>
     <message>
         <source>A4 Small</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">A4 petit</translation>
     </message>
     <message>
         <source>A5 Extra</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">A5 extra</translation>
     </message>
     <message>
         <source>B5 Extra</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">B5 extra</translation>
     </message>
     <message>
         <source>JIS B0</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">JIS B0</translation>
     </message>
     <message>
         <source>JIS B1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">JIS B1</translation>
     </message>
     <message>
         <source>JIS B2</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">JIS B2</translation>
     </message>
     <message>
         <source>JIS B3</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">JIS B3</translation>
     </message>
     <message>
         <source>JIS B4</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">JIS B4</translation>
     </message>
     <message>
         <source>JIS B5</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">JIS B5</translation>
     </message>
     <message>
         <source>JIS B6</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">JIS B6</translation>
     </message>
     <message>
         <source>JIS B7</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">JIS B7</translation>
     </message>
     <message>
         <source>JIS B8</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">JIS B8</translation>
     </message>
     <message>
         <source>JIS B9</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">JIS B9</translation>
     </message>
     <message>
         <source>JIS B10</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">JIS B10</translation>
     </message>
     <message>
         <source>ANSI C</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ANSI C</translation>
     </message>
     <message>
         <source>ANSI D</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ANSI D</translation>
     </message>
     <message>
         <source>ANSI E</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ANSI E</translation>
     </message>
     <message>
         <source>Legal Extra</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Legal extra</translation>
     </message>
     <message>
         <source>Letter Extra</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Carta extra</translation>
     </message>
     <message>
         <source>Letter Plus</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Carta plus</translation>
     </message>
     <message>
         <source>Letter Small</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Carta petita</translation>
     </message>
     <message>
         <source>Tabloid Extra</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Tabloide extra</translation>
     </message>
     <message>
         <source>Architect A</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Arquitecte A</translation>
     </message>
     <message>
         <source>Architect B</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Arquitecte B</translation>
     </message>
     <message>
         <source>Architect C</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Arquitecte C</translation>
     </message>
     <message>
         <source>Architect D</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Arquitecte D</translation>
     </message>
     <message>
         <source>Architect E</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Arquitecte E</translation>
     </message>
     <message>
         <source>Note</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Nota</translation>
     </message>
     <message>
         <source>Quarto</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Quart</translation>
     </message>
     <message>
         <source>Statement</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sentència</translation>
     </message>
     <message>
         <source>Super A</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Super A</translation>
     </message>
     <message>
         <source>Super B</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Super B</translation>
     </message>
     <message>
         <source>Postcard</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Postal</translation>
     </message>
     <message>
         <source>Double Postcard</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Postal doble</translation>
     </message>
     <message>
         <source>PRC 16K</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">PRC 16K</translation>
     </message>
     <message>
         <source>PRC 32K</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">PRC 32K</translation>
     </message>
     <message>
         <source>PRC 32K Big</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">PRC 32K gran</translation>
     </message>
     <message>
         <source>Fan-fold US (14.875 x 11 in)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Paper continu US (14,875 x 11 in)</translation>
     </message>
     <message>
         <source>Fan-fold German (8.5 x 12 in)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Paper continu alemany (8,5 x 12 in)</translation>
     </message>
     <message>
         <source>Fan-fold German Legal (8.5 x 13 in)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Paper continu alemany legal (8,5 x 13 in)</translation>
     </message>
     <message>
         <source>Envelope B4</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre B4</translation>
     </message>
     <message>
         <source>Envelope B5</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre B5</translation>
     </message>
     <message>
         <source>Envelope B6</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre B6</translation>
     </message>
     <message>
         <source>Envelope C0</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre C0</translation>
     </message>
     <message>
         <source>Envelope C1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre C1</translation>
     </message>
     <message>
         <source>Envelope C2</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre C2</translation>
     </message>
     <message>
         <source>Envelope C3</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre C3</translation>
     </message>
     <message>
         <source>Envelope C4</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre C4</translation>
     </message>
     <message>
         <source>Envelope C5</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre C5</translation>
     </message>
     <message>
         <source>Envelope C6</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre C6</translation>
     </message>
     <message>
         <source>Envelope C65</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre C65</translation>
     </message>
     <message>
         <source>Envelope C7</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre C7</translation>
     </message>
     <message>
         <source>Envelope DL</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre DL</translation>
     </message>
     <message>
         <source>Envelope US 9</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre US 9</translation>
     </message>
     <message>
         <source>Envelope US 10</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre US 10</translation>
     </message>
     <message>
         <source>Envelope US 11</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre US 11</translation>
     </message>
     <message>
         <source>Envelope US 12</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre US 12</translation>
     </message>
     <message>
         <source>Envelope US 14</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre US 14</translation>
     </message>
     <message>
         <source>Envelope Monarch</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre monarca</translation>
     </message>
     <message>
         <source>Envelope Personal</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre personal</translation>
     </message>
     <message>
         <source>Envelope Chou 3</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre Chou 3</translation>
     </message>
     <message>
         <source>Envelope Chou 4</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre Chou 4</translation>
     </message>
     <message>
         <source>Envelope Invite</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre invitació</translation>
     </message>
     <message>
         <source>Envelope Italian</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre italià</translation>
     </message>
     <message>
         <source>Envelope Kaku 2</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre Kaku 2</translation>
     </message>
     <message>
         <source>Envelope Kaku 3</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre Kaku 3</translation>
     </message>
     <message>
         <source>Envelope PRC 1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre PRC 1</translation>
     </message>
     <message>
         <source>Envelope PRC 2</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre PRC 2</translation>
     </message>
     <message>
         <source>Envelope PRC 3</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre PRC 3</translation>
     </message>
     <message>
         <source>Envelope PRC 4</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre PRC 4</translation>
     </message>
     <message>
         <source>Envelope PRC 5</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre PRC 5</translation>
     </message>
     <message>
         <source>Envelope PRC 6</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre PRC 6</translation>
     </message>
     <message>
         <source>Envelope PRC 7</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre PRC 7</translation>
     </message>
     <message>
         <source>Envelope PRC 8</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre PRC 8</translation>
     </message>
     <message>
         <source>Envelope PRC 9</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre PRC 9</translation>
     </message>
     <message>
         <source>Envelope PRC 10</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre PRC 10</translation>
     </message>
     <message>
         <source>Envelope You 4</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre You 4</translation>
     </message>
 </context>
 <context>
@@ -4374,15 +4403,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished">Alça</translation>
+        <translation type="unfinished">Desa</translation>
     </message>
     <message>
         <source>Save All</source>
-        <translation type="unfinished">Alça-ho tot</translation>
+        <translation type="unfinished">Desa-ho tot</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished">Obri</translation>
+        <translation type="unfinished">Obre</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
@@ -4390,7 +4419,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Yes to &amp;All</source>
-        <translation type="unfinished">Si a &amp;tot</translation>
+        <translation type="unfinished">Sí &amp;a tot</translation>
     </message>
     <message>
         <source>&amp;No</source>
@@ -4406,7 +4435,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Retry</source>
-        <translation type="unfinished">Torna-ho a provar</translation>
+        <translation type="unfinished">Reintenta</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -4438,37 +4467,127 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished">Restaura els valors predeterminats</translation>
+        <translation type="unfinished">Restaura les opcions per defecte</translation>
     </message>
 </context>
 <context>
     <name>QPluginLoader</name>
     <message>
-        <source>Unknown error</source>
-        <translation>Error desconegut</translation>
-    </message>
-    <message>
         <source>The plugin was not loaded.</source>
         <translation>No s&apos;ha carregat el connector.</translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation>Error desconegut</translation>
     </message>
 </context>
 <context>
     <name>QPrintDialog</name>
     <message>
-        <source>locally connected</source>
-        <translation type="vanished">connectat localment</translation>
+        <source>Print</source>
+        <translation type="unfinished">Imprimeix</translation>
     </message>
     <message>
-        <source>Aliases: %1</source>
-        <translation type="vanished">Àlies: %1</translation>
+        <source>Left to Right, Top to Bottom</source>
+        <translation type="unfinished">D&apos;esquerra a dreta, de dalt a baix</translation>
     </message>
     <message>
-        <source>unknown</source>
-        <translation type="vanished">desconegut</translation>
+        <source>Left to Right, Bottom to Top</source>
+        <translation type="unfinished">D&apos;esquerra a dreta, de baix a dalt</translation>
+    </message>
+    <message>
+        <source>Right to Left, Bottom to Top</source>
+        <translation type="unfinished">De dreta a esquerra, de baix a dalt</translation>
+    </message>
+    <message>
+        <source>Right to Left, Top to Bottom</source>
+        <translation type="unfinished">De dreta a esquerra, de dalt a baix</translation>
+    </message>
+    <message>
+        <source>Bottom to Top, Left to Right</source>
+        <translation type="unfinished">De baix a dalt, d&apos;esquerra a dreta</translation>
+    </message>
+    <message>
+        <source>Bottom to Top, Right to Left</source>
+        <translation type="unfinished">De baix a dalt, de dreta a esquerra</translation>
+    </message>
+    <message>
+        <source>Top to Bottom, Left to Right</source>
+        <translation type="unfinished">De dalt a baix, d&apos;esquerra a dreta</translation>
+    </message>
+    <message>
+        <source>Top to Bottom, Right to Left</source>
+        <translation type="unfinished">De dalt a baix, de dreta a esquerra</translation>
+    </message>
+    <message>
+        <source>1 (1x1)</source>
+        <translation type="unfinished">1 (1x1)</translation>
+    </message>
+    <message>
+        <source>2 (2x1)</source>
+        <translation type="unfinished">2 (2x1)</translation>
+    </message>
+    <message>
+        <source>4 (2x2)</source>
+        <translation type="unfinished">4 (2x2)</translation>
+    </message>
+    <message>
+        <source>6 (2x3)</source>
+        <translation type="unfinished">6 (2x3)</translation>
+    </message>
+    <message>
+        <source>9 (3x3)</source>
+        <translation type="unfinished">9 (3x3)</translation>
+    </message>
+    <message>
+        <source>16 (4x4)</source>
+        <translation type="unfinished">16 (4x4)</translation>
+    </message>
+    <message>
+        <source>All Pages</source>
+        <translation type="unfinished">Totes les pàgines</translation>
+    </message>
+    <message>
+        <source>Odd Pages</source>
+        <translation type="unfinished">Pàgines senars</translation>
+    </message>
+    <message>
+        <source>Even Pages</source>
+        <translation type="unfinished">Pàgines parells</translation>
+    </message>
+    <message>
+        <source>&amp;Options &gt;&gt;</source>
+        <translation>&amp;Opcions &gt;&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Print</source>
+        <translation>Im&amp;primeix</translation>
+    </message>
+    <message>
+        <source>&amp;Options &lt;&lt;</source>
+        <translation>&amp;Opcions &lt;&lt;</translation>
+    </message>
+    <message>
+        <source>Print to File (PDF)</source>
+        <translation>Imprimeix a un fitxer (PDF)</translation>
+    </message>
+    <message>
+        <source>Local file</source>
+        <translation>Fitxer local</translation>
+    </message>
+    <message>
+        <source>Write PDF file</source>
+        <translation type="unfinished">Escriu a fitxer PDF</translation>
     </message>
     <message>
         <source>Print To File ...</source>
         <translation>Imprimeix a un fitxer...</translation>
+    </message>
+    <message>
+        <source>%1 is a directory.
+Please choose a different file name.</source>
+        <translation>%1 és un directori.
+Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>File %1 is not writable.
@@ -4483,10 +4602,34 @@ Do you want to overwrite it?</source>
 Voleu sobreescriure&apos;l?</translation>
     </message>
     <message>
-        <source>%1 is a directory.
-Please choose a different file name.</source>
-        <translation>%1 és un directori.
-Trieu un nom de fitxer diferent.</translation>
+        <source>Options &apos;Pages Per Sheet&apos; and &apos;Page Set&apos; cannot be used together.
+Please turn one of those options off.</source>
+        <translation type="unfinished">Les opcions «Pàgines per full» i «Disposició de la pàgina» no es poden usar conjuntament.
+Desactiveu una de les dues opcions.</translation>
+    </message>
+    <message>
+        <source>The &apos;From&apos; value cannot be greater than the &apos;To&apos; value.</source>
+        <translation type="unfinished">El valor «Des de» no pot ser més gran que el valor «A».</translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation type="unfinished">D&apos;acord</translation>
+    </message>
+    <message>
+        <source>Automatic</source>
+        <translation type="unfinished">Automàtic</translation>
+    </message>
+    <message>
+        <source>locally connected</source>
+        <translation type="vanished">connectat localment</translation>
+    </message>
+    <message>
+        <source>Aliases: %1</source>
+        <translation type="vanished">Àlies: %1</translation>
+    </message>
+    <message>
+        <source>unknown</source>
+        <translation type="vanished">desconegut</translation>
     </message>
     <message>
         <source>A0</source>
@@ -4613,125 +4756,12 @@ Trieu un nom de fitxer diferent.</translation>
         <translation type="vanished">Personalitzat</translation>
     </message>
     <message>
-        <source>&amp;Options &gt;&gt;</source>
-        <translation>&amp;Opcions &gt;&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Print</source>
-        <translation>Im&amp;primeix</translation>
-    </message>
-    <message>
-        <source>&amp;Options &lt;&lt;</source>
-        <translation>&amp;Opcions &lt;&lt;</translation>
-    </message>
-    <message>
-        <source>Print to File (PDF)</source>
-        <translation>Imprimeix a un fitxer (PDF)</translation>
-    </message>
-    <message>
         <source>Print to File (Postscript)</source>
         <translation type="vanished">Imprimeix a un fitxer (Postscript)</translation>
     </message>
     <message>
-        <source>Local file</source>
-        <translation>Fitxer local</translation>
-    </message>
-    <message>
         <source>Write %1 file</source>
         <translation type="vanished">Escriu el fitxer %1</translation>
-    </message>
-    <message>
-        <source>Print</source>
-        <translation type="unfinished">Imprimeix</translation>
-    </message>
-    <message>
-        <source>Left to Right, Top to Bottom</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Left to Right, Bottom to Top</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Right to Left, Bottom to Top</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Right to Left, Top to Bottom</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bottom to Top, Left to Right</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bottom to Top, Right to Left</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Top to Bottom, Left to Right</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Top to Bottom, Right to Left</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>1 (1x1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>2 (2x1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>4 (2x2)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>6 (2x3)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>9 (3x3)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>16 (4x4)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>All Pages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Odd Pages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Even Pages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Write PDF file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Options &apos;Pages Per Sheet&apos; and &apos;Page Set&apos; cannot be used together.
-Please turn one of those options off.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The &apos;From&apos; value cannot be greater than the &apos;To&apos; value.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation type="unfinished">D&apos;acord</translation>
-    </message>
-    <message>
-        <source>Automatic</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4739,6 +4769,10 @@ Please turn one of those options off.</source>
     <message>
         <source>Page Setup</source>
         <translation>Configuració de la pàgina</translation>
+    </message>
+    <message>
+        <source>%1%</source>
+        <translation type="unfinished">%1%</translation>
     </message>
     <message>
         <source>Print Preview</source>
@@ -4805,26 +4839,22 @@ Please turn one of those options off.</source>
         <translation>Configuració de la pàgina</translation>
     </message>
     <message>
+        <source>Export to PDF</source>
+        <translation type="unfinished">Exporta a PDF</translation>
+    </message>
+    <message>
         <source>Close</source>
         <translation type="vanished">Tanca</translation>
-    </message>
-    <message>
-        <source>%1%</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Export to PDF</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPrintPropertiesDialog</name>
     <message>
-        <source>Printer Properties</source>
-        <translation type="unfinished"></translation>
+        <source>Job Options</source>
+        <translation type="unfinished">Opcions del treball</translation>
     </message>
     <message>
-        <source>Job Options</source>
+        <source>Printer Properties</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4870,8 +4900,16 @@ Please turn one of those options off.</source>
         <translation>fins a</translation>
     </message>
     <message>
+        <source>Current Page</source>
+        <translation type="unfinished">Pàgina actual</translation>
+    </message>
+    <message>
         <source>Selection</source>
         <translation>Selecció</translation>
+    </message>
+    <message>
+        <source>Page Set:</source>
+        <translation type="unfinished">Disposició de la pàgina:</translation>
     </message>
     <message>
         <source>Output Settings</source>
@@ -4921,14 +4959,6 @@ Please turn one of those options off.</source>
         <source>Short side</source>
         <translation>Costat curt</translation>
     </message>
-    <message>
-        <source>Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Page Set:</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QPrintWidget</name>
@@ -4972,43 +5002,47 @@ Please turn one of those options off.</source>
 <context>
     <name>QProcess</name>
     <message>
-        <source>Process failed to start</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Process crashed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Process operation timed out</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Error reading from process</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Error en llegir des del procés</translation>
     </message>
     <message>
         <source>Error writing to process</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Error en escriure al procés</translation>
+    </message>
+    <message>
+        <source>Process crashed</source>
+        <translation type="unfinished">El procés ha fallat</translation>
+    </message>
+    <message>
+        <source>Process failed to start (spawned process exited with code 127)</source>
+        <translation type="obsolete">El procés ha fallat en iniciar (el procés engendrat ha sortit amb el codi 127)</translation>
     </message>
     <message>
         <source>No program defined</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha definit cap programa</translation>
     </message>
     <message>
         <source>Could not open input redirection for reading</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Resource error (fork failure): %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha pogut obrir la redirecció d&apos;entrada per lectura</translation>
     </message>
     <message>
         <source>Could not open output redirection for writing</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha pogut obrir la redirecció d&apos;entrada per escriptura</translation>
+    </message>
+    <message>
+        <source>Resource error (fork failure): %1</source>
+        <translation type="unfinished">Error de recurs (ha fallat la bifurcació): %1</translation>
+    </message>
+    <message>
+        <source>Process operation timed out</source>
+        <translation type="unfinished">L&apos;operació del procés ha excedit el temps</translation>
     </message>
     <message>
         <source>Process failed to start: %1</source>
+        <translation type="unfinished">El procés ha fallat en iniciar: %1</translation>
+    </message>
+    <message>
+        <source>Process failed to start</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5030,14 +5064,22 @@ Please turn one of those options off.</source>
     <name>QQnxFileDialogHelper</name>
     <message>
         <source>All files (*.*)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Tots els fitxers (*.*)</translation>
+    </message>
+    <message>
+        <source>CANCEL</source>
+        <translation type="obsolete">Cancel·la</translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation type="obsolete">D&apos;acord</translation>
     </message>
 </context>
 <context>
     <name>QQnxFilePicker</name>
     <message>
         <source>Pick a file</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Tria un fitxer</translation>
     </message>
 </context>
 <context>
@@ -5066,6 +5108,10 @@ Please turn one of those options off.</source>
         <translation>error de sintaxi a l&apos;ullada</translation>
     </message>
     <message>
+        <source>lookbehinds not supported, see QTBUG-2371</source>
+        <translation type="unfinished">«lookbehinds» no està implementat, veieu QTBUG-2371</translation>
+    </message>
+    <message>
         <source>bad repetition syntax</source>
         <translation>error de sintaxi a la repetició</translation>
     </message>
@@ -5086,358 +5132,354 @@ Please turn one of those options off.</source>
         <translation>s&apos;ha arribat al límit intern</translation>
     </message>
     <message>
-        <source>lookbehinds not supported, see QTBUG-2371</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>invalid interval</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">interval no vàlid</translation>
     </message>
     <message>
         <source>invalid category</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">categoria no vàlida</translation>
     </message>
 </context>
 <context>
     <name>QRegularExpression</name>
     <message>
         <source>no error</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">sense error</translation>
     </message>
     <message>
         <source>\ at end of pattern</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">\ al final de patró</translation>
     </message>
     <message>
         <source>\c at end of pattern</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">\c al final de patró</translation>
     </message>
     <message>
         <source>unrecognized character follows \</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">caràcter no reconegut després de \</translation>
     </message>
     <message>
         <source>numbers out of order in {} quantifier</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">nombres fora de l&apos;interval en el quantificador {}</translation>
     </message>
     <message>
         <source>number too big in {} quantifier</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">nombre massa gran en el quantificador {}</translation>
     </message>
     <message>
         <source>missing terminating ] for character class</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">manca la terminació ] en la classe caràcter</translation>
     </message>
     <message>
         <source>invalid escape sequence in character class</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">seqüència d&apos;escapada no vàlida en la classe caràcter</translation>
     </message>
     <message>
         <source>range out of order in character class</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">fora d&apos;interval en la classe caràcter</translation>
     </message>
     <message>
         <source>nothing to repeat</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">res a repetir</translation>
     </message>
     <message>
         <source>internal error: unexpected repeat</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">error intern: repetició inesperada</translation>
     </message>
     <message>
         <source>unrecognized character after (? or (?-</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">caràcter no reconegut després de (? o (?-</translation>
     </message>
     <message>
         <source>POSIX named classes are supported only within a class</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">només es permeten les classes amb nom POSIX dins una classe</translation>
     </message>
     <message>
         <source>missing )</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">manca )</translation>
     </message>
     <message>
         <source>reference to non-existent subpattern</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">referència a un subpatró inexistent</translation>
     </message>
     <message>
         <source>erroffset passed as NULL</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">«erroffset» passat com a NULL</translation>
     </message>
     <message>
         <source>unknown option bit(s) set</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">opció desconeguda «bit(s) set»</translation>
     </message>
     <message>
         <source>missing ) after comment</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">manca ) després d&apos;un comentari</translation>
     </message>
     <message>
         <source>regular expression is too large</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">l&apos;expressió regular és massa gran</translation>
     </message>
     <message>
         <source>failed to get memory</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ha fallat en demanar memòria</translation>
     </message>
     <message>
         <source>unmatched parentheses</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">parèntesi sense parella</translation>
     </message>
     <message>
         <source>internal error: code overflow</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">error intern: desbordament de codi</translation>
     </message>
     <message>
         <source>unrecognized character after (?&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">caràcter no reconegut després de (?&lt;</translation>
     </message>
     <message>
         <source>lookbehind assertion is not fixed length</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">l&apos;asserció «lookbehind» no té longitud fixa</translation>
     </message>
     <message>
         <source>malformed number or name after (?(</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">nombre o nom amb format incorrecte després de (?(</translation>
     </message>
     <message>
         <source>conditional group contains more than two branches</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">un grup condicional conté més de dues branques</translation>
     </message>
     <message>
         <source>assertion expected after (?(</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">asserció esperada després de (?(</translation>
     </message>
     <message>
         <source>(?R or (?[+-]digits must be followed by )</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">(?R o (?[+-]digits ha d&apos;anar seguit per )</translation>
     </message>
     <message>
         <source>unknown POSIX class name</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">nom desconegut de classe POSIX</translation>
     </message>
     <message>
         <source>POSIX collating elements are not supported</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">no es poden utilitzar els elements d&apos;ordenació POSIX</translation>
     </message>
     <message>
         <source>this version of PCRE is not compiled with PCRE_UTF8 support</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">aquesta versió del PCRE no està compilada amb compatibilitat PCRE_UTF8</translation>
     </message>
     <message>
         <source>character value in \x{...} sequence is too large</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">el valor del caràcter en la seqüència \x{...} és massa gran</translation>
     </message>
     <message>
         <source>invalid condition (?(0)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">condició no vàlida (?(0)</translation>
     </message>
     <message>
         <source>\C not allowed in lookbehind assertion</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">\C no permès en l&apos;asserció «lookbehind»</translation>
     </message>
     <message>
         <source>PCRE does not support \L, \l, \N{name}, \U, or \u</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">PCRE not accepta \L, \l, \N{nom}, \U, ni \u</translation>
     </message>
     <message>
         <source>number after (?C is &gt; 255</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">el nombre després de (?C és &gt; 255</translation>
     </message>
     <message>
         <source>closing ) for (?C expected</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">s&apos;esperava un tancament ) per (?C</translation>
     </message>
     <message>
         <source>recursive call could loop indefinitely</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">la invocació recursiva pot repetir-se indefinidament</translation>
     </message>
     <message>
         <source>unrecognized character after (?P</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">caràcter no reconegut després de (?P</translation>
     </message>
     <message>
         <source>syntax error in subpattern name (missing terminator)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">error de sintaxi en nom de subpatró (manca terminació)</translation>
     </message>
     <message>
         <source>two named subpatterns have the same name</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">dos subpatrons amb nom tenen el mateix nom</translation>
     </message>
     <message>
         <source>invalid UTF-8 string</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">cadena UTF-8 no vàlida</translation>
     </message>
     <message>
         <source>support for \P, \p, and \X has not been compiled</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">no s&apos;ha compilat amb implementació per \P, \p, ni \X</translation>
     </message>
     <message>
         <source>malformed \P or \p sequence</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">seqüència \P o \p incorrecta</translation>
     </message>
     <message>
         <source>unknown property name after \P or \p</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">nom de propietat desconeguda després de \P o \p</translation>
     </message>
     <message>
         <source>subpattern name is too long (maximum 32 characters)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">el nom de subpatró és massa llarg (màxim 32 caràcters)</translation>
     </message>
     <message>
         <source>too many named subpatterns (maximum 10000)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">hi ha massa subpatrons amb nom (màxim 10000)</translation>
     </message>
     <message>
         <source>octal value is greater than \377 (not in UTF-8 mode)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">el valor octal és més gran que \377 (no en mode UTF-8)</translation>
     </message>
     <message>
         <source>internal error: overran compiling workspace</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">error intern: desbordament en compilar l&apos;espai de treball</translation>
     </message>
     <message>
         <source>internal error: previously-checked referenced subpattern not found</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">error intern: no s&apos;ha trobat el patró referenciat verificat prèviament</translation>
     </message>
     <message>
         <source>DEFINE group contains more than one branch</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">el grup DEFINE conté més d&apos;una branca</translation>
     </message>
     <message>
         <source>repeating a DEFINE group is not allowed</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">no es permet repetir un grup DEFINE</translation>
     </message>
     <message>
         <source>inconsistent NEWLINE options</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">opcions «NEWLINE» inconsistents</translation>
     </message>
     <message>
         <source>\g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">\g no és seguit per un nom/nombre entre claus, claudàtors o cometes o per un nombre normal</translation>
     </message>
     <message>
         <source>a numbered reference must not be zero</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">una referència amb número no pot ser zero</translation>
     </message>
     <message>
         <source>an argument is not allowed for (*ACCEPT), (*FAIL), or (*COMMIT)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">no es permet cap argument per (*ACCEPT), (*FAIL), o (*COMMIT)</translation>
     </message>
     <message>
         <source>(*VERB) not recognized</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">(*VERB) no es reconeix</translation>
     </message>
     <message>
         <source>number is too big</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">nombre massa gran</translation>
     </message>
     <message>
         <source>subpattern name expected</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">s&apos;esperava un nom de subpatró</translation>
     </message>
     <message>
         <source>digit expected after (?+</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">s&apos;esperava un dígit després de (?+</translation>
     </message>
     <message>
         <source>] is an invalid data character in JavaScript compatibility mode</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">] és un caràcter no vàlid en el mode de compatibilitat amb JavaScript</translation>
     </message>
     <message>
         <source>different names for subpatterns of the same number are not allowed</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">no es permeten noms diferents per subpatrons dels mateix nombre</translation>
     </message>
     <message>
         <source>(*MARK) must have an argument</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">(*MARK) cal que tingui un argument</translation>
     </message>
     <message>
         <source>this version of PCRE is not compiled with PCRE_UCP support</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">aquesta versió del PCRE no està compilada amb compatibilitat PCRE_UCP</translation>
     </message>
     <message>
         <source>\c must be followed by an ASCII character</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">\c ha d&apos;anar seguit d&apos;un caràcter ASCII</translation>
     </message>
     <message>
         <source>\k is not followed by a braced, angle-bracketed, or quoted name</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">\k no és seguit per un nom entre claus, claudàtors o cometes</translation>
     </message>
     <message>
         <source>internal error: unknown opcode in find_fixedlength()</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">error intern: «opcode» desconegut en «find_fixedlength()»</translation>
     </message>
     <message>
         <source>\N is not supported in a class</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">\N no està implementat en cap classe</translation>
     </message>
     <message>
         <source>too many forward references</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">hi ha massa referències cap endavant</translation>
     </message>
     <message>
         <source>disallowed Unicode code point (&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">punt de codi Unicode no permès (&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</translation>
     </message>
     <message>
         <source>invalid UTF-16 string</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">cadena UTF-16 no vàlida</translation>
     </message>
     <message>
         <source>name is too long in (*MARK), (*PRUNE), (*SKIP), or (*THEN)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">el nom és massa llarg en (*MARK), (*PRUNE), (*SKIP), o (*THEN)</translation>
     </message>
     <message>
         <source>character value in \u.... sequence is too large</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">el valor del caràcter en la seqüència \u.... és massa gran</translation>
     </message>
     <message>
         <source>invalid UTF-32 string</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">cadena UTF-32 no vàlida</translation>
     </message>
     <message>
         <source>setting UTF is disabled by the application</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">L&apos;aplicació ha desactivat la definició de l&apos;UTF</translation>
     </message>
     <message>
         <source>non-hex character in \x{} (closing brace missing?)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">caràcter no hexadecimal en \x{} (manca la clau de tancament?)</translation>
     </message>
     <message>
         <source>non-octal character in \o{} (closing brace missing?)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">caràcter no octal en \o{} (manca la clau de tancament?)</translation>
     </message>
     <message>
         <source>missing opening brace after \o</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">manca una clau d&apos;obertura després de \o</translation>
     </message>
     <message>
         <source>parentheses are too deeply nested</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">els parèntesis s&apos;han imbricat amb massa profunditat</translation>
     </message>
     <message>
         <source>invalid range in character class</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">interval no vàlid en la classe caràcter</translation>
     </message>
     <message>
         <source>group name must start with a non-digit</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">el nom del grup ha de començar sense un dígit</translation>
     </message>
     <message>
         <source>parentheses are too deeply nested (stack check)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">els parèntesis s&apos;han imbricat amb massa profunditat (verificació de pila)</translation>
     </message>
     <message>
         <source>digits missing in \x{} or \o{}</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">manquen els dígits a\x{} o \o{} </translation>
     </message>
 </context>
 <context>
     <name>QSQLite2Driver</name>
     <message>
-        <source>Error to open database</source>
-        <translation type="vanished">S&apos;ha produït un error en obrir base de dades</translation>
+        <source>Error opening database</source>
+        <translation type="unfinished">Error en obrir la base de dades</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
@@ -5448,16 +5490,16 @@ Please turn one of those options off.</source>
         <translation>No es pot validar la transacció</translation>
     </message>
     <message>
+        <source>Unable to rollback transaction</source>
+        <translation type="unfinished">No s&apos;ha pogut desfer la transacció</translation>
+    </message>
+    <message>
+        <source>Error to open database</source>
+        <translation type="vanished">S&apos;ha produït un error en obrir base de dades</translation>
+    </message>
+    <message>
         <source>Unable to rollback Transaction</source>
         <translation type="vanished">No es pot fer arrere la transacció</translation>
-    </message>
-    <message>
-        <source>Error opening database</source>
-        <translation type="unfinished">S&apos;ha produït un error en obrir la base de dades</translation>
-    </message>
-    <message>
-        <source>Unable to rollback transaction</source>
-        <translation type="unfinished">No es pot fer arrere la transacció</translation>
     </message>
 </context>
 <context>
@@ -5501,8 +5543,16 @@ Please turn one of those options off.</source>
         <translation>No es pot obtindre la fila</translation>
     </message>
     <message>
+        <source>No query</source>
+        <translation>Cap consulta</translation>
+    </message>
+    <message>
         <source>Unable to execute statement</source>
         <translation>No es pot executar la declaració</translation>
+    </message>
+    <message>
+        <source>Unable to execute multiple statements at a time</source>
+        <translation type="unfinished">No s&apos;han pogut executar múltiples sentències a la vegada</translation>
     </message>
     <message>
         <source>Unable to reset statement</source>
@@ -5516,28 +5566,20 @@ Please turn one of those options off.</source>
         <source>Parameter count mismatch</source>
         <translation>El nombre dels paràmetres és discordant</translation>
     </message>
-    <message>
-        <source>No query</source>
-        <translation>Cap consulta</translation>
-    </message>
-    <message>
-        <source>Unable to execute multiple statements at a time</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QSaveFile</name>
     <message>
         <source>Existing file %1 is not writable</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No es pot escriure al fitxer existent %1</translation>
     </message>
     <message>
         <source>Filename refers to a directory</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El nom del fitxer es refereix a un directori</translation>
     </message>
     <message>
         <source>Writing canceled by application</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">L&apos;aplicació ha cancel·lat l&apos;escriptura</translation>
     </message>
 </context>
 <context>
@@ -5634,8 +5676,8 @@ Please turn one of those options off.</source>
         <translation>%1: ja existeix</translation>
     </message>
     <message>
-        <source>%1: doesn&apos;t exists</source>
-        <translation type="vanished">%1: no existeix</translation>
+        <source>%1: doesn&apos;t exist</source>
+        <translation type="unfinished">%1: no existeix</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
@@ -5650,8 +5692,12 @@ Please turn one of those options off.</source>
         <translation>%1: la clau és buida</translation>
     </message>
     <message>
-        <source>%1: unix key file doesn&apos;t exists</source>
-        <translation type="vanished">%1: no existeix el fitxer de clau unix</translation>
+        <source>%1: bad name</source>
+        <translation type="unfinished">%1: nom incorrecte</translation>
+    </message>
+    <message>
+        <source>%1: UNIX key file doesn&apos;t exist</source>
+        <translation type="unfinished">%1: no existeix el fitxer de claus de l&apos;UNIX</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
@@ -5670,28 +5716,24 @@ Please turn one of those options off.</source>
         <translation>%1: no està connectat</translation>
     </message>
     <message>
-        <source>%1: bad name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1: UNIX key file doesn&apos;t exist</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1: doesn&apos;t exist</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1: invalid size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1: mida no vàlida</translation>
     </message>
     <message>
         <source>%1: key error</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1: error de clau</translation>
     </message>
     <message>
         <source>%1: size query failed</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1: ha fallat la consulta de la mida</translation>
+    </message>
+    <message>
+        <source>%1: doesn&apos;t exists</source>
+        <translation type="vanished">%1: no existeix</translation>
+    </message>
+    <message>
+        <source>%1: unix key file doesn&apos;t exists</source>
+        <translation type="vanished">%1: no existeix el fitxer de clau unix</translation>
     </message>
 </context>
 <context>
@@ -5866,6 +5908,20 @@ Please turn one of those options off.</source>
         <translation>Grava Mèdia</translation>
     </message>
     <message>
+        <source>Media Pause</source>
+        <extracomment>Media player pause button</extracomment>
+        <translation type="unfinished">Pausa</translation>
+    </message>
+    <message>
+        <source>Toggle Media Play/Pause</source>
+        <extracomment>Media player button to toggle between playing and paused</extracomment>
+        <translation type="unfinished">Commuta la reproducció/pausa</translation>
+    </message>
+    <message>
+        <source>Home Page</source>
+        <translation>Pàgina d&apos;inici</translation>
+    </message>
+    <message>
         <source>Favorites</source>
         <translation>Preferits</translation>
     </message>
@@ -5954,6 +6010,446 @@ Please turn one of those options off.</source>
         <translation>Inicia (F)</translation>
     </message>
     <message>
+        <source>Monitor Brightness Up</source>
+        <translation type="unfinished">Augmenta la brillantor del monitor</translation>
+    </message>
+    <message>
+        <source>Monitor Brightness Down</source>
+        <translation type="unfinished">Redueix la brillantor del monitor</translation>
+    </message>
+    <message>
+        <source>Keyboard Light On/Off</source>
+        <translation type="unfinished">Engega/apaga la il·luminació del teclat</translation>
+    </message>
+    <message>
+        <source>Keyboard Brightness Up</source>
+        <translation type="unfinished">Augmenta la brillantor del teclat</translation>
+    </message>
+    <message>
+        <source>Keyboard Brightness Down</source>
+        <translation type="unfinished">Redueix la brillantor del teclat</translation>
+    </message>
+    <message>
+        <source>Power Off</source>
+        <translation type="unfinished">Apaga</translation>
+    </message>
+    <message>
+        <source>Wake Up</source>
+        <translation type="unfinished">Desperta</translation>
+    </message>
+    <message>
+        <source>Eject</source>
+        <translation type="unfinished">Expulsa</translation>
+    </message>
+    <message>
+        <source>Screensaver</source>
+        <translation type="unfinished">Estalvi de pantalla</translation>
+    </message>
+    <message>
+        <source>WWW</source>
+        <translation type="unfinished">WWW</translation>
+    </message>
+    <message>
+        <source>Sleep</source>
+        <translation type="unfinished">Suspèn</translation>
+    </message>
+    <message>
+        <source>LightBulb</source>
+        <translation type="unfinished">Bombeta</translation>
+    </message>
+    <message>
+        <source>Shop</source>
+        <translation type="unfinished">Botiga</translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation type="unfinished">Història</translation>
+    </message>
+    <message>
+        <source>Add Favorite</source>
+        <translation type="unfinished">Afegeix als favorits</translation>
+    </message>
+    <message>
+        <source>Hot Links</source>
+        <translation type="unfinished">Enllaços roents</translation>
+    </message>
+    <message>
+        <source>Adjust Brightness</source>
+        <translation type="unfinished">Ajusta la brillantor</translation>
+    </message>
+    <message>
+        <source>Finance</source>
+        <translation type="unfinished">Finances</translation>
+    </message>
+    <message>
+        <source>Community</source>
+        <translation type="unfinished">Comunitat</translation>
+    </message>
+    <message>
+        <source>Audio Rewind</source>
+        <translation type="obsolete">Rebobina l&apos;àudio</translation>
+    </message>
+    <message>
+        <source>Back Forward</source>
+        <translation type="unfinished">Enrere Endavant</translation>
+    </message>
+    <message>
+        <source>Application Left</source>
+        <translation type="unfinished">Aplicació esquerra</translation>
+    </message>
+    <message>
+        <source>Application Right</source>
+        <translation type="unfinished">Aplicació dreta</translation>
+    </message>
+    <message>
+        <source>Book</source>
+        <translation type="unfinished">Llibre</translation>
+    </message>
+    <message>
+        <source>CD</source>
+        <translation type="unfinished">CD</translation>
+    </message>
+    <message>
+        <source>Calculator</source>
+        <translation type="unfinished">Calculadora</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished">Neteja</translation>
+    </message>
+    <message>
+        <source>Clear Grab</source>
+        <translation type="unfinished">Neteja la gravació</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Tanca</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Copia</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished">Retalla</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished">Visualitza</translation>
+    </message>
+    <message>
+        <source>DOS</source>
+        <translation type="unfinished">DOS</translation>
+    </message>
+    <message>
+        <source>Documents</source>
+        <translation type="unfinished">Documents</translation>
+    </message>
+    <message>
+        <source>Spreadsheet</source>
+        <translation type="unfinished">Full de càlcul</translation>
+    </message>
+    <message>
+        <source>Browser</source>
+        <translation type="unfinished">Navegador</translation>
+    </message>
+    <message>
+        <source>Game</source>
+        <translation type="unfinished">Joc</translation>
+    </message>
+    <message>
+        <source>Go</source>
+        <translation type="unfinished">Vés</translation>
+    </message>
+    <message>
+        <source>iTouch</source>
+        <translation type="unfinished">iTouch</translation>
+    </message>
+    <message>
+        <source>Logoff</source>
+        <translation type="unfinished">Desconnecta</translation>
+    </message>
+    <message>
+        <source>Market</source>
+        <translation type="unfinished">Mercat</translation>
+    </message>
+    <message>
+        <source>Meeting</source>
+        <translation type="unfinished">Reunió</translation>
+    </message>
+    <message>
+        <source>Keyboard Menu</source>
+        <translation type="unfinished">Menú del teclat</translation>
+    </message>
+    <message>
+        <source>Menu PB</source>
+        <translation type="unfinished">Menú PB</translation>
+    </message>
+    <message>
+        <source>My Sites</source>
+        <translation type="unfinished">Els meus llocs</translation>
+    </message>
+    <message>
+        <source>News</source>
+        <translation type="unfinished">Notícies</translation>
+    </message>
+    <message>
+        <source>Home Office</source>
+        <translation type="unfinished">Despatx</translation>
+    </message>
+    <message>
+        <source>Option</source>
+        <translation type="unfinished">Opció</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished">Enganxa</translation>
+    </message>
+    <message>
+        <source>Phone</source>
+        <translation type="unfinished">Telèfon</translation>
+    </message>
+    <message>
+        <source>Reply</source>
+        <translation type="unfinished">Respondre</translation>
+    </message>
+    <message>
+        <source>Reload</source>
+        <translation type="unfinished">Torna a carregar</translation>
+    </message>
+    <message>
+        <source>Rotate Windows</source>
+        <translation type="unfinished">Gira les finestres</translation>
+    </message>
+    <message>
+        <source>Rotation PB</source>
+        <translation type="unfinished">Gir de PB</translation>
+    </message>
+    <message>
+        <source>Rotation KB</source>
+        <translation type="unfinished">Gir de teclat</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished">Desa</translation>
+    </message>
+    <message>
+        <source>Send</source>
+        <translation type="unfinished">Envia</translation>
+    </message>
+    <message>
+        <source>Spellchecker</source>
+        <translation type="unfinished">Corrector ortogràfic</translation>
+    </message>
+    <message>
+        <source>Split Screen</source>
+        <translation type="unfinished">Divideix la pantalla</translation>
+    </message>
+    <message>
+        <source>Support</source>
+        <translation type="unfinished">Suport</translation>
+    </message>
+    <message>
+        <source>Task Panel</source>
+        <translation type="unfinished">Plafó de tasques</translation>
+    </message>
+    <message>
+        <source>Terminal</source>
+        <translation type="unfinished">Terminal</translation>
+    </message>
+    <message>
+        <source>Tools</source>
+        <translation type="unfinished">Eines</translation>
+    </message>
+    <message>
+        <source>Travel</source>
+        <translation type="unfinished">Viatge</translation>
+    </message>
+    <message>
+        <source>Video</source>
+        <translation type="unfinished">Vídeo</translation>
+    </message>
+    <message>
+        <source>Word Processor</source>
+        <translation type="unfinished">Processador de textos</translation>
+    </message>
+    <message>
+        <source>XFer</source>
+        <translation type="unfinished">Transf</translation>
+    </message>
+    <message>
+        <source>Zoom In</source>
+        <translation type="unfinished">Apropa</translation>
+    </message>
+    <message>
+        <source>Zoom Out</source>
+        <translation type="unfinished">Allunya</translation>
+    </message>
+    <message>
+        <source>Away</source>
+        <translation type="unfinished">Absent</translation>
+    </message>
+    <message>
+        <source>Messenger</source>
+        <translation type="unfinished">Missatger</translation>
+    </message>
+    <message>
+        <source>WebCam</source>
+        <translation type="unfinished">Càmera web</translation>
+    </message>
+    <message>
+        <source>Mail Forward</source>
+        <translation type="unfinished">Reenvia</translation>
+    </message>
+    <message>
+        <source>Pictures</source>
+        <translation type="unfinished">Imatges</translation>
+    </message>
+    <message>
+        <source>Music</source>
+        <translation type="unfinished">Música</translation>
+    </message>
+    <message>
+        <source>Battery</source>
+        <translation type="unfinished">Bateria</translation>
+    </message>
+    <message>
+        <source>Bluetooth</source>
+        <translation type="unfinished">Bluetooth</translation>
+    </message>
+    <message>
+        <source>Wireless</source>
+        <translation type="unfinished">Sense fils</translation>
+    </message>
+    <message>
+        <source>Ultra Wide Band</source>
+        <translation type="unfinished">Banda ultra ampla</translation>
+    </message>
+    <message>
+        <source>Audio Forward</source>
+        <translation type="obsolete">Avança àudio</translation>
+    </message>
+    <message>
+        <source>Audio Repeat</source>
+        <translation type="unfinished">Repeteix àudio</translation>
+    </message>
+    <message>
+        <source>Audio Random Play</source>
+        <translation type="unfinished">Reproducció aleatòria àudio</translation>
+    </message>
+    <message>
+        <source>Subtitle</source>
+        <translation type="unfinished">Subtítol</translation>
+    </message>
+    <message>
+        <source>Audio Cycle Track</source>
+        <translation type="unfinished">Reproducció cíclica de la pista àudio</translation>
+    </message>
+    <message>
+        <source>Time</source>
+        <translation type="unfinished">Hora</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation>Selecciona</translation>
+    </message>
+    <message>
+        <source>View</source>
+        <translation type="unfinished">Visualitza</translation>
+    </message>
+    <message>
+        <source>Top Menu</source>
+        <translation type="unfinished">Menú principal</translation>
+    </message>
+    <message>
+        <source>Suspend</source>
+        <translation type="unfinished">Suspèn</translation>
+    </message>
+    <message>
+        <source>Hibernate</source>
+        <translation type="unfinished">Hiberna</translation>
+    </message>
+    <message>
+        <source>Media Rewind</source>
+        <translation type="unfinished">Rebobina el suport</translation>
+    </message>
+    <message>
+        <source>Media Fast Forward</source>
+        <translation type="unfinished">Avança ràpidament el suport</translation>
+    </message>
+    <message>
+        <source>Power Down</source>
+        <translation type="unfinished">Apaga</translation>
+    </message>
+    <message>
+        <source>Microphone Mute</source>
+        <translation type="unfinished">Silencia el micròfon</translation>
+    </message>
+    <message>
+        <source>Red</source>
+        <translation type="unfinished">Vermell</translation>
+    </message>
+    <message>
+        <source>Green</source>
+        <translation type="unfinished">Verd</translation>
+    </message>
+    <message>
+        <source>Yellow</source>
+        <translation type="unfinished">Groc</translation>
+    </message>
+    <message>
+        <source>Blue</source>
+        <translation type="unfinished">Blau</translation>
+    </message>
+    <message>
+        <source>Channel Up</source>
+        <translation type="unfinished">Canal següent</translation>
+    </message>
+    <message>
+        <source>Channel Down</source>
+        <translation type="unfinished">Canal anterior</translation>
+    </message>
+    <message>
+        <source>Guide</source>
+        <translation type="unfinished">Guia</translation>
+    </message>
+    <message>
+        <source>Info</source>
+        <translation type="unfinished">Informació</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished">Configuració</translation>
+    </message>
+    <message>
+        <source>Microphone Volume Up</source>
+        <translation type="unfinished">Apuja el volum del micròfon</translation>
+    </message>
+    <message>
+        <source>Microphone Volume Down</source>
+        <translation type="unfinished">Abaixa el volum del micròfon</translation>
+    </message>
+    <message>
+        <source>New</source>
+        <translation type="unfinished">Nou</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished">Obre</translation>
+    </message>
+    <message>
+        <source>Find</source>
+        <translation type="unfinished">Cerca</translation>
+    </message>
+    <message>
+        <source>Undo</source>
+        <translation type="unfinished">Desfés</translation>
+    </message>
+    <message>
+        <source>Redo</source>
+        <translation type="unfinished">Refés</translation>
+    </message>
+    <message>
         <source>Print Screen</source>
         <translation>Impr Pant</translation>
     </message>
@@ -5998,10 +6494,6 @@ Please turn one of those options off.</source>
         <translation>Pet Sis</translation>
     </message>
     <message>
-        <source>Select</source>
-        <translation>Selecciona</translation>
-    </message>
-    <message>
         <source>Yes</source>
         <translation>Sí</translation>
     </message>
@@ -6036,8 +6528,189 @@ Please turn one of those options off.</source>
         <translation>Penja</translation>
     </message>
     <message>
+        <source>Toggle Call/Hangup</source>
+        <extracomment>Button that will hang up if we&apos;re in call, or make a call if we&apos;re not.</extracomment>
+        <translation type="unfinished">Commuta trucada/penjar</translation>
+    </message>
+    <message>
         <source>Flip</source>
         <translation>Inverteix</translation>
+    </message>
+    <message>
+        <source>Voice Dial</source>
+        <extracomment>Button to trigger voice dialing</extracomment>
+        <translation type="unfinished">Marcació per veu</translation>
+    </message>
+    <message>
+        <source>Last Number Redial</source>
+        <extracomment>Button to redial the last number called</extracomment>
+        <translation type="unfinished">Torna a marcar el darrer número</translation>
+    </message>
+    <message>
+        <source>Camera Shutter</source>
+        <extracomment>Button to trigger the camera shutter (take a picture)</extracomment>
+        <translation type="unfinished">Disparador de la càmera</translation>
+    </message>
+    <message>
+        <source>Camera Focus</source>
+        <extracomment>Button to focus the camera</extracomment>
+        <translation type="unfinished">Focus de la càmera</translation>
+    </message>
+    <message>
+        <source>Kanji</source>
+        <translation type="unfinished">Kanji</translation>
+    </message>
+    <message>
+        <source>Muhenkan</source>
+        <translation type="unfinished">Muhenkan</translation>
+    </message>
+    <message>
+        <source>Henkan</source>
+        <translation type="unfinished">Henkan</translation>
+    </message>
+    <message>
+        <source>Romaji</source>
+        <translation type="unfinished">Romaji</translation>
+    </message>
+    <message>
+        <source>Hiragana</source>
+        <translation type="unfinished">Hiragana</translation>
+    </message>
+    <message>
+        <source>Katakana</source>
+        <translation type="unfinished">Katakana</translation>
+    </message>
+    <message>
+        <source>Hiragana Katakana</source>
+        <translation type="unfinished">Hiragana Katakana</translation>
+    </message>
+    <message>
+        <source>Zenkaku</source>
+        <translation type="unfinished">Zenkaku</translation>
+    </message>
+    <message>
+        <source>Hankaku</source>
+        <translation type="unfinished">Hankaku</translation>
+    </message>
+    <message>
+        <source>Zenkaku Hankaku</source>
+        <translation type="unfinished">Zenkaku Hankaku</translation>
+    </message>
+    <message>
+        <source>Touroku</source>
+        <translation type="unfinished">Touroku</translation>
+    </message>
+    <message>
+        <source>Massyo</source>
+        <translation type="unfinished">Massyo</translation>
+    </message>
+    <message>
+        <source>Kana Lock</source>
+        <translation type="unfinished">Bloqueig Kana</translation>
+    </message>
+    <message>
+        <source>Kana Shift</source>
+        <translation type="unfinished">Majúscules Kana</translation>
+    </message>
+    <message>
+        <source>Eisu Shift</source>
+        <translation type="unfinished">Majúscules Eisu</translation>
+    </message>
+    <message>
+        <source>Eisu toggle</source>
+        <translation type="unfinished">Commuta Eisu</translation>
+    </message>
+    <message>
+        <source>Code input</source>
+        <translation type="unfinished">Entrada de codi</translation>
+    </message>
+    <message>
+        <source>Multiple Candidate</source>
+        <translation type="unfinished">Candidats múltiples</translation>
+    </message>
+    <message>
+        <source>Previous Candidate</source>
+        <translation type="unfinished">Candidat anterior</translation>
+    </message>
+    <message>
+        <source>Hangul</source>
+        <translation type="unfinished">Hangul</translation>
+    </message>
+    <message>
+        <source>Hangul Start</source>
+        <translation type="unfinished">Inici de Hangul</translation>
+    </message>
+    <message>
+        <source>Hangul End</source>
+        <translation type="unfinished">Final de Hangul</translation>
+    </message>
+    <message>
+        <source>Hangul Hanja</source>
+        <translation type="unfinished">Hangul Hanja</translation>
+    </message>
+    <message>
+        <source>Hangul Jamo</source>
+        <translation type="unfinished">Hangul Jamo</translation>
+    </message>
+    <message>
+        <source>Hangul Romaja</source>
+        <translation type="unfinished">Hangul Romaja</translation>
+    </message>
+    <message>
+        <source>Hangul Jeonja</source>
+        <translation type="unfinished">Hangul Jeonja</translation>
+    </message>
+    <message>
+        <source>Hangul Banja</source>
+        <translation type="unfinished">Hangul Banja</translation>
+    </message>
+    <message>
+        <source>Hangul PreHanja</source>
+        <translation type="unfinished">Hangul PreHanja</translation>
+    </message>
+    <message>
+        <source>Hangul PostHanja</source>
+        <translation type="unfinished">Hangul PostHanja</translation>
+    </message>
+    <message>
+        <source>Hangul Special</source>
+        <translation type="unfinished">Hangul especial</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Cancel·la</translation>
+    </message>
+    <message>
+        <source>Printer</source>
+        <translation type="unfinished">Impressora</translation>
+    </message>
+    <message>
+        <source>Execute</source>
+        <translation type="unfinished">Executa</translation>
+    </message>
+    <message>
+        <source>Play</source>
+        <translation type="unfinished">Reprodueix</translation>
+    </message>
+    <message>
+        <source>Zoom</source>
+        <translation type="unfinished">Zoom</translation>
+    </message>
+    <message>
+        <source>Exit</source>
+        <translation type="unfinished">Surt</translation>
+    </message>
+    <message>
+        <source>Touchpad Toggle</source>
+        <translation type="unfinished">Commuta el ratolí tàctil</translation>
+    </message>
+    <message>
+        <source>Touchpad On</source>
+        <translation type="unfinished">Ratolí tàctil actiu</translation>
+    </message>
+    <message>
+        <source>Touchpad Off</source>
+        <translation type="unfinished">Ratolí tàctil inactiu</translation>
     </message>
     <message>
         <source>Ctrl</source>
@@ -6056,639 +6729,16 @@ Please turn one of those options off.</source>
         <translation>Meta</translation>
     </message>
     <message>
+        <source>Num</source>
+        <translation type="unfinished">Núm</translation>
+    </message>
+    <message>
         <source>+</source>
         <translation>+</translation>
     </message>
     <message>
         <source>F%1</source>
         <translation>F%1</translation>
-    </message>
-    <message>
-        <source>Home Page</source>
-        <translation>Pàgina d&apos;inici</translation>
-    </message>
-    <message>
-        <source>Media Pause</source>
-        <extracomment>Media player pause button</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Toggle Media Play/Pause</source>
-        <extracomment>Media player button to toggle between playing and paused</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Monitor Brightness Up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Monitor Brightness Down</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keyboard Light On/Off</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keyboard Brightness Up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keyboard Brightness Down</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Power Off</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Wake Up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Eject</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Screensaver</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>WWW</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sleep</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>LightBulb</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>History</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Favorite</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hot Links</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Adjust Brightness</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Finance</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Community</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Media Rewind</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Back Forward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Application Left</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Application Right</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Book</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>CD</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Calculator</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clear</source>
-        <translation type="unfinished">Neteja</translation>
-    </message>
-    <message>
-        <source>Clear Grab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="unfinished">Tanca</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation type="unfinished">Copia</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation type="unfinished">Retalla</translation>
-    </message>
-    <message>
-        <source>Display</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>DOS</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Documents</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Spreadsheet</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Browser</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Game</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>iTouch</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Logoff</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Market</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Meeting</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keyboard Menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Menu PB</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>My Sites</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>News</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Home Office</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Option</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation type="unfinished">Enganxa</translation>
-    </message>
-    <message>
-        <source>Phone</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reply</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <translation type="unfinished">Torna a carregar</translation>
-    </message>
-    <message>
-        <source>Rotate Windows</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Rotation PB</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Rotation KB</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="unfinished">Alça</translation>
-    </message>
-    <message>
-        <source>Send</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Spellchecker</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Split Screen</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Support</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Task Panel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminal</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tools</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Travel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Video</source>
-        <translation type="unfinished">Vídeo</translation>
-    </message>
-    <message>
-        <source>Word Processor</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>XFer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Zoom In</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Zoom Out</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Away</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Messenger</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>WebCam</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Mail Forward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Pictures</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Music</source>
-        <translation type="unfinished">Música</translation>
-    </message>
-    <message>
-        <source>Battery</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bluetooth</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Wireless</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ultra Wide Band</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Media Fast Forward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Audio Repeat</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Audio Random Play</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Subtitle</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Audio Cycle Track</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Time</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hibernate</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>View</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Top Menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Power Down</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Suspend</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Microphone Mute</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Red</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Green</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Yellow</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Blue</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Channel Up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Channel Down</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Guide</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Info</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Microphone Volume Up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Microphone Volume Down</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="unfinished">Obri</translation>
-    </message>
-    <message>
-        <source>Find</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Undo</source>
-        <translation type="unfinished">Desfés</translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="unfinished">Refés</translation>
-    </message>
-    <message>
-        <source>Toggle Call/Hangup</source>
-        <extracomment>Button that will hang up if we&apos;re in call, or make a call if we&apos;re not.</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Voice Dial</source>
-        <extracomment>Button to trigger voice dialing</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Last Number Redial</source>
-        <extracomment>Button to redial the last number called</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Camera Shutter</source>
-        <extracomment>Button to trigger the camera shutter (take a picture)</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Camera Focus</source>
-        <extracomment>Button to focus the camera</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Kanji</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Muhenkan</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Henkan</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Romaji</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hiragana</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Katakana</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hiragana Katakana</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Zenkaku</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hankaku</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Zenkaku Hankaku</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Touroku</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Massyo</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Kana Lock</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Kana Shift</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Eisu Shift</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Eisu toggle</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Code input</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Multiple Candidate</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Previous Candidate</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hangul</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hangul Start</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hangul End</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hangul Hanja</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hangul Jamo</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hangul Romaja</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hangul Jeonja</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hangul Banja</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hangul PreHanja</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hangul PostHanja</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hangul Special</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="unfinished">Cancel·la</translation>
-    </message>
-    <message>
-        <source>Printer</source>
-        <translation type="unfinished">Impressora</translation>
-    </message>
-    <message>
-        <source>Execute</source>
-        <translation type="unfinished">Executa</translation>
-    </message>
-    <message>
-        <source>Play</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Zoom</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Exit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Touchpad Toggle</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Touchpad On</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Touchpad Off</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Num</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6717,64 +6767,64 @@ Please turn one of those options off.</source>
 <context>
     <name>QSocks5SocketEngine</name>
     <message>
-        <source>Socks5 timeout error connecting to socks server</source>
-        <translation type="vanished">S&apos;ha produït un error de temps excedit Socks5 en connectar al servidor de sòcols</translation>
+        <source>Connection to proxy refused</source>
+        <translation type="unfinished">S&apos;ha rebutjat la connexió al servidor intermediari</translation>
+    </message>
+    <message>
+        <source>Connection to proxy closed prematurely</source>
+        <translation type="unfinished">La connexió al servidor intermediari s&apos;ha tancat prematurament</translation>
+    </message>
+    <message>
+        <source>Proxy host not found</source>
+        <translation type="unfinished">No s&apos;ha trobat el servidor intermediari</translation>
+    </message>
+    <message>
+        <source>Connection to proxy timed out</source>
+        <translation type="unfinished">La connexió al servidor intermediari ha excedit el temps</translation>
+    </message>
+    <message>
+        <source>Proxy authentication failed</source>
+        <translation type="unfinished">Ha fallat l&apos;autenticació al servidor intermediari</translation>
+    </message>
+    <message>
+        <source>Proxy authentication failed: %1</source>
+        <translation type="unfinished">Ha fallat l&apos;autenticació al servidor intermediari: %1</translation>
+    </message>
+    <message>
+        <source>SOCKS version 5 protocol error</source>
+        <translation type="unfinished">Error de protocol SOCKS versió 5</translation>
+    </message>
+    <message>
+        <source>General SOCKSv5 server failure</source>
+        <translation type="unfinished">Fallada general del servidor SOCKSv5</translation>
+    </message>
+    <message>
+        <source>Connection not allowed by SOCKSv5 server</source>
+        <translation type="unfinished">Connexió no autoritzada pel servidor SOCKSv5</translation>
+    </message>
+    <message>
+        <source>TTL expired</source>
+        <translation type="unfinished">Ha caducat el TTL</translation>
+    </message>
+    <message>
+        <source>SOCKSv5 command not supported</source>
+        <translation type="unfinished">Ordre SOCKSv5 no implementada</translation>
+    </message>
+    <message>
+        <source>Address type not supported</source>
+        <translation type="unfinished">Tipus d&apos;accés no implementat</translation>
+    </message>
+    <message>
+        <source>Unknown SOCKSv5 proxy error code 0x%1</source>
+        <translation type="unfinished">Codi d&apos;error desconegut del servidor intermediari SOCKSv5: 0x%1</translation>
     </message>
     <message>
         <source>Network operation timed out</source>
         <translation>L&apos;operació de xarxa ha excedit el temps</translation>
     </message>
     <message>
-        <source>Connection to proxy refused</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Connection to proxy closed prematurely</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Proxy host not found</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Connection to proxy timed out</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Proxy authentication failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Proxy authentication failed: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>SOCKS version 5 protocol error</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>General SOCKSv5 server failure</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Connection not allowed by SOCKSv5 server</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TTL expired</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>SOCKSv5 command not supported</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Address type not supported</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unknown SOCKSv5 proxy error code 0x%1</source>
-        <translation type="unfinished"></translation>
+        <source>Socks5 timeout error connecting to socks server</source>
+        <translation type="vanished">S&apos;ha produït un error de temps excedit Socks5 en connectar al servidor de sòcols</translation>
     </message>
 </context>
 <context>
@@ -6782,354 +6832,359 @@ Please turn one of those options off.</source>
     <message>
         <source>invalid role</source>
         <extracomment>Role of an accessible object - the object is in an invalid state or could not be constructed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">rol no vàlid</translation>
     </message>
     <message>
         <source>title bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">barra de títol</translation>
     </message>
     <message>
         <source>menu bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">barra de menú</translation>
     </message>
     <message>
         <source>scroll bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">barra de desplaçament</translation>
     </message>
     <message>
         <source>grip</source>
         <extracomment>Role of an accessible object - the grip is usually used for resizing another object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">nansa</translation>
     </message>
     <message>
         <source>sound</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">so</translation>
     </message>
     <message>
         <source>cursor</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">cursor</translation>
     </message>
     <message>
         <source>text caret</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">cursor de text</translation>
     </message>
     <message>
         <source>alert message</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">missatge d&apos;alerta</translation>
+    </message>
+    <message>
+        <source>window</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="obsolete">finestra</translation>
+    </message>
+    <message>
+        <source>filler</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished">farciment</translation>
+    </message>
+    <message>
+        <source>popup menu</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished">menú emergent</translation>
+    </message>
+    <message>
+        <source>menu item</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished">element de menú</translation>
+    </message>
+    <message>
+        <source>tool tip</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished">indicador de funció</translation>
+    </message>
+    <message>
+        <source>application</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished">aplicació</translation>
+    </message>
+    <message>
+        <source>document</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished">document</translation>
+    </message>
+    <message>
+        <source>panel</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished">plafó</translation>
+    </message>
+    <message>
+        <source>chart</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished">diagrama</translation>
+    </message>
+    <message>
+        <source>dialog</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished">diàleg</translation>
     </message>
     <message>
         <source>frame</source>
         <extracomment>Role of an accessible object: a window with frame and title
 ----------
 Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>filler</source>
-        <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>popup menu</source>
-        <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>menu item</source>
-        <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>tool tip</source>
-        <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>application</source>
-        <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>document</source>
-        <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>panel</source>
-        <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>chart</source>
-        <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>dialog</source>
-        <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">marc</translation>
     </message>
     <message>
         <source>separator</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">separador</translation>
     </message>
     <message>
         <source>tool bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">barra d&apos;eines</translation>
     </message>
     <message>
         <source>status bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">barra d&apos;estat</translation>
     </message>
     <message>
         <source>table</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">taula</translation>
     </message>
     <message>
         <source>column header</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">capçalera de columna</translation>
     </message>
     <message>
         <source>row header</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">capçalera de fila</translation>
     </message>
     <message>
         <source>column</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">columna</translation>
     </message>
     <message>
         <source>row</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">fila</translation>
     </message>
     <message>
         <source>cell</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">cel·la</translation>
     </message>
     <message>
         <source>link</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">enllaç</translation>
     </message>
     <message>
         <source>help balloon</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">globus d&apos;ajuda</translation>
     </message>
     <message>
         <source>assistant</source>
         <extracomment>Role of an accessible object - a helper dialog</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">assistent</translation>
     </message>
     <message>
         <source>list</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">llista</translation>
     </message>
     <message>
         <source>list item</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">element de llista</translation>
     </message>
     <message>
         <source>tree</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">arbre</translation>
     </message>
     <message>
         <source>tree item</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">element d&apos;arbre</translation>
     </message>
     <message>
         <source>page tab</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">pestanya de pàgina</translation>
     </message>
     <message>
         <source>property page</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">pàgina de propietats</translation>
     </message>
     <message>
         <source>indicator</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">indicador</translation>
     </message>
     <message>
         <source>graphic</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">gràfic</translation>
     </message>
     <message>
         <source>label</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">etiqueta</translation>
     </message>
     <message>
         <source>text</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">text</translation>
     </message>
     <message>
         <source>push button</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">botó per prémer</translation>
     </message>
     <message>
         <source>check box</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">casella de selecció</translation>
     </message>
     <message>
         <source>radio button</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">botó d&apos;opció</translation>
     </message>
     <message>
         <source>combo box</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">quadre combinat</translation>
     </message>
     <message>
         <source>progress bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">barra de progrés</translation>
     </message>
     <message>
         <source>dial</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">marcador</translation>
     </message>
     <message>
         <source>hotkey field</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">camp de drecera</translation>
     </message>
     <message>
         <source>slider</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">control lliscant</translation>
     </message>
     <message>
         <source>spin box</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">botó de selecció de valors</translation>
     </message>
     <message>
         <source>canvas</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">llenç</translation>
     </message>
     <message>
         <source>animation</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">animació</translation>
     </message>
     <message>
         <source>equation</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">equació</translation>
     </message>
     <message>
         <source>button with drop down</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">botó amb llista desplegable</translation>
     </message>
     <message>
         <source>button menu</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">botó de menú</translation>
     </message>
     <message>
         <source>button with drop down grid</source>
         <extracomment>Role of an accessible object - a button that expands a grid.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">botó amb nansa desplegable</translation>
     </message>
     <message>
         <source>space</source>
         <extracomment>Role of an accessible object - blank space between other objects.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">espai</translation>
     </message>
     <message>
         <source>page tab list</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">llista de pestanyes de pàgina</translation>
     </message>
     <message>
         <source>clock</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">rellotge</translation>
     </message>
     <message>
         <source>splitter</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">separador</translation>
     </message>
     <message>
         <source>layered pane</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">subfinestra amb capes</translation>
     </message>
     <message>
         <source>web document</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">document web</translation>
     </message>
     <message>
         <source>paragraph</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">paràgraf</translation>
     </message>
     <message>
         <source>section</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">secció</translation>
     </message>
     <message>
         <source>color chooser</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">selector de color</translation>
     </message>
     <message>
         <source>footer</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">peu de pàgina</translation>
     </message>
     <message>
         <source>form</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">formulari</translation>
     </message>
     <message>
         <source>heading</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">capçalera</translation>
     </message>
     <message>
         <source>note</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">nota</translation>
     </message>
     <message>
         <source>complementary content</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">contingut complementari</translation>
     </message>
     <message>
         <source>unknown</source>
@@ -7194,32 +7249,20 @@ Role of an accessible object</extracomment>
 <context>
     <name>QSslSocket</name>
     <message>
-        <source>Unable to write data: %1</source>
-        <translation>No es poden escriure les dades: %1</translation>
-    </message>
-    <message>
-        <source>Error while reading: %1</source>
-        <translation>S&apos;ha produït un error en llegir: %1</translation>
-    </message>
-    <message>
-        <source>Error during SSL handshake: %1</source>
-        <translation>S&apos;ha produït un error en la conformitat de connexió SSL: %1</translation>
+        <source>Error when setting the elliptic curves (%1)</source>
+        <translation type="unfinished">Error en determinar les corbes el·líptiques (%1)</translation>
     </message>
     <message>
         <source>Error creating SSL context (%1)</source>
         <translation>S&apos;ha produït un error en crear el context SSL (%1)</translation>
     </message>
     <message>
+        <source>unsupported protocol</source>
+        <translation type="unfinished">protocol no implementat</translation>
+    </message>
+    <message>
         <source>Invalid or empty cipher list (%1)</source>
         <translation>Llista de xifres no vàlida o buida (%1)</translation>
-    </message>
-    <message>
-        <source>Error creating SSL session, %1</source>
-        <translation>S&apos;ha produït un error en crear la sessió SSL, %1</translation>
-    </message>
-    <message>
-        <source>Error creating SSL session: %1</source>
-        <translation>S&apos;ha produït un error en crear la sessió SSL: %1</translation>
     </message>
     <message>
         <source>Cannot provide a certificate with no key, %1</source>
@@ -7234,143 +7277,155 @@ Role of an accessible object</extracomment>
         <translation>S&apos;ha produït un error en carregar la clau privada, %1</translation>
     </message>
     <message>
-        <source>Private key does not certificate public key, %1</source>
-        <translation type="vanished">La clau privada no certifica la clau pública, %1</translation>
-    </message>
-    <message>
-        <source>Error when setting the elliptic curves (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>unsupported protocol</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Private key does not certify public key, %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">La clau privada no certifica la clau pública, %1</translation>
     </message>
     <message>
         <source>OpenSSL version too old, need at least v1.0.2</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">La versió de l&apos;OpenSSL és massa antiga, cal com a mínim la v1.0.2</translation>
     </message>
     <message>
         <source>No error</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sense error</translation>
     </message>
     <message>
         <source>The issuer certificate could not be found</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha trobat l&apos;emissor del certificat</translation>
     </message>
     <message>
         <source>The certificate signature could not be decrypted</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha pogut desencriptar la signatura del certificat</translation>
     </message>
     <message>
         <source>The public key in the certificate could not be read</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha pogut llegir la clau pública del certificat</translation>
     </message>
     <message>
         <source>The signature of the certificate is invalid</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">La signatura del certificat no és vàlida</translation>
     </message>
     <message>
         <source>The certificate is not yet valid</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El certificat encara no és vàlid</translation>
     </message>
     <message>
         <source>The certificate has expired</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El certificat ha caducat</translation>
     </message>
     <message>
         <source>The certificate&apos;s notBefore field contains an invalid time</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El camp «noAbans» del certificat conté una hora no vàlida</translation>
     </message>
     <message>
         <source>The certificate&apos;s notAfter field contains an invalid time</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El camp «noDesprés» del certificat conté una hora no vàlida</translation>
     </message>
     <message>
         <source>The certificate is self-signed, and untrusted</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El certificat està autosignat, i no és fiable</translation>
     </message>
     <message>
         <source>The root certificate of the certificate chain is self-signed, and untrusted</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El certificat arrel de la cadena de certificats està autosignat, i no és fiable</translation>
     </message>
     <message>
         <source>The issuer certificate of a locally looked up certificate could not be found</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha trobat l&apos;emissor del certificat d&apos;un certificat local</translation>
     </message>
     <message>
         <source>No certificates could be verified</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No es pot verificar cap certificat</translation>
     </message>
     <message>
         <source>One of the CA certificates is invalid</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Un dels certificats de la CA no és vàlid</translation>
     </message>
     <message>
         <source>The basicConstraints path length parameter has been exceeded</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">S&apos;ha excedit el paràmetre de longitud del camí de «basicConstraints»</translation>
     </message>
     <message>
         <source>The supplied certificate is unsuitable for this purpose</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El certificat proporcionat no és adequat per a aquest propòsit</translation>
     </message>
     <message>
         <source>The root CA certificate is not trusted for this purpose</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El certificat de la CA arrel no és fiable per a aquest propòsit</translation>
     </message>
     <message>
         <source>The root CA certificate is marked to reject the specified purpose</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El certificat de la CA arrel està marcat per a rebutjar el propòsit especificat</translation>
     </message>
     <message>
         <source>The current candidate issuer certificate was rejected because its subject name did not match the issuer name of the current certificate</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El certificat de l&apos;emissor del candidat actual s&apos;ha rebutjat perquè el seu nom de subjecte no coincideix amb el nom de l&apos;emissor del certificat actual</translation>
     </message>
     <message>
         <source>The current candidate issuer certificate was rejected because its issuer name and serial number was present and did not match the authority key identifier of the current certificate</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El certificat de l&apos;emissor del candidat actual s&apos;ha rebutjat perquè el seu nom d&apos;emissor i número de sèrie eren presents i no coincideixen amb l&apos;identificador de la clau de l&apos;autoritat del certificat actual</translation>
     </message>
     <message>
         <source>The peer did not present any certificate</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El parell no presenta cap certificat</translation>
     </message>
     <message>
         <source>The host name did not match any of the valid hosts for this certificate</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El nom d&apos;ordinador no concorda amb cap dels ordinadors vàlids per aquest certificat</translation>
     </message>
     <message>
         <source>The peer certificate is blacklisted</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">El certificat del parell és a la llista negra</translation>
     </message>
     <message>
         <source>Unknown error</source>
         <translation type="unfinished">Error desconegut</translation>
     </message>
     <message>
-        <source>The TLS/SSL connection has been closed</source>
-        <translation type="unfinished"></translation>
+        <source>Error creating SSL session, %1</source>
+        <translation>S&apos;ha produït un error en crear la sessió SSL, %1</translation>
+    </message>
+    <message>
+        <source>Error creating SSL session: %1</source>
+        <translation>S&apos;ha produït un error en crear la sessió SSL: %1</translation>
     </message>
     <message>
         <source>Unable to init SSL Context: %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha pogut iniciar el context SSL: %1</translation>
+    </message>
+    <message>
+        <source>Unable to write data: %1</source>
+        <translation>No es poden escriure les dades: %1</translation>
     </message>
     <message>
         <source>Unable to decrypt data: %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;han pogut desencriptar les dades: %1</translation>
+    </message>
+    <message>
+        <source>The TLS/SSL connection has been closed</source>
+        <translation type="unfinished">S&apos;ha tancat la connexió TLS/SSL</translation>
+    </message>
+    <message>
+        <source>Error while reading: %1</source>
+        <translation>S&apos;ha produït un error en llegir: %1</translation>
+    </message>
+    <message>
+        <source>Error during SSL handshake: %1</source>
+        <translation>S&apos;ha produït un error en la conformitat de connexió SSL: %1</translation>
+    </message>
+    <message>
+        <source>Private key does not certificate public key, %1</source>
+        <translation type="vanished">La clau privada no certifica la clau pública, %1</translation>
     </message>
 </context>
 <context>
     <name>QStandardPaths</name>
     <message>
         <source>Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Escriptori</translation>
     </message>
     <message>
         <source>Documents</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Documents</translation>
     </message>
     <message>
         <source>Fonts</source>
@@ -7378,7 +7433,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Applications</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Aplicacions</translation>
     </message>
     <message>
         <source>Music</source>
@@ -7386,70 +7441,70 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Movies</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Pel·lícules</translation>
     </message>
     <message>
         <source>Pictures</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Imatges</translation>
     </message>
     <message>
         <source>Temporary Directory</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Directori temporal</translation>
     </message>
     <message>
         <source>Home</source>
         <translation type="unfinished">Inici</translation>
     </message>
     <message>
-        <source>Cache</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared Data</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Runtime</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared Configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared Cache</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Download</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Application Data</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Dades d&apos;aplicació</translation>
     </message>
     <message>
         <source>Application Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Configuració d&apos;aplicació</translation>
+    </message>
+    <message>
+        <source>Cache</source>
+        <translation type="unfinished">Memòria cau</translation>
+    </message>
+    <message>
+        <source>Shared Data</source>
+        <translation type="unfinished">Dades compartides</translation>
+    </message>
+    <message>
+        <source>Runtime</source>
+        <translation type="unfinished">Execució</translation>
+    </message>
+    <message>
+        <source>Configuration</source>
+        <translation type="unfinished">Configuració</translation>
+    </message>
+    <message>
+        <source>Shared Configuration</source>
+        <translation type="unfinished">Configuració compartida</translation>
+    </message>
+    <message>
+        <source>Shared Cache</source>
+        <translation type="unfinished">Memòria cau compartida</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation type="unfinished">Baixades</translation>
     </message>
 </context>
 <context>
     <name>QStateMachine</name>
     <message>
         <source>Missing initial state in compound state &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Manca l&apos;estat inicial a l&apos;estat compost «%1»</translation>
     </message>
     <message>
         <source>Missing default state in history state &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Manca l&apos;estat per defecte a l&apos;estat històric «%1»</translation>
     </message>
     <message>
         <source>No common ancestor for targets and source of transition from state &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No hi ha cap antecessor comú per les destinacions i origen des de l&apos;estat «%1»</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -7460,7 +7515,7 @@ Role of an accessible object</extracomment>
     <name>QSystemSemaphore</name>
     <message>
         <source>%1: permission denied</source>
-        <translation type="unfinished">%1: permís denegat</translation>
+        <translation type="unfinished">%1: s&apos;ha denegat el permís</translation>
     </message>
     <message>
         <source>%1: already exists</source>
@@ -7468,11 +7523,11 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>%1: does not exist</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1: no existeix</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
-        <translation type="unfinished">%1: s&apos;han sobrepassat els recursos</translation>
+        <translation type="unfinished">%1: sense recursos</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
@@ -7505,7 +7560,7 @@ Role of an accessible object</extracomment>
     <name>QTcpServer</name>
     <message>
         <source>Operation on socket is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Operació no implementada en el sòcol</translation>
     </message>
 </context>
 <context>
@@ -7544,6 +7599,49 @@ Role of an accessible object</extracomment>
     </message>
 </context>
 <context>
+    <name>QTgaFile</name>
+    <message>
+        <source>Could not read image data</source>
+        <translation type="obsolete">No s&apos;han pogut llegir les dades de la imatge</translation>
+    </message>
+    <message>
+        <source>Sequential device (eg socket) for image read not supported</source>
+        <translation type="obsolete">No s&apos;ha implementat cap dispositiu seqüencial (p. ex. sòcol) per llegir una imatge</translation>
+    </message>
+    <message>
+        <source>Seek file/device for image read failed</source>
+        <translation type="obsolete">Ha fallat la cerca del fitxer/dispositiu de la lectura de la imatge</translation>
+    </message>
+    <message>
+        <source>Image header read failed</source>
+        <translation type="obsolete">Ha fallat la lectura de la capçalera de la imatge</translation>
+    </message>
+    <message>
+        <source>Image type not supported</source>
+        <translation type="obsolete">Tipus d&apos;imatge no implementat</translation>
+    </message>
+    <message>
+        <source>Image depth not valid</source>
+        <translation type="obsolete">Profunditat de la imatge no vàlida</translation>
+    </message>
+    <message>
+        <source>Could not seek to image read footer</source>
+        <translation type="obsolete">No s&apos;ha pogut cercar el peu de lectura de la imatge</translation>
+    </message>
+    <message>
+        <source>Could not read footer</source>
+        <translation type="obsolete">No s&apos;ha pogut llegir el peu</translation>
+    </message>
+    <message>
+        <source>Image type (non-TrueVision 2.0) not supported</source>
+        <translation type="obsolete">Tipus d&apos;imatge no implementat (no és TrueVision 2.0)</translation>
+    </message>
+    <message>
+        <source>Could not reset to read data</source>
+        <translation type="obsolete">No s&apos;ha pogut reiniciar la lectura de les dades</translation>
+    </message>
+</context>
+<context>
     <name>QToolButton</name>
     <message>
         <source>Press</source>
@@ -7564,16 +7662,8 @@ Role of an accessible object</extracomment>
 <context>
     <name>QUndoGroup</name>
     <message>
-        <source>Undo</source>
-        <translation type="vanished">Desfés</translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">Refés</translation>
-    </message>
-    <message>
         <source>Undo %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Desfés %1</translation>
     </message>
     <message>
         <source>Undo</source>
@@ -7582,12 +7672,20 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Redo %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Refés %1</translation>
     </message>
     <message>
         <source>Redo</source>
         <comment>Default text for redo action</comment>
         <translation type="unfinished">Refés</translation>
+    </message>
+    <message>
+        <source>Undo</source>
+        <translation type="vanished">Desfés</translation>
+    </message>
+    <message>
+        <source>Redo</source>
+        <translation type="vanished">Refés</translation>
     </message>
 </context>
 <context>
@@ -7600,16 +7698,8 @@ Role of an accessible object</extracomment>
 <context>
     <name>QUndoStack</name>
     <message>
-        <source>Undo</source>
-        <translation type="vanished">Desfés</translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">Refés</translation>
-    </message>
-    <message>
         <source>Undo %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Desfés %1</translation>
     </message>
     <message>
         <source>Undo</source>
@@ -7618,12 +7708,20 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Redo %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Refés %1</translation>
     </message>
     <message>
         <source>Redo</source>
         <comment>Default text for redo action</comment>
         <translation type="unfinished">Refés</translation>
+    </message>
+    <message>
+        <source>Undo</source>
+        <translation type="vanished">Desfés</translation>
+    </message>
+    <message>
+        <source>Redo</source>
+        <translation type="vanished">Refés</translation>
     </message>
 </context>
 <context>
@@ -7669,24 +7767,24 @@ Role of an accessible object</extracomment>
         <translation>Format direccional pop PDF</translation>
     </message>
     <message>
-        <source>Insert Unicode control character</source>
-        <translation>Insereix un caràcter de control Unicode</translation>
-    </message>
-    <message>
         <source>LRI Left-to-right isolate</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">D&apos;esquerra a dreta aïllat (LRI)</translation>
     </message>
     <message>
         <source>RLI Right-to-left isolate</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">De dreta a esquerra aïllat (RLI)</translation>
     </message>
     <message>
         <source>FSI First strong isolate</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Primer intens aïllat (FSI)</translation>
     </message>
     <message>
         <source>PDI Pop directional isolate</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Final d&apos;aïllament direccional (PDI)</translation>
+    </message>
+    <message>
+        <source>Insert Unicode control character</source>
+        <translation>Insereix un caràcter de control Unicode</translation>
     </message>
 </context>
 <context>
@@ -8001,11 +8099,11 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Copy &amp;Link Location</source>
-        <translation type="unfinished">Copia l&apos;adreça de l&apos;en&amp;llaç</translation>
+        <translation type="unfinished">Copia la ubicació de l&apos;en&amp;llaç</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation type="unfinished">Engan&amp;xa</translation>
+        <translation type="unfinished">&amp;Enganxa</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -8022,11 +8120,13 @@ Role of an accessible object</extracomment>
         <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
 
 The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on this system is %5.%6.%7.%8.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Les Qt no han pogut carregar el connector de la plataforma direct2d perquè la versió del Direct2D en aquest sistema és massa antiga. El requeriment mínim de sistema per aquest connector de plataforma és Windows 7 SP1 amb «Platform Update».
+
+La versió mínima requerida del Direct2D és %1.%2.%3.%4. La versió del Direct2D en aquest sistema és %5.%6.%7.%8.</translation>
     </message>
     <message>
         <source>Cannot load direct2d platform plugin</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">No s&apos;ha pogut carregar el connector de la plataforma direct2d</translation>
     </message>
 </context>
 <context>
@@ -8036,8 +8136,20 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>Vés arrere</translation>
     </message>
     <message>
+        <source>&lt; &amp;Back</source>
+        <translation>&lt; &amp;Arrere</translation>
+    </message>
+    <message>
         <source>Continue</source>
         <translation>Continua</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>Següe&amp;nt</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation>Següe&amp;nt &gt;</translation>
     </message>
     <message>
         <source>Commit</source>
@@ -8048,18 +8160,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>Fet</translation>
     </message>
     <message>
-        <source>Quit</source>
-        <translation type="vanished">Ix</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation>Ajuda</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Arrere</translation>
-    </message>
-    <message>
         <source>&amp;Finish</source>
         <translation>&amp;Finalitza</translation>
     </message>
@@ -8068,16 +8168,16 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>Cancel·la</translation>
     </message>
     <message>
+        <source>Help</source>
+        <translation>Ajuda</translation>
+    </message>
+    <message>
         <source>&amp;Help</source>
         <translation>A&amp;juda</translation>
     </message>
     <message>
-        <source>&amp;Next</source>
-        <translation>Següe&amp;nt</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>Següe&amp;nt &gt;</translation>
+        <source>Quit</source>
+        <translation type="vanished">Ix</translation>
     </message>
 </context>
 <context>
@@ -8249,12 +8349,24 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>Seqüència &apos;]]&gt;&apos; no permesa en el contingut.</translation>
     </message>
     <message>
+        <source>Encountered incorrectly encoded content.</source>
+        <translation>S&apos;ha trobat contingut codificat incorrectament.</translation>
+    </message>
+    <message>
         <source>Namespace prefix &apos;%1&apos; not declared</source>
         <translation>Prefix &apos;%1&apos; del namespace no declarat</translation>
     </message>
     <message>
+        <source>Illegal namespace declaration.</source>
+        <translation>Declaració &apos;namespace&apos; il·legal.</translation>
+    </message>
+    <message>
         <source>Attribute redefined.</source>
         <translation type="vanished">S&apos;ha tornat a definir l&apos;atribut.</translation>
+    </message>
+    <message>
+        <source>Attribute &apos;%1&apos; redefined.</source>
+        <translation type="unfinished">S&apos;ha redefinit l&apos;atribut «%1».</translation>
     </message>
     <message>
         <source>Unexpected character &apos;%1&apos; in public id literal.</source>
@@ -8267,6 +8379,10 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <message>
         <source>Unsupported XML version.</source>
         <translation>Versió XML no compatible.</translation>
+    </message>
+    <message>
+        <source>The standalone pseudo attribute must appear after the encoding.</source>
+        <translation>El pseudo atribut &apos;standalone&apos; ha d&apos;aparèixer després de la codificació.</translation>
     </message>
     <message>
         <source>%1 is an invalid encoding name.</source>
@@ -8317,12 +8433,12 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>S&apos;esperava l&apos;inici de marca.</translation>
     </message>
     <message>
-        <source>XML declaration not at start of document.</source>
-        <translation>Hi ha una declaració XML que no està al començament del document.</translation>
-    </message>
-    <message>
         <source>NDATA in parameter entity declaration.</source>
         <translation>NDATA en la declaració de l&apos;entitat d&apos;un paràmetre.</translation>
+    </message>
+    <message>
+        <source>XML declaration not at start of document.</source>
+        <translation>Hi ha una declaració XML que no està al començament del document.</translation>
     </message>
     <message>
         <source>%1 is an invalid processing instruction name.</source>
@@ -8333,8 +8449,8 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>Nom per processar la instrucció no vàlid.</translation>
     </message>
     <message>
-        <source>Illegal namespace declaration.</source>
-        <translation>Declaració &apos;namespace&apos; il·legal.</translation>
+        <source>%1 is an invalid PUBLIC identifier.</source>
+        <translation>%1 és un identificador PUBLIC no vàlid.</translation>
     </message>
     <message>
         <source>Invalid XML name.</source>
@@ -8345,12 +8461,12 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>L&apos;obertura i el tancament de la marca no concorden.</translation>
     </message>
     <message>
-        <source>Reference to unparsed entity &apos;%1&apos;.</source>
-        <translation>Referència a l&apos;entitat no analitzada &apos;%1&apos;.</translation>
-    </message>
-    <message>
         <source>Entity &apos;%1&apos; not declared.</source>
         <translation>Entitat &apos;%1&apos; no declarada.</translation>
+    </message>
+    <message>
+        <source>Reference to unparsed entity &apos;%1&apos;.</source>
+        <translation>Referència a l&apos;entitat no analitzada &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
@@ -8359,22 +8475,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <message>
         <source>Invalid character reference.</source>
         <translation>Referència de caràcter no vàlida.</translation>
-    </message>
-    <message>
-        <source>Encountered incorrectly encoded content.</source>
-        <translation>S&apos;ha trobat contingut codificat incorrectament.</translation>
-    </message>
-    <message>
-        <source>The standalone pseudo attribute must appear after the encoding.</source>
-        <translation>El pseudo atribut &apos;standalone&apos; ha d&apos;aparèixer després de la codificació.</translation>
-    </message>
-    <message>
-        <source>%1 is an invalid PUBLIC identifier.</source>
-        <translation>%1 és un identificador PUBLIC no vàlid.</translation>
-    </message>
-    <message>
-        <source>Attribute &apos;%1&apos; redefined.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

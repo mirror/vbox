@@ -55,6 +55,17 @@
     </message>
 </context>
 <context>
+    <name>PPDOptionsModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="obsolete">Nome</translation>
+    </message>
+    <message>
+        <source>Value</source>
+        <translation type="obsolete">Valor</translation>
+    </message>
+</context>
+<context>
     <name>Phonon::</name>
     <message>
         <source>Notifications</source>
@@ -424,6 +435,18 @@ Check path and filename.</source>
 Arquivo não encontrado.
 Verifique o caminho e o nome do arquivo.</translation>
     </message>
+    <message>
+        <source>All Files (*.*)</source>
+        <translation type="obsolete">Todos os Ficheiros (*.*)</translation>
+    </message>
+    <message>
+        <source>Open </source>
+        <translation type="obsolete">Abrir </translation>
+    </message>
+    <message>
+        <source>Select a Directory</source>
+        <translation type="obsolete">Seleccione uma Pasta</translation>
+    </message>
 </context>
 <context>
     <name>Q3LocalFs</name>
@@ -598,6 +621,10 @@ para
         <translation type="vanished">Fecha a janela</translation>
     </message>
     <message>
+        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <translation type="obsolete">Mostra o nome da janela e contém controlos para a manipular</translation>
+    </message>
+    <message>
         <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation type="vanished">Mostra o nome da janela e contém controles para manipulá-la</translation>
     </message>
@@ -682,6 +709,14 @@ para
         <translation>Conexão recusada</translation>
     </message>
     <message>
+        <source>Connection timed out</source>
+        <translation type="unfinished">Ligação expirada</translation>
+    </message>
+    <message>
+        <source>Operation on socket is not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Socket operation timed out</source>
         <translation>Tempo esgotado durante operação de socket</translation>
     </message>
@@ -690,20 +725,12 @@ para
         <translation>Socket não está conectado</translation>
     </message>
     <message>
-        <source>Operation on socket is not supported</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Connection timed out</source>
-        <translation type="unfinished">Tempo de conexão esgotado </translation>
+        <source>Network unreachable</source>
+        <translation type="unfinished">Rede inalcançável</translation>
     </message>
     <message>
         <source>Trying to connect while connection is in progress</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Network unreachable</source>
-        <translation type="unfinished">Rede inaacessível</translation>
     </message>
 </context>
 <context>
@@ -854,13 +881,32 @@ para
         <translation>Erro de Biblioteca Qt Incompativel</translation>
     </message>
     <message>
+        <source>Activates the program&apos;s main window</source>
+        <translation type="vanished">Ativa a janela principal do programa</translation>
+    </message>
+    <message>
         <source>QT_LAYOUT_DIRECTION</source>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
         <translation type="vanished">LTR</translation>
     </message>
+</context>
+<context>
+    <name>QAxSelect</name>
     <message>
-        <source>Activates the program&apos;s main window</source>
-        <translation type="vanished">Ativa a janela principal do programa</translation>
+        <source>Select ActiveX Control</source>
+        <translation type="obsolete">Seleccionar Controlo ActiveX</translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation type="obsolete">OK</translation>
+    </message>
+    <message>
+        <source>&amp;Cancel</source>
+        <translation type="obsolete">&amp;Cancelar</translation>
+    </message>
+    <message>
+        <source>COM &amp;Object:</source>
+        <translation type="obsolete">&amp;Objecto COM:</translation>
     </message>
 </context>
 <context>
@@ -882,19 +928,19 @@ para
     <name>QCocoaMenuItem</name>
     <message>
         <source>About Qt</source>
-        <translation type="unfinished">Sobre o Qt</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>About</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sobre</translation>
     </message>
     <message>
         <source>Config</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Configurar</translation>
     </message>
     <message>
         <source>Preference</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Preferências</translation>
     </message>
     <message>
         <source>Options</source>
@@ -902,11 +948,11 @@ para
     </message>
     <message>
         <source>Setting</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Alteração</translation>
     </message>
     <message>
         <source>Setup</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Configuração</translation>
     </message>
     <message>
         <source>Quit</source>
@@ -914,7 +960,7 @@ para
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sair</translation>
     </message>
     <message>
         <source>Cut</source>
@@ -971,12 +1017,28 @@ para
         <translation>Canal A&amp;lfa:</translation>
     </message>
     <message>
+        <source>Select Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&amp;Basic colors</source>
         <translation>Cores &amp;básicas</translation>
     </message>
     <message>
         <source>&amp;Custom colors</source>
         <translation>Cores &amp;customizadas</translation>
+    </message>
+    <message>
+        <source>&amp;Define Custom Colors &gt;&gt;</source>
+        <translation type="obsolete">&amp;Definir Cores Customizadas &gt;&gt;</translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation type="obsolete">OK</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Cancelar</translation>
     </message>
     <message>
         <source>&amp;Add to Custom Colors</source>
@@ -993,10 +1055,6 @@ para
     <message>
         <source>Cursor at %1, %2
 Press ESC to cancel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1073,6 +1131,21 @@ Press ESC to cancel</source>
 <context>
     <name>QCoreApplication</name>
     <message>
+        <source>%1: key is empty</source>
+        <comment>QSystemSemaphore</comment>
+        <translation>%1: chave vazia</translation>
+    </message>
+    <message>
+        <source>%1: unable to make key</source>
+        <comment>QSystemSemaphore</comment>
+        <translation>%1: não foi possível criar chave</translation>
+    </message>
+    <message>
+        <source>%1: ftok failed</source>
+        <comment>QSystemSemaphore</comment>
+        <translation>%1: ftok falhou</translation>
+    </message>
+    <message>
         <source>%1: permission denied</source>
         <comment>QSystemSemaphore</comment>
         <translation type="vanished">%1: permissão negada</translation>
@@ -1096,21 +1169,6 @@ Press ESC to cancel</source>
         <source>%1: unknown error %2</source>
         <comment>QSystemSemaphore</comment>
         <translation type="vanished">%1: erro desconhecido %2</translation>
-    </message>
-    <message>
-        <source>%1: key is empty</source>
-        <comment>QSystemSemaphore</comment>
-        <translation>%1: chave vazia</translation>
-    </message>
-    <message>
-        <source>%1: unable to make key</source>
-        <comment>QSystemSemaphore</comment>
-        <translation>%1: não foi possível criar chave</translation>
-    </message>
-    <message>
-        <source>%1: ftok failed</source>
-        <comment>QSystemSemaphore</comment>
-        <translation>%1: ftok falhou</translation>
     </message>
 </context>
 <context>
@@ -1345,6 +1403,10 @@ Press ESC to cancel</source>
         <translation type="vanished">Salvar</translation>
     </message>
     <message>
+        <source>&amp;Save</source>
+        <translation type="obsolete">&amp;Gravar</translation>
+    </message>
+    <message>
         <source>Open</source>
         <translation type="vanished">Abrir</translation>
     </message>
@@ -1353,8 +1415,16 @@ Press ESC to cancel</source>
         <translation type="vanished">Cancelar</translation>
     </message>
     <message>
+        <source>&amp;Cancel</source>
+        <translation type="obsolete">&amp;Cancelar</translation>
+    </message>
+    <message>
         <source>Close</source>
         <translation type="vanished">Fechar</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">&amp;Fechar</translation>
     </message>
     <message>
         <source>Apply</source>
@@ -1614,27 +1684,7 @@ Press ESC to cancel</source>
 <context>
     <name>QFile</name>
     <message>
-        <source>Destination file is the same file.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Source file does not exist.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Destination file exists</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error while renaming.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to restore from %1: %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Will not rename sequential file using block copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1655,6 +1705,26 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Cannot create %1 for output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Destination file is the same file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Source file does not exist.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while renaming.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to restore from %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Will not rename sequential file using block copy</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1742,6 +1812,14 @@ Por favor verifique o nome do arquivo e tente novamente.</translation>
         <translation>Diretório:</translation>
     </message>
     <message>
+        <source>
+File not found.
+Please verify the correct file name was given</source>
+        <translation type="obsolete">
+Ficheiro não encontrado.
+Por favor verifique o nome do ficheiro</translation>
+    </message>
+    <message>
         <source>%1
 Directory not found.
 Please verify the correct directory name was given.</source>
@@ -1762,6 +1840,14 @@ Você deseja apagá-lo mesmo assim?</translation>
     <message>
         <source>Could not delete directory.</source>
         <translation>Não foi possível apagar o diretório.</translation>
+    </message>
+    <message>
+        <source>Recent Places</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All Files (*.*)</source>
+        <translation type="obsolete">Todos os Ficheiros (*.*)</translation>
     </message>
     <message>
         <source>Save As</source>
@@ -1880,10 +1966,6 @@ Você deseja apagá-lo mesmo assim?</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Recent Places</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 File</source>
         <extracomment>%1 is a file name suffix, for example txt</extracomment>
         <translation type="unfinished"></translation>
@@ -1911,6 +1993,26 @@ Você deseja apagá-lo mesmo assim?</translation>
 </context>
 <context>
     <name>QFileSystemModel</name>
+    <message>
+        <source>%1 TB</source>
+        <translation>%1 TB</translation>
+    </message>
+    <message>
+        <source>%1 GB</source>
+        <translation>%1 GB</translation>
+    </message>
+    <message>
+        <source>%1 MB</source>
+        <translation>%1 MB</translation>
+    </message>
+    <message>
+        <source>%1 KB</source>
+        <translation>%1 KB</translation>
+    </message>
+    <message>
+        <source>%1 bytes</source>
+        <translation>%1 bytes</translation>
+    </message>
     <message>
         <source>Invalid filename</source>
         <translation>Nome de arquivo inválido</translation>
@@ -1948,26 +2050,6 @@ Você deseja apagá-lo mesmo assim?</translation>
     <message>
         <source>Computer</source>
         <translation>Computador</translation>
-    </message>
-    <message>
-        <source>%1 TB</source>
-        <translation>%1 TB</translation>
-    </message>
-    <message>
-        <source>%1 GB</source>
-        <translation>%1 GB</translation>
-    </message>
-    <message>
-        <source>%1 MB</source>
-        <translation>%1 MB</translation>
-    </message>
-    <message>
-        <source>%1 KB</source>
-        <translation>%1 KB</translation>
-    </message>
-    <message>
-        <source>%1 bytes</source>
-        <translation>%1 bytes</translation>
     </message>
     <message>
         <source>%1 byte(s)</source>
@@ -2227,6 +2309,10 @@ Você deseja apagá-lo mesmo assim?</translation>
         <translation>Conexão recusada pelo servidor %1</translation>
     </message>
     <message>
+        <source>Connection timed out to host %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Connected to host %1</source>
         <translation>Conectado ao servidor %1</translation>
     </message>
@@ -2313,10 +2399,6 @@ Você deseja apagá-lo mesmo assim?</translation>
         <translation type="vanished">Conectado ao servidor</translation>
     </message>
     <message>
-        <source>Connection timed out to host %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Data Connection refused</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2329,7 +2411,7 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="unfinished">&amp;Salvar</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
@@ -2337,7 +2419,7 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished">Fe&amp;char</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close without Saving</source>
@@ -2392,6 +2474,10 @@ Você deseja apagá-lo mesmo assim?</translation>
 </context>
 <context>
     <name>QHttp</name>
+    <message>
+        <source>HTTPS connection requested but SSL support not compiled in</source>
+        <translation type="vanished">Conexão HTTPS solicitada mas o suporte a SSL não foi compilado</translation>
+    </message>
     <message>
         <source>Unknown error</source>
         <translation type="vanished">Erro desconhecido</translation>
@@ -2465,10 +2551,6 @@ Você deseja apagá-lo mesmo assim?</translation>
         <translation type="vanished">Autenticação necessária</translation>
     </message>
     <message>
-        <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation type="vanished">Conexão HTTPS solicitada mas o suporte a SSL não foi compilado</translation>
-    </message>
-    <message>
         <source>Connection refused (or timed out)</source>
         <translation type="vanished">Conexão recusada (ou tempo excedido)</translation>
     </message>
@@ -2504,16 +2586,16 @@ Você deseja apagá-lo mesmo assim?</translation>
 <context>
     <name>QHttpSocketEngine</name>
     <message>
-        <source>Authentication required</source>
-        <translation>Authentication required</translation>
-    </message>
-    <message>
         <source>Did not receive HTTP response from proxy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error parsing authentication request from proxy</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication required</source>
+        <translation>Authentication required</translation>
     </message>
     <message>
         <source>Proxy denied connection</source>
@@ -2851,6 +2933,18 @@ Você deseja apagá-lo mesmo assim?</translation>
         <translation>O plugin &apos;%1&apos; utiliza uma biblioteca Qt incompatível. (Não é possível misturar bibliotecas de debug e release.)</translation>
     </message>
     <message>
+        <source>Cannot load library %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot unload library %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot resolve symbol &quot;%1&quot; in %2: %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&apos;%1&apos; is not an ELF object (%2)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2864,18 +2958,6 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
     <message>
         <source>Failed to extract plugin meta data from &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cannot load library %1: %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cannot unload library %1: %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cannot resolve symbol &quot;%1&quot; in %2: %3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3000,15 +3082,15 @@ Você deseja apagá-lo mesmo assim?</translation>
         <translation>%1: A operação de socket não é suportada</translation>
     </message>
     <message>
+        <source>%1: Unknown error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>%1: Unknown error %2</source>
         <translation>%1: Erro desconhecido %2</translation>
     </message>
     <message>
         <source>%1: Operation not permitted when socket is in this state</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1: Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3196,6 +3278,57 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
 </context>
 <context>
+    <name>QMenuBar</name>
+    <message>
+        <source>About</source>
+        <translation type="obsolete">Sobre</translation>
+    </message>
+    <message>
+        <source>Config</source>
+        <translation type="obsolete">Configurar</translation>
+    </message>
+    <message>
+        <source>Preference</source>
+        <translation type="obsolete">Preferências</translation>
+    </message>
+    <message>
+        <source>Options</source>
+        <translation type="obsolete">Opções</translation>
+    </message>
+    <message>
+        <source>Setting</source>
+        <translation type="obsolete">Alteração</translation>
+    </message>
+    <message>
+        <source>Setup</source>
+        <translation type="obsolete">Configuração</translation>
+    </message>
+    <message>
+        <source>Quit</source>
+        <translation type="obsolete">Sair</translation>
+    </message>
+    <message>
+        <source>Exit</source>
+        <translation type="obsolete">Sair</translation>
+    </message>
+    <message>
+        <source>About %1</source>
+        <translation type="obsolete">Sobre %1</translation>
+    </message>
+    <message>
+        <source>About Qt</source>
+        <translation type="obsolete">Acerca do Qt</translation>
+    </message>
+    <message>
+        <source>Preferences</source>
+        <translation type="obsolete">Preferências</translation>
+    </message>
+    <message>
+        <source>Quit %1</source>
+        <translation type="obsolete">Sair de %1</translation>
+    </message>
+</context>
+<context>
     <name>QMessageBox</name>
     <message>
         <source>Help</source>
@@ -3214,12 +3347,20 @@ Você deseja apagá-lo mesmo assim?</translation>
         <translation type="vanished">&lt;p&gt;Este programa utiliza o Qt versão %1.&lt;/p&gt;</translation>
     </message>
     <message>
+        <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qtopia Core.&lt;/p&gt;&lt;p&gt;Qt is a Trolltech product. See &lt;a href=&quot;http://qt.nokia.com/qt/&quot;&gt;qt.nokia.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;h3&gt;Acerca do Qt&lt;/h3&gt;%1&lt;p&gt;Qt é um conjunto de ferramentas para desenvolvimento de aplicações multiplataforma.&lt;/p&gt;O Qt oferece portabilidade de código fonte único em MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux e todas as principais variantes comerciais de Unix. O Qt está igualmente disponível para dispositivos embebidos como Qtopia Core.&lt;/p&gt;&lt;p&gt;O Qt é um produto Trolltech. Veja &lt;a href=&quot;http://qt.nokia.com/qt/&quot;&gt;qt.nokia.com/qt/&lt;/a&gt; para mais informação.&lt;/p&gt;</translation>
+    </message>
+    <message>
         <source>Show Details...</source>
         <translation>Exibir Detalhes...</translation>
     </message>
     <message>
         <source>Hide Details...</source>
         <translation>Ocultar Detalhes...</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://qt.nokia.com/company/model/&quot;&gt;qt.nokia.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Este programa usa Qt Open Source Edition versão %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition é indicado para o desenvolvimento de aplicações/programas open source. Se pretender desenvolver aplicações sem disponibilizar o codigo fonte, então precisará de obter uma licença comercial.&lt;/p&gt;&lt;p&gt;Por favor consulte &lt;a href=&quot;http://qt.nokia.com/company/model/&quot;&gt;qt.nokia.com/company/model/&lt;/a&gt;para obter mais informação acerca de licenças Qt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
@@ -3430,6 +3571,10 @@ Você deseja apagá-lo mesmo assim?</translation>
 <context>
     <name>QNetworkAccessFtpBackend</name>
     <message>
+        <source>No suitable proxy found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Cannot open %1: is a directory</source>
         <translation>Não foi possível abrir %1: é um diretório</translation>
     </message>
@@ -3444,10 +3589,6 @@ Você deseja apagá-lo mesmo assim?</translation>
     <message>
         <source>Error while uploading %1: %2</source>
         <translation>Erro ao enviar %1: %2</translation>
-    </message>
-    <message>
-        <source>No suitable proxy found</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3671,6 +3812,10 @@ Você deseja apagá-lo mesmo assim?</translation>
 </context>
 <context>
     <name>QObject</name>
+    <message>
+        <source>Home</source>
+        <translation type="obsolete">Início</translation>
+    </message>
     <message>
         <source>Operation not supported on %1</source>
         <translation type="vanished">Operação não suportada em %1</translation>
@@ -4376,7 +4521,7 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished">Salvar</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save All</source>
@@ -4469,8 +4614,244 @@ Você deseja apagá-lo mesmo assim?</translation>
         <translation type="vanished">desconhecido</translation>
     </message>
     <message>
+        <source>Portrait</source>
+        <translation type="obsolete">Retrato</translation>
+    </message>
+    <message>
+        <source>Landscape</source>
+        <translation type="obsolete">Paisagem</translation>
+    </message>
+    <message>
+        <source>A0 (841 x 1189 mm)</source>
+        <translation type="obsolete">A0 (841 x 1189 mm)</translation>
+    </message>
+    <message>
+        <source>A1 (594 x 841 mm)</source>
+        <translation type="obsolete">A1 (594 x 841 mm)</translation>
+    </message>
+    <message>
+        <source>A2 (420 x 594 mm)</source>
+        <translation type="obsolete">A2 (420 x 594 mm)</translation>
+    </message>
+    <message>
+        <source>A3 (297 x 420 mm)</source>
+        <translation type="obsolete">A3 (297 x 420 mm)</translation>
+    </message>
+    <message>
+        <source>A4 (210 x 297 mm, 8.26 x 11.7 inches)</source>
+        <translation type="obsolete">A4 (210 x 297 mm, 8.26 x 11.7 polegadas)</translation>
+    </message>
+    <message>
+        <source>A5 (148 x 210 mm)</source>
+        <translation type="obsolete">A5 (148 x 210 mm)</translation>
+    </message>
+    <message>
+        <source>A6 (105 x 148 mm)</source>
+        <translation type="obsolete">A6 (105 x 148 mm)</translation>
+    </message>
+    <message>
+        <source>A7 (74 x 105 mm)</source>
+        <translation type="obsolete">A7 (74 x 105 mm)</translation>
+    </message>
+    <message>
+        <source>A8 (52 x 74 mm)</source>
+        <translation type="obsolete">A8 (52 x 74 mm)</translation>
+    </message>
+    <message>
+        <source>A9 (37 x 52 mm)</source>
+        <translation type="obsolete">A9 (37 x 52 mm)</translation>
+    </message>
+    <message>
+        <source>B0 (1000 x 1414 mm)</source>
+        <translation type="obsolete">B0 (1000 x 1414 mm)</translation>
+    </message>
+    <message>
+        <source>B1 (707 x 1000 mm)</source>
+        <translation type="obsolete">B1 (707 x 1000 mm)</translation>
+    </message>
+    <message>
+        <source>B2 (500 x 707 mm)</source>
+        <translation type="obsolete">B2 (500 x 707 mm)</translation>
+    </message>
+    <message>
+        <source>B3 (353 x 500 mm)</source>
+        <translation type="obsolete">B3 (353 x 500 mm)</translation>
+    </message>
+    <message>
+        <source>B4 (250 x 353 mm)</source>
+        <translation type="obsolete">B4 (250 x 353 mm)</translation>
+    </message>
+    <message>
+        <source>B5 (176 x 250 mm, 6.93 x 9.84 inches)</source>
+        <translation type="obsolete">B5 (176 x 250 mm, 6.93 x 9.84 polegadas)</translation>
+    </message>
+    <message>
+        <source>B6 (125 x 176 mm)</source>
+        <translation type="obsolete">B6 (125 x 176 mm)</translation>
+    </message>
+    <message>
+        <source>B7 (88 x 125 mm)</source>
+        <translation type="obsolete">B7 (88 x 125 mm)</translation>
+    </message>
+    <message>
+        <source>B8 (62 x 88 mm)</source>
+        <translation type="obsolete">B8 (62 x 88 mm)</translation>
+    </message>
+    <message>
+        <source>B9 (44 x 62 mm)</source>
+        <translation type="obsolete">B9 (44 x 62 mm)</translation>
+    </message>
+    <message>
+        <source>B10 (31 x 44 mm)</source>
+        <translation type="obsolete">B10 (31 x 44 mm)</translation>
+    </message>
+    <message>
+        <source>C5E (163 x 229 mm)</source>
+        <translation type="obsolete">C5E (163 x 229 mm)</translation>
+    </message>
+    <message>
+        <source>DLE (110 x 220 mm)</source>
+        <translation type="obsolete">DLE (110 x 220 mm)</translation>
+    </message>
+    <message>
+        <source>Executive (7.5 x 10 inches, 191 x 254 mm)</source>
+        <translation type="obsolete">Executivo (7.5 x 10 polegadas, 191 x 254 mm)</translation>
+    </message>
+    <message>
+        <source>Folio (210 x 330 mm)</source>
+        <translation type="obsolete">Folio (210 x 330 mm)</translation>
+    </message>
+    <message>
+        <source>Ledger (432 x 279 mm)</source>
+        <translation type="obsolete">Ledger (432 x 279 mm)</translation>
+    </message>
+    <message>
+        <source>Legal (8.5 x 14 inches, 216 x 356 mm)</source>
+        <translation type="obsolete">Legal (8.5 x 14 polegadas, 216 x 356 mm)</translation>
+    </message>
+    <message>
+        <source>Letter (8.5 x 11 inches, 216 x 279 mm)</source>
+        <translation type="obsolete">Carta (8.5 x 11 polegadas, 216 x 279 mm)</translation>
+    </message>
+    <message>
+        <source>Tabloid (279 x 432 mm)</source>
+        <translation type="obsolete">Tablóide (279 x 432 mm)</translation>
+    </message>
+    <message>
+        <source>US Common #10 Envelope (105 x 241 mm)</source>
+        <translation type="obsolete">Envelope #10 Comum EUA (105 x 241 mm)</translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation type="unfinished">OK</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Cancelar</translation>
+    </message>
+    <message>
+        <source>Page size:</source>
+        <translation type="obsolete">Tamanho página:</translation>
+    </message>
+    <message>
+        <source>Orientation:</source>
+        <translation type="obsolete">Orientação:</translation>
+    </message>
+    <message>
+        <source>Paper source:</source>
+        <translation type="obsolete">Fonte papel:</translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation type="unfinished">Imprimir</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation type="obsolete">Ficheiro</translation>
+    </message>
+    <message>
+        <source>Printer</source>
+        <translation type="obsolete">Impressora</translation>
+    </message>
+    <message>
         <source>Print To File ...</source>
         <translation>Imprimir Para Arquivo ...</translation>
+    </message>
+    <message>
+        <source>Print dialog</source>
+        <translation type="obsolete">Diálogo de impressão</translation>
+    </message>
+    <message>
+        <source>Paper format</source>
+        <translation type="obsolete">Formato do papel</translation>
+    </message>
+    <message>
+        <source>Size:</source>
+        <translation type="obsolete">Tamanho:</translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="obsolete">Propriedades</translation>
+    </message>
+    <message>
+        <source>Printer info:</source>
+        <translation type="obsolete">Informação da impressora:</translation>
+    </message>
+    <message>
+        <source>Browse</source>
+        <translation type="obsolete">Navegar</translation>
+    </message>
+    <message>
+        <source>Print to file</source>
+        <translation type="obsolete">Imprimir para um ficheiro</translation>
+    </message>
+    <message>
+        <source>Print range</source>
+        <translation type="obsolete">Selecção de páginas</translation>
+    </message>
+    <message>
+        <source>Print all</source>
+        <translation type="obsolete">Imprimir todas</translation>
+    </message>
+    <message>
+        <source>Pages from</source>
+        <translation type="obsolete">Páginas de</translation>
+    </message>
+    <message>
+        <source>to</source>
+        <translation type="obsolete">a</translation>
+    </message>
+    <message>
+        <source>Selection</source>
+        <translation type="obsolete">Selecção</translation>
+    </message>
+    <message>
+        <source>Copies</source>
+        <translation type="obsolete">Cópias</translation>
+    </message>
+    <message>
+        <source>Number of copies:</source>
+        <translation type="obsolete">Número de cópias:</translation>
+    </message>
+    <message>
+        <source>Collate</source>
+        <translation type="obsolete">Juntar</translation>
+    </message>
+    <message>
+        <source>Print last page first</source>
+        <translation type="obsolete">Imprimir a última página primeiro</translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation type="obsolete">Outro</translation>
+    </message>
+    <message>
+        <source>Print in color if available</source>
+        <translation type="obsolete">Imprimir a cores se disponível</translation>
+    </message>
+    <message>
+        <source>Double side printing</source>
+        <translation type="obsolete">Imprimir nos dois lados do papel</translation>
     </message>
     <message>
         <source>File %1 is not writable.
@@ -4482,6 +4863,18 @@ Por favor escolha um nome de arquivo diferente.</translation>
         <source>%1 already exists.
 Do you want to overwrite it?</source>
         <translation>%1 já existe.Você deseja substituí-lo?</translation>
+    </message>
+    <message>
+        <source>File exists</source>
+        <translation type="obsolete">O ficheiro existe</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Do you want to overwrite it?&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;Deseja gravar por cima?&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>Print selection</source>
+        <translation type="obsolete">Selecção de Impressão</translation>
     </message>
     <message>
         <source>%1 is a directory.
@@ -4642,7 +5035,7 @@ Por favor escolha um nome de arquivo diferente.</translation>
         <translation type="vanished">Escrever para arquivo %1</translation>
     </message>
     <message>
-        <source>Print</source>
+        <source>The &apos;From&apos; value cannot be greater than the &apos;To&apos; value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4723,14 +5116,6 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The &apos;From&apos; value cannot be greater than the &apos;To&apos; value.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation type="unfinished">OK</translation>
-    </message>
-    <message>
         <source>Automatic</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4740,6 +5125,10 @@ Please turn one of those options off.</source>
     <message>
         <source>Page Setup</source>
         <translation>Configurações de Página</translation>
+    </message>
+    <message>
+        <source>%1%</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print Preview</source>
@@ -4810,16 +5199,24 @@ Please turn one of those options off.</source>
         <translation type="vanished">Fechar</translation>
     </message>
     <message>
-        <source>%1%</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Export to PDF</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPrintPropertiesDialog</name>
+    <message>
+        <source>PPD Properties</source>
+        <translation type="obsolete">Propriedades PPD</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="obsolete">Gravar</translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation type="obsolete">OK</translation>
+    </message>
     <message>
         <source>Printer Properties</source>
         <translation type="unfinished"></translation>
@@ -4973,11 +5370,15 @@ Please turn one of those options off.</source>
 <context>
     <name>QProcess</name>
     <message>
-        <source>Process failed to start</source>
+        <source>Could not open input redirection for reading</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Process crashed</source>
+        <source>Could not open output redirection for writing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resource error (fork failure): %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4993,19 +5394,15 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Process crashed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>No program defined</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Could not open input redirection for reading</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Resource error (fork failure): %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Could not open output redirection for writing</source>
+        <source>Process failed to start</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5491,6 +5888,10 @@ Please turn one of those options off.</source>
         <translation>Não foi possível efetuar commit da transação</translation>
     </message>
     <message>
+        <source>Unable to roll back transaction</source>
+        <translation type="obsolete">Não foi possível anular a transacção</translation>
+    </message>
+    <message>
         <source>Unable to rollback transaction</source>
         <translation>Não foi possível fazer rollback da transação</translation>
     </message>
@@ -5671,18 +6072,6 @@ Please turn one of those options off.</source>
         <translation>%1: não associada</translation>
     </message>
     <message>
-        <source>%1: bad name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1: UNIX key file doesn&apos;t exist</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1: doesn&apos;t exist</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1: invalid size</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5692,6 +6081,18 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>%1: size query failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: bad name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: UNIX key file doesn&apos;t exist</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: doesn&apos;t exist</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6300,7 +6701,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished">Salvar</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Send</source>
@@ -6673,7 +7074,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sair</translation>
     </message>
     <message>
         <source>Touchpad Toggle</source>
@@ -6717,14 +7118,6 @@ Please turn one of those options off.</source>
 </context>
 <context>
     <name>QSocks5SocketEngine</name>
-    <message>
-        <source>Socks5 timeout error connecting to socks server</source>
-        <translation type="vanished">Erro de tempo esgotado no Socks5 ao tentar conectar ao servidor socks</translation>
-    </message>
-    <message>
-        <source>Network operation timed out</source>
-        <translation>Tempo esgotado durante operação de rede</translation>
-    </message>
     <message>
         <source>Connection to proxy refused</source>
         <translation type="unfinished"></translation>
@@ -6776,6 +7169,14 @@ Please turn one of those options off.</source>
     <message>
         <source>Unknown SOCKSv5 proxy error code 0x%1</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Socks5 timeout error connecting to socks server</source>
+        <translation type="vanished">Erro de tempo esgotado no Socks5 ao tentar conectar ao servidor socks</translation>
+    </message>
+    <message>
+        <source>Network operation timed out</source>
+        <translation>Tempo esgotado durante operação de rede</translation>
     </message>
 </context>
 <context>
@@ -7399,7 +7800,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Home</source>
-        <translation type="unfinished">Home</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cache</source>
@@ -7460,6 +7861,10 @@ Role of an accessible object</extracomment>
 <context>
     <name>QSystemSemaphore</name>
     <message>
+        <source>%1: out of resources</source>
+        <translation type="unfinished">%1: sem recursos</translation>
+    </message>
+    <message>
         <source>%1: permission denied</source>
         <translation type="unfinished">%1: permissão negada</translation>
     </message>
@@ -7470,10 +7875,6 @@ Role of an accessible object</extracomment>
     <message>
         <source>%1: does not exist</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1: out of resources</source>
-        <translation type="unfinished">%1: sem recursos</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
@@ -7504,6 +7905,10 @@ Role of an accessible object</extracomment>
 </context>
 <context>
     <name>QTcpServer</name>
+    <message>
+        <source>Socket operation unsupported</source>
+        <translation type="obsolete">Operação de &apos;socket&apos; não suportada</translation>
+    </message>
     <message>
         <source>Operation on socket is not supported</source>
         <translation type="unfinished"></translation>
@@ -7966,6 +8371,58 @@ Role of an accessible object</extracomment>
     <message>
         <source>Web Inspector - %2</source>
         <translation type="vanished">Inspetor Web - %2</translation>
+    </message>
+    <message>
+        <source>Scroll here</source>
+        <translation type="obsolete">Deslizar aqui</translation>
+    </message>
+    <message>
+        <source>Left edge</source>
+        <translation type="obsolete">Borda esquerda</translation>
+    </message>
+    <message>
+        <source>Top</source>
+        <translation type="obsolete">Topo</translation>
+    </message>
+    <message>
+        <source>Right edge</source>
+        <translation type="obsolete">Borda direita</translation>
+    </message>
+    <message>
+        <source>Bottom</source>
+        <translation type="obsolete">Fundo</translation>
+    </message>
+    <message>
+        <source>Page left</source>
+        <translation type="obsolete">Página para esquerda</translation>
+    </message>
+    <message>
+        <source>Page up</source>
+        <translation type="obsolete">Página para cima</translation>
+    </message>
+    <message>
+        <source>Page right</source>
+        <translation type="obsolete">Página para direita</translation>
+    </message>
+    <message>
+        <source>Page down</source>
+        <translation type="obsolete">Página para baixo</translation>
+    </message>
+    <message>
+        <source>Scroll left</source>
+        <translation type="obsolete">Deslizar para esquerda</translation>
+    </message>
+    <message>
+        <source>Scroll up</source>
+        <translation type="obsolete">Deslizar para cima</translation>
+    </message>
+    <message>
+        <source>Scroll right</source>
+        <translation type="obsolete">Deslizar para a direita</translation>
+    </message>
+    <message>
+        <source>Scroll down</source>
+        <translation type="obsolete">Deslizar para baixo</translation>
     </message>
 </context>
 <context>
@@ -8779,10 +9236,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation type="vanished">Não é possível redeclarar o prefixo %1.</translation>
     </message>
     <message>
-        <source>Only the prefix %1 can be declared to bind the namespace %2. By default, it is already bound to the prefix %1.</source>
-        <translation type="vanished">Apenas o prefixo %1 pode ser declarado para se associar ao namespace %2. Por padrão, este namespace já é associado ao prefixo %1.</translation>
-    </message>
-    <message>
         <source>Prefix %1 is already declared in the prolog.</source>
         <translation type="vanished">O prefixo %1 já está declarado no prolog.</translation>
     </message>
@@ -8801,10 +9254,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <message>
         <source>The module import feature is not supported</source>
         <translation type="vanished">O recurso de importação de módulos não é suportado</translation>
-    </message>
-    <message>
-        <source>A variable by name %1 has already been declared in the prolog.</source>
-        <translation type="vanished">Uma variável de nome %1 já foi declarada no prolog.</translation>
     </message>
     <message>
         <source>No value is available for the external variable by name %1.</source>
@@ -8907,10 +9356,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation type="vanished">%1 não é um tipo atômico. A conversão somente é possível para tipos atômicos.</translation>
     </message>
     <message>
-        <source>%1 is not a valid name for a processing-instruction. Therefore this name test will never match.</source>
-        <translation type="vanished">%1 não é um nome válido para uma instrução de processamento. Logo, este teste de nome nunca irá coincidir.</translation>
-    </message>
-    <message>
         <source>%1 is not in the in-scope attribute declarations. Note that the schema import feature is not supported.</source>
         <translation type="vanished">%1 não está no escopo de declarações de atributos. Lembre-se de que o recurso de importação de schemas não é suportado.</translation>
     </message>
@@ -8961,6 +9406,18 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <message>
         <source>Only the Unicode Codepoint Collation is supported(%1). %2 is unsupported.</source>
         <translation type="vanished">Apenas o Ordenamento de Códigos Unicode é suportado(%1). %2 não é suportado.</translation>
+    </message>
+    <message>
+        <source>Only the prefix %1 can be declared to bind the namespace %2. By default, it is already bound to the prefix %1.</source>
+        <translation type="vanished">Apenas o prefixo %1 pode ser declarado para se associar ao namespace %2. Por padrão, este namespace já é associado ao prefixo %1.</translation>
+    </message>
+    <message>
+        <source>A variable by name %1 has already been declared in the prolog.</source>
+        <translation type="vanished">Uma variável de nome %1 já foi declarada no prolog.</translation>
+    </message>
+    <message>
+        <source>%1 is not a valid name for a processing-instruction. Therefore this name test will never match.</source>
+        <translation type="vanished">%1 não é um nome válido para uma instrução de processamento. Logo, este teste de nome nunca irá coincidir.</translation>
     </message>
 </context>
 <context>
