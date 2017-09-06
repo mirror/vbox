@@ -28,7 +28,7 @@
 #define ___iprt_formats_fat_h
 
 #include <iprt/types.h>
-#include <iprt/assert.h>
+#include <iprt/assertcompile.h>
 
 
 /** @defgroup grp_rt_formats_fat    File Allocation Table (FAT) structures and definitions

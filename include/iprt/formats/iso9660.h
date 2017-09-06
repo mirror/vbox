@@ -28,7 +28,7 @@
 #define ___iprt_formats_iso9660_h
 
 #include <iprt/types.h>
-#include <iprt/assert.h>
+#include <iprt/assertcompile.h>
 
 
 /** @defgroup grp_rt_formats_iso9660    ISO 9660 structures and definitions

@@ -27,8 +27,7 @@
 #ifndef ___iprt_formats_elf32_h
 #define ___iprt_formats_elf32_h
 
-#include <iprt/assert.h>
-
+#include <iprt/assertcompile.h>
 #include "elf-common.h"
 
 /*

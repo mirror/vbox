@@ -28,7 +28,7 @@
 #define ___iprt_formats_mz_h
 
 #include <iprt/types.h>
-#include <iprt/assert.h>
+#include <iprt/assertcompile.h>
 
 typedef struct _IMAGE_DOS_HEADER
 {

@@ -28,7 +28,7 @@
 #define ___iprt_formats_udf_h
 
 #include <iprt/types.h>
-#include <iprt/assert.h>
+#include <iprt/assertcompile.h>
 #include <iprt/formats/iso9660.h>
 
 

@@ -28,7 +28,7 @@
 #define ___iprt_formats_pecoff_h
 
 #include <iprt/types.h>
-#include <iprt/assert.h>
+#include <iprt/assertcompile.h>
 
 
 /** @defgroup grp_rt_formats_pecoff     PE & Microsoft COFF structures and definitions

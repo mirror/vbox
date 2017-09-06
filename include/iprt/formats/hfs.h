@@ -28,7 +28,7 @@
 
 
 #include <iprt/types.h>
-#include <iprt/assert.h>
+#include <iprt/assertcompile.h>
 
 
 /** @defgroup grp_rt_fmt_hfs    HFS - Hierarchical File System.

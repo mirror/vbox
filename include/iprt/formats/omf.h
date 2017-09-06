@@ -32,6 +32,7 @@
 #define ___iprt_formats_omf_h
 
 #include <iprt/stdint.h>
+#include <iprt/assertcompile.h>
 
 
 /** @defgroup grp_rt_formats_omf     Relocatable Object Module Format (OMF) structures and definitions
@@ -51,6 +52,7 @@ typedef struct OMFRECHDR
     uint16_t        cbLen;
 } OMFRECHDR;
 #pragma pack()
+AssertCompileSize(OMFRECHDR, 3);
 /** Pointer to an OMF header. */
 typedef OMFRECHDR *POMFRECHDR;
 /** Pointer to a const OMF header. */

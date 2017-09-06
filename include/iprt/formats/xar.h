@@ -28,6 +28,7 @@
 #define ___iprt_formats_xar_h
 
 #include <iprt/types.h>
+#include <iprt/assertcompile.h>
 
 
 /** @defgroup grp_rt_formats_xar   Extensible Archive (XAR) format
@@ -52,6 +53,7 @@ typedef struct XARHEADER
     uint32_t    uHashFunction;
 } XARHEADER;
 #pragma pack()
+AssertCompileSize(XARHEADER, 28);
 /** Pointer to a XAR header. */
 typedef XARHEADER *PXARHEADER;
 /** Pointer to a const XAR header. */
