@@ -23,6 +23,9 @@
 #include <QObject>
 #include <QPointer>
 
+/* GUI includes: */
+#include "UIMediumDefs.h"
+
 /* Forward declaration: */
 class QWidget;
 class UIPopupStack;
@@ -31,6 +34,7 @@ class CConsole;
 class CEmulatedUSB; 
 class CMachine;
 class CNetworkAdapter;
+class CVirtualBox;
 class CVirtualBoxErrorInfo;
 class CVRDEServer;
 
@@ -137,6 +141,9 @@ public:
                                  const QString &strMachineName, bool fEnable);
     void cannotToggleAudioInput(QWidget *pParent, const CAudioAdapter &comAdapter,
                                 const QString &strMachineName, bool fEnable);
+    void cannotMountImage(QWidget *pParent, const QString &strMachineName, const QString &strMediumName);
+    void cannotOpenMedium(QWidget *pParent, const CVirtualBox &comVBox, UIMediumType enmType, const QString &strLocation);
+    void cannotSaveMachineSettings(QWidget *pParent, const CMachine &comMachine);
 
 private slots:
 

@@ -311,7 +311,6 @@ public:
     void cannotEnterSeamlessMode(ULONG uWidth, ULONG uHeight, ULONG uBpp, ULONG64 uMinVRAM) const;
     bool cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const;
     void cannotSwitchScreenInSeamless(quint64 uMinVRAM) const;
-    void cannotMountGuestAdditions(const QString &strMachineName) const;
     void cannotAddDiskEncryptionPassword(const CConsole &console);
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
