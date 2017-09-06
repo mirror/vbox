@@ -25,6 +25,7 @@
 #include <VBox/log.h>
 #include <VBox/version.h>
 #include <VBox/VBoxGuestLib.h>
+#include <iprt/assert.h>
 
 
 /*********************************************************************************************************************************

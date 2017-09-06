@@ -29,7 +29,7 @@
 #define ___VBox_VBoxGuest_h
 
 #include <VBox/types.h>
-#include <iprt/assert.h>
+#include <iprt/assertcompile.h>
 #include <VBox/VMMDevCoreTypes.h>
 #include <VBox/VBoxGuestCoreTypes.h>
 

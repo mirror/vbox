@@ -32,7 +32,7 @@
 #include <VBox/err.h>
 #include <VBox/ostypes.h>
 #include <VBox/VMMDevCoreTypes.h>
-#include <iprt/assert.h>
+#include <iprt/assertcompile.h>
 
 
 #pragma pack(4) /* force structure dword packing here. */

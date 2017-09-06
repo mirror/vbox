@@ -29,6 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <VBox/log.h>
+#include <iprt/assert.h>
 #include "VBoxGuestR3LibInternal.h"
 
 

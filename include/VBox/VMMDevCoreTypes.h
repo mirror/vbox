@@ -29,7 +29,7 @@
 #ifndef ___VBox_VMMDevCoreTypes_h
 #define ___VBox_VMMDevCoreTypes_h
 
-#include <iprt/assert.h>
+#include <iprt/assertcompile.h>
 #ifdef __cplusplus
 # include <iprt/err.h>
 #endif
