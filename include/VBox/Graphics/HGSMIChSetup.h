@@ -1,5 +1,5 @@
 /** @file
- * VBox Host Guest Shared Memory Interface (HGSMI), sHost/Guest shared part.
+ * VBox Host Guest Shared Memory Interface (HGSMI), Host/Guest shared part.
  */
 
 /*
@@ -26,6 +26,8 @@
 
 #ifndef ___VBox_Graphics_HGSMIChSetup_h
 #define ___VBox_Graphics_HGSMIChSetup_h
+
+#include "HGSMIDefs.h"
 
 /* HGSMI setup and configuration channel commands and data structures. */
 #define HGSMI_CC_HOST_FLAGS_LOCATION 0 /* Tell the host the location of HGSMIHOSTFLAGS structure,

@@ -1,5 +1,5 @@
 /** @file
- * VBox Host Guest Shared Memory Interface (HGSMI) command contexts.
+ * VBox Host Guest Shared Memory Interface (HGSMI) - command contexts.
  */
 
 /*
@@ -27,9 +27,9 @@
 #ifndef ___VBox_Graphics_HGSMIContext_h___
 #define ___VBox_Graphics_HGSMIContext_h___
 
-#include <HGSMI.h>
-#include <HGSMIChSetup.h>
-#include <VBoxVideoIPRT.h>
+#include "HGSMI.h"
+#include "HGSMIChSetup.h"
+#include "VBoxVideoIPRT.h"
 
 #ifdef VBOX_WDDM_MINIPORT
 # include "wddm/VBoxMPShgsmi.h"
@@ -104,3 +104,4 @@ DECLHIDDEN(void)     VBoxHGSMISetupHostContext(PHGSMIHOSTCOMMANDCONTEXT pCtx,
 RT_C_DECLS_END
 
 #endif
+

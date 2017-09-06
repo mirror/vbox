@@ -1,6 +1,5 @@
 /** @file
- * VirtualBox Video driver, common code - iprt and VirtualBox macros and
- * definitions.
+ * VirtualBox Video driver, common code - iprt and VirtualBox macros and definitions.
  */
 
 /*

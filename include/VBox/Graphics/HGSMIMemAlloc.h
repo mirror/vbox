@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox Host Guest Shared Memory Interface (HGSMI).
- * Memory allocator.
+ * VBox Host Guest Shared Memory Interface (HGSMI) - Memory allocator.
  */
 
 /*
@@ -29,8 +27,8 @@
 #ifndef ___VBox_Graphics_HGSMIMemAlloc_h
 #define ___VBox_Graphics_HGSMIMemAlloc_h
 
-#include <HGSMIDefs.h>
-#include <VBoxVideoIPRT.h>
+#include "HGSMIDefs.h"
+#include "VBoxVideoIPRT.h"
 
 
 /* Descriptor. */

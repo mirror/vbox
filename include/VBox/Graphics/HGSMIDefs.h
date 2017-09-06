@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox Host Guest Shared Memory Interface (HGSMI).
- * Host/Guest shared part: types and defines.
+ * VBox Host Guest Shared Memory Interface (HGSMI) - shared part - types and defines.
  */
 
 /*
@@ -30,7 +28,7 @@
 #ifndef ___VBox_Graphics_HGSMIDefs_h
 #define ___VBox_Graphics_HGSMIDefs_h
 
-#include <VBoxVideoIPRT.h>
+#include "VBoxVideoIPRT.h"
 
 /* HGSMI uses 32 bit offsets and sizes. */
 typedef uint32_t HGSMISIZE;
@@ -60,7 +58,7 @@ typedef struct HGSMIAREA
 #define HGSMI_BUFFER_HEADER_F_SEQ_END      0x03 /* The last buffer in a sequence. */
 
 
-#pragma pack(1)
+#pragma pack(1) /** @todo not necessary. use AssertCompileSize instead. */
 /* 16 bytes buffer header. */
 typedef struct HGSMIBUFFERHEADER
 {
@@ -121,3 +119,4 @@ typedef struct HGSMIENV
 } HGSMIENV;
 
 #endif /* !___VBox_Graphics_HGSMIDefs_h */
+

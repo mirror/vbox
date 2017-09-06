@@ -1,5 +1,5 @@
 /** @file
- * VBox Host Guest Shared Memory Interface (HGSMI) buffer management.
+ * VBox Host Guest Shared Memory Interface (HGSMI) - buffer management.
  */
 
 /*
@@ -27,9 +27,9 @@
 #ifndef ___VBox_Graphics_HGSMIHostCmd_h___
 #define ___VBox_Graphics_HGSMIHostCmd_h___
 
-#include <HGSMI.h>
-#include <HGSMIContext.h>
-#include <VBoxVideoIPRT.h>
+#include "HGSMI.h"
+#include "HGSMIContext.h"
+#include "VBoxVideoIPRT.h"
 
 RT_C_DECLS_BEGIN
 

@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox Host Guest Shared Memory Interface (HGSMI).
- * Host/Guest shared part.
+ * VBox Host Guest Shared Memory Interface (HGSMI) - Host/Guest shared part.
  */
 
 /*
@@ -30,11 +28,11 @@
 #ifndef ___VBox_Graphics_HGSMI_h
 #define ___VBox_Graphics_HGSMI_h
 
-#include <VBoxVideoIPRT.h>
+#include "VBoxVideoIPRT.h"
 
-#include <HGSMIDefs.h>
-#include <HGSMIChannels.h>
-#include <HGSMIMemAlloc.h>
+#include "HGSMIDefs.h"
+#include "HGSMIChannels.h"
+#include "HGSMIMemAlloc.h"
 
 /*
  * Basic mechanism for the HGSMI is to prepare and pass data buffer to the host and the guest.

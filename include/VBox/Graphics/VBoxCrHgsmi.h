@@ -1,3 +1,7 @@
+/** @file
+ * Document me, pretty please.
+ */
+
 /*
  * Copyright (C) 2010-2016 Oracle Corporation
  *
@@ -22,7 +26,7 @@
 #define ___VBox_VBoxCrHgsmi_h
 
 #include <iprt/cdefs.h>
-#include <VBoxUhgsmi.h>
+#include "VBoxUhgsmi.h"
 
 RT_C_DECLS_BEGIN
 
