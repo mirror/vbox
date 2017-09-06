@@ -14,6 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #ifndef ___VBox_scsiinline_h
 #define ___VBox_scsiinline_h
 
@@ -185,7 +186,8 @@ DECLINLINE(uint32_t) scsiMSF2LBA(const uint8_t *pbBuf)
  */
 DECLINLINE(void) scsiPadStr(uint8_t *pbDst, const char *pbSrc, uint32_t cbSize)
 {
-    for (uint32_t i = 0; i < cbSize; i++)
+    uint32_t i;
+    for (i = 0; i < cbSize; i++)
     {
         if (*pbSrc)
             pbDst[i] = *pbSrc++;
@@ -206,7 +208,8 @@ DECLINLINE(void) scsiPadStr(uint8_t *pbDst, const char *pbSrc, uint32_t cbSize)
  */
 DECLINLINE(void) scsiPadStrS(int8_t *pbDst, const char *pbSrc, uint32_t cbSize)
 {
-    for (uint32_t i = 0; i < cbSize; i++)
+    uint32_t i;
+    for (i = 0; i < cbSize; i++)
     {
         if (*pbSrc)
             pbDst[i] = *pbSrc++;
@@ -217,5 +220,5 @@ DECLINLINE(void) scsiPadStrS(int8_t *pbDst, const char *pbSrc, uint32_t cbSize)
 
 /** @} */
 
-#endif /* ___VBox_scsiinline_h */
+#endif
 
