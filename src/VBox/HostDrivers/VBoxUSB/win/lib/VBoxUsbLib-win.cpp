@@ -1080,7 +1080,7 @@ static int usbLibInterruptWaitChange(PVBOXUSBGLOBALSTATE pGlobal)
     return VINF_SUCCESS;
 }
 
-USBLIB_DECL(int) USBLibInterruptWaitChange()
+USBLIB_DECL(int) USBLibInterruptWaitChange(void)
 {
     return usbLibInterruptWaitChange(&g_VBoxUsbGlobal);
 }
@@ -1156,7 +1156,7 @@ USBLIB_DECL(void) USBLibRemoveFilter(void *pvId)
         AssertMsgFailed(("DeviceIoControl failed with LastError=%Rwa\n", GetLastError()));
 }
 
-USBLIB_DECL(int) USBLibRunFilters()
+USBLIB_DECL(int) USBLibRunFilters(void)
 {
     DWORD cbReturned = 0;
 
