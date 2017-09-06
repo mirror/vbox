@@ -1511,8 +1511,6 @@ static int dsoundControlStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
         case PDMAUDIOSTREAMCMD_ENABLE:
         case PDMAUDIOSTREAMCMD_RESUME:
         {
-            DSLOG(("DSound: Playback PDMAUDIOSTREAMCMD_ENABLE\n"));
-            /* Try to start playback. If it fails, then reopen and try again. */
             hr = directSoundPlayStart(pThis, pStreamDS);
             if (FAILED(hr))
             {
@@ -1543,7 +1541,8 @@ static int dsoundControlStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
         case PDMAUDIOSTREAMCMD_DISABLE:
         case PDMAUDIOSTREAMCMD_PAUSE:
         {
-            DSLOG(("DSound: Playback PDMAUDIOSTREAMCMD_DISABLE\n"));
+            AssertPtr(pThis->pDS);
+
             hr = directSoundPlayStop(pThis, pStreamDS);
             if (FAILED(hr))
                 rc = VERR_NOT_SUPPORTED;
@@ -1777,9 +1776,15 @@ static int dsoundControlStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, 
         case PDMAUDIOSTREAMCMD_DISABLE:
         case PDMAUDIOSTREAMCMD_PAUSE:
         {
-            hr = directSoundCaptureStop(pStreamDS);
-            if (FAILED(hr))
-                rc = VERR_NOT_SUPPORTED;
+            AssertPtr(pThis->pDSC);
+
+            directSoundCaptureStop(pStreamDS);
+
+            /* Return success in any case, as stopping the capture can fail if
+             * the capture buffer is not around anymore.
+             *
+             * This can happen if the host's capturing device has been changed suddenly. */
+            rc = VINF_SUCCESS;
             break;
         }
 
