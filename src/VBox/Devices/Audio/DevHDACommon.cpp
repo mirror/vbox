@@ -213,7 +213,9 @@ bool hdaWalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce)
 #endif
 
 #ifdef VBOX_STRICT
-            Assert(u64WalClkSet >= u64WalClkCur); /* Setting WALCLK to a value going backwards does not make any sense. */
+            AssertMsg(u64WalClkSet >= u64WalClkCur,
+                      ("Setting WALCLK to a value going backwards does not make any sense (old %RU64 vs. new %RU64)\n",
+                       u64WalClkCur, u64WalClkSet));
             if (u64WalClkSet == u64WalClkCur)     /* Setting a stale value? */
             {
                 if (pThis->u8WalClkStaleCnt++ > 3)
