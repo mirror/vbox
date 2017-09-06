@@ -29,7 +29,10 @@
 
 #include "DrvAudio.h"
 #include "VBoxDD.h"
-
+#ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+# include <new> /* For bad_alloc. */
+# include "VBoxMMNotificationClient.h"
+#endif
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -152,6 +155,9 @@ typedef struct DRVHOSTDSOUND
     LPDIRECTSOUND8          pDS;
     /** The Direct Sound capturing interface. */
     LPDIRECTSOUNDCAPTURE8   pDSC;
+#ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+    VBoxMMNotificationClient *m_pNotificationClient;
+#endif
 #ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
     /** Pointer to the audio connector interface of the driver/device above us. */
     PPDMIAUDIOCONNECTOR     pUpIAudioConnector;
@@ -2398,7 +2404,18 @@ static DECLCALLBACK(void) drvHostDSoundDestruct(PPDMDRVINS pDrvIns)
 {
     PDRVHOSTDSOUND pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTDSOUND);
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+
     LogFlowFuncEnter();
+
+#ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+    if (pThis->m_pNotificationClient)
+    {
+        pThis->m_pNotificationClient->Dispose();
+        pThis->m_pNotificationClient->Release();
+
+        pThis->m_pNotificationClient = NULL;
+    }
+#endif
 
     if (pThis->pDrvIns)
         CoUninitialize();
@@ -2464,12 +2481,30 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->cEvents = 0;
 #endif
 
+    int rc = VINF_SUCCESS;
+
+#ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+    try
+    {
+        pThis->m_pNotificationClient = new VBoxMMNotificationClient();
+
+        HRESULT hr = pThis->m_pNotificationClient->Initialize();
+        if (FAILED(hr))
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+    }
+    catch (std::bad_alloc &ex)
+    {
+        NOREF(ex);
+        rc = VERR_NO_MEMORY;
+    }
+#endif
+
     /*
      * Initialize configuration values.
      */
     dsoundConfigInit(pThis, pCfg);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 

@@ -631,6 +631,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifeq ($(KBUILD_TARGET),win)
   VBoxDD_SOURCES += \
 	Audio/DrvHostDSound.cpp
+  ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+   VBoxDD_SOURCES += \
+	Audio/VBoxMMNotificationClient.cpp
+   VBoxDD_DEFS    += VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+  endif
  endif
 
  ifdef VBOX_WITH_AUDIO_OSS
