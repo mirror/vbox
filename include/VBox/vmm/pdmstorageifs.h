@@ -32,6 +32,10 @@
 
 RT_C_DECLS_BEGIN
 
+struct PDMISECKEY;
+struct PDMISECKEYHLP;
+
+
 /** @defgroup grp_pdm_ifs_storage       PDM Storage Interfaces
  * @ingroup grp_pdm_interfaces
  * @{
@@ -326,8 +330,8 @@ typedef struct PDMIMEDIA
      * @param   pIfSecKeyHlp    The secret key helper interface to use.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetSecKeyIf,(PPDMIMEDIA pInterface, PPDMISECKEY pIfSecKey,
-                                              PPDMISECKEYHLP pIfSecKeyHlp));
+    DECLR3CALLBACKMEMBER(int, pfnSetSecKeyIf,(PPDMIMEDIA pInterface, struct PDMISECKEY *pIfSecKey,
+                                              struct PDMISECKEYHLP *pIfSecKeyHlp));
 
     /**
      * Get the media size in bytes.

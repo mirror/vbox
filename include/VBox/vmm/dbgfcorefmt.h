@@ -61,7 +61,7 @@ typedef struct DBGFCORESEL
     uint16_t        uSel;
     uint16_t        uReserved0;
     uint32_t        uReserved1;
-} VBOXX86SEL;
+} DBGFCORESEL;
 AssertCompileSizeAlignment(DBGFCORESEL, 8);
 
 /**
@@ -72,8 +72,8 @@ typedef struct DBGFCOREXDTR
     uint64_t        uAddr;
     uint32_t        cb;
     uint32_t        uReserved0;
-} DBGFXDTR;
-AssertCompileSizeAlignment(DBGFCORESEL, 8);
+} DBGFCOREXDTR;
+AssertCompileSizeAlignment(DBGFCOREXDTR, 8);
 
 /**
  * A simpler to parse CPU dump than CPUMCTX.
@@ -114,8 +114,8 @@ typedef struct DBGFCORECPU
     uint64_t            dr[8];
     DBGFCOREXDTR        gdtr;
     DBGFCOREXDTR        idtr;
-    VBOXX86SEL          ldtr;
-    VBOXX86SEL          tr;
+    DBGFCORESEL         ldtr;
+    DBGFCORESEL         tr;
     struct
     {
         uint64_t        cs;

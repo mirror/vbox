@@ -32,6 +32,8 @@
 
 RT_C_DECLS_BEGIN
 
+struct RTCRPKCS7SETOFCERTS;
+
 
 /** @defgroup grp_rt_crypto Crypto
  * @ingroup grp_rt

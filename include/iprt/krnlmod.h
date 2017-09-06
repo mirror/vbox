@@ -61,7 +61,7 @@ RTDECL(int) RTKrnlModLoadedQueryInfo(const char *pszName, PRTKRNLMODINFO phKrnlM
  *
  * @returns Number of kernel modules loaded.
  */
-RTDECL(uint32_t) RTKrnlModLoadedGetCount();
+RTDECL(uint32_t) RTKrnlModLoadedGetCount(void);
 
 /**
  * Returns all loaded kernel modules on the host.

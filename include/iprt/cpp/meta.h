@@ -26,6 +26,8 @@
 #ifndef ___iprt_cpp_meta_h
 #define ___iprt_cpp_meta_h
 
+#include <iprt/types.h>
+
 /** @defgroup grp_rt_cpp_meta   C++ Meta programming utilities
  * @ingroup grp_rt_cpp
  * @{

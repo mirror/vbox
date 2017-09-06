@@ -32,6 +32,9 @@
 
 RT_C_DECLS_BEGIN
 
+struct RTCRPKCS7CONTENTINFO;
+
+
 /** @defgroup grp_rt_crpkcs7 RTCrPkcs7 - PKCS \#7, Cryptographic Message Syntax Standard (aka CMS).
  * @ingroup grp_rt_crypto
  * @{

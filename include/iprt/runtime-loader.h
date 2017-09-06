@@ -155,7 +155,7 @@ RTR3DECL(int) RT_RUNTIME_LOADER_FUNCTION(void)
 /* Declarations of the functions that we need from
  * RT_RUNTIME_LOADER_LIB_NAME */
 #  define RT_PROXY_STUB(function, rettype, signature, shortsig) \
-    RTR3DECL(rettype) ( function ) signature ;
+    RTR3DECL(rettype)  function  signature ;
 
 RT_RUNTIME_LOADER_INSERT_SYMBOLS
 

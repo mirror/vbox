@@ -27,6 +27,13 @@
 #ifndef ___iprt_formats_xar_h
 #define ___iprt_formats_xar_h
 
+#include <iprt/types.h>
+
+
+/** @defgroup grp_rt_formats_xar   Extensible Archive (XAR) format
+ * @ingroup grp_rt_formats
+ *
+ * @{ */
 
 #pragma pack(4) /* Misdesigned header, not 8-byte aligned size. */
 typedef struct XARHEADER
@@ -63,6 +70,7 @@ typedef XARHEADER const *PCXARHEADER;
 #define XAR_HASH_MAX            2
 /** @} */
 
+/** @} */
 
 #endif
 

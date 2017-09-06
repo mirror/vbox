@@ -26,6 +26,7 @@
 #ifndef ___VBox_RemoteDesktop_VRDEInput_h
 #define ___VBox_RemoteDesktop_VRDEInput_h
 
+#include <VBox/RemoteDesktop/VRDE.h>
 
 /*
  * Interface for receiving input events from the client.

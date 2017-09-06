@@ -883,8 +883,7 @@ typedef struct PDMAUDIOSTREAMOUT
 #endif
 } PDMAUDIOSTREAMOUT, *PPDMAUDIOSTREAMOUT;
 
-struct PDMAUDIOSTREAM;
-typedef PDMAUDIOSTREAM *PPDMAUDIOSTREAM;
+typedef struct PDMAUDIOSTREAM *PPDMAUDIOSTREAM;
 
 /**
  * Structure for maintaining an nput/output audio stream.

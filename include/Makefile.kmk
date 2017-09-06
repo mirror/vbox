@@ -27,10 +27,14 @@ cpp_features_hdrs := \
 	VBox/vmm/hm_vmx.h \
 	VBox/HostServices/GuestControlSvc.h \
 	VBox/HostServices/DragAndDropSvc.h \
+	VBox/HostServices/Service.h \
+	VBox/GuestHost/GuestControl.h \
+	VBox/GuestHost/DragAndDrop.h \
 	VBox/VBoxCrHgsmi.h \
 	VBox/VBoxUhgsmi.h \
        VBox/dbus.h \
-       VBox/VBoxPktDmp.h
+       VBox/VBoxPktDmp.h \
+       $(wildcard iprt/cpp/*)
 
 # Omit headers that are C++ and ring-3.
 r3_cpp_hdrs := \
@@ -49,7 +53,9 @@ r3_only_hdrs := \
 	VBox/VBoxCrHgsmi.h \
 	VBox/VBoxUhgsmi.h \
 	VBox/VBoxNetCfg-win.h \
+	VBox/VBoxDrvCfg-win.h \
 	VBox/dbus.h \
+	$(if-expr "$(KBUILD_TARGET)" == "win",VBox/usblib.h,) \
 	VBox/usblib-win.h \
 	VBox/vd.h \
 	VBox/vd-cache-backend.h \
@@ -61,20 +67,28 @@ r3_only_hdrs := \
 	VBox/vddbg.h \
 	VBox/vmm/uvm.h \
 	VBox/vscsi.h \
-	$(wildcard VBox/ExtPack/*.h ) \
-	$(wildcard iprt/win/*.h ) \
+	VBox/ExtPack/% \
+	VBox/GuestHost/DragAndDrop.h \
+	VBox/HostServices/Service.h \
+	iprt/win/% \
 	iprt/alloca.h \
 	iprt/tcp.h \
 	iprt/localipc.h \
 	iprt/linux/sysfs.h \
-	iprt/socket.h
+	iprt/socket.h \
+	iprt/udp.h
 
 # Ring-0 only headers.
 r0_only_hdrs := \
 	VBox/VBoxGuestLibSharedFolders.h
 
-# We omit a few headers which have platform specific issues or are templates.
-hdrs := $(filter-out \
+# GCC only headers.
+gcc_only_hdrs := \
+	iprt/nocrt/fenv.h \
+	iprt/nocrt/math.h
+
+# Headers to omit all together.
+omit_hdrs := \
 	VBox/HostServices/glext.h \
 	VBox/HostServices/glxext.h \
 	VBox/HostServices/wglext.h \
@@ -88,17 +102,23 @@ hdrs := $(filter-out \
 		VBox/VBoxDrvCfg-win.h \
 		VBox/VBoxNetCfg-win.h \
 		VBox/usblib-win.h \
-	,) \
+	,$(gcc_only_hdrs)) \
 	\
 	VBox/dbus-calls.h \
 	VBox/VBoxKeyboard.h \
 	VBox/vmm/pdmpcidevint.h \
 	iprt/runtime-loader.h \
 	iprt/mangling.h \
-	\
+       $(wildcard iprt/asm*watcom*.h) \
+       iprt/asn1-generator% \
+       iprt/win/% \
+       iprt/nt/% \
+       \
 	$(foreach os,$(filter-out $(KBUILD_TARGET),$(KBUILD_OSES)),iprt/$(os)/% VBox/$(os)/%) \
-	$(xforeach arch,$(KBUILD_ARCHES),iprt/nocrt/$(arch)/%) \
-	, $(wildcard VBox/*.h VBox/*/*.h iprt/*.h iprt/*/*.h))
+	$(foreach arch,$(KBUILD_ARCHES),iprt/nocrt/$(arch)/%)
+
+# We omit a few headers which have platform specific issues or are templates.
+hdrs := $(filter-out $(omit_hdrs), $(wildcard VBox/*.h VBox/*/*.h iprt/*.h iprt/*/*.h))
 
 # ring-3, ring-0 and raw-mode context specific exclusions.
 hdrs.r3   := $(filter-out $(r0_only_hdrs), $(hdrs))
@@ -112,11 +132,13 @@ hdrs.rc   := $(filter-out \
 	iprt/mem.h \
 	iprt/memsafer.h \
 	iprt/alloc.h \
+	iprt/vector.h \
 	$(r3_cpp_hdrs) \
 	$(r3_only_hdrs) \
 	$(r0_only_hdrs) \
 	, $(hdrs))
 hdrs-c.rc := $(filter-out $(cpp_features_hdrs), $(hdrs.rc))
+#$(error $(subst $(SP),$(NLTAB),$(strip $(sort $(hdrs-c.rc)))))
 
 SyntaxVBoxIncludeR3_TEMPLATE = VBOXMAINEXE
 SyntaxVBoxIncludeR3_DEFS = VBOX_WITH_HGCM
@@ -146,13 +168,26 @@ VBOX_ROOT_INCLUDE_MAKEFILE = $(PATH_ROOT)/include/Makefile.kmk
 include $(FILE_KBUILD_FOOTER)
 
 
+# Headers that must only be included once.
+only_once_hdrs := \
+	iprt/bldprog-strtab-template.cpp.h
+
 define def_hdr
 $(eval flatname := $(subst /,_,$(basename $(hdr))))
+$(eval functioname := $(translate $(flatname),-./,___))
 $$(PATH_TARGET)/$(flatname)-cpp.cpp: $(VBOX_ROOT_INCLUDE_MAKEFILE) | $$(PATH_TARGET)/
-	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
+	$(QUIET)$$(APPEND) -t -n $$@ \
+		'#include <$(hdr)>' \
+		$(if-expr $(intersects $(hdr),$(only_once_hdrs)),, '#include <$(hdr)>') \
+		'extern int $(functioname)_cpp(void);' \
+		'int $(functioname)_cpp(void) { return 0;}'
 
 $$(PATH_TARGET)/$(flatname)-c.c: $(VBOX_ROOT_INCLUDE_MAKEFILE) | $$(PATH_TARGET)/
-	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
+	$(QUIET)$$(APPEND) -t -n $$@ \
+		'#include <$(hdr)>' \
+		$(if-expr $(intersects $(hdr),$(only_once_hdrs)),, '#include <$(hdr)>') \
+		'extern int $(functioname)_c(void);' \
+		'int $(functioname)_c(void) { return 0;}'
 
 $(subst .h,.o,$(notdir $(hdr)))::
 if1of ($(hdr), $(r3_cpp_hdrs) $(cpp_features_hdrs))

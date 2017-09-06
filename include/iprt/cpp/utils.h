@@ -26,6 +26,8 @@
 #ifndef ___iprt_cpputils_h
 #define ___iprt_cpputils_h
 
+#include <iprt/types.h>
+
 /** @defgroup grp_rt_cpp        IPRT C++ APIs */
 
 /** @defgroup grp_rt_cpp_util   C++ Utilities

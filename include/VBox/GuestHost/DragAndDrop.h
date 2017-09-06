@@ -231,5 +231,6 @@ protected:
      *        on 32-bit guests. */
     uint64_t                m_cbTotal;
 };
-#endif /* ___VBox_GuestHost_DragAndDrop_h */
+
+#endif /* !___VBox_GuestHost_DragAndDrop_h */
 

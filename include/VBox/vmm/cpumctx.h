@@ -596,7 +596,7 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR3,  
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,           HC_ARCH_BITS == 64 ? 968 : 960);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR3,           HC_ARCH_BITS == 64 ? 976 : 964);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HCPhysVmcb,             HC_ARCH_BITS == 64 ? 984 : 968);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) fLocalForcedActions,        992);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.fLocalForcedActions,        992);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR0,       8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0, 8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,  8);

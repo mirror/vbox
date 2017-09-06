@@ -30,14 +30,16 @@
 /* Define VRDE_VIDEOIN_WITH_VRDEINTERFACE to include the server VRDE interface parts. */
 
 #ifdef VRDE_VIDEOIN_WITH_VRDEINTERFACE
-#include <VBox/RemoteDesktop/VRDE.h>
+# include <VBox/RemoteDesktop/VRDE.h>
 #endif /* VRDE_VIDEOIN_WITH_VRDEINTERFACE */
 
 #ifdef AssertCompileSize
-#define ASSERTSIZE(type, size) AssertCompileSize(type, size);
+# define ASSERTSIZE(type, size) AssertCompileSize(type, size);
 #else
-#define ASSERTSIZE(type, size)
+# define ASSERTSIZE(type, size)
 #endif /* AssertCompileSize */
+
+#include <iprt/types.h>
 
 
 /*

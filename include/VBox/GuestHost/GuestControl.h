@@ -27,6 +27,8 @@
 #ifndef ___VBox_GuestHost_GuestControl_h
 #define ___VBox_GuestHost_GuestControl_h
 
+#include <iprt/types.h>
+
 /* Everything defined in this file lives in this namespace. */
 namespace guestControl {
 

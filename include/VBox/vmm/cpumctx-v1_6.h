@@ -27,6 +27,7 @@
 #define ___VBox_vmm_cpumctx_v1_6_h
 
 #include <iprt/x86.h>
+#include <VBox/vmm/cpumctx.h>
 
 
 RT_C_DECLS_BEGIN

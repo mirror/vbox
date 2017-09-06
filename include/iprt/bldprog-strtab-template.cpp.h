@@ -900,6 +900,7 @@ static void BldProgStrTab_PrintCStringLitteral(PBLDPROGSTRTAB pThis, PBLDPROGSTR
 #else
         else
             fprintf(pOut, "\\x%02", (unsigned)uch);
+        NOREF(pThis);
 #endif
     }
 }

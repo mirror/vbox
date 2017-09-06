@@ -74,7 +74,7 @@
 /*
  * HGCM parameter structures.
  */
-#pragma pack (1)
+#pragma pack(1)
 typedef struct _VBoxClipboardGetHostMsg
 {
     VBGLIOCHGCMCALL hdr;
@@ -130,6 +130,6 @@ typedef struct _VBoxClipboardWriteData
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA 2
 
-#pragma pack ()
+#pragma pack()
 
 #endif

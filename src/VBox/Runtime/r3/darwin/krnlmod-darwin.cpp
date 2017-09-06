@@ -163,7 +163,7 @@ RTDECL(int) RTKrnlModLoadedQueryInfo(const char *pszName, PRTKRNLMODINFO phKrnlM
 }
 
 
-RTDECL(uint32_t) RTKrnlModLoadedGetCount()
+RTDECL(uint32_t) RTKrnlModLoadedGetCount(void)
 {
     uint32_t cLoadedKexts = 0;
     CFDictionaryRef hLoadedKexts = OSKextCopyLoadedKextInfo(NULL, NULL /* all info */);

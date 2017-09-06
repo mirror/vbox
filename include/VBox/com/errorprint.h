@@ -293,7 +293,7 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
         } \
     })
 #else
-#define CHECK_PROGRESS_ERROR_BREAK(progress, msg) \
+# define CHECK_PROGRESS_ERROR_BREAK(progress, msg) \
     if (1) \
     { \
         LONG iRc; \
@@ -341,7 +341,6 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
         } \
     } while (0)
 
-#endif
 
 /**
  * Does the same as ASSERT(), but executes the |return ret| statement if the
@@ -361,5 +360,8 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
 
 } /* namespace com */
 
+
 /** @} */
+
+#endif
 
