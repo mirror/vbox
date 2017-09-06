@@ -138,44 +138,51 @@ typedef struct DSOUNDSTREAM
 typedef struct DRVHOSTDSOUND
 {
     /** Pointer to the driver instance structure. */
-    PPDMDRVINS              pDrvIns;
+    PPDMDRVINS                  pDrvIns;
     /** Our audio host audio interface. */
-    PDMIHOSTAUDIO           IHostAudio;
+    PDMIHOSTAUDIO               IHostAudio;
+    /** Critical section to serialize access. */
+    RTCRITSECT                  CritSect;
     /** List of found host input devices. */
-    RTLISTANCHOR            lstDevInput;
+    RTLISTANCHOR                lstDevInput;
     /** List of found host output devices. */
-    RTLISTANCHOR            lstDevOutput;
+    RTLISTANCHOR                lstDevOutput;
     /** DirectSound configuration options. */
-    DSOUNDHOSTCFG           cfg;
+    DSOUNDHOSTCFG               cfg;
     /** Whether this backend supports any audio input. */
-    bool                    fEnabledIn;
+    bool                        fEnabledIn;
     /** Whether this backend supports any audio output. */
-    bool                    fEnabledOut;
+    bool                        fEnabledOut;
     /** The Direct Sound playback interface. */
-    LPDIRECTSOUND8          pDS;
+    LPDIRECTSOUND8              pDS;
     /** The Direct Sound capturing interface. */
-    LPDIRECTSOUNDCAPTURE8   pDSC;
+    LPDIRECTSOUNDCAPTURE8       pDSC;
 #ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
-    VBoxMMNotificationClient *m_pNotificationClient;
+    VBoxMMNotificationClient   *m_pNotificationClient;
+#endif
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    /** Callback function to the upper driver.
+     *  Can be NULL if not being used / registered. */
+    PFNPDMHOSTAUDIOCALLBACK     pfnCallback;
 #endif
 #ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
     /** Pointer to the audio connector interface of the driver/device above us. */
-    PPDMIAUDIOCONNECTOR     pUpIAudioConnector;
+    PPDMIAUDIOCONNECTOR         pUpIAudioConnector;
     /** Stopped indicator. */
-    bool                    fStopped;
+    bool                        fStopped;
     /** Shutdown indicator. */
-    bool                    fShutdown;
+    bool                        fShutdown;
     /** Notification thread. */
-    RTTHREAD                Thread;
+    RTTHREAD                    Thread;
     /** Array of events to wait for in notification thread. */
-    HANDLE                  aEvents[VBOX_DSOUND_MAX_EVENTS];
+    HANDLE                      aEvents[VBOX_DSOUND_MAX_EVENTS];
     /** Number of events to wait for in notification thread.
      *  Must not exceed VBOX_DSOUND_MAX_EVENTS. */
-    uint8_t                 cEvents;
+    uint8_t                     cEvents;
     /** Pointer to the input stream. */
-    PDSOUNDSTREAM           pDSStrmIn;
+    PDSOUNDSTREAM               pDSStrmIn;
     /** Pointer to the output stream. */
-    PDSOUNDSTREAM           pDSStrmOut;
+    PDSOUNDSTREAM               pDSStrmOut;
 #endif
 } DRVHOSTDSOUND, *PDRVHOSTDSOUND;
 
@@ -2167,7 +2174,7 @@ static LPCGUID dsoundConfigQueryGUID(PCFGMNODE pCfg, const char *pszName, RTUUID
 }
 
 
-static void dsoundConfigInit(PDRVHOSTDSOUND pThis, PCFGMNODE pCfg)
+static int dsoundConfigInit(PDRVHOSTDSOUND pThis, PCFGMNODE pCfg)
 {
     unsigned int uBufsizeOut, uBufsizeIn;
 
@@ -2184,6 +2191,8 @@ static void dsoundConfigInit(PDRVHOSTDSOUND pThis, PCFGMNODE pCfg)
            pThis->cfg.cbBufferIn,
            &pThis->cfg.uuidPlay,
            &pThis->cfg.uuidCapture));
+
+    return VINF_SUCCESS;
 }
 
 
@@ -2374,6 +2383,50 @@ static DECLCALLBACK(int) drvHostDSoundStreamIterate(PPDMIHOSTAUDIO pInterface, P
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnSetCallback}
+ */
+static DECLCALLBACK(int) drvHostDSoundSetCallback(PPDMIHOSTAUDIO pInterface, PFNPDMHOSTAUDIOCALLBACK pfnCallback)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    /* pfnCallback will be handled below. */
+
+    PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        LogFunc(("pfnCallback=%p\n", pfnCallback));
+
+        if (pfnCallback) /* Register. */
+        {
+            Assert(pThis->pfnCallback == NULL);
+            pThis->pfnCallback = pfnCallback;
+
+#ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+            if (pThis->m_pNotificationClient)
+                pThis->m_pNotificationClient->RegisterCallback(pThis->pDrvIns, pfnCallback);
+#endif
+        }
+        else /* Unregister. */
+        {
+            if (pThis->pfnCallback)
+                pThis->pfnCallback = NULL;
+
+#ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+            if (pThis->m_pNotificationClient)
+                pThis->m_pNotificationClient->UnregisterCallback();
+#endif
+        }
+
+        int rc2 = RTCritSectLeave(&pThis->CritSect);
+        AssertRC(rc2);
+    }
+
+    return rc;
+}
+#endif
 
 /*********************************************************************************************************************************
 *   PDMDRVINS::IBase Interface                                                                                                   *
@@ -2420,6 +2473,9 @@ static DECLCALLBACK(void) drvHostDSoundDestruct(PPDMDRVINS pDrvIns)
     if (pThis->pDrvIns)
         CoUninitialize();
 
+    int rc2 = RTCritSectDelete(&pThis->CritSect);
+    AssertRC(rc2);
+
     LogFlowFuncLeave();
 }
 
@@ -2452,6 +2508,12 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pDrvIns->IBase.pfnQueryInterface = drvHostDSoundQueryInterface;
     /* IHostAudio */
     PDMAUDIO_IHOSTAUDIO_CALLBACKS(drvHostDSound);
+
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    /* This backend supports host audio callbacks. */
+    pThis->IHostAudio.pfnSetCallback = drvHostDSoundSetCallback;
+    pThis->pfnCallback               = NULL;
+#endif
 
 #ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
     /*
@@ -2499,10 +2561,15 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     }
 #endif
 
-    /*
-     * Initialize configuration values.
-     */
-    dsoundConfigInit(pThis, pCfg);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Initialize configuration values.
+         */
+        rc = dsoundConfigInit(pThis, pCfg);
+        if (RT_SUCCESS(rc))
+            rc = RTCritSectInit(&pThis->CritSect);
+    }
 
     return rc;
 }

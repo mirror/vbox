@@ -26,6 +26,9 @@
 #include <endpointvolume.h>
 #pragma warning(pop)
 
+#ifdef LOG_GROUP
+# undef LOG_GROUP
+#endif
 #define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
 #include <VBox/log.h>
 
@@ -68,6 +71,20 @@ HRESULT VBoxMMNotificationClient::Initialize(void)
     return hr;
 }
 
+int VBoxMMNotificationClient::RegisterCallback(PPDMDRVINS pDrvIns, PFNPDMHOSTAUDIOCALLBACK pfnCallback)
+{
+    this->m_pDrvIns     = pDrvIns;
+    this->m_pfnCallback = pfnCallback;
+
+    return VINF_SUCCESS;
+}
+
+void VBoxMMNotificationClient::UnregisterCallback(void)
+{
+    this->m_pDrvIns     = NULL;
+    this->m_pfnCallback = NULL;
+}
+
 HRESULT VBoxMMNotificationClient::AttachToDefaultEndpoint(void)
 {
     return S_OK;
@@ -80,25 +97,36 @@ void VBoxMMNotificationClient::DetachFromEndpoint(void)
 
 STDMETHODIMP VBoxMMNotificationClient::OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState)
 {
-    char  *pszState = "UNKNOWN";
+    char *pszState = "unknown";
 
     switch (dwNewState)
     {
         case DEVICE_STATE_ACTIVE:
-            pszState = "ACTIVE";
+            pszState = "active";
             break;
         case DEVICE_STATE_DISABLED:
-            pszState = "DISABLED";
+            pszState = "disabled";
             break;
         case DEVICE_STATE_NOTPRESENT:
-            pszState = "NOTPRESENT";
+            pszState = "not present";
             break;
         case DEVICE_STATE_UNPLUGGED:
-            pszState = "UNPLUGGED";
+            pszState = "unplugged";
+            break;
+        default:
             break;
     }
 
-    LogFunc(("%ls: %s\n", pwstrDeviceId, pszState));
+    LogRel2(("Audio: Device '%ls' has changed state to '%s'\n", pwstrDeviceId, pszState));
+
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    AssertPtr(this->m_pDrvIns);
+    AssertPtr(this->m_pfnCallback);
+
+    if (this->m_pfnCallback)
+        /* Ignore rc */ this->m_pfnCallback(this->m_pDrvIns, PDMAUDIOBACKENDCBTYPE_DEVICES_CHANGED, NULL, 0);
+#endif
+
     return S_OK;
 }
 

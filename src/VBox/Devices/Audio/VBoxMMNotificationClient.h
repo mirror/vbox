@@ -24,6 +24,8 @@
 
 #include <Mmdeviceapi.h>
 
+#include "DrvAudio.h"
+
 class VBoxMMNotificationClient : IMMNotificationClient
 {
 public:
@@ -32,6 +34,8 @@ public:
     virtual ~VBoxMMNotificationClient();
 
     HRESULT Initialize();
+    int     RegisterCallback(PPDMDRVINS pDrvIns, PFNPDMHOSTAUDIOCALLBACK pfnCallback);
+    void    UnregisterCallback(void);
     void    Dispose();
 
     /** @name IUnknown interface
@@ -41,11 +45,14 @@ public:
 
 private:
 
-    bool                 m_fRegisteredClient;
-    IMMDeviceEnumerator *m_pEnum;
-    IMMDevice           *m_pEndpoint;
+    bool                        m_fRegisteredClient;
+    IMMDeviceEnumerator        *m_pEnum;
+    IMMDevice                  *m_pEndpoint;
 
-    long                 m_cRef;
+    long                        m_cRef;
+
+    PPDMDRVINS                  m_pDrvIns;
+    PFNPDMHOSTAUDIOCALLBACK     m_pfnCallback;
 
     HRESULT AttachToDefaultEndpoint();
     void    DetachFromEndpoint();
