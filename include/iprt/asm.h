@@ -2373,6 +2373,28 @@ DECLINLINE(void) ASMAtomicUoWriteS64(volatile int64_t RT_FAR *pi64, int64_t i64)
 
 
 /**
+ * Atomically writes a size_t value, ordered.
+ *
+ * @returns nothing.
+ * @param   pcb     Pointer to the size_t variable to write.
+ * @param   cb      The value to assign to *pcb.
+ */
+DECLINLINE(void) ASMAtomicWriteZ(volatile size_t RT_FAR *pcb, size_t cb)
+{
+#if ARCH_BITS == 64
+    ASMAtomicWriteU64((uint64_t volatile *)pcb, cb);
+#elif ARCH_BITS == 32
+    ASMAtomicWriteU32((uint32_t volatile *)pcb, cb);
+#elif ARCH_BITS == 16
+    AssertCompileSize(size_t, 2);
+    ASMAtomicWriteU16((uint16_t volatile *)pcb, cb);
+#else
+# error "Unsupported ARCH_BITS value"
+#endif
+}
+
+
+/**
  * Atomically writes a boolean value, unordered.
  *
  * @param   pf      Pointer to the boolean variable to write.
