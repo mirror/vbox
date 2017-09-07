@@ -40,6 +40,12 @@
  * @{
  */
 
+/* Helpful forward declarations: */
+struct VMMDevRequestHeader;
+struct VMMDevReqMousePointer;
+struct VMMDevMemory;
+
+
 /** @name VMMDev events.
  *
  * Used mainly by VMMDevReq_AcknowledgeEvents/VMMDevEvents and version 1.3 of
@@ -115,6 +121,95 @@ typedef enum
 } VMMDevCpuEventType;
 AssertCompileSize(VMMDevCpuEventType, 4);
 
+
+/** @name Guest capability bits.
+ * Used by VMMDevReq_ReportGuestCapabilities and VMMDevReq_SetGuestCapabilities.
+ * @{ */
+/** The guest supports seamless display rendering. */
+#define VMMDEV_GUEST_SUPPORTS_SEAMLESS                      RT_BIT_32(0)
+/** The guest supports mapping guest to host windows. */
+#define VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING     RT_BIT_32(1)
+/** The guest graphical additions are active.
+ * Used for fast activation and deactivation of certain graphical operations
+ * (e.g. resizing & seamless). The legacy VMMDevReq_ReportGuestCapabilities
+ * request sets this automatically, but VMMDevReq_SetGuestCapabilities does
+ * not. */
+#define VMMDEV_GUEST_SUPPORTS_GRAPHICS                      RT_BIT_32(2)
+/** The mask of valid events, for sanity checking. */
+#define VMMDEV_GUEST_CAPABILITIES_MASK                      UINT32_C(0x00000007)
+/** @} */
+
+
+/**
+ * The guest facility.
+ * This needs to be kept in sync with AdditionsFacilityType of the Main API!
+ */
+typedef enum
+{
+    VBoxGuestFacilityType_Unknown         = 0,
+    VBoxGuestFacilityType_VBoxGuestDriver = 20,
+    VBoxGuestFacilityType_AutoLogon       = 90,  /* VBoxGINA / VBoxCredProv / pam_vbox. */
+    VBoxGuestFacilityType_VBoxService     = 100,
+    VBoxGuestFacilityType_VBoxTrayClient  = 101, /* VBoxTray (Windows), VBoxClient (Linux, Unix). */
+    VBoxGuestFacilityType_Seamless        = 1000,
+    VBoxGuestFacilityType_Graphics        = 1100,
+    VBoxGuestFacilityType_MonitorAttach   = 1101,
+    VBoxGuestFacilityType_All             = 0x7ffffffe,
+    VBoxGuestFacilityType_SizeHack        = 0x7fffffff
+} VBoxGuestFacilityType;
+AssertCompileSize(VBoxGuestFacilityType, 4);
+
+
+/**
+ * The current guest status of a facility.
+ * This needs to be kept in sync with AdditionsFacilityStatus of the Main API!
+ *
+ * @remarks r=bird: Pretty please, for future types like this, simply do a
+ *          linear allocation without any gaps.  This stuff is impossible work
+ *          efficiently with, let alone validate.  Applies to the other facility
+ *          enums too.
+ */
+typedef enum
+{
+    VBoxGuestFacilityStatus_Inactive    = 0,
+    VBoxGuestFacilityStatus_Paused      = 1,
+    VBoxGuestFacilityStatus_PreInit     = 20,
+    VBoxGuestFacilityStatus_Init        = 30,
+    VBoxGuestFacilityStatus_Active      = 50,
+    VBoxGuestFacilityStatus_Terminating = 100,
+    VBoxGuestFacilityStatus_Terminated  = 101,
+    VBoxGuestFacilityStatus_Failed  =     800,
+    VBoxGuestFacilityStatus_Unknown     = 999,
+    VBoxGuestFacilityStatus_SizeHack    = 0x7fffffff
+} VBoxGuestFacilityStatus;
+AssertCompileSize(VBoxGuestFacilityStatus, 4);
+
+
+/**
+ * The current status of specific guest user.
+ * This needs to be kept in sync with GuestUserState of the Main API!
+ */
+typedef enum VBoxGuestUserState
+{
+    VBoxGuestUserState_Unknown            = 0,
+    VBoxGuestUserState_LoggedIn           = 1,
+    VBoxGuestUserState_LoggedOut          = 2,
+    VBoxGuestUserState_Locked             = 3,
+    VBoxGuestUserState_Unlocked           = 4,
+    VBoxGuestUserState_Disabled           = 5,
+    VBoxGuestUserState_Idle               = 6,
+    VBoxGuestUserState_InUse              = 7,
+    VBoxGuestUserState_Created            = 8,
+    VBoxGuestUserState_Deleted            = 9,
+    VBoxGuestUserState_SessionChanged     = 10,
+    VBoxGuestUserState_CredentialsChanged = 11,
+    VBoxGuestUserState_RoleChanged        = 12,
+    VBoxGuestUserState_GroupAdded         = 13,
+    VBoxGuestUserState_GroupRemoved       = 14,
+    VBoxGuestUserState_Elevated           = 15,
+    VBoxGuestUserState_SizeHack           = 0x7fffffff
+} VBoxGuestUserState;
+AssertCompileSize(VBoxGuestUserState, 4);
 
 
 
@@ -414,102 +509,6 @@ typedef struct
 #  pragma pack()
 AssertCompileSize(HGCMFunctionParameter, 4+8);
 # endif /* !VBOX_WITH_64_BITS_GUESTS */
-
-
-
-/** @name Guest capability bits.
- * Used by VMMDevReq_ReportGuestCapabilities and VMMDevReq_SetGuestCapabilities.
- * @{ */
-/** The guest supports seamless display rendering. */
-#define VMMDEV_GUEST_SUPPORTS_SEAMLESS                      RT_BIT_32(0)
-/** The guest supports mapping guest to host windows. */
-#define VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING     RT_BIT_32(1)
-/** The guest graphical additions are active.
- * Used for fast activation and deactivation of certain graphical operations
- * (e.g. resizing & seamless). The legacy VMMDevReq_ReportGuestCapabilities
- * request sets this automatically, but VMMDevReq_SetGuestCapabilities does
- * not. */
-#define VMMDEV_GUEST_SUPPORTS_GRAPHICS                      RT_BIT_32(2)
-/** The mask of valid events, for sanity checking. */
-#define VMMDEV_GUEST_CAPABILITIES_MASK                      UINT32_C(0x00000007)
-/** @} */
-
-
-/**
- * The guest facility.
- * This needs to be kept in sync with AdditionsFacilityType of the Main API!
- */
-typedef enum
-{
-    VBoxGuestFacilityType_Unknown         = 0,
-    VBoxGuestFacilityType_VBoxGuestDriver = 20,
-    VBoxGuestFacilityType_AutoLogon       = 90,  /* VBoxGINA / VBoxCredProv / pam_vbox. */
-    VBoxGuestFacilityType_VBoxService     = 100,
-    VBoxGuestFacilityType_VBoxTrayClient  = 101, /* VBoxTray (Windows), VBoxClient (Linux, Unix). */
-    VBoxGuestFacilityType_Seamless        = 1000,
-    VBoxGuestFacilityType_Graphics        = 1100,
-    VBoxGuestFacilityType_MonitorAttach   = 1101,
-    VBoxGuestFacilityType_All             = 0x7ffffffe,
-    VBoxGuestFacilityType_SizeHack        = 0x7fffffff
-} VBoxGuestFacilityType;
-AssertCompileSize(VBoxGuestFacilityType, 4);
-
-
-/**
- * The current guest status of a facility.
- * This needs to be kept in sync with AdditionsFacilityStatus of the Main API!
- *
- * @remarks r=bird: Pretty please, for future types like this, simply do a
- *          linear allocation without any gaps.  This stuff is impossible work
- *          efficiently with, let alone validate.  Applies to the other facility
- *          enums too.
- */
-typedef enum
-{
-    VBoxGuestFacilityStatus_Inactive    = 0,
-    VBoxGuestFacilityStatus_Paused      = 1,
-    VBoxGuestFacilityStatus_PreInit     = 20,
-    VBoxGuestFacilityStatus_Init        = 30,
-    VBoxGuestFacilityStatus_Active      = 50,
-    VBoxGuestFacilityStatus_Terminating = 100,
-    VBoxGuestFacilityStatus_Terminated  = 101,
-    VBoxGuestFacilityStatus_Failed  =     800,
-    VBoxGuestFacilityStatus_Unknown     = 999,
-    VBoxGuestFacilityStatus_SizeHack    = 0x7fffffff
-} VBoxGuestFacilityStatus;
-AssertCompileSize(VBoxGuestFacilityStatus, 4);
-
-
-/**
- * The current status of specific guest user.
- * This needs to be kept in sync with GuestUserState of the Main API!
- */
-typedef enum VBoxGuestUserState
-{
-    VBoxGuestUserState_Unknown            = 0,
-    VBoxGuestUserState_LoggedIn           = 1,
-    VBoxGuestUserState_LoggedOut          = 2,
-    VBoxGuestUserState_Locked             = 3,
-    VBoxGuestUserState_Unlocked           = 4,
-    VBoxGuestUserState_Disabled           = 5,
-    VBoxGuestUserState_Idle               = 6,
-    VBoxGuestUserState_InUse              = 7,
-    VBoxGuestUserState_Created            = 8,
-    VBoxGuestUserState_Deleted            = 9,
-    VBoxGuestUserState_SessionChanged     = 10,
-    VBoxGuestUserState_CredentialsChanged = 11,
-    VBoxGuestUserState_RoleChanged        = 12,
-    VBoxGuestUserState_GroupAdded         = 13,
-    VBoxGuestUserState_GroupRemoved       = 14,
-    VBoxGuestUserState_Elevated           = 15,
-    VBoxGuestUserState_SizeHack           = 0x7fffffff
-} VBoxGuestUserState;
-AssertCompileSize(VBoxGuestUserState, 4);
-
-/* forward declarations: */
-struct VMMDevRequestHeader;
-struct VMMDevReqMousePointer;
-struct VMMDevMemory;
 
 /** @} */
 
