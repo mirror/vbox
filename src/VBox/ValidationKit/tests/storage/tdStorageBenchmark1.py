@@ -49,6 +49,7 @@ from testdriver import reporter;
 from testdriver import base;
 from testdriver import vbox;
 from testdriver import vboxcon;
+from testdriver import vboxwrappers;
 
 import remoteexecutor;
 import storagecfg;
@@ -455,6 +456,9 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         'no-hostiocache' : 'HostCacheOff'
     };
 
+    # Password ID for encryption.
+    ksPwId = 'EncPwId';
+
     # Array indexes for the test configs.
     kiVmName      = 0;
     kiStorageCtrl = 1;
@@ -502,6 +506,12 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.fIoLog                  = False;
         self.fUseRamDiskDef          = False;
         self.fUseRamDisk             = self.fUseRamDiskDef;
+        self.fEncryptDiskDef         = False;
+        self.fEncryptDisk            = self.fEncryptDiskDef;
+        self.sEncryptPwDef           = 'TestTestTest';
+        self.sEncryptPw              = self.sEncryptPwDef;
+        self.sEncryptAlgoDef         = 'AES-XTS256-PLAIN64';
+        self.sEncryptAlgo            = self.sEncryptAlgoDef;
 
     #
     # Overridden methods.
@@ -556,6 +566,12 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         reporter.log('      Whether to enable I/O logging for each test');
         reporter.log('  --use-ramdisk');
         reporter.log('      Default: %s' % (self.fUseRamDiskDef));
+        reporter.log('  --encrypt-disk');
+        reporter.log('      Default: %s' % (self.fEncryptDiskDef));
+        reporter.log('  --encrypt-password');
+        reporter.log('      Default: %s' % (self.sEncryptPwDef));
+        reporter.log('  --encrypt-algorithm');
+        reporter.log('      Default: %s' % (self.sEncryptAlgoDef));
         return rc;
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
@@ -641,12 +657,23 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         elif asArgs[iArg] == '--dont-report-benchmark-results':
             self.fReportBenchmarkResults = False;
         elif asArgs[iArg] == '--io-log-path':
+            iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--io-log-path" takes a path argument');
             self.sIoLogPath = asArgs[iArg];
         elif asArgs[iArg] == '--enable-io-log':
             self.fIoLog = True;
         elif asArgs[iArg] == '--use-ramdisk':
             self.fUseRamDisk = True;
+        elif asArgs[iArg] == '--encrypt-disk':
+            self.fEncryptDisk = True;
+        elif asArgs[iArg] == '--encrypt-password':
+            iArg += 1;
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--encrypt-password" takes a string');
+            self.sEncryptPw = asArgs[iArg];
+        elif asArgs[iArg] == '--encrypt-algorithm':
+            iArg += 1;
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--encrypt-algorithm" takes a string');
+            self.sEncryptAlgo = asArgs[iArg];
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -964,7 +991,54 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 sDiskPath = sDiskPath + '/diff_%u.disk' % (iDiffLvl);
                 oHd = oSession.createDiffHd(oHdParent, sDiskPath, None);
 
+            if oHd is not None and iDiffLvl == 0 and self.fEncryptDisk:
+                try:
+                    oIProgress = oHd.changeEncryption('', self.sEncryptAlgo, self.sEncryptPw, self.ksPwId);
+                    oProgress = vboxwrappers.ProgressWrapper(oIProgress, self.oVBoxMgr, self, 'Encrypting "%s"' % (sDiskPath,));
+                    oProgress.wait();
+                    if oProgress.logResult() is False:
+                        raise base.GenError('Encrypting disk "%s" failed' % (sDiskPath, ));
+                except:
+                    reporter.errorXcpt('changeEncryption("%s","%s","%s") failed on "%s"' \
+                                       % ('', self.sEncryptAlgo, self.sEncryptPw, oSession.sName) );
+                    self.oVBox.deleteHdByMedium(oHd);
+                    oHd = None;
+                else:
+                    reporter.log('Encrypted "%s"' % (sDiskPath,));
+
         return oHd;
+
+    def startVmAndConnect(self, sVmName):
+        """
+        Our own implementation of startVmAndConnectToTxsViaTcp to make it possible
+        to add passwords to a running VM when encryption is used.
+        """
+        oSession = self.startVmByName(sVmName);
+        if oSession is not None:
+            # Add password to the session in case encryption is used.
+            fRc = True;
+            if self.fEncryptDisk:
+                try:
+                    oSession.o.console.addDiskEncryptionPassword(self.ksPwId, self.sEncryptPw, False);
+                except:
+                    reporter.logXcpt();
+                    fRc = False;
+
+            # Connect to TXS.
+            if fRc:
+                reporter.log2('startVmAndConnect: Started(/prepared) "%s", connecting to TXS ...' % (sVmName,));
+                (fRc, oTxsSession) = self.txsDoConnectViaTcp(oSession, 15*60000, fNatForwardingForTxs = True);
+                if fRc is True:
+                    if fRc is True:
+                        # Success!
+                        return (oSession, oTxsSession);
+                else:
+                    reporter.error('startVmAndConnect: txsDoConnectViaTcp failed');
+                # If something went wrong while waiting for TXS to be started - take VM screenshot before terminate it
+
+            self.terminateVmBySession(oSession);
+
+        return (None, None);
 
     def testOneCfg(self, sVmName, eStorageController, sHostIoCache, sDiskFormat, # pylint: disable=R0913,R0914,R0915
                    sDiskVariant, sDiskPath, cCpus, sIoTest, sVirtMode, sTestSet):
@@ -990,7 +1064,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             # If requested recreate the storage space to start with a clean config
             # for benchmarks
             if self.fRecreateStorCfg:
-                sMountPoint = self.prepareStorage(self.oStorCfg, self.fUseRamDisk, cbDisk);
+                sMountPoint = self.prepareStorage(self.oStorCfg, self.fUseRamDisk, 2 * cbDisk);
                 if sMountPoint is not None:
                     # Create a directory where every normal user can write to.
                     self.oStorCfg.mkDirOnVolume(sMountPoint, 'test', 0777);
@@ -1085,7 +1159,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             # Start up.
             if fRc is True:
                 self.logVmInfo(oVM);
-                oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(sVmName, fCdWait = False, fNatForwardingForTxs = True);
+                oSession, oTxsSession = self.startVmAndConnect(sVmName);
                 if oSession is not None:
                     self.addTask(oTxsSession);
 
