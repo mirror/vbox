@@ -87,22 +87,15 @@
  * Used by VbglR3SeamlessWaitEvent
  *
  * @ingroup grp_vmmdev_req
- *
- * @todo DARN! DARN! DARN! Who forgot to do the 32-bit hack here???
- *       FIXME! XXX!
- *
- *       We will now have to carefully check how our compilers have treated this
- *       flag. If any are compressing it into a byte type, we'll have to check
- *       how the request memory is initialized. If we are 104% sure it's ok to
- *       expand it, we'll expand it. If not, we must redefine the field to a
- *       uint8_t and a 3 byte padding.
  */
 typedef enum
 {
     VMMDev_Seamless_Disabled         = 0,     /**< normal mode; entire guest desktop displayed. */
     VMMDev_Seamless_Visible_Region   = 1,     /**< visible region mode; only top-level guest windows displayed. */
-    VMMDev_Seamless_Host_Window      = 2      /**< windowed mode; each top-level guest window is represented in a host window. */
+    VMMDev_Seamless_Host_Window      = 2,     /**< windowed mode; each top-level guest window is represented in a host window. */
+    VMMDev_Seamless_SizeHack         = 0x7fffffff
 } VMMDevSeamlessMode;
+AssertCompileSize(VMMDevSeamlessMode, 4);
 
 
 /**
@@ -120,6 +113,7 @@ typedef enum
     VMMDevCpuEventType_Unplug   = 3,
     VMMDevCpuEventType_SizeHack = 0x7fffffff
 } VMMDevCpuEventType;
+AssertCompileSize(VMMDevCpuEventType, 4);
 
 
 
