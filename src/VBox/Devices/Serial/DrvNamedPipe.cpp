@@ -688,7 +688,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD hThreadSelf, void *pvUs
             }
             else
             {
-                LogRel(("NamedPipe%d: Failed to wrap socket with %Rrc\n", pThis->pDrvIns->iInstance));
+                LogRel(("NamedPipe%d: Failed to wrap socket with %Rrc\n", pThis->pDrvIns->iInstance, rc));
                 close(s);
             }
         }
