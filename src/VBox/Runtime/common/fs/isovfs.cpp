@@ -2282,10 +2282,15 @@ static int rtFsIsoVolReadAndProcessUdfVds(PRTFSISOVOL pThis, uint64_t offSeq, ui
 
     /*
      * Reset the state before we start processing the descriptors.
+     *
+     * The processing has to be done in a different function because there may
+     * be links to sub-sequences that needs to be processed.  We do this by
+     * recursing and check that we don't go to deep.
      */
 
-    NOREF(pThis); NOREF(pbBuf); NOREF(cbBuf); NOREF(pErrInfo);
-    return VINF_SUCCESS;
+    /** @todo state reset */
+
+    return rtFsIsoVolReadAndProcessUdfVdsSeq(pThis, offSeq, cbSeq, pbBuf, cbBuf, 0, pErrInfo);
 }
 
 
