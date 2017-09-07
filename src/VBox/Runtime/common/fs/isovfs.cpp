@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - ISO 9660 Virtual Filesystem.
+ * IPRT - ISO 9660 and UDF Virtual Filesystem (read only).
  */
 
 /*
@@ -52,43 +52,43 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/** Pointer to an ISO 9660 volume (VFS instance data). */
-typedef struct RTFSISO9660VOL *PRTFSISO9660VOL;
-/** Pointer to a const ISO 9660 volume (VFS instance data). */
-typedef struct RTFSISO9660VOL const *PCRTFSISO9660VOL;
+/** Pointer to an ISO volume (VFS instance data). */
+typedef struct RTFSISOVOL *PRTFSISOVOL;
+/** Pointer to a const ISO volume (VFS instance data). */
+typedef struct RTFSISOVOL const *PCRTFSISOVOL;
 
-/** Pointer to a ISO 9660 directory instance. */
-typedef struct RTFSISO9660DIRSHRD *PRTFSISO9660DIRSHRD;
+/** Pointer to a ISO directory instance. */
+typedef struct RTFSISODIRSHRD *PRTFSISODIRSHRD;
 
 
 
 /**
- * ISO 9660 extent (internal to the VFS not a disk structure).
+ * ISO extent (internal to the VFS not a disk structure).
  */
-typedef struct RTFSISO9660EXTENT
+typedef struct RTFSISOEXTENT
 {
     /** The disk offset. */
     uint64_t            offDisk;
     /** The size of the extent in bytes. */
     uint64_t            cbExtent;
-} RTFSISO9660EXTENT;
+} RTFSISOEXTENT;
 /** Pointer to an ISO 9660 extent. */
-typedef RTFSISO9660EXTENT *PRTFSISO9660EXTENT;
+typedef RTFSISOEXTENT *PRTFSISOEXTENT;
 /** Pointer to a const ISO 9660 extent. */
-typedef RTFSISO9660EXTENT const *PCRTFSISO9660EXTENT;
+typedef RTFSISOEXTENT const *PCRTFSISOEXTENT;
 
 
 /**
- * ISO 9660 file system object, shared part.
+ * ISO file system object, shared part.
  */
-typedef struct RTFSISO9660CORE
+typedef struct RTFSISOCORE
 {
-    /** The parent directory keeps a list of open objects (RTFSISO9660CORE). */
+    /** The parent directory keeps a list of open objects (RTFSISOCORE). */
     RTLISTNODE          Entry;
     /** Reference counter.   */
     uint32_t volatile   cRefs;
     /** The parent directory (not released till all children are close). */
-    PRTFSISO9660DIRSHRD pParentDir;
+    PRTFSISODIRSHRD     pParentDir;
     /** The byte offset of the first directory record. */
     uint64_t            offDirRec;
     /** Attributes. */
@@ -104,111 +104,121 @@ typedef struct RTFSISO9660CORE
     /** The birth time. */
     RTTIMESPEC          BirthTime;
     /** Pointer to the volume. */
-    PRTFSISO9660VOL     pVol;
+    PRTFSISOVOL         pVol;
     /** The version number. */
     uint32_t            uVersion;
     /** Number of extents. */
     uint32_t            cExtents;
     /** The first extent. */
-    RTFSISO9660EXTENT   FirstExtent;
+    RTFSISOEXTENT       FirstExtent;
     /** Array of additional extents. */
-    PRTFSISO9660EXTENT  paExtents;
-} RTFSISO9660CORE;
-typedef RTFSISO9660CORE *PRTFSISO9660CORE;
+    PRTFSISOEXTENT      paExtents;
+} RTFSISOCORE;
+typedef RTFSISOCORE *PRTFSISOCORE;
 
 /**
- * ISO 9660 file, shared data.
+ * ISO file, shared data.
  */
-typedef struct RTFSISO9660FILESHRD
+typedef struct RTFSISOFILESHRD
 {
     /** Core ISO9660 object info.  */
-    RTFSISO9660CORE     Core;
-} RTFSISO9660FILESHRD;
+    RTFSISOCORE         Core;
+} RTFSISOFILESHRD;
 /** Pointer to a ISO 9660 file object. */
-typedef RTFSISO9660FILESHRD *PRTFSISO9660FILESHRD;
+typedef RTFSISOFILESHRD *PRTFSISOFILESHRD;
 
 
 /**
- * ISO 9660 directory, shared data.
+ * ISO directory, shared data.
  *
  * We will always read in the whole directory just to keep things really simple.
  */
-typedef struct RTFSISO9660DIRSHRD
+typedef struct RTFSISODIRSHRD
 {
     /** Core ISO 9660 object info.  */
-    RTFSISO9660CORE     Core;
-    /** Open child objects (RTFSISO9660CORE). */
+    RTFSISOCORE         Core;
+    /** Open child objects (RTFSISOCORE). */
     RTLISTNODE          OpenChildren;
 
     /** Pointer to the directory content. */
     uint8_t            *pbDir;
     /** The size of the directory content (duplicate of Core.cbObject). */
     uint32_t            cbDir;
-} RTFSISO9660DIRSHRD;
-/** Pointer to a ISO 9660 directory instance. */
-typedef RTFSISO9660DIRSHRD *PRTFSISO9660DIRSHRD;
+} RTFSISODIRSHRD;
+/** Pointer to a ISO directory instance. */
+typedef RTFSISODIRSHRD *PRTFSISODIRSHRD;
 
 
 /**
  * Private data for a VFS file object.
  */
-typedef struct RTFSISO9660FILEOBJ
+typedef struct RTFSISOFILEOBJ
 {
     /** Pointer to the shared data. */
-    PRTFSISO9660FILESHRD    pShared;
+    PRTFSISOFILESHRD    pShared;
     /** The current file offset. */
-    uint64_t                offFile;
-} RTFSISO9660FILEOBJ;
-typedef RTFSISO9660FILEOBJ *PRTFSISO9660FILEOBJ;
+    uint64_t            offFile;
+} RTFSISOFILEOBJ;
+typedef RTFSISOFILEOBJ *PRTFSISOFILEOBJ;
 
 /**
  * Private data for a VFS directory object.
  */
-typedef struct RTFSISO9660DIROBJ
+typedef struct RTFSISODIROBJ
 {
     /** Pointer to the shared data. */
-    PRTFSISO9660DIRSHRD     pShared;
+    PRTFSISODIRSHRD     pShared;
     /** The current directory offset. */
-    uint32_t                offDir;
-} RTFSISO9660DIROBJ;
-typedef RTFSISO9660DIROBJ *PRTFSISO9660DIROBJ;
+    uint32_t            offDir;
+} RTFSISODIROBJ;
+typedef RTFSISODIROBJ *PRTFSISODIROBJ;
 
 
 /**
- * A ISO 9660 volume.
+ * A ISO volume.
  */
-typedef struct RTFSISO9660VOL
+typedef struct RTFSISOVOL
 {
     /** Handle to itself. */
-    RTVFS                   hVfsSelf;
+    RTVFS               hVfsSelf;
     /** The file, partition, or whatever backing the ISO 9660 volume. */
-    RTVFSFILE               hVfsBacking;
+    RTVFSFILE           hVfsBacking;
     /** The size of the backing thingy. */
-    uint64_t                cbBacking;
+    uint64_t            cbBacking;
+    /** The size of the backing thingy in sectors (cbSector). */
+    uint64_t            cBackingSectors;
     /** Flags. */
-    uint32_t                fFlags;
+    uint32_t            fFlags;
     /** The sector size (in bytes). */
-    uint32_t                cbSector;
+    uint32_t            cbSector;
 
     /** @name ISO 9660 specific data
      *  @{ */
     /** The size of a logical block in bytes. */
-    uint32_t                cbBlock;
+    uint32_t            cbBlock;
     /** The primary volume space size in blocks. */
-    uint32_t                cBlocksInPrimaryVolumeSpace;
+    uint32_t            cBlocksInPrimaryVolumeSpace;
     /** The primary volume space size in bytes. */
-    uint64_t                cbPrimaryVolumeSpace;
+    uint64_t            cbPrimaryVolumeSpace;
     /** The number of volumes in the set. */
-    uint32_t                cVolumesInSet;
+    uint32_t            cVolumesInSet;
     /** The primary volume sequence ID. */
-    uint32_t                idPrimaryVol;
+    uint32_t            idPrimaryVol;
     /** Set if using UTF16-2 (joliet). */
-    bool                    fIsUtf16;
+    bool                fIsUtf16;
+    /** @} */
+
+    /** @name UDF specific data.
+     * @{ */
+    /** Offset of the Anchor volume descriptor sequence. */
+    uint64_t            offAvdp;
+    /** Length of the anchor volume descriptor sequence. */
+    uint32_t            cbAvdp;
     /** @} */
 
     /** The root directory shared data. */
-    PRTFSISO9660DIRSHRD     pRootDir;
-} RTFSISO9660VOL;
+    PRTFSISODIRSHRD     pRootDir;
+} RTFSISOVOL;
 
 
 
@@ -220,11 +230,11 @@ typedef struct RTFSISO9660VOL
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static void rtFsIso9660DirShrd_AddOpenChild(PRTFSISO9660DIRSHRD pDir, PRTFSISO9660CORE pChild);
-static void rtFsIso9660DirShrd_RemoveOpenChild(PRTFSISO9660DIRSHRD pDir, PRTFSISO9660CORE pChild);
-static int  rtFsIso9660Dir_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
-                               uint32_t cDirRecs, uint64_t offDirRec, PRTVFSDIR phVfsDir);
-static PRTFSISO9660CORE rtFsIso9660Dir_LookupShared(PRTFSISO9660DIRSHRD pThis, uint64_t offDirRec);
+static void rtFsIsoDirShrd_AddOpenChild(PRTFSISODIRSHRD pDir, PRTFSISOCORE pChild);
+static void rtFsIsoDirShrd_RemoveOpenChild(PRTFSISODIRSHRD pDir, PRTFSISOCORE pChild);
+static int  rtFsIsoDir_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
+                           uint32_t cDirRecs, uint64_t offDirRec, PRTVFSDIR phVfsDir);
+static PRTFSISOCORE rtFsIsoDir_LookupShared(PRTFSISODIRSHRD pThis, uint64_t offDirRec);
 
 
 /**
@@ -416,9 +426,9 @@ static void rtFsIso9660DateTime2TimeSpec(PRTTIMESPEC pTimeSpec, PCISO9660RECTIME
 
 
 /**
- * Initialization of a RTFSISO9660CORE structure from a directory record.
+ * Initialization of a RTFSISOCORE structure from a directory record.
  *
- * @note    The RTFSISO9660CORE::pParentDir and RTFSISO9660CORE::Clusters members are
+ * @note    The RTFSISOCORE::pParentDir and RTFSISOCORE::Clusters members are
  *          properly initialized elsewhere.
  *
  * @returns IRPT status code.  Either VINF_SUCCESS or VERR_NO_MEMORY, the latter
@@ -430,8 +440,8 @@ static void rtFsIso9660DateTime2TimeSpec(PRTTIMESPEC pTimeSpec, PCISO9660RECTIME
  * @param   uVersion        The file version number.
  * @param   pVol            The volume.
  */
-static int rtFsIso9660Core_InitFromDirRec(PRTFSISO9660CORE pCore, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
-                                          uint64_t offDirRec, uint32_t uVersion, PRTFSISO9660VOL pVol)
+static int rtFsIsoCore_InitFrom9660DirRec(PRTFSISOCORE pCore, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
+                                          uint64_t offDirRec, uint32_t uVersion, PRTFSISOVOL pVol)
 {
     RTListInit(&pCore->Entry);
     pCore->cRefs                = 1;
@@ -461,7 +471,7 @@ static int rtFsIso9660Core_InitFromDirRec(PRTFSISO9660CORE pCore, PCISO9660DIRRE
     { /* done */ }
     else
     {
-        PRTFSISO9660EXTENT pCurExtent = &pCore->FirstExtent;
+        PRTFSISOEXTENT pCurExtent = &pCore->FirstExtent;
         while (cDirRecs > 1)
         {
             offDirRec += pDirRec->cbDirRec;
@@ -478,7 +488,7 @@ static int rtFsIso9660Core_InitFromDirRec(PRTFSISO9660CORE pCore, PCISO9660DIRRE
                 {
                     void *pvNew = RTMemRealloc(pCore->paExtents, pCore->cExtents * sizeof(pCore->paExtents[0]));
                     if (pvNew)
-                        pCore->paExtents = (PRTFSISO9660EXTENT)pvNew;
+                        pCore->paExtents = (PRTFSISOEXTENT)pvNew;
                     else
                     {
                         RTMemFree(pCore->paExtents);
@@ -504,9 +514,9 @@ static int rtFsIso9660Core_InitFromDirRec(PRTFSISO9660CORE pCore, PCISO9660DIRRE
 
 
 /**
- * Worker for rtFsIso9660File_QueryInfo and rtFsIso9660Dir_QueryInfo.
+ * Worker for rtFsIsoFile_QueryInfo and rtFsIsoDir_QueryInfo.
  */
-static int rtFsIso9660Core_QueryInfo(PRTFSISO9660CORE pCore, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+static int rtFsIsoCore_QueryInfo(PRTFSISOCORE pCore, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
     pObjInfo->cbObject              = pCore->cbObject;
     pObjInfo->cbAllocated           = RT_ALIGN_64(pCore->cbObject, pCore->pVol->cbBlock);
@@ -549,14 +559,14 @@ static int rtFsIso9660Core_QueryInfo(PRTFSISO9660CORE pCore, PRTFSOBJINFO pObjIn
 
 
 /**
- * Worker for rtFsIso9660File_Close and rtFsIso9660Dir_Close that does common work.
+ * Worker for rtFsIsoFile_Close and rtFsIsoDir_Close that does common work.
  *
  * @param   pCore           The common shared structure.
  */
-static void rtFsIso9660Core_Destroy(PRTFSISO9660CORE pCore)
+static void rtFsIsoCore_Destroy(PRTFSISOCORE pCore)
 {
     if (pCore->pParentDir)
-        rtFsIso9660DirShrd_RemoveOpenChild(pCore->pParentDir, pCore);
+        rtFsIsoDirShrd_RemoveOpenChild(pCore->pParentDir, pCore);
     if (pCore->paExtents)
     {
         RTMemFree(pCore->paExtents);
@@ -568,19 +578,19 @@ static void rtFsIso9660Core_Destroy(PRTFSISO9660CORE pCore)
 /**
  * @interface_method_impl{RTVFSOBJOPS,pfnClose}
  */
-static DECLCALLBACK(int) rtFsIso9660File_Close(void *pvThis)
+static DECLCALLBACK(int) rtFsIsoFile_Close(void *pvThis)
 {
-    PRTFSISO9660FILEOBJ  pThis   = (PRTFSISO9660FILEOBJ)pvThis;
-    LogFlow(("rtFsIso9660File_Close(%p/%p)\n", pThis, pThis->pShared));
+    PRTFSISOFILEOBJ  pThis   = (PRTFSISOFILEOBJ)pvThis;
+    LogFlow(("rtFsIsoFile_Close(%p/%p)\n", pThis, pThis->pShared));
 
-    PRTFSISO9660FILESHRD pShared = pThis->pShared;
+    PRTFSISOFILESHRD pShared = pThis->pShared;
     pThis->pShared = NULL;
     if (pShared)
     {
         if (ASMAtomicDecU32(&pShared->Core.cRefs) == 0)
         {
-            LogFlow(("rtFsIso9660File_Close: Destroying shared structure %p\n", pShared));
-            rtFsIso9660Core_Destroy(&pShared->Core);
+            LogFlow(("rtFsIsoFile_Close: Destroying shared structure %p\n", pShared));
+            rtFsIsoCore_Destroy(&pShared->Core);
             RTMemFree(pShared);
         }
     }
@@ -591,20 +601,20 @@ static DECLCALLBACK(int) rtFsIso9660File_Close(void *pvThis)
 /**
  * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
  */
-static DECLCALLBACK(int) rtFsIso9660File_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+static DECLCALLBACK(int) rtFsIsoFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
-    PRTFSISO9660FILEOBJ pThis = (PRTFSISO9660FILEOBJ)pvThis;
-    return rtFsIso9660Core_QueryInfo(&pThis->pShared->Core, pObjInfo, enmAddAttr);
+    PRTFSISOFILEOBJ pThis = (PRTFSISOFILEOBJ)pvThis;
+    return rtFsIsoCore_QueryInfo(&pThis->pShared->Core, pObjInfo, enmAddAttr);
 }
 
 
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtFsIso9660File_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtFsIsoFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
-    PRTFSISO9660FILEOBJ  pThis   = (PRTFSISO9660FILEOBJ)pvThis;
-    PRTFSISO9660FILESHRD pShared = pThis->pShared;
+    PRTFSISOFILEOBJ  pThis   = (PRTFSISOFILEOBJ)pvThis;
+    PRTFSISOFILESHRD pShared = pThis->pShared;
     AssertReturn(pSgBuf->cSegs != 0, VERR_INTERNAL_ERROR_3);
     RT_NOREF(fBlocking);
 
@@ -669,7 +679,7 @@ static DECLCALLBACK(int) rtFsIso9660File_Read(void *pvThis, RTFOFF off, PCRTSGBU
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtFsIso9660File_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtFsIsoFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     RT_NOREF(pvThis, off, pSgBuf, fBlocking, pcbWritten);
     return VERR_WRITE_PROTECT;
@@ -679,7 +689,7 @@ static DECLCALLBACK(int) rtFsIso9660File_Write(void *pvThis, RTFOFF off, PCRTSGB
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnFlush}
  */
-static DECLCALLBACK(int) rtFsIso9660File_Flush(void *pvThis)
+static DECLCALLBACK(int) rtFsIsoFile_Flush(void *pvThis)
 {
     RT_NOREF(pvThis);
     return VINF_SUCCESS;
@@ -689,7 +699,7 @@ static DECLCALLBACK(int) rtFsIso9660File_Flush(void *pvThis)
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnPollOne}
  */
-static DECLCALLBACK(int) rtFsIso9660File_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
+static DECLCALLBACK(int) rtFsIsoFile_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
                                                  uint32_t *pfRetEvents)
 {
     NOREF(pvThis);
@@ -719,9 +729,9 @@ static DECLCALLBACK(int) rtFsIso9660File_PollOne(void *pvThis, uint32_t fEvents,
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnTell}
  */
-static DECLCALLBACK(int) rtFsIso9660File_Tell(void *pvThis, PRTFOFF poffActual)
+static DECLCALLBACK(int) rtFsIsoFile_Tell(void *pvThis, PRTFOFF poffActual)
 {
-    PRTFSISO9660FILEOBJ pThis = (PRTFSISO9660FILEOBJ)pvThis;
+    PRTFSISOFILEOBJ pThis = (PRTFSISOFILEOBJ)pvThis;
     *poffActual = pThis->offFile;
     return VINF_SUCCESS;
 }
@@ -730,7 +740,7 @@ static DECLCALLBACK(int) rtFsIso9660File_Tell(void *pvThis, PRTFOFF poffActual)
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
  */
-static DECLCALLBACK(int) rtFsIso9660File_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
+static DECLCALLBACK(int) rtFsIsoFile_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
 {
     RT_NOREF(pvThis, fMode, fMask);
     return VERR_WRITE_PROTECT;
@@ -740,7 +750,7 @@ static DECLCALLBACK(int) rtFsIso9660File_SetMode(void *pvThis, RTFMODE fMode, RT
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
  */
-static DECLCALLBACK(int) rtFsIso9660File_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+static DECLCALLBACK(int) rtFsIsoFile_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                                                  PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
     RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
@@ -751,7 +761,7 @@ static DECLCALLBACK(int) rtFsIso9660File_SetTimes(void *pvThis, PCRTTIMESPEC pAc
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
  */
-static DECLCALLBACK(int) rtFsIso9660File_SetOwner(void *pvThis, RTUID uid, RTGID gid)
+static DECLCALLBACK(int) rtFsIsoFile_SetOwner(void *pvThis, RTUID uid, RTGID gid)
 {
     RT_NOREF(pvThis, uid, gid);
     return VERR_WRITE_PROTECT;
@@ -761,9 +771,9 @@ static DECLCALLBACK(int) rtFsIso9660File_SetOwner(void *pvThis, RTUID uid, RTGID
 /**
  * @interface_method_impl{RTVFSFILEOPS,pfnSeek}
  */
-static DECLCALLBACK(int) rtFsIso9660File_Seek(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual)
+static DECLCALLBACK(int) rtFsIsoFile_Seek(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual)
 {
-    PRTFSISO9660FILEOBJ pThis = (PRTFSISO9660FILEOBJ)pvThis;
+    PRTFSISOFILEOBJ pThis = (PRTFSISOFILEOBJ)pvThis;
     RTFOFF offNew;
     switch (uMethod)
     {
@@ -796,9 +806,9 @@ static DECLCALLBACK(int) rtFsIso9660File_Seek(void *pvThis, RTFOFF offSeek, unsi
 /**
  * @interface_method_impl{RTVFSFILEOPS,pfnQuerySize}
  */
-static DECLCALLBACK(int) rtFsIso9660File_QuerySize(void *pvThis, uint64_t *pcbFile)
+static DECLCALLBACK(int) rtFsIsoFile_QuerySize(void *pvThis, uint64_t *pcbFile)
 {
-    PRTFSISO9660FILEOBJ pThis = (PRTFSISO9660FILEOBJ)pvThis;
+    PRTFSISOFILEOBJ pThis = (PRTFSISOFILEOBJ)pvThis;
     *pcbFile = pThis->pShared->Core.cbObject;
     return VINF_SUCCESS;
 }
@@ -814,17 +824,17 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIos9660FileOps =
             RTVFSOBJOPS_VERSION,
             RTVFSOBJTYPE_FILE,
             "FatFile",
-            rtFsIso9660File_Close,
-            rtFsIso9660File_QueryInfo,
+            rtFsIsoFile_Close,
+            rtFsIsoFile_QueryInfo,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,
         RTVFSIOSTREAMOPS_FEAT_NO_SG,
-        rtFsIso9660File_Read,
-        rtFsIso9660File_Write,
-        rtFsIso9660File_Flush,
-        rtFsIso9660File_PollOne,
-        rtFsIso9660File_Tell,
+        rtFsIsoFile_Read,
+        rtFsIsoFile_Write,
+        rtFsIsoFile_Flush,
+        rtFsIsoFile_PollOne,
+        rtFsIsoFile_Tell,
         NULL /*pfnSkip*/,
         NULL /*pfnZeroFill*/,
         RTVFSIOSTREAMOPS_VERSION,
@@ -834,19 +844,19 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIos9660FileOps =
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
         RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
-        rtFsIso9660File_SetMode,
-        rtFsIso9660File_SetTimes,
-        rtFsIso9660File_SetOwner,
+        rtFsIsoFile_SetMode,
+        rtFsIsoFile_SetTimes,
+        rtFsIsoFile_SetOwner,
         RTVFSOBJSETOPS_VERSION
     },
-    rtFsIso9660File_Seek,
-    rtFsIso9660File_QuerySize,
+    rtFsIsoFile_Seek,
+    rtFsIsoFile_QuerySize,
     RTVFSFILEOPS_VERSION
 };
 
 
 /**
- * Instantiates a new directory.
+ * Instantiates a new directory, from 9660.
  *
  * @returns IPRT status code.
  * @param   pThis           The FAT volume instance.
@@ -862,7 +872,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIos9660FileOps =
  *                          effort here).
  * @param   phVfsFile       Where to return the file handle.
  */
-static int rtFsIso9660File_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParentDir, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
+static int rtFsIsoFile_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
                                uint64_t offDirRec, uint64_t fOpen, uint32_t uVersion, PRTVFSFILE phVfsFile)
 {
     AssertPtr(pParentDir);
@@ -870,7 +880,7 @@ static int rtFsIso9660File_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParen
     /*
      * Create a VFS object.
      */
-    PRTFSISO9660FILEOBJ pNewFile;
+    PRTFSISOFILEOBJ pNewFile;
     int rc = RTVfsNewFile(&g_rtFsIos9660FileOps, sizeof(*pNewFile), fOpen, pThis->hVfsSelf, NIL_RTVFSLOCK /*use volume lock*/,
                           phVfsFile, (void **)&pNewFile);
     if (RT_SUCCESS(rc))
@@ -878,18 +888,18 @@ static int rtFsIso9660File_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParen
         /*
          * Look for existing shared object, create a new one if necessary.
          */
-        PRTFSISO9660FILESHRD pShared = (PRTFSISO9660FILESHRD)rtFsIso9660Dir_LookupShared(pParentDir, offDirRec);
+        PRTFSISOFILESHRD pShared = (PRTFSISOFILESHRD)rtFsIsoDir_LookupShared(pParentDir, offDirRec);
         if (!pShared)
         {
-            pShared = (PRTFSISO9660FILESHRD)RTMemAllocZ(sizeof(*pShared));
+            pShared = (PRTFSISOFILESHRD)RTMemAllocZ(sizeof(*pShared));
             if (pShared)
             {
                 /*
-                 * Initialize it all so rtFsIso9660File_Close doesn't trip up in anyway.
+                 * Initialize it all so rtFsIsoFile_Close doesn't trip up in anyway.
                  */
-                rc = rtFsIso9660Core_InitFromDirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, uVersion, pThis);
+                rc = rtFsIsoCore_InitFrom9660DirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, uVersion, pThis);
                 if (RT_SUCCESS(rc))
-                    rtFsIso9660DirShrd_AddOpenChild(pParentDir, &pShared->Core);
+                    rtFsIsoDirShrd_AddOpenChild(pParentDir, &pShared->Core);
                 else
                 {
                     RTMemFree(pShared);
@@ -899,7 +909,7 @@ static int rtFsIso9660File_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParen
         }
         if (pShared)
         {
-            LogFlow(("rtFsIso9660File_New: cbObject=%#RX64 First Extent: off=%#RX64 cb=%#RX64\n",
+            LogFlow(("rtFsIsoFile_New9660: cbObject=%#RX64 First Extent: off=%#RX64 cb=%#RX64\n",
                      pShared->Core.cbObject, pShared->Core.FirstExtent.offDisk, pShared->Core.FirstExtent.cbExtent));
             pNewFile->offFile = 0;
             pNewFile->pShared = pShared;
@@ -920,10 +930,10 @@ static int rtFsIso9660File_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParen
  * @param   pThis           The directory.
  * @param   offDirRec       The directory record offset of the child.
  */
-static PRTFSISO9660CORE rtFsIso9660Dir_LookupShared(PRTFSISO9660DIRSHRD pThis, uint64_t offDirRec)
+static PRTFSISOCORE rtFsIsoDir_LookupShared(PRTFSISODIRSHRD pThis, uint64_t offDirRec)
 {
-    PRTFSISO9660CORE pCur;
-    RTListForEach(&pThis->OpenChildren, pCur, RTFSISO9660CORE, Entry)
+    PRTFSISOCORE pCur;
+    RTListForEach(&pThis->OpenChildren, pCur, RTFSISOCORE, Entry)
     {
         if (pCur->offDirRec == offDirRec)
         {
@@ -945,7 +955,7 @@ static PRTFSISO9660CORE rtFsIso9660Dir_LookupShared(PRTFSISO9660DIRSHRD pThis, u
  *                      previous extent.
  * @param   pNext       The directory record alleged to be the next extent.
  */
-DECLINLINE(bool) rtFsIso9660Dir_IsDirRecNextExtent(PCISO9660DIRREC pFirst, PCISO9660DIRREC pNext)
+DECLINLINE(bool) rtFsIsoDir_Is9660DirRecNextExtent(PCISO9660DIRREC pFirst, PCISO9660DIRREC pNext)
 {
     if (RT_LIKELY(pNext->bFileIdLength == pFirst->bFileIdLength))
     {
@@ -961,7 +971,7 @@ DECLINLINE(bool) rtFsIso9660Dir_IsDirRecNextExtent(PCISO9660DIRREC pFirst, PCISO
 
 
 /**
- * Worker for rtFsIso9660Dir_FindEntry that compares a UTF-16BE name with a
+ * Worker for rtFsIsoDir_FindEntry that compares a UTF-16BE name with a
  * directory record.
  *
  * @returns true if equal, false if not.
@@ -972,8 +982,8 @@ DECLINLINE(bool) rtFsIso9660Dir_IsDirRecNextExtent(PCISO9660DIRREC pFirst, PCISO
  * @param   cwcEntry            The compare string length in RTUTF16 units.
  * @param   puVersion           Where to return any file version number.
  */
-DECL_FORCE_INLINE(bool) rtFsIso9660Dir_IsEntryEqualUtf16Big(PCISO9660DIRREC pDirRec, PCRTUTF16 pwszEntry, size_t cbEntry,
-                                                            size_t cwcEntry, uint32_t *puVersion)
+DECL_FORCE_INLINE(bool) rtFsIsoDir_IsEntryEqualUtf16Big(PCISO9660DIRREC pDirRec, PCRTUTF16 pwszEntry, size_t cbEntry,
+                                                        size_t cwcEntry, uint32_t *puVersion)
 {
     /* ASSUME directories cannot have any version tags. */
     if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
@@ -1018,7 +1028,7 @@ DECL_FORCE_INLINE(bool) rtFsIso9660Dir_IsEntryEqualUtf16Big(PCISO9660DIRREC pDir
 
 
 /**
- * Worker for rtFsIso9660Dir_FindEntry that compares an ASCII name with a
+ * Worker for rtFsIsoDir_FindEntry that compares an ASCII name with a
  * directory record.
  *
  * @returns true if equal, false if not.
@@ -1027,7 +1037,7 @@ DECL_FORCE_INLINE(bool) rtFsIso9660Dir_IsEntryEqualUtf16Big(PCISO9660DIRREC pDir
  * @param   cchEntry            The length of the compare string.
  * @param   puVersion           Where to return any file version number.
  */
-DECL_FORCE_INLINE(bool) rtFsIso9660Dir_IsEntryEqualAscii(PCISO9660DIRREC pDirRec, const char *pszEntry, size_t cchEntry,
+DECL_FORCE_INLINE(bool) rtFsIsoDir_IsEntryEqualAscii(PCISO9660DIRREC pDirRec, const char *pszEntry, size_t cchEntry,
                                                          uint32_t *puVersion)
 {
     /* ASSUME directories cannot have any version tags. */
@@ -1088,8 +1098,8 @@ DECL_FORCE_INLINE(bool) rtFsIso9660Dir_IsEntryEqualAscii(PCISO9660DIRREC pDirRec
  * @param   pfMode          Where to return the file type, rock ridge adjusted.
  * @param   puVersion       Where to return the file version number.
  */
-static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEntry,  uint64_t *poffDirRec,
-                                    PCISO9660DIRREC *ppDirRec, uint32_t *pcDirRecs, PRTFMODE pfMode, uint32_t *puVersion)
+static int rtFsIsoDir_FindEntry(PRTFSISODIRSHRD pThis, const char *pszEntry,  uint64_t *poffDirRec,
+                                PCISO9660DIRREC *ppDirRec, uint32_t *pcDirRecs, PRTFMODE pfMode, uint32_t *puVersion)
 {
     /* Set return values. */
     *poffDirRec = UINT64_MAX;
@@ -1151,7 +1161,7 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEn
             /* Try match the filename. */
             if (fIsUtf16)
             {
-                if (RT_LIKELY(!rtFsIso9660Dir_IsEntryEqualUtf16Big(pDirRec, uBuf.wszEntry, cbEntry, cwcEntry, puVersion)))
+                if (RT_LIKELY(!rtFsIsoDir_IsEntryEqualUtf16Big(pDirRec, uBuf.wszEntry, cbEntry, cwcEntry, puVersion)))
                 {
                     /* Advance */
                     offEntryInDir += pDirRec->cbDirRec;
@@ -1160,7 +1170,7 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEn
             }
             else
             {
-                if (RT_LIKELY(!rtFsIso9660Dir_IsEntryEqualAscii(pDirRec, uBuf.s.szUpper, cchUpper, puVersion)))
+                if (RT_LIKELY(!rtFsIsoDir_IsEntryEqualAscii(pDirRec, uBuf.s.szUpper, cchUpper, puVersion)))
                 {
                     /** @todo check rock. */
                     if (1)
@@ -1193,7 +1203,7 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEn
                     PCISO9660DIRREC pDirRec2 = (PCISO9660DIRREC)&pThis->pbDir[offEntryInDir];
                     if (pDirRec2->cbDirRec != 0)
                     {
-                        Assert(rtFsIso9660Dir_IsDirRecNextExtent(pDirRec, pDirRec2));
+                        Assert(rtFsIsoDir_Is9660DirRecNextExtent(pDirRec, pDirRec2));
                         cDirRecs++;
                         if (!(pDirRec2->fFileFlags & ISO9660_FILE_FLAGS_MULTI_EXTENT))
                             break;
@@ -1218,20 +1228,20 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEn
  *
  * @param   pShared             The shared directory structure.
  */
-static void rtFsIso9660DirShrd_Release(PRTFSISO9660DIRSHRD pShared)
+static void rtFsIsoDirShrd_Release(PRTFSISODIRSHRD pShared)
 {
     uint32_t cRefs = ASMAtomicDecU32(&pShared->Core.cRefs);
     Assert(cRefs < UINT32_MAX / 2);
     if (cRefs == 0)
     {
-        LogFlow(("rtFsIso9660DirShrd_Release: Destroying shared structure %p\n", pShared));
+        LogFlow(("rtFsIsoDirShrd_Release: Destroying shared structure %p\n", pShared));
         Assert(pShared->Core.cRefs == 0);
         if (pShared->pbDir)
         {
             RTMemFree(pShared->pbDir);
             pShared->pbDir = NULL;
         }
-        rtFsIso9660Core_Destroy(&pShared->Core);
+        rtFsIsoCore_Destroy(&pShared->Core);
         RTMemFree(pShared);
     }
 }
@@ -1242,7 +1252,7 @@ static void rtFsIso9660DirShrd_Release(PRTFSISO9660DIRSHRD pShared)
  *
  * @param   pShared             The shared directory structure.
  */
-static void rtFsIso9660DirShrd_Retain(PRTFSISO9660DIRSHRD pShared)
+static void rtFsIsoDirShrd_Retain(PRTFSISODIRSHRD pShared)
 {
     uint32_t cRefs = ASMAtomicIncU32(&pShared->Core.cRefs);
     Assert(cRefs > 1); NOREF(cRefs);
@@ -1253,15 +1263,15 @@ static void rtFsIso9660DirShrd_Retain(PRTFSISO9660DIRSHRD pShared)
 /**
  * @interface_method_impl{RTVFSOBJOPS,pfnClose}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_Close(void *pvThis)
+static DECLCALLBACK(int) rtFsIsoDir_Close(void *pvThis)
 {
-    PRTFSISO9660DIROBJ pThis = (PRTFSISO9660DIROBJ)pvThis;
-    LogFlow(("rtFsIso9660Dir_Close(%p/%p)\n", pThis, pThis->pShared));
+    PRTFSISODIROBJ pThis = (PRTFSISODIROBJ)pvThis;
+    LogFlow(("rtFsIsoDir_Close(%p/%p)\n", pThis, pThis->pShared));
 
-    PRTFSISO9660DIRSHRD pShared = pThis->pShared;
+    PRTFSISODIRSHRD pShared = pThis->pShared;
     pThis->pShared = NULL;
     if (pShared)
-        rtFsIso9660DirShrd_Release(pShared);
+        rtFsIsoDirShrd_Release(pShared);
     return VINF_SUCCESS;
 }
 
@@ -1269,17 +1279,17 @@ static DECLCALLBACK(int) rtFsIso9660Dir_Close(void *pvThis)
 /**
  * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+static DECLCALLBACK(int) rtFsIsoDir_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
-    PRTFSISO9660DIROBJ pThis = (PRTFSISO9660DIROBJ)pvThis;
-    return rtFsIso9660Core_QueryInfo(&pThis->pShared->Core, pObjInfo, enmAddAttr);
+    PRTFSISODIROBJ pThis = (PRTFSISODIROBJ)pvThis;
+    return rtFsIsoCore_QueryInfo(&pThis->pShared->Core, pObjInfo, enmAddAttr);
 }
 
 
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
+static DECLCALLBACK(int) rtFsIsoDir_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
 {
     RT_NOREF(pvThis, fMode, fMask);
     return VERR_WRITE_PROTECT;
@@ -1289,7 +1299,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_SetMode(void *pvThis, RTFMODE fMode, RTF
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+static DECLCALLBACK(int) rtFsIsoDir_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                                                  PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
     RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
@@ -1300,7 +1310,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_SetTimes(void *pvThis, PCRTTIMESPEC pAcc
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_SetOwner(void *pvThis, RTUID uid, RTGID gid)
+static DECLCALLBACK(int) rtFsIsoDir_SetOwner(void *pvThis, RTUID uid, RTGID gid)
 {
     RT_NOREF(pvThis, uid, gid);
     return VERR_WRITE_PROTECT;
@@ -1310,8 +1320,8 @@ static DECLCALLBACK(int) rtFsIso9660Dir_SetOwner(void *pvThis, RTUID uid, RTGID 
 /**
  * @interface_method_impl{RTVFSOBJOPS,pfnTraversalOpen}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_TraversalOpen(void *pvThis, const char *pszEntry, PRTVFSDIR phVfsDir,
-                                                      PRTVFSSYMLINK phVfsSymlink, PRTVFS phVfsMounted)
+static DECLCALLBACK(int) rtFsIsoDir_TraversalOpen(void *pvThis, const char *pszEntry, PRTVFSDIR phVfsDir,
+                                                  PRTVFSSYMLINK phVfsSymlink, PRTVFS phVfsMounted)
 {
     /*
      * We may have symbolic links if rock ridge is being used, though currently
@@ -1327,22 +1337,22 @@ static DECLCALLBACK(int) rtFsIso9660Dir_TraversalOpen(void *pvThis, const char *
         if (phVfsDir)
             *phVfsDir = NIL_RTVFSDIR;
 
-        PRTFSISO9660DIROBJ  pThis = (PRTFSISO9660DIROBJ)pvThis;
-        PRTFSISO9660DIRSHRD pShared = pThis->pShared;
+        PRTFSISODIROBJ      pThis = (PRTFSISODIROBJ)pvThis;
+        PRTFSISODIRSHRD     pShared = pThis->pShared;
         PCISO9660DIRREC     pDirRec;
         uint64_t            offDirRec;
         uint32_t            cDirRecs;
         RTFMODE             fMode;
         uint32_t            uVersion;
-        rc = rtFsIso9660Dir_FindEntry(pShared, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
-        Log2(("rtFsIso9660Dir_TraversalOpen: FindEntry(,%s,) -> %Rrc\n", pszEntry, rc));
+        rc = rtFsIsoDir_FindEntry(pShared, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
+        Log2(("rtFsIsoDir_TraversalOpen: FindEntry(,%s,) -> %Rrc\n", pszEntry, rc));
         if (RT_SUCCESS(rc))
         {
             switch (fMode & RTFS_TYPE_MASK)
             {
                 case RTFS_TYPE_DIRECTORY:
                     if (phVfsDir)
-                        rc = rtFsIso9660Dir_New(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, phVfsDir);
+                        rc = rtFsIsoDir_New9660(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, phVfsDir);
                     else
                         rc = VERR_NOT_SYMLINK;
                     break;
@@ -1375,10 +1385,10 @@ static DECLCALLBACK(int) rtFsIso9660Dir_TraversalOpen(void *pvThis, const char *
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnOpenFile}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_OpenFile(void *pvThis, const char *pszFilename, uint32_t fOpen, PRTVFSFILE phVfsFile)
+static DECLCALLBACK(int) rtFsIsoDir_OpenFile(void *pvThis, const char *pszFilename, uint32_t fOpen, PRTVFSFILE phVfsFile)
 {
-    PRTFSISO9660DIROBJ  pThis   = (PRTFSISO9660DIROBJ)pvThis;
-    PRTFSISO9660DIRSHRD pShared = pThis->pShared;
+    PRTFSISODIROBJ  pThis   = (PRTFSISODIROBJ)pvThis;
+    PRTFSISODIRSHRD pShared = pThis->pShared;
 
     /*
      * We cannot create or replace anything, just open stuff.
@@ -1395,14 +1405,14 @@ static DECLCALLBACK(int) rtFsIso9660Dir_OpenFile(void *pvThis, const char *pszFi
     uint32_t        cDirRecs;
     RTFMODE         fMode;
     uint32_t        uVersion;
-    int rc = rtFsIso9660Dir_FindEntry(pShared, pszFilename, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
-    Log2(("rtFsIso9660Dir_OpenFile: FindEntry(,%s,) -> %Rrc\n", pszFilename, rc));
+    int rc = rtFsIsoDir_FindEntry(pShared, pszFilename, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
+    Log2(("rtFsIsoDir_OpenFile: FindEntry(,%s,) -> %Rrc\n", pszFilename, rc));
     if (RT_SUCCESS(rc))
     {
         switch (fMode & RTFS_TYPE_MASK)
         {
             case RTFS_TYPE_FILE:
-                rc = rtFsIso9660File_New(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, fOpen, uVersion, phVfsFile);
+                rc = rtFsIsoFile_New9660(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, fOpen, uVersion, phVfsFile);
                 break;
 
             case RTFS_TYPE_SYMLINK:
@@ -1430,10 +1440,10 @@ static DECLCALLBACK(int) rtFsIso9660Dir_OpenFile(void *pvThis, const char *pszFi
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnOpenDir}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_OpenDir(void *pvThis, const char *pszSubDir, uint32_t fFlags, PRTVFSDIR phVfsDir)
+static DECLCALLBACK(int) rtFsIsoDir_OpenDir(void *pvThis, const char *pszSubDir, uint32_t fFlags, PRTVFSDIR phVfsDir)
 {
-    PRTFSISO9660DIROBJ  pThis   = (PRTFSISO9660DIROBJ)pvThis;
-    PRTFSISO9660DIRSHRD pShared = pThis->pShared;
+    PRTFSISODIROBJ  pThis   = (PRTFSISODIROBJ)pvThis;
+    PRTFSISODIRSHRD pShared = pThis->pShared;
     AssertReturn(!fFlags, VERR_INVALID_FLAGS);
 
     /*
@@ -1444,14 +1454,14 @@ static DECLCALLBACK(int) rtFsIso9660Dir_OpenDir(void *pvThis, const char *pszSub
     uint32_t        cDirRecs;
     RTFMODE         fMode;
     uint32_t        uVersion;
-    int rc = rtFsIso9660Dir_FindEntry(pShared, pszSubDir, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
-    Log2(("rtFsIso9660Dir_OpenDir: FindEntry(,%s,) -> %Rrc\n", pszSubDir, rc));
+    int rc = rtFsIsoDir_FindEntry(pShared, pszSubDir, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
+    Log2(("rtFsIsoDir_OpenDir: FindEntry(,%s,) -> %Rrc\n", pszSubDir, rc));
     if (RT_SUCCESS(rc))
     {
         switch (fMode & RTFS_TYPE_MASK)
         {
             case RTFS_TYPE_DIRECTORY:
-                rc = rtFsIso9660Dir_New(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, phVfsDir);
+                rc = rtFsIsoDir_New9660(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, phVfsDir);
                 break;
 
             case RTFS_TYPE_FILE:
@@ -1476,7 +1486,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_OpenDir(void *pvThis, const char *pszSub
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnCreateDir}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_CreateDir(void *pvThis, const char *pszSubDir, RTFMODE fMode, PRTVFSDIR phVfsDir)
+static DECLCALLBACK(int) rtFsIsoDir_CreateDir(void *pvThis, const char *pszSubDir, RTFMODE fMode, PRTVFSDIR phVfsDir)
 {
     RT_NOREF(pvThis, pszSubDir, fMode, phVfsDir);
     return VERR_WRITE_PROTECT;
@@ -1486,7 +1496,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_CreateDir(void *pvThis, const char *pszS
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnOpenSymlink}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_OpenSymlink(void *pvThis, const char *pszSymlink, PRTVFSSYMLINK phVfsSymlink)
+static DECLCALLBACK(int) rtFsIsoDir_OpenSymlink(void *pvThis, const char *pszSymlink, PRTVFSSYMLINK phVfsSymlink)
 {
     RT_NOREF(pvThis, pszSymlink, phVfsSymlink);
 RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSymlink);
@@ -1497,8 +1507,8 @@ RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSymlink);
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnCreateSymlink}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_CreateSymlink(void *pvThis, const char *pszSymlink, const char *pszTarget,
-                                                      RTSYMLINKTYPE enmType, PRTVFSSYMLINK phVfsSymlink)
+static DECLCALLBACK(int) rtFsIsoDir_CreateSymlink(void *pvThis, const char *pszSymlink, const char *pszTarget,
+                                                  RTSYMLINKTYPE enmType, PRTVFSSYMLINK phVfsSymlink)
 {
     RT_NOREF(pvThis, pszSymlink, pszTarget, enmType, phVfsSymlink);
     return VERR_WRITE_PROTECT;
@@ -1508,33 +1518,33 @@ static DECLCALLBACK(int) rtFsIso9660Dir_CreateSymlink(void *pvThis, const char *
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnQueryEntryInfo}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_QueryEntryInfo(void *pvThis, const char *pszEntry,
-                                                       PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+static DECLCALLBACK(int) rtFsIsoDir_QueryEntryInfo(void *pvThis, const char *pszEntry,
+                                                   PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
     /*
      * Try locate the entry.
      */
-    PRTFSISO9660DIROBJ  pThis   = (PRTFSISO9660DIROBJ)pvThis;
-    PRTFSISO9660DIRSHRD pShared = pThis->pShared;
+    PRTFSISODIROBJ      pThis   = (PRTFSISODIROBJ)pvThis;
+    PRTFSISODIRSHRD     pShared = pThis->pShared;
     PCISO9660DIRREC     pDirRec;
     uint64_t            offDirRec;
     uint32_t            cDirRecs;
     RTFMODE             fMode;
     uint32_t            uVersion;
-    int rc = rtFsIso9660Dir_FindEntry(pShared, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
-    Log2(("rtFsIso9660Dir_QueryEntryInfo: FindEntry(,%s,) -> %Rrc\n", pszEntry, rc));
+    int rc = rtFsIsoDir_FindEntry(pShared, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
+    Log2(("rtFsIsoDir_QueryEntryInfo: FindEntry(,%s,) -> %Rrc\n", pszEntry, rc));
     if (RT_SUCCESS(rc))
     {
         /*
-         * To avoid duplicating code in rtFsIso9660Core_InitFromDirRec and
-         * rtFsIso9660Core_QueryInfo, we create a dummy RTFSISO9660CORE on the stack.
+         * To avoid duplicating code in rtFsIsoCore_InitFrom9660DirRec and
+         * rtFsIsoCore_QueryInfo, we create a dummy RTFSISOCORE on the stack.
          */
-        RTFSISO9660CORE TmpObj;
+        RTFSISOCORE TmpObj;
         RT_ZERO(TmpObj);
-        rc = rtFsIso9660Core_InitFromDirRec(&TmpObj, pDirRec, cDirRecs, offDirRec, uVersion, pShared->Core.pVol);
+        rc = rtFsIsoCore_InitFrom9660DirRec(&TmpObj, pDirRec, cDirRecs, offDirRec, uVersion, pShared->Core.pVol);
         if (RT_SUCCESS(rc))
         {
-            rc = rtFsIso9660Core_QueryInfo(&TmpObj, pObjInfo, enmAddAttr);
+            rc = rtFsIsoCore_QueryInfo(&TmpObj, pObjInfo, enmAddAttr);
             RTMemFree(TmpObj.paExtents);
         }
     }
@@ -1545,7 +1555,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_QueryEntryInfo(void *pvThis, const char 
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnUnlinkEntry}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_UnlinkEntry(void *pvThis, const char *pszEntry, RTFMODE fType)
+static DECLCALLBACK(int) rtFsIsoDir_UnlinkEntry(void *pvThis, const char *pszEntry, RTFMODE fType)
 {
     RT_NOREF(pvThis, pszEntry, fType);
     return VERR_WRITE_PROTECT;
@@ -1555,7 +1565,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_UnlinkEntry(void *pvThis, const char *ps
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnRenameEntry}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_RenameEntry(void *pvThis, const char *pszEntry, RTFMODE fType, const char *pszNewName)
+static DECLCALLBACK(int) rtFsIsoDir_RenameEntry(void *pvThis, const char *pszEntry, RTFMODE fType, const char *pszNewName)
 {
     RT_NOREF(pvThis, pszEntry, fType, pszNewName);
     return VERR_WRITE_PROTECT;
@@ -1565,9 +1575,9 @@ static DECLCALLBACK(int) rtFsIso9660Dir_RenameEntry(void *pvThis, const char *ps
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnRewindDir}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_RewindDir(void *pvThis)
+static DECLCALLBACK(int) rtFsIsoDir_RewindDir(void *pvThis)
 {
-    PRTFSISO9660DIROBJ pThis = (PRTFSISO9660DIROBJ)pvThis;
+    PRTFSISODIROBJ pThis = (PRTFSISODIROBJ)pvThis;
     pThis->offDir = 0;
     return VINF_SUCCESS;
 }
@@ -1576,11 +1586,11 @@ static DECLCALLBACK(int) rtFsIso9660Dir_RewindDir(void *pvThis)
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnReadDir}
  */
-static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry,
-                                                RTFSOBJATTRADD enmAddAttr)
+static DECLCALLBACK(int) rtFsIsoDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry,
+                                            RTFSOBJATTRADD enmAddAttr)
 {
-    PRTFSISO9660DIROBJ  pThis   = (PRTFSISO9660DIROBJ)pvThis;
-    PRTFSISO9660DIRSHRD pShared = pThis->pShared;
+    PRTFSISODIROBJ  pThis   = (PRTFSISODIROBJ)pvThis;
+    PRTFSISODIRSHRD pShared = pThis->pShared;
 
     while (pThis->offDir + RT_UOFFSETOF(ISO9660DIRREC, achFileId) <= pShared->cbDir)
     {
@@ -1601,7 +1611,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
                 if (*pcbDirEntry < RT_UOFFSETOF(RTDIRENTRYEX, szName) + 2)
                 {
                     *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName) + 2;
-                    Log3(("rtFsIso9660Dir_ReadDir: VERR_BUFFER_OVERFLOW (dot)\n"));
+                    Log3(("rtFsIsoDir_ReadDir: VERR_BUFFER_OVERFLOW (dot)\n"));
                     return VERR_BUFFER_OVERFLOW;
                 }
                 pDirEntry->cbName    = 1;
@@ -1614,7 +1624,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
                 if (*pcbDirEntry < RT_UOFFSETOF(RTDIRENTRYEX, szName) + 3)
                 {
                     *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName) + 3;
-                    Log3(("rtFsIso9660Dir_ReadDir: VERR_BUFFER_OVERFLOW (dot-dot)\n"));
+                    Log3(("rtFsIsoDir_ReadDir: VERR_BUFFER_OVERFLOW (dot-dot)\n"));
                     return VERR_BUFFER_OVERFLOW;
                 }
                 pDirEntry->cbName    = 2;
@@ -1638,7 +1648,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
                 else if (rc == VERR_BUFFER_OVERFLOW)
                 {
                     *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName) + cchNeeded + 1;
-                    Log3(("rtFsIso9660Dir_ReadDir: VERR_BUFFER_OVERFLOW - cbDst=%zu cchNeeded=%zu (UTF-16BE)\n", cbDst, cchNeeded));
+                    Log3(("rtFsIsoDir_ReadDir: VERR_BUFFER_OVERFLOW - cbDst=%zu cchNeeded=%zu (UTF-16BE)\n", cbDst, cchNeeded));
                     return VERR_BUFFER_OVERFLOW;
                 }
                 else
@@ -1662,7 +1672,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
                 size_t cbNeeded = RT_UOFFSETOF(RTDIRENTRYEX, szName) + cchName + 1;
                 if (*pcbDirEntry < cbNeeded)
                 {
-                    Log3(("rtFsIso9660Dir_ReadDir: VERR_BUFFER_OVERFLOW - cbDst=%zu cbNeeded=%zu (ASCII)\n", *pcbDirEntry, cbNeeded));
+                    Log3(("rtFsIsoDir_ReadDir: VERR_BUFFER_OVERFLOW - cbDst=%zu cbNeeded=%zu (ASCII)\n", *pcbDirEntry, cbNeeded));
                     *pcbDirEntry = cbNeeded;
                     return VERR_BUFFER_OVERFLOW;
                 }
@@ -1677,25 +1687,25 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
             pDirEntry->wszShortName[0] = '\0';
 
             /*
-             * To avoid duplicating code in rtFsIso9660Core_InitFromDirRec and
-             * rtFsIso9660Core_QueryInfo, we create a dummy RTFSISO9660CORE on the stack.
+             * To avoid duplicating code in rtFsIsoCore_InitFrom9660DirRec and
+             * rtFsIsoCore_QueryInfo, we create a dummy RTFSISOCORE on the stack.
              */
-            RTFSISO9660CORE TmpObj;
+            RTFSISOCORE TmpObj;
             RT_ZERO(TmpObj);
-            rtFsIso9660Core_InitFromDirRec(&TmpObj, pDirRec, 1 /* cDirRecs - see below why 1 */,
+            rtFsIsoCore_InitFrom9660DirRec(&TmpObj, pDirRec, 1 /* cDirRecs - see below why 1 */,
                                            pThis->offDir + pShared->Core.FirstExtent.offDisk, uVersion, pShared->Core.pVol);
-            int rc = rtFsIso9660Core_QueryInfo(&TmpObj, &pDirEntry->Info, enmAddAttr);
+            int rc = rtFsIsoCore_QueryInfo(&TmpObj, &pDirEntry->Info, enmAddAttr);
 
             /*
              * Update the directory location and handle multi extent records.
              *
              * Multi extent records only affect the file size and the directory location,
-             * so we deal with it here instead of involving * rtFsIso9660Core_InitFromDirRec
+             * so we deal with it here instead of involving * rtFsIsoCore_InitFrom9660DirRec
              * which would potentially require freeing memory and such.
              */
             if (!(pDirRec->fFileFlags & ISO9660_FILE_FLAGS_MULTI_EXTENT))
             {
-                Log3(("rtFsIso9660Dir_ReadDir: offDir=%#07x: %s (rc=%Rrc)\n", pThis->offDir, pDirEntry->szName, rc));
+                Log3(("rtFsIsoDir_ReadDir: offDir=%#07x: %s (rc=%Rrc)\n", pThis->offDir, pDirEntry->szName, rc));
                 pThis->offDir += pDirRec->cbDirRec;
             }
             else
@@ -1716,7 +1726,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
                     else
                         offDir = (offDir + pShared->Core.pVol->cbSector) & ~(pShared->Core.pVol->cbSector - 1U);
                 }
-                Log3(("rtFsIso9660Dir_ReadDir: offDir=%#07x, %u extents ending at %#07x: %s (rc=%Rrc)\n",
+                Log3(("rtFsIsoDir_ReadDir: offDir=%#07x, %u extents ending at %#07x: %s (rc=%Rrc)\n",
                       pThis->offDir, cExtents, offDir, pDirEntry->szName, rc));
                 pThis->offDir = offDir;
             }
@@ -1725,7 +1735,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
         }
     }
 
-    Log3(("rtFsIso9660Dir_ReadDir: offDir=%#07x: VERR_NO_MORE_FILES\n", pThis->offDir));
+    Log3(("rtFsIsoDir_ReadDir: offDir=%#07x: VERR_NO_MORE_FILES\n", pThis->offDir));
     return VERR_NO_MORE_FILES;
 }
 
@@ -1733,14 +1743,14 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
 /**
  * FAT file operations.
  */
-static const RTVFSDIROPS g_rtFsIso9660DirOps =
+static const RTVFSDIROPS g_rtFsIsoDirOps =
 {
     { /* Obj */
         RTVFSOBJOPS_VERSION,
         RTVFSOBJTYPE_DIR,
         "ISO 9660 Dir",
-        rtFsIso9660Dir_Close,
-        rtFsIso9660Dir_QueryInfo,
+        rtFsIsoDir_Close,
+        rtFsIsoDir_QueryInfo,
         RTVFSOBJOPS_VERSION
     },
     RTVFSDIROPS_VERSION,
@@ -1748,22 +1758,22 @@ static const RTVFSDIROPS g_rtFsIso9660DirOps =
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
         RT_OFFSETOF(RTVFSDIROPS, Obj) - RT_OFFSETOF(RTVFSDIROPS, ObjSet),
-        rtFsIso9660Dir_SetMode,
-        rtFsIso9660Dir_SetTimes,
-        rtFsIso9660Dir_SetOwner,
+        rtFsIsoDir_SetMode,
+        rtFsIsoDir_SetTimes,
+        rtFsIsoDir_SetOwner,
         RTVFSOBJSETOPS_VERSION
     },
-    rtFsIso9660Dir_TraversalOpen,
-    rtFsIso9660Dir_OpenFile,
-    rtFsIso9660Dir_OpenDir,
-    rtFsIso9660Dir_CreateDir,
-    rtFsIso9660Dir_OpenSymlink,
-    rtFsIso9660Dir_CreateSymlink,
-    rtFsIso9660Dir_QueryEntryInfo,
-    rtFsIso9660Dir_UnlinkEntry,
-    rtFsIso9660Dir_RenameEntry,
-    rtFsIso9660Dir_RewindDir,
-    rtFsIso9660Dir_ReadDir,
+    rtFsIsoDir_TraversalOpen,
+    rtFsIsoDir_OpenFile,
+    rtFsIsoDir_OpenDir,
+    rtFsIsoDir_CreateDir,
+    rtFsIsoDir_OpenSymlink,
+    rtFsIsoDir_CreateSymlink,
+    rtFsIsoDir_QueryEntryInfo,
+    rtFsIsoDir_UnlinkEntry,
+    rtFsIsoDir_RenameEntry,
+    rtFsIsoDir_RewindDir,
+    rtFsIsoDir_ReadDir,
     RTVFSDIROPS_VERSION,
 };
 
@@ -1777,11 +1787,11 @@ static const RTVFSDIROPS g_rtFsIso9660DirOps =
  *
  * @param   pDir        The directory.
  * @param   pChild      The child being opened.
- * @sa      rtFsIso9660DirShrd_RemoveOpenChild
+ * @sa      rtFsIsoDirShrd_RemoveOpenChild
  */
-static void rtFsIso9660DirShrd_AddOpenChild(PRTFSISO9660DIRSHRD pDir, PRTFSISO9660CORE pChild)
+static void rtFsIsoDirShrd_AddOpenChild(PRTFSISODIRSHRD pDir, PRTFSISOCORE pChild)
 {
-    rtFsIso9660DirShrd_Retain(pDir);
+    rtFsIsoDirShrd_Retain(pDir);
 
     RTListAppend(&pDir->OpenChildren, &pChild->Entry);
     pChild->pParentDir = pDir;
@@ -1797,15 +1807,15 @@ static void rtFsIso9660DirShrd_AddOpenChild(PRTFSISO9660DIRSHRD pDir, PRTFSISO96
  * @remarks This is the very last thing you do as it may cause a few other
  *          objects to be released recursively (parent dir and the volume).
  *
- * @sa      rtFsIso9660DirShrd_AddOpenChild
+ * @sa      rtFsIsoDirShrd_AddOpenChild
  */
-static void rtFsIso9660DirShrd_RemoveOpenChild(PRTFSISO9660DIRSHRD pDir, PRTFSISO9660CORE pChild)
+static void rtFsIsoDirShrd_RemoveOpenChild(PRTFSISODIRSHRD pDir, PRTFSISOCORE pChild)
 {
     AssertReturnVoid(pChild->pParentDir == pDir);
     RTListNodeRemove(&pChild->Entry);
     pChild->pParentDir = NULL;
 
-    rtFsIso9660DirShrd_Release(pDir);
+    rtFsIsoDirShrd_Release(pDir);
 }
 
 
@@ -1813,7 +1823,7 @@ static void rtFsIso9660DirShrd_RemoveOpenChild(PRTFSISO9660DIRSHRD pDir, PRTFSIS
 /**
  * Logs the content of a directory.
  */
-static void rtFsIso9660DirShrd_LogContent(PRTFSISO9660DIRSHRD pThis)
+static void rtFsIsoDirShrd_Log9660Content(PRTFSISODIRSHRD pThis)
 {
     if (LogIs2Enabled())
     {
@@ -1881,7 +1891,7 @@ static void rtFsIso9660DirShrd_LogContent(PRTFSISO9660DIRSHRD pThis)
 
 
 /**
- * Instantiates a new shared directory structure.
+ * Instantiates a new shared directory structure, given 9660 records.
  *
  * @returns IPRT status code.
  * @param   pThis           The FAT volume instance.
@@ -1893,17 +1903,17 @@ static void rtFsIso9660DirShrd_LogContent(PRTFSISO9660DIRSHRD pThis)
  * @param   offDirRec       The byte offset of the directory record.
  * @param   ppShared        Where to return the shared directory structure.
  */
-static int rtFsIso9660DirShrd_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
-                                  uint32_t cDirRecs, uint64_t offDirRec, PRTFSISO9660DIRSHRD *ppShared)
+static int rtFsIsoDirShrd_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
+                                  uint32_t cDirRecs, uint64_t offDirRec, PRTFSISODIRSHRD *ppShared)
 {
     /*
      * Allocate a new structure and initialize it.
      */
     int rc = VERR_NO_MEMORY;
-    PRTFSISO9660DIRSHRD pShared = (PRTFSISO9660DIRSHRD)RTMemAllocZ(sizeof(*pShared));
+    PRTFSISODIRSHRD pShared = (PRTFSISODIRSHRD)RTMemAllocZ(sizeof(*pShared));
     if (pShared)
     {
-        rc = rtFsIso9660Core_InitFromDirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, 0 /*uVersion*/, pThis);
+        rc = rtFsIsoCore_InitFrom9660DirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, 0 /*uVersion*/, pThis);
         if (RT_SUCCESS(rc))
         {
             RTListInit(&pShared->OpenChildren);
@@ -1915,7 +1925,7 @@ static int rtFsIso9660DirShrd_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pPa
                 if (RT_SUCCESS(rc))
                 {
 #ifdef LOG_ENABLED
-                    rtFsIso9660DirShrd_LogContent(pShared);
+                    rtFsIsoDirShrd_Log9660Content(pShared);
 #endif
 
                     /*
@@ -1923,7 +1933,7 @@ static int rtFsIso9660DirShrd_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pPa
                      * our directory entry.
                      */
                     if (pParentDir)
-                        rtFsIso9660DirShrd_AddOpenChild(pParentDir, &pShared->Core);
+                        rtFsIsoDirShrd_AddOpenChild(pParentDir, &pShared->Core);
                     *ppShared = pShared;
                     return VINF_SUCCESS;
                 }
@@ -1945,13 +1955,13 @@ static int rtFsIso9660DirShrd_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pPa
  *                          reference is always CONSUMED.
  * @param   phVfsDir        Where to return the directory handle.
  */
-static int rtFsIso9660Dir_NewWithShared(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pShared, PRTVFSDIR phVfsDir)
+static int rtFsIsoDir_NewWithShared(PRTFSISOVOL pThis, PRTFSISODIRSHRD pShared, PRTVFSDIR phVfsDir)
 {
     /*
      * Create VFS object around the shared structure.
      */
-    PRTFSISO9660DIROBJ pNewDir;
-    int rc = RTVfsNewDir(&g_rtFsIso9660DirOps, sizeof(*pNewDir), 0 /*fFlags*/, pThis->hVfsSelf,
+    PRTFSISODIROBJ pNewDir;
+    int rc = RTVfsNewDir(&g_rtFsIsoDirOps, sizeof(*pNewDir), 0 /*fFlags*/, pThis->hVfsSelf,
                          NIL_RTVFSLOCK /*use volume lock*/, phVfsDir, (void **)&pNewDir);
     if (RT_SUCCESS(rc))
     {
@@ -1964,7 +1974,7 @@ static int rtFsIso9660Dir_NewWithShared(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSH
         return VINF_SUCCESS;
     }
 
-    rtFsIso9660DirShrd_Release(pShared);
+    rtFsIsoDirShrd_Release(pShared);
     *phVfsDir = NIL_RTVFSDIR;
     return rc;
 }
@@ -1972,8 +1982,8 @@ static int rtFsIso9660Dir_NewWithShared(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSH
 
 
 /**
- * Instantiates a new directory VFS instance, creating the shared structure as
- * necessary.
+ * Instantiates a new directory VFS instance for ISO 9660, creating the shared
+ * structure as necessary.
  *
  * @returns IPRT status code.
  * @param   pThis           The FAT volume instance.
@@ -1984,24 +1994,23 @@ static int rtFsIso9660Dir_NewWithShared(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSH
  * @param   offDirRec       The byte offset of the directory record.
  * @param   phVfsDir        Where to return the directory handle.
  */
-static int  rtFsIso9660Dir_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
+static int  rtFsIsoDir_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
                                uint32_t cDirRecs, uint64_t offDirRec, PRTVFSDIR phVfsDir)
 {
     /*
      * Look for existing shared object, create a new one if necessary.
      */
-    int                 rc      = VINF_SUCCESS;
-    PRTFSISO9660DIRSHRD pShared = (PRTFSISO9660DIRSHRD)rtFsIso9660Dir_LookupShared(pParentDir, offDirRec);
+    PRTFSISODIRSHRD pShared = (PRTFSISODIRSHRD)rtFsIsoDir_LookupShared(pParentDir, offDirRec);
     if (!pShared)
     {
-        rc = rtFsIso9660DirShrd_New(pThis, pParentDir, pDirRec, cDirRecs, offDirRec, &pShared);
+        int rc = rtFsIsoDirShrd_New9660(pThis, pParentDir, pDirRec, cDirRecs, offDirRec, &pShared);
         if (RT_FAILURE(rc))
         {
             *phVfsDir = NIL_RTVFSDIR;
             return rc;
         }
     }
-    return rtFsIso9660Dir_NewWithShared(pThis, pShared, phVfsDir);
+    return rtFsIsoDir_NewWithShared(pThis, pShared, phVfsDir);
 }
 
 
@@ -2009,16 +2018,16 @@ static int  rtFsIso9660Dir_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParen
 /**
  * @interface_method_impl{RTVFSOBJOPS::Obj,pfnClose}
  */
-static DECLCALLBACK(int) rtFsIso9660Vol_Close(void *pvThis)
+static DECLCALLBACK(int) rtFsIsoVol_Close(void *pvThis)
 {
-    PRTFSISO9660VOL pThis = (PRTFSISO9660VOL)pvThis;
-    Log(("rtFsIso9660Vol_Close(%p)\n", pThis));
+    PRTFSISOVOL pThis = (PRTFSISOVOL)pvThis;
+    Log(("rtFsIsoVol_Close(%p)\n", pThis));
 
     if (pThis->pRootDir)
     {
         Assert(RTListIsEmpty(&pThis->pRootDir->OpenChildren));
         Assert(pThis->pRootDir->Core.cRefs == 1);
-        rtFsIso9660DirShrd_Release(pThis->pRootDir);
+        rtFsIsoDirShrd_Release(pThis->pRootDir);
         pThis->pRootDir = NULL;
     }
 
@@ -2032,7 +2041,7 @@ static DECLCALLBACK(int) rtFsIso9660Vol_Close(void *pvThis)
 /**
  * @interface_method_impl{RTVFSOBJOPS::Obj,pfnQueryInfo}
  */
-static DECLCALLBACK(int) rtFsIso9660Vol_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+static DECLCALLBACK(int) rtFsIsoVol_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
     RT_NOREF(pvThis, pObjInfo, enmAddAttr);
     return VERR_WRONG_TYPE;
@@ -2042,48 +2051,359 @@ static DECLCALLBACK(int) rtFsIso9660Vol_QueryInfo(void *pvThis, PRTFSOBJINFO pOb
 /**
  * @interface_method_impl{RTVFSOPS,pfnOpenRoo}
  */
-static DECLCALLBACK(int) rtFsIso9660Vol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
+static DECLCALLBACK(int) rtFsIsoVol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
 {
-    PRTFSISO9660VOL pThis = (PRTFSISO9660VOL)pvThis;
+    PRTFSISOVOL pThis = (PRTFSISOVOL)pvThis;
 
-    rtFsIso9660DirShrd_Retain(pThis->pRootDir); /* consumed by the next call */
-    return rtFsIso9660Dir_NewWithShared(pThis, pThis->pRootDir, phVfsDir);
+    rtFsIsoDirShrd_Retain(pThis->pRootDir); /* consumed by the next call */
+    return rtFsIsoDir_NewWithShared(pThis, pThis->pRootDir, phVfsDir);
 }
 
 
 /**
  * @interface_method_impl{RTVFSOPS,pfnIsRangeInUse}
  */
-static DECLCALLBACK(int) rtFsIso9660Vol_IsRangeInUse(void *pvThis, RTFOFF off, size_t cb, bool *pfUsed)
+static DECLCALLBACK(int) rtFsIsoVol_IsRangeInUse(void *pvThis, RTFOFF off, size_t cb, bool *pfUsed)
 {
     RT_NOREF(pvThis, off, cb, pfUsed);
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsIso9660VolOps =
+DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsIsoVolOps =
 {
     { /* Obj */
         RTVFSOBJOPS_VERSION,
         RTVFSOBJTYPE_VFS,
-        "ISO 9660",
-        rtFsIso9660Vol_Close,
-        rtFsIso9660Vol_QueryInfo,
+        "ISO 9660/UDF",
+        rtFsIsoVol_Close,
+        rtFsIsoVol_QueryInfo,
         RTVFSOBJOPS_VERSION
     },
     RTVFSOPS_VERSION,
     0 /* fFeatures */,
-    rtFsIso9660Vol_OpenRoot,
-    rtFsIso9660Vol_IsRangeInUse,
+    rtFsIsoVol_OpenRoot,
+    rtFsIsoVol_IsRangeInUse,
     RTVFSOPS_VERSION
 };
+
+
+static int rtFsIsoVolValidateUdfDescTag(PCUDFTAG pTag, uint16_t idTag, uint32_t offTag, PRTERRINFO pErrInfo)
+{
+    /*
+     * Checksum the tag first.
+     */
+    const uint8_t *pbTag     = (const uint8_t *)pTag;
+    uint8_t const  bChecksum = pbTag[0]
+                             + pbTag[1]
+                             + pbTag[2]
+                             + pbTag[3]
+                             + pbTag[5] /* skipping byte 4 as that's the checksum. */
+                             + pbTag[6]
+                             + pbTag[7]
+                             + pbTag[8]
+                             + pbTag[9]
+                             + pbTag[10]
+                             + pbTag[11]
+                             + pbTag[12]
+                             + pbTag[13]
+                             + pbTag[14]
+                             + pbTag[15];
+    if (pTag->uChecksum == bChecksum)
+    {
+        /*
+         * Do the matching.
+         */
+        if (   pTag->uVersion == 3
+            || pTag->uVersion == 2)
+        {
+            if (   pTag->idTag == idTag
+                || idTag == UINT16_MAX)
+            {
+                if (pTag->offTag == offTag)
+                    return VINF_SUCCESS;
+
+                Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): Sector mismatch: %#RX32 (%.*Rhxs)\n",
+                     idTag, offTag, pTag->offTag, sizeof(*pTag), pTag));
+                return RTErrInfoSetF(pErrInfo, VERR_MISMATCH, "Descriptor tag sector number mismatch: %#x, expected %#x (%.*Rhxs)",
+                                     pTag->offTag, offTag, sizeof(*pTag), pTag);
+            }
+            Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): Tag ID mismatch: %#x (%.*Rhxs)\n",
+                 idTag, offTag, pTag->idTag, sizeof(*pTag), pTag));
+            return RTErrInfoSetF(pErrInfo, VERR_MISMATCH, "Descriptor tag ID mismatch: %#x, expected %#x (%.*Rhxs)",
+                                 pTag->idTag, idTag, sizeof(*pTag), pTag);
+        }
+        Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): Unsupported version: %#x (%.*Rhxs)\n",
+             idTag, offTag, pTag->uVersion, sizeof(*pTag), pTag));
+        return RTErrInfoSetF(pErrInfo, VERR_MISMATCH, "Unsupported descriptor tag version: %#x, expected 2 or 3 (%.*Rhxs)",
+                             pTag->uVersion, sizeof(*pTag), pTag);
+    }
+    Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): checksum error: %#x, calc %#x (%.*Rhxs)\n",
+         idTag, offTag, pTag->uChecksum, bChecksum, sizeof(*pTag), pTag));
+    return RTErrInfoSetF(pErrInfo, VERR_MISMATCH,
+                         "Descriptor tag checksum error: %#x, calculated %#x (%.*Rhxs)",
+                         pTag->uChecksum, bChecksum, sizeof(*pTag), pTag);
+}
+
+typedef struct RTFSISOSEENSEQENCES
+{
+    /** Number of sequences we've seen thus far. */
+    uint32_t cSequences;
+    /** The per sequence data. */
+    struct
+    {
+        uint64_t off;   /**< Byte offset of the sequence. */
+        uint32_t cb;    /**< Size of the sequence. */
+    } aSequences[8];
+} RTFSISOSEENSEQENCES;
+typedef RTFSISOSEENSEQENCES *PRTFSISOSEENSEQENCES;
+
+
+/**
+ * Process a VDS sequence, recursively dealing with volume descriptor pointers.
+ *
+ * @returns
+ * @param   pThis           .
+ * @param   offSeq          .
+ * @param   cbSeq           .
+ * @param   pbBuf           .
+ * @param   cbBuf           .
+ * @param   cNestings       The VDS nesting depth.
+ * @param   pErrInfo        .
+ */
+static int rtFsIsoVolReadAndProcessUdfVdsSeq(PRTFSISOVOL pThis, uint64_t offSeq, uint32_t cbSeq, uint8_t *pbBuf, size_t cbBuf,
+                                             uint32_t cNestings, PRTERRINFO pErrInfo)
+{
+    Assert(cbBuf >= _2K);
+
+    /*
+     * Check nesting depth.
+     */
+    if (cNestings > 5)
+        return RTErrInfoSet(pErrInfo, VERR_TOO_MUCH_DATA, "The volume descriptor sequence (VDS) is nested too deeply.");
+
+
+    /*
+     * Do the processing sector by sector to keep things simple.
+     */
+    uint32_t offInSeq = 0;
+    while (offInSeq < cbSeq)
+    {
+        int rc;
+
+        /*
+         * Read the next sector.  Zero pad if less that a sector.
+         */
+        Assert((offInSeq & (pThis->cbSector - 1)) == 0);
+        rc = RTVfsFileReadAt(pThis->hVfsBacking, offSeq + offInSeq, pbBuf, pThis->cbSector, NULL);
+        if (RT_FAILURE(rc))
+            return RTErrInfoSetF(pErrInfo, rc, "Error reading VDS content at %RX64 (LB %#x): %Rrc",
+                                 offSeq + offInSeq, pThis->cbSector, rc);
+        if (cbSeq - offInSeq < pThis->cbSector)
+            memset(&pbBuf[cbSeq - offInSeq], 0, pThis->cbSector - (cbSeq - offInSeq));
+
+        /*
+         * Check tag.
+         */
+        PCUDFTAG pTag = (PCUDFTAG)pbBuf;
+        rc = rtFsIsoVolValidateUdfDescTag(pTag, UINT16_MAX, (offSeq + offInSeq) / pThis->cbSector, pErrInfo);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        switch (pTag->idTag)
+        {
+            case UDF_TAG_ID_PRIMARY_VOL_DESC:                 /* UDFPRIMARYVOLUMEDESC */
+                break;
+            case UDF_TAG_ID_ANCHOR_VOLUME_DESC_PTR:           /* UDFANCHORVOLUMEDESCPTR */
+                break;
+            case UDF_TAG_ID_VOLUME_DESC_PTR:                  /* UDFVOLUMEDESCPTR */
+                break;
+            case UDF_TAG_ID_IMPLEMENATION_USE_VOLUME_DESC:    /* UDFIMPLEMENTATIONUSEVOLUMEDESC */
+                break;
+            case UDF_TAG_ID_PARTITION_DESC:                   /* UDFPARTITIONDESC */
+                break;
+            case UDF_TAG_ID_LOGICAL_VOLUME_DESC:              /* UDFLOGICALVOLUMEDESC */
+                break;
+            case UDF_TAG_ID_UNALLOCATED_SPACE_DESC:           /* UDFUNALLOCATEDSPACEDESC */
+                break;
+            case UDF_TAG_ID_TERMINATING_DESC:                 /* UDFTERMINATINGDESC */
+                break;
+            case UDF_TAG_ID_LOGICAL_VOLUME_INTEGRITY_DESC:    /* UDFLOGICALVOLINTEGRITYDESC */
+                break;
+
+        }
+
+        /*
+         * Advance.
+         */
+        offInSeq += pThis->cbSector;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+
+/**
+ * Processes a volume descriptor sequence (VDS).
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The instance.
+ * @param   offSeq          The byte offset of the sequence.
+ * @param   cbSeq           The length of the sequence.
+ * @param   pSeenSequences  Structure where to keep track of VDSes we've already
+ *                          processed, to avoid redoing one that we don't
+ *                          understand.
+ * @param   pbBuf           Read buffer.
+ * @param   cbBuf           Size of the read buffer.  This is at least one
+ *                          sector big.
+ * @param   pErrInfo        Where to report extended error information.
+ */
+static int rtFsIsoVolReadAndProcessUdfVds(PRTFSISOVOL pThis, uint64_t offSeq, uint32_t cbSeq,
+                                          PRTFSISOSEENSEQENCES pSeenSequences, uint8_t *pbBuf, size_t cbBuf,
+                                          PRTERRINFO pErrInfo)
+{
+    /*
+     * Skip if already seen.
+     */
+    uint32_t i = pSeenSequences->cSequences;
+    while (i-- > 0)
+        if (   pSeenSequences->aSequences[i].off == offSeq
+            && pSeenSequences->aSequences[i].cb  == cbSeq)
+            return VERR_NOT_FOUND;
+
+    /* Not seen, so add it. */
+    Assert(pSeenSequences->cSequences + 1 <= RT_ELEMENTS(pSeenSequences->aSequences));
+    pSeenSequences->aSequences[pSeenSequences->cSequences].cb = cbSeq;
+    pSeenSequences->aSequences[pSeenSequences->cSequences].off = offSeq;
+    pSeenSequences->cSequences++;
+
+    LogFlow(("ISO/UDF: Processing anchor volume descriptor sequence at %#RX64 LB %#RX32\n", offSeq, cbSeq));
+
+    /*
+     * Reset the state before we start processing the descriptors.
+     */
+
+    NOREF(pThis); NOREF(pbBuf); NOREF(cbBuf); NOREF(pErrInfo);
+    return VINF_SUCCESS;
+}
+
+
+static int rtFsIsoVolReadAndHandleUdfAvdp(PRTFSISOVOL pThis, uint64_t offAvdp, uint8_t *pbBuf, size_t cbBuf,
+                                          PRTFSISOSEENSEQENCES pSeenSequences, PRTERRINFO pErrInfo)
+{
+    /*
+     * Try read the descriptor and validate its tag.
+     */
+    PUDFANCHORVOLUMEDESCPTR pAvdp = (PUDFANCHORVOLUMEDESCPTR)pbBuf;
+    size_t cbAvdpRead = RT_MIN(pThis->cbSector, cbBuf);
+    int rc = RTVfsFileReadAt(pThis->hVfsBacking, offAvdp, pAvdp, cbAvdpRead, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtFsIsoVolValidateUdfDescTag(&pAvdp->Tag, UDF_TAG_ID_ANCHOR_VOLUME_DESC_PTR, offAvdp / pThis->cbSector, pErrInfo);
+        if (RT_SUCCESS(rc))
+        {
+            Log2(("ISO/UDF: AVDP: MainVolumeDescSeq=%#RX32 LB %#RX32, ReserveVolumeDescSeq=%#RX32 LB %#RX32\n",
+                  pAvdp->MainVolumeDescSeq.off, pAvdp->MainVolumeDescSeq.cb,
+                  pAvdp->ReserveVolumeDescSeq.off, pAvdp->ReserveVolumeDescSeq.cb));
+
+            /*
+             * Try the main sequence if it looks sane.
+             */
+            UDFEXTENTAD const ReserveVolumeDescSeq = pAvdp->ReserveVolumeDescSeq;
+            if (   pAvdp->MainVolumeDescSeq.off < pThis->cBackingSectors
+                &&     (uint64_t)pAvdp->MainVolumeDescSeq.off
+                     + (pAvdp->MainVolumeDescSeq.cb + pThis->cbSector - 1) / pThis->cbSector
+                   <= pThis->cBackingSectors)
+            {
+                rc = rtFsIsoVolReadAndProcessUdfVds(pThis, (uint64_t)pAvdp->MainVolumeDescSeq.off * pThis->cbSector,
+                                                    pAvdp->MainVolumeDescSeq.cb, pSeenSequences, pbBuf, cbBuf, pErrInfo);
+                if (RT_SUCCESS(rc))
+                    return rc;
+            }
+            else
+                rc = RTErrInfoSetF(pErrInfo, VERR_NOT_FOUND,
+                                   "MainVolumeDescSeq is out of bounds: sector %#RX32 LB %#RX32 bytes, image is %#RX64 sectors",
+                                   pAvdp->MainVolumeDescSeq.off, pAvdp->MainVolumeDescSeq.cb, pThis->cBackingSectors);
+            if (ReserveVolumeDescSeq.cb > 0)
+            {
+                if (   ReserveVolumeDescSeq.off < pThis->cBackingSectors
+                    &&     (uint64_t)ReserveVolumeDescSeq.off
+                         + (ReserveVolumeDescSeq.cb + pThis->cbSector - 1) / pThis->cbSector
+                       <= pThis->cBackingSectors)
+                {
+                    rc = rtFsIsoVolReadAndProcessUdfVds(pThis, (uint64_t)ReserveVolumeDescSeq.off * pThis->cbSector,
+                                                        ReserveVolumeDescSeq.cb, pSeenSequences, pbBuf, cbBuf, pErrInfo);
+                    if (RT_SUCCESS(rc))
+                        return rc;
+                }
+                else if (RT_SUCCESS(rc))
+                    rc = RTErrInfoSetF(pErrInfo, VERR_NOT_FOUND,
+                                       "ReserveVolumeDescSeq is out of bounds: sector %#RX32 LB %#RX32 bytes, image is %#RX64 sectors",
+                                       ReserveVolumeDescSeq.off, ReserveVolumeDescSeq.cb, pThis->cBackingSectors);
+            }
+        }
+    }
+    else
+        rc = RTErrInfoSetF(pErrInfo, rc,
+                           "Error reading sector at offset %#RX64 (anchor volume descriptor pointer): %Rrc", offAvdp, rc);
+
+    return rc;
+}
+
+
+/**
+ * Goes looking for UDF when we've seens a volume recognition sequence.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The volume instance data.
+ * @param   puUdfLevel          The UDF level indicated by the VRS.
+ * @param   offUdfBootVolDesc   The offset of the BOOT2 descriptor, UINT64_MAX
+ *                              if not encountered.
+ * @param   pbBuf               Buffer for reading into.
+ * @param   cbBuf               The size of the buffer.  At least one sector.
+ * @param   pErrInfo            Where to return extended error info.
+ */
+static int rtFsIsoVolHandleUdfDetection(PRTFSISOVOL pThis, uint8_t *puUdfLevel, uint64_t offUdfBootVolDesc,
+                                        uint8_t *pbBuf, size_t cbBuf, PRTERRINFO pErrInfo)
+{
+    NOREF(offUdfBootVolDesc);
+
+    /*
+     * There are up to three anchor volume descriptor pointers that can give us
+     * two different descriptor sequences each.  Usually, the different AVDP
+     * structures points to the same two sequences.  The idea here is that
+     * sectors may deteriorate and become unreadable, and we're supposed to try
+     * out alternative sectors to get the job done.  If we really took this
+     * seriously, we could try read all sequences in parallel and use the
+     * sectors that are good.  However, we'll try keep things reasonably simple
+     * since we'll most likely be reading from hard disks rather than optical
+     * media.
+     *
+     * We keep track of which sequences we've processed so we don't try to do it
+     * again when alternative AVDP sectors points to the same sequences.
+     */
+    RTFSISOSEENSEQENCES SeenSequences = { 0 };
+    int rc = rtFsIsoVolReadAndHandleUdfAvdp(pThis, 256 * pThis->cbSector, pbBuf, cbBuf,
+                                            &SeenSequences, pErrInfo);
+    if (RT_FAILURE(rc))
+        rc = rtFsIsoVolReadAndHandleUdfAvdp(pThis,  pThis->cbBacking - 256 * pThis->cbSector,
+                                            pbBuf, cbBuf, &SeenSequences, pErrInfo);
+    if (RT_FAILURE(rc))
+        rc = rtFsIsoVolReadAndHandleUdfAvdp(pThis,  pThis->cbBacking - pThis->cbSector,
+                                            pbBuf, cbBuf, &SeenSequences, pErrInfo);
+    if (RT_SUCCESS(rc))
+        return rc;
+    *puUdfLevel = 0;
+    return VINF_SUCCESS;
+}
 
 
 
 #ifdef LOG_ENABLED
 
 /** Logging helper. */
-static size_t rtFsIso9660VolGetStrippedLength(const char *pachField, size_t cchField)
+static size_t rtFsIsoVolGetStrippedLength(const char *pachField, size_t cchField)
 {
     while (cchField > 0 && pachField[cchField - 1] == ' ')
         cchField--;
@@ -2091,7 +2411,7 @@ static size_t rtFsIso9660VolGetStrippedLength(const char *pachField, size_t cchF
 }
 
 /** Logging helper. */
-static char *rtFsIso9660VolGetMaybeUtf16Be(const char *pachField, size_t cchField, char *pszDst, size_t cbDst)
+static char *rtFsIsoVolGetMaybeUtf16Be(const char *pachField, size_t cchField, char *pszDst, size_t cbDst)
 {
     /* Check the format by looking for zero bytes.  ISO-9660 doesn't allow zeros.
        This doesn't have to be a UTF-16BE string.  */
@@ -2201,17 +2521,17 @@ static char *rtFsIso9660VolGetMaybeUtf16Be(const char *pachField, size_t cchFiel
  *
  * @param   pVolDesc            The descriptor.
  */
-static void rtFsIso9660VolLogPrimarySupplementaryVolDesc(PCISO9660SUPVOLDESC pVolDesc)
+static void rtFsIsoVolLogPrimarySupplementaryVolDesc(PCISO9660SUPVOLDESC pVolDesc)
 {
     if (LogIs2Enabled())
     {
         char szTmp[384];
         Log2(("ISO9660:  fVolumeFlags:              %#RX8\n", pVolDesc->fVolumeFlags));
-        Log2(("ISO9660:  achSystemId:               %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achSystemId, sizeof(pVolDesc->achSystemId), szTmp, sizeof(szTmp)) ));
-        Log2(("ISO9660:  achVolumeId:               %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achVolumeId, sizeof(pVolDesc->achVolumeId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achSystemId:               %s\n", rtFsIsoVolGetMaybeUtf16Be(pVolDesc->achSystemId, sizeof(pVolDesc->achSystemId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achVolumeId:               %s\n", rtFsIsoVolGetMaybeUtf16Be(pVolDesc->achVolumeId, sizeof(pVolDesc->achVolumeId), szTmp, sizeof(szTmp)) ));
         Log2(("ISO9660:  Unused73:                  {%#RX32,%#RX32}\n", RT_BE2H_U32(pVolDesc->Unused73.be), RT_LE2H_U32(pVolDesc->Unused73.le)));
         Log2(("ISO9660:  VolumeSpaceSize:           {%#RX32,%#RX32}\n", RT_BE2H_U32(pVolDesc->VolumeSpaceSize.be), RT_LE2H_U32(pVolDesc->VolumeSpaceSize.le)));
-        Log2(("ISO9660:  abEscapeSequences:         '%.*s'\n", rtFsIso9660VolGetStrippedLength((char *)pVolDesc->abEscapeSequences, sizeof(pVolDesc->abEscapeSequences)), pVolDesc->abEscapeSequences));
+        Log2(("ISO9660:  abEscapeSequences:         '%.*s'\n", rtFsIsoVolGetStrippedLength((char *)pVolDesc->abEscapeSequences, sizeof(pVolDesc->abEscapeSequences)), pVolDesc->abEscapeSequences));
         Log2(("ISO9660:  cVolumesInSet:             {%#RX16,%#RX16}\n", RT_BE2H_U16(pVolDesc->cVolumesInSet.be), RT_LE2H_U16(pVolDesc->cVolumesInSet.le)));
         Log2(("ISO9660:  VolumeSeqNo:               {%#RX16,%#RX16}\n", RT_BE2H_U16(pVolDesc->VolumeSeqNo.be), RT_LE2H_U16(pVolDesc->VolumeSeqNo.le)));
         Log2(("ISO9660:  cbLogicalBlock:            {%#RX16,%#RX16}\n", RT_BE2H_U16(pVolDesc->cbLogicalBlock.be), RT_LE2H_U16(pVolDesc->cbLogicalBlock.le)));
@@ -2220,13 +2540,13 @@ static void rtFsIso9660VolLogPrimarySupplementaryVolDesc(PCISO9660SUPVOLDESC pVo
         Log2(("ISO9660:  offOptionalTypeLPathTable: %#RX32\n", RT_LE2H_U32(pVolDesc->offOptionalTypeLPathTable)));
         Log2(("ISO9660:  offTypeMPathTable:         %#RX32\n", RT_BE2H_U32(pVolDesc->offTypeMPathTable)));
         Log2(("ISO9660:  offOptionalTypeMPathTable: %#RX32\n", RT_BE2H_U32(pVolDesc->offOptionalTypeMPathTable)));
-        Log2(("ISO9660:  achVolumeSetId:            %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achVolumeSetId, sizeof(pVolDesc->achVolumeSetId), szTmp, sizeof(szTmp)) ));
-        Log2(("ISO9660:  achPublisherId:            %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achPublisherId, sizeof(pVolDesc->achPublisherId), szTmp, sizeof(szTmp)) ));
-        Log2(("ISO9660:  achDataPreparerId:         %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achDataPreparerId, sizeof(pVolDesc->achDataPreparerId), szTmp, sizeof(szTmp)) ));
-        Log2(("ISO9660:  achApplicationId:          %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achApplicationId, sizeof(pVolDesc->achApplicationId), szTmp, sizeof(szTmp)) ));
-        Log2(("ISO9660:  achCopyrightFileId:        %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achCopyrightFileId, sizeof(pVolDesc->achCopyrightFileId), szTmp, sizeof(szTmp)) ));
-        Log2(("ISO9660:  achAbstractFileId:         %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achAbstractFileId, sizeof(pVolDesc->achAbstractFileId), szTmp, sizeof(szTmp)) ));
-        Log2(("ISO9660:  achBibliographicFileId:    %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achBibliographicFileId, sizeof(pVolDesc->achBibliographicFileId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achVolumeSetId:            %s\n", rtFsIsoVolGetMaybeUtf16Be(pVolDesc->achVolumeSetId, sizeof(pVolDesc->achVolumeSetId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achPublisherId:            %s\n", rtFsIsoVolGetMaybeUtf16Be(pVolDesc->achPublisherId, sizeof(pVolDesc->achPublisherId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achDataPreparerId:         %s\n", rtFsIsoVolGetMaybeUtf16Be(pVolDesc->achDataPreparerId, sizeof(pVolDesc->achDataPreparerId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achApplicationId:          %s\n", rtFsIsoVolGetMaybeUtf16Be(pVolDesc->achApplicationId, sizeof(pVolDesc->achApplicationId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achCopyrightFileId:        %s\n", rtFsIsoVolGetMaybeUtf16Be(pVolDesc->achCopyrightFileId, sizeof(pVolDesc->achCopyrightFileId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achAbstractFileId:         %s\n", rtFsIsoVolGetMaybeUtf16Be(pVolDesc->achAbstractFileId, sizeof(pVolDesc->achAbstractFileId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achBibliographicFileId:    %s\n", rtFsIsoVolGetMaybeUtf16Be(pVolDesc->achBibliographicFileId, sizeof(pVolDesc->achBibliographicFileId), szTmp, sizeof(szTmp)) ));
         Log2(("ISO9660:  BirthTime:                 %.4s-%.2s-%.2s %.2s:%.2s:%.2s.%.2s%+03d\n",
               pVolDesc->BirthTime.achYear,
               pVolDesc->BirthTime.achMonth,
@@ -2305,8 +2625,8 @@ static void rtFsIso9660VolLogPrimarySupplementaryVolDesc(PCISO9660SUPVOLDESC pVo
  * @param   pDstRootDir     Where to store a copy of the root dir record.
  * @param   pErrInfo        Where to return additional error info.  Can be NULL.
  */
-static int rtFsIso9660VolHandleRootDir(PRTFSISO9660VOL pThis, PCISO9660DIRREC pRootDir,
-                                       PISO9660DIRREC pDstRootDir, PRTERRINFO pErrInfo)
+static int rtFsIsoVolHandleRootDir(PRTFSISOVOL pThis, PCISO9660DIRREC pRootDir,
+                                   PISO9660DIRREC pDstRootDir, PRTERRINFO pErrInfo)
 {
     if (pRootDir->cbDirRec < RT_OFFSETOF(ISO9660DIRREC, achFileId))
         return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Root dir record size is too small: %#x (min %#x)",
@@ -2356,8 +2676,8 @@ static int rtFsIso9660VolHandleRootDir(PRTFSISO9660VOL pThis, PCISO9660DIRREC pR
  * @param   poffRootDirRec  Where to return the disk offset of the root dir.
  * @param   pErrInfo        Where to return additional error info.  Can be NULL.
  */
-static int rtFsIso9660VolHandlePrimaryVolDesc(PRTFSISO9660VOL pThis, PCISO9660PRIMARYVOLDESC pVolDesc, uint32_t offVolDesc,
-                                              PISO9660DIRREC pRootDir, uint64_t *poffRootDirRec, PRTERRINFO pErrInfo)
+static int rtFsIsoVolHandlePrimaryVolDesc(PRTFSISOVOL pThis, PCISO9660PRIMARYVOLDESC pVolDesc, uint32_t offVolDesc,
+                                          PISO9660DIRREC pRootDir, uint64_t *poffRootDirRec, PRTERRINFO pErrInfo)
 {
     if (pVolDesc->bFileStructureVersion != ISO9660_FILE_STRUCTURE_VERSION)
         return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
@@ -2411,7 +2731,7 @@ static int rtFsIso9660VolHandlePrimaryVolDesc(PRTFSISO9660VOL pThis, PCISO9660PR
      * ... and the root directory record.
      */
     *poffRootDirRec = offVolDesc + RT_OFFSETOF(ISO9660PRIMARYVOLDESC, RootDir.DirRec);
-    return rtFsIso9660VolHandleRootDir(pThis, &pVolDesc->RootDir.DirRec, pRootDir, pErrInfo);
+    return rtFsIsoVolHandleRootDir(pThis, &pVolDesc->RootDir.DirRec, pRootDir, pErrInfo);
 }
 
 
@@ -2429,9 +2749,9 @@ static int rtFsIso9660VolHandlePrimaryVolDesc(PRTFSISO9660VOL pThis, PCISO9660PR
  * @param   poffRootDirRec  Where to return the disk offset of the root dir.
  * @param   pErrInfo        Where to return additional error info.  Can be NULL.
  */
-static int rtFsIso9660VolHandleSupplementaryVolDesc(PRTFSISO9660VOL pThis, PCISO9660SUPVOLDESC pVolDesc, uint32_t offVolDesc,
-                                                    uint8_t *pbUcs2Level, PISO9660DIRREC pRootDir, uint64_t *poffRootDirRec,
-                                                    PRTERRINFO pErrInfo)
+static int rtFsIsoVolHandleSupplementaryVolDesc(PRTFSISOVOL pThis, PCISO9660SUPVOLDESC pVolDesc, uint32_t offVolDesc,
+                                                uint8_t *pbUcs2Level, PISO9660DIRREC pRootDir, uint64_t *poffRootDirRec,
+                                                PRTERRINFO pErrInfo)
 {
     if (pVolDesc->bFileStructureVersion != ISO9660_FILE_STRUCTURE_VERSION)
         return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
@@ -2484,7 +2804,7 @@ static int rtFsIso9660VolHandleSupplementaryVolDesc(PRTFSISO9660VOL pThis, PCISO
     /*
      * Switch to the joliet root dir as it has UTF-16 stuff in it.
      */
-    int rc = rtFsIso9660VolHandleRootDir(pThis, &pVolDesc->RootDir.DirRec, pRootDir, pErrInfo);
+    int rc = rtFsIsoVolHandleRootDir(pThis, &pVolDesc->RootDir.DirRec, pRootDir, pErrInfo);
     if (RT_SUCCESS(rc))
     {
         *poffRootDirRec = offVolDesc + RT_OFFSETOF(ISO9660SUPVOLDESC, RootDir.DirRec);
@@ -2501,23 +2821,24 @@ static int rtFsIso9660VolHandleSupplementaryVolDesc(PRTFSISO9660VOL pThis, PCISO
  * Worker for RTFsIso9660VolOpen.
  *
  * @returns IPRT status code.
- * @param   pThis           The FAT VFS instance to initialize.
- * @param   hVfsSelf        The FAT VFS handle (no reference consumed).
+ * @param   pThis           The ISO VFS instance to initialize.
+ * @param   hVfsSelf        The ISO VFS handle (no reference consumed).
  * @param   hVfsBacking     The file backing the alleged FAT file system.
- *                          Reference is consumed (via rtFsIso9660Vol_Close).
- * @param   fFlags          Flags, MBZ.
+ *                          Reference is consumed (via rtFsIsoVol_Close).
+ * @param   fFlags          Flags, RTFSISO9660_F_XXX.
  * @param   pErrInfo        Where to return additional error info.  Can be NULL.
  */
-static int rtFsIso9660VolTryInit(PRTFSISO9660VOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBacking, uint32_t fFlags, PRTERRINFO pErrInfo)
+static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBacking, uint32_t fFlags, PRTERRINFO pErrInfo)
 {
     uint32_t const cbSector = 2048;
 
     /*
-     * First initialize the state so that rtFsIso9660Vol_Destroy won't trip up.
+     * First initialize the state so that rtFsIsoVol_Destroy won't trip up.
      */
     pThis->hVfsSelf                     = hVfsSelf;
-    pThis->hVfsBacking                  = hVfsBacking; /* Caller referenced it for us, we consume it; rtFsIso9660Vol_Destroy releases it. */
+    pThis->hVfsBacking                  = hVfsBacking; /* Caller referenced it for us, we consume it; rtFsIsoVol_Destroy releases it. */
     pThis->cbBacking                    = 0;
+    pThis->cBackingSectors              = 0;
     pThis->fFlags                       = fFlags;
     pThis->cbSector                     = cbSector;
     pThis->cbBlock                      = 0;
@@ -2532,7 +2853,9 @@ static int rtFsIso9660VolTryInit(PRTFSISO9660VOL pThis, RTVFS hVfsSelf, RTVFSFIL
      * Get stuff that may fail.
      */
     int rc = RTVfsFileGetSize(hVfsBacking, &pThis->cbBacking);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+        pThis->cBackingSectors = pThis->cbBacking / pThis->cbSector;
+    else
         return rc;
 
     /*
@@ -2614,11 +2937,11 @@ static int rtFsIso9660VolTryInit(PRTFSISO9660VOL pThis, RTVFS hVfsSelf, RTVFSFIL
                     return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
                                          "Unsupported primary volume descriptor version: %#x", Buf.VolDescHdr.bDescVersion);
 #ifdef LOG_ENABLED
-                rtFsIso9660VolLogPrimarySupplementaryVolDesc(&Buf.SupVolDesc);
+                rtFsIsoVolLogPrimarySupplementaryVolDesc(&Buf.SupVolDesc);
 #endif
                 if (cPrimaryVolDescs > 1)
                     return RTErrInfoSet(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "More than one primary volume descriptor");
-                rc = rtFsIso9660VolHandlePrimaryVolDesc(pThis, &Buf.PrimaryVolDesc, offVolDesc, &RootDir, &offRootDirRec, pErrInfo);
+                rc = rtFsIsoVolHandlePrimaryVolDesc(pThis, &Buf.PrimaryVolDesc, offVolDesc, &RootDir, &offRootDirRec, pErrInfo);
             }
             else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_SUPPLEMENTARY)
             {
@@ -2627,10 +2950,10 @@ static int rtFsIso9660VolTryInit(PRTFSISO9660VOL pThis, RTVFS hVfsSelf, RTVFSFIL
                     return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
                                          "Unsupported supplemental volume descriptor version: %#x", Buf.VolDescHdr.bDescVersion);
 #ifdef LOG_ENABLED
-                rtFsIso9660VolLogPrimarySupplementaryVolDesc(&Buf.SupVolDesc);
+                rtFsIsoVolLogPrimarySupplementaryVolDesc(&Buf.SupVolDesc);
 #endif
-                rc = rtFsIso9660VolHandleSupplementaryVolDesc(pThis, &Buf.SupVolDesc, offVolDesc, &bJolietUcs2Level, &JolietRootDir,
-                                                              &offJolietRootDirRec, pErrInfo);
+                rc = rtFsIsoVolHandleSupplementaryVolDesc(pThis, &Buf.SupVolDesc, offVolDesc, &bJolietUcs2Level, &JolietRootDir,
+                                                          &offJolietRootDirRec, pErrInfo);
             }
             else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_BOOT_RECORD)
             {
@@ -2705,9 +3028,12 @@ static int rtFsIso9660VolTryInit(PRTFSISO9660VOL pThis, RTVFS hVfsSelf, RTVFSFIL
     /*
      * If we found a UDF VRS and are interested in UDF, we have more work to do here.
      */
-    if (uUdfLevel > 0)
+    if (uUdfLevel > 0 && !(fFlags & RTFSISO9660_F_NO_UDF) && /* Just disable this code for now: */ (fFlags & RT_BIT(24)))
     {
-        Log(("rtFsIso9660VolTryInit: uUdfLevel=%d - TODO\n", uUdfLevel));
+        Log(("rtFsIsoVolTryInit: uUdfLevel=%d\n", uUdfLevel));
+        rc = rtFsIsoVolHandleUdfDetection(pThis, &uUdfLevel, offUdfBootVolDesc, Buf.ab, sizeof(Buf), pErrInfo);
+        if (RT_FAILURE(rc))
+            return rc;
     }
 
     /*
@@ -2723,9 +3049,9 @@ static int rtFsIso9660VolTryInit(PRTFSISO9660VOL pThis, RTVFS hVfsSelf, RTVFSFIL
     if (bJolietUcs2Level != 0)
     {
         pThis->fIsUtf16 = true;
-        return rtFsIso9660DirShrd_New(pThis, NULL, &JolietRootDir, 1, offJolietRootDirRec, &pThis->pRootDir);
+        return rtFsIsoDirShrd_New9660(pThis, NULL, &JolietRootDir, 1, offJolietRootDirRec, &pThis->pRootDir);
     }
-    return rtFsIso9660DirShrd_New(pThis, NULL, &RootDir, 1, offRootDirRec, &pThis->pRootDir);
+    return rtFsIsoDirShrd_New9660(pThis, NULL, &RootDir, 1, offRootDirRec, &pThis->pRootDir);
 }
 
 
@@ -2755,10 +3081,10 @@ RTDECL(int) RTFsIso9660VolOpen(RTVFSFILE hVfsFileIn, uint32_t fFlags, PRTVFS phV
      */
     RTVFS hVfs   = NIL_RTVFS;
     void *pvThis = NULL;
-    int rc = RTVfsNew(&g_rtFsIso9660VolOps, sizeof(RTFSISO9660VOL), NIL_RTVFS, RTVFSLOCK_CREATE_RW, &hVfs, &pvThis);
+    int rc = RTVfsNew(&g_rtFsIsoVolOps, sizeof(RTFSISOVOL), NIL_RTVFS, RTVFSLOCK_CREATE_RW, &hVfs, &pvThis);
     if (RT_SUCCESS(rc))
     {
-        rc = rtFsIso9660VolTryInit((PRTFSISO9660VOL)pvThis, hVfs, hVfsFileIn, fFlags, pErrInfo);
+        rc = rtFsIsoVolTryInit((PRTFSISOVOL)pvThis, hVfs, hVfsFileIn, fFlags, pErrInfo);
         if (RT_SUCCESS(rc))
             *phVfs = hVfs;
         else
