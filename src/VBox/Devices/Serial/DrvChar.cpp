@@ -153,9 +153,9 @@ static DECLCALLBACK(int) drvCharSetParameters(PPDMICHARCONNECTOR pInterface, uns
 /**
  * Send thread loop - pushes data down thru the driver chain.
  *
- * @returns 0 on success.
- * @param   hThreadSelf Thread handle to this thread.
- * @param   pvUser      User argument.
+ * @returns VBox status code.
+ * @param   pDrvIns     The char driver instance.
+ * @param   pThread     The worker thread.
  */
 static DECLCALLBACK(int) drvCharIoLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
