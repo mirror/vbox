@@ -1243,6 +1243,28 @@ typedef struct PDMISTREAM *PPDMISTREAM;
 typedef struct PDMISTREAM
 {
     /**
+     * Polls for the specified events.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_INTERRUPTED if the poll was interrupted.
+     * @retval  VERR_TIMEOUT     if the maximum waiting time was reached.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   fEvts           The events to poll for, see RTPOLL_EVT_XXX.
+     * @param   *pfEvts         Where to return details about the events that occurred.
+     * @param   cMillies        Number of milliseconds to wait.  Use
+     *                          RT_INDEFINITE_WAIT to wait for ever.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPoll,(PPDMISTREAM pInterface, uint32_t fEvts, uint32_t *pfEvts, RTMSINTERVAL cMillies));
+
+    /**
+     * Interrupts the current poll call.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPollInterrupt,(PPDMISTREAM pInterface));
+
+    /**
      * Read bits.
      *
      * @returns VBox status code.
@@ -1250,6 +1272,8 @@ typedef struct PDMISTREAM
      * @param   pvBuf           Where to store the read bits.
      * @param   pcbRead         Number of bytes to read/bytes actually read.
      * @thread  Any thread.
+     *
+     * @note: This is non blocking, use the poll callback to block when there is nothing to read.
      */
     DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMISTREAM pInterface, void *pvBuf, size_t *pcbRead));
 
@@ -1261,11 +1285,13 @@ typedef struct PDMISTREAM
      * @param   pvBuf           Where to store the write bits.
      * @param   pcbWrite        Number of bytes to write/bytes actually written.
      * @thread  Any thread.
+     *
+     * @note: This is non blocking, use the poll callback to block until there is room to write.
      */
     DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMISTREAM pInterface, const void *pvBuf, size_t *pcbWrite));
 } PDMISTREAM;
 /** PDMISTREAM interface ID. */
-#define PDMISTREAM_IID                          "d1a5bf5e-3d2c-449a-bde9-addd7920b71f"
+#define PDMISTREAM_IID                          "f9bd1ba6-c134-44cc-8259-febe14393952"
 
 
 /** Mode of the parallel port */

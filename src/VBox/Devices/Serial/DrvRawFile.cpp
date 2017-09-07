@@ -24,6 +24,7 @@
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/mem.h>
+#include <iprt/poll.h>
 #include <iprt/semaphore.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
@@ -35,8 +36,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** Converts a pointer to DRVRAWFILE::IMedia to a PDRVRAWFILE. */
-#define PDMISTREAM_2_DRVRAWFILE(pInterface) ( (PDRVRAWFILE)((uintptr_t)pInterface - RT_OFFSETOF(DRVRAWFILE, IStream)) )
 
 
 /*********************************************************************************************************************************
@@ -55,19 +54,47 @@ typedef struct DRVRAWFILE
     PPDMDRVINS          pDrvIns;
     /** Pointer to the file name. (Freed by MM) */
     char               *pszLocation;
-    /** Flag whether VirtualBox represents the server or client side. */
+    /** File handle to write the data to. */
     RTFILE              hOutputFile;
+    /** Event semaphore for the poll interface. */
+    RTSEMEVENT          hSemEvtPoll;
 } DRVRAWFILE, *PDRVRAWFILE;
 
 
 
 /* -=-=-=-=- PDMISTREAM -=-=-=-=- */
 
+/** @interface_method_impl{PDMISTREAM,pfnPoll} */
+static DECLCALLBACK(int) drvRawFilePoll(PPDMISTREAM pInterface, uint32_t fEvts, uint32_t *pfEvts, RTMSINTERVAL cMillies)
+{
+    PDRVRAWFILE pThis = RT_FROM_MEMBER(pInterface, DRVRAWFILE, IStream);
+
+    Assert(!(fEvts & RTPOLL_EVT_READ)); /* Reading is not supported here. */
+
+    /* Writing is always possible. */
+    if (fEvts & RTPOLL_EVT_WRITE)
+    {
+        *pfEvts = RTPOLL_EVT_WRITE;
+        return VINF_SUCCESS;
+    }
+
+    return RTSemEventWait(pThis->hSemEvtPoll, cMillies);
+}
+
+
+/** @interface_method_impl{PDMISTREAM,pfnPollInterrupt} */
+static DECLCALLBACK(int) drvRawFilePollInterrupt(PPDMISTREAM pInterface)
+{
+    PDRVRAWFILE pThis = RT_FROM_MEMBER(pInterface, DRVRAWFILE, IStream);
+    return RTSemEventSignal(pThis->hSemEvtPoll);
+}
+
+
 /** @interface_method_impl{PDMISTREAM,pfnWrite} */
 static DECLCALLBACK(int) drvRawFileWrite(PPDMISTREAM pInterface, const void *pvBuf, size_t *pcbWrite)
 {
     int rc = VINF_SUCCESS;
-    PDRVRAWFILE pThis = PDMISTREAM_2_DRVRAWFILE(pInterface);
+    PDRVRAWFILE pThis = RT_FROM_MEMBER(pInterface, DRVRAWFILE, IStream);
     LogFlow(("%s: pvBuf=%p *pcbWrite=%#x (%s)\n", __FUNCTION__, pvBuf, *pcbWrite, pThis->pszLocation));
 
     Assert(pvBuf);
@@ -144,6 +171,12 @@ static DECLCALLBACK(void) drvRawFileDestruct(PPDMDRVINS pDrvIns)
         RTFileClose(pThis->hOutputFile);
         pThis->hOutputFile = NIL_RTFILE;
     }
+
+    if (pThis->hSemEvtPoll != NIL_RTSEMEVENT)
+    {
+        RTSemEventDestroy(pThis->hSemEvtPoll);
+        pThis->hSemEvtPoll = NIL_RTSEMEVENT;
+    }
 }
 
 
@@ -167,6 +200,9 @@ static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvRawFileQueryInterface;
     /* IStream */
+    pThis->IStream.pfnPoll              = drvRawFilePoll;
+    pThis->IStream.pfnPollInterrupt     = drvRawFilePollInterrupt;
+    pThis->IStream.pfnRead              = NULL;
     pThis->IStream.pfnWrite             = drvRawFileWrite;
 
     /*
@@ -178,6 +214,9 @@ static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     int rc = CFGMR3QueryStringAlloc(pCfg, "Location", &pThis->pszLocation);
     if (RT_FAILURE(rc))
         AssertMsgFailedReturn(("Configuration error: query \"Location\" resulted in %Rrc.\n", rc), rc);
+
+     rc = RTSemEventCreate(&pThis->hSemEvtPoll);
+     AssertRCReturn(rc, rc);
 
     /*
      * Open the raw file.
