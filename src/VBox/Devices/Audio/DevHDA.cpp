@@ -458,16 +458,40 @@ static uint32_t const g_afMasks[5] =
     UINT32_C(0), UINT32_C(0x000000ff), UINT32_C(0x0000ffff), UINT32_C(0x00ffffff), UINT32_C(0xffffffff)
 };
 
-#ifdef IN_RING3
 /**
- * Acquires the HDA lock or returns.
+ * Acquires the HDA lock.
  */
-# define DEVHDA_LOCK(a_pThis) \
+#define DEVHDA_LOCK(a_pThis) \
     do { \
         int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
         AssertRC(rcLock); \
     } while (0)
-#endif
+
+/**
+ * Acquires the HDA lock or returns.
+ */
+# define DEVHDA_LOCK_RETURN(a_pThis, a_rcBusy) \
+    do { \
+        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, a_rcBusy); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            return rcLock; \
+        } \
+    } while (0)
+
+/**
+ * Acquires the HDA lock or returns.
+ */
+# define DEVHDA_LOCK_RETURN_VOID(a_pThis) \
+    do { \
+        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            return; \
+        } \
+    } while (0)
 
 /**
  * Releases the HDA lock.
@@ -478,7 +502,27 @@ static uint32_t const g_afMasks[5] =
 /**
  * Acquires the TM lock and HDA lock, returns on failure.
  */
-#define DEVHDA_LOCK_BOTH_RETURN(a_pThis, a_rcBusy)  \
+#define DEVHDA_LOCK_BOTH_RETURN_VOID(a_pThis) \
+    do { \
+        int rcLock = TMTimerLock((a_pThis)->pTimer, VERR_IGNORED); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            return; \
+        } \
+        rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            TMTimerUnlock((a_pThis)->pTimer); \
+            return; \
+        } \
+    } while (0)
+
+/**
+ * Acquires the TM lock and HDA lock, returns on failure.
+ */
+#define DEVHDA_LOCK_BOTH_RETURN(a_pThis, a_rcBusy) \
     do { \
         int rcLock = TMTimerLock((a_pThis)->pTimer, (a_rcBusy)); \
         if (rcLock != VINF_SUCCESS) \
@@ -486,11 +530,11 @@ static uint32_t const g_afMasks[5] =
         rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, (a_rcBusy)); \
         if (rcLock != VINF_SUCCESS) \
         { \
+            AssertRC(rcLock); \
             TMTimerUnlock((a_pThis)->pTimer); \
             return rcLock; \
         } \
     } while (0)
-
 
 /**
  * Releases the HDA lock and TM lock.
@@ -874,16 +918,23 @@ static int hdaRegReadU32(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     uint32_t iRegMem = g_aHdaRegMap[iReg].mem_idx;
 
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_READ);
+
     *pu32Value = pThis->au32Regs[iRegMem] & g_aHdaRegMap[iReg].readable;
+
+    DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS;
 }
 
 static int hdaRegWriteU32(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
     uint32_t iRegMem = g_aHdaRegMap[iReg].mem_idx;
 
     pThis->au32Regs[iRegMem]  = (u32Value & g_aHdaRegMap[iReg].writable)
                               | (pThis->au32Regs[iRegMem] & ~g_aHdaRegMap[iReg].writable);
+    DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS;
 }
 
@@ -893,13 +944,19 @@ static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     if (u32Value & HDA_GCTL_CRST)
     {
+        DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
         /* Set the CRST bit to indicate that we're leaving reset mode. */
         HDA_REG(pThis, GCTL) |= HDA_GCTL_CRST;
         LogFunc(("Guest leaving HDA reset\n"));
+
+        DEVHDA_UNLOCK(pThis);
     }
     else
     {
 #ifdef IN_RING3
+        DEVHDA_LOCK(pThis);
+
         /* Enter reset state. */
         LogFunc(("Guest entering HDA reset with DMA(RIRB:%s, CORB:%s)\n",
                  HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA ? "on" : "off",
@@ -909,6 +966,8 @@ static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         HDA_REG(pThis, GCTL) &= ~HDA_GCTL_CRST;
 
         hdaGCTLReset(pThis);
+
+        DEVHDA_UNLOCK(pThis);
 #else
         return VINF_IOM_R3_MMIO_WRITE;
 #endif
@@ -916,25 +975,36 @@ static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     if (u32Value & HDA_GCTL_FCNTRL)
     {
+        DEVHDA_LOCK(pThis);
+
         /* Flush: GSTS:1 set, see 6.2.6. */
         HDA_REG(pThis, GSTS) |= HDA_GSTS_FSTS;  /* Set the flush status. */
         /* DPLBASE and DPUBASE should be initialized with initial value (see 6.2.6). */
+
+        DEVHDA_UNLOCK(pThis);
     }
+
     return VINF_SUCCESS;
 }
 
 static int hdaRegWriteSTATESTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
     uint32_t v  = HDA_REG_IND(pThis, iReg);
     uint32_t nv = u32Value & HDA_STATESTS_SCSF_MASK;
 
     HDA_REG(pThis, STATESTS) &= ~(v & nv); /* Write of 1 clears corresponding bit. */
+
+    DEVHDA_UNLOCK(pThis);
 
     return VINF_SUCCESS;
 }
 
 static int hdaRegReadLPIB(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_READ);
+
     const uint8_t  uSD     = HDA_SD_NUM_FROM_REG(pThis, LPIB, iReg);
     uint32_t       u32LPIB = HDA_STREAM_REG(pThis, LPIB, uSD);
 #ifdef LOG_ENABLED
@@ -943,6 +1013,8 @@ static int hdaRegReadLPIB(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 #endif
 
     *pu32Value = u32LPIB;
+
+    DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS;
 }
 
@@ -989,10 +1061,13 @@ static int hdaRegReadWALCLK(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 #ifdef IN_RING3
     RT_NOREF(iReg);
 
+    DEVHDA_LOCK(pThis);
+
     *pu32Value = RT_LO_U32(ASMAtomicReadU64(&pThis->u64WalClk));
 
     Log3Func(("%RU32 (max @ %RU64)\n",*pu32Value, hdaWalClkGetMax(pThis)));
 
+    DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS;
 #else
     RT_NOREF(pThis, iReg, pu32Value);
@@ -1004,11 +1079,14 @@ static int hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF_PV(iReg);
 
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
     if (u32Value & HDA_CORBRP_RST)
         HDA_REG(pThis, CORBRP) = HDA_CORBRP_RST;    /* Clears the pointer. */
     else
         HDA_REG(pThis, CORBRP) &= ~HDA_CORBRP_RST;  /* Only CORBRP_RST bit is writable. */
 
+    DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS;
 }
 
@@ -1017,11 +1095,17 @@ static int hdaRegWriteCORBCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 #ifdef IN_RING3
     int rc = hdaRegWriteU8(pThis, iReg, u32Value);
     AssertRC(rc);
+
+    DEVHDA_LOCK(pThis);
+
     if (   (uint8_t)HDA_REG(pThis, CORBWP) != (uint8_t)HDA_REG(pThis, CORBRP)
         && (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA))
     {
-        return hdaCORBCmdProcess(pThis);
+        rc = hdaCORBCmdProcess(pThis);
     }
+
+    DEVHDA_UNLOCK(pThis);
+
     return rc;
 #else
     RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
@@ -1033,23 +1117,40 @@ static int hdaRegWriteCORBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF_PV(iReg);
 
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
     uint32_t v = HDA_REG(pThis, CORBSTS);
     HDA_REG(pThis, CORBSTS) &= ~(v & u32Value);
+
+    DEVHDA_UNLOCK(pThis);
+
     return VINF_SUCCESS;
 }
 
 static int hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
-    int rc;
-    rc = hdaRegWriteU16(pThis, iReg, u32Value);
-    if (RT_FAILURE(rc))
-        AssertRCReturn(rc, rc);
+    int rc = hdaRegWriteU16(pThis, iReg, u32Value);
+    AssertRCReturn(rc, rc);
+
+    DEVHDA_LOCK(pThis);
+
     if ((uint8_t)HDA_REG(pThis, CORBWP) == (uint8_t)HDA_REG(pThis, CORBRP))
+    {
+        DEVHDA_UNLOCK(pThis);
         return VINF_SUCCESS;
+    }
+
     if (!(HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA))
+    {
+        DEVHDA_UNLOCK(pThis);
         return VINF_SUCCESS;
+    }
+
     rc = hdaCORBCmdProcess(pThis);
+
+    DEVHDA_UNLOCK(pThis);
+
     return rc;
 #else  /* !IN_RING3 */
     RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
@@ -1060,20 +1161,26 @@ static int hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
+    DEVHDA_LOCK(pThis);
+
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, CBL, iReg));
     if (!pStream)
     {
         LogFunc(("[SD%RU8] Warning: Changing SDCBL on non-attached stream (0x%x)\n",
                  HDA_SD_NUM_FROM_REG(pThis, CTL, iReg), u32Value));
+
+        DEVHDA_UNLOCK(pThis);
         return hdaRegWriteU32(pThis, iReg, u32Value);
     }
 
     pStream->u32CBL = u32Value;
 
+    LogFlowFunc(("[SD%RU8] CBL=%RU32\n", pStream->u8SD, u32Value));
+
+    DEVHDA_UNLOCK(pThis);
+
     int rc2 = hdaRegWriteU32(pThis, iReg, u32Value);
     AssertRC(rc2);
-
-    LogFlowFunc(("[SD%RU8] CBL=%RU32\n", pStream->u8SD, u32Value));
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
@@ -1085,6 +1192,8 @@ static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
+    DEVHDA_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
     /*
      * Some guests write too much (that is, 32-bit with the top 8 bit being junk)
      * instead of 24-bit required for SDCTL. So just mask this here to be safe.
@@ -1114,6 +1223,8 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     if (uTag > HDA_MAX_TAGS)
     {
         LogFunc(("[SD%RU8] Warning: Invalid stream tag %RU8 specified!\n", uSD, uTag));
+
+        DEVHDA_UNLOCK_BOTH(pThis);
         return hdaRegWriteU24(pThis, iReg, u32Value);
     }
 
@@ -1220,6 +1331,8 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         }
     }
 
+    DEVHDA_UNLOCK_BOTH(pThis);
+
     int rc2 = hdaRegWriteU24(pThis, iReg, u32Value);
     AssertRC(rc2);
 
@@ -1233,11 +1346,15 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
+    DEVHDA_LOCK(pThis);
+
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, STS, iReg));
     if (!pStream)
     {
         AssertMsgFailed(("[SD%RU8] Warning: Writing SDSTS on non-attached stream (0x%x)\n",
                          HDA_SD_NUM_FROM_REG(pThis, STS, iReg), u32Value));
+
+        DEVHDA_UNLOCK(pThis);
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
 
@@ -1280,6 +1397,7 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         }
     }
 
+    DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS;
 #else /* IN_RING3 */
     RT_NOREF(pThis, iReg, u32Value);
@@ -1290,8 +1408,13 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
+    DEVHDA_LOCK(pThis);
+
     if (HDA_REG_IND(pThis, iReg) == u32Value) /* Value already set? */
+    {
+        DEVHDA_UNLOCK(pThis);
         return VINF_SUCCESS;
+    }
 
     uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, LVI, iReg);
 
@@ -1299,6 +1422,8 @@ static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     if (!pStream)
     {
         AssertMsgFailed(("[SD%RU8] Warning: Changing SDLVI on non-attached stream (0x%x)\n", uSD, u32Value));
+
+        DEVHDA_UNLOCK(pThis);
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
 
@@ -1316,6 +1441,8 @@ static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     }
 # endif
 
+    DEVHDA_UNLOCK(pThis);
+
     int rc2 = hdaRegWriteU16(pThis, iReg, u32Value);
     AssertRC(rc2);
 
@@ -1329,11 +1456,15 @@ static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
+    DEVHDA_LOCK(pThis);
+
     uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, FIFOW, iReg);
 
     if (hdaGetDirFromSD(uSD) != PDMAUDIODIR_IN) /* FIFOW for input streams only. */
     {
         LogRel(("HDA: Warning: Guest tried to write read-only FIFOW to output stream #%RU8, ignoring\n", uSD));
+
+        DEVHDA_UNLOCK(pThis);
         return VINF_SUCCESS;
     }
 
@@ -1341,6 +1472,8 @@ static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     if (!pStream)
     {
         AssertMsgFailed(("[SD%RU8] Warning: Changing FIFOW on non-attached stream (0x%x)\n", uSD, u32Value));
+
+        DEVHDA_UNLOCK(pThis);
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
 
@@ -1366,10 +1499,13 @@ static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         pStream->u16FIFOW = hdaSDFIFOWToBytes(u32FIFOW);
         LogFunc(("[SD%RU8] Updating FIFOW to %RU32 bytes\n", uSD, pStream->u16FIFOW));
 
+        DEVHDA_UNLOCK(pThis);
+
         int rc2 = hdaRegWriteU16(pThis, iReg, u32FIFOW);
         AssertRC(rc2);
     }
 
+    DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
     RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
@@ -1383,11 +1519,15 @@ static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
+    DEVHDA_LOCK(pThis);
+
     uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, FIFOS, iReg);
 
     if (hdaGetDirFromSD(uSD) != PDMAUDIODIR_OUT) /* FIFOS for output streams only. */
     {
         LogRel(("HDA: Warning: Guest tried to write read-only FIFOS to input stream #%RU8, ignoring\n", uSD));
+
+        DEVHDA_UNLOCK(pThis);
         return VINF_SUCCESS;
     }
 
@@ -1395,6 +1535,8 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     if (!pStream)
     {
         AssertMsgFailed(("[SD%RU8] Warning: Changing FIFOS on non-attached stream (0x%x)\n", uSD, u32Value));
+
+        DEVHDA_UNLOCK(pThis);
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
 
@@ -1424,9 +1566,13 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         pStream->u16FIFOS = u32FIFOS + 1;
         LogFunc(("[SD%RU8] Updating FIFOS to %RU32 bytes\n", uSD, pStream->u16FIFOS));
 
+        DEVHDA_UNLOCK(pThis);
+
         int rc2 = hdaRegWriteU16(pThis, iReg, u32FIFOS);
         AssertRC(rc2);
     }
+    else
+        DEVHDA_UNLOCK(pThis);
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
@@ -1675,6 +1821,8 @@ static int hdaAddStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
+    DEVHDA_LOCK(pThis);
+
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, FMT, iReg));
     if (!pStream)
     {
@@ -1703,6 +1851,8 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             rc = hdaStreamAsyncIOCreate(pStream);
 # endif
     }
+
+    DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS; /* Never return failure. */
 #else /* !IN_RING3 */
     RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
@@ -1717,9 +1867,14 @@ DECLINLINE(int) hdaRegWriteSDBDPX(PHDASTATE pThis, uint32_t iReg, uint32_t u32Va
     int rc2 = hdaRegWriteU32(pThis, iReg, u32Value);
     AssertRC(rc2);
 
+    DEVHDA_LOCK(pThis);
+
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
     if (!pStream)
+    {
+        DEVHDA_UNLOCK(pThis);
         return VINF_SUCCESS;
+    }
 
     /* Update BDL base. */
     pStream->u64BDLBase = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, uSD),
@@ -1736,6 +1891,8 @@ DECLINLINE(int) hdaRegWriteSDBDPX(PHDASTATE pThis, uint32_t iReg, uint32_t u32Va
 # endif
 
     LogFlowFunc(("[SD%RU8] BDLBase=0x%x\n", pStream->u8SD, pStream->u64BDLBase));
+
+    DEVHDA_UNLOCK(pThis);
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
@@ -1756,6 +1913,8 @@ static int hdaRegWriteSDBDPU(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
 static int hdaRegReadIRS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_READ);
+
     /* regarding 3.4.3 we should mark IRS as busy in case CORB is active */
     if (   HDA_REG(pThis, CORBWP) != HDA_REG(pThis, CORBRP)
         || (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA))
@@ -1763,12 +1922,16 @@ static int hdaRegReadIRS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
         HDA_REG(pThis, IRS) = HDA_IRS_ICB;  /* busy */
     }
 
+    DEVHDA_UNLOCK(pThis);
+
     return hdaRegReadU32(pThis, iReg, pu32Value);
 }
 
 static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF_PV(iReg);
+
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     /*
      * If the guest set the ICB bit of IRS register, HDA should process the verb in IC register,
@@ -1782,6 +1945,8 @@ static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
         if (HDA_REG(pThis, CORBWP) != HDA_REG(pThis, CORBRP))
         {
+            DEVHDA_UNLOCK(pThis);
+
             /*
              * 3.4.3: Defines behavior of immediate Command status register.
              */
@@ -1801,8 +1966,11 @@ static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         HDA_REG(pThis, IRS)  = HDA_IRS_IRV;     /* result is ready  */
         /** @todo r=michaln We just set the IRS value, why are we clearing unset bits? */
         HDA_REG(pThis, IRS) &= ~HDA_IRS_ICB;    /* busy is clear */
+
+        DEVHDA_UNLOCK(pThis);
         return VINF_SUCCESS;
 #else  /* !IN_RING3 */
+        DEVHDA_UNLOCK(pThis);
         return VINF_IOM_R3_MMIO_WRITE;
 #endif /* !IN_RING3 */
     }
@@ -1811,6 +1979,8 @@ static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
      * Once the guest read the response, it should clear the IRV bit of the IRS register.
      */
     HDA_REG(pThis, IRS) &= ~(u32Value & HDA_IRS_IRV);
+
+    DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS;
 }
 
@@ -1818,8 +1988,12 @@ static int hdaRegWriteRIRBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF_PV(iReg);
 
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
     if (u32Value & HDA_RIRBWP_RST)
         HDA_REG(pThis, RIRBWP) = 0;
+
+    DEVHDA_UNLOCK(pThis);
 
     /* The remaining bits are O, see 6.2.22. */
     return VINF_SUCCESS;
@@ -1831,6 +2005,8 @@ static int hdaRegWriteBase(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     int rc = hdaRegWriteU32(pThis, iReg, u32Value);
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, rc);
+
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     switch(iReg)
     {
@@ -1870,6 +2046,8 @@ static int hdaRegWriteBase(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     LogFunc(("CORB base:%llx RIRB base: %llx DP base: %llx\n",
              pThis->u64CORBBase, pThis->u64RIRBBase, pThis->u64DPBase));
+
+    DEVHDA_UNLOCK(pThis);
     return rc;
 }
 
@@ -1877,8 +2055,12 @@ static int hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF_PV(iReg);
 
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
     uint8_t v = HDA_REG(pThis, RIRBSTS);
     HDA_REG(pThis, RIRBSTS) &= ~(v & u32Value);
+
+    DEVHDA_UNLOCK(pThis);
 
 #ifndef DEBUG
     return hdaProcessInterrupt(pThis);
@@ -2306,6 +2488,35 @@ static DECLCALLBACK(int) hdaMixerSetVolume(PHDASTATE pThis,
 
 #ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
 /**
+ * Starts the internal audio device timer.
+ *
+ * @param   pThis               HDA state.
+ */
+static int hdaTimerStart(PHDASTATE pThis)
+{
+    LogFlowFuncEnter();
+
+    DEVHDA_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
+    AssertPtr(pThis->pTimer);
+
+    if (!pThis->fTimerActive)
+    {
+        LogRel2(("HDA: Starting transfers\n"));
+
+        pThis->fTimerActive  = true;
+        pThis->tsTimerExpire = TMTimerGet(pThis->pTimer) + pThis->cTimerTicks; /* Update current time timestamp. */
+
+        /* Start transfers. */
+        hdaTimerMain(pThis);
+    }
+
+    DEVHDA_UNLOCK_BOTH(pThis);
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Starts the internal audio device timer (if not started yet).
  *
  * @param   pThis               HDA state.
@@ -2321,22 +2532,7 @@ static int hdaTimerMaybeStart(PHDASTATE pThis)
 
     /* Only start the timer at the first active stream. */
     if (pThis->cStreamsActive == 1)
-    {
-        LogRel2(("HDA: Starting transfers\n"));
-
-        /* Set timer flag. */
-        ASMAtomicXchgBool(&pThis->fTimerActive, true);
-
-        DEVHDA_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
-
-        /* Update current time timestamp. */
-        pThis->tsTimerExpire = TMTimerGet(pThis->pTimer) + pThis->cTimerTicks;
-
-        /* Start transfers. */
-        hdaTimerMain(pThis);
-
-        DEVHDA_UNLOCK_BOTH(pThis);
-    }
+        return hdaTimerStart(pThis);
 
     return VINF_SUCCESS;
 }
@@ -2350,22 +2546,21 @@ static int hdaTimerStop(PHDASTATE pThis)
 {
     LogFlowFuncEnter();
 
-    if (!ASMAtomicReadBool(&pThis->fTimerActive))
+    if (!pThis->pTimer) /* Only can happen on device construction time, so no locking needed here. */
         return VINF_SUCCESS;
 
-    LogRel2(("HDA: Stopping transfers ...\n"));
+    DEVHDA_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
-    /* Set timer flag. */
-    ASMAtomicXchgBool(&pThis->fTimerActive, false);
-
-    if (pThis->pTimer)
+    if (pThis->fTimerActive)
     {
-        DEVHDA_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+        LogRel2(("HDA: Stopping transfers ...\n"));
+
+        pThis->fTimerActive = false;
 
         TMTimerStop(pThis->pTimer);
-
-        DEVHDA_UNLOCK_BOTH(pThis);
     }
+
+    DEVHDA_UNLOCK_BOTH(pThis);
 
     return VINF_SUCCESS;
 }
@@ -2407,7 +2602,7 @@ static void hdaTimerMain(PHDASTATE pThis)
 
     STAM_PROFILE_START(&pThis->StatTimer, a);
 
-    DEVHDA_LOCK(pThis);
+    DEVHDA_LOCK_BOTH_RETURN_VOID(pThis);
 
     /* Flag indicating whether to kick the timer again for a
      * new data processing round. */
@@ -2441,7 +2636,7 @@ static void hdaTimerMain(PHDASTATE pThis)
     else
         LogRel2(("HDA: Stopped transfers\n"));
 
-    DEVHDA_UNLOCK(pThis);
+    DEVHDA_UNLOCK_BOTH(pThis);
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
@@ -2815,6 +3010,8 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     Log3Func(("offReg=%#x cb=%#x\n", offReg, cb));
     Assert(cb == 4); Assert((offReg & 3) == 0);
 
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_READ);
+
     if (!(HDA_REG(pThis, GCTL) & HDA_GCTL_CRST) && idxRegDsc != HDA_REG_GCTL)
         LogFunc(("Access to registers except GCTL is blocked while reset\n"));
 
@@ -2823,6 +3020,9 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
     if (idxRegDsc != -1)
     {
+        /* Leave lock before calling read function. */
+        DEVHDA_UNLOCK(pThis);
+
         /* ASSUMES gapless DWORD at end of map. */
         if (g_aHdaRegMap[idxRegDsc].size == 4)
         {
@@ -2864,6 +3064,8 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     }
     else
     {
+        DEVHDA_UNLOCK(pThis);
+
         rc = VINF_IOM_MMIO_UNUSED_FF;
         Log3Func(("\tHole at %x is accessed for read\n", offReg));
     }
@@ -2885,11 +3087,15 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
 DECLINLINE(int) hdaWriteReg(PHDASTATE pThis, int idxRegDsc, uint32_t u32Value, char const *pszLog)
 {
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_READ);
+
     if (!(HDA_REG(pThis, GCTL) & HDA_GCTL_CRST) && idxRegDsc != HDA_REG_GCTL)
     {
         Log(("hdaWriteReg: Warning: Access to %s is blocked while controller is in reset mode\n", g_aHdaRegMap[idxRegDsc].abbrev));
         LogRel2(("HDA: Warning: Access to register %s is blocked while controller is in reset mode\n",
                  g_aHdaRegMap[idxRegDsc].abbrev));
+
+        DEVHDA_UNLOCK(pThis);
         return VINF_SUCCESS;
     }
 
@@ -2915,9 +3121,14 @@ DECLINLINE(int) hdaWriteReg(PHDASTATE pThis, int idxRegDsc, uint32_t u32Value, c
             Log(("hdaWriteReg: Warning: Access to %s is blocked! %R[sdctl]\n", g_aHdaRegMap[idxRegDsc].abbrev, uSDCTL));
             LogRel2(("HDA: Warning: Access to register %s is blocked while the stream's RUN bit is set\n",
                      g_aHdaRegMap[idxRegDsc].abbrev));
+
+            DEVHDA_UNLOCK(pThis);
             return VINF_SUCCESS;
         }
     }
+
+    /* Leave the lock before calling write function. */
+    DEVHDA_UNLOCK(pThis);
 
 #ifdef LOG_ENABLED
     uint32_t const idxRegMem   = g_aHdaRegMap[idxRegDsc].mem_idx;
@@ -4119,6 +4330,9 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
     LogFlowFuncEnter();
+
+    DEVHDA_LOCK_RETURN_VOID(pThis);
+
      /*
      * 18.2.6,7 defines that values of this registers might be cleared on power on/reset
      * hdaReset shouldn't affects these registers.
@@ -4131,6 +4345,8 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
      * but we can take a shortcut.
      */
     HDA_REG(pThis, GCTL)    = HDA_GCTL_CRST;
+
+    DEVHDA_UNLOCK(pThis);
 }
 
 /**
@@ -4139,6 +4355,8 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     PHDADRIVER pDrv;
     while (!RTListIsEmpty(&pThis->lstDrv))
@@ -4165,6 +4383,8 @@ static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
 
     for (uint8_t i = 0; i < HDA_MAX_STREAMS; i++)
         hdaStreamDestroy(&pThis->aStreams[i]);
+
+    DEVHDA_UNLOCK(pThis);
 
     return VINF_SUCCESS;
 }
@@ -4259,7 +4479,15 @@ static int hdaAttachInternal(PPDMDEVINS pDevIns, PHDADRIVER pDrv, unsigned uLUN,
  */
 static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
-    return hdaAttachInternal(pDevIns, NULL /* pDrv */, uLUN, fFlags);
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
+    int rc = hdaAttachInternal(pDevIns, NULL /* pDrv */, uLUN, fFlags);
+
+    DEVHDA_UNLOCK(pThis);
+
+    return rc;
 }
 
 static DECLCALLBACK(void) hdaDetach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
@@ -4277,6 +4505,8 @@ static DECLCALLBACK(void) hdaPowerOff(PPDMDEVINS pDevIns)
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
+    DEVHDA_LOCK_RETURN_VOID(pThis);
+
     LogRel2(("HDA: Powering off ...\n"));
 
     /* Ditto goes for the codec, which in turn uses the mixer. */
@@ -4292,6 +4522,8 @@ static DECLCALLBACK(void) hdaPowerOff(PPDMDEVINS pDevIns)
         AudioMixerDestroy(pThis->pMixer);
         pThis->pMixer = NULL;
     }
+
+    DEVHDA_UNLOCK(pThis);
 }
 
 /**
