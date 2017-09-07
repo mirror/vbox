@@ -153,24 +153,25 @@ SyntaxVBoxIncludeR3_TEMPLATE = VBOXMAINEXE
 SyntaxVBoxIncludeR3_DEFS = VBOX_WITH_HGCM
 SyntaxVBoxIncludeR3_CDEFS = VBOX_WITHOUT_UNNAMED_UNIONS
 SyntaxVBoxIncludeR3_SOURCES := \
-	$(addprefix $(PATH_OBJ)/include/,$(subst .h,-c.c,     $(subst /,_,$(VBOX_HDRS_ALL_R3_C)))) \
-	$(addprefix $(PATH_OBJ)/include/,$(subst .h,-cpp.cpp, $(subst /,_,$(VBOX_HDRS_ALL_R3))))
+	$(addprefix $(PATH_OBJ)/include/c/,  $(addsuffix .c,  $(basename $(VBOX_HDRS_ALL_R3_C)))) \
+	$(addprefix $(PATH_OBJ)/include/cpp/,$(addsuffix .cpp,$(basename $(VBOX_HDRS_ALL_R3))))
 SyntaxVBoxIncludeR3_CLEAN = $(SyntaxVBoxIncludeR3_SOURCES)
+#$(error $(subst $(SP),$(NLTAB),$(strip $(sort $(SyntaxVBoxIncludeR3_SOURCES)))))
 
 SyntaxVBoxIncludeR0_TEMPLATE = VBoxR0
 SyntaxVBoxIncludeR0_DEFS = VBOX_WITH_HGCM
 SyntaxVBoxIncludeR0_CDEFS = VBOX_WITHOUT_UNNAMED_UNIONS
 SyntaxVBoxIncludeR0_SOURCES := \
-	$(addprefix $(PATH_OBJ)/include/,$(subst .h,-c.c,     $(subst /,_,$(VBOX_HDRS_ALL_R0_C)))) \
-	$(addprefix $(PATH_OBJ)/include/,$(subst .h,-cpp.cpp, $(subst /,_,$(VBOX_HDRS_ALL_R0))))
+	$(addprefix $(PATH_OBJ)/include/c/,  $(addsuffix .c,  $(basename $(VBOX_HDRS_ALL_R0_C)))) \
+	$(addprefix $(PATH_OBJ)/include/cpp/,$(addsuffix .cpp,$(basename $(VBOX_HDRS_ALL_R0))))
 SyntaxVBoxIncludeR0_CLEAN = $(SyntaxVBoxIncludeR0_SOURCES)
 
 SyntaxVBoxIncludeRC_TEMPLATE = VBoxRc
 SyntaxVBoxIncludeRC_DEFS = VBOX_WITH_HGCM
 SyntaxVBoxIncludeRC_CDEFS = VBOX_WITHOUT_UNNAMED_UNIONS
 SyntaxVBoxIncludeRC_SOURCES := \
-	$(addprefix $(PATH_OBJ)/include/,$(subst .h,-c.c,     $(subst /,_,$(VBOX_HDRS_ALL_RC_C)))) \
-	$(addprefix $(PATH_OBJ)/include/,$(subst .h,-cpp.cpp, $(subst /,_,$(VBOX_HDRS_ALL_RC))))
+	$(addprefix $(PATH_OBJ)/include/c/,  $(addsuffix .c,  $(basename $(VBOX_HDRS_ALL_RC_C)))) \
+	$(addprefix $(PATH_OBJ)/include/cpp/,$(addsuffix .cpp,$(basename $(VBOX_HDRS_ALL_RC))))
 SyntaxVBoxIncludeRC_CLEAN = $(SyntaxVBoxIncludeRC_SOURCES)
 
 
@@ -182,35 +183,29 @@ VBOX_HDRS_ONLY_ONCE := \
 
 # Generate the files we compile.
 define def_hdr
-$(eval flatname := $(subst /,_,$(basename $(hdr))))
-$(eval functioname := $(translate $(flatname),-./,___))
-$$(PATH_OBJ)/include/$(flatname)-cpp.cpp: | $$(PATH_OBJ)/include/
-	$(QUIET)$$(APPEND) -t -n $$@ \
-		'#include <$(hdr)>' \
-		$(if-expr $(intersects $(hdr),$(VBOX_HDRS_ONLY_ONCE)),, '#include <$(hdr)>') \
-		'extern int $(functioname)_cpp(void);' \
-		'int $(functioname)_cpp(void) { return 0;}'
+ $(eval functioname := $(translate $(basename $(hdr)),-./,___))
 
-$$(PATH_OBJ)/include/$(flatname)-c.c: | $$(PATH_OBJ)/include/
+ $$(PATH_OBJ)/include/c/$(basename $(hdr)).c: | $$$$(dir $$$$@)
 	$(QUIET)$$(APPEND) -t -n $$@ \
 		'#include <$(hdr)>' \
 		$(if-expr $(intersects $(hdr),$(VBOX_HDRS_ONLY_ONCE)),, '#include <$(hdr)>') \
 		'extern int $(functioname)_c(void);' \
 		'int $(functioname)_c(void) { return 0;}'
 
-$(subst .h,.o,$(notdir $(hdr)))::
-if1of ($(hdr), $(VBOX_HDRS_R3_CPP) $(VBOX_HDRS_CPP_FEATURES))
-	$$(MAKE) -f $(MAKEFILE) $(flatname)-cpp.o
-else
-	$$(MAKE) -f $(MAKEFILE) $(flatname)-c.o $(flatname)-cpp.o
-endif
+ $$(PATH_OBJ)/include/cpp/$(basename $(hdr)).cpp: | $$$$(dir $$$$@)
+	$(QUIET)$$(APPEND) -t -n $$@ \
+		'#include <$(hdr)>' \
+		$(if-expr $(intersects $(hdr),$(VBOX_HDRS_ONLY_ONCE)),, '#include <$(hdr)>') \
+		'extern int $(functioname)_cpp(void);' \
+		'int $(functioname)_cpp(void) { return 0;}'
 
 endef
 
 $(foreach hdr,$(VBOX_HDRS_ALL), $(eval $(def_hdr)))
 
-# Where we put the file.
-BLDDIRS += $(PATH_OBJ)/include/
+# Tell kBuild to generate rules for making the directories for the generated files.
+VBOX_HDR_DIRS := $(sort $(dir $(VBOX_HDRS_ALL)))
+BLDDIRS += $(addprefix $(PATH_OBJ)/include/c/,$(VBOX_HDR_DIRS)) $(addprefix $(PATH_OBJ)/include/cpp/,$(VBOX_HDR_DIRS))
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
