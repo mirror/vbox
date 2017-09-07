@@ -3668,11 +3668,20 @@ DxgkDdiBuildPagingBufferNew(
 
     uint32_t cbBuffer = 0, cbPrivateData = 0;
 
-    LOGF(("ENTER, context(0x%x)", hAdapter));
+    LOGF(("ENTER context(0x%X), operation(0x%X) MultipassOffset(0x%X) DmaSizes(0x%X 0x%X)",
+        hAdapter, pBuildPagingBuffer->Operation, pBuildPagingBuffer->MultipassOffset,
+        pBuildPagingBuffer->DmaSize, pBuildPagingBuffer->DmaBufferPrivateDataSize));
 
+    /* Checking for bare minimum of DMA buffer sizes*/
     if (pBuildPagingBuffer->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_HDR))
     {
-        WARN(("private data too small"));
+        WARN(("pBuildPagingBuffer->DmaBufferPrivateDataSize(%d) < sizeof (VBOXCMDVBVA_HDR)", pBuildPagingBuffer->DmaBufferPrivateDataSize));
+        return STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
+    }
+
+    if (pBuildPagingBuffer->DmaSize < VBOXWDDM_DUMMY_DMABUFFER_SIZE)
+    {
+        WARN(("pBuildPagingBuffer->DmaSize(%d) < VBOXWDDM_DUMMY_DMABUFFER_SIZE", pBuildPagingBuffer->DmaSize));
         return STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
     }
 
@@ -3876,7 +3885,8 @@ DxgkDdiBuildPagingBufferNew(
     pBuildPagingBuffer->pDmaBuffer = ((uint8_t*)pBuildPagingBuffer->pDmaBuffer) + cbBuffer;
     pBuildPagingBuffer->pDmaBufferPrivateData = ((uint8_t*)pBuildPagingBuffer->pDmaBufferPrivateData) + cbPrivateData;
 
-    LOGF(("LEAVE, context(0x%x)", hAdapter));
+    LOGF(("LEAVE context(0x%X), MultipassOffset(0x%X) cbBuffer(0x%X) cbPrivateData(0x%X)", 
+        hAdapter, pBuildPagingBuffer->MultipassOffset, cbBuffer, cbPrivateData));
 
     if (pBuildPagingBuffer->MultipassOffset)
         return STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
