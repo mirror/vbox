@@ -2174,7 +2174,7 @@ typedef RTFSISOSEENSEQENCES *PRTFSISOSEENSEQENCES;
 static int rtFsIsoVolReadAndProcessUdfVdsSeq(PRTFSISOVOL pThis, uint64_t offSeq, uint32_t cbSeq, uint8_t *pbBuf, size_t cbBuf,
                                              uint32_t cNestings, PRTERRINFO pErrInfo)
 {
-    Assert(cbBuf >= _2K);
+    AssertReturn(cbBuf >= pThis->cbSector, VERR_INTERNAL_ERROR);
 
     /*
      * Check nesting depth.
