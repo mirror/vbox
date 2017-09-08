@@ -11714,7 +11714,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не може да се вкара дисковото изображение &lt;b&gt;VirtualBox Виртуални Добавки&lt;/b&gt; във виртуалната машина &lt;b&gt;%1&lt;/b&gt;, тъй като машината няма оптични устройства. Моля, добавете устройство, като използвате страницата Съхранение от прозореца с настройки на виртуалната машина!&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Не може да се вкара дисковото изображение &lt;b&gt;VirtualBox Виртуални Добавки&lt;/b&gt; във виртуалната машина &lt;b&gt;%1&lt;/b&gt;, тъй като машината няма оптични устройства. Моля, добавете устройство, като използвате страницата Съхранение от прозореца с настройки на виртуалната машина!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Unable to enter password!</source>
@@ -11943,6 +11943,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to disable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

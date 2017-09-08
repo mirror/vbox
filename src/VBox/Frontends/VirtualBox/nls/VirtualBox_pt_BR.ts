@@ -12459,7 +12459,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Não foi possível inserir o arquivo de imagem de disco dos &lt;b&gt;Adicionais para Convidado do VirtualBox&lt;/b&gt; na máquina virtual &lt;b&gt;%1&lt;/b&gt;, pois a máquina não possui nenhum drive óptico. Acrescente um drive óptico utilizando a página de armazenamento na janela de configurações da máquina virtual.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Não foi possível inserir o arquivo de imagem de disco dos &lt;b&gt;Adicionais para Convidado do VirtualBox&lt;/b&gt; na máquina virtual &lt;b&gt;%1&lt;/b&gt;, pois a máquina não possui nenhum drive óptico. Acrescente um drive óptico utilizando a página de armazenamento na janela de configurações da máquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Unable to enter password!</source>
@@ -12677,6 +12677,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Failed to disable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao desabilitar a entrada do adaptador de áudio para a máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

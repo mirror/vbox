@@ -10388,7 +10388,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;无法分配存放增强功能包的虚拟光盘到虚拟电脑 &lt;b&gt;%1&lt;/b&gt;, 因为该虚拟电脑没有光驱. 请先到虚拟电脑设置对话框的存储页中添加一个光驱.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;无法分配存放增强功能包的虚拟光盘到虚拟电脑 &lt;b&gt;%1&lt;/b&gt;, 因为该虚拟电脑没有光驱. 请先到虚拟电脑设置对话框的存储页中添加一个光驱.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Unable to enter password!</source>
@@ -10620,6 +10620,10 @@
     </message>
     <message>
         <source>Failed to disable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

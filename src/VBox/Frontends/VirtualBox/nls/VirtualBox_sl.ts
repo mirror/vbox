@@ -7431,35 +7431,35 @@
     <name>UIMessageCenter</name>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="-1562"/>
-        <location line="+2420"/>
+        <location line="+2411"/>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - podatki</translation>
     </message>
     <message>
-        <location line="-2416"/>
-        <location line="+2420"/>
+        <location line="-2407"/>
+        <location line="+2411"/>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - vprašanje</translation>
     </message>
     <message>
-        <location line="-2416"/>
-        <location line="+2420"/>
+        <location line="-2407"/>
+        <location line="+2411"/>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - opozorilo</translation>
     </message>
     <message>
-        <location line="-2416"/>
-        <location line="+2420"/>
+        <location line="-2407"/>
+        <location line="+2411"/>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - napaka</translation>
     </message>
     <message>
-        <location line="-2416"/>
-        <location line="+2420"/>
+        <location line="-2407"/>
+        <location line="+2411"/>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - kritična napaka</translation>
@@ -7471,7 +7471,7 @@
         <translation>Tega sporočila ne prikazuj več</translation>
     </message>
     <message>
-        <location line="-2210"/>
+        <location line="-2201"/>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
         <translation>Odpiranje &lt;tt&gt;%1&lt;/tt&gt; je spodeltelo. Prepričajte se, da lahko vaše namizno okolje pravilno obvlada URL te vrste.</translation>
     </message>
@@ -7634,7 +7634,7 @@
         <translation>&lt;p&gt;Izvajanje navideznega računalnka lahko naleti na stanje napake opisano spodaj. Predlagamo, da se ustrezno odzovete, da preprečite napako.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+319"/>
+        <location line="+310"/>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Datoteka odtis diska &lt;b&gt;Dodatki za gosta VirtualBox&lt;/b&gt; je bila uspešno prejeta s/z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; in krajevno shranjena kot &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;vendar je preverjanje nadzorne vsote SHA-256 spodletelo.&lt;/p&gt;&lt;p&gt;Prosimo, da prejem, namestitev in preverjanje opravite ročno.&lt;/p&gt;</translation>
     </message>
@@ -7685,7 +7685,7 @@
         <translation>Odpiranje datoteke z dovoljenjem &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; je spodletelo. Preverite dovoljenja datoteke.</translation>
     </message>
     <message>
-        <location line="-1622"/>
+        <location line="-1613"/>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Pošiljanje pritiska gumba za izklop ACPI v navidezni računalnik &lt;b&gt;%1&lt;/b&gt; je spodletelo.</translation>
     </message>
@@ -7699,6 +7699,7 @@
     </message>
     <message>
         <location line="+363"/>
+        <location filename="../src/globals/UIPopupCenter.cpp" line="+164"/>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
         <translation>Shranjevanje nastavitev navideznega računalnika &lt;b&gt;%1&lt;/b&gt; v &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; je spodletelo.</translation>
     </message>
@@ -7710,7 +7711,7 @@
     </message>
     <message>
         <location line="+1207"/>
-        <location filename="../src/globals/UIPopupCenter.cpp" line="-35"/>
+        <location filename="../src/globals/UIPopupCenter.cpp" line="-199"/>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
         <translation>&lt;p&gt;Gostiteljska tipka je trenutno določena kot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
@@ -7751,12 +7752,12 @@
         <translation>&lt;p&gt;V tekoči način ni bilo mogoče vstopiti zaradi nezadostnega grafičnega pomnilnika gosta.&lt;/p&gt;&lt;p&gt;Grafični pomnilnik navideznega računalnika morate nastaviti na najmanj &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+64"/>
+        <location line="+55"/>
         <source>You are already running the most recent version of VirtualBox.</source>
         <translation>Že izvajate najnovejšo različico VirtualBoxa.</translation>
     </message>
     <message>
-        <location line="-139"/>
+        <location line="-130"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation>&lt;p&gt;V zaslonu navideznega računalnika ste &lt;b&gt;kliknili miško&lt;/b&gt; ali pritisnili &lt;b&gt;gostiteljsko tipko&lt;/b&gt;. To bo povzročilo, da bo navidezni računalnik &lt;b&gt;zajel&lt;/b&gt; kazalec miške gostitelja (samo če gostujoči OS trenutno ne podpira vključitve kazalca miške) in tipkovnico, in s tem ne bosta več na voljo drugim programom v gostiteljskem računalniku.&lt;/p&gt;&lt;p&gt;Kadarkoli lahko pritisnete &lt;b&gt;gostiteljsko tipko&lt;/b&gt;, da &lt;b&gt;sprostite&lt;/b&gt; tipkovnico in miško (če sta zajeta) in ju vrnete v običajno delovanje. Trenutno dodeljena gostiteljska tipka je prikazana v vrstici stanja na dnu okna navideznega računalnika poleg ikone&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Ta ikona skupaj z bližnjo ikono kazalca miške nakazuje trenutno stanje zajema tipkovnice in miške.&lt;/p&gt;</translation>
     </message>
@@ -7818,12 +7819,12 @@
         <translation>Dostop do datoteke odtisa diska &lt;b&gt;%1&lt;/b&gt; je spodletel&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <location line="+1939"/>
+        <location line="+1930"/>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
         <translation>Naslednje datoteke že obstajajo:&lt;br /&gt;&lt;br /&gt;%1.&lt;br /&gt;&lt;br /&gt;Ali jih res želite nadomestiti? Njihova nadomestitev bo prepisala njihovo vsebino.</translation>
     </message>
     <message>
-        <location line="-2053"/>
+        <location line="-2044"/>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
         <translation>Izvajajte predizdajno različico VirtualBoxa. Ta različica ni primerna za proizvodno uporabo.</translation>
     </message>
@@ -7889,12 +7890,12 @@
         <translation>&lt;p&gt;Izbris tega omrežja samo za gostitelja bo odstranil vmesnik samo za gostitelja, na katerem je osnovano to omrežje. Ali želite odstraniti vmesnik (omrežja samo za gostitelja) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Opomba:&lt;/b&gt; ta vmesnik lahko uporablja enega ali več navideznih omrežnih vmesnikov, ki pripadajo enemu od vaših navideznih računalnikov. Ko bo odstranjen, ti vmesniki ne bodo več uporabni, dokler ne popravite njihovih nastavitev z izbiro drugega imena vmesnika ali drugo vrsto priklopa vmesnika.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+1003"/>
+        <location line="+994"/>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
         <translation>Datoteka z imenom &lt;b&gt;%1&lt;/b&gt; že obstaja. Ali jo res želite nadomestiti?&lt;br /&gt;&lt;br /&gt;Njena nadomestitev bo prepisala njeno vsebino.</translation>
     </message>
     <message>
-        <location line="-552"/>
+        <location line="-543"/>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Strojno pospeševanje VT-x/AMD-V je bilo omogočeno, vendar ne deluje. Določeni gosti (npr. OS/2 in QNX) zahtevajo to značilnost.&lt;/p&gt;&lt;p&gt;Prepričajte se, da ste pravilno omogočili VT-x/AMD-V v BIOS-u svojega gostiteljskega računalnika.&lt;/p&gt;</translation>
     </message>
@@ -8017,7 +8018,7 @@
         <translation>Odklop trdega diska (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) z mesta &lt;i&gt;%2&lt;/i&gt; računalnika &lt;b&gt;%3&lt;/b&gt;.je spodletel.</translation>
     </message>
     <message>
-        <location line="+793"/>
+        <location line="+784"/>
         <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
         <translation>Posodobitev Dodatkov za gosta je spodletela. Datoteka odtisa diska Dodatkov za gosta bo vstavljena za uporabniško namestitev.</translation>
     </message>
@@ -8059,7 +8060,7 @@
         <translation>&amp;Odstrani</translation>
     </message>
     <message>
-        <location line="-1212"/>
+        <location line="-1203"/>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
         <translation>Trenutna pravila posredovanja vrat niso veljavna. Nobena vrednost vrat gostitelja ali gosta ne sme biti nastavljena na nič.</translation>
     </message>
@@ -8090,7 +8091,7 @@
         <translation>&lt;p&gt;Okno navideznega računalnika bo sedaj preklopljeno na &lt;b&gt;umerjeni&lt;/b&gt; način. S pritiskom na &lt;b&gt;%1&lt;/b&gt; se lahko kadarkoli vrnete na okenski način.&lt;/p&gt;&lt;p&gt;Upoštevajte, da je &lt;i&gt;gostiteljska&lt;/i&gt; tipka trenutno določena kot &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Upoštevajte, da je v umerjenem načinu glavna menijska vrstica skrita . Do nje lahko dostopate s pritiskom na &lt;b&gt;gostiteljsko tipko+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+361"/>
+        <location line="+352"/>
         <location line="+7"/>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Odpiranje paketa razširitev &lt;b&gt;%1&lt;/b&gt; je spodletelo.</translation>
@@ -8152,7 +8153,7 @@
         <translation>Paket razširitev &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; je bil uspešno nameščen.</translation>
     </message>
     <message>
-        <location line="-750"/>
+        <location line="-741"/>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Mape računalnika &lt;b&gt;%1&lt;/b&gt; v nadrejeni mapi &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; ni mogoče ustvariti.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Preverite, ali nadrejena mapa res obstaja in da imate dovoljenja za ustvarjanje mape računalnika.&lt;/p&gt;</translation>
     </message>
@@ -8198,7 +8199,7 @@
         <translation>&lt;p&gt;Napaka pri spreminjanju odtisa diska iz &lt;b&gt;%1&lt;/b&gt; v &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+1469"/>
+        <location line="+1460"/>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
         <translation>Storitve posredniškega strežnika USB gostitelja ni bilo mogoče naložiti (VERR_FILE_NOT_FOUND. Storitev morda ni nameščena na gostiteljskem računalniku.</translation>
     </message>
@@ -8223,12 +8224,12 @@
         <translation>Storitve posredniškega strežnika USB gostitelja ni bilo mogoče naložiti.</translation>
     </message>
     <message>
-        <location line="-1703"/>
+        <location line="-1694"/>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Posnetka stanja z imenom &lt;b&gt;%1&lt;/b&gt; ni bilo mogoče najti.</translation>
     </message>
     <message>
-        <location line="+1231"/>
+        <location line="+1222"/>
         <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nameščeno imate staro različico (%1) &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ali želite z interneta prejeti najnovejšo?&lt;/p&gt;</translation>
     </message>
@@ -8260,7 +8261,7 @@
         <translation>&lt;p&gt;Nameščeno imate različico %1 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Prejmite in namestite različico %3 tega paketa razširitev od Oracla!&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="-1658"/>
+        <location line="-1649"/>
         <source>&lt;p&gt;Failed to initialize COM because the VirtualBox global configuration directory &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; is not accessible. Please check the permissions of this directory and of its parent directory.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Začenjanje COM-a je spodletelo, ker mapa splošnih nastavitev VirtualBoxa &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ni na voljo. Preverite dovoljenja te in njene nadrejene mape.&lt;/p&gt;&lt;p&gt;Program se bo sedaj končal.&lt;/p&gt;</translation>
     </message>
@@ -8285,12 +8286,12 @@
         <translation>&lt;p&gt;Ste pred odstranitvijo naslednjih navideznih računalnikov s seznama računalnikov: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ali želite iz trdega diska izbrisati tudi datoteke, ki vsebujejo navidezni računalnik?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+1383"/>
+        <location line="+1374"/>
         <source>Do you wish to cancel all current network operations?</source>
         <translation>Ali želite preklicati vsa trenutna omrežna opravila?</translation>
     </message>
     <message>
-        <location line="-1300"/>
+        <location line="-1291"/>
         <source>ACPI Shutdown</source>
         <comment>machine</comment>
         <translation>Zaustavitev ACPI</translation>
@@ -8600,7 +8601,7 @@
         <translation>Onemogočanje zajema videoposnetkov za navidezni računalnik &lt;b&gt;%1&lt;/b&gt; je spodletelo.</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="+95"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="+86"/>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Datoteke odtisa diska &lt;b&gt;Dodatkov za gosta VirtualBox&lt;/b&gt; ni bilo mogoče najti.&lt;/p&gt;&lt;p&gt;Ali želite prejeti to datoteko odtisa diska iz interneta?&lt;/p&gt;</translation>
     </message>
@@ -8661,7 +8662,7 @@
         <translation>Tega sporočila ne prikazuj več</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="-1189"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="-1180"/>
         <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ali želite odstraniti omrežje NAT &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Če to omrežje uporablja en ali več omrežnih vmesnikov navideznega računalnika, ti ne bodo več uporabni, dokler ne popravite njihove nastavitve z izbiro drugega imena omrežja ali druge vrste priklopa vmesnika.&lt;/p&gt;</translation>
     </message>
@@ -8681,7 +8682,7 @@
         <translation>&lt;p&gt;Videti je, da Dodatki za gosta VirtualBox na tem navideznem računalniku niso na voljo in brez njih souporabe map ni mogoče uporabiti. Da jo uporabite v navideznem računalniku, namestite Dodatke za gosta, če še niso nameščeni, ali jih z izbiro &lt;b&gt;Vstavi odtis CD Dodatkov za gosta&lt;/b&gt; iz menija &lt;b&gt;Naprave&lt;/b&gt; ponovno namestite, če ne delujejo pravilno. Če so  Dodatki za gosta nameščeni, vendar se računalnik še ni popolnoma zagnal, bodo na voljo, ko se popolnoma zažene.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="+1134"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="+1125"/>
         <source>Insert</source>
         <comment>additions</comment>
         <translation>Vstavi</translation>
@@ -8692,7 +8693,7 @@
         <translation>&lt;p&gt;Navidezni zaslon je trenutno nastavljen na &lt;b&gt;%1-bitni&lt;/b&gt; barvni način. Za boljšo zmogljivost to spremenite na &lt;b&gt;%2-bitnega&lt;/b&gt;. To običajno lahko storite iz odseka&lt;b&gt;Zaslon&lt;/b&gt; Nadzorne plošče gostujočega operacijskega sistema ali sistemskih nastavitev.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="-972"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="-963"/>
         <source>The current port forwarding rules are not valid. Rule names should be unique.</source>
         <translation>Trenutna pravila posredovanja vrat niso veljavna. Imena pravil morajo biti edinstvena.</translation>
     </message>
@@ -8787,23 +8788,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="+682"/>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Datoteke odtisa diska&lt;b&gt;Dodatkov za gosta VirtualBox&lt;/b&gt; ni bilo mogoče vstaviti v računalnik &lt;b&gt;%1&lt;/b&gt;, ker nima optičnih pogonov. Dodajte pogon z uporabo strani pomnilnških naprav okna nastavitev navideznega računalnika.&lt;/p&gt;</translation>
+        <location line="+7"/>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+76"/>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <translation type="vanished">&lt;p&gt;Datoteke odtisa diska&lt;b&gt;Dodatkov za gosta VirtualBox&lt;/b&gt; ni bilo mogoče vstaviti v računalnik &lt;b&gt;%1&lt;/b&gt;, ker nima optičnih pogonov. Dodajte pogon z uporabo strani pomnilnških naprav okna nastavitev navideznega računalnika.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="+749"/>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual optical drive?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Datoteka odtisa diska &lt;b&gt;Dodatkov za gosta VirtualBox&lt;/b&gt; je bila uspešno prejeta iz &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt;in krajevno shranjena kot &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ali želite registrirati to datoteko odtisa diska in jo vstaviti v navidezni optični pogon?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="-389"/>
-        <location line="+322"/>
+        <location line="-380"/>
+        <location line="+313"/>
         <source>Bad password or authentication failure.</source>
         <translation>Slabo geslo ali spodletela overitev.</translation>
     </message>
     <message>
-        <location line="-222"/>
+        <location line="-213"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Med izvajanjem navideznega računalnika se je pojavila kritična napaka in izvajanje računalnika se je ustavilo&lt;/p&gt;&lt;p&gt;Za pomoč si oglejte odsek skupnosti na&lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; ali vaš stik za podporo. Priskrbite vsebino datoteke dnevnika&lt;tt&gt;VBox.log&lt;/tt&gt; in datoteko odtisa &lt;tt&gt;VBox.png&lt;/tt&gt;, ki ju lahko neposredno najdete v &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, kot tudi opis vaših dejanj, ko se je ta napaka pojavila. Upoštevajte, da lahko do zgornjih datotek dostopate tudi z izbiro &lt;b&gt;Prikaži dnevnik&lt;/b&gt; iz menija &lt;b&gt;Računalnik&lt;/b&gt; glavnega okna VirtualBox.&lt;/p&gt;&lt;p&gt;Pritisnite &lt;b&gt;V redu&lt;/b&gt;, če želite računalnik  izklopiti ali &lt;b&gt;Prezri&lt;/b&gt;,če ga želite za potrebe razhoščevanja pustiti, kot je. Upoštevajte, da razhroščevanje zahteva posebno znanje in orodja, tako da je priporočljivo, da zdaj pritisnete &lt;b&gt;V redu&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
@@ -8813,7 +8818,7 @@
         <translation>&lt;p&gt;Med izvajanjem navideznega računalnika se je pojavila kritična napaka in izvajanje računalnika bi bilo treba ustaviti.&lt;/p&gt;&lt;p&gt;Za pomoč si oglejte odsek skupnosti na&lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; ali vaš stik za podporo. Priskrbite vsebino datoteke dnevnika&lt;tt&gt;VBox.log&lt;/tt&gt;, ki jo lahko neposredno najdete v mapi dnevnikov navideznega računalnika, kot tudi opis vaših dejanj, ko se je ta napaka pojavila. Upoštevajte, da lahko do zgornje datoteke dostopate tudi z izbiro &lt;b&gt;Prikaži dnevnik&lt;/b&gt; iz menija &lt;b&gt;Računalnik&lt;/b&gt; glavnega okna VirtualBox.&lt;/p&gt;&lt;p&gt;Pritisnite &lt;b&gt;V redu&lt;/b&gt;, če želite računalnik  izklopiti.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+210"/>
+        <location line="+201"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Izdana  je bila nova rezličica VirtualBoxa! Različica &lt;b&gt;%1&lt;/b&gt; je  na voljo na &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;To različico lahko prejmete z uporabo povezave:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
@@ -8835,7 +8840,7 @@
         <translation>Opravilo vlečenja in spuščanja iz gosta v gostitelja je spodletelo.</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIPopupCenter.cpp" line="-30"/>
+        <location filename="../src/globals/UIPopupCenter.cpp" line="-37"/>
         <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Priklop kabla omrežnega vmesnika navideznega računalnika &lt;b&gt;%1&lt;/b&gt; je spodletela.</translation>
     </message>
@@ -8845,7 +8850,7 @@
         <translation>Odklop kabla omrežnega vmesnika navideznega računalnika &lt;b&gt;%1&lt;/b&gt; je spodletela.</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="-1711"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="-1702"/>
         <source>&lt;p&gt;One or more disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ena ali več datotek odtisa diska trenutno ni na voljo. Posledično ne boste mogli upravljati z navideznimi računalniki, ki uporabljajo te datoteke, dokler spet ne postanejo dostopne.&lt;/p&gt;&lt;p&gt;Pritisnite &lt;b&gt;Preveri&lt;/b&gt;, da odprete Upravljalnika navideznih nosilcev in si ogledate, katere datoteke niso dostopne ali &lt;b&gt;Prezri&lt;/b&gt;, da prezrete to sporočilo.&lt;/p&gt;</translation>
     </message>
@@ -8871,6 +8876,7 @@
     </message>
     <message>
         <location line="+136"/>
+        <location filename="../src/globals/UIPopupCenter.cpp" line="+46"/>
         <source>Failed to open the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Odpiranje datoteke odtisa diska &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; je spodletelo.</translation>
     </message>

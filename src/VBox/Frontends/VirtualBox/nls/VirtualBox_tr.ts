@@ -10889,7 +10889,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt; sanal makinesi içine &lt;b&gt;VirtualBox Misafir Eklentileri&lt;/b&gt; disk kalıbı dosyası yerleştirilemedi, makine optik sürücülere sahip değil gibi. Lütfen sanal makine ayarları penceresinin depolama sayfasını kullanarak bir sürücü ekleyin.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;b&gt;%1&lt;/b&gt; sanal makinesi içine &lt;b&gt;VirtualBox Misafir Eklentileri&lt;/b&gt; disk kalıbı dosyası yerleştirilemedi, makine optik sürücülere sahip değil gibi. Lütfen sanal makine ayarları penceresinin depolama sayfasını kullanarak bir sürücü ekleyin.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Unable to enter password!</source>
@@ -11119,6 +11119,10 @@
     <message>
         <source>Failed to disable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; sanal makinesi için ses bağdaştırıcısı girişini etkisizleştirme başarısız.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

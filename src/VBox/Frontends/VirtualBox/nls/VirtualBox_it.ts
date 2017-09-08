@@ -12597,7 +12597,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile inserire il file dell&apos;immagine del disco delle &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; nella macchina virtuale&lt;b&gt;%1&lt;/b&gt;, poiché la macchina non ha alcun lettore ottico. Aggiungi un lettore dalla pagina di archiviazione della finestra delle impostazioni della macchina virtuale.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Impossibile inserire il file dell&apos;immagine del disco delle &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; nella macchina virtuale&lt;b&gt;%1&lt;/b&gt;, poiché la macchina non ha alcun lettore ottico. Aggiungi un lettore dalla pagina di archiviazione della finestra delle impostazioni della macchina virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual optical drive?&lt;/p&gt;</source>
@@ -12823,6 +12823,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Failed to disable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Disabilitazione dell&apos;ingresso audio per la macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
