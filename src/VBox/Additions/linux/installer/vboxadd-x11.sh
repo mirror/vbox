@@ -29,7 +29,6 @@
 ### END INIT INFO
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
-LOG="/var/log/vboxadd-install-x11.log"
 CONFIG_DIR="/var/lib/VBoxGuestAdditions"
 CONFIG="${CONFIG_DIR}/config"
 MODPROBE=/sbin/modprobe
@@ -453,7 +452,7 @@ EOF
 
     # And set up VBoxClient to start when the X session does
     install_x11_startup_app "${lib_dir}/98vboxadd-xclient" "${lib_dir}/vboxclient.desktop" VBoxClient VBoxClient-all ||
-        fail "See the log file $LOG for more information."
+        fail "Failed to set up VBoxClient to start automatically."
     ln -s "${lib_dir}/98vboxadd-xclient" /usr/bin/VBoxClient-all 2>/dev/null
 }
 

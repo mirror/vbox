@@ -59,11 +59,16 @@ QUICKSETUP=
 ## systemd logs information about service status, otherwise do that ourselves.
 QUIET=
 
-# Rotate log files
-mv "${LOG}.3" "${LOG}.4" 2>/dev/null
-mv "${LOG}.2" "${LOG}.3" 2>/dev/null
-mv "${LOG}.1" "${LOG}.2" 2>/dev/null
-mv "${LOG}" "${LOG}.1" 2>/dev/null
+setup_log()
+{
+    test -n "${LOG}" && return 0
+    # Rotate log files
+    LOG="/var/log/vboxadd-setup.log"
+    mv "${LOG}.3" "${LOG}.4" 2>/dev/null
+    mv "${LOG}.2" "${LOG}.3" 2>/dev/null
+    mv "${LOG}.1" "${LOG}.2" 2>/dev/null
+    mv "${LOG}" "${LOG}.1" 2>/dev/null
+}
 
 if $MODPROBE -c 2>/dev/null | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"
@@ -119,6 +124,7 @@ fail()
 
 log()
 {
+    setup_log
     echo "${1}" >> "${LOG}"
 }
 
@@ -332,6 +338,7 @@ setup_modules()
     test -n "${QUICKSETUP}" && test -f "${MODULE_DIR}/vboxguest.ko" && return 0
     info "Building the VirtualBox Guest Additions kernel modules."
 
+    # We are allowed to do ">> $LOG" after we have called "log()" once.
     log "Building the main Guest Additions module."
     if ! $BUILDINTMP \
         --save-module-symvers /tmp/vboxguest-Module.symvers \
