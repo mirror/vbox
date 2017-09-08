@@ -63,8 +63,7 @@ $(MODULE): $(MODULE).o
 
 install: $(MODULE)
 	@mkdir -p $(MODULE_DIR); \
-	install -m 0644 -o root -g root $(MODULE).$(MODULE_EXT) \
-	$(INSTALL_MOD_PATH)/$(KERN_DIR)/$(INSTALL_MOD_DIR); \
+	install -m 0644 -o root -g root $(MODULE).$(MODULE_EXT) $(MODULE_DIR); \
 	PATH="$(PATH):/bin:/sbin" depmod -a;
 
 clean:
