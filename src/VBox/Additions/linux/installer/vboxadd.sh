@@ -230,10 +230,8 @@ start()
 
             $MODPROBE vboxguest >/dev/null 2>&1 || {
                 setup
-                $MODPROBE vboxguest >/dev/null 2>&1 || {
-                    "${INSTALL_DIR}/init/vboxadd-x11" cleanup 2>> "${LOG}"
+                $MODPROBE vboxguest >/dev/null 2>&1 ||
                     fail "modprobe vboxguest failed"
-                }
             }
             case "$no_udev" in 1)
                 sleep .5;;
