@@ -3195,7 +3195,8 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     pCpum->fXStateGuestMask = fGuestXcr0Mask;
 
     /* Work the sub-leaves. */
-    uint32_t cbXSaveMax = sizeof(X86FXSTATE);
+    uint32_t cbXSaveMaxActual = CPUM_MIN_XSAVE_AREA_SIZE;
+    uint32_t cbXSaveMaxReport = CPUM_MIN_XSAVE_AREA_SIZE;
     for (uSubLeaf = 0; uSubLeaf < 63; uSubLeaf++)
     {
         pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, 13, uSubLeaf);
@@ -3211,11 +3212,11 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                         AssertLogRelMsgReturn((pCurLeaf->uEax & (XSAVE_C_X87 | XSAVE_C_SSE)) == (XSAVE_C_X87 | XSAVE_C_SSE),
                                               ("CPUID(0xd/0).EAX missing mandatory X87 or SSE bits: %#RX32", pCurLeaf->uEax),
                                               VERR_CPUM_IPE_1);
-                        cbXSaveMax = pCurLeaf->uEcx;
-                        AssertLogRelMsgReturn(cbXSaveMax <= CPUM_MAX_XSAVE_AREA_SIZE && cbXSaveMax >= CPUM_MIN_XSAVE_AREA_SIZE,
-                                              ("%#x max=%#x\n", cbXSaveMax, CPUM_MAX_XSAVE_AREA_SIZE), VERR_CPUM_IPE_2);
-                        AssertLogRelMsgReturn(pCurLeaf->uEbx >= CPUM_MIN_XSAVE_AREA_SIZE && pCurLeaf->uEbx <= cbXSaveMax,
-                                              ("ebx=%#x cbXSaveMax=%#x\n", pCurLeaf->uEbx, cbXSaveMax),
+                        cbXSaveMaxActual = pCurLeaf->uEcx;
+                        AssertLogRelMsgReturn(cbXSaveMaxActual <= CPUM_MAX_XSAVE_AREA_SIZE && cbXSaveMaxActual >= CPUM_MIN_XSAVE_AREA_SIZE,
+                                              ("%#x max=%#x\n", cbXSaveMaxActual, CPUM_MAX_XSAVE_AREA_SIZE), VERR_CPUM_IPE_2);
+                        AssertLogRelMsgReturn(pCurLeaf->uEbx >= CPUM_MIN_XSAVE_AREA_SIZE && pCurLeaf->uEbx <= cbXSaveMaxActual,
+                                              ("ebx=%#x cbXSaveMaxActual=%#x\n", pCurLeaf->uEbx, cbXSaveMaxActual),
                                               VERR_CPUM_IPE_2);
                         continue;
                     case 1:
@@ -3227,17 +3228,19 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                     default:
                         if (fGuestXcr0Mask & RT_BIT_64(uSubLeaf))
                         {
-                            AssertLogRelMsgReturn(   pCurLeaf->uEax <= cbXSaveMax
+                            AssertLogRelMsgReturn(   pCurLeaf->uEax <= cbXSaveMaxActual
                                                   && pCurLeaf->uEax >  0
-                                                  && pCurLeaf->uEbx < cbXSaveMax
+                                                  && pCurLeaf->uEbx < cbXSaveMaxActual
                                                   && pCurLeaf->uEbx >= CPUM_MIN_XSAVE_AREA_SIZE
-                                                  && pCurLeaf->uEbx + pCurLeaf->uEax <= cbXSaveMax,
+                                                  && pCurLeaf->uEbx + pCurLeaf->uEax <= cbXSaveMaxActual,
                                                   ("%#x: eax=%#x ebx=%#x cbMax=%#x\n",
-                                                   uSubLeaf, pCurLeaf->uEax, pCurLeaf->uEbx, cbXSaveMax),
+                                                   uSubLeaf, pCurLeaf->uEax, pCurLeaf->uEbx, cbXSaveMaxActual),
                                                   VERR_CPUM_IPE_2);
                             AssertLogRel(!(pCurLeaf->uEcx & 1));
                             pCurLeaf->uEcx = 0; /* Bit 0 should be zero (XCR0), the reset are reserved... */
                             pCurLeaf->uEdx = 0; /* it's reserved... */
+                            if (pCurLeaf->uEbx + pCurLeaf->uEax > cbXSaveMaxReport)
+                                cbXSaveMaxReport = pCurLeaf->uEbx + pCurLeaf->uEax;
                             continue;
                         }
                         break;
@@ -3249,6 +3252,19 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
             pCurLeaf->uEbx = 0;
             pCurLeaf->uEcx = 0;
             pCurLeaf->uEdx = 0;
+        }
+    }
+
+    /* Update the max and current feature sizes to shut up annoying Linux kernels. */
+    if (cbXSaveMaxReport != cbXSaveMaxActual && fGuestXcr0Mask)
+    {
+        pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, 13, 0); 
+        if (pCurLeaf)
+        {
+            LogRel(("CPUM: Changing leaf 13[0]: EBX=%#RX32 -> %#RX32, ECX=%#RX32 -> %#RX32\n",
+                    pCurLeaf->uEbx, cbXSaveMaxReport, pCurLeaf->uEcx, cbXSaveMaxReport));
+            pCurLeaf->uEbx = cbXSaveMaxReport; 
+            pCurLeaf->uEcx = cbXSaveMaxReport;
         }
     }
 
