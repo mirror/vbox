@@ -995,7 +995,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 try:
                     oIProgress = oHd.changeEncryption('', self.sEncryptAlgo, self.sEncryptPw, self.ksPwId);
                     oProgress = vboxwrappers.ProgressWrapper(oIProgress, self.oVBoxMgr, self, 'Encrypting "%s"' % (sDiskPath,));
-                    oProgress.wait();
+                    oProgress.wait(60*60000); # Wait for up to one hour, fixed disks take longer to encrypt.
                     if oProgress.logResult() is False:
                         raise base.GenError('Encrypting disk "%s" failed' % (sDiskPath, ));
                 except:
