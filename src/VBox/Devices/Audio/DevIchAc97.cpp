@@ -391,6 +391,8 @@ typedef struct AC97STATE
     PDMPCIDEV               PciDev;
     /** R3 Pointer to the device instance. */
     PPDMDEVINSR3            pDevInsR3;
+    /** Critical section protecting the AC'97 state. */
+    PDMCRITSECT             CritSect;
     /** Global Control (Bus Master Control Register). */
     uint32_t                glob_cnt;
     /** Global Status (Bus Master Control Register). */
@@ -410,11 +412,6 @@ typedef struct AC97STATE
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
     /** The timer for pumping data thru the attached LUN drivers. */
     PTMTIMERR3              pTimer;
-    /** Criticial section for timer. */
-    RTCRITSECT              csTimer;
-# if HC_ARCH_BITS == 32
-    uint32_t                Padding0;
-# endif
     /** Flag indicating whether the timer is active or not. */
     bool                    fTimerActive;
     uint8_t                 u8Padding1[7];
@@ -451,6 +448,93 @@ typedef struct AC97STATE
     uint32_t                uCodecModel;
 } AC97STATE, *PAC97STATE;
 
+/**
+ * Acquires the AC'97 lock.
+ */
+#define DEVAC97_LOCK(a_pThis) \
+    do { \
+        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
+        AssertRC(rcLock); \
+    } while (0)
+
+/**
+ * Acquires the AC'97 lock or returns.
+ */
+# define DEVAC97_LOCK_RETURN(a_pThis, a_rcBusy) \
+    do { \
+        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, a_rcBusy); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            return rcLock; \
+        } \
+    } while (0)
+
+/**
+ * Acquires the AC'97 lock or returns.
+ */
+# define DEVAC97_LOCK_RETURN_VOID(a_pThis) \
+    do { \
+        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            return; \
+        } \
+    } while (0)
+
+/**
+ * Releases the AC'97 lock.
+ */
+#define DEVAC97_UNLOCK(a_pThis) \
+    do { PDMCritSectLeave(&(a_pThis)->CritSect); } while (0)
+
+/**
+ * Acquires the TM lock and AC'97 lock, returns on failure.
+ */
+#define DEVAC97_LOCK_BOTH_RETURN_VOID(a_pThis) \
+    do { \
+        int rcLock = TMTimerLock((a_pThis)->pTimer, VERR_IGNORED); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            return; \
+        } \
+        rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            TMTimerUnlock((a_pThis)->pTimer); \
+            return; \
+        } \
+    } while (0)
+
+/**
+ * Acquires the TM lock and AC'97 lock, returns on failure.
+ */
+#define DEVAC97_LOCK_BOTH_RETURN(a_pThis, a_rcBusy) \
+    do { \
+        int rcLock = TMTimerLock((a_pThis)->pTimer, (a_rcBusy)); \
+        if (rcLock != VINF_SUCCESS) \
+            return rcLock; \
+        rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, (a_rcBusy)); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            TMTimerUnlock((a_pThis)->pTimer); \
+            return rcLock; \
+        } \
+    } while (0)
+
+/**
+ * Releases the AC'97 lock and TM lock.
+ */
+#define DEVAC97_UNLOCK_BOTH(a_pThis) \
+    do { \
+        PDMCritSectLeave(&(a_pThis)->CritSect); \
+        TMTimerUnlock((a_pThis)->pTimer); \
+    } while (0)
+
 #ifdef VBOX_WITH_STATISTICS
 AssertCompileMemberAlignment(AC97STATE, StatTimer,        8);
 AssertCompileMemberAlignment(AC97STATE, StatBytesRead,    8);
@@ -475,8 +559,10 @@ static void               ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStr
 
 static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns);
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
-static void               ichac97TimerMaybeStart(PAC97STATE pThis);
-static void               ichac97TimerMaybeStop(PAC97STATE pThis);
+static int                ichac97TimerStart(PAC97STATE pThis);
+static int                ichac97TimerMaybeStart(PAC97STATE pThis);
+static int                ichac97TimerStop(PAC97STATE pThis);
+static int                ichac97TimerMaybeStop(PAC97STATE pThis);
 static void               ichac97TimerMain(PAC97STATE pThis);
 static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
 #endif
@@ -1212,7 +1298,7 @@ static void ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInT
             AssertRC(rc2);
         }
 
-        /* How much (guest output) data is available at the moment for the HDA stream? */
+        /* How much (guest output) data is available at the moment for the AC'97 stream? */
         uint32_t cbUsed = ichac97StreamGetUsed(pStream);
 
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
@@ -1990,46 +2076,83 @@ static void ichac97WriteBUP(PAC97STATE pThis, uint32_t cbElapsed)
 
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
 /**
- * Starts the internal audio device timer (if not started yet).
+ * Starts the internal audio device timer.
  *
+ * @return  IPRT status code.
  * @param   pThis               AC'97 state.
  */
-static void ichac97TimerMaybeStart(PAC97STATE pThis)
+static int  ichac97TimerStart(PAC97STATE pThis)
+{
+    LogFlowFuncEnter();
+
+    DEVAC97_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
+    AssertPtr(pThis->pTimer);
+
+    if (!pThis->fTimerActive)
+    {
+        LogRel2(("AC97: Starting transfers\n"));
+
+        pThis->fTimerActive = true;
+
+        /* Start transfers. */
+        ichac97TimerMain(pThis);
+    }
+
+    DEVAC97_UNLOCK_BOTH(pThis);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Starts the internal audio device timer (if not started yet).
+ *
+ * @return  IPRT status code.
+ * @param   pThis               AC'97 state.
+ */
+static int ichac97TimerMaybeStart(PAC97STATE pThis)
 {
     LogFlowFuncEnter();
 
     if (!pThis->pTimer)
-        return;
+        return VERR_WRONG_ORDER;
 
     pThis->cStreamsActive++;
 
     /* Only start the timer at the first active stream. */
     if (pThis->cStreamsActive == 1)
-    {
-        LogRel2(("AC97: Starting transfers\n"));
+        return ichac97TimerStart(pThis);
 
-        /* Set timer flag. */
-        ASMAtomicXchgBool(&pThis->fTimerActive, true);
-
-        /* Update current time timestamp. */
-        pThis->uTimerTS = TMTimerGet(pThis->pTimer);
-
-        /* Start transfers. */
-        ichac97TimerMain(pThis);
-    }
+    return VINF_SUCCESS;
 }
 
 /**
  * Stops the internal audio device timer.
  *
+ * @return  IPRT status code.
  * @param   pThis               AC'97 state.
  */
-static void ichac97TimerStop(PAC97STATE pThis)
+static int ichac97TimerStop(PAC97STATE pThis)
 {
     LogFlowFuncEnter();
 
-    /* Set timer flag. */
-    ASMAtomicXchgBool(&pThis->fTimerActive, false);
+    if (!pThis->pTimer) /* Only can happen on device construction time, so no locking needed here. */
+        return VINF_SUCCESS;
+
+    DEVAC97_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+
+    if (pThis->fTimerActive)
+    {
+        LogRel2(("AC97: Stopping transfers ...\n"));
+
+        pThis->fTimerActive = false;
+
+        TMTimerStop(pThis->pTimer);
+    }
+
+    DEVAC97_UNLOCK_BOTH(pThis);
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2037,33 +2160,37 @@ static void ichac97TimerStop(PAC97STATE pThis)
  * then checks if the internal audio device timer can be
  * stopped.
  *
+ * @return  IPRT status code.
  * @param   pThis               AC'97 state.
  */
-static void ichac97TimerMaybeStop(PAC97STATE pThis)
+static int ichac97TimerMaybeStop(PAC97STATE pThis)
 {
     LogFlowFuncEnter();
 
     if (!pThis->pTimer)
-        return;
+        return VERR_WRONG_ORDER;
 
     if (pThis->cStreamsActive) /* Function can be called mupltiple times. */
     {
         pThis->cStreamsActive--;
 
         if (pThis->cStreamsActive == 0)
-            ichac97TimerStop(pThis);
+            return ichac97TimerStop(pThis);
     }
+
+    return VINF_SUCCESS;
 }
 
 /**
  * Main routine for the device timer.
  *
- * @returns IPRT status code.
  * @param   pThis               AC'97 state.
  */
 static void ichac97TimerMain(PAC97STATE pThis)
 {
     STAM_PROFILE_START(&pThis->StatTimer, a);
+
+    DEVAC97_LOCK_BOTH_RETURN_VOID(pThis);
 
     uint64_t cTicksNow = TMTimerGet(pThis->pTimer);
 
@@ -2092,7 +2219,9 @@ static void ichac97TimerMain(PAC97STATE pThis)
         TMTimerSet(pThis->pTimer, cTicksNow + cTicks);
     }
     else
-        LogRel2(("AC97: Stopping transfers\n"));
+        LogRel2(("AC97: Stopped transfers\n"));
+
+    DEVAC97_UNLOCK_BOTH(pThis);
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
@@ -2135,9 +2264,9 @@ static void ichac97DoTransfers(PAC97STATE pThis)
  * Transfers data of an AC'97 stream according to its usage (input / output).
  *
  * For an SDO (output) stream this means reading DMA data from the device to
- * the HDA stream's internal FIFO buffer.
+ * the AC'97 stream's internal FIFO buffer.
  *
- * For an SDI (input) stream this is reading audio data from the HDA stream's
+ * For an SDI (input) stream this is reading audio data from the AC'97 stream's
  * internal FIFO buffer and writing it as DMA data to the device.
  *
  * @returns IPRT status code.
@@ -2368,7 +2497,10 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
                                                uint32_t *pu32Val, unsigned cbVal)
 {
     RT_NOREF(pDevIns);
+
     PAC97STATE pThis = (PAC97STATE)pvUser;
+
+    DEVAC97_LOCK(pThis);
 
     /* Get the index of the NABMBAR port. */
     const uint32_t uPortIdx = uPort - pThis->IOPortBase[1];
@@ -2518,6 +2650,8 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
         }
     }
 
+    DEVAC97_UNLOCK(pThis);
+
     return rc;
 }
 
@@ -2537,7 +2671,10 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                                                 uint32_t u32Val, unsigned cbVal)
 {
     RT_NOREF(pDevIns);
-    PAC97STATE  pThis   = (PAC97STATE)pvUser;
+
+    PAC97STATE pThis = (PAC97STATE)pvUser;
+
+    DEVAC97_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_IOPORT_WRITE);
 
     /* Get the index of the NABMBAR register. */
     const uint32_t uPortIdx = uPort - pThis->IOPortBase[1];
@@ -2704,6 +2841,8 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
             break;
     }
 
+    DEVAC97_UNLOCK_BOTH(pThis);
+
     return VINF_SUCCESS;
 }
 
@@ -2725,6 +2864,8 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
 {
     RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
+
+    DEVAC97_LOCK(pThis);
 
     int rc = VINF_SUCCESS;
 
@@ -2769,6 +2910,8 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
         }
     }
 
+    DEVAC97_UNLOCK(pThis);
+
     return rc;
 }
 
@@ -2789,6 +2932,8 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
 {
     RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
+
+    DEVAC97_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_IOPORT_WRITE);
 
     uint32_t uPortIdx = uPort - pThis->IOPortBase[0];
 
@@ -2930,6 +3075,8 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
             break;
     }
 
+    DEVAC97_UNLOCK_BOTH(pThis);
+
     return VINF_SUCCESS;
 }
 
@@ -2941,14 +3088,15 @@ static DECLCALLBACK(int) ichac97IOPortMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
                                           RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(cb, enmType);
-    PAC97STATE  pThis   = RT_FROM_MEMBER(pPciDev, AC97STATE, PciDev);
-    RTIOPORT    Port    = (RTIOPORT)GCPhysAddress;
 
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
     Assert(cb >= 0x20);
 
     if (iRegion > 1) /* We support 2 regions max. at the moment. */
         return VERR_INVALID_PARAMETER;
+
+    PAC97STATE pThis   = RT_FROM_MEMBER(pPciDev, AC97STATE, PciDev);
+    RTIOPORT   Port    = (RTIOPORT)GCPhysAddress;
 
     int rc;
     if (iRegion == 0)
@@ -3195,6 +3343,15 @@ static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns)
     AudioMixerSinkReset(pThis->pSinkLineIn);
     AudioMixerSinkReset(pThis->pSinkMicIn);
     AudioMixerSinkReset(pThis->pSinkOut);
+
+# ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
+    /*
+     * Stop the timer, if any.
+     */
+    ichac97TimerStop(pThis);
+
+    pThis->cStreamsActive = 0;
+# endif
 }
 
 
@@ -3217,15 +3374,7 @@ static DECLCALLBACK(int) ichac97Destruct(PPDMDEVINS pDevIns)
     /* Sanity. */
     Assert(RTListIsEmpty(&pThis->lstDrv));
 
-    int rc;
-#ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
-    rc = RTCritSectDelete(&pThis->csTimer);
-#else
-    rc = VINF_SUCCESS;
-#endif
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -3447,13 +3596,24 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     }
 
     /*
+     * Use an own critical section for the device instead of the default
+     * one provided by PDM. This allows fine-grained locking in combination
+     * with TM when timer-specific stuff is being called in e.g. the MMIO handlers.
+     */
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "AC'97");
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    /*
      * Initialize data (most of it anyway).
      */
     pThis->pDevInsR3                = pDevIns;
     /* IBase */
     pThis->IBase.pfnQueryInterface  = ichac97QueryInterface;
 
-    /* PCI Device (the assertions will be removed later) */
+    /* PCI Device */
     PCIDevSetVendorId         (&pThis->PciDev, 0x8086); /* 00 ro - intel. */               Assert(pThis->PciDev.abConfig[0x00] == 0x86); Assert(pThis->PciDev.abConfig[0x01] == 0x80);
     PCIDevSetDeviceId         (&pThis->PciDev, 0x2415); /* 02 ro - 82801 / 82801aa(?). */  Assert(pThis->PciDev.abConfig[0x02] == 0x15); Assert(pThis->PciDev.abConfig[0x03] == 0x24);
     PCIDevSetCommand          (&pThis->PciDev, 0x0000); /* 04 rw,ro - pcicmd. */           Assert(pThis->PciDev.abConfig[0x04] == 0x00); Assert(pThis->PciDev.abConfig[0x05] == 0x00);
@@ -3668,21 +3828,24 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
     if (RT_SUCCESS(rc))
     {
-        rc = RTCritSectInit(&pThis->csTimer);
-        if (RT_SUCCESS(rc))
-        {
-            /* Create the emulation timer. */
-            rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ichac97Timer, pThis,
-                                        TMTIMER_FLAGS_NO_CRIT_SECT, "DevIchAc97", &pThis->pTimer);
-            AssertRCReturn(rc, rc);
+        /* Create the emulation timer.
+         *
+         * Note:  Use TMCLOCK_VIRTUAL_SYNC here, as the guest's AC'97 driver
+         *        relies on exact (virtual) DMA timing and uses DMA Position Buffers
+         *        instead of the LPIB registers.
+         */
+        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, ichac97Timer, pThis,
+                                    TMTIMER_FLAGS_NO_CRIT_SECT, "AC'97 Timer", &pThis->pTimer);
+        AssertRCReturn(rc, rc);
 
-            if (RT_SUCCESS(rc))
-            {
-                pThis->cTimerTicks = TMTimerGetFreq(pThis->pTimer) / uTimerHz;
-                pThis->uTimerTS    = TMTimerGet(pThis->pTimer);
-                LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicks, uTimerHz));
-            }
-        }
+        /* Use our own critcal section for the device timer.
+         * That way we can control more fine-grained when to lock what. */
+        rc = TMR3TimerSetCritSect(pThis->pTimer, &pThis->CritSect);
+        AssertRCReturn(rc, rc);
+
+        pThis->cTimerTicks = TMTimerGetFreq(pThis->pTimer) / uTimerHz;
+        pThis->uTimerTS    = TMTimerGet(pThis->pTimer);
+        LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicks, uTimerHz));
     }
 #else /* !VBOX_WITH_AUDIO_AC97_CALLBACKS */
     if (RT_SUCCESS(rc))
