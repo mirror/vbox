@@ -80,6 +80,9 @@ typedef struct DRVTCP
     RTPIPE              hPipeWakeW;
     /** Flag whether the socket is in the pollset. */
     bool                fTcpSockInPollSet;
+    /** Flag whether the send buffer is full nad it is required to wait for more
+     * space until there is room again. */
+    bool                fXmitBufFull;
 
     /** Thread for listening for new connections. */
     RTTHREAD            ListenThread;
@@ -120,10 +123,29 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
             rc = RTPollSetAddSocket(pThis->hPollSet, pThis->hTcpSock,
                                     fEvts, DRVTCP_POLLSET_ID_SOCKET);
             if (RT_SUCCESS(rc))
+            {
                 pThis->fTcpSockInPollSet = true;
+                pThis->fXmitBufFull = false;
+            }
         }
         else
         {
+            /*
+             * Just return if the send buffer wasn't full till now and
+             * the caller wants to check whether writing is possible with
+             * the event set.
+             *
+             * On Windows the write event is only posted after a send operation returned
+             * WSAEWOULDBLOCK. So without this we would block in the poll call below waiting
+             * for an event which would never happen if the buffer has space left.
+             */
+            if (   (fEvts & RTPOLL_EVT_WRITE)
+                && !pThis->fXmitBufFull)
+            {
+                *pfEvts = RTPOLL_EVT_WRITE;
+                return VINF_SUCCESS;
+            }
+
             /* Always include error event. */
             fEvts |= RTPOLL_EVT_ERROR;
             rc = RTPollSetEventsChange(pThis->hPollSet, DRVTCP_POLLSET_ID_SOCKET, fEvts);
@@ -182,6 +204,8 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
                     }
                     else
                     {
+                        if (fEvtsRecv & RTPOLL_EVT_WRITE)
+                            pThis->fXmitBufFull = false;
                         *pfEvts = fEvtsRecv;
                         break;
                     }
@@ -257,11 +281,17 @@ static DECLCALLBACK(int) drvTcpWrite(PPDMISTREAM pInterface, const void *pvBuf, 
     {
         size_t cbBuf = *pcbWrite;
         rc = RTSocketWriteNB(pThis->hTcpSock, pvBuf, cbBuf, pcbWrite);
+        if (rc == VINF_TRY_AGAIN)
+        {
+            Assert(*pcbWrite == 0);
+            pThis->fXmitBufFull = true;
+            rc = VERR_TIMEOUT;
+        }
     }
     else
         *pcbWrite = 0;
 
-    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
+    LogFlow(("%s: returns %Rrc *pcbWrite=%zu\n", __FUNCTION__, rc, *pcbWrite));
     return rc;
 }
 
