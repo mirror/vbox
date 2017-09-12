@@ -146,7 +146,7 @@ typedef struct VIDEORECVIDEOFRAME
 typedef struct VIDEORECAUDIOFRAME
 {
     uint8_t             abBuf[_64K]; /** @todo Fix! */
-    uint32_t            cbBuf;
+    size_t              cbBuf;
     /** Time stamp (in ms). */
     uint64_t            uTimeStampMs;
 } VIDEORECAUDIOFRAME, *PVIDEORECAUDIOFRAME;
@@ -552,7 +552,8 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
             break;
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-        PVIDEORECAUDIOFRAME pAudioFrame;
+        VIDEORECAUDIOFRAME audioFrame;
+        RT_ZERO(audioFrame);
 
         int rc2 = RTCritSectEnter(&pCtx->CritSect);
         AssertRC(rc2);
@@ -566,9 +567,7 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
              *
              * For now just doing a simple copy of the current audio frame should be good enough.
              */
-            VIDEORECAUDIOFRAME audioFrame;
             memcpy(&audioFrame, &pCtx->Audio.Frame, sizeof(VIDEORECAUDIOFRAME));
-            pAudioFrame = &audioFrame;
 
             pCtx->Audio.fHasAudioData = false;
         }
@@ -597,30 +596,26 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
 
             if (fEncodeVideo)
             {
-                pStream->Video.fHasVideoData = false;
-
                 rc = videoRecRGBToYUV(pVideoFrame->uPixelFormat,
                                       /* Destination */
                                       pStream->Video.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
                                       /* Source */
                                       pVideoFrame->pu8RGBBuf, pStream->Video.uWidth, pStream->Video.uHeight);
-            }
+                if (RT_SUCCESS(rc))
+                    rc = videoRecEncodeAndWrite(pStream, pVideoFrame);
 
-            if (   fEncodeVideo
-                && RT_SUCCESS(rc))
-            {
-                rc = videoRecEncodeAndWrite(pStream, pVideoFrame);
+                pStream->Video.fHasVideoData = false;
             }
 
             videoRecStreamUnlock(pStream);
 
             if (RT_FAILURE(rc))
             {
-                static unsigned s_cErrEnc = 100;
-                if (s_cErrEnc > 0)
+                static unsigned s_cErrEncVideo = 0;
+                if (s_cErrEncVideo < 32)
                 {
                     LogRel(("VideoRec: Error %Rrc encoding / writing video frame\n", rc));
-                    s_cErrEnc--;
+                    s_cErrEncVideo++;
                 }
             }
 
@@ -628,12 +623,27 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
             /* Each (enabled) screen has to get the same audio data. */
             if (fEncodeAudio)
             {
-                WebMWriter::BlockData_Opus blockData = { pAudioFrame->abBuf, pAudioFrame->cbBuf, pAudioFrame->uTimeStampMs };
+                Assert(audioFrame.cbBuf);
+                Assert(audioFrame.cbBuf <= _64K); /** @todo Fix. */
+
+                WebMWriter::BlockData_Opus blockData = { audioFrame.abBuf, audioFrame.cbBuf, audioFrame.uTimeStampMs };
                 rc = pStream->pEBML->WriteBlock(pStream->uTrackAudio, &blockData, sizeof(blockData));
+                if (RT_FAILURE(rc))
+                {
+                    static unsigned s_cErrEncAudio = 0;
+                    if (s_cErrEncAudio < 32)
+                    {
+                        LogRel(("VideoRec: Error %Rrc encoding audio frame\n", rc));
+                        s_cErrEncAudio++;
+                    }
+                }
             }
 #endif
         }
-    }
+
+        /* Keep going in case of errors. */
+
+    } /* for */
 
     return VINF_SUCCESS;
 }

@@ -348,14 +348,18 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
 
                         pSink->Con.WebM.pWebM = new WebMWriter();
                         rc = pSink->Con.WebM.pWebM->Create(szFile,
-                                                           /** @ŧodo Add option to add some suffix if file exists instead of overwriting? */
+                                                           /** @todo Add option to add some suffix if file exists instead of overwriting? */
                                                            RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE,
                                                            WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
                         if (RT_SUCCESS(rc))
                         {
                             rc = pSink->Con.WebM.pWebM->AddAudioTrack(uHz, cChannels, cBits,
                                                                       &pSink->Con.WebM.uTrack);
-                            if (RT_FAILURE(rc))
+                            if (RT_SUCCESS(rc))
+                            {
+                                LogRel(("VideoRec: Recording audio to file '%s'\n", szFile));
+                            }
+                            else
                                 LogRel(("VideoRec: Error creating audio track for file '%s' (%Rrc)\n", szFile, rc));
                         }
                         else
@@ -660,9 +664,9 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
         if (cbCircBuf)
         {
             memcpy(pvCircBuf, (uint8_t *)pvBuf + cbWrittenTotal, cbCircBuf),
-            cbWrittenTotal += cbCircBuf;
+            cbWrittenTotal += (uint32_t)cbCircBuf;
             Assert(cbToWrite >= cbCircBuf);
-            cbToWrite      -= cbCircBuf;
+            cbToWrite      -= (uint32_t)cbCircBuf;
         }
 
         RTCircBufReleaseWriteBlock(pCircBuf, cbCircBuf);
@@ -729,7 +733,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
 
         /* Call the encoder to encode one frame per iteration. */
         opus_int32 cbWritten = opus_encode(pSink->Codec.Opus.pEnc,
-                                           (opus_int16 *)abSrc, csFrame, abDst, cbDst);
+                                           (opus_int16 *)abSrc, csFrame, abDst, (opus_int32)cbDst);
         if (cbWritten > 0)
         {
 # ifdef VBOX_WITH_STATISTICS

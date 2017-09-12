@@ -497,23 +497,30 @@ class WebMWriter_Impl
     struct OpusPrivData
     {
         OpusPrivData(uint32_t a_u32SampleRate, uint8_t a_u8Channels)
-            : u8Channels(a_u8Channels)
-            , u32SampleRate(a_u32SampleRate) { }
+        {
+            RTStrPrintf((char *)au8Head, sizeof(au8Head), "OpusHead");
 
-        /** "OpusHead". */
-        uint8_t  au8Head[8]      = { 0x4f, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64 };
-        /** Must set to 1. */
-        uint8_t  u8Version       = 1;
-        uint8_t  u8Channels      = 0;
-        uint16_t u16PreSkip      = 0;
+            u8Version       = 1;
+            u8Channels      = a_u8Channels;
+            u16PreSkip      = 0;
+            u32SampleRate   = a_u32SampleRate;
+            u16Gain         = 0;
+            u8MappingFamily = 0;
+        }
+
+        uint8_t  au8Head[8];        /**< Defaults to "OpusHead". */
+        uint8_t  u8Version;         /**< Must be set to 1. */
+        uint8_t  u8Channels;
+        uint16_t u16PreSkip;
         /** Sample rate *before* encoding to Opus.
          *  Note: This rate has nothing to do with the playback rate later! */
-        uint32_t u32SampleRate   = 0;
-        uint16_t u16Gain         = 0;
+        uint32_t u32SampleRate;
+        uint16_t u16Gain;
         /** Must stay 0 -- otherwise a mapping table must be appended
          *  right after this header. */
-        uint8_t  u8MappingFamily = 0;
+        uint8_t  u8MappingFamily;
     };
+    AssertCompileSize(OpusPrivData, 19);
 # pragma pack(pop)
 #endif /* VBOX_WITH_LIBOPUS */
 

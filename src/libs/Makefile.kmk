@@ -85,12 +85,10 @@ if defined(VBOX_WITH_MAIN) \
   endif
  endif
 
- # Opus for audio encoding video capture.
+ # Opus for supporting audio when doing video capturing.
  if defined(VBOX_WITH_LIBOPUS) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK) \
    && ("$(SDK_VBOX_OPUS_INCS)" == "$(SDK_VBOX_OPUS_DEFAULT_INCS)")
-  if1of ($(KBUILD_TARGET), linux)
-   include $(PATH_SUB_CURRENT)/libopus/Makefile.kmk
-  endif
+  include $(PATH_SUB_CURRENT)/libopus-1.2.1/Makefile.kmk
  endif
 endif
 

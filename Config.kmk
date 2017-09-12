@@ -665,8 +665,16 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 linux.x86
  VBOX_WITH_LIBVPX = 1
  # Enables the video capturing support.
  VBOX_WITH_VIDEOREC = 1
- # Enables audio support for VM video capturing. Not enabled by default yet.
- VBOX_WITH_AUDIO_VIDEOREC =
+endif
+if1of ($(KBUILD_TARGET), linux win)
+ if 0 # Not enabled by default yet.
+  # Enables libopus (Opus), used for encoding audio into VM video capturing files.
+  VBOX_WITH_LIBOPUS = 1
+  # Enable SEE optimizations for Opus.
+  VBOX_WITH_OPUS_SSE = 1
+  # Enables audio support for VM video capturing.
+  VBOX_WITH_AUDIO_VIDEOREC = 1
+ endif
 endif
 # Enable shared folders
 VBOX_WITH_SHARED_FOLDERS = 1
@@ -1167,14 +1175,6 @@ ifdef VBOX_OSE
  VBOX_WITH_NETFLT_CROSSBOW=
  ifn1of ($(KBUILD_TARGET), darwin linux solaris win)
   VBOX_WITH_INSTALLER=
- endif
- if1of ($(KBUILD_TARGET), win)
-  # Undefine codec libraries which are not needed.
-  VBOX_WITH_LIBVPX=
-  VBOX_WITH_LIBOPUS=
-  # Disable video recording (with audio support).
-  VBOX_WITH_VIDEOREC=
-  VBOX_WITH_AUDIO_VIDEOREC=
  endif
  VBOX_GUI_WITH_HIDPI=
  # branding
@@ -3809,7 +3809,8 @@ endif
 
 ifdef VBOX_WITH_LIBOPUS
  SDK_VBOX_OPUS       = .
- SDK_VBOX_OPUS_INCS ?= $(PATH_ROOT)/src/libs/libopus-1.2.1/include
+ SDK_VBOX_OPUS_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libopus-1.2.1/include
+ SDK_VBOX_OPUS_INCS ?= $(SDK_VBOX_OPUS_DEFAULT_INCS)
  SDK_VBOX_OPUS_LIBS ?= $(PATH_STAGE_LIB)/VBox-libopus$(VBOX_SUFF_LIB)
 endif
 
