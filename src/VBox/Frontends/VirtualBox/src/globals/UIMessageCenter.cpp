@@ -947,6 +947,14 @@ void UIMessageCenter::cannotRemoveSnapshot(const CProgress &progress, const QStr
           UIErrorString::formatErrorInfo(progress));
 }
 
+void UIMessageCenter::cannotChangeSnapshot(const CSnapshot &comSnapshot, const QString &strSnapshotName, const QString &strMachineName) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to change the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
+             .arg(strSnapshotName).arg(strMachineName),
+          UIErrorString::formatErrorInfo(comSnapshot));
+}
+
 void UIMessageCenter::cannotFindSnapshotByName(const CMachine &comMachine,
                                                const QString &strName,
                                                QWidget *pParent /* = 0*/) const

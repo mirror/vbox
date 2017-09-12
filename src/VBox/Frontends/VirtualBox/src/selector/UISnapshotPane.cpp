@@ -925,48 +925,71 @@ void UISnapshotPane::sltToggleSnapshotDetailsVisibility(bool fVisible)
 
 void UISnapshotPane::sltApplySnapshotDetailsChanges()
 {
-    /* Make sure nothing being edited in the meantime: */
-    if (!m_pLockReadWrite->tryLockForWrite())
-        return;
-
-    /* Acquire "current snapshot" item: */
+    /* Acquire selected item: */
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
-    AssertPtr(pSnapshotItem);
-    if (pSnapshotItem)
+    AssertPtrReturnVoid(pSnapshotItem);
+
+    /* For snapshot items: */
+    if (!pSnapshotItem->isCurrentStateItem())
     {
+        /* Make sure nothing being edited in the meantime: */
+        if (!m_pLockReadWrite->tryLockForWrite())
+            return;
+
         /* Make sure that's a snapshot item indeed: */
         CSnapshot comSnapshot = pSnapshotItem->snapshot();
-        if (comSnapshot.isNotNull())
+        AssertReturnVoid(comSnapshot.isNotNull());
+
+        /* Get item data: */
+        UIDataSnapshot oldData = *pSnapshotItem;
+        UIDataSnapshot newData = m_pDetailsWidget->data();
+        AssertReturnVoid(newData != oldData);
+
+        /* Open a session (this call will handle all errors): */
+        CSession comSession;
+        if (m_enmSessionState != KSessionState_Unlocked)
+            comSession = vboxGlobal().openExistingSession(m_strMachineId);
+        else
+            comSession = vboxGlobal().openSession(m_strMachineId);
+        if (comSession.isNotNull())
         {
-            /* Get item data: */
-            UIDataSnapshot oldData = *pSnapshotItem;
-            UIDataSnapshot newData = m_pDetailsWidget->data();
+            /* Get corresponding machine object: */
+            CMachine comMachine = comSession.GetMachine();
 
-            /* Update corresponding snapshot attributes if necessary: */
-            if (newData != oldData)
+            /* Perform separate independent steps: */
+            do
             {
-                /* We need to open a session when we manipulate the snapshot data of a machine: */
-                CSession comSession = vboxGlobal().openExistingSession(comSnapshot.GetMachine().GetId());
-                if (!comSession.isNull())
+                /* Save snapshot name: */
+                if (newData.m_strName != oldData.m_strName)
                 {
-                    // TODO: Add settings save validation.
+                    comSnapshot.SetName(newData.m_strName);
+                    if (!comSnapshot.isOk())
+                    {
+                        msgCenter().cannotChangeSnapshot(comSnapshot, oldData.m_strName, comMachine.GetName());
+                        break;
+                    }
+                }
 
-                    /* Save snapshot name: */
-                    if (newData.m_strName != oldData.m_strName)
-                        comSnapshot.SetName(newData.m_strName);
-                    /* Save snapshot description: */
-                    if (newData.m_strDescription != oldData.m_strDescription)
-                        comSnapshot.SetDescription(newData.m_strDescription);
-
-                    /* Close the session again: */
-                    comSession.UnlockMachine();
+                /* Save snapshot description: */
+                if (newData.m_strDescription != oldData.m_strDescription)
+                {
+                    comSnapshot.SetDescription(newData.m_strDescription);
+                    if (!comSnapshot.isOk())
+                    {
+                        msgCenter().cannotChangeSnapshot(comSnapshot, oldData.m_strName, comMachine.GetName());
+                        break;
+                    }
                 }
             }
-        }
-    }
+            while (0);
 
-    /* Allows editing again: */
-    m_pLockReadWrite->unlock();
+            /* Cleanup session: */
+            comSession.UnlockMachine();
+        }
+
+        /* Allows editing again: */
+        m_pLockReadWrite->unlock();
+    }
 
     /* Adjust snapshot tree: */
     adjustTreeWidget();
