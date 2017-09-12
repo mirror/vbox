@@ -2150,7 +2150,9 @@ static int ichac97TimerStop(PAC97STATE pThis)
 
         pThis->fTimerActive = false;
 
-        TMTimerStop(pThis->pTimer);
+        /* Note: Do not stop the timer via TMTimerStop() here, as there still might
+         *       be queued audio data which needs to be handled (e.g. played back) first
+         *       before actually stopping the timer for good. */
     }
 
     DEVAC97_UNLOCK_BOTH(pThis);
