@@ -4365,16 +4365,6 @@ static int e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC *pDesc, bool fOnWork
 #endif
 
     uint16_t u16MaxPktLen = pThis->contextTSE.dw3.u8HDRLEN + pThis->contextTSE.dw3.u16MSS;
-    if (RT_UNLIKELY(u16MaxPktLen <= pThis->contextTSE.dw3.u8HDRLEN))
-    {
-        E1kLog(("%s Transmit packet is too small: %u <= %u(min)\n", pThis->szPrf, u16MaxPktLen, pThis->contextTSE.dw3.u8HDRLEN));
-        return VINF_SUCCESS; // @todo consider VERR_BUFFER_UNDERFLOW;
-    }
-    if (RT_UNLIKELY(u16MaxPktLen > E1K_MAX_TX_PKT_SIZE || u16MaxPktLen > pThis->CTX_SUFF(pTxSg)->cbAvailable))
-    {
-        E1kLog(("%s Transmit packet is too large: %u > %u(max)\n", pThis->szPrf, u16MaxPktLen, E1K_MAX_TX_PKT_SIZE));
-        return VINF_SUCCESS; // @todo consider VERR_BUFFER_OVERFLOW;
-    }
 
     /*
      * Carve out segments.
@@ -4976,9 +4966,16 @@ DECLINLINE(void) e1kUpdateTxContext(PE1KSTATE pThis, E1KTXDESC *pDesc)
     if (pDesc->context.dw2.fTSE)
     {
         pThis->contextTSE = pDesc->context;
-        pThis->u32PayRemain = pDesc->context.dw2.u20PAYLEN;
-        pThis->u16HdrRemain = pDesc->context.dw3.u8HDRLEN;
-        e1kSetupGsoCtx(&pThis->GsoCtx, &pDesc->context);
+        uint32_t cbMaxSegmentSize = pThis->contextTSE.dw3.u16MSS + pThis->contextTSE.dw3.u8HDRLEN + 4; /*VTAG*/
+        if (RT_UNLIKELY(cbMaxSegmentSize > E1K_MAX_TX_PKT_SIZE))
+        {
+            pThis->contextTSE.dw3.u16MSS = E1K_MAX_TX_PKT_SIZE - pThis->contextTSE.dw3.u8HDRLEN - 4; /*VTAG*/
+            LogRelMax(10, ("%s Transmit packet is too large: %u > %u(max). Adjusted MSS to %u.\n",
+                           pThis->szPrf, cbMaxSegmentSize, E1K_MAX_TX_PKT_SIZE, pThis->contextTSE.dw3.u16MSS));
+        }
+        pThis->u32PayRemain = pThis->contextTSE.dw2.u20PAYLEN;
+        pThis->u16HdrRemain = pThis->contextTSE.dw3.u8HDRLEN;
+        e1kSetupGsoCtx(&pThis->GsoCtx, &pThis->contextTSE);
         STAM_COUNTER_INC(&pThis->StatTxDescCtxTSE);
     }
     else
