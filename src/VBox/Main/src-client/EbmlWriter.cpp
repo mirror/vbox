@@ -498,8 +498,7 @@ class WebMWriter_Impl
     {
         OpusPrivData(uint32_t a_u32SampleRate, uint8_t a_u8Channels)
         {
-            RTStrPrintf((char *)au8Head, sizeof(au8Head), "OpusHead");
-
+            au64Head        = RT_MAKE_U64_FROM_U8('O', 'p', 'u','s', 'H', 'e', 'a', 'd');
             u8Version       = 1;
             u8Channels      = a_u8Channels;
             u16PreSkip      = 0;
@@ -508,7 +507,7 @@ class WebMWriter_Impl
             u8MappingFamily = 0;
         }
 
-        uint8_t  au8Head[8];        /**< Defaults to "OpusHead". */
+        uint64_t au64Head;          /**< Defaults to "OpusHead". */
         uint8_t  u8Version;         /**< Must be set to 1. */
         uint8_t  u8Channels;
         uint16_t u16PreSkip;
