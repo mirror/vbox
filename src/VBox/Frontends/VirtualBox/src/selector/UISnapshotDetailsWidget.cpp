@@ -29,7 +29,6 @@
 # include <QPainter>
 # include <QPushButton>
 # include <QScrollArea>
-# include <QStackedLayout>
 # include <QTabWidget>
 # include <QTextBrowser>
 # include <QTextEdit>
@@ -514,9 +513,6 @@ void UIScreenshotViewer::adjustPicture()
 
 UISnapshotDetailsWidget::UISnapshotDetailsWidget(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_pStackedLayout(0)
-    , m_pEmptyWidget(0)
-    , m_pEmptyWidgetLabel(0)
     , m_pTabWidget(0)
     , m_pLayoutOptions(0)
     , m_pLabelName(0), m_pEditorName(0), m_pErrorPaneName(0)
@@ -524,33 +520,65 @@ UISnapshotDetailsWidget::UISnapshotDetailsWidget(QWidget *pParent /* = 0 */)
     , m_pButtonBox(0)
     , m_pLayoutDetails(0)
     , m_pScrollAreaDetails(0)
+    , m_fSnapshotNameEdited(false)
 {
     /* Prepare: */
     prepare();
 }
 
+void UISnapshotDetailsWidget::setData(const CMachine &comMachine)
+{
+    /* Reset defaults: */
+    m_fSnapshotNameEdited = false;
+
+    /* Cache old/new data: */
+    m_oldData = UIDataSnapshot();
+    m_newData = m_oldData;
+
+    /* Cache machine/snapshot: */
+    m_comMachine = comMachine;
+    m_comSnapshot = CSnapshot();
+
+    /* Retranslate buttons: */
+    retranslateButtons();
+    /* Load snapshot data: */
+    loadSnapshotData();
+}
+
 void UISnapshotDetailsWidget::setData(const UIDataSnapshot &data, const CSnapshot &comSnapshot)
 {
+    /* Reset defaults: */
+    m_fSnapshotNameEdited = false;
+
     /* Cache old/new data: */
     m_oldData = data;
     m_newData = m_oldData;
 
-    /* Cache snapshot: */
+    /* Cache machine/snapshot: */
+    m_comMachine = CMachine();
     m_comSnapshot = comSnapshot;
 
+    /* Retranslate buttons: */
+    retranslateButtons();
     /* Load snapshot data: */
     loadSnapshotData();
 }
 
 void UISnapshotDetailsWidget::clearData()
 {
+    /* Reset defaults: */
+    m_fSnapshotNameEdited = false;
+
     /* Reset old/new data: */
     m_oldData = UIDataSnapshot();
     m_newData = m_oldData;
 
-    /* Reset snapshot: */
+    /* Reset machine/snapshot: */
+    m_comMachine = CMachine();
     m_comSnapshot = CSnapshot();
 
+    /* Retranslate buttons: */
+    retranslateButtons();
     /* Load snapshot data: */
     loadSnapshotData();
 }
@@ -558,38 +586,42 @@ void UISnapshotDetailsWidget::clearData()
 void UISnapshotDetailsWidget::retranslateUi()
 {
     /* Translate labels: */
-    m_pEmptyWidgetLabel->setText(tr("<p>You have the <b>Current State</b> item selected.<br>"
-                                    "Press the <b>Take</b> button if you wish to take a new snapshot.</p>"));
     m_pTabWidget->setTabText(0, tr("&Attributes"));
     m_pTabWidget->setTabText(1, tr("&Information"));
     m_pLabelName->setText(tr("&Name:"));
     m_pLabelDescription->setText(tr("&Description:"));
     m_pEditorName->setToolTip(tr("Holds the snapshot name."));
     m_pBrowserDescription->setToolTip(tr("Holds the snapshot description."));
-    m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
-    m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
+
+    /* Translate placeholders: */
+    m_pEditorName->setPlaceholderText(  m_comMachine.isNotNull()
+                                      ? tr("Enter a name for the new snapshot...")
+                                      : m_comSnapshot.isNotNull()
+                                      ? tr("Enter a name for this snapshot...")
+                                      : QString());
+
+    /* Translate buttons:  */
     m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
     m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
-    m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current snapshot details"));
-    m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current snapshot details"));
-    m_pButtonBox->button(QDialogButtonBox::Ok)->
-        setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
-    m_pButtonBox->button(QDialogButtonBox::Cancel)->
-        setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+    retranslateButtons();
 
-    /* And if snapshot is valid: */
-    if (!m_comSnapshot.isNull())
+    /* Update the picture tool-tip and visibility: */
+    m_details.value(DetailsElementType_Preview)->setToolTip(tr("Click to enlarge the screenshot."));
+    if (!m_pixmapScreenshot.isNull() && m_details.value(DetailsElementType_Preview)->isHidden())
+        m_details.value(DetailsElementType_Preview)->setHidden(false);
+    else if (m_pixmapScreenshot.isNull() && !m_details.value(DetailsElementType_Preview)->isHidden())
+        m_details.value(DetailsElementType_Preview)->setHidden(true);
+
+    /* Prepare machine: */
+    const CMachine &comMachine = m_comMachine.isNotNull()
+                               ? m_comMachine
+                               : m_comSnapshot.isNotNull()
+                               ? m_comSnapshot.GetMachine()
+                               : CMachine();
+
+    /* Make sure machine is valid: */
+    if (comMachine.isNotNull())
     {
-        /* Get the machine: */
-        const CMachine comMachine = m_comSnapshot.GetMachine();
-
-        /* Update the picture tool-tip and visibility: */
-        m_details.value(DetailsElementType_Preview)->setToolTip(tr("Click to enlarge the screenshot."));
-        if (!m_pixmapScreenshot.isNull() && m_details.value(DetailsElementType_Preview)->isHidden())
-            m_details.value(DetailsElementType_Preview)->setHidden(false);
-        else if (m_pixmapScreenshot.isNull() && !m_details.value(DetailsElementType_Preview)->isHidden())
-            m_details.value(DetailsElementType_Preview)->setHidden(true);
-
         /* Update USB details visibility: */
         const CUSBDeviceFilters &comFilters = comMachine.GetUSBDeviceFilters();
         const bool fUSBMissing = comFilters.isNull() || !comMachine.GetUSBProxyAvailable();
@@ -600,19 +632,37 @@ void UISnapshotDetailsWidget::retranslateUi()
         foreach (const DetailsElementType &enmType, m_details.keys())
             m_details.value(enmType)->setText(detailsReport(comMachine, enmType));
     }
-    else
-    {
-        /* Clear the details report: */
-        // WORKAROUND:
-        // How stupid Qt *is* to wipe out registered icons not just on clear()
-        // call but on setText(QString()) and even setText("") as well.
-        // Nice way to oversmart itself..
-        foreach (const DetailsElementType &enmType, m_details.keys())
-            m_details.value(enmType)->setText("<empty>");
-    }
 
     /* Retranslate validation: */
     retranslateValidation();
+}
+
+void UISnapshotDetailsWidget::retranslateButtons()
+{
+    /* Common: 'Reset' button: */
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current snapshot details"));
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->
+        setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+    /* Common: 'Apply' button: */
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current snapshot details"));
+    m_pButtonBox->button(QDialogButtonBox::Ok)->
+        setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+
+    if (m_comMachine.isNotNull())
+    {
+        /* Machine: 'Take' button: */
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Take"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Take snapshot on the basis of current machine state"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->
+            setToolTip(tr("Take Snapshot (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+    }
+}
+
+void UISnapshotDetailsWidget::sltHandleNameEdit()
+{
+    m_fSnapshotNameEdited = true;
 }
 
 void UISnapshotDetailsWidget::sltHandleNameChange()
@@ -666,59 +716,25 @@ void UISnapshotDetailsWidget::sltHandleChangeRejected()
 
 void UISnapshotDetailsWidget::prepare()
 {
-    /* Create stacked layout: */
-    m_pStackedLayout = new QStackedLayout(this);
-    AssertPtrReturnVoid(m_pStackedLayout);
+    /* Create layout: */
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    AssertPtrReturnVoid(pLayout);
     {
-        /* Prepare empty-widget: */
-        prepareEmptyWidget();
-        /* Prepare tab-widget: */
-        prepareTabWidget();
-    }
-}
+        /* Configure layout: */
+        pLayout->setContentsMargins(0, 0, 0, 0);
 
-void UISnapshotDetailsWidget::prepareEmptyWidget()
-{
-    /* Create empty-widget: */
-    m_pEmptyWidget = new QWidget;
-    AssertPtrReturnVoid(m_pEmptyWidget);
-    {
-        /* Create empty-widget layout: */
-        new QVBoxLayout(m_pEmptyWidget);
-        AssertPtrReturnVoid(m_pEmptyWidget->layout());
+        /* Create tab-widget: */
+        m_pTabWidget = new QTabWidget;
+        AssertPtrReturnVoid(m_pTabWidget);
         {
-            /* Create empty-widget label: */
-            m_pEmptyWidgetLabel = new QLabel;
-            {
-                /* Configure label: */
-                QFont font = m_pEmptyWidgetLabel->font();
-                font.setPointSize(font.pointSize() * 1.5);
-                m_pEmptyWidgetLabel->setAlignment(Qt::AlignCenter);
-                m_pEmptyWidgetLabel->setFont(font);
+            /* Prepare 'Options' tab: */
+            prepareTabOptions();
+            /* Prepare 'Details' tab: */
+            prepareTabDetails();
 
-                /* Add into layout: */
-                m_pEmptyWidget->layout()->addWidget(m_pEmptyWidgetLabel);
-            }
+            /* Add into layout: */
+            pLayout->addWidget(m_pTabWidget);
         }
-
-        /* Add into layout: */
-        m_pStackedLayout->addWidget(m_pEmptyWidget);
-    }
-}
-
-void UISnapshotDetailsWidget::prepareTabWidget()
-{
-    /* Create tab-widget: */
-    m_pTabWidget = new QTabWidget;
-    AssertPtrReturnVoid(m_pTabWidget);
-    {
-        /* Prepare 'Options' tab: */
-        prepareTabOptions();
-        /* Prepare 'Details' tab: */
-        prepareTabDetails();
-
-        /* Add into layout: */
-        m_pStackedLayout->addWidget(m_pTabWidget);
     }
 }
 
@@ -764,6 +780,8 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                     QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Minimum);
                     policy.setHorizontalStretch(1);
                     m_pEditorName->setSizePolicy(policy);
+                    connect(m_pEditorName, &QLineEdit::textEdited,
+                            this, &UISnapshotDetailsWidget::sltHandleNameEdit);
                     connect(m_pEditorName, &QLineEdit::textChanged,
                             this, &UISnapshotDetailsWidget::sltHandleNameChange);
 
@@ -1024,13 +1042,17 @@ void UISnapshotDetailsWidget::loadSnapshotData()
     /* Read general snapshot properties: */
     m_pEditorName->setText(m_newData.m_strName);
     m_pBrowserDescription->setText(m_newData.m_strDescription);
+    revalidate();
 
-    /* If there is a snapshot: */
-    if (m_comSnapshot.isNotNull())
+    /* If there is a machine: */
+    if (m_comMachine.isNotNull())
     {
-        /* Choose the tab-widget as current one: */
-        m_pStackedLayout->setCurrentWidget(m_pTabWidget);
-
+        /* No screenshot: */
+        m_pixmapScreenshot = QPixmap();
+    }
+    /* If there is a snapshot: */
+    else if (m_comSnapshot.isNotNull())
+    {
         /* Read snapshot display contents: */
         CMachine comMachine = m_comSnapshot.GetMachine();
         ULONG iWidth = 0, iHeight = 0;
@@ -1053,11 +1075,6 @@ void UISnapshotDetailsWidget::loadSnapshotData()
         m_details.value(DetailsElementType_Preview)->document()->addResource(
             QTextDocument::ImageResource, QUrl("details://thumbnail"), QVariant(pixThumbnail));
     }
-    else
-    {
-        /* Choose the empty-widget as current one: */
-        m_pStackedLayout->setCurrentWidget(m_pEmptyWidget);
-    }
 
     /* Retranslate: */
     retranslateUi();
@@ -1071,7 +1088,7 @@ void UISnapshotDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
     if (!pWidget || pWidget == m_pErrorPaneName)
     {
         const bool fError = m_newData.m_strName.isEmpty();
-        m_pErrorPaneName->setVisible(fError);
+        m_pErrorPaneName->setVisible(fError && m_fSnapshotNameEdited);
     }
     if (!pWidget || pWidget == m_pErrorPaneDescription)
     {

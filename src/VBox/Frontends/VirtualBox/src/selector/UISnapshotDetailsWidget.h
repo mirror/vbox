@@ -26,6 +26,8 @@
 #include "UIExtraDataDefs.h"
 
 /* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
 #include "CSnapshot.h"
 
 /* Forward declarations: */
@@ -34,7 +36,6 @@ class QGridLayout;
 class QLabel;
 class QLineEdit;
 class QScrollArea;
-class QStackedLayout;
 class QTabWidget;
 class QTextEdit;
 class QVBoxLayout;
@@ -90,7 +91,9 @@ public:
 
     /** Returns the snapshot data. */
     const UIDataSnapshot &data() const { return m_newData; }
-    /** Defines the snapshot @a data. */
+    /** Defines the @a comMachine. */
+    void setData(const CMachine &comMachine);
+    /** Defines the @a comSnapshot and it's @a data. */
     void setData(const UIDataSnapshot &data, const CSnapshot &comSnapshot);
     /** Clears the snapshot data. */
     void clearData();
@@ -99,9 +102,13 @@ protected:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
+    /** Handles buttons translation. */
+    void retranslateButtons();
 
 private slots:
 
+    /** Handles snapshot name edit. */
+    void sltHandleNameEdit();
     /** Handles snapshot name change. */
     void sltHandleNameChange();
     /** Handles snapshot description change. */
@@ -119,8 +126,6 @@ private:
 
     /** Prepares all. */
     void prepare();
-    /** Prepares empty-widget. */
-    void prepareEmptyWidget();
     /** Prepares tab-widget. */
     void prepareTabWidget();
     /** Prepares 'Options' tab. */
@@ -147,6 +152,8 @@ private:
     /** Summarizes generic properties. */
     static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
 
+    /** Holds the machine object to load data from. */
+    CMachine   m_comMachine;
     /** Holds the snapshot object to load data from. */
     CSnapshot  m_comSnapshot;
 
@@ -157,14 +164,6 @@ private:
 
     /** Holds the cached screenshot. */
     QPixmap  m_pixmapScreenshot;
-
-    /** Holds the stacked layout instance. */
-    QStackedLayout *m_pStackedLayout;
-
-    /** Holds the empty-widget instance. */
-    QWidget *m_pEmptyWidget;
-    /** Holds the empty-widget label instance. */
-    QLabel  *m_pEmptyWidgetLabel;
 
     /** Holds the tab-widget instance. */
     QTabWidget *m_pTabWidget;
@@ -197,6 +196,9 @@ private:
 
     /** Holds the details element map. */
     QMap<DetailsElementType, UISnapshotDetailsElement*> m_details;
+
+    /** Holds whether the snapshot name was edited. */
+    bool  m_fSnapshotNameEdited;
 };
 
 #endif /* !___UISnapshotDetailsWidget_h___ */

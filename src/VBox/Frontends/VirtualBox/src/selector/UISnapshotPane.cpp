@@ -916,10 +916,14 @@ void UISnapshotPane::sltToggleSnapshotDetailsVisibility(bool fVisible)
     /* If details-widget is visible: */
     if (m_pDetailsWidget->isVisible())
     {
-        /* Acquire "current snapshot" item: */
+        /* Acquire selected item: */
         const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
+        AssertPtrReturnVoid(pSnapshotItem);
         /* Update details-widget: */
-        m_pDetailsWidget->setData(*pSnapshotItem, pSnapshotItem->snapshot());
+        if (pSnapshotItem->isCurrentStateItem())
+            m_pDetailsWidget->setData(m_comMachine);
+        else
+            m_pDetailsWidget->setData(*pSnapshotItem, pSnapshotItem->snapshot());
     }
 }
 
@@ -929,8 +933,54 @@ void UISnapshotPane::sltApplySnapshotDetailsChanges()
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
     AssertPtrReturnVoid(pSnapshotItem);
 
+    /* For current state item: */
+    if (pSnapshotItem->isCurrentStateItem())
+    {
+        /* Get item data: */
+        UIDataSnapshot newData = m_pDetailsWidget->data();
+
+        /* Open a session (this call will handle all errors): */
+        CSession comSession;
+        if (m_enmSessionState != KSessionState_Unlocked)
+            comSession = vboxGlobal().openExistingSession(m_strMachineId);
+        else
+            comSession = vboxGlobal().openSession(m_strMachineId);
+        if (comSession.isNotNull())
+        {
+            /* Get corresponding machine object: */
+            CMachine comMachine = comSession.GetMachine();
+
+            /* Perform separate linked steps: */
+            do
+            {
+                /* Take snapshot: */
+                QString strSnapshotId;
+                CProgress comProgress = comMachine.TakeSnapshot(newData.m_strName,
+                                                                newData.m_strDescription,
+                                                                true, strSnapshotId);
+                if (!comMachine.isOk())
+                {
+                    msgCenter().cannotTakeSnapshot(comMachine, comMachine.GetName());
+                    break;
+                }
+
+                /* Show snapshot taking progress: */
+                msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(),
+                                                    ":/progress_snapshot_create_90px.png");
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                {
+                    msgCenter().cannotTakeSnapshot(comProgress, comMachine.GetName());
+                    break;
+                }
+            }
+            while (0);
+
+            /* Cleanup session: */
+            comSession.UnlockMachine();
+        }
+    }
     /* For snapshot items: */
-    if (!pSnapshotItem->isCurrentStateItem())
+    else
     {
         /* Make sure nothing being edited in the meantime: */
         if (!m_pLockReadWrite->tryLockForWrite())
@@ -1013,7 +1063,12 @@ void UISnapshotPane::sltHandleCurrentItemChange()
 
     /* Update details-widget if it's visible: */
     if (pSnapshotItem && m_pDetailsWidget->isVisible())
-        m_pDetailsWidget->setData(*pSnapshotItem, pSnapshotItem->snapshot());
+    {
+        if (pSnapshotItem->isCurrentStateItem())
+            m_pDetailsWidget->setData(m_comMachine);
+        else
+            m_pDetailsWidget->setData(*pSnapshotItem, pSnapshotItem->snapshot());
+    }
 }
 
 void UISnapshotPane::sltHandleContextMenuRequest(const QPoint &position)
