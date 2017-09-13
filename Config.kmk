@@ -666,8 +666,8 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin linux solaris.amd64 win)
  # Enables the video capturing support.
  VBOX_WITH_VIDEOREC = 1
 endif
-if1of ($(KBUILD_TARGET), linux win)
- if 0 # Not enabled by default yet.
+if1of ($(KBUILD_TARGET), darwin linux solaris.amd64 win)
+ if 1 # Not enabled by default yet.
   # Enables libopus (Opus), used for encoding audio into VM video capturing files.
   VBOX_WITH_LIBOPUS = 1
   # Enable SEE optimizations for Opus.
