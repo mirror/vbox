@@ -132,19 +132,21 @@ STDMETHODIMP VBoxMMNotificationClient::OnDeviceStateChanged(LPCWSTR pwstrDeviceI
 
 STDMETHODIMP VBoxMMNotificationClient::OnDeviceAdded(LPCWSTR pwstrDeviceId)
 {
+    RT_NOREF(pwstrDeviceId);
     LogFunc(("%ls\n", pwstrDeviceId));
     return S_OK;
 }
 
 STDMETHODIMP VBoxMMNotificationClient::OnDeviceRemoved(LPCWSTR pwstrDeviceId)
 {
+    RT_NOREF(pwstrDeviceId);
     LogFunc(("%ls\n", pwstrDeviceId));
     return S_OK;
 }
 
 STDMETHODIMP VBoxMMNotificationClient::OnDefaultDeviceChanged(EDataFlow eFlow, ERole eRole, LPCWSTR pwstrDefaultDeviceId)
 {
-    RT_NOREF(eRole, pwstrDefaultDeviceId);
+    RT_NOREF(eFlow, eRole, pwstrDefaultDeviceId);
 
     if (eFlow == eRender)
     {
