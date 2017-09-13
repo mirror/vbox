@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2016 Oracle Corporation
+ * Copyright (C) 2011-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,6 +30,7 @@
 
 #include <iprt/err.h>
 #include <iprt/initterm.h>
+#include <iprt/ldr.h>
 #include <iprt/localipc.h>
 #include <iprt/mem.h>
 #include <iprt/process.h>
@@ -267,94 +268,42 @@ VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size, T
     HRESULT hr = vboxPopString(szFile, sizeof(szFile) / sizeof(TCHAR));
     if (SUCCEEDED(hr))
     {
-        /* See: http://www.microsoft.com/whdc/system/platform/firmware/PECOFF.mspx */
-        FILE *pFh = fopen(szFile, "rb");
-        if (pFh)
+        RTLDRMOD hLdrMod;
+        int rc = RTLdrOpen(szFile, RTLDR_O_FOR_VALIDATION, RTLDRARCH_WHATEVER, &hLdrMod);
+        if (RT_SUCCESS(rc))
         {
-            /* Assume the file is invalid. */
-            hr = __HRESULT_FROM_WIN32(ERROR_FILE_INVALID);
-
-            BYTE offPeHdr = 0; /* Absolute offset of PE signature. */
-
-            /* Do some basic validation. */
-            /* Check for "MZ" header (DOS stub). */
-            BYTE byBuf[255];
-            if (   fread(&byBuf, sizeof(BYTE), 2, pFh) == 2
-                && !memcmp(&byBuf, "MZ", 2))
+            if (RTLdrGetFormat(hLdrMod) == RTLDRFMT_PE)
             {
-                /* Seek to 0x3C to get the PE offset. */
-                if (!fseek(pFh, 60L /*0x3C*/, SEEK_SET))
+                RTLDRARCH enmLdrArch = RTLdrGetArch(hLdrMod);
+                switch (enmLdrArch)
                 {
-                    /* Read actual offset of PE signature. */
-/** @todo r=bird: You've obviously no clue about the structure you're messing with here.  The field is NOT a BYTE
- * field but a int32_t/uint32_t!  The MZ header is defined as IMAGE_DOS_HEADER by windows.h (well, winnt.h), and the
- * field you're accessing is e_lfanew.  Please rewrite this hack to use the structures!  (Also, the MZ structure is
- * OPTIONAL, just in case you didn't know.)  */
-#ifdef DEBUG_andy
-# error "Fix this"
-#endif
-                    if (fread(&offPeHdr, sizeof(BYTE), 1, pFh) == 1)
-                    {
-                        /* ... and seek to it. */
-                        if (!fseek(pFh, offPeHdr, SEEK_SET))
-                        {
-                            /* Validate PE signature. */
-                            if (fread(byBuf, sizeof(BYTE), 4, pFh) == 4)
-                            {
-                                if (!memcmp(byBuf, "PE\0\0", 4))
-                                    hr = S_OK;
-                            }
-                        }
-                    }
+                    case RTLDRARCH_X86_32:
+                        pushstring("x86");
+                        break;
+
+                    case RTLDRARCH_AMD64:
+                        pushstring("amd64");
+                        break;
+
+                    default:
+                        pushstring("Error: Unknown / invalid architecture");
+                        break;
                 }
             }
+            else
+                pushstring("Error: Unknown / invalid PE signature");
 
-            /* Validation successful? */
-            if (SUCCEEDED(hr))
-            {
-                BYTE offFileHeaderMachineField = offPeHdr + 0x4; /* Skip PE signature. */
-
-                /** @todo When we need to do more stuff here, we probably should
-                 *        mmap the file w/ a struct so that we easily could access
-                 *        all the fixed size stuff. Later. */
-
-                /* Jump to machine type (first entry, 2 bytes):
-                 * Use absolute PE offset retrieved above. */
-                if (!fseek(pFh, offFileHeaderMachineField, SEEK_SET))
-                {
-                    WORD wMachineType;
-                    if (fread(&wMachineType, 1,
-                              sizeof(wMachineType), pFh) == 2)
-                    {
-                        switch (wMachineType)
-                        {
-                            case 0x14C: /* Intel 86 */
-                                pushstring("x86");
-                                break;
-
-                            case 0x8664: /* AMD64 / x64 */
-                                pushstring("amd64");
-                                break;
-
-                            default:
-                                hr = __HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
-                                break;
-                        }
-                    }
-                    else
-                        hr = __HRESULT_FROM_WIN32(ERROR_FILE_INVALID);
-                }
-                else
-                    hr = __HRESULT_FROM_WIN32(ERROR_FILE_INVALID);
-            }
-
-            fclose(pFh);
+            RTLdrClose(hLdrMod);
         }
         else
-            hr = __HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
-    }
+        {
+            char szMsg[64];
+            RTStrPrintf(szMsg, sizeof(szMsg), "Error: Could not open file: %Rrc", rc);
 
-    if (FAILED(hr))
+            pushstring(szMsg);
+        }
+    }
+    else
         vboxPushResultAsString(hr);
 }
 
