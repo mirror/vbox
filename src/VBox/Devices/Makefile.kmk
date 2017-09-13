@@ -595,6 +595,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBOX_DEFS   += VBOX_WITH_AUDIO_HDA_CALLBACKS
  endif
 
+ # Enables the audio endpoint detection on Windows hosts.
+ VBoxDD_DEFS.win += VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+
  VBoxDD_SOURCES         += \
 	Audio/DevIchAc97.cpp \
 	Audio/DevSB16.cpp \
