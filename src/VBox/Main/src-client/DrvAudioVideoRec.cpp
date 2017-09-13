@@ -321,7 +321,7 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
         return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     try
     {
@@ -330,8 +330,6 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
             case AVRECCONTAINERTYPE_MAIN_CONSOLE:
             {
                 pSink->Con.Main.pConsole = pThis->pConsole;
-
-                rc = VINF_SUCCESS;
                 break;
             }
 
@@ -343,7 +341,7 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
                 {
                     char szFile[RTPATH_MAX];
                     if (RTStrPrintf(szFile, sizeof(szFile), "%s%s",
-                                    VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "DrvAudioVideoRec.webm" /** @todo Make this configurable. */))
+                                    VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "DrvAudioVideoRec.webm"))
                     {
                         /** @todo Add sink name / number to file name. */
 
@@ -383,12 +381,10 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
                 break;
         }
     }
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA /* Fixes "unreachable code" in MSVC. */
     catch (std::bad_alloc)
     {
         rc = VERR_NO_MEMORY;
     }
-#endif
 
     if (RT_SUCCESS(rc))
     {
