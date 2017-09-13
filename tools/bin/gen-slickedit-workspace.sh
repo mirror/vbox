@@ -1068,11 +1068,11 @@ my_generate_project "Add-solaris"   "src/VBox/Additions/solaris"            --be
 my_generate_project "Add-haiku"     "src/VBox/Additions/haiku"              --begin-incs "include" "src/VBox/Additions/haiku"               --end-includes "src/VBox/Additions/haiku"
 my_generate_project "Add-win"       "src/VBox/Additions/WINNT"              --begin-incs "include" "src/VBox/Additions/WINNT"               --end-includes "src/VBox/Additions/WINNT"
 test -z "$MY_OPT_MINIMAL" && \
-my_generate_project "Add-x11"       "src/VBox/Additions/x11"                --begin-incs "include" "src/VBox/Additions/x11"                 --end-includes "src/VBox/Additions/x11"
-my_generate_project "Add-Control"   "src/VBox/Additions/common/VBoxControl" --begin-incs "include" "src/VBox/Additions/common/VBoxControl"  --end-includes "src/VBox/Additions/common/VBoxControl"
-my_generate_project "Add-GuestDrv"  "src/VBox/Additions/common/VBoxGuest"   --begin-incs "include" "src/VBox/Additions/common/VBoxGuest"    --end-includes "src/VBox/Additions/common/VBoxGuest"    "include/VBox/VBoxGuest*.*"
-my_generate_project "Add-Lib"      "src/VBox/Additions/common/VBoxGuestLib" --begin-incs "include" "src/VBox/Additions/common/VBoxGuestLib" --end-includes "src/VBox/Additions/common/VBoxGuestLib" "include/VBox/VBoxGuest*.*"
-my_generate_project "Add-Service"   "src/VBox/Additions/common/VBoxService" --begin-incs "include" "src/VBox/Additions/common/VBoxService"  --end-includes "src/VBox/Additions/common/VBoxService"
+my_generate_project "Add-x11"       "src/VBox/Additions/x11"                  --begin-incs "include" "src/VBox/Additions/x11"                 --end-includes "src/VBox/Additions/x11"
+my_generate_project "Add-Control"   "src/VBox/Additions/common/VBoxControl"   --begin-incs "include" "src/VBox/Additions/common/VBoxControl"  --end-includes "src/VBox/Additions/common/VBoxControl"
+my_generate_project "Add-GuestDrv"  "src/VBox/Additions/common/VBoxGuest"     --begin-incs "include" "src/VBox/Additions/common/VBoxGuest"    --end-includes "src/VBox/Additions/common/VBoxGuest"      "include/VBox/VBoxGuest*.*"
+my_generate_project "Add-Lib"       "src/VBox/Additions/common/VBoxGuest/lib" --begin-incs "include" "src/VBox/Additions/common/VBoxGuest/lib" --end-includes "src/VBox/Additions/common/VBoxGuest/lib" "include/VBox/VBoxGuest/lib/*.*"
+my_generate_project "Add-Service"   "src/VBox/Additions/common/VBoxService"   --begin-incs "include" "src/VBox/Additions/common/VBoxService"  --end-includes "src/VBox/Additions/common/VBoxService"
 if test -z "$MY_OPT_MINIMAL"; then
     my_generate_project "Add-crOpenGL"  "src/VBox/Additions/common/crOpenGL"    --begin-incs "include" "src/VBox/Additions/common/crOpenGL"     --end-includes "src/VBox/Additions/common/crOpenGL"
     my_generate_project "Add-CredProv"  "src/VBox/Additions/WINNT/VBoxCredProv" --begin-incs "include" "src/VBox/Additions/WINNT/VBoxCredProv"  --end-includes "src/VBox/Additions/WINNT/VBoxCredProv"
