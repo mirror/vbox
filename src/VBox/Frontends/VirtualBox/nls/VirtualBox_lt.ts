@@ -1698,7 +1698,7 @@
     <message>
         <source>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</source>
         <comment>key: value</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>Issuer</source>
@@ -8420,7 +8420,7 @@
     <name>UIMediumDetailsWidget</name>
     <message>
         <source>&amp;Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Atributai</translation>
     </message>
     <message>
         <source>&amp;Information</source>
@@ -10778,7 +10778,7 @@
     </message>
     <message>
         <source>Selects the operating system family that you plan to install into this virtual machine.</source>
-        <translation type="unfinished">Rodo šeimą operacinių sistemų, kurią ketinate įdiegti virtualioje mašinoje.</translation>
+        <translation>Rodo operacinių sistemų šeima, kurią ketinate įdiegti virtualioje mašinoje.</translation>
     </message>
     <message>
         <source>&amp;Version:</source>
@@ -10786,7 +10786,7 @@
     </message>
     <message>
         <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished">Rodo operacinės sistemos tipą, kurį ketinate įdiegti šioje virtualioje mašinoje (pastaroji dar vadinama svečio operacine sistema).</translation>
+        <translation>Operacinės sistemos tipas, kurį ketinate įdiegti šioje virtualioje mašinoje (pastaroji dar vadinama svečio operacine sistema).</translation>
     </message>
     <message>
         <source>N&amp;ame:</source>
@@ -11418,11 +11418,11 @@
     <name>UIPopupPane</name>
     <message>
         <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Išsamiau:&lt;/b&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt; (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Išsamiau:&lt;/b&gt; (%1 iš %2)</translation>
     </message>
 </context>
 <context>
@@ -11456,7 +11456,7 @@
     <name>UIPortForwardingTable</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Pavadinimas</translation>
+        <translation>Vardas</translation>
     </message>
     <message>
         <source>Protocol</source>
@@ -11599,7 +11599,7 @@
     <message>
         <source>%1 status-bar indicator</source>
         <comment>like &apos;hard-disk status-bar indicator&apos;</comment>
-        <translation type="unfinished"></translation>
+        <translation>Indikatorius būsenos juostoje „%1“</translation>
     </message>
 </context>
 <context>
@@ -11681,7 +11681,7 @@
     </message>
     <message>
         <source>Allows to navigate through Global Property categories</source>
-        <translation type="unfinished"></translation>
+        <translation>Leidžia naršyti visuotinių parinkčių kategorijas</translation>
     </message>
 </context>
 <context>
@@ -11768,7 +11768,7 @@
     </message>
     <message>
         <source>Allows to navigate through VM Settings categories</source>
-        <translation type="unfinished"></translation>
+        <translation>Leidžia naršyti VM nuostatų kategorijas</translation>
     </message>
 </context>
 <context>
@@ -11790,7 +11790,7 @@
     </message>
     <message>
         <source>&amp;Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Atributai</translation>
     </message>
     <message>
         <source>&amp;Information</source>
@@ -11806,11 +11806,11 @@
     </message>
     <message>
         <source>Holds the snapshot name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nurodo momentinės kopijos pavadinimą.</translation>
     </message>
     <message>
         <source>Holds the snapshot description.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodo momentinės kopijos aprašą.</translation>
     </message>
     <message>
         <source>Apply</source>
@@ -11902,7 +11902,7 @@
     </message>
     <message>
         <source>Contains the snapshot tree of the current virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Šios virtualios mašinos momentinių kopijų medis</translation>
     </message>
     <message>
         <source>&amp;Take...</source>
@@ -11934,11 +11934,11 @@
     </message>
     <message>
         <source>Restore Snapshot (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Atkurti momentinį būvį (%1)</translation>
     </message>
     <message>
         <source>Open Snapshot Properties (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Atverti momentinio būvio parinkčių langą (%1)</translation>
     </message>
     <message>
         <source>Clone Virtual Machine (%1)</source>
@@ -11950,11 +11950,11 @@
     </message>
     <message>
         <source>Delete selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Ištrinti pasirinktą virtualios mašinos momentinį būvį</translation>
     </message>
     <message>
         <source>Restore selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Sugrąžinti virtualią mašiną į pasirinktą momentinį būvį</translation>
     </message>
     <message>
         <source>Open pane with the selected snapshot properties</source>
@@ -11967,7 +11967,7 @@
     <message>
         <source>Name</source>
         <comment>snapshot</comment>
-        <translation type="unfinished">Pavadinimas</translation>
+        <translation>Pavadinimas</translation>
     </message>
     <message>
         <source>Taken</source>
@@ -12010,10 +12010,10 @@
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation type="unfinished">
-            <numerusform>Dėmesio: jūs mėginate sukurti momentinę būvio kopiją veikiančios mašinos, kuri turi %n priskirtą nekeičiamų atvaizdžių. Kol dirbdate su šiuo būviu, tol nekeičiami atvaizdžiai nebus perstatyti siekiant išvengti duomenų praradimo.</numerusform>
-            <numerusform>Dėmesio: jūs mėginate sukurti momentinę būvio kopiją veikiančios mašinos, kuri turi %n priskirtus nekeičiamų atvaizdžių. Kol dirbdate su šiuo būviu, tol nekeičiami atvaizdžiai nebus perstatyti siekiant išvengti duomenų praradimo.</numerusform>
-            <numerusform>Dėmesio: jūs mėginate sukurti momentinę būvio kopiją veikiančios mašinos, kuri turi %n priskirtų nekeičiamų atvaizdžių. Kol dirbdate su šiuo būviu, tol nekeičiami atvaizdžiai nebus perstatyti siekiant išvengti duomenų praradimo.</numerusform>
+        <translation>
+            <numerusform>Dėmesio: jūs mėginate sukurti momentinę būvio kopiją veikiančios mašinos, kuri turi %n priskirtą nekeičiamą atvaizdžį. Kol dirbdate su šiuo būviu, tol nekeičiamas atvaizdžis nebus perstatytas tam, neprarastumėte duomenų.</numerusform>
+            <numerusform>Dėmesio: jūs mėginate sukurti momentinę būvio kopiją veikiančios mašinos, kuri turi %n priskirtus nekeičiamus atvaizdžius. Kol dirbdate su šiuo būviu, tol nekeičiami atvaizdžiai nebus perstatyti tam, neprarastumėte duomenų.</numerusform>
+            <numerusform>Dėmesio: jūs mėginate sukurti momentinę būvio kopiją veikiančios mašinos, kuri turi %n priskirtų nekeičiamų atvaizdžių. Kol dirbdate su šiuo būviu, tol nekeičiami atvaizdžiai nebus perstatyti tam, neprarastumėte duomenų.</numerusform>
         </translation>
     </message>
     <message>
@@ -12063,7 +12063,7 @@
     <name>UIToolsPaneMachine</name>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window lists all virtual machines and virtual machine groups on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for more information and latest news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Jus sveikina VirtualBox!&lt;/h3&gt;&lt;p&gt;Kairėje lango pusėje pateikiamas visų kopmiuteryje esančių virtualių mašinų ir jų grupių sąrašas. Kol kas šis sąrašas tuščias, kadangi dar nesukūrėte nei vienos virtualios mašinos.&lt;/p&gt;&lt;p&gt;Norėdami sukurti naują virtualią mašiną, spauskite mygtuką &lt;b&gt;Nauja&lt;/b&gt;, kuris yra lango viršuje esančioje pagrindinėje įrankių juostoje.&lt;/p&gt;&lt;p&gt;Žinyną atversite nuspaudę &lt;b&gt;%1&lt;/b&gt;, o naujausią informaciją rasite apsilankę svetainėje &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window lists all virtual machines and virtual machine groups on your computer.&lt;/p&gt;&lt;p&gt;The right part of this window represents a set of tools which are currently opened (or can be opened) for the currently chosen machine. For a list of currently available tools check the corresponding menu at the right side of the main tool bar located at the top of the window. This list will be extended with new tools in future releases.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for more information and latest news.&lt;/p&gt;</source>
@@ -12631,7 +12631,7 @@
     </message>
     <message>
         <source>Choose a location for new virtual hard disk file...</source>
-        <translation type="unfinished">Nurodykite virtualaus standžiojo disko rinkmenos saugojimo vietą...</translation>
+        <translation>Nurodykite naujo virtualaus standžiojo disko rinkmenos saugojimo vietą...</translation>
     </message>
     <message>
         <source>Hard disk to &amp;copy</source>
@@ -12702,7 +12702,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Please choose which parts of the snapshot tree should be cloned with the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Pasirinkite, kurias momentinių būvių medžio dalis klonuoti.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
@@ -12718,15 +12718,15 @@
     </message>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Dabartinę &amp;mašinos būseną</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="unfinished"></translation>
+        <translation>Dabartinę momentinių &amp;būvių medžio šaką</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Visas</translation>
     </message>
     <message>
         <source>New machine &amp;name</source>
@@ -12913,7 +12913,7 @@
     </message>
     <message>
         <source>Write in new OVF 2.0 format.</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrašyti nauju OVF 2.0 formatu.</translation>
     </message>
     <message>
         <source>Write in Oracle Public Cloud 1.0 format.</source>
