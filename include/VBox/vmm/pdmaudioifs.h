@@ -903,7 +903,7 @@ typedef struct PDMAUDIOSTREAM
     /** The stream's audio configuration. */
     PDMAUDIOSTREAMCFG      Cfg;
     /** Stream status flag. */
-    PDMAUDIOSTREAMSTS        fStatus;
+    PDMAUDIOSTREAMSTS      fStatus;
     /** This stream's mixing buffer. */
     PDMAUDIOMIXBUF         MixBuf;
     /** Audio direction of this stream. */
@@ -1379,9 +1379,9 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetWritable, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
-     * Returns whether the specified audio direction in the backend is enabled or not.
+     * Returns the current status of the given backend stream.
      *
-     * @returns PDMAUDIOSTRMSTS
+     * @returns PDMAUDIOSTREAMSTS
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
