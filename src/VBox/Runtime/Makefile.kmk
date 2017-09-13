@@ -1464,19 +1464,21 @@ endif
 RuntimeGuestR3_TEMPLATE                 := VBoxGuestR3Lib
 ## @todo change this to EXTEND the RuntimeR3 target.
 RuntimeGuestR3_SDKS.win                 := $(RuntimeR3_SDKS.win)
-RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT RT_NO_GIP IPRT_WITH_OPENSSL, $(RuntimeR3_DEFS))
+RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT RT_NO_GIP IPRT_WITH_OPENSSL LDR_WITH_KLDR, $(RuntimeR3_DEFS))
+RuntimeGuestR3_DEFS                     := $(filter-out IN_SUP_R3, $(RuntimeGuestR3_DEFS)) ## @todo r=andy Needed to make cross-building with RTLdr API work.
 RuntimeGuestR3_DEFS.$(KBUILD_TARGET)    := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
 RuntimeGuestR3_DEFS.$(KBUILD_HOST)      := $(RuntimeR3_DEFS.$(KBUILD_HOST))
 RuntimeGuestR3_INCS                     := $(RuntimeR3_INCS)
 RuntimeGuestR3_INCS.$(KBUILD_TARGET)    := $(RuntimeR3_INCS.$(KBUILD_TARGET))
 RuntimeGuestR3_INCS.$(KBUILD_HOST)      := $(RuntimeR3_INCS.$(KBUILD_HOST))
 RuntimeGuestR3_SOURCES                  := $(filter-out \
+	common/ldr/ldrkStuff.cpp \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
 	common/time/timesup.cpp \
+	common/zip/xarvfs.cpp \
 	generic/RTLogWriteUser-generic.cpp \
 	r3/xml.cpp \
-	common/zip/xarvfs.cpp \
 	, $(RuntimeR3_SOURCES))
 RuntimeGuestR3_SOURCES              += \
 	common/time/timesysalias.cpp \
@@ -2305,7 +2307,6 @@ RuntimeR0Drv_SOURCES.win = \
 	common/string/RTUtf16PrintHexBytes.cpp \
 	common/string/strstrip.cpp \
 	generic/memsafer-generic.cpp \
-       \
 	common/misc/thread.cpp \
 	common/string/memcmp.asm \
 	common/string/memchr.asm \
