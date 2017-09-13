@@ -383,7 +383,9 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
     }
     catch (std::bad_alloc)
     {
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
         rc = VERR_NO_MEMORY;
+#endif
     }
 
     if (RT_SUCCESS(rc))
