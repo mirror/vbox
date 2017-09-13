@@ -383,10 +383,12 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
                 break;
         }
     }
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA /* Fixes "unreachable code" in MSVC. */
     catch (std::bad_alloc)
     {
         rc = VERR_NO_MEMORY;
     }
+#endif
 
     if (RT_SUCCESS(rc))
     {
