@@ -149,6 +149,9 @@ private:
     /** Returns a details report on a given @a comMachine. */
     QString detailsReport(const CMachine &comMachine, DetailsElementType enmType);
 
+    /** Wipes the HTML stuff from the passed @a strString. */
+    static QString wipeHtmlStuff(const QString &strString);
+
     /** Summarizes generic properties. */
     static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
 

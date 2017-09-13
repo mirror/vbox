@@ -1136,7 +1136,7 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine, Detai
         "</tr>"
         "%5";
     static const char *sSectionItemTpl1 =
-        "<tr><td><nobr><i>%1</i></nobr></td><td/><td/></tr>";
+        "<tr><td><nobr>%1</nobr></td><td/><td/></tr>";
     static const char *sSectionItemTpl2 =
         "<tr><td><nobr>%1:</nobr></td><td/><td>%2</td></tr>";
     static const char *sSectionItemTpl3 =
@@ -1481,7 +1481,7 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine, Detai
                                                      gpConverter->toString(StorageSlot(comController.GetBus(),
                                                                                        comAttachment.GetPort(),
                                                                                        comAttachment.GetDevice())) + strDeviceType)
-                                                .arg(vboxGlobal().details(medium, false));
+                                                .arg(wipeHtmlStuff(vboxGlobal().details(medium, false)));
                     /* Insert that attachment into map: */
                     if (!strAttachmentInfo.isNull())
                         attachmentsMap.insert(attachmentSlot, strAttachmentInfo);
@@ -1772,6 +1772,12 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine, Detai
 
     /* Return report as table: */
     return QString(sTableTpl).arg(strReport);
+}
+
+/* static */
+QString UISnapshotDetailsWidget::wipeHtmlStuff(const QString &strString)
+{
+    return QString(strString).remove(QRegExp("<i>|</i>|<b>|</b>"));
 }
 
 /* static */
