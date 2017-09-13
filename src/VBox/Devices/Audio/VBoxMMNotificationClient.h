@@ -22,6 +22,11 @@
 #include <iprt/critsect.h>
 #include <iprt/win/windows.h>
 
+/* Should fix warning in include\ks.h. */
+#ifndef _WIN64
+ #define _WIN64
+#endif
+
 #include <Mmdeviceapi.h>
 
 #include "DrvAudio.h"
