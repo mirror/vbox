@@ -1094,7 +1094,7 @@
     </message>
     <message>
         <source>Po&amp;wer Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Uit&amp;zetten</translation>
     </message>
 </context>
 <context>
@@ -2697,7 +2697,7 @@
     <name>UIGlobalSettingsPortForwardingDlg</name>
     <message>
         <source>Port Forwarding Rules</source>
-        <translation>Portdoorverwijsregels</translation>
+        <translation>Poortdoorverwijsregels</translation>
     </message>
     <message>
         <source>IPv4</source>
@@ -4637,7 +4637,7 @@
     <name>UIMachineSettingsPortForwardingDlg</name>
     <message>
         <source>Port Forwarding Rules</source>
-        <translation type="unfinished">Portdoorverwijsregels</translation>
+        <translation>Poortdoorverwijsregels</translation>
     </message>
 </context>
 <context>
@@ -7153,7 +7153,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kon schijf-image-bestand &lt;b&gt;%1&lt;/b&gt; niet in virtuele machine &lt;b&gt;%2&lt;/b&gt; doen, omdat deze machine geen optisch station heeft. Voeg een station toe bij Instellingen -&gt; Opslag van deze machine.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -7350,11 +7350,11 @@
     <name>UIPopupPane</name>
     <message>
         <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt; (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt; (%1 of %2)</translation>
     </message>
 </context>
 <context>
@@ -8956,7 +8956,7 @@
     </message>
     <message>
         <source>&amp;Memory size</source>
-        <translation type="unfinished"></translation>
+        <translation>Ge&amp;heugengrootte</translation>
     </message>
 </context>
 <context>
