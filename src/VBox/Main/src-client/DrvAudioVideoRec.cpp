@@ -337,6 +337,7 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
 
             case AVRECCONTAINERTYPE_WEBM:
             {
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
                 /* If we only record audio, create our own WebM writer instance here. */
                 if (!pSink->Con.WebM.pWebM) /* Do we already have our WebM writer instance? */
                 {
@@ -371,7 +372,9 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
                         LogRel(("VideoRec: Error creating audio file path\n"));
                     }
                 }
-
+#else
+                rc = VERR_NOT_SUPPORTED;
+#endif /* VBOX_AUDIO_DEBUG_DUMP_PCM_DATA */
                 break;
             }
 
