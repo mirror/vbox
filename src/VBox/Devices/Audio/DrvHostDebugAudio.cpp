@@ -430,6 +430,10 @@ static DECLCALLBACK(int) drvHostDebugAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNOD
     /* IHostAudio */
     PDMAUDIO_IHOSTAUDIO_CALLBACKS(drvHostDebugAudio);
 
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "AudioDebugOutput.pcm");
+#endif
+
     return VINF_SUCCESS;
 }
 
