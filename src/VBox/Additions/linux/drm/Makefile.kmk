@@ -23,6 +23,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 INSTALLS += vboxvideo_drm-mod
 include $(PATH_SUB_CURRENT)/files_vboxvideo_drv
+vboxvideo_drm-mod_DEPS         = $(PATH_ROOT)/src/VBox/Additions/linux/drm/indent.sed
 vboxvideo_drm-mod_INST         = $(INST_ADDITIONS)src/vboxvideo/
 vboxvideo_drm-mod_SOURCES      = \
 	$(subst $(DQUOTE),,$(FILES_VBOXVIDEO_DRM_NOBIN))
