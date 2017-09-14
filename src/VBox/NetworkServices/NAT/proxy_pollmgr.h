@@ -35,8 +35,7 @@ enum pollmgr_slot_t {
 
     POLLMGR_CHAN_PORTFWD,       /* add/remove port forwarding rules */
 
-    POLLMGR_SLOT_STATIC_COUNT,
-    POLLMGR_SLOT_FIRST_DYNAMIC = POLLMGR_SLOT_STATIC_COUNT
+    POLLMGR_CHAN_COUNT
 };
 
 
