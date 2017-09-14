@@ -491,6 +491,8 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     RTStrFree(pszHstSts);
 #endif /* LOG_ENABLED */
 
+    LogRel2(("Audio: %s stream '%s'\n", DrvAudioHlpStreamCmdToStr(enmStreamCmd), pHstStream->szName));
+
     AssertPtr(pThis->pHostDrvAudio);
 
     int rc = VINF_SUCCESS;
@@ -501,15 +503,12 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
         {
             if (!(pHstStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_ENABLED))
             {
-                LogRel2(("Audio: Enabling stream '%s'\n", pHstStream->szName));
                 rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pHstStream->pvBackend,
                                                             PDMAUDIOSTREAMCMD_ENABLE);
                 if (RT_SUCCESS(rc))
                 {
                     pHstStream->fStatus |= PDMAUDIOSTREAMSTS_FLAG_ENABLED;
                 }
-                else
-                    LogRel2(("Audio: Disabling stream '%s' failed with %Rrc\n", pHstStream->szName, rc));
             }
             break;
         }
@@ -518,17 +517,13 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
         {
             if (pHstStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_ENABLED)
             {
-                LogRel2(("Audio: Disabling stream '%s'\n", pHstStream->szName));
                 rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pHstStream->pvBackend,
                                                             PDMAUDIOSTREAMCMD_DISABLE);
                 if (RT_SUCCESS(rc))
                 {
-                    pHstStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAG_ENABLED;
-                    pHstStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE;
+                    pHstStream->fStatus &= ~(PDMAUDIOSTREAMSTS_FLAG_ENABLED | PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE);
                     AudioMixBufReset(&pHstStream->MixBuf);
                 }
-                else
-                    LogRel2(("Audio: Disabling stream '%s' failed with %Rrc\n", pHstStream->szName, rc));
             }
             break;
         }
@@ -541,15 +536,12 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 
             if (!(pHstStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_PAUSED))
             {
-                LogRel2(("Audio: Pausing stream '%s'\n", pHstStream->szName));
                 rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pHstStream->pvBackend,
                                                             PDMAUDIOSTREAMCMD_PAUSE);
                 if (RT_SUCCESS(rc))
                 {
                     pHstStream->fStatus |= PDMAUDIOSTREAMSTS_FLAG_PAUSED;
                 }
-                else
-                    LogRel2(("Audio: Pausing stream '%s' failed with %Rrc\n", pHstStream->szName, rc));
             }
             break;
         }
@@ -562,15 +554,12 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 
             if (pHstStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_PAUSED)
             {
-                LogRel2(("Audio: Resuming stream '%s'\n", pHstStream->szName));
                 rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pHstStream->pvBackend,
                                                             PDMAUDIOSTREAMCMD_RESUME);
                 if (RT_SUCCESS(rc))
                 {
                     pHstStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAG_PAUSED;
                 }
-                else
-                    LogRel2(("Audio: Resuming stream '%s' failed with %Rrc\n", pHstStream->szName, rc));
             }
             break;
         }
@@ -584,7 +573,10 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     }
 
     if (RT_FAILURE(rc))
-        LogFunc(("[%s] Failed with %Rrc\n", pStream->szName, rc));
+    {
+        LogRel2(("Audio: %s stream '%s' failed with %Rrc\n", DrvAudioHlpStreamCmdToStr(enmStreamCmd), pHstStream->szName, rc));
+        LogFunc(("[%s] %s failed with %Rrc\n", pStream->szName, DrvAudioHlpStreamCmdToStr(enmStreamCmd), rc));
+    }
 
     return rc;
 }
