@@ -1172,23 +1172,12 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                                                      vboxGlobal().vmGuestOSTypeDescription(comMachine.GetOSTypeId()));
 
             /* Groups? */
-            QStringList aGroups = comMachine.GetGroups().toList();
-            /* Do not show groups for machine which is in root group only: */
-            if (aGroups.size() == 1)
-                aGroups.removeAll("/");
-            /* If group list still not empty: */
-            if (!aGroups.isEmpty())
+            const QString strGroups = groupReport(comMachine);
+            if (!strGroups.isNull())
             {
-                /* For all groups => Trim first '/' symbol: */
-                for (int i = 0; i < aGroups.size(); ++i)
-                {
-                    QString &strGroup = aGroups[i];
-                    if (strGroup.startsWith("/") && strGroup != "/")
-                        strGroup.remove(0, 1);
-                }
                 ++iRowCount;
                 strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Groups", "details (general)"),
-                                                         aGroups.join(", "));
+                                                         strGroups);
             }
 
             break;
@@ -1197,16 +1186,17 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
         {
             /* Base Memory: */
             ++iRowCount;
+            const QString strMemory = QApplication::translate("UIGDetails", "%1 MB", "details").arg(comMachine.GetMemorySize());
             strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Base Memory", "details (system)"),
-                                                     QApplication::translate("UIGDetails", "%1 MB", "details").arg(comMachine.GetMemorySize()));
+                                                     strMemory);
 
             /* Processors? */
-            const int cCPU = comMachine.GetCPUCount();
-            if (cCPU > 1)
+            const int cCpu = comMachine.GetCPUCount();
+            if (cCpu > 1)
             {
                 ++iRowCount;
                 strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Processors", "details (system)"),
-                                                         QString::number(cCPU));
+                                                         QString::number(cCpu));
             }
 
             /* Execution Cap? */
@@ -1214,25 +1204,18 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (uExecutionCap < 100)
             {
                 ++iRowCount;
+                const QString strExecutionCap = QApplication::translate("UIGDetails", "%1%", "details").arg(uExecutionCap);
                 strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Execution Cap", "details (system)"),
-                                                         QApplication::translate("UIGDetails", "%1%", "details").arg(uExecutionCap));
+                                                         strExecutionCap);
             }
 
             /* Boot Order: */
-            QStringList aBootOrder;
-            for (ulong i = 1; i <= vboxGlobal().virtualBox().GetSystemProperties().GetMaxBootPosition(); ++i)
-            {
-                const KDeviceType enmDevice = comMachine.GetBootOrder(i);
-                if (enmDevice != KDeviceType_Null)
-                    aBootOrder << gpConverter->toString(enmDevice);
-            }
-            if (aBootOrder.isEmpty())
-                aBootOrder << gpConverter->toString(KDeviceType_Null);
             ++iRowCount;
+            const QString strBootOrder = bootOrderReport(comMachine);
             strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Boot Order", "details (system)"),
-                                                     aBootOrder.join(", "));
+                                                     strBootOrder);
 
-            /* Chipset type? */
+            /* Chipset Type? */
             const KChipsetType enmChipsetType = comMachine.GetChipsetType();
             if (enmChipsetType == KChipsetType_ICH9)
             {
@@ -1241,58 +1224,22 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                                                          gpConverter->toString(enmChipsetType));
             }
 
-            /* Firware type? */
-            switch (comMachine.GetFirmwareType())
+            /* EFI? */
+            const QString strEfiState = efiStateReport(comMachine);
+            if (!strEfiState.isNull())
             {
-                case KFirmwareType_EFI:
-                case KFirmwareType_EFI32:
-                case KFirmwareType_EFI64:
-                case KFirmwareType_EFIDUAL:
-                {
-                    const QString strEFI = QApplication::translate("UIGDetails", "Enabled", "details (system/EFI)");
-                    ++iRowCount;
-                    strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "EFI", "details (system)"), strEFI);
-                    break;
-                }
-                default:
-                {
-                    const QString strEFI = QApplication::translate("UIGDetails", "Disabled", "details (system/EFI)"); Q_UNUSED(strEFI);
-                    //++iRowCount;
-                    //strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "EFI", "details (system)"), strEFI);
-                    break;
-                }
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "EFI", "details (system)"),
+                                                         strEfiState);
             }
 
             /* Acceleration? */
-            QStringList aAcceleration;
-            /* VT-x/AMD-V and Nested Paging? */
-            if (vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx))
-            {
-                /* VT-x/AMD-V? */
-                if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
-                {
-                    aAcceleration << QApplication::translate("UIGDetails", "VT-x/AMD-V", "details (system)");
-                    /* Nested Paging? */
-                    if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
-                        aAcceleration << QApplication::translate("UIGDetails", "Nested Paging", "details (system)");
-                }
-
-            }
-            /* PAE/NX? */
-            if (comMachine.GetCPUProperty(KCPUPropertyType_PAE))
-                aAcceleration << QApplication::translate("UIGDetails", "PAE/NX", "details (system)");
-            /* Paravirtualization Interface? */
-            switch (comMachine.GetEffectiveParavirtProvider())
-            {
-                case KParavirtProvider_Minimal: aAcceleration << QApplication::translate("UIGDetails", "Minimal Paravirtualization", "details (system)"); break;
-                case KParavirtProvider_HyperV:  aAcceleration << QApplication::translate("UIGDetails", "Hyper-V Paravirtualization", "details (system)"); break;
-                case KParavirtProvider_KVM:     aAcceleration << QApplication::translate("UIGDetails", "KVM Paravirtualization", "details (system)"); break;
-                default: break;
-            }
-            if (!aAcceleration.isEmpty())
+            const QString strAcceleration = accelerationReport(comMachine);
+            if (!strAcceleration.isNull())
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Acceleration", "details (system)"), aAcceleration.join(", "));
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Acceleration", "details (system)"),
+                                                         strAcceleration);
             }
 
             break;
@@ -1307,14 +1254,11 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
         }
         case DetailsElementType_Display:
         {
-            // WORKAROUND:
-            // IMachine::GetExtraData still non-const..
-            CMachine comExtraDataMachine = comMachine;
-
             /* Video Memory: */
             ++iRowCount;
+            const QString strVram = QApplication::translate("UIGDetails", "%1 MB", "details").arg(comMachine.GetVRAMSize());
             strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Video Memory", "details (display)"),
-                                                     QApplication::translate("UIGDetails", "%1 MB", "details").arg(comMachine.GetVRAMSize()));
+                                                     strVram);
 
             /* Screens? */
             const int cScreens = comMachine.GetMonitorCount();
@@ -1326,88 +1270,59 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             }
 
             /* Scale-factor? */
-            const QString strScaleFactor = comExtraDataMachine.GetExtraData(UIExtraDataDefs::GUI_ScaleFactor);
+            const QString strScaleFactor = scaleFactorReport(comMachine);
+            if (strScaleFactor != "1.0")
             {
-                /* Try to convert loaded data to double: */
-                bool fOk = false;
-                double dValue = strScaleFactor.toDouble(&fOk);
-                /* Invent the default value: */
-                if (!fOk || !dValue)
-                    dValue = 1.0;
-                /* Append information: */
-                if (dValue != 1.0)
-                {
-                    ++iRowCount;
-                    strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Scale-factor", "details (display)"),
-                                                             QString::number(dValue, 'f', 2));
-                }
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Scale-factor", "details (display)"),
+                                                         strScaleFactor);
             }
 
 #ifdef VBOX_WS_MAC
             /* Unscaled HiDPI Video Output? */
-            const QString strUnscaledHiDPIMode = comExtraDataMachine.GetExtraData(UIExtraDataDefs::GUI_HiDPI_UnscaledOutput);
+            const QString strUnscaledOutput = unscaledOutputReport(comMachine);
+            if (!strUnscaledOutput.isNull())
             {
-                /* Try to convert loaded data to bool: */
-                const bool fEnabled  = strUnscaledHiDPIMode.compare("true", Qt::CaseInsensitive) == 0 ||
-                                       strUnscaledHiDPIMode.compare("yes", Qt::CaseInsensitive) == 0 ||
-                                       strUnscaledHiDPIMode.compare("on", Qt::CaseInsensitive) == 0 ||
-                                       strUnscaledHiDPIMode == "1";
-                /* Append information: */
-                if (fEnabled)
-                {
-                    ++iRowCount;
-                    const QString strHiDPI = QApplication::translate("UIGDetails", "Enabled", "details (display/Unscaled HiDPI Video Output)");
-                    strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Unscaled HiDPI Video Output", "details (display)"), strHiDPI);
-                }
-                else
-                {
-                    const QString strHiDPI = QApplication::translate("UIGDetails", "Disabled", "details (display/Unscaled HiDPI Video Output)"); Q_UNUSED(strHiDPI);
-                    //++iRowCount;
-                    //strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Unscaled HiDPI Video Output", "details (display)"), strHiDPI);
-                }
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Unscaled HiDPI Video Output", "details (display)"),
+                                                         strUnscaledOutput);
             }
 #endif /* VBOX_WS_MAC */
 
             /* Acceleration? */
-            QStringList aAcceleration;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-            /* 2D Video Acceleration? */
-            if (comMachine.GetAccelerate2DVideoEnabled())
-                aAcceleration << QApplication::translate("UIGDetails", "2D Video", "details (display)");
-#endif
-            /* 3D Acceleration? */
-            if (comMachine.GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
-                aAcceleration << QApplication::translate("UIGDetails", "3D", "details (display)");
-            if (!aAcceleration.isEmpty())
+            const QString strAcceleration = displayAccelerationReport(comMachine);
+            if (!strAcceleration.isNull())
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Acceleration", "details (display)"), aAcceleration.join(", "));
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Acceleration", "details (display)"),
+                                                         strAcceleration);
             }
 
             /* Remote Desktop Server: */
-            const CVRDEServer comServer = comMachine.GetVRDEServer();
-            if (!comServer.isNull())
+            QStringList aVrdeReport = vrdeServerReport(comMachine);
+            if (!aVrdeReport.isEmpty())
             {
                 ++iRowCount;
-                if (comServer.GetEnabled())
-                    strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Remote Desktop Server Port", "details (display/vrde)"),
-                                                             comServer.GetVRDEProperty("TCP/Ports"));
-                else
-                    strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Remote Desktop Server", "details (display/vrde)"),
-                                                             QApplication::translate("UIGDetails", "Disabled", "details (display/vrde/VRDE server)"));
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Remote Desktop Server Port", "details (display/vrde)"),
+                                                         aVrdeReport.value(0));
+            }
+            else
+            {
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Remote Desktop Server", "details (display/vrde)"),
+                                                         QApplication::translate("UIGDetails", "Disabled", "details (display/vrde/VRDE server)"));
             }
 
             /* Video Capture: */
-            if (comMachine.GetVideoCaptureEnabled())
+            QStringList aVideoCaptureReport = videoCaptureReport(comMachine);
+            if (!aVideoCaptureReport.isEmpty())
             {
                 ++iRowCount;
                 strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Video Capture File", "details (display/video capture)"),
-                                                         comMachine.GetVideoCaptureFile());
+                                                         aVideoCaptureReport.value(0));
                 ++iRowCount;
                 strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Video Capture Attributes", "details (display/video capture)"),
-                                                         QApplication::translate("UIGDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
-                                                             .arg(comMachine.GetVideoCaptureWidth()).arg(comMachine.GetVideoCaptureHeight())
-                                                             .arg(comMachine.GetVideoCaptureFPS()).arg(comMachine.GetVideoCaptureRate()));
+                                                         aVideoCaptureReport.value(1));
             }
             else
             {
@@ -1420,50 +1335,27 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
         }
         case DetailsElementType_Storage:
         {
-            /* Iterate over the all machine controllers: */
-            foreach (const CStorageController &comController, comMachine.GetStorageControllers())
+            /* Storage: */
+            QPair<QStringList, QList<QMap<QString, QString> > > report = storageReport(comMachine);
+            QStringList aControllers = report.first;
+            QList<QMap<QString, QString> > aAttachments = report.second;
+
+            /* Iterate through storage controllers: */
+            for (int i = 0; i < aControllers.size(); ++i)
             {
                 /* Add controller information: */
-                const QString strControllerName = QApplication::translate("UIMachineSettingsStorage", "Controller: %1");
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl3).arg(strControllerName.arg(comController.GetName()));
+                strItem += QString(sSectionItemTpl3).arg(aControllers.value(i));
 
-                /* Populate sorted map with attachments information: */
-                QMap<StorageSlot,QString> attachmentsMap;
-                foreach (const CMediumAttachment &comAttachment, comMachine.GetMediumAttachmentsOfController(comController.GetName()))
+                /* Iterate through storage attachments: */
+                QMap<QString, QString> aCurrentAttachments = aAttachments.value(i);
+                for (int j = 0; j < aCurrentAttachments.keys().size(); ++j)
                 {
-                    /* Prepare current storage slot: */
-                    const StorageSlot attachmentSlot(comController.GetBus(), comAttachment.GetPort(), comAttachment.GetDevice());
-                    /* Append 'device slot name' with 'device type name' for optical devices only: */
-                    QString strDeviceType = comAttachment.GetType() == KDeviceType_DVD
-                                          ? QApplication::translate("UIGDetails", "[Optical Drive]", "details (storage)")
-                                          : QString();
-                    if (!strDeviceType.isNull())
-                        strDeviceType.prepend(' ');
-                    /* Prepare current medium object: */
-                    const CMedium &medium = comAttachment.GetMedium();
-                    /* Prepare information about current medium & attachment: */
-                    QString strAttachmentInfo = !comAttachment.isOk()
-                                              ? QString()
-                                              : QString(sSectionItemTpl2)
-                                                .arg(QString("&nbsp;&nbsp;") +
-                                                     gpConverter->toString(StorageSlot(comController.GetBus(),
-                                                                                       comAttachment.GetPort(),
-                                                                                       comAttachment.GetDevice())) + strDeviceType)
-                                                .arg(wipeHtmlStuff(vboxGlobal().details(medium, false)));
-                    /* Insert that attachment into map: */
-                    if (!strAttachmentInfo.isNull())
-                        attachmentsMap.insert(attachmentSlot, strAttachmentInfo);
-                }
-
-                /* Iterate over the sorted map with attachments information: */
-                QMapIterator<StorageSlot, QString> it(attachmentsMap);
-                while (it.hasNext())
-                {
-                    /* Add controller information: */
-                    it.next();
+                    const QString &strSlotInfo = aCurrentAttachments.keys().value(j);
+                    const QString &strMediumInfo = aCurrentAttachments.value(aCurrentAttachments.keys().value(j));
+                    /* Add attachment information: */
                     ++iRowCount;
-                    strItem += it.value();
+                    strItem += QString(sSectionItemTpl2).arg(strSlotInfo, strMediumInfo);
                 }
             }
 
@@ -1479,36 +1371,37 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
         }
         case DetailsElementType_Audio:
         {
-            const CAudioAdapter &comAudio = comMachine.GetAudioAdapter();
-            if (comAudio.GetEnabled())
+            /* Audio: */
+            QStringList aReport = audioReport(comMachine);
+
+            /* If there is something to report: */
+            if (!aReport.isEmpty())
             {
                 /* Host Driver: */
                 ++iRowCount;
                 strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Host Driver", "details (audio)"),
-                                                         gpConverter->toString(comAudio.GetAudioDriver()));
+                                                         aReport.value(0));
 
                 /* Controller: */
                 ++iRowCount;
                 strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Controller", "details (audio)"),
-                                                         gpConverter->toString(comAudio.GetAudioController()));
+                                                         aReport.value(1));
 
 #ifdef VBOX_WITH_AUDIO_INOUT_INFO
                 /* Output: */
                 ++iRowCount;
                 strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Audio Output", "details (audio)"),
-                                                         comAudio.GetEnabledOut() ?
-                                                         QApplication::translate("UIGDetails", "Enabled", "details (audio/output)") :
-                                                         QApplication::translate("UIGDetails", "Disabled", "details (audio/output)"));
+                                                         aReport.value(2));
 
                 /* Input: */
                 ++iRowCount;
                 strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Audio Input", "details (audio)"),
-                                                         comAudio.GetEnabledIn() ?
-                                                         QApplication::translate("UIGDetails", "Enabled", "details (audio/input)") :
-                                                         QApplication::translate("UIGDetails", "Disabled", "details (audio/input)"));
+                                                         aReport.value(3));
 #endif /* VBOX_WITH_AUDIO_INOUT_INFO */
             }
-            else
+
+            /* Handle side-case: */
+            if (strItem.isNull())
             {
                 /* Disabled: */
                 ++iRowCount;
@@ -1519,58 +1412,17 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
         }
         case DetailsElementType_Network:
         {
-            /* Enumerate all the network adapters (up to acquired/limited count): */
-            const ulong iCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(comMachine.GetChipsetType());
-            for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
+            /* Network: */
+            QStringList aReport = networkReport(comMachine);
+
+            /* Iterate through network adapters: */
+            for (int i = 0; i < aReport.size(); ++i)
             {
-                /* Get current network adapter: */
-                const CNetworkAdapter &comNetwork = comMachine.GetNetworkAdapter(iSlot);
-                if (comNetwork.GetEnabled())
-                {
-                    /* Determine attachment type: */
-                    const KNetworkAttachmentType enmType = comNetwork.GetAttachmentType();
-                    QString attType = gpConverter->toString(comNetwork.GetAdapterType())
-                                      .replace(QRegExp("\\s\\(.+\\)"), " (%1)");
-                    /* Don't use the adapter type string for types that have
-                     * an additional symbolic network/interface name field,
-                     * use this name instead: */
-                    switch (enmType)
-                    {
-                        case KNetworkAttachmentType_Bridged:
-                            attType = attType.arg(QApplication::translate("UIGDetails", "Bridged Adapter, %1", "details (network)")
-                                                     .arg(comNetwork.GetBridgedInterface()));
-                            break;
-                        case KNetworkAttachmentType_Internal:
-                            attType = attType.arg(QApplication::translate("UIGDetails", "Internal Network, '%1'", "details (network)")
-                                                     .arg(comNetwork.GetInternalNetwork()));
-                            break;
-                        case KNetworkAttachmentType_HostOnly:
-                            attType = attType.arg(QApplication::translate("UIGDetails", "Host-only Adapter, '%1'", "details (network)")
-                                                     .arg(comNetwork.GetHostOnlyInterface()));
-                            break;
-                        case KNetworkAttachmentType_Generic:
-                        {
-                            QString strGenericDriverProperties(summarizeGenericProperties(comNetwork));
-                            attType = attType.arg(strGenericDriverProperties.isNull()
-                                                  ? attType.arg(QApplication::translate("UIGDetails", "Generic Driver, '%1'", "details (network)").arg(comNetwork.GetGenericDriver()))
-                                                  : attType.arg(QApplication::translate("UIGDetails", "Generic Driver, '%1' { %2 }", "details (network)")
-                                                                .arg(comNetwork.GetGenericDriver(), strGenericDriverProperties)));
-                            break;
-                        }
-                        case KNetworkAttachmentType_NATNetwork:
-                            attType = attType.arg(QApplication::translate("UIGDetails", "NAT Network, '%1'", "details (network)")
-                                                     .arg(comNetwork.GetNATNetwork()));
-                            break;
-                        default:
-                            attType = attType.arg(gpConverter->toString(enmType));
-                            break;
-                    }
-                    /* Here goes the record: */
-                    ++iRowCount;
-                    strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Adapter %1", "details (network)")
-                                                                                     .arg(comNetwork.GetSlot() + 1),
-                                                             attType);
-                }
+                const QString &strAdapterInformation = aReport.value(i);
+                /* Add adapter information: */
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Adapter %1", "details (network)").arg(i + 1),
+                                                         strAdapterInformation);
             }
 
             /* Handle side-case: */
@@ -1585,32 +1437,17 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
         }
         case DetailsElementType_Serial:
         {
-            /* Enumerate all the serial ports (up to acquired/limited count): */
-            const ulong iCount = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
-            for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
+            /* Serial: */
+            QStringList aReport = serialReport(comMachine);
+
+            /* Iterate through serial ports: */
+            for (int i = 0; i < aReport.size(); ++i)
             {
-                /* Get current serial port: */
-                const CSerialPort &comSerial = comMachine.GetSerialPort(iSlot);
-                if (comSerial.GetEnabled())
-                {
-                    /* Determine port mode: */
-                    const KPortMode enmMode = comSerial.GetHostMode();
-                    /* Compose the data: */
-                    QString strData = vboxGlobal().toCOMPortName(comSerial.GetIRQ(), comSerial.GetIOBase()) + ", ";
-                    if (   enmMode == KPortMode_HostPipe
-                        || enmMode == KPortMode_HostDevice
-                        || enmMode == KPortMode_TCP
-                        || enmMode == KPortMode_RawFile)
-                        strData += QString("%1 (<nobr>%2</nobr>)").arg(gpConverter->toString(enmMode))
-                                                                  .arg(QDir::toNativeSeparators(comSerial.GetPath()));
-                    else
-                        strData += gpConverter->toString(enmMode);
-                    /* Here goes the record: */
-                    ++iRowCount;
-                    strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Port %1", "details (serial)")
-                                                                .arg(comSerial.GetSlot() + 1),
-                                                             strData);
-                }
+                const QString &strPortInformation = aReport.value(i);
+                /* Add port information: */
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Port %1", "details (serial)").arg(i + 1),
+                                                         strPortInformation);
             }
 
             /* Handle side-case: */
@@ -1625,58 +1462,48 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
         }
         case DetailsElementType_USB:
         {
-            /* Acquire USB filters object: */
-            const CUSBDeviceFilters &comFilters = comMachine.GetUSBDeviceFilters();
-            if (   !comFilters.isNull()
-                && comMachine.GetUSBProxyAvailable())
+            /* USB: */
+            QStringList aReport = usbReport(comMachine);
+
+            /* If there is something to report: */
+            if (!aReport.isEmpty())
             {
-                /* The USB controller may be unavailable (i.e. in VirtualBox OSE): */
-                const CUSBControllerVector controllers = comMachine.GetUSBControllers();
-                if (!controllers.isEmpty())
-                {
-                    /* USB Controller: */
-                    QStringList aControllerList;
-                    foreach (const CUSBController &comController, controllers)
-                        aControllerList << gpConverter->toString(comController.GetType());
-                    ++iRowCount;
-                    strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "USB Controller", "details (usb)"),
-                                                             aControllerList.join(", "));
+                /* USB Controller: */
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "USB Controller", "details (usb)"),
+                                                         aReport.value(0));
 
-                    /* Acquire USB filters: */
-                    const CUSBDeviceFilterVector &filterVector = comFilters.GetDeviceFilters();
-                    /* Calculate the amount of active filters: */
-                    uint cActive = 0;
-                    foreach (const CUSBDeviceFilter &comFilter, filterVector)
-                        if (comFilter.GetActive())
-                            ++cActive;
-                    /* Here goes the record: */
-                    ++iRowCount;
-                    strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Device Filters", "details (usb)"),
-                                                             QApplication::translate("UIGDetails", "%1 (%2 active)", "details (usb)")
-                                                                 .arg(filterVector.size()).arg(cActive));
-                }
+                /* Device Filters: */
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Device Filters", "details (usb)"),
+                                                         aReport.value(1));
+            }
 
-                /* Handle side-case: */
-                if (strItem.isNull())
-                {
-                    /* Disabled: */
-                    ++iRowCount;
-                    strItem = QString(sSectionItemTpl1).arg(QApplication::translate("UIGDetails", "Disabled", "details (usb)"));
-                }
+            /* Handle side-case: */
+            if (strItem.isNull())
+            {
+                /* Disabled: */
+                ++iRowCount;
+                strItem = QString(sSectionItemTpl1).arg(QApplication::translate("UIGDetails", "Disabled", "details (usb)"));
             }
 
             break;
         }
         case DetailsElementType_SF:
         {
-            /* Acquire shared folders count: */
+            /* Shared Folders: */
             const ulong cFolders = comMachine.GetSharedFolders().size();
-            ++iRowCount;
             if (cFolders > 0)
+            {
+                ++iRowCount;
                 strItem = QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Shared Folders", "details (shared folders)"),
                                                         QString::number(cFolders));
+            }
             else
+            {
+                ++iRowCount;
                 strItem = QString(sSectionItemTpl1).arg(QApplication::translate("UIGDetails", "None", "details (shared folders)"));
+            }
 
             break;
         }
@@ -1695,6 +1522,397 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
 
     /* Return report as table: */
     return QString(sTableTpl).arg(strReport);
+}
+
+/* static */
+QString UISnapshotDetailsWidget::groupReport(const CMachine &comMachine)
+{
+    /* Prepare report: */
+    QStringList aReport = comMachine.GetGroups().toList();
+    /* Do not show groups for machine which is in root group only: */
+    if (aReport.size() == 1)
+        aReport.removeAll("/");
+    /* For all groups => trim first '/' symbol: */
+    for (int i = 0; i < aReport.size(); ++i)
+    {
+        QString &strGroup = aReport[i];
+        if (strGroup.startsWith("/") && strGroup != "/")
+            strGroup.remove(0, 1);
+    }
+    /* Compose and return report: */
+    return aReport.isEmpty() ? QString() : aReport.join(", ");
+}
+
+/* static */
+QString UISnapshotDetailsWidget::bootOrderReport(const CMachine &comMachine)
+{
+    /* Prepare report: */
+    QStringList aReport;
+    /* Iterate through boot device types: */
+    for (ulong i = 1; i <= vboxGlobal().virtualBox().GetSystemProperties().GetMaxBootPosition(); ++i)
+    {
+        const KDeviceType enmDevice = comMachine.GetBootOrder(i);
+        if (enmDevice != KDeviceType_Null)
+            aReport << gpConverter->toString(enmDevice);
+    }
+    /* Make sure report contains at least something: */
+    if (aReport.isEmpty())
+        aReport << gpConverter->toString(KDeviceType_Null);
+    /* Compose and return report: */
+    return aReport.isEmpty() ? QString() : aReport.join(", ");
+}
+
+/* static */
+QString UISnapshotDetailsWidget::efiStateReport(const CMachine &comMachine)
+{
+    /* Prepare report: */
+    QString strReport;
+    switch (comMachine.GetFirmwareType())
+    {
+        case KFirmwareType_EFI:
+        case KFirmwareType_EFI32:
+        case KFirmwareType_EFI64:
+        case KFirmwareType_EFIDUAL:
+        {
+            strReport = QApplication::translate("UIGDetails", "Enabled", "details (system/EFI)");
+            break;
+        }
+        default:
+        {
+            /* strReport = */ QApplication::translate("UIGDetails", "Disabled", "details (system/EFI)");
+            break;
+        }
+    }
+    /* Return report: */
+    return strReport;
+}
+
+/* static */
+QString UISnapshotDetailsWidget::accelerationReport(const CMachine &comMachine)
+{
+    /* Prepare report: */
+    QStringList aReport;
+    /* VT-x/AMD-V and Nested Paging? */
+    if (vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx))
+    {
+        /* VT-x/AMD-V? */
+        if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
+        {
+            aReport << QApplication::translate("UIGDetails", "VT-x/AMD-V", "details (system)");
+            /* Nested Paging? */
+            if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
+                aReport << QApplication::translate("UIGDetails", "Nested Paging", "details (system)");
+        }
+    }
+    /* PAE/NX? */
+    if (comMachine.GetCPUProperty(KCPUPropertyType_PAE))
+        aReport << QApplication::translate("UIGDetails", "PAE/NX", "details (system)");
+    /* Paravirtualization Interface? */
+    switch (comMachine.GetEffectiveParavirtProvider())
+    {
+        case KParavirtProvider_Minimal: aReport << QApplication::translate("UIGDetails", "Minimal Paravirtualization", "details (system)"); break;
+        case KParavirtProvider_HyperV:  aReport << QApplication::translate("UIGDetails", "Hyper-V Paravirtualization", "details (system)"); break;
+        case KParavirtProvider_KVM:     aReport << QApplication::translate("UIGDetails", "KVM Paravirtualization", "details (system)"); break;
+        default: break;
+    }
+    /* Compose and return report: */
+    return aReport.isEmpty() ? QString() : aReport.join(", ");
+}
+
+/* static */
+QString UISnapshotDetailsWidget::scaleFactorReport(CMachine comMachine)
+{
+    // WORKAROUND:
+    // IMachine::GetExtraData still non-const..
+    CMachine comExtraDataMachine = comMachine;
+    /* Prepare report: */
+    const QString strScaleFactor = comExtraDataMachine.GetExtraData(UIExtraDataDefs::GUI_ScaleFactor);
+    /* Try to convert loaded data to double: */
+    bool fOk = false;
+    double dReport = strScaleFactor.toDouble(&fOk);
+    /* Invent the default value: */
+    if (!fOk || !dReport)
+        dReport = 1.0;
+    /* Compose and return report: */
+    return QString::number(dReport, 'f', 2);
+}
+
+#ifdef VBOX_WS_MAC
+/* static */
+QString UISnapshotDetailsWidget::unscaledOutputReport(CMachine comMachine)
+{
+    // WORKAROUND:
+    // IMachine::GetExtraData still non-const..
+    CMachine comExtraDataMachine = comMachine;
+    /* Prepare report: */
+    QString strReport;
+    /* Acquire Unscaled Output mode: */
+    const QString strValue = comExtraDataMachine.GetExtraData(UIExtraDataDefs::GUI_HiDPI_UnscaledOutput);
+    {
+        /* Try to convert loaded data to bool: */
+        const bool fEnabled  = strValue.compare("true", Qt::CaseInsensitive) == 0 ||
+                               strValue.compare("yes", Qt::CaseInsensitive) == 0 ||
+                               strValue.compare("on", Qt::CaseInsensitive) == 0 ||
+                               strValue == "1";
+        /* Append information: */
+        if (fEnabled)
+            strReport = QApplication::translate("UIGDetails", "Enabled", "details (display/Unscaled HiDPI Video Output)");
+        else
+            /* strReport = */ QApplication::translate("UIGDetails", "Disabled", "details (display/Unscaled HiDPI Video Output)");
+    }
+    /* Return report: */
+    return strReport;
+}
+#endif /* VBOX_WS_MAC */
+
+/* static */
+QString UISnapshotDetailsWidget::displayAccelerationReport(CMachine comMachine)
+{
+    /* Prepare report: */
+    QStringList aReport;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* 2D Video Acceleration? */
+    if (comMachine.GetAccelerate2DVideoEnabled())
+        aReport << QApplication::translate("UIGDetails", "2D Video", "details (display)");
+#endif
+    /* 3D Acceleration? */
+    if (comMachine.GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+        aReport << QApplication::translate("UIGDetails", "3D", "details (display)");
+    /* Compose and return report: */
+    return aReport.isEmpty() ? QString() : aReport.join(", ");
+}
+
+/* static */
+QStringList UISnapshotDetailsWidget::vrdeServerReport(CMachine comMachine)
+{
+    /* Prepare report: */
+    QStringList aReport;
+    /* Acquire VRDE server: */
+    const CVRDEServer &comServer = comMachine.GetVRDEServer();
+    if (comServer.GetEnabled())
+    {
+        /* Remote Desktop Server Port: */
+        aReport << comServer.GetVRDEProperty("TCP/Ports");
+    }
+    /* Return report: */
+    return aReport;
+}
+
+/* static */
+QStringList UISnapshotDetailsWidget::videoCaptureReport(CMachine comMachine)
+{
+    /* Prepare report: */
+    QStringList aReport;
+    /* Video Capture File: */
+    aReport << comMachine.GetVideoCaptureFile();
+    /* Video Capture Attributes: */
+    aReport << QApplication::translate("UIGDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
+                                       .arg(comMachine.GetVideoCaptureWidth())
+                                       .arg(comMachine.GetVideoCaptureHeight())
+                                       .arg(comMachine.GetVideoCaptureFPS())
+                                       .arg(comMachine.GetVideoCaptureRate());
+    /* Return report: */
+    return aReport;
+}
+
+/* static */
+QPair<QStringList, QList<QMap<QString, QString> > > UISnapshotDetailsWidget::storageReport(CMachine comMachine)
+{
+    /* Prepare report: */
+    QStringList aControllers;
+    QList<QMap<QString, QString> > aAttachments;
+    /* Iterate through machine storage controllers: */
+    foreach (const CStorageController &comController, comMachine.GetStorageControllers())
+    {
+        /* Append controller information: */
+        aControllers << QApplication::translate("UIMachineSettingsStorage", "Controller: %1").arg(comController.GetName());
+
+        /* Prepare attachment information: */
+        QMap<QString, QString> mapAttachments;
+        /* Iterate through machine storage attachments: */
+        foreach (const CMediumAttachment &comAttachment, comMachine.GetMediumAttachmentsOfController(comController.GetName()))
+        {
+            /* Prepare current slot information: */
+            const QString strSlotInfo =   QString("&nbsp;&nbsp;")
+                                        + gpConverter->toString(StorageSlot(comController.GetBus(),
+                                                                            comAttachment.GetPort(),
+                                                                            comAttachment.GetDevice()))
+                                        + (  comAttachment.GetType() == KDeviceType_DVD
+                                           ? QApplication::translate("UIGDetails", "[Optical Drive]", "details (storage)").prepend(' ')
+                                           : QString());
+
+            /* Prepare current medium information: */
+            const QString strMediumInfo = comAttachment.isOk()
+                                        ? wipeHtmlStuff(vboxGlobal().details(comAttachment.GetMedium(), false))
+                                        : QString();
+
+            /* Cache current slot/medium information: */
+            if (!strMediumInfo.isNull())
+                mapAttachments.insert(strSlotInfo, strMediumInfo);
+        }
+        /* Append attachment information: */
+        aAttachments << mapAttachments;
+    }
+    /* Compose and return report: */
+    return qMakePair(aControllers, aAttachments);
+}
+
+/* static */
+QStringList UISnapshotDetailsWidget::audioReport(CMachine comMachine)
+{
+    /* Prepare report: */
+    QStringList aReport;
+    /* Acquire audio adapter: */
+    const CAudioAdapter &comAdapter = comMachine.GetAudioAdapter();
+    if (comAdapter.GetEnabled())
+    {
+        /* Host Driver: */
+        aReport << gpConverter->toString(comAdapter.GetAudioDriver());
+
+        /* Controller: */
+        aReport << gpConverter->toString(comAdapter.GetAudioController());
+
+#ifdef VBOX_WITH_AUDIO_INOUT_INFO
+        /* Output: */
+        aReport << (  comAdapter.GetEnabledOut()
+                    ? QApplication::translate("UIGDetails", "Enabled", "details (audio/output)")
+                    : QApplication::translate("UIGDetails", "Disabled", "details (audio/output)"));
+
+        /* Input: */
+        aReport << (  comAdapter.GetEnabledIn()
+                    ? QApplication::translate("UIGDetails", "Enabled", "details (audio/input)")
+                    : QApplication::translate("UIGDetails", "Disabled", "details (audio/input)"));
+#endif /* VBOX_WITH_AUDIO_INOUT_INFO */
+    }
+    /* Return report: */
+    return aReport;
+}
+
+/* static */
+QStringList UISnapshotDetailsWidget::networkReport(CMachine comMachine)
+{
+    /* Prepare report: */
+    QStringList aReport;
+    /* Iterate through machine network adapters: */
+    const ulong iCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(comMachine.GetChipsetType());
+    for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
+    {
+        /* Get current network adapter: */
+        const CNetworkAdapter &comAdapter = comMachine.GetNetworkAdapter(iSlot);
+        if (comAdapter.GetEnabled())
+        {
+            /* Use adapter type string as template: */
+            QString strInfo = gpConverter->toString(comAdapter.GetAdapterType()).replace(QRegExp("\\s\\(.+\\)"), " (%1)");
+            /* Don't use the adapter type string for types that have an additional
+             * symbolic network/interface name field, use this name instead: */
+            const KNetworkAttachmentType enmType = comAdapter.GetAttachmentType();
+            switch (enmType)
+            {
+                case KNetworkAttachmentType_Bridged:
+                    strInfo = strInfo.arg(QApplication::translate("UIGDetails", "Bridged Adapter, %1", "details (network)")
+                                                                  .arg(comAdapter.GetBridgedInterface()));
+                    break;
+                case KNetworkAttachmentType_Internal:
+                    strInfo = strInfo.arg(QApplication::translate("UIGDetails", "Internal Network, '%1'", "details (network)")
+                                                                  .arg(comAdapter.GetInternalNetwork()));
+                    break;
+                case KNetworkAttachmentType_HostOnly:
+                    strInfo = strInfo.arg(QApplication::translate("UIGDetails", "Host-only Adapter, '%1'", "details (network)")
+                                                                  .arg(comAdapter.GetHostOnlyInterface()));
+                    break;
+                case KNetworkAttachmentType_Generic:
+                {
+                    QString strGenericDriverProperties(summarizeGenericProperties(comAdapter));
+                    strInfo = strInfo.arg(  strGenericDriverProperties.isNull()
+                                          ? strInfo.arg(QApplication::translate("UIGDetails", "Generic Driver, '%1'", "details (network)")
+                                                                                .arg(comAdapter.GetGenericDriver()))
+                                          : strInfo.arg(QApplication::translate("UIGDetails", "Generic Driver, '%1' { %2 }", "details (network)")
+                                                                                .arg(comAdapter.GetGenericDriver(), strGenericDriverProperties)));
+                    break;
+                }
+                case KNetworkAttachmentType_NATNetwork:
+                    strInfo = strInfo.arg(QApplication::translate("UIGDetails", "NAT Network, '%1'", "details (network)")
+                                                                  .arg(comAdapter.GetNATNetwork()));
+                    break;
+                default:
+                    strInfo = strInfo.arg(gpConverter->toString(enmType));
+                    break;
+            }
+            /* Append adapter information: */
+            aReport << strInfo;
+        }
+    }
+    /* Return report: */
+    return aReport;
+}
+
+/* static */
+QStringList UISnapshotDetailsWidget::serialReport(CMachine comMachine)
+{
+    /* Prepare report: */
+    QStringList aReport;
+    /* Iterate through machine serial ports: */
+    const ulong iCount = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
+    for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
+    {
+        /* Get current serial port: */
+        const CSerialPort &comPort = comMachine.GetSerialPort(iSlot);
+        if (comPort.GetEnabled())
+        {
+            /* Determine port mode: */
+            const KPortMode enmMode = comPort.GetHostMode();
+            /* Compose the data: */
+            QStringList aInfo;
+            aInfo << vboxGlobal().toCOMPortName(comPort.GetIRQ(), comPort.GetIOBase());
+            if (   enmMode == KPortMode_HostPipe
+                || enmMode == KPortMode_HostDevice
+                || enmMode == KPortMode_TCP
+                || enmMode == KPortMode_RawFile)
+                aInfo << QString("%1 (<nobr>%2</nobr>)")
+                                 .arg(gpConverter->toString(enmMode))
+                                 .arg(QDir::toNativeSeparators(comPort.GetPath()));
+            else
+                aInfo << gpConverter->toString(enmMode);
+            /* Append port information: */
+            aReport << aInfo.join(", ");
+        }
+    }
+    /* Return report: */
+    return aReport;
+}
+
+/* static */
+QStringList UISnapshotDetailsWidget::usbReport(CMachine comMachine)
+{
+    /* Prepare report: */
+    QStringList aReport;
+    /* Acquire USB filters object: */
+    const CUSBDeviceFilters &comFiltersObject = comMachine.GetUSBDeviceFilters();
+    if (   !comFiltersObject.isNull()
+        && comMachine.GetUSBProxyAvailable())
+    {
+        /* Acquire USB controllers: */
+        const CUSBControllerVector aControllers = comMachine.GetUSBControllers();
+        if (!aControllers.isEmpty())
+        {
+            /* USB Controller: */
+            QStringList aControllerList;
+            foreach (const CUSBController &comController, aControllers)
+                aControllerList << gpConverter->toString(comController.GetType());
+            aReport << aControllerList.join(", ");
+
+            /* Device Filters: */
+            const CUSBDeviceFilterVector &aFilters = comFiltersObject.GetDeviceFilters();
+            uint cActive = 0;
+            foreach (const CUSBDeviceFilter &comFilter, aFilters)
+                if (comFilter.GetActive())
+                    ++cActive;
+            aReport << QApplication::translate("UIGDetails", "%1 (%2 active)", "details (usb)")
+                                               .arg(aFilters.size()).arg(cActive);
+        }
+    }
+    /* Return report: */
+    return aReport;
 }
 
 /* static */

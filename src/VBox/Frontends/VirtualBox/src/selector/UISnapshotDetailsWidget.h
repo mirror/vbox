@@ -149,6 +149,37 @@ private:
     /** Returns details report of requested @a enmType for a given @a comMachine. */
     QString detailsReport(DetailsElementType enmType, const CMachine &comMachine) const;
 
+    /** Acquires @a comMachine group report. */
+    static QString groupReport(const CMachine &comMachine);
+    /** Acquires @a comMachine boot order report. */
+    static QString bootOrderReport(const CMachine &comMachine);
+    /** Acquires @a comMachine efi state report. */
+    static QString efiStateReport(const CMachine &comMachine);
+    /** Acquires @a comMachine acceleration report. */
+    static QString accelerationReport(const CMachine &comMachine);
+    /** Acquires @a comMachine scale-factor report. */
+    static QString scaleFactorReport(CMachine comMachine);
+#ifdef VBOX_WS_MAC
+    /** Acquires @a comMachine unscaled output report. */
+    static QString unscaledOutputReport(CMachine comMachine);
+#endif /* VBOX_WS_MAC */
+    /** Acquires @a comMachine display acceleration report. */
+    static QString displayAccelerationReport(CMachine comMachine);
+    /** Acquires @a comMachine VRDE server report. */
+    static QStringList vrdeServerReport(CMachine comMachine);
+    /** Acquires @a comMachine video capture report. */
+    static QStringList videoCaptureReport(CMachine comMachine);
+    /** Acquires @a comMachine storage report. */
+    static QPair<QStringList, QList<QMap<QString, QString> > > storageReport(CMachine comMachine);
+    /** Acquires @a comMachine audio report. */
+    static QStringList audioReport(CMachine comMachine);
+    /** Acquires @a comMachine network report. */
+    static QStringList networkReport(CMachine comMachine);
+    /** Acquires @a comMachine serial report. */
+    static QStringList serialReport(CMachine comMachine);
+    /** Acquires @a comMachine usb report. */
+    static QStringList usbReport(CMachine comMachine);
+
     /** Wipes the HTML stuff from the passed @a strString. */
     static QString wipeHtmlStuff(const QString &strString);
 
