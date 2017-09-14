@@ -1270,12 +1270,12 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             }
 
             /* Scale-factor? */
-            const QString strScaleFactor = scaleFactorReport(comMachine);
-            if (strScaleFactor != "1.0")
+            const double uScaleFactor = scaleFactorReport(comMachine);
+            if (uScaleFactor != 1.0)
             {
                 ++iRowCount;
                 strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Scale-factor", "details (display)"),
-                                                         strScaleFactor);
+                                                         QString::number(uScaleFactor, 'f', 2));
             }
 
 #ifdef VBOX_WS_MAC
@@ -1620,7 +1620,7 @@ QString UISnapshotDetailsWidget::accelerationReport(const CMachine &comMachine)
 }
 
 /* static */
-QString UISnapshotDetailsWidget::scaleFactorReport(CMachine comMachine)
+double UISnapshotDetailsWidget::scaleFactorReport(CMachine comMachine)
 {
     // WORKAROUND:
     // IMachine::GetExtraData still non-const..
@@ -1633,8 +1633,8 @@ QString UISnapshotDetailsWidget::scaleFactorReport(CMachine comMachine)
     /* Invent the default value: */
     if (!fOk || !dReport)
         dReport = 1.0;
-    /* Compose and return report: */
-    return QString::number(dReport, 'f', 2);
+    /* Return report: */
+    return dReport;
 }
 
 #ifdef VBOX_WS_MAC
@@ -1703,14 +1703,18 @@ QStringList UISnapshotDetailsWidget::videoCaptureReport(CMachine comMachine)
 {
     /* Prepare report: */
     QStringList aReport;
-    /* Video Capture File: */
-    aReport << comMachine.GetVideoCaptureFile();
-    /* Video Capture Attributes: */
-    aReport << QApplication::translate("UIGDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
-                                       .arg(comMachine.GetVideoCaptureWidth())
-                                       .arg(comMachine.GetVideoCaptureHeight())
-                                       .arg(comMachine.GetVideoCaptureFPS())
-                                       .arg(comMachine.GetVideoCaptureRate());
+    /* Acquire video capture status: */
+    if (comMachine.GetVideoCaptureEnabled())
+    {
+        /* Video Capture File: */
+        aReport << comMachine.GetVideoCaptureFile();
+        /* Video Capture Attributes: */
+        aReport << QApplication::translate("UIGDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
+                                           .arg(comMachine.GetVideoCaptureWidth())
+                                           .arg(comMachine.GetVideoCaptureHeight())
+                                           .arg(comMachine.GetVideoCaptureFPS())
+                                           .arg(comMachine.GetVideoCaptureRate());
+    }
     /* Return report: */
     return aReport;
 }
