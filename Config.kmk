@@ -3473,7 +3473,6 @@ ifdef VBOX_SIGNING_MODE
   #
   # Solaris code signing.
   #
-
   ifeq ($(VBOX_SIGNING_MODE),test)
    VBOX_CERTIFICATE_FILE  ?= $(error You need to set VBOX_CERTIFICATE_FILE in LocalConfig.kmk.)
    VBOX_TOKEN_NAME        ?= $(error You need to set VBOX_TOKEN_NAME in LocalConfig.kmk.)
