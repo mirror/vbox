@@ -1379,11 +1379,11 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetWritable, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
-     * Returns the amount which is pending (in other words has not yet been processed) by/from the backend yet. 
+     * Returns the amount which is pending (in other words has not yet been processed) by/from the backend yet.
      * Optional.
      *
-     * For input streams this is audio data from the host which has not been processed yet.
-     * For output streams this is audio data from the guest host which has not been processed yet.
+     * For input streams this is read audio data by the backend which has not been processed by the host yet.
+     * For output streams this is written audio data to the backend which has not been processed by the backend yet.
      *
      * @returns For non-raw layout streams: Number of pending bytes.
      *          for raw layout streams    : Number of pending audio frames.
