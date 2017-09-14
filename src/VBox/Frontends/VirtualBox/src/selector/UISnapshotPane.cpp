@@ -584,6 +584,9 @@ void UISnapshotPane::sltHandleMachineDataChange(QString strMachineId)
 
     /* Recache "current state" item data: */
     m_pCurrentStateItem->recache();
+
+    /* Choose current item again (to update details-widget): */
+    sltHandleCurrentItemChange();
 }
 
 void UISnapshotPane::sltHandleMachineStateChange(QString strMachineId, KMachineState enmState)
