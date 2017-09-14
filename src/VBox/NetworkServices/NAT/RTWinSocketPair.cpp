@@ -196,6 +196,17 @@ extern "C" int RTWinSocketPair(int domain, int type, int protocol, SOCKET socket
             goto close_socket;
         }
     }
+
+    for (int i = 0; i < 2; ++i) {
+        SOCKET s = socket_vector[i];
+        u_long mode = 1;
+
+        int status = ioctlsocket(s, FIONBIO, &mode);
+        if (status == SOCKET_ERROR) {
+            LogRel(("FIONBIO: %R[sockerr]\n", WSAGetLastError()));
+        }
+    }
+
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 
