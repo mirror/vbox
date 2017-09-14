@@ -276,12 +276,10 @@ static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
 }
 
 
-static int dsoundGetPosOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
-                           DWORD *pdwBuffer, DWORD *pdwFree, DWORD *pdwPlayPos)
+static int dsoundGetPosOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, DWORD *pdwFree, DWORD *pdwPlayPos)
 {
     AssertPtr(pThis);
     AssertPtrReturn(pStreamDS, VERR_INVALID_POINTER);
-    AssertPtrNull(pdwBuffer);
     AssertPtrNull(pdwFree);
     AssertPtrNull(pdwPlayPos);
 
@@ -298,8 +296,6 @@ static int dsoundGetPosOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
         if (SUCCEEDED(hr))
         {
             DWORD const cbBuffer = pStreamDS->Out.cbPlayBuf;
-            if (pdwBuffer)
-                *pdwBuffer  = cbBuffer;
             if (pdwFree)
                 *pdwFree    = cbBuffer - dsoundRingDistance(pStreamDS->Out.offPlayWritePos, cbPlayPos, cbBuffer);
             if (pdwPlayPos)
@@ -613,7 +609,9 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
 
         /*
          * As we reuse our (secondary) buffer for playing out data as it comes in,
-         * we're using this buffer as a so-called static buffer.
+         * we're using this buffer as a so-called streaming buffer.
+         *
+         * See https://msdn.microsoft.com/en-us/library/windows/desktop/ee419014(v=vs.85).aspx
          *
          * However, as we do not want to use memory on the sound device directly
          * (as most modern audio hardware on the host doesn't have this anyway),
@@ -1603,8 +1601,8 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
         AssertPtr(pStreamDS->pCfg);
         PPDMAUDIOPCMPROPS pProps = &pStreamDS->pCfg->Props;
 
-        DWORD cbBuffer, cbFree, cbPlayPos;
-        rc = dsoundGetPosOut(pThis, pStreamDS, &cbBuffer, &cbFree, &cbPlayPos);
+        DWORD cbFree, cbPlayPos;
+        rc = dsoundGetPosOut(pThis, pStreamDS, &cbFree, &cbPlayPos);
         if (RT_FAILURE(rc))
             break;
 
@@ -1615,6 +1613,7 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
         const DWORD cbSample = PDMAUDIOPCMPROPS_F2B(pProps, 1);
         if (cbFree <= cbSample)
             break;
+        Assert(cbFree >= cbSample);
         cbFree     -= cbSample;
 
         uint32_t cbLive = cxBuf;
@@ -1622,10 +1621,12 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
         /* Do not write more than available space in the DirectSound playback buffer. */
         cbLive = RT_MIN(cbFree, cbLive);
         cbLive &= ~pStreamDS->uAlign;
-        if (cbLive == 0 || cbLive > cbBuffer)
+
+        if (   cbLive == 0
+            || cbLive > pStreamDS->Out.cbPlayBuf)
         {
-            DSLOG(("DSound: cbLive=%RU32, cbBuffer=%ld, offPlayWritePos=%ld, cbPlayPos=%ld\n",
-                   cbLive, cbBuffer, pStreamDS->Out.offPlayWritePos, cbPlayPos));
+            DSLOG(("DSound: cbLive=%RU32, offPlayWritePos=%ld, cbPlayPos=%ld\n",
+                   cbLive, pStreamDS->Out.offPlayWritePos, cbPlayPos));
             break;
         }
 
@@ -1658,7 +1659,7 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
 
         directSoundPlayUnlock(pThis, pDSB, pv1, pv2, cb1, cb2);
 
-        pStreamDS->Out.offPlayWritePos = (pStreamDS->Out.offPlayWritePos + cbWrittenTotal) % cbBuffer;
+        pStreamDS->Out.offPlayWritePos = (pStreamDS->Out.offPlayWritePos + cbWrittenTotal) % pStreamDS->Out.cbPlayBuf;
 
         DSLOGF(("DSound: %RU32/%RU32, buffer write pos %ld, rc=%Rrc\n",
                 cbWrittenTotal, cbLive, pStreamDS->Out.offPlayWritePos, rc));
@@ -2027,8 +2028,8 @@ static DECLCALLBACK(int) dsoundNotificationThread(RTTHREAD hThreadSelf, void *pv
                 }
                 else if (aEvents[dwObj] == pThis->aEvents[DSOUNDEVENT_OUTPUT])
                 {
-                    DWORD cbBuffer, cbFree, cbPlayPos;
-                    rc = dsoundGetPosOut(pThis->pDSStream, &cbBuffer, &cbFree, &cbPlayPos);
+                    DWORD cbFree, cbPlayPos;
+                    rc = dsoundGetPosOut(pThis->pDSStream, &cbFree, &cbPlayPos);
                     if (   RT_SUCCESS(rc)
                         && cbFree)
                     {
@@ -2316,8 +2317,6 @@ static DECLCALLBACK(uint32_t) drvHostDSoundStreamGetReadable(PPDMIHOSTAUDIO pInt
  */
 static DECLCALLBACK(uint32_t) drvHostDSoundStreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface, pStream);
-
     AssertPtrReturn(pInterface, PDMAUDIOSTREAMSTS_FLAG_NONE);
     AssertPtrReturn(pStream,    PDMAUDIOSTREAMSTS_FLAG_NONE);
 
@@ -2327,7 +2326,7 @@ static DECLCALLBACK(uint32_t) drvHostDSoundStreamGetWritable(PPDMIHOSTAUDIO pInt
     if (pStreamDS->fEnabled)
     {
         DWORD cbFree;
-        int rc = dsoundGetPosOut(pThis, pStreamDS, NULL /* cbBuffer */, &cbFree, NULL /* cbPlayPos */);
+        int rc = dsoundGetPosOut(pThis, pStreamDS, &cbFree, NULL /* cbPlayPos */);
         if (   RT_SUCCESS(rc)
             && cbFree)
         {
