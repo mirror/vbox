@@ -147,7 +147,7 @@ private:
     void updateButtonStates();
 
     /** Returns details report of requested @a enmType for a given @a comMachine. */
-    QString detailsReport(DetailsElementType enmType, const CMachine &comMachine) const;
+    QString detailsReport(DetailsElementType enmType, const CMachine &comMachine, const CSnapshot &comSnapshot = CSnapshot()) const;
 
     /** Acquires @a comMachine group report. */
     static QString groupReport(const CMachine &comMachine);
@@ -182,6 +182,11 @@ private:
 
     /** Wipes the HTML stuff from the passed @a strString. */
     static QString wipeHtmlStuff(const QString &strString);
+
+    /** Prepares emhasized report for a given @a strValue, comparing to @a strOldValue. */
+    static QString empReport(const QString &strValue, const QString &strOldValue);
+    /** Prepares emhasized report for a given @a strValue, depending on @a fDo flag. */
+    static QString empReport(const QString &strValue, bool fIgnore);
 
     /** Summarizes generic properties. */
     static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
