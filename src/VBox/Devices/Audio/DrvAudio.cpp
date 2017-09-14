@@ -1180,29 +1180,39 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
             }
             else
             {
+                /* No audio frames to transfer host to the guest (anymore)? 
+                 * Then try closing this stream if marked so in the next block. */
                 fTryClosePending = true;
             }
         }
         else if (pHstStream->enmDir == PDMAUDIODIR_OUT)
         {
-            /* Nothing to do here (yet). */
+            /* No audio frames to transfer from guest to host (anymore)? 
+             * Then try closing this stream if marked so in the next block. */
+            fTryClosePending = AudioMixBufLive(&pHstStream->MixBuf) == 0;
         }
         else
             AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
 
-        if (fTryClosePending)
+        /* Has the host stream marked as pending to disable?
+         * Try disabling the stream then. */
+        if (   pHstStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE
+            && fTryClosePending)
         {
-            /* Has the host stream marked as disabled but there still were guest streams relying
-             * on it? Check if the stream now can be closed and do so, if possible. */
-            if (pHstStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE)
+            if (pThis->pHostDrvAudio->pfnStreamGetPending) /* Optional to implement. */
             {
-                LogFunc(("[%s] Closing pending input stream\n", pHstStream->szName));
+                const uint32_t cxPending = pThis->pHostDrvAudio->pfnStreamGetPending(pThis->pHostDrvAudio, pHstStream->pvBackend);
+                Log3Func(("[%s] cxPending=%RU32\n", pHstStream->szName, cxPending));
+
+                /* Only try close pending if no audio data is pending on the backend-side anymore. */
+                fTryClosePending = cxPending == 0;
+            }
+
+            if (fTryClosePending)
+            {
+                LogFunc(("[%s] Closing pending stream\n", pHstStream->szName));
                 rc = drvAudioStreamControlInternalBackend(pThis, pHstStream, PDMAUDIOSTREAMCMD_DISABLE);
-                if (RT_SUCCESS(rc))
-                {
-                    pHstStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE;
-                }
-                else
+                if (RT_FAILURE(rc))
                     LogFunc(("[%s] Backend vetoed against closing pending input stream, rc=%Rrc\n", pHstStream->szName, rc));
             }
         }
@@ -1522,8 +1532,9 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
         if (pThis->pHostDrvAudio->pfnStreamPlayEnd)
             pThis->pHostDrvAudio->pfnStreamPlayEnd(pThis->pHostDrvAudio, pHstStream->pvBackend);
 
+#ifdef LOG_ENABLED
         uint32_t cfLive = 0;
-
+#endif
         if (RT_SUCCESS(rc))
         {
             AudioMixBufFinish(&pHstStream->MixBuf, cfPlayedTotal);
@@ -1533,7 +1544,10 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
             STAM_PROFILE_ADV_STOP(&pThis->Stats.DelayOut, out);
             STAM_COUNTER_ADD     (&pHstStream->Out.StatFramesPlayed, cfPlayedTotal);
 #endif
+
+#ifdef LOG_ENABLED
             cfLive = AudioMixBufLive(&pHstStream->MixBuf);
+#endif
         }
 
 #ifdef LOG_ENABLED
@@ -1542,23 +1556,6 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
                   pHstStream->szName, pszBackendSts, cfLive, cfPlayedTotal, rc));
         RTStrFree(pszBackendSts);
 #endif /* LOG_ENABLED */
-
-        if (!cfLive)
-        {
-            /* Has the host stream marked as disabled but there still were guest streams relying
-             * on it? Check if the stream now can be closed and do so, if possible. */
-            if (pHstStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE)
-            {
-                LogFunc(("[%s] All pending data played, closing output stream ...\n", pHstStream->szName));
-                rc = drvAudioStreamControlInternalBackend(pThis, pHstStream, PDMAUDIOSTREAMCMD_DISABLE);
-                if (RT_SUCCESS(rc))
-                {
-                    pHstStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE;
-                }
-                else
-                    LogFunc(("[%s] Backend vetoed against closing output stream, rc=%Rrc\n", pHstStream->szName, rc));
-            }
-        }
 
     } while (0);
 
