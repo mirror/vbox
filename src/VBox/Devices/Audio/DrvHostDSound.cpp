@@ -120,16 +120,31 @@ typedef struct DSOUNDSTREAM
     {
         struct
         {
+            /** The actual DirectSound Buffer (DSB) used for the capturing.
+             *  This is a secondary buffer and is used as a streaming buffer. */
             LPDIRECTSOUNDCAPTUREBUFFER8 pDSCB;
-            DWORD                       offCaptureBufRead;
-            DWORD                       cbCaptureBuf;
+            /** Current read offset (in bytes) within the DSB. */
+            DWORD                       offReadPos;
+            /** Size (in bytes) of the DirectSound buffer. */
+            DWORD                       cbBufSize;
             HRESULT                     hrLastCapture;
         } In;
         struct
         {
+            /** The actual DirectSound Buffer (DSB) used for playback.
+             *  This is a secondary buffer and is used as a streaming buffer. */
             LPDIRECTSOUNDBUFFER8        pDSB;
-            DWORD                       offPlayWritePos;
-            DWORD                       cbPlayBuf;
+            /** Current write offset (in bytes) within the DSB. */
+            DWORD                       offWritePos;
+            /** Offset of last play cursor within the DSB when checked for pending. */
+            DWORD                       offPlayCursorLastPending;
+            /** Offset of last play cursor within the DSB when last played. */
+            DWORD                       offPlayCursorLastPlayed;
+            /** Total amount (in bytes) written. */
+            uint64_t                    cbWritten;
+            /** Size (in bytes) of the DirectSound buffer. */
+            DWORD                       cbBufSize;
+            /** Flag indicating whether playback was (re)started. */
             bool                        fRestartPlayback;
         } Out;
     };
@@ -231,6 +246,9 @@ static void     dsoundUpdateStatusInternalEx(PDRVHOSTDSOUND pThis, PPDMAUDIOBACK
 
 static DWORD dsoundRingDistance(DWORD offEnd, DWORD offBegin, DWORD cSize)
 {
+    AssertReturn(offEnd <= cSize,   0);
+    AssertReturn(offBegin <= cSize, 0);
+
     return offEnd >= offBegin ? offEnd - offBegin : cSize - offBegin + offEnd;
 }
 
@@ -276,45 +294,58 @@ static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
 }
 
 
-static int dsoundGetPosOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, DWORD *pdwFree, DWORD *pdwPlayPos)
+/**
+ * Retrieves the number of free bytes available for writing to a DirectSound output stream.
+ *
+ * @return  IPRT status code. VERR_NOT_AVAILABLE if unable to determine or the buffer was not recoverable.
+ * @param   pThis               Host audio driver instance.
+ * @param   pStreamDS           DirectSound output stream to retrieve number for.
+ * @param   pdwFree             Where to return the free amount on success.
+ */
+static int dsoundGetFreeOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, DWORD *pdwFree)
 {
-    AssertPtr(pThis);
+    AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
     AssertPtrReturn(pStreamDS, VERR_INVALID_POINTER);
-    AssertPtrNull(pdwFree);
-    AssertPtrNull(pdwPlayPos);
+    AssertPtrReturn(pdwFree,   VERR_INVALID_POINTER);
+
+    Assert(pStreamDS->pCfg->enmDir == PDMAUDIODIR_OUT); /* Paranoia. */
 
     LPDIRECTSOUNDBUFFER8 pDSB = pStreamDS->Out.pDSB;
     if (!pDSB)
+    {
+        AssertPtr(pDSB);
         return VERR_INVALID_POINTER;
+    }
+
+    HRESULT hr = S_OK;
 
     /* Get the current play position which is used for calculating the free space in the buffer. */
-    DWORD cbPlayPos;
-    HRESULT hr = E_FAIL;
     for (unsigned i = 0; i < DRV_DSOUND_RESTORE_ATTEMPTS_MAX; i++)
     {
-        hr = IDirectSoundBuffer8_GetCurrentPosition(pDSB, &cbPlayPos, NULL);
+        DWORD cbPlayCursor;
+        hr = IDirectSoundBuffer8_GetCurrentPosition(pDSB, &cbPlayCursor, NULL /* cbWriteCursor */);
         if (SUCCEEDED(hr))
         {
-            DWORD const cbBuffer = pStreamDS->Out.cbPlayBuf;
-            if (pdwFree)
-                *pdwFree    = cbBuffer - dsoundRingDistance(pStreamDS->Out.offPlayWritePos, cbPlayPos, cbBuffer);
-            if (pdwPlayPos)
-                *pdwPlayPos = cbPlayPos;
+            *pdwFree = pStreamDS->Out.cbBufSize
+                     - dsoundRingDistance(pStreamDS->Out.offWritePos, cbPlayCursor, pStreamDS->Out.cbBufSize);
+
             return VINF_SUCCESS;
         }
+
         if (hr != DSERR_BUFFERLOST) /** @todo MSDN doesn't state this error for GetCurrentPosition(). */
             break;
-        LogFlowFunc(("Getting playing position failed due to lost buffer, restoring ...\n"));
+
+        LogFunc(("Getting playing position failed due to lost buffer, restoring ...\n"));
+
         directSoundPlayRestore(pThis, pDSB);
     }
 
     if (hr != DSERR_BUFFERLOST) /* Avoid log flooding if the error is still there. */
         DSLOGREL(("DSound: Getting current playback position failed with %Rhrc\n", hr));
-    LogFlowFunc(("Failed with %Rhrc\n", hr));
 
-    int rc = VERR_NOT_AVAILABLE;
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFunc(("Failed with %Rhrc\n", hr));
+
+    return VERR_NOT_AVAILABLE;
 }
 
 
@@ -696,8 +727,8 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
          * dsoundPlayStart initializes part of it to make sure that Stop/Start continues with a correct
          * playback buffer position.
          */
-        pStreamDS->Out.cbPlayBuf = bc.dwBufferBytes;
-        DSLOG(("DSound: cMaxSamplesInBuffer=%RU32\n", pStreamDS->Out.cbPlayBuf));
+        pStreamDS->Out.cbBufSize = bc.dwBufferBytes;
+        DSLOG(("DSound: cMaxSamplesInBuffer=%RU32\n", pStreamDS->Out.cbBufSize));
 
 #ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
         /*
@@ -770,7 +801,7 @@ static void dsoundPlayClearSamples(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
     PVOID pv1, pv2;
     DWORD cb1, cb2;
     HRESULT hr = directSoundPlayLock(pThis, pStreamDS,
-                                     0 /* dwOffset */, pStreamDS->Out.cbPlayBuf,
+                                     0 /* dwOffset */, pStreamDS->Out.cbBufSize,
                                      &pv1, &pv2, &cb1, &cb2, DSBLOCK_ENTIREBUFFER);
     if (SUCCEEDED(hr))
     {
@@ -1185,13 +1216,13 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
                       bc.dwBufferBytes, pThis->cfg.cbBufferIn));
 
         /* Initial state: reading at the initial capture position, no error. */
-        pStreamDS->In.offCaptureBufRead = offByteReadPos;
-        pStreamDS->In.cbCaptureBuf      = bc.dwBufferBytes;
+        pStreamDS->In.offReadPos = offByteReadPos;
+        pStreamDS->In.cbBufSize  = bc.dwBufferBytes;
 
         pStreamDS->In.hrLastCapture     = S_OK;
 
-        DSLOG(("DSound: offCaptureBufRead=%RU32, cbCaptureBuf=%RU32\n",
-               pStreamDS->In.offCaptureBufRead, pStreamDS->In.cbCaptureBuf));
+        DSLOG(("DSound: offReadPos=%RU32, cbBufSize=%RU32\n",
+               pStreamDS->In.offReadPos, pStreamDS->In.cbBufSize));
 
         pCfgAcq->cFrameBufferHint = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pThis->cfg.cbBufferIn);
 
@@ -1495,9 +1526,12 @@ static int dsoundCreateStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
     LogFlowFunc(("pStreamDS=%p, pCfgReq=%p\n", pStreamDS, pCfgReq));
 
     pStreamDS->Out.pDSB = NULL;
-    pStreamDS->Out.offPlayWritePos = 0;
+    pStreamDS->Out.offWritePos = 0;
+    pStreamDS->Out.offPlayCursorLastPlayed = 0;
+    pStreamDS->Out.offPlayCursorLastPending = 0;
+    pStreamDS->Out.cbWritten = 0;
     pStreamDS->Out.fRestartPlayback = true;
-    pStreamDS->Out.cbPlayBuf = 0;
+    pStreamDS->Out.cbBufSize = 0;
 
     int rc = VINF_SUCCESS;
 
@@ -1601,17 +1635,34 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
         AssertPtr(pStreamDS->pCfg);
         PPDMAUDIOPCMPROPS pProps = &pStreamDS->pCfg->Props;
 
-        DWORD cbFree, cbPlayPos;
-        rc = dsoundGetPosOut(pThis, pStreamDS, &cbFree, &cbPlayPos);
+        DWORD cbFree;
+        rc = dsoundGetFreeOut(pThis, pStreamDS, &cbFree);
         if (RT_FAILURE(rc))
             break;
+
+        if (pStreamDS->Out.fRestartPlayback == false)
+        {
+            DWORD offPlayCursor, offWriteCursor;
+            HRESULT hr = IDirectSoundBuffer8_GetCurrentPosition(pStreamDS->Out.pDSB, &offPlayCursor, &offWriteCursor);
+            if (SUCCEEDED(hr))
+            {
+                uint32_t cbPending;
+                if (pStreamDS->Out.offPlayCursorLastPlayed <= offPlayCursor)
+                    cbPending = offPlayCursor - pStreamDS->Out.offPlayCursorLastPlayed;
+                else
+                    cbPending = pStreamDS->Out.cbBufSize - pStreamDS->Out.offPlayCursorLastPlayed + offPlayCursor;
+
+                pStreamDS->Out.cbWritten               -= RT_MIN(pStreamDS->Out.cbWritten, cbPending);
+                pStreamDS->Out.offPlayCursorLastPlayed  = offPlayCursor;
+            }
+        }
 
         /*
          * Check for full buffer, do not allow the offPlayWritePos to catch cbPlayPos during playback,
          * i.e. always leave a free space for 1 audio sample.
          */
         const DWORD cbSample = PDMAUDIOPCMPROPS_F2B(pProps, 1);
-        if (cbFree <= cbSample)
+        if (cbFree < cbSample)
             break;
         Assert(cbFree >= cbSample);
         cbFree     -= cbSample;
@@ -1619,23 +1670,18 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
         uint32_t cbLive = cxBuf;
 
         /* Do not write more than available space in the DirectSound playback buffer. */
-        cbLive = RT_MIN(cbFree, cbLive);
+        cbLive  = RT_MIN(cbFree, cbLive);
         cbLive &= ~pStreamDS->uAlign;
 
-        if (   cbLive == 0
-            || cbLive > pStreamDS->Out.cbPlayBuf)
-        {
-            DSLOG(("DSound: cbLive=%RU32, offPlayWritePos=%ld, cbPlayPos=%ld\n",
-                   cbLive, pStreamDS->Out.offPlayWritePos, cbPlayPos));
+        if (!cbLive)
             break;
-        }
 
         LPDIRECTSOUNDBUFFER8 pDSB = pStreamDS->Out.pDSB;
         AssertPtr(pDSB);
 
         PVOID pv1, pv2;
         DWORD cb1, cb2;
-        HRESULT hr = directSoundPlayLock(pThis, pStreamDS, pStreamDS->Out.offPlayWritePos, cbLive,
+        HRESULT hr = directSoundPlayLock(pThis, pStreamDS, pStreamDS->Out.offWritePos, cbLive,
                                          &pv1, &pv2, &cb1, &cb2, 0 /* dwFlags */);
         if (FAILED(hr))
         {
@@ -1643,26 +1689,27 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
             break;
         }
 
-        /** @todo r=bird: Can pv1/cb1 really be NULL? Docs says they're always set
-         *        and pv2/cb2 only used when there is a buffer wrap around. */
-        if (pv1 && cb1)
-        {
-            memcpy(pv1, pvBuf, cb1);
-            cbWrittenTotal += cb1;
-        }
+        AssertPtr(pv1);
+        Assert(cb1);
 
-        if (pv2 && cb2)
+        memcpy(pv1, pvBuf, cb1);
+        cbWrittenTotal = cb1;
+
+        if (pv2 && cb2) /* Buffer wrap-around? Write second part. */
         {
             memcpy(pv2, (uint8_t *)pvBuf + cb1, cb2);
             cbWrittenTotal += cb2;
         }
 
+        Assert(cbLive == cb1 + cb2);
+
         directSoundPlayUnlock(pThis, pDSB, pv1, pv2, cb1, cb2);
 
-        pStreamDS->Out.offPlayWritePos = (pStreamDS->Out.offPlayWritePos + cbWrittenTotal) % pStreamDS->Out.cbPlayBuf;
+        pStreamDS->Out.offWritePos = (pStreamDS->Out.offWritePos + cbWrittenTotal) % pStreamDS->Out.cbBufSize;
+        pStreamDS->Out.cbWritten  += cbWrittenTotal;
 
         DSLOGF(("DSound: %RU32/%RU32, buffer write pos %ld, rc=%Rrc\n",
-                cbWrittenTotal, cbLive, pStreamDS->Out.offPlayWritePos, rc));
+                cbWrittenTotal, cbLive, pStreamDS->Out.offWritePos, rc));
 
         if (pStreamDS->Out.fRestartPlayback)
         {
@@ -1718,10 +1765,6 @@ static int dsoundDestroyStreamOut(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDSTREAM p
 
     directSoundPlayClose(pThis, pStreamDS);
 
-    pStreamDS->Out.offPlayWritePos  = 0;
-    pStreamDS->Out.fRestartPlayback = true;
-    pStreamDS->Out.cbPlayBuf        = 0;
-
     return VINF_SUCCESS;
 }
 
@@ -1732,10 +1775,10 @@ static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
              pStreamDS, pCfgReq, DrvAudioHlpRecSrcToStr(pCfgReq->DestSource.Source)));
 
     /* Init the stream structure and save relevant information to it. */
-    pStreamDS->In.offCaptureBufRead = 0;
-    pStreamDS->In.cbCaptureBuf      = 0;
-    pStreamDS->In.pDSCB             = NULL;
-    pStreamDS->In.hrLastCapture     = S_OK;
+    pStreamDS->In.offReadPos    = 0;
+    pStreamDS->In.cbBufSize     = 0;
+    pStreamDS->In.pDSCB         = NULL;
+    pStreamDS->In.hrLastCapture = S_OK;
 
     int rc = VINF_SUCCESS;
 
@@ -1866,7 +1909,7 @@ int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface,
                     offCurPos, pStreamDS->uAlign + 1));
 
         /* Number of samples available in the DirectSound capture buffer. */
-        DWORD cbToCapture = dsoundRingDistance(offCurPos, pStreamDS->In.offCaptureBufRead, pStreamDS->In.cbCaptureBuf);
+        DWORD cbToCapture = dsoundRingDistance(offCurPos, pStreamDS->In.offReadPos, pStreamDS->In.cbBufSize);
         if (cbToCapture == 0)
             break;
 
@@ -1876,8 +1919,8 @@ int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface,
             break;
         }
 
-        DSLOGF(("DSound: Capture cbBuf=%RU32, offCurPos=%ld, offCaptureBufRead=%ld, cbToCapture=%ld\n",
-                cxBuf, offCurPos, pStreamDS->In.offCaptureBufRead, cbToCapture));
+        DSLOGF(("DSound: Capture cxBuf=%RU32, offCurPos=%ld, offReadPos=%ld, cbToCapture=%ld\n",
+                cxBuf, offCurPos, pStreamDS->In.offReadPos, cbToCapture));
 
         /* No need to fetch more samples than mix buffer can receive. */
         cbToCapture = RT_MIN(cbToCapture, cxBuf);
@@ -1886,10 +1929,10 @@ int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface,
         PVOID pv1, pv2;
         DWORD cb1, cb2;
         hr = directSoundCaptureLock(pStreamDS,
-                                    pStreamDS->In.offCaptureBufRead,  /* dwOffset */
-                                    cbToCapture,                      /* dwBytes */
+                                    pStreamDS->In.offReadPos,  /* dwOffset */
+                                    cbToCapture,               /* dwBytes */
                                     &pv1, &pv2, &cb1, &cb2,
-                                    0                                 /* dwFlags */);
+                                    0                          /* dwFlags */);
         if (FAILED(hr))
         {
             rc = VERR_ACCESS_DENIED;
@@ -1912,8 +1955,8 @@ int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface,
 
         if (RT_SUCCESS(rc))
         {
-            pStreamDS->In.offCaptureBufRead = (pStreamDS->In.offCaptureBufRead + cbReadTotal)
-                                            % pStreamDS->In.cbCaptureBuf;
+            pStreamDS->In.offReadPos = (pStreamDS->In.offReadPos + cbReadTotal)
+                                     % pStreamDS->In.cbBufSize;
             DSLOGF(("DSound: Captured %ld bytes (%RU32 total)\n", cbToCapture, cbReadTotal));
         }
 
@@ -1933,9 +1976,6 @@ int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface,
 static int dsoundDestroyStreamIn(PDSOUNDSTREAM pStreamDS)
 {
     directSoundCaptureClose(pStreamDS);
-
-    pStreamDS->In.offCaptureBufRead = 0;
-    pStreamDS->In.cbCaptureBuf      = 0;
 
     return VINF_SUCCESS;
 }
@@ -2028,8 +2068,8 @@ static DECLCALLBACK(int) dsoundNotificationThread(RTTHREAD hThreadSelf, void *pv
                 }
                 else if (aEvents[dwObj] == pThis->aEvents[DSOUNDEVENT_OUTPUT])
                 {
-                    DWORD cbFree, cbPlayPos;
-                    rc = dsoundGetPosOut(pThis->pDSStream, &cbFree, &cbPlayPos);
+                    DWORD cbFree;
+                    rc = dsoundGetFreeOut(pThis->pDSStream, &cbFree);
                     if (   RT_SUCCESS(rc)
                         && cbFree)
                     {
@@ -2046,8 +2086,8 @@ static DECLCALLBACK(int) dsoundNotificationThread(RTTHREAD hThreadSelf, void *pv
                             RTThreadSleep(100);
                         }
 
-                        LogFlowFunc(("Output: cbBuffer=%ld, cbFree=%ld, cbPlayPos=%ld, cbWritten=%RU32, rc=%Rrc\n",
-                                     cbBuffer, cbFree, cbPlayPos, Out.cbOutWritten, rc));
+                        LogFlowFunc(("Output: cbBuffer=%ld, cbFree=%ld, cbWritten=%RU32, rc=%Rrc\n",
+                                     cbBuffer, cbFree, Out.cbOutWritten, rc));
                     }
                 }
                 break;
@@ -2326,7 +2366,7 @@ static DECLCALLBACK(uint32_t) drvHostDSoundStreamGetWritable(PPDMIHOSTAUDIO pInt
     if (pStreamDS->fEnabled)
     {
         DWORD cbFree;
-        int rc = dsoundGetPosOut(pThis, pStreamDS, &cbFree, NULL /* cbPlayPos */);
+        int rc = dsoundGetFreeOut(pThis, pStreamDS, &cbFree);
         if (   RT_SUCCESS(rc)
             && cbFree)
         {
@@ -2334,6 +2374,60 @@ static DECLCALLBACK(uint32_t) drvHostDSoundStreamGetWritable(PPDMIHOSTAUDIO pInt
             return (uint32_t)cbFree;
         }
     }
+
+    return 0;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetPending}
+ */
+static DECLCALLBACK(uint32_t) drvHostDSoundStreamGetPending(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface);
+    AssertPtrReturn(pStream, 0);
+
+    PDRVHOSTDSOUND pThis     = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
+    PDSOUNDSTREAM  pStreamDS = (PDSOUNDSTREAM)pStream;
+
+    if (pStreamDS->pCfg->enmDir == PDMAUDIODIR_OUT)
+    {
+        DWORD dwStatus;
+        HRESULT hr = directSoundPlayGetStatus(pThis, pStreamDS->Out.pDSB, &dwStatus);
+        if (hr != DS_OK)
+            return 0;
+
+         if (!(dwStatus & DSBSTATUS_PLAYING))
+            return 0;
+
+         DWORD offPlayCursor, offWriteCursor;
+         hr = IDirectSoundBuffer8_GetCurrentPosition(pStreamDS->Out.pDSB, &offPlayCursor, &offWriteCursor);
+         if (SUCCEEDED(hr))
+         {
+             uint32_t cbPending;
+             if (pStreamDS->Out.offPlayCursorLastPending <= offPlayCursor)
+                 cbPending = offPlayCursor - pStreamDS->Out.offPlayCursorLastPending;
+             else
+                 cbPending = pStreamDS->Out.cbBufSize - pStreamDS->Out.offPlayCursorLastPending + offPlayCursor;
+
+             pStreamDS->Out.cbWritten                -= RT_MIN(pStreamDS->Out.cbWritten, cbPending);
+             pStreamDS->Out.offPlayCursorLastPending  = offPlayCursor;
+
+            LogFunc(("offPlayCursor=%RU32, offWriteCursor=%RU32\n", offPlayCursor, offWriteCursor));
+            LogFunc(("offPlayWritePos=%RU32, cbWritten=%RU64, cbPending=%RU32\n",
+                     pStreamDS->Out.offWritePos, pStreamDS->Out.cbWritten, cbPending));
+
+            /*
+             * As we operate a DirectSound secondary *streaming* buffer which loops over
+             * the data repeatedly until stopped, we have to make at least an estimate when we're actually
+             * done playing the written data on the host.
+             */
+            return pStreamDS->Out.cbWritten;
+        }
+        else
+            LogFunc(("Failed with %Rhrc\n", hr));
+    }
+    /* Note: For input streams we never have pending data left. */
 
     return 0;
 }
@@ -2507,10 +2601,11 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pDrvIns->IBase.pfnQueryInterface = drvHostDSoundQueryInterface;
     /* IHostAudio */
     PDMAUDIO_IHOSTAUDIO_CALLBACKS(drvHostDSound);
+    pThis->IHostAudio.pfnStreamGetPending  = drvHostDSoundStreamGetPending;
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
     /* This backend supports host audio callbacks. */
-    pThis->IHostAudio.pfnSetCallback = drvHostDSoundSetCallback;
+    pThis->IHostAudio.pfnSetCallback       = drvHostDSoundSetCallback;
     pThis->pfnCallback               = NULL;
 #endif
 
