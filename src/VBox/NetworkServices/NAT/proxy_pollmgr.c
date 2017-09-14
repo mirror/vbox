@@ -341,7 +341,7 @@ pollmgr_chan_call_handler(int slot, void *arg)
     pollmgr.chan_handlers[slot].arg = arg;
     pollmgr.chan_handlers[slot].arg_valid = true;
 
-    nevents = handler->callback(handler, -1, POLLIN);
+    nevents = handler->callback(handler, INVALID_SOCKET, POLLIN);
     if (nevents != POLLIN) {
         DPRINTF2(("%s: nevents=0x%x!\n", __func__, nevents));
     }
