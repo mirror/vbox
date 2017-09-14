@@ -343,7 +343,7 @@ pollmgr_chan_call_handler(int slot, void *arg)
 
     nevents = handler->callback(handler, -1, POLLIN);
     if (nevents != POLLIN) {
-        DPRINTF2(("%s: nevents=0x%x!\n", nevents));
+        DPRINTF2(("%s: nevents=0x%x!\n", __func__, nevents));
     }
 }
 
