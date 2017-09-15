@@ -975,7 +975,8 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
         uint32_t cfMixed = 0;
         if (cfWritten)
         {
-            int rc2 = AudioMixBufMixToParentEx(&pGstStream->MixBuf, 0 /* Offset */, cfWritten /* Frames */, &cfMixed);
+            int rc2 = AudioMixBufMixToParentEx(&pGstStream->MixBuf, 0 /* cSrcOffset */, cfWritten /* cSrcFrames */,
+                                               &cfMixed /* pcSrcMixed */);
             if (   RT_FAILURE(rc2)
                 || cfMixed < cfWritten)
             {
@@ -1180,14 +1181,14 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
             }
             else
             {
-                /* No audio frames to transfer host to the guest (anymore)? 
+                /* No audio frames to transfer host to the guest (anymore)?
                  * Then try closing this stream if marked so in the next block. */
                 fTryClosePending = true;
             }
         }
         else if (pHstStream->enmDir == PDMAUDIODIR_OUT)
         {
-            /* No audio frames to transfer from guest to host (anymore)? 
+            /* No audio frames to transfer from guest to host (anymore)?
              * Then try closing this stream if marked so in the next block. */
             fTryClosePending = AudioMixBufLive(&pHstStream->MixBuf) == 0;
         }
