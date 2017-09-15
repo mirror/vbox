@@ -7514,7 +7514,7 @@ vesa_pm_end:                                 ; 0xc4514 LB 0x1
 
 section _DATA progbits vstart=0x4600 align=1 ; size=0x3732 class=DATA group=DGROUP
 _msg_vga_init:                               ; 0xc4600 LB 0x34
-    db  'Oracle VM VirtualBox Version 5.2.0_BETA2 VGA BIOS', 00dh, 00ah, 000h
+    db  'Oracle VM VirtualBox Version 5.2.0_BETA3 VGA BIOS', 00dh, 00ah, 000h
 _vga_modes:                                  ; 0xc4634 LB 0x80
     db  000h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h, 001h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h
     db  002h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h, 003h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h
@@ -8411,7 +8411,7 @@ _vbebios_vendor_name:                        ; 0xc7c81 LB 0x13
 _vbebios_product_name:                       ; 0xc7c94 LB 0x21
     db  'Oracle VM VirtualBox VBE Adapter', 000h
 _vbebios_product_revision:                   ; 0xc7cb5 LB 0x29
-    db  'Oracle VM VirtualBox Version 5.2.0_BETA2', 000h
+    db  'Oracle VM VirtualBox Version 5.2.0_BETA3', 000h
 _vbebios_info_string:                        ; 0xc7cde LB 0x2b
     db  'VirtualBox VBE Display Adapter enabled', 00dh, 00ah, 00dh, 00ah, 000h
 _no_vbebios_info_string:                     ; 0xc7d09 LB 0x29
@@ -8423,11 +8423,12 @@ section CONST2 progbits vstart=0x7d32 align=1 ; size=0x0 class=DATA group=DGROUP
 
   ; Padding 0x2ce bytes at 0xc7d32
     db  001h, 000h, 000h, 000h, 000h, 001h, 000h, 000h, 000h, 000h, 000h, 000h, 02fh, 068h, 06fh, 06dh
-    db  065h, 02fh, 066h, 06dh, 033h, 02fh, 073h, 072h, 063h, 02fh, 076h, 062h, 06fh, 078h, 02fh, 06fh
-    db  075h, 074h, 02fh, 06ch, 069h, 06eh, 075h, 078h, 02eh, 061h, 06dh, 064h, 036h, 034h, 02fh, 072h
-    db  065h, 06ch, 065h, 061h, 073h, 065h, 02fh, 06fh, 062h, 06ah, 02fh, 056h, 042h, 06fh, 078h, 056h
-    db  067h, 061h, 042h, 069h, 06fh, 073h, 038h, 030h, 038h, 036h, 02fh, 056h, 042h, 06fh, 078h, 056h
-    db  067h, 061h, 042h, 069h, 06fh, 073h, 038h, 030h, 038h, 036h, 02eh, 073h, 079h, 06dh, 000h, 000h
+    db  065h, 02fh, 06dh, 069h, 063h, 068h, 061h, 065h, 06ch, 02fh, 076h, 062h, 06fh, 078h, 02fh, 074h
+    db  072h, 075h, 06eh, 06bh, 02fh, 06fh, 075h, 074h, 02fh, 06ch, 069h, 06eh, 075h, 078h, 02eh, 061h
+    db  06dh, 064h, 036h, 034h, 02fh, 072h, 065h, 06ch, 065h, 061h, 073h, 065h, 02fh, 06fh, 062h, 06ah
+    db  02fh, 056h, 042h, 06fh, 078h, 056h, 067h, 061h, 042h, 069h, 06fh, 073h, 038h, 030h, 038h, 036h
+    db  02fh, 056h, 042h, 06fh, 078h, 056h, 067h, 061h, 042h, 069h, 06fh, 073h, 038h, 030h, 038h, 036h
+    db  02eh, 073h, 079h, 06dh, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
@@ -8465,5 +8466,4 @@ section CONST2 progbits vstart=0x7d32 align=1 ; size=0x0 class=DATA group=DGROUP
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 0f3h
+    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 038h

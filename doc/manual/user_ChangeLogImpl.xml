@@ -4,7 +4,7 @@
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
   <sect1>
-    <title>Version 5.2.0 Beta 2 (2017-08-15)</title>
+    <title>Version 5.2.0 Beta 3 (2017-09-15)</title>
 
     <para>This is a major update. The following major new features
       were added:</para>
@@ -66,6 +66,81 @@
     </itemizedlist>
   </sect1>
 
+    <title>Version 5.1.28 (2017-09-13)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>GUI: mouse events did not reach host windows behind the transparent
+          VM window (Mac OS X hosts only; bug #16246)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed accidental crashes when using the AC'97 sound
+          emulation (bug #16959)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed crash when default input or output devices have changed
+          (bugs #16968, #16969, #17004)</para>
+      </listitem>
+      <listitem>
+        <para>Audio: fixed recording when using the ALSA backend</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed handle leak when using the OSS backend</para>
+      </listitem>
+
+      <listitem>
+        <para>E1000: fixed a crash related to VLAN traffic over internal
+          network (5.1.26 regression; bug #16960)</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT: apply <emphasis>--natbindip1</emphasis> to TCP connections
+          (bug #16478)</para>
+      </listitem>
+
+      <listitem>
+        <para>OVF: when importing an appliance with XHCI controller, don't
+          add an OHCI controller.</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: fixed a GUI crash if Spotlight is used from
+          file dialogs (5.1.20 regression; bugs #16935, #16953)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: fixed creating fixed sized VDI images
+          (bug #17010)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts / guests: fixes for Linux 4.4 of openSUSE Leap 42.3
+          (bug #16966)</para>
+      </listitem>
+
+      <listitem>
+        <para>Bridged networking: align outgoing packet at word boundary,
+          preventing Windows host crash in MsLbfoProvider.</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: kernel drm driver support for custom EL7
+          Linux 3.10 kernel</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris Additions: hide an informational message on the bootup
+          console</para>
+      </listitem>
+
+    </itemizedlist>
   <sect1>
     <title>Version 5.1.26 (2017-07-27)</title>
 
