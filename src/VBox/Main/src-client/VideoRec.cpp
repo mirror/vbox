@@ -945,10 +945,11 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     com::Utf8Str options(pszOptions);
     size_t pos = 0;
 
-    /* By default we enable everything (if available). */
+    /* By default we only enable video recording for now.
+     * Audio support is considered as being experimental. There be dragons! */
     bool     fHasVideoTrack = true;
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-    bool     fHasAudioTrack = true;
+    bool     fHasAudioTrack = false;
     /* By default we use 48kHz, 16-bit, stereo for the audio track. */
     uint16_t uAudioHz       = 48000;
     uint8_t  uAudioBits     = 16;
