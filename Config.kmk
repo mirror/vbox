@@ -2511,10 +2511,20 @@ ifeq ($(KBUILD_HOST),win)
  VBOX_GCC_CHECK_LD = $(2)
  VBOX_GCC32_CHECK_CXX = $(2)
 else
- VBOX_GCC_CHECK_EX_CC = $(shell \
-    if $(1) $(subst -Wno-,-W,$(2)) -Werror -c -o /dev/null -xc   $(PATH_OUT)/DynamicConfig.c   > /dev/null 2>&1; then echo "$(2)"; else echo "$(3)"; fi; )
- VBOX_GCC_CHECK_EX_CXX = $(shell \
-    if $(1) $(subst -Wno-,-W,$(2)) -Werror -c -o /dev/null -xc++ $(PATH_OUT)/DynamicConfig.cpp > /dev/null 2>&1; then echo "$(2)"; else echo "$(3)"; fi; )
+ # Note! The chcking for 'error: unknown warning option' is for clang on darwin not giving us a
+ #       non-zero exit code when using an invalid option here, but it does later on.
+ ifndef CLOSEPAR
+  CLOSEPAR := )
+ endif
+ VBOX_GCC_CHECK_EX_CC_CXX = $(shell \
+    if $(1) $(subst -Wno-,-W,$(2)) -Werror -c -o /dev/null $(4) > /dev/null 2>&1; then \
+        case "`LC_ALL=C $(1) $(subst -Wno-,-W,$(2)) -Werror -c -o /dev/null $(4) 2>&1`" in \
+            "error: unknown warning option"*$(CLOSEPAR) echo "$(3)";; \
+            *$(CLOSEPAR) echo "$(2)";; \
+	 esac; \
+    else echo "$(3)"; fi; )
+ VBOX_GCC_CHECK_EX_CC  = $(call VBOX_GCC_CHECK_EX_CC_CXX,$(1),$(2),$(3),-xc   $(PATH_OUT)/DynamicConfig.c)
+ VBOX_GCC_CHECK_EX_CXX = $(call VBOX_GCC_CHECK_EX_CC_CXX,$(1),$(2),$(3),-xc++ $(PATH_OUT)/DynamicConfig.cpp)
  VBOX_GCC_CHECK_EX_LD = $(shell \
     if $(1) -Wl,$(2) $(if $(eq $(KBUILD_HOST),darwin),-Wl$(COMMA)-u$(COMMA)start -Wl$(COMMA)-undefined$(COMMA)dynamic_lookup,) \
             -nostdlib -o /dev/null -xc /dev/null > /dev/null 2>&1; \
