@@ -104,7 +104,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         /*
          * Disable the global interrupt flag to prevent interrupts during the 'atomic' world switch.
          */
-        pCtx->hwvirt.svm.fGif = 0;
+        pCtx->hwvirt.svm.fGif = false;
 
         Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->es));
         Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs));
@@ -217,6 +217,15 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
          */
         memset(pVmcbNstGstCtrl, 0, sizeof(*pVmcbNstGstCtrl));
         Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+
+        /*
+         * Restore the subset of force-flags that were preserved.
+         */
+        if (pCtx->hwvirt.fLocalForcedActions)
+        {
+            VMCPU_FF_SET(pVCpu, pCtx->hwvirt.fLocalForcedActions);
+            pCtx->hwvirt.fLocalForcedActions = 0;
+        }
 
         if (RT_SUCCESS(rcStrict))
         {
@@ -489,6 +498,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
          *     nested-guest.
          */
         pCtx->hwvirt.fLocalForcedActions = pVCpu->fLocalForcedActions & VMCPU_FF_BLOCK_NMIS;
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
         /*
          * Interrupt shadow.
@@ -565,7 +575,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         /*
          * Clear global interrupt flags to allow interrupts in the guest.
          */
-        pCtx->hwvirt.svm.fGif = 1;
+        pCtx->hwvirt.svm.fGif = true;
 
         /*
          * Event injection.
@@ -1015,7 +1025,8 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmrun);
 
-    RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
+    /** @todo Check effective address size using address size prefix. */
+    RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
     if (   (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
         || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcb))
     {
@@ -1078,7 +1089,8 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmload);
 
-    RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
+    /** @todo Check effective address size using address size prefix. */
+    RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
     if (   (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
         || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcb))
     {
@@ -1133,7 +1145,8 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmsave);
 
-    RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
+    /** @todo Check effective address size using address size prefix. */
+    RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
     if (   (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
         || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcb))
     {
@@ -1196,7 +1209,7 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_CLGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
-    pCtx->hwvirt.svm.fGif = 0;
+    pCtx->hwvirt.svm.fGif = false;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
@@ -1226,7 +1239,7 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_STGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
-    pCtx->hwvirt.svm.fGif = 1;
+    pCtx->hwvirt.svm.fGif = true;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
@@ -1244,7 +1257,8 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
 IEM_CIMPL_DEF_0(iemCImpl_invlpga)
 {
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
-    RTGCPTR  const GCPtrPage = pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
+    /** @todo Check effective address size using address size prefix. */
+    RTGCPTR  const GCPtrPage = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
     /** @todo PGM needs virtual ASID support. */
 #if 0
     uint32_t const uAsid     = pCtx->ecx;
