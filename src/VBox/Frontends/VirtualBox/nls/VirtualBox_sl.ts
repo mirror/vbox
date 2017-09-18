@@ -168,7 +168,7 @@
     <name>QIMessageBox</name>
     <message>
         <location filename="../src/extensions/QIMessageBox.cpp" line="+302"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="+1846"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="+1854"/>
         <location filename="../src/widgets/UIPopupPaneButtonPane.cpp" line="+180"/>
         <source>OK</source>
         <translation>V redu</translation>
@@ -1957,22 +1957,24 @@
 <context>
     <name>UIGDetails</name>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+1146"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+1170"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+248"/>
         <source>Name</source>
         <comment>details (general)</comment>
         <translation>Ime</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+15"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+22"/>
         <source>Groups</source>
         <comment>details (general)</comment>
         <translation>Skupine</translation>
     </message>
     <message>
-        <location line="+19"/>
-        <location line="+133"/>
+        <location line="+10"/>
+        <location line="+1"/>
+        <location line="+77"/>
+        <location line="+1"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+26"/>
         <location line="+103"/>
         <source>%1 MB</source>
@@ -1980,70 +1982,71 @@
         <translation>%1 MB</translation>
     </message>
     <message>
-        <location line="-126"/>
+        <location line="-68"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-98"/>
         <source>Processors</source>
         <comment>details (system)</comment>
         <translation>Procesorji</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+9"/>
+        <location line="+1"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+7"/>
         <source>%1%</source>
         <comment>details</comment>
         <translation>%1%</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+420"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+48"/>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
         <translation>VT-x/AMD-V</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+8"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+7"/>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
         <translation>PAE/NX</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="-389"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+9"/>
         <source>Acceleration</source>
         <comment>details (system)</comment>
         <translation>Pospeševanje</translation>
     </message>
     <message>
-        <location line="+46"/>
+        <location line="+29"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+32"/>
         <source>Screens</source>
         <comment>details (display)</comment>
         <translation>Zasloni</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+431"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+42"/>
         <source>3D</source>
         <comment>details (display)</comment>
         <translation>3D</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="-398"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+2"/>
         <source>Acceleration</source>
         <comment>details (display)</comment>
         <translation>Pospeševanje</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+17"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+12"/>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
         <translation>Onemogočeno</translation>
     </message>
     <message>
-        <location line="+115"/>
+        <location line="+82"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+128"/>
         <source>Controller</source>
         <comment>details (audio)</comment>
@@ -2059,7 +2062,7 @@
     </message>
     <message>
         <location line="+2"/>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+2"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+395"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+2"/>
         <source>Enabled</source>
         <comment>details (audio/output)</comment>
@@ -2075,7 +2078,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+4"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-391"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+3"/>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
@@ -2083,7 +2086,7 @@
     </message>
     <message>
         <location line="+2"/>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+2"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+395"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+2"/>
         <source>Enabled</source>
         <comment>details (audio/input)</comment>
@@ -2098,35 +2101,35 @@
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+6"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-386"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+4"/>
         <source>Disabled</source>
         <comment>details (audio)</comment>
         <translation>Onemogočeno</translation>
     </message>
     <message>
-        <location line="+67"/>
+        <location line="+18"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+77"/>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
         <translation>Vmesnik %1</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+9"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+5"/>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
         <translation>Onemogočeno</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+18"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+54"/>
         <source>Port %1</source>
         <comment>details (serial)</comment>
         <translation>Vrata %1</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+9"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+5"/>
         <source>Disabled</source>
         <comment>details (serial)</comment>
@@ -2143,21 +2146,21 @@
         <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+458"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+44"/>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
         <translation>%1 (%2 dejavnih)</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="-428"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+3"/>
         <source>Disabled</source>
         <comment>details (usb)</comment>
         <translation>Onemogočeno</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+19"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+31"/>
         <source>None</source>
         <comment>details (shared folders)</comment>
@@ -2170,7 +2173,7 @@
         <translation>Brez</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-592"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-365"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-691"/>
         <source>Operating System</source>
         <comment>details (general)</comment>
@@ -2193,111 +2196,111 @@
         <translation>Podatki niso dostopni</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+37"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+22"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-650"/>
         <source>Base Memory</source>
         <comment>details (system)</comment>
         <translation>Osnovni pomnilnik</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+20"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+12"/>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
         <translation>Omejitev izvajanja</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+8"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+14"/>
         <source>Boot Order</source>
         <comment>details (system)</comment>
         <translation>Vrstni red zagona</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+9"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+5"/>
         <source>Chipset Type</source>
         <comment>details (system)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+378"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+12"/>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
         <translation type="unfinished">Omogočeno</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-367"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-1"/>
         <source>EFI</source>
         <comment>details (system)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+372"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+7"/>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+22"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+15"/>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
         <translation>Ugnezdeno odstranjevanje</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="-364"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+39"/>
         <source>Video Memory</source>
         <comment>details (display)</comment>
         <translation>Grafični pomnilnik</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+421"/>
         <source>Disabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+15"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+44"/>
         <source>2D Video</source>
         <comment>details (display)</comment>
         <translation>Grafika 2D</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="-384"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+14"/>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
         <translation>Vrata strežnika oddaljenega namizja</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+6"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+3"/>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
         <translation>Strežnik oddaljenega namizja</translation>
     </message>
     <message>
-        <location line="+90"/>
+        <location line="+62"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+98"/>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
         <translation>Ni priklopljen</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+16"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+27"/>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
         <translation>Gonilnik gostitelja</translation>
     </message>
     <message>
-        <location line="+61"/>
+        <location line="+440"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+62"/>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
@@ -2325,7 +2328,7 @@
         <translation>Splošni gonilnik, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+120"/>
+        <location line="-354"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+124"/>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
@@ -2338,14 +2341,14 @@
         <translation>Krmilnik USB ni dostopen</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+29"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+22"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+26"/>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
         <translation>Mape v souporabi</translation>
     </message>
     <message>
-        <location line="-331"/>
+        <location line="-191"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-357"/>
         <source>Video Capture File</source>
         <comment>details (display/video capture)</comment>
@@ -2359,7 +2362,7 @@
         <translation>Lastnosti zajema videoposnetka</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+6"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+7"/>
         <source>Video Capture</source>
         <comment>details (display/video capture)</comment>
@@ -2373,20 +2376,20 @@
         <translation>Onemogočeno</translation>
     </message>
     <message>
-        <location line="+176"/>
+        <location line="+520"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+197"/>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation>Omrežje NAT, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="-184"/>
+        <location line="-126"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-204"/>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
         <translation>Velikost sličic: %1x%2, hitrost sličic: %3 sl./s, bitna hitrost: %4 kb/s</translation>
     </message>
     <message>
-        <location line="-138"/>
+        <location line="-99"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-103"/>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
@@ -2407,14 +2410,14 @@
         <translation>Paranavideznost KVM</translation>
     </message>
     <message>
-        <location line="+179"/>
+        <location line="+130"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+162"/>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
         <translation>[optični pogon]</translation>
     </message>
     <message>
-        <location line="+244"/>
+        <location line="-273"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+252"/>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
@@ -2452,21 +2455,21 @@
         <translation>Onemogočeno</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-354"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-213"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-494"/>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
         <translation>Faktor umerjanja</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+12"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+15"/>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
         <translation>Neumerjen slikovni izhod HiDPI</translation>
     </message>
     <message>
-        <location line="-1"/>
+        <location line="+388"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+1"/>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
@@ -2509,7 +2512,7 @@
         <translation>Onemogočeno</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+228"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+174"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-208"/>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
@@ -6241,7 +6244,7 @@
         <translation>Izbere števec vrat krmilnika pomnilniških naprav SATA, ki je trenutno izbran v drevesu  pomnilniških naprav. To mora biti vsaj za eno večje od največjega števila vrat, ki jih je treba uporabiti.</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-147"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-101"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-162"/>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="-1600"/>
         <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="-243"/>
@@ -7430,36 +7433,36 @@
 <context>
     <name>UIMessageCenter</name>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="-1562"/>
-        <location line="+2411"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="-1570"/>
+        <location line="+2419"/>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - podatki</translation>
     </message>
     <message>
-        <location line="-2407"/>
-        <location line="+2411"/>
+        <location line="-2415"/>
+        <location line="+2419"/>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - vprašanje</translation>
     </message>
     <message>
-        <location line="-2407"/>
-        <location line="+2411"/>
+        <location line="-2415"/>
+        <location line="+2419"/>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - opozorilo</translation>
     </message>
     <message>
-        <location line="-2407"/>
-        <location line="+2411"/>
+        <location line="-2415"/>
+        <location line="+2419"/>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - napaka</translation>
     </message>
     <message>
-        <location line="-2407"/>
-        <location line="+2411"/>
+        <location line="-2415"/>
+        <location line="+2419"/>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - kritična napaka</translation>
@@ -7471,7 +7474,7 @@
         <translation>Tega sporočila ne prikazuj več</translation>
     </message>
     <message>
-        <location line="-2201"/>
+        <location line="-2209"/>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
         <translation>Odpiranje &lt;tt&gt;%1&lt;/tt&gt; je spodeltelo. Prepričajte se, da lahko vaše namizno okolje pravilno obvlada URL te vrste.</translation>
     </message>
@@ -7481,7 +7484,7 @@
         <translation>&lt;p&gt;Začenjanje COM-a ali iskanje strežnika COM VirtualBox je spodletelo. Najverjetneje se VirtualBox ne izvaja ali je njegov zagon spodletel.&lt;/p&gt;&lt;p&gt;Program se bo sedaj končal.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+572"/>
+        <location line="+580"/>
         <source>Failed to set global VirtualBox properties.</source>
         <translation>Nastavitev splošnih lastnosti VirtualBoxa je spodletela.</translation>
     </message>
@@ -7502,7 +7505,7 @@
         <translation>Zagon navideznega računalnika &lt;b&gt;%1&lt;/b&gt; je spodletel.</translation>
     </message>
     <message>
-        <location line="-1152"/>
+        <location line="-1160"/>
         <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Premor izvajanja navideznega računalnika &lt;b&gt;%1&lt;/b&gt; je spodeltel.</translation>
     </message>
@@ -7557,7 +7560,7 @@
         <translation>Odpiranje nove seje za navidezni računalnik &lt;b&gt;%1&lt;/b&gt; je spodletelo.</translation>
     </message>
     <message>
-        <location line="+974"/>
+        <location line="+982"/>
         <location line="+8"/>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Odstranjevanje omrežnega vmesnika gostitelja &lt;b&gt;%1&lt;/b&gt; je spodletelo.</translation>
@@ -7685,7 +7688,7 @@
         <translation>Odpiranje datoteke z dovoljenjem &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; je spodletelo. Preverite dovoljenja datoteke.</translation>
     </message>
     <message>
-        <location line="-1613"/>
+        <location line="-1621"/>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Pošiljanje pritiska gumba za izklop ACPI v navidezni računalnik &lt;b&gt;%1&lt;/b&gt; je spodletelo.</translation>
     </message>
@@ -7698,19 +7701,19 @@
         <translation type="vanished">&lt;p&gt;Shranjevanje splošnih nastavitev GUI-ja v &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; je spodletelo.&lt;/p&gt;&lt;p&gt;Program se bo sedaj končal.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+363"/>
+        <location line="+371"/>
         <location filename="../src/globals/UIPopupCenter.cpp" line="+164"/>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
         <translation>Shranjevanje nastavitev navideznega računalnika &lt;b&gt;%1&lt;/b&gt; v &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; je spodletelo.</translation>
     </message>
     <message>
-        <location line="-441"/>
+        <location line="-449"/>
         <source>Discard</source>
         <comment>saved state</comment>
         <translation>Zavrzi</translation>
     </message>
     <message>
-        <location line="+1207"/>
+        <location line="+1215"/>
         <location filename="../src/globals/UIPopupCenter.cpp" line="-199"/>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
@@ -7723,7 +7726,7 @@
         <translation>Zajemi</translation>
     </message>
     <message>
-        <location line="-1225"/>
+        <location line="-1233"/>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
         <translation>Preveri</translation>
@@ -7735,7 +7738,7 @@
         <translation>Ponovno zaženi</translation>
     </message>
     <message>
-        <location line="+805"/>
+        <location line="+813"/>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
         <translation>Nadaljuj</translation>
@@ -7814,17 +7817,17 @@
         <translation>Ustvarjanje pomnilniške naprave trdega diska &lt;b&gt;%1&lt;/b&gt; je spodletelo.&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location line="-1095"/>
+        <location line="-1103"/>
         <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Dostop do datoteke odtisa diska &lt;b&gt;%1&lt;/b&gt; je spodletel&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <location line="+1930"/>
+        <location line="+1938"/>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
         <translation>Naslednje datoteke že obstajajo:&lt;br /&gt;&lt;br /&gt;%1.&lt;br /&gt;&lt;br /&gt;Ali jih res želite nadomestiti? Njihova nadomestitev bo prepisala njihovo vsebino.</translation>
     </message>
     <message>
-        <location line="-2044"/>
+        <location line="-2052"/>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
         <translation>Izvajajte predizdajno različico VirtualBoxa. Ta različica ni primerna za proizvodno uporabo.</translation>
     </message>
@@ -7834,7 +7837,7 @@
         <translation>Gosta poizkušate izklopiti z gumbom za izklop ACPI. To trenutno ni mogoče, ker gost ne podpira zaustavtve programske opreme.</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="+1467"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="+1475"/>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Strojno pospeševanje VT-x/AMD-V je bilo omogočeno, vendar ne deluje. Vaš 64-bitni gost ne bo zaznal 64-bitnega CPE-ja in se ne bo mogel zagnati.&lt;/p&gt;&lt;p&gt;Prepričajte se, da ste pravilno omogočili VT-x/AMD-V v BIOS-u svojega gostiteljskega računalnika.&lt;/p&gt;</translation>
     </message>
@@ -7857,14 +7860,14 @@
         <translation>Nadaljuj</translation>
     </message>
     <message>
-        <location line="-1044"/>
+        <location line="-1052"/>
         <location line="+9"/>
         <location filename="../src/globals/UIPopupCenter.cpp" line="-167"/>
         <source>Cancel</source>
         <translation>Prekliči</translation>
     </message>
     <message>
-        <location line="+793"/>
+        <location line="+801"/>
         <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Odpiranje/prepoznavanje namenske naprave &lt;b&gt;%1&lt;/b&gt; je spodletelo.</translation>
     </message>
@@ -7910,7 +7913,7 @@
         <translation>Odstranjevanje datoteke je spodletelo.</translation>
     </message>
     <message>
-        <location line="-1292"/>
+        <location line="-1300"/>
         <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
         <translation>Videti je, da imate na /sys/bus/usb/drivers priklopljen datotečni sistem USBFS. Zelo priporočamo, da to spremenite, ker je to resna napačna nastavitev vašega sistema, ki lahko povzroči, da naprave USB spodletijo na nepričakovane načine.</translation>
     </message>
@@ -7944,7 +7947,7 @@
         <translation>Izbris posnetka stanja &lt;b&gt;%1&lt;/b&gt; navideznega računalnika &lt;b&gt;%2&lt;/b&gt; je spodletel.</translation>
     </message>
     <message>
-        <location line="+471"/>
+        <location line="+479"/>
         <source>Force Unmount</source>
         <translation>Vsili odklop</translation>
     </message>
@@ -7975,7 +7978,7 @@
         <translation>&lt;p&gt;Zaslona gosta ni bilo mogoče spremeniti v zaslon gostitelja zaradi nezadostnega grafičnega pomnilnika gosta.&lt;/p&gt;&lt;p&gt;Grafični pomnilnik navideznega računalnika morate nastaviti na najmanj &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Pritisnite &lt;b&gt;Prezri&lt;/b&gt;, da vseeno preklopite na zaslon ali &lt;b&gt;Prekliči&lt;/b&gt;, da prekličete opravilo.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="-1459"/>
+        <location line="-1467"/>
         <source>Failed to open virtual machine located in %1.</source>
         <translation>Odpiranje navideznega računalnika na %1 je spodletelo.</translation>
     </message>
@@ -7997,7 +8000,7 @@
     <message>
         <location line="-83"/>
         <location line="+75"/>
-        <location line="+309"/>
+        <location line="+317"/>
         <location line="+454"/>
         <source>Remove</source>
         <translation>Odstrani</translation>
@@ -8189,12 +8192,12 @@
         <translation>Kloniranje navideznega računlanika &lt;b&gt;%1&lt;/b&gt; je spodletelo.</translation>
     </message>
     <message>
-        <location line="-730"/>
+        <location line="-738"/>
         <source>Create a snapshot of the current machine state</source>
         <translation>Ustvari posnetek trenutnega stanja računalnika</translation>
     </message>
     <message>
-        <location line="+333"/>
+        <location line="+341"/>
         <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Napaka pri spreminjanju odtisa diska iz &lt;b&gt;%1&lt;/b&gt; v &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
@@ -8261,7 +8264,7 @@
         <translation>&lt;p&gt;Nameščeno imate različico %1 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Prejmite in namestite različico %3 tega paketa razširitev od Oracla!&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="-1649"/>
+        <location line="-1657"/>
         <source>&lt;p&gt;Failed to initialize COM because the VirtualBox global configuration directory &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; is not accessible. Please check the permissions of this directory and of its parent directory.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Začenjanje COM-a je spodletelo, ker mapa splošnih nastavitev VirtualBoxa &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ni na voljo. Preverite dovoljenja te in njene nadrejene mape.&lt;/p&gt;&lt;p&gt;Program se bo sedaj končal.&lt;/p&gt;</translation>
     </message>
@@ -8286,12 +8289,12 @@
         <translation>&lt;p&gt;Ste pred odstranitvijo naslednjih navideznih računalnikov s seznama računalnikov: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ali želite iz trdega diska izbrisati tudi datoteke, ki vsebujejo navidezni računalnik?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+1374"/>
+        <location line="+1382"/>
         <source>Do you wish to cancel all current network operations?</source>
         <translation>Ali želite preklicati vsa trenutna omrežna opravila?</translation>
     </message>
     <message>
-        <location line="-1291"/>
+        <location line="-1299"/>
         <source>ACPI Shutdown</source>
         <comment>machine</comment>
         <translation>Zaustavitev ACPI</translation>
@@ -8303,7 +8306,7 @@
         <translation>Izklopi</translation>
     </message>
     <message>
-        <location line="+856"/>
+        <location line="+864"/>
         <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Mape računalnika &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; ni mogoče odstraniti.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Preverite, ali ta mapa res obstaja in da imate dovoljenja za njeno odstranitev.&lt;/p&gt;</translation>
     </message>
@@ -8313,7 +8316,7 @@
         <translation>&lt;p&gt;Mape računalnika &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; v nadrejeni mapi &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; ni mogoče ustvaritii.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Mapa že obstaja in verjetno pripada drugemu računalniku.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="-903"/>
+        <location line="-911"/>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ali res želite zavreči shranjeno stanje naslednjih navideznih računalnikov?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;To opravilo je enakrovredno ponovnemu zagonu ali izklopu računalnika brez primerne zaustavitve gostujočega OS-a.&lt;/p&gt;</translation>
     </message>
@@ -8363,7 +8366,7 @@
         <translation>Nastavljanje skupin navideznega računalnika &lt;b&gt;%1&lt;/b&gt; je spodeltelo.</translation>
     </message>
     <message>
-        <location line="+1307"/>
+        <location line="+1315"/>
         <source>&lt;p&gt;Could not start the machine &lt;b&gt;%1&lt;/b&gt; because the following physical network interfaces were not found:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;You can either change the machine&apos;s network settings or stop the machine.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Računalnika &lt;b&gt;%1&lt;/b&gt; ni bilo mogoče zagnati, ker naslednjih fizičnih omrežnih vmesnikov ni bilo najdenih:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Lahko spremenite omrežne nastavitve računalnika ali ga ustavite.&lt;/p&gt;</translation>
     </message>
@@ -8373,7 +8376,7 @@
         <translation>Spremeni omrežne nastavitve</translation>
     </message>
     <message>
-        <location line="-1512"/>
+        <location line="-1520"/>
         <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Upravljalnika VirtualBoxa ni mogoče zagnati zaradi krajevnih omejitev.&lt;/p&gt;&lt;p&gt;Program se bo sedaj zaprl.&lt;/p&gt;</translation>
     </message>
@@ -8399,7 +8402,7 @@
     </message>
     <message>
         <location line="+234"/>
-        <location line="+1123"/>
+        <location line="+1131"/>
         <location line="+156"/>
         <location line="+21"/>
         <source>Ignore</source>
@@ -8703,7 +8706,7 @@
         <translation>Trenutna pravila posredovanja vrat niso veljavna. Nekaj pravil ima enaka vrata gostitelja in naslove IP v sporu.</translation>
     </message>
     <message>
-        <location line="-717"/>
+        <location line="-725"/>
         <source>&lt;p&gt;Failed to create the VirtualBoxClient COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ustvarjanje predmeta COM odjemalca VirtualBox je spodletelo.&lt;/p&gt;&lt;p&gt;Program se bo sedaj zaprl.&lt;/p&gt;</translation>
     </message>
@@ -8723,7 +8726,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+127"/>
+        <location line="+115"/>
+        <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+20"/>
         <source>Can&apos;t find snapshot with ID=&lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8850,7 +8858,7 @@
         <translation>Odklop kabla omrežnega vmesnika navideznega računalnika &lt;b&gt;%1&lt;/b&gt; je spodletela.</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="-1702"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="-1710"/>
         <source>&lt;p&gt;One or more disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ena ali več datotek odtisa diska trenutno ni na voljo. Posledično ne boste mogli upravljati z navideznimi računalniki, ki uporabljajo te datoteke, dokler spet ne postanejo dostopne.&lt;/p&gt;&lt;p&gt;Pritisnite &lt;b&gt;Preveri&lt;/b&gt;, da odprete Upravljalnika navideznih nosilcev in si ogledate, katere datoteke niso dostopne ali &lt;b&gt;Prezri&lt;/b&gt;, da prezrete to sporočilo.&lt;/p&gt;</translation>
     </message>
@@ -8865,7 +8873,7 @@
         <translation>&lt;p&gt;Izbris posnetka stanja %1 bo začasno potreboval več prostora.V najslabšem primeru se bo velikost odtisa %2 povečala za %3, vendar je v tem datotečnem sistemu na voljo samo %4.&lt;/p&gt;&lt;/p&gt;Pomanjkanje prostora med opravilom združevanja lahko povzroči okvaro odtisa in nastavitev navideznega računalnika, kar pomeni izgubo navideznega računalnka in njegovih podatkov.&lt;/p&gt;&lt;p&gt;Posnetek stanja lahko izbrišete na lastno odgovornost.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+339"/>
+        <location line="+347"/>
         <source>&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ali res želite sprostiti datoteko odtisa diska &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;To jo bo odklopilo iz naslednjih navideznih računalnikov: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
@@ -8901,12 +8909,12 @@
         <translation>&lt;p&gt;Zaslona gosta ni bilo mogoče preklopiti na celozaslonski način zaradi nezadostnega grafičnega pomnilnika gosta.&lt;/p&gt;&lt;p&gt;Grafični pomnilnik navideznega računalnika morate nastaviti na najmanj &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Pritisnite &lt;b&gt;Prezri&lt;/b&gt;, da vseeno preklopite na celozaslonski način ali &lt;b&gt;Prekliči&lt;/b&gt;, da prekličete opravilo.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="-1445"/>
+        <location line="-1453"/>
         <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
         <translation>Šifrirno geslo za &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; je neveljavno.</translation>
     </message>
     <message>
-        <location line="+581"/>
+        <location line="+589"/>
         <source>The current port forwarding rules are not valid. All of the host or guest address values should be correct or empty.</source>
         <translation>Trenutna pravila posredovanja vrat niso veljavna. Vse vrednosti naslovov gosta morajo biti pravilne ali prazne.</translation>
     </message>
@@ -8916,7 +8924,7 @@
         <translation>Trenutna pravila posredovanja vrat niso veljavna. Nobena vrednost naslovov gosta ne sme biti prazna.</translation>
     </message>
     <message>
-        <location line="-694"/>
+        <location line="-702"/>
         <source>&lt;p&gt;Failed to acquire the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Pridobivanje predmeta VirtualBox COM je spodletelo.&lt;/p&gt;&lt;p&gt;Program se bo sedaj zaprl.&lt;/p&gt;</translation>
     </message>
@@ -9275,7 +9283,7 @@
 <context>
     <name>UIScreenshotViewer</name>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-1085"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-1411"/>
         <source>Screenshot of %1 (%2)</source>
         <translation type="unfinished">Posnetek stanja %1 (%2)</translation>
     </message>
@@ -9519,12 +9527,7 @@
 <context>
     <name>UISnapshotDetailsWidget</name>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+55"/>
-        <source>&lt;p&gt;You have the &lt;b&gt;Current State&lt;/b&gt; item selected.&lt;br&gt;Press the &lt;b&gt;Take&lt;/b&gt; button if you wish to take a new snapshot.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+84"/>
         <source>&amp;Attributes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9554,42 +9557,67 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+4"/>
+        <source>Enter a name for the new snapshot...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Enter a name for this snapshot...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+48"/>
         <source>Apply</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-5"/>
         <source>Reset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+6"/>
         <source>Apply changes in current snapshot details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-5"/>
         <source>Reset changes in current snapshot details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+7"/>
         <source>Apply Changes (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-5"/>
         <source>Reset Changes (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="-37"/>
         <source>Click to enlarge the screenshot.</source>
         <translation type="unfinished">Kliknite za povečavo posnetka stanja.</translation>
     </message>
     <message>
-        <location line="+502"/>
+        <location line="+47"/>
+        <source>Take</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Take snapshot on the basis of current machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Take Snapshot (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+447"/>
         <source>Snapshot name is empty</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9756,7 +9784,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+934"/>
+        <location line="+1015"/>
         <source>Snapshot %1</source>
         <translation type="unfinished">Posnetek stanja %1</translation>
     </message>

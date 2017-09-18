@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="nl_NL">
+<TS version="2.0" language="nl_NL">
 <context>
     <name>AudioOutput</name>
     <message>
         <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;Het apparaat &lt;b&gt;%1&lt;/b&gt; dat geluid zou moeten afspelen werkt niet.&lt;br/&gt;Teruggevallen wordt op &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;Het apparaat &lt;b&gt;%1&lt;/b&gt; dat geluid zou moeten afspelen werkt niet.&lt;br/&gt;Terugvallen op &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;Switchen naar geluidafspeelapparaat &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt; die net beschikbaar is gekomen en de voorkeur verdient.&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;Switchen naar geluidafspeelapparaat &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt; dat net beschikbaar is gekomen en de voorkeur verdient.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Revert back to device &apos;%1&apos;</source>
-        <translation type="vanished">Terugkeren naar apparaat &apos;%1&apos;</translation>
+        <translation>Terugkeren naar apparaat &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
     <name>CloseButton</name>
     <message>
         <source>Close Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Tab sluiten</translation>
     </message>
 </context>
 <context>
@@ -31,7 +31,7 @@
     </message>
     <message>
         <source>Hide %1</source>
-        <translation>Verberg %1</translation>
+        <translation>Verbergen %1</translation>
     </message>
     <message>
         <source>Hide Others</source>
@@ -39,7 +39,7 @@
     </message>
     <message>
         <source>Show All</source>
-        <translation>Alles weergeven</translation>
+        <translation>Alles tonen</translation>
     </message>
     <message>
         <source>Preferences...</source>
@@ -47,7 +47,7 @@
     </message>
     <message>
         <source>Quit %1</source>
-        <translation>Stoppen %1</translation>
+        <translation>Afsluiten %1</translation>
     </message>
     <message>
         <source>About %1</source>
@@ -58,27 +58,27 @@
     <name>Phonon::</name>
     <message>
         <source>Notifications</source>
-        <translation type="vanished">Mededelingen</translation>
+        <translation>Mededelingen</translation>
     </message>
     <message>
         <source>Music</source>
-        <translation type="vanished">Muziek</translation>
+        <translation>Muziek</translation>
     </message>
     <message>
         <source>Video</source>
-        <translation type="vanished">Video</translation>
+        <translation>Video</translation>
     </message>
     <message>
         <source>Communication</source>
-        <translation type="vanished">Communicatie</translation>
+        <translation>Communicatie</translation>
     </message>
     <message>
         <source>Games</source>
-        <translation type="vanished">Games</translation>
+        <translation>Games</translation>
     </message>
     <message>
         <source>Accessibility</source>
-        <translation type="vanished">Toegankelijkheid</translation>
+        <translation>Toegankelijkheid</translation>
     </message>
 </context>
 <context>
@@ -87,14 +87,14 @@
         <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
           Some video features have been disabled.</source>
         <translatorcomment>RL - gstreamer0.10 plugins-good zijn aanvullende codecs voor gstreamer</translatorcomment>
-        <translation type="vanished">Waarschuwing: Het pakket &quot;gstreamer0.10 plugins-good&quot; is niet geïnstalleerd.
+        <translation>Waarschuwing: Het pakket &quot;gstreamer0.10 plugins-good&quot; is niet geïnstalleerd.
           Sommige videomogelijkheden zijn gedeactiveerd.</translation>
     </message>
     <message>
         <source>Warning: You do not seem to have the base GStreamer plugins installed.
           All audio and video support has been disabled</source>
         <translatorcomment>RL - basis GStreamer plugins leveren de basis codecs om mediabestanden te kunnen afspelen</translatorcomment>
-        <translation type="vanished">Waarschuwing: De basis GStreamer plugins blijken niet geïnstalleerd.￼
+        <translation>Waarschuwing: De basis GStreamer plugins blijken niet geïnstalleerd.￼
           Alle audio en video ondersteuning is gedeactiveerd</translation>
     </message>
 </context>
@@ -105,7 +105,7 @@
 
 Check your Gstreamer installation and make sure you 
 have libgstreamer-plugins-base installed.</source>
-        <translation type="vanished">Kan het afspelen niet starten.
+        <translation>Kan het afspelen niet starten.
 
 Controleer de installatie van Gstreamer en zorg ervoor 
 dat libgstreamer-plugins-base is geïnstalleerd.</translation>
@@ -113,321 +113,321 @@ dat libgstreamer-plugins-base is geïnstalleerd.</translation>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
         <translatorcomment>RL - kan nog niet goed vertaald worden omdat %n als single/plural place marker niet in source is opgenomen. Ticket #10400 aangemaakt bij virtualbox, afwachten tot bug hersteld is. RL - Ticket gesloten - is string van derde (Phonon) in Qt source, geen VirtualBox issue.</translatorcomment>
-        <translation type="vanished">
+        <translation>
             <numerusform>Een noodzakelijke codec ontbreekt. U moet de volgende codec installeren om dit bestand af te kunnen spelen: %0</numerusform>
             <numerusform>Noodzakelijke codecs ontbreken. U moet de volgende codecs installeren om dit bestand af te kunnen spelen: %0</numerusform>
         </translation>
     </message>
     <message>
         <source>Could not open media source.</source>
-        <translation type="vanished">Kan de mediabron niet openen.</translation>
+        <translation>Kan de mediabron niet openen.</translation>
     </message>
     <message>
         <source>Invalid source type.</source>
-        <translation type="vanished">Bron type ongeldig.</translation>
+        <translation>Bron type ongeldig.</translation>
     </message>
     <message>
         <source>Could not locate media source.</source>
-        <translation type="vanished">Kan mediabron niet vinden.</translation>
+        <translation>Kan mediabron niet vinden.</translation>
     </message>
     <message>
         <source>Could not open audio device. The device is already in use.</source>
-        <translation type="vanished">Kan het audio-apparaat niet openen. Het apparaat wordt al gebruikt.</translation>
+        <translation>Kan het audio-apparaat niet openen. Het apparaat wordt al gebruikt.</translation>
     </message>
     <message>
         <source>Could not decode media source.</source>
-        <translation type="vanished">Kan de mediabron niet decoderen.</translation>
+        <translation>Kan de mediabron niet decoderen.</translation>
     </message>
 </context>
 <context>
     <name>Phonon::VolumeSlider</name>
     <message>
         <source>Volume: %1%</source>
-        <translation type="vanished">Volume: %1%</translation>
+        <translation>Volume: %1%</translation>
     </message>
     <message>
         <source>Use this slider to adjust the volume. The leftmost position is 0%, the rightmost is %1%</source>
-        <translation type="vanished">Gebruik deze schuif om het geluid aan te passen. De meest linkse positie is 0%, de meest rechtse positie is %1%</translation>
+        <translation>Gebruik deze schuif om het geluid aan te passen. De meest linkse positie is 0%, de meest rechtse positie is %1%</translation>
     </message>
 </context>
 <context>
     <name>Q3Accel</name>
     <message>
         <source>%1, %2 not defined</source>
-        <translation type="vanished">%1, %2 niet gedefinieerd</translation>
+        <translation>%1, %2 niet gedefinieerd</translation>
     </message>
     <message>
         <source>Ambiguous %1 not handled</source>
-        <translation type="vanished">Dubbelzinnig %1 niet uitgevoerd</translation>
+        <translation>Dubbelzinnig %1 niet uitgevoerd</translation>
     </message>
 </context>
 <context>
     <name>Q3DataTable</name>
     <message>
         <source>True</source>
-        <translation type="vanished">Waar</translation>
+        <translation>Waar</translation>
     </message>
     <message>
         <source>False</source>
-        <translation type="vanished">Onwaar</translation>
+        <translation>Onwaar</translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation type="vanished">Invoegen</translation>
+        <translation>Invoegen</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation type="vanished">Bijwerken</translation>
+        <translation>Bijwerken</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="vanished">Verwijderen</translation>
+        <translation>Verwijderen</translation>
     </message>
 </context>
 <context>
     <name>Q3FileDialog</name>
     <message>
         <source>Copy or Move a File</source>
-        <translation type="vanished">Bestand kopiëren of verplaatsen</translation>
+        <translation>Bestand kopiëren of verplaatsen</translation>
     </message>
     <message>
         <source>Read: %1</source>
-        <translation type="vanished">Lees: %1</translation>
+        <translation>Lezen: %1</translation>
     </message>
     <message>
         <source>Write: %1</source>
-        <translation type="vanished">Schrijven: %1</translation>
+        <translation>Schrijven: %1</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">Annuleren</translation>
+        <translation>Annuleren</translation>
     </message>
     <message>
         <source>All Files (*)</source>
-        <translation type="vanished">Alle bestanden (*)</translation>
+        <translation>Alle bestanden (*)</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="vanished">Naam</translation>
+        <translation>Naam</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="vanished">Formaat</translation>
+        <translation>Grootte</translation>
     </message>
     <message>
         <source>Type</source>
-        <translation type="vanished">Soort</translation>
+        <translation>Type</translation>
     </message>
     <message>
         <source>Date</source>
-        <translation type="vanished">Datum</translation>
+        <translation>Datum</translation>
     </message>
     <message>
         <source>Attributes</source>
-        <translation type="vanished">Attribuut</translation>
+        <translation>Attributen</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="vanished">&amp;OK</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>Look &amp;in:</source>
-        <translation type="vanished">&amp;Kijk bij:</translation>
+        <translation>&amp;Kijk bij:</translation>
     </message>
     <message>
         <source>File &amp;name:</source>
-        <translation type="vanished">Bestands&amp;naam:</translation>
+        <translation>Bestands&amp;naam:</translation>
     </message>
     <message>
         <source>File &amp;type:</source>
-        <translation type="vanished">&amp;Bestandstype:</translation>
+        <translation>&amp;Bestandstype:</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="vanished">Terug</translation>
+        <translation>Terug</translation>
     </message>
     <message>
         <source>One directory up</source>
-        <translation type="vanished">Een map omhoog</translation>
+        <translation>Een map omhoog</translation>
     </message>
     <message>
         <source>Create New Folder</source>
-        <translation type="vanished">Maak een nieuwe map aan</translation>
+        <translation>Nieuwe map aanmaken</translation>
     </message>
     <message>
         <source>List View</source>
-        <translation type="vanished">Lijst weergave</translation>
+        <translation>Lijstweergave</translation>
     </message>
     <message>
         <source>Detail View</source>
-        <translation type="vanished">Detail weergave</translation>
+        <translation>Detailweergave</translation>
     </message>
     <message>
         <source>Preview File Info</source>
-        <translation type="vanished">Voorbeeldweergave bestandsinformatie</translation>
+        <translation>Voorbeeldweergave bestandsinformatie</translation>
     </message>
     <message>
         <source>Preview File Contents</source>
-        <translation type="vanished">Voorbeeldweergave bestandsinhoud</translation>
+        <translation>Voorbeeldweergave bestandsinhoud</translation>
     </message>
     <message>
         <source>Read-write</source>
-        <translation type="vanished">Lezen/schrijven</translation>
+        <translation>Lezen/schrijven</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation type="vanished">Alleen-lezen</translation>
+        <translation>Alleen-lezen</translation>
     </message>
     <message>
         <source>Write-only</source>
-        <translation type="vanished">Alleen-schrijven</translation>
+        <translation>Alleen-schrijven</translation>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="vanished">Niet toegankelijk</translation>
+        <translation>Niet toegankelijk</translation>
     </message>
     <message>
         <source>Symlink to File</source>
-        <translation type="vanished">Snelkoppeling naar bestand</translation>
+        <translation>Snelkoppeling naar Bestand</translation>
     </message>
     <message>
         <source>Symlink to Directory</source>
-        <translation type="vanished">Snelkoppeling naar map</translation>
+        <translation>Snelkoppeling naar Map</translation>
     </message>
     <message>
         <source>Symlink to Special</source>
         <translatorcomment>RL - naar de map &apos;Speciaal&apos;, als die map van naam verandert, deze string ook aanpassen</translatorcomment>
-        <translation type="vanished">Snelkoppeling naar Speciaal</translation>
+        <translation>Snelkoppeling naar Speciaal</translation>
     </message>
     <message>
         <source>File</source>
-        <translation type="vanished">Bestand</translation>
+        <translation>Bestand</translation>
     </message>
     <message>
         <source>Dir</source>
-        <translation type="vanished">Map</translation>
+        <translation>Map</translation>
     </message>
     <message>
         <source>Special</source>
-        <translation type="vanished">Speciaal</translation>
+        <translation>Speciaal</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="vanished">Open</translation>
+        <translation>Openen</translation>
     </message>
     <message>
         <source>Save As</source>
-        <translation type="vanished">Opslaan als</translation>
+        <translation>Opslaan als</translation>
     </message>
     <message>
         <source>&amp;Open</source>
-        <translation type="vanished">&amp;Openen</translation>
+        <translation>&amp;Openen</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="vanished">Op&amp;slaan</translation>
+        <translation>Op&amp;slaan</translation>
     </message>
     <message>
         <source>&amp;Rename</source>
-        <translation type="vanished">&amp;Hernoemen</translation>
+        <translation>&amp;Hernoemen</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation type="vanished">&amp;Verwijderen</translation>
+        <translation>&amp;Verwijderen</translation>
     </message>
     <message>
         <source>R&amp;eload</source>
-        <translation type="vanished">&amp;Opnieuw laden</translation>
+        <translation>&amp;Herladen</translation>
     </message>
     <message>
         <source>Sort by &amp;Name</source>
-        <translation type="vanished">Op &amp;Naam sorteren</translation>
+        <translation>Op &amp;naam sorteren</translation>
     </message>
     <message>
         <source>Sort by &amp;Size</source>
         <translatorcomment>EG - size kan ook zijn omvang RL - verschil?</translatorcomment>
-        <translation type="vanished">Op grootte &amp;sorteren</translation>
+        <translation>Op grootte &amp;sorteren</translation>
     </message>
     <message>
         <source>Sort by &amp;Date</source>
-        <translation type="vanished">Op &amp;datum sorteren</translation>
+        <translation>Op &amp;datum sorteren</translation>
     </message>
     <message>
         <source>&amp;Unsorted</source>
-        <translation type="vanished">&amp;Ongesorteerd</translation>
+        <translation>&amp;Ongesorteerd</translation>
     </message>
     <message>
         <source>Sort</source>
-        <translation type="vanished">Sorteren</translation>
+        <translation>Sorteren</translation>
     </message>
     <message>
         <source>Show &amp;hidden files</source>
-        <translation type="vanished">Verbo&amp;rgen bestanden tonen</translation>
+        <translation>Verbo&amp;rgen bestanden tonen</translation>
     </message>
     <message>
         <source>the file</source>
         <translatorcomment>RL - kleine &apos;h&apos; bij &apos;het&apos; (deze string is %1 bij andere string)</translatorcomment>
-        <translation type="vanished">het bestand</translation>
+        <translation>het bestand</translation>
     </message>
     <message>
         <source>the directory</source>
         <translatorcomment>RL - kleine &apos;d&apos; bij &apos;de&apos; (deze string is %1 bij andere string)</translatorcomment>
-        <translation type="vanished">de map</translation>
+        <translation>de map</translation>
     </message>
     <message>
         <source>the symlink</source>
         <translatorcomment>RL - kleine &apos;d&apos; bij &apos;de&apos; (deze string is %1 bij andere string)</translatorcomment>
-        <translation type="vanished">de snelkoppeling</translation>
+        <translation>de snelkoppeling</translation>
     </message>
     <message>
         <source>Delete %1</source>
-        <translation type="vanished">%1 verwijderen</translation>
+        <translation>%1 verwijderen</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation type="vanished">&lt;qt&gt;Weet u zeker dat u %1 &quot;%2&quot; wilt verwijderen?&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Weet u zeker dat u %1 &quot;%2&quot; wilt verwijderen?&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation type="vanished">&amp;Ja</translation>
+        <translation>&amp;Ja</translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation type="vanished">&amp;Nee</translation>
+        <translation>&amp;Nee</translation>
     </message>
     <message>
         <source>New Folder 1</source>
-        <translation type="vanished">Nieuwe map 1</translation>
+        <translation>Nieuwe map 1</translation>
     </message>
     <message>
         <source>New Folder</source>
-        <translation type="vanished">Nieuwe map</translation>
+        <translation>Nieuwe map</translation>
     </message>
     <message>
         <source>New Folder %1</source>
-        <translation type="vanished">Nieuwe map %1</translation>
+        <translation>Nieuwe map %1</translation>
     </message>
     <message>
         <source>Find Directory</source>
-        <translation type="vanished">Zoek een map</translation>
+        <translation>Map zoeken</translation>
     </message>
     <message>
         <source>Directories</source>
-        <translation type="vanished">Mappen</translation>
+        <translation>Mappen</translation>
     </message>
     <message>
         <source>Directory:</source>
-        <translation type="vanished">Map:</translation>
+        <translation>Map:</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation type="vanished">Fout</translation>
+        <translation>Fout</translation>
     </message>
     <message>
         <source>%1
 File not found.
 Check path and filename.</source>
-        <translation type="vanished">%1
+        <translation>%1
 Bestand niet gevonden.
 Controleer pad en bestandsnaam.</translation>
     </message>
@@ -437,19 +437,19 @@ Controleer pad en bestandsnaam.</translation>
     <message>
         <source>Could not read directory
 %1</source>
-        <translation type="vanished">Kon deze map niet lezen
+        <translation>Kon deze map niet lezen
 %1</translation>
     </message>
     <message>
         <source>Could not create directory
 %1</source>
-        <translation type="vanished">Kan de map niet aanmaken
+        <translation>Kan de map niet aanmaken
 %1</translation>
     </message>
     <message>
         <source>Could not remove file or directory
 %1</source>
-        <translation type="vanished">Kan het bestand of de map niet verwijderen
+        <translation>Kan het bestand of de map niet verwijderen
 %1</translation>
     </message>
     <message>
@@ -457,7 +457,7 @@ Controleer pad en bestandsnaam.</translation>
 %1
 to
 %2</source>
-        <translation type="vanished">Kan:
+        <translation>Kan:
 %1
 niet hernoemen naar
 %2</translation>
@@ -465,13 +465,13 @@ niet hernoemen naar
     <message>
         <source>Could not open
 %1</source>
-        <translation type="vanished">Kan niet openen:
+        <translation>Kan niet openen:
 %1</translation>
     </message>
     <message>
         <source>Could not write
 %1</source>
-        <translation type="vanished">Kan niet schrijven:
+        <translation>Kan niet schrijven:
 %1</translation>
     </message>
 </context>
@@ -479,205 +479,205 @@ niet hernoemen naar
     <name>Q3MainWindow</name>
     <message>
         <source>Line up</source>
-        <translation type="vanished">Rangschikken</translation>
+        <translation>Regel naar boven</translation>
     </message>
     <message>
         <source>Customize...</source>
-        <translation type="vanished">Aanpassen...</translation>
+        <translation>Aanpassen...</translation>
     </message>
 </context>
 <context>
     <name>Q3NetworkProtocol</name>
     <message>
         <source>Operation stopped by the user</source>
-        <translation type="vanished">Actie gestopt door gebruiker</translation>
+        <translation>Actie gestopt door gebruiker</translation>
     </message>
 </context>
 <context>
     <name>Q3ProgressDialog</name>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">Annuleren</translation>
+        <translation>Annuleren</translation>
     </message>
 </context>
 <context>
     <name>Q3TabDialog</name>
     <message>
         <source>OK</source>
-        <translation type="vanished">OK</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="vanished">Toepassen</translation>
+        <translation>Toepassen</translation>
     </message>
     <message>
         <source>Help</source>
         <translatorcomment>RL - eng &apos;Help&apos; wordt bij Moz/KDe/GNOME/Ubuntu/Fedora/Windows/Mac standaard vertaald in Nederlands als &apos;Hulp&apos;</translatorcomment>
-        <translation type="vanished">Hulp</translation>
+        <translation>Hulp</translation>
     </message>
     <message>
         <source>Defaults</source>
-        <translation type="vanished">Standaards</translation>
+        <translation>Standaard</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">Annuleren</translation>
+        <translation>Annuleren</translation>
     </message>
 </context>
 <context>
     <name>Q3TextEdit</name>
     <message>
         <source>&amp;Undo</source>
-        <translation type="vanished">&amp;Ongedaan maken</translation>
+        <translation>&amp;Ongedaan maken</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation type="vanished">Op&amp;nieuw</translation>
+        <translation>Op&amp;nieuw</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation type="vanished">K&amp;nippen</translation>
+        <translation>K&amp;nippen</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation type="vanished">&amp;Kopiëren</translation>
+        <translation>&amp;Kopiëren</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation type="vanished">&amp;Plakken</translation>
+        <translation>&amp;Plakken</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="vanished">Wissen</translation>
+        <translation>Wissen</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="vanished">Alles selecteren</translation>
+        <translation>Alles selecteren</translation>
     </message>
 </context>
 <context>
     <name>Q3TitleBar</name>
     <message>
         <source>System</source>
-        <translation type="vanished">Systeem</translation>
+        <translation>Systeem</translation>
     </message>
     <message>
         <source>Restore up</source>
-        <translation type="vanished">Omhoog terugzetten</translation>
+        <translation>Omhoog terugzetten</translation>
     </message>
     <message>
         <source>Minimize</source>
-        <translation type="vanished">Minimaliseren</translation>
+        <translation>Minimaliseren</translation>
     </message>
     <message>
         <source>Restore down</source>
-        <translation type="vanished">Omlaag terugzetten</translation>
+        <translation>Omlaag terugzetten</translation>
     </message>
     <message>
         <source>Maximize</source>
-        <translation type="vanished">Maximaliseren</translation>
+        <translation>Maximaliseren</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="vanished">Sluiten</translation>
+        <translation>Sluiten</translation>
     </message>
     <message>
         <source>Contains commands to manipulate the window</source>
-        <translation type="vanished">Bevat opdrachten om het venster te bewerken</translation>
+        <translation>Bevat opdrachten om het venster te bewerken</translation>
     </message>
     <message>
         <source>Puts a minimized back to normal</source>
-        <translation type="vanished">Zet geminimaliseerd terug naar normaal</translation>
+        <translation>Zet geminimaliseerd terug naar normaal</translation>
     </message>
     <message>
         <source>Moves the window out of the way</source>
-        <translation type="vanished">Verplaatst het venster uit de weg</translation>
+        <translation>Verplaatst het venster uit de weg</translation>
     </message>
     <message>
         <source>Puts a maximized window back to normal</source>
-        <translation type="vanished">Zet gemaximaliseerd terug naar normaal</translation>
+        <translation>Zet gemaximaliseerd terug naar normaal</translation>
     </message>
     <message>
         <source>Makes the window full screen</source>
-        <translation type="vanished">Maak het venster beeldvullend</translation>
+        <translation>Maak het venster beeldvullend</translation>
     </message>
     <message>
         <source>Closes the window</source>
-        <translation type="vanished">Sluit het venster</translation>
+        <translation>Sluit het venster</translation>
     </message>
     <message>
         <source>Holds the name of the window and contains controls to manipulate it</source>
-        <translation type="vanished">Geeft de naam van venster weer en bevat knoppen om deze te bewerken</translation>
+        <translation>Geeft de naam van venster weer en bevat knoppen om deze te bewerken</translation>
     </message>
 </context>
 <context>
     <name>Q3ToolBar</name>
     <message>
         <source>More...</source>
-        <translation type="vanished">Meer...</translation>
+        <translation>Meer...</translation>
     </message>
 </context>
 <context>
     <name>Q3UrlOperator</name>
     <message>
         <source>The protocol `%1&apos; is not supported</source>
-        <translation type="vanished">Het protocol `%1&apos; wordt niet ondersteund</translation>
+        <translation>Protocol `%1&apos; wordt niet ondersteund</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation type="vanished">Het protocol `%1&apos; ondersteunt geen opsomming van mappen</translation>
+        <translation>Protocol `%1&apos; ondersteunt geen opsomming van mappen</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation type="vanished">Het protocol `%1&apos; ondersteunt niet het aanmaken van nieuwe mappen</translation>
+        <translation>Protocol `%1&apos; ondersteunt niet het aanmaken van nieuwe mappen</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation type="vanished">Het protocol `%1&apos; ondersteunt niet het verwijderen van bestanden of mappen</translation>
+        <translation>Protocol `%1&apos; ondersteunt niet het verwijderen van bestanden of mappen</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation type="vanished">Het protocol `%1&apos; ondersteunt niet het herbenoemen van bestanden of mappen</translation>
+        <translation>Protocol `%1&apos; ondersteunt niet het herbenoemen van bestanden of mappen</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support getting files</source>
-        <translation type="vanished">Het protocol `%1&apos; ondersteunt niet het ophalen van bestanden</translation>
+        <translation>Protocol `%1&apos; ondersteunt niet het ophalen van bestanden</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support putting files</source>
-        <translation type="vanished">Het protocol `%1&apos; ondersteunt niet het wegzetten van bestanden</translation>
+        <translation>Protocol `%1&apos; ondersteunt niet het wegzetten van bestanden</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation type="vanished">Het protocol `%1&apos; ondersteunt niet het kopiëren van bestanden of mappen</translation>
+        <translation>Protocol `%1&apos; ondersteunt niet het kopiëren van bestanden of mappen</translation>
     </message>
     <message>
         <source>(unknown)</source>
-        <translation type="vanished">(onbekend)</translation>
+        <translation>(onbekend)</translation>
     </message>
 </context>
 <context>
     <name>Q3Wizard</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="vanished">&amp;Annuleren</translation>
+        <translation>&amp;Annuleren</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="vanished">&lt; &amp;Terug</translation>
+        <translation>&lt; &amp;Terug</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="vanished">&amp;Volgende &gt;</translation>
+        <translation>&amp;Volgende &gt;</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation type="vanished">&amp;Klaar</translation>
+        <translation>&amp;Klaar</translation>
     </message>
     <message>
         <source>&amp;Help</source>
         <translatorcomment>RL - eng &apos;Help&apos; wordt bij Moz/KDe/GNOME/Ubuntu/Fedora/Windows/Mac standaard vertaald in Nederlands als &apos;Hulp&apos;</translatorcomment>
-        <translation type="vanished">&amp;Hulp</translation>
+        <translation>&amp;Hulp</translation>
     </message>
 </context>
 <context>
@@ -700,19 +700,19 @@ niet hernoemen naar
     </message>
     <message>
         <source>Operation on socket is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Bewerkingen op socket wordt niet ondersteund</translation>
     </message>
     <message>
         <source>Connection timed out</source>
-        <translation type="unfinished">Verbinding heeft de tijdslimiet overschreden</translation>
+        <translation>Verbinding heeft de tijdslimiet overschreden</translation>
     </message>
     <message>
         <source>Trying to connect while connection is in progress</source>
-        <translation type="unfinished"></translation>
+        <translation>Proberen te verbinden terwijl opzetten verbinding bezig is</translation>
     </message>
     <message>
         <source>Network unreachable</source>
-        <translation type="unfinished">Netwerk onbereikbaar</translation>
+        <translation>Netwerk onbereikbaar</translation>
     </message>
 </context>
 <context>
@@ -736,125 +736,125 @@ niet hernoemen naar
     <name>QAccessibleActionInterface</name>
     <message>
         <source>Press</source>
-        <translation type="unfinished">Druk op</translation>
+        <translation>Drukken</translation>
     </message>
     <message>
         <source>Increase</source>
-        <translation type="unfinished"></translation>
+        <translation>Toenemen</translation>
     </message>
     <message>
         <source>Decrease</source>
-        <translation type="unfinished"></translation>
+        <translation>Afnemen</translation>
     </message>
     <message>
         <source>ShowMenu</source>
-        <translation type="unfinished"></translation>
+        <translation>MenuTonen</translation>
     </message>
     <message>
         <source>SetFocus</source>
-        <translation type="unfinished"></translation>
+        <translation>FocusInstellen</translation>
     </message>
     <message>
         <source>Toggle</source>
-        <translation type="unfinished">Omschakelen</translation>
+        <translation>Togglen</translation>
     </message>
     <message>
         <source>Scroll Left</source>
-        <translation type="unfinished">Naar links scrollen</translation>
+        <translation>Naar links scrollen</translation>
     </message>
     <message>
         <source>Scroll Right</source>
-        <translation type="unfinished">Naar rechts scrollen</translation>
+        <translation>Naar rechts scrollen</translation>
     </message>
     <message>
         <source>Scroll Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Naar boven scrollen</translation>
     </message>
     <message>
         <source>Scroll Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Naar onder scrollen</translation>
     </message>
     <message>
         <source>Previous Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Vorige pagina</translation>
     </message>
     <message>
         <source>Next Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Volgende pagina</translation>
     </message>
     <message>
         <source>Triggers the action</source>
-        <translation type="unfinished"></translation>
+        <translation>Start de uitvoering</translation>
     </message>
     <message>
         <source>Increase the value</source>
-        <translation type="unfinished"></translation>
+        <translation>Verhoog de waarde</translation>
     </message>
     <message>
         <source>Decrease the value</source>
-        <translation type="unfinished"></translation>
+        <translation>Verlaag de waarde</translation>
     </message>
     <message>
         <source>Shows the menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Toont het menu</translation>
     </message>
     <message>
         <source>Sets the focus</source>
-        <translation type="unfinished"></translation>
+        <translation>Stelt de focus in</translation>
     </message>
     <message>
         <source>Toggles the state</source>
-        <translation type="unfinished"></translation>
+        <translation>Toggels de status</translation>
     </message>
     <message>
         <source>Scrolls to the left</source>
-        <translation type="unfinished"></translation>
+        <translation>Scrollt naar links</translation>
     </message>
     <message>
         <source>Scrolls to the right</source>
-        <translation type="unfinished"></translation>
+        <translation>Scrollt naar rechts</translation>
     </message>
     <message>
         <source>Scrolls up</source>
-        <translation type="unfinished"></translation>
+        <translation>Scrollt naar boven</translation>
     </message>
     <message>
         <source>Scrolls down</source>
-        <translation type="unfinished"></translation>
+        <translation>Scrollt naar beneden</translation>
     </message>
     <message>
         <source>Goes back a page</source>
-        <translation type="unfinished"></translation>
+        <translation>Gaat een pagina terug</translation>
     </message>
     <message>
         <source>Goes to the next page</source>
-        <translation type="unfinished"></translation>
+        <translation>Gaat een pagina verder</translation>
     </message>
 </context>
 <context>
     <name>QAndroidPlatformTheme</name>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">Ja</translation>
+        <translation>Ja</translation>
     </message>
     <message>
         <source>Yes to All</source>
-        <translation type="unfinished"></translation>
+        <translation>Ja op alles</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished">Nee</translation>
+        <translation>Nee</translation>
     </message>
     <message>
         <source>No to All</source>
-        <translation type="unfinished"></translation>
+        <translation>Nee op alles</translation>
     </message>
 </context>
 <context>
     <name>QApplication</name>
     <message>
         <source>Activate</source>
-        <translation type="vanished">Activeren</translation>
+        <translation>Activeren</translation>
     </message>
     <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
@@ -862,93 +862,93 @@ niet hernoemen naar
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>Qt bibliotheek is niet compatibel</translation>
+        <translation>Qt-bibliotheek is niet compatibel</translation>
     </message>
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation type="vanished">LTR</translation>
+        <translation>LTR</translation>
     </message>
     <message>
         <source>Activates the program&apos;s main window</source>
-        <translation type="vanished">Activeert het hoofd venster van het programma</translation>
+        <translation>Activeert het hoofdvenster van het programma</translation>
     </message>
 </context>
 <context>
     <name>QCheckBox</name>
     <message>
         <source>Uncheck</source>
-        <translation type="vanished">Uitgummen</translation>
+        <translation>Vink weghalen</translation>
     </message>
     <message>
         <source>Check</source>
-        <translation type="vanished">Afvinken</translation>
+        <translation>Vink zetten</translation>
     </message>
     <message>
         <source>Toggle</source>
-        <translation type="vanished">Omschakelen</translation>
+        <translation>Togglen</translation>
     </message>
 </context>
 <context>
     <name>QCocoaMenuItem</name>
     <message>
         <source>About Qt</source>
-        <translation type="unfinished">Info over Qt</translation>
+        <translation>Over Qt</translation>
     </message>
     <message>
         <source>About</source>
-        <translation type="unfinished"></translation>
+        <translation>Over</translation>
     </message>
     <message>
         <source>Config</source>
-        <translation type="unfinished"></translation>
+        <translation>Config</translation>
     </message>
     <message>
         <source>Preference</source>
-        <translation type="unfinished"></translation>
+        <translation>Voorkeuren</translation>
     </message>
     <message>
         <source>Options</source>
-        <translation type="unfinished">Opties</translation>
+        <translation>Opties</translation>
     </message>
     <message>
         <source>Setting</source>
-        <translation type="unfinished"></translation>
+        <translation>Instellingen</translation>
     </message>
     <message>
         <source>Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Setup</translation>
     </message>
     <message>
         <source>Quit</source>
-        <translation type="unfinished">Stoppen</translation>
+        <translation>Stoppen</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation>Afsluiten</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished">Knippen</translation>
+        <translation>Knippen</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Kopiëren</translation>
+        <translation>Kopiëren</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished">Plakken</translation>
+        <translation>Plakken</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="unfinished"></translation>
+        <translation>Alles selecteren</translation>
     </message>
 </context>
 <context>
     <name>QCocoaTheme</name>
     <message>
         <source>Don&apos;t Save</source>
-        <translation type="unfinished">Niet opslaan</translation>
+        <translation>Niet opslaan</translation>
     </message>
 </context>
 <context>
@@ -979,7 +979,7 @@ niet hernoemen naar
     </message>
     <message>
         <source>A&amp;lpha channel:</source>
-        <translation>A&amp;lpha kanaal:</translation>
+        <translation>A&amp;lpha-kanaal:</translation>
     </message>
     <message>
         <source>&amp;Basic colors</source>
@@ -995,31 +995,32 @@ niet hernoemen naar
     </message>
     <message>
         <source>Select color</source>
-        <translation type="vanished">Selecteer een kleur</translation>
+        <translation>Kleur selecteren</translation>
     </message>
     <message>
         <source>&amp;HTML:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;HTML:</translation>
     </message>
     <message>
         <source>Cursor at %1, %2
 Press ESC to cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Cursor op %1, %2
+Druk ESC om te annulerenl</translation>
     </message>
     <message>
         <source>Select Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Kleur selecteren</translation>
     </message>
     <message>
         <source>&amp;Pick Screen Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Schermkleur uit&amp;kiezen</translation>
     </message>
 </context>
 <context>
     <name>QComboBox</name>
     <message>
         <source>Open</source>
-        <translation type="vanished">Openen</translation>
+        <translation>Openen</translation>
     </message>
     <message>
         <source>False</source>
@@ -1031,54 +1032,54 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Close</source>
-        <translation type="vanished">Sluiten</translation>
+        <translation>Sluiten</translation>
     </message>
     <message>
         <source>Open the combo box selection popup</source>
-        <translation type="unfinished"></translation>
+        <translation>Combo-box-selectie-pop-up openen</translation>
     </message>
 </context>
 <context>
     <name>QCommandLineParser</name>
     <message>
         <source>Displays version information.</source>
-        <translation type="unfinished"></translation>
+        <translation>Toont versie-informatie.</translation>
     </message>
     <message>
         <source>Displays this help.</source>
-        <translation type="unfinished"></translation>
+        <translation>Toont deze hulp.</translation>
     </message>
     <message>
         <source>Unknown option &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Onbekende optie &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>Unknown options: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Onbekende opties &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>Missing value after &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ontbrekende waarde na &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>Unexpected value after &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Onverwachte waarde na &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>[options]</source>
-        <translation type="unfinished"></translation>
+        <translation>[opties]</translation>
     </message>
     <message>
         <source>Usage: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Gebruik: %1</translation>
     </message>
     <message>
         <source>Options:</source>
-        <translation type="unfinished"></translation>
+        <translation>Opties:</translation>
     </message>
     <message>
         <source>Arguments:</source>
-        <translation type="unfinished"></translation>
+        <translation>Argumenten:</translation>
     </message>
 </context>
 <context>
@@ -1086,27 +1087,27 @@ Press ESC to cancel</source>
     <message>
         <source>%1: permission denied</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: toestemming geweigerd</translation>
+        <translation>%1: toestemming geweigerd</translation>
     </message>
     <message>
         <source>%1: already exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: bestaat al</translation>
+        <translation>%1: bestaat al</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: bestaat niet</translation>
+        <translation>%1: bestaat niet</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: geen hulpbronnen meer</translation>
+        <translation>%1: geen hulpbronnen meer</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: onbekende fout %2</translation>
+        <translation>%1: onbekende fout %2</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
@@ -1128,104 +1129,105 @@ Press ESC to cancel</source>
     <name>QCupsJobWidget</name>
     <message>
         <source>Job</source>
-        <translation type="unfinished"></translation>
+        <translation>Taak</translation>
     </message>
     <message>
         <source>Job Control</source>
-        <translation type="unfinished"></translation>
+        <translation>Taakbeheer</translation>
     </message>
     <message>
         <source>Scheduled printing:</source>
-        <translation type="unfinished"></translation>
+        <translation>Gepland afdrukken:</translation>
     </message>
     <message>
         <source>Billing information:</source>
-        <translation type="unfinished"></translation>
+        <translation>Factuurinformatie:</translation>
     </message>
     <message>
         <source>Job priority:</source>
-        <translation type="unfinished"></translation>
+        <translation>Taakprioriteit:</translation>
     </message>
     <message>
         <source>Banner Pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Bannerpagina&apos;s</translation>
     </message>
     <message>
         <source>End:</source>
         <comment>Banner page at end</comment>
-        <translation type="unfinished"></translation>
+        <translation>Aan het einde:</translation>
     </message>
     <message>
         <source>Start:</source>
         <comment>Banner page at start</comment>
-        <translation type="unfinished"></translation>
+        <translation>Aan het begin:</translation>
     </message>
     <message>
         <source>Print Immediately</source>
-        <translation type="unfinished"></translation>
+        <translation>Direct printen</translation>
     </message>
     <message>
         <source>Hold Indefinitely</source>
-        <translation type="unfinished"></translation>
+        <translation>Eeuwig vasthouden</translation>
     </message>
     <message>
         <source>Day (06:00 to 17:59)</source>
-        <translation type="unfinished"></translation>
+        <translation>Dag (06:00 tot 17:59)</translation>
     </message>
     <message>
         <source>Night (18:00 to 05:59)</source>
-        <translation type="unfinished"></translation>
+        <translation>Nacht (18:00 tot 05:59)</translation>
     </message>
     <message>
         <source>Second Shift (16:00 to 23:59)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tweede ploeg (16:00 tot 23:59)</translation>
     </message>
     <message>
         <source>Third Shift (00:00 to 07:59)</source>
-        <translation type="unfinished"></translation>
+        <translation>Derde ploeg (00:00 tot 07:59)</translation>
     </message>
     <message>
         <source>Weekend (Saturday to Sunday)</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>&apos;tot&apos; zou hier betekenen alleen zaterdag (anders &apos;tot en met&apos;)</translatorcomment>
+        <translation>Weekend (zaterdag en zondag)</translation>
     </message>
     <message>
         <source>Specific Time</source>
-        <translation type="unfinished"></translation>
+        <translation>Specifieke tijd</translation>
     </message>
     <message>
         <source>None</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished">Geen</translation>
+        <translation>Geen</translation>
     </message>
     <message>
         <source>Standard</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation>Standaard</translation>
     </message>
     <message>
         <source>Unclassified</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ongeclassificeerd</translation>
     </message>
     <message>
         <source>Confidential</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vertrouwelijk</translation>
     </message>
     <message>
         <source>Classified</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation>Geclassificeerd</translation>
     </message>
     <message>
         <source>Secret</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation>Geheim</translation>
     </message>
     <message>
         <source>Top Secret</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation>Topgeheim</translation>
     </message>
 </context>
 <context>
@@ -1279,60 +1281,60 @@ Press ESC to cancel</source>
     <name>QDBusTrayIcon</name>
     <message>
         <source>OK</source>
-        <translation type="unfinished">OK</translation>
+        <translation>OK</translation>
     </message>
 </context>
 <context>
     <name>QDateTimeEdit</name>
     <message>
         <source>AM</source>
-        <translation type="vanished">VM</translation>
+        <translation>VM</translation>
     </message>
     <message>
         <source>am</source>
-        <translation type="vanished">vm</translation>
+        <translation>vm</translation>
     </message>
     <message>
         <source>PM</source>
-        <translation type="vanished">NM</translation>
+        <translation>NM</translation>
     </message>
     <message>
         <source>pm</source>
-        <translation type="vanished">nm</translation>
+        <translation>nm</translation>
     </message>
 </context>
 <context>
     <name>QDateTimeParser</name>
     <message>
         <source>AM</source>
-        <translation type="unfinished">VM</translation>
+        <translation>VM</translation>
     </message>
     <message>
         <source>am</source>
-        <translation type="unfinished">vm</translation>
+        <translation>vm</translation>
     </message>
     <message>
         <source>PM</source>
-        <translation type="unfinished">NM</translation>
+        <translation>NM</translation>
     </message>
     <message>
         <source>pm</source>
-        <translation type="unfinished">nm</translation>
+        <translation>nm</translation>
     </message>
 </context>
 <context>
     <name>QDial</name>
     <message>
         <source>QDial</source>
-        <translation type="vanished">QDial</translation>
+        <translation>QDial</translation>
     </message>
     <message>
         <source>SpeedoMeter</source>
-        <translation type="vanished">SpeedoMeter</translation>
+        <translation>SpeedoMeter</translation>
     </message>
     <message>
         <source>SliderHandle</source>
-        <translation type="vanished">Schuifhandel</translation>
+        <translation>Schuifhandel</translation>
     </message>
 </context>
 <context>
@@ -1343,7 +1345,7 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Done</source>
-        <translation type="vanished">Klaar</translation>
+        <translation>Klaar</translation>
     </message>
 </context>
 <context>
@@ -1354,84 +1356,84 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Save</source>
-        <translation type="vanished">Opslaan</translation>
+        <translation>Opslaan</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="vanished">Openen</translation>
+        <translation>Openen</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">Annuleren</translation>
+        <translation>Annuleren</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="vanished">Sluiten</translation>
+        <translation>Sluiten</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="vanished">Toepassen</translation>
+        <translation>Toepassen</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="vanished">Terugzetten</translation>
+        <translation>Terugzetten</translation>
     </message>
     <message>
         <source>Help</source>
         <translatorcomment>RL - eng &apos;Help&apos; wordt bij Moz/KDe/GNOME/Ubuntu/Fedora/Windows/Mac standaard vertaald in Nederlands als &apos;Hulp&apos;</translatorcomment>
-        <translation type="vanished">Hulp</translation>
+        <translation>Hulp</translation>
     </message>
     <message>
         <source>Don&apos;t Save</source>
-        <translation type="vanished">Niet opslaan</translation>
+        <translation>Niet opslaan</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="vanished">Verwerpen</translation>
+        <translation>Niet opslaan</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation type="vanished">&amp;Ja</translation>
+        <translation>&amp;Ja</translation>
     </message>
     <message>
         <source>Yes to &amp;All</source>
-        <translation type="vanished">Ja op &amp;alles</translation>
+        <translation>Ja op &amp;alles</translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation type="vanished">&amp;Nee</translation>
+        <translation>&amp;Nee</translation>
     </message>
     <message>
         <source>N&amp;o to All</source>
-        <translation type="vanished">Nee op &amp;alles</translation>
+        <translation>Nee op &amp;alles</translation>
     </message>
     <message>
         <source>Save All</source>
-        <translation type="vanished">Alles opslaan</translation>
+        <translation>Alles opslaan</translation>
     </message>
     <message>
         <source>Abort</source>
-        <translation type="vanished">Afbreken</translation>
+        <translation>Afbreken</translation>
     </message>
     <message>
         <source>Retry</source>
-        <translation type="vanished">Nogmaals</translation>
+        <translation>Nogmaals</translation>
     </message>
     <message>
         <source>Ignore</source>
-        <translation type="vanished">Negeren</translation>
+        <translation>Negeren</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="vanished">Standaards terugplaatsen</translation>
+        <translation>Standaards terugplaatsen</translation>
     </message>
     <message>
         <source>Close without Saving</source>
-        <translation type="vanished">Sluiten zonder op te slaan</translation>
+        <translation>Sluiten zonder op te slaan</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="vanished">&amp;OK</translation>
+        <translation>&amp;OK</translation>
     </message>
 </context>
 <context>
@@ -1463,106 +1465,106 @@ Press ESC to cancel</source>
     <name>QDnsLookup</name>
     <message>
         <source>Operation cancelled</source>
-        <translation type="unfinished"></translation>
+        <translation>Operatie geanulleerd</translation>
     </message>
 </context>
 <context>
     <name>QDnsLookupRunnable</name>
     <message>
         <source>IPv6 addresses for nameservers are currently not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6-adressen voor naamservers worden momenteel niet ondersteund</translation>
     </message>
     <message>
         <source>Invalid domain name</source>
-        <translation type="unfinished"></translation>
+        <translation>ongeldig domeinnaam</translation>
     </message>
     <message>
         <source>Not yet supported on Android</source>
-        <translation type="unfinished"></translation>
+        <translation>Nog niet ondersteund op Android</translation>
     </message>
     <message>
         <source>Resolver functions not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Resolverfuncties niet gevonden</translation>
     </message>
     <message>
         <source>Resolver initialization failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Resolver-inialisering mislukte</translation>
     </message>
     <message>
         <source>Server could not process query</source>
-        <translation type="unfinished"></translation>
+        <translation>Server kon query niet verwerken</translation>
     </message>
     <message>
         <source>Server failure</source>
-        <translation type="unfinished"></translation>
+        <translation>Severfout</translation>
     </message>
     <message>
         <source>Non existent domain</source>
-        <translation type="unfinished"></translation>
+        <translation>Niet-bestaand domein</translation>
     </message>
     <message>
         <source>Server refused to answer</source>
-        <translation type="unfinished"></translation>
+        <translation>Server weigert te antwoorden</translation>
     </message>
     <message>
         <source>Invalid reply received</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldige antwoord ontvangen</translation>
     </message>
     <message>
         <source>Could not expand domain name</source>
-        <translation type="unfinished"></translation>
+        <translation>Kon domeinnaam niet aanvullen</translation>
     </message>
     <message>
         <source>Invalid IPv4 address record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldig IPv4-adresrecord</translation>
     </message>
     <message>
         <source>Invalid IPv6 address record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldig IPv6-adresrecord</translation>
     </message>
     <message>
         <source>Invalid canonical name record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldig canonicalnaamrecord</translation>
     </message>
     <message>
         <source>Invalid name server record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldig naamserverrecord</translation>
     </message>
     <message>
         <source>Invalid pointer record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldig pointerrecord</translation>
     </message>
     <message>
         <source>Invalid mail exchange record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldig mail-exchangerecord</translation>
     </message>
     <message>
         <source>Invalid service record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldig servicerecord</translation>
     </message>
     <message>
         <source>Invalid text record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldig tekstrecord</translation>
     </message>
     <message>
         <source>Resolver library can&apos;t be loaded: No runtime library loading support</source>
-        <translation type="unfinished"></translation>
+        <translation>Bibliotheek van resolver kan niet worden geladen: geen ondersteuning voor runtime library loading</translation>
     </message>
     <message>
         <source>No hostname given</source>
-        <translation type="unfinished"></translation>
+        <translation>Geen hostnaam opgegeven</translation>
     </message>
     <message>
         <source>Invalid hostname</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldige hostnaam</translation>
     </message>
     <message>
         <source>Host %1 could not be found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Host %1 niet gevonden.</translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation type="unfinished">Onbekende fout</translation>
+        <translation>Onbekende fout</translation>
     </message>
 </context>
 <context>
@@ -1574,7 +1576,7 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="vanished">Koppelen</translation>
+        <translation>Koppelen</translation>
     </message>
     <message>
         <source>Float</source>
@@ -1583,22 +1585,23 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Undocks and re-attaches the dock widget</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>Als je dit beter kan vertalen, ga je gang</translatorcomment>
+        <translation>Undockt en herbevestigt het dock-widget</translation>
     </message>
     <message>
         <source>Closes the dock widget</source>
-        <translation type="unfinished"></translation>
+        <translation>Sluit dock-widget</translation>
     </message>
 </context>
 <context>
     <name>QDoubleSpinBox</name>
     <message>
         <source>More</source>
-        <translation type="vanished">Meer</translation>
+        <translation>Meer</translation>
     </message>
     <message>
         <source>Less</source>
-        <translation type="vanished">Minder</translation>
+        <translation>Minder</translation>
     </message>
 </context>
 <context>
@@ -1618,7 +1621,7 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>&amp;Show this message again</source>
-        <translation>&amp;Geef dit bericht opnieuw weer</translation>
+        <translation>Dit bericht &amp;opnieuw tonen</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -1629,54 +1632,54 @@ Press ESC to cancel</source>
     <name>QFile</name>
     <message>
         <source>Destination file is the same file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestemmingsbestand is hetzelfde bestand.</translation>
     </message>
     <message>
         <source>Source file does not exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bronbestand bestaat niet.</translation>
     </message>
     <message>
         <source>Destination file exists</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestemmingsbestand bestaat</translation>
     </message>
     <message>
         <source>Error while renaming.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fout tijdens hernoemen.</translation>
     </message>
     <message>
         <source>Unable to restore from %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan niet herstellen van %1: %2</translation>
     </message>
     <message>
         <source>Will not rename sequential file using block copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Zal opvolgend bestand niet hernoemen met gebruik van block copy</translation>
     </message>
     <message>
         <source>Cannot remove source file</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan bronbestand niet verwijderen</translation>
     </message>
     <message>
         <source>Cannot open %1 for input</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan %1 niet openen voor gegevensinvoer</translation>
     </message>
     <message>
         <source>Cannot open for output</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan niet openen voor gegevensuitvoer</translation>
     </message>
     <message>
         <source>Failure to write block</source>
-        <translation type="unfinished"></translation>
+        <translation>Block kon niet worden geschreven</translation>
     </message>
     <message>
         <source>Cannot create %1 for output</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan %1 niet aanmaken voor gegevensuitvoer</translation>
     </message>
 </context>
 <context>
     <name>QFileDevice</name>
     <message>
         <source>No file engine available or engine does not support UnMapExtension</source>
-        <translation type="unfinished"></translation>
+        <translation>Geen bestandsengine beschikbaar of engine ondersteunt geen UnMapExtention</translation>
     </message>
 </context>
 <context>
@@ -1729,7 +1732,7 @@ Controleer of de juiste bestandnaam is opgegeven.</translation>
     </message>
     <message>
         <source>Show &amp;hidden files</source>
-        <translation>&amp;Geef verborgen bestanden weer</translation>
+        <translation>Verborgen &amp;bestanden tonen</translation>
     </message>
     <message>
         <source>Back</source>
@@ -1771,7 +1774,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation type="vanished">Weet u zeker dat u %1 wilt verwijderen?</translation>
+        <translation>Weet u zeker dat u &apos;%1&apos; wilt verwijderen?</translation>
     </message>
     <message>
         <source>Could not delete directory.</source>
@@ -1799,7 +1802,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Show </source>
-        <translation>Toon</translation>
+        <translation>Tonen</translation>
     </message>
     <message>
         <source>Forward</source>
@@ -1835,92 +1838,92 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Go back</source>
-        <translation type="unfinished"></translation>
+        <translation>Ga terug</translation>
     </message>
     <message>
         <source>Alt+Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+Links</translation>
     </message>
     <message>
         <source>Go forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Ga vooruit</translation>
     </message>
     <message>
         <source>Alt+Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+Rechts</translation>
     </message>
     <message>
         <source>Go to the parent directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Ga naar bovenliggende map</translation>
     </message>
     <message>
         <source>Alt+Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+Up</translation>
     </message>
     <message>
         <source>Create a New Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Nieuwe map aanmaken</translation>
     </message>
     <message>
         <source>Change to list view mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Ga naar lijst-modus</translation>
     </message>
     <message>
         <source>Change to detail view mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Ga naar detail-modus</translation>
     </message>
     <message>
         <source>Sidebar</source>
-        <translation type="unfinished"></translation>
+        <translation>Zijbalk</translation>
     </message>
     <message>
         <source>List of places and bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>Lijst van plekken en bladwijzers</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestanden</translation>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle bestanden (*)</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijderen</translation>
     </message>
     <message>
         <source>Are you sure you want to delete &apos;%1&apos;?</source>
-        <translation type="unfinished"></translation>
+        <translation>Weet u zeker dat u  &apos;%1&apos; wilt verwijderen?</translation>
     </message>
     <message>
         <source>Recent Places</source>
-        <translation type="unfinished"></translation>
+        <translation>Recente plekken</translation>
     </message>
     <message>
         <source>%1 File</source>
         <extracomment>%1 is a file name suffix, for example txt</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1-bestand</translation>
     </message>
     <message>
         <source>File Folder</source>
         <comment>Match Windows Explorer</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bestandsmap</translation>
     </message>
     <message>
         <source>Folder</source>
         <comment>All other platforms</comment>
-        <translation type="unfinished"></translation>
+        <translation>Map</translation>
     </message>
     <message>
         <source>Alias</source>
         <comment>OS X Finder</comment>
-        <translation type="unfinished"></translation>
+        <translation>Alias</translation>
     </message>
     <message>
         <source>Shortcut</source>
         <comment>All other platforms</comment>
-        <translation type="unfinished"></translation>
+        <translation>Snelkoppeling</translation>
     </message>
 </context>
 <context>
@@ -1985,14 +1988,14 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>%1 byte(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 byte(s)</translation>
     </message>
 </context>
 <context>
     <name>QFontDatabase</name>
     <message>
         <source>Normal</source>
-        <translation type="vanished">Normaal</translation>
+        <translation>Normaal</translation>
     </message>
     <message>
         <source>Bold</source>
@@ -2000,7 +2003,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Demi Bold</source>
-        <translation>half vet</translation>
+        <translation>Half vet</translation>
     </message>
     <message>
         <source>Black</source>
@@ -2158,33 +2161,33 @@ Wilt u het toch verwijderen?</translation>
     <message>
         <source>Normal</source>
         <comment>The Normal or Regular font weight</comment>
-        <translation type="unfinished">Normaal</translation>
+        <translation>Normaal</translation>
     </message>
     <message>
         <source>Medium</source>
         <comment>The Medium font weight</comment>
-        <translation type="unfinished"></translation>
+        <translation>Medium</translation>
     </message>
     <message>
         <source>Thin</source>
-        <translation type="unfinished"></translation>
+        <translation>Dun</translation>
     </message>
     <message>
         <source>Extra Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Extra licht</translation>
     </message>
     <message>
         <source>Extra Bold</source>
-        <translation type="unfinished"></translation>
+        <translation>Extra vet</translation>
     </message>
     <message>
         <source>Extra</source>
         <extracomment>The word for &quot;Extra&quot; as in &quot;Extra Bold, Extra Thin&quot; used as a pattern for string searches</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Extra</translation>
     </message>
     <message>
         <source>N&apos;Ko</source>
-        <translation type="unfinished"></translation>
+        <translation>N&apos;Ko</translation>
     </message>
 </context>
 <context>
@@ -2230,7 +2233,7 @@ Wilt u het toch verwijderen?</translation>
     <name>QFtp</name>
     <message>
         <source>Not connected</source>
-        <translation>Geen verbinding</translation>
+        <translation>Niet verbonden</translation>
     </message>
     <message>
         <source>Host %1 not found</source>
@@ -2246,7 +2249,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Connection refused for data connection</source>
-        <translation type="vanished">Verbinding geweigerd voor dataconnectie</translation>
+        <translation>Verbinding geweigerd voor dataconnectie</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -2312,51 +2315,51 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Host %1 found</source>
-        <translation type="vanished">Host %1 gevonden</translation>
+        <translation>Host %1 gevonden</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation type="vanished">Verbinding met %1 afgesloten</translation>
+        <translation>Verbinding met %1 afgesloten</translation>
     </message>
     <message>
         <source>Host found</source>
         <translatorcomment>RL - &apos;host&apos; als host vertalen, voorkomt &apos;gast&apos; en &apos;gastheer&apos; verwarring in VirtualBox (gebruikerswens)</translatorcomment>
-        <translation type="vanished">Host gevonden</translation>
+        <translation>Host gevonden</translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation type="vanished">Verbonden met host</translation>
+        <translation>Verbonden met host</translation>
     </message>
     <message>
         <source>Connection timed out to host %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Time out verbinding host %1</translation>
     </message>
     <message>
         <source>Data Connection refused</source>
-        <translation type="unfinished"></translation>
+        <translation>Dataverbinding geweigerd</translation>
     </message>
 </context>
 <context>
     <name>QGnomeTheme</name>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;OK</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Op&amp;slaan</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">&amp;Annuleren</translation>
+        <translation>&amp;Annuleren</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Sl&amp;uiten</translation>
     </message>
     <message>
         <source>Close without Saving</source>
-        <translation type="unfinished">Sluiten zonder op te slaan</translation>
+        <translation>Sluiten zonder opslaan</translation>
     </message>
 </context>
 <context>
@@ -2364,7 +2367,7 @@ Wilt u het toch verwijderen?</translation>
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation type="unfinished">LTR</translation>
+        <translation>LTR</translation>
     </message>
 </context>
 <context>
@@ -2375,7 +2378,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>No host name given</source>
-        <translation type="unfinished"></translation>
+        <translation>Geen hostnaam opgegeven</translation>
     </message>
 </context>
 <context>
@@ -2394,38 +2397,38 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>No host name given</source>
-        <translation type="unfinished"></translation>
+        <translation>Geen hostnaam opgegeven</translation>
     </message>
     <message>
         <source>Invalid hostname</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldige hostnaam</translation>
     </message>
     <message>
         <source>Unknown error (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Onbekende fout (%1)</translation>
     </message>
 </context>
 <context>
     <name>QHttp</name>
     <message>
         <source>Unknown error</source>
-        <translation type="vanished">Onbekende fout</translation>
+        <translation>Onbekende fout</translation>
     </message>
     <message>
         <source>Request aborted</source>
-        <translation type="vanished">Verzoek afgebroken</translation>
+        <translation>Verzoek afgebroken</translation>
     </message>
     <message>
         <source>No server set to connect to</source>
-        <translation type="vanished">Geen server aangewezen om mee te verbinden</translation>
+        <translation>Geen server om mee te verbinden aangewezen</translation>
     </message>
     <message>
         <source>Wrong content length</source>
-        <translation type="vanished">Lengte van de inhoud is verkeerd</translation>
+        <translation>Lengte van de inhoud is verkeerd</translation>
     </message>
     <message>
         <source>Server closed connection unexpectedly</source>
-        <translation type="vanished">Server heeft de verbinding onverwacht verbroken</translation>
+        <translation>Server heeft de verbinding onverwacht verbroken</translation>
     </message>
     <message>
         <source>Connection refused</source>
@@ -2437,35 +2440,35 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>HTTP request failed</source>
-        <translation type="vanished">HTTP verzoek is mislukt</translation>
+        <translation>HTTP-verzoek is mislukt</translation>
     </message>
     <message>
         <source>Invalid HTTP response header</source>
-        <translation type="vanished">Ongeldige HTTP antwoord (header)</translation>
+        <translation>Ongeldige HTTP-antwoord (header)</translation>
     </message>
     <message>
         <source>Invalid HTTP chunked body</source>
-        <translation type="vanished">Ongeldige HTTP afgebroken body</translation>
+        <translation>Ongeldige HTTP-afgebroken body</translation>
     </message>
     <message>
         <source>Host %1 found</source>
-        <translation type="vanished">Host %1 gevonden</translation>
+        <translation>Host %1 gevonden</translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation type="vanished">Verbonden met host %1</translation>
+        <translation>Verbonden met host %1</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation type="vanished">Verbinding met %1 afgesloten</translation>
+        <translation>Verbinding met %1 afgesloten</translation>
     </message>
     <message>
         <source>Host found</source>
-        <translation type="vanished">Host gevonden</translation>
+        <translation>Host gevonden</translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation type="vanished">Verbonden met host</translation>
+        <translation>Verbonden met host</translation>
     </message>
     <message>
         <source>Connection closed</source>
@@ -2473,15 +2476,15 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Proxy authentication required</source>
-        <translation type="vanished">Proxy authentcatie vereist</translation>
+        <translation>Proxy-authentcatie vereist</translation>
     </message>
     <message>
         <source>Authentication required</source>
-        <translation type="vanished">Authenticatie vereist</translation>
+        <translation>Authenticatie vereist</translation>
     </message>
     <message>
         <source>Connection refused (or timed out)</source>
-        <translation type="vanished">Verbinding geweigerd (tijdslimiet verstreken)</translation>
+        <translation>Verbinding geweigerd (tijdslimiet verstreken)</translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
@@ -2501,19 +2504,20 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>SSL handshake failed</source>
-        <translation>SSL handdruk is mislukt</translation>
+        <translation>SSL-handdruk is mislukt</translation>
     </message>
     <message>
         <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation type="vanished">HTTPS verbinding vereist maar SSL ondersteuning niet meegecompileerd</translation>
+        <translation>HTTPS-verbinding vereist maar SSL-ondersteuning is niet meegecompileerd</translation>
     </message>
     <message>
         <source>Too many redirects</source>
-        <translation type="unfinished"></translation>
+        <translation>Te veel omleidingen</translation>
     </message>
     <message>
         <source>Insecure redirect</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>&apos;insecure&apos; betekent hier niet &apos;onveilig&apos;, maar dat de lijn niet gecheckt is op veiligheid. Hij *zou* dus gewoon veilig kunnen zijn - RL 2017</translatorcomment>
+        <translation>Omleiding zonder veiligheidsgarantie</translation>
     </message>
 </context>
 <context>
@@ -2524,35 +2528,35 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Did not receive HTTP response from proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>Kreeg geen HTTP-antwoord van proxy</translation>
     </message>
     <message>
         <source>Error parsing authentication request from proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>Fout bij doorleiden authenticatieverzoek van proxy</translation>
     </message>
     <message>
         <source>Proxy denied connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Proxy weigerde verbinding</translation>
     </message>
     <message>
         <source>Error communicating with HTTP proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>Fout bij communicatie met HTTP-proxy</translation>
     </message>
     <message>
         <source>Proxy server not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Proxyserver niet gevonden</translation>
     </message>
     <message>
         <source>Proxy connection refused</source>
-        <translation type="unfinished"></translation>
+        <translation>Proxyverbinding geweigerd</translation>
     </message>
     <message>
         <source>Proxy server connection timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>Verbinding proxyserver timeout</translation>
     </message>
     <message>
         <source>Proxy connection closed prematurely</source>
-        <translation type="unfinished"></translation>
+        <translation>Proxyverbinding voortijdig verbroken</translation>
     </message>
 </context>
 <context>
@@ -2598,51 +2602,51 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Could not get array data</source>
-        <translation>Kan geen array gegevens ophalen</translation>
+        <translation>Kan geen array-gegevens ophalen</translation>
     </message>
     <message>
         <source>Could not get query info</source>
-        <translation>Kan geen array informatie ophalen</translation>
+        <translation>Kan geen query-informatie ophalen</translation>
     </message>
     <message>
         <source>Could not start transaction</source>
-        <translation>Kan de transactie niet starten</translation>
+        <translation>Kon transactie niet starten</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Kan de transactie niet toepassen</translation>
+        <translation>Kan transactie niet toepassen</translation>
     </message>
     <message>
         <source>Could not allocate statement</source>
-        <translation>Kan de instructie niet toewijzen</translation>
+        <translation>Kan instructie niet toewijzen</translation>
     </message>
     <message>
         <source>Could not prepare statement</source>
-        <translation>Kan de instructie niet voorbereiden</translation>
+        <translation>Kan instructie niet voorbereiden</translation>
     </message>
     <message>
         <source>Could not describe input statement</source>
-        <translation>Kan de invoerinstructie niet beschrijven</translation>
+        <translation>Kan invoerinstructie niet beschrijven</translation>
     </message>
     <message>
         <source>Could not describe statement</source>
-        <translation>Kan de instructie niet beschrijven</translation>
+        <translation>Kan instructie niet beschrijven</translation>
     </message>
     <message>
         <source>Unable to close statement</source>
-        <translation>Kan de instructie niet afsluiten</translation>
+        <translation>Kan instructie niet afsluiten</translation>
     </message>
     <message>
         <source>Unable to execute query</source>
-        <translation>Kan de zoekvraag niet uitvoeren</translation>
+        <translation>Kan query niet uitvoeren</translation>
     </message>
     <message>
         <source>Could not fetch next item</source>
-        <translation>Kan het volgende item niet ophalen</translation>
+        <translation>Kan volgende item niet ophalen</translation>
     </message>
     <message>
         <source>Could not get statement info</source>
-        <translation>Kan geen informatie over de instructie krijgen</translation>
+        <translation>Kan geen instructie-informatie krijgen</translation>
     </message>
 </context>
 <context>
@@ -2669,179 +2673,182 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>file to open is a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>bestand te openen is een map</translation>
     </message>
 </context>
 <context>
     <name>QImageReader</name>
     <message>
         <source>Invalid device</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldig apparaat</translation>
     </message>
     <message>
         <source>File not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestand niet gevonden</translation>
     </message>
     <message>
         <source>Unsupported image format</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>gaat hiet niet over afbeeldingen</translatorcomment>
+        <translation>Niet-ondersteund image-formaat</translation>
     </message>
     <message>
         <source>Unable to read image data</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan image-data niet lezen</translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation type="unfinished">Onbekende fout</translation>
+        <translation>Onbekende fout</translation>
     </message>
 </context>
 <context>
     <name>QImageWriter</name>
     <message>
         <source>Unknown error</source>
-        <translation type="unfinished">Onbekende fout</translation>
+        <translation>Onbekende fout</translation>
     </message>
     <message>
         <source>Device is not set</source>
-        <translation type="unfinished"></translation>
+        <translation>Apparaat is niet opgezet</translation>
     </message>
     <message>
         <source>Device not writable</source>
-        <translation type="unfinished"></translation>
+        <translation>Apparaat is niet schrijfbaar</translation>
     </message>
     <message>
         <source>Unsupported image format</source>
-        <translation type="unfinished"></translation>
+        <translation>Niet-ondersteund image-formaat</translation>
     </message>
 </context>
 <context>
     <name>QInputContext</name>
     <message>
         <source>XIM</source>
-        <translation type="vanished">XIM</translation>
+        <translation>XIM</translation>
     </message>
     <message>
         <source>XIM input method</source>
-        <translation type="vanished">XIM invoermethode</translation>
+        <translation>XIM invoermethode</translation>
     </message>
     <message>
         <source>Windows input method</source>
-        <translation type="vanished">Windows invoermethode</translation>
+        <translation>Windows invoermethode</translation>
     </message>
     <message>
         <source>Mac OS X input method</source>
-        <translation type="vanished">Mac OS X invoermethode</translation>
+        <translation>Mac OS X invoermethode</translation>
     </message>
 </context>
 <context>
     <name>QInputDialog</name>
     <message>
         <source>Enter a value:</source>
-        <translation type="unfinished"></translation>
+        <translation>Geef een waarde op:</translation>
     </message>
 </context>
 <context>
     <name>QJsonParseError</name>
     <message>
         <source>no error occurred</source>
-        <translation type="unfinished">Geen fout opgetreden</translation>
+        <translation>Geen fout opgetreden</translation>
     </message>
     <message>
         <source>unterminated object</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>terminated is een uitdrukking</translatorcomment>
+        <translation>unterminated object</translation>
     </message>
     <message>
         <source>missing name separator</source>
-        <translation type="unfinished"></translation>
+        <translation>Naamscheider ontbreekt</translation>
     </message>
     <message>
         <source>unterminated array</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>met een &apos;terminator&apos;: einde van apparatenketting</translatorcomment>
+        <translation>Array is niet terminated</translation>
     </message>
     <message>
         <source>missing value separator</source>
-        <translation type="unfinished"></translation>
+        <translation>Waardescheider ontbreekt</translation>
     </message>
     <message>
         <source>illegal value</source>
-        <translation type="unfinished"></translation>
+        <translation>illigale waarde</translation>
     </message>
     <message>
         <source>invalid termination by number</source>
-        <translation type="unfinished"></translation>
+        <translation>ongeldige beëindiging door nummer</translation>
     </message>
     <message>
         <source>illegal number</source>
-        <translation type="unfinished"></translation>
+        <translation>illigaal nummer</translation>
     </message>
     <message>
         <source>invalid escape sequence</source>
-        <translation type="unfinished"></translation>
+        <translation>ongeldige escape-sequentie</translation>
     </message>
     <message>
         <source>invalid UTF8 string</source>
-        <translation type="unfinished"></translation>
+        <translation>ongeldige UTF8-string</translation>
     </message>
     <message>
         <source>unterminated string</source>
-        <translation type="unfinished"></translation>
+        <translation>unterminated string</translation>
     </message>
     <message>
         <source>object is missing after a comma</source>
-        <translation type="unfinished"></translation>
+        <translation>object ontbreekt na een comma</translation>
     </message>
     <message>
         <source>too deeply nested document</source>
-        <translation type="unfinished"></translation>
+        <translation>document is te diep genest</translation>
     </message>
     <message>
         <source>too large document</source>
-        <translation type="unfinished"></translation>
+        <translation>document is te groot</translation>
     </message>
     <message>
         <source>garbage at the end of the document</source>
-        <translation type="unfinished"></translation>
+        <translation>rotzooi aan het eind van het document</translation>
     </message>
 </context>
 <context>
     <name>QKeySequenceEdit</name>
     <message>
         <source>Press shortcut</source>
-        <translation type="unfinished"></translation>
+        <translation>Druk op snelkoppeling</translation>
     </message>
     <message>
         <source>%1, ...</source>
         <extracomment>This text is an &quot;unfinished&quot; shortcut, expands like &quot;Ctrl+A, ...&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1, ...</translation>
     </message>
 </context>
 <context>
     <name>QLibrary</name>
     <message>
         <source>QLibrary::load_sys: Cannot load %1 (%2)</source>
-        <translation type="vanished">QLibrary::load_sys: %1 kan niet worden geladen (%2)</translation>
+        <translation>QLibrary::load_sys: %1 kan niet worden geladen (%2)</translation>
     </message>
     <message>
         <source>QLibrary::unload_sys: Cannot unload %1 (%2)</source>
-        <translation type="vanished">QLibrary::unload_sys: %1 kan niet worden ontladen (%2)</translation>
+        <translation>QLibrary::unload_sys: %1 kan niet worden ontladen (%2)</translation>
     </message>
     <message>
         <source>QLibrary::resolve_sys: Symbol &quot;%1&quot; undefined in %2 (%3)</source>
-        <translation type="vanished">QLibrary::resolve_sys: Het symbool &quot;%1&quot; is niet in %2 gedefinieerd (%3)</translation>
+        <translation>QLibrary::resolve_sys: Het symbool &quot;%1&quot; is niet in %2 gedefinieerd (%3)</translation>
     </message>
     <message>
         <source>Could not mmap &apos;%1&apos;: %2</source>
         <translatorcomment>EG - wat is mmap   RL - mmap is (op unix en -----x familie) een system call dat bestanden of apparaten mapt naar het geheugen (map/unmap), dus gewoon vertalen als &apos;mmappen&apos;</translatorcomment>
-        <translation type="vanished">Kan &apos;%1&apos;: %2 niet mmappen</translation>
+        <translation>Kan &apos;%1&apos;: %2 niet mmappen</translation>
     </message>
     <message>
         <source>Plugin verification data mismatch in &apos;%1&apos;</source>
-        <translation type="vanished">Plugin controle-gegevens komen niet overeen in &apos;%1</translation>
+        <translation>Plugin-controle-gegevens komen niet overeen in &apos;%1</translation>
     </message>
     <message>
         <source>Could not unmap &apos;%1&apos;: %2</source>
         <translatorcomment>EG - wat is unmap...RL - mmap is (op unix en -----x familie) een system call dat bestanden of apparaten mapt naar het geheugen (map/unmap), dus gewoon vertalen als &apos;unmappen&apos;</translatorcomment>
-        <translation type="vanished">kan &apos;%1&apos;: %2 niet unmappen</translation>
+        <translation>kan &apos;%1&apos;: %2 niet unmappen</translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
@@ -2850,7 +2857,7 @@ Wilt u het toch verwijderen?</translation>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
         <translatorcomment>RL - build key onvertaald laten</translatorcomment>
-        <translation type="vanished">Plugin &apos;%1&apos; gebruikt een Qt bibliotheek die niet compatibel is. Verwacht build key &quot;%2&quot; maar kreeg &quot;%3&quot;</translation>
+        <translation>Plugin &apos;%1&apos; gebruikt een Qt bibliotheek die niet compatibel is. Verwacht build key &quot;%2&quot; maar kreeg &quot;%3&quot;</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -2858,7 +2865,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>The shared library was not found.</source>
-        <translation>De dynamische bibliotheek is niet gevonden.</translation>
+        <translation>De gedeelde bibliotheek is niet gevonden.</translation>
     </message>
     <message>
         <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
@@ -2870,63 +2877,63 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not an ELF object (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; is geen ELF-object (%2)</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not an ELF object</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; is geen ELF-object</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is an invalid ELF object (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; is een ongeldig ELF-object (%2)</translation>
     </message>
     <message>
         <source>Failed to extract plugin meta data from &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan geen pluginmetadata van &apos;%1&apos; onttrekken</translation>
     </message>
     <message>
         <source>Cannot load library %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan bibliotheek %1 niet laden: %2</translation>
     </message>
     <message>
         <source>Cannot unload library %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan bibliotheek %1 niet ontladen: %2</translation>
     </message>
     <message>
         <source>Cannot resolve symbol &quot;%1&quot; in %2: %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan symbool &quot;%1&quot; in %2 niet oplossen: %3</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not a valid Mach-O binary (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; is geen geldig Mach-O-binary (%2)</translation>
     </message>
     <message>
         <source>file is corrupt</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestand gecorrumpeerd</translation>
     </message>
     <message>
         <source>file too small</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestand te klein</translation>
     </message>
     <message>
         <source>no suitable architecture in fat binary</source>
-        <translation type="unfinished"></translation>
+        <translation>geen geschikte architectuur in FAT-binary</translation>
     </message>
     <message>
         <source>invalid magic %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldig magic %1</translation>
     </message>
     <message>
         <source>wrong architecture</source>
-        <translation type="unfinished"></translation>
+        <translation>verkeerde architectuur</translation>
     </message>
     <message>
         <source>not a dynamic library</source>
-        <translation type="unfinished"></translation>
+        <translation>niet een dynamische bibliotheek</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not a Qt plugin</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; is geen Qt-plugin</translation>
     </message>
 </context>
 <context>
@@ -2995,15 +3002,15 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>%1: Socket access error</source>
-        <translation>%1:fout in de toegang naar de socket</translation>
+        <translation>%1: fout in toegang naar de socket</translation>
     </message>
     <message>
         <source>%1: Socket resource error</source>
-        <translation>%1:fout in de toegang naar de bron van de socket</translation>
+        <translation>%1: fout in toegang naar bron van socket</translation>
     </message>
     <message>
         <source>%1: Socket operation timed out</source>
-        <translation>%1: Tijdslimiet verstreken voor de socket actie</translation>
+        <translation>%1: Tijdslimiet verstreken voor socket-actie</translation>
     </message>
     <message>
         <source>%1: Datagram too large</source>
@@ -3015,7 +3022,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>%1: The socket operation is not supported</source>
-        <translation>%1: Deze socket actie wordt niet ondersteund</translation>
+        <translation>%1: Deze socketactie wordt niet ondersteund</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
@@ -3023,26 +3030,26 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>%1: Operation not permitted when socket is in this state</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Operatie niet toegestaan indien socket in deze staat is</translation>
     </message>
     <message>
         <source>%1: Unknown error</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: onbekende fout</translation>
     </message>
     <message>
         <source>Trying to connect while connection is in progress</source>
-        <translation type="unfinished"></translation>
+        <translation>Proberen te verbinden terwijl opzetten verbinding bezig is</translation>
     </message>
     <message>
         <source>%1: Access denied</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Toegang geweigerd</translation>
     </message>
 </context>
 <context>
     <name>QMYSQLDriver</name>
     <message>
         <source>Unable to open database &apos;</source>
-        <translation type="vanished">Kan de database niet openen &apos;</translation>
+        <translation>Kan de database niet openen &apos;</translation>
     </message>
     <message>
         <source>Unable to connect</source>
@@ -3062,11 +3069,11 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Unable to allocate a MYSQL object</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan een MYSQL-object niet alloceren</translation>
     </message>
     <message>
         <source>Unable to open database &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan database &apos;%1&apos; niet openen</translation>
     </message>
 </context>
 <context>
@@ -3153,7 +3160,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>&amp;Omvang</translation>
+        <translation>&amp;Grootte</translation>
     </message>
     <message>
         <source>Mi&amp;nimize</source>
@@ -3205,15 +3212,15 @@ Wilt u het toch verwijderen?</translation>
     <name>QMenu</name>
     <message>
         <source>Close</source>
-        <translation type="vanished">Sluiten</translation>
+        <translation>Sluiten</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="vanished">Openen</translation>
+        <translation>Openen</translation>
     </message>
     <message>
         <source>Execute</source>
-        <translation type="vanished">Uitvoeren</translation>
+        <translation>Uitvoeren</translation>
     </message>
 </context>
 <context>
@@ -3233,11 +3240,11 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Dit programma gebruikt Qt versie %1.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Dit programma gebruikt Qt versie %1.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Show Details...</source>
-        <translation>Details weergeven...</translation>
+        <translation>Details tonen...</translation>
     </message>
     <message>
         <source>Hide Details...</source>
@@ -3245,19 +3252,20 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Dit programma gebruikt Qt Open Source editie versie %1.&lt;/p&gt;&lt;p&gt;Qt Open Source editie is bedoeld voor het ontwikkelen van Open Source applicaties. U hebt een commerciële Qt license nodig voor het ontwikkelen van proprietary (closed source) applicaties.&lt;/p&gt;&lt;p&gt;Kijk bij &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; voor een overzicht van Qt licenties.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Dit programma gebruikt Qt Open Source editie versie %1.&lt;/p&gt;&lt;p&gt;Qt Open Source editie is bedoeld voor het ontwikkelen van Open Source applicaties. U hebt een commerciële Qt license nodig voor het ontwikkelen van proprietary (closed source) applicaties.&lt;/p&gt;&lt;p&gt;Kijk bij &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; voor een overzicht van Qt licenties.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;h3&gt;Info over Qt&lt;/h3&gt;%1&lt;p&gt;Qt is een C++ gereedschapskist voor applicatie-ontwikkeling over platformen heen.&lt;/p&gt;&lt;p&gt;Qt levert één enkele bron overdraagbaarheid met MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux en alle belangrijke commerciële Unix varianten. Qt is ook beschikbaar voor ingebouwde apparaten zoals Qt Embedded Linux en Qt voor Windows CE.&lt;/p&gt;&lt;p&gt;Qt is een Nokia product. Kijk bij &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; voor meer informatie.&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;Info over Qt&lt;/h3&gt;%1&lt;p&gt;Qt is een C++ gereedschapskist voor applicatie-ontwikkeling over platformen heen.&lt;/p&gt;&lt;p&gt;Qt levert één enkele bron overdraagbaarheid met MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux en alle belangrijke commerciële Unix varianten. Qt is ook beschikbaar voor ingebouwde apparaten zoals Qt Embedded Linux en Qt voor Windows CE.&lt;/p&gt;&lt;p&gt;Qt is een Nokia product. Kijk bij &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; voor meer informatie.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Over Qt&lt;/h3&gt;&lt;p&gt;Dit programma gebruikt Qt-versie %1.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>Juridische disclaimers e.d. altijd onvertaald laten omdat vaak de bedoeling met vertaling kan veranderen.</translatorcomment>
+        <translation>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -3265,18 +3273,18 @@ Wilt u het toch verwijderen?</translation>
     <message>
         <source>Select IM</source>
         <translatorcomment>EG - wat is IM   RL - Ik weet het ook niet zeker, maar het zou zomaar kunnen dat hier -gezien de context- &apos;Input Method&apos; wordt afgekort</translatorcomment>
-        <translation type="vanished">Selecteer IM</translation>
+        <translation>Selecteer IM</translation>
     </message>
 </context>
 <context>
     <name>QMultiInputContextPlugin</name>
     <message>
         <source>Multiple input method switcher</source>
-        <translation type="vanished">Schakelaar tussen invoermethodes</translation>
+        <translation>Schakelaar tussen invoermethodes</translation>
     </message>
     <message>
         <source>Multiple input method switcher that uses the context menu of the text widgets</source>
-        <translation type="vanished">Schakelaar tussen invoermethodes die gebruik maakt van het context menu of de tekst-widgets</translation>
+        <translation>Schakelaar tussen invoermethodes die gebruik maakt van het context menu of de tekst-widgets</translation>
     </message>
 </context>
 <context>
@@ -3287,7 +3295,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Network operation timed out</source>
-        <translation>Tijdslimiet van de netwerk operatie is verlopen</translation>
+        <translation>Tijdslimiet van netwerkoperatie is verlopen</translation>
     </message>
     <message>
         <source>Out of resources</source>
@@ -3304,7 +3312,7 @@ Wilt u het toch verwijderen?</translation>
     <message>
         <source>Invalid socket descriptor</source>
         <translatorcomment>EG - Wat is een descriptor  RL - Heel kort door de bocht: een beschrijver (zoals sockfd) hoe de socket moet worden benaderd. Techterm, onvertaald laten</translatorcomment>
-        <translation>Ongeldige socket descriptor</translation>
+        <translation>Ongeldige socket-descriptor</translation>
     </message>
     <message>
         <source>Network unreachable</source>
@@ -3348,11 +3356,11 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Network error</source>
-        <translation>Netwerk fout</translation>
+        <translation>Netwerkfout</translation>
     </message>
     <message>
         <source>Another socket is already listening on the same port</source>
-        <translation>Eenn andere socket luistert al op dezelfde poort</translation>
+        <translation>Een andere socket luistert al op dezelfde poort</translation>
     </message>
     <message>
         <source>Unable to initialize non-blocking socket</source>
@@ -3362,11 +3370,11 @@ Wilt u het toch verwijderen?</translation>
     <message>
         <source>Unable to initialize broadcast socket</source>
         <translatorcomment>RL - broadcast socket: techterm, niet vertalen</translatorcomment>
-        <translation>Kan broadcast socket niet initialiseren</translation>
+        <translation>Kan broadcast-socket niet initialiseren</translation>
     </message>
     <message>
         <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
-        <translation>Poging IPv6 socket te gebruiken op een platform dat IPv6 niet ondersteund</translation>
+        <translation>Poging IPv6-socket te gebruiken op een platform dat IPv6 niet ondersteund</translation>
     </message>
     <message>
         <source>Host unreachable</source>
@@ -3390,44 +3398,44 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Temporary error</source>
-        <translation type="unfinished"></translation>
+        <translation>Tijdelijke fout</translation>
     </message>
     <message>
         <source>Network dropped connection on reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Netwerk verbrak verbinding bij reset</translation>
     </message>
     <message>
         <source>Connection reset by peer</source>
-        <translation type="unfinished"></translation>
+        <translation>Verbinding door peer gereset</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessCacheBackend</name>
     <message>
         <source>Error opening %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Fout bij openen van %1</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessDataBackend</name>
     <message>
         <source>Invalid URI: %1</source>
-        <translation type="unfinished">Ongeldige URI: %1</translation>
+        <translation>Ongeldige URI: %1</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessDebugPipeBackend</name>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation type="unfinished">Schrijffout bij het schrijven naar %1: %2</translation>
+        <translation>Schrijffout bij het schrijven naar %1: %2</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
-        <translation type="unfinished">Socket fout op %1: %2</translation>
+        <translation>Socketfout op %1: %2</translation>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
-        <translation type="unfinished">Host op afstand heeft de verbinding voortijdig verbroken op %1</translation>
+        <translation>Host-op-afstand heeft de verbinding voortijdig verbroken op %1</translation>
     </message>
 </context>
 <context>
@@ -3473,21 +3481,21 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>No suitable proxy found</source>
-        <translation type="unfinished"></translation>
+        <translation>Geen geschikte proxy gevonden</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessManager</name>
     <message>
         <source>Network access is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Netwerktoegang is uitgeschakeld.</translation>
     </message>
 </context>
 <context>
     <name>QNetworkReply</name>
     <message>
         <source>Error downloading %1 - server replied: %2</source>
-        <translation type="vanished">Fout tijdens het downloaden %1 - server antwoordde: %2</translation>
+        <translation>Fout tijdens het downloaden %1 - server antwoordde: %2</translation>
     </message>
     <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
@@ -3495,34 +3503,34 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Error transferring %1 - server replied: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Fout bij overbrengen %1 - server antwoordde: %2</translation>
     </message>
     <message>
         <source>Background request not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Achtergrondverzoek niet toegestaan.</translation>
     </message>
     <message>
         <source>Network session error.</source>
-        <translation type="unfinished"></translation>
+        <translation>Netwerksessiefout.</translation>
     </message>
     <message>
         <source>backend start error.</source>
-        <translation type="unfinished"></translation>
+        <translation>backend startfout.</translation>
     </message>
     <message>
         <source>Temporary network failure.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tijdelijk netwerkfalen.</translation>
     </message>
 </context>
 <context>
     <name>QNetworkReplyHttpImpl</name>
     <message>
         <source>Operation canceled</source>
-        <translation type="unfinished">Operatie geanulleerd</translation>
+        <translation>Operatie geanulleerd</translation>
     </message>
     <message>
         <source>No suitable proxy found</source>
-        <translation type="unfinished"></translation>
+        <translation>Geen geschikte proxy gevonden</translation>
     </message>
 </context>
 <context>
@@ -3536,30 +3544,30 @@ Wilt u het toch verwijderen?</translation>
     <name>QNetworkSession</name>
     <message>
         <source>Invalid configuration.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongeldige configuratie.</translation>
     </message>
 </context>
 <context>
     <name>QNetworkSessionPrivateImpl</name>
     <message>
         <source>Unknown session error.</source>
-        <translation type="unfinished"></translation>
+        <translation>Onbekende sessiefout.</translation>
     </message>
     <message>
         <source>The session was aborted by the user or system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sessie werd afgebroken door gebruiker of systeem.</translation>
     </message>
     <message>
         <source>The requested operation is not supported by the system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verzochte operatie wordt door systeem niet ondersteund.</translation>
     </message>
     <message>
         <source>The specified configuration cannot be used.</source>
-        <translation type="unfinished"></translation>
+        <translation>Opgegeven configuratie kan niet worden gebruikt.</translation>
     </message>
     <message>
         <source>Roaming was aborted or is not possible.</source>
-        <translation type="unfinished"></translation>
+        <translation>Roaming werd afgebroken of is niet mogelijk.</translation>
     </message>
 </context>
 <context>
@@ -3614,7 +3622,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Unable to execute select statement</source>
-        <translation type="vanished">Kan de select-instructie niet uitvoeren</translation>
+        <translation>Kan de select-instructie niet uitvoeren</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
@@ -3622,7 +3630,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Unable to get statement type</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan statementtype niet bepalen</translation>
     </message>
 </context>
 <context>
@@ -3633,7 +3641,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
-        <translation type="vanished">Kan geen verbinding maken - Stuurprogramma ondersteunt niet alle benodigde functionaliteiten</translation>
+        <translation>Kan geen verbinding maken - Stuurprogramma ondersteunt niet alle benodigde functionaliteiten</translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
@@ -3653,7 +3661,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Unable to connect - Driver doesn&apos;t support all functionality required</source>
-        <translation type="unfinished"></translation>
+        <translation>Niet in staat te verbinden - Driver ondersteunt niet alle noodzakelijke functies</translation>
     </message>
 </context>
 <context>
@@ -3699,42 +3707,42 @@ Wilt u het toch verwijderen?</translation>
     <name>QObject</name>
     <message>
         <source>Operation not supported on %1</source>
-        <translation type="vanished">Operatie op %1 niet ondersteund</translation>
+        <translation>Operatie op %1 niet ondersteund</translation>
     </message>
     <message>
         <source>Invalid URI: %1</source>
-        <translation type="vanished">Ongeldige URI: %1</translation>
+        <translation>Ongeldige URI: %1</translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation type="vanished">Schrijffout bij het schrijven naar %1: %2</translation>
+        <translation>Schrijffout bij het schrijven naar %1: %2</translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation type="vanished">Leesfout bij het lezen van %1: %2</translation>
+        <translation>Leesfout bij het lezen van %1: %2</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
-        <translation type="vanished">Socket fout op %1: %2</translation>
+        <translation>Socket fout op %1: %2</translation>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
-        <translation type="vanished">Host op afstand heeft de verbinding voortijdig verbroken op %1</translation>
+        <translation>Host op afstand heeft de verbinding voortijdig verbroken op %1</translation>
     </message>
     <message>
         <source>Protocol error: packet of size 0 received</source>
-        <translation type="vanished">Protocolfout:pakket met grootte van 0 ontvangen</translation>
+        <translation>Protocolfout:pakket met grootte van 0 ontvangen</translation>
     </message>
 </context>
 <context>
     <name>QPPDOptionsModel</name>
     <message>
         <source>Name</source>
-        <translation type="vanished">Naam</translation>
+        <translation>Naam</translation>
     </message>
     <message>
         <source>Value</source>
-        <translation type="vanished">Waarde</translation>
+        <translation>Waarde</translation>
     </message>
 </context>
 <context>
@@ -3779,7 +3787,7 @@ Wilt u het toch verwijderen?</translation>
     <name>QPageSetupWidget</name>
     <message>
         <source>Centimeters (cm)</source>
-        <translation type="vanished">Centimeters (cm)</translation>
+        <translation>Centimeters (cm)</translation>
     </message>
     <message>
         <source>Millimeters (mm)</source>
@@ -3859,61 +3867,61 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Page Layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Pagina-layout</translation>
     </message>
     <message>
         <source>Page order:</source>
-        <translation type="unfinished"></translation>
+        <translation>Paginavolgorde:</translation>
     </message>
     <message>
         <source>Pages per sheet:</source>
-        <translation type="unfinished"></translation>
+        <translation>Pagina&apos;s per vel:</translation>
     </message>
     <message>
         <source>Pica (P̸)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pica (P̸)</translation>
     </message>
     <message>
         <source>Didot (DD)</source>
-        <translation type="unfinished"></translation>
+        <translation>Didot (DD)</translation>
     </message>
     <message>
         <source>Cicero (CC)</source>
-        <translation type="unfinished"></translation>
+        <translation>Cicero (CC)</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished">Aangepast</translation>
+        <translation>Aangepast</translation>
     </message>
     <message>
         <source>mm</source>
         <extracomment>Unit &apos;Millimeter&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>mm</translation>
     </message>
     <message>
         <source>pt</source>
         <extracomment>Unit &apos;Points&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>pt</translation>
     </message>
     <message>
         <source>in</source>
         <extracomment>Unit &apos;Inch&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>in</translation>
     </message>
     <message>
         <source>P̸</source>
         <extracomment>Unit &apos;Pica&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>P̸</translation>
     </message>
     <message>
         <source>DD</source>
         <extracomment>Unit &apos;Didot&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>DD</translation>
     </message>
     <message>
         <source>CC</source>
         <extracomment>Unit &apos;Cicero&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>CC</translation>
     </message>
 </context>
 <context>
@@ -3921,552 +3929,553 @@ Wilt u het toch verwijderen?</translation>
     <message>
         <source>Custom (%1mm x %2mm)</source>
         <extracomment>Custom size name in millimeters</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Aangepast (%1mm x %2mm)</translation>
     </message>
     <message>
         <source>Custom (%1pt x %2pt)</source>
         <extracomment>Custom size name in points</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Aangepast (%1pt x %2pt)</translation>
     </message>
     <message>
         <source>Custom (%1in x %2in)</source>
         <extracomment>Custom size name in inches</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Aangepast (%1in x %2in)</translation>
     </message>
     <message>
         <source>Custom (%1pc x %2pc)</source>
         <extracomment>Custom size name in picas</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Aangepast (%1pc x %2pc)</translation>
     </message>
     <message>
         <source>Custom (%1DD x %2DD)</source>
         <extracomment>Custom size name in didots</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Aangepast (%1DD x %2DD)</translation>
     </message>
     <message>
         <source>Custom (%1CC x %2CC)</source>
         <extracomment>Custom size name in ciceros</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Aangepast (%1CC x %2CC)</translation>
     </message>
     <message>
         <source>%1 x %2 in</source>
         <extracomment>Page size in &apos;Inch&apos;.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 x %2 in</translation>
     </message>
     <message>
         <source>A0</source>
-        <translation type="unfinished">A0</translation>
+        <translation>A0</translation>
     </message>
     <message>
         <source>A1</source>
-        <translation type="unfinished">A1</translation>
+        <translation>A1</translation>
     </message>
     <message>
         <source>A2</source>
-        <translation type="unfinished">A2</translation>
+        <translation>A2</translation>
     </message>
     <message>
         <source>A3</source>
-        <translation type="unfinished">A3</translation>
+        <translation>A3</translation>
     </message>
     <message>
         <source>A4</source>
-        <translation type="unfinished">A4</translation>
+        <translation>A4</translation>
     </message>
     <message>
         <source>A5</source>
-        <translation type="unfinished">A5</translation>
+        <translation>A5</translation>
     </message>
     <message>
         <source>A6</source>
-        <translation type="unfinished">A6</translation>
+        <translation>A6</translation>
     </message>
     <message>
         <source>A7</source>
-        <translation type="unfinished">A7</translation>
+        <translation>A7</translation>
     </message>
     <message>
         <source>A8</source>
-        <translation type="unfinished">A8</translation>
+        <translation>A8</translation>
     </message>
     <message>
         <source>A9</source>
-        <translation type="unfinished">A9</translation>
+        <translation>A9</translation>
     </message>
     <message>
         <source>A10</source>
-        <translation type="unfinished">A10</translation>
+        <translation>A10</translation>
     </message>
     <message>
         <source>B0</source>
-        <translation type="unfinished">B0</translation>
+        <translation>B0</translation>
     </message>
     <message>
         <source>B1</source>
-        <translation type="unfinished">B1</translation>
+        <translation>B1</translation>
     </message>
     <message>
         <source>B2</source>
-        <translation type="unfinished">B2</translation>
+        <translation>B2</translation>
     </message>
     <message>
         <source>B3</source>
-        <translation type="unfinished">B3</translation>
+        <translation>B3</translation>
     </message>
     <message>
         <source>B4</source>
-        <translation type="unfinished">B4</translation>
+        <translation>B4</translation>
     </message>
     <message>
         <source>B5</source>
-        <translation type="unfinished">B5</translation>
+        <translation>B5</translation>
     </message>
     <message>
         <source>B6</source>
-        <translation type="unfinished">B6</translation>
+        <translation>B6</translation>
     </message>
     <message>
         <source>B7</source>
-        <translation type="unfinished">B7</translation>
+        <translation>B7</translation>
     </message>
     <message>
         <source>B8</source>
-        <translation type="unfinished">B8</translation>
+        <translation>B8</translation>
     </message>
     <message>
         <source>B9</source>
-        <translation type="unfinished">B9</translation>
+        <translation>B9</translation>
     </message>
     <message>
         <source>B10</source>
-        <translation type="unfinished">B10</translation>
+        <translation>B10</translation>
     </message>
     <message>
         <source>Executive (7.5 x 10 in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Executive (7.5 x 10 in)</translation>
     </message>
     <message>
         <source>Executive (7.25 x 10.5 in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Executive (7.25 x 10.5 in)</translation>
     </message>
     <message>
         <source>Folio (8.27 x 13 in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Folio (8.27 x 13 in)</translation>
     </message>
     <message>
         <source>Legal</source>
-        <translation type="unfinished">Legal</translation>
+        <translation>Legal</translation>
     </message>
     <message>
         <source>Letter / ANSI A</source>
-        <translation type="unfinished"></translation>
+        <translation>Letter / ANSI A</translation>
     </message>
     <message>
         <source>Tabloid / ANSI B</source>
-        <translation type="unfinished"></translation>
+        <translation>Tabloid / ANSI B</translation>
     </message>
     <message>
         <source>Ledger / ANSI B</source>
-        <translation type="unfinished"></translation>
+        <translation>Ledger / ANSI B</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished">Aangepast</translation>
+        <translation>Aangepast</translation>
     </message>
     <message>
         <source>A3 Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>A3 Extra</translation>
     </message>
     <message>
         <source>A4 Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>A4 Extra</translation>
     </message>
     <message>
         <source>A4 Plus</source>
-        <translation type="unfinished"></translation>
+        <translation>A4 Plus</translation>
     </message>
     <message>
         <source>A4 Small</source>
-        <translation type="unfinished"></translation>
+        <translation>A4 Small</translation>
     </message>
     <message>
         <source>A5 Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>A5 Extra</translation>
     </message>
     <message>
         <source>B5 Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>B5 Extra</translation>
     </message>
     <message>
         <source>JIS B0</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B0</translation>
     </message>
     <message>
         <source>JIS B1</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B1</translation>
     </message>
     <message>
         <source>JIS B2</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B2</translation>
     </message>
     <message>
         <source>JIS B3</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B3</translation>
     </message>
     <message>
         <source>JIS B4</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B4</translation>
     </message>
     <message>
         <source>JIS B5</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B5</translation>
     </message>
     <message>
         <source>JIS B6</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B6</translation>
     </message>
     <message>
         <source>JIS B7</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B7</translation>
     </message>
     <message>
         <source>JIS B8</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B8</translation>
     </message>
     <message>
         <source>JIS B9</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B9</translation>
     </message>
     <message>
         <source>JIS B10</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B10</translation>
     </message>
     <message>
         <source>ANSI C</source>
-        <translation type="unfinished"></translation>
+        <translation>ANSI C</translation>
     </message>
     <message>
         <source>ANSI D</source>
-        <translation type="unfinished"></translation>
+        <translation>ANSI D</translation>
     </message>
     <message>
         <source>ANSI E</source>
-        <translation type="unfinished"></translation>
+        <translation>ANSI E</translation>
     </message>
     <message>
         <source>Legal Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>Legal Extra</translation>
     </message>
     <message>
         <source>Letter Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>Letter Extra</translation>
     </message>
     <message>
         <source>Letter Plus</source>
-        <translation type="unfinished"></translation>
+        <translation>Letter Plus</translation>
     </message>
     <message>
         <source>Letter Small</source>
-        <translation type="unfinished"></translation>
+        <translation>Letter Small</translation>
     </message>
     <message>
         <source>Tabloid Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>Tabloid Extra</translation>
     </message>
     <message>
         <source>Architect A</source>
-        <translation type="unfinished"></translation>
+        <translation>Architect A</translation>
     </message>
     <message>
         <source>Architect B</source>
-        <translation type="unfinished"></translation>
+        <translation>Architect B</translation>
     </message>
     <message>
         <source>Architect C</source>
-        <translation type="unfinished"></translation>
+        <translation>Architect C</translation>
     </message>
     <message>
         <source>Architect D</source>
-        <translation type="unfinished"></translation>
+        <translation>Architect D</translation>
     </message>
     <message>
         <source>Architect E</source>
-        <translation type="unfinished"></translation>
+        <translation>Architect E</translation>
     </message>
     <message>
         <source>Note</source>
-        <translation type="unfinished"></translation>
+        <translation>Note</translation>
     </message>
     <message>
         <source>Quarto</source>
-        <translation type="unfinished"></translation>
+        <translation>Quarto</translation>
     </message>
     <message>
         <source>Statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Statement</translation>
     </message>
     <message>
         <source>Super A</source>
-        <translation type="unfinished"></translation>
+        <translation>Super A</translation>
     </message>
     <message>
         <source>Super B</source>
-        <translation type="unfinished"></translation>
+        <translation>Super B</translation>
     </message>
     <message>
         <source>Postcard</source>
-        <translation type="unfinished"></translation>
+        <translation>Postcard</translation>
     </message>
     <message>
         <source>Double Postcard</source>
-        <translation type="unfinished"></translation>
+        <translation>Double Postcard</translation>
     </message>
     <message>
         <source>PRC 16K</source>
-        <translation type="unfinished"></translation>
+        <translation>PRC 16K</translation>
     </message>
     <message>
         <source>PRC 32K</source>
-        <translation type="unfinished"></translation>
+        <translation>PRC 32K</translation>
     </message>
     <message>
         <source>PRC 32K Big</source>
-        <translation type="unfinished"></translation>
+        <translation>PRC 32K Big</translation>
     </message>
     <message>
         <source>Fan-fold US (14.875 x 11 in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fan-fold US (14.875 x 11 in)</translation>
     </message>
     <message>
         <source>Fan-fold German (8.5 x 12 in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fan-fold German (8.5 x 12 in)</translation>
     </message>
     <message>
         <source>Fan-fold German Legal (8.5 x 13 in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fan-fold German Legal (8.5 x 13 in)</translation>
     </message>
     <message>
         <source>Envelope B4</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope B4</translation>
     </message>
     <message>
         <source>Envelope B5</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope B5</translation>
     </message>
     <message>
         <source>Envelope B6</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope B6</translation>
     </message>
     <message>
         <source>Envelope C0</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope C0</translation>
     </message>
     <message>
         <source>Envelope C1</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope C1</translation>
     </message>
     <message>
         <source>Envelope C2</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope C2</translation>
     </message>
     <message>
         <source>Envelope C3</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope C3</translation>
     </message>
     <message>
         <source>Envelope C4</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope C4</translation>
     </message>
     <message>
         <source>Envelope C5</source>
-        <translation type="unfinished"></translation>
+        <translation>v5</translation>
     </message>
     <message>
         <source>Envelope C6</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope C6</translation>
     </message>
     <message>
         <source>Envelope C65</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope C65</translation>
     </message>
     <message>
         <source>Envelope C7</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope C7</translation>
     </message>
     <message>
         <source>Envelope DL</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope DL</translation>
     </message>
     <message>
         <source>Envelope US 9</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope US 9</translation>
     </message>
     <message>
         <source>Envelope US 10</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope US 10</translation>
     </message>
     <message>
         <source>Envelope US 11</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope US 11</translation>
     </message>
     <message>
         <source>Envelope US 12</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope US 12</translation>
     </message>
     <message>
         <source>Envelope US 14</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope US 14</translation>
     </message>
     <message>
         <source>Envelope Monarch</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope Monarch</translation>
     </message>
     <message>
         <source>Envelope Personal</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope Personal</translation>
     </message>
     <message>
         <source>Envelope Chou 3</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope Chou 3</translation>
     </message>
     <message>
         <source>Envelope Chou 4</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope Chou 4</translation>
     </message>
     <message>
         <source>Envelope Invite</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope Invite</translation>
     </message>
     <message>
         <source>Envelope Italian</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope Italian</translation>
     </message>
     <message>
         <source>Envelope Kaku 2</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope Kaku 2</translation>
     </message>
     <message>
         <source>Envelope Kaku 3</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope Kaku 3</translation>
     </message>
     <message>
         <source>Envelope PRC 1</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope PRC 1</translation>
     </message>
     <message>
         <source>Envelope PRC 2</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope PRC 2</translation>
     </message>
     <message>
         <source>Envelope PRC 3</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope PRC 3</translation>
     </message>
     <message>
         <source>Envelope PRC 4</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope PRC 4</translation>
     </message>
     <message>
         <source>Envelope PRC 5</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope PRC 5</translation>
     </message>
     <message>
         <source>Envelope PRC 6</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope PRC 6</translation>
     </message>
     <message>
         <source>Envelope PRC 7</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope PRC 7</translation>
     </message>
     <message>
         <source>Envelope PRC 8</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope PRC 8</translation>
     </message>
     <message>
         <source>Envelope PRC 9</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope PRC 9</translation>
     </message>
     <message>
         <source>Envelope PRC 10</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope PRC 10</translation>
     </message>
     <message>
         <source>Envelope You 4</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope You 4</translation>
     </message>
 </context>
 <context>
     <name>QPlatformTheme</name>
     <message>
         <source>OK</source>
-        <translation type="unfinished">OK</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished">Opslaan</translation>
+        <translation>Opslaan</translation>
     </message>
     <message>
         <source>Save All</source>
-        <translation type="unfinished">Alles opslaan</translation>
+        <translation>Alles opslaan</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Openen</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation type="unfinished">&amp;Ja</translation>
+        <translation>&amp;Ja</translation>
     </message>
     <message>
         <source>Yes to &amp;All</source>
-        <translation type="unfinished">Ja op &amp;alles</translation>
+        <translation>Ja op &amp;alles</translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation type="unfinished">&amp;Nee</translation>
+        <translation>&amp;Nee</translation>
     </message>
     <message>
         <source>N&amp;o to All</source>
-        <translation type="unfinished">Nee op &amp;alles</translation>
+        <translation>Nee op &amp;alles</translation>
     </message>
     <message>
         <source>Abort</source>
-        <translation type="unfinished">Afbreken</translation>
+        <translation>Afbreken</translation>
     </message>
     <message>
         <source>Retry</source>
-        <translation type="unfinished">Nogmaals</translation>
+        <translation>Nogmaals</translation>
     </message>
     <message>
         <source>Ignore</source>
-        <translation type="unfinished">Negeren</translation>
+        <translation>Negeren</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Sluiten</translation>
+        <translation>Sluiten</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annuleren</translation>
+        <translation>Annuleren</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">Verwerpen</translation>
+        <translatorcomment>&apos;verwerpen&apos; werd te belgisch gezien, lol</translatorcomment>
+        <translation>Niet opslaan</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Hulp</translation>
+        <translation>Hulp</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Toepassen</translation>
+        <translation>Toepassen</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">Terugzetten</translation>
+        <translation>Terugzetten</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished">Standaards terugplaatsen</translation>
+        <translation>Standaardwaarden herstellen</translation>
     </message>
 </context>
 <context>
@@ -4484,15 +4493,15 @@ Wilt u het toch verwijderen?</translation>
     <name>QPrintDialog</name>
     <message>
         <source>locally connected</source>
-        <translation type="vanished">Locaal verbonden</translation>
+        <translation>Locaal verbonden</translation>
     </message>
     <message>
         <source>Aliases: %1</source>
-        <translation type="vanished">Aliases: %1</translation>
+        <translation>Aliases: %1</translation>
     </message>
     <message>
         <source>unknown</source>
-        <translation type="vanished">onbekend</translation>
+        <translation>onbekend</translation>
     </message>
     <message>
         <source>Print To File ...</source>
@@ -4518,127 +4527,127 @@ Kies een andere bestandsnaam.</translation>
     </message>
     <message>
         <source>A0</source>
-        <translation type="vanished">A0</translation>
+        <translation>A0</translation>
     </message>
     <message>
         <source>A1</source>
-        <translation type="vanished">A1</translation>
+        <translation>A1</translation>
     </message>
     <message>
         <source>A2</source>
-        <translation type="vanished">A2</translation>
+        <translation>A2</translation>
     </message>
     <message>
         <source>A3</source>
-        <translation type="vanished">A3</translation>
+        <translation>A3</translation>
     </message>
     <message>
         <source>A4</source>
-        <translation type="vanished">A4</translation>
+        <translation>A4</translation>
     </message>
     <message>
         <source>A5</source>
-        <translation type="vanished">A5</translation>
+        <translation>A5</translation>
     </message>
     <message>
         <source>A6</source>
-        <translation type="vanished">A6</translation>
+        <translation>A6</translation>
     </message>
     <message>
         <source>A7</source>
-        <translation type="vanished">A7</translation>
+        <translation>A7</translation>
     </message>
     <message>
         <source>A8</source>
-        <translation type="vanished">A8</translation>
+        <translation>A8</translation>
     </message>
     <message>
         <source>A9</source>
-        <translation type="vanished">A9</translation>
+        <translation>A9</translation>
     </message>
     <message>
         <source>B0</source>
-        <translation type="vanished">B0</translation>
+        <translation>B0</translation>
     </message>
     <message>
         <source>B1</source>
-        <translation type="vanished">B1</translation>
+        <translation>B1</translation>
     </message>
     <message>
         <source>B2</source>
-        <translation type="vanished">B2</translation>
+        <translation>B2</translation>
     </message>
     <message>
         <source>B3</source>
-        <translation type="vanished">B3</translation>
+        <translation>B3</translation>
     </message>
     <message>
         <source>B4</source>
-        <translation type="vanished">B4</translation>
+        <translation>B4</translation>
     </message>
     <message>
         <source>B5</source>
-        <translation type="vanished">B5</translation>
+        <translation>B5</translation>
     </message>
     <message>
         <source>B6</source>
-        <translation type="vanished">B6</translation>
+        <translation>B6</translation>
     </message>
     <message>
         <source>B7</source>
-        <translation type="vanished">B7</translation>
+        <translation>B7</translation>
     </message>
     <message>
         <source>B8</source>
-        <translation type="vanished">B8</translation>
+        <translation>B8</translation>
     </message>
     <message>
         <source>B9</source>
-        <translation type="vanished">B9</translation>
+        <translation>B9</translation>
     </message>
     <message>
         <source>B10</source>
-        <translation type="vanished">B10</translation>
+        <translation>B10</translation>
     </message>
     <message>
         <source>C5E</source>
-        <translation type="vanished">C5E</translation>
+        <translation>C5E</translation>
     </message>
     <message>
         <source>DLE</source>
-        <translation type="vanished">DLE</translation>
+        <translation>DLE</translation>
     </message>
     <message>
         <source>Executive</source>
-        <translation type="vanished">Executive</translation>
+        <translation>Executive</translation>
     </message>
     <message>
         <source>Folio</source>
-        <translation type="vanished">Folio</translation>
+        <translation>Folio</translation>
     </message>
     <message>
         <source>Ledger</source>
-        <translation type="vanished">Ledger</translation>
+        <translation>Ledger</translation>
     </message>
     <message>
         <source>Legal</source>
-        <translation type="vanished">Legal</translation>
+        <translation>Legal</translation>
     </message>
     <message>
         <source>Letter</source>
-        <translation type="vanished">Letter</translation>
+        <translation>Letter</translation>
     </message>
     <message>
         <source>Tabloid</source>
-        <translation type="vanished">Tabloid</translation>
+        <translation>Tabloid</translation>
     </message>
     <message>
         <source>US Common #10 Envelope</source>
-        <translation type="vanished">US Common #10 Envelope</translation>
+        <translation>US Common #10 Envelope</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="vanished">Aangepast</translation>
+        <translation>Aangepast</translation>
     </message>
     <message>
         <source>&amp;Options &gt;&gt;</source>
@@ -4658,7 +4667,7 @@ Kies een andere bestandsnaam.</translation>
     </message>
     <message>
         <source>Print to File (Postscript)</source>
-        <translation type="vanished">Afdrukken naar bestand (Postscript)</translation>
+        <translation>Afdrukken naar bestand (Postscript)</translation>
     </message>
     <message>
         <source>Local file</source>
@@ -4666,107 +4675,109 @@ Kies een andere bestandsnaam.</translation>
     </message>
     <message>
         <source>Write %1 file</source>
-        <translation type="vanished">Schrijf %1 bestand</translation>
+        <translation>Schrijf %1 bestand</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished"></translation>
+        <translation>Afdrukken</translation>
     </message>
     <message>
         <source>Left to Right, Top to Bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>Links naar rechts, boven naar onder</translation>
     </message>
     <message>
         <source>Left to Right, Bottom to Top</source>
-        <translation type="unfinished"></translation>
+        <translation>Links naar rechts, onder naar boven</translation>
     </message>
     <message>
         <source>Right to Left, Bottom to Top</source>
-        <translation type="unfinished"></translation>
+        <translation>Rechts naar links, onder naar boven</translation>
     </message>
     <message>
         <source>Right to Left, Top to Bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>Rechts naar links, boven naar onder</translation>
     </message>
     <message>
         <source>Bottom to Top, Left to Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Onder naar boven, links naar rechts</translation>
     </message>
     <message>
         <source>Bottom to Top, Right to Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Onder naar boven, rechts naar links</translation>
     </message>
     <message>
         <source>Top to Bottom, Left to Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Boven naar onder, links naar rechts</translation>
     </message>
     <message>
         <source>Top to Bottom, Right to Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Boven naar onder, rechts naar links</translation>
     </message>
     <message>
         <source>1 (1x1)</source>
-        <translation type="unfinished"></translation>
+        <translation>1 (1x1)</translation>
     </message>
     <message>
         <source>2 (2x1)</source>
-        <translation type="unfinished"></translation>
+        <translation>2 (2x1)</translation>
     </message>
     <message>
         <source>4 (2x2)</source>
-        <translation type="unfinished"></translation>
+        <translation>4 (2x2)</translation>
     </message>
     <message>
         <source>6 (2x3)</source>
-        <translation type="unfinished"></translation>
+        <translation>6 (2x3)</translation>
     </message>
     <message>
         <source>9 (3x3)</source>
-        <translation type="unfinished"></translation>
+        <translation>9 (3x3)</translation>
     </message>
     <message>
         <source>16 (4x4)</source>
-        <translation type="unfinished"></translation>
+        <translation>16 (4x4)</translation>
     </message>
     <message>
         <source>All Pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle pagina&apos;s</translation>
     </message>
     <message>
         <source>Odd Pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Oneven pagina&apos;s</translation>
     </message>
     <message>
         <source>Even Pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Even pagina&apos;s</translation>
     </message>
     <message>
         <source>Write PDF file</source>
-        <translation type="unfinished"></translation>
+        <translation>PDF-bestand schrijven</translation>
     </message>
     <message>
         <source>Options &apos;Pages Per Sheet&apos; and &apos;Page Set&apos; cannot be used together.
 Please turn one of those options off.</source>
-        <translation type="unfinished"></translation>
+        <translation>Opties &apos;Pagina&apos;s per vel&apos; en &apos;Paginaset&apos; kunnen niet samen worden gebruikt.
+Schakel één van beide uit.</translation>
     </message>
     <message>
         <source>The &apos;From&apos; value cannot be greater than the &apos;To&apos; value.</source>
-        <translation type="unfinished"></translation>
+        <translation>De &apos;Van&apos;-waarde mag niet groter zijn dan de &apos;Naar&apos;-waarde.</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">OK</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatisch</translation>
     </message>
 </context>
 <context>
     <name>QPrintPreviewDialog</name>
     <message>
         <source>Page Setup</source>
-        <translation>Pagina Instelling</translation>
+        <translatorcomment>Bron: Download IATE, European Union, 2017.</translatorcomment>
+        <translation>Paginaset</translation>
     </message>
     <message>
         <source>Print Preview</source>
@@ -4814,15 +4825,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Show single page</source>
-        <translation>Geeft een enkele pagina weer</translation>
+        <translation>Enkele pagina tonen</translation>
     </message>
     <message>
         <source>Show facing pages</source>
-        <translation>Geef tegenoverliggende pagina&apos;s weer</translation>
+        <translation>Tegenoverliggende pagina&apos;s tonen</translation>
     </message>
     <message>
         <source>Show overview of all pages</source>
-        <translation>Geef een overzicht met alle pagina&apos;s</translation>
+        <translation>Overzicht met alle pagina&apos;s tonen</translation>
     </message>
     <message>
         <source>Print</source>
@@ -4834,26 +4845,26 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Close</source>
-        <translation type="vanished">Sluiten</translation>
+        <translation>Sluiten</translation>
     </message>
     <message>
         <source>%1%</source>
-        <translation type="unfinished"></translation>
+        <translation>%1%</translation>
     </message>
     <message>
         <source>Export to PDF</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporteren naar PDF</translation>
     </message>
 </context>
 <context>
     <name>QPrintPropertiesDialog</name>
     <message>
         <source>Printer Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Printereigenschappen</translation>
     </message>
     <message>
         <source>Job Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Taakopties</translation>
     </message>
 </context>
 <context>
@@ -4868,7 +4879,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Advanced</source>
-        <translation type="vanished">Geavanceerd</translation>
+        <translation>Geavanceerd</translation>
     </message>
 </context>
 <context>
@@ -4952,11 +4963,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Current Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Huidige pagina</translation>
     </message>
     <message>
         <source>Page Set:</source>
-        <translation type="unfinished"></translation>
+        <translation>Paginaset:</translation>
     </message>
 </context>
 <context>
@@ -5002,43 +5013,43 @@ Please turn one of those options off.</source>
     <name>QProcess</name>
     <message>
         <source>Process failed to start</source>
-        <translation type="unfinished"></translation>
+        <translation>Proces kon niet starten</translation>
     </message>
     <message>
         <source>Process crashed</source>
-        <translation type="unfinished"></translation>
+        <translation>Proces crashte</translation>
     </message>
     <message>
         <source>Process operation timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>Procesuitvoering oversteeg tijdslimiet</translation>
     </message>
     <message>
         <source>Error reading from process</source>
-        <translation type="unfinished"></translation>
+        <translation>Fout bij het lezen van proces</translation>
     </message>
     <message>
         <source>Error writing to process</source>
-        <translation type="unfinished"></translation>
+        <translation>Fout bij het schrijven naar proces</translation>
     </message>
     <message>
         <source>No program defined</source>
-        <translation type="unfinished"></translation>
+        <translation>Geen programma gedefinieerd</translation>
     </message>
     <message>
         <source>Could not open input redirection for reading</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan input-redirection niet openen om te lezen</translation>
     </message>
     <message>
         <source>Resource error (fork failure): %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Bronfout (vorkfalen); %1</translation>
     </message>
     <message>
         <source>Could not open output redirection for writing</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan output-redirection niet openen om te lezen</translation>
     </message>
     <message>
         <source>Process failed to start: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Proces kon niet starten: %1</translation>
     </message>
 </context>
 <context>
@@ -5052,28 +5063,28 @@ Please turn one of those options off.</source>
     <name>QPushButton</name>
     <message>
         <source>Open</source>
-        <translation type="vanished">Openen</translation>
+        <translation>Openen</translation>
     </message>
 </context>
 <context>
     <name>QQnxFileDialogHelper</name>
     <message>
         <source>All files (*.*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle bestanden (*.*)</translation>
     </message>
 </context>
 <context>
     <name>QQnxFilePicker</name>
     <message>
         <source>Pick a file</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestand kiezen</translation>
     </message>
 </context>
 <context>
     <name>QRadioButton</name>
     <message>
         <source>Check</source>
-        <translation type="vanished">Controleer</translation>
+        <translation>Controleer</translation>
     </message>
 </context>
 <context>
@@ -5088,15 +5099,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>bad char class syntax</source>
-        <translation>Verkeerd teken in zinsbouw klasse</translation>
+        <translation>Verkeerde tekenklasse in zinsbouw</translation>
     </message>
     <message>
         <source>bad lookahead syntax</source>
-        <translation>Verkeerde zinsbouw voor vooruitkijken</translation>
+        <translation>Verkeerde zinsbouw voor lookahead</translation>
     </message>
     <message>
         <source>bad repetition syntax</source>
-        <translation>Verkeerde zinsbouw herhalingen</translation>
+        <translation>Verkeerde herhalingszinsbouw</translation>
     </message>
     <message>
         <source>invalid octal value</source>
@@ -5104,7 +5115,8 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>missing left delim</source>
-        <translation>Mist linker begrenzing</translation>
+        <translatorcomment>delim=delimiter</translatorcomment>
+        <translation>Mis linker delimiter</translation>
     </message>
     <message>
         <source>unexpected end</source>
@@ -5116,66 +5128,66 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>lookbehinds not supported, see QTBUG-2371</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;lookbehinds&apos; wordt niet ondersteund, zie QTBUG-2371</translation>
     </message>
     <message>
         <source>invalid interval</source>
-        <translation type="unfinished"></translation>
+        <translation>ongeldige interval</translation>
     </message>
     <message>
         <source>invalid category</source>
-        <translation type="unfinished"></translation>
+        <translation>ongeldige categorie</translation>
     </message>
 </context>
 <context>
     <name>QRegularExpression</name>
     <message>
         <source>no error</source>
-        <translation type="unfinished"></translation>
+        <translation>geen fout</translation>
     </message>
     <message>
         <source>\ at end of pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>\ aan eind van patroon</translation>
     </message>
     <message>
         <source>\c at end of pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>\c aan eind van patroon</translation>
     </message>
     <message>
         <source>unrecognized character follows \</source>
-        <translation type="unfinished"></translation>
+        <translation>niet-herkend teken volgt op \</translation>
     </message>
     <message>
         <source>numbers out of order in {} quantifier</source>
-        <translation type="unfinished"></translation>
+        <translation>nummers niet in goede volgorde in {} quantifier</translation>
     </message>
     <message>
         <source>number too big in {} quantifier</source>
-        <translation type="unfinished"></translation>
+        <translation>nummer te groot in {} quantifier</translation>
     </message>
     <message>
         <source>missing terminating ] for character class</source>
-        <translation type="unfinished"></translation>
+        <translation>mis beëindigende ] voor tekenklasse</translation>
     </message>
     <message>
         <source>invalid escape sequence in character class</source>
-        <translation type="unfinished"></translation>
+        <translation>ongeldige escape-sequentie in tekenklasse</translation>
     </message>
     <message>
         <source>range out of order in character class</source>
-        <translation type="unfinished"></translation>
+        <translation>buiten bereik van tekenklasse</translation>
     </message>
     <message>
         <source>nothing to repeat</source>
-        <translation type="unfinished"></translation>
+        <translation>niets te herhalen</translation>
     </message>
     <message>
         <source>internal error: unexpected repeat</source>
-        <translation type="unfinished"></translation>
+        <translation>interne fout: onverwachte herhaling</translation>
     </message>
     <message>
         <source>unrecognized character after (? or (?-</source>
-        <translation type="unfinished"></translation>
+        <translation>niet-herkend teken na (? of (?-</translation>
     </message>
     <message>
         <source>POSIX named classes are supported only within a class</source>
@@ -5466,7 +5478,7 @@ Please turn one of those options off.</source>
     <name>QSQLite2Driver</name>
     <message>
         <source>Error to open database</source>
-        <translation type="vanished">Kan de database niet openen</translation>
+        <translation>Kan de database niet openen</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
@@ -5478,15 +5490,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Unable to rollback Transaction</source>
-        <translation type="vanished">Kan de transactie niet terugdraaien</translation>
+        <translation>Kan de transactie niet terugdraaien</translation>
     </message>
     <message>
         <source>Error opening database</source>
-        <translation type="unfinished">Kan de database niet openen</translation>
+        <translation>Kan de database niet openen</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation type="unfinished">Kan de transactie niet terugdraaien</translation>
+        <translation>Kan de transactie niet terugdraaien</translation>
     </message>
 </context>
 <context>
@@ -5551,22 +5563,22 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Unable to execute multiple statements at a time</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan meerdere instructies niet tegelijkertijd uitvoeren</translation>
     </message>
 </context>
 <context>
     <name>QSaveFile</name>
     <message>
         <source>Existing file %1 is not writable</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestaand bestand %1 is niet-schrijfbaar</translation>
     </message>
     <message>
         <source>Filename refers to a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestandsnaam verwijst naar een map</translation>
     </message>
     <message>
         <source>Writing canceled by application</source>
-        <translation type="unfinished"></translation>
+        <translation>Schrijven geannuleerd door applicatie</translation>
     </message>
 </context>
 <context>
@@ -5625,15 +5637,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Line up</source>
-        <translation type="vanished">Regel naar boven</translation>
+        <translation>Regel naar boven</translation>
     </message>
     <message>
         <source>Position</source>
-        <translation type="vanished">Positie</translation>
+        <translation>Positie</translation>
     </message>
     <message>
         <source>Line down</source>
-        <translation type="vanished">Regel naar beneden</translation>
+        <translation>Regel naar beneden</translation>
     </message>
 </context>
 <context>
@@ -5664,7 +5676,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
-        <translation type="vanished">%1: bestaat niet</translation>
+        <translation>%1: bestaat niet</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
@@ -5680,7 +5692,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>%1: unix key file doesn&apos;t exists</source>
-        <translation type="vanished">%1: het unix sleutelbestand bestaat niet</translation>
+        <translation>%1: het unix sleutelbestand bestaat niet</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
@@ -5700,11 +5712,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>%1: bad name</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Slechte naam</translation>
     </message>
     <message>
         <source>%1: UNIX key file doesn&apos;t exist</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: UNIX-sleutelbestand bestaat niet</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exist</source>
@@ -6725,30 +6737,30 @@ Please turn one of those options off.</source>
     <name>QSlider</name>
     <message>
         <source>Page left</source>
-        <translation type="vanished">Een pagina naar links</translation>
+        <translation>Een pagina naar links</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation type="vanished">Een pagina omhoog</translation>
+        <translation>Een pagina omhoog</translation>
     </message>
     <message>
         <source>Position</source>
-        <translation type="vanished">Positie</translation>
+        <translation>Positie</translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation type="vanished">Een pagina naar rechts</translation>
+        <translation>Een pagina naar rechts</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation type="vanished">Een pagina naar beneden</translation>
+        <translation>Een pagina naar beneden</translation>
     </message>
 </context>
 <context>
     <name>QSocks5SocketEngine</name>
     <message>
         <source>Socks5 timeout error connecting to socks server</source>
-        <translation type="vanished">Socks5 tijdslimiet verlopen tijdens verbinding zoeken met de socks server</translation>
+        <translation>Socks5 tijdslimiet verlopen tijdens verbinding zoeken met de socks server</translation>
     </message>
     <message>
         <source>Network operation timed out</source>
@@ -6812,413 +6824,414 @@ Please turn one of those options off.</source>
     <message>
         <source>invalid role</source>
         <extracomment>Role of an accessible object - the object is in an invalid state or could not be constructed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ongeldige rol</translation>
     </message>
     <message>
         <source>title bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>titelbalk</translation>
     </message>
     <message>
         <source>menu bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>menubalk</translation>
     </message>
     <message>
         <source>scroll bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>scrollbalk</translation>
     </message>
     <message>
         <source>grip</source>
         <extracomment>Role of an accessible object - the grip is usually used for resizing another object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>grip</translation>
     </message>
     <message>
         <source>sound</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>geluid</translation>
     </message>
     <message>
         <source>cursor</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>cursor</translation>
     </message>
     <message>
         <source>text caret</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translatorcomment>beter bekend als &apos;het dakje&apos; (bv boven de &apos;e&apos; of de &apos;o&apos;)</translatorcomment>
+        <translation>tekstcaret</translation>
     </message>
     <message>
         <source>alert message</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>alarmbericht</translation>
     </message>
     <message>
         <source>frame</source>
         <extracomment>Role of an accessible object: a window with frame and title
 ----------
 Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>frame</translation>
     </message>
     <message>
         <source>filler</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>filler</translation>
     </message>
     <message>
         <source>popup menu</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>popupmenu</translation>
     </message>
     <message>
         <source>menu item</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>menu-item</translation>
     </message>
     <message>
         <source>tool tip</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>tooltip</translation>
     </message>
     <message>
         <source>application</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>applicatie</translation>
     </message>
     <message>
         <source>document</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>document</translation>
     </message>
     <message>
         <source>panel</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>paneel</translation>
     </message>
     <message>
         <source>chart</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>kaart</translation>
     </message>
     <message>
         <source>dialog</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>dialoog</translation>
     </message>
     <message>
         <source>separator</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>scheiding</translation>
     </message>
     <message>
         <source>tool bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>toolbalk</translation>
     </message>
     <message>
         <source>status bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>statusbalk</translation>
     </message>
     <message>
         <source>table</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>tabel</translation>
     </message>
     <message>
         <source>column header</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>kolomkop</translation>
     </message>
     <message>
         <source>row header</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>rijkop</translation>
     </message>
     <message>
         <source>column</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>kolom</translation>
     </message>
     <message>
         <source>row</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>rij</translation>
     </message>
     <message>
         <source>cell</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>cel</translation>
     </message>
     <message>
         <source>link</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>link</translation>
     </message>
     <message>
         <source>help balloon</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>hulpballon</translation>
     </message>
     <message>
         <source>assistant</source>
         <extracomment>Role of an accessible object - a helper dialog</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>assistent</translation>
     </message>
     <message>
         <source>list</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>lijst</translation>
     </message>
     <message>
         <source>list item</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>lijst-item</translation>
     </message>
     <message>
         <source>tree</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>boom</translation>
     </message>
     <message>
         <source>tree item</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>boom-item</translation>
     </message>
     <message>
         <source>page tab</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>paginatab</translation>
     </message>
     <message>
         <source>property page</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>eigenschappenpagina</translation>
     </message>
     <message>
         <source>indicator</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>indicator</translation>
     </message>
     <message>
         <source>graphic</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>grafisch</translation>
     </message>
     <message>
         <source>label</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>label</translation>
     </message>
     <message>
         <source>text</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>tekst</translation>
     </message>
     <message>
         <source>push button</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>drukknop</translation>
     </message>
     <message>
         <source>check box</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>checkbox</translation>
     </message>
     <message>
         <source>radio button</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>radioknop</translation>
     </message>
     <message>
         <source>combo box</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>combo-box</translation>
     </message>
     <message>
         <source>progress bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>voortgangsbalk</translation>
     </message>
     <message>
         <source>dial</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>draaiknop</translation>
     </message>
     <message>
         <source>hotkey field</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>hotkey-veld</translation>
     </message>
     <message>
         <source>slider</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>schuif</translation>
     </message>
     <message>
         <source>spin box</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>spinbox</translation>
     </message>
     <message>
         <source>canvas</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>canva</translation>
     </message>
     <message>
         <source>animation</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>animatie</translation>
     </message>
     <message>
         <source>equation</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>vergelijking</translation>
     </message>
     <message>
         <source>button with drop down</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>knop met drop-down</translation>
     </message>
     <message>
         <source>button menu</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>menuknop</translation>
     </message>
     <message>
         <source>button with drop down grid</source>
         <extracomment>Role of an accessible object - a button that expands a grid.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>knop met drop-down-grid</translation>
     </message>
     <message>
         <source>space</source>
         <extracomment>Role of an accessible object - blank space between other objects.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Spatie</translation>
     </message>
     <message>
         <source>page tab list</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>paginatablijst</translation>
     </message>
     <message>
         <source>clock</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>klok</translation>
     </message>
     <message>
         <source>splitter</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>splitter</translation>
     </message>
     <message>
         <source>layered pane</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>gelaagd deelvenster</translation>
     </message>
     <message>
         <source>web document</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>webdocument</translation>
     </message>
     <message>
         <source>paragraph</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>paragraaf</translation>
     </message>
     <message>
         <source>section</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>sectie</translation>
     </message>
     <message>
         <source>color chooser</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>kleurenkiezer</translation>
     </message>
     <message>
         <source>footer</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>voetnoot</translation>
     </message>
     <message>
         <source>form</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>formulier</translation>
     </message>
     <message>
         <source>heading</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>kop</translation>
     </message>
     <message>
         <source>note</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>noot</translation>
     </message>
     <message>
         <source>complementary content</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>aanvullende gegevens</translation>
     </message>
     <message>
         <source>unknown</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished">onbekend</translation>
+        <translation>onbekend</translation>
     </message>
 </context>
 <context>
     <name>QSpinBox</name>
     <message>
         <source>More</source>
-        <translation type="vanished">Meer</translation>
+        <translation>Meer</translation>
     </message>
     <message>
         <source>Less</source>
-        <translation type="vanished">Minder</translation>
+        <translation>Minder</translation>
     </message>
 </context>
 <context>
     <name>QSql</name>
     <message>
         <source>Delete</source>
-        <translation type="vanished">Verwijderen</translation>
+        <translation>Verwijderen</translation>
     </message>
     <message>
         <source>Delete this record?</source>
-        <translation type="vanished">Dit record verwijderen?</translation>
+        <translation>Dit record verwijderen?</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="vanished">Ja</translation>
+        <translation>Ja</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="vanished">Nee</translation>
+        <translation>Nee</translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation type="vanished">Invoegen</translation>
+        <translation>Invoegen</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation type="vanished">Bijwerken</translation>
+        <translation>Bijwerken</translation>
     </message>
     <message>
         <source>Save edits?</source>
-        <translation type="vanished">Wijzigingen opslaan?</translation>
+        <translation>Wijzigingen opslaan?</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">Annuleren</translation>
+        <translation>Annuleren</translation>
     </message>
     <message>
         <source>Confirm</source>
-        <translation type="vanished">Bevestigen</translation>
+        <translation>Bevestigen</translation>
     </message>
     <message>
         <source>Cancel your edits?</source>
-        <translation type="vanished">Wijzigingen annuleren?</translation>
+        <translation>Wijzigingen annuleren?</translation>
     </message>
 </context>
 <context>
@@ -7265,7 +7278,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Private key does not certificate public key, %1</source>
-        <translation type="vanished">Prive sleutel certificeert geen publieke sleutel, %1</translation>
+        <translation>Prive sleutel certificeert geen publieke sleutel, %1</translation>
     </message>
     <message>
         <source>Error when setting the elliptic curves (%1)</source>
@@ -7396,117 +7409,117 @@ Role of an accessible object</extracomment>
     <name>QStandardPaths</name>
     <message>
         <source>Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Bureaublad</translation>
     </message>
     <message>
         <source>Documents</source>
-        <translation type="unfinished"></translation>
+        <translation>Documenten</translation>
     </message>
     <message>
         <source>Fonts</source>
-        <translation type="unfinished">Lettertypen</translation>
+        <translation>Lettertypen</translation>
     </message>
     <message>
         <source>Applications</source>
-        <translation type="unfinished"></translation>
+        <translation>Applicaties</translation>
     </message>
     <message>
         <source>Music</source>
-        <translation type="unfinished">Muziek</translation>
+        <translation>Muziek</translation>
     </message>
     <message>
         <source>Movies</source>
-        <translation type="unfinished"></translation>
+        <translation>Films</translation>
     </message>
     <message>
         <source>Pictures</source>
-        <translation type="unfinished"></translation>
+        <translation>Afbeeldingen</translation>
     </message>
     <message>
         <source>Temporary Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Tijdelijke map</translation>
     </message>
     <message>
         <source>Home</source>
-        <translation type="unfinished">Home</translation>
+        <translation>Home</translation>
     </message>
     <message>
         <source>Cache</source>
-        <translation type="unfinished"></translation>
+        <translation>Cache</translation>
     </message>
     <message>
         <source>Shared Data</source>
-        <translation type="unfinished"></translation>
+        <translation>Gedeelde data</translation>
     </message>
     <message>
         <source>Runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Runtime</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Configuratie</translation>
     </message>
     <message>
         <source>Shared Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Gedeelde configuratie</translation>
     </message>
     <message>
         <source>Shared Cache</source>
-        <translation type="unfinished"></translation>
+        <translation>Gedeelde cache</translation>
     </message>
     <message>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>Download</translation>
     </message>
     <message>
         <source>Application Data</source>
-        <translation type="unfinished"></translation>
+        <translation>Applicatie-data</translation>
     </message>
     <message>
         <source>Application Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Applicatieconfiguratie</translation>
     </message>
 </context>
 <context>
     <name>QStateMachine</name>
     <message>
         <source>Missing initial state in compound state &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Mis initiële staat in samengestelde staat &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Missing default state in history state &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Mis de defaultstaat in geschiedenisstaat &apos;%1&apos;</translation>
     </message>
     <message>
         <source>No common ancestor for targets and source of transition from state &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Doelen en bron van overgang van staat &apos;%1&apos; hebben geen gemeenschappelijke voorganger</translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation type="unfinished">Onbekende fout</translation>
+        <translation>Onbekende fout</translation>
     </message>
 </context>
 <context>
     <name>QSystemSemaphore</name>
     <message>
         <source>%1: permission denied</source>
-        <translation type="unfinished">%1: toestemming geweigerd</translation>
+        <translation>%1: toestemming geweigerd</translation>
     </message>
     <message>
         <source>%1: already exists</source>
-        <translation type="unfinished">%1: bestaat al</translation>
+        <translation>%1: bestaat al</translation>
     </message>
     <message>
         <source>%1: does not exist</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: bestaat niet</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
-        <translation type="unfinished">%1: geen hulpbronnen meer</translation>
+        <translation>%1: geen hulpbronnen meer</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
-        <translation type="unfinished">%1: onbekende fout %2</translation>
+        <translation>%1: onbekende fout %2</translation>
     </message>
 </context>
 <context>
@@ -7535,89 +7548,89 @@ Role of an accessible object</extracomment>
     <name>QTcpServer</name>
     <message>
         <source>Operation on socket is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Bewerkingen op socket wordt niet ondersteund</translation>
     </message>
 </context>
 <context>
     <name>QTextControl</name>
     <message>
         <source>&amp;Undo</source>
-        <translation type="vanished">&amp;Ongedaan maken</translation>
+        <translation>&amp;Ongedaan maken</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation type="vanished">Op&amp;nieuw</translation>
+        <translation>Op&amp;nieuw</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation type="vanished">&amp;Knippen</translation>
+        <translation>&amp;Knippen</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation type="vanished">&amp;Kopiëren</translation>
+        <translation>&amp;Kopiëren</translation>
     </message>
     <message>
         <source>Copy &amp;Link Location</source>
-        <translation type="vanished">Kopiëer &amp;link en locatie</translation>
+        <translation>Kopiëer &amp;link en locatie</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation type="vanished">&amp;Plakken</translation>
+        <translation>&amp;Plakken</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="vanished">Verwijderen</translation>
+        <translation>Verwijderen</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="vanished">Selecteer Alles</translation>
+        <translation>Selecteer Alles</translation>
     </message>
 </context>
 <context>
     <name>QToolButton</name>
     <message>
         <source>Press</source>
-        <translation type="vanished">Druk op</translation>
+        <translation>Druk op</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="vanished">Openen</translation>
+        <translation>Openen</translation>
     </message>
 </context>
 <context>
     <name>QUdpSocket</name>
     <message>
         <source>This platform does not support IPv6</source>
-        <translation type="vanished">Dit platform ondersteunt geen IPv6</translation>
+        <translation>Dit platform ondersteunt geen IPv6</translation>
     </message>
 </context>
 <context>
     <name>QUndoGroup</name>
     <message>
         <source>Undo</source>
-        <translation type="vanished">Ongedaan maken</translation>
+        <translation>Ongedaan maken</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation type="vanished">Opnieuw doen</translation>
+        <translation>Opnieuw doen</translation>
     </message>
     <message>
         <source>Undo %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongedaan maken %1</translation>
     </message>
     <message>
         <source>Undo</source>
         <comment>Default text for undo action</comment>
-        <translation type="unfinished">Ongedaan maken</translation>
+        <translation>Ongedaan maken</translation>
     </message>
     <message>
         <source>Redo %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Opnieuw doen %1</translation>
     </message>
     <message>
         <source>Redo</source>
         <comment>Default text for redo action</comment>
-        <translation type="unfinished">Opnieuw doen</translation>
+        <translation>Opnieuw doen</translation>
     </message>
 </context>
 <context>
@@ -7631,29 +7644,29 @@ Role of an accessible object</extracomment>
     <name>QUndoStack</name>
     <message>
         <source>Undo</source>
-        <translation type="vanished">Ongedaan maken</translation>
+        <translation>Ongedaan maken</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation type="vanished">Opnieuw doen</translation>
+        <translation>Opnieuw doen</translation>
     </message>
     <message>
         <source>Undo %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ongedaan maken %1</translation>
     </message>
     <message>
         <source>Undo</source>
         <comment>Default text for undo action</comment>
-        <translation type="unfinished">Ongedaan maken</translation>
+        <translation>Ongedaan maken</translation>
     </message>
     <message>
         <source>Redo %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Opnieuw doen %1</translation>
     </message>
     <message>
         <source>Redo</source>
         <comment>Default text for redo action</comment>
-        <translation type="unfinished">Opnieuw doen</translation>
+        <translation>Opnieuw doen</translation>
     </message>
 </context>
 <context>
@@ -7708,298 +7721,298 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>LRI Left-to-right isolate</source>
-        <translation type="unfinished"></translation>
+        <translation>LRI Links-naar-rechts isolatie</translation>
     </message>
     <message>
         <source>RLI Right-to-left isolate</source>
-        <translation type="unfinished"></translation>
+        <translation>RLI Rechts-naar-links isolatie</translation>
     </message>
     <message>
         <source>FSI First strong isolate</source>
-        <translation type="unfinished"></translation>
+        <translation>FSI First strong-isolatie</translation>
     </message>
     <message>
         <source>PDI Pop directional isolate</source>
-        <translation type="unfinished"></translation>
+        <translation>PDI Pop directional-isolatie</translation>
     </message>
 </context>
 <context>
     <name>QWebFrame</name>
     <message>
         <source>Request cancelled</source>
-        <translation type="vanished">Verzoek geannuleerd</translation>
+        <translation>Verzoek geannuleerd</translation>
     </message>
     <message>
         <source>Request blocked</source>
-        <translation type="vanished">Verzoek geblokkeerd</translation>
+        <translation>Verzoek geblokkeerd</translation>
     </message>
     <message>
         <source>Cannot show URL</source>
-        <translation type="vanished">Kan URL niet tonen</translation>
+        <translation>Kan URL niet tonen</translation>
     </message>
     <message>
         <source>Frame load interruped by policy change</source>
-        <translation type="vanished">Laden van het frame onderbroken door een policywijziging</translation>
+        <translation>Laden van het frame onderbroken door een policywijziging</translation>
     </message>
     <message>
         <source>Cannot show mimetype</source>
-        <translation type="vanished">Kan het mime-type niet weergeven</translation>
+        <translation>Kan het mime-type niet weergeven</translation>
     </message>
     <message>
         <source>File does not exist</source>
-        <translation type="vanished">Bestand bestaat niet</translation>
+        <translation>Bestand bestaat niet</translation>
     </message>
 </context>
 <context>
     <name>QWebPage</name>
     <message>
         <source>Bad HTTP request</source>
-        <translation type="vanished">Ongeldig HTTP verzoek</translation>
+        <translation>Ongeldig HTTP verzoek</translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>default label for Submit buttons in forms on web pages</comment>
-        <translation type="vanished">Indienen</translation>
+        <translation>Indienen</translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>Submit (input element) alt text for &lt;input&gt; elements with no alt, title, or value</comment>
-        <translation type="vanished">Indienen</translation>
+        <translation>Indienen</translation>
     </message>
     <message>
         <source>Reset</source>
         <comment>default label for Reset buttons in forms on web pages</comment>
-        <translation type="vanished">Terugzetten</translation>
+        <translation>Terugzetten</translation>
     </message>
     <message>
         <source>This is a searchable index. Enter search keywords: </source>
         <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
-        <translation type="vanished">Deze index is te doorzoeken. Geef trefwoorden op:</translation>
+        <translation>Deze index is te doorzoeken. Geef trefwoorden op:</translation>
     </message>
     <message>
         <source>Choose File</source>
         <comment>title for file button used in HTML forms</comment>
-        <translation type="vanished">Kies bestand</translation>
+        <translation>Kies bestand</translation>
     </message>
     <message>
         <source>No file selected</source>
         <comment>text to display in file button used in HTML forms when no file is selected</comment>
-        <translation type="vanished">Geen bestand geselecteerd</translation>
+        <translation>Geen bestand geselecteerd</translation>
     </message>
     <message>
         <source>Open in New Window</source>
         <comment>Open in New Window context menu item</comment>
-        <translation type="vanished">Openen in een nieuw venster</translation>
+        <translation>Openen in een nieuw venster</translation>
     </message>
     <message>
         <source>Save Link...</source>
         <comment>Download Linked File context menu item</comment>
-        <translation type="vanished">Link opslaan...</translation>
+        <translation>Link opslaan...</translation>
     </message>
     <message>
         <source>Copy Link</source>
         <comment>Copy Link context menu item</comment>
-        <translation type="vanished">Kopiëer link</translation>
+        <translation>Kopiëer link</translation>
     </message>
     <message>
         <source>Open Image</source>
         <comment>Open Image in New Window context menu item</comment>
         <translatorcomment>RL - Liever &apos;afbeelding&apos; dan &apos;plaatje&apos;</translatorcomment>
-        <translation type="vanished">Afbeelding openen</translation>
+        <translation>Afbeelding openen</translation>
     </message>
     <message>
         <source>Save Image</source>
         <comment>Download Image context menu item</comment>
-        <translation type="vanished">Afbeelding opslaan</translation>
+        <translation>Afbeelding opslaan</translation>
     </message>
     <message>
         <source>Copy Image</source>
         <comment>Copy Link context menu item</comment>
-        <translation type="vanished">Kopiëer afbeelding</translation>
+        <translation>Kopiëer afbeelding</translation>
     </message>
     <message>
         <source>Open Frame</source>
         <comment>Open Frame in New Window context menu item</comment>
-        <translation type="vanished">Frame openen</translation>
+        <translation>Frame openen</translation>
     </message>
     <message>
         <source>Copy</source>
         <comment>Copy context menu item</comment>
-        <translation type="vanished">Kopiëren</translation>
+        <translation>Kopiëren</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>Back context menu item</comment>
-        <translation type="vanished">Ga terug</translation>
+        <translation>Ga terug</translation>
     </message>
     <message>
         <source>Go Forward</source>
         <comment>Forward context menu item</comment>
-        <translation type="vanished">Ga vooruit</translation>
+        <translation>Ga vooruit</translation>
     </message>
     <message>
         <source>Stop</source>
         <comment>Stop context menu item</comment>
-        <translation type="vanished">Stop</translation>
+        <translation>Stop</translation>
     </message>
     <message>
         <source>Reload</source>
         <comment>Reload context menu item</comment>
-        <translation type="vanished">Opnieuw laden</translation>
+        <translation>Opnieuw laden</translation>
     </message>
     <message>
         <source>Cut</source>
         <comment>Cut context menu item</comment>
-        <translation type="vanished">Knippen</translation>
+        <translation>Knippen</translation>
     </message>
     <message>
         <source>Paste</source>
         <comment>Paste context menu item</comment>
-        <translation type="vanished">Plakken</translation>
+        <translation>Plakken</translation>
     </message>
     <message>
         <source>No Guesses Found</source>
         <comment>No Guesses Found context menu item</comment>
-        <translation type="vanished">Geen schatting gevonden</translation>
+        <translation>Geen schatting gevonden</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>Ignore Spelling context menu item</comment>
-        <translation type="vanished">Negeren</translation>
+        <translation>Negeren</translation>
     </message>
     <message>
         <source>Add To Dictionary</source>
         <comment>Learn Spelling context menu item</comment>
-        <translation type="vanished">Aan woordenboek toevoegen</translation>
+        <translation>Aan woordenboek toevoegen</translation>
     </message>
     <message>
         <source>Search The Web</source>
         <comment>Search The Web context menu item</comment>
-        <translation type="vanished">Doorzoek het Web</translation>
+        <translation>Doorzoek het Web</translation>
     </message>
     <message>
         <source>Look Up In Dictionary</source>
         <comment>Look Up in Dictionary context menu item</comment>
-        <translation type="vanished">In woordenboek opzoeken</translation>
+        <translation>In woordenboek opzoeken</translation>
     </message>
     <message>
         <source>Open Link</source>
         <comment>Open Link context menu item</comment>
-        <translation type="vanished">Link openen</translation>
+        <translation>Link openen</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>Ignore Grammar context menu item</comment>
-        <translation type="vanished">Negeren</translation>
+        <translation>Negeren</translation>
     </message>
     <message>
         <source>Spelling</source>
         <comment>Spelling and Grammar context sub-menu item</comment>
-        <translation type="vanished">Spelling</translation>
+        <translation>Spelling</translation>
     </message>
     <message>
         <source>Show Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation type="vanished">Geef spelling en gramatica weer</translation>
+        <translation>Spelling en gramatica tonen</translation>
     </message>
     <message>
         <source>Hide Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation type="vanished">Verberg spelling en gramatica</translation>
+        <translation>Verberg spelling en gramatica</translation>
     </message>
     <message>
         <source>Check Spelling</source>
         <comment>Check spelling context menu item</comment>
-        <translation type="vanished">Controleer spelling</translation>
+        <translation>Controleer spelling</translation>
     </message>
     <message>
         <source>Check Spelling While Typing</source>
         <comment>Check spelling while typing context menu item</comment>
-        <translation type="vanished">Controleer spelling tijdens het typen</translation>
+        <translation>Controleer spelling tijdens het typen</translation>
     </message>
     <message>
         <source>Check Grammar With Spelling</source>
         <comment>Check grammar with spelling context menu item</comment>
-        <translation type="vanished">Controleer gramatica met de spelling</translation>
+        <translation>Controleer gramatica met de spelling</translation>
     </message>
     <message>
         <source>Fonts</source>
         <comment>Font context sub-menu item</comment>
-        <translation type="vanished">Lettertypen</translation>
+        <translation>Lettertypen</translation>
     </message>
     <message>
         <source>Bold</source>
         <comment>Bold context menu item</comment>
-        <translation type="vanished">Vet</translation>
+        <translation>Vet</translation>
     </message>
     <message>
         <source>Italic</source>
         <comment>Italic context menu item</comment>
-        <translation type="vanished">Cursief</translation>
+        <translation>Cursief</translation>
     </message>
     <message>
         <source>Underline</source>
         <comment>Underline context menu item</comment>
-        <translation type="vanished">Onderstrepen</translation>
+        <translation>Onderstrepen</translation>
     </message>
     <message>
         <source>Outline</source>
         <comment>Outline context menu item</comment>
-        <translation type="vanished">Outline</translation>
+        <translation>Outline</translation>
     </message>
     <message>
         <source>Direction</source>
         <comment>Writing direction context sub-menu item</comment>
-        <translation type="vanished">Richting</translation>
+        <translation>Richting</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Default writing direction context menu item</comment>
-        <translation type="vanished">Standaard</translation>
+        <translation>Standaard</translation>
     </message>
     <message>
         <source>LTR</source>
         <comment>Left to Right context menu item</comment>
-        <translation type="vanished">Van links naar rechts</translation>
+        <translation>Van links naar rechts</translation>
     </message>
     <message>
         <source>RTL</source>
         <comment>Right to Left context menu item</comment>
-        <translation type="vanished">Van rechts naar links</translation>
+        <translation>Van rechts naar links</translation>
     </message>
     <message>
         <source>Inspect</source>
         <comment>Inspect Element context menu item</comment>
-        <translation type="vanished">Inspecteren</translation>
+        <translation>Inspecteren</translation>
     </message>
     <message>
         <source>No recent searches</source>
         <comment>Label for only item in menu that appears when clicking on the search field image, when no searches have been performed</comment>
-        <translation type="vanished">Geen recente zoekvragen</translation>
+        <translation>Geen recente zoekvragen</translation>
     </message>
     <message>
         <source>Recent searches</source>
         <comment>label for first item in the menu that appears when clicking on the search field image, used as embedded menu title</comment>
-        <translation type="vanished">Recente zoekvragen</translation>
+        <translation>Recente zoekvragen</translation>
     </message>
     <message>
         <source>Clear recent searches</source>
         <comment>menu item in Recent Searches menu that empties menu&apos;s contents</comment>
-        <translation type="vanished">Recente zoekvragen opruimen</translation>
+        <translation>Recente zoekvragen opruimen</translation>
     </message>
     <message>
         <source>Unknown</source>
         <comment>Unknown filesize FTP directory listing item</comment>
-        <translation type="vanished">Onbekend</translation>
+        <translation>Onbekend</translation>
     </message>
     <message>
         <source>%1 (%2x%3 pixels)</source>
         <comment>Title string for images</comment>
-        <translation type="vanished">%1 (%2x%3 pixels)</translation>
+        <translation>%1 (%2x%3 pixels)</translation>
     </message>
     <message>
         <source>Web Inspector - %2</source>
-        <translation type="vanished">Web Inspector - %2</translation>
+        <translation>Web Inspector - %2</translation>
     </message>
 </context>
 <context>
@@ -8020,35 +8033,35 @@ Role of an accessible object</extracomment>
     <name>QWidgetTextControl</name>
     <message>
         <source>&amp;Undo</source>
-        <translation type="unfinished">&amp;Ongedaan maken</translation>
+        <translation>&amp;Ongedaan maken</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation type="unfinished">Op&amp;nieuw</translation>
+        <translation>Op&amp;nieuw</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation type="unfinished"></translation>
+        <translation>K&amp;nippen</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished">&amp;Kopiëren</translation>
+        <translation>&amp;Kopiëren</translation>
     </message>
     <message>
         <source>Copy &amp;Link Location</source>
-        <translation type="unfinished">Kopiëer &amp;link en locatie</translation>
+        <translation>Kopiëren &amp;linklocatie</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation type="unfinished">&amp;Plakken</translation>
+        <translation>&amp;Plakken</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijderen</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="unfinished"></translation>
+        <translation>Alles selecteren</translation>
     </message>
 </context>
 <context>
@@ -8057,11 +8070,13 @@ Role of an accessible object</extracomment>
         <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
 
 The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on this system is %5.%6.%7.%8.</source>
-        <translation type="unfinished"></translation>
+        <translation>Qt kan de direct2d-platformplugin niet laden want de Direct2D-versie op dit systeem is te oud. De minimum systeemvereisten voor deze platformplugin is Windows 7 SP1 met Platform Update.
+
+De minimum Direct2D-versie die nodig is, is %1.%2.%3.%4. De Direct2D-versie op dit systeem is %5.%6.%7.%8.</translation>
     </message>
     <message>
         <source>Cannot load direct2d platform plugin</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan de direct2d-platformplugin niet laden</translation>
     </message>
 </context>
 <context>
@@ -8084,7 +8099,7 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Quit</source>
-        <translation type="vanished">Stoppen</translation>
+        <translation>Stoppen</translation>
     </message>
     <message>
         <source>Help</source>
@@ -8121,56 +8136,56 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <name>QWorkspace</name>
     <message>
         <source>&amp;Restore</source>
-        <translation type="vanished">&amp;Terugzetten</translation>
+        <translation>&amp;Terugzetten</translation>
     </message>
     <message>
         <source>&amp;Move</source>
-        <translation type="vanished">&amp;Verplaatsen</translation>
+        <translation>&amp;Verplaatsen</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="vanished">&amp;Grootte</translation>
+        <translation>&amp;Grootte</translation>
     </message>
     <message>
         <source>Mi&amp;nimize</source>
-        <translation type="vanished">Mi&amp;nimaliseren</translation>
+        <translation>Mi&amp;nimaliseren</translation>
     </message>
     <message>
         <source>Ma&amp;ximize</source>
-        <translation type="vanished">Ma&amp;ximaliseren</translation>
+        <translation>Ma&amp;ximaliseren</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="vanished">&amp;Sluiten</translation>
+        <translation>&amp;Sluiten</translation>
     </message>
     <message>
         <source>Stay on &amp;Top</source>
-        <translation type="vanished">Op &amp;voorgrond blijven</translation>
+        <translation>Op &amp;voorgrond blijven</translation>
     </message>
     <message>
         <source>Sh&amp;ade</source>
-        <translation type="vanished">Sh&amp;ade</translation>
+        <translation>Sh&amp;ade</translation>
     </message>
     <message>
         <source>%1 - [%2]</source>
-        <translation type="vanished">%1 - [%2]</translation>
+        <translation>%1 - [%2]</translation>
     </message>
     <message>
         <source>Minimize</source>
-        <translation type="vanished">Minimaliseren</translation>
+        <translation>Minimaliseren</translation>
     </message>
     <message>
         <source>Restore Down</source>
         <translatorcomment>Eg - nog vertalen   RL - Dit is de actie verbonden aan het raam-icoontje rechtsboven op titelbalk van venster (middelste van de drie), bij aanklikken gaat venster naar maximaal, nog eens aanklikken naar oude grootte. Wordt in Fedora vertaald als &apos;venster herstellen&apos;.</translatorcomment>
-        <translation type="vanished">Venster herstellen</translation>
+        <translation>Venster herstellen</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="vanished">Sluiten</translation>
+        <translation>Sluiten</translation>
     </message>
     <message>
         <source>&amp;Unshade</source>
-        <translation type="vanished">&amp;Unshade</translation>
+        <translation>&amp;Unshade</translation>
     </message>
 </context>
 <context>
@@ -8247,19 +8262,19 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>internal general entity reference not allowed in DTD</source>
-        <translation>in een DTD is geen interne algemene entity referentie toegestaan</translation>
+        <translation>in een DTD is geen interne algemene entity-referentie toegestaan</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in attribute value</source>
-        <translation>in een attribuut waarde is geen externe entiteit referentie toegestaan</translation>
+        <translation>in een attribuut waarde is geen externe entiteit-referentie toegestaan</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in DTD</source>
-        <translation>in een DTD is geen externe algemene entity referentie toegestaan</translation>
+        <translation>in een DTD is geen externe algemene entity-referentie toegestaan</translation>
     </message>
     <message>
         <source>unparsed entity reference in wrong context</source>
-        <translation>Niet ontlede entiteit referentie in de verkeerde context</translation>
+        <translation>Niet ontlede entiteit-referentie in de verkeerde context</translation>
     </message>
     <message>
         <source>recursive entities</source>
@@ -8267,7 +8282,7 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>error in the text declaration of an external entity</source>
-        <translation>Fout in de tekst declaratie van een externe entiteit</translation>
+        <translation>Fout in de tekstdeclaratie van een externe entiteit</translation>
     </message>
 </context>
 <context>
@@ -8278,36 +8293,36 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Invalid entity value.</source>
-        <translation>Ongeldige waarde entiteit.</translation>
+        <translation>Ongeldige waarde-entiteit.</translation>
     </message>
     <message>
         <source>Invalid XML character.</source>
-        <translation>Ongeldig XML teken.</translation>
+        <translation>Ongeldig XML-teken.</translation>
     </message>
     <message>
         <source>Sequence &apos;]]&gt;&apos; not allowed in content.</source>
-        <translation>De volgorde &apos;]]&gt;&apos; is niet toegestaan in inhoud.</translation>
+        <translation>De volgorde &apos;]]&gt;&apos; is niet-toegestane inhoud.</translation>
     </message>
     <message>
         <source>Namespace prefix &apos;%1&apos; not declared</source>
         <translatorcomment>gewoon prefix</translatorcomment>
-        <translation>Naamruimte prefix &apos;%1&apos; is niet declareerd</translation>
+        <translation>Naamruimteprefix &apos;%1&apos; is niet declareerd</translation>
     </message>
     <message>
         <source>Attribute redefined.</source>
-        <translation type="vanished">Attribuut opnieuw gedefinieerd.</translation>
+        <translation>Attribuut opnieuw gedefinieerd.</translation>
     </message>
     <message>
         <source>Unexpected character &apos;%1&apos; in public id literal.</source>
-        <translation>Teken &apos;%1&apos; wordt niet verwacht in een publieke identificator literaal.</translation>
+        <translation>Teken &apos;%1&apos; wordt niet verwacht in een publieke identificatorliteraal.</translation>
     </message>
     <message>
         <source>Invalid XML version string.</source>
-        <translation>Ongeldige XML versie opgave.</translation>
+        <translation>Ongeldige XML-versieopgave.</translation>
     </message>
     <message>
         <source>Unsupported XML version.</source>
-        <translation>Deze XML versie wordt niet ondersteund.</translation>
+        <translation>Deze XML-versie wordt niet ondersteund.</translation>
     </message>
     <message>
         <source>%1 is an invalid encoding name.</source>
@@ -8323,11 +8338,11 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Invalid attribute in XML declaration.</source>
-        <translation>Ongeldig attribuut in de XML declaratie.</translation>
+        <translation>Ongeldig attribuut in XML-declaratie.</translation>
     </message>
     <message>
         <source>Premature end of document.</source>
-        <translation>Voortijdig einde van het document.</translation>
+        <translation>Voortijdig einde van document.</translation>
     </message>
     <message>
         <source>Invalid document.</source>
@@ -8351,35 +8366,35 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Recursive entity detected.</source>
-        <translation>Een recursive entiteit ontdekt.</translation>
+        <translation>Een recursieve entiteit ontdekt.</translation>
     </message>
     <message>
         <source>Start tag expected.</source>
-        <translation>Start tag verwacht.</translation>
+        <translation>Starttag verwacht.</translation>
     </message>
     <message>
         <source>XML declaration not at start of document.</source>
-        <translation>De XML declaratie staat niet aan het begin van het document.</translation>
+        <translation>De XML-declaratie staat niet aan het begin van het document.</translation>
     </message>
     <message>
         <source>NDATA in parameter entity declaration.</source>
-        <translation>NDATA in parameter entiteit declaratie.</translation>
+        <translation>NDATA in parameter entiteitdeclaratie.</translation>
     </message>
     <message>
         <source>%1 is an invalid processing instruction name.</source>
-        <translation>%1 is ongeldige naam voor een proces instructie.</translation>
+        <translation>%1 is ongeldige naam voor een procesinstructie.</translation>
     </message>
     <message>
         <source>Invalid processing instruction name.</source>
-        <translation>Ongeldige naam voor een proces instructie.</translation>
+        <translation>Ongeldige naam voor een procesinstructie.</translation>
     </message>
     <message>
         <source>Illegal namespace declaration.</source>
-        <translation>Ongeldige naamruimte declaratie.</translation>
+        <translation>Ongeldige naamruimtedeclaratie.</translation>
     </message>
     <message>
         <source>Invalid XML name.</source>
-        <translation>Ongeldige XML naam.</translation>
+        <translation>Ongeldige XML-naam.</translation>
     </message>
     <message>
         <source>Opening and ending tag mismatch.</source>
@@ -8403,11 +8418,11 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Encountered incorrectly encoded content.</source>
-        <translation>Niet correct gecodeerde inhoud tegengekomen.</translation>
+        <translation>Niet-correct gecodeerde inhoud tegengekomen.</translation>
     </message>
     <message>
         <source>The standalone pseudo attribute must appear after the encoding.</source>
-        <translation>Standalone pseudo attribuut moet komen na de codering.</translation>
+        <translation>Standalone pseudo-attribuut moet komen na de encodering.</translation>
     </message>
     <message>
         <source>%1 is an invalid PUBLIC identifier.</source>
@@ -8415,676 +8430,676 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Attribute &apos;%1&apos; redefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>Attribuut &apos;%1&apos; opnieuw gedefinieerd.</translation>
     </message>
 </context>
 <context>
     <name>QtXmlPatterns</name>
     <message>
         <source>An %1-attribute with value %2 has already been declared.</source>
-        <translation type="vanished">Een %1 attribuut met de waarde %2 is al gedeclareerd.</translation>
+        <translation>Een %1 attribuut met de waarde %2 is al gedeclareerd.</translation>
     </message>
     <message>
         <source>An %1-attribute must have a valid %2 as value, which %3 isn&apos;t.</source>
-        <translation type="vanished">Een %1 attribuut moet een geldige %2 als waarde hebben en dat heeft %3 niet.</translation>
+        <translation>Een %1 attribuut moet een geldige %2 als waarde hebben en dat heeft %3 niet.</translation>
     </message>
     <message>
         <source>Network timeout.</source>
-        <translation type="vanished">Netwerk timeout.</translation>
+        <translation>Netwerk timeout.</translation>
     </message>
     <message>
         <source>Element %1 can&apos;t be serialized because it appears outside the document element.</source>
         <translatorcomment>EG - xml serialization = geserialiseerd</translatorcomment>
-        <translation type="vanished">Element %1 kan niet geserialiseerd worden omdat buiten het document element voorkomt.</translation>
+        <translation>Element %1 kan niet geserialiseerd worden omdat buiten het document element voorkomt.</translation>
     </message>
     <message>
         <source>Year %1 is invalid because it begins with %2.</source>
-        <translation type="vanished">Jaar %1 is ongeldig omdat het begint met %2.</translation>
+        <translation>Jaar %1 is ongeldig omdat het begint met %2.</translation>
     </message>
     <message>
         <source>Day %1 is outside the range %2..%3.</source>
-        <translation type="vanished">Dag %1 valt buiten de reeks %2..%3.</translation>
+        <translation>Dag %1 valt buiten de reeks %2..%3.</translation>
     </message>
     <message>
         <source>Month %1 is outside the range %2..%3.</source>
-        <translation type="vanished">De maand %1 valt buiten de reeks %2..%3.</translation>
+        <translation>De maand %1 valt buiten de reeks %2..%3.</translation>
     </message>
     <message>
         <source>Overflow: Can&apos;t represent date %1.</source>
         <translatorcomment>RL - Foutmelding dus Overflow onvertaald vermelden ivm foutopsporing op internet</translatorcomment>
-        <translation type="vanished">Kan datum %1 niet weergeven (Overflow).</translation>
+        <translation>Kan datum %1 niet weergeven (Overflow).</translation>
     </message>
     <message>
         <source>Day %1 is invalid for month %2.</source>
-        <translation type="vanished">Dag %1 is ongeldig voor maand %2.</translation>
+        <translation>Dag %1 is ongeldig voor maand %2.</translation>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation type="vanished">24 uurs tijd:%1:%2.%3 zijn ongeldig. Het uur is 24 maar de minuten, seconden en milliseconden zijn niet allemaal 0; </translation>
+        <translation>24 uurs tijd:%1:%2.%3 zijn ongeldig. Het uur is 24 maar de minuten, seconden en milliseconden zijn niet allemaal 0; </translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>
-        <translation type="vanished">Tijd %1:%2:%3.%4 is ongeldig.</translation>
+        <translation>Tijd %1:%2:%3.%4 is ongeldig.</translation>
     </message>
     <message>
         <source>Overflow: Date can&apos;t be represented.</source>
         <translatorcomment>RL - Foutmelding dus Overflow onvertaald vermelden ivm foutopsporing op internet</translatorcomment>
-        <translation type="vanished">Kan de datum niet weergeven (Overflow).</translation>
+        <translation>Kan de datum niet weergeven (Overflow).</translation>
     </message>
     <message>
         <source>At least one component must be present.</source>
-        <translation type="vanished">Tenminste één component moet aanwezig zijn.</translation>
+        <translation>Tenminste één component moet aanwezig zijn.</translation>
     </message>
     <message>
         <source>At least one time component must appear after the %1-delimiter.</source>
-        <translation type="vanished">Tenminste één tijdscomponent moet voorkomen na de %1 begrenzer.</translation>
+        <translation>Tenminste één tijdscomponent moet voorkomen na de %1 begrenzer.</translation>
     </message>
     <message>
         <source>No operand in an integer division, %1, can be %2.</source>
-        <translation type="vanished">Geen operand bij deling %1, van gehele getallen, kan een %2 zijn.</translation>
+        <translation>Geen operand bij deling %1, van gehele getallen, kan een %2 zijn.</translation>
     </message>
     <message>
         <source>The first operand in an integer division, %1, cannot be infinity (%2).</source>
-        <translation type="vanished">De eerste operand in een deling met gehele getallen, %1, kan niet oneindig zijn (%2).</translation>
+        <translation>De eerste operand in een deling met gehele getallen, %1, kan niet oneindig zijn (%2).</translation>
     </message>
     <message>
         <source>The second operand in a division, %1, cannot be zero (%2).</source>
-        <translation type="vanished">De tweede operand in een deling, %1 kan niet nul zijn (%2).</translation>
+        <translation>De tweede operand in een deling, %1 kan niet nul zijn (%2).</translation>
     </message>
     <message>
         <source>%1 is not a valid value of type %2.</source>
-        <translation type="vanished">%1 is een ongeldige waarde van het soort %2.</translation>
+        <translation>%1 is een ongeldige waarde van het soort %2.</translation>
     </message>
     <message>
         <source>When casting to %1 from %2, the source value cannot be %3.</source>
-        <translation type="vanished">Bij het omzetten naar %1 vanuit %2 kan %3 geen bron zijn.</translation>
+        <translation>Bij het omzetten naar %1 vanuit %2 kan %3 geen bron zijn.</translation>
     </message>
     <message>
         <source>Integer division (%1) by zero (%2) is undefined.</source>
-        <translation type="vanished">De deling met gehele getallen (%1) door nul (%2) is niet gedefinieerd.</translation>
+        <translation>De deling met gehele getallen (%1) door nul (%2) is niet gedefinieerd.</translation>
     </message>
     <message>
         <source>Division (%1) by zero (%2) is undefined.</source>
-        <translation type="vanished">Deling (%1) door nul (%2) is niet gedefinieerd.</translation>
+        <translation>Deling (%1) door nul (%2) is niet gedefinieerd.</translation>
     </message>
     <message>
         <source>Modulus division (%1) by zero (%2) is undefined.</source>
-        <translation type="vanished">De modulus deling (%1) door nul (%2) is niet gedefinieerd.</translation>
+        <translation>De modulus deling (%1) door nul (%2) is niet gedefinieerd.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 (not-a-number) is not allowed.</source>
-        <translation type="vanished">Delen van een waarde van het soort %1 door %2 (geen getal) is niet toegestaan.</translation>
+        <translation>Delen van een waarde van het soort %1 door %2 (geen getal) is niet toegestaan.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 or %3 (plus or minus zero) is not allowed.</source>
-        <translation type="vanished">Delen van een waarde van het soort %1 door %2 of %3 (plus of min nul) is niet toegestaan.</translation>
+        <translation>Delen van een waarde van het soort %1 door %2 of %3 (plus of min nul) is niet toegestaan.</translation>
     </message>
     <message>
         <source>Multiplication of a value of type %1 by %2 or %3 (plus or minus infinity) is not allowed.</source>
-        <translation type="vanished">Vermenigvuldigen van een waarde van het soort %1 met %2 of %3 (plus of min oneindig) is niet toegestaan.</translation>
+        <translation>Vermenigvuldigen van een waarde van het soort %1 met %2 of %3 (plus of min oneindig) is niet toegestaan.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot have an Effective Boolean Value.</source>
         <translatorcomment>RL - EBV: Waarde van George Boole, wiskundige. Wordt in Nederland wisselend niet vertaald (Boolean) en wel (Booleaans)</translatorcomment>
-        <translation type="vanished">Een waarde van het soort %1 kan geen Effectieve Booleaanse Waarde hebben.</translation>
+        <translation>Een waarde van het soort %1 kan geen Effectieve Booleaanse Waarde hebben.</translation>
     </message>
     <message>
         <source>Effective Boolean Value cannot be calculated for a sequence containing two or more atomic values.</source>
         <translatorcomment>RL - EBV: Waarde van George Boole, wiskundige. Wordt in Nederland wisselend niet vertaald (Boolean) en wel (Booleaans)
 RL - een attribuut is atomair indien het maar één enkele waarde kan bevatten</translatorcomment>
-        <translation type="vanished">Een Effectieve Booleaanse Waarde kan niet worden berekend voor een serie die twee of meer atomaire waarden bevat.</translation>
+        <translation>Een Effectieve Booleaanse Waarde kan niet worden berekend voor een serie die twee of meer atomaire waarden bevat.</translation>
     </message>
     <message>
         <source>Value %1 of type %2 exceeds maximum (%3).</source>
-        <translation type="vanished">Waarde %1 van het soort %2 overschrijdt het maximum (%3).</translation>
+        <translation>Waarde %1 van het soort %2 overschrijdt het maximum (%3).</translation>
     </message>
     <message>
         <source>Value %1 of type %2 is below minimum (%3).</source>
-        <translation type="vanished">Waarde %1 van het soort %2 overschrijdt het minimum (%3).</translation>
+        <translation>Waarde %1 van het soort %2 overschrijdt het minimum (%3).</translation>
     </message>
     <message>
         <source>A value of type %1 must contain an even number of digits. The value %2 does not.</source>
-        <translation type="vanished">Een waarde van het type %1 moet een even aantal getallen bevatten. De waarde %2 heeft dat niet.</translation>
+        <translation>Een waarde van het type %1 moet een even aantal getallen bevatten. De waarde %2 heeft dat niet.</translation>
     </message>
     <message>
         <source>%1 is not valid as a value of type %2.</source>
-        <translation type="vanished">%1 is niet geldig als een waarde van het type %2.</translation>
+        <translation>%1 is niet geldig als een waarde van het type %2.</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on type %2.</source>
-        <translation type="vanished">Operator %1 kan niet worden gebruikt bij type %2.</translation>
+        <translation>Operator %1 kan niet worden gebruikt bij type %2.</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on atomic values of type %2 and %3.</source>
         <translatorcomment>RL - een attribuut is atomair indien het maar één enkele waarde kan bevatten</translatorcomment>
-        <translation type="vanished">Operator %1 kan niet gebruikt worden op atomaire waarden van type %2 en %3.</translation>
+        <translation>Operator %1 kan niet gebruikt worden op atomaire waarden van type %2 en %3.</translation>
     </message>
     <message>
         <source>The namespace URI in the name for a computed attribute cannot be %1.</source>
-        <translation type="vanished">De naamruimte URI in de naam voor berekend attribuut kan geen %1 zijn.</translation>
+        <translation>De naamruimte URI in de naam voor berekend attribuut kan geen %1 zijn.</translation>
     </message>
     <message>
         <source>The name for a computed attribute cannot have the namespace URI %1 with the local name %2.</source>
-        <translation type="vanished">De naam voor een berekend attribuut kan niet de naamruimte URI %1 hebben met de lokale naam %2.</translation>
+        <translation>De naam voor een berekend attribuut kan niet de naamruimte URI %1 hebben met de lokale naam %2.</translation>
     </message>
     <message>
         <source>Type error in cast, expected %1, received %2.</source>
-        <translation type="vanished">Typefout bij omzetten, verwachtte %1 maar %2 ontvangen.</translation>
+        <translation>Typefout bij omzetten, verwachtte %1 maar %2 ontvangen.</translation>
     </message>
     <message>
         <source>When casting to %1 or types derived from it, the source value must be of the same type, or it must be a string literal. Type %2 is not allowed.</source>
         <translatorcomment>RL - literaal: constante die in een programmeertaal, als absolute rekengrootheid, vergelijkingswaarde of vast uitvoergegeven wordt weergegeven</translatorcomment>
-        <translation type="vanished">Bij omzetten van %1 of typen daarvan afgeleid moet de bronwaarde van hetzelfde type zijn of moet het een literale reeks zijn. Soort %2 is niet toegestaan.</translation>
+        <translation>Bij omzetten van %1 of typen daarvan afgeleid moet de bronwaarde van hetzelfde type zijn of moet het een literale reeks zijn. Soort %2 is niet toegestaan.</translation>
     </message>
     <message>
         <source>No casting is possible with %1 as the target type.</source>
-        <translation type="vanished">Een omzetting is niet mogelijk met %1 als doeltype.</translation>
+        <translation>Een omzetting is niet mogelijk met %1 als doeltype.</translation>
     </message>
     <message>
         <source>It is not possible to cast from %1 to %2.</source>
         <translatorcomment>RL - To cast hier is eigenlijk &apos;omgieten&apos; bv van SQL-vorm naar Xml of andersom</translatorcomment>
-        <translation type="vanished">Het is niet mogelijk om %1 om te zetten %2.</translation>
+        <translation>Het is niet mogelijk om %1 om te zetten %2.</translation>
     </message>
     <message>
         <source>Casting to %1 is not possible because it is an abstract type, and can therefore never be instantiated.</source>
-        <translation type="vanished">Omzetten naar %1 is niet mogelijk omdat dit een abstract type is en daarom nooit geconcretiseerd kan worden.</translation>
+        <translation>Omzetten naar %1 is niet mogelijk omdat dit een abstract type is en daarom nooit geconcretiseerd kan worden.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to cast the value %1 of type %2 to %3</source>
-        <translation type="vanished">Het is niet mogelijk om waarde %1 van soort %2 om te zetten in %3</translation>
+        <translation>Het is niet mogelijk om waarde %1 van soort %2 om te zetten in %3</translation>
     </message>
     <message>
         <source>Failure when casting from %1 to %2: %3</source>
-        <translation type="vanished">Omzetting van %1 naar %2 is mislukt: %3</translation>
+        <translation>Omzetting van %1 naar %2 is mislukt: %3</translation>
     </message>
     <message>
         <source>A comment cannot contain %1</source>
-        <translation type="vanished">Een commentaar kan geen %1 bevatten</translation>
+        <translation>Een commentaar kan geen %1 bevatten</translation>
     </message>
     <message>
         <source>A comment cannot end with a %1.</source>
-        <translation type="vanished">Een commentaar kan niet op %1 eindigen.</translation>
+        <translation>Een commentaar kan niet op %1 eindigen.</translation>
     </message>
     <message>
         <source>No comparisons can be done involving the type %1.</source>
-        <translation type="vanished">Met type %1 zijn geen vergelijkingen uit te voeren.</translation>
+        <translation>Met type %1 zijn geen vergelijkingen uit te voeren.</translation>
     </message>
     <message>
         <source>Operator %1 is not available between atomic values of type %2 and %3.</source>
         <translatorcomment>RL - een attribuut is atomair indien het maar één enkele waarde kan bevatten</translatorcomment>
-        <translation type="vanished">Operator %1 is niet beschikbaar tussen atomaire waarden van type %2 en %3.</translation>
+        <translation>Operator %1 is niet beschikbaar tussen atomaire waarden van type %2 en %3.</translation>
     </message>
     <message>
         <source>An attribute node cannot be a child of a document node. Therefore, the attribute %1 is out of place.</source>
-        <translation type="vanished">Een attribuutnode kan geen kind zijn van een documentnode. Daarom is het attribuut %1 niet op zijn plaats.</translation>
+        <translation>Een attribuutnode kan geen kind zijn van een documentnode. Daarom is het attribuut %1 niet op zijn plaats.</translation>
     </message>
     <message>
         <source>A library module cannot be evaluated directly. It must be imported from a main module.</source>
-        <translation type="vanished">Een bibliotheekmodule kan niet direct geëvalueerd worden. Deze moet via een hoofdmodule geïmporteerd worden.</translation>
+        <translation>Een bibliotheekmodule kan niet direct geëvalueerd worden. Deze moet via een hoofdmodule geïmporteerd worden.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot be a predicate. A predicate must have either a numeric type or an Effective Boolean Value type.</source>
         <translatorcomment>RL - Waarde van George Boole, wiskundige. Wordt in Nederland wisselend niet vertaald (Boolean) en wel (Booleaans)</translatorcomment>
-        <translation type="vanished">Een waarde van het soort %1 kan geen predikaat zijn. Een predikaat moet of een numeriek type of een Effectieve Booleaanse Waarde type hebben.</translation>
+        <translation>Een waarde van het soort %1 kan geen predikaat zijn. Een predikaat moet of een numeriek type of een Effectieve Booleaanse Waarde type hebben.</translation>
     </message>
     <message>
         <source>A positional predicate must evaluate to a single numeric value.</source>
-        <translation type="vanished">Een positioneel predikaat moet evalueren naar een enkele numerieke waarde.</translation>
+        <translation>Een positioneel predikaat moet evalueren naar een enkele numerieke waarde.</translation>
     </message>
     <message>
         <source>The target name in a processing instruction cannot be %1 in any combination of upper and lower case. Therefore, is %2 invalid.</source>
-        <translation type="vanished">De doelnaam in een procesinstructie kan geen %1 zijn, in welke combinatie van hoofd- of kleine letters dan ook. Daarom is %2 ongeldig.</translation>
+        <translation>De doelnaam in een procesinstructie kan geen %1 zijn, in welke combinatie van hoofd- of kleine letters dan ook. Daarom is %2 ongeldig.</translation>
     </message>
     <message>
         <source>%1 is not a valid target name in a processing instruction. It must be a %2 value, e.g. %3.</source>
-        <translation type="vanished">%1 is geen geldige doelnaam in een procesinstructie. Deze moet een %2 waarde zijn, bijvoorbeeld %3.</translation>
+        <translation>%1 is geen geldige doelnaam in een procesinstructie. Deze moet een %2 waarde zijn, bijvoorbeeld %3.</translation>
     </message>
     <message>
         <source>The last step in a path must contain either nodes or atomic values. It cannot be a mixture between the two.</source>
         <translatorcomment>RL - een attribuut is atomair indien het maar één enkele waarde kan bevatten</translatorcomment>
-        <translation type="vanished">De laatste stap in een pad moet of nodes of atomaire waarden bevatten. Een combinatie van beide kan niet.</translation>
+        <translation>De laatste stap in een pad moet of nodes of atomaire waarden bevatten. Een combinatie van beide kan niet.</translation>
     </message>
     <message>
         <source>The data of a processing instruction cannot contain the string %1</source>
-        <translation type="vanished">De gegevens van een procesinstructie kunnen niet de reeks %1 bevatten</translation>
+        <translation>De gegevens van een procesinstructie kunnen niet de reeks %1 bevatten</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1</source>
-        <translation type="vanished">Een naamruimtebinding bestaat niet voor prefix %1</translation>
+        <translation>Een naamruimtebinding bestaat niet voor prefix %1</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1 in %2</source>
-        <translation type="vanished">Een naamruimtebinding bestaat niet voor prefix %1 in %2</translation>
+        <translation>Een naamruimtebinding bestaat niet voor prefix %1 in %2</translation>
     </message>
     <message>
         <source>%1 is an invalid %2</source>
-        <translation type="vanished">%1 is een ongeldig %2</translation>
+        <translation>%1 is een ongeldig %2</translation>
     </message>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
         <translatorcomment>enkel en meervoud string, nieuwe format</translatorcomment>
-        <translation type="vanished">
+        <translation>
             <numerusform>%1 accepteert ten hoogste %n argument. %2 is daarom ongeldig.</numerusform>
             <numerusform>%1 accepteert ten hoogste %n argumenten. %2 is daarom ongeldig.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
-        <translation type="vanished">
+        <translation>
             <numerusform>%1 vereist tenminste %n argument %2 is daarom ongeldig.</numerusform>
             <numerusform>%1 vereist tenminste %n argumenten %2 is daarom ongeldig.</numerusform>
         </translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be a numeric type, xs:yearMonthDuration or xs:dayTimeDuration.</source>
-        <translation type="vanished">Het eerste argument van %1 kan niet van het type %2 zijn. Het moet numeriek, xs:jaarMaandDuur of xs:dagTijdDuur zijn.</translation>
+        <translation>Het eerste argument van %1 kan niet van het type %2 zijn. Het moet numeriek, xs:jaarMaandDuur of xs:dagTijdDuur zijn.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="vanished">Het eerste argument van %1 kan niet van het type %2 zijn. Het moet van het type %3, %4 of %5 zijn.</translation>
+        <translation>Het eerste argument van %1 kan niet van het type %2 zijn. Het moet van het type %3, %4 of %5 zijn.</translation>
     </message>
     <message>
         <source>The second argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="vanished">Het tweede argument van %1 kan niet van het type %2 zijn. Het moet van het type %3, %4 of %5 zijn.</translation>
+        <translation>Het tweede argument van %1 kan niet van het type %2 zijn. Het moet van het type %3, %4 of %5 zijn.</translation>
     </message>
     <message>
         <source>%1 is not a valid XML 1.0 character.</source>
-        <translation type="vanished">%1 is een ongeldig XML 1.0 teken.</translation>
+        <translation>%1 is een ongeldig XML 1.0 teken.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2.</source>
-        <translation type="vanished">Het eerste argument van %1 kan niet van het type %2 zijn.</translation>
+        <translation>Het eerste argument van %1 kan niet van het type %2 zijn.</translation>
     </message>
     <message>
         <source>If both values have zone offsets, they must have the same zone offset. %1 and %2 are not the same.</source>
-        <translation type="vanished">Hebben beide waarden zone offsets, dan moeten ze dezelfde zone offset hebben. %1 en %2 zijn niet hetzelfde.</translation>
+        <translation>Hebben beide waarden zone offsets, dan moeten ze dezelfde zone offset hebben. %1 en %2 zijn niet hetzelfde.</translation>
     </message>
     <message>
         <source>%1 was called.</source>
-        <translation type="vanished">%1 was aangeroepen.</translation>
+        <translation>%1 was aangeroepen.</translation>
     </message>
     <message>
         <source>%1 must be followed by %2 or %3, not at the end of the replacement string.</source>
-        <translation type="vanished">%1 moet gevolgd worden door %2 of %3; maar niet aan het einde van een vervangende reeks.</translation>
+        <translation>%1 moet gevolgd worden door %2 of %3; maar niet aan het einde van een vervangende reeks.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 must be followed by at least one digit when not escaped.</source>
-        <translation type="vanished">In de vervangende reeks moet %1 gevolgd worden door tenminste één cijfer als deze niet door een escape teken wordt gedekt.</translation>
+        <translation>In de vervangende reeks moet %1 gevolgd worden door tenminste één cijfer als deze niet door een escape teken wordt gedekt.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 can only be used to escape itself or %2, not %3</source>
-        <translation type="vanished">In de vervangende reeks kan %1 alleen worden gebruikt om zichzelf in te dekken of %2, maar niet %3</translation>
+        <translation>In de vervangende reeks kan %1 alleen worden gebruikt om zichzelf in te dekken of %2, maar niet %3</translation>
     </message>
     <message>
         <source>%1 matches newline characters</source>
-        <translation type="vanished">%1 komt overeen met tekens voor een nieuwe tekstregel</translation>
+        <translation>%1 komt overeen met tekens voor een nieuwe tekstregel</translation>
     </message>
     <message>
         <source>%1 and %2 match the start and end of a line.</source>
-        <translation type="vanished">%1 en %2 betekenen allebei begin en het einde van een regel.</translation>
+        <translation>%1 en %2 betekenen allebei begin en het einde van een regel.</translation>
     </message>
     <message>
         <source>Matches are case insensitive</source>
-        <translation type="vanished">Overeenkomsten zijn niet hoofdletter gevoelig</translation>
+        <translation>Overeenkomsten zijn niet hoofdletter gevoelig</translation>
     </message>
     <message>
         <source>Whitespace characters are removed, except when they appear in character classes</source>
-        <translation type="vanished">Witruimte-tekens worden verwijderd, behalve wanneer deze voorkomen in tekenklassen</translation>
+        <translation>Witruimte-tekens worden verwijderd, behalve wanneer deze voorkomen in tekenklassen</translation>
     </message>
     <message>
         <source>%1 is an invalid regular expression pattern: %2</source>
-        <translation type="vanished">%1 is een ongeldige reguliere expressie patroon: %2</translation>
+        <translation>%1 is een ongeldige reguliere expressie patroon: %2</translation>
     </message>
     <message>
         <source>%1 is an invalid flag for regular expressions. Valid flags are:</source>
-        <translation type="vanished">%1 is een ongeldige vlag voor een reguliere expressie. Geldige vlaggen zijn:</translation>
+        <translation>%1 is een ongeldige vlag voor een reguliere expressie. Geldige vlaggen zijn:</translation>
     </message>
     <message>
         <source>If the first argument is the empty sequence or a zero-length string (no namespace), a prefix cannot be specified. Prefix %1 was specified.</source>
-        <translation type="vanished">Is het eerste argument een lege reeks (empty sequence) of een reeks met lengte nul (geen naamruimte), dan kan geen prefix worden meegegeven. Prefix %1 was meegegeven.</translation>
+        <translation>Is het eerste argument een lege reeks (empty sequence) of een reeks met lengte nul (geen naamruimte), dan kan geen prefix worden meegegeven. Prefix %1 was meegegeven.</translation>
     </message>
     <message>
         <source>It will not be possible to retrieve %1.</source>
-        <translation type="vanished">Het is niet mogelijk om %1 terug te halen.</translation>
+        <translation>Het is niet mogelijk om %1 terug te halen.</translation>
     </message>
     <message>
         <source>The root node of the second argument to function %1 must be a document node. %2 is not a document node.</source>
         <translatorcomment>RL - root node is Techterm</translatorcomment>
-        <translation type="vanished">De root node van het tweede argument voor functie %1 moet een document node zijn. %2 is geen document node.</translation>
+        <translation>De root node van het tweede argument voor functie %1 moet een document node zijn. %2 is geen document node.</translation>
     </message>
     <message>
         <source>The default collection is undefined</source>
-        <translation type="vanished">De standaardverzameling is niet gedefinieerd</translation>
+        <translation>De standaardverzameling is niet gedefinieerd</translation>
     </message>
     <message>
         <source>%1 cannot be retrieved</source>
-        <translation type="vanished">%1 kan niet terug gehaald worden</translation>
+        <translation>%1 kan niet terug gehaald worden</translation>
     </message>
     <message>
         <source>The normalization form %1 is unsupported. The supported forms are %2, %3, %4, and %5, and none, i.e. the empty string (no normalization).</source>
-        <translation type="vanished">De normalisatie vorm %1 wordt niet ondersteund. De ondersteunde vormen zijn %2, %3, %4, %5 ,en &quot;geen&quot; d.w.z. de lege reeks (geen normalisatie).</translation>
+        <translation>De normalisatie vorm %1 wordt niet ondersteund. De ondersteunde vormen zijn %2, %3, %4, %5 ,en &quot;geen&quot; d.w.z. de lege reeks (geen normalisatie).</translation>
     </message>
     <message>
         <source>A zone offset must be in the range %1..%2 inclusive. %3 is out of range.</source>
-        <translation type="vanished">Een zone offset moet binnen de reeks %1..%2 (inclusief) vallen. %3 valt buiten het bereik.</translation>
+        <translation>Een zone offset moet binnen de reeks %1..%2 (inclusief) vallen. %3 valt buiten het bereik.</translation>
     </message>
     <message>
         <source>%1 is not a whole number of minutes.</source>
-        <translation type="vanished">%1 is geen geheel getal in minuten.</translation>
+        <translation>%1 is geen geheel getal in minuten.</translation>
     </message>
     <message>
         <source>Required cardinality is %1; got cardinality %2.</source>
-        <translation type="vanished">Het vereiste hoofdtelwoord is %1 maar kreeg %2.</translation>
+        <translation>Het vereiste hoofdtelwoord is %1 maar kreeg %2.</translation>
     </message>
     <message>
         <source>The item %1 did not match the required type %2.</source>
-        <translation type="vanished">Het item %1 komt niet overeen met het vereiste type %2.</translation>
+        <translation>Het item %1 komt niet overeen met het vereiste type %2.</translation>
     </message>
     <message>
         <source>%1 is an unknown schema type.</source>
-        <translation type="vanished">%1 is een onbekend schematype.</translation>
+        <translation>%1 is een onbekend schematype.</translation>
     </message>
     <message>
         <source>Only one %1 declaration can occur in the query prolog.</source>
-        <translation type="vanished">Maar één %1 declaratie kan voorkomen in de inleiding van een zoekopdracht.</translation>
+        <translation>Maar één %1 declaratie kan voorkomen in de inleiding van een zoekopdracht.</translation>
     </message>
     <message>
         <source>The initialization of variable %1 depends on itself</source>
-        <translation type="vanished">De initialisering van variabele %1 hangt van zichzelf af</translation>
+        <translation>De initialisering van variabele %1 hangt van zichzelf af</translation>
     </message>
     <message>
         <source>No variable by name %1 exists</source>
-        <translation type="vanished">Een variabele met naam %1 bestaat niet</translation>
+        <translation>Een variabele met naam %1 bestaat niet</translation>
     </message>
     <message>
         <source>The variable %1 is unused</source>
-        <translation type="vanished">De variabele %1 wordt niet gebruikt</translation>
+        <translation>De variabele %1 wordt niet gebruikt</translation>
     </message>
     <message>
         <source>Version %1 is not supported. The supported XQuery version is 1.0.</source>
-        <translation type="vanished">Versie %1 wordt niet ondersteund. De ondersteunde XQuery-versie is 1.0.</translation>
+        <translation>Versie %1 wordt niet ondersteund. De ondersteunde XQuery-versie is 1.0.</translation>
     </message>
     <message>
         <source>The encoding %1 is invalid. It must contain Latin characters only, must not contain whitespace, and must match the regular expression %2.</source>
         <translatorcomment>RL - Latin is karaktertype</translatorcomment>
-        <translation type="vanished">De codering %1 is ongeldig. Deze mag alleen Latin tekens bevatten, geen witruimte en moet overeenkomen met de reguliere expressie %2.</translation>
+        <translation>De codering %1 is ongeldig. Deze mag alleen Latin tekens bevatten, geen witruimte en moet overeenkomen met de reguliere expressie %2.</translation>
     </message>
     <message>
         <source>No function with signature %1 is available</source>
-        <translation type="vanished">Geen functie beschikbaar met handtekening %1</translation>
+        <translation>Geen functie beschikbaar met handtekening %1</translation>
     </message>
     <message>
         <source>A default namespace declaration must occur before function, variable, and option declarations.</source>
-        <translation type="vanished">Een standaard naamruimte declaratie moet aanwezig zijn vóór functie, variabele en optie-declaraties.</translation>
+        <translation>Een standaard naamruimte declaratie moet aanwezig zijn vóór functie, variabele en optie-declaraties.</translation>
     </message>
     <message>
         <source>Namespace declarations must occur before function, variable, and option declarations.</source>
-        <translation type="vanished">Naamruimte declaraties moeten aanwezig zijn vóór functie, variabele en optie declaraties.</translation>
+        <translation>Naamruimte declaraties moeten aanwezig zijn vóór functie, variabele en optie declaraties.</translation>
     </message>
     <message>
         <source>Module imports must occur before function, variable, and option declarations.</source>
-        <translation type="vanished">Module imports moeten aanwezig zijn vóór functie, variabele en optie declaraties.</translation>
+        <translation>Module imports moeten aanwezig zijn vóór functie, variabele en optie declaraties.</translation>
     </message>
     <message>
         <source>It is not possible to redeclare prefix %1.</source>
-        <translation type="vanished">Het is niet mogelijk om prefix %1 opnieuw te declareren.</translation>
+        <translation>Het is niet mogelijk om prefix %1 opnieuw te declareren.</translation>
     </message>
     <message>
         <source>Only the prefix %1 can be declared to bind the namespace %2. By default, it is already bound to the prefix %1.</source>
-        <translation type="vanished">Alleen prefixl %1 kan gedeclareerd worden om te binden met naamruimte %2. Standaard is deze al gebonden met prefix %1.</translation>
+        <translation>Alleen prefixl %1 kan gedeclareerd worden om te binden met naamruimte %2. Standaard is deze al gebonden met prefix %1.</translation>
     </message>
     <message>
         <source>Prefix %1 is already declared in the prolog.</source>
-        <translation type="vanished">Prefix %1 is al gedeclareerd in de inleiding.</translation>
+        <translation>Prefix %1 is al gedeclareerd in de inleiding.</translation>
     </message>
     <message>
         <source>The name of an option must have a prefix. There is no default namespace for options.</source>
-        <translation type="vanished">De naam van een optie moet een prefix hebben. Er bestaat geen standaardnaamruimte voor opties.</translation>
+        <translation>De naam van een optie moet een prefix hebben. Er bestaat geen standaardnaamruimte voor opties.</translation>
     </message>
     <message>
         <source>The Schema Import feature is not supported, and therefore %1 declarations cannot occur.</source>
-        <translation type="vanished">De faciliteit Schema Import wordt niet ondersteund en daarom kunnen declaraties %1 niet voorkomen.</translation>
+        <translation>De faciliteit Schema Import wordt niet ondersteund en daarom kunnen declaraties %1 niet voorkomen.</translation>
     </message>
     <message>
         <source>The target namespace of a %1 cannot be empty.</source>
-        <translation type="vanished">De doelnaamruimte van een %1 kan niet leeg zijn.</translation>
+        <translation>De doelnaamruimte van een %1 kan niet leeg zijn.</translation>
     </message>
     <message>
         <source>The module import feature is not supported</source>
-        <translation type="vanished">De import-module faciliteit wordt niet ondersteund</translation>
+        <translation>De import-module faciliteit wordt niet ondersteund</translation>
     </message>
     <message>
         <source>A variable by name %1 has already been declared in the prolog.</source>
-        <translation type="vanished">Een variabele met de naam %1 is al gedeclareerd in de inleiding.</translation>
+        <translation>Een variabele met de naam %1 is al gedeclareerd in de inleiding.</translation>
     </message>
     <message>
         <source>No value is available for the external variable by name %1.</source>
-        <translation type="vanished">Voor de externe variabele met de naam %1 is geen waarde beschikbaar.</translation>
+        <translation>Voor de externe variabele met de naam %1 is geen waarde beschikbaar.</translation>
     </message>
     <message>
         <source>The namespace %1 is reserved; therefore user defined functions may not use it. Try the predefined prefix %2, which exists for these cases.</source>
-        <translation type="vanished">De naamruimte %1 is gereserveerd. Daarom mogen eigen gedefineerde functies deze niet gebruiken. Probeer het voorgedefinieerde prefix %2, dat al bestaat voor dit soort gevallen.</translation>
+        <translation>De naamruimte %1 is gereserveerd. Daarom mogen eigen gedefineerde functies deze niet gebruiken. Probeer het voorgedefinieerde prefix %2, dat al bestaat voor dit soort gevallen.</translation>
     </message>
     <message>
         <source>The namespace of a user defined function in a library module must be equivalent to the module namespace. In other words, it should be %1 instead of %2</source>
-        <translation type="vanished">De naamruimte van een zelf gedefinieerde functie in een bibliotheek module moet overeenkomen met de module naamruimte. Met andere woorden: het zou %1 moeten zijn in plaats van %2</translation>
+        <translation>De naamruimte van een zelf gedefinieerde functie in een bibliotheek module moet overeenkomen met de module naamruimte. Met andere woorden: het zou %1 moeten zijn in plaats van %2</translation>
     </message>
     <message>
         <source>A function already exists with the signature %1.</source>
-        <translation type="vanished">Een functie met handtekening %1 bestaat al.</translation>
+        <translation>Een functie met handtekening %1 bestaat al.</translation>
     </message>
     <message>
         <source>No external functions are supported. All supported functions can be used directly, without first declaring them as external</source>
-        <translation type="vanished">Externe functies worden niet ondersteund. Alle ondersteunde functies kunnen direct worden gebruikt zonder deze als extern te declareren</translation>
+        <translation>Externe functies worden niet ondersteund. Alle ondersteunde functies kunnen direct worden gebruikt zonder deze als extern te declareren</translation>
     </message>
     <message>
         <source>An argument by name %1 has already been declared. Every argument name must be unique.</source>
-        <translation type="vanished">Een argument met de naam %1 is al gedeclareerd. Elke naam van een argument moet uniek zijn.</translation>
+        <translation>Een argument met de naam %1 is al gedeclareerd. Elke naam van een argument moet uniek zijn.</translation>
     </message>
     <message>
         <source>The name of a variable bound in a for-expression must be different from the positional variable. Hence, the two variables named %1 collide.</source>
-        <translation type="vanished">De naam van de variabele gebonden in een &quot;for&quot; expressie moet verschillen van de positionele variabele. Daarom botsen de twee variabelen genaamd %1.</translation>
+        <translation>De naam van de variabele gebonden in een &quot;for&quot; expressie moet verschillen van de positionele variabele. Daarom botsen de twee variabelen genaamd %1.</translation>
     </message>
     <message>
         <source>The Schema Validation Feature is not supported. Hence, %1-expressions may not be used.</source>
-        <translation type="vanished">Schema Validatie faciliteit wordt niet ondersteund. Daarom mogen %1 expressies niet worden gebruikt. </translation>
+        <translation>Schema Validatie faciliteit wordt niet ondersteund. Daarom mogen %1 expressies niet worden gebruikt. </translation>
     </message>
     <message>
         <source>None of the pragma expressions are supported. Therefore, a fallback expression must be present</source>
-        <translation type="vanished">Geen van de pragmatische expressies wordt ondersteund. Daarom moet een terugval expressie aanwezig zijn</translation>
+        <translation>Geen van de pragmatische expressies wordt ondersteund. Daarom moet een terugval expressie aanwezig zijn</translation>
     </message>
     <message>
         <source>The %1-axis is unsupported in XQuery</source>
-        <translation type="vanished">De %1 as wordt niet ondersteund in een XQuery</translation>
+        <translation>De %1 as wordt niet ondersteund in een XQuery</translation>
     </message>
     <message>
         <source>%1 is not a valid numeric literal.</source>
-        <translation type="vanished">%1 is geen geldige numerieke literaal.</translation>
+        <translation>%1 is geen geldige numerieke literaal.</translation>
     </message>
     <message>
         <source>No function by name %1 is available.</source>
-        <translation type="vanished">Een functie met naam %1 is niet beschikbaar.</translation>
+        <translation>Een functie met naam %1 is niet beschikbaar.</translation>
     </message>
     <message>
         <source>The namespace URI cannot be the empty string when binding to a prefix, %1.</source>
-        <translation type="vanished">De naamruimte URI kan niet een lege reeks zijn als deze gebonden wordt aan een prefix, %1.</translation>
+        <translation>De naamruimte URI kan niet een lege reeks zijn als deze gebonden wordt aan een prefix, %1.</translation>
     </message>
     <message>
         <source>%1 is an invalid namespace URI.</source>
-        <translation type="vanished">%1 is een ongeldige naamruimte URI.</translation>
+        <translation>%1 is een ongeldige naamruimte URI.</translation>
     </message>
     <message>
         <source>It is not possible to bind to the prefix %1</source>
-        <translation type="vanished">Het is niet mogelijk om prefix %1 opnieuw te binden</translation>
+        <translation>Het is niet mogelijk om prefix %1 opnieuw te binden</translation>
     </message>
     <message>
         <source>Namespace %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation type="vanished">Naamruimte %1 kan alleen gebonden worden aan %2 (en is in elk geval voorgedeclareerd).</translation>
+        <translation>Naamruimte %1 kan alleen gebonden worden aan %2 (en is in elk geval voorgedeclareerd).</translation>
     </message>
     <message>
         <source>Prefix %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation type="vanished">Prefix %1 kan alleen gebonden worden aan %2 (en is in elk geval voorgedeclareerd).</translation>
+        <translation>Prefix %1 kan alleen gebonden worden aan %2 (en is in elk geval voorgedeclareerd).</translation>
     </message>
     <message>
         <source>Two namespace declaration attributes have the same name: %1.</source>
-        <translation type="vanished">Twee attributen voor een naamruimtedeclaratie hebben dezelfde naam: %1.</translation>
+        <translation>Twee attributen voor een naamruimtedeclaratie hebben dezelfde naam: %1.</translation>
     </message>
     <message>
         <source>The namespace URI must be a constant and cannot use enclosed expressions.</source>
-        <translation type="vanished">Een naamruimte URI moet een constante zijn en kan geen ingesloten expressie zijn.</translation>
+        <translation>Een naamruimte URI moet een constante zijn en kan geen ingesloten expressie zijn.</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already appeared on this element.</source>
-        <translation type="vanished">Een attribuut met de naam %1 is al voorgekomen op dit element.</translation>
+        <translation>Een attribuut met de naam %1 is al voorgekomen op dit element.</translation>
     </message>
     <message>
         <source>A direct element constructor is not well-formed. %1 is ended with %2.</source>
-        <translation type="vanished">Een direct element constructor is niet goed opgezet. %1 eindigt met %2.</translation>
+        <translation>Een direct element constructor is niet goed opgezet. %1 eindigt met %2.</translation>
     </message>
     <message>
         <source>The name %1 does not refer to any schema type.</source>
-        <translation type="vanished">De naam %1 verwijst naar geen enkel schematype.</translation>
+        <translation>De naam %1 verwijst naar geen enkel schematype.</translation>
     </message>
     <message>
         <source>%1 is an complex type. Casting to complex types is not possible. However, casting to atomic types such as %2 works.</source>
         <translatorcomment>RL - een attribuut is atomair indien het maar één enkele waarde kan bevatten</translatorcomment>
-        <translation type="vanished">%1 is een complex type. Overgaan naar complexe typen is niet mogelijk. Echter, omzetten naar atomaire typen zoals %2 werkt.</translation>
+        <translation>%1 is een complex type. Overgaan naar complexe typen is niet mogelijk. Echter, omzetten naar atomaire typen zoals %2 werkt.</translation>
     </message>
     <message>
         <source>%1 is not an atomic type. Casting is only possible to atomic types.</source>
         <translatorcomment>RL - een attribuut is atomair indien het maar één enkele waarde kan bevatten</translatorcomment>
-        <translation type="vanished">%1 is geen atomair type. Overgaan is alleen mogeijk naar atomaire typen.</translation>
+        <translation>%1 is geen atomair type. Overgaan is alleen mogeijk naar atomaire typen.</translation>
     </message>
     <message>
         <source>%1 is not a valid name for a processing-instruction. Therefore this name test will never match.</source>
-        <translation type="vanished">%1 is geen geldige naam voor een procesinstructie. Daarom zal deze naamtest nooit werken.</translation>
+        <translation>%1 is geen geldige naam voor een procesinstructie. Daarom zal deze naamtest nooit werken.</translation>
     </message>
     <message>
         <source>%1 is not in the in-scope attribute declarations. Note that the schema import feature is not supported.</source>
-        <translation type="vanished">%1 valt niet in het bereik van de attribuutdeclaraties. Weet dat schema-import faciliteit niet wordt ondersteund.</translation>
+        <translation>%1 valt niet in het bereik van de attribuutdeclaraties. Weet dat schema-import faciliteit niet wordt ondersteund.</translation>
     </message>
     <message>
         <source>The name of an extension expression must be in a namespace.</source>
-        <translation type="vanished">De naam van een aanvullende expressie moet in een naamruimte staan.</translation>
+        <translation>De naam van een aanvullende expressie moet in een naamruimte staan.</translation>
     </message>
     <message>
         <source>empty</source>
-        <translation type="vanished">leeg</translation>
+        <translation>leeg</translation>
     </message>
     <message>
         <source>zero or one</source>
-        <translation type="vanished">nul of één</translation>
+        <translation>nul of één</translation>
     </message>
     <message>
         <source>exactly one</source>
-        <translation type="vanished">precies één</translation>
+        <translation>precies één</translation>
     </message>
     <message>
         <source>one or more</source>
-        <translation type="vanished">één of meer</translation>
+        <translation>één of meer</translation>
     </message>
     <message>
         <source>zero or more</source>
-        <translation type="vanished">nul of meer</translation>
+        <translation>nul of meer</translation>
     </message>
     <message>
         <source>Required type is %1, but %2 was found.</source>
-        <translation type="vanished">Het vereiste type is %1 maar %2 is gevonden.</translation>
+        <translation>Het vereiste type is %1 maar %2 is gevonden.</translation>
     </message>
     <message>
         <source>Promoting %1 to %2 may cause loss of precision.</source>
-        <translation type="vanished">Het opwaarderen van %1 maar %2 kan verlies van nauwkeurigheid tot gevolg hebben.</translation>
+        <translation>Het opwaarderen van %1 maar %2 kan verlies van nauwkeurigheid tot gevolg hebben.</translation>
     </message>
     <message>
         <source>The focus is undefined.</source>
-        <translation type="vanished">De focus in niet gedefinieerd.</translation>
+        <translation>De focus in niet gedefinieerd.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to add attributes after any other kind of node.</source>
-        <translation type="vanished">Het is niet mogelijk om attributen toe te voegen na enig ander soort node.</translation>
+        <translation>Het is niet mogelijk om attributen toe te voegen na enig ander soort node.</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already been created.</source>
-        <translation type="vanished">Een attribuut met de naam %1 is al aangemaakt.</translation>
+        <translation>Een attribuut met de naam %1 is al aangemaakt.</translation>
     </message>
     <message>
         <source>Only the Unicode Codepoint Collation is supported(%1). %2 is unsupported.</source>
         <translatorcomment>RL - Unicode Codepoint Collation niet vertalen</translatorcomment>
-        <translation type="vanished">Alleen Unicode Codepoint Collation wordt ondersteund (%1). %2 wordt niet ondersteund.</translation>
+        <translation>Alleen Unicode Codepoint Collation wordt ondersteund (%1). %2 wordt niet ondersteund.</translation>
     </message>
     <message>
         <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
-        <translation type="vanished">Attribuut %1 kan niet geserialiseerd worden omdat deze op het hoogste niveau optreedt.</translation>
+        <translation>Attribuut %1 kan niet geserialiseerd worden omdat deze op het hoogste niveau optreedt.</translation>
     </message>
     <message>
         <source>The namespace for a user defined function cannot be empty (try the predefined prefix %1 which exists for cases like this)</source>
-        <translation type="vanished">De naamruimte for een eigen gedefinieerde functie kan niet leeg zijn (probeer een voorgedefinieerd prefix %1 dat voor dit soort gevallen bestaat)</translation>
+        <translation>De naamruimte for een eigen gedefinieerde functie kan niet leeg zijn (probeer een voorgedefinieerd prefix %1 dat voor dit soort gevallen bestaat)</translation>
     </message>
 </context>
 <context>
     <name>VolumeSlider</name>
     <message>
         <source>Muted</source>
-        <translation type="vanished">Gedempd</translation>
+        <translation>Gedempd</translation>
     </message>
     <message>
         <source>Volume: %1%</source>
-        <translation type="vanished">Volume: %1%</translation>
+        <translation>Volume: %1%</translation>
     </message>
 </context>
 <context>
     <name>WebCore::PlatformScrollbar</name>
     <message>
         <source>Scroll here</source>
-        <translation type="vanished">Hier scrollen</translation>
+        <translation>Hier scrollen</translation>
     </message>
     <message>
         <source>Left edge</source>
-        <translation type="vanished">Linker rand</translation>
+        <translation>Linker rand</translation>
     </message>
     <message>
         <source>Top</source>
-        <translation type="vanished">Boven</translation>
+        <translation>Boven</translation>
     </message>
     <message>
         <source>Right edge</source>
-        <translation type="vanished">Rechter rand</translation>
+        <translation>Rechter rand</translation>
     </message>
     <message>
         <source>Bottom</source>
-        <translation type="vanished">Onder</translation>
+        <translation>Onder</translation>
     </message>
     <message>
         <source>Page left</source>
-        <translation type="vanished">Een pagina naar links</translation>
+        <translation>Een pagina naar links</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation type="vanished">Een pagina omhoog</translation>
+        <translation>Een pagina omhoog</translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation type="vanished">Een pagina naar rechts</translation>
+        <translation>Een pagina naar rechts</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation type="vanished">Een pagina naar beneden</translation>
+        <translation>Een pagina naar beneden</translation>
     </message>
     <message>
         <source>Scroll left</source>
-        <translation type="vanished">Naar links scrollen</translation>
+        <translation>Naar links scrollen</translation>
     </message>
     <message>
         <source>Scroll up</source>
-        <translation type="vanished">Naar boven scrollen</translation>
+        <translation>Naar boven scrollen</translation>
     </message>
     <message>
         <source>Scroll right</source>
-        <translation type="vanished">Naar rechts scrollen</translation>
+        <translation>Naar rechts scrollen</translation>
     </message>
     <message>
         <source>Scroll down</source>
-        <translation type="vanished">Naar onder scrollen</translation>
+        <translation>Naar onder scrollen</translation>
     </message>
 </context>
 </TS>

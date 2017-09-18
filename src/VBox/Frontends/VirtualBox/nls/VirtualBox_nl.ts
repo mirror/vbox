@@ -2423,7 +2423,7 @@
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation>Ondersteund DHCP</translation>
+        <translation>Ondersteunt DHCP</translation>
     </message>
     <message>
         <source>yes</source>
@@ -2435,7 +2435,7 @@
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation>Ondersteund IPv6</translation>
+        <translation>Ondersteunt IPv6</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
@@ -2567,7 +2567,7 @@
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="vanished">Toont het host-IPv6-adres voor deze adapter indien IPv6 ondersteund wordt.</translation>
+        <translation type="vanished">Toont het host-IPv6-adres voor deze adapter indien IPv6 wordt ondersteund.</translation>
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
@@ -2575,7 +2575,7 @@
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="vanished">Toont de prefixlengte van het host-IPv6-netwerkmasker voor deze adapter indien IPv6 ondersteund wordt.</translation>
+        <translation type="vanished">Toont de prefixlengte van het host-IPv6-netwerkmasker voor deze adapter indien IPv6 wordt ondersteund.</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
@@ -2658,11 +2658,11 @@
     </message>
     <message>
         <source>Supports &amp;DHCP</source>
-        <translation>Ondersteund &amp;DCPH</translation>
+        <translation>Ondersteunt &amp;DCPH</translation>
     </message>
     <message>
         <source>Supports &amp;IPv6</source>
-        <translation>Ondersteund &amp;IPv6</translation>
+        <translation>Ondersteunt &amp;IPv6</translation>
     </message>
     <message>
         <source>Advertise Default IPv6 &amp;Route</source>
@@ -2945,7 +2945,7 @@
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation>Toont het host-IPv6-adres voor deze adapter indien IPv6 ondersteund wordt.</translation>
+        <translation>Toont het host-IPv6-adres voor deze adapter indien IPv6 wordt ondersteund.</translation>
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
@@ -2953,7 +2953,7 @@
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation>Toont de host-IPv6-prefixlengte van het voor deze adapter indien IPv6 ondersteund wordt.</translation>
+        <translation>Toont de host-IPv6-prefixlengte van het voor deze adapter indien IPv6 wordt ondersteund.</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -7155,6 +7155,10 @@
         <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Kon schijf-image-bestand &lt;b&gt;%1&lt;/b&gt; niet in virtuele machine &lt;b&gt;%2&lt;/b&gt; doen, omdat deze machine geen optisch station heeft. Voeg een station toe bij Instellingen -&gt; Opslag van deze machine.&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniToolBar</name>
@@ -7647,7 +7651,7 @@
     <name>UISnapshotDetailsWidget</name>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Current State&lt;/b&gt; item selected.&lt;br&gt;Press the &lt;b&gt;Take&lt;/b&gt; button if you wish to take a new snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;U heeft &lt;b&gt;Huidige Status&lt;/b&gt; geselecteerd.&lt;br&gt;Klik op de &lt;b&gt;Neem&lt;/b&gt;-knop als u een nieuw snapshot wilt nemen.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;U heeft &lt;b&gt;Huidige Status&lt;/b&gt; geselecteerd.&lt;br&gt;Klik op de &lt;b&gt;Neem&lt;/b&gt;-knop als u een nieuw snapshot wilt nemen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Attributes</source>
@@ -7704,6 +7708,26 @@
     <message>
         <source>Snapshot name is empty</source>
         <translation>Geen snapshotnaam opgegeven</translation>
+    </message>
+    <message>
+        <source>Enter a name for the new snapshot...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a name for this snapshot...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Take</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Take snapshot on the basis of current machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Take Snapshot (%1)</source>
+        <translation type="unfinished">Neem snapshot (%1)</translation>
     </message>
 </context>
 <context>
