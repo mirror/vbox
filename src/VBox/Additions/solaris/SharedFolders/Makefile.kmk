@@ -92,5 +92,14 @@ PROGRAMS                += vboxfsmount
 vboxfsmount_TEMPLATE    = NewVBoxGuestR3Exe
 vboxfsmount_SOURCES     = vboxfs_mount.c
 
+
+#
+# Load script.
+#
+INSTALLS += vboxfsload
+vboxfsload_TEMPLATE = VBOXGUESTR0
+vboxfsload_EXEC_SOURCES = loadfs.sh
+
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
