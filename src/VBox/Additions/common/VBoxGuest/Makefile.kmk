@@ -241,5 +241,14 @@ VBoxGuestInst_TEMPLATE= VBoxGuestR3Exe
 VBoxGuestInst_SOURCES = win/VBoxGuestInst.cpp
 endif
 
+
+#
+# Helper script.
+#
+INSTALLS.solaris += VBoxGuestLoad
+VBoxGuestLoad_TEMPLATE = VBOXGUESTR0
+VBoxGuestLoad_EXEC_SOURCES = solaris/load.sh
+
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
