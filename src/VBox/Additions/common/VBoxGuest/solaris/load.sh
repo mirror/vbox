@@ -64,7 +64,6 @@ sed -e '/name=vboxguest/d' /etc/devlink.tab > /tmp/devlink.vbox
 echo "type=ddi_pseudo;name=vboxguest	\D" >> /tmp/devlink.vbox
 $SUDO cp /tmp/devlink.vbox /etc/devlink.tab
 $SUDO ln -fs ../devices/pci@0,0/pci80ee,cafe@4:vboxguest /dev/vboxguest
-#/usr/sbin/installf -c none $PKGINST /dev/vboxms=../devices/pseudo/vboxms@0:vboxms s
 set +e
 
 #
