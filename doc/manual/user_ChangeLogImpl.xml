@@ -61,6 +61,15 @@
       </listitem>
 
       <listitem>
+        <para>Storage: implemented support for the controller memory buffer
+          feature for NVMe</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: first milestone of the I/O stack redesign landed</para>
+      </listitem>
+
+      <listitem>
         <para>EFI: better video mode handling</para>
       </listitem>
 
