@@ -9275,7 +9275,7 @@ HRESULT Medium::i_taskDeleteHandler(Medium::DeleteTask &task)
             if (RT_SUCCESS(vrc))
                 vrc = VDClose(hdd, true /* fDelete */);
 
-            if (RT_FAILURE(vrc))
+            if (RT_FAILURE(vrc) && vrc != VERR_FILE_NOT_FOUND)
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not delete the medium storage unit '%s'%s"),
                                location.c_str(), i_vdError(vrc).c_str());
