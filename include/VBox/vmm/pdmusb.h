@@ -30,6 +30,7 @@
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/vmm/pdmthread.h>
 #include <VBox/vmm/pdmifs.h>
+#include <VBox/vmm/pdmins.h>
 #include <VBox/vmm/pdmcommon.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/ssm.h>
