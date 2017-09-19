@@ -587,7 +587,11 @@ static int vhdFreeImage(PVHDIMAGE pImage, bool fDelete)
         }
 
         if (fDelete && pImage->pszFilename)
-            vdIfIoIntFileDelete(pImage->pIfIo, pImage->pszFilename);
+        {
+            int rc2 = vdIfIoIntFileDelete(pImage->pIfIo, pImage->pszFilename);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
