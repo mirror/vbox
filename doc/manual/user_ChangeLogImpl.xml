@@ -56,6 +56,11 @@
       </listitem>
 
       <listitem>
+        <para>Storage: implemented support for CUE/BIN images as CD/DVD media
+          including multiple tracks</para>
+      </listitem>
+
+      <listitem>
         <para>EFI: better video mode handling</para>
       </listitem>
 
