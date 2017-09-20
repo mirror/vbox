@@ -154,6 +154,7 @@ public:
 
     HRESULT i_updateMachineState(MachineState_T aMachineState);
     HRESULT i_getNominalState(MachineState_T &aNominalState);
+    Utf8Str i_getAudioAdapterDeviceName(IAudioAdapter *aAudioAdapter);
 
     // events from IInternalSessionControl
     HRESULT i_onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL changeAdapter);

@@ -55,6 +55,10 @@
 #ifdef VBOX_WITH_VIDEOREC
 # include <iprt/path.h>
 # include "VideoRec.h"
+
+# ifdef VBOX_WITH_LIBVPX
+#  include <vpx/vpx_encoder.h>
+# endif
 #endif
 
 #ifdef VBOX_WITH_CROGL
@@ -1048,7 +1052,7 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
         i_handleSetVisibleRegion(mcRectVisibleRegion, mpRectVisibleRegion);
 
 #ifdef VBOX_WITH_VIDEOREC
-    videoCaptureScreenChanged(uScreenId);
+    i_videoCaptureScreenChanged(uScreenId);
 #endif
 
     LogRelFlowFunc(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
@@ -2385,25 +2389,153 @@ HRESULT Display::takeScreenShotToArray(ULONG aScreenId,
     return rc;
 }
 
-int Display::i_videoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens))
-{
 #ifdef VBOX_WITH_VIDEOREC
-    com::SafeArray<BOOL> Screens(ComSafeArrayInArg(aScreens));
-    for (unsigned i = 0; i < Screens.size(); i++)
-    {
-        bool fChanged = maVideoRecEnabled[i] != RT_BOOL(Screens[i]);
+VIDEORECFEATURES Display::i_videoCaptureGetEnabled(void)
+{
+    return VideoRecGetEnabled(&mVideoRecCfg);
+}
 
-        maVideoRecEnabled[i] = RT_BOOL(Screens[i]);
+bool Display::i_videoCaptureStarted(void)
+{
+    return VideoRecIsActive(mpVideoRecCtx);
+}
+
+int Display::i_videoCaptureInvalidate(void)
+{
+    AssertPtr(mParent);
+    ComPtr<IMachine> pMachine = mParent->i_machine();
+    Assert(pMachine.isNotNull());
+
+    mVideoRecCfg.fEnabled = true;
+    mVideoRecCfg.enmDst   = VIDEORECDEST_FILE; /** @todo Make this configurable once we have more variations. */
+
+    /*
+     * Get parameters from API.
+     */
+    SafeArray<BOOL> aScreens;
+    HRESULT rc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(aScreens));
+    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
+    aScreens.cloneTo(mVideoRecCfg.aScreens);
+
+    rc = pMachine->COMGETTER(VideoCaptureWidth)(&mVideoRecCfg.Video.uWidth);
+    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
+    rc = pMachine->COMGETTER(VideoCaptureHeight)(&mVideoRecCfg.Video.uHeight);
+    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
+    rc = pMachine->COMGETTER(VideoCaptureRate)(&mVideoRecCfg.Video.uRate);
+    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
+    rc = pMachine->COMGETTER(VideoCaptureFPS)(&mVideoRecCfg.Video.uFPS);
+    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
+    rc = pMachine->COMGETTER(VideoCaptureFile)(&mVideoRecCfg.File.strFile);
+    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
+    rc = pMachine->COMGETTER(VideoCaptureMaxFileSize)(&mVideoRecCfg.File.uMaxSizeMB);
+    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
+    rc = pMachine->COMGETTER(VideoCaptureMaxTime)(&mVideoRecCfg.uMaxTimeS);
+    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
+    BSTR bstrOptions;
+    rc = pMachine->COMGETTER(VideoCaptureOptions)(&bstrOptions);
+    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
+
+    /*
+     * Parse options string (from API).
+     */
+    com::Utf8Str strOptions(bstrOptions);
+    size_t pos = 0;
+
+    /* By default we only enable video recording for now.
+     * Audio support is considered as being experimental. There be dragons! */
+    mVideoRecCfg.Video.fEnabled  = true;
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+    mVideoRecCfg.Audio.fEnabled  = false;
+    /* By default we use 48kHz, 16-bit, stereo for the audio track. */
+    mVideoRecCfg.Audio.uHz       = 48000;
+    mVideoRecCfg.Audio.cBits     = 16;
+    mVideoRecCfg.Audio.cChannels = 2;
+#endif
+
+    if (!mVideoRecCfg.Video.uFPS) /* Prevent division by zero. */
+        mVideoRecCfg.Video.uFPS = 30;
+
+    /*
+     * Parse options string.
+     */
+    com::Utf8Str key, value;
+    while ((pos = strOptions.parseKeyValue(key, value, pos)) != com::Utf8Str::npos)
+    {
+        if (key.compare("vc_quality", Utf8Str::CaseInsensitive) == 0)
+        {
+#ifdef VBOX_WITH_LIBVPX
+            if (value.compare("realtime", Utf8Str::CaseInsensitive) == 0)
+                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = VPX_DL_REALTIME;
+            else if (value.compare("good", Utf8Str::CaseInsensitive) == 0)
+                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = 1000000 / mVideoRecCfg.Video.uFPS;
+            else if (value.compare("best", Utf8Str::CaseInsensitive) == 0)
+                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = VPX_DL_BEST_QUALITY;
+            else
+            {
+                LogRel(("VideoRec: Setting quality deadline to '%s'\n", value.c_str()));
+                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = value.toUInt32();
+#endif
+            }
+        }
+        else if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
+        {
+            if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
+            {
+                mVideoRecCfg.Video.fEnabled = false;
+                LogRel(("VideoRec: Only audio will be recorded\n"));
+            }
+        }
+        else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
+        {
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+            if (value.compare("false", Utf8Str::CaseInsensitive))
+            {
+                mVideoRecCfg.Audio.fEnabled = false;
+                LogRel(("VideoRec: Only video will be recorded\n"));
+            }
+#endif
+        }
+        else if (key.compare("ac_profile", Utf8Str::CaseInsensitive) == 0)
+        {
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+            if (value.compare("low", Utf8Str::CaseInsensitive) == 0)
+            {
+                mVideoRecCfg.Audio.uHz       = 8000;
+                mVideoRecCfg.Audio.cBits     = 16;
+                mVideoRecCfg.Audio.cChannels = 1;
+            }
+            else if (value.startsWith("med" /* "med[ium]" */, Utf8Str::CaseInsensitive) == 0)
+            {
+                mVideoRecCfg.Audio.uHz       = 22050;
+                mVideoRecCfg.Audio.cBits     = 16;
+                mVideoRecCfg.Audio.cChannels = 2;
+            }
+            else if (value.compare("high", Utf8Str::CaseInsensitive) == 0)
+            {
+                /* Stay with the default set above. */
+            }
+#endif
+        }
+        else
+            LogRel(("VideoRec: Unknown option '%s' (value '%s'), skipping\n", key.c_str(), value.c_str()));
+
+    } /* while */
+
+    /*
+     * Invalidate screens.
+     */
+    for (unsigned i = 0; i < mVideoRecCfg.aScreens.size(); i++)
+    {
+        bool fChanged = maVideoRecEnabled[i] != RT_BOOL(mVideoRecCfg.aScreens[i]);
+
+        maVideoRecEnabled[i] = RT_BOOL(mVideoRecCfg.aScreens[i]);
 
         if (fChanged && i < mcMonitors)
-            videoCaptureScreenChanged(i);
+            i_videoCaptureScreenChanged(i);
 
     }
-    return VINF_SUCCESS;
-#else
-    ComSafeArrayNoRef(aScreens);
-    return VERR_NOT_SUPPORTED;
-#endif
+
+    return S_OK;
 }
 
 /**
@@ -2417,141 +2549,55 @@ int Display::i_videoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens))
  */
 int Display::i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs)
 {
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-    if (!VideoRecIsEnabled(mpVideoRecCtx))
-        return VINF_SUCCESS;
+    if (   VideoRecIsActive(mpVideoRecCtx)
+        && VideoRecGetEnabled(&mVideoRecCfg) & VIDEORECFEATURE_AUDIO)
+    {
+        return VideoRecSendAudioFrame(mpVideoRecCtx, pvData, cbData, uTimestampMs);
+    }
 
-    return VideoRecSendAudioFrame(mpVideoRecCtx, pvData, cbData, uTimestampMs);
-#else
-    RT_NOREF(pvData, cbData, uTimestampMs);
-    return VERR_NOT_SUPPORTED;
-#endif
+    return VINF_SUCCESS;
 }
 
 /**
  * Start video capturing. Does nothing if capturing is already active.
  *
+ * @param   pVideoRecCfg        Video recording configuration to use.
  * @returns IPRT status code.
  */
 int Display::i_videoCaptureStart(void)
 {
-#ifdef VBOX_WITH_VIDEOREC
-    if (VideoRecIsEnabled(mpVideoRecCtx))
+    if (VideoRecIsActive(mpVideoRecCtx))
         return VINF_SUCCESS;
 
-    int rc = VideoRecContextCreate(mcMonitors, &mpVideoRecCtx);
+    int rc = VideoRecContextCreate(mcMonitors, &mVideoRecCfg, &mpVideoRecCtx);
     if (RT_FAILURE(rc))
     {
         LogFlow(("Failed to create video recording context (%Rrc)!\n", rc));
         return rc;
     }
-    ComPtr<IMachine> pMachine = mParent->i_machine();
-    com::SafeArray<BOOL> screens;
-    HRESULT hrc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(screens));
-    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
-    for (unsigned i = 0; i < RT_ELEMENTS(maVideoRecEnabled); i++)
-        maVideoRecEnabled[i] = i < screens.size() && screens[i];
-    ULONG ulWidth;
-    hrc = pMachine->COMGETTER(VideoCaptureWidth)(&ulWidth);
-    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
-    ULONG ulHeight;
-    hrc = pMachine->COMGETTER(VideoCaptureHeight)(&ulHeight);
-    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
-    ULONG ulRate;
-    hrc = pMachine->COMGETTER(VideoCaptureRate)(&ulRate);
-    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
-    ULONG ulFPS;
-    hrc = pMachine->COMGETTER(VideoCaptureFPS)(&ulFPS);
-    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
-    BSTR strFile;
-    hrc = pMachine->COMGETTER(VideoCaptureFile)(&strFile);
-    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
-    ULONG ulMaxTime;
-    hrc = pMachine->COMGETTER(VideoCaptureMaxTime)(&ulMaxTime);
-    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
-    ULONG ulMaxSize;
-    hrc = pMachine->COMGETTER(VideoCaptureMaxFileSize)(&ulMaxSize);
-    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
-    BSTR strOptions;
-    hrc = pMachine->COMGETTER(VideoCaptureOptions)(&strOptions);
-    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
 
-    RTTIMESPEC ts;
-    RTTimeNow(&ts);
-    RTTIME time;
-    RTTimeExplode(&time, &ts);
     for (unsigned uScreen = 0; uScreen < mcMonitors; uScreen++)
     {
-        char *pszAbsPath = RTPathAbsDup(com::Utf8Str(strFile).c_str());
-        char *pszSuff = RTPathSuffix(pszAbsPath);
-        if (pszSuff)
-            pszSuff = RTStrDup(pszSuff);
-        RTPathStripSuffix(pszAbsPath);
-        if (!pszAbsPath)
-            rc = VERR_INVALID_PARAMETER;
-        if (!pszSuff)
-            pszSuff = RTStrDup(".webm");
-        char *pszName = NULL;
-        if (RT_SUCCESS(rc))
+        int rc2 = VideoRecStreamInit(mpVideoRecCtx, uScreen);
+        if (RT_SUCCESS(rc2))
         {
-            if (mcMonitors > 1)
-                rc = RTStrAPrintf(&pszName, "%s-%u%s", pszAbsPath, uScreen+1, pszSuff);
-            else
-                rc = RTStrAPrintf(&pszName, "%s%s", pszAbsPath, pszSuff);
-        }
-        if (RT_SUCCESS(rc))
-        {
-            rc = VideoRecStreamInit(mpVideoRecCtx, uScreen,
-                                    pszName, ulWidth, ulHeight,
-                                    ulRate, ulFPS, ulMaxTime,
-                                    ulMaxSize, com::Utf8Str(strOptions).c_str());
-            if (rc == VERR_ALREADY_EXISTS)
-            {
-                RTStrFree(pszName);
-                pszName = NULL;
-
-                if (mcMonitors > 1)
-                    rc = RTStrAPrintf(&pszName, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ-%u%s",
-                                      pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
-                                      time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
-                                      uScreen+1, pszSuff);
-                else
-                    rc = RTStrAPrintf(&pszName, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ%s",
-                                      pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
-                                      time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
-                                      pszSuff);
-                if (RT_SUCCESS(rc))
-                    rc = VideoRecStreamInit(mpVideoRecCtx, uScreen,
-                                            pszName, ulWidth, ulHeight, ulRate,
-                                            ulFPS, ulMaxTime,
-                                            ulMaxSize, com::Utf8Str(strOptions).c_str());
-            }
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-            videoCaptureScreenChanged(uScreen);
+            i_videoCaptureScreenChanged(uScreen);
         }
         else
-            LogRel(("Display::VideoCaptureStart: Failed to initialize video recording context #%u, (%Rrc)\n", uScreen, rc));
+            LogRel(("Display::VideoCaptureStart: Failed to initialize video recording context #%u (%Rrc)\n", uScreen, rc2));
 
-        RTStrFree(pszName);
-        RTStrFree(pszSuff);
-        RTStrFree(pszAbsPath);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
     return rc;
-#else /* VBOX_WITH_VIDEOREC */
-    return VERR_NOT_SUPPORTED;
-#endif
 }
 
 /**
  * Stop video capturing. Does nothing if video capturing is not active.
  */
-void Display::i_videoCaptureStop()
+void Display::i_videoCaptureStop(void)
 {
-#ifdef VBOX_WITH_VIDEOREC
-    if (!VideoRecIsEnabled(mpVideoRecCtx))
+    if (!VideoRecIsActive(mpVideoRecCtx))
         return;
 
     VideoRecContextDestroy(mpVideoRecCtx);
@@ -2559,14 +2605,12 @@ void Display::i_videoCaptureStop()
 
     unsigned uScreenId;
     for (uScreenId = 0; uScreenId < mcMonitors; ++uScreenId)
-        videoCaptureScreenChanged(uScreenId);
-#endif
+        i_videoCaptureScreenChanged(uScreenId);
 }
 
-#ifdef VBOX_WITH_VIDEOREC
-void Display::videoCaptureScreenChanged(unsigned uScreenId)
+void Display::i_videoCaptureScreenChanged(unsigned uScreenId)
 {
-    if (   !VideoRecIsEnabled(mpVideoRecCtx)
+    if (   !VideoRecIsActive(mpVideoRecCtx)
         || !maVideoRecEnabled[uScreenId])
     {
         /* Skip recording this screen. */
@@ -3288,7 +3332,8 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
     }
 
 #ifdef VBOX_WITH_VIDEOREC
-    if (VideoRecIsEnabled(pDisplay->mpVideoRecCtx))
+    if (   VideoRecIsActive(pDisplay->mpVideoRecCtx)
+        && VideoRecGetEnabled(&pDisplay->mVideoRecCfg) & VIDEORECFEATURE_VIDEO)
     {
         do {
 # if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
@@ -4484,8 +4529,12 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
 
     if (fEnabled)
     {
-        rc = pDisplay->i_videoCaptureStart();
-        fireVideoCaptureChangedEvent(pDisplay->mParent->i_getEventSource());
+        rc = pDisplay->i_videoCaptureInvalidate();
+        if (RT_SUCCESS(rc))
+        {
+            rc = pDisplay->i_videoCaptureStart();
+            fireVideoCaptureChangedEvent(pDisplay->mParent->i_getEventSource());
+        }
     }
 #endif
 

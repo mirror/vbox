@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,11 +31,15 @@
 # include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 #endif
 
+#ifdef VBOX_WITH_VIDEOREC
+# include "../src-client/VideoRec.h"
+struct VIDEORECCONTEXT;
+#endif
+
 #include "DisplaySourceBitmapWrap.h"
 
 
 class Console;
-struct VIDEORECCONTEXT;
 
 typedef struct _DISPLAYFBINFO
 {
@@ -203,12 +207,14 @@ public:
     int  VideoAccelEnableVMMDev(bool fEnable, VBVAMEMORY *pVbvaMemory);
     void VideoAccelFlushVMMDev(void);
 
-    int  i_videoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens));
-    int  i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs);
-    int  i_videoCaptureStart();
-    void i_videoCaptureStop();
 #ifdef VBOX_WITH_VIDEOREC
-    void videoCaptureScreenChanged(unsigned uScreenId);
+    VIDEORECFEATURES i_videoCaptureGetEnabled(void);
+    bool i_videoCaptureStarted(void);
+    int  i_videoCaptureInvalidate(void);
+    int  i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs);
+    int  i_videoCaptureStart(void);
+    void i_videoCaptureStop(void);
+    void i_videoCaptureScreenChanged(unsigned uScreenId);
 #endif
 
     void i_notifyPowerDown(void);
@@ -508,6 +514,7 @@ private:
 #endif
 
 #ifdef VBOX_WITH_VIDEOREC
+    VIDEORECCFG          mVideoRecCfg;
     VIDEORECCONTEXT     *mpVideoRecCtx;
     bool                 maVideoRecEnabled[SchemaDefs::MaxGuestMonitors];
 #endif

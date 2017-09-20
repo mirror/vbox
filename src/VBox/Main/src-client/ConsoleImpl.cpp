@@ -82,6 +82,10 @@
 #include "AutoCaller.h"
 #include "ThreadTask.h"
 
+#ifdef VBOX_WITH_VIDEOREC
+# include "VideoRec.h"
+#endif
+
 #include <VBox/com/array.h>
 #include "VBox/com/ErrorInfo.h"
 #include <VBox/com/listeners.h>
@@ -4964,6 +4968,27 @@ DECLCALLBACK(int) Console::i_changeNetworkAttachment(Console *pThis,
     return rc;
 }
 
+Utf8Str Console::i_getAudioAdapterDeviceName(IAudioAdapter *aAudioAdapter)
+{
+    Utf8Str strDevice;
+
+    AudioControllerType_T audioController;
+    HRESULT hrc = aAudioAdapter->COMGETTER(AudioController)(&audioController);
+    AssertComRC(hrc);
+    if (SUCCEEDED(hrc))
+    {
+        switch (audioController)
+        {
+            case AudioControllerType_AC97: strDevice = "ichac97"; break;
+            case AudioControllerType_SB16: strDevice = "sb16";    break;
+            case AudioControllerType_HDA:  strDevice = "hda";     break;
+            default:                                              break; /* None. */
+        }
+    }
+
+    return strDevice;
+}
+
 /**
  * Called by IInternalSessionControl::OnAudioAdapterChange().
  */
@@ -4991,65 +5016,47 @@ HRESULT Console::i_onAudioAdapterChange(IAudioAdapter *aAudioAdapter)
             AssertComRC(hrc);
             if (SUCCEEDED(hrc))
             {
-                AudioControllerType_T audioController;
-                hrc = aAudioAdapter->COMGETTER(AudioController)(&audioController);
-                AssertComRC(hrc);
-                if (SUCCEEDED(hrc))
+                int rc = VINF_SUCCESS;
+
+                for (ULONG ulLUN = 0; ulLUN < 16 /** @todo Use a define */; ulLUN++)
                 {
-                    Utf8Str strDevice;
+                    PPDMIBASE pBase;
+                    int rc2 = PDMR3QueryDriverOnLun(ptrVM.rawUVM(),
+                                                    i_getAudioAdapterDeviceName(aAudioAdapter).c_str(), 0 /* iInstance */,
+                                                    ulLUN, "AUDIO", &pBase);
+                    if (RT_FAILURE(rc2))
+                        continue;
 
-                    switch (audioController)
+                    if (pBase)
                     {
-                        case AudioControllerType_AC97: strDevice = "ichac97"; break;
-                        case AudioControllerType_SB16: strDevice = "sb16";    break;
-                        case AudioControllerType_HDA:  strDevice = "hda";     break;
-                        default:
-                            AssertFailed(); break; /* Should never happen. */
-                    }
+                        PPDMIAUDIOCONNECTOR pAudioCon =
+                             (PPDMIAUDIOCONNECTOR)pBase->pfnQueryInterface(pBase, PDMIAUDIOCONNECTOR_IID);
 
-                    int rc = VINF_SUCCESS;
-
-                    for (ULONG ulLUN = 0; ulLUN < 16 /** @todo Use a define */; ulLUN++)
-                    {
-                        PPDMIBASE pBase;
-                        int rc2 = PDMR3QueryDriverOnLun(ptrVM.rawUVM(),
-                                                        strDevice.c_str(), 0 /* iInstance */, ulLUN, "AUDIO", &pBase);
-                        if (RT_FAILURE(rc2))
-                            continue;
-
-                        Log(("%s: LUN#%RU32\n", strDevice.c_str(), ulLUN));
-
-                        if (pBase)
+                        if (   pAudioCon
+                            && pAudioCon->pfnEnable)
                         {
-                            PPDMIAUDIOCONNECTOR pAudioCon =
-                                 (PPDMIAUDIOCONNECTOR)pBase->pfnQueryInterface(pBase, PDMIAUDIOCONNECTOR_IID);
+                            int rcIn = pAudioCon->pfnEnable(pAudioCon, PDMAUDIODIR_IN, RT_BOOL(fEnabledIn));
+                            if (RT_FAILURE(rcIn))
+                                LogRel(("Audio: Failed to %s input of LUN#%RU32, rc=%Rrc\n",
+                                        fEnabledIn ? "enable" : "disable", ulLUN, rcIn));
 
-                            if (   pAudioCon
-                                && pAudioCon->pfnEnable)
-                            {
-                                int rcIn = pAudioCon->pfnEnable(pAudioCon, PDMAUDIODIR_IN, RT_BOOL(fEnabledIn));
-                                if (RT_FAILURE(rcIn))
-                                    LogRel(("Audio: Failed to %s input of LUN#%RU32, rc=%Rrc\n",
-                                            fEnabledIn ? "enable" : "disable", ulLUN, rcIn));
+                            if (RT_SUCCESS(rc))
+                                rc = rcIn;
 
-                                if (RT_SUCCESS(rc))
-                                    rc = rcIn;
+                            int rcOut = pAudioCon->pfnEnable(pAudioCon, PDMAUDIODIR_OUT, RT_BOOL(fEnabledOut));
+                            if (RT_FAILURE(rcOut))
+                                LogRel(("Audio: Failed to %s output of LUN#%RU32, rc=%Rrc\n",
+                                        fEnabledIn ? "enable" : "disable", ulLUN, rcOut));
 
-                                int rcOut = pAudioCon->pfnEnable(pAudioCon, PDMAUDIODIR_OUT, RT_BOOL(fEnabledOut));
-                                if (RT_FAILURE(rcOut))
-                                    LogRel(("Audio: Failed to %s output of LUN#%RU32, rc=%Rrc\n",
-                                            fEnabledIn ? "enable" : "disable", ulLUN, rcOut));
-
-                                if (RT_SUCCESS(rc))
-                                    rc = rcOut;
-                            }
+                            if (RT_SUCCESS(rc))
+                                rc = rcOut;
                         }
                     }
-
-                    if (RT_SUCCESS(rc))
-                        LogRel(("Audio: Status has changed (input is %s, output is %s)\n",
-                                fEnabledIn  ? "enabled" : "disabled", fEnabledOut ? "enabled" : "disabled"));
                 }
+
+                if (RT_SUCCESS(rc))
+                    LogRel(("Audio: Status has changed (input is %s, output is %s)\n",
+                            fEnabledIn  ? "enabled" : "disabled", fEnabledOut ? "enabled" : "disabled"));
             }
         }
 
@@ -5485,23 +5492,55 @@ HRESULT Console::i_onVideoCaptureChange()
 
     HRESULT rc = S_OK;
 
-    /* don't trigger video capture changes if the VM isn't running */
+#ifdef VBOX_WITH_VIDEOREC
+    /* Don't trigger video capture changes if the VM isn't running. */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
-        BOOL fEnabled;
-        rc = mMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
-        SafeArray<BOOL> screens;
-        if (SUCCEEDED(rc))
-            rc = mMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(screens));
         if (mDisplay)
         {
-            int vrc = VINF_SUCCESS;
-            if (SUCCEEDED(rc))
-                vrc = mDisplay->i_videoCaptureEnableScreens(ComSafeArrayAsInParam(screens));
+            int vrc = mDisplay->i_videoCaptureInvalidate();
             if (RT_SUCCESS(vrc))
             {
-                if (fEnabled)
+                VIDEORECFEATURES fFeatures = mDisplay->i_videoCaptureGetEnabled();
+
+# ifdef VBOX_WITH_AUDIO_VIDEOREC
+                ComPtr<IAudioAdapter> audioAdapter;
+                rc = mMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+                AssertComRC(rc);
+
+                Utf8Str strAudioDev = i_getAudioAdapterDeviceName(audioAdapter);
+                if (!strAudioDev.isEmpty()) /* Any audio device enabled? */
+                {
+                    for (ULONG ulLUN = 0; ulLUN < 16 /** @todo Use a define */; ulLUN++)
+                    {
+                        PPDMIBASE pBase;
+                        int rc2 = PDMR3QueryDriverOnLun(ptrVM.rawUVM(), strAudioDev.c_str(),
+                                                        0 /* iInstance */, ulLUN, "AUDIO", &pBase);
+                        if (RT_FAILURE(rc2))
+                            continue;
+
+                        if (pBase)
+                        {
+                            PPDMIAUDIOCONNECTOR pAudioCon =
+                                 (PPDMIAUDIOCONNECTOR)pBase->pfnQueryInterface(pBase, PDMIAUDIOCONNECTOR_IID);
+
+                            if (   pAudioCon
+                                && pAudioCon->pfnEnable)
+                            {
+                                rc2 = pAudioCon->pfnEnable(pAudioCon, PDMAUDIODIR_OUT, fFeatures & VIDEORECFEATURE_AUDIO);
+                                if (RT_FAILURE(rc2))
+                                    LogRel(("VideoRec: Failed to %s audio recording, rc=%Rrc\n",
+                                            fFeatures & VIDEORECFEATURE_AUDIO ? "enable" : "disable", ulLUN, rc2));
+                            }
+
+                            break; /* Driver found, no need to continue. */
+                        }
+                    }
+                }
+# endif /* VBOX_WITH_AUDIO_VIDEOREC */
+
+                if (!mDisplay->i_videoCaptureStarted())
                 {
                     vrc = mDisplay->i_videoCaptureStart();
                     if (RT_FAILURE(vrc))
@@ -5513,8 +5552,10 @@ HRESULT Console::i_onVideoCaptureChange()
             else
                 rc = setError(E_FAIL, tr("Unable to set screens for capturing (%Rrc)"), vrc);
         }
+
         ptrVM.release();
     }
+#endif /* VBOX_WITH_VIDEOREC */
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))

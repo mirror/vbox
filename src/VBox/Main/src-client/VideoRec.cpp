@@ -21,14 +21,15 @@
 #include <stdexcept>
 #include <vector>
 
-#include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
+#include <iprt/path.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
 
+#include <VBox/log.h>
 #include <VBox/com/VirtualBox.h>
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
@@ -53,8 +54,9 @@ static int videoRecRGBToYUV(uint32_t uPixelFormat,
                             uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
                             uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight);
 
-int videoRecStreamLock(PVIDEORECSTREAM pStream);
-int videoRecStreamUnlock(PVIDEORECSTREAM pStream);
+static int videoRecStreamCloseFile(PVIDEORECSTREAM pStream);
+static void videoRecStreamLock(PVIDEORECSTREAM pStream);
+static void videoRecStreamUnlock(PVIDEORECSTREAM pStream);
 
 using namespace com;
 
@@ -113,8 +115,6 @@ typedef struct VIDEORECVIDEOCODEC
             vpx_codec_enc_cfg_t Cfg;
             /** VPX image context. */
             vpx_image_t         RawImage;
-            /** Encoder deadline. */
-            unsigned int        uEncoderDeadline;
         } VPX;
 #endif /* VBOX_WITH_LIBVPX */
     };
@@ -157,8 +157,22 @@ typedef struct VIDEORECAUDIOFRAME
  */
 typedef struct VIDEORECSTREAM
 {
-    /** Container context. */
-    WebMWriter         *pEBML;
+    /** Video recording context this stream is associated to. */
+    PVIDEORECCONTEXT            pCtx;
+    /** Destination where to write the stream to. */
+    VIDEORECDEST                enmDst;
+    union
+    {
+        struct
+        {
+            /** File handle to use for writing. */
+            RTFILE              hFile;
+            /** File name being used for this stream. */
+            char               *pszFile;
+            /** Pointer to WebM writer instance being used. */
+            WebMWriter         *pWEBM;
+        } File;
+    };
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
     /** Track number of audio stream. */
     uint8_t             uTrackAudio;
@@ -203,24 +217,24 @@ typedef std::vector <PVIDEORECSTREAM> VideoRecStreams;
  */
 typedef struct VIDEORECCONTEXT
 {
+    /** Used recording configuration. */
+    VIDEORECCFG         Cfg;
     /** The current state. */
     uint32_t            enmState;
     /** Critical section to serialize access. */
     RTCRITSECT          CritSect;
     /** Semaphore to signal the encoding worker thread. */
     RTSEMEVENT          WaitEvent;
-    /** Whether recording is enabled or not. */
+    /** Whether this conext is enabled or not. */
     bool                fEnabled;
     /** Shutdown indicator. */
     bool                fShutdown;
     /** Worker thread. */
     RTTHREAD            Thread;
-    /** Maximal time (in ms) to record. */
-    uint64_t            uMaxTimeMs;
-    /** Maximal file size (in MB) to record. */
-    uint32_t            uMaxSizeMB;
     /** Vector of current recording stream contexts. */
     VideoRecStreams     vecStreams;
+    /** Timestamp (in ms) of when recording has been started. */
+    uint64_t            tsStartMs;
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
     struct
     {
@@ -627,7 +641,7 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
                 Assert(audioFrame.cbBuf <= _64K); /** @todo Fix. */
 
                 WebMWriter::BlockData_Opus blockData = { audioFrame.abBuf, audioFrame.cbBuf, audioFrame.uTimeStampMs };
-                rc = pStream->pEBML->WriteBlock(pStream->uTrackAudio, &blockData, sizeof(blockData));
+                rc = pStream->File.pWEBM->WriteBlock(pStream->uTrackAudio, &blockData, sizeof(blockData));
                 if (RT_FAILURE(rc))
                 {
                     static unsigned s_cErrEncAudio = 0;
@@ -652,13 +666,15 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
  * Creates a video recording context.
  *
  * @returns IPRT status code.
- * @param   cScreens         Number of screens to create context for.
- * @param   ppCtx            Pointer to created video recording context on success.
+ * @param   cScreens            Number of screens to create context for.
+ * @param   pVideoRecCfg        Pointer to video recording configuration to use.
+ * @param   ppCtx               Pointer to created video recording context on success.
  */
-int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
+int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCFG pVideoRecCfg, PVIDEORECCONTEXT *ppCtx)
 {
-    AssertReturn(cScreens, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(ppCtx, VERR_INVALID_POINTER);
+    AssertReturn(cScreens,        VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pVideoRecCfg, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppCtx,        VERR_INVALID_POINTER);
 
     PVIDEORECCONTEXT pCtx = (PVIDEORECCONTEXT)RTMemAllocZ(sizeof(VIDEORECCONTEXT));
     if (!pCtx)
@@ -666,7 +682,10 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
 
     int rc = RTCritSectInit(&pCtx->CritSect);
     if (RT_FAILURE(rc))
+    {
+        RTMemFree(pCtx);
         return rc;
+    }
 
     for (uint32_t uScreen = 0; uScreen < cScreens; uScreen++)
     {
@@ -687,7 +706,7 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
 
             pCtx->vecStreams.push_back(pStream);
 
-            pStream->pEBML = new WebMWriter();
+            pStream->File.pWEBM = new WebMWriter();
         }
         catch (std::bad_alloc)
         {
@@ -698,8 +717,12 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
 
     if (RT_SUCCESS(rc))
     {
+        pCtx->tsStartMs = RTTimeMilliTS();
         pCtx->enmState  = VIDEORECSTS_UNINITIALIZED;
         pCtx->fShutdown = false;
+
+        /* Copy the configuration to our context. */
+        pCtx->Cfg       = *pVideoRecCfg;
 
         rc = RTSemEventCreate(&pCtx->WaitEvent);
         AssertRCReturn(rc, rc);
@@ -722,22 +745,8 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
 
     if (RT_FAILURE(rc))
     {
-        /* Roll back allocations on error. */
-        VideoRecStreams::iterator it = pCtx->vecStreams.begin();
-        while (it != pCtx->vecStreams.end())
-        {
-            PVIDEORECSTREAM pStream = (*it);
-
-            if (pStream->pEBML)
-                delete pStream->pEBML;
-
-            it = pCtx->vecStreams.erase(it);
-
-            RTMemFree(pStream);
-            pStream = NULL;
-        }
-
-        Assert(pCtx->vecStreams.empty());
+        int rc2 = VideoRecContextDestroy(pCtx);
+        AssertRC(rc2);
     }
 
     return rc;
@@ -753,75 +762,117 @@ int VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
     if (!pCtx)
         return VINF_SUCCESS;
 
-    /* Set shutdown indicator. */
-    ASMAtomicWriteBool(&pCtx->fShutdown, true);
+    /* First, disable the context. */
+    ASMAtomicWriteBool(&pCtx->fEnabled, false);
 
-    /* Signal the thread. */
-    RTSemEventSignal(pCtx->WaitEvent);
-
-    int rc = RTThreadWait(pCtx->Thread, 10 * 1000 /* 10s timeout */, NULL);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    rc = RTSemEventDestroy(pCtx->WaitEvent);
-    AssertRC(rc);
-
-    pCtx->WaitEvent = NIL_RTSEMEVENT;
-
-    VideoRecStreams::iterator it = pCtx->vecStreams.begin();
-    while (it != pCtx->vecStreams.end())
+    if (pCtx->enmState == VIDEORECSTS_INITIALIZED)
     {
-        PVIDEORECSTREAM pStream = (*it);
+        /* Set shutdown indicator. */
+        ASMAtomicWriteBool(&pCtx->fShutdown, true);
 
-        if (pStream->fEnabled)
+        /* Signal the thread. */
+        RTSemEventSignal(pCtx->WaitEvent);
+
+        int rc = RTThreadWait(pCtx->Thread, 10 * 1000 /* 10s timeout */, NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        rc = RTSemEventDestroy(pCtx->WaitEvent);
+        AssertRC(rc);
+
+        pCtx->WaitEvent = NIL_RTSEMEVENT;
+    }
+
+    int rc = RTCritSectEnter(&pCtx->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        VideoRecStreams::iterator it = pCtx->vecStreams.begin();
+        while (it != pCtx->vecStreams.end())
         {
-            AssertPtr(pStream->pEBML);
-            pStream->pEBML->Close();
+            PVIDEORECSTREAM pStream = (*it);
 
-            vpx_img_free(&pStream->Video.Codec.VPX.RawImage);
-            vpx_codec_err_t rcv = vpx_codec_destroy(&pStream->Video.Codec.VPX.Ctx);
-            Assert(rcv == VPX_CODEC_OK); RT_NOREF(rcv);
+            videoRecStreamLock(pStream);
+
+            if (pStream->fEnabled)
+            {
+                switch (pStream->enmDst)
+                {
+                    case VIDEORECDEST_FILE:
+                    {
+                        if (pStream->File.pWEBM)
+                            pStream->File.pWEBM->Close();
+                        break;
+                    }
+
+                    default:
+                        AssertFailed(); /* Should never happen. */
+                        break;
+                }
+
+                vpx_img_free(&pStream->Video.Codec.VPX.RawImage);
+                vpx_codec_err_t rcv = vpx_codec_destroy(&pStream->Video.Codec.VPX.Ctx);
+                Assert(rcv == VPX_CODEC_OK); RT_NOREF(rcv);
 
 #ifdef VBOX_VIDEOREC_WITH_QUEUE
 # error "Implement me!"
 #else
-            PVIDEORECVIDEOFRAME pFrame = &pStream->Video.Frame;
+                PVIDEORECVIDEOFRAME pFrame = &pStream->Video.Frame;
 #endif
-            if (pFrame->pu8RGBBuf)
-            {
-                Assert(pFrame->cbRGBBuf);
+                if (pFrame->pu8RGBBuf)
+                {
+                    Assert(pFrame->cbRGBBuf);
 
-                RTMemFree(pFrame->pu8RGBBuf);
-                pFrame->pu8RGBBuf = NULL;
+                    RTMemFree(pFrame->pu8RGBBuf);
+                    pFrame->pu8RGBBuf = NULL;
+                }
+
+                pFrame->cbRGBBuf = 0;
+
+                LogRel(("VideoRec: Recording screen #%u stopped\n", pStream->uScreenID));
             }
 
-            pFrame->cbRGBBuf = 0;
+            switch (pStream->enmDst)
+            {
+                case VIDEORECDEST_FILE:
+                {
+                    int rc2 = videoRecStreamCloseFile(pStream);
+                    AssertRC(rc2);
 
-            LogRel(("VideoRec: Recording screen #%u stopped\n", pStream->uScreenID));
+                    if (pStream->File.pWEBM)
+                    {
+                        delete pStream->File.pWEBM;
+                        pStream->File.pWEBM = NULL;
+                    }
+                    break;
+                }
+
+                default:
+                    AssertFailed(); /* Should never happen. */
+                    break;
+            }
+
+            it = pCtx->vecStreams.erase(it);
+
+            videoRecStreamUnlock(pStream);
+
+            RTCritSectDelete(&pStream->CritSect);
+
+            RTMemFree(pStream);
+            pStream = NULL;
         }
 
-        if (pStream->pEBML)
-        {
-            delete pStream->pEBML;
-            pStream->pEBML = NULL;
-        }
+        Assert(pCtx->vecStreams.empty());
 
-        it = pCtx->vecStreams.erase(it);
+        int rc2 = RTCritSectLeave(&pCtx->CritSect);
+        AssertRC(rc2);
 
-        RTCritSectDelete(&pStream->CritSect);
+        RTCritSectDelete(&pCtx->CritSect);
 
-        RTMemFree(pStream);
-        pStream = NULL;
+        RTMemFree(pCtx);
+        pCtx = NULL;
     }
 
-    Assert(pCtx->vecStreams.empty());
-
-    RTCritSectDelete(&pCtx->CritSect);
-
-    RTMemFree(pCtx);
-    pCtx = NULL;
-
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
@@ -852,29 +903,123 @@ DECLINLINE(PVIDEORECSTREAM) videoRecStreamGet(PVIDEORECCONTEXT pCtx, uint32_t uS
 /**
  * Locks a recording stream.
  *
- * @returns IPRT status code.
  * @param   pStream             Recording stream to lock.
  */
-int videoRecStreamLock(PVIDEORECSTREAM pStream)
+static void videoRecStreamLock(PVIDEORECSTREAM pStream)
 {
     int rc = RTCritSectEnter(&pStream->CritSect);
     AssertRC(rc);
-
-    return rc;
 }
 
 /**
  * Unlocks a locked recording stream.
  *
- * @returns IPRT status code.
  * @param   pStream             Recording stream to unlock.
  */
-int videoRecStreamUnlock(PVIDEORECSTREAM pStream)
+static void videoRecStreamUnlock(PVIDEORECSTREAM pStream)
 {
     int rc = RTCritSectLeave(&pStream->CritSect);
     AssertRC(rc);
+}
+
+/**
+ * Opens a file for a given recording stream to capture to.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             Recording stream to open file for.
+ * @param   pCfg                Recording configuration to use.
+ */
+int videoRecStreamOpenFile(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
+{
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,    VERR_INVALID_POINTER);
+
+    Assert(pStream->enmDst == VIDEORECDEST_INVALID);
+    Assert(pCfg->enmDst    == VIDEORECDEST_FILE);
+
+    RTTIMESPEC ts;
+    RTTimeNow(&ts);
+
+    RTTIME time;
+    RTTimeExplode(&time, &ts);
+
+    char *pszAbsPath = RTPathAbsDup(com::Utf8Str(pCfg->File.strFile).c_str());
+    AssertPtrReturn(pszAbsPath, VERR_NO_MEMORY);
+
+    char *pszSuff    = RTPathSuffix(pszAbsPath);
+    if (pszSuff)
+        pszSuff = RTStrDup(pszSuff);
+
+    RTPathStripSuffix(pszAbsPath);
+    AssertPtrReturn(pszAbsPath, VERR_INVALID_PARAMETER);
+
+    if (!pszSuff)
+        pszSuff = RTStrDup(".webm");
+
+    char *pszFile = NULL;
+
+    int rc;
+    if (pStream->uScreenID > 1)
+        rc = RTStrAPrintf(&pszFile, "%s-%u%s", pszAbsPath, pStream->uScreenID + 1, pszSuff);
+    else
+        rc = RTStrAPrintf(&pszFile, "%s%s", pszAbsPath, pszSuff);
+
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_WRITE;
+#ifdef DEBUG
+        fOpen |= RTFILE_O_CREATE_REPLACE;
+#else
+        /* Play safe: the file must not exist, overwriting is potentially
+         * hazardous as nothing prevents the user from picking a file name of some
+         * other important file, causing unintentional data loss. */
+        fOpen |= RTFILE_O_CREATE;
+#endif
+        RTFILE hFile;
+        rc = RTFileOpen(&hFile, pszFile, fOpen);
+        if (RT_SUCCESS(rc))
+        {
+            pStream->enmDst       = VIDEORECDEST_FILE;
+            pStream->File.hFile   = hFile;
+            pStream->File.pszFile = pszFile; /* Assign allocated string to our stream's config. */
+        }
+        else
+            RTStrFree(pszFile);
+    }
+
+    RTStrFree(pszSuff);
+    RTStrFree(pszAbsPath);
+
+    if (RT_FAILURE(rc))
+        LogRel(("VideoRec: Failed to open file for screen %RU32, rc=%Rrc\n", pStream->uScreenID, rc));
 
     return rc;
+}
+
+/**
+ * Closes a recording stream's file again.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             Recording stream to close file for.
+ */
+static int videoRecStreamCloseFile(PVIDEORECSTREAM pStream)
+{
+    Assert(pStream->enmDst == VIDEORECDEST_FILE);
+
+    pStream->enmDst = VIDEORECDEST_INVALID;
+
+    AssertPtr(pStream->File.pszFile);
+
+    if (RTFileIsValid(pStream->File.hFile))
+    {
+        RTFileClose(pStream->File.hFile);
+        LogRel(("VideoRec: Closed file '%s'\n", pStream->File.pszFile));
+    }
+
+    RTStrFree(pStream->File.pszFile);
+    pStream->File.pszFile = NULL;
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -883,36 +1028,25 @@ int videoRecStreamUnlock(PVIDEORECSTREAM pStream)
  * @returns IPRT status code.
  * @param   pCtx                Pointer to video recording context.
  * @param   uScreen             Screen number to record.
- * @param   pszFile             File to save recording to.
- * @param   uWidth              Target video resolution (width).
- * @param   uHeight             Target video resolution (height).
- * @param   uRate               Target encoding bit rate.
- * @param   uFPS                Target FPS (Frame Per Second).
- * @param   uMaxTimeS           Maximum time (in s) to record, or 0 for no time limit.
- * @param   uMaxSizeMB          Maximum file size (in MB) to record, or 0 for no limit.
- * @param   pszOptions          Additional options in "key=value" array format. Optional.
  */
-int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFile,
-                       uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFPS,
-                       uint32_t uMaxTimeS, uint32_t uMaxSizeMB, const char *pszOptions)
+int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
 {
-    AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
-    AssertReturn(uWidth,     VERR_INVALID_PARAMETER);
-    AssertReturn(uHeight,    VERR_INVALID_PARAMETER);
-    AssertReturn(uRate,      VERR_INVALID_PARAMETER);
-    AssertReturn(uFPS,       VERR_INVALID_PARAMETER);
-    /* pszOptions is optional. */
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     PVIDEORECSTREAM pStream = videoRecStreamGet(pCtx, uScreen);
     if (!pStream)
         return VERR_NOT_FOUND;
 
-    pCtx->uMaxTimeMs = (uMaxTimeS > 0 ? RTTimeProgramMilliTS() + uMaxTimeS * 1000 : 0);
-    pCtx->uMaxSizeMB = uMaxSizeMB;
+    int rc = videoRecStreamOpenFile(pStream, &pCtx->Cfg);
+    if (RT_FAILURE(rc))
+        return rc;
 
-    pStream->Video.uWidth  = uWidth;
-    pStream->Video.uHeight = uHeight;
+    PVIDEORECCFG pCfg = &pCtx->Cfg;
+
+    pStream->pCtx          = pCtx;
+    /** @todo Make the following parameters configurable on a per-stream basis? */
+    pStream->Video.uWidth  = pCfg->Video.uWidth;
+    pStream->Video.uHeight = pCfg->Video.uHeight;
 
 #ifndef VBOX_VIDEOREC_WITH_QUEUE
     /* When not using a queue, we only use one frame per stream at once.
@@ -932,8 +1066,6 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     PVIDEORECVIDEOCODEC pVC = &pStream->Video.Codec;
 
 #ifdef VBOX_WITH_LIBVPX
-    pVC->VPX.uEncoderDeadline = VPX_DL_REALTIME;
-
     vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pVC->VPX.Cfg, 0);
     if (rcv != VPX_CODEC_OK)
     {
@@ -942,173 +1074,96 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     }
 #endif
 
-    com::Utf8Str options(pszOptions);
-    size_t pos = 0;
+    pStream->Video.uDelayMs = 1000 / pCfg->Video.uFPS;
 
-    /* By default we only enable video recording for now.
-     * Audio support is considered as being experimental. There be dragons! */
-    bool     fHasVideoTrack = true;
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-    bool     fHasAudioTrack = false;
-    /* By default we use 48kHz, 16-bit, stereo for the audio track. */
-    uint16_t uAudioHz       = 48000;
-    uint8_t  uAudioBits     = 16;
-    uint8_t  uAudioChannels = 2;
-#endif
-
-    com::Utf8Str key, value;
-    while ((pos = options.parseKeyValue(key, value, pos)) != com::Utf8Str::npos)
+    switch (pStream->enmDst)
     {
-        if (key.compare("vc_quality", Utf8Str::CaseInsensitive) == 0)
+        case VIDEORECDEST_FILE:
         {
-            if (value.compare("realtime", Utf8Str::CaseInsensitive) == 0)
-            {
-#ifdef VBOX_WITH_LIBVPX
-                pVC->VPX.uEncoderDeadline = VPX_DL_REALTIME;
-#endif
-            }
-            else if (value.compare("good", Utf8Str::CaseInsensitive) == 0)
-            {
-                pVC->VPX.uEncoderDeadline = 1000000 / uFPS;
-            }
-            else if (value.compare("best", Utf8Str::CaseInsensitive) == 0)
-            {
-#ifdef VBOX_WITH_LIBVPX
-                pVC->VPX.uEncoderDeadline = VPX_DL_BEST_QUALITY;
-#endif
-            }
-            else
-            {
-                LogRel(("VideoRec: Setting quality deadline to '%s'\n", value.c_str()));
-                pVC->VPX.uEncoderDeadline = value.toUInt32();
-            }
-        }
-        else if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
-        {
+            rc = pStream->File.pWEBM->CreateEx(pStream->File.pszFile, &pStream->File.hFile,
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-            if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
-            {
-                fHasVideoTrack = false;
-                LogRel(("VideoRec: Only audio will be recorded\n"));
-            }
-#endif
-        }
-        else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
-        {
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-            if (value.compare("false", Utf8Str::CaseInsensitive))
-            {
-                fHasAudioTrack = false;
-                LogRel(("VideoRec: Only video will be recorded\n"));
-            }
-#endif
-        }
-        else if (key.compare("ac_profile", Utf8Str::CaseInsensitive) == 0)
-        {
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-            if (value.compare("low", Utf8Str::CaseInsensitive) == 0)
-            {
-                uAudioHz       = 8000;
-                uAudioBits     = 16;
-                uAudioChannels = 1;
-            }
-            else if (value.startsWith("med" /* "med[ium]" */, Utf8Str::CaseInsensitive) == 0)
-            {
-                uAudioHz       = 22050;
-                uAudioBits     = 16;
-                uAudioChannels = 2;
-            }
-            else if (value.compare("high", Utf8Str::CaseInsensitive) == 0)
-            {
-                /* Stay with the default set above. */
-            }
-#endif
-        }
-        else
-            LogRel(("VideoRec: Unknown option '%s' (value '%s'), skipping\n", key.c_str(), value.c_str()));
-
-    } /* while */
-
-    uint64_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_WRITE;
-#ifdef DEBUG
-    fOpen |= RTFILE_O_CREATE_REPLACE;
+                                               pCfg->Audio.fEnabled ? WebMWriter::AudioCodec_Opus : WebMWriter::AudioCodec_None,
 #else
-    /* Play safe: the file must not exist, overwriting is potentially
-     * hazardous as nothing prevents the user from picking a file name of some
-     * other important file, causing unintentional data loss. */
-    fOpen |= RTFILE_O_CREATE;
+                                               WebMWriter::AudioCodec_None,
+#endif
+                                               pCfg->Video.fEnabled ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("VideoRec: Failed to create the capture output file '%s' (%Rrc)\n", pStream->File.pszFile, rc));
+                break;
+            }
+
+            const char *pszFile = pStream->File.pszFile;
+
+            if (pCfg->Video.fEnabled)
+            {
+                rc = pStream->File.pWEBM->AddVideoTrack(pCfg->Video.uWidth, pCfg->Video.uHeight, pCfg->Video.uFPS,
+                                                        &pStream->uTrackVideo);
+                if (RT_FAILURE(rc))
+                {
+                    LogRel(("VideoRec: Failed to add video track to output file '%s' (%Rrc)\n", pszFile, rc));
+                    break;
+                }
+
+                LogRel(("VideoRec: Recording screen #%u with %RU32x%RU32 @ %RU32 kbps, %u FPS\n",
+                        uScreen, pCfg->Video.uWidth, pCfg->Video.uHeight, pCfg->Video.uRate, pCfg->Video.uFPS));
+            }
+
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+            if (pCfg->Audio.fEnabled)
+            {
+                rc = pStream->File.pWEBM->AddAudioTrack(pCfg->Audio.uHz, pCfg->Audio.cChannels, pCfg->Audio.cBits,
+                                                        &pStream->uTrackAudio);
+                if (RT_FAILURE(rc))
+                {
+                    LogRel(("VideoRec: Failed to add audio track to output file '%s' (%Rrc)\n", pszFile, rc));
+                    break;
+                }
+
+                LogRel(("VideoRec: Recording audio in %RU16Hz, %RU8 bit, %RU8 %s\n",
+                        pCfg->Audio.uHz, pCfg->Audio.cBits, pCfg->Audio.cChannels, pCfg->Audio.cChannels ? "channel" : "channels"));
+            }
 #endif
 
-    int rc = pStream->pEBML->Create(pszFile, fOpen,
+            if (   pCfg->Video.fEnabled
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-                                    fHasAudioTrack ? WebMWriter::AudioCodec_Opus : WebMWriter::AudioCodec_None,
-#else
-                                    WebMWriter::AudioCodec_None,
+                || pCfg->Audio.fEnabled
 #endif
-                                    fHasVideoTrack ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
+               )
+            {
+                char szWhat[32] = { 0 };
+                if (pCfg->Video.fEnabled)
+                    RTStrCat(szWhat, sizeof(szWhat), "video");
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+                if (pCfg->Audio.fEnabled)
+                {
+                    if (pCfg->Video.fEnabled)
+                        RTStrCat(szWhat, sizeof(szWhat), " + ");
+                    RTStrCat(szWhat, sizeof(szWhat), "audio");
+                }
+#endif
+                LogRel(("VideoRec: Recording %s to '%s'\n", szWhat, pszFile));
+            }
+
+            break;
+        }
+
+        default:
+            AssertFailed(); /* Should never happen. */
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+    }
+
     if (RT_FAILURE(rc))
-    {
-        LogRel(("VideoRec: Failed to create the video capture output file '%s' (%Rrc)\n", pszFile, rc));
         return rc;
-    }
-
-    pStream->Video.uDelayMs = 1000 / uFPS;
-
-    if (fHasVideoTrack)
-    {
-        rc = pStream->pEBML->AddVideoTrack(uWidth, uHeight, uFPS, &pStream->uTrackVideo);
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("VideoRec: Failed to add video track to output file '%s' (%Rrc)\n", pszFile, rc));
-            return rc;
-        }
-
-        LogRel(("VideoRec: Recording screen #%u with %ux%u @ %u kbps, %u FPS\n",
-                uScreen, uWidth, uHeight, uRate, uFPS));
-    }
-
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-    if (fHasAudioTrack)
-    {
-        rc = pStream->pEBML->AddAudioTrack(uAudioHz, uAudioChannels, uAudioBits, &pStream->uTrackAudio);
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("VideoRec: Failed to add audio track to output file '%s' (%Rrc)\n", pszFile, rc));
-            return rc;
-        }
-
-        LogRel(("VideoRec: Recording audio in %RU16Hz, %RU8 bit, %RU8 %s\n",
-                uAudioHz, uAudioBits, uAudioChannels, uAudioChannels == 1 ? "channel" : "channels"));
-    }
-#endif
-
-    if (   fHasVideoTrack
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-        || fHasAudioTrack
-#endif
-       )
-    {
-        char szWhat[32] = { 0 };
-        if (fHasVideoTrack)
-            RTStrCat(szWhat, sizeof(szWhat), "video");
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-        if (fHasAudioTrack)
-        {
-            if (fHasVideoTrack)
-                RTStrCat(szWhat, sizeof(szWhat), " + ");
-            RTStrCat(szWhat, sizeof(szWhat), "audio");
-        }
-#endif
-        LogRel(("Recording %s to '%s'\n", szWhat, pszFile));
-    }
 
 #ifdef VBOX_WITH_LIBVPX
     /* Target bitrate in kilobits per second. */
-    pVC->VPX.Cfg.rc_target_bitrate = uRate;
+    pVC->VPX.Cfg.rc_target_bitrate = pCfg->Video.uRate;
     /* Frame width. */
-    pVC->VPX.Cfg.g_w = uWidth;
+    pVC->VPX.Cfg.g_w = pCfg->Video.uWidth;
     /* Frame height. */
-    pVC->VPX.Cfg.g_h = uHeight;
+    pVC->VPX.Cfg.g_h = pCfg->Video.uHeight;
     /* 1ms per frame. */
     pVC->VPX.Cfg.g_timebase.num = 1;
     pVC->VPX.Cfg.g_timebase.den = 1000;
@@ -1119,13 +1174,13 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     rcv = vpx_codec_enc_init(&pVC->VPX.Ctx, DEFAULTCODEC, &pVC->VPX.Cfg, 0);
     if (rcv != VPX_CODEC_OK)
     {
-        LogFlow(("Failed to initialize VP8 encoder %s", vpx_codec_err_to_string(rcv)));
+        LogFlow(("Failed to initialize VP8 encoder: %s\n", vpx_codec_err_to_string(rcv)));
         return VERR_INVALID_PARAMETER;
     }
 
-    if (!vpx_img_alloc(&pVC->VPX.RawImage, VPX_IMG_FMT_I420, uWidth, uHeight, 1))
+    if (!vpx_img_alloc(&pVC->VPX.RawImage, VPX_IMG_FMT_I420, pCfg->Video.uWidth, pCfg->Video.uHeight, 1))
     {
-        LogFlow(("Failed to allocate image %dx%d", uWidth, uHeight));
+        LogFlow(("Failed to allocate image %RU32x%RU32\n", pCfg->Video.uWidth, pCfg->Video.uHeight));
         return VERR_NO_MEMORY;
     }
 
@@ -1138,22 +1193,32 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
 }
 
 /**
- * VideoRec utility function to check if recording is enabled.
+ * Returns which recording features currently are enabled for a given configuration.
  *
- * @returns true if recording is enabled.
- * @param   pCtx                Pointer to video recording context.
+ * @returns Enabled video recording features.
+ * @param   pCtx                Pointer to recording configuration.
  */
-bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx)
+VIDEORECFEATURES VideoRecGetEnabled(PVIDEORECCFG pCfg)
 {
-    if (!pCtx)
-        return false;
+    if (   !pCfg
+        || !pCfg->fEnabled)
+    {
+        return VIDEORECFEATURE_NONE;
+    }
 
-    return ASMAtomicReadBool(&pCtx->fEnabled);
+    VIDEORECFEATURES fFeatures = VIDEORECFEATURE_NONE;
+
+    if (pCfg->Video.fEnabled)
+        fFeatures |= VIDEORECFEATURE_VIDEO;
+
+    if (pCfg->Audio.fEnabled)
+        fFeatures |= VIDEORECFEATURE_AUDIO;
+
+    return fFeatures;
 }
 
 /**
- * VideoRec utility function to check if recording engine is ready to accept a new frame
- * for the given screen.
+ * Checks if recording engine is ready to accept a new frame for the given screen.
  *
  * @returns true if recording engine is ready.
  * @param   pCtx                Pointer to video recording context.
@@ -1183,15 +1248,27 @@ bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t uTimeStam
 }
 
 /**
- * VideoRec utility function to check if a specified limit for recording
- * has been reached.
+ * Returns whether video recording for a given recording context is active or not.
+ *
+ * @returns true if active, false if not.
+ * @param   pCtx                 Pointer to video recording context.
+ */
+bool VideoRecIsActive(PVIDEORECCONTEXT pCtx)
+{
+    if (!pCtx)
+        return false;
+
+    return ASMAtomicReadBool(&pCtx->fEnabled);
+}
+
+/**
+ * Checks if a specified limit for recording has been reached.
  *
  * @returns true if any limit has been reached.
  * @param   pCtx                Pointer to video recording context.
  * @param   uScreen             Screen ID.
  * @param   tsNowMs             Current time stamp (in ms).
  */
-
 bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t tsNowMs)
 {
     PVIDEORECSTREAM pStream = videoRecStreamGet(pCtx, uScreen);
@@ -1201,33 +1278,38 @@ bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t ts
         return false;
     }
 
-    if (   pCtx->uMaxTimeMs
-        && tsNowMs >= pCtx->uMaxTimeMs)
+    const PVIDEORECCFG pCfg = &pCtx->Cfg;
+
+    if (   pCfg->uMaxTimeS
+        && tsNowMs >= pCtx->tsStartMs + (pCfg->uMaxTimeS * 1000))
     {
         return true;
     }
 
-    if (pCtx->uMaxSizeMB)
+    if (pCfg->enmDst == VIDEORECDEST_FILE)
     {
-        uint64_t sizeInMB = pStream->pEBML->GetFileSize() / (1024 * 1024);
-        if(sizeInMB >= pCtx->uMaxSizeMB)
+
+        if (pCfg->File.uMaxSizeMB)
+        {
+            uint64_t sizeInMB = pStream->File.pWEBM->GetFileSize() / (1024 * 1024);
+            if(sizeInMB >= pCfg->File.uMaxSizeMB)
+                return true;
+        }
+
+        /* Check for available free disk space */
+        if (   pStream->File.pWEBM
+            && pStream->File.pWEBM->GetAvailableSpace() < 0x100000) /**@todo r=andy WTF? Fix this. */
+        {
+            LogRel(("VideoRec: Not enough free storage space available, stopping video capture\n"));
             return true;
-    }
-
-    /* Check for available free disk space */
-    if (   pStream->pEBML
-        && pStream->pEBML->GetAvailableSpace() < 0x100000) /**@todo r=andy WTF? Fix this. */
-    {
-        LogRel(("VideoRec: Not enough free storage space available, stopping video capture\n"));
-        return true;
+        }
     }
 
     return false;
 }
 
 /**
- * VideoRec utility function to encode the source image and write the encoded
- * image to target file.
+ * Encodes the source image and write the encoded image to the stream's destination.
  *
  * @returns IPRT status code.
  * @param   pStream             Stream to encode and submit to.
@@ -1235,19 +1317,23 @@ bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t ts
  */
 static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, PVIDEORECVIDEOFRAME pFrame)
 {
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtrReturn(pFrame,  VERR_INVALID_POINTER);
+
     int rc;
 
-    PVIDEORECVIDEOCODEC pVC = &pStream->Video.Codec;
-
+    AssertPtr(pStream->pCtx);
+    PVIDEORECCFG        pCfg = &pStream->pCtx->Cfg;
+    PVIDEORECVIDEOCODEC pVC  = &pStream->Video.Codec;
 #ifdef VBOX_WITH_LIBVPX
     /* Presentation Time Stamp (PTS). */
     vpx_codec_pts_t pts = pFrame->uTimeStampMs;
     vpx_codec_err_t rcv = vpx_codec_encode(&pVC->VPX.Ctx,
                                            &pVC->VPX.RawImage,
-                                           pts                       /* Time stamp */,
-                                           pStream->Video.uDelayMs   /* How long to show this frame */,
-                                           0                         /* Flags */,
-                                           pVC->VPX.uEncoderDeadline /* Quality setting */);
+                                           pts                                    /* Time stamp */,
+                                           pStream->Video.uDelayMs                /* How long to show this frame */,
+                                           0                                      /* Flags */,
+                                           pCfg->Video.Codec.VPX.uEncoderDeadline /* Quality setting */);
     if (rcv != VPX_CODEC_OK)
     {
         LogFunc(("Failed to encode video frame: %s\n", vpx_codec_err_to_string(rcv)));
@@ -1267,7 +1353,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, PVIDEORECVIDEOFRAME p
             case VPX_CODEC_CX_FRAME_PKT:
             {
                 WebMWriter::BlockData_VP8 blockData = { &pVC->VPX.Cfg, pPacket };
-                rc = pStream->pEBML->WriteBlock(pStream->uTrackVideo, &blockData, sizeof(blockData));
+                rc = pStream->File.pWEBM->WriteBlock(pStream->uTrackVideo, &blockData, sizeof(blockData));
                 break;
             }
 
@@ -1285,7 +1371,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, PVIDEORECVIDEOFRAME p
 }
 
 /**
- * VideoRec utility function to convert RGB to YUV.
+ * Converts a RGB to YUV buffer.
  *
  * @returns IPRT status code.
  * TODO
@@ -1364,8 +1450,8 @@ int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbD
 }
 
 /**
- * VideoRec utility function to copy a source video frame to the intermediate
- * RGB buffer. This function is executed only once per time.
+ * Copies a source video frame to the intermediate RGB buffer.
+ * This function is executed only once per time.
  *
  * @thread  EMT
  *
@@ -1396,9 +1482,9 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
     if (!pStream)
         return VERR_NOT_FOUND;
 
-    int rc = RTCritSectEnter(&pStream->CritSect);
-    if (RT_FAILURE(rc))
-        return rc;
+    videoRecStreamLock(pStream);
+
+    int rc = VINF_SUCCESS;
 
     do
     {
@@ -1569,18 +1655,14 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
 
     } while (0);
 
-    int rc2 = RTCritSectLeave(&pStream->CritSect);
-    if (RT_SUCCESS(rc2))
-    {
-        if (   RT_SUCCESS(rc)
-            && rc != VINF_TRY_AGAIN) /* Only signal the thread if operation was successful. */
-        {
-            rc2 = RTSemEventSignal(pCtx->WaitEvent);
-        }
-    }
+    videoRecStreamUnlock(pStream);
 
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+    if (   RT_SUCCESS(rc)
+        && rc != VINF_TRY_AGAIN) /* Only signal the thread if operation was successful. */
+    {
+        int rc2 = RTSemEventSignal(pCtx->WaitEvent);
+        AssertRC(rc2);
+    }
 
     return rc;
 }
