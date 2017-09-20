@@ -285,7 +285,10 @@ if  defined(VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER) \
  		$$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip
 	$(call MSG_L1,Unpacking additions archive)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
-	$(APPEND) -n $(PATH_TARGET)/VBoxGuestAdditions.iso
+	## @todo r=klaus replace mv/cp/rm sequence by touch or some equivalent to lose the timestamp
+	$(MV) $(PATH_TARGET)/VBoxGuestAdditions.iso $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
+	$(CP) $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp $(PATH_TARGET)/VBoxGuestAdditions.iso
+	$(RM) -f $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
 	$(APPEND) -t $@ "done"
 
  $$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $$(dir $$@)
@@ -321,9 +324,14 @@ $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_TARGET)/VirtualBox_$(f).chm $(PA
 		$$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip
 	$(call MSG_L1,Unpacking documentation)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
-	$(APPEND) -n $(PATH_TARGET)/VirtualBox.chm
-	$(APPEND) -n $(PATH_TARGET)/UserManual.pdf
-	for i in $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_TARGET)/VirtualBox_$(f).chm $(PATH_TARGET)/UserManual_$(f).pdf); do $(APPEND) -n $$i; done
+	## @todo r=klaus replace mv/cp/rm sequence by touch or some equivalent to lose the timestamp
+	$(MV) $(PATH_TARGET)/VirtualBox.chm $(PATH_TARGET)/VirtualBox.chm.tmp
+	$(CP) $(PATH_TARGET)/VirtualBox.chm.tmp $(PATH_TARGET)/VirtualBox.chm
+	$(RM) -f $(PATH_TARGET)/VirtualBox.chm.tmp
+	$(MV) $(PATH_TARGET)/UserManual.pdf $(PATH_TARGET)/UserManual.pdf.tmp
+	$(CP) $(PATH_TARGET)/UserManual.pdf.tmp $(PATH_TARGET)/UserManual.pdf
+	$(RM) -f $(PATH_TARGET)/UserManual.pdf.tmp
+	for i in $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_TARGET)/VirtualBox_$(f).chm $(PATH_TARGET)/UserManual_$(f).pdf); do $(MV_EXT) $$i $$i.tmp; $(CP_EXT) $$i.tmp $$i; $(RM_EXT) -f $$i.tmp; done
 	$(APPEND) -t $@ "done"
 
 $$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/documentation.sh | $$(dir $$@)
@@ -382,8 +390,13 @@ endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
 		$(NLTAB) $(QUIET)$(TEST) '!' -d $(dir $@)/$(arch) -- $(MKDIR_EXT) -- $(dir $@)/$(arch) \
 		$(foreach mod,$(VBOX_EFI_MODULES_FLAT) \
 		,$(NLTAB) $(QUIET)$(TEST) '!' -f $(dir $@)/$(arch)/$(mod).pdb -- $(APPEND_EXT) $(dir $@)/$(arch)/$(mod).pdb ))
-	$(APPEND) -n $(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd
-	$(APPEND) -n $(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd
+	## @todo r=klaus replace mv/cp/rm sequence by touch or some equivalent to lose the timestamp
+	$(MV) $(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd $(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd.tmp
+	$(CP) $(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd.tmp $(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd
+	$(RM) -f $(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd.tmp
+	$(MV) $(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd $(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd.tmp
+	$(CP) $(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd.tmp $(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd
+	$(RM) -f $(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd.tmp
 	$(APPEND) -t $@ "done"
 
    $$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip: \
