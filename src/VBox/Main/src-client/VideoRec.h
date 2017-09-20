@@ -58,7 +58,8 @@ typedef struct VIDEORECCFG
 {
     /** Whether recording is enabled or not (as a whole). */
     bool                    fEnabled;
-    /** */
+    /** Array of all screens containing whether they're enabled
+     *  for recording or not.  */
     com::SafeArray<BOOL>    aScreens;
     /** Destination where to write the stream to. */
     VIDEORECDEST            enmDst;
@@ -120,7 +121,11 @@ typedef struct VIDEORECCFG
     VIDEORECCFG& operator=(const VIDEORECCFG &that)
     {
         fEnabled = that.fEnabled;
-        that.aScreens.cloneTo(aScreens);
+
+        aScreens.resize(that.aScreens.size());
+        for (size_t i = 0; i < that.aScreens.size(); ++i)
+            aScreens[i] = that.aScreens[i];
+
         enmDst   = that.enmDst;
 
         File.strFile    = that.File.strFile;

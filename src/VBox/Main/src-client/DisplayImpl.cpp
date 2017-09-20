@@ -2419,10 +2419,13 @@ int Display::i_videoCaptureInvalidate(void)
     /*
      * Get parameters from API.
      */
-    SafeArray<BOOL> aScreens;
+    com::SafeArray<BOOL> aScreens;
     HRESULT rc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(aScreens));
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    aScreens.cloneTo(mVideoRecCfg.aScreens);
+
+    mVideoRecCfg.aScreens.resize(aScreens.size());
+    for (size_t i = 0; i < aScreens.size(); ++i)
+        mVideoRecCfg.aScreens[i] = aScreens[i];
 
     rc = pMachine->COMGETTER(VideoCaptureWidth)((ULONG *)&mVideoRecCfg.Video.uWidth);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
