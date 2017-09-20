@@ -1196,7 +1196,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
  * Returns which recording features currently are enabled for a given configuration.
  *
  * @returns Enabled video recording features.
- * @param   pCtx                Pointer to recording configuration.
+ * @param   pCfg                Pointer to recording configuration.
  */
 VIDEORECFEATURES VideoRecGetEnabled(PVIDEORECCFG pCfg)
 {
