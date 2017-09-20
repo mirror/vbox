@@ -5531,8 +5531,8 @@ HRESULT Console::i_onVideoCaptureChange()
                                 rc2 = pAudioCon->pfnEnable(pAudioCon, PDMAUDIODIR_OUT,
                                                            RT_BOOL(fFeatures & VIDEORECFEATURE_AUDIO));
                                 if (RT_FAILURE(rc2))
-                                    LogRel(("VideoRec: Failed to %s audio recording, rc=%Rrc\n",
-                                            fFeatures & VIDEORECFEATURE_AUDIO ? "enable" : "disable", ulLUN, rc2));
+                                    LogRel(("VideoRec: Failed to %s audio recording (%Rrc)\n",
+                                            fFeatures & VIDEORECFEATURE_AUDIO ? "enable" : "disable", rc2));
                             }
 
                             break; /* Driver found, no need to continue. */
