@@ -1211,8 +1211,10 @@ VIDEORECFEATURES VideoRecGetEnabled(PVIDEORECCFG pCfg)
     if (pCfg->Video.fEnabled)
         fFeatures |= VIDEORECFEATURE_VIDEO;
 
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
     if (pCfg->Audio.fEnabled)
         fFeatures |= VIDEORECFEATURE_AUDIO;
+#endif
 
     return fFeatures;
 }
