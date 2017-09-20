@@ -5502,9 +5502,9 @@ HRESULT Console::i_onVideoCaptureChange()
             int vrc = mDisplay->i_videoCaptureInvalidate();
             if (RT_SUCCESS(vrc))
             {
+# ifdef VBOX_WITH_AUDIO_VIDEOREC
                 VIDEORECFEATURES fFeatures = mDisplay->i_videoCaptureGetEnabled();
 
-# ifdef VBOX_WITH_AUDIO_VIDEOREC
                 ComPtr<IAudioAdapter> audioAdapter;
                 rc = mMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
                 AssertComRC(rc);
