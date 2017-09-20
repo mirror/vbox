@@ -2417,19 +2417,19 @@ int Display::i_videoCaptureInvalidate(void)
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
     aScreens.cloneTo(mVideoRecCfg.aScreens);
 
-    rc = pMachine->COMGETTER(VideoCaptureWidth)(&mVideoRecCfg.Video.uWidth);
+    rc = pMachine->COMGETTER(VideoCaptureWidth)((ULONG *)&mVideoRecCfg.Video.uWidth);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureHeight)(&mVideoRecCfg.Video.uHeight);
+    rc = pMachine->COMGETTER(VideoCaptureHeight)((ULONG *)&mVideoRecCfg.Video.uHeight);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureRate)(&mVideoRecCfg.Video.uRate);
+    rc = pMachine->COMGETTER(VideoCaptureRate)((ULONG *)&mVideoRecCfg.Video.uRate);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureFPS)(&mVideoRecCfg.Video.uFPS);
+    rc = pMachine->COMGETTER(VideoCaptureFPS)((ULONG *)&mVideoRecCfg.Video.uFPS);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
     rc = pMachine->COMGETTER(VideoCaptureFile)(&mVideoRecCfg.File.strFile);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureMaxFileSize)(&mVideoRecCfg.File.uMaxSizeMB);
+    rc = pMachine->COMGETTER(VideoCaptureMaxFileSize)((ULONG *)&mVideoRecCfg.File.uMaxSizeMB);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureMaxTime)(&mVideoRecCfg.uMaxTimeS);
+    rc = pMachine->COMGETTER(VideoCaptureMaxTime)((ULONG *)&mVideoRecCfg.uMaxTimeS);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
     BSTR bstrOptions;
     rc = pMachine->COMGETTER(VideoCaptureOptions)(&bstrOptions);
