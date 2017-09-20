@@ -44,6 +44,10 @@
 #include "EbmlWriter.h"
 #include "EbmlMkvIDs.h"
 
+/** No flags set. */
+#define VBOX_EBMLWRITER_FLAG_NONE               0
+/** The file handle was inherited. */
+#define VBOX_EBMLWRITER_FLAG_HANDLE_INHERITED   RT_BIT(0)
 
 class Ebml
 {
@@ -65,24 +69,37 @@ private:
     RTFILE                     m_hFile;
     /** The file's name (path). */
     Utf8Str                    m_strFile;
+    /** Flags. */
+    uint32_t                   m_fFlags;
 
 public:
 
     Ebml(void)
-        : m_hFile(NIL_RTFILE) { }
+        : m_hFile(NIL_RTFILE)
+        , m_fFlags(VBOX_EBMLWRITER_FLAG_NONE) { }
 
     virtual ~Ebml(void) { close(); }
 
 public:
 
-    /** Creates EBML output file. */
-    inline int create(const char *a_pszFilename, uint64_t fOpen)
+    /** Creates an EBML output file using an existing, open file handle. */
+    inline int createEx(const char *a_pszFile, PRTFILE phFile)
     {
-        int rc = RTFileOpen(&m_hFile, a_pszFilename, fOpen);
+        AssertPtrReturn(phFile, VERR_INVALID_POINTER);
+
+        m_hFile   = *phFile;
+        m_fFlags |= VBOX_EBMLWRITER_FLAG_HANDLE_INHERITED;
+        m_strFile = a_pszFile;
+
+        return VINF_SUCCESS;
+    }
+
+    /** Creates an EBML output file using a file name. */
+    inline int create(const char *a_pszFile, uint64_t fOpen)
+    {
+        int rc = RTFileOpen(&m_hFile, a_pszFile, fOpen);
         if (RT_SUCCESS(rc))
-        {
-            m_strFile = a_pszFilename;
-        }
+            m_strFile = a_pszFile;
 
         return rc;
     }
@@ -123,9 +140,13 @@ public:
                   ("%zu elements are not closed yet (next element to close is 0x%x)\n",
                    m_Elements.size(), m_Elements.top().classId));
 
-        RTFileClose(m_hFile);
-        m_hFile = NIL_RTFILE;
+        if (!(m_fFlags & VBOX_EBMLWRITER_FLAG_HANDLE_INHERITED))
+        {
+            RTFileClose(m_hFile);
+            m_hFile = NIL_RTFILE;
+        }
 
+        m_fFlags  = VBOX_EBMLWRITER_FLAG_NONE;
         m_strFile = "";
     }
 
@@ -1096,7 +1117,8 @@ private:
     }
 };
 
-WebMWriter::WebMWriter(void) : m_pImpl(new WebMWriter_Impl()) {}
+WebMWriter::WebMWriter(void)
+    : m_pImpl(new WebMWriter_Impl()) {}
 
 WebMWriter::~WebMWriter(void)
 {
@@ -1105,6 +1127,27 @@ WebMWriter::~WebMWriter(void)
         Close();
         delete m_pImpl;
     }
+}
+
+int WebMWriter::CreateEx(const char *a_pszFilename, PRTFILE a_phFile,
+                         WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec)
+{
+    try
+    {
+        m_pImpl->m_enmAudioCodec = a_enmAudioCodec;
+        m_pImpl->m_enmVideoCodec = a_enmVideoCodec;
+
+        LogFunc(("Creating '%s'\n", a_pszFilename));
+
+        int rc = m_pImpl->m_Ebml.createEx(a_pszFilename, a_phFile);
+        if (RT_SUCCESS(rc))
+            rc = m_pImpl->writeHeader();
+    }
+    catch(int rc)
+    {
+        return rc;
+    }
+    return VINF_SUCCESS;
 }
 
 int WebMWriter::Create(const char *a_pszFilename, uint64_t a_fOpen,
