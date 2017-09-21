@@ -95,7 +95,9 @@ private:
     QString m_strText;
     QTextEdit *m_pTextEdit;
     int m_iDesiredTextEditWidth;
-    int m_iDesiredTextEditHeight;
+    int m_iMaximumPaneHeight;
+    int m_iMaximumTextEditHeight;
+    int m_iTextContentMargin;
 
     /* Variables: Focus stuff: */
     bool m_fFocused;

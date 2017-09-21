@@ -32,12 +32,14 @@
 
 UIPopupPaneDetails::UIPopupPaneDetails(QWidget *pParent, const QString &strText, bool fFocused)
     : QWidget(pParent)
-    , m_iLayoutMargin(0)
+    , m_iLayoutMargin(5)
     , m_iLayoutSpacing(10)
     , m_strText(strText)
     , m_pTextEdit(0)
     , m_iDesiredTextEditWidth(-1)
-    , m_iDesiredTextEditHeight(-1)
+    , m_iMaximumPaneHeight(-1)
+    , m_iMaximumTextEditHeight(0)
+    , m_iTextContentMargin(5)
     , m_fFocused(fFocused)
     , m_pAnimation(0)
 {
@@ -94,6 +96,13 @@ void UIPopupPaneDetails::layoutContent()
     /* TextEdit: */
     m_pTextEdit->move(m_iLayoutMargin, m_iLayoutMargin);
     m_pTextEdit->resize(qMin(iWidth, iTextEditWidth), qMin(iHeight, iTextEditHeight));
+    /* Text-document: */
+    QTextDocument *pTextDocument = m_pTextEdit->document();
+    if (pTextDocument)
+    {
+        pTextDocument->adjustSize();
+        pTextDocument->setTextWidth(m_pTextEdit->width() - m_iTextContentMargin);
+    }
 }
 
 void UIPopupPaneDetails::updateVisibility()
@@ -120,11 +129,12 @@ void UIPopupPaneDetails::sltHandleProposalForWidth(int iWidth)
 void UIPopupPaneDetails::sltHandleProposalForHeight(int iHeight)
 {
     /* Make sure the desired-height has changed: */
-    if (m_iDesiredTextEditHeight == iHeight)
+    if (m_iMaximumPaneHeight == iHeight)
         return;
 
     /* Fetch new desired-height: */
-    m_iDesiredTextEditHeight = iHeight;
+    m_iMaximumPaneHeight = iHeight;
+    m_iMaximumTextEditHeight = m_iMaximumPaneHeight - 2 * m_iLayoutMargin;
 
     /* Update size-hint: */
     updateSizeHint();
@@ -183,7 +193,6 @@ void UIPopupPaneDetails::prepareContent()
         m_pTextEdit->setFont(tuneFont(m_pTextEdit->font()));
         m_pTextEdit->setText(m_strText);
         m_pTextEdit->setFocusProxy(this);
-        m_pTextEdit->setLineWrapMode(QTextEdit::NoWrap);
     }
 }
 
@@ -207,7 +216,7 @@ void UIPopupPaneDetails::updateSizeHint()
 
     /* Recalculate expanded size-hint: */
     {
-        int iNewHeight = m_iDesiredTextEditHeight;
+        int iNewHeight = m_iMaximumPaneHeight;
         QTextDocument *pTextDocument = m_pTextEdit->document();
         if(pTextDocument)
         {
@@ -216,7 +225,7 @@ void UIPopupPaneDetails::updateSizeHint()
             /* Get corresponding QTextDocument size: */
             QSize textSize = pTextDocument->size().toSize();
             /* Make sure the text edits height is no larger than that of container widget: */
-            iNewHeight = qMin(iNewHeight, textSize.height());
+            iNewHeight = qMin(m_iMaximumTextEditHeight, textSize.height() + 2 * m_iLayoutMargin);
         }
         /* Recalculate label size-hint: */
         m_textEditSizeHint = QSize(m_iDesiredTextEditWidth, iNewHeight);

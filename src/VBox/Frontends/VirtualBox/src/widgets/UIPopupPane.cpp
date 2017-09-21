@@ -132,7 +132,7 @@ void UIPopupPane::layoutContent()
         m_pDetailsPane->move(m_iLayoutMargin,
                              iTextPaneYOffset + iTextPaneHeight + m_iLayoutSpacing);
         m_pDetailsPane->resize(iTextPaneWidth + iButtonPaneMinimumWidth,
-                               m_pDetailsPane->minimumSizeHint().height() -  m_iLayoutMargin);
+                               m_pDetailsPane->minimumSizeHint().height());
         m_pDetailsPane->layoutContent();
     }
 }
@@ -195,6 +195,7 @@ void UIPopupPane::sltUpdateSizeHint()
     {
         /* Take into account layout: */
         iMinimumHeightHint += 2 * m_iLayoutMargin;
+        iMinimumHeightHint += m_iLayoutSpacing;
         {
             /* Take into account widgets: */
             const int iTextPaneHeight = m_pMessagePane->minimumSizeHint().height();
