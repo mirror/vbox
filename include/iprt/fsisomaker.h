@@ -89,6 +89,14 @@ RTDECL(uint32_t) RTFsIsoMakerRelease(RTFSISOMAKER hIsoMaker);
 RTDECL(int) RTFsIsoMakerSetIso9660Level(RTFSISOMAKER hIsoMaker, uint8_t uIsoLevel);
 
 /**
+ * Gets the ISO-9660 level.
+ *
+ * @returns The level, UINT8_MAX if invalid handle.
+ * @param   hIsoMaker           The ISO maker handle.
+ */
+RTDECL(uint8_t) RTFsIsoMakerGetIso9660Level(RTFSISOMAKER hIsoMaker);
+
+/**
  * Sets the joliet level.
  *
  * @returns IPRT status code

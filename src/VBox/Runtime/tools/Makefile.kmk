@@ -28,6 +28,23 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 
+# RTIsoMaker - ISO image maker - build version.
+BLDPROGS += bldRTIsoMaker
+bldRTIsoMaker_TEMPLATE = VBoxAdvBldProg
+bldRTIsoMaker_SOURCES = \
+	RTIsoMaker.cpp \
+       ../common/misc/buildconfig.cpp
+bldRTIsoMaker_DEFS = \
+	IPRT_BLDCFG_SCM_REV=$(if $(VBOX_SVN_REV_FALLBACK),$(VBOX_SVN_REV_FALLBACK),$(VBOX_SVN_REV)) \
+	IPRT_BLDCFG_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" \
+	IPRT_BLDCFG_VERSION_MAJOR=$(VBOX_VERSION_MAJOR) \
+	IPRT_BLDCFG_VERSION_MINOR=$(VBOX_VERSION_MINOR) \
+	IPRT_BLDCFG_VERSION_BUILD=$(VBOX_VERSION_BUILD) \
+	IPRT_BLDCFG_TARGET=\"$(KBUILD_TARGET)\" \
+	IPRT_BLDCFG_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\" \
+	IPRT_BLDCFG_TYPE=\"$(KBUILD_TYPE)\"
+bldRTIsoMaker_INCS = ../include
+
 # RTManifest is a tool for creating and verifying manifest files - build version.
 BLDPROGS += bldRTManifest
 bldRTManifest_TEMPLATE = VBoxAdvBldProg
@@ -48,6 +65,11 @@ if  !defined(VBOX_ONLY_ADDITIONS) \
  PROGRAMS += RTCat
  RTCat_TEMPLATE = VBoxR3Tool
  RTCat_SOURCES = RTCat.cpp
+
+ # RTIsoMaker - ISO image maker - build version.
+ PROGRAMS += RTIsoMaker
+ RTIsoMaker_TEMPLATE = VBoxR3Tool
+ RTIsoMaker_SOURCES = RTIsoMaker.cpp
 
  # RTLs is a tool for listing file information.
  PROGRAMS += RTLs

@@ -928,6 +928,7 @@
 # define RTFsIsoMakerBootCatSetSectionEntry             RT_MANGLER(RTFsIsoMakerBootCatSetSectionEntry)
 # define RTFsIsoMakerBootCatSetSectionHeaderEntry       RT_MANGLER(RTFsIsoMakerBootCatSetSectionHeaderEntry)
 # define RTFsIsoMakerQueryObjIdxForBootCatalog          RT_MANGLER(RTFsIsoMakerQueryObjIdxForBootCatalog)
+# define RTFsIsoMakerGetIso9660Level                    RT_MANGLER(RTFsIsoMakerGetIso9660Level)
 # define RTFsIsoMakerSetIso9660Level                    RT_MANGLER(RTFsIsoMakerSetIso9660Level)
 # define RTFsIsoMakerSetJolietUcs2Level                 RT_MANGLER(RTFsIsoMakerSetJolietUcs2Level)
 # define RTFsIsoMakerSetRockRidgeLevel                  RT_MANGLER(RTFsIsoMakerSetRockRidgeLevel)
