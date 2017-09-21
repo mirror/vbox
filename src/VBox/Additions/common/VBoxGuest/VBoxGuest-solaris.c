@@ -482,8 +482,12 @@ static int vgdrvSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pv
 
 /**
  * User context entry points
+ *
+ * @remarks fFlags are the flags passed to open() or to ldi_open_by_name.  In
+ *          the latter case the FKLYR flag is added to indicate that the caller
+ *          is a kernel component rather than user land.
  */
-static int vgdrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
+static int vgdrvSolarisOpen(dev_t *pDev, int fFlags, int fType, cred_t *pCred)
 {
     int                 rc;
     PVBOXGUESTSESSION   pSession = NULL;
@@ -516,10 +520,16 @@ static int vgdrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     /*
      * Create a new session.
      */
-    rc = VGDrvCommonCreateUserSession(&g_DevExt, &pSession);
+    if (!(fFlags & FKLYR))
+        rc = VGDrvCommonCreateUserSession(&g_DevExt, &pSession);
+    else
+        rc = VGDrvCommonCreateKernelSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
     {
-        pState->pvProcRef = proc_ref();
+        if (!(fFlags & FKLYR))
+            pState->pvProcRef = proc_ref();
+        else
+            pState->pvProcRef = NULL;
         pState->pSession = pSession;
         *pDev = makedevice(getmajor(*pDev), iOpenInstance);
         Log(("vgdrvSolarisOpen: pSession=%p pState=%p pid=%d\n", pSession, pState, (int)RTProcSelf()));
@@ -546,7 +556,11 @@ static int vgdrvSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
         return EFAULT;
     }
 
-    proc_unref(pState->pvProcRef);
+    if (pState->pvProcRef != NULL)
+    {
+        proc_unref(pState->pvProcRef);
+        pState->pvProcRef = NULL;
+    }
     pSession = pState->pSession;
     pState->pSession = NULL;
     Log(("vgdrvSolarisClose: pSession=%p pState=%p\n", pSession, pState));
@@ -560,7 +574,8 @@ static int vgdrvSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
     /*
      * Close the session.
      */
-    VGDrvCommonCloseSession(&g_DevExt, pSession);
+    if (pSession)
+        VGDrvCommonCloseSession(&g_DevExt, pSession);
     return 0;
 }
 
@@ -590,6 +605,15 @@ static int vgdrvSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
     LogFlow(("vgdrvSolarisWrite:\n"));
     return 0;
 }
+
+
+/** @def IOCPARM_LEN
+ * Gets the length from the ioctl number.
+ * This is normally defined by sys/ioccom.h on BSD systems...
+ */
+#ifndef IOCPARM_LEN
+# define IOCPARM_LEN(x)     ( ((x) >> 16) & IOCPARM_MASK )
+#endif
 
 
 /**
@@ -632,17 +656,30 @@ static int vgdrvSolarisIOCtl(dev_t Dev, int iCmd, intptr_t iArgs, int Mode, cred
         return 0;
     }
 
+    /*
+     * It's kind of simple if this is a kernel session, take slow path if user land.
+     */
+    if (pSession->R0Process == NIL_RTR0PROCESS)
+    {
+        if (IOCPARM_LEN(iCmd) == sizeof(VBGLREQHDR))
+        {
+            PVBGLREQHDR pHdr = (PVBGLREQHDR)iArgs;
+            int rc;
+            if (iCmd != VBGL_IOCTL_IDC_DISCONNECT)
+                rc =VGDrvCommonIoCtl(iCmd, &g_DevExt, pSession, pHdr, RT_MAX(pHdr->cbIn, pHdr->cbOut));
+            else
+            {
+                pState->pSession = NULL;
+                rc = VGDrvCommonIoCtl(iCmd, &g_DevExt, pSession, pHdr, RT_MAX(pHdr->cbIn, pHdr->cbOut));
+                if (RT_FAILURE(rc))
+                    pState->pSession = pSession;
+            }
+            return rc;
+        }
+    }
+
     return vgdrvSolarisIOCtlSlow(pSession, iCmd, Mode, iArgs);
 }
-
-
-/** @def IOCPARM_LEN
- * Gets the length from the ioctl number.
- * This is normally defined by sys/ioccom.h on BSD systems...
- */
-#ifndef IOCPARM_LEN
-# define IOCPARM_LEN(x)     ( ((x) >> 16) & IOCPARM_MASK )
-#endif
 
 
 /**
@@ -754,6 +791,7 @@ static int vgdrvSolarisIOCtlSlow(PVBOXGUESTSESSION pSession, int iCmd, int Mode,
 }
 
 
+#if 0
 /**
  * @note This code is duplicated on other platforms with variations, so please
  *       keep them all up to date when making changes!
@@ -796,7 +834,7 @@ int VBOXCALL VBoxGuestIDC(void *pvSession, uintptr_t uReq, PVBGLREQHDR pReqHdr, 
         rc = VERR_INVALID_POINTER;
     return rc;
 }
-
+#endif
 
 
 static int vgdrvSolarisPoll(dev_t Dev, short fEvents, int fAnyYet, short *pReqEvents, struct pollhead **ppPollHead)

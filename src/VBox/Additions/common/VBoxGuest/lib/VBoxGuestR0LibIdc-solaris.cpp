@@ -40,18 +40,14 @@ int VBOXCALL vbglR0IdcNativeOpen(PVBGLIDCHANDLE pHandle, PVBGLIOCIDCCONNECT pReq
 {
     ldi_handle_t hDev   = NULL;
     ldi_ident_t  hIdent = ldi_ident_from_anon();
-    /* Note! ldi_open_by_name actually opens the device and ends up creating a useless user session.
-             Wonder if there is any way to detect ldi_open_by_name and do I/O controls via hDev... */
-    int rc = ldi_open_by_name(VBOXGUEST_DEVICE_NAME, FREAD, kcred, &hDev, hIdent);
+    int rc = ldi_open_by_name((char *)VBOXGUEST_DEVICE_NAME, FREAD, kcred, &hDev, hIdent);
     ldi_ident_release(hIdent);
     if (rc == 0)
     {
-        rc = VBoxGuestIDC(NULL, VBGL_IOCTL_IDC_CONNECT, &pReq->Hdr, sizeof(*pReq));
+        pHandle->s.hDev = hDev;
+        rc = VbglR0IdcCallRaw(pHandle, VBGL_IOCTL_IDC_CONNECT, &pReq->Hdr, sizeof(*pReq));
         if (RT_SUCCESS(rc) && RT_SUCCESS(pReq->Hdr.rc))
-        {
-            pHandle->s.hDev = hDev;
             return VINF_SUCCESS;
-        }
         ldi_close(hDev, FREAD, kcred);
     }
     else
@@ -63,7 +59,7 @@ int VBOXCALL vbglR0IdcNativeOpen(PVBGLIDCHANDLE pHandle, PVBGLIOCIDCCONNECT pReq
 
 int VBOXCALL vbglR0IdcNativeClose(PVBGLIDCHANDLE pHandle, PVBGLIOCIDCDISCONNECT pReq)
 {
-    int rc = VBoxGuestIDC(pHandle->s.pvSession, VBGL_IOCTL_IDC_DISCONNECT, &pReq->Hdr, sizeof(*pReq));
+    int rc = VbglR0IdcCallRaw(pHandle, VBGL_IOCTL_IDC_DISCONNECT, &pReq->Hdr, sizeof(*pReq));
     if (RT_SUCCESS(rc) && RT_SUCCESS(pReq->Hdr.rc))
     {
         ldi_close(pHandle->s.hDev, FREAD, kcred);
@@ -84,6 +80,14 @@ int VBOXCALL vbglR0IdcNativeClose(PVBGLIDCHANDLE pHandle, PVBGLIOCIDCDISCONNECT 
  */
 DECLR0VBGL(int) VbglR0IdcCallRaw(PVBGLIDCHANDLE pHandle, uintptr_t uReq, PVBGLREQHDR pReqHdr, uint32_t cbReq)
 {
+#if 0
     return VBoxGuestIDC(pHandle->s.pvSession, uReq, pReqHdr, cbReq);
+#else
+    int iIgn;
+    int rc = ldi_ioctl(pHandle->s.hDev, uReq, (intptr_t)pReqHdr, FKIOCTL | FNATIVE, kcred, &iIgn);
+    if (rc == 0)
+        return VINF_SUCCESS;
+    return RTErrConvertFromErrno(rc);
+#endif
 }
 
