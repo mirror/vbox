@@ -1703,52 +1703,41 @@ static int rtFsIsoMakerCmdParseNameSpec(PRTFSISOMAKERCMDOPTS pOpts, const char *
         /* If the source is a input file name specifier, reduce it to something that starts with a slash. */
         if (pParsed->cNamesWithSrc == 1 && fWithSrc)
         {
-            /** @todo just take the final component and prepend a slash (or whatever
-             *        directory in the ISO we import relative to). */
+            const char *pszSrc = pParsed->aNames[iSrc].szPath;
+            char *pszFinalPath = NULL;
             if (RTVfsChainIsSpec(pParsed->aNames[iSrc].szPath))
             {
                 uint32_t offError;
-                char *pszFinalPath;
                 int rc = RTVfsChainQueryFinalPath(pParsed->aNames[iSrc].szPath, &pszFinalPath, &offError);
                 if (RT_FAILURE(rc))
                     return rtFsIsoMakerCmdChainError(pOpts, "RTVfsChainQueryFinalPath",
                                                      pParsed->aNames[iSrc].szPath, rc, offError, NULL);
-                pParsed->aNames[iSrc].cchPath = (uint32_t)strlen(pszFinalPath);
-                if (RTPATH_IS_SLASH(*pszFinalPath))
-                    memcpy(pParsed->aNames[iSrc].szPath, pszFinalPath, pParsed->aNames[iSrc].cchPath + 1);
-                else
-                {
-                    memcpy(&pParsed->aNames[iSrc].szPath[1], pszFinalPath, pParsed->aNames[iSrc].cchPath + 1);
-                    pParsed->aNames[iSrc].szPath[0] = RTPATH_SLASH;
-                    pParsed->aNames[iSrc].cchPath++;
-                }
-                RTStrFree(pszFinalPath);
+                pszSrc = pszFinalPath;
             }
-#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
-            else if (   RTPATH_IS_VOLSEP(pParsed->aNames[iSrc].szPath[1])
-                     && RT_C_IS_ALPHA(pParsed->aNames[iSrc].szPath[0]))
+
+            /* Find the start of the last component, ignoring trailing slashes. */
+            size_t cchSrc  = strlen(pszSrc);
+            size_t offLast = cchSrc;
+            while (offLast > 0 && RTPATH_IS_SLASH(pszSrc[offLast - 1]))
+                offLast--;
+            while (offLast > 0 && !RTPATH_IS_SLASH(pszSrc[offLast - 1]))
+                offLast--;
+
+            /* Move it up front with a leading slash. */
+            if (offLast > 0 || !RTPATH_IS_SLASH(*pszSrc))
             {
-                if (RTPATH_IS_SLASH(pParsed->aNames[iSrc].szPath[2]))
-                {
-                    memmove(&pParsed->aNames[iSrc].szPath[0], &pParsed->aNames[iSrc].szPath[2], pParsed->aNames[iSrc].cchPath - 1);
-                    pParsed->aNames[iSrc].cchPath -= 2;
-                }
-                else
-                {
-                    memmove(&pParsed->aNames[iSrc].szPath[1], &pParsed->aNames[iSrc].szPath[2], pParsed->aNames[iSrc].cchPath - 1);
-                    pParsed->aNames[iSrc].szPath[0] = RTPATH_SLASH;
-                    pParsed->aNames[iSrc].cchPath  -= 1;
-                }
-            }
-#endif
-            else if (!RTPATH_IS_SLASH(pParsed->aNames[iSrc].szPath[0]))
-            {
-                if (pParsed->aNames[iSrc].cchPath + 2 > sizeof(pParsed->aNames[iSrc].szPath))
+                pParsed->aNames[iSrc].cchPath = 1 + (uint32_t)(cchSrc - offLast);
+                if (pParsed->aNames[iSrc].cchPath >= sizeof(pParsed->aNames[iSrc].szPath))
                     return rtFsIsoMakerCmdSyntaxError(pOpts, "name too long: %s", pszSpecIn);
-                memmove(&pParsed->aNames[iSrc].szPath[1], &pParsed->aNames[iSrc].szPath[0], pParsed->aNames[iSrc].cchPath + 1);
-                pParsed->aNames[iSrc].szPath[0] = RTPATH_SLASH;
-                pParsed->aNames[iSrc].cchPath++;
+
+                memmove(&pParsed->aNames[iSrc].szPath[1], &pszSrc[offLast], pParsed->aNames[iSrc].cchPath);
             }
+            else
+                pParsed->aNames[iSrc].cchPath = 1;
+            pParsed->aNames[iSrc].szPath[0] = RTPATH_SLASH;
+
+            if (pszFinalPath)
+                RTStrFree(pszFinalPath);
         }
 
         for (uint32_t iDst = iSrc + 1; iDst < pOpts->cNameSpecifiers; iDst++)
