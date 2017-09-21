@@ -305,6 +305,9 @@ void crStateCurrentRecoverNew(CRContext *g, CRCurrentStatePointers  *current)
     unsigned int i;
     CRbitvalue nbitID[CR_MAX_BITARRAY];
 
+    /* Invalid parameters, do nothing */
+    if (!g || !current)
+        return;
 
     /* silence warnings */
     (void) __convert_b1;
