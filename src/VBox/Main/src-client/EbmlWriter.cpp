@@ -498,8 +498,8 @@ class WebMWriter_Impl
     struct WebMSegment
     {
         WebMSegment(void)
-            : tcStart(UINT64_MAX)
-            , tcEnd(UINT64_MAX)
+            : tcStart(0)
+            , tcEnd(0)
             , offStart(0)
             , offInfo(0)
             , offSeekInfo(0)
@@ -828,6 +828,9 @@ public:
         Cluster.tcEndMs = tcPTSMs;
         Cluster.cBlocks++;
 
+        if (CurSeg.tcEnd < Cluster.tcEndMs)
+            CurSeg.tcEnd = Cluster.tcEndMs;
+
         /* Calculate the block's timecode, which is relative to the cluster's starting timecode. */
         uint16_t tcBlockMs = static_cast<uint16_t>(tcPTSMs - Cluster.tcStartMs);
 
@@ -904,6 +907,9 @@ public:
 
         Cluster.tcEndMs = tcPTSMs;
         Cluster.cBlocks++;
+
+        if (CurSeg.tcEnd < Cluster.tcEndMs)
+            CurSeg.tcEnd = Cluster.tcEndMs;
 
         /* Calculate the block's timecode, which is relative to the cluster's starting timecode. */
         uint16_t tcBlockMs = static_cast<uint16_t>(tcPTSMs - Cluster.tcStartMs);
@@ -1106,11 +1112,17 @@ private:
         char szApp[64];
         RTStrPrintf(szApp, sizeof(szApp), VBOX_PRODUCT " %sr%u", VBOX_VERSION_STRING, RTBldCfgRevision());
 
-        LogFunc(("Duration=%RU64\n", CurSeg.tcEnd - CurSeg.tcStart));
+        const uint64_t tcDuration = CurSeg.tcEnd - CurSeg.tcStart;
+
+        if (!CurSeg.lstCues.empty())
+        {
+            LogFunc(("tcDuration=%RU64\n", tcDuration));
+            AssertMsg(tcDuration, ("Segment seems to be empty\n"));
+        }
 
         m_Ebml.subStart(MkvElem_Info)
               .serializeUnsignedInteger(MkvElem_TimecodeScale, CurSeg.uTimecodeScaleFactor)
-              .serializeFloat(MkvElem_Segment_Duration, CurSeg.tcEnd - CurSeg.tcStart)
+              .serializeFloat(MkvElem_Segment_Duration, tcDuration)
               .serializeString(MkvElem_MuxingApp, szMux)
               .serializeString(MkvElem_WritingApp, szApp)
               .subEnd(MkvElem_Info);
