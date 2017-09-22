@@ -23,6 +23,7 @@
 
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
+#include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/getopt.h>
 #include <iprt/stream.h>
@@ -85,13 +86,31 @@ void setCurrentSubcommand(uint64_t fSubcommandScope)
  */
 static uint32_t getScreenWidth(PRTSTREAM pStrm)
 {
-    static uint32_t s_acch[2] = { 0, 0};
+    static uint32_t s_acch[2] = { 0, 0 };
     uint32_t        iWhich    = pStrm == g_pStdErr ? 1 : 0;
     uint32_t        cch       = s_acch[iWhich];
     if (cch)
         return cch;
 
-    cch = 80; /** @todo screen width IPRT API. */
+    const char *psz = RTEnvGet("VBOXMANAGE_SCREEN_WIDTH");
+    if (   !psz
+        || RTStrToUInt32Full(psz, 0, &cch) != VINF_SUCCESS
+        || cch == 0)
+    {
+        int rc = RTStrmQueryTerminalWidth(pStrm, &cch);
+        if (rc == VERR_INVALID_FUNCTION)
+        {
+            /* It's not a console, but in case we're being piped to less/more/list
+               we look for a console handle on the other standard output handle
+               and standard input.  (Latter doesn't work on windows.)  */
+            rc = RTStrmQueryTerminalWidth(pStrm == g_pStdErr ? g_pStdOut : g_pStdErr, &cch);
+            if (rc == VERR_INVALID_FUNCTION || rc == VERR_INVALID_HANDLE)
+                rc = RTStrmQueryTerminalWidth(g_pStdIn, &cch);
+            if (RT_FAILURE(rc))
+                cch = 80;
+        }
+    }
+
     s_acch[iWhich] = cch;
     return cch;
 }
@@ -154,14 +173,15 @@ static uint32_t printString(PRTSTREAM pStrm, const char *psz, uint32_t cchMaxWid
         do
         {
             RTStrmWrite(pStrm, g_szSpaces, cchIndent + cchHangingIndent);
-            size_t   offLine       = cchIndent + cchHangingIndent;
-            bool     fPendingSpace = false;
+            size_t  offLine       = cchIndent + cchHangingIndent;
+            bool    fPendingSpace = false;
             do
             {
                 const char *pszSpace = strchr(psz, ' ');
                 size_t      cchWord  = pszSpace ? pszSpace - psz : strlen(psz);
                 if (   offLine + cchWord + fPendingSpace > cchMaxWidth
-                    && offLine != cchIndent)
+                    && offLine != cchIndent
+                    && fPendingSpace /* don't stop before first word */)
                     break;
 
                 pszNbsp = (const char *)memchr(psz, REFENTRY_NBSP, cchWord);
