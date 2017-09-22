@@ -279,7 +279,7 @@ ifdef VBOX_USE_RTISOMAKER
 		--rock-ridge \
 		--joliet \
 		--rational-attribs \
-               --random-order-verficiation 2048 \
+               --random-order-verification 2048 \
 		$(foreach spec,$(VBOX_VALIDATIONKIT_FILESPEC) \
 			,$(if $(findstring =,$(spec)), $(spec), /$(lastword $(subst /$(INST_VALIDATIONKIT), ,$(spec))=$(spec))) ) \
 		$(foreach spec,$(filter-out %.txt %.dll %.xml %.reg %.img, $(VBOX_VALIDATIONKIT_FILESPEC)) \
@@ -289,7 +289,6 @@ ifdef VBOX_USE_RTISOMAKER
 		--volume-id "VBOXVALK_$(VBOX_SVN_REV)_$(VBOX_VERSION_STRING_RAW)" \
                --name-setup joliet \
 		--volume-id "VBoxValK $(VBOX_SVN_REV)"
-
 else
 # use iso-level 3 which is the most ISO conforming level with least restrictions; iso-level 4 maps to iso-level 2
 # with some extra restrictions removal (not conforming to ISO9660) which some platforms like Solaris 10 does not like.

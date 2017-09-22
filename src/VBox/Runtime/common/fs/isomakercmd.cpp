@@ -488,7 +488,7 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
 
     { "--output-buffer-size",           RTFSISOMAKERCMD_OPT_OUTPUT_BUFFER_SIZE,             RTGETOPT_REQ_UINT32  },
     { "--random-output-buffer-size",    RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,      RTGETOPT_REQ_NOTHING },
-    { "--random-order-verficiation",    RTFSISOMAKERCMD_OPT_RANDOM_ORDER_VERIFICATION,      RTGETOPT_REQ_UINT32 },
+    { "--random-order-verification",    RTFSISOMAKERCMD_OPT_RANDOM_ORDER_VERIFICATION,      RTGETOPT_REQ_UINT32 },
 
 #define DD(a_szLong, a_chShort, a_fFlags) { a_szLong, a_chShort, a_fFlags  }, { "-" a_szLong, a_chShort, a_fFlags  }
 
@@ -3596,7 +3596,7 @@ static int rtFsIsoMakerCmdParse(PRTFSISOMAKERCMDOPTS pOpts, unsigned cArgs, char
                 pOpts->fRandomOutputReadBufferSize = true;
                 break;
 
-            case RTFSISOMAKERCMD_OPT_RANDOM_ORDER_VERIFICATION:         /* --random-order-verficiation {cb} */
+            case RTFSISOMAKERCMD_OPT_RANDOM_ORDER_VERIFICATION:         /* --random-order-verification {cb} */
                 pOpts->cbRandomOrderVerifciationBlock = ValueUnion.u32;
                 break;
 
