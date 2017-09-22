@@ -62,6 +62,7 @@
 #else
 # include <termios.h>
 # include <unistd.h>
+# include <sys/ioctl.h>
 #endif
 
 #ifdef RT_OS_OS2
