@@ -341,6 +341,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG) \
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
  	$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml \
+ 	$(VBOX_PATH_MANUAL_OUTBASE)/user_AdvancedTopics_VISO_Options.xml \
 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf) \
 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm) \
 	$(PATH_STAGE_BIN)/UserManual.pdf \
@@ -518,7 +519,8 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
 $(eval $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/user_VBoxManage.xml: $(VBOX_PATH_MANUAL_SRC)/$(lang)/user_VBoxManage.xml \
 	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/user_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
 	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/overview_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
-	$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml ))
+	$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml \
+	$(VBOX_PATH_MANUAL_OUTBASE)/user_AdvancedTopics_VISO_Options.xml ))
 
 # Intermediate step to do some variable replacement in the document.
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG) \
@@ -579,6 +581,31 @@ $(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml: $(VBOXMANAGEHE
                $(foreach refentry, $(filter man_VBoxManage%,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
 		, '  <xi:include href="overview_$(refentry)" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />') \
                '  </remark>' \
+               '</sect1>'
+
+# Generate the VISO option listing.
+$(VBOX_PATH_MANUAL_OUTBASE)/user_AdvancedTopics_VISO_Options.xml: $(VBOX_RTISOMAKER) $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_GENERATE,,$@,)
+	$(QUIET)$(RM) -f $@ $@.dumpopts
+	$(QUIET)$(APPEND) -tn "$@" \
+		'<?xml version="1.0" encoding="UTF-8"?>' \
+               '<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">' \
+               '<sect1> <!-- this will be skipped via xpointer in the include. --> '
+	$(QUIET)$(REDIRECT) -wo $@.dumpopts -E 'VBOX_LOG_FLAGS=disabled' -E 'VBOX_LOG_DEST=nofile' \
+		-- $(VBOX_RTISOMAKER) --help
+	$(QUIET)$(SED) \
+		-e ':a' \
+		-e 'N' \
+		-e '$(DOLLAR)!ba' \
+		-e 's/bldRTIsoMaker/RTIsoMaker/' \
+		-e 's/&/\&amp\;/g' \
+		-e 's/</\&lt\;/g' \
+		-e 's/>/\&gt\;/g' \
+		-e 's/\n*$(DOLLAR)/<\/screen>/' \
+		-e 's/^/<screen>/' \
+		--append $@ $@.dumpopts
+	$(QUIET)$(RM) -f $@.dumpopts
+	$(QUIET)$(APPEND) -n "$@" \
                '</sect1>'
 
 
