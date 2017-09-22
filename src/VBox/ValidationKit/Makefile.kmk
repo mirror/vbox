@@ -118,7 +118,7 @@ ifndef VBOX_WITHOUT_VALIDATIONKIT_ZIP
 	$(foreach os, darwin freebsd linux os2 solaris win,$(foreach arch, x86 amd64 \
 	,$(if-expr defined(VBOX_WITH_VALIDATIONKIT_PACKING.$(os).$(arch))\
 		,$(NLTAB)$(QUIET)$(REDIRECT) -C $(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/ \
-			-- $(VBOX_ZIP) -r9 $@ $(INST_TESTBOXSCRIPT) -x '*.pyc',)))
+			-- $(VBOX_ZIP) -r9X $@ $(INST_TESTBOXSCRIPT) -x '*.pyc',)))
 
 endif # !VBOX_WITHOUT_VALIDATIONKIT_ZIP
 
@@ -265,18 +265,39 @@ endif
 $(VBOX_PATH_VALIDATIONKIT)/VBoxValidationKit.iso: \
 		$(filter-out %=deleteme=, $(subst =,=deleteme= , $(VBOX_VALIDATIONKIT_FILESPEC))) \
 		$(VBOX_SVN_REV_KMK) \
-		$(VBOX_PATH_VALIDATIONKIT_SRC)/Makefile.kmk
+		$(VBOX_PATH_VALIDATIONKIT_SRC)/Makefile.kmk \
+               | $(if-expr defined(VBOX_USE_RTISOMAKER),$(VBOX_RTISOMAKER),)
 	$(call MSG_TOOL,mkisofs,,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 ifneq ($(KBUILD_TARGET),os2)
-	$(ECHO) VBOX_VALIDATIONKIT_FILESPEC $(VBOX_VALIDATIONKIT_FILESPEC)
+	$(QUIET)$(ECHO) VBOX_VALIDATIONKIT_FILESPEC $(VBOX_VALIDATIONKIT_FILESPEC)
 endif
+ifdef VBOX_USE_RTISOMAKER
+	$(VBOX_RTISOMAKER) \
+		--output $@ \
+		--iso-level 3 \
+		--rock-ridge \
+		--joliet \
+		--rational-attribs \
+               --random-order-verficiation 2048 \
+		$(foreach spec,$(VBOX_VALIDATIONKIT_FILESPEC) \
+			,$(if $(findstring =,$(spec)), $(spec), /$(lastword $(subst /$(INST_VALIDATIONKIT), ,$(spec))=$(spec))) ) \
+		$(foreach spec,$(filter-out %.txt %.dll %.xml %.reg %.img, $(VBOX_VALIDATIONKIT_FILESPEC)) \
+			,--chmod=a+x:/$(lastword $(if $(findstring =,$(spec)), \
+				        	   $(subst =, $(SP), $(spec)), \
+						   $(subst /$(INST_VALIDATIONKIT), ,$(spec))))) \
+		--volume-id "VBOXVALK_$(VBOX_SVN_REV)_$(VBOX_VERSION_STRING_RAW)" \
+               --name-setup joliet \
+		--volume-id "VBoxValK $(VBOX_SVN_REV)"
+
+else
 # use iso-level 3 which is the most ISO conforming level with least restrictions; iso-level 4 maps to iso-level 2
 # with some extra restrictions removal (not conforming to ISO9660) which some platforms like Solaris 10 does not like.
 	$(VBOX_MKISOFS) -rational-rock -r -joliet -iso-level 3 \
 		-volid "VBOXVALKIT_$(VBOX_VERSION_STRING_RAW)_$(VBOX_SVN_REV)" -l -graft-points -o $@ \
 		$(foreach spec,$(VBOX_VALIDATIONKIT_FILESPEC) \
 			,$(if $(findstring =,$(spec)),$(spec), $(lastword $(subst /$(INST_VALIDATIONKIT), ,$(spec))=$(spec))))
+endif
 
 # Alias for creating the iso.
 .PHONY: validationkit-iso
