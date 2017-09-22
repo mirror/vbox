@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,7 +47,7 @@ VBOXEXTPACK_IF_CS(IVirtualBox);
  */
 typedef enum VBOXEXTPACKMODKIND
 {
-    /** Zero is invalid as alwasy. */
+    /** Zero is invalid as always. */
     VBOXEXTPACKMODKIND_INVALID = 0,
     /** Raw-mode context module. */
     VBOXEXTPACKMODKIND_RC,
@@ -66,15 +66,14 @@ typedef enum VBOXEXTPACKMODKIND
  */
 typedef enum VBOXEXTPACKCTX
 {
-    /** Zero is invalid as alwasy. */
+    /** Zero is invalid as always. */
     VBOXEXTPACKCTX_INVALID = 0,
     /** The per-user daemon process (VBoxSVC). */
     VBOXEXTPACKCTX_PER_USER_DAEMON,
-    /** A VM process.
-     * @remarks This will also include the client processes in v4.0.  */
+    /** A VM process. */
     VBOXEXTPACKCTX_VM_PROCESS,
-    /** A API client process.
-     * @remarks This will not be returned by VirtualBox 4.0. */
+    /** An API client process.
+     * @remarks This will not be returned by VirtualBox yet. */
     VBOXEXTPACKCTX_CLIENT_PROCESS,
     /** End of the valid values (exclusive). */
     VBOXEXTPACKCTX_END,
@@ -209,6 +208,8 @@ typedef struct VBOXEXTPACKREG const *PCVBOXEXTPACKREG;
 /**
  * Callback table returned by VBoxExtPackRegister.
  *
+ * All the callbacks are called the context of the per-user service (VBoxSVC).
+ *
  * This must be valid until the extension pack main module is unloaded.
  */
 typedef struct VBOXEXTPACKREG
@@ -221,8 +222,6 @@ typedef struct VBOXEXTPACKREG
 
     /**
      * Hook for doing setups after the extension pack was installed.
-     *
-     * This is called in the context of the per-user service (VBoxSVC).
      *
      * @returns VBox status code.
      * @retval  VERR_EXTPACK_UNSUPPORTED_HOST_UNINSTALL if the extension pack
@@ -240,8 +239,6 @@ typedef struct VBOXEXTPACKREG
     /**
      * Hook for cleaning up before the extension pack is uninstalled.
      *
-     * This is called in the context of the per-user service (VBoxSVC).
-     *
      * @returns VBox status code.
      * @param   pThis       Pointer to this structure.
      * @param   pVirtualBox The VirtualBox interface.
@@ -254,31 +251,13 @@ typedef struct VBOXEXTPACKREG
     /**
      * Hook for doing work after the VirtualBox object is ready.
      *
-     * This is called in the context of the per-user service (VBoxSVC).  The
-     * pfnConsoleReady method is the equivalent for the VM/client process.
-     *
      * @param   pThis       Pointer to this structure.
      * @param   pVirtualBox The VirtualBox interface.
      */
     DECLCALLBACKMEMBER(void, pfnVirtualBoxReady)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
 
     /**
-     * Hook for doing work after the Console object is ready.
-     *
-     * This is called in the context of the VM/client process.  The
-     * pfnVirtualBoxReady method is the equivalent for the per-user service
-     * (VBoxSVC).
-     *
-     * @param   pThis       Pointer to this structure.
-     * @param   pConsole    The Console interface.
-     */
-    DECLCALLBACKMEMBER(void, pfnConsoleReady)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole);
-
-    /**
      * Hook for doing work before unloading.
-     *
-     * This is called both in the context of the per-user service (VBoxSVC) and
-     * in context of the VM process (VBoxC).
      *
      * @param   pThis       Pointer to this structure.
      *
@@ -291,8 +270,6 @@ typedef struct VBOXEXTPACKREG
     /**
      * Hook for changing the default VM configuration upon creation.
      *
-     * This is called in the context of the per-user service (VBoxSVC).
-     *
      * @returns VBox status code.
      * @param   pThis       Pointer to this structure.
      * @param   pVirtualBox The VirtualBox interface.
@@ -302,44 +279,7 @@ typedef struct VBOXEXTPACKREG
                                           VBOXEXTPACK_IF_CS(IMachine) *pMachine);
 
     /**
-     * Hook for configuring the VMM for a VM.
-     *
-     * This is called in the context of the VM process (VBoxC).
-     *
-     * @returns VBox status code.
-     * @param   pThis       Pointer to this structure.
-     * @param   pConsole    The console interface.
-     * @param   pVM         The cross context VM structure.
-     */
-    DECLCALLBACKMEMBER(int, pfnVMConfigureVMM)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
-
-    /**
-     * Hook for doing work right before powering on the VM.
-     *
-     * This is called in the context of the VM process (VBoxC).
-     *
-     * @returns VBox status code.
-     * @param   pThis       Pointer to this structure.
-     * @param   pConsole    The console interface.
-     * @param   pVM         The cross context VM structure.
-     */
-    DECLCALLBACKMEMBER(int, pfnVMPowerOn)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
-
-    /**
-     * Hook for doing work after powering on the VM.
-     *
-     * This is called in the context of the VM process (VBoxC).
-     *
-     * @param   pThis       Pointer to this structure.
-     * @param   pConsole    The console interface.
-     * @param   pVM         The cross context VM structure. Can be NULL.
-     */
-    DECLCALLBACKMEMBER(void, pfnVMPowerOff)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
-
-    /**
      * Query the IUnknown interface to an object in the main module.
-     *
-     * This is can be called in any context.
      *
      * @returns IUnknown pointer (referenced) on success, NULL on failure.
      * @param   pThis       Pointer to this structure.
@@ -347,12 +287,12 @@ typedef struct VBOXEXTPACKREG
      */
     DECLCALLBACKMEMBER(void *, pfnQueryObject)(PCVBOXEXTPACKREG pThis, PCRTUUID pObjectId);
 
-    DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
-    DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
-    DECLR3CALLBACKMEMBER(int, pfnReserved3,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
-    DECLR3CALLBACKMEMBER(int, pfnReserved4,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
-    DECLR3CALLBACKMEMBER(int, pfnReserved5,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
-    DECLR3CALLBACKMEMBER(int, pfnReserved6,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKREG pThis)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKREG pThis)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved3,(PCVBOXEXTPACKREG pThis)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved4,(PCVBOXEXTPACKREG pThis)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved5,(PCVBOXEXTPACKREG pThis)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved6,(PCVBOXEXTPACKREG pThis)); /**< Reserved for minor structure revisions. */
 
     /** Reserved for minor structure revisions. */
     uint32_t                    uReserved7;
@@ -361,14 +301,15 @@ typedef struct VBOXEXTPACKREG
     uint32_t                    u32EndMarker;
 } VBOXEXTPACKREG;
 /** Current version of the VBOXEXTPACKREG structure.  */
-#define VBOXEXTPACKREG_VERSION        RT_MAKE_U32(1, 1)
+#define VBOXEXTPACKREG_VERSION        RT_MAKE_U32(2, 0)
 
 
 /**
  * The VBoxExtPackRegister callback function.
  *
- * PDM will invoke this function after loading a driver module and letting
- * the module decide which drivers to register and how to handle conflicts.
+ * The Main API (as in VBoxSVC) will invoke this function after loading an
+ * extension pack Main module. Its job is to do version compatibility checking
+ * and returning the extension pack registration structure.
  *
  * @returns VBox status code.
  * @param   pHlp            Pointer to the extension pack helper function
@@ -385,6 +326,119 @@ typedef FNVBOXEXTPACKREGISTER *PFNVBOXEXTPACKREGISTER;
 
 /** The name of the main module entry point. */
 #define VBOX_EXTPACK_MAIN_MOD_ENTRY_POINT   "VBoxExtPackRegister"
+
+
+/** Pointer to the extension pack VM callback table. */
+typedef struct VBOXEXTPACKVMREG const *PCVBOXEXTPACKVMREG;
+/**
+ * Callback table returned by VBoxExtPackVMRegister.
+ *
+ * All the callbacks are called the context of a VM process.
+ *
+ * This must be valid until the extension pack main VM module is unloaded.
+ */
+typedef struct VBOXEXTPACKVMREG
+{
+    /** Interface version.
+     * This is set to VBOXEXTPACKVMREG_VERSION. */
+    uint32_t                    u32Version;
+    /** The VirtualBox version this extension pack was built against.  */
+    uint32_t                    uVBoxVersion;
+
+    /**
+     * Hook for doing work after the Console object is ready.
+     *
+     * @param   pThis       Pointer to this structure.
+     * @param   pConsole    The Console interface.
+     */
+    DECLCALLBACKMEMBER(void, pfnConsoleReady)(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole);
+
+    /**
+     * Hook for doing work before unloading.
+     *
+     * @param   pThis       Pointer to this structure.
+     *
+     * @remarks The helpers are not available at this point in time.
+     */
+    DECLCALLBACKMEMBER(void, pfnUnload)(PCVBOXEXTPACKVMREG pThis);
+
+    /**
+     * Hook for configuring the VMM for a VM.
+     *
+     * @returns VBox status code.
+     * @param   pThis       Pointer to this structure.
+     * @param   pConsole    The console interface.
+     * @param   pVM         The cross context VM structure.
+     */
+    DECLCALLBACKMEMBER(int, pfnVMConfigureVMM)(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
+
+    /**
+     * Hook for doing work right before powering on the VM.
+     *
+     * @returns VBox status code.
+     * @param   pThis       Pointer to this structure.
+     * @param   pConsole    The console interface.
+     * @param   pVM         The cross context VM structure.
+     */
+    DECLCALLBACKMEMBER(int, pfnVMPowerOn)(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
+
+    /**
+     * Hook for doing work after powering off the VM.
+     *
+     * @param   pThis       Pointer to this structure.
+     * @param   pConsole    The console interface.
+     * @param   pVM         The cross context VM structure. Can be NULL.
+     */
+    DECLCALLBACKMEMBER(void, pfnVMPowerOff)(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
+
+    /**
+     * Query the IUnknown interface to an object in the main VM module.
+     *
+     * @returns IUnknown pointer (referenced) on success, NULL on failure.
+     * @param   pThis       Pointer to this structure.
+     * @param   pObjectId   Pointer to the object ID (UUID).
+     */
+    DECLCALLBACKMEMBER(void *, pfnQueryObject)(PCVBOXEXTPACKVMREG pThis, PCRTUUID pObjectId);
+
+    DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKVMREG pThis)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKVMREG pThis)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved3,(PCVBOXEXTPACKVMREG pThis)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved4,(PCVBOXEXTPACKVMREG pThis)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved5,(PCVBOXEXTPACKVMREG pThis)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved6,(PCVBOXEXTPACKVMREG pThis)); /**< Reserved for minor structure revisions. */
+
+    /** Reserved for minor structure revisions. */
+    uint32_t                    uReserved7;
+
+    /** End of structure marker (VBOXEXTPACKVMREG_VERSION). */
+    uint32_t                    u32EndMarker;
+} VBOXEXTPACKVMREG;
+/** Current version of the VBOXEXTPACKVMREG structure.  */
+#define VBOXEXTPACKVMREG_VERSION      RT_MAKE_U32(2, 0)
+
+
+/**
+ * The VBoxExtPackVMRegister callback function.
+ *
+ * The Main API (in a VM process) will invoke this function after loading an
+ * extension pack VM module. Its job is to do version compatibility checking
+ * and returning the extension pack registration structure for a VM.
+ *
+ * @returns VBox status code.
+ * @param   pHlp            Pointer to the extension pack helper function
+ *                          table.  This is valid until the module is unloaded.
+ * @param   ppReg           Where to return the pointer to the registration
+ *                          structure containing all the hooks.  This structure
+ *                          be valid and unchanged until the module is unloaded
+ *                          (i.e. use some static const data for it).
+ * @param   pErrInfo        Where to return extended error information.
+ */
+typedef DECLCALLBACK(int) FNVBOXEXTPACKVMREGISTER(PCVBOXEXTPACKHLP pHlp, PCVBOXEXTPACKVMREG *ppReg, PRTERRINFO pErrInfo);
+/** Pointer to a FNVBOXEXTPACKVMREGISTER. */
+typedef FNVBOXEXTPACKVMREGISTER *PFNVBOXEXTPACKVMREGISTER;
+
+/** The name of the main VM module entry point. */
+#define VBOX_EXTPACK_MAIN_VM_MOD_ENTRY_POINT   "VBoxExtPackVMRegister"
 
 
 /**

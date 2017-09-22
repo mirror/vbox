@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -99,6 +99,8 @@ typedef struct VBOXEXTPACKDESC
     uint32_t                uRevision;
     /** The name of the main module. */
     RTCString               strMainModule;
+    /** The name of the main VM module, empty if none. */
+    RTCString               strMainVMModule;
     /** The name of the VRDE module, empty if none. */
     RTCString               strVrdeModule;
     /** The number of plug-in descriptors. */

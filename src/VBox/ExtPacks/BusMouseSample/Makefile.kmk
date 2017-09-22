@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2010-2016 Oracle Corporation
+# Copyright (C) 2010-2017 Oracle Corporation
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -68,6 +68,15 @@ VBoxBusMouseMain_DEFS =
 
 
 #
+# VBoxBusMouseMainVM - The module in a VM which the VirtualBox Main API talks to.
+#
+DLLS += VBoxBusMouseMainVM
+VBoxBusMouseMainVM_TEMPLATE = VBoxR3ExtPackBusMouse
+VBoxBusMouseMainVM_SOURCES = VBoxBusMouseMainVM.cpp
+VBoxBusMouseMainVM_DEFS =
+
+
+#
 # The device code.
 #
 DLLS += VBoxBusMouseR3
@@ -111,6 +120,7 @@ endif
 # Build the file list.  The macro takes 1=darwin.x86, 2=dist/VirtualBox.app/Contents/MacOS, 3=dylib
 VBOX_BUSMOUSE_FILES_MACRO = \
 	$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_BUSMOUSE_MANGLED_NAME)/$(1)/VBoxBusMouseMain.$(3)=>$(1)/VBoxBusMouseMain.$(3) \
+	$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_BUSMOUSE_MANGLED_NAME)/$(1)/VBoxBusMouseMainVM.$(3)=>$(1)/VBoxBusMouseMainVM.$(3) \
 	$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_BUSMOUSE_MANGLED_NAME)/$(1)/VBoxBusMouseR3.$(3)=>$(1)/VBoxBusMouseR3.$(3) \
 	$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_BUSMOUSE_MANGLED_NAME)/$(1)/VBoxBusMouseR0.r0=>$(1)/VBoxBusMouseR0.r0
 ifdef VBOX_WITH_RAW_MODE

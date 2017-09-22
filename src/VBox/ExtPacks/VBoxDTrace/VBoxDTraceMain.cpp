@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -36,7 +36,6 @@
 
 #include <VBox/err.h>
 #include <VBox/version.h>
-#include <VBox/vmm/cfgm.h>
 #include <iprt/string.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
@@ -52,58 +51,43 @@ static PCVBOXEXTPACKHLP g_pHlp;
 // /**
 //  * @interface_method_impl{VBOXEXTPACKREG,pfnInstalled}
 //  */
-// static DECLCALLBACK(void) vboxSkeletonExtPack_Installed(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
+// static DECLCALLBACK(void) vboxDTraceExtPack_Installed(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox, PRTERRINFO pErrInfo);
+//
 // /**
 //  * @interface_method_impl{VBOXEXTPACKREG,pfnUninstall}
 //  */
-// static DECLCALLBACK(int)  vboxSkeletonExtPack_Uninstall(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
+// static DECLCALLBACK(int)  vboxDTraceExtPack_Uninstall(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
 //
 // /**
 //  * @interface_method_impl{VBOXEXTPACKREG,pfnVirtualBoxReady}
 //  */
-// static DECLCALLBACK(void)  vboxSkeletonExtPack_VirtualBoxReady(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
+// static DECLCALLBACK(void)  vboxDTraceExtPack_VirtualBoxReady(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
 //
 // /**
 //  * @interface_method_impl{VBOXEXTPACKREG,pfnUnload}
 //  */
-// static DECLCALLBACK(void) vboxSkeletonExtPack_Unload(PCVBOXEXTPACKREG pThis);
+// static DECLCALLBACK(void) vboxDTraceExtPack_Unload(PCVBOXEXTPACKREG pThis);
+//
 // /**
 //  * @interface_method_impl{VBOXEXTPACKREG,pfnVMCreated}
 //  */
-// static DECLCALLBACK(int)  vboxSkeletonExtPack_VMCreated(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox, IMachine *pMachine);
+// static DECLCALLBACK(int)  vboxDTraceExtPack_VMCreated(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox, VBOXEXTPACK_IF_CS(IMachine) *pMachine);
 //
 // /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnVMConfigureVMM}
+//  * @interface_method_impl{VBOXEXTPACKREG,pfnQueryObject}
 //  */
-// static DECLCALLBACK(int)  vboxSkeletonExtPack_VMConfigureVMM(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
-//
-// /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnVMPowerOn}
-//  */
-// static DECLCALLBACK(int)  vboxSkeletonExtPack_VMPowerOn(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
-// /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnVMPowerOff}
-//  */
-// static DECLCALLBACK(void) vboxSkeletonExtPack_VMPowerOff(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
-// /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnVMPowerOff}
-//  */
-// static DECLCALLBACK(void) vboxSkeletonExtPack_QueryObject(PCVBOXEXTPACKREG pThis, PCRTUUID pObjectId);
+// static DECLCALLBACK(void) vboxDTraceExtPack_QueryObject(PCVBOXEXTPACKREG pThis, PCRTUUID pObjectId);
 
 
-static const VBOXEXTPACKREG g_vboxSkeletonExtPackReg =
+static const VBOXEXTPACKREG g_vboxDTraceExtPackReg =
 {
     VBOXEXTPACKREG_VERSION,
     /* .uVBoxFullVersion =  */  VBOX_FULL_VERSION,
     /* .pfnInstalled =      */  NULL,
     /* .pfnUninstall =      */  NULL,
     /* .pfnVirtualBoxReady =*/  NULL,
-    /* .pfnConsoleReady =   */  NULL,
     /* .pfnUnload =         */  NULL,
     /* .pfnVMCreated =      */  NULL,
-    /* .pfnVMConfigureVMM = */  NULL,
-    /* .pfnVMPowerOn =      */  NULL,
-    /* .pfnVMPowerOff =     */  NULL,
     /* .pfnQueryObject =    */  NULL,
     /* .pfnReserved1 =      */  NULL,
     /* .pfnReserved2 =      */  NULL,
@@ -138,7 +122,7 @@ extern "C" DECLEXPORT(int) VBoxExtPackRegister(PCVBOXEXTPACKHLP pHlp, PCVBOXEXTP
      * We're good, save input and return the registration structure.
      */
     g_pHlp = pHlp;
-    *ppReg = &g_vboxSkeletonExtPackReg;
+    *ppReg = &g_vboxDTraceExtPackReg;
 
     return VINF_SUCCESS;
 }

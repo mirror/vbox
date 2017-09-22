@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,7 +23,6 @@
 
 #include <VBox/err.h>
 #include <VBox/version.h>
-#include <VBox/vmm/cfgm.h>
 #include <iprt/string.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
@@ -39,7 +38,8 @@ static PCVBOXEXTPACKHLP g_pHlp;
 // /**
 //  * @interface_method_impl{VBOXEXTPACKREG,pfnInstalled}
 //  */
-// static DECLCALLBACK(void) vboxVNCExtPack_Installed(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
+// static DECLCALLBACK(void) vboxVNCExtPack_Installed(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox, PRTERRINFO pErrInfo);
+//
 // /**
 //  * @interface_method_impl{VBOXEXTPACKREG,pfnUninstall}
 //  */
@@ -54,26 +54,14 @@ static PCVBOXEXTPACKHLP g_pHlp;
 //  * @interface_method_impl{VBOXEXTPACKREG,pfnUnload}
 //  */
 // static DECLCALLBACK(void) vboxVNCExtPack_Unload(PCVBOXEXTPACKREG pThis);
+//
 // /**
 //  * @interface_method_impl{VBOXEXTPACKREG,pfnVMCreated}
 //  */
-// static DECLCALLBACK(int)  vboxVNCExtPack_VMCreated(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox, IMachine *pMachine);
+// static DECLCALLBACK(int)  vboxVNCExtPack_VMCreated(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox, VBOXEXTPACK_IF_CS(IMachine) *pMachine);
 //
 // /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnVMConfigureVMM}
-//  */
-// static DECLCALLBACK(int)  vboxVNCExtPack_VMConfigureVMM(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
-//
-// /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnVMPowerOn}
-//  */
-// static DECLCALLBACK(int)  vboxVNCExtPack_VMPowerOn(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
-// /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnVMPowerOff}
-//  */
-// static DECLCALLBACK(void) vboxVNCExtPack_VMPowerOff(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
-// /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnVMPowerOff}
+//  * @interface_method_impl{VBOXEXTPACKREG,pfnQueryObject}
 //  */
 // static DECLCALLBACK(void) vboxVNCExtPack_QueryObject(PCVBOXEXTPACKREG pThis, PCRTUUID pObjectId);
 
@@ -85,12 +73,8 @@ static const VBOXEXTPACKREG g_vboxVNCExtPackReg =
     /* .pfnInstalled =      */  NULL,
     /* .pfnUninstall =      */  NULL,
     /* .pfnVirtualBoxReady =*/  NULL,
-    /* .pfnConsoleReady =   */  NULL,
     /* .pfnUnload =         */  NULL,
     /* .pfnVMCreated =      */  NULL,
-    /* .pfnVMConfigureVMM = */  NULL,
-    /* .pfnVMPowerOn =      */  NULL,
-    /* .pfnVMPowerOff =     */  NULL,
     /* .pfnQueryObject =    */  NULL,
     /* .pfnReserved1 =      */  NULL,
     /* .pfnReserved2 =      */  NULL,

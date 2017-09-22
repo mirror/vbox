@@ -45,7 +45,7 @@
 #include "AutoCaller.h"
 #include "Global.h"
 #include "ProgressImpl.h"
-#if defined(VBOX_COM_INPROC)
+#ifdef VBOX_COM_INPROC
 # include "ConsoleImpl.h"
 #else
 # include "VirtualBoxImpl.h"
@@ -84,7 +84,7 @@ public:
     Utf8Str             strWhyUnusable;
 };
 
-#if !defined(VBOX_COM_INPROC)
+#ifndef VBOX_COM_INPROC
 /**
  * Private extension pack data.
  */
@@ -131,8 +131,13 @@ public:
     VBOXEXTPACKHLP      Hlp;
     /** Pointer back to the extension pack object (for Hlp methods). */
     ExtPack            *pThis;
-    /** The extension pack registration structure. */
+#ifndef VBOX_COM_INPROC
+    /** The extension pack main registration structure. */
     PCVBOXEXTPACKREG    pReg;
+#else
+    /** The extension pack main VM registration structure. */
+    PCVBOXEXTPACKVMREG  pReg;
+#endif
     /** The current context. */
     VBOXEXTPACKCTX      enmContext;
     /** Set if we've made the pfnVirtualBoxReady or pfnConsoleReady call. */
@@ -156,21 +161,17 @@ struct ExtPackManager::Data
     Utf8Str             strCertificatDirPath;
     /** The list of installed extension packs. */
     ExtPackList         llInstalledExtPacks;
-#if !defined(VBOX_COM_INPROC)
+#ifndef VBOX_COM_INPROC
     /** Pointer to the VirtualBox object, our parent. */
     VirtualBox         *pVirtualBox;
 #endif
     /** The current context. */
     VBOXEXTPACKCTX      enmContext;
-#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_DARWIN)
-    /** File handle for the VBoxVMM libary which we slurp because ExtPacks depend on it. */
-    RTLDRMOD            hVBoxVMM;
-#endif
 
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
-#if !defined(VBOX_COM_INPROC)
+#ifndef VBOX_COM_INPROC
 
 /**
  * Extension pack installation job.
@@ -820,6 +821,7 @@ void ExtPack::uninit()
 }
 
 
+#ifndef VBOX_COM_INPROC
 /**
  * Calls the installed hook.
  *
@@ -894,6 +896,7 @@ bool ExtPack::i_callVirtualBoxReadyHook(IVirtualBox *a_pVirtualBox, AutoWriteLoc
 {
     if (    m != NULL
         &&  m->fUsable
+        &&  m->hMainMod != NIL_RTLDRMOD
         && !m->fMadeReadyCall)
     {
         m->fMadeReadyCall = true;
@@ -908,7 +911,9 @@ bool ExtPack::i_callVirtualBoxReadyHook(IVirtualBox *a_pVirtualBox, AutoWriteLoc
     }
     return false;
 }
+#endif /* !VBOX_COM_INPROC */
 
+#ifdef VBOX_COM_INPROC
 /**
  * Calls the pfnConsoleReady hook.
  *
@@ -920,6 +925,7 @@ bool ExtPack::i_callConsoleReadyHook(IConsole *a_pConsole, AutoWriteLock *a_pLoc
 {
     if (    m != NULL
         &&  m->fUsable
+        &&  m->hMainMod != NIL_RTLDRMOD
         && !m->fMadeReadyCall)
     {
         m->fMadeReadyCall = true;
@@ -934,7 +940,9 @@ bool ExtPack::i_callConsoleReadyHook(IConsole *a_pConsole, AutoWriteLock *a_pLoc
     }
     return false;
 }
+#endif /* VBOX_COM_INPROC */
 
+#ifndef VBOX_COM_INPROC
 /**
  * Calls the pfnVMCreate hook.
  *
@@ -946,6 +954,7 @@ bool ExtPack::i_callConsoleReadyHook(IConsole *a_pConsole, AutoWriteLock *a_pLoc
 bool ExtPack::i_callVmCreatedHook(IVirtualBox *a_pVirtualBox, IMachine *a_pMachine, AutoWriteLock *a_pLock)
 {
     if (   m != NULL
+        && m->hMainMod != NIL_RTLDRMOD
         && m->fUsable)
     {
         if (m->pReg->pfnVMCreated)
@@ -959,7 +968,9 @@ bool ExtPack::i_callVmCreatedHook(IVirtualBox *a_pVirtualBox, IMachine *a_pMachi
     }
     return false;
 }
+#endif /* !VBOX_COM_INPROC */
 
+#ifdef VBOX_COM_INPROC
 /**
  * Calls the pfnVMConfigureVMM hook.
  *
@@ -975,6 +986,7 @@ bool ExtPack::i_callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM, AutoWrit
 {
     *a_pvrc = VINF_SUCCESS;
     if (   m != NULL
+        && m->hMainMod != NIL_RTLDRMOD
         && m->fUsable)
     {
         if (m->pReg->pfnVMConfigureVMM)
@@ -1007,6 +1019,7 @@ bool ExtPack::i_callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock
 {
     *a_pvrc = VINF_SUCCESS;
     if (   m != NULL
+        && m->hMainMod != NIL_RTLDRMOD
         && m->fUsable)
     {
         if (m->pReg->pfnVMPowerOn)
@@ -1035,6 +1048,7 @@ bool ExtPack::i_callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock
 bool ExtPack::i_callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock)
 {
     if (   m != NULL
+        && m->hMainMod != NIL_RTLDRMOD
         && m->fUsable)
     {
         if (m->pReg->pfnVMPowerOff)
@@ -1048,6 +1062,7 @@ bool ExtPack::i_callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLoc
     }
     return false;
 }
+#endif /* !VBOX_COM_INPROC */
 
 /**
  * Check if the extension pack is usable and has an VRDE module.
@@ -1284,11 +1299,25 @@ void ExtPack::i_probeAndLoad(void)
     /*
      * Load the main DLL and call the predefined entry point.
      */
+#ifndef VBOX_COM_INPROC
+    const char *pszMainModule = m->Desc.strMainModule.c_str();
+#else
+    const char *pszMainModule = m->Desc.strMainVMModule.c_str();
+    if (m->Desc.strMainVMModule.isEmpty())
+    {
+        /*
+         * We're good! The main module for VM processes is optional.
+         */
+        m->fUsable = true;
+        m->strWhyUnusable.setNull();
+        return;
+    }
+#endif
     bool fIsNative;
-    if (!i_findModule(m->Desc.strMainModule.c_str(), NULL /* default extension */, VBOXEXTPACKMODKIND_R3,
+    if (!i_findModule(pszMainModule, NULL /* default extension */, VBOXEXTPACKMODKIND_R3,
                       &m->strMainModPath, &fIsNative, &m->ObjInfoMainMod))
     {
-        m->strWhyUnusable.printf(tr("Failed to locate the main module ('%s')"), m->Desc.strMainModule.c_str());
+        m->strWhyUnusable.printf(tr("Failed to locate the main module ('%s')"), pszMainModule);
         return;
     }
 
@@ -1319,8 +1348,16 @@ void ExtPack::i_probeAndLoad(void)
     /*
      * Resolve the predefined entry point.
      */
+#ifndef VBOX_COM_INPROC
+    const char *pszMainEntryPoint = VBOX_EXTPACK_MAIN_MOD_ENTRY_POINT;
     PFNVBOXEXTPACKREGISTER pfnRegistration;
-    vrc = RTLdrGetSymbol(m->hMainMod, VBOX_EXTPACK_MAIN_MOD_ENTRY_POINT, (void **)&pfnRegistration);
+    uint32_t uVersion = VBOXEXTPACKREG_VERSION;
+#else
+    const char *pszMainEntryPoint = VBOX_EXTPACK_MAIN_VM_MOD_ENTRY_POINT;
+    PFNVBOXEXTPACKVMREGISTER pfnRegistration;
+    uint32_t uVersion = VBOXEXTPACKVMREG_VERSION;
+#endif
+    vrc = RTLdrGetSymbol(m->hMainMod, pszMainEntryPoint, (void **)&pfnRegistration);
     if (RT_SUCCESS(vrc))
     {
         RTErrInfoClear(&ErrInfo.Core);
@@ -1329,15 +1366,28 @@ void ExtPack::i_probeAndLoad(void)
             && !RTErrInfoIsSet(&ErrInfo.Core)
             && VALID_PTR(m->pReg))
         {
-            if (   VBOXEXTPACK_IS_MAJOR_VER_EQUAL(m->pReg->u32Version, VBOXEXTPACKREG_VERSION)
+            if (   VBOXEXTPACK_IS_MAJOR_VER_EQUAL(m->pReg->u32Version, uVersion)
                 && m->pReg->u32EndMarker == m->pReg->u32Version)
             {
+#ifndef VBOX_COM_INPROC
                 if (   (!m->pReg->pfnInstalled       || RT_VALID_PTR(m->pReg->pfnInstalled))
                     && (!m->pReg->pfnUninstall       || RT_VALID_PTR(m->pReg->pfnUninstall))
                     && (!m->pReg->pfnVirtualBoxReady || RT_VALID_PTR(m->pReg->pfnVirtualBoxReady))
-                    && (!m->pReg->pfnConsoleReady    || RT_VALID_PTR(m->pReg->pfnConsoleReady))
                     && (!m->pReg->pfnUnload          || RT_VALID_PTR(m->pReg->pfnUnload))
                     && (!m->pReg->pfnVMCreated       || RT_VALID_PTR(m->pReg->pfnVMCreated))
+                    && (!m->pReg->pfnQueryObject     || RT_VALID_PTR(m->pReg->pfnQueryObject))
+                    )
+                {
+                    /*
+                     * We're good!
+                     */
+                    m->fUsable = true;
+                    m->strWhyUnusable.setNull();
+                    return;
+                }
+#else
+                if (   (!m->pReg->pfnConsoleReady    || RT_VALID_PTR(m->pReg->pfnConsoleReady))
+                    && (!m->pReg->pfnUnload          || RT_VALID_PTR(m->pReg->pfnUnload))
                     && (!m->pReg->pfnVMConfigureVMM  || RT_VALID_PTR(m->pReg->pfnVMConfigureVMM))
                     && (!m->pReg->pfnVMPowerOn       || RT_VALID_PTR(m->pReg->pfnVMPowerOn))
                     && (!m->pReg->pfnVMPowerOff      || RT_VALID_PTR(m->pReg->pfnVMPowerOff))
@@ -1351,8 +1401,9 @@ void ExtPack::i_probeAndLoad(void)
                     m->strWhyUnusable.setNull();
                     return;
                 }
+#endif
 
-                m->strWhyUnusable = tr("The registration structure contains on or more invalid function pointers");
+                m->strWhyUnusable = tr("The registration structure contains one or more invalid function pointers");
             }
             else
                 m->strWhyUnusable.printf(tr("Unsupported registration structure version %u.%u"),
@@ -1360,12 +1411,12 @@ void ExtPack::i_probeAndLoad(void)
         }
         else
             m->strWhyUnusable.printf(tr("%s returned %Rrc, pReg=%p ErrInfo='%s'"),
-                                     VBOX_EXTPACK_MAIN_MOD_ENTRY_POINT, vrc, m->pReg, ErrInfo.Core.pszMsg);
+                                     pszMainEntryPoint, vrc, m->pReg, ErrInfo.Core.pszMsg);
         m->pReg = NULL;
     }
     else
         m->strWhyUnusable.printf(tr("Failed to resolve exported symbol '%s' in the main module: %Rrc"),
-                                 VBOX_EXTPACK_MAIN_MOD_ENTRY_POINT, vrc);
+                                 pszMainEntryPoint, vrc);
 
     RTLdrClose(m->hMainMod);
     m->hMainMod = NIL_RTLDRMOD;
@@ -1906,19 +1957,6 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
 #endif
 
     /*
-     * Slurp in VBoxVMM which is used by VBoxPuelMain.
-     */
-#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_DARWIN)
-    if (a_enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON)
-    {
-        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxVMM", &m->hVBoxVMM, RTLDRLOAD_FLAGS_GLOBAL, NULL);
-        if (RT_FAILURE(vrc))
-            m->hVBoxVMM = NIL_RTLDRMOD;
-        /* cleanup in ::uninit()? */
-    }
-#endif
-
-    /*
      * Go looking for extensions.  The RTDirOpen may fail if nothing has been
      * installed yet, or if root is paranoid and has revoked our access to them.
      *
@@ -2042,7 +2080,7 @@ HRESULT ExtPackManager::openExtPackFile(const com::Utf8Str &aPath, ComPtr<IExtPa
 {
     AssertReturn(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON, E_UNEXPECTED);
 
-#if !defined(VBOX_COM_INPROC)
+#ifndef VBOX_COM_INPROC
     /* The API can optionally take a ::SHA-256=<hex-digest> attribute at the
        end of the file name.  This is just a temporary measure for
        backporting, in 4.2 we'll add another parameter to the method. */
@@ -2076,7 +2114,7 @@ HRESULT ExtPackManager::uninstall(const com::Utf8Str &aName, BOOL aForcedRemoval
 {
     Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
 
-#if !defined(VBOX_COM_INPROC)
+#ifndef VBOX_COM_INPROC
 
     HRESULT hrc;
     ExtPackUninstallTask *pTask = NULL;
@@ -2435,7 +2473,7 @@ void ExtPackManager::i_removeExtPack(const char *a_pszName)
     AssertMsgFailed(("%s\n", a_pszName));
 }
 
-#if !defined(VBOX_COM_INPROC)
+#ifndef VBOX_COM_INPROC
 
 /**
  * Refreshes the specified extension pack.
@@ -2858,6 +2896,7 @@ void ExtPackManager::i_callAllVirtualBoxReadyHooks(void)
 
 #endif /* !VBOX_COM_INPROC */
 
+#ifdef VBOX_COM_INPROC
 /**
  * Calls the pfnConsoleReady hook for all working extension packs.
  *
@@ -2883,8 +2922,9 @@ void ExtPackManager::i_callAllConsoleReadyHooks(IConsole *a_pConsole)
             ++it;
     }
 }
+#endif
 
-#if !defined(VBOX_COM_INPROC)
+#ifndef VBOX_COM_INPROC
 /**
  * Calls the pfnVMCreated hook for all working extension packs.
  *
@@ -2905,6 +2945,7 @@ void ExtPackManager::i_callAllVmCreatedHooks(IMachine *a_pMachine)
 }
 #endif
 
+#ifdef VBOX_COM_INPROC
 /**
  * Calls the pfnVMConfigureVMM hook for all working extension packs.
  *
@@ -2982,6 +3023,7 @@ void ExtPackManager::i_callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM)
     for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); ++it)
         (*it)->i_callVmPowerOffHook(a_pConsole, a_pVM, &autoLock);
 }
+#endif
 
 
 /**

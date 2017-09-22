@@ -825,6 +825,10 @@ void Console::uninit()
     // we don't perform uninit() as it's possible that some pending event refers to this source
     unconst(mEventSource).setNull();
 
+#ifdef VBOX_WITH_EXTPACK
+    unconst(mptrExtPackManager).setNull();
+#endif
+
     LogFlowThisFuncLeave();
 }
 

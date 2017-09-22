@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,7 +30,7 @@
 #define ORACLE_PUEL_EXTPACK_NAME "Oracle VM VirtualBox Extension Pack"
 
 
-#if !defined(VBOX_COM_INPROC)
+#ifndef VBOX_COM_INPROC
 /**
  * An extension pack file.
  */
@@ -86,7 +86,7 @@ private:
     friend class ExtPackManager;
     friend class ExtPackInstallTask;
 };
-#endif
+#endif /* !VBOX_COM_INPROC */
 
 
 /**
@@ -109,14 +109,22 @@ public:
 
     /** @name Internal interfaces used by ExtPackManager.
      * @{ */
+#ifndef VBOX_COM_INPROC
     bool        i_callInstalledHook(IVirtualBox *a_pVirtualBox, AutoWriteLock *a_pLock, PRTERRINFO pErrInfo);
     HRESULT     i_callUninstallHookAndClose(IVirtualBox *a_pVirtualBox, bool a_fForcedRemoval);
     bool        i_callVirtualBoxReadyHook(IVirtualBox *a_pVirtualBox, AutoWriteLock *a_pLock);
+#endif
+#ifdef VBOX_COM_INPROC
     bool        i_callConsoleReadyHook(IConsole *a_pConsole, AutoWriteLock *a_pLock);
+#endif
+#ifndef VBOX_COM_INPROC
     bool        i_callVmCreatedHook(IVirtualBox *a_pVirtualBox, IMachine *a_pMachine, AutoWriteLock *a_pLock);
+#endif
+#ifdef VBOX_COM_INPROC
     bool        i_callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock, int *a_pvrc);
     bool        i_callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock, int *a_pvrc);
     bool        i_callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock);
+#endif
     HRESULT     i_checkVrde(void);
     HRESULT     i_getVrdpLibraryName(Utf8Str *a_pstrVrdeLibrary);
     HRESULT     i_getLibraryName(const char *a_pszModuleName, Utf8Str *a_pstrLibrary);
@@ -196,16 +204,22 @@ public:
 
     /** @name Internal interfaces used by other Main classes.
      * @{ */
-#if !defined(VBOX_COM_INPROC)
+#ifndef VBOX_COM_INPROC
     HRESULT     i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, Utf8Str const *a_pstrDisplayInfo);
     HRESULT     i_doUninstall(const Utf8Str *a_pstrName, bool a_fForcedRemoval, const Utf8Str *a_pstrDisplayInfo);
-#endif
     void        i_callAllVirtualBoxReadyHooks(void);
+#endif
+#ifdef VBOX_COM_INPROC
     void        i_callAllConsoleReadyHooks(IConsole *a_pConsole);
+#endif
+#ifndef VBOX_COM_INPROC
     void        i_callAllVmCreatedHooks(IMachine *a_pMachine);
+#endif
+#ifdef VBOX_COM_INPROC
     int         i_callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM);
     int         i_callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM);
     void        i_callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM);
+#endif
     HRESULT     i_checkVrdeExtPack(Utf8Str const *a_pstrExtPack);
     int         i_getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrVrdeLibrary);
     HRESULT     i_getLibraryPathForExtPack(const char *a_pszModuleName, const char *a_pszExtPack, Utf8Str *a_pstrLibrary);

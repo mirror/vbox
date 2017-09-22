@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Skeleton main module.
+ * Bus Mouse main VM module.
  */
 
 /*
@@ -36,6 +36,7 @@
 
 #include <VBox/err.h>
 #include <VBox/version.h>
+#include <VBox/vmm/cfgm.h>
 #include <iprt/string.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
@@ -49,45 +50,88 @@ static PCVBOXEXTPACKHLP g_pHlp;
 
 
 // /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnInstalled}
+//  * @interface_method_impl{VBOXEXTPACKVMREG,pfnConsoleReady}
 //  */
-// static DECLCALLBACK(void) vboxSkeletonExtPack_Installed(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox, PRTERRINFO pErrInfo);
+// static DECLCALLBACK(void)  vboxBusMouseExtPackVM_ConsoleReady(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole);
 //
 // /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnUninstall}
+//  * @interface_method_impl{VBOXEXTPACKVMREG,pfnUnload}
 //  */
-// static DECLCALLBACK(int)  vboxSkeletonExtPack_Uninstall(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
-//
-// /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnVirtualBoxReady}
-//  */
-// static DECLCALLBACK(void)  vboxSkeletonExtPack_VirtualBoxReady(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
-//
-// /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnUnload}
-//  */
-// static DECLCALLBACK(void) vboxSkeletonExtPack_Unload(PCVBOXEXTPACKREG pThis);
-//
-// /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnVMCreated}
-//  */
-// static DECLCALLBACK(int)  vboxSkeletonExtPack_VMCreated(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox, VBOXEXTPACK_IF_CS(IMachine) *pMachine);
-//
-// /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnQueryObject}
-//  */
-// static DECLCALLBACK(int)  vboxSkeletonExtPack_QueryObject(PCVBOXEXTPACKREG pThis, PCRTUUID pObjectId);
+// static DECLCALLBACK(void) vboxBusMouseExtPackVM_Unload(PCVBOXEXTPACKVMREG pThis);
 
-
-static const VBOXEXTPACKREG g_vboxSkeletonExtPackReg =
+/**
+ * @interface_method_impl{VBOXEXTPACKVMREG,pfnVMConfigureVMM
+ */
+static DECLCALLBACK(int)  vboxBusMouseExtPackVM_VMConfigureVMM(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM)
 {
-    VBOXEXTPACKREG_VERSION,
+    RT_NOREF(pThis, pConsole);
+
+    /*
+     * Find the bus mouse module and tell PDM to load it.
+     * ASSUME /PDM/Devices exists.
+     */
+    char szPath[RTPATH_MAX];
+    int rc = g_pHlp->pfnFindModule(g_pHlp, "VBoxBusMouseR3", NULL, VBOXEXTPACKMODKIND_R3, szPath, sizeof(szPath), NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    PCFGMNODE pCfgRoot = CFGMR3GetRoot(pVM);
+    AssertReturn(pCfgRoot, VERR_INTERNAL_ERROR_3);
+
+    PCFGMNODE pCfgDevices = CFGMR3GetChild(pCfgRoot, "PDM/Devices");
+    AssertReturn(pCfgDevices, VERR_INTERNAL_ERROR_3);
+
+    PCFGMNODE pCfgMine;
+    rc = CFGMR3InsertNode(pCfgDevices, "VBoxBusMouse", &pCfgMine);
+    AssertRCReturn(rc, rc);
+    rc = CFGMR3InsertString(pCfgMine, "Path", szPath);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Tell PDM where to find the R0 and RC modules for the bus mouse device.
+     */
+#ifdef VBOX_WITH_RAW_MODE
+    rc = g_pHlp->pfnFindModule(g_pHlp, "VBoxBusMouseRC", NULL, VBOXEXTPACKMODKIND_RC, szPath, sizeof(szPath), NULL);
+    AssertRCReturn(rc, rc);
+    RTPathStripFilename(szPath);
+    rc = CFGMR3InsertString(pCfgMine, "RCSearchPath", szPath);
+    AssertRCReturn(rc, rc);
+#endif
+
+    rc = g_pHlp->pfnFindModule(g_pHlp, "VBoxBusMouseR0", NULL, VBOXEXTPACKMODKIND_R0, szPath, sizeof(szPath), NULL);
+    AssertRCReturn(rc, rc);
+    RTPathStripFilename(szPath);
+    rc = CFGMR3InsertString(pCfgMine, "R0SearchPath", szPath);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+// /**
+//  * @interface_method_impl{VBOXEXTPACKVMREG,pfnVMPowerOn}
+//  */
+// static DECLCALLBACK(int)  vboxBusMouseExtPackVM_VMPowerOn(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
+//
+// /**
+//  * @interface_method_impl{VBOXEXTPACKVMREG,pfnVMPowerOff}
+//  */
+// static DECLCALLBACK(void) vboxBusMouseExtPackVM_VMPowerOff(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
+//
+// /**
+//  * @interface_method_impl{VBOXEXTPACKVMREG,pfnQueryObject}
+//  */
+// static DECLCALLBACK(void) vboxBusMouseExtPackVM_QueryObject(PCVBOXEXTPACKVMREG pThis, PCRTUUID pObjectId);
+
+
+static const VBOXEXTPACKVMREG g_vboxBusMouseExtPackVMReg =
+{
+    VBOXEXTPACKVMREG_VERSION,
     /* .uVBoxFullVersion =  */  VBOX_FULL_VERSION,
-    /* .pfnInstalled =      */  NULL,
-    /* .pfnUninstall =      */  NULL,
-    /* .pfnVirtualBoxReady =*/  NULL,
+    /* .pfnConsoleReady =   */  NULL,
     /* .pfnUnload =         */  NULL,
-    /* .pfnVMCreated =      */  NULL,
+    /* .pfnVMConfigureVMM = */  vboxBusMouseExtPackVM_VMConfigureVMM,
+    /* .pfnVMPowerOn =      */  NULL,
+    /* .pfnVMPowerOff =     */  NULL,
     /* .pfnQueryObject =    */  NULL,
     /* .pfnReserved1 =      */  NULL,
     /* .pfnReserved2 =      */  NULL,
@@ -96,12 +140,12 @@ static const VBOXEXTPACKREG g_vboxSkeletonExtPackReg =
     /* .pfnReserved5 =      */  NULL,
     /* .pfnReserved6 =      */  NULL,
     /* .u32Reserved7 =      */  0,
-    VBOXEXTPACKREG_VERSION
+    VBOXEXTPACKVMREG_VERSION
 };
 
 
-/** @callback_method_impl{FNVBOXEXTPACKREGISTER}  */
-extern "C" DECLEXPORT(int) VBoxExtPackRegister(PCVBOXEXTPACKHLP pHlp, PCVBOXEXTPACKREG *ppReg, PRTERRINFO pErrInfo)
+/** @callback_method_impl{FNVBOXEXTPACKVMREGISTER}  */
+extern "C" DECLEXPORT(int) VBoxExtPackVMRegister(PCVBOXEXTPACKHLP pHlp, PCVBOXEXTPACKVMREG *ppReg, PRTERRINFO pErrInfo)
 {
     /*
      * Check the VirtualBox version.
@@ -122,7 +166,7 @@ extern "C" DECLEXPORT(int) VBoxExtPackRegister(PCVBOXEXTPACKHLP pHlp, PCVBOXEXTP
      * We're good, save input and return the registration structure.
      */
     g_pHlp = pHlp;
-    *ppReg = &g_vboxSkeletonExtPackReg;
+    *ppReg = &g_vboxBusMouseExtPackVMReg;
 
     return VINF_SUCCESS;
 }
