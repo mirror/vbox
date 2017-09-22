@@ -245,7 +245,7 @@ typedef struct RTFSISOMAKERNAME
 
     /** Rock ridge flags (ISO9660RRIP_RR_F_XXX). */
     uint8_t                 fRockEntries;
-    /** Number of rock ridge data bytes in the directory record. */
+    /** Number of rock ridge data bytes in the directory record.  Unaligned! */
     uint8_t                 cbRockInDirRec;
     /** Rock ridge spill file data offset, UINT32_MAX if placed in dir record. */
     uint32_t                offRockSpill;
@@ -4658,7 +4658,7 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
         {
             if (pName->cbDirRec + cbRock < UINT8_MAX)
             {
-                pName->cbRockInDirRec      = cbRock + (cbRock & 1);
+                pName->cbRockInDirRec      = cbRock;
                 pName->cbRockSpill         = 0;
                 pName->fRockNeedRRInDirRec = uRockRidgeLevel >= 2;
                 pName->fRockNeedRRInSpill  = false;
@@ -4668,7 +4668,7 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
                 /* Try fit the 'RR' entry in the directory record, but don't bother with anything else. */
                 if (uRockRidgeLevel >= 2 && pName->cbDirRec + sizeof(ISO9660SUSPCE) + sizeof(ISO9660RRIPRR) < UINT8_MAX)
                 {
-                    pName->cbRockInDirRec      = RT_ALIGN_T(sizeof(ISO9660SUSPCE) + sizeof(ISO9660RRIPRR), 2, uint16_t);
+                    pName->cbRockInDirRec      = (uint16_t)(sizeof(ISO9660SUSPCE) + sizeof(ISO9660RRIPRR));
                     cbRock -= sizeof(ISO9660RRIPRR);
                     pName->cbRockSpill         = cbRock;
                     pName->fRockNeedRRInDirRec = true;
@@ -4676,7 +4676,7 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
                 }
                 else
                 {
-                    pName->cbRockInDirRec      = RT_ALIGN_T(sizeof(ISO9660SUSPCE), 2, uint16_t);
+                    pName->cbRockInDirRec      = (uint16_t)sizeof(ISO9660SUSPCE);
                     pName->cbRockSpill         = cbRock;
                     pName->fRockNeedRRInDirRec = false;
                     pName->fRockNeedRRInSpill  = uRockRidgeLevel >= 2;
@@ -4701,7 +4701,7 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
                 Assert(!(fFlags & (ISO9660RRIP_RR_F_NM | ISO9660RRIP_RR_F_SL | ISO9660RRIP_RR_F_CL | ISO9660RRIP_RR_F_PL | ISO9660RRIP_RR_F_RE)));
                 cbRock += sizeof(ISO9660SUSPSP);
                 Assert(pName->cbDirRec + cbRock < UINT8_MAX);
-                pName->cbRockInDirRec       = cbRock + (cbRock & 1);
+                pName->cbRockInDirRec       = cbRock ;
                 pName->cbRockSpill          = 0;
                 pName->fRockNeedER          = false;
                 pName->fRockNeedRRInDirRec  = false;
@@ -4709,7 +4709,7 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
             }
             else
             {
-                pName->cbRockInDirRec       = RT_ALIGN_T(sizeof(ISO9660SUSPSP) + sizeof(ISO9660SUSPCE), 2, uint16_t);
+                pName->cbRockInDirRec       = (uint16_t)(sizeof(ISO9660SUSPSP) + sizeof(ISO9660SUSPCE));
                 pName->fRockNeedER          = true;
                 pName->fRockNeedRRInSpill   = true;
                 pName->fRockNeedRRInDirRec  = false;
@@ -4718,7 +4718,7 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
                 pName->offRockSpill         = rtFsIsoMakerFinalizeAllocRockRidgeSpill(pFinalizedDirs->pRRSpillFile, cbRock);
             }
         }
-        pName->cbDirRec += pName->cbRockInDirRec;
+        pName->cbDirRec += pName->cbRockInDirRec + (pName->cbRockInDirRec & 1);
         Assert(pName->cbDirRec < UINT8_MAX);
     }
 
