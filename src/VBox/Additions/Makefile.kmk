@@ -324,7 +324,7 @@ $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso: \
 		--rational-attribs \
                --random-order-verification 2048 \
 		$(addprefix /,$(GUESTADDITIONS_FILESPEC_ALL)) \
-               $(foreach spec, $(filter %.run,$(GUESTADDITIONS_FILESPEC_ALL)) \
+               $(foreach spec, $(filter %.run %.sh,$(GUESTADDITIONS_FILESPEC_ALL)) \
 			, --chmod a+x:/$(substr $(spec), 1, $(expr $(pos =,$(spec)) - 1))) \
 		--volume-id="VBOXADDITIONS_$(VBOX_VERSION_STRING_RAW)_$(VBOX_SVN_REV)" \
                --name-setup=joliet \
