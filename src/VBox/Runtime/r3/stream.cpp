@@ -601,7 +601,8 @@ RTR3DECL(int) RTStrmQueryTerminalWidth(PRTSTREAM pStream, uint32_t *pcchWidth)
                 return VINF_SUCCESS;
             }
             return RTErrConvertFromWin32(GetLastError());
-#else
+
+#elif defined(TIOCGWINSZ) || !defined(RT_OS_OS2) /* only OS/2 should currently miss this */
             struct winsize Info;
             RT_ZERO(Info);
             int rc = ioctl(fh, TIOCGWINSZ, &Info);
