@@ -928,7 +928,11 @@ VBOX_WITH_STRICT_LOCKS = 1
 # when multiple VBoxSVC starts for the same user
 # it is enabled for windows build only
 ifeq  ($(KBUILD_TARGET),win)
-  VBOX_WITH_SDS =
+ VBOX_WITH_SDS =
+endif
+## Experimenting with using our own ISO image maker instead of mkisofs.
+if 1
+ VBOX_USE_RTISOMAKER = 1
 endif
 
 
