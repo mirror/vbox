@@ -99,7 +99,12 @@ typedef enum RTFSISOMAKERCMDOPT
     RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,
     RTFSISOMAKERCMD_OPT_RANDOM_ORDER_VERIFICATION,
     RTFSISOMAKERCMD_OPT_NAME_SETUP,
+
+    RTFSISOMAKERCMD_OPT_ROCK_RIDGE,
+    RTFSISOMAKERCMD_OPT_LIMITED_ROCK_RIDGE,
+    RTFSISOMAKERCMD_OPT_NO_ROCK_RIDGE,
     RTFSISOMAKERCMD_OPT_NO_JOLIET,
+
     RTFSISOMAKERCMD_OPT_IMPORT_ISO,
     RTFSISOMAKERCMD_OPT_PUSH_ISO,
     RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_JOLIET,
@@ -113,8 +118,13 @@ typedef enum RTFSISOMAKERCMDOPT
     RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_144,
     RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_288,
 
+    RTFSISOMAKERCMD_OPT_RATIONAL_ATTRIBS,
+    RTFSISOMAKERCMD_OPT_STRICT_ATTRIBS,
     RTFSISOMAKERCMD_OPT_NO_FILE_MODE,
     RTFSISOMAKERCMD_OPT_NO_DIR_MODE,
+    RTFSISOMAKERCMD_OPT_CHMOD,
+    RTFSISOMAKERCMD_OPT_CHOWN,
+    RTFSISOMAKERCMD_OPT_CHGRP,
 
     /*
      * Compatibility options:
@@ -440,8 +450,36 @@ typedef RTFSISOMKCMDPARSEDNAMES *PCRTFSISOMKCMDPARSEDNAMES;
 static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
 {
     /*
-     * Unquie IPRT ISO maker options.
+     * Unique IPRT ISO maker options.
      */
+    { "--name-setup",                   RTFSISOMAKERCMD_OPT_NAME_SETUP,                     RTGETOPT_REQ_STRING  },
+    { "--import-iso",                   RTFSISOMAKERCMD_OPT_IMPORT_ISO,                     RTGETOPT_REQ_STRING  },
+    { "--push-iso",                     RTFSISOMAKERCMD_OPT_PUSH_ISO,                       RTGETOPT_REQ_STRING  },
+    { "--push-iso-no-joliet",           RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_JOLIET,             RTGETOPT_REQ_STRING  },
+    { "--push-iso-no-rock",             RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_ROCK,               RTGETOPT_REQ_STRING  },
+    { "--push-iso-no-rock-no-joliet",   RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_ROCK_NO_JOLIET,     RTGETOPT_REQ_STRING  },
+    { "--pop",                          RTFSISOMAKERCMD_OPT_POP,                            RTGETOPT_REQ_NOTHING },
+
+    { "--rock-ridge",                   RTFSISOMAKERCMD_OPT_ROCK_RIDGE,                     RTGETOPT_REQ_NOTHING },
+    { "--limited-rock-ridge",           RTFSISOMAKERCMD_OPT_LIMITED_ROCK_RIDGE,             RTGETOPT_REQ_NOTHING },
+    { "--no-rock-ridge",                RTFSISOMAKERCMD_OPT_NO_ROCK_RIDGE,                  RTGETOPT_REQ_NOTHING },
+    { "--no-joliet",                    RTFSISOMAKERCMD_OPT_NO_JOLIET,                      RTGETOPT_REQ_NOTHING },
+    { "--joliet-ucs-level",             RTFSISOMAKERCMD_OPT_JOLIET_LEVEL,                   RTGETOPT_REQ_UINT8   },
+
+    { "--rational-attribs",             RTFSISOMAKERCMD_OPT_RATIONAL_ATTRIBS,               RTGETOPT_REQ_NOTHING },
+    { "--strict-attribs",               RTFSISOMAKERCMD_OPT_STRICT_ATTRIBS,                 RTGETOPT_REQ_NOTHING },
+    { "--no-file-mode",                 RTFSISOMAKERCMD_OPT_NO_FILE_MODE,                   RTGETOPT_REQ_NOTHING },
+    { "--no-dir-mode",                  RTFSISOMAKERCMD_OPT_NO_DIR_MODE,                    RTGETOPT_REQ_NOTHING },
+    { "--chmod",                        RTFSISOMAKERCMD_OPT_CHMOD,                          RTGETOPT_REQ_STRING  },
+    { "--chown",                        RTFSISOMAKERCMD_OPT_CHOWN,                          RTGETOPT_REQ_STRING  },
+    { "--chgrp",                        RTFSISOMAKERCMD_OPT_CHGRP,                          RTGETOPT_REQ_STRING  },
+
+    { "--eltorito-new-entry",           RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY,             RTGETOPT_REQ_NOTHING },
+    { "--eltorito-add-image",           RTFSISOMAKERCMD_OPT_ELTORITO_ADD_IMAGE,             RTGETOPT_REQ_STRING },
+    { "--eltorito-floppy-12",           RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_12,             RTGETOPT_REQ_NOTHING },
+    { "--eltorito-floppy-144",          RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_144,            RTGETOPT_REQ_NOTHING },
+    { "--eltorito-floppy-288",          RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_288,            RTGETOPT_REQ_NOTHING },
+
     { "--iprt-iso-maker-file-marker",           RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER, RTGETOPT_REQ_STRING },
     { "--iprt-iso-maker-file-marker-ms",        RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER, RTGETOPT_REQ_STRING },
     { "--iprt-iso-maker-file-marker-ms-crt",    RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER, RTGETOPT_REQ_STRING },
@@ -451,24 +489,6 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--output-buffer-size",           RTFSISOMAKERCMD_OPT_OUTPUT_BUFFER_SIZE,             RTGETOPT_REQ_UINT32  },
     { "--random-output-buffer-size",    RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,      RTGETOPT_REQ_NOTHING },
     { "--random-order-verficiation",    RTFSISOMAKERCMD_OPT_RANDOM_ORDER_VERIFICATION,      RTGETOPT_REQ_UINT32 },
-    { "--name-setup",                   RTFSISOMAKERCMD_OPT_NAME_SETUP,                     RTGETOPT_REQ_STRING  },
-    { "--no-joliet",                    RTFSISOMAKERCMD_OPT_NO_JOLIET,                      RTGETOPT_REQ_NOTHING },
-    { "--import-iso",                   RTFSISOMAKERCMD_OPT_IMPORT_ISO,                     RTGETOPT_REQ_STRING  },
-    { "--push-iso",                     RTFSISOMAKERCMD_OPT_PUSH_ISO,                       RTGETOPT_REQ_STRING  },
-    { "--push-iso-no-joliet",           RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_JOLIET,             RTGETOPT_REQ_STRING  },
-    { "--push-iso-no-rock",             RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_ROCK,               RTGETOPT_REQ_STRING  },
-    { "--push-iso-no-rock-no-joliet",   RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_ROCK_NO_JOLIET,     RTGETOPT_REQ_STRING  },
-    { "--pop",                          RTFSISOMAKERCMD_OPT_POP,                            RTGETOPT_REQ_NOTHING },
-
-
-    { "--eltorito-new-entry",           RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY,             RTGETOPT_REQ_NOTHING },
-    { "--eltorito-add-image",           RTFSISOMAKERCMD_OPT_ELTORITO_ADD_IMAGE,             RTGETOPT_REQ_STRING },
-    { "--eltorito-floppy-12",           RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_12,             RTGETOPT_REQ_NOTHING },
-    { "--eltorito-floppy-144",          RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_144,            RTGETOPT_REQ_NOTHING },
-    { "--eltorito-floppy-288",          RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_288,            RTGETOPT_REQ_NOTHING },
-
-    { "--no-file-mode",                 RTFSISOMAKERCMD_OPT_NO_FILE_MODE,                   RTGETOPT_REQ_NOTHING },
-    { "--no-dir-mode",                  RTFSISOMAKERCMD_OPT_NO_DIR_MODE,                    RTGETOPT_REQ_NOTHING },
 
 #define DD(a_szLong, a_chShort, a_fFlags) { a_szLong, a_chShort, a_fFlags  }, { "-" a_szLong, a_chShort, a_fFlags  }
 
@@ -497,7 +517,7 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--preparer",                     'p',                                                RTGETOPT_REQ_STRING  },
     DD("-sysid",                        RTFSISOMAKERCMD_OPT_SYSTEM_ID,                      RTGETOPT_REQ_STRING  ),
     { "--volume-id",                    RTFSISOMAKERCMD_OPT_VOLUME_ID,                      RTGETOPT_REQ_STRING  }, /* should've been '-V' */
-    DD("-volid-id",                     RTFSISOMAKERCMD_OPT_VOLUME_ID,                      RTGETOPT_REQ_STRING  ),
+    DD("-volid",                        RTFSISOMAKERCMD_OPT_VOLUME_ID,                      RTGETOPT_REQ_STRING  ),
     DD("-volset",                       RTFSISOMAKERCMD_OPT_VOLUME_SET_ID,                  RTGETOPT_REQ_STRING  ),
 
     /* Other: */
@@ -507,6 +527,13 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     DD("-graft-points",                 RTFSISOMAKERCMD_OPT_GRAFT_POINTS,                   RTGETOPT_REQ_NOTHING ),
     DD("--iso-level",                   RTFSISOMAKERCMD_OPT_ISO_LEVEL,                      RTGETOPT_REQ_UINT8   ),
     { "--long-names",                   'l',                                                RTGETOPT_REQ_NOTHING },
+    { "--output",                       'o',                                                RTGETOPT_REQ_STRING  },
+    { "--joliet",                       'J',                                                RTGETOPT_REQ_NOTHING },
+    DD("-ucs-level",                    RTFSISOMAKERCMD_OPT_JOLIET_LEVEL,                   RTGETOPT_REQ_UINT8   ),
+    DD("-rock",                         'R',                                                RTGETOPT_REQ_NOTHING ),
+    DD("-rational-rock",                'r',                                                RTGETOPT_REQ_NOTHING ),
+    DD("-pad",                          RTFSISOMAKERCMD_OPT_PAD,                            RTGETOPT_REQ_NOTHING ),
+    DD("-no-pad",                       RTFSISOMAKERCMD_OPT_NO_PAD,                         RTGETOPT_REQ_NOTHING ),
 
     /*
      * genisoimage/mkisofs compatibility:
@@ -546,7 +573,6 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     DD("-hide-rr-moved",                RTFSISOMAKERCMD_OPT_HIDE_RR_MOVED,                  RTGETOPT_REQ_NOTHING ),
     DD("-input-charset",                RTFSISOMAKERCMD_OPT_INPUT_CHARSET,                  RTGETOPT_REQ_STRING  ),
     DD("-output-charset",               RTFSISOMAKERCMD_OPT_OUTPUT_CHARSET,                 RTGETOPT_REQ_STRING  ),
-    { "--joliet",                       'J',                                                RTGETOPT_REQ_NOTHING },
     DD("-joliet-long",                  RTFSISOMAKERCMD_OPT_JOLIET_LONG,                    RTGETOPT_REQ_NOTHING ),
     DD("-jcharset",                     RTFSISOMAKERCMD_OPT_JOLIET_CHARSET,                 RTGETOPT_REQ_STRING  ),
     { "--leading-dot",                  'L',                                                RTGETOPT_REQ_NOTHING },
@@ -572,14 +598,9 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     DD("-no-rr",                        RTFSISOMAKERCMD_OPT_NO_RR,                          RTGETOPT_REQ_NOTHING ),
     DD("-no-split-symlink-components",  RTFSISOMAKERCMD_OPT_NO_SPLIT_SYMLINK_COMPONENTS,    RTGETOPT_REQ_NOTHING ),
     DD("-no-split-symlink-fields",      RTFSISOMAKERCMD_OPT_NO_SPLIT_SYMLINK_FIELDS,        RTGETOPT_REQ_NOTHING ),
-    { "--output",                       'o',                                                RTGETOPT_REQ_STRING  },
-    DD("-pad",                          RTFSISOMAKERCMD_OPT_PAD,                            RTGETOPT_REQ_NOTHING ),
-    DD("-no-pad",                       RTFSISOMAKERCMD_OPT_NO_PAD,                         RTGETOPT_REQ_NOTHING ),
     DD("-path-list",                    RTFSISOMAKERCMD_OPT_PATH_LIST,                      RTGETOPT_REQ_STRING  ),
     DD("-print-size",                   RTFSISOMAKERCMD_OPT_PRINT_SIZE,                     RTGETOPT_REQ_NOTHING ),
     DD("-quiet",                        RTFSISOMAKERCMD_OPT_QUIET,                          RTGETOPT_REQ_NOTHING ),
-    { "--rock-ridge",                   'R',                                                RTGETOPT_REQ_NOTHING },
-    { "--rock-ridge-relaxed",           'r',                                                RTGETOPT_REQ_NOTHING },
     DD("-relaxed-filenames",            RTFSISOMAKERCMD_OPT_RELAXED_FILENAMES,              RTGETOPT_REQ_NOTHING ),
     DD("-root",                         RTFSISOMAKERCMD_OPT_ROOT,                           RTGETOPT_REQ_STRING  ),
     DD("-old-root",                     RTFSISOMAKERCMD_OPT_OLD_ROOT,                       RTGETOPT_REQ_STRING  ),
@@ -593,7 +614,6 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     DD("-sunx86-label",                 RTFSISOMAKERCMD_OPT_SUNX86_LABEL,                   RTGETOPT_REQ_STRING  ),
     { "--trans-tbl",                    'T',                                                RTGETOPT_REQ_NOTHING },
     DD("-table-name",                   RTFSISOMAKERCMD_OPT_TRANS_TBL_NAME,                 RTGETOPT_REQ_STRING  ),
-    DD("-ucs-level",                    RTFSISOMAKERCMD_OPT_JOLIET_LEVEL,                   RTGETOPT_REQ_UINT8   ),
     DD("-udf",                          RTFSISOMAKERCMD_OPT_UDF,                            RTGETOPT_REQ_NOTHING ),
     DD("-uid",                          RTFSISOMAKERCMD_OPT_UID,                            RTGETOPT_REQ_UINT32  ),
     DD("-use-fileversion",              RTFSISOMAKERCMD_OPT_USE_FILE_VERSION,               RTGETOPT_REQ_NOTHING ),
@@ -848,7 +868,11 @@ static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProg
                        "    directory itself, not any recursively added files and directories below it.\n"
                        "\n"
                        "\n"
-                       "Options:\n"
+                       "Options - General:\n"
+                       "\n"
+                       "    -o <output-file>\n"
+                       "    --output <output-file>\n"
+                       "        The output filename.  This option is not supported in VISO mode.\n"
                        "\n"
                        "    --name-setup <spec>\n"
                        "        Configures active namespaces and how file specifications are to be\n"
@@ -872,19 +896,6 @@ static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProg
                        "            - udf-trans-tbl\n"
                        "            - hfs-trans-tbl\n"
                        "\n"
-                       "    --iso-level <0|1|2|3>\n"
-                       "        Sets the ISO level:\n"
-                       "            - 0: Disable primary ISO namespace.\n"
-                       "            - 1: ISO level 1: Filenames 8.3 format and limited to 4GB - 1.\n"
-                       "            - 2: ISO level 2: 31 char long names and limited to 4GB - 1.\n"
-                       "            - 3: ISO level 3: 31 char long names and support for >=4GB files.\n"
-                       "            - 4: Fictive level used by other tools. Not yet implemented.\n"
-                       "        Default: 3\n"
-                       "\n"
-                       "    --no-joliet\n"
-                       "        Disable the joliet namespace entirely.  This option must be specified\n"
-                       "        before any file specifications\n"
-                       "\n"
                        "    --push-iso <iso-file>\n"
                        "    --push-iso-no-joliet <iso-file>\n"
                        "    --push-iso-no-rock <iso-file>\n"
@@ -902,17 +913,81 @@ static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProg
                        "        Imports everything on the given ISO file. You can use --name-setup to\n"
                        "        omit namespaces.\n"
                        "\n"
+                       "\n"
+                       "Options - Namespaces:\n"
+                       "\n"
+                       "    --iso-level <0|1|2|3>\n"
+                       "        Sets the ISO level:\n"
+                       "            - 0: Disable primary ISO namespace.\n"
+                       "            - 1: ISO level 1: Filenames 8.3 format and limited to 4GB - 1.\n"
+                       "            - 2: ISO level 2: 31 char long names and limited to 4GB - 1.\n"
+                       "            - 3: ISO level 3: 31 char long names and support for >=4GB files.\n"
+                       "            - 4: Fictive level used by other tools. Not yet implemented.\n"
+                       "        Default: 3\n"
+                       "\n"
+                       "    --rock-ridge\n"
+                       "    --limited-rock-ridge\n"
+                       "    --no-rock-ridge\n"
+                       "        Enables or disables rock ridge support for the primary ISO 9660\n"
+                       "        namespace.  The --limited-rock-ridge option omits a couple of bits in\n"
+                       "        the root directory that would make Linux pick rock ridge over joliet.\n"
+                       "        Default: --limited-rock-ridge"
+                       "\n"
+                       "    -J\n"
+                       "    --joliet\n"
+                       "    --no-joliet\n"
+                       "        Enables or disable the joliet namespace.  This option must precede any\n"
+                       "        file specifications.  Default: --joliet\n"
+                       "\n"
+                       "    --joliet-ucs-level <1|2|3>\n"
+                       "    --ucs-level <1|2|3>\n"
+                       "        Set the Joliet UCS support level.  This is currently only flagged in the\n"
+                       "        image but not enforced on the actual path names.  Default level: 3\n"
+                       "\n"
+                       "\n"
+                       "Options - File attributes:\n"
+                       "\n"
+                       "    --rational-attribs\n"
+                       "        Enables rational file attribute handling:\n"
+                       "            * Owner ID is set to zero\n"
+                       "            * Group ID is set to zero\n"
+                       "            * Mode is set to 0444 for non-executable files.\n"
+                       "            * Mode is set to 0555 for executable files.\n"
+                       "            * Mode is set to 0555 for directories, preserving stick bits.\n"
+                       "        This is default.\n"
+                       "\n"
+                       "    --strict-attribs\n"
+                       "        Counters --rational-attribs and causes attributes to be recorded\n"
+                       "        exactly as they appear in the source.\n"
+                       "\n"
                        "    --file-mode <mode>\n"
                        "    --no-file-mode\n"
-                       "        Controls the forced file mode mask.\n"
+                       "        Controls the forced file mode mask for rock ridge, UDF and HFS.\n"
                        "\n"
                        "    --dir-mode <mode>\n"
                        "    --no-dir-mode\n"
-                       "        Controls the forced directory mode mask.\n"
+                       "        Controls the forced directory mode mask for rock ridge, UDF and HFS.\n"
                        "\n"
                        "    --new-dir-mode <mode>\n"
-                       "        Controls the default mode mask for directories that are created "
-                       "        implicitly.  The --dir-mode option overrides this.\n"
+                       "        Controls the default mode mask (rock ridge, UDF, HFS) for directories\n"
+                       "        that are created implicitly.  The --dir-mode option overrides this.\n"
+                       "\n"
+                       "    --chmod <mode>:<on-iso-file>\n"
+                       "       Explictily sets the rock ridge, UDF and HFS file mode for a\n"
+                       "       file/dir/whatever that has already been added to the ISO.  The mode can\n"
+                       "       be octal, a+x, a+r, or a+rx.  (Support for more complicated mode\n"
+                       "       specifications may be implemented at a later point.)\n"
+                       "       Note that only namespaces in the current --name-setup are affected.\n"
+                       "\n"
+                       "    --chown <owner-id>:<on-iso-file>\n"
+                       "       Explictily sets the rock ridge, UDF and HFS file owner ID (numeric) for a\n"
+                       "       file/dir/whatever that has already been added to the ISO.\n"
+                       "       Note that only namespaces in the current --name-setup are affected.\n"
+                       "\n"
+                       "    --chgrp <group-id>:<on-iso-file>\n"
+                       "       Explictily sets the rock ridge, UDF and HFS file group ID (numeric) for a\n"
+                       "       file/dir/whatever that has already been added to the ISO.\n"
+                       "       Note that only namespaces in the current --name-setup are affected.\n"
                        "\n"
                        "\n"
                        "Options - Booting:\n"
@@ -925,8 +1000,8 @@ static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProg
                        "        File specification of a file that should be added to the image and used\n"
                        "        as the El Torito boot image of the current boot entry.\n"
                        "\n"
-                       "    -b <on-ISO-file>\n"
-                       "    --eltorito-boot <on-ISO-file>\n"
+                       "    -b <on-iso-file>\n"
+                       "    --eltorito-boot <on-iso-file>\n"
                        "        Specifies a file on the ISO as the El Torito boot image for the current\n"
                        "        boot entry.\n"
                        "\n"
@@ -971,7 +1046,7 @@ static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProg
                        "        parts of this may be regenerated by partition tables and such.\n"
                        "\n"
                        "\n"
-                       "Options - String properties:\n"
+                       "Options - String properties (applied to active namespaces only):\n"
                        "\n"
                        "    --abstract <file-id>\n"
                        "        The name of the abstract file in the root dir.\n"
@@ -1002,7 +1077,9 @@ static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProg
                        "\n"
                        "    --volid <text>\n"
                        "    --volume-id <text>\n"
-                       "        Volume ID string.\n"
+                       "        Volume ID string (label).  (It is possible to set different labels for\n"
+                       "        primary ISO 9660, joliet, UDF and HFS by changing the active namespaces\n"
+                       "        using the --name-setup option between --volume-id occurences.)\n"
                        "\n"
                        "    --volset <text>\n"
                        "        Volume set ID string.\n"
@@ -1016,6 +1093,15 @@ static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProg
                        "    -l\n"
                        "    --long-names\n"
                        "        Allow 31 charater filenames.  Just ensure ISO level >= 2 here.\n"
+                       "\n"
+                       "    -R\n"
+                       "    --rock\n"
+                       "        Same as --rock-ridge and --strict-attribs.\n"
+                       "\n"
+                       "    -r\n"
+                       "    --rational-rock\n"
+                       "        Same as --rock-ridge and --rational-attribs.\n"
+                       "\n"
                        "\n"
                        "Options - VISO specific:\n"
                        "\n"
@@ -1091,7 +1177,7 @@ static int rtFsIsoMakerCmdVerifyImageInRandomOrder(PRTFSISOMAKERCMDOPTS pOpts, R
         /*
          * Do the verification.
          */
-        rtFsIsoMakerPrintf(pOpts, "Verifying image in random order using %zu (%#zx) byte blocks: %#zx in blocks\n",
+        rtFsIsoMakerPrintf(pOpts, "Verifying image in random order using %zu (%#zx) byte blocks: %#RX32 in blocks\n",
                            cbBuf, cbBuf, cBlocks);
 
         rc = VINF_SUCCESS;
@@ -2355,6 +2441,77 @@ static int rtFsIsoMakerCmdOptImportIso(PRTFSISOMAKERCMDOPTS pOpts, const char *p
 
 
 /**
+ * Deals with: --iso-level, -l
+ *
+ * @returns IPRT status code
+ * @param   pOpts           The ISO maker command instance.
+ * @param   uLevel          The new ISO level.
+ */
+static int rtFsIsoMakerCmdOptSetIsoLevel(PRTFSISOMAKERCMDOPTS pOpts, uint8_t uLevel)
+{
+    int rc = RTFsIsoMakerSetIso9660Level(pOpts->hIsoMaker, uLevel);
+    if (RT_SUCCESS(rc))
+        return rc;
+    if (rc == VERR_WRONG_ORDER)
+        return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Cannot change ISO level to %d after having added files!", uLevel);
+    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to set ISO level to %d: %Rrc", uLevel, rc);
+}
+
+
+/**
+ * Deals with: --rock-ridge, --limited-rock-ridge, --no-rock-ridge
+ *
+ * @returns IPRT status code
+ * @param   pOpts           The ISO maker command instance.
+ * @param   uLevel          The new rock ridge level.
+ */
+static int rtFsIsoMakerCmdOptSetPrimaryRockLevel(PRTFSISOMAKERCMDOPTS pOpts, uint8_t uLevel)
+{
+    int rc = RTFsIsoMakerSetRockRidgeLevel(pOpts->hIsoMaker, uLevel);
+    if (RT_SUCCESS(rc))
+        return rc;
+    if (rc == VERR_WRONG_ORDER)
+        return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Cannot change rock ridge level to %d after having added files!", uLevel);
+    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to set rock ridge level to %d: %Rrc", uLevel, rc);
+}
+
+
+/**
+ * Deals with: --joliet, --no-joliet, --joliet-ucs-level, --ucs-level
+ *
+ * @returns IPRT status code
+ * @param   pOpts           The ISO maker command instance.
+ * @param   uLevel          The new rock ridge level.
+ */
+static int rtFsIsoMakerCmdOptSetJolietUcs2Level(PRTFSISOMAKERCMDOPTS pOpts, uint8_t uLevel)
+{
+    int rc = RTFsIsoMakerSetJolietUcs2Level(pOpts->hIsoMaker, uLevel);
+    if (RT_SUCCESS(rc))
+        return rc;
+    if (rc == VERR_WRONG_ORDER)
+        return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Cannot change joliet UCS level to %d after having added files!", uLevel);
+    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to set joliet UCS level to %d: %Rrc", uLevel, rc);
+}
+
+
+/**
+ * Deals with: --rational-attribs, --strict-attribs, -R, -r
+ *
+ * @returns IPRT status code
+ * @param   pOpts           The ISO maker command instance.
+ * @param   uLevel          The new rock ridge level.
+ */
+static int rtFsIsoMakerCmdOptSetAttribInheritStyle(PRTFSISOMAKERCMDOPTS pOpts, bool fStrict)
+{
+    int rc = RTFsIsoMakerSetAttribInheritStyle(pOpts->hIsoMaker, fStrict);
+    if (RT_SUCCESS(rc))
+        return rc;
+    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to change attributes handling style to %s: %Rrc",
+                                  fStrict ? "strict" : "rational", rc);
+}
+
+
+/**
  * Deals with: -G|--generic-boot {file}
  *
  * This concers content the first 16 sectors of the image.  We start loading the
@@ -2859,7 +3016,7 @@ static int rtFsIsoMakerCmdOptEltoritoNewEntry(PRTFSISOMAKERCMDOPTS pOpts)
  */
 static int rtFsIsoMakerCmdOptSetStringProp(PRTFSISOMAKERCMDOPTS pOpts, const char *pszValue, RTFSISOMAKERSTRINGPROP enmStringProp)
 {
-    int rc = RTFsIsoMakerSetStringProp(pOpts->hIsoMaker, enmStringProp, RTFSISOMAKER_NAMESPACE_ALL, pszValue);
+    int rc = RTFsIsoMakerSetStringProp(pOpts->hIsoMaker, enmStringProp, pOpts->fDstNamespaces, pszValue);
     if (RT_FAILURE(rc))
         rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to set string property %d to '%s': %Rrc", enmStringProp, pszValue, rc);
     return rc;
@@ -2932,6 +3089,115 @@ static int rtFsIsoMakerCmdOptSetNewDirMode(PRTFSISOMAKERCMDOPTS pOpts, RTFMODE f
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
     return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to set default dir mode mask to %04o: %Rrc", fMode, rc);
+}
+
+
+/**
+ * Handles the --chmod option.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszSpec             The option value.
+ */
+static int rtFsIsoMakerCmdOptChmod(PRTFSISOMAKERCMDOPTS pOpts, const char *pszSpec)
+{
+    /*
+     * Parse the mode part.
+     */
+    int         rc;
+    uint32_t    fUnset  = 07777;
+    uint32_t    fSet    = 0;
+    const char *pszPath = pszSpec;
+    if (RT_C_IS_DIGIT(*pszPath))
+    {
+        rc = RTStrToUInt32Ex(pszSpec, (char **)&pszPath, 8, &fSet);
+        if (rc != VWRN_TRAILING_CHARS)
+            return rtFsIsoMakerCmdSyntaxError(pOpts, "Malformed --chmod, octal mode parse failed: %s (%Rrc)", pszSpec, rc);
+        if (fSet & ~07777)
+            return rtFsIsoMakerCmdSyntaxError(pOpts, "Malformed --chmod, invalid mode mask: 0%o, max 07777", fSet);
+        if (*pszPath != ':')
+            return rtFsIsoMakerCmdSyntaxError(pOpts, "Malformed --chmod, expected colon after mode: %s", pszSpec);
+    }
+    else
+    {
+        pszPath = strchr(pszPath, ':');
+        if (pszPath == NULL)
+            return rtFsIsoMakerCmdSyntaxError(pOpts, "Malformed --chmod, expected colon after mode: %s", pszSpec);
+        size_t const cchMode = pszPath - pszSpec;
+
+        /* We currently only matches certain patterns. Later this needs to be generalized into a RTFile or RTPath method. */
+        fUnset = 0;
+#define MATCH_MODE_STR(a_szMode)  (cchMode == sizeof(a_szMode) - 1U && memcmp(pszSpec, a_szMode, sizeof(a_szMode) - 1) == 0)
+        if (MATCH_MODE_STR("a+x"))
+            fSet = 0111;
+        else if (MATCH_MODE_STR("a+r"))
+            fSet = 0444;
+        else if (MATCH_MODE_STR("a+rx"))
+            fSet = 0555;
+        else
+            return rtFsIsoMakerCmdSyntaxError(pOpts, "Sorry, --chmod doesn't understand complicated mode expressions: %s", pszSpec);
+#undef MATCH_MODE_STR
+    }
+
+    /*
+     * Check that the file starts with a slash.
+     */
+    pszPath++;
+    if (!RTPATH_IS_SLASH(*pszPath))
+        return rtFsIsoMakerCmdSyntaxError(pOpts, "Malformed --chmod, path must start with a slash: %s", pszSpec);
+
+    /*
+     * Do the job.
+     */
+    rc = RTFsIsoMakerSetPathMode(pOpts->hIsoMaker, pszPath, pOpts->fDstNamespaces, fSet, fUnset, 0 /*fFlags*/, NULL /*pcHits*/);
+    if (rc == VWRN_NOT_FOUND)
+        return rtFsIsoMakerCmdSyntaxError(pOpts, "Could not find --chmod path: %s", pszPath);
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+    return rtFsIsoMakerCmdSyntaxError(pOpts, "RTFsIsoMakerSetPathMode(,%s,%#x,%o,%o,0,) failed: %Rrc",
+                                      pszPath, pOpts->fDstNamespaces, fSet, fUnset, rc);
+}
+
+
+/**
+ * Handles the --chown and --chgrp options.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszSpec             The option value.
+ * @param   fIsChOwn            Set if 'chown', clear if 'chgrp'.
+ */
+static int rtFsIsoMakerCmdOptChangeOwnerGroup(PRTFSISOMAKERCMDOPTS pOpts, const char *pszSpec, bool fIsChOwn)
+{
+    const char * const pszOpt = fIsChOwn ? "chown" : "chgrp";
+
+    /*
+     * Parse out the ID and path .
+     */
+    uint32_t    idValue;
+    const char *pszPath = pszSpec;
+    int rc = RTStrToUInt32Ex(pszSpec, (char **)&pszPath, 0, &idValue);
+    if (rc != VWRN_TRAILING_CHARS)
+        return rtFsIsoMakerCmdSyntaxError(pOpts, "Malformed --%s, numeric ID parse failed: %s (%Rrc)", pszOpt, pszSpec, rc);
+    if (*pszPath != ':')
+        return rtFsIsoMakerCmdSyntaxError(pOpts, "Malformed --%s, expected colon after ID: %s", pszOpt, pszSpec);
+    pszPath++;
+    if (!RTPATH_IS_SLASH(*pszPath))
+        return rtFsIsoMakerCmdSyntaxError(pOpts, "Malformed --%s, path must start with a slash: %s", pszOpt, pszSpec);
+
+    /*
+     * Do the job.
+     */
+    if (fIsChOwn)
+        rc = RTFsIsoMakerSetPathOwnerId(pOpts->hIsoMaker, pszPath, pOpts->fDstNamespaces, idValue, NULL /*pcHits*/);
+    else
+        rc = RTFsIsoMakerSetPathGroupId(pOpts->hIsoMaker, pszPath, pOpts->fDstNamespaces, idValue, NULL /*pcHits*/);
+    if (rc == VWRN_NOT_FOUND)
+        return rtFsIsoMakerCmdSyntaxError(pOpts, "Could not find --%s path: %s", pszOpt, pszPath);
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+    return rtFsIsoMakerCmdSyntaxError(pOpts, "RTFsIsoMakerSetPath%sId(,%s,%#x,%u,) failed: %Rrc",
+                                      fIsChOwn ? "Owner" : "Group", pszPath, pOpts->fDstNamespaces, idValue, rc);
 }
 
 
@@ -3056,27 +3322,20 @@ static int rtFsIsoMakerCmdParse(PRTFSISOMAKERCMDOPTS pOpts, unsigned cArgs, char
                     rc = rtFsIsoMakerCmdParseArgumentFile(pOpts, ValueUnion.psz + 1, cDepth);
                 break;
 
+
             /*
-             * Options specific to our ISO maker.
+             * General options
              */
+            case 'o':
+                if (pOpts->fVirtualImageMaker)
+                    return rtFsIsoMakerCmdSyntaxError(pOpts, "The --output option is not allowed");
+                if (pOpts->pszOutFile)
+                    return rtFsIsoMakerCmdSyntaxError(pOpts, "The --output option is specified more than once");
+                pOpts->pszOutFile = ValueUnion.psz;
+                break;
+
             case RTFSISOMAKERCMD_OPT_NAME_SETUP:
                 rc = rtFsIsoMakerCmdOptNameSetup(pOpts, ValueUnion.psz);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER:
-                /* ignored */
-                break;
-
-            case RTFSISOMAKERCMD_OPT_OUTPUT_BUFFER_SIZE:                /* --output-buffer-size {cb} */
-                pOpts->cbOutputReadBuffer = ValueUnion.u32;
-                break;
-
-            case RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE:         /* --random-output-buffer-size */
-                pOpts->fRandomOutputReadBufferSize = true;
-                break;
-
-            case RTFSISOMAKERCMD_OPT_RANDOM_ORDER_VERIFICATION:         /* --random-order-verficiation {cb} */
-                pOpts->cbRandomOrderVerifciationBlock = ValueUnion.u32;
                 break;
 
             case RTFSISOMAKERCMD_OPT_PUSH_ISO:
@@ -3100,26 +3359,84 @@ static int rtFsIsoMakerCmdParse(PRTFSISOMAKERCMDOPTS pOpts, unsigned cArgs, char
                 rc = rtFsIsoMakerCmdOptPop(pOpts);
                 break;
 
-
             case RTFSISOMAKERCMD_OPT_IMPORT_ISO:
                 rc = rtFsIsoMakerCmdOptImportIso(pOpts, ValueUnion.psz);
+                break;
+
+
+            /*
+             * Namespace configuration.
+             */
+            case RTFSISOMAKERCMD_OPT_ISO_LEVEL:
+                rc = rtFsIsoMakerCmdOptSetIsoLevel(pOpts, ValueUnion.u8);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_ROCK_RIDGE:
+                rc = rtFsIsoMakerCmdOptSetPrimaryRockLevel(pOpts, 2);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_LIMITED_ROCK_RIDGE:
+                rc = rtFsIsoMakerCmdOptSetPrimaryRockLevel(pOpts, 1);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_NO_ROCK_RIDGE:
+                rc = rtFsIsoMakerCmdOptSetPrimaryRockLevel(pOpts, 0);
+                break;
+
+            case 'J':
+                rc = rtFsIsoMakerCmdOptSetJolietUcs2Level(pOpts, 3);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_NO_JOLIET:
+                rc = rtFsIsoMakerCmdOptSetJolietUcs2Level(pOpts, 0);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_JOLIET_LEVEL:
+                rc = rtFsIsoMakerCmdOptSetJolietUcs2Level(pOpts, ValueUnion.u8);
+                break;
+
+
+            /*
+             * File attributes.
+             */
+            case RTFSISOMAKERCMD_OPT_RATIONAL_ATTRIBS:
+                rc = rtFsIsoMakerCmdOptSetAttribInheritStyle(pOpts, false /*fStrict*/);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_STRICT_ATTRIBS:
+                rc = rtFsIsoMakerCmdOptSetAttribInheritStyle(pOpts, true /*fStrict*/);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_FILE_MODE:
+                rc = rtFsIsoMakerCmdOptSetFileOrDirMode(pOpts, false /*fDir*/, ValueUnion.u32);
                 break;
 
             case RTFSISOMAKERCMD_OPT_NO_FILE_MODE:
                 rc = rtFsIsoMakerCmdOptDisableFileOrDirMode(pOpts, false /*fDir*/);
                 break;
+
+            case RTFSISOMAKERCMD_OPT_DIR_MODE:
+                rc = rtFsIsoMakerCmdOptSetFileOrDirMode(pOpts, true /*fDir*/, ValueUnion.u32);
+                break;
+
             case RTFSISOMAKERCMD_OPT_NO_DIR_MODE:
                 rc = rtFsIsoMakerCmdOptDisableFileOrDirMode(pOpts, true /*fDir*/);
                 break;
 
+            case RTFSISOMAKERCMD_OPT_NEW_DIR_MODE:
+                rc = rtFsIsoMakerCmdOptSetNewDirMode(pOpts, ValueUnion.u32);
+                break;
 
-            /*
-             * Joliet related options.
-             */
-            case RTFSISOMAKERCMD_OPT_NO_JOLIET:
-                rc = RTFsIsoMakerSetJolietUcs2Level(pOpts->hIsoMaker, 0);
-                if (RT_FAILURE(rc))
-                    rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to disable joliet: %Rrc", rc);
+            case RTFSISOMAKERCMD_OPT_CHMOD:
+                rc = rtFsIsoMakerCmdOptChmod(pOpts, ValueUnion.psz);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_CHOWN:
+                rc = rtFsIsoMakerCmdOptChangeOwnerGroup(pOpts, ValueUnion.psz, true  /*fIsChOwn*/);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_CHGRP:
+                rc = rtFsIsoMakerCmdOptChangeOwnerGroup(pOpts, ValueUnion.psz, false /*fIsChOwn*/);
                 break;
 
 
@@ -3182,6 +3499,7 @@ static int rtFsIsoMakerCmdParse(PRTFSISOMAKERCMDOPTS pOpts, unsigned cArgs, char
                 rc = rtFsIsoMakerCmdOptEltoritoSetBootCatalogPath(pOpts, ValueUnion.psz);
                 break;
 
+
             /*
              * Image/namespace property related options.
              */
@@ -3221,42 +3539,65 @@ static int rtFsIsoMakerCmdParse(PRTFSISOMAKERCMDOPTS pOpts, unsigned cArgs, char
                 rc = rtFsIsoMakerCmdOptSetStringProp(pOpts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_VOLUME_SET_ID);
                 break;
 
+
             /*
-             * Options compatible with other ISO makers.
+             * Compatibility.
              */
-            case 'o':
-                if (pOpts->fVirtualImageMaker)
-                    return rtFsIsoMakerCmdSyntaxError(pOpts, "The --output option is not allowed");
-                if (pOpts->pszOutFile)
-                    return rtFsIsoMakerCmdSyntaxError(pOpts, "The --output option is specified more than once");
-                pOpts->pszOutFile = ValueUnion.psz;
-                break;
-
-            case RTFSISOMAKERCMD_OPT_DIR_MODE:
-                rc = rtFsIsoMakerCmdOptSetFileOrDirMode(pOpts, true /*fDir*/, ValueUnion.u32);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_FILE_MODE:
-                rc = rtFsIsoMakerCmdOptSetFileOrDirMode(pOpts, false /*fDir*/, ValueUnion.u32);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_NEW_DIR_MODE:
-                rc = rtFsIsoMakerCmdOptSetNewDirMode(pOpts, ValueUnion.u32);
-                break;
-
             case RTFSISOMAKERCMD_OPT_GRAFT_POINTS:
                 rc = rtFsIsoMakerCmdOptNameSetup(pOpts, "iso+joliet+udf+hfs");
                 break;
 
             case 'l':
                 if (RTFsIsoMakerGetIso9660Level(pOpts->hIsoMaker) >= 2)
-                    break;
-                ValueUnion.u8 = 2;
-                /* fall thru */
-            case RTFSISOMAKERCMD_OPT_ISO_LEVEL:
-                rc = RTFsIsoMakerSetIso9660Level(pOpts->hIsoMaker, ValueUnion.u8);
+                    rc = rtFsIsoMakerCmdOptSetIsoLevel(pOpts, 2);
+                break;
+
+            case 'R':
+                rc = rtFsIsoMakerCmdOptSetPrimaryRockLevel(pOpts, 2);
+                if (RT_SUCCESS(rc))
+                    rc = rtFsIsoMakerCmdOptSetAttribInheritStyle(pOpts, true /*fStrict*/);
+                break;
+
+            case 'r':
+                rc = rtFsIsoMakerCmdOptSetPrimaryRockLevel(pOpts, 2);
+                if (RT_SUCCESS(rc))
+                    rc = rtFsIsoMakerCmdOptSetAttribInheritStyle(pOpts, false /*fStrict*/);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_PAD:
+                rc = RTFsIsoMakerSetImagePadding(pOpts->hIsoMaker, 150);
                 if (RT_FAILURE(rc))
-                    rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to set ISO level to %d: %Rrc", ValueUnion.u8, rc);
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerSetImagePadding failed: %Rrc", rc);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_NO_PAD:
+                rc = RTFsIsoMakerSetImagePadding(pOpts->hIsoMaker, 0);
+                if (RT_FAILURE(rc))
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerSetImagePadding failed: %Rrc", rc);
+                break;
+
+
+            /*
+             * VISO specific
+             */
+            case RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER:
+                /* ignored */
+                break;
+
+
+            /*
+             * Testing.
+             */
+            case RTFSISOMAKERCMD_OPT_OUTPUT_BUFFER_SIZE:                /* --output-buffer-size {cb} */
+                pOpts->cbOutputReadBuffer = ValueUnion.u32;
+                break;
+
+            case RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE:         /* --random-output-buffer-size */
+                pOpts->fRandomOutputReadBufferSize = true;
+                break;
+
+            case RTFSISOMAKERCMD_OPT_RANDOM_ORDER_VERIFICATION:         /* --random-order-verficiation {cb} */
+                pOpts->cbRandomOrderVerifciationBlock = ValueUnion.u32;
                 break;
 
 

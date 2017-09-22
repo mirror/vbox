@@ -127,6 +127,24 @@ RTDECL(int) RTFsIsoMakerSetRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t uLevel
 RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t uLevel);
 
 /**
+ * Changes the file attribute (mode, owner, group) inherit style (from source).
+ *
+ * The strict style will use the exact attributes from the source, where as the
+ * non-strict (aka rational and default) style will use 0 for the owner and
+ * group IDs and normalize the mode bits along the lines of 'chmod a=rX',
+ * stripping set-uid/gid bitson files but preserving sticky ones on directories.
+ *
+ * When disabling strict style, the default dir and file modes will be restored
+ * to default values.
+ *
+ * @returns IRPT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   fStrict             Indicates strict (true) or non-strict (false)
+ *                              style.
+ */
+RTDECL(int) RTFsIsoMakerSetAttribInheritStyle(RTFSISOMAKER hIsoMaker, bool fStrict);
+
+/**
  * Sets the default file mode settings.
  *
  * @returns IRPT status code.
@@ -224,6 +242,15 @@ typedef enum RTFSISOMAKERSTRINGPROP
  */
 RTDECL(int) RTFsIsoMakerSetStringProp(RTFSISOMAKER hIsoMaker, RTFSISOMAKERSTRINGPROP enmStringProp,
                                       uint32_t fNamespaces, const char *pszValue);
+
+/**
+ * Specifies image padding.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   cSectors            Number of sectors to pad the image with.
+ */
+RTDECL(int) RTFsIsoMakerSetImagePadding(RTFSISOMAKER hIsoMaker, uint32_t cSectors);
 
 /**
  * Resolves a path into a object ID.
@@ -494,6 +521,62 @@ RTDECL(int) RTFsIsoMakerAddUnnamedSymlink(RTFSISOMAKER hIsoMaker, PCRTFSOBJINFO 
  * @sa      RTFsIsoMakerAddUnnamedSymlink, RTFsIsoMakerObjSetPath
  */
 RTDECL(int) RTFsIsoMakerAddSymlink(RTFSISOMAKER hIsoMaker, const char *pszSymlink, const char *pszTarget, uint32_t *pidxObj);
+
+/**
+ * Modifies the mode mask for a given path in one or more namespaces.
+ *
+ * The mode mask is used by rock ridge, UDF and HFS.
+ *
+ * @returns IPRT status code.
+ * @retval  VWRN_NOT_FOUND if the path wasn't found in any of the specified
+ *          namespaces.
+ *
+ * @param   hIsoMaker           The ISO maker handler.
+ * @param   pszPath             The path which mode mask should be modified.
+ * @param   fNamespaces         The namespaces to set it in.
+ * @param   fSet                The mode bits to set.
+ * @param   fUnset              The mode bits to clear (applied first).
+ * @param   fFlags              Reserved, MBZ.
+ * @param   pcHits              Where to return number of paths found. Optional.
+ */
+RTDECL(int) RTFsIsoMakerSetPathMode(RTFSISOMAKER hIsoMaker, const char *pszPath, uint32_t fNamespaces,
+                                    RTFMODE fSet, RTFMODE fUnset, uint32_t fFlags, uint32_t *pcHits);
+
+/**
+ * Modifies the owner ID for a given path in one or more namespaces.
+ *
+ * The owner ID is used by rock ridge, UDF and HFS.
+ *
+ * @returns IPRT status code.
+ * @retval  VWRN_NOT_FOUND if the path wasn't found in any of the specified
+ *          namespaces.
+ *
+ * @param   hIsoMaker           The ISO maker handler.
+ * @param   pszPath             The path which mode mask should be modified.
+ * @param   fNamespaces         The namespaces to set it in.
+ * @param   idOwner             The new owner ID to set.
+ * @param   pcHits              Where to return number of paths found. Optional.
+ */
+RTDECL(int) RTFsIsoMakerSetPathOwnerId(RTFSISOMAKER hIsoMaker, const char *pszPath, uint32_t fNamespaces,
+                                       RTUID idOwner, uint32_t *pcHits);
+
+/**
+ * Modifies the group ID for a given path in one or more namespaces.
+ *
+ * The group ID is used by rock ridge, UDF and HFS.
+ *
+ * @returns IPRT status code.
+ * @retval  VWRN_NOT_FOUND if the path wasn't found in any of the specified
+ *          namespaces.
+ *
+ * @param   hIsoMaker           The ISO maker handler.
+ * @param   pszPath             The path which mode mask should be modified.
+ * @param   fNamespaces         The namespaces to set it in.
+ * @param   idGroup             The new group ID to set.
+ * @param   pcHits              Where to return number of paths found. Optional.
+ */
+RTDECL(int) RTFsIsoMakerSetPathGroupId(RTFSISOMAKER hIsoMaker, const char *pszPath, uint32_t fNamespaces,
+                                       RTGID idGroup, uint32_t *pcHits);
 
 /**
  * Set the validation entry of the boot catalog (this is the first entry).

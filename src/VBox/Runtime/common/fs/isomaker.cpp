@@ -494,11 +494,16 @@ typedef struct RTFSISOMAKERINT
     uint64_t                cbData;
     /** Number of volume descriptors. */
     uint32_t                cVolumeDescriptors;
+    /** The image (trail) padding in bytes. */
+    uint32_t                cbImagePadding;
 
     /** The 'now' timestamp we use for the whole image.
      * This way we'll save lots of RTTimeNow calls and have similar timestamps
      * over the whole image. */
     RTTIMESPEC              ImageCreationTime;
+    /** Indicates strict or non-strict attribute handling style.
+     * See RTFsIsoMakerSetAttributeStyle() for details.  */
+    bool                    fStrictAttributeStyle;
     /** The default owner ID. */
     RTUID                   uidDefault;
     /** The default group ID. */
@@ -822,7 +827,9 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         //pThis->cbData                     = 0;
 
         pThis->cVolumeDescriptors           = 3; /* primary, secondary joliet, terminator. */
+        pThis->cbImagePadding               = 150 * RTFSISOMAKER_SECTOR_SIZE;
 
+        //pThis->fStrictAttributeStyle      = false;
         //pThis->uidDefault                 = 0;
         //pThis->gidDefault                 = 0;
         pThis->fDefaultFileMode             = 0444 | RTFS_TYPE_FILE      | RTFS_DOS_ARCHIVED  | RTFS_DOS_READONLY;
@@ -1269,6 +1276,38 @@ RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t 
 
 
 /**
+ * Changes the file attribute (mode, owner, group) inherit style (from source).
+ *
+ * The strict style will use the exact attributes from the source, where as the
+ * non-strict (aka rational and default) style will use 0 for the owner and
+ * group IDs and normalize the mode bits along the lines of 'chmod a=rX',
+ * stripping set-uid/gid bitson files but preserving sticky ones on directories.
+ *
+ * When disabling strict style, the default dir and file modes will be restored
+ * to default values.
+ *
+ * @returns IRPT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   fStrict             Indicates strict (true) or non-strict (false)
+ *                              style.
+ */
+RTDECL(int) RTFsIsoMakerSetAttribInheritStyle(RTFSISOMAKER hIsoMaker, bool fStrict)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+
+    pThis->fStrictAttributeStyle = fStrict;
+    if (!fStrict)
+    {
+        pThis->fDefaultFileMode = 0444 | RTFS_TYPE_FILE      | RTFS_DOS_ARCHIVED  | RTFS_DOS_READONLY;
+        pThis->fDefaultDirMode  = 0555 | RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY | RTFS_DOS_READONLY;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Sets the default file mode settings.
  *
  * @returns IRPT status code.
@@ -1476,6 +1515,27 @@ RTDECL(int) RTFsIsoMakerSetStringProp(RTFSISOMAKER hIsoMaker, RTFSISOMAKERSTRING
         }
     return VINF_SUCCESS;
 }
+
+
+/**
+ * Specifies image padding.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   cSectors            Number of sectors to pad the image with.
+ */
+RTDECL(int) RTFsIsoMakerSetImagePadding(RTFSISOMAKER hIsoMaker, uint32_t cSectors)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    AssertReturn(cSectors <= _64K, VERR_OUT_OF_RANGE);
+    AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
+
+    pThis->cbImagePadding = cSectors * RTFSISOMAKER_SECTOR_SIZE;
+    return VINF_SUCCESS;
+}
+
+
 
 
 
@@ -2905,7 +2965,6 @@ RTDECL(int) RTFsIsoMakerObjSetRockName(RTFSISOMAKER hIsoMaker, uint32_t idxObj, 
             }
         }
     return VINF_SUCCESS;
-
 }
 
 
@@ -3024,11 +3083,28 @@ static int rtFsIsoMakerInitCommonObj(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pO
         pObj->ModificationTime  = pObjInfo->ModificationTime;
         pObj->AccessedTime      = pObjInfo->AccessTime;
         pObj->fMode             = pObjInfo->Attr.fMode;
+        if (!pThis->fStrictAttributeStyle)
+        {
+            if (enmType == RTFSISOMAKEROBJTYPE_DIR)
+                pObj->fMode     = (pObjInfo->Attr.fMode & ~07222) | 0555;
+            else
+            {
+                pObj->fMode     = (pObjInfo->Attr.fMode & ~00222) | 0444;
+                if (pObj->fMode & 0111)
+                    pObj->fMode |= 0111;
+            }
+            pObj->uid           = pThis->uidDefault;
+            pObj->gid           = pThis->gidDefault;
+        }
+        else
+        {
+            pObj->fMode         = pObjInfo->Attr.fMode;
+            pObj->uid           = pObjInfo->Attr.u.Unix.uid != NIL_RTUID ? pObjInfo->Attr.u.Unix.uid : pThis->uidDefault;
+            pObj->gid           = pObjInfo->Attr.u.Unix.gid != NIL_RTGID ? pObjInfo->Attr.u.Unix.gid : pThis->gidDefault;
+        }
         if (enmType == RTFSISOMAKEROBJTYPE_DIR ? pThis->fForcedDirModeActive : pThis->fForcedFileModeActive)
             pObj->fMode = (pObj->fMode & ~RTFS_UNIX_ALL_PERMS)
                         | (enmType == RTFSISOMAKEROBJTYPE_DIR ? pThis->fForcedDirMode : pThis->fForcedFileMode);
-        pObj->uid               = pObjInfo->Attr.u.Unix.uid != NIL_RTUID ? pObjInfo->Attr.u.Unix.uid : pThis->uidDefault;
-        pObj->gid               = pObjInfo->Attr.u.Unix.gid != NIL_RTGID ? pObjInfo->Attr.u.Unix.gid : pThis->gidDefault;
     }
     else
     {
@@ -3588,6 +3664,193 @@ RTDECL(int) RTFsIsoMakerAddSymlink(RTFSISOMAKER hIsoMaker, const char *pszSymlin
     return rc;
 
 }
+
+
+
+/*
+ *
+ * Name space level object config.
+ * Name space level object config.
+ * Name space level object config.
+ *
+ */
+
+
+/**
+ * Modifies the mode mask for a given path in one or more namespaces.
+ *
+ * The mode mask is used by rock ridge, UDF and HFS.
+ *
+ * @returns IPRT status code.
+ * @retval  VWRN_NOT_FOUND if the path wasn't found in any of the specified
+ *          namespaces.
+ *
+ * @param   hIsoMaker           The ISO maker handler.
+ * @param   pszPath             The path which mode mask should be modified.
+ * @param   fNamespaces         The namespaces to set it in.
+ * @param   fSet                The mode bits to set.
+ * @param   fUnset              The mode bits to clear (applied first).
+ * @param   fFlags              Reserved, MBZ.
+ * @param   pcHits              Where to return number of paths found. Optional.
+ */
+RTDECL(int) RTFsIsoMakerSetPathMode(RTFSISOMAKER hIsoMaker, const char *pszPath, uint32_t fNamespaces,
+                                    RTFMODE fSet, RTFMODE fUnset, uint32_t fFlags, uint32_t *pcHits)
+{
+    /*
+     * Validate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(RTPATH_IS_SLASH(*pszPath), VERR_INVALID_NAME);
+    AssertReturn(!(fNamespaces & ~RTFSISOMAKER_NAMESPACE_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(!(fSet   & ~07777), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fUnset & ~07777), VERR_INVALID_PARAMETER);
+    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+    AssertPtrNullReturn(pcHits, VERR_INVALID_POINTER);
+
+    /*
+     * Make the changes namespace by namespace.
+     */
+    uint32_t cHits = 0;
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aRTFsIsoNamespaces); i++)
+        if (fNamespaces & g_aRTFsIsoNamespaces[i].fNamespace)
+        {
+            PRTFSISOMAKERNAMESPACE pNamespace = (PRTFSISOMAKERNAMESPACE)((uintptr_t)pThis + g_aRTFsIsoNamespaces[i].offNamespace);
+            if (pNamespace->uLevel > 0)
+            {
+                PRTFSISOMAKERNAME pName;
+                int rc = rtFsIsoMakerWalkPathBySpec(pNamespace, pszPath, &pName);
+                if (RT_SUCCESS(rc))
+                {
+                    pName->fMode = (pName->fMode & ~fUnset) | fSet;
+                    cHits++;
+                }
+            }
+        }
+
+   if (pcHits)
+       *pcHits = cHits;
+   if (cHits > 0)
+       return VINF_SUCCESS;
+   return VWRN_NOT_FOUND;
+}
+
+
+/**
+ * Modifies the owner ID for a given path in one or more namespaces.
+ *
+ * The owner ID is used by rock ridge, UDF and HFS.
+ *
+ * @returns IPRT status code.
+ * @retval  VWRN_NOT_FOUND if the path wasn't found in any of the specified
+ *          namespaces.
+ *
+ * @param   hIsoMaker           The ISO maker handler.
+ * @param   pszPath             The path which mode mask should be modified.
+ * @param   fNamespaces         The namespaces to set it in.
+ * @param   idOwner             The new owner ID to set.
+ * @param   pcHits              Where to return number of paths found. Optional.
+ */
+RTDECL(int) RTFsIsoMakerSetPathOwnerId(RTFSISOMAKER hIsoMaker, const char *pszPath, uint32_t fNamespaces,
+                                       RTUID idOwner, uint32_t *pcHits)
+{
+    /*
+     * Validate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(RTPATH_IS_SLASH(*pszPath), VERR_INVALID_NAME);
+    AssertReturn(!(fNamespaces & ~RTFSISOMAKER_NAMESPACE_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertPtrNullReturn(pcHits, VERR_INVALID_POINTER);
+
+    /*
+     * Make the changes namespace by namespace.
+     */
+    uint32_t cHits = 0;
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aRTFsIsoNamespaces); i++)
+        if (fNamespaces & g_aRTFsIsoNamespaces[i].fNamespace)
+        {
+            PRTFSISOMAKERNAMESPACE pNamespace = (PRTFSISOMAKERNAMESPACE)((uintptr_t)pThis + g_aRTFsIsoNamespaces[i].offNamespace);
+            if (pNamespace->uLevel > 0)
+            {
+                PRTFSISOMAKERNAME pName;
+                int rc = rtFsIsoMakerWalkPathBySpec(pNamespace, pszPath, &pName);
+                if (RT_SUCCESS(rc))
+                {
+                    pName->uid = idOwner;
+                    cHits++;
+                }
+            }
+        }
+
+   if (pcHits)
+       *pcHits = cHits;
+   if (cHits > 0)
+       return VINF_SUCCESS;
+   return VWRN_NOT_FOUND;
+}
+
+
+/**
+ * Modifies the group ID for a given path in one or more namespaces.
+ *
+ * The group ID is used by rock ridge, UDF and HFS.
+ *
+ * @returns IPRT status code.
+ * @retval  VWRN_NOT_FOUND if the path wasn't found in any of the specified
+ *          namespaces.
+ *
+ * @param   hIsoMaker           The ISO maker handler.
+ * @param   pszPath             The path which mode mask should be modified.
+ * @param   fNamespaces         The namespaces to set it in.
+ * @param   idGroup             The new group ID to set.
+ * @param   pcHits              Where to return number of paths found. Optional.
+ */
+RTDECL(int) RTFsIsoMakerSetPathGroupId(RTFSISOMAKER hIsoMaker, const char *pszPath, uint32_t fNamespaces,
+                                       RTGID idGroup, uint32_t *pcHits)
+{
+    /*
+     * Validate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(RTPATH_IS_SLASH(*pszPath), VERR_INVALID_NAME);
+    AssertReturn(!(fNamespaces & ~RTFSISOMAKER_NAMESPACE_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertPtrNullReturn(pcHits, VERR_INVALID_POINTER);
+
+    /*
+     * Make the changes namespace by namespace.
+     */
+    uint32_t cHits = 0;
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aRTFsIsoNamespaces); i++)
+        if (fNamespaces & g_aRTFsIsoNamespaces[i].fNamespace)
+        {
+            PRTFSISOMAKERNAMESPACE pNamespace = (PRTFSISOMAKERNAMESPACE)((uintptr_t)pThis + g_aRTFsIsoNamespaces[i].offNamespace);
+            if (pNamespace->uLevel > 0)
+            {
+                PRTFSISOMAKERNAME pName;
+                int rc = rtFsIsoMakerWalkPathBySpec(pNamespace, pszPath, &pName);
+                if (RT_SUCCESS(rc))
+                {
+                    pName->gid = idGroup;
+                    cHits++;
+                }
+            }
+        }
+
+   if (pcHits)
+       *pcHits = cHits;
+   if (cHits > 0)
+       return VINF_SUCCESS;
+   return VWRN_NOT_FOUND;
+}
+
+
+
+
 
 
 /*
@@ -5219,7 +5482,7 @@ RTDECL(int) RTFsIsoMakerFinalize(RTFSISOMAKER hIsoMaker)
             rc = rtFsIsoMakerFinalizeData(pThis, &offData);
             if (RT_SUCCESS(rc))
             {
-                pThis->cbFinalizedImage = offData;
+                pThis->cbFinalizedImage = offData + pThis->cbImagePadding;
 
                 /*
                  * Do a 2nd pass over the boot stuff to finalize locations.
@@ -6906,9 +7169,19 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_Read(void *pvThis, RTFOFF off, PCRT
         {
             if (offUnsigned < pIsoMaker->cbFinalizedImage)
             {
-                rc = rtFsIsoMakerOutFile_ReadFileData(pThis, pIsoMaker, offUnsigned, pbBuf, cbBuf, &cbDone);
-                if (RT_FAILURE(rc))
-                    break;
+                if (offUnsigned < pIsoMaker->cbFinalizedImage - pIsoMaker->cbImagePadding)
+                {
+                    rc = rtFsIsoMakerOutFile_ReadFileData(pThis, pIsoMaker, offUnsigned, pbBuf, cbBuf, &cbDone);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+                else
+                {
+                    cbDone = pIsoMaker->cbFinalizedImage - offUnsigned;
+                    if (cbDone > cbBuf)
+                        cbDone = cbBuf;
+                    memset(pbBuf, 0, cbDone);
+                }
             }
             else
             {
