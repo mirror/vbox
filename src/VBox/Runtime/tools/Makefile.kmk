@@ -62,10 +62,7 @@ if !defined(VBOX_ONLY_DOCS)
 
 endif
 
-if  !defined(VBOX_ONLY_ADDITIONS) \
- && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) \
- && !defined(VBOX_ONLY_VALIDATIONKIT) \
- && !defined(VBOX_ONLY_DOCS)
+if !defined(VBOX_ONLY_BUILD)
 
  # RTCat is a tool for displaying files.
  PROGRAMS += RTCat
@@ -147,7 +144,7 @@ if  !defined(VBOX_ONLY_ADDITIONS) \
  RTKrnlModInfo_SOURCES = RTKrnlModInfo.cpp
  endif
 
-endif # !VBOX_ONLY_EXTPACKS_USE_IMPLIBS
+endif # !VBOX_ONLY_BUILD
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
