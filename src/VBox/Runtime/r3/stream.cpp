@@ -59,8 +59,7 @@
 #endif
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/windows.h>
-#endif
-#ifndef RT_OS_WINDOWS
+#else
 # include <termios.h>
 # include <unistd.h>
 #endif
@@ -552,6 +551,71 @@ RTR3DECL(int) RTStrmInputSetEchoChars(PRTSTREAM pStream, bool fEchoChars)
 
     return rc;
 }
+
+
+RTR3DECL(bool) RTStrmIsTerminal(PRTSTREAM pStream)
+{
+    AssertPtrReturn(pStream, false);
+    AssertReturn(pStream->u32Magic == RTSTREAM_MAGIC, false);
+
+    if (pStream->pFile)
+    {
+        int fh = fileno(pStream->pFile);
+        if (isatty(fh))
+        {
+#ifdef RT_OS_WINDOWS
+            DWORD  dwMode;
+            HANDLE hCon = (HANDLE)_get_osfhandle(fh);
+            if (GetConsoleMode(hCon, &dwMode))
+                return true;
+#else
+            return true;
+#endif
+        }
+    }
+    return false;
+}
+
+
+RTR3DECL(int) RTStrmQueryTerminalWidth(PRTSTREAM pStream, uint32_t *pcchWidth)
+{
+    AssertPtrReturn(pcchWidth, VERR_INVALID_HANDLE);
+    *pcchWidth = 80;
+
+    AssertPtrReturn(pStream, VERR_INVALID_HANDLE);
+    AssertReturn(pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_HANDLE);
+
+    if (pStream->pFile)
+    {
+        int fh = fileno(pStream->pFile);
+        if (isatty(fh))
+        {
+#ifdef RT_OS_WINDOWS
+            CONSOLE_SCREEN_BUFFER_INFO Info;
+            HANDLE hCon = (HANDLE)_get_osfhandle(fh);
+            RT_ZERO(Info);
+            if (GetConsoleScreenBufferInfo(hCon, &Info))
+            {
+                *pcchWidth = Info.dwSize.X ? Info.dwSize.X : 80;
+                return VINF_SUCCESS;
+            }
+            return RTErrConvertFromWin32(GetLastError());
+#else
+            struct winsize Info;
+            RT_ZERO(Info);
+            int rc = ioctl(fh, TIOCGWINSZ, &Info);
+            if (rc >= 0)
+            {
+                *pcchWidth = Info.ws_row ? Info.ws_row : 80;
+                return VINF_SUCCESS;
+            }
+            return RTErrConvertFromErrno(errno);
+#endif
+        }
+    }
+    return VERR_INVALID_FUNCTION;
+}
+
 
 
 /**
