@@ -64,7 +64,8 @@ endif
 
 if  !defined(VBOX_ONLY_ADDITIONS) \
  && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) \
- && !defined(VBOX_ONLY_VALIDATIONKIT)
+ && !defined(VBOX_ONLY_VALIDATIONKIT) \
+ && !defined(VBOX_ONLY_DOCS)
 
  # RTCat is a tool for displaying files.
  PROGRAMS += RTCat
