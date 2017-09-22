@@ -110,7 +110,7 @@ ifndef VBOX_ONLY_VALIDATIONKIT
 	$(PATH_TARGET)/VBoxGuestCat.dir
 
   $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf: $(PATH_SUB_CURRENT)/common/VBoxGuest/win/VBoxGuest.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_GENERATE,VBoxGuest-inf,$@,$<)
+	(call MSG_GENERATE,VBoxGuest-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
   $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys:   $$(VBoxGuest_1_TARGET) | $$(dir $$@)
@@ -324,7 +324,7 @@ $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso: \
 		--rational-attribs \
                --random-order-verification 2048 \
 		$(addprefix /,$(GUESTADDITIONS_FILESPEC_ALL)) \
-               $(foreach spec, $(filter-out %.run,$(GUESTADDITIONS_FILESPEC_ALL)) \
+               $(foreach spec, $(filter %.run,$(GUESTADDITIONS_FILESPEC_ALL)) \
 			, --chmod a+x:/$(substr $(spec), 1, $(expr $(pos =,$(spec)) - 1))) \
 		--volume-id="VBOXADDITIONS_$(VBOX_VERSION_STRING_RAW)_$(VBOX_SVN_REV)" \
                --name-setup=joliet \
