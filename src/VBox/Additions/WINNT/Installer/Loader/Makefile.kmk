@@ -49,7 +49,8 @@ VBoxWindowsAdditions.rc_CLEAN = $(VBoxWindowsAdditions_0_OUTDIR)/VBoxWindowsAddi
 
 
 # Icon include file.
-$$(VBoxWindowsAdditions_0_OUTDIR)/VBoxWindowsAdditions-icon.rc: $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) Makefile.kmk | $$(dir $$@)
+$$(VBoxWindowsAdditions_0_OUTDIR)/VBoxWindowsAdditions-icon.rc: \
+		$(VBOX_WINDOWS_ADDITIONS_ICON_FILE) $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))"'
 
