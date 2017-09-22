@@ -1117,7 +1117,7 @@ static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProg
                        "        it is formatted using microsoft CRT argument quoting & escaping style.\n"
                        "\n"
                        "\n"
-                       "Options - Testing:\n"
+                       "Options - Testing (not applicable to VISO):\n"
                        "\n"
                        "    --output-buffer-size <bytes>\n"
                        "        Selects a specific output buffer size for testing virtual image reads.\n"
