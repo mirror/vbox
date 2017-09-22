@@ -288,50 +288,54 @@ ifdef VBOX_WITH_ADDITIONS_ISO.haiku.x86
 	VBoxHaikuAdditions-x86.run=$(VBOX_PATH_ADDITIONS.haiku.x86)/VBoxHaikuAdditions-x86.run
 endif
 
+# For the iso rule.
+GUESTADDITIONS_FILESPEC_ALL = \
+	$(GUESTADDITIONS_FILESPEC.win) \
+	$(GUESTADDITIONS_FILESPEC.win.x86) \
+	$(GUESTADDITIONS_FILESPEC.win.amd64) \
+	$(GUESTADDITIONS_FILESPEC.solaris.x86) \
+	$(GUESTADDITIONS_FILESPEC.solaris.amd64) \
+	$(GUESTADDITIONS_FILESPEC.os2.x86) \
+	$(GUESTADDITIONS_FILESPEC.linux.x86) \
+	$(GUESTADDITIONS_FILESPEC.linux.amd64) \
+	$(GUESTADDITIONS_FILESPEC.freebsd.x86) \
+	$(GUESTADDITIONS_FILESPEC.freebsd.amd64) \
+	$(GUESTADDITIONS_FILESPEC.haiku.x86) \
+	$(GUESTADDITIONS_FILESPEC.darwin.x86) \
+	$(GUESTADDITIONS_FILESPEC.darwin.amd64)
 
 #
 # Build the Guest Additions ISO image.
 #
 ifndef VBOX_WITHOUT_ADDITIONS_ISO
 $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso: \
-		$(filter-out %=deleteme=,\
-			$(subst =,=deleteme= ,\
-				$(GUESTADDITIONS_FILESPEC.win) \
-				$(GUESTADDITIONS_FILESPEC.win.x86) \
-				$(GUESTADDITIONS_FILESPEC.win.amd64) \
-				$(GUESTADDITIONS_FILESPEC.solaris.x86) \
-				$(GUESTADDITIONS_FILESPEC.solaris.amd64) \
-				$(GUESTADDITIONS_FILESPEC.os2.x86) \
-				$(GUESTADDITIONS_FILESPEC.linux.x86) \
-				$(GUESTADDITIONS_FILESPEC.linux.amd64) \
-				$(GUESTADDITIONS_FILESPEC.freebsd.x86) \
-				$(GUESTADDITIONS_FILESPEC.freebsd.amd64) \
-				$(GUESTADDITIONS_FILESPEC.haiku.x86) \
-				$(GUESTADDITIONS_FILESPEC.darwin.x86) \
-				$(GUESTADDITIONS_FILESPEC.darwin.amd64) \
-			)\
-		) \
+		$(filter-out %=deleteme=,$(subst =,=deleteme= , $(GUESTADDITIONS_FILESPEC_ALL))) \
 		$(VBOX_SVN_REV_KMK) \
-		$(VBOX_PATH_ADDITIONS_SRC)/Makefile.kmk
+		$(VBOX_PATH_ADDITIONS_SRC)/Makefile.kmk \
+		| $(if-expr defined(VBOX_USE_RTISOMAKER),$(VBOX_RTISOMAKER),)
 	$(call MSG_TOOL,mkisofs,,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
-	@# use iso-level 3 which is the most ISO conforming level with least restrictions; iso-level 4 maps to iso-level 2
-	@# with some extra restrictions removal (not conforming to ISO9660) which some platforms like Solaris 10 does not like.
+ ifdef VBOX_USE_RTISOMAKER
+	$(VBOX_RTISOMAKER) \
+		--output $@ \
+		--iso-level 3 \
+		--rock-ridge \
+		--joliet \
+		--rational-attribs \
+               --random-order-verification 2048 \
+		$(addprefix /,$(GUESTADDITIONS_FILESPEC_ALL)) \
+               $(foreach spec, $(filter %.run,$(GUESTADDITIONS_FILESPEC_ALL)) \
+			, --chmod a+x:/$(substr $(spec), $(pos =,$(spec)))) \
+		--volume-id="VBOXADDITIONS_$(VBOX_VERSION_STRING_RAW)_$(VBOX_SVN_REV)" \
+               --name-setup=joliet \
+		--volume-id="VBox GAs $(VBOX_VERSION_STRING_RAW)"
+ else
+# use iso-level 3 which is the most ISO conforming level with least restrictions; iso-level 4 maps to iso-level 2
+# with some extra restrictions removal (not conforming to ISO9660) which some platforms like Solaris 10 does not like.
 	$(VBOX_MKISOFS) -rational-rock -joliet -iso-level 3 \
 		-volid "VBOXADDITIONS_$(VBOX_VERSION_STRING_RAW)_$(VBOX_SVN_REV)" -l -graft-points -o $@ \
-		$(GUESTADDITIONS_FILESPEC.win) \
-		$(GUESTADDITIONS_FILESPEC.win.x86) \
-		$(GUESTADDITIONS_FILESPEC.win.amd64) \
-		$(GUESTADDITIONS_FILESPEC.solaris.x86) \
-		$(GUESTADDITIONS_FILESPEC.solaris.amd64) \
-		$(GUESTADDITIONS_FILESPEC.os2.x86) \
-		$(GUESTADDITIONS_FILESPEC.linux.x86) \
-		$(GUESTADDITIONS_FILESPEC.linux.amd64) \
-		$(GUESTADDITIONS_FILESPEC.freebsd.x86) \
-		$(GUESTADDITIONS_FILESPEC.freebsd.amd64) \
-		$(GUESTADDITIONS_FILESPEC.haiku.x86) \
-		$(GUESTADDITIONS_FILESPEC.darwin.x86) \
-		$(GUESTADDITIONS_FILESPEC.darwin.amd64)
+		$(GUESTADDITIONS_FILESPEC_ALL)
+ endif
 
 $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.zip: $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso
 	$(call MSG_L1,Zipping image $@)
