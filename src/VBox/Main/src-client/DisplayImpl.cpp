@@ -2451,9 +2451,20 @@ int Display::i_videoCaptureInvalidate(void)
     com::Utf8Str strOptions(bstrOptions);
     size_t pos = 0;
 
-    /* By default we only enable video recording for now.
-     * Audio support is considered as being experimental. There be dragons! */
+    /*
+     * Set sensible defaults.
+     */
     mVideoRecCfg.Video.fEnabled  = true;
+
+    if (!mVideoRecCfg.Video.uFPS) /* Prevent division by zero. */
+        mVideoRecCfg.Video.uFPS = 15;
+
+#ifdef VBOX_WITH_LIBVPX
+    mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = 1000000 / mVideoRecCfg.Video.uFPS;
+#endif
+
+    /* Note: Audio support is considered as being experimental.
+     * There be dragons! */
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
     mVideoRecCfg.Audio.fEnabled  = true;
     /* By default we use 48kHz, 16-bit, stereo for the audio track. */
@@ -2461,9 +2472,6 @@ int Display::i_videoCaptureInvalidate(void)
     mVideoRecCfg.Audio.cBits     = 16;
     mVideoRecCfg.Audio.cChannels = 2;
 #endif
-
-    if (!mVideoRecCfg.Video.uFPS) /* Prevent division by zero. */
-        mVideoRecCfg.Video.uFPS = 30;
 
     /*
      * Parse options string.
