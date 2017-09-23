@@ -1199,14 +1199,16 @@ static int rtFsIsoMakerCmdVerifyImageInRandomOrder(PRTFSISOMAKERCMDOPTS pOpts, R
                 {
                     iBlock = RTRandU32Ex(0, cBlocks - 1);
                     fBitSet = ASMBitTestAndSet(pvBitmap, iBlock);
-                } while (fBitSet && ++cTries < 32);
+                } while (fBitSet && ++cTries < /*32 - testing buggy assembly*/ 1);
                 if (fBitSet)
                 {
                     /* Look for the next clear bit after it (with wrap around). */
+                    //int iHit = ASMBitNextClear(pvBitmap, RT_ALIGN_32(cBlocks, 64), iBlock); - buggy assembly somewhere...
                     int iHit = ASMBitNextClear(pvBitmap, cBlocks, iBlock);
                     Assert(iHit < (int32_t)cBlocks);
                     if (iHit < 0)
                     {
+                        //iHit = ASMBitNextClear(pvBitmap, RT_ALIGN_32(iBlock, 64), 0); - buggy assembly somewhere...
                         iHit = ASMBitNextClear(pvBitmap, iBlock, 0);
                         Assert(iHit < (int32_t)cBlocks);
                     }
@@ -1218,15 +1220,20 @@ static int rtFsIsoMakerCmdVerifyImageInRandomOrder(PRTFSISOMAKERCMDOPTS pOpts, R
                         else
                         {
                             rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_INTERNAL_ERROR_3,
-                                                        "Bitmap weirdness: iHit=%#x iBlock=%#x cBlocks=%#x",
-                                                        iHit, iBlock, cBlocks);
+                                                        "Bitmap weirdness: iHit=%#x iBlock=%#x cLeft=%#x cBlocks=%#x",
+                                                        iHit, iBlock, cLeft, cBlocks);
+                            if (!pOpts->pErrInfo)
+                                RTMsgInfo("Bitmap: %#RX32 bytes\n%.*Rhxd", cbBitmap, cbBitmap, pvBitmap);
                             break;
                         }
                     }
                     else
                     {
-                        rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_INTERNAL_ERROR_2, "Bitmap weirdness: iBlock=%#x cBlocks=%#x",
-                                                    iBlock, cBlocks);
+                        rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_INTERNAL_ERROR_2,
+                                                    "Bitmap weirdness: iBlock=%#x cLeft=%#x cBlocks=%#x",
+                                                    iBlock, cLeft, cBlocks);
+                        if (!pOpts->pErrInfo)
+                            RTMsgInfo("Bitmap: %#RX32 bytes\n%.*Rhxd", cbBitmap, cbBitmap, pvBitmap);
                         break;
                     }
                 }
