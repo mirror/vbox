@@ -1199,7 +1199,7 @@ static int rtFsIsoMakerCmdVerifyImageInRandomOrder(PRTFSISOMAKERCMDOPTS pOpts, R
                 {
                     iBlock = RTRandU32Ex(0, cBlocks - 1);
                     fBitSet = ASMBitTestAndSet(pvBitmap, iBlock);
-                } while (fBitSet && ++cTries < /*32 - testing buggy assembly*/ 1);
+                } while (fBitSet && ++cTries < 32);
                 if (fBitSet)
                 {
                     /* Look for the next clear bit after it (with wrap around). */
