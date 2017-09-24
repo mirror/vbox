@@ -61,43 +61,59 @@ typedef IMAGE_FILE_HEADER const *PCIMAGE_FILE_HEADER;
 /** @name PE & COFF machine types.
  * Used by IMAGE_FILE_HEADER::Machine and IMAGE_SEPARATE_DEBUG_HEADER::Machine.
  * @{ */
-/** X86 compatible CPU, 32-bit instructions.   */
+/** X86 compatible CPU, 32-bit instructions. */
 #define IMAGE_FILE_MACHINE_I386             UINT16_C(0x014c)
-/** AMD64 compatible CPU, 64-bit instructions.   */
+/** AMD64 compatible CPU, 64-bit instructions. */
 #define IMAGE_FILE_MACHINE_AMD64            UINT16_C(0x8664)
 
 /** Unknown target CPU. */
 #define IMAGE_FILE_MACHINE_UNKNOWN          UINT16_C(0x0000)
-/** Matshushita AM33 CPU. */
-#define IMAGE_FILE_MACHINE_AM33             UINT16_C(0x01d3)
-/** Little endian ARM CPU. */
-#define IMAGE_FILE_MACHINE_ARM              UINT16_C(0x01c0)
-/** ARM or Thumb stuff. */
-#define IMAGE_FILE_MACHINE_THUMB            UINT16_C(0x01c2)
-/** ARMv7 or higher CPU, Thumb mode. */
-#define IMAGE_FILE_MACHINE_ARMNT            UINT16_C(0x01c4)
-/** ARMv8 CPU, 64-bit mode. */
-#define IMAGE_FILE_MACHINE_ARM64            UINT16_C(0xaa64)
-/** EFI byte code. */
-#define IMAGE_FILE_MACHINE_EBC              UINT16_C(0x0ebc)
-/** "Itanic" CPU. */
-#define IMAGE_FILE_MACHINE_IA64             UINT16_C(0x0200)
-/** Mitsubishi M32R CPU, little endian. */
-#define IMAGE_FILE_MACHINE_M32R             UINT16_C(0x9041)
-/** MIPS CPU, compact 16-bit instructions only? */
-#define IMAGE_FILE_MACHINE_MIPS16           UINT16_C(0x0266)
-/** MIPS CPU with FPU, full 32-bit instructions only? */
-#define IMAGE_FILE_MACHINE_MIPSFPU          UINT16_C(0x0366)
-/** MIPS CPU with FPU, compact 16-bit instructions? */
-#define IMAGE_FILE_MACHINE_MIPSFPU16        UINT16_C(0x0466)
-/** MIPS CPU, little endian, Windows CE (?) v2 designation. */
-#define IMAGE_FILE_MACHINE_WCEMIPSV2        UINT16_C(0x0169)
-/** Power PC CPU, little endian. */
-#define IMAGE_FILE_MACHINE_POWERPC          UINT16_C(0x01f0)
-/** Power PC CPU with FPU, also little endian? */
-#define IMAGE_FILE_MACHINE_POWERPCFP        UINT16_C(0x01f1)
+/** Basic-16 (whatever that is). */
+#define IMAGE_FILE_MACHINE_BASIC_16         UINT16_C(0x0142)
+/** Basic-16 (whatever that is) w/ transfer vector(s?) (TV). */
+#define IMAGE_FILE_MACHINE_BASIC_16_TV      UINT16_C(0x0143)
+/** Intel iAPX 16 (8086?). */
+#define IMAGE_FILE_MACHINE_IAPX16           UINT16_C(0x0144)
+/** Intel iAPX 16 (8086?) w/ transfer vector(s?) (TV). */
+#define IMAGE_FILE_MACHINE_IAPX16_TV        UINT16_C(0x0145)
+/** Intel iAPX 20 (80286?). */
+#define IMAGE_FILE_MACHINE_IAPX20           UINT16_C(0x0144)
+/** Intel iAPX 20 (80286?) w/ transfer vector(s?) (TV). */
+#define IMAGE_FILE_MACHINE_IAPX20_TV        UINT16_C(0x0145)
+/** X86 compatible CPU, 8086. */
+#define IMAGE_FILE_MACHINE_I8086            UINT16_C(0x0148)
+/** X86 compatible CPU, 8086 w/ transfer vector(s?) (TV). */
+#define IMAGE_FILE_MACHINE_I8086_TV         UINT16_C(0x0149)
+/** X86 compatible CPU, 80286 small model program. */
+#define IMAGE_FILE_MACHINE_I286_SMALL       UINT16_C(0x014a)
+/** Motorola 68000. */
+#define IMAGE_FILE_MACHINE_MC68             UINT16_C(0x0150)
+/** Motorola 68000 w/ writable text sections. */
+#define IMAGE_FILE_MACHINE_MC68_WR          UINT16_C(0x0150)
+/** Motorola 68000 w/ transfer vector(s?). */
+#define IMAGE_FILE_MACHINE_MC68_TV          UINT16_C(0x0151)
+/** Motorola 68000 w/ demand paged text.
+ * @note shared with 80286 large model program. */
+#define IMAGE_FILE_MACHINE_MC68_PG          UINT16_C(0x0152)
+/** X86 compatible CPU, 80286 large model program.
+ * @note shared with MC68000 w/ demand paged text */
+#define IMAGE_FILE_MACHINE_I286_LARGE       UINT16_C(0x0152)
+/** IBM 370 (writable text). */
+#define IMAGE_FILE_MACHINE_U370_WR          UINT16_C(0x0158)
+/** Amdahl 470/580 (writable text). */
+#define IMAGE_FILE_MACHINE_AMDAHL_470_WR    UINT16_C(0x0159)
+/** Amdahl 470/580 (read only text). */
+#define IMAGE_FILE_MACHINE_AMDAHL_470_RO    UINT16_C(0x015c)
+/** IBM 370 (read only text). */
+#define IMAGE_FILE_MACHINE_U370_RO          UINT16_C(0x015d)
 /** MIPS R4000 CPU, little endian. */
 #define IMAGE_FILE_MACHINE_R4000            UINT16_C(0x0166)
+/** MIPS CPU, little endian, Windows CE (?) v2 designation. */
+#define IMAGE_FILE_MACHINE_WCEMIPSV2        UINT16_C(0x0169)
+/** VAX-11/750 and VAX-11/780 (writable text). */
+#define IMAGE_FILE_MACHINE_VAX_WR           UINT16_C(0x0178)
+/** VAX-11/750 and VAX-11/780 (read-only text). */
+#define IMAGE_FILE_MACHINE_VAX_RO           UINT16_C(0x017d)
 /** Hitachi SH3 CPU. */
 #define IMAGE_FILE_MACHINE_SH3              UINT16_C(0x01a2)
 /** Hitachi SH3 DSP. */
@@ -106,6 +122,32 @@ typedef IMAGE_FILE_HEADER const *PCIMAGE_FILE_HEADER;
 #define IMAGE_FILE_MACHINE_SH4              UINT16_C(0x01a6)
 /** Hitachi SH5 CPU. */
 #define IMAGE_FILE_MACHINE_SH5              UINT16_C(0x01a8)
+/** Little endian ARM CPU. */
+#define IMAGE_FILE_MACHINE_ARM              UINT16_C(0x01c0)
+/** ARM or Thumb stuff. */
+#define IMAGE_FILE_MACHINE_THUMB            UINT16_C(0x01c2)
+/** ARMv7 or higher CPU, Thumb mode. */
+#define IMAGE_FILE_MACHINE_ARMNT            UINT16_C(0x01c4)
+/** Matshushita AM33 CPU. */
+#define IMAGE_FILE_MACHINE_AM33             UINT16_C(0x01d3)
+/** Power PC CPU, little endian. */
+#define IMAGE_FILE_MACHINE_POWERPC          UINT16_C(0x01f0)
+/** Power PC CPU with FPU, also little endian? */
+#define IMAGE_FILE_MACHINE_POWERPCFP        UINT16_C(0x01f1)
+/** "Itanic" CPU. */
+#define IMAGE_FILE_MACHINE_IA64             UINT16_C(0x0200)
+/** MIPS CPU, compact 16-bit instructions only? */
+#define IMAGE_FILE_MACHINE_MIPS16           UINT16_C(0x0266)
+/** MIPS CPU with FPU, full 32-bit instructions only? */
+#define IMAGE_FILE_MACHINE_MIPSFPU          UINT16_C(0x0366)
+/** MIPS CPU with FPU, compact 16-bit instructions? */
+#define IMAGE_FILE_MACHINE_MIPSFPU16        UINT16_C(0x0466)
+/** EFI byte code. */
+#define IMAGE_FILE_MACHINE_EBC              UINT16_C(0x0ebc)
+/** Mitsubishi M32R CPU, little endian. */
+#define IMAGE_FILE_MACHINE_M32R             UINT16_C(0x9041)
+/** ARMv8 CPU, 64-bit mode. */
+#define IMAGE_FILE_MACHINE_ARM64            UINT16_C(0xaa64)
 /** @} */
 
 /** @name File header characteristics (IMAGE_FILE_HEADER::Characteristics)
@@ -122,8 +164,8 @@ typedef IMAGE_FILE_HEADER const *PCIMAGE_FILE_HEADER;
 #define IMAGE_FILE_DEBUG_STRIPPED           UINT16_C(0x0200)
 #define IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP  UINT16_C(0x0400)
 #define IMAGE_FILE_NET_RUN_FROM_SWAP        UINT16_C(0x0800)
-#define IMAGE_FILE_SYSTEM                   UINT16_C(0x1000)
-#define IMAGE_FILE_DLL                      UINT16_C(0x2000)
+#define IMAGE_FILE_SYSTEM                   UINT16_C(0x1000) /**< (COFF/I8086: Used to indicate 80186 instructions) */
+#define IMAGE_FILE_DLL                      UINT16_C(0x2000) /**< (COFF/I8086: Used to indicate 80286 instructions) */
 #define IMAGE_FILE_UP_SYSTEM_ONLY           UINT16_C(0x4000)
 #define IMAGE_FILE_BYTES_REVERSED_HI        UINT16_C(0x8000)
 /** @} */
