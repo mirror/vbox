@@ -29,7 +29,7 @@
 #include <iprt/stdint.h>
 #include <iprt/types.h>
 
-#if !defined VBOX_XPDM_MINIPORT && !defined VBOX_GUESTR3XORGMOD && !defined RT_OS_OS2
+#if !defined VBOX_XPDM_MINIPORT && !defined RT_OS_OS2
 # include <iprt/asm-amd64-x86.h>
 #endif
 
@@ -37,8 +37,6 @@
 # include <iprt/nt/miniport.h>
 # include <ntddvdeo.h> /* sdk, clean */
 # include <iprt/nt/Video.h>
-#elif defined VBOX_GUESTR3XORGMOD
-# include <compiler.h>
 #endif
 
 /** @name Port I/O helpers
@@ -65,27 +63,6 @@
 # define VBVO_PORT_READ_U32(Port) \
     VideoPortReadPortUlong((PULONG)Port)
     
-#elif defined(VBOX_GUESTR3XORGMOD)
-
-/** Write an 8-bit value to an I/O port. */
-# define VBVO_PORT_WRITE_U8(Port, Value) \
-    outb(Port, Value)
-/** Write a 16-bit value to an I/O port. */
-# define VBVO_PORT_WRITE_U16(Port, Value) \
-    outw(Port, Value)
-/** Write a 32-bit value to an I/O port. */
-# define VBVO_PORT_WRITE_U32(Port, Value) \
-    outl(Port, Value)
-/** Read an 8-bit value from an I/O port. */
-# define VBVO_PORT_READ_U8(Port) \
-    inb(Port)
-/** Read a 16-bit value from an I/O port. */
-# define VBVO_PORT_READ_U16(Port) \
-    inw(Port)
-/** Read a 32-bit value from an I/O port. */
-# define VBVO_PORT_READ_U32(Port) \
-    inl(Port)
-
 #else  /** @todo make these explicit */
 
 /** Write an 8-bit value to an I/O port. */
