@@ -25,9 +25,12 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <HGSMIBase.h>
+#include <VBoxVideoIPRT.h>
 #include <VBoxVideoGuest.h>
 #include <VBoxVideoVBE.h>
-#include <VBoxVideoIPRT.h>
+#include <HGSMIChannels.h>
+#include <HGSMIChSetup.h>
 
 /** Detect whether HGSMI is supported by the host. */
 DECLHIDDEN(bool) VBoxHGSMIIsSupported(void)
@@ -44,38 +47,32 @@ DECLHIDDEN(bool) VBoxHGSMIIsSupported(void)
 
 
 /**
- * Inform the host of the location of the host flags in VRAM via an HGSMI
- * command.
+ * Inform the host of the location of the host flags in VRAM via an HGSMI command.
  * @returns  IPRT status value.
  * @returns  VERR_NOT_IMPLEMENTED  if the host does not support the command.
  * @returns  VERR_NO_MEMORY        if a heap allocation fails.
  * @param    pCtx                  the context of the guest heap to use.
- * @param    offLocation           the offset chosen for the flags withing guest
- *                                 VRAM.
+ * @param    offLocation           the offset chosen for the flags withing guest VRAM.
  */
-DECLHIDDEN(int) VBoxHGSMIReportFlagsLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                             HGSMIOFFSET offLocation)
+DECLHIDDEN(int) VBoxHGSMIReportFlagsLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx, HGSMIOFFSET offLocation)
 {
     HGSMIBUFFERLOCATION *p;
-    int rc = VINF_SUCCESS;
 
     /* Allocate the IO buffer. */
-    p = (HGSMIBUFFERLOCATION *)VBoxHGSMIBufferAlloc(pCtx,
-                                              sizeof(HGSMIBUFFERLOCATION),
-                                              HGSMI_CH_HGSMI,
-                                              HGSMI_CC_HOST_FLAGS_LOCATION);
-    if (p)
-    {
-        /* Prepare data to be sent to the host. */
-        p->offLocation = offLocation;
-        p->cbLocation  = sizeof(HGSMIHOSTFLAGS);
-        rc = VBoxHGSMIBufferSubmit(pCtx, p);
-        /* Free the IO buffer. */
-        VBoxHGSMIBufferFree(pCtx, p);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-    return rc;
+    p = (HGSMIBUFFERLOCATION *)VBoxHGSMIBufferAlloc(pCtx, sizeof(*p), HGSMI_CH_HGSMI,
+                                                    HGSMI_CC_HOST_FLAGS_LOCATION);
+    if (!p)
+        return VERR_NO_MEMORY;
+
+    /* Prepare data to be sent to the host. */
+    p->offLocation = offLocation;
+    p->cbLocation  = sizeof(HGSMIHOSTFLAGS);
+    /* No need to check that the buffer is valid as we have just allocated it. */
+    VBoxHGSMIBufferSubmit(pCtx, p);
+    /* Free the IO buffer. */
+    VBoxHGSMIBufferFree(pCtx, p);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -87,34 +84,26 @@ DECLHIDDEN(int) VBoxHGSMIReportFlagsLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param    pCtx                  the context of the guest heap to use.
  * @param    fCaps                 the capabilities to report, see VBVACAPS.
  */
-DECLHIDDEN(int) VBoxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                      uint32_t fCaps)
+DECLHIDDEN(int) VBoxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx, uint32_t fCaps)
 {
-    VBVACAPS *pCaps;
-    int rc = VINF_SUCCESS;
+    VBVACAPS *p;
 
     /* Allocate the IO buffer. */
-    pCaps = (VBVACAPS *)VBoxHGSMIBufferAlloc(pCtx,
-                                       sizeof(VBVACAPS), HGSMI_CH_VBVA,
-                                       VBVA_INFO_CAPS);
+    p = (VBVACAPS *)VBoxHGSMIBufferAlloc(pCtx, sizeof(*p), HGSMI_CH_VBVA, VBVA_INFO_CAPS);
 
-    if (pCaps)
-    {
-        /* Prepare data to be sent to the host. */
-        pCaps->rc    = VERR_NOT_IMPLEMENTED;
-        pCaps->fCaps = fCaps;
-        rc = VBoxHGSMIBufferSubmit(pCtx, pCaps);
-        if (RT_SUCCESS(rc))
-        {
-            AssertRC(pCaps->rc);
-            rc = pCaps->rc;
-        }
-        /* Free the IO buffer. */
-        VBoxHGSMIBufferFree(pCtx, pCaps);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-    return rc;
+    if (!p)
+        return VERR_NO_MEMORY;
+
+    /* Prepare data to be sent to the host. */
+    p->rc    = VERR_NOT_IMPLEMENTED;
+    p->fCaps = fCaps;
+    /* No need to check that the buffer is valid as we have just allocated it. */
+    VBoxHGSMIBufferSubmit(pCtx, p);
+
+    AssertRC(p->rc);
+    /* Free the IO buffer. */
+    VBoxHGSMIBufferFree(pCtx, p);
+    return p->rc;
 }
 
 
@@ -159,74 +148,33 @@ DECLHIDDEN(void) VBoxHGSMIGetBaseMappingInfo(uint32_t cbVRAM,
                          - sizeof(HGSMIHOSTFLAGS);
 }
 
-
-/** Sanity test on first call.  We do not worry about concurrency issues. */
-static int testQueryConf(PHGSMIGUESTCOMMANDCONTEXT pCtx)
-{
-    static bool cOnce = false;
-    uint32_t ulValue = 0;
-    int rc;
-
-    if (cOnce)
-        return VINF_SUCCESS;
-    cOnce = true;
-    rc = VBoxQueryConfHGSMI(pCtx, UINT32_MAX, &ulValue);
-    if (RT_SUCCESS(rc) && ulValue == UINT32_MAX)
-        return VINF_SUCCESS;
-    cOnce = false;
-    if (RT_FAILURE(rc))
-        return rc;
-    return VERR_INTERNAL_ERROR;
-}
-
-
 /**
  * Query the host for an HGSMI configuration parameter via an HGSMI command.
  * @returns iprt status value
  * @param  pCtx      the context containing the heap used
  * @param  u32Index  the index of the parameter to query,
  *                   @see VBVACONF32::u32Index
- * @param  u32DefValue defaut value
  * @param  pulValue  where to store the value of the parameter on success
  */
-DECLHIDDEN(int) VBoxQueryConfHGSMIDef(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                      uint32_t u32Index, uint32_t u32DefValue, uint32_t *pulValue)
+DECLHIDDEN(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx, uint32_t u32Index, uint32_t *pulValue)
 {
-    int rc = VINF_SUCCESS;
     VBVACONF32 *p;
-    // LogFunc(("u32Index = %d\n", u32Index));
 
-    rc = testQueryConf(pCtx);
-    if (RT_FAILURE(rc))
-        return rc;
     /* Allocate the IO buffer. */
-    p = (VBVACONF32 *)VBoxHGSMIBufferAlloc(pCtx,
-                                     sizeof(VBVACONF32), HGSMI_CH_VBVA,
-                                     VBVA_QUERY_CONF32);
-    if (p)
-    {
-        /* Prepare data to be sent to the host. */
-        p->u32Index = u32Index;
-        p->u32Value = u32DefValue;
-        rc = VBoxHGSMIBufferSubmit(pCtx, p);
-        if (RT_SUCCESS(rc))
-        {
-            *pulValue = p->u32Value;
-            // LogFunc(("u32Value = %d\n", p->u32Value));
-        }
-        /* Free the IO buffer. */
-        VBoxHGSMIBufferFree(pCtx, p);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-    // LogFunc(("rc = %d\n", rc));
-    return rc;
-}
+    p = (VBVACONF32 *)VBoxHGSMIBufferAlloc(pCtx, sizeof(*p), HGSMI_CH_VBVA,
+                                           VBVA_QUERY_CONF32);
+    if (!p)
+        return VERR_NO_MEMORY;
 
-DECLHIDDEN(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                   uint32_t u32Index, uint32_t *pulValue)
-{
-    return VBoxQueryConfHGSMIDef(pCtx, u32Index, UINT32_MAX, pulValue);
+    /* Prepare data to be sent to the host. */
+    p->u32Index = u32Index;
+    p->u32Value = UINT32_MAX;
+    /* No need to check that the buffer is valid as we have just allocated it. */
+    VBoxHGSMIBufferSubmit(pCtx, p);
+    *pulValue = p->u32Value;
+    /* Free the IO buffer. */
+    VBoxHGSMIBufferFree(pCtx, p);
+    return VINF_SUCCESS;
 }
 
 /**
@@ -242,65 +190,52 @@ DECLHIDDEN(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param  pPixels   pixel data, @see VMMDevReqMousePointer for the format
  * @param  cbLength  size in bytes of the pixel data
  */
-DECLHIDDEN(int)  VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                             uint32_t fFlags,
-                                             uint32_t cHotX,
-                                             uint32_t cHotY,
-                                             uint32_t cWidth,
-                                             uint32_t cHeight,
-                                             uint8_t *pPixels,
-                                             uint32_t cbLength)
+DECLHIDDEN(int)  VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx, uint32_t fFlags,
+                                             uint32_t cHotX, uint32_t cHotY, uint32_t cWidth, uint32_t cHeight,
+                                             uint8_t *pPixels, uint32_t cbLength)
 {
     VBVAMOUSEPOINTERSHAPE *p;
-    uint32_t cbData = 0;
-    int rc = VINF_SUCCESS;
+    uint32_t cbPixels = 0;
+    int rc;
 
     if (fFlags & VBOX_MOUSE_POINTER_SHAPE)
     {
-        /* Size of the pointer data: sizeof (AND mask) + sizeof (XOR_MASK) */
-        cbData = ((((cWidth + 7) / 8) * cHeight + 3) & ~3)
+        /*
+         * Size of the pointer data:
+         * sizeof (AND mask) + sizeof (XOR_MASK)
+         */
+        cbPixels = ((((cWidth + 7) / 8) * cHeight + 3) & ~3)
                  + cWidth * 4 * cHeight;
-        /* If shape is supplied, then always create the pointer visible.
+        if (cbPixels > cbLength)
+            return VERR_INVALID_PARAMETER;
+        /*
+         * If shape is supplied, then always create the pointer visible.
          * See comments in 'vboxUpdatePointerShape'
          */
         fFlags |= VBOX_MOUSE_POINTER_VISIBLE;
     }
-    // LogFlowFunc(("cbData %d, %dx%d\n", cbData, cWidth, cHeight));
-    if (cbData > cbLength)
-    {
-        // LogFunc(("calculated pointer data size is too big (%d bytes, limit %d)\n",
-        //          cbData, cbLength));
-        return VERR_INVALID_PARAMETER;
-    }
     /* Allocate the IO buffer. */
-    p = (VBVAMOUSEPOINTERSHAPE *)VBoxHGSMIBufferAlloc(pCtx,
-                                                  sizeof(VBVAMOUSEPOINTERSHAPE)
-                                                + cbData,
-                                                HGSMI_CH_VBVA,
-                                                VBVA_MOUSE_POINTER_SHAPE);
-    if (p)
-    {
-        /* Prepare data to be sent to the host. */
-        /* Will be updated by the host. */
-        p->i32Result = VINF_SUCCESS;
-        /* We have our custom flags in the field */
-        p->fu32Flags = fFlags;
-        p->u32HotX   = cHotX;
-        p->u32HotY   = cHotY;
-        p->u32Width  = cWidth;
-        p->u32Height = cHeight;
-        if (p->fu32Flags & VBOX_MOUSE_POINTER_SHAPE)
-            /* Copy the actual pointer data. */
-            memcpy (p->au8Data, pPixels, cbData);
-        rc = VBoxHGSMIBufferSubmit(pCtx, p);
-        if (RT_SUCCESS(rc))
-            rc = p->i32Result;
-        /* Free the IO buffer. */
-        VBoxHGSMIBufferFree(pCtx, p);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-    // LogFlowFunc(("rc %d\n", rc));
+    p = (VBVAMOUSEPOINTERSHAPE *)VBoxHGSMIBufferAlloc(pCtx, sizeof(*p) + cbPixels, HGSMI_CH_VBVA,
+                                                      VBVA_MOUSE_POINTER_SHAPE);
+    if (!p)
+        return VERR_NO_MEMORY;
+    /* Prepare data to be sent to the host. */
+    /* Will be updated by the host. */
+    p->i32Result = VINF_SUCCESS;
+    /* We have our custom flags in the field */
+    p->fu32Flags = fFlags;
+    p->u32HotX   = cHotX;
+    p->u32HotY   = cHotY;
+    p->u32Width  = cWidth;
+    p->u32Height = cHeight;
+    if (cbPixels)
+        /* Copy the actual pointer data. */
+        memcpy (p->au8Data, pPixels, cbPixels);
+    /* No need to check that the buffer is valid as we have just allocated it. */
+    VBoxHGSMIBufferSubmit(pCtx, p);
+    rc = p->i32Result;
+    /* Free the IO buffer. */
+    VBoxHGSMIBufferFree(pCtx, p);
     return rc;
 }
 
@@ -318,43 +253,36 @@ DECLHIDDEN(int)  VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @returns  iprt status code.
  * @returns  VERR_NO_MEMORY      HGSMI heap allocation failed.
  */
-DECLHIDDEN(int) VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fReportPosition, uint32_t x, uint32_t y,
-                                        uint32_t *pxHost, uint32_t *pyHost)
+DECLHIDDEN(int) VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fReportPosition,
+                                        uint32_t x, uint32_t y, uint32_t *pxHost, uint32_t *pyHost)
 {
-    int rc = VINF_SUCCESS;
     VBVACURSORPOSITION *p;
-    // Log(("%s: x=%u, y=%u\n", __PRETTY_FUNCTION__, (unsigned)x, (unsigned)y));
 
     /* Allocate the IO buffer. */
-    p = (VBVACURSORPOSITION *)VBoxHGSMIBufferAlloc(pCtx, sizeof(VBVACURSORPOSITION), HGSMI_CH_VBVA, VBVA_CURSOR_POSITION);
-    if (p)
-    {
-        /* Prepare data to be sent to the host. */
-        p->fReportPosition = fReportPosition ? 1 : 0;
-        p->x = x;
-        p->y = y;
-        rc = VBoxHGSMIBufferSubmit(pCtx, p);
-        if (RT_SUCCESS(rc))
-        {
-            if (pxHost)
-                *pxHost = p->x;
-            if (pyHost)
-                *pyHost = p->y;
-            // Log(("%s: return: x=%u, y=%u\n", __PRETTY_FUNCTION__, (unsigned)p->x, (unsigned)p->y));
-        }
-        /* Free the IO buffer. */
-        VBoxHGSMIBufferFree(pCtx, p);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-    // LogFunc(("rc = %d\n", rc));
-    return rc;
+    p = (VBVACURSORPOSITION *)VBoxHGSMIBufferAlloc(pCtx, sizeof(*p), HGSMI_CH_VBVA,
+                                                   VBVA_CURSOR_POSITION);
+    if (!p)
+        return VERR_NO_MEMORY;
+    /* Prepare data to be sent to the host. */
+    p->fReportPosition = fReportPosition;
+    p->x = x;
+    p->y = y;
+    /* No need to check that the buffer is valid as we have just allocated it. */
+    VBoxHGSMIBufferSubmit(pCtx, p);
+    if (pxHost)
+        *pxHost = p->x;
+    if (pyHost)
+        *pyHost = p->y;
+    /* Free the IO buffer. */
+    VBoxHGSMIBufferFree(pCtx, p);
+    return VINF_SUCCESS;
 }
 
 
-/** @todo Mouse pointer position to be read from VMMDev memory, address of the memory region
- * can be queried from VMMDev via an IOCTL. This VMMDev memory region will contain
- * host information which is needed by the guest.
+/**
+ * @todo Mouse pointer position to be read from VMMDev memory, address of the
+ * memory region can be queried from VMMDev via an IOCTL. This VMMDev memory
+ * region will contain host information which is needed by the guest.
  *
  * Reading will not cause a switch to the host.
  *
@@ -365,7 +293,6 @@ DECLHIDDEN(int) VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fRe
  *  * guest writes: may be allocate a page for the host info and make
  *    the page readonly for the guest.
  *  * the information should be available only for additions drivers.
- *  * VMMDev additions driver will inform the host which version of the info it expects,
- *    host must support all versions.
- *
+ *  * VMMDev additions driver will inform the host which version of the info
+ *    it expects, host must support all versions.
  */

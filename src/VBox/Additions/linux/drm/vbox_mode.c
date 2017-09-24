@@ -37,14 +37,14 @@
  *          Hans de Goede <hdegoede@redhat.com>
  */
 #include "vbox_drv.h"
-
-#include <VBoxVideo.h>
-
 #include <linux/export.h>
 #include <drm/drm_crtc_helper.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_73)
 #include <drm/drm_plane_helper.h>
 #endif
+
+#include "VBoxVideo.h"
+#include "hgsmi_channels.h"
 
 static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
 			    u32 handle, u32 width, u32 height,

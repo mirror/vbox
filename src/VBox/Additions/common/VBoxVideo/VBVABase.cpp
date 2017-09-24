@@ -28,6 +28,7 @@
 
 #include <VBoxVideoGuest.h>
 #include <VBoxVideoIPRT.h>
+#include <HGSMIChannels.h>
 
 /*
  * There is a hardware ring buffer in the graphics device video RAM, formerly

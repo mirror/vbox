@@ -37,16 +37,16 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_VGA
 
-#include <VBoxVideoGuest.h>
+#include <linux/version.h>
 
-#include <drm/drmP.h>
-#include <drm/drm_fb_helper.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+# include <linux/types.h>
+# include <linux/spinlock_types.h>
+#endif
 
-#include <drm/ttm/ttm_bo_api.h>
-#include <drm/ttm/ttm_bo_driver.h>
-#include <drm/ttm/ttm_placement.h>
-#include <drm/ttm/ttm_memory.h>
-#include <drm/ttm/ttm_module.h>
+#include <linux/genalloc.h>
+#include <linux/io.h>
+#include <linux/string.h>
 
 #if defined(RHEL_MAJOR) && defined(RHEL_MINOR)
 # if RHEL_MAJOR == 7 && RHEL_MINOR >= 4
@@ -57,12 +57,24 @@
 # endif
 #endif
 
+#include <drm/drmP.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_73)
 #include <drm/drm_gem.h>
 #endif
+#include <drm/drm_fb_helper.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 #include <drm/drm_encoder.h>
 #endif
+
+#include <drm/ttm/ttm_bo_api.h>
+#include <drm/ttm/ttm_bo_driver.h>
+#include <drm/ttm/ttm_placement.h>
+#include <drm/ttm/ttm_memory.h>
+#include <drm/ttm/ttm_module.h>
+
+#include "vboxvideo_guest.h"
+#include "vboxvideo_vbe.h"
+#include "hgsmi_ch_setup.h"
 
 #include "product-generated.h"
 
@@ -339,5 +351,17 @@ int vbox_irq_init(struct vbox_private *vbox);
 void vbox_irq_fini(struct vbox_private *vbox);
 void vbox_report_hotplug(struct vbox_private *vbox);
 irqreturn_t vbox_irq_handler(int irq, void *arg);
+
+/* vbox_hgsmi.c */
+void *hgsmi_buffer_alloc(struct gen_pool *guest_pool, size_t size,
+                         u8 channel, u16 channel_info);
+void hgsmi_buffer_free(struct gen_pool *guest_pool, void *buf);
+int hgsmi_buffer_submit(struct gen_pool *guest_pool, void *buf);
+
+static inline void vbox_write_ioport(u16 index, u16 data)
+{
+        outw(index, VBE_DISPI_IOPORT_INDEX);
+        outw(data, VBE_DISPI_IOPORT_DATA);
+}
 
 #endif

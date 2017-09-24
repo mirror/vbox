@@ -22,26 +22,38 @@
 # code conform to both at once.
 
 # Replace up to six leading groups of four spaces with tabs.
-s/^                        /\t\t\t\t\t\t/g
+s/^                         */\t\t\t\t\t\t/g
 s/^                    /\t\t\t\t\t/g
 s/^                /\t\t\t\t/g
 s/^            /\t\t\t/g
 s/^        /\t\t/g
 s/^    /\t/g
-# Remove any spaces left after the tabs.  This also limits maximum indentation.
-s/^\(\t\t*\) */\1/g
 
 # Change various symbols and file names to fit kernel conventions.
 
+# Miscellaneous:
+# Remove @file headers.
+\|/\*\* @file| {
+:start
+  N
+  s|\*/|\*/|g
+  T start
+  N
+  d
+}
+/^\/\* \$Id:.*\*\/$/d
+/^typedef .* HGSMIOFFSET;$/d
+s/^#\( *\)include <\([^/]*\)>$/#\1include "\2"/g
+
 # File names:
-s/\bHGSMIBase\.h\b/hgsmi_base.h/g
+s/\bHGSMIBase\.h\b/vbox_drv.h/g
 s/\bHGSMIChannels\.h\b/hgsmi_channels.h/g
 s/\bHGSMIChSetup\.h\b/hgsmi_ch_setup.h/g
 s/\bHGSMIContext\.h\b/hgsmi_context.h/g
 s/\bHGSMIDefs\.h\b/hgsmi_defs.h/g
 s/\bVBoxVideoGuest\.h\b/vboxvideo_guest.h/g
 s/\bVBoxVideo\.h\b/vboxvideo.h/g
-s/\bVBoxVideoIPRT\.h\b/vboxvideo_iprt.h/g
+s/\bVBoxVideoIPRT\.h\b/vbox_err.h/g
 s/\bVBoxVideoVBE\.h\b/vboxvideo_vbe.h/g
 
 # Function names:
@@ -68,39 +80,87 @@ s/\bVBoxVBVADisable\b/vbva_disable/g
 s/\bVBoxVBVAEnable\b/vbva_enable/g
 s/\bvboxVBVAInformHost\b/vbva_inform_host/g
 s/\bvboxVBVASetupBufferContext\b/vbva_setup_buffer_context/g
+s/\bVBVO_PORT_READ_U8\b/inb/g
+s/\bVBVO_PORT_READ_U16\b/inw/g
+s/\bVBVO_PORT_READ_U32\b/inl/g
+s/\bVBVO_PORT_WRITE_U8\b/outb/g
+s/\bVBVO_PORT_WRITE_U16\b/outw/g
+s/\bVBVO_PORT_WRITE_U32\b/outl/g
 
 # Macros:
+s/\b_1K\b/1024/g
+s/\b_4M\b/4*1024*1024/g
+s/\bAssert\b\([^;]*\);$/WARN_ON_ONCE(!(\1));/g
+s/\bAssertCompile\b/assert_compile/g
+s/\bAssertCompileSize\b/assert_compile_size/g
+s/\bAssertPtr\b\([^;]*\);$/WARN_ON_ONCE(!(\1));/g
+/AssertPtrNullReturnVoid/d
+s/\bAssertRC\b\([^;]*\);$/WARN_ON_ONCE(RT_FAILURE\1);/g
+s/\bDECLCALLBACK\b(\([^)]*\))/\1/g
+s/\bDECLCALLBACKMEMBER\b(\([^,)]*\), *\([^,)]*\))/\1 (*\2)/g
+s/^\bDECLHIDDEN\b(\([^)]*\))/\1/g
+s/\bDECLINLINE\b(\([^)]*\))/static inline \1/g
+s/\bRT_BIT\b/BIT/g
+s/\bRT_BOOL\b(\([^)]*\))/(!!(\1))/g
+/RT_C_DECLS/d
+s/\bUINT16_MAX\b/U16_MAX/g
+s/\bUINT32_MAX\b/U32_MAX/g
+s/\bUINT32_C\b(\(.*\))/\1u/g
 s/!VALID_PTR(/WARN_ON(!/g
 
 # Type names:
 s/\bint32_t\b/s32/g
+s/\buint8_t\b/u8/g
 s/\buint16_t\b/u16/g
 s/\buint32_t\b/u32/g
+s/(HGSMIBUFFERLOCATION \*)//g  # Remove C++ casts from void.
+s/typedef struct HGSMIBUFFERLOCATION/struct hgsmi_buffer_location/g
 s/struct HGSMIBUFFERLOCATION/struct hgsmi_buffer_location/g
-s/} HGSMIBUFFERLOCATION/} hgsmi_buffer_location/g
+s/} HGSMIBUFFERLOCATION/}/g
 s/\bHGSMIBUFFERLOCATION\b/struct hgsmi_buffer_location/g
+s/\([^*] *\)\bPHGSMIGUESTCOMMANDCONTEXT\b/\1struct gen_pool */g
+s/(HGSMIHOSTFLAGS \*)//g  # Remove C++ casts from void.
+s/typedef struct HGSMIHOSTFLAGS/struct hgsmi_host_flags/g
+s/struct HGSMIHOSTFLAGS/struct hgsmi_host_flags/g
+s/} HGSMIHOSTFLAGS/}/g
+s/\bHGSMIHOSTFLAGS\b/struct hgsmi_host_flags/g
+s/\bHGSMIOFFSET\b/u32/g
+s/\bHGSMISIZE\b/u32/g
+s/\bRTRECT\b/void/g
+s/(VBVABUFFERCONTEXT \*)//g  # Remove C++ casts from void.
 s/struct VBVABUFFERCONTEXT/struct vbva_buf_context/g
 s/} VBVABUFFERCONTEXT/} vbva_buf_context/g
 s/\bVBVABUFFERCONTEXT\b/struct vbva_buf_context/g
 s/\([^*] *\)\bPVBVABUFFERCONTEXT\b/\1struct vbva_buf_context */g
+s/(VBVACAPS \*)//g  # Remove C++ casts from void.
+s/struct VBVACAPS/struct vbva_caps/g
+s/} VBVACAPS/} vbva_caps/g
+s/\bVBVACAPS\b/struct vbva_caps/g
+s/(VBVACONF32 \*)//g  # Remove C++ casts from void.
 s/struct VBVACONF32/struct vbva_conf32/g
 s/} VBVACONF32/} vbva_conf32/g
 s/\bVBVACONF32\b/struct vbva_conf32/g
+s/(VBVACURSORPOSITION \*)//g  # Remove C++ casts from void.
 s/struct VBVACURSORPOSITION/struct vbva_cursor_position/g
 s/} VBVACURSORPOSITION/} vbva_cursor_position/g
 s/\bVBVACURSORPOSITION\b/struct vbva_cursor_position/g
+s/(VBVAENABLE_EX \*)//g  # Remove C++ casts from void.
 s/struct VBVAENABLE_EX/struct vbva_enable_ex/g
 s/} VBVAENABLE_EX/} vbva_enable_ex/g
 s/\bVBVAENABLE_EX\b/struct vbva_enable_ex/g
+s/(VBVAMOUSEPOINTERSHAPE \*)//g  # Remove C++ casts from void.
 s/struct VBVAMOUSEPOINTERSHAPE/struct vbva_mouse_pointer_shape/g
 s/} VBVAMOUSEPOINTERSHAPE/} vbva_mouse_pointer_shape/g
 s/\bVBVAMOUSEPOINTERSHAPE\b/struct vbva_mouse_pointer_shape/g
+s/(VBVAMODEHINT \*)//g  # Remove C++ casts from void.
 s/struct VBVAMODEHINT/struct vbva_modehint/g
 s/} VBVAMODEHINT/} vbva_modehint/g
 s/\bVBVAMODEHINT\b/struct vbva_modehint/g
+s/(VBVAQUERYMODEHINTS \*)//g  # Remove C++ casts from void.
 s/struct VBVAQUERYMODEHINTS/struct vbva_query_mode_hints/g
 s/} VBVAQUERYMODEHINTS/} vbva_query_mode_hints/g
 s/\bVBVAQUERYMODEHINTS\b/struct vbva_query_mode_hints/g
+s/(VBVAREPORTINPUTMAPPING \*)//g  # Remove C++ casts from void.
 s/struct VBVAREPORTINPUTMAPPING/struct vbva_report_input_mapping/g
 s/} VBVAREPORTINPUTMAPPING/} vbva_report_input_mapping/g
 s/\bVBVAREPORTINPUTMAPPING\b/struct vbva_report_input_mapping/g
@@ -108,6 +168,7 @@ s/\bVBVAREPORTINPUTMAPPING\b/struct vbva_report_input_mapping/g
 # Variable and parameter names:
 s/\baRecords\b/records/g
 s/\bau8Data\b/data/g
+s/\bau32Reserved\b/reserved/g
 s/\bBase\b/base/g
 s/\bbEnable\b/enable/g
 s/\bbRc\b/ret/g
@@ -118,8 +179,10 @@ s/\bcbData\b/data_len/g
 s/\bcbHintsStructureGuest\b/hints_structure_guest_size/g
 s/\bcbHwBufferAvail\b/available/g
 s/\bcbLength\b/len/g
+s/\bcbLocation\b/buf_len/g
 s/\bcbPartialWriteThreshold\b/partial_write_tresh/g  ## @todo fix this?
 s/\bcbPitch\b/pitch/g
+s/\bcbPixels\b/pixel_len/g
 s/\bcBPP\b/bpp/g
 s/\bcbRecord\b/len_and_flags/g  ## @todo fix this?
 s/\bcDisplay\b/display/g
@@ -164,6 +227,7 @@ s/\bu32BytesTillBoundary\b/bytes_till_boundary/g
 s/\bu32Flags\b/flags/g
 s/\bu32Height\b/height/g
 s/\bu32HostEvents\b/host_events/g
+s/\bu32HostFlags\b/host_flags/g
 s/\bu32HotX\b/hot_x/g
 s/\bu32HotY\b/hot_y/g
 s/\bu32Index\b/index/g
@@ -178,6 +242,10 @@ s/\bu32ViewIndex\b/view_index/g
 s/\bu32Width\b/width/g
 s/\bulValue\b/value/g
 
+# Header file guard:
+s/__HGSMIChannels_h__/__HGSMI_CHANNELS_H__/g
+s/___VBox_Graphics_HGSMIChSetup_h/__HGSMI_CH_SETUP_H__/g
+
 # And move braces.  This must be the last expression as it jumps to the next
 # line.
 /..*$/ {
@@ -189,6 +257,7 @@ s/\bulValue\b/value/g
   N
 :try_brace
   s/^\([\t ].*\)\n[\t ][\t ]*{/\1 {/g
+  s/^\([^#()]*\)\n[\t ]*{/\1 {/g
   t done_brace
   P
   D
