@@ -201,10 +201,10 @@ ifeq ($(KBUILD_TARGET),linux)
  #
  include $(PATH_SUB_CURRENT)/linux/files_vboxguest
  # sources and stuff.
- INSTALLS += vboxguest-src
- vboxguest-src_INST     = $(INST_ADDITIONS)src/vboxguest/
- vboxguest-src_MODE     = a+r,u+w
- vboxguest-src_SOURCES  = $(subst ",,$(FILES_VBOXGUEST_NOBIN))
+ INSTALLS += vboxguest-mod
+ vboxguest-mod_INST     = $(INST_ADDITIONS)src/vboxguest/
+ vboxguest-mod_MODE     = a+r,u+w
+ vboxguest-mod_SOURCES  = $(subst ",,$(FILES_VBOXGUEST_NOBIN))
 
  INSTALLS += vboxguest-scripts
  vboxguest-scripts_INST    = $(INST_ADDITIONS)src/
@@ -225,10 +225,10 @@ ifeq ($(KBUILD_TARGET),freebsd)
  #
  include $(PATH_SUB_CURRENT)/freebsd/files_vboxguest
  # sources and stuff.
- INSTALLS += vboxguest-src
- vboxguest-src_INST     = $(INST_ADDITIONS)src/vboxguest/
- vboxguest-src_MODE     = a+r,u+w
- vboxguest-src_SOURCES  = $(subst ",,$(FILES_VBOXGUEST_NOBIN))
+ INSTALLS += vboxguest-mod
+ vboxguest-mod_INST     = $(INST_ADDITIONS)src/vboxguest/
+ vboxguest-mod_MODE     = a+r,u+w
+ vboxguest-mod_SOURCES  = $(subst ",,$(FILES_VBOXGUEST_NOBIN))
 
 endif # FreeBSD
 

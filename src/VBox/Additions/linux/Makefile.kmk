@@ -361,25 +361,29 @@ if   defined(VBOX_WITH_TESTCASES) \
  && !defined(VBOX_ONLY_VALIDATIONKIT) \
  && !defined(VBOX_WITHOUT_LINUX_TEST_BUILDS) \
  && "$(KBUILD_HOST_ARCH)" == "$(KBUILD_TARGET_ARCH)"
- VBOX_LNX_ADD_TEST        = $(PATH_TARGET)/tstguest_mod
- VBOX_LNX_ADD_TEST_TARGET = $(PATH_TARGET)/tstguest_mod.run
- TESTING     += $(VBOX_LNX_ADD_TEST_TARGET)
- OTHERS      += $(VBOX_LNX_ADD_TEST_TARGET)
- OTHER_CLEAN += $(VBOX_LNX_ADD_TEST_TARGET)
- $$(VBOX_LNX_ADD_TEST_TARGET): \
- 		$$(vboxguest-src_2_STAGE_TARGETS) \
- 		$$(vboxsf-mod_2_STAGE_TARGETS) \
- 		$$(vboxvideo_drm-mod_2_STAGE_TARGETS) \
- 		$$(GuestDrivers-src_2_STAGE_TARGETS)
-	$(QUIET)$(call MSG_L1,Doing a test build of the guest kernel modules)
-	$(QUIET)$(RM) -f -- "$@"
-	$(QUIET)$(RM) -Rf -- "$(VBOX_LNX_ADD_TEST)"
-	$(QUIET)$(MKDIR) -p -- "$(VBOX_LNX_ADD_TEST)"
-	$(QUIET)$(CP) -R -- "$(PATH_STAGE_BIN)/additions/src/" "$(VBOX_LNX_ADD_TEST)/"
-	+ $(QUIET)make -C $(VBOX_LNX_ADD_TEST) clean
-	+ $(QUIET)make -C $(VBOX_LNX_ADD_TEST)
-	$(QUIET)$(RM) -Rf -- $(VBOX_LNX_ADD_TEST)
-	$(QUIET)$(APPEND) -t "$@" "done"
+
+ KBUILD_VERBOSE ?=
+
+##
+# Using the extra expansion to replace $(ver) before eval, thus everything
+# else needs escaped dollars.
+ define def_vboxadd_mod_test
+  TESTING      += $$(PATH_TARGET)/tst$(module)_mod.run
+  OTHERS       += $$(PATH_TARGET)/tst$(module)_mod.run
+  OTHERS_CLEAN += $$(PATH_TARGET)/tst$(module)_mod.run
+  $$$$(PATH_TARGET)/tst$(module)_mod.run: $$$$($(module)-mod_2_STAGE_TARGETS)
+	$(QUIET)$$(call MSG_L1,Doing a test build of the $(module) kernel module)
+	$(QUIET)$$(RM) -f -- "$@"
+	$(QUIET)$$(RM) -Rf -- "$$(PATH_TARGET)/tst$(module)_mod"
+	$(QUIET)$$(MKDIR) -p -- "$$(PATH_TARGET)/tst$(module)_mod"
+	$(QUIET)$$(CP) -R -- "$$(PATH_STAGE_BIN)/additions/src/$(module)/" "$$(PATH_TARGET)/tst$(module)_mod/"
+	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C $$(PATH_TARGET)/tst$(module)_mod clean
+	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C $$(PATH_TARGET)/tst$(module)_mod
+	$(QUIET)$$(RM) -Rf -- $$(PATH_TARGET)/tst$(module)_mod
+	$(QUIET)$$(APPEND) -t "$$@" "done"
+ endef
+ $(foreach module, vboxguest vboxsf vboxvideo, $(eval $(def_vboxadd_mod_test)))
+
 endif
 
 
