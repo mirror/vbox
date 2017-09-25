@@ -400,8 +400,8 @@ class WebMWriter_Impl
             : enmType(a_enmType)
             , uTrack(a_uTrack)
             , offUUID(a_offID)
-            , cTotalClusters(0)
             , cTotalBlocks(0)
+            , tcLastWriteMs(0)
         {
             uUUID = RTRandU32();
         }
@@ -439,10 +439,10 @@ class WebMWriter_Impl
         /** Absolute offset in file of track UUID.
          *  Needed to write the hash sum within the footer. */
         uint64_t      offUUID;
-        /** Total number of clusters. */
-        uint64_t      cTotalClusters;
         /** Total number of blocks. */
         uint64_t      cTotalBlocks;
+        /** Timecode (in ms) of last write. */
+        uint64_t      tcLastWriteMs;
     };
 
     /**
@@ -472,7 +472,7 @@ class WebMWriter_Impl
             , offCluster(0)
             , fOpen(false)
             , tcStartMs(0)
-            , tcEndMs(0)
+            , tcLastWriteMs(0)
             , cBlocks(0) { }
 
         /** This cluster's ID. */
@@ -484,8 +484,8 @@ class WebMWriter_Impl
         bool          fOpen;
         /** Timecode (in ms) when starting this cluster. */
         uint64_t      tcStartMs;
-        /** Timecode (in ms) when this cluster ends. */
-        uint64_t      tcEndMs;
+        /** Timecode (in ms) of last write. */
+        uint64_t      tcLastWriteMs;
         /** Number of (simple) blocks in this cluster. */
         uint64_t      cBlocks;
     };
@@ -498,8 +498,8 @@ class WebMWriter_Impl
     struct WebMSegment
     {
         WebMSegment(void)
-            : tcStart(0)
-            , tcEnd(0)
+            : tcStartMs(0)
+            , tcLastWriteMs(0)
             , offStart(0)
             , offInfo(0)
             , offSeekInfo(0)
@@ -514,10 +514,10 @@ class WebMWriter_Impl
         /** The timecode scale factor of this segment. */
         uint64_t                        uTimecodeScaleFactor;
 
-        /** Timecode when starting this segment. */
-        uint64_t                        tcStart;
-        /** Timecode when this segment ended. */
-        uint64_t                        tcEnd;
+        /** Timecode (in ms) when starting this segment. */
+        uint64_t                        tcStartMs;
+        /** Timecode (in ms) of last write. */
+        uint64_t                        tcLastWriteMs;
 
         /** Absolute offset (in bytes) of CurSeg. */
         uint64_t                        offStart;
@@ -531,6 +531,9 @@ class WebMWriter_Impl
         uint64_t                        offCues;
         /** List of cue points. Needed for seeking table. */
         std::list<WebMCuePoint>         lstCues;
+
+        /** Total number of clusters. */
+        uint64_t                        cClusters;
 
         /** Map of tracks.
          *  The key marks the track number (*not* the UUID!). */
@@ -770,11 +773,14 @@ public:
         /* Calculate the PTS of this frame (in ms). */
         uint64_t tcPTSMs = a_pPkt->data.frame.pts * 1000
                          * (uint64_t) a_pCfg->g_timebase.num / a_pCfg->g_timebase.den;
+        /* Sanity. */
+        Assert(tcPTSMs);
+        //Assert(tcPTSMs >= Cluster.tcLastWriteMs);
 
         if (   tcPTSMs
-            && tcPTSMs <= CurSeg.CurCluster.tcEndMs)
+            && tcPTSMs <= a_pTrack->tcLastWriteMs)
         {
-            tcPTSMs = CurSeg.CurCluster.tcEndMs + 1;
+            tcPTSMs = a_pTrack->tcLastWriteMs + 1;
         }
 
         /* Whether to start a new cluster or not. */
@@ -787,7 +793,11 @@ public:
         /* Did we reach the maximum a cluster can hold? Use a new cluster then. */
         if (tcPTSMs > VBOX_WEBM_CLUSTER_MAX_LEN_MS)
         {
-            tcPTSMs = 0;
+            LogFunc(("[T%RU8C%RU64] Exceeded max length (%RU64ms)\n",
+                     a_pTrack->uTrack, Cluster.uID, VBOX_WEBM_CLUSTER_MAX_LEN_MS));
+
+            /* Note: Do not reset the PTS here -- the new cluster starts time-wise
+             *       where the old cluster left off. */
 
             fClusterStart = true;
         }
@@ -804,10 +814,14 @@ public:
             }
 
             Cluster.fOpen      = true;
-            Cluster.uID        = a_pTrack->cTotalClusters;
+            Cluster.uID        = CurSeg.cClusters;
             Cluster.tcStartMs  = tcPTSMs;
             Cluster.offCluster = RTFileTell(m_Ebml.getFile());
             Cluster.cBlocks    = 0;
+
+            if (CurSeg.cClusters)
+                AssertMsg(Cluster.tcStartMs, ("[T%RU8C%RU64] @ %RU64 start is 0 which is invalid\n",
+                                              a_pTrack->uTrack, Cluster.uID, Cluster.offCluster));
 
             LogFunc(("[T%RU8C%RU64] Start @ %RU64ms / %RU64 bytes\n",
                      a_pTrack->uTrack, Cluster.uID, Cluster.tcStartMs, Cluster.offCluster));
@@ -822,22 +836,21 @@ public:
                 CurSeg.lstCues.push_back(cue);
             }
 
-            a_pTrack->cTotalClusters++;
+            CurSeg.cClusters++;
         }
 
-        Cluster.tcEndMs = tcPTSMs;
+        Cluster.tcLastWriteMs = tcPTSMs;
         Cluster.cBlocks++;
 
-        if (CurSeg.tcEnd < Cluster.tcEndMs)
-            CurSeg.tcEnd = Cluster.tcEndMs;
+        a_pTrack->tcLastWriteMs = tcPTSMs;
+
+        if (CurSeg.tcLastWriteMs < a_pTrack->tcLastWriteMs)
+            CurSeg.tcLastWriteMs = a_pTrack->tcLastWriteMs;
 
         /* Calculate the block's timecode, which is relative to the cluster's starting timecode. */
         uint16_t tcBlockMs = static_cast<uint16_t>(tcPTSMs - Cluster.tcStartMs);
 
-        Log2Func(("tcPTSMs=%RU64, tcBlockMs=%RU64\n", tcPTSMs, tcBlockMs));
-
-        Log2Func(("[C%RU64] cBlocks=%RU64, tcStartMs=%RU64, tcEndMs=%RU64 (%zums)\n",
-                  Cluster.uID, Cluster.cBlocks, Cluster.tcStartMs, Cluster.tcEndMs, Cluster.tcEndMs - Cluster.tcStartMs));
+        Log2Func(("[T%RU8C%RU64] tcPTSMs=%RU64, (%RU64ms)\n", a_pTrack->uTrack, Cluster.uID, tcPTSMs, tcBlockMs));
 
         uint8_t fFlags = 0;
         if (fKeyframe)
@@ -851,13 +864,11 @@ public:
 
 #ifdef VBOX_WITH_LIBOPUS
     /* Audio blocks that have same absolute timecode as video blocks SHOULD be written before the video blocks. */
-    int writeBlockOpus(WebMTrack *a_pTrack, const void *pvData, size_t cbData, uint64_t uTimeStampMs)
+    int writeBlockOpus(WebMTrack *a_pTrack, const void *pvData, size_t cbData, uint64_t uDurationMs)
     {
         AssertPtrReturn(a_pTrack, VERR_INVALID_POINTER);
         AssertPtrReturn(pvData,   VERR_INVALID_POINTER);
         AssertReturn(cbData,      VERR_INVALID_PARAMETER);
-
-        RT_NOREF(uTimeStampMs);
 
         WebMCluster &Cluster = CurSeg.CurCluster;
 
@@ -866,13 +877,14 @@ public:
          * The "raw PTS" is the exact time of an object represented in nanoseconds):
          *     Raw Timecode = (Block timecode + Cluster timecode) * TimecodeScaleFactor
          */
-        uint64_t tcPTSMs  = Cluster.tcStartMs + (Cluster.cBlocks * 20 /*ms */);
+        uint64_t tcPTSMs = CurSeg.tcLastWriteMs + uDurationMs;
+
+        /* Sanity. */
+        Assert(tcPTSMs);
+        //Assert(tcPTSMs >= Cluster.tcLastWriteMs);
 
         /* Whether to start a new cluster or not. */
         bool fClusterStart = false;
-
-        if (a_pTrack->cTotalBlocks == 0)
-            fClusterStart = true;
 
         /* Did we reach the maximum a cluster can hold? Use a new cluster then. */
         if (tcPTSMs > VBOX_WEBM_CLUSTER_MAX_LEN_MS)
@@ -887,10 +899,14 @@ public:
             }
 
             Cluster.fOpen      = true;
-            Cluster.uID        = a_pTrack->cTotalClusters;
-            Cluster.tcStartMs  = Cluster.tcEndMs;
+            Cluster.uID        = CurSeg.cClusters;
+            Cluster.tcStartMs  = Cluster.tcLastWriteMs;
             Cluster.offCluster = RTFileTell(m_Ebml.getFile());
             Cluster.cBlocks    = 0;
+
+            if (CurSeg.cClusters)
+                AssertMsg(Cluster.tcStartMs, ("[T%RU8C%RU64] @ %RU64 start is 0 which is invalid\n",
+                                              a_pTrack->uTrack, Cluster.uID, Cluster.offCluster));
 
             LogFunc(("[T%RU8C%RU64] Start @ %RU64ms / %RU64 bytes\n",
                      a_pTrack->uTrack, Cluster.uID, Cluster.tcStartMs, Cluster.offCluster));
@@ -902,22 +918,21 @@ public:
             m_Ebml.subStart(MkvElem_Cluster)
                   .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcStartMs);
 
-            a_pTrack->cTotalClusters++;
+            CurSeg.cClusters++;
         }
 
-        Cluster.tcEndMs = tcPTSMs;
+        Cluster.tcLastWriteMs = tcPTSMs;
         Cluster.cBlocks++;
 
-        if (CurSeg.tcEnd < Cluster.tcEndMs)
-            CurSeg.tcEnd = Cluster.tcEndMs;
+        a_pTrack->tcLastWriteMs = tcPTSMs;
+
+        if (CurSeg.tcLastWriteMs < a_pTrack->tcLastWriteMs)
+            CurSeg.tcLastWriteMs = a_pTrack->tcLastWriteMs;
 
         /* Calculate the block's timecode, which is relative to the cluster's starting timecode. */
         uint16_t tcBlockMs = static_cast<uint16_t>(tcPTSMs - Cluster.tcStartMs);
 
-        Log2Func(("tcPTSMs=%RU64, tcBlockMs=%RU64\n", tcPTSMs, tcBlockMs));
-
-        Log2Func(("[C%RU64] cBlocks=%RU64, tcStartMs=%RU64, tcEndMs=%RU64 (%zums)\n",
-                  Cluster.uID, Cluster.cBlocks, Cluster.tcStartMs, Cluster.tcEndMs, Cluster.tcEndMs - Cluster.tcStartMs));
+        Log2Func(("[T%RU8C%RU64] tcPTSMs=%RU64, (%RU64ms)\n", a_pTrack->uTrack, Cluster.uID, tcPTSMs, tcBlockMs));
 
         return writeSimpleBlockInternal(a_pTrack, tcBlockMs,
                                         pvData, cbData, VBOX_WEBM_BLOCK_FLAG_KEY_FRAME);
@@ -953,7 +968,7 @@ public:
                 {
                     Assert(cbData == sizeof(WebMWriter::BlockData_Opus));
                     WebMWriter::BlockData_Opus *pData = (WebMWriter::BlockData_Opus *)pvData;
-                    rc = writeBlockOpus(pTrack, pData->pvData, pData->cbData, pData->uTimestampMs);
+                    rc = writeBlockOpus(pTrack, pData->pvData, pData->cbData, pData->uDurationMs);
                 }
                 else
 #endif /* VBOX_WITH_LIBOPUS */
@@ -1112,7 +1127,7 @@ private:
         char szApp[64];
         RTStrPrintf(szApp, sizeof(szApp), VBOX_PRODUCT " %sr%u", VBOX_VERSION_STRING, RTBldCfgRevision());
 
-        const uint64_t tcDuration = CurSeg.tcEnd - CurSeg.tcStart;
+        const uint64_t tcDuration = CurSeg.tcLastWriteMs - CurSeg.tcStartMs;
 
         if (!CurSeg.lstCues.empty())
         {

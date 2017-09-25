@@ -66,7 +66,7 @@ using namespace com;
 #endif
 #ifdef DEBUG_andy
 /** Enables dumping audio / video data for debugging reasons. */
-# define VBOX_VIDEOREC_DUMP
+//# define VBOX_VIDEOREC_DUMP
 #endif
 
 /**

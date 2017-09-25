@@ -757,11 +757,15 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
             Assert((uint32_t)cbWritten <= cbDst);
             cbDst = RT_MIN((uint32_t)cbWritten, cbDst); /* Update cbDst to actual bytes encoded (written). */
 
+            Assert(cEncFrames == 1); /* At the moment we encode exactly *one* frame per frame. */
+
+            const uint64_t uDurationMs = pSink->Codec.Opus.msFrame * cEncFrames;
+
             switch (pSink->Con.Parms.enmType)
             {
                 case AVRECCONTAINERTYPE_MAIN_CONSOLE:
                 {
-                    HRESULT hr = pSink->Con.Main.pConsole->i_audioVideoRecSendAudio(abDst, cbDst, RTTimeMilliTS() /* Now */);
+                    HRESULT hr = pSink->Con.Main.pConsole->i_audioVideoRecSendAudio(abDst, cbDst, uDurationMs);
                     Assert(hr == S_OK);
                     RT_NOREF(hr);
 
@@ -770,7 +774,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
 
                 case AVRECCONTAINERTYPE_WEBM:
                 {
-                    WebMWriter::BlockData_Opus blockData = { abDst, cbDst, RTTimeMilliTS() };
+                    WebMWriter::BlockData_Opus blockData = { abDst, cbDst, uDurationMs };
                     rc = pSink->Con.WebM.pWebM->WriteBlock(pSink->Con.WebM.uTrack, &blockData, sizeof(blockData));
                     AssertRC(rc);
 

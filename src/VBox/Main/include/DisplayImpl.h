@@ -211,7 +211,7 @@ public:
     VIDEORECFEATURES i_videoCaptureGetEnabled(void);
     bool i_videoCaptureStarted(void);
     int  i_videoCaptureInvalidate(void);
-    int  i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs);
+    int  i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);
     int  i_videoCaptureStart(void);
     void i_videoCaptureStop(void);
     void i_videoCaptureScreenChanged(unsigned uScreenId);
