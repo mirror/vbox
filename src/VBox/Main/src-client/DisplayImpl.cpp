@@ -4546,11 +4546,12 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
 
     if (fEnabled)
     {
-        rc = pDisplay->i_videoCaptureInvalidate();
-        if (RT_SUCCESS(rc))
+        int rc2 = pDisplay->i_videoCaptureInvalidate();
+        if (RT_SUCCESS(rc2))
         {
-            rc = pDisplay->i_videoCaptureStart();
-            fireVideoCaptureChangedEvent(pDisplay->mParent->i_getEventSource());
+            rc2 = pDisplay->i_videoCaptureStart();
+            if (RT_SUCCESS(rc2))
+                fireVideoCaptureChangedEvent(pDisplay->mParent->i_getEventSource());
         }
     }
 #endif
