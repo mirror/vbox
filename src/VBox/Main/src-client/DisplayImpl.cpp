@@ -4553,6 +4553,10 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
             if (RT_SUCCESS(rc2))
                 fireVideoCaptureChangedEvent(pDisplay->mParent->i_getEventSource());
         }
+
+        /* If video capturing fails for whatever reason here, this is
+         * non-critical and should not be returned at this point -- otherwise
+         * the display driver construction fails completely. */
     }
 #endif
 
