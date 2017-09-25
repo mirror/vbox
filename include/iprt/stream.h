@@ -255,7 +255,7 @@ RTR3DECL(int) RTStrmPutCh(PRTSTREAM pStream, int ch);
  * @returns iprt status code.
  * @param   pStream         The stream.
  * @param   pszString       The string to write.
- *                          No newlines or anything is appended or prepended.
+ *                          No newlines or anything are appended or prepended.
  *                          The terminating '\\0' is not written, of course.
  */
 RTR3DECL(int) RTStrmPutStr(PRTSTREAM pStream, const char *pszString);

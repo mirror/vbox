@@ -208,6 +208,102 @@ RTDECL(int)  RTMsgInfo(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
  */
 RTDECL(int)  RTMsgInfoV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
+
+
+/** @defgroup grp_rt_msg_refentry Help generated from refentry/manpage.
+ *
+ * The refentry/manpage docbook source in doc/manual/en_US/man_* is processed by
+ * doc/manual/docbook-refentry-to-C-help.xsl and turned a set of the structures
+ * defined here.
+ *
+ * @{
+ */
+
+/** The non-breaking space character.
+ * @remarks We could've used U+00A0, but it is easier both to encode and to
+ *          search and replace a single ASCII character. */
+#define RTMSGREFENTRY_NBSP              '\b'
+
+/** @name REFENTRYSTR_SCOPE_XXX - Common string scoping and flags.
+ * @{ */
+/** Same scope as previous string table entry, flags are reset and can be
+ *  ORed in. */
+#define RTMSGREFENTRYSTR_SCOPE_SAME     UINT64_C(0)
+/** Global scope. */
+#define RTMSGREFENTRYSTR_SCOPE_GLOBAL   UINT64_C(0x00ffffffffffffff)
+/** Scope mask. */
+#define RTMSGREFENTRYSTR_SCOPE_MASK     UINT64_C(0x00ffffffffffffff)
+/** Flags mask. */
+#define RTMSGREFENTRYSTR_FLAGS_MASK     UINT64_C(0xff00000000000000)
+/** Command synopsis, special hanging indent rules applies. */
+#define RTMSGREFENTRYSTR_FLAGS_SYNOPSIS RT_BIT_64(63)
+/** @} */
+
+/** String table entry for a refentry. */
+typedef struct RTMSGREFENTRYSTR
+{
+    /** The scope of the string.  There are two predefined scopes,
+     *  REFENTRYSTR_SCOPE_SAME and REFENTRYSTR_SCOPE_GLOBAL.  The rest are
+     *  reference entry specific. */
+    uint64_t        fScope;
+    /** The string.  Non-breaking space is represented by the char
+     * REFENTRY_NBSP defines, just in case the string needs wrapping.  There is
+     * no trailing newline, that's implicit. */
+    const char     *psz;
+} RTMSGREFENTRYSTR;
+/** Pointer to a read-only string table entry. */
+typedef const RTMSGREFENTRYSTR *PCRTMSGREFENTRYSTR;
+
+/** Refentry string table. */
+typedef struct RTMSGREFENTRYSTRTAB
+{
+    /** Number of strings. */
+    uint16_t            cStrings;
+    /** Reserved for future use. */
+    uint16_t            fReserved;
+    /** Pointer to the string table. */
+    PCRTMSGREFENTRYSTR  paStrings;
+} RTMSGREFENTRYSTRTAB;
+/** Pointer to a read-only string table. */
+typedef RTMSGREFENTRYSTRTAB const *PCRTMSGREFENTRYSTRTAB;
+
+/**
+ * Help extracted from a docbook refentry document.
+ */
+typedef struct RTMSGREFENTRY
+{
+    /** Internal reference entry identifier.  */
+    int64_t             idInternal;
+    /** Usage synopsis. */
+    RTMSGREFENTRYSTRTAB Synopsis;
+    /** Full help. */
+    RTMSGREFENTRYSTRTAB Help;
+    /** Brief command description. */
+    const char         *pszBrief;
+} RTMSGREFENTRY;
+/** Pointer to a read-only refentry help extract structure. */
+typedef RTMSGREFENTRY const *PCRTMSGREFENTRY;
+
+
+typedef struct RTSTREAM *PRTSTREAM;
+
+RTDECL(int) RTMsgRefEntrySynopsisEx(PRTSTREAM pStrm, PCRTMSGREFENTRY pEntry, uint64_t fScope, uint32_t fFlags);
+/** @name  RTMSGREFENTRY_SYNOPSIS_F_XXX -  Flags for RTMsgRefEntrySynopsisEx.
+ * @{  */
+/** Prefix the output with 'Usage:'.   */
+#define RTMSGREFENTRY_SYNOPSIS_F_USAGE      RT_BIT_32(0)
+/** @}  */
+
+RTDECL(int) RTMsgRefEntrySynopsis(PRTSTREAM pStrm, PCRTMSGREFENTRY pEntry);
+
+RTDECL(int) RTMsgRefEntryHelpEx(PRTSTREAM pStrm, PCRTMSGREFENTRY pEntry, uint64_t fScope, uint32_t fFlags);
+RTDECL(int) RTMsgRefEntryHelp(PRTSTREAM pStrm, PCRTMSGREFENTRY pEntry);
+RTDECL(int) RTMsgRefEntryPrintStringTable(PRTSTREAM pStrm, PCRTMSGREFENTRYSTRTAB pStrTab, uint64_t fScope,
+                                          uint32_t *pcPendingBlankLines, uint32_t *pcLinesWritten);
+
+/** @} */
+
+
 /** @} */
 
 RT_C_DECLS_END
