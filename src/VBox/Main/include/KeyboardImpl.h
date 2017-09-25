@@ -85,10 +85,6 @@ private:
     Console * const         mParent;
     /** Pointer to the associated keyboard driver(s). */
     struct DRVMAINKEYBOARD *mpDrv[KEYBOARD_MAX_DEVICES];
-    /** Pointer to the device instance for the VMM Device. */
-    PPDMDEVINS              mpVMMDev;
-    /** Set after the first attempt to find the VMM Device. */
-    bool                    mfVMMDevInited;
 
     /* The current guest keyboard LED status. */
     PDMKEYBLEDS menmLeds;

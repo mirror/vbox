@@ -401,10 +401,6 @@ private:
     Console * const         mParent;
     /** Pointer to the associated display driver. */
     struct DRVMAINDISPLAY   *mpDrv;
-    /** Pointer to the device instance for the VMM Device. */
-    PPDMDEVINS              mpVMMDev;
-    /** Set after the first attempt to find the VMM Device. */
-    bool                    mfVMMDevInited;
 
     unsigned mcMonitors;
     /** Input mapping rectangle top left X relative to the first screen. */
