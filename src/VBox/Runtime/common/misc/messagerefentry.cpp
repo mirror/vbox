@@ -233,7 +233,8 @@ DECLINLINE(bool) isEmptyString(const char *psz)
  * @param   pStrm               The output stream.
  * @param   pStrTab             The string table.
  * @param   fScope              The selection scope.
- * @param   cPendingBlankLines  Pending blank lines from previous string table.
+ * @param   pcPendingBlankLines In: Pending blank lines from previous string
+ *                              table.  Out: Pending blank lines.
  * @param   pcLinesWritten      Pointer to variable that should be incremented
  *                              by the number of lines written.  Optional.
  */

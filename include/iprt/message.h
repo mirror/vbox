@@ -287,6 +287,26 @@ typedef RTMSGREFENTRY const *PCRTMSGREFENTRY;
 
 typedef struct RTSTREAM *PRTSTREAM;
 
+
+/**
+ * Print the synopsis to the given stream.
+ *
+ * @returns Current number of pending blank lines.
+ * @param   pStrm               The output stream.
+ * @param   pEntry              The refentry to print the help for.
+ */
+RTDECL(int) RTMsgRefEntrySynopsis(PRTSTREAM pStrm, PCRTMSGREFENTRY pEntry);
+
+
+/**
+ * Print the synopsis to the given stream.
+ *
+ * @returns Current number of pending blank lines.
+ * @param   pStrm               The output stream.
+ * @param   pEntry              The refentry to print the help for.
+ * @param   fScope              The scope inclusion mask.
+ * @param   fFlags              RTMSGREFENTRY_SYNOPSIS_F_XXX.
+ */
 RTDECL(int) RTMsgRefEntrySynopsisEx(PRTSTREAM pStrm, PCRTMSGREFENTRY pEntry, uint64_t fScope, uint32_t fFlags);
 /** @name  RTMSGREFENTRY_SYNOPSIS_F_XXX -  Flags for RTMsgRefEntrySynopsisEx.
  * @{  */
@@ -294,10 +314,39 @@ RTDECL(int) RTMsgRefEntrySynopsisEx(PRTSTREAM pStrm, PCRTMSGREFENTRY pEntry, uin
 #define RTMSGREFENTRY_SYNOPSIS_F_USAGE      RT_BIT_32(0)
 /** @}  */
 
-RTDECL(int) RTMsgRefEntrySynopsis(PRTSTREAM pStrm, PCRTMSGREFENTRY pEntry);
 
-RTDECL(int) RTMsgRefEntryHelpEx(PRTSTREAM pStrm, PCRTMSGREFENTRY pEntry, uint64_t fScope, uint32_t fFlags);
+/**
+ * Print the help text to the given stream.
+ *
+ * @returns Current number of pending blank lines.
+ * @param   pStrm               The output stream.
+ * @param   pEntry              The refentry to print the help for.
+ */
 RTDECL(int) RTMsgRefEntryHelp(PRTSTREAM pStrm, PCRTMSGREFENTRY pEntry);
+
+/**
+ * Print the help text to the given stream, extended version.
+ *
+ * @returns Current number of pending blank lines.
+ * @param   pStrm               The output stream.
+ * @param   pEntry              The refentry to print the help for.
+ * @param   fScope              The scope inclusion mask.
+ * @param   fFlags              Reserved, MBZ.
+ */
+RTDECL(int) RTMsgRefEntryHelpEx(PRTSTREAM pStrm, PCRTMSGREFENTRY pEntry, uint64_t fScope, uint32_t fFlags);
+
+/**
+ * Prints a string table.
+ *
+ * @returns Current number of pending blank lines.
+ * @param   pStrm               The output stream.
+ * @param   pStrTab             The string table.
+ * @param   fScope              The selection scope.
+ * @param   pcPendingBlankLines In: Pending blank lines from previous string
+ *                              table.  Out: Pending blank lines.
+ * @param   pcLinesWritten      Pointer to variable that should be incremented
+ *                              by the number of lines written.  Optional.
+ */
 RTDECL(int) RTMsgRefEntryPrintStringTable(PRTSTREAM pStrm, PCRTMSGREFENTRYSTRTAB pStrTab, uint64_t fScope,
                                           uint32_t *pcPendingBlankLines, uint32_t *pcLinesWritten);
 
