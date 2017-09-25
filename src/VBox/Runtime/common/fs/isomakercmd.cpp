@@ -666,7 +666,9 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
 #undef DD
 };
 
-#include "isomakercmd-man.h"
+#ifndef RT_OS_OS2 /* fixme */
+# include "isomakercmd-man.h"
+#endif
 
 
 /*********************************************************************************************************************************
@@ -811,7 +813,7 @@ static int rtFsIsoMakerCmdDeleteState(PRTFSISOMAKERCMDOPTS pOpts, int rc)
  */
 static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProgName)
 {
-#if 0
+#ifdef RT_OS_OS2 /* fixme */
     rtFsIsoMakerPrintf(pOpts,
                        "Usage: %s [options] [@commands.rsp] <filespec1> [filespec2 [..]]\n"
                        "\n"

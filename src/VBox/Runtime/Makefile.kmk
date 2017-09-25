@@ -1437,30 +1437,32 @@ RuntimeR3_SOURCES.haiku.amd64 += common/string/memrchr.asm
 #
 # Generate RTIsoMaker / VISO help text from the manpage xml.
 #
-IPRT_XML_REFENTRY_FILES = \
-	common/fs/isomakercmd-man.xml
+if1of ($(KBUILD_TARGET), os2) # breaks validationkit, figure out later.
 
-#$(call KB_FN_DO_PASS0_ON_TARGET,RuntimeR3)
+ IPRT_XML_REFENTRY_FILES = \
+ 	common/fs/isomakercmd-man.xml
 
-BLDDIRS += $(IPRT_OUT_DIR)/man/
-OTHER_CLEAN += \
-	$(addprefix $(IPRT_OUT_DIR)/man/,$(IPRT_XML_REFENTRY_FILES)) \
-	$(addprefix $(IPRT_OUT_DIR)/man/,$(patsubst %.xml,%.h,$(IPRT_XML_REFENTRY_FILES))) \
-	$(addprefix $(IPRT_OUT_DIR)/man/,$(patsubst %.xml,%.h.ts,$(IPRT_XML_REFENTRY_FILES)))
+ #$(call KB_FN_DO_PASS0_ON_TARGET,RuntimeR3)
+
+ BLDDIRS += $(IPRT_OUT_DIR)/man/
+ OTHER_CLEAN += \
+ 	$(addprefix $(IPRT_OUT_DIR)/man/,$(IPRT_XML_REFENTRY_FILES)) \
+ 	$(addprefix $(IPRT_OUT_DIR)/man/,$(patsubst %.xml,%.h,$(IPRT_XML_REFENTRY_FILES))) \
+ 	$(addprefix $(IPRT_OUT_DIR)/man/,$(patsubst %.xml,%.h.ts,$(IPRT_XML_REFENTRY_FILES)))
 
 
-include $(PATH_ROOT)/doc/manual/Config.kmk
+ include $(PATH_ROOT)/doc/manual/Config.kmk
 
-# Preprocess the xml files, applying remarks.
-$(foreach file,$(IPRT_XML_REFENTRY_FILES) \
-, $(evalcall2 def_vbox_refentry_preprocess_for_manpage,$(IPRT_OUT_DIR)/man,$(notdir $(file)),$(VBOX_PATH_RUNTIME_SRC)/$(file)))
+ # Preprocess the xml files, applying remarks.
+ $(foreach file,$(IPRT_XML_REFENTRY_FILES) \
+ , $(evalcall2 def_vbox_refentry_preprocess_for_manpage,$(IPRT_OUT_DIR)/man,$(notdir $(file)),$(VBOX_PATH_RUNTIME_SRC)/$(file)))
 
-# generate the header and add it as a dependency to the source using it.
-$(evalcall2 def_vbox_single_refentry_to_h,$(IPRT_OUT_DIR)/man/isomakercmd-man.h, $(IPRT_OUT_DIR)/man/isomakercmd-man.xml)
-common/fs/isomakercmd.cpp_DEPS = $(IPRT_OUT_DIR)/man/isomakercmd-man.h
-common/fs/isomakercmd.cpp_INCS = $(IPRT_OUT_DIR)/man/
+ # generate the header and add it as a dependency to the source using it.
+ $(evalcall2 def_vbox_single_refentry_to_h,$(IPRT_OUT_DIR)/man/isomakercmd-man.h, $(IPRT_OUT_DIR)/man/isomakercmd-man.xml)
+ common/fs/isomakercmd.cpp_DEPS = $(IPRT_OUT_DIR)/man/isomakercmd-man.h
+ common/fs/isomakercmd.cpp_INCS = $(IPRT_OUT_DIR)/man/
 
-foobar: $(IPRT_OUT_DIR)/isomakercmd-man.h.ts
+endif
 
 
 
