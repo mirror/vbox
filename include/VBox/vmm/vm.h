@@ -824,30 +824,32 @@ typedef struct VMCPU
 #if defined(IN_RC) || defined(IN_RING0)
 # define VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu) \
     Assert(    VMCPU_IS_EMT(pVCpu) \
-           || !VM_IS_RUNNING((pVCpu)->CTX_SUFF(pVM)) )
+           || !VM_IS_RUNNING_FOR_ASSERTIONS_ONLY((pVCpu)->CTX_SUFF(pVM)) )
 #else
 # define VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu) \
     AssertMsg(    VMCPU_IS_EMT(pVCpu) \
-              || !VM_IS_RUNNING((pVCpu)->CTX_SUFF(pVM)), \
+              || !VM_IS_RUNNING_FOR_ASSERTIONS_ONLY((pVCpu)->CTX_SUFF(pVM)), \
               ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd idCpu=%#x\n", \
                RTThreadNativeSelf(), (pVCpu)->hNativeThread, (pVCpu)->idCpu))
 #endif
 
-/** @def VM_IS_RUNNING
+/** @def VM_IS_RUNNING_FOR_ASSERTIONS_ONLY
  * Checks if the the VM is running.
+ * @note Thie is only for pure debug assertions.  No AssertReturn or similar!
  */
-#define VM_IS_RUNNING(pVM)                  (   (pVM)->enmVMState == VMSTATE_RUNNING    \
-                                             || (pVM)->enmVMState == VMSTATE_RUNNING_LS \
-                                             || (pVM)->enmVMState == VMSTATE_RUNNING_FT)
+#define VM_IS_RUNNING_FOR_ASSERTIONS_ONLY(pVM) \
+    (   (pVM)->enmVMState == VMSTATE_RUNNING \
+     || (pVM)->enmVMState == VMSTATE_RUNNING_LS \
+     || (pVM)->enmVMState == VMSTATE_RUNNING_FT )
 
 /** @def VM_ASSERT_IS_NOT_RUNNING
  * Asserts that the VM is not running.
  */
 #if defined(IN_RC) || defined(IN_RING0)
-#define VM_ASSERT_IS_NOT_RUNNING(pVM)       Assert(!VM_IS_RUNNING(pVM))
+#define VM_ASSERT_IS_NOT_RUNNING(pVM)       Assert(!VM_IS_RUNNING_FOR_ASSERTIONS_ONLY(pVM))
 #else
-#define VM_ASSERT_IS_NOT_RUNNING(pVM)       AssertMsg(!VM_IS_RUNNING(pVM), ("VM is running. enmVMState=%d\n", \
-                                                      (pVM)->enmVMState))
+#define VM_ASSERT_IS_NOT_RUNNING(pVM)       AssertMsg(!VM_IS_RUNNING_FOR_ASSERTIONS_ONLY(pVM), \
+                                                      ("VM is running. enmVMState=%d\n", (pVM)->enmVMState))
 #endif
 
 /** @def VM_ASSERT_EMT0
