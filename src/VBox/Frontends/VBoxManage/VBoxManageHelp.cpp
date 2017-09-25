@@ -47,8 +47,6 @@
 enum HELP_CMD_VBOXMANAGE    g_enmCurCommand = HELP_CMD_VBOXMANAGE_INVALID;
 /** The scope maskt for the current subcommand. */
 uint64_t                    g_fCurSubcommandScope = RTMSGREFENTRYSTR_SCOPE_GLOBAL;
-/** String of spaces that can be used for indentation.   */
-static const char           g_szSpaces[] = "                                                ";
 
 /**
  * Sets the current command.
