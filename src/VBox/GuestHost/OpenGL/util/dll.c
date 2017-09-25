@@ -219,15 +219,14 @@ CRDLL *crDLLOpen( const char *dllname, int resolveGlobal )
         szwPath[cwcPath] = '\\';
         ++cwcPath;
     }
-
-    if (!MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, dllname, -1, &szwPath[cwcPath], MAX_PATH - cwcPath))
-    {
-        DWORD winEr = GetLastError();
-        crError("MultiByteToWideChar failed err %d", winEr);
-        SetLastError(winEr);
-        return NULL;
-    }
 # endif /* CR_NO_GL_SYSTEM_PATH */
+	if (!MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, dllname, -1, &szwPath[cwcPath], MAX_PATH - cwcPath))
+	{
+		DWORD winEr = GetLastError();
+		crError("MultiByteToWideChar failed err %d", winEr);
+		SetLastError(winEr);
+		return NULL;
+	}
 #endif
 
 	dll = (CRDLL *) crAlloc( sizeof( CRDLL ) );
