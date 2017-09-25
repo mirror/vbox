@@ -25,6 +25,10 @@
           tools handling, new icons)</para>
       </listitem>
 
+      <listitem>
+        <para>Added experimental audio support for video recording</para>
+      </listitem>
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
