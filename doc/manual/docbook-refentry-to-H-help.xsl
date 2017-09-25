@@ -37,15 +37,27 @@
     cmdsynopsisdiv/cmdsynopsis IDs into constants.
     -->
   <xsl:template match="refentry">
+    <xsl:variable name="RefEntry" select="."/>
+    <xsl:variable name="sRefEntryId" select="@id"/>
     <xsl:variable name="sBaseNm">
-      <xsl:call-template name="str:to-upper">
-        <xsl:with-param name="text" select="translate(substring-after(@id, '-'), '-', '_')"/>
-      </xsl:call-template>
+      <xsl:choose>
+        <xsl:when test="contains($sRefEntryId, '-')">   <!-- Multi level command. -->
+          <xsl:call-template name="str:to-upper">
+            <xsl:with-param name="text" select="translate(substring-after($sRefEntryId, '-'), '-', '_')"/>
+          </xsl:call-template>
+        </xsl:when>
+        <xsl:otherwise>                                 <!-- Simple command. -->
+          <xsl:call-template name="str:to-upper">
+            <xsl:with-param name="text" select="translate($sRefEntryId, '-', '_')"/>
+          </xsl:call-template>
+        </xsl:otherwise>
+      </xsl:choose>
     </xsl:variable>
 
     <xsl:choose>
       <!-- Generate subcommand enums and defines -->
       <xsl:when test="$g_sMode = 'subcmd'">
+        <!-- Start enum type and start off with the refentry id. -->
         <xsl:text>
 enum
 {
@@ -54,7 +66,9 @@ enum
         <xsl:value-of select="substring('                                               ',1,56 - string-length($sBaseNm) - 11)"/>
         <xsl:text> RT_BIT_32(HELP_SCOPE_</xsl:text><xsl:value-of select="$sBaseNm"/><xsl:text>_BIT)
         HELP_SCOPE_</xsl:text><xsl:value-of select="$sBaseNm"/><xsl:text>_BIT = 0</xsl:text>
-        <xsl:for-each select="./refsynopsisdiv/cmdsynopsis">
+
+        <!-- Synopsis IDs -->
+        <xsl:for-each select="./refsynopsisdiv/cmdsynopsis[@id != concat('synopsis-', $sRefEntryId)]">
           <xsl:variable name="sSubNm">
             <xsl:text>HELP_SCOPE_</xsl:text>
             <xsl:call-template name="str:to-upper">
@@ -63,14 +77,45 @@ enum
           </xsl:variable>
           <xsl:text>,
 #define </xsl:text>
-        <xsl:value-of select="$sSubNm"/>
-        <xsl:value-of select="substring('                                               ',1,56 - string-length($sSubNm))"/>
-        <xsl:text> RT_BIT_32(</xsl:text><xsl:value-of select="$sSubNm"/><xsl:text>_BIT)
-        </xsl:text><xsl:value-of select="$sSubNm"/><xsl:text>_BIT</xsl:text>
+          <xsl:value-of select="$sSubNm"/>
+          <xsl:value-of select="substring('                                               ',1,56 - string-length($sSubNm))"/>
+          <xsl:text> RT_BIT_32(</xsl:text><xsl:value-of select="$sSubNm"/><xsl:text>_BIT)
+        </xsl:text>
+          <xsl:value-of select="$sSubNm"/><xsl:text>_BIT</xsl:text>
         </xsl:for-each>
 
+        <!-- Add scoping info for refsect1, refsect2 and refsect3 IDs that aren't part of the synopsis. -->
+        <xsl:for-each select=".//refsect1[@id] | .//refsect2[@id] | .//refsect3[@id]">
+          <xsl:variable name="sThisId" select="@id"/>
+          <xsl:if test="not($RefEntry[@id = $sThisId]) and not($RefEntry/refsynopsisdiv/cmdsynopsis[@id = concat('synopsis-', $sThisId)])">
+            <xsl:variable name="sSubNm">
+              <xsl:text>HELP_SCOPE_</xsl:text>
+              <xsl:choose>
+                <xsl:when test="contains($sRefEntryId, '-')">   <!-- Multi level command. -->
+                  <xsl:call-template name="str:to-upper">
+                    <xsl:with-param name="text" select="translate(substring-after(@id, '-'), '-', '_')"/>
+                  </xsl:call-template>
+                </xsl:when>
+                <xsl:otherwise>                                 <!-- Simple command. -->
+                  <xsl:call-template name="str:to-upper">
+                    <xsl:with-param name="text" select="translate(@id, '-', '_')"/>
+                  </xsl:call-template>
+                </xsl:otherwise>
+              </xsl:choose>
+            </xsl:variable>
+            <xsl:text>,
+#define </xsl:text>
+            <xsl:value-of select="$sSubNm"/>
+            <xsl:value-of select="substring('                                               ',1,56 - string-length($sSubNm))"/>
+            <xsl:text> RT_BIT_32(</xsl:text><xsl:value-of select="$sSubNm"/><xsl:text>_BIT)
+        </xsl:text>
+            <xsl:value-of select="$sSubNm"/><xsl:text>_BIT</xsl:text>
+          </xsl:if>
+        </xsl:for-each>
+
+        <!-- Done - complete the enum. -->
         <xsl:text>,
-    HELP_SCOPE_</xsl:text><xsl:value-of select="$sBaseNm"/><xsl:text>_END
+        HELP_SCOPE_</xsl:text><xsl:value-of select="$sBaseNm"/><xsl:text>_END
 };
 </xsl:text>
       </xsl:when>

@@ -666,6 +666,8 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
 #undef DD
 };
 
+#include "isomakercmd-man.h"
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -809,6 +811,7 @@ static int rtFsIsoMakerCmdDeleteState(PRTFSISOMAKERCMDOPTS pOpts, int rc)
  */
 static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProgName)
 {
+#if 0
     rtFsIsoMakerPrintf(pOpts,
                        "Usage: %s [options] [@commands.rsp] <filespec1> [filespec2 [..]]\n"
                        "\n"
@@ -1131,8 +1134,13 @@ static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProg
                        "        size in random order from the virtual and output images\n"
                        "\n"
                        , RTPathFilename(pszProgName));
-
-
+#else
+    if (pOpts->pErrInfo)
+        rtFsIsoMakerPrintf(pOpts, "Usage: %s [options] [@commands.rsp] <filespec1> [filespec2 [..]]\n",
+                           RTPathFilename(pszProgName));
+    else
+        RTMsgRefEntryHelp(g_pStdOut, &g_rtisomaker);
+#endif
 }
 
 

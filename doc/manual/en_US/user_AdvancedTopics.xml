@@ -4361,28 +4361,7 @@ $ usbip list -l
     </sect2>
   </sect1>
 
-  <sect1 id="viso">
-    <title>VISO file format</title>
-
-    <para>The VISO files was introduced with VirtualBox 5.2.  They are virtual ISO images,
-    i.e. constructed in memory from a bunch of files on the host.  A VISO is just the
-    recipe describing how to go about this using a syntax vaguely similar to mkisofs and
-    genisoimage.</para>
-
-    <para>One requirement, the VISO file must start with one of the
-    <option>--iprt-iso-maker-file-marker</option> options. Which of the options
-    you use will dicate the quoting and escaping rules used when reading the
-    file.  The option takes the image UUID as an argument.</para>
-
-    <para>The VISO files are treated as UTF-8 and must not contain any byte order
-    marker (BOM).  There is currently no way to comment out lines in a VISO file.</para>
-
-
-     <xi:include href="../user_AdvancedTopics_VISO_Options.xml" xpointer="xpointer(/sect1/*)"
-       xmlns:xi="http://www.w3.org/2001/XInclude" />
-
-
-  </sect1>
+  <xi:include href="user_isomakercmd-man.xml"    xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </chapter>
 

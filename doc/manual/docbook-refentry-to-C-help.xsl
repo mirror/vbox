@@ -77,7 +77,7 @@
       -->
     <xsl:text>
 
-static const REFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text>_synopsis[] =
+static const RTMSGREFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text>_synopsis[] =
 {</xsl:text>
     <xsl:for-each select="./refsynopsisdiv/cmdsynopsis">
       <!-- Assert synopsis expectations -->
@@ -103,7 +103,7 @@ static const REFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:t
       Convert the whole manpage to help text.
       -->
     <xsl:text>
-static const REFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text>_full_help[] =
+static const RTMSGREFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text>_full_help[] =
 {</xsl:text>
     <!-- We start by combining the refentry title and the refpurpose into a short description. -->
     <xsl:text>
@@ -117,15 +117,15 @@ static const REFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:t
           </xsl:with-param>
         </xsl:call-template>
         <xsl:text>." },
-    {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
+    {   RTMSGREFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
 
     <!-- The follows the usage (synopsis) section. -->
     <xsl:text>
-    {   REFENTRYSTR_SCOPE_GLOBAL,
+    {   RTMSGREFENTRYSTR_SCOPE_GLOBAL,
         "Usage" },
-    {   REFENTRYSTR_SCOPE_SAME,
+    {   RTMSGREFENTRYSTR_SCOPE_SAME,
         "=====" },
-    {   REFENTRYSTR_SCOPE_SAME,
+    {   RTMSGREFENTRYSTR_SCOPE_SAME,
         "" },</xsl:text>
         <xsl:apply-templates select="./refsynopsisdiv/node()"/>
 
@@ -139,9 +139,9 @@ static const REFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:t
         </xsl:variable>
         <xsl:text>
     {   </xsl:text><xsl:call-template name="calc-scope-refsect1"/><xsl:text>, "" },
-    {   REFENTRYSTR_SCOPE_SAME,
+    {   RTMSGREFENTRYSTR_SCOPE_SAME,
         "</xsl:text><xsl:value-of select="$sTitle"/><xsl:text>" },
-    {   REFENTRYSTR_SCOPE_SAME,
+    {   RTMSGREFENTRYSTR_SCOPE_SAME,
         "</xsl:text>
         <xsl:value-of select="substring($g_sUnderlineRefSect1, 1, string-length($sTitle))"/>
         <xsl:text>" },</xsl:text>
@@ -157,12 +157,21 @@ static const REFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:t
       Generate the refentry structure.
       -->
     <xsl:text>
-static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text> =
+static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text> =
 {
     /* .idInternal = */   HELP_CMD_</xsl:text>
-    <xsl:call-template name="str:to-upper">
-      <xsl:with-param name="text" select="translate(substring-after(@id, '-'), '-', '_')"/>
-    </xsl:call-template>
+    <xsl:choose>
+      <xsl:when test="contains(@id, '-')">
+        <xsl:call-template name="str:to-upper">   <!-- Multi level command. -->
+          <xsl:with-param name="text" select="translate(substring-after(@id, '-'), '-', '_')"/>
+        </xsl:call-template>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:call-template name="str:to-upper">   <!-- Simple command. -->
+          <xsl:with-param name="text" select="@id"/>
+        </xsl:call-template>
+      </xsl:otherwise>
+    </xsl:choose>
     <xsl:text>,
     /* .Synopsis   = */   { RT_ELEMENTS(</xsl:text>
     <xsl:value-of select="$sDataBaseSym"/><xsl:text>_synopsis), 0, </xsl:text>
@@ -185,19 +194,19 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
   <xsl:template match="cmdsynopsis">
     <xsl:if test="text()"><xsl:message terminate="yes">cmdsynopsis with text is not supported.</xsl:message></xsl:if>
     <xsl:text>
-    {   </xsl:text><xsl:call-template name="calc-scope-cmdsynopsis"/><xsl:text> | REFENTRYSTR_FLAGS_SYNOPSIS,
+    {   </xsl:text><xsl:call-template name="calc-scope-cmdsynopsis"/><xsl:text> | RTMSGREFENTRYSTR_FLAGS_SYNOPSIS,
         "</xsl:text><xsl:call-template name="emit-indentation"/><xsl:apply-templates select="*|@*"/><xsl:text>" },</xsl:text>
   </xsl:template>
 
   <xsl:template match="sbr">
     <xsl:text>" },
-    {   REFENTRYSTR_SCOPE_SAME | REFENTRYSTR_FLAGS_SYNOPSIS,
+    {   RTMSGREFENTRYSTR_SCOPE_SAME | RTMSGREFENTRYSTR_FLAGS_SYNOPSIS,
         "    </xsl:text><xsl:call-template name="emit-indentation"/> <!-- hardcoded in VBoxManageHelp.cpp too -->
   </xsl:template>
 
   <xsl:template match="cmdsynopsis/command">
     <xsl:text>" },
-    {   REFENTRYSTR_SCOPE_SAME | REFENTRYSTR_FLAGS_SYNOPSIS,
+    {   RTMSGREFENTRYSTR_SCOPE_SAME | RTMSGREFENTRYSTR_FLAGS_SYNOPSIS,
         "</xsl:text><xsl:call-template name="emit-indentation"/>
     <xsl:apply-templates select="node()|@*"/>
   </xsl:template>
@@ -274,15 +283,15 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
     </xsl:variable>
     <xsl:text>
     {   </xsl:text><xsl:call-template name="calc-scope-refsect2"/><xsl:text>, "" },
-    {   REFENTRYSTR_SCOPE_SAME,
+    {   RTMSGREFENTRYSTR_SCOPE_SAME,
         "</xsl:text><xsl:call-template name="emit-indentation"/>
     <xsl:value-of select="$sTitle"/>
     <xsl:text>" },
-    {   REFENTRYSTR_SCOPE_SAME,
+    {   RTMSGREFENTRYSTR_SCOPE_SAME,
         "</xsl:text><xsl:call-template name="emit-indentation"/>
     <xsl:value-of select="substring($g_sUnderlineRefSect2, 1, string-length($sTitle))"/>
     <xsl:text>" },
-    {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
+    {   RTMSGREFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
 
     <!-- Format the text in the section -->
     <xsl:for-each select="./*[name() != 'title']">
@@ -292,7 +301,7 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
     <!-- Add two blank lines, unless we're the last element in this refsect1. -->
     <xsl:if test="position() != last()">
       <xsl:text>
-    {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
+    {   RTMSGREFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
     </xsl:if>
   </xsl:template>
 
@@ -303,7 +312,7 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
   <xsl:template match="para">
     <xsl:if test="position() != 1 or not(parent::listitem)">
       <xsl:text>
-    {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
+    {   RTMSGREFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
     </xsl:if>
     <xsl:call-template name="process-mixed"/>
   </xsl:template>
@@ -317,12 +326,12 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
       <xsl:message terminate="yes">Only varlistentry elements are supported in variablelist</xsl:message>
     </xsl:if>
     <xsl:for-each select="./varlistentry">
-      <xsl:if test="count(*) != 2 or not(term) or not(listitem)">
-        <xsl:message terminate="yes">Expected exactly one term and one listentry member in varlistentry element.</xsl:message>
+      <xsl:if test="not(term) or not(listitem) or count(listitem) > 1">
+        <xsl:message terminate="yes">Expected one or more term members and exactly one listentry member in varlistentry element.</xsl:message>
       </xsl:if>
       <xsl:if test="not(@spacing) or @spacing != 'compact'">
         <xsl:text>
-    {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
+    {   RTMSGREFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
       </xsl:if>
       <xsl:apply-templates select="*"/>
     </xsl:for-each>
@@ -360,7 +369,7 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
     </xsl:if>
     <xsl:if test="position() != 1 and (not(@spacing) or @spacing != 'compact')">
       <xsl:text>
-    {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
+    {   RTMSGREFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
     </xsl:if>
     <xsl:for-each select="./listitem">
       <xsl:apply-templates select="*"/>
@@ -379,7 +388,7 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
 
     <xsl:if test="position() != 1 and @spaceing != 'compact'">
       <xsl:text>
-    {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
+    {   RTMSGREFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
     </xsl:if>
     <xsl:apply-templates select="*"/>
   </xsl:template>
@@ -394,7 +403,7 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
     </xsl:if>
 
     <xsl:text>
-    {   REFENTRYSTR_SCOPE_SAME,
+    {   RTMSGREFENTRYSTR_SCOPE_SAME,
         "</xsl:text>
 
     <xsl:for-each select="node()">
@@ -425,7 +434,7 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
 
     <xsl:if test="substring-after($sText,'&#x0a;')">
       <xsl:text>" },
-    {   REFENTRYSTR_SCOPE_SAME,
+    {   RTMSGREFENTRYSTR_SCOPE_SAME,
         "</xsl:text>
       <xsl:call-template name="screen_text_line">
         <xsl:with-param name="sText" select="substring-after($sText,'&#x0a;')"/>
@@ -607,7 +616,7 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
     Normalizes whitespace. -->
   <xsl:template name="process-mixed">
     <xsl:text>
-    {   REFENTRYSTR_SCOPE_SAME,
+    {   RTMSGREFENTRYSTR_SCOPE_SAME,
         "</xsl:text><xsl:call-template name="emit-indentation"/>
 
     <xsl:for-each select="node()[not(self::remark)]">
@@ -630,20 +639,32 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
     -->
 
   <xsl:template name="calc-scope-for-refentry">
-    <xsl:call-template name="calc-scope-const-from-id"/>
+    <xsl:text>HELP_SCOPE_</xsl:text>
+    <xsl:choose>
+      <xsl:when test="contains(@id, '-')">          <!-- Multi level command. -->
+        <xsl:call-template name="str:to-upper">
+          <xsl:with-param name="text" select="translate(substring-after(@id, '-'), '-', '_')"/>
+        </xsl:call-template>
+      </xsl:when>
+      <xsl:otherwise>                               <!-- Single command. -->
+        <xsl:call-template name="str:to-upper">
+          <xsl:with-param name="text" select="@id"/>
+        </xsl:call-template>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
 
   <!-- Figures out the scope of a refsect1 element. -->
   <xsl:template name="calc-scope-refsect1">
     <xsl:choose>
       <xsl:when test="title[text() = 'Description']">
-        <xsl:text>REFENTRYSTR_SCOPE_GLOBAL</xsl:text>
+        <xsl:text>RTMSGREFENTRYSTR_SCOPE_GLOBAL</xsl:text>
       </xsl:when>
       <xsl:when test="@id or remark[@role='help-scope']">
         <xsl:call-template name="calc-scope-from-remark-or-id"/>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:text>REFENTRYSTR_SCOPE_GLOBAL</xsl:text>
+        <xsl:text>RTMSGREFENTRYSTR_SCOPE_GLOBAL</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -655,7 +676,7 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
         <xsl:call-template name="calc-scope-from-remark-or-id"/>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:text>REFENTRYSTR_SCOPE_SAME</xsl:text>
+        <xsl:text>RTMSGREFENTRYSTR_SCOPE_SAME</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -669,7 +690,7 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
         </xsl:call-template>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:text>REFENTRYSTR_SCOPE_SAME</xsl:text>
+        <xsl:text>RTMSGREFENTRYSTR_SCOPE_SAME</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -703,17 +724,32 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
     constants (word delimiter '-'). -->
   <xsl:template name="calc-scope-const-from-id">
     <xsl:param name="sId" select="@id"/>
-    <xsl:variable name="sPrefix" select="concat(substring-before(ancestor::refentry/@id, '-'), '-')"/>
-    <xsl:if test="not(contains($sId, sPrefix))">
-      <xsl:message terminate="yes">Expected sId (<xsl:value-of select="$sId"/>) to contain <xsl:value-of select="$sPrefix"/></xsl:message>
-    </xsl:if>
+    <xsl:param name="sAncestorId" select="ancestor::refentry/@id"/>
     <xsl:text>HELP_SCOPE_</xsl:text>
-    <xsl:call-template name="str:to-upper">
-      <xsl:with-param name="text" select="translate(substring-after($sId, $sPrefix), '-', '_')"/>
-    </xsl:call-template>
+    <xsl:choose>
+      <xsl:when test="not($sAncestorId)">           <!-- Sanity check. -->
+        <xsl:message terminate="yes">error: calc-scope-const-from-id is invoked without an refentry ancestor with a id. <xsl:call-template name="get-node-path"/> </xsl:message>
+      </xsl:when>
+
+      <xsl:when test="contains($sAncestorId, '-')"> <!-- Multi level command. -->
+        <xsl:variable name="sPrefix" select="concat(substring-before($sAncestorId, '-'), '-')"/>
+        <xsl:if test="not(contains($sId, $sPrefix))">
+          <xsl:message terminate="yes">Expected sId (<xsl:value-of select="$sId"/>) to contain <xsl:value-of select="$sPrefix"/></xsl:message>
+        </xsl:if>
+        <xsl:call-template name="str:to-upper">
+          <xsl:with-param name="text" select="translate(substring-after($sId, $sPrefix), '-', '_')"/>
+        </xsl:call-template>
+      </xsl:when>
+
+      <xsl:otherwise>                               <!-- Single command. -->
+        <xsl:call-template name="str:to-upper">
+          <xsl:with-param name="text" select="translate($sId, '-', '_')"/>
+        </xsl:call-template>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
 
-  <!-- Turns a remark into one or more scope constant. -->
+  <!-- Turns a remark into one or more scope constants. -->
   <xsl:template name="calc-scope-consts-from-remark">
     <xsl:param name="sCondition" select="remark/@condition"/>
     <xsl:variable name="sNormalized" select="concat(normalize-space(translate($sCondition, ',;:|', '    ')), ' ')"/>
@@ -722,7 +758,7 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
     </xsl:if>
     <xsl:choose>
       <xsl:when test="substring-before($sNormalized, ' ') = 'GLOBAL'">
-        <xsl:text>REFENTRYSTR_SCOPE_GLOBAL</xsl:text>
+        <xsl:text>RTMSGREFENTRYSTR_SCOPE_GLOBAL</xsl:text>
       </xsl:when>
       <xsl:otherwise>
         <xsl:text>HELP_SCOPE_</xsl:text><xsl:value-of select="substring-before($sNormalized, ' ')"/>
@@ -738,7 +774,7 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
     <xsl:if test="$sList != ''">
       <xsl:choose>
         <xsl:when test="substring-before($sList, ' ') = 'GLOBAL'">
-          <xsl:text>| REFENTRYSTR_SCOPE_GLOBAL</xsl:text>
+          <xsl:text>| RTMSGREFENTRYSTR_SCOPE_GLOBAL</xsl:text>
         </xsl:when>
         <xsl:otherwise>
           <xsl:text> | HELP_SCOPE_</xsl:text><xsl:value-of select="substring-before($sList, ' ')"/>
