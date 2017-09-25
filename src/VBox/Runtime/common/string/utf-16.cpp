@@ -856,7 +856,7 @@ RTDECL(int)  RTUtf16LittleToUtf8Tag(PCRTUTF16 pwszString, char **ppszString, con
     }
     return rc;
 }
-RT_EXPORT_SYMBOL(RTUtf16BigToUtf8Tag);
+RT_EXPORT_SYMBOL(RTUtf16LittleToUtf8Tag);
 
 
 RTDECL(int)  RTUtf16ToUtf8ExTag(PCRTUTF16 pwszString, size_t cwcString, char **ppsz, size_t cch, size_t *pcch, const char *pszTag)

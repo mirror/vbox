@@ -615,6 +615,7 @@ RTDECL(bool) RTUtf16IsValidEncoding(PCRTUTF16 pwsz);
  */
 RTDECL(ssize_t) RTUtf16PurgeComplementSet(PRTUTF16 pwsz, PCRTUNICP puszValidPairs, char chReplacement);
 
+
 /**
  * Translate a UTF-16 string into a UTF-8 allocating the result buffer (default
  * tag).
@@ -668,6 +669,37 @@ RTDECL(int)  RTUtf16ToUtf8Tag(PCRTUTF16 pwszString, char **ppszString, const cha
  * @param   pszTag          Allocation tag used for statistics and such.
  */
 RTDECL(int)  RTUtf16BigToUtf8Tag(PCRTUTF16 pwszString, char **ppszString, const char *pszTag);
+
+/**
+ * Translate a UTF-16LE string into a UTF-8 allocating the result buffer
+ * (default tag).
+ *
+ * This differs from RTUtf16ToUtf8 in that the input is always a
+ * little-endian string.
+ *
+ * @returns iprt status code.
+ * @param   pwszString      UTF-16LE string to convert.
+ * @param   ppszString      Receives pointer of allocated UTF-8 string on
+ *                          success, and is always set to NULL on failure.
+ *                          The returned pointer must be freed using RTStrFree().
+ */
+#define RTUtf16LittleToUtf8(pwszString, ppszString)     RTUtf16LittleToUtf8Tag((pwszString), (ppszString), RTSTR_TAG)
+
+/**
+ * Translate a UTF-16LE string into a UTF-8 allocating the result buffer.
+ *
+ * This differs from RTUtf16ToUtf8Tag in that the input is always a
+ * little-endian string.
+ *
+ * @returns iprt status code.
+ * @param   pwszString      UTF-16LE string to convert.
+ * @param   ppszString      Receives pointer of allocated UTF-8 string on
+ *                          success, and is always set to NULL on failure.
+ *                          The returned pointer must be freed using RTStrFree().
+ * @param   pszTag          Allocation tag used for statistics and such.
+ */
+RTDECL(int)  RTUtf16LittleToUtf8Tag(PCRTUTF16 pwszString, char **ppszString, const char *pszTag);
+
 
 /**
  * Translates UTF-16 to UTF-8 using buffer provided by the caller or a fittingly
