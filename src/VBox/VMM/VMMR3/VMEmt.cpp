@@ -93,6 +93,7 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
     rc = VINF_SUCCESS;
     Log(("vmR3EmulationThread: Emulation thread starting the days work... Thread=%#x pUVM=%p\n", hThreadSelf, pUVM));
     VMSTATE enmBefore = VMSTATE_CREATED; /* (only used for logging atm.) */
+    ASMAtomicIncU32(&pUVM->vm.s.cActiveEmts);
     for (;;)
     {
         /*
@@ -243,6 +244,13 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
         }
 
     } /* forever */
+
+
+    /*
+     * Decrement the active EMT count if we haven't done it yet in vmR3Destroy.
+     */
+    if (!pUVCpu->vm.s.fBeenThruVmDestroy)
+        ASMAtomicDecU32(&pUVM->vm.s.cActiveEmts);
 
 
     /*
@@ -1378,5 +1386,21 @@ VMMR3DECL(int) VMR3NotifyCpuDeviceReady(PVM pVM, VMCPUID idCpu)
      */
     VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Returns the number of active EMTs.
+ *
+ * This is used by the rendezvous code during VM destruction to avoid waiting
+ * for EMTs that aren't around any more.
+ *
+ * @returns Number of active EMTs.  0 if invalid parameter.
+ * @param   pUVM                The user mode VM structure.
+ */
+VMMR3_INT_DECL(uint32_t) VMR3GetActiveEmts(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, 0);
+    return pUVM->vm.s.cActiveEmts;
 }
 

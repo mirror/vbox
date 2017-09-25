@@ -191,6 +191,9 @@ typedef struct VMINTUSERPERVM
     /** The reference count of the UVM handle. */
     volatile uint32_t               cUvmRefs;
 
+    /** Number of active EMTs. */
+    volatile uint32_t               cActiveEmts;
+
 # ifdef VBOX_WITH_STATISTICS
     /** Number of VMR3ReqAlloc returning a new packet. */
     STAMCOUNTER                     StatReqAllocNew;
@@ -341,8 +344,11 @@ typedef struct VMINTUSERPERVMCPU
     RTSEMEVENT                      EventSemWait;
     /** Wait/Idle indicator. */
     bool volatile                   fWait;
+    /** Set if we've been thru vmR3Destroy and decremented the active EMT count
+     *  already. */
+    bool volatile                   fBeenThruVmDestroy;
     /** Align the next bit. */
-    bool                            afAlignment[HC_ARCH_BITS == 32 ? 3 : 7];
+    bool                            afAlignment[HC_ARCH_BITS == 32 ? 2 : 6];
 
     /** @name Generic Halt data
      * @{

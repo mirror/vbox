@@ -2159,10 +2159,10 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
     VBOXSTRICTRC rcStrict;
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
+    {
         /*
          * Forward the request to an EMT thread.
          */
-    {
         Log(("VMMR3EmtRendezvous: %#x non-EMT\n", fFlags));
         if (!(fFlags & VMMEMTRENDEZVOUS_FLAGS_PRIORITY))
             rcStrict = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMMR3EmtRendezvous, 4, pVM, fFlags, pfnRendezvous, pvUser);
@@ -2170,10 +2170,15 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
             rcStrict = VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)VMMR3EmtRendezvous, 4, pVM, fFlags, pfnRendezvous, pvUser);
         Log(("VMMR3EmtRendezvous: %#x non-EMT returns %Rrc\n", fFlags, VBOXSTRICTRC_VAL(rcStrict)));
     }
-    else if (pVM->cCpus == 1)
+    else if (   pVM->cCpus == 1
+             || (   pVM->enmVMState == VMSTATE_DESTROYING
+                 && VMR3GetActiveEmts(pVM->pUVM) < pVM->cCpus ) )
     {
         /*
          * Shortcut for the single EMT case.
+         *
+         * We also ends up here if EMT(0) (or others) tries to issue a rendezvous
+         * during vmR3Destroy after other emulation threads have started terminating.
          */
         if (!pVCpu->vmm.s.fInRendezvous)
         {

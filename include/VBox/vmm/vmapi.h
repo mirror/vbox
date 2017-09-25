@@ -488,6 +488,7 @@ VMMR3DECL(RTTHREAD)         VMR3GetVMCPUThread(PUVM pUVM);
 VMMR3DECL(RTNATIVETHREAD)   VMR3GetVMCPUNativeThread(PVM pVM);
 VMMR3DECL(RTNATIVETHREAD)   VMR3GetVMCPUNativeThreadU(PUVM pUVM);
 VMMR3DECL(int)              VMR3GetCpuCoreAndPackageIdFromCpuId(PUVM pUVM, VMCPUID idCpu, uint32_t *pidCpuCore, uint32_t *pidCpuPackage);
+VMMR3_INT_DECL(uint32_t)    VMR3GetActiveEmts(PUVM pUVM);
 VMMR3DECL(int)              VMR3HotUnplugCpu(PUVM pUVM, VMCPUID idCpu);
 VMMR3DECL(int)              VMR3HotPlugCpu(PUVM pUVM, VMCPUID idCpu);
 VMMR3DECL(int)              VMR3SetCpuExecutionCap(PUVM pUVM, uint32_t uCpuExecutionCap);

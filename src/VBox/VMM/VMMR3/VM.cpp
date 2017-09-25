@@ -2534,6 +2534,19 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
         ASMAtomicWriteU32(&pVM->fGlobalForcedActions, VM_FF_CHECK_VM_STATE); /* Can't hurt... */
         LogFlow(("vmR3Destroy: returning %Rrc\n", VINF_EM_TERMINATE));
     }
+
+    /*
+     * Decrement the active EMT count here.
+     */
+    PUVMCPU pUVCpu = &pUVM->aCpus[pVCpu->idCpu];
+    if (!pUVCpu->vm.s.fBeenThruVmDestroy)
+    {
+        pUVCpu->vm.s.fBeenThruVmDestroy = true;
+        ASMAtomicDecU32(&pUVM->vm.s.cActiveEmts);
+    }
+    else
+        AssertFailed();
+
     return VINF_EM_TERMINATE;
 }
 
