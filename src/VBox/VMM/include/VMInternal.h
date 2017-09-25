@@ -195,6 +195,9 @@ typedef struct VMINTUSERPERVM
     volatile uint32_t               cActiveEmts;
 
 # ifdef VBOX_WITH_STATISTICS
+#  if HC_ARCH_BITS == 32
+    uint32_t                        uPadding;
+#  endif
     /** Number of VMR3ReqAlloc returning a new packet. */
     STAMCOUNTER                     StatReqAllocNew;
     /** Number of VMR3ReqAlloc causing races. */
