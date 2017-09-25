@@ -1437,7 +1437,7 @@ RuntimeR3_SOURCES.haiku.amd64 += common/string/memrchr.asm
 #
 # Generate RTIsoMaker / VISO help text from the manpage xml.
 #
-if1of ($(KBUILD_TARGET), os2) # breaks validationkit, figure out later.
+ifn1of ($(KBUILD_TARGET), os2) # breaks validationkit, figure out later.
 
  IPRT_XML_REFENTRY_FILES = \
  	common/fs/isomakercmd-man.xml
