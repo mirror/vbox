@@ -64,6 +64,7 @@ struct UIDataSettingsMachineDisplay
         , m_iVideoCaptureFrameHeight(0)
         , m_iVideoCaptureFrameRate(0)
         , m_iVideoCaptureBitRate(0)
+        , m_strVideoCaptureOptions(QString())
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -93,6 +94,7 @@ struct UIDataSettingsMachineDisplay
                && (m_iVideoCaptureFrameRate == other.m_iVideoCaptureFrameRate)
                && (m_iVideoCaptureBitRate == other.m_iVideoCaptureBitRate)
                && (m_screens == other.m_screens)
+               && (m_strVideoCaptureOptions == other.m_strVideoCaptureOptions)
                ;
     }
 
@@ -100,6 +102,127 @@ struct UIDataSettingsMachineDisplay
     bool operator==(const UIDataSettingsMachineDisplay &other) const { return equal(other); }
     /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineDisplay &other) const { return !equal(other); }
+
+    /** Video Capture Options. */
+    enum VideoCaptureOption
+    {
+        VideoCaptureOption_Unknown,
+        VideoCaptureOption_AC,
+    };
+
+    /** Returns enum value corresponding to passed @a strKey. */
+    static VideoCaptureOption toVideoCaptureOptionKey(const QString &strKey)
+    {
+        /* Compare case-sensitive: */
+        QMap<QString, VideoCaptureOption> keys;
+        keys["ac_enabled"] = VideoCaptureOption_AC;
+        /* Return known value or VideoCaptureOption_Unknown otherwise: */
+        return keys.value(strKey, VideoCaptureOption_Unknown);
+    }
+
+    /** Returns bool value corresponding to passed @a strValue. */
+    static bool toVideoCaptureOptionValue(const QString &strValue)
+    {
+        /* Compare case-sensitive: */
+        QMap<QString, bool> values;
+        values["true"] = true;
+        values["false"] = false;
+        /* Return known value or true otherwise: */
+        return values.value(strValue, true);
+    }
+
+    /** Returns string representation for passed enum @a enmKey. */
+    static QString fromVideoCaptureOptionKey(VideoCaptureOption enmKey)
+    {
+        /* Compare case-sensitive: */
+        QMap<VideoCaptureOption, QString> values;
+        values[VideoCaptureOption_AC] = "ac_enabled";
+        /* Return known value or QString() otherwise: */
+        return values.value(enmKey);
+    }
+
+    /** Returns string representation for passed bool @a fValue. */
+    static QString fromVideoCaptureOptionValue(bool fValue)
+    {
+        /* Compare case-sensitive: */
+        QMap<bool, QString> values;
+        values[true] = "true";
+        values[false] = "false";
+        /* Return known value or "true" otherwise: */
+        return values.value(fValue, "true");
+    }
+
+    /** Parses Video Capture Options. */
+    static void parseVideoCaptureOptions(const QString &strOptions,
+                                         QList<VideoCaptureOption> &outKeys,
+                                         QList<bool> &outValues)
+    {
+        outKeys.clear();
+        outValues.clear();
+        const QStringList aPairs = strOptions.split(',');
+        foreach (const QString &strPair, aPairs)
+        {
+            const QStringList aPair = strPair.split('=');
+            const VideoCaptureOption enmKey = toVideoCaptureOptionKey(aPair.value(0));
+            const bool fValue = toVideoCaptureOptionValue(aPair.value(1));
+            if (enmKey == VideoCaptureOption_Unknown)
+                continue;
+            outKeys << enmKey;
+            outValues << fValue;
+        }
+    }
+
+    /** Serializes Video Capture Options. */
+    static void serializeVideoCaptureOptions(const QList<VideoCaptureOption> &inKeys,
+                                             const QList<bool> &inValues,
+                                             QString &strOptions)
+    {
+        QStringList aPairs;
+        for (int i = 0; i < inKeys.size(); ++i)
+        {
+            QStringList aPair;
+            aPair << fromVideoCaptureOptionKey(inKeys.value(i));
+            aPair << fromVideoCaptureOptionValue(inValues.value(i));
+            aPairs << aPair.join('=');
+        }
+        strOptions = aPairs.join(',');
+    }
+
+    /** Returns whether passed Video Capture @a enmOption is enabled. */
+    static bool isVideoCaptureOptionEnabled(const QString &strOptions,
+                                            VideoCaptureOption enmOption)
+    {
+        QList<VideoCaptureOption> aKeys;
+        QList<bool> aValues;
+        parseVideoCaptureOptions(strOptions, aKeys, aValues);
+        int iIndex = aKeys.indexOf(enmOption);
+        if (iIndex == -1)
+            return true;
+        return aValues.value(iIndex);
+    }
+
+    /** Defines whether passed Video Capture @a enmOption is @a fEnabled. */
+    static QString setVideoCaptureOptionEnabled(const QString &strOptions,
+                                                VideoCaptureOption enmOption,
+                                                bool fEnabled)
+    {
+        QList<VideoCaptureOption> aKeys;
+        QList<bool> aValues;
+        parseVideoCaptureOptions(strOptions, aKeys, aValues);
+        int iIndex = aKeys.indexOf(enmOption);
+        if (iIndex == -1)
+        {
+            aKeys << enmOption;
+            aValues << fEnabled;
+        }
+        else
+        {
+            aValues[iIndex] = fEnabled;
+        }
+        QString strResult;
+        serializeVideoCaptureOptions(aKeys, aValues, strResult);
+        return strResult;
+    }
 
     /** Holds the video RAM amount. */
     int     m_iCurrentVRAM;
@@ -147,6 +270,8 @@ struct UIDataSettingsMachineDisplay
     int m_iVideoCaptureBitRate;
     /** Holds which of the guest screens should be captured. */
     QVector<BOOL> m_screens;
+    /** Holds the video capture options. */
+    QString m_strVideoCaptureOptions;
 };
 
 
@@ -257,6 +382,7 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     oldDisplayData.m_iVideoCaptureFrameRate = m_machine.GetVideoCaptureFPS();
     oldDisplayData.m_iVideoCaptureBitRate = m_machine.GetVideoCaptureRate();
     oldDisplayData.m_screens = m_machine.GetVideoCaptureScreens();
+    oldDisplayData.m_strVideoCaptureOptions = m_machine.GetVideoCaptureOptions();
 
     /* Gather other old display data: */
     m_iInitialVRAM = RT_MIN(oldDisplayData.m_iCurrentVRAM, m_iMaxVRAM);
@@ -306,6 +432,8 @@ void UIMachineSettingsDisplay::getFromCache()
     m_pEditorVideoCaptureFrameRate->setValue(oldDisplayData.m_iVideoCaptureFrameRate);
     m_pEditorVideoCaptureBitRate->setValue(oldDisplayData.m_iVideoCaptureBitRate);
     m_pScrollerVideoCaptureScreens->setValue(oldDisplayData.m_screens);
+    m_pCheckBoxVideoCaptureWithAudio->setChecked(UIDataSettingsMachineDisplay::isVideoCaptureOptionEnabled(oldDisplayData.m_strVideoCaptureOptions,
+                                                                                                           UIDataSettingsMachineDisplay::VideoCaptureOption_AC));
 
     /* Polish page finally: */
     polishPage();
@@ -352,6 +480,9 @@ void UIMachineSettingsDisplay::putToCache()
     newDisplayData.m_iVideoCaptureFrameRate = m_pEditorVideoCaptureFrameRate->value();
     newDisplayData.m_iVideoCaptureBitRate = m_pEditorVideoCaptureBitRate->value();
     newDisplayData.m_screens = m_pScrollerVideoCaptureScreens->value();
+    newDisplayData.m_strVideoCaptureOptions = UIDataSettingsMachineDisplay::setVideoCaptureOptionEnabled(m_pCache->base().m_strVideoCaptureOptions,
+                                                                                                         UIDataSettingsMachineDisplay::VideoCaptureOption_AC,
+                                                                                                         m_pCheckBoxVideoCaptureWithAudio->isChecked());
 
     /* Cache new display data: */
     m_pCache->cacheCurrentData(newDisplayData);
@@ -705,6 +836,9 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureCheckboxToggle()
     m_pLabelVideoCaptureRate->setEnabled(fIsVideoCaptureOptionsEnabled);
     m_pContainerSliderVideoCaptureQuality->setEnabled(fIsVideoCaptureOptionsEnabled);
     m_pEditorVideoCaptureBitRate->setEnabled(fIsVideoCaptureOptionsEnabled);
+
+    m_pLabelVideoCaptureExtended->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pCheckBoxVideoCaptureWithAudio->setEnabled(fIsVideoCaptureOptionsEnabled);
 
     m_pLabelVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled);
     m_pLabelVideoCaptureSizeHint->setEnabled(fIsVideoCaptureScreenOptionEnabled);
@@ -1478,6 +1612,12 @@ bool UIMachineSettingsDisplay::saveVideoCaptureData()
             if (fSuccess && newDisplayData.m_screens != oldDisplayData.m_screens)
             {
                 m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
+                fSuccess = m_machine.isOk();
+            }
+            /* Save video capture options: */
+            if (fSuccess && newDisplayData.m_strVideoCaptureOptions != oldDisplayData.m_strVideoCaptureOptions)
+            {
+                m_machine.SetVideoCaptureOptions(newDisplayData.m_strVideoCaptureOptions);
                 fSuccess = m_machine.isOk();
             }
         }

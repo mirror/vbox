@@ -673,6 +673,26 @@
               <widget class="QLabel" name="m_pLabelVideoCaptureSizeHint"/>
              </item>
              <item row="7" column="0">
+              <widget class="QLabel" name="m_pLabelVideoCaptureExtended">
+               <property name="text">
+                <string>Extended Features:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="1" colspan="3">
+              <widget class="QCheckBox" name="m_pCheckBoxVideoCaptureWithAudio">
+               <property name="whatsThis">
+                <string>When checked, VirtualBox will record the audio stream to video file as well.</string>
+               </property>
+               <property name="text">
+                <string>&amp;Record Audio</string>
+               </property>
+              </widget>
+             </item>
+             <item row="8" column="0">
               <widget class="QLabel" name="m_pLabelVideoCaptureScreens">
                <property name="text">
                 <string>&amp;Screens:</string>
@@ -685,7 +705,7 @@
                </property>
               </widget>
              </item>
-             <item row="7" column="1" colspan="3">
+             <item row="8" column="1" colspan="3">
               <widget class="UIFilmContainer" name="m_pScrollerVideoCaptureScreens">
                <property name="whatsThis">
                 <string></string>
