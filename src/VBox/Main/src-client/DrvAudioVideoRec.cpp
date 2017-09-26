@@ -1018,6 +1018,28 @@ AudioVideoRec::~AudioVideoRec(void)
 
 
 /**
+ * @interface_method_impl{PDMDRVREG,pfnDestruct}
+ */
+/* static */
+DECLCALLBACK(void) AudioVideoRec::drvDestruct(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVAUDIOVIDEOREC pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVIDEOREC);
+    LogFlowFuncEnter();
+
+    /*
+     * If the AudioVideoRec object is still alive, we must clear it's reference to
+     * us since we'll be invalid when we return from this method.
+     */
+    if (pThis->pAudioVideoRec)
+    {
+        pThis->pAudioVideoRec->mpDrv = NULL;
+        pThis->pAudioVideoRec = NULL;
+    }
+}
+
+
+/**
  * Construct a audio video recording driver instance.
  *
  * @copydoc FNPDMDRVCONSTRUCT
@@ -1025,13 +1047,9 @@ AudioVideoRec::~AudioVideoRec(void)
 /* static */
 DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    RT_NOREF(fFlags);
-
-    AssertPtrReturn(pDrvIns, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,    VERR_INVALID_POINTER);
-
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVAUDIOVIDEOREC pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVIDEOREC);
+    RT_NOREF(fFlags);
 
     LogRel(("Audio: Initializing video recording audio driver\n"));
     LogFlowFunc(("fFlags=0x%x\n", fFlags));
@@ -1084,28 +1102,6 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 #endif
 
     return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{PDMDRVREG,pfnDestruct}
- */
-/* static */
-DECLCALLBACK(void) AudioVideoRec::drvDestruct(PPDMDRVINS pDrvIns)
-{
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    PDRVAUDIOVIDEOREC pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVIDEOREC);
-    LogFlowFuncEnter();
-
-    /*
-     * If the AudioVideoRec object is still alive, we must clear it's reference to
-     * us since we'll be invalid when we return from this method.
-     */
-    if (pThis->pAudioVideoRec)
-    {
-        pThis->pAudioVideoRec->mpDrv = NULL;
-        pThis->pAudioVideoRec = NULL;
-    }
 }
 
 
