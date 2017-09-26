@@ -5269,7 +5269,7 @@ ifeq ($(KBUILD_TYPE),debug)
   TEMPLATE_VBoxR3DllNonPedanticFast_CFLAGS.debug   = $(filter-out -RTC%, $(TEMPLATE_VBoxR3DllNonPedantic_CFLAGS.debug))
  else
   TEMPLATE_VBoxR3DllNonPedanticFast_CXXFLAGS       = $(TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS) -O2 -fno-omit-frame-pointer
-  TEMPLATE_VBoxR3DllNonPedanticFast_CFLAGS         = $(TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS) -O2 -fno-omit-frame-pointer
+  TEMPLATE_VBoxR3DllNonPedanticFast_CFLAGS         = $(TEMPLATE_VBoxR3DllNonPedantic_CFLAGS) -O2 -fno-omit-frame-pointer
  endif
 endif
 
@@ -5298,6 +5298,23 @@ TEMPLATE_VBoxR3RuntimeDllNonPedantic_EXTENDS = VBoxR3DllNonPedantic
 if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && $(KBUILD_TARGET_ARCH) == "x86"
  TEMPLATE_VBoxR3RuntimeDllNonPedantic_CFLAGS   = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBoxR3DllNonPedantic_CFLAGS)) -MT$(VBOX_VCC_CRT_TYPE)
  TEMPLATE_VBoxR3RuntimeDllNonPedantic_CXXFLAGS = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS)) -MT$(VBOX_VCC_CRT_TYPE)
+endif
+
+#
+# Same as VBoxR3RuntimeDllNonPedantic, only it optimized debug builds too.
+#
+TEMPLATE_VBoxR3RuntimeDllNonPedanticFast = For libraries that are linked into VBoxRT, but must be excluded from -pedantic warnings, optmized debug.
+TEMPLATE_VBoxR3RuntimeDllNonPedanticFast_EXTENDS = VBoxR3RuntimeDllNonPedantic
+ifeq ($(KBUILD_TYPE),debug)
+ ifeq ($(KBUILD_TARGET),win)
+  TEMPLATE_VBoxR3RuntimeDllNonPedanticFast_CXXFLAGS       = $(filter-out -O0,   $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_CXXFLAGS)) -O2 -Oy-
+  TEMPLATE_VBoxR3RuntimeDllNonPedanticFast_CXXFLAGS.debug = $(filter-out -RTC%, $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_CXXFLAGS.debug))
+  TEMPLATE_VBoxR3RuntimeDllNonPedanticFast_CFLAGS         = $(filter-out -O0,   $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_CFLAGS)) -O2 -Oy-
+  TEMPLATE_VBoxR3RuntimeDllNonPedanticFast_CFLAGS.debug   = $(filter-out -RTC%, $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_CFLAGS.debug))
+ else
+  TEMPLATE_VBoxR3RuntimeDllNonPedanticFast_CXXFLAGS       = $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_CXXFLAGS) -O2 -fno-omit-frame-pointer
+  TEMPLATE_VBoxR3RuntimeDllNonPedanticFast_CFLAGS         = $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_CFLAGS) -O2 -fno-omit-frame-pointer
+ endif
 endif
 
 
