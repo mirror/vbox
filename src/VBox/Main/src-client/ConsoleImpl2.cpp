@@ -3019,16 +3019,13 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pCfg, "ObjectConsole", (uintptr_t)this /* Console */);
 #endif /* VBOX_WITH_AUDIO_VIDEOREC */
 
-#ifdef VBOX_WITH_AUDIO_DEBUG
-# ifdef DEBUG_andy
-            strTmp = "1"; /* Always use the debugging backend. */
-# else
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/Enabled", &strTmp);
-# endif
+
             if (!strTmp.isEmpty())
             {
                 LogRel(("Audio: Debugging enabled\n"));
 
+#ifdef VBOX_WITH_AUDIO_DEBUG
                 /*
                  * The audio debugging backend.
                  */
@@ -3043,8 +3040,23 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                     InsertConfigString(pLunL1, "Driver", "DebugAudio");
                     InsertConfigNode  (pLunL1, "Config", &pCfg);
-            }
 #endif /* VBOX_WITH_AUDIO_DEBUG */
+
+                /*
+                 * Tweak the logging groups.
+                 */
+                Utf8Str strLogGroups = "drv_host_audio.e.l.l2.l3.f+" \
+                                       "drv_audio.e.l.l2.l3.f+" \
+                                       "audio_mixer.e.l.l2.l3.f+" \
+                                       "dev_hda_codec.e.l.l2.l3.f+" \
+                                       "dev_hda.e.l.l2.l3.f+" \
+                                       "dev_ac97.e.l.l2.l3.f+" \
+                                       "dev_sb16.e.l.l2.l3.f";
+
+                rc = RTLogGroupSettings(RTLogRelGetDefaultInstance(), strLogGroups.c_str());
+                if (RT_FAILURE(rc))
+                    LogRel(("Audio: Setting debug logging failed, rc=%Rrc\n", rc));
+            }
 
 #ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
             /** @todo Make this a runtime-configurable entry! */
