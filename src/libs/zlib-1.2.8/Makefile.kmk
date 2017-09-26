@@ -23,7 +23,7 @@ if1of ($(KBUILD_TARGET),os2 win)
  # only required for vbox-img
  LIBRARIES += VBox-zlib-static
 endif
-VBox-zlib_TEMPLATE = VBoxR3RuntimeDllNonPedantic
+VBox-zlib_TEMPLATE = VBoxR3RuntimeDllNonPedanticFast
 VBox-zlib_DEFS = verbose=-1 NO_VIZ=1
 VBox-zlib_SOURCES = \
 	adler32.c \
