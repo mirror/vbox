@@ -49,22 +49,22 @@
   <xsl:template match="refentry">
     <!-- Assert refetry expectations. -->
     <xsl:if test="not(./refsynopsisdiv)">
-        <xsl:message terminate="yes">refentry must have a refsynopsisdiv</xsl:message>
+        <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>refentry must have a refsynopsisdiv</xsl:message>
     </xsl:if>
     <xsl:if test="not(./refentryinfo/title)">
-      <xsl:message terminate="yes">refentry must have a refentryinfo with title</xsl:message>
+      <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>refentry must have a refentryinfo with title</xsl:message>
     </xsl:if>
     <xsl:if test="not(./refmeta/refentrytitle)">
-      <xsl:message terminate="yes">refentry must have a refentryinfo with title</xsl:message>
+      <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>refentry must have a refentryinfo with title</xsl:message>
     </xsl:if>
     <xsl:if test="./refmeta/refentrytitle != ./refnamediv/refname">
-      <xsl:message terminate="yes">The refmeta/refentrytitle and the refnamediv/refname must be identical</xsl:message>
+      <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>The refmeta/refentrytitle and the refnamediv/refname must be identical</xsl:message>
     </xsl:if>
     <xsl:if test="not(./refsect1/title)">
-      <xsl:message terminate="yes">refentry must have a refsect1 with title</xsl:message>
+      <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>refentry must have a refsect1 with title</xsl:message>
     </xsl:if>
     <xsl:if test="not(@id) or @id = ''">
-      <xsl:message terminate="yes">refentry must have an id attribute</xsl:message>
+      <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>refentry must have an id attribute</xsl:message>
     </xsl:if>
 
     <!-- variables -->
@@ -82,13 +82,13 @@ static const RTMSGREFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><
     <xsl:for-each select="./refsynopsisdiv/cmdsynopsis">
       <!-- Assert synopsis expectations -->
       <xsl:if test="not(@id) or substring-before(@id, '-') != 'synopsis'">
-        <xsl:message terminate="yes">The refsynopsisdiv/cmdsynopsis elements must have an id starting with 'synopsis-'.</xsl:message>
+        <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>The refsynopsisdiv/cmdsynopsis elements must have an id starting with 'synopsis-'.</xsl:message>
       </xsl:if>
       <xsl:if test="not(starts-with(substring-after(@id, '-'), $sBaseId))">
-        <xsl:message terminate="yes">The refsynopsisdiv/cmdsynopsis elements @id is expected to include the refentry @id.</xsl:message>
+        <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>The refsynopsisdiv/cmdsynopsis elements @id is expected to include the refentry @id.</xsl:message>
       </xsl:if>
       <xsl:if test="not(../../refsect1/refsect2[@id=./@id])">
-        <xsl:message terminate="yes">No refsect2 with id="<xsl:value-of select="@id"/>" found.</xsl:message>
+        <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>No refsect2 with id="<xsl:value-of select="@id"/>" found.</xsl:message>
       </xsl:if>
 
       <!-- Do the work. -->
@@ -131,8 +131,8 @@ static const RTMSGREFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><
 
     <!-- Then comes the description and other refsect1 -->
     <xsl:for-each select="./refsect1">
-      <xsl:if test="name(*[1]) != 'title'"><xsl:message terminate="yes">Expected title as the first element in refsect1.</xsl:message></xsl:if>
-      <xsl:if test="text()"><xsl:message terminate="yes">No text supported in refsect1.</xsl:message></xsl:if>
+      <xsl:if test="name(*[1]) != 'title'"><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Expected title as the first element in refsect1.</xsl:message></xsl:if>
+      <xsl:if test="text()"><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>No text supported in refsect1.</xsl:message></xsl:if>
       <xsl:if test="not(./remark[@role='help-skip'])">
         <xsl:variable name="sTitle">
           <xsl:apply-templates select="./title/node()"/>
@@ -147,6 +147,9 @@ static const RTMSGREFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><
         <xsl:text>" },</xsl:text>
 
         <xsl:apply-templates select="./*[name() != 'title']"/>
+
+        <xsl:text>
+    {   RTMSGREFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
       </xsl:if>
     </xsl:for-each>
 
@@ -192,7 +195,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     Convert command synopsis to text.
     -->
   <xsl:template match="cmdsynopsis">
-    <xsl:if test="text()"><xsl:message terminate="yes">cmdsynopsis with text is not supported.</xsl:message></xsl:if>
+    <xsl:if test="text()"><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>cmdsynopsis with text is not supported.</xsl:message></xsl:if>
     <xsl:text>
     {   </xsl:text><xsl:call-template name="calc-scope-cmdsynopsis"/><xsl:text> | RTMSGREFENTRYSTR_FLAGS_SYNOPSIS,
         "</xsl:text><xsl:call-template name="emit-indentation"/><xsl:apply-templates select="*|@*"/><xsl:text>" },</xsl:text>
@@ -221,7 +224,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
 
   <xsl:template match="replaceable">
     <xsl:choose>
-      <xsl:when test="not(ancestor::cmdsynopsis) or ancestor::arg">
+      <xsl:when test="ancestor::arg">
         <xsl:apply-templates />
       </xsl:when>
       <xsl:otherwise>
@@ -248,7 +251,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
       <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.open.str"/></xsl:when>
       <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.open.str"/></xsl:when>
       <xsl:when test="@choice = 'plain'"/>
-      <xsl:otherwise><xsl:message terminate="yes">Invalid arg choice: "<xsl:value-of select="@choice"/>"</xsl:message></xsl:otherwise>
+      <xsl:otherwise><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Invalid arg choice: "<xsl:value-of select="@choice"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
 
     <!-- render the arg (TODO: may need to do more work here) -->
@@ -258,7 +261,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     <xsl:choose>
       <xsl:when test="@rep = 'norepeat' or not(@rep) or @rep = ''"/>
       <xsl:when test="@rep = 'repeat'">               <xsl:value-of select="$arg.rep.repeat.str"/></xsl:when>
-      <xsl:otherwise><xsl:message terminate="yes">Invalid rep choice: "<xsl:value-of select="@rep"/>"</xsl:message></xsl:otherwise>
+      <xsl:otherwise><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Invalid rep choice: "<xsl:value-of select="@rep"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
     <!-- close wrapping -->
     <xsl:choose>
@@ -274,8 +277,8 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     -->
   <xsl:template match="refsect2">
     <!-- assertions -->
-    <xsl:if test="text()"><xsl:message terminate="yes">refsect2 shouldn't contain text</xsl:message></xsl:if>
-    <xsl:if test="count(./title) != 1"><xsl:message terminate="yes">refsect2 requires a title (<xsl:value-of select="ancestor-or-self::*[@id][1]/@id"/>)</xsl:message></xsl:if>
+    <xsl:if test="text()"><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>refsect2 shouldn't contain text</xsl:message></xsl:if>
+    <xsl:if test="count(./title) != 1"><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>refsect2 requires a title (<xsl:value-of select="ancestor-or-self::*[@id][1]/@id"/>)</xsl:message></xsl:if>
 
     <!-- title / command synopsis - sets the scope. -->
     <xsl:variable name="sTitle">
@@ -323,13 +326,13 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     -->
   <xsl:template match="variablelist">
     <xsl:if test="*[not(self::varlistentry)]|text()">
-      <xsl:message terminate="yes">Only varlistentry elements are supported in variablelist</xsl:message>
+      <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Only varlistentry elements are supported in variablelist </xsl:message>
     </xsl:if>
     <xsl:for-each select="./varlistentry">
       <xsl:if test="not(term) or not(listitem) or count(listitem) > 1">
-        <xsl:message terminate="yes">Expected one or more term members and exactly one listentry member in varlistentry element.</xsl:message>
+        <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Expected one or more term members and exactly one listentry member in varlistentry element.</xsl:message>
       </xsl:if>
-      <xsl:if test="not(@spacing) or @spacing != 'compact'">
+      <xsl:if test="(not(@spacing) or @spacing != 'compact') and (position() > 1 or (count(../preceding-sibling::*) - count(../preceding-sibling::title) > 0))">
         <xsl:text>
     {   RTMSGREFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
       </xsl:if>
@@ -357,7 +360,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
   <xsl:template match="itemizedlist|orderedlist">
     <xsl:if test="*[not(self::listitem)]|text()">
       <xsl:message terminate="yes">
-        <xsl:call-template name="get-node-path"/>: error: Only listitem elements are supported in <xsl:value-of select="name()"/>:
+        <xsl:call-template name="error-prefix"/>Only listitem elements are supported in <xsl:value-of select="name()"/>:
         <xsl:call-template name="list-nodes">
           <xsl:with-param name="Nodes" select="*[not(self::listitem)]|text()"/>
         </xsl:call-template>
@@ -379,7 +382,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
   <xsl:template match="itemizedlist/listitem|orderedlist/listitem">
     <xsl:if test="*[not(self::para)]|text()">
       <xsl:message terminate="yes">
-        <xsl:call-template name="get-node-path"/>: error: Expected <xsl:value-of select="name()"/>/listitem to only contain para elements:
+        <xsl:call-template name="error-prefix"/>Expected <xsl:value-of select="name()"/>/listitem to only contain para elements:
         <xsl:call-template name="list-nodes">
           <xsl:with-param name="Nodes" select="*[not(self::para)]|text()"/>
         </xsl:call-template>
@@ -415,7 +418,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
         </xsl:when>
         <xsl:otherwise>
           <xsl:if test="*">
-            <xsl:message terminate="yes">Support for elements under screen has not been implemented: <xsl:value-of select="name()"/></xsl:message>
+            <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Support for elements under screen has not been implemented: <xsl:value-of select="name()"/></xsl:message>
           </xsl:if>
         </xsl:otherwise>
       </xsl:choose>
@@ -564,7 +567,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     Unsupported elements and elements handled directly.
     -->
   <xsl:template match="synopfragment|synopfragmentref|title|refsect1">
-    <xsl:message terminate="yes">The <xsl:value-of select="name()"/> element is not supported</xsl:message>
+    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>The <xsl:value-of select="name()"/> element is not supported</xsl:message>
   </xsl:template>
 
   <!--
@@ -576,7 +579,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
       <xsl:when test="parent::refsect2"/>
       <xsl:when test="parent::cmdsynopsis and ancestor::refsynopsisdiv"/>
       <xsl:otherwise>
-        <xsl:message terminate="yes">Misplaced remark/@role=help-scope element.
+        <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Misplaced remark/@role=help-scope element.
 Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
       </xsl:otherwise>
     </xsl:choose>
@@ -586,7 +589,7 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
     Execute synopsis copy remark (avoids duplication for complicated xml).
     -->
   <xsl:template match="remark[@role = 'help-copy-synopsis']">
-    <xsl:message terminate="yes">remark/@role=help-copy-synopsis is not supported by this stylesheet. Must preprocess input!</xsl:message>
+    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>remark/@role=help-copy-synopsis is not supported by this stylesheet. Must preprocess input!</xsl:message>
   </xsl:template>
 
   <!--
@@ -713,7 +716,7 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
         </xsl:call-template>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:message terminate="yes">expected remark child or id attribute.</xsl:message>
+        <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>expected remark child or id attribute.</xsl:message>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -728,13 +731,13 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
     <xsl:text>HELP_SCOPE_</xsl:text>
     <xsl:choose>
       <xsl:when test="not($sAncestorId)">           <!-- Sanity check. -->
-        <xsl:message terminate="yes">error: calc-scope-const-from-id is invoked without an refentry ancestor with a id. <xsl:call-template name="get-node-path"/> </xsl:message>
+        <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>calc-scope-const-from-id is invoked without an refentry ancestor with a id. <xsl:call-template name="get-node-path"/> </xsl:message>
       </xsl:when>
 
       <xsl:when test="contains($sAncestorId, '-')"> <!-- Multi level command. -->
         <xsl:variable name="sPrefix" select="concat(substring-before($sAncestorId, '-'), '-')"/>
         <xsl:if test="not(contains($sId, $sPrefix))">
-          <xsl:message terminate="yes">Expected sId (<xsl:value-of select="$sId"/>) to contain <xsl:value-of select="$sPrefix"/></xsl:message>
+          <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Expected sId (<xsl:value-of select="$sId"/>) to contain <xsl:value-of select="$sPrefix"/></xsl:message>
         </xsl:if>
         <xsl:call-template name="str:to-upper">
           <xsl:with-param name="text" select="translate(substring-after($sId, $sPrefix), '-', '_')"/>
@@ -754,7 +757,7 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
     <xsl:param name="sCondition" select="remark/@condition"/>
     <xsl:variable name="sNormalized" select="concat(normalize-space(translate($sCondition, ',;:|', '    ')), ' ')"/>
     <xsl:if test="$sNormalized = ' ' or $sNormalized = ''">
-      <xsl:message terminate="yes">Empty @condition for help-scope remark.</xsl:message>
+      <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Empty @condition for help-scope remark.</xsl:message>
     </xsl:if>
     <xsl:choose>
       <xsl:when test="substring-before($sNormalized, ' ') = 'GLOBAL'">
@@ -854,15 +857,32 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
           </xsl:when>
           <xsl:otherwise>
             <xsl:value-of select="concat('/', name(.))"/>
-            <xsl:if test="@id">
-              <xsl:text>[@id=</xsl:text>
-              <xsl:value-of select="@id"/>
-              <xsl:text>]</xsl:text>
-            </xsl:if>
+            <xsl:choose>
+              <xsl:when test="@id">
+                <xsl:text>[@id=</xsl:text>
+                <xsl:value-of select="@id"/>
+                <xsl:text>]</xsl:text>
+              </xsl:when>
+              <xsl:when test="position() > 1">
+                <xsl:text>[</xsl:text><xsl:value-of select="position()"/><xsl:text>]</xsl:text>
+              </xsl:when>
+            </xsl:choose>
           </xsl:otherwise>
         </xsl:choose>
       </xsl:for-each>
     </xsl:for-each>
+  </xsl:template>
+
+  <!--
+    Debug/Diagnostics: Return error message prefix.
+    -->
+  <xsl:template name="error-prefix">
+    <xsl:param name="Node" select="."/>
+    <xsl:text>error: </xsl:text>
+    <xsl:call-template name="get-node-path">
+      <xsl:with-param name="Node" select="$Node"/>
+    </xsl:call-template>
+    <xsl:text>: </xsl:text>
   </xsl:template>
 
   <!--
