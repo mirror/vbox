@@ -2409,14 +2409,18 @@ int Display::i_videoCaptureInvalidate(void)
     ComPtr<IMachine> pMachine = mParent->i_machine();
     Assert(pMachine.isNotNull());
 
-    mVideoRecCfg.fEnabled = true;
-    mVideoRecCfg.enmDst   = VIDEORECDEST_FILE; /** @todo Make this configurable once we have more variations. */
+    mVideoRecCfg.enmDst = VIDEORECDEST_FILE; /** @todo Make this configurable once we have more variations. */
 
     /*
      * Get parameters from API.
      */
+    BOOL fValue;
+    HRESULT rc = pMachine->COMGETTER(VideoCaptureEnabled)(&fValue);
+    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
+    mVideoRecCfg.fEnabled = RT_BOOL(fValue);
+
     com::SafeArray<BOOL> aScreens;
-    HRESULT rc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(aScreens));
+    rc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(aScreens));
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
 
     mVideoRecCfg.aScreens.resize(aScreens.size());
@@ -4539,20 +4543,12 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
 #endif
 
 #ifdef VBOX_WITH_VIDEOREC
-    ComPtr<IMachine> pMachine = pDisplay->mParent->i_machine();
-    BOOL fEnabled = false;
-    HRESULT hrc = pMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
-    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
-
-    if (fEnabled)
+    int rc2 = pDisplay->i_videoCaptureInvalidate();
+    if (pDisplay->i_videoCaptureGetEnabled())
     {
-        int rc2 = pDisplay->i_videoCaptureInvalidate();
+        rc2 = pDisplay->i_videoCaptureStart();
         if (RT_SUCCESS(rc2))
-        {
-            rc2 = pDisplay->i_videoCaptureStart();
-            if (RT_SUCCESS(rc2))
-                fireVideoCaptureChangedEvent(pDisplay->mParent->i_getEventSource());
-        }
+            fireVideoCaptureChangedEvent(pDisplay->mParent->i_getEventSource());
 
         /* If video capturing fails for whatever reason here, this is
          * non-critical and should not be returned at this point -- otherwise
