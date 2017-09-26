@@ -2303,8 +2303,8 @@ static int drvAudioInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     if (RT_SUCCESS(rc2))
         pThis->Out.fEnabled = RT_BOOL(u64Temp);
 
-    LogRel(("Audio: Initial status for driver '%s': Input is %s, output is %s\n",
-            pThis->szName, pThis->In.fEnabled ? "enabled" : "disabled", pThis->Out.fEnabled ? "enabled" : "disabled"));
+    LogRel2(("Audio: Initial status for driver '%s': Input is %s, output is %s\n",
+             pThis->szName, pThis->In.fEnabled ? "enabled" : "disabled", pThis->Out.fEnabled ? "enabled" : "disabled"));
 
     /*
      * If everything went well, initialize the lower driver.
@@ -2684,8 +2684,8 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
             int rc2 = drvAudioStreamControlInternal(pThis, pStream,
                                                     fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE);
             if (RT_FAILURE(rc2))
-                LogRel2(("Audio: Failed to %s %s stream '%s', rc=%Rrc\n",
-                         fEnable ? "enable" : "disable", enmDir == PDMAUDIODIR_IN ? "input" : "output", pStream->szName, rc2));
+                LogRel(("Audio: Failed to %s %s stream '%s', rc=%Rrc\n",
+                        fEnable ? "enable" : "disable", enmDir == PDMAUDIODIR_IN ? "input" : "output", pStream->szName, rc2));
 
             if (RT_SUCCESS(rc))
                 rc = rc2;
