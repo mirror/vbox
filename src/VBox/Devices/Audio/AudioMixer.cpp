@@ -890,12 +890,6 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
         PAUDMIXSTREAM pMixStream;
         RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
         {
-            if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAMSTS_FLAG_ENABLED))
-            {
-                Log3Func(("[%s] Stream '%s' disabled, skipping ...\n", pSink->pszName, pMixStream->pszName));
-                continue;
-            }
-
             const uint32_t cbWritableStream = pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream);
 
             if (cbWritableStream < cbWritable)
@@ -1621,12 +1615,6 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
     {
-        if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAMSTS_FLAG_ENABLED))
-        {
-            Log3Func(("[%s] Stream '%s' disabled, skipping ...\n", pSink->pszName, pMixStream->pszName));
-            continue;
-        }
-
         uint32_t cbProcessed = 0;
         int rc2 = pMixStream->pConn->pfnStreamWrite(pMixStream->pConn, pMixStream->pStream, pvBuf, cbBuf, &cbProcessed);
         if (RT_FAILURE(rc2))
