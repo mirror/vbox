@@ -5257,6 +5257,24 @@ TEMPLATE_VBoxR3DllNonPedantic-x86_DEFS      = $(filter-out HC_ARCH_BITS%,$(TEMPL
 
 
 #
+# Same as VBoxR3DllNonPedantic, only it optimizes debug builds.
+#
+TEMPLATE_VBoxR3DllNonPedanticFast            = VBox ring-3 Non-pedantic, with warnings, optimized debug.
+TEMPLATE_VBoxR3DllNonPedanticFast_EXTENDS    = VBoxR3DllNonPedantic
+ifeq ($(KBUILD_TYPE),debug)
+ ifeq ($(KBUILD_TARGET),win)
+  TEMPLATE_VBoxR3DllNonPedanticFast_CXXFLAGS       = $(filter-out -O0,   $(TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS)) -O2 -Oy-
+  TEMPLATE_VBoxR3DllNonPedanticFast_CXXFLAGS.debug = $(filter-out -RTC%, $(TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS.debug))
+  TEMPLATE_VBoxR3DllNonPedanticFast_CFLAGS         = $(filter-out -O0,   $(TEMPLATE_VBoxR3DllNonPedantic_CFLAGS)) -O2 -Oy-
+  TEMPLATE_VBoxR3DllNonPedanticFast_CFLAGS.debug   = $(filter-out -RTC%, $(TEMPLATE_VBoxR3DllNonPedantic_CFLAGS.debug))
+ else
+  TEMPLATE_VBoxR3DllNonPedanticFast_CXXFLAGS       = $(TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS) -O2 -fno-omit-frame-pointer
+  TEMPLATE_VBoxR3DllNonPedanticFast_CFLAGS         = $(TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS) -O2 -fno-omit-frame-pointer
+ endif
+endif
+
+
+#
 # Template for building libraries that are linked into VBoxRT.dll
 # and it's variations, pedantic variation.
 #
