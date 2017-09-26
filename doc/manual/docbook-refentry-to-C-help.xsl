@@ -124,9 +124,7 @@ static const RTMSGREFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><
     {   RTMSGREFENTRYSTR_SCOPE_GLOBAL,
         "Usage" },
     {   RTMSGREFENTRYSTR_SCOPE_SAME,
-        "=====" },
-    {   RTMSGREFENTRYSTR_SCOPE_SAME,
-        "" },</xsl:text>
+        "=====" },</xsl:text>
         <xsl:apply-templates select="./refsynopsisdiv/node()"/>
 
     <!-- Then comes the description and other refsect1 -->
@@ -196,6 +194,10 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     -->
   <xsl:template match="cmdsynopsis">
     <xsl:if test="text()"><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>cmdsynopsis with text is not supported.</xsl:message></xsl:if>
+    <xsl:if test="position() = 1">
+      <xsl:text>
+    {   </xsl:text><xsl:call-template name="calc-scope-cmdsynopsis"/><xsl:text> | RTMSGREFENTRYSTR_FLAGS_SYNOPSIS, "" }, </xsl:text>
+    </xsl:if>
     <xsl:text>
     {   </xsl:text><xsl:call-template name="calc-scope-cmdsynopsis"/><xsl:text> | RTMSGREFENTRYSTR_FLAGS_SYNOPSIS,
         "</xsl:text><xsl:call-template name="emit-indentation"/><xsl:apply-templates select="*|@*"/><xsl:text>" },</xsl:text>
@@ -293,8 +295,10 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     {   RTMSGREFENTRYSTR_SCOPE_SAME,
         "</xsl:text><xsl:call-template name="emit-indentation"/>
     <xsl:value-of select="substring($g_sUnderlineRefSect2, 1, string-length($sTitle))"/>
-    <xsl:text>" },
-    {   RTMSGREFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
+    <xsl:text>" },</xsl:text>
+
+<!--    <xsl:if test="./*[name() != 'title']/following::
+    {   RTMSGREFENTRYSTR_SCOPE_SAME, "y" },</xsl:text>  cmdsynopsis -->
 
     <!-- Format the text in the section -->
     <xsl:for-each select="./*[name() != 'title']">
