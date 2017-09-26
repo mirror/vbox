@@ -4972,6 +4972,12 @@ DECLCALLBACK(int) Console::i_changeNetworkAttachment(Console *pThis,
     return rc;
 }
 
+/**
+ * Returns the device name of a given audio adapter.
+ *
+ * @returns Device name, or an empty string if no device is configured.
+ * @param   aAudioAdapter       Audio adapter to return device name for.
+ */
 Utf8Str Console::i_getAudioAdapterDeviceName(IAudioAdapter *aAudioAdapter)
 {
     Utf8Str strDevice;
