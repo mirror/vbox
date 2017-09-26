@@ -584,14 +584,13 @@
     <xsl:if test="not(./term) or not(./listitem) or count(./listitem) != 1">
       <xsl:message terminate="yes">Expected at least one term and one listitem element in the varlistentry.</xsl:message>
     </xsl:if>
-    <!-- TODO: Ideally, I'd like to have each term on a new line. didn't find a simple way of doing that... -->
-    <xsl:text>&#x0a;&#x0a;\item[</xsl:text>
+    <xsl:text>&#x0a;&#x0a;\item[{\parbox[t]{\linewidth}{\raggedright </xsl:text>
     <xsl:apply-templates select="./term[1]"/>
     <xsl:for-each select="./term[position() > 1]">
-      <xsl:text>,&#x0a; </xsl:text>
+      <xsl:text>\\&#x0a; </xsl:text>
       <xsl:apply-templates select="."/>
     </xsl:for-each>
-    <xsl:text>] \hfill \\&#x0a;</xsl:text>
+    <xsl:text>}}] \hfill \\&#x0a;</xsl:text>
     <xsl:apply-templates select="listitem/*"/>
   </xsl:template>
 
