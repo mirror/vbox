@@ -562,13 +562,6 @@
   <xsl:template match="itemizedlist">
     <xsl:call-template name="xsltprocNewlineOutputHack"/>
     <xsl:text>&#x0a;\begin{itemize}&#x0a;</xsl:text>
-    <xsl:if test="@spacing = 'compact'">
-      <xsl:text> \setlength{\parskip}{0pt}&#x0a;</xsl:text>
-      <xsl:text> \setlength{\itemsep}{0pt}&#x0a;</xsl:text>
-      <xsl:text> \setlength{\topsep}{0pt}&#x0a;</xsl:text>
-      <xsl:text> \setlength{\parsep}{0pt}&#x0a;</xsl:text> 
-      <xsl:text> \setlength{\partopsep}{0pt}&#x0a;</xsl:text>
-    </xsl:if>
     <xsl:apply-templates />
     <xsl:text>&#x0a;\end{itemize}&#x0a;</xsl:text>
   </xsl:template>
@@ -576,13 +569,6 @@
   <xsl:template match="orderedlist">
     <xsl:call-template name="xsltprocNewlineOutputHack"/>
     <xsl:text>&#x0a;\begin{enumerate}&#x0a;</xsl:text>
-    <xsl:if test="@spacing = 'compact'">
-      <xsl:text> \setlength{\parskip}{0pt}&#x0a;</xsl:text>
-      <xsl:text> \setlength{\itemsep}{0pt}&#x0a;</xsl:text>
-      <xsl:text> \setlength{\topsep}{0pt}&#x0a;</xsl:text>
-      <xsl:text> \setlength{\parsep}{0pt}&#x0a;</xsl:text>
-      <xsl:text> \setlength{\partopsep}{0pt}&#x0a;</xsl:text>
-    </xsl:if>
     <xsl:apply-templates />
     <xsl:text>&#x0a;\end{enumerate}&#x0a;</xsl:text>
   </xsl:template>
@@ -590,13 +576,6 @@
   <xsl:template match="variablelist">
     <xsl:call-template name="xsltprocNewlineOutputHack"/>
     <xsl:text>&#x0a;\begin{description}&#x0a;</xsl:text>
-    <xsl:if test="@spacing = 'compact'">
-      <xsl:text> \setlength{\parskip}{0pt}&#x0a;</xsl:text>
-      <xsl:text> \setlength{\itemsep}{0pt}&#x0a;</xsl:text>
-      <xsl:text> \setlength{\topsep}{0pt}&#x0a;</xsl:text>
-      <xsl:text> \setlength{\parsep}{0pt}&#x0a;</xsl:text>
-      <xsl:text> \setlength{\partopsep}{0pt}&#x0a;</xsl:text>
-    </xsl:if>
     <xsl:apply-templates />
     <xsl:text>&#x0a;\end{description}&#x0a;</xsl:text>
   </xsl:template>
