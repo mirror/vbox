@@ -1063,7 +1063,6 @@ static DECLCALLBACK(int) drvAudioStreamIterate(PPDMIAUDIOCONNECTOR pInterface, P
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    /* pcData is optional. */
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
@@ -1095,6 +1094,9 @@ static DECLCALLBACK(int) drvAudioStreamIterate(PPDMIAUDIOCONNECTOR pInterface, P
 static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    if (!pThis->pHostDrvAudio)
+        return VINF_SUCCESS;
 
     if (!pStream)
         return VINF_SUCCESS;
@@ -1481,10 +1483,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
     do
     {
         if (!pThis->pHostDrvAudio)
-        {
-            rc = VERR_NOT_AVAILABLE;
             break;
-        }
 
         PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
         AssertPtr(pHstStream);
@@ -1775,6 +1774,9 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
 
     do
     {
+        if (!pThis->pHostDrvAudio)
+            break;
+
         PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
         AssertPtr(pHstStream);
         PPDMAUDIOSTREAM pGstStream = pHstStream ? pHstStream->pPair : NULL;
@@ -2252,12 +2254,18 @@ static void drvAudioStateHandler(PPDMDRVINS pDrvIns, PDMAUDIOSTREAMCMD enmCmd)
 
     LogFlowFunc(("enmCmd=%s\n", DrvAudioHlpStreamCmdToStr(enmCmd)));
 
+    int rc2 = RTCritSectEnter(&pThis->CritSect);
+    AssertRC(rc2);
+
     if (!pThis->pHostDrvAudio)
         return;
 
     PPDMAUDIOSTREAM pHstStream;
     RTListForEach(&pThis->lstHstStreams, pHstStream, PDMAUDIOSTREAM, Node)
         drvAudioStreamControlInternalBackend(pThis, pHstStream, enmCmd);
+
+    rc2 = RTCritSectLeave(&pThis->CritSect);
+    AssertRC(rc2);
 }
 
 /**
@@ -3479,6 +3487,55 @@ static DECLCALLBACK(void) drvAudioResume(PPDMDRVINS pDrvIns)
 }
 
 /**
+ * Attach notification.
+ *
+ * @param   pDrvIns     The driver instance data.
+ */
+static DECLCALLBACK(int) drvAudioAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    RT_NOREF(fFlags);
+
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+
+    int rc2 = RTCritSectEnter(&pThis->CritSect);
+    AssertRC(rc2);
+
+    int rc = VINF_SUCCESS;
+
+    LogFunc(("%s\n", pThis->szName));
+
+    rc2 = RTCritSectLeave(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    return rc;
+}
+
+/**
+ * Detach notification.
+ *
+ * @param   pDrvIns     The driver instance data.
+ */
+static DECLCALLBACK(void) drvAudioDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    RT_NOREF(fFlags);
+
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+
+    int rc2 = RTCritSectEnter(&pThis->CritSect);
+    AssertRC(rc2);
+
+    pThis->pHostDrvAudio = NULL;
+
+    LogFunc(("%s\n", pThis->szName));
+
+    rc2 = RTCritSectLeave(&pThis->CritSect);
+    AssertRC(rc2);
+}
+
+/**
  * Audio driver registration record.
  */
 const PDMDRVREG g_DrvAUDIO =
@@ -3518,9 +3575,9 @@ const PDMDRVREG g_DrvAUDIO =
     /* pfnResume */
     drvAudioResume,
     /* pfnAttach */
-    NULL,
+    drvAudioAttach,
     /* pfnDetach */
-    NULL,
+    drvAudioDetach,
     /* pfnPowerOff */
     drvAudioPowerOff,
     /* pfnSoftReset */
