@@ -5285,6 +5285,7 @@ static void wined3d_adapter_init_fb_cfgs(struct wined3d_adapter *adapter, HDC dc
  */
 static HMODULE loadSystemDll(const char *pszName)
 {
+#ifndef DEBUG
     char   szPath[MAX_PATH];
     UINT   cchPath = GetSystemDirectoryA(szPath, sizeof(szPath));
     size_t cbName  = strlen(pszName) + 1;
@@ -5293,6 +5294,9 @@ static HMODULE loadSystemDll(const char *pszName)
     szPath[cchPath] = '\\';
     memcpy(&szPath[cchPath + 1], pszName, cbName);
     return LoadLibraryA(szPath);
+#else
+    return LoadLibraryA(pszName);
+#endif
 }
 
 /* Do not call while under the GL lock. */

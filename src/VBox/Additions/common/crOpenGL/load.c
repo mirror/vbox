@@ -1190,6 +1190,7 @@ static MINIDUMP_TYPE g_enmVBoxMdDumpType = MiniDumpNormal
 
 static HMODULE loadSystemDll(const char *pszName)
 {
+#ifndef DEBUG
     char   szPath[MAX_PATH];
     UINT   cchPath = GetSystemDirectoryA(szPath, sizeof(szPath));
     size_t cbName  = strlen(pszName) + 1;
@@ -1201,6 +1202,9 @@ static HMODULE loadSystemDll(const char *pszName)
     szPath[cchPath] = '\\';
     memcpy(&szPath[cchPath + 1], pszName, cbName);
     return LoadLibraryA(szPath);
+#else
+    return LoadLibraryA(pszName);
+#endif
 }
 
 static DWORD vboxMdMinidumpCreate(struct _EXCEPTION_POINTERS *pExceptionInfo)
