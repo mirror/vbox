@@ -3517,7 +3517,7 @@ static DECLCALLBACK(int) drvAudioAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
  * Detach notification.
  *
  * @param   pDrvIns     The driver instance data.
- * @param   fFlags      Attach flags.
+ * @param   fFlags      Detach flags.
  */
 static DECLCALLBACK(void) drvAudioDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
