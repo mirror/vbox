@@ -608,6 +608,10 @@
 # define RTCoreDumperDisable                            RT_MANGLER(RTCoreDumperDisable)  /* solaris */
 # define RTCoreDumperSetup                              RT_MANGLER(RTCoreDumperSetup)    /* solaris */
 # define RTCoreDumperTakeDump                           RT_MANGLER(RTCoreDumperTakeDump) /* solaris */
+# define RTCrc16Ccitt                                   RT_MANGLER(RTCrc16Ccitt)
+# define RTCrc16CcittProcess                            RT_MANGLER(RTCrc16CcittProcess)
+# define RTCrc16CcittFinish                             RT_MANGLER(RTCrc16CcittFinish)
+# define RTCrc16CcittStart                              RT_MANGLER(RTCrc16CcittStart)
 # define RTCrc32                                        RT_MANGLER(RTCrc32)
 # define RTCrc32Finish                                  RT_MANGLER(RTCrc32Finish)
 # define RTCrc32Process                                 RT_MANGLER(RTCrc32Process)

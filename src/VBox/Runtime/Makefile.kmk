@@ -338,6 +338,7 @@ RuntimeR3_SOURCES       = \
 	common/checksum/crc32.cpp \
 	common/checksum/crc32c.cpp \
 	common/checksum/crc64.cpp \
+	common/checksum/crc16ccitt.cpp \
 	common/checksum/alt-md2.cpp \
 	common/checksum/alt-md5.cpp \
 	common/checksum/alt-sha1.cpp \
