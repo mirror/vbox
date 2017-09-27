@@ -205,9 +205,6 @@ private:
         const CMachine machine = m_pSession->machine();
 
         /* Prepare tool-tip: */
-        QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                                     "<nobr>Indicates the activity of the "
-                                                     "hard disks:</nobr>%1", "HD tooltip");
         QString strFullData;
 
         /* Enumerate all the controllers: */
@@ -237,7 +234,7 @@ private:
             hide();
 
         /* Update tool-tip: */
-        setToolTip(strToolTip.arg(s_strTable.arg(strFullData)));
+        setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(fAttachmentsPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
@@ -273,9 +270,6 @@ private:
         const CMachine machine = m_pSession->machine();
 
         /* Prepare tool-tip: */
-        QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                                     "<nobr>Indicates the activity of the "
-                                                     "optical drives:</nobr>%1", "CD tooltip");
         QString strFullData;
 
         /* Enumerate all the controllers: */
@@ -309,7 +303,7 @@ private:
             hide();
 
         /* Update tool-tip: */
-        setToolTip(strToolTip.arg(s_strTable.arg(strFullData)));
+        setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(fAttachmentsMounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
@@ -345,9 +339,6 @@ private:
         const CMachine machine = m_pSession->machine();
 
         /* Prepare tool-tip: */
-        QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                                     "<nobr>Indicates the activity of the "
-                                                     "floppy drives:</nobr>%1", "FD tooltip");
         QString strFullData;
 
         /* Enumerate all the controllers: */
@@ -381,7 +372,7 @@ private:
             hide();
 
         /* Update tool-tip: */
-        setToolTip(strToolTip.arg(s_strTable.arg(strFullData)));
+        setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(fAttachmentsMounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
@@ -426,9 +417,6 @@ private:
         const CMachine comMachine = m_pSession->machine();
 
         /* Prepare tool-tip: */
-        QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                                     "<nobr>Indicates the activity of the "
-                                                     "audio device:</nobr>%1", "Audio tooltip");
         QString strFullData;
 
         /* Get audio adapter: */
@@ -459,7 +447,7 @@ private:
             hide();
 
         /* Update tool-tip: */
-        setToolTip(strToolTip.arg(s_strTable.arg(strFullData)));
+        setToolTip(s_strTable.arg(strFullData));
     }
 };
 
@@ -532,9 +520,6 @@ private:
         const CMachine machine = m_pSession->machine();
 
         /* Prepare tool-tip: */
-        QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                                     "<nobr>Indicates the activity of the "
-                                                     "network interfaces:</nobr>%1", "Network tooltip");
         QString strFullData;
 
         /* Gather adapter properties: */
@@ -596,7 +581,7 @@ private:
             hide();
 
         /* Update tool-tip: */
-        setToolTip(strToolTip.arg(s_strTable.arg(strFullData)));
+        setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(fAdaptersPresent && !fCablesDisconnected ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
@@ -637,9 +622,6 @@ private:
         const CMachine machine = m_pSession->machine();
 
         /* Prepare tool-tip: */
-        QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                                     "<nobr>Indicates the activity of the attached "
-                                                     "USB devices:</nobr>%1", "USB tooltip");
         QString strFullData;
 
         /* Check whether there is at least one USB controller with an available proxy. */
@@ -663,7 +645,7 @@ private:
             hide();
 
         /* Update tool-tip: */
-        setToolTip(strToolTip.arg(s_strTable.arg(strFullData)));
+        setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(fUSBEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
@@ -701,9 +683,6 @@ private:
         const CGuest guest = m_pSession->guest();
 
         /* Prepare tool-tip: */
-        QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                                     "<nobr>Indicates the activity of the machine's "
-                                                     "shared folders:</nobr>%1", "Shared folders tooltip");
         QString strFullData;
 
         /* Enumerate all the folders: */
@@ -728,7 +707,7 @@ private:
                 .arg(QApplication::translate("UIIndicatorsPool", "No shared folders", "Shared folders tooltip"));
 
         /* Update tool-tip: */
-        setToolTip(strToolTip.arg(s_strTable.arg(strFullData)));
+        setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(!sfs.isEmpty() ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
@@ -763,9 +742,6 @@ private:
         const CMachine machine = m_pSession->machine();
 
         /* Prepare tool-tip: */
-        QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                                     "<nobr>Indicates the activity of the "
-                                                     "display:</nobr>%1", "Display tooltip");
         QString strFullData;
 
         /* Video Memory: */
@@ -795,7 +771,7 @@ private:
         }
 
         /* Update tool-tip: */
-        setToolTip(strToolTip.arg(s_strTable.arg(strFullData)));
+        setToolTip(s_strTable.arg(strFullData));
         /* Set initial indicator state: */
         setState(fAcceleration3D ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
@@ -903,9 +879,6 @@ private:
             setState(UIIndicatorStateVideoCapture_Paused);
 
         /* Prepare tool-tip: */
-        QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                                     "<nobr>Indicates video capturing "
-                                                     "activity:</nobr>%1", "Video capture tooltip");
         QString strFullData;
         switch (state())
         {
@@ -928,7 +901,7 @@ private:
         }
 
         /* Update tool-tip: */
-        setToolTip(strToolTip.arg(s_strTable.arg(strFullData)));
+        setToolTip(s_strTable.arg(strFullData));
     }
 
     /** Returns rotation start angle. */
@@ -995,9 +968,6 @@ private:
         const QString strParavirt = gpConverter->toString(m_pSession->paraVirtProvider());
 
         /* Prepare tool-tip: */
-        const QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                                           "<nobr>Indicates the activity of the additional "
-                                                           "features:</nobr>%1", "Virtualization Stuff LED");
         QString strFullData;
         strFullData += s_strTableRow2.arg(VBoxGlobal::tr("VT-x/AMD-V", "details report"),                   strVirtualization);
         strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Nested Paging"),                                  strNestedPaging);
@@ -1009,7 +979,7 @@ private:
             strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Processor(s)", "details report"), QString::number(cpuCount));
 
         /* Update tool-tip: */
-        setToolTip(strToolTip.arg(s_strTable.arg(strFullData)));
+        setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(m_pSession->isHWVirtExEnabled());
     }
