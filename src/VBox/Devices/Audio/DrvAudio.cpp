@@ -3490,6 +3490,7 @@ static DECLCALLBACK(void) drvAudioResume(PPDMDRVINS pDrvIns)
  * Attach notification.
  *
  * @param   pDrvIns     The driver instance data.
+ * @param   fFlags      Attach flags.
  */
 static DECLCALLBACK(int) drvAudioAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
