@@ -814,7 +814,8 @@ class UIIndicatorVideoCapture : public UISessionStateStatusBarIndicator
     enum UIIndicatorStateVideoCapture
     {
         UIIndicatorStateVideoCapture_Disabled = 0,
-        UIIndicatorStateVideoCapture_Enabled  = 1
+        UIIndicatorStateVideoCapture_Enabled  = 1,
+        UIIndicatorStateVideoCapture_Paused   = 2
     };
 
 public:
@@ -828,6 +829,7 @@ public:
         /* Assign state-icons: */
         setStateIcon(UIIndicatorStateVideoCapture_Disabled, UIIconPool::iconSet(":/video_capture_16px.png"));
         setStateIcon(UIIndicatorStateVideoCapture_Enabled,  UIIconPool::iconSet(":/movie_reel_16px.png"));
+        setStateIcon(UIIndicatorStateVideoCapture_Paused,   UIIconPool::iconSet(":/movie_reel_16px.png"));
         /* Create *enabled* state animation: */
         m_pAnimation = UIAnimationLoop::installAnimationLoop(this, "rotationAngle",
                                                                    "rotationAngleStart", "rotationAngleFinal",
@@ -850,6 +852,9 @@ private slots:
                 break;
             case UIIndicatorStateVideoCapture_Enabled:
                 m_pAnimation->start();
+                break;
+            case UIIndicatorStateVideoCapture_Paused:
+                m_pAnimation->stop();
                 break;
             default:
                 break;
@@ -887,9 +892,15 @@ private:
     {
         /* Get machine: */
         const CMachine machine = m_pSession->machine();
+        const bool fMachinePaused = m_pSession->isPaused();
 
         /* Update indicator state early: */
-        setState(machine.GetVideoCaptureEnabled());
+        if (!machine.GetVideoCaptureEnabled())
+            setState(UIIndicatorStateVideoCapture_Disabled);
+        else if (!fMachinePaused)
+            setState(UIIndicatorStateVideoCapture_Enabled);
+        else
+            setState(UIIndicatorStateVideoCapture_Paused);
 
         /* Prepare tool-tip: */
         QString strToolTip = QApplication::translate("UIIndicatorsPool",
@@ -905,6 +916,7 @@ private:
                 break;
             }
             case UIIndicatorStateVideoCapture_Enabled:
+            case UIIndicatorStateVideoCapture_Paused:
             {
                 strFullData += s_strTableRow2
                     .arg(QApplication::translate("UIIndicatorsPool", "Video capture file", "Video capture tooltip"))

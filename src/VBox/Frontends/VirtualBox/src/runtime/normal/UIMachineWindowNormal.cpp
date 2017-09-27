@@ -70,7 +70,7 @@ void UIMachineWindowNormal::sltMachineStateChanged()
     UIMachineWindow::sltMachineStateChanged();
 
     /* Update indicator-pool and virtualization stuff: */
-    updateAppearanceOf(UIVisualElement_IndicatorPoolStuff | UIVisualElement_FeaturesStuff);
+    updateAppearanceOf(UIVisualElement_IndicatorPoolStuff | UIVisualElement_VideoCapture | UIVisualElement_FeaturesStuff);
 }
 
 void UIMachineWindowNormal::sltMediumChange(const CMediumAttachment &attachment)
@@ -610,29 +610,37 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
     /* Set status-bar indicator-pool auto update timer: */
     if (iElement & UIVisualElement_IndicatorPoolStuff)
         m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
-    /* Update status-bar indicator-pool appearance only when status-bar is visible and VM is running: */
-    if (statusBar()->isVisible() && uisession()->isRunning())
+    /* Update status-bar indicator-pool appearance only when status-bar is visible: */
+    if (statusBar()->isVisible())
     {
-        if (iElement & UIVisualElement_HDStuff)
-            m_pIndicatorsPool->updateAppearance(IndicatorType_HardDisks);
-        if (iElement & UIVisualElement_CDStuff)
-            m_pIndicatorsPool->updateAppearance(IndicatorType_OpticalDisks);
-        if (iElement & UIVisualElement_FDStuff)
-            m_pIndicatorsPool->updateAppearance(IndicatorType_FloppyDisks);
-        if (iElement & UIVisualElement_AudioStuff)
-            m_pIndicatorsPool->updateAppearance(IndicatorType_Audio);
-        if (iElement & UIVisualElement_NetworkStuff)
-            m_pIndicatorsPool->updateAppearance(IndicatorType_Network);
-        if (iElement & UIVisualElement_USBStuff)
-            m_pIndicatorsPool->updateAppearance(IndicatorType_USB);
-        if (iElement & UIVisualElement_SharedFolderStuff)
-            m_pIndicatorsPool->updateAppearance(IndicatorType_SharedFolders);
-        if (iElement & UIVisualElement_Display)
-            m_pIndicatorsPool->updateAppearance(IndicatorType_Display);
-        if (iElement & UIVisualElement_VideoCapture)
-            m_pIndicatorsPool->updateAppearance(IndicatorType_VideoCapture);
-        if (iElement & UIVisualElement_FeaturesStuff)
-            m_pIndicatorsPool->updateAppearance(IndicatorType_Features);
+        /* If VM is running: */
+        if (uisession()->isRunning())
+        {
+            if (iElement & UIVisualElement_HDStuff)
+                m_pIndicatorsPool->updateAppearance(IndicatorType_HardDisks);
+            if (iElement & UIVisualElement_CDStuff)
+                m_pIndicatorsPool->updateAppearance(IndicatorType_OpticalDisks);
+            if (iElement & UIVisualElement_FDStuff)
+                m_pIndicatorsPool->updateAppearance(IndicatorType_FloppyDisks);
+            if (iElement & UIVisualElement_AudioStuff)
+                m_pIndicatorsPool->updateAppearance(IndicatorType_Audio);
+            if (iElement & UIVisualElement_NetworkStuff)
+                m_pIndicatorsPool->updateAppearance(IndicatorType_Network);
+            if (iElement & UIVisualElement_USBStuff)
+                m_pIndicatorsPool->updateAppearance(IndicatorType_USB);
+            if (iElement & UIVisualElement_SharedFolderStuff)
+                m_pIndicatorsPool->updateAppearance(IndicatorType_SharedFolders);
+            if (iElement & UIVisualElement_Display)
+                m_pIndicatorsPool->updateAppearance(IndicatorType_Display);
+            if (iElement & UIVisualElement_FeaturesStuff)
+                m_pIndicatorsPool->updateAppearance(IndicatorType_Features);
+        }
+        /* If VM is running or paused: */
+        if (uisession()->isRunning() || uisession()->isPaused())
+        {
+            if (iElement & UIVisualElement_VideoCapture)
+                m_pIndicatorsPool->updateAppearance(IndicatorType_VideoCapture);
+        }
     }
 }
 
