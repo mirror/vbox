@@ -1955,8 +1955,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         if (    !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)
             &&  (!rc || rc >= VINF_EM_RESCHEDULE_HM))
         {
-            if (    !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-                &&  !TRPMHasTrap(pVCpu)) /* an interrupt could already be scheduled for dispatching in the recompiler. */
+            if (   !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+                && !TRPMHasTrap(pVCpu)) /* an interrupt could already be scheduled for dispatching in the recompiler. */
             {
                 bool     fIntrEnabled;
                 PCPUMCTX pCtx = pVCpu->em.s.pCtx;
