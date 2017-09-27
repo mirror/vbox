@@ -1018,28 +1018,6 @@ AudioVideoRec::~AudioVideoRec(void)
 
 
 /**
- * @interface_method_impl{PDMDRVREG,pfnDestruct}
- */
-/* static */
-DECLCALLBACK(void) AudioVideoRec::drvDestruct(PPDMDRVINS pDrvIns)
-{
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    PDRVAUDIOVIDEOREC pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVIDEOREC);
-    LogFlowFuncEnter();
-
-    /*
-     * If the AudioVideoRec object is still alive, we must clear it's reference to
-     * us since we'll be invalid when we return from this method.
-     */
-    if (pThis->pAudioVideoRec)
-    {
-        pThis->pAudioVideoRec->mpDrv = NULL;
-        pThis->pAudioVideoRec = NULL;
-    }
-}
-
-
-/**
  * Construct a audio video recording driver instance.
  *
  * @copydoc FNPDMDRVCONSTRUCT
@@ -1106,6 +1084,52 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 
 
 /**
+ * @interface_method_impl{PDMDRVREG,pfnDestruct}
+ */
+/* static */
+DECLCALLBACK(void) AudioVideoRec::drvDestruct(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVAUDIOVIDEOREC pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVIDEOREC);
+    LogFlowFuncEnter();
+
+    /*
+     * If the AudioVideoRec object is still alive, we must clear it's reference to
+     * us since we'll be invalid when we return from this method.
+     */
+    if (pThis->pAudioVideoRec)
+    {
+        pThis->pAudioVideoRec->mpDrv = NULL;
+        pThis->pAudioVideoRec = NULL;
+    }
+}
+
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnAttach}
+ */
+/* static */
+DECLCALLBACK(int) AudioVideoRec::drvAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    RT_NOREF(pDrvIns, fFlags);
+
+    LogFlowFuncEnter();
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnDetach}
+ */
+/* static */
+DECLCALLBACK(void) AudioVideoRec::drvDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    RT_NOREF(pDrvIns, fFlags);
+
+    LogFlowFuncEnter();
+}
+
+/**
  * Video recording audio driver registration record.
  */
 const PDMDRVREG AudioVideoRec::DrvReg =
@@ -1144,9 +1168,9 @@ const PDMDRVREG AudioVideoRec::DrvReg =
     /* pfnResume */
     NULL,
     /* pfnAttach */
-    NULL,
+    AudioVideoRec::drvAttach,
     /* pfnDetach */
-    NULL,
+    AudioVideoRec::drvDetach,
     /* pfnPowerOff */
     NULL,
     /* pfnSoftReset */
