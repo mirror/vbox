@@ -29,10 +29,6 @@
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pdmaudioifs.h>
 
-#ifdef DEBUG_andy
-# define VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-#endif
-
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
 # ifdef RT_OS_WINDOWS
 #  define VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
