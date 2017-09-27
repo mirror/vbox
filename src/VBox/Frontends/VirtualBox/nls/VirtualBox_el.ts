@@ -185,27 +185,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>Κώδικας&amp;nbsp;Αποτελέσματος: </translation>
+        <translation type="vanished">Κώδικας&amp;nbsp;Αποτελέσματος: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>Συστατικό: </translation>
+        <translation type="vanished">Συστατικό: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>Περιβάλλον: </translation>
+        <translation type="vanished">Περιβάλλον: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>Καλέστηκε από: </translation>
+        <translation type="vanished">Καλέστηκε από: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>Καλών&amp;nbsp;RC: </translation>
+        <translation type="vanished">Καλών&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -1406,6 +1406,34 @@
     <message>
         <source>Choose...</source>
         <translation>Επιλέξτε...</translation>
+    </message>
+</context>
+<context>
+    <name>UIErrorString</name>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Κώδικας&amp;nbsp;Αποτελέσματος: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Καλών&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -3400,22 +3428,22 @@
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1</source>
         <comment>HD tooltip</comment>
-        <translation>&lt;nobr&gt;Δείχνει δραστηριότητα των σκληρών δίσκων:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Δείχνει δραστηριότητα των σκληρών δίσκων:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1</source>
         <comment>CD tooltip</comment>
-        <translation>&lt;nobr&gt;Δείχνει δραστηριότητα των οπτικών δίσκων:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Δείχνει δραστηριότητα των οπτικών δίσκων:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;nobr&gt;Δείχνει δραστηριότητα των δισκετών:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Δείχνει δραστηριότητα των δισκετών:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1</source>
         <comment>Network tooltip</comment>
-        <translation>&lt;nobr&gt;Δείχνει δραστηριότητα των καρτών δικτύου:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Δείχνει δραστηριότητα των καρτών δικτύου:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Adapter %1 (%2)</source>
@@ -3445,7 +3473,7 @@
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1</source>
         <comment>USB tooltip</comment>
-        <translation>&lt;nobr&gt;Δείχνει δραστηριότητα των συνδεδεμένων συσκευών USB:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Δείχνει δραστηριότητα των συνδεδεμένων συσκευών USB:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>No USB devices attached</source>
@@ -3455,7 +3483,7 @@
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;nobr&gt;Δείχνει δραστηριότητα των κοινών φακέλων της μηχανής:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Δείχνει δραστηριότητα των κοινών φακέλων της μηχανής:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>No shared folders</source>
@@ -3465,7 +3493,7 @@
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1</source>
         <comment>Display tooltip</comment>
-        <translation>&lt;nobr&gt;Δείχνει δραστηριότητα της οθόνης:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Δείχνει δραστηριότητα της οθόνης:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Video memory</source>
@@ -3485,7 +3513,7 @@
     <message>
         <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;%1</source>
         <comment>Video capture tooltip</comment>
-        <translation>&lt;nobr&gt;Δείχνει δραστηριότητα μαγνητοσκόπησης:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Δείχνει δραστηριότητα μαγνητοσκόπησης:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Video capture disabled</source>
@@ -3500,7 +3528,7 @@
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the additional features:&lt;/nobr&gt;%1</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>&lt;nobr&gt;Δείχνει δραστηριότητα των πρόσθετων χαρακτηριστικών:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Δείχνει δραστηριότητα των πρόσθετων χαρακτηριστικών:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:%1</source>
@@ -3555,7 +3583,7 @@
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the audio device:&lt;/nobr&gt;%1</source>
         <comment>Audio tooltip</comment>
-        <translation>&lt;nobr&gt;Δείχνει δραστηριότητα της συσκευής ήχου:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Δείχνει δραστηριότητα της συσκευής ήχου:&lt;/nobr&gt;%1</translation>
     </message>
 </context>
 <context>
@@ -4329,6 +4357,14 @@
     <message>
         <source>When checked, enables video recording for screen %1.</source>
         <translation>Όταν επιλεγεί, ενεργοποιεί τη μαγνητοσκόπηση για την οθόνη %1.</translation>
+    </message>
+    <message>
+        <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Record Audio</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

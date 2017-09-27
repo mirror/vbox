@@ -264,27 +264,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Код&amp;nbsp;на&amp;nbsp;резултата:</translation>
+        <translation type="obsolete">Код&amp;nbsp;на&amp;nbsp;резултата:</translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Компонент:</translation>
+        <translation type="obsolete">Компонент:</translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Интерфейс:</translation>
+        <translation type="obsolete">Интерфейс:</translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Заявка:</translation>
+        <translation type="obsolete">Заявка:</translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Зявка&amp;nbsp;RC:</translation>
+        <translation type="obsolete">Зявка&amp;nbsp;RC:</translation>
     </message>
 </context>
 <context>
@@ -2754,6 +2754,34 @@
             <numerusform>&lt;nobr&gt;Използва се от следния %n твърд диск:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
             <numerusform>&lt;nobr&gt;Използва се от следните %n твърди дискове:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>UIErrorString</name>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Код&amp;nbsp;на&amp;nbsp;резултата:</translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Компонент:</translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Интерфейс:</translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Заявка:</translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Зявка&amp;nbsp;RC:</translation>
     </message>
 </context>
 <context>
@@ -6178,26 +6206,6 @@ p, li { white-space: pre-wrap; }
         <translation type="vanished">Показва дали реалната клавиатура е прихваната от виртуалната ОС:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;клавиатурата не е прихваната&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;клавиатурата е прихваната&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1</source>
-        <comment>HD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1</source>
-        <comment>CD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1</source>
-        <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1</source>
-        <comment>Network tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Adapter %1 (%2)</source>
         <comment>Network tooltip</comment>
         <translation type="unfinished"></translation>
@@ -6223,28 +6231,13 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Несвързан</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1</source>
-        <comment>USB tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No USB devices attached</source>
         <comment>USB tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1</source>
-        <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No shared folders</source>
         <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1</source>
-        <comment>Display tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6263,11 +6256,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;%1</source>
-        <comment>Video capture tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Video capture disabled</source>
         <comment>Video capture tooltip</comment>
         <translation type="unfinished"></translation>
@@ -6275,11 +6263,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Video capture file</source>
         <comment>Video capture tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the additional features:&lt;/nobr&gt;%1</source>
-        <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6330,11 +6313,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>keyboard is captured</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the audio device:&lt;/nobr&gt;%1</source>
-        <comment>Audio tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7320,6 +7298,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>When checked, enables video recording for screen %1.</source>
         <translation>Когато е избрано, включва видео записване на екран %1.</translation>
+    </message>
+    <message>
+        <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Record Audio</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

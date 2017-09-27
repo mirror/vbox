@@ -209,27 +209,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished">کد&amp;nbsp;نتیجه: </translation>
+        <translation type="obsolete">کد&amp;nbsp;نتیجه: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="unfinished">جزء: </translation>
+        <translation type="obsolete">جزء: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished">رابط: </translation>
+        <translation type="obsolete">رابط: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Callee: </translation>
+        <translation type="obsolete">Callee: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Callee&amp;nbsp;RC: </translation>
+        <translation type="obsolete">Callee&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -2055,6 +2055,34 @@
     <message>
         <source>Choose...</source>
         <translation type="unfinished">انتخاب کنید...</translation>
+    </message>
+</context>
+<context>
+    <name>UIErrorString</name>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">کد&amp;nbsp;نتیجه: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">جزء: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">رابط: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Callee: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Callee&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -4462,26 +4490,6 @@
         <translation type="vanished">اگر صفحه کلید میزبان توسط سیستم عامل مهمان ضبط شده باشد را نشان میدهد:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;صفحه کلید ضبط نشده است&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;صفحه کلید ضبط شده است&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1</source>
-        <comment>HD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1</source>
-        <comment>CD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1</source>
-        <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1</source>
-        <comment>Network tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Adapter %1 (%2)</source>
         <comment>Network tooltip</comment>
         <translation type="unfinished"></translation>
@@ -4507,28 +4515,13 @@
         <translation type="unfinished">قطع شده است</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1</source>
-        <comment>USB tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No USB devices attached</source>
         <comment>USB tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1</source>
-        <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No shared folders</source>
         <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1</source>
-        <comment>Display tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4547,11 +4540,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;%1</source>
-        <comment>Video capture tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Video capture disabled</source>
         <comment>Video capture tooltip</comment>
         <translation type="unfinished"></translation>
@@ -4559,11 +4547,6 @@
     <message>
         <source>Video capture file</source>
         <comment>Video capture tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the additional features:&lt;/nobr&gt;%1</source>
-        <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4614,11 +4597,6 @@
     <message>
         <source>keyboard is captured</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the audio device:&lt;/nobr&gt;%1</source>
-        <comment>Audio tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5537,6 +5515,14 @@
     <message>
         <source>When checked, enables video recording for screen %1.</source>
         <translation>وقتیکه انتخاب شده، ضبط ویدیو را برای نمایشگر %1 فعال میکند.</translation>
+    </message>
+    <message>
+        <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Record Audio</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -313,27 +313,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Eredmény&amp;nbsp;kód: </translation>
+        <translation type="obsolete">Eredmény&amp;nbsp;kód: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Komponens: </translation>
+        <translation type="obsolete">Komponens: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Interfész: </translation>
+        <translation type="obsolete">Interfész: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Callee: </translation>
+        <translation type="obsolete">Callee: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Callee&amp;nbsp;RC: </translation>
+        <translation type="obsolete">Callee&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -2734,6 +2734,34 @@
     <message>
         <source>Choose...</source>
         <translation type="unfinished">Kiválaszt...</translation>
+    </message>
+</context>
+<context>
+    <name>UIErrorString</name>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Eredmény&amp;nbsp;kód: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Komponens: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Interfész: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Callee: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Callee&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -6160,26 +6188,6 @@ p, li { white-space: pre-wrap; }
         <translation type="vanished">Jelzi, hogy a vendég gép elfogta-e a gazda billentyűzetét:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;billentyűzet nincs elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;billentyűzet elfogva&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1</source>
-        <comment>HD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1</source>
-        <comment>CD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1</source>
-        <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1</source>
-        <comment>Network tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Adapter %1 (%2)</source>
         <comment>Network tooltip</comment>
         <translation type="unfinished"></translation>
@@ -6205,28 +6213,13 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Lekapcsolva</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1</source>
-        <comment>USB tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No USB devices attached</source>
         <comment>USB tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1</source>
-        <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No shared folders</source>
         <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1</source>
-        <comment>Display tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6245,11 +6238,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;%1</source>
-        <comment>Video capture tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Video capture disabled</source>
         <comment>Video capture tooltip</comment>
         <translation type="unfinished"></translation>
@@ -6257,11 +6245,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Video capture file</source>
         <comment>Video capture tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the additional features:&lt;/nobr&gt;%1</source>
-        <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6312,11 +6295,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>keyboard is captured</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Indicates the activity of the audio device:&lt;/nobr&gt;%1</source>
-        <comment>Audio tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7256,6 +7234,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>When checked, enables video recording for screen %1.</source>
         <translation>%1 képernyő videórögzítése.</translation>
+    </message>
+    <message>
+        <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Record Audio</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

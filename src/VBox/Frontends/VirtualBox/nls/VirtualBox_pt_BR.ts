@@ -312,27 +312,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>Código&amp;nbsp;de&amp;nbsp;Resultado: </translation>
+        <translation type="vanished">Código&amp;nbsp;de&amp;nbsp;Resultado: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>Componente: </translation>
+        <translation type="vanished">Componente: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>Interface: </translation>
+        <translation type="vanished">Interface: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>Chamador: </translation>
+        <translation type="vanished">Chamador: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>RC&amp;nbsp;do&amp;nbsp;Chamador: </translation>
+        <translation type="vanished">RC&amp;nbsp;do&amp;nbsp;Chamador: </translation>
     </message>
 </context>
 <context>
@@ -2935,6 +2935,34 @@
             <numerusform>&lt;nobr&gt;Usado pelo(s) seguinte(s) %n disco(s) rígido(s):&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
             <numerusform></numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>UIErrorString</name>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Código&amp;nbsp;de&amp;nbsp;Resultado: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Componente: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Interface: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Chamador: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">RC&amp;nbsp;do&amp;nbsp;Chamador: </translation>
     </message>
 </context>
 <context>
@@ -6521,22 +6549,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1</source>
         <comment>HD tooltip</comment>
-        <translation>&lt;nobr&gt;Indica a atividade dos discos rígidos:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Indica a atividade dos discos rígidos:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1</source>
         <comment>CD tooltip</comment>
-        <translation>&lt;nobr&gt;Indica a atividade dos drives ópticos:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Indica a atividade dos drives ópticos:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;nobr&gt;Indica a atividade dos drives de disquete:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Indica a atividade dos drives de disquete:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1</source>
         <comment>Network tooltip</comment>
-        <translation>&lt;nobr&gt;Indica a atividade das interfaces de rede:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Indica a atividade das interfaces de rede:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Adapter %1 (%2)</source>
@@ -6566,7 +6594,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1</source>
         <comment>USB tooltip</comment>
-        <translation>&lt;nobr&gt;Indica a atividade dos dispositivos USB conectados:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Indica a atividade dos dispositivos USB conectados:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>No USB devices attached</source>
@@ -6576,7 +6604,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;nobr&gt;Indica a atividade das pastas compartilhadas:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Indica a atividade das pastas compartilhadas:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>No shared folders</source>
@@ -6586,7 +6614,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1</source>
         <comment>Display tooltip</comment>
-        <translation>&lt;nobr&gt;Indica a atividade da tela:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Indica a atividade da tela:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Video memory</source>
@@ -6606,7 +6634,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;%1</source>
         <comment>Video capture tooltip</comment>
-        <translation>&lt;nobr&gt;Indica atividade de captura de vídeo:&lt;/nobr&gt;&lt;br&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Indica atividade de captura de vídeo:&lt;/nobr&gt;&lt;br&gt;%1</translation>
     </message>
     <message>
         <source>Video capture disabled</source>
@@ -6621,7 +6649,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the additional features:&lt;/nobr&gt;%1</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>&lt;nobr&gt;Indica a atividade de recursos adicionais:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Indica a atividade de recursos adicionais:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:%1</source>
@@ -6676,7 +6704,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the audio device:&lt;/nobr&gt;%1</source>
         <comment>Audio tooltip</comment>
-        <translation>&lt;nobr&gt;Indica a atividade do dispositivo de áudio:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;Indica a atividade do dispositivo de áudio:&lt;/nobr&gt;%1</translation>
     </message>
 </context>
 <context>
@@ -7655,6 +7683,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>When checked, enables video recording for screen %1.</source>
         <translation>Quando selecionado, habilita a gravação de vídeo para a tela %1.</translation>
+    </message>
+    <message>
+        <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Record Audio</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

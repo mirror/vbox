@@ -149,27 +149,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>結果碼: </translation>
+        <translation type="vanished">結果碼: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>元件: </translation>
+        <translation type="vanished">元件: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>介面: </translation>
+        <translation type="vanished">介面: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>被呼叫端: </translation>
+        <translation type="vanished">被呼叫端: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>被呼叫端&amp;nbsp;RC: </translation>
+        <translation type="vanished">被呼叫端&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -1368,6 +1368,34 @@
     <message>
         <source>Choose...</source>
         <translation>選擇...</translation>
+    </message>
+</context>
+<context>
+    <name>UIErrorString</name>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">結果碼: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">元件: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">介面: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">被呼叫端: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">被呼叫端&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -3004,22 +3032,22 @@
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1</source>
         <comment>HD tooltip</comment>
-        <translation>&lt;nobr&gt;指示硬碟的活動性:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;指示硬碟的活動性:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1</source>
         <comment>CD tooltip</comment>
-        <translation>&lt;nobr&gt;指示光學裝置的活動性:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;指示光學裝置的活動性:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;nobr&gt;指示軟碟的活動性:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;指示軟碟的活動性:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1</source>
         <comment>Network tooltip</comment>
-        <translation>&lt;nobr&gt;指示網路介面的活動性:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;指示網路介面的活動性:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Adapter %1 (%2)</source>
@@ -3049,7 +3077,7 @@
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1</source>
         <comment>USB tooltip</comment>
-        <translation>&lt;nobr&gt;指示附加 USB 裝置的活動性:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;指示附加 USB 裝置的活動性:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>No USB devices attached</source>
@@ -3059,7 +3087,7 @@
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;nobr&gt;指示電腦的共用資料夾的活動性:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;指示電腦的共用資料夾的活動性:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>No shared folders</source>
@@ -3069,7 +3097,7 @@
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1</source>
         <comment>Display tooltip</comment>
-        <translation>&lt;nobr&gt;指示顯示的活動性:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;指示顯示的活動性:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Video memory</source>
@@ -3089,7 +3117,7 @@
     <message>
         <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;%1</source>
         <comment>Video capture tooltip</comment>
-        <translation>&lt;nobr&gt;指示視訊擷取的活動性:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;指示視訊擷取的活動性:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Video capture disabled</source>
@@ -3104,7 +3132,7 @@
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the additional features:&lt;/nobr&gt;%1</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>&lt;nobr&gt;指示額外功能的活動性:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;指示額外功能的活動性:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:%1</source>
@@ -3159,7 +3187,7 @@
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the audio device:&lt;/nobr&gt;%1</source>
         <comment>Audio tooltip</comment>
-        <translation>&lt;nobr&gt;指示音訊裝置的活動性:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;指示音訊裝置的活動性:&lt;/nobr&gt;%1</translation>
     </message>
 </context>
 <context>
@@ -3859,6 +3887,14 @@
     <message>
         <source>When checked, enables video recording for screen %1.</source>
         <translation>選取時，啟用畫面 %1 的視訊錄製。</translation>
+    </message>
+    <message>
+        <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Record Audio</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

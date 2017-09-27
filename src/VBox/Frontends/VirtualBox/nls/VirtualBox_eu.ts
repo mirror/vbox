@@ -242,35 +242,29 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../src/globals/UIErrorString.cpp" line="+126"/>
-        <location line="+71"/>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Emaitz&amp;nbsp;Kodea: </translation>
+        <translation type="obsolete">Emaitz&amp;nbsp;Kodea: </translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Osagaia: </translation>
+        <translation type="obsolete">Osagaia: </translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Interfazea: </translation>
+        <translation type="obsolete">Interfazea: </translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Deitua: </translation>
+        <translation type="obsolete">Deitua: </translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Deitua&amp;nbsp;RC: </translation>
+        <translation type="obsolete">Deitua&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -2426,6 +2420,40 @@
     </message>
 </context>
 <context>
+    <name>UIErrorString</name>
+    <message>
+        <location filename="../src/globals/UIErrorString.cpp" line="+126"/>
+        <location line="+71"/>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Emaitz&amp;nbsp;Kodea: </translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Osagaia: </translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Interfazea: </translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Deitua: </translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Deitua&amp;nbsp;RC: </translation>
+    </message>
+</context>
+<context>
     <name>UIExtensionPackageItem</name>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsExtension.cpp" line="+157"/>
@@ -3085,7 +3113,7 @@
         <translation>Hostalari Gidagailua</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+441"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+429"/>
         <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+11"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+9"/>
         <source>Audio Output</source>
@@ -5267,37 +5295,7 @@
         <translation type="obsolete">&lt;hr&gt;Hurruneko Mahaigain Zerbitzaria %1 atakan ari da aditzen</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-240"/>
-        <source>&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1</source>
-        <comment>HD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+68"/>
-        <source>&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1</source>
-        <comment>CD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+72"/>
-        <source>&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1</source>
-        <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+81"/>
-        <source>&lt;nobr&gt;Indicates the activity of the audio device:&lt;/nobr&gt;%1</source>
-        <comment>Audio tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+106"/>
-        <source>&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1</source>
-        <comment>Network tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+46"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+130"/>
         <source>Adapter %1 (%2)</source>
         <comment>Network tooltip</comment>
         <translation type="unfinished"></translation>
@@ -5327,37 +5325,19 @@
         <translation type="unfinished">Etenda</translation>
     </message>
     <message>
-        <location line="+50"/>
-        <source>&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1</source>
-        <comment>USB tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+18"/>
+        <location line="+65"/>
         <source>No USB devices attached</source>
         <comment>USB tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+46"/>
-        <source>&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1</source>
-        <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+24"/>
+        <location line="+67"/>
         <source>No shared folders</source>
         <comment>Shared folders tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+38"/>
-        <source>&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1</source>
-        <comment>Display tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
+        <location line="+44"/>
         <source>Video memory</source>
         <comment>Display tooltip</comment>
         <translation type="unfinished"></translation>
@@ -5375,31 +5355,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+101"/>
-        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;%1</source>
-        <comment>Video capture tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
+        <location line="+118"/>
         <source>Video capture disabled</source>
         <comment>Video capture tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Video capture file</source>
         <comment>Video capture tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+76"/>
-        <source>&lt;nobr&gt;Indicates the activity of the additional features:&lt;/nobr&gt;%1</source>
-        <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+67"/>
+        <location line="+140"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:%1</source>
         <comment>Mouse tooltip</comment>
         <translation type="unfinished"></translation>
@@ -6096,7 +6064,7 @@
 <context>
     <name>UIMachineSettingsDisplay</name>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+389"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+520"/>
         <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation>Makina birtual hau hardware bizkorpena erabiltzeko ezarrita dago Horrela ere hostalari sistemak ezin du oraingoz hau hornitu, hortaz ez zara makina abiarazeko gai izango.</translation>
     </message>
@@ -6158,12 +6126,12 @@
     <message>
         <location line="+76"/>
         <location line="+1"/>
-        <location line="+583"/>
+        <location line="+586"/>
         <source>%1 MB</source>
         <translation>%1 MB</translation>
     </message>
     <message>
-        <location line="-580"/>
+        <location line="-583"/>
         <location line="+1"/>
         <source>%1%</source>
         <translation>%1%</translation>
@@ -6187,12 +6155,12 @@
         <translation>handia</translation>
     </message>
     <message>
-        <location line="+613"/>
+        <location line="+616"/>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
         <translation>&lt;i&gt;%1MB 5 minutuko bideo inguru&lt;/i&gt;</translation>
     </message>
     <message>
-        <location line="-619"/>
+        <location line="-622"/>
         <source>kbps</source>
         <translation>kbs-ko</translation>
     </message>
@@ -6218,11 +6186,12 @@
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="+305"/>
+        <location line="+285"/>
         <source>Extended Features:</source>
         <translation>Ezaugarri Hedatuak:</translation>
     </message>
     <message>
-        <location line="-144"/>
+        <location line="-429"/>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation>Hautatutakoan, makina birtualak sarbidea emango du hostalarian eskuragarri dauden 3D grafika gaitasunetara.</translation>
     </message>
@@ -6354,11 +6323,21 @@
         <translation>Ezarpen honek bitneurria zehazten du&lt;b&gt;kilobit segunduko&lt;/b&gt;-tan. Balio hau handitzeak bideoak hobea ematea egingo du agiriaren neurria apur bat handituz.</translation>
     </message>
     <message>
+        <location line="+20"/>
+        <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>&amp;Record Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Defines the VRDP authentication method.</source>
         <translation type="obsolete">VRDP egiaztapen metodoa zehazten du.</translation>
     </message>
     <message>
-        <location line="-295"/>
+        <location line="-318"/>
         <source>Authentication &amp;Timeout:</source>
         <translation>Egiaztapen &amp;Epemuga:</translation>
     </message>
@@ -6430,12 +6409,12 @@
         <translation type="obsolete">Ezarpen honek bitneurria zehazten du&lt;b&gt;kilobit segunduko&lt;/b&gt;-tan. Balio hau handitzeak bideoak hobea ematea egingo du agiriaren neurria apur bat handituz.</translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+97"/>
         <source>&amp;Screens:</source>
         <translation>&amp;Ikusleihoak:</translation>
     </message>
     <message>
-        <location line="-413"/>
+        <location line="-433"/>
         <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
         <translation>Hautatutakoan, makina birtualak hostalarian eskuragarri dauden Bideo Bizkorpen gaitasunetarako sarbidea emango du.</translation>
     </message>
@@ -11075,7 +11054,7 @@
 <context>
     <name>UIPopupCenter</name>
     <message>
-        <location filename="../src/widgets/UIPopupPane.cpp" line="+323"/>
+        <location filename="../src/widgets/UIPopupPane.cpp" line="+324"/>
         <location line="+1"/>
         <source>Click for full details</source>
         <translation>Klikatu xehetasun guztietarako</translation>
@@ -11291,7 +11270,7 @@
 <context>
     <name>UISessionStateStatusBarIndicator</name>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-987"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-969"/>
         <source>%1 status-bar indicator</source>
         <comment>like &apos;hard-disk status-bar indicator&apos;</comment>
         <translation type="unfinished"></translation>
@@ -13556,7 +13535,7 @@
         <translation>itzalita</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+795"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+780"/>
         <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="+26"/>
         <source>Active</source>
         <comment>details report (VT-x/AMD-V)</comment>
@@ -13598,7 +13577,7 @@
         <translation>Jardungabe</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+14"/>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
         <translation>Parabirtualizazio Interfazea</translation>
@@ -14186,7 +14165,7 @@
         <translation type="vanished">3D Bizkorpena</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-199"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-205"/>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
         <translation>Gaituta</translation>
@@ -14311,7 +14290,7 @@
         <translation>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location line="+224"/>
+        <location line="+230"/>
         <source>Processor(s)</source>
         <comment>details report</comment>
         <translation>Prozesagailua(k)</translation>

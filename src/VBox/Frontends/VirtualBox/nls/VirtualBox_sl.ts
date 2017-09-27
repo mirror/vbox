@@ -213,35 +213,29 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../src/globals/UIErrorString.cpp" line="+126"/>
-        <location line="+71"/>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Koda&amp;nbsp;rezultata: </translation>
+        <translation type="obsolete">Koda&amp;nbsp;rezultata: </translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Sestavni del: </translation>
+        <translation type="obsolete">Sestavni del: </translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Vmesnik: </translation>
+        <translation type="obsolete">Vmesnik: </translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Klicalec: </translation>
+        <translation type="obsolete">Klicalec: </translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Klicalec&amp;nbsp;RC: </translation>
+        <translation type="obsolete">Klicalec&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -1763,6 +1757,40 @@
     </message>
 </context>
 <context>
+    <name>UIErrorString</name>
+    <message>
+        <location filename="../src/globals/UIErrorString.cpp" line="+126"/>
+        <location line="+71"/>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Koda&amp;nbsp;rezultata: </translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Sestavni del: </translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Vmesnik: </translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Klicalec: </translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">Klicalec&amp;nbsp;RC: </translation>
+    </message>
+</context>
+<context>
     <name>UIExtensionPackageItem</name>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsExtension.cpp" line="+157"/>
@@ -2053,7 +2081,7 @@
         <translation>Krmilnik</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+441"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+429"/>
         <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+6"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+5"/>
         <source>Audio Output</source>
@@ -4229,37 +4257,7 @@
         <translation type="vanished">Nakazuje, ali je gostujoči operacijski sistem zajel tipkovnico gostitelja:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;Tipkovnica ni zajeta&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;Tipkovnica je zajeta&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-240"/>
-        <source>&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1</source>
-        <comment>HD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+68"/>
-        <source>&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1</source>
-        <comment>CD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+72"/>
-        <source>&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1</source>
-        <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+81"/>
-        <source>&lt;nobr&gt;Indicates the activity of the audio device:&lt;/nobr&gt;%1</source>
-        <comment>Audio tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+106"/>
-        <source>&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1</source>
-        <comment>Network tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+46"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+130"/>
         <source>Adapter %1 (%2)</source>
         <comment>Network tooltip</comment>
         <translation type="unfinished"></translation>
@@ -4289,37 +4287,19 @@
         <translation type="unfinished">Prekinjen</translation>
     </message>
     <message>
-        <location line="+50"/>
-        <source>&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1</source>
-        <comment>USB tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+18"/>
+        <location line="+65"/>
         <source>No USB devices attached</source>
         <comment>USB tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+46"/>
-        <source>&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1</source>
-        <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+24"/>
+        <location line="+67"/>
         <source>No shared folders</source>
         <comment>Shared folders tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+38"/>
-        <source>&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1</source>
-        <comment>Display tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
+        <location line="+44"/>
         <source>Video memory</source>
         <comment>Display tooltip</comment>
         <translation type="unfinished"></translation>
@@ -4337,31 +4317,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+101"/>
-        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;%1</source>
-        <comment>Video capture tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
+        <location line="+118"/>
         <source>Video capture disabled</source>
         <comment>Video capture tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Video capture file</source>
         <comment>Video capture tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+76"/>
-        <source>&lt;nobr&gt;Indicates the activity of the additional features:&lt;/nobr&gt;%1</source>
-        <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+67"/>
+        <location line="+140"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:%1</source>
         <comment>Mouse tooltip</comment>
         <translation type="unfinished"></translation>
@@ -5031,17 +4999,18 @@
         <translation>Nadzira količino grafičnega pomnilnika, ki se ga dobavi navideznemu računalniku.</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+535"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+666"/>
         <source>MB</source>
         <translation>MB</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="+305"/>
+        <location line="+285"/>
         <source>Extended Features:</source>
         <translation>Razširjene značilnosti:</translation>
     </message>
     <message>
-        <location line="-144"/>
+        <location line="-429"/>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation>Ko je označeno, bo navidezni računalnik dobil dostop do zmogljivosti grafike 3D, ki je na voljo na gostitelju.</translation>
     </message>
@@ -5142,7 +5111,17 @@
         <translation>&amp;Kakovost:</translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+87"/>
+        <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>&amp;Record Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>&amp;Screens:</source>
         <translation>&amp;Zasloni:</translation>
     </message>
@@ -5216,12 +5195,12 @@
         <translation>Zaslon %1</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+619"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+622"/>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
         <translation>&lt;i&gt;Okoli %1 MB na 5 min. videoposnetka&lt;/i&gt;</translation>
     </message>
     <message>
-        <location line="-709"/>
+        <location line="-712"/>
         <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
         <translation>Oddaljeni zaslon je trenutno omogočen za ta navidezni računalnik. Vendar to zahteva namestitev &lt;i&gt;%1&lt;/i&gt;. Namestite paket razširitev z mesta za prejem VirtualBox ali pa se bo vaš navidezni računalnik zaganal z onemogočenim oddaljenim zaslonom.</translation>
     </message>
@@ -5231,7 +5210,7 @@
         <translation>Navidezni računalnik je nastavljen za uporabo strojnega grafičnega poseševanja in namig operacijskega sistema je nastavljen na Windows Vista ali starejši. Za najboljšo zmogljivost morate grafični pomnilnik računalnika nastaviti na najmanj &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="-648"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="-668"/>
         <source>&amp;Screen</source>
         <translation>&amp;Zaslon</translation>
     </message>
@@ -5335,12 +5314,12 @@
     <message>
         <location line="+134"/>
         <location line="+1"/>
-        <location line="+583"/>
+        <location line="+586"/>
         <source>%1 MB</source>
         <translation>%1 MB</translation>
     </message>
     <message>
-        <location line="-580"/>
+        <location line="-583"/>
         <location line="+1"/>
         <source>%1%</source>
         <translation>%1%</translation>
@@ -9158,7 +9137,7 @@
 <context>
     <name>UIPopupCenter</name>
     <message>
-        <location filename="../src/widgets/UIPopupPane.cpp" line="+323"/>
+        <location filename="../src/widgets/UIPopupPane.cpp" line="+324"/>
         <location line="+1"/>
         <source>Click for full details</source>
         <translation>Kliknite za polne podrobnosti</translation>
@@ -9347,7 +9326,7 @@
 <context>
     <name>UISessionStateStatusBarIndicator</name>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-987"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-969"/>
         <source>%1 status-bar indicator</source>
         <comment>like &apos;hard-disk status-bar indicator&apos;</comment>
         <translation type="unfinished"></translation>
@@ -11656,7 +11635,7 @@
         <translation>Uporabniško določeno</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+819"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+801"/>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
         <translation>VT-x/AMD-V</translation>
@@ -11854,7 +11833,7 @@
         <translation type="vanished">Pospeševanje 3D</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-199"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-205"/>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
         <translation>Omogočeno</translation>
@@ -11979,7 +11958,7 @@
         <translation>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location line="+224"/>
+        <location line="+230"/>
         <source>Processor(s)</source>
         <comment>details report</comment>
         <translation>Procesor(ji)</translation>
@@ -12899,7 +12878,7 @@
         <translation>Nova dinamično dodeljena pomnilniška naprava</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-28"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="-25"/>
         <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="+26"/>
         <source>Active</source>
         <comment>details report (VT-x/AMD-V)</comment>

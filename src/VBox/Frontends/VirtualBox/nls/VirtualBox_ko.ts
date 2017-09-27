@@ -268,27 +268,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>결과&amp;nbsp;코드: </translation>
+        <translation type="vanished">결과&amp;nbsp;코드: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>구성 요소: </translation>
+        <translation type="vanished">구성 요소: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>인터페이스: </translation>
+        <translation type="vanished">인터페이스: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>호출자: </translation>
+        <translation type="vanished">호출자: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>호출자&amp;nbsp;RC: </translation>
+        <translation type="vanished">호출자&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -2720,6 +2720,34 @@
         <translation type="obsolete">
             <numerusform>&lt;nobr&gt;다음 하드 드라이브 %n개에 사용됨:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>UIErrorString</name>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">결과&amp;nbsp;코드: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">구성 요소: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">인터페이스: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">호출자: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation type="unfinished">호출자&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -6206,22 +6234,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1</source>
         <comment>HD tooltip</comment>
-        <translation>&lt;nobr&gt;하드 디스크의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;하드 디스크의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1</source>
         <comment>CD tooltip</comment>
-        <translation>&lt;nobr&gt;광학 드라이브의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;광학 드라이브의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;nobr&gt;플로피 드라이브의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;플로피 드라이브의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1</source>
         <comment>Network tooltip</comment>
-        <translation>&lt;nobr&gt;네트워크 인터페이스의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;네트워크 인터페이스의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Adapter %1 (%2)</source>
@@ -6251,7 +6279,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1</source>
         <comment>USB tooltip</comment>
-        <translation>&lt;nobr&gt;연결된 USB 장치의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;연결된 USB 장치의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>No USB devices attached</source>
@@ -6261,7 +6289,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;nobr&gt;머신 공유 폴더의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;머신 공유 폴더의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>No shared folders</source>
@@ -6271,7 +6299,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1</source>
         <comment>Display tooltip</comment>
-        <translation>&lt;nobr&gt;디스플레이의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;디스플레이의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Video memory</source>
@@ -6291,7 +6319,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;%1</source>
         <comment>Video capture tooltip</comment>
-        <translation>&lt;nobr&gt;비디오 캡처 활동을 표시합니다:&lt;/nobr&gt;&lt;br&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;비디오 캡처 활동을 표시합니다:&lt;/nobr&gt;&lt;br&gt;%1</translation>
     </message>
     <message>
         <source>Video capture disabled</source>
@@ -6306,7 +6334,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the additional features:&lt;/nobr&gt;%1</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>&lt;nobr&gt;추가 기능의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;추가 기능의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:%1</source>
@@ -6361,7 +6389,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the audio device:&lt;/nobr&gt;%1</source>
         <comment>Audio tooltip</comment>
-        <translation>&lt;nobr&gt;오디오 장치의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
+        <translation type="vanished">&lt;nobr&gt;오디오 장치의 활동 상태를 표시합니다:&lt;/nobr&gt;%1</translation>
     </message>
 </context>
 <context>
@@ -7335,6 +7363,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>When checked, enables video recording for screen %1.</source>
         <translation>선택하면 화면 %1의 동영상 녹화를 사용합니다.</translation>
+    </message>
+    <message>
+        <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Record Audio</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
