@@ -1805,6 +1805,8 @@ VMMR3_INT_DECL(void) HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmSha
         Log(("HMR3PagingModeChanged indicates real mode execution\n"));
         pVCpu->hm.s.vmx.fWasInRealMode = true;
     }
+    else
+        Log(("HMR3PagingModeChanged indicates %d mode execution\n", enmGuestMode));
 }
 
 
