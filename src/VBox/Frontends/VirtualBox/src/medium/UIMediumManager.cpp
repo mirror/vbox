@@ -797,31 +797,31 @@ void UIMediumManagerWidget::retranslateUi()
     if (m_pActionCopy)
     {
         m_pActionCopy->setText(UIMediumManager::tr("&Copy..."));
-        m_pActionCopy->setToolTip(tr("Copy Disk Image File (%1)").arg(m_pActionCopy->shortcut().toString()));
+        m_pActionCopy->setToolTip(UIMediumManager::tr("Copy Disk Image File (%1)").arg(m_pActionCopy->shortcut().toString()));
         m_pActionCopy->setStatusTip(UIMediumManager::tr("Copy selected disk image file"));
     }
     if (m_pActionRemove)
     {
         m_pActionRemove->setText(UIMediumManager::tr("&Remove..."));
-        m_pActionRemove->setToolTip(tr("Remove Disk Image File (%1)").arg(m_pActionRemove->shortcut().toString()));
+        m_pActionRemove->setToolTip(UIMediumManager::tr("Remove Disk Image File (%1)").arg(m_pActionRemove->shortcut().toString()));
         m_pActionRemove->setStatusTip(UIMediumManager::tr("Remove selected disk image file"));
     }
     if (m_pActionRelease)
     {
         m_pActionRelease->setText(UIMediumManager::tr("Re&lease..."));
-        m_pActionRelease->setToolTip(tr("Release Disk Image File (%1)").arg(m_pActionRelease->shortcut().toString()));
+        m_pActionRelease->setToolTip(UIMediumManager::tr("Release Disk Image File (%1)").arg(m_pActionRelease->shortcut().toString()));
         m_pActionRelease->setStatusTip(UIMediumManager::tr("Release selected disk image file by detaching it from machines"));
     }
     if (m_pActionDetails)
     {
         m_pActionDetails->setText(UIMediumManager::tr("&Properties..."));
-        m_pActionDetails->setToolTip(tr("Open Disk Image File Properties (%1)").arg(m_pActionDetails->shortcut().toString()));
+        m_pActionDetails->setToolTip(UIMediumManager::tr("Open Disk Image File Properties (%1)").arg(m_pActionDetails->shortcut().toString()));
         m_pActionDetails->setStatusTip(UIMediumManager::tr("Open pane with selected disk image file properties"));
     }
     if (m_pActionRefresh)
     {
         m_pActionRefresh->setText(UIMediumManager::tr("Re&fresh"));
-        m_pActionRefresh->setToolTip(tr("Refresh Disk Image Files (%1)").arg(m_pActionRefresh->shortcut().toString()));
+        m_pActionRefresh->setToolTip(UIMediumManager::tr("Refresh Disk Image Files (%1)").arg(m_pActionRefresh->shortcut().toString()));
         m_pActionRefresh->setStatusTip(UIMediumManager::tr("Refresh the list of disk image files"));
     }
 
