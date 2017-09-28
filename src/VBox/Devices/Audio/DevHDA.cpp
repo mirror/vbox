@@ -2153,121 +2153,138 @@ static PHDAMIXERSINK hdaMixerControlToSink(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
 }
 
 /**
- * Adds audio streams of all attached LUNs to a given HDA audio mixer sink.
+ * Adds a driver stream to a specific mixer sink.
  *
  * @returns IPRT status code.
  * @param   pThis               HDA state.
  * @param   pSink               HDA mixer sink to add audio streams to.
  * @param   pCfg                Audio stream configuration to use for the audio streams to add.
+ * @param   pDrv                Driver stream to add.
  */
-static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink, PPDMAUDIOSTREAMCFG pCfg)
+static int hdaMixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg, PHDADRIVER pDrv)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,     VERR_INVALID_POINTER);
 
-    LogFunc(("Sink=%s, Stream=%s\n", pSink->pMixSink->pszName, pCfg->szName));
+    LogFunc(("Sink=%s, Stream=%s\n", pMixSink->pszName, pCfg->szName));
 
-    if (!DrvAudioHlpStreamCfgIsValid(pCfg))
+    PPDMAUDIOSTREAMCFG pStreamCfg = DrvAudioHlpStreamCfgDup(pCfg);
+    if (!pStreamCfg)
+        return VERR_NO_MEMORY;
+
+    if (!RTStrPrintf(pStreamCfg->szName, sizeof(pStreamCfg->szName), "%s", pCfg->szName))
     {
-        LogRel(("HDA: Invalid stream configuration used for sink #%RU8: %RU8 bit, %RU8 channel(s) @ %RU32Hz\n",
-                pSink->uSD, pCfg->Props.cBits, pCfg->Props.cChannels, pCfg->Props.uHz));
-
-        AssertFailed(); /* Should not happen. */
-        return VERR_INVALID_PARAMETER;
+        RTMemFree(pStreamCfg);
+        return VERR_BUFFER_OVERFLOW;
     }
 
-    int rc = AudioMixerSinkSetFormat(pSink->pMixSink, &pCfg->Props);
+    LogFunc(("[LUN#%RU8] %s\n", pDrv->uLUN, pStreamCfg->szName));
+
+    int rc = VINF_SUCCESS;
+
+    PHDADRIVERSTREAM pDrvStream = NULL;
+
+    if (pStreamCfg->enmDir == PDMAUDIODIR_IN)
+    {
+        LogFunc(("enmRecSource=%d\n", pStreamCfg->DestSource.Source));
+
+        switch (pStreamCfg->DestSource.Source)
+        {
+            case PDMAUDIORECSOURCE_LINE:
+                pDrvStream = &pDrv->LineIn;
+                break;
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+            case PDMAUDIORECSOURCE_MIC:
+                pDrvStream = &pDrv->MicIn;
+                break;
+#endif
+            default:
+                rc = VERR_NOT_SUPPORTED;
+                break;
+        }
+    }
+    else if (pStreamCfg->enmDir == PDMAUDIODIR_OUT)
+    {
+        LogFunc(("enmPlaybackDest=%d\n", pStreamCfg->DestSource.Dest));
+
+        switch (pStreamCfg->DestSource.Dest)
+        {
+            case PDMAUDIOPLAYBACKDEST_FRONT:
+                pDrvStream = &pDrv->Front;
+                break;
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+            case PDMAUDIOPLAYBACKDEST_CENTER_LFE:
+                pDrvStream = &pDrv->CenterLFE;
+                break;
+            case PDMAUDIOPLAYBACKDEST_REAR:
+                pDrvStream = &pDrv->Rear;
+                break;
+#endif
+            default:
+                rc = VERR_NOT_SUPPORTED;
+                break;
+        }
+    }
+    else
+        rc = VERR_NOT_SUPPORTED;
+
+    if (RT_SUCCESS(rc))
+    {
+        AssertPtr(pDrvStream);
+        AssertMsg(pDrvStream->pMixStrm == NULL, ("[LUN#%RU8] Driver stream already present when it must not\n", pDrv->uLUN));
+
+        PAUDMIXSTREAM pMixStrm;
+        rc = AudioMixerSinkCreateStream(pMixSink, pDrv->pConnector, pStreamCfg, 0 /* fFlags */, &pMixStrm);
+        if (RT_SUCCESS(rc))
+        {
+            rc = AudioMixerSinkAddStream(pMixSink, pMixStrm);
+            LogFlowFunc(("LUN#%RU8: Added \"%s\" to sink, rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName, rc));
+        }
+
+        if (RT_SUCCESS(rc))
+            pDrvStream->pMixStrm = pMixStrm;
+    }
+
+    if (pStreamCfg)
+    {
+        RTMemFree(pStreamCfg);
+        pStreamCfg = NULL;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Adds all current driver streams to a specific mixer sink.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               HDA state.
+ * @param   pMixSink            Mixer sink to add stream to.
+ * @param   pCfg                Audio stream configuration to use for the audio streams to add.
+ */
+static int hdaMixerAddDrvStreams(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg)
+{
+    AssertPtrReturn(pThis,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,     VERR_INVALID_POINTER);
+
+    LogFunc(("Sink=%s, Stream=%s\n", pMixSink->pszName, pCfg->szName));
+
+    if (!DrvAudioHlpStreamCfgIsValid(pCfg))
+        return VERR_INVALID_PARAMETER;
+
+    int rc = AudioMixerSinkSetFormat(pMixSink, &pCfg->Props);
     if (RT_FAILURE(rc))
         return rc;
 
     PHDADRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
-        int rc2 = VINF_SUCCESS;
-        PHDADRIVERSTREAM pDrvStream = NULL;
-
-        PPDMAUDIOSTREAMCFG pStreamCfg = DrvAudioHlpStreamCfgDup(pCfg);
-        if (!pStreamCfg)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        RTStrPrintf(pStreamCfg->szName, RT_ELEMENTS(pStreamCfg->szName), "%s", pCfg->szName);
-
-        if (pStreamCfg->enmDir == PDMAUDIODIR_IN)
-        {
-            LogFunc(("enmRecSource=%d\n", pStreamCfg->DestSource.Source));
-
-            switch (pStreamCfg->DestSource.Source)
-            {
-                case PDMAUDIORECSOURCE_LINE:
-                    pDrvStream = &pDrv->LineIn;
-                    break;
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-                case PDMAUDIORECSOURCE_MIC:
-                    pDrvStream = &pDrv->MicIn;
-                    break;
-#endif
-                default:
-                    rc2 = VERR_NOT_SUPPORTED;
-                    break;
-            }
-        }
-        else if (pStreamCfg->enmDir == PDMAUDIODIR_OUT)
-        {
-            LogFunc(("enmPlaybackDest=%d\n", pStreamCfg->DestSource.Dest));
-
-            switch (pStreamCfg->DestSource.Dest)
-            {
-                case PDMAUDIOPLAYBACKDEST_FRONT:
-                    pDrvStream = &pDrv->Front;
-                    break;
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-                case PDMAUDIOPLAYBACKDEST_CENTER_LFE:
-                    pDrvStream = &pDrv->CenterLFE;
-                    break;
-                case PDMAUDIOPLAYBACKDEST_REAR:
-                    pDrvStream = &pDrv->Rear;
-                    break;
-#endif
-                default:
-                    rc2 = VERR_NOT_SUPPORTED;
-                    break;
-            }
-        }
-        else
-            rc2 = VERR_NOT_SUPPORTED;
-
-        if (RT_SUCCESS(rc2))
-        {
-            AssertPtr(pDrvStream);
-
-            AudioMixerSinkRemoveStream(pSink->pMixSink, pDrvStream->pMixStrm);
-
-            AudioMixerStreamDestroy(pDrvStream->pMixStrm);
-            pDrvStream->pMixStrm = NULL;
-
-            PAUDMIXSTREAM pMixStrm;
-            rc2 = AudioMixerSinkCreateStream(pSink->pMixSink, pDrv->pConnector, pStreamCfg, 0 /* fFlags */, &pMixStrm);
-            if (RT_SUCCESS(rc2))
-            {
-                rc2 = AudioMixerSinkAddStream(pSink->pMixSink, pMixStrm);
-                LogFlowFunc(("LUN#%RU8: Added \"%s\" to sink, rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName , rc2));
-            }
-
-            if (RT_SUCCESS(rc2))
-                pDrvStream->pMixStrm = pMixStrm;
-
-            /* If creating a stream fails, be forgiving and continue -- don't pass rc2 to rc here. */
-        }
-
-        if (pStreamCfg)
-        {
-            RTMemFree(pStreamCfg);
-            pStreamCfg = NULL;
-        }
+        int rc2 = hdaMixerAddDrvStream(pThis, pMixSink, pCfg, pDrv);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -2294,7 +2311,7 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
     PHDAMIXERSINK pSink = hdaMixerControlToSink(pThis, enmMixerCtl);
     if (pSink)
     {
-        rc = hdaMixerAddStream(pThis, pSink, pCfg);
+        rc = hdaMixerAddDrvStreams(pThis, pSink->pMixSink, pCfg);
 
         AssertPtr(pSink->pMixSink);
         LogFlowFunc(("Sink=%s, enmMixerCtl=%d\n", pSink->pMixSink->pszName, enmMixerCtl));
@@ -4403,17 +4420,14 @@ static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
  * constructor has to attach to all the available drivers.
  *
  * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pDrv        Driver to (re-)use for (re-)attaching to.
- *                      If NULL is specified, a new driver will be created and appended
- *                      to the driver list.
+ * @param   pThis       HDA state.
  * @param   uLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ * @param   ppDrv       Attached driver instance on success. Optional.
  */
-static int hdaAttachInternal(PPDMDEVINS pDevIns, PHDADRIVER pDrv, unsigned uLUN, uint32_t fFlags)
+static int hdaAttachInternal(PHDASTATE pThis, unsigned uLUN, uint32_t fFlags, PHDADRIVER *ppDrv)
 {
     RT_NOREF(fFlags);
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
     /*
      * Attach driver.
@@ -4423,12 +4437,11 @@ static int hdaAttachInternal(PPDMDEVINS pDevIns, PHDADRIVER pDrv, unsigned uLUN,
         AssertLogRelFailedReturn(VERR_NO_MEMORY);
 
     PPDMIBASE pDrvBase;
-    int rc = PDMDevHlpDriverAttach(pDevIns, uLUN,
+    int rc = PDMDevHlpDriverAttach(pThis->pDevInsR3, uLUN,
                                    &pThis->IBase, &pDrvBase, pszDesc);
     if (RT_SUCCESS(rc))
     {
-        if (pDrv == NULL)
-            pDrv = (PHDADRIVER)RTMemAllocZ(sizeof(HDADRIVER));
+        PHDADRIVER pDrv = (PHDADRIVER)RTMemAllocZ(sizeof(HDADRIVER));
         if (pDrv)
         {
             pDrv->pDrvBase   = pDrvBase;
@@ -4452,6 +4465,9 @@ static int hdaAttachInternal(PPDMDEVINS pDevIns, PHDADRIVER pDrv, unsigned uLUN,
                 RTListAppend(&pThis->lstDrv, &pDrv->Node);
                 pDrv->fAttached = true;
             }
+
+            if (ppDrv)
+                *ppDrv = pDrv;
         }
         else
             rc = VERR_NO_MEMORY;
@@ -4471,16 +4487,52 @@ static int hdaAttachInternal(PPDMDEVINS pDevIns, PHDADRIVER pDrv, unsigned uLUN,
 }
 
 /**
- * Attach command.
+ * Detach command, internal version.
  *
- * This is called to let the device attach to a driver for a specified LUN
- * during runtime. This is not called during VM construction, the device
- * constructor has to attach to all the available drivers.
+ * This is called to let the device detach from a driver for a specified LUN
+ * during runtime.
  *
  * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   uLUN        The logical unit which is being detached.
+ * @param   pThis       HDA state.
+ * @param   pDrv        Driver to detach device from.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ */
+static int hdaDetachInternal(PHDASTATE pThis, PHDADRIVER pDrv, uint32_t fFlags)
+{
+    RT_NOREF(fFlags);
+
+    AudioMixerSinkRemoveStream(pThis->SinkFront.pMixSink,     pDrv->Front.pMixStrm);
+    AudioMixerStreamDestroy(pDrv->Front.pMixStrm);
+    pDrv->Front.pMixStrm = NULL;
+
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+    AudioMixerSinkRemoveStream(pThis->SinkCenterLFE.pMixSink, pDrv->CenterLFE.pMixStrm);
+    AudioMixerStreamDestroy(pDrv->CenterLFE.pMixStrm);
+    pDrv->CenterLFE.pMixStrm = NULL;
+
+    AudioMixerSinkRemoveStream(pThis->SinkRear.pMixSink,      pDrv->Rear.pMixStrm);
+    AudioMixerStreamDestroy(pDrv->Rear.pMixStrm);
+    pDrv->Rear.pMixStrm = NULL;
+#endif
+
+    AudioMixerSinkRemoveStream(pThis->SinkLineIn.pMixSink,    pDrv->LineIn.pMixStrm);
+    AudioMixerStreamDestroy(pDrv->LineIn.pMixStrm);
+    pDrv->LineIn.pMixStrm = NULL;
+
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+    AudioMixerSinkRemoveStream(pThis->SinkMicIn.pMixSink,     pDrv->MicIn.pMixStrm);
+    AudioMixerStreamDestroy(pDrv->MicIn.pMixStrm);
+    pDrv->MicIn.pMixStrm = NULL;
+#endif
+
+    RTListNodeRemove(&pDrv->Node);
+
+    LogFunc(("uLUN=%u, fFlags=0x%x\n", pDrv->uLUN, fFlags));
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnAttach}
  */
 static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
@@ -4488,17 +4540,132 @@ static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t f
 
     DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
-    int rc = hdaAttachInternal(pDevIns, NULL /* pDrv */, uLUN, fFlags);
+    PHDADRIVER pDrv;
+    int rc2 = hdaAttachInternal(pThis, uLUN, fFlags, &pDrv);
+    if (RT_SUCCESS(rc2))
+    {
+        PHDASTREAM pStream = hdaGetStreamFromSink(pThis, &pThis->SinkFront);
+        if (DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
+            hdaMixerAddDrvStream(pThis, pThis->SinkFront.pMixSink,     &pStream->State.Cfg, pDrv);
+
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+        pStream = hdaGetStreamFromSink(pThis, &pThis->SinkCenterLFE);
+        if (DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
+            hdaMixerAddDrvStream(pThis, pThis->SinkCenterLFE.pMixSink, &pStream->State.Cfg, pDrv);
+
+        pStream = hdaGetStreamFromSink(pThis, &pThis->SinkRear);
+        if (DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
+            hdaMixerAddDrvStream(pThis, pThis->SinkRear.pMixSink,      &pStream->State.Cfg, pDrv);
+#endif
+        pStream = hdaGetStreamFromSink(pThis, &pThis->SinkLineIn);
+        if (DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
+            hdaMixerAddDrvStream(pThis, pThis->SinkLineIn.pMixSink,    &pStream->State.Cfg, pDrv);
+
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+        pStream = hdaGetStreamFromSink(pThis, &pThis->SinkMicIn);
+        if (DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
+            hdaMixerAddDrvStream(pThis, pThis->SinkMicIn.pMixSink,     &pStream->State.Cfg, pDrv);
+#endif
+    }
 
     DEVHDA_UNLOCK(pThis);
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
+/**
+ * @interface_method_impl{PDMDEVREG,pfnDetach}
+ */
 static DECLCALLBACK(void) hdaDetach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
-    RT_NOREF(pDevIns, uLUN, fFlags);
-    LogFunc(("iLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+
+    LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
+
+    DEVHDA_LOCK(pThis);
+
+    PHDADRIVER pDrv, pDrvNext;
+    RTListForEachSafe(&pThis->lstDrv, pDrv, pDrvNext, HDADRIVER, Node)
+    {
+        if (pDrv->uLUN == uLUN)
+        {
+            int rc2 = hdaDetachInternal(pThis, pDrv, fFlags);
+            if (RT_SUCCESS(rc2))
+            {
+                RTMemFree(pDrv);
+                pDrv = NULL;
+            }
+
+            break;
+        }
+    }
+
+    DEVHDA_UNLOCK(pThis);
+}
+
+/**
+ * Re-attaches (replaces) a driver with a new driver.
+ *
+ * @returns VBox status code.
+ * @param   pThis       Device instance to re-attach driver to.
+ * @param   pDrv        Driver instance used for attaching to.
+ *                      If NULL is specified, a new driver will be created and appended
+ *                      to the driver list.
+ * @param   uLUN        The logical unit which is being re-detached.
+ * @param   pszDriver   New driver name to attach.
+ */
+static int hdaReattachInternal(PHDASTATE pThis, PHDADRIVER pDrv, uint8_t uLUN, const char *pszDriver)
+{
+    AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pszDriver, VERR_INVALID_POINTER);
+
+    int rc;
+
+    if (pDrv)
+    {
+        rc = hdaDetachInternal(pThis, pDrv, 0 /* fFlags */);
+        if (RT_SUCCESS(rc))
+            rc = PDMDevHlpDriverDetach(pThis->pDevInsR3, PDMIBASE_2_PDMDRV(pDrv->pDrvBase), 0 /* fFlags */);
+
+        if (RT_FAILURE(rc))
+            return rc;
+
+        pDrv = NULL;
+    }
+
+    PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
+    PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
+    PCFGMNODE pDev0 = CFGMR3GetChild(pRoot, "Devices/hda/0/");
+
+    /* Remove LUN branch. */
+    CFGMR3RemoveNode(CFGMR3GetChildF(pDev0, "LUN#%u/", uLUN));
+
+#define RC_CHECK() if (RT_FAILURE(rc)) { AssertReleaseRC(rc); break; }
+
+    do
+    {
+        PCFGMNODE pLunL0;
+        rc = CFGMR3InsertNodeF(pDev0, &pLunL0, "LUN#%u/", uLUN);        RC_CHECK();
+        rc = CFGMR3InsertString(pLunL0, "Driver",       "AUDIO");       RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0,   "Config/",       NULL);         RC_CHECK();
+
+        PCFGMNODE pLunL1, pLunL2;
+        rc = CFGMR3InsertNode  (pLunL0, "AttachedDriver/", &pLunL1);    RC_CHECK();
+        rc = CFGMR3InsertNode  (pLunL1,  "Config/",        &pLunL2);    RC_CHECK();
+        rc = CFGMR3InsertString(pLunL1,  "Driver",          pszDriver); RC_CHECK();
+
+        rc = CFGMR3InsertString(pLunL2, "AudioDriver", pszDriver);      RC_CHECK();
+
+    } while (0);
+
+    if (RT_SUCCESS(rc))
+        rc = hdaAttachInternal(pThis, uLUN, 0 /* fFlags */, NULL /* ppDrv */);
+
+    LogFunc(("pThis=%p, uLUN=%u, pszDriver=%s, rc=%Rrc\n", pThis, uLUN, pszDriver, rc));
+
+#undef RC_CHECK
+
+    return rc;
 }
 
 /**
@@ -4529,66 +4696,6 @@ static DECLCALLBACK(void) hdaPowerOff(PPDMDEVINS pDevIns)
     }
 
     DEVHDA_UNLOCK(pThis);
-}
-
-/**
- * Re-attaches a new driver to the device's driver chain.
- *
- * @returns VBox status code.
- * @param   pThis       Device instance to re-attach driver to.
- * @param   pDrv        Driver instance used for attaching to.
- *                      If NULL is specified, a new driver will be created and appended
- *                      to the driver list.
- * @param   uLUN        The logical unit which is being re-detached.
- * @param   pszDriver   Driver name.
- */
-static int hdaReattach(PHDASTATE pThis, PHDADRIVER pDrv, uint8_t uLUN, const char *pszDriver)
-{
-    AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
-    AssertPtrReturn(pszDriver, VERR_INVALID_POINTER);
-
-    PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
-    PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
-    PCFGMNODE pDev0 = CFGMR3GetChild(pRoot, "Devices/hda/0/");
-
-    /* Remove LUN branch. */
-    CFGMR3RemoveNode(CFGMR3GetChildF(pDev0, "LUN#%u/", uLUN));
-
-    if (pDrv)
-    {
-        /* Re-use a driver instance => detach the driver before. */
-        int rc = PDMDevHlpDriverDetach(pThis->pDevInsR3, PDMIBASE_2_PDMDRV(pDrv->pDrvBase), 0 /* fFlags */);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-#define RC_CHECK() if (RT_FAILURE(rc)) { AssertReleaseRC(rc); break; }
-
-    int rc = VINF_SUCCESS;
-    do
-    {
-        PCFGMNODE pLunL0;
-        rc = CFGMR3InsertNodeF(pDev0, &pLunL0, "LUN#%u/", uLUN);        RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0, "Driver",       "AUDIO");       RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0,   "Config/",       NULL);         RC_CHECK();
-
-        PCFGMNODE pLunL1, pLunL2;
-        rc = CFGMR3InsertNode  (pLunL0, "AttachedDriver/", &pLunL1);    RC_CHECK();
-        rc = CFGMR3InsertNode  (pLunL1,  "Config/",        &pLunL2);    RC_CHECK();
-        rc = CFGMR3InsertString(pLunL1,  "Driver",          pszDriver); RC_CHECK();
-
-        rc = CFGMR3InsertString(pLunL2, "AudioDriver", pszDriver);      RC_CHECK();
-
-    } while (0);
-
-    if (RT_SUCCESS(rc))
-        rc = hdaAttachInternal(pThis->pDevInsR3, pDrv, uLUN, 0 /* fFlags */);
-
-    LogFunc(("pThis=%p, uLUN=%u, pszDriver=%s, rc=%Rrc\n", pThis, uLUN, pszDriver, rc));
-
-#undef RC_CHECK
-
-    return rc;
 }
 
 /**
@@ -4762,14 +4869,14 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     for (uLUN = 0; uLUN < UINT8_MAX; ++uLUN)
     {
         LogFunc(("Trying to attach driver for LUN #%RU32 ...\n", uLUN));
-        rc = hdaAttachInternal(pDevIns, NULL /* pDrv */, uLUN, 0 /* fFlags */);
+        rc = hdaAttachInternal(pThis, uLUN, 0 /* fFlags */, NULL /* ppDrv */);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
                 rc = VINF_SUCCESS;
             else if (rc == VERR_AUDIO_BACKEND_INIT_FAILED)
             {
-                hdaReattach(pThis, NULL /* pDrv */, uLUN, "NullAudio");
+                hdaReattachInternal(pThis, NULL /* pDrv */, uLUN, "NullAudio");
                 PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
                     N_("Host audio backend initialization has failed. Selecting the NULL audio backend "
                        "with the consequence that no sound is audible"));
@@ -4897,7 +5004,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
                 LogRel(("HDA: Falling back to NULL backend (no sound audible)\n"));
 
                 hdaReset(pDevIns);
-                hdaReattach(pThis, pDrv, pDrv->uLUN, "NullAudio");
+                hdaReattachInternal(pThis, pDrv, pDrv->uLUN, "NullAudio");
 
                 PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
                     N_("No audio devices could be opened. Selecting the NULL audio backend "
