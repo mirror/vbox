@@ -357,14 +357,15 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst)
         pVmcbNstGstCtrl->u32InterceptXcpt         = pNstGstVmcbCache->u32InterceptXcpt;
         pVmcbNstGstCtrl->u64InterceptCtrl         = pNstGstVmcbCache->u64InterceptCtrl;
         pVmcbNstGstState->u64CR3                  = pNstGstVmcbCache->u64CR3;
+        pVmcbNstGstState->u64CR4                  = pNstGstVmcbCache->u64CR4;
         pVmcbNstGstCtrl->u64VmcbCleanBits         = pNstGstVmcbCache->u64VmcbCleanBits;
         pVmcbNstGstCtrl->u64IOPMPhysAddr          = pNstGstVmcbCache->u64IOPMPhysAddr;
         pVmcbNstGstCtrl->u64MSRPMPhysAddr         = pNstGstVmcbCache->u64MSRPMPhysAddr;
         pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking = pNstGstVmcbCache->fVIntrMasking;
         pVmcbNstGstCtrl->TLBCtrl                  = pNstGstVmcbCache->TLBCtrl;
+        pVmcbNstGstCtrl->NestedPaging             = pNstGstVmcbCache->NestedPagingCtrl;
         pNstGstVmcbCache->fValid = false;
     }
-    pNstGstVmcbCache->fVmrunEmulatedInR0 = false;
 }
 #endif
 

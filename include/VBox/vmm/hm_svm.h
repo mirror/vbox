@@ -995,18 +995,20 @@ typedef struct SVMNESTEDVMCBCACHE
     uint64_t            u64VmcbCleanBits;
     /** Cache of the TLB control. */
     SVMTLBCTRL          TLBCtrl;
+    /** Cache of the nested-paging control. */
+    SVMNPCTRL           NestedPagingCtrl;
     /** @} */
 
     /** @name Nested-guest VMCB guest state.
      * @{ */
     /** Cache of CR3. */
     uint64_t            u64CR3;
+    /** Cache of CR4. */
+    uint64_t            u64CR4;
     /** @} */
 
     /** @name Other miscellaneous state.
      * @{ */
-    /** Whether a VMRUN was just emulated in R0 and the VMCB is up to date. */
-    bool                fVmrunEmulatedInR0;
     /** Whether the VMCB exit code and info fields are updated during \#VMEXIT
      *  processing. */
     bool                fExitCodeAndInfoUpdated;
@@ -1015,7 +1017,7 @@ typedef struct SVMNESTEDVMCBCACHE
     /** Whether the fields above are updated or not. */
     bool                fValid;
     /** Alignment. */
-    bool                afPadding0[4];
+    bool                afPadding0[5];
     /** @} */
 } SVMNESTEDVMCBCACHE;
 #pragma pack()
