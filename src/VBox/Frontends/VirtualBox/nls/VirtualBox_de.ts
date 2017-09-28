@@ -3251,7 +3251,15 @@
     <name>UIHostNetworkManagerWidget</name>
     <message>
         <source>Networking</source>
-        <translation>Netzwerk</translation>
+        <translation type="vanished">Netzwerk</translation>
+    </message>
+    <message>
+        <source>Adding network...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5964,28 +5972,48 @@
         <source>Close Window (%1)</source>
         <translation>Fenster schließen (%1)</translation>
     </message>
+    <message>
+        <source>Copy Disk Image File (%1)</source>
+        <translation type="unfinished">Plattenabbild kopieren (%1)</translation>
+    </message>
+    <message>
+        <source>Remove Disk Image File (%1)</source>
+        <translation type="unfinished">Plattenabbild löschen (%1)</translation>
+    </message>
+    <message>
+        <source>Release Disk Image File (%1)</source>
+        <translation type="unfinished">Plattenabbild von der VM lösen (%1)</translation>
+    </message>
+    <message>
+        <source>Open Disk Image File Properties (%1)</source>
+        <translation type="unfinished">Eigenschaften des Plattenabbilds öffnen (%1)</translation>
+    </message>
+    <message>
+        <source>Refresh Disk Image Files (%1)</source>
+        <translation type="unfinished">Plattenabbilder aktualisieren (%1)</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation>Plattenabbild kopieren (%1)</translation>
+        <translation type="vanished">Plattenabbild kopieren (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation>Plattenabbild löschen (%1)</translation>
+        <translation type="vanished">Plattenabbild löschen (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation>Plattenabbild von der VM lösen (%1)</translation>
+        <translation type="vanished">Plattenabbild von der VM lösen (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation>Eigenschaften des Plattenabbilds öffnen (%1)</translation>
+        <translation type="vanished">Eigenschaften des Plattenabbilds öffnen (%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation>Plattenabbilder aktualisieren (%1)</translation>
+        <translation type="vanished">Plattenabbilder aktualisieren (%1)</translation>
     </message>
 </context>
 <context>

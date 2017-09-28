@@ -5664,7 +5664,15 @@ p, li { white-space: pre-wrap; }
     <name>UIHostNetworkManagerWidget</name>
     <message>
         <source>Networking</source>
-        <translation>Сеть</translation>
+        <translation type="vanished">Сеть</translation>
+    </message>
+    <message>
+        <source>Adding network...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9949,28 +9957,48 @@ p, li { white-space: pre-wrap; }
         <source>Close Window (%1)</source>
         <translation>Закрыть окно (%1)</translation>
     </message>
+    <message>
+        <source>Copy Disk Image File (%1)</source>
+        <translation type="unfinished">Копировать файл образа диска (%1)</translation>
+    </message>
+    <message>
+        <source>Remove Disk Image File (%1)</source>
+        <translation type="unfinished">Удалить файл образа диска (%1)</translation>
+    </message>
+    <message>
+        <source>Release Disk Image File (%1)</source>
+        <translation type="unfinished">Отключить файл образа диска (%1)</translation>
+    </message>
+    <message>
+        <source>Open Disk Image File Properties (%1)</source>
+        <translation type="unfinished">Открыть свойства файла образа диска (%1)</translation>
+    </message>
+    <message>
+        <source>Refresh Disk Image Files (%1)</source>
+        <translation type="unfinished">Обновить файлы образа диска (%1)</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation>Копировать файл образа диска (%1)</translation>
+        <translation type="vanished">Копировать файл образа диска (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation>Удалить файл образа диска (%1)</translation>
+        <translation type="vanished">Удалить файл образа диска (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation>Отключить файл образа диска (%1)</translation>
+        <translation type="vanished">Отключить файл образа диска (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation>Открыть свойства файла образа диска (%1)</translation>
+        <translation type="vanished">Открыть свойства файла образа диска (%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation>Обновить файлы образа диска (%1)</translation>
+        <translation type="vanished">Обновить файлы образа диска (%1)</translation>
     </message>
 </context>
 <context>

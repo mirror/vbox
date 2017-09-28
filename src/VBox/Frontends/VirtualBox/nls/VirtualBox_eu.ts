@@ -2642,7 +2642,7 @@
 <context>
     <name>UIGDetails</name>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+1170"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+1173"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+248"/>
         <source>Name</source>
         <comment>details (general)</comment>
@@ -5034,10 +5034,18 @@
 <context>
     <name>UIHostNetworkManagerWidget</name>
     <message>
-        <location line="-666"/>
-        <location line="+101"/>
         <source>Networking</source>
-        <translation type="unfinished">Sareketa</translation>
+        <translation type="obsolete">Sareketa</translation>
+    </message>
+    <message>
+        <location line="-666"/>
+        <source>Adding network...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+101"/>
+        <source>Removing network...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8819,7 +8827,12 @@
         <translation type="unfinished">K&amp;opiatu...</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+1"/>
+        <source>Copy Disk Image File (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>Copy selected disk image file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8829,7 +8842,12 @@
         <translation type="unfinished">&amp;Kendu...</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+1"/>
+        <source>Remove Disk Image File (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>Remove selected disk image file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8839,7 +8857,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+1"/>
+        <source>Release Disk Image File (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>Release selected disk image file by detaching it from machines</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8849,7 +8872,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+1"/>
+        <source>Open Disk Image File Properties (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>Open pane with selected disk image file properties</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8859,7 +8887,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+1"/>
+        <source>Refresh Disk Image Files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>Refresh the list of disk image files</source>
         <translation type="unfinished">Berritu diska irudi agiri zerrenda</translation>
     </message>
@@ -8969,34 +9002,6 @@
     <message>
         <source>C&amp;lose</source>
         <translation type="obsolete">It&amp;xi</translation>
-    </message>
-</context>
-<context>
-    <name>UIMediumManagerWidget</name>
-    <message>
-        <location line="-1484"/>
-        <source>Copy Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Remove Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Release Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Open Disk Image File Properties (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11206,7 +11211,7 @@
 <context>
     <name>UIScreenshotViewer</name>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-1411"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-1414"/>
         <source>Screenshot of %1 (%2)</source>
         <translation type="unfinished">Ikusleiho-argazkiak %1 (%2)</translation>
     </message>
@@ -11506,32 +11511,32 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+48"/>
+        <location line="+59"/>
         <source>Apply</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-5"/>
+        <location line="-16"/>
         <source>Reset</source>
         <translation type="unfinished">Berrezarri</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+17"/>
         <source>Apply changes in current snapshot details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-5"/>
+        <location line="-16"/>
         <source>Reset changes in current snapshot details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+18"/>
         <source>Apply Changes (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-5"/>
+        <location line="-16"/>
         <source>Reset Changes (%1)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11541,7 +11546,7 @@
         <translation type="unfinished">Klikatu ikusleiho-argazkia handitzeko.</translation>
     </message>
     <message>
-        <location line="+47"/>
+        <location line="+42"/>
         <source>Take</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11556,7 +11561,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+447"/>
+        <location line="+455"/>
         <source>Snapshot name is empty</source>
         <translation type="unfinished"></translation>
     </message>

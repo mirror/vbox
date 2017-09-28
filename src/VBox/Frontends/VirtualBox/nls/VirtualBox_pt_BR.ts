@@ -6067,7 +6067,15 @@ p, li { white-space: pre-wrap; }
     <name>UIHostNetworkManagerWidget</name>
     <message>
         <source>Networking</source>
-        <translation>Rede</translation>
+        <translation type="vanished">Rede</translation>
+    </message>
+    <message>
+        <source>Adding network...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10488,28 +10496,48 @@ p, li { white-space: pre-wrap; }
         <source>Close Window (%1)</source>
         <translation>Fechar Janela (%1)</translation>
     </message>
+    <message>
+        <source>Copy Disk Image File (%1)</source>
+        <translation type="unfinished">Copiar Arquivo de Imagem de Disco (%1)</translation>
+    </message>
+    <message>
+        <source>Remove Disk Image File (%1)</source>
+        <translation type="unfinished">Remover Arquivo de Imagem de Disco (%1)</translation>
+    </message>
+    <message>
+        <source>Release Disk Image File (%1)</source>
+        <translation type="unfinished">Liberar Arquivo de Imagem de Disco (%1)</translation>
+    </message>
+    <message>
+        <source>Open Disk Image File Properties (%1)</source>
+        <translation type="unfinished">Abrir Propriedades do Arquivo de Imagem de Disco (%1)</translation>
+    </message>
+    <message>
+        <source>Refresh Disk Image Files (%1)</source>
+        <translation type="unfinished">Atualizar Arquivos de Imagem de Disco (%1)</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation>Copiar Arquivo de Imagem de Disco (%1)</translation>
+        <translation type="vanished">Copiar Arquivo de Imagem de Disco (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation>Remover Arquivo de Imagem de Disco (%1)</translation>
+        <translation type="vanished">Remover Arquivo de Imagem de Disco (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation>Liberar Arquivo de Imagem de Disco (%1)</translation>
+        <translation type="vanished">Liberar Arquivo de Imagem de Disco (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation>Abrir Propriedades do Arquivo de Imagem de Disco (%1)</translation>
+        <translation type="vanished">Abrir Propriedades do Arquivo de Imagem de Disco (%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation>Atualizar Arquivos de Imagem de Disco (%1)</translation>
+        <translation type="vanished">Atualizar Arquivos de Imagem de Disco (%1)</translation>
     </message>
 </context>
 <context>

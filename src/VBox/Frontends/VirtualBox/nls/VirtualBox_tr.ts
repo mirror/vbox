@@ -5141,7 +5141,15 @@
     <name>UIHostNetworkManagerWidget</name>
     <message>
         <source>Networking</source>
-        <translation>Ağ oluşturma</translation>
+        <translation type="vanished">Ağ oluşturma</translation>
+    </message>
+    <message>
+        <source>Adding network...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9164,28 +9172,48 @@
         <source>Close Window (%1)</source>
         <translation>Pencereyi Kapat (%1)</translation>
     </message>
+    <message>
+        <source>Copy Disk Image File (%1)</source>
+        <translation type="unfinished">Disk Kalıbı Dosyasını Kopyala (%1)</translation>
+    </message>
+    <message>
+        <source>Remove Disk Image File (%1)</source>
+        <translation type="unfinished">Disk Kalıbı Dosyasını Kaldır (%1)</translation>
+    </message>
+    <message>
+        <source>Release Disk Image File (%1)</source>
+        <translation type="unfinished">Disk Kalıbı Dosyasını Bırak (%1)</translation>
+    </message>
+    <message>
+        <source>Open Disk Image File Properties (%1)</source>
+        <translation type="unfinished">Disk Kalıbı Dosyası Özelliklerini Aç (%1)</translation>
+    </message>
+    <message>
+        <source>Refresh Disk Image Files (%1)</source>
+        <translation type="unfinished">Disk Kalıbı Dosyasını Yenile (%1)</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation>Disk Kalıbı Dosyasını Kopyala (%1)</translation>
+        <translation type="vanished">Disk Kalıbı Dosyasını Kopyala (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation>Disk Kalıbı Dosyasını Kaldır (%1)</translation>
+        <translation type="vanished">Disk Kalıbı Dosyasını Kaldır (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation>Disk Kalıbı Dosyasını Bırak (%1)</translation>
+        <translation type="vanished">Disk Kalıbı Dosyasını Bırak (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation>Disk Kalıbı Dosyası Özelliklerini Aç (%1)</translation>
+        <translation type="vanished">Disk Kalıbı Dosyası Özelliklerini Aç (%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation>Disk Kalıbı Dosyasını Yenile (%1)</translation>
+        <translation type="vanished">Disk Kalıbı Dosyasını Yenile (%1)</translation>
     </message>
 </context>
 <context>

@@ -5704,7 +5704,15 @@ p, li { white-space: pre-wrap; }
     <name>UIHostNetworkManagerWidget</name>
     <message>
         <source>Networking</source>
-        <translation type="unfinished">ネットワーク</translation>
+        <translation type="obsolete">ネットワーク</translation>
+    </message>
+    <message>
+        <source>Adding network...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10084,9 +10092,6 @@ p, li { white-space: pre-wrap; }
         <source>Close Window (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
         <translation type="unfinished"></translation>

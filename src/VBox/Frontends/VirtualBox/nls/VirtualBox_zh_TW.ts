@@ -2967,7 +2967,15 @@
     <name>UIHostNetworkManagerWidget</name>
     <message>
         <source>Networking</source>
-        <translation>網路</translation>
+        <translation type="vanished">網路</translation>
+    </message>
+    <message>
+        <source>Adding network...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5380,28 +5388,48 @@
         <source>Close Window (%1)</source>
         <translation>關閉視窗 (%1)</translation>
     </message>
+    <message>
+        <source>Copy Disk Image File (%1)</source>
+        <translation type="unfinished">複製磁碟映像檔案 (%1)</translation>
+    </message>
+    <message>
+        <source>Remove Disk Image File (%1)</source>
+        <translation type="unfinished">移除磁碟映像檔案 (%1)</translation>
+    </message>
+    <message>
+        <source>Release Disk Image File (%1)</source>
+        <translation type="unfinished">釋放磁碟映像檔案 (%1)</translation>
+    </message>
+    <message>
+        <source>Open Disk Image File Properties (%1)</source>
+        <translation type="unfinished">開啟磁碟映像檔案內容 (%1)</translation>
+    </message>
+    <message>
+        <source>Refresh Disk Image Files (%1)</source>
+        <translation type="unfinished">重新整理磁碟映像檔案 (%1)</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation>複製磁碟映像檔案 (%1)</translation>
+        <translation type="vanished">複製磁碟映像檔案 (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation>移除磁碟映像檔案 (%1)</translation>
+        <translation type="vanished">移除磁碟映像檔案 (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation>釋放磁碟映像檔案 (%1)</translation>
+        <translation type="vanished">釋放磁碟映像檔案 (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation>開啟磁碟映像檔案內容 (%1)</translation>
+        <translation type="vanished">開啟磁碟映像檔案內容 (%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation>重新整理磁碟映像檔案 (%1)</translation>
+        <translation type="vanished">重新整理磁碟映像檔案 (%1)</translation>
     </message>
 </context>
 <context>

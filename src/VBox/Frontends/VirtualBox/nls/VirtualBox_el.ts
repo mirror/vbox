@@ -3269,7 +3269,15 @@
     <name>UIHostNetworkManagerWidget</name>
     <message>
         <source>Networking</source>
-        <translation>Δίκτυο</translation>
+        <translation type="vanished">Δίκτυο</translation>
+    </message>
+    <message>
+        <source>Adding network...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5942,28 +5950,48 @@
         <source>Close Window (%1)</source>
         <translation>Κλείσιμο Παραθύρου (%1)</translation>
     </message>
+    <message>
+        <source>Copy Disk Image File (%1)</source>
+        <translation type="unfinished">Αντιγραφή Αρχείου Σκληρού Δίσκου (%1)</translation>
+    </message>
+    <message>
+        <source>Remove Disk Image File (%1)</source>
+        <translation type="unfinished">Αφαίρεση Αρχείου Σκληρού Δίσκου (%1)</translation>
+    </message>
+    <message>
+        <source>Release Disk Image File (%1)</source>
+        <translation type="unfinished">Απελευθέρωση Αρχείου Σκληρού Δίσκου (%1)</translation>
+    </message>
+    <message>
+        <source>Open Disk Image File Properties (%1)</source>
+        <translation type="unfinished">Άνοιγμα Ιδιοτήτω Αρχείου Σκληρού Δίσκου (%1)</translation>
+    </message>
+    <message>
+        <source>Refresh Disk Image Files (%1)</source>
+        <translation type="unfinished">Ανανέωση Αρχείου Σκληρού Δίσκου (%1)</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation>Αντιγραφή Αρχείου Σκληρού Δίσκου (%1)</translation>
+        <translation type="vanished">Αντιγραφή Αρχείου Σκληρού Δίσκου (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation>Αφαίρεση Αρχείου Σκληρού Δίσκου (%1)</translation>
+        <translation type="vanished">Αφαίρεση Αρχείου Σκληρού Δίσκου (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation>Απελευθέρωση Αρχείου Σκληρού Δίσκου (%1)</translation>
+        <translation type="vanished">Απελευθέρωση Αρχείου Σκληρού Δίσκου (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation>Άνοιγμα Ιδιοτήτω Αρχείου Σκληρού Δίσκου (%1)</translation>
+        <translation type="vanished">Άνοιγμα Ιδιοτήτω Αρχείου Σκληρού Δίσκου (%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation>Ανανέωση Αρχείου Σκληρού Δίσκου (%1)</translation>
+        <translation type="vanished">Ανανέωση Αρχείου Σκληρού Δίσκου (%1)</translation>
     </message>
 </context>
 <context>

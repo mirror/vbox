@@ -3288,7 +3288,15 @@
     <name>UIHostNetworkManagerWidget</name>
     <message>
         <source>Networking</source>
-        <translation>Netwerken</translation>
+        <translation type="vanished">Netwerken</translation>
+    </message>
+    <message>
+        <source>Adding network...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5910,28 +5918,48 @@
         <source>Close Window (%1)</source>
         <translation>Afsluiten scherm (%1)</translation>
     </message>
+    <message>
+        <source>Copy Disk Image File (%1)</source>
+        <translation type="unfinished">Kopiëer disk-imagebestand (%1)</translation>
+    </message>
+    <message>
+        <source>Remove Disk Image File (%1)</source>
+        <translation type="unfinished">Verwijderen disk-imagebestand (%1)</translation>
+    </message>
+    <message>
+        <source>Release Disk Image File (%1)</source>
+        <translation type="unfinished">Vrijgeven disk-imagebestand (%1)</translation>
+    </message>
+    <message>
+        <source>Open Disk Image File Properties (%1)</source>
+        <translation type="unfinished">Openen disk-imagebestand-eigenschappen(%1)</translation>
+    </message>
+    <message>
+        <source>Refresh Disk Image Files (%1)</source>
+        <translation type="unfinished">Verversen disk-imagebestanden (%1)</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation>Kopiëer disk-imagebestand (%1)</translation>
+        <translation type="vanished">Kopiëer disk-imagebestand (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation>Verwijderen disk-imagebestand (%1)</translation>
+        <translation type="vanished">Verwijderen disk-imagebestand (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation>Vrijgeven disk-imagebestand (%1)</translation>
+        <translation type="vanished">Vrijgeven disk-imagebestand (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation>Openen disk-imagebestand-eigenschappen(%1)</translation>
+        <translation type="vanished">Openen disk-imagebestand-eigenschappen(%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation>Verversen disk-imagebestanden (%1)</translation>
+        <translation type="vanished">Verversen disk-imagebestanden (%1)</translation>
     </message>
 </context>
 <context>

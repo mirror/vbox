@@ -5273,7 +5273,15 @@
     <name>UIHostNetworkManagerWidget</name>
     <message>
         <source>Networking</source>
-        <translation>Jejaring</translation>
+        <translation type="vanished">Jejaring</translation>
+    </message>
+    <message>
+        <source>Adding network...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9148,28 +9156,48 @@
         <source>Close Window (%1)</source>
         <translation>Tutup Jendela (%1)</translation>
     </message>
+    <message>
+        <source>Copy Disk Image File (%1)</source>
+        <translation type="unfinished">Salin Berkas Image Disk (%1)</translation>
+    </message>
+    <message>
+        <source>Remove Disk Image File (%1)</source>
+        <translation type="unfinished">Hapus Berkas Image Disk (%1)</translation>
+    </message>
+    <message>
+        <source>Release Disk Image File (%1)</source>
+        <translation type="unfinished">Lepas Berkas Image Disk (%1)</translation>
+    </message>
+    <message>
+        <source>Open Disk Image File Properties (%1)</source>
+        <translation type="unfinished">Buka Properti Berkas Image Disk (%1)</translation>
+    </message>
+    <message>
+        <source>Refresh Disk Image Files (%1)</source>
+        <translation type="unfinished">Segarkan Berkas Image Disk (%1)</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation>Salin Berkas Image Disk (%1)</translation>
+        <translation type="vanished">Salin Berkas Image Disk (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation>Hapus Berkas Image Disk (%1)</translation>
+        <translation type="vanished">Hapus Berkas Image Disk (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation>Lepas Berkas Image Disk (%1)</translation>
+        <translation type="vanished">Lepas Berkas Image Disk (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation>Buka Properti Berkas Image Disk (%1)</translation>
+        <translation type="vanished">Buka Properti Berkas Image Disk (%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation>Segarkan Berkas Image Disk (%1)</translation>
+        <translation type="vanished">Segarkan Berkas Image Disk (%1)</translation>
     </message>
 </context>
 <context>

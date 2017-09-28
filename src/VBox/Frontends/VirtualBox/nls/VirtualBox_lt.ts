@@ -5098,7 +5098,15 @@
     <name>UIHostNetworkManagerWidget</name>
     <message>
         <source>Networking</source>
-        <translation type="unfinished">Tinklas</translation>
+        <translation type="obsolete">Tinklas</translation>
+    </message>
+    <message>
+        <source>Adding network...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8645,20 +8653,17 @@
         <source>Close Window (%1)</source>
         <translation>Užverti langą (%1)</translation>
     </message>
-</context>
-<context>
-    <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation>Kopijuoti disko atvaizdžio rinkmeną (%1)</translation>
+        <translation type="unfinished">Kopijuoti disko atvaizdžio rinkmeną (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation>Pašalinti disko atvaizdžio rinkmeną (%1)</translation>
+        <translation type="unfinished">Pašalinti disko atvaizdžio rinkmeną (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation>Atlaisvinti disko atvaizdžio rinkmeną (%1)</translation>
+        <translation type="unfinished">Atlaisvinti disko atvaizdžio rinkmeną (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
@@ -8666,7 +8671,26 @@
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation>Atnaujinti disko atvaizdžio rinkmeną (%1)</translation>
+        <translation type="unfinished">Atnaujinti disko atvaizdžio rinkmeną (%1)</translation>
+    </message>
+</context>
+<context>
+    <name>UIMediumManagerWidget</name>
+    <message>
+        <source>Copy Disk Image File (%1)</source>
+        <translation type="vanished">Kopijuoti disko atvaizdžio rinkmeną (%1)</translation>
+    </message>
+    <message>
+        <source>Remove Disk Image File (%1)</source>
+        <translation type="vanished">Pašalinti disko atvaizdžio rinkmeną (%1)</translation>
+    </message>
+    <message>
+        <source>Release Disk Image File (%1)</source>
+        <translation type="vanished">Atlaisvinti disko atvaizdžio rinkmeną (%1)</translation>
+    </message>
+    <message>
+        <source>Refresh Disk Image Files (%1)</source>
+        <translation type="vanished">Atnaujinti disko atvaizdžio rinkmeną (%1)</translation>
     </message>
 </context>
 <context>

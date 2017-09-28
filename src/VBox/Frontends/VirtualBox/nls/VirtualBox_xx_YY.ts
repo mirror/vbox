@@ -2938,7 +2938,11 @@
 <context>
     <name>UIHostNetworkManagerWidget</name>
     <message>
-        <source>Networking</source>
+        <source>Adding network...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5302,9 +5306,6 @@
         <source>Close Window (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
         <translation type="unfinished"></translation>

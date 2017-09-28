@@ -5748,7 +5748,15 @@ p, li { white-space: pre-wrap; }
     <name>UIHostNetworkManagerWidget</name>
     <message>
         <source>Networking</source>
-        <translation>네트워킹</translation>
+        <translation type="vanished">네트워킹</translation>
+    </message>
+    <message>
+        <source>Adding network...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10085,28 +10093,48 @@ p, li { white-space: pre-wrap; }
         <source>Close Window (%1)</source>
         <translation>창 닫기(%1)</translation>
     </message>
+    <message>
+        <source>Copy Disk Image File (%1)</source>
+        <translation type="unfinished">디스크 이미지 파일 복사(%1)</translation>
+    </message>
+    <message>
+        <source>Remove Disk Image File (%1)</source>
+        <translation type="unfinished">디스크 이미지 파일 삭제(%1)</translation>
+    </message>
+    <message>
+        <source>Release Disk Image File (%1)</source>
+        <translation type="unfinished">디스크 이미지 파일 등록 해제(%1)</translation>
+    </message>
+    <message>
+        <source>Open Disk Image File Properties (%1)</source>
+        <translation type="unfinished">디스크 이미지 파일 속성 열기(%1)</translation>
+    </message>
+    <message>
+        <source>Refresh Disk Image Files (%1)</source>
+        <translation type="unfinished">디스크 이미지 파일 새로 고침(%1)</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation>디스크 이미지 파일 복사(%1)</translation>
+        <translation type="vanished">디스크 이미지 파일 복사(%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation>디스크 이미지 파일 삭제(%1)</translation>
+        <translation type="vanished">디스크 이미지 파일 삭제(%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation>디스크 이미지 파일 등록 해제(%1)</translation>
+        <translation type="vanished">디스크 이미지 파일 등록 해제(%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation>디스크 이미지 파일 속성 열기(%1)</translation>
+        <translation type="vanished">디스크 이미지 파일 속성 열기(%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation>디스크 이미지 파일 새로 고침(%1)</translation>
+        <translation type="vanished">디스크 이미지 파일 새로 고침(%1)</translation>
     </message>
 </context>
 <context>
