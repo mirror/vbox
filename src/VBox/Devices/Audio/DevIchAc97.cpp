@@ -3545,22 +3545,13 @@ static DECLCALLBACK(int) ichac97Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32
     if (RT_SUCCESS(rc2))
     {
         if (DrvAudioHlpStreamCfgIsValid(&pThis->StreamLineIn.State.Cfg))
-        {
-            rc2 = ichac97MixerAddDrvStream(pThis, pThis->pSinkLineIn, &pThis->StreamLineIn.State.Cfg, pDrv);
-            AssertRC(rc2);
-        }
+            ichac97MixerAddDrvStream(pThis, pThis->pSinkLineIn, &pThis->StreamLineIn.State.Cfg, pDrv);
 
         if (DrvAudioHlpStreamCfgIsValid(&pThis->StreamMicIn.State.Cfg))
-        {
-            rc2 = ichac97MixerAddDrvStream(pThis, pThis->pSinkMicIn,  &pThis->StreamMicIn.State.Cfg, pDrv);
-            AssertRC(rc2);
-        }
+            ichac97MixerAddDrvStream(pThis, pThis->pSinkMicIn,  &pThis->StreamMicIn.State.Cfg, pDrv);
 
         if (DrvAudioHlpStreamCfgIsValid(&pThis->StreamOut.State.Cfg))
-        {
-            rc2 = ichac97MixerAddDrvStream(pThis, pThis->pSinkOut,    &pThis->StreamOut.State.Cfg, pDrv);
-            AssertRC(rc2);
-        }
+            ichac97MixerAddDrvStream(pThis, pThis->pSinkOut,    &pThis->StreamOut.State.Cfg, pDrv);
     }
 
     DEVAC97_UNLOCK(pThis);
