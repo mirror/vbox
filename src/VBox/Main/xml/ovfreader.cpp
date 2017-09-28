@@ -17,10 +17,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_APPLIANCE
 #include "ovfreader.h"
+#include <VBox/log.h>
+#include <vector>
 
 using namespace std;
 using namespace ovf;
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -324,7 +329,9 @@ void OVFReader::HandleNetworkSection(const xml::ElementNode * /* pSectionElem */
  */
 void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSystem)
 {
-    VirtualSystem vsys;
+    /* Create a new virtual system and work directly on the list copy. */
+    m_llVirtualSystems.push_back(VirtualSystem());
+    VirtualSystem &vsys = m_llVirtualSystems.back();
 
     // peek under the <VirtualSystem> node whether we have a <vbox:Machine> node;
     // that case case, the caller can completely ignore the OVF but only load the VBox machine XML
@@ -411,76 +418,55 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                     vsys.strVirtualSystemType = pelmVirtualSystemType->getValue();
             }
 
+            /* Parse the items into the hardware item vector. */
             {
-                xml::NodesLoop loopVirtualHardwareItems(*pelmThis, "Item");      // all "Item" child elements
+                std::map<uint32_t, const VirtualHardwareItem *> mapHardwareItems;
+                xml::NodesLoop childrenIterator(*pelmThis);
                 const xml::ElementNode *pelmItem;
-                while ((pelmItem = loopVirtualHardwareItems.forAllNodes()))
+                while ((pelmItem = childrenIterator.forAllNodes()) != NULL)
                 {
-                    VirtualHardwareItem i;
+                    /* Parse according to type. */
+                    VirtualHardwareItem *pItem;
+                    const char *pszName = pelmItem->getName();
+                    if (RTStrCmp(pszName, "Item") == 0)
+                        pItem = new VirtualHardwareItem();
+                    else if (RTStrCmp(pszName, "StorageItem") == 0)
+                        pItem = new StorageItem();
+                    else if (RTStrCmp(pszName, "EthernetPortItem") == 0)
+                        pItem = new EthernetPortItem();
+                    else
+                        continue;
+                    vsys.vecHardwareItems.push_back(pItem);
+                    pItem->ulLineNumber = pelmItem->getLineNumber();
+                    pItem->fillItem(pelmItem);
 
-                    i.ulLineNumber = pelmItem->getLineNumber();
-                    i.fillItem(pelmItem);
-                    try{
-                        i.checkConsistencyAndCompliance();
-                    }
-                    catch (OVFLogicError &e)
-                    {
-                        throw OVFLogicError(N_("Error reading \"%s\": \"%s\""),
-                                            m_strPath.c_str(),
-                                            e.what());
-                    }
-
-                    // store!
-                    vsys.mapHardwareItems[i.ulInstanceID] = i;
-                }
-            }
-
-            {
-                xml::NodesLoop loopVirtualHardwareItems(*pelmThis, "StorageItem");// all "StorageItem" child elements
-                const xml::ElementNode *pelmItem;
-                while ((pelmItem = loopVirtualHardwareItems.forAllNodes()))
-                {
-                    StorageItem i;
-
-                    i.ulLineNumber = pelmItem->getLineNumber();
-                    i.fillItem(pelmItem);
-
+                    /* validate */
                     try
                     {
-                        i.checkConsistencyAndCompliance();
+                        pItem->checkConsistencyAndCompliance();
                     }
                     catch (OVFLogicError &e)
                     {
-                        throw OVFLogicError(N_("Error reading \"%s\": \"%s\""),
-                                            m_strPath.c_str(),
-                                            e.what());
+                        throw OVFLogicError(N_("Error reading \"%s\": \"%s\""), m_strPath.c_str(), e.what());
                     }
 
-                    vsys.mapHardwareItems[i.ulInstanceID] = i;
-                }
-            }
-
-            {
-                xml::NodesLoop loopVirtualHardwareItems(*pelmThis, "EthernetPortItem");// all "EthernetPortItem" child elements
-                const xml::ElementNode *pelmItem;
-                while ((pelmItem = loopVirtualHardwareItems.forAllNodes()))
-                {
-                    EthernetPortItem i;
-
-                    i.ulLineNumber = pelmItem->getLineNumber();
-                    i.fillItem(pelmItem);
-
-                    try{
-                        i.checkConsistencyAndCompliance();
-                    }
-                    catch (OVFLogicError &e)
+                    /* Add to mapping vector (for parent ID lookups) if it has a valid instance ID. */
+                    if (pItem->ulInstanceID != 0)
                     {
-                        throw OVFLogicError(N_("Error reading \"%s\": \"%s\""),
-                                            m_strPath.c_str(),
-                                            e.what());
+                        std::map<uint32_t, const VirtualHardwareItem *>::const_iterator itDup;
+                        itDup = mapHardwareItems.find(pItem->ulInstanceID);
+                        if (itDup == mapHardwareItems.end())
+                            mapHardwareItems[pItem->ulInstanceID] = pItem;
+                        else
+#if 1
+                            LogRel(("OVFREADER: Warning reading '%s'! Duplicate ulInstanceID %u on line %u, previous at %u!\n",
+                                    m_strPath.c_str(), pItem->ulInstanceID, pItem->ulLineNumber, itDup->second->ulLineNumber));
+#else
+                            throw OVFLogicError(N_("Error reading '%s': Duplicate ulInstanceID %u on line %u, previous at %u"),
+                                                m_strPath.c_str(), pItem->ulInstanceID,
+                                                pItem->ulLineNumber, itDup->second->ulLineNumber);
+#endif
                     }
-
-                    vsys.mapHardwareItems[i.ulInstanceID] = i;
                 }
             }
 
@@ -489,12 +475,10 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
             // now go thru all hardware items and handle them according to their type;
             // in this first loop we handle all items _except_ hard disk images,
             // which we'll handle in a second loop below
-            HardwareItemsMap::const_iterator itH;
-            for (itH = vsys.mapHardwareItems.begin();
-                 itH != vsys.mapHardwareItems.end();
-                 ++itH)
+            HardwareItemVector::const_iterator itH;
+            for (itH = vsys.vecHardwareItems.begin(); itH != vsys.vecHardwareItems.end(); ++itH)
             {
-                const VirtualHardwareItem &i = itH->second;
+                const VirtualHardwareItem &i = **itH;
 
                 // do some analysis
                 switch (i.resourceType)
@@ -718,11 +702,9 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
             // now run through the items for a second time, but handle only
             // hard disk images; otherwise the code would fail if a hard
             // disk image appears in the OVF before its hard disk controller
-            for (itH = vsys.mapHardwareItems.begin();
-                 itH != vsys.mapHardwareItems.end();
-                 ++itH)
+            for (itH = vsys.vecHardwareItems.begin(); itH != vsys.vecHardwareItems.end(); ++itH)
             {
-                const VirtualHardwareItem &i = itH->second;
+                const VirtualHardwareItem &i = **itH;
 
                 // do some analysis
                 switch (i.resourceType)
@@ -816,9 +798,6 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                 vsys.strDescription = pelmAnnotation->getValue();
         }
     }
-
-    // now create the virtual system
-    m_llVirtualSystems.push_back(vsys);
 }
 
 void VirtualHardwareItem::fillItem(const xml::ElementNode *item)
@@ -834,9 +813,8 @@ void VirtualHardwareItem::fillItem(const xml::ElementNode *item)
             strCaption = pelmItemChild->getValue();
         else if (!strcmp(pcszItemChildName, "ElementName"))
             strElementName = pelmItemChild->getValue();
-        else if ((!strcmp(pcszItemChildName, "InstanceID"))
-                 ||(!strcmp(pcszItemChildName, "InstanceId"))
-                )
+        else if (   !strcmp(pcszItemChildName, "InstanceID")
+                 || !strcmp(pcszItemChildName, "InstanceId") )
             pelmItemChild->copyValue(ulInstanceID);
         else if (!strcmp(pcszItemChildName, "HostResource"))
             strHostResource = pelmItemChild->getValue();
@@ -901,14 +879,26 @@ void VirtualHardwareItem::fillItem(const xml::ElementNode *item)
 void VirtualHardwareItem::_checkConsistencyAndCompliance() RT_THROW(OVFLogicError)
 {
     RTCString name = getItemName();
-    if (ulInstanceID == 0)
-        throw OVFLogicError(N_("Element InstanceID is absent under %s element, line %d. "
-                               "see DMTF Schema Documentation %s"),
-                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
     if (resourceType == 0)
-        throw OVFLogicError(N_("Empty element ResourceType under %s element, line %d. "
-                               "see DMTF Schema Documentation %s"),
-                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+        throw OVFLogicError(N_("Empty element ResourceType under %s element, line %d. see DMTF Schema Documentation %s"),
+                            name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+
+    /* Don't be too uptight about the ulInstanceID value.  There are OVAs out
+       there which have ulInstanceID="%iid% for memory for instance, which is
+       no good reason for not being able to process them.  bugref:8997 */
+    if (ulInstanceID == 0)
+    {
+        if (   resourceType == ResourceType_IDEController
+            || resourceType == ResourceType_OtherStorageDevice
+            || resourceType == ResourceType_ParallelSCSIHBA
+            || resourceType == ResourceType_iSCSIHBA //??
+            || resourceType == ResourceType_IBHCA )  //??
+            throw OVFLogicError(N_("Element InstanceID is absent under %s element, line %d. see DMTF Schema Documentation %s"),
+                                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+        else
+            LogRel(("OVFREADER: Warning: Ignoring missing or invalid ulInstanceID under element %s, line %u\n",
+                    name.c_str(), ulLineNumber));
+    }
 }
 
 void StorageItem::fillItem(const xml::ElementNode *item)
