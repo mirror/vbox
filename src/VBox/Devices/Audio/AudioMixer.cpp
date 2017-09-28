@@ -1324,6 +1324,28 @@ void AudioMixerSinkReset(PAUDMIXSINK pSink)
 }
 
 /**
+ * Returns the audio format of a mixer sink.
+ *
+ * @returns IPRT status code.
+ * @param   pSink               Sink to retrieve audio format for.
+ * @param   pPCMProps           Where to the returned audio format.
+ */
+void AudioMixerSinkGetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
+{
+    AssertPtrReturnVoid(pSink);
+    AssertPtrReturnVoid(pPCMProps);
+
+    int rc2 = RTCritSectEnter(&pSink->CritSect);
+    if (RT_FAILURE(rc2))
+        return;
+
+    memcpy(pPCMProps, &pSink->PCMProps, sizeof(PDMAUDIOPCMPROPS));
+
+    rc2 = RTCritSectLeave(&pSink->CritSect);
+    AssertRC(rc2);
+}
+
+/**
  * Sets the audio format of a mixer sink.
  *
  * @returns IPRT status code.
