@@ -303,6 +303,9 @@ typedef struct AC97STREAMSTATE
     R3PTRTYPE(PRTCIRCBUF) pCircBuf;
     /** Criticial section for this stream. */
     RTCRITSECT            CritSect;
+    /** The stream's current configuration. */
+    PDMAUDIOSTREAMCFG     Cfg;
+    uint32_t              Padding;
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
     /** Asynchronous I/O state members. */
     AC97STREAMSTATEAIO    AIO;
@@ -571,7 +574,9 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 #endif
 static void               ichac97DoTransfers(PAC97STATE pThis);
 
+static int                ichac97MixerAddDrvStream(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg, PAC97DRIVER pDrv);
 static int                ichac97MixerAddDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg);
+static void               ichac97MixerRemoveDrvStream(PAC97STATE pThis, PAUDMIXSINK pMixSink, PDMAUDIODIR enmDir, PDMAUDIODESTSOURCE dstSrc, PAC97DRIVER pDrv);
 static void               ichac97MixerRemoveDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PDMAUDIODIR enmDir, PDMAUDIODESTSOURCE dstSrc);
 
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
@@ -1492,7 +1497,65 @@ static PAC97DRIVERSTREAM ichac97MixerGetDrvStream(PAC97STATE pThis, PAC97DRIVER 
 }
 
 /**
- * Adds audio streams for all drivers to a specific mixer sink.
+ * Adds a driver stream to a specific mixer sink.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               AC'97 state.
+ * @param   pMixSink            Mixer sink to add driver stream to.
+ * @param   pCfg                Stream configuration to use.
+ * @param   pDrv                Driver stream to add.
+ */
+static int ichac97MixerAddDrvStream(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg, PAC97DRIVER pDrv)
+{
+    AssertPtrReturn(pThis,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,     VERR_INVALID_POINTER);
+
+    PPDMAUDIOSTREAMCFG pStreamCfg = DrvAudioHlpStreamCfgDup(pCfg);
+    if (!pStreamCfg)
+        return VERR_NO_MEMORY;
+
+    if (!RTStrPrintf(pStreamCfg->szName, sizeof(pStreamCfg->szName), "%s", pCfg->szName))
+    {
+        RTMemFree(pStreamCfg);
+        return VERR_BUFFER_OVERFLOW;
+    }
+
+    LogFunc(("[LUN#%RU8] %s\n", pDrv->uLUN, pStreamCfg->szName));
+
+    int rc;
+
+    PAC97DRIVERSTREAM pDrvStream = ichac97MixerGetDrvStream(pThis, pDrv, pStreamCfg->enmDir, pStreamCfg->DestSource);
+    if (pDrvStream)
+    {
+        AssertMsg(pDrvStream->pMixStrm == NULL, ("[LUN#%RU8] Driver stream already present when it must not\n", pDrv->uLUN));
+
+        PAUDMIXSTREAM pMixStrm;
+        rc = AudioMixerSinkCreateStream(pMixSink, pDrv->pConnector, pStreamCfg, 0 /* fFlags */, &pMixStrm);
+        if (RT_SUCCESS(rc))
+        {
+            rc = AudioMixerSinkAddStream(pMixSink, pMixStrm);
+            LogFlowFunc(("LUN#%RU8: Created stream \"%s\", rc=%Rrc\n", pDrv->uLUN, pCfg->szName, rc));
+        }
+
+        if (RT_SUCCESS(rc))
+            pDrvStream->pMixStrm = pMixStrm;
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    if (pStreamCfg)
+    {
+        RTMemFree(pStreamCfg);
+        pStreamCfg = NULL;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Adds all current driver streams to a specific mixer sink.
  *
  * @returns IPRT status code.
  * @param   pThis               AC'97 state.
@@ -1515,49 +1578,9 @@ static int ichac97MixerAddDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPD
     PAC97DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
     {
-        PPDMAUDIOSTREAMCFG pStreamCfg = DrvAudioHlpStreamCfgDup(pCfg);
-        if (!pStreamCfg)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        if (!RTStrPrintf(pStreamCfg->szName, sizeof(pStreamCfg->szName), "%s", pCfg->szName))
-        {
-            RTMemFree(pStreamCfg);
-
-            rc = VERR_BUFFER_OVERFLOW;
-            break;
-        }
-
-        LogFunc(("[LUN#%RU8] %s\n", pDrv->uLUN, pStreamCfg->szName));
-
-        int rc2 = VINF_SUCCESS;
-
-        PAC97DRIVERSTREAM pDrvStream = ichac97MixerGetDrvStream(pThis, pDrv, pStreamCfg->enmDir, pStreamCfg->DestSource);
-        if (pDrvStream)
-        {
-            AssertMsg(pDrvStream->pMixStrm == NULL, ("[LUN#%RU8] Driver stream already present when it must not\n", pDrv->uLUN));
-
-            PAUDMIXSTREAM pMixStrm;
-            rc2 = AudioMixerSinkCreateStream(pMixSink, pDrv->pConnector, pStreamCfg, 0 /* fFlags */, &pMixStrm);
-            if (RT_SUCCESS(rc2))
-            {
-                rc2 = AudioMixerSinkAddStream(pMixSink, pMixStrm);
-                LogFlowFunc(("LUN#%RU8: Created stream \"%s\", rc=%Rrc\n", pDrv->uLUN, pCfg->szName, rc2));
-            }
-
-            if (RT_SUCCESS(rc2))
-                pDrvStream->pMixStrm = pMixStrm;
-
-            /* If creating a stream fails, be forgiving and continue -- don't pass rc2 to rc here. */
-        }
-
-        if (pStreamCfg)
-        {
-            RTMemFree(pStreamCfg);
-            pStreamCfg = NULL;
-        }
+        int rc2 = ichac97MixerAddDrvStream(pThis, pMixSink, pCfg, pDrv);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1565,7 +1588,35 @@ static int ichac97MixerAddDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPD
 }
 
 /**
- * Removes specific audio streams for all drivers.
+ * Removes a driver stream from a specific mixer sink.
+ *
+ * @param   pThis               AC'97 state.
+ * @param   pMixSink            Mixer sink to remove audio streams from.
+ * @param   enmDir              Stream direction to remove.
+ * @param   dstSrc              Stream destination / source to remove.
+ * @param   pDrv                Driver stream to remove.
+ */
+static void ichac97MixerRemoveDrvStream(PAC97STATE pThis, PAUDMIXSINK pMixSink,
+                                        PDMAUDIODIR enmDir, PDMAUDIODESTSOURCE dstSrc, PAC97DRIVER pDrv)
+{
+    AssertPtrReturnVoid(pThis);
+    AssertPtrReturnVoid(pMixSink);
+
+    PAC97DRIVERSTREAM pDrvStream = ichac97MixerGetDrvStream(pThis, pDrv, enmDir, dstSrc);
+    if (pDrvStream)
+    {
+        if (pDrvStream->pMixStrm)
+        {
+            AudioMixerSinkRemoveStream(pMixSink, pDrvStream->pMixStrm);
+
+            AudioMixerStreamDestroy(pDrvStream->pMixStrm);
+            pDrvStream->pMixStrm = NULL;
+        }
+    }
+}
+
+/**
+ * Removes all driver streams from a specific mixer sink.
  *
  * @param   pThis               AC'97 state.
  * @param   pMixSink            Mixer sink to remove audio streams from.
@@ -1580,19 +1631,7 @@ static void ichac97MixerRemoveDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink,
 
     PAC97DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
-    {
-        PAC97DRIVERSTREAM pDrvStream = ichac97MixerGetDrvStream(pThis, pDrv, enmDir, dstSrc);
-        if (pDrvStream)
-        {
-            if (pDrvStream->pMixStrm)
-            {
-                AudioMixerSinkRemoveStream(pMixSink, pDrvStream->pMixStrm);
-
-                AudioMixerStreamDestroy(pDrvStream->pMixStrm);
-                pDrvStream->pMixStrm = NULL;
-            }
-        }
-    }
+        ichac97MixerRemoveDrvStream(pThis, pMixSink, enmDir, dstSrc, pDrv);
 }
 
 /**
@@ -1611,49 +1650,49 @@ static int ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
 
     LogFunc(("[SD%RU8]\n", pStream->u8SD));
 
-    PDMAUDIOSTREAMCFG streamCfg;
-    RT_ZERO(streamCfg);
+    RT_ZERO(pStream->State.Cfg);
 
-    PAUDMIXSINK pMixSink = NULL;
+    PPDMAUDIOSTREAMCFG pCfg     = &pStream->State.Cfg;
+    PAUDMIXSINK        pMixSink = NULL;
 
     switch (pStream->u8SD)
     {
         case AC97SOUNDSOURCE_PI_INDEX:
         {
-            streamCfg.Props.uHz         = ichac97MixerGet(pThis, AC97_PCM_LR_ADC_Rate);
-            streamCfg.enmDir            = PDMAUDIODIR_IN;
-            streamCfg.DestSource.Source = PDMAUDIORECSOURCE_LINE;
-            streamCfg.enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            pCfg->Props.uHz         = ichac97MixerGet(pThis, AC97_PCM_LR_ADC_Rate);
+            pCfg->enmDir            = PDMAUDIODIR_IN;
+            pCfg->DestSource.Source = PDMAUDIORECSOURCE_LINE;
+            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
-            RTStrPrintf2(streamCfg.szName, sizeof(streamCfg.szName), "Line-In");
+            RTStrPrintf2(pCfg->szName, sizeof(pCfg->szName), "Line-In");
 
-            pMixSink                    = pThis->pSinkLineIn;
+            pMixSink                = pThis->pSinkLineIn;
             break;
         }
 
         case AC97SOUNDSOURCE_MC_INDEX:
         {
-            streamCfg.Props.uHz         = ichac97MixerGet(pThis, AC97_MIC_ADC_Rate);
-            streamCfg.enmDir            = PDMAUDIODIR_IN;
-            streamCfg.DestSource.Source = PDMAUDIORECSOURCE_MIC;
-            streamCfg.enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            pCfg->Props.uHz         = ichac97MixerGet(pThis, AC97_MIC_ADC_Rate);
+            pCfg->enmDir            = PDMAUDIODIR_IN;
+            pCfg->DestSource.Source = PDMAUDIORECSOURCE_MIC;
+            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
-            RTStrPrintf2(streamCfg.szName, sizeof(streamCfg.szName), "Mic-In");
+            RTStrPrintf2(pCfg->szName, sizeof(pCfg->szName), "Mic-In");
 
-            pMixSink                    = pThis->pSinkMicIn;
+            pMixSink                = pThis->pSinkMicIn;
             break;
         }
 
         case AC97SOUNDSOURCE_PO_INDEX:
         {
-            streamCfg.Props.uHz         = ichac97MixerGet(pThis, AC97_PCM_Front_DAC_Rate);
-            streamCfg.enmDir            = PDMAUDIODIR_OUT;
-            streamCfg.DestSource.Dest   = PDMAUDIOPLAYBACKDEST_FRONT;
-            streamCfg.enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            pCfg->Props.uHz         = ichac97MixerGet(pThis, AC97_PCM_Front_DAC_Rate);
+            pCfg->enmDir            = PDMAUDIODIR_OUT;
+            pCfg->DestSource.Dest   = PDMAUDIOPLAYBACKDEST_FRONT;
+            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
-            RTStrPrintf2(streamCfg.szName, sizeof(streamCfg.szName), "Output");
+            RTStrPrintf2(pCfg->szName, sizeof(pCfg->szName), "Output");
 
-            pMixSink                    = pThis->pSinkOut;
+            pMixSink                = pThis->pSinkOut;
             break;
         }
 
@@ -1664,18 +1703,18 @@ static int ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
 
     if (RT_SUCCESS(rc))
     {
-        ichac97MixerRemoveDrvStreams(pThis, pMixSink, streamCfg.enmDir, streamCfg.DestSource);
+        ichac97MixerRemoveDrvStreams(pThis, pMixSink, pCfg->enmDir, pCfg->DestSource);
 
-        if (streamCfg.Props.uHz)
+        if (pCfg->Props.uHz)
         {
-            Assert(streamCfg.enmDir != PDMAUDIODIR_UNKNOWN);
+            Assert(pCfg->enmDir != PDMAUDIODIR_UNKNOWN);
 
-            streamCfg.Props.cChannels = 2;
-            streamCfg.Props.cBits     = 16;
-            streamCfg.Props.fSigned   = true;
-            streamCfg.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(streamCfg.Props.cBits, streamCfg.Props.cChannels);
+            pCfg->Props.cChannels = 2;
+            pCfg->Props.cBits     = 16;
+            pCfg->Props.fSigned   = true;
+            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
 
-            rc = ichac97MixerAddDrvStreams(pThis, pMixSink, &streamCfg);
+            rc = ichac97MixerAddDrvStreams(pThis, pMixSink, pCfg);
         }
     }
 
@@ -3391,17 +3430,14 @@ static DECLCALLBACK(int) ichac97Destruct(PPDMDEVINS pDevIns)
  * constructor has to attach to all the available drivers.
  *
  * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pDrv        Driver to (re-)use for (re-)attaching to.
- *                      If NULL is specified, a new driver will be created and appended
- *                      to the driver list.
+ * @param   pThis       AC'97 state.
  * @param   uLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ * @param   ppDrv       Attached driver instance on success. Optional.
  */
-static DECLCALLBACK(int) ichac97AttachInternal(PPDMDEVINS pDevIns, PAC97DRIVER pDrv, unsigned uLUN, uint32_t fFlags)
+static int ichac97AttachInternal(PAC97STATE pThis, unsigned uLUN, uint32_t fFlags, PAC97DRIVER *ppDrv)
 {
     RT_NOREF(fFlags);
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
 
     /*
      * Attach driver.
@@ -3411,12 +3447,11 @@ static DECLCALLBACK(int) ichac97AttachInternal(PPDMDEVINS pDevIns, PAC97DRIVER p
         AssertLogRelFailedReturn(VERR_NO_MEMORY);
 
     PPDMIBASE pDrvBase;
-    int rc = PDMDevHlpDriverAttach(pDevIns, uLUN,
+    int rc = PDMDevHlpDriverAttach(pThis->pDevInsR3, uLUN,
                                    &pThis->IBase, &pDrvBase, pszDesc);
     if (RT_SUCCESS(rc))
     {
-        if (pDrv == NULL)
-            pDrv = (PAC97DRIVER)RTMemAllocZ(sizeof(AC97DRIVER));
+        PAC97DRIVER pDrv = (PAC97DRIVER)RTMemAllocZ(sizeof(AC97DRIVER));
         if (pDrv)
         {
             pDrv->pDrvBase   = pDrvBase;
@@ -3440,6 +3475,9 @@ static DECLCALLBACK(int) ichac97AttachInternal(PPDMDEVINS pDevIns, PAC97DRIVER p
                 RTListAppend(&pThis->lstDrv, &pDrv->Node);
                 pDrv->fAttached = true;
             }
+
+            if (ppDrv)
+                *ppDrv = pDrv;
         }
         else
             rc = VERR_NO_MEMORY;
@@ -3454,36 +3492,115 @@ static DECLCALLBACK(int) ichac97AttachInternal(PPDMDEVINS pDevIns, PAC97DRIVER p
         RTStrFree(pszDesc);
     }
 
-    LogFunc(("iLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
+    LogFunc(("uLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
     return rc;
 }
 
-
 /**
- * Attach command.
+ * Detach command, internal version.
  *
- * This is called to let the device attach to a driver for a specified LUN
- * during runtime. This is not called during VM construction, the device
- * constructor has to attach to all the available drivers.
+ * This is called to let the device detach from a driver for a specified LUN
+ * during runtime.
  *
  * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   uLUN        The logical unit which is being detached.
+ * @param   pThis       AC'97 state.
+ * @param   pDrv        Driver to detach device from.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ */
+static int ichac97DetachInternal(PAC97STATE pThis, PAC97DRIVER pDrv, uint32_t fFlags)
+{
+    AudioMixerSinkRemoveStream(pThis->pSinkMicIn,  pDrv->MicIn.pMixStrm);
+    AudioMixerStreamDestroy(pDrv->MicIn.pMixStrm);
+    pDrv->MicIn.pMixStrm = NULL;
+
+    AudioMixerSinkRemoveStream(pThis->pSinkLineIn, pDrv->LineIn.pMixStrm);
+    AudioMixerStreamDestroy(pDrv->LineIn.pMixStrm);
+    pDrv->LineIn.pMixStrm = NULL;
+
+    AudioMixerSinkRemoveStream(pThis->pSinkOut,    pDrv->Out.pMixStrm);
+    AudioMixerStreamDestroy(pDrv->Out.pMixStrm);
+    pDrv->Out.pMixStrm = NULL;
+
+    RTListNodeRemove(&pDrv->Node);
+
+    LogFunc(("uLUN=%u, fFlags=0x%x\n", pDrv->uLUN, fFlags));
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnAttach}
  */
 static DECLCALLBACK(int) ichac97Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
-    return ichac97AttachInternal(pDevIns, NULL /* pDrv */, uLUN, fFlags);
-}
+    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
 
-static DECLCALLBACK(void) ichac97Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
-{
-    RT_NOREF(pDevIns, uLUN, fFlags);
-    LogFunc(("iLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
+    LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
+
+    DEVAC97_LOCK(pThis);
+
+    PAC97DRIVER pDrv;
+    int rc2 = ichac97AttachInternal(pThis, uLUN, fFlags, &pDrv);
+    if (RT_SUCCESS(rc2))
+    {
+        PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
+        AssertPtr(pCon);
+
+        if (DrvAudioHlpStreamCfgIsValid(&pThis->StreamLineIn.State.Cfg))
+        {
+            rc2 = ichac97MixerAddDrvStream(pThis, pThis->pSinkLineIn, &pThis->StreamLineIn.State.Cfg, pDrv);
+            AssertRC(rc2);
+        }
+
+        if (DrvAudioHlpStreamCfgIsValid(&pThis->StreamMicIn.State.Cfg))
+        {
+            rc2 = ichac97MixerAddDrvStream(pThis, pThis->pSinkMicIn,  &pThis->StreamMicIn.State.Cfg, pDrv);
+            AssertRC(rc2);
+        }
+
+        if (DrvAudioHlpStreamCfgIsValid(&pThis->StreamOut.State.Cfg))
+        {
+            rc2 = ichac97MixerAddDrvStream(pThis, pThis->pSinkOut,    &pThis->StreamOut.State.Cfg, pDrv);
+            AssertRC(rc2);
+        }
+    }
+
+    DEVAC97_UNLOCK(pThis);
+
+    return VINF_SUCCESS;
 }
 
 /**
- * Re-attach.
+ * @interface_method_impl{PDMDEVREG,pfnDetach}
+ */
+static DECLCALLBACK(void) ichac97Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+{
+    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+
+    LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
+
+    DEVAC97_LOCK(pThis);
+
+    PAC97DRIVER pDrv, pDrvNext;
+    RTListForEachSafe(&pThis->lstDrv, pDrv, pDrvNext, AC97DRIVER, Node)
+    {
+        if (pDrv->uLUN == uLUN)
+        {
+            int rc2 = ichac97DetachInternal(pThis, pDrv, fFlags);
+            if (RT_SUCCESS(rc2))
+            {
+                RTMemFree(pDrv);
+                pDrv = NULL;
+            }
+
+            break;
+        }
+    }
+
+    DEVAC97_UNLOCK(pThis);
+}
+
+/**
+ * Re-attaches (replaces) a driver with a new driver.
  *
  * @returns VBox status code.
  * @param   pThis       Device instance.
@@ -3491,12 +3608,26 @@ static DECLCALLBACK(void) ichac97Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint3
  *                      If NULL is specified, a new driver will be created and appended
  *                      to the driver list.
  * @param   uLUN        The logical unit which is being re-detached.
- * @param   pszDriver   Driver name.
+ * @param   pszDriver   New driver name to attach.
  */
-static int ichac97Reattach(PAC97STATE pThis, PAC97DRIVER pDrv, uint8_t uLUN, const char *pszDriver)
+static int ichac97ReattachInternal(PAC97STATE pThis, PAC97DRIVER pDrv, uint8_t uLUN, const char *pszDriver)
 {
     AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
     AssertPtrReturn(pszDriver, VERR_INVALID_POINTER);
+
+    int rc;
+
+    if (pDrv)
+    {
+        rc = ichac97DetachInternal(pThis, pDrv, 0 /* fFlags */);
+        if (RT_SUCCESS(rc))
+            rc = PDMDevHlpDriverDetach(pThis->pDevInsR3, PDMIBASE_2_PDMDRV(pDrv->pDrvBase), 0 /* fFlags */);
+
+        if (RT_FAILURE(rc))
+            return rc;
+
+        pDrv = NULL;
+    }
 
     PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
     PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
@@ -3505,17 +3636,8 @@ static int ichac97Reattach(PAC97STATE pThis, PAC97DRIVER pDrv, uint8_t uLUN, con
     /* Remove LUN branch. */
     CFGMR3RemoveNode(CFGMR3GetChildF(pDev0, "LUN#%u/", uLUN));
 
-    if (pDrv)
-    {
-        /* Re-use a driver instance => detach the driver before. */
-        int rc = PDMDevHlpDriverDetach(pThis->pDevInsR3, PDMIBASE_2_PDMDRV(pDrv->pDrvBase), 0 /* fFlags */);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
 #define RC_CHECK() if (RT_FAILURE(rc)) { AssertReleaseRC(rc); break; }
 
-    int rc;
     do
     {
         PCFGMNODE pLunL0;
@@ -3533,7 +3655,7 @@ static int ichac97Reattach(PAC97STATE pThis, PAC97DRIVER pDrv, uint8_t uLUN, con
     } while (0);
 
     if (RT_SUCCESS(rc))
-        rc = ichac97AttachInternal(pThis->pDevInsR3, pDrv, uLUN, 0 /* fFlags */);
+        rc = ichac97AttachInternal(pThis, uLUN, 0 /* fFlags */, NULL /* ppDrv */);
 
     LogFunc(("pThis=%p, uLUN=%u, pszDriver=%s, rc=%Rrc\n", pThis, uLUN, pszDriver, rc));
 
@@ -3682,14 +3804,14 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     for (uLUN = 0; uLUN < UINT8_MAX; ++uLUN)
     {
         LogFunc(("Trying to attach driver for LUN #%RU8 ...\n", uLUN));
-        rc = ichac97AttachInternal(pDevIns, NULL /* pDrv */, uLUN, 0 /* fFlags */);
+        rc = ichac97AttachInternal(pThis, uLUN, 0 /* fFlags */, NULL /* ppDrv */);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
                 rc = VINF_SUCCESS;
             else if (rc == VERR_AUDIO_BACKEND_INIT_FAILED)
             {
-                ichac97Reattach(pThis, NULL /* pDrv */, uLUN, "NullAudio");
+                ichac97ReattachInternal(pThis, NULL /* pDrv */, uLUN, "NullAudio");
                 PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
                         N_("Host audio backend initialization has failed. Selecting the NULL audio backend "
                             "with the consequence that no sound is audible"));
@@ -3754,7 +3876,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                 LogRel(("AC97: Falling back to NULL backend (no sound audible)\n"));
 
                 ichac97Reset(pDevIns);
-                ichac97Reattach(pThis, pDrv, pDrv->uLUN, "NullAudio");
+                ichac97ReattachInternal(pThis, pDrv, pDrv->uLUN, "NullAudio");
 
                 PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
                     N_("No audio devices could be opened. Selecting the NULL audio backend "
