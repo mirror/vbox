@@ -115,7 +115,7 @@ typedef struct HDASTREAMSTATE
     HDASTREAMPERIOD         Period;
     /** The stream's current configuration.
      *  Should match SDFMT. */
-    PDMAUDIOSTREAMCFG       strmCfg;
+    PDMAUDIOSTREAMCFG       Cfg;
 #ifdef HDA_USE_DMA_ACCESS_HANDLER
     /** List of DMA handlers. */
     RTLISTANCHORR3          lstDMAHandlers;

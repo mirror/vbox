@@ -137,7 +137,7 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
     /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
     hdaStreamUpdateLPIB(pStream, HDA_STREAM_REG(pThis, LPIB, pStream->u8SD));
 
-    PPDMAUDIOSTREAMCFG pCfg = &pStream->State.strmCfg;
+    PPDMAUDIOSTREAMCFG pCfg = &pStream->State.Cfg;
 
     int rc = hdaSDFMTToPCMProps(HDA_STREAM_REG(pThis, FMT, uSD), &pCfg->Props);
     if (RT_FAILURE(rc))
@@ -559,7 +559,7 @@ uint32_t hdaStreamTransferGetElapsed(PHDASTREAM pStream)
 
     AssertPtr(pStream->pHDAState->pCodec);
 
-    PPDMAUDIOSTREAMCFG pCfg = &pStream->State.strmCfg;
+    PPDMAUDIOSTREAMCFG pCfg = &pStream->State.Cfg;
 
     /* A stream *always* runs with 48 kHz device-wise, regardless of the actual stream input/output format (Hz) being set. */
     uint32_t csPerPeriod = (int)((pCfg->Props.cChannels * cTicksElapsed * 48000 /* Hz */ + cTicksPerSec) / cTicksPerSec / 2);

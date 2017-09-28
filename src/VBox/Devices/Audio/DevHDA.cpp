@@ -1300,7 +1300,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             {
                 /* (Re-)init the stream's period. */
                 hdaStreamPeriodInit(&pStream->State.Period,
-                                    pStream->u8SD, pStream->u16LVI, pStream->u32CBL, &pStream->State.strmCfg);
+                                    pStream->u8SD, pStream->u16LVI, pStream->u32CBL, &pStream->State.Cfg);
 
                 /* Begin a new period for this stream. */
                 rc2 = hdaStreamPeriodBegin(&pStream->State.Period, hdaWalClkGetCurrent(pThis)/* Use current wall clock time */);
@@ -1845,7 +1845,7 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     if (RT_SUCCESS(rc))
     {
         /* Add the stream to the device setup. */
-        rc = hdaAddStream(pThis, &pStream->State.strmCfg);
+        rc = hdaAddStream(pThis, &pStream->State.Cfg);
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         if (RT_SUCCESS(rc))
             rc = hdaStreamAsyncIOCreate(pStream);
@@ -3534,7 +3534,7 @@ static int hdaLoadExecPost(PHDASTATE pThis)
                 AssertRC(rc2);
 
                 /* Add the stream to the device setup. */
-                rc2 = hdaAddStream(pThis, &pStream->State.strmCfg);
+                rc2 = hdaAddStream(pThis, &pStream->State.Cfg);
                 AssertRC(rc2);
 
 #ifdef HDA_USE_DMA_ACCESS_HANDLER
@@ -3961,7 +3961,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
          * Don't annoy other team mates (forgot this for state v7).
          */
         hdaStreamPeriodInit(&pStrm->State.Period,
-                            pStrm->u8SD, pStrm->u16LVI, pStrm->u32CBL, &pStrm->State.strmCfg);
+                            pStrm->u8SD, pStrm->u16LVI, pStrm->u32CBL, &pStrm->State.Cfg);
 
         if (   SSMR3HandleRevision(pSSM) >= 116273
             || SSMR3HandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(5, 2, 0))
