@@ -2157,7 +2157,7 @@ static PHDAMIXERSINK hdaMixerControlToSink(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
  *
  * @returns IPRT status code.
  * @param   pThis               HDA state.
- * @param   pSink               HDA mixer sink to add audio streams to.
+ * @param   pMixSink            Audio mixer sink to add audio streams to.
  * @param   pCfg                Audio stream configuration to use for the audio streams to add.
  * @param   pDrv                Driver stream to add.
  */
@@ -2261,7 +2261,7 @@ static int hdaMixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIO
  *
  * @returns IPRT status code.
  * @param   pThis               HDA state.
- * @param   pMixSink            Mixer sink to add stream to.
+ * @param   pMixSink            Audio mixer sink to add stream to.
  * @param   pCfg                Audio stream configuration to use for the audio streams to add.
  */
 static int hdaMixerAddDrvStreams(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg)
