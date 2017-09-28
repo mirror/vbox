@@ -1326,7 +1326,6 @@ void AudioMixerSinkReset(PAUDMIXSINK pSink)
 /**
  * Returns the audio format of a mixer sink.
  *
- * @returns IPRT status code.
  * @param   pSink               Sink to retrieve audio format for.
  * @param   pPCMProps           Where to the returned audio format.
  */
