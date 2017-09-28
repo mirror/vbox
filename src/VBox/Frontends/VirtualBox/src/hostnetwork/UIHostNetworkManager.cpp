@@ -517,7 +517,7 @@ void UIHostNetworkManagerWidget::sltRemoveHostNetwork()
             else
             {
                 /* Show interface removal progress: */
-                msgCenter().showModalProgressDialog(progress, tr("Networking"), ":/progress_network_interface_90px.png", this, 0);
+                msgCenter().showModalProgressDialog(progress, tr("Removing network..."), ":/progress_network_interface_90px.png", this, 0);
 
                 /* Show error message if necessary: */
                 if (!progress.isOk() || progress.GetResultCode() != 0)
