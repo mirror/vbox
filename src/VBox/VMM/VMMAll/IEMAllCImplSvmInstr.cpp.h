@@ -59,7 +59,10 @@ IEM_STATIC uint8_t iemGetSvmEventType(uint32_t uVector, uint32_t fIemXcptFlags)
  */
 DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    /* Flush the TLB with new CR3. */
+    /*
+     * Flush the TLB with new CR3. This is required in case the PGM mode change
+     * below doesn't actually change anything.
+     */
     PGMFlushTLB(pVCpu, pCtx->cr3, true);
 
     /*
@@ -136,8 +139,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         pVmcbNstGstState->u64RIP        = pCtx->rip;
         pVmcbNstGstState->u64RSP        = pCtx->rsp;
         pVmcbNstGstState->u64RAX        = pCtx->rax;
-        pVmcbNstGstState->u64DR7        = pCtx->dr[6];
-        pVmcbNstGstState->u64DR6        = pCtx->dr[7];
+        pVmcbNstGstState->u64DR7        = pCtx->dr[7];
+        pVmcbNstGstState->u64DR6        = pCtx->dr[6];
         pVmcbNstGstState->u8CPL         = pCtx->ss.Attr.n.u2Dpl;   /* See comment in CPUMGetGuestCPL(). */
         Assert(CPUMGetGuestCPL(pVCpu) == pCtx->ss.Attr.n.u2Dpl);
 
@@ -532,8 +535,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         pCtx->gdtr.pGdt  = pVmcbNstGst->GDTR.u64Base;
         pCtx->idtr.cbIdt = pVmcbNstGst->IDTR.u32Limit;
         pCtx->idtr.pIdt  = pVmcbNstGst->IDTR.u64Base;
-        pCtx->cr0        = pVmcbNstGst->u64CR0;   /** @todo What about informing PGM about CR0.WP? */
-        pCtx->cr4        = pVmcbNstGst->u64CR4;
+        CPUMSetGuestCR0(pVCpu, pVmcbNstGst->u64CR0);
+        CPUMSetGuestCR4(pVCpu, pVmcbNstGst->u64CR4);
         pCtx->cr3        = pVmcbNstGst->u64CR3;
         pCtx->cr2        = pVmcbNstGst->u64CR2;
         pCtx->dr[6]      = pVmcbNstGst->u64DR6;
@@ -623,7 +626,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
              *        NRIP for the nested-guest to calculate the instruction length
              *        below. */
             LogFlow(("iemSvmVmrun: Injecting event: %04x:%08RX64 uVector=%#x enmType=%d uErrorCode=%u cr2=%#RX64\n",
-                     pCtx->cs.Sel, pCtx->rip, uVector, enmType,uErrorCode, pCtx->cr2));
+                     pCtx->cs.Sel, pCtx->rip, uVector, enmType, uErrorCode, pCtx->cr2));
             rcStrict = IEMInjectTrap(pVCpu, uVector, enmType, uErrorCode, pCtx->cr2, 0 /* cbInstr */);
         }
         else
