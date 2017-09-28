@@ -2239,7 +2239,9 @@ HRESULT Appliance::i_verifyManifestFile(ImportStack &stack)
          */
         char szErr[256];
         vrc = RTManifestEqualsEx(m->hTheirManifest, m->hOurManifest, NULL /*papszIgnoreEntries*/,
-                                 NULL /*papszIgnoreAttrs*/, RTMANIFEST_EQUALS_IGN_MISSING_ATTRS, szErr, sizeof(szErr));
+                                 NULL /*papszIgnoreAttrs*/,
+                                 RTMANIFEST_EQUALS_IGN_MISSING_ATTRS | RTMANIFEST_EQUALS_IGN_MISSING_ENTRIES_2ND,
+                                 szErr, sizeof(szErr));
         if (RT_SUCCESS(vrc))
             hrc = S_OK;
         else

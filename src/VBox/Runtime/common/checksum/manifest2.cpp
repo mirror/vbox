@@ -553,8 +553,13 @@ static DECLCALLBACK(int) rtManifestEntryCompare(PRTSTRSPACECORE pStr, void *pvUs
     pEntry2 = (PRTMANIFESTENTRY)RTStrSpaceGet(&pEquals->pThis2->Entries, pEntry1->StrCore.pszString);
     if (!pEntry2)
     {
-        RTStrPrintf(pEquals->pszError, pEquals->cbError, "'%s' not found in the 2nd manifest", pEntry1->StrCore.pszString);
-        return VERR_NOT_EQUAL;
+        if (!(pEquals->fFlags & RTMANIFEST_EQUALS_IGN_MISSING_ENTRIES_2ND))
+        {
+            RTStrPrintf(pEquals->pszError, pEquals->cbError, "'%s' not found in the 2nd manifest", pEntry1->StrCore.pszString);
+            return VERR_NOT_EQUAL;
+        }
+        pEntry1->fVisited = true;
+        return VINF_SUCCESS;
     }
 
     Assert(!pEntry1->fVisited);
@@ -589,7 +594,7 @@ RTDECL(int) RTManifestEqualsEx(RTMANIFEST hManifest1, RTMANIFEST hManifest2, con
         AssertPtrReturn(pThis2, VERR_INVALID_HANDLE);
         AssertReturn(pThis2->u32Magic == RTMANIFEST_MAGIC, VERR_INVALID_HANDLE);
     }
-    AssertReturn(!(fFlags & ~(RTMANIFEST_EQUALS_IGN_MISSING_ATTRS)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~RTMANIFEST_EQUALS_VALID_MASK), VERR_INVALID_PARAMETER);
 
     /*
      * The simple cases.
