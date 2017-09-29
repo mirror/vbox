@@ -2698,8 +2698,9 @@ static int rtFsIsoVolReadAndProcessUdfVdsSeq(PRTFSISOVOL pThis, uint64_t offSeq,
                     return VINF_SUCCESS;
 
                 default:
-                    return RTErrInfoSetF(pErrInfo, VERR_ISOFS_UNEXPECTED_VDS_DESC, "Unexpected/unknown VDS descriptor %#x",
-                                         offSeq + offInSeq, pThis->cbSector, rc);
+                    return RTErrInfoSetF(pErrInfo, VERR_ISOFS_UNEXPECTED_VDS_DESC,
+                                         "Unexpected/unknown VDS descriptor %#x at byte offset %#RX64",
+                                         pThis->cbSector, offSeq + offInSeq);
             }
         }
         /* The descriptor sequence is usually zero padded to 16 sectors.  Just
