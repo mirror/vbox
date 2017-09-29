@@ -97,6 +97,10 @@ class tdAppliance1(vbox.TestDriver):
             # thus it should be impossible to establish a trusted path to a root CA.
             'tdAppliance1-t6.ova',
             'tdAppliance1-t6-ovftool-4.1.0.ova',
+            # t7 is based on tdAppliance1-t2-ovftool-4.1.0.ova and has modified to have an invalid InstanceID as well as an
+            # extra readme file.  It was tarred up using bsdtar 2.4.12 on windows, so it uses a slightly different tar format and
+            # have different file attributes.
+            'tdAppliance1-t7-bad-instance.ova',
             ):
             reporter.testStart(sOva);
             try:
