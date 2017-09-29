@@ -12894,7 +12894,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica dell&apos;istantanea &lt;b&gt;%1&lt;/b&gt; della macchina virtuale &lt;b&gt;%2&lt;/b&gt; non riuscita.</translation>
     </message>
 </context>
 <context>
@@ -14553,23 +14553,23 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Enter a name for the new snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>Digita un nome per la nuova istantanea...</translation>
     </message>
     <message>
         <source>Enter a name for this snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>Digita un nome per questa istantanea...</translation>
     </message>
     <message>
         <source>Take</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea</translation>
     </message>
     <message>
         <source>Take snapshot on the basis of current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un&apos;istantanea in base dello stato attuale della macchina</translation>
     </message>
     <message>
         <source>Take Snapshot (%1)</source>
-        <translation type="unfinished">Crea istantanea (%1)</translation>
+        <translation>Crea istantanea (%1)</translation>
     </message>
 </context>
 <context>

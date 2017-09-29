@@ -232,27 +232,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="obsolete">返回&amp;nbsp;代码:</translation>
+        <translation>返回&amp;nbsp;代码:</translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="obsolete">组件:</translation>
+        <translation>组件:</translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="obsolete">界面:</translation>
+        <translation>界面:</translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="obsolete">被召者:</translation>
+        <translation>被召者:</translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="obsolete">被召者&amp;nbsp;RC:</translation>
+        <translation>被召者&amp;nbsp;RC:</translation>
     </message>
 </context>
 <context>
@@ -260,7 +260,7 @@
     <message>
         <source>%1, %2: %3, %4: %5, %6: %7</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text, col.4 name: col.4 text</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1, %2: %3, %4: %5, %6: %7</translation>
     </message>
 </context>
 <context>
@@ -1440,95 +1440,95 @@
     </message>
     <message>
         <source>&amp;Host Network Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>主机网络管理器(&amp;H)...</translation>
     </message>
     <message>
         <source>Display the Host Network Manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>显示主机网络管理器</translation>
     </message>
     <message>
         <source>&amp;Machine Tools</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑工具(&amp;M)</translation>
     </message>
     <message>
         <source>Switch to machine tools</source>
-        <translation type="unfinished"></translation>
+        <translation>切换到虚拟电脑工具</translation>
     </message>
     <message>
         <source>&amp;Machine Tools Menu</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑工具菜单(&amp;M)</translation>
     </message>
     <message>
         <source>Open the machine tools menu</source>
-        <translation type="unfinished"></translation>
+        <translation>打开虚拟电脑工具菜单</translation>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished"></translation>
+        <translation>明细(&amp;D)</translation>
     </message>
     <message>
         <source>Open the machine details pane</source>
-        <translation type="unfinished"></translation>
+        <translation>打开虚拟电脑详情页</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation type="unfinished">备份[系统快照](&amp;S)</translation>
+        <translation>备份[系统快照](&amp;S)</translation>
     </message>
     <message>
         <source>Open the machine snapshots pane</source>
-        <translation type="unfinished"></translation>
+        <translation>打开虚拟电脑快照页</translation>
     </message>
     <message>
         <source>&amp;Global Tools</source>
-        <translation type="unfinished"></translation>
+        <translation>全局工具(&amp;G)</translation>
     </message>
     <message>
         <source>Switch to global tools</source>
-        <translation type="unfinished"></translation>
+        <translation>切换到全局工具</translation>
     </message>
     <message>
         <source>&amp;Global Tools Menu</source>
-        <translation type="unfinished"></translation>
+        <translation>全局工具菜单(&amp;G)</translation>
     </message>
     <message>
         <source>Open the global tools menu</source>
-        <translation type="unfinished"></translation>
+        <translation>打开全局工具菜单</translation>
     </message>
     <message>
         <source>&amp;Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟介质管理(&amp;V)</translation>
     </message>
     <message>
         <source>Open the Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>打开虚拟介质管理器</translation>
     </message>
     <message>
         <source>&amp;Host Network Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>主机网络管理器(&amp;H)</translation>
     </message>
     <message>
         <source>Open the Host Network Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>打开主机网络管理器</translation>
     </message>
     <message>
         <source>&amp;Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>声音(&amp;A)</translation>
     </message>
     <message>
         <source>Audio Output</source>
-        <translation type="unfinished"></translation>
+        <translation>声音输出</translation>
     </message>
     <message>
         <source>Enable audio output</source>
-        <translation type="unfinished"></translation>
+        <translation>启用声音输出</translation>
     </message>
     <message>
         <source>Audio Input</source>
-        <translation type="unfinished"></translation>
+        <translation>声音输入</translation>
     </message>
     <message>
         <source>Enable audio input</source>
-        <translation type="unfinished"></translation>
+        <translation>启用声音输入</translation>
     </message>
 </context>
 <context>
@@ -1717,7 +1717,7 @@
     </message>
     <message>
         <source>Detailed list of all components of all virtual machines of the current appliance</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑组件详单</translation>
     </message>
 </context>
 <context>
@@ -1736,12 +1736,12 @@
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1% {1?}</translation>
+        <translation>%1</translation>
     </message>
     <message>
         <source>%1: %2</source>
         <comment>col.1 text: col.2 text</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation>%1: %2</translation>
     </message>
 </context>
 <context>
@@ -2607,34 +2607,6 @@
     </message>
 </context>
 <context>
-    <name>UIErrorString</name>
-    <message>
-        <source>Result&amp;nbsp;Code: </source>
-        <comment>error info</comment>
-        <translation type="unfinished">返回&amp;nbsp;代码:</translation>
-    </message>
-    <message>
-        <source>Component: </source>
-        <comment>error info</comment>
-        <translation type="unfinished">组件:</translation>
-    </message>
-    <message>
-        <source>Interface: </source>
-        <comment>error info</comment>
-        <translation type="unfinished">界面:</translation>
-    </message>
-    <message>
-        <source>Callee: </source>
-        <comment>error info</comment>
-        <translation type="unfinished">被召者:</translation>
-    </message>
-    <message>
-        <source>Callee&amp;nbsp;RC: </source>
-        <comment>error info</comment>
-        <translation type="unfinished">被召者&amp;nbsp;RC:</translation>
-    </message>
-</context>
-<context>
     <name>UIExportApplianceWzd</name>
     <message>
         <source>Appliance Export Wizard</source>
@@ -2783,12 +2755,12 @@
     <message>
         <source>%1, %2: %3, %4</source>
         <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1, %2: %3, %4</translation>
     </message>
     <message>
         <source>%1, %2: %3</source>
         <comment>col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1, %2: %3</translation>
     </message>
 </context>
 <context>
@@ -2989,14 +2961,14 @@
     </message>
     <message>
         <source>Virtual Machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑编组</translation>
     </message>
 </context>
 <context>
     <name>UIGChooserItemMachine</name>
     <message>
         <source>Virtual Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑</translation>
     </message>
 </context>
 <context>
@@ -3010,7 +2982,7 @@
     <name>UIGChooserView</name>
     <message>
         <source>Contains a tree of Virtual Machines and their groups</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑及其编组的树状列表</translation>
     </message>
 </context>
 <context>
@@ -3404,57 +3376,57 @@
     <message>
         <source>Chipset Type</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>芯片组</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
-        <translation type="unfinished"></translation>
+        <translation>已启用</translation>
     </message>
     <message>
         <source>EFI</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>EFI</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
-        <translation type="unfinished"></translation>
+        <translation>已禁用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation type="unfinished"></translation>
+        <translation>已禁用</translation>
     </message>
     <message>
         <source>Audio Output</source>
         <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>声音输出</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (audio/output)</comment>
-        <translation type="unfinished"></translation>
+        <translation>已启用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio/output)</comment>
-        <translation type="unfinished"></translation>
+        <translation>已禁用</translation>
     </message>
     <message>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>声音输入</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (audio/input)</comment>
-        <translation type="unfinished"></translation>
+        <translation>已启用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio/input)</comment>
-        <translation type="unfinished"></translation>
+        <translation>已禁用</translation>
     </message>
 </context>
 <context>
@@ -3462,14 +3434,14 @@
     <message>
         <source>%1 details</source>
         <comment>like &apos;General details&apos; or &apos;Storage details&apos;</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 明细</translation>
     </message>
 </context>
 <context>
     <name>UIGDetailsSet</name>
     <message>
         <source>Contains the details of virtual machine &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑 &apos;%1&apos; 明细</translation>
     </message>
 </context>
 <context>
@@ -3636,7 +3608,7 @@
     <name>UIGDetailsView</name>
     <message>
         <source>Contains a list of Virtual Machine details</source>
-        <translation type="unfinished"></translation>
+        <translation>各虚拟电脑的明细</translation>
     </message>
 </context>
 <context>
@@ -4761,7 +4733,7 @@
     <message>
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation>%1: %2</translation>
     </message>
 </context>
 <context>
@@ -4843,170 +4815,172 @@
     </message>
     <message>
         <source>Left %1</source>
-        <translation type="unfinished"></translation>
+        <translation>左 %1</translation>
     </message>
     <message>
         <source>Right %1</source>
-        <translation type="unfinished"></translation>
+        <translation>右 %1</translation>
     </message>
 </context>
 <context>
     <name>UIHostNetworkDetailsWidget</name>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">主机虚拟网络界面(&amp;A)</translation>
+        <translation>网卡(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">DHCP 服务器(&amp;D)</translation>
+        <translation>DHCP 服务器(&amp;D)</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Automatically</source>
-        <translation type="unfinished"></translation>
+        <translation>自动配置网卡(&amp;A)</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Manually</source>
-        <translation type="unfinished"></translation>
+        <translation>手动配置网卡(&amp;M)</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished">IPv4 地址(&amp;I):</translation>
+        <translation>IPv4 地址(&amp;I):</translation>
     </message>
     <message>
         <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="unfinished">显示主机虚拟网络界面的 IPv4 地址.</translation>
+        <translation>显示主机虚拟网络界面的 IPv4 地址.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">IPv4 网络掩码(&amp;M):</translation>
+        <translation>IPv4 网络掩码(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished">显示主机虚拟网络界面的 IPv4 网络掩码.</translation>
+        <translation>显示主机虚拟网络界面的 IPv4 网络掩码.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished">IPv6 地址(&amp;P):</translation>
+        <translation>IPv6 地址(&amp;P):</translation>
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">显示主机虚拟网络界面的 IPv6 地址.</translation>
+        <translation>显示主机虚拟网络界面的 IPv6 地址.</translation>
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished">IPv6 网络掩码长度(&amp;L):</translation>
+        <translation>IPv6 网络掩码长度(&amp;L):</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">显示主机虚拟网络界面的 IPv6 网络掩码前缀.</translation>
+        <translation>显示主机虚拟网络界面的 IPv6 网络掩码前缀.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>默认</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>应用</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>todo</translatorcomment>
+        <translation>重置更改</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>todo</translatorcomment>
+        <translation>应用更改</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>重置更改 (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>应用更改 (%1)</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">启用服务器(&amp;E)</translation>
+        <translation>启用服务器(&amp;E)</translation>
     </message>
     <message>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished">选中, DHCP服务器在电脑开机时启用.</translation>
+        <translation>选中, DHCP服务器在电脑开机时启用.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">服务器地址(&amp;r):</translation>
+        <translation>服务器地址(&amp;r):</translation>
     </message>
     <message>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">显示 DHCP 服务器地址.</translation>
+        <translation>显示 DHCP 服务器地址.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">服务器网络掩码(&amp;M):</translation>
+        <translation>服务器网络掩码(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">显示 DHCP 服务器网络掩码.</translation>
+        <translation>显示 DHCP 服务器网络掩码.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">最小地址(&amp;L):</translation>
+        <translation>最小地址(&amp;L):</translation>
     </message>
     <message>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">显示 DHCP 服务器提供的最小地址.</translation>
+        <translation>显示 DHCP 服务器提供的最小地址.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">最大地址(&amp;U):</translation>
+        <translation>最大地址(&amp;U):</translation>
     </message>
     <message>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">显示 DHCP 服务器提供的最大地址.</translation>
+        <translation>显示 DHCP 服务器提供的最大地址.</translation>
     </message>
     <message>
         <source>Reset changes in current DHCP server details</source>
-        <translation type="unfinished"></translation>
+        <translation>重置更改</translation>
     </message>
     <message>
         <source>Apply changes in current DHCP server details</source>
-        <translation type="unfinished"></translation>
+        <translation>应用更改</translation>
     </message>
     <message>
         <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; is set to obtain the address automatically but the corresponding DHCP server is not enabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>主机网卡 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 设置为自动获取地址, 但 DHCP 服务器未启用。</translation>
     </message>
     <message>
         <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv4 address.</source>
-        <translation type="unfinished"></translation>
+        <translation>主机网卡 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 目前没有有效的 IPv4 地址。</translation>
     </message>
     <message>
         <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv4 network mask.</source>
-        <translation type="unfinished"></translation>
+        <translation>主机网卡 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 目前没有有效的 IPv4 掩码。</translation>
     </message>
     <message>
         <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv6 address.</source>
-        <translation type="unfinished"></translation>
+        <translation>主机网卡 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 目前没有有效的 IPv6 地址。</translation>
     </message>
     <message>
         <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv6 prefix length.</source>
-        <translation type="unfinished"></translation>
+        <translation>主机网卡 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 目前没有有效的 IPv6 掩码前缀长度。</translation>
     </message>
     <message>
         <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server address.</source>
-        <translation type="unfinished"></translation>
+        <translation>主机网卡 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 目前没有有效的 DHCP 服务器地址。</translation>
     </message>
     <message>
         <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server mask.</source>
-        <translation type="unfinished"></translation>
+        <translation>主机网卡 &lt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 目前没有有效的 DHCP 服务器掩码。</translation>
     </message>
     <message>
         <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server lower address bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>主机网卡 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 目前没有有效的 DHCP 服务器最小地址。</translation>
     </message>
     <message>
         <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server upper address bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>主机网卡 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 目前没有有效的 DHCP 服务器最大地址。</translation>
     </message>
 </context>
 <context>
@@ -5014,206 +4988,199 @@
     <message>
         <source>Enable</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">启用</translation>
+        <translation>启用</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished">主机虚拟网络界面</translation>
+        <translation>主机虚拟网络界面</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">自动配置</translation>
+        <translation>自动配置</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">手动配置</translation>
+        <translation>手动配置</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished">IPv4 地址</translation>
+        <translation>IPv4 地址</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished">未设置</translation>
+        <translation>未设置</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished">IPv4 网络掩码</translation>
+        <translation>IPv4 网络掩码</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished">未设置</translation>
+        <translation>未设置</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished">IPv6 地址</translation>
+        <translation>IPv6 地址</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished">IPv6 网络掩码长度</translation>
+        <translation>IPv6 网络掩码长度</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished">未设置</translation>
+        <translation>未设置</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation type="unfinished">DHCP 服务器</translation>
+        <translation>DHCP 服务器</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>已启用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>已禁用</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished">地址</translation>
+        <translation>地址</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished">网络掩码</translation>
+        <translation>网络掩码</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished">最小地址</translation>
+        <translation>最小地址</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished">未设置</translation>
+        <translation>未设置</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished">最大地址</translation>
+        <translation>最大地址</translation>
     </message>
     <message>
         <source>&amp;Network</source>
-        <translation type="unfinished">网络(&amp;N)</translation>
+        <translation>网络(&amp;N)</translation>
     </message>
     <message>
         <source>&amp;Create</source>
-        <translation type="unfinished"></translation>
+        <translation>创建(&amp;C)</translation>
     </message>
     <message>
         <source>Create Host-only Network (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>创建仅主机(Host-only)网络 (%1)</translation>
     </message>
     <message>
         <source>Create new host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>新建仅主机(Host-only)网络</translation>
     </message>
     <message>
         <source>&amp;Remove...</source>
-        <translation type="unfinished">删除(&amp;R)...</translation>
+        <translation>删除(&amp;R)...</translation>
     </message>
     <message>
         <source>Remove Host-only Network (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>删除仅主机(Host-only)网络 (%1)</translation>
     </message>
     <message>
         <source>Remove selected host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>删除选中的仅主机(Host-Only)网络</translation>
     </message>
     <message>
         <source>&amp;Properties...</source>
-        <translation type="unfinished"></translation>
+        <translation>属性(&amp;P)...</translation>
     </message>
     <message>
         <source>Open Host-only Network Properties (%1)</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>todo</translatorcomment>
+        <translation>显示仅主机(Host-only)网络属性 (%1)</translation>
     </message>
     <message>
         <source>Open pane with selected host-only network properties</source>
-        <translation type="unfinished"></translation>
+        <translation>显示仅主机(Host-only)网络属性</translation>
     </message>
     <message>
         <source>&amp;Refresh...</source>
-        <translation type="unfinished"></translation>
+        <translation>刷新(&amp;R)...</translation>
     </message>
     <message>
         <source>Refresh Host-only Networks (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>刷新仅主机(Host-only)网络 (%1)</translation>
     </message>
     <message>
         <source>Refresh the list of host-only networks</source>
-        <translation type="unfinished"></translation>
+        <translation>刷新仅主机(Host-only)网络列表</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>名称</translation>
     </message>
     <message>
         <source>IPv4 Address/Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 网络掩码</translation>
     </message>
     <message>
         <source>IPv6 Address/Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 网络掩码</translation>
     </message>
     <message>
         <source>Host Network Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>主机网络管理器</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>默认</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>应用</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">关闭</translation>
+        <translation>关闭</translation>
     </message>
     <message>
         <source>Reset changes in current host network details</source>
-        <translation type="unfinished"></translation>
+        <translation>重置更改</translation>
     </message>
     <message>
         <source>Apply changes in current host network details</source>
-        <translation type="unfinished"></translation>
+        <translation>应用更改</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>关闭对话框而不保存</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>重置更改 (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>应用更改 (%1)</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>关闭窗口 (%1)</translation>
     </message>
 </context>
 <context>
     <name>UIHostNetworkManagerWidget</name>
     <message>
         <source>Networking</source>
-        <translation type="obsolete">网络</translation>
-    </message>
-    <message>
-        <source>Adding network...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Removing network...</source>
-        <translation type="unfinished"></translation>
+        <translation>网络</translation>
     </message>
 </context>
 <context>
@@ -5516,114 +5483,164 @@
         <translation type="vanished">提示主机键盘是否被虚拟电脑捕获：&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;键盘未捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;键盘已被捕获&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <source>&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1</source>
+        <comment>HD tooltip</comment>
+        <translation>&lt;nobr&gt;指示硬盘活动:&lt;/nobr&gt;%1</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1</source>
+        <comment>CD tooltip</comment>
+        <translation>&lt;nobr&gt;指示虚拟光驱活动:&lt;/nobr&gt;%1</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1</source>
+        <comment>FD tooltip</comment>
+        <translation>&lt;nobr&gt;指示虚拟软盘活动:&lt;/nobr&gt;%1</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1</source>
+        <comment>Network tooltip</comment>
+        <translation>&lt;nobr&gt;指示网卡活动:&lt;/nobr&gt;%1</translation>
+    </message>
+    <message>
         <source>Adapter %1 (%2)</source>
         <comment>Network tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>网卡 %1 (%2)</translation>
     </message>
     <message>
         <source>IP</source>
         <comment>Network tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>IP</translation>
     </message>
     <message>
         <source>Cable</source>
         <comment>Network tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>网线</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>cable (Network tooltip)</comment>
-        <translation type="unfinished"></translation>
+        <translation>已连接</translation>
     </message>
     <message>
         <source>Disconnected</source>
         <comment>cable (Network tooltip)</comment>
-        <translation type="unfinished">未连接</translation>
+        <translation>已断开</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1</source>
+        <comment>USB tooltip</comment>
+        <translation>&lt;nobr&gt;指示USB设备活动状态:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>No USB devices attached</source>
         <comment>USB tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>没有连接 USB 设备</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1</source>
+        <comment>Shared folders tooltip</comment>
+        <translation>&lt;nobr&gt;指示共享文件夹活动状态:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>No shared folders</source>
         <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>无共享文件夹</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1</source>
+        <comment>Display tooltip</comment>
+        <translation>&lt;nobr&gt;指示显示器活动状态:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Video memory</source>
         <comment>Display tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>显存大小</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>Display tooltip</comment>
-        <translation type="unfinished">屏幕</translation>
+        <translation>屏幕</translation>
     </message>
     <message>
         <source>3D acceleration</source>
         <comment>Display tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>3D 加速</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;%1</source>
+        <comment>Video capture tooltip</comment>
+        <translation>&lt;nobr&gt;指示录像进程:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Video capture disabled</source>
         <comment>Video capture tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>禁用录像</translation>
     </message>
     <message>
         <source>Video capture file</source>
         <comment>Video capture tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>录像文件</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Indicates the activity of the additional features:&lt;/nobr&gt;%1</source>
+        <comment>Virtualization Stuff LED</comment>
+        <translation>&lt;nobr&gt;指示其他活动:&lt;/nobr&gt;%1</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:%1</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>指示主机鼠标是否捕获于虚拟电脑的系统:%1</translation>
     </message>
     <message>
         <source>pointer is not captured</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>鼠标未被捕获</translation>
     </message>
     <message>
         <source>pointer is captured</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>鼠标已被捕获</translation>
     </message>
     <message>
         <source>mouse integration (MI) is On</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>鼠标集成(MI)已启用</translation>
     </message>
     <message>
         <source>MI is Off, pointer is captured</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>鼠标集成已关闭，鼠标已被捕获</translation>
     </message>
     <message>
         <source>MI is Off, pointer is not captured</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>鼠标集成已关闭，鼠标未被捕获</translation>
     </message>
     <message>
         <source>Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>注意鼠标集成功能需要在虚拟电脑的系统中安装增强功能包。</translation>
     </message>
     <message>
         <source>Indicates whether the host keyboard is captured by the guest OS:%1</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>指示主机键盘是否捕获于虚拟电脑的系统:%1</translation>
     </message>
     <message>
         <source>keyboard is not captured</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>键盘未独占</translation>
     </message>
     <message>
         <source>keyboard is captured</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>键盘已独占</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Indicates the activity of the audio device:&lt;/nobr&gt;%1</source>
+        <comment>Audio tooltip</comment>
+        <translation>&lt;nobr&gt;指示音频设备活动:&lt;/nobr&gt;%1</translation>
     </message>
 </context>
 <context>
@@ -5929,7 +5946,7 @@
     </message>
     <message>
         <source>Requests</source>
-        <translation type="unfinished"></translation>
+        <translation>请求</translation>
     </message>
 </context>
 <context>
@@ -6068,12 +6085,12 @@
     <message>
         <source>%1, %2</source>
         <comment>col.2 text, col.1 name</comment>
-        <translation type="unfinished">%1: %2 {1,?}</translation>
+        <translation>%1, %2</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.2 text</comment>
-        <translation type="unfinished">%1% {1?}</translation>
+        <translation>%1</translation>
     </message>
 </context>
 <context>
@@ -6174,23 +6191,23 @@
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">扩展特性:</translation>
+        <translation>扩展特性:</translation>
     </message>
     <message>
         <source>When checked, output to the virtual audio device will reach the host. Otherwise the guest is muted.</source>
-        <translation type="unfinished"></translation>
+        <translation>选中时，声音输出到主机。否则静音。</translation>
     </message>
     <message>
         <source>Enable Audio &amp;Output</source>
-        <translation type="unfinished"></translation>
+        <translation>启用声音输出(&amp;O)</translation>
     </message>
     <message>
         <source>When checked, the guest will be able to capture audio input from the host. Otherwise the guest will capture only silence.</source>
-        <translation type="unfinished"></translation>
+        <translation>选中时，声音从主机输入。否则无输入。</translation>
     </message>
     <message>
         <source>Enable Audio &amp;Input</source>
-        <translation type="unfinished"></translation>
+        <translation>启用声音输入(&amp;I)</translation>
     </message>
 </context>
 <context>
@@ -6572,14 +6589,6 @@
     <message>
         <source>When checked, enables video recording for screen %1.</source>
         <translation>启用屏幕 %1 录像。</translation>
-    </message>
-    <message>
-        <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Record Audio</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7236,7 +7245,7 @@
     </message>
     <message>
         <source>Shared &amp;Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>共享文件夹(&amp;F)</translation>
     </message>
 </context>
 <context>
@@ -7923,7 +7932,7 @@
     </message>
     <message>
         <source>&amp;Storage Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>存储介质(&amp;S)</translation>
     </message>
 </context>
 <context>
@@ -8208,19 +8217,19 @@
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed to support a chipset of type ICH9. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>您已为该虚拟机分配了 ICH9 芯片组类型。只有同时启用 IO-APIC 功能，才能正常工作。确认更改时将自动启用。</translation>
     </message>
     <message>
         <source>The USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB pointing device. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB配置页中USB控制器模拟未启用。 模拟USB输入设备时需要启用。 确认更改时将自动启用。</translation>
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>您已为该虚拟机分配了多个虚拟处理器。只有同时启用 IO-APIC 功能，才能正常工作。确认更改时将自动启用。</translation>
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>尚未启用硬件虚拟。支持多个虚拟处理器时需要启用。确认更改时此选项将被启用。</translation>
     </message>
 </context>
 <context>
@@ -8588,71 +8597,71 @@
     <name>UIMediumDetailsWidget</name>
     <message>
         <source>&amp;Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>属性(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation type="unfinished"></translation>
+        <translation>明细(&amp;I)</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>类型(&amp;T):</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation type="unfinished"></translation>
+        <translation>位置(&amp;L):</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation type="unfinished">描述(&amp;D):</translation>
+        <translation>描述(&amp;D):</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>大小(&amp;S):</translation>
     </message>
     <message>
         <source>Holds the type of this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>介质类型.</translation>
     </message>
     <message>
         <source>Holds the location of this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>介质存放位置。</translation>
     </message>
     <message>
         <source>Holds the description of this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>介质的描述。</translation>
     </message>
     <message>
         <source>Holds the size of this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>介质的大小容量。</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>默认</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>应用</translation>
     </message>
     <message>
         <source>Reset changes in current medium details</source>
-        <translation type="unfinished"></translation>
+        <translation>重置更改</translation>
     </message>
     <message>
         <source>Apply changes in current medium details</source>
-        <translation type="unfinished"></translation>
+        <translation>应用更改</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>重置更改 (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>应用更改 (%1)</translation>
     </message>
     <message>
         <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
-        <translation type="unfinished"></translation>
+        <translation>不能将介质大小从 &lt;b&gt;%1&lt;/b&gt; 调整为 &lt;b&gt;%2&lt;/b&gt; ，存储空间缩减的功能尚未实现。</translation>
     </message>
 </context>
 <context>
@@ -8688,179 +8697,182 @@
     <message>
         <source>%1, %2: %3, %4: %5</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1, %2: %3, %4: %5</translation>
     </message>
     <message>
         <source>Format:</source>
-        <translation type="unfinished">格式:</translation>
+        <translation>格式:</translation>
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="unfinished">存储器明细:</translation>
+        <translation>存储器明细:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished">分配到:</translation>
+        <translation>分配到:</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished">加密密钥:</translation>
+        <translation>加密密钥:</translation>
     </message>
     <message>
         <source>UUID:</source>
-        <translation type="unfinished">UUID:</translation>
+        <translation>UUID:</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;未分配&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;未分配&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;未加密&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;未加密&lt;/i&gt;</translation>
     </message>
     <message>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished"></translation>
+        <translation>--</translation>
     </message>
     <message>
         <source>&amp;Medium</source>
-        <translation type="unfinished"></translation>
+        <translation>介质(&amp;M)</translation>
     </message>
     <message>
         <source>&amp;Copy...</source>
-        <translation type="unfinished">复制(&amp;C)...</translation>
+        <translation>复制(&amp;C)...</translation>
     </message>
     <message>
         <source>Copy selected disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>复制选中的虚拟磁盘文件</translation>
     </message>
     <message>
         <source>&amp;Remove...</source>
-        <translation type="unfinished">删除(&amp;R)...</translation>
+        <translation>删除(&amp;R)...</translation>
     </message>
     <message>
         <source>Remove selected disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>移除所选的虚拟存储介质</translation>
     </message>
     <message>
         <source>Re&amp;lease...</source>
-        <translation type="unfinished"></translation>
+        <translation>释放(&amp;l)...</translation>
     </message>
     <message>
         <source>Release selected disk image file by detaching it from machines</source>
-        <translation type="unfinished"></translation>
+        <translation>从虚拟电脑中释放所选的虚拟存储介质</translation>
     </message>
     <message>
         <source>&amp;Properties...</source>
-        <translation type="unfinished"></translation>
+        <translation>属性(&amp;P)...</translation>
     </message>
     <message>
         <source>Open pane with selected disk image file properties</source>
-        <translation type="unfinished"></translation>
+        <translation>查看选定介质的属性</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished"></translation>
+        <translation>刷新(&amp;f)</translation>
     </message>
     <message>
         <source>Refresh the list of disk image files</source>
-        <translation type="unfinished">刷新虚拟存储介质列表</translation>
+        <translation>刷新虚拟存储介质列表</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>名称</translation>
     </message>
     <message>
         <source>Virtual Size</source>
-        <translation type="unfinished">虚拟分配空间</translation>
+        <translation>虚拟分配空间</translation>
     </message>
     <message>
         <source>Actual Size</source>
-        <translation type="unfinished">实际分配空间</translation>
+        <translation>实际分配空间</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished">大小</translation>
+        <translation>大小</translation>
     </message>
     <message>
         <source>Checking accessibility</source>
-        <translation type="unfinished">检测可访问性</translation>
+        <translation>检测可访问性</translation>
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation type="unfinished"></translation>
+        <translation>移动介质...</translation>
     </message>
     <message>
         <source>Virtual Media Manager</source>
-        <translation type="unfinished">虚拟介质管理器</translation>
+        <translation>虚拟介质管理器</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>默认</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>应用</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">关闭</translation>
+        <translation>关闭</translation>
     </message>
     <message>
         <source>Reset changes in current medium details</source>
-        <translation type="unfinished"></translation>
+        <translation>重置更改</translation>
     </message>
     <message>
         <source>Apply changes in current medium details</source>
-        <translation type="unfinished"></translation>
+        <translation>应用更改</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>关闭对话框而不保存</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>重置更改 (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>应用更改 (%1)</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>关闭窗口 (%1)</translation>
     </message>
+</context>
+<context>
+    <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>复制虚拟磁盘文件 (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>移除虚拟磁盘文件 (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>释放虚拟磁盘文件 (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>查看虚拟介质文件属性 (%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>刷新虚拟存储介质列表 (%1)</translation>
     </message>
 </context>
 <context>
     <name>UIMediumSizeEditor</name>
     <message>
         <source>Holds the size of this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>介质的大小容量。</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -8926,11 +8938,11 @@
     </message>
     <message>
         <source>Toggle menu %1</source>
-        <translation type="unfinished"></translation>
+        <translation>切换菜单 %1</translation>
     </message>
     <message>
         <source>Popup menu %1</source>
-        <translation type="unfinished"></translation>
+        <translation>弹出菜单 %1</translation>
     </message>
 </context>
 <context>
@@ -10523,103 +10535,105 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to start all of the following virtual machines:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This could take some time and consume a lot of host system resources. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;将启动下列虚拟电脑:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;需要不少时间并消耗许多主机资源。 确定继续启动?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Can&apos;t find snapshot with ID=&lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法找到 ID 为 &lt;b&gt;%1&lt;/b&gt; 的备份。</translation>
     </message>
     <message>
         <source>Can&apos;t acquire snapshot attributes.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法获取备份属性。</translation>
     </message>
     <message>
         <source>Failed to move the storage unit of the disk image &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>移动虚拟磁盘 &lt;b&gt;%1&lt;/b&gt; 至 &lt;b&gt;%2&lt;/b&gt; 失败。</translation>
     </message>
     <message>
         <source>&lt;p&gt;Error changing the description of the disk image &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;更改虚拟磁盘 &lt;b&gt;%1&lt;/b&gt; 的描述出错。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to resize the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;%2&lt;/b&gt; to &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>调整虚拟硬盘 &lt;b&gt;%1&lt;/b&gt; 的大小 &lt;b&gt;%2&lt;/b&gt; 为 &lt;b&gt;%3&lt;/b&gt; 失败。</translation>
     </message>
     <message>
         <source>Failed to acquire host network interfaces.</source>
-        <translation type="unfinished"></translation>
+        <translation>未能获取主机网络连接.</translation>
     </message>
     <message>
         <source>Unable to find the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>未找到主机网络连接 &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create a host network interface.</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>todo</translatorcomment>
+        <translation>未能创建主机网络连接.</translation>
     </message>
     <message>
         <source>Failed to acquire host network interface parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>未能获取主机网络连接参数.</translation>
     </message>
     <message>
         <source>Failed to save host network interface parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>未能保存主机网络连接参数.</translation>
     </message>
     <message>
         <source>Failed to create a DHCP server for the network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>未能创建网卡&lt;b&gt;%1&lt;/b&gt;的DHCP服务器.</translation>
     </message>
     <message>
         <source>Failed to remove the DHCP server for the network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>未能删除网卡&lt;b&gt;%1&lt;/b&gt;的DHCP服务器.</translation>
     </message>
     <message>
         <source>Failed to acquire DHCP server parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>未能获取 DHCP 服务器参数.</translation>
     </message>
     <message>
         <source>Failed to save DHCP server parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>未能保存 DHCP 服务器参数.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;您将要安装 VirtualBox 扩展包。扩展包补充 VirtualBox 的功能，并且可能包含危害到您系统的系统级软件。请查看下面的说明，只有在您获得来自受信任源的扩展包时才能进行。&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名称:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt; {0 ?} {5&gt;?} {1&lt;?} {2&lt;?} {3&lt;?}</translation>
+        <translation>&lt;p&gt;您将要安装 VirtualBox 扩展包。扩展包补充 VirtualBox 的功能，并且可能包含危害到您系统的系统级软件。请查看下面的说明，只有在您获得来自受信任源的扩展包时才能进行。&lt;/p&gt;&lt;p&gt;&lt;table  cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名称:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;已经安装了旧版本的扩展包，您是否要升级？&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名称:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;新版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;当前版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt; {1&lt;?} {0 ?} {5&gt;?} {2&lt;?} {3&lt;?} {4&lt;?} {5&lt;?}</translation>
+        <translation>&lt;p&gt;已经安装了旧版本的扩展包，您是否要升级？&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名称:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;新版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;当前版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;已经安装了新版本的扩展包，您是否要降级？&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名称:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;新版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;当前版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt; {1&lt;?} {0 ?} {5&gt;?} {2&lt;?} {3&lt;?} {4&lt;?} {5&lt;?}</translation>
+        <translation>&lt;p&gt;已经安装了新版本的扩展包，您是否要降级？&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名称:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;新版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;当前版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;扩展包已安装了相同的版本，您是否要重新安装？&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名称:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt; {1&lt;?} {0 ?} {5&gt;?} {2&lt;?} {3&lt;?} {4&lt;?}</translation>
+        <translation>&lt;p&gt;扩展包已安装了相同的版本，您是否要重新安装？&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名称:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to enable the audio adapter output for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>为虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 启用声音输出失败。</translation>
     </message>
     <message>
         <source>Failed to disable the audio adapter output for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>为虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 禁用声音输出失败。</translation>
     </message>
     <message>
         <source>Failed to enable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>为虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 启用声音输入失败。</translation>
     </message>
     <message>
         <source>Failed to disable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>为虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 禁用声音输入失败。</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>note</translatorcomment>
+        <translation>&lt;p&gt;未能插入 &lt;b&gt;%1&lt;/b&gt; 磁盘映像文件到虚拟电脑 &lt;b&gt;%2&lt;/b&gt;, 此虚拟电脑没有配置虚拟光驱。 请在设置窗口的存储页中添加虚拟光驱。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>修改虚拟电脑 &lt;b&gt;%2&lt;/b&gt; 的备份 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
     </message>
 </context>
 <context>
@@ -11204,11 +11218,11 @@
     <name>UIPopupPane</name>
     <message>
         <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;明细:&lt;/b&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt; (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;明细:&lt;/b&gt; (%1 / %2)</translation>
     </message>
 </context>
 <context>
@@ -11326,15 +11340,15 @@
     <name>UIScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
-        <translation type="unfinished">屏幕截图 %1 (%2)</translation>
+        <translation>屏幕截图 %1 (%2)</translation>
     </message>
     <message>
         <source>Click to view non-scaled screenshot.</source>
-        <translation type="unfinished">单击查看未缩放的屏幕截图。</translation>
+        <translation>单击查看未缩放的屏幕截图。</translation>
     </message>
     <message>
         <source>Click to view scaled screenshot.</source>
-        <translation type="unfinished">单击查看缩放的屏幕截图。</translation>
+        <translation>单击查看缩放的屏幕截图。</translation>
     </message>
 </context>
 <context>
@@ -11370,7 +11384,7 @@
     </message>
     <message>
         <source>Show Toolbar Text</source>
-        <translation type="unfinished"></translation>
+        <translation>显示工具栏文字</translation>
     </message>
 </context>
 <context>
@@ -11389,7 +11403,7 @@
     <message>
         <source>%1 status-bar indicator</source>
         <comment>like &apos;hard-disk status-bar indicator&apos;</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 状态栏图标</translation>
     </message>
 </context>
 <context>
@@ -11471,7 +11485,7 @@
     </message>
     <message>
         <source>Allows to navigate through Global Property categories</source>
-        <translation type="unfinished"></translation>
+        <translation>允许浏览全局属性</translation>
     </message>
 </context>
 <context>
@@ -11534,7 +11548,7 @@
     </message>
     <message>
         <source>Allows to navigate through VM Settings categories</source>
-        <translation type="unfinished"></translation>
+        <translation>允许浏览虚拟电脑属性</translation>
     </message>
 </context>
 <context>
@@ -11552,79 +11566,79 @@
     <name>UISnapshotDetailsWidget</name>
     <message>
         <source>&amp;Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>属性(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation type="unfinished"></translation>
+        <translation>明细(&amp;I)</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>名称(&amp;N):</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation type="unfinished">描述(&amp;D):</translation>
+        <translation>描述(&amp;D):</translation>
     </message>
     <message>
         <source>Holds the snapshot name.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示备份名称。</translation>
     </message>
     <message>
         <source>Holds the snapshot description.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示备份描述。</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>应用</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>默认</translation>
     </message>
     <message>
         <source>Apply changes in current snapshot details</source>
-        <translation type="unfinished"></translation>
+        <translation>应用更改</translation>
     </message>
     <message>
         <source>Reset changes in current snapshot details</source>
-        <translation type="unfinished"></translation>
+        <translation>重置更改</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>应用更改 (%1)</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>重置更改 (%1)</translation>
     </message>
     <message>
         <source>Click to enlarge the screenshot.</source>
-        <translation type="unfinished">点击可放大屏幕快照.</translation>
+        <translation>点击可放大屏幕截图。</translation>
     </message>
     <message>
         <source>Snapshot name is empty</source>
-        <translation type="unfinished"></translation>
+        <translation>备份名称为空</translation>
     </message>
     <message>
         <source>Enter a name for the new snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>为新备份设置名称...</translation>
     </message>
     <message>
         <source>Enter a name for this snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>为此备份设置名称...</translation>
     </message>
     <message>
         <source>Take</source>
-        <translation type="unfinished"></translation>
+        <translation>生成</translation>
     </message>
     <message>
         <source>Take snapshot on the basis of current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>创建当前虚拟机状态的备份[系统快照]</translation>
     </message>
     <message>
         <source>Take Snapshot (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>生成备份 (%1)</translation>
     </message>
 </context>
 <context>
@@ -11632,133 +11646,133 @@
     <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation type="unfinished">当前状态 (已改变)</translation>
+        <translation>当前状态 (已改变)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation type="unfinished">当前状态</translation>
+        <translation>当前状态</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation type="unfinished">当前状态与最近备份中保存的状态不一致</translation>
+        <translation>当前状态与最近备份中保存的状态不一致</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation type="unfinished">当前状态与最近备份中保存的状态一致</translation>
+        <translation>当前状态与最近备份中保存的状态一致</translation>
     </message>
     <message>
         <source>%1 (%2 ago)</source>
         <comment>date time (how long ago)</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 (%2 之前)</translation>
     </message>
     <message>
         <source>%1 since %2</source>
         <comment>Current State (time or date + time)</comment>
-        <translation type="unfinished">%1 自从 %2</translation>
+        <translation>%1 自从 %2</translation>
     </message>
     <message>
         <source>current</source>
         <comment>snapshot</comment>
-        <translation type="unfinished"></translation>
+        <translation>当前</translation>
     </message>
     <message>
         <source>online</source>
         <comment>snapshot</comment>
-        <translation type="unfinished"></translation>
+        <translation>在线</translation>
     </message>
     <message>
         <source>offline</source>
         <comment>snapshot</comment>
-        <translation type="unfinished"></translation>
+        <translation>离线</translation>
     </message>
     <message>
         <source>Taken at %1</source>
         <comment>Snapshot (time)</comment>
-        <translation type="unfinished">生成于 %1</translation>
+        <translation>生成于 %1</translation>
     </message>
     <message>
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
-        <translation type="unfinished">生成于 %1</translation>
+        <translation>生成于 %1</translation>
     </message>
     <message>
         <source>Contains the snapshot tree of the current virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑备份的树状列表</translation>
     </message>
     <message>
         <source>&amp;Take...</source>
-        <translation type="unfinished"></translation>
+        <translation>生成(&amp;T)...</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>删除备份(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Restore</source>
-        <translation type="unfinished"></translation>
+        <translation>恢复备份(&amp;R)</translation>
     </message>
     <message>
         <source>&amp;Properties...</source>
-        <translation type="unfinished"></translation>
+        <translation>属性(&amp;P)...</translation>
     </message>
     <message>
         <source>&amp;Clone...</source>
-        <translation type="unfinished">复制(&amp;O)...</translation>
+        <translation>复制(&amp;C)...</translation>
     </message>
     <message>
         <source>Take Snapshot (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>生成备份 (%1)</translation>
     </message>
     <message>
         <source>Delete Snapshot (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>删除备份 (%1)</translation>
     </message>
     <message>
         <source>Restore Snapshot (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>恢复备份 (%1)</translation>
     </message>
     <message>
         <source>Open Snapshot Properties (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>查看备份的属性 (%1)</translation>
     </message>
     <message>
         <source>Clone Virtual Machine (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>复制虚拟电脑 (%1)</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="unfinished">为虚拟电脑的当前状态生成一个备份</translation>
+        <translation>为虚拟电脑的当前状态生成一个备份</translation>
     </message>
     <message>
         <source>Delete selected snapshot of the virtual machine</source>
-        <translation type="unfinished">删除所选备份</translation>
+        <translation>删除所选备份</translation>
     </message>
     <message>
         <source>Restore selected snapshot of the virtual machine</source>
-        <translation type="unfinished">恢复虚拟电脑到所选备份时的状态</translation>
+        <translation>恢复虚拟电脑到所选备份时的状态</translation>
     </message>
     <message>
         <source>Open pane with the selected snapshot properties</source>
-        <translation type="unfinished"></translation>
+        <translation>查看选定备份的属性</translation>
     </message>
     <message>
         <source>Clone selected virtual machine</source>
-        <translation type="unfinished">复制所选的虚拟电脑</translation>
+        <translation>复制所选的虚拟电脑</translation>
     </message>
     <message>
         <source>Name</source>
         <comment>snapshot</comment>
-        <translation type="unfinished"></translation>
+        <translation>名称</translation>
     </message>
     <message>
         <source>Taken</source>
         <comment>snapshot</comment>
-        <translation type="unfinished"></translation>
+        <translation>生成时间</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation type="unfinished">备份 %1</translation>
+        <translation>备份 %1</translation>
     </message>
 </context>
 <context>
@@ -11787,25 +11801,25 @@
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation type="unfinished">生成备份</translation>
+        <translation>生成备份</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
-        <translation type="unfinished">备份名称(&amp;N)</translation>
+        <translation>备份名称(&amp;N)</translation>
     </message>
     <message>
         <source>Snapshot &amp;Description</source>
-        <translation type="unfinished">备份描述(&amp;D)</translation>
+        <translation>备份描述(&amp;D)</translation>
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>警告: 您正在获取所运行虚拟机的备份，它有 %n 项不可改变的映像分配给它。生成备份时，那些不可改变的映像将不被重置以避免丢失数据。</numerusform>
         </translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation type="unfinished">备份 %1</translation>
+        <translation>备份 %1</translation>
     </message>
 </context>
 <context>
@@ -11835,34 +11849,35 @@
     <name>UIToolsPaneGlobal</name>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;This window represents a set of global tools which are currently opened (or can be opened). They are not related to any particular machine but to the complete VM collection. For a list of currently available tools check the corresponding menu at the right side of the main tool bar located at the top of the window. This list will be extended with new tools in future releases.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for more information and latest news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;欢迎使用虚拟电脑控制台!&lt;/h3&gt;&lt;p&gt;本窗口包括一些全局工具，不是关联到某个虚拟电脑而是虚拟电脑集。从窗口上边工具栏右边相应菜单中查看更多工具。&lt;/p&gt;&lt;p&gt;你可以按  &lt;b&gt;%1&lt;/b&gt; 键来查看帮助，或访问 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 查看最新信息和新闻.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Tool to observe virtual storage media. Reflects all the chains of &lt;u&gt;virtual disks&lt;/u&gt; you have registered (per each storage type) within your virtual machines and allows for media operations like &lt;u&gt;copy&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt;, &lt;u&gt;release&lt;/u&gt; (detach it from VMs where it is currently attached to) and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; medium attributes like &lt;u&gt;type&lt;/u&gt;, &lt;u&gt;location/name&lt;/u&gt;, &lt;u&gt;description&lt;/u&gt; and &lt;u&gt;size&lt;/u&gt; (for dynamical storages only).</source>
-        <translation type="unfinished"></translation>
+        <translation>查看虚拟存储介质。查看全部&lt;u&gt;虚拟磁盘&lt;/u&gt;，可以&lt;u&gt;复制&lt;/u&gt;, &lt;u&gt;移除&lt;/u&gt;, &lt;u&gt;释放&lt;/u&gt;它们以及查看属性。可以&lt;u&gt;修改&lt;/u&gt; 介质属性如 &lt;u&gt;类型&lt;/u&gt;, &lt;u&gt;存储位置/名称&lt;/u&gt;, &lt;u&gt;描述&lt;/u&gt; 及 &lt;u&gt;大小&lt;/u&gt; (仅限动态存储)。</translation>
     </message>
     <message>
         <source>Tool to control host-only network interfaces. Reflects &lt;u&gt;host-only networks&lt;/u&gt;, their DHCP servers and allows for operations on the networks like possibility to &lt;u&gt;create&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt; and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; various &lt;u&gt;attributes&lt;/u&gt; for host-only interface and corresponding DHCP server.</source>
-        <translation type="unfinished"></translation>
+        <translation>控制仅主机(Host-Only)网络。查看&lt;u&gt;仅主机(Host-Only)网络&lt;/u&gt;及其 DHCP 服务器，允许查看、&lt;u&gt;创建&lt;/u&gt;、&lt;u&gt;移除&lt;/u&gt;及&lt;u&gt;编辑&lt;/u&gt;其属性。</translation>
     </message>
 </context>
 <context>
     <name>UIToolsPaneMachine</name>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window lists all virtual machines and virtual machine groups on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for more information and latest news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;欢迎使用虚拟电脑控制台!&lt;/h3&gt;&lt;p&gt;窗口的左边用来显示已生成的虚拟电脑. 现在是空的，因为你还没有新建任何虚拟电脑.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;要新建一个虚拟电脑, 请按位于窗口顶部工具栏上的 &lt;b&gt;新建&lt;/b&gt; 按钮。&lt;/p&gt;&lt;p&gt;你可以按  &lt;b&gt;%1&lt;/b&gt; 键来查看帮助，或访问 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 查看最新信息和新闻.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window lists all virtual machines and virtual machine groups on your computer.&lt;/p&gt;&lt;p&gt;The right part of this window represents a set of tools which are currently opened (or can be opened) for the currently chosen machine. For a list of currently available tools check the corresponding menu at the right side of the main tool bar located at the top of the window. This list will be extended with new tools in future releases.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for more information and latest news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;欢迎使用虚拟电脑控制台!&lt;/h3&gt;&lt;p&gt;窗口的左边用来显示已生成的虚拟电脑及编组。&lt;/p&gt;&lt;p&gt;窗口右边显示当前选中的虚拟电脑的可用工具集。 从窗口上边工具栏右边相应菜单中查看更多工具。&lt;/p&gt;&lt;p&gt;你可以按  &lt;b&gt;%1&lt;/b&gt; 键来查看帮助，或访问 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 查看最新信息和新闻.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Tool to observe virtual machine (VM) details. Reflects groups of &lt;u&gt;properties&lt;/u&gt; for the currently chosen VM and allows basic operations on certain properties (like the machine storage devices).</source>
-        <translation type="unfinished"></translation>
+        <translation>查看虚拟电脑明细。当前选中的虚拟电脑的&lt;u&gt;属性&lt;/u&gt;。</translation>
     </message>
     <message>
         <source>Tool to control virtual machine (VM) snapshots. Reflects &lt;u&gt;snapshots&lt;/u&gt; created for the currently selected VM and allows snapshot operations like &lt;u&gt;create&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt;, &lt;u&gt;restore&lt;/u&gt; (make current) and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; snapshot attributes like &lt;u&gt;name&lt;/u&gt; and &lt;u&gt;description&lt;/u&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>todo</translatorcomment>
+        <translation>查看虚拟电脑备份明细。可&lt;u&gt;编辑&lt;/u&gt; 备份的属性如 &lt;u&gt;名称&lt;/u&gt; 和 &lt;u&gt;描述&lt;/u&gt;。</translation>
     </message>
 </context>
 <context>
@@ -11870,12 +11885,12 @@
     <message>
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1, 活动</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1% {1?}</translation>
+        <translation>%1</translation>
     </message>
 </context>
 <context>
@@ -12725,31 +12740,31 @@
     </message>
     <message>
         <source>Oracle Public Cloud Format Archive (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Oracle公共云格式包 (%1)</translation>
     </message>
     <message>
         <source>Open Virtualization Format 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation>开放式虚拟化格式 0.9</translation>
     </message>
     <message>
         <source>Open Virtualization Format 1.0</source>
-        <translation type="unfinished"></translation>
+        <translation>开放式虚拟化格式 1.0</translation>
     </message>
     <message>
         <source>Open Virtualization Format 2.0</source>
-        <translation type="unfinished"></translation>
+        <translation>开放式虚拟化格式 2.0</translation>
     </message>
     <message>
         <source>Oracle Public Cloud Format 1.0</source>
-        <translation type="unfinished"></translation>
+        <translation>Oracle公共云格式 1.0</translation>
     </message>
     <message>
         <source>Write in new OVF 2.0 format.</source>
-        <translation type="unfinished"></translation>
+        <translation>用新 OVF 2.0 格式写入.</translation>
     </message>
     <message>
         <source>Write in Oracle Public Cloud 1.0 format.</source>
-        <translation type="unfinished"></translation>
+        <translation>用Oracle公共云格式 1.0格式写入。</translation>
     </message>
 </context>
 <context>
@@ -12772,7 +12787,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Please choose a filename to export the virtual appliance to.&lt;/p&gt;&lt;p&gt;The &lt;b&gt;Open Virtualization Format&lt;/b&gt; supports only &lt;b&gt;ovf&lt;/b&gt; or &lt;b&gt;ova&lt;/b&gt; extensions. &lt;br&gt;If you use the &lt;b&gt;ovf&lt;/b&gt; extension, several files will be written separately.&lt;br&gt;If you use the &lt;b&gt;ova&lt;/b&gt; extension, all the files will be combined into one Open Virtualization Format archive.&lt;/p&gt;&lt;p&gt;The &lt;b&gt;Oracle Public Cloud Format&lt;/b&gt; supports only the &lt;b&gt;tar.gz&lt;/b&gt; extension.&lt;br&gt;Each virtual disk file will be written separately.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;请选择导出的文件名。&lt;/p&gt;&lt;p&gt; &lt;b&gt;开放式虚拟化格式&lt;/b&gt; 仅支持 &lt;b&gt;ovf&lt;/b&gt; 或 &lt;b&gt;ova&lt;/b&gt; 扩展名。 &lt;br&gt;若采用 &lt;b&gt;ovf&lt;/b&gt; 格式, 将分别存成多个独立文件。&lt;br&gt;若采用 &lt;b&gt;ova&lt;/b&gt; 格式, 这些文件将合并成一个开放式虚拟化格式包。&lt;/p&gt;&lt;p&gt; &lt;b&gt;Oracle 公共云格式&lt;/b&gt; 仅支持 &lt;b&gt;tar.gz&lt;/b&gt; 扩展名。&lt;br&gt;每个虚拟磁盘文件分别保存。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -15037,67 +15052,67 @@
     <message>
         <source>Hard Disks</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
+        <translation>虚拟硬盘</translation>
     </message>
     <message>
         <source>Optical Disks</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
+        <translation>虚拟光盘</translation>
     </message>
     <message>
         <source>Floppy Disks</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
+        <translation>虚拟软盘</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">网络</translation>
+        <translation>网络</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB设备</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">共享文件夹</translation>
+        <translation>共享文件夹</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">显示</translation>
+        <translation>显示</translation>
     </message>
     <message>
         <source>Video Capture</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">录像</translation>
+        <translation>录像</translation>
     </message>
     <message>
         <source>Features</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
+        <translation>功能</translation>
     </message>
     <message>
         <source>Mouse</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
+        <translation>鼠标</translation>
     </message>
     <message>
         <source>Keyboard</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
+        <translation>键盘</translation>
     </message>
     <message>
         <source>Differencing</source>
         <comment>MediumType</comment>
-        <translation type="unfinished">备份部分</translation>
+        <translation>差分存储</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">声音</translation>
+        <translation>声音</translation>
     </message>
 </context>
 <context>

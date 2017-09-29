@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="zh_TW">
+<TS version="2.0" language="zh_TW">
 <context>
     <name>@@@</name>
     <message>
@@ -2062,7 +2062,7 @@
     <name>UIGlobalSettingsExtension</name>
     <message>
         <source>Lists all installed packages.</source>
-        <translation>列出所有已安裝的擴充包。</translation>
+        <translation>列出所有已安裝的擴充功能包。</translation>
     </message>
     <message>
         <source>Active</source>
@@ -2078,7 +2078,7 @@
     </message>
     <message>
         <source>Select an extension package file</source>
-        <translation>選取一個擴充包檔案</translation>
+        <translation>選取一個擴充功能包檔案</translation>
     </message>
     <message>
         <source>Extension package files (%1)</source>
@@ -2090,23 +2090,23 @@
     </message>
     <message>
         <source>&amp;Extension Packages</source>
-        <translation>擴充包(&amp;E)</translation>
+        <translation>擴充功能包(&amp;E)</translation>
     </message>
     <message>
         <source>Add Package</source>
-        <translation>加入擴充包</translation>
+        <translation>加入擴充功能包</translation>
     </message>
     <message>
         <source>Remove Package</source>
-        <translation>移除擴充包</translation>
+        <translation>移除擴充功能包</translation>
     </message>
     <message>
         <source>Adds new package.</source>
-        <translation>加入新的擴充包。</translation>
+        <translation>加入新的擴充功能包。</translation>
     </message>
     <message>
         <source>Removes selected package.</source>
-        <translation>移除選取的擴充包。</translation>
+        <translation>移除選取的擴充功能包。</translation>
     </message>
 </context>
 <context>
@@ -5920,11 +5920,11 @@
     </message>
     <message>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>安裝擴充包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+        <translation>安裝擴充功能包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
     </message>
     <message>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>解除安裝擴充包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+        <translation>解除安裝擴充功能包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -5956,7 +5956,7 @@
     </message>
     <message>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>開啟擴充包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+        <translation>開啟擴充功能包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
     </message>
     <message>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
@@ -5980,7 +5980,7 @@
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation>擴充包 &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; 安裝成功。</translation>
+        <translation>擴充功能包 &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; 安裝成功。</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
@@ -6052,7 +6052,7 @@
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;從 &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 成功下載 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; 並在本機儲存為 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您希望安裝此擴充套件嗎?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;從 &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 成功下載 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; 並在本機儲存為 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您希望安裝此擴充功能包嗎?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Install</source>
@@ -6378,10 +6378,6 @@
         <translation>在機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 分離軟碟機 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;無法放入 &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; 磁碟映像檔案到虛擬機器 &lt;b&gt;%1&lt;/b&gt;，因為機器沒有光碟機。 請使用虛擬機器設定視窗的 [存放裝置] 頁面加入磁碟機。&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual optical drive?&lt;/p&gt;</source>
         <translation>&lt;p&gt;從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; 下載 &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; 磁碟映像檔案成功並在本機儲存為 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您希望註冊此磁碟映像檔案並放入到虛擬光碟機嗎?&lt;/p&gt;</translation>
     </message>
@@ -6596,11 +6592,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;無法插入 &lt;b&gt;%1&lt;/b&gt; 磁碟映像檔案到虛擬機器 &lt;b&gt;%2&lt;/b&gt;，由於機器沒有光碟機。 請使用虛擬機器設定視窗的 [存放裝置] 頁面加入磁碟機。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>變更虛擬機器 &lt;b&gt;%2&lt;/b&gt; 的快照 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
     </message>
 </context>
 <context>
@@ -6797,11 +6793,11 @@
     <name>UIPopupPane</name>
     <message>
         <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;詳細資料:&lt;/b&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt; (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;詳細資料:&lt;/b&gt; (%1 / %2)</translation>
     </message>
 </context>
 <context>
@@ -7085,10 +7081,6 @@
 <context>
     <name>UISnapshotDetailsWidget</name>
     <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Current State&lt;/b&gt; item selected.&lt;br&gt;Press the &lt;b&gt;Take&lt;/b&gt; button if you wish to take a new snapshot.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;您已選取「&lt;b&gt;目前狀態&lt;/b&gt;」項目。&lt;br&gt;如果您想取得新的快照，按下 [&lt;b&gt;取得&lt;/b&gt;] 按鈕。&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>&amp;Attributes</source>
         <translation>屬性(&amp;A)</translation>
     </message>
@@ -7146,23 +7138,23 @@
     </message>
     <message>
         <source>Enter a name for the new snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>輸入新快照的名稱...</translation>
     </message>
     <message>
         <source>Enter a name for this snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>輸入這個快照的名稱...</translation>
     </message>
     <message>
         <source>Take</source>
-        <translation type="unfinished"></translation>
+        <translation>拍照</translation>
     </message>
     <message>
         <source>Take snapshot on the basis of current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>在目前機器狀態的基礎取得快照</translation>
     </message>
     <message>
         <source>Take Snapshot (%1)</source>
-        <translation type="unfinished">取得快照 (%1)</translation>
+        <translation>取得快照 (%1)</translation>
     </message>
 </context>
 <context>
