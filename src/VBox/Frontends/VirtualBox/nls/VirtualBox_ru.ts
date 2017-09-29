@@ -5668,11 +5668,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adding network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Создание сети...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Удаление сети...</translation>
     </message>
 </context>
 <context>
@@ -9959,23 +9959,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation type="unfinished">Копировать файл образа диска (%1)</translation>
+        <translation>Копировать файл образа диска (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation type="unfinished">Удалить файл образа диска (%1)</translation>
+        <translation>Удалить файл образа диска (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation type="unfinished">Отключить файл образа диска (%1)</translation>
+        <translation>Отключить файл образа диска (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation type="unfinished">Открыть свойства файла образа диска (%1)</translation>
+        <translation>Открыть свойства файла образа диска (%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished">Обновить файлы образа диска (%1)</translation>
+        <translation>Обновить файлы образа диска (%1)</translation>
     </message>
 </context>
 <context>
@@ -14600,31 +14600,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Oracle Public Cloud Format Archive (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Архив формата публичного облака Oracle (%1)</translation>
     </message>
     <message>
         <source>Open Virtualization Format 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation>Открытый формат виртуализации 0.9</translation>
     </message>
     <message>
         <source>Open Virtualization Format 1.0</source>
-        <translation type="unfinished"></translation>
+        <translation>Открытый формат виртуализации 1.0</translation>
     </message>
     <message>
         <source>Open Virtualization Format 2.0</source>
-        <translation type="unfinished"></translation>
+        <translation>Открытый формат виртуализации 2.0</translation>
     </message>
     <message>
         <source>Oracle Public Cloud Format 1.0</source>
-        <translation type="unfinished"></translation>
+        <translation>Формат публичного облака Oracle 1.0</translation>
     </message>
     <message>
         <source>Write in new OVF 2.0 format.</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить в новом формате OVF 2.0.</translation>
     </message>
     <message>
         <source>Write in Oracle Public Cloud 1.0 format.</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить в формате Oracle Public Cloud 1.0.</translation>
     </message>
 </context>
 <context>
@@ -14647,7 +14647,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Please choose a filename to export the virtual appliance to.&lt;/p&gt;&lt;p&gt;The &lt;b&gt;Open Virtualization Format&lt;/b&gt; supports only &lt;b&gt;ovf&lt;/b&gt; or &lt;b&gt;ova&lt;/b&gt; extensions. &lt;br&gt;If you use the &lt;b&gt;ovf&lt;/b&gt; extension, several files will be written separately.&lt;br&gt;If you use the &lt;b&gt;ova&lt;/b&gt; extension, all the files will be combined into one Open Virtualization Format archive.&lt;/p&gt;&lt;p&gt;The &lt;b&gt;Oracle Public Cloud Format&lt;/b&gt; supports only the &lt;b&gt;tar.gz&lt;/b&gt; extension.&lt;br&gt;Each virtual disk file will be written separately.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Пожалуйста укажите имя файла для экспорта конфигурации.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Открытый формат виртуализации&lt;/b&gt; поддерживает экспорт в файлы с расширениями &lt;b&gt;ovf&lt;/b&gt; или &lt;b&gt;ova&lt;/b&gt;.&lt;br&gt;Если Вы используете расширение &lt;b&gt;ovf&lt;/b&gt;, несколько файлов будут записаны отдельно.&lt;br&gt;Если Вы используете расширение &lt;b&gt;ova&lt;/b&gt;, все файлы будут скомбинированы в один архив открытого формата виртуализации.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Формат публичного облака Oracle&lt;/b&gt; поддерживает только расширение &lt;b&gt;tar.gz&lt;/b&gt;.&lt;br&gt;Каждый виртуальный диск будет записан отдельно.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
