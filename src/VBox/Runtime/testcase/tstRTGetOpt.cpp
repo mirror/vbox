@@ -105,6 +105,9 @@ int main()
         { "--threevalues",      407, RTGETOPT_REQ_UINT32 },
         { "--boolean",          408, RTGETOPT_REQ_BOOL_ONOFF },
         { "--booleanindex",     409, RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
+        { "--pair32",           410, RTGETOPT_REQ_UINT32_PAIR  },
+        { "--optpair32",        411, RTGETOPT_REQ_UINT32_OPTIONAL_PAIR  },
+        { "--optpair64",        412, RTGETOPT_REQ_UINT64_OPTIONAL_PAIR  },
     };
 
     const char *argv2[] =
@@ -186,6 +189,14 @@ int main()
         "--version",
         "-version",
         "-V",
+
+        /* 32-bit pairs */
+        "--pair32", "1536:0x1536",
+        "--optpair32", "0x42:042",
+        "--optpair32", "0128",
+        "--optpair64", "0x128 0x42",
+        "--optpair64", "0x128 :0x42",
+        "--optpair64", "0x128",
 
         /* done */
         NULL
@@ -425,6 +436,27 @@ int main()
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'V', 1);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'V', 1);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'V', 1);
+
+    /* 32-bit pairs */
+    RTTestSub(hTest, "RTGetOpt - pairs");
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 410, 2);
+    CHECK(Val.PairU32.uFirst == 1536);
+    CHECK(Val.PairU32.uSecond == 0x1536);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 411, 2);
+    CHECK(Val.PairU32.uFirst == 0x42);
+    CHECK(Val.PairU32.uSecond == 42);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 411, 2);
+    CHECK(Val.PairU32.uFirst == 128);
+    CHECK(Val.PairU32.uSecond == UINT32_MAX);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 412, 2);
+    CHECK(Val.PairU64.uFirst == 0x128);
+    CHECK(Val.PairU64.uSecond == 0x42);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 412, 2);
+    CHECK(Val.PairU64.uFirst == 0x128);
+    CHECK(Val.PairU64.uSecond == 0x42);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 412, 2);
+    CHECK(Val.PairU64.uFirst == 0x128);
+    CHECK(Val.PairU64.uSecond == UINT64_MAX);
 
     /* the end */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 0, 0);

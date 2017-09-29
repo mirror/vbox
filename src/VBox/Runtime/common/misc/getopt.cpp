@@ -253,10 +253,11 @@ static int rtGetOptProcessValue(uint32_t fFlags, const char *pszValue, PRTGETOPT
      * try a 16 based conversion. We will not interpret any of the
      * generic ints as octals.
      */
-    switch (fFlags & (  RTGETOPT_REQ_MASK
-                      | RTGETOPT_FLAG_HEX
-                      | RTGETOPT_FLAG_DEC
-                      | RTGETOPT_FLAG_OCT))
+    uint32_t const fSwitchValue =  fFlags & (  RTGETOPT_REQ_MASK
+                                             | RTGETOPT_FLAG_HEX
+                                             | RTGETOPT_FLAG_DEC
+                                             | RTGETOPT_FLAG_OCT);
+    switch (fSwitchValue)
     {
         case RTGETOPT_REQ_STRING:
             pValueUnion->psz = pszValue;
@@ -405,6 +406,72 @@ static int rtGetOptProcessValue(uint32_t fFlags, const char *pszValue, PRTGETOPT
             pValueUnion->Uuid = Uuid;
             break;
         }
+
+#define MY_INT_PAIR_CASE(a_fReqValue, a_fReqValueOptional, a_Type, a_MemberPrefix, a_fnConv, a_ConvBase, a_DefaultValue) \
+            case a_fReqValue: \
+            case a_fReqValueOptional: \
+            { \
+                /* First value: */ \
+                a_Type Value1; \
+                char *pszNext = NULL; \
+                unsigned uBase =   pszValue[0] == '0' \
+                                && (pszValue[1] == 'x' || pszValue[1] == 'X') \
+                                && RT_C_IS_XDIGIT(pszValue[2]) \
+                              ? 16 : a_ConvBase; \
+                int rc = a_fnConv(pszValue, &pszNext, uBase, &Value1); \
+                if (rc == VINF_SUCCESS || rc == VWRN_TRAILING_CHARS || rc == VWRN_TRAILING_SPACES) \
+                { \
+                    /* The second value, could be optional: */ \
+                    a_Type Value2 = a_DefaultValue; \
+                    pszValue = pszNext;\
+                    if (pszValue) \
+                    { \
+                        while (RT_C_IS_BLANK(*pszValue)) \
+                            pszValue++; \
+                        if (*pszValue == ':' || *pszValue == '/' || *pszValue == '|') \
+                            do pszValue++; \
+                            while (RT_C_IS_BLANK(*pszValue)); \
+                        if (pszValue != pszNext) \
+                        { \
+                            unsigned uBase =    pszValue[0] == '0' \
+                                             && (pszValue[1] == 'x' || pszValue[1] == 'X') \
+                                             && RT_C_IS_XDIGIT(pszValue[2]) \
+                                           ? 16 : a_ConvBase; \
+                            rc = a_fnConv(pszValue, &pszNext, uBase, &Value2); \
+                            if (rc == VINF_SUCCESS) \
+                            { /* likely */ } \
+                            else \
+                               { RTAssertMsg2("z rc=%Rrc: '%s' '%s' uBase=%d\n", rc, pszValue, pszNext, uBase); return VERR_GETOPT_INVALID_ARGUMENT_FORMAT; } \
+                        } \
+                        else if (fSwitchValue != (a_fReqValueOptional)) \
+                        { RTAssertMsg2("x\n"); return VERR_GETOPT_INVALID_ARGUMENT_FORMAT; } \
+                    } \
+                    else if (fSwitchValue != (a_fReqValueOptional)) \
+                        { RTAssertMsg2("y\n"); return VERR_GETOPT_INVALID_ARGUMENT_FORMAT; } \
+                    pValueUnion->a_MemberPrefix##Second = Value2; \
+                    pValueUnion->a_MemberPrefix##First  = Value1; \
+                    break; \
+                } \
+                return VERR_GETOPT_INVALID_ARGUMENT_FORMAT; \
+            }
+
+        MY_INT_PAIR_CASE(RTGETOPT_REQ_UINT32_PAIR,                      RTGETOPT_REQ_UINT32_OPTIONAL_PAIR,
+                         uint32_t, PairU32.u, RTStrToUInt32Ex, 10, UINT32_MAX)
+        MY_INT_PAIR_CASE(RTGETOPT_REQ_UINT32_PAIR | RTGETOPT_FLAG_DEC,  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_DEC,
+                         uint32_t, PairU32.u, RTStrToUInt32Ex, 10, UINT32_MAX)
+        MY_INT_PAIR_CASE(RTGETOPT_REQ_UINT32_PAIR | RTGETOPT_FLAG_HEX,  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX,
+                         uint32_t, PairU32.u, RTStrToUInt32Ex, 16, UINT32_MAX)
+        MY_INT_PAIR_CASE(RTGETOPT_REQ_UINT32_PAIR | RTGETOPT_FLAG_OCT,  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_OCT,
+                         uint32_t, PairU32.u, RTStrToUInt32Ex,  8, UINT32_MAX)
+
+        MY_INT_PAIR_CASE(RTGETOPT_REQ_UINT64_PAIR,                      RTGETOPT_REQ_UINT64_OPTIONAL_PAIR,
+                         uint64_t, PairU64.u, RTStrToUInt64Ex, 10, UINT64_MAX)
+        MY_INT_PAIR_CASE(RTGETOPT_REQ_UINT64_PAIR | RTGETOPT_FLAG_DEC,  RTGETOPT_REQ_UINT64_OPTIONAL_PAIR | RTGETOPT_FLAG_DEC,
+                         uint64_t, PairU64.u, RTStrToUInt64Ex, 10, UINT64_MAX)
+        MY_INT_PAIR_CASE(RTGETOPT_REQ_UINT64_PAIR | RTGETOPT_FLAG_HEX,  RTGETOPT_REQ_UINT64_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX,
+                         uint64_t, PairU64.u, RTStrToUInt64Ex, 16, UINT64_MAX)
+        MY_INT_PAIR_CASE(RTGETOPT_REQ_UINT64_PAIR | RTGETOPT_FLAG_OCT,  RTGETOPT_REQ_UINT64_OPTIONAL_PAIR | RTGETOPT_FLAG_OCT,
+                         uint64_t, PairU64.u, RTStrToUInt64Ex,  8, UINT64_MAX)
 
         default:
             AssertMsgFailed(("f=%#x\n", fFlags));

@@ -93,6 +93,18 @@ RT_C_DECLS_BEGIN
 /** Boolean option accepting a wide range of typical ways of
  * expression true and false. */
 #define RTGETOPT_REQ_BOOL                       17
+/** The value must two unsigned 32-bit integer values separated by a colon,
+ * slash, pipe or space(s).  */
+#define RTGETOPT_REQ_UINT32_PAIR                18
+/** The value must two unsigned 64-bit integer values separated by a colon,
+ * slash, pipe or space(s). */
+#define RTGETOPT_REQ_UINT64_PAIR                19
+/** The value must at least unsigned 32-bit integer value, optionally
+ * followed by a second separated by a colon, slash, pipe or space(s). */
+#define RTGETOPT_REQ_UINT32_OPTIONAL_PAIR       20
+/** The value must at least unsigned 64-bit integer value, optionally
+ * followed by a second separated by a colon, slash, pipe or space(s). */
+#define RTGETOPT_REQ_UINT64_OPTIONAL_PAIR       21
 /** The mask of the valid required types. */
 #define RTGETOPT_REQ_MASK                       31
 /** Treat the value as hexadecimal - only applicable with the RTGETOPT_REQ_*INT*. */
@@ -184,6 +196,19 @@ typedef union RTGETOPTUNION
     RTUUID          Uuid;
     /** A boolean flag. */
     bool            f;
+    /** A RTGETOPT_REQ_UINT32_PAIR or RTGETOPT_REQ_UINT32_OPTIONAL_PAIR option
+     *  argument. */
+    struct
+    {
+        uint32_t    uFirst;
+        uint32_t    uSecond; /**< Set to UINT32_MAX if optional and not present. */
+    } PairU32;
+    /** A RTGETOPT_REQ_UINT64_COLON_PAIR option argument. */
+    struct
+    {
+        uint64_t    uFirst;
+        uint64_t    uSecond; /**< Set to UINT64_MAX if optional and not present. */
+    } PairU64;
 } RTGETOPTUNION;
 /** Pointer to an option argument union. */
 typedef RTGETOPTUNION *PRTGETOPTUNION;
