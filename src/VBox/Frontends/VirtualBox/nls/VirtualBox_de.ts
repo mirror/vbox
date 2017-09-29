@@ -1399,27 +1399,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Fehlercode:</translation>
+        <translation>Fehlercode:</translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Komponente:</translation>
+        <translation>Komponente:</translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Interface:</translation>
+        <translation>Interface:</translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Callee:</translation>
+        <translation>Callee:</translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Callee&amp;nbsp;RC:</translation>
+        <translation>Callee&amp;nbsp;RC:</translation>
     </message>
 </context>
 <context>
@@ -3255,11 +3255,11 @@
     </message>
     <message>
         <source>Adding network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk hinzufügen ...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk entfernen ...</translation>
     </message>
 </context>
 <context>
@@ -4350,11 +4350,11 @@
     </message>
     <message>
         <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviert die Audioaufnahme.</translation>
     </message>
     <message>
         <source>&amp;Record Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Audio aufnehmen</translation>
     </message>
 </context>
 <context>
@@ -5974,23 +5974,23 @@
     </message>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation type="unfinished">Plattenabbild kopieren (%1)</translation>
+        <translation>Plattenabbild kopieren (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation type="unfinished">Plattenabbild löschen (%1)</translation>
+        <translation>Plattenabbild löschen (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation type="unfinished">Plattenabbild von der VM lösen (%1)</translation>
+        <translation>Plattenabbild von der VM lösen (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation type="unfinished">Eigenschaften des Plattenabbilds öffnen (%1)</translation>
+        <translation>Eigenschaften des Plattenabbilds öffnen (%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished">Plattenabbilder aktualisieren (%1)</translation>
+        <translation>Plattenabbilder aktualisieren (%1)</translation>
     </message>
 </context>
 <context>
@@ -7181,19 +7181,19 @@
     </message>
     <message>
         <source>Failed to acquire host network interface parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerkinterface-Parameter konnten nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>Failed to save host network interface parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerkinterface-Parameter konnten nicht gespeichert werden.</translation>
     </message>
     <message>
         <source>Failed to create a DHCP server for the network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP-Server für das Netzwerkinterface &lt;b&gt;%1&lt;/b&gt; konnte nicht erzeugt werden.</translation>
     </message>
     <message>
         <source>Failed to remove the DHCP server for the network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Der DHCP-server für das Netzwerkinterface &lt;b&gt;%1&lt;/b&gt; konnte nicht gelöscht werden.</translation>
+        <translation>Der DHCP-Server für das Netzwerkinterface &lt;b&gt;%1&lt;/b&gt; konnte nicht gelöscht werden.</translation>
     </message>
     <message>
         <source>Failed to acquire DHCP server parameter.</source>
@@ -7258,11 +7258,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Konnte das Abbild &lt;b&gt;%1&lt;/b&gt; nicht zur virtuellen Maschine lt;b&gt;%2&lt;/b&gt; hinzufügen, da diese kein optisches Laufwerk enthält. Bitte ein optisches Laufwerk in den VM-Einstellungen hinzufügen.</translation>
     </message>
     <message>
         <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändern des Sicherungspunktes &lt;b&gt;%1&lt;/b&gt; der virtuellen Maschine lt;b&gt;%2&lt;/b&gt; fehlgeschlagen.</translation>
     </message>
 </context>
 <context>
@@ -7459,11 +7459,11 @@
     <name>UIPopupPane</name>
     <message>
         <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt; (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt; (%1 von %2)</translation>
     </message>
 </context>
 <context>
@@ -7675,7 +7675,7 @@
     </message>
     <message>
         <source>Allows to navigate through Global Property categories</source>
-        <translation type="unfinished"></translation>
+        <translation>Erlaubt das Navigieren durch die globalen Eigenschaftskategorien</translation>
     </message>
 </context>
 <context>
@@ -7828,23 +7828,23 @@
     </message>
     <message>
         <source>Enter a name for the new snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>Name für den neuen Sicherungspunkt eingeben...</translation>
     </message>
     <message>
         <source>Enter a name for this snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>Name für diesen Sicherungspunkt eingeben...</translation>
     </message>
     <message>
         <source>Take</source>
-        <translation type="unfinished"></translation>
+        <translation>Erzeugen</translation>
     </message>
     <message>
         <source>Take snapshot on the basis of current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Einen Sicherungspunkt für den aktuellen Maschinen-Status erzeugen</translation>
     </message>
     <message>
         <source>Take Snapshot (%1)</source>
-        <translation type="unfinished">Sicherungspunkt erzeugen (%1)</translation>
+        <translation>Sicherungspunkt erzeugen (%1)</translation>
     </message>
 </context>
 <context>
@@ -8011,7 +8011,7 @@
     </message>
     <message>
         <source>Open pane with the selected snapshot properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet die Eigenschaften des ausgewählten Sicherungspunktes</translation>
     </message>
     <message>
         <source>Name</source>
