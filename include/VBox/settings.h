@@ -693,11 +693,12 @@ struct CpuIdLeaf
 
     bool operator==(const CpuIdLeaf &c) const;
 
-    uint32_t                ulId;
-    uint32_t                ulEax;
-    uint32_t                ulEbx;
-    uint32_t                ulEcx;
-    uint32_t                ulEdx;
+    uint32_t                idx;
+    uint32_t                idxSub;
+    uint32_t                uEax;
+    uint32_t                uEbx;
+    uint32_t                uEcx;
+    uint32_t                uEdx;
 };
 
 typedef std::list<CpuIdLeaf> CpuIdLeafsList;

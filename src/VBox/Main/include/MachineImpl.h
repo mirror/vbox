@@ -297,8 +297,7 @@ public:
 
         BOOL                mCPUAttached[SchemaDefs::MaxCPUCount];
 
-        settings::CpuIdLeaf mCpuIdStdLeafs[11];
-        settings::CpuIdLeaf mCpuIdExtLeafs[11];
+        std::list<settings::CpuIdLeaf> mCpuIdLeafList;
 
         DeviceType_T        mBootOrder[SchemaDefs::MaxBootPosition];
 
@@ -1089,17 +1088,24 @@ private:
                            BOOL *aValue);
     HRESULT setCPUProperty(CPUPropertyType_T aProperty,
                            BOOL aValue);
-    HRESULT getCPUIDLeaf(ULONG aId,
+    HRESULT getCPUIDLeafByOrdinal(ULONG aOrdinal,
+                                  ULONG *aIdx,
+                                  ULONG *aSubIdx,
+                                  ULONG *aValEax,
+                                  ULONG *aValEbx,
+                                  ULONG *aValEcx,
+                                  ULONG *aValEdx);
+    HRESULT getCPUIDLeaf(ULONG aIdx, ULONG aSubIdx,
                          ULONG *aValEax,
                          ULONG *aValEbx,
                          ULONG *aValEcx,
                          ULONG *aValEdx);
-    HRESULT setCPUIDLeaf(ULONG aId,
+    HRESULT setCPUIDLeaf(ULONG aIdx, ULONG aSubIdx,
                          ULONG aValEax,
                          ULONG aValEbx,
                          ULONG aValEcx,
                          ULONG aValEdx);
-    HRESULT removeCPUIDLeaf(ULONG aId);
+    HRESULT removeCPUIDLeaf(ULONG aIdx, ULONG aSubIdx);
     HRESULT removeAllCPUIDLeaves();
     HRESULT getHWVirtExProperty(HWVirtExPropertyType_T aProperty,
                                 BOOL *aValue);

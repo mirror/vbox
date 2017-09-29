@@ -921,29 +921,22 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         PCFGMNODE pCPUM;
         InsertConfigNode(pRoot, "CPUM", &pCPUM);
 
-        /* cpuid leaf overrides. */
-        static uint32_t const s_auCpuIdRanges[] =
+        /* Host CPUID leaf overrides. */
+        for (uint32_t iOrdinal = 0; iOrdinal < _4K; iOrdinal++)
         {
-            UINT32_C(0x00000000), UINT32_C(0x0000000a),
-            UINT32_C(0x80000000), UINT32_C(0x8000000a)
-        };
-        for (unsigned i = 0; i < RT_ELEMENTS(s_auCpuIdRanges); i += 2)
-            for (uint32_t uLeaf = s_auCpuIdRanges[i]; uLeaf < s_auCpuIdRanges[i + 1]; uLeaf++)
-            {
-                ULONG ulEax, ulEbx, ulEcx, ulEdx;
-                hrc = pMachine->GetCPUIDLeaf(uLeaf, &ulEax, &ulEbx, &ulEcx, &ulEdx);
-                if (SUCCEEDED(hrc))
-                {
-                    PCFGMNODE pLeaf;
-                    InsertConfigNode(pCPUM, Utf8StrFmt("HostCPUID/%RX32", uLeaf).c_str(), &pLeaf);
-
-                    InsertConfigInteger(pLeaf, "eax", ulEax);
-                    InsertConfigInteger(pLeaf, "ebx", ulEbx);
-                    InsertConfigInteger(pLeaf, "ecx", ulEcx);
-                    InsertConfigInteger(pLeaf, "edx", ulEdx);
-                }
-                else if (hrc != E_INVALIDARG)                                               H();
-            }
+            ULONG uLeaf, uSubLeaf, uEax, uEbx, uEcx, uEdx;
+            hrc = pMachine->GetCPUIDLeafByOrdinal(iOrdinal, &uLeaf, &uSubLeaf, &uEax, &uEbx, &uEcx, &uEdx);
+            if (hrc == E_INVALIDARG)
+                break;
+            H();
+            PCFGMNODE pLeaf;
+            InsertConfigNode(pCPUM, Utf8StrFmt("HostCPUID/%RX32", uLeaf).c_str(), &pLeaf);
+            /** @todo Figure out how to tell the VMM about uSubLeaf   */
+            InsertConfigInteger(pLeaf, "eax", uEax);
+            InsertConfigInteger(pLeaf, "ebx", uEbx);
+            InsertConfigInteger(pLeaf, "ecx", uEcx);
+            InsertConfigInteger(pLeaf, "edx", uEdx);
+        }
 
         /* We must limit CPUID count for Windows NT 4, as otherwise it stops
         with error 0x3e (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED). */

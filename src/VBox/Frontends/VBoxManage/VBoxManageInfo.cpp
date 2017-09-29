@@ -629,31 +629,31 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("CPUID overrides: ");
-    ULONG cFound = 0;
-    static uint32_t const s_auCpuIdRanges[] =
+    ULONG uOrdinal = 0;
+    for (uOrdinal = 0; uOrdinal < _4K; uOrdinal++)
     {
-        UINT32_C(0x00000000), UINT32_C(0x0000000a),
-        UINT32_C(0x80000000), UINT32_C(0x8000000a)
-    };
-    for (unsigned i = 0; i < RT_ELEMENTS(s_auCpuIdRanges); i += 2)
-        for (uint32_t uLeaf = s_auCpuIdRanges[i]; uLeaf < s_auCpuIdRanges[i + 1]; uLeaf++)
+        ULONG uLeaf, uSubLeaf, uEAX, uEBX, uECX, uEDX;
+        rc = machine->GetCPUIDLeafByOrdinal(uOrdinal, &uLeaf, &uSubLeaf, &uEAX, &uEBX, &uECX, &uEDX);
+        if (SUCCEEDED(rc))
         {
-            ULONG uEAX, uEBX, uECX, uEDX;
-            rc = machine->GetCPUIDLeaf(uLeaf, &uEAX, &uEBX, &uECX, &uEDX);
-            if (SUCCEEDED(rc))
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("cpuid=%08x,%08x,%08x,%08x,%08x,%08x", uLeaf, uSubLeaf, uEAX, uEBX, uECX, uEDX);
+            else
             {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("cpuid=%08x,%08x,%08x,%08x,%08x", uLeaf, uEAX, uEBX, uECX, uEDX);
-                else
-                {
-                    if (!cFound)
-                        RTPrintf("Leaf no.  EAX      EBX      ECX      EDX\n");
-                    RTPrintf("                 %08x  %08x %08x %08x %08x\n", uLeaf, uEAX, uEBX, uECX, uEDX);
-                }
-                cFound++;
+                if (!uOrdinal)
+                    RTPrintf("Leaf no.       EAX      EBX      ECX      EDX\n");
+                RTPrintf("                 %08x/%03x  %08x %08x %08x %08x\n", uLeaf, uSubLeaf, uEAX, uEBX, uECX, uEDX);
             }
         }
-    if (!cFound && details != VMINFO_MACHINEREADABLE)
+        else
+        {
+            if (rc != E_INVALIDARG)
+                com::GlueHandleComError(machine, "GetCPUIDLeaf", rc, __FILE__, __LINE__);
+            break;
+        }
+    }
+
+    if (!uOrdinal && details != VMINFO_MACHINEREADABLE)
         RTPrintf("None\n");
 
     ComPtr<IBIOSSettings> biosSettings;

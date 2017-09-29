@@ -4775,11 +4775,11 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="f50b24f0-0956-453c-d14c-8c27c683c295"
+    uuid="85cd948e-a71f-4289-281e-0ca7ad48cd89"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
-    reservedMethods="7" reservedAttributes="9"
+    reservedMethods="6" reservedAttributes="9"
     >
     <!-- Note! This interface is not compatible between 5.0 and 5.1 as it had too many
                methods/attributes for midl and the reservedAttributes had to be
@@ -6931,24 +6931,75 @@ and "VAR" for unsetting. -->
       </param>
     </method>
 
+    <method name="getCPUIDLeafByOrdinal" const="yes">
+      <desc>
+        Used to enumerate CPUID information override values.
+
+        <result name="E_INVALIDARG">
+          Invalid ordinal number is out of range.
+        </result>
+      </desc>
+      <param name="ordinal" type="unsigned long" dir="in">
+        <desc>
+          The ordinal number of the leaf to get.
+        </desc>
+      </param>
+      <param name="idx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf index.
+        </desc>
+      </param>
+      <param name="idxSub" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf sub-index.
+        </desc>
+      </param>
+      <param name="valEax" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register eax.
+        </desc>
+      </param>
+      <param name="valEbx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register ebx.
+        </desc>
+      </param>
+      <param name="valEcx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register ecx.
+        </desc>
+      </param>
+      <param name="valEdx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register edx.
+        </desc>
+      </param>
+    </method>
+
     <method name="getCPUIDLeaf" const="yes">
       <desc>
         Returns the virtual CPU cpuid information for the specified leaf.
 
         Currently supported index values for cpuid:
-        Standard CPUID leafs: 0 - 0xA
-        Extended CPUID leafs: 0x80000000 - 0x8000000A
+        Standard CPUID leaves: 0 - 0x1f
+        Extended CPUID leaves: 0x80000000 - 0x8000001f
+        VIA CPUID leaves:      0xc0000000 - 0xc000000f
 
-        See the Intel and AMD programmer's manuals for detailed information
-        about the cpuid instruction and its leafs.
+        See the Intel, AMD and VIA programmer's manuals for detailed information
+        about the CPUID instruction and its leaves.
         <result name="E_INVALIDARG">
-          Invalid id.
+          Invalid index.
         </result>
 
       </desc>
-      <param name="id" type="unsigned long" dir="in">
+      <param name="idx" type="unsigned long" dir="in">
         <desc>
           CPUID leaf index.
+        </desc>
+      </param>
+      <param name="idxSub" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf sub-index (ECX).  Set to 0xffffffff (or 0) if not applicable.
         </desc>
       </param>
       <param name="valEax" type="unsigned long" dir="out">
@@ -6979,22 +7030,33 @@ and "VAR" for unsetting. -->
         are not passed unmodified. VirtualBox clears features that it doesn't support.
 
         Currently supported index values for cpuid:
-        Standard CPUID leafs: 0 - 0xA
-        Extended CPUID leafs: 0x80000000 - 0x8000000A
+        Standard CPUID leaves: 0 - 0x1f
+        Extended CPUID leaves: 0x80000000 - 0x8000001f
+        VIA CPUID leaves:      0xc0000000 - 0xc000000f
 
-        See the Intel and AMD programmer's manuals for detailed information
-        about the cpuid instruction and its leafs.
+        The subleaf index is only applicable to certain leaves (see manuals as this is
+        subject to change).
+
+        See the Intel, AMD and VIA programmer's manuals for detailed information
+        about the cpuid instruction and its leaves.
 
         Do not use this method unless you know exactly what you're doing. Misuse can lead to
         random crashes inside VMs.
         <result name="E_INVALIDARG">
-          Invalid id.
+          Invalid index.
         </result>
 
       </desc>
-      <param name="id" type="unsigned long" dir="in">
+      <param name="idx" type="unsigned long" dir="in">
         <desc>
           CPUID leaf index.
+        </desc>
+      </param>
+      <param name="idxSub" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf sub-index (ECX).  Set to 0xffffffff (or 0) if not applicable.
+          The 0xffffffff causes it to remove all other subleaves before adding one
+          with sub-index 0.
         </desc>
       </param>
       <param name="valEax" type="unsigned long" dir="in">
@@ -7024,13 +7086,19 @@ and "VAR" for unsetting. -->
         Removes the virtual CPU cpuid leaf for the specified index
 
         <result name="E_INVALIDARG">
-          Invalid id.
+          Invalid index.
         </result>
 
       </desc>
-      <param name="id" type="unsigned long" dir="in">
+      <param name="idx" type="unsigned long" dir="in">
         <desc>
           CPUID leaf index.
+        </desc>
+      </param>
+      <param name="idxSub" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf sub-index (ECX).  Set to 0xffffffff (or 0) if not applicable.
+          The 0xffffffff value works like a wildcard.
         </desc>
       </param>
     </method>

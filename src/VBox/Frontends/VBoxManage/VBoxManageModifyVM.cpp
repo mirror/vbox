@@ -80,7 +80,9 @@ enum
     MODIFYVM_PLUGCPU,
     MODIFYVM_UNPLUGCPU,
     MODIFYVM_SETCPUID,
+    MODIFYVM_SETCPUID_OLD,
     MODIFYVM_DELCPUID,
+    MODIFYVM_DELCPUID_OLD,
     MODIFYVM_DELALLCPUID,
     MODIFYVM_GRAPHICSCONTROLLER,
     MODIFYVM_MONITORCOUNT,
@@ -252,8 +254,10 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--largepages",               MODIFYVM_LARGEPAGES,                RTGETOPT_REQ_BOOL_ONOFF },
     { "--vtxvpid",                  MODIFYVM_VTXVPID,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--vtxux",                    MODIFYVM_VTXUX,                     RTGETOPT_REQ_BOOL_ONOFF },
-    { "--cpuidset",                 MODIFYVM_SETCPUID,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX},
-    { "--cpuidremove",              MODIFYVM_DELCPUID,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX},
+    { "--cpuid-set",                MODIFYVM_SETCPUID,                  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX },
+    { "--cpuid-remove",             MODIFYVM_DELCPUID,                  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX },
+    { "--cpuidset",                 MODIFYVM_SETCPUID_OLD,              RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX },
+    { "--cpuidremove",              MODIFYVM_DELCPUID_OLD,              RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX },
     { "--cpuidremoveall",           MODIFYVM_DELALLCPUID,               RTGETOPT_REQ_NOTHING},
     { "--cpus",                     MODIFYVM_CPUS,                      RTGETOPT_REQ_UINT32 },
     { "--cpuhotplug",               MODIFYVM_CPUHOTPLUG,                RTGETOPT_REQ_BOOL_ONOFF },
@@ -734,28 +738,29 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             }
 
             case MODIFYVM_SETCPUID:
+            case MODIFYVM_SETCPUID_OLD:
             {
-                uint32_t id = ValueUnion.u32;
+                uint32_t const idx    = c == MODIFYVM_SETCPUID ?  ValueUnion.PairU32.uFirst  : ValueUnion.u32;
+                uint32_t const idxSub = c == MODIFYVM_SETCPUID ?  ValueUnion.PairU32.uSecond : UINT32_MAX;
                 uint32_t aValue[4];
-
                 for (unsigned i = 0; i < 4; i++)
                 {
                     int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX);
                     if (RT_FAILURE(vrc))
-                        return errorSyntax(USAGE_MODIFYVM,
-                                           "Missing or Invalid argument to '%s'",
-                                           GetOptState.pDef->pszLong);
+                        return errorSyntax(USAGE_MODIFYVM, "Missing or Invalid argument to '%s'", GetOptState.pDef->pszLong);
                     aValue[i] = ValueUnion.u32;
                 }
-                CHECK_ERROR(sessionMachine, SetCPUIDLeaf(id, aValue[0], aValue[1], aValue[2], aValue[3]));
+                CHECK_ERROR(sessionMachine, SetCPUIDLeaf(idx, idxSub, aValue[0], aValue[1], aValue[2], aValue[3]));
                 break;
             }
 
             case MODIFYVM_DELCPUID:
-            {
-                CHECK_ERROR(sessionMachine, RemoveCPUIDLeaf(ValueUnion.u32));
+                CHECK_ERROR(sessionMachine, RemoveCPUIDLeaf(ValueUnion.PairU32.uFirst, ValueUnion.PairU32.uSecond));
                 break;
-            }
+
+            case MODIFYVM_DELCPUID_OLD:
+                CHECK_ERROR(sessionMachine, RemoveCPUIDLeaf(ValueUnion.u32, UINT32_MAX));
+                break;
 
             case MODIFYVM_DELALLCPUID:
             {

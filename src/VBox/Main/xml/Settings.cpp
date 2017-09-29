@@ -2634,11 +2634,12 @@ bool GuestProperty::operator==(const GuestProperty &g) const
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
 CpuIdLeaf::CpuIdLeaf() :
-    ulId(UINT32_MAX),
-    ulEax(0),
-    ulEbx(0),
-    ulEcx(0),
-    ulEdx(0)
+    idx(UINT32_MAX),
+    idxSub(0),
+    uEax(0),
+    uEbx(0),
+    uEcx(0),
+    uEdx(0)
 {
 }
 
@@ -2650,11 +2651,12 @@ CpuIdLeaf::CpuIdLeaf() :
 bool CpuIdLeaf::operator==(const CpuIdLeaf &c) const
 {
     return (this == &c)
-        || (   ulId      == c.ulId
-            && ulEax     == c.ulEax
-            && ulEbx     == c.ulEbx
-            && ulEcx     == c.ulEcx
-            && ulEdx     == c.ulEdx);
+        || (   idx      == c.idx
+            && idxSub   == c.idxSub
+            && uEax     == c.uEax
+            && uEbx     == c.uEbx
+            && uEcx     == c.uEcx
+            && uEdx     == c.uEdx);
 }
 
 /**
@@ -3347,13 +3349,15 @@ void MachineConfigFile::readCpuIdTree(const xml::ElementNode &elmCpuid,
     {
         CpuIdLeaf leaf;
 
-        if (!pelmCpuIdLeaf->getAttributeValue("id", leaf.ulId))
+        if (!pelmCpuIdLeaf->getAttributeValue("id", leaf.idx))
             throw ConfigFileError(this, pelmCpuIdLeaf, N_("Required CpuId/@id attribute is missing"));
 
-        pelmCpuIdLeaf->getAttributeValue("eax", leaf.ulEax);
-        pelmCpuIdLeaf->getAttributeValue("ebx", leaf.ulEbx);
-        pelmCpuIdLeaf->getAttributeValue("ecx", leaf.ulEcx);
-        pelmCpuIdLeaf->getAttributeValue("edx", leaf.ulEdx);
+        if (!pelmCpuIdLeaf->getAttributeValue("subleaf", leaf.idxSub))
+            leaf.idxSub = 0;
+        pelmCpuIdLeaf->getAttributeValue("eax", leaf.uEax);
+        pelmCpuIdLeaf->getAttributeValue("ebx", leaf.uEbx);
+        pelmCpuIdLeaf->getAttributeValue("ecx", leaf.uEcx);
+        pelmCpuIdLeaf->getAttributeValue("edx", leaf.uEdx);
 
         ll.push_back(leaf);
     }
@@ -5316,11 +5320,13 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
              pelmCpuIdTree = pelmCPU->createChild("CpuIdTree");
 
         xml::ElementNode *pelmCpuIdLeaf = pelmCpuIdTree->createChild("CpuIdLeaf");
-        pelmCpuIdLeaf->setAttribute("id",  leaf.ulId);
-        pelmCpuIdLeaf->setAttribute("eax", leaf.ulEax);
-        pelmCpuIdLeaf->setAttribute("ebx", leaf.ulEbx);
-        pelmCpuIdLeaf->setAttribute("ecx", leaf.ulEcx);
-        pelmCpuIdLeaf->setAttribute("edx", leaf.ulEdx);
+        pelmCpuIdLeaf->setAttribute("id",  leaf.idx);
+        if (leaf.idxSub != 0)
+            pelmCpuIdLeaf->setAttribute("subleaf",  leaf.idxSub);
+        pelmCpuIdLeaf->setAttribute("eax", leaf.uEax);
+        pelmCpuIdLeaf->setAttribute("ebx", leaf.uEbx);
+        pelmCpuIdLeaf->setAttribute("ecx", leaf.uEcx);
+        pelmCpuIdLeaf->setAttribute("edx", leaf.uEdx);
     }
 
     xml::ElementNode *pelmMemory = pelmHardware->createChild("Memory");
@@ -6936,6 +6942,15 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 return;
             }
         }
+
+        for (CpuIdLeafsList::const_iterator it = hardwareMachine.llCpuIdLeafs.begin();
+             it != hardwareMachine.llCpuIdLeafs.end();
+             ++it)
+            if (it->idxSub != 0)
+            {
+                m->sv = SettingsVersion_v1_16;
+                return;
+            }
     }
 
     if (m->sv < SettingsVersion_v1_15)

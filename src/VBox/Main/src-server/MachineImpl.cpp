@@ -2309,168 +2309,139 @@ HRESULT Machine::setCPUProperty(CPUPropertyType_T aProperty, BOOL aValue)
     return S_OK;
 }
 
-HRESULT Machine::getCPUIDLeaf(ULONG aId, ULONG *aValEax, ULONG *aValEbx, ULONG *aValEcx, ULONG *aValEdx)
+HRESULT Machine::getCPUIDLeafByOrdinal(ULONG aOrdinal, ULONG *aIdx, ULONG *aSubIdx, ULONG *aValEax, ULONG *aValEbx,
+                                       ULONG *aValEcx, ULONG *aValEdx)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    if (aOrdinal < mHWData->mCpuIdLeafList.size())
+    {
+        for (settings::CpuIdLeafsList::const_iterator it = mHWData->mCpuIdLeafList.begin();
+             it != mHWData->mCpuIdLeafList.end();
+             ++it)
+        {
+            if (aOrdinal == 0)
+            {
+                const settings::CpuIdLeaf &rLeaf= *it;
+                *aIdx    = rLeaf.idx;
+                *aSubIdx = rLeaf.idxSub;
+                *aValEax = rLeaf.uEax;
+                *aValEbx = rLeaf.uEbx;
+                *aValEcx = rLeaf.uEcx;
+                *aValEdx = rLeaf.uEdx;
+                return S_OK;
+            }
+            aOrdinal--;
+        }
+    }
+    return E_INVALIDARG;
+}
+
+HRESULT Machine::getCPUIDLeaf(ULONG aIdx, ULONG aSubIdx, ULONG *aValEax, ULONG *aValEbx, ULONG *aValEcx, ULONG *aValEdx)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    switch(aId)
+    /*
+     * Search the list.
+     */
+    for (settings::CpuIdLeafsList::const_iterator it = mHWData->mCpuIdLeafList.begin(); it != mHWData->mCpuIdLeafList.end(); ++it)
     {
-        case 0x0:
-        case 0x1:
-        case 0x2:
-        case 0x3:
-        case 0x4:
-        case 0x5:
-        case 0x6:
-        case 0x7:
-        case 0x8:
-        case 0x9:
-        case 0xA:
-            if (mHWData->mCpuIdStdLeafs[aId].ulId != aId)
-                return E_INVALIDARG;
-
-            *aValEax = mHWData->mCpuIdStdLeafs[aId].ulEax;
-            *aValEbx = mHWData->mCpuIdStdLeafs[aId].ulEbx;
-            *aValEcx = mHWData->mCpuIdStdLeafs[aId].ulEcx;
-            *aValEdx = mHWData->mCpuIdStdLeafs[aId].ulEdx;
-            break;
-
-        case 0x80000000:
-        case 0x80000001:
-        case 0x80000002:
-        case 0x80000003:
-        case 0x80000004:
-        case 0x80000005:
-        case 0x80000006:
-        case 0x80000007:
-        case 0x80000008:
-        case 0x80000009:
-        case 0x8000000A:
-            if (mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulId != aId)
-                return E_INVALIDARG;
-
-            *aValEax = mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulEax;
-            *aValEbx = mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulEbx;
-            *aValEcx = mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulEcx;
-            *aValEdx = mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulEdx;
-            break;
-
-        default:
-            return setError(E_INVALIDARG, tr("CpuId override leaf %#x is out of range"), aId);
+        const settings::CpuIdLeaf &rLeaf= *it;
+        if (   rLeaf.idx == aIdx
+            && (   aSubIdx == UINT32_MAX
+                || rLeaf.idxSub == aSubIdx) )
+        {
+            *aValEax = rLeaf.uEax;
+            *aValEbx = rLeaf.uEbx;
+            *aValEcx = rLeaf.uEcx;
+            *aValEdx = rLeaf.uEdx;
+            return S_OK;
+        }
     }
-    return S_OK;
+
+    return E_INVALIDARG;
 }
 
 
-HRESULT Machine::setCPUIDLeaf(ULONG aId, ULONG aValEax, ULONG aValEbx, ULONG aValEcx, ULONG aValEdx)
+HRESULT Machine::setCPUIDLeaf(ULONG aIdx, ULONG aSubIdx, ULONG aValEax, ULONG aValEbx, ULONG aValEcx, ULONG aValEdx)
+{
+    /*
+     * Validate input before taking locks and checking state.
+     */
+    if (aSubIdx != 0 && aSubIdx != UINT32_MAX)
+        return setError(E_INVALIDARG, tr("Currently only aSubIdx values 0 and 0xffffffff are supported: %#x"), aSubIdx);
+    if (   aIdx >= UINT32_C(0x20)
+        && aIdx - UINT32_C(0x80000000) >= UINT32_C(0x20)
+        && aIdx - UINT32_C(0xc0000000) >= UINT32_C(0x10) )
+        return setError(E_INVALIDARG, tr("CpuId override leaf %#x is out of range"), aIdx);
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    /*
+     * Impose a maximum number of leaves.
+     */
+    if (mHWData->mCpuIdLeafList.size() > 256)
+        return setError(E_FAIL, tr("Max of 256 CPUID override leaves reached"));
+
+    /*
+     * Updating the list is a bit more complicated.  So, let's do a remove first followed by an insert.
+     */
+    i_setModified(IsModified_MachineData);
+    mHWData.backup();
+
+    for (settings::CpuIdLeafsList::iterator it = mHWData->mCpuIdLeafList.begin(); it != mHWData->mCpuIdLeafList.end(); )
+    {
+        settings::CpuIdLeaf &rLeaf= *it;
+        if (   rLeaf.idx == aIdx
+            && (   aSubIdx == UINT32_MAX
+                || rLeaf.idxSub == aSubIdx) )
+            it = mHWData->mCpuIdLeafList.erase(it);
+        else
+            ++it;
+    }
+
+    settings::CpuIdLeaf NewLeaf;
+    NewLeaf.idx    = aIdx;
+    NewLeaf.idxSub = aSubIdx == UINT32_MAX ? 0 : aSubIdx;
+    NewLeaf.uEax   = aValEax;
+    NewLeaf.uEbx   = aValEbx;
+    NewLeaf.uEcx   = aValEcx;
+    NewLeaf.uEdx   = aValEdx;
+    mHWData->mCpuIdLeafList.push_back(NewLeaf);
+    return S_OK;
+}
+
+HRESULT Machine::removeCPUIDLeaf(ULONG aIdx, ULONG aSubIdx)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = i_checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
-    switch(aId)
+    /*
+     * Do the removal.
+     */
+    bool fModified = false;
+    for (settings::CpuIdLeafsList::iterator it = mHWData->mCpuIdLeafList.begin(); it != mHWData->mCpuIdLeafList.end(); )
     {
-        case 0x0:
-        case 0x1:
-        case 0x2:
-        case 0x3:
-        case 0x4:
-        case 0x5:
-        case 0x6:
-        case 0x7:
-        case 0x8:
-        case 0x9:
-        case 0xA:
-            AssertCompile(RT_ELEMENTS(mHWData->mCpuIdStdLeafs) == 0xB);
-            AssertRelease(aId < RT_ELEMENTS(mHWData->mCpuIdStdLeafs));
-            i_setModified(IsModified_MachineData);
-            mHWData.backup();
-            mHWData->mCpuIdStdLeafs[aId].ulId  = aId;
-            mHWData->mCpuIdStdLeafs[aId].ulEax = aValEax;
-            mHWData->mCpuIdStdLeafs[aId].ulEbx = aValEbx;
-            mHWData->mCpuIdStdLeafs[aId].ulEcx = aValEcx;
-            mHWData->mCpuIdStdLeafs[aId].ulEdx = aValEdx;
-            break;
-
-        case 0x80000000:
-        case 0x80000001:
-        case 0x80000002:
-        case 0x80000003:
-        case 0x80000004:
-        case 0x80000005:
-        case 0x80000006:
-        case 0x80000007:
-        case 0x80000008:
-        case 0x80000009:
-        case 0x8000000A:
-            AssertCompile(RT_ELEMENTS(mHWData->mCpuIdExtLeafs) == 0xB);
-            AssertRelease(aId - 0x80000000 < RT_ELEMENTS(mHWData->mCpuIdExtLeafs));
-            i_setModified(IsModified_MachineData);
-            mHWData.backup();
-            mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulId  = aId;
-            mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulEax = aValEax;
-            mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulEbx = aValEbx;
-            mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulEcx = aValEcx;
-            mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulEdx = aValEdx;
-            break;
-
-        default:
-            return setError(E_INVALIDARG, tr("CpuId override leaf %#x is out of range"), aId);
+        settings::CpuIdLeaf &rLeaf= *it;
+        if (   rLeaf.idx == aIdx
+            && (   aSubIdx == UINT32_MAX
+                || rLeaf.idxSub == aSubIdx) )
+        {
+            if (!fModified)
+            {
+                fModified = true;
+                i_setModified(IsModified_MachineData);
+                mHWData.backup();
+            }
+            it = mHWData->mCpuIdLeafList.erase(it);
+        }
+        else
+            ++it;
     }
-    return S_OK;
-}
 
-HRESULT Machine::removeCPUIDLeaf(ULONG aId)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
-
-    switch(aId)
-    {
-        case 0x0:
-        case 0x1:
-        case 0x2:
-        case 0x3:
-        case 0x4:
-        case 0x5:
-        case 0x6:
-        case 0x7:
-        case 0x8:
-        case 0x9:
-        case 0xA:
-            AssertCompile(RT_ELEMENTS(mHWData->mCpuIdStdLeafs) == 0xB);
-            AssertRelease(aId < RT_ELEMENTS(mHWData->mCpuIdStdLeafs));
-            i_setModified(IsModified_MachineData);
-            mHWData.backup();
-            /* Invalidate leaf. */
-            mHWData->mCpuIdStdLeafs[aId].ulId = UINT32_MAX;
-            break;
-
-        case 0x80000000:
-        case 0x80000001:
-        case 0x80000002:
-        case 0x80000003:
-        case 0x80000004:
-        case 0x80000005:
-        case 0x80000006:
-        case 0x80000007:
-        case 0x80000008:
-        case 0x80000009:
-        case 0x8000000A:
-            AssertCompile(RT_ELEMENTS(mHWData->mCpuIdExtLeafs) == 0xB);
-            AssertRelease(aId - 0x80000000 < RT_ELEMENTS(mHWData->mCpuIdExtLeafs));
-            i_setModified(IsModified_MachineData);
-            mHWData.backup();
-            /* Invalidate leaf. */
-            mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulId = UINT32_MAX;
-            break;
-
-        default:
-            return setError(E_INVALIDARG, tr("CpuId override leaf %#x is out of range"), aId);
-    }
     return S_OK;
 }
 
@@ -2481,16 +2452,13 @@ HRESULT Machine::removeAllCPUIDLeaves()
     HRESULT rc = i_checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
+    if (mHWData->mCpuIdLeafList.size() > 0)
+    {
+        i_setModified(IsModified_MachineData);
+        mHWData.backup();
 
-    /* Invalidate all standard leafs. */
-    for (unsigned i = 0; i < RT_ELEMENTS(mHWData->mCpuIdStdLeafs); ++i)
-        mHWData->mCpuIdStdLeafs[i].ulId = UINT32_MAX;
-
-    /* Invalidate all extended leafs. */
-    for (unsigned i = 0; i < RT_ELEMENTS(mHWData->mCpuIdExtLeafs); ++i)
-        mHWData->mCpuIdExtLeafs[i].ulId = UINT32_MAX;
+        mHWData->mCpuIdLeafList.clear();
+    }
 
     return S_OK;
 }
@@ -8956,42 +8924,12 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
              it != data.llCpuIdLeafs.end();
              ++it)
         {
-            const settings::CpuIdLeaf &leaf = *it;
-
-            switch (leaf.ulId)
-            {
-            case 0x0:
-            case 0x1:
-            case 0x2:
-            case 0x3:
-            case 0x4:
-            case 0x5:
-            case 0x6:
-            case 0x7:
-            case 0x8:
-            case 0x9:
-            case 0xA:
-                mHWData->mCpuIdStdLeafs[leaf.ulId] = leaf;
-                break;
-
-            case 0x80000000:
-            case 0x80000001:
-            case 0x80000002:
-            case 0x80000003:
-            case 0x80000004:
-            case 0x80000005:
-            case 0x80000006:
-            case 0x80000007:
-            case 0x80000008:
-            case 0x80000009:
-            case 0x8000000A:
-                mHWData->mCpuIdExtLeafs[leaf.ulId - 0x80000000] = leaf;
-                break;
-
-            default:
-                /* just ignore */
-                break;
-            }
+            const settings::CpuIdLeaf &rLeaf= *it;
+            if (   rLeaf.idx < UINT32_C(0x20)
+                || rLeaf.idx - UINT32_C(0x80000000) < UINT32_C(0x20)
+                || rLeaf.idx - UINT32_C(0xc0000000) < UINT32_C(0x10) )
+                mHWData->mCpuIdLeafList.push_back(rLeaf);
+            /* else: just ignore */
         }
 
         mHWData->mMemorySize = data.ulMemorySizeMB;
@@ -10304,12 +10242,7 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
 
         /* Standard and Extended CPUID leafs. */
         data.llCpuIdLeafs.clear();
-        for (unsigned idx = 0; idx < RT_ELEMENTS(mHWData->mCpuIdStdLeafs); ++idx)
-            if (mHWData->mCpuIdStdLeafs[idx].ulId != UINT32_MAX)
-                data.llCpuIdLeafs.push_back(mHWData->mCpuIdStdLeafs[idx]);
-        for (unsigned idx = 0; idx < RT_ELEMENTS(mHWData->mCpuIdExtLeafs); ++idx)
-            if (mHWData->mCpuIdExtLeafs[idx].ulId != UINT32_MAX)
-                data.llCpuIdLeafs.push_back(mHWData->mCpuIdExtLeafs[idx]);
+        data.llCpuIdLeafs = mHWData->mCpuIdLeafList;
 
         // memory
         data.ulMemorySizeMB = mHWData->mMemorySize;
