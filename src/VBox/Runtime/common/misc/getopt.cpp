@@ -433,10 +433,10 @@ static int rtGetOptProcessValue(uint32_t fFlags, const char *pszValue, PRTGETOPT
                             while (RT_C_IS_BLANK(*pszValue)); \
                         if (pszValue != pszNext) \
                         { \
-                            unsigned uBase =    pszValue[0] == '0' \
-                                             && (pszValue[1] == 'x' || pszValue[1] == 'X') \
-                                             && RT_C_IS_XDIGIT(pszValue[2]) \
-                                           ? 16 : a_ConvBase; \
+                            uBase =    pszValue[0] == '0' \
+                                    && (pszValue[1] == 'x' || pszValue[1] == 'X') \
+                                    && RT_C_IS_XDIGIT(pszValue[2]) \
+                                  ? 16 : a_ConvBase; \
                             rc = a_fnConv(pszValue, &pszNext, uBase, &Value2); \
                             if (rc == VINF_SUCCESS) \
                             { /* likely */ } \
