@@ -35,6 +35,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/crc.h>
 #include <iprt/ctype.h>
 #include <iprt/file.h>
 #include <iprt/log.h>
@@ -173,6 +174,57 @@ typedef struct RTFSISODIROBJ
 } RTFSISODIROBJ;
 typedef RTFSISODIROBJ *PRTFSISODIROBJ;
 
+/**
+ * Information about a logical partition.
+ */
+typedef struct RTFSISOVOLUDFPART
+{
+    /** Partition number (not index). */
+    uint16_t            uPartitionNo;
+    uint16_t            fFlags;
+    /** Number of sectors. */
+    uint32_t            cSectors;
+#if 0
+
+
+    /** 0x000: The descriptor tag (UDF_TAG_ID_PARTITION_DESC). */
+    UDFTAG          Tag;
+    /** 0x010: Volume descriptor sequence number. */
+    uint32_t        uVolumeDescSeqNo;
+    /** 0x014: The partition flags (UDF_PARTITION_FLAGS_XXX).   */
+    uint16_t        fFlags;
+    /** 0x016: The partition number. */
+    uint16_t        uPartitionNo;
+    /** 0x018: Partition contents (UDF_ENTITY_ID_PD_PARTITION_CONTENTS_XXX). */
+    UDFENTITYID     PartitionContents;
+    /** 0x038: partition contents use (depends on the PartitionContents field). */
+    union
+    {
+        /** Generic view. */
+        uint8_t     ab[128];
+        /** UDF partition header descriptor (UDF_ENTITY_ID_PD_PARTITION_CONTENTS_UDF). */
+        UDFPARTITIONHDRDESC Hdr;
+    } ContentsUse;
+    /** 0x0b8: Access type (UDF_PART_ACCESS_TYPE_XXX).  */
+    uint32_t        uAccessType;
+    /** 0x0bc: Partition starting location (logical sector number). */
+    uint32_t        offLocation;
+    /** 0x0c0: Partition length in sectors. */
+    uint32_t        cSectors;
+    /** 0x0c4: Implementation identifier ("*Developer ID"). */
+    UDFENTITYID     idImplementation;
+    /** 0x0e4: Implemenation use bytes. */
+    union
+    {
+        /** Generic view. */
+        uint8_t     ab[128];
+    } ImplementationUse;
+    /** 0x164: Reserved. */
+    uint8_t         abReserved[156];
+#endif
+
+} RTFSISOVOLUDFPART;
+
 
 /**
  * A ISO volume.
@@ -208,13 +260,37 @@ typedef struct RTFSISOVOL
     bool                fIsUtf16;
     /** @} */
 
-    /** @name UDF specific data.
-     * @{ */
-    /** Offset of the Anchor volume descriptor sequence. */
-    uint64_t            offAvdp;
-    /** Length of the anchor volume descriptor sequence. */
-    uint32_t            cbAvdp;
-    /** @} */
+    /** UDF specific data. */
+    struct
+    {
+        /** Offset of the Anchor volume descriptor sequence. */
+        uint64_t        offAvdp;
+        /** Length of the anchor volume descriptor sequence. */
+        uint32_t        cbAvdp;
+        /** The UDF level. */
+        uint8_t         uLevel;
+        /** Number of volume sets. */
+        uint8_t         cVolumeSets;
+        /** Set if we already seen the primary volume descriptor. */
+        bool            fSeenPrimaryDesc : 1;
+#if 0
+        /** Volume sets. */
+        struct
+        {
+            /** Number of partitions in the set. */
+            uint16_t        cPartitions;
+
+
+        } aVolumeSets[1];
+
+
+        /** Partitions. */
+        struct
+        {
+
+        } aPartitions[]
+#endif
+    } udf;
 
     /** The root directory shared data. */
     PRTFSISODIRSHRD     pRootDir;
@@ -226,14 +302,13 @@ typedef struct RTFSISOVOL
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 
-
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static void rtFsIsoDirShrd_AddOpenChild(PRTFSISODIRSHRD pDir, PRTFSISOCORE pChild);
 static void rtFsIsoDirShrd_RemoveOpenChild(PRTFSISODIRSHRD pDir, PRTFSISOCORE pChild);
 static int  rtFsIsoDir_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
-                           uint32_t cDirRecs, uint64_t offDirRec, PRTVFSDIR phVfsDir);
+                               uint32_t cDirRecs, uint64_t offDirRec, PRTVFSDIR phVfsDir);
 static PRTFSISOCORE rtFsIsoDir_LookupShared(PRTFSISODIRSHRD pThis, uint64_t offDirRec);
 
 
@@ -2088,6 +2163,22 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsIsoVolOps =
 };
 
 
+/**
+ * Checks the descriptor tag and CRC.
+ *
+ * @retval  IPRT status code.
+ * @retval  VERR_ISOFS_TAG_IS_ALL_ZEROS
+ * @retval  VERR_MISMATCH
+ * @retval  VERR_ISOFS_UNSUPPORTED_TAG_VERSION
+ * @retval  VERR_ISOFS_TAG_SECTOR_MISMATCH
+ * @retval  VERR_ISOFS_BAD_TAG_CHECKSUM
+ *
+ * @param   pTag        The tag to check.
+ * @param   idTag       The expected descriptor tag ID, UINT16_MAX matches any
+ *                      tag ID.
+ * @param   offTag      The sector offset of the tag.
+ * @param   pErrInfo    Where to return extended error info.
+ */
 static int rtFsIsoVolValidateUdfDescTag(PCUDFTAG pTag, uint16_t idTag, uint32_t offTag, PRTERRINFO pErrInfo)
 {
     /*
@@ -2121,11 +2212,16 @@ static int rtFsIsoVolValidateUdfDescTag(PCUDFTAG pTag, uint16_t idTag, uint32_t 
                 || idTag == UINT16_MAX)
             {
                 if (pTag->offTag == offTag)
+                {
+                    Log2(("ISO/UDF: Valid descriptor %#06x at %#010RX32; cbDescriptorCrc=%#06RX32 uTagSerialNo=%#x\n",
+                          pTag->idTag, offTag, pTag->cbDescriptorCrc, pTag->uTagSerialNo));
                     return VINF_SUCCESS;
+                }
 
                 Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): Sector mismatch: %#RX32 (%.*Rhxs)\n",
                      idTag, offTag, pTag->offTag, sizeof(*pTag), pTag));
-                return RTErrInfoSetF(pErrInfo, VERR_MISMATCH, "Descriptor tag sector number mismatch: %#x, expected %#x (%.*Rhxs)",
+                return RTErrInfoSetF(pErrInfo, VERR_ISOFS_TAG_SECTOR_MISMATCH,
+                                     "Descriptor tag sector number mismatch: %#x, expected %#x (%.*Rhxs)",
                                      pTag->offTag, offTag, sizeof(*pTag), pTag);
             }
             Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): Tag ID mismatch: %#x (%.*Rhxs)\n",
@@ -2133,17 +2229,353 @@ static int rtFsIsoVolValidateUdfDescTag(PCUDFTAG pTag, uint16_t idTag, uint32_t 
             return RTErrInfoSetF(pErrInfo, VERR_MISMATCH, "Descriptor tag ID mismatch: %#x, expected %#x (%.*Rhxs)",
                                  pTag->idTag, idTag, sizeof(*pTag), pTag);
         }
+        if (ASMMemIsZero(pTag, sizeof(*pTag)))
+        {
+            Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): All zeros\n", idTag, offTag));
+            return RTErrInfoSet(pErrInfo, VERR_ISOFS_TAG_IS_ALL_ZEROS, "Descriptor is all zeros");
+        }
+
         Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): Unsupported version: %#x (%.*Rhxs)\n",
              idTag, offTag, pTag->uVersion, sizeof(*pTag), pTag));
-        return RTErrInfoSetF(pErrInfo, VERR_MISMATCH, "Unsupported descriptor tag version: %#x, expected 2 or 3 (%.*Rhxs)",
+        return RTErrInfoSetF(pErrInfo, VERR_ISOFS_UNSUPPORTED_TAG_VERSION, "Unsupported descriptor tag version: %#x, expected 2 or 3 (%.*Rhxs)",
                              pTag->uVersion, sizeof(*pTag), pTag);
     }
     Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): checksum error: %#x, calc %#x (%.*Rhxs)\n",
          idTag, offTag, pTag->uChecksum, bChecksum, sizeof(*pTag), pTag));
-    return RTErrInfoSetF(pErrInfo, VERR_MISMATCH,
+    return RTErrInfoSetF(pErrInfo, VERR_ISOFS_BAD_TAG_CHECKSUM,
                          "Descriptor tag checksum error: %#x, calculated %#x (%.*Rhxs)",
                          pTag->uChecksum, bChecksum, sizeof(*pTag), pTag);
 }
+
+
+/**
+ * Checks the descriptor CRC.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_ISOFS_INSUFFICIENT_DATA_FOR_DESC_CRC
+ * @retval  VERR_ISOFS_DESC_CRC_MISMATCH
+ *
+ * @param   pTag        The descriptor buffer to checksum.
+ * @param   cbDesc      The size of the descriptor buffer.
+ * @param   pErrInfo    Where to return extended error info.
+ */
+static int rtFsIsoVolValidateUdfDescCrc(PCUDFTAG pTag, size_t cbDesc, PRTERRINFO pErrInfo)
+{
+    if (pTag->cbDescriptorCrc + sizeof(*pTag) <= cbDesc)
+    {
+        uint16_t uCrc = RTCrc16Ccitt(pTag + 1, pTag->cbDescriptorCrc);
+        if (pTag->uDescriptorCrc == uCrc)
+            return VINF_SUCCESS;
+
+        Log(("rtFsIsoVolValidateUdfDescCrc(,%#x,%#010RX32,): Descriptor CRC mismatch: expected %#x, calculated %#x (cbDescriptorCrc=%#x)\n",
+             pTag->idTag, pTag->offTag, pTag->uDescriptorCrc, uCrc, pTag->cbDescriptorCrc));
+        return RTErrInfoSetF(pErrInfo, VERR_ISOFS_DESC_CRC_MISMATCH,
+                             "Descriptor CRC mismatch: exepcted %#x, calculated %#x (cbDescriptor=%#x, idTag=%#x, offTag=%#010RX32)",
+                             pTag->uDescriptorCrc, uCrc, pTag->cbDescriptorCrc, pTag->idTag, pTag->offTag);
+    }
+
+    Log(("rtFsIsoVolValidateUdfDescCrc(,%#x,%#010RX32,): Insufficient data to CRC: cbDescriptorCrc=%#x cbDesc=%#zx\n",
+         pTag->idTag, pTag->offTag, pTag->cbDescriptorCrc, cbDesc));
+    return RTErrInfoSetF(pErrInfo, VERR_ISOFS_INSUFFICIENT_DATA_FOR_DESC_CRC,
+                         "Insufficient data to CRC: cbDescriptorCrc=%#x cbDesc=%#zx (idTag=%#x, offTag=%#010RX32)",
+                         pTag->cbDescriptorCrc, cbDesc, pTag->idTag, pTag->offTag);
+}
+
+
+/**
+ * Checks the descriptor tag and CRC.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_ISOFS_INSUFFICIENT_DATA_FOR_DESC_CRC
+ * @retval  VERR_ISOFS_TAG_IS_ALL_ZEROS
+ * @retval  VERR_MISMATCH
+ * @retval  VERR_ISOFS_UNSUPPORTED_TAG_VERSION
+ * @retval  VERR_ISOFS_TAG_SECTOR_MISMATCH
+ * @retval  VERR_ISOFS_BAD_TAG_CHECKSUM
+ * @retval  VERR_ISOFS_DESC_CRC_MISMATCH
+ *
+ * @param   pTag        The descriptor buffer to check the tag of and to
+ *                      checksum.
+ * @param   cbDesc      The size of the descriptor buffer.
+ * @param   idTag       The expected descriptor tag ID, UINT16_MAX
+ *                      matches any tag ID.
+ * @param   offTag      The sector offset of the tag.
+ * @param   pErrInfo    Where to return extended error info.
+ */
+static int rtFsIsoVolValidateUdfDescTagAndCrc(PCUDFTAG pTag, size_t cbDesc, uint16_t idTag, uint32_t offTag, PRTERRINFO pErrInfo)
+{
+    int rc = rtFsIsoVolValidateUdfDescTag(pTag, idTag, offTag, pErrInfo);
+    if (RT_SUCCESS(rc))
+        rc = rtFsIsoVolValidateUdfDescCrc(pTag, cbDesc, pErrInfo);
+    return rc;
+}
+
+
+#define UDF_LOG2_MEMBER(a_pStruct, a_szFmt, a_Member) \
+    Log2(("ISO/UDF:   %-32s %" a_szFmt "\n", #a_Member ":", (a_pStruct)->a_Member))
+#define UDF_LOG2_MEMBER_EX(a_pStruct, a_szFmt, a_Member, a_cchIndent) \
+    Log2(("ISO/UDF:   %*s%-32s %" a_szFmt "\n", a_cchIndent, "", #a_Member ":", (a_pStruct)->a_Member))
+#define UDF_LOG2_MEMBER_ENTITY_ID_EX(a_pStruct, a_Member, a_cchIndent) \
+    Log2(("ISO/UDF:   %*s%-32s '%.23s' fFlags=%#06x Suffix=%.8Rhxs\n", a_cchIndent, "", #a_Member ":", \
+          (a_pStruct)->a_Member.achIdentifier, (a_pStruct)->a_Member.fFlags, &(a_pStruct)->a_Member.Suffix))
+#define UDF_LOG2_MEMBER_ENTITY_ID(a_pStruct, a_Member) UDF_LOG2_MEMBER_ENTITY_ID_EX(a_pStruct, a_Member, 0)
+#define UDF_LOG2_MEMBER_EXTENTAD(a_pStruct, a_Member) \
+    Log2(("ISO/UDF:   %-32s sector %#010RX32 LB %#010RX32\n", #a_Member ":", (a_pStruct)->a_Member.off, (a_pStruct)->a_Member.cb))
+#define UDF_LOG2_MEMBER_SHORTAD(a_pStruct, a_Member) \
+    Log2(("ISO/UDF:   %-32s sector %#010RX32 LB %#010RX32 %s\n", #a_Member ":", (a_pStruct)->a_Member.off, (a_pStruct)->a_Member.cb, \
+          (a_pStruct)->a_Member.uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED ? "alloced+recorded" \
+          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_ONLY_ALLOCATED ? "alloced" \
+          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_FREE ? "free" : "next" ))
+#define UDF_LOG2_MEMBER_LONGAD(a_pStruct, a_Member) \
+    Log2(("ISO/UDF:   %-32s partition %#RX16, sector %#010RX32 LB %#010RX32 %s idUnique=%#010RX32 fFlags=%#RX16\n", #a_Member ":", \
+          (a_pStruct)->a_Member.Location.uPartitionNo, (a_pStruct)->a_Member.Location.off, (a_pStruct)->a_Member.cb, \
+          (a_pStruct)->a_Member.uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED ? "alloced+recorded" \
+          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_ONLY_ALLOCATED ? "alloced" \
+          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_FREE ? "free" : "next", \
+          (a_pStruct)->a_Member.ImplementationUse.Fid.idUnique, (a_pStruct)->a_Member.ImplementationUse.Fid.fFlags ))
+
+#define UDF_LOG2_MEMBER_TIMESTAMP(a_pStruct, a_Member) \
+    Log2(("ISO/UDF:   %-32s %04d-%02u-%02u %02u:%02u:%02u.%02u%02u%02u uTypeAndZone=%#x\n", #a_Member ":", \
+          (a_pStruct)->a_Member.iYear, (a_pStruct)->a_Member.uMonth, (a_pStruct)->a_Member.uDay, \
+          (a_pStruct)->a_Member.uHour, (a_pStruct)->a_Member.uMinute, (a_pStruct)->a_Member.uSecond, \
+          (a_pStruct)->a_Member.cCentiseconds, (a_pStruct)->a_Member.cHundredsOfMicroseconds, \
+          (a_pStruct)->a_Member.cMicroseconds, (a_pStruct)->a_Member.uTypeAndZone))
+#define UDF_LOG2_MEMBER_CHARSPEC(a_pStruct, a_Member) \
+    do { \
+        if (   (a_pStruct)->a_Member.uType == UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE \
+            && memcmp(&(a_pStruct)->a_Member.abInfo[0], UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO, \
+                      sizeof(UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO)) == 0) \
+            Log2(("ISO/UDF:   %-32s OSTA COMPRESSED UNICODE INFO\n", #a_Member ":")); \
+        else if (ASMMemIsZero(&(a_pStruct)->a_Member, sizeof((a_pStruct)->a_Member))) \
+            Log2(("ISO/UDF:   %-32s all zeros\n", #a_Member ":")); \
+        else \
+            Log2(("ISO/UDF:   %-32s %#x info: %.63Rhxs\n", #a_Member ":", \
+                  (a_pStruct)->a_Member.uType, (a_pStruct)->a_Member.abInfo)); \
+    } while (0)
+#define UDF_LOG2_MEMBER_DSTRING(a_pStruct, a_Member) \
+    do { \
+        if ((a_pStruct)->a_Member[0] == 8) \
+            Log2(("ISO/UDF:   %-32s  8: '%s' len=%u (actual=%u)\n", #a_Member ":", &(a_pStruct)->a_Member[1], \
+                  (a_pStruct)->a_Member[sizeof((a_pStruct)->a_Member) - 1], strlen(&(a_pStruct)->a_Member[1]) + 1 )); \
+        else if ((a_pStruct)->a_Member[0] == 16) \
+        { \
+            PCRTUTF16 pwszTmp = (PCRTUTF16)&(a_pStruct)->a_Member[1]; \
+            char *pszTmp = NULL; \
+            RTUtf16BigToUtf8Ex(pwszTmp, (sizeof((a_pStruct)->a_Member) - 2) / sizeof(RTUTF16), &pszTmp, 0, NULL); \
+            Log2(("ISO/UDF:   %-32s 16: '%s' len=%u (actual=%u)\n", #a_Member ":", pszTmp, \
+                  (a_pStruct)->a_Member[sizeof((a_pStruct)->a_Member) - 1], RTUtf16Len(pwszTmp) * sizeof(RTUTF16) + 1 /*??*/ )); \
+        } \
+        else if (ASMMemIsZero(&(a_pStruct)->a_Member[0], sizeof((a_pStruct)->a_Member))) \
+            Log2(("ISO/UDF:   %-32s empty\n", #a_Member ":")); \
+        else \
+            Log2(("ISO/UDF:   %-32s bad: %.*Rhxs\n", #a_Member ":", sizeof((a_pStruct)->a_Member), &(a_pStruct)->a_Member[0] )); \
+    } while (0)
+
+
+
+/**
+ * Processes a primary volume descriptor in the VDS (UDF).
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The instance.
+ * @param   pDesc       The descriptor.
+ * @param   pErrInfo    Where to return extended error information.
+ */
+//cmd: kmk VBoxRT && kmk_redirect -E VBOX_LOG_DEST="nofile stderr" -E VBOX_LOG="rt_fs=~0" -E VBOX_LOG_FLAGS="unbuffered enabled" -- e:\vbox\svn\trunk\out\win.amd64\debug\bin\tools\RTLs.exe :iprtvfs:file(open,d:\Downloads\en_windows_10_enterprise_version_1703_updated_march_2017_x64_dvd_10189290.iso,r):vfs(isofs):/ -la
+static int rtFsIsoVolProcessUdfPrimaryVolDesc(PRTFSISOVOL pThis, PCUDFPRIMARYVOLUMEDESC pDesc, PRTERRINFO pErrInfo)
+{
+#ifdef LOG_ENABLED
+    Log(("ISO/UDF: Primary volume descriptor at sector %#RX32\n", pDesc->Tag.offTag));
+    if (LogIs2Enabled())
+    {
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", uVolumeDescSeqNo);
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", uPrimaryVolumeDescNo);
+        UDF_LOG2_MEMBER_DSTRING(pDesc, achVolumeID);
+        UDF_LOG2_MEMBER(pDesc, "#06RX16", uVolumeSeqNo);
+        UDF_LOG2_MEMBER(pDesc, "#06RX16", uVolumeSeqNo);
+        UDF_LOG2_MEMBER(pDesc, "#06RX16", uMaxVolumeSeqNo);
+        UDF_LOG2_MEMBER(pDesc, "#06RX16", uInterchangeLevel);
+        UDF_LOG2_MEMBER(pDesc, "#06RX16", uMaxInterchangeLevel);
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", fCharacterSets);
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", fMaxCharacterSets);
+        UDF_LOG2_MEMBER_DSTRING(pDesc, achVolumeSetID);
+        UDF_LOG2_MEMBER_CHARSPEC(pDesc, DescCharSet);
+        UDF_LOG2_MEMBER_CHARSPEC(pDesc, ExplanatoryCharSet);
+        UDF_LOG2_MEMBER_EXTENTAD(pDesc, VolumeAbstract);
+        UDF_LOG2_MEMBER_EXTENTAD(pDesc, VolumeCopyrightNotice);
+        UDF_LOG2_MEMBER_ENTITY_ID(pDesc, idApplication);
+        UDF_LOG2_MEMBER_TIMESTAMP(pDesc, RecordingTimestamp);
+        UDF_LOG2_MEMBER_ENTITY_ID(pDesc, idImplementation);
+        if (!ASMMemIsZero(&pDesc->abImplementationUse, sizeof(pDesc->abImplementationUse)))
+            Log2(("ISO/UDF:   %-32s %.64Rhxs\n", "abReserved[64]:", &pDesc->abImplementationUse[0]));
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", offPredecessorVolDescSeq);
+        UDF_LOG2_MEMBER(pDesc, "#06RX16", fFlags);
+        if (!ASMMemIsZero(&pDesc->abReserved, sizeof(pDesc->abReserved)))
+            Log2(("ISO/UDF:   %-32s %.22Rhxs\n", "abReserved[22]:", &pDesc->abReserved[0]));
+    }
+#endif
+
+    RT_NOREF(pThis, pDesc, pErrInfo);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Processes an logical volume descriptor in the VDS (UDF).
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The instance.
+ * @param   pDesc       The descriptor.
+ * @param   pErrInfo    Where to return extended error information.
+ */
+static int rtFsIsoVolProcessUdfLogicalVolumeDesc(PRTFSISOVOL pThis, PCUDFLOGICALVOLUMEDESC pDesc, PRTERRINFO pErrInfo)
+{
+#ifdef LOG_ENABLED
+    Log(("ISO/UDF: Logical volume descriptor at sector %#RX32\n", pDesc->Tag.offTag));
+    if (LogIs2Enabled())
+    {
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", uVolumeDescSeqNo);
+        UDF_LOG2_MEMBER_CHARSPEC(pDesc, DescriptorCharSet);
+        UDF_LOG2_MEMBER_DSTRING(pDesc, achLogicalVolumeID);
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", cbLogicalBlock);
+        UDF_LOG2_MEMBER_ENTITY_ID(pDesc, idDomain);
+        if (memcmp(&pDesc->idDomain.achIdentifier[0], RT_STR_TUPLE(UDF_ENTITY_ID_LVD_DOMAIN) + 1) == 0)
+            UDF_LOG2_MEMBER_LONGAD(pDesc, ContentsUse.FileSetDescriptor);
+        else if (!ASMMemIsZero(&pDesc->ContentsUse.ab[0], sizeof(pDesc->ContentsUse.ab)))
+            Log2(("ISO/UDF:   %-32s %.16Rhxs\n", "ContentsUse.ab[16]:", &pDesc->ContentsUse.ab[0]));
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", cbMapTable);
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", cPartitionMaps);
+        UDF_LOG2_MEMBER_ENTITY_ID(pDesc, idImplementation);
+        if (!ASMMemIsZero(&pDesc->ImplementationUse.ab[0], sizeof(pDesc->ImplementationUse.ab)))
+            Log2(("ISO/UDF:   %-32s\n%.128Rhxd\n", "ImplementationUse.ab[128]:", &pDesc->ImplementationUse.ab[0]));
+        UDF_LOG2_MEMBER_EXTENTAD(pDesc, IntegritySeqExtent);
+        if (pDesc->cbMapTable)
+        {
+            Log2(("ISO/UDF:   %-32s\n", "abPartitionMaps"));
+            uint32_t iMap = 0;
+            uint32_t off  = 0;
+            while (off + sizeof(UDFPARTMAPHDR) <= pDesc->cbMapTable)
+            {
+                PCUDFPARTMAPHDR pHdr = (PCUDFPARTMAPHDR)&pDesc->abPartitionMaps[off];
+                Log2(("ISO/UDF:     %02u @ %#05x: type %u, length %u\n", iMap, off, pHdr->bType, pHdr->cb));
+                if (off + pHdr->cb > pDesc->cbMapTable)
+                {
+                    Log2(("ISO/UDF:                 BAD! Entry is %d bytes too long!\n", off + pHdr->cb - pDesc->cbMapTable));
+                    break;
+                }
+                if (pHdr->bType == 1)
+                {
+                    PCUDFPARTMAPTYPE1 pType1 = (PCUDFPARTMAPTYPE1)pHdr;
+                    UDF_LOG2_MEMBER_EX(pType1, "#06RX16", uVolumeSeqNo, 5);
+                    UDF_LOG2_MEMBER_EX(pType1, "#06RX16", uPartitionNo, 5);
+                }
+                else if (pHdr->bType == 2)
+                {
+                    PCUDFPARTMAPTYPE2 pType2 = (PCUDFPARTMAPTYPE2)pHdr;
+                    UDF_LOG2_MEMBER_ENTITY_ID_EX(pType2, idPartitionType, 5);
+                    UDF_LOG2_MEMBER_EX(pType2, "#06RX16", uVolumeSeqNo, 5);
+                    UDF_LOG2_MEMBER_EX(pType2, "#06RX16", uPartitionNo, 5);
+                }
+                else
+                    Log2(("ISO/UDF:                 BAD! Unknown type!\n"));
+
+                /* advance */
+                off += pHdr->cb;
+                iMap++;
+            }
+        }
+    }
+#endif
+
+    RT_NOREF(pThis, pDesc, pErrInfo);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Processes an partition descriptor in the VDS (UDF).
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The instance.
+ * @param   pDesc       The descriptor.
+ * @param   pErrInfo    Where to return extended error information.
+ */
+static int rtFsIsoVolProcessUdfPartitionDesc(PRTFSISOVOL pThis, PCUDFPARTITIONDESC pDesc, PRTERRINFO pErrInfo)
+{
+#ifdef LOG_ENABLED
+    Log(("ISO/UDF: Partition descriptor at sector %#RX32\n", pDesc->Tag.offTag));
+    if (LogIs2Enabled())
+    {
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", uVolumeDescSeqNo);
+        UDF_LOG2_MEMBER(pDesc, "#06RX16", fFlags);
+        UDF_LOG2_MEMBER(pDesc, "#06RX16", uPartitionNo);
+        UDF_LOG2_MEMBER_ENTITY_ID(pDesc, PartitionContents);
+        if (memcmp(&pDesc->PartitionContents.achIdentifier[0], RT_STR_TUPLE(UDF_ENTITY_ID_PD_PARTITION_CONTENTS_UDF) + 1) == 0)
+        {
+            UDF_LOG2_MEMBER_SHORTAD(&pDesc->ContentsUse, Hdr.UnallocatedSpaceTable);
+            UDF_LOG2_MEMBER_SHORTAD(&pDesc->ContentsUse, Hdr.UnallocatedSpaceBitmap);
+            UDF_LOG2_MEMBER_SHORTAD(&pDesc->ContentsUse, Hdr.PartitionIntegrityTable);
+            UDF_LOG2_MEMBER_SHORTAD(&pDesc->ContentsUse, Hdr.FreedSpaceTable);
+            UDF_LOG2_MEMBER_SHORTAD(&pDesc->ContentsUse, Hdr.FreedSpaceBitmap);
+            if (!ASMMemIsZero(&pDesc->ContentsUse.Hdr.abReserved[0], sizeof(pDesc->ContentsUse.Hdr.abReserved)))
+                Log2(("ISO/UDF:   %-32s\n%.88Rhxd\n", "Hdr.abReserved[88]:", &pDesc->ContentsUse.Hdr.abReserved[0]));
+        }
+        else if (!ASMMemIsZero(&pDesc->ContentsUse.ab[0], sizeof(pDesc->ContentsUse.ab)))
+            Log2(("ISO/UDF:   %-32s\n%.128Rhxd\n", "ContentsUse.ab[128]:", &pDesc->ContentsUse.ab[0]));
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", uAccessType);
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", offLocation);
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", cSectors);
+        UDF_LOG2_MEMBER_ENTITY_ID(pDesc, idImplementation);
+        if (!ASMMemIsZero(&pDesc->ImplementationUse.ab[0], sizeof(pDesc->ImplementationUse.ab)))
+            Log2(("ISO/UDF:   %-32s\n%.128Rhxd\n", "ImplementationUse.ab[128]:", &pDesc->ImplementationUse.ab[0]));
+
+        if (!ASMMemIsZero(&pDesc->abReserved[0], sizeof(pDesc->abReserved)))
+            Log2(("ISO/UDF:   %-32s\n%.156Rhxd\n", "ImplementationUse.ab[156]:", &pDesc->abReserved[0]));
+    }
+#endif
+
+    RT_NOREF(pThis, pDesc, pErrInfo);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Processes an implementation use descriptor in the VDS (UDF).
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The instance.
+ * @param   pDesc       The descriptor.
+ * @param   pErrInfo    Where to return extended error information.
+ */
+static int rtFsIsoVolProcessUdfImplUseVolDesc(PRTFSISOVOL pThis, PCUDFIMPLEMENTATIONUSEVOLUMEDESC pDesc, PRTERRINFO pErrInfo)
+{
+#ifdef LOG_ENABLED
+    Log(("ISO/UDF: Implementation use volume descriptor at sector %#RX32\n", pDesc->Tag.offTag));
+    if (LogIs2Enabled())
+    {
+        UDF_LOG2_MEMBER(pDesc, "#010RX32", uVolumeDescSeqNo);
+        UDF_LOG2_MEMBER_ENTITY_ID(pDesc, idImplementation);
+        if (memcmp(pDesc->idImplementation.achIdentifier, RT_STR_TUPLE(UDF_ENTITY_ID_IUVD_IMPLEMENTATION) + 1) == 0)
+        {
+            UDF_LOG2_MEMBER_CHARSPEC(&pDesc->ImplementationUse, Lvi.Charset);
+            UDF_LOG2_MEMBER_DSTRING(&pDesc->ImplementationUse, Lvi.achVolumeID);
+            UDF_LOG2_MEMBER_DSTRING(&pDesc->ImplementationUse, Lvi.achInfo1);
+            UDF_LOG2_MEMBER_DSTRING(&pDesc->ImplementationUse, Lvi.achInfo2);
+            UDF_LOG2_MEMBER_DSTRING(&pDesc->ImplementationUse, Lvi.achInfo3);
+            UDF_LOG2_MEMBER_ENTITY_ID(&pDesc->ImplementationUse, Lvi.idImplementation);
+            if (!ASMMemIsZero(&pDesc->ImplementationUse.Lvi.abUse[0], sizeof(pDesc->ImplementationUse.Lvi.abUse)))
+                Log2(("ISO/UDF:   %-32s\n%.128Rhxd\n", "Lvi.abUse[128]:", &pDesc->ImplementationUse.Lvi.abUse[0]));
+        }
+        else if (!ASMMemIsZero(&pDesc->ImplementationUse.ab[0], sizeof(pDesc->ImplementationUse.ab)))
+            Log2(("ISO/UDF:   %-32s\n%.460Rhxd\n", "ImplementationUse.ab[460]:", &pDesc->ImplementationUse.ab[0]));
+    }
+#endif
+
+    RT_NOREF(pThis, pDesc, pErrInfo);
+    return VINF_SUCCESS;
+}
+
+
 
 typedef struct RTFSISOSEENSEQENCES
 {
@@ -2162,14 +2594,15 @@ typedef RTFSISOSEENSEQENCES *PRTFSISOSEENSEQENCES;
 /**
  * Process a VDS sequence, recursively dealing with volume descriptor pointers.
  *
- * @returns
- * @param   pThis           .
- * @param   offSeq          .
- * @param   cbSeq           .
- * @param   pbBuf           .
- * @param   cbBuf           .
+ * @returns IPRT status code.
+ * @param   pThis           The instance.
+ * @param   offSeq          The byte offset of the sequence.
+ * @param   cbSeq           The length of the sequence.
+ * @param   pbBuf           Read buffer.
+ * @param   cbBuf           Size of the read buffer.  This is at least one
+ *                          sector big.
  * @param   cNestings       The VDS nesting depth.
- * @param   pErrInfo        .
+ * @param   pErrInfo        Where to return extended error info.
  */
 static int rtFsIsoVolReadAndProcessUdfVdsSeq(PRTFSISOVOL pThis, uint64_t offSeq, uint32_t cbSeq, uint8_t *pbBuf, size_t cbBuf,
                                              uint32_t cNestings, PRTERRINFO pErrInfo)
@@ -2206,32 +2639,73 @@ static int rtFsIsoVolReadAndProcessUdfVdsSeq(PRTFSISOVOL pThis, uint64_t offSeq,
          * Check tag.
          */
         PCUDFTAG pTag = (PCUDFTAG)pbBuf;
-        rc = rtFsIsoVolValidateUdfDescTag(pTag, UINT16_MAX, (offSeq + offInSeq) / pThis->cbSector, pErrInfo);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        switch (pTag->idTag)
+        rc = rtFsIsoVolValidateUdfDescTagAndCrc(pTag, pThis->cbSector, UINT16_MAX, (offSeq + offInSeq) / pThis->cbSector, pErrInfo);
+        if (   RT_SUCCESS(rc)
+            || (   rc == VERR_ISOFS_INSUFFICIENT_DATA_FOR_DESC_CRC
+                && (   pTag->idTag == UDF_TAG_ID_LOGICAL_VOLUME_INTEGRITY_DESC
+                    || pTag->idTag == UDF_TAG_ID_LOGICAL_VOLUME_DESC
+                    || pTag->idTag == UDF_TAG_ID_UNALLOCATED_SPACE_DESC
+                   )
+               )
+           )
         {
-            case UDF_TAG_ID_PRIMARY_VOL_DESC:                 /* UDFPRIMARYVOLUMEDESC */
-                break;
-            case UDF_TAG_ID_ANCHOR_VOLUME_DESC_PTR:           /* UDFANCHORVOLUMEDESCPTR */
-                break;
-            case UDF_TAG_ID_VOLUME_DESC_PTR:                  /* UDFVOLUMEDESCPTR */
-                break;
-            case UDF_TAG_ID_IMPLEMENATION_USE_VOLUME_DESC:    /* UDFIMPLEMENTATIONUSEVOLUMEDESC */
-                break;
-            case UDF_TAG_ID_PARTITION_DESC:                   /* UDFPARTITIONDESC */
-                break;
-            case UDF_TAG_ID_LOGICAL_VOLUME_DESC:              /* UDFLOGICALVOLUMEDESC */
-                break;
-            case UDF_TAG_ID_UNALLOCATED_SPACE_DESC:           /* UDFUNALLOCATEDSPACEDESC */
-                break;
-            case UDF_TAG_ID_TERMINATING_DESC:                 /* UDFTERMINATINGDESC */
-                break;
-            case UDF_TAG_ID_LOGICAL_VOLUME_INTEGRITY_DESC:    /* UDFLOGICALVOLINTEGRITYDESC */
-                break;
+            switch (pTag->idTag)
+            {
+                case UDF_TAG_ID_PRIMARY_VOL_DESC:
+                    rc = rtFsIsoVolProcessUdfPrimaryVolDesc(pThis, (PCUDFPRIMARYVOLUMEDESC)pTag, pErrInfo);
+                    break;
 
+                case UDF_TAG_ID_IMPLEMENATION_USE_VOLUME_DESC:
+                    rc = rtFsIsoVolProcessUdfImplUseVolDesc(pThis, (PCUDFIMPLEMENTATIONUSEVOLUMEDESC)pTag, pErrInfo);
+                    break;
+
+                case UDF_TAG_ID_PARTITION_DESC:
+                    rc = rtFsIsoVolProcessUdfPartitionDesc(pThis, (PCUDFPARTITIONDESC)pTag, pErrInfo);
+                    break;
+
+                case UDF_TAG_ID_LOGICAL_VOLUME_DESC:
+                    rc = rtFsIsoVolProcessUdfLogicalVolumeDesc(pThis, (PCUDFLOGICALVOLUMEDESC)pTag, pErrInfo);
+                    break;
+
+                case UDF_TAG_ID_LOGICAL_VOLUME_INTEGRITY_DESC:
+                    Log(("ISO/UDF: Ignoring logical volume integrity descriptor at offset %#RX64.\n", offSeq + offInSeq));
+                    rc = VINF_SUCCESS;
+                    break;
+
+                case UDF_TAG_ID_UNALLOCATED_SPACE_DESC:
+                    Log(("ISO/UDF: Ignoring unallocated space descriptor at offset %#RX64.\n", offSeq + offInSeq));
+                    rc = VINF_SUCCESS;
+                    break;
+
+                case UDF_TAG_ID_ANCHOR_VOLUME_DESC_PTR:
+                    Log(("ISO/UDF: Ignoring AVDP in VDS (at offset %#RX64).\n", offSeq + offInSeq));
+                    rc = VINF_SUCCESS;
+                    break;
+
+                case UDF_TAG_ID_VOLUME_DESC_PTR:
+                {
+                    PCUDFVOLUMEDESCPTR pVdp = (PCUDFVOLUMEDESCPTR)pTag;
+                    Log(("ISO/UDF: Processing volume descriptor pointer at offset %#RX64: %#x LB %#x (seq %#x); cNestings=%d\n",
+                         offSeq + offInSeq, pVdp->NextVolumeDescSeq.off, pVdp->NextVolumeDescSeq.cb,
+                         pVdp->uVolumeDescSeqNo, cNestings));
+                    rc = rtFsIsoVolReadAndProcessUdfVdsSeq(pThis, (uint64_t)pVdp->NextVolumeDescSeq.off * pThis->cbSector,
+                                                           pVdp->NextVolumeDescSeq.cb, pbBuf, cbBuf, cNestings + 1, pErrInfo);
+                    break;
+                }
+
+                case UDF_TAG_ID_TERMINATING_DESC:
+                    Log(("ISO/UDF: Terminating descriptor at offset %#RX64\n", offSeq + offInSeq));
+                    return VINF_SUCCESS;
+
+                default:
+                    return RTErrInfoSetF(pErrInfo, VERR_ISOFS_UNEXPECTED_VDS_DESC, "Unexpected/unknown VDS descriptor %#x",
+                                         offSeq + offInSeq, pThis->cbSector, rc);
+            }
         }
+        /* The descriptor sequence is usually zero padded to 16 sectors.  Just
+           ignore zero descriptors. */
+        else if (rc != VERR_ISOFS_TAG_IS_ALL_ZEROS)
+            return rc;
 
         /*
          * Advance.
@@ -2278,7 +2752,7 @@ static int rtFsIsoVolReadAndProcessUdfVds(PRTFSISOVOL pThis, uint64_t offSeq, ui
     pSeenSequences->aSequences[pSeenSequences->cSequences].off = offSeq;
     pSeenSequences->cSequences++;
 
-    LogFlow(("ISO/UDF: Processing anchor volume descriptor sequence at %#RX64 LB %#RX32\n", offSeq, cbSeq));
+    LogFlow(("ISO/UDF: Processing anchor volume descriptor sequence at offset %#RX64 LB %#RX32\n", offSeq, cbSeq));
 
     /*
      * Reset the state before we start processing the descriptors.
@@ -3040,6 +3514,9 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
         if (RT_FAILURE(rc))
             return rc;
     }
+#if 0
+    return VERR_NOT_IMPLEMENTED;
+#else
 
     /*
      * We may be faced with choosing between joliet and rock ridge (we won't
@@ -3057,6 +3534,7 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
         return rtFsIsoDirShrd_New9660(pThis, NULL, &JolietRootDir, 1, offJolietRootDirRec, &pThis->pRootDir);
     }
     return rtFsIsoDirShrd_New9660(pThis, NULL, &RootDir, 1, offRootDirRec, &pThis->pRootDir);
+#endif
 }
 
 

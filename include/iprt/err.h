@@ -2866,6 +2866,26 @@ RT_C_DECLS_END
 
 /** @} */
 
+
+/** @name RTFsIsoVol status codes
+ * @{ */
+/** Descriptor tag is all zeros. */
+#define VERR_ISOFS_TAG_IS_ALL_ZEROS                     (-25300)
+/** Unsupported descriptor tag version. */
+#define VERR_ISOFS_UNSUPPORTED_TAG_VERSION              (-25301)
+/** Bad descriptor tag checksum. */
+#define VERR_ISOFS_BAD_TAG_CHECKSUM                     (-25302)
+/** Descriptor tag sector number mismatch. */
+#define VERR_ISOFS_TAG_SECTOR_MISMATCH                  (-25303)
+/** Descriptor CRC mismatch. */
+#define VERR_ISOFS_DESC_CRC_MISMATCH                    (-25304)
+/** Insufficient data to check descriptor CRC. */
+#define VERR_ISOFS_INSUFFICIENT_DATA_FOR_DESC_CRC       (-25305)
+/** Unexpected/unknown/bad descriptor in volume descriptor sequence. */
+#define VERR_ISOFS_UNEXPECTED_VDS_DESC                  (-25306)
+
+/** @} */
+
 /* SED-END */
 
 /** @} */

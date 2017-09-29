@@ -345,23 +345,10 @@ typedef UDFENTITYID const *PCUDFENTITYID;
  * See @udf260{2.1.5.2,21}.
  *
  * @{ */
-/** Primary volume descriptor, implementation ID field.
- * Implementation ID suffix. */
-#define UDF_ENTITY_ID_PVD_IMPLEMENTATION        "*Developer ID"
-/** Primary volume descriptor, application ID field.
- * Application ID suffix. */
-#define UDF_ENTITY_ID_PVD_APPLICATION           "*Application ID"
-
 /** Implementation use volume descriptor, implementation ID field.
  * UDF ID suffix. */
 #define UDF_ENTITY_ID_IUVD_IMPLEMENTATION       "*UDF LV Info"
-/** Implementation use volume descriptor, implementation ID field in Use field.
- * Implementation ID suffix. */
-#define UDF_ENTITY_ID_IUVD_USE_IMPLEMENTATION   "*Developer ID"
 
-/** Partition descriptor, implementation ID field.
- * Implementation ID suffix. */
-#define UDF_ENTITY_ID_PD_IMPLEMENTATION         "*Developer ID"
 /** Partition descriptor, partition contents field, set to indicate UDF
  * (ECMA-167 3rd edition). Application ID suffix. */
 #define UDF_ENTITY_ID_PD_PARTITION_CONTENTS_UDF     "+NSR03"
@@ -375,9 +362,6 @@ typedef UDFENTITYID const *PCUDFENTITYID;
  * (ECMA-107). Application ID suffix. */
 #define UDF_ENTITY_ID_PD_PARTITION_CONTENTS_FAT     "+FDC01"
 
-/** Logical volume descriptor, implementation ID field.
- * Implementation ID suffix. */
-#define UDF_ENTITY_ID_LVD_IMPLEMENTATION        "*Developer ID"
 /** Logical volume descriptor, domain ID field.
  * Domain ID suffix. */
 #define UDF_ENTITY_ID_LVD_DOMAIN                "*OSTA UDF Compliant"
@@ -385,18 +369,6 @@ typedef UDFENTITYID const *PCUDFENTITYID;
 /** File set descriptor, domain ID field.
  * Domain ID suffix. */
 #define UDF_ENTITY_FSD_LVD_DOMAIN               "*OSTA UDF Compliant"
-
-/** File identifier descriptor, implementation use field.
- * Implementation ID suffix. */
-#define UDF_ENTITY_ID_FID_IMPLEMENTATION_USE    "*Developer ID"
-
-/** File entry, implementation ID field.
- * Implementation ID suffix. */
-#define UDF_ENTITY_ID_FE_IMPLEMENTATION         "*Developer ID"
-
-/** Device specification extended attribute, implementation use field.
- * Implementation ID suffix. */
-#define UDF_ENTITY_ID_DSEA_IMPLEMENTATION_USE   "*Developer ID"
 
 /** UDF implementation use extended attribute, implementation ID field, set
  * to free EA space.  UDF ID suffix. */
@@ -417,37 +389,13 @@ typedef UDFENTITYID const *PCUDFENTITYID;
  * to OS/400 extended directory information.  UDF ID suffix. */
 #define UDF_ENTITY_ID_IUEA_OS400_DIR_INFO       "*UDF OS/400 DirInfo"
 
-/** Non-UDF implementation use extended attribute, implementation ID field.
- * Implementation ID suffix. */
-#define UDF_ENTITY_ID_NUIUSEA_IMPLEMENTATION    "*Developer ID"
-
 /** UDF application use extended attribute, application ID field, set
  * to free application use EA space.  UDF ID suffix. */
 #define UDF_ENTITY_ID_AUEA_FREE_EA_SPACE        "*UDF FreeAppEASpace"
 
-/** Non-UDF application use extended attribute, implementation ID field.
- * Application ID suffix. */
-#define UDF_ENTITY_ID_NUAUEA_IMPLEMENTATION     "*Application ID"
-
-/** UDF unique ID mapping data, implementation ID field.
- * Implementation ID suffix. */
-#define UDF_ENTITY_ID_UIMD_IMPLEMENTATION       "*Developer ID"
-
-/** Power calibration table stream, implementation ID field.
- * Implementation ID suffix. */
-#define UDF_ENTITY_ID_PCTS_IMPLEMENTATION       "*Developer ID"
-
-/** Logical volume integrity descriptor, implementation ID field.
- * Implementation ID suffix. */
-#define UDF_ENTITY_ID_LVID_IMPLEMENTATION       "*Developer ID"
-
 /** Virtual partition map, partition type field.
  * UDF ID suffix. */
 #define UDF_ENTITY_ID_VPM_PARTITION_TYPE        "*UDF Virtual Partition"
-
-/** Virtual allocation table, implementation use field.
- * Implementation ID suffix. */
-#define UDF_ENTITY_ID_VAT_IMPLEMENTATION_USE    "*Developer ID"
 
 /** Sparable partition map, partition type field.
  * UDF ID suffix. */
@@ -558,11 +506,11 @@ typedef struct UDFPRIMARYVOLUMEDESC
     UDFEXTENTAD     VolumeAbstract;
     /** 0x150: Volume copyright notice. */
     UDFEXTENTAD     VolumeCopyrightNotice;
-    /** 0x158: Application identifier (UDF_ENTITY_ID_PVD_APPLICATION). */
+    /** 0x158: Application identifier ("*Application ID"). */
     UDFENTITYID     idApplication;
     /** 0x178: Recording date and time. */
     UDFTIMESTAMP    RecordingTimestamp;
-    /** 0x184: Implementation identifier (UDF_ENTITY_ID_PVD_IMPLEMENTATION). */
+    /** 0x184: Implementation identifier ("*Developer ID"). */
     UDFENTITYID     idImplementation;
     /** 0x1a4: Implementation use. */
     uint8_t         abImplementationUse[64];
@@ -664,8 +612,7 @@ typedef struct UDFIMPLEMENTATIONUSEVOLUMEDESC
             UDFDSTRING      achInfo2[36];
             /** 0x13c: Info string \#3. */
             UDFDSTRING      achInfo3[36];
-            /** 0x160: The implementation identifier
-             * (UDF_ENTITY_ID_IUVD_USE_IMPLEMENTATION). */
+            /** 0x160: The implementation identifier ("*Developer ID"). */
             UDFENTITYID     idImplementation;
             /** 0x180: Additional use bytes. */
             uint8_t         abUse[128];
@@ -743,19 +690,22 @@ typedef struct UDFPARTITIONDESC
     uint32_t        offLocation;
     /** 0x0c0: Partition length in sectors. */
     uint32_t        cSectors;
-    /** 0x0c4: Implementation identifier (UDF_ENTITY_ID_PD_IMPLEMENTATION). */
+    /** 0x0c4: Implementation identifier ("*Developer ID"). */
     UDFENTITYID     idImplementation;
     /** 0x0e4: Implemenation use bytes. */
     union
     {
         /** Generic view. */
         uint8_t     ab[128];
-
     } ImplementationUse;
     /** 0x164: Reserved. */
     uint8_t         abReserved[156];
 } UDFPARTITIONDESC;
 AssertCompileSize(UDFPARTITIONDESC, 512);
+/** Pointer to an UDF partitions descriptor. */
+typedef UDFPARTITIONDESC *PUDFPARTITIONDESC;
+/** Pointer to a const UDF partitions descriptor. */
+typedef const UDFPARTITIONDESC *PCUDFPARTITIONDESC;
 
 /** @name UDF_PART_ACCESS_TYPE_XXX - UDF partition access types
  *
@@ -806,7 +756,7 @@ typedef struct UDFLOGICALVOLUMEDESC
     uint32_t        cbMapTable;
     /** 0x10c: Number of partition maps. */
     uint32_t        cPartitionMaps;
-    /** 0x110: Implementation identifier (UDF_ENTITY_ID_LVD_IMPLEMENTATION). */
+    /** 0x110: Implementation identifier ("*Developer ID"). */
     UDFENTITYID     idImplementation;
     /** 0x130: Implementation use. */
     union
@@ -816,7 +766,8 @@ typedef struct UDFLOGICALVOLUMEDESC
     } ImplementationUse;
     /** 0x1b0: Integrity sequence extent. Can be zero if cPartitionMaps is zero. */
     UDFEXTENTAD     IntegritySeqExtent;
-    /** 0x1b8: Partition maps (length given by @a cPartitionMaps). */
+    /** 0x1b8: Partition maps (length given by @a cbMapTable), data format is
+     * defined by UDFPARTMAPHDR, UDFPARTMAPTYPE1 and UDFPARTMAPTYPE2. */
     uint8_t         abPartitionMaps[RT_FLEXIBLE_ARRAY];
 } UDFLOGICALVOLUMEDESC;
 AssertCompileMemberOffset(UDFLOGICALVOLUMEDESC, abPartitionMaps, 0x1b8);
@@ -824,6 +775,64 @@ AssertCompileMemberOffset(UDFLOGICALVOLUMEDESC, abPartitionMaps, 0x1b8);
 typedef UDFLOGICALVOLUMEDESC *PUDFLOGICALVOLUMEDESC;
 /** Pointer to a const UDF logical volume descriptor. */
 typedef UDFLOGICALVOLUMEDESC const *PCUDFLOGICALVOLUMEDESC;
+
+/**
+ * Partition map header (UDFLOGICALVOLUMEDESC::abPartitionMaps).
+ */
+typedef struct UDFPARTMAPHDR
+{
+    /** 0x00: The partition map type. */
+    uint8_t         bType;
+    /** 0x01: The partition map length (header included). */
+    uint8_t         cb;
+} UDFPARTMAPHDR;
+AssertCompileSize(UDFPARTMAPHDR, 2);
+/** Pointer to a partition map header. */
+typedef UDFPARTMAPHDR *PUDFPARTMAPHDR;
+/** Pointer to a const partition map header. */
+typedef UDFPARTMAPHDR const *PCUDFPARTMAPHDR;
+
+/**
+ * Partition map type 1 (UDFLOGICALVOLUMEDESC::abPartitionMaps).
+ */
+typedef struct UDFPARTMAPTYPE1
+{
+    /** 0x00: Header (uType=1, cb=6). */
+    UDFPARTMAPHDR   Hdr;
+    /** 0x02: Volume sequence number. */
+    uint16_t        uVolumeSeqNo;
+    /** 0x04: Partition number. */
+    uint16_t        uPartitionNo;
+} UDFPARTMAPTYPE1;
+AssertCompileSize(UDFPARTMAPTYPE1, 6);
+/** Pointer to a type 1 partition map. */
+typedef UDFPARTMAPTYPE1 *PUDFPARTMAPTYPE1;
+/** Pointer to a const type 1 partition map. */
+typedef UDFPARTMAPTYPE1 const *PCUDFPARTMAPTYPE1;
+
+/**
+ * Partition map type 2 (UDFLOGICALVOLUMEDESC::abPartitionMaps).
+ */
+typedef struct UDFPARTMAPTYPE2
+{
+    /** 0x00: Header (uType=2, cb=64). */
+    UDFPARTMAPHDR   Hdr;
+    /** 0x02: Reserved \#1. */
+    uint16_t        uReserved1;
+    /** 0x04: Partition number (UDF_ENTITY_ID_VPM_PARTITION_TYPE). */
+    UDFENTITYID     idPartitionType;
+    /** 0x24: Volume sequence number. */
+    uint16_t        uVolumeSeqNo;
+    /** 0x26: Partition number. */
+    uint16_t        uPartitionNo;
+    /** 0x28: Reserved \#2. */
+    uint8_t         abReserved2[24];
+} UDFPARTMAPTYPE2;
+AssertCompileSize(UDFPARTMAPTYPE2, 64);
+/** Pointer to a type 2 partition map. */
+typedef UDFPARTMAPTYPE2 *PUDFPARTMAPTYPE2;
+/** Pointer to a const type 2 partition map1. */
+typedef UDFPARTMAPTYPE2 const *PCUDFPARTMAPTYPE2;
 
 
 /**
@@ -1244,7 +1253,7 @@ typedef struct UDFFILEENTRY
     uint32_t        uCheckpoint;
     /** 0x70: Extended attribute information control block location. */
     UDFLONGAD       ExtAttribIcb;
-    /** 0x80: Implementation identifier (UDF_ENTITY_ID_FE_IMPLEMENTATION). */
+    /** 0x80: Implementation identifier ("*Developer ID"). */
     UDFENTITYID     idImplementation;
     /** 0xa0: Unique ID. */
     uint64_t        INodeId;
@@ -1451,8 +1460,8 @@ typedef struct UDFEADATADEVICESPEC
     /** 0x08/0x14: Minor device number. */
     uint32_t        uMinorDeviceNo;
     /** 0x0c/0x18: Implementation use field (variable length).
-     * UDF specficiation expects UDFENTITYID with
-     * UDF_ENTITY_ID_DSEA_IMPLEMENTATION_USE as first part here. */
+     * UDF specficiation expects UDFENTITYID with a "*Developer ID" as first part
+     * here. */
     uint8_t         abImplementationUse[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
 } UDFEADATADEVICESPEC;
 /** Pointer to UDF device specification EA data. */
