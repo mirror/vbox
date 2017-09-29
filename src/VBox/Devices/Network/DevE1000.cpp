@@ -59,12 +59,18 @@
  * being already set (see @bugref{4657}).
  */
 #define E1K_INIT_RA0
+/** @def E1K_LSC_ON_RESET
+ * E1K_LSC_ON_RESET causes e1000 to generate Link Status Change
+ * interrupt after hard reset. This makes the E1K_LSC_ON_SLU option unnecessary.
+ * With unplugged cable, LSC is triggerred for 82543GC only.
+ */
+#define E1K_LSC_ON_RESET
 /** @def E1K_LSC_ON_SLU
  * E1K_LSC_ON_SLU causes E1000 to generate Link Status Change interrupt when
  * the guest driver brings up the link via STATUS.LU bit. Again the only guest
  * that requires it is Mac OS X (see @bugref{4657}).
  */
-#define E1K_LSC_ON_SLU
+//#define E1K_LSC_ON_SLU
 /** @def E1K_INIT_LINKUP_DELAY
  * E1K_INIT_LINKUP_DELAY prevents the link going up while the driver is still
  * in init (see @bugref{8624}).
@@ -1667,6 +1673,11 @@ static void e1kHardReset(PE1KSTATE pThis)
         e1kCsRxLeave(pThis);
     }
 #endif /* E1K_WITH_RXD_CACHE */
+#ifdef E1K_LSC_ON_RESET
+    E1kLog(("%s Will trigger LSC in %d seconds...\n",
+            pThis->szPrf, pThis->cMsLinkUpDelay / 1000));
+    e1kArmTimer(pThis, pThis->CTX_SUFF(pLUTimer), pThis->cMsLinkUpDelay * 1000);
+#endif /* E1K_LSC_ON_RESET */
 }
 
 #endif /* IN_RING3 */
@@ -2575,6 +2586,9 @@ DECLINLINE(void) e1kR3LinkDown(PE1KSTATE pThis)
 {
     E1kLog(("%s Link is down\n", pThis->szPrf));
     STATUS &= ~STATUS_LU;
+#ifdef E1K_LSC_ON_RESET
+    Phy::setLinkStatus(&pThis->phy, false);
+#endif /* E1K_LSC_ON_RESET */
     e1kRaiseInterrupt(pThis, VERR_SEM_BUSY, ICR_LSC);
     if (pThis->pDrvR3)
         pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, PDMNETWORKLINKSTATE_DOWN);
@@ -3413,12 +3427,15 @@ static DECLCALLBACK(void) e1kLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
     /*
      * This can happen if we set the link status to down when the Link up timer was
      * already armed (shortly after e1kLoadDone() or when the cable was disconnected
-     * and connect+disconnect the cable very quick.
+     * and connect+disconnect the cable very quick. Moreover, 82543GC triggers LSC
+     * on reset even if the cable is unplugged (see @bugref{8942}).
      */
-    if (!pThis->fCableConnected)
-        return;
-
-    e1kR3LinkUp(pThis);
+    if (pThis->fCableConnected)
+        e1kR3LinkUp(pThis);
+#ifdef E1K_LSC_ON_RESET
+    else if (pThis->eChip == E1K_CHIP_82543GC)
+        e1kR3LinkDown(pThis);
+#endif /* E1K_LSC_ON_RESET */
 }
 
 #endif /* IN_RING3 */
@@ -7651,7 +7668,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'TidEnabled'"));
 
-    rc = CFGMR3QueryU32Def(pCfg, "LinkUpDelay", (uint32_t*)&pThis->cMsLinkUpDelay, 5000); /* ms */
+    rc = CFGMR3QueryU32Def(pCfg, "LinkUpDelay", (uint32_t*)&pThis->cMsLinkUpDelay, 3000); /* ms */
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'LinkUpDelay'"));
