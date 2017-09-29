@@ -36,6 +36,30 @@
     <itemizedlist>
 
       <listitem>
+        <para>GUI: Virtual Media Manager rework allowing to manage media
+          attributes, like size, location, type and description</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Host-only Network Manager implemented to simplify managing
+          corresponding networks and their attributes</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Snapshot Pane rework allowing to manage snapshot
+          attributes, like name and description; reworked snapshot details
+          which looks more clear, corresponds to VM Details pane and reflects
+          current VM state difference according to last snapshot taken</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Audio settings extended with possibility to enable/disable
+          audio input/output; corresponding changed were done to Audio
+          and Video Capture settings pages; VM Devices menu and status-bar
+          extended with corresponding actions and indicator as well.</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: improvements with accessibility support</para>
       </listitem>
 
