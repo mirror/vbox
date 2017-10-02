@@ -2542,10 +2542,15 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             RTPrintf("\n");
     }
 
+#ifdef VBOX_WITH_VIDEOREC
     {
         /* Video capture */
-        BOOL bActive = FALSE;
-        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureEnabled)(&bActive), rc);
+        BOOL fCaptureVideo = FALSE;
+# ifdef VBOX_WITH_AUDIO_VIDEOREC
+        BOOL fCaptureAudio = FALSE;
+# endif
+
+        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureEnabled)(&fCaptureVideo), rc);
         com::SafeArray<BOOL> screens;
         CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(screens)), rc);
         ULONG Width;
@@ -2556,11 +2561,34 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureRate)(&Rate), rc);
         ULONG Fps;
         CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureFPS)(&Fps), rc);
-        Bstr File;
-        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureFile)(File.asOutParam()), rc);
+        Bstr  bstrFile;
+        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureFile)(bstrFile.asOutParam()), rc);
+        Bstr  bstrOptions;
+        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureOptions)(bstrOptions.asOutParam()), rc);
+
+        Utf8Str strOptions(bstrOptions);
+        size_t pos = 0;
+        com::Utf8Str key, value;
+        while ((pos = strOptions.parseKeyValue(key, value, pos)) != com::Utf8Str::npos)
+        {
+            if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
+            {
+                fCaptureVideo = value.compare("true", Utf8Str::CaseInsensitive) == 0;
+            }
+            else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
+            {
+# ifdef VBOX_WITH_AUDIO_VIDEOREC
+                fCaptureAudio = value.compare("true", Utf8Str::CaseInsensitive) == 0;
+# endif
+            }
+        }
+
         if (details == VMINFO_MACHINEREADABLE)
         {
-            RTPrintf("videocap=\"%s\"\n", bActive ? "on" : "off");
+            RTPrintf("videocap=\"%s\"\n",       fCaptureVideo ? "on" : "off");
+# ifdef VBOX_WITH_AUDIO_VIDEOREC
+            RTPrintf("videocap_audio=\"%s\"\n", fCaptureAudio ? "on" : "off");
+# endif
             RTPrintf("videocapscreens=");
             bool fComma = false;
             for (unsigned i = 0; i < screens.size(); i++)
@@ -2570,14 +2598,18 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     fComma = true;
                 }
             RTPrintf("\n");
-            RTPrintf("videocapfile=\"%ls\"\n", File.raw());
+            RTPrintf("videocapfile=\"%ls\"\n", bstrFile.raw());
             RTPrintf("videocapres=%ux%u\n", (unsigned)Width, (unsigned)Height);
             RTPrintf("videocaprate=%u\n", (unsigned)Rate);
             RTPrintf("videocapfps=%u\n", (unsigned)Fps);
+            RTPrintf("videocapopts=%ls\n", bstrOptions.raw());
         }
         else
         {
-            RTPrintf("Video capturing:    %s\n", bActive ? "active" : "not active");
+            RTPrintf("Capturing:          %s\n", fCaptureVideo ? "active" : "not active");
+# ifdef VBOX_WITH_AUDIO_VIDEOREC
+            RTPrintf("Capture audio:      %s\n", fCaptureAudio ? "active" : "not active");
+# endif
             RTPrintf("Capture screens:    ");
             bool fComma = false;
             for (unsigned i = 0; i < screens.size(); i++)
@@ -2587,13 +2619,17 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     fComma = true;
                 }
             RTPrintf("\n");
-            RTPrintf("Capture file:       %ls\n", File.raw());
+            RTPrintf("Capture file:       %ls\n", bstrFile.raw());
             RTPrintf("Capture dimensions: %ux%u\n", Width, Height);
             RTPrintf("Capture rate:       %u kbps\n", Rate);
             RTPrintf("Capture FPS:        %u\n", Fps);
+            RTPrintf("Capture options:    %ls\n", bstrOptions.raw());
             RTPrintf("\n");
+
+            /** @todo Add more audio capturing profile / information here. */
         }
     }
+#endif /* VBOX_WITH_VIDEOREC */
 
     if (    details == VMINFO_STANDARD
         ||  details == VMINFO_FULL
