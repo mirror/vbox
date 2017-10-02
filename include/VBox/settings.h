@@ -935,6 +935,7 @@ struct Hardware
     bool                fVideoCaptureEnabled;   // requires settings version 1.14 (VirtualBox 4.3)
     uint64_t            u64VideoCaptureScreens; // requires settings version 1.14 (VirtualBox 4.3)
     com::Utf8Str        strVideoCaptureFile;    // requires settings version 1.14 (VirtualBox 4.3)
+    com::Utf8Str        strVideoCaptureOptions; // new since VirtualBox 5.2.
 
     FirmwareType_T      firmwareType;           // requires settings version 1.9 (VirtualBox 3.1)
 
