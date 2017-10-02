@@ -602,8 +602,8 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
     AssertPtrReturn(pCfgReq,   E_POINTER);
     AssertPtrReturn(pCfgAcq,   E_POINTER);
 
-    DSLOG(("DSound: pStreamDS=%p, cbBufferOut=%RU32, uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool\n",
-           pStreamDS, pThis->cfg.cbBufferOut,
+    DSLOG(("DSound: Starting playback cbBufferOut=%RU32, uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool\n",
+           pThis->cfg.cbBufferOut,
            pCfgReq->Props.uHz,
            pCfgReq->Props.cChannels,
            pCfgReq->Props.cBits,
@@ -1070,11 +1070,10 @@ static HRESULT directSoundCaptureClose(PDSOUNDSTREAM pStreamDS)
 {
     AssertPtrReturn(pStreamDS, E_POINTER);
 
-    DSLOG(("DSound: pStreamDS=%p, pDSCB=%p\n", pStreamDS, pStreamDS->In.pDSCB));
-
     HRESULT hr = S_OK;
 
-    if (pStreamDS->In.pDSCB)
+    if (   pStreamDS
+        && pStreamDS->In.pDSCB)
     {
         hr = directSoundCaptureStop(pStreamDS);
         if (SUCCEEDED(hr))
@@ -1221,7 +1220,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
 
         pStreamDS->In.hrLastCapture     = S_OK;
 
-        DSLOG(("DSound: offReadPos=%RU32, cbBufSize=%RU32\n",
+        DSLOG(("DSound: Started capturing offReadPos=%RU32, cbBufSize=%RU32\n",
                pStreamDS->In.offReadPos, pStreamDS->In.cbBufSize));
 
         pCfgAcq->cFrameBufferHint = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pThis->cfg.cbBufferIn);
@@ -2227,9 +2226,9 @@ static int dsoundConfigInit(PDRVHOSTDSOUND pThis, PCFGMNODE pCfg)
     pThis->cfg.pGuidPlay    = dsoundConfigQueryGUID(pCfg, "DeviceGuidOut", &pThis->cfg.uuidPlay);
     pThis->cfg.pGuidCapture = dsoundConfigQueryGUID(pCfg, "DeviceGuidIn",  &pThis->cfg.uuidCapture);
 
-    DSLOG(("DSound: BufsizeOut %u, BufsizeIn %u, DeviceGuidOut {%RTuuid}, DeviceGuidIn {%RTuuid}\n",
-           pThis->cfg.cbBufferOut,
+    DSLOG(("DSound: Configuration cbBufferIn=%ld, cbBufferOut=%ld, DeviceGuidOut {%RTuuid}, DeviceGuidIn {%RTuuid}\n",
            pThis->cfg.cbBufferIn,
+           pThis->cfg.cbBufferOut,
            &pThis->cfg.uuidPlay,
            &pThis->cfg.uuidCapture));
 
