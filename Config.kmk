@@ -917,10 +917,6 @@ VBOX_WITH_STRICT_LOCKS = 1
 ifeq  ($(KBUILD_TARGET),win)
  VBOX_WITH_SDS =
 endif
-## Experimenting with using our own ISO image maker instead of mkisofs.
-if 1
- VBOX_USE_RTISOMAKER = 1
-endif
 
 
 #
@@ -1948,7 +1944,7 @@ VBOX_RTMANIFEST ?= $(PATH_OBJ)/bldRTManifest/bldRTManifest$(HOSTSUFF_EXE)
 # RTSignTool (certificate extraction tool)
 VBOX_RTSIGNTOOL ?= $(PATH_OBJ)/bldRTSignTool/bldRTSignTool$(HOSTSUFF_EXE)
 
-# RTIsoMaker - our own ISO maker, will replace VBOX_MKISOFS.
+# RTIsoMaker - our own ISO maker.
 VBOX_RTISOMAKER  ?= $(PATH_OBJ)/bldRTIsoMaker/bldRTIsoMaker$(HOSTSUFF_EXE)
 
 # VBoxCmp (simple /bin/cmp with more sensible output)
@@ -1986,13 +1982,6 @@ if1of ($(KBUILD_TARGET), linux os2 win)
  VBOX_GTAR ?= tar
 else if1of ($(KBUILD_TARGET), freebsd netbsd solaris)
  VBOX_GTAR ?= gtar
-endif
-
-# mkisofs
-ifeq ($(KBUILD_HOST),win)
- VBOX_MKISOFS  ?= $(KBUILD_DEVTOOLS_HST)/bin/mkisofs.exe
-else
- VBOX_MKISOFS  ?= mkisofs
 endif
 
 # zip

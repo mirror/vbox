@@ -145,7 +145,7 @@ include $(FILE_KBUILD_SUB_FOOTER)
 #
 # We test for the VBOX_WITH_ADDITIONS_ISO.os.arch so that we don't have to
 # do the $(if )'ing down where the GUESTADDITIONS_FILESPEC.os.arch down
-# in the dependency list and mkisofs command.
+# in the dependency list and RTIsoMaker command.
 #
 
 # Darwin / Mac OS X
@@ -313,9 +313,8 @@ $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso: \
 		$(VBOX_SVN_REV_KMK) \
 		$(VBOX_PATH_ADDITIONS_SRC)/Makefile.kmk \
 		| $(if-expr defined(VBOX_USE_RTISOMAKER),$(VBOX_RTISOMAKER),)
-	$(call MSG_TOOL,mkisofs,,$@)
+	$(call MSG_TOOL,RTIsoMaker,,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
- ifdef VBOX_USE_RTISOMAKER
 	$(VBOX_RTISOMAKER) \
 		--output $@ \
 		--iso-level 3 \
@@ -329,13 +328,6 @@ $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso: \
 		--volume-id="VBOXADDITIONS_$(VBOX_VERSION_STRING_RAW)_$(VBOX_SVN_REV)" \
                --name-setup=joliet \
 		--volume-id="VBox_GAs_$(VBOX_VERSION_STRING_RAW)"
- else
-# use iso-level 3 which is the most ISO conforming level with least restrictions; iso-level 4 maps to iso-level 2
-# with some extra restrictions removal (not conforming to ISO9660) which some platforms like Solaris 10 does not like.
-	$(VBOX_MKISOFS) -rational-rock -joliet -iso-level 3 \
-		-volid "VBOXADDITIONS_$(VBOX_VERSION_STRING_RAW)_$(VBOX_SVN_REV)" -l -graft-points -o $@ \
-		$(GUESTADDITIONS_FILESPEC_ALL)
- endif
 
 $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.zip: $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso
 	$(call MSG_L1,Zipping image $@)

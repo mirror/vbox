@@ -267,12 +267,11 @@ $(VBOX_PATH_VALIDATIONKIT)/VBoxValidationKit.iso: \
 		$(VBOX_SVN_REV_KMK) \
 		$(VBOX_PATH_VALIDATIONKIT_SRC)/Makefile.kmk \
                | $(if-expr defined(VBOX_USE_RTISOMAKER),$(VBOX_RTISOMAKER),)
-	$(call MSG_TOOL,mkisofs,,$@)
+	$(call MSG_TOOL,RTIsoMaker,,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 ifneq ($(KBUILD_TARGET),os2)
 	$(QUIET)$(ECHO) VBOX_VALIDATIONKIT_FILESPEC $(VBOX_VALIDATIONKIT_FILESPEC)
 endif
-ifdef VBOX_USE_RTISOMAKER
 	$(VBOX_RTISOMAKER) \
 		--output $@ \
 		--iso-level 3 \
@@ -289,14 +288,6 @@ ifdef VBOX_USE_RTISOMAKER
 		--volume-id "VBOXVALK_$(VBOX_SVN_REV)_$(VBOX_VERSION_STRING_RAW)" \
                --name-setup joliet \
 		--volume-id "VBoxValK $(VBOX_SVN_REV)"
-else
-# use iso-level 3 which is the most ISO conforming level with least restrictions; iso-level 4 maps to iso-level 2
-# with some extra restrictions removal (not conforming to ISO9660) which some platforms like Solaris 10 does not like.
-	$(VBOX_MKISOFS) -rational-rock -r -joliet -iso-level 3 \
-		-volid "VBOXVALKIT_$(VBOX_VERSION_STRING_RAW)_$(VBOX_SVN_REV)" -l -graft-points -o $@ \
-		$(foreach spec,$(VBOX_VALIDATIONKIT_FILESPEC) \
-			,$(if $(findstring =,$(spec)),$(spec), $(lastword $(subst /$(INST_VALIDATIONKIT), ,$(spec))=$(spec))))
-endif
 
 # Alias for creating the iso.
 .PHONY: validationkit-iso
