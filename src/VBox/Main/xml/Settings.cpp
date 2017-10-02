@@ -58,7 +58,7 @@
  */
 
 /*
- * Copyright (C) 2007-2016 Oracle Corporation
+ * Copyright (C) 2007-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2890,7 +2890,8 @@ bool Hardware::areVideoCaptureDefaultSettings() const
            && ulVideoCaptureRate == 512
            && ulVideoCaptureFPS == 25
            && ulVideoCaptureMaxTime == 0
-           && ulVideoCaptureMaxSize == 0;
+           && ulVideoCaptureMaxSize == 0
+           && strVideoCaptureOptions.isEmpty();
 }
 
 /**
@@ -2953,6 +2954,7 @@ bool Hardware::operator==(const Hardware& h) const
             && ulVideoCaptureFPS         == h.ulVideoCaptureFPS
             && ulVideoCaptureMaxTime     == h.ulVideoCaptureMaxTime
             && ulVideoCaptureMaxSize     == h.ulVideoCaptureMaxTime
+            && strVideoCaptureOptions    == h.strVideoCaptureOptions
             && firmwareType              == h.firmwareType
             && pointingHIDType           == h.pointingHIDType
             && keyboardHIDType           == h.keyboardHIDType
@@ -4133,7 +4135,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             pelmHwChild->getAttributeValue("rate",      hw.ulVideoCaptureRate);
             pelmHwChild->getAttributeValue("fps",       hw.ulVideoCaptureFPS);
             pelmHwChild->getAttributeValue("maxTime",   hw.ulVideoCaptureMaxTime);
-            pelmHwChild->getAttributeValue("maxSize",   hw.ulVideoCaptureMaxSize);
+            pelmHwChild->getAttributeValue("options",   hw.strVideoCaptureOptions);
         }
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
         {
@@ -5500,24 +5502,26 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     {
         xml::ElementNode *pelmVideoCapture = pelmHardware->createChild("VideoCapture");
         if (hw.fVideoCaptureEnabled)
-            pelmVideoCapture->setAttribute("enabled",   hw.fVideoCaptureEnabled);
+            pelmVideoCapture->setAttribute("enabled",      hw.fVideoCaptureEnabled);
         if (hw.u64VideoCaptureScreens != UINT64_C(0xffffffffffffffff))
-            pelmVideoCapture->setAttribute("screens",   hw.u64VideoCaptureScreens);
+            pelmVideoCapture->setAttribute("screens",      hw.u64VideoCaptureScreens);
         if (!hw.strVideoCaptureFile.isEmpty())
-            pelmVideoCapture->setAttributePath("file",  hw.strVideoCaptureFile);
+            pelmVideoCapture->setAttributePath("file",     hw.strVideoCaptureFile);
         if (hw.ulVideoCaptureHorzRes != 1024 || hw.ulVideoCaptureVertRes != 768)
         {
-            pelmVideoCapture->setAttribute("horzRes",   hw.ulVideoCaptureHorzRes);
-            pelmVideoCapture->setAttribute("vertRes",   hw.ulVideoCaptureVertRes);
+            pelmVideoCapture->setAttribute("horzRes",      hw.ulVideoCaptureHorzRes);
+            pelmVideoCapture->setAttribute("vertRes",      hw.ulVideoCaptureVertRes);
         }
         if (hw.ulVideoCaptureRate != 512)
-            pelmVideoCapture->setAttribute("rate",      hw.ulVideoCaptureRate);
+            pelmVideoCapture->setAttribute("rate",         hw.ulVideoCaptureRate);
         if (hw.ulVideoCaptureFPS)
-            pelmVideoCapture->setAttribute("fps",       hw.ulVideoCaptureFPS);
+            pelmVideoCapture->setAttribute("fps",          hw.ulVideoCaptureFPS);
         if (hw.ulVideoCaptureMaxTime)
-            pelmVideoCapture->setAttribute("maxTime",   hw.ulVideoCaptureMaxTime);
+            pelmVideoCapture->setAttribute("maxTime",      hw.ulVideoCaptureMaxTime);
         if (hw.ulVideoCaptureMaxSize)
-            pelmVideoCapture->setAttribute("maxSize",   hw.ulVideoCaptureMaxSize);
+            pelmVideoCapture->setAttribute("maxSize",      hw.ulVideoCaptureMaxSize);
+        if (!hw.strVideoCaptureOptions.isEmpty())
+            pelmVideoCapture->setAttributePath("options",  hw.strVideoCaptureOptions);
     }
 
     if (!hw.vrdeSettings.areDefaultSettings(m->sv))

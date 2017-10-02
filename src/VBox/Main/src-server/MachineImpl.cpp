@@ -8962,6 +8962,7 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
             i_calculateFullPath(data.strVideoCaptureFile, mHWData->mVideoCaptureFile);
         else
             mHWData->mVideoCaptureFile.setNull();
+        mHWData->mVideoCaptureOptions = data.strVideoCaptureOptions;
         mHWData->mFirmwareType = data.firmwareType;
         mHWData->mPointingHIDType = data.pointingHIDType;
         mHWData->mKeyboardHIDType = data.keyboardHIDType;
@@ -10293,6 +10294,7 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         }
         /* store relative video capture file if possible */
         i_copyPathRelativeToMachine(mHWData->mVideoCaptureFile, data.strVideoCaptureFile);
+        data.strVideoCaptureOptions = mHWData->mVideoCaptureOptions;
 
         /* VRDEServer settings (optional) */
         rc = mVRDEServer->i_saveSettings(data.vrdeSettings);

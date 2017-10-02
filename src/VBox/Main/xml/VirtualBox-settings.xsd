@@ -6,7 +6,7 @@
  *  Oracle VM VirtualBox Settings Schema
  *  Common definitions
 
-    Copyright (C) 2004-2016 Oracle Corporation
+    Copyright (C) 2004-2017 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -28,7 +28,7 @@
 <xsd:annotation>
   <xsd:documentation xml:lang="en">
     Oracle VM VirtualBox Settings Schema (common definitions).
-    Copyright (c) 2004-2016 Oracle Corporation
+    Copyright (c) 2004-2017 Oracle Corporation
   </xsd:documentation>
 </xsd:annotation>
 
@@ -641,6 +641,7 @@
   <xsd:attribute name="fps" type="xsd:unsignedInt"/>
   <xsd:attribute name="maxTime" type="xsd:unsignedInt"/>
   <xsd:attribute name="maxSize" type="xsd:unsignedInt"/>
+  <xsd:attribute name="options" type="xsd:string"/>
 </xsd:complexType>
 
 <xsd:complexType name="TVRDEProperties">
@@ -857,7 +858,7 @@
 
 <xsd:complexType name="TUSB">
   <xsd:sequence>
-    <xsd:element name="Controllers" type="TUSBControllers" minOccurs="0"/> 
+    <xsd:element name="Controllers" type="TUSBControllers" minOccurs="0"/>
     <xsd:element name="DeviceFilters" type="TUSBDeviceFilters" minOccurs="0"/>
   </xsd:sequence>
 </xsd:complexType>
