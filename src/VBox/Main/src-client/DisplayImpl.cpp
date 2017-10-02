@@ -2558,10 +2558,10 @@ DECLCALLBACK(int) Display::i_videoCaptureConfigure(Display *pThis, PVIDEORECCFG 
     pCfg->Video.Codec.VPX.uEncoderDeadline = 1000000 / pCfg->Video.uFPS;
 #endif
 
-    /* Note: Audio support is considered as being experimental.
+    /* Note: Audio support is considered as being experimental, thus it's disabled by default.
      * There be dragons! */
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-    pCfg->Audio.fEnabled  = pCfg->fEnabled;
+    pCfg->Audio.fEnabled  = false;
     /* By default we use 48kHz, 16-bit, stereo for the audio track. */
     pCfg->Audio.uHz       = 48000;
     pCfg->Audio.cBits     = 16;
@@ -2605,11 +2605,13 @@ DECLCALLBACK(int) Display::i_videoCaptureConfigure(Display *pThis, PVIDEORECCFG 
         else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
         {
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-            if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
+            if (value.compare("true", Utf8Str::CaseInsensitive) == 0)
             {
-                pCfg->Audio.fEnabled = false;
-                LogRel(("VideoRec: Only video will be recorded\n"));
+                pCfg->Audio.fEnabled = true;
+
             }
+            else
+                LogRel(("VideoRec: Only video will be recorded\n"));
 #endif
         }
         else if (key.compare("ac_profile", Utf8Str::CaseInsensitive) == 0)

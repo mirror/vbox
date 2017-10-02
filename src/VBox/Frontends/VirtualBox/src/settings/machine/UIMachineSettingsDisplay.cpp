@@ -128,7 +128,7 @@ struct UIDataSettingsMachineDisplay
         values["true"] = true;
         values["false"] = false;
         /* Return known value or true otherwise: */
-        return values.value(strValue, true);
+        return values.value(strValue, false);
     }
 
     /** Returns string representation for passed enum @a enmKey. */
@@ -148,8 +148,8 @@ struct UIDataSettingsMachineDisplay
         QMap<bool, QString> values;
         values[true] = "true";
         values[false] = "false";
-        /* Return known value or "true" otherwise: */
-        return values.value(fValue, "true");
+        /* Return known value or "false" otherwise: */
+        return values.value(fValue, "false");
     }
 
     /** Parses Video Capture Options. */
@@ -197,7 +197,7 @@ struct UIDataSettingsMachineDisplay
         parseVideoCaptureOptions(strOptions, aKeys, aValues);
         int iIndex = aKeys.indexOf(enmOption);
         if (iIndex == -1)
-            return true;
+            return false; /* If option is missing, assume disabled (false). */
         return aValues.value(iIndex);
     }
 
