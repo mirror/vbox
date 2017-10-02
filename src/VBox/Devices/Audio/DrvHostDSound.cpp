@@ -558,12 +558,12 @@ static HRESULT directSoundPlayClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamD
     AssertPtrReturn(pThis,     E_POINTER);
     AssertPtrReturn(pStreamDS, E_POINTER);
 
-    DSLOG(("DSound: Closing playback stream %p, buffer %p\n", pStreamDS, pStreamDS->Out.pDSB));
-
     HRESULT hr = S_OK;
 
     if (pStreamDS->Out.pDSB)
     {
+        DSLOG(("DSound: Closing playback stream %p, buffer %p\n", pStreamDS, pStreamDS->Out.pDSB));
+
         hr = IDirectSoundBuffer8_Stop(pStreamDS->Out.pDSB);
         if (SUCCEEDED(hr))
         {
@@ -602,7 +602,8 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
     AssertPtrReturn(pCfgReq,   E_POINTER);
     AssertPtrReturn(pCfgAcq,   E_POINTER);
 
-    DSLOG(("DSound: Starting playback cbBufferOut=%RU32, uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool\n",
+    DSLOG(("DSound: Opening playback stream %p: cbBufferOut=%ld, uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool\n",
+           pStreamDS,
            pThis->cfg.cbBufferOut,
            pCfgReq->Props.uHz,
            pCfgReq->Props.cChannels,
@@ -1075,6 +1076,8 @@ static HRESULT directSoundCaptureClose(PDSOUNDSTREAM pStreamDS)
     if (   pStreamDS
         && pStreamDS->In.pDSCB)
     {
+        DSLOG(("DSound: Closing capturing stream %p, buffer %p\n", pStreamDS, pStreamDS->In.pDSCB));
+
         hr = directSoundCaptureStop(pStreamDS);
         if (SUCCEEDED(hr))
         {
@@ -1098,7 +1101,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
     AssertPtrReturn(pCfgReq,   E_POINTER);
     AssertPtrReturn(pCfgAcq,   E_POINTER);
 
-    DSLOG(("DSound: pStreamDS=%p, cbBufferIn=%RU32, uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool\n",
+    DSLOG(("DSound: Opening capturing stream %p: cbBufferIn=%ld, uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool\n",
            pStreamDS,
            pThis->cfg.cbBufferIn,
            pCfgReq->Props.uHz,
