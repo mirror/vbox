@@ -2806,20 +2806,25 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
         if (fAudioEnabled)
         {
+            Utf8Str strAudioDevice;
+
             AudioControllerType_T audioController;
             hrc = audioAdapter->COMGETTER(AudioController)(&audioController);               H();
             AudioCodecType_T audioCodec;
             hrc = audioAdapter->COMGETTER(AudioCodec)(&audioCodec);                         H();
+
             switch (audioController)
             {
                 case AudioControllerType_AC97:
                 {
                     /* ICH AC'97. */
-                    InsertConfigNode(pDevices, "ichac97", &pDev);
-                    InsertConfigNode(pDev,     "0", &pInst);
-                    InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
-                    hrc = pBusMgr->assignPCIDevice("ichac97", pInst);                       H();
-                    InsertConfigNode(pInst,    "Config", &pCfg);
+                    strAudioDevice = "ichac97";
+
+                    InsertConfigNode   (pDevices, strAudioDevice.c_str(),  &pDev);
+                    InsertConfigNode   (pDev,     "0",                     &pInst);
+                    InsertConfigInteger(pInst,    "Trusted",               1); /* boolean */
+                    hrc = pBusMgr->assignPCIDevice(strAudioDevice.c_str(), pInst);          H();
+                    InsertConfigNode   (pInst,    "Config",                &pCfg);
                     switch (audioCodec)
                     {
                         case AudioCodecType_STAC9700:
@@ -2835,25 +2840,29 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 case AudioControllerType_SB16:
                 {
                     /* Legacy SoundBlaster16. */
-                    InsertConfigNode(pDevices, "sb16", &pDev);
-                    InsertConfigNode(pDev,     "0", &pInst);
-                    InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
-                    InsertConfigNode(pInst,    "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "IRQ", 5);
-                    InsertConfigInteger(pCfg,  "DMA", 1);
-                    InsertConfigInteger(pCfg,  "DMA16", 5);
-                    InsertConfigInteger(pCfg,  "Port", 0x220);
-                    InsertConfigInteger(pCfg,  "Version", 0x0405);
+                    strAudioDevice = "sb16";
+
+                    InsertConfigNode   (pDevices, strAudioDevice.c_str(), &pDev);
+                    InsertConfigNode   (pDev,     "0", &pInst);
+                    InsertConfigInteger(pInst,    "Trusted",              1); /* boolean */
+                    InsertConfigNode   (pInst,    "Config",               &pCfg);
+                    InsertConfigInteger(pCfg,     "IRQ",                  5);
+                    InsertConfigInteger(pCfg,     "DMA",                  1);
+                    InsertConfigInteger(pCfg,     "DMA16",                5);
+                    InsertConfigInteger(pCfg,     "Port",                 0x220);
+                    InsertConfigInteger(pCfg,     "Version",              0x0405);
                     break;
                 }
                 case AudioControllerType_HDA:
                 {
                     /* Intel HD Audio. */
-                    InsertConfigNode(pDevices, "hda", &pDev);
-                    InsertConfigNode(pDev,     "0", &pInst);
-                    InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
-                    hrc = pBusMgr->assignPCIDevice("hda", pInst);                           H();
-                    InsertConfigNode(pInst,    "Config", &pCfg);
+                    strAudioDevice = "hda";
+
+                    InsertConfigNode   (pDevices, strAudioDevice.c_str(),  &pDev);
+                    InsertConfigNode   (pDev,     "0",                     &pInst);
+                    InsertConfigInteger(pInst,    "Trusted",               1); /* boolean */
+                    hrc = pBusMgr->assignPCIDevice(strAudioDevice.c_str(), pInst);          H();
+                    InsertConfigNode   (pInst,    "Config",                &pCfg);
                 }
             }
 
@@ -2991,25 +3000,13 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 #endif /* VBOX_WITH_VRDE_AUDIO */
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-            /*
-             * The video recording audio backend driver.
-             * Currently being used with VPX video recording only.
-             */
-            CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", u8AudioLUN++);
-            InsertConfigString(pLunL0, "Driver", "AUDIO");
-
-            InsertConfigNode(pLunL0,   "Config", &pCfg);
-                InsertConfigString (pCfg, "DriverName",    "AudioVideoRec");
-                InsertConfigInteger(pCfg, "InputEnabled",  fAudioEnabledIn);
-                InsertConfigInteger(pCfg, "OutputEnabled", fAudioEnabledOut);
-
-            InsertConfigNode(pLunL0, "AttachedDriver", &pLunL1);
-                InsertConfigString(pLunL1, "Driver", "AudioVideoRec");
-
-                InsertConfigNode(pLunL1, "Config", &pCfg);
-                    InsertConfigString (pCfg, "StreamName",     bstr);
-                    InsertConfigInteger(pCfg, "Object",        (uintptr_t)mAudioVideoRec);
-                    InsertConfigInteger(pCfg, "ObjectConsole", (uintptr_t)this /* Console */);
+            Display *pDisplay = i_getDisplay();
+            if (pDisplay)
+            {
+                /* Note: Don't do any driver attaching (fAttachDetach) here, as this will
+                 *       be done automatically as part of the VM startup process. */
+                pDisplay->i_videoCaptureConfigure(pDisplay, pDisplay->i_videoCaptureGetConfig(), false /* fAttachDetach */);
+            }
 #endif /* VBOX_WITH_AUDIO_VIDEOREC */
 
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/Enabled", &strTmp);

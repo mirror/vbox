@@ -66,6 +66,9 @@
 #   include <vpx/vpx_encoder.h>
 #  endif
 # endif
+
+# include <VBox/vmm/pdmapi.h>
+# include <VBox/vmm/pdmaudioifs.h>
 #endif
 
 #ifdef VBOX_WITH_CROGL
@@ -2393,89 +2396,181 @@ HRESULT Display::takeScreenShotToArray(ULONG aScreenId,
 }
 
 #ifdef VBOX_WITH_VIDEOREC
+/**
+ * Returns the currently enabled video capturing features.
+ *
+ * @returns Enables video capturing features.
+ */
 VIDEORECFEATURES Display::i_videoCaptureGetEnabled(void)
 {
     return VideoRecGetEnabled(&mVideoRecCfg);
 }
 
+/**
+ * Returns whether video capturing is currently is active or not.
+ *
+ * @returns True if video capturing is active, false if not.
+ */
 bool Display::i_videoCaptureStarted(void)
 {
     return VideoRecIsActive(mpVideoRecCtx);
 }
 
-int Display::i_videoCaptureInvalidate(void)
+/**
+ * Configures the video recording audio driver in CFGM.
+ *
+ * @returns VBox status code.
+ * @param   strDevice           The PDM device name.
+ * @param   uInstance           The PDM device instance.
+ * @param   uLun                The PDM LUN number of the drive.
+ * @param   fAttach             Whether to attach or detach the driver configuration to CFGM.
+ *
+ * @thread EMT
+ */
+int Display::i_videoCaptureConfigureAudioDriver(const Utf8Str& strDevice,
+                                                unsigned       uInstance,
+                                                unsigned       uLun,
+                                                bool           fAttach)
 {
+    if (strDevice.isEmpty()) /* No audio device configured. Bail out. */
+        return VINF_SUCCESS;
+
     AssertPtr(mParent);
+
     ComPtr<IMachine> pMachine = mParent->i_machine();
     Assert(pMachine.isNotNull());
 
-    mVideoRecCfg.enmDst = VIDEORECDEST_FILE; /** @todo Make this configurable once we have more variations. */
+    Console::SafeVMPtr ptrVM(mParent);
+    Assert(ptrVM.isOk());
+
+    PUVM pUVM = ptrVM.rawUVM();
+    AssertPtr(pUVM);
+
+    PCFGMNODE pRoot   = CFGMR3GetRootU(pUVM);
+    AssertPtr(pRoot);
+    PCFGMNODE pDev0   = CFGMR3GetChildF(pRoot, "Devices/%s/%u/", strDevice.c_str(), uInstance);
+    AssertPtr(pDev0);
+
+    PCFGMNODE pDevLun = CFGMR3GetChildF(pDev0, "LUN#%u/", uLun);
+
+    if (fAttach)
+    {
+        if (!pDevLun)
+        {
+            LogRel2(("VideoRec: Attaching audio driver\n"));
+
+            PCFGMNODE pLunL0;
+            CFGMR3InsertNodeF(pDev0, &pLunL0, "LUN#%RU8", uLun);
+            CFGMR3InsertString(pLunL0, "Driver", "AUDIO");
+
+            PCFGMNODE pCfg;
+            CFGMR3InsertNode(pLunL0,   "Config", &pCfg);
+                CFGMR3InsertString (pCfg, "DriverName",    "AudioVideoRec");
+                CFGMR3InsertInteger(pCfg, "InputEnabled",  0);
+                CFGMR3InsertInteger(pCfg, "OutputEnabled", 1);
+
+            PCFGMNODE pLunL1;
+            CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL1);
+                CFGMR3InsertString(pLunL1, "Driver", "AudioVideoRec");
+
+                CFGMR3InsertNode(pLunL1, "Config", &pCfg);
+                    CFGMR3InsertInteger(pCfg, "Object",        (uintptr_t)mParent->i_getAudioVideoRec());
+                    CFGMR3InsertInteger(pCfg, "ObjectConsole", (uintptr_t)mParent /* Console */);
+        }
+    }
+    else /* Detach */
+    {
+        if (pDevLun)
+        {
+            LogRel2(("VideoRec: Detaching audio driver\n"));
+            CFGMR3RemoveNode(pDevLun);
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Configures video capturing and attaches / detaches the associated driver(s).
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Display instance to configure video capturing for.
+ * @param   pCfg                Video capturing configuration to use.
+ * @param   fAttachDetach       Whether to attach/detach associated drivers or not.
+ */
+/* static */
+DECLCALLBACK(int) Display::i_videoCaptureConfigure(Display *pThis, PVIDEORECCFG pCfg, bool fAttachDetach)
+{
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
+
+    AssertPtr(pThis->mParent);
+    ComPtr<IMachine> pMachine = pThis->mParent->i_machine();
+    Assert(pMachine.isNotNull());
+
+    pCfg->enmDst = VIDEORECDEST_FILE; /** @todo Make this configurable once we have more variations. */
 
     /*
-     * Get parameters from API.
+     * Cache parameters from API.
      */
-    BOOL fValue;
-    HRESULT rc = pMachine->COMGETTER(VideoCaptureEnabled)(&fValue);
+    BOOL fEnabled;
+    HRESULT rc = pMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    mVideoRecCfg.fEnabled = RT_BOOL(fValue);
+    pCfg->fEnabled = RT_BOOL(fEnabled);
 
     com::SafeArray<BOOL> aScreens;
     rc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(aScreens));
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
 
-    mVideoRecCfg.aScreens.resize(aScreens.size());
+    pCfg->aScreens.resize(aScreens.size());
     for (size_t i = 0; i < aScreens.size(); ++i)
-        mVideoRecCfg.aScreens[i] = aScreens[i];
+        pCfg->aScreens[i] = aScreens[i];
 
-    rc = pMachine->COMGETTER(VideoCaptureWidth)((ULONG *)&mVideoRecCfg.Video.uWidth);
+    rc = pMachine->COMGETTER(VideoCaptureWidth)((ULONG *)&pCfg->Video.uWidth);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureHeight)((ULONG *)&mVideoRecCfg.Video.uHeight);
+    rc = pMachine->COMGETTER(VideoCaptureHeight)((ULONG *)&pCfg->Video.uHeight);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureRate)((ULONG *)&mVideoRecCfg.Video.uRate);
+    rc = pMachine->COMGETTER(VideoCaptureRate)((ULONG *)&pCfg->Video.uRate);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureFPS)((ULONG *)&mVideoRecCfg.Video.uFPS);
+    rc = pMachine->COMGETTER(VideoCaptureFPS)((ULONG *)&pCfg->Video.uFPS);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureFile)(&mVideoRecCfg.File.strFile);
+    rc = pMachine->COMGETTER(VideoCaptureFile)(&pCfg->File.strFile);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureMaxFileSize)((ULONG *)&mVideoRecCfg.File.uMaxSizeMB);
+    rc = pMachine->COMGETTER(VideoCaptureMaxFileSize)((ULONG *)&pCfg->File.uMaxSizeMB);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureMaxTime)((ULONG *)&mVideoRecCfg.uMaxTimeS);
+    rc = pMachine->COMGETTER(VideoCaptureMaxTime)((ULONG *)&pCfg->uMaxTimeS);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
     BSTR bstrOptions;
     rc = pMachine->COMGETTER(VideoCaptureOptions)(&bstrOptions);
     AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
 
     /*
-     * Parse options string (from API).
-     */
-    com::Utf8Str strOptions(bstrOptions);
-    size_t pos = 0;
-
-    /*
      * Set sensible defaults.
      */
-    mVideoRecCfg.Video.fEnabled  = true;
+    pCfg->Video.fEnabled = pCfg->fEnabled;
 
-    if (!mVideoRecCfg.Video.uFPS) /* Prevent division by zero. */
-        mVideoRecCfg.Video.uFPS = 15;
+    if (!pCfg->Video.uFPS) /* Prevent division by zero. */
+        pCfg->Video.uFPS = 15;
 
 #ifdef VBOX_WITH_LIBVPX
-    mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = 1000000 / mVideoRecCfg.Video.uFPS;
+    pCfg->Video.Codec.VPX.uEncoderDeadline = 1000000 / pCfg->Video.uFPS;
 #endif
 
     /* Note: Audio support is considered as being experimental.
      * There be dragons! */
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-    mVideoRecCfg.Audio.fEnabled  = true;
+    pCfg->Audio.fEnabled  = pCfg->fEnabled;
     /* By default we use 48kHz, 16-bit, stereo for the audio track. */
-    mVideoRecCfg.Audio.uHz       = 48000;
-    mVideoRecCfg.Audio.cBits     = 16;
-    mVideoRecCfg.Audio.cChannels = 2;
+    pCfg->Audio.uHz       = 48000;
+    pCfg->Audio.cBits     = 16;
+    pCfg->Audio.cChannels = 2;
 #endif
 
     /*
      * Parse options string.
      */
+    com::Utf8Str strOptions(bstrOptions);
+    size_t pos = 0;
     com::Utf8Str key, value;
     while ((pos = strOptions.parseKeyValue(key, value, pos)) != com::Utf8Str::npos)
     {
@@ -2483,15 +2578,15 @@ int Display::i_videoCaptureInvalidate(void)
         {
 #ifdef VBOX_WITH_LIBVPX
             if (value.compare("realtime", Utf8Str::CaseInsensitive) == 0)
-                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = VPX_DL_REALTIME;
+                pCfg->Video.Codec.VPX.uEncoderDeadline = VPX_DL_REALTIME;
             else if (value.compare("good", Utf8Str::CaseInsensitive) == 0)
-                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = 1000000 / mVideoRecCfg.Video.uFPS;
+                pCfg->Video.Codec.VPX.uEncoderDeadline = 1000000 / pCfg->Video.uFPS;
             else if (value.compare("best", Utf8Str::CaseInsensitive) == 0)
-                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = VPX_DL_BEST_QUALITY;
+                pCfg->Video.Codec.VPX.uEncoderDeadline = VPX_DL_BEST_QUALITY;
             else
             {
                 LogRel(("VideoRec: Setting quality deadline to '%s'\n", value.c_str()));
-                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = value.toUInt32();
+                pCfg->Video.Codec.VPX.uEncoderDeadline = value.toUInt32();
 #endif
             }
         }
@@ -2499,8 +2594,10 @@ int Display::i_videoCaptureInvalidate(void)
         {
             if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
             {
-                mVideoRecCfg.Video.fEnabled = false;
+                pCfg->Video.fEnabled = false;
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
                 LogRel(("VideoRec: Only audio will be recorded\n"));
+#endif
             }
         }
         else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
@@ -2508,7 +2605,7 @@ int Display::i_videoCaptureInvalidate(void)
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
             if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
             {
-                mVideoRecCfg.Audio.fEnabled = false;
+                pCfg->Audio.fEnabled = false;
                 LogRel(("VideoRec: Only video will be recorded\n"));
             }
 #endif
@@ -2518,15 +2615,15 @@ int Display::i_videoCaptureInvalidate(void)
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
             if (value.compare("low", Utf8Str::CaseInsensitive) == 0)
             {
-                mVideoRecCfg.Audio.uHz       = 8000;
-                mVideoRecCfg.Audio.cBits     = 16;
-                mVideoRecCfg.Audio.cChannels = 1;
+                pCfg->Audio.uHz       = 8000;
+                pCfg->Audio.cBits     = 16;
+                pCfg->Audio.cChannels = 1;
             }
             else if (value.startsWith("med" /* "med[ium]" */, Utf8Str::CaseInsensitive) == 0)
             {
-                mVideoRecCfg.Audio.uHz       = 22050;
-                mVideoRecCfg.Audio.cBits     = 16;
-                mVideoRecCfg.Audio.cChannels = 2;
+                pCfg->Audio.uHz       = 22050;
+                pCfg->Audio.cBits     = 16;
+                pCfg->Audio.cChannels = 2;
             }
             else if (value.compare("high", Utf8Str::CaseInsensitive) == 0)
             {
@@ -2539,17 +2636,71 @@ int Display::i_videoCaptureInvalidate(void)
 
     } /* while */
 
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+    ComPtr<IAudioAdapter> audioAdapter;
+    rc = pMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+    AssertComRC(rc);
+
+    Utf8Str strAudioDev = pThis->mParent->i_getAudioAdapterDeviceName(audioAdapter);
+    if (!strAudioDev.isEmpty())
+    {
+        Console::SafeVMPtr ptrVM(pThis->mParent);
+        Assert(ptrVM.isOk());
+
+        unsigned uInstance = 0;
+        unsigned uLun      = 2; /** @todo Make this configurable. */
+
+        /*
+         * Configure + attach audio driver.
+         */
+        int vrc2 = VINF_SUCCESS;
+
+        LogFunc(("Audio fAttachDetach=%RTbool, fEnabled=%RTbool\n", fAttachDetach, pCfg->Audio.fEnabled));
+
+        if (pCfg->Audio.fEnabled) /* Enable */
+        {
+            vrc2 = pThis->i_videoCaptureConfigureAudioDriver(strAudioDev, uInstance, uLun, true /* fAttach */);
+            if (   RT_SUCCESS(vrc2)
+                && fAttachDetach)
+            {
+                vrc2 = PDMR3DriverAttach(ptrVM.rawUVM(), strAudioDev.c_str(), uInstance, uLun, 0 /* fFlags */, NULL /* ppBase */);
+            }
+
+            if (RT_FAILURE(vrc2))
+                LogRel(("VideoRec: Failed to attach audio driver, rc=%Rrc\n", vrc2));
+        }
+        else /* Disable */
+        {
+            if (fAttachDetach)
+                vrc2 = PDMR3DriverDetach(ptrVM.rawUVM(), strAudioDev.c_str(), uInstance, uLun, "AUDIO",
+                                         0 /* iOccurance */, 0 /* fFlags */);
+
+            if (RT_SUCCESS(vrc2))
+            {
+                vrc2 = pThis->i_videoCaptureConfigureAudioDriver(strAudioDev, uInstance, uLun, false /* fAttach */);
+            }
+
+            if (RT_FAILURE(vrc2))
+                LogRel(("VideoRec: Failed to detach audio driver, rc=%Rrc\n", vrc2));
+        }
+
+        AssertRC(vrc2);
+    }
+    else
+        LogRel2(("VideoRec: No audio hardware configured, skipping to record audio\n"));
+#endif
+
     /*
      * Invalidate screens.
      */
-    for (unsigned i = 0; i < mVideoRecCfg.aScreens.size(); i++)
+    for (unsigned i = 0; i < pCfg->aScreens.size(); i++)
     {
-        bool fChanged = maVideoRecEnabled[i] != RT_BOOL(mVideoRecCfg.aScreens[i]);
+        bool fChanged = pThis->maVideoRecEnabled[i] != RT_BOOL(pCfg->aScreens[i]);
 
-        maVideoRecEnabled[i] = RT_BOOL(mVideoRecCfg.aScreens[i]);
+        pThis->maVideoRecEnabled[i] = RT_BOOL(pCfg->aScreens[i]);
 
-        if (fChanged && i < mcMonitors)
-            i_videoCaptureScreenChanged(i);
+        if (fChanged && i < pThis->mcMonitors)
+            pThis->i_videoCaptureScreenChanged(i);
 
     }
 
@@ -2611,7 +2762,7 @@ int Display::i_videoCaptureStart(void)
 }
 
 /**
- * Stop video capturing. Does nothing if video capturing is not active.
+ * Stops video capturing. Does nothing if video capturing is not active.
  */
 void Display::i_videoCaptureStop(void)
 {
@@ -4543,10 +4694,9 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
 #endif
 
 #ifdef VBOX_WITH_VIDEOREC
-    int rc2 = pDisplay->i_videoCaptureInvalidate();
     if (pDisplay->i_videoCaptureGetEnabled())
     {
-        rc2 = pDisplay->i_videoCaptureStart();
+        int rc2 = pDisplay->i_videoCaptureStart();
         if (RT_SUCCESS(rc2))
             fireVideoCaptureChangedEvent(pDisplay->mParent->i_getEventSource());
 

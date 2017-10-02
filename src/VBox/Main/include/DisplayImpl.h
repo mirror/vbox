@@ -208,13 +208,15 @@ public:
     void VideoAccelFlushVMMDev(void);
 
 #ifdef VBOX_WITH_VIDEOREC
-    VIDEORECFEATURES i_videoCaptureGetEnabled(void);
-    bool i_videoCaptureStarted(void);
-    int  i_videoCaptureInvalidate(void);
-    int  i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);
-    int  i_videoCaptureStart(void);
-    void i_videoCaptureStop(void);
-    void i_videoCaptureScreenChanged(unsigned uScreenId);
+    PVIDEORECCFG             i_videoCaptureGetConfig(void) { return &mVideoRecCfg; }
+    VIDEORECFEATURES         i_videoCaptureGetEnabled(void);
+    bool                     i_videoCaptureStarted(void);
+    int                      i_videoCaptureConfigureAudioDriver(const Utf8Str& strAdapter, unsigned uInstance, unsigned uLun, bool fAttach);
+    static DECLCALLBACK(int) i_videoCaptureConfigure(Display *pThis, PVIDEORECCFG pCfg, bool fAttachDetach);
+    int                      i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);
+    int                      i_videoCaptureStart(void);
+    void                     i_videoCaptureStop(void);
+    void                     i_videoCaptureScreenChanged(unsigned uScreenId);
 #endif
 
     void i_notifyPowerDown(void);
@@ -470,7 +472,10 @@ private:
     RTCRITSECT mVideoAccelLock;
 #ifdef VBOX_WITH_VIDEOREC
     /* Serializes access to video capture source bitmaps. */
-    RTCRITSECT mVideoCaptureLock;
+    RTCRITSECT           mVideoCaptureLock;
+    VIDEORECCFG          mVideoRecCfg;
+    VIDEORECCONTEXT     *mpVideoRecCtx;
+    bool                 maVideoRecEnabled[SchemaDefs::MaxGuestMonitors];
 #endif
 
 public:
@@ -507,12 +512,6 @@ private:
 
 #ifdef VBOX_WITH_HGSMI
     volatile uint32_t mu32UpdateVBVAFlags;
-#endif
-
-#ifdef VBOX_WITH_VIDEOREC
-    VIDEORECCFG          mVideoRecCfg;
-    VIDEORECCONTEXT     *mpVideoRecCtx;
-    bool                 maVideoRecEnabled[SchemaDefs::MaxGuestMonitors];
 #endif
 
 private:

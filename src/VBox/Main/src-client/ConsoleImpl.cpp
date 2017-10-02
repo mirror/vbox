@@ -4989,9 +4989,9 @@ Utf8Str Console::i_getAudioAdapterDeviceName(IAudioAdapter *aAudioAdapter)
     {
         switch (audioController)
         {
+            case AudioControllerType_HDA:  strDevice = "hda";     break;
             case AudioControllerType_AC97: strDevice = "ichac97"; break;
             case AudioControllerType_SB16: strDevice = "sb16";    break;
-            case AudioControllerType_HDA:  strDevice = "hda";     break;
             default:                                              break; /* None. */
         }
     }
@@ -5509,47 +5509,23 @@ HRESULT Console::i_onVideoCaptureChange()
     {
         if (mDisplay)
         {
-            int vrc = mDisplay->i_videoCaptureInvalidate();
+            Display *pDisplay = mDisplay;
+
+            /* Release lock because the call scheduled on EMT may also try to take it. */
+            alock.release();
+
+            /*
+             * Call worker in EMT, that's faster and safer than doing everything
+             * using VM3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
+             * here to make requests from under the lock in order to serialize them.
+             */
+            int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY /*idDstCpu*/,
+                                       (PFNRT)Display::i_videoCaptureConfigure, 3,
+                                       pDisplay, pDisplay->i_videoCaptureGetConfig(), true /* fAttachDetach */);
             if (RT_SUCCESS(vrc))
             {
-# ifdef VBOX_WITH_AUDIO_VIDEOREC
-                VIDEORECFEATURES fFeatures = mDisplay->i_videoCaptureGetEnabled();
-
-                ComPtr<IAudioAdapter> audioAdapter;
-                rc = mMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
-                AssertComRC(rc);
-
-                Utf8Str strAudioDev = i_getAudioAdapterDeviceName(audioAdapter);
-                if (!strAudioDev.isEmpty()) /* Any audio device enabled? */
-                {
-                    for (ULONG ulLUN = 0; ulLUN < 16 /** @todo Use a define */; ulLUN++)
-                    {
-                        PPDMIBASE pBase;
-                        int rc2 = PDMR3QueryDriverOnLun(ptrVM.rawUVM(), strAudioDev.c_str(),
-                                                        0 /* iInstance */, ulLUN, "AUDIO", &pBase);
-                        if (RT_FAILURE(rc2))
-                            continue;
-
-                        if (pBase)
-                        {
-                            PPDMIAUDIOCONNECTOR pAudioCon =
-                                 (PPDMIAUDIOCONNECTOR)pBase->pfnQueryInterface(pBase, PDMIAUDIOCONNECTOR_IID);
-
-                            if (   pAudioCon
-                                && pAudioCon->pfnEnable)
-                            {
-                                rc2 = pAudioCon->pfnEnable(pAudioCon, PDMAUDIODIR_OUT,
-                                                           RT_BOOL(fFeatures & VIDEORECFEATURE_AUDIO));
-                                if (RT_FAILURE(rc2))
-                                    LogRel(("VideoRec: Failed to %s audio recording (%Rrc)\n",
-                                            fFeatures & VIDEORECFEATURE_AUDIO ? "enable" : "disable", rc2));
-                            }
-
-                            break; /* Driver found, no need to continue. */
-                        }
-                    }
-                }
-# endif /* VBOX_WITH_AUDIO_VIDEOREC */
+                /* Make sure to acquire the lock again after we're done running in EMT. */
+                alock.acquire();
 
                 if (!mDisplay->i_videoCaptureStarted())
                 {
@@ -5568,7 +5544,7 @@ HRESULT Console::i_onVideoCaptureChange()
     }
 #endif /* VBOX_WITH_VIDEOREC */
 
-    /* notify console callbacks on success */
+    /* Notify console callbacks on success. */
     if (SUCCEEDED(rc))
     {
         alock.release();
