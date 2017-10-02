@@ -2506,7 +2506,7 @@ int Display::i_videoCaptureInvalidate(void)
         else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
         {
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-            if (value.compare("false", Utf8Str::CaseInsensitive))
+            if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
             {
                 mVideoRecCfg.Audio.fEnabled = false;
                 LogRel(("VideoRec: Only video will be recorded\n"));
