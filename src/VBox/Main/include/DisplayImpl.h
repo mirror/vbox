@@ -211,7 +211,9 @@ public:
     PVIDEORECCFG             i_videoCaptureGetConfig(void) { return &mVideoRecCfg; }
     VIDEORECFEATURES         i_videoCaptureGetEnabled(void);
     bool                     i_videoCaptureStarted(void);
+# ifdef VBOX_WITH_AUDIO_VIDEOREC
     int                      i_videoCaptureConfigureAudioDriver(const Utf8Str& strAdapter, unsigned uInstance, unsigned uLun, bool fAttach);
+# endif
     static DECLCALLBACK(int) i_videoCaptureConfigure(Display *pThis, PVIDEORECCFG pCfg, bool fAttachDetach);
     int                      i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);
     int                      i_videoCaptureStart(void);

@@ -2416,6 +2416,7 @@ bool Display::i_videoCaptureStarted(void)
     return VideoRecIsActive(mpVideoRecCtx);
 }
 
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
 /**
  * Configures the video recording audio driver in CFGM.
  *
@@ -2489,6 +2490,7 @@ int Display::i_videoCaptureConfigureAudioDriver(const Utf8Str& strDevice,
 
     return VINF_SUCCESS;
 }
+#endif
 
 /**
  * Configures video capturing and attaches / detaches the associated driver(s).
