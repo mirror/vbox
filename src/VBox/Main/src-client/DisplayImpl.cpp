@@ -2690,6 +2690,8 @@ DECLCALLBACK(int) Display::i_videoCaptureConfigure(Display *pThis, PVIDEORECCFG 
     }
     else
         LogRel2(("VideoRec: No audio hardware configured, skipping to record audio\n"));
+#else
+    RT_NOREF(fAttachDetach);
 #endif
 
     /*
