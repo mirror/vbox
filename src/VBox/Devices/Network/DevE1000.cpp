@@ -2575,6 +2575,10 @@ DECLINLINE(void) e1kR3LinkUp(PE1KSTATE pThis)
     e1kRaiseInterrupt(pThis, VERR_SEM_BUSY, ICR_LSC);
     if (pThis->pDrvR3)
         pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, PDMNETWORKLINKSTATE_UP);
+    /* Process pending TX descriptors (see @bugref{8942}) */
+    PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pTxQueue));
+    if (RT_UNLIKELY(pItem))
+        PDMQueueInsert(pThis->CTX_SUFF(pTxQueue), pItem);
 }
 
 /**
