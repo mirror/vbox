@@ -150,6 +150,8 @@ private:
         void prepareTreeWidget();
         /** Prepares details-widget. */
         void prepareDetailsWidget();
+        /** Load settings: */
+        void loadSettings();
 
         /** Refreshes everything. */
         void refreshAll();

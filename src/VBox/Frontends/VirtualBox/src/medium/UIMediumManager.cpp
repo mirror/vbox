@@ -29,6 +29,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIExtraDataManager.h"
 # include "UIMediumDetailsWidget.h"
 # include "UIMediumManager.h"
 # include "UIWizardCloneVD.h"
@@ -1157,6 +1158,8 @@ void UIMediumManagerWidget::sltReleaseMedium()
 
 void UIMediumManagerWidget::sltToggleMediumDetailsVisibility(bool fVisible)
 {
+    /* Save the setting: */
+    gEDataManager->setVirtualMediaManagerDetailsExpanded(fVisible);
     /* Toggle medium details visibility: */
     if (m_pDetailsWidget)
         m_pDetailsWidget->setVisible(fVisible);
@@ -1250,6 +1253,9 @@ void UIMediumManagerWidget::prepare()
 {
     /* Prepare this: */
     prepareThis();
+
+    /* Load settings: */
+    loadSettings();
 
     /* Apply language settings: */
     retranslateUi();
@@ -1586,6 +1592,12 @@ void UIMediumManagerWidget::prepareDetailsWidget()
 //        m_pButtonBox->addExtraWidget(m_pProgressBar);
 //    }
 //}
+
+void UIMediumManagerWidget::loadSettings()
+{
+    /* Details action/widget: */
+    m_pActionDetails->setChecked(gEDataManager->virtualMediaManagerDetailsExpanded());
+}
 
 void UIMediumManagerWidget::repopulateTreeWidgets()
 {

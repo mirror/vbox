@@ -152,6 +152,24 @@ namespace UIExtraDataDefs
         extern const char* GUI_PreviewUpdate;
     /** @} */
 
+    /** @name Snapshot Manager
+      * @{ */
+        /** Holds whether Snapshot Manager details expanded. */
+        extern const char* GUI_SnapshotManager_Details_Expanded;
+    /** @} */
+
+    /** @name Virtual Media Manager
+      * @{ */
+        /** Holds whether Virtual Media Manager details expanded. */
+        extern const char* GUI_VirtualMediaManager_Details_Expanded;
+    /** @} */
+
+    /** @name Host Network Manager
+      * @{ */
+        /** Holds whether Host Network Manager details expanded. */
+        extern const char* GUI_HostNetworkManager_Details_Expanded;
+    /** @} */
+
     /** @name Wizards
       * @{ */
         /** Holds wizard types for which descriptions should be hidden. */

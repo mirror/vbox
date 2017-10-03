@@ -88,6 +88,15 @@ const char* UIExtraDataDefs::GUI_LastItemSelected = "GUI/LastItemSelected";
 const char* UIExtraDataDefs::GUI_DetailsPageBoxes = "GUI/DetailsPageBoxes";
 const char* UIExtraDataDefs::GUI_PreviewUpdate = "GUI/PreviewUpdate";
 
+/* Snapshot Manager: */
+const char* UIExtraDataDefs::GUI_SnapshotManager_Details_Expanded = "GUI/SnapshotManager/Details/Expanded";
+
+/* Virtual Media Manager: */
+const char* UIExtraDataDefs::GUI_VirtualMediaManager_Details_Expanded = "GUI/VirtualMediaManager/Details/Expanded";
+
+/* Host Network Manager: */
+const char* UIExtraDataDefs::GUI_HostNetworkManager_Details_Expanded = "GUI/HostNetworkManager/Details/Expanded";
+
 /* Wizards: */
 const char* UIExtraDataDefs::GUI_HideDescriptionForWizards = "GUI/HideDescriptionForWizards";
 

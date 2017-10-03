@@ -27,6 +27,7 @@
 /* GUI includes: */
 # include "QIDialogButtonBox.h"
 # include "QITreeWidget.h"
+# include "UIExtraDataManager.h"
 # include "UIIconPool.h"
 # include "UIHostNetworkDetailsWidget.h"
 # include "UIHostNetworkManager.h"
@@ -537,6 +538,8 @@ void UIHostNetworkManagerWidget::sltRemoveHostNetwork()
 
 void UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility(bool fVisible)
 {
+    /* Save the setting: */
+    gEDataManager->setHostNetworkManagerDetailsExpanded(fVisible);
     /* Show/hide details area and Apply button: */
     m_pDetailsWidget->setVisible(fVisible);
     /* Notify external lsiteners: */
@@ -703,6 +706,9 @@ void UIHostNetworkManagerWidget::prepare()
 {
     /* Prepare this: */
     prepareThis();
+
+    /* Load settings: */
+    loadSettings();
 
     /* Apply language settings: */
     retranslateUi();
@@ -906,6 +912,12 @@ void UIHostNetworkManagerWidget::prepareDetailsWidget()
         /* Add into layout: */
         layout()->addWidget(m_pDetailsWidget);
     }
+}
+
+void UIHostNetworkManagerWidget::loadSettings()
+{
+    /* Details action/widget: */
+    m_pActionDetails->setChecked(gEDataManager->hostNetworkManagerDetailsExpanded());
 }
 
 void UIHostNetworkManagerWidget::loadHostNetworks()

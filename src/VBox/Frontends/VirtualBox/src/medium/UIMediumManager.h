@@ -182,6 +182,8 @@ private:
         void prepareDetailsWidget();
 //        /** Prepares progress-bar. */
 //        void prepareProgressBar();
+        /** Load settings: */
+        void loadSettings();
 
         /** Repopulates tree-widgets content. */
         void repopulateTreeWidgets();

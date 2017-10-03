@@ -2841,6 +2841,42 @@ void UIExtraDataManager::setSelectorWindowPreviewUpdateInterval(PreviewUpdateInt
     setExtraDataString(GUI_PreviewUpdate, gpConverter->toInternalString(interval));
 }
 
+bool UIExtraDataManager::snapshotManagerDetailsExpanded()
+{
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_SnapshotManager_Details_Expanded);
+}
+
+void UIExtraDataManager::setSnapshotManagerDetailsExpanded(bool fExpanded)
+{
+    /* 'True' if feature allowed, null-string otherwise: */
+    return setExtraDataString(GUI_SnapshotManager_Details_Expanded, toFeatureAllowed(fExpanded));
+}
+
+bool UIExtraDataManager::virtualMediaManagerDetailsExpanded()
+{
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_VirtualMediaManager_Details_Expanded);
+}
+
+void UIExtraDataManager::setVirtualMediaManagerDetailsExpanded(bool fExpanded)
+{
+    /* 'True' if feature allowed, null-string otherwise: */
+    return setExtraDataString(GUI_VirtualMediaManager_Details_Expanded, toFeatureAllowed(fExpanded));
+}
+
+bool UIExtraDataManager::hostNetworkManagerDetailsExpanded()
+{
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_HostNetworkManager_Details_Expanded);
+}
+
+void UIExtraDataManager::setHostNetworkManagerDetailsExpanded(bool fExpanded)
+{
+    /* 'True' if feature allowed, null-string otherwise: */
+    return setExtraDataString(GUI_HostNetworkManager_Details_Expanded, toFeatureAllowed(fExpanded));
+}
+
 WizardMode UIExtraDataManager::modeForWizardType(WizardType type)
 {
     /* Some wizard use only 'basic' mode: */

@@ -133,6 +133,8 @@ private:
         void prepareTreeWidget();
         /** Prepares details-widget. */
         void prepareDetailsWidget();
+        /** Load settings: */
+        void loadSettings();
     /** @} */
 
     /** @name Loading stuff.
