@@ -1415,6 +1415,18 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
             comma-separated key=value format, e.g.
             <computeroutput>foo=bar,a=b</computeroutput>.
           </para>
+
+          <para>The following keys and their corresponding values are available:
+            <itemizedlist>
+              <listitem>
+                <para><computeroutput>ac_enabled</computeroutput>:
+                  Enables audio recording when set to <computeroutput>true</computeroutput>,
+                  otherwise set to <computeroutput>false</computeroutput> to disable.
+                  This feature is considered being experimental.</para>
+              </listitem>
+            </itemizedlist>
+          </para>
+
         </listitem>
       </itemizedlist></para>
 
