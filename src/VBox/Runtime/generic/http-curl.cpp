@@ -1718,7 +1718,8 @@ static int rtHttpWinConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszU
                                     || RTStrNICmp(pszUrl, RT_STR_TUPLE("http://")) == 0) ) )
                             rcRet = rtHttpUpdateAutomaticProxyDisable(pThis);
                         else
-                            AssertMsgFailed(("g_pfnWinHttpGetProxyForUrl(%s) -> %u\n", pszUrl, dwErr));
+                            AssertMsgFailed(("g_pfnWinHttpGetProxyForUrl(%s) -> %u; lpszAutoConfigUrl=%sx\n",
+                                             pszUrl, dwErr, AutoProxyOptions.lpszAutoConfigUrl));
                     }
                     RTUtf16Free(pwszUrl);
                 }
