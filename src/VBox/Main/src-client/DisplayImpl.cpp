@@ -2497,7 +2497,7 @@ int Display::i_videoCaptureConfigureAudioDriver(const Utf8Str& strDevice,
  *
  * @returns IPRT status code.
  * @param   pThis               Display instance to configure video capturing for.
- * @param   pCfg                Video capturing configuration to use.
+ * @param   pCfg                Where to store the configuration into.
  * @param   fAttachDetach       Whether to attach/detach associated drivers or not.
  */
 /* static */

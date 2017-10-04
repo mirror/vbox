@@ -5510,15 +5510,11 @@ HRESULT Console::i_onVideoCaptureChange()
         if (mDisplay)
         {
             Display *pDisplay = mDisplay;
+            AssertPtr(pDisplay);
 
             /* Release lock because the call scheduled on EMT may also try to take it. */
             alock.release();
 
-            /*
-             * Call worker in EMT, that's faster and safer than doing everything
-             * using VM3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
-             * here to make requests from under the lock in order to serialize them.
-             */
             int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY /*idDstCpu*/,
                                        (PFNRT)Display::i_videoCaptureConfigure, 3,
                                        pDisplay, pDisplay->i_videoCaptureGetConfig(), true /* fAttachDetach */);
