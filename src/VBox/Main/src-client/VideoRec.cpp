@@ -29,10 +29,7 @@
 #include <iprt/thread.h>
 #include <iprt/time.h>
 
-#include <VBox/log.h>
 #include <VBox/com/VirtualBox.h>
-#include <VBox/com/com.h>
-#include <VBox/com/string.h>
 
 #include "EbmlWriter.h"
 #include "VideoRec.h"
@@ -937,9 +934,9 @@ static int videoRecStreamOpenFile(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
     Assert(pStream->enmDst == VIDEORECDEST_INVALID);
     Assert(pCfg->enmDst    == VIDEORECDEST_FILE);
 
-    Assert(com::Utf8Str(pCfg->File.strFile).isNotEmpty());
+    Assert(pCfg->File.strName.isNotEmpty());
 
-    char *pszAbsPath = RTPathAbsDup(com::Utf8Str(pCfg->File.strFile).c_str());
+    char *pszAbsPath = RTPathAbsDup(com::Utf8Str(pCfg->File.strName).c_str());
     AssertPtrReturn(pszAbsPath, VERR_NO_MEMORY);
 
     RTPathStripSuffix(pszAbsPath);

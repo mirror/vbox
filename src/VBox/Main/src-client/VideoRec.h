@@ -74,19 +74,18 @@ typedef struct VIDEORECCFG
     com::SafeArray<BOOL>    aScreens;
     /** Destination where to write the stream to. */
     VIDEORECDEST            enmDst;
-    union
+
+    /**
+     * Structure for keeping recording parameters if
+     * destination is a file.
+     */
+    struct
     {
-        /**
-         * Structure for keeping recording parameters if
-         * destination is a file.
-         */
-        struct
-        {
-            BSTR            strFile;
-            /** Maximum file size (in MB) to record. */
-            uint32_t        uMaxSizeMB;
-        } File;
-    };
+        /** File name (as absolute path). */
+        com::Bstr       strName;
+        /** Maximum file size (in MB) to record. */
+        uint32_t        uMaxSizeMB;
+    } File;
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
     /**
@@ -94,10 +93,15 @@ typedef struct VIDEORECCFG
      */
     struct
     {
+        /** Whether audio recording is enabled or not. */
         bool                fEnabled;
+        /** Hertz (Hz) rate. */
         uint16_t            uHz;
+        /** Bits per sample. */
         uint8_t             cBits;
+        /** Number of audio channels. */
         uint8_t             cChannels;
+        /** Audio profile which is being used. */
         VIDEORECPROFILE     enmProfile;
     } Audio;
 #endif
@@ -107,10 +111,15 @@ typedef struct VIDEORECCFG
      */
     struct
     {
+        /** Whether video recording is enabled or not. */
         bool                fEnabled;
+        /** Target width (in pixels). */
         uint32_t            uWidth;
+        /** Target height (in pixels). */
         uint32_t            uHeight;
+        /** Target encoding rate. */
         uint32_t            uRate;
+        /** Target FPS. */
         uint32_t            uFPS;
 
 #ifdef VBOX_WITH_LIBVPX
@@ -139,7 +148,7 @@ typedef struct VIDEORECCFG
 
         enmDst   = that.enmDst;
 
-        File.strFile    = that.File.strFile;
+        File.strName    = that.File.strName;
         File.uMaxSizeMB = that.File.uMaxSizeMB;
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
         Audio           = that.Audio;
