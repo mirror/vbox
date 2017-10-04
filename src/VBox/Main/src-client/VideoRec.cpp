@@ -937,24 +937,23 @@ static int videoRecStreamOpenFile(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
     Assert(pStream->enmDst == VIDEORECDEST_INVALID);
     Assert(pCfg->enmDst    == VIDEORECDEST_FILE);
 
-    RTTIMESPEC ts;
-    RTTimeNow(&ts);
-
-    RTTIME time;
-    RTTimeExplode(&time, &ts);
+    Assert(com::Utf8Str(pCfg->File.strFile).isNotEmpty());
 
     char *pszAbsPath = RTPathAbsDup(com::Utf8Str(pCfg->File.strFile).c_str());
     AssertPtrReturn(pszAbsPath, VERR_NO_MEMORY);
 
-    char *pszSuff    = RTPathSuffix(pszAbsPath);
-    if (pszSuff)
-        pszSuff = RTStrDup(pszSuff);
-
     RTPathStripSuffix(pszAbsPath);
     AssertPtrReturn(pszAbsPath, VERR_INVALID_PARAMETER);
 
+    char *pszSuff    = RTPathSuffix(pszAbsPath);
     if (!pszSuff)
         pszSuff = RTStrDup(".webm");
+
+    if (!pszSuff)
+    {
+        RTStrFree(pszAbsPath);
+        return VERR_NO_MEMORY;
+    }
 
     char *pszFile = NULL;
 
