@@ -5140,6 +5140,19 @@
         This setting contains any additional video capture options
         required in comma-separated key=value format. This setting
         cannot be changed while video capturing is enabled.
+
+        The following keys and their corresponding values are available:
+
+        <table>
+          <tr>
+            <td>ac_enabled</td>
+            <td>Enables audio recording when set to <pre>true</pre>, otherwise
+                set to <pre>false</pre> to disable.
+
+                <b>This feature is considered being experimental.</b></td>
+          </tr>
+        </table>
+
       </desc>
     </attribute>
 
@@ -24332,7 +24345,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           flaws in Microsoft's (D)COM, in particular the local server instantiation
           behavior.
       </desc>
-      
+
       <method name="getVirtualBox" >
        <param name="result" type="IVirtualBox" dir="out" >
         <desc>
@@ -24346,7 +24359,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </desc>
       </param>
       </method>
-        
+
   </interface>
 </if>
 
