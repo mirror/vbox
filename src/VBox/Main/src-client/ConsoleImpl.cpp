@@ -445,6 +445,7 @@ HRESULT Console::FinalConstruct()
     pVmm2UserMethods->pfnNotifyPdmtInit = Console::i_vmm2User_NotifyPdmtInit;
     pVmm2UserMethods->pfnNotifyPdmtTerm = Console::i_vmm2User_NotifyPdmtTerm;
     pVmm2UserMethods->pfnNotifyResetTurnedIntoPowerOff = Console::i_vmm2User_NotifyResetTurnedIntoPowerOff;
+    pVmm2UserMethods->pfnQueryGenericObject = Console::i_vmm2User_QueryGenericObject;
     pVmm2UserMethods->u32EndMagic       = VMM2USERMETHODS_MAGIC;
     pVmm2UserMethods->pConsole          = this;
     mpVmm2UserMethods = pVmm2UserMethods;
@@ -6575,13 +6576,16 @@ HRESULT Console::i_resume(Reason_T aReason, AutoWriteLock &alock)
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgress, const Utf8Str &aStateFilePath, bool aPauseVM, bool &aLeftPaused)
+HRESULT Console::i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgress,
+                             const ComPtr<ISnapshot> &aSnapshot,
+                             const Utf8Str &aStateFilePath, bool aPauseVM, bool &aLeftPaused)
 {
     LogFlowThisFuncEnter();
     aLeftPaused = false;
 
     AssertReturn(!aProgress.isNull(), E_INVALIDARG);
     AssertReturn(!aStateFilePath.isEmpty(), E_INVALIDARG);
+    Assert(aSnapshot.isNull() || aReason == Reason_Snapshot);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -6649,6 +6653,7 @@ HRESULT Console::i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgres
 
     LogFlowFunc(("Saving the state to '%s'...\n", aStateFilePath.c_str()));
 
+    mpVmm2UserMethods->pISnapshot = aSnapshot;
     mptrCancelableProgress = aProgress;
     alock.release();
     int vrc = VMR3Save(ptrVM.rawUVM(),
@@ -6658,6 +6663,7 @@ HRESULT Console::i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgres
                        static_cast<IProgress *>(aProgress),
                        &aLeftPaused);
     alock.acquire();
+    mpVmm2UserMethods->pISnapshot = NULL;
     mptrCancelableProgress.setNull();
     if (RT_FAILURE(vrc))
     {
@@ -10334,7 +10340,35 @@ Console::i_vmm2User_NotifyResetTurnedIntoPowerOff(PCVMM2USERMETHODS pThis, PUVM 
     pConsole->mfPowerOffCausedByReset = true;
 }
 
+/**
+ * @interface_method_impl{VMM2USERMETHODS,pfnQueryGenericObject}
+ */
+/*static*/ DECLCALLBACK(void *)
+Console::i_vmm2User_QueryGenericObject(PCVMM2USERMETHODS pThis, PUVM pUVM, PCRTUUID pUuid)
+{
+    Console *pConsole = ((MYVMM2USERMETHODS *)pThis)->pConsole;
+    NOREF(pUVM);
 
+    /* To simplify comparison we copy the UUID into a com::Guid object. */
+    com::Guid const UuidCopy(*pUuid);
+
+    if (UuidCopy == COM_IIDOF(IConsole))
+    {
+        IConsole *pIConsole = static_cast<IConsole *>(pConsole);
+        return pIConsole;
+    }
+
+    if (UuidCopy == COM_IIDOF(IMachine))
+    {
+        IMachine *pIMachine = pConsole->mMachine;
+        return pIMachine;
+    }
+
+    if (UuidCopy == COM_IIDOF(ISnapshot))
+        return ((MYVMM2USERMETHODS *)pThis)->pISnapshot;
+
+    return NULL;
+}
 
 
 /**

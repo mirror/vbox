@@ -236,6 +236,20 @@ typedef struct VMM2USERMETHODS
      */
     DECLR3CALLBACKMEMBER(void, pfnNotifyResetTurnedIntoPowerOff,(PCVMM2USERMETHODS pThis, PUVM pUVM));
 
+    /**
+     * Generic object query by UUID.
+     *
+     * @returns pointer to queried the object on success, NULL if not found.
+     *
+     * @param   pThis       Pointer to the callback method table.
+     * @param   pUVM        The user mode VM handle.
+     * @param   pUuid       The UUID of what's being queried.  The UUIDs and the
+     *                      usage conventions are defined by the user.
+     *
+     * @remarks This is optional and shall be set to NULL if not wanted.
+     */
+    DECLR3CALLBACKMEMBER(void *, pfnQueryGenericObject,(PCVMM2USERMETHODS pThis, PUVM pUVM, PCRTUUID pUuid));
+
     /** Magic value (VMM2USERMETHODS_MAGIC) marking the end of the structure. */
     uint32_t    u32EndMagic;
 } VMM2USERMETHODS;
@@ -243,7 +257,7 @@ typedef struct VMM2USERMETHODS
 /** Magic value of the VMM2USERMETHODS (Franz Kafka). */
 #define VMM2USERMETHODS_MAGIC         UINT32_C(0x18830703)
 /** The VMM2USERMETHODS structure version. */
-#define VMM2USERMETHODS_VERSION       UINT32_C(0x00020001)
+#define VMM2USERMETHODS_VERSION       UINT32_C(0x00030000)
 
 
 /**

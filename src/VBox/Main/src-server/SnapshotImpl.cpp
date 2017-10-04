@@ -1734,6 +1734,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
                 task.m_pProgress->i_setCancelCallback(i_takeSnapshotProgressCancelCallback, &task);
                 rc = task.m_pDirectControl->SaveStateWithReason(Reason_Snapshot,
                                                                 task.m_pProgress,
+                                                                task.m_pSnapshot,
                                                                 Bstr(task.m_strStateFilePath).raw(),
                                                                 task.m_fPause,
                                                                 &fSuspendedBySave);

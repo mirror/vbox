@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1066,7 +1066,10 @@ HRESULT Session::resumeWithReason(Reason_T aReason)
 #endif
 }
 
-HRESULT Session::saveStateWithReason(Reason_T aReason, const ComPtr<IProgress> &aProgress, const Utf8Str &aStateFilePath,
+HRESULT Session::saveStateWithReason(Reason_T aReason,
+                                     const ComPtr<IProgress> &aProgress,
+                                     const ComPtr<ISnapshot> &aSnapshot,
+                                     const Utf8Str &aStateFilePath,
                                      BOOL aPauseVM, BOOL *aLeftPaused)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -1076,12 +1079,12 @@ HRESULT Session::saveStateWithReason(Reason_T aReason, const ComPtr<IProgress> &
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     bool fLeftPaused = false;
-    HRESULT rc = mConsole->i_saveState(aReason, aProgress, aStateFilePath, !!aPauseVM, fLeftPaused);
+    HRESULT rc = mConsole->i_saveState(aReason, aProgress, aSnapshot, aStateFilePath, !!aPauseVM, fLeftPaused);
     if (aLeftPaused)
         *aLeftPaused = fLeftPaused;
     return rc;
 #else
-    RT_NOREF(aReason, aProgress, aStateFilePath, aPauseVM, aLeftPaused);
+    RT_NOREF(aReason, aProgress, aSnapshot, aStateFilePath, aPauseVM, aLeftPaused);
     AssertFailed();
     return E_NOTIMPL;
 #endif

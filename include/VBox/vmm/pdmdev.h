@@ -1877,7 +1877,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @}   */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 21, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 22, 0)
 
 /**
  * PDM Device API.
@@ -3479,6 +3479,19 @@ typedef struct PDMDEVHLPR3
      * @param   pDevIns             The device instance.
      */
     DECLR3CALLBACKMEMBER(PSUPDRVSESSION, pfnGetSupDrvSession,(PPDMDEVINS pDevIns));
+
+    /**
+     * Queries a generic object from the VMM user.
+     *
+     * @returns Pointer to the object if found, NULL if not.
+     * @param   pDevIns             The device instance.
+     * @param   pUuid               The UUID of what's being queried.  The UUIDs and
+     *                              the usage conventions are defined by the user.
+     *
+     * @note    It is strictly forbidden to call this internally in VBox!  This
+     *          interface is exclusively for hacks in externally developed devices.
+     */
+    DECLR3CALLBACKMEMBER(void *, pfnQueryGenericUserObject,(PPDMDEVINS pDevIns, PCRTUUID pUuid));
 
     /** @} */
 
@@ -5356,6 +5369,14 @@ DECLINLINE(void) PDMDevHlpGetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t 
 DECLINLINE(PSUPDRVSESSION) PDMDevHlpGetSupDrvSession(PPDMDEVINS pDevIns)
 {
     return pDevIns->pHlpR3->pfnGetSupDrvSession(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnQueryGenericUserObject
+ */
+DECLINLINE(void *) PDMDevHlpQueryGenericUserObject(PPDMDEVINS pDevIns, PCRTUUID pUuid)
+{
+    return pDevIns->pHlpR3->pfnQueryGenericUserObject(pDevIns, pUuid);
 }
 
 #endif /* IN_RING3 */

@@ -228,7 +228,9 @@ public:
 
     HRESULT i_pause(Reason_T aReason);
     HRESULT i_resume(Reason_T aReason, AutoWriteLock &alock);
-    HRESULT i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgress, const Utf8Str &aStateFilePath, bool fPauseVM, bool &fLeftPaused);
+    HRESULT i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgress,
+                        const ComPtr<ISnapshot> &aSnapshot,
+                        const Utf8Str &aStateFilePath, bool fPauseVM, bool &fLeftPaused);
     HRESULT i_cancelSaveState();
 
     // callback callers (partly; for some events console callbacks are notified
@@ -776,6 +778,7 @@ private:
     static DECLCALLBACK(void)   i_vmm2User_NotifyPdmtInit(PCVMM2USERMETHODS pThis, PUVM pUVM);
     static DECLCALLBACK(void)   i_vmm2User_NotifyPdmtTerm(PCVMM2USERMETHODS pThis, PUVM pUVM);
     static DECLCALLBACK(void)   i_vmm2User_NotifyResetTurnedIntoPowerOff(PCVMM2USERMETHODS pThis, PUVM pUVM);
+    static DECLCALLBACK(void *) i_vmm2User_QueryGenericObject(PCVMM2USERMETHODS pThis, PUVM pUVM, PCRTUUID pUuid);
 
     static DECLCALLBACK(void *) i_drvStatus_QueryInterface(PPDMIBASE pInterface, const char *pszIID);
     static DECLCALLBACK(void)   i_drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterface, unsigned iLUN);
@@ -908,6 +911,8 @@ private:
     struct MYVMM2USERMETHODS : public VMM2USERMETHODS
     {
         Console *pConsole;
+        /** The in-progress snapshot. */
+        ISnapshot *pISnapshot;
     } *mpVmm2UserMethods;
 
     /** The current network attachment type in the VM.

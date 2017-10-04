@@ -817,6 +817,30 @@ static DECLCALLBACK(PSUPDRVSESSION) pdmR3DevHlp_GetSupDrvSession(PPDMDEVINS pDev
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnQueryGenericUserObject} */
+static DECLCALLBACK(void *) pdmR3DevHlp_QueryGenericUserObject(PPDMDEVINS pDevIns, PCRTUUID pUuid)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_QueryGenericUserObject: caller='%s'/%d: pUuid=%p:%RTuuid\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pUuid, pUuid));
+
+#if defined(DEBUG_bird) || defined(DEBUG_ramshankar) || defined(DEBUG_sunlover) || defined(DEBUG_michael) || defined(DEBUG_andy)
+    AssertMsgFailed(("'%s' wants %RTuuid - external only interface!\n", pDevIns->pReg->szName, pUuid))
+#endif
+
+    void *pvRet;
+    PUVM  pUVM = pDevIns->Internal.s.pVMR3->pUVM;
+    if (pUVM->pVmm2UserMethods->pfnQueryGenericObject)
+        pvRet = pUVM->pVmm2UserMethods->pfnQueryGenericObject(pUVM->pVmm2UserMethods, pUVM, pUuid);
+    else
+        pvRet = NULL;
+
+    LogRel(("pdmR3DevHlp_QueryGenericUserObject: caller='%s'/%d: returns %#p for %RTuuid\n",
+            pDevIns->pReg->szName, pDevIns->iInstance, pvRet, pUuid));
+    return pvRet;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnPhysRead} */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
@@ -3727,6 +3751,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_TMTimeVirtGetFreq,
     pdmR3DevHlp_TMTimeVirtGetNano,
     pdmR3DevHlp_GetSupDrvSession,
+    pdmR3DevHlp_QueryGenericUserObject,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 
@@ -3863,6 +3888,16 @@ static DECLCALLBACK(PSUPDRVSESSION) pdmR3DevHlp_Untrusted_GetSupDrvSession(PPDMD
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnQueryGenericUserObject} */
+static DECLCALLBACK(void *) pdmR3DevHlp_Untrusted_QueryGenericUserObject(PPDMDEVINS pDevIns, PCRTUUID pUuid)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d %RTuuid\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance, pUuid));
+    return NULL;
+}
+
+
 /**
  * The device helper structure for non-trusted devices.
  */
@@ -3986,6 +4021,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_TMTimeVirtGetFreq,
     pdmR3DevHlp_TMTimeVirtGetNano,
     pdmR3DevHlp_Untrusted_GetSupDrvSession,
+    pdmR3DevHlp_Untrusted_QueryGenericUserObject,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 

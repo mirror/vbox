@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -136,6 +136,7 @@ private:
     HRESULT resumeWithReason(Reason_T aReason);
     HRESULT saveStateWithReason(Reason_T aReason,
                                 const ComPtr<IProgress> &aProgress,
+                                const ComPtr<ISnapshot> &aSnapshot,
                                 const Utf8Str &aStateFilePath,
                                 BOOL aPauseVM,
                                 BOOL *aLeftPaused);

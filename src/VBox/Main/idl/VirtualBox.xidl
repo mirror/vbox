@@ -20349,6 +20349,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="progress" type="IProgress" dir="in">
         <desc>Progress object to track the operation completion.</desc>
       </param>
+      <param name="snapshot" type="ISnapshot" dir="in">
+        <desc>Snapshot object for which this save state operation is executed.</desc>
+      </param>
       <param name="stateFilePath" type="wstring" dir="in">
         <desc>File path the VM process must save the execution state to.</desc>
       </param>
