@@ -517,9 +517,10 @@ static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS pPtrs)
             PPEB_LDR_DATA pLdrData = pPeb->Ldr;
             if (RT_VALID_PTR(pLdrData))
             {
-                LIST_ENTRY     *pList      = &pLdrData->InMemoryOrderModuleList;
-                LIST_ENTRY     *pListEntry = pList->Flink;
-                uint32_t        cLoops     = 0;
+                PLDR_DATA_TABLE_ENTRY pFound     = NULL;
+                LIST_ENTRY * const    pList      = &pLdrData->InMemoryOrderModuleList;
+                LIST_ENTRY           *pListEntry = pList->Flink;
+                uint32_t              cLoops     = 0;
                 RTLogLogger(pLogger, NULL,
                             "\nLoaded Modules:\n"
                             "%-*s[*] Timestamp Path\n", sizeof(void *) * 4 + 2 - 1, "Address range"
@@ -528,7 +529,12 @@ static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS pPtrs)
                 {
                     PLDR_DATA_TABLE_ENTRY pLdrEntry = RT_FROM_MEMBER(pListEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
                     uint32_t const        cbLength  = (uint32_t)(uintptr_t)pLdrEntry->Reserved3[1];
-                    char const            chInd     = uXcptPC - (uintptr_t)pLdrEntry->DllBase < cbLength ? '*' : ' ';
+                    char                  chInd     = ' ';
+                    if (uXcptPC - (uintptr_t)pLdrEntry->DllBase < cbLength)
+                    {
+                        chInd = '*';
+                        pFound = pLdrEntry;
+                    }
 
                     if (   RT_VALID_PTR(pLdrEntry->FullDllName.Buffer)
                         && pLdrEntry->FullDllName.Length > 0
@@ -548,6 +554,75 @@ static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS pPtrs)
                     /* advance */
                     pListEntry = pListEntry->Flink;
                     cLoops++;
+                }
+
+                /*
+                 * Use the above to pick out code addresses on the stack.
+                 */
+                if (   cLoops < 1024
+                    && uXcptSP - uStack < cbToDump)
+                {
+                    RTLogLogger(pLogger, NULL, "\nPotential code addresses on the stack:\n");
+                    if (pFound)
+                    {
+                        if (   RT_VALID_PTR(pFound->FullDllName.Buffer)
+                            && pFound->FullDllName.Length > 0
+                            && pFound->FullDllName.Length < _8K
+                            && (pFound->FullDllName.Length & 1) == 0
+                            && pFound->FullDllName.Length <= pFound->FullDllName.MaximumLength)
+                            RTLogLogger(pLogger, NULL, "%-*s: %p - %#010RX32 bytes into %.*ls\n",
+                                        sizeof(void *) * 2, "PC", uXcptPC, (uint32_t)(uXcptPC - (uintptr_t)pFound->DllBase),
+                                        pFound->FullDllName.Length / sizeof(RTUTF16), pFound->FullDllName.Buffer);
+                        else
+                            RTLogLogger(pLogger, NULL, "%-*s: %p - %08RX32 into module at %p\n",
+                                        sizeof(void *) * 2, "PC", uXcptPC, (uint32_t)(uXcptPC - (uintptr_t)pFound->DllBase),
+                                        pFound->DllBase);
+                    }
+
+                    uintptr_t const *puStack = (uintptr_t const *)uXcptSP;
+                    uintptr_t        cLeft   = (cbToDump - (uXcptSP - uStack)) / sizeof(uintptr_t);
+                    while (cLeft-- > 0)
+                    {
+                        uintptr_t uPtr = *puStack;
+                        if (RT_VALID_PTR(uPtr))
+                        {
+                            /* Search the module table. */
+                            pFound     = NULL;
+                            cLoops     = 0;
+                            pListEntry = pList->Flink;
+                            while (pListEntry != pList && RT_VALID_PTR(pListEntry) && cLoops < 1024)
+                            {
+                                PLDR_DATA_TABLE_ENTRY pLdrEntry = RT_FROM_MEMBER(pListEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
+                                uint32_t const        cbLength  = (uint32_t)(uintptr_t)pLdrEntry->Reserved3[1];
+                                if (uPtr - (uintptr_t)pLdrEntry->DllBase < cbLength)
+                                {
+                                    pFound = pLdrEntry;
+                                    break;
+                                }
+
+                                /* advance */
+                                pListEntry = pListEntry->Flink;
+                                cLoops++;
+                            }
+
+                            if (pFound)
+                            {
+                                if (   RT_VALID_PTR(pFound->FullDllName.Buffer)
+                                    && pFound->FullDllName.Length > 0
+                                    && pFound->FullDllName.Length < _8K
+                                    && (pFound->FullDllName.Length & 1) == 0
+                                    && pFound->FullDllName.Length <= pFound->FullDllName.MaximumLength)
+                                    RTLogLogger(pLogger, NULL, "%p: %p - %#010RX32 bytes into %.*ls\n",
+                                                puStack, uPtr, (uint32_t)(uPtr - (uintptr_t)pFound->DllBase),
+                                                pFound->FullDllName.Length / sizeof(RTUTF16), pFound->FullDllName.Buffer);
+                                else
+                                    RTLogLogger(pLogger, NULL, "%p: %p - %08RX32 into module at %p\n",
+                                                puStack, uPtr, (uint32_t)(uPtr - (uintptr_t)pFound->DllBase), pFound->DllBase);
+                            }
+                        }
+
+                        puStack++;
+                    }
                 }
             }
         }
