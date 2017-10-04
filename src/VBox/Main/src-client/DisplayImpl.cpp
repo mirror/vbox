@@ -4683,6 +4683,7 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
         return rc;
     }
     Display *pDisplay = (Display *)pv;      /** @todo Check this cast! */
+LogRel(("Display: Debug: pDisplay=%p sizeof(*pDisplay)=%#x\n", pDisplay, sizeof(*pDisplay)));
     pThis->pDisplay = pDisplay;
     pThis->pDisplay->mpDrv = pThis;
 
@@ -4693,15 +4694,19 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     /*
      * Start periodic screen refreshes
      */
+LogRel(("Display: Debug: Calling pfnSetRefreshRate\n"));
     pThis->pUpPort->pfnSetRefreshRate(pThis->pUpPort, 20);
 
 #ifdef VBOX_WITH_CRHGSMI
+LogRel(("Display: Debug: Calling i_setupCrHgsmiData\n"));
     pDisplay->i_setupCrHgsmiData();
 #endif
 
 #ifdef VBOX_WITH_VIDEOREC
+LogRel(("Display: Debug: Calling i_videoCaptureGetEnabled\n"));
     if (pDisplay->i_videoCaptureGetEnabled())
     {
+LogRel(("Display: Debug: Calling i_videoCaptureStart\n"));
         int rc2 = pDisplay->i_videoCaptureStart();
         if (RT_SUCCESS(rc2))
             fireVideoCaptureChangedEvent(pDisplay->mParent->i_getEventSource());
@@ -4712,6 +4717,7 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     }
 #endif
 
+LogRel(("Display: driver constructed\n"));
     return rc;
 }
 
