@@ -929,7 +929,7 @@ static void videoRecStreamUnlock(PVIDEORECSTREAM pStream)
  * @param   pStream             Recording stream to open file for.
  * @param   pCfg                Recording configuration to use.
  */
-int videoRecStreamOpenFile(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
+static int videoRecStreamOpenFile(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,    VERR_INVALID_POINTER);
