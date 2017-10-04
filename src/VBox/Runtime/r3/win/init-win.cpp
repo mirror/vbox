@@ -39,8 +39,18 @@
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
+#include <iprt/param.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 #include "../init.h"
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+typedef VOID (WINAPI *PFNGETCURRENTTHREADSTACKLIMITS)(PULONG_PTR puLow, PULONG_PTR puHigh);
+typedef LPTOP_LEVEL_EXCEPTION_FILTER (WINAPI * PFNSETUNHANDLEDEXCEPTIONFILTER)(LPTOP_LEVEL_EXCEPTION_FILTER);
 
 
 /*********************************************************************************************************************************
@@ -58,7 +68,18 @@ DECLHIDDEN(HMODULE)             g_hModKernel32 = NULL;
 DECLHIDDEN(HMODULE)             g_hModNtDll = NULL;
 /** GetSystemWindowsDirectoryW or GetWindowsDirectoryW (NT4). */
 DECLHIDDEN(PFNGETWINSYSDIR)     g_pfnGetSystemWindowsDirectoryW = NULL;
+/** The GetCurrentThreadStackLimits API. */
+static PFNGETCURRENTTHREADSTACKLIMITS g_pfnGetCurrentThreadStackLimits = NULL;
+/** SetUnhandledExceptionFilter. */
+static PFNSETUNHANDLEDEXCEPTIONFILTER g_pfnSetUnhandledExceptionFilter = NULL;
+/** The previous unhandled exception filter. */
+static LPTOP_LEVEL_EXCEPTION_FILTER   g_pfnUnhandledXcptFilter = NULL;
 
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS);
 
 
 /**
@@ -300,6 +321,17 @@ static int rtR3InitNativeObtrusiveWorker(uint32_t fFlags)
         }
     }
 
+    /*
+     * Register an unhandled exception callback if we can.
+     */
+    g_pfnGetCurrentThreadStackLimits = (PFNGETCURRENTTHREADSTACKLIMITS)GetProcAddress(g_hModKernel32, "GetCurrentThreadStackLimits");
+    g_pfnSetUnhandledExceptionFilter = (PFNSETUNHANDLEDEXCEPTIONFILTER)GetProcAddress(g_hModKernel32, "SetUnhandledExceptionFilter");
+    if (g_pfnSetUnhandledExceptionFilter && !g_pfnUnhandledXcptFilter)
+    {
+        g_pfnUnhandledXcptFilter = g_pfnSetUnhandledExceptionFilter(rtR3WinUnhandledXcptFilter);
+        AssertStmt(g_pfnUnhandledXcptFilter != rtR3WinUnhandledXcptFilter, g_pfnUnhandledXcptFilter = NULL);
+    }
+
     return rc;
 }
 
@@ -346,4 +378,137 @@ DECLHIDDEN(int) rtR3InitNativeFinal(uint32_t fFlags)
     RT_NOREF_PV(fFlags);
     return VINF_SUCCESS;
 }
+
+
+/**
+ * Unhandled exception filter callback.
+ *
+ * Will try log stuff.
+ */
+static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS pPtrs)
+{
+    /*
+     * Try get the logger and log exception details.
+     *
+     * Note! We'll be using RTLogLogger for now, though we should probably add
+     *       a less deadlock prone API here and gives up pretty fast if it
+     *       cannot get the lock...
+     */
+    PRTLOGGER pLogger = RTLogRelGetDefaultInstance();
+    if (!pLogger)
+        pLogger = RTLogGetDefaultInstance();
+    if (pLogger)
+    {
+        RTLogLogger(pLogger, NULL, "\nrtR3WinUnhandledXcptFilter: !Exception!\n");
+        RTLogLogger(pLogger, NULL,  "Thread ID:   %p\n", RTThreadNativeSelf());
+
+        /*
+         * Dump the exception record.
+         */
+        PEXCEPTION_RECORD pXcptRec = RT_VALID_PTR(pPtrs) && RT_VALID_PTR(pPtrs->ExceptionRecord) ? pPtrs->ExceptionRecord : NULL;
+        if (pXcptRec)
+        {
+            RTLogLogger(pLogger, NULL, "ExceptionCode=%#010x ExceptionFlags=%#010x ExceptionAddress=%p\n",
+                        pXcptRec->ExceptionCode, pXcptRec->ExceptionFlags, pXcptRec->ExceptionAddress);
+            for (uint32_t i = 0; i < RT_MIN(pXcptRec->NumberParameters, EXCEPTION_MAXIMUM_PARAMETERS); i++)
+                RTLogLogger(pLogger, NULL, "ExceptionInformation[%d]=%p\n", i, pXcptRec->ExceptionInformation[i]);
+
+            /* Nested? Display one level only. */
+            PEXCEPTION_RECORD pNestedRec = pXcptRec->ExceptionRecord;
+            if (RT_VALID_PTR(pNestedRec))
+            {
+                RTLogLogger(pLogger, NULL, "Nested: ExceptionCode=%#010x ExceptionFlags=%#010x ExceptionAddress=%p (nested %p)\n",
+                            pNestedRec->ExceptionCode, pNestedRec->ExceptionFlags, pNestedRec->ExceptionAddress,
+                            pNestedRec->ExceptionRecord);
+                for (uint32_t i = 0; i < RT_MIN(pNestedRec->NumberParameters, EXCEPTION_MAXIMUM_PARAMETERS); i++)
+                    RTLogLogger(pLogger, NULL, "Nested: ExceptionInformation[%d]=%p\n", i, pNestedRec->ExceptionInformation[i]);
+            }
+        }
+
+        /*
+         * Dump the context record.
+         */
+        volatile char   szMarker[] = "stackmarker";
+        uintptr_t       uXcptSP = (uintptr_t)&szMarker[0];
+        PCONTEXT pXcptCtx = RT_VALID_PTR(pPtrs) && RT_VALID_PTR(pPtrs->ContextRecord)   ? pPtrs->ContextRecord   : NULL;
+        if (pXcptCtx)
+        {
+#ifdef RT_ARCH_AMD64
+            RTLogLogger(pLogger, NULL, "cs:rip=%04x:%016RX64\n", pXcptCtx->SegCs, pXcptCtx->Rip);
+            RTLogLogger(pLogger, NULL, "ss:rsp=%04x:%016RX64 rbp=%016RX64\n", pXcptCtx->SegSs, pXcptCtx->Rsp, pXcptCtx->Rbp);
+            RTLogLogger(pLogger, NULL, "rax=%016RX64 rcx=%016RX64 rdx=%016RX64 rbx=%016RX64\n",
+                        pXcptCtx->Rax, pXcptCtx->Rcx, pXcptCtx->Rdx, pXcptCtx->Rbx);
+            RTLogLogger(pLogger, NULL, "rsi=%016RX64 rdi=%016RX64 rsp=%016RX64 rbp=%016RX64\n",
+                        pXcptCtx->Rsi, pXcptCtx->Rdi, pXcptCtx->Rsp, pXcptCtx->Rbp);
+            RTLogLogger(pLogger, NULL, "r8 =%016RX64 r9 =%016RX64 r10=%016RX64 r11=%016RX64\n",
+                        pXcptCtx->R8,  pXcptCtx->R9,  pXcptCtx->R10, pXcptCtx->R11);
+            RTLogLogger(pLogger, NULL, "r12=%016RX64 r13=%016RX64 r14=%016RX64 r15=%016RX64\n",
+                        pXcptCtx->R12,  pXcptCtx->R13,  pXcptCtx->R14, pXcptCtx->R15);
+            RTLogLogger(pLogger, NULL, "ds=%04x es=%04x fs=%04x gs=%04x eflags=%08x\n",
+                        pXcptCtx->SegDs, pXcptCtx->SegEs, pXcptCtx->SegFs, pXcptCtx->SegGs, pXcptCtx->EFlags);
+            RTLogLogger(pLogger, NULL, "p1home=%016RX64 p2home=%016RX64 pe3home=%016RX64\n",
+                        pXcptCtx->P1Home, pXcptCtx->P2Home, pXcptCtx->P3Home);
+            RTLogLogger(pLogger, NULL, "p4home=%016RX64 p5home=%016RX64 pe6home=%016RX64\n",
+                        pXcptCtx->P4Home, pXcptCtx->P5Home, pXcptCtx->P6Home);
+            RTLogLogger(pLogger, NULL, "   LastBranchToRip=%016RX64    LastBranchFromRip=%016RX64\n",
+                        pXcptCtx->LastBranchToRip, pXcptCtx->LastBranchFromRip);
+            RTLogLogger(pLogger, NULL, "LastExceptionToRip=%016RX64 LastExceptionFromRip=%016RX64\n",
+                        pXcptCtx->LastExceptionToRip, pXcptCtx->LastExceptionFromRip);
+            uXcptSP = pXcptCtx->Rsp;
+
+#elif defined(RT_ARCH_X86)
+            RTLogLogger(pLogger, NULL, "cs:eip=%04x:%08RX32\n", pXcptCtx->SegCs, pXcptCtx->Eip);
+            RTLogLogger(pLogger, NULL, "ss:esp=%04x:%08RX32 ebp=%08RX32\n", pXcptCtx->SegSs, pXcptCtx->Esp, pXcptCtx->Ebp);
+            RTLogLogger(pLogger, NULL, "eax=%08RX32 ecx=%08RX32 edx=%08RX32 ebx=%08RX32\n",
+                        pXcptCtx->Eax, pXcptCtx->Ecx,  pXcptCtx->Edx,  pXcptCtx->Ebx);
+            RTLogLogger(pLogger, NULL, "esi=%08RX32 edi=%08RX32 esp=%08RX32 ebp=%08RX32\n",
+                        pXcptCtx->Esi, pXcptCtx->Edi,  pXcptCtx->Esp,  pXcptCtx->Ebp);
+            RTLogLogger(pLogger, NULL, "ds=%04x es=%04x fs=%04x gs=%04x eflags=%08x\n",
+                        pXcptCtx->SegDs, pXcptCtx->SegEs, pXcptCtx->SegFs, pXcptCtx->SegGs, pXcptCtx->EFlags);
+            uXcptSP = pXcptCtx->Esp;
+#endif
+        }
+
+        /*
+         * Dump stack.
+         */
+        void  *pvStack  = (void *)&szMarker[0];
+        size_t cbToDump = PAGE_SIZE - ((uintptr_t)pvStack & PAGE_OFFSET_MASK);
+        if (cbToDump < 512)
+            cbToDump += PAGE_SIZE;
+        size_t cbToXcpt = uXcptSP - (uintptr_t)pvStack;
+        while (cbToXcpt > cbToDump && cbToXcpt <= _16K)
+            cbToDump += PAGE_SIZE;
+        ULONG_PTR uLow  = (uintptr_t)&szMarker[0];
+        ULONG_PTR uHigh = (uintptr_t)&szMarker[0];
+        if (g_pfnGetCurrentThreadStackLimits)
+        {
+            g_pfnGetCurrentThreadStackLimits(&uLow, &uHigh);
+            size_t cbToTop = RT_MAX(uLow, uHigh) - (uintptr_t)pvStack;
+            if (cbToTop < _1M)
+                cbToDump = cbToTop;
+        }
+
+        RTLogLogger(pLogger, NULL, "\nStack %p, dumping %#x bytes (low=%p, high=%p)\n", pvStack, cbToDump, uLow, uHigh);
+        RTLogLogger(pLogger, NULL, "%.*Rhxd\n", cbToDump, pvStack);
+
+        /*
+         * Try figure the thread name.
+         *
+         * Note! This involves the thread db lock, so it may deadlock, which
+         *       is why it's at the end.
+         */
+        RTLogLogger(pLogger, NULL,  "Thread ID:   %p\n", RTThreadNativeSelf());
+        RTLogLogger(pLogger, NULL,  "Thread name: %s\n", RTThreadSelfName());
+        RTLogLogger(pLogger, NULL,  "Thread IPRT: %p\n", RTThreadSelf());
+    }
+
+    /*
+     * Do the default stuff, never mind us.
+     */
+    if (g_pfnUnhandledXcptFilter)
+        return g_pfnUnhandledXcptFilter(pPtrs);
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
 
