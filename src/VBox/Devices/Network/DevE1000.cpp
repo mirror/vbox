@@ -2714,18 +2714,18 @@ static int e1kRegWriteCTRL(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
             /* It should take about 2 seconds for the link to come up */
             e1kArmTimer(pThis, pThis->CTX_SUFF(pLUTimer), E1K_INIT_LINKUP_DELAY_US);
         }
-        if (value & CTRL_VME)
+        if ((value & CTRL_VME) != (CTRL & CTRL_VME))
         {
-            E1kLog(("%s VLAN Mode Enabled\n", pThis->szPrf));
+            E1kLog(("%s VLAN Mode %s\n", pThis->szPrf, (value & CTRL_VME) ? "Enabled" : "Disabled"));
         }
-        E1kLog(("%s e1kRegWriteCTRL: mdio dir=%s mdc dir=%s mdc=%s mdio=%d\n",
-                pThis->szPrf, (value & CTRL_MDIO_DIR)?"OUT":"IN ",
-                (value & CTRL_MDC_DIR)?"OUT":"IN ", (value & CTRL_MDC)?"HIGH":"LOW ", !!(value & CTRL_MDIO)));
+        Log7(("%s e1kRegWriteCTRL: mdio dir=%s mdc dir=%s mdc=%s mdio=%d\n",
+              pThis->szPrf, (value & CTRL_MDIO_DIR)?"OUT":"IN ",
+              (value & CTRL_MDC_DIR)?"OUT":"IN ", (value & CTRL_MDC)?"HIGH":"LOW ", !!(value & CTRL_MDIO)));
         if (value & CTRL_MDC)
         {
             if (value & CTRL_MDIO_DIR)
             {
-                E1kLog(("%s e1kRegWriteCTRL: Phy::writeMDIO(%d)\n", pThis->szPrf, !!(value & CTRL_MDIO)));
+                Log7(("%s e1kRegWriteCTRL: Phy::writeMDIO(%d)\n", pThis->szPrf, !!(value & CTRL_MDIO)));
                 /* MDIO direction pin is set to output and MDC is high, write MDIO pin value to PHY */
                 Phy::writeMDIO(&pThis->phy, !!(value & CTRL_MDIO));
             }
@@ -2735,8 +2735,7 @@ static int e1kRegWriteCTRL(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
                     value |= CTRL_MDIO;
                 else
                     value &= ~CTRL_MDIO;
-                E1kLog(("%s e1kRegWriteCTRL: Phy::readMDIO(%d)\n",
-                        pThis->szPrf, !!(value & CTRL_MDIO)));
+                Log7(("%s e1kRegWriteCTRL: Phy::readMDIO(%d)\n", pThis->szPrf, !!(value & CTRL_MDIO)));
             }
         }
         rc = e1kRegWriteDefault(pThis, offset, index, value);
