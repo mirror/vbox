@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DEFAULT
-#include <iprt/win/windows.h>
+#include <iprt/nt/nt-and-windows.h>
 #ifndef LOAD_LIBRARY_SEARCH_APPLICATION_DIR
 # define LOAD_LIBRARY_SEARCH_APPLICATION_DIR    0x200
 # define LOAD_LIBRARY_SEARCH_SYSTEM32           0x800
@@ -399,19 +399,20 @@ static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS pPtrs)
         pLogger = RTLogGetDefaultInstance();
     if (pLogger)
     {
-        RTLogLogger(pLogger, NULL, "\nrtR3WinUnhandledXcptFilter: !Exception!\n");
-        RTLogLogger(pLogger, NULL,  "Thread ID:   %p\n", RTThreadNativeSelf());
+        RTLogLogger(pLogger, NULL, "\n!!! rtR3WinUnhandledXcptFilter caught an exception on thread %p!!!\n", RTThreadNativeSelf());
 
         /*
          * Dump the exception record.
          */
+        uintptr_t         uXcptPC  = 0;
         PEXCEPTION_RECORD pXcptRec = RT_VALID_PTR(pPtrs) && RT_VALID_PTR(pPtrs->ExceptionRecord) ? pPtrs->ExceptionRecord : NULL;
         if (pXcptRec)
         {
-            RTLogLogger(pLogger, NULL, "ExceptionCode=%#010x ExceptionFlags=%#010x ExceptionAddress=%p\n",
+            RTLogLogger(pLogger, NULL, "\nExceptionCode=%#010x ExceptionFlags=%#010x ExceptionAddress=%p\n",
                         pXcptRec->ExceptionCode, pXcptRec->ExceptionFlags, pXcptRec->ExceptionAddress);
             for (uint32_t i = 0; i < RT_MIN(pXcptRec->NumberParameters, EXCEPTION_MAXIMUM_PARAMETERS); i++)
                 RTLogLogger(pLogger, NULL, "ExceptionInformation[%d]=%p\n", i, pXcptRec->ExceptionInformation[i]);
+            uXcptPC = (uintptr_t)pXcptRec->ExceptionAddress;
 
             /* Nested? Display one level only. */
             PEXCEPTION_RECORD pNestedRec = pXcptRec->ExceptionRecord;
@@ -422,6 +423,7 @@ static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS pPtrs)
                             pNestedRec->ExceptionRecord);
                 for (uint32_t i = 0; i < RT_MIN(pNestedRec->NumberParameters, EXCEPTION_MAXIMUM_PARAMETERS); i++)
                     RTLogLogger(pLogger, NULL, "Nested: ExceptionInformation[%d]=%p\n", i, pNestedRec->ExceptionInformation[i]);
+                uXcptPC = (uintptr_t)pNestedRec->ExceptionAddress;
             }
         }
 
@@ -434,7 +436,7 @@ static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS pPtrs)
         if (pXcptCtx)
         {
 #ifdef RT_ARCH_AMD64
-            RTLogLogger(pLogger, NULL, "cs:rip=%04x:%016RX64\n", pXcptCtx->SegCs, pXcptCtx->Rip);
+            RTLogLogger(pLogger, NULL, "\ncs:rip=%04x:%016RX64\n", pXcptCtx->SegCs, pXcptCtx->Rip);
             RTLogLogger(pLogger, NULL, "ss:rsp=%04x:%016RX64 rbp=%016RX64\n", pXcptCtx->SegSs, pXcptCtx->Rsp, pXcptCtx->Rbp);
             RTLogLogger(pLogger, NULL, "rax=%016RX64 rcx=%016RX64 rdx=%016RX64 rbx=%016RX64\n",
                         pXcptCtx->Rax, pXcptCtx->Rcx, pXcptCtx->Rdx, pXcptCtx->Rbx);
@@ -455,9 +457,10 @@ static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS pPtrs)
             RTLogLogger(pLogger, NULL, "LastExceptionToRip=%016RX64 LastExceptionFromRip=%016RX64\n",
                         pXcptCtx->LastExceptionToRip, pXcptCtx->LastExceptionFromRip);
             uXcptSP = pXcptCtx->Rsp;
+            uXcptPC = pXcptCtx->Rip;
 
 #elif defined(RT_ARCH_X86)
-            RTLogLogger(pLogger, NULL, "cs:eip=%04x:%08RX32\n", pXcptCtx->SegCs, pXcptCtx->Eip);
+            RTLogLogger(pLogger, NULL, "\ncs:eip=%04x:%08RX32\n", pXcptCtx->SegCs, pXcptCtx->Eip);
             RTLogLogger(pLogger, NULL, "ss:esp=%04x:%08RX32 ebp=%08RX32\n", pXcptCtx->SegSs, pXcptCtx->Esp, pXcptCtx->Ebp);
             RTLogLogger(pLogger, NULL, "eax=%08RX32 ecx=%08RX32 edx=%08RX32 ebx=%08RX32\n",
                         pXcptCtx->Eax, pXcptCtx->Ecx,  pXcptCtx->Edx,  pXcptCtx->Ebx);
@@ -466,17 +469,20 @@ static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS pPtrs)
             RTLogLogger(pLogger, NULL, "ds=%04x es=%04x fs=%04x gs=%04x eflags=%08x\n",
                         pXcptCtx->SegDs, pXcptCtx->SegEs, pXcptCtx->SegFs, pXcptCtx->SegGs, pXcptCtx->EFlags);
             uXcptSP = pXcptCtx->Esp;
+            uXcptPC = pXcptCtx->Eip;
 #endif
         }
 
         /*
          * Dump stack.
          */
-        void  *pvStack  = (void *)&szMarker[0];
-        size_t cbToDump = PAGE_SIZE - ((uintptr_t)pvStack & PAGE_OFFSET_MASK);
+        uintptr_t uStack = (uintptr_t)(void *)&szMarker[0];
+        uStack -= uStack & 15;
+
+        size_t cbToDump = PAGE_SIZE - (uStack & PAGE_OFFSET_MASK);
         if (cbToDump < 512)
             cbToDump += PAGE_SIZE;
-        size_t cbToXcpt = uXcptSP - (uintptr_t)pvStack;
+        size_t cbToXcpt = uXcptSP - uStack;
         while (cbToXcpt > cbToDump && cbToXcpt <= _16K)
             cbToDump += PAGE_SIZE;
         ULONG_PTR uLow  = (uintptr_t)&szMarker[0];
@@ -484,13 +490,13 @@ static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS pPtrs)
         if (g_pfnGetCurrentThreadStackLimits)
         {
             g_pfnGetCurrentThreadStackLimits(&uLow, &uHigh);
-            size_t cbToTop = RT_MAX(uLow, uHigh) - (uintptr_t)pvStack;
+            size_t cbToTop = RT_MAX(uLow, uHigh) - uStack;
             if (cbToTop < _1M)
                 cbToDump = cbToTop;
         }
 
-        RTLogLogger(pLogger, NULL, "\nStack %p, dumping %#x bytes (low=%p, high=%p)\n", pvStack, cbToDump, uLow, uHigh);
-        RTLogLogger(pLogger, NULL, "%.*Rhxd\n", cbToDump, pvStack);
+        RTLogLogger(pLogger, NULL, "\nStack %p, dumping %#x bytes (low=%p, high=%p)\n", uStack, cbToDump, uLow, uHigh);
+        RTLogLogger(pLogger, NULL, "%.*Rhxd\n", cbToDump, uStack);
 
         /*
          * Try figure the thread name.
@@ -501,6 +507,50 @@ static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS pPtrs)
         RTLogLogger(pLogger, NULL,  "Thread ID:   %p\n", RTThreadNativeSelf());
         RTLogLogger(pLogger, NULL,  "Thread name: %s\n", RTThreadSelfName());
         RTLogLogger(pLogger, NULL,  "Thread IPRT: %p\n", RTThreadSelf());
+
+        /*
+         * Try dump the load information.
+         */
+        PPEB pPeb = RTNtCurrentPeb();
+        if (RT_VALID_PTR(pPeb))
+        {
+            PPEB_LDR_DATA pLdrData = pPeb->Ldr;
+            if (RT_VALID_PTR(pLdrData))
+            {
+                LIST_ENTRY     *pList      = &pLdrData->InMemoryOrderModuleList;
+                LIST_ENTRY     *pListEntry = pList->Flink;
+                uint32_t        cLoops     = 0;
+                RTLogLogger(pLogger, NULL,
+                            "\nLoaded Modules:\n"
+                            "%-*s[*] Timestamp Path\n", sizeof(void *) * 4 + 2 - 1, "Address range"
+                            );
+                while (pListEntry != pList && RT_VALID_PTR(pListEntry) && cLoops < 1024)
+                {
+                    PLDR_DATA_TABLE_ENTRY pLdrEntry = RT_FROM_MEMBER(pListEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
+                    uint32_t const        cbLength  = (uint32_t)(uintptr_t)pLdrEntry->Reserved3[1];
+                    char const            chInd     = uXcptPC - (uintptr_t)pLdrEntry->DllBase < cbLength ? '*' : ' ';
+
+                    if (   RT_VALID_PTR(pLdrEntry->FullDllName.Buffer)
+                        && pLdrEntry->FullDllName.Length > 0
+                        && pLdrEntry->FullDllName.Length < _8K
+                        && (pLdrEntry->FullDllName.Length & 1) == 0
+                        && pLdrEntry->FullDllName.Length <= pLdrEntry->FullDllName.MaximumLength)
+                        RTLogLogger(pLogger, NULL, "%p..%p%c  %08RX32  %.*ls\n",
+                                    pLdrEntry->DllBase, (uintptr_t)pLdrEntry->DllBase + cbLength - 1, chInd,
+                                    pLdrEntry->TimeDateStamp, pLdrEntry->FullDllName.Length / sizeof(RTUTF16),
+                                    pLdrEntry->FullDllName.Buffer);
+                    else
+                        RTLogLogger(pLogger, NULL, "%p..%p%c  %08RX32  <bad or missing: %p LB %#x max %#x\n",
+                                    pLdrEntry->DllBase, (uintptr_t)pLdrEntry->DllBase + cbLength - 1, chInd,
+                                    pLdrEntry->TimeDateStamp, pLdrEntry->FullDllName.Buffer, pLdrEntry->FullDllName.Length,
+                                    pLdrEntry->FullDllName.MaximumLength);
+
+                    /* advance */
+                    pListEntry = pListEntry->Flink;
+                    cLoops++;
+                }
+            }
+        }
     }
 
     /*
