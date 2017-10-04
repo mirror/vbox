@@ -571,11 +571,11 @@ static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS pPtrs)
                             && (pFound->FullDllName.Length & 1) == 0
                             && pFound->FullDllName.Length <= pFound->FullDllName.MaximumLength)
                             RTLogLogger(pLogger, NULL, "%-*s: %p - %#010RX32 bytes into %.*ls\n",
-                                        sizeof(void *) * 2, "PC", uXcptPC, (uint32_t)(uXcptPC - (uintptr_t)pFound->DllBase),
+                                        sizeof(void *) * 2, "Xcpt PC", uXcptPC, (uint32_t)(uXcptPC - (uintptr_t)pFound->DllBase),
                                         pFound->FullDllName.Length / sizeof(RTUTF16), pFound->FullDllName.Buffer);
                         else
                             RTLogLogger(pLogger, NULL, "%-*s: %p - %08RX32 into module at %p\n",
-                                        sizeof(void *) * 2, "PC", uXcptPC, (uint32_t)(uXcptPC - (uintptr_t)pFound->DllBase),
+                                        sizeof(void *) * 2, "Xcpt PC", uXcptPC, (uint32_t)(uXcptPC - (uintptr_t)pFound->DllBase),
                                         pFound->DllBase);
                     }
 
