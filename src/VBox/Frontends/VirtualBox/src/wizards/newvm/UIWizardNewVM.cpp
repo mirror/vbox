@@ -138,6 +138,7 @@ bool UIWizardNewVM::createVM()
     m_machine.GetAudioAdapter().SetAudioCodec(type.GetRecommendedAudioCodec());
     /* Enabling audio by default: */
     m_machine.GetAudioAdapter().SetEnabled(true);
+    m_machine.GetAudioAdapter().SetEnabledOut(true);
 
     /* Enable the OHCI and EHCI controller by default for new VMs. (new in 2.2): */
     CUSBDeviceFilters usbDeviceFilters = m_machine.GetUSBDeviceFilters();
