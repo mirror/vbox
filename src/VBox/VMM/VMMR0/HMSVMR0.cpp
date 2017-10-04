@@ -3045,10 +3045,11 @@ DECLINLINE(void) hmR0SvmClearIretIntercept(PSVMVMCB pVmcb)
  * Evaluates the event to be delivered to the nested-guest and sets it as the
  * pending event.
  *
+ * @returns VBox strict status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
-static void hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCtx)
+static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Log4Func(("\n"));
 
@@ -3090,73 +3091,51 @@ static void hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCtx)
                 hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
                 hmR0SvmSetIretIntercept(pVmcbNstGst);
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
-                return;
+                return VINF_SUCCESS;
             }
         }
 
         /*
          * Check if the nested-guest can receive external interrupts (PIC/APIC).
+         *
+         * Physical (from the nested-guest's point of view) intercepts are -always-
+         * intercepted, see HMSVM_MANDATORY_NESTED_GUEST_CTRL_INTERCEPTS.
+         *
+         * Physical interrupts take priority over virtual interrupts,
+         * see AMD spec. 15.21.4 "Injecting Virtual (INTR) Interrupts".
+         *
+         * We must be careful that the call to CPUMCanSvmNstGstTakePhysIntr below
+         * happens -before- modifying the nested-guests's V_INTR_MASKING bit,
+         * which is currently set later in hmR0SvmLoadGuestApicStateNested.
          */
         if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
-            && !pVCpu->hm.s.fSingleInstruction)
+            && !fIntShadow
+            && !pVCpu->hm.s.fSingleInstruction
+            && CPUMCanSvmNstGstTakePhysIntr(pCtx))
         {
-            /* Note: it is critical we call CPUMCanSvmNstGstTakePhysIntr -before- modifying the nested-guests's V_INTR_MASKING
-               bit, currently it gets modified in hmR0SvmLoadGuestApicStateNested. */
-            bool const fIntEnabled = CPUMCanSvmNstGstTakePhysIntr(pCtx);
-            if (    fIntEnabled
-                && !fIntShadow)
-            {
-                uint8_t u8Interrupt;
-                int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-                if (RT_SUCCESS(rc))
-                {
-                    Log4(("Injecting external interrupt u8Interrupt=%#x\n", u8Interrupt));
-
-                    Event.n.u1Valid  = 1;
-                    Event.n.u8Vector = u8Interrupt;
-                    Event.n.u3Type   = SVM_EVENT_EXTERNAL_IRQ;
-
-                    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-                }
-                else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
-                {
-                    /*
-                     * AMD-V has no TPR thresholding feature. We just avoid posting the interrupt.
-                     * We just avoid delivering the TPR-masked interrupt here. TPR will be updated
-                     * always via hmR0SvmLoadGuestState() -> hmR0SvmLoadGuestApicState().
-                     */
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchTprMaskedIrq);
-                }
-                else
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
-            }
-            else
-            {
-                /** @todo Figure this out, how we shall manage virt. intercept if the
-                 *        nested-guest already has one set and/or if we really need it? */
-                //hmR0SvmSetVirtIntrIntercept(pVmcbNstGst);
-            }
+            return IEMExecSvmVmexit(pVCpu, SVM_EXIT_INTR, 0, 0);
         }
+
         /*
          * Check if the nested-guest can receive virtual interrupts.
          */
-        else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
+        if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
+            && CPUMCanSvmNstGstTakeVirtIntr(pCtx))
         {
-            bool const fVirtIntEnabled = CPUMCanSvmNstGstTakeVirtIntr(pCtx);
-            if (fVirtIntEnabled)
-            {
-                uint8_t const u8Interrupt = CPUMGetSvmNstGstInterrupt(pCtx);
-                Log4(("Injecting virtual interrupt u8Interrupt=%#x\n", u8Interrupt));
+            uint8_t const u8Interrupt = CPUMGetSvmNstGstInterrupt(pCtx);
+            Log4(("Injecting virtual interrupt u8Interrupt=%#x\n", u8Interrupt));
 
-                Event.n.u1Valid  = 1;
-                Event.n.u8Vector = u8Interrupt;
-                Event.n.u3Type   = SVM_EVENT_EXTERNAL_IRQ;
+            Event.n.u1Valid  = 1;
+            Event.n.u8Vector = u8Interrupt;
+            Event.n.u3Type   = SVM_EVENT_EXTERNAL_IRQ;
 
-                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
-                hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-            }
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
+            hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+            return VINF_SUCCESS;
         }
     }
+
+    return VINF_SUCCESS;
 }
 #endif
 
@@ -3583,7 +3562,11 @@ static int hmR0SvmPreRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTR
     if (TRPMHasTrap(pVCpu))
         hmR0SvmTrpmTrapToPendingEvent(pVCpu);
     else if (!pVCpu->hm.s.Event.fPending)
-        hmR0SvmEvaluatePendingEventNested(pVCpu, pCtx);
+    {
+        VBOXSTRICTRC rcStrict = hmR0SvmEvaluatePendingEventNested(pVCpu, pCtx);
+        if (rcStrict != VINF_SUCCESS)
+            return VBOXSTRICTRC_VAL(rcStrict);
+    }
 
     /*
      * On the oldest AMD-V systems, we may not get enough information to reinject an NMI.
