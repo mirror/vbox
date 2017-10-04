@@ -146,7 +146,7 @@ HRESULT Display::FinalConstruct()
 #endif
 
 #ifdef VBOX_WITH_VIDEOREC
-    rc = RTCritSectInit(&mVideoCaptureLock);
+    rc = RTCritSectInit(&mVideoRecLock);
     AssertRC(rc);
 
     mpVideoRecCtx = NULL;
@@ -179,10 +179,10 @@ void Display::FinalRelease()
     uninit();
 
 #ifdef VBOX_WITH_VIDEOREC
-    if (RTCritSectIsInitialized(&mVideoCaptureLock))
+    if (RTCritSectIsInitialized(&mVideoRecLock))
     {
-        RTCritSectDelete(&mVideoCaptureLock);
-        RT_ZERO(mVideoCaptureLock);
+        RTCritSectDelete(&mVideoRecLock);
+        RT_ZERO(mVideoRecLock);
     }
 #endif
 
@@ -730,7 +730,7 @@ void Display::uninit()
         maFramebuffers[uScreenId].updateImage.cbLine = 0;
         maFramebuffers[uScreenId].pFramebuffer.setNull();
 #ifdef VBOX_WITH_VIDEOREC
-        maFramebuffers[uScreenId].videoCapture.pSourceBitmap.setNull();
+        maFramebuffers[uScreenId].videoRec.pSourceBitmap.setNull();
 #endif
     }
 
@@ -1058,7 +1058,7 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
         i_handleSetVisibleRegion(mcRectVisibleRegion, mpRectVisibleRegion);
 
 #ifdef VBOX_WITH_VIDEOREC
-    i_videoCaptureScreenChanged(uScreenId);
+    i_videoRecScreenChanged(uScreenId);
 #endif
 
     LogRelFlowFunc(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
@@ -2401,7 +2401,7 @@ HRESULT Display::takeScreenShotToArray(ULONG aScreenId,
  *
  * @returns Enables video capturing features.
  */
-VIDEORECFEATURES Display::i_videoCaptureGetEnabled(void)
+VIDEORECFEATURES Display::i_videoRecGetEnabled(void)
 {
     return VideoRecGetEnabled(&mVideoRecCfg);
 }
@@ -2411,7 +2411,7 @@ VIDEORECFEATURES Display::i_videoCaptureGetEnabled(void)
  *
  * @returns True if video capturing is active, false if not.
  */
-bool Display::i_videoCaptureStarted(void)
+bool Display::i_videoRecStarted(void)
 {
     return VideoRecIsActive(mpVideoRecCtx);
 }
@@ -2428,7 +2428,7 @@ bool Display::i_videoCaptureStarted(void)
  *
  * @thread EMT
  */
-int Display::i_videoCaptureConfigureAudioDriver(const Utf8Str& strDevice,
+int Display::i_videoRecConfigureAudioDriver(const Utf8Str& strDevice,
                                                 unsigned       uInstance,
                                                 unsigned       uLun,
                                                 bool           fAttach)
@@ -2501,7 +2501,7 @@ int Display::i_videoCaptureConfigureAudioDriver(const Utf8Str& strDevice,
  * @param   fAttachDetach       Whether to attach/detach associated drivers or not.
  */
 /* static */
-DECLCALLBACK(int) Display::i_videoCaptureConfigure(Display *pThis, PVIDEORECCFG pCfg, bool fAttachDetach)
+DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg, bool fAttachDetach)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
@@ -2663,7 +2663,7 @@ DECLCALLBACK(int) Display::i_videoCaptureConfigure(Display *pThis, PVIDEORECCFG 
 
         if (pCfg->Audio.fEnabled) /* Enable */
         {
-            vrc2 = pThis->i_videoCaptureConfigureAudioDriver(strAudioDev, uInstance, uLun, true /* fAttach */);
+            vrc2 = pThis->i_videoRecConfigureAudioDriver(strAudioDev, uInstance, uLun, true /* fAttach */);
             if (   RT_SUCCESS(vrc2)
                 && fAttachDetach)
             {
@@ -2681,7 +2681,7 @@ DECLCALLBACK(int) Display::i_videoCaptureConfigure(Display *pThis, PVIDEORECCFG 
 
             if (RT_SUCCESS(vrc2))
             {
-                vrc2 = pThis->i_videoCaptureConfigureAudioDriver(strAudioDev, uInstance, uLun, false /* fAttach */);
+                vrc2 = pThis->i_videoRecConfigureAudioDriver(strAudioDev, uInstance, uLun, false /* fAttach */);
             }
 
             if (RT_FAILURE(vrc2))
@@ -2706,7 +2706,7 @@ DECLCALLBACK(int) Display::i_videoCaptureConfigure(Display *pThis, PVIDEORECCFG 
         pThis->maVideoRecEnabled[i] = RT_BOOL(pCfg->aScreens[i]);
 
         if (fChanged && i < pThis->mcMonitors)
-            pThis->i_videoCaptureScreenChanged(i);
+            pThis->i_videoRecScreenChanged(i);
 
     }
 
@@ -2722,7 +2722,7 @@ DECLCALLBACK(int) Display::i_videoCaptureConfigure(Display *pThis, PVIDEORECCFG 
  * @param   cbData              Size (in bytes) of audio data.
  * @param   uTimestampMs        Timestamp (in ms) of the audio data.
  */
-int Display::i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs)
+int Display::i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs)
 {
     if (   VideoRecIsActive(mpVideoRecCtx)
         && VideoRecGetEnabled(&mVideoRecCfg) & VIDEORECFEATURE_AUDIO)
@@ -2739,7 +2739,7 @@ int Display::i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t
  * @param   pVideoRecCfg        Video recording configuration to use.
  * @returns IPRT status code.
  */
-int Display::i_videoCaptureStart(void)
+int Display::i_videoRecStart(void)
 {
     if (VideoRecIsActive(mpVideoRecCtx))
         return VINF_SUCCESS;
@@ -2756,10 +2756,10 @@ int Display::i_videoCaptureStart(void)
         int rc2 = VideoRecStreamInit(mpVideoRecCtx, uScreen);
         if (RT_SUCCESS(rc2))
         {
-            i_videoCaptureScreenChanged(uScreen);
+            i_videoRecScreenChanged(uScreen);
         }
         else
-            LogRel(("Display::VideoCaptureStart: Failed to initialize video recording context #%u (%Rrc)\n", uScreen, rc2));
+            LogRel(("VideoRec: Failed to initialize video recording context #%u (%Rrc)\n", uScreen, rc2));
 
         if (RT_SUCCESS(rc))
             rc = rc2;
@@ -2770,7 +2770,7 @@ int Display::i_videoCaptureStart(void)
 /**
  * Stops video capturing. Does nothing if video capturing is not active.
  */
-void Display::i_videoCaptureStop(void)
+void Display::i_videoRecStop(void)
 {
     if (!VideoRecIsActive(mpVideoRecCtx))
         return;
@@ -2780,10 +2780,10 @@ void Display::i_videoCaptureStop(void)
 
     unsigned uScreenId;
     for (uScreenId = 0; uScreenId < mcMonitors; ++uScreenId)
-        i_videoCaptureScreenChanged(uScreenId);
+        i_videoRecScreenChanged(uScreenId);
 }
 
-void Display::i_videoCaptureScreenChanged(unsigned uScreenId)
+void Display::i_videoRecScreenChanged(unsigned uScreenId)
 {
     if (   !VideoRecIsActive(mpVideoRecCtx)
         || !maVideoRecEnabled[uScreenId])
@@ -2792,16 +2792,16 @@ void Display::i_videoCaptureScreenChanged(unsigned uScreenId)
         return;
     }
 
-    /* Get a new source bitmap which will be used by video capture code. */
+    /* Get a new source bitmap which will be used by video recording code. */
     ComPtr<IDisplaySourceBitmap> pSourceBitmap;
     QuerySourceBitmap(uScreenId, pSourceBitmap.asOutParam());
 
-    int rc2 = RTCritSectEnter(&mVideoCaptureLock);
+    int rc2 = RTCritSectEnter(&mVideoRecLock);
     if (RT_SUCCESS(rc2))
     {
-        maFramebuffers[uScreenId].videoCapture.pSourceBitmap = pSourceBitmap;
+        maFramebuffers[uScreenId].videoRec.pSourceBitmap = pSourceBitmap;
 
-        rc2 = RTCritSectLeave(&mVideoCaptureLock);
+        rc2 = RTCritSectLeave(&mVideoRecLock);
         AssertRC(rc2);
     }
 }
@@ -3554,7 +3554,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
 
                 if (VideoRecIsLimitReached(pDisplay->mpVideoRecCtx, uScreenId, u64Now))
                 {
-                    pDisplay->i_videoCaptureStop();
+                    pDisplay->i_videoRecStop();
                     pDisplay->mParent->i_machine()->COMSETTER(VideoCaptureEnabled)(false);
                     break;
                 }
@@ -3563,11 +3563,11 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
                 if (!pFBInfo->fDisabled)
                 {
                     ComPtr<IDisplaySourceBitmap> pSourceBitmap;
-                    int rc2 = RTCritSectEnter(&pDisplay->mVideoCaptureLock);
+                    int rc2 = RTCritSectEnter(&pDisplay->mVideoRecLock);
                     if (RT_SUCCESS(rc2))
                     {
-                        pSourceBitmap = pFBInfo->videoCapture.pSourceBitmap;
-                        RTCritSectLeave(&pDisplay->mVideoCaptureLock);
+                        pSourceBitmap = pFBInfo->videoRec.pSourceBitmap;
+                        RTCritSectLeave(&pDisplay->mVideoRecLock);
                     }
 
                     if (!pSourceBitmap.isNull())
@@ -4590,7 +4590,7 @@ DECLCALLBACK(void) Display::i_drvDestruct(PPDMDRVINS pDrvIns)
     {
         AutoWriteLock displayLock(pThis->pDisplay COMMA_LOCKVAL_SRC_POS);
 #ifdef VBOX_WITH_VIDEOREC
-        pThis->pDisplay->i_videoCaptureStop();
+        pThis->pDisplay->i_videoRecStop();
 #endif
 #ifdef VBOX_WITH_CRHGSMI
         pThis->pDisplay->i_destructCrHgsmiData();
@@ -4703,15 +4703,15 @@ LogRel(("Display: Debug: Calling i_setupCrHgsmiData\n"));
 #endif
 
 #ifdef VBOX_WITH_VIDEOREC
-LogRel(("Display: Debug: Calling i_videoCaptureGetEnabled\n"));
-    if (pDisplay->i_videoCaptureGetEnabled())
+LogRel(("Display: Debug: Calling i_videoRecGetEnabled\n"));
+    if (pDisplay->i_videoRecGetEnabled())
     {
-LogRel(("Display: Debug: Calling i_videoCaptureStart\n"));
-        int rc2 = pDisplay->i_videoCaptureStart();
+LogRel(("Display: Debug: Calling i_videoRecStart\n"));
+        int rc2 = pDisplay->i_videoRecStart();
         if (RT_SUCCESS(rc2))
             fireVideoCaptureChangedEvent(pDisplay->mParent->i_getEventSource());
 
-        /* If video capturing fails for whatever reason here, this is
+        /* If video recording fails for whatever reason here, this is
          * non-critical and should not be returned at this point -- otherwise
          * the display driver construction fails completely. */
     }

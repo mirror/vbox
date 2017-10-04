@@ -104,7 +104,7 @@ typedef struct _DISPLAYFBINFO
     struct
     {
         ComPtr<IDisplaySourceBitmap> pSourceBitmap;
-    } videoCapture;
+    } videoRec;
 #endif /* VBOX_WITH_VIDEOREC */
 } DISPLAYFBINFO;
 
@@ -208,17 +208,17 @@ public:
     void VideoAccelFlushVMMDev(void);
 
 #ifdef VBOX_WITH_VIDEOREC
-    PVIDEORECCFG             i_videoCaptureGetConfig(void) { return &mVideoRecCfg; }
-    VIDEORECFEATURES         i_videoCaptureGetEnabled(void);
-    bool                     i_videoCaptureStarted(void);
+    PVIDEORECCFG             i_videoRecGetConfig(void) { return &mVideoRecCfg; }
+    VIDEORECFEATURES         i_videoRecGetEnabled(void);
+    bool                     i_videoRecStarted(void);
 # ifdef VBOX_WITH_AUDIO_VIDEOREC
-    int                      i_videoCaptureConfigureAudioDriver(const Utf8Str& strAdapter, unsigned uInstance, unsigned uLun, bool fAttach);
+    int                      i_videoRecConfigureAudioDriver(const Utf8Str& strAdapter, unsigned uInstance, unsigned uLun, bool fAttach);
 # endif
-    static DECLCALLBACK(int) i_videoCaptureConfigure(Display *pThis, PVIDEORECCFG pCfg, bool fAttachDetach);
-    int                      i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);
-    int                      i_videoCaptureStart(void);
-    void                     i_videoCaptureStop(void);
-    void                     i_videoCaptureScreenChanged(unsigned uScreenId);
+    static DECLCALLBACK(int) i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg, bool fAttachDetach);
+    int                      i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);
+    int                      i_videoRecStart(void);
+    void                     i_videoRecStop(void);
+    void                     i_videoRecScreenChanged(unsigned uScreenId);
 #endif
 
     void i_notifyPowerDown(void);
@@ -474,8 +474,8 @@ private:
     RTCRITSECT           mVideoAccelLock;
 
 #ifdef VBOX_WITH_VIDEOREC
-    /* Serializes access to video capture source bitmaps. */
-    RTCRITSECT           mVideoCaptureLock;
+    /* Serializes access to video recording source bitmaps. */
+    RTCRITSECT           mVideoRecLock;
     /** The current video recording configuration being used. */
     VIDEORECCFG          mVideoRecCfg;
     /** The video recording context. */

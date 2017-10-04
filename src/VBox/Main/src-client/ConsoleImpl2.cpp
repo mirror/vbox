@@ -3005,7 +3005,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             {
                 /* Note: Don't do any driver attaching (fAttachDetach) here, as this will
                  *       be done automatically as part of the VM startup process. */
-                pDisplay->i_videoCaptureConfigure(pDisplay, pDisplay->i_videoCaptureGetConfig(), false /* fAttachDetach */);
+                pDisplay->i_videoRecConfigure(pDisplay, pDisplay->i_videoRecGetConfig(), false /* fAttachDetach */);
             }
 #endif /* VBOX_WITH_AUDIO_VIDEOREC */
 

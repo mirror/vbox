@@ -5516,21 +5516,21 @@ HRESULT Console::i_onVideoCaptureChange()
             alock.release();
 
             int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY /*idDstCpu*/,
-                                       (PFNRT)Display::i_videoCaptureConfigure, 3,
-                                       pDisplay, pDisplay->i_videoCaptureGetConfig(), true /* fAttachDetach */);
+                                       (PFNRT)Display::i_videoRecConfigure, 3,
+                                       pDisplay, pDisplay->i_videoRecGetConfig(), true /* fAttachDetach */);
             if (RT_SUCCESS(vrc))
             {
                 /* Make sure to acquire the lock again after we're done running in EMT. */
                 alock.acquire();
 
-                if (!mDisplay->i_videoCaptureStarted())
+                if (!mDisplay->i_videoRecStarted())
                 {
-                    vrc = mDisplay->i_videoCaptureStart();
+                    vrc = mDisplay->i_videoRecStart();
                     if (RT_FAILURE(vrc))
                         rc = setError(E_FAIL, tr("Unable to start video capturing (%Rrc)"), vrc);
                 }
                 else
-                    mDisplay->i_videoCaptureStop();
+                    mDisplay->i_videoRecStop();
             }
             else
                 rc = setError(E_FAIL, tr("Unable to set screens for capturing (%Rrc)"), vrc);
@@ -6735,7 +6735,7 @@ HRESULT Console::i_audioVideoRecSendAudio(const void *pvData, size_t cbData, uin
 {
     if (mDisplay)
     {
-        int rc2 = mDisplay->i_videoCaptureSendAudio(pvData, cbData, uDurationMs);
+        int rc2 = mDisplay->i_videoRecSendAudio(pvData, cbData, uDurationMs);
         AssertRC(rc2);
     }
 
