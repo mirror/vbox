@@ -223,7 +223,8 @@ typedef enum IEMXCPTCLASS
 {
     IEMXCPTCLASS_BENIGN,
     IEMXCPTCLASS_CONTRIBUTORY,
-    IEMXCPTCLASS_PAGE_FAULT
+    IEMXCPTCLASS_PAGE_FAULT,
+    IEMXCPTCLASS_DOUBLE_FAULT
 } IEMXCPTCLASS;
 
 
@@ -3238,6 +3239,9 @@ IEM_STATIC IEMXCPTCLASS iemGetXcptClass(uint8_t uVector)
         case X86_XCPT_PF:
         case X86_XCPT_VE:   /* Intel only */
             return IEMXCPTCLASS_PAGE_FAULT;
+
+        case X86_XCPT_DF:
+            return IEMXCPTCLASS_DOUBLE_FAULT;
     }
     return IEMXCPTCLASS_BENIGN;
 }
@@ -3266,6 +3270,7 @@ VMM_INT_DECL(IEMXCPTRAISE) IEMEvaluateRecursiveXcpt(PVMCPU pVCpu, uint32_t fPrev
      */
     AssertReturn(fCurFlags & IEM_XCPT_FLAGS_T_CPU_XCPT, IEMXCPTRAISE_INVALID);
     Assert(pVCpu); RT_NOREF(pVCpu);
+    Log2(("IEMEvaluateRecursiveXcpt: uPrevVector=%#x uCurVector=%#x\n", uPrevVector, uCurVector));
 
     IEMXCPTRAISE     enmRaise   = IEMXCPTRAISE_CURRENT_XCPT;
     IEMXCPTRAISEINFO fRaiseInfo = IEMXCPTRAISEINFO_NONE;
@@ -3291,7 +3296,7 @@ VMM_INT_DECL(IEMXCPTRAISE) IEMEvaluateRecursiveXcpt(PVMCPU pVCpu, uint32_t fPrev
                 enmRaise = IEMXCPTRAISE_DOUBLE_FAULT;
                 Log2(("IEMEvaluateRecursiveXcpt: uPrevVector=%u uCurVector=%u -> #DF\n", uPrevVector, uCurVector));
             }
-            else if (   uPrevVector == X86_XCPT_DF
+            else if (   enmPrevXcptClass == IEMXCPTCLASS_DOUBLE_FAULT
                      && (   enmCurXcptClass == IEMXCPTCLASS_CONTRIBUTORY
                          || enmCurXcptClass == IEMXCPTCLASS_PAGE_FAULT))
             {
@@ -5425,6 +5430,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
         { /* likely */ }
         else if (enmRaise == IEMXCPTRAISE_DOUBLE_FAULT)
         {
+            Log2(("iemRaiseXcptOrInt: Raising double fault. uPrevXcpt=%#x\n", uPrevXcpt));
             fFlags   = IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR;
             u8Vector = X86_XCPT_DF;
             uErr     = 0;
@@ -5434,7 +5440,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
         }
         else if (enmRaise == IEMXCPTRAISE_TRIPLE_FAULT)
         {
-            Log2(("iemRaiseXcptOrInt: raising triple fault. uPrevXcpt=%#x\n", uPrevXcpt));
+            Log2(("iemRaiseXcptOrInt: Raising triple fault. uPrevXcpt=%#x\n", uPrevXcpt));
             return iemInitiateCpuShutdown(pVCpu);
         }
         else if (enmRaise == IEMXCPTRAISE_CPU_HANG)
