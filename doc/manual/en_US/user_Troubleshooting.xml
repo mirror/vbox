@@ -792,7 +792,7 @@
       <title>PCnet driver failure in 32-bit Windows Server 2003 guests</title>
 
       <para>Certain editions of Windows 2000 and 2003 servers support more
-      than 4 GB RAM on 32-bit systems. The AMD PCnet network driver shipped with 
+      than 4 GB RAM on 32-bit systems. The AMD PCnet network driver shipped with
       Windows Server 2003 fails to load if the 32-bit guest OS uses paging
       extensions (which will occur with more than approximately 3.5 GB RAM
       assigned to the VM).</para>
@@ -1120,19 +1120,19 @@ VBoxClient --seamless</screen> when your X11 user session is started if you
     <sect2>
       <title>Certain Solaris 10 releases may take long to boot with SMP</title>
 
-      <para>When using more than one CPU, Solaris 10 releases 5/08 ("S10U5"), 
-          10/08 ("S10U6"), and 5/09 ("S10U7") may take a long time to boot and 
-          may print warnings on the system console regarding failures to read 
-          from disk. This is a bug in Solaris 10 which affects specific physical 
-          and virtual configurations. It is caused by trying to read microcode 
-          updates from the boot disk when the disk interrupt is reassigned to a 
-          not yet fully initialized secondary CPU. Disk reads will time out and 
+      <para>When using more than one CPU, Solaris 10 releases 5/08 ("S10U5"),
+          10/08 ("S10U6"), and 5/09 ("S10U7") may take a long time to boot and
+          may print warnings on the system console regarding failures to read
+          from disk. This is a bug in Solaris 10 which affects specific physical
+          and virtual configurations. It is caused by trying to read microcode
+          updates from the boot disk when the disk interrupt is reassigned to a
+          not yet fully initialized secondary CPU. Disk reads will time out and
           fail, triggering delays (approx. 45 seconds) and warnings.
       </para>
       <para>
-          The recommended solution is upgrading to at least Solaris 10 10/09 
-          ("S10U8") which includes a fix for this problem. Alternative solutions 
-          include restricting the number of virtual CPUs to one or possibly 
+          The recommended solution is upgrading to at least Solaris 10 10/09
+          ("S10U8") which includes a fix for this problem. Alternative solutions
+          include restricting the number of virtual CPUs to one or possibly
           using a different storage controller.
       </para>
 
@@ -1479,8 +1479,8 @@ VirtualBox</screen>
       current user is a member of the
       <computeroutput>vboxusers</computeroutput> group.
       Please keep in mind that group membership does not take effect immediately
-      but rather at the next login. If available, the 
-      <computeroutput>newgrp</computeroutput> command may avoid the need for 
+      but rather at the next login. If available, the
+      <computeroutput>newgrp</computeroutput> command may avoid the need for
       logout/login.</para>
     </sect2>
 

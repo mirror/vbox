@@ -1017,7 +1017,7 @@
     select between the OSS, ALSA or the PulseAudio subsystem. On newer Linux
     distributions, the PulseAudio subsystem should be preferred.</para>
 
-    <para>Since VirtualBox 5.0 only OSS is supported on Solaris hosts - the "Solaris Audio" 
+    <para>Since VirtualBox 5.0 only OSS is supported on Solaris hosts - the "Solaris Audio"
     audio backend is no longer supported on Solaris hosts.</para>
   </sect1>
 
@@ -1399,7 +1399,7 @@
 
     <para>The "User Interface" section allows you to change certain aspects of
       the user interface of this VM.</para>
-      
+
     <para><glosslist>
       <glossentry>
         <glossterm>Menu Bar</glossterm>

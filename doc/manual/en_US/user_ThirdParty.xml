@@ -267,7 +267,7 @@
           the license in <xref linkend="licNetBsd" xrefstyle="template: %n" />.
         </para>
       </listitem>
-      
+
       <listitem>
         <para>VirtualBox contains portions of liblightdm-gobject which is governed by the
         license in <xref linkend="licLGPL" xrefstyle="template: %n" /> and</para>

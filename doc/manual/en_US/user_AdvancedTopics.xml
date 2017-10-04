@@ -4316,9 +4316,9 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
       <computeroutput>usbip-core.ko</computeroutput> and
       <computeroutput>usbip-host.ko</computeroutput> kernel drivers
       are available, and that the USB/IP tools package is installed.
-      The particular installation method for the necessary tools depends on which 
+      The particular installation method for the necessary tools depends on which
       distribution is used.
-      For example, for Debian based systems - the following command should be used to 
+      For example, for Debian based systems - the following command should be used to
       install the required tools:
       <screen>apt-get install usbip-utils</screen></para>
       <para>To check whether the necessary tools are already installed use
@@ -4343,7 +4343,7 @@ $ usbip list -l
       service when the system boots.</para>
 
       <para>By default, no device on the server is exported - and this must be done manually
-      for each device. To export a device use: 
+      for each device. To export a device use:
       <screen>usbip bind -b "bus identifier"</screen>
       To export the multicard reader from above, for example  - use:
       <screen>usbip bind -b 4-2</screen></para>

@@ -39,7 +39,7 @@
           Windows system library Shell32.dll, asking for the user profile. Only
           on very old Windows versions which don't have this function
           or where it unexpectedly returns an error, there is a fallback based
-          on environment variables: first 
+          on environment variables: first
           <computeroutput>%USERPROFILE%</computeroutput> is checked, if it
           doesn't exist then an attempt with
           <computeroutput>%HOMEDRIVE%%HOMEPATH%</computeroutput> is made.
@@ -56,7 +56,7 @@
           by users using VirtualBox in combination with the tool
           <computeroutput>sudo</computeroutput> which by default doesn't reset
           the environment variable <computeroutput>$HOME</computeroutput>).
-          Typical value on Linux and Solaris is 
+          Typical value on Linux and Solaris is
           <computeroutput>/home/username</computeroutput> and on Mac OS X
           <computeroutput>/Users/username</computeroutput>.</para>
         </listitem>
@@ -610,9 +610,9 @@
     to recognize their presence and make use of them in order to leverage
     the benefits of communicating with the VirtualBox hypervisor.</para>
 
-    <para>Most modern mainstream guest operating systems, including 
-    Windows and Linux, ship with support for one or more paravirtualization 
-    interfaces. Hence, there is typically no need to install additional software 
+    <para>Most modern mainstream guest operating systems, including
+    Windows and Linux, ship with support for one or more paravirtualization
+    interfaces. Hence, there is typically no need to install additional software
     in the guest to take advantage of this feature.
     </para>
 

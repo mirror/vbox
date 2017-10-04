@@ -711,7 +711,7 @@
 
     <para>As a security measure, by default, the Linux implementation of internal
     networking only allows VMs running under the same user ID to establish an
-    internal network. However, it is possible to create a shared 
+    internal network. However, it is possible to create a shared
     internal networking interface, accessible by users with different UUIds.</para>
   </sect1>
 
@@ -1009,12 +1009,12 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen></para>
             command in Linux guests.</para>
         </listitem>
         <listitem>
-          <para>Perform a full, detailed analysis of network traffic on 
-            the VM's network adaptor using a 3rd party tool such as Wireshark. 
-            To do this, a promiscuous mode policy needs to be used on the 
-            VM's network adaptor. Use of this mode is only possible on 
+          <para>Perform a full, detailed analysis of network traffic on
+            the VM's network adaptor using a 3rd party tool such as Wireshark.
+            To do this, a promiscuous mode policy needs to be used on the
+            VM's network adaptor. Use of this mode is only possible on
             networks: NAT Network, Bridged Adapter, Internal Network and Host-only Adapter.</para>
-          <para>To setup a promiscuous mode policy, either select from the drop down list 
+          <para>To setup a promiscuous mode policy, either select from the drop down list
             located in the Network Settings dialog for the network adaptor
             or use the command line tool <computeroutput>VBoxManage</computeroutput>;
             for details, refer to <xref linkend="vboxmanage-modifyvm" />.</para>

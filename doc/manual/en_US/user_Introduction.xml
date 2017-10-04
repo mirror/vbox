@@ -401,7 +401,7 @@
           <para>Support for 64-bit Windows was added with VirtualBox
           1.5. Support for Windows XP was removed with VirtualBox 5.0.</para>
           </footnote>
-          
+
           <itemizedlist>
             <listitem>
               <para>Windows Vista SP1 and later (32-bit and 64-bit)</para>
