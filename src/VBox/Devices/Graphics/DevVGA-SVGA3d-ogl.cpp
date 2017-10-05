@@ -4201,8 +4201,7 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
 
             if (pContext->state.aRenderState[SVGA3D_RS_BLENDENABLE].uintValue != 0)
                 continue;   /* ignore if blend is already enabled */
-            /* no break */
-        }
+        }  /* Fall through */
 
         case SVGA3D_RS_BLENDENABLE:            /* SVGA3dBool */
             enableCap = GL_BLEND;
@@ -5796,7 +5795,7 @@ int vmsvga3dVertexDecl2OGL(SVGA3dVertexArrayIdentity &identity, GLint &size, GLe
 
     case SVGA3D_DECLTYPE_UBYTE4N:
         normalized = GL_TRUE;
-        /* no break */
+        /* Fall through */
     case SVGA3D_DECLTYPE_UBYTE4:
         size = 4;
         type = GL_UNSIGNED_BYTE;
@@ -5804,7 +5803,7 @@ int vmsvga3dVertexDecl2OGL(SVGA3dVertexArrayIdentity &identity, GLint &size, GLe
 
     case SVGA3D_DECLTYPE_SHORT2N:
         normalized = GL_TRUE;
-        /* no break */
+        /* Fall through */
     case SVGA3D_DECLTYPE_SHORT2:
         size = 2;
         type = GL_SHORT;
@@ -5812,7 +5811,7 @@ int vmsvga3dVertexDecl2OGL(SVGA3dVertexArrayIdentity &identity, GLint &size, GLe
 
     case SVGA3D_DECLTYPE_SHORT4N:
         normalized = GL_TRUE;
-        /* no break */
+        /* Fall through */
     case SVGA3D_DECLTYPE_SHORT4:
         size = 4;
         type = GL_SHORT;
@@ -6207,6 +6206,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         {
             case SVGA3D_DECLUSAGE_POSITIONT:
                 Log(("ShaderSetPositionTransformed: (%d,%d)\n", pContext->state.RectViewPort.w, pContext->state.RectViewPort.h));
+                /* Fall through */
             case SVGA3D_DECLUSAGE_POSITION:
                 ShaderSetPositionTransformed(pContext->pShaderContext, pContext->state.RectViewPort.w,
                                              pContext->state.RectViewPort.h,

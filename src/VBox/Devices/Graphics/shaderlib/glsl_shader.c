@@ -518,7 +518,7 @@ static inline void walk_constant_heap(const struct wined3d_gl_info *gl_info, con
                     stack[stack_idx] = HEAP_NODE_TRAVERSE_LEFT;
                     break;
                 }
-            }
+            }  /* Fall through */
 
             case HEAP_NODE_TRAVERSE_RIGHT:
             {
@@ -534,7 +534,7 @@ static inline void walk_constant_heap(const struct wined3d_gl_info *gl_info, con
                     stack[stack_idx] = HEAP_NODE_TRAVERSE_LEFT;
                     break;
                 }
-            }
+            }  /* Fall through */
 
             case HEAP_NODE_POP:
             {
@@ -594,7 +594,7 @@ static inline void walk_constant_heap_clamped(const struct wined3d_gl_info *gl_i
                     stack[stack_idx] = HEAP_NODE_TRAVERSE_LEFT;
                     break;
                 }
-            }
+            }  /* Fall through */
 
             case HEAP_NODE_TRAVERSE_RIGHT:
             {
@@ -609,7 +609,7 @@ static inline void walk_constant_heap_clamped(const struct wined3d_gl_info *gl_i
                     stack[stack_idx] = HEAP_NODE_TRAVERSE_LEFT;
                     break;
                 }
-            }
+            }  /* Fall through */
 
             case HEAP_NODE_POP:
             {

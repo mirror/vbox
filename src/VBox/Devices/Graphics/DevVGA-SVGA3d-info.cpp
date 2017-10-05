@@ -1269,7 +1269,7 @@ char *vmsvga3dFormatRenderState(char *pszBuffer, size_t cbBuffer, SVGA3dRenderSt
                                 uValue.u <= SVGA3D_WRAPCOORD_ALL ? " (out of bounds" : "");
                     break;
                 default:
-                    AssertFailed();
+                    AssertFailed();  /* Fall through */
                 case 'b': //SVGA3dBlendOp
                 case 'e': //SVGA3dBlendEquation
                 case 'p': //SVGA3dCmpFunc

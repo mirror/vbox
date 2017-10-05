@@ -755,7 +755,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                         {
                         default:
                             AssertFailed();
-                            /* no break */
+                            /* Fall through */
                         case SVGA3D_SURFACE_HINT_DEPTHSTENCIL:
                         case SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_HINT_TEXTURE:
                             /** @todo fetch data from the renderbuffer */
