@@ -446,7 +446,7 @@ typedef UDFTAG const *PCUDFTAG;
 #define UDF_TAG_ID_PRIMARY_VOL_DESC                 UINT16_C(0x0001) /**< UDFPRIMARYVOLUMEDESC */
 #define UDF_TAG_ID_ANCHOR_VOLUME_DESC_PTR           UINT16_C(0x0002) /**< UDFANCHORVOLUMEDESCPTR */
 #define UDF_TAG_ID_VOLUME_DESC_PTR                  UINT16_C(0x0003) /**< UDFVOLUMEDESCPTR */
-#define UDF_TAG_ID_IMPLEMENATION_USE_VOLUME_DESC    UINT16_C(0x0004) /**< UDFIMPLEMENTATIONUSEVOLUMEDESC */
+#define UDF_TAG_ID_IMPLEMENTATION_USE_VOLUME_DESC   UINT16_C(0x0004) /**< UDFIMPLEMENTATIONUSEVOLUMEDESC */
 #define UDF_TAG_ID_PARTITION_DESC                   UINT16_C(0x0005) /**< UDFPARTITIONDESC */
 #define UDF_TAG_ID_LOGICAL_VOLUME_DESC              UINT16_C(0x0006) /**< UDFLOGICALVOLUMEDESC */
 #define UDF_TAG_ID_UNALLOCATED_SPACE_DESC           UINT16_C(0x0007) /**< UDFUNALLOCATEDSPACEDESC */
@@ -494,7 +494,7 @@ typedef struct UDFPRIMARYVOLUMEDESC
     /** 0x044: Maximum character set bitmask (aka list). */
     uint32_t        fMaxCharacterSets;
     /** 0x048: Volume set identifier (dstring).  This starts with 16 unique
-     *  characters, the first 8 being the hex represenation of a time value. */
+     *  characters, the first 8 being the hex representation of a time value. */
     UDFDSTRING      achVolumeSetID[128];
     /** 0x0c8: Descriptor character set.
      * For achVolumeSetID and achVolumeID. */
@@ -588,7 +588,7 @@ typedef UDFVOLUMEDESCPTR const *PCUDFVOLUMEDESCPTR;
  */
 typedef struct UDFIMPLEMENTATIONUSEVOLUMEDESC
 {
-    /** 0x00: The descriptor tag (UDF_TAG_ID_IMPLEMENATION_USE_VOLUME_DESC). */
+    /** 0x00: The descriptor tag (UDF_TAG_ID_IMPLEMENTATION_USE_VOLUME_DESC). */
     UDFTAG          Tag;
     /** 0x10: Volume descriptor sequence number. */
     uint32_t        uVolumeDescSeqNo;
@@ -692,7 +692,7 @@ typedef struct UDFPARTITIONDESC
     uint32_t        cSectors;
     /** 0x0c4: Implementation identifier ("*Developer ID"). */
     UDFENTITYID     idImplementation;
-    /** 0x0e4: Implemenation use bytes. */
+    /** 0x0e4: Implementation use bytes. */
     union
     {
         /** Generic view. */
@@ -896,7 +896,7 @@ typedef struct UDFLOGICALVOLINTEGRITYDESC
      * There are two tables each @a cPartitions in size.  The first is the free
      * space table.  The second the size table.
      *
-     * Following these tables there are @a cbImplemenationUse bytes of space for
+     * Following these tables there are @a cbImplementationUse bytes of space for
      * the implementation to use.
      */
     uint32_t        aTables[RT_FLEXIBLE_ARRAY];

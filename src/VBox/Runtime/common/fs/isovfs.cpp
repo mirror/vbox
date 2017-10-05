@@ -174,56 +174,71 @@ typedef struct RTFSISODIROBJ
 } RTFSISODIROBJ;
 typedef RTFSISODIROBJ *PRTFSISODIROBJ;
 
+/** Pointer to info about a UDF volume. */
+typedef struct RTFSISOVOLUDFVOL *PRTFSISOVOLUDFVOL;
+
 /**
- * Information about a logical partition.
+ * Information about a logical UDF partition.
+ *
+ * This combins information from the partition descriptor, the UDFPARTMAPTYPE1
+ * and the UDFPARTMAPTYPE2 structure.
  */
 typedef struct RTFSISOVOLUDFPART
 {
     /** Partition number (not index). */
     uint16_t            uPartitionNo;
+    /** Parition flags (UDF_PARTITION_FLAGS_XXX). */
     uint16_t            fFlags;
     /** Number of sectors. */
     uint32_t            cSectors;
-#if 0
+    /** Partition starting location as a byte offset. */
+    uint64_t            offByteLocation;
+    /** Partition starting location (logical sector number). */
+    uint32_t            offLocation;
+    /** Set if Hdr is valid. */
+    bool                fHaveHdr;
+    /** Copy of UDFPARTITIONDESC::ContentsUse::Hdr. */
+    UDFPARTITIONHDRDESC Hdr;
 
-
-    /** 0x000: The descriptor tag (UDF_TAG_ID_PARTITION_DESC). */
-    UDFTAG          Tag;
-    /** 0x010: Volume descriptor sequence number. */
-    uint32_t        uVolumeDescSeqNo;
-    /** 0x014: The partition flags (UDF_PARTITION_FLAGS_XXX).   */
-    uint16_t        fFlags;
-    /** 0x016: The partition number. */
-    uint16_t        uPartitionNo;
-    /** 0x018: Partition contents (UDF_ENTITY_ID_PD_PARTITION_CONTENTS_XXX). */
-    UDFENTITYID     PartitionContents;
-    /** 0x038: partition contents use (depends on the PartitionContents field). */
-    union
-    {
-        /** Generic view. */
-        uint8_t     ab[128];
-        /** UDF partition header descriptor (UDF_ENTITY_ID_PD_PARTITION_CONTENTS_UDF). */
-        UDFPARTITIONHDRDESC Hdr;
-    } ContentsUse;
-    /** 0x0b8: Access type (UDF_PART_ACCESS_TYPE_XXX).  */
-    uint32_t        uAccessType;
-    /** 0x0bc: Partition starting location (logical sector number). */
-    uint32_t        offLocation;
-    /** 0x0c0: Partition length in sectors. */
-    uint32_t        cSectors;
-    /** 0x0c4: Implementation identifier ("*Developer ID"). */
-    UDFENTITYID     idImplementation;
-    /** 0x0e4: Implemenation use bytes. */
-    union
-    {
-        /** Generic view. */
-        uint8_t     ab[128];
-    } ImplementationUse;
-    /** 0x164: Reserved. */
-    uint8_t         abReserved[156];
-#endif
-
+    /** Pointer to the volume this partition belongs to. */
+    PRTFSISOVOLUDFVOL   pVol;
 } RTFSISOVOLUDFPART;
+typedef RTFSISOVOLUDFPART *PRTFSISOVOLUDFPART;
+
+/**
+ * Information about a UDF volume (/ volume set).
+ *
+ * This combines information from the primary and logical descriptors.
+ *
+ * @note There is only one volume per volume set in the current UDF
+ *       implementation.  So, this can be considered a volume and a volume set.
+ */
+typedef struct RTFSISOVOLUDFVOL
+{
+    /** The extent containing the file set descriptor. */
+    UDFLONGAD           FileSetDescriptor;
+
+    /** The logical block size on this volume. */
+    uint32_t            cbBlock;
+    /** Primary volume descriptor number. */
+    uint32_t            uPrimaryVolumeDescNo;
+    /** Volume sequence number. */
+    uint16_t            uVolumeSeqNo;
+    /** Maximum volume sequence number. */
+    uint16_t            uMaxVolumeSeqNo;
+    /** Flags (UDF_PVD_FLAGS_XXX). */
+    uint16_t            fFlags;
+
+    /** Number of partitions in this volume. */
+    uint16_t            cPartitions;
+    /** Partitions in this volume. */
+    PRTFSISOVOLUDFPART  paPartitions;
+
+    /** Volume identifier (dstring). */
+    UDFDSTRING          achVolumeID[32];
+    /** The volume ID string. */
+    UDFDSTRING          achLogicalVolumeID[128];
+} RTFSISOVOLUDFVOL;
 
 
 /**
@@ -271,8 +286,13 @@ typedef struct RTFSISOVOL
         uint8_t         uLevel;
         /** Number of volume sets. */
         uint8_t         cVolumeSets;
+        /** Number of entries in the array paPartitions points to. */
+        uint8_t         cPartitions;
         /** Set if we already seen the primary volume descriptor. */
         bool            fSeenPrimaryDesc : 1;
+        /** Partitions. */
+        PRTFSISOVOLUDFPART paPartitions;
+
 #if 0
         /** Volume sets. */
         struct
@@ -283,12 +303,6 @@ typedef struct RTFSISOVOL
 
         } aVolumeSets[1];
 
-
-        /** Partitions. */
-        struct
-        {
-
-        } aPartitions[]
 #endif
     } udf;
 
@@ -2655,7 +2669,7 @@ static int rtFsIsoVolReadAndProcessUdfVdsSeq(PRTFSISOVOL pThis, uint64_t offSeq,
                     rc = rtFsIsoVolProcessUdfPrimaryVolDesc(pThis, (PCUDFPRIMARYVOLUMEDESC)pTag, pErrInfo);
                     break;
 
-                case UDF_TAG_ID_IMPLEMENATION_USE_VOLUME_DESC:
+                case UDF_TAG_ID_IMPLEMENTATION_USE_VOLUME_DESC:
                     rc = rtFsIsoVolProcessUdfImplUseVolDesc(pThis, (PCUDFIMPLEMENTATIONUSEVOLUMEDESC)pTag, pErrInfo);
                     break;
 
