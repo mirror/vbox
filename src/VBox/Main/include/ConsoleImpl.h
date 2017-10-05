@@ -258,8 +258,8 @@ public:
     static HRESULT i_setErrorStatic(HRESULT aResultCode, const char *pcsz, ...);
     HRESULT i_setInvalidMachineStateError();
 
-    static const char *i_convertControllerTypeToDev(StorageControllerType_T enmCtrlType);
-    static HRESULT i_convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun);
+    static const char *i_storageControllerTypeToStr(StorageControllerType_T enmCtrlType);
+    static HRESULT i_storageBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun);
     // Called from event listener
     HRESULT i_onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
                                       NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort, IN_BSTR aGuestIp, LONG aGuestPort);

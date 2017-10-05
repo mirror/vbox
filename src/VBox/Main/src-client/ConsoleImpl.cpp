@@ -3279,7 +3279,7 @@ HRESULT Console::i_setInvalidMachineStateError()
 
 
 /* static */
-const char *Console::i_convertControllerTypeToDev(StorageControllerType_T enmCtrlType)
+const char *Console::i_storageControllerTypeToStr(StorageControllerType_T enmCtrlType)
 {
     switch (enmCtrlType)
     {
@@ -3306,7 +3306,7 @@ const char *Console::i_convertControllerTypeToDev(StorageControllerType_T enmCtr
     }
 }
 
-HRESULT Console::i_convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun)
+HRESULT Console::i_storageBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun)
 {
     switch (enmBus)
     {
@@ -3477,7 +3477,7 @@ HRESULT Console::i_doMediumChange(IMediumAttachment *aMediumAttachment, bool fFo
     StorageControllerType_T enmCtrlType;
     rc = pStorageController->COMGETTER(ControllerType)(&enmCtrlType);
     AssertComRC(rc);
-    pszDevice = i_convertControllerTypeToDev(enmCtrlType);
+    pszDevice = i_storageControllerTypeToStr(enmCtrlType);
 
     StorageBus_T enmBus;
     rc = pStorageController->COMGETTER(Bus)(&enmBus);
@@ -3655,7 +3655,7 @@ HRESULT Console::i_doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, P
     StorageControllerType_T enmCtrlType;
     rc = pStorageController->COMGETTER(ControllerType)(&enmCtrlType);
     AssertComRC(rc);
-    pszDevice = i_convertControllerTypeToDev(enmCtrlType);
+    pszDevice = i_storageControllerTypeToStr(enmCtrlType);
 
     StorageBus_T enmBus;
     rc = pStorageController->COMGETTER(Bus)(&enmBus);
@@ -3833,7 +3833,7 @@ HRESULT Console::i_doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, P
     StorageControllerType_T enmCtrlType;
     rc = pStorageController->COMGETTER(ControllerType)(&enmCtrlType);
     AssertComRC(rc);
-    pszDevice = i_convertControllerTypeToDev(enmCtrlType);
+    pszDevice = i_storageControllerTypeToStr(enmCtrlType);
 
     StorageBus_T enmBus;
     rc = pStorageController->COMGETTER(Bus)(&enmBus);
@@ -3947,7 +3947,7 @@ DECLCALLBACK(int) Console::i_detachStorageDevice(Console *pThis,
     hrc = pMediumAtt->COMGETTER(Device)(&lDev);                             H();
     hrc = pMediumAtt->COMGETTER(Port)(&lPort);                              H();
     hrc = pMediumAtt->COMGETTER(Type)(&lType);                              H();
-    hrc = Console::i_convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);  H();
+    hrc = Console::i_storageBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);  H();
 
 #undef H
 
@@ -4425,14 +4425,14 @@ HRESULT Console::i_initSecretKeyIfOnAllAttachments(void)
         StorageControllerType_T enmCtrlType;
         hrc = pStorageCtrl->COMGETTER(ControllerType)(&enmCtrlType);
         AssertComRC(hrc);
-        const char *pcszDevice = i_convertControllerTypeToDev(enmCtrlType);
+        const char *pcszDevice = i_storageControllerTypeToStr(enmCtrlType);
 
         StorageBus_T enmBus;
         hrc = pStorageCtrl->COMGETTER(Bus)(&enmBus);
         AssertComRC(hrc);
 
         unsigned uLUN;
-        hrc = Console::i_convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);
+        hrc = Console::i_storageBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);
         AssertComRC(hrc);
 
         PPDMIBASE pIBase = NULL;
@@ -4537,14 +4537,14 @@ HRESULT Console::i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(const Utf8St
             StorageControllerType_T enmCtrlType;
             hrc = pStorageCtrl->COMGETTER(ControllerType)(&enmCtrlType);
             AssertComRC(hrc);
-            const char *pcszDevice = i_convertControllerTypeToDev(enmCtrlType);
+            const char *pcszDevice = i_storageControllerTypeToStr(enmCtrlType);
 
             StorageBus_T enmBus;
             hrc = pStorageCtrl->COMGETTER(Bus)(&enmBus);
             AssertComRC(hrc);
 
             unsigned uLUN;
-            hrc = Console::i_convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);
+            hrc = Console::i_storageBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);
             AssertComRC(hrc);
 
             PPDMIBASE pIBase = NULL;
@@ -4660,14 +4660,14 @@ HRESULT Console::i_configureEncryptionForDisk(const com::Utf8Str &strId, unsigne
             StorageControllerType_T enmCtrlType;
             hrc = pStorageCtrl->COMGETTER(ControllerType)(&enmCtrlType);
             AssertComRC(hrc);
-            const char *pcszDevice = i_convertControllerTypeToDev(enmCtrlType);
+            const char *pcszDevice = i_storageControllerTypeToStr(enmCtrlType);
 
             StorageBus_T enmBus;
             hrc = pStorageCtrl->COMGETTER(Bus)(&enmBus);
             AssertComRC(hrc);
 
             unsigned uLUN;
-            hrc = Console::i_convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);
+            hrc = Console::i_storageBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);
             AssertComRCReturnRC(hrc);
 
             PPDMIBASE pIBase = NULL;
@@ -6196,7 +6196,7 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     StorageControllerType_T enmCtrlType;
     rc = pStorageController->COMGETTER(ControllerType)(&enmCtrlType);
     AssertComRC(rc);
-    const char *pcszDevice = i_convertControllerTypeToDev(enmCtrlType);
+    const char *pcszDevice = i_storageControllerTypeToStr(enmCtrlType);
 
     StorageBus_T enmBus;
     rc = pStorageController->COMGETTER(Bus)(&enmBus);
@@ -6209,7 +6209,7 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     AssertComRC(rc);
 
     unsigned uLUN;
-    rc = Console::i_convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);
+    rc = Console::i_storageBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);
     AssertComRCReturnRC(rc);
 
     Assert(mMachineState == MachineState_DeletingSnapshotOnline);
@@ -6343,7 +6343,7 @@ HRESULT Console::i_reconfigureMediumAttachments(const std::vector<ComPtr<IMedium
         if (FAILED(rc))
             throw rc;
 
-        const char *pcszDevice = i_convertControllerTypeToDev(enmController);
+        const char *pcszDevice = i_storageControllerTypeToStr(enmController);
 
         BOOL fBuiltinIOCache;
         rc = mMachine->COMGETTER(IOCacheEnabled)(&fBuiltinIOCache);
