@@ -122,6 +122,7 @@ systemd_wrap_init_script()
     test -d /lib/systemd/system && unit_path=/lib/systemd/system
     test -n "${unit_path}" || \
         { echo "$self: systemd unit path not found" >&2 && return 1; }
+    conflicts=`sed -n 's/# *X-Conflicts-With: *\(.*\)/\1/p' "${script}" | sed 's/\$[a-z]*//'`
     description=`sed -n 's/# *Short-Description: *\(.*\)/\1/p' "${script}"`
     required=`sed -n 's/# *Required-Start: *\(.*\)/\1/p' "${script}" | sed 's/\$[a-z]*//'`
     startbefore=`sed -n 's/# *X-Start-Before: *\(.*\)/\1/p' "${script}" | sed 's/\$[a-z]*//'`
@@ -137,7 +138,7 @@ SourcePath=${script}
 Description=${description}
 Before=${targets}shutdown.target ${before}
 After=${after}
-Conflicts=shutdown.target
+Conflicts=shutdown.target ${conflicts}
 
 [Service]
 Type=${servicetype}

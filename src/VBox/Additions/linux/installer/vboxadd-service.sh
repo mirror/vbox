@@ -13,6 +13,9 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
+# X-Conflicts-With is our own invention, which we use when converting to
+# a systemd unit.
+
 # chkconfig: 345 35 65
 # description: VirtualBox Additions service
 #
@@ -22,6 +25,7 @@
 # Required-Stop:  vboxadd
 # Default-Start:  2 3 4 5
 # Default-Stop:   0 1 6
+# X-Conflicts-With: systemd-timesyncd.service
 # Description:    VirtualBox Additions Service
 ### END INIT INFO
 
