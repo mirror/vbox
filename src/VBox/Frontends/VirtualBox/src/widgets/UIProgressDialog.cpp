@@ -31,6 +31,8 @@
 # include "QIDialogButtonBox.h"
 # include "QILabel.h"
 # include "UIErrorString.h"
+# include "UIExtraDataManager.h"
+# include "UIMainEventListener.h"
 # include "UIModalWindowManager.h"
 # include "UIProgressDialog.h"
 # include "UISpecialControls.h"
@@ -40,9 +42,162 @@
 # endif /* VBOX_WS_MAC */
 
 /* COM includes: */
+# include "CEventListener.h"
+# include "CEventSource.h"
 # include "CProgress.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+/** Private QObject extension
+  * providing UIExtraDataManager with the CVirtualBox event-source. */
+class UIProgressEventHandler : public QObject
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies about @a iPercent change for progress with @a strProgressId. */
+    void sigProgressPercentageChange(QString strProgressId, int iPercent);
+    /** Notifies about task complete for progress with @a strProgressId. */
+    void sigProgressTaskComplete(QString strProgressId);
+
+public:
+
+    /** Constructs event proxy object on the basis of passed @a pParent. */
+    UIProgressEventHandler(QObject *pParent, const CProgress &comProgress);
+    /** Destructs event proxy object. */
+    ~UIProgressEventHandler();
+
+protected:
+
+    /** @name Prepare/Cleanup cascade.
+      * @{ */
+        /** Prepares all. */
+        void prepare();
+        /** Prepares listener. */
+        void prepareListener();
+        /** Prepares connections. */
+        void prepareConnections();
+
+        /** Cleanups connections. */
+        void cleanupConnections();
+        /** Cleanups listener. */
+        void cleanupListener();
+        /** Cleanups all. */
+        void cleanup();
+    /** @} */
+
+private:
+
+    /** Holds the progress wrapper. */
+    CProgress m_comProgress;
+
+    /** Holds the Qt event listener instance. */
+    ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
+    /** Holds the COM event listener instance. */
+    CEventListener m_comEventListener;
+};
+
+
+/*********************************************************************************************************************************
+*   Class UIProgressEventHandler implementation.                                                                                 *
+*********************************************************************************************************************************/
+
+UIProgressEventHandler::UIProgressEventHandler(QObject *pParent, const CProgress &comProgress)
+    : QObject(pParent)
+    , m_comProgress(comProgress)
+{
+    /* Prepare: */
+    prepare();
+}
+
+UIProgressEventHandler::~UIProgressEventHandler()
+{
+    /* Cleanup: */
+    cleanup();
+}
+
+void UIProgressEventHandler::prepare()
+{
+    /* Prepare: */
+    prepareListener();
+    prepareConnections();
+}
+
+void UIProgressEventHandler::prepareListener()
+{
+    /* Create event listener instance: */
+    m_pQtListener.createObject();
+    m_pQtListener->init(new UIMainEventListener, this);
+    m_comEventListener = CEventListener(m_pQtListener);
+
+    /* Get CProgress event source: */
+    CEventSource comEventSourceProgress = m_comProgress.GetEventSource();
+    AssertWrapperOk(comEventSourceProgress);
+
+    /* Enumerate all the required event-types: */
+    QVector<KVBoxEventType> eventTypes;
+    eventTypes
+        << KVBoxEventType_OnProgressPercentageChanged
+        << KVBoxEventType_OnProgressTaskCompleted;
+
+    /* Register event listener for CProgress event source: */
+    comEventSourceProgress.RegisterListener(m_comEventListener, eventTypes,
+        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
+    AssertWrapperOk(comEventSourceProgress);
+
+    /* If event listener registered as passive one: */
+    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    {
+        /* Register event sources in their listeners as well: */
+        m_pQtListener->getWrapped()->registerSource(comEventSourceProgress, m_comEventListener);
+    }
+}
+
+void UIProgressEventHandler::prepareConnections()
+{
+    /* Create direct (sync) connections for signals of main listener: */
+    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigProgressPercentageChange,
+            this, &UIProgressEventHandler::sigProgressPercentageChange,
+            Qt::DirectConnection);
+    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigProgressTaskComplete,
+            this, &UIProgressEventHandler::sigProgressTaskComplete,
+            Qt::DirectConnection);
+}
+
+void UIProgressEventHandler::cleanupConnections()
+{
+    /* Nothing for now. */
+}
+
+void UIProgressEventHandler::cleanupListener()
+{
+    /* If event listener registered as passive one: */
+    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    {
+        /* Unregister everything: */
+        m_pQtListener->getWrapped()->unregisterSources();
+    }
+
+    /* Make sure VBoxSVC is available: */
+    if (!vboxGlobal().isVBoxSVCAvailable())
+        return;
+
+    /* Get CProgress event source: */
+    CEventSource comEventSourceProgress = m_comProgress.GetEventSource();
+    AssertWrapperOk(comEventSourceProgress);
+
+    /* Unregister event listener for CProgress event source: */
+    comEventSourceProgress.UnregisterListener(m_comEventListener);
+}
+
+void UIProgressEventHandler::cleanup()
+{
+    /* Cleanup: */
+    cleanupConnections();
+    cleanupListener();
+}
 
 
 /*********************************************************************************************************************************
@@ -61,6 +216,7 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
     , m_strTitle(strTitle)
     , m_pImage(pImage)
     , m_cMinDuration(cMinDuration)
+    , m_fLegacyHandling(gEDataManager->legacyProgressHandlingRequested())
     , m_pLabelImage(0)
     , m_pLabelDescription(0)
     , m_pProgressBar(0)
@@ -70,6 +226,7 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
     , m_uCurrentOperation(m_comProgress.GetOperation() + 1)
     , m_fCancelEnabled(false)
     , m_fEnded(false)
+    , m_pEventHandler(0)
 {
     /* Prepare: */
     prepare();
@@ -100,8 +257,10 @@ int UIProgressDialog::run(int cRefreshInterval)
             return Rejected;
     }
 
-    /* Start refresh timer: */
-    int id = startTimer(cRefreshInterval);
+    /* Start refresh timer (if necessary): */
+    int id = 0;
+    if (m_fLegacyHandling)
+        id = startTimer(cRefreshInterval);
 
     /* Set busy cursor.
      * We don't do this on the Mac, cause regarding the design rules of
@@ -128,8 +287,9 @@ int UIProgressDialog::run(int cRefreshInterval)
             return Rejected;
     }
 
-    /* Kill refresh timer: */
-    killTimer(id);
+    /* Kill refresh timer (if necessary): */
+    if (m_fLegacyHandling)
+        killTimer(id);
 
 #ifndef VBOX_WS_MAC
     /* Reset the busy cursor */
@@ -170,6 +330,42 @@ void UIProgressDialog::closeEvent(QCloseEvent *pEvent)
         pEvent->ignore();
 }
 
+void UIProgressDialog::sltHandleProgressPercentageChange(QString /* strProgressId */, int iPercent)
+{
+    /* New mode only: */
+    AssertReturnVoid(!m_fLegacyHandling);
+
+    /* Update progress: */
+    updateProgressState();
+    updateProgressPercentage(iPercent);
+}
+
+void UIProgressDialog::sltHandleProgressTaskComplete(QString /* strProgressId */)
+{
+    /* New mode only: */
+    AssertReturnVoid(!m_fLegacyHandling);
+
+    /* If progress-dialog is not yet ended but progress is aborted or completed: */
+    if (!m_fEnded && (!m_comProgress.isOk() || m_comProgress.GetCompleted()))
+    {
+        /* Set progress to 100%: */
+        updateProgressPercentage(100);
+
+        /* Try to close the dialog: */
+        closeProgressDialog();
+    }
+}
+
+void UIProgressDialog::sltHandleWindowStackChange()
+{
+    /* If progress-dialog is not yet ended but progress is aborted or completed: */
+    if (!m_fEnded && (!m_comProgress.isOk() || m_comProgress.GetCompleted()))
+    {
+        /* Try to close the dialog: */
+        closeProgressDialog();
+    }
+}
+
 void UIProgressDialog::sltCancelOperation()
 {
     m_pButtonCancel->setEnabled(false);
@@ -185,8 +381,26 @@ void UIProgressDialog::prepare()
     ::darwinSetHidesAllTitleButtons(this);
 #endif
 
+    /* Make sure dialog is handling window stack changes: */
+    connect(&windowManager(), &UIModalWindowManager::sigStackChanged,
+            this, &UIProgressDialog::sltHandleWindowStackChange);
+
     /* Prepare: */
+    prepareEventHandler();
     prepareWidgets();
+}
+
+void UIProgressDialog::prepareEventHandler()
+{
+    if (!m_fLegacyHandling)
+    {
+        /* Create CProgress event handler: */
+        m_pEventHandler = new UIProgressEventHandler(this, m_comProgress);
+        connect(m_pEventHandler, &UIProgressEventHandler::sigProgressPercentageChange,
+                this, &UIProgressDialog::sltHandleProgressPercentageChange);
+        connect(m_pEventHandler, &UIProgressEventHandler::sigProgressTaskComplete,
+                this, &UIProgressDialog::sltHandleProgressTaskComplete);
+    }
 }
 
 void UIProgressDialog::prepareWidgets()
@@ -310,15 +524,27 @@ void UIProgressDialog::cleanupWidgets()
     /* Nothing for now. */
 }
 
+void UIProgressDialog::cleanupEventHandler()
+{
+    if (!m_fLegacyHandling)
+    {
+        /* Destroy CProgress event handler: */
+        delete m_pEventHandler;
+        m_pEventHandler = 0;
+    }
+}
+
 void UIProgressDialog::cleanup()
 {
     /* Wait for CProgress to complete: */
     m_comProgress.WaitForCompletion(-1);
 
     /* Call the timer event handling delegate: */
-    handleTimerEvent();
+    if (m_fLegacyHandling)
+        handleTimerEvent();
 
     /* Cleanup: */
+    cleanupEventHandler();
     cleanupWidgets();
 }
 
@@ -429,6 +655,9 @@ void UIProgressDialog::closeProgressDialog()
 
 void UIProgressDialog::handleTimerEvent()
 {
+    /* Old mode only: */
+    AssertReturnVoid(m_fLegacyHandling);
+
     /* If progress-dialog is ended: */
     if (m_fEnded)
     {
@@ -534,4 +763,6 @@ void UIProgress::timerEvent(QTimerEvent*)
                                m_comProgress.GetOperation() + 1, m_comProgress.GetPercent());
     }
 }
+
+#include "UIProgressDialog.moc"
 

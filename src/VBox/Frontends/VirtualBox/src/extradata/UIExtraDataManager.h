@@ -177,6 +177,12 @@ public:
     /** @} */
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
+    /** @name Progress
+      * @{ */
+        /** Returns whether legacy progress handling method is requested. */
+        bool legacyProgressHandlingRequested();
+    /** @} */
+
     /** @name Settings
       * @{ */
         /** Returns whether GUI @a enmFeature is enabled. */

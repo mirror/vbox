@@ -27,6 +27,7 @@ class QLabel;
 class QProgressBar;
 class QILabel;
 class UIMiniCancelButton;
+class UIProgressEventHandler;
 class CProgress;
 
 
@@ -85,6 +86,14 @@ protected:
 
 private slots:
 
+    /** Handles percentage changed event for progress with @a strProgressId to @a iPercent. */
+    void sltHandleProgressPercentageChange(QString strProgressId, int iPercent);
+    /** Handles task completed event for progress with @a strProgressId. */
+    void sltHandleProgressTaskComplete(QString strProgressId);
+
+    /** Handles window stack changed signal. */
+    void sltHandleWindowStackChange();
+
     /** Handles request to cancel operation. */
     void sltCancelOperation();
 
@@ -92,10 +101,14 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares event handler. */
+    void prepareEventHandler();
     /** Prepares widgets. */
     void prepareWidgets();
     /** Cleanups widgets. */
     void cleanupWidgets();
+    /** Cleanups event handler. */
+    void cleanupEventHandler();
     /** Cleanups all. */
     void cleanup();
 
@@ -119,6 +132,9 @@ private:
     /** Holds the minimum duration before the progress-dialog is shown. */
     int        m_cMinDuration;
 
+    /** Holds whether legacy handling is requested for this progress. */
+    bool  m_fLegacyHandling;
+
     /** Holds the image label instance. */
     QLabel             *m_pLabelImage;
     /** Holds the description label instance. */
@@ -138,6 +154,9 @@ private:
     bool         m_fCancelEnabled;
     /** Holds whether the progress has ended. */
     bool         m_fEnded;
+
+    /** Holds the progress event handler instance. */
+    UIProgressEventHandler *m_pEventHandler;
 
     /** Holds the operation description template. */
     static const char *m_spcszOpDescTpl;

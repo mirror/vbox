@@ -42,6 +42,9 @@ const char* UIExtraDataDefs::GUI_UpdateDate = "GUI/UpdateDate";
 const char* UIExtraDataDefs::GUI_UpdateCheckCount = "GUI/UpdateCheckCount";
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
+/* Progress: */
+const char* UIExtraDataDefs::GUI_Progress_LegacyMode = "GUI/Progress/LegacyMode";
+
 /* Settings: */
 const char* UIExtraDataDefs::GUI_Customizations = "GUI/Customizations";
 const char* UIExtraDataDefs::GUI_RestrictedGlobalSettingsPages = "GUI/RestrictedGlobalSettingsPages";

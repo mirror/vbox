@@ -121,6 +121,11 @@ signals:
     /** Notifies about audio adapter state change. */
     void sigAudioAdapterChange();
 
+    /** Notifies about @a iPercent change for progress with @a strProgressId. */
+    void sigProgressPercentageChange(QString strProgressId, int iPercent);
+    /** Notifies about task complete for progress with @a strProgressId. */
+    void sigProgressTaskComplete(QString strProgressId);
+
 public:
 
     /** Constructs main event listener. */

@@ -59,6 +59,12 @@ namespace UIExtraDataDefs
     /** @} */
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
+    /** @name Progress
+      * @{ */
+        /** Holds whether legacy progress handling method is requested. */
+        extern const char* GUI_Progress_LegacyMode;
+    /** @} */
+
     /** @name Settings
       * @{ */
         /** Holds GUI feature list. */
