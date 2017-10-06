@@ -13972,7 +13972,7 @@ useful to the API client. -->
 
   <interface
     name="IProgress" extends="$unknown"
-    uuid="77faf1c0-489d-b123-274c-5a95e77ab286"
+    uuid="e0026dc0-0c55-47b1-aa64-d340a396b418"
     wsmap="managed"
     reservedMethods="1" reservedAttributes="2"
     >
@@ -14108,6 +14108,8 @@ useful to the API client. -->
           cancelable objects.
       </desc>
     </attribute>
+
+    <attribute name="eventSource" type="IEventSource" readonly="yes"/>
 
     <method name="setCurrentOperationProgress">
       <desc>Internal method, not to be called externally.</desc>
@@ -22255,8 +22257,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IAudioAdapterChangedEvent">IAudioAdapterChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnProgressPercentageChanged" value="98">
+      <desc>
+        See <link to="IProgressPercentageChangedEvent">IProgressPercentageChangedEvent</link>.
+      </desc>
+    </const>
+    <const name="OnProgressTaskCompleted" value="99">
+      <desc>
+        See <link to="IProgressTaskCompletedEvent">IProgressTaskCompletedEvent</link>.
+      </desc>
+    </const>
     <!-- Last event marker -->
-    <const name="Last" value="98">
+    <const name="Last" value="100">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -24295,6 +24307,37 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnHostNameResolutionConfigurationChange"
     dtracename="HostNameResCfgChangeEvent"
     >
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
+  </interface>
+
+  <interface
+    name="IProgressEvent" extends="IEvent"
+    uuid="daaf9016-1f04-4191-aa2f-1fac9646ae4c"
+    wsmap="managed" id="ProgressEvent">
+    <desc>Base abstract interface for all progress events.</desc>
+
+    <attribute name="progressId" readonly="yes" type="uuid" mod="string">
+      <desc>GUID of the progress this event relates to.</desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IProgressPercentageChangedEvent" extends="IProgressEvent"
+    uuid="f05d7e60-1bcf-4218-9807-04e036cc70f1"
+    wsmap="managed" autogen="VBoxEvent" id="OnProgressPercentageChanged">
+    <desc>Progress state change event.</desc>
+
+    <attribute name="percent" readonly="yes" type="long">
+      <desc>New percent</desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IProgressTaskCompletedEvent" extends="IProgressEvent"
+    uuid="a5bbdb7d-8ce7-469f-a4c2-6476f581ff72"
+    wsmap="managed" autogen="VBoxEvent" id="OnProgressTaskCompleted">
+    <desc>Progress task completion event.</desc>
     <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 

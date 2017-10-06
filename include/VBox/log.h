@@ -569,6 +569,12 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_PROCESS,
     /** Main group, IProgress. */
     LOG_GROUP_MAIN_PROGRESS,
+    /** Main group, IProgressEvent. */
+    LOG_GROUP_MAIN_PROGRESSEVENT,
+    /** Main group, IProgressPercentageChangedEvent. */
+    LOG_GROUP_MAIN_PROGRESSPERCENTAGECHANGEDEVENT,
+    /** Main group, IProgressTaskCompletedEvent. */
+    LOG_GROUP_MAIN_PROGRESSTASKCOMPLETEDEVENT,
     /** Main group, IReusableEvent. */
     LOG_GROUP_MAIN_REUSABLEEVENT,
     /** Main group, IRuntimeErrorEvent. */
@@ -1075,6 +1081,9 @@ typedef enum LOGGROUP
     "MAIN_PERFORMANCEMETRIC", \
     "MAIN_PROCESS", \
     "MAIN_PROGRESS", \
+    "MAIN_PROGRESSEVENT", \
+    "MAIN_PROGRESSPERCENTAGECHANGEDEVENT", \
+    "MAIN_PROGRESSTASKCOMPLETEDEVENT", \
     "MAIN_REUSABLEEVENT", \
     "MAIN_RUNTIMEERROREVENT", \
     "MAIN_SERIALPORT", \

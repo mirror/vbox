@@ -41,6 +41,7 @@
 #include <VBox/err.h>
 #include "AutoCaller.h"
 
+#include "VBoxEvents.h"
 
 Progress::Progress()
 #if !defined(VBOX_COM_INPROC)
@@ -167,6 +168,11 @@ HRESULT Progress::init(
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     HRESULT rc = S_OK;
+    rc = unconst(pEventSource).createObject();
+    if (FAILED(rc)) throw rc;
+
+    rc = pEventSource->init();
+    if (FAILED(rc)) throw rc;
 
 //    rc = Progress::init(
 //#if !defined(VBOX_COM_INPROC)
@@ -474,6 +480,8 @@ HRESULT Progress::i_notifyCompleteEI(HRESULT aResultCode, const ComPtr<IVirtualB
     if (mWaitersCount > 0)
         RTSemEventMultiSignal(mCompletedSem);
 
+    fireProgressTaskCompletedEvent(pEventSource, mId.toUtf16().raw());
+
     return S_OK;
 }
 
@@ -562,6 +570,9 @@ bool Progress::i_setCancelCallback(void (*pfnCallback)(void *), void *pvUser)
             Assert(pThis->mCancelable);
             vrc = VERR_CANCELLED;
         }
+        ULONG actualPercent = 0;
+        pThis->getPercent(&actualPercent);
+        fireProgressPercentageChangedEvent(pThis->pEventSource, pThis->mId.toUtf16().raw(), actualPercent);
     }
     /* else ignored */
     return vrc;
@@ -812,6 +823,10 @@ HRESULT Progress::setCurrentOperationProgress(ULONG aPercent)
 
     m_ulOperationPercent = aPercent;
 
+    ULONG actualPercent = 0;
+    getPercent(&actualPercent);
+    fireProgressPercentageChangedEvent(pEventSource, mId.toUtf16().raw(), actualPercent);
+
     return S_OK;
 }
 
@@ -846,6 +861,10 @@ HRESULT Progress::setNextOperation(const com::Utf8Str &aNextOperationDescription
     /* wake up all waiting threads */
     if (mWaitersCount > 0)
         RTSemEventMultiSignal(mCompletedSem);
+
+    ULONG actualPercent = 0;
+    getPercent(&actualPercent);
+    fireProgressPercentageChangedEvent(pEventSource, mId.toUtf16().raw(), actualPercent);
 
     return S_OK;
 }
@@ -1074,6 +1093,12 @@ HRESULT Progress::cancel()
     return S_OK;
 }
 
+HRESULT Progress::getEventSource(ComPtr<IEventSource> &aEventSource)
+{
+    /* event source is const, no need to lock */
+    pEventSource.queryInterfaceTo(aEventSource.asOutParam());
+    return S_OK;
+}
 
 // private internal helpers
 /////////////////////////////////////////////////////////////////////////////
