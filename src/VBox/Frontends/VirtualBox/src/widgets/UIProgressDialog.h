@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2016 Oracle Corporation
+ * Copyright (C) 2009-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,86 +29,99 @@ class QILabel;
 class UIMiniCancelButton;
 class CProgress;
 
-/**
- * A QProgressDialog enhancement that allows to:
- *
- * 1) prevent closing the dialog when it has no cancel button;
- * 2) effectively track the IProgress object completion (w/o using
- *    IProgress::waitForCompletion() and w/o blocking the UI thread in any other
- *    way for too long).
- *
- * @note The CProgress instance is passed as a non-const reference to the
- *       constructor (to memorize COM errors if they happen), and therefore must
- *       not be destroyed before the created UIProgressDialog instance is
- *       destroyed.
- */
+
+/** QProgressDialog enhancement that allows to:
+  * 1) prevent closing the dialog when it has no cancel button;
+  * 2) effectively track the IProgress object completion (w/o using
+  *    IProgress::waitForCompletion() and w/o blocking the UI thread in any other way for too long).
+  * @note The CProgress instance is passed as a non-const reference to the constructor (to memorize COM errors if they happen),
+  *       and therefore must not be destroyed before the created UIProgressDialog instance is destroyed. */
 class UIProgressDialog: public QIWithRetranslateUI2<QIDialog>
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructor. */
+    /** Constructs progress-dialog passing @a pParent to the base-class.
+      * @param  progress   Brings the progress reference.
+      * @param  strTitle      Brings the progress-dialog title.
+      * @param  pImage        Brings the progress-dialog image.
+      * @param  cMinDuration  Brings the minimum duration before the progress-dialog is shown. */
     UIProgressDialog(CProgress &progress, const QString &strTitle,
                      QPixmap *pImage = 0, int cMinDuration = 2000, QWidget *pParent = 0);
-    /** Destructor. */
+    /** Destructs progress-dialog. */
     ~UIProgressDialog();
 
-    /* API: Run stuff: */
+    /** Executes the progress-dialog within its loop with passed @a iRefreshInterval. */
     int run(int aRefreshInterval);
 
 signals:
 
     /** Notifies listeners about wrapped CProgress change.
-      * @param iOperations  holds the number of operations CProgress have,
-      * @param strOperation holds the description of the current CProgress operation,
-      * @param iOperation   holds the index of the current CProgress operation,
-      * @param iPercent     holds the percentage of the current CProgress operation. */
+      * @param  iOperations   Brings the number of operations CProgress have.
+      * @param  strOperation  Brings the description of the current CProgress operation.
+      * @param  iOperation    Brings the index of the current CProgress operation.
+      * @param  iPercent      Brings the percentage of the current CProgress operation. */
     void sigProgressChange(ulong iOperations, QString strOperation,
                            ulong iOperation, ulong iPercent);
 
 public slots:
 
-    /* Handler: Show stuff: */
+    /** Shows progress-dialog if it's not yet shown. */
     void show();
 
 protected:
 
-    /* Helper: Translate stuff: */
+    /** Handles translation event. */
     void retranslateUi();
 
-    /* Helper: Cancel stuff: */
+    /** Rejects dialog. */
     void reject();
 
-    /* Handlers: Event processing stuff: */
+    /** Handles timer @a pEvent. */
     virtual void timerEvent(QTimerEvent *pEvent);
+    /** Handles close @a pEvent. */
     virtual void closeEvent(QCloseEvent *pEvent);
 
 private slots:
 
-    /* Handler: Cancel stuff: */
+    /** Handles request to cancel operation. */
     void sltCancelOperation();
 
 private:
 
-    /** Timer event handling delegate. */
+    /** Performes timer event handling. */
     void handleTimerEvent();
 
-    /* Variables: */
+    /** Holds the progress reference. */
     CProgress &m_progress;
-    QLabel *m_pImageLbl;
-    QILabel *m_pDescriptionLbl;
-    QProgressBar *m_pProgressBar;
-    UIMiniCancelButton *m_pCancelBtn;
-    QILabel *m_pEtaLbl;
-    bool m_fCancelEnabled;
-    QString m_strCancel;
-    const ulong m_cOperations;
-    ulong m_iCurrentOperation;
-    bool m_fEnded;
 
+    /** Holds the image label instance. */
+    QLabel             *m_pImageLbl;
+    /** Holds the description label instance. */
+    QILabel            *m_pDescriptionLbl;
+    /** Holds the progress-bar instance. */
+    QProgressBar       *m_pProgressBar;
+    /** Holds the cancel button instance. */
+    UIMiniCancelButton *m_pCancelBtn;
+    /** Holds the ETA label instance. */
+    QILabel            *m_pEtaLbl;
+
+    /** Holds whether progress cancel is enabled. */
+    bool         m_fCancelEnabled;
+    /** Holds the translated canceling tag. */
+    QString      m_strCancel;
+    /** Holds the amount of operations. */
+    const ulong  m_cOperations;
+    /** Holds the number of current operation. */
+    ulong        m_iCurrentOperation;
+    /** Holds whether the progress has ended. */
+    bool         m_fEnded;
+
+    /** Holds the operation description template. */
     static const char *m_spcszOpDescTpl;
 };
+
 
 /** QObject reimplementation allowing to effectively track the CProgress object completion
   * (w/o using CProgress::waitForCompletion() and w/o blocking the calling thread in any other way for too long).
@@ -123,10 +136,10 @@ class UIProgress : public QObject
 signals:
 
     /** Notifies listeners about wrapped CProgress change.
-      * @param iOperations  holds the number of operations CProgress have,
-      * @param strOperation holds the description of the current CProgress operation,
-      * @param iOperation   holds the index of the current CProgress operation,
-      * @param iPercent     holds the percentage of the current CProgress operation. */
+      * @param  iOperations   Brings the number of operations CProgress have.
+      * @param  strOperation  Brings the description of the current CProgress operation.
+      * @param  iOperation    Brings the index of the current CProgress operation.
+      * @param  iPercent      Brings the percentage of the current CProgress operation. */
     void sigProgressChange(ulong iOperations, QString strOperation,
                            ulong iOperation, ulong iPercent);
 
@@ -136,30 +149,29 @@ signals:
 
 public:
 
-    /** Constructor passing @a pParent to the base-class.
-      * @param progress holds the CProgress to be wrapped. */
+    /** Constructs progress handler passing @a pParent to the base-class.
+      * @param  progress  Brings the progress reference. */
     UIProgress(CProgress &progress, QObject *pParent = 0);
 
-    /** Starts the UIProgress by entering the personal event-loop.
-      * @param iRefreshInterval holds the refresh interval to check
-      *                         for the CProgress updates with. */
+    /** Executes the progress-handler within its loop with passed @a iRefreshInterval. */
     void run(int iRefreshInterval);
 
 private:
 
-    /** Timer @a pEvent reimplementation. */
+    /** Handles timer @a pEvent. */
     virtual void timerEvent(QTimerEvent *pEvent);
 
-    /** Holds the wrapped CProgress reference. */
+    /** Holds the progress reference. */
     CProgress &m_progress;
-    /** Holds the number of operations wrapped CProgress have. */
-    const ulong m_cOperations;
-    /** Holds whether the UIProgress ended. */
-    bool m_fEnded;
 
-    /** Holds the personal event-loop. */
+    /** Holds the amount of operations. */
+    const ulong  m_cOperations;
+    /** Holds whether the progress has ended. */
+    bool         m_fEnded;
+
+    /** Holds the personal event-loop instance. */
     QPointer<QEventLoop> m_pEventLoop;
 };
 
-#endif /* __UIProgressDialog_h__ */
+#endif /* !__UIProgressDialog_h__ */
 

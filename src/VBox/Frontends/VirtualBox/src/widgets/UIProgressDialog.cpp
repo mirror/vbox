@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -66,41 +66,47 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
 
     /* Create main layout: */
     QHBoxLayout *pMainLayout = new QHBoxLayout(this);
-
+    /* Configure layout: */
 #ifdef VBOX_WS_MAC
     ::darwinSetHidesAllTitleButtons(this);
     if (pImage)
         pMainLayout->setContentsMargins(30, 15, 30, 15);
     else
         pMainLayout->setContentsMargins(6, 6, 6, 6);
-#endif /* VBOX_WS_MAC */
+#endif
 
-    /* Create image: */
+    /* If there is image: */
     if (pImage)
     {
+        /* Create image label: */
         m_pImageLbl = new QLabel(this);
+        /* Configure label: */
         m_pImageLbl->setPixmap(*pImage);
+        /* Add into layout: */
         pMainLayout->addWidget(m_pImageLbl);
     }
 
-    /* Create description: */
+    /* Create description label: */
     m_pDescriptionLbl = new QILabel(this);
+    /* Configure label: */
     if (m_cOperations > 1)
         m_pDescriptionLbl->setText(QString(m_spcszOpDescTpl)
-                                   .arg(m_progress.GetOperationDescription())
-                                   .arg(m_iCurrentOperation).arg(m_cOperations));
+                                           .arg(m_progress.GetOperationDescription())
+                                           .arg(m_iCurrentOperation).arg(m_cOperations));
     else
         m_pDescriptionLbl->setText(QString("%1 ...")
-                                   .arg(m_progress.GetOperationDescription()));
+                                           .arg(m_progress.GetOperationDescription()));
 
     /* Create progress-bar: */
     m_pProgressBar = new QProgressBar(this);
+    /* Configure progress-bar: */
     m_pProgressBar->setMaximum(100);
     m_pProgressBar->setValue(0);
 
     /* Create cancel button: */
     m_fCancelEnabled = m_progress.GetCancelable();
     m_pCancelBtn = new UIMiniCancelButton(this);
+    /* Configure cancel button: */
     m_pCancelBtn->setEnabled(m_fCancelEnabled);
     m_pCancelBtn->setFocusPolicy(Qt::ClickFocus);
     connect(m_pCancelBtn, SIGNAL(clicked()), this, SLOT(sltCancelOperation()));
@@ -110,18 +116,25 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
 
     /* Create proggress layout: */
     QHBoxLayout *pProgressLayout = new QHBoxLayout;
+    /* Configure layout: */
     pProgressLayout->setMargin(0);
+    /* Add into layout: */
     pProgressLayout->addWidget(m_pProgressBar, 0, Qt::AlignVCenter);
     pProgressLayout->addWidget(m_pCancelBtn, 0, Qt::AlignVCenter);
 
     /* Create description layout: */
     QVBoxLayout *pDescriptionLayout = new QVBoxLayout;
+    /* Configure layout: */
     pDescriptionLayout->setMargin(0);
+    /* Add stretch: */
     pDescriptionLayout->addStretch(1);
+    /* Add into layout: */
     pDescriptionLayout->addWidget(m_pDescriptionLbl, 0, Qt::AlignHCenter);
     pDescriptionLayout->addLayout(pProgressLayout);
     pDescriptionLayout->addWidget(m_pEtaLbl, 0, Qt::AlignLeft | Qt::AlignVCenter);
+    /* Add stretch: */
     pDescriptionLayout->addStretch(1);
+    /* Add into layout: */
     pMainLayout->addLayout(pDescriptionLayout);
 
     /* Translate finally: */
@@ -136,6 +149,7 @@ UIProgressDialog::~UIProgressDialog()
 {
     /* Wait for CProgress to complete: */
     m_progress.WaitForCompletion(-1);
+
     /* Call the timer event handling delegate: */
     handleTimerEvent();
 }
@@ -151,7 +165,7 @@ int UIProgressDialog::run(int cRefreshInterval)
 {
     if (m_progress.isOk())
     {
-        /* Start refresh timer */
+        /* Start refresh timer: */
         int id = startTimer(cRefreshInterval);
 
         /* Set busy cursor.
@@ -179,7 +193,7 @@ int UIProgressDialog::run(int cRefreshInterval)
                 return Rejected;
         }
 
-        /* Kill refresh timer */
+        /* Kill refresh timer: */
         killTimer(id);
 
 #ifndef VBOX_WS_MAC
@@ -268,10 +282,10 @@ void UIProgressDialog::handleTimerEvent()
         return;
     }
 
+    /* Update the progress dialog: */
     if (!m_progress.GetCanceled())
     {
-        /* Update the progress dialog: */
-        /* First ETA */
+        /* Update ETA: */
         long newTime = m_progress.GetTimeRemaining();
         long seconds;
         long minutes;
@@ -323,7 +337,7 @@ void UIProgressDialog::handleTimerEvent()
         else
             m_pEtaLbl->clear();
 
-        /* Then operation text if changed: */
+        /* Then operation text (if changed): */
         ulong newOp = m_progress.GetOperation() + 1;
         if (newOp != m_iCurrentOperation)
         {
@@ -332,6 +346,7 @@ void UIProgressDialog::handleTimerEvent()
                                        .arg(m_progress.GetOperationDescription())
                                        .arg(m_iCurrentOperation).arg(m_cOperations));
         }
+        /* Update operation percentage: */
         m_pProgressBar->setValue(m_progress.GetPercent());
 
         /* Then cancel button: */
@@ -342,6 +357,7 @@ void UIProgressDialog::handleTimerEvent()
         emit sigProgressChange(m_cOperations, m_progress.GetOperationDescription(),
                                m_progress.GetOperation() + 1, m_progress.GetPercent());
     }
+    /* Mark progress canceled if so: */
     else
         m_pEtaLbl->setText(m_strCancel);
 }
