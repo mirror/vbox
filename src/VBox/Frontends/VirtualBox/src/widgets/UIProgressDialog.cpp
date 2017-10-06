@@ -54,137 +54,27 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
                                    QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI2<QIDialog>(pParent, Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
     , m_comProgress(progress)
+    , m_strTitle(strTitle)
+    , m_pImage(pImage)
+    , m_cMinDuration(cMinDuration)
     , m_pLabelImage(0)
     , m_pLabelDescription(0)
     , m_pProgressBar(0)
     , m_pButtonCancel(0)
     , m_pLabelEta(0)
-    , m_fCancelEnabled(false)
     , m_cOperations(m_comProgress.GetOperationCount())
     , m_uCurrentOperation(m_comProgress.GetOperation() + 1)
+    , m_fCancelEnabled(false)
     , m_fEnded(false)
 {
-    /* Setup dialog: */
-    setWindowTitle(QString("%1: %2").arg(strTitle, m_comProgress.GetDescription()));
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-#ifdef VBOX_WS_MAC
-    ::darwinSetHidesAllTitleButtons(this);
-#endif
-
-    /* Create main layout: */
-    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
-    {
-        /* Configure layout: */
-#ifdef VBOX_WS_MAC
-        if (pImage)
-            pMainLayout->setContentsMargins(30, 15, 30, 15);
-        else
-            pMainLayout->setContentsMargins(6, 6, 6, 6);
-#endif
-
-        /* If there is image: */
-        if (pImage)
-        {
-            /* Create image label: */
-            m_pLabelImage = new QLabel;
-            {
-                /* Configure label: */
-                m_pLabelImage->setPixmap(*pImage);
-
-                /* Add into layout: */
-                pMainLayout->addWidget(m_pLabelImage);
-            }
-        }
-
-        /* Create description layout: */
-        QVBoxLayout *pDescriptionLayout = new QVBoxLayout;
-        {
-            /* Configure layout: */
-            pDescriptionLayout->setMargin(0);
-
-            /* Add stretch: */
-            pDescriptionLayout->addStretch(1);
-
-            /* Create description label: */
-            m_pLabelDescription = new QILabel;
-            {
-                /* Configure label: */
-                if (m_cOperations > 1)
-                    m_pLabelDescription->setText(QString(m_spcszOpDescTpl)
-                                                 .arg(m_comProgress.GetOperationDescription())
-                                                 .arg(m_uCurrentOperation).arg(m_cOperations));
-                else
-                    m_pLabelDescription->setText(QString("%1 ...")
-                                                 .arg(m_comProgress.GetOperationDescription()));
-
-                /* Add into layout: */
-                pDescriptionLayout->addWidget(m_pLabelDescription, 0, Qt::AlignHCenter);
-            }
-
-            /* Create proggress layout: */
-            QHBoxLayout *pProgressLayout = new QHBoxLayout;
-            {
-                /* Configure layout: */
-                pProgressLayout->setMargin(0);
-
-                /* Create progress-bar: */
-                m_pProgressBar = new QProgressBar;
-                {
-                    /* Configure progress-bar: */
-                    m_pProgressBar->setMaximum(100);
-                    m_pProgressBar->setValue(0);
-
-                    /* Add into layout: */
-                    pProgressLayout->addWidget(m_pProgressBar, 0, Qt::AlignVCenter);
-                }
-
-                /* Create cancel button: */
-                m_pButtonCancel = new UIMiniCancelButton;
-                {
-                    /* Configure cancel button: */
-                    m_fCancelEnabled = m_comProgress.GetCancelable();
-                    m_pButtonCancel->setEnabled(m_fCancelEnabled);
-                    m_pButtonCancel->setFocusPolicy(Qt::ClickFocus);
-                    connect(m_pButtonCancel, SIGNAL(clicked()), this, SLOT(sltCancelOperation()));
-
-                    /* Add into layout: */
-                    pProgressLayout->addWidget(m_pButtonCancel, 0, Qt::AlignVCenter);
-                }
-
-                /* Add into layout: */
-                pDescriptionLayout->addLayout(pProgressLayout);
-            }
-
-            /* Create estimation label: */
-            m_pLabelEta = new QILabel;
-            {
-                /* Add into layout: */
-                pDescriptionLayout->addWidget(m_pLabelEta, 0, Qt::AlignLeft | Qt::AlignVCenter);
-            }
-
-            /* Add stretch: */
-            pDescriptionLayout->addStretch(1);
-
-            /* Add into layout: */
-            pMainLayout->addLayout(pDescriptionLayout);
-        }
-    }
-
-    /* Translate finally: */
-    retranslateUi();
-
-    /* The progress dialog will be shown automatically after
-     * the duration is over if progress is not finished yet. */
-    QTimer::singleShot(cMinDuration, this, SLOT(show()));
+    /* Prepare: */
+    prepare();
 }
 
 UIProgressDialog::~UIProgressDialog()
 {
-    /* Wait for CProgress to complete: */
-    m_comProgress.WaitForCompletion(-1);
-
-    /* Call the timer event handling delegate: */
-    handleTimerEvent();
+    /* Cleanup: */
+    cleanup();
 }
 
 void UIProgressDialog::retranslateUi()
@@ -275,47 +165,159 @@ void UIProgressDialog::sltCancelOperation()
     m_comProgress.Cancel();
 }
 
-void UIProgressDialog::handleTimerEvent()
+void UIProgressDialog::prepare()
 {
-    /* We should hide progress-dialog
-     * if it was already finalized but not yet closed.
-     * This could happens in case of some other
-     * modal dialog prevents our event-loop from
-     * being exit overlapping 'this'. */
-    if (m_fEnded && !isHidden() && windowManager().isWindowOnTheTopOfTheModalWindowStack(this))
-    {
-        hide();
-        return;
-    }
-    else if (m_fEnded)
-        return;
+    /* Setup dialog: */
+    setWindowTitle(QString("%1: %2").arg(m_strTitle, m_comProgress.GetDescription()));
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+#ifdef VBOX_WS_MAC
+    ::darwinSetHidesAllTitleButtons(this);
+#endif
 
-    if (!m_fEnded && (!m_comProgress.isOk() || m_comProgress.GetCompleted()))
+    /* Prepare: */
+    prepareWidgets();
+}
+
+void UIProgressDialog::prepareWidgets()
+{
+    /* Create main layout: */
+    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
+    AssertPtrReturnVoid(pMainLayout);
     {
-        /* Is this progress-dialog a top-level modal-dialog now? */
-        if (windowManager().isWindowOnTheTopOfTheModalWindowStack(this))
+        /* Configure layout: */
+#ifdef VBOX_WS_MAC
+        if (m_pImage)
+            pMainLayout->setContentsMargins(30, 15, 30, 15);
+        else
+            pMainLayout->setContentsMargins(6, 6, 6, 6);
+#endif
+
+        /* If there is image: */
+        if (m_pImage)
         {
-            /* Progress finished: */
-            if (m_comProgress.isOk())
+            /* Create image label: */
+            m_pLabelImage = new QLabel;
+            AssertPtrReturnVoid(m_pLabelImage);
             {
-                m_pProgressBar->setValue(100);
-                done(Accepted);
-            }
-            /* Progress is not valid: */
-            else
-                done(Rejected);
+                /* Configure label: */
+                m_pLabelImage->setPixmap(*m_pImage);
 
-            /* Request to exit loop: */
-            m_fEnded = true;
-            return;
+                /* Add into layout: */
+                pMainLayout->addWidget(m_pLabelImage);
+            }
         }
-        /* Else we should wait until all the subsequent
-         * top-level modal-dialog(s) will be dismissed: */
-        return;
+
+        /* Create description layout: */
+        QVBoxLayout *pDescriptionLayout = new QVBoxLayout;
+        AssertPtrReturnVoid(pDescriptionLayout);
+        {
+            /* Configure layout: */
+            pDescriptionLayout->setMargin(0);
+
+            /* Add stretch: */
+            pDescriptionLayout->addStretch(1);
+
+            /* Create description label: */
+            m_pLabelDescription = new QILabel;
+            AssertPtrReturnVoid(m_pLabelDescription);
+            {
+                /* Configure label: */
+                if (m_cOperations > 1)
+                    m_pLabelDescription->setText(QString(m_spcszOpDescTpl)
+                                                 .arg(m_comProgress.GetOperationDescription())
+                                                 .arg(m_uCurrentOperation).arg(m_cOperations));
+                else
+                    m_pLabelDescription->setText(QString("%1 ...")
+                                                 .arg(m_comProgress.GetOperationDescription()));
+
+                /* Add into layout: */
+                pDescriptionLayout->addWidget(m_pLabelDescription, 0, Qt::AlignHCenter);
+            }
+
+            /* Create proggress layout: */
+            QHBoxLayout *pProgressLayout = new QHBoxLayout;
+            AssertPtrReturnVoid(pProgressLayout);
+            {
+                /* Configure layout: */
+                pProgressLayout->setMargin(0);
+
+                /* Create progress-bar: */
+                m_pProgressBar = new QProgressBar;
+                AssertPtrReturnVoid(m_pProgressBar);
+                {
+                    /* Configure progress-bar: */
+                    m_pProgressBar->setMaximum(100);
+                    m_pProgressBar->setValue(0);
+
+                    /* Add into layout: */
+                    pProgressLayout->addWidget(m_pProgressBar, 0, Qt::AlignVCenter);
+                }
+
+                /* Create cancel button: */
+                m_pButtonCancel = new UIMiniCancelButton;
+                AssertPtrReturnVoid(m_pButtonCancel);
+                {
+                    /* Configure cancel button: */
+                    m_fCancelEnabled = m_comProgress.GetCancelable();
+                    m_pButtonCancel->setEnabled(m_fCancelEnabled);
+                    m_pButtonCancel->setFocusPolicy(Qt::ClickFocus);
+                    connect(m_pButtonCancel, SIGNAL(clicked()), this, SLOT(sltCancelOperation()));
+
+                    /* Add into layout: */
+                    pProgressLayout->addWidget(m_pButtonCancel, 0, Qt::AlignVCenter);
+                }
+
+                /* Add into layout: */
+                pDescriptionLayout->addLayout(pProgressLayout);
+            }
+
+            /* Create estimation label: */
+            m_pLabelEta = new QILabel;
+            {
+                /* Add into layout: */
+                pDescriptionLayout->addWidget(m_pLabelEta, 0, Qt::AlignLeft | Qt::AlignVCenter);
+            }
+
+            /* Add stretch: */
+            pDescriptionLayout->addStretch(1);
+
+            /* Add into layout: */
+            pMainLayout->addLayout(pDescriptionLayout);
+        }
     }
 
-    /* Update the progress dialog: */
-    if (!m_comProgress.GetCanceled())
+    /* Translate finally: */
+    retranslateUi();
+
+    /* The progress dialog will be shown automatically after
+     * the duration is over if progress is not finished yet. */
+    QTimer::singleShot(m_cMinDuration, this, SLOT(show()));
+}
+
+void UIProgressDialog::cleanupWidgets()
+{
+    /* Nothing for now. */
+}
+
+void UIProgressDialog::cleanup()
+{
+    /* Wait for CProgress to complete: */
+    m_comProgress.WaitForCompletion(-1);
+
+    /* Call the timer event handling delegate: */
+    handleTimerEvent();
+
+    /* Cleanup: */
+    cleanupWidgets();
+}
+
+void UIProgressDialog::updateProgressState()
+{
+    /* Mark progress canceled if so: */
+    if (m_comProgress.GetCanceled())
+        m_pLabelEta->setText(tr("Canceling..."));
+    /* Update the progress dialog otherwise: */
+    else
     {
         /* Update ETA: */
         const long iNewTime = m_comProgress.GetTimeRemaining();
@@ -378,20 +380,68 @@ void UIProgressDialog::handleTimerEvent()
                                        .arg(m_comProgress.GetOperationDescription())
                                        .arg(m_uCurrentOperation).arg(m_cOperations));
         }
-        /* Update operation percentage: */
-        m_pProgressBar->setValue(m_comProgress.GetPercent());
 
         /* Then cancel button: */
         m_fCancelEnabled = m_comProgress.GetCancelable();
         m_pButtonCancel->setEnabled(m_fCancelEnabled);
-
-        /* Notify listeners about the operation progress update: */
-        emit sigProgressChange(m_cOperations, m_comProgress.GetOperationDescription(),
-                               m_comProgress.GetOperation() + 1, m_comProgress.GetPercent());
     }
-    /* Mark progress canceled if so: */
-    else
-        m_pLabelEta->setText(tr("Canceling..."));
+}
+
+void UIProgressDialog::updateProgressPercentage(int iPercent /* = -1 */)
+{
+    /* Update operation percentage: */
+    if (iPercent == -1)
+        iPercent = m_comProgress.GetPercent();
+    m_pProgressBar->setValue(iPercent);
+
+    /* Notify listeners about the operation progress update: */
+    emit sigProgressChange(m_cOperations, m_comProgress.GetOperationDescription(),
+                           m_comProgress.GetOperation() + 1, iPercent);
+}
+
+void UIProgressDialog::handleTimerEvent()
+{
+    /* We should hide progress-dialog
+     * if it was already finalized but not yet closed.
+     * This could happens in case of some other
+     * modal dialog prevents our event-loop from
+     * being exit overlapping 'this'. */
+    if (m_fEnded && !isHidden() && windowManager().isWindowOnTheTopOfTheModalWindowStack(this))
+    {
+        hide();
+        return;
+    }
+    else if (m_fEnded)
+        return;
+
+    if (!m_fEnded && (!m_comProgress.isOk() || m_comProgress.GetCompleted()))
+    {
+        /* Is this progress-dialog a top-level modal-dialog now? */
+        if (windowManager().isWindowOnTheTopOfTheModalWindowStack(this))
+        {
+            /* Progress finished: */
+            if (m_comProgress.isOk())
+            {
+                m_pProgressBar->setValue(100);
+                done(Accepted);
+            }
+            /* Progress is not valid: */
+            else
+                done(Rejected);
+
+            /* Request to exit loop: */
+            m_fEnded = true;
+            return;
+        }
+
+        /* Else we should wait until all the subsequent
+         * top-level modal-dialog(s) will be dismissed: */
+        return;
+    }
+
+    /* Update progress: */
+    updateProgressState();
+    updateProgressPercentage();
 }
 
 
