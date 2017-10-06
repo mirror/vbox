@@ -227,6 +227,9 @@ void UIModalWindowManager::registerNewParent(QWidget *pWindow, QWidget *pParentW
         m_windows << newWindowStack;
         connect(pWindow, &QWidget::destroyed, this, &UIModalWindowManager::sltRemoveFromStack);
     }
+
+    /* Notify listeners that their stack may have changed: */
+    emit sigStackChanged();
 }
 
 void UIModalWindowManager::sltRemoveFromStack(QObject *pObject)
@@ -263,6 +266,9 @@ void UIModalWindowManager::sltRemoveFromStack(QObject *pObject)
             }
         }
     }
+
+    /* Notify listeners that their stack may have changed: */
+    emit sigStackChanged();
 }
 
 bool UIModalWindowManager::contains(QWidget *pParentWindow, bool fAsTheTopOfStack /* = false*/)

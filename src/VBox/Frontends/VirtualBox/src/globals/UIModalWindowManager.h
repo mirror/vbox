@@ -30,6 +30,11 @@ class UIModalWindowManager : public QObject
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies about stack changed. */
+    void sigStackChanged();
+
 public:
 
     /* Static API: Create/destroy stuff: */
