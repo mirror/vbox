@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIProgressDialog_h__
-#define __UIProgressDialog_h__
+#ifndef ___UIProgressDialog_h___
+#define ___UIProgressDialog_h___
 
 /* GUI includes: */
 #include "QIDialog.h"
@@ -36,24 +36,24 @@ class CProgress;
   *    IProgress::waitForCompletion() and w/o blocking the UI thread in any other way for too long).
   * @note The CProgress instance is passed as a non-const reference to the constructor (to memorize COM errors if they happen),
   *       and therefore must not be destroyed before the created UIProgressDialog instance is destroyed. */
-class UIProgressDialog: public QIWithRetranslateUI2<QIDialog>
+class UIProgressDialog : public QIWithRetranslateUI2<QIDialog>
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs progress-dialog passing @a pParent to the base-class.
-      * @param  progress   Brings the progress reference.
+      * @param  comProgress   Brings the progress reference.
       * @param  strTitle      Brings the progress-dialog title.
       * @param  pImage        Brings the progress-dialog image.
       * @param  cMinDuration  Brings the minimum duration before the progress-dialog is shown. */
-    UIProgressDialog(CProgress &progress, const QString &strTitle,
+    UIProgressDialog(CProgress &comProgress, const QString &strTitle,
                      QPixmap *pImage = 0, int cMinDuration = 2000, QWidget *pParent = 0);
     /** Destructs progress-dialog. */
-    ~UIProgressDialog();
+    virtual ~UIProgressDialog() /* override */;
 
     /** Executes the progress-dialog within its loop with passed @a iRefreshInterval. */
-    int run(int aRefreshInterval);
+    int run(int iRefreshInterval);
 
 signals:
 
@@ -73,15 +73,15 @@ public slots:
 protected:
 
     /** Handles translation event. */
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
 
     /** Rejects dialog. */
-    void reject();
+    virtual void reject() /* override */;
 
     /** Handles timer @a pEvent. */
-    virtual void timerEvent(QTimerEvent *pEvent);
+    virtual void timerEvent(QTimerEvent *pEvent) /* override */;
     /** Handles close @a pEvent. */
-    virtual void closeEvent(QCloseEvent *pEvent);
+    virtual void closeEvent(QCloseEvent *pEvent) /* override */;
 
 private slots:
 
@@ -94,27 +94,25 @@ private:
     void handleTimerEvent();
 
     /** Holds the progress reference. */
-    CProgress &m_progress;
+    CProgress &m_comProgress;
 
     /** Holds the image label instance. */
-    QLabel             *m_pImageLbl;
+    QLabel             *m_pLabelImage;
     /** Holds the description label instance. */
-    QILabel            *m_pDescriptionLbl;
+    QILabel            *m_pLabelDescription;
     /** Holds the progress-bar instance. */
     QProgressBar       *m_pProgressBar;
     /** Holds the cancel button instance. */
-    UIMiniCancelButton *m_pCancelBtn;
+    UIMiniCancelButton *m_pButtonCancel;
     /** Holds the ETA label instance. */
-    QILabel            *m_pEtaLbl;
+    QILabel            *m_pLabelEta;
 
     /** Holds whether progress cancel is enabled. */
     bool         m_fCancelEnabled;
-    /** Holds the translated canceling tag. */
-    QString      m_strCancel;
     /** Holds the amount of operations. */
     const ulong  m_cOperations;
     /** Holds the number of current operation. */
-    ulong        m_iCurrentOperation;
+    ulong        m_uCurrentOperation;
     /** Holds whether the progress has ended. */
     bool         m_fEnded;
 
@@ -150,8 +148,8 @@ signals:
 public:
 
     /** Constructs progress handler passing @a pParent to the base-class.
-      * @param  progress  Brings the progress reference. */
-    UIProgress(CProgress &progress, QObject *pParent = 0);
+      * @param  comProgress  Brings the progress reference. */
+    UIProgress(CProgress &comProgress, QObject *pParent = 0);
 
     /** Executes the progress-handler within its loop with passed @a iRefreshInterval. */
     void run(int iRefreshInterval);
@@ -159,10 +157,10 @@ public:
 private:
 
     /** Handles timer @a pEvent. */
-    virtual void timerEvent(QTimerEvent *pEvent);
+    virtual void timerEvent(QTimerEvent *pEvent) /* override */;
 
     /** Holds the progress reference. */
-    CProgress &m_progress;
+    CProgress &m_comProgress;
 
     /** Holds the amount of operations. */
     const ulong  m_cOperations;
@@ -173,5 +171,5 @@ private:
     QPointer<QEventLoop> m_pEventLoop;
 };
 
-#endif /* !__UIProgressDialog_h__ */
+#endif /* !___UIProgressDialog_h___ */
 

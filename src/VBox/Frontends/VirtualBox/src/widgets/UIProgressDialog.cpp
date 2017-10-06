@@ -53,89 +53,122 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
                                    int cMinDuration /* = 2000 */,
                                    QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI2<QIDialog>(pParent, Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
-    , m_progress(progress)
-    , m_pImageLbl(0)
+    , m_comProgress(progress)
+    , m_pLabelImage(0)
+    , m_pLabelDescription(0)
+    , m_pProgressBar(0)
+    , m_pButtonCancel(0)
+    , m_pLabelEta(0)
     , m_fCancelEnabled(false)
-    , m_cOperations(m_progress.GetOperationCount())
-    , m_iCurrentOperation(m_progress.GetOperation() + 1)
+    , m_cOperations(m_comProgress.GetOperationCount())
+    , m_uCurrentOperation(m_comProgress.GetOperation() + 1)
     , m_fEnded(false)
 {
     /* Setup dialog: */
-    setWindowTitle(QString("%1: %2").arg(strTitle, m_progress.GetDescription()));
+    setWindowTitle(QString("%1: %2").arg(strTitle, m_comProgress.GetDescription()));
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+#ifdef VBOX_WS_MAC
+    ::darwinSetHidesAllTitleButtons(this);
+#endif
 
     /* Create main layout: */
     QHBoxLayout *pMainLayout = new QHBoxLayout(this);
-    /* Configure layout: */
+    {
+        /* Configure layout: */
 #ifdef VBOX_WS_MAC
-    ::darwinSetHidesAllTitleButtons(this);
-    if (pImage)
-        pMainLayout->setContentsMargins(30, 15, 30, 15);
-    else
-        pMainLayout->setContentsMargins(6, 6, 6, 6);
+        if (pImage)
+            pMainLayout->setContentsMargins(30, 15, 30, 15);
+        else
+            pMainLayout->setContentsMargins(6, 6, 6, 6);
 #endif
 
-    /* If there is image: */
-    if (pImage)
-    {
-        /* Create image label: */
-        m_pImageLbl = new QLabel(this);
-        /* Configure label: */
-        m_pImageLbl->setPixmap(*pImage);
-        /* Add into layout: */
-        pMainLayout->addWidget(m_pImageLbl);
+        /* If there is image: */
+        if (pImage)
+        {
+            /* Create image label: */
+            m_pLabelImage = new QLabel;
+            {
+                /* Configure label: */
+                m_pLabelImage->setPixmap(*pImage);
+
+                /* Add into layout: */
+                pMainLayout->addWidget(m_pLabelImage);
+            }
+        }
+
+        /* Create description layout: */
+        QVBoxLayout *pDescriptionLayout = new QVBoxLayout;
+        {
+            /* Configure layout: */
+            pDescriptionLayout->setMargin(0);
+
+            /* Add stretch: */
+            pDescriptionLayout->addStretch(1);
+
+            /* Create description label: */
+            m_pLabelDescription = new QILabel;
+            {
+                /* Configure label: */
+                if (m_cOperations > 1)
+                    m_pLabelDescription->setText(QString(m_spcszOpDescTpl)
+                                                 .arg(m_comProgress.GetOperationDescription())
+                                                 .arg(m_uCurrentOperation).arg(m_cOperations));
+                else
+                    m_pLabelDescription->setText(QString("%1 ...")
+                                                 .arg(m_comProgress.GetOperationDescription()));
+
+                /* Add into layout: */
+                pDescriptionLayout->addWidget(m_pLabelDescription, 0, Qt::AlignHCenter);
+            }
+
+            /* Create proggress layout: */
+            QHBoxLayout *pProgressLayout = new QHBoxLayout;
+            {
+                /* Configure layout: */
+                pProgressLayout->setMargin(0);
+
+                /* Create progress-bar: */
+                m_pProgressBar = new QProgressBar;
+                {
+                    /* Configure progress-bar: */
+                    m_pProgressBar->setMaximum(100);
+                    m_pProgressBar->setValue(0);
+
+                    /* Add into layout: */
+                    pProgressLayout->addWidget(m_pProgressBar, 0, Qt::AlignVCenter);
+                }
+
+                /* Create cancel button: */
+                m_pButtonCancel = new UIMiniCancelButton;
+                {
+                    /* Configure cancel button: */
+                    m_fCancelEnabled = m_comProgress.GetCancelable();
+                    m_pButtonCancel->setEnabled(m_fCancelEnabled);
+                    m_pButtonCancel->setFocusPolicy(Qt::ClickFocus);
+                    connect(m_pButtonCancel, SIGNAL(clicked()), this, SLOT(sltCancelOperation()));
+
+                    /* Add into layout: */
+                    pProgressLayout->addWidget(m_pButtonCancel, 0, Qt::AlignVCenter);
+                }
+
+                /* Add into layout: */
+                pDescriptionLayout->addLayout(pProgressLayout);
+            }
+
+            /* Create estimation label: */
+            m_pLabelEta = new QILabel;
+            {
+                /* Add into layout: */
+                pDescriptionLayout->addWidget(m_pLabelEta, 0, Qt::AlignLeft | Qt::AlignVCenter);
+            }
+
+            /* Add stretch: */
+            pDescriptionLayout->addStretch(1);
+
+            /* Add into layout: */
+            pMainLayout->addLayout(pDescriptionLayout);
+        }
     }
-
-    /* Create description label: */
-    m_pDescriptionLbl = new QILabel(this);
-    /* Configure label: */
-    if (m_cOperations > 1)
-        m_pDescriptionLbl->setText(QString(m_spcszOpDescTpl)
-                                           .arg(m_progress.GetOperationDescription())
-                                           .arg(m_iCurrentOperation).arg(m_cOperations));
-    else
-        m_pDescriptionLbl->setText(QString("%1 ...")
-                                           .arg(m_progress.GetOperationDescription()));
-
-    /* Create progress-bar: */
-    m_pProgressBar = new QProgressBar(this);
-    /* Configure progress-bar: */
-    m_pProgressBar->setMaximum(100);
-    m_pProgressBar->setValue(0);
-
-    /* Create cancel button: */
-    m_fCancelEnabled = m_progress.GetCancelable();
-    m_pCancelBtn = new UIMiniCancelButton(this);
-    /* Configure cancel button: */
-    m_pCancelBtn->setEnabled(m_fCancelEnabled);
-    m_pCancelBtn->setFocusPolicy(Qt::ClickFocus);
-    connect(m_pCancelBtn, SIGNAL(clicked()), this, SLOT(sltCancelOperation()));
-
-    /* Create estimation label: */
-    m_pEtaLbl = new QILabel(this);
-
-    /* Create proggress layout: */
-    QHBoxLayout *pProgressLayout = new QHBoxLayout;
-    /* Configure layout: */
-    pProgressLayout->setMargin(0);
-    /* Add into layout: */
-    pProgressLayout->addWidget(m_pProgressBar, 0, Qt::AlignVCenter);
-    pProgressLayout->addWidget(m_pCancelBtn, 0, Qt::AlignVCenter);
-
-    /* Create description layout: */
-    QVBoxLayout *pDescriptionLayout = new QVBoxLayout;
-    /* Configure layout: */
-    pDescriptionLayout->setMargin(0);
-    /* Add stretch: */
-    pDescriptionLayout->addStretch(1);
-    /* Add into layout: */
-    pDescriptionLayout->addWidget(m_pDescriptionLbl, 0, Qt::AlignHCenter);
-    pDescriptionLayout->addLayout(pProgressLayout);
-    pDescriptionLayout->addWidget(m_pEtaLbl, 0, Qt::AlignLeft | Qt::AlignVCenter);
-    /* Add stretch: */
-    pDescriptionLayout->addStretch(1);
-    /* Add into layout: */
-    pMainLayout->addLayout(pDescriptionLayout);
 
     /* Translate finally: */
     retranslateUi();
@@ -148,7 +181,7 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
 UIProgressDialog::~UIProgressDialog()
 {
     /* Wait for CProgress to complete: */
-    m_progress.WaitForCompletion(-1);
+    m_comProgress.WaitForCompletion(-1);
 
     /* Call the timer event handling delegate: */
     handleTimerEvent();
@@ -156,14 +189,13 @@ UIProgressDialog::~UIProgressDialog()
 
 void UIProgressDialog::retranslateUi()
 {
-    m_strCancel = tr("Canceling...");
-    m_pCancelBtn->setText(tr("&Cancel"));
-    m_pCancelBtn->setToolTip(tr("Cancel the current operation"));
+    m_pButtonCancel->setText(tr("&Cancel"));
+    m_pButtonCancel->setToolTip(tr("Cancel the current operation"));
 }
 
 int UIProgressDialog::run(int cRefreshInterval)
 {
-    if (m_progress.isOk())
+    if (m_comProgress.isOk())
     {
         /* Start refresh timer: */
         int id = startTimer(cRefreshInterval);
@@ -239,8 +271,8 @@ void UIProgressDialog::closeEvent(QCloseEvent *pEvent)
 
 void UIProgressDialog::sltCancelOperation()
 {
-    m_pCancelBtn->setEnabled(false);
-    m_progress.Cancel();
+    m_pButtonCancel->setEnabled(false);
+    m_comProgress.Cancel();
 }
 
 void UIProgressDialog::handleTimerEvent()
@@ -258,13 +290,13 @@ void UIProgressDialog::handleTimerEvent()
     else if (m_fEnded)
         return;
 
-    if (!m_fEnded && (!m_progress.isOk() || m_progress.GetCompleted()))
+    if (!m_fEnded && (!m_comProgress.isOk() || m_comProgress.GetCompleted()))
     {
         /* Is this progress-dialog a top-level modal-dialog now? */
         if (windowManager().isWindowOnTheTopOfTheModalWindowStack(this))
         {
             /* Progress finished: */
-            if (m_progress.isOk())
+            if (m_comProgress.isOk())
             {
                 m_pProgressBar->setValue(100);
                 done(Accepted);
@@ -283,90 +315,90 @@ void UIProgressDialog::handleTimerEvent()
     }
 
     /* Update the progress dialog: */
-    if (!m_progress.GetCanceled())
+    if (!m_comProgress.GetCanceled())
     {
         /* Update ETA: */
-        long newTime = m_progress.GetTimeRemaining();
-        long seconds;
-        long minutes;
-        long hours;
-        long days;
+        const long iNewTime = m_comProgress.GetTimeRemaining();
+        long iSeconds;
+        long iMinutes;
+        long iHours;
+        long iDays;
 
-        seconds  = newTime < 0 ? 0 : newTime;
-        minutes  = seconds / 60;
-        seconds -= minutes * 60;
-        hours    = minutes / 60;
-        minutes -= hours   * 60;
-        days     = hours   / 24;
-        hours   -= days    * 24;
+        iSeconds  = iNewTime < 0 ? 0 : iNewTime;
+        iMinutes  = iSeconds / 60;
+        iSeconds -= iMinutes * 60;
+        iHours    = iMinutes / 60;
+        iMinutes -= iHours   * 60;
+        iDays     = iHours   / 24;
+        iHours   -= iDays    * 24;
 
-        QString strDays = VBoxGlobal::daysToString(days);
-        QString strHours = VBoxGlobal::hoursToString(hours);
-        QString strMinutes = VBoxGlobal::minutesToString(minutes);
-        QString strSeconds = VBoxGlobal::secondsToString(seconds);
+        const QString strDays = VBoxGlobal::daysToString(iDays);
+        const QString strHours = VBoxGlobal::hoursToString(iHours);
+        const QString strMinutes = VBoxGlobal::minutesToString(iMinutes);
+        const QString strSeconds = VBoxGlobal::secondsToString(iSeconds);
 
-        QString strTwoComp = tr("%1, %2 remaining", "You may wish to translate this more like \"Time remaining: %1, %2\"");
-        QString strOneComp = tr("%1 remaining", "You may wish to translate this more like \"Time remaining: %1\"");
+        const QString strTwoComp = tr("%1, %2 remaining", "You may wish to translate this more like \"Time remaining: %1, %2\"");
+        const QString strOneComp = tr("%1 remaining", "You may wish to translate this more like \"Time remaining: %1\"");
 
-        if      (days > 1 && hours > 0)
-            m_pEtaLbl->setText(strTwoComp.arg(strDays).arg(strHours));
-        else if (days > 1)
-            m_pEtaLbl->setText(strOneComp.arg(strDays));
-        else if (days > 0 && hours > 0)
-            m_pEtaLbl->setText(strTwoComp.arg(strDays).arg(strHours));
-        else if (days > 0 && minutes > 5)
-            m_pEtaLbl->setText(strTwoComp.arg(strDays).arg(strMinutes));
-        else if (days > 0)
-            m_pEtaLbl->setText(strOneComp.arg(strDays));
-        else if (hours > 2)
-            m_pEtaLbl->setText(strOneComp.arg(strHours));
-        else if (hours > 0 && minutes > 0)
-            m_pEtaLbl->setText(strTwoComp.arg(strHours).arg(strMinutes));
-        else if (hours > 0)
-            m_pEtaLbl->setText(strOneComp.arg(strHours));
-        else if (minutes > 2)
-            m_pEtaLbl->setText(strOneComp.arg(strMinutes));
-        else if (minutes > 0 && seconds > 5)
-            m_pEtaLbl->setText(strTwoComp.arg(strMinutes).arg(strSeconds));
-        else if (minutes > 0)
-            m_pEtaLbl->setText(strOneComp.arg(strMinutes));
-        else if (seconds > 5)
-            m_pEtaLbl->setText(strOneComp.arg(strSeconds));
-        else if (seconds > 0)
-            m_pEtaLbl->setText(tr("A few seconds remaining"));
+        if      (iDays > 1 && iHours > 0)
+            m_pLabelEta->setText(strTwoComp.arg(strDays).arg(strHours));
+        else if (iDays > 1)
+            m_pLabelEta->setText(strOneComp.arg(strDays));
+        else if (iDays > 0 && iHours > 0)
+            m_pLabelEta->setText(strTwoComp.arg(strDays).arg(strHours));
+        else if (iDays > 0 && iMinutes > 5)
+            m_pLabelEta->setText(strTwoComp.arg(strDays).arg(strMinutes));
+        else if (iDays > 0)
+            m_pLabelEta->setText(strOneComp.arg(strDays));
+        else if (iHours > 2)
+            m_pLabelEta->setText(strOneComp.arg(strHours));
+        else if (iHours > 0 && iMinutes > 0)
+            m_pLabelEta->setText(strTwoComp.arg(strHours).arg(strMinutes));
+        else if (iHours > 0)
+            m_pLabelEta->setText(strOneComp.arg(strHours));
+        else if (iMinutes > 2)
+            m_pLabelEta->setText(strOneComp.arg(strMinutes));
+        else if (iMinutes > 0 && iSeconds > 5)
+            m_pLabelEta->setText(strTwoComp.arg(strMinutes).arg(strSeconds));
+        else if (iMinutes > 0)
+            m_pLabelEta->setText(strOneComp.arg(strMinutes));
+        else if (iSeconds > 5)
+            m_pLabelEta->setText(strOneComp.arg(strSeconds));
+        else if (iSeconds > 0)
+            m_pLabelEta->setText(tr("A few seconds remaining"));
         else
-            m_pEtaLbl->clear();
+            m_pLabelEta->clear();
 
         /* Then operation text (if changed): */
-        ulong newOp = m_progress.GetOperation() + 1;
-        if (newOp != m_iCurrentOperation)
+        ulong uNewOp = m_comProgress.GetOperation() + 1;
+        if (uNewOp != m_uCurrentOperation)
         {
-            m_iCurrentOperation = newOp;
-            m_pDescriptionLbl->setText(QString(m_spcszOpDescTpl)
-                                       .arg(m_progress.GetOperationDescription())
-                                       .arg(m_iCurrentOperation).arg(m_cOperations));
+            m_uCurrentOperation = uNewOp;
+            m_pLabelDescription->setText(QString(m_spcszOpDescTpl)
+                                       .arg(m_comProgress.GetOperationDescription())
+                                       .arg(m_uCurrentOperation).arg(m_cOperations));
         }
         /* Update operation percentage: */
-        m_pProgressBar->setValue(m_progress.GetPercent());
+        m_pProgressBar->setValue(m_comProgress.GetPercent());
 
         /* Then cancel button: */
-        m_fCancelEnabled = m_progress.GetCancelable();
-        m_pCancelBtn->setEnabled(m_fCancelEnabled);
+        m_fCancelEnabled = m_comProgress.GetCancelable();
+        m_pButtonCancel->setEnabled(m_fCancelEnabled);
 
         /* Notify listeners about the operation progress update: */
-        emit sigProgressChange(m_cOperations, m_progress.GetOperationDescription(),
-                               m_progress.GetOperation() + 1, m_progress.GetPercent());
+        emit sigProgressChange(m_cOperations, m_comProgress.GetOperationDescription(),
+                               m_comProgress.GetOperation() + 1, m_comProgress.GetPercent());
     }
     /* Mark progress canceled if so: */
     else
-        m_pEtaLbl->setText(m_strCancel);
+        m_pLabelEta->setText(tr("Canceling..."));
 }
 
 
 UIProgress::UIProgress(CProgress &progress, QObject *pParent /* = 0 */)
     : QObject(pParent)
-    , m_progress(progress)
-    , m_cOperations(m_progress.GetOperationCount())
+    , m_comProgress(progress)
+    , m_cOperations(m_comProgress.GetOperationCount())
     , m_fEnded(false)
 {
 }
@@ -374,7 +406,7 @@ UIProgress::UIProgress(CProgress &progress, QObject *pParent /* = 0 */)
 void UIProgress::run(int iRefreshInterval)
 {
     /* Make sure the CProgress still valid: */
-    if (!m_progress.isOk())
+    if (!m_comProgress.isOk())
         return;
 
     /* Start the refresh timer: */
@@ -410,11 +442,11 @@ void UIProgress::timerEvent(QTimerEvent*)
         return;
 
     /* If progress had failed or finished: */
-    if (!m_progress.isOk() || m_progress.GetCompleted())
+    if (!m_comProgress.isOk() || m_comProgress.GetCompleted())
     {
         /* Notify listeners about the operation progress error: */
-        if (!m_progress.isOk() || m_progress.GetResultCode() != 0)
-            emit sigProgressError(UIErrorString::formatErrorInfo(m_progress));
+        if (!m_comProgress.isOk() || m_comProgress.GetResultCode() != 0)
+            emit sigProgressError(UIErrorString::formatErrorInfo(m_comProgress));
 
         /* Exit from the event-loop if there is any: */
         if (m_pEventLoop)
@@ -428,11 +460,11 @@ void UIProgress::timerEvent(QTimerEvent*)
     }
 
     /* If CProgress was not yet canceled: */
-    if (!m_progress.GetCanceled())
+    if (!m_comProgress.GetCanceled())
     {
         /* Notify listeners about the operation progress update: */
-        emit sigProgressChange(m_cOperations, m_progress.GetOperationDescription(),
-                               m_progress.GetOperation() + 1, m_progress.GetPercent());
+        emit sigProgressChange(m_cOperations, m_comProgress.GetOperationDescription(),
+                               m_comProgress.GetOperation() + 1, m_comProgress.GetPercent());
     }
 }
 
