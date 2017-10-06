@@ -89,47 +89,54 @@ void UIProgressDialog::retranslateUi()
 
 int UIProgressDialog::run(int cRefreshInterval)
 {
-    if (m_comProgress.isOk())
+    /* Make sure progress hasn't finished already: */
+    if (!m_comProgress.isOk() || m_comProgress.GetCompleted())
     {
-        /* Start refresh timer: */
-        int id = startTimer(cRefreshInterval);
-
-        /* Set busy cursor.
-         * We don't do this on the Mac, cause regarding the design rules of
-         * Apple there is no busy window behavior. A window should always be
-         * responsive and it is in our case (We show the progress dialog bar). */
-#ifndef VBOX_WS_MAC
-        if (m_fCancelEnabled)
-            QApplication::setOverrideCursor(QCursor(Qt::BusyCursor));
+        /* Progress completed? */
+        if (m_comProgress.isOk())
+            return Accepted;
+        /* Or aborted? */
         else
-            QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+            return Rejected;
+    }
+
+    /* Start refresh timer: */
+    int id = startTimer(cRefreshInterval);
+
+    /* Set busy cursor.
+     * We don't do this on the Mac, cause regarding the design rules of
+     * Apple there is no busy window behavior. A window should always be
+     * responsive and it is in our case (We show the progress dialog bar). */
+#ifndef VBOX_WS_MAC
+    if (m_fCancelEnabled)
+        QApplication::setOverrideCursor(QCursor(Qt::BusyCursor));
+    else
+        QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 #endif /* VBOX_WS_MAC */
 
-        /* Create a local event-loop: */
-        {
-            /* Guard ourself for the case
-             * we destroyed ourself in our event-loop: */
-            QPointer<UIProgressDialog> guard = this;
+    /* Create a local event-loop: */
+    {
+        /* Guard ourself for the case
+         * we destroyed ourself in our event-loop: */
+        QPointer<UIProgressDialog> guard = this;
 
-            /* Holds the modal loop, but don't show the window immediately: */
-            execute(false);
+        /* Holds the modal loop, but don't show the window immediately: */
+        execute(false);
 
-            /* Are we still valid? */
-            if (guard.isNull())
-                return Rejected;
-        }
+        /* Are we still valid? */
+        if (guard.isNull())
+            return Rejected;
+    }
 
-        /* Kill refresh timer: */
-        killTimer(id);
+    /* Kill refresh timer: */
+    killTimer(id);
 
 #ifndef VBOX_WS_MAC
-        /* Reset the busy cursor */
-        QApplication::restoreOverrideCursor();
+    /* Reset the busy cursor */
+    QApplication::restoreOverrideCursor();
 #endif /* VBOX_WS_MAC */
 
-        return result();
-    }
-    return Rejected;
+    return result();
 }
 
 void UIProgressDialog::show()
@@ -439,7 +446,7 @@ void UIProgressDialog::handleTimerEvent()
     if (!m_comProgress.isOk() || m_comProgress.GetCompleted())
     {
         /* Set progress to 100%: */
-        m_pProgressBar->setValue(100);
+        updateProgressPercentage(100);
 
         /* Try to close the dialog: */
         return closeProgressDialog();
