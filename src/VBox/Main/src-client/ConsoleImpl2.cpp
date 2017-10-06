@@ -1779,18 +1779,34 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
             /* Get graphics resolution settings */
             uint32_t u32HorizontalResolution = 0;
-            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiHorizontalResolution", &strTmp);
-            if (strTmp.isEmpty())
-                GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaHorizontalResolution", &strTmp);
-            if (!strTmp.isEmpty())
-                u32HorizontalResolution = strTmp.toUInt32();
-
             uint32_t u32VerticalResolution = 0;
-            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiVerticalResolution", &strTmp);
-            if (strTmp.isEmpty())
-                GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaVerticalResolution", &strTmp);
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiResolution", &strTmp);
             if (!strTmp.isEmpty())
-                u32VerticalResolution = strTmp.toUInt32();
+            {
+                size_t pos = strTmp.find('x');
+                if (pos != strTmp.npos)
+                {
+                    Utf8Str strH, strV;
+                    strH.assignEx(strTmp, 0, pos);
+                    strV.assignEx(strTmp, pos+1, strTmp.length()-pos);
+                    u32HorizontalResolution = strH.toUInt32();
+                    u32VerticalResolution = strV.toUInt32();
+                }
+            }
+            else
+            {
+                GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiHorizontalResolution", &strTmp);
+                if (strTmp.isEmpty())
+                    GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaHorizontalResolution", &strTmp);
+                if (!strTmp.isEmpty())
+                    u32HorizontalResolution = strTmp.toUInt32();
+
+                GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiVerticalResolution", &strTmp);
+                if (strTmp.isEmpty())
+                    GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaVerticalResolution", &strTmp);
+                if (!strTmp.isEmpty())
+                    u32VerticalResolution = strTmp.toUInt32();
+            }
 
             /*
              * EFI subtree.
