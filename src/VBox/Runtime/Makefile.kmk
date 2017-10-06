@@ -2197,7 +2197,6 @@ RuntimeR0Drv_SOURCES    = \
  	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
-	generic/rtStrFormatKernelAddress-generic.cpp \
 	generic/critsect-generic.cpp \
 	generic/errvars-generic.cpp \
 	generic/uuid-generic.cpp \
@@ -2226,6 +2225,7 @@ RuntimeR0Drv_SOURCES.linux = \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
 	generic/mppresent-generic.cpp \
+	generic/rtStrFormatKernelAddress-generic.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/assert-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \
@@ -2356,6 +2356,7 @@ RuntimeR0Drv_SOURCES.win = \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic-online.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
+	generic/rtStrFormatKernelAddress-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	nt/RTNtPathExpand8dot3Path.cpp \
 	nt/RTNtPathFindPossible8dot3Name.cpp \
@@ -2412,6 +2413,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/darwin/process-r0drv-darwin.cpp \
 	r0drv/darwin/RTLogWriteDebugger-r0drv-darwin.cpp \
 	r0drv/darwin/RTLogWriteStdOut-r0drv-darwin.cpp \
+	r0drv/darwin/rtStrFormatKernelAddress-r0drv-darwin.cpp \
 	r0drv/darwin/semevent-r0drv-darwin.cpp \
 	r0drv/darwin/semeventmulti-r0drv-darwin.cpp \
 	r0drv/darwin/semfastmutex-r0drv-darwin.cpp \
@@ -2520,6 +2522,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/RTMpOnPair-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
+	generic/rtStrFormatKernelAddress-generic.cpp \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
 	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
@@ -2554,6 +2557,7 @@ RuntimeR0Drv_SOURCES.netbsd = \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
+	generic/rtStrFormatKernelAddress-generic.cpp \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
 	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
@@ -2584,6 +2588,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	generic/RTMpGetCoreCount-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
+	generic/rtStrFormatKernelAddress-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
 	r0drv/powernotification-r0drv.c \
@@ -2620,6 +2625,7 @@ RuntimeR0Drv_SOURCES.haiku = \
 	generic/RTMpOnPair-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
+	generic/rtStrFormatKernelAddress-generic.cpp \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
 	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
