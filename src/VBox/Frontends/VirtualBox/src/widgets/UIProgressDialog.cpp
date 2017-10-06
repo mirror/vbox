@@ -28,12 +28,12 @@
 # include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIProgressDialog.h"
-# include "UIErrorString.h"
-# include "UISpecialControls.h"
-# include "UIModalWindowManager.h"
 # include "QIDialogButtonBox.h"
 # include "QILabel.h"
+# include "UIErrorString.h"
+# include "UIModalWindowManager.h"
+# include "UIProgressDialog.h"
+# include "UISpecialControls.h"
 # include "VBoxGlobal.h"
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
@@ -44,6 +44,10 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
+/*********************************************************************************************************************************
+*   Class UIProgressDialog implementation.                                                                                       *
+*********************************************************************************************************************************/
 
 const char *UIProgressDialog::m_spcszOpDescTpl = "%1 ... (%2/%3)";
 
@@ -399,44 +403,46 @@ void UIProgressDialog::updateProgressPercentage(int iPercent /* = -1 */)
                            m_comProgress.GetOperation() + 1, iPercent);
 }
 
+void UIProgressDialog::closeProgressDialog()
+{
+    /* If window is on the top of the stack: */
+    if (windowManager().isWindowOnTheTopOfTheModalWindowStack(this))
+    {
+        /* Progress completed? */
+        if (m_comProgress.isOk())
+            done(Accepted);
+        /* Or aborted? */
+        else
+            done(Rejected);
+
+        /* Mark progress-dialog finished: */
+        m_fEnded = true;
+    }
+}
+
 void UIProgressDialog::handleTimerEvent()
 {
-    /* We should hide progress-dialog
-     * if it was already finalized but not yet closed.
-     * This could happens in case of some other
-     * modal dialog prevents our event-loop from
-     * being exit overlapping 'this'. */
-    if (m_fEnded && !isHidden() && windowManager().isWindowOnTheTopOfTheModalWindowStack(this))
+    /* If progress-dialog is ended: */
+    if (m_fEnded)
     {
-        hide();
+        // WORKAROUND:
+        // We should hide progress-dialog if it was already ended but not yet closed.  This could happen
+        // in case if some other modal dialog prevents our event-loop from being exit overlapping 'this'.
+        /* If window is on the top of the stack and still shown: */
+        if (!isHidden() && windowManager().isWindowOnTheTopOfTheModalWindowStack(this))
+            hide();
+
         return;
     }
-    else if (m_fEnded)
-        return;
 
-    if (!m_fEnded && (!m_comProgress.isOk() || m_comProgress.GetCompleted()))
+    /* If progress-dialog is not yet ended but progress is aborted or completed: */
+    if (!m_comProgress.isOk() || m_comProgress.GetCompleted())
     {
-        /* Is this progress-dialog a top-level modal-dialog now? */
-        if (windowManager().isWindowOnTheTopOfTheModalWindowStack(this))
-        {
-            /* Progress finished: */
-            if (m_comProgress.isOk())
-            {
-                m_pProgressBar->setValue(100);
-                done(Accepted);
-            }
-            /* Progress is not valid: */
-            else
-                done(Rejected);
+        /* Set progress to 100%: */
+        m_pProgressBar->setValue(100);
 
-            /* Request to exit loop: */
-            m_fEnded = true;
-            return;
-        }
-
-        /* Else we should wait until all the subsequent
-         * top-level modal-dialog(s) will be dismissed: */
-        return;
+        /* Try to close the dialog: */
+        return closeProgressDialog();
     }
 
     /* Update progress: */
@@ -444,6 +450,10 @@ void UIProgressDialog::handleTimerEvent()
     updateProgressPercentage();
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIProgress implementation.                                                                                             *
+*********************************************************************************************************************************/
 
 UIProgress::UIProgress(CProgress &progress, QObject *pParent /* = 0 */)
     : QObject(pParent)
