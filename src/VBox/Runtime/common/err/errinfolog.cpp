@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Error Info, Setters.
+ * IPRT - Error Info, Setters with logging.
  */
 
 /*
