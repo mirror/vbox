@@ -848,10 +848,12 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                     while (off < cchPrecision)
                                     {
                                         int i;
-                                        cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s%0*p %04x:", off ? "\n" : "", sizeof(pu8) * 2, (uintptr_t)pu8, off);
+                                        cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                                                           "%s%0*p %04x:", off ? "\n" : "", sizeof(pu8) * 2, (uintptr_t)pu8, off);
                                         for (i = 0; i < cchWidth && off + i < cchPrecision ; i++)
                                             cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                                                               off + i < cchPrecision ? !(i & 7) && i ? "-%02x" : " %02x" : "   ", pu8[i]);
+                                                               off + i < cchPrecision ? !(i & 7) && i ? "-%02x" : " %02x" : "   ",
+                                                               pu8[i]);
                                         while (i++ < cchWidth)
                                             cch += pfnOutput(pvArgOutput, "   ", 3);
 
@@ -862,6 +864,66 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                             uint8_t u8 = pu8[i];
                                             cch += pfnOutput(pvArgOutput, u8 < 127 && u8 >= 32 ? (const char *)&u8 : ".", 1);
                                         }
+
+                                        /* next */
+                                        pu8 += cchWidth;
+                                        off += cchWidth;
+                                    }
+                                    return cch;
+                                }
+
+                                /*
+                                 * Regular hex dump with dittoing.
+                                 */
+                                case 'D':
+                                {
+                                    int offEndDupCheck;
+                                    int cDuplicates = 0;
+                                    int off = 0;
+                                    cch = 0;
+
+                                    if (cchWidth <= 0)
+                                        cchWidth = 16;
+                                    offEndDupCheck = cchPrecision - cchWidth;
+
+                                    while (off < cchPrecision)
+                                    {
+                                        int i;
+                                        if (   off >= offEndDupCheck
+                                            || off <= 0
+                                            || memcmp(pu8, pu8 - cchWidth, cchWidth) != 0
+                                            || (   cDuplicates == 0
+                                                && (   off + cchWidth >= offEndDupCheck
+                                                    || memcmp(pu8 + cchWidth, pu8, cchWidth) != 0)) )
+                                        {
+                                            if (cDuplicates > 0)
+                                            {
+                                                cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                                                                   "\n%.*s ****  <ditto x %u>",
+                                                                   sizeof(pu8) * 2, "****************", cDuplicates);
+                                                cDuplicates = 0;
+                                            }
+
+                                            cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                                                               "%s%0*p %04x:", off ? "\n" : "", sizeof(pu8) * 2, (uintptr_t)pu8, off);
+                                            for (i = 0; i < cchWidth && off + i < cchPrecision ; i++)
+                                                cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                                                                     off + i < cchPrecision ? !(i & 7) && i
+                                                                   ? "-%02x" : " %02x" : "   ",
+                                                                   pu8[i]);
+                                            while (i++ < cchWidth)
+                                                cch += pfnOutput(pvArgOutput, "   ", 3);
+
+                                            cch += pfnOutput(pvArgOutput, " ", 1);
+
+                                            for (i = 0; i < cchWidth && off + i < cchPrecision; i++)
+                                            {
+                                                uint8_t u8 = pu8[i];
+                                                cch += pfnOutput(pvArgOutput, u8 < 127 && u8 >= 32 ? (const char *)&u8 : ".", 1);
+                                            }
+                                        }
+                                        else
+                                            cDuplicates++;
 
                                         /* next */
                                         pu8 += cchWidth;

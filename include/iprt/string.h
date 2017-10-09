@@ -1438,6 +1438,7 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  *      - \%Rhxd            - Takes a pointer to the memory which is to be dumped in typical
  *                            hex format. Use the precision to specify the length, and the width to
  *                            set the number of bytes per line. Default width and precision is 16.
+ *      - \%RhxD            - Same as \%Rhxd, except that it skips duplicate lines.
  *      - \%Rhxs            - Takes a pointer to the memory to be displayed as a hex string,
  *                            i.e. a series of space separated bytes formatted as two digit hex value.
  *                            Use the precision to specify the length. Default length is 16 bytes.
