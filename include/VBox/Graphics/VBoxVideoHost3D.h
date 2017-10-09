@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VirtualBox 3D host inter-components interfaces
  */
