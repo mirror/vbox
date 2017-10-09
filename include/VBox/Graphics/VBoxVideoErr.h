@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VirtualBox Video driver, common code - iprt and VirtualBox macros and
  * definitions.
@@ -23,6 +24,8 @@
  * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * Authors: Michael Thayer <michael.thayer@oracle.com>
  */
 
 #ifndef __VBOX_ERR_H__
@@ -39,6 +42,7 @@
 #define VERR_INVALID_FUNCTION               (-36)
 #define VERR_NOT_SUPPORTED                  (-37)
 #define VERR_TOO_MUCH_DATA                  (-42)
+#define VERR_NOT_FOUND                      (-78)
 #define VERR_INVALID_STATE                  (-79)
 #define VERR_OUT_OF_RESOURCES               (-80)
 #define VERR_ALREADY_EXISTS                 (-105)
