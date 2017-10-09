@@ -43,6 +43,7 @@ s/^    /\t/g
 }
 /^\/\* \$Id:.*\*\/$/d
 /^typedef .* HGSMIOFFSET;$/d
+/^typedef .* HGSMISIZE;$/d
 s/^#\( *\)include <\([^/]*\)>$/#\1include "\2"/g
 
 # File names:
