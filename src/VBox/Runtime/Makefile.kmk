@@ -423,6 +423,7 @@ RuntimeR3_SOURCES       = \
 	common/dvm/dvmmbr.cpp \
 	common/dvm/dvmvfs.cpp \
 	common/err/errinfo.cpp \
+	common/err/errinfolog.cpp \
 	common/err/errinfo-alloc.cpp \
 	common/err/errmsg.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
@@ -2328,6 +2329,7 @@ RuntimeR0Drv_SOURCES.win = \
 	common/checksum/sha512t224str.cpp \
 	common/checksum/sha512t256str.cpp \
 	common/err/errinfo.cpp \
+	common/err/errinfolog.cpp \
 	common/path/RTPathChangeToUnixSlashes.cpp \
 	common/math/bignum.cpp \
 	common/misc/zero.asm \

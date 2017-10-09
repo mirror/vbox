@@ -554,6 +554,119 @@ RTDECL(int)         RTErrInfoAddF(PRTERRINFO pErrInfo, int rc, const char *pszFo
  */
 RTDECL(int)         RTErrInfoAddV(PRTERRINFO pErrInfo, int rc, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 
+/** @name RTERRINFO_LOG_F_XXX
+ * @{ */
+/** Both debug and release log.   */
+#define RTERRINFO_LOG_F_RELEASE         RT_BIT_32(0)
+/** @} */
+
+/**
+ * Fills in the error info details.
+ *
+ * @returns @a rc.
+ *
+ * @param   pErrInfo            The error info structure to fill in.
+ * @param   rc                  The status code to return.
+ * @param   iLogGroup           The logging group.
+ * @param   fFlags              RTERRINFO_LOG_F_XXX.
+ * @param   pszMsg              The error message string.
+ */
+RTDECL(int)         RTErrInfoLogAndSet(PRTERRINFO pErrInfo, int rc, uint32_t iLogGroup, uint32_t fFlags, const char *pszMsg);
+
+/**
+ * Fills in the error info details, with a sprintf style message.
+ *
+ * @returns @a rc.
+ *
+ * @param   pErrInfo            The error info structure to fill in.
+ * @param   rc                  The status code to return.
+ * @param   iLogGroup           The logging group.
+ * @param   fFlags              RTERRINFO_LOG_F_XXX.
+ * @param   pszFormat           The format string.
+ * @param   ...                 The format arguments.
+ */
+RTDECL(int)         RTErrInfoLogAndSetF(PRTERRINFO pErrInfo, int rc, uint32_t iLogGroup, uint32_t fFlags, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(5, 6);
+
+/**
+ * Fills in the error info details, with a vsprintf style message.
+ *
+ * @returns @a rc.
+ *
+ * @param   pErrInfo            The error info structure to fill in.
+ * @param   rc                  The status code to return.
+ * @param   iLogGroup           The logging group.
+ * @param   fFlags              RTERRINFO_LOG_F_XXX.
+ * @param   pszFormat           The format string.
+ * @param   va                  The format arguments.
+ */
+RTDECL(int)         RTErrInfoLogAndSetV(PRTERRINFO pErrInfo, int rc, uint32_t iLogGroup, uint32_t fFlags, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(5, 0);
+
+/**
+ * Adds more error info details.
+ *
+ * @returns @a rc.
+ *
+ * @param   pErrInfo            The error info structure to fill in.
+ * @param   rc                  The status code to return.
+ * @param   iLogGroup           The logging group.
+ * @param   fFlags              RTERRINFO_LOG_F_XXX.
+ * @param   pszMsg              The error message string to add.
+ */
+RTDECL(int)         RTErrInfoLogAndAdd(PRTERRINFO pErrInfo, int rc, uint32_t iLogGroup, uint32_t fFlags, const char *pszMsg);
+
+/**
+ * Adds more error info details, with a sprintf style message.
+ *
+ * @returns @a rc.
+ *
+ * @param   pErrInfo            The error info structure to fill in.
+ * @param   rc                  The status code to return.
+ * @param   iLogGroup           The logging group.
+ * @param   fFlags              RTERRINFO_LOG_F_XXX.
+ * @param   pszFormat           The format string to add.
+ * @param   ...                 The format arguments.
+ */
+RTDECL(int)         RTErrInfoLogAndAddF(PRTERRINFO pErrInfo, int rc, uint32_t iLogGroup, uint32_t fFlags, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(5, 6);
+
+/**
+ * Adds more error info details, with a vsprintf style message.
+ *
+ * @returns @a rc.
+ *
+ * @param   pErrInfo            The error info structure to fill in.
+ * @param   rc                  The status code to return.
+ * @param   iLogGroup           The logging group.
+ * @param   fFlags              RTERRINFO_LOG_F_XXX.
+ * @param   pszFormat           The format string to add.
+ * @param   va                  The format arguments.
+ */
+RTDECL(int)         RTErrInfoLogAndAddV(PRTERRINFO pErrInfo, int rc, uint32_t iLogGroup, uint32_t fFlags, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(5, 0);
+
+/** @name Macros wrapping the RTErrInfoLog* functions.
+ * @{ */
+#define RTERRINFO_LOG_SET(  a_pErrInfo, a_rc, a_pszMsg)             RTErrInfoLogAndSet( a_pErrInfo, a_rc, LOG_GROUP, 0, a_pszMsg)
+#define RTERRINFO_LOG_SET_V(a_pErrInfo, a_rc, a_pszMsg, a_va)       RTErrInfoLogAndSetV(a_pErrInfo, a_rc, LOG_GROUP, 0, a_pszMsg, a_va)
+#define RTERRINFO_LOG_ADD(  a_pErrInfo, a_rc, a_pszMsg)             RTErrInfoLogAndAdd( a_pErrInfo, a_rc, LOG_GROUP, 0, a_pszMsg)
+#define RTERRINFO_LOG_ADD_V(a_pErrInfo, a_rc, a_pszMsg, a_va)       RTErrInfoLogAndAddV(a_pErrInfo, a_rc, LOG_GROUP, 0, a_pszMsg, a_va)
+#ifdef RT_COMPILER_SUPPORTS_VA_ARGS
+# define RTERRINFO_LOG_ADD_F(a_pErrInfo, a_rc, ...)                 RTErrInfoLogAndAddF(a_pErrInfo, a_rc, LOG_GROUP, 0, __VA_ARGS__)
+# define RTERRINFO_LOG_SET_F(a_pErrInfo, a_rc, ...)                 RTErrInfoLogAndSetF(a_pErrInfo, a_rc, LOG_GROUP, 0, __VA_ARGS__)
+#endif
+
+#define RTERRINFO_LOG_REL_SET(  a_pErrInfo, a_rc, a_pszMsg)         RTErrInfoLogAndSet( a_pErrInfo, a_rc, LOG_GROUP, RTERRINFO_LOG_F_RELEASE, a_pszMsg)
+#define RTERRINFO_LOG_REL_SET_V(a_pErrInfo, a_rc, a_pszMsg, a_va)   RTErrInfoLogAndSetV(a_pErrInfo, a_rc, LOG_GROUP, RTERRINFO_LOG_F_RELEASE, a_pszMsg, a_va)
+#define RTERRINFO_LOG_REL_ADD(  a_pErrInfo, a_rc, a_pszMsg)         RTErrInfoLogAndAdd( a_pErrInfo, a_rc, LOG_GROUP, RTERRINFO_LOG_F_RELEASE, a_pszMsg)
+#define RTERRINFO_LOG_REL_ADD_V(a_pErrInfo, a_rc, a_pszMsg, a_va)   RTErrInfoLogAndAddV(a_pErrInfo, a_rc, LOG_GROUP, RTERRINFO_LOG_F_RELEASE, a_pszMsg, a_va)
+#ifdef RT_COMPILER_SUPPORTS_VA_ARGS
+# define RTERRINFO_LOG_REL_ADD_F(a_pErrInfo, a_rc, ...)             RTErrInfoLogAndAddF(a_pErrInfo, a_rc, LOG_GROUP, RTERRINFO_LOG_F_RELEASE, __VA_ARGS__)
+# define RTERRINFO_LOG_REL_SET_F(a_pErrInfo, a_rc, ...)             RTErrInfoLogAndSetF(a_pErrInfo, a_rc, LOG_GROUP, RTERRINFO_LOG_F_RELEASE, __VA_ARGS__)
+#else
+# define RTERRINFO_LOG_REL_ADD_F                                    RTErrInfoSetF
+# define RTERRINFO_LOG_REL_SET_F                                    RTErrInfoAddF
+#endif
+/** @} */
+
+
 /**
  * Checks if the error info is set.
  *
