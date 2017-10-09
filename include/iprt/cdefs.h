@@ -1108,6 +1108,21 @@
 # define RT_THROW(type)
 #endif
 
+
+/** @def RT_FALL_THROUGH
+ * Tell the compiler that we're falling through to the next case in a switch.
+ * @sa RT_FALL_THRU  */
+#if RT_GNUC_PREREQ(7, 0)
+# define RT_FALL_THROUGH()      __attribute__((fallthrough))
+#else
+# define RT_FALL_THROUGH()      (void)0
+#endif
+/** @def RT_FALL_THRU
+ * Tell the compiler that we're falling thru to the next case in a switch.
+ * @sa RT_FALL_THROUGH */
+#define RT_FALL_THRU()          RT_FALL_THROUGH()
+
+
 /** @def RT_IPRT_FORMAT_ATTR
  * Identifies a function taking an IPRT format string.
  * @param   a_iFmt  The index (1-based) of the format string argument.
