@@ -1374,7 +1374,7 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Discard</source>
-        <translation>Αποβολή αλλαγών</translation>
+        <translation>Αποβολή</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
@@ -1398,7 +1398,7 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Abort</source>
-        <translation>Ματαίωσε</translation>
+        <translation>Ματαίωση</translation>
     </message>
     <message>
         <source>Retry</source>
@@ -1406,11 +1406,11 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Ignore</source>
-        <translation>Αγνόησε</translation>
+        <translation>Αγνόηση</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation>Επανέφερε τα αρχικά</translation>
+        <translation>Επανέφορα Προκαθορισμένων</translation>
     </message>
     <message>
         <source>Close without Saving</source>
@@ -1813,7 +1813,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Look in:</source>
-        <translation>Ψάξε σε :</translation>
+        <translation>Ψάξιμο σε :</translation>
     </message>
     <message>
         <source>Create New Folder</source>
@@ -4424,7 +4424,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Discard</source>
-        <translation>Αποβολή αλλαγών</translation>
+        <translation>Αποβολή</translation>
     </message>
     <message>
         <source>Help</source>

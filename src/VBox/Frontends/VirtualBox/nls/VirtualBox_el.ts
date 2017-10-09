@@ -6,7 +6,7 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translatorcomment>2017-09-16</translatorcomment>
+        <translatorcomment>2017-10-01</translatorcomment>
         <translation>Ελληνικά</translation>
     </message>
     <message>
@@ -185,7 +185,7 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="vanished">Κώδικας&amp;nbsp;Αποτελέσματος: </translation>
+        <translation type="vanished">Κωδικός&amp;nbsp;Αποτελέσματος: </translation>
     </message>
     <message>
         <source>Component: </source>
@@ -334,7 +334,7 @@
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>Επαναφορά όλων των αποσιωποιμένων προειδοποιήσεων και μηνυμάτων</translation>
+        <translation>Επαναφορά όλων των αποσιωποιημένων προειδοποιήσεων και μηνυμάτων</translation>
     </message>
     <message>
         <source>&amp;Network Operations Manager...</source>
@@ -484,7 +484,7 @@
     </message>
     <message>
         <source>&amp;Shared Folders Settings...</source>
-        <translation>Ρυθμίσεις Κοινών Φακέλων...</translation>
+        <translation>Ρυθμίσεις Κοινόχρηστων Φακέλων...</translation>
     </message>
     <message>
         <source>R&amp;emote Display</source>
@@ -560,7 +560,7 @@
     </message>
     <message>
         <source>&amp;Shared Folders</source>
-        <translation>Κοινοί Φάκελοι</translation>
+        <translation>Κοινόχρηστοι Φάκελοι</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
@@ -1096,8 +1096,8 @@
         <source>This virtual machine is password protected. Please enter the %n encryption password(s) below.</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many passwords are in the list and doesn&apos;t need to be told).</comment>
         <translation>
-            <numerusform>Η εικονική μηχανή είναι προστατευμένη με κωδικό. Παρακαλούμε εισάγετε τον κωδικό κρυπρογράφησης πιο κάτω.</numerusform>
-            <numerusform>Η εικονική μηχανή είναι προστατευμένη με κωδικό. Παρακαλούμε εισάγετε τους %n κωδικούς κρυπρογράφησης πιο κάτω.</numerusform>
+            <numerusform>Η εικονική μηχανή είναι προστατευμένη με κωδικό. Παρακαλούμε εισάγετε τον κωδικό κρυπτογράφησης πιο κάτω.</numerusform>
+            <numerusform>Η εικονική μηχανή είναι προστατευμένη με κωδικό. Παρακαλούμε εισάγετε τους %n κωδικούς κρυπτογράφησης πιο κάτω.</numerusform>
         </translation>
     </message>
     <message>
@@ -1361,7 +1361,7 @@
     </message>
     <message>
         <source>Downloading %1...</source>
-        <translation>Κατεβάζω το %1...</translation>
+        <translation>Κατέβασσμα %1...</translation>
     </message>
     <message>
         <source>Verifying %1...</source>
@@ -1413,27 +1413,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Κώδικας&amp;nbsp;Αποτελέσματος: </translation>
+        <translation>Κωδικός&amp;nbsp;Αποτελέσματος: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Συστατικό: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Περιβάλλον: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Καλέστηκε από: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Καλών&amp;nbsp;RC: </translation>
+        <translation>Καλών&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -1697,7 +1697,7 @@
     <message>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
-        <translation>%1 (%2 ενεργό)</translation>
+        <translation>%1 (%2 ενεργά)</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -1807,7 +1807,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
-        <translation>Κοινοί Φάκελοι</translation>
+        <translation>Κοινόχρηστοι Φάκελοι</translation>
     </message>
     <message>
         <source>Video Capture File</source>
@@ -3273,11 +3273,11 @@
     </message>
     <message>
         <source>Adding network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Προσθήκη δικτύου...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Αφαίρεση δικτύου...</translation>
     </message>
 </context>
 <context>
@@ -3382,7 +3382,7 @@
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation type="vanished">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Δεν υπάρχουν κοινοί φάκελοι&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Δεν υπάρχουν κοινόχρηστοι φάκελοι&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
@@ -3496,7 +3496,7 @@
     <message>
         <source>No shared folders</source>
         <comment>Shared folders tooltip</comment>
-        <translation>Κανένας Κοινός Φάκελος</translation>
+        <translation>Κανένας Κοινόχρηστος Φάκελος</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1</source>
@@ -3853,12 +3853,12 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="vanished">Κοινοί Φάκελοι</translation>
+        <translation type="vanished">Κοινόχρηστοι Φάκελοι</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation>Κοινοί Φάκελοι</translation>
+        <translation>Κοινόχρηστοι Φάκελοι</translation>
     </message>
 </context>
 <context>
@@ -4028,7 +4028,7 @@
     <message>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation>%1 (%2 ενεργό)</translation>
+        <translation>%1 (%2 ενεργά)</translation>
     </message>
 </context>
 <context>
@@ -4368,11 +4368,11 @@
     </message>
     <message>
         <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
-        <translation type="unfinished"></translation>
+        <translation>Όταν επιλεγεί, το VirtualBox θα καταγράφει και τον ήχο στο αρχείο βίντεο.</translation>
     </message>
     <message>
         <source>&amp;Record Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>Καταγραφή Ήχου</translation>
     </message>
 </context>
 <context>
@@ -4435,7 +4435,7 @@
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
-        <translation>Κωδικοποίηση κρυπρογράφησης:</translation>
+        <translation>Κωδικοποίηση κρυπτογράφησης:</translation>
     </message>
     <message>
         <source>E&amp;nter New Password:</source>
@@ -4459,7 +4459,7 @@
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
-        <translation>Ο τύπος της κωδικοποίηση κρυπρογράφησης δεν έχει καθοριστεί.</translation>
+        <translation>Ο τύπος της κρυπτογράφησης δεν έχει καθοριστεί.</translation>
     </message>
     <message>
         <source>Encryption password empty.</source>
@@ -4745,7 +4745,7 @@
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>Δείχνει όλους τους κοινούς φακέλους προσβάσιμους απ&apos; αυτή τη μηχανή. Χρησιμοποιήστε &apos;net use x: \\vboxsvr\share&apos; για πρόσβαση του κοινού φακέλου ονόματι &lt;i&gt;share&lt;/i&gt; από ένα λειτουργικό βασισμένο στο DOS, ή &apos;mount -t vboxsf share mount_point&apos; για πρόσβαση του κοινού φακέλου από ένα λειτουργικό βασισμένο στο Linux. Αυτό το χαρακτηριστικό απαιτεί τις Προσθήκες Επισκέπτη.</translation>
+        <translation>Δείχνει όλους τους κοινόχρηστους φακέλους προσβάσιμους απ&apos; αυτή τη μηχανή. Χρησιμοποιήστε &apos;net use x: \\vboxsvr\share&apos; για πρόσβαση του κοινόχρηστου φακέλου ονόματι &lt;i&gt;share&lt;/i&gt; από ένα λειτουργικό βασισμένο στο DOS, ή &apos;mount -t vboxsf share mount_point&apos; για πρόσβαση του κοινόχρηστου φακέλου από ένα λειτουργικό βασισμένο στο Linux. Αυτό το χαρακτηριστικό απαιτεί τις Προσθήκες Επισκέπτη.</translation>
     </message>
     <message>
         <source>Name</source>
@@ -4773,15 +4773,15 @@
     </message>
     <message>
         <source>Add Shared Folder</source>
-        <translation>Προσθήκη Κοινού Φακέλου</translation>
+        <translation>Προσθήκη Κοινόχρηστου Φακέλου</translation>
     </message>
     <message>
         <source>Edit Shared Folder</source>
-        <translation>Επεξεργασία Κοινού Φακέλου</translation>
+        <translation>Επεξεργασία Κοινόχρηστου Φακέλου</translation>
     </message>
     <message>
         <source>Remove Shared Folder</source>
-        <translation>Αφαίρεση Κοινού Φακέλου</translation>
+        <translation>Αφαίρεση Κοινόχρηστου Φακέλου</translation>
     </message>
     <message>
         <source>Adds new shared folder.</source>
@@ -4789,7 +4789,7 @@
     </message>
     <message>
         <source>Edits selected shared folder.</source>
-        <translation>Επεξεργασία του επιλεγμένου κοινού φακέλου.</translation>
+        <translation>Επεξεργασία του επιλεγμένου κοινόχρηστου φακέλου.</translation>
     </message>
     <message>
         <source>Removes selected shared folder.</source>
@@ -4797,18 +4797,18 @@
     </message>
     <message>
         <source>Shared &amp;Folders</source>
-        <translation>Κοινοί Φάκελοι</translation>
+        <translation>Κοινόχρηστοι Φάκελοι</translation>
     </message>
 </context>
 <context>
     <name>UIMachineSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
-        <translation>Προσθήκη Κοινού</translation>
+        <translation>Προσθήκη Κοινόχρηστου</translation>
     </message>
     <message>
         <source>Edit Share</source>
-        <translation>Επεξεργασία Κοινού</translation>
+        <translation>Επεξεργασία Κοινόχρηστου</translation>
     </message>
     <message>
         <source>Folder Path:</source>
@@ -4820,7 +4820,7 @@
     </message>
     <message>
         <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation>Δείχνει το όνομα του κοινού φακέλου (όπως θα φαίνεται στο ΛΣ του επισκέπτη).</translation>
+        <translation>Δείχνει το όνομα του κοινόχρηστου φακέλου (όπως θα φαίνεται στο ΛΣ του επισκέπτη).</translation>
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
@@ -5952,23 +5952,23 @@
     </message>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation type="unfinished">Αντιγραφή Αρχείου Σκληρού Δίσκου (%1)</translation>
+        <translation>Αντιγραφή Αρχείου Σκληρού Δίσκου (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation type="unfinished">Αφαίρεση Αρχείου Σκληρού Δίσκου (%1)</translation>
+        <translation>Αφαίρεση Αρχείου Σκληρού Δίσκου (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation type="unfinished">Απελευθέρωση Αρχείου Σκληρού Δίσκου (%1)</translation>
+        <translation>Απελευθέρωση Αρχείου Σκληρού Δίσκου (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation type="unfinished">Άνοιγμα Ιδιοτήτω Αρχείου Σκληρού Δίσκου (%1)</translation>
+        <translation>Άνοιγμα Ιδιοτήτω Αρχείου Σκληρού Δίσκου (%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished">Ανανέωση Αρχείου Σκληρού Δίσκου (%1)</translation>
+        <translation>Ανανέωση Αρχείου Σκληρού Δίσκου (%1)</translation>
     </message>
 </context>
 <context>
@@ -6169,7 +6169,7 @@
     </message>
     <message>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Αποτυχία ανοίγματος συνεδρία για την εικονική μηχανή &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Αποτυχία ανοίγματος συνεδρίας για την εικονική μηχανή &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -6185,7 +6185,7 @@
     </message>
     <message>
         <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="vanished">Αποτυχία δημιουργίας του κοινού φακέλου &lt;b&gt;%1&lt;/b&gt; (δείχνει στο &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) για την εικονική μηχανή &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation type="vanished">Αποτυχία δημιουργίας του κοινόχρηστου φακέλου &lt;b&gt;%1&lt;/b&gt; (δείχνει στο &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) για την εικονική μηχανή &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
@@ -6235,7 +6235,7 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="vanished">Κώδικας&amp;nbsp;Αποτελέσματος: </translation>
+        <translation type="vanished">Κωδικός&amp;nbsp;Αποτελέσματος: </translation>
     </message>
     <message>
         <source>Component: </source>
@@ -6259,7 +6259,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation type="vanished">Αποτυχία αφαίρεσης του κοινού φακέλου &lt;b&gt;%1&lt;/b&gt; (δείχνει το &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) από την εικονική μηχανή &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Παρακαλούμε κλείστε όλα τα προγράμματα στον επισκέπτη που μπορεί να χρησιμοποιούνε τον κοινό φάκελο και ξαναπροσπαθήστε.&lt;/p&gt;</translation>
+        <translation type="vanished">Αποτυχία αφαίρεσης του κοινόχρηστου φακέλου &lt;b&gt;%1&lt;/b&gt; (δείχνει το &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) από την εικονική μηχανή &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Παρακαλούμε κλείστε όλα τα προγράμματα στον επισκέπτη που μπορεί να χρησιμοποιούνε τον κοινό φάκελο και ξαναπροσπαθήστε.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
@@ -6794,7 +6794,7 @@
     </message>
     <message>
         <source>Ignore</source>
-        <translation>Αγνοήστε</translation>
+        <translation>Αγνόηση</translation>
     </message>
     <message>
         <source>Failed to create NAT network.</source>
@@ -6960,7 +6960,7 @@
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Οι Προσθήκες Επισκέπτη του VirtualBox δεν φαίνεται να είναι διαθέσιμες σε αυτή την εικονική μηχανή, και οι κοινοί φάκελοι δεν μπορούν να χρησιμοποιηθούν χωρίς αυτές. Για να χρησιμοποιήσετε κοινούς φακέλους στην εικονική μηχανή παρακαλώ εγκαταστείστε τις Προσθήκες Επισκέπτη αν δεν είναι εγκατεστημένες, ή επανεγκαταστείστε τες αν δεν λειτουργούν σωστά, επιλέγοντας &lt;b&gt;Εισάγετε τον δίσκο με τις Προσθήκες Επισκέπτη&lt;/b&gt; από το κατάλογο επιλογών &lt;b&gt;Συσκευές&lt;/b&gt;. Αν είναι εγκατεστημένες αλλά η μηχανή δεν έχει ξεκινήσει πλήρως τότε οι κοινοί φάκελοι θα είναι διαθέσιμοι όταν γίνει αυτό.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Οι Προσθήκες Επισκέπτη του VirtualBox δεν φαίνεται να είναι διαθέσιμες σε αυτή την εικονική μηχανή, και οι κοινόχρηστοι φάκελοι δεν μπορούν να χρησιμοποιηθούν χωρίς αυτές. Για να χρησιμοποιήσετε κοινόχρηστους φακέλους στην εικονική μηχανή παρακαλώ εγκαταστείστε τις Προσθήκες Επισκέπτη αν δεν είναι εγκατεστημένες, ή επανεγκαταστείστε τες αν δεν λειτουργούν σωστά, επιλέγοντας &lt;b&gt;Εισάγετε τον δίσκο με τις Προσθήκες Επισκέπτη&lt;/b&gt; από το κατάλογο επιλογών &lt;b&gt;Συσκευές&lt;/b&gt;. Αν είναι εγκατεστημένες αλλά η μηχανή δεν έχει ξεκινήσει πλήρως τότε οι κοινόχρηστοι φάκελοι θα είναι διαθέσιμοι όταν γίνει αυτό.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Insert</source>
@@ -7033,7 +7033,7 @@
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ένα κριτικό λάθος προέκυψε κατά τη διάρκεια λειτουργίας της εικονικής μηχανής και η εκτέλεση της μηχανής έχει σταματήσει.&lt;/p&gt;&lt;p&gt;Για βοήθεια, παρακαλώ δείτε στην Κοινότητα σχετικά &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; ή στο συμβόλαιο υποστήριξης. Παρακαλώ παρέχετε τα περιοχόμενα του αρχείου καταγραφής &lt;tt&gt;VBox.log&lt;/tt&gt; και την εικόνα &lt;tt&gt;VBox.png&lt;/tt&gt;, που μπορείτε να βρείτε στο φάκελο &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, καθώς και μία περιγραφή για το τι κάνατε όταν συνέβη το λάθος. Σημειώστε οτι μπορείτε να έχετε πρόσβαση στα παραπάνω αρχεία επιλέγοντας &lt;b&gt;Εμφάνιση καταγραφής&lt;/b&gt; από την επιλογή &lt;b&gt;Μηχανή&lt;/b&gt; του κυρίως παραθύρου του VirtualBox.&lt;/p&gt;&lt;p&gt;Πατήστε &lt;b&gt;Εντάξει&lt;/b&gt; αν θέλετε να σβήσετε τη μηχανή ή πατήστε &lt;b&gt;Αγνοήστε&lt;/b&gt; αν θέλετε να την αφήσετε ως έχει για αποσφαλμάτωση. Σημειώστε οτι η αποσφαλμάτωση χρειάζεται ειδικές γνώσεις και εργαλεία, γι αυτό και συνιστάται να πατήσετε &lt;b&gt;Εντάξει&lt;/b&gt; τώρα.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ένα κρίσιμο λάθος προέκυψε κατά τη διάρκεια λειτουργίας της εικονικής μηχανής και η εκτέλεση της μηχανής έχει σταματήσει.&lt;/p&gt;&lt;p&gt;Για βοήθεια, παρακαλώ δείτε στην Κοινότητα σχετικά &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; ή στο συμβόλαιο υποστήριξης. Παρακαλώ παρέχετε τα περιοχόμενα του αρχείου καταγραφής &lt;tt&gt;VBox.log&lt;/tt&gt; και την εικόνα &lt;tt&gt;VBox.png&lt;/tt&gt;, που μπορείτε να βρείτε στο φάκελο &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, καθώς και μία περιγραφή για το τι κάνατε όταν συνέβη το λάθος. Σημειώστε οτι μπορείτε να έχετε πρόσβαση στα παραπάνω αρχεία επιλέγοντας &lt;b&gt;Εμφάνιση καταγραφής&lt;/b&gt; από την επιλογή &lt;b&gt;Μηχανή&lt;/b&gt; του κυρίως παραθύρου του VirtualBox.&lt;/p&gt;&lt;p&gt;Πατήστε &lt;b&gt;Εντάξει&lt;/b&gt; αν θέλετε να σβήσετε τη μηχανή ή πατήστε &lt;b&gt;Αγνοήστε&lt;/b&gt; αν θέλετε να την αφήσετε ως έχει για αποσφαλμάτωση. Σημειώστε οτι η αποσφαλμάτωση χρειάζεται ειδικές γνώσεις και εργαλεία, γι αυτό και συνιστάται να πατήσετε &lt;b&gt;Εντάξει&lt;/b&gt; τώρα.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</source>
@@ -7105,7 +7105,7 @@
     </message>
     <message>
         <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
-        <translation>Ο κωδικός κωδικοποίησης για &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; δεν είναι έγκυρος.</translation>
+        <translation>Ο κωδικός κρυπτογράφησης για &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; δεν είναι έγκυρος.</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. All of the host or guest address values should be correct or empty.</source>
@@ -7246,7 +7246,7 @@
     </message>
     <message>
         <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Αποτυχία αλλαγής του στιγμιότυπου &lt;b&gt;%1&lt;/b&gt; της εικονικής μηχανής &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -7478,7 +7478,7 @@
     </message>
     <message>
         <source>Contains a list of port forwarding rules.</source>
-        <translation>Περιέχει ένα κατάλογο με τους κανόνες προώθησης θυρών.</translation>
+        <translation>Περιέχει ένα κατάλογο με κανόνες προώθησης θυρών.</translation>
     </message>
     <message>
         <source>Add New Rule</source>
@@ -7706,7 +7706,7 @@
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation>Κοινοί Φάκελοι</translation>
+        <translation>Κοινόχρηστοι Φάκελοι</translation>
     </message>
     <message>
         <source>%1 - %2</source>
@@ -7800,23 +7800,23 @@
     </message>
     <message>
         <source>Enter a name for the new snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>Εισαγωγή ονόματος για το νέο στιγμιότυπο....</translation>
     </message>
     <message>
         <source>Enter a name for this snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>Εισαγωγή ονόματος για αυτό το στιγμιότυπο....</translation>
     </message>
     <message>
         <source>Take</source>
-        <translation type="unfinished"></translation>
+        <translation>Λήψη</translation>
     </message>
     <message>
         <source>Take snapshot on the basis of current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Λήψη ενός στιγμιοτύπου της τρέχουσας κατάστασης της εικονικής μηχανής</translation>
     </message>
     <message>
         <source>Take Snapshot (%1)</source>
-        <translation type="unfinished">Νέο Στιγμιότυπο (%1)</translation>
+        <translation>Νέο Στιγμιότυπο (%1)</translation>
     </message>
 </context>
 <context>
@@ -9264,7 +9264,7 @@
     <message>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation type="vanished">%1 (%2 ενεργό)</translation>
+        <translation type="vanished">%1 (%2 ενεργά)</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -9459,7 +9459,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation type="vanished">Κοινοί Φάκελοι</translation>
+        <translation type="vanished">Κοινόχρηστοι Φάκελοι</translation>
     </message>
     <message>
         <source>None</source>
@@ -9469,7 +9469,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="vanished">Κοινοί Φάκελοι</translation>
+        <translation type="vanished">Κοινόχρηστοι Φάκελοι</translation>
     </message>
     <message>
         <source>Disconnected</source>
@@ -9554,7 +9554,7 @@
     <message>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation>Κοινός Φάκελος</translation>
+        <translation>Κοινόχρηστος Φάκελος</translation>
     </message>
     <message>
         <source>IDE</source>
@@ -10337,7 +10337,7 @@
     <message>
         <source>Shared folders</source>
         <comment>DetailsElementType</comment>
-        <translation>Κοινοί φάκελοι</translation>
+        <translation>Κοινόχρηστοι φάκελοι</translation>
     </message>
     <message>
         <source>Description</source>
@@ -10671,7 +10671,7 @@
     <message>
         <source>Shared folders</source>
         <comment>InformationElementType</comment>
-        <translation>Κοινοί φάκελοι</translation>
+        <translation>Κοινόχρηστοι φάκελοι</translation>
     </message>
     <message>
         <source>User interface</source>
@@ -10726,7 +10726,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>IndicatorType</comment>
-        <translation>Κοινοί Φάκελοι</translation>
+        <translation>Κοινόχρηστοι Φάκελοι</translation>
     </message>
     <message>
         <source>Display</source>
