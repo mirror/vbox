@@ -21,9 +21,23 @@
 obj ?= $(CURDIR)
 include $(obj)/Makefile.include.header
 
+BUILD = 1
+
 # We want to build on Linux 3.11 and later, plus the 3.10 EL 7.3 and later
 # kernels.  This file was added in 3.11 and back-ported to the EL 7.3 kernel.
-ifneq ($(wildcard $(KERN_INCL)/drm/drm_rect.h),)
+ifeq ($(wildcard $(KERN_INCL)/drm/drm_rect.h),)
+ BUILD =
+endif
+
+# And we do not want to build on EL6, regardless of what may have been
+# backported.
+ifneq ($(wildcard /etc/redhat-release),)
+ ifneq ($(shell grep "Enterprise.*release 6" /etc/redhat-release),)
+  BUILD =
+ endif
+endif
+
+ifneq ($(BUILD),)
 
 MOD_NAME   = vboxvideo
 MOD_OBJS   = hgsmi_base.o \
