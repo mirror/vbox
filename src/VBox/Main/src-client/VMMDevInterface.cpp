@@ -84,7 +84,7 @@ VMMDev::VMMDev(Console *console)
     int rc = RTSemEventCreate(&mCredentialsEvent);
     AssertRC(rc);
 #ifdef VBOX_WITH_HGCM
-    rc = HGCMHostInit ();
+    rc = HGCMHostInit();
     AssertRC(rc);
     m_fHGCMActive = true;
 #endif /* VBOX_WITH_HGCM */
@@ -100,7 +100,7 @@ VMMDev::~VMMDev()
         HGCMHostShutdown();
     }
 #endif /* VBOX_WITH_HGCM */
-    RTSemEventDestroy (mCredentialsEvent);
+    RTSemEventDestroy(mCredentialsEvent);
     if (mpDrv)
         mpDrv->pVMMDev = NULL;
     mpDrv = NULL;
@@ -129,7 +129,7 @@ int VMMDev::WaitCredentialsJudgement(uint32_t u32Timeout, uint32_t *pu32Credenti
         u32Timeout = 5000;
     }
 
-    int rc = RTSemEventWait (mCredentialsEvent, u32Timeout);
+    int rc = RTSemEventWait(mCredentialsEvent, u32Timeout);
 
     if (RT_SUCCESS(rc))
     {
@@ -143,7 +143,7 @@ int VMMDev::SetCredentialsJudgementResult(uint32_t u32Flags)
 {
     mu32CredentialsFlags = u32Flags;
 
-    int rc = RTSemEventSignal (mCredentialsEvent);
+    int rc = RTSemEventSignal(mCredentialsEvent);
     AssertRC(rc);
 
     return rc;
@@ -444,7 +444,7 @@ DECLCALLBACK(int) vmmdevSetCredentialsJudgementResult(PPDMIVMMDEVCONNECTOR pInte
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
 
     if (pDrv->pVMMDev)
-        return pDrv->pVMMDev->SetCredentialsJudgementResult (u32Flags);
+        return pDrv->pVMMDev->SetCredentialsJudgementResult(u32Flags);
 
     return VERR_GENERAL_FAILURE;
 }
