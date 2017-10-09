@@ -401,13 +401,13 @@ typedef UDFENTITYID const *PCUDFENTITYID;
  * UDF ID suffix. */
 #define UDF_ENTITY_ID_SPM_PARTITION_TYPE        "*UDF Sparable Partition"
 
-/** Sparing table, sparing identifier field.
- * UDF ID suffix. */
-#define UDF_ENTITY_ID_ST_SPARING                "*UDF Sparting Table"
-
 /** Metadata partition map, partition type field.
  * UDF ID suffix. */
 #define UDF_ENTITY_ID_MPM_PARTITION_TYPE        "*UDF Metadata Partition"
+
+/** Sparing table, sparing identifier field.
+ * UDF ID suffix. */
+#define UDF_ENTITY_ID_ST_SPARING                "*UDF Sparting Table"
 
 /** @} */
 
@@ -443,26 +443,26 @@ typedef UDFTAG const *PCUDFTAG;
 
 /** @name UDF_TAG_ID_XXX - UDF descriptor tag IDs.
  * @{ */
-#define UDF_TAG_ID_PRIMARY_VOL_DESC                 UINT16_C(0x0001) /**< UDFPRIMARYVOLUMEDESC */
-#define UDF_TAG_ID_ANCHOR_VOLUME_DESC_PTR           UINT16_C(0x0002) /**< UDFANCHORVOLUMEDESCPTR */
-#define UDF_TAG_ID_VOLUME_DESC_PTR                  UINT16_C(0x0003) /**< UDFVOLUMEDESCPTR */
-#define UDF_TAG_ID_IMPLEMENTATION_USE_VOLUME_DESC   UINT16_C(0x0004) /**< UDFIMPLEMENTATIONUSEVOLUMEDESC */
-#define UDF_TAG_ID_PARTITION_DESC                   UINT16_C(0x0005) /**< UDFPARTITIONDESC */
-#define UDF_TAG_ID_LOGICAL_VOLUME_DESC              UINT16_C(0x0006) /**< UDFLOGICALVOLUMEDESC */
-#define UDF_TAG_ID_UNALLOCATED_SPACE_DESC           UINT16_C(0x0007) /**< UDFUNALLOCATEDSPACEDESC */
-#define UDF_TAG_ID_TERMINATING_DESC                 UINT16_C(0x0008) /**< UDFTERMINATINGDESC */
-#define UDF_TAG_ID_LOGICAL_VOLUME_INTEGRITY_DESC    UINT16_C(0x0009) /**< UDFLOGICALVOLINTEGRITYDESC */
-#define UDF_TAG_ID_FILE_SET_DESC                    UINT16_C(0x0100)
-#define UDF_TAG_ID_FILE_ID_DESC                     UINT16_C(0x0101)
-#define UDF_TAG_ID_ALLOCATION_EXTENT_DESC           UINT16_C(0x0102)
-#define UDF_TAG_ID_INDIRECT_ENTRY                   UINT16_C(0x0103)
-#define UDF_TAG_ID_TERMINAL_ENTRY                   UINT16_C(0x0104)
-#define UDF_TAG_ID_FILE_ENTRY                       UINT16_C(0x0105)
-#define UDF_TAG_ID_EXTENDED_ATTRIB_HDR_DESC         UINT16_C(0x0106)
-#define UDF_TAG_ID_UNALLOCATED_SPACE_ENTRY          UINT16_C(0x0107)
-#define UDF_TAG_ID_SPACE_BITMAP_DESC                UINT16_C(0x0108)
-#define UDF_TAG_ID_PARTITION_INTEGERITY_DESC        UINT16_C(0x0109)
-#define UDF_TAG_ID_EXTENDED_FILE_ENTRY              UINT16_C(0x010a)
+#define UDF_TAG_ID_PRIMARY_VOL_DESC                 UINT16_C(0x0001) /**< See UDFPRIMARYVOLUMEDESC */
+#define UDF_TAG_ID_ANCHOR_VOLUME_DESC_PTR           UINT16_C(0x0002) /**< See UDFANCHORVOLUMEDESCPTR */
+#define UDF_TAG_ID_VOLUME_DESC_PTR                  UINT16_C(0x0003) /**< See UDFVOLUMEDESCPTR */
+#define UDF_TAG_ID_IMPLEMENTATION_USE_VOLUME_DESC   UINT16_C(0x0004) /**< See UDFIMPLEMENTATIONUSEVOLUMEDESC */
+#define UDF_TAG_ID_PARTITION_DESC                   UINT16_C(0x0005) /**< See UDFPARTITIONDESC */
+#define UDF_TAG_ID_LOGICAL_VOLUME_DESC              UINT16_C(0x0006) /**< See UDFLOGICALVOLUMEDESC */
+#define UDF_TAG_ID_UNALLOCATED_SPACE_DESC           UINT16_C(0x0007) /**< See UDFUNALLOCATEDSPACEDESC */
+#define UDF_TAG_ID_TERMINATING_DESC                 UINT16_C(0x0008) /**< See UDFTERMINATINGDESC */
+#define UDF_TAG_ID_LOGICAL_VOLUME_INTEGRITY_DESC    UINT16_C(0x0009) /**< See UDFLOGICALVOLINTEGRITYDESC */
+#define UDF_TAG_ID_FILE_SET_DESC                    UINT16_C(0x0100) /**< See UDFFILESETDESC */
+#define UDF_TAG_ID_FILE_ID_DESC                     UINT16_C(0x0101) /**< See UDFFILEIDDESC */
+#define UDF_TAG_ID_ALLOCATION_EXTENT_DESC           UINT16_C(0x0102) /**< See UDFALLOCATIONEXTENTDESC */
+#define UDF_TAG_ID_INDIRECT_ENTRY                   UINT16_C(0x0103) /**< See UDFINDIRECTENTRY */
+#define UDF_TAG_ID_TERMINAL_ENTRY                   UINT16_C(0x0104) /**< See UDFTERMINALENTRY */
+#define UDF_TAG_ID_FILE_ENTRY                       UINT16_C(0x0105) /**< See UDFFILEENTRY */
+#define UDF_TAG_ID_EXTENDED_ATTRIB_HDR_DESC         UINT16_C(0x0106) /**< See UDFEXTATTRIBHDRDESC */
+#define UDF_TAG_ID_UNALLOCATED_SPACE_ENTRY          UINT16_C(0x0107) /**< See UDFUNALLOCATEDSPACEENTRY */
+#define UDF_TAG_ID_SPACE_BITMAP_DESC                UINT16_C(0x0108) /**< See UDFSPACEBITMAPDESC */
+#define UDF_TAG_ID_PARTITION_INTEGERITY_DESC        UINT16_C(0x0109) /**< See UDFPARTITIONINTEGRITYDESC */
+#define UDF_TAG_ID_EXTENDED_FILE_ENTRY              UINT16_C(0x010a) /**< See UDFEXFILEENTRY */
 /** @} */
 
 
@@ -737,7 +737,7 @@ typedef struct UDFLOGICALVOLUMEDESC
     /** 0x010: Volume descriptor sequence number. */
     uint32_t        uVolumeDescSeqNo;
     /** 0x014: Character set used in the achLogicalVolumeID field.   */
-    UDFCHARSPEC     DescriptorCharSet;
+    UDFCHARSPEC     DescCharSet;
     /** 0x054: The logical volume ID (label). */
     UDFDSTRING      achLogicalVolumeID[128];
     /** 0x0d4: Logical block size (in bytes). */
@@ -819,7 +819,8 @@ typedef struct UDFPARTMAPTYPE2
     UDFPARTMAPHDR   Hdr;
     /** 0x02: Reserved \#1. */
     uint16_t        uReserved1;
-    /** 0x04: Partition number (UDF_ENTITY_ID_VPM_PARTITION_TYPE). */
+    /** 0x04: Partition number (UDF_ENTITY_ID_VPM_PARTITION_TYPE,
+     *  UDF_ENTITY_ID_SPM_PARTITION_TYPE, or UDF_ENTITY_ID_MPM_PARTITION_TYPE). */
     UDFENTITYID     idPartitionType;
     /** 0x24: Volume sequence number. */
     uint16_t        uVolumeSeqNo;

@@ -2996,6 +2996,69 @@ RT_C_DECLS_END
 #define VERR_ISOFS_INSUFFICIENT_DATA_FOR_DESC_CRC       (-25305)
 /** Unexpected/unknown/bad descriptor in volume descriptor sequence. */
 #define VERR_ISOFS_UNEXPECTED_VDS_DESC                  (-25306)
+/** Too many primary volume descriptors. */
+#define VERR_ISOFS_TOO_MANY_PVDS                        (-25307)
+/** Too many logical volume descriptors. */
+#define VERR_ISOFS_TOO_MANY_LVDS                        (-25308)
+/** Too many partition descriptors. */
+#define VERR_ISOFS_TOO_MANY_PDS                         (-25309)
+/** The logical volume descriptor has a too big partition map. */
+#define VERR_ISOFS_TOO_BIT_PARTMAP_IN_LVD               (-25310)
+/** No primary volume descriptors found. */
+#define VERR_ISOFS_NO_PVD                               (-25311)
+/** No logical volume descriptors found. */
+#define VERR_ISOFS_NO_LVD                               (-25312)
+/** No partition descriptors found. */
+#define VERR_ISOFS_NO_PD                                (-25313)
+/** Multiple primary volume descriptors found, we can only deal with one. */
+#define VERR_ISOFS_MULTIPLE_PVDS                        (-25314)
+/** Multiple logical volume descriptors found, we can only deal with one. */
+#define VERR_ISOFS_MULTIPLE_LVDS                        (-25315)
+/** Too many partition maps in the logical volume descriptor. */
+#define VERR_ISOFS_TOO_MANY_PART_MAPS                   (-25316)
+/** Malformed partition map table in the logical volume descriptor. */
+#define VERR_ISOFS_MALFORMED_PART_MAP_TABLE             (-25317)
+/** Unable to find partition descriptor for a partition map table entry. */
+#define VERR_ISOFS_PARTITION_NOT_FOUND                  (-25318)
+/** Partition mapping table is shorted than described. */
+#define VERR_ISOFS_INCOMPLETE_PART_MAP_TABLE            (-25319)
+/** Unknown partition map entry type. */
+#define VERR_ISOFS_UNKNOWN_PART_MAP_ENTRY_TYPE          (-25320)
+/** Unkonwn paritition ID found in the partition map table. */
+#define VERR_ISOFS_UNKNOWN_PART_MAP_TYPE_ID             (-25321)
+/** Support for virtual partitions as not yet been implemented. */
+#define VERR_ISOFS_VPM_NOT_SUPPORTED                    (-25322)
+/** Support for sparable partitions as not yet been implemented. */
+#define VERR_ISOFS_SPM_NOT_SUPPORTED                    (-25323)
+/** Support for metadata partitions as not yet been implemented. */
+#define VERR_ISOFS_MPM_NOT_SUPPORTED                    (-25324)
+/** Invalid or unsupported logical block size. */
+#define VERR_ISOFS_UNSUPPORTED_LOGICAL_BLOCK_SIZE       (-25325)
+/** Unsupported domain ID in logical volume descriptor. */
+#define VERR_ISOFS_BAD_LVD_DOMAIN_ID                    (-25326)
+/** Malformed or invalid file set descriptor location. */
+#define VERR_ISOFS_BAD_LVD_FILE_SET_DESC_LOCATION       (-25327)
+/** Non-standard descriptor character set in the logical volume descriptor. */
+#define VERR_ISOFS_BAD_LVD_DESC_CHAR_SET                (-25329)
+/** Invalid partition index in a location. */
+#define VERR_ISOFS_INVALID_PARTITION_INDEX              (-25329)
+/** Unsupported file system charset. */
+#define VERR_ISOFS_FSD_UNSUPPORTED_CHAR_SET             (-25330)
+/** File set descriptor has an zero length or invalid root dir extent. */
+#define VERR_ISOFS_FSD_ZERO_ROOT_DIR                    (-25331)
+/** File set descriptor has a next extent member. */
+#define VERR_ISOFS_FSD_NEXT_EXTENT                      (-25332)
+
+/** Internal processing error \#1.  */
+#define VERR_ISOFS_IPE_1                                (-25391)
+/** Internal processing error \#2.  */
+#define VERR_ISOFS_IPE_2                                (-25392)
+/** Internal processing error \#3.  */
+#define VERR_ISOFS_IPE_3                                (-25393)
+/** Internal processing error \#4.  */
+#define VERR_ISOFS_IPE_4                                (-25394)
+/** Internal processing error \#5.  */
+#define VERR_ISOFS_IPE_5                                (-25395)
 
 /** @} */
 

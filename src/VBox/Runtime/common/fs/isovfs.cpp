@@ -48,6 +48,8 @@
 #include <iprt/formats/iso9660.h>
 #include <iprt/formats/udf.h>
 
+/** @todo move to err.h:   */
+#define VERR_ISOFS_IPE_0                                (-25390)
 
 
 /*********************************************************************************************************************************
@@ -175,7 +177,17 @@ typedef struct RTFSISODIROBJ
 typedef RTFSISODIROBJ *PRTFSISODIROBJ;
 
 /** Pointer to info about a UDF volume. */
-typedef struct RTFSISOVOLUDFVOL *PRTFSISOVOLUDFVOL;
+typedef struct RTFSISOUDFVOLINFO *PRTFSISOUDFVOLINFO;
+
+
+/** @name RTFSISO_UDF_PMAP_T_XXX
+ * @{ */
+#define RTFSISO_UDF_PMAP_T_PLAIN        1
+#define RTFSISO_UDF_PMAP_T_VPM_15       2
+#define RTFSISO_UDF_PMAP_T_VPM_20       3
+#define RTFSISO_UDF_PMAP_T_SPM          4
+#define RTFSISO_UDF_PMAP_T_MPM          5
+/** @} */
 
 /**
  * Information about a logical UDF partition.
@@ -183,27 +195,37 @@ typedef struct RTFSISOVOLUDFVOL *PRTFSISOVOLUDFVOL;
  * This combins information from the partition descriptor, the UDFPARTMAPTYPE1
  * and the UDFPARTMAPTYPE2 structure.
  */
-typedef struct RTFSISOVOLUDFPART
+typedef struct RTFSISOVOLUDFPMAP
 {
-    /** Partition number (not index). */
-    uint16_t            uPartitionNo;
-    /** Parition flags (UDF_PARTITION_FLAGS_XXX). */
-    uint16_t            fFlags;
-    /** Number of sectors. */
-    uint32_t            cSectors;
     /** Partition starting location as a byte offset. */
     uint64_t            offByteLocation;
     /** Partition starting location (logical sector number). */
     uint32_t            offLocation;
+    /** Number of sectors. */
+    uint32_t            cSectors;
+
+    /** Partition descriptor index (for processing). */
+    uint16_t            idxPartDesc;
+    /** Offset info the map table. */
+    uint16_t            offMapTable;
+    /** Partition number (not index). */
+    uint16_t            uPartitionNo;
+    /** Partition number (not index). */
+    uint16_t            uVolumeSeqNo;
+
+    /** The access type (UDF_PART_ACCESS_TYPE_XXX). */
+    uint32_t            uAccessType;
+    /** Partition flags (UDF_PARTITION_FLAGS_XXX). */
+    uint16_t            fFlags;
+    /** RTFSISO_UDF_PMAP_T_XXX. */
+    uint8_t             bType;
     /** Set if Hdr is valid. */
     bool                fHaveHdr;
     /** Copy of UDFPARTITIONDESC::ContentsUse::Hdr. */
     UDFPARTITIONHDRDESC Hdr;
 
-    /** Pointer to the volume this partition belongs to. */
-    PRTFSISOVOLUDFVOL   pVol;
-} RTFSISOVOLUDFPART;
-typedef RTFSISOVOLUDFPART *PRTFSISOVOLUDFPART;
+} RTFSISOVOLUDFPMAP;
+typedef RTFSISOVOLUDFPMAP *PRTFSISOVOLUDFPMAP;
 
 /**
  * Information about a UDF volume (/ volume set).
@@ -213,33 +235,45 @@ typedef RTFSISOVOLUDFPART *PRTFSISOVOLUDFPART;
  * @note There is only one volume per volume set in the current UDF
  *       implementation.  So, this can be considered a volume and a volume set.
  */
-typedef struct RTFSISOVOLUDFVOL
+typedef struct RTFSISOUDFVOLINFO
 {
     /** The extent containing the file set descriptor. */
     UDFLONGAD           FileSetDescriptor;
 
+    /** The root directory location (from the file set descriptor). */
+    UDFLONGAD           RootDirIcb;
+    /** Location of the system stream directory associated with the file set. */
+    UDFLONGAD           SystemStreamDirIcb;
+
     /** The logical block size on this volume. */
     uint32_t            cbBlock;
-    /** Primary volume descriptor number. */
-    uint32_t            uPrimaryVolumeDescNo;
-    /** Volume sequence number. */
-    uint16_t            uVolumeSeqNo;
-    /** Maximum volume sequence number. */
-    uint16_t            uMaxVolumeSeqNo;
+    /** The log2 of cbBlock. */
+    uint32_t            cShiftBlock;
     /** Flags (UDF_PVD_FLAGS_XXX). */
     uint16_t            fFlags;
 
-    /** Number of partitions in this volume. */
+    /** Number of partitions mapp in this volume. */
     uint16_t            cPartitions;
     /** Partitions in this volume. */
-    PRTFSISOVOLUDFPART  paPartitions;
+    PRTFSISOVOLUDFPMAP  paPartitions;
 
-    /** Volume identifier (dstring). */
-    UDFDSTRING          achVolumeID[32];
     /** The volume ID string. */
     UDFDSTRING          achLogicalVolumeID[128];
-} RTFSISOVOLUDFVOL;
+} RTFSISOUDFVOLINFO;
 
+
+/**
+ * Indicates which of the possible content types we're accessing.
+ */
+typedef enum RTFSISOVOLTYPE
+{
+    /** Accessing the primary ISO-9660 volume. */
+    RTFSISOVOLTYPE_ISO9960 = 0,
+    /** Accessing the joliet volume (secondary ISO-9660). */
+    RTFSISOVOLTYPE_JOLIET,
+    /** Accessing the UDF volume. */
+    RTFSISOVOLTYPE_UDF
+} RTFSISOVOLTYPE;
 
 /**
  * A ISO volume.
@@ -258,6 +292,8 @@ typedef struct RTFSISOVOL
     uint32_t            fFlags;
     /** The sector size (in bytes). */
     uint32_t            cbSector;
+    /** What we're accessing. */
+    RTFSISOVOLTYPE      enmType;
 
     /** @name ISO 9660 specific data
      *  @{ */
@@ -278,38 +314,120 @@ typedef struct RTFSISOVOL
     /** UDF specific data. */
     struct
     {
-        /** Offset of the Anchor volume descriptor sequence. */
-        uint64_t        offAvdp;
-        /** Length of the anchor volume descriptor sequence. */
-        uint32_t        cbAvdp;
+        /** Volume information. */
+        RTFSISOUDFVOLINFO   VolInfo;
         /** The UDF level. */
-        uint8_t         uLevel;
-        /** Number of volume sets. */
-        uint8_t         cVolumeSets;
-        /** Number of entries in the array paPartitions points to. */
-        uint8_t         cPartitions;
-        /** Set if we already seen the primary volume descriptor. */
-        bool            fSeenPrimaryDesc : 1;
-        /** Partitions. */
-        PRTFSISOVOLUDFPART paPartitions;
-
-#if 0
-        /** Volume sets. */
-        struct
-        {
-            /** Number of partitions in the set. */
-            uint16_t        cPartitions;
-
-
-        } aVolumeSets[1];
-
-#endif
-    } udf;
+        uint8_t             uLevel;
+    } Udf;
 
     /** The root directory shared data. */
     PRTFSISODIRSHRD     pRootDir;
 } RTFSISOVOL;
 
+
+/**
+ * Info gathered from a VDS sequence.
+ */
+typedef struct RTFSISOVDSINFO
+{
+    /** Number of entries in apPrimaryVols. */
+    uint32_t                cPrimaryVols;
+    /** Number of entries in apLogicalVols. */
+    uint32_t                cLogicalVols;
+    /** Number of entries in apPartitions. */
+    uint32_t                cPartitions;
+    /** Pointer to primary volume descriptors (native endian). */
+    PUDFPRIMARYVOLUMEDESC   apPrimaryVols[8];
+    /** Pointer to logical volume descriptors (native endian). */
+    PUDFLOGICALVOLUMEDESC   apLogicalVols[8];
+    /** Pointer to partition descriptors (native endian). */
+    PUDFPARTITIONDESC       apPartitions[16];
+
+    /** Created after scanning the sequence (here for cleanup purposes). */
+    PRTFSISOVOLUDFPMAP      paPartMaps;
+} RTFSISOVDSINFO;
+/** Pointer to VDS sequence info. */
+typedef RTFSISOVDSINFO *PRTFSISOVDSINFO;
+
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** Check if an entity ID field equals the given ID string. */
+#define UDF_ENTITY_ID_EQUALS(a_pEntityId, a_szId)  \
+    ( memcmp(&(a_pEntityId)->achIdentifier[0], a_szId, RT_MIN(sizeof(a_szId), sizeof(a_pEntityId)->achIdentifier)) == 0 )
+/** Checks if a character set indicator indicates OSTA compressed unicode. */
+#define UDF_IS_CHAR_SET_OSTA(a_pCharSet) \
+    (   (a_pCharSet)->uType == UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE \
+     && memcmp((a_pCharSet)->abInfo, UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO, \
+               sizeof(UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO)) == 0 )
+
+
+/** @name UDF structure logging macros
+ * @{ */
+#define UDF_LOG2_MEMBER(a_pStruct, a_szFmt, a_Member) \
+    Log2(("ISO/UDF:   %-32s %" a_szFmt "\n", #a_Member ":", (a_pStruct)->a_Member))
+#define UDF_LOG2_MEMBER_EX(a_pStruct, a_szFmt, a_Member, a_cchIndent) \
+    Log2(("ISO/UDF:   %*s%-32s %" a_szFmt "\n", a_cchIndent, "", #a_Member ":", (a_pStruct)->a_Member))
+#define UDF_LOG2_MEMBER_ENTITY_ID_EX(a_pStruct, a_Member, a_cchIndent) \
+    Log2(("ISO/UDF:   %*s%-32s '%.23s' fFlags=%#06x Suffix=%.8Rhxs\n", a_cchIndent, "", #a_Member ":", \
+          (a_pStruct)->a_Member.achIdentifier, (a_pStruct)->a_Member.fFlags, &(a_pStruct)->a_Member.Suffix))
+#define UDF_LOG2_MEMBER_ENTITY_ID(a_pStruct, a_Member) UDF_LOG2_MEMBER_ENTITY_ID_EX(a_pStruct, a_Member, 0)
+#define UDF_LOG2_MEMBER_EXTENTAD(a_pStruct, a_Member) \
+    Log2(("ISO/UDF:   %-32s sector %#010RX32 LB %#010RX32\n", #a_Member ":", (a_pStruct)->a_Member.off, (a_pStruct)->a_Member.cb))
+#define UDF_LOG2_MEMBER_SHORTAD(a_pStruct, a_Member) \
+    Log2(("ISO/UDF:   %-32s sector %#010RX32 LB %#010RX32 %s\n", #a_Member ":", (a_pStruct)->a_Member.off, (a_pStruct)->a_Member.cb, \
+          (a_pStruct)->a_Member.uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED ? "alloced+recorded" \
+          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_ONLY_ALLOCATED ? "alloced" \
+          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_FREE ? "free" : "next" ))
+#define UDF_LOG2_MEMBER_LONGAD(a_pStruct, a_Member) \
+    Log2(("ISO/UDF:   %-32s partition %#RX16, block %#010RX32 LB %#010RX32 %s idUnique=%#010RX32 fFlags=%#RX16\n", #a_Member ":", \
+          (a_pStruct)->a_Member.Location.uPartitionNo, (a_pStruct)->a_Member.Location.off, (a_pStruct)->a_Member.cb, \
+          (a_pStruct)->a_Member.uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED ? "alloced+recorded" \
+          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_ONLY_ALLOCATED ? "alloced" \
+          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_FREE ? "free" : "next", \
+          (a_pStruct)->a_Member.ImplementationUse.Fid.idUnique, (a_pStruct)->a_Member.ImplementationUse.Fid.fFlags ))
+
+#define UDF_LOG2_MEMBER_TIMESTAMP(a_pStruct, a_Member) \
+    Log2(("ISO/UDF:   %-32s %04d-%02u-%02u %02u:%02u:%02u.%02u%02u%02u uTypeAndZone=%#x\n", #a_Member ":", \
+          (a_pStruct)->a_Member.iYear, (a_pStruct)->a_Member.uMonth, (a_pStruct)->a_Member.uDay, \
+          (a_pStruct)->a_Member.uHour, (a_pStruct)->a_Member.uMinute, (a_pStruct)->a_Member.uSecond, \
+          (a_pStruct)->a_Member.cCentiseconds, (a_pStruct)->a_Member.cHundredsOfMicroseconds, \
+          (a_pStruct)->a_Member.cMicroseconds, (a_pStruct)->a_Member.uTypeAndZone))
+#define UDF_LOG2_MEMBER_CHARSPEC(a_pStruct, a_Member) \
+    do { \
+        if (   (a_pStruct)->a_Member.uType == UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE \
+            && memcmp(&(a_pStruct)->a_Member.abInfo[0], UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO, \
+                      sizeof(UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO)) == 0) \
+            Log2(("ISO/UDF:   %-32s OSTA COMPRESSED UNICODE INFO\n", #a_Member ":")); \
+        else if (ASMMemIsZero(&(a_pStruct)->a_Member, sizeof((a_pStruct)->a_Member))) \
+            Log2(("ISO/UDF:   %-32s all zeros\n", #a_Member ":")); \
+        else \
+            Log2(("ISO/UDF:   %-32s %#x info: %.63Rhxs\n", #a_Member ":", \
+                  (a_pStruct)->a_Member.uType, (a_pStruct)->a_Member.abInfo)); \
+    } while (0)
+#define UDF_LOG2_MEMBER_DSTRING(a_pStruct, a_Member) \
+    do { \
+        if ((a_pStruct)->a_Member[0] == 8) \
+            Log2(("ISO/UDF:   %-32s  8: '%s' len=%u (actual=%u)\n", #a_Member ":", &(a_pStruct)->a_Member[1], \
+                  (a_pStruct)->a_Member[sizeof((a_pStruct)->a_Member) - 1], \
+                  RTStrNLen(&(a_pStruct)->a_Member[1], sizeof((a_pStruct)->a_Member) - 2) + 1 )); \
+        else if ((a_pStruct)->a_Member[0] == 16) \
+        { \
+            PCRTUTF16 pwszTmp = (PCRTUTF16)&(a_pStruct)->a_Member[1]; \
+            char *pszTmp = NULL; \
+            RTUtf16BigToUtf8Ex(pwszTmp, (sizeof((a_pStruct)->a_Member) - 2) / sizeof(RTUTF16), &pszTmp, 0, NULL); \
+            Log2(("ISO/UDF:   %-32s 16: '%s' len=%u (actual=%u)\n", #a_Member ":", pszTmp, \
+                  (a_pStruct)->a_Member[sizeof((a_pStruct)->a_Member) - 1], \
+                  RTUtf16NLen(pwszTmp, (sizeof((a_pStruct)->a_Member) - 2) / sizeof(RTUTF16)) * sizeof(RTUTF16) + 1 /*??*/ )); \
+        } \
+        else if (ASMMemIsZero(&(a_pStruct)->a_Member[0], sizeof((a_pStruct)->a_Member))) \
+            Log2(("ISO/UDF:   %-32s empty\n", #a_Member ":")); \
+        else \
+            Log2(("ISO/UDF:   %-32s bad: %.*Rhxs\n", #a_Member ":", sizeof((a_pStruct)->a_Member), &(a_pStruct)->a_Member[0] )); \
+    } while (0)
+/** @} */
 
 
 /*********************************************************************************************************************************
@@ -324,6 +442,58 @@ static void rtFsIsoDirShrd_RemoveOpenChild(PRTFSISODIRSHRD pDir, PRTFSISOCORE pC
 static int  rtFsIsoDir_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
                                uint32_t cDirRecs, uint64_t offDirRec, PRTVFSDIR phVfsDir);
 static PRTFSISOCORE rtFsIsoDir_LookupShared(PRTFSISODIRSHRD pThis, uint64_t offDirRec);
+
+
+/**
+ * UDF virtual partition read function.
+ *
+ * This deals with all the fun related to block mapping and such.
+ *
+ * @returns VBox status code.
+ * @param   pThis           The instance.
+ * @param   idxPart         The virtual partition number.
+ * @param   idxBlock        The block number.
+ * @param   offByteAddend   The byte offset relative to the block.
+ * @param   pvBuf           The output buffer.
+ * @param   cbBuf           The number of bytes to read.
+ */
+static int rtFsIsoVolUdfVpRead(PRTFSISOVOL pThis, uint32_t idxPart, uint32_t idxBlock, uint64_t offByteAddend,
+                               void *pvBuf, size_t cbToRead)
+{
+    uint64_t const offByte = ((uint64_t)idxBlock << pThis->Udf.VolInfo.cShiftBlock) + offByteAddend;
+
+    int rc;
+    if (idxPart < pThis->Udf.VolInfo.cPartitions)
+    {
+        PRTFSISOVOLUDFPMAP  pPart = &pThis->Udf.VolInfo.paPartitions[idxPart];
+        switch (pPart->bType)
+        {
+            case RTFSISO_UDF_PMAP_T_PLAIN:
+                rc = RTVfsFileReadAt(pThis->hVfsBacking, offByte + pPart->offByteLocation, pvBuf, cbToRead, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    Log3(("ISO/UDF: Read %#x bytes at %#RX64 (%#x:%#RX64)\n",
+                          cbToRead, offByte + pPart->offByteLocation, idxPart, offByte));
+                    return VINF_SUCCESS;
+                }
+                Log(("ISO/UDF: Error reading %#x bytes at %#RX64 (%#x:%#RX64): %Rrc\n",
+                     cbToRead, offByte + pPart->offByteLocation, idxPart, offByte, rc));
+                break;
+
+            default:
+                AssertFailed();
+                rc = VERR_ISOFS_IPE_1;
+                break;
+        }
+    }
+    else
+    {
+        Log(("ISO/UDF: Invalid partition index %#x (offset %#RX64), max partitions %#x\n",
+             idxPart, offByte, pThis->Udf.VolInfo.cPartitions));
+        rc = VERR_ISOFS_INVALID_PARTITION_INDEX;
+    }
+    return rc;
+}
 
 
 /**
@@ -618,7 +788,7 @@ static int rtFsIsoCore_QueryInfo(PRTFSISOCORE pCore, PRTFSOBJINFO pObjInfo, RTFS
 
     switch (enmAddAttr)
     {
-        case RTFSOBJATTRADD_NOTHING: /* fall thru */
+        case RTFSOBJATTRADD_NOTHING: RT_FALL_THRU();
         case RTFSOBJATTRADD_UNIX:
             pObjInfo->Attr.u.Unix.uid           = NIL_RTUID;
             pObjInfo->Attr.u.Unix.gid           = NIL_RTGID;
@@ -2035,6 +2205,67 @@ static int rtFsIsoDirShrd_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir,
 }
 
 
+#if 0
+/**
+ * Instantiates a new shared directory structure, given 9660 records.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The FAT volume instance.
+ * @param   pParentDir      The parent directory.  This is NULL for the root
+ *                          directory.
+ * @param   pDirRec         The directory record.  Will access @a cDirRecs
+ *                          records.
+ * @param   cDirRecs        Number of directory records if more than one.
+ * @param   offDirRec       The byte offset of the directory record.
+ * @param   ppShared        Where to return the shared directory structure.
+ */
+static int rtFsIsoDirShrd_NewUdf(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir,
+                                 PCUDFEXTVOLDESCNSR
+
+                                 PCISO9660DIRREC pDirRec, uint32_t cDirRecs, uint64_t offDirRec,
+                                 PRTFSISODIRSHRD *ppShared)
+{
+    /*
+     * Allocate a new structure and initialize it.
+     */
+    int rc = VERR_NO_MEMORY;
+    PRTFSISODIRSHRD pShared = (PRTFSISODIRSHRD)RTMemAllocZ(sizeof(*pShared));
+    if (pShared)
+    {
+        rc = rtFsIsoCore_InitFrom9660DirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, 0 /*uVersion*/, pThis);
+        if (RT_SUCCESS(rc))
+        {
+            RTListInit(&pShared->OpenChildren);
+            pShared->cbDir = ISO9660_GET_ENDIAN(&pDirRec->cbData);
+            pShared->pbDir = (uint8_t *)RTMemAllocZ(pShared->cbDir + 256);
+            if (pShared->pbDir)
+            {
+                rc = RTVfsFileReadAt(pThis->hVfsBacking, pShared->Core.FirstExtent.offDisk, pShared->pbDir, pShared->cbDir, NULL);
+                if (RT_SUCCESS(rc))
+                {
+#ifdef LOG_ENABLED
+                    rtFsIsoDirShrd_Log9660Content(pShared);
+#endif
+
+                    /*
+                     * Link into parent directory so we can use it to update
+                     * our directory entry.
+                     */
+                    if (pParentDir)
+                        rtFsIsoDirShrd_AddOpenChild(pParentDir, &pShared->Core);
+                    *ppShared = pShared;
+                    return VINF_SUCCESS;
+                }
+            }
+        }
+        RTMemFree(pShared);
+    }
+    *ppShared = NULL;
+    return rc;
+}
+#endif
+
+
 /**
  * Instantiates a new directory with a shared structure presupplied.
  *
@@ -2234,31 +2465,31 @@ static int rtFsIsoVolValidateUdfDescTag(PCUDFTAG pTag, uint16_t idTag, uint32_t 
 
                 Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): Sector mismatch: %#RX32 (%.*Rhxs)\n",
                      idTag, offTag, pTag->offTag, sizeof(*pTag), pTag));
-                return RTErrInfoSetF(pErrInfo, VERR_ISOFS_TAG_SECTOR_MISMATCH,
-                                     "Descriptor tag sector number mismatch: %#x, expected %#x (%.*Rhxs)",
-                                     pTag->offTag, offTag, sizeof(*pTag), pTag);
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_TAG_SECTOR_MISMATCH,
+                                           "Descriptor tag sector number mismatch: %#x, expected %#x (%.*Rhxs)",
+                                           pTag->offTag, offTag, sizeof(*pTag), pTag);
             }
             Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): Tag ID mismatch: %#x (%.*Rhxs)\n",
                  idTag, offTag, pTag->idTag, sizeof(*pTag), pTag));
-            return RTErrInfoSetF(pErrInfo, VERR_MISMATCH, "Descriptor tag ID mismatch: %#x, expected %#x (%.*Rhxs)",
-                                 pTag->idTag, idTag, sizeof(*pTag), pTag);
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_MISMATCH, "Descriptor tag ID mismatch: %#x, expected %#x (%.*Rhxs)",
+                                       pTag->idTag, idTag, sizeof(*pTag), pTag);
         }
         if (ASMMemIsZero(pTag, sizeof(*pTag)))
         {
             Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): All zeros\n", idTag, offTag));
-            return RTErrInfoSet(pErrInfo, VERR_ISOFS_TAG_IS_ALL_ZEROS, "Descriptor is all zeros");
+            return RTERRINFO_LOG_SET(pErrInfo, VERR_ISOFS_TAG_IS_ALL_ZEROS, "Descriptor is all zeros");
         }
 
         Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): Unsupported version: %#x (%.*Rhxs)\n",
              idTag, offTag, pTag->uVersion, sizeof(*pTag), pTag));
-        return RTErrInfoSetF(pErrInfo, VERR_ISOFS_UNSUPPORTED_TAG_VERSION, "Unsupported descriptor tag version: %#x, expected 2 or 3 (%.*Rhxs)",
-                             pTag->uVersion, sizeof(*pTag), pTag);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_UNSUPPORTED_TAG_VERSION, "Unsupported descriptor tag version: %#x, expected 2 or 3 (%.*Rhxs)",
+                                   pTag->uVersion, sizeof(*pTag), pTag);
     }
     Log(("rtFsIsoVolValidateUdfDescTag(,%#x,%#010RX32,): checksum error: %#x, calc %#x (%.*Rhxs)\n",
          idTag, offTag, pTag->uChecksum, bChecksum, sizeof(*pTag), pTag));
-    return RTErrInfoSetF(pErrInfo, VERR_ISOFS_BAD_TAG_CHECKSUM,
-                         "Descriptor tag checksum error: %#x, calculated %#x (%.*Rhxs)",
-                         pTag->uChecksum, bChecksum, sizeof(*pTag), pTag);
+    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_BAD_TAG_CHECKSUM,
+                               "Descriptor tag checksum error: %#x, calculated %#x (%.*Rhxs)",
+                               pTag->uChecksum, bChecksum, sizeof(*pTag), pTag);
 }
 
 
@@ -2283,16 +2514,16 @@ static int rtFsIsoVolValidateUdfDescCrc(PCUDFTAG pTag, size_t cbDesc, PRTERRINFO
 
         Log(("rtFsIsoVolValidateUdfDescCrc(,%#x,%#010RX32,): Descriptor CRC mismatch: expected %#x, calculated %#x (cbDescriptorCrc=%#x)\n",
              pTag->idTag, pTag->offTag, pTag->uDescriptorCrc, uCrc, pTag->cbDescriptorCrc));
-        return RTErrInfoSetF(pErrInfo, VERR_ISOFS_DESC_CRC_MISMATCH,
-                             "Descriptor CRC mismatch: exepcted %#x, calculated %#x (cbDescriptor=%#x, idTag=%#x, offTag=%#010RX32)",
-                             pTag->uDescriptorCrc, uCrc, pTag->cbDescriptorCrc, pTag->idTag, pTag->offTag);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_DESC_CRC_MISMATCH,
+                                   "Descriptor CRC mismatch: exepcted %#x, calculated %#x (cbDescriptor=%#x, idTag=%#x, offTag=%#010RX32)",
+                                   pTag->uDescriptorCrc, uCrc, pTag->cbDescriptorCrc, pTag->idTag, pTag->offTag);
     }
 
     Log(("rtFsIsoVolValidateUdfDescCrc(,%#x,%#010RX32,): Insufficient data to CRC: cbDescriptorCrc=%#x cbDesc=%#zx\n",
          pTag->idTag, pTag->offTag, pTag->cbDescriptorCrc, cbDesc));
-    return RTErrInfoSetF(pErrInfo, VERR_ISOFS_INSUFFICIENT_DATA_FOR_DESC_CRC,
-                         "Insufficient data to CRC: cbDescriptorCrc=%#x cbDesc=%#zx (idTag=%#x, offTag=%#010RX32)",
-                         pTag->cbDescriptorCrc, cbDesc, pTag->idTag, pTag->offTag);
+    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_INSUFFICIENT_DATA_FOR_DESC_CRC,
+                               "Insufficient data to CRC: cbDescriptorCrc=%#x cbDesc=%#zx (idTag=%#x, offTag=%#010RX32)",
+                               pTag->cbDescriptorCrc, cbDesc, pTag->idTag, pTag->offTag);
 }
 
 
@@ -2325,78 +2556,334 @@ static int rtFsIsoVolValidateUdfDescTagAndCrc(PCUDFTAG pTag, size_t cbDesc, uint
 }
 
 
-#define UDF_LOG2_MEMBER(a_pStruct, a_szFmt, a_Member) \
-    Log2(("ISO/UDF:   %-32s %" a_szFmt "\n", #a_Member ":", (a_pStruct)->a_Member))
-#define UDF_LOG2_MEMBER_EX(a_pStruct, a_szFmt, a_Member, a_cchIndent) \
-    Log2(("ISO/UDF:   %*s%-32s %" a_szFmt "\n", a_cchIndent, "", #a_Member ":", (a_pStruct)->a_Member))
-#define UDF_LOG2_MEMBER_ENTITY_ID_EX(a_pStruct, a_Member, a_cchIndent) \
-    Log2(("ISO/UDF:   %*s%-32s '%.23s' fFlags=%#06x Suffix=%.8Rhxs\n", a_cchIndent, "", #a_Member ":", \
-          (a_pStruct)->a_Member.achIdentifier, (a_pStruct)->a_Member.fFlags, &(a_pStruct)->a_Member.Suffix))
-#define UDF_LOG2_MEMBER_ENTITY_ID(a_pStruct, a_Member) UDF_LOG2_MEMBER_ENTITY_ID_EX(a_pStruct, a_Member, 0)
-#define UDF_LOG2_MEMBER_EXTENTAD(a_pStruct, a_Member) \
-    Log2(("ISO/UDF:   %-32s sector %#010RX32 LB %#010RX32\n", #a_Member ":", (a_pStruct)->a_Member.off, (a_pStruct)->a_Member.cb))
-#define UDF_LOG2_MEMBER_SHORTAD(a_pStruct, a_Member) \
-    Log2(("ISO/UDF:   %-32s sector %#010RX32 LB %#010RX32 %s\n", #a_Member ":", (a_pStruct)->a_Member.off, (a_pStruct)->a_Member.cb, \
-          (a_pStruct)->a_Member.uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED ? "alloced+recorded" \
-          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_ONLY_ALLOCATED ? "alloced" \
-          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_FREE ? "free" : "next" ))
-#define UDF_LOG2_MEMBER_LONGAD(a_pStruct, a_Member) \
-    Log2(("ISO/UDF:   %-32s partition %#RX16, sector %#010RX32 LB %#010RX32 %s idUnique=%#010RX32 fFlags=%#RX16\n", #a_Member ":", \
-          (a_pStruct)->a_Member.Location.uPartitionNo, (a_pStruct)->a_Member.Location.off, (a_pStruct)->a_Member.cb, \
-          (a_pStruct)->a_Member.uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED ? "alloced+recorded" \
-          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_ONLY_ALLOCATED ? "alloced" \
-          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_FREE ? "free" : "next", \
-          (a_pStruct)->a_Member.ImplementationUse.Fid.idUnique, (a_pStruct)->a_Member.ImplementationUse.Fid.fFlags ))
 
-#define UDF_LOG2_MEMBER_TIMESTAMP(a_pStruct, a_Member) \
-    Log2(("ISO/UDF:   %-32s %04d-%02u-%02u %02u:%02u:%02u.%02u%02u%02u uTypeAndZone=%#x\n", #a_Member ":", \
-          (a_pStruct)->a_Member.iYear, (a_pStruct)->a_Member.uMonth, (a_pStruct)->a_Member.uDay, \
-          (a_pStruct)->a_Member.uHour, (a_pStruct)->a_Member.uMinute, (a_pStruct)->a_Member.uSecond, \
-          (a_pStruct)->a_Member.cCentiseconds, (a_pStruct)->a_Member.cHundredsOfMicroseconds, \
-          (a_pStruct)->a_Member.cMicroseconds, (a_pStruct)->a_Member.uTypeAndZone))
-#define UDF_LOG2_MEMBER_CHARSPEC(a_pStruct, a_Member) \
-    do { \
-        if (   (a_pStruct)->a_Member.uType == UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE \
-            && memcmp(&(a_pStruct)->a_Member.abInfo[0], UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO, \
-                      sizeof(UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO)) == 0) \
-            Log2(("ISO/UDF:   %-32s OSTA COMPRESSED UNICODE INFO\n", #a_Member ":")); \
-        else if (ASMMemIsZero(&(a_pStruct)->a_Member, sizeof((a_pStruct)->a_Member))) \
-            Log2(("ISO/UDF:   %-32s all zeros\n", #a_Member ":")); \
-        else \
-            Log2(("ISO/UDF:   %-32s %#x info: %.63Rhxs\n", #a_Member ":", \
-                  (a_pStruct)->a_Member.uType, (a_pStruct)->a_Member.abInfo)); \
-    } while (0)
-#define UDF_LOG2_MEMBER_DSTRING(a_pStruct, a_Member) \
-    do { \
-        if ((a_pStruct)->a_Member[0] == 8) \
-            Log2(("ISO/UDF:   %-32s  8: '%s' len=%u (actual=%u)\n", #a_Member ":", &(a_pStruct)->a_Member[1], \
-                  (a_pStruct)->a_Member[sizeof((a_pStruct)->a_Member) - 1], strlen(&(a_pStruct)->a_Member[1]) + 1 )); \
-        else if ((a_pStruct)->a_Member[0] == 16) \
-        { \
-            PCRTUTF16 pwszTmp = (PCRTUTF16)&(a_pStruct)->a_Member[1]; \
-            char *pszTmp = NULL; \
-            RTUtf16BigToUtf8Ex(pwszTmp, (sizeof((a_pStruct)->a_Member) - 2) / sizeof(RTUTF16), &pszTmp, 0, NULL); \
-            Log2(("ISO/UDF:   %-32s 16: '%s' len=%u (actual=%u)\n", #a_Member ":", pszTmp, \
-                  (a_pStruct)->a_Member[sizeof((a_pStruct)->a_Member) - 1], RTUtf16Len(pwszTmp) * sizeof(RTUTF16) + 1 /*??*/ )); \
-        } \
-        else if (ASMMemIsZero(&(a_pStruct)->a_Member[0], sizeof((a_pStruct)->a_Member))) \
-            Log2(("ISO/UDF:   %-32s empty\n", #a_Member ":")); \
-        else \
-            Log2(("ISO/UDF:   %-32s bad: %.*Rhxs\n", #a_Member ":", sizeof((a_pStruct)->a_Member), &(a_pStruct)->a_Member[0] )); \
-    } while (0)
 
+static int rtFsIsoVolProcessUdfFileSetDescs(PRTFSISOVOL pThis, uint8_t *pbBuf, size_t cbBuf, PRTERRINFO pErrInfo)
+{
+
+    /*
+     * We assume there is a single file descriptor and don't bother checking what comes next.
+     */
+    PUDFFILESETDESC pFsd     = (PUDFFILESETDESC)pbBuf;
+    Assert(cbBuf > sizeof(*pFsd)); NOREF(cbBuf);
+    RT_ZERO(*pFsd);
+    size_t          cbToRead = RT_MAX(pThis->Udf.VolInfo.FileSetDescriptor.cb, sizeof(*pFsd));
+    int rc = rtFsIsoVolUdfVpRead(pThis, pThis->Udf.VolInfo.FileSetDescriptor.Location.uPartitionNo,
+                                 pThis->Udf.VolInfo.FileSetDescriptor.Location.off, 0, pFsd, cbToRead);
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtFsIsoVolValidateUdfDescTagAndCrc(&pFsd->Tag, cbToRead, UDF_TAG_ID_FILE_SET_DESC,
+                                                pThis->Udf.VolInfo.FileSetDescriptor.Location.off, pErrInfo);
+        if (RT_SUCCESS(rc))
+        {
+#ifdef LOG_ENABLED
+            Log(("ISO/UDF: File set descriptor at %#RX32 (%#RX32:%#RX32)\n", pFsd->Tag.offTag,
+                 pThis->Udf.VolInfo.FileSetDescriptor.Location.uPartitionNo,
+                 pThis->Udf.VolInfo.FileSetDescriptor.Location.off));
+            if (LogIs2Enabled())
+            {
+                UDF_LOG2_MEMBER_TIMESTAMP(pFsd, RecordingTimestamp);
+                UDF_LOG2_MEMBER(pFsd, "#06RX16", uInterchangeLevel);
+                UDF_LOG2_MEMBER(pFsd, "#06RX16", uMaxInterchangeLevel);
+                UDF_LOG2_MEMBER(pFsd, "#010RX32", fCharacterSets);
+                UDF_LOG2_MEMBER(pFsd, "#010RX32", fMaxCharacterSets);
+                UDF_LOG2_MEMBER(pFsd, "#010RX32", uFileSetNo);
+                UDF_LOG2_MEMBER(pFsd, "#010RX32", uFileSetDescNo);
+                UDF_LOG2_MEMBER_CHARSPEC(pFsd, LogicalVolumeIDCharSet);
+                UDF_LOG2_MEMBER_DSTRING(pFsd, achLogicalVolumeID);
+                UDF_LOG2_MEMBER_CHARSPEC(pFsd, FileSetCharSet);
+                UDF_LOG2_MEMBER_DSTRING(pFsd, achFileSetID);
+                UDF_LOG2_MEMBER_DSTRING(pFsd, achCopyrightFile);
+                UDF_LOG2_MEMBER_DSTRING(pFsd, achAbstractFile);
+                UDF_LOG2_MEMBER_LONGAD(pFsd, RootDirIcb);
+                UDF_LOG2_MEMBER_ENTITY_ID(pFsd, idDomain);
+                UDF_LOG2_MEMBER_LONGAD(pFsd, NextExtent);
+                UDF_LOG2_MEMBER_LONGAD(pFsd, SystemStreamDirIcb);
+                if (!ASMMemIsZero(&pFsd->abReserved[0], sizeof(pFsd->abReserved)))
+                    UDF_LOG2_MEMBER(pFsd, "%.32Rhxs", abReserved);
+            }
+#endif
+
+            /*
+             * Do some basic sanity checking.
+             */
+            if (!UDF_IS_CHAR_SET_OSTA(&pFsd->FileSetCharSet))
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_FSD_UNSUPPORTED_CHAR_SET,
+                                           "Invalid file set charset %.64Rhxs", &pFsd->FileSetCharSet);
+            if (   pFsd->RootDirIcb.cb == 0
+                || pFsd->RootDirIcb.uType != UDF_AD_TYPE_RECORDED_AND_ALLOCATED)
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_FSD_ZERO_ROOT_DIR,
+                                           "Root Dir ICB location is zero or malformed: uType=%#x cb=%#x loc=%#x:%#RX32",
+                                           pFsd->RootDirIcb.uType, pFsd->RootDirIcb.cb,
+                                           pFsd->RootDirIcb.Location.uPartitionNo, pFsd->RootDirIcb.Location.off);
+            if (   pFsd->NextExtent.cb != 0
+                && pFsd->NextExtent.uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED)
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_FSD_NEXT_EXTENT,
+                                           "NextExtent isn't zero: uType=%#x cb=%#x loc=%#x:%#RX32",
+                                           pFsd->NextExtent.uType, pFsd->NextExtent.cb,
+                                           pFsd->NextExtent.Location.uPartitionNo, pFsd->NextExtent.Location.off);
+
+            /*
+             * Copy the information we need.
+             */
+            pThis->Udf.VolInfo.RootDirIcb         = pFsd->RootDirIcb;
+            if (   pFsd->SystemStreamDirIcb.cb > 0
+                && pFsd->SystemStreamDirIcb.uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED)
+                pThis->Udf.VolInfo.SystemStreamDirIcb = pFsd->SystemStreamDirIcb;
+            else
+                RT_ZERO(pThis->Udf.VolInfo.SystemStreamDirIcb);
+            return VINF_SUCCESS;
+        }
+        return rc;
+    }
+    return RTERRINFO_LOG_SET(pErrInfo, rc, "Error reading file set descriptor");
+}
+
+
+/**
+ * Check validatity and extract information from the descriptors in the VDS seq.
+ *
+ * @returns IPRT status code
+ * @param   pThis       The instance.
+ * @param   pInfo       The VDS sequence info.
+ * @param   pErrInfo    Where to return extended error info.
+ */
+static int rtFsIsoVolProcessUdfVdsSeqInfo(PRTFSISOVOL pThis, PRTFSISOVDSINFO pInfo, PRTERRINFO pErrInfo)
+{
+    /*
+     * Check the basic descriptor counts.
+     */
+    PUDFPRIMARYVOLUMEDESC pPvd;
+    if (pInfo->cPrimaryVols == 1)
+        pPvd = pInfo->apPrimaryVols[0];
+    else
+    {
+        if (pInfo->cPrimaryVols == 0)
+            return RTERRINFO_LOG_SET(pErrInfo, VERR_ISOFS_NO_PVD, "No primary volume descriptor was found");
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_MULTIPLE_PVDS,
+                                   "More than one primary volume descriptor was found: %u", pInfo->cPrimaryVols);
+    }
+
+    PUDFLOGICALVOLUMEDESC pLvd;
+    if (pInfo->cLogicalVols == 1)
+        pLvd = pInfo->apLogicalVols[0];
+    else
+    {
+        if (pInfo->cLogicalVols == 0)
+            return RTERRINFO_LOG_SET(pErrInfo, VERR_ISOFS_NO_LVD, "No logical volume descriptor was found");
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_MULTIPLE_LVDS,
+                                   "More than one logical volume descriptor was found: %u", pInfo->cLogicalVols);
+    }
+
+#if 0
+    if (pInfo->cPartitions == 0)
+        return RTERRINFO_LOG_SET(pErrInfo, VERR_ISOFS_NO_PD, "No partition descriptors was found");
+#endif
+
+    /*
+     * Check out the partition map in the logical volume descriptor.
+     * Produce the mapping table while going about that.
+     */
+    if (pLvd->cPartitionMaps > 64)
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_TOO_MANY_PART_MAPS,
+                                   "Too many partition maps: %u (max 64)", pLvd->cPartitionMaps);
+
+    PRTFSISOVOLUDFPMAP paPartMaps = NULL;
+    if (pLvd->cPartitionMaps > 0)
+    {
+        pInfo->paPartMaps = paPartMaps = (PRTFSISOVOLUDFPMAP)RTMemAllocZ(sizeof(paPartMaps[0]) * pLvd->cPartitionMaps);
+        if (!paPartMaps)
+            return VERR_NO_MEMORY;
+    }
+    uint32_t cPartMaps = 0;
+
+    if (pLvd->cbMapTable)
+    {
+        uint32_t off  = 0;
+        while (off + sizeof(UDFPARTMAPHDR) <= pLvd->cbMapTable)
+        {
+            PCUDFPARTMAPHDR pHdr = (PCUDFPARTMAPHDR)&pLvd->abPartitionMaps[off];
+
+            /*
+             * Bounds checking.
+             */
+            if (off + pHdr->cb > pLvd->cbMapTable)
+            {
+                if (cPartMaps < pLvd->cbMapTable)
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_MALFORMED_PART_MAP_TABLE,
+                                               "Incomplete partition map entry at offset %#x: cb=%#x -> offEnd=%#x cbMapTable=%#x (type=%#x)",
+                                               off, pHdr->cb, off + pHdr->cb, pLvd->cbMapTable, pHdr->bType);
+                LogRel(("ISO/UDF: Warning: Incomplete partition map entry at offset %#x: cb=%#x -> offEnd=%#x cbMapTable=%#x (type=%#x)\n",
+                        off, pHdr->cb, off + pHdr->cb, pLvd->cbMapTable, pHdr->bType));
+                break;
+            }
+            if (cPartMaps >= pLvd->cPartitionMaps)
+            {
+                LogRel(("ISO/UDF: Warning: LVD::cPartitionMaps is %u but there are more bytes in the table. (off=%#x cb=%#x cbMapTable=%#x bType=%#x)\n",
+                        off, pHdr->cb, pLvd->cbMapTable, pHdr->bType));
+                break;
+            }
+
+            /*
+             * Extract relevant info out of the entry.
+             */
+            paPartMaps[cPartMaps].offMapTable = (uint16_t)off;
+            uint16_t uPartitionNo;
+            if (pHdr->bType == 1)
+            {
+                PCUDFPARTMAPTYPE1 pType1 = (PCUDFPARTMAPTYPE1)pHdr;
+                paPartMaps[cPartMaps].uVolumeSeqNo = pType1->uVolumeSeqNo;
+                paPartMaps[cPartMaps].bType        = RTFSISO_UDF_PMAP_T_PLAIN;
+                uPartitionNo = pType1->uPartitionNo;
+            }
+            else if (pHdr->bType == 2)
+            {
+                PCUDFPARTMAPTYPE2 pType2 = (PCUDFPARTMAPTYPE2)pHdr;
+                if (UDF_ENTITY_ID_EQUALS(&pType2->idPartitionType, UDF_ENTITY_ID_VPM_PARTITION_TYPE))
+                {
+                    paPartMaps[cPartMaps].bType = pType2->idPartitionType.Suffix.Udf.uUdfRevision >= 0x200
+                                                ? RTFSISO_UDF_PMAP_T_VPM_20 : RTFSISO_UDF_PMAP_T_VPM_15;
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_VPM_NOT_SUPPORTED, "Partition type '%.23s' (%#x) not supported",
+                                               pType2->idPartitionType.achIdentifier, pType2->idPartitionType.Suffix.Udf.uUdfRevision);
+                }
+                else if (UDF_ENTITY_ID_EQUALS(&pType2->idPartitionType, UDF_ENTITY_ID_SPM_PARTITION_TYPE))
+                {
+                    paPartMaps[cPartMaps].bType = RTFSISO_UDF_PMAP_T_SPM;
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_SPM_NOT_SUPPORTED, "Partition type '%.23s' (%#x) not supported",
+                                               pType2->idPartitionType.achIdentifier, pType2->idPartitionType.Suffix.Udf.uUdfRevision);
+                }
+                else if (UDF_ENTITY_ID_EQUALS(&pType2->idPartitionType, UDF_ENTITY_ID_MPM_PARTITION_TYPE))
+                {
+                    paPartMaps[cPartMaps].bType = RTFSISO_UDF_PMAP_T_MPM;
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_MPM_NOT_SUPPORTED, "Partition type '%.23s' (%#x) not supported",
+                                               pType2->idPartitionType.achIdentifier, pType2->idPartitionType.Suffix.Udf.uUdfRevision);
+                }
+                else
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_UNKNOWN_PART_MAP_TYPE_ID,
+                                               "Unknown partition map ID for #%u @ %#x: %.23s",
+                                               cPartMaps, off, pType2->idPartitionType.achIdentifier);
+#if 0 /* unreachable code */
+                paPartMaps[cPartMaps].uVolumeSeqNo = pType2->uVolumeSeqNo;
+                uPartitionNo = pType2->uPartitionNo;
+#endif
+            }
+            else
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_UNKNOWN_PART_MAP_ENTRY_TYPE,
+                                           "Unknown partition map entry type #%u @ %#x: %u", cPartMaps, off, pHdr->bType);
+            paPartMaps[cPartMaps].uPartitionNo = uPartitionNo;
+
+            /*
+             * Lookup the partition number and retrieve the relevant info from the partition descriptor.
+             */
+            uint32_t i = pInfo->cPartitions;
+            while (i-- > 0)
+            {
+                PUDFPARTITIONDESC pPd = pInfo->apPartitions[i];
+                if (paPartMaps[cPartMaps].uPartitionNo == pPd->uPartitionNo)
+                {
+                    paPartMaps[cPartMaps].idxPartDesc     = (uint16_t)i;
+                    paPartMaps[cPartMaps].cSectors        = pPd->cSectors;
+                    paPartMaps[cPartMaps].offLocation     = pPd->offLocation;
+                    paPartMaps[cPartMaps].offByteLocation = (uint64_t)pPd->offLocation * pThis->cbSector;
+                    paPartMaps[cPartMaps].fFlags          = pPd->fFlags;
+                    paPartMaps[cPartMaps].uAccessType     = pPd->uAccessType;
+                    if (!UDF_ENTITY_ID_EQUALS(&pPd->PartitionContents, UDF_ENTITY_ID_PD_PARTITION_CONTENTS_UDF))
+                        paPartMaps[cPartMaps].fHaveHdr    = false;
+                    else
+                    {
+                        paPartMaps[cPartMaps].fHaveHdr    = true;
+                        paPartMaps[cPartMaps].Hdr         = pPd->ContentsUse.Hdr;
+                    }
+                    break;
+                }
+            }
+            if (i > pInfo->cPartitions)
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_PARTITION_NOT_FOUND,
+                                           "Partition #%u (%#x) specified by mapping entry #%u (@ %#x) was not found! (int-type %u)",
+                                           uPartitionNo, uPartitionNo, cPartMaps, off, paPartMaps[cPartMaps].bType);
+
+            /*
+             * Advance.
+             */
+            cPartMaps++;
+            off += pHdr->cb;
+        }
+
+        if (cPartMaps < pLvd->cPartitionMaps)
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_INCOMPLETE_PART_MAP_TABLE,
+                                       "Only found %u of the %u announced partition mapping table entries",
+                                       cPartMaps, pLvd->cPartitionMaps);
+    }
+
+    /* It might be theoretically possible to not use virtual partitions for
+       accessing data, so just warn if there aren't any. */
+    if (cPartMaps == 0)
+        LogRel(("ISO/UDF: Warning: No partition maps!\n"));
+
+    /*
+     * Check out the logical volume descriptor.
+     */
+    if (   pLvd->cbLogicalBlock < pThis->cbSector
+        || pLvd->cbLogicalBlock > _16K
+        || (pLvd->cbLogicalBlock % pThis->cbSector) != 0)
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_UNSUPPORTED_LOGICAL_BLOCK_SIZE,
+                                   "Logical block size of %#x is not supported with a sector size of %#x",
+                                   pLvd->cbLogicalBlock, pThis->cbSector);
+
+    if (!UDF_ENTITY_ID_EQUALS(&pLvd->idDomain, UDF_ENTITY_ID_LVD_DOMAIN))
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_BAD_LVD_DOMAIN_ID,
+                                   "Unsupported domain ID in logical volume descriptor: '%.23s'", pLvd->idDomain.achIdentifier);
+
+    if (   pLvd->ContentsUse.FileSetDescriptor.uType != UDF_AD_TYPE_RECORDED_AND_ALLOCATED
+        || pLvd->ContentsUse.FileSetDescriptor.cb    == 0
+        || pLvd->ContentsUse.FileSetDescriptor.Location.uPartitionNo >= cPartMaps)
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_BAD_LVD_FILE_SET_DESC_LOCATION,
+                                   "Malformed file set descriptor location (type=%u cb=%#x part=%#x)",
+                                   pLvd->ContentsUse.FileSetDescriptor.uType,
+                                   pLvd->ContentsUse.FileSetDescriptor.cb,
+                                   pLvd->ContentsUse.FileSetDescriptor.Location.uPartitionNo);
+
+    bool fLvdHaveVolId = !ASMMemIsZero(pLvd->achLogicalVolumeID, sizeof(pLvd->achLogicalVolumeID));
+    if (   fLvdHaveVolId
+        && !UDF_IS_CHAR_SET_OSTA(&pLvd->DescCharSet))
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_BAD_LVD_DESC_CHAR_SET,
+                                   "Logical volume ID is not using OSTA compressed unicode");
+
+    /*
+     * We can ignore much, if not all of the primary volume descriptor.
+     */
+
+    /*
+     * We're good. So copy over the data.
+     */
+    pThis->Udf.VolInfo.FileSetDescriptor = pLvd->ContentsUse.FileSetDescriptor;
+    pThis->Udf.VolInfo.cbBlock           = pLvd->cbLogicalBlock;
+    pThis->Udf.VolInfo.cShiftBlock       = 9;
+    while (pThis->Udf.VolInfo.cbBlock != RT_BIT_32(pThis->Udf.VolInfo.cShiftBlock))
+        pThis->Udf.VolInfo.cShiftBlock++;
+    pThis->Udf.VolInfo.fFlags            = pPvd->fFlags;
+    pThis->Udf.VolInfo.cPartitions       = cPartMaps;
+    pThis->Udf.VolInfo.paPartitions      = paPartMaps;
+    pInfo->paPartMaps = NULL;
+    if (fLvdHaveVolId)
+        memcpy(pThis->Udf.VolInfo.achLogicalVolumeID, pLvd->achLogicalVolumeID, sizeof(pThis->Udf.VolInfo.achLogicalVolumeID));
+    else
+        RT_ZERO(pThis->Udf.VolInfo.achLogicalVolumeID);
+
+    return VINF_SUCCESS;
+}
 
 
 /**
  * Processes a primary volume descriptor in the VDS (UDF).
  *
  * @returns IPRT status code.
- * @param   pThis       The instance.
+ * @param   pInfo       Where we gather descriptor information.
  * @param   pDesc       The descriptor.
  * @param   pErrInfo    Where to return extended error information.
  */
 //cmd: kmk VBoxRT && kmk_redirect -E VBOX_LOG_DEST="nofile stderr" -E VBOX_LOG="rt_fs=~0" -E VBOX_LOG_FLAGS="unbuffered enabled" -- e:\vbox\svn\trunk\out\win.amd64\debug\bin\tools\RTLs.exe :iprtvfs:file(open,d:\Downloads\en_windows_10_enterprise_version_1703_updated_march_2017_x64_dvd_10189290.iso,r):vfs(isofs):/ -la
-static int rtFsIsoVolProcessUdfPrimaryVolDesc(PRTFSISOVOL pThis, PCUDFPRIMARYVOLUMEDESC pDesc, PRTERRINFO pErrInfo)
+static int rtFsIsoVolProcessUdfPrimaryVolDesc(PRTFSISOVDSINFO pInfo, PCUDFPRIMARYVOLUMEDESC pDesc, PRTERRINFO pErrInfo)
 {
 #ifdef LOG_ENABLED
     Log(("ISO/UDF: Primary volume descriptor at sector %#RX32\n", pDesc->Tag.offTag));
@@ -2429,7 +2916,59 @@ static int rtFsIsoVolProcessUdfPrimaryVolDesc(PRTFSISOVOL pThis, PCUDFPRIMARYVOL
     }
 #endif
 
-    RT_NOREF(pThis, pDesc, pErrInfo);
+    /*
+     * Check if this is a new revision of an existing primary volume descriptor.
+     */
+    PUDFPRIMARYVOLUMEDESC pEndianConvert = NULL;
+    uint32_t i = pInfo->cPrimaryVols;
+    while (i--> 0)
+    {
+        if (   memcmp(pDesc->achVolumeID, pInfo->apPrimaryVols[i]->achVolumeID, sizeof(pDesc->achVolumeID)) == 0
+            && memcmp(&pDesc->DescCharSet, &pInfo->apPrimaryVols[i]->DescCharSet, sizeof(pDesc->DescCharSet)) == 0)
+        {
+            if (RT_LE2H_U32(pDesc->uVolumeDescSeqNo) >= pInfo->apPrimaryVols[i]->uVolumeDescSeqNo)
+            {
+                Log(("ISO/UDF: Primary descriptor prevails over previous! (%u >= %u)\n",
+                     RT_LE2H_U32(pDesc->uVolumeDescSeqNo), pInfo->apPartitions[i]->uVolumeDescSeqNo));
+                pEndianConvert = pInfo->apPrimaryVols[i];
+                memcpy(pEndianConvert, pDesc, sizeof(*pDesc));
+            }
+            else
+                Log(("ISO/UDF: Primary descriptor has lower sequence number than the previous! (%u < %u)\n",
+                     RT_LE2H_U32(pDesc->uVolumeDescSeqNo), pInfo->apPartitions[i]->uVolumeDescSeqNo));
+            break;
+        }
+    }
+    if (i >= pInfo->cPrimaryVols)
+    {
+        /*
+         * It wasn't. Append it.
+         */
+        i = pInfo->cPrimaryVols;
+        if (i < RT_ELEMENTS(pInfo->apPrimaryVols))
+        {
+            pInfo->apPrimaryVols[i] = pEndianConvert = (PUDFPRIMARYVOLUMEDESC)RTMemDup(pDesc, sizeof(*pDesc));
+            if (pEndianConvert)
+                pInfo->cPrimaryVols = i + 1;
+            else
+                return VERR_NO_MEMORY;
+            Log2(("ISO/UDF: ++New primary descriptor.\n"));
+        }
+        else
+            return RTERRINFO_LOG_SET(pErrInfo, VERR_ISOFS_TOO_MANY_PVDS, "Encountered too many primary volume descriptors");
+    }
+
+#ifdef RT_BIG_ENDIAN
+    /*
+     * Do endian conversion of the descriptor.
+     */
+    if (pEndianConvert)
+    {
+        AssertFailed();
+    }
+#else
+    RT_NOREF(pEndianConvert);
+#endif
     return VINF_SUCCESS;
 }
 
@@ -2438,22 +2977,25 @@ static int rtFsIsoVolProcessUdfPrimaryVolDesc(PRTFSISOVOL pThis, PCUDFPRIMARYVOL
  * Processes an logical volume descriptor in the VDS (UDF).
  *
  * @returns IPRT status code.
- * @param   pThis       The instance.
+ * @param   pInfo       Where we gather descriptor information.
  * @param   pDesc       The descriptor.
+ * @param   cbSector    The sector size (UDF defines the logical and physical
+ *                      sector size to be the same).
  * @param   pErrInfo    Where to return extended error information.
  */
-static int rtFsIsoVolProcessUdfLogicalVolumeDesc(PRTFSISOVOL pThis, PCUDFLOGICALVOLUMEDESC pDesc, PRTERRINFO pErrInfo)
+static int rtFsIsoVolProcessUdfLogicalVolumeDesc(PRTFSISOVDSINFO pInfo, PCUDFLOGICALVOLUMEDESC pDesc,
+                                                 uint32_t cbSector, PRTERRINFO pErrInfo)
 {
 #ifdef LOG_ENABLED
     Log(("ISO/UDF: Logical volume descriptor at sector %#RX32\n", pDesc->Tag.offTag));
     if (LogIs2Enabled())
     {
         UDF_LOG2_MEMBER(pDesc, "#010RX32", uVolumeDescSeqNo);
-        UDF_LOG2_MEMBER_CHARSPEC(pDesc, DescriptorCharSet);
+        UDF_LOG2_MEMBER_CHARSPEC(pDesc, DescCharSet);
         UDF_LOG2_MEMBER_DSTRING(pDesc, achLogicalVolumeID);
         UDF_LOG2_MEMBER(pDesc, "#010RX32", cbLogicalBlock);
         UDF_LOG2_MEMBER_ENTITY_ID(pDesc, idDomain);
-        if (memcmp(&pDesc->idDomain.achIdentifier[0], RT_STR_TUPLE(UDF_ENTITY_ID_LVD_DOMAIN) + 1) == 0)
+        if (UDF_ENTITY_ID_EQUALS(&pDesc->idDomain, UDF_ENTITY_ID_LVD_DOMAIN))
             UDF_LOG2_MEMBER_LONGAD(pDesc, ContentsUse.FileSetDescriptor);
         else if (!ASMMemIsZero(&pDesc->ContentsUse.ab[0], sizeof(pDesc->ContentsUse.ab)))
             Log2(("ISO/UDF:   %-32s %.16Rhxs\n", "ContentsUse.ab[16]:", &pDesc->ContentsUse.ab[0]));
@@ -2501,7 +3043,71 @@ static int rtFsIsoVolProcessUdfLogicalVolumeDesc(PRTFSISOVOL pThis, PCUDFLOGICAL
     }
 #endif
 
-    RT_NOREF(pThis, pDesc, pErrInfo);
+    /*
+     * Check if this is a newer revision of an existing primary volume descriptor.
+     */
+    size_t cbDesc = (size_t)pDesc->cbMapTable + RT_UOFFSETOF(UDFLOGICALVOLUMEDESC, abPartitionMaps);
+    if (   pDesc->cbMapTable >= (UINT32_MAX >> 1)
+        || cbDesc > cbSector)
+    {
+        Log(("ISO/UDF: Logical volume descriptor is too big: %#zx (cbSector=%#x)\n", cbDesc, cbSector));
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_TOO_BIT_PARTMAP_IN_LVD,
+                                   "Logical volume descriptor is too big: %#zx (cbSector=%#x)\n", cbDesc, cbSector);
+    }
+
+    PUDFLOGICALVOLUMEDESC pEndianConvert = NULL;
+    uint32_t i = pInfo->cLogicalVols;
+    while (i--> 0)
+        if (   memcmp(pDesc->achLogicalVolumeID, pInfo->apLogicalVols[i]->achLogicalVolumeID,
+                      sizeof(pDesc->achLogicalVolumeID)) == 0
+            && memcmp(&pDesc->DescCharSet, &pInfo->apLogicalVols[i]->DescCharSet,
+                      sizeof(pDesc->DescCharSet)) == 0)
+        {
+            if (RT_LE2H_U32(pDesc->uVolumeDescSeqNo) >= pInfo->apLogicalVols[i]->uVolumeDescSeqNo)
+            {
+                Log(("ISO/UDF: Logical descriptor prevails over previous! (%u >= %u)\n",
+                     RT_LE2H_U32(pDesc->uVolumeDescSeqNo), pInfo->apLogicalVols[i]->uVolumeDescSeqNo));
+                pEndianConvert = (PUDFLOGICALVOLUMEDESC)RTMemDup(pDesc, cbDesc);
+                if (!pEndianConvert)
+                    return VERR_NO_MEMORY;
+                RTMemFree(pInfo->apLogicalVols[i]);
+                pInfo->apLogicalVols[i] = pEndianConvert;
+            }
+            else
+                Log(("ISO/UDF: Logical descriptor has lower sequence number than the previous! (%u >= %u)\n",
+                     RT_LE2H_U32(pDesc->uVolumeDescSeqNo), pInfo->apLogicalVols[i]->uVolumeDescSeqNo));
+            break;
+        }
+    if (i >= pInfo->cLogicalVols)
+    {
+        /*
+         * It wasn't. Append it.
+         */
+        i = pInfo->cLogicalVols;
+        if (i < RT_ELEMENTS(pInfo->apLogicalVols))
+        {
+            pInfo->apLogicalVols[i] = pEndianConvert = (PUDFLOGICALVOLUMEDESC)RTMemDup(pDesc, cbDesc);
+            if (pEndianConvert)
+                pInfo->cLogicalVols = i + 1;
+            else
+                return VERR_NO_MEMORY;
+            Log2(("ISO/UDF: ++New logical volume descriptor.\n"));
+        }
+        else
+            return RTERRINFO_LOG_SET(pErrInfo, VERR_ISOFS_TOO_MANY_LVDS, "Too many logical volume descriptors");
+    }
+
+#ifdef RT_BIG_ENDIAN
+    /*
+     * Do endian conversion of the descriptor.
+     */
+    if (pEndianConvert)
+    {
+        AssertFailed();
+    }
+#else
+    RT_NOREF(pEndianConvert);
+#endif
     return VINF_SUCCESS;
 }
 
@@ -2510,11 +3116,11 @@ static int rtFsIsoVolProcessUdfLogicalVolumeDesc(PRTFSISOVOL pThis, PCUDFLOGICAL
  * Processes an partition descriptor in the VDS (UDF).
  *
  * @returns IPRT status code.
- * @param   pThis       The instance.
+ * @param   pInfo       Where we gather descriptor information.
  * @param   pDesc       The descriptor.
  * @param   pErrInfo    Where to return extended error information.
  */
-static int rtFsIsoVolProcessUdfPartitionDesc(PRTFSISOVOL pThis, PCUDFPARTITIONDESC pDesc, PRTERRINFO pErrInfo)
+static int rtFsIsoVolProcessUdfPartitionDesc(PRTFSISOVDSINFO pInfo, PCUDFPARTITIONDESC pDesc, PRTERRINFO pErrInfo)
 {
 #ifdef LOG_ENABLED
     Log(("ISO/UDF: Partition descriptor at sector %#RX32\n", pDesc->Tag.offTag));
@@ -2524,7 +3130,7 @@ static int rtFsIsoVolProcessUdfPartitionDesc(PRTFSISOVOL pThis, PCUDFPARTITIONDE
         UDF_LOG2_MEMBER(pDesc, "#06RX16", fFlags);
         UDF_LOG2_MEMBER(pDesc, "#06RX16", uPartitionNo);
         UDF_LOG2_MEMBER_ENTITY_ID(pDesc, PartitionContents);
-        if (memcmp(&pDesc->PartitionContents.achIdentifier[0], RT_STR_TUPLE(UDF_ENTITY_ID_PD_PARTITION_CONTENTS_UDF) + 1) == 0)
+        if (UDF_ENTITY_ID_EQUALS(&pDesc->PartitionContents, UDF_ENTITY_ID_PD_PARTITION_CONTENTS_UDF))
         {
             UDF_LOG2_MEMBER_SHORTAD(&pDesc->ContentsUse, Hdr.UnallocatedSpaceTable);
             UDF_LOG2_MEMBER_SHORTAD(&pDesc->ContentsUse, Hdr.UnallocatedSpaceBitmap);
@@ -2548,7 +3154,56 @@ static int rtFsIsoVolProcessUdfPartitionDesc(PRTFSISOVOL pThis, PCUDFPARTITIONDE
     }
 #endif
 
-    RT_NOREF(pThis, pDesc, pErrInfo);
+    /*
+     * Check if this is a newer revision of an existing primary volume descriptor.
+     */
+    PUDFPARTITIONDESC pEndianConvert = NULL;
+    uint32_t i = pInfo->cPartitions;
+    while (i--> 0)
+        if (pDesc->uPartitionNo == pInfo->apPartitions[i]->uPartitionNo)
+        {
+            if (RT_LE2H_U32(pDesc->uVolumeDescSeqNo) >= pInfo->apPartitions[i]->uVolumeDescSeqNo)
+            {
+                Log(("ISO/UDF: Partition descriptor for part %#u prevails over previous! (%u >= %u)\n",
+                     pDesc->uPartitionNo, RT_LE2H_U32(pDesc->uVolumeDescSeqNo), pInfo->apPartitions[i]->uVolumeDescSeqNo));
+                pEndianConvert = pInfo->apPartitions[i];
+                memcpy(pEndianConvert, pDesc, sizeof(*pDesc));
+            }
+            else
+                Log(("ISO/UDF: Partition descriptor for part %#u has a lower sequence number than the previous! (%u < %u)\n",
+                     pDesc->uPartitionNo, RT_LE2H_U32(pDesc->uVolumeDescSeqNo), pInfo->apPartitions[i]->uVolumeDescSeqNo));
+            break;
+        }
+    if (i >= pInfo->cPartitions)
+    {
+        /*
+         * It wasn't. Append it.
+         */
+        i = pInfo->cPartitions;
+        if (i < RT_ELEMENTS(pInfo->apPartitions))
+        {
+            pInfo->apPartitions[i] = pEndianConvert = (PUDFPARTITIONDESC)RTMemDup(pDesc, sizeof(*pDesc));
+            if (pEndianConvert)
+                pInfo->cPartitions = i + 1;
+            else
+                return VERR_NO_MEMORY;
+            Log2(("ISO/UDF: ++New partition descriptor.\n"));
+        }
+        else
+            return RTERRINFO_LOG_SET(pErrInfo, VERR_ISOFS_TOO_MANY_PDS, "Too many physical volume descriptors");
+    }
+
+#ifdef RT_BIG_ENDIAN
+    /*
+     * Do endian conversion of the descriptor.
+     */
+    if (pEndianConvert)
+    {
+        AssertFailed();
+    }
+#else
+    RT_NOREF(pEndianConvert);
+#endif
     return VINF_SUCCESS;
 }
 
@@ -2557,11 +3212,11 @@ static int rtFsIsoVolProcessUdfPartitionDesc(PRTFSISOVOL pThis, PCUDFPARTITIONDE
  * Processes an implementation use descriptor in the VDS (UDF).
  *
  * @returns IPRT status code.
- * @param   pThis       The instance.
+ * @param   pInfo       Where we gather descriptor information.
  * @param   pDesc       The descriptor.
  * @param   pErrInfo    Where to return extended error information.
  */
-static int rtFsIsoVolProcessUdfImplUseVolDesc(PRTFSISOVOL pThis, PCUDFIMPLEMENTATIONUSEVOLUMEDESC pDesc, PRTERRINFO pErrInfo)
+static int rtFsIsoVolProcessUdfImplUseVolDesc(PRTFSISOVDSINFO pInfo, PCUDFIMPLEMENTATIONUSEVOLUMEDESC pDesc, PRTERRINFO pErrInfo)
 {
 #ifdef LOG_ENABLED
     Log(("ISO/UDF: Implementation use volume descriptor at sector %#RX32\n", pDesc->Tag.offTag));
@@ -2569,7 +3224,7 @@ static int rtFsIsoVolProcessUdfImplUseVolDesc(PRTFSISOVOL pThis, PCUDFIMPLEMENTA
     {
         UDF_LOG2_MEMBER(pDesc, "#010RX32", uVolumeDescSeqNo);
         UDF_LOG2_MEMBER_ENTITY_ID(pDesc, idImplementation);
-        if (memcmp(pDesc->idImplementation.achIdentifier, RT_STR_TUPLE(UDF_ENTITY_ID_IUVD_IMPLEMENTATION) + 1) == 0)
+        if (UDF_ENTITY_ID_EQUALS(&pDesc->idImplementation, UDF_ENTITY_ID_IUVD_IMPLEMENTATION))
         {
             UDF_LOG2_MEMBER_CHARSPEC(&pDesc->ImplementationUse, Lvi.Charset);
             UDF_LOG2_MEMBER_DSTRING(&pDesc->ImplementationUse, Lvi.achVolumeID);
@@ -2585,7 +3240,7 @@ static int rtFsIsoVolProcessUdfImplUseVolDesc(PRTFSISOVOL pThis, PCUDFIMPLEMENTA
     }
 #endif
 
-    RT_NOREF(pThis, pDesc, pErrInfo);
+    RT_NOREF(pInfo, pDesc, pErrInfo);
     return VINF_SUCCESS;
 }
 
@@ -2605,11 +3260,16 @@ typedef struct RTFSISOSEENSEQENCES
 typedef RTFSISOSEENSEQENCES *PRTFSISOSEENSEQENCES;
 
 
+
 /**
  * Process a VDS sequence, recursively dealing with volume descriptor pointers.
  *
+ * This function only gathers information from the sequence, handling the
+ * prevailing descriptor fun.
+ *
  * @returns IPRT status code.
  * @param   pThis           The instance.
+ * @param   pInfo           Where to store info from the VDS sequence.
  * @param   offSeq          The byte offset of the sequence.
  * @param   cbSeq           The length of the sequence.
  * @param   pbBuf           Read buffer.
@@ -2618,8 +3278,8 @@ typedef RTFSISOSEENSEQENCES *PRTFSISOSEENSEQENCES;
  * @param   cNestings       The VDS nesting depth.
  * @param   pErrInfo        Where to return extended error info.
  */
-static int rtFsIsoVolReadAndProcessUdfVdsSeq(PRTFSISOVOL pThis, uint64_t offSeq, uint32_t cbSeq, uint8_t *pbBuf, size_t cbBuf,
-                                             uint32_t cNestings, PRTERRINFO pErrInfo)
+static int rtFsIsoVolReadAndProcessUdfVdsSeq(PRTFSISOVOL pThis, PRTFSISOVDSINFO pInfo, uint64_t offSeq, uint32_t cbSeq,
+                                             uint8_t *pbBuf, size_t cbBuf, uint32_t cNestings, PRTERRINFO pErrInfo)
 {
     AssertReturn(cbBuf >= pThis->cbSector, VERR_INTERNAL_ERROR);
 
@@ -2627,7 +3287,7 @@ static int rtFsIsoVolReadAndProcessUdfVdsSeq(PRTFSISOVOL pThis, uint64_t offSeq,
      * Check nesting depth.
      */
     if (cNestings > 5)
-        return RTErrInfoSet(pErrInfo, VERR_TOO_MUCH_DATA, "The volume descriptor sequence (VDS) is nested too deeply.");
+        return RTERRINFO_LOG_SET(pErrInfo, VERR_TOO_MUCH_DATA, "The volume descriptor sequence (VDS) is nested too deeply.");
 
 
     /*
@@ -2644,8 +3304,8 @@ static int rtFsIsoVolReadAndProcessUdfVdsSeq(PRTFSISOVOL pThis, uint64_t offSeq,
         Assert((offInSeq & (pThis->cbSector - 1)) == 0);
         rc = RTVfsFileReadAt(pThis->hVfsBacking, offSeq + offInSeq, pbBuf, pThis->cbSector, NULL);
         if (RT_FAILURE(rc))
-            return RTErrInfoSetF(pErrInfo, rc, "Error reading VDS content at %RX64 (LB %#x): %Rrc",
-                                 offSeq + offInSeq, pThis->cbSector, rc);
+            return RTERRINFO_LOG_SET_F(pErrInfo, rc, "Error reading VDS content at %RX64 (LB %#x): %Rrc",
+                                       offSeq + offInSeq, pThis->cbSector, rc);
         if (cbSeq - offInSeq < pThis->cbSector)
             memset(&pbBuf[cbSeq - offInSeq], 0, pThis->cbSector - (cbSeq - offInSeq));
 
@@ -2666,19 +3326,23 @@ static int rtFsIsoVolReadAndProcessUdfVdsSeq(PRTFSISOVOL pThis, uint64_t offSeq,
             switch (pTag->idTag)
             {
                 case UDF_TAG_ID_PRIMARY_VOL_DESC:
-                    rc = rtFsIsoVolProcessUdfPrimaryVolDesc(pThis, (PCUDFPRIMARYVOLUMEDESC)pTag, pErrInfo);
+                    rc = rtFsIsoVolProcessUdfPrimaryVolDesc(pInfo, (PCUDFPRIMARYVOLUMEDESC)pTag, pErrInfo);
                     break;
 
                 case UDF_TAG_ID_IMPLEMENTATION_USE_VOLUME_DESC:
-                    rc = rtFsIsoVolProcessUdfImplUseVolDesc(pThis, (PCUDFIMPLEMENTATIONUSEVOLUMEDESC)pTag, pErrInfo);
+                    rc = rtFsIsoVolProcessUdfImplUseVolDesc(pInfo, (PCUDFIMPLEMENTATIONUSEVOLUMEDESC)pTag, pErrInfo);
                     break;
 
                 case UDF_TAG_ID_PARTITION_DESC:
-                    rc = rtFsIsoVolProcessUdfPartitionDesc(pThis, (PCUDFPARTITIONDESC)pTag, pErrInfo);
+                    rc = rtFsIsoVolProcessUdfPartitionDesc(pInfo, (PCUDFPARTITIONDESC)pTag, pErrInfo);
                     break;
 
                 case UDF_TAG_ID_LOGICAL_VOLUME_DESC:
-                    rc = rtFsIsoVolProcessUdfLogicalVolumeDesc(pThis, (PCUDFLOGICALVOLUMEDESC)pTag, pErrInfo);
+                    if (rc != VERR_ISOFS_INSUFFICIENT_DATA_FOR_DESC_CRC)
+                        rc = rtFsIsoVolProcessUdfLogicalVolumeDesc(pInfo, (PCUDFLOGICALVOLUMEDESC)pTag,
+                                                                   pThis->cbSector, pErrInfo);
+                    else
+                        rc = VERR_ISOFS_TOO_BIT_PARTMAP_IN_LVD;
                     break;
 
                 case UDF_TAG_ID_LOGICAL_VOLUME_INTEGRITY_DESC:
@@ -2702,7 +3366,7 @@ static int rtFsIsoVolReadAndProcessUdfVdsSeq(PRTFSISOVOL pThis, uint64_t offSeq,
                     Log(("ISO/UDF: Processing volume descriptor pointer at offset %#RX64: %#x LB %#x (seq %#x); cNestings=%d\n",
                          offSeq + offInSeq, pVdp->NextVolumeDescSeq.off, pVdp->NextVolumeDescSeq.cb,
                          pVdp->uVolumeDescSeqNo, cNestings));
-                    rc = rtFsIsoVolReadAndProcessUdfVdsSeq(pThis, (uint64_t)pVdp->NextVolumeDescSeq.off * pThis->cbSector,
+                    rc = rtFsIsoVolReadAndProcessUdfVdsSeq(pThis, pInfo, (uint64_t)pVdp->NextVolumeDescSeq.off * pThis->cbSector,
                                                            pVdp->NextVolumeDescSeq.cb, pbBuf, cbBuf, cNestings + 1, pErrInfo);
                     break;
                 }
@@ -2712,10 +3376,12 @@ static int rtFsIsoVolReadAndProcessUdfVdsSeq(PRTFSISOVOL pThis, uint64_t offSeq,
                     return VINF_SUCCESS;
 
                 default:
-                    return RTErrInfoSetF(pErrInfo, VERR_ISOFS_UNEXPECTED_VDS_DESC,
-                                         "Unexpected/unknown VDS descriptor %#x at byte offset %#RX64",
-                                         pThis->cbSector, offSeq + offInSeq);
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_UNEXPECTED_VDS_DESC,
+                                               "Unexpected/unknown VDS descriptor %#x at byte offset %#RX64",
+                                               pThis->cbSector, offSeq + offInSeq);
             }
+            if (RT_FAILURE(rc))
+                return rc;
         }
         /* The descriptor sequence is usually zero padded to 16 sectors.  Just
            ignore zero descriptors. */
@@ -2770,16 +3436,41 @@ static int rtFsIsoVolReadAndProcessUdfVds(PRTFSISOVOL pThis, uint64_t offSeq, ui
     LogFlow(("ISO/UDF: Processing anchor volume descriptor sequence at offset %#RX64 LB %#RX32\n", offSeq, cbSeq));
 
     /*
-     * Reset the state before we start processing the descriptors.
+     * Gather relevant descriptor info from the VDS then process it and on
+     * success copy it into the instance.
      *
      * The processing has to be done in a different function because there may
      * be links to sub-sequences that needs to be processed.  We do this by
      * recursing and check that we don't go to deep.
      */
+    RTFSISOVDSINFO Info;
+    RT_ZERO(Info);
+    int rc = rtFsIsoVolReadAndProcessUdfVdsSeq(pThis, &Info, offSeq, cbSeq, pbBuf, cbBuf, 0, pErrInfo);
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtFsIsoVolProcessUdfVdsSeqInfo(pThis, &Info, pErrInfo);
+        if (RT_SUCCESS(rc))
+            rc = rtFsIsoVolProcessUdfFileSetDescs(pThis, pbBuf, cbBuf, pErrInfo);
+    }
 
-    /** @todo state reset */
+    /*
+     * Clean up info.
+     */
+    i = Info.cPrimaryVols;
+    while (i-- > 0)
+        RTMemFree(Info.apPrimaryVols[i]);
 
-    return rtFsIsoVolReadAndProcessUdfVdsSeq(pThis, offSeq, cbSeq, pbBuf, cbBuf, 0, pErrInfo);
+    i = Info.cLogicalVols;
+    while (i-- > 0)
+        RTMemFree(Info.apLogicalVols[i]);
+
+    i = Info.cPartitions;
+    while (i-- > 0)
+        RTMemFree(Info.apPartitions[i]);
+
+    RTMemFree(Info.paPartMaps);
+
+    return rc;
 }
 
 
@@ -2816,9 +3507,9 @@ static int rtFsIsoVolReadAndHandleUdfAvdp(PRTFSISOVOL pThis, uint64_t offAvdp, u
                     return rc;
             }
             else
-                rc = RTErrInfoSetF(pErrInfo, VERR_NOT_FOUND,
-                                   "MainVolumeDescSeq is out of bounds: sector %#RX32 LB %#RX32 bytes, image is %#RX64 sectors",
-                                   pAvdp->MainVolumeDescSeq.off, pAvdp->MainVolumeDescSeq.cb, pThis->cBackingSectors);
+                rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_NOT_FOUND,
+                                         "MainVolumeDescSeq is out of bounds: sector %#RX32 LB %#RX32 bytes, image is %#RX64 sectors",
+                                         pAvdp->MainVolumeDescSeq.off, pAvdp->MainVolumeDescSeq.cb, pThis->cBackingSectors);
             if (ReserveVolumeDescSeq.cb > 0)
             {
                 if (   ReserveVolumeDescSeq.off < pThis->cBackingSectors
@@ -2832,15 +3523,15 @@ static int rtFsIsoVolReadAndHandleUdfAvdp(PRTFSISOVOL pThis, uint64_t offAvdp, u
                         return rc;
                 }
                 else if (RT_SUCCESS(rc))
-                    rc = RTErrInfoSetF(pErrInfo, VERR_NOT_FOUND,
-                                       "ReserveVolumeDescSeq is out of bounds: sector %#RX32 LB %#RX32 bytes, image is %#RX64 sectors",
-                                       ReserveVolumeDescSeq.off, ReserveVolumeDescSeq.cb, pThis->cBackingSectors);
+                    rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_NOT_FOUND,
+                                             "ReserveVolumeDescSeq is out of bounds: sector %#RX32 LB %#RX32 bytes, image is %#RX64 sectors",
+                                             ReserveVolumeDescSeq.off, ReserveVolumeDescSeq.cb, pThis->cBackingSectors);
             }
         }
     }
     else
-        rc = RTErrInfoSetF(pErrInfo, rc,
-                           "Error reading sector at offset %#RX64 (anchor volume descriptor pointer): %Rrc", offAvdp, rc);
+        rc = RTERRINFO_LOG_SET_F(pErrInfo, rc,
+                                 "Error reading sector at offset %#RX64 (anchor volume descriptor pointer): %Rrc", offAvdp, rc);
 
     return rc;
 }
@@ -2877,18 +3568,32 @@ static int rtFsIsoVolHandleUdfDetection(PRTFSISOVOL pThis, uint8_t *puUdfLevel, 
      * We keep track of which sequences we've processed so we don't try to do it
      * again when alternative AVDP sectors points to the same sequences.
      */
+    pThis->Udf.uLevel = *puUdfLevel;
     RTFSISOSEENSEQENCES SeenSequences = { 0 };
-    int rc = rtFsIsoVolReadAndHandleUdfAvdp(pThis, 256 * pThis->cbSector, pbBuf, cbBuf,
-                                            &SeenSequences, pErrInfo);
-    if (RT_FAILURE(rc))
-        rc = rtFsIsoVolReadAndHandleUdfAvdp(pThis,  pThis->cbBacking - 256 * pThis->cbSector,
-                                            pbBuf, cbBuf, &SeenSequences, pErrInfo);
-    if (RT_FAILURE(rc))
-        rc = rtFsIsoVolReadAndHandleUdfAvdp(pThis,  pThis->cbBacking - pThis->cbSector,
-                                            pbBuf, cbBuf, &SeenSequences, pErrInfo);
-    if (RT_SUCCESS(rc))
-        return rc;
-    *puUdfLevel = 0;
+    int rc1 = rtFsIsoVolReadAndHandleUdfAvdp(pThis, 256 * pThis->cbSector, pbBuf, cbBuf,
+                                             &SeenSequences, pErrInfo);
+    if (RT_SUCCESS(rc1))
+        return rc1;
+
+    int rc2 = rtFsIsoVolReadAndHandleUdfAvdp(pThis,  pThis->cbBacking - 256 * pThis->cbSector,
+                                             pbBuf, cbBuf, &SeenSequences, pErrInfo);
+    if (RT_SUCCESS(rc2))
+        return rc2;
+
+    int rc3 = rtFsIsoVolReadAndHandleUdfAvdp(pThis,  pThis->cbBacking - pThis->cbSector,
+                                             pbBuf, cbBuf, &SeenSequences, pErrInfo);
+    if (RT_SUCCESS(rc3))
+        return rc3;
+
+    /*
+     * Return failure if the alternatives have been excluded.
+     *
+     * Note! The error info won't be correct here.
+     */
+    pThis->Udf.uLevel = *puUdfLevel = 0;
+
+    if (RTFSISO9660_F_IS_ONLY_TYPE(pThis->fFlags, RTFSISO9660_F_NO_UDF))
+        return rc1 != VERR_NOT_FOUND ? rc1 : rc2 != VERR_NOT_FOUND ? rc2 : rc3;
     return VINF_SUCCESS;
 }
 
@@ -3123,33 +3828,33 @@ static int rtFsIsoVolHandleRootDir(PRTFSISOVOL pThis, PCISO9660DIRREC pRootDir,
                                    PISO9660DIRREC pDstRootDir, PRTERRINFO pErrInfo)
 {
     if (pRootDir->cbDirRec < RT_OFFSETOF(ISO9660DIRREC, achFileId))
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Root dir record size is too small: %#x (min %#x)",
-                             pRootDir->cbDirRec, RT_OFFSETOF(ISO9660DIRREC, achFileId));
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Root dir record size is too small: %#x (min %#x)",
+                                   pRootDir->cbDirRec, RT_OFFSETOF(ISO9660DIRREC, achFileId));
 
     if (!(pRootDir->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY))
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT,
-                             "Root dir is not flagged as directory: %#x", pRootDir->fFileFlags);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                   "Root dir is not flagged as directory: %#x", pRootDir->fFileFlags);
     if (pRootDir->fFileFlags & ISO9660_FILE_FLAGS_MULTI_EXTENT)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT,
-                             "Root dir is cannot be multi-extent: %#x", pRootDir->fFileFlags);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                   "Root dir is cannot be multi-extent: %#x", pRootDir->fFileFlags);
 
     if (RT_LE2H_U32(pRootDir->cbData.le) != RT_BE2H_U32(pRootDir->cbData.be))
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid root dir size: {%#RX32,%#RX32}",
-                             RT_BE2H_U32(pRootDir->cbData.be), RT_LE2H_U32(pRootDir->cbData.le));
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid root dir size: {%#RX32,%#RX32}",
+                                   RT_BE2H_U32(pRootDir->cbData.be), RT_LE2H_U32(pRootDir->cbData.le));
     if (RT_LE2H_U32(pRootDir->cbData.le) == 0)
-        return RTErrInfoSet(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Zero sized root dir");
+        return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Zero sized root dir");
 
     if (RT_LE2H_U32(pRootDir->offExtent.le) != RT_BE2H_U32(pRootDir->offExtent.be))
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid root dir extent: {%#RX32,%#RX32}",
-                             RT_BE2H_U32(pRootDir->offExtent.be), RT_LE2H_U32(pRootDir->offExtent.le));
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid root dir extent: {%#RX32,%#RX32}",
+                                   RT_BE2H_U32(pRootDir->offExtent.be), RT_LE2H_U32(pRootDir->offExtent.le));
 
     if (RT_LE2H_U16(pRootDir->VolumeSeqNo.le) != RT_BE2H_U16(pRootDir->VolumeSeqNo.be))
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid root dir volume sequence ID: {%#RX16,%#RX16}",
-                             RT_BE2H_U16(pRootDir->VolumeSeqNo.be), RT_LE2H_U16(pRootDir->VolumeSeqNo.le));
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid root dir volume sequence ID: {%#RX16,%#RX16}",
+                                   RT_BE2H_U16(pRootDir->VolumeSeqNo.be), RT_LE2H_U16(pRootDir->VolumeSeqNo.le));
     if (RT_LE2H_U16(pRootDir->VolumeSeqNo.le) != pThis->idPrimaryVol)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                             "Expected root dir to have same volume sequence number as primary volume: %#x, expected %#x",
-                             RT_LE2H_U16(pRootDir->VolumeSeqNo.le), pThis->idPrimaryVol);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                   "Expected root dir to have same volume sequence number as primary volume: %#x, expected %#x",
+                                   RT_LE2H_U16(pRootDir->VolumeSeqNo.le), pThis->idPrimaryVol);
 
     /*
      * Seems okay, copy it.
@@ -3174,8 +3879,8 @@ static int rtFsIsoVolHandlePrimaryVolDesc(PRTFSISOVOL pThis, PCISO9660PRIMARYVOL
                                           PISO9660DIRREC pRootDir, uint64_t *poffRootDirRec, PRTERRINFO pErrInfo)
 {
     if (pVolDesc->bFileStructureVersion != ISO9660_FILE_STRUCTURE_VERSION)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                             "Unsupported file structure version: %#x", pVolDesc->bFileStructureVersion);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                   "Unsupported file structure version: %#x", pVolDesc->bFileStructureVersion);
 
     /*
      * We need the block size ...
@@ -3184,18 +3889,18 @@ static int rtFsIsoVolHandlePrimaryVolDesc(PRTFSISOVOL pThis, PCISO9660PRIMARYVOL
     if (   pThis->cbBlock != RT_BE2H_U16(pVolDesc->cbLogicalBlock.be)
         || !RT_IS_POWER_OF_TWO(pThis->cbBlock)
         || pThis->cbBlock / pThis->cbSector < 1)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid logical block size: {%#RX16,%#RX16}",
-                             RT_BE2H_U16(pVolDesc->cbLogicalBlock.be), RT_LE2H_U16(pVolDesc->cbLogicalBlock.le));
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid logical block size: {%#RX16,%#RX16}",
+                                   RT_BE2H_U16(pVolDesc->cbLogicalBlock.be), RT_LE2H_U16(pVolDesc->cbLogicalBlock.le));
     if (pThis->cbBlock / pThis->cbSector > 128)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Unsupported block size: %#x\n", pThis->cbBlock);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Unsupported block size: %#x\n", pThis->cbBlock);
 
     /*
      * ... volume space size ...
      */
     pThis->cBlocksInPrimaryVolumeSpace = RT_LE2H_U32(pVolDesc->VolumeSpaceSize.le);
     if (pThis->cBlocksInPrimaryVolumeSpace != RT_BE2H_U32(pVolDesc->VolumeSpaceSize.be))
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid volume space size: {%#RX32,%#RX32}",
-                             RT_BE2H_U32(pVolDesc->VolumeSpaceSize.be), RT_LE2H_U32(pVolDesc->VolumeSpaceSize.le));
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid volume space size: {%#RX32,%#RX32}",
+                                   RT_BE2H_U32(pVolDesc->VolumeSpaceSize.be), RT_LE2H_U32(pVolDesc->VolumeSpaceSize.le));
     pThis->cbPrimaryVolumeSpace = pThis->cBlocksInPrimaryVolumeSpace * (uint64_t)pThis->cbBlock;
 
     /*
@@ -3204,22 +3909,22 @@ static int rtFsIsoVolHandlePrimaryVolDesc(PRTFSISOVOL pThis, PCISO9660PRIMARYVOL
     pThis->cVolumesInSet = RT_LE2H_U16(pVolDesc->cVolumesInSet.le);
     if (   pThis->cVolumesInSet != RT_BE2H_U16(pVolDesc->cVolumesInSet.be)
         || pThis->cVolumesInSet == 0)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid volume set size: {%#RX16,%#RX16}",
-                             RT_BE2H_U16(pVolDesc->cVolumesInSet.be), RT_LE2H_U16(pVolDesc->cVolumesInSet.le));
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid volume set size: {%#RX16,%#RX16}",
+                                   RT_BE2H_U16(pVolDesc->cVolumesInSet.be), RT_LE2H_U16(pVolDesc->cVolumesInSet.le));
     if (pThis->cVolumesInSet > 32)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Too large volume set size: %#x\n", pThis->cVolumesInSet);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Too large volume set size: %#x\n", pThis->cVolumesInSet);
 
     /*
      * ... primary volume sequence ID ...
      */
     pThis->idPrimaryVol = RT_LE2H_U16(pVolDesc->VolumeSeqNo.le);
     if (pThis->idPrimaryVol != RT_BE2H_U16(pVolDesc->VolumeSeqNo.be))
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid volume sequence ID: {%#RX16,%#RX16}",
-                             RT_BE2H_U16(pVolDesc->VolumeSeqNo.be), RT_LE2H_U16(pVolDesc->VolumeSeqNo.le));
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Invalid volume sequence ID: {%#RX16,%#RX16}",
+                                   RT_BE2H_U16(pVolDesc->VolumeSeqNo.be), RT_LE2H_U16(pVolDesc->VolumeSeqNo.le));
     if (   pThis->idPrimaryVol > pThis->cVolumesInSet
         || pThis->idPrimaryVol < 1)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                             "Volume sequence ID out of of bound: %#x (1..%#x)\n", pThis->idPrimaryVol, pThis->cVolumesInSet);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                   "Volume sequence ID out of of bound: %#x (1..%#x)\n", pThis->idPrimaryVol, pThis->cVolumesInSet);
 
     /*
      * ... and the root directory record.
@@ -3248,8 +3953,8 @@ static int rtFsIsoVolHandleSupplementaryVolDesc(PRTFSISOVOL pThis, PCISO9660SUPV
                                                 PRTERRINFO pErrInfo)
 {
     if (pVolDesc->bFileStructureVersion != ISO9660_FILE_STRUCTURE_VERSION)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                             "Unsupported file structure version: %#x", pVolDesc->bFileStructureVersion);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                   "Unsupported file structure version: %#x", pVolDesc->bFileStructureVersion);
 
     /*
      * Is this a joliet volume descriptor?  If not, we probably don't need to
@@ -3273,27 +3978,27 @@ static int rtFsIsoVolHandleSupplementaryVolDesc(PRTFSISOVOL pThis, PCISO9660SUPV
      * Note! These are our assumptions and may be wrong.
      */
     if (pThis->cbBlock == 0)
-        return RTErrInfoSet(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                            "Supplementary joliet volume descriptor is not supported when appearing before the primary volume descriptor");
+        return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                 "Supplementary joliet volume descriptor is not supported when appearing before the primary volume descriptor");
     if (ISO9660_GET_ENDIAN(&pVolDesc->cbLogicalBlock) != pThis->cbBlock)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                             "Logical block size for joliet volume descriptor differs from primary: %#RX16 vs %#RX16\n",
-                             ISO9660_GET_ENDIAN(&pVolDesc->cbLogicalBlock), pThis->cbBlock);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                   "Logical block size for joliet volume descriptor differs from primary: %#RX16 vs %#RX16\n",
+                                   ISO9660_GET_ENDIAN(&pVolDesc->cbLogicalBlock), pThis->cbBlock);
     if (ISO9660_GET_ENDIAN(&pVolDesc->VolumeSpaceSize) != pThis->cBlocksInPrimaryVolumeSpace)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                             "Volume space size for joliet volume descriptor differs from primary: %#RX32 vs %#RX32\n",
-                             ISO9660_GET_ENDIAN(&pVolDesc->VolumeSpaceSize), pThis->cBlocksInPrimaryVolumeSpace);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                   "Volume space size for joliet volume descriptor differs from primary: %#RX32 vs %#RX32\n",
+                                   ISO9660_GET_ENDIAN(&pVolDesc->VolumeSpaceSize), pThis->cBlocksInPrimaryVolumeSpace);
     if (ISO9660_GET_ENDIAN(&pVolDesc->cVolumesInSet) != pThis->cVolumesInSet)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                             "Volume set size for joliet volume descriptor differs from primary: %#RX16 vs %#RX32\n",
-                             ISO9660_GET_ENDIAN(&pVolDesc->cVolumesInSet), pThis->cVolumesInSet);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                   "Volume set size for joliet volume descriptor differs from primary: %#RX16 vs %#RX32\n",
+                                   ISO9660_GET_ENDIAN(&pVolDesc->cVolumesInSet), pThis->cVolumesInSet);
     if (ISO9660_GET_ENDIAN(&pVolDesc->VolumeSeqNo) != pThis->idPrimaryVol)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                             "Volume sequence ID for joliet volume descriptor differs from primary: %#RX16 vs %#RX32\n",
-                             ISO9660_GET_ENDIAN(&pVolDesc->VolumeSeqNo), pThis->idPrimaryVol);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                   "Volume sequence ID for joliet volume descriptor differs from primary: %#RX16 vs %#RX32\n",
+                                   ISO9660_GET_ENDIAN(&pVolDesc->VolumeSeqNo), pThis->idPrimaryVol);
 
     if (*pbUcs2Level != 0)
-        return RTErrInfoSet(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "More than one supplementary joliet volume descriptor");
+        return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "More than one supplementary joliet volume descriptor");
 
     /*
      * Switch to the joliet root dir as it has UTF-16 stuff in it.
@@ -3394,12 +4099,12 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
     for (uint32_t iVolDesc = 0; ; iVolDesc++, offVolDesc += cbSector)
     {
         if (iVolDesc > 32)
-            return RTErrInfoSet(pErrInfo, VERR_VFS_BOGUS_FORMAT, "More than 32 volume descriptors, doesn't seem right...");
+            return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "More than 32 volume descriptors, doesn't seem right...");
 
         /* Read the next one and check the signature. */
         rc = RTVfsFileReadAt(hVfsBacking, offVolDesc, &Buf, cbSector, NULL);
         if (RT_FAILURE(rc))
-            return RTErrInfoSetF(pErrInfo, rc, "Unable to read volume descriptor #%u", iVolDesc);
+            return RTERRINFO_LOG_SET_F(pErrInfo, rc, "Unable to read volume descriptor #%u", iVolDesc);
 
 #define MATCH_STD_ID(a_achStdId1, a_szStdId2) \
             (   (a_achStdId1)[0] == (a_szStdId2)[0] \
@@ -3428,21 +4133,21 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
             {
                 cPrimaryVolDescs++;
                 if (Buf.VolDescHdr.bDescVersion != ISO9660PRIMARYVOLDESC_VERSION)
-                    return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                                         "Unsupported primary volume descriptor version: %#x", Buf.VolDescHdr.bDescVersion);
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                               "Unsupported primary volume descriptor version: %#x", Buf.VolDescHdr.bDescVersion);
 #ifdef LOG_ENABLED
                 rtFsIsoVolLogPrimarySupplementaryVolDesc(&Buf.SupVolDesc);
 #endif
                 if (cPrimaryVolDescs > 1)
-                    return RTErrInfoSet(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "More than one primary volume descriptor");
+                    return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "More than one primary volume descriptor");
                 rc = rtFsIsoVolHandlePrimaryVolDesc(pThis, &Buf.PrimaryVolDesc, offVolDesc, &RootDir, &offRootDirRec, pErrInfo);
             }
             else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_SUPPLEMENTARY)
             {
                 cSupplementaryVolDescs++;
                 if (Buf.VolDescHdr.bDescVersion != ISO9660SUPVOLDESC_VERSION)
-                    return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                                         "Unsupported supplemental volume descriptor version: %#x", Buf.VolDescHdr.bDescVersion);
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                               "Unsupported supplemental volume descriptor version: %#x", Buf.VolDescHdr.bDescVersion);
 #ifdef LOG_ENABLED
                 rtFsIsoVolLogPrimarySupplementaryVolDesc(&Buf.SupVolDesc);
 #endif
@@ -3456,12 +4161,12 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
             else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_TERMINATOR)
             {
                 if (!cPrimaryVolDescs)
-                    return RTErrInfoSet(pErrInfo, VERR_VFS_BOGUS_FORMAT, "No primary volume descriptor");
+                    return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "No primary volume descriptor");
                 enmState = kStateNoSeq;
             }
             else
-                return RTErrInfoSetF(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                                     "Unknown volume descriptor: %#x", Buf.VolDescHdr.bDescType);
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                           "Unknown volume descriptor: %#x", Buf.VolDescHdr.bDescType);
         }
         /*
          * UDF volume recognition sequence (VRS).
@@ -3473,7 +4178,7 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
             if (uUdfLevel == 0)
                 enmState = kStateUdfSeq;
             else
-                return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Only one BEA01 sequence is supported");
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Only one BEA01 sequence is supported");
         }
         else if (   enmState == kStateUdfSeq
                  && MATCH_HDR(&Buf.VolDescHdr, UDF_EXT_VOL_DESC_TYPE, UDF_EXT_VOL_DESC_STD_ID_NSR_02, UDF_EXT_VOL_DESC_VERSION) )
@@ -3487,7 +4192,7 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
             if (offUdfBootVolDesc == UINT64_MAX)
                 offUdfBootVolDesc = iVolDesc * cbSector;
             else
-                return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Only one BOOT2 descriptor is supported");
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Only one BOOT2 descriptor is supported");
         }
         else if (   enmState == kStateUdfSeq
                  && MATCH_HDR(&Buf.VolDescHdr, UDF_EXT_VOL_DESC_TYPE, UDF_EXT_VOL_DESC_STD_ID_TERM, UDF_EXT_VOL_DESC_VERSION) )
@@ -3495,7 +4200,7 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
             if (uUdfLevel != 0)
                 enmState = kStateNoSeq;
             else
-                return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Found BEA01 & TEA01, but no NSR02 or NSR03 descriptors");
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Found BEA01 & TEA01, but no NSR02 or NSR03 descriptors");
         }
         /*
          * Unknown, probably the end.
@@ -3503,18 +4208,18 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
         else if (enmState == kStateNoSeq)
             break;
         else if (enmState == kStateStart)
-                return RTErrInfoSetF(pErrInfo, VERR_VFS_UNKNOWN_FORMAT,
-                                     "Not ISO? Unable to recognize volume descriptor signature: %.5Rhxs", Buf.VolDescHdr.achStdId);
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNKNOWN_FORMAT,
+                                           "Not ISO? Unable to recognize volume descriptor signature: %.5Rhxs", Buf.VolDescHdr.achStdId);
         else if (enmState == kStateCdSeq)
-            return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT,
-                                 "Missing ISO 9660 terminator volume descriptor? (Found %.5Rhxs)", Buf.VolDescHdr.achStdId);
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                       "Missing ISO 9660 terminator volume descriptor? (Found %.5Rhxs)", Buf.VolDescHdr.achStdId);
         else if (enmState == kStateUdfSeq)
-            return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT,
-                                 "Missing UDF terminator volume descriptor? (Found %.5Rhxs)", Buf.VolDescHdr.achStdId);
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                       "Missing UDF terminator volume descriptor? (Found %.5Rhxs)", Buf.VolDescHdr.achStdId);
         else
-            return RTErrInfoSetF(pErrInfo, VERR_VFS_UNKNOWN_FORMAT,
-                                 "Unknown volume descriptor signature found at sector %u: %.5Rhxs",
-                                 16 + iVolDesc, Buf.VolDescHdr.achStdId);
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNKNOWN_FORMAT,
+                                       "Unknown volume descriptor signature found at sector %u: %.5Rhxs",
+                                       16 + iVolDesc, Buf.VolDescHdr.achStdId);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -3522,16 +4227,38 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
     /*
      * If we found a UDF VRS and are interested in UDF, we have more work to do here.
      */
-    if (uUdfLevel > 0 && !(fFlags & RTFSISO9660_F_NO_UDF) && /* Just disable this code for now: */ (fFlags & RT_BIT(24)))
+#if 0
+    if (uUdfLevel > 0 && !(fFlags & RTFSISO9660_F_NO_UDF) )// && /* Just disable this code for now: */ (fFlags & RT_BIT(24)))
     {
         Log(("rtFsIsoVolTryInit: uUdfLevel=%d\n", uUdfLevel));
         rc = rtFsIsoVolHandleUdfDetection(pThis, &uUdfLevel, offUdfBootVolDesc, Buf.ab, sizeof(Buf), pErrInfo);
         if (RT_FAILURE(rc))
             return rc;
     }
-#if 0
-    return VERR_NOT_IMPLEMENTED;
+
+    /*
+     * Decide which to prefer.
+     *
+     * By default we pick UDF over any of the two ISO 9960, there is currently
+     * no way to override this without using the RTFSISO9660_F_NO_XXX options.
+     *
+     * If there isn't UDF, we may faced with choosing between joliet and rock
+     * ridge.  The joliet option is generally favorable as we don't have to
+     * guess wrt to the file name encoding.  So, we'll pick that for now.
+     *
+     * Note! Should we change this preference for joliet, there fun wrt making sure
+     *       there really is rock ridge stuff in the primary volume as well as
+     *       making sure there really is anything of value in the primary volume.
+     */
+    if (uUdfLevel > 0)
+    {
+        pThis->enmType = RTFSISOVOLTYPE_UDF;
+        //return rtFsIsoDirShrd_NewUdf(pThis, xxx);
+        return VERR_NOT_IMPLEMENTED;
+    }
 #else
+    if (uUdfLevel > 0 && !(fFlags & RTFSISO9660_F_NO_UDF) && /* Just disable this code for now: */ (fFlags & RT_BIT(24)))
+        rc = rtFsIsoVolHandleUdfDetection(pThis, &uUdfLevel, offUdfBootVolDesc, Buf.ab, sizeof(Buf), pErrInfo);
 
     /*
      * We may be faced with choosing between joliet and rock ridge (we won't
@@ -3543,13 +4270,15 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
      *       there really is rock ridge stuff in the primary volume as well as
      *       making sure there really is anything of value in the primary volume.
      */
+#endif
     if (bJolietUcs2Level != 0)
     {
+        pThis->enmType = RTFSISOVOLTYPE_JOLIET;
         pThis->fIsUtf16 = true;
         return rtFsIsoDirShrd_New9660(pThis, NULL, &JolietRootDir, 1, offJolietRootDirRec, &pThis->pRootDir);
     }
+    pThis->enmType = RTFSISOVOLTYPE_ISO9960;
     return rtFsIsoDirShrd_New9660(pThis, NULL, &RootDir, 1, offRootDirRec, &pThis->pRootDir);
-#endif
 }
 
 
@@ -3633,7 +4362,7 @@ static DECLCALLBACK(int) rtVfsChainIso9660Vol_Validate(PCRTVFSCHAINELEMENTREG pP
                 else
                 {
                     *poffError = pElement->paArgs[iArg].offSpec;
-                    return RTErrInfoSet(pErrInfo, VERR_VFS_CHAIN_INVALID_ARGUMENT, "Only knows: 'nojoliet' and 'norock'");
+                    return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_CHAIN_INVALID_ARGUMENT, "Only knows: 'nojoliet' and 'norock'");
                 }
             }
         }

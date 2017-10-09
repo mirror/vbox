@@ -128,6 +128,10 @@ RTDECL(int) RTFsFatVolFormat144(RTVFSFILE hVfsFile, bool fQuick);
 #define RTFSISO9660_F_NO_ROCK       RT_BIT_32(2)
 /** Valid ISO 9660 mount option mask.   */
 #define RTFSISO9660_F_VALID_MASK    UINT32_C(0x00000007)
+/** Checks if @a a_fNoType is the only acceptable volume type. */
+#define RTFSISO9660_F_IS_ONLY_TYPE(a_fFlags, a_fNoType) \
+    (   ((a_fFlags)   & (RTFSISO9660_F_NO_UDF | RTFSISO9660_F_NO_JOLIET | RTFSISO9660_F_NO_ROCK)) \
+     == (~(a_fNoType) & (RTFSISO9660_F_NO_UDF | RTFSISO9660_F_NO_JOLIET | RTFSISO9660_F_NO_ROCK)) )
 /** @}  */
 
 /**
