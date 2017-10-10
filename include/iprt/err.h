@@ -3052,6 +3052,26 @@ RT_C_DECLS_END
 #define VERR_ISOFS_DIR_ICB_TOO_BIG                      (-25334)
 /** The ICB for a directory is too small. */
 #define VERR_ISOFS_DIR_ICB_TOO_SMALL                    (-25335)
+/** No direct ICB entries found. */
+#define VERR_ISOFS_NO_DIRECT_ICB_ENTRIES                (-25336)
+/** Too many ICB indirections, possibly a loop. */
+#define VERR_ISOFS_TOO_MANY_ICB_INDIRECTIONS            (-25337)
+/** Too deep ICB recursion. */
+#define VERR_ISOFS_TOO_DEEP_ICB_RECURSION               (-25338)
+/** ICB is too small to contain anything useful.   */
+#define VERR_ISOFS_ICB_TOO_SMALL                        (-25339)
+/** Unsupported tag encountered in ICB. */
+#define VERR_ISOFS_UNSUPPORTED_ICB                      (-25340)
+/** Bad file entry (ICB). */
+#define VERR_ISOFS_BAD_FILE_ENTRY                       (-25341)
+/** Unknown allocation descriptor type.   */
+#define VERR_ISO_FS_UNKNOWN_AD_TYPE                     (-25342)
+/** Malformed extended allocation descriptor. */
+#define VERR_ISOFS_BAD_EXTAD                            (-25343)
+/** Wrong file type. */
+#define VERR_ISOFS_WRONG_FILE_TYPE                      (-25344)
+/** Unknow file type. */
+#define VERR_ISOFS_UNKNOWN_FILE_TYPE                    (-25345)
 
 /** Internal processing error \#1.  */
 #define VERR_ISOFS_IPE_1                                (-25391)

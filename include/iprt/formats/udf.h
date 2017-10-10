@@ -230,8 +230,19 @@ typedef UDFEXTAD const *PCUDFEXTAD;
  */
 typedef struct UDFTIMESTAMP
 {
-    /** 0x00: Type and timezone. */
-    uint16_t        uTypeAndZone;
+#ifdef RT_BIG_ENDIAN
+    /** 0x00: Type (UDFTIMESTAMP_T_XXX). */
+    uint16_t        fType : 4;
+    /** 0x00: Time zone offset in minutes.
+     * For EST this will be -300, whereas for CET it will be 60. */
+    int16_t         offUtcInMin : 12;
+#else
+    /** 0x00: Time zone offset in minutes.
+     * For EST this will be -300, whereas for CET it will be 60. */
+    int16_t         offUtcInMin : 12;
+    /** 0x00: Type (UDFTIMESTAMP_T_XXX). */
+    uint16_t        fType : 4;
+#endif
     /** 0x02: The year. */
     int16_t         iYear;
     /** 0x04: Month of year (1-12). */
@@ -256,6 +267,15 @@ AssertCompileSize(UDFTIMESTAMP, 12);
 typedef UDFTIMESTAMP *PUDFTIMESTAMP;
 /** Pointer to a const UDF timestamp. */
 typedef UDFTIMESTAMP const *PCUDFTIMESTAMP;
+
+/** @name UDFTIMESTAMP_T_XXX
+ * @{ */
+/** Local time. */
+#define UDFTIMESTAMP_T_LOCAL                1
+/** @} */
+
+/** No time zone specified. */
+#define UDFTIMESTAMP_NO_TIME_ZONE           (-2047)
 
 
 /**
@@ -1254,7 +1274,7 @@ typedef struct UDFFILEENTRY
     uint16_t        cHardlinks;
     /** 0x32: Record format (UDF_REC_FMT_XXX).   */
     uint8_t         uRecordFormat;
-    /** 0x33: Record format (UDF_REC_FMT_XXX).   */
+    /** 0x33: Record format (UDF_REC_ATTR_XXX).   */
     uint8_t         fRecordDisplayAttribs;
     /** 0x34: Record length (in bytes).
      * @note  Must be zero according to the UDF specification. */
