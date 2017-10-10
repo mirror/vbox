@@ -1011,7 +1011,7 @@ public:
      */
     int32_t toInt32() const
     {
-        return RTStrToInt32(m_psz);
+        return RTStrToInt32(c_str());
     }
 
     /**
@@ -1022,7 +1022,7 @@ public:
      */
     uint32_t toUInt32() const
     {
-        return RTStrToUInt32(m_psz);
+        return RTStrToUInt32(c_str());
     }
 
     /**
@@ -1033,7 +1033,7 @@ public:
      */
     int64_t toInt64() const
     {
-        return RTStrToInt64(m_psz);
+        return RTStrToInt64(c_str());
     }
 
     /**
@@ -1044,7 +1044,7 @@ public:
      */
     uint64_t toUInt64() const
     {
-        return RTStrToUInt64(m_psz);
+        return RTStrToUInt64(c_str());
     }
 
     /**
