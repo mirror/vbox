@@ -49,7 +49,96 @@
 #include <iprt/formats/udf.h>
 
 /** @todo move to err.h:   */
-#define VERR_ISOFS_IPE_0                                (-25390)
+
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** The maximum logical block size. */
+#define RTFSISO_MAX_LOGICAL_BLOCK_SIZE                  _16K
+/** Max directory size. */
+#if ARCH_BITS == 32
+# define RTFSISO_MAX_DIR_SIZE                           _32M
+#else
+# define RTFSISO_MAX_DIR_SIZE                           _64M
+#endif
+
+/** Check if an entity ID field equals the given ID string. */
+#define UDF_ENTITY_ID_EQUALS(a_pEntityId, a_szId)  \
+    ( memcmp(&(a_pEntityId)->achIdentifier[0], a_szId, RT_MIN(sizeof(a_szId), sizeof(a_pEntityId)->achIdentifier)) == 0 )
+/** Checks if a character set indicator indicates OSTA compressed unicode. */
+#define UDF_IS_CHAR_SET_OSTA(a_pCharSet) \
+    (   (a_pCharSet)->uType == UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE \
+     && memcmp((a_pCharSet)->abInfo, UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO, \
+               sizeof(UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO)) == 0 )
+
+
+/** @name UDF structure logging macros
+ * @{ */
+#define UDF_LOG2_MEMBER(a_pStruct, a_szFmt, a_Member) \
+    Log2(("ISO/UDF:   %-32s %" a_szFmt "\n", #a_Member ":", (a_pStruct)->a_Member))
+#define UDF_LOG2_MEMBER_EX(a_pStruct, a_szFmt, a_Member, a_cchIndent) \
+    Log2(("ISO/UDF:   %*s%-32s %" a_szFmt "\n", a_cchIndent, "", #a_Member ":", (a_pStruct)->a_Member))
+#define UDF_LOG2_MEMBER_ENTITY_ID_EX(a_pStruct, a_Member, a_cchIndent) \
+    Log2(("ISO/UDF:   %*s%-32s '%.23s' fFlags=%#06x Suffix=%.8Rhxs\n", a_cchIndent, "", #a_Member ":", \
+          (a_pStruct)->a_Member.achIdentifier, (a_pStruct)->a_Member.fFlags, &(a_pStruct)->a_Member.Suffix))
+#define UDF_LOG2_MEMBER_ENTITY_ID(a_pStruct, a_Member) UDF_LOG2_MEMBER_ENTITY_ID_EX(a_pStruct, a_Member, 0)
+#define UDF_LOG2_MEMBER_EXTENTAD(a_pStruct, a_Member) \
+    Log2(("ISO/UDF:   %-32s sector %#010RX32 LB %#010RX32\n", #a_Member ":", (a_pStruct)->a_Member.off, (a_pStruct)->a_Member.cb))
+#define UDF_LOG2_MEMBER_SHORTAD(a_pStruct, a_Member) \
+    Log2(("ISO/UDF:   %-32s sector %#010RX32 LB %#010RX32 %s\n", #a_Member ":", (a_pStruct)->a_Member.off, (a_pStruct)->a_Member.cb, \
+          (a_pStruct)->a_Member.uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED ? "alloced+recorded" \
+          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_ONLY_ALLOCATED ? "alloced" \
+          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_FREE ? "free" : "next" ))
+#define UDF_LOG2_MEMBER_LONGAD(a_pStruct, a_Member) \
+    Log2(("ISO/UDF:   %-32s partition %#RX16, block %#010RX32 LB %#010RX32 %s idUnique=%#010RX32 fFlags=%#RX16\n", #a_Member ":", \
+          (a_pStruct)->a_Member.Location.uPartitionNo, (a_pStruct)->a_Member.Location.off, (a_pStruct)->a_Member.cb, \
+          (a_pStruct)->a_Member.uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED ? "alloced+recorded" \
+          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_ONLY_ALLOCATED ? "alloced" \
+          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_FREE ? "free" : "next", \
+          (a_pStruct)->a_Member.ImplementationUse.Fid.idUnique, (a_pStruct)->a_Member.ImplementationUse.Fid.fFlags ))
+
+#define UDF_LOG2_MEMBER_TIMESTAMP(a_pStruct, a_Member) \
+    Log2(("ISO/UDF:   %-32s %04d-%02u-%02u %02u:%02u:%02u.%02u%02u%02u uTypeAndZone=%#x\n", #a_Member ":", \
+          (a_pStruct)->a_Member.iYear, (a_pStruct)->a_Member.uMonth, (a_pStruct)->a_Member.uDay, \
+          (a_pStruct)->a_Member.uHour, (a_pStruct)->a_Member.uMinute, (a_pStruct)->a_Member.uSecond, \
+          (a_pStruct)->a_Member.cCentiseconds, (a_pStruct)->a_Member.cHundredsOfMicroseconds, \
+          (a_pStruct)->a_Member.cMicroseconds, (a_pStruct)->a_Member.uTypeAndZone))
+#define UDF_LOG2_MEMBER_CHARSPEC(a_pStruct, a_Member) \
+    do { \
+        if (   (a_pStruct)->a_Member.uType == UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE \
+            && memcmp(&(a_pStruct)->a_Member.abInfo[0], UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO, \
+                      sizeof(UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO)) == 0) \
+            Log2(("ISO/UDF:   %-32s OSTA COMPRESSED UNICODE INFO\n", #a_Member ":")); \
+        else if (ASMMemIsZero(&(a_pStruct)->a_Member, sizeof((a_pStruct)->a_Member))) \
+            Log2(("ISO/UDF:   %-32s all zeros\n", #a_Member ":")); \
+        else \
+            Log2(("ISO/UDF:   %-32s %#x info: %.63Rhxs\n", #a_Member ":", \
+                  (a_pStruct)->a_Member.uType, (a_pStruct)->a_Member.abInfo)); \
+    } while (0)
+#define UDF_LOG2_MEMBER_DSTRING(a_pStruct, a_Member) \
+    do { \
+        if ((a_pStruct)->a_Member[0] == 8) \
+            Log2(("ISO/UDF:   %-32s  8: '%s' len=%u (actual=%u)\n", #a_Member ":", &(a_pStruct)->a_Member[1], \
+                  (a_pStruct)->a_Member[sizeof((a_pStruct)->a_Member) - 1], \
+                  RTStrNLen(&(a_pStruct)->a_Member[1], sizeof((a_pStruct)->a_Member) - 2) + 1 )); \
+        else if ((a_pStruct)->a_Member[0] == 16) \
+        { \
+            PCRTUTF16 pwszTmp = (PCRTUTF16)&(a_pStruct)->a_Member[1]; \
+            char *pszTmp = NULL; \
+            RTUtf16BigToUtf8Ex(pwszTmp, (sizeof((a_pStruct)->a_Member) - 2) / sizeof(RTUTF16), &pszTmp, 0, NULL); \
+            Log2(("ISO/UDF:   %-32s 16: '%s' len=%u (actual=%u)\n", #a_Member ":", pszTmp, \
+                  (a_pStruct)->a_Member[sizeof((a_pStruct)->a_Member) - 1], \
+                  RTUtf16NLen(pwszTmp, (sizeof((a_pStruct)->a_Member) - 2) / sizeof(RTUTF16)) * sizeof(RTUTF16) + 1 /*??*/ )); \
+        } \
+        else if (ASMMemIsZero(&(a_pStruct)->a_Member[0], sizeof((a_pStruct)->a_Member))) \
+            Log2(("ISO/UDF:   %-32s empty\n", #a_Member ":")); \
+        else \
+            Log2(("ISO/UDF:   %-32s bad: %.*Rhxs\n", #a_Member ":", sizeof((a_pStruct)->a_Member), &(a_pStruct)->a_Member[0] )); \
+    } while (0)
+/** @} */
+
 
 
 /*********************************************************************************************************************************
@@ -349,85 +438,6 @@ typedef struct RTFSISOVDSINFO
 /** Pointer to VDS sequence info. */
 typedef RTFSISOVDSINFO *PRTFSISOVDSINFO;
 
-
-
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-/** Check if an entity ID field equals the given ID string. */
-#define UDF_ENTITY_ID_EQUALS(a_pEntityId, a_szId)  \
-    ( memcmp(&(a_pEntityId)->achIdentifier[0], a_szId, RT_MIN(sizeof(a_szId), sizeof(a_pEntityId)->achIdentifier)) == 0 )
-/** Checks if a character set indicator indicates OSTA compressed unicode. */
-#define UDF_IS_CHAR_SET_OSTA(a_pCharSet) \
-    (   (a_pCharSet)->uType == UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE \
-     && memcmp((a_pCharSet)->abInfo, UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO, \
-               sizeof(UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO)) == 0 )
-
-
-/** @name UDF structure logging macros
- * @{ */
-#define UDF_LOG2_MEMBER(a_pStruct, a_szFmt, a_Member) \
-    Log2(("ISO/UDF:   %-32s %" a_szFmt "\n", #a_Member ":", (a_pStruct)->a_Member))
-#define UDF_LOG2_MEMBER_EX(a_pStruct, a_szFmt, a_Member, a_cchIndent) \
-    Log2(("ISO/UDF:   %*s%-32s %" a_szFmt "\n", a_cchIndent, "", #a_Member ":", (a_pStruct)->a_Member))
-#define UDF_LOG2_MEMBER_ENTITY_ID_EX(a_pStruct, a_Member, a_cchIndent) \
-    Log2(("ISO/UDF:   %*s%-32s '%.23s' fFlags=%#06x Suffix=%.8Rhxs\n", a_cchIndent, "", #a_Member ":", \
-          (a_pStruct)->a_Member.achIdentifier, (a_pStruct)->a_Member.fFlags, &(a_pStruct)->a_Member.Suffix))
-#define UDF_LOG2_MEMBER_ENTITY_ID(a_pStruct, a_Member) UDF_LOG2_MEMBER_ENTITY_ID_EX(a_pStruct, a_Member, 0)
-#define UDF_LOG2_MEMBER_EXTENTAD(a_pStruct, a_Member) \
-    Log2(("ISO/UDF:   %-32s sector %#010RX32 LB %#010RX32\n", #a_Member ":", (a_pStruct)->a_Member.off, (a_pStruct)->a_Member.cb))
-#define UDF_LOG2_MEMBER_SHORTAD(a_pStruct, a_Member) \
-    Log2(("ISO/UDF:   %-32s sector %#010RX32 LB %#010RX32 %s\n", #a_Member ":", (a_pStruct)->a_Member.off, (a_pStruct)->a_Member.cb, \
-          (a_pStruct)->a_Member.uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED ? "alloced+recorded" \
-          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_ONLY_ALLOCATED ? "alloced" \
-          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_FREE ? "free" : "next" ))
-#define UDF_LOG2_MEMBER_LONGAD(a_pStruct, a_Member) \
-    Log2(("ISO/UDF:   %-32s partition %#RX16, block %#010RX32 LB %#010RX32 %s idUnique=%#010RX32 fFlags=%#RX16\n", #a_Member ":", \
-          (a_pStruct)->a_Member.Location.uPartitionNo, (a_pStruct)->a_Member.Location.off, (a_pStruct)->a_Member.cb, \
-          (a_pStruct)->a_Member.uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED ? "alloced+recorded" \
-          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_ONLY_ALLOCATED ? "alloced" \
-          : (a_pStruct)->a_Member.uType == UDF_AD_TYPE_FREE ? "free" : "next", \
-          (a_pStruct)->a_Member.ImplementationUse.Fid.idUnique, (a_pStruct)->a_Member.ImplementationUse.Fid.fFlags ))
-
-#define UDF_LOG2_MEMBER_TIMESTAMP(a_pStruct, a_Member) \
-    Log2(("ISO/UDF:   %-32s %04d-%02u-%02u %02u:%02u:%02u.%02u%02u%02u uTypeAndZone=%#x\n", #a_Member ":", \
-          (a_pStruct)->a_Member.iYear, (a_pStruct)->a_Member.uMonth, (a_pStruct)->a_Member.uDay, \
-          (a_pStruct)->a_Member.uHour, (a_pStruct)->a_Member.uMinute, (a_pStruct)->a_Member.uSecond, \
-          (a_pStruct)->a_Member.cCentiseconds, (a_pStruct)->a_Member.cHundredsOfMicroseconds, \
-          (a_pStruct)->a_Member.cMicroseconds, (a_pStruct)->a_Member.uTypeAndZone))
-#define UDF_LOG2_MEMBER_CHARSPEC(a_pStruct, a_Member) \
-    do { \
-        if (   (a_pStruct)->a_Member.uType == UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE \
-            && memcmp(&(a_pStruct)->a_Member.abInfo[0], UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO, \
-                      sizeof(UDF_CHAR_SET_OSTA_COMPRESSED_UNICODE_INFO)) == 0) \
-            Log2(("ISO/UDF:   %-32s OSTA COMPRESSED UNICODE INFO\n", #a_Member ":")); \
-        else if (ASMMemIsZero(&(a_pStruct)->a_Member, sizeof((a_pStruct)->a_Member))) \
-            Log2(("ISO/UDF:   %-32s all zeros\n", #a_Member ":")); \
-        else \
-            Log2(("ISO/UDF:   %-32s %#x info: %.63Rhxs\n", #a_Member ":", \
-                  (a_pStruct)->a_Member.uType, (a_pStruct)->a_Member.abInfo)); \
-    } while (0)
-#define UDF_LOG2_MEMBER_DSTRING(a_pStruct, a_Member) \
-    do { \
-        if ((a_pStruct)->a_Member[0] == 8) \
-            Log2(("ISO/UDF:   %-32s  8: '%s' len=%u (actual=%u)\n", #a_Member ":", &(a_pStruct)->a_Member[1], \
-                  (a_pStruct)->a_Member[sizeof((a_pStruct)->a_Member) - 1], \
-                  RTStrNLen(&(a_pStruct)->a_Member[1], sizeof((a_pStruct)->a_Member) - 2) + 1 )); \
-        else if ((a_pStruct)->a_Member[0] == 16) \
-        { \
-            PCRTUTF16 pwszTmp = (PCRTUTF16)&(a_pStruct)->a_Member[1]; \
-            char *pszTmp = NULL; \
-            RTUtf16BigToUtf8Ex(pwszTmp, (sizeof((a_pStruct)->a_Member) - 2) / sizeof(RTUTF16), &pszTmp, 0, NULL); \
-            Log2(("ISO/UDF:   %-32s 16: '%s' len=%u (actual=%u)\n", #a_Member ":", pszTmp, \
-                  (a_pStruct)->a_Member[sizeof((a_pStruct)->a_Member) - 1], \
-                  RTUtf16NLen(pwszTmp, (sizeof((a_pStruct)->a_Member) - 2) / sizeof(RTUTF16)) * sizeof(RTUTF16) + 1 /*??*/ )); \
-        } \
-        else if (ASMMemIsZero(&(a_pStruct)->a_Member[0], sizeof((a_pStruct)->a_Member))) \
-            Log2(("ISO/UDF:   %-32s empty\n", #a_Member ":")); \
-        else \
-            Log2(("ISO/UDF:   %-32s bad: %.*Rhxs\n", #a_Member ":", sizeof((a_pStruct)->a_Member), &(a_pStruct)->a_Member[0] )); \
-    } while (0)
-/** @} */
 
 
 /*********************************************************************************************************************************
@@ -768,6 +778,87 @@ static int rtFsIsoCore_InitFrom9660DirRec(PRTFSISOCORE pCore, PCISO9660DIRREC pD
             }
         }
     }
+    return VINF_SUCCESS;
+}
+
+
+static int rtFsIsoCore_InitFromUdfIcbAndFileIdDesc(PRTFSISOCORE pCore, PCUDFLONGAD pAllocDesc,
+                                                   PCUDFFILEIDDESC pFileIdDesc, PRTFSISOVOL pThis)
+{
+#if 1
+    RT_NOREF(pCore, pAllocDesc, pFileIdDesc, pThis);
+#else
+    /*
+     * Allocate a temporary buffer.
+     */
+    if (pAllocDesc->cb > _64K)
+        return VERR_ISOFS_DIR_ICB_TOO_BIG;
+    if (pAllocDesc->cb < sizeof(UDFTAG) + sizeof(UDFICBTAG))
+        return VERR_ISOFS_DIR_ICB_TOO_SMALL;
+
+    size_t const    cbBuf = pThis->Udf.VolInfo.cbBlock * 2;
+    uint8_t * const pbBuf = RTMemTmpAlloc(pThis->Udf.VolInfo.cbBlock * 2);
+    if (!pbBuf)
+        return VERR_NO_TMP_MEMORY;
+
+    /*
+     *
+     */
+    uint32_t offIcb = 0;
+    int      rc;
+    do
+    {
+        size_t cbToRead = RT_MIN(cbBuf, pAllocDesc->cb);
+        rc = rtFsIsoVolUdfVpRead(pThis, pAllocDesc->Location.uPartitionNo, pAllocDesc->Location.off, offIcb, pbBuf, cbToRead);
+        if (RT_FAILURE(rc))
+            break;
+
+
+    } while (0);
+
+
+    /*
+     * Read the ICB into a temporary buffer.
+     */
+
+    uint32_t cbBuf = RT_ALIGN_32(pAllocDesc->cb, pThis->cbSector);
+    void *pvBuf = RTMemTmpAllocZ(cbBuf);
+    if (!pvBuf)
+        return VERR_NO_TMP_MEMORY;
+
+    int rc = rtFsIsoVolUdfVpRead(pThis, pAllocDesc->Location.uPartitionNo,  pAllocDesc->Location.off, 0, pvBuf, cbBuf);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Parse the buffer.
+         */
+        size_t   cbLeft = pAllocDesc->cb;
+        uint8_t *pbCur  = (uint8_t *)
+        do
+        {
+            PCUDFFILEENTRY pFe = (PCUDFFILEENTRY)pbCur;
+
+        }
+
+        while (cbLeft > 0)
+        {
+            PCUDFFILEENTRY pFe = (PCUDFFILEENTRY)pbCur;
+
+        }
+
+
+        union
+        {
+            void               *pv;
+            PCUDFFILEENTRY      pFe;
+            PCUDFEXFILEENTRY    pExFe;
+        } uBuf;
+
+
+    }
+    RTMemTmpFree(uBuf.pv);
+#endif
+
     return VINF_SUCCESS;
 }
 
@@ -2137,7 +2228,7 @@ static void rtFsIsoDirShrd_Log9660Content(PRTFSISODIRSHRD pThis)
             uint32_t offSysUse = RT_OFFSETOF(ISO9660DIRREC, achFileId[pDirRec->bFileIdLength]) + !(pDirRec->bFileIdLength & 1);
             if (offSysUse < pDirRec->cbDirRec)
             {
-                Log2(("ISO9660:       system use (%#x bytes):\n%.*Rhxd\n", pDirRec->cbDirRec - offSysUse,
+                Log2(("ISO9660:       system use (%#x bytes):\n%.*RhxD\n", pDirRec->cbDirRec - offSysUse,
                       pDirRec->cbDirRec - offSysUse, (uint8_t *)pDirRec + offSysUse));
             }
 
@@ -2205,25 +2296,19 @@ static int rtFsIsoDirShrd_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir,
 }
 
 
-#if 0
 /**
- * Instantiates a new shared directory structure, given 9660 records.
+ * Instantiates a new shared directory structure, given UDF descriptors.
  *
  * @returns IPRT status code.
  * @param   pThis           The FAT volume instance.
  * @param   pParentDir      The parent directory.  This is NULL for the root
  *                          directory.
- * @param   pDirRec         The directory record.  Will access @a cDirRecs
- *                          records.
- * @param   cDirRecs        Number of directory records if more than one.
- * @param   offDirRec       The byte offset of the directory record.
+ * @param   pAllocDesc      The allocation descriptor for the directory ICB.
+ * @param   pFileIdDesc     The file ID descriptor.  This is NULL for the root.
  * @param   ppShared        Where to return the shared directory structure.
  */
-static int rtFsIsoDirShrd_NewUdf(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir,
-                                 PCUDFEXTVOLDESCNSR
-
-                                 PCISO9660DIRREC pDirRec, uint32_t cDirRecs, uint64_t offDirRec,
-                                 PRTFSISODIRSHRD *ppShared)
+static int rtFsIsoDirShrd_NewUdf(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, PCUDFLONGAD pAllocDesc,
+                                 PCUDFFILEIDDESC pFileIdDesc, PRTFSISODIRSHRD *ppShared)
 {
     /*
      * Allocate a new structure and initialize it.
@@ -2232,38 +2317,42 @@ static int rtFsIsoDirShrd_NewUdf(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir,
     PRTFSISODIRSHRD pShared = (PRTFSISODIRSHRD)RTMemAllocZ(sizeof(*pShared));
     if (pShared)
     {
-        rc = rtFsIsoCore_InitFrom9660DirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, 0 /*uVersion*/, pThis);
+        rc = rtFsIsoCore_InitFromUdfIcbAndFileIdDesc(&pShared->Core, pAllocDesc, pFileIdDesc, pThis);
         if (RT_SUCCESS(rc))
         {
             RTListInit(&pShared->OpenChildren);
-            pShared->cbDir = ISO9660_GET_ENDIAN(&pDirRec->cbData);
-            pShared->pbDir = (uint8_t *)RTMemAllocZ(pShared->cbDir + 256);
-            if (pShared->pbDir)
+
+            if (pShared->Core.cbObject < RTFSISO_MAX_DIR_SIZE)
             {
-                rc = RTVfsFileReadAt(pThis->hVfsBacking, pShared->Core.FirstExtent.offDisk, pShared->pbDir, pShared->cbDir, NULL);
-                if (RT_SUCCESS(rc))
+                pShared->cbDir = (uint32_t)pShared->Core.cbObject;
+                pShared->pbDir = (uint8_t *)RTMemAllocZ(RT_ALIGN_32(pShared->cbDir, 512));
+                if (pShared->pbDir)
                 {
+                    rc = RTVfsFileReadAt(pThis->hVfsBacking, pShared->Core.FirstExtent.offDisk, pShared->pbDir, pShared->cbDir, NULL);
+                    if (RT_SUCCESS(rc))
+                    {
 #ifdef LOG_ENABLED
-                    rtFsIsoDirShrd_Log9660Content(pShared);
+                        //rtFsIsoDirShrd_Log9660Content(pShared);
 #endif
 
-                    /*
-                     * Link into parent directory so we can use it to update
-                     * our directory entry.
-                     */
-                    if (pParentDir)
-                        rtFsIsoDirShrd_AddOpenChild(pParentDir, &pShared->Core);
-                    *ppShared = pShared;
-                    return VINF_SUCCESS;
+                        /*
+                         * Link into parent directory so we can use it to update
+                         * our directory entry.
+                         */
+                        if (pParentDir)
+                            rtFsIsoDirShrd_AddOpenChild(pParentDir, &pShared->Core);
+                        *ppShared = pShared;
+                        return VINF_SUCCESS;
+                    }
                 }
             }
         }
         RTMemFree(pShared);
     }
+
     *ppShared = NULL;
     return rc;
 }
-#endif
 
 
 /**
@@ -2720,7 +2809,7 @@ static int rtFsIsoVolProcessUdfVdsSeqInfo(PRTFSISOVOL pThis, PRTFSISOVDSINFO pIn
             if (cPartMaps >= pLvd->cPartitionMaps)
             {
                 LogRel(("ISO/UDF: Warning: LVD::cPartitionMaps is %u but there are more bytes in the table. (off=%#x cb=%#x cbMapTable=%#x bType=%#x)\n",
-                        off, pHdr->cb, pLvd->cbMapTable, pHdr->bType));
+                        cPartMaps - pLvd->cPartitionMaps, off, pHdr->cb, pLvd->cbMapTable, pHdr->bType));
                 break;
             }
 
@@ -2824,7 +2913,7 @@ static int rtFsIsoVolProcessUdfVdsSeqInfo(PRTFSISOVOL pThis, PRTFSISOVDSINFO pIn
      * Check out the logical volume descriptor.
      */
     if (   pLvd->cbLogicalBlock < pThis->cbSector
-        || pLvd->cbLogicalBlock > _16K
+        || pLvd->cbLogicalBlock > RTFSISO_MAX_LOGICAL_BLOCK_SIZE
         || (pLvd->cbLogicalBlock % pThis->cbSector) != 0)
         return RTERRINFO_LOG_SET_F(pErrInfo, VERR_ISOFS_UNSUPPORTED_LOGICAL_BLOCK_SIZE,
                                    "Logical block size of %#x is not supported with a sector size of %#x",
@@ -3003,7 +3092,7 @@ static int rtFsIsoVolProcessUdfLogicalVolumeDesc(PRTFSISOVDSINFO pInfo, PCUDFLOG
         UDF_LOG2_MEMBER(pDesc, "#010RX32", cPartitionMaps);
         UDF_LOG2_MEMBER_ENTITY_ID(pDesc, idImplementation);
         if (!ASMMemIsZero(&pDesc->ImplementationUse.ab[0], sizeof(pDesc->ImplementationUse.ab)))
-            Log2(("ISO/UDF:   %-32s\n%.128Rhxd\n", "ImplementationUse.ab[128]:", &pDesc->ImplementationUse.ab[0]));
+            Log2(("ISO/UDF:   %-32s\n%.128RhxD\n", "ImplementationUse.ab[128]:", &pDesc->ImplementationUse.ab[0]));
         UDF_LOG2_MEMBER_EXTENTAD(pDesc, IntegritySeqExtent);
         if (pDesc->cbMapTable)
         {
@@ -3138,19 +3227,19 @@ static int rtFsIsoVolProcessUdfPartitionDesc(PRTFSISOVDSINFO pInfo, PCUDFPARTITI
             UDF_LOG2_MEMBER_SHORTAD(&pDesc->ContentsUse, Hdr.FreedSpaceTable);
             UDF_LOG2_MEMBER_SHORTAD(&pDesc->ContentsUse, Hdr.FreedSpaceBitmap);
             if (!ASMMemIsZero(&pDesc->ContentsUse.Hdr.abReserved[0], sizeof(pDesc->ContentsUse.Hdr.abReserved)))
-                Log2(("ISO/UDF:   %-32s\n%.88Rhxd\n", "Hdr.abReserved[88]:", &pDesc->ContentsUse.Hdr.abReserved[0]));
+                Log2(("ISO/UDF:   %-32s\n%.88RhxD\n", "Hdr.abReserved[88]:", &pDesc->ContentsUse.Hdr.abReserved[0]));
         }
         else if (!ASMMemIsZero(&pDesc->ContentsUse.ab[0], sizeof(pDesc->ContentsUse.ab)))
-            Log2(("ISO/UDF:   %-32s\n%.128Rhxd\n", "ContentsUse.ab[128]:", &pDesc->ContentsUse.ab[0]));
+            Log2(("ISO/UDF:   %-32s\n%.128RhxD\n", "ContentsUse.ab[128]:", &pDesc->ContentsUse.ab[0]));
         UDF_LOG2_MEMBER(pDesc, "#010RX32", uAccessType);
         UDF_LOG2_MEMBER(pDesc, "#010RX32", offLocation);
         UDF_LOG2_MEMBER(pDesc, "#010RX32", cSectors);
         UDF_LOG2_MEMBER_ENTITY_ID(pDesc, idImplementation);
         if (!ASMMemIsZero(&pDesc->ImplementationUse.ab[0], sizeof(pDesc->ImplementationUse.ab)))
-            Log2(("ISO/UDF:   %-32s\n%.128Rhxd\n", "ImplementationUse.ab[128]:", &pDesc->ImplementationUse.ab[0]));
+            Log2(("ISO/UDF:   %-32s\n%.128RhxD\n", "ImplementationUse.ab[128]:", &pDesc->ImplementationUse.ab[0]));
 
         if (!ASMMemIsZero(&pDesc->abReserved[0], sizeof(pDesc->abReserved)))
-            Log2(("ISO/UDF:   %-32s\n%.156Rhxd\n", "ImplementationUse.ab[156]:", &pDesc->abReserved[0]));
+            Log2(("ISO/UDF:   %-32s\n%.156RhxD\n", "ImplementationUse.ab[156]:", &pDesc->abReserved[0]));
     }
 #endif
 
@@ -3233,10 +3322,10 @@ static int rtFsIsoVolProcessUdfImplUseVolDesc(PRTFSISOVDSINFO pInfo, PCUDFIMPLEM
             UDF_LOG2_MEMBER_DSTRING(&pDesc->ImplementationUse, Lvi.achInfo3);
             UDF_LOG2_MEMBER_ENTITY_ID(&pDesc->ImplementationUse, Lvi.idImplementation);
             if (!ASMMemIsZero(&pDesc->ImplementationUse.Lvi.abUse[0], sizeof(pDesc->ImplementationUse.Lvi.abUse)))
-                Log2(("ISO/UDF:   %-32s\n%.128Rhxd\n", "Lvi.abUse[128]:", &pDesc->ImplementationUse.Lvi.abUse[0]));
+                Log2(("ISO/UDF:   %-32s\n%.128RhxD\n", "Lvi.abUse[128]:", &pDesc->ImplementationUse.Lvi.abUse[0]));
         }
         else if (!ASMMemIsZero(&pDesc->ImplementationUse.ab[0], sizeof(pDesc->ImplementationUse.ab)))
-            Log2(("ISO/UDF:   %-32s\n%.460Rhxd\n", "ImplementationUse.ab[460]:", &pDesc->ImplementationUse.ab[0]));
+            Log2(("ISO/UDF:   %-32s\n%.460RhxD\n", "ImplementationUse.ab[460]:", &pDesc->ImplementationUse.ab[0]));
     }
 #endif
 
@@ -3807,7 +3896,7 @@ static void rtFsIsoVolLogPrimarySupplementaryVolDesc(PCISO9660SUPVOLDESC pVolDes
                            + !(pVolDesc->RootDir.DirRec.bFileIdLength & 1);
         if (offSysUse < pVolDesc->RootDir.DirRec.cbDirRec)
         {
-            Log2(("ISO9660:  RootDir System Use:\n%.*Rhxd\n",
+            Log2(("ISO9660:  RootDir System Use:\n%.*RhxD\n",
                   pVolDesc->RootDir.DirRec.cbDirRec - offSysUse, &pVolDesc->RootDir.ab[offSysUse]));
         }
     }
@@ -4062,9 +4151,9 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
      */
     union
     {
-        uint8_t                 ab[_4K];
-        uint16_t                au16[_4K / 2];
-        uint32_t                au32[_4K / 4];
+        uint8_t                 ab[RTFSISO_MAX_LOGICAL_BLOCK_SIZE];
+        uint16_t                au16[RTFSISO_MAX_LOGICAL_BLOCK_SIZE / 2];
+        uint32_t                au32[RTFSISO_MAX_LOGICAL_BLOCK_SIZE / 4];
         ISO9660VOLDESCHDR       VolDescHdr;
         ISO9660BOOTRECORD       BootRecord;
         ISO9660PRIMARYVOLDESC   PrimaryVolDesc;
@@ -4253,12 +4342,18 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
     if (uUdfLevel > 0)
     {
         pThis->enmType = RTFSISOVOLTYPE_UDF;
-        //return rtFsIsoDirShrd_NewUdf(pThis, xxx);
-        return VERR_NOT_IMPLEMENTED;
+        rc = rtFsIsoDirShrd_NewUdf(pThis, NULL /*pParent*/, &pThis->Udf.VolInfo.RootDirIcb,
+                                   NULL /*pFileIdDesc*/, &pThis->pRootDir);
+        /** @todo fall back on failure? */
+        return rc;
     }
 #else
     if (uUdfLevel > 0 && !(fFlags & RTFSISO9660_F_NO_UDF) && /* Just disable this code for now: */ (fFlags & RT_BIT(24)))
+    {
         rc = rtFsIsoVolHandleUdfDetection(pThis, &uUdfLevel, offUdfBootVolDesc, Buf.ab, sizeof(Buf), pErrInfo);
+        rc = rtFsIsoDirShrd_NewUdf(pThis, NULL /*pParent*/, &pThis->Udf.VolInfo.RootDirIcb,
+                                   NULL /*pFileIdDesc*/, &pThis->pRootDir);
+    }
 
     /*
      * We may be faced with choosing between joliet and rock ridge (we won't

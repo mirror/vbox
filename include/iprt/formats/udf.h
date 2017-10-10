@@ -1008,6 +1008,8 @@ AssertCompileMemberOffset(UDFFILEIDDESC, Icb,                 0x14);
 AssertCompileMemberOffset(UDFFILEIDDESC, abImplementationUse, 0x26);
 /** Pointer to an UDF file set descriptor   */
 typedef UDFFILEIDDESC *PUDFFILEIDDESC;
+/** Pointer to a const UDF file set descriptor   */
+typedef UDFFILEIDDESC const *PCUDFFILEIDDESC;
 
 /** Get the pointer to the name field. */
 #define UDFFILEIDDESC_2_NAME(a_pFid)        ((char *)(&(a_pFid)->abImplementationUse[(a_pFid)->cbImplementationUse]))

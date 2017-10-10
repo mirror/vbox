@@ -3041,13 +3041,17 @@ RT_C_DECLS_END
 /** Non-standard descriptor character set in the logical volume descriptor. */
 #define VERR_ISOFS_BAD_LVD_DESC_CHAR_SET                (-25329)
 /** Invalid partition index in a location. */
-#define VERR_ISOFS_INVALID_PARTITION_INDEX              (-25329)
+#define VERR_ISOFS_INVALID_PARTITION_INDEX              (-25330)
 /** Unsupported file system charset. */
-#define VERR_ISOFS_FSD_UNSUPPORTED_CHAR_SET             (-25330)
+#define VERR_ISOFS_FSD_UNSUPPORTED_CHAR_SET             (-25331)
 /** File set descriptor has an zero length or invalid root dir extent. */
-#define VERR_ISOFS_FSD_ZERO_ROOT_DIR                    (-25331)
+#define VERR_ISOFS_FSD_ZERO_ROOT_DIR                    (-25332)
 /** File set descriptor has a next extent member. */
-#define VERR_ISOFS_FSD_NEXT_EXTENT                      (-25332)
+#define VERR_ISOFS_FSD_NEXT_EXTENT                      (-25333)
+/** The ICB for a directory is too big. */
+#define VERR_ISOFS_DIR_ICB_TOO_BIG                      (-25334)
+/** The ICB for a directory is too small. */
+#define VERR_ISOFS_DIR_ICB_TOO_SMALL                    (-25335)
 
 /** Internal processing error \#1.  */
 #define VERR_ISOFS_IPE_1                                (-25391)
