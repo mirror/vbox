@@ -2293,8 +2293,8 @@ void UIExtraDataManager::incrementApplicationUpdateCheckCounter()
 
 bool UIExtraDataManager::legacyProgressHandlingRequested()
 {
-    /* 'False' unless feature allowed: */
-    return isFeatureAllowed(GUI_Progress_LegacyMode);
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_Progress_LegacyMode);
 }
 
 bool UIExtraDataManager::guiFeatureEnabled(GUIFeatureType enmFeature)
