@@ -496,7 +496,7 @@ static LONG CALLBACK rtR3WinUnhandledXcptFilter(PEXCEPTION_POINTERS pPtrs)
         }
 
         RTLogLogger(pLogger, NULL, "\nStack %p, dumping %#x bytes (low=%p, high=%p)\n", uStack, cbToDump, uLow, uHigh);
-        RTLogLogger(pLogger, NULL, "%.*Rhxd\n", cbToDump, uStack);
+        RTLogLogger(pLogger, NULL, "%.*RhxD\n", cbToDump, uStack);
 
         /*
          * Try figure the thread name.
