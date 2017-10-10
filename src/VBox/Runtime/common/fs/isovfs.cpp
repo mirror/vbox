@@ -159,10 +159,15 @@ typedef struct RTFSISODIRSHRD *PRTFSISODIRSHRD;
  */
 typedef struct RTFSISOEXTENT
 {
-    /** The disk offset. */
-    uint64_t            offDisk;
+    /** The disk or partition byte offset.
+     * This is set to UINT64_MAX for parts of sparse files that aren't  recorded.*/
+    uint64_t            off;
     /** The size of the extent in bytes. */
     uint64_t            cbExtent;
+    /** UDF virtual partition number, UINT32_MAX for ISO 9660. */
+    uint32_t            idxPart;
+    /** Reserved.   */
+    uint32_t            uReserved;
 } RTFSISOEXTENT;
 /** Pointer to an ISO 9660 extent. */
 typedef RTFSISOEXTENT *PRTFSISOEXTENT;
@@ -453,6 +458,10 @@ static int  rtFsIsoDir_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, PC
                                uint32_t cDirRecs, uint64_t offDirRec, PRTVFSDIR phVfsDir);
 static PRTFSISOCORE rtFsIsoDir_LookupShared(PRTFSISODIRSHRD pThis, uint64_t offDirRec);
 
+static int rtFsIsoVolValidateUdfDescCrc(PCUDFTAG pTag, size_t cbDesc, PRTERRINFO pErrInfo);
+static int rtFsIsoVolValidateUdfDescTag(PCUDFTAG pTag, uint16_t idTag, uint32_t offTag, PRTERRINFO pErrInfo);
+static int rtFsIsoVolValidateUdfDescTagAndCrc(PCUDFTAG pTag, size_t cbDesc, uint16_t idTag, uint32_t offTag, PRTERRINFO pErrInfo);
+
 
 /**
  * UDF virtual partition read function.
@@ -726,7 +735,9 @@ static int rtFsIsoCore_InitFrom9660DirRec(PRTFSISOCORE pCore, PCISO9660DIRREC pD
     pCore->uVersion             = uVersion;
     pCore->cExtents             = 1;
     pCore->FirstExtent.cbExtent = pCore->cbObject;
-    pCore->FirstExtent.offDisk  = (ISO9660_GET_ENDIAN(&pDirRec->offExtent) + pDirRec->cExtAttrBlocks) * (uint64_t)pVol->cbBlock;
+    pCore->FirstExtent.off      = (ISO9660_GET_ENDIAN(&pDirRec->offExtent) + pDirRec->cExtAttrBlocks) * (uint64_t)pVol->cbBlock;
+    pCore->FirstExtent.idxPart  = UINT32_MAX;
+    pCore->FirstExtent.uReserved = 0;
 
     rtFsIso9660DateTime2TimeSpec(&pCore->ModificationTime, &pDirRec->RecTime);
     pCore->BirthTime  = pCore->ModificationTime;
@@ -747,11 +758,11 @@ static int rtFsIsoCore_InitFrom9660DirRec(PRTFSISOCORE pCore, PCISO9660DIRREC pD
             pDirRec = (PCISO9660DIRREC)((uintptr_t)pDirRec + pDirRec->cbDirRec);
             if (pDirRec->cbDirRec != 0)
             {
-                uint64_t offDisk = ISO9660_GET_ENDIAN(&pDirRec->offExtent) * (uint64_t)pVol->cbBlock;
-                uint32_t cbExtent  = ISO9660_GET_ENDIAN(&pDirRec->cbData);
+                uint64_t offDisk  = ISO9660_GET_ENDIAN(&pDirRec->offExtent) * (uint64_t)pVol->cbBlock;
+                uint32_t cbExtent = ISO9660_GET_ENDIAN(&pDirRec->cbData);
                 pCore->cbObject += cbExtent;
 
-                if (pCurExtent->offDisk + pCurExtent->cbExtent == offDisk)
+                if (pCurExtent->off + pCurExtent->cbExtent == offDisk)
                     pCurExtent->cbExtent += cbExtent;
                 else
                 {
@@ -764,8 +775,10 @@ static int rtFsIsoCore_InitFrom9660DirRec(PRTFSISOCORE pCore, PCISO9660DIRREC pD
                         return VERR_NO_MEMORY;
                     }
                     pCurExtent = &pCore->paExtents[pCore->cExtents - 1];
-                    pCurExtent->cbExtent = cbExtent;
-                    pCurExtent->offDisk  = offDisk;
+                    pCurExtent->cbExtent  = cbExtent;
+                    pCurExtent->off       = offDisk;
+                    pCurExtent->idxPart   = UINT32_MAX;
+                    pCurExtent->uReserved = 0;
                     pCore->cExtents++;
                 }
                 cDirRecs--;
@@ -781,85 +794,393 @@ static int rtFsIsoCore_InitFrom9660DirRec(PRTFSISOCORE pCore, PCISO9660DIRREC pD
     return VINF_SUCCESS;
 }
 
+/** No direct ICB entries found. */
+#define VERR_ISOFS_NO_DIRECT_ICB_ENTRIES                (-25336)
+/** Too many ICB indirections, possibly a loop. */
+#define VERR_ISOFS_TOO_MANY_ICB_INDIRECTIONS            (-25337)
+/** Too deep ICB recursion. */
+#define VERR_ISOFS_TOO_DEEP_ICB_RECURSION               (-25338)
+/** ICB is too small to contain anything useful.   */
+#define VERR_ISOFS_ICB_TOO_SMALL                        (-25339)
+/** Unsupported tag encountered in ICB. */
+#define VERR_ISOFS_UNSUPPORTED_ICB                      (-25340)
+/** Bad file entry (ICB). */
+#define VERR_ISOFS_BAD_FILE_ENTRY                       (-25341)
+/** Unknown allocation descriptor type.   */
+#define VERR_ISO_FS_UNKNOWN_AD_TYPE                     (-25342)
+/** Malformed extended allocation descriptor. */
+#define VERR_ISOFS_BAD_EXTAD                            (-25343)
+
+
+/**
+ * Initalizes the allocation extends of a core structure.
+ *
+ * @returns IPRT status code
+ * @param   pCore           .
+ * @param   pbAllocDescs    .
+ * @param   cbAllocDescs    .
+ * @param   fIcbTagFlags    .
+ * @param   idxDefaultPart  .
+ * @param   offAllocDescs   .
+ * @param   pThis           .
+ */
+static int rtFsIsoCore_InitExtentsUdfIcbEntry(PRTFSISOCORE pCore, uint8_t const *pbAllocDescs, uint32_t cbAllocDescs,
+                                              uint32_t fIcbTagFlags, uint32_t idxDefaultPart, uint64_t offAllocDescs,
+                                              PRTFSISOVOL pThis)
+{
+    /*
+     * Just in case there are mutiple file entries in the ICB.
+     */
+    if (pCore->paExtents != NULL)
+    {
+        LogRelMax(45, ("ISO/UDF: Re-reading extents - multiple file entries?\n"));
+        RTMemFree(pCore->paExtents);
+        pCore->paExtents = NULL;
+    }
+
+    /*
+     * Figure the (minimal) size of an allocation descriptor, deal with the
+     * embedded storage and invalid descriptor types.
+     */
+    uint32_t cbOneDesc;
+    switch (fIcbTagFlags & UDF_ICB_FLAGS_AD_TYPE_MASK)
+    {
+        case UDF_ICB_FLAGS_AD_TYPE_EMBEDDED:
+            pCore->cExtents             = 1;
+            pCore->FirstExtent.cbExtent = cbAllocDescs;
+            pCore->FirstExtent.off      = offAllocDescs;
+            pCore->FirstExtent.idxPart  = idxDefaultPart;
+            return VINF_SUCCESS;
+
+        case UDF_ICB_FLAGS_AD_TYPE_SHORT:       cbOneDesc = sizeof(UDFSHORTAD); break;
+        case UDF_ICB_FLAGS_AD_TYPE_LONG:        cbOneDesc = sizeof(UDFLONGAD); break;
+        case UDF_ICB_FLAGS_AD_TYPE_EXTENDED:    cbOneDesc = sizeof(UDFEXTAD); break;
+
+        default:
+            LogRelMax(45, ("ISO/UDF: Unknown allocation descriptor type %#x\n", fIcbTagFlags));
+            return VERR_ISO_FS_UNKNOWN_AD_TYPE;
+    }
+    if (cbAllocDescs >= cbOneDesc)
+    {
+        /*
+         * Loop thru the allocation descriptors.
+         */
+        PRTFSISOEXTENT pCurExtent = NULL;
+        union
+        {
+            uint8_t const  *pb;
+            PCUDFSHORTAD    pShort;
+            PCUDFLONGAD     pLong;
+            PCUDFEXTAD      pExt;
+        } uPtr;
+        uPtr.pb = pbAllocDescs;
+        do
+        {
+            /* Extract the information we need from the descriptor. */
+            uint32_t idxBlock;
+            uint32_t idxPart;
+            uint32_t cb;
+            uint8_t  uType;
+            switch (fIcbTagFlags & UDF_ICB_FLAGS_AD_TYPE_MASK)
+            {
+                case UDF_ICB_FLAGS_AD_TYPE_SHORT:
+                    uType    = uPtr.pShort->uType;
+                    cb       = uPtr.pShort->cb;
+                    idxBlock = uPtr.pShort->off;
+                    idxPart  = idxDefaultPart;
+                    cbAllocDescs -= sizeof(*uPtr.pShort);
+                    uPtr.pShort++;
+                    break;
+                case UDF_ICB_FLAGS_AD_TYPE_LONG:
+                    uType    = uPtr.pLong->uType;
+                    cb       = uPtr.pLong->cb;
+                    idxBlock = uPtr.pLong->Location.off;
+                    idxPart  = uPtr.pLong->Location.uPartitionNo;
+                    cbAllocDescs -= sizeof(*uPtr.pLong);
+                    uPtr.pLong++;
+                    break;
+                case UDF_ICB_FLAGS_AD_TYPE_EXTENDED:
+                    if (   uPtr.pExt->cbInformation > cbAllocDescs
+                        || uPtr.pExt->cbInformation < sizeof(*uPtr.pExt))
+                        return VERR_ISOFS_BAD_EXTAD;
+                    uType    = uPtr.pExt->uType;
+                    cb       = uPtr.pExt->cb;
+                    idxBlock = uPtr.pExt->Location.off;
+                    idxPart  = uPtr.pExt->Location.uPartitionNo;
+                    cbAllocDescs -= uPtr.pExt->cbInformation;
+                    uPtr.pb += uPtr.pExt->cbInformation;
+                    break;
+                default:
+                    AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
+            }
+
+            /* Check if we can extend the current extent.  This is useful since
+               the descriptors can typically only cover 1GB. */
+            uint64_t const off = (uint64_t)idxBlock << pThis->Udf.VolInfo.cShiftBlock;
+            if (   pCurExtent != NULL
+                && (   pCurExtent->off != UINT64_MAX
+                    ?     uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED
+                       && pCurExtent->off + pCurExtent->cbExtent == off
+                       && pCurExtent->idxPart == idxPart
+                    :     uType != UDF_AD_TYPE_RECORDED_AND_ALLOCATED) )
+                pCurExtent->cbExtent += cb;
+            else
+            {
+                /* Allocate a new descriptor. */
+                if (pCore->cExtents == 0)
+                {
+                    pCore->cExtents = 1;
+                    pCurExtent = &pCore->FirstExtent;
+                }
+                else
+                {
+                    void *pvNew = RTMemRealloc(pCore->paExtents, pCore->cExtents * sizeof(pCore->paExtents[0]));
+                    if (pvNew)
+                        pCore->paExtents = (PRTFSISOEXTENT)pvNew;
+                    else
+                    {
+                        RTMemFree(pCore->paExtents);
+                        pCore->paExtents = NULL;
+                        pCore->cExtents  = 0;
+                        return VERR_NO_MEMORY;
+                    }
+                    pCurExtent = &pCore->paExtents[pCore->cExtents - 1];
+                    pCore->cExtents++;
+                }
+
+                /* Initialize it. */
+                if (uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED)
+                {
+                    pCurExtent->off     = off;
+                    pCurExtent->idxPart = idxPart;
+                }
+                else
+                {
+                    pCurExtent->off     = UINT64_MAX;
+                    pCurExtent->idxPart = UINT32_MAX;
+                }
+                pCurExtent->cbExtent    = cb;
+                pCurExtent->uReserved   = 0;
+            }
+        } while (cbAllocDescs >= cbOneDesc);
+
+        if (cbAllocDescs > 0)
+            LogRelMax(45,("ISO/UDF: Warning! %u bytes left in allocation descriptor: %.*Rhxs\n", cbAllocDescs, cbAllocDescs, uPtr.pb));
+    }
+    else
+    {
+        /*
+         * Zero descriptors
+         */
+        pCore->cExtents = 0;
+        pCore->FirstExtent.off      = UINT64_MAX;
+        pCore->FirstExtent.cbExtent = 0;
+        pCore->FirstExtent.idxPart  = UINT32_MAX;
+
+        if (cbAllocDescs > 0)
+            LogRelMax(45, ("ISO/UDF: Warning! Allocation descriptor area is shorted than one descriptor: %#u vs %#u: %.*Rhxs\n",
+                           cbAllocDescs, cbOneDesc, cbAllocDescs, pbAllocDescs));
+    }
+    return VINF_SUCCESS;
+}
+
+
+static int rtFsIsoCore_InitFromUdfIcbFileEntry(PRTFSISOCORE pCore, PCUDFFILEENTRY pFileEntry, uint32_t idxDefaultPart,
+                                               uint32_t *pcProcessed, PRTFSISOVOL pThis)
+{
+    /*
+     * Basic sanity checking of what we use.
+     */
+    if (     RT_OFFSETOF(UDFFILEENTRY, abExtAttribs) + pFileEntry->cbExtAttribs + pFileEntry->cbAllocDescs
+           > pThis->Udf.VolInfo.cbBlock
+        || (pFileEntry->cbExtAttribs & 3) != 0
+        || pFileEntry->cbExtAttribs >= pThis->Udf.VolInfo.cbBlock
+        || (pFileEntry->cbAllocDescs & 3) != 0
+        || pFileEntry->cbAllocDescs >= pThis->Udf.VolInfo.cbBlock)
+    {
+        LogRelMax(45, ("ISO/UDF: File entry (ICB) is bad size values: cbAllocDesc=%#x cbExtAttribs=%#x (cbBlock=%#x)\n",
+                       pFileEntry->cbAllocDescs, pFileEntry->cbExtAttribs, pThis->Udf.VolInfo.cbBlock));
+        return VERR_ISOFS_BAD_FILE_ENTRY;
+    }
+
+    /*
+     * Process the file size and extract allocation information.
+     */
+    pCore->cbObject = pFileEntry->cbData;
+    int rc = rtFsIsoCore_InitExtentsUdfIcbEntry(pCore,
+                                                &pFileEntry->abExtAttribs[pFileEntry->cbExtAttribs],
+                                                pFileEntry->cbAllocDescs,
+                                                pFileEntry->IcbTag.fFlags,
+                                                idxDefaultPart,
+                                                  ((uint64_t)pFileEntry->Tag.offTag << pThis->Udf.VolInfo.cShiftBlock)
+                                                + RT_OFFSETOF(UDFFILEENTRY, abExtAttribs) + pFileEntry->cbExtAttribs,
+                                                pThis);
+    if (RT_FAILURE(rc))
+    {
+        return rc;
+    }
+
+
+
+    /*
+     * We're good.
+     */
+    *pcProcessed += 1;
+    return VINF_SUCCESS;
+}
+
+static int rtFsIsoCore_InitFromUdfIcbRecursive(PRTFSISOCORE pCore, UDFLONGAD AllocDesc, uint8_t *pbBuf, uint32_t cNestings,
+                                               uint32_t *pcProcessed, uint32_t *pcIndirections, PRTFSISOVOL pThis)
+{
+    if (cNestings >= 8)
+        return VERR_ISOFS_TOO_DEEP_ICB_RECURSION;
+
+    for (;;)
+    {
+        if (*pcIndirections >= 32)
+            return VERR_ISOFS_TOO_MANY_ICB_INDIRECTIONS;
+
+        /*
+         * Check the basic validity of the allocation descriptor.
+         */
+        if (   AllocDesc.uType == UDF_AD_TYPE_RECORDED_AND_ALLOCATED
+            && AllocDesc.cb >= sizeof(UDFICBTAG) )
+        { /* likely */ }
+        else if (AllocDesc.uType != UDF_AD_TYPE_RECORDED_AND_ALLOCATED)
+        {
+            Log(("ISO/UDF: ICB has alloc type %d!\n", AllocDesc.uType));
+            return VINF_SUCCESS;
+        }
+        else
+        {
+            LogRelMax(45, ("ISO/UDF: ICB is too small: %u bytes\n", AllocDesc.cb));
+            return AllocDesc.cb == 0 ? VINF_SUCCESS : VERR_ISOFS_ICB_TOO_SMALL;
+        }
+
+        /*
+         * Process it block by block.
+         */
+        uint32_t cBlocks = (AllocDesc.cb + pThis->Udf.VolInfo.cbBlock - 1) >> pThis->Udf.VolInfo.cShiftBlock;
+        for (uint32_t idxBlock = 0; ; idxBlock++)
+        {
+            /*
+             * Read a block
+             */
+            size_t cbToRead = RT_MIN(pThis->Udf.VolInfo.cbBlock, AllocDesc.cb);
+            int rc = rtFsIsoVolUdfVpRead(pThis, AllocDesc.Location.uPartitionNo, AllocDesc.Location.off + idxBlock, 0,
+                                         pbBuf, cbToRead);
+            if (RT_FAILURE(rc))
+                return rc;
+            if (cbToRead < pThis->Udf.VolInfo.cbBlock)
+                RT_BZERO(&pbBuf[cbToRead], pThis->Udf.VolInfo.cbBlock - cbToRead);
+
+            /*
+             * Verify the TAG.
+             */
+            PUDFICBHDR pHdr = (PUDFICBHDR)pbBuf;
+            rc = rtFsIsoVolValidateUdfDescTagAndCrc(&pHdr->Tag, pThis->Udf.VolInfo.cbBlock, UINT16_MAX,
+                                                    AllocDesc.Location.off + idxBlock, NULL);
+            if (RT_FAILURE(rc))
+                return rc;
+
+            /*
+             * Do specific processing.
+             */
+            if (pHdr->Tag.idTag == UDF_TAG_ID_FILE_ENTRY)
+            {
+                Log2(("ISO/UDF: ICB: File entry\n"));
+                rc = rtFsIsoCore_InitFromUdfIcbFileEntry(pCore, (PCUDFFILEENTRY)pHdr, AllocDesc.Location.uPartitionNo,
+                                                         pcProcessed, pThis);
+            }
+            else if (pHdr->Tag.idTag == UDF_TAG_ID_EXTENDED_FILE_ENTRY)
+            {
+                Log2(("ISO/UDF: ICB: Extended file entry\n"));
+                //UDFEXFILEENTRY
+                //*pcProcessed += 1;
+            }
+            else if (pHdr->Tag.idTag == UDF_TAG_ID_INDIRECT_ENTRY)
+            {
+                PUDFINDIRECTENTRY pIndir = (PUDFINDIRECTENTRY)pHdr;
+                *pcIndirections += 1;
+                if (pIndir->IndirectIcb.cb != 0)
+                {
+                    if (idxBlock + 1 == cBlocks)
+                    {
+                        AllocDesc = pIndir->IndirectIcb;
+                        Log2(("ISO/UDF: ICB: Indirect entry - looping: %x:%#010RX32 LB %#x; uType=%d\n",
+                              AllocDesc.Location.uPartitionNo, AllocDesc.Location.off, AllocDesc.cb, AllocDesc.uType));
+                        break;
+                    }
+                    Log2(("ISO/UDF: ICB: Indirect entry - recursing: %x:%#010RX32 LB %#x; uType=%d\n",
+                          pIndir->IndirectIcb.Location.uPartitionNo, pIndir->IndirectIcb.Location.off,
+                          pIndir->IndirectIcb.cb, pIndir->IndirectIcb.uType));
+                    rc = rtFsIsoCore_InitFromUdfIcbRecursive(pCore, pIndir->IndirectIcb, pbBuf, cNestings,
+                                                             pcProcessed, pcIndirections, pThis);
+                }
+                else
+                    Log(("ISO/UDF: zero length indirect entry\n"));
+            }
+            else if (pHdr->Tag.idTag == UDF_TAG_ID_TERMINAL_ENTRY)
+            {
+                Log2(("ISO/UDF: Terminal ICB entry\n"));
+                return VINF_SUCCESS;
+            }
+            else if (pHdr->Tag.idTag == UDF_TAG_ID_UNALLOCATED_SPACE_ENTRY)
+            {
+                Log2(("ISO/UDF: Unallocated space entry: skipping\n"));
+                /* Ignore since we don't do writing (UDFUNALLOCATEDSPACEENTRY) */
+            }
+            else
+            {
+                LogRelMax(90, ("ISO/UDF: Unknown ICB type %#x\n", pHdr->Tag.idTag));
+                return VERR_ISOFS_UNSUPPORTED_ICB;
+            }
+            if (RT_FAILURE(rc))
+                return rc;
+
+            /*
+             * Advance.
+             */
+            if (idxBlock + 1 >= cBlocks)
+                return VINF_SUCCESS;
+        }
+
+        /* If we get here, we've jumped thru an indirect entry. */
+    }
+
+    /* never reached */
+}
+
+
 
 static int rtFsIsoCore_InitFromUdfIcbAndFileIdDesc(PRTFSISOCORE pCore, PCUDFLONGAD pAllocDesc,
                                                    PCUDFFILEIDDESC pFileIdDesc, PRTFSISOVOL pThis)
 {
-#if 1
-    RT_NOREF(pCore, pAllocDesc, pFileIdDesc, pThis);
-#else
-    /*
-     * Allocate a temporary buffer.
-     */
+RT_NOREF(pFileIdDesc);
     if (pAllocDesc->cb > _64K)
         return VERR_ISOFS_DIR_ICB_TOO_BIG;
     if (pAllocDesc->cb < sizeof(UDFTAG) + sizeof(UDFICBTAG))
         return VERR_ISOFS_DIR_ICB_TOO_SMALL;
 
-    size_t const    cbBuf = pThis->Udf.VolInfo.cbBlock * 2;
-    uint8_t * const pbBuf = RTMemTmpAlloc(pThis->Udf.VolInfo.cbBlock * 2);
-    if (!pbBuf)
-        return VERR_NO_TMP_MEMORY;
-
     /*
-     *
+     * Allocate a temporary buffer, one logical block in size.
      */
-    uint32_t offIcb = 0;
-    int      rc;
-    do
+    uint8_t * const pbBuf = (uint8_t *)RTMemTmpAlloc(pThis->Udf.VolInfo.cbBlock);
+    if (pbBuf)
     {
-        size_t cbToRead = RT_MIN(cbBuf, pAllocDesc->cb);
-        rc = rtFsIsoVolUdfVpRead(pThis, pAllocDesc->Location.uPartitionNo, pAllocDesc->Location.off, offIcb, pbBuf, cbToRead);
-        if (RT_FAILURE(rc))
-            break;
-
-
-    } while (0);
-
-
-    /*
-     * Read the ICB into a temporary buffer.
-     */
-
-    uint32_t cbBuf = RT_ALIGN_32(pAllocDesc->cb, pThis->cbSector);
-    void *pvBuf = RTMemTmpAllocZ(cbBuf);
-    if (!pvBuf)
-        return VERR_NO_TMP_MEMORY;
-
-    int rc = rtFsIsoVolUdfVpRead(pThis, pAllocDesc->Location.uPartitionNo,  pAllocDesc->Location.off, 0, pvBuf, cbBuf);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Parse the buffer.
-         */
-        size_t   cbLeft = pAllocDesc->cb;
-        uint8_t *pbCur  = (uint8_t *)
-        do
+        uint32_t cProcessed = 0;
+        uint32_t cIndirections = 0;
+        int rc = rtFsIsoCore_InitFromUdfIcbRecursive(pCore, *pAllocDesc, pbBuf, 0, &cProcessed, &cIndirections, pThis);
+        RTMemTmpFree(pbBuf);
+        if (RT_SUCCESS(rc))
         {
-            PCUDFFILEENTRY pFe = (PCUDFFILEENTRY)pbCur;
-
+            if (cProcessed > 0)
+                return VINF_SUCCESS;
+            rc = VERR_ISOFS_NO_DIRECT_ICB_ENTRIES;
         }
-
-        while (cbLeft > 0)
-        {
-            PCUDFFILEENTRY pFe = (PCUDFFILEENTRY)pbCur;
-
-        }
-
-
-        union
-        {
-            void               *pv;
-            PCUDFFILEENTRY      pFe;
-            PCUDFEXFILEENTRY    pExFe;
-        } uBuf;
-
-
+        return rc;
     }
-    RTMemTmpFree(uBuf.pv);
-#endif
-
-    return VINF_SUCCESS;
+    return VERR_NO_TMP_MEMORY;
 }
 
 
@@ -999,7 +1320,7 @@ static DECLCALLBACK(int) rtFsIsoFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
             size_t cbToRead = cbLeft;
             if (cbToRead > cbFileLeft)
                 cbToRead = (size_t)cbFileLeft;
-            rc = RTVfsFileReadAt(pShared->Core.pVol->hVfsBacking, pShared->Core.FirstExtent.offDisk + off, pbDst, cbToRead, NULL);
+            rc = RTVfsFileReadAt(pShared->Core.pVol->hVfsBacking, pShared->Core.FirstExtent.off + off, pbDst, cbToRead, NULL);
             if (RT_SUCCESS(rc))
             {
                 off         += cbToRead;
@@ -1260,7 +1581,7 @@ static int rtFsIsoFile_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, PC
         if (pShared)
         {
             LogFlow(("rtFsIsoFile_New9660: cbObject=%#RX64 First Extent: off=%#RX64 cb=%#RX64\n",
-                     pShared->Core.cbObject, pShared->Core.FirstExtent.offDisk, pShared->Core.FirstExtent.cbExtent));
+                     pShared->Core.cbObject, pShared->Core.FirstExtent.off, pShared->Core.FirstExtent.cbExtent));
             pNewFile->offFile = 0;
             pNewFile->pShared = pShared;
             return VINF_SUCCESS;
@@ -1532,7 +1853,7 @@ static int rtFsIsoDir_FindEntry(PRTFSISODIRSHRD pThis, const char *pszEntry,  ui
                 }
             }
 
-            *poffDirRec = pThis->Core.FirstExtent.offDisk + offEntryInDir;
+            *poffDirRec = pThis->Core.FirstExtent.off + offEntryInDir;
             *ppDirRec   = pDirRec;
             *pfMode     = pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY
                         ? 0755 | RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY
@@ -2043,7 +2364,7 @@ static DECLCALLBACK(int) rtFsIsoDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntr
             RTFSISOCORE TmpObj;
             RT_ZERO(TmpObj);
             rtFsIsoCore_InitFrom9660DirRec(&TmpObj, pDirRec, 1 /* cDirRecs - see below why 1 */,
-                                           pThis->offDir + pShared->Core.FirstExtent.offDisk, uVersion, pShared->Core.pVol);
+                                           pThis->offDir + pShared->Core.FirstExtent.off, uVersion, pShared->Core.pVol);
             int rc = rtFsIsoCore_QueryInfo(&TmpObj, &pDirEntry->Info, enmAddAttr);
 
             /*
@@ -2271,7 +2592,7 @@ static int rtFsIsoDirShrd_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir,
             pShared->pbDir = (uint8_t *)RTMemAllocZ(pShared->cbDir + 256);
             if (pShared->pbDir)
             {
-                rc = RTVfsFileReadAt(pThis->hVfsBacking, pShared->Core.FirstExtent.offDisk, pShared->pbDir, pShared->cbDir, NULL);
+                rc = RTVfsFileReadAt(pThis->hVfsBacking, pShared->Core.FirstExtent.off, pShared->pbDir, pShared->cbDir, NULL);
                 if (RT_SUCCESS(rc))
                 {
 #ifdef LOG_ENABLED
@@ -2288,6 +2609,8 @@ static int rtFsIsoDirShrd_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir,
                     return VINF_SUCCESS;
                 }
             }
+            else
+                rc = VERR_NO_MEMORY;
         }
         RTMemFree(pShared);
     }
@@ -2325,10 +2648,10 @@ static int rtFsIsoDirShrd_NewUdf(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, 
             if (pShared->Core.cbObject < RTFSISO_MAX_DIR_SIZE)
             {
                 pShared->cbDir = (uint32_t)pShared->Core.cbObject;
-                pShared->pbDir = (uint8_t *)RTMemAllocZ(RT_ALIGN_32(pShared->cbDir, 512));
+                pShared->pbDir = (uint8_t *)RTMemAllocZ(RT_MIN(RT_ALIGN_32(pShared->cbDir, 512), 512));
                 if (pShared->pbDir)
                 {
-                    rc = RTVfsFileReadAt(pThis->hVfsBacking, pShared->Core.FirstExtent.offDisk, pShared->pbDir, pShared->cbDir, NULL);
+                    rc = RTVfsFileReadAt(pThis->hVfsBacking, pShared->Core.FirstExtent.off, pShared->pbDir, pShared->cbDir, NULL);
                     if (RT_SUCCESS(rc))
                     {
 #ifdef LOG_ENABLED
@@ -2345,6 +2668,8 @@ static int rtFsIsoDirShrd_NewUdf(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, 
                         return VINF_SUCCESS;
                     }
                 }
+                else
+                    rc = VERR_NO_MEMORY;
             }
         }
         RTMemFree(pShared);

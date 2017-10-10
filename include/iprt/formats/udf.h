@@ -1120,8 +1120,8 @@ typedef UDFICBTAG const *PCUDFICBTAG;
 #define UDF_ICB_FLAGS_AD_TYPE_LONG              UINT16_C(0x0001)
 /** Using UDFEXTAD. */
 #define UDF_ICB_FLAGS_AD_TYPE_EXTENDED          UINT16_C(0x0002)
-/** Single descriptor. */
-#define UDF_ICB_FLAGS_AD_TYPE_SINGLE            UINT16_C(0x0003)
+/** File content is embedded in the allocation descriptor area. */
+#define UDF_ICB_FLAGS_AD_TYPE_EMBEDDED          UINT16_C(0x0003)
 /** Allocation type mask. */
 #define UDF_ICB_FLAGS_AD_TYPE_MASK              UINT16_C(0x0007)
 /** Set on directories that are sorted (according to @ecma167{4,8.6.1,78}).
@@ -1178,6 +1178,23 @@ typedef UDFICBTAG const *PCUDFICBTAG;
 #define UDF_FILE_TYPE_METADATA_MIRROR_FILE      UINT8_C(0xfb)
 #define UDF_FILE_TYPE_METADATA_BITMAP_FILE      UINT8_C(0xfc)
 /** @} */
+
+
+/**
+ * UDF ICB header (derived structure).
+ */
+typedef struct UDFICBHDR
+{
+    /** 0x00: The descriptor tag (UDF_TAG_ID_INDIRECT_ENTRY). */
+    UDFTAG          Tag;
+    /** 0x10: ICB Tag. */
+    UDFICBTAG       IcbTag;
+} UDFICBHDR;
+AssertCompileSize(UDFICBHDR, 36);
+/** Pointer to an UDF ICB header. */
+typedef UDFICBHDR *PUDFICBHDR;
+/** Pointer to a const UDF ICB header. */
+typedef UDFICBHDR const *PCUDFICBHDR;
 
 
 /**
