@@ -528,13 +528,20 @@ void BIOSCALL ata_detect(void)
             bios_dsk->devices[device].lchs           = lgeo;
             if (device < 2)
             {
-                uint8_t         sum, i;
-                fdpt_t __far    *fdpt;
+                uint8_t             sum, i;
+                fdpt_t __far        *fdpt;
+                void __far * __far  *int_vec;
 
-                if (device == 0)
+                if (device == 0) {
                     fdpt = ebda_seg :> &EbdaData->fdpt0;
-                else
+                    int_vec = MK_FP(0, 0x41 * sizeof(void __far *));
+                }
+                else {
                     fdpt = ebda_seg :> &EbdaData->fdpt1;
+                    int_vec = MK_FP(0, 0x46 * sizeof(void __far *));
+                }
+                /* Set the INT 41h or 46h pointer. */
+                *int_vec = fdpt;
 
                 /* Update the DPT for drive 0/1 pointed to by Int41/46. This used
                  * to be done at POST time with lots of ugly assembler code, which

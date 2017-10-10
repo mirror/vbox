@@ -581,11 +581,7 @@ hard_drive_post proc    near
                 ;; set up hard disk interrupt vectors
                 SET_INT_VECTOR 13h, BIOSSEG, int13_handler
                 SET_INT_VECTOR 76h, BIOSSEG, int76_handler
-                ;; INT 41h/46h: hard disk 0/1 dpt
-                ; TODO: This should be done from the code which
-                ; builds the DPTs?
-                SET_INT_VECTOR 41h, EBDA_SEG, 3Dh
-                SET_INT_VECTOR 46h, EBDA_SEG, 4Dh
+		;; The ATA init code sets up INT 41h/46h FDPT pointers
                 ret
 
 hard_drive_post endp
