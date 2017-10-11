@@ -84,9 +84,9 @@ s/\bvboxVBVASetupBufferContext\b/vbva_setup_buffer_context/g
 s/\bVBVO_PORT_READ_U8\b/inb/g
 s/\bVBVO_PORT_READ_U16\b/inw/g
 s/\bVBVO_PORT_READ_U32\b/inl/g
-s/\bVBVO_PORT_WRITE_U8\b/outb/g
-s/\bVBVO_PORT_WRITE_U16\b/outw/g
-s/\bVBVO_PORT_WRITE_U32\b/outl/g
+s/\bVBVO_PORT_WRITE_U8\b *( *\(\b[^(),]*\b\) *, *\(\b[^(),]*\b\) *)/outb(\2, \1)/g
+s/\bVBVO_PORT_WRITE_U16\b *( *\(\b[^(),]*\b\) *, *\(\b[^(),]*\b\) *)/outw(\2, \1)/g
+s/\bVBVO_PORT_WRITE_U32\b *( *\(\b[^(),]*\b\) *, *\(\b[^(),]*\b\) *)/outl(\2, \1)/g
 
 # Macros:
 s/\b_1K\b/1024/g
