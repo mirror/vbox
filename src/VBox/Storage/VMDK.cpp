@@ -5644,10 +5644,10 @@ static DECLCALLBACK(int) vmdkRename(void *pBackendData, const char *pszFilename)
     memset(&RenameState, 0, sizeof(RenameState));
 
     /* Check arguments. */
-    AssertReturn((   !pImage
-                  || (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK)
-                  || !VALID_PTR(pszFilename)
-                  || !*pszFilename), VERR_INVALID_PARAMETER);
+    AssertReturn((   pImage
+                  && VALID_PTR(pszFilename)
+                  && *pszFilename),
+                  && !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK)), VERR_INVALID_PARAMETER);
 
     int rc = vmdkRenameStatePrepare(pImage, &RenameState, pszFilename);
     if (RT_SUCCESS(rc))
