@@ -280,6 +280,7 @@ ifdef VBOX_GSOAP_INSTALLED
   ifn1of ($(KBUILD_TARGET), win)
    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS = \
 	-Wno-format \
+	 $(VBOX_GCC_Wno-int-in-bool-context) \
 	$(if $(VBOX_GCC_Wlogical-op),-Wno-error=logical-op,)
    # currently necessary when compiling against OpenSSL 1.0 due to a missing
    # typecase from 'const v3_ext_method*' to 'aka v3_ext_method*'.
