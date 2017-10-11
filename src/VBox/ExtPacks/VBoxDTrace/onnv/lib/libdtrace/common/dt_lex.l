@@ -759,7 +759,7 @@ yybegin(yystate_t state)
 		assert(yypcb->pcb_hold == NULL);
 		yypcb->pcb_hold = yypcb->pcb_list;
 		yypcb->pcb_list = NULL;
-		/*FALLTHRU*/
+		RT_FALL_THRU();
 	case YYS_EXPR:
 		BEGIN(S0);
 		break;

@@ -641,19 +641,19 @@ dt_optval_parse(const char *arg, dtrace_optval_t *rval)
 	case 't':
 	case 'T':
 		mul *= 1024;
-		/*FALLTHRU*/
+		RT_FALL_THRU();
 	case 'g':
 	case 'G':
 		mul *= 1024;
-		/*FALLTHRU*/
+		RT_FALL_THRU();
 	case 'm':
 	case 'M':
 		mul *= 1024;
-		/*FALLTHRU*/
+		RT_FALL_THRU();
 	case 'k':
 	case 'K':
 		mul *= 1024;
-		/*FALLTHRU*/
+		RT_FALL_THRU();
 	default:
 		break;
 	}

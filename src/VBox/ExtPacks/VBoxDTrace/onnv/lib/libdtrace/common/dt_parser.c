@@ -577,7 +577,7 @@ dt_node_free(dt_node_t *dnp)
 			dt_node_free(dnp->dn_expr);
 			dnp->dn_expr = NULL;
 		}
-		/*FALLTHRU*/
+		RT_FALL_THRU();
 	case DT_NODE_OP2:
 		if (dnp->dn_left != NULL) {
 			dt_node_free(dnp->dn_left);
@@ -1657,7 +1657,7 @@ dt_node_decl(void)
 			case CTF_K_UNION:
 				if (ctf_type_size(dtt.dtt_ctfp, type) != 0)
 					break; /* proceed to declaring */
-				/*FALLTHRU*/
+				RT_FALL_THRU();
 			case CTF_K_FORWARD:
 				xyerror(D_DECL_INCOMPLETE,
 				    "incomplete struct/union/enum %s: %s\n",
@@ -1817,7 +1817,7 @@ dt_node_op1(int op, dt_node_t *cp)
 				cp->dn_value &= ~0ULL >>
 				    (64 - dt_node_type_size(cp) * NBBY);
 			}
-			/*FALLTHRU*/
+			RT_FALL_THRU();
 		case DT_TOK_IPOS:
 			return (cp);
 		case DT_TOK_BNEG:
@@ -3611,7 +3611,7 @@ asgn_common:
 			return (rp);
 		}
 
-		/*FALLTHRU*/
+		RT_FALL_THRU();
 
 	case DT_TOK_DOT:
 		lp = dnp->dn_left = dt_node_cook(lp, DT_IDFLG_REF);

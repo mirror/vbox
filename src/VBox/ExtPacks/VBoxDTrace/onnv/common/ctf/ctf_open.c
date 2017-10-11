@@ -289,7 +289,7 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 				pop[CTF_K_STRUCT]++;
 			else
 				pop[tp->ctt_type]++;
-			/*FALLTHRU*/
+			RT_FALL_THRU();
 		case CTF_K_UNKNOWN:
 			vbytes = 0;
 			break;
@@ -493,7 +493,7 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 			    CTF_TYPE_TO_INDEX(tp->ctt_type) <= (intptr_t/*vbox*/)fp->ctf_typemax)
 				fp->ctf_ptrtab[
 				    CTF_TYPE_TO_INDEX(tp->ctt_type)] = id;
-			/*FALLTHRU*/
+			RT_FALL_THRU();
 
 		case CTF_K_VOLATILE:
 		case CTF_K_CONST:
@@ -502,7 +502,7 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 			    CTF_INDEX_TO_TYPE(id, child), tp->ctt_name);
 			if (err != 0 && err != ECTF_STRTAB)
 				return (err);
-			/*FALLTHRU*/
+			RT_FALL_THRU();
 
 		default:
 			vbytes = 0;

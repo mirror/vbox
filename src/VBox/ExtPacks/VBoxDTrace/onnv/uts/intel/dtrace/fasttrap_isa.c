@@ -284,22 +284,22 @@ fasttrap_tracepoint_init(proc_t *p, fasttrap_tracepoint_t *tp, uintptr_t pc,
 		switch (instr[start]) {
 		case FASTTRAP_PREFIX_SS:
 			seg++;
-			/*FALLTHRU*/
+			RT_FALL_THRU();
 		case FASTTRAP_PREFIX_GS:
 			seg++;
-			/*FALLTHRU*/
+			RT_FALL_THRU();
 		case FASTTRAP_PREFIX_FS:
 			seg++;
-			/*FALLTHRU*/
+			RT_FALL_THRU();
 		case FASTTRAP_PREFIX_ES:
 			seg++;
-			/*FALLTHRU*/
+			RT_FALL_THRU();
 		case FASTTRAP_PREFIX_DS:
 			seg++;
-			/*FALLTHRU*/
+			RT_FALL_THRU();
 		case FASTTRAP_PREFIX_CS:
 			seg++;
-			/*FALLTHRU*/
+			RT_FALL_THRU();
 		case FASTTRAP_PREFIX_OPERAND:
 		case FASTTRAP_PREFIX_ADDRESS:
 		case FASTTRAP_PREFIX_LOCK:

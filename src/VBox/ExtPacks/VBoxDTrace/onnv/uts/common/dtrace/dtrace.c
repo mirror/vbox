@@ -2418,7 +2418,7 @@ dtrace_speculation_commit(dtrace_state_t *state, processorid_t cpu,
 				new = DTRACESPEC_COMMITTING;
 				break;
 			}
-			/*FALLTHROUGH*/
+			RT_FALL_THRU();
 
 		case DTRACESPEC_ACTIVEMANY:
 			new = DTRACESPEC_COMMITTINGMANY;
@@ -4931,7 +4931,7 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 				*illval = regs[r1];
 				break;
 			}
-			/*FALLTHROUGH*/
+			RT_FALL_THRU();
 		case DIF_OP_LDSB:
 			regs[rd] = (int8_t)dtrace_load8(regs[r1]);
 			break;
@@ -4941,7 +4941,7 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 				*illval = regs[r1];
 				break;
 			}
-			/*FALLTHROUGH*/
+			RT_FALL_THRU();
 		case DIF_OP_LDSH:
 			regs[rd] = (int16_t)dtrace_load16(regs[r1]);
 			break;
@@ -4951,7 +4951,7 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 				*illval = regs[r1];
 				break;
 			}
-			/*FALLTHROUGH*/
+			RT_FALL_THRU();
 		case DIF_OP_LDSW:
 			regs[rd] = (int32_t)dtrace_load32(regs[r1]);
 			break;
@@ -4961,7 +4961,7 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 				*illval = regs[r1];
 				break;
 			}
-			/*FALLTHROUGH*/
+			RT_FALL_THRU();
 		case DIF_OP_LDUB:
 			regs[rd] = dtrace_load8(regs[r1]);
 			break;
@@ -4971,7 +4971,7 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 				*illval = regs[r1];
 				break;
 			}
-			/*FALLTHROUGH*/
+			RT_FALL_THRU();
 		case DIF_OP_LDUH:
 			regs[rd] = dtrace_load16(regs[r1]);
 			break;
@@ -4981,7 +4981,7 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 				*illval = regs[r1];
 				break;
 			}
-			/*FALLTHROUGH*/
+			RT_FALL_THRU();
 		case DIF_OP_LDUW:
 			regs[rd] = dtrace_load32(regs[r1]);
 			break;
@@ -4991,7 +4991,7 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 				*illval = regs[r1];
 				break;
 			}
-			/*FALLTHROUGH*/
+			RT_FALL_THRU();
 		case DIF_OP_LDX:
 			regs[rd] = dtrace_load64(regs[r1]);
 			break;
@@ -7016,12 +7016,12 @@ top:
 	case '\\':
 		if ((c = *p++) == '\0')
 			return (0);
-		/*FALLTHRU*/
+		RT_FALL_THRU();
 
 	default:
 		if (c != s1)
 			return (0);
-		/*FALLTHRU*/
+		RT_FALL_THRU();
 
 	case '?':
 		if (s1 != '\0')
@@ -9972,7 +9972,7 @@ dtrace_ecb_action_add(dtrace_ecb_t *ecb, dtrace_actdesc_t *desc)
 				    (char *)(uintptr_t)arg);
 			}
 
-			/*FALLTHROUGH*/
+			RT_FALL_THRU();
 		case DTRACEACT_LIBACT:
 		case DTRACEACT_DIFEXPR:
 			if (dp == NULL)
@@ -10009,7 +10009,7 @@ dtrace_ecb_action_add(dtrace_ecb_t *ecb, dtrace_actdesc_t *desc)
 
 			arg = DTRACE_USTACK_ARG(nframes, strsize);
 
-			/*FALLTHROUGH*/
+			RT_FALL_THRU();
 		case DTRACEACT_USTACK:
 			if (desc->dtad_kind != DTRACEACT_JSTACK &&
 			    (nframes = DTRACE_USTACK_NFRAMES(arg)) == 0) {
@@ -15234,7 +15234,7 @@ dtrace_ioctl_helper(int cmd, intptr_t arg, int *rv)
 
 		dhp = &help;
 		arg = (intptr_t)help.dofhp_dof;
-		/*FALLTHROUGH*/
+		RT_FALL_THRU();
 
 	case DTRACEHIOC_ADD: {
 		dof_hdr_t *dof = dtrace_dof_copyin(arg, &rval);
