@@ -6180,6 +6180,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
     if (pVmcb->ctrl.u64ExitInfo1 == SVM_EXIT1_MSR_WRITE)
     {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWrmsr);
+        Log4(("MSR Write: idMsr=%#RX32\n", pCtx->ecx));
 
         /* Handle TPR patching; intercepted LSTAR write. */
         if (   pVM->hm.s.fTPRPatchingActive
@@ -6244,6 +6245,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
         /* MSR Read access. */
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdmsr);
         Assert(pVmcb->ctrl.u64ExitInfo1 == SVM_EXIT1_MSR_READ);
+        Log4(("MSR Read: idMsr=%#RX32\n", pCtx->ecx));
 
         if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
         {
@@ -6585,7 +6587,8 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                   || rcStrict == VINF_EM_DBG_BREAKPOINT
                   || rcStrict == VINF_EM_RAW_GUEST_TRAP
                   || rcStrict == VINF_EM_RAW_TO_R3
-                  || rcStrict == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+                  || rcStrict == VINF_TRPM_XCPT_DISPATCHED
+                  || rcStrict == VINF_EM_TRIPLE_FAULT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     }
 #endif
     return VBOXSTRICTRC_TODO(rcStrict);
@@ -6653,7 +6656,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     {
         /* If event delivery causes an MMIO #NPF, go back to instruction emulation as
            otherwise injecting the original pending event would most likely cause the same MMIO #NPF. */
-        if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
+        if (pVCpu->hm.s.Event.fPending)
             return VINF_EM_RAW_INJECT_TRPM_EVENT;
 
         VBOXSTRICTRC rc2 = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, enmNestedPagingMode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr,
