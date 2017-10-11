@@ -43,11 +43,6 @@
 /** Use VBE bytewise I/O. Only needed for Windows Longhorn/Vista betas and backwards compatibility. */
 #define VBE_BYTEWISE_IO
 
-/** Use VBE new dynamic mode list.
- * If this is not defined, no checks are carried out to see if the modes all
- * fit into the framebuffer! See the VRAM_SIZE_FIX define. */
-#define VBE_NEW_DYN_LIST
-
 #ifdef VBOX
 /** The default amount of VRAM. */
 # define VGA_VRAM_DEFAULT    (_4M)
@@ -381,13 +376,9 @@ typedef struct VGAState {
     /** VBE write data/index one byte buffer */
     uint8_t                     cbWriteVBEData;
     uint8_t                     cbWriteVBEIndex;
-#  ifdef VBE_NEW_DYN_LIST
     /** VBE Extra Data write address one byte buffer */
     uint8_t                     cbWriteVBEExtraAddress;
     uint8_t                     Padding5;
-#  else
-    uint8_t                     Padding5[2];
-#  endif
 # endif
 
     /** Retrace emulation state */
@@ -395,7 +386,6 @@ typedef struct VGAState {
     bool                        Padding6[HC_ARCH_BITS == 64 ? 7 : 3];
     vga_retrace_s               retrace_state;
 
-# ifdef VBE_NEW_DYN_LIST
     /** The VBE BIOS extra data. */
     R3PTRTYPE(uint8_t *)        pbVBEExtraData;
     /** The size of the VBE BIOS extra data. */
@@ -403,7 +393,6 @@ typedef struct VGAState {
     /** The VBE BIOS current memory address. */
     uint16_t                    u16VBEExtraAddress;
     uint16_t                    Padding7[2];
-# endif
 
     /** The BIOS logo data. */
     R3PTRTYPE(uint8_t *)        pbLogo;
@@ -498,7 +487,6 @@ AssertCompileMemberAlignment(VGASTATE, last_ch_attr, 8);
 AssertCompileMemberAlignment(VGASTATE, u32Marker, 8);
 #endif
 
-#ifdef VBE_NEW_DYN_LIST
 /**
  * VBE Bios Extra Data structure.
  * @remark duplicated in vbe.h.
@@ -527,8 +515,6 @@ typedef VBEHEADER *PVBEHEADER;
 /** The extra port which is used for debug printf.
  * @remark duplicated in vbe.h. */
 #define VBE_PRINTF_PORT      0x3b7
-
-#endif /* VBE_NEW_DYN_LIST */
 
 #if !defined(VBOX) || defined(IN_RING3)
 static inline int c6_to_8(int v)

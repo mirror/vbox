@@ -18,8 +18,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBE_NEW_DYN_LIST
-
 #include <VBoxVideoVBE.h>
 
 /* VBE Mode Numbers */
@@ -191,5 +189,3 @@ typedef struct ModeInfoListItem
 #include "vbetables.h"
 
 #define MODE_INFO_SIZE ( sizeof(mode_info_list) / sizeof(ModeInfoListItem) )
-
-#endif /* VBE_NEW_DYN_LIST */

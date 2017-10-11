@@ -64,10 +64,6 @@
 /** Converts a vga adaptor state pointer to a device instance pointer. */
 #define VGASTATE2DEVINS(pVgaState)    ((pVgaState)->CTX_SUFF(pDevIns))
 
-/** Check that the video modes fit into virtual video memory.
- * Only works when VBE_NEW_DYN_LIST is defined! */
-#define VRAM_SIZE_FIX
-
 /** Check buffer if an VRAM offset is within the right range or not. */
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define VERIFY_VRAM_WRITE_OFF_RETURN(pThis, off) \
@@ -133,7 +129,7 @@
 /* should go BEFORE any other DevVGA include to make all DevVGA.h config defines be visible */
 #include "DevVGA.h"
 
-#if defined(VBE_NEW_DYN_LIST) && defined(IN_RING3) && !defined(VBOX_DEVICE_STRUCT_TESTCASE)
+#if defined(IN_RING3) && !defined(VBOX_DEVICE_STRUCT_TESTCASE)
 # include "DevVGAModes.h"
 # include <stdio.h> /* sscan */
 #endif
@@ -3702,7 +3698,6 @@ PDMBOTHCBDECL(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 
 #ifdef IN_RING3
 
-# ifdef VBE_NEW_DYN_LIST
 /**
  * @callback_method_impl{FNIOMIOPORTOUT,
  *      Port I/O Handler for VBE Extra OUT operations.}
@@ -3769,7 +3764,6 @@ PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
     return rc;
 }
-# endif /* VBE_NEW_DYN_LIST */
 
 
 /**
@@ -6023,7 +6017,6 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
-#ifdef VBE_NEW_DYN_LIST
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     LogFlow(("vgaR3Destruct:\n"));
 
@@ -6049,7 +6042,6 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
         PDMDevHlpMMHeapFree(pDevIns, pThis->pbVBEExtraData);
         pThis->pbVBEExtraData = NULL;
     }
-#endif /* VBE_NEW_DYN_LIST */
     if (pThis->pbVgaBios)
     {
         PDMDevHlpMMHeapFree(pDevIns, pThis->pbVgaBios);
@@ -6116,14 +6108,12 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     static bool s_fExpandDone = false;
     int         rc;
     unsigned    i;
-#ifdef VBE_NEW_DYN_LIST
     uint32_t    cCustomModes;
     uint32_t    cyReduction;
     uint32_t    cbPitch;
     PVBEHEADER  pVBEDataHdr;
     ModeInfoListItem *pCurMode;
     unsigned    cb;
-#endif
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     PVM         pVM   = PDMDevHlpGetVM(pDevIns);
@@ -6710,8 +6700,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = CFGMR3QueryBoolDef(pCfg, "RealRetrace", &pThis->fRealRetrace, false);
     AssertLogRelRCReturn(rc, rc);
 
-#ifdef VBE_NEW_DYN_LIST
-
     uint16_t maxBiosXRes;
     rc = CFGMR3QueryU16Def(pCfg, "MaxBiosXRes", &maxBiosXRes, UINT16_MAX);
     AssertLogRelRCReturn(rc, rc);
@@ -6749,10 +6737,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pVBEDataHdr->u16Signature = VBEHEADER_MAGIC;
     pVBEDataHdr->cbData = cb;
 
-# ifndef VRAM_SIZE_FIX
-    pCurMode = memcpy(pVBEDataHdr + 1, &mode_info_list, sizeof(mode_info_list));
-    pCurMode = (ModeInfoListItem *)((uintptr_t)pCurMode + sizeof(mode_info_list));
-# else  /* VRAM_SIZE_FIX defined */
     pCurMode = (ModeInfoListItem *)(pVBEDataHdr + 1);
     for (i = 0; i < MODE_INFO_SIZE; i++)
     {
@@ -6773,7 +6757,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         vgaAdjustModeInfo(pThis, pCurMode);
         pCurMode++;
     }
-# endif  /* VRAM_SIZE_FIX defined */
 
     /*
      * Copy default modes with subtracted YResolution.
@@ -6782,14 +6765,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         ModeInfoListItem *pDefMode = mode_info_list;
         Log(("vgaR3Construct: cyReduction=%u\n", cyReduction));
-# ifndef VRAM_SIZE_FIX
-        for (i = 0; i < MODE_INFO_SIZE; i++, pCurMode++, pDefMode++)
-        {
-            *pCurMode = *pDefMode;
-            pCurMode->mode += 0x30;
-            pCurMode->info.YResolution -= cyReduction;
-        }
-# else  /* VRAM_SIZE_FIX defined */
         for (i = 0; i < MODE_INFO_SIZE; i++, pDefMode++)
         {
             uint32_t pixelWidth, reqSize;
@@ -6808,7 +6783,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             pCurMode->info.YResolution -= cyReduction;
             pCurMode++;
         }
-# endif  /* VRAM_SIZE_FIX defined */
     }
 
 
@@ -6840,14 +6814,12 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                     return VERR_VGA_INVALID_CUSTOM_MODE;
                 }
                 cbPitch = calc_line_pitch(cBits, cx);
-# ifdef VRAM_SIZE_FIX
                 if (cy * cbPitch >= pThis->vram_size)
                 {
                     AssertMsgFailed(("Configuration error: custom video mode %dx%dx%dbits is too large for the virtual video memory of %dMb.  Please increase the video memory size.\n",
                                      cx, cy, cBits, pThis->vram_size / _1M));
                     return VERR_VGA_INVALID_CUSTOM_MODE;
                 }
-# endif  /* VRAM_SIZE_FIX defined */
                 MMR3HeapFree(pszExtraData);
 
                 /* Use defaults from max@bpp mode. */
@@ -6912,7 +6884,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpIOPortRegister(pDevIns, VBE_EXTRA_PORT, 1, NULL, vbeIOPortWriteVBEExtra, vbeIOPortReadVBEExtra, NULL, NULL, "VBE BIOS Extra Data");
     if (RT_FAILURE(rc))
         return rc;
-#endif /* VBE_NEW_DYN_LIST */
 
     /*
      * Register I/O Port for the BIOS Logo.
