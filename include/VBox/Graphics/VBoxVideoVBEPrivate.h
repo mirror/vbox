@@ -27,6 +27,12 @@
 #ifndef ___VBox_Graphics_VBoxVideoVBEPrivate_h
 #define ___VBox_Graphics_VBoxVideoVBEPrivate_h
 
+#ifdef VBE
+# include <stdint.h>
+#else
+# include <iprt/types.h>
+#endif
+
 /* VBE Mode Numbers */
 #define VBE_MODE_VESA_DEFINED                            0x0100
 #define VBE_MODE_REFRESH_RATE_USE_CRTC                   0x0800
