@@ -98,7 +98,8 @@
       </listitem>
 
       <listitem>
-        <para>EFI: better video mode handling</para>
+        <para>EFI: better video mode handling, supporting custom video
+          modes and easier configuration</para>
       </listitem>
 
       <listitem>

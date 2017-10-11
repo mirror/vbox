@@ -146,25 +146,26 @@ UINT8 Crtc_1024_768_256_60[25] = {
 #endif
 
 ///
-/// Table of supported video modes (sorted by pixel count!)
+/// Table of supported video modes (sorted by increasing horizontal, then by
+/// increasing vertical resolution)
 ///
 VBOX_VGA_VIDEO_MODES  VBoxVgaVideoModes[] =
 {
   {  640,  480, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // VGA 4:3
   {  800,  600, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // SVGA 4:3
   { 1024,  768, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // XGA 4:3
-  { 1280,  720, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // HD 16:9
   { 1152,  864, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // XGA+ 4:3
+  { 1280,  720, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // HD 16:9
   { 1280,  800, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // WXGA 16:10
-  { 1440,  900, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // WXGA+ 16:10
   { 1280, 1024, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // SXGA 5:4
   { 1400, 1050, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // SXGA+ 4:3
+  { 1440,  900, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // WXGA+ 16:10
   { 1600,  900, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // HD+ 16:9
-  { 1680, 1050, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // WSXGA+ 16:10
   { 1600, 1200, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // UXGA 4:3
+  { 1680, 1050, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // WSXGA+ 16:10
   { 1920, 1080, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // FHD 16:9
-  { 2048, 1080, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // DCI_2K 19:10
   { 1920, 1200, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // WUXGA 16:10
+  { 2048, 1080, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // DCI_2K 19:10
   { 2160, 1440, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // FHD+ 3:2
   { 2304, 1440, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // unnamed 16:10
   { 2560, 1440, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // QHD 16:9
@@ -173,14 +174,30 @@ VBOX_VGA_VIDEO_MODES  VBoxVgaVideoModes[] =
   { 3200, 1800, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // QHD+ 16:9
   { 3200, 2048, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // WQSXGA 16:10
   { 3840, 2160, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // 4K_UHD 16:9
-  { 4096, 2160, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // DCI_4K 19:10
   { 3840, 2400, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // WQUXGA 16:10
+  { 4096, 2160, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // DCI_4K 19:10
   { 4096, 3072, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // HXGA 4:3
   { 5120, 2880, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // UHD+ 16:9
   { 5120, 3200, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // WHXGA 16:10
   { 6400, 4096, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // WHSXGA 16:10
   { 6400, 4800, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // HUXGA 4:3
   { 7680, 4320, 32, 60, NULL /* crtc */, NULL /* sequencer */, 0x01 }, // 8K_UHD2 16:9
+  { 0, }, // Custom video mode 0, do not delete, must be at the end!
+  { 0, }, // Custom video mode 1, do not delete, must be at the end!
+  { 0, }, // Custom video mode 2, do not delete, must be at the end!
+  { 0, }, // Custom video mode 3, do not delete, must be at the end!
+  { 0, }, // Custom video mode 4, do not delete, must be at the end!
+  { 0, }, // Custom video mode 5, do not delete, must be at the end!
+  { 0, }, // Custom video mode 6, do not delete, must be at the end!
+  { 0, }, // Custom video mode 7, do not delete, must be at the end!
+  { 0, }, // Custom video mode 8, do not delete, must be at the end!
+  { 0, }, // Custom video mode 9, do not delete, must be at the end!
+  { 0, }, // Custom video mode 10, do not delete, must be at the end!
+  { 0, }, // Custom video mode 11, do not delete, must be at the end!
+  { 0, }, // Custom video mode 12, do not delete, must be at the end!
+  { 0, }, // Custom video mode 13, do not delete, must be at the end!
+  { 0, }, // Custom video mode 14, do not delete, must be at the end!
+  { 0, }  // Custom video mode 15, do not delete, must be at the end!
 };
 
 const UINT32 VBoxVgaVideoModeCount = sizeof(VBoxVgaVideoModes) / sizeof(VBoxVgaVideoModes[0]);
@@ -926,6 +943,8 @@ InitializeGraphicsMode (
     EFI_STATUS Status;
     int i;
 
+    DEBUG((DEBUG_INFO, "%a:%d InitializeGraphicsMode: %dx%d bpp:%d\n", __FILE__, __LINE__, ModeData->Width, ModeData->Height, ModeData->ColorDepth));
+
     //
     // Read the PCI ID from the PCI Device (dummy)
     //
@@ -947,6 +966,24 @@ InitializeGraphicsMode (
     ASMOutU16(CRTC_ADDRESS_REGISTER, 0x0011);
 
     ASMOutU16(SEQ_ADDRESS_REGISTER, 0x0100);
+    if (ModeData->SeqSettings)
+      BOUTB(ModeData->SeqSettings, 5, SEQ_ADDRESS_REGISTER, SEQ_DATA_REGISTER);
+    else
+      BOUTB(Seq_Default, 5, SEQ_ADDRESS_REGISTER, SEQ_DATA_REGISTER);
+    ASMOutU16(SEQ_ADDRESS_REGISTER, 0x0300);
+
+    BOUTB(GraphicsController, 9, GRAPH_ADDRESS_REGISTER, GRAPH_DATA_REGISTER);
+
+    ASMInU8(INPUT_STATUS_1_REGISTER);   // reset attribute address/data flip-flop
+    BOUTB(AttributeController, 21, ATT_ADDRESS_REGISTER, ATT_DATA_REGISTER);
+
+    ASMOutU8(MISC_OUTPUT_REGISTER, ModeData->MiscSetting);
+
+    if (ModeData->ColorDepth <= 8)
+    {
+      ASMOutU8(DAC_PIXEL_MASK_REGISTER, 0xff);
+      SetDefaultPalette(Private);
+    }
 
     if (!ModeData->CrtcSettings)
     {
@@ -962,33 +999,17 @@ InitializeGraphicsMode (
         ASMOutU16(VBE_DISPI_IOPORT_INDEX, 0x08); ASMOutU16(VBE_DISPI_IOPORT_DATA, 0);                               // X_OFFSET
         ASMOutU16(VBE_DISPI_IOPORT_INDEX, 0x09); ASMOutU16(VBE_DISPI_IOPORT_DATA, 0);                               // Y_OFFSET
         ASMOutU16(VBE_DISPI_IOPORT_INDEX, 0x04); ASMOutU16(VBE_DISPI_IOPORT_DATA, 1);                               // ENABLE
+        /// @todo enabling VBE is automatically tweaking the CRTC, GC, SC, clears the
+        // screen and at the end unblanks graphics. So make sure that nothing is done
+        // after this which needs blanking. Way too much magic, but that's how it is...
     }
     else
     {
         BOUTB(ModeData->CrtcSettings, 25, CRTC_ADDRESS_REGISTER, CRTC_DATA_REGISTER);
     }
 
-    ASMOutU8(MISC_OUTPUT_REGISTER, ModeData->MiscSetting);
-
-    if (ModeData->SeqSettings)
-      BOUTB(ModeData->SeqSettings, 5, SEQ_ADDRESS_REGISTER, SEQ_DATA_REGISTER);
-    else
-      BOUTB(Seq_Default, 5, SEQ_ADDRESS_REGISTER, SEQ_DATA_REGISTER);
-
-    ASMOutU16(SEQ_ADDRESS_REGISTER, 0x0300);
-
-    BOUTB(GraphicsController, 9, GRAPH_ADDRESS_REGISTER, GRAPH_DATA_REGISTER);
-
-    ASMInU8(INPUT_STATUS_1_REGISTER);   // reset attribute address/data flip-flop
-    // attribute controller is weird: data writes to the address register
-    BOUTB(AttributeController, 21, ATT_ADDRESS_REGISTER, ATT_ADDRESS_REGISTER);
-    ASMOutU8(ATT_ADDRESS_REGISTER, 0x20);
-
-    if (ModeData->ColorDepth <= 8)
-    {
-      ASMOutU8(DAC_PIXEL_MASK_REGISTER, 0xff);
-      SetDefaultPalette(Private);
-    }
+    ASMInU8(INPUT_STATUS_1_REGISTER);       // reset attribute address/data flip-flop
+    ASMOutU8(ATT_ADDRESS_REGISTER, 0x20);   // unblank screen
 
     ClearScreen(Private);
 }

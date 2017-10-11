@@ -137,8 +137,8 @@ EDID_TIMING mVbeEstablishedEdidTiming[] = {
 EFI_STATUS
 ReadEdidData (
   VBOX_VGA_PRIVATE_DATA     *Private,
-  UINT8                              **EdidDataBlock,
-  UINTN                              *EdidSize
+  UINT8                     **EdidDataBlock,
+  UINTN                     *EdidSize
   )
 {
   UINTN             Index;
@@ -341,6 +341,51 @@ ParseEdidData (
   return TRUE;
 }
 
+static uint16_t in_word(uint16_t port, uint16_t addr)
+{
+    ASMOutU16(port, addr);
+    return ASMInU16(port);
+}
+
+static EFI_STATUS VBoxVgaVideoModeInitExtra(void)
+{
+  UINT16 w, cur_info_ofs, vmode, xres, yres;
+  UINTN  Index;
+  VBOX_VGA_VIDEO_MODES *VideoMode;
+
+  // Read and check the VBE Extra Data magic
+  w = in_word(VBE_EXTRA_PORT, 0);
+  if (w != VBEHEADER_MAGIC) {
+      DEBUG((DEBUG_INFO, "%a:%d could not find VBE magic, got %x\n", __FILE__, __LINE__, w));
+    return EFI_NOT_FOUND;
+  }
+
+  cur_info_ofs = sizeof(VBEHeader);
+
+  Index = VBoxVgaVideoModeCount - 16;
+  VideoMode = &VBoxVgaVideoModes[Index];
+  vmode = in_word(VBE_EXTRA_PORT, cur_info_ofs + offsetof(ModeInfoListItem, mode));
+  while (vmode != VBE_VESA_MODE_END_OF_LIST)
+  {
+    xres = in_word(VBE_EXTRA_PORT, cur_info_ofs + offsetof(ModeInfoListItem, info.XResolution));
+    yres = in_word(VBE_EXTRA_PORT, cur_info_ofs + offsetof(ModeInfoListItem, info.YResolution));
+
+    if (vmode >= VBE_VBOX_MODE_CUSTOM1 && vmode <= VBE_VBOX_MODE_CUSTOM16 && xres && yres && Index < VBoxVgaVideoModeCount) {
+      VideoMode->Width = xres;
+      VideoMode->Height = yres;
+      VideoMode->ColorDepth = 32;
+      VideoMode->RefreshRate = 60;
+      VideoMode->MiscSetting = 0x01;
+      VideoMode++;
+      Index++;
+    }
+
+    cur_info_ofs += sizeof(ModeInfoListItem);
+    vmode = in_word(VBE_EXTRA_PORT, cur_info_ofs + offsetof(ModeInfoListItem, mode));
+  }
+  return EFI_SUCCESS;
+}
+
 /**
   Construct the valid video modes for VBoxVga.
 
@@ -366,7 +411,7 @@ VBoxVgaVideoModeSetup (
   UINT32                                 ValidModeCount;
   VBOX_VGA_MODE_DATA                     *ModeData;
   BOOLEAN                                TimingMatch;
-  VBOX_VGA_VIDEO_MODES                   *VideoMode;
+  const VBOX_VGA_VIDEO_MODES             *VideoMode;
   EDID_TIMING                            TempTiming;
 
   //
@@ -528,15 +573,30 @@ VBoxVgaVideoModeSetup (
     //
     // If EDID information wasn't found
     //
+    VBoxVgaVideoModeInitExtra();
     ValidModeCount = 0;
     Private->ModeData = AllocatePool(sizeof(VBOX_VGA_MODE_DATA) * VBoxVgaVideoModeCount);
     ModeData = &Private->ModeData[0];
     VideoMode = &VBoxVgaVideoModes[0];
     for (Index = 0; Index < VBoxVgaVideoModeCount; Index ++) {
+
+      TimingMatch = TRUE;
+
+      //
+      // Not export Mode 0x0 as GOP mode, this is not defined in spec.
+      //
+      if ((VideoMode->Width == 0) || (VideoMode->Height == 0)) {
+        TimingMatch = FALSE;
+      }
+
       //
       // Check whether the mode would be exceeding the VRAM size.
       //
-      if (VideoMode->Width * VideoMode->Height * (VideoMode->ColorDepth / 8) <= Private->VRAMSize) {
+      if (VideoMode->Width * VideoMode->Height * (VideoMode->ColorDepth / 8) > Private->VRAMSize) {
+        TimingMatch = FALSE;
+      }
+
+      if (TimingMatch) {
         ModeData->ModeNumber = Index;
         ModeData->HorizontalResolution          = VideoMode->Width;
         ModeData->VerticalResolution            = VideoMode->Height;
@@ -549,6 +609,38 @@ VBoxVgaVideoModeSetup (
 
       VideoMode ++;
     }
+  }
+
+  // Sort list of video modes (keeping duplicates) by increasing X, then Y,
+  // then the mode number. This way the custom modes are not overriding the
+  // default modes if they are for the same resolution.
+  ModeData = &Private->ModeData[0];
+  for (Index = 0; Index < ValidModeCount - 1; Index ++) {
+    UINT32 Index2;
+    VBOX_VGA_MODE_DATA *ModeData2 = ModeData + 1;
+    for (Index2 = Index + 1; Index2 < ValidModeCount; Index2 ++) {
+        if (   ModeData->HorizontalResolution > ModeData2->HorizontalResolution
+            || (   ModeData->HorizontalResolution == ModeData2->HorizontalResolution
+                && ModeData->VerticalResolution > ModeData2->VerticalResolution)
+            || (   ModeData->HorizontalResolution == ModeData2->HorizontalResolution
+                && ModeData->VerticalResolution == ModeData2->VerticalResolution
+                && ModeData->ModeNumber > ModeData2->ModeNumber)) {
+            VBOX_VGA_MODE_DATA Tmp;
+            CopyMem(&Tmp, ModeData, sizeof(Tmp));
+            CopyMem(ModeData, ModeData2, sizeof(Tmp));
+            CopyMem(ModeData2, &Tmp, sizeof(Tmp));
+            DEBUG((DEBUG_INFO, "%a:%d swapped mode entries %d and %d\n", __FILE__, __LINE__, Index, Index2));
+        }
+        ModeData2++;
+    }
+    ModeData++;
+  }
+
+  // dump mode list for debugging purposes
+  ModeData = &Private->ModeData[0];
+  for (Index = 0; Index < ValidModeCount; Index ++) {
+    DEBUG((DEBUG_INFO, "%a:%d mode %d: %dx%d mode number %d\n", __FILE__, __LINE__, Index, ModeData->HorizontalResolution, ModeData->VerticalResolution, ModeData->ModeNumber));
+    ModeData++;
   }
 
   Private->MaxMode = ValidModeCount;

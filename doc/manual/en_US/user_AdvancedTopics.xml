@@ -963,7 +963,7 @@ host path or identifier</screen>
   <sect1>
     <title>Advanced display configuration</title>
 
-    <sect2>
+    <sect2 id="customvesa">
       <title>Custom VESA resolutions</title>
 
       <para>Apart from the standard VESA resolutions, the VirtualBox VESA BIOS

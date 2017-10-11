@@ -1472,20 +1472,246 @@
       <title>Video modes in EFI</title>
 
       <para>EFI provides two distinct video interfaces: GOP (Graphics Output
-      Protocol) and UGA (Universal Graphics Adapter). Mac OS X uses GOP, while
-      Linux tends to use UGA. VirtualBox provides a configuration option to
-      control the framebuffer size for both interfaces.</para>
+      Protocol) and UGA (Universal Graphics Adapter). Modern operating systems
+      (such as Mac OS X) generally use GOP, while some older ones still use
+      UGA. VirtualBox provides a configuration option to control the
+      graphics resolution for both interfaces, making the difference mostly
+      irrelevant for users.</para>
 
-      <para>To control GOP, use the following
-      <computeroutput>VBoxManage</computeroutput> command: <screen>VBoxManage setextradata "VM name" VBoxInternal2/EfiGopMode N</screen>
-      Where N can be one of 0,1,2,3,4,5 referring to the 640x480, 800x600,
-      1024x768, 1280x1024, 1440x900, 1920x1200 screen resolution respectively.</para>
+      <para>The default resolution is 1024x768. To select a graphics resolution
+      for EFI, use the following <computeroutput>VBoxManage</computeroutput>
+      command:
+      <screen>VBoxManage setextradata "VM name" VBoxInternal2/EfiGraphicsResolution HxV</screen>
+      Determine the horizontal resolution H and the vertical resolution V from
+      the following list of default resolutions:</para>
 
-      <para>To change the UGA resolution: <screen>VBoxManage setextradata "VM name" VBoxInternal2/UgaHorizontalResolution 1440
-VBoxManage setextradata "VM name" VBoxInternal2/UgaVerticalResolution    900</screen></para>
+      <glosslist>
+        <glossentry>
+          <glossterm>VGA</glossterm>
+          <glossdef>
+            <para>640x480, 32bpp, 4:3</para>
+          </glossdef>
+        </glossentry>
 
-      <para>The video mode for both GOP and UGA can only be changed when the
-      VM is powered off and remains persistent until changed.</para>
+        <glossentry>
+          <glossterm>SVGA</glossterm>
+          <glossdef>
+            <para>800x600, 32bpp, 4:3</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>XGA</glossterm>
+          <glossdef>
+            <para>1024x768, 32bpp, 4:3</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>XGA+</glossterm>
+          <glossdef>
+            <para>1152x864, 32bpp, 4:3</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>HD</glossterm>
+          <glossdef>
+            <para>1280x720, 32bpp, 16:9</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>WXGA</glossterm>
+          <glossdef>
+            <para>1280x800, 32bpp, 16:10</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>SXGA</glossterm>
+          <glossdef>
+            <para>1280x1024, 32bpp, 5:4</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>SXGA+</glossterm>
+          <glossdef>
+            <para>1400x1050, 32bpp, 4:3</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>WXGA+</glossterm>
+          <glossdef>
+            <para>1440x900, 32bpp, 16:10</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>HD+</glossterm>
+          <glossdef>
+            <para>1600x900, 32bpp, 16:9</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>UXGA</glossterm>
+          <glossdef>
+            <para>1600x1200, 32bpp, 4:3</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>WSXGA+</glossterm>
+          <glossdef>
+            <para>1680x1050, 32bpp, 16:10</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>Full HD</glossterm>
+          <glossdef>
+            <para>1920x1080, 32bpp, 16:9</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>WUXGA</glossterm>
+          <glossdef>
+            <para>1920x1200, 32bpp, 16:10</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>DCI 2K</glossterm>
+          <glossdef>
+            <para>2048x1080, 32bpp, 19:10</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>Full HD+</glossterm>
+          <glossdef>
+            <para>2160x1440, 32bpp, 3:2</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>Unnamed</glossterm>
+          <glossdef>
+            <para>2304x1440, 32bpp, 16:10</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>QHD</glossterm>
+          <glossdef>
+            <para>2560x1440, 32bpp, 16:9</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>WQXGA</glossterm>
+          <glossdef>
+            <para>2560x1600, 32bpp, 16:10</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>QWXGA+</glossterm>
+          <glossdef>
+            <para>2880x1800, 32bpp, 16:10</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>QHD+</glossterm>
+          <glossdef>
+            <para>3200x1800, 32bpp, 16:9</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>WQSXGA</glossterm>
+          <glossdef>
+            <para>3200x2048, 32bpp, 16:10</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>4K UHD</glossterm>
+          <glossdef>
+            <para>3840x2160, 32bpp, 16:9</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>WQUXGA</glossterm>
+          <glossdef>
+            <para>3840x2400, 32bpp, 16:10</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>DCI 4K</glossterm>
+          <glossdef>
+            <para>4096x2160, 32bpp, 19:10</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>HXGA</glossterm>
+          <glossdef>
+            <para>4096x3072, 32bpp, 4:3</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>UHD+</glossterm>
+          <glossdef>
+            <para>5120x2880, 32bpp, 16:9</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>WHXGA</glossterm>
+          <glossdef>
+            <para>5120x3200, 32bpp, 16:10</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>WHSXGA</glossterm>
+          <glossdef>
+            <para>6400x4096, 32bpp, 16:10</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>HUXGA</glossterm>
+          <glossdef>
+            <para>6400x4800, 32bpp, 4:3</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>8K UHD2</glossterm>
+          <glossdef>
+            <para>7680x4320, 32bpp, 16:9</para>
+          </glossdef>
+        </glossentry>
+
+      </glosslist>
+
+      <para>If this list of default resolution does not cover your needs, see
+      <xref linkend="customvesa" />. Note that the color depth value specified
+      in a custom video mode must be specified (8, 16, 24 and 32 are accepted),
+      but it is silently assumed to be 32 by EFI.</para>
+
+      <para>The EFI default video resolution settings can only be changed when
+      the VM is powered off.</para>
     </sect2>
 
     <sect2 id="efibootargs">

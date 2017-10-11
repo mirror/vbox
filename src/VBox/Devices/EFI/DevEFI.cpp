@@ -1466,7 +1466,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             {
                 pThis->szMsg[pThis->iMsg] = '\0';
                 if (pThis->iMsg)
-                    LogRel(("efi: %s\n", pThis->szMsg));
+                    LogRel2(("efi: %s\n", pThis->szMsg));
                 pThis->iMsg = 0;
             }
             else
@@ -1474,7 +1474,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                 if (pThis->iMsg >= sizeof(pThis->szMsg)-1)
                 {
                     pThis->szMsg[pThis->iMsg] = '\0';
-                    LogRel(("efi: %s\n", pThis->szMsg));
+                    LogRel2(("efi: %s\n", pThis->szMsg));
                     pThis->iMsg = 0;
                 }
                 pThis->szMsg[pThis->iMsg] = (char )u32;
@@ -2192,8 +2192,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "GraphicsMode\0"
                               "UgaHorizontalResolution\0"   // legacy
                               "UgaVerticalResolution\0"     // legacy
-                              "HorizontalResolution\0"
-                              "VerticalResolution\0"))
+                              "GraphicsResolution\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config value(s) for the EFI device"));
 
@@ -2337,17 +2336,27 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                        N_("Configuration error: Querying \"GopMode\" as a 32-bit int failed"));
     }
     if (pThis->u32GraphicsMode == UINT32_MAX)
-        pThis->u32GraphicsMode = 2; /* 1024x768 */
+        pThis->u32GraphicsMode = 2; /* 1024x768, at least typically */
 
     /*
      * EFI graphics resolution, defaults to 1024x768 (used to be UGA only, now
      * is the main config setting as the mode number is so hard to predict).
      */
-    rc = CFGMR3QueryU32Def(pCfg, "HorizontalResolution", &pThis->u32HorizontalResolution, 0);
-    AssertRCReturn(rc, rc);
-    rc = CFGMR3QueryU32Def(pCfg, "VerticalResolution", &pThis->u32VerticalResolution, 0);
-    AssertRCReturn(rc, rc);
-    if (pThis->u32HorizontalResolution == 0 || pThis->u32VerticalResolution == 0)
+    char szResolution[16];
+    rc = CFGMR3QueryStringDef(pCfg, "GraphicsResolution", szResolution, sizeof(szResolution), "");
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Configuration error: Querying \"GraphicsResolution\" as a string failed"));
+    if (szResolution[0])
+    {
+        const char *pszX = RTStrStr(szResolution, "x");
+        if (pszX)
+        {
+            pThis->u32HorizontalResolution = RTStrToUInt32(szResolution);
+            pThis->u32VerticalResolution = RTStrToUInt32(pszX + 1);
+        }
+    }
+    else
     {
         /* get the legacy values if nothing else was specified */
         rc = CFGMR3QueryU32Def(pCfg, "UgaHorizontalResolution", &pThis->u32HorizontalResolution, 0);

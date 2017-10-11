@@ -1777,35 +1777,42 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             if (!strTmp.isEmpty())
                 u32GraphicsMode = strTmp.toUInt32();
 
-            /* Get graphics resolution settings */
-            uint32_t u32HorizontalResolution = 0;
-            uint32_t u32VerticalResolution = 0;
-            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiResolution", &strTmp);
-            if (!strTmp.isEmpty())
+            /* Get graphics resolution settings, with some sanity checking */
+            Utf8Str strResolution;
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiGraphicsResolution", &strResolution);
+            if (!strResolution.isEmpty())
             {
-                size_t pos = strTmp.find("x");
-                if (pos != strTmp.npos)
+                size_t pos = strResolution.find("x");
+                if (pos != strResolution.npos)
                 {
                     Utf8Str strH, strV;
-                    strH.assignEx(strTmp, 0, pos);
-                    strV.assignEx(strTmp, pos+1, strTmp.length()-pos);
-                    u32HorizontalResolution = strH.toUInt32();
-                    u32VerticalResolution = strV.toUInt32();
+                    strH.assignEx(strResolution, 0, pos);
+                    strV.assignEx(strResolution, pos+1, strResolution.length()-pos-1);
+                    uint32_t u32H = strH.toUInt32();
+                    uint32_t u32V = strV.toUInt32();
+                    if (u32H == 0 || u32V == 0)
+                        strResolution.setNull();
                 }
+                else
+                    strResolution.setNull();
             }
             else
             {
+                uint32_t u32H = 0;
+                uint32_t u32V = 0;
                 GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiHorizontalResolution", &strTmp);
                 if (strTmp.isEmpty())
                     GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaHorizontalResolution", &strTmp);
                 if (!strTmp.isEmpty())
-                    u32HorizontalResolution = strTmp.toUInt32();
+                    u32H = strTmp.toUInt32();
 
                 GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiVerticalResolution", &strTmp);
                 if (strTmp.isEmpty())
                     GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaVerticalResolution", &strTmp);
                 if (!strTmp.isEmpty())
-                    u32VerticalResolution = strTmp.toUInt32();
+                    u32V = strTmp.toUInt32();
+                if (u32H != 0 && u32V != 0)
+                    strResolution = Utf8StrFmt("%ux%u", u32H, u32V);
             }
 
             /*
@@ -1825,9 +1832,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCfg,  "APIC",        uFwAPIC);
             InsertConfigBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
             InsertConfigInteger(pCfg,  "64BitEntry",  f64BitEntry); /* boolean */
-            InsertConfigInteger(pCfg,  "GraphicsMode",  u32GraphicsMode);
-            InsertConfigInteger(pCfg,  "HorizontalResolution", u32HorizontalResolution);
-            InsertConfigInteger(pCfg,  "VerticalResolution", u32VerticalResolution);
+            if (u32GraphicsMode != UINT32_MAX)
+                InsertConfigInteger(pCfg,  "GraphicsMode",  u32GraphicsMode);
+            if (!strResolution.isEmpty())
+                InsertConfigString(pCfg,   "GraphicsResolution", strResolution);
 
             /* For OS X guests we'll force passing host's DMI info to the guest */
             if (fOsXGuest)
