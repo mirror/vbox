@@ -1740,7 +1740,7 @@ static void vertexshader_set_limits(IWineD3DVertexShaderImpl *shader)
 
         case WINED3D_SHADER_VERSION(4, 0):
             FIXME("Using 3.0 limits for 4.0 shader.\n");
-            /* Fall through. */
+            RT_FALL_THRU();
 
         case WINED3D_SHADER_VERSION(3, 0):
             shader->baseShader.limits.temporary = 32;
@@ -2109,7 +2109,7 @@ void find_ps_compile_args(IWineD3DPixelShaderImpl *shader,
 
                     switch (stateblock->renderState[WINED3DRS_FOGVERTEXMODE])
                     {
-                        case WINED3DFOG_NONE: /* Fall through. */
+                        case WINED3DFOG_NONE: RT_FALL_THRU();
                         case WINED3DFOG_LINEAR: args->fog = FOG_LINEAR; break;
                         case WINED3DFOG_EXP:    args->fog = FOG_EXP;    break;
                         case WINED3DFOG_EXP2:   args->fog = FOG_EXP2;   break;
@@ -2188,7 +2188,7 @@ static void pixelshader_set_limits(IWineD3DPixelShaderImpl *shader)
 
         case WINED3D_SHADER_VERSION(4, 0):
             FIXME("Using 3.0 limits for 4.0 shader.\n");
-            /* Fall through. */
+            RT_FALL_THRU();
 
         case WINED3D_SHADER_VERSION(3, 0):
             shader->baseShader.limits.temporary = 32;

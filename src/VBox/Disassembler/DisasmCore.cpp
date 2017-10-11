@@ -976,7 +976,7 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
                 if (mod != 3)
                     break;  /* memory operand */
                 reg = rm; /* the RM field specifies the xmm register */
-                /* fall thru */
+                RT_FALL_THRU();
 
             case OP_PARM_P: //MMX register
                 reg &= 7;   /* REX.R has no effect here */
@@ -999,11 +999,11 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
             case OP_PARM_W: //XMM register or memory operand
                 if (mod != 3)
                     break;  /* memory operand */
-                /* fall thru */
+                RT_FALL_THRU();
 
             case OP_PARM_U: // XMM/YMM register
                 reg = rm; /* the RM field specifies the xmm register */
-                /* fall thru */
+                RT_FALL_THRU();
 
             case OP_PARM_V: //XMM register
                 if (VEXREG_IS256B(pDis->bVexDestReg)

@@ -882,7 +882,7 @@ static int dbgfR3VMMWait(PVM pVM)
                     /* remember return code. */
                     default:
                         AssertReleaseMsgFailed(("rc=%Rrc is not in the switch!\n", rc));
-                        /* fall thru */
+                        RT_FALL_THRU();
                     case VINF_EM_RESET:
                     case VINF_EM_SUSPEND:
                     case VINF_EM_HALT:

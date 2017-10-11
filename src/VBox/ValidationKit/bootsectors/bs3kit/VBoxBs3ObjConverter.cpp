@@ -1430,7 +1430,7 @@ static bool convertElfSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCELFDETAILS
                     fHaveData |= pThis->paSegments[i].iGrpNm == idxGrpData;
                     break;
                 }
-                /* fall thru */
+                RT_FALL_THRU();
 
             default:
                 pThis->paSegments[i].iSegDef  = UINT16_MAX;
@@ -1858,7 +1858,7 @@ static bool convertElfSectionsToLeDataAndFixupps(POMFWRITER pThis, PCELFDETAILS 
                     case R_X86_64_32:
                     case R_X86_64_32S:  /* signed, unsigned, whatever. */
                         fSelfRel = false;
-                        /* fall thru */
+                        RT_FALL_THRU();
                     case R_X86_64_PC32:
                     {
                         /* defaults are ok, just handle the addend. */
@@ -2371,7 +2371,7 @@ static bool convertCoffSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCIMAGE_SYMB
                         pThis->paSymbols[iSym].idxGrpDef = pThis->paSegments[idxSection - 1].iGrpDef;
                         break;
                     }
-                    /* fall thru */
+                    RT_FALL_THRU();
 
                 case IMAGE_SYM_CLASS_END_OF_FUNCTION:
                 case IMAGE_SYM_CLASS_AUTOMATIC:
@@ -2699,7 +2699,7 @@ static bool convertCoffSectionsToLeDataAndFixupps(POMFWRITER pThis, uint8_t cons
 
                     case IMAGE_REL_AMD64_SECTION:
                         bLocation = OMF_FIX_LOC_16BIT_SEGMENT;
-                        /* fall thru */
+                        RT_FALL_THRU();
 
                     case IMAGE_REL_AMD64_SECREL:
                         fSelfRel = false;
@@ -3144,7 +3144,7 @@ static bool convertMachoSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCMACHODET
                     fHaveData |= pThis->paSegments[i].iGrpDef == idxGrpData;
                     break;
                 }
-                /* fall thru */
+                RT_FALL_THRU();
 
             default:
                 pThis->paSegments[i].iSegDef  = UINT16_MAX;
@@ -3547,7 +3547,7 @@ static bool convertMachOSectionsToLeDataAndFixupps(POMFWRITER pThis, PCMACHODETA
                     case R_X86_64_32:
                     case R_X86_64_32S:  /* signed, unsigned, whatever. */
                         fSelfRel = false;
-                        /* fall thru */
+                        RT_FALL_THRU();
                     case R_X86_64_PC32:
                     {
                         /* defaults are ok, just handle the addend. */
@@ -4298,7 +4298,7 @@ static bool collectOmfDetails(const char *pszFile, uint8_t const *pbFile, size_t
             case OMF_PUBDEF32:
             case OMF_LPUBDEF32:
                 pOmfStuff->fProbably32bit = true;
-                /* fall thru */
+                RT_FALL_THRU();
             case OMF_PUBDEF16:
             case OMF_LPUBDEF16:
                 if (g_cVerbose > 0)

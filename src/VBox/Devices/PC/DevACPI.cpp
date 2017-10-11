@@ -1244,7 +1244,7 @@ PDMBOTHCBDECL(int) acpiR3BatDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     {
         case BAT_STATUS_STATE:
             acpiR3FetchBatteryStatus(pThis);
-            /* fall thru */
+            RT_FALL_THRU();
         case BAT_STATUS_PRESENT_RATE:
         case BAT_STATUS_REMAINING_CAPACITY:
         case BAT_STATUS_PRESENT_VOLTAGE:
@@ -1253,7 +1253,7 @@ PDMBOTHCBDECL(int) acpiR3BatDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 
         case BAT_INFO_UNITS:
             acpiR3FetchBatteryInfo(pThis);
-            /* fall thru */
+            RT_FALL_THRU();
         case BAT_INFO_DESIGN_CAPACITY:
         case BAT_INFO_LAST_FULL_CHARGE_CAPACITY:
         case BAT_INFO_TECHNOLOGY:
@@ -1692,7 +1692,7 @@ PDMBOTHCBDECL(int) acpiR3PM1aCtlWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
                     break;
                 }
                 LogRel(("ACPI: Ignoring guest attempt to enter S1 power state (powered-on suspend)!\n"));
-                /* fall thru */
+                RT_FALL_THRU();
 
             case 0x04:                  /* S4 */
                 if (pThis->fS4Enabled)
@@ -1702,7 +1702,7 @@ PDMBOTHCBDECL(int) acpiR3PM1aCtlWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
                     break;
                 }
                 LogRel(("ACPI: Ignoring guest attempt to enter S4 power state (suspend to disk)!\n"));
-                /* fall thru */
+                RT_FALL_THRU();
 
             case 0x05:                  /* S5 */
                 LogRel(("ACPI: Entering S5 power state (power down)\n"));

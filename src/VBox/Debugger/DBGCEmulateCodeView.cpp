@@ -1228,7 +1228,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     unsigned fFlags = DBGF_DISAS_FLAGS_NO_ADDRESS | DBGF_DISAS_FLAGS_UNPATCHED_BYTES | DBGF_DISAS_FLAGS_ANNOTATE_PATCHED;
     switch (pCmd->pszCmd[1])
     {
-        default: AssertFailed(); /* fall thru */
+        default: AssertFailed(); RT_FALL_THRU();
         case '\0':  fFlags |= DBGF_DISAS_FLAGS_DEFAULT_MODE;    break;
         case '6':   fFlags |= DBGF_DISAS_FLAGS_64BIT_MODE;      break;
         case '3':   fFlags |= DBGF_DISAS_FLAGS_32BIT_MODE;      break;
@@ -1319,7 +1319,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             break;
         case DBGCVAR_TYPE_GC_PHYS:
             hDbgAs = DBGF_AS_PHYS;
-            /* fall thru */
+            RT_FALL_THRU();
         case DBGCVAR_TYPE_HC_FLAT:
         case DBGCVAR_TYPE_HC_PHYS:
         {
@@ -1999,7 +1999,7 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
     bool fUseColor = false;
     switch (pCmd->pszCmd[4])
     {
-        default: AssertFailed(); /* fall thru */
+        default: AssertFailed(); RT_FALL_THRU();
         case '\0':  fFlags |= DBGF_DISAS_FLAGS_DEFAULT_MODE;    break;
         case '6':   fFlags |= DBGF_DISAS_FLAGS_64BIT_MODE;      break;
         case '3':   fFlags |= DBGF_DISAS_FLAGS_32BIT_MODE;      break;
@@ -2091,7 +2091,7 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             break;
         case DBGCVAR_TYPE_GC_PHYS:
             hDbgAs = DBGF_AS_PHYS;
-            /* fall thru */
+            RT_FALL_THRU();
         case DBGCVAR_TYPE_HC_FLAT:
         case DBGCVAR_TYPE_HC_PHYS:
         {

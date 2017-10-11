@@ -4283,7 +4283,7 @@ RTDECL(void *) RTLockValidatorQueryBlocking(RTTHREAD hThread)
                             pRec = (PRTLOCKVALRECUNION)pRec->ShrdOwner.pSharedRec;
                             if (!pRec || pRec->Core.u32Magic != RTLOCKVALRECSHRD_MAGIC)
                                 break;
-                            /* fall thru */
+                            RT_FALL_THRU();
                         case RTLOCKVALRECSHRD_MAGIC:
                             pvLock = pRec->Shared.hLock;
                             break;

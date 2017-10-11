@@ -1041,7 +1041,7 @@ DECLHIDDEN(void) suplibHardenedPrintFV(const char *pszFormat, va_list va)
                             break;
                         case 'X':
                             fFlags |= RTSTR_F_CAPITAL;
-                            /* fall thru */
+                            RT_FALL_THRU();
                         case 'x':
                             uBase = 16;
                             break;
@@ -1082,7 +1082,7 @@ DECLHIDDEN(void) suplibHardenedPrintFV(const char *pszFormat, va_list va)
                         pszFormat += 2;
                         break;
                     }
-                    /* fall thru */
+                    RT_FALL_THRU();
 
                 /*
                  * Custom format.

@@ -1555,7 +1555,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
             }
             break;  /* sti doesn't mark the end of a pushf block; only popf does. */
         }
-        /* fall thru */
+        RT_FALL_THRU();
     case OP_RETN: /* exit point for function replacement */
         return VINF_SUCCESS;
 
@@ -5204,10 +5204,10 @@ VMMR3_INT_DECL(int) PATMR3ReadOrgInstr(PVM pVM, RTGCPTR32 GCPtrInstr, uint8_t *p
             cbToRead = cbMax;
         switch (cbToRead)
         {
-            case 5: pbDst[4] = pbSrc[4]; /* fall thru */
-            case 4: pbDst[3] = pbSrc[3]; /* fall thru */
-            case 3: pbDst[2] = pbSrc[2]; /* fall thru */
-            case 2: pbDst[1] = pbSrc[1]; /* fall thru */
+            case 5: pbDst[4] = pbSrc[4]; RT_FALL_THRU();
+            case 4: pbDst[3] = pbSrc[3]; RT_FALL_THRU();
+            case 3: pbDst[2] = pbSrc[2]; RT_FALL_THRU();
+            case 2: pbDst[1] = pbSrc[1]; RT_FALL_THRU();
             case 1: pbDst[0] = pbSrc[0];
                 break;
             default:

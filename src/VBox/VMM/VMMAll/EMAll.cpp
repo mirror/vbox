@@ -2562,7 +2562,7 @@ static int emInterpretMov(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
         case DISQPV_TYPE_IMMEDIATE:
             if(!(param1.flags  & (DISQPV_FLAG_32|DISQPV_FLAG_64)))
                 return VERR_EM_INTERPRETER;
-            /* fallthru */
+            RT_FALL_THRU();
 
         case DISQPV_TYPE_ADDRESS:
             pDest = (RTGCPTR)param1.val.val64;
@@ -2635,7 +2635,7 @@ static int emInterpretMov(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
         case DISQPV_TYPE_IMMEDIATE:
             if(!(param2.flags & (DISQPV_FLAG_32|DISQPV_FLAG_64)))
                 return VERR_EM_INTERPRETER;
-            /* fallthru */
+            RT_FALL_THRU();
 
         case DISQPV_TYPE_ADDRESS:
             pSrc = (RTGCPTR)param2.val.val64;

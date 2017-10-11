@@ -442,7 +442,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                 if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_PENDING_SCHEDULE, TMTIMERSTATE_PENDING_RESCHEDULE)))
                     break; /* retry */
                 tmTimerQueueUnlinkActive(pQueue, pTimer);
-                /* fall thru */
+                RT_FALL_THRU();
 
             /*
              * Schedule timer (insert into the active list).
@@ -461,7 +461,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                 if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_PENDING_STOP_SCHEDULE, TMTIMERSTATE_PENDING_STOP)))
                     break; /* retry */
                 tmTimerQueueUnlinkActive(pQueue, pTimer);
-                /* fall thru */
+                RT_FALL_THRU();
 
             /*
              * Stop the timer (not on the active list).
@@ -1617,7 +1617,7 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
                      *        (99.9% sure this that the assertion is caused by DevAPIC.cpp
                      *        re-starting the timer in response to a initial_count write.) */
                 }
-                /* fall thru */
+                RT_FALL_THRU();
             case TMTIMERSTATE_EXPIRED_DELIVER:
                 if (tmTimerTryWithLink(pTimer, TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE, enmState))
                 {

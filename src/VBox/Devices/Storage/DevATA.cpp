@@ -2379,7 +2379,7 @@ static bool atapiR3ReadDVDStructureSS(ATADevState *s)
                 break;
             }
             /** @todo BD support, fall through for now */
-            /* fall thru */
+            RT_FALL_THRU();
 
         /* Generic disk structures */
         case 0x80: /** @todo AACS volume identifier */
@@ -3963,7 +3963,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
         case ATA_RECALIBRATE:
             if (s->fATAPI)
                 goto abort_cmd;
-            /* fall through */
+            RT_FALL_THRU();
         case ATA_INITIALIZE_DEVICE_PARAMETERS:
             ataR3CmdOK(s, ATA_STAT_SEEK);
             ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
@@ -3985,7 +3985,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_READ_VERIFY_SECTORS_EXT:
             s->fLBA48 = true;
-            /* fall thru */
+            RT_FALL_THRU();
         case ATA_READ_VERIFY_SECTORS:
         case ATA_READ_VERIFY_SECTORS_WITHOUT_RETRIES:
             /* do sector number check ? */
@@ -3994,7 +3994,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_READ_SECTORS_EXT:
             s->fLBA48 = true;
-            /* fall thru */
+            RT_FALL_THRU();
         case ATA_READ_SECTORS:
         case ATA_READ_SECTORS_WITHOUT_RETRIES:
             if (!s->pDrvMedia || s->fATAPI)
@@ -4004,7 +4004,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_WRITE_SECTORS_EXT:
             s->fLBA48 = true;
-            /* fall thru */
+            RT_FALL_THRU();
         case ATA_WRITE_SECTORS:
         case ATA_WRITE_SECTORS_WITHOUT_RETRIES:
             if (!s->pDrvMedia || s->fATAPI)
@@ -4014,7 +4014,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_READ_MULTIPLE_EXT:
             s->fLBA48 = true;
-            /* fall thru */
+            RT_FALL_THRU();
         case ATA_READ_MULTIPLE:
             if (!s->pDrvMedia || !s->cMultSectors || s->fATAPI)
                 goto abort_cmd;
@@ -4023,7 +4023,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_WRITE_MULTIPLE_EXT:
             s->fLBA48 = true;
-            /* fall thru */
+            RT_FALL_THRU();
         case ATA_WRITE_MULTIPLE:
             if (!s->pDrvMedia || !s->cMultSectors || s->fATAPI)
                 goto abort_cmd;
@@ -4032,7 +4032,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_READ_DMA_EXT:
             s->fLBA48 = true;
-            /* fall thru */
+            RT_FALL_THRU();
         case ATA_READ_DMA:
         case ATA_READ_DMA_WITHOUT_RETRIES:
             if (!s->pDrvMedia || s->fATAPI)
@@ -4043,7 +4043,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_WRITE_DMA_EXT:
             s->fLBA48 = true;
-            /* fall thru */
+            RT_FALL_THRU();
         case ATA_WRITE_DMA:
         case ATA_WRITE_DMA_WITHOUT_RETRIES:
             if (!s->pDrvMedia || s->fATAPI)
@@ -4761,10 +4761,10 @@ DECL_NO_INLINE(static, void) ataCopyPioData124Slow(ATADevState *pIf, uint8_t *pb
 
     switch (cbCopy)
     {
-        case 4: pbDst[3] = pbSrc[3]; /* fall thru */
-        case 3: pbDst[2] = pbSrc[2]; /* fall thru */
-        case 2: pbDst[1] = pbSrc[1]; /* fall thru */
-        case 1: pbDst[0] = pbSrc[0]; /* fall thru */
+        case 4: pbDst[3] = pbSrc[3]; RT_FALL_THRU();
+        case 3: pbDst[2] = pbSrc[2]; RT_FALL_THRU();
+        case 2: pbDst[1] = pbSrc[1]; RT_FALL_THRU();
+        case 1: pbDst[0] = pbSrc[0]; RT_FALL_THRU();
         case 0: break;
         default: AssertFailed(); /* impossible */
     }

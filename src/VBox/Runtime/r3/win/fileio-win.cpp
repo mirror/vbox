@@ -218,7 +218,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
                 dwDesiredAccess = 0;
                 break;
             }
-            /* fall thru */
+            RT_FALL_THRU();
         default:
             AssertMsgFailed(("Impossible fOpen=%#llx\n", fOpen));
             return VERR_INVALID_PARAMETER;

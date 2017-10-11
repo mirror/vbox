@@ -332,7 +332,7 @@ static bool rtDirFilterWinNtMatchStar(unsigned iDepth, RTUNICP uc, const char *p
                 if (rtDirFilterWinNtMatchEon(puszFilter))
                     return true;
                 ucFilter = '.';
-                /* fall thru */
+                RT_FALL_THRU();
 
             /*
              * Ok, we've got zero or more characters.

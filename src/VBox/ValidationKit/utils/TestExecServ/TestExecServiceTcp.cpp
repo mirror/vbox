@@ -741,7 +741,7 @@ static DECLCALLBACK(int) txsTcpOption(int ch, PCRTGETOPTUNION pVal)
 
         case TXSTCPOPT_LEGACY_CONNECT:
             g_enmTcpMode = TXSTCPMODE_CLIENT;
-            /* fall thru */
+            RT_FALL_THRU();
         case TXSTCPOPT_CONNECT_ADDRESS:
             rc = RTStrCopy(g_szTcpConnectAddr, sizeof(g_szTcpConnectAddr), pVal->psz);
             if (RT_FAILURE(rc))

@@ -127,7 +127,7 @@ void  STATE_APIENTRY crStatePolygonMode (GLenum face, GLenum mode)
             break;
         case GL_FRONT_AND_BACK:
             p->frontMode = mode;
-            /* fall thru */
+            RT_FALL_THRU();
         case GL_BACK:
             p->backMode = mode;
             break;

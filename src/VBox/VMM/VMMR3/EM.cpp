@@ -2358,7 +2358,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         break;
                     }
                     /* fall through and get scheduled. */
-                    /* fall thru */
+                    RT_FALL_THRU();
 
                 /*
                  * Reschedule.
@@ -2521,7 +2521,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         continue;
                     }
                     /* Else fall through and trigger a guru. */
-                    /* fall thru */
+                    RT_FALL_THRU();
 
                 case VERR_VMM_RING0_ASSERTION:
                     Log(("EMR3ExecuteVM: %Rrc: %d -> %d (EMSTATE_GURU_MEDITATION)\n", rc, enmOldState, EMSTATE_GURU_MEDITATION));

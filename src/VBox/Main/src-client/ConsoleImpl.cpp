@@ -1157,7 +1157,7 @@ int Console::i_VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const 
 
             LogFlowFunc(("External auth asked for guest judgement\n"));
         }
-        /* fall thru */
+        RT_FALL_THRU();
 
         case AuthType_Guest:
         {
@@ -8582,7 +8582,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
             {
                 default:
                     AssertFailed();
-                    /* fall through */
+                    RT_FALL_THRU();
                 case MachineState_Stopping:
                     /* successfully powered down */
                     that->i_setMachineState(MachineState_PoweredOff);

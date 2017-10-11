@@ -2663,7 +2663,7 @@ static void ohciRhXferCompleteGeneralURB(POHCI pThis, PVUSBURB pUrb, POHCIED pEd
                     break;
                 default: /* what the hell */
                     Log(("pUrb->enmStatus=%#x!!!\n", pUrb->enmStatus));
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case VUSBSTATUS_DNR:
                     pTd->hwinfo |= OHCI_CC_DNR;
                     break;

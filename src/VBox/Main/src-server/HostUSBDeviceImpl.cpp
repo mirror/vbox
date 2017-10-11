@@ -1289,7 +1289,7 @@ bool HostUSBDevice::i_updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMa
                     /* Changed! */
                     case kHostUSBDeviceState_UsedByHost:
                         fIsImportant = true;
-                        /* fall thru */
+                        RT_FALL_THRU();
                     case kHostUSBDeviceState_Unused:
                         LogThisFunc(("{%s} %s -> %s\n", mName, i_getStateName(), i_stateName(kHostUSBDeviceState_Capturable)));
                         *aRunFilters = i_setState(kHostUSBDeviceState_Capturable);
@@ -1857,7 +1857,7 @@ bool HostUSBDevice::i_setState(HostUSBDeviceState aNewState,
                 case kHostUSBDeviceState_Capturable:
                 case kHostUSBDeviceState_Unused:
                     fFilters = true;
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case kHostUSBDeviceState_PhysDetached:
                     Assert(aNewPendingState == kHostUSBDeviceState_Invalid);
                     Assert(aNewSubState == kHostUSBDeviceSubState_Default);
@@ -1877,7 +1877,7 @@ bool HostUSBDevice::i_setState(HostUSBDeviceState aNewState,
                 /* Host changes. */
                 case kHostUSBDeviceState_Unused:
                     fFilters = true; /* Wildcard only... */
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case kHostUSBDeviceState_UsedByHost:
                 case kHostUSBDeviceState_PhysDetached:
                     Assert(aNewPendingState == kHostUSBDeviceState_Invalid);
@@ -2297,7 +2297,7 @@ bool HostUSBDevice::i_advanceTransition(bool aSkipReAttach /* = false */)
                     break;
                 case kHostUSBDeviceSubState_AwaitingReAttach:
                     enmSub = kHostUSBDeviceSubState_Default;
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case kHostUSBDeviceSubState_Default:
                     switch (enmPending)
                     {
@@ -2326,7 +2326,7 @@ bool HostUSBDevice::i_advanceTransition(bool aSkipReAttach /* = false */)
                     break;
                 case kHostUSBDeviceSubState_AwaitingReAttach:
                     enmSub = kHostUSBDeviceSubState_Default;
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case kHostUSBDeviceSubState_Default:
                     switch (enmPending)
                     {
@@ -2355,7 +2355,7 @@ bool HostUSBDevice::i_advanceTransition(bool aSkipReAttach /* = false */)
                     break;
                 case kHostUSBDeviceSubState_AwaitingReAttach:
                     enmSub = kHostUSBDeviceSubState_Default;
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case kHostUSBDeviceSubState_Default:
                     switch (enmPending)
                     {
@@ -2381,7 +2381,7 @@ bool HostUSBDevice::i_advanceTransition(bool aSkipReAttach /* = false */)
                     break;
                 case kHostUSBDeviceSubState_AwaitingReAttach:
                     enmSub = kHostUSBDeviceSubState_Default;
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case kHostUSBDeviceSubState_Default:
                     switch (enmPending)
                     {
@@ -2470,7 +2470,7 @@ bool HostUSBDevice::i_failTransition(HostUSBDeviceState a_enmStateHint)
             {
                 case kHostUSBDeviceSubState_AwaitingDetach:
                     enmSub = kHostUSBDeviceSubState_Default;
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case kHostUSBDeviceSubState_Default:
                     enmState = mPrevUniState;
                     break;

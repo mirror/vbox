@@ -11519,7 +11519,7 @@ FNIEMOP_DEF_2(iemOpHlp_Grp5_far_Ep, uint8_t, bRm, FNIEMCIMPLFARBRANCH *, pfnCImp
                 return VINF_SUCCESS;
             }
             /* AMD falls thru. */
-            /* fall thru */
+            RT_FALL_THRU();
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(3, 1);

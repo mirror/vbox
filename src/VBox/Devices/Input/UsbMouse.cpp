@@ -2175,7 +2175,7 @@ static DECLCALLBACK(int) usbHidQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 
         case 0x81:
             AssertFailed();
-            /* fall thru */
+            RT_FALL_THRU();
         case 0x01:
             rc = usbHidHandleIntrDevToHost(pThis, &pThis->aEps[1], pUrb);
             break;

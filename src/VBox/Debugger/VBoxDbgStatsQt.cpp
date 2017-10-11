@@ -2223,7 +2223,7 @@ VBoxDbgStatsModel::strValueTimes(PCDBGGUISTATSNODE pNode)
 
         default:
             AssertMsgFailed(("%d\n", pNode->enmType));
-            /* fall thru */
+            RT_FALL_THRU();
         case STAMTYPE_INVALID:
             return "";
     }
@@ -2313,7 +2313,7 @@ VBoxDbgStatsModel::strDeltaValue(PCDBGGUISTATSNODE pNode)
         case STAMTYPE_PROFILE_ADV:
             if (!pNode->Data.Profile.cPeriods)
                 return "0";
-            /* fall thru */
+            RT_FALL_THRU();
         case STAMTYPE_COUNTER:
         case STAMTYPE_RATIO_U32:
         case STAMTYPE_RATIO_U32_RESET:

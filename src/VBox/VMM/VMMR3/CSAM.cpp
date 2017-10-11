@@ -1067,7 +1067,7 @@ static DECLCALLBACK(int) CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTR
     case OP_IRET:
         if (EMIsRawRing1Enabled(pVM))
             break;
-        /* fall thru */
+        RT_FALL_THRU();
 
     case OP_ILLUD2:
         /* This appears to be some kind of kernel panic in Linux 2.4; no point to continue. */
@@ -1164,11 +1164,11 @@ static DECLCALLBACK(int) CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTR
         if (pCpu->pCurInstr->fParam1 != OP_PARM_REG_CS)
             break;
 
-        /* fall thru */
 #ifndef VBOX_WITH_SAFE_STR
+    RT_FALL_THRU();
     case OP_STR:
 #endif
-        /* fall thru */
+    RT_FALL_THRU();
     case OP_LSL:
     case OP_LAR:
     case OP_SGDT:

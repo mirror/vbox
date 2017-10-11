@@ -770,7 +770,7 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, size_t vlen)
     {
         case DHCPDISCOVER:
             fDhcpDiscover = 1;
-            /* fall through */
+            RT_FALL_THRU();
         case DHCPINFORM:
             rc = dhcp_decode_discover(pData, bp, fDhcpDiscover, m);
             if (rc > 0)

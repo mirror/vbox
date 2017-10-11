@@ -494,7 +494,7 @@ static DECLCALLBACK(int) supSvcGrantThread(RTTHREAD hThread, void *pvThis)
                 rc = RTSemEventSignal(pThis->hResponseEvent);
                 if (RT_FAILURE(rc))
                     return supSvcGrantThreadButchered(pThis, true /* fOwnCritSect*/, "RTSemEventSignal", rc);
-                /* fall thru */
+                RT_FALL_THRU();
 
             case kSupSvcGrantState_Paused:
                 RTCritSectLeave(&pThis->CritSect);
@@ -509,7 +509,7 @@ static DECLCALLBACK(int) supSvcGrantThread(RTTHREAD hThread, void *pvThis)
                 rc = RTSemEventSignal(pThis->hResponseEvent);
                 if (RT_FAILURE(rc))
                     return supSvcGrantThreadButchered(pThis, true /* fOwnCritSect*/, "RTSemEventSignal", rc);
-                /* fall thru */
+                RT_FALL_THRU();
 
             case kSupSvcGrantState_Listen:
                 RTCritSectLeave(&pThis->CritSect);

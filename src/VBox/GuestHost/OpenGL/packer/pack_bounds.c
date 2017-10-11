@@ -36,9 +36,9 @@ void PACK_APIENTRY crPackBoundsInfoCR( CR_PACKER_CONTEXT_ARGDECL const CRrecti *
     /* put in padding opcodes (deliberately bogus) */
     switch ( len_aligned - len )
     {
-      case 3: *data_ptr++ = 0xff; /* FALLTHROUGH */
-      case 2: *data_ptr++ = 0xff; /* FALLTHROUGH */
-      case 1: *data_ptr++ = 0xff; /* FALLTHROUGH */
+      case 3: *data_ptr++ = 0xff; RT_FALL_THRU();
+      case 2: *data_ptr++ = 0xff; RT_FALL_THRU();
+      case 1: *data_ptr++ = 0xff; RT_FALL_THRU();
       default: break;
     }
 

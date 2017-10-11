@@ -1357,7 +1357,7 @@ RTEXITCODE handleList(HandlerArg *a)
                 if (enmOptCommand == kListNotSpecified)
                     break;
                 ch = enmOptCommand;
-                /* fall thru */
+                RT_FALL_THRU();
 
             case kListVMs:
             case kListRunningVMs:

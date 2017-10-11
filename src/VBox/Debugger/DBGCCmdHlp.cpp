@@ -554,7 +554,7 @@ static DECLCALLBACK(int) dbgcHlpMemWrite(PDBGCCMDHLP pCmdHlp, const void *pvBuff
             Var.enmType = DBGCVAR_TYPE_GC_FLAT;
             Var.u.GCFlat = Address.FlatPtr;
         }
-        /* fall thru */
+        RT_FALL_THRU();
         case DBGCVAR_TYPE_GC_FLAT:
             rc = DBGFR3MemWrite(pDbgc->pUVM, pDbgc->idCpu,
                                 DBGFR3AddrFromFlat(pDbgc->pUVM, &Address, Var.u.GCFlat),

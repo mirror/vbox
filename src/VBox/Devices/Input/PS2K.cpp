@@ -750,7 +750,7 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
             /* Fall through only to handle unrecognized commands. */
             if (fHandled)
                 break;
-            /* fall thru */
+            RT_FALL_THRU();
 
         case KCMD_INVALID_1:
         case KCMD_INVALID_2:

@@ -301,7 +301,7 @@ mb_free_ext(PNATState pData, struct mbuf *m)
 #else
             AssertMsgFailed(("unimplemented"));
 #endif
-			/* FALLTHROUGH */
+			RT_FALL_THRU();
 		case EXT_EXTREF:
 			KASSERT(m->m_ext.ext_free != NULL,
 				("%s: ext_free not set", __func__));

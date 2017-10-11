@@ -246,7 +246,7 @@ void WinAltGrMonitor::updateStateFromKeyEvent(unsigned iDownScanCode,
             }
             else
                 m_enmFakeControlDetectionState = LEFT_CONTROL_DOWN;
-            /* Fall through. */
+            RT_FALL_THRU();
         case LEFT_CONTROL_DOWN:
             if (   iDownScanCode == 0x1D /* left control */
                 && !fKeyDown

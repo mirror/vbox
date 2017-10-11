@@ -1178,7 +1178,7 @@ static int pgmR3PrepRamPages(PVM pVM)
 
                         default:
                             AssertMsgFailed(("%R[pgmpage]", pPage));
-                            /* fall thru */
+                            RT_FALL_THRU();
                         case PGMPAGETYPE_MMIO2:
                         case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
                             paLSPages[iPage].fZero   = 0;
@@ -2198,7 +2198,7 @@ DECLINLINE(bool) pgmR3CompareNewAndOldPageTypes(PPGMPAGE pPage, uint8_t uOldType
         case PGMPAGETYPE_MMIO2_ALIAS_MMIO:      uOldPageType = PGMPAGETYPE_OLD_MMIO2_ALIAS_MMIO; break;
         case PGMPAGETYPE_ROM_SHADOW:            uOldPageType = PGMPAGETYPE_OLD_ROM_SHADOW; break;
         case PGMPAGETYPE_ROM:                   uOldPageType = PGMPAGETYPE_OLD_ROM; break;
-        case PGMPAGETYPE_SPECIAL_ALIAS_MMIO:    /* fall thru */
+        case PGMPAGETYPE_SPECIAL_ALIAS_MMIO:    RT_FALL_THRU();
         case PGMPAGETYPE_MMIO:                  uOldPageType = PGMPAGETYPE_OLD_MMIO; break;
         default:
             AssertFailed();
@@ -2933,7 +2933,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                             ||  PGM_PAGE_IS_BALLOONED(pRealPage))
                             break;
                         /** @todo implement zero page replacing. */
-                        /* fall thru */
+                        RT_FALL_THRU();
                     case PGM_STATE_REC_ROM_VIRGIN:
                     case PGM_STATE_REC_ROM_SHW_RAW:
                     {

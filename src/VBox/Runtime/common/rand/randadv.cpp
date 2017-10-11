@@ -221,11 +221,11 @@ DECLHIDDEN(DECLCALLBACK(void))  rtRandAdvSynthesizeBytesFromU32(PRTRANDINT pThis
         switch (cb)
         {
             case 4:
-                pb[3] = (uint8_t)(u32 >> 24); /* fall thru */
+                pb[3] = (uint8_t)(u32 >> 24); RT_FALL_THRU();
             case 3:
-                pb[2] = (uint8_t)(u32 >> 16); /* fall thru */
+                pb[2] = (uint8_t)(u32 >> 16); RT_FALL_THRU();
             case 2:
-                pb[1] = (uint8_t)(u32 >> 8);  /* fall thru */
+                pb[1] = (uint8_t)(u32 >> 8);  RT_FALL_THRU();
             case 1:
                 pb[0] = (uint8_t)u32;
             return; /* done */
@@ -253,19 +253,19 @@ DECLHIDDEN(DECLCALLBACK(void))  rtRandAdvSynthesizeBytesFromU64(PRTRANDINT pThis
         switch (cb)
         {
             case 8:
-                pb[7] = (uint8_t)(u64 >> 56); /* fall thru */
+                pb[7] = (uint8_t)(u64 >> 56); RT_FALL_THRU();
             case 7:
-                pb[6] = (uint8_t)(u64 >> 48); /* fall thru */
+                pb[6] = (uint8_t)(u64 >> 48); RT_FALL_THRU();
             case 6:
-                pb[5] = (uint8_t)(u64 >> 40); /* fall thru */
+                pb[5] = (uint8_t)(u64 >> 40); RT_FALL_THRU();
             case 5:
-                pb[4] = (uint8_t)(u64 >> 32); /* fall thru */
+                pb[4] = (uint8_t)(u64 >> 32); RT_FALL_THRU();
             case 4:
-                pb[3] = (uint8_t)(u64 >> 24); /* fall thru */
+                pb[3] = (uint8_t)(u64 >> 24); RT_FALL_THRU();
             case 3:
-                pb[2] = (uint8_t)(u64 >> 16); /* fall thru */
+                pb[2] = (uint8_t)(u64 >> 16); RT_FALL_THRU();
             case 2:
-                pb[1] = (uint8_t)(u64 >> 8);  /* fall thru */
+                pb[1] = (uint8_t)(u64 >> 8);  RT_FALL_THRU();
             case 1:
                 pb[0] = (uint8_t)u64;
             return; /* done */

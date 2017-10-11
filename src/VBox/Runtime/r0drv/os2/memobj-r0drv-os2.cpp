@@ -89,7 +89,7 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             if (pMemOs2->Core.u.Mapping.R0Process == NIL_RTR0PROCESS)
                 break;
 
-            /* fall thru */
+            RT_FALL_THRU();
         case RTR0MEMOBJTYPE_PAGE:
         case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_CONT:

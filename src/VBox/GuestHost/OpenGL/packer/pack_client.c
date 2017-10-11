@@ -108,8 +108,8 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                     case 4:
                         crPackVertexAttrib4usvARB(attr, usPtr);
                         break;
-                    case 3: usv[2] = usPtr[2]; /* fall thru */
-                    case 2: usv[1] = usPtr[1]; /* fall thru */
+                    case 3: usv[2] = usPtr[2]; RT_FALL_THRU();
+                    case 2: usv[1] = usPtr[1]; RT_FALL_THRU();
                     case 1:
                         usv[0] = usPtr[0];
                         crPackVertexAttrib4usvARB(attr, usv);
@@ -147,8 +147,8 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                     case 4:
                         crPackVertexAttrib4ivARB(attr, iPtr);
                         break;
-                    case 3: iv[2] = iPtr[2]; /* fall thru */
-                    case 2: iv[1] = iPtr[1]; /* fall thru */
+                    case 3: iv[2] = iPtr[2]; RT_FALL_THRU();
+                    case 2: iv[1] = iPtr[1]; RT_FALL_THRU();
                     case 1:
                         iv[0] = iPtr[0];
                         crPackVertexAttrib4ivARB(attr, iv);
@@ -186,8 +186,8 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                     case 4:
                         crPackVertexAttrib4uivARB(attr, uiPtr);
                         break;
-                    case 3: uiv[2] = uiPtr[2]; /* fall thru */
-                    case 2: uiv[1] = uiPtr[1]; /* fall thru */
+                    case 3: uiv[2] = uiPtr[2]; RT_FALL_THRU();
+                    case 2: uiv[1] = uiPtr[1]; RT_FALL_THRU();
                     case 1:
                         uiv[0] = uiPtr[0];
                         crPackVertexAttrib4uivARB(attr, uiv);
@@ -243,8 +243,8 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                     case 4:
                         crPackVertexAttrib4bvARB(attr, bPtr);
                         break;
-                    case 3: bv[2] = bPtr[2]; /* fall thru */
-                    case 2: bv[1] = bPtr[1]; /* fall thru */
+                    case 3: bv[2] = bPtr[2]; RT_FALL_THRU();
+                    case 2: bv[1] = bPtr[1]; RT_FALL_THRU();
                     case 1:
                         bv[0] = bPtr[0];
                         crPackVertexAttrib4bvARB(attr, bv);
@@ -282,8 +282,8 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                     case 4:
                         crPackVertexAttrib4ubvARB(attr, ubPtr);
                         break;
-                    case 3: ubv[2] = ubPtr[2]; /* fall thru */
-                    case 2: ubv[1] = ubPtr[1]; /* fall thru */
+                    case 3: ubv[2] = ubPtr[2]; RT_FALL_THRU();
+                    case 2: ubv[1] = ubPtr[1]; RT_FALL_THRU();
                     case 1:
                         ubv[0] = ubPtr[0];
                         crPackVertexAttrib4ubvARB(attr, ubv);

@@ -1402,14 +1402,14 @@ static unsigned BS3_NEAR_CODE Bs3Cfg1EncodeMemMod0Disp(PBS3CG1STATE pThis, bool 
      */
     switch (cbOp + cbMisalign)
     {
-        case 8: pThis->pbDataPg[X86_PAGE_SIZE - 8] = 0xcc;  /* fall thru */
-        case 7: pThis->pbDataPg[X86_PAGE_SIZE - 7] = 0xcc;  /* fall thru */
-        case 6: pThis->pbDataPg[X86_PAGE_SIZE - 6] = 0xcc;  /* fall thru */
-        case 5: pThis->pbDataPg[X86_PAGE_SIZE - 5] = 0xcc;  /* fall thru */
-        case 4: pThis->pbDataPg[X86_PAGE_SIZE - 4] = 0xcc;  /* fall thru */
-        case 3: pThis->pbDataPg[X86_PAGE_SIZE - 3] = 0xcc;  /* fall thru */
-        case 2: pThis->pbDataPg[X86_PAGE_SIZE - 2] = 0xcc;  /* fall thru */
-        case 1: pThis->pbDataPg[X86_PAGE_SIZE - 1] = 0xcc;  /* fall thru */
+        case 8: pThis->pbDataPg[X86_PAGE_SIZE - 8] = 0xcc;  RT_FALL_THRU();
+        case 7: pThis->pbDataPg[X86_PAGE_SIZE - 7] = 0xcc;  RT_FALL_THRU();
+        case 6: pThis->pbDataPg[X86_PAGE_SIZE - 6] = 0xcc;  RT_FALL_THRU();
+        case 5: pThis->pbDataPg[X86_PAGE_SIZE - 5] = 0xcc;  RT_FALL_THRU();
+        case 4: pThis->pbDataPg[X86_PAGE_SIZE - 4] = 0xcc;  RT_FALL_THRU();
+        case 3: pThis->pbDataPg[X86_PAGE_SIZE - 3] = 0xcc;  RT_FALL_THRU();
+        case 2: pThis->pbDataPg[X86_PAGE_SIZE - 2] = 0xcc;  RT_FALL_THRU();
+        case 1: pThis->pbDataPg[X86_PAGE_SIZE - 1] = 0xcc;  RT_FALL_THRU();
         case 0: break;
         default:
         {
@@ -2657,7 +2657,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_OR_ViceVersa(PBS3CG1STATE
             pThis->aOperands[pThis->iRegOp].idxFieldBase = BS3CG1DST_YMM0;
             pThis->aOperands[pThis->iRegOp].cbOp = 32;
             pThis->aOperands[pThis->iRmOp ].cbOp = 32;
-            /* fall thru */
+            RT_FALL_THRU();
         case 0:
             off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, iEncoding >= 20 /*L*/, 1 /*~R*/);
             off = Bs3Cg1InsertOpcodes(pThis, off);
@@ -3281,7 +3281,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_OR_ViceVersa(PBS3CG1STATE
             pThis->aOperands[pThis->iRmOp ].idxFieldBase = BS3CG1DST_YMM0;
             pThis->aOperands[pThis->iRegOp].cbOp         = 32;
             pThis->aOperands[pThis->iRegOp].idxFieldBase = BS3CG1DST_YMM0;
-            /* fall thru */
+            RT_FALL_THRU();
         case 0:
             pThis->aOperands[pThis->iRmOp ].enmLocation = pThis->aOperands[pThis->iRmOp].enmLocationReg;
             off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, iEncoding >= 20 /*L*/, 1 /*~R*/);
@@ -4857,7 +4857,7 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
                     }
                     return Bs3TestFailedF("Malformed context instruction: idxField=%d", idxField);
                 }
-                /* fall thru */
+                RT_FALL_THRU();
             default:
                 return Bs3TestFailed("Malformed context instruction: Destination");
         }
@@ -4879,7 +4879,7 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
                     if (cbValue)
                         break;
                 }
-                /* fall thru */
+                RT_FALL_THRU();
             default:
                 return Bs3TestFailed("Malformed context instruction: size");
         }

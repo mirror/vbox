@@ -507,7 +507,7 @@ static void ps2mRateProtocolKnock(PPS2M pThis, uint8_t rate)
             pThis->enmProtocol = PS2M_PROTO_IMEX;
             LogRelFlow(("PS2M: Switching mouse to ImEx protocol.\n"));
         }
-        /* Fall through! */
+        RT_FALL_THRU();
     default:
         pThis->enmKnockState = PS2M_KNOCK_INITIAL;
     }
@@ -782,7 +782,7 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
             /* Fall through only to handle unrecognized commands. */
             if (fHandled)
                 break;
-            /* fall thru */
+            RT_FALL_THRU();
 
         case ACMD_INVALID_1:
         case ACMD_INVALID_2:

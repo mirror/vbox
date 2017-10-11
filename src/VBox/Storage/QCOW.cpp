@@ -1431,7 +1431,7 @@ static DECLCALLBACK(int) qcowAsyncClusterAllocUpdate(void *pBackendData, PVDIOCT
             }
             /* Success, fall through. */
         }
-        /* fall thru */
+        RT_FALL_THRU();
         case QCOWCLUSTERASYNCALLOCSTATE_L2_LINK:
         {
             /* L2 link updated in L1 , save L2 entry in cache and allocate new user data cluster. */
@@ -1457,7 +1457,7 @@ static DECLCALLBACK(int) qcowAsyncClusterAllocUpdate(void *pBackendData, PVDIOCT
                 break;
             }
         }
-        /* fall thru */
+        RT_FALL_THRU();
         case QCOWCLUSTERASYNCALLOCSTATE_USER_ALLOC:
         {
             pClusterAlloc->enmAllocState = QCOWCLUSTERASYNCALLOCSTATE_USER_LINK;
@@ -1477,7 +1477,7 @@ static DECLCALLBACK(int) qcowAsyncClusterAllocUpdate(void *pBackendData, PVDIOCT
                 break;
             }
         }
-        /* fall thru */
+        RT_FALL_THRU();
         case QCOWCLUSTERASYNCALLOCSTATE_USER_LINK:
         {
             /* Everything done without errors, signal completion. */

@@ -3025,7 +3025,7 @@ static int pcnetBCRWriteU16(PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
             {
                 default:
                     Log(("#%d Bad SWSTYLE=%#04x\n", PCNET_INST_NR, val & 0xff));
-                    // fall through
+                    RT_FALL_THRU();
                 case 0:
                     val |= 0x0200; /* 16 bit */
                     pThis->iLog2DescSize = 3;
@@ -3045,7 +3045,7 @@ static int pcnetBCRWriteU16(PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
             }
             Log(("#%d BCR_SWS=%#06x\n", PCNET_INST_NR, val));
             pThis->aCSR[58] = val;
-            /* fall through */
+            RT_FALL_THRU();
         case BCR_LNKST:
         case BCR_LED1:
         case BCR_LED2:

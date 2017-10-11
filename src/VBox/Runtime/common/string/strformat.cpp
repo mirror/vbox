@@ -658,7 +658,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
 
                             case 'X':
                                 fFlags |= RTSTR_F_CAPITAL;
-                                /* fall thru */
+                                RT_FALL_THRU();
                             case 'x':
                                 uBase = 16;
                                 break;

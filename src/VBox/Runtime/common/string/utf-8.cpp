@@ -94,16 +94,16 @@ DECLHIDDEN(int) rtUtf8Length(const char *psz, size_t cch, size_t *pcuc, size_t *
             {
                 case 6:
                     RTStrAssertMsgReturn((puch[5] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("6/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case 5:
                     RTStrAssertMsgReturn((puch[4] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("5/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case 4:
                     RTStrAssertMsgReturn((puch[3] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("4/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case 3:
                     RTStrAssertMsgReturn((puch[2] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("3/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case 2:
                     RTStrAssertMsgReturn((puch[1] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("2/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
                    break;
@@ -606,16 +606,16 @@ static int rtUtf8CalcUtf16LengthN(const char *psz, size_t cch, size_t *pcwc)
             {
                 case 6:
                     RTStrAssertMsgReturn((puch[5] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("6/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case 5:
                     RTStrAssertMsgReturn((puch[4] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("5/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case 4:
                     RTStrAssertMsgReturn((puch[3] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("4/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case 3:
                     RTStrAssertMsgReturn((puch[2] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("3/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case 2:
                     RTStrAssertMsgReturn((puch[1] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("2/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
                    break;
@@ -1685,19 +1685,19 @@ RTDECL(int) RTStrGetCpExInternal(const char **ppsz, PRTUNICP pCp)
             case 6:
                 RTStrAssertMsgReturn((puch[5] & 0xc0) == 0x80, ("6/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
                                      rtStrGetCpExFailure(ppsz, pCp, VERR_INVALID_UTF8_ENCODING));
-                /* fall thru */
+                RT_FALL_THRU();
             case 5:
                 RTStrAssertMsgReturn((puch[4] & 0xc0) == 0x80, ("5/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
                                      rtStrGetCpExFailure(ppsz, pCp, VERR_INVALID_UTF8_ENCODING));
-                /* fall thru */
+                RT_FALL_THRU();
             case 4:
                 RTStrAssertMsgReturn((puch[3] & 0xc0) == 0x80, ("4/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
                                      rtStrGetCpExFailure(ppsz, pCp, VERR_INVALID_UTF8_ENCODING));
-                /* fall thru */
+                RT_FALL_THRU();
             case 3:
                 RTStrAssertMsgReturn((puch[2] & 0xc0) == 0x80, ("3/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
                                      rtStrGetCpExFailure(ppsz, pCp, VERR_INVALID_UTF8_ENCODING));
-                /* fall thru */
+                RT_FALL_THRU();
             case 2:
                 RTStrAssertMsgReturn((puch[1] & 0xc0) == 0x80, ("2/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
                                      rtStrGetCpExFailure(ppsz, pCp, VERR_INVALID_UTF8_ENCODING));
@@ -1844,19 +1844,19 @@ RTDECL(int) RTStrGetCpNExInternal(const char **ppsz, size_t *pcch, PRTUNICP pCp)
             case 6:
                 RTStrAssertMsgReturn((puch[5] & 0xc0) == 0x80, ("6/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
                                      rtStrGetCpNExFailure(ppsz, pcch, pCp, VERR_INVALID_UTF8_ENCODING));
-                /* fall thru */
+                RT_FALL_THRU();
             case 5:
                 RTStrAssertMsgReturn((puch[4] & 0xc0) == 0x80, ("5/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
                                      rtStrGetCpNExFailure(ppsz, pcch, pCp, VERR_INVALID_UTF8_ENCODING));
-                /* fall thru */
+                RT_FALL_THRU();
             case 4:
                 RTStrAssertMsgReturn((puch[3] & 0xc0) == 0x80, ("4/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
                                      rtStrGetCpNExFailure(ppsz, pcch, pCp, VERR_INVALID_UTF8_ENCODING));
-                /* fall thru */
+                RT_FALL_THRU();
             case 3:
                 RTStrAssertMsgReturn((puch[2] & 0xc0) == 0x80, ("3/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
                                      rtStrGetCpNExFailure(ppsz, pcch, pCp, VERR_INVALID_UTF8_ENCODING));
-                /* fall thru */
+                RT_FALL_THRU();
             case 2:
                 RTStrAssertMsgReturn((puch[1] & 0xc0) == 0x80, ("2/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
                                      rtStrGetCpNExFailure(ppsz, pcch, pCp, VERR_INVALID_UTF8_ENCODING));

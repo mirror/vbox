@@ -414,7 +414,7 @@ main(int argc, char **argv)
         {
             default:
                 fprintf(stderr, "unknown option `%c:%#x'\n", c, c);
-                /* fall thru */
+                RT_FALL_THRU();
             case '?':
             case 'h':
                 return usage(argv[0]);

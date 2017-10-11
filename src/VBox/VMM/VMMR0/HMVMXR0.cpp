@@ -7269,7 +7269,7 @@ static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
             case X86_XCPT_GP:
             case X86_XCPT_AC:
                 u32IntInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
-                /* fall thru */
+                RT_FALL_THRU();
             default:
                 u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
                 break;
@@ -8247,7 +8247,7 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uin
             case X86_XCPT_AC:
                 AssertMsg(VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntInfo),
                           ("Error-code-valid bit not set for exception that has an error code uVector=%#x\n", uVector));
-                /* fall thru */
+                RT_FALL_THRU();
             default:
                 break;
         }
@@ -11590,10 +11590,10 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
     {
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_PRIV_SW_XCPT:  /* Privileged software exception. (#DB from ICEBP) */
             Assert(uVector == X86_XCPT_DB);
-            /* fall thru */
+            RT_FALL_THRU();
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT:       /* Software exception. (#BP or #OF) */
             Assert(uVector == X86_XCPT_BP || uVector == X86_XCPT_OF || uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_PRIV_SW_XCPT);
-            /* fall thru */
+            RT_FALL_THRU();
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT:
         {
             /*
@@ -12446,7 +12446,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                     HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_SYSENTER_ESP_MSR);
                     HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR);
                     break;
-                case MSR_K8_FS_BASE:        /* fall thru */
+                case MSR_K8_FS_BASE:        RT_FALL_THRU();
                 case MSR_K8_GS_BASE:        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_SEGMENT_REGS);     break;
                 case MSR_K6_EFER:           /* already handled above */                             break;
                 default:

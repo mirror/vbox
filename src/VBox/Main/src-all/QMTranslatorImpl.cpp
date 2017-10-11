@@ -241,7 +241,7 @@ public:
                     /* Only get size information to speed-up vector filling
                      * if Hashes section goes in the file before Message section */
                     m_messageArray.reserve(sLen >> 3);
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case Context:
                     stream.seek(sLen);
                     break;

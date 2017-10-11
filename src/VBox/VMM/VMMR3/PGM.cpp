@@ -4033,7 +4033,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 
                     default:
                         AssertFailed();
-                        /* fall thru */
+                        RT_FALL_THRU();
                     case PGMPAGETYPE_MMIO:
                     case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
                     case PGMPAGETYPE_SPECIAL_ALIAS_MMIO:

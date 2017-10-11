@@ -740,7 +740,7 @@ BS3_CMN_DEF(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list BS3_FA
              */
             case 'P':
                 State.fFlags |= STR_F_CAPITAL;
-                /* fall thru */
+                RT_FALL_THRU();
             case 'p':
             {
                 void BS3_FAR *pv = va_arg(va, void BS3_FAR *);

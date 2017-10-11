@@ -379,7 +379,7 @@ sbuf_copyin(struct sbuf *s, const void *uaddr, size_t len)
 	switch (copyinstr(uaddr, s->s_buf + s->s_len, len + 1, &done)) {
 	case ENAMETOOLONG:
 		SBUF_SETFLAG(s, SBUF_OVERFLOWED);
-		/* fall through */
+		RT_FALL_THRU();
 	case 0:
 		s->s_len += done - 1;
 		break;

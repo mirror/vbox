@@ -241,7 +241,7 @@ static int rtOnceOtherThread(PRTONCE pOnce, PRTSEMEVENTMULTI phEvtM)
             case RTONCESTATE_DONE_HAVE_SEM:
                 if (*phEvtM == NIL_RTSEMEVENTMULTI)
                     return VINF_SUCCESS;
-                /* fall thru */
+                RT_FALL_THRU();
             case RTONCESTATE_BUSY_HAVE_SEM:
             {
                 /*

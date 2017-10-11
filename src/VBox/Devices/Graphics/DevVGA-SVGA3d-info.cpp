@@ -1035,7 +1035,7 @@ void vmsvga3dAsciiPrint(PFMVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void c
                     AssertMsgFailed(("%s is not implemented\n", vmsvgaLookupEnum((int)enmFormat, &g_SVGA3dSurfaceFormat2String)));
                     fHitFormatAssert = true;
                 }
-                /* fall thru */
+                RT_FALL_THRU();
             default:
                 /* Lazy programmer fallbacks. */
                 if (cbSrcPixel == 4)
@@ -1269,7 +1269,7 @@ char *vmsvga3dFormatRenderState(char *pszBuffer, size_t cbBuffer, SVGA3dRenderSt
                                 uValue.u <= SVGA3D_WRAPCOORD_ALL ? " (out of bounds" : "");
                     break;
                 default:
-                    AssertFailed();  /* Fall through */
+                    AssertFailed();  RT_FALL_THRU();
                 case 'b': //SVGA3dBlendOp
                 case 'e': //SVGA3dBlendEquation
                 case 'p': //SVGA3dCmpFunc

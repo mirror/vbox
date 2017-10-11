@@ -1378,7 +1378,7 @@ DECLHIDDEN(int) vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode)
         {
             default:
                 AssertMsgFailed(("Invalid cancel mode\n"));
-                /* fall thru */
+                RT_FALL_THRU();
             case CANCELMODE_FAIL:
                 pUrb->enmStatus = VUSBSTATUS_CRC;
                 break;

@@ -614,7 +614,7 @@ static void pit_irq_timer_update(PPITCHANNEL pChan, uint64_t current_time, uint6
                     PDMDevHlpISASetIrq(pDevIns, pChan->irq, PDM_IRQ_LEVEL_FLIP_FLOP);
                     break;
                 }
-                /* Else fall through! */
+                RT_FALL_THRU();
             default:
                 PDMDevHlpISASetIrq(pDevIns, pChan->irq, irq_level);
                 break;

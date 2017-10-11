@@ -1077,7 +1077,7 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     {
         case PGM_PAGE_STATE_WRITE_MONITORED:
             pgmPhysPageMakeWriteMonitoredWritable(pVM, pPage);
-            /* fall thru */
+            RT_FALL_THRU();
         default: /* to shut up GCC */
         case PGM_PAGE_STATE_ALLOCATED:
             return VINF_SUCCESS;
@@ -1090,7 +1090,7 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         case PGM_PAGE_STATE_ZERO:
             if (PGM_PAGE_IS_MMIO(pPage))
                 return VERR_PGM_PHYS_PAGE_RESERVED;
-            /* fall thru */
+            RT_FALL_THRU();
         case PGM_PAGE_STATE_SHARED:
             return pgmPhysAllocPage(pVM, pPage, GCPhys);
 
@@ -4432,7 +4432,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2PtrNoLock(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCP
                             break;
                         case PGM_PAGE_STATE_BALLOONED:
                             AssertFailed();
-                            /* fall thru */
+                            RT_FALL_THRU();
                         case PGM_PAGE_STATE_ZERO:
                         case PGM_PAGE_STATE_SHARED:
                         case PGM_PAGE_STATE_WRITE_MONITORED:
@@ -4473,7 +4473,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2PtrNoLock(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCP
                                 break;
                             case PGM_PAGE_STATE_BALLOONED:
                                 AssertFailed();
-                                /* fall thru */
+                                RT_FALL_THRU();
                             case PGM_PAGE_STATE_ZERO:
                             case PGM_PAGE_STATE_SHARED:
                             case PGM_PAGE_STATE_WRITE_MONITORED:

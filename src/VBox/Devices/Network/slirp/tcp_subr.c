@@ -454,7 +454,7 @@ int tcp_fconnect(PNATState pData, struct socket *so)
                             break;
                         }
                     }
-                    /* FALLTHROUGH */
+                    RT_FALL_THRU();
                 case CTL_ALIAS:
                 default:
                     addr.sin_addr = loopback_addr;

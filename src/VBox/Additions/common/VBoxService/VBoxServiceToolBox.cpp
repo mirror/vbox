@@ -808,7 +808,7 @@ static int vgsvcToolboxLsHandleDir(const char *pszDir, uint32_t fFlags, uint32_t
                     case RTFS_TYPE_SYMLINK:
                         if (!(fFlags & VBOXSERVICETOOLBOXLSFLAG_SYMLINKS))
                             break;
-                        /* fall thru */
+                        RT_FALL_THRU();
                     case RTFS_TYPE_DIRECTORY:
                     {
                         const char *pszName = pNodeIt->dirEntry.szName;

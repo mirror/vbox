@@ -1453,7 +1453,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         {
             default:
                 Assert(false);
-                /* fall thru */
+                RT_FALL_THRU();
             case ChipsetType_PIIX3:
                 InsertConfigNode(pDevices, "pci", &pDev);
                 uHbcPCIAddress = (0x0 << 16) | 0;

@@ -1584,7 +1584,7 @@ static int usbMsdHandleBulkHostToDev(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb
         case USBMSDREQSTATE_STATUS:
             LogFlow(("usbMsdHandleBulkHostToDev: Skipping pending status.\n"));
             pReq->enmState = USBMSDREQSTATE_READY;
-            /* fall thru */
+            RT_FALL_THRU();
 
         /*
          * We're ready to receive a command.  Start off by validating the
@@ -1828,7 +1828,7 @@ static int usbMsdHandleBulkDevToHost(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb
                 return usbMsdCompleteStall(pThis, NULL, pUrb, "SCSI Submit #3");
             }
         }
-        /* fall thru */
+        RT_FALL_THRU();
 
         /*
          * The SCSI command is still pending, queue the URB awaiting its
@@ -1963,7 +1963,7 @@ static DECLCALLBACK(int) usbMsdQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 
         case 0x81:
             AssertFailed();
-            /* fall thru */
+            RT_FALL_THRU();
         case 0x01:
             rc = usbMsdHandleBulkDevToHost(pThis, &pThis->aEps[1], pUrb);
             break;

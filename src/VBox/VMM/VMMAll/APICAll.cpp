@@ -2122,7 +2122,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICWriteMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t 
                     break;
                 }
             }
-            /* fall thru */
+            RT_FALL_THRU();
             /* Read-only MSRs: */
             case MSR_IA32_X2APIC_ID:
             case MSR_IA32_X2APIC_VERSION:
@@ -2536,7 +2536,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICLocalInterrupt(PVMCPU pVCpu, uint8_t u8Pin, uint8
                     /** @todo won't work in R0/RC because callers don't care about rcRZ. */
                     AssertMsgFailed(("INIT through LINT0/LINT1 is not yet supported\n"));
                 }
-                /* fall thru */
+                RT_FALL_THRU();
                 case XAPICDELIVERYMODE_FIXED:
                 {
                     PAPICCPU       pApicCpu = VMCPU_TO_APICCPU(pVCpu);

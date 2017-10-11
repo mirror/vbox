@@ -4190,7 +4190,7 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                 rc = RTSemEventSignal(pDevExt->hTscDeltaEvent);
                 if (RT_FAILURE(rc))
                     return supdrvTscDeltaThreadButchered(pDevExt, true /* fSpinlockHeld */, "RTSemEventSignal", rc);
-                /* fall thru */
+                RT_FALL_THRU();
             }
 
             case kTscDeltaThreadState_Listening:
@@ -4219,7 +4219,7 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                     return supdrvTscDeltaThreadButchered(pDevExt, true /* fSpinlockHeld */, "RTSemEventSignal", rc);
                 RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
                 RTThreadSleep(1);
-                /* fall thru */
+                RT_FALL_THRU();
             }
 
             case kTscDeltaThreadState_Measuring:

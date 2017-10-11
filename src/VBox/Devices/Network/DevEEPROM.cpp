@@ -236,7 +236,7 @@ void EEPROM93C46::write(uint32_t u32Wires)
                 break;
             case READING_DI:
                 m_u32InternalWires &= ~WIRES_DO; /* Clear ready/busy status from DO. */
-                /* Fall through! */
+                RT_FALL_THRU();
             default:
                 m_eState = STANDBY;
                 break;

@@ -503,7 +503,7 @@ RTEXITCODE RTZipGzipCmd(unsigned cArgs, char **papszArgs)
                     return rcExit;
                 ValueUnion.psz = "-";
                 Opts.fStdOut = true;
-                /* Fall thru. */
+                RT_FALL_THRU();
             case VINF_GETOPT_NOT_OPTION:
             {
                 if (!*Opts.pszSuff && !Opts.fStdOut)

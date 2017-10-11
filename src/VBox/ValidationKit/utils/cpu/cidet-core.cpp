@@ -1116,32 +1116,32 @@ static bool cidetCoreSetupNextBaseEncoding_SegmentPrefix(PCIDETCORE pThis)
                 pThis->uSegPrf = X86_SREG_ES;
                 if (pThis->fTestCfg & CIDET_TESTCFG_SEG_PRF_ES)
                     return true;
-                /* fall thru */
+                RT_FALL_THRU();
             case X86_SREG_ES:
                 pThis->uSegPrf = X86_SREG_CS;
                 if (pThis->fTestCfg & CIDET_TESTCFG_SEG_PRF_CS)
                     return true;
-                /* fall thru */
+                RT_FALL_THRU();
             case X86_SREG_CS:
                 pThis->uSegPrf = X86_SREG_SS;
                 if (pThis->fTestCfg & CIDET_TESTCFG_SEG_PRF_SS)
                     return true;
-                /* fall thru */
+                RT_FALL_THRU();
             case X86_SREG_SS:
                 pThis->uSegPrf = X86_SREG_DS;
                 if (pThis->fTestCfg & CIDET_TESTCFG_SEG_PRF_DS)
                     return true;
-                /* fall thru */
+                RT_FALL_THRU();
             case X86_SREG_DS:
                 pThis->uSegPrf = X86_SREG_FS;
                 if (pThis->fTestCfg & CIDET_TESTCFG_SEG_PRF_FS)
                     return true;
-                /* fall thru */
+                RT_FALL_THRU();
             case X86_SREG_FS:
                 pThis->uSegPrf = X86_SREG_GS;
                 if (pThis->fTestCfg & CIDET_TESTCFG_SEG_PRF_GS)
                     return true;
-                /* fall thru */
+                RT_FALL_THRU();
             case X86_SREG_GS:
                 break;
             default: AssertReleaseFailedBreak();
@@ -1918,8 +1918,8 @@ bool CidetCoreAssembleLength(PCIDETCORE pThis)
     //uint8_t const *pbOpcode = pThis->pCurInstr->abOpcode;
     switch (pThis->pCurInstr->cbOpcode)
     {
-        case 3: off++; /* fall thru */
-        case 2: off++; /* fall thru */
+        case 3: off++; RT_FALL_THRU();
+        case 2: off++; RT_FALL_THRU();
         case 1: off++;
             break;
         default:
@@ -2036,8 +2036,8 @@ bool CidetCoreAssemble(PCIDETCORE pThis)
     uint8_t const *pbOpcode = pThis->pCurInstr->abOpcode;
     switch (pThis->pCurInstr->cbOpcode)
     {
-        case 3: pThis->abInstr[off++] = *pbOpcode++; /* fall thru */
-        case 2: pThis->abInstr[off++] = *pbOpcode++; /* fall thru */
+        case 3: pThis->abInstr[off++] = *pbOpcode++; RT_FALL_THRU();
+        case 2: pThis->abInstr[off++] = *pbOpcode++; RT_FALL_THRU();
         case 1: pThis->abInstr[off++] = *pbOpcode++;
             break;
         default:
@@ -2058,13 +2058,13 @@ bool CidetCoreAssemble(PCIDETCORE pThis)
             switch (pThis->aOperands[pThis->idxMrmRmOp].cbMemDisp)
             {
                 case 0: break;
-                case 8: pThis->abInstr[off + 3] = (uDispValue >> 56) & UINT8_C(0xff); /* fall thru */
-                case 7: pThis->abInstr[off + 3] = (uDispValue >> 48) & UINT8_C(0xff); /* fall thru */
-                case 6: pThis->abInstr[off + 3] = (uDispValue >> 40) & UINT8_C(0xff); /* fall thru */
-                case 5: pThis->abInstr[off + 3] = (uDispValue >> 32) & UINT8_C(0xff); /* fall thru */
-                case 4: pThis->abInstr[off + 3] = (uDispValue >> 24) & UINT8_C(0xff); /* fall thru */
-                case 3: pThis->abInstr[off + 2] = (uDispValue >> 16) & UINT8_C(0xff); /* fall thru */
-                case 2: pThis->abInstr[off + 1] = (uDispValue >>  8) & UINT8_C(0xff); /* fall thru */
+                case 8: pThis->abInstr[off + 3] = (uDispValue >> 56) & UINT8_C(0xff); RT_FALL_THRU();
+                case 7: pThis->abInstr[off + 3] = (uDispValue >> 48) & UINT8_C(0xff); RT_FALL_THRU();
+                case 6: pThis->abInstr[off + 3] = (uDispValue >> 40) & UINT8_C(0xff); RT_FALL_THRU();
+                case 5: pThis->abInstr[off + 3] = (uDispValue >> 32) & UINT8_C(0xff); RT_FALL_THRU();
+                case 4: pThis->abInstr[off + 3] = (uDispValue >> 24) & UINT8_C(0xff); RT_FALL_THRU();
+                case 3: pThis->abInstr[off + 2] = (uDispValue >> 16) & UINT8_C(0xff); RT_FALL_THRU();
+                case 2: pThis->abInstr[off + 1] = (uDispValue >>  8) & UINT8_C(0xff); RT_FALL_THRU();
                 case 1: pThis->abInstr[off] = uDispValue & UINT8_C(0xff);
                     break;
                 default: AssertReleaseFailedReturn(false);
@@ -2083,13 +2083,13 @@ bool CidetCoreAssemble(PCIDETCORE pThis)
             uint64_t uImmValue = pThis->aOperands[iOp].uImmDispValue;
             switch (pThis->aOperands[iOp].cb)
             {
-                case 8: pThis->abInstr[off + 3] = (uImmValue >> 56) & UINT8_C(0xff); /* fall thru */
-                case 7: pThis->abInstr[off + 3] = (uImmValue >> 48) & UINT8_C(0xff); /* fall thru */
-                case 6: pThis->abInstr[off + 3] = (uImmValue >> 40) & UINT8_C(0xff); /* fall thru */
-                case 5: pThis->abInstr[off + 3] = (uImmValue >> 32) & UINT8_C(0xff); /* fall thru */
-                case 4: pThis->abInstr[off + 3] = (uImmValue >> 24) & UINT8_C(0xff); /* fall thru */
-                case 3: pThis->abInstr[off + 2] = (uImmValue >> 16) & UINT8_C(0xff); /* fall thru */
-                case 2: pThis->abInstr[off + 1] = (uImmValue >>  8) & UINT8_C(0xff); /* fall thru */
+                case 8: pThis->abInstr[off + 3] = (uImmValue >> 56) & UINT8_C(0xff); RT_FALL_THRU();
+                case 7: pThis->abInstr[off + 3] = (uImmValue >> 48) & UINT8_C(0xff); RT_FALL_THRU();
+                case 6: pThis->abInstr[off + 3] = (uImmValue >> 40) & UINT8_C(0xff); RT_FALL_THRU();
+                case 5: pThis->abInstr[off + 3] = (uImmValue >> 32) & UINT8_C(0xff); RT_FALL_THRU();
+                case 4: pThis->abInstr[off + 3] = (uImmValue >> 24) & UINT8_C(0xff); RT_FALL_THRU();
+                case 3: pThis->abInstr[off + 2] = (uImmValue >> 16) & UINT8_C(0xff); RT_FALL_THRU();
+                case 2: pThis->abInstr[off + 1] = (uImmValue >>  8) & UINT8_C(0xff); RT_FALL_THRU();
                 case 1: pThis->abInstr[off] = uImmValue & UINT8_C(0xff);
                     break;
                 default: AssertReleaseFailedReturn(false);

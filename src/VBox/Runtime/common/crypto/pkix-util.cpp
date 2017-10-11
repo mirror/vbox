@@ -62,7 +62,7 @@ RTDECL(const char *) RTCrPkixGetCiperOidFromSignatureAlgorithm(PCRTASN1OBJID pAl
                 case 14:
                     return RTCR_PKCS1_RSA_OID;
                 case 1: AssertFailed();
-                    /* fall thru */
+                    RT_FALL_THRU();
                 default:
                     return NULL;
             }

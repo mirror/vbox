@@ -5951,7 +5951,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                 case PortMode_TCP:
                 case PortMode_HostPipe:
                     pelmPort->setAttribute("server", port.fServer);
-                    /* fall thru */
+                    RT_FALL_THRU();
                 case PortMode_HostDevice:
                 case PortMode_RawFile:
                     pelmPort->setAttribute("path", port.strPath);
@@ -6001,7 +6001,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                     pcszController = "HDA";
                     break;
                 }
-                /* fall through */
+                RT_FALL_THRU();
             case AudioControllerType_AC97:
             default:
                 pcszController = NULL;

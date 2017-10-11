@@ -1676,7 +1676,7 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
 #endif
             }
         }
-        /* fall thru */
+        RT_FALL_THRU();
         case LSILOGIC_REG_DIAG_RW_ADDRESS:
         {
             if (pThis->fDiagRegsEnabled)
@@ -1688,7 +1688,7 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
 #endif
             }
         }
-        /* fall thru */
+        RT_FALL_THRU();
         case LSILOGIC_REG_TEST_BASE_ADDRESS: /* The spec doesn't say anything about these registers, so we just ignore them */
         default: /* Ignore. */
         {

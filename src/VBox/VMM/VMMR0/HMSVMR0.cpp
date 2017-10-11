@@ -5350,7 +5350,7 @@ static uint32_t hmR0SvmGetIemXcptFlags(PCSVMEVENT pEvent)
                 break;
             }
             /** @todo How do we distinguish ICEBP \#DB from the regular one? */
-            /* fall thru */
+            RT_FALL_THRU();
         case SVM_EVENT_NMI:
             fIemXcptFlags = IEM_XCPT_FLAGS_T_CPU_XCPT;
             break;

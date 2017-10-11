@@ -676,15 +676,15 @@ RTDECL(int) RTBigNumInit(PRTBIGNUM pBigNum, uint32_t fFlags, void const *pvRaw, 
                 {
                     default: AssertFailed();
 #if RTBIGNUM_ELEMENT_SIZE == 8
-                                                          /* fall thru */
-                    case 7: uLast = (uLast << 8) | pb[6]; /* fall thru */
-                    case 6: uLast = (uLast << 8) | pb[5]; /* fall thru */
-                    case 5: uLast = (uLast << 8) | pb[4]; /* fall thru */
+                                                          RT_FALL_THRU();
+                    case 7: uLast = (uLast << 8) | pb[6]; RT_FALL_THRU();
+                    case 6: uLast = (uLast << 8) | pb[5]; RT_FALL_THRU();
+                    case 5: uLast = (uLast << 8) | pb[4]; RT_FALL_THRU();
                     case 4: uLast = (uLast << 8) | pb[3];
 #endif
-                                                          /* fall thru */
-                    case 3: uLast = (uLast << 8) | pb[2]; /* fall thru */
-                    case 2: uLast = (uLast << 8) | pb[1]; /* fall thru */
+                                                          RT_FALL_THRU();
+                    case 3: uLast = (uLast << 8) | pb[2]; RT_FALL_THRU();
+                    case 2: uLast = (uLast << 8) | pb[1]; RT_FALL_THRU();
                     case 1: uLast = (uLast << 8) | pb[0];
                 }
                 pBigNum->pauElements[i] = uLast;
@@ -715,15 +715,15 @@ RTDECL(int) RTBigNumInit(PRTBIGNUM pBigNum, uint32_t fFlags, void const *pvRaw, 
                 {
                     default: AssertFailed();
 #if RTBIGNUM_ELEMENT_SIZE == 8
-                                                          /* fall thru */
-                    case 7: uLast = (uLast << 8) | *pb++; /* fall thru */
-                    case 6: uLast = (uLast << 8) | *pb++; /* fall thru */
-                    case 5: uLast = (uLast << 8) | *pb++; /* fall thru */
+                                                          RT_FALL_THRU();
+                    case 7: uLast = (uLast << 8) | *pb++; RT_FALL_THRU();
+                    case 6: uLast = (uLast << 8) | *pb++; RT_FALL_THRU();
+                    case 5: uLast = (uLast << 8) | *pb++; RT_FALL_THRU();
                     case 4: uLast = (uLast << 8) | *pb++;
 #endif
-                                                          /* fall thru */
-                    case 3: uLast = (uLast << 8) | *pb++; /* fall thru */
-                    case 2: uLast = (uLast << 8) | *pb++; /* fall thru */
+                                                          RT_FALL_THRU();
+                    case 3: uLast = (uLast << 8) | *pb++; RT_FALL_THRU();
+                    case 2: uLast = (uLast << 8) | *pb++; RT_FALL_THRU();
                     case 1: uLast = (uLast << 8) | *pb++;
                 }
                 pBigNum->pauElements[i] = uLast;
@@ -749,9 +749,9 @@ RTDECL(int) RTBigNumInit(PRTBIGNUM pBigNum, uint32_t fFlags, void const *pvRaw, 
             AssertCompile(RTBIGNUM_ALIGNMENT <= 4);
             switch (pBigNum->cAllocated - pBigNum->cUsed)
             {
-                default: AssertFailed(); /* fall thru */
-                case 3: *puUnused++ = 0; /* fall thru */
-                case 2: *puUnused++ = 0; /* fall thru */
+                default: AssertFailed(); RT_FALL_THRU();
+                case 3: *puUnused++ = 0; RT_FALL_THRU();
+                case 2: *puUnused++ = 0; RT_FALL_THRU();
                 case 1: *puUnused++ = 0;
             }
         }

@@ -332,7 +332,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
             fport = udp->uh_dport;
             lport = udp->uh_sport;
             last_socket = udp_last_so;
-            /* fall through */
+            RT_FALL_THRU();
 
         case IPPROTO_TCP:
             if (head_socket == NULL)

@@ -614,7 +614,7 @@ main(int argc, char *argv[])
         case 'V':
             fprintf(stderr, PACKAGE_STRING "\n");
             exit(0);
-        /* FALLTHROUGH */
+        RT_FALL_THRU();
         case 'h':
         default:
             fprintf(stderr,

@@ -194,7 +194,7 @@ void STATE_APIENTRY crStateBlendFunc (GLenum sfactor, GLenum dfactor)
             if (g->extensions.EXT_blend_color)
                 break; /* OK */
 #endif
-        /* fall thru */
+        RT_FALL_THRU();
         default:
             crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "Invalid sfactor passed to glBlendFunc: %d", sfactor);
             return;
@@ -219,7 +219,7 @@ void STATE_APIENTRY crStateBlendFunc (GLenum sfactor, GLenum dfactor)
             if (g->extensions.EXT_blend_color)
                 break; /* OK */
 #endif
-        /* fall thru */
+        RT_FALL_THRU();
         default:
             crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "Invalid dfactor passed to glBlendFunc: %d", dfactor);
             return;
@@ -290,7 +290,7 @@ void STATE_APIENTRY crStateBlendFuncSeparateEXT( GLenum sfactorRGB, GLenum dfact
             if (g->extensions.EXT_blend_color)
                 break; /* OK */
 #endif
-        /* fall thru */
+        RT_FALL_THRU();
         default:
             crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "Invalid sfactorRGB passed to glBlendFuncSeparateEXT: %d", sfactorRGB);
             return;
@@ -316,7 +316,7 @@ void STATE_APIENTRY crStateBlendFuncSeparateEXT( GLenum sfactorRGB, GLenum dfact
             if (g->extensions.EXT_blend_color)
                 break; /* OK */
 #endif
-        /* fall thru */
+        RT_FALL_THRU();
         default:
             crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "Invalid sfactorA passed to glBlendFuncSeparateEXT: %d", sfactorA);
             return;
@@ -344,7 +344,7 @@ void STATE_APIENTRY crStateBlendFuncSeparateEXT( GLenum sfactorRGB, GLenum dfact
             if (g->extensions.EXT_blend_color)
                 break; /* OK */
 #endif
-        /* fall thru */
+        RT_FALL_THRU();
         default:
             crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "Invalid dfactorRGB passed to glBlendFuncSeparateEXT: %d", dfactorRGB);
             return;
@@ -372,7 +372,7 @@ void STATE_APIENTRY crStateBlendFuncSeparateEXT( GLenum sfactorRGB, GLenum dfact
             if (g->extensions.EXT_blend_color)
                 break; /* OK */
 #endif
-        /* fall thru */
+        RT_FALL_THRU();
         default:
             crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "Invalid dfactorA passed to glBlendFuncSeparateEXT: %d", dfactorA);
             return;

@@ -682,9 +682,8 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                         pPage->iFirstPresent = NIL_PGMPOOL_PRESENT_INDEX;
                     }
                 }
-                /* fall thru */
+                RT_FALL_THRU();
 #ifdef PGM_WITH_LARGE_PAGES
-                /* fall thru */
                 default_case:
 #endif
                 default:

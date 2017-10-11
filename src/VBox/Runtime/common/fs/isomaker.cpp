@@ -5554,7 +5554,7 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_QueryInfo(void *pvThis, PRTFSOBJINF
     {
         case RTFSOBJATTRADD_NOTHING:
             enmAddAttr = RTFSOBJATTRADD_UNIX;
-            /* fall thru */
+            RT_FALL_THRU();
         case RTFSOBJATTRADD_UNIX:
             pObjInfo->Attr.u.Unix.uid           = NIL_RTUID;
             pObjInfo->Attr.u.Unix.gid           = NIL_RTGID;

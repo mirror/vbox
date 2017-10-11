@@ -1568,7 +1568,7 @@ static DECLCALLBACK(int) rtFsFatObj_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInf
 
     switch (enmAddAttr)
     {
-        case RTFSOBJATTRADD_NOTHING: /* fall thru */
+        case RTFSOBJATTRADD_NOTHING: RT_FALL_THRU();
         case RTFSOBJATTRADD_UNIX:
             pObjInfo->Attr.u.Unix.uid           = NIL_RTUID;
             pObjInfo->Attr.u.Unix.gid           = NIL_RTGID;
@@ -4898,7 +4898,7 @@ RTDECL(int) RTFsFatVolFormat(RTVFSFILE hVfsFile, uint64_t offVol, uint64_t cbVol
         case RTFSFATTYPE_FAT32:
             AssertMsgReturn(cClusters >= FAT_MIN_FAT32_DATA_CLUSTERS && cClusters <= FAT_MAX_FAT32_DATA_CLUSTERS,
                             ("cClusters=%#x\n", cClusters), VERR_OUT_OF_RANGE);
-            /* fall thru */
+            RT_FALL_THRU();
         default:
             AssertFailedReturn(VERR_INTERNAL_ERROR_2);
     }
@@ -5032,10 +5032,10 @@ RTDECL(int) RTFsFatVolFormat(RTVFSFILE hVfsFile, uint64_t offVol, uint64_t cbVol
                 pbBuf[6]  = 0xff;
                 pbBuf[5]  = 0xff;
                 pbBuf[4]  = 0xff;
-                /* fall thru */
+                RT_FALL_THRU();
             case RTFSFATTYPE_FAT16:
                 pbBuf[3]  = 0xff;
-                /* fall thru */
+                RT_FALL_THRU();
             case RTFSFATTYPE_FAT12:
                 pbBuf[2]  = 0xff;
                 pbBuf[1]  = 0xff;

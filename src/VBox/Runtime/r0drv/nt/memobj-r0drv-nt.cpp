@@ -171,7 +171,7 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 /* Nothing to do here. */
                 break;
             }
-            /* fall thru */
+            RT_FALL_THRU();
 
         case RTR0MEMOBJTYPE_PHYS_NC:
 #ifndef IPRT_TARGET_NT4
