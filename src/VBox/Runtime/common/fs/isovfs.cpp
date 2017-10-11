@@ -49,9 +49,6 @@
 #include <iprt/formats/iso9660.h>
 #include <iprt/formats/udf.h>
 
-/** @todo move to err.h:   */
-
-
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -3623,9 +3620,12 @@ static DECLCALLBACK(int) rtFsIsoDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntr
 {
     PRTFSISODIROBJ  pThis   = (PRTFSISODIROBJ)pvThis;
     PRTFSISODIRSHRD pShared = pThis->pShared;
+    int rc;
     if (pShared->Core.pVol->enmType != RTFSISOVOLTYPE_UDF)
-        return rtFsIsoDir_ReadDir9660(pThis, pShared, pDirEntry, pcbDirEntry, enmAddAttr);
-    return rtFsIsoDir_ReadDirUdf(pThis, pShared, pDirEntry, pcbDirEntry, enmAddAttr);
+        rc = rtFsIsoDir_ReadDir9660(pThis, pShared, pDirEntry, pcbDirEntry, enmAddAttr);
+    else
+        rc = rtFsIsoDir_ReadDirUdf(pThis, pShared, pDirEntry, pcbDirEntry, enmAddAttr);
+    return rc;
 }
 
 
@@ -3956,7 +3956,7 @@ static int rtFsIsoDirShrd_NewUdf(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, 
             if (pShared->Core.cbObject < RTFSISO_MAX_DIR_SIZE)
             {
                 pShared->cbDir = (uint32_t)pShared->Core.cbObject;
-                pShared->pbDir = (uint8_t *)RTMemAllocZ(RT_MIN(RT_ALIGN_32(pShared->cbDir, 512), 512));
+                pShared->pbDir = (uint8_t *)RTMemAllocZ(RT_MAX(RT_ALIGN_32(pShared->cbDir, 512), 512));
                 if (pShared->pbDir)
                 {
                     rc = rtFsIsoCore_ReadWorker(&pShared->Core, 0, pShared->pbDir, pShared->cbDir, NULL, NULL);
@@ -5982,7 +5982,6 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
     /*
      * If we found a UDF VRS and are interested in UDF, we have more work to do here.
      */
-#if defined(DEBUG_bird) && 0
     if (uUdfLevel > 0 && !(fFlags & RTFSISO9660_F_NO_UDF) )
     {
         Log(("rtFsIsoVolTryInit: uUdfLevel=%d\n", uUdfLevel));
@@ -6013,25 +6012,6 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
         /** @todo fall back on failure? */
         return rc;
     }
-#else
-    if (uUdfLevel > 0 && !(fFlags & RTFSISO9660_F_NO_UDF) && /* Just disable this code for now: */ (fFlags & RT_BIT(24)))
-    {
-        rc = rtFsIsoVolHandleUdfDetection(pThis, &uUdfLevel, offUdfBootVolDesc, Buf.ab, sizeof(Buf), pErrInfo);
-        rc = rtFsIsoDirShrd_NewUdf(pThis, NULL /*pParent*/, &pThis->Udf.VolInfo.RootDirIcb,
-                                   NULL /*pFileIdDesc*/, 0 /*offInDir*/, &pThis->pRootDir);
-    }
-
-    /*
-     * We may be faced with choosing between joliet and rock ridge (we won't
-     * have this choice when RTFSISO9660_F_NO_JOLIET is set).  The joliet
-     * option is generally favorable as we don't have to guess wrt to the file
-     * name encoding.  So, we'll pick that for now.
-     *
-     * Note! Should we change this preference for joliet, there fun wrt making sure
-     *       there really is rock ridge stuff in the primary volume as well as
-     *       making sure there really is anything of value in the primary volume.
-     */
-#endif
     if (bJolietUcs2Level != 0)
     {
         pThis->enmType = RTFSISOVOLTYPE_JOLIET;
