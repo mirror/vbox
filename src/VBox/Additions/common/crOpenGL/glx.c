@@ -1000,7 +1000,7 @@ VBOXGLXTAG(glXCreatePbuffer)(Display *dpy, GLXFBConfig config, ATTRIB_TYPE *attr
  * Instead we'd do necessary initialization on first use of those pixmaps.
  */
 DECLEXPORT(GLXPixmap) 
-VBOXGLXTAG(glXCreatePixmap)(Display *dpy, GLXFBConfig config, Pixmap pixmap, const ATTRIB_TYPE *attrib_list)
+VBOXGLXTAG(glXCreatePixmap)(Display *dpy, GLXFBConfig config, Pixmap pixmap, ATTRIB_TYPE *attrib_list)
 {
     ATTRIB_TYPE *attrib;
     GLX_Pixmap_t *pGlxPixmap;
