@@ -211,6 +211,11 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
   VBoxDTraceCmd_SOURCES  += \
  	$(VBOXDT_PATH)/generated/dt_lex.c
  endif
+ ifeq ($(KBUILD_HOST),linux)
+  if $(VBOX_GCC_VERSION_CXX) >= 70000
+   VBoxDTraceCmd_CFLAGS += -Wno-implicit-fallthrough
+  endif
+ endif
  VBoxDTraceCmd_DEFS      += USING_FLEX
  $(call VBOX_SET_VER_INFO_DLL,VBoxDTraceCmd,VBoxDTrace Command Implementation)
 
