@@ -72,7 +72,7 @@
 #include <VBox/param.h>
 #include <VBox/vmm/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach. */
 #include <VBox/vmm/pdmusb.h> /* For PDMR3UsbCreateEmulatedDevice. */
-#include <VBox/vmm/apic.h>   /* For APICMODE enum. */
+#include <VBox/vmm/pdmdev.h> /* For PDMAPICMODE enum. */
 #include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/version.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
