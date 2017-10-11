@@ -299,7 +299,7 @@ typedef struct VGAState {
 # else
     RTR3PTR                     Padding2;
 # endif
-    /** Status LUN\#0: Leds interface. */
+    /** Status LUN: Leds interface. */
     PDMILEDPORTS                ILeds;
 
     /** Pointer to base interface of the driver. */
@@ -309,8 +309,6 @@ typedef struct VGAState {
 
     /** Status LUN: Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)   pLedsConnector;
-    /** Status LUN: Media Notifys. */
-    R3PTRTYPE(PPDMIMEDIANOTIFY)     pMediaNotify;
 
     /** Refresh timer handle - HC. */
     PTMTIMERR3                  RefreshTimer;

@@ -4621,7 +4621,7 @@ static DECLCALLBACK(int) vgaPortQueryStatusLed(PPDMILEDPORTS pInterface, unsigne
     PVGASTATE pThis = ILEDPORTS_2_VGASTATE(pInterface);
     switch (iLUN)
     {
-        /* LUN #0: Display port. */
+        /* LUN #0 is the only one for which we have a status LED. */
         case 0:
         {
             *ppLed = &pThis->Led3D;
@@ -7153,10 +7153,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
          */
         rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
         if (RT_SUCCESS(rc))
-        {
             pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
-            pThis->pMediaNotify = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIANOTIFY);
-        }
         else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
             Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pReg->szName, pDevIns->iInstance));
