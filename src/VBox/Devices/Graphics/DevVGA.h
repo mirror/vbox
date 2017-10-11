@@ -318,10 +318,6 @@ typedef struct VGAState {
     /** The R0 vram pointer... */
     R0PTRTYPE(uint8_t *)        vram_ptrR0;
 
-# if HC_ARCH_BITS == 32
-    uint32_t                    Padding3;
-# endif
-
 # ifdef VBOX_WITH_VMSVGA
     VMSVGAState                 svga;
 # endif
