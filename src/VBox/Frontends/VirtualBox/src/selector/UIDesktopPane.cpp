@@ -107,26 +107,6 @@ protected:
 };
 
 
-/** Our own skinnable implementation of tool widget header for UIDesktopPane. */
-class UIToolWidgetHeader : public QLabel
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs tool widget header passing @a pParent to the base-class. */
-    UIToolWidgetHeader(QWidget *pParent = 0);
-
-protected:
-
-    /** Handles resuze @a pEvent. */
-    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
-
-    /** Handles paint @a pEvent. */
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
-};
-
-
 /** Our own skinnable implementation of tool widget for UIDesktopPane. */
 class UIToolWidget : public QWidget
 {
@@ -306,70 +286,6 @@ QSize UILabel::sizeHint() const /* override */
 
 
 /*********************************************************************************************************************************
-*   Class UIToolWidgetHeader implementation.                                                                                     *
-*********************************************************************************************************************************/
-
-UIToolWidgetHeader::UIToolWidgetHeader(QWidget *pParent /* = 0 */)
-    : QLabel(pParent)
-{
-}
-
-void UIToolWidgetHeader::resizeEvent(QResizeEvent *pEvent)
-{
-    /* Call to base-class: */
-    QLabel::resizeEvent(pEvent);
-
-#if 0
-    /* Get basic palette: */
-    QPalette pal = qApp->palette();
-
-    /* Prepare new foreground: */
-    const QColor color0 = pal.color(QPalette::Active, QPalette::HighlightedText);
-    const QColor color1 = pal.color(QPalette::Active, QPalette::WindowText);
-    QLinearGradient grad(QPointF(0, 0), QPointF(width(), height()));
-    {
-        grad.setColorAt(0, color0);
-        grad.setColorAt(1, color1);
-    }
-
-    /* Apply palette changes: */
-    pal.setBrush(QPalette::Active, QPalette::WindowText, grad);
-    setPalette(pal);
-#endif
-}
-
-void UIToolWidgetHeader::paintEvent(QPaintEvent *pEvent)
-{
-    /* Prepare painter: */
-    QPainter painter(this);
-
-    /* Prepare palette colors: */
-    const QPalette pal = palette();
-#ifdef VBOX_WS_MAC
-    const QColor color0 = pal.color(QPalette::Highlight).lighter(105);
-#else /* !VBOX_WS_MAC */
-    const QColor color0 = pal.color(QPalette::Highlight).lighter(130);
-#endif /* !VBOX_WS_MAC */
-    QColor color1 = color0;
-    color1.setAlpha(0);
-
-    /* Prepare background: */
-    QLinearGradient grad(QPointF(0, 0), QPointF(width(), height()));
-    {
-        grad.setColorAt(0,   color1);
-        grad.setColorAt(0.2, color0);
-        grad.setColorAt(1,   color1);
-    }
-
-    /* Paint background: */
-    painter.fillRect(QRect(0, 0, width(), height()), grad);
-
-    /* Call to base-class: */
-    QLabel::paintEvent(pEvent);
-}
-
-
-/*********************************************************************************************************************************
 *   Class UIToolWidget implementation.                                                                                           *
 *********************************************************************************************************************************/
 
@@ -427,15 +343,13 @@ void UIToolWidget::paintEvent(QPaintEvent * /* pEvent */)
     /* Prepare palette colors: */
     const QPalette pal = palette();
 #ifdef VBOX_WS_MAC
-    const QColor color0 = m_fHovered
-                        ? pal.color(QPalette::Highlight).lighter(120)
-                        : pal.color(QPalette::Base);
-    const QColor color1 = color0.lighter(110);
+    const QColor color0 = pal.color(QPalette::Base);
+    const QColor color11 = pal.color(QPalette::Highlight).lighter(120);
+    const QColor color12 = pal.color(QPalette::Highlight);
 #else /* !VBOX_WS_MAC */
-    const QColor color0 = m_fHovered
-                        ? pal.color(QPalette::Highlight).lighter(160)
-                        : pal.color(QPalette::Base);
-    const QColor color1 = color0.lighter(120);
+    const QColor color0 = pal.color(QPalette::Base);
+    const QColor color11 = pal.color(QPalette::Highlight).lighter(150);
+    const QColor color12 = pal.color(QPalette::Highlight);
 #endif /* !VBOX_WS_MAC */
     QColor color2 = pal.color(QPalette::Window).lighter(110);
     color2.setAlpha(0);
@@ -443,12 +357,15 @@ void UIToolWidget::paintEvent(QPaintEvent * /* pEvent */)
 
     /* Invent pixel metric: */
     const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375;
+    const int iIconMargin = iIconMetric / 2;
 
     /* Background gradient: */
-    QLinearGradient grad(QPointF(0, height()), QPointF(0, 0));
+    QLinearGradient grad(QPointF(width(), 0), QPointF(width() - (2 * iIconMargin + iIconMetric), 0));
     {
-        grad.setColorAt(0, color0);
-        grad.setColorAt(1, color1);
+        grad.setColorAt(0, color11);
+        grad.setColorAt(0.95, color12);
+        grad.setColorAt(1, color2);
     }
 
     /* Top-left corner: */
@@ -501,8 +418,14 @@ void UIToolWidget::paintEvent(QPaintEvent * /* pEvent */)
         grad8.setColorAt(1, color3);
     }
 
+    /* Paint hovered item cursor: */
+    if (m_fHovered)
+    {
+        painter.fillRect(QRect(iMetric, iMetric, width() - iMetric * 2, height() - iMetric * 2), color0);
+        painter.fillRect(QRect(width() - (height() - iMetric), iMetric, height() - iMetric * 2, height() - iMetric * 2), grad);
+    }
+
     /* Paint shape/shadow: */
-    painter.fillRect(QRect(iMetric,           iMetric,            width() - iMetric * 2, height() - iMetric * 2), grad);
     painter.fillRect(QRect(0,                 0,                  iMetric,               iMetric),                grad1);
     painter.fillRect(QRect(width() - iMetric, 0,                  iMetric,               iMetric),                grad2);
     painter.fillRect(QRect(0,                 height() - iMetric, iMetric,               iMetric),                grad3);
@@ -525,14 +448,16 @@ void UIToolWidget::prepare()
         /* Invent pixel metric: */
         const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375;
         const int iMargin = iMetric / 2;
-        const int iSpacing = iMargin / 2;
+        const int iVerticalSpacing = iMargin / 2;
+        const int iHorizontalSpacing = iMargin * 2;
 
         /* Configure layout: */
-        m_pLayout->setContentsMargins(iMargin + iSpacing, iMargin, iMargin, iMargin);
-        m_pLayout->setSpacing(iSpacing);
+        m_pLayout->setContentsMargins(iMargin + iVerticalSpacing, iMargin, iMargin, iMargin);
+        m_pLayout->setVerticalSpacing(iVerticalSpacing);
+        m_pLayout->setHorizontalSpacing(iHorizontalSpacing);
 
         /* Create name label: */
-        m_pLabelName = new UIToolWidgetHeader;
+        m_pLabelName = new QLabel;
         AssertPtrReturnVoid(m_pLabelName);
         {
             /* Configure label: */
@@ -571,7 +496,7 @@ void UIToolWidget::prepare()
 
             /* Add into layout: */
             m_pLayout->addWidget(m_pLabelIcon, 0, 1, 2, 1);
-            m_pLayout->setAlignment(m_pLabelIcon, Qt::AlignHCenter | Qt::AlignTop);
+            m_pLayout->setAlignment(m_pLabelIcon, Qt::AlignCenter);
         }
     }
 }
