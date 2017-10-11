@@ -2652,6 +2652,7 @@ VMM_INT_DECL(void) CPUMSvmVmExitRestoreHostState(PCPUMCTX pCtx)
     pCtx->rax        = pHostState->uRax;
     pCtx->dr[7]     &= ~(X86_DR7_ENABLED_MASK | X86_DR7_RAZ_MASK | X86_DR7_MBZ_MASK);
     pCtx->dr[7]     |= X86_DR7_RA1_MASK;
+    Assert(pCtx->ss.Attr.n.u2Dpl == 0);
 
     /** @todo if RIP is not canonical or outside the CS segment limit, we need to
      *        raise \#GP(0) in the guest. */
