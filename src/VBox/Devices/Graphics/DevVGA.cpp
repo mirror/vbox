@@ -6791,7 +6791,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     if (cCustomModes)
     {
-        uint16_t u16CurMode = 0x160;
+        uint16_t u16CurMode = VBE_VBOX_MODE_CUSTOM1;
         for (i = 1; i <= cCustomModes; i++)
         {
             char szExtraDataKey[sizeof("CustomVideoModeXX")];

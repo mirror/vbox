@@ -53,6 +53,7 @@
 #endif
 
 #include <VBoxVideoVBE.h>
+#include <VBoxVideoVBEPrivate.h>
 
 #ifdef VBOX_WITH_HGSMI
 # include "HGSMI/HGSMIHost.h"
@@ -487,34 +488,10 @@ AssertCompileMemberAlignment(VGASTATE, last_ch_attr, 8);
 AssertCompileMemberAlignment(VGASTATE, u32Marker, 8);
 #endif
 
-/**
- * VBE Bios Extra Data structure.
- * @remark duplicated in vbe.h.
- */
-typedef struct VBEHeader
-{
-    /** Signature (VBEHEADER_MAGIC). */
-    uint16_t        u16Signature;
-    /** Data size. */
-    uint16_t        cbData;
-} VBEHeader;
-
 /** VBE Extra Data. */
 typedef VBEHeader VBEHEADER;
 /** Pointer to the VBE Extra Data. */
 typedef VBEHEADER *PVBEHEADER;
-
-/** The value of the VBEHEADER::u16Signature field.
- * @remark duplicated in vbe.h. */
-#define VBEHEADER_MAGIC      0x77CC
-
-/** The extra port which is used to read the mode list.
- * @remark duplicated in vbe.h. */
-#define VBE_EXTRA_PORT       0x3b6
-
-/** The extra port which is used for debug printf.
- * @remark duplicated in vbe.h. */
-#define VBE_PRINTF_PORT      0x3b7
 
 #if !defined(VBOX) || defined(IN_RING3)
 static inline int c6_to_8(int v)
