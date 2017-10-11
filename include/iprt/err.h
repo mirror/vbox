@@ -3048,10 +3048,10 @@ RT_C_DECLS_END
 #define VERR_ISOFS_FSD_ZERO_ROOT_DIR                    (-25332)
 /** File set descriptor has a next extent member. */
 #define VERR_ISOFS_FSD_NEXT_EXTENT                      (-25333)
-/** The ICB for a directory is too big. */
-#define VERR_ISOFS_DIR_ICB_TOO_BIG                      (-25334)
-/** The ICB for a directory is too small. */
-#define VERR_ISOFS_DIR_ICB_TOO_SMALL                    (-25335)
+/** The ICB for is too big. */
+#define VERR_ISOFS_ICB_TOO_BIG                          (-25334)
+/** The ICB for is too small. */
+#define VERR_ISOFS_ICB_TOO_SMALL                        (-25335)
 /** No direct ICB entries found. */
 #define VERR_ISOFS_NO_DIRECT_ICB_ENTRIES                (-25336)
 /** Too many ICB indirections, possibly a loop. */
@@ -3059,7 +3059,7 @@ RT_C_DECLS_END
 /** Too deep ICB recursion. */
 #define VERR_ISOFS_TOO_DEEP_ICB_RECURSION               (-25338)
 /** ICB is too small to contain anything useful.   */
-#define VERR_ISOFS_ICB_TOO_SMALL                        (-25339)
+#define VERR_ISOFS_ICB_ENTRY_TOO_SMALL                  (-25339)
 /** Unsupported tag encountered in ICB. */
 #define VERR_ISOFS_UNSUPPORTED_ICB                      (-25340)
 /** Bad file entry (ICB). */
@@ -3073,6 +3073,8 @@ RT_C_DECLS_END
 /** Unknow file type. */
 #define VERR_ISOFS_UNKNOWN_FILE_TYPE                    (-25345)
 
+/** Not implemented for UDF. */
+#define VERR_ISOFS_UDF_NOT_IMPLEMENTED                  (-25390)
 /** Internal processing error \#1.  */
 #define VERR_ISOFS_IPE_1                                (-25391)
 /** Internal processing error \#2.  */

@@ -1032,12 +1032,12 @@ typedef UDFFILEIDDESC *PUDFFILEIDDESC;
 typedef UDFFILEIDDESC const *PCUDFFILEIDDESC;
 
 /** Get the pointer to the name field. */
-#define UDFFILEIDDESC_2_NAME(a_pFid)        ((char *)(&(a_pFid)->abImplementationUse[(a_pFid)->cbImplementationUse]))
+#define UDFFILEIDDESC_2_NAME(a_pFid)        ((uint8_t const *)(&(a_pFid)->abImplementationUse[(a_pFid)->cbImplementationUse]))
 /** Calculates the total size the size of a record.  */
 #define UDFFILEIDDESC_CALC_SIZE_EX(cbImplementationUse, cbName) \
-    RT_ALIGN_Z(RT_UOFFSETOF(UDFFILEIDDESC, abImplementationUse) + cbImplementationUse + cbName, 4)
+    RT_ALIGN_32((uint32_t)RT_UOFFSETOF(UDFFILEIDDESC, abImplementationUse) + cbImplementationUse + cbName, 4)
 /** Gets the actual size of a record. */
-#define UDFFILEIDDESC_GET_SIZE(a_pFid)      UDFFILEIDDESC_CALC_SIZE_EX((a_pFid)->cbImplementationUse + (a_pFid)->cbName)
+#define UDFFILEIDDESC_GET_SIZE(a_pFid)      UDFFILEIDDESC_CALC_SIZE_EX((a_pFid)->cbImplementationUse, (a_pFid)->cbName)
 
 /** @name UDF_FILE_FLAGS_XXX
  * @{ */
@@ -1047,7 +1047,7 @@ typedef UDFFILEIDDESC const *PCUDFFILEIDDESC;
 #define UDF_FILE_FLAGS_DIRECTORY            UINT8_C(0x02)
 /** Deleted - Indicate that the file has been deleted.  Assoicated descriptors may still be valid, though. */
 #define UDF_FILE_FLAGS_DELETED              UINT8_C(0x04)
-/** Parent - Indicate the ICB field refers to the parent directory (or mabye
+/** Parent - Indicate the ICB field refers to the parent directory (or maybe
  * a file in case of streaming directory). */
 #define UDF_FILE_FLAGS_PARENT               UINT8_C(0x08)
 /** Metadata - Zero means user data, one means implementation specific metadata.
