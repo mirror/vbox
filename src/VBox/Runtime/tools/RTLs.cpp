@@ -1190,7 +1190,7 @@ static RTEXITCODE rtCmdLsProcessDirectory(PRTCMDLSOPTS pOpts, RTVFSDIR hVfsDir, 
                 {
                     pszPath[cchPath] = RTPATH_SLASH;
                     memcpy(&pszPath[cchPath + 1], pEntry->szName, pEntry->cchName + 1);
-                    RTEXITCODE rcExit2 = rtCmdLsProcessDirectory(pOpts, hVfsDir, pszPath,
+                    RTEXITCODE rcExit2 = rtCmdLsProcessDirectory(pOpts, hSubDir, pszPath,
                                                                  cchPath + 1 + pEntry->cchName, &pEntry->Info);
                     if (rcExit2 != RTEXITCODE_SUCCESS)
                         rcExit = rcExit2;
