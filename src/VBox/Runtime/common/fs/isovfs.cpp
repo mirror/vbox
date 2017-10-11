@@ -2701,8 +2701,8 @@ static int rtFsIsoDir_FindEntryUdf(PRTFSISODIRSHRD pThis, const char *pszEntry, 
     for (;;)
     {
         RTUNICP uc;
-        int rc = RTStrGetCpEx(&pszSrc, &uc);
-        AssertRCReturn(rc, rc);
+        int rc2 = RTStrGetCpEx(&pszSrc, &uc);
+        AssertRCReturn(rc2, rc2);
         if (uc <= 0x7f)
         {
             if (uc)
