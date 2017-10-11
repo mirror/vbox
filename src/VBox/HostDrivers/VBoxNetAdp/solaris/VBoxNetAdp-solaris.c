@@ -62,6 +62,9 @@
 #define DEVICE_NAME              "vboxnet"
 /** The module descriptions as seen in 'modinfo'. */
 #define DEVICE_DESC_DRV          "VirtualBox NetAdp"
+/** The maximum MTU size permittable, value taken from "Oracle Quad 10 Gb or Dual 40
+ *  Gb Ethernet Adapter User's Guide". */
+#define DEVICE_MAX_MTU_SIZE      9706
 
 
 /*********************************************************************************************************************************
@@ -320,7 +323,7 @@ static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                     pMacInfo->gldm_ident = DEVICE_NAME;
                     pMacInfo->gldm_type = DL_ETHER;
                     pMacInfo->gldm_minpkt = 0;
-                    pMacInfo->gldm_maxpkt = VBOXNETADP_MTU;
+                    pMacInfo->gldm_maxpkt = DEVICE_MAX_MTU_SIZE;
                     pMacInfo->gldm_capabilities = GLD_CAP_LINKSTATE;
                     AssertCompile(sizeof(RTMAC) == ETHERADDRL);
 
