@@ -100,13 +100,13 @@ void vbvxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
 
 static DECLCALLBACK(void *) hgsmiEnvAlloc(void *pvEnv, HGSMISIZE cb)
 {
-    NOREF(pvEnv);
+    RT_NOREF(pvEnv);
     return calloc(1, cb);
 }
 
 static DECLCALLBACK(void) hgsmiEnvFree(void *pvEnv, void *pv)
 {
-    NOREF(pvEnv);
+    RT_NOREF(pvEnv);
     free(pv);
 }
 

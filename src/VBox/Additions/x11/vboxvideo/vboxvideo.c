@@ -396,7 +396,7 @@ vbox_crtc_dpms(xf86CrtcPtr crtc, int mode)
 
 static Bool
 vbox_crtc_lock (xf86CrtcPtr crtc)
-{ (void) crtc; return FALSE; }
+{ RT_NOREF(crtc); return FALSE; }
 
 
 /* We use this function to check whether the X server owns the active virtual
@@ -408,17 +408,17 @@ vbox_crtc_lock (xf86CrtcPtr crtc)
 static Bool
 vbox_crtc_mode_fixup (xf86CrtcPtr crtc, DisplayModePtr mode,
                       DisplayModePtr adjusted_mode)
-{ (void) crtc; (void) mode; (void) adjusted_mode; return TRUE; }
+{ RT_NOREF(crtc, mode, adjusted_mode); return TRUE; }
 
 static void
 vbox_crtc_stub (xf86CrtcPtr crtc)
-{ (void) crtc; }
+{ RT_NOREF(crtc); }
 
 static void
 vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
                     DisplayModePtr adjusted_mode, int x, int y)
 {
-    (void) mode;
+    RT_NOREF(mode);
     VBOXPtr pVBox = VBOXGetRec(crtc->scrn);
     unsigned cDisplay = (uintptr_t)crtc->driver_private;
 
@@ -435,11 +435,11 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
 static void
 vbox_crtc_gamma_set (xf86CrtcPtr crtc, CARD16 *red,
                      CARD16 *green, CARD16 *blue, int size)
-{ (void) crtc; (void) red; (void) green; (void) blue; (void) size; }
+{ RT_NOREF(crtc, red, green, blue, size); }
 
 static void *
 vbox_crtc_shadow_allocate (xf86CrtcPtr crtc, int width, int height)
-{ (void) crtc; (void) width; (void) height; return NULL; }
+{ RT_NOREF(crtc, width, height); return NULL; }
 
 static const xf86CrtcFuncsRec VBOXCrtcFuncs = {
     .dpms = vbox_crtc_dpms,
@@ -466,12 +466,12 @@ static const xf86CrtcFuncsRec VBOXCrtcFuncs = {
 
 static void
 vbox_output_stub (xf86OutputPtr output)
-{ (void) output; }
+{ RT_NOREF(output); }
 
 static void
 vbox_output_dpms (xf86OutputPtr output, int mode)
 {
-    (void)output; (void)mode;
+    RT_NOREF(output, mode);
 }
 
 static int
@@ -483,12 +483,12 @@ vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
 static Bool
 vbox_output_mode_fixup (xf86OutputPtr output, DisplayModePtr mode,
                         DisplayModePtr adjusted_mode)
-{ (void) output; (void) mode; (void) adjusted_mode; return TRUE; }
+{ RT_NOREF(output, mode, adjusted_mode); return TRUE; }
 
 static void
 vbox_output_mode_set (xf86OutputPtr output, DisplayModePtr mode,
                         DisplayModePtr adjusted_mode)
-{ (void) output; (void) mode; (void) adjusted_mode; }
+{ RT_NOREF(output, mode, adjusted_mode); }
 
 /* A virtual monitor is always connected. */
 static xf86OutputStatus
@@ -674,22 +674,22 @@ static Bool VBOXScreenInitIndex(int scrnIndex, ScreenPtr pScreen, int argc, char
 }
 
 static Bool VBOXEnterVTIndex(int scrnIndex, int flags)
-{ (void) flags; return VBOXEnterVT(xf86Screens[scrnIndex]); }
+{ RT_NOREF(flags); return VBOXEnterVT(xf86Screens[scrnIndex]); }
 
 static void VBOXLeaveVTIndex(int scrnIndex, int flags)
-{ (void) flags; VBOXLeaveVT(xf86Screens[scrnIndex]); }
+{ RT_NOREF(flags); VBOXLeaveVT(xf86Screens[scrnIndex]); }
 
 static Bool VBOXCloseScreenIndex(int scrnIndex, ScreenPtr pScreen)
-{ (void) scrnIndex; return VBOXCloseScreen(pScreen); }
+{ RT_NOREF(scrnIndex); return VBOXCloseScreen(pScreen); }
 
 static Bool VBOXSwitchModeIndex(int scrnIndex, DisplayModePtr pMode, int flags)
-{ (void) flags; return VBOXSwitchMode(xf86Screens[scrnIndex], pMode); }
+{ RT_NOREF(flags); return VBOXSwitchMode(xf86Screens[scrnIndex], pMode); }
 
 static void VBOXAdjustFrameIndex(int scrnIndex, int x, int y, int flags)
-{ (void) flags; VBOXAdjustFrame(xf86Screens[scrnIndex], x, y); }
+{ RT_NOREF(flags); VBOXAdjustFrame(xf86Screens[scrnIndex], x, y); }
 
 static void VBOXFreeScreenIndex(int scrnIndex, int flags)
-{ (void) flags; VBOXFreeScreen(xf86Screens[scrnIndex]); }
+{ RT_NOREF(flags); VBOXFreeScreen(xf86Screens[scrnIndex]); }
 # else
 # define SCRNINDEXAPI(pfn) pfn
 #endif /* XF86_SCRN_INTERFACE */
@@ -989,8 +989,7 @@ static void
 vboxLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
           LOCO *colors, VisualPtr pVisual)
 {
-    (void)pScrn; (void) numColors; (void) indices; (void) colors;
-    (void)pVisual;
+    RT_NOREF(pScrn, numColors, indices, colors, pVisual);
 }
 
 /** Set the graphics and guest cursor support capabilities to the host if
@@ -1360,7 +1359,7 @@ static Bool VBOXSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
 }
 
 static void VBOXAdjustFrame(ScrnInfoPtr pScrn, int x, int y)
-{ (void)pScrn; (void)x; (void)y; }
+{ RT_NOREF(pScrn, x, y); }
 
 static void VBOXFreeScreen(ScrnInfoPtr pScrn)
 {
@@ -1424,7 +1423,7 @@ VBOXUnmapVidMem(ScrnInfoPtr pScrn)
 static Bool
 VBOXSaveScreen(ScreenPtr pScreen, int mode)
 {
-    (void)pScreen; (void)mode;
+    RT_NOREF(pScreen, mode);
     return TRUE;
 }
 #endif
@@ -1466,6 +1465,6 @@ VBOXRestoreMode(ScrnInfoPtr pScrn)
 static void
 VBOXDisplayPowerManagementSet(ScrnInfoPtr pScrn, int mode, int flags)
 {
-    (void)pScrn; (void)mode; (void) flags;
+    RT_NOREF(pScrn, mode, flags);
 }
 #endif

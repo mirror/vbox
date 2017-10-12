@@ -178,9 +178,9 @@ vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
 static void
 vbox_set_cursor_colors(ScrnInfoPtr pScrn, int bg, int fg)
 {
-    NOREF(pScrn);
-    NOREF(bg);
-    NOREF(fg);
+    RT_NOREF(pScrn);
+    RT_NOREF(bg);
+    RT_NOREF(fg);
     /* ErrorF("vbox_set_cursor_colors NOT IMPLEMENTED\n"); */
 }
 
