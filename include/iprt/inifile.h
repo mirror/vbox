@@ -76,7 +76,7 @@ RTDECL(uint32_t) RTIniFileRetain(RTINIFILE hIniFile);
 RTDECL(uint32_t) RTIniFileRelease(RTINIFILE hIniFile);
 
 /**
- * Queries a value in a section.
+ * Queries a named value in a section.
  *
  * The first matching value is returned.  The matching is by default case
  * insensitive.
@@ -97,6 +97,36 @@ RTDECL(uint32_t) RTIniFileRelease(RTINIFILE hIniFile);
  */
 RTDECL(int)      RTIniFileQueryValue(RTINIFILE hIniFile, const char *pszSection, const char *pszKey,
                                      char *pszValue, size_t cbValue, size_t *pcbActual);
+
+/**
+ * Queries a key-value pair in a section by ordinal.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_FOUND if the section wasn't found or if it contains no pair
+ *          with the given ordinal value.
+ *
+ * @param   hIniFile        The INI-file handle.
+ * @param   pszSection      The section name.  Pass NULL to refer to the
+ *                          unsectioned key space at the top of the file.
+ * @param   idxPair         The pair to fetch (counting from 0).
+ *
+ * @param   pszKey          Where to return the key name.
+ * @param   cbKey           Size of the buffer @a pszKey points to.
+ * @param   pcbKeyActual    Where to return the actual key size excluding
+ *                          terminator on success.  On VERR_BUFFER_OVERFLOW this
+ *                          will be set to the buffer size needed to hold the
+ *                          value, terminator included.  Optional.
+ *
+ * @param   pszValue        Where to return the value.
+ * @param   cbValue         Size of the buffer @a pszValue points to.
+ * @param   pcbValueActual  Where to return the actual value size excluding
+ *                          terminator on success.  On VERR_BUFFER_OVERFLOW this
+ *                          will be set to the buffer size needed to hold the
+ *                          value, terminator included. Optional.
+ */
+RTDECL(int)      RTIniFileQueryPair(RTINIFILE hIniFile, const char *pszSection, uint32_t idxPair,
+                                    char *pszKey, size_t cbKey, size_t *pcbKeyActual,
+                                    char *pszValue, size_t cbValue, size_t *pcbValueActual);
 
 
 /** @} */

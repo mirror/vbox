@@ -1019,6 +1019,7 @@
 # define RTIniFileCreateFromVfsFile                     RT_MANGLER(RTIniFileCreateFromVfsFile)
 # define RTIniFileRetain                                RT_MANGLER(RTIniFileRetain)
 # define RTIniFileRelease                               RT_MANGLER(RTIniFileRelease)
+# define RTIniFileQueryPair                             RT_MANGLER(RTIniFileQueryPair)
 # define RTIniFileQueryValue                            RT_MANGLER(RTIniFileQueryValue)
 # define RTIsoFsClose                                   RT_MANGLER(RTIsoFsClose)
 # define RTIsoFsExtractFile                             RT_MANGLER(RTIsoFsExtractFile)

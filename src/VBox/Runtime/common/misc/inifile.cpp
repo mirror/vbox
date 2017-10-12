@@ -437,7 +437,7 @@ static int rtIniFileQueryValueInSection(PRTINIFILEINT pThis, PRTINIFILESECTION p
             const char *pszEqual;
             if (ch != '=')
             {
-                /** @todo deal with escaped eqal signs? */
+                /** @todo deal with escaped equal signs? */
                 pszEqual = strchr(psz, '=');
                 if (pszEqual)
                 {
@@ -565,6 +565,221 @@ RTDECL(int) RTIniFileQueryValue(RTINIFILE hIniFile, const char *pszSection, cons
             {
                 rc = rtIniFileQueryValueInSection(pThis, &pThis->paSections[iSection], pszKey, cchKey,
                                                   pszValue, cbValue, pcbActual);
+                if (rc != VERR_NOT_FOUND)
+                    break;
+            }
+    }
+    return rc;
+}
+
+
+/**
+ * Worker for RTIniFileQueryPair.
+ *
+ * This can also be used to count the number of pairs in a section.
+ */
+static int rtIniFileQueryPairInSection(PRTINIFILEINT pThis, PRTINIFILESECTION pSection, uint32_t *pidxPair,
+                                       char *pszKey, size_t cbKey, size_t *pcbKeyActual,
+                                       char *pszValue, size_t cbValue, size_t *pcbValueActual)
+{
+    uint32_t idxPair = *pidxPair;
+
+    /*
+     * Scan the section, looking for the matching key.
+     */
+    Assert(pSection->cchSkipToValues <= pSection->cchSection);
+    const char * const  pszEnd  = &pThis->pszFile[pSection->offName + pSection->cchSection];
+    const char *        pszNext = pszEnd;
+    for (const char    *psz     = &pThis->pszFile[pSection->offName + pSection->cchSkipToValues];
+         (uintptr_t)psz < (uintptr_t)pszEnd;
+         psz = pszNext)
+    {
+        /* Find start of next line so we can use 'continue' to skip a line. */
+        pszNext = strchr(psz, '\n');
+        if (pszNext)
+            pszNext++;
+        else
+            pszNext = pszEnd;
+
+        /* Skip leading spaces. */
+        char ch;
+        while ((ch = *psz) != '\0' && RT_C_IS_SPACE(ch))
+            psz++;
+        if (   ch != ';'  /* comment line */
+            && ch != '\n' /* empty line */
+            && ch != '\r' /* empty line */
+            && (uintptr_t)psz < (uintptr_t)pszEnd)
+        {
+            /* Find end of key name, if any. */
+            const char *pszCurKey = psz;
+            size_t      cchCurKey;
+            const char *pszEqual;
+            if (ch != '=')
+            {
+                /** @todo deal with escaped equal signs? */
+                pszEqual = strchr(psz, '=');
+                if (pszEqual)
+                {
+                    if ((uintptr_t)pszEqual < (uintptr_t)pszNext)
+                        cchCurKey = pszEqual - pszCurKey;
+                    else
+                        continue;
+                }
+                else
+                    break;
+            }
+            else
+            {
+                cchCurKey = 0;
+                pszEqual  = psz;
+            }
+
+            /* Is this the pair we're looking for? */
+            if (idxPair > 0)
+                idxPair--;
+            else
+            {
+                /*
+                 * Yes it's the stuff we're looking for.
+                 * Prepare the the return stuff.
+                 */
+
+                /* Strip trailing spaces from the key name. */
+                while (cchCurKey > 0 && RT_C_IS_SPACE(pszCurKey[cchCurKey - 1]))
+                    cchCurKey--;
+
+                /* Skip leading blanks from the value. */
+                psz = pszEqual + 1;
+                while ((ch = *psz) && RT_C_IS_SPACE(ch) && ch != '\n')
+                    psz++;
+
+                /* Strip trailing spaces from the value. */
+                size_t cchCurValue = pszNext - psz;
+                while (cchCurValue > 1 && RT_C_IS_SPACE(psz[cchCurValue - 1]))
+                    cchCurValue--;
+
+                /* Strip value quotes. */
+                if (   cchCurValue > 2
+                    && (   (ch = *psz) == '"'
+                        || ch          == '\'' )
+                    && psz[cchCurValue - 1] == ch)
+                {
+                    cchCurValue -= 2;
+                    psz++;
+                }
+
+                /*
+                 * Copy the stuff out.
+                 */
+                if (   cchCurValue < cbValue
+                    && cchCurKey   < cbKey)
+                {
+                    memcpy(pszKey, pszCurKey, cchCurKey);
+                    pszKey[cchCurKey] = '\0';
+                    if (pcbKeyActual)
+                        *pcbKeyActual = cchCurKey;
+
+                    memcpy(pszValue, psz, cchCurValue);
+                    pszValue[cchCurValue] = '\0';
+                    if (pcbValueActual)
+                        *pcbValueActual = cchCurValue;
+
+                    *pidxPair = 0;
+                    return VINF_SUCCESS;
+                }
+
+                /* Buffer overflow. Copy out what we can. */
+                if (cbKey > 0)
+                {
+                    if (cchCurKey < cbKey)
+                        cbKey = cchCurKey + 1;
+                    memcpy(pszKey, pszCurKey, cbKey - 1);
+                    pszKey[cbKey - 1] = '\0';
+                }
+                if (pcbKeyActual)
+                    *pcbKeyActual = cchCurKey + 1;
+
+                if (cbValue > 0)
+                {
+                    if (cchCurValue < cbValue)
+                        cbValue = cchCurValue + 1;
+                    memcpy(pszValue, psz, cbValue - 1);
+                    pszValue[cbValue - 1] = '\0';
+                }
+                if (pcbValueActual)
+                    *pcbValueActual = cchCurValue + 1;
+
+                *pidxPair = 0;
+                return VERR_BUFFER_OVERFLOW;
+            }
+        }
+    }
+    *pidxPair = idxPair;
+    return VERR_NOT_FOUND;
+}
+
+
+/**
+ * Queries a key-value pair in a section by ordinal.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_FOUND if the section wasn't found or if it contains no pair
+ *          with the given ordinal value.
+ *
+ * @param   hIniFile        The INI-file handle.
+ * @param   pszSection      The section name.  Pass NULL to refer to the
+ *                          unsectioned key space at the top of the file.
+ * @param   idxPair         The pair to fetch (counting from 0).
+ *
+ * @param   pszKey          Where to return the key name.
+ * @param   cbKey           Size of the buffer @a pszKey points to.
+ * @param   pcbKeyActual    Where to return the actual key size excluding
+ *                          terminator on success.  On VERR_BUFFER_OVERFLOW this
+ *                          will be set to the buffer size needed to hold the
+ *                          value, terminator included.  Optional.
+ *
+ * @param   pszValue        Where to return the value.
+ * @param   cbValue         Size of the buffer @a pszValue points to.
+ * @param   pcbValueActual  Where to return the actual value size excluding
+ *                          terminator on success.  On VERR_BUFFER_OVERFLOW this
+ *                          will be set to the buffer size needed to hold the
+ *                          value, terminator included. Optional.
+ */
+RTDECL(int) RTIniFileQueryPair(RTINIFILE hIniFile, const char *pszSection, uint32_t idxPair,
+                               char *pszKey, size_t cbKey, size_t *pcbKeyActual,
+                               char *pszValue, size_t cbValue, size_t *pcbValueActual)
+{
+    /*
+     * Validate input.
+     */
+    PRTINIFILEINT pThis = hIniFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTINIFILE_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrNullReturn(pszSection, VERR_INVALID_POINTER);
+    if (cbKey)
+        AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pcbKeyActual, VERR_INVALID_POINTER);
+    if (cbValue)
+        AssertPtrReturn(pszValue, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pcbValueActual, VERR_INVALID_POINTER);
+
+    /*
+     * Search relevant sections.
+     */
+    int rc;
+    if (pszSection == NULL)
+        rc = rtIniFileQueryPairInSection(pThis, &pThis->paSections[0], &idxPair,
+                                         pszKey, cbKey, pcbKeyActual, pszValue, cbValue, pcbValueActual);
+    else
+    {
+        rc = VERR_NOT_FOUND;
+        uint32_t const cchSection = (uint32_t)strlen(pszSection);
+        for (uint32_t iSection = 1; iSection < pThis->cSections; iSection++)
+            if (   pThis->paSections[iSection].cchName == cchSection
+                && RTStrNICmp(&pThis->pszFile[pThis->paSections[iSection].offName], pszSection, cchSection) == 0)
+            {
+                rc = rtIniFileQueryPairInSection(pThis, &pThis->paSections[iSection], &idxPair,
+                                                 pszKey, cbKey, pcbKeyActual, pszValue, cbValue, pcbValueActual);
                 if (rc != VERR_NOT_FOUND)
                     break;
             }
