@@ -38,6 +38,8 @@ vboxvideo_xorg_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xextproto-7.1.1 \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18 \
 	$(VBOX_GRAPHICS_INCS)
+vboxvideo_override_INCLUDES = \
+    -include $(PATH_ROOT)/src/VBox/Additions/x11/vboxvideo/HGSMIMemAlloc.h
 
 vboxvideo.c_DEPS = $(VBOX_SVN_REV_HEADER)
 
@@ -47,6 +49,8 @@ LIBRARIES += vboxvideo_drv_lib
 # vboxvideo_drv_lib
 #
 vboxvideo_drv_lib_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_lib_CFLAGS += $(vboxvideo_override_INCLUDES)
+vboxvideo_drv_lib_CXXFLAGS += $(vboxvideo_override_INCLUDES)
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.  Do we need this?  I don't want to find out.
  vboxvideo_drv_lib_CFLAGS += -D_XPG6 -Wno-shadow # Use XPG6 until we have moved the C++ bits into a library.
 endif
@@ -56,7 +60,7 @@ vboxvideo_drv_lib_SOURCES  = \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/HGSMI/HGSMICommon.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/HGSMI/HGSMIMemAlloc.cpp
+	$(PATH_ROOT)/src/VBox/Additions/x11/vboxvideo/hgsmimemalloc.c
 vboxvideo_drv_lib_INCS = \
 	$(PATH_ROOT)/src/VBox/Runtime/include \
 	$(VBOX_GRAPHICS_INCS)
@@ -69,7 +73,9 @@ if1of ($(KBUILD_TARGET), linux)
  SYSMODS += vboxvideo_drv
 endif   # target linux
 vboxvideo_drv_TEMPLATE = VBOXGUESTR3XF86MOD
+vboxvideo_drv_CFLAGS += $(vboxvideo_override_INCLUDES)
 vboxvideo_drv_CFLAGS += -Wno-shadow # Avoid MBs of warnings in X11 and OpenGL headers (solaris mostly).
+vboxvideo_drv_CXXFLAGS += $(vboxvideo_override_INCLUDES)
 vboxvideo_drv_DEFS.linux = linux
 vboxvideo_drv_DEFS.x86 = __i386__
 # This one has to be defined when building server code on systems where
@@ -143,6 +149,7 @@ vboxvideo_drv_SOURCES = \
 DLLS += vboxvideo_drv_70
 vboxvideo_drv_70_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxvideo_drv_70_DEFS = $(vboxvideo_70_DEFS) XORG_VERSION_CURRENT=70000000
+vboxvideo_drv_70_CFLAGS += $(vboxvideo_override_INCLUDES)
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
  vboxvideo_drv_70_CFLAGS += -D_XPG6 -Wno-shadow # Use XPG6 until we have moved the C++ bits into a library.
 endif
