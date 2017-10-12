@@ -243,7 +243,7 @@ static int rtIniFileLoad(PRTINIFILEINT pThis)
     /*
      * Allocation section array and do the preparsing.
      */
-    pThis->paSections = (PRTINIFILESECTION)RTMemAllocZ(sizeof(pThis->paSections) * cSections);
+    pThis->paSections = (PRTINIFILESECTION)RTMemAllocZ(sizeof(pThis->paSections[0]) * cSections);
     if (!pThis->paSections)
         return VERR_NO_MEMORY;
 
