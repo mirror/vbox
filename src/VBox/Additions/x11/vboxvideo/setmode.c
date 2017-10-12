@@ -84,14 +84,14 @@ void vbvxClearVRAM(ScrnInfoPtr pScrn, size_t cbOldSize, size_t cbNewSize)
 /** Set a graphics mode.  Poke any required values into registers, do an HGSMI
  * mode set and tell the host we support advanced graphics functions.
  */
-void vbvxSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth, unsigned cHeight, int x, int y, bool fEnabled,
-                 bool fConnected, struct vbvxFrameBuffer *pFrameBuffer)
+void vbvxSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth, unsigned cHeight, int x, int y, Bool fEnabled,
+                 Bool fConnected, struct vbvxFrameBuffer *pFrameBuffer)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     uint32_t offStart;
     uint16_t fFlags;
     int rc;
-    bool fEnabledAndVisible = fEnabled && x + cWidth <= pFrameBuffer->cWidth && y + cHeight <= pFrameBuffer->cHeight;
+    Bool fEnabledAndVisible = fEnabled && x + cWidth <= pFrameBuffer->cWidth && y + cHeight <= pFrameBuffer->cHeight;
     /* Recent host code has a flag to blank the screen; older code needs BPP set to zero. */
     uint32_t cBPP = fEnabledAndVisible || pVBox->fHostHasScreenBlankingFlag ? pFrameBuffer->cBPP : 0;
 

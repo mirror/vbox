@@ -174,14 +174,14 @@ void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn)
     pScrn->modes->VDisplay = pVBox->pScreens[0].aPreferredSize.cy;
 }
 
-static bool useHardwareCursor(uint32_t fCursorCapabilities)
+static Bool useHardwareCursor(uint32_t fCursorCapabilities)
 {
     if (fCursorCapabilities & VBOX_VBVA_CURSOR_CAPABILITY_HARDWARE)
         return true;
     return false;
 }
 
-static void compareAndMaybeSetUseHardwareCursor(VBOXPtr pVBox, uint32_t fCursorCapabilities, bool *pfChanged, bool fSet)
+static void compareAndMaybeSetUseHardwareCursor(VBOXPtr pVBox, uint32_t fCursorCapabilities, Bool *pfChanged, Bool fSet)
 {
     if (pVBox->fUseHardwareCursor != useHardwareCursor(fCursorCapabilities))
         *pfChanged = true;
@@ -201,12 +201,12 @@ do { \
 
 /** Read in information about the most recent size hints and cursor
  * capabilities requested for the guest screens from HGSMI. */
-void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, bool *pfNeedUpdate)
+void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, Bool *pfNeedUpdate)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     int rc;
     unsigned i;
-    bool fChanged = false;
+    Bool fChanged = false;
     uint32_t fCursorCapabilities;
 
     if (!pVBox->fHaveHGSMIModeHints)

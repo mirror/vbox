@@ -161,7 +161,7 @@ typedef struct VBOXRec
     /** The size of the framebuffer and the VBVA buffers at the end of it. */
     unsigned long cbView;
     /** Whether the pre-X-server mode was a VBE mode */
-    bool fSavedVBEMode;
+    Bool fSavedVBEMode;
     /** Paramters of the saved pre-X-server VBE mode, invalid if there is none
      */
     uint16_t cSavedWidth, cSavedHeight, cSavedPitch, cSavedBPP, fSavedFlags;
@@ -178,9 +178,9 @@ typedef struct VBOXRec
     /** Information about each virtual screen. */
     struct VBoxScreen *pScreens;
     /** Can we get mode hint and cursor integration information from HGSMI? */
-    bool fHaveHGSMIModeHints;
+    Bool fHaveHGSMIModeHints;
     /** Does the host support the screen blanking flag? */
-    bool fHostHasScreenBlankingFlag;
+    Bool fHostHasScreenBlankingFlag;
     /** Array of structures for receiving mode hints. */
     VBVAMODEHINT *paVBVAModeHints;
 #ifdef VBOXVIDEO_13
@@ -225,8 +225,8 @@ struct vbvxFrameBuffer {
 };
 
 extern void vbvxClearVRAM(ScrnInfoPtr pScrn, size_t cbOldSize, size_t cbNewSize);
-extern void vbvxSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth, unsigned cHeight, int x, int y, bool fEnabled,
-                        bool fConnected, struct vbvxFrameBuffer *pFrameBuffer);
+extern void vbvxSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth, unsigned cHeight, int x, int y, Bool fEnabled,
+                        Bool fConnected, struct vbvxFrameBuffer *pFrameBuffer);
 extern void vbvxSetSolarisMouseRange(int width, int height);
 
 /* pointer.h */
@@ -242,8 +242,8 @@ extern void vboxDisableVbva(ScrnInfoPtr pScrn);
 /* getmode.c */
 extern void vboxAddModes(ScrnInfoPtr pScrn);
 extern void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn);
-extern void vbvxReadSizesAndCursorIntegrationFromProperties(ScrnInfoPtr pScrn, bool *pfNeedUpdate);
-extern void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, bool *pfNeedUpdate);
+extern void vbvxReadSizesAndCursorIntegrationFromProperties(ScrnInfoPtr pScrn, Bool *pfNeedUpdate);
+extern void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, Bool *pfNeedUpdate);
 extern void vbvxSetUpLinuxACPI(ScreenPtr pScreen);
 extern void vbvxCleanUpLinuxACPI(ScreenPtr pScreen);
 

@@ -116,7 +116,7 @@ static Bool VBOXMapVidMem(ScrnInfoPtr pScrn);
 static void VBOXUnmapVidMem(ScrnInfoPtr pScrn);
 static void VBOXSaveMode(ScrnInfoPtr pScrn);
 static void VBOXRestoreMode(ScrnInfoPtr pScrn);
-static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, bool fScreenInitTime);
+static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, Bool fScreenInitTime);
 
 #ifndef XF86_SCRN_INTERFACE
 # define xf86ScreenToScrn(pScreen) xf86Screens[(pScreen)->myNum]
@@ -288,7 +288,7 @@ static Bool adjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
  * RandR.  We solve this by setting the requested mode to the host but keeping
  * the virtual frame-
  * buffer matching what the X server expects. */
-static void setModeRandR11(ScrnInfoPtr pScrn, DisplayModePtr pMode, bool fScreenInitTime, bool fEnterVTTime,
+static void setModeRandR11(ScrnInfoPtr pScrn, DisplayModePtr pMode, Bool fScreenInitTime, Bool fEnterVTTime,
                            int cXOverRide, int cYOverRide)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
@@ -1030,7 +1030,7 @@ static void setSizesRandR11(ScrnInfoPtr pScrn)
 
 #endif
 
-static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, bool fScreenInitTime)
+static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, Bool fScreenInitTime)
 {
     RT_NOREF(fScreenInitTime);
     TRACE_LOG("fScreenInitTime=%d\n", (int)fScreenInitTime);
@@ -1055,7 +1055,7 @@ static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, bool fScreenInitTime
 static void vboxBlockHandler(pointer pData, OSTimePtr pTimeout, pointer pReadmask)
 {
     ScrnInfoPtr pScrn = (ScrnInfoPtr)pData;
-    bool fNeedUpdate = false;
+    Bool fNeedUpdate = false;
 
     (void)pTimeout;
     (void)pReadmask;
