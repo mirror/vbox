@@ -4,25 +4,13 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
- *
- * This file is part of VirtualBox Open Source Edition (OSE), as
- * available from http://www.virtualbox.org. This file is free software;
- * you can redistribute it and/or modify it under the terms of the GNU
- * General Public License (GPL) as published by the Free Software
- * Foundation, in version 2 as it comes in the "COPYING" file of the
- * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
- * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
- * --------------------------------------------------------------------
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This code is based on the X.Org VESA driver with the following copyrights:
  *
  * Copyright (c) 2000 by Conectiva S.A. (http://www.conectiva.com)
  * Copyright 2008 Red Hat, Inc.
  * Copyright 2012 Red Hat, Inc.
- *
- * and the following permission notice (not all original sourse files include
- * the last paragraph):
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -36,11 +24,11 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- * CONECTIVA LINUX BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
- * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
+ * THE COPYRIGHT HOLDERS, AUTHORS AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+ * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+ * USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Except as contained in this notice, the name of Conectiva Linux shall
  * not be used in advertising or otherwise to promote the sale, use or other
@@ -51,6 +39,7 @@
  *          David Dawes <dawes@xfree86.org>
  *          Adam Jackson <ajax@redhat.com>
  *          Dave Airlie <airlied@redhat.com>
+ *          Michael Thayer <michael.thayer@oracle.com>
  */
 
 #include "vboxvideo.h"
