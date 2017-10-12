@@ -839,21 +839,72 @@ typedef struct UDFPARTMAPTYPE2
     UDFPARTMAPHDR   Hdr;
     /** 0x02: Reserved \#1. */
     uint16_t        uReserved1;
-    /** 0x04: Partition number (UDF_ENTITY_ID_VPM_PARTITION_TYPE,
+    /** 0x04: Partition ID type (UDF_ENTITY_ID_VPM_PARTITION_TYPE,
      *  UDF_ENTITY_ID_SPM_PARTITION_TYPE, or UDF_ENTITY_ID_MPM_PARTITION_TYPE). */
     UDFENTITYID     idPartitionType;
     /** 0x24: Volume sequence number. */
     uint16_t        uVolumeSeqNo;
     /** 0x26: Partition number. */
     uint16_t        uPartitionNo;
-    /** 0x28: Reserved \#2. */
-    uint8_t         abReserved2[24];
+    /** 0x28: Data specific to the partition ID type. */
+    union
+    {
+        /** 0x28: Generic view. */
+        uint8_t     ab[24];
+
+        /** UDF_ENTITY_ID_VPM_PARTITION_TYPE. */
+        struct
+        {
+            /** 0x28: Reserved. */
+            uint8_t         abReserved2[24];
+        } Vpm;
+
+        /** UDF_ENTITY_ID_SPM_PARTITION_TYPE. */
+        struct
+        {
+            /** 0x28: Packet length in blocks.   */
+            uint16_t        cBlocksPerPacket;
+            /** 0x2a: Number of sparing tables. */
+            uint8_t         cSparingTables;
+            /** 0x2b: Reserved padding byte. */
+            uint8_t         bReserved2;
+            /** 0x2c: The size of each sparing table. */
+            uint32_t        cbSparingTable;
+            /** 0x30: The sparing table locations (logical block). */
+            uint32_t        aoffSparingTables[4];
+        } Spm;
+
+        /** UDF_ENTITY_ID_MPM_PARTITION_TYPE. */
+        struct
+        {
+            /** 0x28: Metadata file entry location (logical block). */
+            uint32_t        offMetadataFile;
+            /** 0x2c: Metadata mirror file entry location (logical block). */
+            uint32_t        offMetadataMirrorFile;
+            /** 0x30: Metadata bitmap file entry location (logical block). */
+            uint32_t        offMetadataBitmapFile;
+            /** 0x34: The metadata allocation unit (logical blocks) */
+            uint32_t        cBlocksAllocationUnit;
+            /** 0x38: The metadata allocation unit alignment (logical blocks). */
+            uint16_t        cBlocksAlignmentUnit;
+            /** 0x3a: Flags, UDFPARTMAPMETADATA_F_XXX. */
+            uint8_t         fFlags;
+            /** 0x3b: Reserved. */
+            uint8_t         abReserved2[5];
+        } Mpm;
+    } u;
 } UDFPARTMAPTYPE2;
 AssertCompileSize(UDFPARTMAPTYPE2, 64);
 /** Pointer to a type 2 partition map. */
 typedef UDFPARTMAPTYPE2 *PUDFPARTMAPTYPE2;
-/** Pointer to a const type 2 partition map1. */
+/** Pointer to a const type 2 partition map. */
 typedef UDFPARTMAPTYPE2 const *PCUDFPARTMAPTYPE2;
+
+/** @name UDFPARTMAPMETADATA_F_XXX
+ * @{ */
+/** Indicates that the metadata is mirrored too, not just the file entry. */
+#define UDFPARTMAPMETADATA_F_DATA_MIRRORED      UINT8_C(1)
+/** @} */
 
 
 /**
