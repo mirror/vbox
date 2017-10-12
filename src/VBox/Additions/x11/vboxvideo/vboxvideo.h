@@ -46,6 +46,9 @@
 #include <VBoxVideo.h>
 #include "version-generated.h"
 
+#define VBOX_VENDORID 0x80EE
+#define VBOX_DEVICEID 0xBEEF
+
 #ifndef VBVA_SCREEN_F_BLANK
 # define VBVA_SCREEN_F_BLANK    0x0004
 #endif
@@ -97,7 +100,8 @@ if (!(expr)) \
 #include "xf86str.h"
 #include "xf86Cursor.h"
 
-#define VBOX_VERSION            VBOX_VERSION_MAJOR * 10000 + VBOX_VERSION_MINOR * 100 + VBOX_VERSION_BUILD
+#define VBOX_VERSION            VBOX_VERSION_MAJOR * 10000 \
+                              + VBOX_VERSION_MINOR * 100
 #define VBOX_NAME               "VBoxVideo"
 #define VBOX_DRIVER_NAME        "vboxvideo"
 

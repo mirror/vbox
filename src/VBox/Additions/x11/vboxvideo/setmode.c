@@ -47,8 +47,6 @@
 # include <string.h>
 #endif
 #include "vboxvideo.h"
-#include "version-generated.h"
-#include "product-generated.h"
 #include "xf86.h"
 
 /* VGA hardware functions for setting and restoring text mode */

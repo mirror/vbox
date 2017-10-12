@@ -43,12 +43,8 @@
  */
 
 #include "vboxvideo.h"
-#include <VBox/param.h> /* for VBOX_DEVICEID and VBOX_VENDORID */
 #include <VBox/VBoxGuestLib.h>
 #include <VBoxVideoVBE.h>
-#include "version-generated.h"
-#include "product-generated.h"
-#include "revision-generated.h"
 
 /* Basic definitions and functions needed by all drivers. */
 #include "xf86.h"
@@ -597,7 +593,7 @@ static MODULESETUPPROTO(vboxSetup);
 static XF86ModuleVersionInfo vboxVersionRec =
 {
     VBOX_DRIVER_NAME,
-    VBOX_VENDOR,
+    "Oracle Corporation",
     MODINFOSTRING1,
     MODINFOSTRING2,
 #ifdef XORG_7X
@@ -848,8 +844,9 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     if (flags & PROBE_DETECT)
         return (FALSE);
 
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VirtualBox guest additions video driver version " VBOX_VERSION_STRING "r%d\n",
-               VBOX_SVN_REV);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+               "VirtualBox guest additions video driver version %d.%d\n",
+               VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR);
 
     /* The ramdac module is needed for the hardware cursor. */
     if (!xf86LoadSubModule(pScrn, "ramdac"))
