@@ -104,7 +104,7 @@ void UIToolsToolbar::sltHandleOpenToolMachine()
         idTab = m_mapTabIdsMachine.value(enmType);
     else
     {
-        idTab = m_pTabBarMachine->addTab(pAction->icon(), pAction->text().remove('&'));
+        idTab = m_pTabBarMachine->addTab(pAction);
         m_mapTabIdsMachine[enmType] = idTab;
     }
     /* And make it active: */
@@ -127,7 +127,7 @@ void UIToolsToolbar::sltHandleOpenToolGlobal()
         idTab = m_mapTabIdsGlobal.value(enmType);
     else
     {
-        idTab = m_pTabBarGlobal->addTab(pAction->icon(), pAction->text().remove('&'));
+        idTab = m_pTabBarGlobal->addTab(pAction);
         m_mapTabIdsGlobal[enmType] = idTab;
     }
     /* And make it active: */
@@ -206,17 +206,17 @@ void UIToolsToolbar::prepareMenu()
     AssertPtrReturnVoid(pMenuMachine);
     {
         /* Add 'Details' action: */
-        pMenuMachine->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_Details));
-        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_Details), &UIAction::triggered,
+        pMenuMachine->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_Details));
+        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_Details), &UIAction::triggered,
                 this, &UIToolsToolbar::sltHandleOpenToolMachine);
-        m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_Details)
+        m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_Details)
             ->setProperty("ToolTypeMachine", QVariant::fromValue(ToolTypeMachine_Details));
 
         /* Add 'Snapshots' action: */
-        pMenuMachine->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_Snapshots));
-        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_Snapshots), &UIAction::triggered,
+        pMenuMachine->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots));
+        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots), &UIAction::triggered,
                 this, &UIToolsToolbar::sltHandleOpenToolMachine);
-        m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_Snapshots)
+        m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots)
             ->setProperty("ToolTypeMachine", QVariant::fromValue(ToolTypeMachine_Snapshots));
     }
 
@@ -230,17 +230,17 @@ void UIToolsToolbar::prepareMenu()
     AssertPtrReturnVoid(pMenuGlobal);
     {
         /* Add 'Virtual Media Manager' action: */
-        pMenuGlobal->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_VirtualMediaManager));
-        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_VirtualMediaManager), &UIAction::triggered,
+        pMenuGlobal->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager));
+        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager), &UIAction::triggered,
                 this, &UIToolsToolbar::sltHandleOpenToolGlobal);
-        m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_VirtualMediaManager)
+        m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager)
             ->setProperty("ToolTypeGlobal", QVariant::fromValue(ToolTypeGlobal_VirtualMedia));
 
         /* Add 'Host Network Manager' action: */
-        pMenuGlobal->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_HostNetworkManager));
-        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_HostNetworkManager), &UIAction::triggered,
+        pMenuGlobal->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager));
+        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager), &UIAction::triggered,
                 this, &UIToolsToolbar::sltHandleOpenToolGlobal);
-        m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_HostNetworkManager)
+        m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager)
             ->setProperty("ToolTypeGlobal", QVariant::fromValue(ToolTypeGlobal_HostNetwork));
     }
 

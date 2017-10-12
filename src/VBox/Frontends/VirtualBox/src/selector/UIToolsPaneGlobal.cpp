@@ -195,7 +195,7 @@ void UIToolsPaneGlobal::retranslateUi()
     m_pPaneDesktop->removeToolDescriptions();
 
     /* Add tool descriptions: */
-    QAction *pAction1 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_VirtualMediaManager);
+    QAction *pAction1 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager);
     m_pPaneDesktop->addToolDescription(pAction1,
                                        tr("Tool to observe virtual storage media. "
                                           "Reflects all the chains of <u>virtual disks</u> you have registered "
@@ -205,7 +205,7 @@ void UIToolsPaneGlobal::retranslateUi()
                                           "Allows to <u>edit</u> medium attributes like <u>type</u>, "
                                           "<u>location/name</u>, <u>description</u> and <u>size</u> (for dynamical storages "
                                           "only)."));
-    QAction *pAction2 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_HostNetworkManager);
+    QAction *pAction2 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager);
     m_pPaneDesktop->addToolDescription(pAction2,
                                        tr("Tool to control host-only network interfaces. "
                                           "Reflects <u>host-only networks</u>, their DHCP servers and allows "

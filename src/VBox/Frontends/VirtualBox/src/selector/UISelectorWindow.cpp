@@ -156,8 +156,8 @@ void UISelectorWindow::sltHandlePolishEvent()
         // Let's just _create_ them later, asynchronously after the showEvent().
         /* Restore previously opened Machine tools at startup: */
         QMap<ToolTypeMachine, QAction*> mapActionsMachine;
-        mapActionsMachine[ToolTypeMachine_Details] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details);
-        mapActionsMachine[ToolTypeMachine_Snapshots] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots);
+        mapActionsMachine[ToolTypeMachine_Details] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Details);
+        mapActionsMachine[ToolTypeMachine_Snapshots] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots);
         for (int i = m_orderMachine.size() - 1; i >= 0; --i)
             if (m_orderMachine.at(i) != ToolTypeMachine_Invalid)
                 mapActionsMachine.value(m_orderMachine.at(i))->trigger();
@@ -274,10 +274,10 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
         {
             /* Make sure Details or Snapshot pane is chosen if opened: */
             if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-                actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details)->trigger();
+                actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Details)->trigger();
             else
             if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
-                actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots)->trigger();
+                actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots)->trigger();
         }
 
         /* Update Details-pane (if requested): */
@@ -2120,8 +2120,8 @@ void UISelectorWindow::loadSettings()
 
         /* We can restore previously opened Global tools right here: */
         QMap<ToolTypeGlobal, QAction*> mapActionsGlobal;
-        mapActionsGlobal[ToolTypeGlobal_VirtualMedia] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_VirtualMediaManager);
-        mapActionsGlobal[ToolTypeGlobal_HostNetwork] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_HostNetworkManager);
+        mapActionsGlobal[ToolTypeGlobal_VirtualMedia] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager);
+        mapActionsGlobal[ToolTypeGlobal_HostNetwork] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager);
         for (int i = m_orderGlobal.size() - 1; i >= 0; --i)
             if (m_orderGlobal.at(i) != ToolTypeGlobal_Invalid)
                 mapActionsGlobal.value(m_orderGlobal.at(i))->trigger();
@@ -2366,8 +2366,8 @@ void UISelectorWindow::updateActionsAppearance()
 
     /* Enable/disable tools actions: */
     actionPool()->action(UIActionIndexST_M_Tools_M_Machine)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine, items));
-    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_Details, items));
-    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_Snapshots, items));
+    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Details)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_S_Details, items));
+    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_S_Snapshots, items));
 }
 
 bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items)
@@ -2495,8 +2495,8 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
             return isActionEnabled(UIActionIndexST_M_Machine_M_Close, items);
         }
         case UIActionIndexST_M_Tools_M_Machine:
-        case UIActionIndexST_M_Tools_M_Machine_Details:
-        case UIActionIndexST_M_Tools_M_Machine_Snapshots:
+        case UIActionIndexST_M_Tools_M_Machine_S_Details:
+        case UIActionIndexST_M_Tools_M_Machine_S_Snapshots:
         {
             return pItem->accessible();
         }

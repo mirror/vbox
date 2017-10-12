@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAction>
 # include <QApplication>
 # include <QDrag>
 # include <QDragEnterEvent>
@@ -39,9 +40,11 @@
 # include <QToolButton>
 
 /* GUI includes: */
+# include "QIWithRetranslateUI.h"
 # include "UIIconPool.h"
 # include "UITabBar.h"
 
+/* Other VBox includes: */
 # include "iprt/assert.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -63,7 +66,7 @@ class QToolButton;
 
 
 /** Our own skinnable implementation of tabs for tab-bar. */
-class UITabBarItem : public QWidget
+class UITabBarItem : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -86,15 +89,11 @@ public:
     /** Holds the mime-type for the D&D system. */
     static const QString MimeType;
 
-    /** Creates tab-bar item on the basis of passed @a uuid, @a icon and @a strName. */
-    UITabBarItem(const QUuid &uuid, const QIcon &icon = QIcon(), const QString &strName = QString());
+    /** Creates tab-bar item on the basis of passed @a uuid and @a pAction. */
+    UITabBarItem(const QUuid &uuid, const QAction *pAction);
 
     /** Returns item ID. */
     const QUuid uuid() const { return m_uuid; }
-    /** Returns item icon. */
-    const QIcon icon() const { return m_icon; }
-    /** Returns item name. */
-    const QString name() const { return m_strName; }
 
     /** Defines the item @a enmPositionStyle. */
     void setPositionStyle(PositionStyle enmPositionStyle);
@@ -103,6 +102,9 @@ public:
     void setCurrent(bool fCurrent);
 
 protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
     /** Handles paint @a pEvent. */
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
@@ -129,11 +131,9 @@ private:
     void prepare();
 
     /** Holds the item ID. */
-    const QUuid  m_uuid;
-    /** Holds the item icon. */
-    QIcon        m_icon;
-    /** Holds the item name. */
-    QString      m_strName;
+    const QUuid    m_uuid;
+    /** Holds the item action reference. */
+    const QAction *m_pAction;
 
     /** Holds the item position style. */
     PositionStyle m_enmPosition;
@@ -169,10 +169,9 @@ private:
 /* static */
 const QString UITabBarItem::MimeType = QString("application/virtualbox;value=TabID");
 
-UITabBarItem::UITabBarItem(const QUuid &uuid, const QIcon &icon /* = QIcon() */, const QString &strName /* = QString() */)
+UITabBarItem::UITabBarItem(const QUuid &uuid, const QAction *pAction)
     : m_uuid(uuid)
-    , m_icon(icon)
-    , m_strName(strName)
+    , m_pAction(pAction)
     , m_enmPosition(PositionStyle_Single)
     , m_fCurrent(false)
     , m_fHovered(false)
@@ -212,6 +211,12 @@ void UITabBarItem::setCurrent(bool fCurrent)
 
     /* And call for repaint: */
     update();
+}
+
+void UITabBarItem::retranslateUi()
+{
+    /* Translate label: */
+    m_pLabelName->setText(m_pAction->text().remove('&'));
 }
 
 void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
@@ -546,7 +551,7 @@ void UITabBarItem::mouseMoveEvent(QMouseEvent *pEvent)
     pMimeData->setData(MimeType, uuid().toByteArray());
     pDrag->setMimeData(pMimeData);
     const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-    pDrag->setPixmap(icon().pixmap(iMetric, iMetric));
+    pDrag->setPixmap(m_pAction->icon().pixmap(iMetric, iMetric));
     pDrag->exec();
 }
 
@@ -617,7 +622,7 @@ void UITabBarItem::prepare()
         {
             /* Configure label: */
             m_pLabelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-            m_pLabelIcon->setPixmap(m_icon.pixmap(iMetric));
+            m_pLabelIcon->setPixmap(m_pAction->icon().pixmap(iMetric));
         }
 
         /* Create name label: */
@@ -626,7 +631,6 @@ void UITabBarItem::prepare()
         {
             /* Configure label: */
             m_pLabelName->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-            m_pLabelName->setText(m_strName);
         }
 
         /* Create close button: */
@@ -670,6 +674,9 @@ void UITabBarItem::prepare()
         m_pLayout->addWidget(m_pButtonClose);
 #endif /* !VBOX_WS_MAC */
     }
+
+    /* Apply language settings: */
+    retranslateUi();
 }
 
 
@@ -689,12 +696,12 @@ UITabBar::UITabBar(QWidget *pParent /* = 0 */)
     prepare();
 }
 
-QUuid UITabBar::addTab(const QIcon &icon /* = QIcon() */, const QString &strName /* = QString() */)
+QUuid UITabBar::addTab(const QAction *pAction)
 {
     /* Generate unique ID: */
     const QUuid uuid = QUuid::createUuid();
     /* Create new tab item: */
-    UITabBarItem *pItem = new UITabBarItem(uuid, icon, strName);
+    UITabBarItem *pItem = new UITabBarItem(uuid, pAction);
     AssertPtrReturn(pItem, QUuid());
     {
         /* Configure item: */
