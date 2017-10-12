@@ -276,69 +276,69 @@ HRESULT Unattended::detectIsoOS()
      * Just fake up some windows installation media locale (for <UILanguage>).
      * Note! The translation here isn't perfect.  Feel free to send us a patch.
      */
-    /** @todo Looks like we can get this from sources/lang.ini as well as
-     *        sources/??-* and boot/??-*.  Will require UDF reader. */
-    char        szTmp[16];
-    const char *pszFilename = RTPathFilename(mStrIsoPath.c_str());
-    if (   pszFilename
-        && RT_C_IS_ALPHA(pszFilename[0])
-        && RT_C_IS_ALPHA(pszFilename[1])
-        && (pszFilename[2] == '-' || pszFilename[2] == '_') )
+    if (mDetectedOSLanguages.size() == 0)
     {
-        szTmp[0] = (char)RT_C_TO_LOWER(pszFilename[0]);
-        szTmp[1] = (char)RT_C_TO_LOWER(pszFilename[1]);
-        szTmp[2] = '-';
-        if (szTmp[0] == 'e' && szTmp[1] == 'n')
-            strcpy(&szTmp[3], "US");
-        else if (szTmp[0] == 'a' && szTmp[1] == 'r')
-            strcpy(&szTmp[3], "SA");
-        else if (szTmp[0] == 'd' && szTmp[1] == 'a')
-            strcpy(&szTmp[3], "DK");
-        else if (szTmp[0] == 'e' && szTmp[1] == 't')
-            strcpy(&szTmp[3], "EE");
-        else if (szTmp[0] == 'e' && szTmp[1] == 'l')
-            strcpy(&szTmp[3], "GR");
-        else if (szTmp[0] == 'h' && szTmp[1] == 'e')
-            strcpy(&szTmp[3], "IL");
-        else if (szTmp[0] == 'j' && szTmp[1] == 'a')
-            strcpy(&szTmp[3], "JP");
-        else if (szTmp[0] == 's' && szTmp[1] == 'v')
-            strcpy(&szTmp[3], "SE");
-        else if (szTmp[0] == 'u' && szTmp[1] == 'k')
-            strcpy(&szTmp[3], "UA");
-        else if (szTmp[0] == 'c' && szTmp[1] == 's')
-            strcpy(szTmp, "cs-CZ");
-        else if (szTmp[0] == 'n' && szTmp[1] == 'o')
-            strcpy(szTmp, "nb-NO");
-        else if (szTmp[0] == 'p' && szTmp[1] == 'p')
-            strcpy(szTmp, "pt-PT");
-        else if (szTmp[0] == 'p' && szTmp[1] == 't')
-            strcpy(szTmp, "pt-BR");
-        else if (szTmp[0] == 'c' && szTmp[1] == 'n')
-            strcpy(szTmp, "zh-CN");
-        else if (szTmp[0] == 'h' && szTmp[1] == 'k')
-            strcpy(szTmp, "zh-HK");
-        else if (szTmp[0] == 't' && szTmp[1] == 'w')
-            strcpy(szTmp, "zh-TW");
-        else if (szTmp[0] == 's' && szTmp[1] == 'r')
-            strcpy(szTmp, "sr-Latn-CS"); /* hmm */
-        else
+        char        szTmp[16];
+        const char *pszFilename = RTPathFilename(mStrIsoPath.c_str());
+        if (   pszFilename
+            && RT_C_IS_ALPHA(pszFilename[0])
+            && RT_C_IS_ALPHA(pszFilename[1])
+            && (pszFilename[2] == '-' || pszFilename[2] == '_') )
         {
-            szTmp[3] = (char)RT_C_TO_UPPER(pszFilename[0]);
-            szTmp[4] = (char)RT_C_TO_UPPER(pszFilename[1]);
-            szTmp[5] = '\0';
+            szTmp[0] = (char)RT_C_TO_LOWER(pszFilename[0]);
+            szTmp[1] = (char)RT_C_TO_LOWER(pszFilename[1]);
+            szTmp[2] = '-';
+            if (szTmp[0] == 'e' && szTmp[1] == 'n')
+                strcpy(&szTmp[3], "US");
+            else if (szTmp[0] == 'a' && szTmp[1] == 'r')
+                strcpy(&szTmp[3], "SA");
+            else if (szTmp[0] == 'd' && szTmp[1] == 'a')
+                strcpy(&szTmp[3], "DK");
+            else if (szTmp[0] == 'e' && szTmp[1] == 't')
+                strcpy(&szTmp[3], "EE");
+            else if (szTmp[0] == 'e' && szTmp[1] == 'l')
+                strcpy(&szTmp[3], "GR");
+            else if (szTmp[0] == 'h' && szTmp[1] == 'e')
+                strcpy(&szTmp[3], "IL");
+            else if (szTmp[0] == 'j' && szTmp[1] == 'a')
+                strcpy(&szTmp[3], "JP");
+            else if (szTmp[0] == 's' && szTmp[1] == 'v')
+                strcpy(&szTmp[3], "SE");
+            else if (szTmp[0] == 'u' && szTmp[1] == 'k')
+                strcpy(&szTmp[3], "UA");
+            else if (szTmp[0] == 'c' && szTmp[1] == 's')
+                strcpy(szTmp, "cs-CZ");
+            else if (szTmp[0] == 'n' && szTmp[1] == 'o')
+                strcpy(szTmp, "nb-NO");
+            else if (szTmp[0] == 'p' && szTmp[1] == 'p')
+                strcpy(szTmp, "pt-PT");
+            else if (szTmp[0] == 'p' && szTmp[1] == 't')
+                strcpy(szTmp, "pt-BR");
+            else if (szTmp[0] == 'c' && szTmp[1] == 'n')
+                strcpy(szTmp, "zh-CN");
+            else if (szTmp[0] == 'h' && szTmp[1] == 'k')
+                strcpy(szTmp, "zh-HK");
+            else if (szTmp[0] == 't' && szTmp[1] == 'w')
+                strcpy(szTmp, "zh-TW");
+            else if (szTmp[0] == 's' && szTmp[1] == 'r')
+                strcpy(szTmp, "sr-Latn-CS"); /* hmm */
+            else
+            {
+                szTmp[3] = (char)RT_C_TO_UPPER(pszFilename[0]);
+                szTmp[4] = (char)RT_C_TO_UPPER(pszFilename[1]);
+                szTmp[5] = '\0';
+            }
         }
-    }
-    else
-        strcpy(szTmp, "en-US");
-    try
-    {
-        mDetectedOSLanguages.clear();
-        mDetectedOSLanguages.append(szTmp);
-    }
-    catch (std::bad_alloc)
-    {
-        return E_OUTOFMEMORY;
+        else
+            strcpy(szTmp, "en-US");
+        try
+        {
+            mDetectedOSLanguages.append(szTmp);
+        }
+        catch (std::bad_alloc)
+        {
+            return E_OUTOFMEMORY;
+        }
     }
 
     /** @todo implement actual detection logic. */
@@ -352,6 +352,8 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
         char sz[4096];
     } uBuf;
 
+    /** @todo The 'sources/' path can differ. */
+
     // globalinstallorder.xml - vista beta2
     // sources/idwbinfo.txt   - ditto.
     // sources/lang.ini       - ditto.
@@ -363,8 +365,6 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
      * This file appeared with Vista beta 2 from what we can tell.  Before windows 10
      * it contains easily decodable branch names, after that things goes weird.
      */
-    /** @todo This requires UDF reader support, since vista beta 2 and later seems
-     *        all to use UDF rather than joliet.  Sigh. */
     RTVFSFILE hVfsFile;
     int vrc = RTVfsFileOpen(hVfsIso, "sources/idwbinfo.txt", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
     if (RT_SUCCESS(vrc))
@@ -415,14 +415,58 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
         }
     }
 
-    /*
-     *
-     */
     if (   enmOsType != VBOXOSTYPE_Unknown
         && enmOsType != VBOXOSTYPE_Unknown_x64)
     {
         mStrDetectedOSTypeId = Global::OSTypeId(enmOsType);
     }
+
+    /*
+     * Look for sources/lang.ini and try parse it to get the languages out of it.
+     */
+    /** @todo We could also check sources/??-* and boot/??-* if lang.ini is not
+     *        found or unhelpful. */
+    vrc = RTVfsFileOpen(hVfsIso, "sources/lang.ini", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+    if (RT_SUCCESS(vrc))
+    {
+        RTINIFILE hIniFile;
+        vrc = RTIniFileCreateFromVfsFile(&hIniFile, hVfsFile, RTINIFILE_F_READONLY);
+        RTVfsFileRelease(hVfsFile);
+        if (RT_SUCCESS(vrc))
+        {
+            mDetectedOSLanguages.clear();
+
+            uint32_t idxPair;
+            for (idxPair = 0; idxPair < 256; idxPair++)
+            {
+                size_t cbHalf   = sizeof(uBuf) / 2;
+                char  *pszKey   = uBuf.sz;
+                char  *pszValue = &uBuf.sz[cbHalf];
+                vrc = RTIniFileQueryPair(hIniFile, "Available UI Languages", idxPair,
+                                         pszKey, cbHalf, NULL, pszValue, cbHalf, NULL);
+                if (RT_SUCCESS(vrc))
+                {
+                    try
+                    {
+                        mDetectedOSLanguages.append(pszKey);
+                    }
+                    catch (std::bad_alloc)
+                    {
+                        RTIniFileRelease(hIniFile);
+                        return E_OUTOFMEMORY;
+                    }
+                }
+                else if (vrc == VERR_NOT_FOUND)
+                    break;
+                else
+                    Assert(vrc == VERR_BUFFER_OVERFLOW);
+            }
+            if (idxPair == 0)
+                LogRel(("Unattended: Warning! Empty 'Available UI Languages' section in sources/lang.ini\n"));
+            RTIniFileRelease(hIniFile);
+        }
+    }
+
 
     return S_FALSE;
 }
