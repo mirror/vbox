@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,10 @@
 #include <iprt/cdefs.h>
 #include <iprt/stdarg.h>
 
+#if RT_GNUC_PREREQ(5, 1)
+# include "gcc-plugin.h"
+# include "plugin-version.h"
+#endif
 #if __GNUC__ == 4 && __GNUC_MINOR__ == 5
 # include "gmp.h"
 extern "C" {
@@ -31,10 +35,14 @@ extern "C" {
 # include "coretypes.h"
 #endif
 #include "plugin.h"
-#include "gimple.h"
 #include "basic-block.h"
 #include "tree.h"
 #include "tree-pass.h"
+#include "gimple.h"
+#if RT_GNUC_PREREQ(4, 9)
+# include "gimple-iterator.h"
+# include "context.h" /* for g */
+#endif
 #include "cp/cp-tree.h"
 #if __GNUC__ == 4 && __GNUC_MINOR__ == 5
 }
@@ -56,6 +64,10 @@ int plugin_is_GPL_compatible;
 /** Convencience macro not present in earlier gcc versions. */
 #ifndef VAR_P
 # define VAR_P(a_hNode) (TREE_CODE(a_hNode) == VAR_DECL)
+#endif
+/** Replacement for the 4.9.0 get_tree_code_name function. */
+#if !RT_GNUC_PREREQ(4, 9)
+# define get_tree_code_name(a_enmTreeCode) (tree_code_name[a_enmTreeCode])
 #endif
 
 
@@ -88,13 +100,28 @@ static tree gimple_call_fntype(gimple hStmt)
     return NULL_TREE; /* caller bitches about this*/
 }
 #endif
-#if __GNUC__ > 4 || __GNUC_MINOR__ > 5
-# define MY_INT_FITS_SHWI(hNode)    (hNode).fits_shwi()
-# define MY_INT_TO_SHWI(hNode)      (hNode).to_shwi()
+
+///* Integer to HOST_WIDE_INT conversion fun. */
+//#if RT_GNUC_PREREQ(4, 6)
+//# define MY_INT_FITS_SHWI(hNode)    (hNode).fits_shwi()
+//# define MY_INT_TO_SHWI(hNode)      (hNode).to_shwi()
+//#else
+//# define MY_INT_FITS_SHWI(hNode)    double_int_fits_in_shwi_p(hNode)
+//# define MY_INT_TO_SHWI(hNode)      double_int_to_shwi(hNode)
+//#endif
+
+/* Integer to HOST_WIDE_INT conversion fun. */
+#if RT_GNUC_PREREQ(5, 1)
+# define MY_DOUBLE_INT_FITS_SHWI(hNode)     tree_fits_shwi_p(hNode)
+# define MY_DOUBLE_INT_TO_SHWI(hNode)       tree_to_shwi(hNode)
+#elif RT_GNUC_PREREQ(4, 6)
+# define MY_DOUBLE_INT_FITS_SHWI(hNode)     (TREE_INT_CST(hNode).fits_shwi())
+# define MY_DOUBLE_INT_TO_SHWI(hNode)       (TREE_INT_CST(hNode).to_shwi())
 #else
-# define MY_INT_FITS_SHWI(hNode)    double_int_fits_in_shwi_p(hNode)
-# define MY_INT_TO_SHWI(hNode)      double_int_to_shwi(hNode)
+# define MY_DOUBLE_INT_FITS_SHWI(hNode)     double_int_fits_in_shwi_p(TREE_INT_CST(hNode))
+# define MY_DOUBLE_INT_TO_SHWI(hNode)       double_int_to_shwi(TREE_INT_CST(hNode))
 #endif
+
 #ifndef EXPR_LOC_OR_LOC
 # define EXPR_LOC_OR_LOC(a,b) (b)
 #endif
@@ -106,6 +133,7 @@ static tree gimple_call_fntype(gimple hStmt)
 *********************************************************************************************************************************/
 static bool             MyPassGateCallback(void);
 static unsigned int     MyPassExecuteCallback(void);
+static unsigned int     MyPassExecuteCallbackWithFunction(struct function *pFun);
 static tree             AttributeHandler(tree *, tree, tree, int, bool *);
 
 
@@ -119,6 +147,42 @@ static const struct plugin_info g_PlugInInfo =
     help   : "Implements the __iprt_format__ attribute for checking format strings and arguments."
 };
 
+#if RT_GNUC_PREREQ(4, 9)
+/** My pass. */
+static const pass_data g_MyPassData =
+{
+    type                    : GIMPLE_PASS,
+    name                    : "*iprt-format-checks", /* asterisk = no dump */
+    optinfo_flags           : 0,
+    tv_id                   : TV_NONE,
+    properties_required     : 0,
+    properties_provided     : 0,
+    properties_destroyed    : 0,
+    todo_flags_start        : 0,
+    todo_flags_finish       : 0,
+};
+
+class MyPass : public gimple_opt_pass
+{
+public:
+    MyPass(gcc::context *pCtx) : gimple_opt_pass(g_MyPassData, pCtx)
+    { }
+
+    virtual bool gate(function *pFun)
+    {
+        NOREF(pFun);
+        return MyPassGateCallback();
+    }
+
+    virtual unsigned int execute(function *pFun)
+    {
+        NOREF(pFun);
+        return MyPassExecuteCallbackWithFunction(pFun);
+    }
+};
+
+#else /* < 4.9.0 */
+
 /** My pass. */
 static struct gimple_opt_pass g_MyPass =
 {
@@ -126,9 +190,9 @@ static struct gimple_opt_pass g_MyPass =
     {
         type                    : GIMPLE_PASS,
         name                    : "*iprt-format-checks", /* asterisk = no dump */
-#if __GNUC__ != 4 || __GNUC_MINOR__ != 5
+# if __GNUC__ != 4 || __GNUC_MINOR__ != 5
         optinfo_flags           : 0,
-#endif
+# endif
         gate                    : MyPassGateCallback,
         execute                 : MyPassExecuteCallback,
         sub                     : NULL,
@@ -151,6 +215,8 @@ static const struct register_pass_info  g_MyPassInfo =
     ref_pass_instance_number    : 1,
     pos_op                      : PASS_POS_INSERT_BEFORE,
 };
+
+#endif /* < 4.9.0 */
 
 
 /** Attribute specifications. */
@@ -223,11 +289,11 @@ static void dprintDecl(tree hDecl)
         dprint_class(hType);
 #endif
 
-    dprintf("%s ", tree_code_name[enmDeclCode]);
+    dprintf("%s ", get_tree_code_name(enmDeclCode));
     dprintScope(hDecl);
     dprintf("::%s", DECL_NAME(hDecl) ? IDENTIFIER_POINTER(DECL_NAME(hDecl)) : "<noname>");
     if (hType)
-        dprintf(" type %s", tree_code_name[enmTypeCode]);
+        dprintf(" type %s", get_tree_code_name(enmTypeCode));
     dprintf(" @%s:%d", DECL_SOURCE_FILE(hDecl),  DECL_SOURCE_LINE(hDecl));
 }
 
@@ -293,7 +359,7 @@ static location_t MyGetLocationPlusColumnOffset(location_t hLoc, unsigned int of
 static location_t MyGetFormatStringLocation(PVFMTCHKSTATE pState, const char *pszLoc)
 {
     location_t hLoc = pState->hFmtLoc;
-#if __GNUC__ != 4 || __GNUC_MINOR__ > 5
+#if RT_GNUC_PREREQ(4,6)
     intptr_t   offString = pszLoc - pState->pszFmt;
     if (   offString >= 0
         && !linemap_location_from_macro_expansion_p(line_table, hLoc))
@@ -301,8 +367,8 @@ static location_t MyGetFormatStringLocation(PVFMTCHKSTATE pState, const char *ps
         unsigned            uCol    = 1 + offString;
         expanded_location   XLoc    = expand_location_to_spelling_point(hLoc);
         int                 cchLine = 0;
-# if __GNUC__ >= 5 /** @todo figure this... */
-        const char         *pszLine = location_get_source_line(XLoc, &cchLine);
+# if RT_GNUC_PREREQ(5,0)
+        const char         *pszLine = location_get_source_line(XLoc.file, XLoc.line, &cchLine);
 # else
         const char         *pszLine = location_get_source_line(XLoc);
         if (pszLine)
@@ -338,7 +404,7 @@ static location_t MyGetFormatStringLocation(PVFMTCHKSTATE pState, const char *ps
  */
 DECL_NO_INLINE(static, void) MyCheckFormatNonRecursive(PVFMTCHKSTATE pState, tree hFmtArg)
 {
-    dprintf("checker: hFmtArg=%p %s\n", hFmtArg, tree_code_name[TREE_CODE(hFmtArg)]);
+    dprintf("checker: hFmtArg=%p %s\n", hFmtArg, get_tree_code_name(TREE_CODE(hFmtArg)));
 
     /*
      * Try resolve variables into constant strings.
@@ -347,7 +413,7 @@ DECL_NO_INLINE(static, void) MyCheckFormatNonRecursive(PVFMTCHKSTATE pState, tre
     {
         hFmtArg = decl_constant_value(hFmtArg);
         STRIP_NOPS(hFmtArg); /* Used as argument and assigned call result. */
-        dprintf("checker1: variable => hFmtArg=%p %s\n", hFmtArg, tree_code_name[TREE_CODE(hFmtArg)]);
+        dprintf("checker1: variable => hFmtArg=%p %s\n", hFmtArg, get_tree_code_name(TREE_CODE(hFmtArg)));
     }
 
     /*
@@ -364,7 +430,7 @@ DECL_NO_INLINE(static, void) MyCheckFormatNonRecursive(PVFMTCHKSTATE pState, tre
      * Need address expression to get any further.
      */
     else if (TREE_CODE(hFmtArg) != ADDR_EXPR)
-        dprintf("checker1: Not address expression (%s)\n", tree_code_name[TREE_CODE(hFmtArg)]);
+        dprintf("checker1: Not address expression (%s)\n", get_tree_code_name(TREE_CODE(hFmtArg)));
     else
     {
         pState->hFmtLoc = EXPR_LOC_OR_LOC(hFmtArg, pState->hFmtLoc);
@@ -375,17 +441,17 @@ DECL_NO_INLINE(static, void) MyCheckFormatNonRecursive(PVFMTCHKSTATE pState, tre
          */
         HOST_WIDE_INT off = 0;
         if (   TREE_CODE(hFmtArg) == ARRAY_REF
-            && MY_INT_FITS_SHWI(TREE_INT_CST(TREE_OPERAND(hFmtArg, 1)))
-            && MY_INT_FITS_SHWI(TREE_INT_CST(TREE_OPERAND(hFmtArg, 1))) )
+            && MY_DOUBLE_INT_FITS_SHWI(TREE_OPERAND(hFmtArg, 1))
+            && MY_DOUBLE_INT_FITS_SHWI(TREE_OPERAND(hFmtArg, 1)) )
         {
-            off = MY_INT_TO_SHWI(TREE_INT_CST(TREE_OPERAND(hFmtArg, 1)));
+            off = MY_DOUBLE_INT_TO_SHWI(TREE_OPERAND(hFmtArg, 1));
             if (off < 0)
             {
                 dprintf("checker1: ARRAY_REF, off=%ld\n", off);
                 return;
             }
             hFmtArg = TREE_OPERAND(hFmtArg, 0);
-            dprintf("checker1: ARRAY_REF => hFmtArg=%p %s, off=%ld\n", hFmtArg, tree_code_name[TREE_CODE(hFmtArg)], off);
+            dprintf("checker1: ARRAY_REF => hFmtArg=%p %s, off=%ld\n", hFmtArg, get_tree_code_name(TREE_CODE(hFmtArg)), off);
         }
 
         /*
@@ -409,7 +475,7 @@ DECL_NO_INLINE(static, void) MyCheckFormatNonRecursive(PVFMTCHKSTATE pState, tre
          * Are we dealing with a string literal now?
          */
         if (TREE_CODE(hFmtArg) != STRING_CST)
-            dprintf("checker1: Not string literal (%s)\n", tree_code_name[TREE_CODE(hFmtArg)]);
+            dprintf("checker1: Not string literal (%s)\n", get_tree_code_name(TREE_CODE(hFmtArg)));
         else if (TYPE_MAIN_VARIANT(TREE_TYPE(TREE_TYPE(hFmtArg))) != char_type_node)
             warning_at(pState->hFmtLoc, 0, "expected 'char' type string literal");
         else
@@ -424,12 +490,12 @@ DECL_NO_INLINE(static, void) MyCheckFormatNonRecursive(PVFMTCHKSTATE pState, tre
             if (hArraySize != NULL_TREE)
             {
                 if (TREE_CODE(hArraySize) != INTEGER_CST)
-                    warning_at(pState->hFmtLoc, 0, "Expected integer array size (not %s)", tree_code_name[TREE_CODE(hArraySize)]);
-                else if (!MY_INT_FITS_SHWI(TREE_INT_CST(hArraySize)))
+                    warning_at(pState->hFmtLoc, 0, "Expected integer array size (not %s)", get_tree_code_name(TREE_CODE(hArraySize)));
+                else if (!MY_DOUBLE_INT_FITS_SHWI(hArraySize))
                     warning_at(pState->hFmtLoc, 0, "Unexpected integer overflow in array size constant");
                 else
                 {
-                    HOST_WIDE_INT cbArray = MY_INT_TO_SHWI(TREE_INT_CST(hArraySize));
+                    HOST_WIDE_INT cbArray = MY_DOUBLE_INT_TO_SHWI(hArraySize);
                     if (   cbArray <= 0
                         || cbArray != (int)cbArray)
                         warning_at(pState->hFmtLoc, 0, "Unexpected integer array size constant value: %ld", cbArray);
@@ -516,11 +582,22 @@ static void MyCheckFormatRecursive(PVFMTCHKSTATE pState, tree hFmtArg)
 }
 
 
+#if !RT_GNUC_PREREQ(4, 9)
 /**
  * Execute my pass.
  * @returns Flags indicates stuff todo, we return 0.
  */
 static unsigned int     MyPassExecuteCallback(void)
+{
+    return MyPassExecuteCallbackWithFunction(cfun);
+}
+#endif
+
+/**
+ * Execute my pass.
+ * @returns Flags indicates stuff todo, we return 0.
+ */
+static unsigned int     MyPassExecuteCallbackWithFunction(struct function *pFun)
 {
     dprintf("MyPassExecuteCallback:\n");
 
@@ -528,7 +605,7 @@ static unsigned int     MyPassExecuteCallback(void)
      * Enumerate the basic blocks.
      */
     basic_block hBasicBlock;
-    FOR_EACH_BB(hBasicBlock)
+    FOR_EACH_BB_FN(hBasicBlock, pFun)
     {
         dprintf(" hBasicBlock=%p\n", hBasicBlock);
 
@@ -538,7 +615,12 @@ static unsigned int     MyPassExecuteCallback(void)
          */
         for (gimple_stmt_iterator hStmtItr = gsi_start_bb(hBasicBlock); !gsi_end_p(hStmtItr); gsi_next(&hStmtItr))
         {
+#if RT_GNUC_PREREQ(6, 0)
+            const gimple * const    hStmt   = gsi_stmt(hStmtItr);
+#else
             gimple const            hStmt   = gsi_stmt(hStmtItr);
+#endif
+
             enum gimple_code const  enmCode = gimple_code(hStmt);
 #ifdef DEBUG
             unsigned const          cOps    = gimple_num_ops(hStmt);
@@ -547,7 +629,7 @@ static unsigned int     MyPassExecuteCallback(void)
             {
                 tree const hOp = gimple_op(hStmt, iOp);
                 if (hOp)
-                    dprintf("     %02d: %p, code %s(%d)\n", iOp, hOp, tree_code_name[TREE_CODE(hOp)], TREE_CODE(hOp));
+                    dprintf("     %02d: %p, code %s(%d)\n", iOp, hOp, get_tree_code_name(TREE_CODE(hOp)), TREE_CODE(hOp));
                 else
                     dprintf("     %02d: NULL_TREE\n", iOp);
             }
@@ -559,7 +641,7 @@ static unsigned int     MyPassExecuteCallback(void)
                  */
                 tree const hFn = gimple_call_fn(hStmt);
                 dprintf("     hFn    =%p %s(%d); args=%d\n",
-                        hFn, tree_code_name[TREE_CODE(hFn)], TREE_CODE(hFn), gimple_call_num_args(hStmt));
+                        hFn, get_tree_code_name(TREE_CODE(hFn)), TREE_CODE(hFn), gimple_call_num_args(hStmt));
 #ifdef DEBUG
                 if (DECL_P(hFn))
                     dprintf("     hFn is decl: %s %s:%d\n",
@@ -569,19 +651,20 @@ static unsigned int     MyPassExecuteCallback(void)
                 tree const hFnDecl = gimple_call_fndecl(hStmt);
                 if (hFnDecl)
                     dprintf("     hFnDecl=%p %s(%d) %s type=%p %s:%d\n",
-                            hFnDecl, tree_code_name[TREE_CODE(hFnDecl)], TREE_CODE(hFnDecl),
+                            hFnDecl, get_tree_code_name(TREE_CODE(hFnDecl)), TREE_CODE(hFnDecl),
                             DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>",
                             TREE_TYPE(hFnDecl), DECL_SOURCE_FILE(hFnDecl), DECL_SOURCE_LINE(hFnDecl));
                 tree const hFnType = gimple_call_fntype(hStmt);
                 if (hFnType == NULL_TREE)
                     error_at(gimple_location(hStmt), "Failed to resolve function type [fn=%s]\n",
-                             tree_code_name[TREE_CODE(hFn)]);
+                             get_tree_code_name(TREE_CODE(hFn)));
                 else if (POINTER_TYPE_P(hFnType))
                     error_at(gimple_location(hStmt), "Got a POINTER_TYPE when expecting a function type [fn=%s]\n",
-                             tree_code_name[TREE_CODE(hFn)]);
+                             get_tree_code_name(TREE_CODE(hFn)));
                 if (hFnType)
-                    dprintf("     hFnType=%p %s(%d) %s\n", hFnType, tree_code_name[TREE_CODE(hFnType)], TREE_CODE(hFnType),
-                            TYPE_NAME(hFnType) ? IDENTIFIER_POINTER(TYPE_NAME(hFnType)) : "<unamed>");
+                    dprintf("     hFnType=%p %s(%d) %s\n", hFnType, get_tree_code_name(TREE_CODE(hFnType)), TREE_CODE(hFnType),
+                              TYPE_NAME(hFnType) && DECL_NAME(TYPE_NAME(hFnType))
+                            ? IDENTIFIER_POINTER(DECL_NAME(TYPE_NAME(hFnType))) : "<unamed>");
 
                 tree const hAttr        = hFnType ? lookup_attribute("iprt_format", TYPE_ATTRIBUTES(hFnType))            : NULL_TREE;
                 tree const hAttrMaybe0  = hFnType ? lookup_attribute("iprt_format_maybe_null", TYPE_ATTRIBUTES(hFnType)) : NULL_TREE;
@@ -592,8 +675,8 @@ static unsigned int     MyPassExecuteCallback(void)
                      */
                     tree const hAttrArgs = hAttr ? TREE_VALUE(hAttr) : TREE_VALUE(hAttrMaybe0);
                     VFMTCHKSTATE State;
-                    State.iFmt          = MY_INT_TO_SHWI(TREE_INT_CST(TREE_VALUE(hAttrArgs)));
-                    State.iArgs         = MY_INT_TO_SHWI(TREE_INT_CST(TREE_VALUE(TREE_CHAIN(hAttrArgs))));
+                    State.iFmt          = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(hAttrArgs));
+                    State.iArgs         = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(TREE_CHAIN(hAttrArgs)));
                     State.pszFmt        = NULL;
                     State.fMaybeNull    = hAttr == NULL_TREE;
                     State.hStmt         = hStmt;
@@ -641,12 +724,12 @@ static bool             MyPassGateCallback(void)
 static tree AttributeHandler(tree *phOnNode, tree hAttrName, tree hAttrArgs, int fFlags, bool *pfDontAddAttrib)
 {
     dprintf("AttributeHandler: name=%s fFlags=%#x", IDENTIFIER_POINTER(hAttrName), fFlags);
-    long iFmt  = MY_INT_TO_SHWI(TREE_INT_CST(TREE_VALUE(hAttrArgs)));
-    long iArgs = MY_INT_TO_SHWI(TREE_INT_CST(TREE_VALUE(TREE_CHAIN(hAttrArgs))));
+    long iFmt  = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(hAttrArgs));
+    long iArgs = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(TREE_CHAIN(hAttrArgs)));
     dprintf(" iFmt=%ld iArgs=%ld", iFmt, iArgs);
 
     tree hType = *phOnNode;
-    dprintf(" hType=%p %s(%d)\n", hType, tree_code_name[TREE_CODE(hType)], TREE_CODE(hType));
+    dprintf(" hType=%p %s(%d)\n", hType, get_tree_code_name(TREE_CODE(hType)), TREE_CODE(hType));
 
     if (pfDontAddAttrib)
         *pfDontAddAttrib = false;
@@ -687,7 +770,17 @@ int plugin_init(plugin_name_args *pPlugInInfo, plugin_gcc_version *pGccVer)
     register_callback(pPlugInInfo->base_name, PLUGIN_ATTRIBUTES, RegisterAttributesEvent, NULL /*pvUser*/);
 
     /* Register our pass. */
+#if RT_GNUC_PREREQ(4, 9)
+    /** The registration info for my pass. */
+    struct register_pass_info MyPassInfo;
+    MyPassInfo.pass                     = new MyPass(g);
+    MyPassInfo.reference_pass_name      = "ssa";
+    MyPassInfo.ref_pass_instance_number = 1;
+    MyPassInfo.pos_op                   = PASS_POS_INSERT_BEFORE;
+    register_callback(pPlugInInfo->base_name, PLUGIN_PASS_MANAGER_SETUP, NULL, &MyPassInfo);
+#else
     register_callback(pPlugInInfo->base_name, PLUGIN_PASS_MANAGER_SETUP, NULL, (void *)&g_MyPassInfo);
+#endif
 
     /* Register plug-in info. */
     register_callback(pPlugInInfo->base_name, PLUGIN_INFO, NULL, (void *)&g_PlugInInfo);
@@ -748,8 +841,8 @@ void VFmtChkVerifyEndOfArgs(PVFMTCHKSTATE pState, unsigned iArg)
             if (cArgs - iArg > 1)
                 error_at(MY_LOC(hArg, pState), "%u extra arguments not consumed by format string", cArgs - iArg);
             else if (   TREE_CODE(hArg) != INTEGER_CST
-                     || !MY_INT_FITS_SHWI(TREE_INT_CST(hArg))
-                     || MY_INT_TO_SHWI(TREE_INT_CST(hArg)) != -99) /* ignore final dummy argument: ..., -99); */
+                     || !MY_DOUBLE_INT_FITS_SHWI(hArg)
+                     || MY_DOUBLE_INT_TO_SHWI(hArg) != -99) /* ignore final dummy argument: ..., -99); */
                 error_at(MY_LOC(hArg, pState), "one extra argument not consumed by format string");
         }
         /* This should be handled elsewhere, but just in case. */
@@ -775,16 +868,16 @@ bool VFmtChkRequirePresentArg(PVFMTCHKSTATE pState, const char *pszLoc, unsigned
 
         tree hArg  = gimple_call_arg(pState->hStmt, iArg);
         tree hType = TREE_TYPE(hArg);
-        dprintf("arg%u: hArg=%p [%s] hType=%p [%s] cls=%s\n", iArg, hArg, tree_code_name[TREE_CODE(hArg)],
-                hType, tree_code_name[TREE_CODE(hType)], tree_code_class_strings[TREE_CODE_CLASS(TREE_CODE(hType))]);
+        dprintf("arg%u: hArg=%p [%s] hType=%p [%s] cls=%s\n", iArg, hArg, get_tree_code_name(TREE_CODE(hArg)),
+                hType, get_tree_code_name(TREE_CODE(hType)), tree_code_class_strings[TREE_CODE_CLASS(TREE_CODE(hType))]);
         dprintf("      nm=%p\n", TYPE_NAME(hType));
-        dprintf("      cb=%p %s value=%ld\n", TYPE_SIZE(hType), tree_code_name[TREE_CODE(TYPE_SIZE(hType))],
-                MY_INT_TO_SHWI(TREE_INT_CST(TYPE_SIZE(hType))) );
-        dprintf("      unit=%p %s value=%ld\n", TYPE_SIZE_UNIT(hType), tree_code_name[TREE_CODE(TYPE_SIZE_UNIT(hType))],
-                MY_INT_TO_SHWI(TREE_INT_CST(TYPE_SIZE_UNIT(hType))) );
+        dprintf("      cb=%p %s value=%ld\n", TYPE_SIZE(hType), get_tree_code_name(TREE_CODE(TYPE_SIZE(hType))),
+                MY_DOUBLE_INT_TO_SHWI(TYPE_SIZE(hType)) );
+        dprintf("      unit=%p %s value=%ld\n", TYPE_SIZE_UNIT(hType), get_tree_code_name(TREE_CODE(TYPE_SIZE_UNIT(hType))),
+                MY_DOUBLE_INT_TO_SHWI(TYPE_SIZE_UNIT(hType)) );
         tree hTypeNm = TYPE_NAME(hType);
         if (hTypeNm)
-            dprintf("      typenm=%p %s '%s'\n", hTypeNm, tree_code_name[TREE_CODE(hTypeNm)],
+            dprintf("      typenm=%p %s '%s'\n", hTypeNm, get_tree_code_name(TREE_CODE(hTypeNm)),
                     IDENTIFIER_POINTER(DECL_NAME(hTypeNm)));
     }
     return true;
