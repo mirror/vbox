@@ -402,8 +402,8 @@ VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, R
     /*
      * Theoretically, other hypervisors may have used ASIDs, ideally we should flush all non-zero ASIDs
      * when enabling SVM. AMD doesn't have an SVM instruction to flush all ASIDs (flushing is done
-     * upon VMRUN). Therefore, just set the fFlushAsidBeforeUse flag which instructs hmR0SvmSetupTLB()
-     * to flush the TLB with before using a new ASID.
+     * upon VMRUN). Therefore, flag that we need to flush the TLB entirely with before executing any
+     * guest code.
      */
     pCpu->fFlushAsidBeforeUse = true;
 
@@ -957,35 +957,20 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
             if (fNewAsid)
             {
                 ++pCpu->uCurrentAsid;
+
                 bool fHitASIDLimit = false;
                 if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
                 {
                     pCpu->uCurrentAsid = 1;      /* Wraparound at 1; host uses 0 */
                     pCpu->cTlbFlushes++;         /* All VCPUs that run on this host CPU must use a new ASID. */
                     fHitASIDLimit      = true;
-
-                    if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
-                    {
-                        pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
-                        pCpu->fFlushAsidBeforeUse = true;
-                    }
-                    else
-                    {
-                        pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
-                        pCpu->fFlushAsidBeforeUse = false;
-                    }
                 }
 
-                if (   !fHitASIDLimit
-                    && pCpu->fFlushAsidBeforeUse)
+                if (   fHitASIDLimit
+                    || pCpu->fFlushAsidBeforeUse)
                 {
-                    if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
-                        pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
-                    else
-                    {
-                        pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
-                        pCpu->fFlushAsidBeforeUse = false;
-                    }
+                    pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+                    pCpu->fFlushAsidBeforeUse = false;
                 }
 
                 pVCpu->hm.s.uCurrentAsid = pCpu->uCurrentAsid;
