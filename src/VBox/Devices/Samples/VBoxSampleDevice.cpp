@@ -157,11 +157,6 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
                           ("callback version %#x, expected %#x\n", pCallbacks->u32Version, PDM_DEVREG_CB_VERSION),
                           VERR_VERSION_MISMATCH);
 
-    /* Two devices in this module. */
-    extern const PDMDEVREG g_DevicePlayground;
-    int rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceSample);
-    if (RT_SUCCESS(rc))
-        rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePlayground);
-    return rc;
+    return pCallbacks->pfnRegister(pCallbacks, &g_DeviceSample);
 }
 

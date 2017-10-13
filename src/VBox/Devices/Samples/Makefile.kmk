@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2009-2016 Oracle Corporation
+# Copyright (C) 2009-2017 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -25,12 +25,10 @@ include $(KBUILD_PATH)/subheader.kmk
 DLLS += VBoxSampleDevice
 VBoxSampleDevice_TEMPLATE = VBOXR3
 VBoxSampleDevice_SOURCES  = \
-	VBoxSampleDevice.cpp \
-	DevPlayground.cpp
+	VBoxSampleDevice.cpp
 VBoxSampleDevice_LIBS     = \
 	$(LIB_RUNTIME) \
-	$(LIB_VMM) \
-	$(LIB_REM)
+	$(LIB_VMM)
 
 #
 # VBoxSampleDriver - A sample driver module.
@@ -41,8 +39,40 @@ VBoxSampleDriver_SOURCES  = \
 	DrvStorageFilter.cpp
 VBoxSampleDriver_LIBS     = \
 	$(LIB_RUNTIME) \
-	$(LIB_VMM) \
-	$(LIB_REM)
+	$(LIB_VMM)
+
+
+#
+# VBoxPlaygroundDevice - A device module demonstrating some unusual features.
+#
+DLLS += VBoxPlaygroundDevice
+VBoxPlaygroundDevice_TEMPLATE = VBOXR3
+VBoxPlaygroundDevice_SOURCES  = \
+	DevPlayground.cpp
+VBoxPlaygroundDevice_LIBS     = \
+	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
+	$(LIB_RUNTIME) \
+	$(LIB_VMM)
+
+ifdef VBOX_WITH_XPCOM
+ ## @todo may be worth creating the VBOX_XPCOM SDK def, or just a SDK_VBOXXPCOM.
+ VBoxPlaygroundDevice_DEFS += VBOX_WITH_XPCOM
+ ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+  VBoxPlaygroundDevice_DEFS += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+ endif
+ VBoxPlaygroundDevice_INCS += \
+	$(VBOX_XPCOM_INCS)
+ VBoxPlaygroundDevice_INTERMEDIATES += \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
+ VBoxPlaygroundDevice_LIBS += \
+	$(LIB_XPCOM)
+else  # COM
+ VBoxPlaygroundDevice_INCS += \
+	$(VBOX_PATH_SDK)/bindings/mscom/include
+ VBoxPlaygroundDevice_INTERMEDIATES += \
+	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
+endif # COM
+
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
