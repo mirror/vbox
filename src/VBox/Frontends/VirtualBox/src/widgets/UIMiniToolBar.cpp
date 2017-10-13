@@ -24,6 +24,7 @@
 # include <QTimer>
 # include <QLabel>
 # include <QMenu>
+# include <QMoveEvent>
 # include <QToolButton>
 # include <QStateMachine>
 # include <QPainter>
