@@ -36,6 +36,11 @@
     <itemizedlist>
 
       <listitem>
+        <para>VMM: fixed reason for recent Linux kernels on also recent CPU
+          models warning about "XSAVE consistency problem"</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: Virtual Media Manager rework allowing to manage media
           attributes, like size, location, type and description</para>
       </listitem>
@@ -56,11 +61,17 @@
         <para>GUI: Audio settings extended with possibility to enable/disable
           audio input/output; corresponding changed were done to Audio
           and Video Capture settings pages; VM Devices menu and status-bar
-          extended with corresponding actions and indicator as well.</para>
+          extended with corresponding actions and indicator as well</para>
       </listitem>
 
       <listitem>
         <para>GUI: improvements with accessibility support</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Fixed double mouse cursor when using mouse integration
+          without Guest Additions, actually a Qt 5.6 bug fixed with QT 5.6.3
+          (Mac OS X hosts only; bug #15610)</para>
       </listitem>
 
       <listitem>
@@ -74,12 +85,12 @@
       </listitem>
 
       <listitem>
-        <para>Audio: HDA emulation now uses asynchronous data processing in 
+        <para>Audio: HDA emulation now uses asynchronous data processing in
           separate threads</para>
       </listitem>
 
       <listitem>
-        <para>Audio: implemented ability to enable or disable audio 
+        <para>Audio: implemented ability to enable or disable audio
           input / output on-the-fly</para>
       </listitem>
 
@@ -98,12 +109,55 @@
       </listitem>
 
       <listitem>
+        <para>E1000: Fix for Windows XP freeze when booting with unplugged
+          cable</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT network: do not skip some port forwarding setup when
+          multiple VMs are active (Windows hosts only; bug #17041)</para>
+      </listitem>
+
+      <listitem>
+        <para>Serial: fixed extremely rare misbehavior on VM poweroff</para>
+      </listitem>
+
+      <listitem>
         <para>EFI: better video mode handling, supporting custom video
           modes and easier configuration (bug #6783)</para>
       </listitem>
 
       <listitem>
-        <para>E1000: Windows XP freeze when booting with unplugged cable</para>
+        <para>BIOS: properly report floppy logical sectors per track for
+          unusual formats</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS: update ATA disk parameter table vectors only if there is
+          actually a corresponding ATA disk attached</para>
+      </listitem>
+
+      <listitem>
+        <para>PXE: speed up booting by better handling pending packets when
+          the link is not up yet</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: handle CPUID sub-leaf overrides better</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fix several 3D related crashes</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris hosts: allow increasing MTU size for host-only adapter to
+          9706 bytes to support jumbo frames</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: on systems using systemd, make sure that only
+          the Guest Additions timesync service is active</para>
       </listitem>
 
       <listitem>
@@ -155,7 +209,7 @@
 
       <listitem>
         <para>OVF: when importing an appliance with XHCI controller, don't
-          add an OHCI controller.</para>
+          add an OHCI controller</para>
       </listitem>
 
       <listitem>
@@ -175,7 +229,7 @@
 
       <listitem>
         <para>Bridged networking: align outgoing packet at word boundary,
-          preventing Windows host crash in MsLbfoProvider.</para>
+          preventing Windows host crash in MsLbfoProvider</para>
       </listitem>
 
       <listitem>
@@ -214,7 +268,7 @@
       </listitem>
 
       <listitem>
-        <para>Audio: implemented record gain registers for AC'97 emulation; 
+        <para>Audio: implemented record gain registers for AC'97 emulation;
           those are needed for newer Ubuntu guests which rely on those when controlling
           gain and muting the recording (capturing) levels</para>
       </listitem>
@@ -982,7 +1036,7 @@
 
       <listitem>
         <para>NAT: don't exceed the maximum number of "search" suffixes.
-          Patch from bug #15948.</para>
+          Patch from bug #15948</para>
       </listitem>
 
       <listitem>
@@ -994,7 +1048,7 @@
         <para>NAT Network: when the host has only loopback nameserver
           that cannot be mapped to the guests (e.g. dnsmasq running on
           127.0.1.1), make DHCP supply NAT Network DNS proxy as
-          nameserver.</para>
+          nameserver</para>
       </listitem>
 
       <listitem>
@@ -1639,7 +1693,7 @@
         <para>VMM: reverted to the old I/O-APIC code for now to fix certain
           regressions with 5.0.22 (bug #15529). This means that the networking
           performance with certain guests will drop to the 5.0.20 level
-          (bug #15295). One workaround is to disable GRO for Linux guests.</para>
+          (bug #15295). One workaround is to disable GRO for Linux guests</para>
       </listitem>
 
       <listitem>
@@ -1724,7 +1778,7 @@
         <para>Main: when monitoring DNS configuration changes on Windows hosts
           avoid false positives from competing DHCP renewals.  This should fix
           NAT link flaps when host has multiple DHCP configured interfaces, in
-          particular when the host uses OpnVPN.</para>
+          particular when the host uses OpnVPN</para>
       </listitem>
 
       <listitem>
@@ -2539,7 +2593,7 @@
           (it was hidden in previous release to avoid native full-screen issues).
           For Yosemite and El Capitan this button should work accordingly to the
           Apple HIG: Full-screen by default, maximize if the user holds the
-          Option key.</para>
+          Option key</para>
       </listitem>
 
       <listitem>
@@ -2632,7 +2686,7 @@
 
       <listitem>
         <para>Bridged Networking: fixed handling of guest DHCP requests without UDP
-          checksum when bridging to a wireless interface (bug #14615).</para>
+          checksum when bridging to a wireless interface (bug #14615)</para>
       </listitem>
 
       <listitem>
@@ -2922,7 +2976,7 @@
 
       <listitem>
         <para>X11 Additions: fixed a number of small issues with dynamic
-           resizing and full-screen and seamless modes.</para>
+           resizing and full-screen and seamless modes</para>
       </listitem>
 
     </itemizedlist>
@@ -2969,7 +3023,7 @@
       <listitem>
         <para>VMM: This release has AVX2 passthrough disabled on every host and
           AVX passthrough disabled for 64-bit VMs on 32-bit hosts. This will be
-          properly fixed in a future 5.0.x maintenance release (see e.g. bug #14262).</para>
+          properly fixed in a future 5.0.x maintenance release (see e.g. bug #14262)</para>
       </listitem>
 
       <listitem>
@@ -3127,7 +3181,7 @@
 
       <listitem>
         <para>X11 Additions: various seamless mode fixes, including
-           invisible windows under LXDE.</para>
+           invisible windows under LXDE</para>
       </listitem>
 
     </itemizedlist>
@@ -3170,7 +3224,7 @@
       <listitem>
         <para>VMs can now be started in <emphasis>separate mode</emphasis>. The VM
           process is started headless while the frontend runs as a separate process
-          which can be terminated without stopping the VM.</para>
+          which can be terminated without stopping the VM</para>
       </listitem>
 
       <listitem>
@@ -3237,7 +3291,7 @@
 
       <listitem>
         <para>GUI: improved HID LEDs synchronization for Mac and Windows hosts.
-          The physical LEDs state now restored together with the VM state.</para>
+          The physical LEDs state now restored together with the VM state</para>
       </listitem>
 
       <listitem>
@@ -3922,7 +3976,7 @@
       <listitem>
         <para>Windows Additions: prevent VBox WDDM driver from loading if host
           reports weak OpenGL capabilities. 3D content now can be shown over
-          Remote Desktop connection.</para>
+          Remote Desktop connection</para>
       </listitem>
 
       <listitem>
