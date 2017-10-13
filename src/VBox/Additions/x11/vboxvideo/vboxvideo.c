@@ -43,7 +43,6 @@
  */
 
 #include "vboxvideo.h"
-#include <VBox/VBoxGuestLib.h>
 #include <VBoxVideoVBE.h>
 
 /* Basic definitions and functions needed by all drivers. */
@@ -251,8 +250,9 @@ static Bool adjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     pPixmap = pScreen->GetScreenPixmap(pScreen);
     VBVXASSERT(pPixmap != NULL, ("Failed to get the screen pixmap.\n"));
     TRACE_LOG("pPixmap=%p adjustedWidth=%d height=%d pScrn->depth=%d pScrn->bitsPerPixel=%d cbLine=%d pVBox->base=%p pPixmap->drawable.width=%d pPixmap->drawable.height=%d\n",
-              (void *)pPixmap, adjustedWidth, height, pScrn->depth, pScrn->bitsPerPixel, cbLine, pVBox->base, pPixmap->drawable.width,
-              pPixmap->drawable.height);
+              (void *)pPixmap, adjustedWidth, height, pScrn->depth,
+              pScrn->bitsPerPixel, cbLine, pVBox->base,
+              pPixmap->drawable.width, pPixmap->drawable.height);
     if (   adjustedWidth != pPixmap->drawable.width
         || height != pPixmap->drawable.height)
     {

@@ -3,6 +3,7 @@
 # in XFree86 4.3.  Some of these may only be allowed on some platforms, but
 # it fixing that would add additional complexity.
 
+__assert_fail
 calloc
 chdir
 chmod

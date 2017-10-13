@@ -25,8 +25,6 @@
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <VBox/VBoxGuestLib.h>
-
 #ifndef PCIACCESS
 # include "xf86Pci.h"
 # include <Pci.h>
@@ -34,7 +32,6 @@
 
 #include "xf86.h"
 #define NEED_XF86_TYPES
-#include <iprt/string.h>
 #include "compiler.h"
 #include "cursorstr.h"
 #include "servermd.h"
@@ -43,6 +40,7 @@
 
 #ifdef XORG_7X
 # include <stdlib.h>
+# include <string.h>
 #endif
 
 #define VBOX_MAX_CURSOR_WIDTH 64

@@ -28,13 +28,12 @@
 #include "vboxvideo.h"
 
 #define NEED_XF86_TYPES
-#include <iprt/string.h>
-
 #include "xf86.h"
 
 #ifdef XORG_7X
 # include <stdio.h>
 # include <stdlib.h>
+# include <string.h>
 #endif
 
 #ifdef VBOXVIDEO_13

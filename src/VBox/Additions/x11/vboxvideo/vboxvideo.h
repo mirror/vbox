@@ -85,7 +85,7 @@ if (!(expr)) \
 { \
     xf86ErrorF("\nAssertion failed!\n\n"); \
     xf86ErrorF("%s\n", #expr); \
-    xf86ErrorF("at %s (%s:%d)\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, __FILE__, __LINE__); \
+    xf86ErrorF("at %s (%s:%d)\n", __func__, __FILE__, __LINE__); \
     xf86ErrorF out; \
     FatalError("Assertion"); \
 }

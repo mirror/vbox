@@ -39,7 +39,8 @@ vboxvideo_xorg_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18 \
 	$(VBOX_GRAPHICS_INCS)
 vboxvideo_override_INCLUDES = \
-    -include $(PATH_ROOT)/src/VBox/Additions/x11/vboxvideo/HGSMIMemAlloc.h
+	-include $(PATH_ROOT)/src/VBox/Additions/x11/vboxvideo/VBoxVideoIPRT.h \
+	-include $(PATH_ROOT)/src/VBox/Additions/x11/vboxvideo/HGSMIMemAlloc.h
 
 LIBRARIES += vboxvideo_drv_lib
 
@@ -47,6 +48,8 @@ LIBRARIES += vboxvideo_drv_lib
 # vboxvideo_drv_lib
 #
 vboxvideo_drv_lib_TEMPLATE = VBOXGUESTR3XORGMOD
+# We are relying in the include guard in the two headers below to stop the more
+# generic ones from being included.  Not very nice, I know.
 vboxvideo_drv_lib_CFLAGS += $(vboxvideo_override_INCLUDES)
 vboxvideo_drv_lib_CXXFLAGS += $(vboxvideo_override_INCLUDES)
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.  Do we need this?  I don't want to find out.
@@ -59,7 +62,12 @@ vboxvideo_drv_lib_SOURCES  = \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/HGSMI/HGSMICommon.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/x11/vboxvideo/hgsmimemalloc.c
+# $(VBOX_PATH_X11_ROOT)/xorg-server-1.18.0 is for in[blw] and out[blw], xproto
+# for _X_[UN]LIKELY.
 vboxvideo_drv_lib_INCS = \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.18.0 \
+	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18 \
+	$(VBOX_PATH_X11_ROOT)/pixman-0.16.0 \
 	$(PATH_ROOT)/src/VBox/Runtime/include \
 	$(VBOX_GRAPHICS_INCS)
 vboxvideo_drv_lib_INST = $(INST_LIB)
@@ -87,7 +95,6 @@ vboxvideo_drv_DEFS = \
 	XFree86LOADER XFree86Server XF86VIDMODE XvMCExtension SMART_SCHEDULE \
 	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
 	IN_MODULE XFree86Module IN_XF86_MODULE IN_RT_STATIC
-vboxvideo_drv_DEFS += memset=xf86memset memcpy=xf86memcpy
 vboxvideo_drv_INCS = \
 	$(VBOX_PATH_X11_XFREE_4_3)/include \
 	$(VBOX_PATH_X11_XFREE_4_3)/include/X11 \

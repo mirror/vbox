@@ -25,15 +25,16 @@
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <VBox/VBoxGuestLib.h>
-
-#include <iprt/string.h>
+#if defined(IN_XF86_MODULE) && !defined(NO_ANSIC)
+# include "xf86_ansic.h"
+#endif
 #include "compiler.h"
 
 #include "vboxvideo.h"
 
 #ifdef XORG_7X
 # include <stdlib.h>
+# include <string.h>
 #endif
 
 /**************************************************************************
