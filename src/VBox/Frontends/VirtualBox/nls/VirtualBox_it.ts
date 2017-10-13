@@ -3006,27 +3006,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Codice&amp;nbsp;di&amp;nbsp;uscita:</translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Componente: </translation>
+        <translation>Componente: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Interfaccia: </translation>
+        <translation>Interfaccia: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Chiamante: </translation>
+        <translation>Chiamante: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>RC&amp;nbsp;chiamante: </translation>
     </message>
 </context>
 <context>
@@ -6207,11 +6207,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adding network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunta rete...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimozione rete...</translation>
     </message>
 </context>
 <context>
@@ -7809,11 +7809,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, VirtualBox registrerà anche il flusso audio sul file video.</translation>
     </message>
     <message>
         <source>&amp;Record Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Registra audio</translation>
     </message>
 </context>
 <context>
@@ -10649,23 +10649,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation type="unfinished">Copia file immagine del disco (%1)</translation>
+        <translation>Copia file immagine del disco (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation type="unfinished">Rimuovi file immagine del disco (%1)</translation>
+        <translation>Rimuovi file immagine del disco (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation type="unfinished">Rilascia file immagine del disco (%1)</translation>
+        <translation>Rilascia file immagine del disco (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation type="unfinished">Apri proprietà del file immagine del disco (%1)</translation>
+        <translation>Apri proprietà del file immagine del disco (%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished">Aggiorna i file immagine dei dischi (%1)</translation>
+        <translation>Aggiorna i file immagine dei dischi (%1)</translation>
     </message>
 </context>
 <context>

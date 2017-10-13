@@ -2269,7 +2269,7 @@
 <context>
     <name>UIDetailsPagePrivate</name>
     <message>
-        <location filename="../src/selector/UIDesktopPane.cpp" line="+665"/>
+        <location filename="../src/selector/UIDesktopPane.cpp" line="+590"/>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
         <translation>Hautaturiko makina birtuala &lt;i&gt;eskuraezina&lt;/i&gt; da. Mesedez aztertu behean erakusten den akats mezua eta sakatu &lt;b&gt;Berritu&lt;/b&gt; botoia sarbidetasun egiaztapena berregitea nahi baduzu:</translation>
     </message>
@@ -4792,7 +4792,7 @@
 <context>
     <name>UIHostNetworkManager</name>
     <message>
-        <location filename="../src/hostnetwork/UIHostNetworkManager.cpp" line="+93"/>
+        <location filename="../src/hostnetwork/UIHostNetworkManager.cpp" line="+94"/>
         <source>Enable</source>
         <comment>DHCP Server</comment>
         <translation type="unfinished">Gaitu</translation>
@@ -4981,7 +4981,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+816"/>
+        <location line="+827"/>
         <source>Host Network Manager</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5038,7 +5038,7 @@
         <translation type="obsolete">Sareketa</translation>
     </message>
     <message>
-        <location line="-666"/>
+        <location line="-677"/>
         <source>Adding network...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8762,7 +8762,7 @@
         <translation type="obsolete">Diska &amp;gogorrak</translation>
     </message>
     <message>
-        <location filename="../src/medium/UIMediumManager.cpp" line="+364"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+365"/>
         <source>%1, %2: %3, %4: %5</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
         <translation type="unfinished"></translation>
@@ -8946,7 +8946,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1291"/>
+        <location line="+1302"/>
         <source>Virtual Media Manager</source>
         <translation type="unfinished">Multimedia Birtual Kudeatzailea</translation>
     </message>
@@ -11176,17 +11176,17 @@
 <context>
     <name>UIProgressDialog</name>
     <message>
-        <location filename="../src/widgets/UIProgressDialog.cpp" line="+322"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="+607"/>
         <source>A few seconds remaining</source>
         <translation>Segundu gutxi gelditzen dira</translation>
     </message>
     <message>
-        <location line="-177"/>
+        <location line="-52"/>
         <source>Canceling...</source>
         <translation>Ezeztatzen...</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-312"/>
         <source>&amp;Cancel</source>
         <translation>E&amp;zeztatu</translation>
     </message>
@@ -11196,7 +11196,7 @@
         <translation>Ezeztatu oraingo eragiketa</translation>
     </message>
     <message>
-        <location line="+147"/>
+        <location line="+335"/>
         <source>%1, %2 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
         <translation>%1, %2 gelditzen da</translation>
@@ -11728,7 +11728,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1015"/>
+        <location line="+1026"/>
         <source>Snapshot %1</source>
         <translation type="unfinished">Berehalakoa %1</translation>
     </message>
@@ -13220,7 +13220,7 @@
 <context>
     <name>UIWizardNewVM</name>
     <message>
-        <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="+336"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="+337"/>
         <source>Create Virtual Machine</source>
         <translation>Sortu Makina Birtuala</translation>
     </message>
