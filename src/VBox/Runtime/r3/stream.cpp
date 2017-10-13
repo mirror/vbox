@@ -608,7 +608,7 @@ RTR3DECL(int) RTStrmQueryTerminalWidth(PRTSTREAM pStream, uint32_t *pcchWidth)
             int rc = ioctl(fh, TIOCGWINSZ, &Info);
             if (rc >= 0)
             {
-                *pcchWidth = Info.ws_row ? Info.ws_row : 80;
+                *pcchWidth = Info.ws_col ? Info.ws_col : 80;
                 return VINF_SUCCESS;
             }
             return RTErrConvertFromErrno(errno);
