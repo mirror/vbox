@@ -123,7 +123,6 @@ vboxvideo_drv_INCS += \
 	$(VBOX_GRAPHICS_INCS)
 vboxvideo_drv_SOURCES = \
 	getmode.c \
-	helpers.c \
 	pointer.c \
 	setmode.c \
 	vboxvideo.c \

@@ -53,27 +53,24 @@
 # define VBVA_SCREEN_F_BLANK    0x0004
 #endif
 
+#include <VBoxVideoVBE.h>
+
+#include "xf86.h"
+#include "xf86str.h"
+#include "xf86Cursor.h"
+
 #ifdef DEBUG
 
-#define TRACE_ENTRY() \
-do { \
-    vbvxMsg(RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
-    vbvxMsg(": entering\n"); \
-} while(0)
-#define TRACE_EXIT() \
-do { \
-    vbvxMsg(RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
-    vbvxMsg(": leaving\n"); \
-} while(0)
+#define TRACE_ENTRY() do { xf86ErrorF("%s: entering\n", __func__); } while(0)
+#define TRACE_EXIT() do { xf86ErrorF("%s: leaving\n", __func__); } while(0)
+#define TRACE_LINE() \
+    do { xf86ErrorF("%s: line\n", __func__, __LINE__); } while(0)
 #define TRACE_LOG(...) \
 do { \
-    vbvxMsg("%s: ", RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
-    vbvxMsg(__VA_ARGS__); \
+    xf86ErrorF("%s: ", __func__); \
+    xf86ErrorF(__VA_ARGS__); \
 } while(0)
-# define TRACE_LINE() do \
-{ \
-    vbvxMsg("%s: line %d\n", __FUNCTION__, __LINE__); \
-} while(0)
+
 #else  /* !DEBUG */
 
 #define TRACE_ENTRY()         do { } while (0)
@@ -86,17 +83,12 @@ do { \
 #define VBVXASSERT(expr, out) \
 if (!(expr)) \
 { \
-    vbvxMsg("\nAssertion failed!\n\n"); \
-    vbvxMsg("%s\n", #expr); \
-    vbvxMsg("at %s (%s:%d)\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, __FILE__, __LINE__); \
-    vbvxMsg out; \
-    vbvxAbortServer(); \
+    xf86ErrorF("\nAssertion failed!\n\n"); \
+    xf86ErrorF("%s\n", #expr); \
+    xf86ErrorF("at %s (%s:%d)\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, __FILE__, __LINE__); \
+    xf86ErrorF out; \
+    FatalError("Assertion"); \
 }
-
-#include <VBoxVideoVBE.h>
-
-#include "xf86str.h"
-#include "xf86Cursor.h"
 
 #define VBOX_VERSION            VBOX_VERSION_MAJOR * 10000 \
                               + VBOX_VERSION_MINOR * 100
@@ -199,15 +191,7 @@ typedef struct VBOXRec
     Bool fAnyX;
 } VBOXRec, *VBOXPtr;
 
-/* helpers.c */
-extern void vbvxMsg(const char *pszFormat, ...);
-extern void vbvxMsgV(const char *pszFormat, va_list args);
-extern void vbvxAbortServer(void);
-extern VBOXPtr vbvxGetRec(ScrnInfoPtr pScrn);
-#define VBOXGetRec vbvxGetRec  /* Temporary */
-extern int vbvxGetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t *pcData, int32_t **ppaData);
-extern void vbvxSetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t cData, int32_t *paData, Bool fSendEvent);
-extern void vbvxReprobeCursor(ScrnInfoPtr pScrn);
+#define VBOXGetRec(pScrn) ((VBOXPtr)(pScrn)->driverPrivate)
 
 /* setmode.c */
 

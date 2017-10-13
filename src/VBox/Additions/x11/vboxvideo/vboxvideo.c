@@ -251,7 +251,7 @@ static Bool adjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     pPixmap = pScreen->GetScreenPixmap(pScreen);
     VBVXASSERT(pPixmap != NULL, ("Failed to get the screen pixmap.\n"));
     TRACE_LOG("pPixmap=%p adjustedWidth=%d height=%d pScrn->depth=%d pScrn->bitsPerPixel=%d cbLine=%d pVBox->base=%p pPixmap->drawable.width=%d pPixmap->drawable.height=%d\n",
-              pPixmap, adjustedWidth, height, pScrn->depth, pScrn->bitsPerPixel, cbLine, pVBox->base, pPixmap->drawable.width,
+              (void *)pPixmap, adjustedWidth, height, pScrn->depth, pScrn->bitsPerPixel, cbLine, pVBox->base, pPixmap->drawable.width,
               pPixmap->drawable.height);
     if (   adjustedWidth != pPixmap->drawable.width
         || height != pPixmap->drawable.height)
@@ -1025,6 +1025,19 @@ static void setSizesRandR11(ScrnInfoPtr pScrn)
 
 #endif
 
+static void reprobeCursor(ScrnInfoPtr pScrn)
+{
+    if (ROOT_WINDOW(pScrn) == NULL)
+        return;
+#ifdef XF86_SCRN_INTERFACE
+    pScrn->EnableDisableFBAccess(pScrn, FALSE);
+    pScrn->EnableDisableFBAccess(pScrn, TRUE);
+#else
+    pScrn->EnableDisableFBAccess(pScrn->scrnIndex, FALSE);
+    pScrn->EnableDisableFBAccess(pScrn->scrnIndex, TRUE);
+#endif
+}
+
 static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, Bool fScreenInitTime)
 {
     RT_NOREF(fScreenInitTime);
@@ -1040,7 +1053,7 @@ static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, Bool fScreenInitTime
 #endif
     /* This calls EnableDisableFBAccess(), so only use when switched in. */
     if (pScrn->vtSema)
-        vbvxReprobeCursor(pScrn);
+        reprobeCursor(pScrn);
 }
 
 /* We update the size hints from the X11 property set by VBoxClient every time
