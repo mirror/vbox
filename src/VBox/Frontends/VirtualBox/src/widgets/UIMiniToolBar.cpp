@@ -1051,6 +1051,29 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
                 break;
             }
             case QEvent::Move:
+            {
+                // WORKAROUND:
+                // In certain cases there can be that parent is moving outside of
+                // full-screen geometry. That for example can happen if virtual
+                // desktop being changed. We should ignore Move event in such case.
+                /* Skip if parent is outside of full-screen geometry: */
+                QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
+                if (!gpDesktop->screenGeometry(m_pParent).contains(pMoveEvent->pos()))
+                    break;
+                /* Skip if parent or we are invisible: */
+                if (   !m_pParent->isVisible()
+                    || !isVisible())
+                    break;
+                /* Skip if parent or we are minimized: */
+                if (   isParentMinimized()
+                    || isMinimized())
+                    break;
+
+                /* Asynchronously call for sltShow(): */
+                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent move event\n"));
+                QMetaObject::invokeMethod(this, "sltShow", Qt::QueuedConnection);
+                break;
+            }
             case QEvent::Resize:
             {
                 /* Skip if parent or we are invisible: */
@@ -1063,7 +1086,7 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
                     break;
 
                 /* Asynchronously call for sltShow(): */
-                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent move/resize event\n"));
+                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent resize event\n"));
                 QMetaObject::invokeMethod(this, "sltShow", Qt::QueuedConnection);
                 break;
             }
