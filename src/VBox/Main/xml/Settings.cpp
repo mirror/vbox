@@ -4135,6 +4135,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             pelmHwChild->getAttributeValue("rate",      hw.ulVideoCaptureRate);
             pelmHwChild->getAttributeValue("fps",       hw.ulVideoCaptureFPS);
             pelmHwChild->getAttributeValue("maxTime",   hw.ulVideoCaptureMaxTime);
+            pelmHwChild->getAttributeValue("maxSize",   hw.ulVideoCaptureMaxSize);
             pelmHwChild->getAttributeValue("options",   hw.strVideoCaptureOptions);
         }
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
