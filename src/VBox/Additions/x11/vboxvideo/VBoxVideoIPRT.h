@@ -52,8 +52,9 @@ RT_C_DECLS_BEGIN
 RT_C_DECLS_END
 #endif  /* defined(IN_XF86_MODULE) && !defined(NO_ANSIC) */
 #define __STDC_LIMIT_MACROS  /* define *INT*_MAX on C++ too. */
-#include "compiler.h"  /* Pulls in <sdtint.h>.  Must come after xf86_ansic.h on XFree86. */
+#include "compiler.h"  /* Can pull in <sdtint.h>.  Must come after xf86_ansic.h on XFree86. */
 #include <X11/Xfuncproto.h>
+#include <stdint.h>
 #if defined(IN_XF86_MODULE) && !defined(NO_ANSIC)
 /* XFree86 did not have these.  Not that I care much for micro-optimisations
  * in most cases anyway. */
@@ -62,49 +63,9 @@ RT_C_DECLS_END
 # ifndef offsetof
 #  define offsetof(type, member) ( (int)(uintptr_t)&( ((type *)(void *)0)->member) )
 # endif
-# if !defined(_INT8_T_DECLARED)   && !defined(_INT8_T)   && !defined(__INT8_TYPE__)   && !defined(INT8_MAX)
-typedef signed char int8_t;
-# endif
-# if !defined(_UINT8_T_DECLARED)   && !defined(_UINT8_T)   && !defined(__UINT8_TYPE__)   && !defined(UINT8_MAX)
-typedef unsigned char uint8_t;
-# endif
-# if !defined(_INT16_T_DECLARED)   && !defined(_INT16_T)   && !defined(__INT16_TYPE__)   && !defined(INT16_MAX)
-typedef signed short int16_t;
-# endif
-# if !defined(_UINT16_T_DECLARED)   && !defined(_UINT16_T)   && !defined(__UINT16_TYPE__)   && !defined(UINT16_MAX)
-typedef unsigned short uint16_t;
-# endif
-# if !defined(_INT32_T_DECLARED)   && !defined(_INT32_T)   && !defined(__INT32_TYPE__)   && !defined(INT32_MAX)
-typedef signed int int32_t;
-# endif
-# if !defined(_UINT32_T_DECLARED)   && !defined(_UINT32_T)   && !defined(__UINT32_TYPE__)   && !defined(UINT32_MAX)
-typedef unsigned int uint32_t;
-# endif
-# if !defined(_INT64_T_DECLARED)   && !defined(_INT64_T)   && !defined(__INT64_TYPE__)   && !defined(INT64_MAX)
-typedef signed long long int64_t;
-# endif
-# if !defined(_UINT64_T_DECLARED)   && !defined(_UINT64_T)   && !defined(__UINT64_TYPE__)   && !defined(UINT64_MAX)
-typedef unsigned long long uint64_t;
-# endif
-# ifndef _XSERVER64
-#  if !defined(_INTPTR_T_DECLARED)  && !defined(_INTPTR_T)  && !defined(__INTPTR_TYPE__)   && !defined(INTPTR_MAX)
-typedef signed long         intptr_t;
-#  endif
-#  if !defined(_UINTPTR_T_DECLARED)  && !defined(_UINTPTR_T)  && !defined(__UINTPTR_TYPE__)   && !defined(UINTPTR_MAX)
-typedef unsigned long       uintptr_t;
-#  endif
-# else
-#  if !defined(_INTPTR_T_DECLARED)  && !defined(_INTPTR_T)  && !defined(__INTPTR_TYPE__)   && !defined(INTPTR_MAX)
-typedef int64_t             intptr_t;
-#  endif
-#  if !defined(_UINTPTR_T_DECLARED)  && !defined(_UINTPTR_T)  && !defined(__UINTPTR_TYPE__)   && !defined(UINTPTR_MAX)
-typedef uint64_t            uintptr_t;
-#  endif
-# endif
 #else  /* !(defined(IN_XF86_MODULE) && !defined(NO_ANSIC)) */
 # include <stdarg.h>
 # include <stddef.h>
-# include <stdint.h>
 # include <string.h>
 #endif  /* !(defined(IN_XF86_MODULE) && !defined(NO_ANSIC)) */
 
@@ -170,18 +131,6 @@ RT_C_DECLS_END
 #endif
 #ifndef UINT32_C
 # define UINT32_C(Value) (Value ## U)
-#endif
-#ifndef INT16_MAX
-# define INT16_MAX INT16_C(0x7fff)
-#endif
-#ifndef UINT16_MAX
-# define UINT16_MAX UINT16_C(0xffff)
-#endif
-#ifndef INT32_MAX
-# define INT32_MAX INT32_C(0x7fffffff)
-#endif
-#ifndef UINT32_MAX
-# define UINT32_MAX UINT32_C(0xffffffff)
 #endif
 
 #define likely _X_LIKELY
