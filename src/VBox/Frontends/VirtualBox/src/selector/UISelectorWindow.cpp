@@ -1816,6 +1816,19 @@ void UISelectorWindow::prepareToolbar()
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
+#ifdef VBOX_WS_MAC
+        // WORKAROUND:
+        // Actually Qt should do that itself but by some unknown reason it sometimes
+        // forget to update toolbar after changing its actions on cocoa platform.
+        connect(actionPool()->action(UIActionIndexST_M_Machine_S_New), &UIAction::changed,
+                m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
+        connect(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), &UIAction::changed,
+                m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
+        connect(actionPool()->action(UIActionIndexST_M_Machine_S_Discard), &UIAction::changed,
+                m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
+        connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow), &UIAction::changed,
+                m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
+#endif /* VBOX_WS_MAC */
 
         /* Create Machine tab-bar: */
         m_pTabBarMachine = new UITabBar;
