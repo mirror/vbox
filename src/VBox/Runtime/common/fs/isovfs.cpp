@@ -3908,9 +3908,11 @@ static void rtFsIsoDirShrd_LogUdfContent(PRTFSISODIRSHRD pThis)
             if (RT_FAILURE(rc))
                 Log2(("ISO/UDF:      Bad Tag: %Rrc - idTag=%#x\n", rc, pFid->Tag.idTag));
             if (pFid->cbImplementationUse > 32)
-                Log2(("ISO/UDF:      impl use (%#x bytes):\n%.*RhxD\n", pFid->cbImplementationUse, pFid->abImplementationUse));
+                Log2(("ISO/UDF:      impl use (%#x bytes):\n%.*RhxD\n",
+                      pFid->cbImplementationUse, pFid->cbImplementationUse, pFid->abImplementationUse));
             else if (pFid->cbImplementationUse > 0)
-                Log2(("ISO/UDF:      impl use (%#x bytes): %.*Rhxs\n", pFid->cbImplementationUse, pFid->abImplementationUse));
+                Log2(("ISO/UDF:      impl use (%#x bytes): %.*Rhxs\n",
+                      pFid->cbImplementationUse, pFid->cbImplementationUse, pFid->abImplementationUse));
 
             /* advance */
             offDesc += cbFid;
@@ -4355,7 +4357,7 @@ static int rtFsIsoVolProcessUdfFileSetDescs(PRTFSISOVOL pThis, uint8_t *pbBuf, s
                 UDF_LOG2_MEMBER_LONGAD(pFsd, NextExtent);
                 UDF_LOG2_MEMBER_LONGAD(pFsd, SystemStreamDirIcb);
                 if (!ASMMemIsZero(&pFsd->abReserved[0], sizeof(pFsd->abReserved)))
-                    UDF_LOG2_MEMBER(pFsd, "%.32Rhxs", abReserved);
+                    UDF_LOG2_MEMBER(pFsd, ".32Rhxs", abReserved);
             }
 #endif
 
