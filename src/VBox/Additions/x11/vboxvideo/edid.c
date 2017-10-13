@@ -36,9 +36,9 @@
  *    Michael Thayer <michael.thayer@oracle.com>
  */
 
-#include <misc.h>
-#include <xf86DDC.h>
-#include <xf86Crtc.h>
+#include "misc.h"
+#include "xf86DDC.h"
+#include "xf86Crtc.h"
 #include "vboxvideo.h"
 
 enum { EDID_SIZE = 128 };

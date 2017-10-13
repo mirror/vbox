@@ -41,8 +41,6 @@ vboxvideo_xorg_INCS = \
 vboxvideo_override_INCLUDES = \
     -include $(PATH_ROOT)/src/VBox/Additions/x11/vboxvideo/HGSMIMemAlloc.h
 
-vboxvideo.c_DEPS = $(VBOX_SVN_REV_HEADER)
-
 LIBRARIES += vboxvideo_drv_lib
 
 #

@@ -73,7 +73,7 @@
 #endif
 /* For setting the root window property. */
 #include "property.h"
-#include "X11/Xatom.h"
+#include <X11/Xatom.h>
 
 #ifdef XORG_7X
 # include <stdlib.h>
@@ -490,7 +490,6 @@ vbox_output_mode_set (xf86OutputPtr output, DisplayModePtr mode,
                         DisplayModePtr adjusted_mode)
 { RT_NOREF(output, mode, adjusted_mode); }
 
-/* A virtual monitor is always connected. */
 static xf86OutputStatus
 vbox_output_detect (xf86OutputPtr output)
 {
@@ -751,7 +750,7 @@ VBOXPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
         pVBox->pciInfo = dev;
     }
 
-    TRACE_LOG("returning %s\n", BOOL_STR(pScrn != NULL));
+    TRACE_LOG("returning %s\n", pScrn == NULL ? "false" : "true");
     return (pScrn != NULL);
 }
 #endif
@@ -1084,8 +1083,6 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
 
     TRACE_ENTRY();
 
-    /* Initialise our guest library if possible: ignore failure. */
-    VbglR3Init();
     if (!VBOXMapVidMem(pScrn))
         return (FALSE);
 
@@ -1340,7 +1337,6 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
 #else
     ret = pScreen->CloseScreen(pScreen);
 #endif
-    VbglR3Term();
     return ret;
 }
 

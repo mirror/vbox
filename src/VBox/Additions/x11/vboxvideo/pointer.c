@@ -28,7 +28,7 @@
 #include <VBox/VBoxGuestLib.h>
 
 #ifndef PCIACCESS
-# include <xf86Pci.h>
+# include "xf86Pci.h"
 # include <Pci.h>
 #endif
 

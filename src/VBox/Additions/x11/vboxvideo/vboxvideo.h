@@ -93,8 +93,6 @@ if (!(expr)) \
     vbvxAbortServer(); \
 }
 
-#define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
-
 #include <VBoxVideoVBE.h>
 
 #include "xf86str.h"
