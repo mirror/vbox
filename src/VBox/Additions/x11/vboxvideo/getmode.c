@@ -211,7 +211,7 @@ void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, Bool *pfNeedU
     if (!pVBox->fHaveHGSMIModeHints)
         return;
     rc = VBoxHGSMIGetModeHints(&pVBox->guestCtx, pVBox->cScreens, pVBox->paVBVAModeHints);
-    VBVXASSERT(rc == VINF_SUCCESS, ("VBoxHGSMIGetModeHints failed, rc=%d.\n", rc));
+    AssertMsg(rc == VINF_SUCCESS, ("VBoxHGSMIGetModeHints failed, rc=%d.\n", rc));
     for (i = 0; i < pVBox->cScreens; ++i)
         if (pVBox->paVBVAModeHints[i].magic == VBVAMODEHINT_MAGIC)
         {
@@ -228,7 +228,7 @@ void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, Bool *pfNeedU
                 COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].afHaveLocation, false, &fChanged, true);
         }
     rc = VBoxQueryConfHGSMI(&pVBox->guestCtx, VBOX_VBVA_CONF32_CURSOR_CAPABILITIES, &fCursorCapabilities);
-    VBVXASSERT(rc == VINF_SUCCESS, ("Getting VBOX_VBVA_CONF32_CURSOR_CAPABILITIES failed, rc=%d.\n", rc));
+    AssertMsg(rc == VINF_SUCCESS, ("Getting VBOX_VBVA_CONF32_CURSOR_CAPABILITIES failed, rc=%d.\n", rc));
     compareAndMaybeSetUseHardwareCursor(pVBox, fCursorCapabilities, &fChanged, true);
     if (pfNeedUpdate != NULL && fChanged)
         *pfNeedUpdate = true;
@@ -252,7 +252,7 @@ static void acpiEventHandler(int fd, void *pvData)
         rc = read(fd, &event, sizeof(event));
     while (rc > 0 || (rc == -1 && errno == EINTR));
     /* Why do they return EAGAIN instead of zero bytes read like everyone else does? */
-    VBVXASSERT(rc != -1 || errno == EAGAIN, ("Reading ACPI input event failed.\n"));
+    AssertMsg(rc != -1 || errno == EAGAIN, ("Reading ACPI input event failed.\n"));
 }
 
 void vbvxSetUpLinuxACPI(ScreenPtr pScreen)

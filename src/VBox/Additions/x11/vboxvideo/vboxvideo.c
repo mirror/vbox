@@ -244,11 +244,11 @@ static Bool adjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     PixmapPtr pPixmap;
 
     TRACE_LOG("width=%d, height=%d\n", width, height);
-    VBVXASSERT(width >= 0 && height >= 0, ("Invalid negative width (%d) or height (%d)\n", width, height));
+    AssertMsg(width >= 0 && height >= 0, ("Invalid negative width (%d) or height (%d)\n", width, height));
     if (pScreen == NULL)  /* Not yet initialised. */
         return TRUE;
     pPixmap = pScreen->GetScreenPixmap(pScreen);
-    VBVXASSERT(pPixmap != NULL, ("Failed to get the screen pixmap.\n"));
+    AssertMsg(pPixmap != NULL, ("Failed to get the screen pixmap.\n"));
     TRACE_LOG("pPixmap=%p adjustedWidth=%d height=%d pScrn->depth=%d pScrn->bitsPerPixel=%d cbLine=%d pVBox->base=%p pPixmap->drawable.width=%d pPixmap->drawable.height=%d\n",
               (void *)pPixmap, adjustedWidth, height, pScrn->depth,
               pScrn->bitsPerPixel, cbLine, pVBox->base,
@@ -342,7 +342,7 @@ static void setModeRandR12(ScrnInfoPtr pScrn, unsigned cScreen)
     /* Check that this code cannot trigger the resizing bug in X.Org Server 1.3.
      * See the work-around in ScreenInit. */
     xf86RandR12GetOriginalVirtualSize(pScrn, &originalX, &originalY);
-    VBVXASSERT(originalX == VBOX_VIDEO_MAX_VIRTUAL && originalY == VBOX_VIDEO_MAX_VIRTUAL, ("OriginalSize=%dx%d",
+    AssertMsg(originalX == VBOX_VIDEO_MAX_VIRTUAL && originalY == VBOX_VIDEO_MAX_VIRTUAL, ("OriginalSize=%dx%d",
                originalX, originalY));
     for (i = cFirst; i < cLast; ++i)
         if (pVBox->pScreens[i].paCrtcs->mode.HDisplay != 0 && pVBox->pScreens[i].paCrtcs->mode.VDisplay != 0 && pScrn->vtSema)

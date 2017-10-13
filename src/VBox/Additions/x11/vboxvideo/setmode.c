@@ -68,7 +68,7 @@ void vbvxClearVRAM(ScrnInfoPtr pScrn, size_t cbOldSize, size_t cbNewSize)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     /* Assume 32BPP - this is just a sanity test. */
-    VBVXASSERT(   cbOldSize / 4 <= VBOX_VIDEO_MAX_VIRTUAL * VBOX_VIDEO_MAX_VIRTUAL
+    AssertMsg(   cbOldSize / 4 <= VBOX_VIDEO_MAX_VIRTUAL * VBOX_VIDEO_MAX_VIRTUAL
                && cbNewSize / 4 <= VBOX_VIDEO_MAX_VIRTUAL * VBOX_VIDEO_MAX_VIRTUAL,
                ("cbOldSize=%llu cbNewSize=%llu, max=%u.\n", (unsigned long long)cbOldSize, (unsigned long long)cbNewSize,
                 VBOX_VIDEO_MAX_VIRTUAL * VBOX_VIDEO_MAX_VIRTUAL));
@@ -96,7 +96,7 @@ void vbvxSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth, unsigned
     TRACE_LOG("cDisplay=%u, cWidth=%u, cHeight=%u, x=%d, y=%d, fEnabled=%d, fConnected=%d, pFrameBuffer: { x0=%d, y0=%d, cWidth=%u, cHeight=%u, cBPP=%u }\n",
               cDisplay, cWidth, cHeight, x, y, fEnabled, fConnected, pFrameBuffer->x0, pFrameBuffer->y0, pFrameBuffer->cWidth,
               pFrameBuffer->cHeight, pFrameBuffer->cBPP);
-    VBVXASSERT(cWidth != 0 && cHeight != 0, ("cWidth = 0 or cHeight = 0\n"));
+    AssertMsg(cWidth != 0 && cHeight != 0, ("cWidth = 0 or cHeight = 0\n"));
     offStart = (y * pFrameBuffer->cWidth + x) * pFrameBuffer->cBPP / 8;
     if (cDisplay == 0 && fEnabled)
         VBoxVideoSetModeRegisters(cWidth, cHeight, pFrameBuffer->cWidth, pFrameBuffer->cBPP, 0, x, y);

@@ -138,7 +138,7 @@ vbox_vmm_hide_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     RT_NOREF(pScrn);
 
     rc = VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, 0, 0, 0, 0, 0, NULL, 0);
-    VBVXASSERT(rc == VINF_SUCCESS, ("Could not hide the virtual mouse pointer, VBox error %d.\n", rc));
+    AssertMsg(rc == VINF_SUCCESS, ("Could not hide the virtual mouse pointer, VBox error %d.\n", rc));
 }
 
 static void
@@ -151,7 +151,7 @@ vbox_vmm_show_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
         return;
     rc = VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, VBOX_MOUSE_POINTER_VISIBLE,
                                      0, 0, 0, 0, NULL, 0);
-    VBVXASSERT(rc == VINF_SUCCESS, ("Could not unhide the virtual mouse pointer.\n"));
+    AssertMsg(rc == VINF_SUCCESS, ("Could not unhide the virtual mouse pointer.\n"));
 }
 
 static void
@@ -170,7 +170,7 @@ vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
     rc = VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, pImage->fFlags,
              pImage->cHotX, pImage->cHotY, pImage->cWidth, pImage->cHeight,
              pImage->pPixels, pImage->cbLength);
-    VBVXASSERT(rc == VINF_SUCCESS, ("Unable to set the virtual mouse pointer image.\n"));
+    AssertMsg(rc == VINF_SUCCESS, ("Unable to set the virtual mouse pointer image.\n"));
 }
 
 static void

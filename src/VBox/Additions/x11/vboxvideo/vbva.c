@@ -134,7 +134,7 @@ void vbvxSetUpHGSMIHeapInGuest(VBOXPtr pVBox, uint32_t cbVRAM)
     pvGuestHeapMemory = ((uint8_t *)pVBox->base) + offVRAMBaseMapping + offGuestHeapMemory;
     rc = VBoxHGSMISetupGuestContext(&pVBox->guestCtx, pvGuestHeapMemory, cbGuestHeapMemory,
                                     offVRAMBaseMapping + offGuestHeapMemory, &g_hgsmiEnv);
-    VBVXASSERT(RT_SUCCESS(rc), ("Failed to set up the guest-to-host message buffer heap, rc=%d\n", rc));
+    AssertMsg(RT_SUCCESS(rc), ("Failed to set up the guest-to-host message buffer heap, rc=%d\n", rc));
     pVBox->cbView = offVRAMBaseMapping;
 }
 
@@ -179,7 +179,7 @@ static Bool vboxSetupVRAMVbva(VBOXPtr pVBox)
               (unsigned long) pVBox->cbFBMax);
     rc = VBoxHGSMISendViewInfo(&pVBox->guestCtx, pVBox->cScreens,
                                vboxFillViewInfo, (void *)pVBox);
-    VBVXASSERT(RT_SUCCESS(rc), ("Failed to send the view information to the host, rc=%d\n", rc));
+    AssertMsg(RT_SUCCESS(rc), ("Failed to send the view information to the host, rc=%d\n", rc));
     return TRUE;
 }
 
@@ -228,7 +228,7 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
                             pVBVA, i))
             rc = FALSE;
     }
-    VBVXASSERT(rc, ("Failed to enable screen update reporting for at least one virtual monitor.\n"));
+    AssertMsg(rc, ("Failed to enable screen update reporting for at least one virtual monitor.\n"));
     pVBox->fHaveHGSMIModeHints = haveHGSMIModeHintAndCursorReportingInterface(pVBox);
     pVBox->fHostHasScreenBlankingFlag = hostHasScreenBlankingFlag(pVBox);
     return rc;
