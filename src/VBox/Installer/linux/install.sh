@@ -18,8 +18,8 @@
 # Testing:
 # * After successful installation, 0 is returned if the vboxdrv module version
 #   built matches the one loaded.
-# * If the kernel modules cannot be built (run the installer with KERN_DIR=/) or
-#   loaded (run with KERN_DIR=/lib/modules/<installed non-current version>/build)
+# * If the kernel modules cannot be built (run the installer with KERN_VER=none)
+#   or loaded (run with KERN_VER=<installed non-current version>)
 #   then 1 is returned.
 
 PATH=$PATH:/bin:/sbin:/usr/sbin

@@ -20,8 +20,9 @@
 # * After successful installation, 0 is returned if the vboxguest module version
 #   built matches the one loaded and 2 is returned otherwise.  E.g. VBoxClient
 #   running will prevent vboxguest reloading.
-# * If the kernel modules cannot be built (run the installer with KERN_DIR=/) or
-#   loaded (run with KERN_VER=<installed non-current version>) then 1 is returned.
+# * If the kernel modules cannot be built (run the installer with KERN_VER=none)
+#   or loaded (run with KERN_VER=<installed non-current version>) then 1 is
+#   returned.
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
 

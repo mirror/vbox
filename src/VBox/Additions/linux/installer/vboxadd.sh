@@ -417,8 +417,7 @@ create_module_rebuild_script()
     cat << EOF > /etc/kernel/postinst.d/vboxadd
 #!/bin/sh
 test -d "/lib/modules/\${1}/build" || exit 0
-KERN_DIR="/lib/modules/\${1}/build" MODULE_DIR="/lib/modules/\${1}/misc" \
-/sbin/rcvboxadd quicksetup
+KERN_VER="\${1}" /sbin/rcvboxadd quicksetup
 exit 0
 EOF
     cat << EOF > /etc/kernel/prerm.d/vboxadd
