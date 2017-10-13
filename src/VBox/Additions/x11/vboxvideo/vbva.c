@@ -120,9 +120,7 @@ static HGSMIENV g_hgsmiEnv =
 
 /**
  * Calculate the location in video RAM of and initialise the heap for guest to
- * host messages.  In the VirtualBox 4.3 and earlier Guest Additions this
- * function creates the heap structures directly in guest video RAM, so it
- * needs to be called whenever video RAM is (re-)set-up.
+ * host messages.
  */
 void vbvxSetUpHGSMIHeapInGuest(VBOXPtr pVBox, uint32_t cbVRAM)
 {
