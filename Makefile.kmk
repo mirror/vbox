@@ -427,6 +427,7 @@ $$(buildserver-extpacks_0_OUTDIR)/Oracle_VM_VirtualBox_Extension_Pack.vbox-extpa
 	$(RM) -f -- "$@.tmp" "$@"
 	$(SHELL) $(PATH_DEVTOOLS)/bin/extpacks.sh --cmd fetch --filename "$@.tmp" --vbox-version "$(VBOX_VERSION_STRING)"
 	$(MV) -f -- "$@.tmp" "$@"
+	$(TOUCH) -- "$@"
 
 endif
 
