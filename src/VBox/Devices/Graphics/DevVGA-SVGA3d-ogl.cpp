@@ -6419,7 +6419,7 @@ internal_error:
             }
 # else
             PVMSVGA3DSURFACE pTexture = pState->papSurfaces[pContext->aSidActiveTexture[i]];
-            AssertMsg(pTexture->id == pContext->aSidActiveTexture[i], ("%x vs %x\n", pTexture->id == pContext->aSidActiveTexture[i]));
+            AssertMsg(pTexture->id == pContext->aSidActiveTexture[i], ("%x vs %x\n", pTexture->id, pContext->aSidActiveTexture[i]));
             AssertMsg(pTexture->oglId.texture == (GLuint)activeTexture,
                       ("%x vs %x unit %d (active unit %d) sid=%x\n", pTexture->oglId.texture, activeTexture, i,
                        activeTextureUnit - GL_TEXTURE0, pContext->aSidActiveTexture[i]));

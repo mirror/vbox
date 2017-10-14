@@ -464,8 +464,7 @@ SHADERDECL(int) ShaderSetVertexShaderConstantB(void *pShaderContext, uint32_t st
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
     This = g_pCurrentContext->pDeviceContext;
 
-    Log(("(ShaderSetVertexShaderConstantB %p, srcData %p, start %d, count %d)\n",
-            srcData, start, count));
+    Log(("(ShaderSetVertexShaderConstantB %p, srcData %p, start %d, count %d)\n", pShaderContext, srcData, start, count));
 
     if (!srcData || start >= MAX_CONST_B)
     {
@@ -494,8 +493,7 @@ SHADERDECL(int) ShaderSetVertexShaderConstantI(void *pShaderContext, uint32_t st
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
     This = g_pCurrentContext->pDeviceContext;
 
-    Log(("(ShaderSetVertexShaderConstantI %p, srcData %p, start %d, count %d)\n",
-            srcData, start, count));
+    Log(("(ShaderSetVertexShaderConstantI %p, srcData %p, start %d, count %d)\n", pShaderContext, srcData, start, count));
 
     if (!srcData || start >= MAX_CONST_I)
     {
@@ -521,8 +519,7 @@ SHADERDECL(int) ShaderSetVertexShaderConstantF(void *pShaderContext, uint32_t st
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
     This = g_pCurrentContext->pDeviceContext;
 
-    Log(("(ShaderSetVertexShaderConstantF %p, srcData %p, start %d, count %d)\n",
-            srcData, start, count));
+    Log(("(ShaderSetVertexShaderConstantF %p, srcData %p, start %d, count %d)\n", pShaderContext, srcData, start, count));
 
     if (srcData == NULL || start + count > This->d3d_vshader_constantF || start > This->d3d_vshader_constantF)
     {
@@ -549,8 +546,7 @@ SHADERDECL(int) ShaderSetPixelShaderConstantB(void *pShaderContext, uint32_t sta
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
     This = g_pCurrentContext->pDeviceContext;
 
-    Log(("(ShaderSetPixelShaderConstantB %p, srcData %p, start %d, count %d)\n",
-            srcData, start, count));
+    Log(("(ShaderSetPixelShaderConstantB %p, srcData %p, start %d, count %d)\n", pShaderContext, srcData, start, count));
 
     if (!srcData || start >= MAX_CONST_B)
     {
@@ -579,8 +575,7 @@ SHADERDECL(int) ShaderSetPixelShaderConstantI(void *pShaderContext, uint32_t sta
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
     This = g_pCurrentContext->pDeviceContext;
 
-    Log(("(ShaderSetPixelShaderConstantI %p, srcData %p, start %d, count %d)\n",
-            srcData, start, count));
+    Log(("(ShaderSetPixelShaderConstantI %p, srcData %p, start %d, count %d)\n", pShaderContext, srcData, start, count));
 
     if (!srcData || start >= MAX_CONST_I)
     {
@@ -606,8 +601,7 @@ SHADERDECL(int) ShaderSetPixelShaderConstantF(void *pShaderContext, uint32_t sta
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
     This = g_pCurrentContext->pDeviceContext;
 
-    Log(("(ShaderSetPixelShaderConstantF %p, srcData %p, start %d, count %d)\n",
-            srcData, start, count));
+    Log(("(ShaderSetPixelShaderConstantF %p, srcData %p, start %d, count %d)\n", pShaderContext, srcData, start, count));
 
     if (srcData == NULL || start + count > This->d3d_pshader_constantF || start > This->d3d_pshader_constantF)
     {

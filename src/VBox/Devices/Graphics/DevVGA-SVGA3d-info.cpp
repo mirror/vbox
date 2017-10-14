@@ -1601,6 +1601,7 @@ static void vmsvga3dInfoContextWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DCONTEXT pC
     for (uint32_t i = 0; i < RT_ELEMENTS(pContext->state.aClipPlane); i++)
         if (pContext->state.aClipPlane[i].fValid)
             pHlp->pfnPrintf(pHlp, "aClipPlane[%#04x]: [ " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR " ]\n",
+                            i,
                             FLOAT_FMT_ARGS(pContext->state.aClipPlane[i].plane[0]),
                             FLOAT_FMT_ARGS(pContext->state.aClipPlane[i].plane[1]),
                             FLOAT_FMT_ARGS(pContext->state.aClipPlane[i].plane[2]),
