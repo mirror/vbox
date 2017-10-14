@@ -285,8 +285,7 @@ if  defined(VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER) \
  		$$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip
 	$(call MSG_L1,Unpacking additions archive)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
-	# @todo r=klaus replace TOUCH_EXT by TOUCH as soon as kBuild t
-	$(TOUCH_EXT) -c $(PATH_TARGET)/VBoxGuestAdditions.iso
+	$(TOUCH) -c -- $(PATH_TARGET)/VBoxGuestAdditions.iso
 	$(APPEND) -t $@ "done"
 
  $$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $$(dir $$@)
@@ -322,9 +321,8 @@ $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_TARGET)/VirtualBox_$(f).chm $(PA
 		$$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip
 	$(call MSG_L1,Unpacking documentation)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
-	# @todo r=klaus replace TOUCH_EXT by TOUCH as soon as kBuild is fixed
-	$(TOUCH_EXT) -c $(PATH_TARGET)/VirtualBox.chm \
-		$(PATH_TARGET)/UserManual.pdf\
+	$(TOUCH) -c -- $(PATH_TARGET)/VirtualBox.chm \
+		$(PATH_TARGET)/UserManual.pdf \
 		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_TARGET)/VirtualBox_$(f).chm $(PATH_TARGET)/UserManual_$(f).pdf)
 	$(APPEND) -t $@ "done"
 
@@ -384,8 +382,7 @@ endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
 		$(NLTAB) $(QUIET)$(TEST) '!' -d $(dir $@)/$(arch) -- $(MKDIR_EXT) -- $(dir $@)/$(arch) \
 		$(foreach mod,$(VBOX_EFI_MODULES_FLAT) \
 		,$(NLTAB) $(QUIET)$(TEST) '!' -f $(dir $@)/$(arch)/$(mod).pdb -- $(APPEND_EXT) $(dir $@)/$(arch)/$(mod).pdb ))
-	# @todo r=klaus replace TOUCH_EXT by TOUCH as soon as kBuild is fixed
-	$(TOUCH_EXT) -c $(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd \
+	$(TOUCH) -c -- $(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd \
 		$(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd
 	$(APPEND) -t $@ "done"
 
@@ -429,10 +426,6 @@ $$(buildserver-extpacks_0_OUTDIR)/Oracle_VM_VirtualBox_Extension_Pack.vbox-extpa
 		$(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/extpacks.sh | $$(dir $$@)
 	$(RM) -f -- "$@.tmp" "$@"
 	$(SHELL) $(PATH_DEVTOOLS)/bin/extpacks.sh --cmd fetch --filename "$@.tmp" --vbox-version "$(VBOX_VERSION_STRING)"
-	## @todo r=klaus replace mv/cp/rm sequence by touch or some equivalent to lose the timestamp
-	$(MV) "$@.tmp" "$@.tmp2"
-	$(CP) "$@.tmp2" "$@.tmp"
-	$(RM) -f "$@.tmp2"
 	$(MV) -f -- "$@.tmp" "$@"
 
 endif
