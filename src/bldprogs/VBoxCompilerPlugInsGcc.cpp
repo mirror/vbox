@@ -641,9 +641,10 @@ static unsigned int     MyPassExecuteCallbackWithFunction(struct function *pFun)
                  */
                 tree const hFn = gimple_call_fn(hStmt);
                 dprintf("     hFn    =%p %s(%d); args=%d\n",
-                        hFn, get_tree_code_name(TREE_CODE(hFn)), TREE_CODE(hFn), gimple_call_num_args(hStmt));
+                        hFn, hFn ? get_tree_code_name(TREE_CODE(hFn)) : NULL, hFn ? TREE_CODE(hFn) : - 1,
+                        gimple_call_num_args(hStmt));
 #ifdef DEBUG
-                if (DECL_P(hFn))
+                if (hFn && DECL_P(hFn))
                     dprintf("     hFn is decl: %s %s:%d\n",
                             DECL_NAME(hFn) ? IDENTIFIER_POINTER(DECL_NAME(hFn)) : "<unamed>",
                             DECL_SOURCE_FILE(hFn), DECL_SOURCE_LINE(hFn));
@@ -656,8 +657,14 @@ static unsigned int     MyPassExecuteCallbackWithFunction(struct function *pFun)
                             TREE_TYPE(hFnDecl), DECL_SOURCE_FILE(hFnDecl), DECL_SOURCE_LINE(hFnDecl));
                 tree const hFnType = gimple_call_fntype(hStmt);
                 if (hFnType == NULL_TREE)
-                    error_at(gimple_location(hStmt), "Failed to resolve function type [fn=%s]\n",
-                             get_tree_code_name(TREE_CODE(hFn)));
+                {
+                    if (   hFnDecl == NULL_TREE
+                        && gimple_call_internal_p(hStmt) /* va_arg() kludge */)
+                        continue;
+                    error_at(gimple_location(hStmt), "Failed to resolve function type [fn=%s fndecl=%s]\n",
+                             hFn ? get_tree_code_name(TREE_CODE(hFn)) : "<null>",
+                             hFnDecl ? get_tree_code_name(TREE_CODE(hFnDecl)) : "<null>");
+                }
                 else if (POINTER_TYPE_P(hFnType))
                     error_at(gimple_location(hStmt), "Got a POINTER_TYPE when expecting a function type [fn=%s]\n",
                              get_tree_code_name(TREE_CODE(hFn)));
