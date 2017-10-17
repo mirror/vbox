@@ -2719,3 +2719,4 @@ const PDMDRVREG g_DrvHostDSound =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
+

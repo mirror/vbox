@@ -1,19 +1,17 @@
 /* $Id$ */
 /** @file
- * VBox audio: Mixing routines, mainly used by the various audio device
- *             emulations to achieve proper multiplexing from/to attached
- *             devices LUNs.
+ * Audio mixing routines for multiplexing audio sources in device emulations.
  *
  * This mixer acts as a layer between the audio connector interface and
- * the actual device emulation, providing mechanisms for audio sources (input) and
- * audio sinks (output).
+ * the actual device emulation, providing mechanisms for audio sources (input)
+ * and audio sinks (output).
  *
- * Think of this mixer as kind of a high(er) level interface for the audio connector
- * interface, abstracting common tasks such as creating and managing various audio
- * sources and sinks. This mixer class is purely optional and can be left out when
- * implementing a new device emulation, using only the audi connector interface
- * instead. For example, the SB16 emulation does not use this mixer and does all its
- * stream management on its own.
+ * Think of this mixer as kind of a high(er) level interface for the audio
+ * connector interface, abstracting common tasks such as creating and managing
+ * various audio sources and sinks. This mixer class is purely optional and can
+ * be left out when implementing a new device emulation, using only the audi
+ * connector interface instead.  For example, the SB16 emulation does not use
+ * this mixer and does all its stream management on its own.
  *
  * As audio driver instances are handled as LUNs on the device level, this
  * audio mixer then can take care of e.g. mixing various inputs/outputs to/from
@@ -39,6 +37,11 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_AUDIO_MIXER
 #include <VBox/log.h>
 #include "AudioMixer.h"
@@ -55,6 +58,10 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 static int audioMixerRemoveSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
 
 static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink);

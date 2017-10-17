@@ -84,5 +84,5 @@ private:
     IFACEMETHODIMP_(ULONG) AddRef();
     /** @} */
 };
-#endif /* ___VBOX_MMNOTIFICATIONCLIENT_H___ */
+#endif /* !___VBOX_MMNOTIFICATIONCLIENT_H___ */
 

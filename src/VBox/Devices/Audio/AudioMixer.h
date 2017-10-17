@@ -245,5 +245,5 @@ void AudioMixerStreamDestroy(PAUDMIXSTREAM pStream);
 bool AudioMixerStreamIsActive(PAUDMIXSTREAM pStream);
 bool AudioMixerStreamIsValid(PAUDMIXSTREAM pStream);
 
-#endif /* AUDIO_MIXER_H */
+#endif /* !AUDIO_MIXER_H */
 

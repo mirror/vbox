@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * Stubs for libasound.
  */
 
@@ -19,3 +19,4 @@
 # define AUDIO_ALSA_STUBS_H
 extern int audioLoadAlsaLib(void);
 #endif
+

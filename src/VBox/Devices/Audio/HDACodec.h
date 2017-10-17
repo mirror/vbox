@@ -141,5 +141,5 @@ int hdaCodecRemoveStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl);
 #define HDA_SSM_VERSION_2 2
 #define HDA_SSM_VERSION_1 1
 
-#endif /* DEV_HDA_CODEC_H */
+#endif /* !DEV_HDA_CODEC_H */
 

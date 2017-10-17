@@ -221,5 +221,5 @@ typedef struct HDACALLBACKCTX
 } HDACALLBACKCTX, *PHDACALLBACKCTX;
 #endif
 
-#endif /* DEV_HDA_H */
+#endif /* !DEV_HDA_H */
 

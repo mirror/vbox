@@ -1,8 +1,9 @@
 /* $Id$ */
 /** @file
- * Intermedia audio driver, common routines. These are also used
- * in the drivers which are bound to Main, e.g. the VRDE or the
- * video audio recording drivers.
+ * Intermedia audio driver, common routines.
+ *
+ * These are also used in the drivers which are bound to Main, e.g. the VRDE
+ * or the video audio recording drivers.
  */
 
 /*
@@ -16,6 +17,10 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <iprt/alloc.h>
 #include <iprt/asm-math.h>
 #include <iprt/assert.h>
@@ -38,7 +43,10 @@
 #include "DrvAudio.h"
 #include "AudioMixBuffer.h"
 
-#pragma pack(1)
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /**
  * Structure for building up a .WAV file header.
  */
@@ -60,7 +68,7 @@ typedef struct AUDIOWAVFILEHDR
     uint32_t u32ID2;
     uint32_t u32Size2;
 } AUDIOWAVFILEHDR, *PAUDIOWAVFILEHDR;
-#pragma pack()
+AssertCompileSize(AUDIOWAVFILEHDR, 11*4);
 
 /**
  * Structure for keeeping the internal .WAV file data
@@ -70,6 +78,9 @@ typedef struct AUDIOWAVFILEDATA
     /** The file header/footer. */
     AUDIOWAVFILEHDR Hdr;
 } AUDIOWAVFILEDATA, *PAUDIOWAVFILEDATA;
+
+
+
 
 /**
  * Retrieves the matching PDMAUDIOFMT for given bits + signing flag.

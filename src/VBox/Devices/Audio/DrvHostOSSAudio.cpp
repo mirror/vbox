@@ -13,8 +13,8 @@
  * Foundation, in version 2 as it comes in the "COPYING" file of the
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
- * --------------------------------------------------------------------
  */
+
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>

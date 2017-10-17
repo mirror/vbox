@@ -1,6 +1,7 @@
+/* $Id$ */
 /** @file
- * VaKit audio driver -- host backend for dumping and injecting audio data
- * from/to the device emulation.
+ * ValidationKit audio driver - host backend for dumping and injecting audio data
+ *                              from/to the device emulation.
  */
 
 /*
@@ -13,7 +14,6 @@
  * Foundation, in version 2 as it comes in the "COPYING" file of the
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
- * --------------------------------------------------------------------
  */
 
 #include <iprt/alloc.h>

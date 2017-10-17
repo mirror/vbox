@@ -1,7 +1,8 @@
+/* $Id$ */
 /** @file
+ * Mangle libpulse symbols.
  *
- * Mangle libpulse symbols. This is necessary on hosts which don't
- * support the -fvisibility gcc switch.
+ * This is necessary on hosts which don't support the -fvisibility gcc switch.
  */
 
 /*
@@ -85,3 +86,4 @@
 #define pa_usec_to_bytes                        PULSE_MANGLER(pa_usec_to_bytes)
 
 #endif /* !AUDIO_PULSE_MANGLING_H */
+

@@ -35,7 +35,7 @@
 # else
 #  define VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "/tmp/"
 # endif
-#endif /* VBOX_AUDIO_DEBUG_DUMP_PCM_DATA */
+#endif
 
 typedef enum
 {
@@ -194,5 +194,5 @@ int DrvAudioHlpWAVFileWrite(PPDMAUDIOFILE pFile, const void *pvBuf, size_t cbBuf
 
 #define AUDIO_MAKE_FOURCC(c0, c1, c2, c3) RT_H2LE_U32_C(RT_MAKE_U32_FROM_U8(c0, c1, c2, c3))
 
-#endif /* DRV_AUDIO_H */
+#endif /* !DRV_AUDIO_H */
 

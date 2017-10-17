@@ -1356,3 +1356,4 @@ void hdaStreamAsyncIOEnable(PHDASTREAM pStream, bool fEnable)
 # endif /* VBOX_WITH_AUDIO_HDA_ASYNC_IO */
 
 #endif /* IN_RING3 */
+

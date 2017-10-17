@@ -38,6 +38,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_SB16
 #include <VBox/log.h>
 #include <iprt/assert.h>
@@ -57,6 +62,10 @@
 #include "AudioMixer.h"
 #include "DrvAudio.h"
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /** Current saved state version. */
 #define SB16_SAVE_STATE_VERSION         2
 /** The version used in VirtualBox version 3.0 and earlier. This didn't include the config dump. */
@@ -70,8 +79,16 @@
     DECLCALLBACK(int) name (PPDMDEVINS pDevIns, void *opaque,       \
                             RTIOPORT nport, uint32_t val, unsigned cb)
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 static const char e3[] = "COPYRIGHT (C) CREATIVE TECHNOLOGY LTD, 1992.";
 
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /**
  * Structure defining a (host backend) driver stream.
  * Each driver has its own instances of audio mixer streams, which then
@@ -205,6 +222,10 @@ typedef struct SB16STATE
     uint8_t mixer_regs[256];
 } SB16STATE, *PSB16STATE;
 
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 static int sb16CreateDrvStream(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg, PSB16DRIVER pDrv);
 static void sb16DestroyDrvStream(PSB16STATE pThis, PSB16DRIVER pDrv);
 static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg);
@@ -213,6 +234,8 @@ static void sb16CloseOut(PSB16STATE pThis);
 static void sb16TimerMaybeStart(PSB16STATE pThis);
 static void sb16TimerMaybeStop(PSB16STATE pThis);
 #endif
+
+
 
 /**
  * Attach command, internal version.

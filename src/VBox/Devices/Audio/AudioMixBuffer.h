@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox audio - Mixing buffer to convert audio samples to/from different rates / formats.
+ * Audio Mixing bufer convert audio samples to/from different rates / formats.
  */
 
 /*

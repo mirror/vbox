@@ -4078,3 +4078,4 @@ const PDMDEVREG g_DeviceICHAC97 =
 
 #endif /* !IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
+

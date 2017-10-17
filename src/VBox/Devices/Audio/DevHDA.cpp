@@ -5293,3 +5293,4 @@ const PDMDEVREG g_DeviceHDA =
 
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
+

@@ -1,7 +1,8 @@
 /* $Id$ */
 /** @file
- * NULL audio driver -- also acts as a fallback if no
- * other backend is available.
+ * NULL audio driver.
+ *
+ * This also acts as a fallback if no other backend is available.
  */
 
 /*

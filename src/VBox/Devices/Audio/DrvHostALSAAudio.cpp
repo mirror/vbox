@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox audio devices: ALSA audio driver.
+ * ALSA audio driver.
  */
 
 /*

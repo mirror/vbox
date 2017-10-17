@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * Stubs for libpulse.
  */
 
@@ -19,3 +19,4 @@
 #define AUDIO_PULSE_STUBS_H
 extern int audioLoadPulseLib(void);
 #endif
+

@@ -1,7 +1,8 @@
+/* $Id$ */
 /** @file
+ * Mangle libasound symbols.
  *
- * Mangle libasound symbols. This is necessary on hosts which don't
- * support the -fvisibility gcc switch.
+ * This is necessary on hosts which don't support the -fvisibility gcc switch.
  */
 
 /*

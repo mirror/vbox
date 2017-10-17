@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox audio: Audio mixing buffer for converting reading/writing audio data.
+ * Audio mixing buffer for converting reading/writing audio data.
  */
 
 /*

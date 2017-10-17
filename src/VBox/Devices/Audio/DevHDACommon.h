@@ -602,5 +602,5 @@ bool          hdaBDLENeedsInterrupt(PHDABDLE pBDLE);
 #endif /* IN_RING3 */
 /** @} */
 
-#endif /* DEV_HDA_H_COMMON */
+#endif /* !DEV_HDA_H_COMMON */
 
