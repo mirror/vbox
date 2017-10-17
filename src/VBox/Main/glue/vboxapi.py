@@ -439,7 +439,7 @@ class PlatformMSCOM(PlatformBase):
 
         # Setup client impersonation in COM calls.
         try:
-            pythoncom.CoInitializeSecurity(None, 
+            pythoncom.CoInitializeSecurity(None,
                                            None,
                                            None,
                                            pythoncom.RPC_C_AUTHN_LEVEL_DEFAULT,
@@ -448,14 +448,16 @@ class PlatformMSCOM(PlatformBase):
                                            pythoncom.EOAC_NONE,
                                            None)
         except:
-            # handle RPC_E_TOO_LATE (repeat call of CoInitializeSecurity)
-            print("Warning: CoInitializeSecurity was already called")
+            _, oXcpt, _ = sys.exc_info();
+            if isinstance(oXcpt, pythoncom.com_error) and self.xcptGetStatus(oXcpt) == -2147417831: # RPC_E_TOO_LATE
+                print("Warning: CoInitializeSecurity was already called");
+            else:
+                print("Warning: CoInitializeSecurity failed: ", oXctp);
 
-        pid = GetCurrentProcess()
+        # Remember this thread ID and get its handle so we can wait on it in waitForEvents().
         self.tid = GetCurrentThreadId()
-        handle = DuplicateHandle(pid, GetCurrentThread(), pid, 0, 0, DUPLICATE_SAME_ACCESS)
-        self.handles = []
-        self.handles.append(handle)
+        pid = GetCurrentProcess()
+        self.handles = [DuplicateHandle(pid, GetCurrentThread(), pid, 0, 0, DUPLICATE_SAME_ACCESS),];
 
         # Hack the COM dispatcher base class so we can modify method and
         # attribute names to match those in xpcom.
@@ -602,8 +604,7 @@ class PlatformMSCOM(PlatformBase):
     def waitForEvents(self, timeout):
         from win32api import GetCurrentThreadId
         from win32event import INFINITE
-        from win32event import MsgWaitForMultipleObjects, \
-            QS_ALLINPUT, WAIT_TIMEOUT, WAIT_OBJECT_0
+        from win32event import MsgWaitForMultipleObjects, QS_ALLINPUT, WAIT_TIMEOUT, WAIT_OBJECT_0
         from pythoncom import PumpWaitingMessages
         import types
 
@@ -670,7 +671,6 @@ class PlatformMSCOM(PlatformBase):
         del self.oClient
         oClient = None
         pythoncom.CoUninitialize()
-        pass
 
     def queryInterface(self, oIUnknown, sClassName):
         from win32com.client import CastTo
