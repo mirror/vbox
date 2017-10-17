@@ -164,7 +164,7 @@ debian/modules-stamp: debian/build-stamp
 	        make -C $(builddir)/bin/src/vboxdrv KERN_VER=$$(basename $$d) clean \
 	        make -C $(builddir)/bin/src/vboxnetflt KERN_VER=$$(basename $$d) clean \
 	        make -C $(builddir)/bin/src/vboxnetadp KERN_VER=$$(basename $$d) clean \
-	        make -C $(builddir)/bin/src/vboxpci KERN_VER=$$(basename $$d) clean
+	        make -C $(builddir)/bin/src/vboxpci KERN_VER=$$(basename $$d) clean \
 	    fi; \
 	done
 	touch debian/modules-stamp
