@@ -1282,54 +1282,65 @@ class TestDriver(base.TestDriver):                                              
             self.oVBoxMgr = None;
             reporter.logXcpt('VirtualBoxManager exception');
             return False;
-        reporter.log("oVBoxMgr=%s" % (self.oVBoxMgr,)); # Temporary - debugging hang somewhere after 'sys.path' log line above.
 
         # Figure the API version.
         try:
             oVBox = self.oVBoxMgr.getVirtualBox();
-            reporter.log("oVBox=%s" % (oVBox,));        # Temporary - debugging hang somewhere after 'sys.path' log line above.
+
             try:
                 sVer = oVBox.version;
             except:
                 reporter.logXcpt('Failed to get VirtualBox version, assuming 4.0.0');
                 sVer = "4.0.0";
-            reporter.log("sVer=%s" % (sVer,));          # Temporary - debugging hang somewhere after 'sys.path' log line above.
-            if sVer.startswith("5.2"):
-                self.fpApiVer = 5.2;
-            elif sVer.startswith("5.1"):
-                self.fpApiVer = 5.1;
-            elif sVer.startswith("5.0") or (sVer.startswith("4.3.5") and len(sVer) == 6):
-                self.fpApiVer = 5.0;
-            elif sVer.startswith("4.3") or (sVer.startswith("4.2.5") and len(sVer) == 6):
-                self.fpApiVer = 4.3;
-            elif sVer.startswith("4.2."):
-                self.fpApiVer = 4.2; ## @todo Fudge: Add (proper) 4.2 API support. Unmount medium etc?
-            elif sVer.startswith("4.1.") or (sVer.startswith("4.0.5") and len(sVer) == 6):
-                self.fpApiVer = 4.1;
-            elif sVer.startswith("4.0."):
-                self.fpApiVer = 4.0;
-            elif sVer.startswith("3.2."):
-                self.fpApiVer = 3.2;
-            elif sVer.startswith("3.1."):
-                self.fpApiVer = 3.1;
-            elif sVer.startswith("3.0."):
-                self.fpApiVer = 3.0;
-            else:
-                raise base.GenError('Unknown version "%s"' % (sVer,));
+            reporter.log("IVirtualBox.version=%s" % (sVer,));
 
+            # Convert the string to three integer values and check ranges.
+            asVerComponents = sVer.split('.');
+            try:
+                sLast = asVerComponents[2].split('_')[0].split('r')[0];
+                aiVerComponents = (int(asVerComponents[0]), int(asVerComponents[1]), int(sLast));
+            except:
+                raise base.GenError('Malformed version "%s"' % (sVer,));
+            if aiVerComponents[0] < 3 or aiVerComponents[0] > 19:
+                raise base.GenError('Malformed version "%s" - 1st component is out of bounds 3..19: %u'
+                                    % (sVer, aiVerComponents[0]));
+            if aiVerComponents[1] < 0 or aiVerComponents[1] > 9:
+                raise base.GenError('Malformed version "%s" - 2nd component is out of bounds 0..9: %u'
+                                    % (sVer, aiVerComponents[1]));
+            if aiVerComponents[2] < 0 or aiVerComponents[2] > 99:
+                raise base.GenError('Malformed version "%s" - 3rd component is out of bounds 0..99: %u'
+                                    % (sVer, aiVerComponents[2]));
+
+            # Convert the three integers into a floating point value.  The API is table witin a
+            # x.y release, so the third component only indicates whether it's a stable or
+            # development build of the next release.
+            self.fpApiVer = aiVerComponents[0] + 0.1 * aiVerComponents[1];
+            if aiVerComponents[2] >= 51:
+                if self.fpApiVer not in [4.3, 3.2,]:
+                    self.fpApiVer += 0.1;
+                else:
+                    self.fpApiVer += 1.1;
+
+            # Patch VBox manage to gloss over portability issues (error constants, etc).
             self._patchVBoxMgr();
 
+            # Wrap oVBox.
             from testdriver.vboxwrappers import VirtualBoxWrapper;
             self.oVBox = VirtualBoxWrapper(oVBox, self.oVBoxMgr, self.fpApiVer, self);
+
+            # Install the constant wrapping hack.
             vboxcon.goHackModuleClass.oVBoxMgr  = self.oVBoxMgr; # VBoxConstantWrappingHack.
-            vboxcon.fpApiVer                    = self.fpApiVer
-            self.fImportedVBoxApi = True;
-            reporter.log('Found version %s (%s)' % (self.fpApiVer, sVer));
+            vboxcon.fpApiVer                    = self.fpApiVer;
+
         except:
             self.oVBoxMgr = None;
             self.oVBox    = None;
-            reporter.logXcpt("getVirtualBox exception");
+            reporter.logXcpt("getVirtualBox / API version exception");
             return False;
+
+        # Done
+        self.fImportedVBoxApi = True;
+        reporter.log('Found version %s (%s)' % (self.fpApiVer, sVer));
         return True;
 
     def _patchVBoxMgr(self):
