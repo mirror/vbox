@@ -399,14 +399,11 @@
       <listitem>
         <para><emphasis role="bold">Windows</emphasis> hosts:<footnote>
           <para>Support for 64-bit Windows was added with VirtualBox
-          1.5. Support for Windows XP was removed with VirtualBox 5.0.</para>
+          1.5. Support for Windows XP was removed with VirtualBox 5.0.
+          Support for Windows Vista was removed with VirtualBox 5.2.</para>
           </footnote>
 
           <itemizedlist>
-            <listitem>
-              <para>Windows Vista SP1 and later (32-bit and 64-bit)</para>
-            </listitem>
-
             <listitem>
               <para>Windows Server 2008 (64-bit)</para>
             </listitem>
@@ -439,6 +436,10 @@
               <para>Windows Server 2012 R2 (64-bit)</para>
             </listitem>
 
+            <listitem>
+              <para>Windows Server 2016 (64-bit)</para>
+            </listitem>
+
           </itemizedlist></para>
       </listitem>
 
@@ -446,16 +447,13 @@
         <para><emphasis role="bold">Mac OS X</emphasis> hosts (64-bit):<footnote>
             <para>Preliminary Mac OS X support (beta stage) was added with
             VirtualBox 1.4, full support with 1.6. Mac OS X 10.4 (Tiger)
-            support was removed with VirtualBox 3.1. Support for Mac OS X 10.7 (Lion)
-            and earlier was removed with VirtualBox 5.0. Support for Mac OS X 10.8
-            (Mountain Lion) was removed with VirtualBox 5.1.</para>
+            support was removed with VirtualBox 3.1. Support for Mac OS X 10.7
+            (Lion) and earlier was removed with VirtualBox 5.0. Support for Mac
+            OS X 10.8 (Mountain Lion) was removed with VirtualBox 5.1. Support
+            for Mac OS X 10.9 (Mavericks) was removed with VirtualBox 5.2.</para>
           </footnote></para>
 
         <itemizedlist>
-
-          <listitem>
-            <para>10.9 (Mavericks)</para>
-          </listitem>
 
           <listitem>
             <para>10.10 (Yosemite)</para>
@@ -467,6 +465,10 @@
 
           <listitem>
             <para>10.12 (Sierra)</para>
+          </listitem>
+
+          <listitem>
+            <para>10.13 (High Sierra)</para>
           </listitem>
 
         </itemizedlist>
@@ -482,11 +484,11 @@
             1.4.</para>
           </footnote>). Among others, this includes:<itemizedlist>
             <listitem>
-              <para>Ubuntu 12.04 to 16.10</para>
+              <para>Ubuntu 14.04 LTS, 16.04 LTS, and 17.04</para>
             </listitem>
 
             <listitem>
-              <para>Debian GNU/Linux 7 ("Wheezy") and 8 ("Jessie")</para>
+              <para>Debian GNU/Linux 7 ("Wheezy"), 8 ("Jessie") and 9 ("Stretch")</para>
             </listitem>
 
             <listitem>
@@ -498,7 +500,7 @@
             </listitem>
 
             <listitem>
-              <para>Fedora Core / Fedora 6 to 25</para>
+              <para>Fedora 25 and 26</para>
             </listitem>
 
             <listitem>
@@ -506,7 +508,7 @@
             </listitem>
 
             <listitem>
-              <para>openSUSE 11.4 to 13.2</para>
+              <para>openSUSE 13.2</para>
             </listitem>
 
           </itemizedlist></para>
