@@ -822,7 +822,7 @@ class TestDriver(base.TestDriver):                                              
         # Make sure all debug logs goes to the scratch area unless
         # specified otherwise (more of this later on).
         if 'VBOX_LOG_DEST' not in os.environ:
-            os.environ['VBOX_LOG_DEST'] = 'dir=%s' % (self.sScratchPath);
+            os.environ['VBOX_LOG_DEST'] = 'nodeny dir=%s' % (self.sScratchPath);
 
     def dump(self):
         """
@@ -1025,9 +1025,9 @@ class TestDriver(base.TestDriver):                                              
         os.environ['VBOX_LOG']       = self.sLogSvcGroups;
         os.environ['VBOX_LOG_FLAGS'] = '%s append' % (self.sLogSvcFlags,);  # Append becuse of VBoxXPCOMIPCD.
         if self.sLogSvcDest:
-            os.environ['VBOX_LOG_DEST'] = self.sLogSvcDest;
+            os.environ['VBOX_LOG_DEST'] = 'nodeny ' + self.sLogSvcDest;
         else:
-            os.environ['VBOX_LOG_DEST'] = 'file=%s' % (self.sVBoxSvcLogFile,);
+            os.environ['VBOX_LOG_DEST'] = 'nodeny file=%s' % (self.sVBoxSvcLogFile,);
         os.environ['VBOXSVC_RELEASE_LOG_FLAGS'] = 'time append';
 
         # Always leave a pid file behind so we can kill it during cleanup-before.
@@ -1245,9 +1245,9 @@ class TestDriver(base.TestDriver):                                              
         os.environ['VBOX_LOG']       = self.sLogSelfGroups;
         os.environ['VBOX_LOG_FLAGS'] = '%s append' % (self.sLogSelfFlags, );
         if self.sLogSelfDest:
-            os.environ['VBOX_LOG_DEST'] = self.sLogSelfDest;
+            os.environ['VBOX_LOG_DEST'] = 'nodeny ' + self.sLogSelfDest;
         else:
-            os.environ['VBOX_LOG_DEST'] = 'file=%s' % (self.sSelfLogFile,);
+            os.environ['VBOX_LOG_DEST'] = 'nodeny file=%s' % (self.sSelfLogFile,);
         os.environ['VBOX_RELEASE_LOG_FLAGS'] = 'time append';
 
         # Hack the sys.path + environment so the vboxapi can be found.
@@ -2486,7 +2486,7 @@ class TestDriver(base.TestDriver):                                              
             sLogDest = self.sLogSessionDest;
         else:
             sLogDest = 'file=%s' % sLogFile;
-        sEnv = 'VBOX_LOG=%s\nVBOX_LOG_FLAGS=%s\nVBOX_LOG_DEST=%s\nVBOX_RELEASE_LOG_FLAGS=append time' \
+        sEnv = 'VBOX_LOG=%s\nVBOX_LOG_FLAGS=%s\nVBOX_LOG_DEST=nodeny %s\nVBOX_RELEASE_LOG_FLAGS=append time' \
              % (self.sLogSessionGroups, self.sLogSessionFlags, sLogDest,);
         # Extra audio logging
         sEnv += '\nVBOX_RELEASE_LOG=drv_audio.e.l.l2+drv_host_audio.e.l.l2'
