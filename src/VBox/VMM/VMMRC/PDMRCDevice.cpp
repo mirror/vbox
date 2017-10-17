@@ -83,6 +83,7 @@ static DECLCALLBACK(int) pdmRCDevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV 
     {
         Log(("pdmRCDevHlp_PCIPhysRead: caller=%p/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbRead=%#zx\n",
              pDevIns, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbRead));
+        memset(pvBuf, 0xff, cbRead);
         return VERR_PDM_NOT_PCI_BUS_MASTER;
     }
 #endif
