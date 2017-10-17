@@ -148,7 +148,6 @@ modules: debian/build-stamp debian/modules-stamp
 debian/modules-stamp: debian/build-stamp
 	rm -rf $(moddir)
 	mkdir $(moddir)
-	make -C $(builddir)/bin/src/vboxdrv clean
 	for d in $(wildcard /lib/modules/*); do \
 	    if [ -L $$d/build ]; then \
 	        make -C $(builddir)/bin/src/vboxdrv KERN_VER=$$(basename $$d) clean && \
@@ -162,12 +161,12 @@ debian/modules-stamp: debian/build-stamp
 	        make -C $(builddir)/bin/src/vboxpci KERN_VER=$$(basename $$d) clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxpci || true) && \
 	        make -j4 -C $(builddir)/bin/src/vboxpci KBUILD_VERBOSE= KERN_VER=$$(basename $$d) all; \
+	        make -C $(builddir)/bin/src/vboxdrv KERN_VER=$$(basename $$d) clean \
+	        make -C $(builddir)/bin/src/vboxnetflt KERN_VER=$$(basename $$d) clean \
+	        make -C $(builddir)/bin/src/vboxnetadp KERN_VER=$$(basename $$d) clean \
+	        make -C $(builddir)/bin/src/vboxpci KERN_VER=$$(basename $$d) clean
 	    fi; \
 	done
-	make -C $(builddir)/bin/src/vboxdrv clean
-	make -C $(builddir)/bin/src/vboxnetflt clean
-	make -C $(builddir)/bin/src/vboxnetadp clean
-	make -C $(builddir)/bin/src/vboxpci clean
 	touch debian/modules-stamp
 
 clean:
