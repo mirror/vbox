@@ -3308,6 +3308,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                      pCursor->id, pCursor->width, pCursor->height, pCursor->hotspotX, pCursor->hotspotY,
                      pCursor->andMaskDepth, pCursor->xorMaskDepth));
                 AssertBreak(pCursor->height < 2048 && pCursor->width < 2048);
+                AssertBreak(pCursor->andMaskDepth <= 32);
+                AssertBreak(pCursor->xorMaskDepth <= 32);
 
                 uint32_t cbAndLine = RT_ALIGN_32(pCursor->width * (pCursor->andMaskDepth + (pCursor->andMaskDepth == 15)), 32) / 8;
                 uint32_t cbAndMask = cbAndLine * pCursor->height;
@@ -3682,6 +3684,15 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     width = pThis->svga.uWidth;
                 if (height > pThis->svga.uHeight)
                     height = pThis->svga.uHeight;
+
+                /* srcOrigin */
+                AssertBreak(pSVGAState->GMRFB.bytesPerLine != 0);
+                AssertBreak(pSVGAState->GMRFB.format.s.bitsPerPixel != 0);
+
+                const uint32_t cScanlines = pThis->vram_size / pSVGAState->GMRFB.bytesPerLine;
+                AssertBreak(pCmd->srcOrigin.y < (int32_t)cScanlines);
+
+                AssertBreak(pCmd->srcOrigin.x < (int32_t)(pSVGAState->GMRFB.bytesPerLine / ((pSVGAState->GMRFB.format.s.bitsPerPixel + 7) / 8)));
 
                 unsigned offsetSource = (pCmd->srcOrigin.x * pSVGAState->GMRFB.format.s.bitsPerPixel) / 8 + pSVGAState->GMRFB.bytesPerLine * pCmd->srcOrigin.y;
                 unsigned offsetDest   = (pCmd->destRect.left * RT_ALIGN(pThis->svga.uBpp, 8)) / 8 + pThis->svga.cbScanline * pCmd->destRect.top;
@@ -4243,19 +4254,64 @@ int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
          src.gmrId, src.offset, cbDestPitch, cbWidth, cHeight, offSrc, cbSrcPitch));
     Assert(cbWidth && cHeight);
 
+    const uint32_t cbGmrScanline = cbSrcPitch > 0 ? cbSrcPitch : -cbSrcPitch;
+
+    uint32_t cbGmrTotal; /* The GMR size in bytes. */
+    if (src.gmrId == SVGA_GMR_FRAMEBUFFER)
+    {
+        pGMR = NULL;
+        cbGmrTotal = pThis->vram_size;
+    }
+    else
+    {
+        AssertReturn(src.gmrId < VMSVGA_MAX_GMR_IDS, VERR_INVALID_PARAMETER);
+        pGMR = &pSVGAState->aGMR[src.gmrId];
+        cbGmrTotal = pGMR->cbTotal;
+    }
+
+    /* Check GMR parameters */
+    AssertMsgReturn(src.offset < cbGmrTotal,
+                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
+                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, cbGmrTotal),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(offSrc < cbGmrTotal - src.offset,
+                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
+                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, cbGmrTotal),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cbGmrScanline != 0,
+                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
+                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, cbGmrTotal),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cbWidth <= cbGmrScanline,
+                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
+                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, cbGmrTotal),
+                    VERR_INVALID_PARAMETER);
+
+    offSrc += src.offset; /* Actual offset in the GMR, where the first scanline will be copied. */
+
+    AssertMsgReturn(cbWidth <= cbGmrTotal - offSrc,
+                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
+                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, cbGmrTotal),
+                    VERR_INVALID_PARAMETER);
+
+    uint32_t cbGmrLeft = cbSrcPitch > 0 ? cbGmrTotal - offSrc : offSrc + cbWidth;
+
+    uint32_t cGmrScanlines = cbGmrLeft / cbGmrScanline;
+    uint32_t cbLastScanline = cbGmrLeft - cGmrScanlines * cbGmrScanline; /* Slack space. */
+    if (cbWidth <= cbLastScanline)
+        ++cGmrScanlines;
+
+    if (cHeight > cGmrScanlines)
+        cHeight = cGmrScanlines;
+
+    AssertMsgReturn(cHeight > 0,
+                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
+                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, cbGmrTotal),
+                    VERR_INVALID_PARAMETER);
+
     /* Shortcut for the framebuffer. */
     if (src.gmrId == SVGA_GMR_FRAMEBUFFER)
     {
-        offSrc += src.offset;
-        AssertMsgReturn(src.offset < pThis->vram_size,
-                        ("src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x vram_size=%#x\n",
-                         src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, pThis->vram_size),
-                        VERR_INVALID_PARAMETER);
-        AssertMsgReturn(offSrc + cbSrcPitch * (cHeight - 1) + cbWidth <= pThis->vram_size,
-                        ("src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x vram_size=%#x\n",
-                         src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, pThis->vram_size),
-                        VERR_INVALID_PARAMETER);
-
         uint8_t *pSrc  = pThis->CTX_SUFF(vram_ptr) + offSrc;
 
         if (enmTransferType == SVGA3D_READ_HOST_VRAM)
@@ -4290,19 +4346,8 @@ int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
         return VINF_SUCCESS;
     }
 
-    AssertReturn(src.gmrId < VMSVGA_MAX_GMR_IDS, VERR_INVALID_PARAMETER);
-    pGMR   = &pSVGAState->aGMR[src.gmrId];
-    pDesc  = pGMR->paDesc;
-
-    offSrc += src.offset;
-    AssertMsgReturn(src.offset < pGMR->cbTotal,
-                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbTotal=%#x\n",
-                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, pGMR->cbTotal),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn(offSrc + cbSrcPitch * (cHeight - 1) + cbWidth <= pGMR->cbTotal,
-                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbTotal=%#x\n",
-                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, pGMR->cbTotal),
-                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pGMR, VERR_INVALID_PARAMETER);
+    pDesc = pGMR->paDesc;
 
     for (uint32_t i = 0; i < cHeight; i++)
     {
