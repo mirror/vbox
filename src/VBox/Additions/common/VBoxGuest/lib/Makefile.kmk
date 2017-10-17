@@ -210,11 +210,9 @@ VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3LibVideo.cpp \
 	VBoxGuestR3LibRuntimeXF86.cpp
 VBoxGuestR3LibXFree86_INCS     = \
-        $(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/common/ \
-        $(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/os-support \
-        $(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/include \
-        $(VBOX_PATH_X11_XFREE_4_3)/include \
-        $(VBOX_PATH_X11_XFREE_4_3)/exports/include/X11
+        $(VBOX_PATH_X11_ROOT)/XFree86-4.3/Xserver \
+        $(VBOX_PATH_X11_ROOT)/XFree86-4.3 \
+        $(VBOX_PATH_X11_ROOT)/XFree86-4.3/X11
 
 #
 # VBoxGuestR3LibXOrg - a reduced version of the guest library which uses

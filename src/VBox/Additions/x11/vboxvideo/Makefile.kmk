@@ -96,35 +96,11 @@ vboxvideo_drv_DEFS = \
 	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
 	IN_MODULE XFree86Module IN_XF86_MODULE IN_RT_STATIC
 vboxvideo_drv_INCS = \
-	$(VBOX_PATH_X11_XFREE_4_3)/include \
-	$(VBOX_PATH_X11_XFREE_4_3)/include/X11 \
-	$(VBOX_PATH_X11_XFREE_4_3)/include/X11/extensions \
-	$(VBOX_PATH_X11_XFREE_4_3)/include/extensions \
-	$(VBOX_PATH_X11_XFREE_4_3)/include/fonts \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/afb \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/include \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/fb \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86 \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/common \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/ddc \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/int10 \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/i2c \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/os-support \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/vbe \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/os-support/bus \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/rac \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/ramdac \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/shadowfb \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/vgahw \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/xf1bpp \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/xf24_32bpp \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/xf4bpp \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/mfb \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/mi \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/miext/shadow \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/render \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/randr \
-	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/Xext
+	$(VBOX_PATH_X11_ROOT)/XFree86-4.3 \
+	$(VBOX_PATH_X11_ROOT)/XFree86-4.3/X11 \
+	$(VBOX_PATH_X11_ROOT)/XFree86-4.3/X11/extensions \
+	$(VBOX_PATH_X11_ROOT)/XFree86-4.3/X11/fonts \
+	$(VBOX_PATH_X11_ROOT)/XFree86-4.3/Xserver
 vboxvideo_drv_INCS += \
 	$(PATH_ROOT)/src/VBox/Runtime/include \
 	$(VBOX_GRAPHICS_INCS)
