@@ -33,13 +33,12 @@
 class QAbstractButton;
 class QComboBox;
 class QLabel;
-class QLineEdit;
 class QStackedLayout;
 class QTextEdit;
 class QWidget;
 class QILabel;
 class QITabWidget;
-class QIToolButton;
+class UIFilePathSelector;
 class UIMediumSizeEditor;
 
 
@@ -207,8 +206,6 @@ private slots:
         void sltTypeIndexChanged(int iIndex);
         /** Handles location change. */
         void sltLocationPathChanged(const QString &strPath);
-        /** Handles request to choose location. */
-        void sltChooseLocationPath();
         /** Handles description text change. */
         void sltDescriptionTextChanged();
         /** Handles size editor change. */
@@ -288,13 +285,11 @@ private:
         QLabel    *m_pErrorPaneType;
 
         /** Holds the location label. */
-        QLabel       *m_pLabelLocation;
-        /** Holds the location editor. */
-        QLineEdit    *m_pEditorLocation;
-        /** Holds the location button. */
-        QIToolButton *m_pButtonLocation;
+        QLabel             *m_pLabelLocation;
+        /** Holds the location selector. */
+        UIFilePathSelector *m_pSelectorLocation;
         /** Holds the location error pane. */
-        QLabel       *m_pErrorPaneLocation;
+        QLabel             *m_pErrorPaneLocation;
 
         /** Holds the description label. */
         QLabel    *m_pLabelDescription;
