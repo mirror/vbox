@@ -57,7 +57,7 @@ class UIMediumManagerWidget : public QIWithRetranslateUI<QWidget>
     Q_OBJECT;
 
     /** Item action types. */
-    enum Action { Action_Add, Action_Edit, Action_Copy, Action_Modify, Action_Remove, Action_Release };
+    enum Action { Action_Add, Action_Edit, Action_Copy, Action_Remove, Action_Release };
 
 signals:
 
@@ -126,6 +126,8 @@ private slots:
       * @{ */
         /** Handles command to copy medium. */
         void sltCopyMedium();
+        /** Handles command to move medium. */
+        void sltMoveMedium();
         /** Handles command to remove medium. */
         void sltRemoveMedium();
         /** Handles command to release medium. */
@@ -309,6 +311,8 @@ private:
         QMenu     *m_pMenu;
         /** Holds the Copy action instance. */
         QAction   *m_pActionCopy;
+        /** Holds the Move action instance. */
+        QAction   *m_pActionMove;
         /** Holds the Remove action instance. */
         QAction   *m_pActionRemove;
         /** Holds the Release action instance. */

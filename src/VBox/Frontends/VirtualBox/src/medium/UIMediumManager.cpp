@@ -34,6 +34,7 @@
 # include "UIMediumManager.h"
 # include "UIWizardCloneVD.h"
 # include "UIMessageCenter.h"
+# include "QIFileDialog.h"
 # include "QITabWidget.h"
 # include "QITreeWidget.h"
 # include "QILabel.h"
@@ -72,6 +73,8 @@ public:
 
     /** Copies UIMedium wrapped by <i>this</i> item. */
     virtual bool copy() = 0;
+    /** Moves UIMedium wrapped by <i>this</i> item. */
+    virtual bool move();
     /** Removes UIMedium wrapped by <i>this</i> item. */
     virtual bool remove() = 0;
     /** Releases UIMedium wrapped by <i>this</i> item. */
@@ -315,6 +318,61 @@ UIMediumItem::UIMediumItem(const UIMedium &guiMedium, UIMediumItem *pParent)
     , m_guiMedium(guiMedium)
 {
     refresh();
+}
+
+bool UIMediumItem::move()
+{
+    /* Open file-save dialog to choose location for current medium: */
+    const QString strFileName = QIFileDialog::getSaveFileName(location(),
+                                                              UIMediumManager::tr("Current extension (*.%1)")
+                                                                 .arg(QFileInfo(location()).suffix()),
+                                                              treeWidget(),
+                                                              UIMediumManager::tr("Choose the location of this medium"),
+                                                              0, true, true);
+    /* Negative if nothing changed: */
+    if (strFileName.isNull())
+        return false;
+
+    /* Search for corresponding medium: */
+    CMedium comMedium = medium().medium();
+
+    /* Try to assign new medium location: */
+    if (   comMedium.isOk()
+        && strFileName != location())
+    {
+        /* Prepare move storage progress: */
+        CProgress comProgress = comMedium.SetLocation(strFileName);
+
+        /* Show error message if necessary: */
+        if (!comMedium.isOk())
+        {
+            msgCenter().cannotMoveMediumStorage(comMedium, location(),
+                                                strFileName, treeWidget());
+            /* Negative if failed: */
+            return false;
+        }
+        else
+        {
+            /* Show move storage progress: */
+            msgCenter().showModalProgressDialog(comProgress, UIMediumManager::tr("Moving medium..."),
+                                                ":/progress_media_move_90px.png", treeWidget());
+
+            /* Show error message if necessary: */
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            {
+                msgCenter().cannotMoveMediumStorage(comProgress, location(),
+                                                    strFileName, treeWidget());
+                /* Negative if failed: */
+                return false;
+            }
+        }
+    }
+
+    /* Recache item: */
+    refreshAll();
+
+    /* Positive: */
+    return true;
 }
 
 bool UIMediumItem::release()
@@ -779,7 +837,7 @@ UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, QWidget *pPar
     , m_pToolBar(0)
     , m_pContextMenu(0)
     , m_pMenu(0)
-    , m_pActionCopy(0), m_pActionRemove(0)
+    , m_pActionCopy(0), m_pActionMove(0), m_pActionRemove(0)
     , m_pActionRelease(0), m_pActionDetails(0)
     , m_pActionRefresh(0)
     , m_pProgressBar(0)
@@ -800,6 +858,12 @@ void UIMediumManagerWidget::retranslateUi()
         m_pActionCopy->setText(UIMediumManager::tr("&Copy..."));
         m_pActionCopy->setToolTip(UIMediumManager::tr("Copy Disk Image File (%1)").arg(m_pActionCopy->shortcut().toString()));
         m_pActionCopy->setStatusTip(UIMediumManager::tr("Copy selected disk image file"));
+    }
+    if (m_pActionMove)
+    {
+        m_pActionMove->setText(UIMediumManager::tr("&Move..."));
+        m_pActionMove->setToolTip(UIMediumManager::tr("Move Disk Image File (%1)").arg(m_pActionMove->shortcut().toString()));
+        m_pActionMove->setStatusTip(UIMediumManager::tr("Move selected disk image file"));
     }
     if (m_pActionRemove)
     {
@@ -1130,6 +1194,20 @@ void UIMediumManagerWidget::sltCopyMedium()
     pMediumItem->copy();
 }
 
+void UIMediumManagerWidget::sltMoveMedium()
+{
+    /* Get current medium-item: */
+    UIMediumItem *pMediumItem = currentMediumItem();
+    AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
+    AssertReturnVoid(!pMediumItem->id().isNull());
+
+    /* Copy current medium-item: */
+    pMediumItem->move();
+
+    /* Push the current item data into details-widget: */
+    sltHandleCurrentTabChanged();
+}
+
 void UIMediumManagerWidget::sltRemoveMedium()
 {
     /* Get current medium-item: */
@@ -1313,6 +1391,15 @@ void UIMediumManagerWidget::prepareActions()
         connect(m_pActionCopy, &QAction::triggered, this, &UIMediumManagerWidget::sltCopyMedium);
     }
 
+    /* Create 'Move' action: */
+    m_pActionMove = new QAction(this);
+    AssertPtrReturnVoid(m_pActionMove);
+    {
+        /* Configure move-action: */
+        m_pActionMove->setShortcut(QKeySequence("Ctrl+M"));
+        connect(m_pActionMove, &QAction::triggered, this, &UIMediumManagerWidget::sltMoveMedium);
+    }
+
     /* Create 'Remove' action: */
     m_pActionRemove  = new QAction(this);
     AssertPtrReturnVoid(m_pActionRemove);
@@ -1368,9 +1455,11 @@ void UIMediumManagerWidget::prepareMenu()
         /* Configure 'Medium' menu: */
         if (m_pActionCopy)
             m_pMenu->addAction(m_pActionCopy);
+        if (m_pActionMove)
+            m_pMenu->addAction(m_pActionMove);
         if (m_pActionRemove)
             m_pMenu->addAction(m_pActionRemove);
-        if (   (m_pActionCopy || m_pActionRemove)
+        if (   (m_pActionCopy || m_pActionMove || m_pActionRemove)
             && (m_pActionRelease || m_pActionDetails))
             m_pMenu->addSeparator();
         if (m_pActionRelease)
@@ -1394,9 +1483,11 @@ void UIMediumManagerWidget::prepareContextMenu()
         /* Configure contex-menu: */
         if (m_pActionCopy)
             m_pContextMenu->addAction(m_pActionCopy);
+        if (m_pActionMove)
+            m_pContextMenu->addAction(m_pActionMove);
         if (m_pActionRemove)
             m_pContextMenu->addAction(m_pActionRemove);
-        if (   (m_pActionCopy || m_pActionRemove)
+        if (   (m_pActionCopy || m_pActionMove || m_pActionRemove)
             && (m_pActionRelease || m_pActionDetails))
             m_pContextMenu->addSeparator();
         if (m_pActionRelease)
@@ -1442,9 +1533,11 @@ void UIMediumManagerWidget::prepareToolBar()
         /* Add toolbar actions: */
         if (m_pActionCopy)
             m_pToolBar->addAction(m_pActionCopy);
+        if (m_pActionMove)
+            m_pToolBar->addAction(m_pActionMove);
         if (m_pActionRemove)
             m_pToolBar->addAction(m_pActionRemove);
-        if (   (m_pActionCopy || m_pActionRemove)
+        if (   (m_pActionCopy || m_pActionMove || m_pActionRemove)
             && (m_pActionRelease || m_pActionDetails))
             m_pToolBar->addSeparator();
         if (m_pActionRelease)
@@ -1697,6 +1790,11 @@ void UIMediumManagerWidget::updateActions()
                                   fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Copy);
         m_pActionCopy->setEnabled(fActionEnabledCopy);
     }
+    if (m_pActionMove)
+    {
+        bool fActionEnabledMove = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Edit);
+        m_pActionMove->setEnabled(fActionEnabledMove);
+    }
     if (m_pActionRemove)
     {
         bool fActionEnabledRemove = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Remove);
@@ -1732,6 +1830,11 @@ void UIMediumManagerWidget::updateActionIcons()
                                                        QString(":/%1_copy_16px.png").arg(strPrefix),
                                                        QString(":/%1_copy_disabled_22px.png").arg(strPrefix),
                                                        QString(":/%1_copy_disabled_16px.png").arg(strPrefix)));
+    if (m_pActionMove)
+        m_pActionMove->setIcon(UIIconPool::iconSetFull(QString(":/%1_move_22px.png").arg(strPrefix),
+                                                       QString(":/%1_move_16px.png").arg(strPrefix),
+                                                       QString(":/%1_move_disabled_22px.png").arg(strPrefix),
+                                                       QString(":/%1_move_disabled_16px.png").arg(strPrefix)));
     if (m_pActionRemove)
         m_pActionRemove->setIcon(UIIconPool::iconSetFull(QString(":/%1_remove_22px.png").arg(strPrefix),
                                                          QString(":/%1_remove_16px.png").arg(strPrefix),
@@ -1836,7 +1939,8 @@ void UIMediumManagerWidget::updateTabIcons(UIMediumItem *pMediumItem, Action act
             break;
         }
 
-        case Action_Copy: case Action_Modify: case Action_Release: break; /* Shut up MSC */
+        default:
+            break;
     }
 }
 
@@ -2213,11 +2317,6 @@ bool UIMediumManagerWidget::checkMediumFor(UIMediumItem *pItem, Action action)
             /* False for children: */
             return pItem->medium().parentID() == UIMedium::nullID();
         }
-        case Action_Modify:
-        {
-            /* False for children: */
-            return pItem->medium().parentID() == UIMedium::nullID();
-        }
         case Action_Remove:
         {
             /* Removable if not attached to anything: */
@@ -2229,7 +2328,8 @@ bool UIMediumManagerWidget::checkMediumFor(UIMediumItem *pItem, Action action)
             return pItem->isUsed() && !pItem->isUsedInSnapshots();
         }
 
-        case Action_Add: break; /* Shut up MSC */
+        default:
+            break;
     }
 
     AssertFailedReturn(false);
