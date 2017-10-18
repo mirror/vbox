@@ -25,16 +25,18 @@
 # include <QPushButton>
 # include <QSlider>
 # include <QStackedLayout>
+# include <QStyle>
 # include <QTextEdit>
 # include <QVBoxLayout>
 
 /* GUI includes: */
 # include "QIDialogButtonBox.h"
+# include "QIFileDialog.h"
 # include "QILabel.h"
 # include "QILineEdit.h"
 # include "QITabWidget.h"
+# include "QIToolButton.h"
 # include "UIConverter.h"
-# include "UIFilePathSelector.h"
 # include "UIIconPool.h"
 # include "UIMediumDetailsWidget.h"
 # include "UIMediumSizeEditor.h"
@@ -53,7 +55,7 @@ UIMediumDetailsWidget::UIMediumDetailsWidget(EmbedTo enmEmbedding, QWidget *pPar
     , m_newData(UIDataMedium())
     , m_pTabWidget(0)
     , m_pLabelType(0), m_pComboBoxType(0), m_pErrorPaneType(0)
-    , m_pLabelLocation(0), m_pSelectorLocation(0), m_pErrorPaneLocation(0)
+    , m_pLabelLocation(0), m_pEditorLocation(0), m_pButtonLocation(0), m_pErrorPaneLocation(0)
     , m_pLabelDescription(0), m_pEditorDescription(0), m_pErrorPaneDescription(0)
     , m_pLabelSize(0), m_pEditorSize(0), m_pErrorPaneSize(0)
     , m_pButtonBox(0)
@@ -101,7 +103,8 @@ void UIMediumDetailsWidget::retranslateUi()
     m_pComboBoxType->setToolTip(tr("Holds the type of this medium."));
     for (int i = 0; i < m_pComboBoxType->count(); ++i)
         m_pComboBoxType->setItemText(i, gpConverter->toString(m_pComboBoxType->itemData(i).value<KMediumType>()));
-    m_pSelectorLocation->setToolTip(tr("Holds the location of this medium."));
+    m_pEditorLocation->setToolTip(tr("Holds the location of this medium."));
+    m_pButtonLocation->setToolTip(tr("Choose Medium Location"));
     m_pEditorDescription->setToolTip(tr("Holds the description of this medium."));
     m_pEditorSize->setToolTip(tr("Holds the size of this medium."));
 
@@ -138,6 +141,19 @@ void UIMediumDetailsWidget::sltLocationPathChanged(const QString &strPath)
     m_newData.m_options.m_strLocation = strPath;
     revalidate(m_pErrorPaneLocation);
     updateButtonStates();
+}
+
+void UIMediumDetailsWidget::sltChooseLocationPath()
+{
+    /* Open file-save dialog to choose location for current medium: */
+    const QString strFileName = QIFileDialog::getSaveFileName(m_pEditorLocation->text(),
+                                                              QApplication::translate("UIMediumManager", "Current extension (*.%1)")
+                                                                 .arg(QFileInfo(m_oldData.m_options.m_strLocation).suffix()),
+                                                              this,
+                                                              QApplication::translate("UIMediumManager", "Choose the location of this medium"),
+                                                              0, true, true);
+    if (!strFileName.isNull())
+        m_pEditorLocation->setText(QDir::toNativeSeparators(strFileName));
 }
 
 void UIMediumDetailsWidget::sltDescriptionTextChanged()
@@ -307,19 +323,33 @@ void UIMediumDetailsWidget::prepareTabOptions()
                 pLayoutLocation->setContentsMargins(0, 0, 0, 0);
 
                 /* Create location editor: */
-                m_pSelectorLocation = new UIFilePathSelector;
-                AssertPtrReturnVoid(m_pSelectorLocation);
+                m_pEditorLocation = new QLineEdit;
+                AssertPtrReturnVoid(m_pEditorLocation);
                 {
                     /* Configure editor: */
-                    m_pLabelLocation->setBuddy(m_pSelectorLocation);
-                    m_pSelectorLocation->setResetEnabled(false);
-                    m_pSelectorLocation->setMode(UIFilePathSelector::Mode_File_Save);
-                    m_pSelectorLocation->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-                    connect(m_pSelectorLocation, &UIFilePathSelector::pathChanged,
+                    m_pLabelLocation->setBuddy(m_pEditorLocation);
+                    m_pEditorLocation->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+                    connect(m_pEditorLocation, &QLineEdit::textChanged,
                             this, &UIMediumDetailsWidget::sltLocationPathChanged);
 
                     /* Add into layout: */
-                    pLayoutLocation->addWidget(m_pSelectorLocation);
+                    pLayoutLocation->addWidget(m_pEditorLocation);
+                }
+
+                /* Create location button: */
+                m_pButtonLocation = new QIToolButton;
+                AssertPtrReturnVoid(m_pButtonLocation);
+                {
+                    /* Configure editor: */
+                    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+                    m_pButtonLocation->setIconSize(QSize(iIconMetric, iIconMetric));
+                    m_pButtonLocation->setIcon(UIIconPool::iconSet(":/select_file_16px.png"));
+                    m_pButtonLocation->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+                    connect(m_pButtonLocation, &QIToolButton::clicked,
+                            this, &UIMediumDetailsWidget::sltChooseLocationPath);
+
+                    /* Add into layout: */
+                    pLayoutLocation->addWidget(m_pButtonLocation);
                 }
 
                 /* Create location error pane: */
@@ -600,9 +630,8 @@ void UIMediumDetailsWidget::loadDataForOptions()
 
     /* Load location: */
     m_pLabelLocation->setEnabled(m_newData.m_fValid);
-    m_pSelectorLocation->setEnabled(m_newData.m_fValid);
-    m_pSelectorLocation->setPath(m_newData.m_options.m_strLocation);
-    sltLocationPathChanged(m_pSelectorLocation->path());
+    m_pEditorLocation->setEnabled(m_newData.m_fValid);
+    m_pEditorLocation->setText(m_newData.m_options.m_strLocation);
 
     /* Load description: */
     m_pLabelDescription->setEnabled(m_newData.m_fValid);
@@ -653,7 +682,7 @@ void UIMediumDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
     if (!pWidget || pWidget == m_pErrorPaneLocation)
     {
         /* Always valid for now: */
-        const bool fError = false;
+        const bool fError = m_newData.m_options.m_strLocation.isEmpty();
         m_pErrorPaneLocation->setVisible(fError);
         if (fError)
             m_fValid = false;
@@ -685,9 +714,8 @@ void UIMediumDetailsWidget::retranslateValidation(QWidget *pWidget /* = 0 */)
 //    if (!pWidget || pWidget == m_pErrorPaneType)
 //        m_pErrorPaneType->setToolTip(tr("Cannot change from type <b>%1</b> to <b>%2</b>.")
 //                                     .arg(m_oldData.m_options.m_enmType).arg(m_newData.m_options.m_enmType));
-//    if (!pWidget || pWidget == m_pErrorPaneLocation)
-//        m_pErrorPaneLocation->setToolTip(tr("Cannot change medium location from <b>%1</b> to <b>%2</b>.")
-//                                         .arg(m_oldData.m_options.m_strLocation).arg(m_newData.m_options.m_strLocation));
+    if (!pWidget || pWidget == m_pErrorPaneLocation)
+        m_pErrorPaneLocation->setToolTip(tr("Location can not be empty."));
 //    if (!pWidget || pWidget == m_pErrorPaneDescription)
 //        m_pErrorPaneDescription->setToolTip(tr("Cannot change medium description from <b>%1</b> to <b>%2</b>.")
 //                                               .arg(m_oldData.m_options.m_strDescription).arg(m_newData.m_options.m_strDescription));
