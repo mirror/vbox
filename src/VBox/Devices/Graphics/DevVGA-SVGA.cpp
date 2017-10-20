@@ -208,7 +208,7 @@ typedef struct
  */
 typedef struct VMSVGAR3STATE
 {
-    GMR                     aGMR[VMSVGA_MAX_GMR_IDS];
+    GMR                    *paGMR; // [VMSVGAState::cGMR]
     struct
     {
         SVGAGuestPtr        ptr;
@@ -360,7 +360,7 @@ static SSMFIELD const g_aGMRFields[] =
  */
 static SSMFIELD const g_aVMSVGAR3STATEFields[] =
 {
-    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, aGMR),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, paGMR),
     SSMFIELD_ENTRY(             VMSVGAR3STATE, GMRFB),
     SSMFIELD_ENTRY(             VMSVGAR3STATE, Cursor.fActive),
     SSMFIELD_ENTRY(             VMSVGAR3STATE, Cursor.xHotspot),
@@ -493,6 +493,7 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
     SSMFIELD_ENTRY(                 VMSVGAState, fVRAMTracking),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, u8FIFOExtCommand),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, fFifoExtCommandWakeup),
+    SSMFIELD_ENTRY_IGNORE(          VMSVGAState, cGMR),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -1083,7 +1084,7 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
 
     case SVGA_REG_GMR_MAX_IDS:
         STAM_REL_COUNTER_INC(&pThis->svga.StatRegGmrMaxIdsRd);
-        *pu32 = VMSVGA_MAX_GMR_IDS;
+        *pu32 = pThis->svga.cGMR;
         break;
 
     case SVGA_REG_GMR_MAX_DESCRIPTOR_LENGTH:
@@ -1581,7 +1582,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
 
         /* Validate current GMR id. */
         uint32_t idGMR = pThis->svga.u32CurrentGMRId;
-        AssertBreak(idGMR < VMSVGA_MAX_GMR_IDS);
+        AssertBreak(idGMR < pThis->svga.cGMR);
 
         /* Free the old GMR if present. */
         vmsvgaGMRFree(pThis, idGMR);
@@ -1641,13 +1642,13 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         if (RT_SUCCESS(rc))
         {
             /* Commit the GMR. */
-            pSVGAState->aGMR[idGMR].paDesc         = paDescs;
-            pSVGAState->aGMR[idGMR].numDescriptors = iDesc;
-            pSVGAState->aGMR[idGMR].cMaxPages      = cPagesTotal;
-            pSVGAState->aGMR[idGMR].cbTotal        = cPagesTotal * PAGE_SIZE;
-            Assert((pSVGAState->aGMR[idGMR].cbTotal >> PAGE_SHIFT) == cPagesTotal);
+            pSVGAState->paGMR[idGMR].paDesc         = paDescs;
+            pSVGAState->paGMR[idGMR].numDescriptors = iDesc;
+            pSVGAState->paGMR[idGMR].cMaxPages      = cPagesTotal;
+            pSVGAState->paGMR[idGMR].cbTotal        = cPagesTotal * PAGE_SIZE;
+            Assert((pSVGAState->paGMR[idGMR].cbTotal >> PAGE_SHIFT) == cPagesTotal);
             Log(("Defined new gmr %x numDescriptors=%d cbTotal=%x (%#x pages)\n",
-                 idGMR, iDesc, pSVGAState->aGMR[idGMR].cbTotal, cPagesTotal));
+                 idGMR, iDesc, pSVGAState->paGMR[idGMR].cbTotal, cPagesTotal));
         }
         else
         {
@@ -2248,9 +2249,9 @@ vmsvgaR3GMRAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, v
 
     Log(("vmsvgaR3GMRAccessHandler: GMR access to page %RGp\n", GCPhys));
 
-    for (uint32_t i = 0; i < RT_ELEMENTS(pSVGAState->aGMR); i++)
+    for (uint32_t i = 0; i < pThis->svga.cGMR; ++i)
     {
-        PGMR pGMR = &pSVGAState->aGMR[i];
+        PGMR pGMR = &pSVGAState->paGMR[i];
 
         if (pGMR->numDescriptors)
         {
@@ -2279,7 +2280,7 @@ static DECLCALLBACK(int) vmsvgaRegisterGMR(PPDMDEVINS pDevIns, uint32_t gmrId)
 {
     PVGASTATE       pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     PVMSVGAR3STATE  pSVGAState = pThis->svga.pSvgaR3State;
-    PGMR pGMR = &pSVGAState->aGMR[gmrId];
+    PGMR pGMR = &pSVGAState->paGMR[gmrId];
     int rc;
 
     for (uint32_t i = 0; i < pGMR->numDescriptors; i++)
@@ -2297,7 +2298,7 @@ static DECLCALLBACK(int) vmsvgaDeregisterGMR(PPDMDEVINS pDevIns, uint32_t gmrId)
 {
     PVGASTATE       pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     PVMSVGAR3STATE  pSVGAState = pThis->svga.pSvgaR3State;
-    PGMR pGMR = &pSVGAState->aGMR[gmrId];
+    PGMR pGMR = &pSVGAState->paGMR[gmrId];
 
     for (uint32_t i = 0; i < pGMR->numDescriptors; i++)
     {
@@ -2312,9 +2313,9 @@ static DECLCALLBACK(int) vmsvgaResetGMRHandlers(PVGASTATE pThis)
 {
     PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
 
-    for (uint32_t i = 0; i < RT_ELEMENTS(pSVGAState->aGMR); i++)
+    for (uint32_t i = 0; i < pThis->svga.cGMR; ++i)
     {
-        PGMR pGMR = &pSVGAState->aGMR[i];
+        PGMR pGMR = &pSVGAState->paGMR[i];
 
         if (pGMR->numDescriptors)
         {
@@ -3422,7 +3423,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdDefineGmr2);
 
                 /* Validate current GMR id. */
-                AssertBreak(pCmd->gmrId < VMSVGA_MAX_GMR_IDS);
+                AssertBreak(pCmd->gmrId < pThis->svga.cGMR);
                 AssertBreak(pCmd->numPages <= VMSVGA_MAX_GMR_PAGES);
 
                 if (!pCmd->numPages)
@@ -3432,7 +3433,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 }
                 else
                 {
-                    PGMR pGMR = &pSVGAState->aGMR[pCmd->gmrId];
+                    PGMR pGMR = &pSVGAState->paGMR[pCmd->gmrId];
                     if (pGMR->cMaxPages)
                         STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdDefineGmr2Modify);
 
@@ -3456,7 +3457,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdRemapGmr2);
 
                 Log(("vmsvgaFIFOLoop: SVGA_CMD_REMAP_GMR2 id=%x flags=%x offset=%x npages=%x\n", pCmd->gmrId, pCmd->flags, pCmd->offsetPages, pCmd->numPages));
-                AssertBreak(pCmd->gmrId < VMSVGA_MAX_GMR_IDS);
+                AssertBreak(pCmd->gmrId < pThis->svga.cGMR);
 
                 /* Calculate the size of what comes after next and fetch it. */
                 uint32_t cbCmd = sizeof(SVGAFifoCmdRemapGMR2);
@@ -3479,8 +3480,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdRemapGMR2, cbCmd);
 
                 /* Validate current GMR id and size. */
-                AssertBreak(pCmd->gmrId < VMSVGA_MAX_GMR_IDS);
-                PGMR pGMR = &pSVGAState->aGMR[pCmd->gmrId];
+                AssertBreak(pCmd->gmrId < pThis->svga.cGMR);
+                PGMR pGMR = &pSVGAState->paGMR[pCmd->gmrId];
                 AssertBreak(   (uint64_t)pCmd->offsetPages + pCmd->numPages
                             <= RT_MIN(pGMR->cMaxPages, RT_MIN(VMSVGA_MAX_GMR_PAGES, UINT32_MAX / X86_PAGE_SIZE)));
                 AssertBreak(!pCmd->offsetPages || pGMR->paDesc); /** @todo */
@@ -4210,7 +4211,7 @@ void vmsvgaGMRFree(PVGASTATE pThis, uint32_t idGMR)
     PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
 
     /* Free the old descriptor if present. */
-    PGMR pGMR = &pSVGAState->aGMR[idGMR];
+    PGMR pGMR = &pSVGAState->paGMR[idGMR];
     if (   pGMR->numDescriptors
         || pGMR->paDesc /* needed till we implement SVGA_REMAP_GMR2_VIA_GMR */)
     {
@@ -4266,8 +4267,8 @@ int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
     }
     else
     {
-        AssertReturn(src.gmrId < VMSVGA_MAX_GMR_IDS, VERR_INVALID_PARAMETER);
-        pGMR = &pSVGAState->aGMR[src.gmrId];
+        AssertReturn(src.gmrId < pThis->svga.cGMR, VERR_INVALID_PARAMETER);
+        pGMR = &pSVGAState->paGMR[src.gmrId];
         cbGmrTotal = pGMR->cbTotal;
     }
 
@@ -4683,7 +4684,7 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
  */
 int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    RT_NOREF(uVersion, uPass);
+    RT_NOREF(uPass);
     PVGASTATE       pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     PVMSVGAR3STATE  pSVGAState = pThis->svga.pSvgaR3State;
     int             rc;
@@ -4726,10 +4727,31 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
         AssertRCReturn(rc, rc);
     }
 
-    /* Load the GMR state */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pSVGAState->aGMR); i++)
+    /* Load the GMR state. */
+    uint32_t cGMR = 256; /* Hardcoded in previous saved state versions. */
+    if (uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_GMR_COUNT)
     {
-        PGMR pGMR = &pSVGAState->aGMR[i];
+        rc = SSMR3GetU32(pSSM, &cGMR);
+        AssertRCReturn(rc, rc);
+        /* Numbers of GMRs was never less than 256. 1MB is a large arbitrary limit. */
+        AssertLogRelMsgReturn(cGMR <= _1M && cGMR >= 256,
+                              ("cGMR=%#x - expected 256B..1MB\n", cGMR),
+                              VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+    }
+
+    if (pThis->svga.cGMR != cGMR)
+    {
+        /* Reallocate GMR array. */
+        Assert(pSVGAState->paGMR != NULL);
+        RTMemFree(pSVGAState->paGMR);
+        pSVGAState->paGMR = (PGMR)RTMemAlloc(cGMR * sizeof(GMR));
+        AssertReturn(pSVGAState->paGMR, VERR_NO_MEMORY);
+        pThis->svga.cGMR = cGMR;
+    }
+
+    for (uint32_t i = 0; i < cGMR; ++i)
+    {
+        PGMR pGMR = &pSVGAState->paGMR[i];
 
         rc = SSMR3GetStructEx(pSSM, pGMR, sizeof(*pGMR), 0, g_aGMRFields, NULL);
         AssertRCReturn(rc, rc);
@@ -4740,7 +4762,7 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
             pGMR->paDesc = (PVMSVGAGMRDESCRIPTOR)RTMemAllocZ(pGMR->numDescriptors * sizeof(VMSVGAGMRDESCRIPTOR));
             AssertReturn(pGMR->paDesc, VERR_NO_MEMORY);
 
-            for (uint32_t j = 0; j < pGMR->numDescriptors; j++)
+            for (uint32_t j = 0; j < pGMR->numDescriptors; ++j)
             {
                 rc = SSMR3GetStructEx(pSSM, &pGMR->paDesc[j], sizeof(pGMR->paDesc[j]), 0, g_aVMSVGAGMRDESCRIPTORFields, NULL);
                 AssertRCReturn(rc, rc);
@@ -4826,14 +4848,18 @@ int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     }
 
     /* Save the GMR state */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pSVGAState->aGMR); i++)
+    rc = SSMR3PutU32(pSSM, pThis->svga.cGMR);
+    AssertLogRelRCReturn(rc, rc);
+    for (uint32_t i = 0; i < pThis->svga.cGMR; ++i)
     {
-        rc = SSMR3PutStructEx(pSSM, &pSVGAState->aGMR[i], sizeof(pSVGAState->aGMR[i]), 0, g_aGMRFields, NULL);
+        PGMR pGMR = &pSVGAState->paGMR[i];
+
+        rc = SSMR3PutStructEx(pSSM, pGMR, sizeof(*pGMR), 0, g_aGMRFields, NULL);
         AssertLogRelRCReturn(rc, rc);
 
-        for (uint32_t j = 0; j < pSVGAState->aGMR[i].numDescriptors; j++)
+        for (uint32_t j = 0; j < pGMR->numDescriptors; ++j)
         {
-            rc = SSMR3PutStructEx(pSSM, &pSVGAState->aGMR[i].paDesc[j], sizeof(pSVGAState->aGMR[i].paDesc[j]), 0, g_aVMSVGAGMRDESCRIPTORFields, NULL);
+            rc = SSMR3PutStructEx(pSSM, &pGMR->paDesc[j], sizeof(pGMR->paDesc[j]), 0, g_aVMSVGAGMRDESCRIPTORFields, NULL);
             AssertLogRelRCReturn(rc, rc);
         }
     }
@@ -4943,9 +4969,15 @@ int vmsvgaDestruct(PPDMDEVINS pDevIns)
         if (pSVGAState->Cursor.fActive)
             RTMemFree(pSVGAState->Cursor.pData);
 
-        for (unsigned i = 0; i < RT_ELEMENTS(pSVGAState->aGMR); i++)
-            if (pSVGAState->aGMR[i].paDesc)
-                RTMemFree(pSVGAState->aGMR[i].paDesc);
+        if (pSVGAState->paGMR)
+        {
+            for (unsigned i = 0; i < pThis->svga.cGMR; ++i)
+                if (pSVGAState->paGMR[i].paDesc)
+                    RTMemFree(pSVGAState->paGMR[i].paDesc);
+
+            RTMemFree(pSVGAState->paGMR);
+            pSVGAState->paGMR = NULL;
+        }
 
         RTMemFree(pSVGAState);
         pThis->svga.pSvgaR3State = NULL;
@@ -4992,6 +5024,10 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     pThis->svga.pSvgaR3State = (PVMSVGAR3STATE)RTMemAllocZ(sizeof(VMSVGAR3STATE));
     AssertReturn(pThis->svga.pSvgaR3State, VERR_NO_MEMORY);
     pSVGAState = pThis->svga.pSvgaR3State;
+
+    pThis->svga.cGMR = VMSVGA_MAX_GMR_IDS;
+    pSVGAState->paGMR = (PGMR)RTMemAllocZ(pThis->svga.cGMR * sizeof(GMR));
+    AssertReturn(pSVGAState->paGMR, VERR_NO_MEMORY);
 
     /* Necessary for creating a backup of the text mode frame buffer when switching into svga mode. */
     pThis->svga.pbVgaFrameBufferR3 = (uint8_t *)RTMemAllocZ(VMSVGA_VGA_FB_BACKUP_SIZE);
