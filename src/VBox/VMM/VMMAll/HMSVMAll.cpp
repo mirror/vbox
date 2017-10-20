@@ -352,7 +352,7 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst)
         PSVMVMCBSTATESAVE pVmcbNstGstState = &pVmcbNstGst->guest;
         pVmcbNstGstCtrl->u16InterceptRdCRx        = pNstGstVmcbCache->u16InterceptRdCRx;
         pVmcbNstGstCtrl->u16InterceptWrCRx        = pNstGstVmcbCache->u16InterceptWrCRx;
-        pVmcbNstGstCtrl->u16InterceptRdCRx        = pNstGstVmcbCache->u16InterceptRdCRx;
+        pVmcbNstGstCtrl->u16InterceptRdDRx        = pNstGstVmcbCache->u16InterceptRdDRx;
         pVmcbNstGstCtrl->u16InterceptWrDRx        = pNstGstVmcbCache->u16InterceptWrDRx;
         pVmcbNstGstCtrl->u32InterceptXcpt         = pNstGstVmcbCache->u32InterceptXcpt;
         pVmcbNstGstCtrl->u64InterceptCtrl         = pNstGstVmcbCache->u64InterceptCtrl;
