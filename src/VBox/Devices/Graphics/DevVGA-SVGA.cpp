@@ -11,7 +11,7 @@
  */
 
 /*
- * Copyright (C) 2013-2016 Oracle Corporation
+ * Copyright (C) 2013-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1185,7 +1185,9 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
             rc = VINF_IOM_R3_IOPORT_READ;
 #else
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegUnknownRd);
+# ifndef DEBUG_sunlover
             AssertMsgFailed(("reg=%#x\n", idxReg));
+# endif
 #endif
         }
         break;

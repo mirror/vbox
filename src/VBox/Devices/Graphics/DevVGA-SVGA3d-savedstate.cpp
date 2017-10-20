@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2016 Oracle Corporation
+ * Copyright (C) 2013-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -352,7 +352,7 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
                         rc = SSMR3GetStructEx(pSSM, &pMipmapLevel[idx], sizeof(pMipmapLevel[idx]), 0, g_aVMSVGA3DMIPMAPLEVELFields, NULL);
                         AssertRCReturn(rc, rc);
 
-                        pMipmapLevelSize[idx] = pMipmapLevel[idx].size;
+                        pMipmapLevelSize[idx] = pMipmapLevel[idx].mipmapSize;
                     }
                 }
 
@@ -374,9 +374,9 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
                 PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->pMipmapLevels[j];
                 bool fDataPresent = false;
 
+                /* vmsvga3dSurfaceDefine already allocated the surface data buffer. */
                 Assert(pMipmapLevel->cbSurface);
-                pMipmapLevel->pSurfaceData = RTMemAllocZ(pMipmapLevel->cbSurface);
-                AssertReturn(pMipmapLevel->pSurfaceData, VERR_NO_MEMORY);
+                AssertReturn(pMipmapLevel->pSurfaceData, VERR_INTERNAL_ERROR);
 
                 /* Fetch the data present boolean first. */
                 rc = SSMR3GetBool(pSSM, &fDataPresent);
@@ -599,7 +599,6 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                         void            *pData;
                         bool             fRenderTargetTexture = false;
                         bool             fTexture = false;
-                        bool             fVertex = false;
                         bool             fSkipSave = false;
                         HRESULT          hr;
 
@@ -607,7 +606,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                         pData = RTMemAllocZ(pMipmapLevel->cbSurface);
                         AssertReturn(pData, VERR_NO_MEMORY);
 
-                        switch (pSurface->flags & (SVGA3D_SURFACE_HINT_INDEXBUFFER | SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET | SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_CUBEMAP))
+                        switch (pSurface->flags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK)
                         {
                         case SVGA3D_SURFACE_HINT_DEPTHSTENCIL:
                         case SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_HINT_TEXTURE:
@@ -675,9 +674,11 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                             AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSaveExec: LockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
                             /* Copy the data one line at a time in case the internal pitch is different. */
-                            for (uint32_t j = 0; j < pMipmapLevel->size.height; j++)
+                            for (uint32_t j = 0; j < pMipmapLevel->cBlocksY; ++j)
                             {
-                                memcpy((uint8_t *)pData + j * pMipmapLevel->cbSurfacePitch, (uint8_t *)LockedRect.pBits + j * LockedRect.Pitch, pMipmapLevel->cbSurfacePitch);
+                                uint8_t *pu8Dst = (uint8_t *)pData + j * pMipmapLevel->cbSurfacePitch;
+                                const uint8_t *pu8Src = (uint8_t *)LockedRect.pBits + j * LockedRect.Pitch;
+                                memcpy(pu8Dst, pu8Src, pMipmapLevel->cbSurfacePitch);
                             }
 
                             if (fTexture)
@@ -696,12 +697,13 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                             break;
                         }
 
+                        case SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_INDEXBUFFER:
                         case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
-                            fVertex = true;
-                            /* no break */
-
                         case SVGA3D_SURFACE_HINT_INDEXBUFFER:
                         {
+                            /* Current type of the buffer. */
+                            const bool fVertex = RT_BOOL(pSurface->fu32ActualUsageFlags & SVGA3D_SURFACE_HINT_VERTEXBUFFER);
+
                             uint8_t *pD3DData;
 
                             if (fVertex)
@@ -751,7 +753,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
 
                         Assert(pMipmapLevel->cbSurface);
 
-                        switch (pSurface->flags & (SVGA3D_SURFACE_HINT_INDEXBUFFER | SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET | SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_CUBEMAP))
+                        switch (pSurface->flags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK)
                         {
                         default:
                             AssertFailed();
@@ -806,6 +808,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                             break;
                         }
 
+                        case SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_INDEXBUFFER:
                         case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
                         case SVGA3D_SURFACE_HINT_INDEXBUFFER:
                         {

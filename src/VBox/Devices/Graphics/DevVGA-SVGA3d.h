@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2016 Oracle Corporation
+ * Copyright (C) 2013-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -207,7 +207,9 @@ char *vmsvga3dFormatRenderState(char *pszBuffer, size_t cbBuffer, SVGA3dRenderSt
 char *vmsvga3dFormatTextureState(char *pszBuffer, size_t cbBuffer, SVGA3dTextureState const *pTextureState);
 void vmsvga3dInfoHostWindow(PCDBGFINFOHLP pHlp, uint64_t idHostWindow);
 
-uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format);
+uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format,
+                                   uint32_t *pu32BlockWidth,
+                                   uint32_t *pu32BlockHeight);
 
 #ifdef LOG_ENABLED
 const char *vmsvga3dGetCapString(uint32_t idxCap);

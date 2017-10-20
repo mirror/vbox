@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2016 Oracle Corporation
+ * Copyright (C) 2013-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -266,10 +266,7 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
      * surfaces both for OpenGL and D3D, so skip these here (don't
      * wast memory on them).
      */
-    uint32_t const fSwitchFlags = pSurface->flags
-                                & (  SVGA3D_SURFACE_HINT_INDEXBUFFER  | SVGA3D_SURFACE_HINT_VERTEXBUFFER
-                                   | SVGA3D_SURFACE_HINT_TEXTURE      | SVGA3D_SURFACE_HINT_RENDERTARGET
-                                   | SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_CUBEMAP);
+    uint32_t const fSwitchFlags = pSurface->flags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK;
     if (   fSwitchFlags != SVGA3D_SURFACE_HINT_DEPTHSTENCIL
         && fSwitchFlags != (SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_HINT_TEXTURE))
     {
@@ -298,7 +295,7 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
 #endif
                 {
                     Assert(pMipmapLevel->cbSurface);
-                    Assert(pMipmapLevel->cbSurface == pMipmapLevel->cbSurfacePitch * pMipmapLevel->size.height); /* correct for depth stuff? */
+                    Assert(pMipmapLevel->cbSurface == pMipmapLevel->cbSurfacePlane * pMipmapLevel->mipmapSize.depth);
 
                     /*
                      * Make sure we've got surface memory buffer.
@@ -381,7 +378,7 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
                             if (pMipmapLevel->cbSurfacePitch == (uint32_t)LockedRect.Pitch)
                                 memcpy(pbDst, LockedRect.pBits, pMipmapLevel->cbSurface);
                             else
-                                for (uint32_t j = 0; j < pMipmapLevel->size.height; j++)
+                                for (uint32_t j = 0; j < pMipmapLevel->cBlocksY; j++)
                                     memcpy(pbDst + j * pMipmapLevel->cbSurfacePitch,
                                            (uint8_t *)LockedRect.pBits + j * LockedRect.Pitch,
                                            pMipmapLevel->cbSurfacePitch);
@@ -405,29 +402,27 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
                             break;
                         }
 
+                        case SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_INDEXBUFFER:
                         case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
-                        {
-                            void *pvD3DData = NULL;
-                            hr = pSurface->u.pVertexBuffer->Lock(0, 0, &pvD3DData, D3DLOCK_READONLY);
-                            AssertMsgReturn(hr == D3D_OK, ("Lock vertex failed with %x\n", hr), VERR_INTERNAL_ERROR);
-
-                            memcpy(pbDst, pvD3DData, pMipmapLevel->cbSurface);
-
-                            hr = pSurface->u.pVertexBuffer->Unlock();
-                            AssertMsg(hr == D3D_OK, ("Unlock vertex failed with %x\n", hr));
-                            break;
-                        }
-
                         case SVGA3D_SURFACE_HINT_INDEXBUFFER:
                         {
+                            /* Current type of the buffer. */
+                            const bool fVertex = RT_BOOL(pSurface->fu32ActualUsageFlags & SVGA3D_SURFACE_HINT_VERTEXBUFFER);
+
                             void *pvD3DData = NULL;
-                            hr = pSurface->u.pIndexBuffer->Lock(0, 0, &pvD3DData, D3DLOCK_READONLY);
-                            AssertMsgReturn(hr == D3D_OK, ("Lock index failed with %x\n", hr), VERR_INTERNAL_ERROR);
+                            if (fVertex)
+                                hr = pSurface->u.pVertexBuffer->Lock(0, 0, &pvD3DData, D3DLOCK_READONLY);
+                            else
+                                hr = pSurface->u.pIndexBuffer->Lock(0, 0, &pvD3DData, D3DLOCK_READONLY);
+                            AssertMsgReturn(hr == D3D_OK, ("Lock %s failed with %x\n", fVertex ? "vertex" : "index", hr), VERR_INTERNAL_ERROR);
 
                             memcpy(pbDst, pvD3DData, pMipmapLevel->cbSurface);
 
-                            hr = pSurface->u.pIndexBuffer->Unlock();
-                            AssertMsg(hr == D3D_OK, ("Unlock index failed with %x\n", hr));
+                            if (fVertex)
+                                hr = pSurface->u.pVertexBuffer->Unlock();
+                            else
+                                hr = pSurface->u.pIndexBuffer->Unlock();
+                            AssertMsg(hr == D3D_OK, ("Unlock %s failed with %x\n", fVertex ? "vertex" : "index", hr));
                             break;
                         }
 
@@ -471,6 +466,7 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
                             break;
                         }
 
+                        case SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_INDEXBUFFER:
                         case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
                         case SVGA3D_SURFACE_HINT_INDEXBUFFER:
                         {
@@ -844,7 +840,7 @@ void vmsvga3dAsciiPrint(PFMVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void c
     uint32_t cyPerChar = cy / cchMaxY + 1;
     /** @todo try keep aspect...   */
     uint32_t const cchLine = (cx + cxPerChar - 1) / cxPerChar;
-    uint32_t const cbSrcPixel = vmsvga3dSurfaceFormatSize(enmFormat);
+    uint32_t const cbSrcPixel = vmsvga3dSurfaceFormatSize(enmFormat, NULL, NULL);
 
     /*
      * The very simple conversion we're doing in this function is based on
@@ -1830,9 +1826,9 @@ static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pS
         {
             pHlp->pfnPrintf(pHlp, "Face #%u, mipmap #%u[%u]:%s  cx=%u, cy=%u, cz=%u, cbSurface=%#x, cbPitch=%#x",
                             iFace, iLevel, iMipmap, iMipmap < 10 ? " " : "",
-                            pSurface->pMipmapLevels[iMipmap].size.width,
-                            pSurface->pMipmapLevels[iMipmap].size.height,
-                            pSurface->pMipmapLevels[iMipmap].size.depth,
+                            pSurface->pMipmapLevels[iMipmap].mipmapSize.width,
+                            pSurface->pMipmapLevels[iMipmap].mipmapSize.height,
+                            pSurface->pMipmapLevels[iMipmap].mipmapSize.depth,
                             pSurface->pMipmapLevels[iMipmap].cbSurface,
                             pSurface->pMipmapLevels[iMipmap].cbSurfacePitch);
             if (pSurface->pMipmapLevels[iMipmap].pSurfaceData)
@@ -1889,14 +1885,14 @@ static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pS
                     {
                         pHlp->pfnPrintf(pHlp, "--- Face #%u, mipmap #%u[%u]: cx=%u, cy=%u, cz=%u ---\n",
                                         iFace, iLevel, iMipmap,
-                                        pSurface->pMipmapLevels[iMipmap].size.width,
-                                        pSurface->pMipmapLevels[iMipmap].size.height,
-                                        pSurface->pMipmapLevels[iMipmap].size.depth);
+                                        pSurface->pMipmapLevels[iMipmap].mipmapSize.width,
+                                        pSurface->pMipmapLevels[iMipmap].mipmapSize.height,
+                                        pSurface->pMipmapLevels[iMipmap].mipmapSize.depth);
                         vmsvga3dAsciiPrint(vmsvga3dAsciiPrintlnInfo, (void *)pHlp,
                                            pSurface->pMipmapLevels[iMipmap].pSurfaceData,
                                            pSurface->pMipmapLevels[iMipmap].cbSurface,
-                                           pSurface->pMipmapLevels[iMipmap].size.width,
-                                           pSurface->pMipmapLevels[iMipmap].size.height,
+                                           pSurface->pMipmapLevels[iMipmap].mipmapSize.width,
+                                           pSurface->pMipmapLevels[iMipmap].mipmapSize.height,
                                            pSurface->pMipmapLevels[iMipmap].cbSurfacePitch,
                                            pSurface->format,
                                            fInvY,

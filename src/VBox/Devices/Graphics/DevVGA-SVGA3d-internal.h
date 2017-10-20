@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2016 Oracle Corporation
+ * Copyright (C) 2013-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -395,13 +395,19 @@ typedef void (APIENTRYP PFNGLGETPROGRAMIVARBPROC) (GLenum target, GLenum pname, 
  */
 typedef struct VMSVGA3DMIPMAPLEVEL
 {
-    /** The mipmap size. */
-    SVGA3dSize              size;
-    /** The size (in bytes) of the mimap data when using the format the surface was
-     *  defined with. */
-    uint32_t                cbSurface;
-    /** The scanline/pitch size in bytes. */
+    /** The mipmap size: width, height and depth. */
+    SVGA3dSize              mipmapSize;
+    /** Width in blocks: (width + cxBlock - 1) / cxBlock. SSM: not saved, recalculated on load. */
+    uint32_t                cBlocksX;
+    /** Height in blocks: (height + cyBlock - 1) / cyBlock. SSM: not saved, recalculated on load. */
+    uint32_t                cBlocksY;
+    /** The scanline/pitch size in bytes: at least cBlocksX * cbBlock. */
     uint32_t                cbSurfacePitch;
+    /** The size (in bytes) of the mipmap plane: cbSurfacePitch * cBlocksY */
+    uint32_t                cbSurfacePlane;
+    /** The size (in bytes) of the mipmap data when using the format the surface was
+     *  defined with: cbSurfacePlane * mipmapSize.z */
+    uint32_t                cbSurface;
     /** Pointer to the mipmap bytes (cbSurface).  Often NULL.  If the surface has
      * been realized in hardware, this may be outdated. */
     void                   *pSurfaceData;
@@ -419,7 +425,7 @@ typedef VMSVGA3DMIPMAPLEVEL *PVMSVGA3DMIPMAPLEVEL;
  */
 static SSMFIELD const g_aVMSVGA3DMIPMAPLEVELFields[] =
 {
-    SSMFIELD_ENTRY(                 VMSVGA3DMIPMAPLEVEL, size),
+    SSMFIELD_ENTRY(                 VMSVGA3DMIPMAPLEVEL, mipmapSize),
     SSMFIELD_ENTRY(                 VMSVGA3DMIPMAPLEVEL, cbSurface),
     SSMFIELD_ENTRY(                 VMSVGA3DMIPMAPLEVEL, cbSurfacePitch),
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DMIPMAPLEVEL, pSurfaceData),
@@ -533,6 +539,10 @@ typedef struct VMSVGA3DSURFACE
 #endif
 
     uint32_t                cbBlock;        /* block/pixel size in bytes */
+    /* Dimensions of the surface block, usually 1x1 except for compressed formats. */
+    uint32_t                cxBlock;        /* Block width in pixels. SSM: not saved, recalculated on load. */
+    uint32_t                cyBlock;        /* Block height in pixels. SSM: not saved, recalculated on load. */
+
     /* Dirty state; surface was manually updated. */
     bool                    fDirty;
 
@@ -541,6 +551,8 @@ typedef struct VMSVGA3DSURFACE
     HANDLE                  hSharedObject;
     /** Event query inserted after each GPU operation that updates or uses this surface. */
     IDirect3DQuery9        *pQuery;
+    /** @todo Just remember the type of actually created D3D object. Do not always guess from flags.
+     * Replace fu32ActualUsageFlags and possibly fStencilAsTexture. */
     union
     {
         IDirect3DSurface9          *pSurface;
@@ -552,6 +564,7 @@ typedef struct VMSVGA3DSURFACE
     union
     {
         IDirect3DTexture9          *pTexture;
+        IDirect3DCubeTexture9      *pCubeTexture;
     } bounce;
     /** AVL tree containing VMSVGA3DSHAREDSURFACE structures. */
     AVLU32TREE              pSharedObjectTree;
@@ -1050,11 +1063,12 @@ int vmsvga3dSaveShaderConst(PVMSVGA3DCONTEXT pContext, uint32_t reg, SVGA3dShade
 /* Command implementation workers. */
 void vmsvga3dBackSurfaceDestroy(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface);
 int  vmsvga3dBackSurfaceStretchBlt(PVGASTATE pThis, PVMSVGA3DSTATE pState,
-                                   PVMSVGA3DSURFACE pDstSurface, uint32_t uDstMipmap, SVGA3dBox const *pDstBox,
-                                   PVMSVGA3DSURFACE pSrcSurface, uint32_t uSrcMipmap, SVGA3dBox const *pSrcBox,
+                                   PVMSVGA3DSURFACE pDstSurface, uint32_t uDstFace, uint32_t uDstMipmap, SVGA3dBox const *pDstBox,
+                                   PVMSVGA3DSURFACE pSrcSurface, uint32_t uSrcFace, uint32_t uSrcMipmap, SVGA3dBox const *pSrcBox,
                                    SVGA3dStretchBltMode enmMode, PVMSVGA3DCONTEXT pContext);
-int  vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface, uint32_t uHostMimap,
-                                   SVGAGuestPtr GuestPtr, uint32_t cbSrcPitch, SVGA3dTransferType transfer,
+int  vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface,
+                                   PVMSVGA3DMIPMAPLEVEL pMipLevel, uint32_t uHostFace, uint32_t uHostMipmap,
+                                   SVGAGuestPtr GuestPtr, uint32_t cbGuestPitch, SVGA3dTransferType transfer,
                                    SVGA3dCopyBox const *pBox, PVMSVGA3DCONTEXT pContext, int rc, int iBox);
 
 int  vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t idAssociatedContext,
@@ -1065,6 +1079,48 @@ void vmsvgaClipCopyBox(const SVGA3dSize *pSizeSrc,
                        SVGA3dCopyBox *pBox);
 void vmsvgaClipBox(const SVGA3dSize *pSize,
                    SVGA3dBox *pBox);
+
+DECLINLINE(int) vmsvga3dContextFromCid(PVMSVGA3DSTATE pState, uint32_t cid, PVMSVGA3DCONTEXT *ppContext)
+{
+    /** @todo stricter checks for associated context */
+    if (   cid >= pState->cContexts
+        || pState->papContexts[cid]->id != cid)
+    {
+        Log(("vmsvga3dSurfaceCopy invalid context id!\n"));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    *ppContext = pState->papContexts[cid];
+    return VINF_SUCCESS;
+}
+
+DECLINLINE(int) vmsvga3dSurfaceFromSid(PVMSVGA3DSTATE pState, uint32_t sid, PVMSVGA3DSURFACE *ppSurface)
+{
+    Assert(sid < SVGA3D_MAX_SURFACE_IDS);
+    AssertReturn(sid < pState->cSurfaces, VERR_INVALID_PARAMETER);
+    PVMSVGA3DSURFACE pSurface = pState->papSurfaces[sid];
+    AssertReturn(pSurface && pSurface->id == sid, VERR_INVALID_PARAMETER);
+    *ppSurface = pSurface;
+    return VINF_SUCCESS;
+}
+
+DECLINLINE(int) vmsvga3dMipmapLevel(PVMSVGA3DSURFACE pSurface, uint32_t face, uint32_t mipmap,
+                                    PVMSVGA3DMIPMAPLEVEL *ppMipmapLevel)
+{
+    /* Can use faces[0].numMipLevels, because numMipLevels is the same for all faces. */
+    const uint32_t numMipLevels = pSurface->faces[0].numMipLevels;
+
+    AssertMsgReturn(face < pSurface->cFaces,
+                    ("cFaces %d, face %d\n", pSurface->cFaces, face),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(mipmap < numMipLevels,
+                    ("numMipLevels %d, mipmap %d", numMipLevels, mipmap),
+                    VERR_INVALID_PARAMETER);
+
+    *ppMipmapLevel = &pSurface->pMipmapLevels[face * numMipLevels + mipmap];
+    return VINF_SUCCESS;
+}
+
 
 #endif
 
