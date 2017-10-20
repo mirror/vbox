@@ -625,8 +625,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
             /** @todo NRIP: Software interrupts can only be pushed properly if we support
              *        NRIP for the nested-guest to calculate the instruction length
              *        below. */
-            LogFlow(("iemSvmVmrun: Injecting event: %04x:%08RX64 uVector=%#x enmType=%d uErrorCode=%u cr2=%#RX64\n",
-                     pCtx->cs.Sel, pCtx->rip, uVector, enmType, uErrorCode, pCtx->cr2));
+            LogFlow(("iemSvmVmrun: Injecting event: %04x:%08RX64 uVector=%#x enmType=%d uErrorCode=%u cr2=%#RX64 efer=%#RX64\n",
+                     pCtx->cs.Sel, pCtx->rip, uVector, enmType, uErrorCode, pCtx->cr2, pCtx->msrEFER));
             rcStrict = IEMInjectTrap(pVCpu, uVector, enmType, uErrorCode, pCtx->cr2, 0 /* cbInstr */);
         }
         else
