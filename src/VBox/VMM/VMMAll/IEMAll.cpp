@@ -6553,17 +6553,14 @@ IEM_STATIC void iemRegAddToRipAndClearRF(PVMCPU pVCpu, uint8_t cbInstr)
 
     AssertCompile(IEMMODE_16BIT == 0 && IEMMODE_32BIT == 1 && IEMMODE_64BIT == 2);
 #if ARCH_BITS >= 64
-    static uint64_t const s_aRipMasks[] = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_MAX };
+    static uint64_t const s_aRipMasks[] = { UINT64_C(0xffffffff), UINT64_C(0xffffffff), UINT64_MAX };
     Assert(pCtx->rip <= s_aRipMasks[(unsigned)pVCpu->iem.s.enmCpuMode]);
     pCtx->rip = (pCtx->rip + cbInstr) & s_aRipMasks[(unsigned)pVCpu->iem.s.enmCpuMode];
 #else
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
         pCtx->rip += cbInstr;
     else
-    {
-        static uint32_t const s_aEipMasks[] = { UINT32_C(0xffff), UINT32_MAX };
-        pCtx->eip = (pCtx->eip + cbInstr) & s_aEipMasks[(unsigned)pVCpu->iem.s.enmCpuMode];
-    }
+        pCtx->eip += cbInstr;
 #endif
 }
 
