@@ -234,6 +234,7 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size, lof
 
         err = VbglR0SfWritePhysCont(&client_handle, &sf_g->map, sf_r->handle,
                                     pos, &nwritten, tmp_phys);
+        err = RT_FAILURE(err) ? -EPROTO : 0;
         if (err)
             goto fail;
 
