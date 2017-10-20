@@ -29,14 +29,15 @@ PATH_TMP="`cd \`dirname $1\`; pwd`/.vbox_modules"
 PATH_OUT=$PATH_TMP
 FILE_OUT="`cd \`dirname $1\`; pwd`/`basename $1`"
 PATH_ROOT="`cd ${MY_DIR}/../../../..; pwd`"
+PATH_LOG=/tmp/vbox-export-guest.log
 PATH_LINUX="$PATH_ROOT/src/VBox/Additions/linux"
 PATH_VBOXGUEST="$PATH_ROOT/src/VBox/Additions/common/VBoxGuest"
 PATH_VBOXSF="$PATH_ROOT/src/VBox/Additions/linux/sharedfolders"
 PATH_VBOXVIDEO="$PATH_ROOT/src/VBox/Additions/linux/drm"
 
-VBOX_VERSION_MAJOR=`sed -e "s/^ *VBOX_VERSION_MAJOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
-VBOX_VERSION_MINOR=`sed -e "s/^ *VBOX_VERSION_MINOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
-VBOX_VERSION_BUILD=`sed -e "s/^ *VBOX_VERSION_BUILD *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
+VBOX_VERSION_MAJOR=`sed -e "s/^ *VBOX_VERSION_MAJOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Version.kmk`
+VBOX_VERSION_MINOR=`sed -e "s/^ *VBOX_VERSION_MINOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Version.kmk`
+VBOX_VERSION_BUILD=`sed -e "s/^ *VBOX_VERSION_BUILD *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Version.kmk`
 VBOX_SVN_REV=`sed -e 's/^ *VBOX_SVN_REV_FALLBACK *:= \+\$(patsubst *%:,, *\$Rev: *\([0-9]\+\) *\$ *) */\1/;t;d' $PATH_ROOT/Config.kmk`
 VBOX_VENDOR=`sed -e 's/^ *VBOX_VENDOR *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`
 VBOX_VENDOR_SHORT=`sed -e 's/^ *VBOX_VENDOR_SHORT *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`
@@ -110,6 +111,7 @@ done
 for f in $FILES_VBOXVIDEO_DRM_BIN; do
     install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxvideo/`echo $f|cut -d'>' -f2`"
 done
+sed -f $PATH_VBOXVIDEO/indent.sed -i $PATH_TMP/vboxvideo/*.[ch]
 
 # convenience Makefile
 install -D -m 0644 $PATH_LINUX/Makefile "$PATH_TMP/Makefile"
@@ -118,6 +120,12 @@ install -D -m 0644 $PATH_LINUX/Makefile "$PATH_TMP/Makefile"
 rm $PATH_TMP/version-generated.h
 rm $PATH_TMP/revision-generated.h
 rm $PATH_TMP/product-generated.h
+
+# Do a test build
+echo Doing a test build, this may take a while.
+make -C $PATH_TMP > $PATH_LOG 2>&1 &&
+    make -C $PATH_TMP clean >> $PATH_LOG 2>&1 ||
+    echo "Warning: test build failed.  Please check $PATH_LOG"
 
 # Create the archive
 tar -czf $FILE_OUT -C $PATH_TMP . || exit 1
