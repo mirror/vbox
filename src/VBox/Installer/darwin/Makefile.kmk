@@ -161,8 +161,10 @@ endif
 	sudo chown "$(shell whoami)" "$@"
 	sudo chown -R "$(shell whoami)" $(VBOX_PATH_PACK_TMP)/DiskImage
 ifdef VBOX_SIGNING_MODE
+ ifndef VBOX_WITHOUT_SIGNED_DMG
 	@# Sign the created dmg.
 	$(call VBOX_SIGN_FILE_FN,$@,org.virtualbox.dmg)
+ endif
 endif
 
 #
