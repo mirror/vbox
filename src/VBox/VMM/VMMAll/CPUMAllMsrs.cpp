@@ -1441,21 +1441,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64Efer(PVMCPU pVCpu, uint32_t idM
     if (RT_FAILURE(rc))
         return VERR_CPUM_RAISE_GP_0;
 
-    pVCpu->cpum.s.Guest.msrEFER = uValidatedEfer;
-
-    /* AMD64 Architecture Programmer's Manual: 15.15 TLB Control; flush the TLB
-       if MSR_K6_EFER_NXE, MSR_K6_EFER_LME or MSR_K6_EFER_LMA are changed. */
-    if (   (uOldEfer                    & (MSR_K6_EFER_NXE | MSR_K6_EFER_LME | MSR_K6_EFER_LMA))
-        != (pVCpu->cpum.s.Guest.msrEFER & (MSR_K6_EFER_NXE | MSR_K6_EFER_LME | MSR_K6_EFER_LMA)))
-    {
-        /// @todo PGMFlushTLB(pVCpu, cr3, true /*fGlobal*/);
-        HMFlushTLB(pVCpu);
-
-        /* Notify PGM about NXE changes. */
-        if (   (uOldEfer                    & MSR_K6_EFER_NXE)
-            != (pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE))
-            PGMNotifyNxeChanged(pVCpu, !(uOldEfer & MSR_K6_EFER_NXE));
-    }
+    CPUMSetGuestEferNoCheck(pVCpu, uOldEfer, uValidatedEfer);
     return VINF_SUCCESS;
 }
 
@@ -6099,6 +6085,36 @@ VMMDECL(uint64_t) CPUMGetGuestScalableBusFrequency(PVM pVM)
     if (uFreq == CPUM_SBUSFREQ_UNKNOWN)
         uFreq = CPUM_SBUSFREQ_100MHZ;
     return uFreq;
+}
+
+
+/**
+ * Sets the guest EFER MSR without performing any additional checks.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   uOldEfer    The previous EFER MSR value.
+ * @param   uValidEfer  The new, validated EFER MSR value.
+ *
+ * @remarks One would normally call CPUMQueryValidatedGuestEfer before calling this
+ *          function to change the EFER in order to perform an EFER transition.
+ */
+VMMDECL(void) CPUMSetGuestEferNoCheck(PVMCPU pVCpu, uint64_t uOldEfer, uint64_t uValidEfer)
+{
+    pVCpu->cpum.s.Guest.msrEFER = uValidEfer;
+
+    /* AMD64 Architecture Programmer's Manual: 15.15 TLB Control; flush the TLB
+       if MSR_K6_EFER_NXE, MSR_K6_EFER_LME or MSR_K6_EFER_LMA are changed. */
+    if (   (uOldEfer                    & (MSR_K6_EFER_NXE | MSR_K6_EFER_LME | MSR_K6_EFER_LMA))
+        != (pVCpu->cpum.s.Guest.msrEFER & (MSR_K6_EFER_NXE | MSR_K6_EFER_LME | MSR_K6_EFER_LMA)))
+    {
+        /// @todo PGMFlushTLB(pVCpu, cr3, true /*fGlobal*/);
+        HMFlushTLB(pVCpu);
+
+        /* Notify PGM about NXE changes. */
+        if (   (uOldEfer                    & MSR_K6_EFER_NXE)
+            != (pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE))
+            PGMNotifyNxeChanged(pVCpu, !(uOldEfer & MSR_K6_EFER_NXE));
+    }
 }
 
 
