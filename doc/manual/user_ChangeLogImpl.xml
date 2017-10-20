@@ -183,6 +183,40 @@
   </sect1>
 
   <sect1>
+    <title>Version 5.1.30 (2017-10-16)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>GUI: translation updates</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Fixed double mouse cursor when using mouse integration
+          without Guest Additions, actually a Qt 5.6 bug fixed with QT 5.6.3 
+          (Mac OS X hosts only; bug #15610)</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris hosts: allow increasing MTU size for host-only adapter to
+          9706 bytes to support jumbo frames</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: glibc 2.26 compile fix</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: 3D related crash fix (bugs #17082, #17092)</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
     <title>Version 5.1.28 (2017-09-13)</title>
 
     <para>This is a maintenance release. The following items were fixed and/or
