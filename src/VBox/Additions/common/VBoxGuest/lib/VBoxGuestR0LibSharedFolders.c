@@ -175,30 +175,6 @@ DECLVBGL(int) VbglR0SfMapFolder(PVBGLSFCLIENT pClient, PSHFLSTRING szFolderName,
         pMap->root = data.root.u.value32;
         rc         = data.callInfo.Hdr.rc;
     }
-    else if (rc == VERR_NOT_IMPLEMENTED)
-    {
-        /* try the legacy interface too; temporary to assure backwards compatibility */
-        VBoxSFMapFolder_Old OldData;
-
-        VBOX_INIT_CALL(&OldData.callInfo, MAP_FOLDER_OLD, pClient);
-
-        OldData.path.type                    = VMMDevHGCMParmType_LinAddr;
-        OldData.path.u.Pointer.size          = ShflStringSizeOfBuffer (szFolderName);
-        OldData.path.u.Pointer.u.linearAddr  = (uintptr_t)szFolderName;
-
-        OldData.root.type                    = VMMDevHGCMParmType_32bit;
-        OldData.root.u.value32               = 0;
-
-        OldData.delimiter.type               = VMMDevHGCMParmType_32bit;
-        OldData.delimiter.u.value32          = RTPATH_DELIMITER;
-
-        rc = VbglR0HGCMCallRaw(pClient->handle, &OldData.callInfo, sizeof(OldData));
-        if (RT_SUCCESS(rc))
-        {
-            pMap->root = OldData.root.u.value32;
-            rc         = OldData.callInfo.Hdr.rc;
-        }
-    }
     return rc;
 }
 

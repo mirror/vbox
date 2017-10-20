@@ -17,18 +17,9 @@
 #ifndef VBFS_MOUNT_H
 #define VBFS_MOUNT_H
 
+/* Linux constraints the size of data mount argument to PAGE_SIZE - 1. */
 #define MAX_HOST_NAME  256
 #define MAX_NLS_NAME    32
-
-/* Linux constraints the size of data mount argument to PAGE_SIZE - 1. */
-struct vbsf_mount_info_old
-{
-    char name[MAX_HOST_NAME];
-    char nls_name[MAX_NLS_NAME];
-    int  uid;
-    int  gid;
-    int  ttl;
-};
 
 #define VBSF_MOUNT_SIGNATURE_BYTE_0 '\377'
 #define VBSF_MOUNT_SIGNATURE_BYTE_1 '\376'
@@ -36,9 +27,14 @@ struct vbsf_mount_info_old
 
 struct vbsf_mount_info_new
 {
-    char nullchar;              /* name cannot be '\0' -- we use this field
-                                   to distinguish between the old structure
-                                   and the new structure */
+    /*
+     * The old version of the mount_info struct started with a
+     * char name[MAX_HOST_NAME] field, where name cannot be '\0'.
+     * So the new version of the mount_info struct starts with a
+     * nullchar field which is always 0 so that we can detect and
+     * reject the old structure being passed.
+     */
+    char nullchar;
     char signature[3];          /* signature */
     int  length;                /* length of the whole structure */
     char name[MAX_HOST_NAME];   /* share name */
