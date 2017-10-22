@@ -266,7 +266,7 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
      * surfaces both for OpenGL and D3D, so skip these here (don't
      * wast memory on them).
      */
-    uint32_t const fSwitchFlags = pSurface->flags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK;
+    uint32_t const fSwitchFlags = pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK;
     if (   fSwitchFlags != SVGA3D_SURFACE_HINT_DEPTHSTENCIL
         && fSwitchFlags != (SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_HINT_TEXTURE))
     {
@@ -311,23 +311,37 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
                     /*
                      * D3D specifics.
                      */
-                    HRESULT  hr;
-                    switch (fSwitchFlags)
+                    Assert(pSurface->enmD3DResType != VMSVGA3D_D3DRESTYPE_NONE);
+
+                    HRESULT hr;
+                    switch (pSurface->enmD3DResType)
                     {
-                        case SVGA3D_SURFACE_HINT_TEXTURE:
-                        case SVGA3D_SURFACE_HINT_RENDERTARGET:
-                        case SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET:
+                        case VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE:
+                            AssertFailed(); ///@todo
+                            break;
+
+                        case VMSVGA3D_D3DRESTYPE_SURFACE:
+                        case VMSVGA3D_D3DRESTYPE_TEXTURE:
+                        case VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE:
                         {
                             /*
                              * Lock the buffer and make it accessible to memcpy.
                              */
                             D3DLOCKED_RECT LockedRect;
-                            if (fSwitchFlags & SVGA3D_SURFACE_HINT_TEXTURE)
+                            if (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE)
+                            {
+                                hr = pSurface->u.pCubeTexture->LockRect(vmsvga3dCubemapFaceFromIndex(iFace),
+                                                                        i, /* texture level */
+                                                                        &LockedRect,
+                                                                        NULL,
+                                                                        D3DLOCK_READONLY);
+                            }
+                            else if (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_TEXTURE)
                             {
                                 if (pSurface->bounce.pTexture)
                                 {
                                     if (    !pSurface->fDirty
-                                        &&  fSwitchFlags == (SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET)
+                                        &&  RT_BOOL(fSwitchFlags & SVGA3D_SURFACE_HINT_RENDERTARGET)
                                         &&  i == 0 /* only the first time */)
                                     {
                                         /** @todo stricter checks for associated context */
@@ -402,12 +416,11 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
                             break;
                         }
 
-                        case SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_INDEXBUFFER:
-                        case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
-                        case SVGA3D_SURFACE_HINT_INDEXBUFFER:
+                        case VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER:
+                        case VMSVGA3D_D3DRESTYPE_INDEX_BUFFER:
                         {
                             /* Current type of the buffer. */
-                            const bool fVertex = RT_BOOL(pSurface->fu32ActualUsageFlags & SVGA3D_SURFACE_HINT_VERTEXBUFFER);
+                            const bool fVertex = (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER);
 
                             void *pvD3DData = NULL;
                             if (fVertex)
@@ -427,7 +440,7 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
                         }
 
                         default:
-                            AssertMsgFailed(("%#x\n", fSwitchFlags));
+                            AssertMsgFailed(("flags %#x, type %d\n", fSwitchFlags, pSurface->enmD3DResType));
                     }
 
 #elif defined(VMSVGA3D_OPENGL)
@@ -1810,8 +1823,8 @@ static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pS
 #endif
     pHlp->pfnPrintf(pHlp, "Format:                  %s\n",
                     vmsvgaFormatEnumValueEx(szTmp, sizeof(szTmp), NULL, (int)pSurface->format, false, &g_SVGA3dSurfaceFormat2String));
-    pHlp->pfnPrintf(pHlp, "Flags:                   %#x", pSurface->flags);
-    vmsvga3dInfoU32Flags(pHlp, pSurface->flags, "SVGA3D_SURFACE_", g_aSvga3DSurfaceFlags, RT_ELEMENTS(g_aSvga3DSurfaceFlags));
+    pHlp->pfnPrintf(pHlp, "Flags:                   %#x", pSurface->surfaceFlags);
+    vmsvga3dInfoU32Flags(pHlp, pSurface->surfaceFlags, "SVGA3D_SURFACE_", g_aSvga3DSurfaceFlags, RT_ELEMENTS(g_aSvga3DSurfaceFlags));
     pHlp->pfnPrintf(pHlp, "\n");
     if (pSurface->cFaces == 0)
         pHlp->pfnPrintf(pHlp, "Faces:                   %u\n", pSurface->cFaces);

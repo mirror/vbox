@@ -485,6 +485,19 @@ static SSMFIELD const g_aVMSVGASHADERCONSTFields[] =
 #endif
 
 #ifdef VMSVGA3D_DIRECT3D
+
+/* What kind of Direct3D resource has been created for the VMSVGA3D surface. */
+typedef enum VMSVGA3DD3DRESTYPE
+{
+    VMSVGA3D_D3DRESTYPE_NONE           = 0,
+    VMSVGA3D_D3DRESTYPE_SURFACE        = 1,
+    VMSVGA3D_D3DRESTYPE_TEXTURE        = 2,
+    VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE   = 3,
+    VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE = 4,
+    VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER  = 5,
+    VMSVGA3D_D3DRESTYPE_INDEX_BUFFER   = 6
+} VMSVGA3DD3DRESTYPE;
+
 /**
  *
  */
@@ -497,6 +510,7 @@ typedef struct
         IDirect3DSurface9          *pSurface;
         IDirect3DTexture9          *pTexture;
         IDirect3DCubeTexture9      *pCubeTexture;
+        IDirect3DVolumeTexture9    *pVolumeTexture;
     } u;
 } VMSVGA3DSHAREDSURFACE;
 typedef VMSVGA3DSHAREDSURFACE *PVMSVGA3DSHAREDSURFACE;
@@ -513,7 +527,7 @@ typedef struct VMSVGA3DSURFACE
 #else
     uint32_t                idAssociatedContext;
 #endif
-    uint32_t                flags;
+    uint32_t                surfaceFlags;
     SVGA3dSurfaceFormat     format;
 #ifdef VMSVGA3D_OPENGL
     GLint                   internalFormatGL;
@@ -551,25 +565,26 @@ typedef struct VMSVGA3DSURFACE
     HANDLE                  hSharedObject;
     /** Event query inserted after each GPU operation that updates or uses this surface. */
     IDirect3DQuery9        *pQuery;
-    /** @todo Just remember the type of actually created D3D object. Do not always guess from flags.
-     * Replace fu32ActualUsageFlags and possibly fStencilAsTexture. */
+    /* The type of actually created D3D resource. */
+    VMSVGA3DD3DRESTYPE      enmD3DResType;
     union
     {
         IDirect3DSurface9          *pSurface;
-        IDirect3DCubeTexture9      *pCubeTexture;
-        IDirect3DIndexBuffer9      *pIndexBuffer;
         IDirect3DTexture9          *pTexture;
+        IDirect3DCubeTexture9      *pCubeTexture;
+        IDirect3DVolumeTexture9    *pVolumeTexture;
         IDirect3DVertexBuffer9     *pVertexBuffer;
+        IDirect3DIndexBuffer9      *pIndexBuffer;
     } u;
     union
     {
         IDirect3DTexture9          *pTexture;
         IDirect3DCubeTexture9      *pCubeTexture;
+        IDirect3DVolumeTexture9    *pVolumeTexture;
     } bounce;
     /** AVL tree containing VMSVGA3DSHAREDSURFACE structures. */
     AVLU32TREE              pSharedObjectTree;
     bool                    fStencilAsTexture;
-    uint32_t                fu32ActualUsageFlags;
 #endif
 } VMSVGA3DSURFACE;
 /** Pointer to a 3d surface. */
@@ -587,7 +602,7 @@ static SSMFIELD const g_aVMSVGA3DSURFACEFields[] =
 # else
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, idAssociatedContext),
 # endif
-    SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, flags),
+    SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, surfaceFlags),
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, format),
 # ifdef VMSVGA3D_OPENGL
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, internalFormatGL),
@@ -1121,6 +1136,23 @@ DECLINLINE(int) vmsvga3dMipmapLevel(PVMSVGA3DSURFACE pSurface, uint32_t face, ui
     return VINF_SUCCESS;
 }
 
+#ifdef VMSVGA3D_DIRECT3D
+DECLINLINE(D3DCUBEMAP_FACES) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
+{
+    D3DCUBEMAP_FACES Face;
+    switch (iFace)
+    {
+        case 0: Face = D3DCUBEMAP_FACE_POSITIVE_X; break;
+        case 1: Face = D3DCUBEMAP_FACE_NEGATIVE_X; break;
+        case 2: Face = D3DCUBEMAP_FACE_POSITIVE_Y; break;
+        case 3: Face = D3DCUBEMAP_FACE_NEGATIVE_Y; break;
+        case 4: Face = D3DCUBEMAP_FACE_POSITIVE_Z; break;
+        default:
+        case 5: Face = D3DCUBEMAP_FACE_NEGATIVE_Z; break;
+    }
+    return Face;
+}
+#endif /* VMSVGA3D_DIRECT3D */
 
 #endif
 

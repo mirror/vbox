@@ -356,7 +356,7 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
                     }
                 }
 
-                rc = vmsvga3dSurfaceDefine(pThis, sid, surface.flags, surface.format, surface.faces, surface.multiSampleCount, surface.autogenFilter, cMipLevels, pMipmapLevelSize);
+                rc = vmsvga3dSurfaceDefine(pThis, sid, surface.surfaceFlags, surface.format, surface.faces, surface.multiSampleCount, surface.autogenFilter, cMipLevels, pMipmapLevelSize);
                 AssertRCReturn(rc, rc);
 
                 RTMemFree(pMipmapLevelSize);
@@ -606,21 +606,26 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                         pData = RTMemAllocZ(pMipmapLevel->cbSurface);
                         AssertReturn(pData, VERR_NO_MEMORY);
 
-                        switch (pSurface->flags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK)
+                        switch (pSurface->enmD3DResType)
                         {
-                        case SVGA3D_SURFACE_HINT_DEPTHSTENCIL:
-                        case SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_HINT_TEXTURE:
-                            /** @todo unable to easily fetch depth surface data in d3d 9 */
+                        case VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE:
+                        case VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE:
+                            AssertFailed(); ///@todo
                             fSkipSave = true;
                             break;
-                        case SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET:
-                            fRenderTargetTexture = true;
-                            /* no break */
-                        case SVGA3D_SURFACE_HINT_TEXTURE:
-                            fTexture = true;
-                            /* no break */
-                        case SVGA3D_SURFACE_HINT_RENDERTARGET:
+                        case VMSVGA3D_D3DRESTYPE_SURFACE:
+                        case VMSVGA3D_D3DRESTYPE_TEXTURE:
                         {
+                            if (pSurface->surfaceFlags & SVGA3D_SURFACE_HINT_DEPTHSTENCIL)
+                            {
+                               /** @todo unable to easily fetch depth surface data in d3d 9 */
+                               fSkipSave = true;
+                               break;
+                            }
+
+                            fTexture = (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_TEXTURE);
+                            fRenderTargetTexture = fTexture && (pSurface->surfaceFlags & SVGA3D_SURFACE_HINT_RENDERTARGET);
+
                             D3DLOCKED_RECT LockedRect;
 
                             if (fTexture)
@@ -697,12 +702,11 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                             break;
                         }
 
-                        case SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_INDEXBUFFER:
-                        case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
-                        case SVGA3D_SURFACE_HINT_INDEXBUFFER:
+                        case VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER:
+                        case VMSVGA3D_D3DRESTYPE_INDEX_BUFFER:
                         {
                             /* Current type of the buffer. */
-                            const bool fVertex = RT_BOOL(pSurface->fu32ActualUsageFlags & SVGA3D_SURFACE_HINT_VERTEXBUFFER);
+                            const bool fVertex = (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER);
 
                             uint8_t *pD3DData;
 
@@ -753,7 +757,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
 
                         Assert(pMipmapLevel->cbSurface);
 
-                        switch (pSurface->flags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK)
+                        switch (pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK)
                         {
                         default:
                             AssertFailed();

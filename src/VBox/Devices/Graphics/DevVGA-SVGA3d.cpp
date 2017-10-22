@@ -208,7 +208,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
         break;
     }
 
-    pSurface->flags             = surfaceFlags;
+    pSurface->surfaceFlags      = surfaceFlags;
     pSurface->format            = format;
     memcpy(pSurface->faces, face, sizeof(pSurface->faces));
     pSurface->cFaces            = cFaces;
@@ -241,7 +241,9 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
         pSurface->fUsageD3D |= D3DUSAGE_WRITEONLY;
     if (surfaceFlags & SVGA3D_SURFACE_AUTOGENMIPMAPS)
         pSurface->fUsageD3D |= D3DUSAGE_AUTOGENMIPMAP;
-    pSurface->fu32ActualUsageFlags = 0;
+    pSurface->enmD3DResType = VMSVGA3D_D3DRESTYPE_NONE;
+    /* pSurface->u.pSurface = NULL; */
+    /* pSurface->bounce.pTexture = NULL; */
 #else
     vmsvga3dSurfaceFormat2OGL(pSurface, format);
 #endif
@@ -428,7 +430,7 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId const *pDstS
     if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSrcSurface))
     {
         /* Unknown surface type; turn it into a texture, which can be used for other purposes too. */
-        LogFunc(("unknown src sid=%x type=%d format=%d -> create texture\n", sidSrc, pSrcSurface->flags, pSrcSurface->format));
+        LogFunc(("unknown src sid=%x type=%d format=%d -> create texture\n", sidSrc, pSrcSurface->surfaceFlags, pSrcSurface->format));
         rc = vmsvga3dBackCreateTexture(pState, pContext, pContext->id, pSrcSurface);
         AssertRCReturn(rc, rc);
     }
@@ -436,7 +438,7 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId const *pDstS
     if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pDstSurface))
     {
         /* Unknown surface type; turn it into a texture, which can be used for other purposes too. */
-        LogFunc(("unknown dest sid=%x type=%d format=%d -> create texture\n", sidDst, pDstSurface->flags, pDstSurface->format));
+        LogFunc(("unknown dest sid=%x type=%d format=%d -> create texture\n", sidDst, pDstSurface->surfaceFlags, pDstSurface->format));
         rc = vmsvga3dBackCreateTexture(pState, pContext, pContext->id, pDstSurface);
         AssertRCReturn(rc, rc);
     }
@@ -482,7 +484,7 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
     AssertRCReturn(rc, rc);
 
     LogFunc(("%sguestptr gmr=%x offset=%x pitch=%x host sid=%x face=%d mipmap=%d transfer=%s cCopyBoxes=%d\n",
-             (pSurface->flags & SVGA3D_SURFACE_HINT_TEXTURE) ? "TEXTURE " : "",
+             (pSurface->surfaceFlags & SVGA3D_SURFACE_HINT_TEXTURE) ? "TEXTURE " : "",
              guest.ptr.gmrId, guest.ptr.offset, guest.pitch,
              host.sid, host.face, host.mipmap, (transfer == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", cCopyBoxes));
 
