@@ -662,11 +662,9 @@ bool ScmStreamIsAtStartOfLine(PSCMSTREAM pStream)
 }
 
 /**
- * Get a numbered line from the stream (changes the position).
+ * Worker for ScmStreamGetLineByNo and ScmStreamGetLine.
  *
- * A line is always delimited by a LF character or the end of the stream.  The
- * delimiter is not included in returned line length, but instead returned via
- * the @a penmEol indicator.
+ * Works on a fully lineated stream.
  *
  * @returns Pointer to the first character in the line, not NULL terminated.
  *          NULL if the end of the stream has been reached or some problem
@@ -677,38 +675,71 @@ bool ScmStreamIsAtStartOfLine(PSCMSTREAM pStream)
  * @param   pcchLine            The length.
  * @param   penmEol             Where to return the end of line type indicator.
  */
+DECLINLINE(const char *) scmStreamGetLineByNoCommon(PSCMSTREAM pStream, size_t iLine, size_t *pcchLine, PSCMEOL penmEol)
+{
+    Assert(!pStream->fWriteOrRead);
+    Assert(pStream->fFullyLineated);
+
+    /* Check stream status. */
+    if (RT_SUCCESS(pStream->rc))
+    {
+        /* Not at the end of the stream yet? */
+        if (RT_LIKELY(iLine < pStream->cLines))
+        {
+            /* Get the data. */
+            const char *pchRet = &pStream->pch[pStream->paLines[iLine].off];
+            *pcchLine          = pStream->paLines[iLine].cch;
+            *penmEol           = pStream->paLines[iLine].enmEol;
+
+            /* update the stream position. */
+            pStream->off       = pStream->paLines[iLine].off + pStream->paLines[iLine].cch + pStream->paLines[iLine].enmEol;
+            pStream->iLine     = iLine + 1;
+            return pchRet;
+        }
+        pStream->off   = pStream->cb;
+        pStream->iLine = pStream->cLines;
+    }
+    *pcchLine = 0;
+    *penmEol  = SCMEOL_NONE;
+    return NULL;
+}
+
+
+/**
+ * Get a numbered line from the stream (changes the position).
+ *
+ * A line is always delimited by a LF character or the end of the stream.  The
+ * delimiter is not included in returned line length, but instead returned via
+ * the @a penmEol indicator.
+ *
+ * @returns Pointer to the first character in the line, not NULL terminated.
+ *          NULL if the end of the stream has been reached or some problem
+ *          occurred (*pcchLine set to zero and *penmEol to SCMEOL_NONE).
+ *
+ * @param   pStream             The stream.  Must be in read mode.
+ * @param   iLine               The line to get (0-based).
+ * @param   pcchLine            The length.
+ * @param   penmEol             Where to return the end of line type indicator.
+ */
 const char *ScmStreamGetLineByNo(PSCMSTREAM pStream, size_t iLine, size_t *pcchLine, PSCMEOL penmEol)
 {
     AssertReturn(!pStream->fWriteOrRead, NULL);
-    if (RT_FAILURE(pStream->rc))
-        return NULL;
 
     /* Make sure it's fully delineated so we can use the index. */
-    if (RT_UNLIKELY(!pStream->fFullyLineated))
+    if (RT_LIKELY(pStream->fFullyLineated))
+        return scmStreamGetLineByNoCommon(pStream, iLine, pcchLine, penmEol);
+
+    int rc = pStream->rc;
+    if (RT_SUCCESS(rc))
     {
-        int rc = scmStreamLineate(pStream);
-        if (RT_FAILURE(rc))
-            return NULL;
+        rc = scmStreamLineate(pStream);
+        if (RT_SUCCESS(rc))
+            return scmStreamGetLineByNoCommon(pStream, iLine, pcchLine, penmEol);
     }
 
-    /* End of stream? */
-    if (RT_UNLIKELY(iLine >= pStream->cLines))
-    {
-        pStream->off   = pStream->cb;
-        pStream->iLine = pStream->cLines;
-        return NULL;
-    }
-
-    /* Get the data. */
-    const char *pchRet = &pStream->pch[pStream->paLines[iLine].off];
-    *pcchLine          = pStream->paLines[iLine].cch;
-    *penmEol           = pStream->paLines[iLine].enmEol;
-
-    /* update the stream position. */
-    pStream->off       = pStream->paLines[iLine].off + pStream->paLines[iLine].cch + pStream->paLines[iLine].enmEol;
-    pStream->iLine     = iLine + 1;
-
-    return pchRet;
+    *pcchLine = 0;
+    *penmEol  = SCMEOL_NONE;
+    return NULL;
 }
 
 /**
@@ -720,7 +751,7 @@ const char *ScmStreamGetLineByNo(PSCMSTREAM pStream, size_t iLine, size_t *pcchL
  *
  * @returns Pointer to the first character in the line, not NULL terminated.
  *          NULL if the end of the stream has been reached or some problem
- *          occurred.
+ *          occurred (*pcchLine set to zero and *penmEol to SCMEOL_NONE).
  *
  * @param   pStream             The stream.  Must be in read mode.
  * @param   pcchLine            The length.
@@ -728,24 +759,25 @@ const char *ScmStreamGetLineByNo(PSCMSTREAM pStream, size_t iLine, size_t *pcchL
  */
 const char *ScmStreamGetLine(PSCMSTREAM pStream, size_t *pcchLine, PSCMEOL penmEol)
 {
-    if (!pStream->fFullyLineated)
-        return scmStreamGetLineInternal(pStream, pcchLine, penmEol);
-
-    size_t      offCur   = pStream->off;
-    size_t      iCurLine = pStream->iLine;
-    const char *pszLine  = ScmStreamGetLineByNo(pStream, iCurLine, pcchLine, penmEol);
-    if (   pszLine
-        && offCur > pStream->paLines[iCurLine].off)
+    if (RT_LIKELY(pStream->fFullyLineated))
     {
-        offCur -= pStream->paLines[iCurLine].off;
-        Assert(offCur <= pStream->paLines[iCurLine].cch + pStream->paLines[iCurLine].enmEol);
-        if (offCur < pStream->paLines[iCurLine].cch)
-            *pcchLine  -= offCur;
-        else
-            *pcchLine   = 0;
-        pszLine        += offCur;
+        size_t      offCur   = pStream->off;
+        size_t      iCurLine = pStream->iLine;
+        const char *pszLine  = scmStreamGetLineByNoCommon(pStream, iCurLine, pcchLine, penmEol);
+        if (   pszLine
+            && offCur > pStream->paLines[iCurLine].off)
+        {
+            offCur -= pStream->paLines[iCurLine].off;
+            Assert(offCur <= pStream->paLines[iCurLine].cch + pStream->paLines[iCurLine].enmEol);
+            if (offCur < pStream->paLines[iCurLine].cch)
+                *pcchLine  -= offCur;
+            else
+                *pcchLine   = 0;
+            pszLine        += offCur;
+        }
+        return pszLine;
     }
-    return pszLine;
+    return scmStreamGetLineInternal(pStream, pcchLine, penmEol);
 }
 
 /**

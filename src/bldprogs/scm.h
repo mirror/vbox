@@ -61,6 +61,92 @@ int  ScmSvnApplyChanges(PSCMRWSTATE pState);
 /** @} */
 
 
+/** @name Code Parsing
+ * @{  */
+
+/**
+ * Comment style.
+ */
+typedef enum SCMCOMMENTSTYLE
+{
+    kScmCommentStyle_Invalid = 0,
+    kScmCommentStyle_C,
+    kScmCommentStyle_Hash,
+    kScmCommentStyle_Python,    /**< Same as hash, except for copyright/license. */
+    kScmCommentStyle_Semicolon,
+    kScmCommentStyle_Rem_Upper,
+    kScmCommentStyle_Rem_Lower,
+    kScmCommentStyle_Rem_Camel,
+    kScmCommentStyle_End
+} SCMCOMMENTSTYLE;
+
+/**
+ * Comment types.
+ */
+typedef enum SCMCOMMENTTYPE
+{
+    kScmCommentType_Invalid = 0,                /**< Customary invalid zero value. */
+    kScmCommentType_Line,                       /**< Line comment. */
+    kScmCommentType_Line_JavaDoc,               /**< Line comment, JavaDoc style. */
+    kScmCommentType_Line_JavaDoc_After,         /**< Line comment, JavaDoc after-member style. */
+    kScmCommentType_Line_Qt,                    /**< Line comment, JavaDoc style. */
+    kScmCommentType_Line_Qt_After,              /**< Line comment, JavaDoc after-member style. */
+    kScmCommentType_MultiLine,                  /**< Multi-line comment (e.g. ansi C).  */
+    kScmCommentType_MultiLine_JavaDoc,          /**< Multi-line comment, JavaDoc style.  */
+    kScmCommentType_MultiLine_JavaDoc_After,    /**< Multi-line comment, JavaDoc after-member style.  */
+    kScmCommentType_MultiLine_Qt,               /**< Multi-line comment, Qt style.  */
+    kScmCommentType_MultiLine_Qt_After,         /**< Multi-line comment, Qt after-member style.  */
+    kScmCommentType_DocString,                  /**< Triple quoted python doc string. */
+    kScmCommentType_End                         /**< Customary exclusive end value. */
+} SCMCOMMENTTYPE;
+
+
+/**
+ * Comment information.
+ */
+typedef struct SCMCOMMENTINFO
+{
+    /** Comment type. */
+    SCMCOMMENTTYPE  enmType;
+    /** Start line number  (0-based). */
+    uint32_t        iLineStart;
+    /** Start line offset (0-based). */
+    uint32_t        offStart;
+    /** End line number  (0-based). */
+    uint32_t        iLineEnd;
+    /** End line offset  (0-based). */
+    uint32_t        offEnd;
+    /** Number of blank lines before the body (@a pszBody). */
+    uint32_t        cBlankLinesBefore;
+    /** Number of blank lines after the body (@a pszBody + @a cchBody). */
+    uint32_t        cBlankLinesAfter;
+    /** @todo add min/max indent. Raw length. Etc. */
+} SCMCOMMENTINFO;
+/** Pointer to comment info. */
+typedef SCMCOMMENTINFO *PSCMCOMMENTINFO;
+/** Pointer to const comment info. */
+typedef SCMCOMMENTINFO const *PCSCMCOMMENTINFO;
+
+
+/**
+ * Comment enumeration callback function.
+ *
+ * @returns IPRT style status code.  Failures causes immediate return.  While an
+ *          informational status code is saved (first one) and returned later.
+ * @param   pInfo           Additional comment info.
+ * @param   pszBody         The comment body.  This is somewhat stripped.
+ * @param   cchBody         The comment body length.
+ * @param   pvUser          User callback argument.
+ */
+typedef DECLCALLBACK(int) FNSCMCOMMENTENUMERATOR(PCSCMCOMMENTINFO pInfo, const char *pszBody, size_t cchBody, void *pvUser);
+/** Poiter to a omment enumeration callback function. */
+typedef FNSCMCOMMENTENUMERATOR *PFNSCMCOMMENTENUMERATOR;
+
+int ScmEnumerateComments(PSCMSTREAM pIn, SCMCOMMENTSTYLE enmCommentStyle, PFNSCMCOMMENTENUMERATOR pfnCallback, void *pvUser);
+
+/** @} */
+
+
 /** @name Rewriters
  * @{ */
 
@@ -78,6 +164,8 @@ typedef struct SCMRWSTATE
     size_t              cSvnPropChanges;
     /** Pointer to an array of SVN property changes. */
     struct SCMSVNPROP  *paSvnPropChanges;
+    /** For error propagation. */
+    int32_t             rc;
 } SCMRWSTATE;
 
 /**
@@ -103,6 +191,11 @@ FNSCMREWRITER rewrite_ForceCRLF;
 FNSCMREWRITER rewrite_AdjustTrailingLines;
 FNSCMREWRITER rewrite_SvnNoExecutable;
 FNSCMREWRITER rewrite_SvnKeywords;
+FNSCMREWRITER rewrite_Copyright_CstyleComment;
+FNSCMREWRITER rewrite_Copyright_HashComment;
+FNSCMREWRITER rewrite_Copyright_PythonComment;
+FNSCMREWRITER rewrite_Copyright_RemComment;
+FNSCMREWRITER rewrite_Copyright_SemicolonComment;
 FNSCMREWRITER rewrite_Makefile_kup;
 FNSCMREWRITER rewrite_Makefile_kmk;
 FNSCMREWRITER rewrite_FixFlowerBoxMarkers;
@@ -131,6 +224,17 @@ typedef SCMCFGENTRY *PSCMCFGENTRY;
 typedef SCMCFGENTRY const *PCSCMCFGENTRY;
 
 
+/** License update options. */
+typedef enum SCMLICENSE
+{
+    kScmLicense_LeaveAlone = 0,     /**< Leave it alone. */
+    kScmLicense_OseGpl,             /**< VBox OSE GPL if public. */
+    kScmLicense_OseDualGplCddl,     /**< VBox OSE dual GPL & CDDL if public. */
+    kScmLicense_Lgpl,               /**< LGPL if public. */
+    kScmLicense_Mit,                /**< MIT if public. */
+    kScmLicense_End
+} SCMLICENSE;
+
 /**
  * Source Code Massager Settings.
  */
@@ -150,6 +254,11 @@ typedef struct SCMSETTINGSBASE
 
     /** Whether to fix C/C++ todos. */
     bool            fFixTodos;
+
+    /** Update the copyright year. */
+    bool            fUpdateCopyrightYear;
+    /** How to update the license. */
+    SCMLICENSE      enmUpdateLicense;
 
     /** Only process files that are part of a SVN working copy. */
     bool            fOnlySvnFiles;
@@ -229,11 +338,13 @@ typedef SCMSETTINGS const *PCSCMSETTINGS;
 /** @} */
 
 
-void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ...);
+void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+bool ScmError(PSCMRWSTATE pState, int rc, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 extern const char g_szTabSpaces[16+1];
 extern const char g_szAsterisks[255+1];
 extern const char g_szSpaces[255+1];
+extern uint32_t g_uYear;
 
 RT_C_DECLS_END
 

@@ -76,6 +76,13 @@ typedef enum SCMOPT
     SCMOPT_NO_FIX_FLOWER_BOX_MARKERS,
     SCMOPT_FIX_TODOS,
     SCMOPT_NO_FIX_TODOS,
+    SCMOPT_UPDATE_COPYRIGHT_YEAR,
+    SCMOPT_NO_UPDATE_COPYRIGHT_YEAR,
+    SCMOPT_NO_UPDATE_LICENSE,
+    SCMOPT_LICENSE_OSE_GPL,
+    SCMOPT_LICENSE_OSE_DUAL_GPL_CDDL,
+    SCMOPT_LICENSE_LGPL,
+    SCMOPT_LICENSE_MIT,
     SCMOPT_MIN_BLANK_LINES_BEFORE_FLOWER_BOX_MARKERS,
     SCMOPT_ONLY_SVN_DIRS,
     SCMOPT_NOT_ONLY_SVN_DIRS,
@@ -128,6 +135,7 @@ static bool         g_fDiffIgnoreEol        = false;
 static bool         g_fDiffIgnoreLeadingWS  = false;
 static bool         g_fDiffIgnoreTrailingWS = false;
 static int          g_iVerbosity            = 2;//99; //0;
+uint32_t            g_uYear                 = 0; /**< The current year. */
 
 /** The global settings. */
 static SCMSETTINGSBASE const g_Defaults =
@@ -141,6 +149,8 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fFixFlowerBoxMarkers = */                   true,
     /* .cMinBlankLinesBeforeFlowerBoxMakers = */    2,
     /* .fFixTodos = */                              true,
+    /* .fUpdateCopyrightYear = */                   false,
+    /* .enmUpdateLicense = */                       kScmLicense_OseGpl,
     /* .fOnlySvnFiles = */                          false,
     /* .fOnlySvnDirs = */                           false,
     /* .fSetSvnEol = */                             false,
@@ -168,11 +178,18 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--no-strip-trailing-blanks",         SCMOPT_NO_STRIP_TRAILING_BLANKS,        RTGETOPT_REQ_NOTHING },
     { "--strip-trailing-lines",             SCMOPT_STRIP_TRAILING_LINES,            RTGETOPT_REQ_NOTHING },
     { "--strip-no-trailing-lines",          SCMOPT_NO_STRIP_TRAILING_LINES,         RTGETOPT_REQ_NOTHING },
-    { "--min-blank-lines-before-flower-box-makers", SCMOPT_FIX_FLOWER_BOX_MARKERS,  RTGETOPT_REQ_UINT8 },
+    { "--min-blank-lines-before-flower-box-makers", SCMOPT_MIN_BLANK_LINES_BEFORE_FLOWER_BOX_MARKERS,  RTGETOPT_REQ_UINT8 },
     { "--fix-flower-box-markers",           SCMOPT_FIX_FLOWER_BOX_MARKERS,          RTGETOPT_REQ_NOTHING },
     { "--no-fix-flower-box-markers",        SCMOPT_NO_FIX_FLOWER_BOX_MARKERS,       RTGETOPT_REQ_NOTHING },
     { "--fix-todos",                        SCMOPT_FIX_TODOS,                       RTGETOPT_REQ_NOTHING },
     { "--no-fix-todos",                     SCMOPT_NO_FIX_TODOS,                    RTGETOPT_REQ_NOTHING },
+    { "--update-copyright-year",            SCMOPT_UPDATE_COPYRIGHT_YEAR,           RTGETOPT_REQ_NOTHING },
+    { "--no-update-copyright-year",         SCMOPT_NO_UPDATE_COPYRIGHT_YEAR,        RTGETOPT_REQ_NOTHING },
+    { "--no-update-license",                SCMOPT_NO_UPDATE_LICENSE,               RTGETOPT_REQ_NOTHING },
+    { "--license-ose-gpl",                  SCMOPT_LICENSE_OSE_GPL,                 RTGETOPT_REQ_NOTHING },
+    { "--license-ose-dual",                 SCMOPT_LICENSE_OSE_DUAL_GPL_CDDL,       RTGETOPT_REQ_NOTHING },
+    { "--license-lgpl",                     SCMOPT_LICENSE_LGPL,                    RTGETOPT_REQ_NOTHING },
+    { "--license-mit",                      SCMOPT_LICENSE_MIT,                     RTGETOPT_REQ_NOTHING },
     { "--only-svn-dirs",                    SCMOPT_ONLY_SVN_DIRS,                   RTGETOPT_REQ_NOTHING },
     { "--not-only-svn-dirs",                SCMOPT_NOT_ONLY_SVN_DIRS,               RTGETOPT_REQ_NOTHING },
     { "--only-svn-files",                   SCMOPT_ONLY_SVN_FILES,                  RTGETOPT_REQ_NOTHING },
@@ -206,6 +223,7 @@ static PFNSCMREWRITER const g_aRewritersFor_Makefile_kmk[] =
     rewrite_AdjustTrailingLines,
     rewrite_SvnNoExecutable,
     rewrite_SvnKeywords,
+    rewrite_Copyright_HashComment,
     rewrite_Makefile_kmk
 };
 
@@ -217,6 +235,7 @@ static PFNSCMREWRITER const g_aRewritersFor_C_and_CPP[] =
     rewrite_AdjustTrailingLines,
     rewrite_SvnNoExecutable,
     rewrite_SvnKeywords,
+    rewrite_Copyright_CstyleComment,
     rewrite_FixFlowerBoxMarkers,
     rewrite_Fix_C_and_CPP_Todos,
     rewrite_C_and_CPP
@@ -229,6 +248,7 @@ static PFNSCMREWRITER const g_aRewritersFor_H_and_HPP[] =
     rewrite_StripTrailingBlanks,
     rewrite_AdjustTrailingLines,
     rewrite_SvnNoExecutable,
+    rewrite_Copyright_CstyleComment,
     rewrite_C_and_CPP
 };
 
@@ -239,7 +259,8 @@ static PFNSCMREWRITER const g_aRewritersFor_RC[] =
     rewrite_StripTrailingBlanks,
     rewrite_AdjustTrailingLines,
     rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords
+    rewrite_SvnKeywords,
+    rewrite_Copyright_CstyleComment,
 };
 
 static PFNSCMREWRITER const g_aRewritersFor_DEF[] =
@@ -249,28 +270,32 @@ static PFNSCMREWRITER const g_aRewritersFor_DEF[] =
     rewrite_StripTrailingBlanks,
     rewrite_AdjustTrailingLines,
     rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords
+    rewrite_SvnKeywords,
+    rewrite_Copyright_SemicolonComment,
 };
 
 static PFNSCMREWRITER const g_aRewritersFor_ShellScripts[] =
 {
     rewrite_ForceLF,
     rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks
+    rewrite_StripTrailingBlanks,
+    rewrite_Copyright_HashComment,
 };
 
 static PFNSCMREWRITER const g_aRewritersFor_BatchFiles[] =
 {
     rewrite_ForceCRLF,
     rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks
+    rewrite_StripTrailingBlanks,
+    rewrite_Copyright_RemComment,
 };
 
 static PFNSCMREWRITER const g_aRewritersFor_SedScripts[] =
 {
     rewrite_ForceLF,
     rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks
+    rewrite_StripTrailingBlanks,
+    rewrite_Copyright_HashComment,
 };
 
 static PFNSCMREWRITER const g_aRewritersFor_Python[] =
@@ -279,7 +304,8 @@ static PFNSCMREWRITER const g_aRewritersFor_Python[] =
     rewrite_ExpandTabs,
     rewrite_StripTrailingBlanks,
     rewrite_AdjustTrailingLines,
-    rewrite_SvnKeywords
+    rewrite_SvnKeywords,
+    rewrite_Copyright_PythonComment,
 };
 
 
@@ -437,6 +463,29 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             return VINF_SUCCESS;
         case SCMOPT_NO_FIX_FLOWER_BOX_MARKERS:
             pSettings->fFixFlowerBoxMarkers = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_UPDATE_COPYRIGHT_YEAR:
+            pSettings->fUpdateCopyrightYear = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_UPDATE_COPYRIGHT_YEAR:
+            pSettings->fUpdateCopyrightYear = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_NO_UPDATE_LICENSE:
+            pSettings->enmUpdateLicense = kScmLicense_LeaveAlone;
+            return VINF_SUCCESS;
+        case SCMOPT_LICENSE_OSE_GPL:
+            pSettings->enmUpdateLicense = kScmLicense_OseGpl;
+            return VINF_SUCCESS;
+        case SCMOPT_LICENSE_OSE_DUAL_GPL_CDDL:
+            pSettings->enmUpdateLicense = kScmLicense_OseDualGplCddl;
+            return VINF_SUCCESS;
+        case SCMOPT_LICENSE_LGPL:
+            pSettings->enmUpdateLicense = kScmLicense_Lgpl;
+            return VINF_SUCCESS;
+        case SCMOPT_LICENSE_MIT:
+            pSettings->enmUpdateLicense = kScmLicense_Mit;
             return VINF_SUCCESS;
 
         case SCMOPT_ONLY_SVN_DIRS:
@@ -1057,6 +1106,34 @@ void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ...)
 }
 
 
+/**
+ * Prints an error message.
+ *
+ * @returns false
+ * @param   pState              The rewrite state.  Optional.
+ * @param   rc                  The error code.
+ * @param   pszFormat           The message format string.
+ * @param   ...                 Format arguments.
+ */
+bool ScmError(PSCMRWSTATE pState, int rc, const char *pszFormat, ...)
+{
+    if (RT_SUCCESS(pState->rc))
+        pState->rc = rc;
+
+    if (!pState->fFirst)
+    {
+        RTPrintf("%s: info: --= Rewriting '%s' =--\n", g_szProgName, pState->pszFilename);
+        pState->fFirst = true;
+    }
+    va_list va;
+    va_start(va, pszFormat);
+    RTPrintf("%s: error: %s: %N", g_szProgName, pState->pszFilename, pszFormat, &va);
+    va_end(va);
+
+    return false;
+}
+
+
 /* -=-=-=-=-=- file and directory processing -=-=-=-=-=- */
 
 
@@ -1157,7 +1234,10 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                     PSCMSTREAM  pOut      = &Stream2;
                     for (size_t iRw = 0; iRw < pCfg->cRewriters; iRw++)
                     {
+                        pState->rc = VINF_SUCCESS;
                         bool fRc = pCfg->papfnRewriter[iRw](pState, pIn, pOut, pBaseSettings);
+                        if (RT_FAILURE(pState->rc))
+                            break;
                         if (fRc)
                         {
                             PSCMSTREAM pTmp = pOut;
@@ -1165,58 +1245,65 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                             pIn  = pTmp;
                             fModified = true;
                         }
+
                         ScmStreamRewindForReading(pIn);
                         ScmStreamRewindForWriting(pOut);
                     }
 
-                    rc = ScmStreamGetStatus(&Stream1);
-                    if (RT_SUCCESS(rc))
-                        rc = ScmStreamGetStatus(&Stream2);
-                    if (RT_SUCCESS(rc))
-                        rc = ScmStreamGetStatus(&Stream3);
+                    rc = pState->rc;
                     if (RT_SUCCESS(rc))
                     {
-                        /*
-                         * If rewritten, write it back to disk.
-                         */
-                        if (fModified)
+                        rc = ScmStreamGetStatus(&Stream1);
+                        if (RT_SUCCESS(rc))
+                            rc = ScmStreamGetStatus(&Stream2);
+                        if (RT_SUCCESS(rc))
+                            rc = ScmStreamGetStatus(&Stream3);
+                        if (RT_SUCCESS(rc))
                         {
-                            if (!g_fDryRun)
+                            /*
+                             * If rewritten, write it back to disk.
+                             */
+                            if (fModified)
                             {
-                                ScmVerbose(pState, 1, "writing modified file to \"%s%s\"\n", pszFilename, g_pszChangedSuff);
-                                rc = ScmStreamWriteToFile(pIn, "%s%s", pszFilename, g_pszChangedSuff);
-                                if (RT_FAILURE(rc))
-                                    RTMsgError("Error writing '%s%s': %Rrc\n", pszFilename, g_pszChangedSuff, rc);
+                                if (!g_fDryRun)
+                                {
+                                    ScmVerbose(pState, 1, "writing modified file to \"%s%s\"\n", pszFilename, g_pszChangedSuff);
+                                    rc = ScmStreamWriteToFile(pIn, "%s%s", pszFilename, g_pszChangedSuff);
+                                    if (RT_FAILURE(rc))
+                                        RTMsgError("Error writing '%s%s': %Rrc\n", pszFilename, g_pszChangedSuff, rc);
+                                }
+                                else
+                                {
+                                    ScmVerbose(pState, 1, NULL);
+                                    ScmDiffStreams(pszFilename, &Stream1, pIn, g_fDiffIgnoreEol,
+                                                   g_fDiffIgnoreLeadingWS, g_fDiffIgnoreTrailingWS, g_fDiffSpecialChars,
+                                                   pBaseSettings->cchTab, g_pStdOut);
+                                    ScmVerbose(pState, 2, "would have modified the file \"%s%s\"\n",
+                                               pszFilename, g_pszChangedSuff);
+                                }
                             }
-                            else
-                            {
-                                ScmVerbose(pState, 1, NULL);
-                                ScmDiffStreams(pszFilename, &Stream1, pIn, g_fDiffIgnoreEol, g_fDiffIgnoreLeadingWS,
-                                               g_fDiffIgnoreTrailingWS, g_fDiffSpecialChars, pBaseSettings->cchTab, g_pStdOut);
-                                ScmVerbose(pState, 2, "would have modified the file \"%s%s\"\n", pszFilename, g_pszChangedSuff);
-                            }
-                        }
 
-                        /*
-                         * If pending SVN property changes, apply them.
-                         */
-                        if (pState->cSvnPropChanges && RT_SUCCESS(rc))
-                        {
-                            if (!g_fDryRun)
+                            /*
+                             * If pending SVN property changes, apply them.
+                             */
+                            if (pState->cSvnPropChanges && RT_SUCCESS(rc))
                             {
-                                rc = ScmSvnApplyChanges(pState);
-                                if (RT_FAILURE(rc))
-                                    RTMsgError("%s: failed to apply SVN property changes (%Rrc)\n", pszFilename, rc);
+                                if (!g_fDryRun)
+                                {
+                                    rc = ScmSvnApplyChanges(pState);
+                                    if (RT_FAILURE(rc))
+                                        RTMsgError("%s: failed to apply SVN property changes (%Rrc)\n", pszFilename, rc);
+                                }
+                                else
+                                    ScmSvnDisplayChanges(pState);
                             }
-                            else
-                                ScmSvnDisplayChanges(pState);
-                        }
 
-                        if (!fModified && !pState->cSvnPropChanges)
-                            ScmVerbose(pState, 3, "no change\n", pszFilename);
+                            if (!fModified && !pState->cSvnPropChanges)
+                                ScmVerbose(pState, 3, "no change\n", pszFilename);
+                        }
+                        else
+                            RTMsgError("%s: stream error %Rrc\n", pszFilename, rc);
                     }
-                    else
-                        RTMsgError("%s: stream error %Rrc\n", pszFilename, rc);
                     ScmStreamDelete(&Stream3);
                 }
                 else
@@ -1261,6 +1348,7 @@ static int scmProcessFile(const char *pszFilename, const char *pszBasename, size
         State.pszFilename      = pszFilename;
         State.cSvnPropChanges  = 0;
         State.paSvnPropChanges = NULL;
+        State.rc               = VINF_SUCCESS;
 
         rc = scmProcessFileInner(&State, pszFilename, pszBasename, cchBasename, &Base);
 
@@ -1502,20 +1590,34 @@ static void usage(PCRTGETOPTDEF paOpts, size_t cOpts)
              "Options:\n", g_szProgName);
     for (size_t i = 0; i < cOpts; i++)
     {
-        bool fAdvanceTwo = false;
+        size_t cExtraAdvance = 0;
         if ((paOpts[i].fFlags & RTGETOPT_REQ_MASK) == RTGETOPT_REQ_NOTHING)
         {
-            fAdvanceTwo = i + 1 < cOpts
-                       && (   strstr(paOpts[i+1].pszLong, "-no-") != NULL
-                           || strstr(paOpts[i+1].pszLong, "-not-") != NULL
-                           || strstr(paOpts[i+1].pszLong, "-dont-") != NULL
-                           || (paOpts[i].iShort == 'q' && paOpts[i+1].iShort == 'v')
-                           || (paOpts[i].iShort == 'd' && paOpts[i+1].iShort == 'D')
-                          );
-            if (fAdvanceTwo)
+            cExtraAdvance = i + 1 < cOpts
+                         && (   strstr(paOpts[i+1].pszLong, "-no-") != NULL
+                             || strstr(paOpts[i+1].pszLong, "-not-") != NULL
+                             || strstr(paOpts[i+1].pszLong, "-dont-") != NULL
+                             || (paOpts[i].iShort == 'q' && paOpts[i+1].iShort == 'v')
+                             || (paOpts[i].iShort == 'd' && paOpts[i+1].iShort == 'D')
+                            );
+            if (cExtraAdvance)
                 RTPrintf("  %s, %s\n", paOpts[i].pszLong, paOpts[i + 1].pszLong);
-            else
+            else if (paOpts[i].iShort != SCMOPT_NO_UPDATE_LICENSE)
                 RTPrintf("  %s\n", paOpts[i].pszLong);
+            else
+            {
+                RTPrintf("  %s,\n"
+                         "  %s,\n"
+                         "  %s,\n"
+                         "  %s,\n"
+                         "  %s\n",
+                         paOpts[i].pszLong,
+                         paOpts[i + 1].pszLong,
+                         paOpts[i + 2].pszLong,
+                         paOpts[i + 3].pszLong,
+                         paOpts[i + 4].pszLong);
+                cExtraAdvance = 4;
+            }
         }
         else if ((paOpts[i].fFlags & RTGETOPT_REQ_MASK) == RTGETOPT_REQ_STRING)
             RTPrintf("  %s string\n", paOpts[i].pszLong);
@@ -1542,8 +1644,18 @@ static void usage(PCRTGETOPTDEF paOpts, size_t cOpts)
             case SCMOPT_STRIP_TRAILING_BLANKS:  RTPrintf("      Default: %RTbool\n", g_Defaults.fStripTrailingBlanks); break;
             case SCMOPT_STRIP_TRAILING_LINES:   RTPrintf("      Default: %RTbool\n", g_Defaults.fStripTrailingLines); break;
             case SCMOPT_FIX_FLOWER_BOX_MARKERS: RTPrintf("      Default: %RTbool\n", g_Defaults.fFixFlowerBoxMarkers); break;
-            case SCMOPT_FIX_TODOS:              RTPrintf("      Default: %RTbool\n", g_Defaults.fFixTodos); break;
             case SCMOPT_MIN_BLANK_LINES_BEFORE_FLOWER_BOX_MARKERS: RTPrintf("      Default: %u\n", g_Defaults.cMinBlankLinesBeforeFlowerBoxMakers); break;
+
+            case SCMOPT_FIX_TODOS:
+                RTPrintf("      Fix @todo statements so doxygen sees them.  Default: %RTbool\n", g_Defaults.fFixTodos);
+                break;
+            case SCMOPT_UPDATE_COPYRIGHT_YEAR:
+                RTPrintf("      Update the copyright year.  Default: %RTbool\n", g_Defaults.fUpdateCopyrightYear);
+                break;
+            case SCMOPT_NO_UPDATE_LICENSE:
+                RTPrintf("      License selection.  Default: --license-ose-gpl\n");
+                break;
+
             case SCMOPT_ONLY_SVN_DIRS:          RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnDirs); break;
             case SCMOPT_ONLY_SVN_FILES:         RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnFiles); break;
             case SCMOPT_SET_SVN_EOL:            RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnEol); break;
@@ -1556,7 +1668,7 @@ static void usage(PCRTGETOPTDEF paOpts, size_t cOpts)
             case SCMOPT_FILTER_OUT_FILES:       RTPrintf("      Default: %s\n", g_Defaults.pszFilterOutFiles); break;
             default: AssertMsgFailed(("i=%d %d %s\n", i, paOpts[i].iShort, paOpts[i].pszLong));
         }
-        i += fAdvanceTwo;
+        i += cExtraAdvance;
     }
 
 }
@@ -1566,6 +1678,14 @@ int main(int argc, char **argv)
     int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return 1;
+
+    /*
+     * Init the current year.
+     */
+    RTTIMESPEC  Now;
+    RTTIME      Time;
+    RTTimeExplode(&Time, RTTimeNow(&Now));
+    g_uYear = Time.i32Year;
 
     /*
      * Init the settings.
