@@ -12,7 +12,7 @@
     <itemizedlist>
 
       <listitem>
-        <para>dummy</para>
+        <para>Storage: fixed regression breaking iSCSI (bug #17196)</para>
       </listitem>
 
     </itemizedlist>
