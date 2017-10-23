@@ -1951,6 +1951,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                     info.enmStatus = pAdapter->OperStatus == IfOperStatusUp ? NETIF_S_UP : NETIF_S_DOWN;
                     info.fIsDefault = (pAdapter->IfIndex == (DWORD)iDefault);
                     info.fDhcpEnabled = pAdapter->Flags & IP_ADAPTER_DHCP_ENABLED;
+                    info.fWireless = (*it).fWireless;
                     OSVERSIONINFOEX OSInfoEx;
                     RT_ZERO(OSInfoEx);
                     OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);

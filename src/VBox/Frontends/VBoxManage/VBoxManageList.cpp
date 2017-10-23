@@ -170,6 +170,9 @@ static HRESULT listNetworkInterfaces(const ComPtr<IVirtualBox> pVirtualBox,
         HostNetworkInterfaceMediumType_T Type;
         networkInterface->COMGETTER(MediumType)(&Type);
         RTPrintf("MediumType:      %s\n", getHostIfMediumTypeText(Type));
+        BOOL fWireless;
+        networkInterface->COMGETTER(Wireless)(&fWireless);
+        RTPrintf("Wireless:        %s\n", fWireless ? "Yes" : "No");
         HostNetworkInterfaceStatus_T Status;
         networkInterface->COMGETTER(Status)(&Status);
         RTPrintf("Status:          %s\n", getHostIfStatusText(Status));
