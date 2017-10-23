@@ -917,6 +917,8 @@ static int scmSettingsCreateForPath(PSCMSETTINGS *ppSettings, PCSCMSETTINGSBASE 
             rc = RTPathAppend(szFile, sizeof(szFile), SCM_SETTINGS_FILENAME);
         if (RT_FAILURE(rc))
             break;
+        RTPathChangeToUnixSlashes(szFile, true);
+
         if (RTFileExists(szFile))
         {
             rc = scmSettingsLoadFile(pSettings, szFile);
@@ -966,6 +968,8 @@ static int scmSettingsStackPushDir(PSCMSETTINGS *ppSettingsStack, const char *ps
     int rc = RTPathJoin(szFile, sizeof(szFile), pszDir, SCM_SETTINGS_FILENAME);
     if (RT_SUCCESS(rc))
     {
+        RTPathChangeToUnixSlashes(szFile, true);
+
         PSCMSETTINGS pSettings;
         rc = scmSettingsCreate(&pSettings, &(*ppSettingsStack)->Base);
         if (RT_SUCCESS(rc))
@@ -1032,6 +1036,8 @@ static void scmSettingsStackPopAndDestroy(PSCMSETTINGS *ppSettingsStack)
 static int scmSettingsStackMakeFileBase(PCSCMSETTINGS pSettingsStack, const char *pszFilename,
                                         const char *pszBasename, size_t cchBasename, PSCMSETTINGSBASE pBase)
 {
+    ScmVerbose(NULL, 5, "scmSettingsStackMakeFileBase(%s, %.*s)\n", pszFilename, cchBasename, pszBasename);
+
     int rc = scmSettingsBaseInitAndCopy(pBase, &pSettingsStack->Base);
     if (RT_SUCCESS(rc))
     {
@@ -1052,6 +1058,8 @@ static int scmSettingsStackMakeFileBase(PCSCMSETTINGS pSettingsStack, const char
                         || RTStrSimplePatternMultiMatch(pCur->paPairs[i].pszPattern, RTSTR_MAX,
                                                         pszFilename,  RTSTR_MAX, NULL))
                     {
+                        ScmVerbose(NULL, 5, "scmSettingsStackMakeFileBase: Matched '%s' : '%s'\n",
+                                   pCur->paPairs[i].pszPattern, pCur->paPairs[i].pszOptions);
                         rc = scmSettingsBaseParseString(pBase, pCur->paPairs[i].pszOptions);
                         if (RT_FAILURE(rc))
                             break;
@@ -1535,6 +1543,8 @@ static int scmProcessDirTree(char *pszDir, PSCMSETTINGS pSettingsStack)
     int rc = RTPathAppend(pszDir, RTPATH_MAX, ".");
     if (RT_SUCCESS(rc))
     {
+        RTPathChangeToUnixSlashes(pszDir, true);
+
         RTDIRENTRY Entry;
         rc = scmProcessDirTreeRecursion(pszDir, strlen(pszDir), &Entry, pSettingsStack, 0);
     }

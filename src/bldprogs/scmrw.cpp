@@ -163,6 +163,30 @@ static const char g_szVBoxLgpl[] =
 /** --license-mit
  * @note This isn't detectable as VirtualBox or Oracle specific.  */
 static const char g_szMit[] =
+    "Permission is hereby granted, free of charge, to any person obtaining a\n"
+    "copy of this software and associated documentation files (the \"Software\"),\n"
+    "to deal in the Software without restriction, including without limitation\n"
+    "the rights to use, copy, modify, merge, publish, distribute, sublicense,\n"
+    "and/or sell copies of the Software, and to permit persons to whom the\n"
+    "Software is furnished to do so, subject to the following conditions:\n"
+    "\n"
+    "The above copyright notice and this permission notice shall be included in\n"
+    "all copies or substantial portions of the Software.\n"
+    "\n"
+    "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+    "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+    "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL\n"
+    "THE COPYRIGHT HOLDER(S) OR AUTHOR(S) BE LIABLE FOR ANY CLAIM, DAMAGES OR\n"
+    "OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,\n"
+    "ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR\n"
+    "OTHER DEALINGS IN THE SOFTWARE.\n";
+
+/** --license-mit, alternative wording.
+ * @note This isn't detectable as VirtualBox or Oracle specific.
+ * @note This differes from g_szMit in "COPYRIGHT HOLDER(S) OR AUTHOR(S)" is
+ *       written "AUTHORS OR COPYRIGHT HOLDERS".  Its layout is narrower, so
+ *       it is a couple of lines longer. */
+static const char g_szMitAltB[] =
     "Permission is hereby granted, free of charge, to any person\n"
     "obtaining a copy of this software and associated documentation\n"
     "files (the \"Software\"), to deal in the Software without\n"
@@ -178,11 +202,59 @@ static const char g_szMit[] =
     "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n"
     "EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES\n"
     "OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\n"
-    "NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT\n"
+    "NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT\n"
     "HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,\n"
     "WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING\n"
     "FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR\n"
     "OTHER DEALINGS IN THE SOFTWARE.\n";
+
+/** --license-mit, alternative wording.
+ * @note This isn't detectable as VirtualBox or Oracle specific.
+ * @note This differes from g_szMit in that "COPYRIGHT HOLDER(S) OR AUTHOR(S)"
+ *       is replaced with "THE COPYRIGHT HOLDERS, AUTHORS AND/OR ITS
+ *       SUPPLIERS". */
+static const char g_szMitAltC[] =
+    "Permission is hereby granted, free of charge, to any person obtaining a\n"
+    "copy of this software and associated documentation files (the \"Software\"),\n"
+    "to deal in the Software without restriction, including without limitation\n"
+    "the rights to use, copy, modify, merge, publish, distribute, sublicense,\n"
+    "and/or sell copies of the Software, and to permit persons to whom the\n"
+    "Software is furnished to do so, subject to the following conditions:\n"
+    "\n"
+    "The above copyright notice and this permission notice shall be included in\n"
+    "all copies or substantial portions of the Software.\n"
+    "\n"
+    "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+    "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+    "FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL\n"
+    "THE COPYRIGHT HOLDERS, AUTHORS AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM,\n"
+    "DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR\n"
+    "OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE\n"
+    "USE OR OTHER DEALINGS IN THE SOFTWARE.\n";
+
+/** --license-mit, alternative wording.
+ * @note This isn't detectable as VirtualBox or Oracle specific.
+ * @note This differes from g_szMitAltC in that the second and third sections
+ *       have been switch. */
+static const char g_szMitAltD[] =
+    "Permission is hereby granted, free of charge, to any person obtaining a\n"
+    "copy of this software and associated documentation files (the \"Software\"),\n"
+    "to deal in the Software without restriction, including without limitation\n"
+    "the rights to use, copy, modify, merge, publish, distribute, sublicense,\n"
+    "and/or sell copies of the Software, and to permit persons to whom the\n"
+    "Software is furnished to do so, subject to the following conditions:\n"
+    "\n"
+    "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+    "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+    "FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL\n"
+    "THE COPYRIGHT HOLDERS, AUTHORS AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM,\n"
+    "DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR\n"
+    "OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE\n"
+    "USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+    "\n"
+    "The above copyright notice and this permission notice shall be included in\n"
+    "all copies or substantial portions of the Software.\n";
+
 
 /** Oracle confidential. */
 static const char g_szOracleConfidential[] =
@@ -202,10 +274,13 @@ static const SCMLICENSETEXT g_aLicenses[] =
 /** Licenses to detect when --license-mit _is_ used. */
 static const SCMLICENSETEXT g_aLicensesWithMit[] =
 {
+    { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMit) },
+    { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMitAltB) },
+    { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMitAltC) },
+    { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMitAltD) },
     { kScmLicenseType_OseGpl,           kScmLicense_OseGpl,         RT_STR_TUPLE(g_szVBoxOseGpl)},
     { kScmLicenseType_OseDualGplCddl,   kScmLicense_OseDualGplCddl, RT_STR_TUPLE(g_szVBoxOseDualGplCddl) },
     { kScmLicenseType_VBoxLgpl,         kScmLicense_Lgpl,           RT_STR_TUPLE(g_szVBoxLgpl)},
-    { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMit) },
     { kScmLicenseType_Confidential,     kScmLicense_End,            RT_STR_TUPLE(g_szOracleConfidential) },
     { kScmLicenseType_Invalid,          kScmLicense_End,            NULL, 0 },
 };
@@ -816,7 +891,7 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
     PSCMCOPYRIGHTINFO pState = (PSCMCOPYRIGHTINFO)pvUser;
     Assert(strlen(pszBody) == cchBody);
     //RTPrintf("--- comment at %u, type %u ---\n%s\n--- end ---\n", pInfo->iLineStart, pInfo->enmType, pszBody);
-    ScmVerbose(pState->pState, 2,
+    ScmVerbose(pState->pState, 4,
                "--- comment at %u col %u, %u lines, type %u, %u lines before body, %u lines after body\n",
                pInfo->iLineStart, pInfo->offStart, pInfo->iLineEnd - pInfo->iLineStart + 1, pInfo->enmType,
                pInfo->cBlankLinesBefore, pInfo->cBlankLinesAfter);
@@ -1017,7 +1092,7 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
                     pState->pCurrentLicense     = pCur;
                     pState->fExternalLicense    = fExternal;
                     pState->fIsCorrectLicense   = pState->fOpenSource
-                                                ? pCur->enmOpt == pState->enmLicenceOpt
+                                                ? pCur == pState->pExpectedLicense
                                                 : pCur->enmType == kScmLicenseType_Confidential;
                     pState->fWellFormedLicense  = memcmp(pszBody, pCur->psz, pCur->cch - 1) == 0;
 
