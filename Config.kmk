@@ -218,7 +218,7 @@ VBOX_VERSION_STRING = $(VBOX_VERSION_STRING_RAW)$(addprefix _,$(VBOX_VERSION_PRE
 
 # Force the additions.sh script to get an exact additions build when we're doing the release.
 ifeq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
-  ifeq ($VBOX_VERSION_PRERELEASE),)
+  ifeq ($(VBOX_VERSION_PRERELEASE),)
     VBOX_RELEASE_EXACT_MATCH=1
   endif
 endif
