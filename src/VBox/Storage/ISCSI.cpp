@@ -1618,6 +1618,7 @@ static int iscsiLogin(PISCSIIMAGE pImage)
                                     csg = 1;
                                     nsg = 3;
                                     substate = 0;
+                                    break;
                                 }
                                 rc = VERR_PARSE_ERROR;
                                 break;
@@ -1706,7 +1707,7 @@ static int iscsiLogin(PISCSIIMAGE pImage)
         iscsiTransportClose(pImage);
         pImage->state = ISCSISTATE_FREE;
     }
-    else if (RT_FAILURE(rc))
+    else if (rc == VINF_SUCCESS)
         pImage->state = ISCSISTATE_NORMAL;
 
     return rc;
