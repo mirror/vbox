@@ -4765,7 +4765,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         {
             if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR)
                 HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
-            return hmR0SvmNestedExitVIntr(pVCpu, pCtx, pSvmTransient);
+            return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_INTR:
@@ -7363,6 +7363,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 
+
 /**
  * Nested-guest \#VMEXIT handler for IRET (SVM_EXIT_VMRUN). Conditional \#VMEXIT.
  */
@@ -7380,30 +7381,6 @@ HMSVM_EXIT_DECL hmR0SvmNestedExitIret(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT
     /* Deliver the pending NMI via hmR0SvmEvaluatePendingEventNested() and resume guest execution. */
     return VINF_SUCCESS;
 }
-
-
-/**
- * \#VMEXIT handler for virtual interrupt (SVM_EXIT_VINTR). Conditional
- * \#VMEXIT.
- */
-HMSVM_EXIT_DECL hmR0SvmNestedExitVIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
-{
-    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-
-    /* No virtual interrupts pending, we'll inject the current one/NMI before reentry. */
-    PSVMVMCB pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    pVmcbNstGst->ctrl.IntCtrl.n.u1VIrqPending = 0;
-    pVmcbNstGst->ctrl.IntCtrl.n.u8VIntrVector = 0;
-
-    /* Indicate that we no longer need to #VMEXIT when the nested-guest is ready to receive interrupts/NMIs, it is now ready. */
-    pVmcbNstGst->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_VINTR;
-    pVmcbNstGst->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
-
-    /* Deliver the pending interrupt/NMI via hmR0SvmEvaluatePendingEventNested() and resume guest execution. */
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIntWindow);
-    return VINF_SUCCESS;
-}
-
 #endif /* VBOX_WITH_NESTED_HWVIRT */
 
 
