@@ -339,6 +339,7 @@ typedef SCMSETTINGS const *PCSCMSETTINGS;
 
 
 void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+void ScmVerboseBanner(PSCMRWSTATE pState, int iLevel);
 bool ScmError(PSCMRWSTATE pState, int rc, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 extern const char g_szTabSpaces[16+1];

@@ -1091,17 +1091,30 @@ void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ...)
             RTPrintf("%s: info: --= Rewriting '%s' =--\n", g_szProgName, pState->pszFilename);
             pState->fFirst = true;
         }
-        if (pszFormat)
-        {
-            RTPrintf(pState
-                     ? "%s: info:   "
-                     : "%s: info: ",
-                     g_szProgName);
-            va_list va;
-            va_start(va, pszFormat);
-            RTPrintfV(pszFormat, va);
-            va_end(va);
-        }
+        RTPrintf(pState
+                 ? "%s: info:   "
+                 : "%s: info: ",
+                 g_szProgName);
+        va_list va;
+        va_start(va, pszFormat);
+        RTPrintfV(pszFormat, va);
+        va_end(va);
+    }
+}
+
+
+/**
+ * Prints the per file banner needed and the message level is high enough.
+ *
+ * @param   pState              The rewrite state.
+ * @param   iLevel              The required verbosity level.
+ */
+void ScmVerboseBanner(PSCMRWSTATE pState, int iLevel)
+{
+    if (iLevel <= g_iVerbosity && !pState->fFirst)
+    {
+        RTPrintf("%s: info: --= Rewriting '%s' =--\n", g_szProgName, pState->pszFilename);
+        pState->fFirst = true;
     }
 }
 
@@ -1206,7 +1219,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
     }
     if (ScmStreamIsText(&Stream1))
     {
-        ScmVerbose(pState, 3, NULL);
+        ScmVerboseBanner(pState, 3);
 
         /*
          * Gather SCM and editor settings from the stream.
@@ -1274,7 +1287,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                                 }
                                 else
                                 {
-                                    ScmVerbose(pState, 1, NULL);
+                                    ScmVerboseBanner(pState, 1);
                                     ScmDiffStreams(pszFilename, &Stream1, pIn, g_fDiffIgnoreEol,
                                                    g_fDiffIgnoreLeadingWS, g_fDiffIgnoreTrailingWS, g_fDiffSpecialChars,
                                                    pBaseSettings->cchTab, g_pStdOut);
@@ -1299,7 +1312,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                             }
 
                             if (!fModified && !pState->cSvnPropChanges)
-                                ScmVerbose(pState, 3, "no change\n", pszFilename);
+                                ScmVerbose(pState, 3, "%s: no change\n", pszFilename);
                         }
                         else
                             RTMsgError("%s: stream error %Rrc\n", pszFilename, rc);
