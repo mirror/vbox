@@ -161,10 +161,38 @@ AssertCompile(sizeof(PDMCRITSECTINT) <= (HC_ARCH_BITS == 32 ? 0x80 : 0xc0));
 typedef struct PDMTHREADINT
 {
     /** Pointer to the callback table. */
-    PCTSTDEVVMMCALLBACKS pVmmCallbacks;
-    /** @todo: */
+    PCTSTDEVVMMCALLBACKS            pVmmCallbacks;
+    /** Pointer to the device under test. */
+    PTSTDEVDUTINT                   pDut;
+    /** Node for the list of PDM threads. */
+    RTLISTNODE                      NdPdmThreads;
 } PDMTHREADINT;
 AssertCompile(sizeof(PDMTHREADINT) <= 64);
+
+/**
+ * MM Heap allocation.
+ */
+typedef struct TSTDEVMMHEAPALLOC
+{
+    /** Node for the list of allocations. */
+    RTLISTNODE                      NdMmHeap;
+    /** Pointer to the callback table. */
+    PCTSTDEVVMMCALLBACKS            pVmmCallbacks;
+    /** Pointer to the device under test the allocation was made for. */
+    PTSTDEVDUTINT                   pDut;
+    /** Size of the allocation. */
+    size_t                          cbAlloc;
+    /** Align the next member on a 16byte boundary. */
+    size_t                          uAlignment0;
+    /** Start of the real allocation. */
+    uint8_t                         abAlloc[RT_FLEXIBLE_ARRAY];
+} TSTDEVMMHEAPALLOC;
+/** Pointer to a MM Heap allocation. */
+typedef TSTDEVMMHEAPALLOC *PTSTDEVMMHEAPALLOC;
+/** Pointer to a const MM Heap allocation. */
+typedef const TSTDEVMMHEAPALLOC *PCTSTDEVMMHEAPALLOC;
+
+AssertCompileMemberAlignment(TSTDEVMMHEAPALLOC, abAlloc, HC_ARCH_BITS == 64 ? 16 : 8);
 
 #if 0
 /**

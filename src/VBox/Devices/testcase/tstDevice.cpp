@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEFAULT /** @todo */
 #include <VBox/types.h>
+#include <VBox/sup.h>
 #include <VBox/version.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
@@ -773,11 +774,12 @@ static int tstDevPdmLoadMod(const char *pszFilename, TSTDEVPDMMODTYPE enmModType
  *
  * @returns VBox status code.
  * @param   pThis                   The device under test instance.
- * @param   pszR0Mod                The R0 module.
+ * @param   pszMod                  The module name.
+ * @param   enmModType              The module type if the module needs to be loaded.
  * @param   pszSymbol               The symbol to resolve.
  * @param   ppfn                    Where to store the value on success.
  */
-DECLHIDDEN(int) tstDevPdmLdrGetSymbol(PDEVDUTINT pThis, const char *pszMod, TSTDEVPDMMODTYPE enmModType,
+DECLHIDDEN(int) tstDevPdmLdrGetSymbol(PTSTDEVDUTINT pThis, const char *pszMod, TSTDEVPDMMODTYPE enmModType,
                                       const char *pszSymbol, PFNRT *ppfn)
 {
     RT_NOREF(pThis);
@@ -808,13 +810,19 @@ DECLHIDDEN(int) tstDevPdmLdrGetSymbol(PDEVDUTINT pThis, const char *pszMod, TSTD
 }
 
 
+static TSTDEVCFGITEM s_aTestcaseCfg[] =
+{
+    {"CtrlMemBufSize", TSTDEVCFGITEMTYPE_INTEGER, "0"  },
+    {NULL,             TSTDEVCFGITEMTYPE_INVALID, NULL }
+};
+
 static TSTDEVTESTCASEREG s_TestcaseDef =
 {
     "test",
     "Testcase during implementation",
-    "serial",
+    "nvme",
     0,
-    NULL,
+    &s_aTestcaseCfg[0],
     NULL,
 };
 
@@ -831,13 +839,21 @@ static int tstDevPdmDevCreate(const char *pszName)
     if (RT_LIKELY(pPdmDev))
     {
         TSTDEVDUTINT Dut;
-        Dut.pTestcaseReg = &s_TestcaseDef;
-        Dut.enmCtx       = TSTDEVDUTCTX_R3;
+        Dut.pTestcaseReg    = &s_TestcaseDef;
+        Dut.enmCtx          = TSTDEVDUTCTX_R3;
+        Dut.pVm             = NULL;
+        Dut.SupSession.pDut = &Dut;
         RTListInit(&Dut.LstIoPorts);
         RTListInit(&Dut.LstTimers);
+        RTListInit(&Dut.LstMmHeap);
+        RTListInit(&Dut.LstPdmThreads);
+        RTListInit(&Dut.SupSession.LstSupSem);
         CFGMNODE Cfg;
         Cfg.pVmmCallbacks = &g_tstDevVmmCallbacks;
         Cfg.pDut = &Dut;
+
+        rc = RTCritSectRwInit(&Dut.CritSectLists);
+        AssertRC(rc);
 
         PPDMDEVINS pDevIns = (PPDMDEVINS)RTMemAllocZ(RT_OFFSETOF(PDMDEVINS, achInstanceData[pPdmDev->pReg->cbInstance]));
         pDevIns->u32Version               = PDM_DEVINS_VERSION;
@@ -883,7 +899,7 @@ int main(int argc, char *argv[])
         {
             rc = tstDevPdmLoadMod(argv[1], TSTDEVPDMMODTYPE_R3);
             if (RT_SUCCESS(rc))
-                rc = tstDevPdmDevCreate("serial");
+                rc = tstDevPdmDevCreate("nvme");
             else
                 rcExit = RTEXITCODE_FAILURE;
         }

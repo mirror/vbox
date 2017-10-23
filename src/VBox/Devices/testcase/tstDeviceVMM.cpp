@@ -24,6 +24,8 @@
 #include <VBox/version.h>
 #include <VBox/vmm/pdmpci.h>
 
+#include <iprt/mem.h>
+
 #include "tstDeviceInternal.h"
 
 /*********************************************************************************************************************************
@@ -273,9 +275,36 @@ static DECLCALLBACK(int) tstDevVmm_CFGMR3QuerySize(PCFGMNODE pNode, const char *
 
 static DECLCALLBACK(int) tstDevVmm_CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString)
 {
-    RT_NOREF(pNode, pszName, pszString, cchString);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    if (!pNode)
+        return VERR_CFGM_NO_PARENT;
+
+    PCTSTDEVCFGITEM pCfgItem;
+    int rc = tstDev_CfgmR3ResolveItem(pNode->pDut->pTestcaseReg->paDevCfg, pszName, &pCfgItem);
+    if (RT_SUCCESS(rc))
+    {
+        switch (pCfgItem->enmType)
+        {
+            case TSTDEVCFGITEMTYPE_STRING:
+            {
+                size_t cchVal = strlen(pCfgItem->pszVal);
+                if (cchString <= cchVal + 1)
+                    memcpy(pszString, pCfgItem->pszVal, cchVal);
+                else
+                    rc = VERR_CFGM_NOT_ENOUGH_SPACE;
+                break;
+            }
+            case TSTDEVCFGITEMTYPE_INTEGER:
+            case TSTDEVCFGITEMTYPE_BYTES:
+            default:
+                rc = VERR_CFGM_IPE_1;
+                AssertMsgFailed(("Invalid value type %d\n", pCfgItem->enmType));
+                break;
+        }
+    }
+    else
+        rc = VERR_CFGM_VALUE_NOT_FOUND;
+
+    return rc;
 }
 
 
@@ -370,8 +399,16 @@ static DECLCALLBACK(RTRCPTR) tstDevVmm_MMHyperR3ToRC(PVM pVM, RTR3PTR R3Ptr)
 
 static DECLCALLBACK(void) tstDevVmm_MMR3HeapFree(void *pv)
 {
-    RT_NOREF(pv);
-    AssertFailed();
+    PTSTDEVMMHEAPALLOC pHeapAlloc = (PTSTDEVMMHEAPALLOC)((uint8_t *)pv - RT_OFFSETOF(TSTDEVMMHEAPALLOC, abAlloc[0]));
+    PTSTDEVDUTINT pThis = pHeapAlloc->pDut;
+
+    tstDevDutLockExcl(pThis);
+    RTListNodeRemove(&pHeapAlloc->NdMmHeap);
+    tstDevDutUnlockExcl(pThis);
+
+    /* Poison */
+    memset(&pHeapAlloc->abAlloc[0], 0xfc, pHeapAlloc->cbAlloc);
+    RTMemFree(pHeapAlloc);
 }
 
 

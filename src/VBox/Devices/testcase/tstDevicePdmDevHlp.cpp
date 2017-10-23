@@ -24,6 +24,7 @@
 #include <VBox/version.h>
 #include <VBox/vmm/pdmpci.h>
 
+#include <iprt/assert.h>
 #include <iprt/mem.h>
 
 #include "tstDeviceInternal.h"
@@ -124,7 +125,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPO
     LogFlow(("pdmR3DevHlp_IOPortRegisterR0: caller='%s'/%d: Port=%#x cPorts=%#x pvUser=%p pszOut=%p:{%s} pszIn=%p:{%s} pszOutStr=%p:{%s} pszInStr=%p:{%s} pszDesc=%p:{%s}\n", 
              pDevIns->pReg->szName, pDevIns->iInstance, Port, cPorts, pvUser, pszOut, pszOut, pszIn, pszIn, pszOutStr, pszOutStr, pszInStr, pszInStr, pszDesc, pszDesc));
 
-    PDEVDUTINT pThis = pDevIns->Internal.s.pDut;
+    PTSTDEVDUTINT pThis = pDevIns->Internal.s.pDut;
     PRTDEVDUTIOPORT pIoPort;
     int rc = VERR_NOT_FOUND;
     RTListForEach(&pThis->LstIoPorts, pIoPort, RTDEVDUTIOPORT, NdIoPorts)
@@ -550,8 +551,8 @@ static DECLCALLBACK(PSUPDRVSESSION) pdmR3DevHlp_GetSupDrvSession(PPDMDEVINS pDev
     LogFlow(("pdmR3DevHlp_GetSupDrvSession: caller='%s'/%d\n",
              pDevIns->pReg->szName, pDevIns->iInstance));
 
-    PSUPDRVSESSION pSession = 0;
-    AssertFailed();
+    PTSTDEVDUTINT pThis = TSTDEV_PDMDEVINS_2_DUT(pDevIns);
+    PSUPDRVSESSION pSession = TSTDEV_PTSTDEVSUPDRVSESSION_2_PSUPDRVSESSION(&pThis->SupSession);
 
     LogFlow(("pdmR3DevHlp_GetSupDrvSession: caller='%s'/%d: returns %#p\n", pDevIns->pReg->szName, pDevIns->iInstance, pSession));
     return pSession;
@@ -702,8 +703,24 @@ static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAlloc(PPDMDEVINS pDevIns, size_t c
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MMHeapAlloc: caller='%s'/%d: cb=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, cb));
 
+    PTSTDEVDUTINT pThis = TSTDEV_PDMDEVINS_2_DUT(pDevIns);
+
     void *pv = NULL;
-    AssertFailed();
+    PTSTDEVMMHEAPALLOC pHeapAlloc = (PTSTDEVMMHEAPALLOC)RTMemAllocZ(cb + sizeof(TSTDEVMMHEAPALLOC) - 1);
+    if (pHeapAlloc)
+    {
+        /* Poison */
+        memset(&pHeapAlloc->abAlloc[0], 0xfe, cb);
+        pHeapAlloc->cbAlloc       = cb;
+        pHeapAlloc->pVmmCallbacks = pDevIns->Internal.s.pVmmCallbacks;
+        pHeapAlloc->pDut          = pThis;
+
+        tstDevDutLockExcl(pThis);
+        RTListAppend(&pThis->LstMmHeap, &pHeapAlloc->NdMmHeap);
+        tstDevDutUnlockExcl(pThis);
+
+        pv = &pHeapAlloc->abAlloc[0];
+    }
 
     LogFlow(("pdmR3DevHlp_MMHeapAlloc: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pv));
     return pv;
@@ -716,8 +733,9 @@ static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAllocZ(PPDMDEVINS pDevIns, size_t 
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MMHeapAllocZ: caller='%s'/%d: cb=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, cb));
 
-    void *pv = NULL;
-    AssertFailed();
+    void *pv = pdmR3DevHlp_MMHeapAlloc(pDevIns, cb);
+    if (VALID_PTR(pv))
+        memset(pv, 0, cb);
 
     LogFlow(("pdmR3DevHlp_MMHeapAllocZ: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pv));
     return pv;
@@ -727,10 +745,10 @@ static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAllocZ(PPDMDEVINS pDevIns, size_t 
 /** @interface_method_impl{PDMDEVHLPR3,pfnMMHeapFree} */
 static DECLCALLBACK(void) pdmR3DevHlp_MMHeapFree(PPDMDEVINS pDevIns, void *pv)
 {
-    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF_PV(pDevIns);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MMHeapFree: caller='%s'/%d: pv=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pv));
 
-    AssertFailed();
+    MMR3HeapFree(pv);
 
     LogFlow(("pdmR3DevHlp_MMHeapAlloc: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
 }
@@ -934,8 +952,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
     AssertLogRelMsgReturn(!(fFlags & ~PDMPCIDEVREG_F_VALID_MASK),
                           ("'%s'/%d: Invalid flags: %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, fFlags),
                           VERR_INVALID_FLAGS);
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
+    int rc = VINF_SUCCESS;
+    pDevIns->Internal.s.pDut->pPciDev = pPciDev;
 
     LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -949,8 +967,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegisterMsi(PPDMDEVINS pDevIns, PPDMPCID
     LogFlow(("pdmR3DevHlp_PCIRegisterMsi: caller='%s'/%d: pPciDev=%p:{%#x} pMsgReg=%p:{cMsiVectors=%d, cMsixVectors=%d}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, pMsiReg, pMsiReg->cMsiVectors, pMsiReg->cMsixVectors));
 
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
+    int rc = VERR_NOT_SUPPORTED; /** @todo */
 
     LogFlow(("pdmR3DevHlp_PCIRegisterMsi: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -965,8 +982,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
     LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%d cbRegion=%RGp enmType=%d pfnCallback=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iRegion, cbRegion, enmType, pfnCallback));
 
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
+    AssertLogRelMsgReturn(iRegion < VBOX_PCI_NUM_REGIONS,
+                          ("Region %u exceeds maximum region index %u\n", iRegion, VBOX_PCI_NUM_REGIONS),
+                          VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
+    PTSTDEVDUTINT pThis = TSTDEV_PDMDEVINS_2_DUT(pDevIns);
+    PTSTDEVDUTPCIREGION pRegion = &pThis->aPciRegions[iRegion];
+    pRegion->cbRegion     = cbRegion;
+    pRegion->enmType      = enmType;
+    pRegion->pfnRegionMap = pfnCallback;
 
     LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -1488,9 +1513,10 @@ static DECLCALLBACK(PUVM) pdmR3DevHlp_GetUVM(PPDMDEVINS pDevIns)
 static DECLCALLBACK(PVM) pdmR3DevHlp_GetVM(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    AssertFailed();
+    PTSTDEVDUTINT pThis = TSTDEV_PDMDEVINS_2_DUT(pDevIns);
+    PVM pVM = pThis->pVm;
     LogFlow(("pdmR3DevHlp_GetVM: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, NULL));
-    return NULL;
+    return pVM;
 }
 
 

@@ -29,11 +29,16 @@
 #include <VBox/types.h>
 #include <iprt/assert.h>
 #include <iprt/list.h>
+#include <iprt/semaphore.h>
 
 #include "tstDevicePlugin.h"
 #include "tstDeviceVMMInternal.h"
 
 RT_C_DECLS_BEGIN
+
+
+/** Converts PDM device instance to the device under test structure. */
+#define TSTDEV_PDMDEVINS_2_DUT(a_pDevIns) ((a_pDevIns)->Internal.s.pDut)
 
 /**
  * PDM module descriptor type.
@@ -76,21 +81,74 @@ typedef struct RTDEVDUTIOPORT
 
     /** Opaque user data - R0. */
     void                            *pvUserR0;
-    /** Out handler - R3. */
+    /** Out handler - R0. */
     PFNIOMIOPORTOUT                 pfnOutR0;
-    /** In handler - R3. */
+    /** In handler - R0. */
     PFNIOMIOPORTIN                  pfnInR0;
-    /** Out string handler - R3. */
+    /** Out string handler - R0. */
     PFNIOMIOPORTOUTSTRING           pfnOutStrR0;
-    /** In string handler - R3. */
+    /** In string handler - R0. */
     PFNIOMIOPORTINSTRING            pfnInStrR0;
 
-    /** @todo: RC */
+#ifdef TSTDEV_SUPPORTS_RC
+    /** Opaque user data - RC. */
+    void                            *pvUserRC;
+    /** Out handler - RC. */
+    PFNIOMIOPORTOUT                 pfnOutRC;
+    /** In handler - RC. */
+    PFNIOMIOPORTIN                  pfnInRC;
+    /** Out string handler - RC. */
+    PFNIOMIOPORTOUTSTRING           pfnOutStrRC;
+    /** In string handler - RC. */
+    PFNIOMIOPORTINSTRING            pfnInStrRC;
+#endif
 } RTDEVDUTIOPORT;
 /** Pointer to a registered I/O port handler. */
 typedef RTDEVDUTIOPORT *PRTDEVDUTIOPORT;
 /** Pointer to a const I/O port handler. */
 typedef const RTDEVDUTIOPORT *PCRTDEVDUTIOPORT;
+
+/**
+ * The Support Driver session state.
+ */
+typedef struct TSTDEVSUPDRVSESSION
+{
+    /** Pointer to the owning device under test instance. */
+    PTSTDEVDUTINT                   pDut;
+    /** List of event semaphores. */
+    RTLISTANCHOR                    LstSupSem;
+} TSTDEVSUPDRVSESSION;
+/** Pointer to the Support Driver session state. */
+typedef TSTDEVSUPDRVSESSION *PTSTDEVSUPDRVSESSION;
+
+/** Converts a Support Driver session handle to the internal state. */
+#define TSTDEV_PSUPDRVSESSION_2_PTSTDEVSUPDRVSESSION(a_pSession) ((PTSTDEVSUPDRVSESSION)(a_pSession))
+/** Converts the internal session state to a Support Driver session handle. */
+#define TSTDEV_PTSTDEVSUPDRVSESSION_2_PSUPDRVSESSION(a_pSession) ((PSUPDRVSESSION)(a_pSession))
+
+/**
+ * Support driver event semaphore.
+ */
+typedef struct TSTDEVSUPSEMEVENT
+{
+    /** Node for the event semaphore list. */
+    RTLISTNODE                      NdSupSem;
+    /** Flag whether this is multi event semaphore. */
+    bool                            fMulti;
+    /** Event smeaphore handles depending on the flag above. */
+    union
+    {
+        RTSEMEVENT                  hSemEvt;
+        RTSEMEVENTMULTI             hSemEvtMulti;
+    } u;
+} TSTDEVSUPSEMEVENT;
+/** Pointer to a support event semaphore state. */
+typedef TSTDEVSUPSEMEVENT *PTSTDEVSUPSEMEVENT;
+
+/** Converts a Support event semaphore handle to the internal state. */
+#define TSTDEV_SUPSEMEVENT_2_PTSTDEVSUPSEMEVENT(a_pSupSemEvt) ((PTSTDEVSUPSEMEVENT)(a_pSupSemEvt))
+/** Converts the internal session state to a Support event semaphore handle. */
+#define TSTDEV_PTSTDEVSUPSEMEVENT_2_SUPSEMEVENT(a_pSupSemEvt) ((SUPSEMEVENT)(a_pSupSemEvt))
 
 /**
  * The contex the device under test is currently in.
@@ -110,6 +168,23 @@ typedef enum TSTDEVDUTCTX
 } TSTDEVDUTCTX;
 
 /**
+ * PCI region descriptor.
+ */
+typedef struct TSTDEVDUTPCIREGION
+{
+    /** Size of the region. */
+    RTGCPHYS                        cbRegion;
+    /** Address space type. */
+    PCIADDRESSSPACE                 enmType;
+    /** Region mapping callback. */
+    PFNPCIIOREGIONMAP               pfnRegionMap;
+} TSTDEVDUTPCIREGION;
+/** Pointer to a PCI region descriptor. */
+typedef TSTDEVDUTPCIREGION *PTSTDEVDUTPCIREGION;
+/** Pointer to a const PCI region descriptor. */
+typedef const TSTDEVDUTPCIREGION *PCTSTDEVDUTPCIREGION;
+
+/**
  * Device under test instance data.
  */
 typedef struct TSTDEVDUTINT
@@ -120,16 +195,52 @@ typedef struct TSTDEVDUTINT
     PPDMDEVINS                      pDevIns;
     /** Current device context. */
     TSTDEVDUTCTX                    enmCtx;
+    /** Critical section protecting the lists below. */
+    RTCRITSECTRW                    CritSectLists;
     /** List of registered I/O port handlers. */
     RTLISTANCHOR                    LstIoPorts;
     /** List of timers registered. */
     RTLISTANCHOR                    LstTimers;
+    /** List of registered MMIO regions. */
+    RTLISTANCHOR                    LstMmio;
+    /** List of MM Heap allocations. */
+    RTLISTANCHOR                    LstMmHeap;
+    /** List of PDM threads. */
+    RTLISTANCHOR                    LstPdmThreads;
+    /** The SUP session we emulate. */
+    TSTDEVSUPDRVSESSION             SupSession;
+    /** The VM state assoicated with this device. */
+    PVM                             pVm;
+    /** The registered PCI device instance if this is a PCI device. */
+    PPDMPCIDEV                      pPciDev;
+    /** PCI Region descriptors. */
+    TSTDEVDUTPCIREGION              aPciRegions[VBOX_PCI_NUM_REGIONS];
 } TSTDEVDUTINT;
-/** Pointer to the internal device under test instance data. */
-typedef TSTDEVDUTINT *PDEVDUTINT;
 
-DECLHIDDEN(int) tstDevPdmLdrGetSymbol(PDEVDUTINT pThis, const char *pszR0Mod, TSTDEVPDMMODTYPE enmModType,
+
+DECLHIDDEN(int) tstDevPdmLdrGetSymbol(PTSTDEVDUTINT pThis, const char *pszMod, TSTDEVPDMMODTYPE enmModType,
                                       const char *pszSymbol, PFNRT *ppfn);
+
+
+DECLINLINE(int) tstDevDutLockShared(PTSTDEVDUTINT pThis)
+{
+    return RTCritSectRwEnterShared(&pThis->CritSectLists);
+}
+
+DECLINLINE(int) tstDevDutUnlockShared(PTSTDEVDUTINT pThis)
+{
+    return RTCritSectRwLeaveShared(&pThis->CritSectLists);
+}
+
+DECLINLINE(int) tstDevDutLockExcl(PTSTDEVDUTINT pThis)
+{
+    return RTCritSectRwEnterExcl(&pThis->CritSectLists);
+}
+
+DECLINLINE(int) tstDevDutUnlockExcl(PTSTDEVDUTINT pThis)
+{
+    return RTCritSectRwLeaveExcl(&pThis->CritSectLists);
+}
 
 RT_C_DECLS_END
 

@@ -1351,6 +1351,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
   PROGRAMS += tstDevice
   tstDevice_TEMPLATE    = VBOXR3TSTEXE
+  tstDevice_DEFS        += IN_SUP_R3
   tstDevice_LIBS.linux  = $(PATH_STAGE_BIN)/tstDeviceVBoxVMMStubs.so
   tstDevice_LIBS.darwin = $(PATH_STAGE_BIN)/tstDeviceVBoxVMMStubs.dylib
   # Required on OS X to prevent resolving symbols in the real VBoxVMM.dylib when VBoxDD.dylib is loaded
@@ -1358,7 +1359,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   tstDevice_SOURCES     = \
  	testcase/tstDevice.cpp \
  	testcase/tstDevicePdmDevHlp.cpp \
- 	testcase/tstDeviceVMM.cpp
+ 	testcase/tstDeviceVMM.cpp \
+ 	testcase/tstDeviceSUP.cpp
  endif
 
 endif # !VBOX_ONLY_EXTPACKS
