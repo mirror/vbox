@@ -752,7 +752,7 @@ typedef struct VMSVGA3DCONTEXT
     /* Current active render target (if any) */
     uint32_t                sidRenderTarget;
     /* Current selected texture surfaces (if any) */
-    uint32_t                aSidActiveTexture[SVGA3D_MAX_TEXTURE_STAGE];
+    uint32_t                aSidActiveTextures[SVGA3D_MAX_SAMPLERS];
     /* Per context pixel and vertex shaders. */
     uint32_t                cPixelShaders;
     PVMSVGA3DSHADER         paPixelShader;
@@ -765,7 +765,8 @@ typedef struct VMSVGA3DCONTEXT
         uint32_t                u32UpdateFlags;
 
         SVGA3dRenderState       aRenderState[SVGA3D_RS_MAX];
-        SVGA3dTextureState      aTextureState[SVGA3D_MAX_TEXTURE_STAGE][SVGA3D_TS_MAX];
+        /* aTextureStates contains both TextureStageStates and SamplerStates, therefore [SVGA3D_MAX_SAMPLERS]. */
+        SVGA3dTextureState      aTextureStates[SVGA3D_MAX_SAMPLERS][SVGA3D_TS_MAX];
         VMSVGATRANSFORMSTATE    aTransformState[SVGA3D_TRANSFORM_MAX];
         VMSVGAMATERIALSTATE     aMaterial[SVGA3D_FACE_MAX];
         VMSVGACLIPPLANESTATE    aClipPlane[SVGA3D_CLIPPLANE_MAX];
@@ -822,7 +823,7 @@ static SSMFIELD const g_aVMSVGA3DCONTEXTFields[] =
 #endif
 
     SSMFIELD_ENTRY_IGNORE(          VMSVGA3DCONTEXT, sidRenderTarget),
-    SSMFIELD_ENTRY_IGNORE(          VMSVGA3DCONTEXT, aSidActiveTexture),
+    SSMFIELD_ENTRY_IGNORE(          VMSVGA3DCONTEXT, aSidActiveTextures),
     SSMFIELD_ENTRY(                 VMSVGA3DCONTEXT, cPixelShaders),
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DCONTEXT, paPixelShader),
     SSMFIELD_ENTRY(                 VMSVGA3DCONTEXT, cVertexShaders),
@@ -830,7 +831,8 @@ static SSMFIELD const g_aVMSVGA3DCONTEXTFields[] =
     SSMFIELD_ENTRY(                 VMSVGA3DCONTEXT, state.u32UpdateFlags),
 
     SSMFIELD_ENTRY(                 VMSVGA3DCONTEXT, state.aRenderState),
-    SSMFIELD_ENTRY(                 VMSVGA3DCONTEXT, state.aTextureState),
+    SSMFIELD_ENTRY_OLD(             state.aTextureStates,
+                                    sizeof(SVGA3dTextureState) * /*SVGA3D_MAX_TEXTURE_STAGE=*/ 8 * /*SVGA3D_TS_MAX=*/ 30),
     SSMFIELD_ENTRY(                 VMSVGA3DCONTEXT, state.aTransformState),
     SSMFIELD_ENTRY(                 VMSVGA3DCONTEXT, state.aMaterial),
     SSMFIELD_ENTRY(                 VMSVGA3DCONTEXT, state.aClipPlane),

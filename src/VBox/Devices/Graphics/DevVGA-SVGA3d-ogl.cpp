@@ -3291,8 +3291,8 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
      */
     memset(pContext, 0, sizeof(*pContext));
     pContext->id                = cid;
-    for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTexture); i++)
-        pContext->aSidActiveTexture[i] = SVGA3D_INVALID_ID;
+    for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTextures); i++)
+        pContext->aSidActiveTextures[i] = SVGA3D_INVALID_ID;
 
     pContext->sidRenderTarget   = SVGA3D_INVALID_ID;
     pContext->state.shidVertex  = SVGA3D_INVALID_ID;
@@ -5078,18 +5078,18 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
 
         Log(("vmsvga3dSetTextureState: cid=%x stage=%d type=%s (%x) val=%x\n", cid, pTextureState[i].stage, vmsvga3dTextureStateToString(pTextureState[i].name), pTextureState[i].name, pTextureState[i].value));
         /* Record the texture state for vm state saving. */
-        if (    pTextureState[i].stage < SVGA3D_MAX_TEXTURE_STAGE
-            &&  pTextureState[i].name < SVGA3D_TS_MAX)
+        if (    pTextureState[i].stage < RT_ELEMENTS(pContext->state.aTextureStates)
+            &&  pTextureState[i].name < RT_ELEMENTS(pContext->state.aTextureStates[0]))
         {
-            pContext->state.aTextureState[pTextureState[i].stage][pTextureState[i].name] = pTextureState[i];
+            pContext->state.aTextureStates[pTextureState[i].stage][pTextureState[i].name] = pTextureState[i];
         }
 
         /* Active the right texture unit for subsequent texture state changes. */
         if (pTextureState[i].stage != currentStage || i == 0)
         {
             /** @todo Is this the appropriate limit for all kinds of textures?  It is the
-             * size of aSidActiveTexture and for binding/unbinding we cannot exceed it. */
-            if (pTextureState[i].stage < SVGA3D_MAX_TEXTURE_STAGE)
+             * size of aSidActiveTextures and for binding/unbinding we cannot exceed it. */
+            if (pTextureState[i].stage < RT_ELEMENTS(pContext->state.aTextureStates))
             {
                 pState->ext.glActiveTexture(GL_TEXTURE0 + pTextureState[i].stage);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
@@ -5141,9 +5141,9 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
             if (pTextureState[i].value == SVGA3D_INVALID_ID)
             {
                 Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x replacing=%x\n",
-                     currentStage, pTextureState[i].value, pContext->aSidActiveTexture[currentStage]));
+                     currentStage, pTextureState[i].value, pContext->aSidActiveTextures[currentStage]));
 
-                pContext->aSidActiveTexture[currentStage] = SVGA3D_INVALID_ID;
+                pContext->aSidActiveTextures[currentStage] = SVGA3D_INVALID_ID;
                 /* Unselect the currently associated texture. */
                 glBindTexture(GL_TEXTURE_2D, 0);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
@@ -5162,7 +5162,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
 
                 Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x (%d,%d) replacing=%x\n",
                      currentStage, pTextureState[i].value, pSurface->pMipmapLevels[0].mipmapSize.width,
-                     pSurface->pMipmapLevels[0].mipmapSize.height, pContext->aSidActiveTexture[currentStage]));
+                     pSurface->pMipmapLevels[0].mipmapSize.height, pContext->aSidActiveTextures[currentStage]));
 
                 if (pSurface->oglId.texture == OPENGL_INVALID_ID)
                 {
@@ -5178,14 +5178,14 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                 glEnable(GL_TEXTURE_2D);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
-                if (pContext->aSidActiveTexture[currentStage] != sid)
+                if (pContext->aSidActiveTextures[currentStage] != sid)
                 {
                     /* Recreate the texture state as glBindTexture resets them all (sigh). */
-                    for (uint32_t iStage = 0; iStage < SVGA3D_MAX_TEXTURE_STAGE; iStage++)
+                    for (uint32_t iStage = 0; iStage < RT_ELEMENTS(pContext->state.aTextureStates); iStage++)
                     {
-                        for (uint32_t j = 0; j < SVGA3D_TS_MAX; j++)
+                        for (uint32_t j = 0; j < RT_ELEMENTS(pContext->state.aTextureStates[0]); j++)
                         {
-                            SVGA3dTextureState *pTextureStateIter = &pContext->state.aTextureState[iStage][j];
+                            SVGA3dTextureState *pTextureStateIter = &pContext->state.aTextureStates[iStage][j];
 
                             if (    pTextureStateIter->name != SVGA3D_TS_INVALID
                                 &&  pTextureStateIter->name != SVGA3D_TS_BIND_TEXTURE)
@@ -5193,7 +5193,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                         }
                     }
                 }
-                pContext->aSidActiveTexture[currentStage] = sid;
+                pContext->aSidActiveTextures[currentStage] = sid;
             }
             /* Finished; continue with the next one. */
             continue;
@@ -5216,8 +5216,8 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
         case SVGA3D_TS_MIPFILTER:                   /* SVGA3dTextureFilter */
         case SVGA3D_TS_MINFILTER:                   /* SVGA3dTextureFilter */
         {
-            uint32_t mipFilter = pContext->state.aTextureState[currentStage][SVGA3D_TS_MIPFILTER].value;
-            uint32_t minFilter = pContext->state.aTextureState[currentStage][SVGA3D_TS_MINFILTER].value;
+            uint32_t mipFilter = pContext->state.aTextureStates[currentStage][SVGA3D_TS_MIPFILTER].value;
+            uint32_t minFilter = pContext->state.aTextureStates[currentStage][SVGA3D_TS_MINFILTER].value;
 
             /* If SVGA3D_TS_MIPFILTER is set to NONE, then use SVGA3D_TS_MIPFILTER, otherwise SVGA3D_TS_MIPFILTER enables mipmap minification. */
             textureType = GL_TEXTURE_MIN_FILTER;
@@ -6398,9 +6398,9 @@ internal_error:
         iCurrentVertex = iVertex;
     }
 #ifdef DEBUG
-    for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTexture); i++)
+    for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTextures); i++)
     {
-        if (pContext->aSidActiveTexture[i] != SVGA3D_INVALID_ID)
+        if (pContext->aSidActiveTextures[i] != SVGA3D_INVALID_ID)
         {
             GLint activeTexture = 0;
             GLint activeTextureUnit = 0;
@@ -6416,19 +6416,19 @@ internal_error:
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
 # if 0 /* Aren't we checking whether 'activeTexture' on texture unit 'i' matches what we expected?  This works if only one unit is active, but if both are it _will_ fail for one of them. */
-            if (pContext->aSidActiveTexture[activeTextureUnit - GL_TEXTURE0] != SVGA3D_INVALID_ID)
+            if (pContext->aSidActiveTextures[activeTextureUnit - GL_TEXTURE0] != SVGA3D_INVALID_ID)
             {
                 PVMSVGA3DSURFACE pTexture;
-                pTexture = pState->papSurfaces[pContext->aSidActiveTexture[activeTextureUnit - GL_TEXTURE0]];
+                pTexture = pState->papSurfaces[pContext->aSidActiveTextures[activeTextureUnit - GL_TEXTURE0]];
 
                 AssertMsg(pTexture->oglId.texture == (GLuint)activeTexture, ("%x vs %x unit %d - %d\n", pTexture->oglId.texture, activeTexture, i, activeTextureUnit - GL_TEXTURE0));
             }
 # else
-            PVMSVGA3DSURFACE pTexture = pState->papSurfaces[pContext->aSidActiveTexture[i]];
-            AssertMsg(pTexture->id == pContext->aSidActiveTexture[i], ("%x vs %x\n", pTexture->id, pContext->aSidActiveTexture[i]));
+            PVMSVGA3DSURFACE pTexture = pState->papSurfaces[pContext->aSidActiveTextures[i]];
+            AssertMsg(pTexture->id == pContext->aSidActiveTextures[i], ("%x vs %x\n", pTexture->id, pContext->aSidActiveTextures[i]));
             AssertMsg(pTexture->oglId.texture == (GLuint)activeTexture,
                       ("%x vs %x unit %d (active unit %d) sid=%x\n", pTexture->oglId.texture, activeTexture, i,
-                       activeTextureUnit - GL_TEXTURE0, pContext->aSidActiveTexture[i]));
+                       activeTextureUnit - GL_TEXTURE0, pContext->aSidActiveTextures[i]));
 # endif
         }
     }

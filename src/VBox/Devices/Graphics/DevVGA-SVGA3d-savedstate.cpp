@@ -83,11 +83,11 @@ static int vmsvga3dLoadReinitContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
 
     /* Recreate the texture state */
     Log(("vmsvga3dLoadReinitContext: Recreate texture state BEGIN\n"));
-    for (uint32_t iStage = 0; iStage < SVGA3D_MAX_TEXTURE_STAGE; iStage++)
+    for (uint32_t iStage = 0; iStage < RT_ELEMENTS(pContext->state.aTextureStates); ++iStage)
     {
-        for (uint32_t j = 0; j < SVGA3D_TS_MAX; j++)
+        for (uint32_t j = 0; j < RT_ELEMENTS(pContext->state.aTextureStates[0]); ++j)
         {
-            SVGA3dTextureState *pTextureState = &pContext->state.aTextureState[iStage][j];
+            SVGA3dTextureState *pTextureState = &pContext->state.aTextureStates[iStage][j];
 
             if (pTextureState->name != SVGA3D_TS_INVALID)
                 vmsvga3dSetTextureState(pThis, pContext->id, 1, pTextureState);
@@ -148,7 +148,7 @@ static int vmsvga3dLoadReinitContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
 
 int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    RT_NOREF(uVersion, uPass);
+    RT_NOREF(uPass);
     PVMSVGA3DSTATE pState = pThis->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
     int            rc;
@@ -306,6 +306,41 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
                 {
                     rc = vmsvga3dShaderSetConst(pThis, cid, j, SVGA3D_SHADERTYPE_VS, ShaderConst.ctype, 1, ShaderConst.value);
                     AssertRCReturn(rc, rc);
+                }
+            }
+
+            if (uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_TEX_STAGES)
+            {
+                /* Load texture stage and samplers state. */
+
+                /* Number of stages/samplers. */
+                uint32_t cStages;
+                rc = SSMR3GetU32(pSSM, &cStages);
+                AssertRCReturn(rc, rc);
+
+                /* Number of states. */
+                uint32_t cTextureStates;
+                rc = SSMR3GetU32(pSSM, &cTextureStates);
+                AssertRCReturn(rc, rc);
+
+                for (uint32_t iStage = 0; iStage < cStages; ++iStage)
+                {
+                    for (uint32_t j = 0; j < cTextureStates; ++j)
+                    {
+                        SVGA3dTextureState textureState;
+                        SSMR3GetU32(pSSM, &textureState.stage);
+                        uint32_t u32Name;
+                        SSMR3GetU32(pSSM, &u32Name);
+                        textureState.name = (SVGA3dTextureStateName)u32Name;
+                        rc = SSMR3GetU32(pSSM, &textureState.value);
+                        AssertRCReturn(rc, rc);
+
+                        if (   iStage < RT_ELEMENTS(pContext->state.aTextureStates)
+                            && j < RT_ELEMENTS(pContext->state.aTextureStates[0]))
+                        {
+                            pContext->state.aTextureStates[iStage][j] = textureState;
+                        }
+                    }
                 }
             }
         }
@@ -499,6 +534,29 @@ static int vmsvga3dSaveContext(PVGASTATE pThis, PSSMHANDLE pSSM, PVMSVGA3DCONTEX
         {
             rc = SSMR3PutStructEx(pSSM, &pContext->state.paVertexShaderConst[j], sizeof(pContext->state.paVertexShaderConst[j]), 0, g_aVMSVGASHADERCONSTFields, NULL);
             AssertRCReturn(rc, rc);
+        }
+
+        /* Save texture stage and samplers state. */
+
+        /* Number of stages/samplers. */
+        rc = SSMR3PutU32(pSSM, RT_ELEMENTS(pContext->state.aTextureStates));
+        AssertRCReturn(rc, rc);
+
+        /* Number of texture states. */
+        rc = SSMR3PutU32(pSSM, RT_ELEMENTS(pContext->state.aTextureStates[0]));
+        AssertRCReturn(rc, rc);
+
+        for (uint32_t iStage = 0; iStage < RT_ELEMENTS(pContext->state.aTextureStates); ++iStage)
+        {
+            for (uint32_t j = 0; j < RT_ELEMENTS(pContext->state.aTextureStates[0]); ++j)
+            {
+                SVGA3dTextureState *pTextureState = &pContext->state.aTextureStates[iStage][j];
+
+                SSMR3PutU32(pSSM, pTextureState->stage);
+                SSMR3PutU32(pSSM, pTextureState->name);
+                rc = SSMR3PutU32(pSSM, pTextureState->value);
+                AssertRCReturn(rc, rc);
+            }
         }
     }
 

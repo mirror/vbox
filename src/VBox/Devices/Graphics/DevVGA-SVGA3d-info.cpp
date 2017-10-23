@@ -96,6 +96,8 @@ static const VMSVGAINFOENUM g_aSVGA3dSurfaceFormats[] =
     { SVGA3D_Z_DF16             , "Z_DF16" },
     { SVGA3D_Z_DF24             , "Z_DF24" },
     { SVGA3D_Z_D24S8_INT        , "Z_D24S8_INT" },
+    { SVGA3D_R8G8B8A8_SNORM     , "R8G8B8A8_SNORM" },
+    { SVGA3D_R16G16_UNORM       , "R16G16_UNORM" },
 };
 VMSVGAINFOENUMMAP_MAKE(RT_NOTHING, g_SVGA3dSurfaceFormat2String, g_aSVGA3dSurfaceFormats, "SVGA3D_");
 
@@ -1551,9 +1553,9 @@ static void vmsvga3dInfoContextWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DCONTEXT pC
 #endif
     pHlp->pfnPrintf(pHlp, "sidRenderTarget:         %#x\n", pContext->sidRenderTarget);
 
-    for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTexture); i++)
-        if (pContext->aSidActiveTexture[i] != SVGA3D_INVALID_ID)
-            pHlp->pfnPrintf(pHlp, "aSidActiveTexture[%u]:    %#x\n", i, pContext->aSidActiveTexture[i]);
+    for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTextures); i++)
+        if (pContext->aSidActiveTextures[i] != SVGA3D_INVALID_ID)
+            pHlp->pfnPrintf(pHlp, "aSidActiveTextures[%u]:    %#x\n", i, pContext->aSidActiveTextures[i]);
 
     pHlp->pfnPrintf(pHlp, "fUpdateFlags:            %#x\n", pContext->state.u32UpdateFlags);
 
@@ -1562,11 +1564,11 @@ static void vmsvga3dInfoContextWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DCONTEXT pC
             pHlp->pfnPrintf(pHlp, "aRenderState[%3d]: %s\n", i,
                             vmsvga3dFormatRenderState(szTmp, sizeof(szTmp), &pContext->state.aRenderState[i]));
 
-    for (uint32_t i = 0; i < RT_ELEMENTS(pContext->state.aTextureState); i++)
-        for (uint32_t j = 0; j < RT_ELEMENTS(pContext->state.aTextureState[i]); j++)
-            if (pContext->state.aTextureState[i][j].name != SVGA3D_TS_INVALID)
-                pHlp->pfnPrintf(pHlp, "aTextureState[%3d][%3d]: %s\n", i, j,
-                                vmsvga3dFormatTextureState(szTmp, sizeof(szTmp), &pContext->state.aTextureState[i][j]));
+    for (uint32_t i = 0; i < RT_ELEMENTS(pContext->state.aTextureStates); i++)
+        for (uint32_t j = 0; j < RT_ELEMENTS(pContext->state.aTextureStates[i]); j++)
+            if (pContext->state.aTextureStates[i][j].name != SVGA3D_TS_INVALID)
+                pHlp->pfnPrintf(pHlp, "aTextureStates[%3d][%3d]: %s\n", i, j,
+                                vmsvga3dFormatTextureState(szTmp, sizeof(szTmp), &pContext->state.aTextureStates[i][j]));
 
     AssertCompile(RT_ELEMENTS(g_apszTransformTypes) == SVGA3D_TRANSFORM_MAX);
     for (uint32_t i = 0; i < RT_ELEMENTS(pContext->state.aTransformState); i++)

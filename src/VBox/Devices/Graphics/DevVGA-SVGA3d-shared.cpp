@@ -423,11 +423,19 @@ uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format,
     case SVGA3D_G16R16:
         *pcxBlock = 1;
         *pcyBlock = 1;
-        return 32;
+        return 4;
     case SVGA3D_A16B16G16R16:
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 8;
+    case SVGA3D_R8G8B8A8_SNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
+    case SVGA3D_R16G16_UNORM:
+        *pcxBlock = 1;
+        *pcyBlock = 1;
+        return 4;
 
     default:
         *pcxBlock = 1;

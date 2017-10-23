@@ -345,9 +345,9 @@ int vmsvga3dSurfaceDestroy(PVGASTATE pThis, uint32_t sid)
         PVMSVGA3DCONTEXT pContext = pState->papContexts[cid];
         if (pContext->id == cid)
         {
-            for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTexture); i++)
-                if (pContext->aSidActiveTexture[i] == sid)
-                    pContext->aSidActiveTexture[i] = SVGA3D_INVALID_ID;
+            for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTextures); ++i)
+                if (pContext->aSidActiveTextures[i] == sid)
+                    pContext->aSidActiveTextures[i] = SVGA3D_INVALID_ID;
             if (pContext->sidRenderTarget == sid)
                 pContext->sidRenderTarget = SVGA3D_INVALID_ID;
         }
