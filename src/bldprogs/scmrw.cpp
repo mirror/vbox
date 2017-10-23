@@ -747,7 +747,11 @@ static bool IsEqualWordByWordIgnoreCase(const char *psz1, const char *psz2, cons
                 psz2++;
             }
             else
+            {
+                if (ppsz2Next)
+                    *ppsz2Next = psz2;
                 return true;
+            }
         }
         else
         {
@@ -768,7 +772,11 @@ static bool IsEqualWordByWordIgnoreCase(const char *psz1, const char *psz2, cons
 
             if (   ch1 != ch2
                 && RT_C_TO_LOWER(ch1) != RT_C_TO_LOWER(ch2))
+            {
+                if (ppsz2Next)
+                    *ppsz2Next = psz2;
                 return false;
+            }
         }
     }
 }
