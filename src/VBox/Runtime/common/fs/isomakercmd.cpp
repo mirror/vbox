@@ -1107,7 +1107,9 @@ static int rtFsIsoMakerCmdWriteImage(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsS
             RTVFSFILE       hVfsDstFile;
             uint32_t        offError;
             RTERRINFOSTATIC ErrInfo;
-            rc = RTVfsChainOpenFile(pOpts->pszOutFile, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE,
+            rc = RTVfsChainOpenFile(pOpts->pszOutFile,
+                                    RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE
+                                    | (0664 << RTFILE_O_CREATE_MODE_SHIFT),
                                     &hVfsDstFile, &offError, RTErrInfoInitStatic(&ErrInfo));
             if (RT_SUCCESS(rc))
             {
