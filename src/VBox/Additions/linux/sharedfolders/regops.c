@@ -562,15 +562,14 @@ struct file_operations sf_reg_fops =
     .release     = sf_reg_release,
     .mmap        = sf_reg_mmap,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
+/** @todo This code is known to cause caching of data which should not be
+ * cached.  Investigate. */
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
     .splice_read = generic_file_splice_read,
-# else
+#  else
     .sendfile    = generic_file_sendfile,
-# endif
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
-    .read_iter   = generic_file_read_iter,
-    .write_iter  = generic_file_write_iter,
-# else
+#  endif
     .aio_read    = generic_file_aio_read,
     .aio_write   = generic_file_aio_write,
 # endif
