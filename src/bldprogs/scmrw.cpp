@@ -217,57 +217,57 @@ static const char g_szCopyrightHolder[] = "Oracle Corporation";
 /** Copyright+license comment start for each SCMCOMMENTSTYLE. */
 static RTSTRTUPLE const g_aCopyrightCommentStart[] =
 {
-    RT_STR_TUPLE("<invalid> "),
-    RT_STR_TUPLE("/*"),
-    RT_STR_TUPLE("#"),
-    RT_STR_TUPLE("\"\"\""),
-    RT_STR_TUPLE(";"),
-    RT_STR_TUPLE("REM"),
-    RT_STR_TUPLE("rem"),
-    RT_STR_TUPLE("Rem"),
-    RT_STR_TUPLE("<end>"),
+    { RT_STR_TUPLE("<invalid> ") },
+    { RT_STR_TUPLE("/*") },
+    { RT_STR_TUPLE("#") },
+    { RT_STR_TUPLE("\"\"\"") },
+    { RT_STR_TUPLE(";") },
+    { RT_STR_TUPLE("REM") },
+    { RT_STR_TUPLE("rem") },
+    { RT_STR_TUPLE("Rem") },
+    { RT_STR_TUPLE("<end>") },
 };
 
 /** Copyright+license line prefix for each SCMCOMMENTSTYLE. */
 static RTSTRTUPLE const g_aCopyrightCommentPrefix[] =
 {
-    RT_STR_TUPLE("<invalid> "),
-    RT_STR_TUPLE(" * "),
-    RT_STR_TUPLE("# "),
-    RT_STR_TUPLE(""),
-    RT_STR_TUPLE("; "),
-    RT_STR_TUPLE("REM "),
-    RT_STR_TUPLE("rem "),
-    RT_STR_TUPLE("Rem "),
-    RT_STR_TUPLE("<end>"),
+    { RT_STR_TUPLE("<invalid> ") },
+    { RT_STR_TUPLE(" * ") },
+    { RT_STR_TUPLE("# ") },
+    { RT_STR_TUPLE("") },
+    { RT_STR_TUPLE("; ") },
+    { RT_STR_TUPLE("REM ") },
+    { RT_STR_TUPLE("rem ") },
+    { RT_STR_TUPLE("Rem ") },
+    { RT_STR_TUPLE("<end>") },
 };
 
 /** Copyright+license empty line for each SCMCOMMENTSTYLE. */
 static RTSTRTUPLE const g_aCopyrightCommentEmpty[] =
 {
-    RT_STR_TUPLE("<invalid>"),
-    RT_STR_TUPLE(" *"),
-    RT_STR_TUPLE("#"),
-    RT_STR_TUPLE(""),
-    RT_STR_TUPLE(";"),
-    RT_STR_TUPLE("REM"),
-    RT_STR_TUPLE("rem"),
-    RT_STR_TUPLE("Rem"),
-    RT_STR_TUPLE("<end>"),
+    { RT_STR_TUPLE("<invalid>") },
+    { RT_STR_TUPLE(" *") },
+    { RT_STR_TUPLE("#") },
+    { RT_STR_TUPLE("") },
+    { RT_STR_TUPLE(";") },
+    { RT_STR_TUPLE("REM") },
+    { RT_STR_TUPLE("rem") },
+    { RT_STR_TUPLE("Rem") },
+    { RT_STR_TUPLE("<end>") },
 };
 
 /** Copyright+license end of comment for each SCMCOMMENTSTYLE. */
 static RTSTRTUPLE const g_aCopyrightCommentEnd[] =
 {
-    RT_STR_TUPLE("<invalid> "),
-    RT_STR_TUPLE(" */"),
-    RT_STR_TUPLE("#"),
-    RT_STR_TUPLE("\"\"\""),
-    RT_STR_TUPLE(";"),
-    RT_STR_TUPLE("REM"),
-    RT_STR_TUPLE("rem"),
-    RT_STR_TUPLE("Rem"),
-    RT_STR_TUPLE("<end>"),
+    { RT_STR_TUPLE("<invalid> ") },
+    { RT_STR_TUPLE(" */") },
+    { RT_STR_TUPLE("#") },
+    { RT_STR_TUPLE("\"\"\"") },
+    { RT_STR_TUPLE(";") },
+    { RT_STR_TUPLE("REM") },
+    { RT_STR_TUPLE("rem") },
+    { RT_STR_TUPLE("Rem") },
+    { RT_STR_TUPLE("<end>") },
 };
 
 
