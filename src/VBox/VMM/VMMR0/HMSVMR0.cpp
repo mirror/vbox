@@ -3130,11 +3130,15 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCt
          * Check if the nested-guest can receive virtual (injected by VMRUN) interrupts.
          * We can call CPUMCanSvmNstGstTakeVirtIntr here as we don't cache/modify any
          * nested-guest VMCB interrupt control fields besides V_INTR_MASKING, see hmR0SvmVmRunCacheVmcb.
+         *
+         * If a VINTR intercept isn't set, the virtual interrupt will be delivered when we execute
+         * the nested-guest using hardware-assisted SVM.
          */
         if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
-            && CPUMCanSvmNstGstTakeVirtIntr(pCtx))
+            && CPUMCanSvmNstGstTakeVirtIntr(pCtx)
+            && CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_VINTR))
         {
-            Log4(("Intercepting external interrupt -> #VMEXIT\n"));
+            Log4(("Intercepting virtual interrupt -> #VMEXIT\n"));
             return IEMExecSvmVmexit(pVCpu, SVM_EXIT_VINTR, 0, 0);
         }
     }
@@ -7353,6 +7357,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     VBOXSTRICTRC rcStrict;
     uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
     rcStrict = IEMExecDecodedVmrun(pVCpu, cbInstr);
+    Log4(("IEMExecDecodedVmrun: returned %d\n", VBOXSTRICTRC_VAL(rcStrict)));
     if (rcStrict == VINF_SUCCESS)
     {
         rcStrict = VINF_SVM_VMRUN;
