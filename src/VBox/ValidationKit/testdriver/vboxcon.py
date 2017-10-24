@@ -45,7 +45,7 @@ class VBoxConstantWrappingHack(object):                                         
         if self.o.machine.state == vboxcon.MachineState_Running:
             do stuff;
 
-    For our own convenience there's a vboxcon attribute set up in vbox.py, 
+    For our own convenience there's a vboxcon attribute set up in vbox.py,
     class TestDriver which is the basis for the VirtualBox testcases. It takes
     care of setting things up properly through the global variable
     'goHackModuleClass' that refers to the instance of this class(if we didn't
