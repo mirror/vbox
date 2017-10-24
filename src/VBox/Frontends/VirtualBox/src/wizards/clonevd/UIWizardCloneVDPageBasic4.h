@@ -46,8 +46,10 @@ protected:
     static QString toFileName(const QString &strName, const QString &strExtension);
     /** Converts the @a strFileName to absolute one if necessary using @a strDefaultPath as advice. */
     static QString absoluteFilePath(const QString &strFileName, const QString &strDefaultPath);
-    /** Acquires @a strDefaultExtension on the basis of incoming @a mediumFormatRef. */
-    static QString defaultExtension(const CMediumFormat &comMediumFormat);
+    /** Acquires the list of @a aAllowedExtensions and @a strDefaultExtension
+      * on the basis of incoming @a comMediumFormat. */
+    static void acquireExtensions(const CMediumFormat &comMediumFormat,
+                                  QStringList &aAllowedExtensions, QString &strDefaultExtension);
 
     /** Returns 'mediumPath' field value. */
     QString mediumPath() const;
@@ -59,6 +61,8 @@ protected:
     QString      m_strDefaultPath;
     /** Holds the default extension. */
     QString      m_strDefaultExtension;
+    /** Holds the allowed extensions. */
+    QStringList  m_aAllowedExtensions;
 
     /** Holds the target disk path editor instance. */
     QLineEdit    *m_pDestinationDiskEditor;

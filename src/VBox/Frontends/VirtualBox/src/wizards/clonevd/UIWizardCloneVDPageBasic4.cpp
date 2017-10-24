@@ -133,7 +133,8 @@ QString UIWizardCloneVDPage4::absoluteFilePath(const QString &strFileName, const
 }
 
 /* static */
-QString UIWizardCloneVDPage4::defaultExtension(const CMediumFormat &comMediumFormat)
+void UIWizardCloneVDPage4::acquireExtensions(const CMediumFormat &comMediumFormat,
+                                             QStringList &aAllowedExtensions, QString &strDefaultExtension)
 {
     /* Load extension / device list: */
     QVector<QString> fileExtensions;
@@ -142,14 +143,22 @@ QString UIWizardCloneVDPage4::defaultExtension(const CMediumFormat &comMediumFor
     mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
     for (int i = 0; i < fileExtensions.size(); ++i)
         if (deviceTypes[i] == KDeviceType_HardDisk)
-            return fileExtensions[i].toLower();
-    AssertMsgFailed(("Extension can't be NULL!\n"));
-    return QString();
+            aAllowedExtensions << fileExtensions[i].toLower();
+    AssertReturnVoid(!aAllowedExtensions.isEmpty());
+    strDefaultExtension = aAllowedExtensions.first();
 }
 
 QString UIWizardCloneVDPage4::mediumPath() const
 {
-    return absoluteFilePath(toFileName(m_pDestinationDiskEditor->text(), m_strDefaultExtension), m_strDefaultPath);
+    /* Acquire chosen file path, and what is important user suffix: */
+    const QString strChosenFilePath = m_pDestinationDiskEditor->text();
+    QString strSuffix = QFileInfo(strChosenFilePath).suffix().toLower();
+    /* If there is no suffix of it's not allowed: */
+    if (   strSuffix.isEmpty()
+        || !m_aAllowedExtensions.contains(strSuffix))
+        strSuffix = m_strDefaultExtension;
+    /* Compose full file path finally: */
+    return absoluteFilePath(toFileName(m_pDestinationDiskEditor->text(), strSuffix), m_strDefaultPath);
 }
 
 qulonglong UIWizardCloneVDPage4::mediumSize() const
@@ -216,7 +225,8 @@ void UIWizardCloneVDPageBasic4::initializePage()
     /* Get default path for virtual-disk copy: */
     m_strDefaultPath = sourceFileInfo.absolutePath();
     /* Get default extension for virtual-disk copy: */
-    m_strDefaultExtension = defaultExtension(field("mediumFormat").value<CMediumFormat>());
+    acquireExtensions(field("mediumFormat").value<CMediumFormat>(),
+                      m_aAllowedExtensions, m_strDefaultExtension);
     /* Compose default-name for virtual-disk copy: */
     QString strMediumName = UIWizardCloneVD::tr("%1_copy", "copied virtual hard drive name").arg(sourceFileInfo.baseName());
     /* Set default-name as text for location editor: */

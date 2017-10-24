@@ -229,7 +229,7 @@ void UIWizardCloneVDPageExpert::sltMediumFormatChanged()
     m_pSplitBox->setEnabled(fIsCreateSplitPossible);
 
     /* Compose virtual-disk extension: */
-    m_strDefaultExtension = defaultExtension(mf);
+    acquireExtensions(mf, m_aAllowedExtensions, m_strDefaultExtension);
 
     /* Broadcast complete-change: */
     emit completeChanged();
