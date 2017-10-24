@@ -7236,6 +7236,3 @@ up2 update2::
 st stat status:
 	$(SVN) status
 
-
-
-
