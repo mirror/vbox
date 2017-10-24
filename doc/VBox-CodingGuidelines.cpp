@@ -522,7 +522,7 @@
  *                  pvBar = RTMemAlloc(sizeof(*pvBar));
  *                  if (!pvBar)
  *                     rc = VERR_NO_MEMORY;
- *              }   
+ *              }
  *              if (RT_SUCCESS(rc))
  *              {
  *                  buzz = foo;
