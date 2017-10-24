@@ -642,4 +642,3 @@ class Bs3CpuGenerated1Generator(object):
 if __name__ == '__main__':
     sys.exit(Bs3CpuGenerated1Generator().main(sys.argv));
 
-
