@@ -127,7 +127,7 @@ if "$(KBUILD_TARGET)" != "win"
  BLDDIRS += \
 	$(VBOX_PATH_SDK)/bindings/xpcom/idl \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include
- # disable VBoxSDS for XPCOM	
+ # disable VBoxSDS for XPCOM
  override VBOX_WITH_SDS =
 endif # xpcom
 

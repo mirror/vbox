@@ -19,3 +19,6 @@
 /cbinding/*.h: --license-lgpl
 /cbinding/VBoxCAPIGlue.c: --license-mit
 
+# The Python bindings is licensed under dual GPL and CDDL.
+/glue/vboxapi.py: --license-ose-dual
+
