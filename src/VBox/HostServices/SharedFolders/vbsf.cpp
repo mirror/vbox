@@ -1093,7 +1093,7 @@ int vbsfWrite(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_
     }
     else
     {
-        /** @todo: What writing zero bytes should do? */
+        /** @todo What writing zero bytes should do? */
         rc = VINF_SUCCESS;
     }
 

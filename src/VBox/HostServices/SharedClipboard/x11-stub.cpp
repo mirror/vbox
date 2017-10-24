@@ -72,7 +72,7 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA * /* pClient */)
 
 /**
  * Shut down the shared clipboard subsystem and "disconnect" the guest.
- * 
+ *
  * @param   pClient    Structure containing context information about the guest system
  */
 void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
