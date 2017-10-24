@@ -5236,8 +5236,6 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
     AssertReturn(numVertexDecls && numVertexDecls <= SVGA3D_MAX_VERTEX_ARRAYS, VERR_INVALID_PARAMETER);
     AssertReturn(numRanges && numRanges <= SVGA3D_MAX_DRAW_PRIMITIVE_RANGES, VERR_INVALID_PARAMETER);
     AssertReturn(!cVertexDivisor || cVertexDivisor == numVertexDecls, VERR_INVALID_PARAMETER);
-    /** @todo */
-    Assert(!cVertexDivisor);
 
     rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
@@ -5283,6 +5281,13 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         rc = vmsvga3dDrawPrimitivesProcessVertexDecls(pState, pContext, iVertex - iCurrentVertex, &pVertexDecl[iCurrentVertex], iCurrentStreamId, &pVertexElement[iCurrentVertex]);
         if (RT_FAILURE(rc))
             goto internal_error;
+
+        if (cVertexDivisor)
+        {
+            LogFunc(("SetStreamSourceFreq[%d]=%x\n", iCurrentStreamId, pVertexDivisor[iCurrentStreamId].value));
+            HRESULT hr2 = pContext->pDevice->SetStreamSourceFreq(iCurrentStreamId, pVertexDivisor[iCurrentStreamId].value);
+            Assert(SUCCEEDED(hr2));
+        }
 
         iCurrentVertex = iVertex;
         iCurrentStreamId++;
@@ -5462,6 +5467,16 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
             Log(("vmsvga3dDrawPrimitives: clear stream %d\n", i));
             hr = pContext->pDevice->SetStreamSource(i, NULL, 0, 0);
             AssertMsgReturn(hr == D3D_OK, ("vmsvga3dDrawPrimitives: SetStreamSource failed with %x\n", hr), VERR_INTERNAL_ERROR);
+        }
+    }
+
+    if (cVertexDivisor)
+    {
+        /* "When you are finished rendering the instance data, be sure to reset the vertex stream frequency back..." */
+        for (uint32_t i = 0; i < cVertexDivisor; ++i)
+        {
+            HRESULT hr2 = pContext->pDevice->SetStreamSourceFreq(i, 1);
+            Assert(SUCCEEDED(hr2));
         }
     }
 
