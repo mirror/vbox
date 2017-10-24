@@ -628,7 +628,7 @@ EOF
 #define CTX_SUFF(var)                   var##R3
 #define CTXAllSUFF(var)                 var##R3
 #define CTXSUFF(var)                    var##HC
-#define OTHERCTXSUFF(var)  	        var##GC
+#define OTHERCTXSUFF(var)               var##GC
 #define CTXALLMID(first, last)          first##R3##last
 #define CTXMID(first, last)             first##HC##last
 #define OTHERCTXMID(first, last)        first##GC##last
@@ -695,8 +695,8 @@ EOF
 #define PGM_BTH_NAME_EPT_AMD64(name)    PGM_CTX3(pgm,Bth,name)
 #define PGM_BTH_DECL(type, name)        type PGM_BTH_NAME(name)
 
-#define FNIEMOP_STUB(a_Name)        	   VBOXSTRICTRC a_Name(PIEMCPU pIemCpu) { return VERR_NOT_IMPLEMENTED; }
-#define FNIEMOP_DEF(a_Name)        	   VBOXSTRICTRC a_Name(PIEMCPU pIemCpu)
+#define FNIEMOP_STUB(a_Name)               VBOXSTRICTRC a_Name(PIEMCPU pIemCpu) { return VERR_NOT_IMPLEMENTED; }
+#define FNIEMOP_DEF(a_Name)                VBOXSTRICTRC a_Name(PIEMCPU pIemCpu)
 #define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0)
 #define FNIEMOP_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0, a_Type1 a_Name1)
 #define IEM_CIMPL_DEF_0(a_Name)         static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu)

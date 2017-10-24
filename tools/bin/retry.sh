@@ -34,6 +34,6 @@ do
         exit 0;
     fi
 done
-echo "retry.sh: Giving up: exitcode=${EXITCODE}  command: $@" 
+echo "retry.sh: Giving up: exitcode=${EXITCODE}  command: $@"
 exit ${EXITCODE};
 
