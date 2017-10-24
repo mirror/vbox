@@ -1,7 +1,9 @@
 #!/bin/sh
 # $Id$
-#
+## @file
 # VirtualBox X Server auto-start service.
+#
+
 #
 # Copyright (C) 2012-2015 Oracle Corporation
 #

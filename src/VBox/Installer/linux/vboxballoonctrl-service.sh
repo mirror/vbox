@@ -1,6 +1,9 @@
 #!/bin/sh
-#
+# $Id$
+## @file
 # VirtualBox watchdog daemon init script.
+#
+
 #
 # Copyright (C) 2006-2015 Oracle Corporation
 #

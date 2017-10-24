@@ -1,6 +1,9 @@
 #!/bin/sh
-#
+# $Id$
+## @file
 # VirtualBox autostart service init script.
+#
+
 #
 # Copyright (C) 2012-2015 Oracle Corporation
 #
