@@ -902,7 +902,8 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
     uint32_t iLine = pInfo->iLineStart + pInfo->cBlankLinesBefore;
 
     /*
-     * Look for a 'contributed by' line, this comes first.
+     * Look for a 'contributed by' or 'includes contributions from' line, these
+     * comes first when present.
      */
     const char *pchContributedBy = NULL;
     size_t      cchContributedBy = 0;
@@ -910,8 +911,10 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
     if (    pState->pszContributedBy == NULL
         && (   pState->iLineCopyright == UINT32_MAX
             || pState->iLineLicense == UINT32_MAX)
-        && cchBody > sizeof("Contributed by")
-        && RTStrNICmp(pszBody, RT_STR_TUPLE("contributed by")) == 0)
+        && (   (    cchBody > sizeof("Contributed by")
+                && RTStrNICmp(pszBody, RT_STR_TUPLE("contributed by")) == 0)
+            || (    cchBody > sizeof("Includes contributions from")
+                && RTStrNICmp(pszBody, RT_STR_TUPLE("Includes contributions from")) == 0) ) )
     {
         const char *pszNextLine = (const char *)memchr(pszBody, '\n', cchBody);
         if (pszNextLine)
