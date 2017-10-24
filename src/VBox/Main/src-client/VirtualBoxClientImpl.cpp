@@ -696,7 +696,7 @@ HRESULT VirtualBoxClient::checkMachineError(const ComPtr<IMachine> &aMachine)
 /////////////////////////////////////////////////////////////////////////////
 
 
-// TODO: AM Add pinging of VBoxSDS
+/// @todo AM Add pinging of VBoxSDS
 /*static*/
 DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
                                                      void *pvUser)
