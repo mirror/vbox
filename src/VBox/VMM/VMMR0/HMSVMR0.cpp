@@ -315,7 +315,6 @@ static FNSVMEXITHANDLER hmR0SvmExitVmsave;
 static FNSVMEXITHANDLER hmR0SvmExitInvlpga;
 static FNSVMEXITHANDLER hmR0SvmExitVmrun;
 static FNSVMEXITHANDLER hmR0SvmNestedExitIret;
-static FNSVMEXITHANDLER hmR0SvmNestedExitVIntr;
 #endif
 /** @} */
 
@@ -3280,6 +3279,8 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmc
         else if (Event.n.u3Type == SVM_EVENT_NMI)
             Assert(!fIntShadow);
         NOREF(fBlockInt);
+#else
+        Assert(!pVmcb->ctrl.EventInject.n.u1Valid);
 #endif
 
         Log4(("Injecting pending HM event\n"));
