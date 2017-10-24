@@ -633,7 +633,7 @@ static int enumeratePythonComments(PSCMSTREAM pIn, PFNSCMCOMMENTENUMERATOR pfnCa
                      * Note! This is very similar to the multiline C comment handling above.
                      */
                     Info.iLineStart         = iLine;
-                    Info.offStart           = (uint32_t)off;
+                    Info.offStart           = (uint32_t)off - 1;
                     Info.iLineEnd           = UINT32_MAX;
                     Info.offEnd             = UINT32_MAX;
                     Info.cBlankLinesBefore  = 0;

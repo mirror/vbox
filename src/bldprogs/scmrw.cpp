@@ -1013,18 +1013,25 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
             else
                 cchWellFormed = RTStrPrintf(szWellFormed, sizeof(szWellFormed), "Copyright (C) %u-%u %s",
                                             pState->uFirstYear, pState->uLastYear, g_szCopyrightHolder);
-            pState->fWellFormedCopyright = cchWellFormed == (uintptr_t)(pszEnd - pszBody)
-                                        && memcmp(pszBody, szWellFormed, cchWellFormed) == 0;
             pState->fUpToDateCopyright   = pState->uLastYear == g_uYear;
             pState->iLineCopyright       = iLine;
+            pState->fWellFormedCopyright = cchWellFormed == (uintptr_t)(pszEnd - pszBody)
+                                        && memcmp(pszBody, szWellFormed, cchWellFormed) == 0;
+            if (!pState->fWellFormedCopyright)
+                ScmVerbose(pState->pState, 1, "* copyright isn't well formed\n");
 
             /* If there wasn't exactly one blank line before the comment, trigger a rewrite. */
             if (pInfo->cBlankLinesBefore != 1)
+            {
+                ScmVerbose(pState->pState, 1, "* copyright comment is preceeded by %u blank lines instead of 1\n",
+                           pInfo->cBlankLinesBefore);
                 pState->fWellFormedCopyright = false;
+            }
 
             /* If the comment doesn't start in column 1, trigger rewrite. */
             if (pInfo->offStart != 0)
             {
+                ScmVerbose(pState->pState, 1, "* copyright comment starts in column %u instead of 1\n", pInfo->offStart + 1);
                 pState->fWellFormedCopyright = false;
                 /** @todo check that there isn't any code preceeding the comment. */
             }
@@ -1095,11 +1102,15 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
                                                 ? pCur == pState->pExpectedLicense
                                                 : pCur->enmType == kScmLicenseType_Confidential;
                     pState->fWellFormedLicense  = memcmp(pszBody, pCur->psz, pCur->cch - 1) == 0;
+                    if (!pState->fWellFormedLicense)
+                        ScmVerbose(pState->pState, 1, "* license text isn't well-formed\n");
 
                     /* If there was more than one blank line between the copyright and the
                        license text, extend the license text area and force a rewrite of it. */
                     if (cBlankLinesAfterCopyright > 1)
                     {
+                        ScmVerbose(pState->pState, 1, "* %u blank lines between copyright and license text, instead of 1\n",
+                                   cBlankLinesAfterCopyright);
                         pState->iLineLicense -= cBlankLinesAfterCopyright - 1;
                         pState->cLinesLicense += cBlankLinesAfterCopyright - 1;
                         pState->fWellFormedLicense = false;
@@ -1107,7 +1118,11 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
 
                     /* If there was more than one blank line after the license, trigger a rewrite. */
                     if (!fExternal && pInfo->cBlankLinesAfter != 1)
+                    {
+                        ScmVerbose(pState->pState, 1, "* copyright comment is followed by %u blank lines instead of 1\n",
+                                   pInfo->cBlankLinesAfter);
                         pState->fWellFormedLicense = false;
+                    }
 
                     /** @todo Check that the last comment line doesn't have any code on it. */
                     /** @todo Check that column 2 contains '*' for C/C++ files. */
