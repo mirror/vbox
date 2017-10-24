@@ -16,8 +16,12 @@
 #
 
 
-# Default license here is dual GPL and CDDL.
+# Default license for headers is dual GPL and CDDL.
 --license-ose-dual
+
+# Only the headers should be dual.
+/Makefile.kmk:  --license-ose-gpl
+/.scm-settings: --license-ose-gpl
 
 # These three have no Oracle license or copyright stuff for some reason.
 /iprt/formats/elf-amd64.h:  --no-update-license  --no-update-copyright-year
