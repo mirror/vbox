@@ -15,6 +15,15 @@ rem Foundation, in version 2 as it comes in the "COPYING" file of the
 rem VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 rem hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 rem
+rem The contents of this file may alternatively be used under the terms
+rem of the Common Development and Distribution License Version 1.0
+rem (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+rem VirtualBox OSE distribution, in which case the provisions of the
+rem CDDL are applicable instead of those of the GPL.
+rem
+rem You may elect to license modified versions of this file under the
+rem terms and conditions of either the GPL or the CDDL or both.
+rem
 
 
 setlocal ENABLEEXTENSIONS

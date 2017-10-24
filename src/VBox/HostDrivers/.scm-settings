@@ -14,15 +14,33 @@
 # VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
+# The contents of this file may alternatively be used under the terms
+# of the Common Development and Distribution License Version 1.0
+# (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+# VirtualBox OSE distribution, in which case the provisions of the
+# CDDL are applicable instead of those of the GPL.
+#
+# You may elect to license modified versions of this file under the
+# terms and conditions of either the GPL or the CDDL or both.
+#
 
 # Driver code is dual licensed.
 --license-ose-dual
 
+/adpctl/*: --license-ose-gpl
+
 # External stuff.
-/Support/freebsd/SUPDrv-freebsd.c: --external-copyright
-/Support/freebsd/SUPDrv-freebsd.def: --no-update-copyright-year --no-update-license
-/Support/os2/SUPDrv-os2.cpp: --external-copyright
-/Support/os2/SUPDrvA-os2.asm: --external-copyright
+/Support/freebsd/SUPDrv-freebsd.c:              --external-copyright
+/Support/freebsd/SUPDrv-freebsd.def:            --no-update-copyright-year --no-update-license
+/Support/os2/SUPDrv-os2.cpp:                    --external-copyright
+/Support/os2/SUPDrvA-os2.asm:                   --external-copyright
+/VBoxNetAdp/freebsd/VBoxNetAdp-freebsd.c:       --external-copyright
+/VBoxNetFlt/freebsd/VBoxNetFlt-freebsd.c:       --external-copyright
 
+# No license header (public domain).
+/VBoxUSB/os2/usbcalls.c:                        --no-update-copyright-year --no-update-license
 
+# Trivial dual C and assembly include files which cannot have comments.
+/Support/win/import-template-kernel32.h: --no-update-copyright-year --no-update-license
+/Support/win/import-template-ntdll.h:    --no-update-copyright-year --no-update-license
 
