@@ -38,4 +38,3 @@
 # error "Log() from iprt/log.h cannot be defined in the precompiled header!"
 #endif
 
-
