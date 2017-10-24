@@ -876,12 +876,13 @@ public:
      */
     int writeSimpleBlockEBML(WebMTrack *a_pTrack, WebMSimpleBlock *a_pBlock)
     {
+#ifdef LOG_ENABLED
         WebMCluster &Cluster = CurSeg.CurCluster;
 
         Log3Func(("[T%RU8C%RU64] Off=%RU64, PTS=%RU16, RelToClusterMs=%RU16, %zu bytes\n",
                   a_pTrack->uTrack, Cluster.uID, RTFileTell(m_Ebml.getFile()),
                   a_pBlock->Data.tcPTSMs, a_pBlock->Data.tcRelToClusterMs, a_pBlock->Data.cb));
-
+#endif
         /*
          * Write a "Simple Block".
          */
