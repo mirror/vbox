@@ -780,6 +780,8 @@ endif
 VBoxC_SDKS = VBOX_LIBPNG VBOX_ZLIB
 
 ifdef VBOX_WITH_VIDEOREC
+   VBoxC_SOURCES += \
+	src-client/EBMLWriter.cpp
   ifdef VBOX_WITH_LIBVPX
    VBoxC_SDKS += VBOX_VPX
    VBoxC_DEFS += VBOX_WITH_LIBVPX
@@ -889,7 +891,6 @@ VBoxC_SOURCES += \
 	src-client/DisplayImpl.cpp \
 	src-client/DisplayImplLegacy.cpp \
 	src-client/DisplaySourceBitmapImpl.cpp \
-	src-client/EBMLWriter.cpp \
 	src-client/EmulatedUSBImpl.cpp \
 	src-client/GuestImpl.cpp \
 	src-client/GuestCtrlImpl.cpp \
