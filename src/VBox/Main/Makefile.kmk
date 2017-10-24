@@ -889,7 +889,7 @@ VBoxC_SOURCES += \
 	src-client/DisplayImpl.cpp \
 	src-client/DisplayImplLegacy.cpp \
 	src-client/DisplaySourceBitmapImpl.cpp \
-	src-client/EbmlWriter.cpp \
+	src-client/EBMLWriter.cpp \
 	src-client/EmulatedUSBImpl.cpp \
 	src-client/GuestImpl.cpp \
 	src-client/GuestCtrlImpl.cpp \
