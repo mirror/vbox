@@ -37,9 +37,6 @@ endif
 ifeq ($(KBUILD_TARGET_ARCH),x86)
  include $(PATH_SUB_CURRENT)/Stub/Makefile.kmk
  include $(PATH_SUB_CURRENT)/StubBld/Makefile.kmk
- ifdef VBOX_BRAND_WIN_AS_MENU
-  include $(PATH_SUB_CURRENT)/AutoStartMenu/Makefile.kmk
- endif
 endif
 
 include $(PATH_SUB_CURRENT)/Resources/Makefile.kmk
@@ -865,7 +862,6 @@ $(VBOX_PATH_PACK_BUNDLE_ZIP): \
 		$(PACKAGE_NAME_FINAL) \
 		$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86", \
 			$(PATH_STAGE_BIN)/VBoxBundleMachine.exe \
-			$(if $(VBOX_BRAND_WIN_AS_MENU), $(PATH_STAGE_BIN)/AutoStartMenu.exe) \
 			$(if $(VBOX_WITH_COMBINED_PACKAGE), $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)),)
 	$(RM) -Rf -- $(VBOX_PATH_PACK_BUNDLE_TMP)/
 	$(MKDIR) -p $(VBOX_PATH_PACK_BUNDLE_TMP)/
@@ -878,22 +874,6 @@ ifeq ($(KBUILD_TARGET_ARCH),x86)
  endif
 	$(CP) $(PATH_STAGE_BIN)/VBoxBundleMachine.exe     $(VBOX_PATH_PACK_BUNDLE_TMP)/
 	$(CP) $(PATH_STAGE_BIN)/AutoStartMenu.exe         $(VBOX_PATH_PACK_BUNDLE_TMP)/
- ifdef VBOX_BRAND_WIN_AS_MENU
-	$(MKDIR) -p $(VBOX_PATH_PACK_BUNDLE_TMP)/Menu/Graphics/
-	$(CP) $(VBOX_BRAND_WIN_AS_CONTENT)          $(VBOX_PATH_PACK_BUNDLE_TMP)/
-	$(CP) $(VBOX_BRAND_WIN_AS_MENU_CONTENT)     $(VBOX_PATH_PACK_BUNDLE_TMP)/Menu/
-	$(CP) $(VBOX_BRAND_WIN_AS_MENU_CONTENT_GFX) $(VBOX_PATH_PACK_BUNDLE_TMP)/Menu/Graphics/
-  ifdef VBOX_WITH_COMBINED_PACKAGE
-	$(SED) -e 's/VBOXEXE/$(PACKAGE_NAME_MULTIARCH_FINAL)/g' \
-	       --output $(VBOX_PATH_PACK_BUNDLE_TMP)/Menu/index.html \
-	       $(VBOX_BRAND_WIN_AS_MENU)/index_combined.html
-  else
-	$(SED) -e 's/VBOX32EXE/$(VBOX_BRAND_WIN_INST_NAME.x86)/g' \
-	       -e 's/VBOX64EXE/$(VBOX_BRAND_WIN_INST_NAME.amd64)/g' \
-	       --output $(VBOX_PATH_PACK_BUNDLE_TMP)/Menu/index.html \
-	       $(VBOX_BRAND_WIN_AS_MENU)/index.html
-  endif
- endif
 endif
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
  ifndef VBOX_WITH_COMBINED_PACKAGE
