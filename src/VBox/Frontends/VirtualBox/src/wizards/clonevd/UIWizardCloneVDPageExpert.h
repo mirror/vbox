@@ -45,11 +45,14 @@ class UIWizardCloneVDPageExpert : public UIWizardPage,
 public:
 
     /** Constructs basic page.
-      * @param  comSourceVirtualDisk  Brings the initial source disk to make copy from. */
-    UIWizardCloneVDPageExpert(const CMedium &comSourceVirtualDisk);
+      * @param  comSourceVirtualDisk  Brings the initial source disk to make copy from.
+      * @param  enmDeviceType         Brings the device type to limit format to. */
+    UIWizardCloneVDPageExpert(const CMedium &comSourceVirtualDisk, KDeviceType enmDeviceType);
 
 protected:
 
+    /** Allows to access 'wizard()' from base part. */
+    UIWizard* wizardImp() { return wizard(); }
     /** Allows to access 'this' from base part. */
     UIWizardPage* thisImp() { return this; }
     /** Allows to access 'field()' from base part. */

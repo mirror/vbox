@@ -43,7 +43,7 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &comSourceVirtualDisk)
+UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &comSourceVirtualDisk, KDeviceType enmDeviceType)
 {
     /* Create widgets: */
     QGridLayout *pMainLayout = new QGridLayout(this);
@@ -58,7 +58,7 @@ UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &comSourceVir
                 m_pSourceDiskSelector = new VBoxMediaComboBox(m_pSourceDiskCnt);
                 {
                     m_pSourceDiskSelector->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
-                    m_pSourceDiskSelector->setType(UIMediumType_HardDisk);
+                    m_pSourceDiskSelector->setType(UIMediumDefs::mediumTypeToLocal(enmDeviceType));
                     m_pSourceDiskSelector->setCurrentItem(comSourceVirtualDisk.GetId());
                     m_pSourceDiskSelector->repopulate();
                 }
@@ -116,11 +116,11 @@ UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &comSourceVir
 
                     /* Create buttons for VDI, preferred and others: */
                     foreach (const QString &strId, vdi.keys())
-                        addFormatButton(this, pFormatCntLayout, vdi.value(strId), true);
+                        addFormatButton(this, pFormatCntLayout, enmDeviceType, vdi.value(strId), true);
                     foreach (const QString &strId, preferred.keys())
-                        addFormatButton(this, pFormatCntLayout, preferred.value(strId), true);
+                        addFormatButton(this, pFormatCntLayout, enmDeviceType, preferred.value(strId), true);
                     foreach (const QString &strId, others.keys())
-                        addFormatButton(this, pFormatCntLayout, others.value(strId));
+                        addFormatButton(this, pFormatCntLayout, enmDeviceType, others.value(strId));
 
                     if (!m_pFormatButtonGroup->buttons().isEmpty())
                     {
@@ -138,11 +138,18 @@ UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &comSourceVir
                 m_pVariantButtonGroup = new QButtonGroup(m_pVariantCnt);
                 {
                     m_pDynamicalButton = new QRadioButton(m_pVariantCnt);
+                    if (enmDeviceType == KDeviceType_HardDisk)
                     {
                         m_pDynamicalButton->click();
                         m_pDynamicalButton->setFocus();
                     }
                     m_pFixedButton = new QRadioButton(m_pVariantCnt);
+                    if (   enmDeviceType == KDeviceType_DVD
+                        || enmDeviceType == KDeviceType_Floppy)
+                    {
+                        m_pFixedButton->click();
+                        m_pFixedButton->setFocus();
+                    }
                     m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
                     m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
                 }
@@ -156,8 +163,6 @@ UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &comSourceVir
         pMainLayout->addWidget(m_pDestinationCnt, 1, 0, 1, 2);
         pMainLayout->addWidget(m_pFormatCnt, 2, 0, Qt::AlignTop);
         pMainLayout->addWidget(m_pVariantCnt, 2, 1, Qt::AlignTop);
-        sltHandleSourceDiskChange();
-        sltMediumFormatChanged();
     }
 
     /* Setup connections: */
@@ -187,7 +192,7 @@ void UIWizardCloneVDPageExpert::sltHandleSourceDiskChange()
     /* Get default path for virtual-disk copy: */
     m_strDefaultPath = sourceFileInfo.absolutePath();
     /* Compose name for virtual-disk copy: */
-    QString strMediumName = UIWizardCloneVD::tr("%1_copy", "copied virtual hard drive name").arg(sourceFileInfo.baseName());
+    QString strMediumName = UIWizardCloneVD::tr("%1_copy", "copied virtual disk image name").arg(sourceFileInfo.baseName());
     /* Set text to location editor: */
     m_pDestinationDiskEditor->setText(strMediumName);
 
@@ -229,7 +234,8 @@ void UIWizardCloneVDPageExpert::sltMediumFormatChanged()
     m_pSplitBox->setEnabled(fIsCreateSplitPossible);
 
     /* Compose virtual-disk extension: */
-    acquireExtensions(mf, m_aAllowedExtensions, m_strDefaultExtension);
+    acquireExtensions(mf, static_cast<UIWizardCloneVD*>(wizardImp())->sourceVirtualDiskDeviceType(),
+                      m_aAllowedExtensions, m_strDefaultExtension);
 
     /* Broadcast complete-change: */
     emit completeChanged();
@@ -244,11 +250,11 @@ void UIWizardCloneVDPageExpert::sltSelectLocationButtonClicked()
 void UIWizardCloneVDPageExpert::retranslateUi()
 {
     /* Translate widgets: */
-    m_pSourceDiskCnt->setTitle(UIWizardCloneVD::tr("Hard disk to &copy"));
-    m_pSourceDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a virtual hard disk file to copy..."));
-    m_pDestinationCnt->setTitle(UIWizardCloneVD::tr("&New hard disk to create"));
-    m_pDestinationDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a location for new virtual hard disk file..."));
-    m_pFormatCnt->setTitle(UIWizardCloneVD::tr("Hard disk file &type"));
+    m_pSourceDiskCnt->setTitle(UIWizardCloneVD::tr("Disk image to &copy"));
+    m_pSourceDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a virtual disk image file to copy..."));
+    m_pDestinationCnt->setTitle(UIWizardCloneVD::tr("&New disk image to create"));
+    m_pDestinationDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a location for new virtual disk image file..."));
+    m_pFormatCnt->setTitle(UIWizardCloneVD::tr("Disk image file &type"));
     QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
     for (int i = 0; i < buttons.size(); ++i)
     {
@@ -265,6 +271,9 @@ void UIWizardCloneVDPageExpert::initializePage()
 {
     /* Translate page: */
     retranslateUi();
+
+    sltHandleSourceDiskChange();
+    sltMediumFormatChanged();
 }
 
 bool UIWizardCloneVDPageExpert::isComplete() const

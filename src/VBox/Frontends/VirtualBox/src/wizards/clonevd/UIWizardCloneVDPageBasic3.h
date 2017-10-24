@@ -21,6 +21,9 @@
 /* GUI includes: */
 #include "UIWizardPage.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+
 /* Forward declarations: */
 class QButtonGroup;
 class QRadioButton;
@@ -61,7 +64,7 @@ class UIWizardCloneVDPageBasic3 : public UIWizardPage, public UIWizardCloneVDPag
 public:
 
     /** Constructs basic page. */
-    UIWizardCloneVDPageBasic3();
+    UIWizardCloneVDPageBasic3(KDeviceType enmDeviceType);
 
 private:
 

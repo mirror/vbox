@@ -38,6 +38,7 @@
 UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &comSourceVirtualDisk)
     : UIWizard(pParent, WizardType_CloneVD)
     , m_comSourceVirtualDisk(comSourceVirtualDisk)
+    , m_enmSourceVirtualDiskDeviceType(m_comSourceVirtualDisk.GetDeviceType())
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -63,11 +64,11 @@ bool UIWizardCloneVD::copyVirtualDisk()
     /* Get VBox object: */
     CVirtualBox comVBox = vboxGlobal().virtualBox();
 
-    /* Create new virtual hard-disk: */
-    CMedium comVirtualDisk = comVBox.CreateMedium(comMediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
+    /* Create new virtual disk image: */
+    CMedium comVirtualDisk = comVBox.CreateMedium(comMediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, m_enmSourceVirtualDiskDeviceType);
     if (!comVBox.isOk())
     {
-        msgCenter().cannotCreateHardDiskStorage(comVBox, strMediumPath, this);
+        msgCenter().cannotCreateMediumStorage(comVBox, strMediumPath, this);
         return false;
     }
 
@@ -80,11 +81,11 @@ bool UIWizardCloneVD::copyVirtualDisk()
         variants[i] = (KMediumVariant)temp;
     }
 
-    /* Copy existing virtual-disk to the new virtual-disk: */
+    /* Copy source image to new one: */
     CProgress comProgress = comSourceVirtualDisk.CloneTo(comVirtualDisk, variants, CMedium());
     if (!comSourceVirtualDisk.isOk())
     {
-        msgCenter().cannotCreateHardDiskStorage(comSourceVirtualDisk, strMediumPath, this);
+        msgCenter().cannotCreateMediumStorage(comSourceVirtualDisk, strMediumPath, this);
         return false;
     }
 
@@ -94,14 +95,14 @@ bool UIWizardCloneVD::copyVirtualDisk()
         return false;
     if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
     {
-        msgCenter().cannotCreateHardDiskStorage(comProgress, strMediumPath, this);
+        msgCenter().cannotCreateMediumStorage(comProgress, strMediumPath, this);
         return false;
     }
 
-    /* Remember created virtual-disk: */
+    /* Save created image as target one: */
     m_comTargetVirtualDisk = comVirtualDisk;
 
-    /* Just close the created medium, it is not necessary yet: */
+    /* Just close the created image, it is not required anymore: */
     m_comTargetVirtualDisk.Close();
 
     return true;
@@ -113,7 +114,7 @@ void UIWizardCloneVD::retranslateUi()
     UIWizard::retranslateUi();
 
     /* Translate wizard: */
-    setWindowTitle(tr("Copy Virtual Hard Disk"));
+    setWindowTitle(tr("Copy Virtual Disk Image"));
     setButtonText(QWizard::FinishButton, tr("Copy"));
 }
 
@@ -124,15 +125,17 @@ void UIWizardCloneVD::prepare()
     {
         case WizardMode_Basic:
         {
-            setPage(Page1, new UIWizardCloneVDPageBasic1(m_comSourceVirtualDisk));
-            setPage(Page2, new UIWizardCloneVDPageBasic2);
-            setPage(Page3, new UIWizardCloneVDPageBasic3);
+            setPage(Page1, new UIWizardCloneVDPageBasic1(m_comSourceVirtualDisk,
+                                                         m_enmSourceVirtualDiskDeviceType));
+            setPage(Page2, new UIWizardCloneVDPageBasic2(m_enmSourceVirtualDiskDeviceType));
+            setPage(Page3, new UIWizardCloneVDPageBasic3(m_enmSourceVirtualDiskDeviceType));
             setPage(Page4, new UIWizardCloneVDPageBasic4);
             break;
         }
         case WizardMode_Expert:
         {
-            setPage(PageExpert, new UIWizardCloneVDPageExpert(m_comSourceVirtualDisk));
+            setPage(PageExpert, new UIWizardCloneVDPageExpert(m_comSourceVirtualDisk,
+                                                              m_enmSourceVirtualDiskDeviceType));
             break;
         }
         default:

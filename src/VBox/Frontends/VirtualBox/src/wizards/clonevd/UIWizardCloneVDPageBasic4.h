@@ -24,6 +24,9 @@
 /* GUI includes: */
 #include "UIWizardPage.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+
 /* Forward declarations: */
 class CMediumFormat;
 class QLineEdit;
@@ -47,8 +50,8 @@ protected:
     /** Converts the @a strFileName to absolute one if necessary using @a strDefaultPath as advice. */
     static QString absoluteFilePath(const QString &strFileName, const QString &strDefaultPath);
     /** Acquires the list of @a aAllowedExtensions and @a strDefaultExtension
-      * on the basis of incoming @a comMediumFormat. */
-    static void acquireExtensions(const CMediumFormat &comMediumFormat,
+      * on the basis of incoming @a comMediumFormat and @a enmDeviceType. */
+    static void acquireExtensions(const CMediumFormat &comMediumFormat, KDeviceType enmDeviceType,
                                   QStringList &aAllowedExtensions, QString &strDefaultExtension);
 
     /** Returns 'mediumPath' field value. */
@@ -85,6 +88,8 @@ public:
 
 protected:
 
+    /** Allows to access 'wizard()' from base part. */
+    UIWizard* wizardImp() { return wizard(); }
     /** Allows to access 'this' from base part. */
     UIWizardPage* thisImp() { return this; }
     /** Allows to access 'field()' from base part. */

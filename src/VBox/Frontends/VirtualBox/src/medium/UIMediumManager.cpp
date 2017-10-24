@@ -72,7 +72,7 @@ public:
     UIMediumItem(const UIMedium &guiMedium, UIMediumItem *pParent);
 
     /** Copies UIMedium wrapped by <i>this</i> item. */
-    virtual bool copy() = 0;
+    virtual bool copy();
     /** Moves UIMedium wrapped by <i>this</i> item. */
     virtual bool move();
     /** Removes UIMedium wrapped by <i>this</i> item. */
@@ -162,8 +162,6 @@ public:
 
 protected:
 
-    /** Copies UIMedium wrapped by <i>this</i> item. */
-    virtual bool copy() /* override */;
     /** Removes UIMedium wrapped by <i>this</i> item. */
     virtual bool remove() /* override */;
     /** Releases UIMedium wrapped by <i>this</i> item from virtual @a comMachine. */
@@ -187,8 +185,6 @@ public:
 
 protected:
 
-    /** Copies UIMedium wrapped by <i>this</i> item. */
-    virtual bool copy() /* override */;
     /** Removes UIMedium wrapped by <i>this</i> item. */
     virtual bool remove() /* override */;
     /** Releases UIMedium wrapped by <i>this</i> item from virtual @a comMachine. */
@@ -207,8 +203,6 @@ public:
 
 protected:
 
-    /** Copies UIMedium wrapped by <i>this</i> item. */
-    virtual bool copy() /* override */;
     /** Removes UIMedium wrapped by <i>this</i> item. */
     virtual bool remove() /* override */;
     /** Releases UIMedium wrapped by <i>this</i> item from virtual @a comMachine. */
@@ -372,6 +366,21 @@ bool UIMediumItem::move()
     refreshAll();
 
     /* Positive: */
+    return true;
+}
+
+bool UIMediumItem::copy()
+{
+    /* Show Clone VD wizard: */
+    UISafePointerWizard pWizard = new UIWizardCloneVD(treeWidget(), medium().medium());
+    pWizard->prepare();
+    pWizard->exec();
+
+    /* Delete if still exists: */
+    if (pWizard)
+        delete pWizard;
+
+    /* True by default: */
     return true;
 }
 
@@ -547,21 +556,6 @@ UIMediumItemHD::UIMediumItemHD(const UIMedium &guiMedium, UIMediumItem *pParent)
 {
 }
 
-bool UIMediumItemHD::copy()
-{
-    /* Show Clone VD wizard: */
-    UISafePointerWizard pWizard = new UIWizardCloneVD(treeWidget(), medium().medium());
-    pWizard->prepare();
-    pWizard->exec();
-
-    /* Delete if still exists: */
-    if (pWizard)
-        delete pWizard;
-
-    /* True by default: */
-    return true;
-}
-
 bool UIMediumItemHD::remove()
 {
     /* Confirm medium removal: */
@@ -684,11 +678,6 @@ UIMediumItemCD::UIMediumItemCD(const UIMedium &guiMedium, QITreeWidget *pParent)
 {
 }
 
-bool UIMediumItemCD::copy()
-{
-    AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
-}
-
 bool UIMediumItemCD::remove()
 {
     /* Confirm medium removal: */
@@ -753,11 +742,6 @@ bool UIMediumItemCD::releaseFrom(CMachine comMachine)
 UIMediumItemFD::UIMediumItemFD(const UIMedium &guiMedium, QITreeWidget *pParent)
     : UIMediumItem(guiMedium, pParent)
 {
-}
-
-bool UIMediumItemFD::copy()
-{
-    AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
 }
 
 bool UIMediumItemFD::remove()
@@ -1786,8 +1770,7 @@ void UIMediumManagerWidget::updateActions()
     /* Apply actions accessibility: */
     if (m_pActionCopy)
     {
-        bool fActionEnabledCopy = currentMediumType() == UIMediumType_HardDisk &&
-                                  fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Copy);
+        bool fActionEnabledCopy = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Copy);
         m_pActionCopy->setEnabled(fActionEnabledCopy);
     }
     if (m_pActionMove)

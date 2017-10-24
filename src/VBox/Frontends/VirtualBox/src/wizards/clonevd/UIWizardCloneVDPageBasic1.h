@@ -64,7 +64,7 @@ public:
 
     /** Constructs basic page.
       * @param  comSourceVirtualDisk  Brings the initial source disk to make copy from. */
-    UIWizardCloneVDPageBasic1(const CMedium &comSourceVirtualDisk);
+    UIWizardCloneVDPageBasic1(const CMedium &comSourceVirtualDisk, KDeviceType enmDeviceType);
 
 protected:
 
