@@ -629,7 +629,7 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
                 return VINF_SUCCESS;
 
             /* Append it pattern by pattern, turning settings-relative paths into absolute ones. */
-            while (cchSrc > 0)
+            for (;;)
             {
                 const char *pszEnd = (const char *)memchr(pszSrc, '|', cchSrc);
                 size_t cchPattern = pszEnd ? pszEnd - pszSrc : cchSrc;
@@ -653,6 +653,7 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
                 cchSrc -= 1;
                 pszSrc += cchPattern + 1;
             }
+            /* not reached */
         }
 
         default:
