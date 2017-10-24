@@ -136,6 +136,16 @@ static bool         g_fDiffIgnoreLeadingWS  = false;
 static bool         g_fDiffIgnoreTrailingWS = false;
 static int          g_iVerbosity            = 2;//99; //0;
 uint32_t            g_uYear                 = 0; /**< The current year. */
+/** @name Statistics
+ * @{ */
+static uint32_t     g_cDirsProcessed        = 0;
+static uint32_t     g_cFilesProcessed       = 0;
+static uint32_t     g_cFilesModified        = 0;
+static uint32_t     g_cFilesSkipped         = 0;
+static uint32_t     g_cFilesNotInSvn        = 0;
+static uint32_t     g_cFilesNoRewriters     = 0;
+static uint32_t     g_cFilesBinaries        = 0;
+/** @} */
 
 /** The global settings. */
 static SCMSETTINGSBASE const g_Defaults =
@@ -263,6 +273,17 @@ static PFNSCMREWRITER const g_aRewritersFor_RC[] =
     rewrite_Copyright_CstyleComment,
 };
 
+static PFNSCMREWRITER const g_aRewritersFor_ASM[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_ExpandTabs,
+    rewrite_StripTrailingBlanks,
+    rewrite_AdjustTrailingLines,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords,
+    rewrite_Copyright_SemicolonComment,
+};
+
 static PFNSCMREWRITER const g_aRewritersFor_DEF[] =
 {
     rewrite_ForceNativeEol,
@@ -308,6 +329,17 @@ static PFNSCMREWRITER const g_aRewritersFor_Python[] =
     rewrite_Copyright_PythonComment,
 };
 
+static PFNSCMREWRITER const g_aRewritersFor_ScmSettings[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_ExpandTabs,
+    rewrite_StripTrailingBlanks,
+    rewrite_AdjustTrailingLines,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords,
+    rewrite_Copyright_HashComment,
+};
+
 
 static SCMCFGENTRY const g_aConfigs[] =
 {
@@ -316,11 +348,13 @@ static SCMCFGENTRY const g_aConfigs[] =
     { RT_ELEMENTS(g_aRewritersFor_C_and_CPP),    &g_aRewritersFor_C_and_CPP[0],    "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc|*.m|*.mm" },
     { RT_ELEMENTS(g_aRewritersFor_H_and_HPP),    &g_aRewritersFor_H_and_HPP[0],    "*.h|*.hpp" },
     { RT_ELEMENTS(g_aRewritersFor_RC),           &g_aRewritersFor_RC[0],           "*.rc" },
+    { RT_ELEMENTS(g_aRewritersFor_ASM),          &g_aRewritersFor_ASM[0],          "*.asm|*.mac" },
     { RT_ELEMENTS(g_aRewritersFor_DEF),          &g_aRewritersFor_DEF[0],          "*.def" },
     { RT_ELEMENTS(g_aRewritersFor_ShellScripts), &g_aRewritersFor_ShellScripts[0], "*.sh|configure" },
     { RT_ELEMENTS(g_aRewritersFor_BatchFiles),   &g_aRewritersFor_BatchFiles[0],   "*.bat|*.cmd|*.btm|*.vbs|*.ps1" },
     { RT_ELEMENTS(g_aRewritersFor_SedScripts),   &g_aRewritersFor_SedScripts[0],   "*.sed" },
     { RT_ELEMENTS(g_aRewritersFor_Python),       &g_aRewritersFor_Python[0],       "*.py" },
+    { RT_ELEMENTS(g_aRewritersFor_ScmSettings),  &g_aRewritersFor_ScmSettings[0],  "*.scm-settings" },
 };
 
 
@@ -727,18 +761,21 @@ static void scmSettingsDestroy(PSCMSETTINGS pSettings)
  * @param   pSettings           The settings.
  * @param   pchLine             The line containing the unparsed pair.
  * @param   cchLine             The length of the line.
+ * @param   offColon            The offset of the colon into the line.
+ * @param   pchDir              The absolute path to the directory relative
+ *                              components in pchLine should be relative to.
  */
-static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_t cchLine)
+static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_t cchLine, size_t offColon,
+                              const char *pchDir, size_t cchDir)
 {
+    Assert(pchLine[offColon] == ':' && offColon < cchLine);
+    Assert(pchDir[cchDir - 1] == '/');
+
     /*
      * Split the string.
      */
-    const char *pchOptions = (const char *)memchr(pchLine, ':', cchLine);
-    if (!pchOptions)
-        return VERR_INVALID_PARAMETER;
-    size_t cchPattern = pchOptions - pchLine;
+    size_t cchPattern = offColon;
     size_t cchOptions = cchLine - cchPattern - 1;
-    pchOptions++;
 
     /* strip spaces everywhere */
     while (cchPattern > 0 && RT_C_IS_SPACE(pchLine[cchPattern - 1]))
@@ -746,6 +783,7 @@ static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_
     while (cchPattern > 0 && RT_C_IS_SPACE(*pchLine))
         cchPattern--, pchLine++;
 
+    const char *pchOptions = &pchLine[offColon + 1];
     while (cchOptions > 0 && RT_C_IS_SPACE(pchOptions[cchOptions - 1]))
         cchOptions--;
     while (cchOptions > 0 && RT_C_IS_SPACE(*pchOptions))
@@ -756,7 +794,7 @@ static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_
         return VINF_SUCCESS;
 
     /*
-     * Add the pair and verify the option string.
+     * Prepair the pair and verify the option string.
      */
     uint32_t iPair = pSettings->cPairs;
     if ((iPair % 32) == 0)
@@ -775,7 +813,67 @@ static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_
         rc = scmSettingsBaseVerifyString(pSettings->paPairs[iPair].pszOptions);
     else
         rc = VERR_NO_MEMORY;
+
+    /*
+     * If it checked out fine, expand any relative paths in the pattern.
+     */
     if (RT_SUCCESS(rc))
+    {
+        size_t cRelativePaths = 0;
+        const char *pszSrc = pSettings->paPairs[iPair].pszPattern;
+        for (;;)
+        {
+            if (*pszSrc == '/')
+                cRelativePaths++;
+            pszSrc = strchr(pszSrc, '|');
+            if (!pszSrc)
+                break;
+            pszSrc++;
+        }
+        if (cRelativePaths > 0)
+        {
+            char *pszNewPattern = RTStrAlloc(cchPattern + cRelativePaths * (cchDir - 1) + 1);
+            if (pszNewPattern)
+            {
+                char *pszDst = pszNewPattern;
+                pszSrc = pSettings->paPairs[iPair].pszPattern;
+                for (;;)
+                {
+                    if (*pszSrc == '/')
+                    {
+                        memcpy(pszDst, pchDir, cchDir);
+                        pszDst += cchDir;
+                        pszSrc += 1;
+                    }
+
+                    /* Look for the next relative path. */
+                    const char *pszSrcNext = strchr(pszSrc, '|');
+                    while (pszSrcNext && pszSrcNext[1] != '/')
+                        pszSrcNext = strchr(pszSrcNext, '|');
+                    if (!pszSrcNext)
+                        break;
+
+                    /* Copy stuff between current and the next path. */
+                    pszSrcNext++;
+                    memcpy(pszDst, pszSrc, pszSrcNext - pszSrc);
+                    pszDst += pszSrcNext - pszSrc;
+                    pszSrc = pszSrcNext;
+                }
+
+                /* Copy the final portion and replace the pattern. */
+                strcpy(pszDst, pszSrc);
+
+                RTStrFree(pSettings->paPairs[iPair].pszPattern);
+                pSettings->paPairs[iPair].pszPattern = pszNewPattern;
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+    }
+    if (RT_SUCCESS(rc))
+        /*
+         * Commit the pair.
+         */
         pSettings->cPairs = iPair + 1;
     else
     {
@@ -790,11 +888,19 @@ static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_
  *
  * @returns IPRT status code.
  * @param   pSettings           Where to load the settings file.
- * @param   pszFilename         The file to load.
+ * @param   pszFilename         The file to load.  ASSUMED to be absolute.
+ * @param   offName             The offset of the name part in pszFilename.
  */
-static int scmSettingsLoadFile(PSCMSETTINGS pSettings, const char *pszFilename)
+static int scmSettingsLoadFile(PSCMSETTINGS pSettings, const char *pszFilename, size_t offName)
 {
     ScmVerbose(NULL, 3, "Loading settings file '%s'...\n", pszFilename);
+
+#ifdef RT_STRICT
+    /* Check absolute path assumption. */
+    char szTmp[RTPATH_MAX];
+    int rcTmp = RTPathAbs(pszFilename, szTmp, sizeof(szTmp));
+    AssertMsg(RT_SUCCESS(rcTmp) && RTPathCompare(szTmp, pszFilename) == 0, ("rcTmp=%Rrc pszFilename='%s'\n", rcTmp, pszFilename));
+#endif
 
     SCMSTREAM Stream;
     int rc = ScmStreamInitForReading(&Stream, pszFilename);
@@ -820,7 +926,7 @@ static int scmSettingsLoadFile(PSCMSETTINGS pSettings, const char *pszFilename)
         /* What kind of line is it? */
         const char *pchColon = (const char *)memchr(pchLine, ':', cchLine);
         if (pchColon)
-            rc = scmSettingsAddPair(pSettings, pchLine, cchLine);
+            rc = scmSettingsAddPair(pSettings, pchLine, cchLine, pchColon - pchLine, pszFilename, offName);
         else
             rc = scmSettingsBaseParseStringN(&pSettings->Base, pchLine, cchLine);
         if (RT_FAILURE(rc))
@@ -856,7 +962,7 @@ static int scmSettingsCreateFromFile(PSCMSETTINGS *ppSettings, const char *pszFi
     int rc = scmSettingsCreate(&pSettings, pSettingsBase);
     if (RT_SUCCESS(rc))
     {
-        rc = scmSettingsLoadFile(pSettings, pszFilename);
+        rc = scmSettingsLoadFile(pSettings, pszFilename, RTPathFilename(pszFilename) - pszFilename);
         if (RT_SUCCESS(rc))
         {
             *ppSettings = pSettings;
@@ -921,7 +1027,7 @@ static int scmSettingsCreateForPath(PSCMSETTINGS *ppSettings, PCSCMSETTINGSBASE 
 
         if (RTFileExists(szFile))
         {
-            rc = scmSettingsLoadFile(pSettings, szFile);
+            rc = scmSettingsLoadFile(pSettings, szFile, RTPathFilename(szFile) - &szFile[0]);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -975,7 +1081,7 @@ static int scmSettingsStackPushDir(PSCMSETTINGS *ppSettingsStack, const char *ps
         if (RT_SUCCESS(rc))
         {
             if (RTFileExists(szFile))
-                rc = scmSettingsLoadFile(pSettings, szFile);
+                rc = scmSettingsLoadFile(pSettings, szFile, RTPathFilename(szFile) - &szFile[0]);
             if (RT_SUCCESS(rc))
             {
                 scmSettingsStackPush(ppSettingsStack, pSettings);
@@ -1181,6 +1287,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
         && !RTStrSimplePatternMultiMatch(pBaseSettings->pszFilterFiles, RTSTR_MAX, pszBasename, cchBasename, NULL))
     {
         ScmVerbose(NULL, 5, "skipping '%s': file filter mismatch\n", pszFilename);
+        g_cFilesSkipped++;
         return VINF_SUCCESS;
     }
     if (   pBaseSettings->pszFilterOutFiles
@@ -1189,12 +1296,14 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
             || RTStrSimplePatternMultiMatch(pBaseSettings->pszFilterOutFiles, RTSTR_MAX, pszFilename, RTSTR_MAX, NULL)) )
     {
         ScmVerbose(NULL, 5, "skipping '%s': filterd out\n", pszFilename);
+        g_cFilesSkipped++;
         return VINF_SUCCESS;
     }
     if (   pBaseSettings->fOnlySvnFiles
         && !ScmSvnIsInWorkingCopy(pState))
     {
         ScmVerbose(NULL, 5, "skipping '%s': not in SVN WC\n", pszFilename);
+        g_cFilesNotInSvn++;
         return VINF_SUCCESS;
     }
 
@@ -1211,6 +1320,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
     if (!pCfg)
     {
         ScmVerbose(NULL, 4, "skipping '%s': no rewriters configured\n", pszFilename);
+        g_cFilesNoRewriters++;
         return VINF_SUCCESS;
     }
     ScmVerbose(pState, 4, "matched \"%s\"\n", pCfg->pszFilePattern);
@@ -1302,6 +1412,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                                     ScmVerbose(pState, 2, "would have modified the file \"%s%s\"\n",
                                                pszFilename, g_pszChangedSuff);
                                 }
+                                g_cFilesModified++;
                             }
 
                             /*
@@ -1317,6 +1428,8 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                                 }
                                 else
                                     ScmSvnDisplayChanges(pState);
+                                if (!fModified)
+                                    g_cFilesModified++;
                             }
 
                             if (!fModified && !pState->cSvnPropChanges)
@@ -1338,7 +1451,10 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
             RTMsgError("scmSettingsBaseLoadFromDocument: %Rrc\n", rc);
     }
     else
+    {
         ScmVerbose(pState, 4, "not text file: \"%s\"\n", pszFilename);
+        g_cFilesBinaries++;
+    }
     ScmStreamDelete(&Stream1);
 
     return rc;
@@ -1382,6 +1498,8 @@ static int scmProcessFile(const char *pszFilename, const char *pszBasename, size
         RTMemFree(State.paSvnPropChanges);
 
         scmSettingsBaseDelete(&Base);
+
+        g_cFilesProcessed++;
     }
     return rc;
 }
@@ -1444,6 +1562,7 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
         if (!ScmSvnIsDirInWorkingCopy(pszBuf))
             return VINF_SUCCESS;
     }
+    g_cDirsProcessed++;
 
     /*
      * Try open and read the directory.
@@ -1602,6 +1721,23 @@ static int scmProcessSomething(const char *pszSomething, PSCMSETTINGS pSettingsS
     else
         RTMsgError("RTPathAbs: %Rrc\n", rc);
     return rc;
+}
+
+/**
+ * Print some stats.
+ */
+static void scmPrintStats(void)
+{
+    ScmVerbose(NULL, 0,
+               g_fDryRun
+               ? "%u out of %u file%s in %u dir%s would be modified (%u without rewriter%s, %u binar%s, %u not in svn, %u skipped)\n"
+               : "%u out of %u file%s in %u dir%s was modified (%u without rewriter%s, %u binar%s, %u not in svn, %u skipped)\n",
+               g_cFilesModified,
+               g_cFilesProcessed, g_cFilesProcessed == 1 ? "" : "s",
+               g_cDirsProcessed,  g_cDirsProcessed == 1 ? "" : "s",
+               g_cFilesNoRewriters, g_cFilesNoRewriters == 1 ? "" : "s",
+               g_cFilesBinaries,  g_cFilesBinaries == 1 ? "y" : "ies",
+               g_cFilesNotInSvn, g_cFilesSkipped);
 }
 
 static void usage(PCRTGETOPTDEF paOpts, size_t cOpts)
@@ -1843,7 +1979,10 @@ int main(int argc, char **argv)
                 }
                 rc = scmProcessSomething(ValueUnion.psz, pSettings);
                 if (RT_FAILURE(rc))
-                    return rc;
+                {
+                    scmPrintStats();
+                    return RTEXITCODE_FAILURE;
+                }
                 break;
             }
 
@@ -1859,6 +1998,7 @@ int main(int argc, char **argv)
         }
     }
 
+    scmPrintStats();
     scmSettingsDestroy(pSettings);
     return 0;
 }
