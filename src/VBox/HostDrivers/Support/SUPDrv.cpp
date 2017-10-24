@@ -2389,14 +2389,14 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             /* validate */
             PSUPUCODEREV pReq = (PSUPUCODEREV)pReqHdr;
             REQ_CHECK_SIZES(SUP_IOCTL_UCODE_REV);
-    
+
             /* execute */
             pReq->Hdr.rc = SUPR0QueryUcodeRev(pSession, &pReq->u.Out.MicrocodeRev);
             if (RT_FAILURE(pReq->Hdr.rc))
                 pReq->Hdr.cbOut = sizeof(pReq->Hdr);
             return 0;
         }
-    
+
         default:
             Log(("Unknown IOCTL %#lx\n", (long)uIOCtl));
             break;
@@ -4421,7 +4421,7 @@ int VBOXCALL supdrvQueryUcodeRev(uint32_t *puRevision)
                     *puRevision = RT_HIDWORD(uRevMsr);
                     rc = VINF_SUCCESS;
                 }
-            } 
+            }
             else if (ASMIsAmdCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
             {
                 /* Not well documented, but at least all AMD64 CPUs support this. */

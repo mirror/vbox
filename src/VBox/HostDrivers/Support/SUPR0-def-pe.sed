@@ -3,6 +3,7 @@
 # IPRT - SED script for generating SUPR0.def
 #
 
+#
 # Copyright (C) 2012-2015 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
