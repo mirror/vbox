@@ -26,6 +26,7 @@
 
 #include <list>
 #include <map>
+#include <queue>
 #include <stack>
 
 #include <math.h> /* For lround.h. */
@@ -33,6 +34,7 @@
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/cdefs.h>
+#include <iprt/critsect.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/rand.h>
@@ -378,6 +380,12 @@ private:
 
 class WebMWriter_Impl
 {
+    /** Defines a WebM timecode. */
+    typedef uint16_t WebMTimecode;
+
+    /** Defines the WebM block flags data type. */
+    typedef uint8_t  WebMBlockFlags;
+
     /**
      * Track type enumeration.
      */
@@ -391,6 +399,105 @@ class WebMWriter_Impl
         WebMTrackType_Video       = 2
     };
 
+    struct WebMTrack;
+
+    /**
+     * Structure for defining a WebM simple block.
+     */
+    struct WebMSimpleBlock
+    {
+        WebMSimpleBlock(WebMTrack *a_pTrack,
+                        WebMTimecode a_tcPTSMs, const void *a_pvData, size_t a_cbData, WebMBlockFlags a_fFlags)
+            : pTrack(a_pTrack)
+        {
+            Data.tcPTSMs = a_tcPTSMs;
+            Data.cb      = a_cbData;
+            Data.fFlags  = a_fFlags;
+
+            if (Data.cb)
+            {
+                Data.pv = RTMemDup(a_pvData, a_cbData);
+                if (!Data.pv)
+                    throw;
+            }
+        }
+
+        virtual ~WebMSimpleBlock()
+        {
+            if (Data.pv)
+            {
+                Assert(Data.cb);
+                RTMemFree(Data.pv);
+            }
+        }
+
+        WebMTrack    *pTrack;
+
+        /** Actual simple block data. */
+        struct
+        {
+            WebMTimecode   tcPTSMs;
+            WebMTimecode   tcRelToClusterMs;
+            void          *pv;
+            size_t         cb;
+            WebMBlockFlags fFlags;
+        } Data;
+    };
+
+    /** A simple block queue.*/
+    typedef std::queue<WebMSimpleBlock *> WebMSimpleBlockQueue;
+
+    /** Structure for queuing all simple blocks bound to a single timecode.
+     *  This can happen if multiple tracks are being involved. */
+    struct WebMTimecodeBlocks
+    {
+        WebMTimecodeBlocks(void)
+            : fClusterNeeded(false)
+            , fClusterStarted(false) { }
+
+        /** The actual block queue for this timecode. */
+        WebMSimpleBlockQueue Queue;
+        /** Whether a new cluster is needed for this timecode or not. */
+        bool                 fClusterNeeded;
+        /** Whether a new cluster already has been started for this timecode or not. */
+        bool                 fClusterStarted;
+
+        /**
+         * Enqueues a simple block into the internal queue.
+         *
+         * @param   a_pBlock    Block to enqueue and take ownership of.
+         */
+        void Enqueue(WebMSimpleBlock *a_pBlock)
+        {
+            Queue.push(a_pBlock);
+
+            if (a_pBlock->Data.fFlags & VBOX_WEBM_BLOCK_FLAG_KEY_FRAME)
+                fClusterNeeded = true;
+        }
+    };
+
+    /** A block map containing all currently queued blocks.
+     *  The key specifies a unique timecode, whereas the value
+     *  is a queue of blocks which all correlate to the key (timecode). */
+    typedef std::map<WebMTimecode, WebMTimecodeBlocks> WebMBlockMap;
+
+    /**
+     * Structure for defining a WebM (encoding) queue.
+     */
+    struct WebMQueue
+    {
+        WebMQueue(void)
+            : tcLastBlockWrittenMs(0)
+            , tslastProcessedMs(0) { }
+
+        /** Blocks as FIFO (queue). */
+        WebMBlockMap Map;
+        /** Timecode (in ms) of last written block to queue. */
+        WebMTimecode tcLastBlockWrittenMs;
+        /** Time stamp (in ms) of when the queue was processed last. */
+        uint64_t     tslastProcessedMs;
+    };
+
     /**
      * Structure for keeping a WebM track entry.
      */
@@ -401,7 +508,7 @@ class WebMWriter_Impl
             , uTrack(a_uTrack)
             , offUUID(a_offID)
             , cTotalBlocks(0)
-            , tcLastWriteMs(0)
+            , tcLastWrittenMs(0)
         {
             uUUID = RTRandU32();
         }
@@ -432,17 +539,17 @@ class WebMWriter_Impl
             } Audio;
         };
         /** This track's track number. Also used as key in track map. */
-        uint8_t       uTrack;
+        uint8_t             uTrack;
         /** The track's "UUID".
          *  Needed in case this track gets mux'ed with tracks from other files. Not really unique though. */
-        uint32_t      uUUID;
+        uint32_t            uUUID;
         /** Absolute offset in file of track UUID.
          *  Needed to write the hash sum within the footer. */
-        uint64_t      offUUID;
+        uint64_t            offUUID;
         /** Total number of blocks. */
-        uint64_t      cTotalBlocks;
+        uint64_t            cTotalBlocks;
         /** Timecode (in ms) of last write. */
-        uint64_t      tcLastWriteMs;
+        WebMTimecode        tcLastWrittenMs;
     };
 
     /**
@@ -450,16 +557,16 @@ class WebMWriter_Impl
      */
     struct WebMCuePoint
     {
-        WebMCuePoint(WebMTrack *a_pTrack, uint32_t a_tcClusterStart, uint64_t a_offClusterStart)
+        WebMCuePoint(WebMTrack *a_pTrack, uint64_t a_offCluster, WebMTimecode a_tcAbs)
             : pTrack(a_pTrack)
-            , tcClusterStart(a_tcClusterStart), offClusterStart(a_offClusterStart) {}
+            , offCluster(a_offCluster), tcAbs(a_tcAbs) { }
 
         /** Associated track. */
-        WebMTrack *pTrack;
-        /** Start time code of the related cluster. */
-        uint32_t   tcClusterStart;
-        /** Start offset of the related cluster. */
-        uint64_t   offClusterStart;
+        WebMTrack   *pTrack;
+        /** Offset (in bytes) of the related cluster containing the given position. */
+        uint64_t     offCluster;
+        /** Time code (absolute) of this cue point. */
+        WebMTimecode tcAbs;
     };
 
     /**
@@ -469,23 +576,20 @@ class WebMWriter_Impl
     {
         WebMCluster(void)
             : uID(0)
-            , offCluster(0)
+            , offStart(0)
             , fOpen(false)
             , tcStartMs(0)
-            , tcLastWriteMs(0)
             , cBlocks(0) { }
 
         /** This cluster's ID. */
         uint64_t      uID;
-        /** Absolute offset (in bytes) of current cluster.
+        /** Absolute offset (in bytes) of this cluster.
          *  Needed for seeking info table. */
-        uint64_t      offCluster;
+        uint64_t      offStart;
         /** Whether this cluster element is opened currently. */
         bool          fOpen;
-        /** Timecode (in ms) when starting this cluster. */
-        uint64_t      tcStartMs;
-        /** Timecode (in ms) of last write. */
-        uint64_t      tcLastWriteMs;
+        /** Timecode (in ms) when this cluster starts. */
+        WebMTimecode  tcStartMs;
         /** Number of (simple) blocks in this cluster. */
         uint64_t      cBlocks;
     };
@@ -499,7 +603,7 @@ class WebMWriter_Impl
     {
         WebMSegment(void)
             : tcStartMs(0)
-            , tcLastWriteMs(0)
+            , tcLastWrittenMs(0)
             , offStart(0)
             , offInfo(0)
             , offSeekInfo(0)
@@ -511,13 +615,26 @@ class WebMWriter_Impl
             LogFunc(("Default timecode scale is: %RU64ns\n", uTimecodeScaleFactor));
         }
 
+        int init(void)
+        {
+            return RTCritSectInit(&CritSect);
+        }
+
+        void destroy(void)
+        {
+            RTCritSectDelete(&CritSect);
+        }
+
+        /** Critical section for serializing access to this segment. */
+        RTCRITSECT                      CritSect;
+
         /** The timecode scale factor of this segment. */
         uint64_t                        uTimecodeScaleFactor;
 
         /** Timecode (in ms) when starting this segment. */
-        uint64_t                        tcStartMs;
+        WebMTimecode                    tcStartMs;
         /** Timecode (in ms) of last write. */
-        uint64_t                        tcLastWriteMs;
+        WebMTimecode                    tcLastWrittenMs;
 
         /** Absolute offset (in bytes) of CurSeg. */
         uint64_t                        offStart;
@@ -544,6 +661,8 @@ class WebMWriter_Impl
          *  Note that we don't need (and shouldn't need, as this can be a *lot* of data!) a
          *  list of all clusters. */
         WebMCluster                     CurCluster;
+
+        WebMQueue                       queueBlocks;
 
     } CurSeg;
 
@@ -579,6 +698,16 @@ public:
     virtual ~WebMWriter_Impl()
     {
         close();
+    }
+
+    int init(void)
+    {
+        return CurSeg.init();
+    }
+
+    void destroy(void)
+    {
+        CurSeg.destroy();
     }
 
     /**
@@ -702,6 +831,11 @@ public:
 #endif
     }
 
+    /**
+     * Writes the WebM file header.
+     *
+     * @returns IPRT status code.
+     */
     int writeHeader(void)
     {
         LogFunc(("Header @ %RU64\n", RTFileTell(m_Ebml.getFile())));
@@ -733,224 +867,175 @@ public:
         return VINF_SUCCESS;
     }
 
-    int writeSimpleBlockInternal(WebMTrack *a_pTrack, uint64_t a_uTimecode,
-                                 const void *a_pvData, size_t a_cbData, uint8_t a_fFlags)
+    /**
+     * Writes a simple block into the EBML structure.
+     *
+     * @returns IPRT status code.
+     * @param   a_pTrack        Track the simple block is assigned to.
+     * @param   a_pBlock        Simple block to write.
+     */
+    int writeSimpleBlockEBML(WebMTrack *a_pTrack, WebMSimpleBlock *a_pBlock)
     {
-        Log3Func(("SimpleBlock @ %RU64 (T%RU8, TS=%RU64, %zu bytes)\n",
-                  RTFileTell(m_Ebml.getFile()), a_pTrack->uTrack, a_uTimecode, a_cbData));
+        WebMCluster &Cluster = CurSeg.CurCluster;
 
-        /** @todo Mask out non-valid timecode bits, e.g. the upper 48 bits for a (default) 16-bit timecode. */
-        Assert(a_uTimecode <= m_uTimecodeMax);
+        Log3Func(("[T%RU8C%RU64] Off=%RU64, PTS=%RU16, RelToClusterMs=%RU16, %zu bytes\n",
+                  a_pTrack->uTrack, Cluster.uID, RTFileTell(m_Ebml.getFile()),
+                  a_pBlock->Data.tcPTSMs, a_pBlock->Data.tcRelToClusterMs, a_pBlock->Data.cb));
 
-        /* Write a "Simple Block". */
+        /*
+         * Write a "Simple Block".
+         */
         m_Ebml.writeClassId(MkvElem_SimpleBlock);
         /* Block size. */
-        m_Ebml.writeUnsignedInteger(0x10000000u | (  1            /* Track number size. */
-                                                   + m_cbTimecode /* Timecode size .*/
-                                                   + 1            /* Flags size. */
-                                                   + a_cbData     /* Actual frame data size. */),  4);
+        m_Ebml.writeUnsignedInteger(0x10000000u | (  1                 /* Track number size. */
+                                                   + m_cbTimecode      /* Timecode size .*/
+                                                   + 1                 /* Flags size. */
+                                                   + a_pBlock->Data.cb /* Actual frame data size. */),  4);
         /* Track number. */
         m_Ebml.writeSize(a_pTrack->uTrack);
         /* Timecode (relative to cluster opening timecode). */
-        m_Ebml.writeUnsignedInteger(a_uTimecode, m_cbTimecode);
+        m_Ebml.writeUnsignedInteger(a_pBlock->Data.tcRelToClusterMs, m_cbTimecode);
         /* Flags. */
-        m_Ebml.writeUnsignedInteger(a_fFlags, 1);
+        m_Ebml.writeUnsignedInteger(a_pBlock->Data.fFlags, 1);
         /* Frame data. */
-        m_Ebml.write(a_pvData, a_cbData);
-
-        a_pTrack->cTotalBlocks++;
+        m_Ebml.write(a_pBlock->Data.pv, a_pBlock->Data.cb);
 
         return VINF_SUCCESS;
     }
 
-#ifdef VBOX_WITH_LIBVPX
-    int writeBlockVP8(WebMTrack *a_pTrack, const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt)
+    /**
+     * Writes a simple block and enqueues it into the segment's render queue.
+     *
+     * @returns IPRT status code.
+     * @param   a_pTrack        Track the simple block is assigned to.
+     * @param   a_pBlock        Simple block to write and enqueue.
+     */
+    int writeSimpleBlockQueued(WebMTrack *a_pTrack, WebMSimpleBlock *a_pBlock)
     {
         RT_NOREF(a_pTrack);
 
-        WebMCluster &Cluster = CurSeg.CurCluster;
+        int rc = VINF_SUCCESS;
 
-        /* Calculate the PTS of this frame (in ms). */
-        uint64_t tcPTSMs = a_pPkt->data.frame.pts * 1000
-                         * (uint64_t) a_pCfg->g_timebase.num / a_pCfg->g_timebase.den;
-        /* Sanity. */
-        Assert(tcPTSMs);
-        //Assert(tcPTSMs >= Cluster.tcLastWriteMs);
-
-        if (   tcPTSMs
-            && tcPTSMs <= a_pTrack->tcLastWriteMs)
+        try
         {
-            tcPTSMs = a_pTrack->tcLastWriteMs + 1;
+            const WebMTimecode tcMap = a_pBlock->Data.tcPTSMs;
+
+            /* See if we already have an entry for the specified timecode in our queue. */
+            WebMBlockMap::iterator itQueue = CurSeg.queueBlocks.Map.find(tcMap);
+            if (itQueue != CurSeg.queueBlocks.Map.end()) /* Use existing queue. */
+            {
+                WebMTimecodeBlocks &Blocks = itQueue->second;
+                Blocks.Enqueue(a_pBlock);
+            }
+            else /* Create a new timecode entry. */
+            {
+                WebMTimecodeBlocks Blocks;
+                Blocks.Enqueue(a_pBlock);
+
+                CurSeg.queueBlocks.Map[tcMap] = Blocks;
+            }
+
+            processQueues(&CurSeg.queueBlocks, false /* fForce */);
+        }
+        catch(...)
+        {
+            delete a_pBlock;
+            a_pBlock = NULL;
+
+            rc = VERR_NO_MEMORY;
         }
 
-        /* Whether to start a new cluster or not. */
-        bool fClusterStart = false;
+        return rc;
+    }
 
-        /* No blocks written yet? Start a new cluster. */
-        if (a_pTrack->cTotalBlocks == 0)
-            fClusterStart = true;
+#ifdef VBOX_WITH_LIBVPX
+    /**
+     * Writes VPX (VP8 video) simple data block.
+     *
+     * @returns IPRT status code.
+     * @param   a_pTrack        Track ID to write data to.
+     * @param   a_pCfg          VPX encoder configuration to use.
+     * @param   a_pPkt          VPX packet video data packet to write.
+     */
+    int writeSimpleBlockVP8(WebMTrack *a_pTrack, const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt)
+    {
+        RT_NOREF(a_pTrack);
 
-        /* Did we reach the maximum a cluster can hold? Use a new cluster then. */
-        if (tcPTSMs > VBOX_WEBM_CLUSTER_MAX_LEN_MS)
+        /* Calculate the PTS of this frame (in ms). */
+        WebMTimecode tcPTSMs = a_pPkt->data.frame.pts * 1000
+                             * (uint64_t) a_pCfg->g_timebase.num / a_pCfg->g_timebase.den;
+
+        if (   tcPTSMs
+            && tcPTSMs <= a_pTrack->tcLastWrittenMs)
         {
-            LogFunc(("[T%RU8C%RU64] Exceeded max length (%RU64ms)\n",
-                     a_pTrack->uTrack, Cluster.uID, VBOX_WEBM_CLUSTER_MAX_LEN_MS));
-
-            /* Note: Do not reset the PTS here -- the new cluster starts time-wise
-             *       where the old cluster left off. */
-
-            fClusterStart = true;
+            tcPTSMs = a_pTrack->tcLastWrittenMs + 1;
         }
 
         const bool fKeyframe = RT_BOOL(a_pPkt->data.frame.flags & VPX_FRAME_IS_KEY);
 
-        if (   fClusterStart
-            || fKeyframe)
-        {
-            if (Cluster.fOpen) /* Close current cluster first. */
-            {
-                m_Ebml.subEnd(MkvElem_Cluster);
-                Cluster.fOpen = false;
-            }
-
-            Cluster.fOpen      = true;
-            Cluster.uID        = CurSeg.cClusters;
-            Cluster.tcStartMs  = tcPTSMs;
-            Cluster.offCluster = RTFileTell(m_Ebml.getFile());
-            Cluster.cBlocks    = 0;
-
-            if (CurSeg.cClusters)
-                AssertMsg(Cluster.tcStartMs, ("[T%RU8C%RU64] @ %RU64 start is 0 which is invalid\n",
-                                              a_pTrack->uTrack, Cluster.uID, Cluster.offCluster));
-
-            LogFunc(("[T%RU8C%RU64] Start @ %RU64ms / %RU64 bytes\n",
-                     a_pTrack->uTrack, Cluster.uID, Cluster.tcStartMs, Cluster.offCluster));
-
-            m_Ebml.subStart(MkvElem_Cluster)
-                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcStartMs);
-
-            /* Save a cue point if this is a keyframe. */
-            if (fKeyframe)
-            {
-                WebMCuePoint cue(a_pTrack, Cluster.tcStartMs, Cluster.offCluster);
-                CurSeg.lstCues.push_back(cue);
-            }
-
-            CurSeg.cClusters++;
-        }
-
-        Cluster.tcLastWriteMs = tcPTSMs;
-        Cluster.cBlocks++;
-
-        a_pTrack->tcLastWriteMs = tcPTSMs;
-
-        if (CurSeg.tcLastWriteMs < a_pTrack->tcLastWriteMs)
-            CurSeg.tcLastWriteMs = a_pTrack->tcLastWriteMs;
-
-        /* Calculate the block's timecode, which is relative to the cluster's starting timecode. */
-        uint16_t tcBlockMs = static_cast<uint16_t>(tcPTSMs - Cluster.tcStartMs);
-
-        Log2Func(("[T%RU8C%RU64] tcPTSMs=%RU64, (%RU64ms)\n", a_pTrack->uTrack, Cluster.uID, tcPTSMs, tcBlockMs));
-
-        uint8_t fFlags = 0;
+        uint8_t fFlags = VBOX_WEBM_BLOCK_FLAG_NONE;
         if (fKeyframe)
             fFlags |= VBOX_WEBM_BLOCK_FLAG_KEY_FRAME;
         if (a_pPkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE)
             fFlags |= VBOX_WEBM_BLOCK_FLAG_INVISIBLE;
 
-        return writeSimpleBlockInternal(a_pTrack, tcBlockMs, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags);
+        return writeSimpleBlockQueued(a_pTrack,
+                                      new WebMSimpleBlock(a_pTrack,
+                                                          tcPTSMs, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags));
     }
 #endif /* VBOX_WITH_LIBVPX */
 
 #ifdef VBOX_WITH_LIBOPUS
-    /* Audio blocks that have same absolute timecode as video blocks SHOULD be written before the video blocks. */
-    int writeBlockOpus(WebMTrack *a_pTrack, const void *pvData, size_t cbData, uint64_t uDurationMs)
+    /**
+     * Writes an Opus (audio) simple data block.
+     *
+     * @returns IPRT status code.
+     * @param   a_pTrack        Track ID to write data to.
+     * @param   pvData          Pointer to simple data block to write.
+     * @param   cbData          Size (in bytes) of simple data block to write.
+     * @param   uPTSMs          PTS of simple data block.
+     *
+     * @remarks Audio blocks that have same absolute timecode as video blocks SHOULD be written before the video blocks.
+     */
+    int writeSimpleBlockOpus(WebMTrack *a_pTrack, const void *pvData, size_t cbData, WebMTimecode uPTSMs)
     {
         AssertPtrReturn(a_pTrack, VERR_INVALID_POINTER);
         AssertPtrReturn(pvData,   VERR_INVALID_POINTER);
         AssertReturn(cbData,      VERR_INVALID_PARAMETER);
 
-        WebMCluster &Cluster = CurSeg.CurCluster;
+        /* Every Opus frame is a key frame. */
+        const uint8_t fFlags = VBOX_WEBM_BLOCK_FLAG_KEY_FRAME;
 
-        /* Calculate the PTS of the current block:
-         *
-         * The "raw PTS" is the exact time of an object represented in nanoseconds):
-         *     Raw Timecode = (Block timecode + Cluster timecode) * TimecodeScaleFactor
-         */
-        uint64_t tcPTSMs = CurSeg.tcLastWriteMs + uDurationMs;
-
-        /* Sanity. */
-        Assert(tcPTSMs);
-        //Assert(tcPTSMs >= Cluster.tcLastWriteMs);
-
-        /* Whether to start a new cluster or not. */
-        bool fClusterStart = false;
-
-        /* Did we reach the maximum a cluster can hold? Use a new cluster then. */
-        if (tcPTSMs > VBOX_WEBM_CLUSTER_MAX_LEN_MS)
-            fClusterStart = true;
-
-        if (fClusterStart)
-        {
-            if (Cluster.fOpen) /* Close current clusters first. */
-            {
-                m_Ebml.subEnd(MkvElem_Cluster);
-                Cluster.fOpen = false;
-            }
-
-            Cluster.fOpen      = true;
-            Cluster.uID        = CurSeg.cClusters;
-            Cluster.tcStartMs  = Cluster.tcLastWriteMs;
-            Cluster.offCluster = RTFileTell(m_Ebml.getFile());
-            Cluster.cBlocks    = 0;
-
-            if (CurSeg.cClusters)
-                AssertMsg(Cluster.tcStartMs, ("[T%RU8C%RU64] @ %RU64 start is 0 which is invalid\n",
-                                              a_pTrack->uTrack, Cluster.uID, Cluster.offCluster));
-
-            LogFunc(("[T%RU8C%RU64] Start @ %RU64ms / %RU64 bytes\n",
-                     a_pTrack->uTrack, Cluster.uID, Cluster.tcStartMs, Cluster.offCluster));
-
-            /* As all audio frame as key frames, insert a new cue point when a new cluster starts. */
-            WebMCuePoint cue(a_pTrack, Cluster.tcStartMs, Cluster.offCluster);
-            CurSeg.lstCues.push_back(cue);
-
-            m_Ebml.subStart(MkvElem_Cluster)
-                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcStartMs);
-
-            CurSeg.cClusters++;
-        }
-
-        Cluster.tcLastWriteMs = tcPTSMs;
-        Cluster.cBlocks++;
-
-        a_pTrack->tcLastWriteMs = tcPTSMs;
-
-        if (CurSeg.tcLastWriteMs < a_pTrack->tcLastWriteMs)
-            CurSeg.tcLastWriteMs = a_pTrack->tcLastWriteMs;
-
-        /* Calculate the block's timecode, which is relative to the cluster's starting timecode. */
-        uint16_t tcBlockMs = static_cast<uint16_t>(tcPTSMs - Cluster.tcStartMs);
-
-        Log2Func(("[T%RU8C%RU64] tcPTSMs=%RU64, (%RU64ms)\n", a_pTrack->uTrack, Cluster.uID, tcPTSMs, tcBlockMs));
-
-        return writeSimpleBlockInternal(a_pTrack, tcBlockMs,
-                                        pvData, cbData, VBOX_WEBM_BLOCK_FLAG_KEY_FRAME);
+        return writeSimpleBlockQueued(a_pTrack,
+                                      new WebMSimpleBlock(a_pTrack,
+                                                          uPTSMs, pvData, cbData, fFlags));
     }
 #endif /* VBOX_WITH_LIBOPUS */
 
+    /**
+     * Writes a data block to the specified track.
+     *
+     * @returns IPRT status code.
+     * @param   uTrack          Track ID to write data to.
+     * @param   pvData          Pointer to data block to write.
+     * @param   cbData          Size (in bytes) of data block to write.
+     */
     int WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData)
     {
-        RT_NOREF(pvData, cbData); /* Only needed for assertions for now. */
+        RT_NOREF(cbData); /* Only needed for assertions for now. */
+
+        int rc = RTCritSectEnter(&CurSeg.CritSect);
+        AssertRC(rc);
 
         WebMTracks::iterator itTrack = CurSeg.mapTracks.find(uTrack);
         if (itTrack == CurSeg.mapTracks.end())
+        {
+            RTCritSectLeave(&CurSeg.CritSect);
             return VERR_NOT_FOUND;
+        }
 
         WebMTrack *pTrack = itTrack->second;
         AssertPtr(pTrack);
-
-        int rc;
 
         if (m_fInTracksSection)
         {
@@ -968,7 +1053,7 @@ public:
                 {
                     Assert(cbData == sizeof(WebMWriter::BlockData_Opus));
                     WebMWriter::BlockData_Opus *pData = (WebMWriter::BlockData_Opus *)pvData;
-                    rc = writeBlockOpus(pTrack, pData->pvData, pData->cbData, pData->uDurationMs);
+                    rc = writeSimpleBlockOpus(pTrack, pData->pvData, pData->cbData, pData->uPTSMs);
                 }
                 else
 #endif /* VBOX_WITH_LIBOPUS */
@@ -983,7 +1068,7 @@ public:
                 {
                     Assert(cbData == sizeof(WebMWriter::BlockData_VP8));
                     WebMWriter::BlockData_VP8 *pData = (WebMWriter::BlockData_VP8 *)pvData;
-                    rc = writeBlockVP8(pTrack, pData->pCfg, pData->pPkt);
+                    rc = writeSimpleBlockVP8(pTrack, pData->pCfg, pData->pPkt);
                 }
                 else
 #endif /* VBOX_WITH_LIBVPX */
@@ -996,11 +1081,151 @@ public:
                 break;
         }
 
+        int rc2 = RTCritSectLeave(&CurSeg.CritSect);
+        AssertRC(rc2);
+
         return rc;
     }
 
+    /**
+     * Processes a render queue.
+     *
+     * @returns IPRT status code.
+     * @param   pQueue          Queue to process.
+     * @param   fForce          Whether forcing to process the render queue or not.
+     *                          Needed to drain the queues when terminating.
+     */
+    int processQueues(WebMQueue *pQueue, bool fForce)
+    {
+        if (pQueue->tslastProcessedMs == 0)
+            pQueue->tslastProcessedMs = RTTimeMilliTS();
+
+        if (!fForce)
+        {
+            /* Only process when we reached a certain threshold. */
+            if (RTTimeMilliTS() - pQueue->tslastProcessedMs < 5000 /* ms */ /** @todo Make this configurable */)
+                return VINF_SUCCESS;
+        }
+
+        WebMCluster &Cluster = CurSeg.CurCluster;
+
+        /* Iterate through the block map. */
+        WebMBlockMap::iterator it = pQueue->Map.begin();
+        while (it != CurSeg.queueBlocks.Map.end())
+        {
+            WebMTimecode       mapTC     = it->first;
+            RT_NOREF(mapTC);
+            WebMTimecodeBlocks mapBlocks = it->second;
+
+            /* Whether to start a new cluster or not. */
+            bool fClusterStart = false;
+
+            /* No blocks written yet? Start a new cluster. */
+            if (Cluster.cBlocks == 0)
+                fClusterStart = true;
+
+            /* Did we reach the maximum a cluster can hold? Use a new cluster then. */
+            if (mapTC - Cluster.tcStartMs > VBOX_WEBM_CLUSTER_MAX_LEN_MS)
+                fClusterStart = true;
+
+            /* If the block map indicates that a cluster is needed for this timecode, create one. */
+            if (mapBlocks.fClusterNeeded)
+                fClusterStart = true;
+
+            if (   fClusterStart
+                && !mapBlocks.fClusterStarted)
+            {
+                if (Cluster.fOpen) /* Close current cluster first. */
+                {
+                    /* Make sure that the current cluster contained some data.  */
+                    Assert(Cluster.offStart);
+                    Assert(Cluster.cBlocks);
+
+                    m_Ebml.subEnd(MkvElem_Cluster);
+                    Cluster.fOpen = false;
+                }
+
+                Cluster.fOpen     = true;
+                Cluster.uID       = CurSeg.cClusters;
+                Cluster.tcStartMs = mapTC;
+                Cluster.offStart  = RTFileTell(m_Ebml.getFile());
+                Cluster.cBlocks   = 0;
+
+                if (CurSeg.cClusters)
+                    AssertMsg(Cluster.tcStartMs, ("[C%RU64] @ %RU64 starting timecode is 0 which is invalid\n",
+                                                  Cluster.uID, Cluster.offStart));
+
+                Log2Func(("[C%RU64] Start @ %RU64ms (map TC is %RU64) / %RU64 bytes\n",
+                          Cluster.uID, Cluster.tcStartMs, mapTC, Cluster.offStart));
+
+                m_Ebml.subStart(MkvElem_Cluster)
+                      .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcStartMs);
+
+                CurSeg.cClusters++;
+
+                mapBlocks.fClusterStarted = true;
+            }
+
+            /* Iterate through all blocks related to the current timecode. */
+            while (!mapBlocks.Queue.empty())
+            {
+                WebMSimpleBlock *pBlock = mapBlocks.Queue.front();
+                AssertPtr(pBlock);
+
+                WebMTrack       *pTrack = pBlock->pTrack;
+                AssertPtr(pTrack);
+
+                /* Calculate the block's relative time code to the current cluster's starting time code. */
+                Assert(pBlock->Data.tcPTSMs >= Cluster.tcStartMs);
+                pBlock->Data.tcRelToClusterMs = pBlock->Data.tcPTSMs - Cluster.tcStartMs;
+
+                int rc2 = writeSimpleBlockEBML(pTrack, pBlock);
+                AssertRC(rc2);
+
+                Cluster.cBlocks++;
+
+                pTrack->cTotalBlocks++;
+                pTrack->tcLastWrittenMs = pBlock->Data.tcPTSMs;
+
+                if (CurSeg.tcLastWrittenMs < pTrack->tcLastWrittenMs)
+                    CurSeg.tcLastWrittenMs = pTrack->tcLastWrittenMs;
+
+                /* Save a cue point if this is a keyframe. */
+                if (pBlock->Data.fFlags & VBOX_WEBM_BLOCK_FLAG_KEY_FRAME)
+                {
+                    WebMCuePoint cue(pBlock->pTrack, Cluster.offStart, pBlock->Data.tcPTSMs);
+                    CurSeg.lstCues.push_back(cue);
+                }
+
+                delete pBlock;
+                pBlock = NULL;
+
+                mapBlocks.Queue.pop();
+            }
+
+            Assert(mapBlocks.Queue.empty());
+
+            CurSeg.queueBlocks.Map.erase(it);
+
+            it = CurSeg.queueBlocks.Map.begin();
+        }
+
+        Assert(CurSeg.queueBlocks.Map.empty());
+
+        pQueue->tslastProcessedMs = RTTimeMilliTS();
+
+        return VINF_SUCCESS;
+    }
+
+    /**
+     * Writes the WebM footer.
+     *
+     * @returns IPRT status code.
+     */
     int writeFooter(void)
     {
+        AssertReturn(m_Ebml.isOpen(), VERR_WRONG_ORDER);
+
         if (m_fInTracksSection)
         {
             m_Ebml.subEnd(MkvElem_Tracks);
@@ -1028,16 +1253,15 @@ public:
             /* Sanity. */
             AssertPtr(itCuePoint->pTrack);
 
-            const uint64_t uClusterPos = itCuePoint->offClusterStart - CurSeg.offStart;
-
-            LogFunc(("CuePoint @ %RU64: Track #%RU8 (Time %RU64, Pos %RU64)\n",
-                     RTFileTell(m_Ebml.getFile()), itCuePoint->pTrack->uTrack, itCuePoint->tcClusterStart, uClusterPos));
+            LogFunc(("CuePoint @ %RU64: Track #%RU8 (Cluster @ %RU64, TC %RU64)\n",
+                     RTFileTell(m_Ebml.getFile()), itCuePoint->pTrack->uTrack,
+                     itCuePoint->offCluster, itCuePoint->tcAbs));
 
             m_Ebml.subStart(MkvElem_CuePoint)
-                      .serializeUnsignedInteger(MkvElem_CueTime, itCuePoint->tcClusterStart)
+                      .serializeUnsignedInteger(MkvElem_CueTime,                itCuePoint->tcAbs)
                       .subStart(MkvElem_CueTrackPositions)
                           .serializeUnsignedInteger(MkvElem_CueTrack,           itCuePoint->pTrack->uTrack)
-                          .serializeUnsignedInteger(MkvElem_CueClusterPosition, uClusterPos, 8)
+                          .serializeUnsignedInteger(MkvElem_CueClusterPosition, itCuePoint->offCluster, 8)
                   .subEnd(MkvElem_CueTrackPositions)
                   .subEnd(MkvElem_CuePoint);
 
@@ -1056,15 +1280,33 @@ public:
         return RTFileSeek(m_Ebml.getFile(), 0, RTFILE_SEEK_END, NULL);
     }
 
+    /**
+     * Closes the WebM file and drains all queues.
+     *
+     * @returns IPRT status code.
+     */
     int close(void)
     {
+        if (!m_Ebml.isOpen())
+            return VINF_SUCCESS;
+
+        LogFunc(("\n"));
+
+        /* Make sure to drain all queues. */
+        processQueues(&CurSeg.queueBlocks, true /* fForce */);
+
+        writeFooter();
+
         WebMTracks::iterator itTrack = CurSeg.mapTracks.begin();
         for (; itTrack != CurSeg.mapTracks.end(); ++itTrack)
         {
-            delete itTrack->second;
+            WebMTrack *pTrack = itTrack->second;
+
+            delete pTrack;
             CurSeg.mapTracks.erase(itTrack);
         }
 
+        Assert(CurSeg.queueBlocks.Map.size() == 0);
         Assert(CurSeg.mapTracks.size() == 0);
 
         m_Ebml.close();
@@ -1079,8 +1321,6 @@ private:
 
     /**
      * Writes the segment's seek information and cue points.
-     *
-     * @returns IPRT status code.
      */
     void writeSegSeekInfo(void)
     {
@@ -1127,7 +1367,7 @@ private:
         char szApp[64];
         RTStrPrintf(szApp, sizeof(szApp), VBOX_PRODUCT " %sr%u", VBOX_VERSION_STRING, RTBldCfgRevision());
 
-        const uint64_t tcDuration = CurSeg.tcLastWriteMs - CurSeg.tcStartMs;
+        const WebMTimecode tcDuration = CurSeg.tcLastWrittenMs - CurSeg.tcStartMs;
 
         if (!CurSeg.lstCues.empty())
         {
@@ -1151,13 +1391,14 @@ WebMWriter::~WebMWriter(void)
 {
     if (m_pImpl)
     {
-        Close();
+        m_pImpl->destroy();
+
         delete m_pImpl;
     }
 }
 
-int WebMWriter::CreateEx(const char *a_pszFilename, PRTFILE a_phFile,
-                         WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec)
+int WebMWriter::OpenEx(const char *a_pszFilename, PRTFILE a_phFile,
+                       WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec)
 {
     try
     {
@@ -1168,7 +1409,11 @@ int WebMWriter::CreateEx(const char *a_pszFilename, PRTFILE a_phFile,
 
         int rc = m_pImpl->m_Ebml.createEx(a_pszFilename, a_phFile);
         if (RT_SUCCESS(rc))
-            rc = m_pImpl->writeHeader();
+        {
+            rc = m_pImpl->init();
+            if (RT_SUCCESS(rc))
+                rc = m_pImpl->writeHeader();
+        }
     }
     catch(int rc)
     {
@@ -1177,8 +1422,8 @@ int WebMWriter::CreateEx(const char *a_pszFilename, PRTFILE a_phFile,
     return VINF_SUCCESS;
 }
 
-int WebMWriter::Create(const char *a_pszFilename, uint64_t a_fOpen,
-                       WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec)
+int WebMWriter::Open(const char *a_pszFilename, uint64_t a_fOpen,
+                     WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec)
 {
     try
     {
@@ -1189,7 +1434,11 @@ int WebMWriter::Create(const char *a_pszFilename, uint64_t a_fOpen,
 
         int rc = m_pImpl->m_Ebml.create(a_pszFilename, a_fOpen);
         if (RT_SUCCESS(rc))
-            rc = m_pImpl->writeHeader();
+        {
+            rc = m_pImpl->init();
+            if (RT_SUCCESS(rc))
+                rc = m_pImpl->writeHeader();
+        }
     }
     catch(int rc)
     {
@@ -1200,14 +1449,7 @@ int WebMWriter::Create(const char *a_pszFilename, uint64_t a_fOpen,
 
 int WebMWriter::Close(void)
 {
-    if (!m_pImpl->m_Ebml.isOpen())
-        return VINF_SUCCESS;
-
-    int rc = m_pImpl->writeFooter();
-    if (RT_SUCCESS(rc))
-        m_pImpl->close();
-
-    return rc;
+    return m_pImpl->close();
 }
 
 int WebMWriter::AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBitDepth, uint8_t *puTrack)

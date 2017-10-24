@@ -1076,13 +1076,13 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
     {
         case VIDEORECDEST_FILE:
         {
-            rc = pStream->File.pWEBM->CreateEx(pStream->File.pszFile, &pStream->File.hFile,
+            rc = pStream->File.pWEBM->OpenEx(pStream->File.pszFile, &pStream->File.hFile,
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-                                               pCfg->Audio.fEnabled ? WebMWriter::AudioCodec_Opus : WebMWriter::AudioCodec_None,
+                                             pCfg->Audio.fEnabled ? WebMWriter::AudioCodec_Opus : WebMWriter::AudioCodec_None,
 #else
-                                               WebMWriter::AudioCodec_None,
+                                             WebMWriter::AudioCodec_None,
 #endif
-                                               pCfg->Video.fEnabled ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
+                                             pCfg->Video.fEnabled ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
             if (RT_FAILURE(rc))
             {
                 LogRel(("VideoRec: Failed to create the capture output file '%s' (%Rrc)\n", pStream->File.pszFile, rc));

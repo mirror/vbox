@@ -85,8 +85,8 @@ public:
         const void *pvData;
         /** Size (in bytes) of encoded Opus audio data. */
         size_t      cbData;
-        /** Duration (in ms) of encoded Opus audio data. */
-        uint64_t    uDurationMs;
+        /** PTS (in ms) of encoded Opus audio data. */
+        uint64_t    uPTSMs;
     };
 #endif /* VBOX_WITH_LIBOPUS */
 
@@ -96,7 +96,7 @@ public:
     virtual ~WebMWriter();
 
     /**
-     * Creates an output file using an already open file handle.
+     * Opens (creates) an output file using an already open file handle.
      *
      * @param   a_pszFilename   Name of the file the file handle points at.
      * @param   a_phFile        Pointer to open file handle to use.
@@ -104,11 +104,11 @@ public:
      * @param   a_enmVideoCodec Video codec to use.
      *
      * @returns VBox status code. */
-    int CreateEx(const char *a_pszFilename, PRTFILE a_phFile,
-                 WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec);
+    int OpenEx(const char *a_pszFilename, PRTFILE a_phFile,
+               WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec);
 
     /**
-     * Creates an output file.
+     * Opens an output file.
      *
      * @param   a_pszFilename   Name of the file to create.
      * @param   a_fOpen         File open mode of type RTFILE_O_.
@@ -116,8 +116,8 @@ public:
      * @param   a_enmVideoCodec Video codec to use.
      *
      * @returns VBox status code. */
-    int Create(const char *a_pszFilename, uint64_t a_fOpen,
-               WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec);
+    int Open(const char *a_pszFilename, uint64_t a_fOpen,
+             WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec);
 
     /** Closes output file. */
     int Close(void);
