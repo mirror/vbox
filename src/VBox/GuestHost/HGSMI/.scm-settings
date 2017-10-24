@@ -14,7 +14,6 @@
 # VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
-#
 
 # @bugref{8524} r114561: MIT license of files upstreamed to the Linux kernel to
 #               encourage other kernels to pick them up.
