@@ -51,7 +51,7 @@
 /** The file handle was inherited. */
 #define VBOX_EBMLWRITER_FLAG_HANDLE_INHERITED   RT_BIT(0)
 
-class Ebml
+class EBMLWriter
 {
 public:
     typedef uint32_t EbmlClassId;
@@ -76,11 +76,11 @@ private:
 
 public:
 
-    Ebml(void)
+    EBMLWriter(void)
         : m_hFile(NIL_RTFILE)
         , m_fFlags(VBOX_EBMLWRITER_FLAG_NONE) { }
 
-    virtual ~Ebml(void) { close(); }
+    virtual ~EBMLWriter(void) { close(); }
 
 public:
 
@@ -163,7 +163,7 @@ public:
     }
 
     /** Starts an EBML sub-element. */
-    inline Ebml &subStart(EbmlClassId classId)
+    inline EBMLWriter &subStart(EbmlClassId classId)
     {
         writeClassId(classId);
         /* store the current file offset. */
@@ -176,7 +176,7 @@ public:
     }
 
     /** Ends an EBML sub-element. */
-    inline Ebml &subEnd(EbmlClassId classId)
+    inline EBMLWriter &subEnd(EbmlClassId classId)
     {
 #ifdef VBOX_STRICT
         /* Class ID on the top of the stack should match the class ID passed
@@ -201,7 +201,7 @@ public:
     }
 
     /** Serializes a null-terminated string. */
-    inline Ebml &serializeString(EbmlClassId classId, const char *str)
+    inline EBMLWriter &serializeString(EbmlClassId classId, const char *str)
     {
         writeClassId(classId);
         uint64_t size = strlen(str);
@@ -212,7 +212,7 @@ public:
 
     /* Serializes an UNSIGNED integer
      * If size is zero then it will be detected automatically. */
-    inline Ebml &serializeUnsignedInteger(EbmlClassId classId, uint64_t parm, size_t size = 0)
+    inline EBMLWriter &serializeUnsignedInteger(EbmlClassId classId, uint64_t parm, size_t size = 0)
     {
         writeClassId(classId);
         if (!size) size = getSizeOfUInt(parm);
@@ -226,7 +226,7 @@ public:
      * Only 8-bytes double precision values are supported
      * by this function.
      */
-    inline Ebml &serializeFloat(EbmlClassId classId, float value)
+    inline EBMLWriter &serializeFloat(EbmlClassId classId, float value)
     {
         writeClassId(classId);
         Assert(sizeof(uint32_t) == sizeof(float));
@@ -247,7 +247,7 @@ public:
     }
 
     /** Serializes binary data. */
-    inline Ebml &serializeData(EbmlClassId classId, const void *pvData, size_t cbData)
+    inline EBMLWriter &serializeData(EbmlClassId classId, const void *pvData, size_t cbData)
     {
         writeClassId(classId);
         writeSize(cbData);
@@ -322,7 +322,7 @@ public:
     }
 
 private:
-    void operator=(const Ebml &);
+    void operator=(const EBMLWriter &);
 
 };
 
@@ -679,7 +679,7 @@ class WebMWriter_Impl
     /** Maximum value a timecode can have. */
     uint32_t                    m_uTimecodeMax;
 
-    Ebml                        m_Ebml;
+    EBMLWriter                  m_Ebml;
 
 public:
 
