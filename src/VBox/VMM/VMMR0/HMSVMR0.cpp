@@ -4550,7 +4550,7 @@ static bool hmR0SvmIsIoInterceptActive(void *pvIoBitmap, PSVMIOIOEXITINFO pIoExi
     const uint16_t    u16Port       = pIoExitInfo->n.u16Port;
     const SVMIOIOTYPE enmIoType     = (SVMIOIOTYPE)pIoExitInfo->n.u1Type;
     const uint8_t     cbReg         = (pIoExitInfo->u >> SVM_IOIO_OP_SIZE_SHIFT) & 7;
-    const uint8_t     cAddrSizeBits = (pIoExitInfo->u >> SVM_IOIO_ADDR_SIZE_SHIFT) << 4;
+    const uint8_t     cAddrSizeBits = ((pIoExitInfo->u >> SVM_IOIO_ADDR_SIZE_SHIFT) & 7) << 4;
     const uint8_t     iEffSeg       = pIoExitInfo->n.u3SEG;
     const bool        fRep          = pIoExitInfo->n.u1REP;
     const bool        fStrIo        = pIoExitInfo->n.u1STR;
