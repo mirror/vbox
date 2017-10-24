@@ -1483,11 +1483,12 @@ bool rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, P
 }
 
 
-static bool isFlowerBoxSectionMarker(PSCMSTREAM pIn, const char *pchLine, size_t cchLine,
-                                     const char **ppchText, size_t *pcchText)
+static bool isFlowerBoxSectionMarker(PSCMSTREAM pIn, const char *pchLine, size_t cchLine, uint32_t cchWidth,
+                                     const char **ppchText, size_t *pcchText, bool *pfNeedFixing)
 {
     *ppchText = NULL;
     *pcchText = 0;
+    *pfNeedFixing = false;
 
     /*
      * The first line.
@@ -1505,6 +1506,7 @@ static bool isFlowerBoxSectionMarker(PSCMSTREAM pIn, const char *pchLine, size_t
         return false;
 
     size_t const cchBox = cchLine;
+    *pfNeedFixing = cchBox != cchWidth;
 
     /*
      * The next line, extracting the text.
@@ -1516,7 +1518,10 @@ static bool isFlowerBoxSectionMarker(PSCMSTREAM pIn, const char *pchLine, size_t
 
     offLine = 0;
     if (RT_C_IS_BLANK(pchLine[0]))
+    {
+        *pfNeedFixing = true;
         offLine = RT_C_IS_BLANK(pchLine[1]) ? 2 : 1;
+    }
 
     if (pchLine[offLine] != '*')
         return false;
@@ -1532,6 +1537,9 @@ static bool isFlowerBoxSectionMarker(PSCMSTREAM pIn, const char *pchLine, size_t
         return false;
     if (!RT_C_IS_UPPER(pchLine[offLine]))
         return false;
+
+    if (offLine != 4 || cchLine != cchBox)
+        *pfNeedFixing = true;
 
     *ppchText = &pchLine[offLine];
     size_t const offText = offLine;
@@ -1560,7 +1568,10 @@ static bool isFlowerBoxSectionMarker(PSCMSTREAM pIn, const char *pchLine, size_t
 
     offLine = 0;
     if (RT_C_IS_BLANK(pchLine[0]))
+    {
+        *pfNeedFixing = true;
         offLine = RT_C_IS_BLANK(pchLine[1]) ? 2 : 1;
+    }
     while (offLine < cchLine && pchLine[offLine] == '*')
         offLine++;
     if (offLine < cchBox - 4)
@@ -1569,6 +1580,9 @@ static bool isFlowerBoxSectionMarker(PSCMSTREAM pIn, const char *pchLine, size_t
     if (pchLine[offLine] != '/')
         return false;
     offLine++;
+
+    if (offLine != cchBox)
+        *pfNeedFixing = true;
 
     while (offLine < cchLine && RT_C_IS_BLANK(pchLine[offLine]))
         offLine++;
@@ -1614,7 +1628,12 @@ bool rewrite_FixFlowerBoxMarkers(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM 
             size_t const offSaved = ScmStreamTell(pIn);
             char const  *pchText;
             size_t       cchText;
-            if (isFlowerBoxSectionMarker(pIn, pchLine, cchLine, &pchText, &cchText))
+            bool         fNeedFixing;
+            bool         fIsFlowerBoxSection = isFlowerBoxSectionMarker(pIn, pchLine, cchLine, pSettings->cchWidth,
+                                                                        &pchText, &cchText, &fNeedFixing);
+            if (   fIsFlowerBoxSection
+                && (   fNeedFixing
+                    || cBlankLines < pSettings->cMinBlankLinesBeforeFlowerBoxMakers) )
             {
                 while (cBlankLines < pSettings->cMinBlankLinesBeforeFlowerBoxMakers)
                 {
