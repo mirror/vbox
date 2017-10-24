@@ -229,7 +229,7 @@ void UIWizardCloneVDPageBasic4::initializePage()
                       static_cast<UIWizardCloneVD*>(wizardImp())->sourceVirtualDiskDeviceType(),
                       m_aAllowedExtensions, m_strDefaultExtension);
     /* Compose default-name for virtual-disk copy: */
-    QString strMediumName = UIWizardCloneVD::tr("%1_copy", "copied virtual disk image name").arg(sourceFileInfo.baseName());
+    QString strMediumName = UIWizardCloneVD::tr("%1_copy", "copied virtual disk image name").arg(sourceFileInfo.completeBaseName());
     /* Set default-name as text for location editor: */
     m_pDestinationDiskEditor->setText(strMediumName);
 }
