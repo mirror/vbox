@@ -196,7 +196,7 @@ static bool isWireless(const char *pszName)
     }
 
     return fWireless;
-}    
+}
 
 int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {

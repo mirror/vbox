@@ -553,7 +553,7 @@ HRESULT HostNetworkInterface::enableStaticIPConfigV6(const com::Utf8Str &aIPV6Ad
     {
         fAddrChanged = true;
     }
-   
+
     if (   fAddrChanged
         || m.realIPV6PrefixLength != aIPV6NetworkMaskPrefixLength)
     {
