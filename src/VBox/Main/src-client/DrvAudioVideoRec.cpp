@@ -231,6 +231,8 @@ typedef struct AVRECSINK
     AVRECCONTAINER       Con;
     /** Codec data this sink uses for encoding. */
     AVRECCODEC           Codec;
+    /** Timestamp (in ms) of when the sink was created. */
+    uint64_t             tsStartMs;
 } AVRECSINK, *PAVRECSINK;
 
 /**
@@ -244,6 +246,8 @@ typedef struct AVRECSTREAM
     PRTCIRCBUF           pCircBuf;
     /** Pointer to sink to use for writing. */
     PAVRECSINK           pSink;
+    /** Last encoded PTS (in ms). */
+    uint64_t             uLastPTSMs;
 } AVRECSTREAM, *PAVRECSTREAM;
 
 /**
@@ -409,6 +413,8 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
         pSink->Codec.STAM.cEncFrames = 0;
         pSink->Codec.STAM.msEncTotal = 0;
 #endif
+
+        pSink->tsStartMs             = RTTimeMilliTS();
     }
     else
     {
@@ -508,7 +514,8 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
     rc = RTCircBufCreate(&pStreamAV->pCircBuf, cbFrame * cFrames);
     if (RT_SUCCESS(rc))
     {
-        pStreamAV->pSink = pSink; /* Assign sink to stream. */
+        pStreamAV->pSink      = pSink; /* Assign sink to stream. */
+        pStreamAV->uLastPTSMs = 0;
 
         if (pCfgAcq)
         {
@@ -759,13 +766,19 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
 
             Assert(cEncFrames == 1); /* At the moment we encode exactly *one* frame per frame. */
 
+            if (pStreamAV->uLastPTSMs == 0)
+                pStreamAV->uLastPTSMs = RTTimeMilliTS() - pSink->tsStartMs;
+
             const uint64_t uDurationMs = pSink->Codec.Opus.msFrame * cEncFrames;
+            const uint64_t uPTSMs      = pStreamAV->uLastPTSMs + uDurationMs;
+
+            pStreamAV->uLastPTSMs += uDurationMs;
 
             switch (pSink->Con.Parms.enmType)
             {
                 case AVRECCONTAINERTYPE_MAIN_CONSOLE:
                 {
-                    HRESULT hr = pSink->Con.Main.pConsole->i_audioVideoRecSendAudio(abDst, cbDst, uDurationMs);
+                    HRESULT hr = pSink->Con.Main.pConsole->i_audioVideoRecSendAudio(abDst, cbDst, uPTSMs);
                     Assert(hr == S_OK);
                     RT_NOREF(hr);
 
@@ -774,7 +787,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
 
                 case AVRECCONTAINERTYPE_WEBM:
                 {
-                    WebMWriter::BlockData_Opus blockData = { abDst, cbDst, uDurationMs };
+                    WebMWriter::BlockData_Opus blockData = { abDst, cbDst, uPTSMs };
                     rc = pSink->Con.WebM.pWebM->WriteBlock(pSink->Con.WebM.uTrack, &blockData, sizeof(blockData));
                     AssertRC(rc);
 
