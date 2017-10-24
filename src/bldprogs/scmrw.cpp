@@ -77,6 +77,9 @@ typedef struct SCMCOPYRIGHTINFO
     /** The comment style (neede for C/C++). */
     SCMCOMMENTSTYLE     enmCommentStyle;        /**< input */
 
+    /** Copy of the contributed-by line if present. */
+    char               *pszContributedBy;
+
     /** @name Common info
      * @{ */
     uint32_t            iLineComment;
@@ -899,7 +902,39 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
     uint32_t iLine = pInfo->iLineStart + pInfo->cBlankLinesBefore;
 
     /*
-     * Since the license statement is typically prefaced by a copyright line.
+     * Look for a 'contributed by' line, this comes first.
+     */
+    const char *pchContributedBy = NULL;
+    size_t      cchContributedBy = 0;
+    size_t      cBlankLinesAfterContributedBy = 0;
+    if (    pState->pszContributedBy == NULL
+        && (   pState->iLineCopyright == UINT32_MAX
+            || pState->iLineLicense == UINT32_MAX)
+        && cchBody > sizeof("Contributed by")
+        && RTStrNICmp(pszBody, RT_STR_TUPLE("contributed by")) == 0)
+    {
+        const char *pszNextLine = (const char *)memchr(pszBody, '\n', cchBody);
+        if (pszNextLine)
+        {
+            pchContributedBy = pszBody;
+            cchContributedBy = pszNextLine - pszBody;
+
+            /* Skip the copyright line and any blank lines following it. */
+            cchBody -= cchContributedBy + 1;
+            pszBody  = pszNextLine + 1;
+            iLine   += 1;
+            while (*pszBody == '\n')
+            {
+                pszBody++;
+                cchBody--;
+                iLine++;
+                cBlankLinesAfterContributedBy++;
+            }
+        }
+    }
+
+    /*
+     * Look for the copyright line.
      */
     bool     fFoundCopyright = false;
     uint32_t cBlankLinesAfterCopyright = 0;
@@ -1036,6 +1071,17 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
                 /** @todo check that there isn't any code preceeding the comment. */
             }
 
+            if (pchContributedBy)
+            {
+                pState->pszContributedBy = RTStrDupN(pchContributedBy, cchContributedBy);
+                if (cBlankLinesAfterContributedBy != 1)
+                {
+                    ScmVerbose(pState->pState, 1, "* %u blank lines between contributed by and copyright, should be 1\n",
+                               cBlankLinesAfterContributedBy);
+                    pState->fWellFormedCopyright = false;
+                }
+            }
+
             fFoundCopyright = true;
             ScmVerbose(pState->pState, 2, "oracle copyright %u-%u: up-to-date=%RTbool well-formed=%RTbool\n",
                        pState->uFirstYear, pState->uLastYear, pState->fUpToDateCopyright, pState->fWellFormedCopyright);
@@ -1060,7 +1106,7 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
     }
 
     /*
-     * Now try match against the license texts if we haven't already found it.
+     * Look for the license text.
      */
     if (pState->iLineLicense == UINT32_MAX)
     {
@@ -1180,6 +1226,8 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
         /*.pState = */                  pState,
         /*.enmCommentStyle = */         enmCommentStyle,
 
+        /*.pszContributedBy = */        NULL,
+
         /*.iLineComment = */            UINT32_MAX,
         /*.cLinesComment = */           0,
 
@@ -1227,7 +1275,14 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
     if (   (rc == VERR_CALLBACK_RETURN || RT_SUCCESS(rc))
         && RT_SUCCESS(pState->rc))
     {
-        if (Info.iLineCopyright == UINT32_MAX)
+        if (pSettings->fExternalCopyright)
+        {
+            if (Info.iLineCopyright != UINT32_MAX)
+                ScmError(pState, VERR_NOT_FOUND,
+                         "Marked as external copyright only, but found non-external copyright statement at line %u!\n",
+                         Info.iLineCopyright + 1);
+        }
+        else if (Info.iLineCopyright == UINT32_MAX)
             ScmError(pState, VERR_NOT_FOUND, "Missing copyright!\n");
         else if (Info.iLineLicense == UINT32_MAX)
             ScmError(pState, VERR_NOT_FOUND, "Missing license!\n");
@@ -1265,6 +1320,18 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
                         /* Leading blank line. */
                         ScmStreamPutLine(pOut, g_aCopyrightCommentStart[enmCommentStyle].psz,
                                          g_aCopyrightCommentStart[enmCommentStyle].cch, enmEol);
+
+                        /* Contributed by someone? */
+                        if (Info.pszContributedBy)
+                        {
+                            ScmStreamWrite(pOut, g_aCopyrightCommentPrefix[enmCommentStyle].psz,
+                                           g_aCopyrightCommentPrefix[enmCommentStyle].cch);
+                            ScmStreamWrite(pOut, Info.pszContributedBy, strlen(Info.pszContributedBy));
+                            ScmStreamPutEol(pOut, enmEol);
+
+                            ScmStreamPutLine(pOut, g_aCopyrightCommentEmpty[enmCommentStyle].psz,
+                                             g_aCopyrightCommentEmpty[enmCommentStyle].cch, enmEol);
+                        }
 
                         /* Write the copyright comment line. */
                         ScmStreamWrite(pOut, g_aCopyrightCommentPrefix[enmCommentStyle].psz,
@@ -1326,8 +1393,13 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
                         iLine++;
                     }
                     if (RT_FAILURE(rc))
+                    {
+                        RTStrFree(Info.pszContributedBy);
                         return false;
-                }
+                    }
+                } /* for each source line */
+
+                RTStrFree(Info.pszContributedBy);
                 return true;
             }
         }
@@ -1335,6 +1407,7 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
     else
         ScmError(pState, rc,  "ScmEnumerateComments: %Rrc\n", rc);
     NOREF(pState); NOREF(pOut);
+    RTStrFree(Info.pszContributedBy);
     return false;
 }
 

@@ -78,6 +78,8 @@ typedef enum SCMOPT
     SCMOPT_NO_FIX_TODOS,
     SCMOPT_UPDATE_COPYRIGHT_YEAR,
     SCMOPT_NO_UPDATE_COPYRIGHT_YEAR,
+    SCMOPT_EXTERNAL_COPYRIGHT,
+    SCMOPT_NO_EXTERNAL_COPYRIGHT,
     SCMOPT_NO_UPDATE_LICENSE,
     SCMOPT_LICENSE_OSE_GPL,
     SCMOPT_LICENSE_OSE_DUAL_GPL_CDDL,
@@ -160,6 +162,7 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .cMinBlankLinesBeforeFlowerBoxMakers = */    2,
     /* .fFixTodos = */                              true,
     /* .fUpdateCopyrightYear = */                   false,
+    /* .fExternalCopyright = */                     false,
     /* .enmUpdateLicense = */                       kScmLicense_OseGpl,
     /* .fOnlySvnFiles = */                          false,
     /* .fOnlySvnDirs = */                           false,
@@ -195,6 +198,8 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--no-fix-todos",                     SCMOPT_NO_FIX_TODOS,                    RTGETOPT_REQ_NOTHING },
     { "--update-copyright-year",            SCMOPT_UPDATE_COPYRIGHT_YEAR,           RTGETOPT_REQ_NOTHING },
     { "--no-update-copyright-year",         SCMOPT_NO_UPDATE_COPYRIGHT_YEAR,        RTGETOPT_REQ_NOTHING },
+    { "--external-copyright",               SCMOPT_EXTERNAL_COPYRIGHT,              RTGETOPT_REQ_NOTHING },
+    { "--no-external-copyright",            SCMOPT_NO_EXTERNAL_COPYRIGHT,           RTGETOPT_REQ_NOTHING },
     { "--no-update-license",                SCMOPT_NO_UPDATE_LICENSE,               RTGETOPT_REQ_NOTHING },
     { "--license-ose-gpl",                  SCMOPT_LICENSE_OSE_GPL,                 RTGETOPT_REQ_NOTHING },
     { "--license-ose-dual",                 SCMOPT_LICENSE_OSE_DUAL_GPL_CDDL,       RTGETOPT_REQ_NOTHING },
@@ -510,6 +515,13 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             return VINF_SUCCESS;
         case SCMOPT_NO_UPDATE_COPYRIGHT_YEAR:
             pSettings->fUpdateCopyrightYear = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_EXTERNAL_COPYRIGHT:
+            pSettings->fExternalCopyright = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_EXTERNAL_COPYRIGHT:
+            pSettings->fExternalCopyright = false;
             return VINF_SUCCESS;
 
         case SCMOPT_NO_UPDATE_LICENSE:
@@ -1852,6 +1864,9 @@ static void usage(PCRTGETOPTDEF paOpts, size_t cOpts)
                 break;
             case SCMOPT_UPDATE_COPYRIGHT_YEAR:
                 RTPrintf("      Update the copyright year.  Default: %RTbool\n", g_Defaults.fUpdateCopyrightYear);
+                break;
+            case SCMOPT_EXTERNAL_COPYRIGHT:
+                RTPrintf("      Only external copyright holders.  Default: %RTbool\n", g_Defaults.fExternalCopyright);
                 break;
             case SCMOPT_NO_UPDATE_LICENSE:
                 RTPrintf("      License selection.  Default: --license-ose-gpl\n");
