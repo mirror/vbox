@@ -44,7 +44,7 @@
 #include <VBox/version.h>
 
 #include "EBMLWriter.h"
-#include "EbmlMkvIDs.h"
+#include "EBML_MKV.h"
 
 /** No flags set. */
 #define VBOX_EBMLWRITER_FLAG_NONE               0
