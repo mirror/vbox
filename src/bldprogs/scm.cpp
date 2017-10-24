@@ -439,9 +439,15 @@ static void scmSettingsBaseDelete(PSCMSETTINGSBASE pSettings)
  * @param   pSettings           The settings to change.
  * @param   rc                  The RTGetOpt return value.
  * @param   pValueUnion         The RTGetOpt value union.
+ * @param   pchDir              The absolute path to the directory relative
+ *                              components in pchLine should be relative to.
+ * @param   cchDir              The length of the @a pchDir string.
  */
-static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOPTUNION pValueUnion)
+static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOPTUNION pValueUnion,
+                                    const char *pchDir, size_t cchDir)
 {
+    Assert(pchDir[cchDir - 1] == '/');
+
     switch (rc)
     {
         case SCMOPT_CONVERT_EOL:
@@ -610,9 +616,31 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             if (!cchSrc)
                 return VINF_SUCCESS;
 
-            return RTStrAAppendExN(ppsz, 2,
-                                   "|", *ppsz && **ppsz ? (size_t)1 : (size_t)0,
-                                   pszSrc, cchSrc);
+            /* Append it pattern by pattern, turning settings-relative paths into absolute ones. */
+            while (cchSrc > 0)
+            {
+                const char *pszEnd = (const char *)memchr(pszSrc, '|', cchSrc);
+                size_t cchPattern = pszEnd ? pszEnd - pszSrc : cchSrc;
+                int rc2;
+                if (*pszSrc == '/')
+                    rc2 = RTStrAAppendExN(ppsz, 3,
+                                          "|", *ppsz && **ppsz != '\0' ? (size_t)1 : (size_t)0,
+                                          pchDir, cchDir - 1,
+                                          pszSrc, cchPattern);
+                else
+                    rc2 = RTStrAAppendExN(ppsz, 2,
+                                          "|", *ppsz && **ppsz != '\0' ? (size_t)1 : (size_t)0,
+                                          pszSrc, cchPattern);
+                if (RT_FAILURE(rc2))
+                    return rc2;
+
+                /* next */
+                cchSrc -= cchPattern;
+                if (!cchSrc)
+                    return VINF_SUCCESS;
+                cchSrc -= 1;
+                pszSrc += cchPattern + 1;
+            }
         }
 
         default:
@@ -627,8 +655,11 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
  * @param   pBase               The base settings structure to apply the options
  *                              to.
  * @param   pszOptions          The options to parse.
+ * @param   pchDir              The absolute path to the directory relative
+ *                              components in pchLine should be relative to.
+ * @param   cchDir              The length of the @a pchDir string.
  */
-static int scmSettingsBaseParseString(PSCMSETTINGSBASE pBase, const char *pszLine)
+static int scmSettingsBaseParseString(PSCMSETTINGSBASE pBase, const char *pszLine, const char *pchDir, size_t cchDir)
 {
     int    cArgs;
     char **papszArgs;
@@ -642,7 +673,7 @@ static int scmSettingsBaseParseString(PSCMSETTINGSBASE pBase, const char *pszLin
         {
             while ((rc = RTGetOpt(&GetOptState, &ValueUnion)) != 0)
             {
-                rc = scmSettingsBaseHandleOpt(pBase, rc, &ValueUnion);
+                rc = scmSettingsBaseHandleOpt(pBase, rc, &ValueUnion, pchDir, cchDir);
                 if (RT_FAILURE(rc))
                     break;
             }
@@ -661,13 +692,17 @@ static int scmSettingsBaseParseString(PSCMSETTINGSBASE pBase, const char *pszLin
  *                              to.
  * @param   pchLine             The line.
  * @param   cchLine             The line length.
+ * @param   pchDir              The absolute path to the directory relative
+ *                              components in pchLine should be relative to.
+ * @param   cchDir              The length of the @a pchDir string.
  */
-static int scmSettingsBaseParseStringN(PSCMSETTINGSBASE pBase, const char *pchLine, size_t cchLine)
+static int scmSettingsBaseParseStringN(PSCMSETTINGSBASE pBase, const char *pchLine, size_t cchLine,
+                                       const char *pchDir, size_t cchDir)
 {
     char *pszLine = RTStrDupN(pchLine, cchLine);
     if (!pszLine)
         return VERR_NO_MEMORY;
-    int rc = scmSettingsBaseParseString(pBase, pszLine);
+    int rc = scmSettingsBaseParseString(pBase, pszLine, pchDir, cchDir);
     RTStrFree(pszLine);
     return rc;
 }
@@ -684,7 +719,7 @@ static int scmSettingsBaseVerifyString(const char *pszOptions)
     int rc = scmSettingsBaseInit(&Base);
     if (RT_SUCCESS(rc))
     {
-        rc = scmSettingsBaseParseString(&Base, pszOptions);
+        rc = scmSettingsBaseParseString(&Base, pszOptions, "/", 1);
         scmSettingsBaseDelete(&Base);
     }
     return rc;
@@ -745,8 +780,10 @@ static void scmSettingsDestroy(PSCMSETTINGS pSettings)
         {
             RTStrFree(pSettings->paPairs[i].pszPattern);
             RTStrFree(pSettings->paPairs[i].pszOptions);
+            RTStrFree(pSettings->paPairs[i].pszRelativeTo);
             pSettings->paPairs[i].pszPattern = NULL;
             pSettings->paPairs[i].pszOptions = NULL;
+            pSettings->paPairs[i].pszRelativeTo = NULL;
         }
         RTMemFree(pSettings->paPairs);
         pSettings->paPairs = NULL;
@@ -764,6 +801,7 @@ static void scmSettingsDestroy(PSCMSETTINGS pSettings)
  * @param   offColon            The offset of the colon into the line.
  * @param   pchDir              The absolute path to the directory relative
  *                              components in pchLine should be relative to.
+ * @param   cchDir              The length of the @a pchDir string.
  */
 static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_t cchLine, size_t offColon,
                               const char *pchDir, size_t cchDir)
@@ -805,11 +843,13 @@ static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_
         pSettings->paPairs = (PSCMPATRNOPTPAIR)pvNew;
     }
 
-    pSettings->paPairs[iPair].pszPattern = RTStrDupN(pchLine, cchPattern);
-    pSettings->paPairs[iPair].pszOptions = RTStrDupN(pchOptions, cchOptions);
+    pSettings->paPairs[iPair].pszPattern    = RTStrDupN(pchLine, cchPattern);
+    pSettings->paPairs[iPair].pszOptions    = RTStrDupN(pchOptions, cchOptions);
+    pSettings->paPairs[iPair].pszRelativeTo = RTStrDupN(pchDir, cchDir);
     int rc;
     if (   pSettings->paPairs[iPair].pszPattern
-        && pSettings->paPairs[iPair].pszOptions)
+        && pSettings->paPairs[iPair].pszOptions
+        && pSettings->paPairs[iPair].pszRelativeTo)
         rc = scmSettingsBaseVerifyString(pSettings->paPairs[iPair].pszOptions);
     else
         rc = VERR_NO_MEMORY;
@@ -879,6 +919,7 @@ static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_
     {
         RTStrFree(pSettings->paPairs[iPair].pszPattern);
         RTStrFree(pSettings->paPairs[iPair].pszOptions);
+        RTStrFree(pSettings->paPairs[iPair].pszRelativeTo);
     }
     return rc;
 }
@@ -928,7 +969,7 @@ static int scmSettingsLoadFile(PSCMSETTINGS pSettings, const char *pszFilename, 
         if (pchColon)
             rc = scmSettingsAddPair(pSettings, pchLine, cchLine, pchColon - pchLine, pszFilename, offName);
         else
-            rc = scmSettingsBaseParseStringN(&pSettings->Base, pchLine, cchLine);
+            rc = scmSettingsBaseParseStringN(&pSettings->Base, pchLine, cchLine, pszFilename, offName);
         if (RT_FAILURE(rc))
         {
             RTMsgError("%s:%d: %Rrc\n", pszFilename, ScmStreamTellLine(&Stream), rc);
@@ -1166,7 +1207,8 @@ static int scmSettingsStackMakeFileBase(PCSCMSETTINGS pSettingsStack, const char
                     {
                         ScmVerbose(NULL, 5, "scmSettingsStackMakeFileBase: Matched '%s' : '%s'\n",
                                    pCur->paPairs[i].pszPattern, pCur->paPairs[i].pszOptions);
-                        rc = scmSettingsBaseParseString(pBase, pCur->paPairs[i].pszOptions);
+                        rc = scmSettingsBaseParseString(pBase, pCur->paPairs[i].pszOptions,
+                                                        pCur->paPairs[i].pszRelativeTo, strlen(pCur->paPairs[i].pszRelativeTo));
                         if (RT_FAILURE(rc))
                             break;
                     }
@@ -1185,6 +1227,22 @@ static int scmSettingsStackMakeFileBase(PCSCMSETTINGS pSettingsStack, const char
 
 
 /* -=-=-=-=-=- misc -=-=-=-=-=- */
+
+
+/**
+ * Prints the per file banner needed and the message level is high enough.
+ *
+ * @param   pState              The rewrite state.
+ * @param   iLevel              The required verbosity level.
+ */
+void ScmVerboseBanner(PSCMRWSTATE pState, int iLevel)
+{
+    if (iLevel <= g_iVerbosity && !pState->fFirst)
+    {
+        RTPrintf("%s: info: --= Rewriting '%s' =--\n", g_szProgName, pState->pszFilename);
+        pState->fFirst = true;
+    }
+}
 
 
 /**
@@ -1213,22 +1271,6 @@ void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ...)
         va_start(va, pszFormat);
         RTPrintfV(pszFormat, va);
         va_end(va);
-    }
-}
-
-
-/**
- * Prints the per file banner needed and the message level is high enough.
- *
- * @param   pState              The rewrite state.
- * @param   iLevel              The required verbosity level.
- */
-void ScmVerboseBanner(PSCMRWSTATE pState, int iLevel)
-{
-    if (iLevel <= g_iVerbosity && !pState->fFirst)
-    {
-        RTPrintf("%s: info: --= Rewriting '%s' =--\n", g_szProgName, pState->pszFilename);
-        pState->fFirst = true;
     }
 }
 
@@ -1452,7 +1494,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
     }
     else
     {
-        ScmVerbose(pState, 4, "not text file: \"%s\"\n", pszFilename);
+        ScmVerbose(pState, 2, "not text file: \"%s\"\n", pszFilename);
         g_cFilesBinaries++;
     }
     ScmStreamDelete(&Stream1);
@@ -1988,7 +2030,7 @@ int main(int argc, char **argv)
 
             default:
             {
-                int rc2 = scmSettingsBaseHandleOpt(&pSettings->Base, rc, &ValueUnion);
+                int rc2 = scmSettingsBaseHandleOpt(&pSettings->Base, rc, &ValueUnion, "/", 1);
                 if (RT_SUCCESS(rc2))
                     break;
                 if (rc2 != VERR_GETOPT_UNKNOWN_OPTION)

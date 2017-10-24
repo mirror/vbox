@@ -295,6 +295,7 @@ typedef struct SCMPATRNOPTPAIR
 {
     char *pszPattern;
     char *pszOptions;
+    char *pszRelativeTo;
 } SCMPATRNOPTPAIR;
 /** Pointer to a pattern + option pair. */
 typedef SCMPATRNOPTPAIR *PSCMPATRNOPTPAIR;
@@ -338,8 +339,8 @@ typedef SCMSETTINGS const *PCSCMSETTINGS;
 /** @} */
 
 
-void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 void ScmVerboseBanner(PSCMRWSTATE pState, int iLevel);
+void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 bool ScmError(PSCMRWSTATE pState, int rc, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 extern const char g_szTabSpaces[16+1];
