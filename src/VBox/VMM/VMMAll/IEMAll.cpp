@@ -3219,9 +3219,9 @@ DECLINLINE(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPU pVCpu)
 
 /**
  * Gets the exception class for the specified exception vector.
- *  
+ *
  * @returns The class of the specified exception.
- * @param   uVector       The exception vector. 
+ * @param   uVector       The exception vector.
  */
 IEM_STATIC IEMXCPTCLASS iemGetXcptClass(uint8_t uVector)
 {
@@ -3250,8 +3250,8 @@ IEM_STATIC IEMXCPTCLASS iemGetXcptClass(uint8_t uVector)
 /**
  * Evaluates how to handle an exception caused during delivery of another event
  * (exception / interrupt).
- *  
- * @returns How to handle the recursive exception. 
+ *
+ * @returns How to handle the recursive exception.
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling thread.
  * @param   fPrevFlags          The flags of the previous event.
@@ -3338,7 +3338,7 @@ VMM_INT_DECL(IEMXCPTRAISE) IEMEvaluateRecursiveXcpt(PVMCPU pVCpu, uint32_t fPrev
 
     if (pfXcptRaiseInfo)
         *pfXcptRaiseInfo = fRaiseInfo;
-    return enmRaise; 
+    return enmRaise;
 }
 
 

@@ -2674,7 +2674,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         LogRel(("CPUM: Failed to query microcode revision. rc=%Rrc\n", rc));
     }
 
-    /* Mask out the VME capability on certain CPUs, unless overridden by fForceVme. 
+    /* Mask out the VME capability on certain CPUs, unless overridden by fForceVme.
      * VME bug was fixed in AGESA 1.0.0.6, microcode patch level 8001126.
      */
     if ( (pVM->cpum.s.GuestFeatures.enmMicroarch == kCpumMicroarch_AMD_Zen_Ryzen)
@@ -3258,12 +3258,12 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     /* Update the max and current feature sizes to shut up annoying Linux kernels. */
     if (cbXSaveMaxReport != cbXSaveMaxActual && fGuestXcr0Mask)
     {
-        pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, 13, 0); 
+        pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, 13, 0);
         if (pCurLeaf)
         {
             LogRel(("CPUM: Changing leaf 13[0]: EBX=%#RX32 -> %#RX32, ECX=%#RX32 -> %#RX32\n",
                     pCurLeaf->uEbx, cbXSaveMaxReport, pCurLeaf->uEcx, cbXSaveMaxReport));
-            pCurLeaf->uEbx = cbXSaveMaxReport; 
+            pCurLeaf->uEbx = cbXSaveMaxReport;
             pCurLeaf->uEcx = cbXSaveMaxReport;
         }
     }
