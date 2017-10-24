@@ -1471,38 +1471,38 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
         return winEr;
     }
 
-    VBOXWDDM_RECOMMENDVIDPN VidPnData;
-
-    memset(&VidPnData, 0, sizeof (VidPnData));
-
-    uint32_t cElements = 0;
-
-    for (uint32_t i = 0; i < cDevModes; ++i)
-    {
-        if ((i == iChangedMode) ? fEnable : (paDisplayDevices[i].StateFlags & DISPLAY_DEVICE_ACTIVE))
-        {
-            VidPnData.aSources[cElements].Size.cx = paDeviceModes[i].dmPelsWidth;
-            VidPnData.aSources[cElements].Size.cy = paDeviceModes[i].dmPelsHeight;
-            VidPnData.aTargets[cElements].iSource = cElements;
-            ++cElements;
-        }
-        else
-            VidPnData.aTargets[cElements].iSource = -1;
-    }
-
 /*  The pfnD3DKMTInvalidateActiveVidPn was deprecated since Win7 and causes deadlocks since Win10 TH2.
     Instead, the VidPn Manager can replace an old VidPn as soon as SetDisplayConfig or ChangeDisplaySettingsEx will try to set a new display mode.
     On Vista D3DKMTInvalidateActiveVidPn is still required. TBD: Get rid of it. */
     if (Op.pIf->enmMode < VBOXDISPIF_MODE_WDDM_W7)
     {
-        D3DKMT_INVALIDATEACTIVEVIDPN DdiData = {0};
+        D3DKMT_INVALIDATEACTIVEVIDPN ddiArgInvalidateVidPN;
+        VBOXWDDM_RECOMMENDVIDPN vboxRecommendVidPN;
 
-        DdiData.hAdapter = Op.Adapter.hAdapter;
-        DdiData.pPrivateDriverData = &VidPnData;
-        DdiData.PrivateDriverDataSize = sizeof (VidPnData);
+        memset(&ddiArgInvalidateVidPN, 0, sizeof(ddiArgInvalidateVidPN));
+        memset(&vboxRecommendVidPN, 0, sizeof(vboxRecommendVidPN));
+
+        uint32_t cElements = 0;
+
+        for (uint32_t i = 0; i < cDevModes; ++i)
+        {
+            if ((i == iChangedMode) ? fEnable : (paDisplayDevices[i].StateFlags & DISPLAY_DEVICE_ACTIVE))
+            {
+                vboxRecommendVidPN.aSources[cElements].Size.cx = paDeviceModes[i].dmPelsWidth;
+                vboxRecommendVidPN.aSources[cElements].Size.cy = paDeviceModes[i].dmPelsHeight;
+                vboxRecommendVidPN.aTargets[cElements].iSource = cElements;
+                ++cElements;
+            }
+            else
+                vboxRecommendVidPN.aTargets[cElements].iSource = -1;
+        }
+
+        ddiArgInvalidateVidPN.hAdapter = Op.Adapter.hAdapter;
+        ddiArgInvalidateVidPN.pPrivateDriverData = &vboxRecommendVidPN;
+        ddiArgInvalidateVidPN.PrivateDriverDataSize = sizeof (vboxRecommendVidPN);
 
         NTSTATUS Status;
-        Status = Op.pIf->modeData.wddm.KmtCallbacks.pfnD3DKMTInvalidateActiveVidPn(&DdiData);
+        Status = Op.pIf->modeData.wddm.KmtCallbacks.pfnD3DKMTInvalidateActiveVidPn(&ddiArgInvalidateVidPN);
         LogFunc(("D3DKMTInvalidateActiveVidPn returned %d)\n", Status));
     }
 
