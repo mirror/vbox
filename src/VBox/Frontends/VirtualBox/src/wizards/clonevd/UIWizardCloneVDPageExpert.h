@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,10 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIWizardCloneVDPageExpert_h__
-#define __UIWizardCloneVDPageExpert_h__
+#ifndef ___UIWizardCloneVDPageExpert_h___
+#define ___UIWizardCloneVDPageExpert_h___
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardCloneVDPageBasic1.h"
 #include "UIWizardCloneVDPageBasic2.h"
 #include "UIWizardCloneVDPageBasic3.h"
@@ -27,7 +27,8 @@
 /* Forward declarations: */
 class QGroupBox;
 
-/* Expert page of the Clone Virtual Hard Drive wizard: */
+
+/** Expert page of the Clone Virtual Disk Image wizard: */
 class UIWizardCloneVDPageExpert : public UIWizardPage,
                                   public UIWizardCloneVDPage1,
                                   public UIWizardCloneVDPage2,
@@ -43,46 +44,53 @@ class UIWizardCloneVDPageExpert : public UIWizardPage,
 
 public:
 
-    /* Constructor: */
+    /** Constructs basic page.
+      * @param  sourceVirtualDisk  Brings the initial source disk to make copy from. */
     UIWizardCloneVDPageExpert(const CMedium &sourceVirtualDisk);
 
 protected:
 
-    /* Wrapper to access 'this' from base part: */
+    /** Allows to access 'this' from base part. */
     UIWizardPage* thisImp() { return this; }
-    /* Wrapper to access 'wizard-field' from base part: */
+    /** Allows to access 'field()' from base part. */
     QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
 private slots:
 
-    /* Source virtual-disk stuff: */
+    /** Handles source disk change. */
     void sltHandleSourceDiskChange();
+    /** Handles command to open source disk. */
     void sltHandleOpenSourceDiskClick();
 
-    /* Medium format stuff: */
+    /** Handles medium format change. */
     void sltMediumFormatChanged();
 
-    /* Location editor stuff: */
+    /** Handles target disk change. */
     void sltSelectLocationButtonClicked();
 
 private:
 
-    /* Translation stuff: */
+    /** Handles translation event. */
     void retranslateUi();
 
-    /* Prepare stuff: */
+    /** Prepares the page. */
     void initializePage();
 
-    /* Validation stuff: */
+    /** Returns whether the page is complete. */
     bool isComplete() const;
+
+    /** Returns whether the page is valid. */
     bool validatePage();
 
-    /* Widgets: */
+    /** Holds the source disk container instance. */
     QGroupBox *m_pSourceDiskCnt;
+    /** Holds the format container instance. */
     QGroupBox *m_pFormatCnt;
+    /** Holds the variant container instance. */
     QGroupBox *m_pVariantCnt;
+    /** Holds the target disk container instance. */
     QGroupBox *m_pDestinationCnt;
 };
 
-#endif // __UIWizardCloneVDPageExpert_h__
+#endif /* !___UIWizardCloneVDPageExpert_h___ */
 
