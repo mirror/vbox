@@ -31,7 +31,7 @@
 
 #include <VBox/com/VirtualBox.h>
 
-#include "EbmlWriter.h"
+#include "EBMLWriter.h"
 #include "VideoRec.h"
 
 #ifdef VBOX_WITH_LIBVPX
