@@ -942,62 +942,64 @@ static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_
  *
  * @returns IPRT status code.
  * @param   pSettings           Where to load the settings file.
- * @param   pszFilename         The file to load.  ASSUMED to be absolute.
- * @param   offName             The offset of the name part in pszFilename.
+ * @param   pszFilename         The file to load.
  */
-static int scmSettingsLoadFile(PSCMSETTINGS pSettings, const char *pszFilename, size_t offName)
+static int scmSettingsLoadFile(PSCMSETTINGS pSettings, const char *pszFilename)
 {
     ScmVerbose(NULL, 3, "Loading settings file '%s'...\n", pszFilename);
 
-#ifdef RT_STRICT
-    /* Check absolute path assumption. */
-    char szTmp[RTPATH_MAX];
-    int rcTmp = RTPathAbs(pszFilename, szTmp, sizeof(szTmp));
-    AssertMsg(RT_SUCCESS(rcTmp) && RTPathCompare(szTmp, pszFilename) == 0, ("rcTmp=%Rrc pszFilename='%s'\n", rcTmp, pszFilename));
-#endif
-
-    SCMSTREAM Stream;
-    int rc = ScmStreamInitForReading(&Stream, pszFilename);
+    /* Turn filename into an absolute path and drop the filename. */
+    char szAbsPath[RTPATH_MAX];
+    int rc = RTPathAbs(pszFilename, szAbsPath, sizeof(szAbsPath));
     if (RT_FAILURE(rc))
     {
-        RTMsgError("%s: ScmStreamInitForReading -> %Rrc\n", pszFilename, rc);
+        RTMsgError("%s: RTPathAbs -> %Rrc\n", pszFilename, rc);
         return rc;
     }
+    RTPathChangeToUnixSlashes(szAbsPath, true);
+    size_t cchDir = RTPathFilename(szAbsPath) - &szAbsPath[0];
 
-    SCMEOL      enmEol;
-    const char *pchLine;
-    size_t      cchLine;
-    while ((pchLine = ScmStreamGetLine(&Stream, &cchLine, &enmEol)) != NULL)
-    {
-        /* Ignore leading spaces. */
-        while (cchLine > 0 && RT_C_IS_SPACE(*pchLine))
-            pchLine++, cchLine--;
-
-        /* Ignore empty lines and comment lines. */
-        if (cchLine < 1 || *pchLine == '#')
-            continue;
-
-        /* What kind of line is it? */
-        const char *pchColon = (const char *)memchr(pchLine, ':', cchLine);
-        if (pchColon)
-            rc = scmSettingsAddPair(pSettings, pchLine, cchLine, pchColon - pchLine, pszFilename, offName);
-        else
-            rc = scmSettingsBaseParseStringN(&pSettings->Base, pchLine, cchLine, pszFilename, offName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("%s:%d: %Rrc\n", pszFilename, ScmStreamTellLine(&Stream), rc);
-            break;
-        }
-    }
-
+    /* Try open it.*/
+    SCMSTREAM Stream;
+    rc = ScmStreamInitForReading(&Stream, pszFilename);
     if (RT_SUCCESS(rc))
     {
-        rc = ScmStreamGetStatus(&Stream);
-        if (RT_FAILURE(rc))
-            RTMsgError("%s: ScmStreamGetStatus- > %Rrc\n", pszFilename, rc);
-    }
+        SCMEOL      enmEol;
+        const char *pchLine;
+        size_t      cchLine;
+        while ((pchLine = ScmStreamGetLine(&Stream, &cchLine, &enmEol)) != NULL)
+        {
+            /* Ignore leading spaces. */
+            while (cchLine > 0 && RT_C_IS_SPACE(*pchLine))
+                pchLine++, cchLine--;
 
-    ScmStreamDelete(&Stream);
+            /* Ignore empty lines and comment lines. */
+            if (cchLine < 1 || *pchLine == '#')
+                continue;
+
+            /* What kind of line is it? */
+            const char *pchColon = (const char *)memchr(pchLine, ':', cchLine);
+            if (pchColon)
+                rc = scmSettingsAddPair(pSettings, pchLine, cchLine, pchColon - pchLine, szAbsPath, cchDir);
+            else
+                rc = scmSettingsBaseParseStringN(&pSettings->Base, pchLine, cchLine, szAbsPath, cchDir);
+            if (RT_FAILURE(rc))
+            {
+                RTMsgError("%s:%d: %Rrc\n", pszFilename, ScmStreamTellLine(&Stream), rc);
+                break;
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            rc = ScmStreamGetStatus(&Stream);
+            if (RT_FAILURE(rc))
+                RTMsgError("%s: ScmStreamGetStatus- > %Rrc\n", pszFilename, rc);
+        }
+        ScmStreamDelete(&Stream);
+    }
+    else
+        RTMsgError("%s: ScmStreamInitForReading -> %Rrc\n", pszFilename, rc);
     return rc;
 }
 
@@ -1081,7 +1083,7 @@ static int scmSettingsCreateForPath(PSCMSETTINGS *ppSettings, PCSCMSETTINGSBASE 
 
         if (RTFileExists(szFile))
         {
-            rc = scmSettingsLoadFile(pSettings, szFile, RTPathFilename(szFile) - &szFile[0]);
+            rc = scmSettingsLoadFile(pSettings, szFile);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -1135,7 +1137,7 @@ static int scmSettingsStackPushDir(PSCMSETTINGS *ppSettingsStack, const char *ps
         if (RT_SUCCESS(rc))
         {
             if (RTFileExists(szFile))
-                rc = scmSettingsLoadFile(pSettings, szFile, RTPathFilename(szFile) - &szFile[0]);
+                rc = scmSettingsLoadFile(pSettings, szFile);
             if (RT_SUCCESS(rc))
             {
                 scmSettingsStackPush(ppSettingsStack, pSettings);
