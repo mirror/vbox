@@ -53,6 +53,7 @@ typedef struct VDPLUGIN
 /** Pointer to a plugin structure. */
 typedef VDPLUGIN *PVDPLUGIN;
 
+
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -108,6 +109,7 @@ static PCVDFILTERBACKEND *g_apFilterBackends = NULL;
 /** Array of handles to the corresponding plugin. */
 static PRTLDRMOD g_pahFilterBackendPlugins = NULL;
 #endif
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -822,7 +824,7 @@ DECLHIDDEN(int) vdPluginUnloadFromPath(const char *pszPath)
          * files matching, while on other platforms enumerating the
          * files below fails. Either way: no plugins. */
     }
-    
+
     if (rc == VERR_NO_MORE_FILES)
         rc = VINF_SUCCESS;
     RTStrFree(pszPluginFilter);

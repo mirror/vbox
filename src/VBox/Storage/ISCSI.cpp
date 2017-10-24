@@ -2161,7 +2161,7 @@ static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq,
  *
  * @returns VBOX status
  * @param   pImage      The iSCSI connection state to be used.
- * @param   itt         The initiator task tag. 
+ * @param   itt         The initiator task tag.
  * @param   paRes       Pointer to array of iSCSI response sections.
  * @param   cnRes       Number of valid iSCSI response sections in the array.
  * @param   fRecvFlags  PDU receive flags.
