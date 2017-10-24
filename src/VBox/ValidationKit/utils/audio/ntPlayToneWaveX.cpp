@@ -209,7 +209,7 @@ int main(int argc, char **argv)
     {
         waveOutClose(g_hWaveOut);
     }
-    
+
     HeapFree(GetProcessHeap(), 0, i16Samples1);
     HeapFree(GetProcessHeap(), 0, i16Samples2);
 }
