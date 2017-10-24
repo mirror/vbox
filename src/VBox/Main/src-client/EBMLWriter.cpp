@@ -43,7 +43,7 @@
 #include <VBox/log.h>
 #include <VBox/version.h>
 
-#include "EbmlWriter.h"
+#include "EBMLWriter.h"
 #include "EbmlMkvIDs.h"
 
 /** No flags set. */
