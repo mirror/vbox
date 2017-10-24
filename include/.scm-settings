@@ -16,27 +16,28 @@
 #
 
 
-#
-# Export license configuration (default is OSE-GPL).
-#
-*/include/iprt/*: --license-ose-dual
-*/include/iprt/formats/elf-amd64.h: --no-update-license
-*/include/iprt/formats/elf-common.h: --no-update-license
-*/include/iprt/formats/elf-i386.h: --no-update-license
-*/include/iprt/formats/elf-i386.h: --no-update-license
+# Default license here is dual GPL and CDDL.
+--license-ose-dual
 
-*/include/VBox/*: --license-ose-dual
-*/include/VBox/Graphics/HGSMI.h:               --license-mit
-*/include/VBox/Graphics/HGSMIBase.h:           --license-mit
-*/include/VBox/Graphics/HGSMIChannels.h:       --license-mit
-*/include/VBox/Graphics/HGSMIChSetup.h:        --license-mit
-*/include/VBox/Graphics/HGSMIContext.h:        --license-mit
-*/include/VBox/Graphics/HGSMIDefs.h:           --license-mit
-*/include/VBox/Graphics/VBoxVideo.h:           --license-mit
-*/include/VBox/Graphics/VBoxVideoErr.h:        --license-mit
-*/include/VBox/Graphics/VBoxVideoGuest.h:      --license-mit
-*/include/VBox/Graphics/VBoxVideoVBE.h:        --license-mit
-*/include/VBox/Graphics/VBoxVideoVBEPrivate.h: --license-mit
+# These three have no Oracle license or copyright stuff for some reason.
+/iprt/formats/elf-amd64.h:  --no-update-license  --no-update-copyright-year
+/iprt/formats/elf-common.h: --no-update-license  --no-update-copyright-year
+/iprt/formats/elf-i386.h:   --no-update-license  --no-update-copyright-year
+/iprt/formats/elf-i386.h:   --no-update-license  --no-update-copyright-year
 
-*/include/VBox/VBoxKeyboard.h: --no-update-license
+# TODO: This is using LGPL with Oracle disclaimer. Implement.
+/VBox/VBoxKeyboard.h: --no-update-license
+
+# Some of the graphics stuff is using MIT.
+/VBox/Graphics/HGSMI.h:               --license-mit
+/VBox/Graphics/HGSMIBase.h:           --license-mit
+/VBox/Graphics/HGSMIChannels.h:       --license-mit
+/VBox/Graphics/HGSMIChSetup.h:        --license-mit
+/VBox/Graphics/HGSMIContext.h:        --license-mit
+/VBox/Graphics/HGSMIDefs.h:           --license-mit
+/VBox/Graphics/VBoxVideo.h:           --license-mit
+/VBox/Graphics/VBoxVideoErr.h:        --license-mit
+/VBox/Graphics/VBoxVideoGuest.h:      --license-mit
+/VBox/Graphics/VBoxVideoVBE.h:        --license-mit
+/VBox/Graphics/VBoxVideoVBEPrivate.h: --license-mit
 
