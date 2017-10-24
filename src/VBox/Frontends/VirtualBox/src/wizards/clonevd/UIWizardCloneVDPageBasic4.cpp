@@ -133,12 +133,12 @@ QString UIWizardCloneVDPage4::absoluteFilePath(const QString &strFileName, const
 }
 
 /* static */
-QString UIWizardCloneVDPage4::defaultExtension(const CMediumFormat &mediumFormatRef)
+QString UIWizardCloneVDPage4::defaultExtension(const CMediumFormat &comMediumFormat)
 {
     /* Load extension / device list: */
     QVector<QString> fileExtensions;
     QVector<KDeviceType> deviceTypes;
-    CMediumFormat mediumFormat(mediumFormatRef);
+    CMediumFormat mediumFormat(comMediumFormat);
     mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
     for (int i = 0; i < fileExtensions.size(); ++i)
         if (deviceTypes[i] == KDeviceType_HardDisk)

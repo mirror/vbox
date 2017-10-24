@@ -38,9 +38,9 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &sourceVirtualDisk)
+UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &comSourceVirtualDisk)
     : UIWizard(pParent, WizardType_CloneVD)
-    , m_sourceVirtualDisk(sourceVirtualDisk)
+    , m_comSourceVirtualDisk(comSourceVirtualDisk)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -54,8 +54,8 @@ UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &sourceVirtualD
 bool UIWizardCloneVD::copyVirtualDisk()
 {
     /* Gather attributes: */
-    CMedium sourceVirtualDisk = field("sourceVirtualDisk").value<CMedium>();
-    CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
+    CMedium comSourceVirtualDisk = field("sourceVirtualDisk").value<CMedium>();
+    CMediumFormat comMediumFormat = field("mediumFormat").value<CMediumFormat>();
     qulonglong uVariant = field("mediumVariant").toULongLong();
     QString strMediumPath = field("mediumPath").toString();
     qulonglong uSize = field("mediumSize").toULongLong();
@@ -64,18 +64,18 @@ bool UIWizardCloneVD::copyVirtualDisk()
     AssertReturn(uSize > 0, false);
 
     /* Get VBox object: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox comVBox = vboxGlobal().virtualBox();
 
     /* Create new virtual hard-disk: */
-    CMedium virtualDisk = vbox.CreateMedium(mediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
-    if (!vbox.isOk())
+    CMedium comVirtualDisk = comVBox.CreateMedium(comMediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
+    if (!comVBox.isOk())
     {
-        msgCenter().cannotCreateHardDiskStorage(vbox, strMediumPath, this);
+        msgCenter().cannotCreateHardDiskStorage(comVBox, strMediumPath, this);
         return false;
     }
 
     /* Compose medium-variant: */
-    QVector<KMediumVariant> variants(sizeof(qulonglong)*8);
+    QVector<KMediumVariant> variants(sizeof(qulonglong) * 8);
     for (int i = 0; i < variants.size(); ++i)
     {
         qulonglong temp = uVariant;
@@ -84,28 +84,28 @@ bool UIWizardCloneVD::copyVirtualDisk()
     }
 
     /* Copy existing virtual-disk to the new virtual-disk: */
-    CProgress progress = sourceVirtualDisk.CloneTo(virtualDisk, variants, CMedium());
-    if (!sourceVirtualDisk.isOk())
+    CProgress comProgress = comSourceVirtualDisk.CloneTo(comVirtualDisk, variants, CMedium());
+    if (!comSourceVirtualDisk.isOk())
     {
-        msgCenter().cannotCreateHardDiskStorage(sourceVirtualDisk, strMediumPath, this);
+        msgCenter().cannotCreateHardDiskStorage(comSourceVirtualDisk, strMediumPath, this);
         return false;
     }
 
     /* Show creation progress: */
-    msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_create_90px.png", this);
-    if (progress.GetCanceled())
+    msgCenter().showModalProgressDialog(comProgress, windowTitle(), ":/progress_media_create_90px.png", this);
+    if (comProgress.GetCanceled())
         return false;
-    if (!progress.isOk() || progress.GetResultCode() != 0)
+    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
     {
-        msgCenter().cannotCreateHardDiskStorage(progress, strMediumPath, this);
+        msgCenter().cannotCreateHardDiskStorage(comProgress, strMediumPath, this);
         return false;
     }
 
     /* Remember created virtual-disk: */
-    m_virtualDisk = virtualDisk;
+    m_comTargetVirtualDisk = comVirtualDisk;
 
     /* Just close the created medium, it is not necessary yet: */
-    m_virtualDisk.Close();
+    m_comTargetVirtualDisk.Close();
 
     return true;
 }
@@ -127,7 +127,7 @@ void UIWizardCloneVD::prepare()
     {
         case WizardMode_Basic:
         {
-            setPage(Page1, new UIWizardCloneVDPageBasic1(m_sourceVirtualDisk));
+            setPage(Page1, new UIWizardCloneVDPageBasic1(m_comSourceVirtualDisk));
             setPage(Page2, new UIWizardCloneVDPageBasic2);
             setPage(Page3, new UIWizardCloneVDPageBasic3);
             setPage(Page4, new UIWizardCloneVDPageBasic4);
@@ -135,7 +135,7 @@ void UIWizardCloneVD::prepare()
         }
         case WizardMode_Expert:
         {
-            setPage(PageExpert, new UIWizardCloneVDPageExpert(m_sourceVirtualDisk));
+            setPage(PageExpert, new UIWizardCloneVDPageExpert(m_comSourceVirtualDisk));
             break;
         }
         default:

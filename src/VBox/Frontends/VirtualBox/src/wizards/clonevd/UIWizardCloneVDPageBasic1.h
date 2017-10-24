@@ -45,7 +45,7 @@ protected:
     /** Returns 'sourceVirtualDisk' field value. */
     CMedium sourceVirtualDisk() const;
     /** Defines 'sourceVirtualDisk' field value. */
-    void setSourceVirtualDisk(const CMedium &sourceVirtualDisk);
+    void setSourceVirtualDisk(const CMedium &comSourceVirtualDisk);
 
     /** Holds the source media combo-box instance. */
     VBoxMediaComboBox *m_pSourceDiskSelector;
@@ -63,8 +63,8 @@ class UIWizardCloneVDPageBasic1 : public UIWizardPage, public UIWizardCloneVDPag
 public:
 
     /** Constructs basic page.
-      * @param  sourceVirtualDisk  Brings the initial source disk to make copy from. */
-    UIWizardCloneVDPageBasic1(const CMedium &sourceVirtualDisk);
+      * @param  comSourceVirtualDisk  Brings the initial source disk to make copy from. */
+    UIWizardCloneVDPageBasic1(const CMedium &comSourceVirtualDisk);
 
 protected:
 
@@ -79,13 +79,13 @@ private slots:
 private:
 
     /** Handles translation event. */
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
 
     /** Prepares the page. */
-    void initializePage();
+    virtual void initializePage() /* override */;
 
     /** Returns whether the page is complete. */
-    bool isComplete() const;
+    virtual bool isComplete() const /* override */;
 
     /** Holds the description label instance. */
     QIRichTextLabel *m_pLabel;

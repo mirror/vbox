@@ -43,7 +43,7 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &sourceVirtualDisk)
+UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &comSourceVirtualDisk)
 {
     /* Create widgets: */
     QGridLayout *pMainLayout = new QGridLayout(this);
@@ -59,7 +59,7 @@ UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &sourceVirtua
                 {
                     m_pSourceDiskSelector->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
                     m_pSourceDiskSelector->setType(UIMediumType_HardDisk);
-                    m_pSourceDiskSelector->setCurrentItem(sourceVirtualDisk.GetId());
+                    m_pSourceDiskSelector->setCurrentItem(comSourceVirtualDisk.GetId());
                     m_pSourceDiskSelector->repopulate();
                 }
                 m_pSourceDiskOpenButton = new QIToolButton(m_pSourceDiskCnt);

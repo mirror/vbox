@@ -45,8 +45,8 @@ class UIWizardCloneVDPageExpert : public UIWizardPage,
 public:
 
     /** Constructs basic page.
-      * @param  sourceVirtualDisk  Brings the initial source disk to make copy from. */
-    UIWizardCloneVDPageExpert(const CMedium &sourceVirtualDisk);
+      * @param  comSourceVirtualDisk  Brings the initial source disk to make copy from. */
+    UIWizardCloneVDPageExpert(const CMedium &comSourceVirtualDisk);
 
 protected:
 
@@ -71,16 +71,16 @@ private slots:
 private:
 
     /** Handles translation event. */
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
 
     /** Prepares the page. */
-    void initializePage();
+    virtual void initializePage() /* override */;
 
     /** Returns whether the page is complete. */
-    bool isComplete() const;
+    virtual bool isComplete() const /* override */;
 
     /** Returns whether the page is valid. */
-    bool validatePage();
+    virtual bool validatePage() /* override */;
 
     /** Holds the source disk container instance. */
     QGroupBox *m_pSourceDiskCnt;

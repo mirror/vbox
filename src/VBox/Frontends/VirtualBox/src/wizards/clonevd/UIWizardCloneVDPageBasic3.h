@@ -66,13 +66,13 @@ public:
 private:
 
     /** Handles translation event. */
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
 
     /** Prepares the page. */
-    void initializePage();
+    virtual void initializePage() /* override */;
 
     /** Returns whether the page is complete. */
-    bool isComplete() const;
+    virtual bool isComplete() const /* override */;
 
     /** Holds the description label instance. */
     QIRichTextLabel *m_pDescriptionLabel;

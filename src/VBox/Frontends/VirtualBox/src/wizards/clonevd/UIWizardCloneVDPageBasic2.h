@@ -41,16 +41,19 @@ protected:
     UIWizardCloneVDPage2();
 
     /** Adds format button.
-      * @param  pParent         Brings the parent to add button to.
-      * @param  pFormatsLayout  Brings the layout to insert button to.
-      * @param  medFormat       Brings the medium format object to acquire format from.
-      * @param  fPreferred      Brings whether curretn format is preferred or not. */
-    void addFormatButton(QWidget *pParent, QVBoxLayout *pFormatsLayout, CMediumFormat medFormat, bool fPreferred = false);
+      * @param  pParent          Brings the parent to add button to.
+      * @param  pFormatsLayout   Brings the layout to insert button to.
+      * @param  comMediumFormat  Brings the medium format object to acquire format from.
+      * @param  fPreferred       Brings whether curretn format is preferred or not. */
+    void addFormatButton(QWidget *pParent,
+                         QVBoxLayout *pFormatsLayout,
+                         CMediumFormat comMediumFormat,
+                         bool fPreferred = false);
 
     /** Returns 'mediumFormat' field value. */
     CMediumFormat mediumFormat() const;
     /** Defines 'mediumFormat' field value. */
-    void setMediumFormat(const CMediumFormat &mediumFormat);
+    void setMediumFormat(const CMediumFormat &comMediumFormat);
 
     /** Holds the format button-group instance. */
     QButtonGroup         *m_pFormatButtonGroup;
@@ -75,16 +78,16 @@ public:
 private:
 
     /** Handles translation event. */
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
 
     /** Prepares the page. */
-    void initializePage();
+    virtual void initializePage() /* override */;
 
     /** Returns whether the page is complete. */
-    bool isComplete() const;
+    virtual bool isComplete() const /* override */;
 
     /** Returns the ID of the next page to traverse to. */
-    int nextId() const;
+    virtual int nextId() const /* override */;
 
     /** Holds the description label instance. */
     QIRichTextLabel *m_pLabel;

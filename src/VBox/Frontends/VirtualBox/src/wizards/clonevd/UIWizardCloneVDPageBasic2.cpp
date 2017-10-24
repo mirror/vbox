@@ -40,12 +40,12 @@ UIWizardCloneVDPage2::UIWizardCloneVDPage2()
 {
 }
 
-void UIWizardCloneVDPage2::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, CMediumFormat medFormat, bool fPreferred /* = false */)
+void UIWizardCloneVDPage2::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, CMediumFormat comMediumFormat, bool fPreferred /* = false */)
 {
     /* Check that medium format supports creation: */
     ULONG uFormatCapabilities = 0;
     QVector<KMediumFormatCapabilities> capabilities;
-    capabilities = medFormat.GetCapabilities();
+    capabilities = comMediumFormat.GetCapabilities();
     for (int i = 0; i < capabilities.size(); i++)
         uFormatCapabilities |= capabilities[i];
 
@@ -56,7 +56,7 @@ void UIWizardCloneVDPage2::addFormatButton(QWidget *pParent, QVBoxLayout *pForma
     /* Check that medium format supports creation of virtual hard-disks: */
     QVector<QString> fileExtensions;
     QVector<KDeviceType> deviceTypes;
-    medFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+    comMediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
     if (!deviceTypes.contains(KDeviceType_HardDisk))
         return;
 
@@ -72,8 +72,8 @@ void UIWizardCloneVDPage2::addFormatButton(QWidget *pParent, QVBoxLayout *pForma
             pFormatButton->setFont(font);
         }
         pFormatLayout->addWidget(pFormatButton);
-        m_formats << medFormat;
-        m_formatNames << medFormat.GetName();
+        m_formats << comMediumFormat;
+        m_formatNames << comMediumFormat.GetName();
         m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
     }
 }
@@ -83,9 +83,9 @@ CMediumFormat UIWizardCloneVDPage2::mediumFormat() const
     return m_pFormatButtonGroup->checkedButton() ? m_formats[m_pFormatButtonGroup->checkedId()] : CMediumFormat();
 }
 
-void UIWizardCloneVDPage2::setMediumFormat(const CMediumFormat &mediumFormat)
+void UIWizardCloneVDPage2::setMediumFormat(const CMediumFormat &comMediumFormat)
 {
-    int iPosition = m_formats.indexOf(mediumFormat);
+    int iPosition = m_formats.indexOf(comMediumFormat);
     if (iPosition >= 0)
     {
         m_pFormatButtonGroup->button(iPosition)->click();
