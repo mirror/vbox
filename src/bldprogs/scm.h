@@ -240,6 +240,7 @@ typedef enum SCMLICENSE
     kScmLicense_OseCddl,            /**< VBox OSE CDDL if public. */
     kScmLicense_Lgpl,               /**< LGPL if public. */
     kScmLicense_Mit,                /**< MIT if public. */
+    kScmLicense_BasedOnMit,         /**< Copyright us but based on someone else's MIT . */
     kScmLicense_End
 } SCMLICENSE;
 

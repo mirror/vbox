@@ -86,6 +86,7 @@ typedef enum SCMOPT
     SCMOPT_LICENSE_OSE_CDDL,
     SCMOPT_LICENSE_LGPL,
     SCMOPT_LICENSE_MIT,
+    SCMOPT_LICENSE_BASED_ON_MIT,
     SCMOPT_LGPL_DISCLAIMER,
     SCMOPT_NO_LGPL_DISCLAIMER,
     SCMOPT_MIN_BLANK_LINES_BEFORE_FLOWER_BOX_MARKERS,
@@ -212,6 +213,7 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--license-ose-cddl",                 SCMOPT_LICENSE_OSE_CDDL,                RTGETOPT_REQ_NOTHING },
     { "--license-lgpl",                     SCMOPT_LICENSE_LGPL,                    RTGETOPT_REQ_NOTHING },
     { "--license-mit",                      SCMOPT_LICENSE_MIT,                     RTGETOPT_REQ_NOTHING },
+    { "--license-based-on-mit",             SCMOPT_LICENSE_BASED_ON_MIT,            RTGETOPT_REQ_NOTHING },
     { "--lgpl-disclaimer",                  SCMOPT_LGPL_DISCLAIMER,                 RTGETOPT_REQ_NOTHING },
     { "--no-lgpl-disclaimer",               SCMOPT_NO_LGPL_DISCLAIMER,              RTGETOPT_REQ_NOTHING },
     { "--only-svn-dirs",                    SCMOPT_ONLY_SVN_DIRS,                   RTGETOPT_REQ_NOTHING },
@@ -685,6 +687,9 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             return VINF_SUCCESS;
         case SCMOPT_LICENSE_MIT:
             pSettings->enmUpdateLicense = kScmLicense_Mit;
+            return VINF_SUCCESS;
+        case SCMOPT_LICENSE_BASED_ON_MIT:
+            pSettings->enmUpdateLicense = kScmLicense_BasedOnMit;
             return VINF_SUCCESS;
 
         case SCMOPT_LGPL_DISCLAIMER:
@@ -2011,14 +2016,16 @@ static void usage(PCRTGETOPTDEF paOpts, size_t cOpts)
                          "  %s,\n"
                          "  %s,\n"
                          "  %s,\n"
+                         "  %s,\n"
                          "  %s\n",
                          paOpts[i].pszLong,
                          paOpts[i + 1].pszLong,
                          paOpts[i + 2].pszLong,
                          paOpts[i + 3].pszLong,
                          paOpts[i + 4].pszLong,
-                         paOpts[i + 5].pszLong);
-                cExtraAdvance = 5;
+                         paOpts[i + 5].pszLong,
+                         paOpts[i + 6].pszLong);
+                cExtraAdvance = 6;
             }
         }
         else if ((paOpts[i].fFlags & RTGETOPT_REQ_MASK) == RTGETOPT_REQ_STRING)

@@ -267,6 +267,31 @@ static const char g_szMitAlt3[] =
     "The above copyright notice and this permission notice shall be included in\n"
     "all copies or substantial portions of the Software.\n";
 
+/** --license-(based-on)mit, alternative wording \#4.
+ * @note This differs from g_szMitAlt3 in using "sub license" instead of
+ *       "sublicense" and adding an illogical "(including the next
+ *       paragraph)" remark to the final paragraph. (vbox_ttm.c) */
+static const char g_szMitAlt4[] =
+    "Permission is hereby granted, free of charge, to any person obtaining a\n"
+    "copy of this software and associated documentation files (the\n"
+    "\"Software\"), to deal in the Software without restriction, including\n"
+    "without limitation the rights to use, copy, modify, merge, publish,\n"
+    "distribute, sub license, and/or sell copies of the Software, and to\n"
+    "permit persons to whom the Software is furnished to do so, subject to\n"
+    "the following conditions:\n"
+    "\n"
+    "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+    "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+    "FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL\n"
+    "THE COPYRIGHT HOLDERS, AUTHORS AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM,\n"
+    "DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR\n"
+    "OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE\n"
+    "USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+    "\n"
+    "The above copyright notice and this permission notice (including the\n"
+    "next paragraph) shall be included in all copies or substantial portions\n"
+    "of the Software.\n";
+
 
 /** Oracle confidential. */
 static const char g_szOracleConfidential[] =
@@ -284,13 +309,14 @@ static const SCMLICENSETEXT g_aLicenses[] =
     { kScmLicenseType_Invalid,          kScmLicense_End,            NULL, 0 },
 };
 
-/** Licenses to detect when --license-mit _is_ used. */
+/** Licenses to detect when --license-mit or --license-based-on-mit are used. */
 static const SCMLICENSETEXT g_aLicensesWithMit[] =
 {
     { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMit) },
     { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMitAlt1) },
     { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMitAlt2) },
     { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMitAlt3) },
+    { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMitAlt4) },
     { kScmLicenseType_OseGpl,           kScmLicense_OseGpl,         RT_STR_TUPLE(g_szVBoxOseGpl)},
     { kScmLicenseType_OseDualGplCddl,   kScmLicense_OseDualGplCddl, RT_STR_TUPLE(g_szVBoxOseDualGplCddl) },
     { kScmLicenseType_VBoxLgpl,         kScmLicense_Lgpl,           RT_STR_TUPLE(g_szVBoxLgpl)},
@@ -1224,6 +1250,63 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
             iLine++;
             cBlankLinesAfterCopyright++;
         }
+
+        /*
+         * If we have a based-on-mit scenario, check for the lead in now and
+         * complain if not found.
+         */
+        if (   fFoundCopyright
+            && pState->enmLicenceOpt == kScmLicense_BasedOnMit
+            && pState->iLineLicense == UINT32_MAX)
+        {
+            if (RTStrNICmp(pszBody, RT_STR_TUPLE("This file is based on ")) == 0)
+            {
+                /* Take down a comment area which goes up to 'this file is based on'.
+                   The license line and length isn't used but gets set to cover the current line. */
+                pState->iLineComment        = pInfo->iLineStart;
+                pState->cLinesComment       = iLine - pInfo->iLineStart;
+                pState->iLineLicense        = iLine;
+                pState->cLinesLicense       = 1;
+                pState->fExternalLicense    = true;
+                pState->fIsCorrectLicense   = true;
+                pState->fWellFormedLicense  = true;
+
+                /* Check if we've got a MIT a license here or not. */
+                pState->pCurrentLicense     = NULL;
+                do
+                {
+                    const char *pszEol = (const char *)memchr(pszBody, '\n', cchBody);
+                    if (!pszEol || pszEol[1] == '\0')
+                    {
+                        pszBody += cchBody;
+                        cchBody = 0;
+                        break;
+                    }
+                    cchBody -= pszEol - pszBody + 1;
+                    pszBody  = pszEol + 1;
+                    iLine++;
+
+                    for (PCSCMLICENSETEXT pCur = pState->paLicenses; pCur->cch > 0; pCur++)
+                    {
+                        const char *pszNext;
+                        if (   pCur->cch <= cchBody + 32 /* (+ 32 since we don't compare spaces and punctuation) */
+                            && IsEqualWordByWordIgnoreCase(pCur->psz, pszBody, &pszNext))
+                        {
+                            pState->pCurrentLicense = pCur;
+                            break;
+                        }
+                    }
+                } while (!pState->pCurrentLicense);
+                if (!pState->pCurrentLicense)
+                    ScmError(pState->pState, VERR_NOT_FOUND, "Could not find the based-on license!\n");
+                else if (pState->pCurrentLicense->enmType != kScmLicenseType_Mit)
+                    ScmError(pState->pState, VERR_NOT_FOUND, "The based-on license is not MIT (%.32s...)\n",
+                             pState->pCurrentLicense->psz);
+            }
+            else
+                ScmError(pState->pState, VERR_WRONG_ORDER, "Expected 'This file is based on ...' after our copyright!\n");
+            return VINF_SUCCESS;
+        }
     }
 
     /*
@@ -1360,7 +1443,9 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
 
         /*.fOpenSource = */             true,
         /*.pExpectedLicense = */        NULL,
-        /*.paLicenses = */              pSettings->enmUpdateLicense != kScmLicense_Mit ? &g_aLicenses[0] : &g_aLicensesWithMit[0],
+        /*.paLicenses = */                   pSettings->enmUpdateLicense != kScmLicense_Mit
+                                          && pSettings->enmUpdateLicense != kScmLicense_BasedOnMit
+                                        ? &g_aLicenses[0] : &g_aLicensesWithMit[0],
         /*.enmLicenceOpt = */           pSettings->enmUpdateLicense,
         /*.iLineLicense = */            UINT32_MAX,
         /*.cLinesLicense = */           0,
@@ -1385,8 +1470,14 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
 
     Info.pExpectedLicense = Info.paLicenses;
     if (Info.fOpenSource)
-        while (Info.pExpectedLicense->enmOpt != pSettings->enmUpdateLicense)
-            Info.pExpectedLicense++;
+    {
+        if (   pSettings->enmUpdateLicense != kScmLicense_Mit
+            && pSettings->enmUpdateLicense != kScmLicense_BasedOnMit)
+            while (Info.pExpectedLicense->enmOpt != pSettings->enmUpdateLicense)
+                Info.pExpectedLicense++;
+        else
+            Assert(Info.pExpectedLicense->enmOpt == kScmLicense_Mit);
+    }
     else
         while (Info.pExpectedLicense->enmType != kScmLicenseType_Confidential)
             Info.pExpectedLicense++;
@@ -1479,38 +1570,42 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
                         ScmStreamWrite(pOut, szCopyright, cchCopyright);
                         ScmStreamPutEol(pOut, enmEol);
 
-                        /* Blank line separating the two. */
-                        ScmStreamPutLine(pOut, g_aCopyrightCommentEmpty[enmCommentStyle].psz,
-                                         g_aCopyrightCommentEmpty[enmCommentStyle].cch, enmEol);
-
-                        /* Write the license text. */
-                        Assert(Info.pExpectedLicense->psz[Info.pExpectedLicense->cch - 1] == '\n');
-                        Assert(Info.pExpectedLicense->psz[Info.pExpectedLicense->cch - 2] != '\n');
-                        const char *psz = Info.pExpectedLicense->psz;
-                        do
+                        if (pSettings->enmUpdateLicense != kScmLicense_BasedOnMit)
                         {
-                            const char *pszEol = strchr(psz, '\n');
-                            if (pszEol != psz)
-                            {
-                                ScmStreamWrite(pOut, g_aCopyrightCommentPrefix[enmCommentStyle].psz,
-                                               g_aCopyrightCommentPrefix[enmCommentStyle].cch);
-                                ScmStreamWrite(pOut, psz, pszEol - psz);
-                                ScmStreamPutEol(pOut, enmEol);
-                            }
-                            else
-                                ScmStreamPutLine(pOut, g_aCopyrightCommentEmpty[enmCommentStyle].psz,
-                                                 g_aCopyrightCommentEmpty[enmCommentStyle].cch, enmEol);
-                            psz = pszEol + 1;
-                        } while (*psz != '\0');
+                            /* Blank line separating the two. */
+                            ScmStreamPutLine(pOut, g_aCopyrightCommentEmpty[enmCommentStyle].psz,
+                                             g_aCopyrightCommentEmpty[enmCommentStyle].cch, enmEol);
 
-                        /* Final comment line (picking up the stream status here). */
-                        if (!Info.fExternalLicense)
-                            rc = ScmStreamPutLine(pOut, g_aCopyrightCommentEnd[enmCommentStyle].psz,
-                                                  g_aCopyrightCommentEnd[enmCommentStyle].cch, enmEol);
+                            /* Write the license text. */
+                            Assert(Info.pExpectedLicense->psz[Info.pExpectedLicense->cch - 1] == '\n');
+                            Assert(Info.pExpectedLicense->psz[Info.pExpectedLicense->cch - 2] != '\n');
+                            const char *psz = Info.pExpectedLicense->psz;
+                            do
+                            {
+                                const char *pszEol = strchr(psz, '\n');
+                                if (pszEol != psz)
+                                {
+                                    ScmStreamWrite(pOut, g_aCopyrightCommentPrefix[enmCommentStyle].psz,
+                                                   g_aCopyrightCommentPrefix[enmCommentStyle].cch);
+                                    ScmStreamWrite(pOut, psz, pszEol - psz);
+                                    ScmStreamPutEol(pOut, enmEol);
+                                }
+                                else
+                                    ScmStreamPutLine(pOut, g_aCopyrightCommentEmpty[enmCommentStyle].psz,
+                                                     g_aCopyrightCommentEmpty[enmCommentStyle].cch, enmEol);
+                                psz = pszEol + 1;
+                            } while (*psz != '\0');
+
+                            /* Final comment line. */
+                            if (!Info.fExternalLicense)
+                                ScmStreamPutLine(pOut, g_aCopyrightCommentEnd[enmCommentStyle].psz,
+                                                 g_aCopyrightCommentEnd[enmCommentStyle].cch, enmEol);
+                        }
                         else
-                            rc = ScmStreamGetStatus(pOut);
+                            Assert(Info.fExternalLicense);
 
                         /* Skip the copyright and license text in the input file. */
+                        rc = ScmStreamGetStatus(pOut);
                         if (RT_SUCCESS(rc))
                         {
                             iLine = Info.iLineComment + Info.cLinesComment;
