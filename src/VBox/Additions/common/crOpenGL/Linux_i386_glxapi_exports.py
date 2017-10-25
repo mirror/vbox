@@ -91,6 +91,8 @@ print("extern glxim")
 print("%endif")
 print("")
 
+## r=bird: This could all be done with macros in the assembler.
+
 for index in range(len(glx_functions)):
     func_name = glx_functions[index]
 
