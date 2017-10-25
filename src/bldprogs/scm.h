@@ -77,6 +77,7 @@ typedef enum SCMCOMMENTSTYLE
     kScmCommentStyle_Rem_Upper,
     kScmCommentStyle_Rem_Lower,
     kScmCommentStyle_Rem_Camel,
+    kScmCommentStyle_Tick,
     kScmCommentStyle_End
 } SCMCOMMENTSTYLE;
 
@@ -196,6 +197,7 @@ FNSCMREWRITER rewrite_Copyright_HashComment;
 FNSCMREWRITER rewrite_Copyright_PythonComment;
 FNSCMREWRITER rewrite_Copyright_RemComment;
 FNSCMREWRITER rewrite_Copyright_SemicolonComment;
+FNSCMREWRITER rewrite_Copyright_TickComment;
 FNSCMREWRITER rewrite_Makefile_kup;
 FNSCMREWRITER rewrite_Makefile_kmk;
 FNSCMREWRITER rewrite_FixFlowerBoxMarkers;

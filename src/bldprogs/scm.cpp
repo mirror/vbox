@@ -316,6 +316,14 @@ static PFNSCMREWRITER const g_aRewritersFor_BatchFiles[] =
     rewrite_Copyright_RemComment,
 };
 
+static PFNSCMREWRITER const g_aRewritersFor_BasicScripts[] =
+{
+    rewrite_ForceCRLF,
+    rewrite_ExpandTabs,
+    rewrite_StripTrailingBlanks,
+    rewrite_Copyright_TickComment,
+};
+
 static PFNSCMREWRITER const g_aRewritersFor_SedScripts[] =
 {
     rewrite_ForceLF,
@@ -356,7 +364,8 @@ static SCMCFGENTRY const g_aConfigs[] =
     { RT_ELEMENTS(g_aRewritersFor_ASM),          &g_aRewritersFor_ASM[0],          "*.asm|*.mac" },
     { RT_ELEMENTS(g_aRewritersFor_DEF),          &g_aRewritersFor_DEF[0],          "*.def" },
     { RT_ELEMENTS(g_aRewritersFor_ShellScripts), &g_aRewritersFor_ShellScripts[0], "*.sh|configure" },
-    { RT_ELEMENTS(g_aRewritersFor_BatchFiles),   &g_aRewritersFor_BatchFiles[0],   "*.bat|*.cmd|*.btm|*.vbs|*.ps1" },
+    { RT_ELEMENTS(g_aRewritersFor_BatchFiles),   &g_aRewritersFor_BatchFiles[0],   "*.bat|*.cmd|*.btm" },
+    { RT_ELEMENTS(g_aRewritersFor_BasicScripts), &g_aRewritersFor_BasicScripts[0], "*.vbs|*.vb" },
     { RT_ELEMENTS(g_aRewritersFor_SedScripts),   &g_aRewritersFor_SedScripts[0],   "*.sed" },
     { RT_ELEMENTS(g_aRewritersFor_Python),       &g_aRewritersFor_Python[0],       "*.py" },
     { RT_ELEMENTS(g_aRewritersFor_ScmSettings),  &g_aRewritersFor_ScmSettings[0],  "*.scm-settings" },

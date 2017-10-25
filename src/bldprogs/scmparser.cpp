@@ -124,6 +124,21 @@ static size_t isBatchComment(const char *pchLine, size_t cchLine, bool fSecond)
     return 0;
 }
 
+/**
+ * Callback for checking if tick comment.
+ */
+static size_t isTickComment(const char *pchLine, size_t cchLine, bool fSecond)
+{
+    if (cchLine >= 1 && *pchLine == '\'')
+    {
+        if (!fSecond)
+            return 1;
+        if (cchLine >= 2 && pchLine[1] == '\'')
+            return 2;
+    }
+    return 0;
+}
+
 
 /**
  * Common worker for enumeratePythonComments and enumerateSimpleLineComments.
@@ -901,6 +916,9 @@ int ScmEnumerateComments(PSCMSTREAM pIn, SCMCOMMENTSTYLE enmCommentStyle, PFNSCM
         case kScmCommentStyle_Rem_Lower:
         case kScmCommentStyle_Rem_Camel:
             return enumerateBatchComments(pIn, pfnCallback, pvUser);
+
+        case kScmCommentStyle_Tick:
+            return enumerateSimpleLineComments(pIn, '\'', isTickComment, pfnCallback, pvUser);
 
         default:
             AssertFailedReturn(VERR_INVALID_PARAMETER);
