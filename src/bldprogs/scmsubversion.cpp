@@ -958,7 +958,7 @@ static int scmSvnIsObjectInWorkingCopy(const char *pszPath)
                 apr_hash_t         *pHash = NULL;
                 svn_opt_revision_t  Rev;
                 RT_ZERO(Rev);
-                Rev.kind          = svn_opt_revision_base;
+                Rev.kind          = svn_opt_revision_working;
                 Rev.value.number  = -1L;
                 pErr = g_pfnSvnClientPropGet4(&pHash, "svn:no-such-property", szAbsPath, &Rev, &Rev,
                                               NULL /*pActualRev*/, svn_depth_empty, NULL /*pChangeList*/, pCtx, pPool, pPool);
@@ -1096,7 +1096,7 @@ static int scmSvnQueryPropertyUsingApi(const char *pszPath, const char *pszPrope
                 apr_hash_t         *pHash = NULL;
                 svn_opt_revision_t  Rev;
                 RT_ZERO(Rev);
-                Rev.kind          = svn_opt_revision_base;
+                Rev.kind          = svn_opt_revision_working;
                 Rev.value.number  = -1L;
                 pErr = g_pfnSvnClientPropGet4(&pHash, pszProperty, szAbsPath, &Rev, &Rev,
                                               NULL /*pActualRev*/, svn_depth_empty, NULL /*pChangeList*/, pCtx, pPool, pPool);
