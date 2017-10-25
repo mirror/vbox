@@ -1,7 +1,10 @@
 # Oracle VM VirtualBox
+# $Id$
+## @file
 # VirtualBox Linux Guest Additions installer - autologon module
 #
 
+#
 # Copyright (C) 2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as

@@ -316,7 +316,7 @@ done
 # If the currently installed Additions have provided an uninstallation hook, try
 # that first.
 if test -x "${PUBLIC_UNINSTALL_HOOK}"; then
-  "${PUBLIC_UNINSTALL_HOOK}" 1>&2 || 
+  "${PUBLIC_UNINSTALL_HOOK}" 1>&2 ||
     abort "Failed to remove existing installation.  Aborting..."
 fi
 

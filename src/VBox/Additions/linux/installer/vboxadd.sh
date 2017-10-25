@@ -1,5 +1,6 @@
 #! /bin/sh
-#
+# $Id$
+## @file
 # Linux Additions kernel module init script ($Revision$)
 #
 

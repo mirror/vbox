@@ -1,6 +1,9 @@
 #!/bin/sh
-#
+# $Id$
+## @file
 # Linux Additions Guest Additions service daemon init script.
+#
+
 #
 # Copyright (C) 2006-2012 Oracle Corporation
 #

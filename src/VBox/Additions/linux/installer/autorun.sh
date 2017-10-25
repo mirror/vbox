@@ -1,6 +1,6 @@
 #!/bin/sh
 # $Id$
-#
+## @file
 # VirtualBox Guest Additions installation script for *nix guests
 #
 

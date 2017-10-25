@@ -1,5 +1,6 @@
 #! /bin/sh
-#
+# $Id$
+## @file
 # Linux Additions X11 setup init script ($Revision$)
 #
 
