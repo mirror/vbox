@@ -22,8 +22,12 @@
 --filter-out-dirs  "/onnv/uts/."
 
 --filter-out-files "/generated/dt_*"
+--filter-out-files "/CDDL-ONLY"
 
-
+# This is CDDL licensed
 --license-ose-cddl
 VBoxDTraceMain.cpp: --license-mit
+
+# MIT license on the samples.
+/Samples/*: --license-mit
 
