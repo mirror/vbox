@@ -1,11 +1,10 @@
-#!/bin/bash
 # $Id$
 ## @file
-# Driver unload script.
+# Source code massager settings for haiku guest additions.
 #
 
 #
-# Copyright (C) 2012-2017 Oracle Corporation
+# Copyright (C) 2010-2017 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -16,11 +15,8 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-basedir=/boot/home/config/add-ons/
-rm -f $basedir/input_server/devices/VBoxMouse
-rm -f $basedir/kernel/drivers/bin/vboxdev
-rm -f $basedir/kernel/drivers/dev/misc/vboxdev
-rm -f $basedir/kernel/file_systems/vboxsf
-rm -f $basedir/kernel/generic/vboxguest
-rm -rf /boot/apps/VBoxAdditions
+
+/VBoxTray/VBoxTray.rdef: --treat-as .rc
+
+
 
