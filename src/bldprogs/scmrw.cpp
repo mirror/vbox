@@ -47,6 +47,7 @@ typedef enum SCMLICENSETYPE
     kScmLicenseType_Invalid = 0,
     kScmLicenseType_OseGpl,
     kScmLicenseType_OseDualGplCddl,
+    kScmLicenseType_OseCddl,
     kScmLicenseType_VBoxLgpl,
     kScmLicenseType_Mit,
     kScmLicenseType_Confidential
@@ -144,6 +145,16 @@ static const char g_szVBoxOseDualGplCddl[] =
     "\n"
     "You may elect to license modified versions of this file under the\n"
     "terms and conditions of either the GPL or the CDDL or both.\n";
+
+/** --license-ose-cddl   */
+static const char g_szVBoxOseCddl[] =
+    "This file is part of VirtualBox Open Source Edition (OSE), as\n"
+    "available from http://www.virtualbox.org. This file is free software;\n"
+    "you can redistribute it and/or modify it under the terms of the Common\n"
+    "Development and Distribution License Version 1.0 (CDDL) only, as it\n"
+    "comes in the \"COPYING.CDDL\" file of the VirtualBox OSE distribution.\n"
+    "VirtualBox OSE is distributed in the hope that it will be useful, but\n"
+    "WITHOUT ANY WARRANTY of any kind.\n";
 
 /** --license-lgpl */
 static const char g_szVBoxLgpl[] =
@@ -267,6 +278,7 @@ static const SCMLICENSETEXT g_aLicenses[] =
 {
     { kScmLicenseType_OseGpl,           kScmLicense_OseGpl,         RT_STR_TUPLE(g_szVBoxOseGpl)},
     { kScmLicenseType_OseDualGplCddl,   kScmLicense_OseDualGplCddl, RT_STR_TUPLE(g_szVBoxOseDualGplCddl) },
+    { kScmLicenseType_OseCddl,          kScmLicense_OseCddl,        RT_STR_TUPLE(g_szVBoxOseCddl) },
     { kScmLicenseType_VBoxLgpl,         kScmLicense_Lgpl,           RT_STR_TUPLE(g_szVBoxLgpl)},
     { kScmLicenseType_Confidential,     kScmLicense_End,            RT_STR_TUPLE(g_szOracleConfidential) },
     { kScmLicenseType_Invalid,          kScmLicense_End,            NULL, 0 },
