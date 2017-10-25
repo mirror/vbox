@@ -722,7 +722,7 @@ bool rewrite_AdjustTrailingLines(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM 
 }
 
 /**
- * Make sure there is no svn:executable keyword on the current file.
+ * Make sure there is no svn:executable property on the current file.
  *
  * @returns false - the state carries these kinds of changes.
  * @param   pState              The rewriter state.
@@ -745,6 +745,109 @@ bool rewrite_SvnNoExecutable(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
         if (RT_FAILURE(rc))
             ScmError(pState, rc, "ScmSvnSetProperty: %Rrc\n", rc);
     }
+    return false;
+}
+
+/**
+ * Make sure there is no svn:keywords property on the current file.
+ *
+ * @returns false - the state carries these kinds of changes.
+ * @param   pState              The rewriter state.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
+ */
+bool rewrite_SvnNoKeywords(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    RT_NOREF2(pIn, pOut);
+    if (   !pSettings->fSetSvnExecutable
+        || !ScmSvnIsInWorkingCopy(pState))
+        return false;
+
+    int rc = ScmSvnQueryProperty(pState, "svn:keywords", NULL);
+    if (RT_SUCCESS(rc))
+    {
+        ScmVerbose(pState, 2, " * removing svn:keywords\n");
+        rc = ScmSvnDelProperty(pState, "svn:keywords");
+        if (RT_FAILURE(rc))
+            ScmError(pState, rc, "ScmSvnSetProperty: %Rrc\n", rc);
+    }
+    return false;
+}
+
+/**
+ * Make sure there is no svn:eol-style property on the current file.
+ *
+ * @returns false - the state carries these kinds of changes.
+ * @param   pState              The rewriter state.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
+ */
+bool rewrite_SvnNoEolStyle(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    RT_NOREF2(pIn, pOut);
+    if (   !pSettings->fSetSvnExecutable
+        || !ScmSvnIsInWorkingCopy(pState))
+        return false;
+
+    int rc = ScmSvnQueryProperty(pState, "svn:eol-style", NULL);
+    if (RT_SUCCESS(rc))
+    {
+        ScmVerbose(pState, 2, " * removing svn:eol-style\n");
+        rc = ScmSvnDelProperty(pState, "svn:eol-style");
+        if (RT_FAILURE(rc))
+            ScmError(pState, rc, "ScmSvnSetProperty: %Rrc\n", rc);
+    }
+    return false;
+}
+
+/**
+ * Makes sure the svn properties are appropriate for a binary.
+ *
+ * @returns false - the state carries these kinds of changes.
+ * @param   pState              The rewriter state.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
+ */
+bool rewrite_SvnBinary(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    RT_NOREF2(pIn, pOut);
+    if (   !pSettings->fSetSvnExecutable
+        || !ScmSvnIsInWorkingCopy(pState))
+        return false;
+
+    /* remove svn:eol-style and svn:keywords */
+    static const char * const s_apszRemove[] = { "svn:eol-style", "svn:keywords" };
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_apszRemove); i++)
+    {
+        char *pszValue;
+        int rc = ScmSvnQueryProperty(pState, s_apszRemove[i], &pszValue);
+        if (RT_SUCCESS(rc))
+        {
+            ScmVerbose(pState, 2, " * removing %s=%s\n", s_apszRemove[i], pszValue);
+            RTStrFree(pszValue);
+            rc = ScmSvnDelProperty(pState, s_apszRemove[i]);
+            if (RT_FAILURE(rc))
+                ScmError(pState, rc, "ScmSvnSetProperty(,%s): %Rrc\n", s_apszRemove[i], rc);
+        }
+        else if (rc != VERR_NOT_FOUND)
+            ScmError(pState, rc, "ScmSvnQueryProperty: %Rrc\n", rc);
+    }
+
+    /* Make sure there is a svn:mime-type set. */
+    int rc = ScmSvnQueryProperty(pState, "svn:mime-type", NULL);
+    if (rc == VERR_NOT_FOUND)
+    {
+        ScmVerbose(pState, 2, " * settings svn:mime-type\n");
+        rc = ScmSvnSetProperty(pState, "svn:mime-type", "application/octet-stream");
+        if (RT_FAILURE(rc))
+            ScmError(pState, rc, "ScmSvnSetProperty: %Rrc\n", rc);
+    }
+    else if (RT_FAILURE(rc))
+        ScmError(pState, rc, "ScmSvnQueryProperty: %Rrc\n", rc);
+
     return false;
 }
 
@@ -799,7 +902,6 @@ bool rewrite_SvnKeywords(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PC
 
     return false;
 }
-
 
 /**
  * Compares two strings word-by-word, ignoring spaces, punctuation and case.

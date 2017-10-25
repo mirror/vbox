@@ -353,22 +353,30 @@ static PFNSCMREWRITER const g_aRewritersFor_ScmSettings[] =
     rewrite_Copyright_HashComment,
 };
 
+static PFNSCMREWRITER const g_aRewritersFor_Images[] =
+{
+    rewrite_SvnNoExecutable,
+    rewrite_SvnBinary,
+};
 
+#define SCM_CFG_ENTRY(a_aRewriters, a_fBinary, a_szFilePatterns) \
+    { RT_ELEMENTS(a_aRewriters), &a_aRewriters[0], a_fBinary, a_szFilePatterns }
 static SCMCFGENTRY const g_aConfigs[] =
 {
-    { RT_ELEMENTS(g_aRewritersFor_Makefile_kup), &g_aRewritersFor_Makefile_kup[0], "Makefile.kup" },
-    { RT_ELEMENTS(g_aRewritersFor_Makefile_kmk), &g_aRewritersFor_Makefile_kmk[0], "Makefile.kmk|Config.kmk" },
-    { RT_ELEMENTS(g_aRewritersFor_C_and_CPP),    &g_aRewritersFor_C_and_CPP[0],    "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc|*.m|*.mm" },
-    { RT_ELEMENTS(g_aRewritersFor_H_and_HPP),    &g_aRewritersFor_H_and_HPP[0],    "*.h|*.hpp" },
-    { RT_ELEMENTS(g_aRewritersFor_RC),           &g_aRewritersFor_RC[0],           "*.rc" },
-    { RT_ELEMENTS(g_aRewritersFor_ASM),          &g_aRewritersFor_ASM[0],          "*.asm|*.mac" },
-    { RT_ELEMENTS(g_aRewritersFor_DEF),          &g_aRewritersFor_DEF[0],          "*.def" },
-    { RT_ELEMENTS(g_aRewritersFor_ShellScripts), &g_aRewritersFor_ShellScripts[0], "*.sh|configure" },
-    { RT_ELEMENTS(g_aRewritersFor_BatchFiles),   &g_aRewritersFor_BatchFiles[0],   "*.bat|*.cmd|*.btm" },
-    { RT_ELEMENTS(g_aRewritersFor_BasicScripts), &g_aRewritersFor_BasicScripts[0], "*.vbs|*.vb" },
-    { RT_ELEMENTS(g_aRewritersFor_SedScripts),   &g_aRewritersFor_SedScripts[0],   "*.sed" },
-    { RT_ELEMENTS(g_aRewritersFor_Python),       &g_aRewritersFor_Python[0],       "*.py" },
-    { RT_ELEMENTS(g_aRewritersFor_ScmSettings),  &g_aRewritersFor_ScmSettings[0],  "*.scm-settings" },
+    SCM_CFG_ENTRY(g_aRewritersFor_Makefile_kup, false, "Makefile.kup" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Makefile_kmk, false, "Makefile.kmk|Config.kmk" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_C_and_CPP,    false, "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc|*.m|*.mm" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_H_and_HPP,    false, "*.h|*.hpp" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_RC,           false, "*.rc" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_ASM,          false, "*.asm|*.mac" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_DEF,          false, "*.def" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_ShellScripts, false, "*.sh|configure" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_BatchFiles,   false, "*.bat|*.cmd|*.btm" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_BasicScripts, false, "*.vbs|*.vb" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_SedScripts,   false, "*.sed" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Python,       false, "*.py" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_ScmSettings,  false, "*.scm-settings" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Images,       true,  "*.png|*.bmp|*.jpg" ),
 };
 
 
@@ -1401,7 +1409,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
         RTMsgError("Failed to read '%s': %Rrc\n", pszFilename, rc);
         return rc;
     }
-    if (ScmStreamIsText(&Stream1))
+    if (ScmStreamIsText(&Stream1) || pCfg->fBinary)
     {
         ScmVerboseBanner(pState, 3);
 
@@ -1460,7 +1468,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                             /*
                              * If rewritten, write it back to disk.
                              */
-                            if (fModified)
+                            if (fModified && !pCfg->fBinary)
                             {
                                 if (!g_fDryRun)
                                 {
@@ -1480,6 +1488,8 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                                 }
                                 g_cFilesModified++;
                             }
+                            else if (fModified)
+                                rc = RTMsgErrorRc(VERR_INTERNAL_ERROR, "Rewriters modified binary file! Impossible!");
 
                             /*
                              * If pending SVN property changes, apply them.

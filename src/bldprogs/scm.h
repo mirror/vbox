@@ -191,6 +191,9 @@ FNSCMREWRITER rewrite_ForceLF;
 FNSCMREWRITER rewrite_ForceCRLF;
 FNSCMREWRITER rewrite_AdjustTrailingLines;
 FNSCMREWRITER rewrite_SvnNoExecutable;
+FNSCMREWRITER rewrite_SvnNoKeyword;
+FNSCMREWRITER rewrite_SvnNoEolStyle;
+FNSCMREWRITER rewrite_SvnBinary;
 FNSCMREWRITER rewrite_SvnKeywords;
 FNSCMREWRITER rewrite_Copyright_CstyleComment;
 FNSCMREWRITER rewrite_Copyright_HashComment;
@@ -219,6 +222,8 @@ typedef struct SCMCFGENTRY
     size_t          cRewriters;
     /** Pointer to an array of rewriters. */
     PFNSCMREWRITER const  *papfnRewriter;
+    /** Set if the entry handles binaries.  */
+    bool            fBinary;
     /** File pattern (simple).  */
     const char     *pszFilePattern;
 } SCMCFGENTRY;
