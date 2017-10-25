@@ -536,6 +536,7 @@ static int drvvdSetWritable(PVBOXDISK pThis)
     return rc;
 }
 
+
 /*********************************************************************************************************************************
 *   Error reporting callback                                                                                                     *
 *********************************************************************************************************************************/
@@ -3112,7 +3113,7 @@ DECLINLINE(int) drvvdMediaExIoReqBufAlloc(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
     int rc = VERR_NOT_SUPPORTED;
     LogFlowFunc(("pThis=%#p pIoReq=%#p cb=%zu\n", pThis, pIoReq, cb));
 
-/** @todo: This does not work at all with encryption enabled because the encryption plugin
+/** @todo This does not work at all with encryption enabled because the encryption plugin
  *         encrypts the data in place trashing guest memory and causing data corruption later on!
  *
  * DO NOT ENABLE UNLESS YOU WANT YOUR DATA SHREDDED!!!
@@ -4516,6 +4517,7 @@ static void drvvdStatsDeregister(PVBOXDISK pThis)
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsDiscard);
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsPerSec);
 }
+
 
 /*********************************************************************************************************************************
 *   Base interface methods                                                                                                       *

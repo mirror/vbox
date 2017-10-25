@@ -40,6 +40,7 @@
 #include "VBoxDD.h"
 #include "IOBufMgmt.h"
 
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -503,6 +504,7 @@ static int drvramdiskDiscardRecords(PDRVRAMDISK pThis, PCRTRANGE paRanges, unsig
 
 /* -=-=-=-=- IMedia -=-=-=-=- */
 
+
 /*********************************************************************************************************************************
 *   Media interface methods                                                                                                      *
 *********************************************************************************************************************************/
@@ -720,7 +722,7 @@ DECLINLINE(int) drvramdiskMediaExIoReqBufSync(PDRVRAMDISK pThis, PPDMMEDIAEXIORE
  */
 DECLINLINE(unsigned) drvramdiskMediaExIoReqIdHash(PDMMEDIAEXIOREQID uIoReqId)
 {
-    return uIoReqId % DRVVD_VDIOREQ_ALLOC_BINS; /** @todo: Find something better? */
+    return uIoReqId % DRVVD_VDIOREQ_ALLOC_BINS; /** @todo Find something better? */
 }
 
 /**

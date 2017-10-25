@@ -2349,7 +2349,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
             /* Fast path for mailbox execution command. */
             if ((uVal == BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND) && (pBusLogic->uOperationCode == 0xff))
             {
-                ///@todo: Should fail if BL_STAT_INREQ is set
+                /// @todo Should fail if BL_STAT_INREQ is set
                 /* If there are no mailboxes configured, don't even try to do anything. */
                 if (pBusLogic->cMailbox)
                 {

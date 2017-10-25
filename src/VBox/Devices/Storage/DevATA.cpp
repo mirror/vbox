@@ -138,6 +138,7 @@
 
 /** @} */
 
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -2486,7 +2487,7 @@ static bool atapiR3ReadTrackInformationSS(ATADevState *s)
                                                             &cBlocks, &cbBlock, &enmDataForm);
             }
             else
-                rc = VERR_NOT_FOUND; /** @todo: Return lead-in information. */
+                rc = VERR_NOT_FOUND; /** @todo Return lead-in information. */
             break;
         }
         case 0x02:

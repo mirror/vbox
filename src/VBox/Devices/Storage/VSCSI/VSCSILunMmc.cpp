@@ -31,6 +31,7 @@
 
 #include "VSCSIInternal.h"
 
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -936,7 +937,7 @@ static int vscsiLunMmcReadTrackInformation(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQI
                                                          &cBlocks, &cbBlock, &enmDataForm);
             }
             else
-                rc = VERR_NOT_FOUND; /** @todo: Return lead-in information. */
+                rc = VERR_NOT_FOUND; /** @todo Return lead-in information. */
             break;
         }
         case 0x02:
