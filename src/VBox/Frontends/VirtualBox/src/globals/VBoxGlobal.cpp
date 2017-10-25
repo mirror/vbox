@@ -3563,7 +3563,7 @@ void VBoxGlobal::prepare()
             msgCenter().cannotInitCOM(rc);
         return;
     }
-    
+
 #ifdef VBOX_WITH_SDS
     // setup Client COM Security to enable impersonation required by VBOX_SDS
     HRESULT hrGUICoInitializeSecurity = CoInitializeSecurity(NULL,

@@ -82,7 +82,7 @@ public:
         AssertPtrReturn(parent(), QRect());
 
         /* Return the parent's rect for now: */
-        // TODO: Return sub-rect.
+        /// @todo Return sub-rect.
         return parent()->rect();
     }
 

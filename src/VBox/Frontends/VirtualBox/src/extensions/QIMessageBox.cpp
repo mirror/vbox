@@ -216,7 +216,7 @@ void QIMessageBox::prepare()
         AssertPtrReturnVoid(m_pDetailsContainer);
         {
             /* Configure container: */
-            connect(m_pDetailsContainer, &QIArrowSplitter::sigSizeHintChange, 
+            connect(m_pDetailsContainer, &QIArrowSplitter::sigSizeHintChange,
                     this, &QIMessageBox::sltUpdateSize);
             /* Add details-container into main-layout: */
             pMainLayout->addWidget(m_pDetailsContainer);

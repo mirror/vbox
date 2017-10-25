@@ -1133,7 +1133,7 @@ void UISnapshotPane::sltHandleItemChange(QTreeWidgetItem *pItem)
                 CSession comSession = vboxGlobal().openExistingSession(comSnapshot.GetMachine().GetId());
                 if (!comSession.isNull())
                 {
-                    // TODO: Add settings save validation.
+                    /// @todo Add settings save validation.
 
                     /* Save snapshot name: */
                     comSnapshot.SetName(pSnapshotItem->text(Column_Name));

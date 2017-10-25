@@ -330,7 +330,7 @@ void UISnapshotDetailsElement::prepare()
 
 
 /*********************************************************************************************************************************
-*   Class UIScreenshotViewer implementation.                                                                                   *
+*   Class UIScreenshotViewer implementation.                                                                                     *
 *********************************************************************************************************************************/
 
 UIScreenshotViewer::UIScreenshotViewer(const QPixmap &pixmapScreenshot,

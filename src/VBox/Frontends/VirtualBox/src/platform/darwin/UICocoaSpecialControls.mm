@@ -468,7 +468,7 @@ QAccessibleInterface *UIAccessibilityInterfaceForUICocoaSegmentedButtonSegment::
 
 QRect UIAccessibilityInterfaceForUICocoaSegmentedButtonSegment::rect() const
 {
-    // TODO: Return the -=real=- segment rectangle.
+    /// @todo Return the -=real=- segment rectangle.
     const QRect myRect = m_pParent->rect();
     return QRect(myRect.x() + myRect.width() / 2 * m_iIndex,
                  myRect.y(), myRect.width() / 2, myRect.height());

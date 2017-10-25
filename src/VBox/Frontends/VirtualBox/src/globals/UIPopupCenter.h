@@ -31,7 +31,7 @@ class QWidget;
 class UIPopupStack;
 class CAudioAdapter;
 class CConsole;
-class CEmulatedUSB; 
+class CEmulatedUSB;
 class CMachine;
 class CNetworkAdapter;
 class CVirtualBox;

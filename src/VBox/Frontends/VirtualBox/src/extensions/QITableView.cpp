@@ -167,7 +167,7 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class QIAccessibilityInterfaceForQITableViewCell implementation.                                                              *
+*   Class QIAccessibilityInterfaceForQITableViewCell implementation.                                                             *
 *********************************************************************************************************************************/
 
 QAccessibleInterface *QIAccessibilityInterfaceForQITableViewCell::parent() const

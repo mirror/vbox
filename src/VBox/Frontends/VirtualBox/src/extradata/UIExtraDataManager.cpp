@@ -244,7 +244,7 @@ void UIExtraDataEventHandler::sltPreprocessExtraDataCanChange(QString strMachine
         if (strKey.startsWith("GUI/"))
         {
             /* Check whether global extra-data property can be applied: */
-            // TODO: Here can be various extra-data flags handling.
+            /// @todo Here can be various extra-data flags handling.
             //       Generally we should check whether one or another flag feats some rule (like reg-exp).
             //       For each required strValue we should set fVeto = true; and fill strVetoReason = "with some text".
         }
@@ -259,7 +259,7 @@ void UIExtraDataEventHandler::sltPreprocessExtraDataChange(QString strMachineID,
         if (strKey.startsWith("GUI/"))
         {
             /* Apply global extra-data property: */
-            // TODO: Here can be various extra-data flags handling.
+            /// @todo Here can be various extra-data flags handling.
             //       Generally we should push one or another flag to various instances which want to handle
             //       those flags independently from UIExtraDataManager. Remember to process each required strValue
             //       from under the m_mutex lock (since we are in another thread) and unlock that m_mutex afterwards.
