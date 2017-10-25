@@ -431,7 +431,7 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY(g_aRewritersFor_SedScripts,       false, "*.sed" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Python,           false, "*.py" ),
     SCM_CFG_ENTRY(g_aRewritersFor_ScmSettings,      false, "*.scm-settings" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Images,           true,  "*.png|*.bmp|*.jpg" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Images,           true,  "*.png|*.bmp|*.jpg|*.pnm|*.ico" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Xslt,             false, "*.xsl" ),
     SCM_CFG_ENTRY(g_aRewritersFor_QtProject,        false, "*.pro" ),
     SCM_CFG_ENTRY(g_aRewritersFor_QtResourceFiles,  false, "*.qrc" ),
