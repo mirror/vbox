@@ -1,3 +1,6 @@
+from __future__ import print_function
+
+__copyright__ = \
 """
 Copyright (C) 2009-2016 Oracle Corporation
 
@@ -8,9 +11,8 @@ General Public License (GPL) as published by the Free Software
 Foundation, in version 2 as it comes in the "COPYING" file of the
 VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-"""
+""";
 
-from __future__ import print_function
 import sys
 
 #Note, this should match the fakedri_glxfuncsList.h order

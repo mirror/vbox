@@ -28,7 +28,7 @@ void FEEDBACKSPU_APIENTRY   feedbackspu_MakeCurrent( GLint window, GLint nativeW
 void FEEDBACKSPU_APIENTRY   feedbackspu_DestroyContext( GLint ctx );
 
 
-/*@todo Multithreading case. (See feedback_spu.self.RenderMode)*/
+/** @todo Multithreading case. (See feedback_spu.self.RenderMode)*/
 
 GLint FEEDBACKSPU_APIENTRY
 feedbackspu_VBoxCreateContext( GLint con, const char *dpyName, GLint visual, GLint shareCtx )
@@ -93,7 +93,7 @@ feedbackspu_MakeCurrent( GLint window, GLint nativeWindow, GLint ctx )
             feedback_spu.self.RenderMode(oldmode);
         }
     }
-    else 
+    else
     {
         crStateMakeCurrent(NULL);
     }

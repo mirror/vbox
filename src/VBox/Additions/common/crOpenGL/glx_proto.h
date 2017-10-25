@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * VirtualBox guest OpenGL DRI GLX header C prototypes
  */
 

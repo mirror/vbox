@@ -80,7 +80,7 @@ static GLint packspu_GetUniformLocationUncached(GLuint program, const char * nam
 
 GLint PACKSPU_APIENTRY packspu_GetUniformLocation(GLuint program, const char * name)
 {
-    if (!crStateIsProgramUniformsCached(program))  
+    if (!crStateIsProgramUniformsCached(program))
     {
         GET_THREAD(thread);
         int writeback = 1;

@@ -52,7 +52,7 @@ extern DECLEXPORT(GLXPixmap) VBOXGLXTAG(glXCreateGLXPixmapMESA)(Display *dpy, XV
 #endif
 
 /*Common glX functions*/
-extern DECLEXPORT(void) VBOXGLXTAG(glXCopyContext)( Display *dpy, GLXContext src, GLXContext dst, 
+extern DECLEXPORT(void) VBOXGLXTAG(glXCopyContext)( Display *dpy, GLXContext src, GLXContext dst,
 #if defined(SunOS)
 unsigned long mask);
 #else

@@ -23,7 +23,7 @@
 #include "cr_mem.h"
 #include <iprt/assert.h>
 
-/*@todo combine with the one from server_getshaders.c*/
+/** @todo combine with the one from server_getshaders.c*/
 typedef struct _crGetActive_t
 {
     GLsizei length;

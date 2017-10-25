@@ -28,7 +28,7 @@
 
 #include <iprt/win/windows.h>
 
-//TODO: consider
+/// @todo consider
 /* We can modify chronium dispatch table functions order to match the one required by ICD,
  * but it'd render us incompatible with other chromium SPUs and require more changes.
  * In current state, we can use unmodified binary chromium SPUs. Question is do we need it?
@@ -64,7 +64,7 @@ static GLuint desiredVisual = CR_RGB_BIT;
  */
 static GLuint ComputeVisBits( HDC hdc )
 {
-    PIXELFORMATDESCRIPTOR pfd; 
+    PIXELFORMATDESCRIPTOR pfd;
     int iPixelFormat;
     GLuint b = 0;
 
@@ -106,7 +106,7 @@ BOOL APIENTRY DrvValidateVersion(DWORD version)
         return TRUE;
     }
 
-    crDebug("DrvValidateVersion %x -> FALSE, going to use system default opengl32.dll\n", version); 
+    crDebug("DrvValidateVersion %x -> FALSE, going to use system default opengl32.dll\n", version);
     return FALSE;
 }
 
@@ -202,7 +202,7 @@ HGLRC APIENTRY DrvCreateLayerContext(HDC hdc, int iLayerPlane)
         crError( "DrvCreateLayerContext (%x,%x): unsupported", hdc, iLayerPlane);
         return NULL;
     }
-    
+
 }
 
 BOOL APIENTRY DrvDescribeLayerPlane(HDC hdc,int iPixelFormat,
@@ -391,7 +391,7 @@ BOOL APIENTRY DrvSwapBuffers(HDC hdc)
 
     CR_DDI_PROLOGUE();
     /*crDebug( "DrvSwapBuffers(0x%x) called", hdc );*/
-    window = stubGetWindowInfo(hdc);    
+    window = stubGetWindowInfo(hdc);
     stubSwapBuffers( window, 0 );
     return 1;
 }

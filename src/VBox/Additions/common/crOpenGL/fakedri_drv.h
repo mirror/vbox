@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VirtualBox guest OpenGL DRI header
  */
 
@@ -118,5 +116,5 @@ extern void VBOXGLXENTRYTAG(glXSelectEvent)(Display *dpy, GLXDrawable draw, unsi
 # undef GLXAPI_ENTRY
 #endif
 
-#endif /* ___CROPENGL_FAKEDRIDRV_H */
+#endif /* !___CROPENGL_FAKEDRIDRV_H */
 
