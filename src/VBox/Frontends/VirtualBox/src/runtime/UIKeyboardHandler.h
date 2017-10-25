@@ -172,6 +172,7 @@ protected:
     bool autoCaptureSetGlobally();
     bool viewHasFocus(ulong uScreenId);
     bool isSessionRunning();
+    bool isSessionStuck();
 
     UIMachineWindow* isItListenedWindow(QObject *pWatchedObject) const;
     UIMachineView* isItListenedView(QObject *pWatchedObject) const;
