@@ -5725,6 +5725,38 @@
         <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Choose Medium Location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location can not be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, ignored when taking snapshots.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This type of medium is attached directly, and can be used by several machines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumManager</name>
@@ -5910,6 +5942,26 @@
         <source>Refresh Disk Image Files (%1)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Current extension (*.%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose the location of this medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Move...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Disk Image File (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move selected disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumSizeEditor</name>
@@ -5926,39 +5978,15 @@
     <name>UIMediumTypeChangeDialog</name>
     <message>
         <source>Modify medium attributes</source>
-        <translation>Modifica els atributs del suport</translation>
+        <translation type="vanished">Modifica els atributs del suport</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ara canviareu els atributs del disc virtual ubicat a &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Seleccioneu un dels tipus de suport següents i premeu &lt;b&gt;%2&lt;/b&gt; per procedir o &lt;b&gt;%3&lt;/b&gt; en altre cas.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Ara canviareu els atributs del disc virtual ubicat a &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Seleccioneu un dels tipus de suport següents i premeu &lt;b&gt;%2&lt;/b&gt; per procedir o &lt;b&gt;%3&lt;/b&gt; en altre cas.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose mode:</source>
-        <translation>Trieu el tipus de suport:</translation>
-    </message>
-    <message>
-        <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Trieu el tipus de suport:</translation>
     </message>
 </context>
 <context>
@@ -7159,6 +7187,10 @@
         <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Failed to create the virtual disk image storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniToolBar</name>
@@ -8340,31 +8372,31 @@
     <message>
         <source>%1_copy</source>
         <comment>copied virtual hard drive name</comment>
-        <translation>%1_còpia</translation>
+        <translation type="vanished">%1_còpia</translation>
     </message>
     <message>
         <source>Copy Virtual Hard Disk</source>
-        <translation>Copia el disc dur virtual</translation>
+        <translation type="vanished">Copia el disc dur virtual</translation>
     </message>
     <message>
         <source>Hard disk to copy</source>
-        <translation>Disc dur que es copiarà</translation>
+        <translation type="vanished">Disc dur que es copiarà</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual hard disk file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu el disc dur virtual que voleu seleccionar si no ho està encara. Podeu triar un de la llista o fer servir la icona de carpeta per seleccionar-ne un altre.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Seleccioneu el disc dur virtual que voleu seleccionar si no ho està encara. Podeu triar un de la llista o fer servir la icona de carpeta per seleccionar-ne un altre.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file to copy...</source>
-        <translation>Seleccioneu un fitxer de disc dur virtual per copiar...</translation>
+        <translation type="vanished">Seleccioneu un fitxer de disc dur virtual per copiar...</translation>
     </message>
     <message>
         <source>Hard disk file type</source>
-        <translation>Tipus de fitxer de disc dur</translation>
+        <translation type="vanished">Tipus de fitxer de disc dur</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation>Seleccioneu el tipus de fitxer que voleu crear per al disc dur virtual nou. Si no necessiteu cap altre programari de virtualització, podeu deixar aquest camp sense canvis.</translation>
+        <translation type="vanished">Seleccioneu el tipus de fitxer que voleu crear per al disc dur virtual nou. Si no necessiteu cap altre programari de virtualització, podeu deixar aquest camp sense canvis.</translation>
     </message>
     <message>
         <source>Storage on physical hard disk</source>
@@ -8372,47 +8404,120 @@
     </message>
     <message>
         <source>Please choose whether the new virtual hard disk file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation>Seleccioneu si el fitxer de disc dur ha de créixer conforme s&apos;usa (ubicació dinàmica) o bé si s&apos;ha de crear amb la mida màxima assignada (mida fixa).</translation>
+        <translation type="vanished">Seleccioneu si el fitxer de disc dur ha de créixer conforme s&apos;usa (ubicació dinàmica) o bé si s&apos;ha de crear amb la mida màxima assignada (mida fixa).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard disk file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Un disc dur &lt;b&gt;ubicat dinàmicament&lt;/b&gt; només farà servir espai al disc dur conforme creixi (fins a una &lt;b&gt;mida fixa&lt;/b&gt; màxima), tot i que no es reduirà l&apos;espai ocupat en cas d&apos;alliberar espai més tard.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Un disc dur &lt;b&gt;ubicat dinàmicament&lt;/b&gt; només farà servir espai al disc dur conforme creixi (fins a una &lt;b&gt;mida fixa&lt;/b&gt; màxima), tot i que no es reduirà l&apos;espai ocupat en cas d&apos;alliberar espai més tard.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Un fitxer de disc dur de &lt;b&gt;mida fixa&lt;/b&gt; pot requerir més temps per ser creat, però sol ser més ràpid.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Un fitxer de disc dur de &lt;b&gt;mida fixa&lt;/b&gt; pot requerir més temps per ser creat, però sol ser més ràpid.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation>&lt;p&gt;També podeu triar &lt;b&gt;dividir&lt;/b&gt; el fitxer de disc dur en diversos fitxers de fins a 2GB cada un. Això és útil principalment si voleu emmagatzemar la màquina virtual en dispositius USB o en sistemes antics que no poden gestionar fitxers molt grans.</translation>
+        <translation type="vanished">&lt;p&gt;També podeu triar &lt;b&gt;dividir&lt;/b&gt; el fitxer de disc dur en diversos fitxers de fins a 2GB cada un. Això és útil principalment si voleu emmagatzemar la màquina virtual en dispositius USB o en sistemes antics que no poden gestionar fitxers molt grans.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation>Seleccioneu una ubicació per al fitxer de disc dur virtual nou</translation>
+        <translation type="vanished">Seleccioneu una ubicació per al fitxer de disc dur virtual nou</translation>
     </message>
     <message>
         <source>New hard disk to create</source>
-        <translation>Disc dur nou que es crearà</translation>
+        <translation type="vanished">Disc dur nou que es crearà</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation>Introduïu el nom del disc dur virtual nou al camp següent o feu clic a la icona de carpeta per seleccionar una carpeta diferent on crear-lo.</translation>
+        <translation type="vanished">Introduïu el nom del disc dur virtual nou al camp següent o feu clic a la icona de carpeta per seleccionar una carpeta diferent on crear-lo.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual hard disk file...</source>
-        <translation>Seleccioneu una ubicació per al fitxer de disc dur virtual nou...</translation>
+        <translation type="vanished">Seleccioneu una ubicació per al fitxer de disc dur virtual nou...</translation>
     </message>
     <message>
         <source>Hard disk to &amp;copy</source>
-        <translation>Disc dur que es &amp;copiarà</translation>
+        <translation type="vanished">Disc dur que es &amp;copiarà</translation>
     </message>
     <message>
         <source>&amp;New hard disk to create</source>
-        <translation>Disc dur &amp;nou que es crearà</translation>
+        <translation type="vanished">Disc dur &amp;nou que es crearà</translation>
     </message>
     <message>
         <source>Hard disk file &amp;type</source>
-        <translation>&amp;Tipus de fitxer de disc dur</translation>
+        <translation type="vanished">&amp;Tipus de fitxer de disc dur</translation>
+    </message>
+    <message>
+        <source>Copy Virtual Disk Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk image to copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the virtual disk image file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual disk image file to copy...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk image file type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the type of file that you would like to use for the new virtual disk image. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose whether the new virtual disk image file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; disk image file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; disk image file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the disk image file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a location for new virtual disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New disk image to create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please type the name of the new virtual disk image file into the box below or click on the folder icon to select a different folder to create the file in.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a location for new virtual disk image file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1_copy</source>
+        <comment>copied virtual disk image name</comment>
+        <translation type="unfinished">%1_còpia</translation>
+    </message>
+    <message>
+        <source>Disk image to &amp;copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New disk image to create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk image file &amp;type</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
