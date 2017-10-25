@@ -4907,7 +4907,7 @@ static void vdFixupPCHSGeometry(PVDGEOMETRY pPCHS, uint64_t cbSize)
 }
 
 /**
- * internal: adjust PCHS geometry
+ * internal: adjust LCHS geometry
  */
 static void vdFixupLCHSGeometry(PVDGEOMETRY pLCHS, uint64_t cbSize)
 {
