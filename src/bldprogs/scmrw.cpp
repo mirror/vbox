@@ -1449,10 +1449,10 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
                             for (;;)
                             {
                                 const char *pszEol = strchr(psz, '\n');
-                                size_t cchLine = pszEol ? pszEol - psz : strlen(psz);
+                                size_t cchContribLine = pszEol ? pszEol - psz : strlen(psz);
                                 ScmStreamWrite(pOut, g_aCopyrightCommentPrefix[enmCommentStyle].psz,
                                                g_aCopyrightCommentPrefix[enmCommentStyle].cch);
-                                ScmStreamWrite(pOut, psz, cchLine);
+                                ScmStreamWrite(pOut, psz, cchContribLine);
                                 ScmStreamPutEol(pOut, enmEol);
                                 if (!pszEol)
                                     break;
