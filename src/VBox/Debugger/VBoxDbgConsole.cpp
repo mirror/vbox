@@ -177,7 +177,7 @@ VBoxDbgConsoleOutput::setColorGreenOnBlack()
        When used as a trigger, the checked is done automatically by Qt. */
     if (!m_pGreenOnBlackAction->isChecked())
         m_pGreenOnBlackAction->setChecked(true);
-    
+
     /* Make this setting persistent */
     if (m_pVirtualBox)
         m_pVirtualBox->SetExtraData(com::Bstr("DbgConsole/ColorScheme").raw(), com::Bstr("GreenOnBlack").raw());
@@ -214,7 +214,7 @@ VBoxDbgConsoleOutput::setFontCourier()
 
     if (!m_pCourierFontAction->isChecked())
         m_pCourierFontAction->setChecked(true);
-    
+
     /* Make this setting persistent */
     if (m_pVirtualBox)
         m_pVirtualBox->SetExtraData(com::Bstr("DbgConsole/Font").raw(), com::Bstr("Courier").raw());

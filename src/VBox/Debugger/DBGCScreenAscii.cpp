@@ -28,6 +28,7 @@
 
 #include "DBGCInternal.h"
 
+
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -239,7 +240,7 @@ DECLHIDDEN(void) dbgcScreenAsciiDestroy(DBGCSCREEN hScreen)
  * @param   pfnBlit             Blitting callback.
  * @param   pvUser              Opaque user data to pass to the dumper callback.
  * @param   fAddColors          Flag whether to use the color info inserting
- *                              appropriate escape sequences. 
+ *                              appropriate escape sequences.
  */
 DECLHIDDEN(int) dbgcScreenAsciiBlit(DBGCSCREEN hScreen, PFNDGCSCREENBLIT pfnBlit, void *pvUser, bool fAddColors)
 {
