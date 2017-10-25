@@ -17,3 +17,6 @@
 
 /VBoxSDLMain-darwin.h: --external-copyright
 /VBoxSDLMain-darwin.m: --external-copyright
+
+--filter-out-files /diff_SDL13_svn
+
