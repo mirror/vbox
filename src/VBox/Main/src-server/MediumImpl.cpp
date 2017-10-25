@@ -241,12 +241,12 @@ public:
 
         /* Set up a per-operation progress interface, can be used freely (for
          * binary operations you can use it either on the source or target). */
-        mVDIfProgress.pfnProgress = vdProgressCall;
+        mVDIfProgress = VDINTERFACEPROGRESS_INITALIZER(aProgress->i_vdProgressCallback);
         int vrc = VDInterfaceAdd(&mVDIfProgress.Core,
                                 "Medium::Task::vdInterfaceProgress",
                                 VDINTERFACETYPE_PROGRESS,
                                 mProgress,
-                                sizeof(VDINTERFACEPROGRESS),
+                                sizeof(mVDIfProgress),
                                 &mVDOperationIfaces);
         AssertRC(vrc);
         if (RT_FAILURE(vrc))
@@ -314,8 +314,6 @@ private:
     virtual HRESULT executeTask() = 0;
 
     const ComObjPtr<Progress> mProgress;
-
-    static DECLCALLBACK(int) vdProgressCall(void *pvUser, unsigned uPercent);
 
     VDINTERFACEPROGRESS mVDIfProgress;
 
@@ -799,34 +797,6 @@ struct Medium::CryptoFilterSettings
     VDINTERFACECONFIG vdIfCfg;
     VDINTERFACECRYPTO vdIfCrypto;
 };
-
-/**
- * PFNVDPROGRESS callback handler for Task operations.
- *
- * @param pvUser      Pointer to the Progress instance.
- * @param uPercent    Completion percentage (0-100).
- */
-/*static*/
-DECLCALLBACK(int) Medium::Task::vdProgressCall(void *pvUser, unsigned uPercent)
-{
-    Progress *that = static_cast<Progress *>(pvUser);
-
-    if (that != NULL)
-    {
-        /* update the progress object, capping it at 99% as the final percent
-         * is used for additional operations like setting the UUIDs and similar. */
-        HRESULT rc = that->SetCurrentOperationProgress(uPercent * 99 / 100);
-        if (FAILED(rc))
-        {
-            if (rc == E_FAIL)
-                return VERR_CANCELLED;
-            else
-                return VERR_INVALID_STATE;
-        }
-    }
-
-    return VINF_SUCCESS;
-}
 
 /**
  * Implementation code for the "create base" task.
