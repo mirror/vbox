@@ -668,7 +668,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                         {
                         case VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE:
                         case VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE:
-                            AssertFailed(); ///@todo
+                            AssertFailed(); /// @todo
                             fSkipSave = true;
                             break;
                         case VMSVGA3D_D3DRESTYPE_SURFACE:

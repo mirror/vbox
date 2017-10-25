@@ -2152,7 +2152,7 @@ int vmsvga3dBackSurfaceStretchBlt(PVGASTATE pThis, PVMSVGA3DSTATE pState,
                                   SVGA3dStretchBltMode enmMode, PVMSVGA3DCONTEXT pContext)
 {
     RT_NOREF(pThis);
-    RT_NOREF2(uDstFace, uSrcFace); ///@todo
+    RT_NOREF2(uDstFace, uSrcFace); /// @todo
 
     /* Activate the read and draw framebuffer objects. */
     pState->ext.glBindFramebuffer(GL_READ_FRAMEBUFFER, pContext->idReadFramebuffer);
@@ -2341,7 +2341,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                                   SVGA3dCopyBox const *pBox, PVMSVGA3DCONTEXT pContext, int rc, int iBox)
 {
     RT_NOREF(iBox);
-    RT_NOREF(uHostFace); ///@todo
+    RT_NOREF(uHostFace); /// @todo
 
     switch (pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK)
     {
@@ -2420,7 +2420,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                                (int32_t)cbSurfacePitch,
 #endif
                                GuestPtr,
-                               pBox->srcx * pSurface->cbBlock + pBox->srcy * cbGuestPitch, ///@todo compressed fmts
+                               pBox->srcx * pSurface->cbBlock + pBox->srcy * cbGuestPitch, /// @todo compressed fmts
                                cbGuestPitch,
                                pBox->w * pSurface->cbBlock,
                                pBox->h);

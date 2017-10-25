@@ -319,7 +319,7 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
                     switch (pSurface->enmD3DResType)
                     {
                         case VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE:
-                            AssertFailed(); ///@todo
+                            AssertFailed(); /// @todo
                             break;
 
                         case VMSVGA3D_D3DRESTYPE_SURFACE:
