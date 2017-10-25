@@ -861,6 +861,7 @@ HRESULT ListenerRecord::enqueue(IEvent *aEvent)
     if (queueSize > 1000 || (queueSize > 500 && sinceRead > 60 * 1000))
     {
         ::RTCritSectLeave(&mcsQLock);
+        LogRel(("Event: forcefully unregistering passive event listener %p due to excessive queue size\n", this));
         return E_ABORT;
     }
 
