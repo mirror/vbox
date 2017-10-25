@@ -267,6 +267,8 @@ typedef struct SCMSETTINGSBASE
     bool            fUpdateCopyrightYear;
     /** Only external copyright holders. */
     bool            fExternalCopyright;
+    /** Whether there should be a LGPL disclaimer. */
+    bool            fLgplDisclaimer;
     /** How to update the license. */
     SCMLICENSE      enmUpdateLicense;
 
