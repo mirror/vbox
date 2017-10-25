@@ -447,7 +447,7 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY(g_aRewritersFor_H_and_HPP,        false, "*.h|*.hpp" ),
     SCM_CFG_ENTRY(g_aRewritersFor_RC,               false, "*.rc" ),
     SCM_CFG_ENTRY(g_aRewritersFor_DTrace,           false, "*.d" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_ASM,              false, "*.asm|*.mac" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_ASM,              false, "*.asm|*.mac|*.inc" ),
     SCM_CFG_ENTRY(g_aRewritersFor_DEF,              false, "*.def" ),
     SCM_CFG_ENTRY(g_aRewritersFor_ShellScripts,     false, "*.sh|configure" ),
     SCM_CFG_ENTRY(g_aRewritersFor_BatchFiles,       false, "*.bat|*.cmd|*.btm" ),
