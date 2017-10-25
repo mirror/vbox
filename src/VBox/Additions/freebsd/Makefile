@@ -3,7 +3,6 @@
 #
 
 #
-#
 # Copyright (C) 2009-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as

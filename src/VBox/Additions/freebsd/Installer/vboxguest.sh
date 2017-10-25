@@ -1,6 +1,9 @@
 #!/bin/bash
-#
+# $Id$
+## @file
 # VirtualBox Guest Additions kernel module control script for FreeBSD.
+#
+
 #
 # Copyright (C) 2008-2010 Oracle Corporation
 #
