@@ -286,6 +286,8 @@ typedef struct SCMSETTINGSBASE
     uint8_t         cchTab;
     /** Optimal source code width. */
     uint8_t         cchWidth;
+    /** Treat the file as if it had the given name (for finding SCMCFGENTRY). */
+    char           *pszTreatAsName;
     /** Only consider files matching these patterns.  This is only applied to the
      *  base names. */
     char           *pszFilterFiles;

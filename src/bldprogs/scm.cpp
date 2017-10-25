@@ -101,6 +101,7 @@ typedef enum SCMOPT
     SCMOPT_DONT_SET_SVN_KEYWORDS,
     SCMOPT_TAB_SIZE,
     SCMOPT_WIDTH,
+    SCMOPT_TREAT_AS,
     SCMOPT_FILTER_OUT_DIRS,
     SCMOPT_FILTER_FILES,
     SCMOPT_FILTER_OUT_FILES,
@@ -175,6 +176,7 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fSetSvnKeywords = */                        false,
     /* .cchTab = */                                 8,
     /* .cchWidth = */                               130,
+    /* .pszTreatAsName = */                         NULL,
     /* .pszFilterFiles = */                         (char *)"",
     /* .pszFilterOutFiles = */                      (char *)"*.exe|*.com|20*-*-*.log",
     /* .pszFilterOutDirs = */                       (char *)".svn|.hg|.git|CVS",
@@ -224,6 +226,7 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--dont-set-svn-keywords",            SCMOPT_DONT_SET_SVN_KEYWORDS,           RTGETOPT_REQ_NOTHING },
     { "--tab-size",                         SCMOPT_TAB_SIZE,                        RTGETOPT_REQ_UINT8   },
     { "--width",                            SCMOPT_WIDTH,                           RTGETOPT_REQ_UINT8   },
+    { "--treat-as",                         SCMOPT_TREAT_AS,                        RTGETOPT_REQ_STRING  },
     { "--filter-out-dirs",                  SCMOPT_FILTER_OUT_DIRS,                 RTGETOPT_REQ_STRING  },
     { "--filter-files",                     SCMOPT_FILTER_FILES,                    RTGETOPT_REQ_STRING  },
     { "--filter-out-files",                 SCMOPT_FILTER_OUT_FILES,                RTGETOPT_REQ_STRING  },
@@ -517,8 +520,14 @@ static int scmSettingsBaseInitAndCopy(PSCMSETTINGSBASE pSettings, PCSCMSETTINGSB
         {
             rc = RTStrDupEx(&pSettings->pszFilterOutDirs, pSrc->pszFilterOutDirs);
             if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
+            {
+                if (pSrc->pszTreatAsName)
+                    rc = RTStrDupEx(&pSettings->pszTreatAsName, pSrc->pszTreatAsName);
+                if (RT_SUCCESS(rc))
+                    return VINF_SUCCESS;
 
+                RTStrFree(pSettings->pszFilterOutDirs);
+            }
             RTStrFree(pSettings->pszFilterOutFiles);
         }
         RTStrFree(pSettings->pszFilterFiles);
@@ -527,6 +536,7 @@ static int scmSettingsBaseInitAndCopy(PSCMSETTINGSBASE pSettings, PCSCMSETTINGSB
     pSettings->pszFilterFiles = NULL;
     pSettings->pszFilterOutFiles = NULL;
     pSettings->pszFilterOutDirs = NULL;
+    pSettings->pszTreatAsName = NULL;
     return rc;
 }
 
@@ -561,6 +571,9 @@ static void scmSettingsBaseDelete(PSCMSETTINGSBASE pSettings)
 
         RTStrFree(pSettings->pszFilterOutDirs);
         pSettings->pszFilterOutDirs = NULL;
+
+        RTStrFree(pSettings->pszTreatAsName);
+        pSettings->pszTreatAsName = NULL;
     }
 }
 
@@ -734,6 +747,20 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
                 return VERR_OUT_OF_RANGE;
             }
             pSettings->cchWidth = pValueUnion->u8;
+            return VINF_SUCCESS;
+
+        case SCMOPT_TREAT_AS:
+            if (pSettings->pszTreatAsName)
+            {
+                RTStrFree(pSettings->pszTreatAsName);
+                pSettings->pszTreatAsName = NULL;
+            }
+            if (*pValueUnion->psz)
+            {
+                pSettings->pszTreatAsName = RTStrDup(pValueUnion->psz);
+                if (!pSettings->pszTreatAsName)
+                    return VERR_NO_MEMORY;
+            }
             return VINF_SUCCESS;
 
         case SCMOPT_FILTER_OUT_DIRS:
@@ -1509,12 +1536,26 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
      * Try find a matching rewrite config for this filename.
      */
     PCSCMCFGENTRY pCfg = NULL;
-    for (size_t iCfg = 0; iCfg < RT_ELEMENTS(g_aConfigs); iCfg++)
-        if (RTStrSimplePatternMultiMatch(g_aConfigs[iCfg].pszFilePattern, RTSTR_MAX, pszBasename, cchBasename, NULL))
-        {
-            pCfg = &g_aConfigs[iCfg];
-            break;
-        }
+    if (!pBaseSettings->pszTreatAsName)
+    {
+        for (size_t iCfg = 0; iCfg < RT_ELEMENTS(g_aConfigs); iCfg++)
+            if (RTStrSimplePatternMultiMatch(g_aConfigs[iCfg].pszFilePattern, RTSTR_MAX, pszBasename, cchBasename, NULL))
+            {
+                pCfg = &g_aConfigs[iCfg];
+                break;
+            }
+    }
+    else
+    {
+        size_t cchTreatAsName = strlen(pBaseSettings->pszTreatAsName);
+        for (size_t iCfg = 0; iCfg < RT_ELEMENTS(g_aConfigs); iCfg++)
+            if (RTStrSimplePatternMultiMatch(g_aConfigs[iCfg].pszFilePattern, RTSTR_MAX,
+                                             pBaseSettings->pszTreatAsName, cchTreatAsName, NULL))
+            {
+                pCfg = &g_aConfigs[iCfg];
+                break;
+            }
+    }
     if (!pCfg)
     {
         ScmVerbose(NULL, 2, "skipping '%s': no rewriters configured\n", pszFilename);
@@ -2031,6 +2072,11 @@ static void usage(PCRTGETOPTDEF paOpts, size_t cOpts)
             case SCMOPT_SET_SVN_KEYWORDS:       RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnKeywords); break;
             case SCMOPT_TAB_SIZE:               RTPrintf("      Default: %u\n", g_Defaults.cchTab); break;
             case SCMOPT_WIDTH:                  RTPrintf("      Default: %u\n", g_Defaults.cchWidth); break;
+
+            case SCMOPT_TREAT_AS:
+                RTPrintf("      For files not using the default extension.\n");
+                break;
+
             case SCMOPT_FILTER_OUT_DIRS:        RTPrintf("      Default: %s\n", g_Defaults.pszFilterOutDirs); break;
             case SCMOPT_FILTER_FILES:           RTPrintf("      Default: %s\n", g_Defaults.pszFilterFiles); break;
             case SCMOPT_FILTER_OUT_FILES:       RTPrintf("      Default: %s\n", g_Defaults.pszFilterOutFiles); break;
