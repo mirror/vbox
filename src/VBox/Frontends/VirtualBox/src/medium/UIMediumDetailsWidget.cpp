@@ -603,10 +603,6 @@ void UIMediumDetailsWidget::loadDataForOptions()
         /* Populate type combo-box: */
         switch (m_newData.m_enmType)
         {
-            case UIMediumType_DVD:
-            case UIMediumType_Floppy:
-                m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Readonly));
-                break;
             case UIMediumType_HardDisk:
                 m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Normal));
                 m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Immutable));
@@ -614,12 +610,22 @@ void UIMediumDetailsWidget::loadDataForOptions()
                 m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Shareable));
                 m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_MultiAttach));
                 break;
+            case UIMediumType_DVD:
+                m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Readonly));
+                break;
+            case UIMediumType_Floppy:
+                m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Writethrough));
+                m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Readonly));
+                break;
             default:
                 break;
         }
         /* Translate type combo-box: */
         for (int i = 0; i < m_pComboBoxType->count(); ++i)
+        {
             m_pComboBoxType->setItemText(i, gpConverter->toString(m_pComboBoxType->itemData(i).value<KMediumType>()));
+            m_pComboBoxType->setItemData(i, mediumTypeTip(m_pComboBoxType->itemData(i).value<KMediumType>()), Qt::ToolTipRole);
+        }
     }
 
     /* Choose the item with required type to be the current one: */
@@ -752,6 +758,31 @@ void UIMediumDetailsWidget::updateButtonStates()
     /* Notify listeners as well: */
     emit sigRejectAllowed(m_oldData != m_newData);
     emit sigAcceptAllowed((m_oldData != m_newData) && m_fValid);
+}
+
+/* static */
+QString UIMediumDetailsWidget::mediumTypeTip(KMediumType enmType)
+{
+    switch (enmType)
+    {
+        case KMediumType_Normal:
+            return tr("This type of medium is attached directly or indirectly, preserved when taking snapshots.");
+        case KMediumType_Immutable:
+            return tr("This type of medium is attached indirectly, changes are wiped out the next time the "
+                      "virtual machine is started.");
+        case KMediumType_Writethrough:
+            return tr("This type of medium is attached directly, ignored when taking snapshots.");
+        case KMediumType_Shareable:
+            return tr("This type of medium is attached directly, allowed to be used concurrently by several machines.");
+        case KMediumType_Readonly:
+            return tr("This type of medium is attached directly, and can be used by several machines.");
+        case KMediumType_MultiAttach:
+            return tr("This type of medium is attached indirectly, so that one base medium can be used for several "
+                      "VMs which have their own differencing medium to store their modifications.");
+        default:
+            break;
+    }
+    AssertFailedReturn(QString());
 }
 
 QWidget *UIMediumDetailsWidget::infoContainer(UIMediumType enmType) const

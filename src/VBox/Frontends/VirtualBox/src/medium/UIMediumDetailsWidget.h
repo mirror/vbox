@@ -252,6 +252,9 @@ private:
         void retranslateValidation(QWidget *pWidget = 0);
         /** Updates button states. */
         void updateButtonStates();
+
+        /** Returns tool-tip for passed medium @a enmType. */
+        static QString mediumTypeTip(KMediumType enmType);
     /** @} */
 
     /** @name Details stuff.
