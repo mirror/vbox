@@ -93,6 +93,10 @@
 --filter-out-files "/src/VBox/RDP/x11server/Init*.c"
 --filter-out-files "/vslick.h"
 --filter-out-files "/tools/envSub.cmd"
+--filter-out-files "*/PkgInfo"
+--filter-out-files "*/*-PkgInfo"
+--filter-out-files "*.plist"
+--filter-out-files "*/Doxyfile*"
 
 
 #
