@@ -241,13 +241,13 @@ public:
 
         /* Set up a per-operation progress interface, can be used freely (for
          * binary operations you can use it either on the source or target). */
-        mVDIfProgress = VDINTERFACEPROGRESS_INITALIZER(aProgress->i_vdProgressCallback);
+        mVDIfProgress.pfnProgress = aProgress->i_vdProgressCallback;
         int vrc = VDInterfaceAdd(&mVDIfProgress.Core,
-                                "Medium::Task::vdInterfaceProgress",
-                                VDINTERFACETYPE_PROGRESS,
-                                mProgress,
-                                sizeof(mVDIfProgress),
-                                &mVDOperationIfaces);
+                                 "Medium::Task::vdInterfaceProgress",
+                                 VDINTERFACETYPE_PROGRESS,
+                                 mProgress,
+                                 sizeof(mVDIfProgress),
+                                 &mVDOperationIfaces);
         AssertRC(vrc);
         if (RT_FAILURE(vrc))
             mRC = E_FAIL;
