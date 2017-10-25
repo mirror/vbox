@@ -380,6 +380,17 @@ static PFNSCMREWRITER const g_aRewritersFor_Xslt[] =
     /** @todo copyright is in an XML comment. */
 };
 
+static PFNSCMREWRITER const g_aRewritersFor_Xml[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_ExpandTabs,
+    rewrite_StripTrailingBlanks,
+    rewrite_AdjustTrailingLines,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords,
+    /** @todo copyright is in an XML comment. */
+};
+
 static PFNSCMREWRITER const g_aRewritersFor_QtProject[] =
 {
     rewrite_ForceNativeEol,
@@ -433,6 +444,7 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY(g_aRewritersFor_ScmSettings,      false, "*.scm-settings" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Images,           true,  "*.png|*.bmp|*.jpg|*.pnm|*.ico" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Xslt,             false, "*.xsl" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Xml,              false, "*.xml" ),
     SCM_CFG_ENTRY(g_aRewritersFor_QtProject,        false, "*.pro" ),
     SCM_CFG_ENTRY(g_aRewritersFor_QtResourceFiles,  false, "*.qrc" ),
     SCM_CFG_ENTRY(g_aRewritersFor_QtTranslations,   false, "*.ts" ),
