@@ -359,24 +359,62 @@ static PFNSCMREWRITER const g_aRewritersFor_Images[] =
     rewrite_SvnBinary,
 };
 
+static PFNSCMREWRITER const g_aRewritersFor_Xslt[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_ExpandTabs,
+    rewrite_StripTrailingBlanks,
+    rewrite_AdjustTrailingLines,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords,
+    /** @todo copyright is in an XML comment. */
+};
+
+static PFNSCMREWRITER const g_aRewritersFor_QtResourceFiles[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords,
+    /** @todo figure out copyright for Qt resource XML files. */
+};
+
+static PFNSCMREWRITER const g_aRewritersFor_QtTranslations[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_SvnNoExecutable,
+};
+
+static PFNSCMREWRITER const g_aRewritersFor_QtUiFiles[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords,
+    /** @todo copyright is in an XML 'comment' element. */
+};
+
+
 #define SCM_CFG_ENTRY(a_aRewriters, a_fBinary, a_szFilePatterns) \
     { RT_ELEMENTS(a_aRewriters), &a_aRewriters[0], a_fBinary, a_szFilePatterns }
 static SCMCFGENTRY const g_aConfigs[] =
 {
-    SCM_CFG_ENTRY(g_aRewritersFor_Makefile_kup, false, "Makefile.kup" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Makefile_kmk, false, "Makefile.kmk|Config.kmk" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_C_and_CPP,    false, "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc|*.m|*.mm" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_H_and_HPP,    false, "*.h|*.hpp" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_RC,           false, "*.rc" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_ASM,          false, "*.asm|*.mac" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_DEF,          false, "*.def" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_ShellScripts, false, "*.sh|configure" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_BatchFiles,   false, "*.bat|*.cmd|*.btm" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_BasicScripts, false, "*.vbs|*.vb" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_SedScripts,   false, "*.sed" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Python,       false, "*.py" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_ScmSettings,  false, "*.scm-settings" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Images,       true,  "*.png|*.bmp|*.jpg" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Makefile_kup,     false, "Makefile.kup" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Makefile_kmk,     false, "*.kmk" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_C_and_CPP,        false, "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc|*.m|*.mm" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_H_and_HPP,        false, "*.h|*.hpp" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_RC,               false, "*.rc" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_ASM,              false, "*.asm|*.mac" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_DEF,              false, "*.def" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_ShellScripts,     false, "*.sh|configure" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_BatchFiles,       false, "*.bat|*.cmd|*.btm" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_BasicScripts,     false, "*.vbs|*.vb" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_SedScripts,       false, "*.sed" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Python,           false, "*.py" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_ScmSettings,      false, "*.scm-settings" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Images,           true,  "*.png|*.bmp|*.jpg" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Xslt,             false, "*.xsl" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_QtResourceFiles,  false, "*.qrc" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_QtTranslations,   false, "*.ts" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_QtUiFiles,        false, "*.ui" ),
 };
 
 
@@ -1393,7 +1431,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
         }
     if (!pCfg)
     {
-        ScmVerbose(NULL, 4, "skipping '%s': no rewriters configured\n", pszFilename);
+        ScmVerbose(NULL, 2, "skipping '%s': no rewriters configured\n", pszFilename);
         g_cFilesNoRewriters++;
         return VINF_SUCCESS;
     }

@@ -1000,7 +1000,7 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
     PSCMCOPYRIGHTINFO pState = (PSCMCOPYRIGHTINFO)pvUser;
     Assert(strlen(pszBody) == cchBody);
     //RTPrintf("--- comment at %u, type %u ---\n%s\n--- end ---\n", pInfo->iLineStart, pInfo->enmType, pszBody);
-    ScmVerbose(pState->pState, 4,
+    ScmVerbose(pState->pState, 5,
                "--- comment at %u col %u, %u lines, type %u, %u lines before body, %u lines after body\n",
                pInfo->iLineStart, pInfo->offStart, pInfo->iLineEnd - pInfo->iLineStart + 1, pInfo->enmType,
                pInfo->cBlankLinesBefore, pInfo->cBlankLinesAfter);
@@ -1192,11 +1192,11 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
             }
 
             fFoundCopyright = true;
-            ScmVerbose(pState->pState, 2, "oracle copyright %u-%u: up-to-date=%RTbool well-formed=%RTbool\n",
+            ScmVerbose(pState->pState, 3, "oracle copyright %u-%u: up-to-date=%RTbool well-formed=%RTbool\n",
                        pState->uFirstYear, pState->uLastYear, pState->fUpToDateCopyright, pState->fWellFormedCopyright);
         }
         else
-            ScmVerbose(pState->pState, 2, "not oracle copyright: '%.*s'\n", pszEnd - pszBody, pszBody);
+            ScmVerbose(pState->pState, 3, "not oracle copyright: '%.*s'\n", pszEnd - pszBody, pszBody);
 
         if (!pszNextLine)
             return VINF_SUCCESS;
@@ -1282,7 +1282,7 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
                     /** @todo Check that the last comment line doesn't have any code on it. */
                     /** @todo Check that column 2 contains '*' for C/C++ files. */
 
-                    ScmVerbose(pState->pState, 2,
+                    ScmVerbose(pState->pState, 3,
                                "Found license %d/%d at %u..%u: is-correct=%RTbool well-formed=%RTbool external-part=%RTbool open-source=%RTbool\n",
                                pCur->enmType, pCur->enmOpt, pState->iLineLicense, pState->iLineLicense + pState->cLinesLicense,
                                pState->fIsCorrectLicense, pState->fWellFormedLicense,
