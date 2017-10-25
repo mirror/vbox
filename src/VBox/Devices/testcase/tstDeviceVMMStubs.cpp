@@ -20,6 +20,7 @@
  *     objdump -T VBoxDD.so | grep "UND" | awk -F ' ' '{print $5}' | grep -E "^TM|^PGM|^PDM|^CFGM|^IOM|^MM|^VM|^PDM|^SUP" | sort
  */
 
+
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -31,6 +32,7 @@
 #include <VBox/cdefs.h>
 
 #include "tstDeviceVMMInternal.h"
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -788,7 +790,7 @@ VMMDECL(int) PGMShwMakePageWritable(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fFlags
     return VERR_NOT_IMPLEMENTED;
 }
 
-/** @todo: PDMR3AsyncCompletion + BlkCache + CritSect + QueryLun + Thread. */
+/** @todo PDMR3AsyncCompletion + BlkCache + CritSect + QueryLun + Thread. */
 
 /**
  * @copydoc TMCpuTicksPerSecond
@@ -986,6 +988,4 @@ VMMDECL(void) TMTimerUnlock(PTMTIMER pTimer)
 {
     return pTimer->pVmmCallbacks->pfnTMTimerUnlock(pTimer);
 }
-
-
 

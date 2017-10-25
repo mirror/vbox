@@ -39,6 +39,7 @@
 
 #include "tstDeviceInternal.h"
 
+
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -188,6 +189,7 @@ typedef struct TSTDEVPDMR0IMPORTS
     PFNRT                           pfn;
 } TSTDEVPDMR0IMPORTS;
 typedef const TSTDEVPDMR0IMPORTS *PCTSTDEVPDMR0IMPORTS;
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -694,7 +696,7 @@ static int tstDevPdmLoadR0RcMod(PTSTDEVPDMMOD pMod)
 
 
 /**
- * Loads the given 
+ * Loads the given
  */
 static int tstDevPdmLoadR3Mod(PTSTDEVPDMMOD pMod)
 {
