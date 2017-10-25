@@ -305,6 +305,17 @@ static PFNSCMREWRITER const g_aRewritersFor_DTrace[] =
     rewrite_Copyright_CstyleComment,
 };
 
+static PFNSCMREWRITER const g_aRewritersFor_DSL[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_ExpandTabs,
+    rewrite_StripTrailingBlanks,
+    rewrite_AdjustTrailingLines,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords,
+    rewrite_Copyright_CstyleComment,
+};
+
 static PFNSCMREWRITER const g_aRewritersFor_ASM[] =
 {
     rewrite_ForceNativeEol,
@@ -451,9 +462,10 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY(g_aRewritersFor_C_and_CPP,        false, "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc|*.m|*.mm" ),
     SCM_CFG_ENTRY(g_aRewritersFor_H_and_HPP,        false, "*.h|*.hpp" ),
     SCM_CFG_ENTRY(g_aRewritersFor_RC,               false, "*.rc" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_DTrace,           false, "*.d" ),
     SCM_CFG_ENTRY(g_aRewritersFor_ASM,              false, "*.asm|*.mac|*.inc" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_DTrace,           false, "*.d" ),
     SCM_CFG_ENTRY(g_aRewritersFor_DEF,              false, "*.def" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_DSL,              false, "*.dsl" ),
     SCM_CFG_ENTRY(g_aRewritersFor_ShellScripts,     false, "*.sh|configure" ),
     SCM_CFG_ENTRY(g_aRewritersFor_BatchFiles,       false, "*.bat|*.cmd|*.btm" ),
     SCM_CFG_ENTRY(g_aRewritersFor_BasicScripts,     false, "*.vbs|*.vb" ),
