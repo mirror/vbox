@@ -538,7 +538,6 @@
 #include "UIMediumDefs.h"
 #include "UIMediumEnumerator.h"
 #include "UIMediumManager.h"
-#include "UIMediumTypeChangeDialog.h"
 #include "UIMenuBar.h"
 #include "UIMenuBarEditorWindow.h"
 #include "UIMessageCenter.h"

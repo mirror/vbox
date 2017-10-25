@@ -286,7 +286,6 @@ endif
 
 # Headers containing definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCHDRS = \
-	src/UIMediumTypeChangeDialog.h \
 	src/VBoxAboutDlg.h \
 	src/VBoxLicenseViewer.h \
 	src/UITakeSnapshotDialog.h \
@@ -593,7 +592,6 @@ endif
 
 VirtualBox_SOURCES = \
 	src/main.cpp \
-	src/UIMediumTypeChangeDialog.cpp \
 	src/VBoxAboutDlg.cpp \
 	src/VBoxLicenseViewer.cpp \
 	src/UITakeSnapshotDialog.cpp \
