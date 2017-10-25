@@ -1,8 +1,8 @@
 ; $Id$
 ;; @file
 ; VBoxDTraceR0 - Assembly Hacks.
-;  
-; Contributed by: bird 
+;
+; Contributed by: bird
 ;
 
 ;
@@ -28,5 +28,4 @@ extern NAME(dtrace_probe)
 
 GLOBALNAME dtrace_probe6
     jmp     NAME(dtrace_probe)
-
 
