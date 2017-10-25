@@ -1,4 +1,8 @@
 #!/bin/sh
+# $Id$
+## @file
+# Post flight installer script for the VirtualBox OS X kernel extensions.
+#
 
 #
 # Copyright (C) 2007-2013 Oracle Corporation

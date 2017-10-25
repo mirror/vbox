@@ -1,8 +1,10 @@
 #!/bin/sh
-#
+## @file
 # VBoxService wrapper script.
 #
 # Load required kernel extensions before start service (if necessary).
+#
+
 #
 # Copyright (C) 2007-2013 Oracle Corporation
 #

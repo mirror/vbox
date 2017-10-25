@@ -1,6 +1,9 @@
 #!/bin/sh
-#
+# $Id$
+## #file
 # VirtualBox Uninstaller Script.
+#
+
 #
 # Copyright (C) 2007-2013 Oracle Corporation
 #
@@ -103,3 +106,4 @@ done
 
 echo "Done."
 exit 0;
+
