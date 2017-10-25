@@ -242,6 +242,16 @@ static PFNSCMREWRITER const g_aRewritersFor_Makefile_kmk[] =
     rewrite_Makefile_kmk
 };
 
+static PFNSCMREWRITER const g_aRewritersFor_OtherMakefiles[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_StripTrailingBlanks,
+    rewrite_AdjustTrailingLines,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords,
+    rewrite_Copyright_HashComment,
+};
+
 static PFNSCMREWRITER const g_aRewritersFor_C_and_CPP[] =
 {
     rewrite_ForceNativeEol,
@@ -409,6 +419,7 @@ static SCMCFGENTRY const g_aConfigs[] =
 {
     SCM_CFG_ENTRY(g_aRewritersFor_Makefile_kup,     false, "Makefile.kup" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Makefile_kmk,     false, "*.kmk" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_OtherMakefiles,   false, "Makefile" ),
     SCM_CFG_ENTRY(g_aRewritersFor_C_and_CPP,        false, "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc|*.m|*.mm" ),
     SCM_CFG_ENTRY(g_aRewritersFor_H_and_HPP,        false, "*.h|*.hpp" ),
     SCM_CFG_ENTRY(g_aRewritersFor_RC,               false, "*.rc" ),
