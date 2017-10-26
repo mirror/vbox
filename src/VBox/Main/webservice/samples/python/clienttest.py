@@ -1,15 +1,19 @@
 #!/usr/bin/python
-#
-# Copyright (C) 2012-2016 Oracle Corporation
-#
-# This file is part of VirtualBox Open Source Edition (OSE), as
-# available from http://www.virtualbox.org. This file is free software;
-# you can redistribute it and/or modify it under the terms of the GNU
-# General Public License (GPL) as published by the Free Software
-# Foundation, in version 2 as it comes in the "COPYING" file of the
-# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
-# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-#
+
+__copyright__ = \
+"""
+Copyright (C) 2012-2016 Oracle Corporation
+
+This file is part of VirtualBox Open Source Edition (OSE), as
+available from http://www.virtualbox.org. This file is free software;
+you can redistribute it and/or modify it under the terms of the GNU
+General Public License (GPL) as published by the Free Software
+Foundation, in version 2 as it comes in the "COPYING" file of the
+VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+"""
+
+
 # Things needed to be set up before running this sample:
 # - Install Python and verify it works (2.7.2 will do, 3.x is untested yet)
 # - On Windows: Install the PyWin32 extensions for your Python version

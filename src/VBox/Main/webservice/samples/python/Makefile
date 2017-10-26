@@ -12,9 +12,9 @@
 
 all: run
 
-run: 
+run:
 	@echo !!!! Don\'t forget to start webserver with \"vboxwebsrv -t 10000\" !!!
-	PYTHONPATH=../lib python ../../../glue/python/sample/vboxshell.py -w 
+	PYTHONPATH=../lib python ../../../glue/python/sample/vboxshell.py -w
 
 server:
 	nohup vboxwebsrv -t 10000 &
