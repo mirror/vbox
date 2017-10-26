@@ -21,3 +21,4 @@
 # Dual licensed code.
 /common/vboxapisetup.py: --license-ose-dual
 
+--filter-out-files *.desktop.in
