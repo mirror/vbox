@@ -27,3 +27,4 @@
 # Like the host drivers, this is dual licensed.
 --license-ose-dual
 
+/VBoxGuest-solaris.conf: --treat-as .sh
