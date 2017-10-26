@@ -1,4 +1,4 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * VBoxSeamless - Seamless windows
  */
@@ -24,5 +24,5 @@ void VBoxSeamlessCheckWindows(bool fForce);
 
 void VBoxSeamlessSetSupported(BOOL fSupported);
 
-#endif /* __VBOXSERVICESEAMLESS__H */
+#endif /* !__VBOXSERVICESEAMLESS__H */
 

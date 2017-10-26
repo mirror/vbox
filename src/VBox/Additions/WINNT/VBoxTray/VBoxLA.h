@@ -18,5 +18,5 @@
 #ifndef __VBOXSERVICELA__H
 #define __VBOXSERVICELA__H
 
-#endif /* __VBOXSERVICELA__H */
+#endif /* !__VBOXSERVICELA__H */
 

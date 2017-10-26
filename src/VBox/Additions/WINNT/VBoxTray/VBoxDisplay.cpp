@@ -883,7 +883,7 @@ static DECLCALLBACK(int) VBoxDisplayWorker(void *pvInstance, bool volatile *pfSh
                             ResizeDisplayDeviceNT4(cx, cy, cBits);
                             break;
                         }
-  
+
                         /* Retry the change a bit later. */
                         RTThreadSleep(1000);
                     }

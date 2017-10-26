@@ -1,4 +1,4 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * VBoxSeamless - Shared Clipboard
  */
@@ -18,5 +18,5 @@
 #ifndef __VBOXSERVICESHAREDCLIPLBOARD__H
 #define __VBOXSERVICESHAREDCLIPLBOARD__H
 
-#endif /* __VBOXSERVICESHAREDCLIPLBOARD__H */
+#endif /* !__VBOXSERVICESHAREDCLIPLBOARD__H */
 

@@ -23,4 +23,4 @@ int                VBoxVRDPInit    (const VBOXSERVICEENV *pEnv, void **ppInstanc
 unsigned __stdcall VBoxVRDPThread  (void *pInstance);
 void               VBoxVRDPDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
 
-#endif /* __VBOXSERVICEVRDP__H */
+#endif /* !__VBOXSERVICEVRDP__H */

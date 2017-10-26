@@ -25,4 +25,4 @@ unsigned __stdcall VBoxIPCWorker  (void *pInstance);
 void               VBoxIPCStop    (const VBOXSERVICEENV *pEnv, void *pInstance);
 void               VBoxIPCDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
 
-#endif /* __VBOXTRAYIPCSERVER__H */
+#endif /* !__VBOXTRAYIPCSERVER__H */

@@ -1,4 +1,4 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * VBoxSeamless - Display notifications
  */
@@ -32,4 +32,4 @@ static bool isVBoxDisplayDriverActive(void);
  * so it is moved to VBoxDisplay.cpp */
 #endif
 
-#endif /* __VBOXSERVICEDISPLAY__H */
+#endif /* !__VBOXSERVICEDISPLAY__H */
