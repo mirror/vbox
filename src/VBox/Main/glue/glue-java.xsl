@@ -1923,7 +1923,7 @@
         <xsl:with-param name="safearray" select="@safearray" />
       </xsl:call-template>
       </xsl:variable>
-      <xsl:value-of select="concat('        ', $attrname, ' = ', $wrapped, ';&#10;')" /> 
+      <xsl:value-of select="concat('        ', $attrname, ' = ', $wrapped, ';&#10;')" />
     </xsl:if>
   </xsl:for-each>
   <xsl:text>    }&#10;&#10;</xsl:text>
@@ -4890,7 +4890,7 @@ class VBoxTLSSocketFactory extends SSLSocketFactory
         return sf.getSupportedCipherSuites();
     }
 }
-        
+
 
 public class VirtualBoxManager
 {
