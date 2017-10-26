@@ -2287,6 +2287,9 @@ static DECLCALLBACK(int) usbHidUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
     LogRelFlow(("usbHidUsbReset/#%u:\n", pUsbIns->iInstance));
     RTCritSectEnter(&pThis->CritSect);
 
+    /* We can not handle any input until device is configured again. */
+    pThis->Lun0.pDrv->pfnReportModes(pThis->Lun0.pDrv, false, false, false);
+
     int rc = usbHidResetWorker(pThis, NULL, false /*fSetConfig*/);
 
     RTCritSectLeave(&pThis->CritSect);
