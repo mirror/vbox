@@ -52,7 +52,6 @@
 --filter-out-dirs  "/doc/manual/texfiles/."
 --filter-out-dirs  "/src/libs/*/."
 --filter-out-dirs  "/src/apps/kchmviewer*/."
---filter-out-dirs  "/src/VBox/Additions/x11/x11include/."
 --filter-out-dirs  "/src/VBox/Additions/WINNT/Graphics/Wine/."
 --filter-out-dirs  "/src/VBox/Additions/WINNT/Network/freebsd/."
 --filter-out-dirs  "/src/VBox/Additions/WINNT/i8042prt/include/."
@@ -101,10 +100,6 @@
 #
 # Files and sub-trees where we don't convert tabs.
 #
-/src/VBox/Additions/x11/vboxmouse/*mouse*: --no-convert-tabs
-/src/VBox/Additions/x11/vboxmouse/*pnp.c: --no-convert-tabs
-/src/VBox/Additions/x11/vboxvideo/vboxvideo*.c: --no-convert-tabs
-/src/VBox/Additions/x11/vboxvideo/vboxvideo*.h: --no-convert-tabs
 /src/VBox/Devices/Network/slirp/*: --no-convert-tabs
 /src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxVgaDxe/Edid.c: --no-convert-tabs
 /src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxFsDxe/*.*: --no-convert-tabs
@@ -120,10 +115,6 @@ vboxvideo_drm.c: --no-convert-tabs
 #
 # Files and sub-trees where we don't set forcibly set svn:keywords.
 #
-/src/VBox/Additions/x11/vboxmouse/*mouse*: --dont-set-svn-keywords
-/src/VBox/Additions/x11/vboxmouse/*pnp.c: --dont-set-svn-keywords
-/src/VBox/Additions/x11/vboxvideo/vboxvideo*.c: --dont-set-svn-keywords
-/src/VBox/Additions/x11/vboxvideo/vboxvideo*.h: --dont-set-svn-keywords
 /src/VBox/Devices/Network/slirp/*: --dont-set-svn-keywords
 /src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxVgaDxe/Edid.c: --dont-set-svn-keywords
 /src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxFsDxe/*.*: --dont-set-svn-keywords
