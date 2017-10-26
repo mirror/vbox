@@ -22,3 +22,28 @@
 # The Python bindings is licensed under dual GPL and CDDL.
 /glue/vboxapi.py: --license-ose-dual
 
+--filter-out-files /src-all/VBoxAPI-end.d
+--filter-out-files /src-client/README.testing
+
+/idl/VirtualBox.xidl: --treat-as .xml
+/idl/VirtualBox.dtd:  --treat-as .xml
+
+/xml/VirtualBox-settings.xsd: --treat-as .xml
+--filter-out-files /xml/samples/*.xml
+
+# We don't have any copyright or license in the .cfg and .sif files.
+# Exploint --external-copyright to check that this remains the case.
+# This does not imply anything wrt to the copyright status of the files.
+/UnattendedTemplates/*.cfg: --external-copyright --treat-as .sh
+/UnattendedTemplates/*.sif: --external-copyright
+/UnattendedTemplates/*.xml: --dont-set-svn-eol --no-convert-eol
+
+/webservice/Makefile.webtest: --treat-as Makefile
+--filter-out-files /webservice/MANIFEST.MF.in
+--filter-out-dirs /webservice/jaxlibs/.
+
+# Samples are MIT.
+/webservice/samples/*:                   --license-mit
+/webservice/samples/*.java:              --treat-as .c
+/webservice/samples/*/Makefile.glue:     --treat-as Makefile
+/webservice/samples/php/clienttest.php:  --treat-as .c
