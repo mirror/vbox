@@ -1,6 +1,8 @@
-#
+# $Id$
+## @file
 # tstVBoxAPIXPCOM makefile
 #
+
 #
 # Copyright (C) 2006-2014 Oracle Corporation
 #
@@ -50,3 +52,4 @@ tstVBoxAPIXPCOM.o: tstVBoxAPIXPCOM.cpp
 
 clean:
 	rm -f tstVBoxAPIXPCOM tstVBoxAPIXPCOM.o
+
