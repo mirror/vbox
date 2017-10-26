@@ -20,7 +20,7 @@
 #include "cr_error.h"
 #include "cr_string.h"
 
-void PACK_APIENTRY 
+void PACK_APIENTRY
 crPackDeleteRenderbuffersEXT(GLsizei n, const GLuint * renderbuffers)
 {
     unsigned char *data_ptr;
@@ -37,7 +37,7 @@ crPackDeleteRenderbuffersEXT(GLsizei n, const GLuint * renderbuffers)
     crPackFree(data_ptr);
 }
 
-void PACK_APIENTRY 
+void PACK_APIENTRY
 crPackDeleteFramebuffersEXT(GLsizei n, const GLuint * framebuffers)
 {
     unsigned char *data_ptr;
@@ -54,7 +54,7 @@ crPackDeleteFramebuffersEXT(GLsizei n, const GLuint * framebuffers)
     crPackFree(data_ptr);
 }
 
-void PACK_APIENTRY 
+void PACK_APIENTRY
 crPackDeleteRenderbuffersEXTSWAP(GLsizei n, const GLuint * renderbuffers)
 {
     (void) n;
@@ -62,7 +62,7 @@ crPackDeleteRenderbuffersEXTSWAP(GLsizei n, const GLuint * renderbuffers)
     crError ("No swap version");
 }
 
-void PACK_APIENTRY 
+void PACK_APIENTRY
 crPackDeleteFramebuffersEXTSWAP(GLsizei n, const GLuint * framebuffers)
 {
     (void) n;

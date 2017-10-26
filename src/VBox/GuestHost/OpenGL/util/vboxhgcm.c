@@ -45,7 +45,7 @@
 #include <VBoxCrHgsmi.h>
 #endif
 
-/*@todo move define somewhere else, and make sure it's less than VBGLR0_MAX_HGCM_KERNEL_PARM*/
+/** @todo move define somewhere else, and make sure it's less than VBGLR0_MAX_HGCM_KERNEL_PARM*/
 /*If we fail to pass data in one chunk, send it in chunks of this size instead*/
 #define CR_HGCM_SPLIT_BUFFER_SIZE (8*_1M)
 
@@ -544,7 +544,7 @@ static bool _crVBoxHGCMReadBytes(CRConnection *conn, void *buf, uint32_t len)
 #endif
 
 #ifndef IN_GUEST
-/*@todo get rid of it*/
+/** @todo get rid of it*/
 static bool _crVBoxHGCMWriteBytes(CRConnection *conn, const void *buf, uint32_t len)
 {
     CRASSERT(conn && buf);
@@ -592,7 +592,7 @@ static int crVBoxHGCMCall(CRConnection *conn, PVBGLIOCHGCMCALL pData, unsigned c
         rc = VBoxCrHgsmiCtlConCall(pClient->pHgsmi, pData, cbData);
     else
 # endif
-    {        
+    {
         rc = VbglR3HGCMCall(pData, cbData);
         if (RT_SUCCESS(rc))
         { /* likely */ }
@@ -915,7 +915,7 @@ static void crVBoxHGCMSend(CRConnection *conn, void **bufp,
     if (!bufp) /* We're sending a user-allocated buffer. */
     {
 #ifndef IN_GUEST
-            /**@todo remove temp buffer allocation in unpacker*/
+            /** @todo remove temp buffer allocation in unpacker*/
             /* we're at the host side, so just store data until guest polls us */
             _crVBoxHGCMWriteBytes(conn, start, len);
 #else
@@ -1022,7 +1022,7 @@ static void _crVBoxHGCMFree(CRConnection *conn, void *buf)
 
     CRASSERT(hgcm_buffer->magic == CR_VBOXHGCM_BUFFER_MAGIC);
 
-    /*@todo wrong len for redir buffers*/
+    /** @todo wrong len for redir buffers*/
     conn->recv_credits += hgcm_buffer->len;
 
     switch (hgcm_buffer->kind)
@@ -1032,7 +1032,7 @@ static void _crVBoxHGCMFree(CRConnection *conn, void *buf)
             crLockMutex(&g_crvboxhgcm.mutex);
 #endif
             if (g_crvboxhgcm.bufpool) {
-                /**@todo o'rly? */
+                /** @todo o'rly? */
                 /* pool may have been deallocated just a bit earlier in response
                  * to a SIGPIPE (Broken Pipe) signal.
                  */
@@ -1375,7 +1375,7 @@ static bool _crVBoxCommonDoDisconnectLocked( CRConnection *conn )
     return false;
 }
 
-/*@todo same, replace DeviceIoControl with vbglR3DoIOCtl */
+/** @todo same, replace DeviceIoControl with vbglR3DoIOCtl */
 static void crVBoxHGCMDoDisconnect( CRConnection *conn )
 {
     bool fHasActiveCons = false;
@@ -2188,7 +2188,7 @@ void crVBoxHGCMInit(CRNetReceiveFuncList *rfl, CRNetCloseFuncList *cfl, unsigned
     g_crvboxhgcm.conns     = NULL;
 
     /* Can't open VBox guest driver here, because it gets called for host side as well */
-    /*@todo as we have 2 dll versions, can do it now.*/
+    /** @todo as we have 2 dll versions, can do it now.*/
 
 #ifdef RT_OS_WINDOWS
     g_crvboxhgcm.pDirectDraw = NULL;

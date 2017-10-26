@@ -2305,7 +2305,7 @@ crStateProgramSwitch(CRProgramBits *b, CRbitvalue *bitID,
     }
 }
 
-/*@todo support NVprograms and add some data validity checks*/
+/** @todo support NVprograms and add some data validity checks*/
 static void
 DiffProgramCallback(unsigned long key, void *pProg, void *pCtx)
 {
