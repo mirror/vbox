@@ -1,6 +1,9 @@
 #!/usr/bin/perl -w
-#
+# $Id$
+## @file
 # Guest Additions X11 config update script for X.org 1.5
+#
+
 #
 # Copyright (C) 2006-2010 Oracle Corporation
 #

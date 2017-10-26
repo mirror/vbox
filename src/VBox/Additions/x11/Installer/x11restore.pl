@@ -1,7 +1,9 @@
 #!/usr/bin/perl -w
-# $Revision$
-#
+# $Id$
+## @file
 # Restore xorg.conf while removing Guest Additions.
+#
+
 #
 # Copyright (C) 2008-2012 Oracle Corporation
 #

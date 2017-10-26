@@ -1,6 +1,9 @@
 #!/bin/sh
-#
+# $Id$
+## @file
 # Guest Additions X11 config update script
+#
+
 #
 # Copyright (C) 2006-2012 Oracle Corporation
 #
