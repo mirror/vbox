@@ -97,6 +97,9 @@
 --filter-out-files "*/*-PkgInfo"
 --filter-out-files "*.plist"
 --filter-out-files "*/Doxyfile*"
+--filter-out-files "*/COPYING"
+--filter-out-files "*/COPYING.LIB"
+--filter-out-files "*.desktop"
 
 
 #
