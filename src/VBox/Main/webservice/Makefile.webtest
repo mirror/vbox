@@ -60,7 +60,7 @@ stdsoap2.o: $(PATH_GSOAP)/stdsoap2.cpp
 gsoapH_from_xslt.h:
 	$(XSLTPROC) -o $@ $(WEBSRVWSDL2GSOAPH) $(VBOXWEBWSDL)
 
-vboxwebsrv.nsmap: 
+vboxwebsrv.nsmap:
 	$(XSLTPROC) -o $@ $(WEBSRVNSMAPXSL) $(VBOXWEBIDLSRC)
 
 $(subst soapC,%,$(SOAPCCPP)): split-soapC %.cpp

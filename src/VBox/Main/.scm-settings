@@ -38,12 +38,15 @@
 /UnattendedTemplates/*.sif: --external-copyright
 /UnattendedTemplates/*.xml: --dont-set-svn-eol --no-convert-eol
 
+# The webservice is fun.
 /webservice/Makefile.webtest: --treat-as Makefile
+--filter-out-files /webservice/types.txt:
 --filter-out-files /webservice/MANIFEST.MF.in
---filter-out-dirs /webservice/jaxlibs/.
+--filter-out-dirs  /webservice/jaxlibs/.
 
-# Samples are MIT.
+# The webservice samples are MIT and need some hacks to handle unusual file types.
 /webservice/samples/*:                   --license-mit
 /webservice/samples/*.java:              --treat-as .c
 /webservice/samples/*/Makefile.glue:     --treat-as Makefile
 /webservice/samples/php/clienttest.php:  --treat-as .c
+
