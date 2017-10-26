@@ -4768,19 +4768,19 @@ HRESULT Medium::i_createDiffStorage(ComObjPtr<Medium> &aTarget,
         {
             /* use the existing progress object... */
             pProgress = *aProgress;
-
+        }
+        else
+        {
             /* ...but create a new one if it is null */
-            if (pProgress.isNull())
-            {
-                pProgress.createObject();
-                rc = pProgress->init(m->pVirtualBox,
-                                     static_cast<IMedium*>(this),
-                                     BstrFmt(tr("Creating differencing medium storage unit '%s'"),
-                                             aTarget->m->strLocationFull.c_str()).raw(),
-                                     TRUE /* aCancelable */);
-                if (FAILED(rc))
-                    throw rc;
-            }
+
+            pProgress.createObject();
+            rc = pProgress->init(m->pVirtualBox,
+                                 static_cast<IMedium*>(this),
+                                 BstrFmt(tr("Creating differencing medium storage unit '%s'"),
+                                         aTarget->m->strLocationFull.c_str()).raw(),
+                                 TRUE /* aCancelable */);
+            if (FAILED(rc))
+                throw rc;
         }
 
         /* setup task object to carry out the operation sync/async */
@@ -5112,7 +5112,9 @@ HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
         {
             /* use the existing progress object... */
             pProgress = *aProgress;
-
+        }
+        else
+        {
             /* ...but create a new one if it is null */
             if (pProgress.isNull())
             {
@@ -5786,28 +5788,27 @@ HRESULT Medium::i_mergeTo(const ComObjPtr<Medium> &pTarget,
         {
             /* use the existing progress object... */
             pProgress = *aProgress;
-
+        }
+        else
+        {
             /* ...but create a new one if it is null */
-            if (pProgress.isNull())
+            Utf8Str tgtName;
             {
-                Utf8Str tgtName;
-                {
-                    AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
-                    tgtName = pTarget->i_getName();
-                }
-
-                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-                pProgress.createObject();
-                rc = pProgress->init(m->pVirtualBox,
-                                     static_cast<IMedium*>(this),
-                                     BstrFmt(tr("Merging medium '%s' to '%s'"),
-                                             i_getName().c_str(),
-                                             tgtName.c_str()).raw(),
-                                     TRUE /* aCancelable */);
-                if (FAILED(rc))
-                    throw rc;
+                AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
+                tgtName = pTarget->i_getName();
             }
+
+            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+            pProgress.createObject();
+            rc = pProgress->init(m->pVirtualBox,
+                                 static_cast<IMedium*>(this),
+                                 BstrFmt(tr("Merging medium '%s' to '%s'"),
+                                         i_getName().c_str(),
+                                         tgtName.c_str()).raw(),
+                                 TRUE /* aCancelable */);
+            if (FAILED(rc))
+                throw rc;
         }
 
         /* setup task object to carry out the operation sync/async */
@@ -5827,7 +5828,6 @@ HRESULT Medium::i_mergeTo(const ComObjPtr<Medium> &pTarget,
         if (aWait)
         {
             rc = pTask->runNow();
-
             delete pTask;
         }
         else
