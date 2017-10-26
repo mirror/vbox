@@ -946,6 +946,12 @@ static int scmSvnIsObjectInWorkingCopy(const char *pszPath)
     int  rc2 = scmSvnAbsPath(pszPath, szAbsPath, sizeof(szAbsPath));
     if (RT_SUCCESS(rc2))
     {
+# if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+        /* To avoid: svn: E235000: In file '..\..\..\subversion\libsvn_client\prop_commands.c' line 796: assertion failed (svn_dirent_is_absolute(target)) */
+        if (szAbsPath[1] == ':')
+            szAbsPath[0] = RT_C_TO_UPPER(szAbsPath[0]);
+# endif
+
         /* Create calling context. */
         apr_pool_t *pPool = g_pfnSvnPoolCreateEx(NULL, NULL);
         if (pPool)
@@ -1084,6 +1090,12 @@ static int scmSvnQueryPropertyUsingApi(const char *pszPath, const char *pszPrope
     int  rc2 = scmSvnAbsPath(pszPath, szAbsPath, sizeof(szAbsPath));
     if (RT_SUCCESS(rc2))
     {
+# if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+        /* To avoid: svn: E235000: In file '..\..\..\subversion\libsvn_client\prop_commands.c' line 796: assertion failed (svn_dirent_is_absolute(target)) */
+        if (szAbsPath[1] == ':')
+            szAbsPath[0] = RT_C_TO_UPPER(szAbsPath[0]);
+# endif
+
         /* Create calling context. */
         apr_pool_t *pPool = g_pfnSvnPoolCreateEx(NULL, NULL);
         if (pPool)
