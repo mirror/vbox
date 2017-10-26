@@ -19,7 +19,7 @@
 #
 # Make sure the old startup items are gone.
 #
-if [ -d /Library/StartupItems/VirtualBox/ ]; then 
+if [ -d /Library/StartupItems/VirtualBox/ ]; then
     rm -vf  "/Library/StartupItems/VirtualBox/StartupParameters.plist"
     rm -vf  "/Library/StartupItems/VirtualBox/VirtualBox"
     rm -vf  "/Library/StartupItems/VirtualBox/Resources/English.lproj/Localizable.strings"
