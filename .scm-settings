@@ -57,7 +57,6 @@
 --filter-out-dirs  "/src/VBox/Additions/WINNT/Network/freebsd/."
 --filter-out-dirs  "/src/VBox/Additions/WINNT/i8042prt/include/."
 --filter-out-dirs  "/src/VBox/Additions/WINNT/Graphics/Wine*/."
---filter-out-dirs  "/src/VBox/Additions/common/crOpenGL/."
 --filter-out-dirs  "/src/VBox/Additions/solaris/DRM/include/."
 --filter-out-dirs  "/src/VBox/Additions/solaris/SharedFolders/solaris10/sys/."
 --filter-out-dirs  "/src/VBox/HostServices/SharedOpenGL/."

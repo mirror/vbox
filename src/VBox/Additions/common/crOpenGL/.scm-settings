@@ -53,3 +53,10 @@
 /VBoxCROGL.rc:                  --no-external-copyright --convert-tabs
 /VBoxICDList.h:                 --no-external-copyright
 
+*_special: --treat-as Makefile
+
+# Ignore some stuff.
+--filter-out-files /COPYRIGHT.LLNL
+--filter-out-files /COPYRIGHT.REDHAT
+--filter-out-files /LICENSE
+
