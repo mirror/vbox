@@ -60,7 +60,6 @@
 --filter-out-dirs  "/src/VBox/Additions/common/crOpenGL/."
 --filter-out-dirs  "/src/VBox/Additions/solaris/DRM/include/."
 --filter-out-dirs  "/src/VBox/Additions/solaris/SharedFolders/solaris10/sys/."
---filter-out-dirs  "/src/VBox/Additions/linux/lightdm-greeter/*/."
 --filter-out-dirs  "/src/VBox/HostServices/SharedOpenGL/."
 --filter-out-dirs  "/src/VBox/HostDrivers/VBoxNetFlt/solaris/include/."
 --filter-out-dirs  "/src/VBox/HostDrivers/VBoxUSB/solaris/include/."
