@@ -268,10 +268,33 @@ static const char g_szMitAlt3[] =
     "all copies or substantial portions of the Software.\n";
 
 /** --license-(based-on)mit, alternative wording \#4.
+ * @note This differs from g_szMitAlt2 in injecting "(including the next
+ *       paragraph)". */
+static const char g_szMitAlt4[] =
+    "Permission is hereby granted, free of charge, to any person obtaining a\n"
+    "copy of this software and associated documentation files (the \"Software\"),\n"
+    "to deal in the Software without restriction, including without limitation\n"
+    "the rights to use, copy, modify, merge, publish, distribute, sublicense,\n"
+    "and/or sell copies of the Software, and to permit persons to whom the\n"
+    "Software is furnished to do so, subject to the following conditions:\n"
+    "\n"
+    "The above copyright notice and this permission notice (including the next\n"
+    "paragraph) shall be included in all copies or substantial portions of the\n"
+    "Software.\n"
+    "\n"
+    "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+    "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+    "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL\n"
+    "THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n"
+    "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING\n"
+    "FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\n"
+    "DEALINGS IN THE SOFTWARE.\n";
+
+/** --license-(based-on)mit, alternative wording \#5.
  * @note This differs from g_szMitAlt3 in using "sub license" instead of
  *       "sublicense" and adding an illogical "(including the next
  *       paragraph)" remark to the final paragraph. (vbox_ttm.c) */
-static const char g_szMitAlt4[] =
+static const char g_szMitAlt5[] =
     "Permission is hereby granted, free of charge, to any person obtaining a\n"
     "copy of this software and associated documentation files (the\n"
     "\"Software\"), to deal in the Software without restriction, including\n"
@@ -291,7 +314,6 @@ static const char g_szMitAlt4[] =
     "The above copyright notice and this permission notice (including the\n"
     "next paragraph) shall be included in all copies or substantial portions\n"
     "of the Software.\n";
-
 
 /** Oracle confidential. */
 static const char g_szOracleConfidential[] =
@@ -317,6 +339,7 @@ static const SCMLICENSETEXT g_aLicensesWithMit[] =
     { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMitAlt2) },
     { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMitAlt3) },
     { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMitAlt4) },
+    { kScmLicenseType_Mit,              kScmLicense_Mit,            RT_STR_TUPLE(g_szMitAlt5) },
     { kScmLicenseType_OseGpl,           kScmLicense_OseGpl,         RT_STR_TUPLE(g_szVBoxOseGpl)},
     { kScmLicenseType_OseDualGplCddl,   kScmLicense_OseDualGplCddl, RT_STR_TUPLE(g_szVBoxOseDualGplCddl) },
     { kScmLicenseType_VBoxLgpl,         kScmLicense_Lgpl,           RT_STR_TUPLE(g_szVBoxLgpl)},
