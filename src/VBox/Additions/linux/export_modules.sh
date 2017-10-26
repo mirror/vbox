@@ -1,9 +1,11 @@
 #!/bin/sh
+# $Id$
+## @file
+# Create a tar archive containing the sources of the Linux guest kernel modules.
+#
 
 #
-# Create a tar archive containing the sources of the vboxdrv kernel module
-#
-# Copyright (C) 2007-2015 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -19,37 +21,33 @@ TARGET=`readlink -e -- "${0}"` || exit 1
 MY_DIR="${TARGET%/[!/]*}"
 
 if [ -z "$1" ]; then
-    echo "Usage: $0 <filename.tar.gz> [--without-hardening]"
+    echo "Usage: $0 <filename.tar.gz>"
     echo "  Export VirtualBox kernel modules to <filename.tar.gz>"
     exit 1
-fi
-
-VBOX_WITH_HARDENING=1
-if [ "$2" = "--without-hardening" ]; then
-    VBOX_WITH_HARDENING=
 fi
 
 PATH_TMP="`cd \`dirname $1\`; pwd`/.vbox_modules"
 PATH_OUT=$PATH_TMP
 FILE_OUT="`cd \`dirname $1\`; pwd`/`basename $1`"
 PATH_ROOT="`cd ${MY_DIR}/../../../..; pwd`"
-PATH_LOG=/tmp/vbox-export-host.log
-PATH_LINUX="$PATH_ROOT/src/VBox/HostDrivers/linux"
-PATH_VBOXDRV="$PATH_ROOT/src/VBox/HostDrivers/Support"
-PATH_VBOXNET="$PATH_ROOT/src/VBox/HostDrivers/VBoxNetFlt"
-PATH_VBOXADP="$PATH_ROOT/src/VBox/HostDrivers/VBoxNetAdp"
-PATH_VBOXPCI="$PATH_ROOT/src/VBox/HostDrivers/VBoxPci"
+PATH_LOG=/tmp/vbox-export-guest.log
+PATH_LINUX="$PATH_ROOT/src/VBox/Additions/linux"
+PATH_VBOXGUEST="$PATH_ROOT/src/VBox/Additions/common/VBoxGuest"
+PATH_VBOXSF="$PATH_ROOT/src/VBox/Additions/linux/sharedfolders"
+PATH_VBOXVIDEO="$PATH_ROOT/src/VBox/Additions/linux/drm"
 
 VBOX_VERSION_MAJOR=`sed -e "s/^ *VBOX_VERSION_MAJOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Version.kmk`
 VBOX_VERSION_MINOR=`sed -e "s/^ *VBOX_VERSION_MINOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Version.kmk`
 VBOX_VERSION_BUILD=`sed -e "s/^ *VBOX_VERSION_BUILD *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Version.kmk`
-VBOX_VERSION_STRING=$VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
-VBOX_SVN_REV=`sed -e 's/^ *VBOX_SVN_REV_FALLBACK *:= \+\$(patsubst *%:,, *\$Rev: *\([0-9]\+\) *\$ *) */\1/;t;d' $PATH_ROOT/Config.kmk`                                                                                                        VBOX_VENDOR=`sed -e 's/^ *VBOX_VENDOR *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`                                     VBOX_VENDOR_SHORT=`sed -e 's/^ *VBOX_VENDOR_SHORT *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`                         VBOX_PRODUCT=`sed -e 's/^ *VBOX_PRODUCT *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`                                   VBOX_C_YEAR=`date +%Y`
+VBOX_SVN_REV=`sed -e 's/^ *VBOX_SVN_REV_FALLBACK *:= \+\$(patsubst *%:,, *\$Rev: *\([0-9]\+\) *\$ *) */\1/;t;d' $PATH_ROOT/Config.kmk`
+VBOX_VENDOR=`sed -e 's/^ *VBOX_VENDOR *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`
+VBOX_VENDOR_SHORT=`sed -e 's/^ *VBOX_VENDOR_SHORT *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`
+VBOX_PRODUCT=`sed -e 's/^ *VBOX_PRODUCT *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`
+VBOX_C_YEAR=`date +%Y`
 
-. $PATH_VBOXDRV/linux/files_vboxdrv
-. $PATH_VBOXNET/linux/files_vboxnetflt
-. $PATH_VBOXADP/linux/files_vboxnetadp
-. $PATH_VBOXPCI/linux/files_vboxpci
+. $PATH_VBOXGUEST/linux/files_vboxguest
+. $PATH_VBOXSF/files_vboxsf
+. $PATH_VBOXVIDEO/files_vboxvideo_drv
 
 # Temporary path for creating the modules, will be removed later
 mkdir $PATH_TMP || exit 1
@@ -62,7 +60,7 @@ echo "#define VBOX_VERSION_MAJOR $VBOX_VERSION_MAJOR" >> $PATH_TMP/version-gener
 echo "#define VBOX_VERSION_MINOR $VBOX_VERSION_MINOR" >> $PATH_TMP/version-generated.h
 echo "#define VBOX_VERSION_BUILD $VBOX_VERSION_BUILD" >> $PATH_TMP/version-generated.h
 echo "#define VBOX_VERSION_STRING_RAW \"$VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD\"" >> $PATH_TMP/version-generated.h
-echo "#define VBOX_VERSION_STRING \"$VBOX_VERSION_STRING\"" >> $PATH_TMP/version-generated.h
+echo "#define VBOX_VERSION_STRING \"$VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD\"" >> $PATH_TMP/version-generated.h
 echo "#define VBOX_API_VERSION_STRING \"${VBOX_VERSION_MAJOR}_${VBOX_VERSION_MINOR}\"" >> $PATH_TMP/version-generated.h
 echo "#define VBOX_PRIVATE_BUILD_DESC \"Private build with export_modules\"" >> $PATH_TMP/version-generated.h
 echo "" >> $PATH_TMP/version-generated.h
@@ -88,60 +86,36 @@ echo "#define VBOX_C_YEAR \"$VBOX_C_YEAR\"" >> $PATH_TMP/product-generated.h
 echo "" >> $PATH_TMP/product-generated.h
 echo "#endif" >> $PATH_TMP/product-generated.h
 
-# vboxdrv (VirtualBox host kernel module)
-mkdir $PATH_TMP/vboxdrv || exit 1
-for f in $FILES_VBOXDRV_NOBIN; do
-    install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxdrv/`echo $f|cut -d'>' -f2`"
+# vboxguest (VirtualBox guest kernel module)
+mkdir $PATH_TMP/vboxguest || exit 1
+for f in $FILES_VBOXGUEST_NOBIN; do
+    install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxguest/`echo $f|cut -d'>' -f2`"
 done
-for f in $FILES_VBOXDRV_BIN; do
-    install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxdrv/`echo $f|cut -d'>' -f2`"
+for f in $FILES_VBOXGUEST_BIN; do
+    install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxguest/`echo $f|cut -d'>' -f2`"
 done
-if [ -n "$VBOX_WITH_HARDENING" ]; then
-    sed -e "s;-DVBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g" \
-        -e "s;-DIPRT_WITH_EFLAGS_AC_PRESERVING;;g" \
-        < $PATH_VBOXDRV/linux/Makefile > $PATH_TMP/vboxdrv/Makefile
-else
-    sed -e "s;-DVBOX_WITH_HARDENING;;g" \
-        -e "s;-DVBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g" \
-        -e "s;-DIPRT_WITH_EFLAGS_AC_PRESERVING;;g" \
-        < $PATH_VBOXDRV/linux/Makefile > $PATH_TMP/vboxdrv/Makefile
-fi
 
-# vboxnetflt (VirtualBox netfilter kernel module)
-mkdir $PATH_TMP/vboxnetflt || exit 1
-for f in $VBOX_VBOXNETFLT_SOURCES; do
-    install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxnetflt/`echo $f|cut -d'>' -f2`"
+# vboxsf (VirtualBox guest kernel module for shared folders)
+mkdir $PATH_TMP/vboxsf || exit 1
+for f in $FILES_VBOXSF_NOBIN; do
+    install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxsf/`echo $f|cut -d'>' -f2`"
 done
-if [ -n "$VBOX_WITH_HARDENING" ]; then
-    cat                                   $PATH_VBOXNET/linux/Makefile > $PATH_TMP/vboxnetflt/Makefile
-else
-    sed -e "s;-DVBOX_WITH_HARDENING;;g" < $PATH_VBOXNET/linux/Makefile > $PATH_TMP/vboxnetflt/Makefile
-fi
-
-# vboxnetadp (VirtualBox network adapter kernel module)
-mkdir $PATH_TMP/vboxnetadp || exit 1
-for f in $VBOX_VBOXNETADP_SOURCES; do
-    install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxnetadp/`echo $f|cut -d'>' -f2`"
+for f in $FILES_VBOXSF_BIN; do
+    install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxsf/`echo $f|cut -d'>' -f2`"
 done
-if [ -n "$VBOX_WITH_HARDENING" ]; then
-    cat                                   $PATH_VBOXADP/linux/Makefile > $PATH_TMP/vboxnetadp/Makefile
-else
-    sed -e "s;-DVBOX_WITH_HARDENING;;g" < $PATH_VBOXADP/linux/Makefile > $PATH_TMP/vboxnetadp/Makefile
-fi
 
-# vboxpci (VirtualBox host PCI access kernel module)
-mkdir $PATH_TMP/vboxpci || exit 1
-for f in $VBOX_VBOXPCI_SOURCES; do
-    install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxpci/`echo $f|cut -d'>' -f2`"
+# vboxvideo (VirtualBox guest kernel module for drm support)
+mkdir $PATH_TMP/vboxvideo || exit 1
+for f in $FILES_VBOXVIDEO_DRM_NOBIN; do
+    install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxvideo/`echo $f|cut -d'>' -f2`"
 done
-if [ -n "$VBOX_WITH_HARDENING" ]; then
-    cat                                   $PATH_VBOXPCI/linux/Makefile > $PATH_TMP/vboxpci/Makefile
-else
-    sed -e "s;-DVBOX_WITH_HARDENING;;g" < $PATH_VBOXPCI/linux/Makefile > $PATH_TMP/vboxpci/Makefile
-fi
+for f in $FILES_VBOXVIDEO_DRM_BIN; do
+    install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxvideo/`echo $f|cut -d'>' -f2`"
+done
+sed -f $PATH_VBOXVIDEO/indent.sed -i $PATH_TMP/vboxvideo/*.[ch]
 
-install -D -m 0644 $PATH_LINUX/Makefile $PATH_TMP/Makefile
-install -D -m 0755 $PATH_LINUX/build_in_tmp $PATH_TMP/build_in_tmp
+# convenience Makefile
+install -D -m 0644 $PATH_LINUX/Makefile "$PATH_TMP/Makefile"
 
 # Only temporary, omit from archive
 rm $PATH_TMP/version-generated.h
@@ -159,3 +133,4 @@ tar -czf $FILE_OUT -C $PATH_TMP . || exit 1
 
 # Remove the temporary directory
 rm -r $PATH_TMP
+
