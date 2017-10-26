@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox OpenGL GLSL related get functions
  */
@@ -143,7 +142,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetInfoLogARB(VBoxGLhandleARB obj,
     }
     /* initial (fallback )value */
     *pLocal = 0;
-    /*@todo: recheck*/
+    /** @todo recheck*/
     hwid = crStateGetProgramHWID(obj);
     if (!hwid) hwid = crStateGetShaderHWID(obj);
     cr_server.head_spu->dispatch_table.GetInfoLogARB(hwid, maxLength, pLocal, (char*)&pLocal[1]);
@@ -208,7 +207,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetShaderSource(GLuint shader, GLs
     crFree(pLocal);
 }
 
-void SERVER_DISPATCH_APIENTRY 
+void SERVER_DISPATCH_APIENTRY
 crServerDispatchGetUniformsLocations(GLuint program, GLsizei maxcbData, GLsizei * cbData, GLvoid * pData)
 {
     GLsizei *pLocal;
@@ -223,7 +222,7 @@ crServerDispatchGetUniformsLocations(GLuint program, GLsizei maxcbData, GLsizei 
         crServerReturnValue(&zero, sizeof(zero));
         return;
     }
-    
+
     /* initial (fallback )value */
     *pLocal = 0;
     crStateGLSLProgramCacheUniforms(program, maxcbData, pLocal, (char*)&pLocal[1]);
@@ -261,7 +260,7 @@ static GLint __GetUniformSize(GLuint program, GLint location)
     GLint  size = 0;
     GLenum type = 0;
 
-    /*@todo: check if index and location is the same*/
+    /** @todo check if index and location is the same*/
     cr_server.head_spu->dispatch_table.GetActiveUniform(crStateGetProgramHWID(program), location, 0, NULL, &size, &type, NULL);
 
     return crStateGetUniformSize(type);

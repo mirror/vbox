@@ -1390,7 +1390,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
              * and re-create it with the context's visual abilities
              */
 
-            /*@todo Chromium has no correct code to remove window ids and associated info from 
+            /** @todo Chromium has no correct code to remove window ids and associated info from 
              * various tables. This is hack which just hides the root case.
              */
             crWarning("Recreating window in renderspu_SystemMakeCurrent\n");

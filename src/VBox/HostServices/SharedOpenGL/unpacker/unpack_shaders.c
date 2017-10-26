@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox OpenGL DRI driver functions
  */
@@ -264,20 +263,20 @@ void crUnpackExtendGetAttachedShaders(void)
 
 void crUnpackExtendGetAttachedObjectsARB(void)
 {
-	VBoxGLhandleARB containerObj = READ_DATA(8, VBoxGLhandleARB);
-	GLsizei maxCount = READ_DATA(12, GLsizei);
-	SET_RETURN_PTR(16);
-	SET_WRITEBACK_PTR(24);
-	cr_unpackDispatch.GetAttachedObjectsARB(containerObj, maxCount, NULL, NULL);
+        VBoxGLhandleARB containerObj = READ_DATA(8, VBoxGLhandleARB);
+        GLsizei maxCount = READ_DATA(12, GLsizei);
+        SET_RETURN_PTR(16);
+        SET_WRITEBACK_PTR(24);
+        cr_unpackDispatch.GetAttachedObjectsARB(containerObj, maxCount, NULL, NULL);
 }
 
 void crUnpackExtendGetInfoLogARB(void)
 {
-	VBoxGLhandleARB obj = READ_DATA(8, VBoxGLhandleARB);
-	GLsizei maxLength = READ_DATA(12, GLsizei);
-	SET_RETURN_PTR(16);
-	SET_WRITEBACK_PTR(24);
-	cr_unpackDispatch.GetInfoLogARB(obj, maxLength, NULL, NULL);
+        VBoxGLhandleARB obj = READ_DATA(8, VBoxGLhandleARB);
+        GLsizei maxLength = READ_DATA(12, GLsizei);
+        SET_RETURN_PTR(16);
+        SET_WRITEBACK_PTR(24);
+        cr_unpackDispatch.GetInfoLogARB(obj, maxLength, NULL, NULL);
 }
 
 void crUnpackExtendGetProgramInfoLog(void)
@@ -329,11 +328,11 @@ void crUnpackExtendGetUniformLocation(void)
 
 void crUnpackExtendGetUniformsLocations(void)
 {
-	GLuint program = READ_DATA(8, GLuint);
-	GLsizei maxcbData = READ_DATA(12, GLsizei);
-	SET_RETURN_PTR(16);
-	SET_WRITEBACK_PTR(24);
-	cr_unpackDispatch.GetUniformsLocations(program, maxcbData, NULL, NULL);
+        GLuint program = READ_DATA(8, GLuint);
+        GLsizei maxcbData = READ_DATA(12, GLsizei);
+        SET_RETURN_PTR(16);
+        SET_WRITEBACK_PTR(24);
+        cr_unpackDispatch.GetUniformsLocations(program, maxcbData, NULL, NULL);
 }
 
 void crUnpackExtendGetAttribsLocations(void)

@@ -944,7 +944,7 @@ static void crVBoxServerSaveMuralCB(unsigned long key, void *data1, void *data2)
     CRASSERT(rc == VINF_SUCCESS);
 }
 
-/* @todo add hashtable walker with result info and intermediate abort */
+/** @todo add hashtable walker with result info and intermediate abort */
 static void crVBoxServerSaveCreateInfoCB(unsigned long key, void *data1, void *data2)
 {
     CRCreateInfo_t *pCreateInfo = (CRCreateInfo_t *)data1;
@@ -1543,7 +1543,7 @@ static int32_t crVBoxServerSaveStatePerform(PSSMHANDLE pSSM)
     /* We shouldn't be called if there's no clients at all*/
     CRASSERT(cr_server.numClients > 0);
 
-    /* @todo it's hack atm */
+    /** @todo it's hack atm */
     /* We want to be called only once to save server state but atm we're being called from svcSaveState
      * for every connected client (e.g. guest opengl application)
      */
@@ -1619,7 +1619,7 @@ static int32_t crVBoxServerSaveStatePerform(PSSMHANDLE pSSM)
 
     Data.pSSM = pSSM;
     /* Save contexts state tracker data */
-    /* @todo For now just some blind data dumps,
+    /** @todo For now just some blind data dumps,
      * but I've a feeling those should be saved/restored in a very strict sequence to
      * allow diff_api to work correctly.
      * Should be tested more with multiply guest opengl apps working when saving VM snapshot.
@@ -2926,7 +2926,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
         {
             Log(("svcCall: SHCRGL_GUEST_FN_WRITE\n"));
 
-            /* @todo: Verify  */
+            /** @todo Verify  */
             if (cParams == 1)
             {
                 CRVBOXHGSMIWRITE* pFnCmd = (CRVBOXHGSMIWRITE*)pHdr;
@@ -2978,7 +2978,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
         {
             WARN(("svcCall: SHCRGL_GUEST_FN_INJECT\n"));
 
-            /* @todo: Verify  */
+            /** @todo Verify  */
             if (cParams == 1)
             {
                 CRVBOXHGSMIINJECT *pFnCmd = (CRVBOXHGSMIINJECT*)pHdr;
@@ -3031,7 +3031,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
         {
             Log(("svcCall: SHCRGL_GUEST_FN_READ\n"));
 
-            /* @todo: Verify  */
+            /** @todo Verify  */
             if (cParams == 1)
             {
                 CRVBOXHGSMIREAD *pFnCmd = (CRVBOXHGSMIREAD*)pHdr;
@@ -3089,7 +3089,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(const struct VBOXCMDVBVA_CRCMD_CM
         {
             Log(("svcCall: SHCRGL_GUEST_FN_WRITE_READ\n"));
 
-            /* @todo: Verify  */
+            /** @todo Verify  */
             if (cParams == 2)
             {
                 CRVBOXHGSMIWRITEREAD *pFnCmd = (CRVBOXHGSMIWRITEREAD*)pHdr;
@@ -3649,7 +3649,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
         {
             Log(("svcCall: SHCRGL_GUEST_FN_WRITE\n"));
 
-            /* @todo: Verify  */
+            /** @todo Verify  */
             if (cParams == 1)
             {
                 CRVBOXHGSMIWRITE* pFnCmd = (CRVBOXHGSMIWRITE*)pHdr;
@@ -3703,7 +3703,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
         {
             Log(("svcCall: SHCRGL_GUEST_FN_INJECT\n"));
 
-            /* @todo: Verify  */
+            /** @todo Verify  */
             if (cParams == 1)
             {
                 CRVBOXHGSMIINJECT *pFnCmd = (CRVBOXHGSMIINJECT*)pHdr;
@@ -3755,7 +3755,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
         {
             Log(("svcCall: SHCRGL_GUEST_FN_READ\n"));
 
-            /* @todo: Verify  */
+            /** @todo Verify  */
             if (cParams == 1)
             {
                 CRVBOXHGSMIREAD *pFnCmd = (CRVBOXHGSMIREAD*)pHdr;
@@ -3810,7 +3810,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
         {
             Log(("svcCall: SHCRGL_GUEST_FN_WRITE_READ\n"));
 
-            /* @todo: Verify  */
+            /** @todo Verify  */
             if (cParams == 2)
             {
                 CRVBOXHGSMIWRITEREAD *pFnCmd = (CRVBOXHGSMIWRITEREAD*)pHdr;

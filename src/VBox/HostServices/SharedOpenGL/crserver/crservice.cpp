@@ -228,7 +228,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     {
         LogRel(("OpenGL: svcLoadState: Unsupported save state version %d\n", ui32));
 
-        /*@todo ugly hack, as we don't know size of stored opengl data try to read untill end of opengl data marker*/
+        /** @todo ugly hack, as we don't know size of stored opengl data try to read untill end of opengl data marker*/
         /*VBoxSharedCrOpenGL isn't last hgcm service now, so can't use SSMR3SkipToEndOfUnit*/
         {
             const char *pMatch = &gszVBoxOGLSSMMagic[0];
@@ -539,7 +539,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             if (RT_SUCCESS(rc))
             {
                 /* Update parameters.*/
-                paParms[0].u.pointer.size = cbBuffer; //@todo guest doesn't see this change somehow?
+                paParms[0].u.pointer.size = cbBuffer; /// @todo guest doesn't see this change somehow?
             } else if (VERR_NOT_SUPPORTED==rc)
             {
                 svcClientVersionUnsupported(0, 0);

@@ -1,7 +1,6 @@
 /* $Id$ */
-
 /** @file
- * VBox crOpenGL: teximage functions.
+ * VBox crOpenGL - teximage functions.
  */
 
 /*
@@ -17,7 +16,7 @@
  */
 
 #include "chromium.h"
-#include "cr_error.h" 
+#include "cr_error.h"
 #include "server_dispatch.h"
 #include "server.h"
 #include "cr_mem.h"
@@ -60,7 +59,7 @@
             crWarning("UnmapBufferARB failed");                                             \
         }                                                                                   \
     }
-#else 
+#else
 #define CR_FINISHBUFFER()
 #endif
 
@@ -249,7 +248,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchPrioritizeTextures( GLsizei n, con
 }
 
 
-/*@todo will fail for textures loaded from snapshot */
+/** @todo will fail for textures loaded from snapshot */
 GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsTexture( GLuint texture )
 {
     GLboolean retval;

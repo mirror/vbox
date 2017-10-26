@@ -1,7 +1,6 @@
 /* $Id$ */
-
 /** @file
- * VBox OpenGL: GLSL related functions
+ * VBox OpenGL - GLSL related functions
  */
 
 /*
@@ -194,7 +193,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteProgramsARB(GLsizei n, const
 }
 
 
-/*@todo will fail for progs loaded from snapshot */
+/** @todo will fail for progs loaded from snapshot */
 GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsProgramARB( GLuint program )
 {
     GLboolean retval;

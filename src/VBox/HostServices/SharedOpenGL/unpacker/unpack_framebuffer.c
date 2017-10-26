@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox OpenGL: EXT_framebuffer_object
  */

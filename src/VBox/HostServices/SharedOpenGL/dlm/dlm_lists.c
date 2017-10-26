@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * Implementation of all the Display Lists related routines:
  *
@@ -234,7 +233,7 @@ void DLM_APIENTRY crDLMEndList(SPUDispatchTable *dispatchTable)
         }
         else
             crDebug("DLM: glEndList() is assuming glNewList() was issued previously.");
-    } 
+    }
     else
         crDebug("DLM: EndList called with no current state.");
 }
@@ -396,7 +395,7 @@ void DLM_APIENTRY crDLMListBase(GLuint base, SPUDispatchTable *dispatchTable)
         pListState->listBase = base;
 
         /* Only add to cache if we are currently recording a list. */
-        /* TODO: Do we really need to chache it? */
+        /** @todo Do we really need to chache it? */
         if (pListState->currentListInfo)
             crDLMCompileListBase(base);
 

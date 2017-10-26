@@ -53,7 +53,6 @@
 --filter-out-dirs  "/src/libs/*/."
 --filter-out-dirs  "/src/apps/kchmviewer*/."
 
---filter-out-dirs  "/src/VBox/HostServices/SharedOpenGL/."
 --filter-out-dirs  "/src/VBox/GuestHost/OpenGL/*/."
 --filter-out-dirs  "/src/VBox/Devices/Graphics/shaderlib*/."
 --filter-out-dirs  "/src/VBox/Devices/Graphics/vmsvga/."

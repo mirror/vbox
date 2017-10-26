@@ -303,7 +303,7 @@ int main(int argc, char **argv)
                     break;
 
                 case 'V':
-                    RTPrintf("$Revision: $\n");
+                    RTPrintf("$Revision$\n");
                     return 0;
 
                 case VERR_GETOPT_UNKNOWN_OPTION:
