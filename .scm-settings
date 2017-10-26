@@ -98,10 +98,8 @@
 /src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxVgaDxe/Edid.c: --no-convert-tabs
 /src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxFsDxe/*.*: --no-convert-tabs
 /src/apps/tunctl/tunctl.c: --no-convert-tabs
-/src/VBox/Main/src-all/DisplayResampleImage.cpp: --no-convert-tabs
 vboxvideo_drm.c: --no-convert-tabs
 *linux.mod.c: --no-convert-tabs
-/src/VBox/Main/DisplayResampleImage.cpp: --no-convert-tabs
 /src/recompiler/*: --no-convert-tabs
 /src/recompiler/VBox*: --convert-tabs
 
