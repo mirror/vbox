@@ -395,6 +395,17 @@ static PFNSCMREWRITER const g_aRewritersFor_Perl[] =
     rewrite_Copyright_HashComment,
 };
 
+static PFNSCMREWRITER const g_aRewritersFor_DriverInfFiles[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_ExpandTabs,
+    rewrite_StripTrailingBlanks,
+    rewrite_AdjustTrailingLines,
+    rewrite_SvnKeywords,
+    rewrite_SvnNoExecutable,
+    rewrite_Copyright_SemicolonComment,
+};
+
 static PFNSCMREWRITER const g_aRewritersFor_ScmSettings[] =
 {
     rewrite_ForceNativeEol,
@@ -497,6 +508,7 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY(g_aRewritersFor_SedScripts,       false, "*.sed" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Python,           false, "*.py" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Perl,             false, "*.pl" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_DriverInfFiles,   false, "*.inf" ),
     SCM_CFG_ENTRY(g_aRewritersFor_ScmSettings,      false, "*.scm-settings" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Images,           true,  "*.png|*.bmp|*.jpg|*.pnm|*.ico|*.icns" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Xslt,             false, "*.xsl" ),
