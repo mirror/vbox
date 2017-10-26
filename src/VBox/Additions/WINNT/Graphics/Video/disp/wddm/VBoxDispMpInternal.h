@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBoxVideo Display external interface config
  */

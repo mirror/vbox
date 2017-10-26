@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox XPDM Display driver, helper functions which interacts with our miniport driver
  */

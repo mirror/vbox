@@ -1,5 +1,8 @@
-;
+; $Id$
+;; @file
 ; VirtualBox Video Wddm driver
+;
+
 ;
 ; Copyright (C) 2011-2016 Oracle Corporation
 ;

@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <../VBoxDispD3DBase.h>
+#include "../VBoxDispD3DBase.h"
 #include <VBoxDispKmt.h>
 
 #include <iprt/assert.h>

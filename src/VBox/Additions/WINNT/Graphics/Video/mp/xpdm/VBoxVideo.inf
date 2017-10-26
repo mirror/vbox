@@ -1,5 +1,8 @@
-;
+; $Id$
+;; @file
 ; VirtualBox Video miniport driver
+;
+
 ;
 ; Copyright (C) 2011-2016 Oracle Corporation
 ;

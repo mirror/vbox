@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox XPDM Display driver, direct draw callbacks
  */
@@ -42,4 +41,4 @@ DWORD APIENTRY VBoxDispDDSetOverlayPosition(PDD_SETOVERLAYPOSITIONDATA lpSetOver
 DWORD APIENTRY VBoxDispDDUpdateOverlay(PDD_UPDATEOVERLAYDATA lpUpdateOverlay);
 #endif
 
-#endif /*VBOXDISPDDRAW_H*/
+#endif /*!VBOXDISPDDRAW_H*/

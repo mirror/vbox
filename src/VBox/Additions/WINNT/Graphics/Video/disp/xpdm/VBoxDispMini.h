@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox XPDM Display driver, helper functions which interacts with our miniport driver
  */
@@ -40,4 +39,4 @@ int VBoxDispMPShareVideoMemory(HANDLE hDriver, PVIDEO_SHARE_MEMORY pSMem, PVIDEO
 int VBoxDispMPUnshareVideoMemory(HANDLE hDriver, PVIDEO_SHARE_MEMORY pSMem);
 int VBoxDispMPQueryRegistryFlags(HANDLE hDriver, ULONG *pulFlags);
 
-#endif /*VBOXDISPMINI_H*/
+#endif /* !VBOXDISPMINI_H */

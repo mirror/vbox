@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox XPDM Display driver
  */
@@ -79,4 +78,4 @@ typedef struct _VRDPBC
 void vrdpbmpReset (VRDPBC *pCache);
 int vrdpbmpCacheSurface (VRDPBC *pCache, const SURFOBJ *pso, VRDPBCHASH *phash, VRDPBCHASH *phashDeleted, BOOL bForce);
 
-#endif /*VBOXDISPVRDPBMP_H*/
+#endif /* !VBOXDISPVRDPBMP_H */

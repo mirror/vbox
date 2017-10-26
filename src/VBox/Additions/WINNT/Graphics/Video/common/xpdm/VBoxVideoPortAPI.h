@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox video port functions header
  */
@@ -85,4 +84,4 @@ typedef struct VBOXVIDEOPORTPROCS
     PFNCREATESECONDARYDISPLAY pfnCreateSecondaryDisplay;
 } VBOXVIDEOPORTPROCS;
 
-#endif /*VBOXVIDEOPORTAPI_H*/
+#endif /* !VBOXVIDEOPORTAPI_H */

@@ -1,7 +1,8 @@
 ; $Id$
-; @file
-;
+;; @file
 ; VBox Windows Guest Additions XPDM Miniport Video Driver
+;
+
 ;
 ; Copyright (C) 2011-2016 Oracle Corporation
 ;
