@@ -1,6 +1,8 @@
+; $Id$
+;; @file
+; INF file for installing the VBox Guest Mouse (driver for Windows NT5+).
 ;
-; INF file for installing the VBox Guest Mouse
-; (driver for Windows NT5+).
+
 ;
 ; Copyright (C) 2011-2016 Oracle Corporation
 ;
@@ -28,7 +30,7 @@ DriverPackageType=ClassFilter
 VBoxMouse.sys = 1
 
 [DestinationDirs]
-DefaultDestDir = 12	; DIRID_DRIVERS
+DefaultDestDir = 12     ; DIRID_DRIVERS
 
 [Manufacturer]
 ;x86   %ORACLE%=VBoxMouse
