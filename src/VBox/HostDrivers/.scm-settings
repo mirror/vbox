@@ -36,9 +36,11 @@
 /Support/os2/SUPDrvA-os2.asm:                   --external-copyright
 /VBoxNetAdp/freebsd/VBoxNetAdp-freebsd.c:       --external-copyright
 /VBoxNetFlt/freebsd/VBoxNetFlt-freebsd.c:       --external-copyright
+--filter-out-files /VBoxUSB/solaris/include/usbai_private.h
 
 # No license header (public domain).
-/VBoxUSB/os2/usbcalls.c:                        --no-update-copyright-year --no-update-license
+/VBoxUSB/os2/usbcalls.c:                        --external-copyright
+/VBoxUSB/os2/usbcalls.h:                        --external-copyright --no-convert-tabs
 
 # Trivial dual C and assembly include files which cannot have comments.
 /Support/win/import-template-kernel32.h: --no-update-copyright-year --no-update-license
@@ -54,4 +56,5 @@
 --filter-out-files /VBoxNetAdp/solaris/hostname.vboxnet0
 --filter-out-files /VBoxNetFlt/win/nobj/VBoxNetFltNobj.rgs
 /VBoxNetFlt/win/nobj/VBoxNetFltNobjT.idl: --treat-as .h
+/Support/solaris/mod.sh: --no-convert-tabs
 
