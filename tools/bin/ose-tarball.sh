@@ -1,19 +1,5 @@
 #!/bin/sh
-## @file
 # Use this script in conjunction with snapshot-ose.sh
-#
-
-#
-# Copyright (C) 2006-2017 Oracle Corporation
-#
-# This file is part of VirtualBox Open Source Edition (OSE), as
-# available from http://www.virtualbox.org. This file is free software;
-# you can redistribute it and/or modify it under the terms of the GNU
-# General Public License (GPL) as published by the Free Software
-# Foundation, in version 2 as it comes in the "COPYING" file of the
-# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
-# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-#
 
 vboxdir=`pwd`
 if [ ! -r "$vboxdir/Config.kmk" -o ! -r "$vboxdir/Doxyfile.Core" ]; then
@@ -24,9 +10,9 @@ if [ -r "$vboxdir/src/VBox/RDP/server/server.cpp" ]; then
   echo "Found RDP stuff, refused to build OSE tarball!"
   exit 1
 fi
-vermajor=`grep "^VBOX_VERSION_MAJOR *=" "$vboxdir/Config.kmk"|sed -e "s|.*= *\(.*\)|\1|g"`
-verminor=`grep "^VBOX_VERSION_MINOR *=" "$vboxdir/Config.kmk"|sed -e "s|.*= *\(.*\)|\1|g"`
-verbuild=`grep "^VBOX_VERSION_BUILD *=" "$vboxdir/Config.kmk"|sed -e "s|.*= *\(.*\)|\1|g"`
+vermajor=`grep "^VBOX_VERSION_MAJOR *=" "$vboxdir/Version.kmk"|sed -e "s|.*= *\(.*\)|\1|g"`
+verminor=`grep "^VBOX_VERSION_MINOR *=" "$vboxdir/Version.kmk"|sed -e "s|.*= *\(.*\)|\1|g"`
+verbuild=`grep "^VBOX_VERSION_BUILD *=" "$vboxdir/Version.kmk"|sed -e "s|.*= *\(.*\)|\1|g"`
 rootpath=`cd ..;pwd`
 verstr="$vermajor.$verminor.$verbuild"
 rootname="VirtualBox-$verstr"
