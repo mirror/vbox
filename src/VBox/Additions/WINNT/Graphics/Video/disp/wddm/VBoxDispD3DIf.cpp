@@ -38,7 +38,7 @@ void VBoxDispD3DClose(VBOXDISPD3D *pD3D)
  */
 static HMODULE loadSystemDll(const char *pszName)
 {
-    /* Assumed here that DEBUG version of VBoxDispD3D.dll will not be installed system wide 
+    /* Assumed here that DEBUG version of VBoxDispD3D.dll will not be installed system wide
        but will be loaded from local folder of an application being debugged. */
 #ifndef DEBUG
     char   szPath[MAX_PATH];
