@@ -1,5 +1,8 @@
-;
+; $Id$
+;; @file
 ; INF file for installing the VirtualBox Windows guest driver
+;
+
 ;
 ; Copyright (C) 2006-2016 Oracle Corporation
 ;
@@ -68,5 +71,4 @@ ORACLE = "Oracle Corporation"
 VBoxSF.DeviceDesc = "VirtualBox Device"
 VBoxSF_svcdesc = "VirtualBox Shared Folders Driver"
 VBoxMRXNP_svcdesc = "VirtualBox Network Provider Service"
-
 
