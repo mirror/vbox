@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBoxGINA - Windows Logon DLL for VirtualBox, Helper Functions.
  */
