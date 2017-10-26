@@ -138,9 +138,6 @@ vboxvideo_drm.c: --no-convert-tabs
 #
 # Temporary exclusions, awaiting cleanup.
 #
---filter-out-dirs  "/src/VBox/Additions/os2/VBoxGradd/."
---filter-out-dirs  "/src/VBox/Additions/os2/VBoxGrext/."
---filter-out-dirs  "/src/VBox/Additions/os2/VBoxMouse/."
 --filter-out-dirs  "/src/VBox/Devices/PC/PXE/."
 /src/VBox/Additions/solaris/Installer/postinstall.sh: --no-convert-tabs
 /src/VBox/HostDrivers/Support/solaris/mod.sh: --no-convert-tabs
