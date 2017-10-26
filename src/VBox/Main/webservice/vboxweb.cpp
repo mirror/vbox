@@ -1,10 +1,13 @@
-/**
+/* $Id$ */
+/** @file
  * vboxweb.cpp:
  *      hand-coded parts of the webservice server. This is linked with the
  *      generated code in out/.../src/VBox/Main/webservice/methodmaps.cpp
  *      (plus static gSOAP server code) to implement the actual webservice
  *      server, to which clients can connect.
- *
+ */
+
+/*
  * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
