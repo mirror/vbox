@@ -1,5 +1,6 @@
 ; $Id$
-; @file NLS for German language.
+;; @file
+; NLS for German language.
 ;
 
 ;

@@ -1,5 +1,5 @@
 ; $Id$
-; @file
+;; @file
 ; VBoxGuestAdditionsNT4.nsh - Guest Additions installation for NT4.
 ;
 

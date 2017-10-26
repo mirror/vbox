@@ -1,5 +1,5 @@
 ; $Id$
-; @file
+;; @file
 ; VBoxGuestAdditionsUninstall.nsh - Guest Additions uninstallation.
 ;
 

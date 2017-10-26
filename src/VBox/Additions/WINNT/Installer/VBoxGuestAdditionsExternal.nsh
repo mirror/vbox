@@ -1,7 +1,6 @@
 ; $Id$
 ;; @file
-; VBoxGuestAdditionExternal.nsh - Utility function for invoking external
-;                                 applications.
+; VBoxGuestAdditionExternal.nsh - Utility function for invoking external applications.
 ;
 
 ;

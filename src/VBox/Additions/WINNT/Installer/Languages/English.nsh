@@ -1,5 +1,6 @@
 ; $Id$
-; @file NLS for English language.
+;; @file
+; NLS for English language.
 ;
 
 ;

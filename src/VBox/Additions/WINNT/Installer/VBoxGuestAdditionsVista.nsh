@@ -1,5 +1,5 @@
 ; $Id$
-; @file
+;; @file
 ; VBoxGuestAdditionsVista.nsh - Guest Additions installation for Windows Vista/7.
 ;
 
@@ -32,7 +32,7 @@ Function Vista_CheckForRequirements
   ${If} $0 == "1" ; D3D files are invalid, notify user
     MessageBox MB_ICONSTOP|MB_OKCANCEL $(VBOX_COMPONENT_D3D_INVALID) /SD IDOK IDCANCEL failure
     ; Offer to open up the VBox online manual on how to fix missing/corrupted D3D files
-    MessageBox MB_ICONQUESTION|MB_YESNO $(VBOX_COMPONENT_D3D_INVALID_MANUAL) /SD IDNO IDYES open_handbook_d3d_invalid    
+    MessageBox MB_ICONQUESTION|MB_YESNO $(VBOX_COMPONENT_D3D_INVALID_MANUAL) /SD IDNO IDYES open_handbook_d3d_invalid
   ${EndIf}
   Goto success
 

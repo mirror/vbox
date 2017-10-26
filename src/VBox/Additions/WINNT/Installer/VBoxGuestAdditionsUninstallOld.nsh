@@ -1,7 +1,6 @@
-; $Id: $
+; $Id$
 ;; @file
-; VBoxGuestAdditionsUninstallOld.nsh - Guest Additions uninstallation handling
-;                                      for legacy packages.
+; VBoxGuestAdditionsUninstallOld.nsh - Guest Additions uninstallation handling for legacy packages.
 ;
 
 ;
