@@ -57,8 +57,6 @@
 --filter-out-dirs  "/src/VBox/Additions/WINNT/Network/freebsd/."
 --filter-out-dirs  "/src/VBox/Additions/WINNT/i8042prt/include/."
 --filter-out-dirs  "/src/VBox/Additions/WINNT/Graphics/Wine*/."
---filter-out-dirs  "/src/VBox/Additions/solaris/DRM/include/."
---filter-out-dirs  "/src/VBox/Additions/solaris/SharedFolders/solaris10/sys/."
 --filter-out-dirs  "/src/VBox/HostServices/SharedOpenGL/."
 --filter-out-dirs  "/src/VBox/HostDrivers/VBoxNetFlt/solaris/include/."
 --filter-out-dirs  "/src/VBox/HostDrivers/VBoxUSB/solaris/include/."
@@ -103,7 +101,6 @@
 #
 # Files and sub-trees where we don't convert tabs.
 #
-/src/VBox/Additions/solaris/SharedFolders/*: --no-convert-tabs
 /src/VBox/Additions/x11/vboxmouse/*mouse*: --no-convert-tabs
 /src/VBox/Additions/x11/vboxmouse/*pnp.c: --no-convert-tabs
 /src/VBox/Additions/x11/vboxvideo/vboxvideo*.c: --no-convert-tabs
@@ -139,7 +136,6 @@ vboxvideo_drm.c: --no-convert-tabs
 # Temporary exclusions, awaiting cleanup.
 #
 --filter-out-dirs  "/src/VBox/Devices/PC/PXE/."
-/src/VBox/Additions/solaris/Installer/postinstall.sh: --no-convert-tabs
 /src/VBox/HostDrivers/Support/solaris/mod.sh: --no-convert-tabs
 /src/VBox/Installer/solaris/vboxconfig.sh: --no-convert-tabs
 

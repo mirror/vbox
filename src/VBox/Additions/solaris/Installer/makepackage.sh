@@ -1,6 +1,9 @@
 #!/bin/sh
-#
+# $Id$
+## @file
 # VirtualBox Solaris Guest Additions package creation script.
+#
+
 #
 # Copyright (C) 2008-2012 Oracle Corporation
 #

@@ -1,6 +1,9 @@
 #!/bin/sh
-#
+# $Id$
+## @file
 # VirtualBox startup script for Solaris Guests Additions
+#
+
 #
 # Copyright (C) 2008-2011 Oracle Corporation
 #

@@ -1,6 +1,9 @@
 #!/bin/sh
-#
+# $Id$
+## @file
 # VirtualBox Guest Additions kernel module control script for Solaris.
+#
+
 #
 # Copyright (C) 2008-2012 Oracle Corporation
 #
