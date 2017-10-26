@@ -61,7 +61,6 @@
 --filter-out-dirs  "/src/VBox/Devices/Network/lwip*/src*/."
 --filter-out-dirs  "/src/VBox/Devices/Network/lwip*/doc*/."
 --filter-out-dirs  "/src/VBox/Devices/Network/lwip*/test*/."
---filter-out-dirs  "/src/VBox/Storage/VDFormats/StorageCraft/*/."
 --filter-out-dirs  "/src/VBox/RDP/client-*/."
 --filter-out-dirs  "/src/recompiler/tests/."
 
