@@ -81,7 +81,7 @@ HRESULT WINAPI D3D8GetSWInfo(void)
 void WINAPI DebugSetMute(void)
 {
     SW_CHECKCALL(g_swd3d8, DebugSetMute);
-    g_swd3d8.pDebugSetMute();    
+    g_swd3d8.pDebugSetMute();
 }
 
 IDirect3D8* WINAPI Direct3DCreate8(UINT SDKVersion)

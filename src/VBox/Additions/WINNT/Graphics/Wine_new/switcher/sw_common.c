@@ -82,8 +82,8 @@ BOOL checkOptionsExe(void)
     char *filename = name, *pName;
     int i;
 
-	if (!GetModuleFileName(NULL, name, 1000))
-		return TRUE;
+        if (!GetModuleFileName(NULL, name, 1000))
+                return TRUE;
 
     /*Extract filename*/
     for (pName=name; *pName; ++pName)
@@ -129,6 +129,6 @@ void InitD3DExports(const char *vboxName, const char *msName)
         dllName = msName;
 
     hDLL = loadSystemDll(dllName);
-    FillD3DExports(hDLL); 
+    FillD3DExports(hDLL);
 }
 
