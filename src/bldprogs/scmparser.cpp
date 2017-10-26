@@ -567,6 +567,9 @@ static int enumerateCStyleComments(PSCMSTREAM pIn, PFNSCMCOMMENTENUMERATOR pfnCa
                         if (rcRet == VINF_SUCCESS)
                             rcRet = rc;
                     }
+
+                    if (!pchLine)
+                        break;
                 }
             }
             else if (ch == '"')
@@ -630,6 +633,9 @@ static int enumeratePythonComments(PSCMSTREAM pIn, PFNSCMCOMMENTENUMERATOR pfnCa
                     return rc;
                 if (rcRet == VINF_SUCCESS)
                     rcRet = rc;
+
+                if (!pchLine)
+                    break;
             }
             else if (ch == '"' || ch == '\'')
             {
@@ -777,6 +783,9 @@ static int enumeratePythonComments(PSCMSTREAM pIn, PFNSCMCOMMENTENUMERATOR pfnCa
                     if (rc > VINF_SUCCESS && rcRet == VINF_SUCCESS)
                         rcRet = rc;
                 }
+
+                if (!pchLine)
+                    break;
             }
             /* else: We don't have to deal with character litterals as these shouldn't
                      include comment-like sequences. */
@@ -874,6 +883,9 @@ static int enumerateSimpleLineComments(PSCMSTREAM pIn, char chStart, PFNISCOMMEN
                     return rc;
                 if (rcRet == VINF_SUCCESS)
                     rcRet = rc;
+
+                if (!pchLine)
+                    break;
             }
         } /* for each character in the line */
 
