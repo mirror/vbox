@@ -691,6 +691,13 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             pSettings->fFixFlowerBoxMarkers = false;
             return VINF_SUCCESS;
 
+        case SCMOPT_FIX_TODOS:
+            pSettings->fFixTodos = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_FIX_TODOS:
+            pSettings->fFixTodos = false;
+            return VINF_SUCCESS;
+
         case SCMOPT_UPDATE_COPYRIGHT_YEAR:
             pSettings->fUpdateCopyrightYear = true;
             return VINF_SUCCESS;
