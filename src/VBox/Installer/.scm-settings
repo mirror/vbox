@@ -51,18 +51,18 @@
 /linux/debian/postrm:                           --treat-as .sh
 /linux/debian/preinst:                          --treat-as .sh
 /linux/debian/prerm:                            --treat-as .sh
-/linux/debian/rules:                            --treat-as Makefile --no-convert-eol --set-svn-executable
+/linux/debian/rules:                            --treat-as Makefile --no-convert-eol --dont-set-svn-executable
 --filter-out-files /linux/debian/templates
 /linux/deffiles:                                --treat-as .sh
 --filter-out-files /linux/distributions_deb
 --filter-out-files /linux/distributions_rpm
 /linux/Makefile.include.footer:                 --treat-as Makefile --no-convert-eol
 /linux/Makefile.include.header:                 --treat-as Makefile --no-convert-eol
-/linux/rpm/rules:                               --treat-as Makefile --no-convert-eol --set-svn-executable
+/linux/rpm/rules:                               --treat-as Makefile --no-convert-eol --dont-set-svn-executable
 /linux/rpm/VirtualBox.tmpl.spec:                --treat-as .sh
 /linux/rpm-kmod/build-kmod.in:                  --treat-as .sh
 /linux/rpm-kmod/kmodtool:                       --treat-as .sh --external-copyright --no-strip-trailing-blanks
-/linux/rpm-kmod/rules:                          --treat-as Makefile --no-convert-eol --set-svn-executable
+/linux/rpm-kmod/rules:                          --treat-as Makefile --no-convert-eol --dont-set-svn-executable
 --filter-out-files /linux/rpm-kmod/vboxdrv.spec.in
 --filter-out-files /linux/rpm-kmod/VirtualBox-kmod.spec.in
 --filter-out-files /linux/rpm-kmod-VBoxGuest/README
@@ -70,6 +70,6 @@
 --filter-out-files /linux/README.testing
 
 # Caveat: If we export /linux/rpm-VBoxGuestAdditions/, the --no-update-license hack must go.
-/linux/rpm-VBoxGuestAdditions/rules:                        --no-update-license --treat-as Makefile --no-convert-eol --set-svn-executable
+/linux/rpm-VBoxGuestAdditions/rules:                        --no-update-license --treat-as Makefile --no-convert-eol --dont-set-svn-executable
 /linux/rpm-VBoxGuestAdditions/VBoxGuestAdditions.tmpl.spec: --no-update-license --treat-as .sh
 
