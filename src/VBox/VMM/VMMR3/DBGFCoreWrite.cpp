@@ -52,7 +52,7 @@
 #include <iprt/param.h>
 #include <iprt/file.h>
 #include <iprt/mem.h>
-#include <irpt/formats/elf64.h>
+#include <iprt/formats/elf64.h>
 
 #include "DBGFInternal.h"
 
