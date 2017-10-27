@@ -417,6 +417,19 @@ static PFNSCMREWRITER const g_aRewritersFor_NsisFiles[] =
     rewrite_Copyright_SemicolonComment,
 };
 
+static PFNSCMREWRITER const g_aRewritersFor_Java[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_ExpandTabs,
+    rewrite_StripTrailingBlanks,
+    rewrite_AdjustTrailingLines,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords,
+    rewrite_Copyright_CstyleComment,
+    rewrite_FixFlowerBoxMarkers,
+    rewrite_Fix_C_and_CPP_Todos,
+};
+
 static PFNSCMREWRITER const g_aRewritersFor_ScmSettings[] =
 {
     rewrite_ForceNativeEol,
@@ -544,6 +557,7 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY(g_aRewritersFor_Perl,             false, "*.pl" ),
     SCM_CFG_ENTRY(g_aRewritersFor_DriverInfFiles,   false, "*.inf" ),
     SCM_CFG_ENTRY(g_aRewritersFor_NsisFiles,        false, "*.nsh|*.nsi" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Java,             false, "*.java" ),
     SCM_CFG_ENTRY(g_aRewritersFor_ScmSettings,      false, "*.scm-settings" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Images,           true,  "*.png|*.bmp|*.jpg|*.pnm|*.ico|*.icns|*.tiff|*.tif|*.xcf" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Xslt,             false, "*.xsl" ),
