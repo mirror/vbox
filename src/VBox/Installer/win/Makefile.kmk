@@ -28,12 +28,6 @@ endif
 #
 include $(PATH_SUB_CURRENT)/InstallHelper/Makefile.kmk
 
-ifdef VBOX_WITH_BUNDLED_INSTALLER
- ifeq ($(KBUILD_TARGET_ARCH),x86)
-  include $(PATH_SUB_CURRENT)/BundleMachine/Makefile.kmk
- endif
-endif
-
 ifeq ($(KBUILD_TARGET_ARCH),x86)
  include $(PATH_SUB_CURRENT)/Stub/Makefile.kmk
  include $(PATH_SUB_CURRENT)/StubBld/Makefile.kmk
@@ -202,28 +196,6 @@ ifdef VBOX_WITH_MSM_INSTALL
 		$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm \
 		$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj \
 		$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixpdb))
-endif
-
-ifdef VBOX_WITH_BUNDLED_INSTALLER
- ifeq ($(KBUILD_TARGET),darwin)
-  VBOX_TMP_DIR ?= /VBox
-  ZIP = /usr/bin/zip
- else
-  VBOX_TMP_DIR ?= c:\Temp
-  ZIP = zip
- endif
-
- ifndef VBOX_PATH_PACK_TMP
-  VBOX_PATH_PACK_TMP := $(VBOX_WIN_INST_OUT_DIR)
- endif
-
- VBOX_PATH_PACK_BUNDLE_TMP = $(PATH_STAGE_BIN)/VBoxWinBundleInstaller
- VBOX_PATH_PACK_BUNDLE_ZIP = $(PATH_STAGE_BIN)/VBoxWinBundleInstaller-$(KBUILD_TARGET_ARCH).zip
-
- VBOX_BRAND_WIN_INST_NAME.x86   = $(PACKAGE_BASE)-Win_x86$(VBOX_BRAND_WIN_INST_EXT).msi
- VBOX_BRAND_WIN_INST_NAME.amd64 = $(PACKAGE_BASE)-Win_amd64$(VBOX_BRAND_WIN_INST_EXT).msi
-
- PACKING.win += $(VBOX_PATH_PACK_BUNDLE_ZIP)
 endif
 
 #
@@ -854,38 +826,5 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL): \
 	$(call VBOX_SIGN_FILE_FN,$@)
 endif
 
-
-#
-# Make the bundle installer (for retail ISOs) (zip-file).
-#
-$(VBOX_PATH_PACK_BUNDLE_ZIP): \
-		$(PACKAGE_NAME_FINAL) \
-		$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86", \
-			$(PATH_STAGE_BIN)/VBoxBundleMachine.exe \
-			$(if $(VBOX_WITH_COMBINED_PACKAGE), $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)),)
-	$(RM) -Rf -- $(VBOX_PATH_PACK_BUNDLE_TMP)/
-	$(MKDIR) -p $(VBOX_PATH_PACK_BUNDLE_TMP)/
-ifndef VBOX_WITH_COMBINED_PACKAGE
-	$(CP) $(PACKAGE_NAME_FINAL)                 $(VBOX_PATH_PACK_BUNDLE_TMP)/$(VBOX_BRAND_WIN_INST_NAME.$(KBUILD_TARGET_ARCH))
-endif
-ifeq ($(KBUILD_TARGET_ARCH),x86)
- ifdef VBOX_WITH_COMBINED_PACKAGE
-	$(CP) $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)       $(VBOX_PATH_PACK_BUNDLE_TMP)/$(PACKAGE_NAME_MULTIARCH_FINAL)
- endif
-	$(CP) $(PATH_STAGE_BIN)/VBoxBundleMachine.exe     $(VBOX_PATH_PACK_BUNDLE_TMP)/
-	$(CP) $(PATH_STAGE_BIN)/AutoStartMenu.exe         $(VBOX_PATH_PACK_BUNDLE_TMP)/
-endif
-ifeq ($(KBUILD_TARGET_ARCH),amd64)
- ifndef VBOX_WITH_COMBINED_PACKAGE
-	# Only needed if *not* combined package -- otherwise the 64-bit build
-	# has nothing to do here since the one and only amd64 .MSI file is already
-	# included in the x86 combined package.
-	$(REDIRECT) -C $(VBOX_PATH_PACK_BUNDLE_TMP) -- $(ZIP) -9r $@ .
- endif
-else
-	# Do a bundle .zip in every case on x86. On a combined package this also
-	# will include the amd64 installer we left out in the block above (see comment).
-	$(REDIRECT) -C $(VBOX_PATH_PACK_BUNDLE_TMP) -- $(ZIP) -9r $@ .
-endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
