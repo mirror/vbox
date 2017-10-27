@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox wine & ogl debugging stuff
  */
