@@ -23,7 +23,6 @@
 # You may elect to license modified versions of this file under the
 # terms and conditions of either the GPL or the CDDL or both.
 #
-#/
 
 [Defines]
         INF_VERSION                = 0x00010005

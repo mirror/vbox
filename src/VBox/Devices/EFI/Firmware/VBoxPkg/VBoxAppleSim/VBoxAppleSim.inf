@@ -39,7 +39,7 @@
         VBoxAppleSim.c
         Cpu.c
         Console.c
- 
+
 [Packages]
         MdePkg/MdePkg.dec
         MdeModulePkg/MdeModulePkg.dec
@@ -61,13 +61,13 @@
 
 [Guids]
    gEfiProcessorSubClassGuid
-   
+
 [Protocols]
    gEfiDevicePathToTextProtocolGuid
    gEfiDataHubProtocolGuid
 
 [BuildOptions.common]
 
-  GCC:*_*_*_CC_FLAGS = 
+  GCC:*_*_*_CC_FLAGS =
   INTEL:*_*_*_CC_FLAGS =
   MSFT:*_*_*_CC_FLAGS =

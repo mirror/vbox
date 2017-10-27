@@ -51,7 +51,7 @@
   FILE_GUID                      = 92e02078-d0ca-11de-a547-fb90b709a001
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = PeCoffLib 
+  LIBRARY_CLASS                  = PeCoffLib
 
 
 #

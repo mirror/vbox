@@ -22,9 +22,7 @@
  *
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
- */
-
-/*-
+ * ---------------------------------------------------------------------------
  * This code is based on:
  *
  * Copyright (c) 2006 Christoph Pfisterer
@@ -539,7 +537,7 @@ void fsw_strsplit(struct fsw_string *element, struct fsw_string *buffer, char se
         buffer->type = FSW_STRING_TYPE_EMPTY;
     }
 
-    // TODO: support UTF8 and UTF16_SWAPPED
+    /// @todo support UTF8 and UTF16_SWAPPED
 }
 
 /**

@@ -1,6 +1,7 @@
 # $Id$
 ## @file
 # VBox ISO9660 FS driver
+#
 
 #
 # Copyright (C) 2010-2016 Oracle Corporation
@@ -83,4 +84,3 @@
 
   MSFT:*_*_*_CC_FLAGS = -DFSTYPE=iso9660
 
-  
