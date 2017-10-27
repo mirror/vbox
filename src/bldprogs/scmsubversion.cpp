@@ -1082,16 +1082,26 @@ static int scmSvnIsObjectInWorkingCopy(const char *pszPath)
  * Checks if the file we're operating on is part of a SVN working copy.
  *
  * @returns true if it is, false if it isn't or we cannot tell.
- * @param   pState              The rewrite state to work on.
+ * @param   pState      The rewrite state to work on.  Will use the
+ *                      fIsInSvnWorkingCopy member for caching the result.
  */
 bool ScmSvnIsInWorkingCopy(PSCMRWSTATE pState)
 {
+    /*
+     * We don't ask SVN twice as that's expensive.
+     */
+    if (pState->fIsInSvnWorkingCopy != 0)
+        return pState->fIsInSvnWorkingCopy > 0;
+
 #ifdef SCM_WITH_DYNAMIC_LIB_SVN
     if (g_fSvnFunctionPointersValid)
     {
         int rc = scmSvnIsObjectInWorkingCopy(pState->pszFilename);
         if (rc == (int)true || rc == (int)false)
+        {
+            pState->fIsInSvnWorkingCopy = rc == (int)true ? 1 : -1;
             return rc == (int)true;
+        }
     }
 
     /* Fallback: */
@@ -1104,7 +1114,13 @@ bool ScmSvnIsInWorkingCopy(PSCMRWSTATE pState)
         char szPath[RTPATH_MAX];
         int rc = scmSvnConstructName(pState, ".svn/text-base/", ".svn-base", szPath);
         if (RT_SUCCESS(rc))
-            return RTFileExists(szPath);
+        {
+            if (RTFileExists(szPath))
+            {
+                pState->fIsInSvnWorkingCopy = 1;
+                return true;
+            }
+        }
     }
     else
     {
@@ -1114,9 +1130,11 @@ bool ScmSvnIsInWorkingCopy(PSCMRWSTATE pState)
         if (RT_SUCCESS(rc))
         {
             RTStrFree(pszValue);
+            pState->fIsInSvnWorkingCopy = 1;
             return true;
         }
     }
+    pState->fIsInSvnWorkingCopy = -1;
     return false;
 }
 

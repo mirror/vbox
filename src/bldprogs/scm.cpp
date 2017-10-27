@@ -1127,6 +1127,7 @@ static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_
      */
     if (RT_SUCCESS(rc))
     {
+        size_t cPattern = 1;
         size_t cRelativePaths = 0;
         const char *pszSrc = pSettings->paPairs[iPair].pszPattern;
         for (;;)
@@ -1137,7 +1138,9 @@ static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_
             if (!pszSrc)
                 break;
             pszSrc++;
+            cPattern++;
         }
+        pSettings->paPairs[iPair].fMultiPattern = cPattern > 1;
         if (cRelativePaths > 0)
         {
             char *pszNewPattern = RTStrAlloc(cchPattern + cRelativePaths * (cchDir - 1) + 1);
@@ -1532,10 +1535,14 @@ static int scmSettingsStackMakeFileBase(PCSCMSETTINGS pSettingsStack, const char
             if (cPairs)
             {
                 for (size_t i = 0; i < cPairs; i++)
-                    if (   RTStrSimplePatternMultiMatch(pCur->paPairs[i].pszPattern, RTSTR_MAX,
-                                                        pszBasename,  cchBasename, NULL)
-                        || RTStrSimplePatternMultiMatch(pCur->paPairs[i].pszPattern, RTSTR_MAX,
-                                                        pszFilename,  RTSTR_MAX, NULL))
+                    if (   !pCur->paPairs[i].fMultiPattern
+                        ?    RTStrSimplePatternNMatch(pCur->paPairs[i].pszPattern, RTSTR_MAX,
+                                                      pszBasename,  cchBasename)
+                          || RTStrSimplePatternMatch(pCur->paPairs[i].pszPattern, pszFilename)
+                        :    RTStrSimplePatternMultiMatch(pCur->paPairs[i].pszPattern, RTSTR_MAX,
+                                                          pszBasename,  cchBasename, NULL)
+                          || RTStrSimplePatternMultiMatch(pCur->paPairs[i].pszPattern, RTSTR_MAX,
+                                                          pszFilename,  RTSTR_MAX, NULL))
                     {
                         ScmVerbose(NULL, 5, "scmSettingsStackMakeFileBase: Matched '%s' : '%s'\n",
                                    pCur->paPairs[i].pszPattern, pCur->paPairs[i].pszOptions);
@@ -1871,11 +1878,12 @@ static int scmProcessFile(const char *pszFilename, const char *pszBasename, size
     if (RT_SUCCESS(rc))
     {
         SCMRWSTATE State;
-        State.fFirst           = false;
-        State.pszFilename      = pszFilename;
-        State.cSvnPropChanges  = 0;
-        State.paSvnPropChanges = NULL;
-        State.rc               = VINF_SUCCESS;
+        State.pszFilename           = pszFilename;
+        State.fFirst                = false;
+        State.fIsInSvnWorkingCopy   = 0;
+        State.cSvnPropChanges       = 0;
+        State.paSvnPropChanges      = NULL;
+        State.rc                    = VINF_SUCCESS;
 
         rc = scmProcessFileInner(&State, pszFilename, pszBasename, cchBasename, &Base);
 
