@@ -210,7 +210,7 @@ static int handleLineComment(PSCMSTREAM pIn, PFNISCOMMENT pfnIsComment,
     if (off < cchLine && RT_C_IS_SPACE(pchLine[off]))
         off++;
     size_t cchBody = cchLine;
-    while (cchBody >= off && RT_C_IS_SPACE(pchLine[cchBody - 1]))
+    while (cchBody > off && RT_C_IS_SPACE(pchLine[cchBody - 1]))
            cchBody--;
     cchBody -= off;
     size_t   cbBodyAlloc = RT_MAX(_1K, RT_ALIGN_Z(cchBody + 64, 128));
