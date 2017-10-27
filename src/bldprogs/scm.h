@@ -50,6 +50,8 @@ typedef SCMSVNPROP *PSCMSVNPROP;
 typedef SCMSVNPROP const *PCSCMSVNPROP;
 
 
+void ScmSvnInit(void);
+void ScmSvnTerm(void);
 bool ScmSvnIsDirInWorkingCopy(const char *pszDir);
 bool ScmSvnIsInWorkingCopy(PSCMRWSTATE pState);
 int  ScmSvnQueryProperty(PSCMRWSTATE pState, const char *pszName, char **ppszValue);
