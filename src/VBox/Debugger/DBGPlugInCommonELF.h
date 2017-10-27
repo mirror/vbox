@@ -19,8 +19,8 @@
 #define ___Debugger_DBGPlugInCommonELF_h
 
 #include <VBox/types.h>
-#include "../Runtime/include/internal/ldrELF32.h"
-#include "../Runtime/include/internal/ldrELF64.h"
+#include <iprt/formats/elf32.h>
+#include <iprt/formats/elf64.h>
 
 /** @name DBGDiggerCommonParseElf32Mod and DBGDiggerCommonParseElf64Mod flags
  * @{ */

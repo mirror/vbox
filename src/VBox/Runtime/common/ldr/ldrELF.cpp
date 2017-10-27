@@ -37,10 +37,17 @@
 #include <iprt/string.h>
 #include <iprt/log.h>
 #include <iprt/err.h>
+#if 0
 #include "internal/ldrELF32.h"
 #include "internal/ldrELF64.h"
 #include "internal/ldrELFi386.h"
 #include "internal/ldrELFAmd64.h"
+#else
+# include <iprt/formats/elf32.h>
+# include <iprt/formats/elf64.h>
+# include <iprt/formats/elf-i386.h>
+# include <iprt/formats/elf-amd64.h>
+#endif
 #include "internal/ldr.h"
 
 

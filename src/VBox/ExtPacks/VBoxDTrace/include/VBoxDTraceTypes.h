@@ -435,7 +435,7 @@ extern int dtrace_close(struct dtrace_state *state);
 /*
  * gelf
  */
-# include "../../../Runtime/include/internal/ldrELF64.h"
+# include <iprt/formats/elf64.h>
 typedef Elf64_Half  GElf_Half;
 typedef Elf64_Xword GElf_Xword;
 typedef Elf64_Shdr  GElf_Shdr;
