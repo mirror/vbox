@@ -2670,22 +2670,6 @@ DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, PSVMEVENT pEvent, RTGCUINT
 
 
 /**
- * Sets an exception as pending-for-injection into the VM.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-DECLINLINE(void) hmR0SvmSetPendingXcpt(PVMCPU pVCpu, uint8_t uXcpt)
-{
-    SVMEVENT Event;
-    Event.u          = 0;
-    Event.n.u1Valid  = 1;
-    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
-    Event.n.u8Vector = uXcpt;
-    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-}
-
-
-/**
  * Sets an invalid-opcode (\#UD) exception as pending-for-injection into the VM.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -7442,7 +7426,7 @@ HMSVM_EXIT_DECL hmR0SvmNestedExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIE
         return VINF_EM_RAW_INJECT_TRPM_EVENT;
     }
 
-    hmR0SvmSetPendingXcpt(pVCpu, X86_XCPT_DB);
+    hmR0SvmSetPendingXcptDB(pVCpu);
     return VINF_SUCCESS;
 }
 
