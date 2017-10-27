@@ -541,7 +541,6 @@ static SCMCFGENTRY const g_aConfigs[] =
 {
     SCM_CFG_ENTRY(g_aRewritersFor_Makefile_kup,     false, "Makefile.kup" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Makefile_kmk,     false, "*.kmk" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_OtherMakefiles,   false, "Makefile" ),
     SCM_CFG_ENTRY(g_aRewritersFor_C_and_CPP,        false, "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc|*.m|*.mm" ),
     SCM_CFG_ENTRY(g_aRewritersFor_H_and_HPP,        false, "*.h|*.hpp" ),
     SCM_CFG_ENTRY(g_aRewritersFor_RC,               false, "*.rc" ),
@@ -568,6 +567,8 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY(g_aRewritersFor_QtTranslations,   false, "*.ts" ),
     SCM_CFG_ENTRY(g_aRewritersFor_QtUiFiles,        false, "*.ui" ),
     SCM_CFG_ENTRY(g_aRewritersFor_SifFiles,         false, "*.sif" ),
+    /* Should be last. */
+    SCM_CFG_ENTRY(g_aRewritersFor_OtherMakefiles,   false, "Makefile|makefile|GNUmakefile|SMakefile" ),
     /* Must be be last: */
     SCM_CFG_ENTRY(g_aRewritersFor_FileLists,        false, "files_*" ),
 };
@@ -1231,15 +1232,77 @@ static int scmSettingsLoadFile(PSCMSETTINGS pSettings, const char *pszFilename)
             if (cchLine < 1 || *pchLine == '#')
                 continue;
 
+            /* Deal with escaped newlines. */
+            size_t  iFirstLine  = ~(size_t)0;
+            char   *pszFreeLine = NULL;
+            if (   pchLine[cchLine - 1] == '\\'
+                && (   cchLine < 2
+                    || pchLine[cchLine - 2] != '\\') )
+            {
+                iFirstLine = ScmStreamTellLine(&Stream);
+
+                cchLine--;
+                while (cchLine > 0 && RT_C_IS_SPACE(pchLine[cchLine - 1]))
+                    cchLine--;
+
+                size_t cchTotal = cchLine;
+                pszFreeLine = RTStrDupN(pchLine, cchLine);
+                if (pszFreeLine)
+                {
+                    /* Append following lines. */
+                    while ((pchLine = ScmStreamGetLine(&Stream, &cchLine, &enmEol)) != NULL)
+                    {
+                        while (cchLine > 0 && RT_C_IS_SPACE(*pchLine))
+                            pchLine++, cchLine--;
+
+                        bool const fDone = cchLine == 0
+                                        || pchLine[cchLine - 1] != '\\'
+                                        || (cchLine >= 2 && pchLine[cchLine - 2] == '\\');
+                        if (!fDone)
+                        {
+                            cchLine--;
+                            while (cchLine > 0 && RT_C_IS_SPACE(pchLine[cchLine - 1]))
+                                cchLine--;
+                        }
+
+                        rc = RTStrRealloc(&pszFreeLine, cchTotal + 1 + cchLine + 1);
+                        if (RT_FAILURE(rc))
+                            break;
+                        pszFreeLine[cchTotal++] = ' ';
+                        memcpy(&pszFreeLine[cchTotal], pchLine, cchLine);
+                        cchTotal += cchLine;
+                        pszFreeLine[cchTotal] = '\0';
+
+                        if (fDone)
+                            break;
+                    }
+                }
+                else
+                    rc = VERR_NO_STR_MEMORY;
+
+                if (RT_FAILURE(rc))
+                {
+                    RTStrFree(pszFreeLine);
+                    rc = RTMsgErrorRc(VERR_NO_MEMORY, "%s: Ran out of memory deal with escaped newlines");
+                    break;
+                }
+
+                pchLine = pszFreeLine;
+                cchLine = cchTotal;
+            }
+
             /* What kind of line is it? */
             const char *pchColon = (const char *)memchr(pchLine, ':', cchLine);
             if (pchColon)
                 rc = scmSettingsAddPair(pSettings, pchLine, cchLine, pchColon - pchLine, szAbsPath, cchDir);
             else
                 rc = scmSettingsBaseParseStringN(&pSettings->Base, pchLine, cchLine, szAbsPath, cchDir);
+            if (pszFreeLine)
+                RTStrFree(pszFreeLine);
             if (RT_FAILURE(rc))
             {
-                RTMsgError("%s:%d: %Rrc\n", pszFilename, ScmStreamTellLine(&Stream), rc);
+                RTMsgError("%s:%d: %Rrc\n",
+                           pszFilename, iFirstLine == ~(size_t)0 ? ScmStreamTellLine(&Stream) : iFirstLine, rc);
                 break;
             }
         }
