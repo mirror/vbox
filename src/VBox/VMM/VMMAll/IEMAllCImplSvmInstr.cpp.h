@@ -71,6 +71,9 @@ DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPU pVCpu, PCPUMCTX pCtx)
      * see comment in iemMemPageTranslateAndCheckAccess().
      */
     int rc = PGMChangeMode(pVCpu, pCtx->cr0 | X86_CR0_PE, pCtx->cr4, pCtx->msrEFER);
+#ifdef IN_RING3
+    Assert(rc != VINF_PGM_CHANGE_MODE);
+#endif
     AssertRCReturn(rc, rc);
 
     /* Inform CPUM (recompiler), can later be removed. */
@@ -238,7 +241,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
             /*
              * Reload the guest's "host state".
              */
-            CPUMSvmVmExitRestoreHostState(pCtx);
+            CPUMSvmVmExitRestoreHostState(pVCpu, pCtx);
 
             /*
              * Update PGM, IEM and others of a world-switch.
@@ -289,6 +292,15 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     LogFlow(("iemSvmVmrun\n"));
+
+#ifdef IN_RING0
+    /*
+     * Until PGM can handle switching the guest paging mode in ring-0,
+     * there's no point in trying to emulate VMRUN in ring-0 as we have
+     * to go back to ring-3 anyway, see @bugref{7243#c48}.
+     */
+    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+#endif
 
     /*
      * Cache the physical address of the VMCB for #VMEXIT exceptions.
@@ -450,15 +462,21 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
 
         /*
          * Continue validating guest-state and controls.
+         *
+         * We pass CR0 as 0 to CPUMQueryValidatedGuestEfer below to skip the illegal
+         * EFER.LME bit transition check. We pass the nested-guest's EFER as both the
+         * old and new EFER value to not have any guest EFER bits influence the new
+         * nested-guest EFER.
          */
-        /* EFER, CR0 and CR4. */
         uint64_t uValidEfer;
-        rc = CPUMQueryValidatedGuestEfer(pVM, pVmcbNstGst->u64CR0, pVmcbNstGst->u64EFER, pVmcbNstGst->u64EFER, &uValidEfer);
+        rc = CPUMQueryValidatedGuestEfer(pVM, 0 /* CR0 */, pVmcbNstGst->u64EFER, pVmcbNstGst->u64EFER, &uValidEfer);
         if (RT_FAILURE(rc))
         {
             Log(("iemSvmVmrun: EFER invalid uOldEfer=%#RX64 -> #VMEXIT\n", pVmcbNstGst->u64EFER));
             return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
         }
+
+        /* Validate paging and CPU mode bits. */
         bool const fSvm                     = RT_BOOL(uValidEfer & MSR_K6_EFER_SVME);
         bool const fLongModeSupported       = RT_BOOL(pVM->cpum.ro.GuestFeatures.fLongMode);
         bool const fLongModeEnabled         = RT_BOOL(uValidEfer & MSR_K6_EFER_LME);
@@ -545,7 +563,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         pCtx->rax        = pVmcbNstGst->u64RAX;
         pCtx->rsp        = pVmcbNstGst->u64RSP;
         pCtx->rip        = pVmcbNstGst->u64RIP;
-        pCtx->msrEFER    = uValidEfer;
+        CPUMSetGuestMsrEferNoCheck(pVCpu, pCtx->msrEFER, uValidEfer);
 
         /* Mask DR6, DR7 bits mandatory set/clear bits. */
         pCtx->dr[6] &= ~(X86_DR6_RAZ_MASK | X86_DR6_MBZ_MASK);
@@ -568,7 +586,10 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         if (rcStrict == VINF_SUCCESS)
         { /* likely */ }
         else if (RT_SUCCESS(rcStrict))
+        {
+            LogFlow(("iemSvmVmrun: iemSvmWorldSwitch returned %Rrc, setting passup status\n", VBOXSTRICTRC_VAL(rcStrict)));
             rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
+        }
         else
         {
             LogFlow(("iemSvmVmrun: iemSvmWorldSwitch unexpected failure. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -633,6 +654,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
             LogFlow(("iemSvmVmrun: Entering nested-guest: %04x:%08RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64 efer=%#RX64 efl=%#x\n",
                      pCtx->cs.Sel, pCtx->rip, pCtx->cr0, pCtx->cr3, pCtx->cr4, pCtx->msrEFER, pCtx->rflags.u64));
 
+        LogFlow(("iemSvmVmrun: returns %d\n", VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
     }
 
