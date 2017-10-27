@@ -18,5 +18,5 @@
 
 /VMMAll/IEMAllInstructionsPython.py: --license-ose-dual
 
---filter-out-file /testcase/dev.tar.gz
+--filter-out-files /testcase/dev.tar.gz
 
