@@ -6824,6 +6824,7 @@ int vmsvga3dOcclusionQueryBegin(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext
 
 int vmsvga3dOcclusionQueryEnd(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext)
 {
+    RT_NOREF(pContext);
     AssertReturn(pState->ext.glEndQuery, VERR_NOT_SUPPORTED);
     pState->ext.glEndQuery(GL_ANY_SAMPLES_PASSED);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
