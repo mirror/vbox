@@ -28,11 +28,27 @@
 # The validation kit is dual licensed.
 --license-ose-dual
 
-*.c16:             --treat-as .c
-*.c32:             --treat-as .c
-*.c64:             --treat-as .c
+*.c16:                                  --treat-as .c
+*.c32:                                  --treat-as .c
+*.c64:                                  --treat-as .c
 
-/testdriver/*.ps1: --treat-as Makefile
+*.css:                                  --treat-as .h
+*.js:                                   --treat-as .h
 
+/testdriver/*.ps1:                      --treat-as Makefile
+/testmanager/apache-template-*.conf:    --treat-as Makefile
+
+# Skip stuff without licenses and such.
 --filter-out-files *.txt
 --filter-out-files *.html
+--filter-out-files *.svg
+--filter-out-files /testmanager/misc/htpasswd-logout
+--filter-out-files /testmanager/misc/htpasswd-sample
+
+# Skip the XML for database diagrams.
+--filter-out-files /testmanager/db/TestManagerDatabase/*.xml
+--filter-out-files /testmanager/db/TestManagerDatabase.dmd
+
+# Skip ova test data
+--filter-out-files *.ova
+--filter-out-files *.pem

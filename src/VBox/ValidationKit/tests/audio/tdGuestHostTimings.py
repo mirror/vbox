@@ -61,7 +61,7 @@ class tdGuestHostTimings(vbox.TestDriver):                                      
         oTestVm = vboxtestvms.TestVm(self.oTestVmSet, 'mw7x64', sHd = 'mw7x64.vdi',
                          sKind = 'Windows7', acCpusSup = range(1, 2), fIoApic = True, sFirmwareType = 'bios',
                             asParavirtModesSup = ['hyperv'], asVirtModesSup = ['hwvirt-np'], sHddControllerType = 'SATA Controller');
-                            
+
         self.oTestVmSet.aoTestVms.append(oTestVm);
 
         self.sVMname = None
@@ -86,7 +86,7 @@ class tdGuestHostTimings(vbox.TestDriver):                                      
 
     def actionConfig(self):
         return True
-  
+
     def actionExecute(self):
         #self.sTempPathHost  = os.environ.get("IPRT_TMPDIR")
         self.sTempPathHost  = os.path.normpath(os.environ.get("TEMP") + "/VBoxAudioValKit")
@@ -116,19 +116,19 @@ class tdGuestHostTimings(vbox.TestDriver):                                      
             oProcess = oGuestSession.processCreate(sPathToPlayer,  ["xxx0", "--total-duration-in-secs", str(duration)], [], [], 0)
             processWaitResult = oProcess.waitFor(self.oVBoxMgr.constants.ProcessWaitForFlag_Start, 1000)
             reporter.log("Started: pid %d, waitResult %d" % (oProcess.PID, processWaitResult))
-            
+
             processWaitResult = oProcess.waitFor(self.oVBoxMgr.constants.ProcessWaitForFlag_Terminate, 2 * duration * 1000)
             reporter.log("Terminated: pid %d, waitResult %d" % (oProcess.PID, processWaitResult))
             time.sleep(1) # Give audio backend sometime to save a stream to .wav file
 
             absFileName = self.seekLatestAudioFileName(oGuestSession, duration)
-            
+
             if absFileName is None:
                 reporter.testFailure("Unable to find audio file")
                 continue
-            
+
             reporter.log("Checking audio file '" + absFileName + "'")
-            
+
             diff = self.checkGuestHostTimings(absFileName + ".timing")
             if diff is not None:
                 if diff > 0.0:      # Guest sends data quicker than a host can play
@@ -138,7 +138,7 @@ class tdGuestHostTimings(vbox.TestDriver):                                      
                     diff = -diff;   # Much worse case: guest sends data very slow, host feels starvation
                     if diff > 0.005: # 0.5% is probably good threshold here
                         reporter.testFailure("Guest sends audio buffers too slowly")
-                        
+
                 reporter.testDone()
             else:
                 reporter.testFailure("Unable to parse a file with timings")
@@ -147,7 +147,7 @@ class tdGuestHostTimings(vbox.TestDriver):                                      
 
         del oGuest
         del oConsole
-        
+
         return True
 
     def testOneVmConfig(self, oVM, oTestVm):
@@ -179,10 +179,10 @@ class tdGuestHostTimings(vbox.TestDriver):                                      
 
         oSession = self.oVBoxMgr.mgr.getSessionObject(oVirtualBox)
         oMachine.lockMachine(oSession, self.oVBoxMgr.constants.LockType_Shared)
-        
+
         self.doTest(oSession);
 
-        oSession.unlockMachine()   
+        oSession.unlockMachine()
 
         del oSession
         del oMachine
@@ -192,17 +192,17 @@ class tdGuestHostTimings(vbox.TestDriver):                                      
     def seekLatestAudioFileName(self, guestSession, duration):
 
         listOfFiles = os.listdir(self.sTempPathHost)
-        # Assuming that .wav files are named like 2016-11-15T12_08_27.669573100Z.wav by VBOX audio backend 
+        # Assuming that .wav files are named like 2016-11-15T12_08_27.669573100Z.wav by VBOX audio backend
         # So that sorting by name = sorting by creation date
         listOfFiles.sort(reverse = True)
 
         for fileName in listOfFiles:
             if not fileName.endswith(".wav"):
                 continue
-                
+
             absFileName = os.path.join(self.sTempPathHost, fileName)
-            
-            # Ignore too small wav files (usually uncompleted audio streams) 
+
+            # Ignore too small wav files (usually uncompleted audio streams)
             statInfo = os.stat(absFileName)
             if statInfo.st_size > 100:
                 return absFileName
@@ -222,7 +222,7 @@ class tdGuestHostTimings(vbox.TestDriver):                                      
 
             diff = float(guestTime - hostTime) / hostTime
             return diff
-        
+
         return
 
 if __name__ == '__main__':
