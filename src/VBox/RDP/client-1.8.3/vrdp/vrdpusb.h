@@ -1,5 +1,6 @@
+/* $Id$ */
 /** @file
- *
+ * Remote Desktop Protocol client - USB Channel
  */
 
 /*
@@ -27,4 +28,5 @@
 #define VRDP_USB_CAPS_FLAG_ASYNC    (0)
 #define VRDP_USB_CAPS_FLAG_POLL     (1)
 
-#endif /* __VRDPUSB__H  */
+#endif /* !__VRDPUSB__H  */
+
