@@ -1205,7 +1205,7 @@ VMM_INT_DECL(bool)  CPUMIsGuestInRawMode(PVMCPU pVCpu);
 VMM_INT_DECL(bool)      CPUMCanSvmNstGstTakePhysIntr(PCCPUMCTX pCtx);
 VMM_INT_DECL(bool)      CPUMCanSvmNstGstTakeVirtIntr(PCCPUMCTX pCtx);
 VMM_INT_DECL(uint8_t)   CPUMGetSvmNstGstInterrupt(PCCPUMCTX pCtx);
-VMM_INT_DECL(void)      CPUMSvmVmExitRestoreHostState(PCPUMCTX pCtx);
+VMM_INT_DECL(void)      CPUMSvmVmExitRestoreHostState(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(void)      CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr);
 /** @} */
 
