@@ -32,10 +32,10 @@
 
 
 # fun
-/slirp/dnsproxy/dnsproxy.h: --external-copyright
-/slirp/dnsproxy/hash.c:     --external-copyright
-/slirp/libalias/*:          --external-copyright
-/slirp/bsd/*:               --external-copyright
+/slirp/dnsproxy/dnsproxy.h: --external-copyright --no-convert-tabs
+/slirp/dnsproxy/hash.c:     --external-copyright --no-convert-tabs
+/slirp/libalias/*:          --external-copyright --no-convert-tabs
+/slirp/bsd/*:               --external-copyright --no-convert-tabs --dont-set-svn-keywords
 
 # well...
 /lwipopts.h: --external-copyright

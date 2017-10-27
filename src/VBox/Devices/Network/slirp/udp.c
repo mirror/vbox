@@ -367,7 +367,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         *ip = save_ip;
         Log2(("NAT: UDP tx errno = %d (%s) on sent to %RTnaipv4\n",
               errno, strerror(errno), ip->ip_dst));
-	icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
+        icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
         so->so_m = NULL;
         LogFlowFuncLeave();
         return;
