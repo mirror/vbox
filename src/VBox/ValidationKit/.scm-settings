@@ -52,3 +52,9 @@
 # Skip ova test data
 --filter-out-files *.ova
 --filter-out-files *.pem
+
+# Skip some plain config files
+--filter-out-files /utils/TestExecServ/linux/vboxtxs.service
+--filter-out-files /utils/TestExecServ/win/*.reg
+--filter-out-files /utils/usb/linux/usbtest.service
+
