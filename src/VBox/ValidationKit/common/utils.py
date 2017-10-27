@@ -348,7 +348,7 @@ def openNoDenyDeleteNoInherit(sFile, sMode = 'r'):
             if 'a' in sMode:
                 fOpen |= os.O_APPEND;
             if 'b' in sMode or 't' in sMode:
-                fOpen |= os.O_TEXT;
+                fOpen |= os.O_TEXT;                                                                 # pylint: disable=no-member
             fdFile = msvcrt.open_osfhandle(hDetachedFile, fOpen);
 
             # Tell python to use this handle.
