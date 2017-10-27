@@ -554,7 +554,7 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY(g_aRewritersFor_BasicScripts,     false, "*.vbs|*.vb" ),
     SCM_CFG_ENTRY(g_aRewritersFor_SedScripts,       false, "*.sed" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Python,           false, "*.py" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Perl,             false, "*.pl" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Perl,             false, "*.pl|*.pm" ),
     SCM_CFG_ENTRY(g_aRewritersFor_DriverInfFiles,   false, "*.inf" ),
     SCM_CFG_ENTRY(g_aRewritersFor_NsisFiles,        false, "*.nsh|*.nsi" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Java,             false, "*.java" ),
