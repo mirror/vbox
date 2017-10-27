@@ -383,13 +383,13 @@ cleanup()
            || test -e "${i}/misc/vboxpci.ko"; then
             rm -f "${i}/misc/vboxdrv.ko" "${i}/misc/vboxnetadp.ko" \
                   "${i}/misc/vboxnetflt.ko" "${i}/misc/vboxpci.ko"
-            # Remove the kernel version folder if it was empty except for us.
-            test   "`echo ${i}/misc/* ${i}/misc/.?* ${i}/* ${i}/.?*`" \
-                 = "${i}/misc/* ${i}/misc/.. ${i}/misc ${i}/.." &&
-                rmdir "${i}/misc" "${i}"  # We used to leave empty folders.
             version=`expr "${i}" : "/lib/modules/\(.*\)"`
             depmod -a "${version}"
         fi
+        # Remove the kernel version folder if it was empty except for us.
+        test   "`echo ${i}/misc/* ${i}/misc/.?* ${i}/* ${i}/.?*`" \
+             = "${i}/misc/* ${i}/misc/.. ${i}/misc ${i}/.." &&
+            rmdir "${i}/misc" "${i}"  # We used to leave empty folders.
     done
 }
 
