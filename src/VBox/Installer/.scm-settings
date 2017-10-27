@@ -73,3 +73,17 @@
 /linux/rpm-VBoxGuestAdditions/rules:                        --no-update-license --treat-as Makefile --no-convert-eol --dont-set-svn-executable
 /linux/rpm-VBoxGuestAdditions/VBoxGuestAdditions.tmpl.spec: --no-update-license --treat-as .sh
 
+# Solaris stuff.
+/solaris/vboxconfig.sh:                         --no-convert-tabs
+/solaris/*.xml:                                 --no-convert-eol
+
+--filter-out-files /solaris/ips/vbox.mog
+--filter-out-files /solaris/vbox.pkginfo
+--filter-out-files /solaris/vbox.pkgresponse
+--filter-out-files /solaris/vbox.space
+--filter-out-files /solaris/virtualbox.applications.in
+--filter-out-files /solaris/virtualbox.keys
+--filter-out-files /solaris/virtualbox.mime
+
+
+

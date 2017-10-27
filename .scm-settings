@@ -116,5 +116,4 @@ vboxvideo_drm.c: --no-convert-tabs
 # Temporary exclusions, awaiting cleanup.
 #
 --filter-out-dirs  "/src/VBox/Devices/PC/PXE/."
-/src/VBox/Installer/solaris/vboxconfig.sh: --no-convert-tabs
 

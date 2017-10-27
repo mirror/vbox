@@ -1,6 +1,7 @@
 #!/sbin/sh
 # $Id$
 
+#
 # Copyright (C) 2008-2015 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
