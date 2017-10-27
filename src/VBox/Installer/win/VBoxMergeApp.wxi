@@ -81,7 +81,7 @@
         <!-- Include the auto-generated TypeLib block -->
         <?include $(env.PATH_TARGET)\VirtualBox_TypeLib.wxi ?>
 <?endif?>
-        
+
 <?if $(env.VBOX_WITH_SDS) = "yes" ?>
         <File Id="VBoxSDS" Name="VBoxSDS.exe"
               Source="$(env.PATH_OUT)\bin\VBoxSDS.exe">
@@ -123,7 +123,7 @@
 <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
     <Component Id="cp_RegisterExtensions" Guid="FEB8943E-5D60-4E2D-846F-458207019D40"
                Win64="$(var.Property_Win64)" KeyPath="yes">
-               
+
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
             <Condition><![CDATA[(local_VBOX_REGISTERFILEEXTENSIONS="1")]]></Condition>
 <?else ?>

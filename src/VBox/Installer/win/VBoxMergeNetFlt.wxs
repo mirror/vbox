@@ -37,10 +37,10 @@
         <?include PublicProperties.wxi ?>
 
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-        <Property Id="localMSMNetworkType" Value="Empty" /> 
-        <Configuration Name="passedNetworkType" Format="Text" DefaultValue="Not passed"/> 
-        <Substitution Table="CustomAction" Row="setNetworkTypeFLT" Column="Target" Value="[=passedNetworkType]"/> 
-        <CustomAction Id="setNetworkTypeFLT" Property="localMSMNetworkType" Value="[localMSMNetworkType]" Execute="immediate" /> 
+        <Property Id="localMSMNetworkType" Value="Empty" />
+        <Configuration Name="passedNetworkType" Format="Text" DefaultValue="Not passed"/>
+        <Substitution Table="CustomAction" Row="setNetworkTypeFLT" Column="Target" Value="[=passedNetworkType]"/>
+        <CustomAction Id="setNetworkTypeFLT" Property="localMSMNetworkType" Value="[localMSMNetworkType]" Execute="immediate" />
         <CustomAction Id="correctNetworkTypeFLT" Property="localMSMNetworkType" Value="NDIS5" Execute="immediate" />
 <?endif ?>
 
