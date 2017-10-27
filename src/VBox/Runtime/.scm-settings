@@ -26,13 +26,24 @@
 
 --license-ose-dual
 
+
+/common/asn1/oiddb.cfg: --treat-as Makefile
+
+# TODO:
 --filter-out-dirs  "/r0drv/solaris/vbi/*/."
 --filter-out-dirs  "/common/math/gcc/."
 
---filter-out-files "/testcase/soundcard.h"
---filter-out-files "/include/internal/ldrELF*.h"
---filter-out-files "/common/math/x86/fenv-x86.c"
---filter-out-files "/common/checksum/md5.cpp"
+
+# Skip test certificates.
+--filter-out-files /testcase/tstRTCrX509*.pem
+--filter-out-files /testcase/tstRTCrX509*.der
+
+# Skip test binaries and other output/input files.
+--filter-out-files /testcase/*.bin
+--filter-out-files /testcase/*.o
+--filter-out-files /testcase/tstRTLdrMachORelocs-1.o
+--filter-out-files /testcase/tstRTLdrMachORelocs-1.S
+--filter-out-files /testcase/tstRTLdrMachORelocs-1.disas
 
 # external code
 /r0drv/freebsd/alloc-r0drv-freebsd.c           : --external-copyright
@@ -80,4 +91,13 @@
 /r0drv/os2/time-r0drv-os2.cpp                  : --external-copyright
 /r0drv/os2/timer-r0drv-os2.cpp                 : --external-copyright
 /r0drv/os2/timerA-r0drv-os2.asm                : --external-copyright
+
+/r3/os2/time-os2.cpp                           : --external-copyright
+/r0drv/os2/os2imports.imp                      : --external-copyright --treat-as .def
+
+/r3/win/VBoxRT-msvcp100-win32.def              : --external-copyright
+/r3/win/VBoxRT-msvcr100-win32.def              : --external-copyright
+
+/common/math/x86/fenv-x86.c                    : --external-copyright
+
 

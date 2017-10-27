@@ -1,4 +1,4 @@
-/* $Id: krnlmod-linux.cpp 115982 2017-06-07 20:35:49Z aeichner $ */
+/* $Id$ */
 /** @file
  * IPRT - Kernel module, Windows.
  */
