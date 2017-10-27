@@ -29,11 +29,6 @@
 
 /common/asn1/oiddb.cfg: --treat-as Makefile
 
-# TODO:
---filter-out-dirs  "/r0drv/solaris/vbi/*/."
---filter-out-dirs  "/common/math/gcc/."
-
-
 # Skip test certificates.
 --filter-out-files /testcase/tstRTCrX509*.pem
 --filter-out-files /testcase/tstRTCrX509*.der
@@ -98,6 +93,8 @@
 /r3/win/VBoxRT-msvcp100-win32.def              : --external-copyright
 /r3/win/VBoxRT-msvcr100-win32.def              : --external-copyright
 
-/common/math/x86/fenv-x86.c                    : --external-copyright
+/common/math/x86/fenv-x86.c                    : --external-copyright --no-convert-tabs
 
+/common/math/gcc/*                             : --external-copyright --no-convert-tabs --dont-set-svn-keywords
+/common/math/gcc/udivmoddi4.c                  : --no-external-copyright --convert-tabs --set-svn-keywords
 
