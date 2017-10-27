@@ -456,6 +456,17 @@ static PFNSCMREWRITER const g_aRewritersFor_Xml[] =
     /** @todo copyright is in an XML comment. */
 };
 
+static PFNSCMREWRITER const g_aRewritersFor_Wix[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_ExpandTabs,
+    rewrite_StripTrailingBlanks,
+    rewrite_AdjustTrailingLines,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords,
+    /** @todo copyright is in an XML comment. */
+};
+
 static PFNSCMREWRITER const g_aRewritersFor_QtProject[] =
 {
     rewrite_ForceNativeEol,
@@ -534,9 +545,10 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY(g_aRewritersFor_DriverInfFiles,   false, "*.inf" ),
     SCM_CFG_ENTRY(g_aRewritersFor_NsisFiles,        false, "*.nsh|*.nsi" ),
     SCM_CFG_ENTRY(g_aRewritersFor_ScmSettings,      false, "*.scm-settings" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Images,           true,  "*.png|*.bmp|*.jpg|*.pnm|*.ico|*.icns" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Images,           true,  "*.png|*.bmp|*.jpg|*.pnm|*.ico|*.icns|*.tiff|*.tif|*.xcf" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Xslt,             false, "*.xsl" ),
     SCM_CFG_ENTRY(g_aRewritersFor_Xml,              false, "*.xml" ),
+    SCM_CFG_ENTRY(g_aRewritersFor_Wix,              false, "*.wxi|*.wxs|*.wxl" ),
     SCM_CFG_ENTRY(g_aRewritersFor_QtProject,        false, "*.pro" ),
     SCM_CFG_ENTRY(g_aRewritersFor_QtResourceFiles,  false, "*.qrc" ),
     SCM_CFG_ENTRY(g_aRewritersFor_QtTranslations,   false, "*.ts" ),
