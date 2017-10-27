@@ -362,6 +362,7 @@ static RTSTRTUPLE const g_aCopyrightCommentStart[] =
     { RT_STR_TUPLE("REM") },
     { RT_STR_TUPLE("rem") },
     { RT_STR_TUPLE("Rem") },
+    { RT_STR_TUPLE("--") },
     { RT_STR_TUPLE("'") },
     { RT_STR_TUPLE("<end>") },
 };
@@ -377,6 +378,7 @@ static RTSTRTUPLE const g_aCopyrightCommentPrefix[] =
     { RT_STR_TUPLE("REM ") },
     { RT_STR_TUPLE("rem ") },
     { RT_STR_TUPLE("Rem ") },
+    { RT_STR_TUPLE("-- ") },
     { RT_STR_TUPLE("' ") },
     { RT_STR_TUPLE("<end>") },
 };
@@ -392,6 +394,7 @@ static RTSTRTUPLE const g_aCopyrightCommentEmpty[] =
     { RT_STR_TUPLE("REM") },
     { RT_STR_TUPLE("rem") },
     { RT_STR_TUPLE("Rem") },
+    { RT_STR_TUPLE("--") },
     { RT_STR_TUPLE("'") },
     { RT_STR_TUPLE("<end>") },
 };
@@ -407,6 +410,7 @@ static RTSTRTUPLE const g_aCopyrightCommentEnd[] =
     { RT_STR_TUPLE("REM") },
     { RT_STR_TUPLE("rem") },
     { RT_STR_TUPLE("Rem") },
+    { RT_STR_TUPLE("--") },
     { RT_STR_TUPLE("'") },
     { RT_STR_TUPLE("<end>") },
 };
@@ -1689,6 +1693,12 @@ bool rewrite_Copyright_PythonComment(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
 bool rewrite_Copyright_SemicolonComment(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
     return rewrite_Copyright_Common(pState, pIn, pOut, pSettings, kScmCommentStyle_Semicolon);
+}
+
+/** Copyright updater for sql  comments.   */
+bool rewrite_Copyright_SqlComment(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    return rewrite_Copyright_Common(pState, pIn, pOut, pSettings, kScmCommentStyle_Sql);
 }
 
 /** Copyright updater for tick-prefixed comments.   */

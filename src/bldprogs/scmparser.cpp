@@ -104,7 +104,7 @@ static size_t isSemicolonComment(const char *pchLine, size_t cchLine, bool fSeco
 
 
 /**
- * Callback for checking if comment.
+ * Callback for checking if batch comment.
  */
 static size_t isBatchComment(const char *pchLine, size_t cchLine, bool fSecond)
 {
@@ -120,6 +120,24 @@ static size_t isBatchComment(const char *pchLine, size_t cchLine, bool fSecond)
             && RT_C_IS_SPACE(*pchLine)
             && IS_REM(pchLine, 1, cchLine))
             return 4;
+    }
+    return 0;
+}
+
+/**
+ * Callback for checking if SQL comment.
+ */
+static size_t isSqlComment(const char *pchLine, size_t cchLine, bool fSecond)
+{
+    if (   cchLine >= 2
+        && pchLine[0] == '-'
+        && pchLine[1] == '-')
+    {
+        if (!fSecond)
+            return 2;
+        if (   cchLine >= 3
+            && pchLine[2] == '-')
+            return 3;
     }
     return 0;
 }
@@ -849,6 +867,54 @@ static int enumerateBatchComments(PSCMSTREAM pIn, PFNSCMCOMMENTENUMERATOR pfnCal
 
 
 /**
+ * Deals with comments in SQL files.
+ *
+ * @returns VBox status code / callback return code.
+ * @param   pIn                 The stream to parse.
+ * @param   pfnCallback         The callback.
+ * @param   pvUser              The user parameter for the callback.
+ */
+static int enumerateSqlComments(PSCMSTREAM pIn, PFNSCMCOMMENTENUMERATOR pfnCallback, void *pvUser)
+{
+    int             rcRet = VINF_SUCCESS;
+    uint32_t        iLine = 0;
+    SCMEOL          enmEol;
+    size_t          cchLine;
+    const char     *pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
+    while (pchLine != NULL)
+    {
+        /*
+         * Skip leading blanks and check for '--'.
+         */
+        size_t off = 0;
+        while (off + 3 < cchLine && RT_C_IS_SPACE(pchLine[off]))
+            off++;
+        if (   cchLine < 2
+            || pchLine[0] != '-'
+            || pchLine[1] != '-')
+        {
+            iLine++;
+            pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
+        }
+        else
+        {
+            int rc = handleLineComment(pIn, isSqlComment, pfnCallback, pvUser,
+                                       &pchLine, &cchLine, &enmEol, &iLine, &off);
+            if (RT_FAILURE(rc))
+                return rc;
+            if (rcRet == VINF_SUCCESS)
+                rcRet = rc;
+        }
+    }
+
+    int rcStream = ScmStreamGetStatus(pIn);
+    if (RT_SUCCESS(rcStream))
+        return rcRet;
+    return rcStream;
+}
+
+
+/**
  * Deals with simple line comments.
  *
  * @returns VBox status code / callback return code.
@@ -928,6 +994,9 @@ int ScmEnumerateComments(PSCMSTREAM pIn, SCMCOMMENTSTYLE enmCommentStyle, PFNSCM
         case kScmCommentStyle_Rem_Lower:
         case kScmCommentStyle_Rem_Camel:
             return enumerateBatchComments(pIn, pfnCallback, pvUser);
+
+        case kScmCommentStyle_Sql:
+            return enumerateSqlComments(pIn, pfnCallback, pvUser);
 
         case kScmCommentStyle_Tick:
             return enumerateSimpleLineComments(pIn, '\'', isTickComment, pfnCallback, pvUser);
