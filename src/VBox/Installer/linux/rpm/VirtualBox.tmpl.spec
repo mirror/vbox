@@ -1,4 +1,5 @@
-#
+# $Id$
+## @file
 # Spec file for creating VirtualBox rpm packages
 #
 
@@ -277,7 +278,7 @@ fi
 
 %preun
 # Called before the package is removed, or during upgrade after (not before)
-# the new version's "post" scriptlet. 
+# the new version's "post" scriptlet.
 # $1==0: remove the last version of the package
 # $1>=1: upgrade
 if [ "$1" = 0 ]; then

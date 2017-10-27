@@ -1,4 +1,9 @@
 #!/usr/bin/make -f
+# $Id$
+## @file
+# VirtualBox rules.
+#
+
 #
 # Copyright (C) 2006-2015 Oracle Corporation
 #
@@ -128,7 +133,7 @@ archdir  := $(current)/rpm/VirtualBox-$(ver)
 rpmname  := $(verpkg)-$(rpmver)_$(rpmrel)
 
 # never ship any modules
-instmod  := 
+instmod  :=
 
 ifneq ($(STAGEDISO),)
  ifeq ($(wildcard $(STAGEDISO)/VBoxGuestAdditions.iso),)
