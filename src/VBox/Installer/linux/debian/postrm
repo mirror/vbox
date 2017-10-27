@@ -1,4 +1,8 @@
 #!/bin/sh
+# $Id$
+## @file
+# VirtualBox post remove.
+#
 
 #
 # Copyright (C) 2006-2015 Oracle Corporation

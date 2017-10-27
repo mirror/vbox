@@ -35,3 +35,41 @@
 /darwin/VirtualBox/preflight:                   --treat-as .sh
 /darwin/*/distribution.dist:                    --treat-as .xml --no-convert-eol
 
+# FreeBSD stuff.
+--filter-out-files /freebsd/pkg-comment
+--filter-out-files /freebsd/pkg-descr
+--filter-out-files /freebsd/pkg_plist
+
+# Linux stuff.
+--filter-out-files /linux/debian/changelog.in
+--filter-out-files /linux/debian/compat
+--filter-out-files /linux/debian/control
+--filter-out-files /linux/debian/copyright
+--filter-out-files /linux/debian/dirs
+--filter-out-files /linux/debian/lintian-override.in
+/linux/debian/postinst:                         --treat-as .sh
+/linux/debian/postrm:                           --treat-as .sh
+/linux/debian/preinst:                          --treat-as .sh
+/linux/debian/prerm:                            --treat-as .sh
+/linux/debian/rules:                            --treat-as Makefile --no-convert-eol
+--filter-out-files /linux/debian/templates
+/linux/deffiles:                                --treat-as .sh
+--filter-out-files /linux/distributions_deb
+--filter-out-files /linux/distributions_rpm
+/linux/Makefile.include.footer:                 --treat-as Makefile --no-convert-eol
+/linux/Makefile.include.header:                 --treat-as Makefile --no-convert-eol
+/linux/rpm/rules:                               --treat-as Makefile --no-convert-eol
+/linux/rpm/VirtualBox.tmpl.spec:                --treat-as .sh
+/linux/rpm-kmod/build-kmod.in:                  --treat-as .sh
+/linux/rpm-kmod/kmodtool:                       --treat-as .sh --external-copyright --no-strip-trailing-blanks
+/linux/rpm-kmod/rules:                          --treat-as Makefile --no-convert-eol
+--filter-out-files /linux/rpm-kmod/vboxdrv.spec.in
+--filter-out-files /linux/rpm-kmod/VirtualBox-kmod.spec.in
+--filter-out-files /linux/rpm-kmod-VBoxGuest/README
+--filter-out-files /linux/rpm-kmod-VBoxGuest/VBoxGuest-kmod.spec
+--filter-out-files /linux/README.testing
+
+# Caveat: If we export /linux/rpm-VBoxGuestAdditions/, the --no-update-license hack must go.
+/linux/rpm-VBoxGuestAdditions/rules:                        --no-update-license --treat-as Makefile --no-convert-eol
+/linux/rpm-VBoxGuestAdditions/VBoxGuestAdditions.tmpl.spec: --no-update-license --treat-as .sh
+

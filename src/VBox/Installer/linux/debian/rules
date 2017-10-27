@@ -1,4 +1,9 @@
 #!/usr/bin/make -f
+# $Id$
+## @file
+# VirtualBox rules.
+#
+
 #
 # Copyright (C) 2006-2015 Oracle Corporation
 #
