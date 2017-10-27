@@ -96,7 +96,7 @@ PartitionInstallAppleChildHandles (
   EFI_BLOCK_IO_MEDIA       *Media;
   VOID                     *Block;
   //UINTN                   MaxIndex;
-  /** @todo: wrong, as this PT can be on both HDD or CD */
+  /** @todo wrong, as this PT can be on both HDD or CD */
   CDROM_DEVICE_PATH         CdDev;
   //EFI_DEVICE_PATH_PROTOCOL  Dev;
   EFI_STATUS                Found;
