@@ -89,3 +89,4 @@
 /win/MsiHack/MsiHackExtension.cs:               --treat-as .c
 --filter-out-files /win/Stub/VBoxStub.manifest
 /win/NLS/*.wxl:                                 --no-convert-tabs
+
