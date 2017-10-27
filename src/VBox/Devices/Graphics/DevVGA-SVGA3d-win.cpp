@@ -2322,6 +2322,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
         pMipLevel->fDirty = true;
         pSurface->fDirty = true;
 
+        /// @todo Do not bother to copy the data to the D3D resource. DrawPrimitives should do that anyway.
         /* Also copy the data to the current D3D buffer object. */
         uint8_t *pu8Buffer = NULL;
         /** @todo lock only as much as we really need */
@@ -2982,6 +2983,8 @@ int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
             RTMemFree(pContext->state.paVertexShaderConst);
         if (pContext->state.paPixelShaderConst)
             RTMemFree(pContext->state.paPixelShaderConst);
+
+        vmsvga3dOcclusionQueryDelete(pState, pContext);
 
         /* Release the D3D device object */
         D3D_RELEASE(pContext->pDevice);
@@ -4579,7 +4582,8 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                 else
                 {
                     Assert(   pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_TEXTURE
-                           || pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE);
+                           || pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE
+                           || pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE);
                     /* Must flush the other context's 3d pipeline to make sure all drawing is complete for the surface we're about to use. */
                     vmsvga3dSurfaceFlush(pThis, pSurface);
                 }
@@ -5880,26 +5884,56 @@ int vmsvga3dShaderSetConst(PVGASTATE pThis, uint32_t cid, uint32_t reg, SVGA3dSh
     return VINF_SUCCESS;
 }
 
-
-int vmsvga3dQueryBegin(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type)
+int vmsvga3dOcclusionQueryCreate(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext)
 {
-    RT_NOREF(pThis, cid, type);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    RT_NOREF(pState);
+    HRESULT hr = pContext->pDevice->CreateQuery(D3DQUERYTYPE_OCCLUSION, &pContext->occlusion.pQuery);
+    AssertMsgReturn(hr == D3D_OK, ("CreateQuery(D3DQUERYTYPE_OCCLUSION) failed with %x\n", hr), VERR_INTERNAL_ERROR);
+    return VINF_SUCCESS;
 }
 
-int vmsvga3dQueryEnd(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult)
+int vmsvga3dOcclusionQueryDelete(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext)
 {
-    RT_NOREF(pThis, cid, type, guestResult);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    RT_NOREF(pState);
+    D3D_RELEASE(pContext->occlusion.pQuery);
+    return VINF_SUCCESS;
 }
 
-int vmsvga3dQueryWait(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult)
+int vmsvga3dOcclusionQueryBegin(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext)
 {
-    RT_NOREF(pThis, cid, type, guestResult);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    RT_NOREF(pState);
+    HRESULT hr = pContext->occlusion.pQuery->Issue(D3DISSUE_BEGIN);
+    AssertMsgReturnStmt(hr == D3D_OK, ("D3DISSUE_BEGIN(D3DQUERYTYPE_OCCLUSION) failed with %x\n", hr),
+                        D3D_RELEASE(pContext->occlusion.pQuery), VERR_INTERNAL_ERROR);
+    return VINF_SUCCESS;
+}
+
+int vmsvga3dOcclusionQueryEnd(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext)
+{
+    RT_NOREF(pState);
+    HRESULT hr = pContext->occlusion.pQuery->Issue(D3DISSUE_END);
+    AssertMsgReturnStmt(hr == D3D_OK, ("D3DISSUE_END(D3DQUERYTYPE_OCCLUSION) failed with %x\n", hr),
+                        D3D_RELEASE(pContext->occlusion.pQuery), VERR_INTERNAL_ERROR);
+    return VINF_SUCCESS;
+}
+
+int vmsvga3dOcclusionQueryGetData(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t *pu32Pixels)
+{
+    RT_NOREF(pState);
+    HRESULT hr = D3D_OK;
+    /* Wait until the data becomes available. */
+    DWORD dwPixels = 0;
+    do
+    {
+        hr = pContext->occlusion.pQuery->GetData((void *)&dwPixels, sizeof(DWORD), D3DGETDATA_FLUSH);
+    } while (hr == S_FALSE);
+
+    AssertMsgReturnStmt(hr == D3D_OK, ("GetData(D3DQUERYTYPE_OCCLUSION) failed with %x\n", hr),
+                        D3D_RELEASE(pContext->occlusion.pQuery), VERR_INTERNAL_ERROR);
+
+    LogFunc(("Query result: dwPixels %d\n", dwPixels));
+    *pu32Pixels = dwPixels;
+    return VINF_SUCCESS;
 }
 
 static void vmsvgaDumpD3DCaps(D3DCAPS9 *pCaps)

@@ -703,6 +703,51 @@ static SSMFIELD const g_aVMSVGA3DSHADERFields[] =
 #define VMSVGA3D_UPDATE_MATERIAL       RT_BIT_32(6)
 /** @} */
 
+/* Query states. Mostly used for saved state. */
+typedef enum VMSVGA3DQUERYSTATE
+{
+    VMSVGA3DQUERYSTATE_NULL     = 0,  /* Not created. */
+    VMSVGA3DQUERYSTATE_SIGNALED = 1,  /* Result obtained. The guest may or may not read the result yet. */
+    VMSVGA3DQUERYSTATE_BUILDING = 2,  /* In process of collecting data. */
+    VMSVGA3DQUERYSTATE_ISSUED   = 3,  /* Data collected, but result is not yet obtained. */
+    VMSVGA3DQUERYSTATE_32BIT    = 0x7fffffff
+} VMSVGA3DQUERYSTATE;
+AssertCompileSize(VMSVGA3DQUERYSTATE, sizeof(uint32_t));
+
+typedef struct VMSVGA3DQUERY
+{
+#ifdef VMSVGA3D_DIRECT3D
+    IDirect3DQuery9    *pQuery;
+#else /* VMSVGA3D_OPENGL */
+    GLuint              idQuery;
+#endif
+    VMSVGA3DQUERYSTATE  enmQueryState;  /* VMSVGA3DQUERYSTATE_*. State is implicitly _NULL if pQuery is NULL. */
+    uint32_t            u32QueryResult; /* Generic result. Enough for all VGPU9 queries. */
+} VMSVGA3DQUERY;
+
+#ifdef VMSVGA3D_INCL_STRUCTURE_DESCRIPTORS
+/**
+ * SSM descriptor table for the VMSVGA3DQUERY structure.
+ */
+static SSMFIELD const g_aVMSVGA3DQUERYFields[] =
+{
+#ifdef VMSVGA3D_DIRECT3D
+    SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DQUERY, pQuery),
+#else /* VMSVGA3D_OPENGL */
+    SSMFIELD_ENTRY_IGNORE(          VMSVGA3DQUERY, idQuery),
+#endif
+    SSMFIELD_ENTRY(                 VMSVGA3DQUERY, enmQueryState),
+    SSMFIELD_ENTRY(                 VMSVGA3DQUERY, u32QueryResult),
+    SSMFIELD_ENTRY_TERM()
+};
+#endif
+
+#ifdef VMSVGA3D_DIRECT3D
+#define VMSVGA3DQUERY_EXISTS(p) ((p)->pQuery && (p)->enmQueryState != VMSVGA3DQUERYSTATE_NULL)
+#else
+#define VMSVGA3DQUERY_EXISTS(p) ((p)->idQuery && (p)->enmQueryState != VMSVGA3DQUERYSTATE_NULL)
+#endif
+
 /**
  * VMSVGA3d context.
  */
@@ -784,6 +829,9 @@ typedef struct VMSVGA3DCONTEXT
         uint32_t                cVertexShaderConst;
         PVMSVGASHADERCONST      paVertexShaderConst;
     } state;
+
+    /* Occlusion query. */
+    VMSVGA3DQUERY occlusion;
 } VMSVGA3DCONTEXT;
 /** Pointer to a VMSVGA3d context. */
 typedef VMSVGA3DCONTEXT *PVMSVGA3DCONTEXT;
@@ -949,6 +997,11 @@ typedef struct VMSVGA3DSTATE
         PFNGLGETPROGRAMIVARBPROC                        glGetProgramivARB;
         PFNGLPROVOKINGVERTEXPROC                        glProvokingVertex;
         bool                                            fEXT_stencil_two_side;
+        PFNGLGENQUERIESPROC                             glGenQueries;
+        PFNGLDELETEQUERIESPROC                          glDeleteQueries;
+        PFNGLBEGINQUERYPROC                             glBeginQuery;
+        PFNGLENDQUERYPROC                               glEndQuery;
+        PFNGLGETQUERYOBJECTUIVPROC                      glGetQueryObjectuiv;
     } ext;
 
     struct
@@ -1155,6 +1208,12 @@ DECLINLINE(D3DCUBEMAP_FACES) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
     return Face;
 }
 #endif /* VMSVGA3D_DIRECT3D */
+
+int vmsvga3dOcclusionQueryCreate(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext);
+int vmsvga3dOcclusionQueryDelete(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext);
+int vmsvga3dOcclusionQueryBegin(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext);
+int vmsvga3dOcclusionQueryEnd(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext);
+int vmsvga3dOcclusionQueryGetData(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t *pu32Pixels);
 
 #endif
 

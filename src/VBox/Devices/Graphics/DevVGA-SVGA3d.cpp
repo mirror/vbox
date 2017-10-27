@@ -682,3 +682,133 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
     return rc;
 }
 
+static int vmsvga3dQueryWriteResult(PVGASTATE pThis, SVGAGuestPtr guestResult, SVGA3dQueryState enmState, uint32_t u32Result)
+{
+    SVGA3dQueryResult queryResult;
+    queryResult.totalSize = sizeof(queryResult);    /* Set by guest before query is ended. */
+    queryResult.state = enmState;                   /* Set by host or guest. See SVGA3dQueryState. */
+    queryResult.result32 = u32Result;
+
+    int rc = vmsvgaGMRTransfer(pThis, SVGA3D_READ_HOST_VRAM, (uint8_t *)&queryResult, sizeof(queryResult),
+                               guestResult, 0, sizeof(queryResult), sizeof(queryResult), 1);
+    AssertRC(rc);
+    return rc;
+}
+
+int vmsvga3dQueryBegin(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type)
+{
+    PVMSVGA3DSTATE pState = pThis->svga.p3dState;
+    AssertReturn(pState, VERR_NO_MEMORY);
+
+    LogFunc(("cid=%x type=%d\n", cid, type));
+
+    PVMSVGA3DCONTEXT pContext;
+    int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
+    AssertRCReturn(rc, rc);
+
+    if (type == SVGA3D_QUERYTYPE_OCCLUSION)
+    {
+        VMSVGA3DQUERY *p = &pContext->occlusion;
+        if (!VMSVGA3DQUERY_EXISTS(p))
+        {
+            /* Lazy creation of the query object. */
+            rc = vmsvga3dOcclusionQueryCreate(pState, pContext);
+            AssertRCReturn(rc, rc);
+        }
+
+        rc = vmsvga3dOcclusionQueryBegin(pState, pContext);
+        AssertRCReturn(rc, rc);
+
+        p->enmQueryState = VMSVGA3DQUERYSTATE_BUILDING;
+        p->u32QueryResult = 0;
+
+        return VINF_SUCCESS;
+    }
+
+    /* Nothing else for VGPU9. */
+    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+}
+
+int vmsvga3dQueryEnd(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult)
+{
+    RT_NOREF(guestResult);
+    PVMSVGA3DSTATE pState = pThis->svga.p3dState;
+    AssertReturn(pState, VERR_NO_MEMORY);
+
+    LogFunc(("cid=%x type=%d guestResult %d:0x%x\n", cid, type, guestResult.gmrId, guestResult.offset));
+
+    PVMSVGA3DCONTEXT pContext;
+    int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
+    AssertRCReturn(rc, rc);
+
+    if (type == SVGA3D_QUERYTYPE_OCCLUSION)
+    {
+        VMSVGA3DQUERY *p = &pContext->occlusion;
+        Assert(p->enmQueryState == VMSVGA3DQUERYSTATE_BUILDING);
+        AssertMsgReturn(VMSVGA3DQUERY_EXISTS(p), ("Query is NULL\n"), VERR_INTERNAL_ERROR);
+
+        rc = vmsvga3dOcclusionQueryEnd(pState, pContext);
+        AssertRCReturn(rc, rc);
+
+        p->enmQueryState = VMSVGA3DQUERYSTATE_ISSUED;
+
+        /* Do not touch guestResult, because the guest will call WaitForQuery. */
+        return VINF_SUCCESS;
+    }
+
+    /* Nothing else for VGPU9. */
+    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+}
+
+int vmsvga3dQueryWait(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult)
+{
+    PVMSVGA3DSTATE pState = pThis->svga.p3dState;
+    AssertReturn(pState, VERR_NO_MEMORY);
+
+    LogFunc(("cid=%x type=%d guestResult GMR%d:0x%x\n", cid, type, guestResult.gmrId, guestResult.offset));
+
+    PVMSVGA3DCONTEXT pContext;
+    int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
+    AssertRCReturn(rc, rc);
+
+    if (type == SVGA3D_QUERYTYPE_OCCLUSION)
+    {
+        VMSVGA3DQUERY *p = &pContext->occlusion;
+        if (VMSVGA3DQUERY_EXISTS(p))
+        {
+            if (p->enmQueryState == VMSVGA3DQUERYSTATE_ISSUED)
+            {
+                /* Only if not already in SIGNALED state,
+                 * i.e. not a second read from the guest or after restoring saved state.
+                 */
+                uint32_t u32Pixels = 0;
+                rc = vmsvga3dOcclusionQueryGetData(pState, pContext, &u32Pixels);
+                if (RT_SUCCESS(rc))
+                {
+                    p->enmQueryState = VMSVGA3DQUERYSTATE_SIGNALED;
+                    p->u32QueryResult += u32Pixels; /* += because it might contain partial result from saved state. */
+                }
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                /* Return data to the guest. */
+                vmsvga3dQueryWriteResult(pThis, guestResult, SVGA3D_QUERYSTATE_SUCCEEDED, p->u32QueryResult);
+                return VINF_SUCCESS;
+            }
+        }
+        else
+        {
+            AssertMsgFailed(("GetData Query is NULL\n"));
+        }
+
+        rc = VERR_INTERNAL_ERROR;
+    }
+    else
+    {
+        rc = VERR_NOT_IMPLEMENTED;
+    }
+
+    vmsvga3dQueryWriteResult(pThis, guestResult, SVGA3D_QUERYSTATE_FAILED, 0);
+    AssertFailedReturn(rc);
+}

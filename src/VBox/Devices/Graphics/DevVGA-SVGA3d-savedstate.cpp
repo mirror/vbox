@@ -343,6 +343,47 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
                     }
                 }
             }
+
+#if 0 /** @todo */
+            if (uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_TEX_STAGES) /** @todo VGA_SAVEDSTATE_VERSION_VMSVGA_3D */
+            {
+                VMSVGA3DQUERY query;
+                RT_ZERO(query);
+
+                rc = SSMR3GetStructEx(pSSM, &query, sizeof(query), 0, g_aVMSVGA3DQUERYFields, NULL);
+                AssertRCReturn(rc, rc);
+
+                switch (query.enmQueryState)
+                {
+                    case VMSVGA3DQUERYSTATE_BUILDING:
+                        /* Start collecting data. */
+                        vmsvga3dQueryBegin(pThis, cid, SVGA3D_QUERYTYPE_OCCLUSION);
+                        /* Partial result. */
+                        pContext->occlusion.u32QueryResult = query.u32QueryResult;
+                        break;
+
+                    case VMSVGA3DQUERYSTATE_ISSUED:
+                        /* Guest ended the query but did not read result. Result is restored. */
+                        query.enmQueryState = VMSVGA3DQUERYSTATE_SIGNALED;
+                        RT_FALL_THRU();
+                    case VMSVGA3DQUERYSTATE_SIGNALED:
+                        /* Create the query object. */
+                        vmsvga3dOcclusionQueryCreate(pState, pContext);
+
+                        /* Update result and state. */
+                        pContext->occlusion.enmQueryState = query.enmQueryState;
+                        pContext->occlusion.u32QueryResult = query.u32QueryResult;
+                        break;
+
+                    default:
+                        AssertFailed();
+                        RT_FALL_THRU();
+                    case VMSVGA3DQUERYSTATE_NULL:
+                        RT_ZERO(pContext->occlusion);
+                        break;
+                }
+            }
+#endif
         }
     }
 
@@ -558,6 +599,42 @@ static int vmsvga3dSaveContext(PVGASTATE pThis, PSSMHANDLE pSSM, PVMSVGA3DCONTEX
                 AssertRCReturn(rc, rc);
             }
         }
+
+#if 0 /** @todo Enable later. */
+        PVMSVGA3DSTATE pState = pThis->svga.p3dState;
+        /* Occlusion query. */
+        if (!VMSVGA3DQUERY_EXISTS(&pContext->occlusion))
+        {
+            pContext->occlusion.enmQueryState = VMSVGA3DQUERYSTATE_NULL;
+        }
+
+        switch (pContext->occlusion.enmQueryState)
+        {
+            case VMSVGA3DQUERYSTATE_BUILDING:
+                /* Stop collecting data. Fetch partial result. Save result. */
+                vmsvga3dOcclusionQueryEnd(pState, pContext);
+                RT_FALL_THRU();
+            case VMSVGA3DQUERYSTATE_ISSUED:
+                /* Fetch result. Save result. */
+                pContext->occlusion.u32QueryResult = 0;
+                vmsvga3dOcclusionQueryGetData(pState, pContext, &pContext->occlusion.u32QueryResult);
+                RT_FALL_THRU();
+            case VMSVGA3DQUERYSTATE_SIGNALED:
+                /* Save result. Nothing to do here. */
+                break;
+
+            default:
+                AssertFailed();
+                RT_FALL_THRU();
+            case VMSVGA3DQUERYSTATE_NULL:
+                pContext->occlusion.enmQueryState = VMSVGA3DQUERYSTATE_NULL;
+                pContext->occlusion.u32QueryResult = 0;
+                break;
+        }
+
+        rc = SSMR3PutStructEx(pSSM, &pContext->occlusion, sizeof(pContext->occlusion), 0, g_aVMSVGA3DQUERYFields, NULL);
+        AssertRCReturn(rc, rc);
+#endif
     }
 
     return VINF_SUCCESS;

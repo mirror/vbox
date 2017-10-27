@@ -785,6 +785,23 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_stencil_two_side ");
 #endif
 
+#define GLGETPROC(ProcType, ProcName) do { \
+    pState->ext.ProcName = (ProcType)OGLGETPROCADDRESS(#ProcName); \
+    AssertMsgReturn(pState->ext.ProcName, (#ProcName " missing"), VERR_NOT_IMPLEMENTED); \
+} while(0)
+#define GLGETPROCOPT(ProcType, ProcName) do { \
+    pState->ext.ProcName = (ProcType)OGLGETPROCADDRESS(#ProcName); \
+    AssertMsg(pState->ext.ProcName, (#ProcName " missing (optional)")); \
+} while(0)
+
+        GLGETPROCOPT(PFNGLGENQUERIESPROC                       , glGenQueries);
+        GLGETPROCOPT(PFNGLDELETEQUERIESPROC                    , glDeleteQueries);
+        GLGETPROCOPT(PFNGLBEGINQUERYPROC                       , glBeginQuery);
+        GLGETPROCOPT(PFNGLENDQUERYPROC                         , glEndQuery);
+        GLGETPROCOPT(PFNGLGETQUERYOBJECTUIVPROC                , glGetQueryObjectuiv);
+
+#undef GLGETPROCOPT
+#undef GLGETPROC
     /*
      * Initialize the capabilities with sensible defaults.
      */
@@ -3559,6 +3576,9 @@ static int vmsvga3dContextDestroyOgl(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext,
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
         }
     }
+
+    vmsvga3dOcclusionQueryDelete(pState, pContext);
+
 #ifdef RT_OS_WINDOWS
     wglMakeCurrent(pContext->hdc, NULL);
     wglDeleteContext(pContext->hglrc);
@@ -6773,25 +6793,50 @@ int vmsvga3dShaderSetConst(PVGASTATE pThis, uint32_t cid, uint32_t reg, SVGA3dSh
     return VINF_SUCCESS;
 }
 
-
-int vmsvga3dQueryBegin(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type)
+int vmsvga3dOcclusionQueryCreate(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext)
 {
-    RT_NOREF(pThis, cid, type);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    AssertReturn(pState->ext.glGenQueries, VERR_NOT_SUPPORTED);
+    GLuint idQuery = 0;
+    pState->ext.glGenQueries(1, &idQuery);
+    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+    AssertReturn(idQuery, VERR_INTERNAL_ERROR);
+    pContext->occlusion.idQuery = idQuery;
+    return VINF_SUCCESS;
 }
 
-int vmsvga3dQueryEnd(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult)
+int vmsvga3dOcclusionQueryDelete(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext)
 {
-    RT_NOREF(pThis, cid, type, guestResult);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    AssertReturn(pState->ext.glDeleteQueries, VERR_NOT_SUPPORTED);
+    if (pContext->occlusion.idQuery)
+    {
+        pState->ext.glDeleteQueries(1, &pContext->occlusion.idQuery);
+    }
+    return VINF_SUCCESS;
 }
 
-int vmsvga3dQueryWait(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult)
+int vmsvga3dOcclusionQueryBegin(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext)
 {
-    RT_NOREF(pThis, cid, type, guestResult);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    AssertReturn(pState->ext.glBeginQuery, VERR_NOT_SUPPORTED);
+    pState->ext.glBeginQuery(GL_ANY_SAMPLES_PASSED, pContext->occlusion.idQuery);
+    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+    return VINF_SUCCESS;
 }
 
+int vmsvga3dOcclusionQueryEnd(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext)
+{
+    AssertReturn(pState->ext.glEndQuery, VERR_NOT_SUPPORTED);
+    pState->ext.glEndQuery(GL_ANY_SAMPLES_PASSED);
+    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+    return VINF_SUCCESS;
+}
+
+int vmsvga3dOcclusionQueryGetData(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t *pu32Pixels)
+{
+    AssertReturn(pState->ext.glGetQueryObjectuiv, VERR_NOT_SUPPORTED);
+    GLuint pixels = 0;
+    pState->ext.glGetQueryObjectuiv(pContext->occlusion.idQuery, GL_QUERY_RESULT, &pixels);
+    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+
+    *pu32Pixels = (uint32_t)pixels;
+    return VINF_SUCCESS;
+}
