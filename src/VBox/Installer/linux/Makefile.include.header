@@ -1,7 +1,10 @@
-#
+# $Id$
+## @file
 # VirtualBox Guest Additions kernel module Makefile, common parts.
 #
 # (For 2.6.x, the main file must be called 'Makefile'!)
+#
+
 #
 # Copyright (C) 2006-2015 Oracle Corporation
 #

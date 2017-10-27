@@ -2,6 +2,7 @@
 # VirtualBox installer shell routines
 #
 
+#
 # Copyright (C) 2007-2015 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as

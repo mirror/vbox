@@ -1,7 +1,8 @@
 #!/bin/sh
+# $Id$
+## @file
+# Oracle VM VirtualBox - linux default files list.
 #
-# Oracle VM VirtualBox
-# VirtualBox linux default files list
 
 #
 # Copyright (C) 2007-2015 Oracle Corporation
