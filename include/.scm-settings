@@ -33,15 +33,20 @@
 /VBox/VBoxKeyboard.h: --external-copyright
 
 # Some of the graphics stuff is using MIT.
-/VBox/Graphics/HGSMI.h:               --license-mit
-/VBox/Graphics/HGSMIBase.h:           --license-mit
-/VBox/Graphics/HGSMIChannels.h:       --license-mit
-/VBox/Graphics/HGSMIChSetup.h:        --license-mit
-/VBox/Graphics/HGSMIContext.h:        --license-mit
-/VBox/Graphics/HGSMIDefs.h:           --license-mit
-/VBox/Graphics/VBoxVideo.h:           --license-mit
-/VBox/Graphics/VBoxVideoErr.h:        --license-mit
-/VBox/Graphics/VBoxVideoGuest.h:      --license-mit
-/VBox/Graphics/VBoxVideoVBE.h:        --license-mit
-/VBox/Graphics/VBoxVideoVBEPrivate.h: --license-mit
+/VBox/Graphics/HGSMI.h:                 --license-mit
+/VBox/Graphics/HGSMIBase.h:             --license-mit
+/VBox/Graphics/HGSMIChannels.h:         --license-mit
+/VBox/Graphics/HGSMIChSetup.h:          --license-mit
+/VBox/Graphics/HGSMIContext.h:          --license-mit
+/VBox/Graphics/HGSMIDefs.h:             --license-mit
+/VBox/Graphics/VBoxVideo.h:             --license-mit
+/VBox/Graphics/VBoxVideoErr.h:          --license-mit
+/VBox/Graphics/VBoxVideoGuest.h:        --license-mit
+/VBox/Graphics/VBoxVideoVBE.h:          --license-mit
+/VBox/Graphics/VBoxVideoVBEPrivate.h:   --license-mit
+
+
+/VBox/HostServices/glext.h:             --external-copyright --no-convert-tabs --no-strip-trailing-blanks
+/VBox/HostServices/glxext.h:            --external-copyright --no-convert-tabs --no-strip-trailing-blanks
+/VBox/HostServices/wglext.h:            --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 
