@@ -110,6 +110,7 @@ typedef enum SCMOPT
     SCMOPT_DEL_ACTION,
     SCMOPT_LAST_SETTINGS = SCMOPT_DEL_ACTION,
     //
+    SCMOPT_CHECK_RUN,
     SCMOPT_DIFF_IGNORE_EOL,
     SCMOPT_DIFF_NO_IGNORE_EOL,
     SCMOPT_DIFF_IGNORE_SPACE,
@@ -2585,6 +2586,7 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
         {
             case 'd':
             case 'D':                           RTPrintf("      Default: --dry-run\n"); break;
+            case SCMOPT_CHECK_RUN:              RTPrintf("      Default: --dry-run\n"); break;
             case 'f':                           RTPrintf("      Default: none\n"); break;
             case 'q':
             case 'v':                           RTPrintf("      Default: -vv\n"); break;
@@ -2694,6 +2696,7 @@ int main(int argc, char **argv)
     {
         { "--dry-run",                          'd',                                    RTGETOPT_REQ_NOTHING },
         { "--real-run",                         'D',                                    RTGETOPT_REQ_NOTHING },
+        { "--check-run",                        SCMOPT_CHECK_RUN,                       RTGETOPT_REQ_NOTHING },
         { "--file-filter",                      'f',                                    RTGETOPT_REQ_STRING  },
         { "--quiet",                            'q',                                    RTGETOPT_REQ_NOTHING },
         { "--verbose",                          'v',                                    RTGETOPT_REQ_NOTHING },
@@ -2710,6 +2713,7 @@ int main(int argc, char **argv)
     };
     memcpy(&s_aOpts[RT_ELEMENTS(s_aOpts) - RT_ELEMENTS(g_aScmOpts)], &g_aScmOpts[0], sizeof(g_aScmOpts));
 
+    bool            fCheckRun = false;
     RTGETOPTUNION   ValueUnion;
     RTGETOPTSTATE   GetOptState;
     rc = RTGetOptInit(&GetOptState, argc, argv, &s_aOpts[0], RT_ELEMENTS(s_aOpts), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
@@ -2722,9 +2726,13 @@ int main(int argc, char **argv)
         {
             case 'd':
                 g_fDryRun = true;
+                fCheckRun = false;
                 break;
             case 'D':
-                g_fDryRun = false;
+                g_fDryRun = fCheckRun = false;
+                break;
+            case SCMOPT_CHECK_RUN:
+                g_fDryRun = fCheckRun = true;
                 break;
 
             case 'f':
@@ -2850,6 +2858,16 @@ int main(int argc, char **argv)
         RTMsgWarning("No files or directories specified. Doing nothing");
 
     scmSettingsDestroy(pSettings);
+
+    /* If we're in checking mode, fail if any files needed modification. */
+    if (   rcExit == RTEXITCODE_SUCCESS
+        && fCheckRun
+        && g_cFilesModified > 0)
+    {
+        RTMsgError("Checking mode failed! %u file%s needs modifications", g_cFilesBinaries, g_cFilesBinaries > 1 ? "s" : "");
+        rcExit = RTEXITCODE_FAILURE;
+    }
+
     return rcExit;
 }
 

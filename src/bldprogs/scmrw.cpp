@@ -119,6 +119,8 @@ typedef struct SCMCOPYRIGHTINFO
     bool                fCheckforLgpl;
     /** The approximate line we found the (first) LGPL licence notice on. */
     uint32_t            iLineLgplNotice;
+    /** The line number after the LGPL notice comment. */
+    uint32_t            iLineAfterLgplComment;
     /** The LGPL disclaimer line. */
     uint32_t            iLineLgplDisclaimer;
     /** @} */
@@ -1435,6 +1437,7 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
                 if (scmContainsWordByWordIgnoreCase(pszBody, cchBody, s_apszFragments[i], NULL, NULL))
                 {
                     pState->iLineLgplNotice = iLine;
+                    pState->iLineAfterLgplComment = pInfo->iLineEnd + 1;
                     ScmVerbose(pState->pState, 3, "Found LGPL notice at %u\n", iLine);
                     break;
                 }
@@ -1547,6 +1550,40 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
     return VINF_SUCCESS;
 }
 
+/**
+ * Writes comment body text.
+ *
+ * @returns Stream status.
+ * @param   pOut                The output stream.
+ * @param   pszText             The text to write.
+ * @param   cchText             The length of the text.
+ * @param   enmCommentStyle     The comment style.
+ * @param   enmEol              The EOL style.
+ */
+static int scmWriteCommentBody(PSCMSTREAM pOut, const char *pszText, size_t cchText,
+                               SCMCOMMENTSTYLE enmCommentStyle, SCMEOL enmEol)
+{
+    Assert(pszText[cchText - 1] == '\n');
+    Assert(pszText[cchText - 2] != '\n');
+    NOREF(cchText);
+    do
+    {
+        const char *pszEol = strchr(pszText, '\n');
+        if (pszEol != pszText)
+        {
+            ScmStreamWrite(pOut, g_aCopyrightCommentPrefix[enmCommentStyle].psz,
+                           g_aCopyrightCommentPrefix[enmCommentStyle].cch);
+            ScmStreamWrite(pOut, pszText, pszEol - pszText);
+            ScmStreamPutEol(pOut, enmEol);
+        }
+        else
+            ScmStreamPutLine(pOut, g_aCopyrightCommentEmpty[enmCommentStyle].psz,
+                             g_aCopyrightCommentEmpty[enmCommentStyle].cch, enmEol);
+        pszText = pszEol + 1;
+    } while (*pszText != '\0');
+    return ScmStreamGetStatus(pOut);
+}
+
 
 /**
  * Updates the copyright year and/or license text.
@@ -1601,6 +1638,7 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
 
         /*.fCheckForLgpl = */           true,
         /*.iLineLgplNotice = */         UINT32_MAX,
+        /*.iLineAfterLgplComment = */   UINT32_MAX,
         /*.iLineLgplDisclaimer = */     UINT32_MAX,
     };
 
@@ -1636,38 +1674,58 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
     if (   (rc == VERR_CALLBACK_RETURN || RT_SUCCESS(rc))
         && RT_SUCCESS(pState->rc))
     {
-        if (pSettings->fExternalCopyright)
+        /*
+         * Do conformity checks.
+         */
+        bool fAddLgplDisclaimer = false;
+        if (Info.fCheckforLgpl)
         {
-            if (Info.iLineCopyright != UINT32_MAX)
-                ScmError(pState, VERR_NOT_FOUND,
-                         "Marked as external copyright only, but found non-external copyright statement at line %u!\n",
-                         Info.iLineCopyright + 1);
+            if (   Info.iLineLgplNotice != UINT32_MAX
+                && Info.iLineLgplDisclaimer == UINT32_MAX)
+            {
+                if (!pSettings->fLgplDisclaimer) /** @todo reconcile options with common sense. */
+                    ScmError(pState, VERR_NOT_FOUND, "LGPL licence notice on line %u, but no LGPL disclaimer was found!\n",
+                             Info.iLineLgplNotice + 1);
+                else
+                {
+                    ScmVerbose(pState, 1, "* Need to add LGPL disclaimer\n");
+                    fAddLgplDisclaimer = true;
+                }
+            }
+            else if (   Info.iLineLgplNotice == UINT32_MAX
+                     && Info.iLineLgplDisclaimer != UINT32_MAX)
+                ScmError(pState, VERR_NOT_FOUND, "LGPL disclaimer on line %u, but no LGPL copyright notice!\n",
+                         Info.iLineLgplDisclaimer + 1);
         }
-        else if (Info.iLineCopyright == UINT32_MAX)
-            ScmError(pState, VERR_NOT_FOUND, "Missing copyright!\n");
-        else if (Info.iLineLicense == UINT32_MAX)
-            ScmError(pState, VERR_NOT_FOUND, "Missing license!\n");
-        else if (   Info.fCheckforLgpl
-                 && Info.iLineLgplNotice != UINT32_MAX
-                 && Info.iLineLgplDisclaimer == UINT32_MAX)
-            ScmError(pState, VERR_NOT_FOUND, "LGPL licence notice on line %u, but no LGPL disclaimer was found!\n",
-                     Info.iLineLgplNotice + 1);
-        else if (   Info.fCheckforLgpl
-                 && Info.iLineLgplNotice == UINT32_MAX
-                 && Info.iLineLgplDisclaimer != UINT32_MAX)
-            ScmError(pState, VERR_NOT_FOUND, "LGPL disclaimer on line %u, but no LGPL copyright notice!\n",
-                     Info.iLineLgplDisclaimer + 1);
-        else
+
+        if (!pSettings->fExternalCopyright)
+        {
+            if (Info.iLineCopyright == UINT32_MAX)
+                ScmError(pState, VERR_NOT_FOUND, "Missing copyright!\n");
+            if (Info.iLineLicense == UINT32_MAX)
+                ScmError(pState, VERR_NOT_FOUND, "Missing license!\n");
+        }
+        else if (Info.iLineCopyright != UINT32_MAX)
+            ScmError(pState, VERR_NOT_FOUND,
+                     "Marked as external copyright only, but found non-external copyright statement at line %u!\n",
+                     Info.iLineCopyright + 1);
+
+
+        if (RT_SUCCESS(pState->rc))
         {
             /*
              * Do we need to make any changes?
              */
-            bool fUpdateCopyright = !Info.fWellFormedCopyright
-                                 || (!Info.fUpToDateCopyright && pSettings->fUpdateCopyrightYear);
-            bool fUpdateLicense   = Info.enmLicenceOpt != kScmLicense_LeaveAlone
+            bool fUpdateCopyright = !pSettings->fExternalCopyright
+                                 && (   !Info.fWellFormedCopyright
+                                     || (!Info.fUpToDateCopyright && pSettings->fUpdateCopyrightYear));
+            bool fUpdateLicense   = !pSettings->fExternalCopyright
+                                 && Info.enmLicenceOpt != kScmLicense_LeaveAlone
                                  && (   !Info.fWellFormedLicense
                                      || !Info.fIsCorrectLicense);
-            if (fUpdateCopyright || fUpdateLicense)
+            if (   fUpdateCopyright
+                || fUpdateLicense
+                || fAddLgplDisclaimer)
             {
                 Assert(Info.iLineComment != UINT32_MAX);
                 Assert(Info.cLinesComment > 0);
@@ -1686,7 +1744,8 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
                 const char *pchLine;
                 while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
                 {
-                    if (iLine == Info.iLineComment)
+                    if (   iLine == Info.iLineComment
+                        && (fUpdateCopyright || fUpdateLicense) )
                     {
                         /* Leading blank line. */
                         ScmStreamPutLine(pOut, g_aCopyrightCommentStart[enmCommentStyle].psz,
@@ -1736,24 +1795,8 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
                                              g_aCopyrightCommentEmpty[enmCommentStyle].cch, enmEol);
 
                             /* Write the license text. */
-                            Assert(Info.pExpectedLicense->psz[Info.pExpectedLicense->cch - 1] == '\n');
-                            Assert(Info.pExpectedLicense->psz[Info.pExpectedLicense->cch - 2] != '\n');
-                            const char *psz = Info.pExpectedLicense->psz;
-                            do
-                            {
-                                const char *pszEol = strchr(psz, '\n');
-                                if (pszEol != psz)
-                                {
-                                    ScmStreamWrite(pOut, g_aCopyrightCommentPrefix[enmCommentStyle].psz,
-                                                   g_aCopyrightCommentPrefix[enmCommentStyle].cch);
-                                    ScmStreamWrite(pOut, psz, pszEol - psz);
-                                    ScmStreamPutEol(pOut, enmEol);
-                                }
-                                else
-                                    ScmStreamPutLine(pOut, g_aCopyrightCommentEmpty[enmCommentStyle].psz,
-                                                     g_aCopyrightCommentEmpty[enmCommentStyle].cch, enmEol);
-                                psz = pszEol + 1;
-                            } while (*psz != '\0');
+                            scmWriteCommentBody(pOut, Info.pExpectedLicense->psz, Info.pExpectedLicense->cch,
+                                                enmCommentStyle, enmEol);
 
                             /* Final comment line. */
                             if (!Info.fExternalLicense)
@@ -1770,6 +1813,24 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
                             iLine = Info.iLineComment + Info.cLinesComment;
                             rc = ScmStreamSeekByLine(pIn, iLine);
                         }
+                    }
+                    /*
+                     * Add LGPL disclaimer?
+                     */
+                    else if (   iLine == Info.iLineAfterLgplComment
+                             && fAddLgplDisclaimer)
+                    {
+                        ScmStreamPutEol(pOut, enmEol);
+                        ScmStreamPutLine(pOut, g_aCopyrightCommentStart[enmCommentStyle].psz,
+                                         g_aCopyrightCommentStart[enmCommentStyle].cch, enmEol);
+                        scmWriteCommentBody(pOut, g_szLgplDisclaimer, sizeof(g_szLgplDisclaimer) - 1,
+                                            enmCommentStyle, enmEol);
+                        ScmStreamPutLine(pOut, g_aCopyrightCommentEnd[enmCommentStyle].psz,
+                                         g_aCopyrightCommentEnd[enmCommentStyle].cch, enmEol);
+
+                        /* put the actual line */
+                        rc = ScmStreamPutLine(pOut, pchLine, cchLine, enmEol);
+                        iLine++;
                     }
                     else
                     {
