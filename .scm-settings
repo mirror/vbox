@@ -59,7 +59,6 @@
 --filter-out-files "/include/VBox/HostServices/glxext.h"
 --filter-out-files "/include/VBox/HostServices/wglext.h"
 --filter-out-files "/vslick.h"
---filter-out-files "/tools/envSub.cmd"
 --filter-out-files "*/PkgInfo"
 --filter-out-files "*/*-PkgInfo"
 --filter-out-files "*.plist"
