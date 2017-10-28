@@ -78,6 +78,9 @@ typedef struct SCMCOPYRIGHTINFO
     /** The comment style (neede for C/C++). */
     SCMCOMMENTSTYLE     enmCommentStyle;        /**< input */
 
+    /** Number of comments we've parsed. */
+    uint32_t            cComments;
+
     /** Copy of the contributed-by line if present. */
     char               *pszContributedBy;
 
@@ -108,6 +111,16 @@ typedef struct SCMCOPYRIGHTINFO
     bool                fIsCorrectLicense;
     bool                fWellFormedLicense;
     bool                fExternalLicense;
+    /** @} */
+
+    /** @name LGPL licence notice and disclaimer info
+     * @{ */
+    /** Wheter to check for LGPL license notices and disclaimers. */
+    bool                fCheckforLgpl;
+    /** The approximate line we found the (first) LGPL licence notice on. */
+    uint32_t            iLineLgplNotice;
+    /** The LGPL disclaimer line. */
+    uint32_t            iLineLgplDisclaimer;
     /** @} */
 
 } SCMCOPYRIGHTINFO;
@@ -350,6 +363,14 @@ static const SCMLICENSETEXT g_aLicensesWithMit[] =
 /** Copyright holder. */
 static const char g_szCopyrightHolder[] = "Oracle Corporation";
 
+/** LGPL disclaimer. */
+static const char g_szLgplDisclaimer[] =
+    "Oracle LGPL Disclaimer: For the avoidance of doubt, except that if any license choice\n"
+    "other than GPL or LGPL is available it will apply instead, Oracle elects to use only\n"
+    "the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where\n"
+    "a choice of LGPL license versions is made available with the language indicating\n"
+    "that LGPLv2 or any later version may be used, or where a choice of which version\n"
+    "of the LGPL is applied is otherwise unspecified.\n";
 
 /** Copyright+license comment start for each SCMCOMMENTSTYLE. */
 static RTSTRTUPLE const g_aCopyrightCommentStart[] =
@@ -1028,6 +1049,65 @@ static bool IsEqualWordByWordIgnoreCase(const char *psz1, const char *psz2, cons
     }
 }
 
+/**
+ * Looks for @a pszFragment anywhere in @a pszText, ignoring spaces, punctuation
+ * and case.
+ *
+ * @returns true if found, false if not.
+ * @param   pszText             The haystack to search in.
+ * @param   cchText             The length @a pszText.
+ * @param   pszFragment         The needle to search for.
+ * @param   ppszStart           Where to return the address in @a pszText where
+ *                              the fragment was found.  Optional.
+ * @param   ppszNext            Where to return the pointer to the first char in
+ *                              @a pszText after the fragment.  Optional.
+ *
+ * @remarks First character of @a pszFragment must be an 7-bit ASCII character!
+ *          This character must not be space or punctuation.
+ */
+static bool scmContainsWordByWordIgnoreCase(const char *pszText, size_t cchText, const char *pszFragment,
+                                            const char **ppszStart, const char **ppszNext)
+{
+    Assert(!((unsigned)*pszFragment & 0x80));
+    Assert(pszText[cchText] == '\0');
+    Assert(RT_C_IS_BLANK(*pszFragment));
+    Assert(RT_C_IS_PUNCT(*pszFragment));
+
+    char chLower = RT_C_TO_LOWER(*pszFragment);
+    char chUpper = RT_C_TO_UPPER(*pszFragment);
+    for (;;)
+    {
+        const char *pszHit = (const char *)memchr(pszText, chLower, cchText);
+        const char *pszHit2 = (const char *)memchr(pszText, chUpper, cchText);
+        if (!pszHit && !pszHit2)
+        {
+            if (ppszStart)
+                *ppszStart = NULL;
+            if (ppszNext)
+                *ppszNext = NULL;
+            return false;
+        }
+
+        if (   pszHit == NULL
+            || (   pszHit2 != NULL
+                && ((uintptr_t)pszHit2 < (uintptr_t)pszHit)) )
+            pszHit = pszHit2;
+
+        const char *pszNext;
+        if (IsEqualWordByWordIgnoreCase(pszFragment, pszHit, &pszNext))
+        {
+            if (ppszStart)
+                *ppszStart = pszHit;
+            if (ppszNext)
+                *ppszNext = pszNext;
+            return true;
+        }
+
+        cchText -= pszHit - pszText + 1;
+        pszText = pszHit + 1;
+    }
+}
+
 
 /**
  * Counts the number of lines in the given substring.
@@ -1067,6 +1147,8 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
                "--- comment at %u col %u, %u lines, type %u, %u lines before body, %u lines after body\n",
                pInfo->iLineStart, pInfo->offStart, pInfo->iLineEnd - pInfo->iLineStart + 1, pInfo->enmType,
                pInfo->cBlankLinesBefore, pInfo->cBlankLinesAfter);
+
+    pState->cComments++;
 
     uint32_t iLine = pInfo->iLineStart + pInfo->cBlankLinesBefore;
 
@@ -1338,6 +1420,35 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
     }
 
     /*
+     * Look for LGPL like text in the comment.
+     */
+    if (pState->fCheckforLgpl && cchBody > 128)
+    {
+        /* We look for typical LGPL notices. */
+        if (pState->iLineLgplNotice == UINT32_MAX)
+        {
+            static const char * const s_apszFragments[] =
+            {
+                "under the terms of the GNU Lesser General Public License",
+            };
+            for (unsigned i = 0; i < RT_ELEMENTS(s_apszFragments); i++)
+                if (scmContainsWordByWordIgnoreCase(pszBody, cchBody, s_apszFragments[i], NULL, NULL))
+                {
+                    pState->iLineLgplNotice = iLine;
+                    ScmVerbose(pState->pState, 3, "Found LGPL notice at %u\n", iLine);
+                    break;
+                }
+        }
+
+        if (   pState->iLineLgplDisclaimer == UINT32_MAX
+            && scmContainsWordByWordIgnoreCase(pszBody, cchBody, g_szLgplDisclaimer, NULL, NULL))
+        {
+            pState->iLineLgplDisclaimer = iLine;
+            ScmVerbose(pState->pState, 3, "Found LGPL disclaimer at %u\n", iLine);
+        }
+    }
+
+    /*
      * Look for the license text.
      */
     if (pState->iLineLicense == UINT32_MAX)
@@ -1419,16 +1530,20 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
                     }
                     else
                         ScmError(pState->pState, VERR_WRONG_ORDER, "License should be preceeded by the copyright!\n");
-                    if (pState->iLineCopyright != UINT32_MAX)
-                        return VERR_CALLBACK_RETURN;
                     break;
                 }
             }
         }
     }
 
-    if (fFoundCopyright)
+    if (fFoundCopyright && pState->iLineLicense == UINT32_MAX)
         ScmError(pState->pState, VERR_WRONG_ORDER, "Copyright should be followed by the license text!\n");
+
+    /*
+     * Stop looking for stuff after 100 comments.
+     */
+    if (pState->cComments > 100)
+        return VERR_CALLBACK_RETURN;
     return VINF_SUCCESS;
 }
 
@@ -1458,6 +1573,8 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
         /*.pState = */                  pState,
         /*.enmCommentStyle = */         enmCommentStyle,
 
+        /*.cComments = */               0,
+
         /*.pszContributedBy = */        NULL,
 
         /*.iLineComment = */            UINT32_MAX,
@@ -1481,6 +1598,10 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
         /*.fIsCorrectLicense = */       false,
         /*.fWellFormedLicense = */      false,
         /*.fExternalLicense = */        false,
+
+        /*.fCheckForLgpl = */           true,
+        /*.iLineLgplNotice = */         UINT32_MAX,
+        /*.iLineLgplDisclaimer = */     UINT32_MAX,
     };
 
     /* Figure Info.fOpenSource and the desired license: */
@@ -1526,6 +1647,16 @@ static bool rewrite_Copyright_Common(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTR
             ScmError(pState, VERR_NOT_FOUND, "Missing copyright!\n");
         else if (Info.iLineLicense == UINT32_MAX)
             ScmError(pState, VERR_NOT_FOUND, "Missing license!\n");
+        else if (   Info.fCheckforLgpl
+                 && Info.iLineLgplNotice != UINT32_MAX
+                 && Info.iLineLgplDisclaimer == UINT32_MAX)
+            ScmError(pState, VERR_NOT_FOUND, "LGPL licence notice on line %u, but no LGPL disclaimer was found!\n",
+                     Info.iLineLgplNotice + 1);
+        else if (   Info.fCheckforLgpl
+                 && Info.iLineLgplNotice == UINT32_MAX
+                 && Info.iLineLgplDisclaimer != UINT32_MAX)
+            ScmError(pState, VERR_NOT_FOUND, "LGPL disclaimer on line %u, but no LGPL copyright notice!\n",
+                     Info.iLineLgplDisclaimer + 1);
         else
         {
             /*
