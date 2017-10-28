@@ -30,7 +30,7 @@
 /iprt/formats/elf-i386.h:   --no-update-license  --no-update-copyright-year
 
 # TODO: This is using LGPL with Oracle disclaimer. Implement.
-/VBox/VBoxKeyboard.h: --external-copyright
+/VBox/VBoxKeyboard.h: --external-copyright --lgpl-disclaimer
 
 # Some of the graphics stuff is using MIT.
 /VBox/Graphics/HGSMI.h:                 --license-mit

@@ -62,5 +62,6 @@
 --filter-out-files "*/Doxyfile*"
 --filter-out-files "*/COPYING"
 --filter-out-files "*/COPYING.LIB"
+--filter-out-files "*/COPYING.CDDL"
 --filter-out-files "*.desktop"
 
