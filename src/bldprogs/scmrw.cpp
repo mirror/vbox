@@ -1373,7 +1373,7 @@ rewrite_Copyright_CommentCallback(PCSCMCOMMENTINFO pInfo, const char *pszBody, s
 
                     /* Record it. */
                     pState->iLineLicense        = iLine;
-                    pState->cLinesLicense       = CountLinesInSubstring(pszBody, pszNext - pszBody);
+                    pState->cLinesLicense       = CountLinesInSubstring(pszBody, pszNext - pszBody) - fExternal;
                     pState->pCurrentLicense     = pCur;
                     pState->fExternalLicense    = fExternal;
                     pState->fIsCorrectLicense   = pState->fOpenSource
