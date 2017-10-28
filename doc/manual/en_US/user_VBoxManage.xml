@@ -3588,7 +3588,7 @@ Virtual system 0:
 
                             [--format VDI|VMDK|VHD|RAW|&lt;other&gt;]
                             [--variant Standard,Fixed,Split2G,Stream,ESX]
-			    [--existing]</screen>
+                            [--existing]</screen>
 
 
     <para>The medium to clone as well as the target image must be described
@@ -3632,7 +3632,7 @@ Virtual system 0:
         </glossentry>
       </glosslist> <note>
         <para>For compatibility with earlier versions of VirtualBox, the
- 	"clonevdi" and "clonehd" commands are still supported and mapped
+        "clonevdi" and "clonehd" commands are still supported and mapped
         internally to the "clonehd disk" command.</para>
       </note></para>
   </sect1>
