@@ -794,8 +794,8 @@ static void scmCfgEntryDelAction(PSCMCFGENTRY pEntry, PCSCMREWRITERCFG pAction)
     for (size_t iSrc = 0; iSrc < cEntries; iSrc++)
     {
         PCSCMREWRITERCFG pCurAction = paRewriters[iSrc];
-        if (pCurAction == pAction)
-            paRewriters[iDst++] = pAction;
+        if (pCurAction != pAction)
+            paRewriters[iDst++] = pCurAction;
     }
     pEntry->cRewriters = iDst;
 }
