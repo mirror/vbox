@@ -2,7 +2,7 @@ from __future__ import print_function
 
 __copyright__ = \
 """
-Copyright (C) 2009-2017 Oracle Corporation
+Copyright (C) 2009-2016 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -11,7 +11,7 @@ General Public License (GPL) as published by the Free Software
 Foundation, in version 2 as it comes in the "COPYING" file of the
 VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-"""
+""";
 
 import sys
 
