@@ -23,16 +23,16 @@
 #include <iprt/cdefs.h>
 
 #ifdef __MINGW32__
-# define ASM_TYPE_DIRECTIVE(name,typearg) 
-# define ASM_SIZE_DIRECTIVE(name) 
+# define ASM_TYPE_DIRECTIVE(name,typearg)
+# define ASM_SIZE_DIRECTIVE(name)
 # define cfi_adjust_cfa_offset(a)
 # define C_LABEL(name)       _ ## name:
 # define C_SYMBOL_NAME(name) _ ## name
 # define ASM_GLOBAL_DIRECTIVE .global
 # define ALIGNARG(log2) 1<<log2
 #elif __APPLE__
-# define ASM_TYPE_DIRECTIVE(name,typearg) 
-# define ASM_SIZE_DIRECTIVE(name) 
+# define ASM_TYPE_DIRECTIVE(name,typearg)
+# define ASM_SIZE_DIRECTIVE(name)
 # define cfi_adjust_cfa_offset(a)
 # define C_LABEL(name)       _ ## name:
 # define C_SYMBOL_NAME(name) _ ## name

@@ -52,7 +52,6 @@
 --filter-out-dirs  "/doc/manual/texfiles/."
 --filter-out-dirs  "/src/libs/*/."
 --filter-out-dirs  "/src/apps/kchmviewer*/."
---filter-out-dirs  "/src/recompiler/tests/."
 
 
 #
