@@ -107,7 +107,8 @@ typedef enum SCMOPT
     SCMOPT_FILTER_OUT_FILES,
     SCMOPT_TREAT_AS,
     SCMOPT_ADD_ACTION,
-    SCMOPT_LAST_SETTINGS = SCMOPT_ADD_ACTION,
+    SCMOPT_DEL_ACTION,
+    SCMOPT_LAST_SETTINGS = SCMOPT_DEL_ACTION,
     //
     SCMOPT_DIFF_IGNORE_EOL,
     SCMOPT_DIFF_NO_IGNORE_EOL,
@@ -242,6 +243,7 @@ static RTGETOPTDEF  g_aScmOpts[] =
     /* rewriter selection */
     { "--treat-as",                         SCMOPT_TREAT_AS,                        RTGETOPT_REQ_STRING  },
     { "--add-action",                       SCMOPT_ADD_ACTION,                      RTGETOPT_REQ_STRING  },
+    { "--del-action",                       SCMOPT_DEL_ACTION,                      RTGETOPT_REQ_STRING  },
 
     /* Additional help */
     { "--help-config",                      SCMOPT_HELP_CONFIG,                     RTGETOPT_REQ_NOTHING },
@@ -664,7 +666,7 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY("def",        g_apRewritersFor_DEF,              false, "*.def" ),
     SCM_CFG_ENTRY("iasl",       g_apRewritersFor_DSL,              false, "*.dsl" ),
     SCM_CFG_ENTRY("shell",      g_apRewritersFor_ShellScripts,     false, "*.sh|configure" ),
-    SCM_CFG_ENTRY("bat",        g_apRewritersFor_BatchFiles,       false, "*.bat|*.cmd|*.btm" ),
+    SCM_CFG_ENTRY("batch",      g_apRewritersFor_BatchFiles,       false, "*.bat|*.cmd|*.btm" ),
     SCM_CFG_ENTRY("vbs",        g_apRewritersFor_BasicScripts,     false, "*.vbs|*.vb" ),
     SCM_CFG_ENTRY("sed",        g_apRewritersFor_SedScripts,       false, "*.sed" ),
     SCM_CFG_ENTRY("python",     g_apRewritersFor_Python,           false, "*.py" ),
@@ -696,6 +698,11 @@ static SCMCFGENTRY const g_aConfigs[] =
 
 /* -=-=-=-=-=- settings -=-=-=-=-=- */
 
+/**
+ * Delete the given config entry.
+ *
+ * @param   pEntry              The configuration entry to delete.
+ */
 static void scmCfgEntryDelete(PSCMCFGENTRY pEntry)
 {
     RTMemFree((void *)pEntry->paRewriters);
@@ -703,22 +710,12 @@ static void scmCfgEntryDelete(PSCMCFGENTRY pEntry)
     RTMemFree(pEntry);
 }
 
-static PSCMCFGENTRY scmCfgEntryDup(PCSCMCFGENTRY pEntry)
-{
-    PSCMCFGENTRY pDup = (PSCMCFGENTRY)RTMemDup(pEntry, sizeof(*pEntry));
-    if (pDup)
-    {
-        size_t    cbRewriters = sizeof(pEntry->paRewriters[0]) * RT_ALIGN_Z(pEntry->cRewriters, 8);
-        pDup->paRewriters = (PCSCMREWRITERCFG const *)RTMemDup(pEntry->paRewriters, cbRewriters);
-        if (pDup->paRewriters)
-            return pDup;
-
-        RTMemFree(pDup);
-    }
-    return NULL;
-}
-
-#if 0
+/**
+ * Create a new configuration entry.
+ *
+ * @returns The new entry. NULL if out of memory.
+ * @param   pEntry              The configuration entry to duplicate.
+ */
 static PSCMCFGENTRY scmCfgEntryNew(void)
 {
     PSCMCFGENTRY pNew = (PSCMCFGENTRY)RTMemAlloc(sizeof(*pNew));
@@ -732,12 +729,43 @@ static PSCMCFGENTRY scmCfgEntryNew(void)
     }
     return pNew;
 }
-#endif
 
-static int scmCfgEntryAddAction(PSCMCFGENTRY pEntry, PCSCMREWRITERCFG pActions)
+/**
+ * Duplicate the given config entry.
+ *
+ * @returns The duplicate. NULL if out of memory.
+ * @param   pEntry              The configuration entry to duplicate.
+ */
+static PSCMCFGENTRY scmCfgEntryDup(PCSCMCFGENTRY pEntry)
+{
+    if (pEntry)
+    {
+        PSCMCFGENTRY pDup = (PSCMCFGENTRY)RTMemDup(pEntry, sizeof(*pEntry));
+        if (pDup)
+        {
+            size_t    cbRewriters = sizeof(pEntry->paRewriters[0]) * RT_ALIGN_Z(pEntry->cRewriters, 8);
+            pDup->paRewriters = (PCSCMREWRITERCFG const *)RTMemDup(pEntry->paRewriters, cbRewriters);
+            if (pDup->paRewriters)
+                return pDup;
+
+            RTMemFree(pDup);
+        }
+        return NULL;
+    }
+    return scmCfgEntryNew();
+}
+
+/**
+ * Adds a rewriter action to the given config entry (--add-action).
+ *
+ * @returns VINF_SUCCESS.
+ * @param   pEntry              The configuration entry.
+ * @param   pAction             The rewriter action to add.
+ */
+static int scmCfgEntryAddAction(PSCMCFGENTRY pEntry, PCSCMREWRITERCFG pAction)
 {
     PCSCMREWRITERCFG *paRewriters = (PCSCMREWRITERCFG *)pEntry->paRewriters;
-    if ((pEntry->cRewriters + 1) % 8 == 0)
+    if (pEntry->cRewriters % 8 == 0)
     {
         size_t cbRewriters = sizeof(pEntry->paRewriters[0]) * RT_ALIGN_Z((pEntry->cRewriters + 1), 8);
         void *pvNew = RTMemRealloc(paRewriters, cbRewriters);
@@ -747,8 +775,28 @@ static int scmCfgEntryAddAction(PSCMCFGENTRY pEntry, PCSCMREWRITERCFG pActions)
             return VERR_NO_MEMORY;
     }
 
-    paRewriters[pEntry->cRewriters++] = pActions;
+    paRewriters[pEntry->cRewriters++] = pAction;
     return VINF_SUCCESS;
+}
+
+/**
+ * Delets an rewriter action from the given config entry (--del-action).
+ *
+ * @param   pEntry              The configuration entry.
+ * @param   pAction             The rewriter action to remove.
+ */
+static void scmCfgEntryDelAction(PSCMCFGENTRY pEntry, PCSCMREWRITERCFG pAction)
+{
+    PCSCMREWRITERCFG *paRewriters = (PCSCMREWRITERCFG *)pEntry->paRewriters;
+    size_t const cEntries = pEntry->cRewriters;
+    size_t       iDst = 0;
+    for (size_t iSrc = 0; iSrc < cEntries; iSrc++)
+    {
+        PCSCMREWRITERCFG pCurAction = paRewriters[iSrc];
+        if (pCurAction == pAction)
+            paRewriters[iDst++] = pAction;
+    }
+    pEntry->cRewriters = iDst;
 }
 
 /**
@@ -1125,6 +1173,32 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
                 }
             RTMsgError("Unknown --add-action value '%s'.  Try --help-actions for a list.", pValueUnion->psz);
             return VERR_NOT_FOUND;
+
+        case SCMOPT_DEL_ACTION:
+        {
+            uint32_t cActions = 0;
+            for (uint32_t iAction = 0; iAction < RT_ELEMENTS(g_papRewriterActions); iAction++)
+                if (RTStrSimplePatternMatch(pValueUnion->psz, g_papRewriterActions[iAction]->pszName))
+                {
+                    cActions++;
+                    PSCMCFGENTRY pEntry = (PSCMCFGENTRY)pSettings->pTreatAs;
+                    if (!pSettings->fFreeTreatAs)
+                    {
+                        pEntry = scmCfgEntryDup(pEntry);
+                        if (!pEntry)
+                            return VERR_NO_MEMORY;
+                        pSettings->pTreatAs = pEntry;
+                        pSettings->fFreeTreatAs = true;
+                    }
+                    scmCfgEntryDelAction(pEntry, g_papRewriterActions[iAction]);
+                    if (!strchr(pValueUnion->psz, '*'))
+                        return VINF_SUCCESS;
+                }
+            if (cActions > 0)
+                return VINF_SUCCESS;
+            RTMsgError("Unknown --del-action value '%s'.  Try --help-actions for a list.", pValueUnion->psz);
+            return VERR_NOT_FOUND;
+        }
 
         default:
             return VERR_GETOPT_UNKNOWN_OPTION;
@@ -2492,7 +2566,19 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
             }
         }
         else if ((paOpts[i].fFlags & RTGETOPT_REQ_MASK) == RTGETOPT_REQ_STRING)
-            RTPrintf("  %s string\n", paOpts[i].pszLong);
+            switch (paOpts[i].iShort)
+            {
+                case SCMOPT_DEL_ACTION:
+                    RTPrintf("  %s pattern\n", paOpts[i].pszLong);
+                    break;
+                case SCMOPT_FILTER_OUT_DIRS:
+                case SCMOPT_FILTER_FILES:
+                case SCMOPT_FILTER_OUT_FILES:
+                    RTPrintf("  %s multi-pattern\n", paOpts[i].pszLong);
+                    break;
+                default:
+                    RTPrintf("  %s string\n", paOpts[i].pszLong);
+            }
         else
             RTPrintf("  %s value\n", paOpts[i].pszLong);
         switch (paOpts[i].iShort)
@@ -2560,6 +2646,11 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
                 RTPrintf("      Adds a rewriter action.  The first use after a --treat-as will copy and\n"
                          "      the action list selected by the --treat-as.  The actuion list will be\n"
                          "      flushed by --treat-as.\n");
+                break;
+
+            case SCMOPT_DEL_ACTION:
+                RTPrintf("      Deletes one or more rewriter action (pattern). Best used after\n"
+                         "      a --treat-as.\n");
                 break;
 
             default: AssertMsgFailed(("i=%d %d %s\n", i, paOpts[i].iShort, paOpts[i].pszLong));
