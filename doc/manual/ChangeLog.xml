@@ -4,7 +4,7 @@
 <!ENTITY __ChangeLog__et8f0z3c SYSTEM "../user_ChangeLogImpl_1.xml">
 ]>
 <book>
-  
+
   <xi:include href="../user_ChangeLogImpl.xml" xpointer="element(/1)"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
