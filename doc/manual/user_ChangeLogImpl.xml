@@ -196,7 +196,7 @@
 
       <listitem>
         <para>GUI: Fixed double mouse cursor when using mouse integration
-          without Guest Additions, actually a Qt 5.6 bug fixed with QT 5.6.3 
+          without Guest Additions, actually a Qt 5.6 bug fixed with QT 5.6.3
           (Mac OS X hosts only; bug #15610)</para>
       </listitem>
 
@@ -307,7 +307,7 @@
 
       <listitem>
         <para>GUI: Fixed double mouse cursor when using mouse integration
-          without Guest Additions, actually a Qt 5.6 bug fixed with QT 5.6.3 
+          without Guest Additions, actually a Qt 5.6 bug fixed with QT 5.6.3
           (Mac OS X hosts only; bug #15610)</para>
       </listitem>
 
