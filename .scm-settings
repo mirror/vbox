@@ -76,7 +76,6 @@
 #
 # Files and sub-trees where we don't convert tabs.
 #
-/src/apps/tunctl/tunctl.c: --no-convert-tabs
 vboxvideo_drm.c: --no-convert-tabs
 *linux.mod.c: --no-convert-tabs
 
