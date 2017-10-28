@@ -1935,7 +1935,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                 SCMEOL      enmIgn;
                 size_t      cchFirst;
                 const char *pchFirst = ScmStreamGetLine(&Stream1, &cchFirst, &enmIgn);
-                if (cchFirst >= 9 && *pchFirst == '#')
+                if (cchFirst >= 9 && pchFirst && *pchFirst == '#')
                 {
                     do
                     {
