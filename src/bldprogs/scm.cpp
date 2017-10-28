@@ -663,14 +663,14 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY("dtrace",     g_apRewritersFor_DTrace,           false, "*.d" ),
     SCM_CFG_ENTRY("def",        g_apRewritersFor_DEF,              false, "*.def" ),
     SCM_CFG_ENTRY("iasl",       g_apRewritersFor_DSL,              false, "*.dsl" ),
-    SCM_CFG_ENTRY("sh",         g_apRewritersFor_ShellScripts,     false, "*.sh|configure" ),
+    SCM_CFG_ENTRY("shell",      g_apRewritersFor_ShellScripts,     false, "*.sh|configure" ),
     SCM_CFG_ENTRY("bat",        g_apRewritersFor_BatchFiles,       false, "*.bat|*.cmd|*.btm" ),
     SCM_CFG_ENTRY("vbs",        g_apRewritersFor_BasicScripts,     false, "*.vbs|*.vb" ),
     SCM_CFG_ENTRY("sed",        g_apRewritersFor_SedScripts,       false, "*.sed" ),
     SCM_CFG_ENTRY("python",     g_apRewritersFor_Python,           false, "*.py" ),
     SCM_CFG_ENTRY("perl",       g_apRewritersFor_Perl,             false, "*.pl|*.pm" ),
     SCM_CFG_ENTRY("drvinf",     g_apRewritersFor_DriverInfFiles,   false, "*.inf" ),
-    SCM_CFG_ENTRY("nsis",       g_apRewritersFor_NsisFiles,        false, "*.nsh|*.nsi" ),
+    SCM_CFG_ENTRY("nsis",       g_apRewritersFor_NsisFiles,        false, "*.nsh|*.nsi|*.nsis" ),
     SCM_CFG_ENTRY("java",       g_apRewritersFor_Java,             false, "*.java" ),
     SCM_CFG_ENTRY("scm",        g_apRewritersFor_ScmSettings,      false, "*.scm-settings" ),
     SCM_CFG_ENTRY("image",      g_apRewritersFor_Images,           true,  "*.png|*.bmp|*.jpg|*.pnm|*.ico|*.icns|*.tiff|*.tif|*.xcf" ),
@@ -684,11 +684,11 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY("sif",        g_apRewritersFor_SifFiles,         false, "*.sif" ),
     SCM_CFG_ENTRY("sql",        g_apRewritersFor_SqlFiles,         false, "*.pgsql|*.sql" ),
     SCM_CFG_ENTRY("gas",        g_apRewritersFor_GnuAsm,           false, "*.S" ),
-    SCM_CFG_ENTRY("binary",     g_apRewritersFor_BinaryFiles,      false, "*.bin|*.pdf" ),
+    SCM_CFG_ENTRY("binary",     g_apRewritersFor_BinaryFiles,      true,  "*.bin|*.pdf|*.zip|*.bz2|*.gz" ),
     /* These should be be last: */
-    SCM_CFG_ENTRY("make",       g_apRewritersFor_OtherMakefiles,   false, "Makefile|makefile|GNUmakefile|SMakefile" ),
+    SCM_CFG_ENTRY("make",       g_apRewritersFor_OtherMakefiles,   false, "Makefile|makefile|GNUmakefile|SMakefile|Makefile.am|Makefile.in|*.cmake" ),
     SCM_CFG_ENTRY("text",       g_apRewritersFor_TextFiles,        false, "*.txt|README*|readme*|ReadMe*|NOTE*|TODO*" ),
-    SCM_CFG_ENTRY("plaintext",  g_apRewritersFor_PlainTextFiles,   false, "LICENSE" ),
+    SCM_CFG_ENTRY("plaintext",  g_apRewritersFor_PlainTextFiles,   false, "LICENSE|ChangeLog|FAQ|AUTHORS|INSTALL|NEWS" ),
     SCM_CFG_ENTRY("file-list",  g_apRewritersFor_FileLists,        false, "files_*" ),
 };
 
@@ -1904,6 +1904,18 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
     }
 
     /*
+     * Create an input stream from the file and check that it's text.
+     */
+    SCMSTREAM Stream1;
+    int rc = ScmStreamInitForReading(&Stream1, pszFilename);
+    if (RT_FAILURE(rc))
+    {
+        RTMsgError("Failed to read '%s': %Rrc\n", pszFilename, rc);
+        return rc;
+    }
+    bool const fIsText = ScmStreamIsText(&Stream1);
+
+    /*
      * Try find a matching rewrite config for this filename.
      */
     PCSCMCFGENTRY pCfg = pBaseSettings->pTreatAs;
@@ -1917,26 +1929,65 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
             }
         if (!pCfg)
         {
-            ScmVerbose(NULL, 2, "skipping '%s': no rewriters configured\n", pszFilename);
-            g_cFilesNoRewriters++;
-            return VINF_SUCCESS;
+            /* On failure try check for hash-bang stuff before giving up. */
+            if (fIsText)
+            {
+                SCMEOL      enmIgn;
+                size_t      cchFirst;
+                const char *pchFirst = ScmStreamGetLine(&Stream1, &cchFirst, &enmIgn);
+                if (cchFirst >= 9 && *pchFirst == '#')
+                {
+                    do
+                    {
+                        pchFirst++;
+                        cchFirst--;
+                    } while (cchFirst > 0 && RT_C_IS_BLANK(*pchFirst));
+                    if (*pchFirst == '!')
+                    {
+                        do
+                        {
+                            pchFirst++;
+                            cchFirst--;
+                        } while (cchFirst > 0 && RT_C_IS_BLANK(*pchFirst));
+                        const char *pszTreatAs = NULL;
+                        if (   (cchFirst >= 7 && strncmp(pchFirst, "/bin/sh", 7) == 0)
+                            || (cchFirst >= 9 && strncmp(pchFirst, "/bin/bash", 9) == 0)
+                            || (cchFirst >= 4+9 && strncmp(pchFirst, "/usr/bin/bash", 4+9) == 0) )
+                            pszTreatAs = "shell";
+                        else if (   (cchFirst >= 15 && strncmp(pchFirst, "/usr/bin/python", 15) == 0)
+                                 || (cchFirst >= 19 && strncmp(pchFirst, "/usr/bin/env python", 19) == 0) )
+                            pszTreatAs = "python";
+                        else if (   (cchFirst >= 13 && strncmp(pchFirst, "/usr/bin/perl", 13) == 0)
+                                 || (cchFirst >= 17 && strncmp(pchFirst, "/usr/bin/env perl", 17) == 0) )
+                            pszTreatAs = "python";
+                        if (pszTreatAs)
+                        {
+                            for (size_t iCfg = 0; iCfg < RT_ELEMENTS(g_aConfigs); iCfg++)
+                                if (strcmp(pszTreatAs, g_aConfigs[iCfg].pszName) == 0)
+                                {
+                                    pCfg = &g_aConfigs[iCfg];
+                                    break;
+                                }
+                            Assert(pCfg);
+                        }
+                    }
+                }
+                ScmStreamRewindForReading(&Stream1);
+            }
+            if (!pCfg)
+            {
+                ScmVerbose(NULL, 2, "skipping '%s': no rewriters configured\n", pszFilename);
+                g_cFilesNoRewriters++;
+                ScmStreamDelete(&Stream1);
+                return VINF_SUCCESS;
+            }
         }
         ScmVerbose(pState, 4, "matched \"%s\" (%s)\n", pCfg->pszFilePattern, pCfg->pszName);
     }
     else
         ScmVerbose(pState, 4, "treat-as \"%s\"\n", pCfg->pszName);
 
-    /*
-     * Create an input stream from the file and check that it's text.
-     */
-    SCMSTREAM Stream1;
-    int rc = ScmStreamInitForReading(&Stream1, pszFilename);
-    if (RT_FAILURE(rc))
-    {
-        RTMsgError("Failed to read '%s': %Rrc\n", pszFilename, rc);
-        return rc;
-    }
-    if (ScmStreamIsText(&Stream1) || pCfg->fBinary)
+    if (fIsText || pCfg->fBinary)
     {
         ScmVerboseBanner(pState, 3);
 
