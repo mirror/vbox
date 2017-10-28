@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Source code massager settings for the manual.
+# Source code massager settings for the docs.
 #
 
 #
@@ -15,7 +15,11 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
+/*.html: --treat-as plaintext
+/*.rtf:  --treat-as binary
+/*.doc:  --treat-as binary
 
-/string.xsl:             --external-copyright --no-convert-tabs
-/titlepage-htmlhelp.xml: --external-copyright --no-convert-tabs
+# Abusing --external-copyright.
+/*.txvStateDiagram20:    --xml --external-copyright
+
 
