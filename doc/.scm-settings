@@ -18,8 +18,22 @@
 /*.html: --treat-as plaintext
 /*.rtf:  --treat-as binary
 /*.doc:  --treat-as binary
+/*.odt:  --treat-as binary
+/*.ods:  --treat-as binary
+/*.odg:  --treat-as binary
+/*.sxi:  --treat-as binary
+/*.vpp:  --treat-as binary
 
 # Abusing --external-copyright.
-/*.txvStateDiagram20:    --xml --external-copyright
+/*.txvpck:                      --treat-as xml --external-copyright --no-convert-eol
+/*.txvStateDiagram20:           --treat-as xml --external-copyright --no-convert-eol
+/*.txvComponentDiagram20:       --treat-as xml --external-copyright --no-convert-eol
+/*.xmi:                         --treat-as xml --external-copyright --no-convert-eol
+/*.tpx:                         --treat-as xml --external-copyright --no-convert-eol
+/*.graphml:                     --treat-as xml --external-copyright --no-convert-eol
 
+/*.iuml:                 --treat-as plaintext --add-action copyright-tick-style
+/Changelog.2*:           --treat-as plaintext
+
+--filter-out-files /Qt/qt4.darwin.patch
 
