@@ -51,7 +51,6 @@
 --filter-out-dirs  "/SlickEdit/."
 --filter-out-dirs  "/doc/manual/texfiles/."
 --filter-out-dirs  "/src/libs/*/."
---filter-out-dirs  "/src/apps/kchmviewer*/."
 
 
 #
