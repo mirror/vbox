@@ -15,7 +15,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-/ISO/AUTORUN.INF: --treat-as .inf --dont-set-svn-eol
+/ISO/AUTORUN.INF: --treat-as .inf --del-action force-native-eol --add-action force-crlf
 --filter-out-files /ISO/ReadmeDrivers.txt
 
 /dumplog.nsh:           --external-copyright
