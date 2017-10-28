@@ -1,4 +1,4 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * vboxweb.h - header file for "real" web server code.
  */

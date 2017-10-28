@@ -1,4 +1,4 @@
-/* $Id: VBoxStubCertUtil.h 64806 2010-08-13 15:57:03Z fmehnert $ */
+/* $Id$ */
 /** @file
  * VBoxStub - VirtualBox's Windows installer stub (certificate manipulations).
  */

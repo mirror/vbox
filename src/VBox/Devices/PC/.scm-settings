@@ -55,7 +55,7 @@
 # PXE
 /PXE/*.asm:     --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 /PXE/*.c:       --external-copyright --no-convert-tabs --no-strip-trailing-blanks
-/PXE/*.h:       --external-copyright --no-convert-tabs --no-strip-trailing-blanks
+/PXE/*.h:       --external-copyright --no-convert-tabs --no-strip-trailing-blanks --dont-set-svn-keywords
 /PXE/*.inc:     --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 /PXE/*.i:       --external-copyright --no-convert-tabs --no-strip-trailing-blanks --strip-no-trailing-lines --treat-as .inc
 /PXE/*.r:       --external-copyright --no-convert-tabs --no-strip-trailing-blanks --strip-no-trailing-lines --treat-as .inc
