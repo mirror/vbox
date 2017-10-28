@@ -57,4 +57,4 @@
 --filter-out-files /VBoxNetFlt/win/nobj/VBoxNetFltNobj.rgs
 /VBoxNetFlt/win/nobj/VBoxNetFltNobjT.idl: --treat-as .h
 /Support/solaris/mod.sh: --no-convert-tabs
-
+/Support/linux/SUPDrv-linux.mod.c: --no-convert-tabs
