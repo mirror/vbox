@@ -900,6 +900,19 @@ $(VBOX_CORE_DOXYFILE_OUTPUT)/docs.Core: $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Co
 
 docs.Core docs.core: $(VBOX_CORE_DOXYFILE_OUTPUT)/docs.Core
 
+#
+# This is a bit odd, but we attach the optional scm check run onto the 'docs' pass
+# so the build box output is less confusing on failure.
+#
+ifeq ($(KBUILD_HOST),$(KBUILD_TARGET))
+ ifdef VBOX_WITH_SCM_CHECK_RUN
+  docs: scm.check.run
+ endif
+ .PHONY: scm.check.run
+ scm.check.run: $(VBOX_PATH_TOOLS)/scm$(HOST_SUFF_EXE)
+	$(VBOX_PATH_TOOLS)/scm$(HOST_SUFF_EXE) -qvv --check-run $(PATH_ROOT)
+endif
+
 
 #
 # Alias for kmk_time.  Used by both the additions and validation kit build setups.

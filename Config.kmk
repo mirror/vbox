@@ -156,6 +156,7 @@ VBOX_PATH_ADDITIONS_ISO = $(patsubst %/,%,$(PATH_STAGE)/$(INST_ADDITIONS_ISO))
 VBOX_PATH_ADDITIONS_LIB = $(patsubst %/,%,$(PATH_STAGE)/$(INST_ADDITIONS_LIB))
 VBOX_PATH_EXTPACK_PUEL= $(patsubst %/,%,$(PATH_STAGE)/$(INST_EXTPACK_PUEL))
 VBOX_PATH_PACKAGES    = $(patsubst %/,%,$(PATH_STAGE)/$(INST_PACKAGES))
+VBOX_PATH_TOOLS       = $(patsubst %/,%,$(PATH_STAGE)/$(VBOX_INST_TOOLS))
 
 
 # Delete targets on failure.
