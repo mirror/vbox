@@ -16,3 +16,5 @@
 #
 
 --filter-out-files /Installer/pkg-descr
+/drm/vboxvideo_drm.c: --no-convert-tabs
+

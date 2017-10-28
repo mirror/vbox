@@ -72,10 +72,3 @@
 --filter-out-files "*/COPYING.LIB"
 --filter-out-files "*.desktop"
 
-
-#
-# Files and sub-trees where we don't convert tabs.
-#
-vboxvideo_drm.c: --no-convert-tabs
-*linux.mod.c: --no-convert-tabs
-

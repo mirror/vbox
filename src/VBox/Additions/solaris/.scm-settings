@@ -40,3 +40,5 @@
 --filter-out-dirs  "/SharedFolders/solaris10/sys/."
 /SharedFolders/*: --no-convert-tabs
 
+/DRM/vboxvideo_drm.c: --no-convert-tabs
+
