@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * BIOS POST routines. Used only during initialization.
  */
