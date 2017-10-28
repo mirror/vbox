@@ -354,6 +354,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_H_and_HPP[] =
     &g_StripTrailingBlanks,
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
+    &g_SvnKeywords,
     &g_Copyright_CstyleComment,
     &g_C_and_CPP
 };
@@ -592,15 +593,6 @@ static PCSCMREWRITERCFG const g_apRewritersFor_SifFiles[] =
     &g_Copyright_SemicolonComment,
 };
 
-static PCSCMREWRITERCFG const g_apRewritersFor_TextFiles[] =
-{
-    &g_ForceNativeEol,
-    &g_StripTrailingBlanks,
-    &g_SvnKeywords,
-    &g_SvnNoExecutable,
-    /** @todo check for plain copyright + license in text files. */
-};
-
 static PCSCMREWRITERCFG const g_apRewritersFor_SqlFiles[] =
 {
     &g_ForceNativeEol,
@@ -612,6 +604,39 @@ static PCSCMREWRITERCFG const g_apRewritersFor_SqlFiles[] =
     &g_Copyright_SqlComment,
 };
 
+static PCSCMREWRITERCFG const g_apRewritersFor_GnuAsm[] =
+{
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnKeywords,
+    &g_SvnNoExecutable,
+    &g_Copyright_CstyleComment,
+};
+
+static PCSCMREWRITERCFG const g_apRewritersFor_TextFiles[] =
+{
+    &g_ForceNativeEol,
+    &g_StripTrailingBlanks,
+    &g_SvnKeywords,
+    &g_SvnNoExecutable,
+    /** @todo check for plain copyright + license in text files. */
+};
+
+static PCSCMREWRITERCFG const g_apRewritersFor_PlainTextFiles[] =
+{
+    &g_ForceNativeEol,
+    &g_StripTrailingBlanks,
+    &g_SvnKeywords,
+    &g_SvnNoExecutable,
+};
+
+static PCSCMREWRITERCFG const g_apRewritersFor_BinaryFiles[] =
+{
+    &g_SvnBinary,
+};
+
 static PCSCMREWRITERCFG const g_apRewritersFor_FileLists[] = /* both makefile and shell script */
 {
     &g_ForceLF,
@@ -619,11 +644,6 @@ static PCSCMREWRITERCFG const g_apRewritersFor_FileLists[] = /* both makefile an
     &g_StripTrailingBlanks,
     &g_AdjustTrailingLines,
     &g_Copyright_HashComment,
-};
-
-static PCSCMREWRITERCFG const g_apRewritersFor_BinaryFiles[] =
-{
-    &g_SvnBinary,
 };
 
 
@@ -663,10 +683,12 @@ static SCMCFGENTRY const g_aConfigs[] =
     SCM_CFG_ENTRY("qt-ui",      g_apRewritersFor_QtUiFiles,        false, "*.ui" ),
     SCM_CFG_ENTRY("sif",        g_apRewritersFor_SifFiles,         false, "*.sif" ),
     SCM_CFG_ENTRY("sql",        g_apRewritersFor_SqlFiles,         false, "*.pgsql|*.sql" ),
+    SCM_CFG_ENTRY("gas",        g_apRewritersFor_GnuAsm,           false, "*.S" ),
     SCM_CFG_ENTRY("binary",     g_apRewritersFor_BinaryFiles,      false, "*.bin|*.pdf" ),
-    SCM_CFG_ENTRY("text",       g_apRewritersFor_TextFiles,        false, "*.txt|README*|readme*" ),
     /* These should be be last: */
     SCM_CFG_ENTRY("make",       g_apRewritersFor_OtherMakefiles,   false, "Makefile|makefile|GNUmakefile|SMakefile" ),
+    SCM_CFG_ENTRY("text",       g_apRewritersFor_TextFiles,        false, "*.txt|README*|readme*|ReadMe*|NOTE*|TODO*" ),
+    SCM_CFG_ENTRY("plaintext",  g_apRewritersFor_PlainTextFiles,   false, "LICENSE" ),
     SCM_CFG_ENTRY("file-list",  g_apRewritersFor_FileLists,        false, "files_*" ),
 };
 
