@@ -197,7 +197,7 @@ FNSCMREWRITER rewrite_ForceLF;
 FNSCMREWRITER rewrite_ForceCRLF;
 FNSCMREWRITER rewrite_AdjustTrailingLines;
 FNSCMREWRITER rewrite_SvnNoExecutable;
-FNSCMREWRITER rewrite_SvnNoKeyword;
+FNSCMREWRITER rewrite_SvnNoKeywords;
 FNSCMREWRITER rewrite_SvnNoEolStyle;
 FNSCMREWRITER rewrite_SvnBinary;
 FNSCMREWRITER rewrite_SvnKeywords;
@@ -214,6 +214,19 @@ FNSCMREWRITER rewrite_FixFlowerBoxMarkers;
 FNSCMREWRITER rewrite_Fix_C_and_CPP_Todos;
 FNSCMREWRITER rewrite_C_and_CPP;
 
+/**
+ * Rewriter configuration.
+ */
+typedef struct SCMREWRITERCFG
+{
+    /** The rewriter function. */
+    PFNSCMREWRITER  pfnRewriter;
+    /** The name of the rewriter. */
+    const char     *pszName;
+} SCMREWRITERCFG;
+/** Pointer to a const rewriter config. */
+typedef SCMREWRITERCFG const *PCSCMREWRITERCFG;
+
 /** @}  */
 
 
@@ -226,13 +239,15 @@ FNSCMREWRITER rewrite_C_and_CPP;
 typedef struct SCMCFGENTRY
 {
     /** Number of rewriters. */
-    size_t          cRewriters;
+    size_t                  cRewriters;
     /** Pointer to an array of rewriters. */
-    PFNSCMREWRITER const  *papfnRewriter;
+    PCSCMREWRITERCFG const *paRewriters;
     /** Set if the entry handles binaries.  */
-    bool            fBinary;
+    bool                    fBinary;
     /** File pattern (simple).  */
-    const char     *pszFilePattern;
+    const char             *pszFilePattern;
+    /** Name (for treat as).  */
+    const char             *pszName;
 } SCMCFGENTRY;
 typedef SCMCFGENTRY *PSCMCFGENTRY;
 typedef SCMCFGENTRY const *PCSCMCFGENTRY;
@@ -247,7 +262,7 @@ typedef enum SCMLICENSE
     kScmLicense_OseCddl,            /**< VBox OSE CDDL if public. */
     kScmLicense_Lgpl,               /**< LGPL if public. */
     kScmLicense_Mit,                /**< MIT if public. */
-    kScmLicense_BasedOnMit,         /**< Copyright us but based on someone else's MIT . */
+    kScmLicense_BasedOnMit,         /**< Copyright us but based on someone else's MIT. */
     kScmLicense_End
 } SCMLICENSE;
 
@@ -294,8 +309,10 @@ typedef struct SCMSETTINGSBASE
     uint8_t         cchTab;
     /** Optimal source code width. */
     uint8_t         cchWidth;
-    /** Treat the file as if it had the given name (for finding SCMCFGENTRY). */
-    char           *pszTreatAsName;
+    /** Free the treat as structure. */
+    bool            fFreeTreatAs;
+    /** Prematched config entry. */
+    PCSCMCFGENTRY   pTreatAs;
     /** Only consider files matching these patterns.  This is only applied to the
      *  base names. */
     char           *pszFilterFiles;

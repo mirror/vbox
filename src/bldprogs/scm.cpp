@@ -102,11 +102,12 @@ typedef enum SCMOPT
     SCMOPT_DONT_SET_SVN_KEYWORDS,
     SCMOPT_TAB_SIZE,
     SCMOPT_WIDTH,
-    SCMOPT_TREAT_AS,
     SCMOPT_FILTER_OUT_DIRS,
     SCMOPT_FILTER_FILES,
     SCMOPT_FILTER_OUT_FILES,
-    SCMOPT_LAST_SETTINGS = SCMOPT_FILTER_OUT_FILES,
+    SCMOPT_TREAT_AS,
+    SCMOPT_ADD_ACTION,
+    SCMOPT_LAST_SETTINGS = SCMOPT_ADD_ACTION,
     //
     SCMOPT_DIFF_IGNORE_EOL,
     SCMOPT_DIFF_NO_IGNORE_EOL,
@@ -118,6 +119,8 @@ typedef enum SCMOPT
     SCMOPT_DIFF_NO_IGNORE_TRAILING_SPACE,
     SCMOPT_DIFF_SPECIAL_CHARS,
     SCMOPT_DIFF_NO_SPECIAL_CHARS,
+    SCMOPT_HELP_CONFIG,
+    SCMOPT_HELP_ACTIONS,
     SCMOPT_END
 } SCMOPT;
 
@@ -177,7 +180,8 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fSetSvnKeywords = */                        false,
     /* .cchTab = */                                 8,
     /* .cchWidth = */                               130,
-    /* .pszTreatAsName = */                         NULL,
+    /* .fFreeTreatAs = */                           false,
+    /* .pTreatAs = */                               NULL,
     /* .pszFilterFiles = */                         (char *)"",
     /* .pszFilterOutFiles = */                      (char *)"*.exe|*.com|20*-*-*.log",
     /* .pszFilterOutDirs = */                       (char *)".svn|.hg|.git|CVS",
@@ -186,6 +190,7 @@ static SCMSETTINGSBASE const g_Defaults =
 /** Option definitions for the base settings. */
 static RTGETOPTDEF  g_aScmOpts[] =
 {
+    /* rewriters */
     { "--convert-eol",                      SCMOPT_CONVERT_EOL,                     RTGETOPT_REQ_NOTHING },
     { "--no-convert-eol",                   SCMOPT_NO_CONVERT_EOL,                  RTGETOPT_REQ_NOTHING },
     { "--convert-tabs",                     SCMOPT_CONVERT_TABS,                    RTGETOPT_REQ_NOTHING },
@@ -216,10 +221,6 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--license-based-on-mit",             SCMOPT_LICENSE_BASED_ON_MIT,            RTGETOPT_REQ_NOTHING },
     { "--lgpl-disclaimer",                  SCMOPT_LGPL_DISCLAIMER,                 RTGETOPT_REQ_NOTHING },
     { "--no-lgpl-disclaimer",               SCMOPT_NO_LGPL_DISCLAIMER,              RTGETOPT_REQ_NOTHING },
-    { "--only-svn-dirs",                    SCMOPT_ONLY_SVN_DIRS,                   RTGETOPT_REQ_NOTHING },
-    { "--not-only-svn-dirs",                SCMOPT_NOT_ONLY_SVN_DIRS,               RTGETOPT_REQ_NOTHING },
-    { "--only-svn-files",                   SCMOPT_ONLY_SVN_FILES,                  RTGETOPT_REQ_NOTHING },
-    { "--not-only-svn-files",               SCMOPT_NOT_ONLY_SVN_FILES,              RTGETOPT_REQ_NOTHING },
     { "--set-svn-eol",                      SCMOPT_SET_SVN_EOL,                     RTGETOPT_REQ_NOTHING },
     { "--dont-set-svn-eol",                 SCMOPT_DONT_SET_SVN_EOL,                RTGETOPT_REQ_NOTHING },
     { "--set-svn-executable",               SCMOPT_SET_SVN_EXECUTABLE,              RTGETOPT_REQ_NOTHING },
@@ -228,366 +229,505 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--dont-set-svn-keywords",            SCMOPT_DONT_SET_SVN_KEYWORDS,           RTGETOPT_REQ_NOTHING },
     { "--tab-size",                         SCMOPT_TAB_SIZE,                        RTGETOPT_REQ_UINT8   },
     { "--width",                            SCMOPT_WIDTH,                           RTGETOPT_REQ_UINT8   },
-    { "--treat-as",                         SCMOPT_TREAT_AS,                        RTGETOPT_REQ_STRING  },
+
+    /* input selection */
+    { "--only-svn-dirs",                    SCMOPT_ONLY_SVN_DIRS,                   RTGETOPT_REQ_NOTHING },
+    { "--not-only-svn-dirs",                SCMOPT_NOT_ONLY_SVN_DIRS,               RTGETOPT_REQ_NOTHING },
+    { "--only-svn-files",                   SCMOPT_ONLY_SVN_FILES,                  RTGETOPT_REQ_NOTHING },
+    { "--not-only-svn-files",               SCMOPT_NOT_ONLY_SVN_FILES,              RTGETOPT_REQ_NOTHING },
     { "--filter-out-dirs",                  SCMOPT_FILTER_OUT_DIRS,                 RTGETOPT_REQ_STRING  },
     { "--filter-files",                     SCMOPT_FILTER_FILES,                    RTGETOPT_REQ_STRING  },
     { "--filter-out-files",                 SCMOPT_FILTER_OUT_FILES,                RTGETOPT_REQ_STRING  },
+
+    /* rewriter selection */
+    { "--treat-as",                         SCMOPT_TREAT_AS,                        RTGETOPT_REQ_STRING  },
+    { "--add-action",                       SCMOPT_ADD_ACTION,                      RTGETOPT_REQ_STRING  },
+
+    /* Additional help */
+    { "--help-config",                      SCMOPT_HELP_CONFIG,                     RTGETOPT_REQ_NOTHING },
+    { "--help-actions",                     SCMOPT_HELP_ACTIONS,                    RTGETOPT_REQ_NOTHING },
 };
 
 /** Consider files matching the following patterns (base names only). */
 static const char  *g_pszFileFilter         = NULL;
 
-static PFNSCMREWRITER const g_aRewritersFor_Makefile_kup[] =
+/* The rewriter configuration. */
+#define SCM_REWRITER_CFG(a_Global, a_szName, fnRewriter) static const SCMREWRITERCFG a_Global = { &fnRewriter, a_szName }
+SCM_REWRITER_CFG(g_StripTrailingBlanks,             "strip-trailing-blanks",        rewrite_StripTrailingBlanks);
+SCM_REWRITER_CFG(g_ExpandTabs,                      "expand-tabs",                  rewrite_ExpandTabs);
+SCM_REWRITER_CFG(g_ForceNativeEol,                  "force-native-eol",             rewrite_ForceNativeEol);
+SCM_REWRITER_CFG(g_ForceLF,                         "force-lf",                     rewrite_ForceLF);
+SCM_REWRITER_CFG(g_ForceCRLF,                       "force-crlf",                   rewrite_ForceCRLF);
+SCM_REWRITER_CFG(g_AdjustTrailingLines,             "adjust-trailing-lines",        rewrite_AdjustTrailingLines);
+SCM_REWRITER_CFG(g_SvnNoExecutable,                 "svn-no-executable",            rewrite_SvnNoExecutable);
+SCM_REWRITER_CFG(g_SvnNoKeywords,                   "svn-no-keywords",              rewrite_SvnNoKeywords);
+SCM_REWRITER_CFG(g_SvnNoEolStyle,                   "svn-no-eol-style",             rewrite_SvnNoEolStyle);
+SCM_REWRITER_CFG(g_SvnBinary,                       "svn-binary",                   rewrite_SvnBinary);
+SCM_REWRITER_CFG(g_SvnKeywords,                     "svn-keywords",                 rewrite_SvnKeywords);
+SCM_REWRITER_CFG(g_Copyright_CstyleComment,         "copyright-c-style",            rewrite_Copyright_CstyleComment);
+SCM_REWRITER_CFG(g_Copyright_HashComment,           "copyright-hash-style",         rewrite_Copyright_HashComment);
+SCM_REWRITER_CFG(g_Copyright_PythonComment,         "copyright-python-style",       rewrite_Copyright_PythonComment);
+SCM_REWRITER_CFG(g_Copyright_RemComment,            "copyright-rem-style",          rewrite_Copyright_RemComment);
+SCM_REWRITER_CFG(g_Copyright_SemicolonComment,      "copyright-semicolon-style",    rewrite_Copyright_SemicolonComment);
+SCM_REWRITER_CFG(g_Copyright_SqlComment,            "copyright-sql-style",          rewrite_Copyright_SqlComment);
+SCM_REWRITER_CFG(g_Copyright_TickComment,           "copyright-tick-style",         rewrite_Copyright_TickComment);
+SCM_REWRITER_CFG(g_Makefile_kup,                    "makefile-kup",                 rewrite_Makefile_kup);
+SCM_REWRITER_CFG(g_Makefile_kmk,                    "makefile-kmk",                 rewrite_Makefile_kmk);
+SCM_REWRITER_CFG(g_FixFlowerBoxMarkers,             "fix-flower-boxes",             rewrite_FixFlowerBoxMarkers);
+SCM_REWRITER_CFG(g_Fix_C_and_CPP_Todos,             "fix-c-todos",                  rewrite_Fix_C_and_CPP_Todos);
+SCM_REWRITER_CFG(g_C_and_CPP,                       "c-and-cpp",                    rewrite_C_and_CPP);
+
+/** The rewriter actions. */
+static PCSCMREWRITERCFG const g_papRewriterActions[] =
 {
-    rewrite_SvnNoExecutable,
-    rewrite_Makefile_kup
+    &g_StripTrailingBlanks,
+    &g_ExpandTabs,
+    &g_ForceNativeEol,
+    &g_ForceLF,
+    &g_ForceCRLF,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnNoKeywords,
+    &g_SvnNoEolStyle,
+    &g_SvnBinary,
+    &g_SvnKeywords,
+    &g_Copyright_CstyleComment,
+    &g_Copyright_HashComment,
+    &g_Copyright_PythonComment,
+    &g_Copyright_RemComment,
+    &g_Copyright_SemicolonComment,
+    &g_Copyright_SqlComment,
+    &g_Copyright_TickComment,
+    &g_Makefile_kup,
+    &g_Makefile_kmk,
+    &g_FixFlowerBoxMarkers,
+    &g_Fix_C_and_CPP_Todos,
+    &g_C_and_CPP,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_Makefile_kmk[] =
+
+static PCSCMREWRITERCFG const g_apRewritersFor_Makefile_kup[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
-    rewrite_Copyright_HashComment,
-    rewrite_Makefile_kmk
+    &g_SvnNoExecutable,
+    &g_Makefile_kup
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_OtherMakefiles[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_Makefile_kmk[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
-    rewrite_Copyright_HashComment,
+    &g_ForceNativeEol,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
+    &g_Copyright_HashComment,
+    &g_Makefile_kmk
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_C_and_CPP[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_OtherMakefiles[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
-    rewrite_Copyright_CstyleComment,
-    rewrite_FixFlowerBoxMarkers,
-    rewrite_Fix_C_and_CPP_Todos,
-    rewrite_C_and_CPP
+    &g_ForceNativeEol,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
+    &g_Copyright_HashComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_H_and_HPP[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_C_and_CPP[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_Copyright_CstyleComment,
-    rewrite_C_and_CPP
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
+    &g_Copyright_CstyleComment,
+    &g_FixFlowerBoxMarkers,
+    &g_Fix_C_and_CPP_Todos,
+    &g_C_and_CPP
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_RC[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_H_and_HPP[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
-    rewrite_Copyright_CstyleComment,
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_Copyright_CstyleComment,
+    &g_C_and_CPP
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_DTrace[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_RC[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnKeywords,
-    rewrite_Copyright_CstyleComment,
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
+    &g_Copyright_CstyleComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_DSL[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_DTrace[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
-    rewrite_Copyright_CstyleComment,
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnKeywords,
+    &g_Copyright_CstyleComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_ASM[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_DSL[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
-    rewrite_Copyright_SemicolonComment,
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
+    &g_Copyright_CstyleComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_DEF[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_ASM[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
-    rewrite_Copyright_SemicolonComment,
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
+    &g_Copyright_SemicolonComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_ShellScripts[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_DEF[] =
 {
-    rewrite_ForceLF,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_Copyright_HashComment,
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
+    &g_Copyright_SemicolonComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_BatchFiles[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_ShellScripts[] =
 {
-    rewrite_ForceCRLF,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_Copyright_RemComment,
+    &g_ForceLF,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_Copyright_HashComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_BasicScripts[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_BatchFiles[] =
 {
-    rewrite_ForceCRLF,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_Copyright_TickComment,
+    &g_ForceCRLF,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_Copyright_RemComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_SedScripts[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_BasicScripts[] =
 {
-    rewrite_ForceLF,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_Copyright_HashComment,
+    &g_ForceCRLF,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_Copyright_TickComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_Python[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_SedScripts[] =
 {
-    /** @todo rewrite_ForceLFIfExecutable */
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnKeywords,
-    rewrite_Copyright_PythonComment,
+    &g_ForceLF,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_Copyright_HashComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_Perl[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_Python[] =
 {
-    /** @todo rewrite_ForceLFIfExecutable */
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnKeywords,
-    rewrite_Copyright_HashComment,
+    /** @todo &g_ForceLFIfExecutable */
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnKeywords,
+    &g_Copyright_PythonComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_DriverInfFiles[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_Perl[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnKeywords,
-    rewrite_SvnNoExecutable,
-    rewrite_Copyright_SemicolonComment,
+    /** @todo &g_ForceLFIfExecutable */
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnKeywords,
+    &g_Copyright_HashComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_NsisFiles[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_DriverInfFiles[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnKeywords,
-    rewrite_SvnNoExecutable,
-    rewrite_Copyright_SemicolonComment,
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnKeywords,
+    &g_SvnNoExecutable,
+    &g_Copyright_SemicolonComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_Java[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_NsisFiles[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
-    rewrite_Copyright_CstyleComment,
-    rewrite_FixFlowerBoxMarkers,
-    rewrite_Fix_C_and_CPP_Todos,
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnKeywords,
+    &g_SvnNoExecutable,
+    &g_Copyright_SemicolonComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_ScmSettings[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_Java[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
-    rewrite_Copyright_HashComment,
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
+    &g_Copyright_CstyleComment,
+    &g_FixFlowerBoxMarkers,
+    &g_Fix_C_and_CPP_Todos,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_Images[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_ScmSettings[] =
 {
-    rewrite_SvnNoExecutable,
-    rewrite_SvnBinary,
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
+    &g_Copyright_HashComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_Xslt[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_Images[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
+    &g_SvnNoExecutable,
+    &g_SvnBinary,
+};
+
+static PCSCMREWRITERCFG const g_apRewritersFor_Xslt[] =
+{
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
     /** @todo copyright is in an XML comment. */
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_Xml[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_Xml[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
     /** @todo copyright is in an XML comment. */
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_Wix[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_Wix[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
     /** @todo copyright is in an XML comment. */
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_QtProject[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_QtProject[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
-    rewrite_Copyright_HashComment,
+    &g_ForceNativeEol,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
+    &g_Copyright_HashComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_QtResourceFiles[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_QtResourceFiles[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
+    &g_ForceNativeEol,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
     /** @todo figure out copyright for Qt resource XML files. */
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_QtTranslations[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_QtTranslations[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_SvnNoExecutable,
+    &g_ForceNativeEol,
+    &g_SvnNoExecutable,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_QtUiFiles[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_QtUiFiles[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_SvnNoExecutable,
-    rewrite_SvnKeywords,
+    &g_ForceNativeEol,
+    &g_SvnNoExecutable,
+    &g_SvnKeywords,
     /** @todo copyright is in an XML 'comment' element. */
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_SifFiles[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_SifFiles[] =
 {
-    rewrite_ForceCRLF,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnKeywords,
-    rewrite_SvnNoExecutable,
-    rewrite_Copyright_SemicolonComment,
+    &g_ForceCRLF,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnKeywords,
+    &g_SvnNoExecutable,
+    &g_Copyright_SemicolonComment,
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_SqlFiles[] =
+static PCSCMREWRITERCFG const g_apRewritersFor_TextFiles[] =
 {
-    rewrite_ForceNativeEol,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_SvnKeywords,
-    rewrite_SvnNoExecutable,
-    rewrite_Copyright_SqlComment,
+    &g_ForceNativeEol,
+    &g_StripTrailingBlanks,
+    &g_SvnKeywords,
+    &g_SvnNoExecutable,
+    /** @todo check for plain copyright + license in text files. */
 };
 
-static PFNSCMREWRITER const g_aRewritersFor_FileLists[] = /* both makefile and shell script */
+static PCSCMREWRITERCFG const g_apRewritersFor_SqlFiles[] =
 {
-    rewrite_ForceLF,
-    rewrite_ExpandTabs,
-    rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines,
-    rewrite_Copyright_HashComment,
+    &g_ForceNativeEol,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_SvnKeywords,
+    &g_SvnNoExecutable,
+    &g_Copyright_SqlComment,
+};
+
+static PCSCMREWRITERCFG const g_apRewritersFor_FileLists[] = /* both makefile and shell script */
+{
+    &g_ForceLF,
+    &g_ExpandTabs,
+    &g_StripTrailingBlanks,
+    &g_AdjustTrailingLines,
+    &g_Copyright_HashComment,
+};
+
+static PCSCMREWRITERCFG const g_apRewritersFor_BinaryFiles[] =
+{
+    &g_SvnBinary,
 };
 
 
-
-#define SCM_CFG_ENTRY(a_aRewriters, a_fBinary, a_szFilePatterns) \
-    { RT_ELEMENTS(a_aRewriters), &a_aRewriters[0], a_fBinary, a_szFilePatterns }
+/**
+ * Array of standard rewriter configurations.
+ */
 static SCMCFGENTRY const g_aConfigs[] =
 {
-    SCM_CFG_ENTRY(g_aRewritersFor_Makefile_kup,     false, "Makefile.kup" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Makefile_kmk,     false, "*.kmk" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_C_and_CPP,        false, "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc|*.m|*.mm" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_H_and_HPP,        false, "*.h|*.hpp" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_RC,               false, "*.rc" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_ASM,              false, "*.asm|*.mac|*.inc" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_DTrace,           false, "*.d" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_DEF,              false, "*.def" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_DSL,              false, "*.dsl" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_ShellScripts,     false, "*.sh|configure" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_BatchFiles,       false, "*.bat|*.cmd|*.btm" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_BasicScripts,     false, "*.vbs|*.vb" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_SedScripts,       false, "*.sed" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Python,           false, "*.py" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Perl,             false, "*.pl|*.pm" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_DriverInfFiles,   false, "*.inf" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_NsisFiles,        false, "*.nsh|*.nsi" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Java,             false, "*.java" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_ScmSettings,      false, "*.scm-settings" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Images,           true,  "*.png|*.bmp|*.jpg|*.pnm|*.ico|*.icns|*.tiff|*.tif|*.xcf" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Xslt,             false, "*.xsl" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Xml,              false, "*.xml" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_Wix,              false, "*.wxi|*.wxs|*.wxl" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_QtProject,        false, "*.pro" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_QtResourceFiles,  false, "*.qrc" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_QtTranslations,   false, "*.ts" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_QtUiFiles,        false, "*.ui" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_SifFiles,         false, "*.sif" ),
-    SCM_CFG_ENTRY(g_aRewritersFor_SqlFiles,         false, "*.pgsql|*.sql" ),
-    /* Should be last. */
-    SCM_CFG_ENTRY(g_aRewritersFor_OtherMakefiles,   false, "Makefile|makefile|GNUmakefile|SMakefile" ),
-    /* Must be be last: */
-    SCM_CFG_ENTRY(g_aRewritersFor_FileLists,        false, "files_*" ),
+#define SCM_CFG_ENTRY(a_szName, a_aRewriters, a_fBinary, a_szFilePatterns) \
+    { RT_ELEMENTS(a_aRewriters), &a_aRewriters[0], a_fBinary, a_szFilePatterns, a_szName }
+    SCM_CFG_ENTRY("kup",        g_apRewritersFor_Makefile_kup,     false, "Makefile.kup" ),
+    SCM_CFG_ENTRY("kmk",        g_apRewritersFor_Makefile_kmk,     false, "*.kmk" ),
+    SCM_CFG_ENTRY("c",          g_apRewritersFor_C_and_CPP,        false, "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc|*.m|*.mm" ),
+    SCM_CFG_ENTRY("h",          g_apRewritersFor_H_and_HPP,        false, "*.h|*.hpp" ),
+    SCM_CFG_ENTRY("rc",         g_apRewritersFor_RC,               false, "*.rc" ),
+    SCM_CFG_ENTRY("asm",        g_apRewritersFor_ASM,              false, "*.asm|*.mac|*.inc" ),
+    SCM_CFG_ENTRY("dtrace",     g_apRewritersFor_DTrace,           false, "*.d" ),
+    SCM_CFG_ENTRY("def",        g_apRewritersFor_DEF,              false, "*.def" ),
+    SCM_CFG_ENTRY("iasl",       g_apRewritersFor_DSL,              false, "*.dsl" ),
+    SCM_CFG_ENTRY("sh",         g_apRewritersFor_ShellScripts,     false, "*.sh|configure" ),
+    SCM_CFG_ENTRY("bat",        g_apRewritersFor_BatchFiles,       false, "*.bat|*.cmd|*.btm" ),
+    SCM_CFG_ENTRY("vbs",        g_apRewritersFor_BasicScripts,     false, "*.vbs|*.vb" ),
+    SCM_CFG_ENTRY("sed",        g_apRewritersFor_SedScripts,       false, "*.sed" ),
+    SCM_CFG_ENTRY("python",     g_apRewritersFor_Python,           false, "*.py" ),
+    SCM_CFG_ENTRY("perl",       g_apRewritersFor_Perl,             false, "*.pl|*.pm" ),
+    SCM_CFG_ENTRY("drvinf",     g_apRewritersFor_DriverInfFiles,   false, "*.inf" ),
+    SCM_CFG_ENTRY("nsis",       g_apRewritersFor_NsisFiles,        false, "*.nsh|*.nsi" ),
+    SCM_CFG_ENTRY("java",       g_apRewritersFor_Java,             false, "*.java" ),
+    SCM_CFG_ENTRY("scm",        g_apRewritersFor_ScmSettings,      false, "*.scm-settings" ),
+    SCM_CFG_ENTRY("image",      g_apRewritersFor_Images,           true,  "*.png|*.bmp|*.jpg|*.pnm|*.ico|*.icns|*.tiff|*.tif|*.xcf" ),
+    SCM_CFG_ENTRY("xslt",       g_apRewritersFor_Xslt,             false, "*.xsl" ),
+    SCM_CFG_ENTRY("xml",        g_apRewritersFor_Xml,              false, "*.xml" ),
+    SCM_CFG_ENTRY("wix",        g_apRewritersFor_Wix,              false, "*.wxi|*.wxs|*.wxl" ),
+    SCM_CFG_ENTRY("qt-pro",     g_apRewritersFor_QtProject,        false, "*.pro" ),
+    SCM_CFG_ENTRY("qt-rc",      g_apRewritersFor_QtResourceFiles,  false, "*.qrc" ),
+    SCM_CFG_ENTRY("qt-ts",      g_apRewritersFor_QtTranslations,   false, "*.ts" ),
+    SCM_CFG_ENTRY("qt-ui",      g_apRewritersFor_QtUiFiles,        false, "*.ui" ),
+    SCM_CFG_ENTRY("sif",        g_apRewritersFor_SifFiles,         false, "*.sif" ),
+    SCM_CFG_ENTRY("sql",        g_apRewritersFor_SqlFiles,         false, "*.pgsql|*.sql" ),
+    SCM_CFG_ENTRY("binary",     g_apRewritersFor_BinaryFiles,      false, "*.bin|*.pdf" ),
+    SCM_CFG_ENTRY("text",       g_apRewritersFor_TextFiles,        false, "*.txt|README*|readme*" ),
+    /* These should be be last: */
+    SCM_CFG_ENTRY("make",       g_apRewritersFor_OtherMakefiles,   false, "Makefile|makefile|GNUmakefile|SMakefile" ),
+    SCM_CFG_ENTRY("file-list",  g_apRewritersFor_FileLists,        false, "files_*" ),
 };
 
 
 
 /* -=-=-=-=-=- settings -=-=-=-=-=- */
 
+static void scmCfgEntryDelete(PSCMCFGENTRY pEntry)
+{
+    RTMemFree((void *)pEntry->paRewriters);
+    pEntry->paRewriters = NULL;
+    RTMemFree(pEntry);
+}
+
+static PSCMCFGENTRY scmCfgEntryDup(PCSCMCFGENTRY pEntry)
+{
+    PSCMCFGENTRY pDup = (PSCMCFGENTRY)RTMemDup(pEntry, sizeof(*pEntry));
+    if (pDup)
+    {
+        size_t    cbRewriters = sizeof(pEntry->paRewriters[0]) * RT_ALIGN_Z(pEntry->cRewriters, 8);
+        pDup->paRewriters = (PCSCMREWRITERCFG const *)RTMemDup(pEntry->paRewriters, cbRewriters);
+        if (pDup->paRewriters)
+            return pDup;
+
+        RTMemFree(pDup);
+    }
+    return NULL;
+}
+
+#if 0
+static PSCMCFGENTRY scmCfgEntryNew(void)
+{
+    PSCMCFGENTRY pNew = (PSCMCFGENTRY)RTMemAlloc(sizeof(*pNew));
+    if (pNew)
+    {
+        pNew->pszName        = "custom";
+        pNew->pszFilePattern = "custom";
+        pNew->cRewriters     = 0;
+        pNew->paRewriters    = NULL;
+        pNew->fBinary        = false;
+    }
+    return pNew;
+}
+#endif
+
+static int scmCfgEntryAddAction(PSCMCFGENTRY pEntry, PCSCMREWRITERCFG pActions)
+{
+    PCSCMREWRITERCFG *paRewriters = (PCSCMREWRITERCFG *)pEntry->paRewriters;
+    if ((pEntry->cRewriters + 1) % 8 == 0)
+    {
+        size_t cbRewriters = sizeof(pEntry->paRewriters[0]) * RT_ALIGN_Z((pEntry->cRewriters + 1), 8);
+        void *pvNew = RTMemRealloc(paRewriters, cbRewriters);
+        if (pvNew)
+            pEntry->paRewriters = paRewriters = (PCSCMREWRITERCFG *)pvNew;
+        else
+            return VERR_NO_MEMORY;
+    }
+
+    paRewriters[pEntry->cRewriters++] = pActions;
+    return VINF_SUCCESS;
+}
 
 /**
  * Init a settings structure with settings from @a pSrc.
@@ -609,9 +749,11 @@ static int scmSettingsBaseInitAndCopy(PSCMSETTINGSBASE pSettings, PCSCMSETTINGSB
             rc = RTStrDupEx(&pSettings->pszFilterOutDirs, pSrc->pszFilterOutDirs);
             if (RT_SUCCESS(rc))
             {
-                if (pSrc->pszTreatAsName)
-                    rc = RTStrDupEx(&pSettings->pszTreatAsName, pSrc->pszTreatAsName);
-                if (RT_SUCCESS(rc))
+                if (!pSrc->fFreeTreatAs)
+                    return VINF_SUCCESS;
+
+                pSettings->pTreatAs = scmCfgEntryDup(pSrc->pTreatAs);
+                if (pSettings->pTreatAs)
                     return VINF_SUCCESS;
 
                 RTStrFree(pSettings->pszFilterOutDirs);
@@ -624,7 +766,7 @@ static int scmSettingsBaseInitAndCopy(PSCMSETTINGSBASE pSettings, PCSCMSETTINGSB
     pSettings->pszFilterFiles = NULL;
     pSettings->pszFilterOutFiles = NULL;
     pSettings->pszFilterOutDirs = NULL;
-    pSettings->pszTreatAsName = NULL;
+    pSettings->pTreatAs = NULL;
     return rc;
 }
 
@@ -652,19 +794,18 @@ static void scmSettingsBaseDelete(PSCMSETTINGSBASE pSettings)
         pSettings->cchTab = UINT8_MAX;
 
         RTStrFree(pSettings->pszFilterFiles);
-        pSettings->pszFilterFiles = NULL;
-
         RTStrFree(pSettings->pszFilterOutFiles);
-        pSettings->pszFilterOutFiles = NULL;
-
         RTStrFree(pSettings->pszFilterOutDirs);
-        pSettings->pszFilterOutDirs = NULL;
+        if (pSettings->fFreeTreatAs)
+            scmCfgEntryDelete((PSCMCFGENTRY)pSettings->pTreatAs);
 
-        RTStrFree(pSettings->pszTreatAsName);
-        pSettings->pszTreatAsName = NULL;
+        pSettings->pszFilterOutDirs = NULL;
+        pSettings->pszFilterOutFiles = NULL;
+        pSettings->pszFilterFiles = NULL;
+        pSettings->pTreatAs = NULL;
+        pSettings->fFreeTreatAs = false;
     }
 }
-
 
 /**
  * Processes a RTGetOpt result.
@@ -847,20 +988,6 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             pSettings->cchWidth = pValueUnion->u8;
             return VINF_SUCCESS;
 
-        case SCMOPT_TREAT_AS:
-            if (pSettings->pszTreatAsName)
-            {
-                RTStrFree(pSettings->pszTreatAsName);
-                pSettings->pszTreatAsName = NULL;
-            }
-            if (*pValueUnion->psz)
-            {
-                pSettings->pszTreatAsName = RTStrDup(pValueUnion->psz);
-                if (!pSettings->pszTreatAsName)
-                    return VERR_NO_MEMORY;
-            }
-            return VINF_SUCCESS;
-
         case SCMOPT_FILTER_OUT_DIRS:
         case SCMOPT_FILTER_FILES:
         case SCMOPT_FILTER_OUT_FILES:
@@ -921,6 +1048,61 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             }
             /* not reached */
         }
+
+        case SCMOPT_TREAT_AS:
+            if (pSettings->fFreeTreatAs)
+            {
+                scmCfgEntryDelete((PSCMCFGENTRY)pSettings->pTreatAs);
+                pSettings->pTreatAs = NULL;
+                pSettings->fFreeTreatAs = false;
+            }
+
+            if (*pValueUnion->psz)
+            {
+                /* first check the names, then patterns (legacy). */
+                for (size_t iCfg = 0; iCfg < RT_ELEMENTS(g_aConfigs); iCfg++)
+                    if (strcmp(g_aConfigs[iCfg].pszName, pValueUnion->psz) == 0)
+                    {
+                        pSettings->pTreatAs = &g_aConfigs[iCfg];
+                        return VINF_SUCCESS;
+                    }
+                for (size_t iCfg = 0; iCfg < RT_ELEMENTS(g_aConfigs); iCfg++)
+                    if (RTStrSimplePatternMultiMatch(g_aConfigs[iCfg].pszFilePattern, RTSTR_MAX,
+                                                     pValueUnion->psz, RTSTR_MAX, NULL))
+                    {
+                        pSettings->pTreatAs = &g_aConfigs[iCfg];
+                        return VINF_SUCCESS;
+                    }
+                /* Special help for listing the possibilities?  */
+                if (strcmp(pValueUnion->psz, "help") == 0)
+                {
+                    RTPrintf("Possible --treat-as values:\n");
+                    for (size_t iCfg = 0; iCfg < RT_ELEMENTS(g_aConfigs); iCfg++)
+                        RTPrintf("    %s (%s)\n", g_aConfigs[iCfg].pszName, g_aConfigs[iCfg].pszFilePattern);
+                }
+                return VERR_NOT_FOUND;
+            }
+
+            pSettings->pTreatAs = NULL;
+            return VINF_SUCCESS;
+
+        case SCMOPT_ADD_ACTION:
+            for (uint32_t iAction = 0; iAction < RT_ELEMENTS(g_papRewriterActions); iAction++)
+                if (strcmp(g_papRewriterActions[iAction]->pszName, pValueUnion->psz) == 0)
+                {
+                    PSCMCFGENTRY pEntry = (PSCMCFGENTRY)pSettings->pTreatAs;
+                    if (!pSettings->fFreeTreatAs)
+                    {
+                        pEntry = scmCfgEntryDup(pEntry);
+                        if (!pEntry)
+                            return VERR_NO_MEMORY;
+                        pSettings->pTreatAs = pEntry;
+                        pSettings->fFreeTreatAs = true;
+                    }
+                    return scmCfgEntryAddAction(pEntry, g_papRewriterActions[iAction]);
+                }
+            RTMsgError("Unknown --add-action value '%s'.  Try --help-actions for a list.", pValueUnion->psz);
+            return VERR_NOT_FOUND;
 
         default:
             return VERR_GETOPT_UNKNOWN_OPTION;
@@ -1702,8 +1884,8 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
     /*
      * Try find a matching rewrite config for this filename.
      */
-    PCSCMCFGENTRY pCfg = NULL;
-    if (!pBaseSettings->pszTreatAsName)
+    PCSCMCFGENTRY pCfg = pBaseSettings->pTreatAs;
+    if (!pCfg)
     {
         for (size_t iCfg = 0; iCfg < RT_ELEMENTS(g_aConfigs); iCfg++)
             if (RTStrSimplePatternMultiMatch(g_aConfigs[iCfg].pszFilePattern, RTSTR_MAX, pszBasename, cchBasename, NULL))
@@ -1711,25 +1893,16 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                 pCfg = &g_aConfigs[iCfg];
                 break;
             }
+        if (!pCfg)
+        {
+            ScmVerbose(NULL, 2, "skipping '%s': no rewriters configured\n", pszFilename);
+            g_cFilesNoRewriters++;
+            return VINF_SUCCESS;
+        }
+        ScmVerbose(pState, 4, "matched \"%s\" (%s)\n", pCfg->pszFilePattern, pCfg->pszName);
     }
     else
-    {
-        size_t cchTreatAsName = strlen(pBaseSettings->pszTreatAsName);
-        for (size_t iCfg = 0; iCfg < RT_ELEMENTS(g_aConfigs); iCfg++)
-            if (RTStrSimplePatternMultiMatch(g_aConfigs[iCfg].pszFilePattern, RTSTR_MAX,
-                                             pBaseSettings->pszTreatAsName, cchTreatAsName, NULL))
-            {
-                pCfg = &g_aConfigs[iCfg];
-                break;
-            }
-    }
-    if (!pCfg)
-    {
-        ScmVerbose(NULL, 2, "skipping '%s': no rewriters configured\n", pszFilename);
-        g_cFilesNoRewriters++;
-        return VINF_SUCCESS;
-    }
-    ScmVerbose(pState, 4, "matched \"%s\"\n", pCfg->pszFilePattern);
+        ScmVerbose(pState, 4, "treat-as \"%s\"\n", pCfg->pszName);
 
     /*
      * Create an input stream from the file and check that it's text.
@@ -1772,7 +1945,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                     for (size_t iRw = 0; iRw < pCfg->cRewriters; iRw++)
                     {
                         pState->rc = VINF_SUCCESS;
-                        bool fRc = pCfg->papfnRewriter[iRw](pState, pIn, pOut, pBaseSettings);
+                        bool fRc = pCfg->paRewriters[iRw]->pfnRewriter(pState, pIn, pOut, pBaseSettings);
                         if (RT_FAILURE(pState->rc))
                             break;
                         if (fRc)
@@ -1912,7 +2085,6 @@ static int scmProcessFile(const char *pszFilename, const char *pszBasename, size
     }
     return rc;
 }
-
 
 /**
  * Tries to correct RTDIRENTRY_UNKNOWN.
@@ -2149,15 +2321,70 @@ static void scmPrintStats(void)
                g_cFilesNotInSvn, g_cFilesSkipped);
 }
 
-static void usage(PCRTGETOPTDEF paOpts, size_t cOpts)
+/**
+ * Display the rewriter actions.
+ *
+ * @returns RTEXITCODE_SUCCESS.
+ */
+static int scmHelpActions(void)
+{
+    RTPrintf("Available rewriter actions:\n");
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_papRewriterActions); i++)
+        RTPrintf("  %s\n", g_papRewriterActions[i]->pszName);
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Display the default configuration.
+ *
+ * @returns RTEXITCODE_SUCCESS.
+ */
+static int scmHelpConfig(void)
+{
+    RTPrintf("Rewriter configuration:\n");
+    for (size_t iCfg = 0; iCfg < RT_ELEMENTS(g_aConfigs); iCfg++)
+    {
+        RTPrintf("\n  %s%s - %s:\n",
+                 g_aConfigs[iCfg].pszName, g_aConfigs[iCfg].fBinary ? " (binary)" : "", g_aConfigs[iCfg].pszFilePattern);
+        for (size_t i = 0; i < g_aConfigs[iCfg].cRewriters; i++)
+            RTPrintf("    %s\n", g_aConfigs[iCfg].paRewriters[i]->pszName);
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Display the primary help text.
+ *
+ * @returns RTEXITCODE_SUCCESS.
+ * @param   paOpts              Options.
+ * @param   cOpts               Number of options.
+ */
+static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
 {
     RTPrintf("VirtualBox Source Code Massager\n"
              "\n"
              "Usage: %s [options] <files & dirs>\n"
              "\n"
-             "Options:\n", g_szProgName);
+             "General options:\n", g_szProgName);
     for (size_t i = 0; i < cOpts; i++)
     {
+        /* Grouping. */
+        switch (paOpts[i].iShort)
+        {
+            case SCMOPT_DIFF_IGNORE_EOL:
+                RTPrintf("\nDiff options (dry runs):\n");
+                break;
+            case SCMOPT_CONVERT_EOL:
+                RTPrintf("\nRewriter action options:\n");
+                break;
+            case SCMOPT_ONLY_SVN_DIRS:
+                RTPrintf("\nInput selection options:\n");
+                break;
+            case SCMOPT_TREAT_AS:
+                RTPrintf("\nMisc options:\n");
+                break;
+        }
+
         size_t cExtraAdvance = 0;
         if ((paOpts[i].fFlags & RTGETOPT_REQ_MASK) == RTGETOPT_REQ_NOTHING)
         {
@@ -2202,6 +2429,8 @@ static void usage(PCRTGETOPTDEF paOpts, size_t cOpts)
             case 'f':                           RTPrintf("      Default: none\n"); break;
             case 'q':
             case 'v':                           RTPrintf("      Default: -vv\n"); break;
+            case SCMOPT_HELP_CONFIG:            RTPrintf("      Shows the standard file rewriter configurations.\n"); break;
+            case SCMOPT_HELP_ACTIONS:           RTPrintf("      Shows the available rewriter actions.\n"); break;
 
             case SCMOPT_DIFF_IGNORE_EOL:        RTPrintf("      Default: false\n"); break;
             case SCMOPT_DIFF_IGNORE_SPACE:      RTPrintf("      Default: false\n"); break;
@@ -2235,26 +2464,37 @@ static void usage(PCRTGETOPTDEF paOpts, size_t cOpts)
                 RTPrintf("      Include LGPL version disclaimer.  Default: --no-lgpl-disclaimer\n");
                 break;
 
-            case SCMOPT_ONLY_SVN_DIRS:          RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnDirs); break;
-            case SCMOPT_ONLY_SVN_FILES:         RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnFiles); break;
             case SCMOPT_SET_SVN_EOL:            RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnEol); break;
             case SCMOPT_SET_SVN_EXECUTABLE:     RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnExecutable); break;
             case SCMOPT_SET_SVN_KEYWORDS:       RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnKeywords); break;
             case SCMOPT_TAB_SIZE:               RTPrintf("      Default: %u\n", g_Defaults.cchTab); break;
             case SCMOPT_WIDTH:                  RTPrintf("      Default: %u\n", g_Defaults.cchWidth); break;
 
-            case SCMOPT_TREAT_AS:
-                RTPrintf("      For files not using the default extension.\n");
-                break;
-
+            case SCMOPT_ONLY_SVN_DIRS:          RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnDirs); break;
+            case SCMOPT_ONLY_SVN_FILES:         RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnFiles); break;
             case SCMOPT_FILTER_OUT_DIRS:        RTPrintf("      Default: %s\n", g_Defaults.pszFilterOutDirs); break;
             case SCMOPT_FILTER_FILES:           RTPrintf("      Default: %s\n", g_Defaults.pszFilterFiles); break;
             case SCMOPT_FILTER_OUT_FILES:       RTPrintf("      Default: %s\n", g_Defaults.pszFilterOutFiles); break;
+
+            case SCMOPT_TREAT_AS:
+                RTPrintf("      For treat the input file(s) differently, restting any --add-action.\n"
+                         "      If the value is empty defaults will be used again.  Possible values:\n");
+                for (size_t iCfg = 0; iCfg < RT_ELEMENTS(g_aConfigs); iCfg++)
+                    RTPrintf("          %s (%s)\n", g_aConfigs[iCfg].pszName, g_aConfigs[iCfg].pszFilePattern);
+                break;
+
+            case SCMOPT_ADD_ACTION:
+                RTPrintf("      Adds a rewriter action.  The first use after a --treat-as will copy and\n"
+                         "      the action list selected by the --treat-as.  The actuion list will be\n"
+                         "      flushed by --treat-as.\n");
+                break;
+
             default: AssertMsgFailed(("i=%d %d %s\n", i, paOpts[i].iShort, paOpts[i].pszLong));
         }
         i += cExtraAdvance;
     }
 
+    return RTEXITCODE_SUCCESS;
 }
 
 int main(int argc, char **argv)
@@ -2328,8 +2568,13 @@ int main(int argc, char **argv)
                 break;
 
             case 'h':
-                usage(s_aOpts, RT_ELEMENTS(s_aOpts));
-                return 1;
+                return scmHelp(s_aOpts, RT_ELEMENTS(s_aOpts));
+
+            case SCMOPT_HELP_CONFIG:
+                return scmHelpConfig();
+
+            case SCMOPT_HELP_ACTIONS:
+                return scmHelpActions();
 
             case 'q':
                 g_iVerbosity = 0;
