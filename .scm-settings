@@ -42,14 +42,10 @@
 #
 --filter-out-dirs  ".svn"
 --filter-out-dirs  "/*out*/."
---filter-out-dirs  "/tools/."
 --filter-out-dirs  "/webtools/."
---filter-out-dirs  "/kBuild/."
---filter-out-dirs  "/_kBuild/."
---filter-out-dirs  "/kBuild_/."
+--filter-out-dirs  "/*kBuild*/."
 --filter-out-dirs  "/debian/."
 --filter-out-dirs  "/SlickEdit/."
---filter-out-dirs  "/doc/manual/texfiles/."
 --filter-out-dirs  "/src/libs/*/."
 
 

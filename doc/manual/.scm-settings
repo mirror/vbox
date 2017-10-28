@@ -19,3 +19,5 @@
 /string.xsl:             --external-copyright --no-convert-tabs
 /titlepage-htmlhelp.xml: --external-copyright --no-convert-tabs
 
+--filter-out-dirs  /texfiles/.
+
