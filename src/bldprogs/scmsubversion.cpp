@@ -714,13 +714,13 @@ static void scmSvnTryResolveFunctions(void)
 # else
             { "../lib/lib", ".so" },
             { "../lib/lib", "-1.so" },
-# ifdef RT_ARCH_X86
+#  ifdef RT_ARCH_X86
             { "../lib/i386-linux-gnu/lib", ".so" },
             { "../lib/i386-linux-gnu/lib", "-1.so" },
-# else
+#  else
             { "../lib/x86_64-linux-gnu/lib", ".so" },
             { "../lib/x86_64-linux-gnu/lib", "-1.so" },
-# endif
+#  endif
 # endif
         };
         for (unsigned iVar = 0; iVar < RT_ELEMENTS(s_aVariations); iVar++)
