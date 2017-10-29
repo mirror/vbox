@@ -909,8 +909,8 @@ ifeq ($(KBUILD_HOST),$(KBUILD_TARGET))
   docs: scm.check.run
  endif
  .PHONY: scm.check.run
- scm.check.run: $(VBOX_PATH_TOOLS)/scm$(HOST_SUFF_EXE)
-	$(VBOX_PATH_TOOLS)/scm$(HOST_SUFF_EXE) -qvv --check-run $(PATH_ROOT)
+ scm.check.run: $(VBOX_PATH_TOOLS)/scm$(HOSTSUFF_EXE)
+	$(VBOX_PATH_TOOLS)/scm$(HOSTSUFF_EXE) -qvv --check-run $(PATH_ROOT)
 endif
 
 
