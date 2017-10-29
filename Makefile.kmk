@@ -910,7 +910,8 @@ ifeq ($(KBUILD_HOST),$(KBUILD_TARGET))
  endif
  .PHONY: scm.check.run
  scm.check.run: $(VBOX_PATH_TOOLS)/scm$(HOSTSUFF_EXE)
-	$(VBOX_PATH_TOOLS)/scm$(HOSTSUFF_EXE) -qvv --check-run $(PATH_ROOT)
+	$(REDIRECT) -E VBOX_LOG_FLAGS="disabled" -E VBOX_LOG_DEST="nofile" -- \
+		$(VBOX_PATH_TOOLS)/scm$(HOSTSUFF_EXE) -qvv --check-run $(PATH_ROOT)
 endif
 
 
