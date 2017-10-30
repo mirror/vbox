@@ -93,7 +93,21 @@ ifeq ($(KERNELRELEASE),)
  #
 
  # kernel base directory
+ ifdef KERN_DIR
+  ifeq ($(filter %/build,$(KERN_DIR)),)
+   $(error The variable KERN_DIR must be a kernel build folder and end with /build without a trailing slash)
+  endif
+ endif
+
+ ifndef KERN_VER
+  ifdef KERN_DIR
+   KERN_VER = $(notdir $(patsubst %/build,%,$(KERN_DIR)))
+   ifeq ($(shell expr $(KERN_VER) : '[0-9]*\.[0-9]*.[0-9]*'),0)
+    $(error The kernel build folder path must end in <version>/build, or the variable KERN_VER must be set)
+   endif
+  endif
  KERN_VER ?= $(shell uname -r)
+ endif
 
  # guess kernel major version (24 or later)
  ifeq ($(shell if grep '"2\.4\.' /lib/modules/$(KERN_VER)/build/include/linux/version.h > /dev/null 2>&1; then echo yes; fi),yes)
