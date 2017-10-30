@@ -298,10 +298,10 @@ private:
         QLabel       *m_pLabelLocation;
         /** Holds the location editor. */
         QLineEdit    *m_pEditorLocation;
-        /** Holds the location button. */
-        QIToolButton *m_pButtonLocation;
         /** Holds the location error pane. */
         QLabel       *m_pErrorPaneLocation;
+        /** Holds the location button. */
+        QIToolButton *m_pButtonLocation;
 
         /** Holds the description label. */
         QLabel    *m_pLabelDescription;

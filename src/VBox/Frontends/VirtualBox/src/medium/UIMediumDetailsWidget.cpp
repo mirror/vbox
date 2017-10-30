@@ -57,7 +57,7 @@ UIMediumDetailsWidget::UIMediumDetailsWidget(UIMediumManagerWidget *pParent, Emb
     , m_newData(UIDataMedium())
     , m_pTabWidget(0)
     , m_pLabelType(0), m_pComboBoxType(0), m_pErrorPaneType(0)
-    , m_pLabelLocation(0), m_pEditorLocation(0), m_pButtonLocation(0), m_pErrorPaneLocation(0)
+    , m_pLabelLocation(0), m_pEditorLocation(0), m_pErrorPaneLocation(0), m_pButtonLocation(0)
     , m_pLabelDescription(0), m_pEditorDescription(0), m_pErrorPaneDescription(0)
     , m_pLabelSize(0), m_pEditorSize(0), m_pErrorPaneSize(0)
     , m_pButtonBox(0)
@@ -339,6 +339,18 @@ void UIMediumDetailsWidget::prepareTabOptions()
                     pLayoutLocation->addWidget(m_pEditorLocation);
                 }
 
+                /* Create location error pane: */
+                m_pErrorPaneLocation = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneLocation);
+                {
+                    /* Configure label: */
+                    m_pErrorPaneLocation->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneLocation->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                    .pixmap(QSize(iIconMetric, iIconMetric)));
+                    /* Add into layout: */
+                    pLayoutLocation->addWidget(m_pErrorPaneLocation);
+                }
+
                 /* Create location button: */
                 m_pButtonLocation = new QIToolButton;
                 AssertPtrReturnVoid(m_pButtonLocation);
@@ -353,18 +365,6 @@ void UIMediumDetailsWidget::prepareTabOptions()
 
                     /* Add into layout: */
                     pLayoutLocation->addWidget(m_pButtonLocation);
-                }
-
-                /* Create location error pane: */
-                m_pErrorPaneLocation = new QLabel;
-                AssertPtrReturnVoid(m_pErrorPaneLocation);
-                {
-                    /* Configure label: */
-                    m_pErrorPaneLocation->setAlignment(Qt::AlignCenter);
-                    m_pErrorPaneLocation->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
-                                                    .pixmap(QSize(iIconMetric, iIconMetric)));
-                    /* Add into layout: */
-                    pLayoutLocation->addWidget(m_pErrorPaneLocation);
                 }
 
                 /* Add into layout: */
