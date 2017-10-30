@@ -4203,7 +4203,28 @@ ifeq ($(KBUILD_TARGET),win)
 endif
 
 ifeq ($(KBUILD_TARGET),linux)
-TEMPLATE_VBOXR0DRV_TOOL                = $(NO_SUCH_VARIABLE)
+ TEMPLATE_VBOXR0DRV_TOOL                = $(NO_SUCH_VARIABLE)
+
+##
+# Using the extra expansion to replace $(module) before eval, thus everything
+# else needs escaped dollars.
+ define VBOX_LINUX_GENERATE_KMOD_TEST
+  VBOX_TARGET_$(module) = $$(PATH_TARGET)/tst$(module)_mod.run
+  TESTING      += $$(VBOX_TARGET_$(module))
+  OTHERS       += $$(VBOX_TARGET_$(module))
+  OTHERS_CLEAN += $$(VBOX_TARGET_$(module))
+  $$$$(VBOX_TARGET_$(module)): $$$$($(module)_2_STAGE_TARGETS)
+	$(QUIET)$$(call MSG_L1,Doing a test build of the $(module) kernel module)
+	$(QUIET)$$(RM) -f -- "$$@"
+	$(QUIET)$$(RM) -Rf -- "$$(PATH_TARGET)/tst$(module)_mod"
+	$(QUIET)$$(MKDIR) -p -- "$$(PATH_TARGET)/tst$(module)_mod"
+	$(QUIET)$$(CP) -R -- "$$(PATH_STAGE_BIN)/../$$($(module)_INST)" "$$(PATH_TARGET)/tst$(module)_mod/"
+	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C $$(PATH_TARGET)/tst$(module)_mod clean
+	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C $$(PATH_TARGET)/tst$(module)_mod
+	$(QUIET)$$(RM) -Rf -- $$(PATH_TARGET)/tst$(module)_mod
+	$(QUIET)$$(APPEND) -t "$$@" "done"
+ endef
+
 endif
 
 ifeq ($(KBUILD_TARGET),os2)
