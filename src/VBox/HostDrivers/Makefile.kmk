@@ -77,7 +77,7 @@ if   defined(VBOX_WITH_TESTCASES) \
  && "$(KBUILD_HOST_ARCH)" == "$(KBUILD_TARGET_ARCH)"
 
  ifneq ($(KERN_DIR),)
-  $(foreach module, vboxdrv-mod VBoxNetFlt-src VBoxNetAdp-src VBoxPci-src, $(eval $(VBOX_LINUX_GENERATE_KMOD_TEST)))
+  $(foreach module, vboxdrv-src VBoxNetFlt-src VBoxNetAdp-src VBoxPci-src, $(eval $(VBOX_LINUX_GENERATE_KMOD_TEST)))
  endif
 
 endif

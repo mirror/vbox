@@ -364,7 +364,7 @@ if   defined(VBOX_WITH_TESTCASES) \
  && "$(KBUILD_HOST_ARCH)" == "$(KBUILD_TARGET_ARCH)"
 
  ifneq ($(KERN_DIR),)
-  $(foreach module, vboxguest-mod vboxsf-mod vboxvideo-mod, $(eval $(VBOX_LINUX_GENERATE_KMOD_TEST)))
+  $(foreach module, vboxguest-src vboxsf-src vboxvideo-src, $(eval $(VBOX_LINUX_GENERATE_KMOD_TEST)))
  endif
 
 endif
