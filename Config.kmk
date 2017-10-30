@@ -4222,7 +4222,7 @@ ifeq ($(KBUILD_TARGET),linux)
   TESTING      += $$(VBOX_TARGET_$(module))
   OTHERS       += $$(VBOX_TARGET_$(module))
   OTHERS_CLEAN += $$(VBOX_TARGET_$(module))
-  $$(VBOX_TARGET_$(module)): $$($(module)_2_STAGE_TARGETS)
+  $$(VBOX_TARGET_$(module)): $$$$($(module)_2_STAGE_TARGETS)
 	$(QUIET)$$(call MSG_L1,Doing a test build of the $(module) kernel module)
 	$(QUIET)$$(RM) -f -- "$$@"
 	$(QUIET)$$(RM) -Rf -- "$$(PATH_TARGET)/tst$(module)_mod"
