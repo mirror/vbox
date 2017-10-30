@@ -114,6 +114,9 @@ public:
     UIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
+    /** Defines @a pProgressBar reference. */
+    void setProgressBar(UIEnumerationProgressBar *pProgressBar);
+
 protected:
 
     /** @name Event-handling stuff.
@@ -215,8 +218,6 @@ private:
         void prepareTreeWidget(UIMediumType type, int iColumns);
         /** Prepares details-widget. */
         void prepareDetailsWidget();
-//        /** Prepares progress-bar. */
-//        void prepareProgressBar();
         /** Load settings: */
         void loadSettings();
 
@@ -358,7 +359,7 @@ private:
 
     /** @name Progress-bar variables.
       * @{ */
-        /** Holds the progress-bar widget instance. */
+        /** Holds the progress-bar widget reference. */
         UIEnumerationProgressBar *m_pProgressBar;
     /** @} */
 };
@@ -423,6 +424,12 @@ private:
       * @{ */
         /** Returns the widget. */
         virtual UIMediumManagerWidget *widget() /* override */;
+    /** @} */
+
+    /** @name Progress-bar variables.
+      * @{ */
+        /** Holds the progress-bar widget instance. */
+        UIEnumerationProgressBar *m_pProgressBar;
     /** @} */
 
     /** Allow factory access to private/protected members: */

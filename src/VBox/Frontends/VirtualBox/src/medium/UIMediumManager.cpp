@@ -826,6 +826,15 @@ UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, QWidget *pPar
     prepare();
 }
 
+void UIMediumManagerWidget::setProgressBar(UIEnumerationProgressBar *pProgressBar)
+{
+    /* Cache progress-bar reference:*/
+    m_pProgressBar = pProgressBar;
+
+    /* Update translation: */
+    retranslateUi();
+}
+
 void UIMediumManagerWidget::retranslateUi()
 {
     /* Translate menu: */
@@ -1633,7 +1642,7 @@ void UIMediumManagerWidget::prepareTreeWidget(UIMediumType type, int iColumns)
 void UIMediumManagerWidget::prepareDetailsWidget()
 {
     /* Create details-widget: */
-    m_pDetailsWidget = new UIMediumDetailsWidget(m_enmEmbedding);
+    m_pDetailsWidget = new UIMediumDetailsWidget(this, m_enmEmbedding);
     AssertPtrReturnVoid(m_pDetailsWidget);
     {
         /* Configure details-widget: */
@@ -1652,19 +1661,6 @@ void UIMediumManagerWidget::prepareDetailsWidget()
         layout()->addWidget(m_pDetailsWidget);
     }
 }
-
-//void UIMediumManagerWidget::prepareProgressBar()
-//{
-//    /* Create progress-bar: */
-//    m_pProgressBar = new UIEnumerationProgressBar;
-//    AssertPtrReturnVoid(m_pProgressBar);
-//    {
-//        /* Configure progress-bar: */
-//        m_pProgressBar->hide();
-//        /* Add progress-bar into button-box layout: */
-//        m_pButtonBox->addExtraWidget(m_pProgressBar);
-//    }
-//}
 
 void UIMediumManagerWidget::loadSettings()
 {
@@ -2338,6 +2334,7 @@ void UIMediumManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterW
 
 UIMediumManager::UIMediumManager(QWidget *pCenterWidget)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    , m_pProgressBar(0)
 {
 }
 
@@ -2416,6 +2413,18 @@ void UIMediumManager::configureButtonBox()
             button(ButtonType_Reset), &QPushButton::setEnabled);
     connect(buttonBox(), &QIDialogButtonBox::clicked,
             this, &UIMediumManager::sltHandleButtonBoxClick);
+
+    /* Create progress-bar: */
+    m_pProgressBar = new UIEnumerationProgressBar;
+    AssertPtrReturnVoid(m_pProgressBar);
+    {
+        /* Configure progress-bar: */
+        m_pProgressBar->hide();
+        /* Add progress-bar into button-box layout: */
+        buttonBox()->addExtraWidget(m_pProgressBar);
+        /* Notify widget it has progress-bar: */
+        widget()->setProgressBar(m_pProgressBar);
+    }
 }
 
 void UIMediumManager::finalize()

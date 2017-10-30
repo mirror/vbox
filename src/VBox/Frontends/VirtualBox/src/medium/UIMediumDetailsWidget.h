@@ -40,6 +40,8 @@ class QWidget;
 class QILabel;
 class QITabWidget;
 class QIToolButton;
+class UIEnumerationProgressBar;
+class UIMediumManagerWidget;
 class UIMediumSizeEditor;
 
 
@@ -184,7 +186,7 @@ public:
 
     /** Constructs medium details dialog passing @a pParent to the base-class.
       * @param  enmEmbedding  Brings embedding type. */
-    UIMediumDetailsWidget(EmbedTo enmEmbedding, QWidget *pParent = 0);
+    UIMediumDetailsWidget(UIMediumManagerWidget *pParent, EmbedTo enmEmbedding);
 
     /** Defines the raised details @a enmType. */
     void setCurrentType(UIMediumType enmType);
@@ -269,6 +271,8 @@ private:
 
     /** @name General variables.
       * @{ */
+        /** Holds the parent reference. */
+        UIMediumManagerWidget *m_pParent;
         /** Holds the parent widget embedding type. */
         const EmbedTo m_enmEmbedding;
 
@@ -314,7 +318,9 @@ private:
         QLabel             *m_pErrorPaneSize;
 
         /** Holds the button-box instance. */
-        QIDialogButtonBox *m_pButtonBox;
+        QIDialogButtonBox        *m_pButtonBox;
+        /** Holds the progress-bar widget instance. */
+        UIEnumerationProgressBar *m_pProgressBar;
 
         /** Holds whether options are valid. */
         bool m_fValid;

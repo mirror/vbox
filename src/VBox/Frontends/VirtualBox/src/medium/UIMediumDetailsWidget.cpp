@@ -39,6 +39,7 @@
 # include "UIConverter.h"
 # include "UIIconPool.h"
 # include "UIMediumDetailsWidget.h"
+# include "UIMediumManager.h"
 # include "UIMediumSizeEditor.h"
 # include "VBoxGlobal.h"
 
@@ -48,8 +49,9 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIMediumDetailsWidget::UIMediumDetailsWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
+UIMediumDetailsWidget::UIMediumDetailsWidget(UIMediumManagerWidget *pParent, EmbedTo enmEmbedding)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_pParent(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_oldData(UIDataMedium())
     , m_newData(UIDataMedium())
@@ -59,6 +61,7 @@ UIMediumDetailsWidget::UIMediumDetailsWidget(EmbedTo enmEmbedding, QWidget *pPar
     , m_pLabelDescription(0), m_pEditorDescription(0), m_pErrorPaneDescription(0)
     , m_pLabelSize(0), m_pEditorSize(0), m_pErrorPaneSize(0)
     , m_pButtonBox(0)
+    , m_pProgressBar(0)
     , m_fValid(true)
     , m_pLayoutDetails(0)
 {
@@ -494,9 +497,23 @@ void UIMediumDetailsWidget::prepareTabOptions()
                 /* Create button-box: */
                 m_pButtonBox = new QIDialogButtonBox;
                 AssertPtrReturnVoid(m_pButtonBox);
-                /* Configure button-box: */
-                m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
-                connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UIMediumDetailsWidget::sltHandleButtonBoxClick);
+                {
+                    /* Configure button-box: */
+                    m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+                    connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UIMediumDetailsWidget::sltHandleButtonBoxClick);
+
+                    /* Create progress-bar: */
+                    m_pProgressBar = new UIEnumerationProgressBar;
+                    AssertPtrReturnVoid(m_pProgressBar);
+                    {
+                        /* Configure progress-bar: */
+                        m_pProgressBar->hide();
+                        /* Add progress-bar into button-box layout: */
+                        m_pButtonBox->addExtraWidget(m_pProgressBar);
+                        /* Notify parent it has progress-bar: */
+                        m_pParent->setProgressBar(m_pProgressBar);
+                    }
+                }
 
                 /* Add into layout: */
                 pLayoutOptions->addWidget(m_pButtonBox, 7, 0, 1, 2);
