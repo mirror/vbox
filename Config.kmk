@@ -4205,11 +4205,20 @@ endif
 ifeq ($(KBUILD_TARGET),linux)
  TEMPLATE_VBOXR0DRV_TOOL                = $(NO_SUCH_VARIABLE)
 
+ ifndef KERN_DIR
+  ifndef KERN_VER
+   KERN_VER=$(notdir $(lastword $(sort $(wildcard /lib/modules/*))))
+  endif
+  ifneq ($(KERN_VER),)
+   KERN_DIR=/lib/modules/$(KERN_VER)/build
+  endif
+ endif
+
 ##
 # Using the extra expansion to replace $(module) before eval, thus everything
 # else needs escaped dollars.
  define VBOX_LINUX_GENERATE_KMOD_TEST
-  VBOX_TARGET_$(module) = $$(PATH_TARGET)/tst$(module)_mod.run
+  VBOX_TARGET_$(module) = $$(PATH_TARGET)/tst$(module)$(subst /,_,$(KERN_DIR))_mod.run
   TESTING      += $$(VBOX_TARGET_$(module))
   OTHERS       += $$(VBOX_TARGET_$(module))
   OTHERS_CLEAN += $$(VBOX_TARGET_$(module))
@@ -4219,8 +4228,8 @@ ifeq ($(KBUILD_TARGET),linux)
 	$(QUIET)$$(RM) -Rf -- "$$(PATH_TARGET)/tst$(module)_mod"
 	$(QUIET)$$(MKDIR) -p -- "$$(PATH_TARGET)/tst$(module)_mod"
 	$(QUIET)$$(CP) -R -- "$$(PATH_STAGE_BIN)/../$$($(module)_INST)" "$$(PATH_TARGET)/tst$(module)_mod/"
-	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C $$(PATH_TARGET)/tst$(module)_mod clean
-	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C $$(PATH_TARGET)/tst$(module)_mod
+	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$$(KERN_DIR) -C $$(PATH_TARGET)/tst$(module)_mod clean
+	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$$(KERN_DIR) -C $$(PATH_TARGET)/tst$(module)_mod
 	$(QUIET)$$(RM) -Rf -- $$(PATH_TARGET)/tst$(module)_mod
 	$(QUIET)$$(APPEND) -t "$$@" "done"
  endef
