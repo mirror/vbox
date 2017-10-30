@@ -26,12 +26,12 @@
 /* Forward declarations: */
 class QAbstractButton;
 class QLabel;
+class QProgressBar;
 class QTabWidget;
 class QTreeWidgetItem;
 class QIDialogButtonBox;
 class QILabel;
 class QITreeWidget;
-class UIEnumerationProgressBar;
 class UIMedium;
 class UIMediumDetailsWidget;
 class UIMediumItem;
@@ -48,6 +48,39 @@ public:
 
     /** Determines whether passed @a pItem is suitable. */
     virtual bool isItSuitable(UIMediumItem *pItem) const = 0;
+};
+
+
+/** Medium manager progress-bar.
+  * Reflects medium-enumeration progress, stays hidden otherwise. */
+class UIEnumerationProgressBar : public QWidget
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor on the basis of passed @a pParent. */
+    UIEnumerationProgressBar(QWidget *pParent = 0);
+
+    /** Defines progress-bar label-text. */
+    void setText(const QString &strText);
+
+    /** Returns progress-bar current-value. */
+    int value() const;
+    /** Defines progress-bar current-value. */
+    void setValue(int iValue);
+    /** Defines progress-bar maximum-value. */
+    void setMaximum(int iValue);
+
+private:
+
+    /** Prepares progress-bar content. */
+    void prepare();
+
+    /** Progress-bar label. */
+    QLabel       *m_pLabel;
+    /** Progress-bar itself. */
+    QProgressBar *m_pProgressBar;
 };
 
 

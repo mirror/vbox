@@ -543,7 +543,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/medium/UIMediumEnumerator.cpp \
-	src/medium/UIMediumManager.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
