@@ -520,7 +520,6 @@ UISnapshotDetailsWidget::UISnapshotDetailsWidget(QWidget *pParent /* = 0 */)
     , m_pButtonBox(0)
     , m_pLayoutDetails(0)
     , m_pScrollAreaDetails(0)
-    , m_fSnapshotNameEdited(false)
 {
     /* Prepare: */
     prepare();
@@ -528,9 +527,6 @@ UISnapshotDetailsWidget::UISnapshotDetailsWidget(QWidget *pParent /* = 0 */)
 
 void UISnapshotDetailsWidget::setData(const CMachine &comMachine)
 {
-    /* Reset defaults: */
-    m_fSnapshotNameEdited = false;
-
     /* Cache old/new data: */
     m_oldData = UIDataSnapshot();
     m_newData = m_oldData;
@@ -547,9 +543,6 @@ void UISnapshotDetailsWidget::setData(const CMachine &comMachine)
 
 void UISnapshotDetailsWidget::setData(const UIDataSnapshot &data, const CSnapshot &comSnapshot)
 {
-    /* Reset defaults: */
-    m_fSnapshotNameEdited = false;
-
     /* Cache old/new data: */
     m_oldData = data;
     m_newData = m_oldData;
@@ -566,9 +559,6 @@ void UISnapshotDetailsWidget::setData(const UIDataSnapshot &data, const CSnapsho
 
 void UISnapshotDetailsWidget::clearData()
 {
-    /* Reset defaults: */
-    m_fSnapshotNameEdited = false;
-
     /* Reset old/new data: */
     m_oldData = UIDataSnapshot();
     m_newData = m_oldData;
@@ -661,11 +651,6 @@ void UISnapshotDetailsWidget::retranslateButtons()
         m_pButtonBox->button(QDialogButtonBox::Ok)->
             setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
-}
-
-void UISnapshotDetailsWidget::sltHandleNameEdit()
-{
-    m_fSnapshotNameEdited = true;
 }
 
 void UISnapshotDetailsWidget::sltHandleNameChange()
@@ -783,8 +768,6 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                     QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Minimum);
                     policy.setHorizontalStretch(1);
                     m_pEditorName->setSizePolicy(policy);
-                    connect(m_pEditorName, &QLineEdit::textEdited,
-                            this, &UISnapshotDetailsWidget::sltHandleNameEdit);
                     connect(m_pEditorName, &QLineEdit::textChanged,
                             this, &UISnapshotDetailsWidget::sltHandleNameChange);
 
@@ -1091,7 +1074,7 @@ void UISnapshotDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
     if (!pWidget || pWidget == m_pErrorPaneName)
     {
         const bool fError = m_newData.m_strName.isEmpty();
-        m_pErrorPaneName->setVisible(fError && m_fSnapshotNameEdited);
+        m_pErrorPaneName->setVisible(fError && m_comMachine.isNull());
     }
     if (!pWidget || pWidget == m_pErrorPaneDescription)
     {
