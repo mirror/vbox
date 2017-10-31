@@ -3697,6 +3697,8 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     /* IEM only for executing nested guest, we shouldn't get here. */
+    /** @todo Make this into an assertion since HMR3CanExecuteGuest already checks
+     *        for it? */
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
         Log2(("hmR0SvmPreRunGuest: Rescheduling to IEM due to nested-hwvirt or forced IEM exec -> VINF_EM_RESCHEDULE_REM\n"));
