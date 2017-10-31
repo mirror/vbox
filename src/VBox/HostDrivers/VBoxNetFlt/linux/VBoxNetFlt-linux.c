@@ -746,9 +746,6 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
         case PDMNETWORKGSOTYPE_IPV4_TCP:
             fGsoType = SKB_GSO_TCPV4;
             break;
-        case PDMNETWORKGSOTYPE_IPV4_UDP:
-            fGsoType = SKB_GSO_UDP;
-            break;
         case PDMNETWORKGSOTYPE_IPV6_TCP:
             fGsoType = SKB_GSO_TCPV6;
             break;
@@ -1282,7 +1279,7 @@ static bool vboxNetFltLinuxCanForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff 
      * Check the GSO properties of the socket buffer and make sure it fits.
      */
     /** @todo Figure out how to handle SKB_GSO_TCP_ECN! */
-    if (RT_UNLIKELY( skb_shinfo(pSkb)->gso_type & ~(SKB_GSO_UDP | SKB_GSO_DODGY | SKB_GSO_TCPV6 | SKB_GSO_TCPV4) ))
+    if (RT_UNLIKELY( skb_shinfo(pSkb)->gso_type & ~(SKB_GSO_DODGY | SKB_GSO_TCPV6 | SKB_GSO_TCPV4) ))
     {
         Log5(("vboxNetFltLinuxCanForwardAsGso: gso_type=%#x\n", skb_shinfo(pSkb)->gso_type));
         return false;
@@ -1532,7 +1529,7 @@ static void vboxNetFltLinuxForwardToIntNetInner(PVBOXNETFLTINS pThis, struct sk_
         }
 #endif /* !VBOXNETFLT_SG_SUPPORT */
 # ifdef VBOXNETFLT_WITH_GSO_RECV
-        if (   (skb_shinfo(pBuf)->gso_type & (SKB_GSO_UDP | SKB_GSO_TCPV6 | SKB_GSO_TCPV4))
+        if (   (skb_shinfo(pBuf)->gso_type & (SKB_GSO_TCPV6 | SKB_GSO_TCPV4))
             && vboxNetFltLinuxCanForwardAsGso(pThis, pBuf, fSrc, &GsoCtx) )
             vboxNetFltLinuxForwardAsGso(pThis, pBuf, fSrc, &GsoCtx);
         else
@@ -1708,17 +1705,9 @@ static void vboxNetFltLinuxReportNicGsoCapabilities(PVBOXNETFLTINS pThis)
                 fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_TCP);
             if (fFeatures & NETIF_F_TSO6)
                 fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_TCP);
-# if 0 /** @todo GSO: Test UDP offloading (UFO) on linux. */
-            if (fFeatures & NETIF_F_UFO)
-                fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_UDP);
-            if (fFeatures & NETIF_F_UFO)
-                fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_UDP);
-# endif
             Log3(("vboxNetFltLinuxReportNicGsoCapabilities: reporting wire %s%s%s%s\n",
                   (fGsoCapabilites & RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_TCP)) ? "tso " : "",
-                  (fGsoCapabilites & RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_TCP)) ? "tso6 " : "",
-                  (fGsoCapabilites & RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_UDP)) ? "ufo " : "",
-                  (fGsoCapabilites & RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_UDP)) ? "ufo6 " : ""));
+                  (fGsoCapabilites & RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_TCP)) ? "tso6 " : ""));
             pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, fGsoCapabilites, INTNETTRUNKDIR_WIRE);
         }
 
@@ -2411,15 +2400,11 @@ int  vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
      */
     /** @todo duplicate work here now? Attach */
 #if defined(VBOXNETFLT_WITH_GSO_XMIT_HOST)
-    Log3(("vboxNetFltOsConnectIt: reporting host tso tso6 ufo\n"));
+    Log3(("vboxNetFltOsConnectIt: reporting host tso tso6\n"));
     pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort,
                                                  0
                                                  | RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_TCP)
                                                  | RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_TCP)
-                                                 | RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_UDP)
-# if 0 /** @todo GSO: Test UDP offloading (UFO) on linux. */
-                                                 | RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_UDP)
-# endif
                                                  , INTNETTRUNKDIR_HOST);
 
 #endif
