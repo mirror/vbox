@@ -3695,8 +3695,7 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
     HMSVM_ASSERT_PREEMPT_SAFE();
     Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
-#if defined(VBOX_WITH_NESTED_HWVIRT) && defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM)
-
+#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     /* IEM only for executing nested guest, we shouldn't get here. */
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {

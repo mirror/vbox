@@ -2689,7 +2689,7 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     Assert(HMIsEnabled(pVM));
 
-#if defined(VBOX_WITH_NESTED_HWVIRT) && defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM)
+#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     if (CPUMIsGuestInNestedHwVirtMode(pCtx))
     {
         Log(("HMR3CanExecuteGuest: In nested-guest mode - returning false"));
