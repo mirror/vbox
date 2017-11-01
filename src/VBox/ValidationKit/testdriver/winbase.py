@@ -271,3 +271,41 @@ def logMemoryStats():
         reporter.log('  %32s: %s' % (sField, getattr(oStats, sField)));
     return True;
 
+def checkProcessHeap():
+    """
+    Calls HeapValidate(GetProcessHeap(), 0, NULL);
+    """
+
+    # Get the process heap.
+    try:
+        hHeap = ctypes.windll.kernel32.GetProcessHeap();
+    except:
+        reporter.logXcpt();
+        return False;
+
+    # Check it.
+    try:
+        fIsOkay = ctypes.windll.kernel32.HeapValidate(hHeap, 0, None);
+    except:
+        reporter.logXcpt();
+        return False;
+
+    if fIsOkay == 0:
+        reporter.log('HeapValidate failed!');
+
+        # Try trigger a dump using c:\utils\procdump64.exe.
+        from common import utils;
+
+        iPid = os.getpid();
+        asArgs = [ 'e:\\utils\\procdump64.exe', '-ma', '%s' % (iPid,), 'c:\\CrashDumps\\python.exe-%u-heap.dmp' % (iPid,)];
+        if utils.getHostArch() != 'amd64':
+            asArgs[0] = 'c:\\utils\\procdump.exe'
+        reporter.log('Trying to dump this process using: %s' % (asArgs,));
+        utils.processCall(asArgs);
+
+        # Generate a crash exception.
+        ctypes.windll.msvcrt.strcpy(None, None, 1024);
+
+    return True;
+
+

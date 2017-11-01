@@ -815,6 +815,11 @@ class TestDriver(base.TestDriver):                                              
         self.fAlwaysUploadScreenshots = False;
         self.fEnableDebugger          = True;
 
+        # TEMPORARY: For process heap checking on windows 2012 boxes.
+        self.fDoHeapChecks = False;
+        if 'COMPUTERNAME' in os.environ and utils.getHostOs() == 'windows':
+            self.fDoHeapChecks = os.environ['COMPUTERNAME'] in [ 'TESTBOXWIN5', 'WEI01-B6KC-4', 'TESTBOXPILE2' ];
+
         # Quietly detect build and validation kit.
         self._detectBuild(False);
         self._detectValidationKit(False);
@@ -841,6 +846,18 @@ class TestDriver(base.TestDriver):                                              
         print >> sys.stderr, "testdriver.vbox: sVBoxBootSectors  = '%s'" % self.sVBoxBootSectors;
         if self.oBuild is not None:
             self.oBuild.dump();
+
+
+    def checkProcessHeap(self):
+        """
+        TEMPORARY: Check the process heap on some Windows 2012 server machines to try catch heap corruption issue.
+        """
+        if self.fDoHeapChecks:
+            if sys.platform == 'win32':
+                from testdriver import winbase;
+                return winbase.checkProcessHeap();
+        return True;
+
 
     def _detectBuild(self, fQuiet = False):
         """
@@ -1416,6 +1433,7 @@ class TestDriver(base.TestDriver):                                              
         self.oVBoxMgr         = None;
         self.oVBox            = None;
         vboxcon.goHackModuleClass.oVBoxMgr = None; # VBoxConstantWrappingHack.
+        self.checkProcessHeap(); ## TEMPORARY
 
         try:
             import gc
@@ -1438,6 +1456,7 @@ class TestDriver(base.TestDriver):                                              
         except:
             reporter.logXcpt();
         self.fImportedVBoxApi = False;
+        self.checkProcessHeap(); ## TEMPORARY
 
         if self.sHost == 'win':
             pass; ## TODO shutdown COM if possible/necessary?
@@ -1459,12 +1478,14 @@ class TestDriver(base.TestDriver):                                              
                             reporter.logXcpt('actionCleanupAfter: _DumpInterfaces failed');
             except:
                 reporter.logXcpt();
+        self.checkProcessHeap(); ## TEMPORARY
 
         try:
             gc.collect();
             time.sleep(0.5); # fudge factory
         except:
             reporter.logXcpt();
+        self.checkProcessHeap(); ## TEMPORARY
         return True;
 
     def _powerOffAllVms(self):
@@ -1832,12 +1853,14 @@ class TestDriver(base.TestDriver):                                              
 
         Only Ctrl-C exception, no return.
         """
+        self.checkProcessHeap(); ## TEMPORARY
         try:
             self.oVBoxMgr.waitForEvents(cMsTimeout);
         except KeyboardInterrupt:
             raise;
         except:
             pass;
+        self.checkProcessHeap(); ## TEMPORARY
         return None;
 
     def processPendingEvents(self):
@@ -2120,6 +2143,7 @@ class TestDriver(base.TestDriver):                                              
         """
         if not self.importVBoxApi():
             return None;
+        self.checkProcessHeap(); ## TEMPORARY
 
         # create + register the VM
         try:
@@ -2230,7 +2254,9 @@ class TestDriver(base.TestDriver):                                              
         # success.
         reporter.log('created "%s" with name "%s"' % (oVM.id, sName));
         self.aoVMs.append(oVM);
+        self.checkProcessHeap(); ## TEMPORARY
         self.logVmInfo(oVM); # testing...
+        self.checkProcessHeap(); ## TEMPORARY
         return oVM;
     # pylint: enable=R0913,R0914,R0915
 
