@@ -819,6 +819,8 @@ class TestDriver(base.TestDriver):                                              
         self.fDoHeapChecks = False;
         if 'COMPUTERNAME' in os.environ and utils.getHostOs() == 'windows':
             self.fDoHeapChecks = os.environ['COMPUTERNAME'] in [ 'TESTBOXWIN5', 'WEI01-B6KC-4', 'TESTBOXPILE2' ];
+            if self.fDoHeapChecks:
+                reporter.log('Will do heap checking...');
 
         # Quietly detect build and validation kit.
         self._detectBuild(False);
