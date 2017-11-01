@@ -817,8 +817,8 @@ class TestDriver(base.TestDriver):                                              
 
         # TEMPORARY: For process heap checking on windows 2012 boxes.
         self.fDoHeapChecks = False;
-        if 'COMPUTERNAME' in os.environ and utils.getHostOs() == 'windows':
-            self.fDoHeapChecks = os.environ['COMPUTERNAME'] in [ 'TESTBOXWIN5', 'WEI01-B6KC-4', 'TESTBOXPILE2' ];
+        if 'COMPUTERNAME' in os.environ and utils.getHostOs() == 'win':
+            self.fDoHeapChecks = os.environ['COMPUTERNAME'] in [ 'TESTBOXWIN5', 'WEI01-B6KC-4', 'TESTBOXPILE2', 'SKYLAKE' ];
             if self.fDoHeapChecks:
                 reporter.log('Will do heap checking...');
 
