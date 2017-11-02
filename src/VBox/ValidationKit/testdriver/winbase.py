@@ -102,7 +102,7 @@ def processTerminate(uPid):
             fRc = True;
         except:
             reporter.logXcpt('uPid=%s' % (uPid,));
-        win32api.CloseHandle(hProcess)
+        hProcess.Close(); #win32api.CloseHandle(hProcess)
     return fRc;
 
 def processKill(uPid):
@@ -118,7 +118,7 @@ def processExists(uPid):
     except:
         reporter.logXcpt('uPid=%s' % (uPid,));
     else:
-        win32api.CloseHandle(hProcess)
+        hProcess.Close(); #win32api.CloseHandle(hProcess)
         fRc = True;
     return fRc;
 
@@ -186,7 +186,7 @@ def processCreate(sName, asArgs):
 
     # Dispense with the thread handle.
     try:
-        win32api.CloseHandle(hThread);
+        hThread.Close(); # win32api.CloseHandle(hThread);
     except:
         reporter.logXcpt();
 
@@ -202,7 +202,7 @@ def processCreate(sName, asArgs):
             | win32con.DELETE,
             False,
             0);
-        win32api.CloseHandle(hProcess);
+        hProcess.Close(); # win32api.CloseHandle(hProcess);
         hProcess = hProcessFullAccess;
     except:
         reporter.logXcpt();
