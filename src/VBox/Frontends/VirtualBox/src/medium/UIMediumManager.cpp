@@ -1355,18 +1355,18 @@ void UIMediumManagerWidget::prepareThis()
 void UIMediumManagerWidget::prepareConnections()
 {
     /* Configure medium-processing connections: */
-    connect(&vboxGlobal(), SIGNAL(sigMediumCreated(const QString&)),
-            this, SLOT(sltHandleMediumCreated(const QString&)));
-    connect(&vboxGlobal(), SIGNAL(sigMediumDeleted(const QString&)),
-            this, SLOT(sltHandleMediumDeleted(const QString&)));
+    connect(&vboxGlobal(), &VBoxGlobal::sigMediumCreated,
+            this, &UIMediumManagerWidget::sltHandleMediumCreated);
+    connect(&vboxGlobal(), &VBoxGlobal::sigMediumDeleted,
+            this, &UIMediumManagerWidget::sltHandleMediumDeleted);
 
     /* Configure medium-enumeration connections: */
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationStarted()),
-            this, SLOT(sltHandleMediumEnumerationStart()));
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated(const QString&)),
-            this, SLOT(sltHandleMediumEnumerated(const QString&)));
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()),
-            this, SLOT(sltHandleMediumEnumerationFinish()));
+    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationStarted,
+            this, &UIMediumManagerWidget::sltHandleMediumEnumerationStart);
+    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerated,
+            this, &UIMediumManagerWidget::sltHandleMediumEnumerated);
+    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationFinished,
+            this, &UIMediumManagerWidget::sltHandleMediumEnumerationFinish);
 }
 
 void UIMediumManagerWidget::prepareActions()
@@ -1567,7 +1567,7 @@ void UIMediumManagerWidget::prepareTabWidget()
         m_pTabWidget->setTabIcon(tabIndex(UIMediumType_HardDisk), m_iconHD);
         m_pTabWidget->setTabIcon(tabIndex(UIMediumType_DVD), m_iconCD);
         m_pTabWidget->setTabIcon(tabIndex(UIMediumType_Floppy), m_iconFD);
-        connect(m_pTabWidget, SIGNAL(currentChanged(int)), this, SLOT(sltHandleCurrentTabChanged()));
+        connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIMediumManagerWidget::sltHandleCurrentTabChanged);
 
         /* Add tab-widget into central layout: */
         layout()->addWidget(m_pTabWidget);
@@ -1623,17 +1623,17 @@ void UIMediumManagerWidget::prepareTreeWidget(UIMediumType type, int iColumns)
             pTreeWidget->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
         pTreeWidget->header()->setStretchLastSection(false);
         pTreeWidget->setSortingEnabled(true);
-        connect(pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-                this, SLOT(sltHandleCurrentItemChanged()));
+        connect(pTreeWidget, &QITreeWidget::currentItemChanged,
+                this, &UIMediumManagerWidget::sltHandleCurrentItemChanged);
         if (m_pActionDetails)
             connect(pTreeWidget, &QITreeWidget::itemDoubleClicked,
                     m_pActionDetails, &QAction::setChecked);
-        connect(pTreeWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
-                this, SLOT(sltHandleContextMenuCall(const QPoint&)));
-        connect(pTreeWidget, SIGNAL(resized(const QSize&, const QSize&)),
-                this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
-        connect(pTreeWidget->header(), SIGNAL(sectionResized(int, int, int)),
-                this, SLOT(sltPerformTablesAdjustment()), Qt::QueuedConnection);
+        connect(pTreeWidget, &QITreeWidget::customContextMenuRequested,
+                this, &UIMediumManagerWidget::sltHandleContextMenuCall);
+        connect(pTreeWidget, &QITreeWidget::resized,
+                this, &UIMediumManagerWidget::sltPerformTablesAdjustment, Qt::QueuedConnection);
+        connect(pTreeWidget->header(), &QHeaderView::sectionResized,
+                this, &UIMediumManagerWidget::sltPerformTablesAdjustment, Qt::QueuedConnection);
         /* Add tree-widget into tab layout: */
         tab(type)->layout()->addWidget(pTreeWidget);
     }
