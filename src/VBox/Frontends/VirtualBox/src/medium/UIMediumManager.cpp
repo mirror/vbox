@@ -77,8 +77,10 @@ public:
     virtual bool move();
     /** Removes UIMedium wrapped by <i>this</i> item. */
     virtual bool remove() = 0;
-    /** Releases UIMedium wrapped by <i>this</i> item. */
-    virtual bool release();
+    /** Releases UIMedium wrapped by <i>this</i> item.
+      * @param  fInduced  Brings whether this action is caused by other user's action,
+      *                   not a direct order to release particularly selected medium. */
+    virtual bool release(bool fInduced = false);
 
     /** Refreshes item fully. */
     void refreshAll();
@@ -112,6 +114,8 @@ public:
     /** Returns QString <i>tool-tip</i> of the wrapped UIMedium. */
     QString toolTip() const { return m_guiMedium.toolTip(); }
 
+    /** Returns a vector of IDs of all machines wrapped UIMedium is attached to. */
+    const QList<QString> &machineIds() const { return m_guiMedium.machineIds(); }
     /** Returns QString <i>usage</i> of the wrapped UIMedium. */
     QString usage() const { return m_guiMedium.usage(); }
     /** Returns whether wrapped UIMedium is used. */
@@ -327,7 +331,7 @@ bool UIMediumItem::copy()
     return true;
 }
 
-bool UIMediumItem::release()
+bool UIMediumItem::release(bool fInduced /* = false */)
 {
     /* Refresh medium and item: */
     m_guiMedium.refresh();
@@ -338,7 +342,7 @@ bool UIMediumItem::release()
         return true;
 
     /* Confirm release: */
-    if (!msgCenter().confirmMediumRelease(medium(), treeWidget()))
+    if (!msgCenter().confirmMediumRelease(medium(), fInduced, treeWidget()))
         return false;
 
     /* Release: */
@@ -978,11 +982,22 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
     if (   comMedium.isOk()
         && newData.m_options.m_enmType != oldData.m_options.m_enmType)
     {
-        comMedium.SetType(newData.m_options.m_enmType);
+        /* Check if we need to release medium first: */
+        bool fDo = true;
+        if (   pMediumItem->machineIds().size() > 1
+            || (   (   newData.m_options.m_enmType == KMediumType_Immutable
+                    || newData.m_options.m_enmType == KMediumType_MultiAttach)
+                && pMediumItem->machineIds().size() > 0))
+            fDo = pMediumItem->release(true);
 
-        /* Show error message if necessary: */
-        if (!comMedium.isOk())
-            msgCenter().cannotChangeMediumType(comMedium, oldData.m_options.m_enmType, newData.m_options.m_enmType, this);
+        if (fDo)
+        {
+            comMedium.SetType(newData.m_options.m_enmType);
+
+            /* Show error message if necessary: */
+            if (!comMedium.isOk())
+                msgCenter().cannotChangeMediumType(comMedium, oldData.m_options.m_enmType, newData.m_options.m_enmType, this);
+        }
     }
 
     /* Try to assign new medium location: */

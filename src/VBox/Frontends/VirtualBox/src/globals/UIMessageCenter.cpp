@@ -1219,7 +1219,7 @@ void UIMessageCenter::cannotChangeMediumDescription(const CMedium &comMedium, co
           UIErrorString::formatErrorInfo(comMedium));
 }
 
-bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, QWidget *pParent /* = 0*/) const
+bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, bool fInduced, QWidget *pParent /* = 0 */) const
 {
     /* Prepare the usage: */
     QStringList usage;
@@ -1232,12 +1232,21 @@ bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, QWidget *pPar
         usage << machine.GetName();
     }
     /* Show the question: */
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Are you sure you want to release the disk image file <nobr><b>%1</b></nobr>?</p>"
-                             "<p>This will detach it from the following virtual machine(s): <b>%2</b>.</p>")
-                             .arg(medium.location(), usage.join(", ")),
-                          0 /* auto-confirm id */,
-                          tr("Release", "detach medium"));
+    return !fInduced
+           ? questionBinary(pParent, MessageType_Question,
+                            tr("<p>Are you sure you want to release the disk image file <nobr><b>%1</b></nobr>?</p>"
+                               "<p>This will detach it from the following virtual machine(s): <b>%2</b>.</p>")
+                               .arg(medium.location(), usage.join(", ")),
+                            0 /* auto-confirm id */,
+                            tr("Release", "detach medium"))
+           : questionBinary(pParent, MessageType_Question,
+                            tr("<p>The changes you requested require this disk to "
+                               "be released from the machines it is attached to.</p>"
+                               "<p>Are you sure you want to release the disk image file <nobr><b>%1</b></nobr>?</p>"
+                               "<p>This will detach it from the following virtual machine(s): <b>%2</b>.</p>")
+                               .arg(medium.location(), usage.join(", ")),
+                            0 /* auto-confirm id */,
+                            tr("Release", "detach medium"));
 }
 
 bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pParent /* = 0*/) const
