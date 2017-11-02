@@ -1429,6 +1429,7 @@ class TestDriver(base.TestDriver):                                              
         """
         if not self.fImportedVBoxApi:
             return True;
+        import gc;
 
         self.aoRemoteSessions = [];
         self.aoVMs            = [];
@@ -1438,30 +1439,41 @@ class TestDriver(base.TestDriver):                                              
         self.checkProcessHeap(); ## TEMPORARY
 
         try:
-            import gc
             gc.collect();
-            objects = gc.get_objects()
+            aObjects = gc.get_objects();
             try:
-                try:
-                    from types import InstanceType
-                except ImportError:
-                    InstanceType = None # Python 3.x compatibility
-                for o in objects:
-                    objtype = type(o)
-                    if objtype == InstanceType: # Python 2.x codepath
-                        objtype = o.__class__
-                    if objtype.__name__ == 'VirtualBoxManager':
+                try:                from types import InstanceType; # For old-style python 2.x objects, not in python 3.
+                except ImportError: InstanceType = None;
+                for oObj in aObjects:
+                    oObjType = type(oObj)
+                    if oObjType == InstanceType: # Python 2.x codepath
+                        oObjType = oObj.__class__
+                    if oObjType.__name__ == 'VirtualBoxManager':
                         reporter.log('actionCleanupAfter: CAUTION, there is still a VirtualBoxManager object, GC trouble')
                         break
             finally:
-                del objects
+                del aObjects;
         except:
             reporter.logXcpt();
         self.fImportedVBoxApi = False;
         self.checkProcessHeap(); ## TEMPORARY
 
         if self.sHost == 'win':
-            pass; ## TODO shutdown COM if possible/necessary?
+            try:
+                import pythoncom;                       # pylint: disable=F0401
+                cIfs  = pythoncom._GetInterfaceCount(); # pylint: disable=no-member,protected-access
+                cObjs = pythoncom._GetGatewayCount();   # pylint: disable=no-member,protected-access
+                if cObjs == 0 and cIfs == 0:
+                    reporter.log('actionCleanupAfter: no interfaces or objects left behind.');
+                else:
+                    reporter.log('actionCleanupAfter: Python COM still has %s objects and %s interfaces...' % ( cObjs, cIfs));
+                    from win32com.client import DispatchBaseClass;
+                    for oObj in gc.get_objects():
+                        if isinstance(oObj, DispatchBaseClass):
+                            reporter.log('actionCleanupAfter:   %s' % (oObj,));
+                    oObj = None;
+            except:
+                reporter.logXcpt();
         else:
             try:
                 from xpcom import _xpcom as _xpcom;     # pylint: disable=F0401
