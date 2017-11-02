@@ -452,6 +452,11 @@ public:
       * @note  Take into account that this request may fail on X11. */
     static void setTopLevelGeometry(QWidget *pWidget, const QRect &rect);
 
+#ifdef VBOX_WS_X11
+    /** Assigns WM_CLASS property for passed @a pWidget. */
+    static void setWMClass(QWidget *pWidget, const char *pStrName, const char *pStrClass);
+#endif
+
 signals:
 
     /** Notifies listeners about the VBoxSVC availability change. */

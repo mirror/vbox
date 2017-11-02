@@ -168,6 +168,7 @@
 # include <X11/Xmd.h>
 # include <X11/Xlib.h>
 # include <X11/Xatom.h>
+# include <X11/Xutil.h>
 # include <X11/extensions/Xinerama.h>
 # define BOOL PRBool
 #endif /* VBOX_WS_X11 */
@@ -3320,6 +3321,29 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, const QRect &rect)
 {
     VBoxGlobal::setTopLevelGeometry(pWidget, rect.x(), rect.y(), rect.width(), rect.height());
 }
+
+#ifdef VBOX_WS_X11
+void VBoxGlobal::setWMClass(QWidget *pWidget, const char *pStrName, const char *pStrClass)
+{
+    /* Make sure all arguments set: */
+    AssertReturnVoid(pWidget && pStrName && pStrClass);
+
+    /* Create duplicates to avoid casting away constness: */
+    char *pWindowName = strdup(pStrName);
+    char *pWindowClass = strdup(pStrClass);
+    AssertReturnVoid(pWindowName && pWindowClass);
+
+    XClassHint windowClass;
+    windowClass.res_name = pWindowName;
+    windowClass.res_class = pWindowClass;
+    /* Set WM_CLASS of the window to passed name and class strings: */
+    XSetClassHint(QX11Info::display(), pWidget->window()->winId(), &windowClass);
+
+    /* Free duplicates: */
+    XFree(windowClass.res_class);
+    XFree(windowClass.res_name);
+}
+#endif /* VBOX_WS_X11 */
 
 // Public slots
 ////////////////////////////////////////////////////////////////////////////////

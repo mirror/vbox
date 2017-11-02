@@ -1320,6 +1320,11 @@ bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
 
 void UISelectorWindow::prepare()
 {
+#ifdef VBOX_WS_X11
+    /* Assign same name to both WM_CLASS name & class for now: */
+    vboxGlobal().setWMClass(this, "VirtualBox Manager", "VirtualBox Manager");
+#endif
+
 #ifdef VBOX_WS_MAC
     /* We have to make sure that we are getting the front most process: */
     ::darwinSetFrontMostProcess();

@@ -95,6 +95,18 @@ void UIMachineWindow::destroy(UIMachineWindow *pWhichWindow)
 
 void UIMachineWindow::prepare()
 {
+#ifdef VBOX_WS_X11
+    /* Compose window name: */
+    const QString strWindowName = QString("VirtualBox Machine UUID: %1").arg(vboxGlobal().managedVMUuid());
+
+    /* Assign it to both WM_CLASS name & class for now: */
+    const char *pBuffer = strWindowName.toLatin1().constData();
+    if (pBuffer)
+        vboxGlobal().setWMClass(this, pBuffer, pBuffer);
+    else
+        vboxGlobal().setWMClass(this, "VirtualBox Machine", "VirtualBox Machine");
+#endif
+
     /* Prepare session-connections: */
     prepareSessionConnections();
 
