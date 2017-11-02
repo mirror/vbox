@@ -88,6 +88,13 @@ public:
     /** Returns the request reply. */
     UINetworkReply* reply() { return m_pReply; }
 
+public slots:
+
+    /** Initiates request retrying. */
+    void sltRetry();
+    /** Initiates request cancelling. */
+    void sltCancel();
+
 private slots:
 
     /** Handles reply about progress changed.
@@ -96,11 +103,6 @@ private slots:
     void sltHandleNetworkReplyProgress(qint64 iReceived, qint64 iTotal);
     /** Handles reply about progress finished. */
     void sltHandleNetworkReplyFinish();
-
-    /** Initiates request retrying. */
-    void sltRetry();
-    /** Initiates request cancelling. */
-    void sltCancel();
 
 private:
 

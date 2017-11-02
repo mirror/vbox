@@ -82,7 +82,7 @@ UINetworkManagerDialog::UINetworkManagerDialog()
 
     /* Create button-box: */
     m_pButtonBox = new QIDialogButtonBox(QDialogButtonBox::Cancel, Qt::Horizontal, centralWidget());
-    connect(m_pButtonBox, SIGNAL(rejected()), this, SLOT(sltHandleCancelAllButtonPress()));
+    connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UINetworkManagerDialog::sltHandleCancelAllButtonPress);
     m_pButtonBox->setHidden(true);
 
     /* Layout content: */
@@ -120,8 +120,8 @@ void UINetworkManagerDialog::addNetworkRequestWidget(UINetworkRequest *pNetworkR
     }
 
     /* Prepare network-request widget's notifications for network-request: */
-    connect(pNetworkRequestWidget, SIGNAL(sigRetry()), pNetworkRequest, SLOT(sltRetry()), Qt::QueuedConnection);
-    connect(pNetworkRequestWidget, SIGNAL(sigCancel()), pNetworkRequest, SLOT(sltCancel()), Qt::QueuedConnection);
+    connect(pNetworkRequestWidget, &UINetworkRequestWidget::sigRetry,  pNetworkRequest, &UINetworkRequest::sltRetry,  Qt::QueuedConnection);
+    connect(pNetworkRequestWidget, &UINetworkRequestWidget::sigCancel, pNetworkRequest, &UINetworkRequest::sltCancel, Qt::QueuedConnection);
 }
 
 void UINetworkManagerDialog::removeNetworkRequestWidget(const QUuid &uuid)

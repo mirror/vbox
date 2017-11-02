@@ -113,20 +113,20 @@ public:
         if (pQueue->isEmpty())
         {
             /* Connect starting-signal of the queue to starting-slot of this step: */
-            connect(pQueue, SIGNAL(sigStartQueue()), this, SLOT(sltStartStep()), Qt::QueuedConnection);
+            connect(pQueue, &UIUpdateQueue::sigStartQueue, this, &UIUpdateStep::sltStartStep, Qt::QueuedConnection);
         }
         /* If queue has at least one step already: */
         else
         {
             /* Reconnect completion-signal of the last-step from completion-signal of the queue to starting-slot of this step: */
-            disconnect(pQueue->lastStep(), SIGNAL(sigStepComplete()), pQueue, SIGNAL(sigQueueFinished()));
-            connect(pQueue->lastStep(), SIGNAL(sigStepComplete()), this, SLOT(sltStartStep()), Qt::QueuedConnection);
+            disconnect(pQueue->lastStep(), &UIUpdateStep::sigStepComplete, pQueue, &UIUpdateQueue::sigQueueFinished);
+            connect(pQueue->lastStep(), &UIUpdateStep::sigStepComplete, this, &UIUpdateStep::sltStartStep, Qt::QueuedConnection);
         }
 
         /* Connect completion-signal of this step to the completion-signal of the queue: */
-        connect(this, SIGNAL(sigStepComplete()), pQueue, SIGNAL(sigQueueFinished()), Qt::QueuedConnection);
+        connect(this, &UIUpdateStep::sigStepComplete, pQueue, &UIUpdateQueue::sigQueueFinished, Qt::QueuedConnection);
         /* Connect completion-signal of this step to the destruction-slot of this step: */
-        connect(this, SIGNAL(sigStepComplete()), this, SLOT(deleteLater()), Qt::QueuedConnection);
+        connect(this, &UIUpdateStep::sigStepComplete, this, &UIUpdateStep::deleteLater, Qt::QueuedConnection);
 
         /* Remember this step as the last one: */
         pQueue->setLastStep(this);
@@ -406,10 +406,11 @@ private slots:
         /* Create and configure the Extension Pack downloader: */
         UIDownloaderExtensionPack *pDl = UIDownloaderExtensionPack::create();
         /* After downloading finished => propose to install the Extension Pack: */
-        connect(pDl, SIGNAL(sigDownloadFinished(const QString&, const QString&, QString)),
-                this, SLOT(sltHandleDownloadedExtensionPack(const QString&, const QString&, QString)));
+        connect(pDl, &UIDownloaderExtensionPack::sigDownloadFinished,
+                this, &UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack);
         /* Also, destroyed downloader is a signal to finish the step: */
-        connect(pDl, SIGNAL(destroyed(QObject*)), this, SIGNAL(sigStepComplete()));
+        connect(pDl, &UIDownloaderExtensionPack::destroyed,
+                this, &UIUpdateStepVirtualBoxExtensionPack::sigStepComplete);
         /* Start downloading: */
         pDl->start();
     }
@@ -485,7 +486,7 @@ UIUpdateManager::UIUpdateManager()
         m_pInstance = this;
 
     /* Configure queue: */
-    connect(m_pQueue, SIGNAL(sigQueueFinished()), this, SLOT(sltHandleUpdateFinishing()));
+    connect(m_pQueue, &UIUpdateQueue::sigQueueFinished, this, &UIUpdateManager::sltHandleUpdateFinishing);
 
 #ifdef VBOX_WITH_UPDATE_REQUEST
     /* Ask updater to check for the first time: */

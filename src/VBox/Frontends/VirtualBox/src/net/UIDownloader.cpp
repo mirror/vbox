@@ -73,9 +73,9 @@ UIDownloader::UIDownloader()
     : m_state(UIDownloaderState_Null)
 {
     /* Connect listeners: */
-    connect(this, SIGNAL(sigToStartAcknowledging()), this, SLOT(sltStartAcknowledging()), Qt::QueuedConnection);
-    connect(this, SIGNAL(sigToStartDownloading()), this, SLOT(sltStartDownloading()), Qt::QueuedConnection);
-    connect(this, SIGNAL(sigToStartVerifying()), this, SLOT(sltStartVerifying()), Qt::QueuedConnection);
+    connect(this, &UIDownloader::sigToStartAcknowledging, this, &UIDownloader::sltStartAcknowledging, Qt::QueuedConnection);
+    connect(this, &UIDownloader::sigToStartDownloading,   this, &UIDownloader::sltStartDownloading,   Qt::QueuedConnection);
+    connect(this, &UIDownloader::sigToStartVerifying,     this, &UIDownloader::sltStartVerifying,     Qt::QueuedConnection);
 }
 
 /* virtual override */

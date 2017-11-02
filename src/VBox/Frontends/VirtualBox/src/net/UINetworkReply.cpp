@@ -930,9 +930,10 @@ UINetworkReplyPrivate::UINetworkReplyPrivate(UINetworkRequestType type, const QU
 
     /* Create and run reply thread: */
     m_pThread = new UINetworkReplyPrivateThread(type, url, requestHeaders);
-    connect(m_pThread, SIGNAL(sigDownloadProgress(qint64, qint64)),
-            this, SIGNAL(downloadProgress(qint64, qint64)), Qt::QueuedConnection);
-    connect(m_pThread, SIGNAL(finished()), this, SLOT(sltFinished()));
+    connect(m_pThread, &UINetworkReplyPrivateThread::sigDownloadProgress,
+            this, &UINetworkReplyPrivate::downloadProgress, Qt::QueuedConnection);
+    connect(m_pThread, &UINetworkReplyPrivateThread::finished,
+            this, &UINetworkReplyPrivate::sltFinished);
     m_pThread->start();
 }
 
@@ -1000,8 +1001,8 @@ UINetworkReply::UINetworkReply(UINetworkRequestType type, const QUrl &url, const
     : m_pReply(new UINetworkReplyPrivate(type, url, requestHeaders))
 {
     /* Prepare network-reply object connections: */
-    connect(m_pReply, SIGNAL(downloadProgress(qint64, qint64)), this, SIGNAL(downloadProgress(qint64, qint64)));
-    connect(m_pReply, SIGNAL(finished()), this, SIGNAL(finished()));
+    connect(m_pReply, &UINetworkReplyPrivate::downloadProgress, this, &UINetworkReply::downloadProgress);
+    connect(m_pReply, &UINetworkReplyPrivate::finished,         this, &UINetworkReply::finished);
 }
 
 UINetworkReply::~UINetworkReply()
