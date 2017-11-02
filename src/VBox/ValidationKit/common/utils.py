@@ -736,7 +736,7 @@ def processTerminate(uPid):
                 fRc = True;
             except:
                 pass;
-            win32api.CloseHandle(hProcess)                                                      # pylint: disable=no-member
+            hProcess.Close(); #win32api.CloseHandle(hProcess)
     else:
         try:
             os.kill(uPid, signal.SIGTERM);
@@ -787,7 +787,7 @@ def processExists(uPid):
         except:
             pass;
         else:
-            win32api.CloseHandle(hProcess);                                                     # pylint: disable=no-member
+            hProcess.Close(); # win32api.CloseHandle(hProcess);
             fRc = True;
     else:
         try:
