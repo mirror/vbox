@@ -255,5 +255,11 @@ if __name__ == '__main__':
         del g_oDrv;
         g_oDrv = None;
         winbase.checkProcessHeap();
+
+        import gc;
+        for oObj in gc.get_objects():
+            if not callable(oObj):
+                reporter.log('type %s: object %s' % (type(oObj), oObj));
+
     sys.exit(g_iExitCode);
 
