@@ -182,9 +182,9 @@ void UINetworkRequest::prepareNetworkReply()
     AssertPtrReturnVoid(m_pReply.data());
     {
         /* Prepare network-reply: */
-        connect(m_pReply, &UINetworkReply::downloadProgress,
+        connect(m_pReply.data(), &UINetworkReply::downloadProgress,
                 this, &UINetworkRequest::sltHandleNetworkReplyProgress);
-        connect(m_pReply, &UINetworkReply::finished,
+        connect(m_pReply.data(), &UINetworkReply::finished,
                 this, &UINetworkRequest::sltHandleNetworkReplyFinish);
 
         /* Mark network-reply as running: */
