@@ -4207,7 +4207,7 @@ ifeq ($(KBUILD_TARGET),linux)
 
  ifndef KERN_DIR
   ifndef KERN_VER
-   KERN_VER=$(notdir $(lastword $(sort $(wildcard /lib/modules/*))))
+   KERN_VER=$(notdir $(lastword $(shell LC_ALL=C ls -t /lib/modules/)))
   endif
   ifneq ($(KERN_VER),)
    KERN_DIR=/lib/modules/$(KERN_VER)/build
