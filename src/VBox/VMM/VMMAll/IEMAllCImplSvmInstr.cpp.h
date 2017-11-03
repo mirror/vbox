@@ -290,7 +290,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
  */
 IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr, RTGCPHYS GCPhysVmcb)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
     LogFlow(("iemSvmVmrun\n"));
 
 #ifdef IN_RING0
@@ -299,8 +298,9 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
      * there's no point in trying to emulate VMRUN in ring-0 as we have
      * to go back to ring-3 anyway, see @bugref{7243#c48}.
      */
+    RT_NOREF(pVCpu, pCtx, cbInstr, GCPhysVmcb);
     return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
-#endif
+#else
 
     /*
      * Cache the physical address of the VMCB for #VMEXIT exceptions.
@@ -315,6 +315,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
     /*
      * Read the guest VMCB state.
      */
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc = PGMPhysSimpleReadGCPhys(pVM, pCtx->hwvirt.svm.CTX_SUFF(pVmcb), GCPhysVmcb, sizeof(SVMVMCB));
     if (RT_SUCCESS(rc))
     {
@@ -661,6 +662,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
     /* Shouldn't really happen as the caller should've validated the physical address already. */
     Log(("iemSvmVmrun: Failed to read nested-guest VMCB at %#RGp (rc=%Rrc) -> #VMEXIT\n", GCPhysVmcb, rc));
     return rc;
+#endif
 }
 
 
