@@ -1357,6 +1357,16 @@ class TestDriver(base.TestDriver):                                              
             reporter.logXcpt("getVirtualBox / API version exception");
             return False;
 
+        # HACK ALERT! Keep COM alive past the python garbage collection on in case of dangling objects. @bugref{9037}
+        #             This is a bit of an experiment at the moment...
+        if self.sHost == 'win':
+            try:
+                import pythoncom;           # pylint: disable=F0401
+                pythoncom.CoInitializeEx(0);   # pylint: disable=no-member
+                pythoncom.CoInitializeEx(0);   # pylint: disable=no-member
+            except:
+                reporter.logXcpt("pythoncom.CoInitializeEx");
+
         # Done
         self.fImportedVBoxApi = True;
         reporter.log('Found version %s (%s)' % (self.fpApiVer, sVer));
