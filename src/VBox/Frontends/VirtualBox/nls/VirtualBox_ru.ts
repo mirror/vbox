@@ -14451,84 +14451,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;New disk image to create</source>
-        <translation type="vanished">Укажите имя &amp;нового диска</translation>
+        <translation>Укажите имя &amp;нового диска</translation>
     </message>
     <message>
         <source>Disk image file &amp;type</source>
-        <translation type="vanished">Укажите &amp;тип</translation>
-    </message>
-    <message>
-        <source>Copy Virtual Disk Image</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disk image to copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Please select the virtual disk image file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose a virtual disk image file to copy...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disk image file type</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Please choose the type of file that you would like to use for the new virtual disk image. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Please choose whether the new virtual disk image file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; disk image file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; disk image file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the disk image file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Please choose a location for new virtual disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New disk image to create</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Please type the name of the new virtual disk image file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose a location for new virtual disk image file...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1_copy</source>
-        <comment>copied virtual disk image name</comment>
-        <translation type="unfinished">%1_копия</translation>
-    </message>
-    <message>
-        <source>Disk image to &amp;copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;New disk image to create</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disk image file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>Укажите &amp;тип</translation>
     </message>
 </context>
 <context>

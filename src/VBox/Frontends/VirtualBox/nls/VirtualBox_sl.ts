@@ -1985,7 +1985,7 @@
 <context>
     <name>UIGDetails</name>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+1173"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+1156"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+248"/>
         <source>Name</source>
         <comment>details (general)</comment>
@@ -6992,7 +6992,7 @@
 <context>
     <name>UIMediumDetailsWidget</name>
     <message>
-        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="+91"/>
+        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="+94"/>
         <source>&amp;Attributes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7077,7 +7077,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+601"/>
+        <location line="+615"/>
         <source>Location can not be empty.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7120,7 +7120,7 @@
 <context>
     <name>UIMediumManager</name>
     <message>
-        <location filename="../src/medium/UIMediumManager.cpp" line="+892"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+897"/>
         <source>&amp;Optical disks</source>
         <translation>&amp;Optični diski</translation>
     </message>
@@ -7130,7 +7130,7 @@
         <translation>&amp;Diskete</translation>
     </message>
     <message>
-        <location line="-235"/>
+        <location line="-297"/>
         <source>Removing medium...</source>
         <translation>Odstranjevanje nosilca …</translation>
     </message>
@@ -7185,7 +7185,7 @@
         <translation type="unfinished">--</translation>
     </message>
     <message>
-        <location line="+298"/>
+        <location line="+360"/>
         <source>&amp;Medium</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7313,14 +7313,14 @@
         <translation type="unfinished">Preverjanje dostopnosti</translation>
     </message>
     <message>
-        <location line="-573"/>
-        <location line="+648"/>
+        <location line="-635"/>
+        <location line="+710"/>
         <location line="+29"/>
         <source>Moving medium...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1337"/>
+        <location line="+1325"/>
         <source>Virtual Media Manager</source>
         <translation type="unfinished">Upravljalnik navideznih nosilcev</translation>
     </message>
@@ -7370,8 +7370,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="-630"/>
-        <location filename="../src/medium/UIMediumManager.cpp" line="-2058"/>
+        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="-644"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="-2108"/>
         <source>Current extension (*.%1)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9333,7 +9333,7 @@
 <context>
     <name>UIScreenshotViewer</name>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-1414"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-1397"/>
         <source>Screenshot of %1 (%2)</source>
         <translation type="unfinished">Posnetek stanja %1 (%2)</translation>
     </message>
@@ -9577,7 +9577,7 @@
 <context>
     <name>UISnapshotDetailsWidget</name>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+84"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+74"/>
         <source>&amp;Attributes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9667,7 +9667,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+455"/>
+        <location line="+448"/>
         <source>Snapshot name is empty</source>
         <translation type="unfinished"></translation>
     </message>
