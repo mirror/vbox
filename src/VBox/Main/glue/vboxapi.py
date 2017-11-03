@@ -457,7 +457,7 @@ class PlatformMSCOM(PlatformBase):
         # Remember this thread ID and get its handle so we can wait on it in waitForEvents().
         self.tid = GetCurrentThreadId()
         pid = GetCurrentProcess()
-        self.handles = [DuplicateHandle(pid, GetCurrentThread(), pid, 0, 0, DUPLICATE_SAME_ACCESS),];
+        self.aoHandles = [DuplicateHandle(pid, GetCurrentThread(), pid, 0, 0, DUPLICATE_SAME_ACCESS),]; # type: list[PyHANDLE]
 
         # Hack the COM dispatcher base class so we can modify method and
         # attribute names to match those in xpcom.
@@ -617,11 +617,11 @@ class PlatformMSCOM(PlatformBase):
             cMsTimeout = INFINITE
         else:
             cMsTimeout = timeout
-        rc = MsgWaitForMultipleObjects(self.handles, 0, cMsTimeout, QS_ALLINPUT)
-        if WAIT_OBJECT_0 <= rc < WAIT_OBJECT_0 + len(self.handles):
+        rc = MsgWaitForMultipleObjects(self.aoHandles, 0, cMsTimeout, QS_ALLINPUT)
+        if WAIT_OBJECT_0 <= rc < WAIT_OBJECT_0 + len(self.aoHandles):
             # is it possible?
             rc = 2
-        elif rc == WAIT_OBJECT_0 + len(self.handles):
+        elif rc == WAIT_OBJECT_0 + len(self.aoHandles):
             # Waiting messages
             PumpWaitingMessages()
             rc = 0
@@ -662,14 +662,15 @@ class PlatformMSCOM(PlatformBase):
 
     def deinit(self):
         import pythoncom
-        from win32file import CloseHandle
 
-        for h in self.handles:
-            if h is not None:
-                CloseHandle(h)
-        self.handles = None
-        del self.oClient
-        oClient = None
+        for oHandle in self.aoHandles:
+            if oHandle is not None:
+                oHandle.Close();
+        self.oHandle = None;
+
+        del self.oClient;
+        self.oClient = None;
+
         pythoncom.CoUninitialize()
 
     def queryInterface(self, oIUnknown, sClassName):
