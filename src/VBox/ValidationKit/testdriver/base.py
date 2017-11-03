@@ -594,7 +594,8 @@ class Process(TdTaskBase):
                     try:
                         (uPid, uStatus) = os.waitpid(self.hWin, 0);
                         if uPid == self.hWin or uPid == self.uPid:
-                            self.hWin = None; # waitpid closed it, so it's now invalid.
+                            self.hWin.Detach(); # waitpid closed it, so it's now invalid.
+                            self.hWin = None;
                             uPid = self.uPid;
                     except:
                         reporter.logXcpt();
