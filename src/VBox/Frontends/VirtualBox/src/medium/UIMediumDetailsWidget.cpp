@@ -279,6 +279,7 @@ void UIMediumDetailsWidget::prepareTabOptions()
                 {
                     /* Configure editor: */
                     m_pLabelType->setBuddy(m_pComboBoxType);
+                    m_pComboBoxType->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                     m_pComboBoxType->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
                     connect(m_pComboBoxType, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
                             this, &UIMediumDetailsWidget::sltTypeIndexChanged);
@@ -629,8 +630,11 @@ void UIMediumDetailsWidget::loadDataForOptions()
                 {
                     m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Normal));
                     m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Immutable));
-                    m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Writethrough));
-                    m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Shareable));
+                    if (!m_newData.m_fHasChildren)
+                    {
+                        m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Writethrough));
+                        m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Shareable));
+                    }
                     m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_MultiAttach));
                 }
                 break;

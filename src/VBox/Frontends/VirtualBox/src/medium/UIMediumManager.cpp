@@ -399,6 +399,7 @@ void UIMediumItem::refresh()
                && m_guiMedium.state() != KMediumState_Inaccessible;
     m_enmType = m_guiMedium.type();
     m_enmVariant = m_guiMedium.mediumVariant();
+    m_fHasChildren = m_guiMedium.hasChildren();
     /* Gather medium options data: */
     m_options.m_enmType = m_guiMedium.mediumType();
     m_options.m_strLocation = m_guiMedium.location();
