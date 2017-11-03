@@ -583,7 +583,7 @@ class EventHandlerBase(object):
                 else:
                     if not fPassive:
                         if sys.platform == 'win32':
-                            from win32com.server.util import unwrap # pylint: disable=F0401
+                            from win32com.server.util import unwrap # pylint: disable=import-error
                             oRet = unwrap(oRet);
                         oRet.oListener = oListener;
                     else:
@@ -1278,7 +1278,7 @@ class TestDriver(base.TestDriver):                                              
         reporter.log("sys.path: %s" % (sys.path));
 
         try:
-            # pylint: disable=F0401
+            # pylint: disable=import-error
             from vboxapi import VirtualBoxManager
             if self.sHost == 'win':
                 from pythoncom import com_error as NativeComExceptionClass  # pylint: disable=E0611
@@ -1286,7 +1286,7 @@ class TestDriver(base.TestDriver):                                              
             else:
                 from xpcom import Exception     as NativeComExceptionClass
                 from xpcom import nsError       as NativeComErrorClass
-            # pylint: enable=F0401
+            # pylint: enable=import-error
         except:
             traceback.print_exc();
             return False;
@@ -1361,7 +1361,7 @@ class TestDriver(base.TestDriver):                                              
         #             This is a bit of an experiment at the moment...
         if self.sHost == 'win':
             try:
-                import pythoncom;           # pylint: disable=F0401
+                import pythoncom;           # pylint: disable=import-error
                 pythoncom.CoInitializeEx(0);   # pylint: disable=no-member
                 pythoncom.CoInitializeEx(0);   # pylint: disable=no-member
             except:
@@ -1382,7 +1382,7 @@ class TestDriver(base.TestDriver):                                              
             _ = oSelf;
             if oXcpt is None: oXcpt = sys.exc_info()[1];
             if sys.platform == 'win32':
-                import winerror;                                            # pylint: disable=F0401
+                import winerror;                                            # pylint: disable=import-error
                 hrXcpt = oXcpt.hresult;
                 if hrXcpt == winerror.DISP_E_EXCEPTION:
                     hrXcpt = oXcpt.excepinfo[5];
@@ -1407,9 +1407,9 @@ class TestDriver(base.TestDriver):                                              
             _ = oSelf;
             if oXcpt is None: oXcpt = sys.exc_info()[1];
             if sys.platform == 'win32':
-                from pythoncom import com_error as NativeComExceptionClass  # pylint: disable=F0401,E0611
+                from pythoncom import com_error as NativeComExceptionClass  # pylint: disable=import-error,E0611
             else:
-                from xpcom import Exception     as NativeComExceptionClass  # pylint: disable=F0401
+                from xpcom import Exception     as NativeComExceptionClass  # pylint: disable=import-error
             return isinstance(oXcpt, NativeComExceptionClass);
 
         def _xcptIsEqual(oSelf, oXcpt, hrStatus):
@@ -1470,14 +1470,14 @@ class TestDriver(base.TestDriver):                                              
 
         if self.sHost == 'win':
             try:
-                import pythoncom;                       # pylint: disable=F0401
+                import pythoncom;                       # pylint: disable=import-error
                 cIfs  = pythoncom._GetInterfaceCount(); # pylint: disable=no-member,protected-access
                 cObjs = pythoncom._GetGatewayCount();   # pylint: disable=no-member,protected-access
                 if cObjs == 0 and cIfs == 0:
                     reporter.log('actionCleanupAfter: no interfaces or objects left behind.');
                 else:
                     reporter.log('actionCleanupAfter: Python COM still has %s objects and %s interfaces...' % ( cObjs, cIfs));
-                    from win32com.client import DispatchBaseClass;
+                    from win32com.client import DispatchBaseClass; # pylint: disable=import-error
                     for oObj in gc.get_objects():
                         if isinstance(oObj, DispatchBaseClass):
                             reporter.log('actionCleanupAfter:   %s' % (oObj,));
@@ -1486,7 +1486,7 @@ class TestDriver(base.TestDriver):                                              
                 reporter.logXcpt();
         else:
             try:
-                from xpcom import _xpcom as _xpcom;     # pylint: disable=F0401
+                from xpcom import _xpcom as _xpcom;     # pylint: disable=import-error
                 hrc   = _xpcom.NS_ShutdownXPCOM();
                 cIfs  = _xpcom._GetInterfaceCount();    # pylint: disable=W0212
                 cObjs = _xpcom._GetGatewayCount();      # pylint: disable=W0212
