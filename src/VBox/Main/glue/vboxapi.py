@@ -661,8 +661,6 @@ class PlatformMSCOM(PlatformBase):
         return True
 
     def deinit(self):
-        import pythoncom
-
         for oHandle in self.aoHandles:
             if oHandle is not None:
                 oHandle.Close();
@@ -671,7 +669,10 @@ class PlatformMSCOM(PlatformBase):
         del self.oClient;
         self.oClient = None;
 
-        pythoncom.CoUninitialize()
+        # This non-sense doesn't pair up with any pythoncom.CoInitialize[Ex].
+        # See @bugref{9037}.
+        #import pythoncom
+        #pythoncom.CoUninitialize()
 
     def queryInterface(self, oIUnknown, sClassName):
         from win32com.client import CastTo
