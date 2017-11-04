@@ -245,5 +245,5 @@ class tdGuestOsInstOs2(vbox.TestDriver):
         return False
 
 if __name__ == '__main__':
-    sys.exit(tdGuestOsInstOs2().main(sys.argv);
+    sys.exit(tdGuestOsInstOs2().main(sys.argv));
 
