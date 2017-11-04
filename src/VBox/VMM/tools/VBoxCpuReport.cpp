@@ -39,6 +39,7 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/sup.h>
 
+#include "VBoxCpuReport.h"
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -76,8 +77,11 @@ static bool             g_fNoMsrs = false;
 /** Snooping info storage for vbCpuRepGuessScalableBusFrequencyName. */
 static uint64_t         g_uMsrIntelP6FsbFrequency = UINT64_MAX;
 
+/** MSR prober routines. */
+static VBMSRFNS         g_MsrAcc;
 
-static void vbCpuRepDebug(const char *pszMsg, ...)
+
+void vbCpuRepDebug(const char *pszMsg, ...)
 {
     va_list va;
 
@@ -101,7 +105,7 @@ static void vbCpuRepDebug(const char *pszMsg, ...)
 }
 
 
-static void vbCpuRepPrintf(const char *pszMsg, ...)
+void vbCpuRepPrintf(const char *pszMsg, ...)
 {
     va_list va;
 
@@ -218,7 +222,7 @@ static bool vbCpuRepSupportsX2Apic(void)
 static bool msrProberWrite(uint32_t uMsr, uint64_t uValue)
 {
     bool fGp;
-    int rc = SUPR3MsrProberWrite(uMsr, NIL_RTCPUID, uValue, &fGp);
+    int rc = g_MsrAcc.msrWrite(uMsr, NIL_RTCPUID, uValue, &fGp);
     AssertRC(rc);
     return RT_SUCCESS(rc) && !fGp;
 }
@@ -229,7 +233,7 @@ static bool msrProberRead(uint32_t uMsr, uint64_t *puValue)
 {
     *puValue = 0;
     bool fGp;
-    int rc = SUPR3MsrProberRead(uMsr, NIL_RTCPUID, puValue, &fGp);
+    int rc = g_MsrAcc.msrRead(uMsr, NIL_RTCPUID, puValue, &fGp);
     AssertRC(rc);
     return RT_SUCCESS(rc) && !fGp;
 }
@@ -239,7 +243,7 @@ static bool msrProberRead(uint32_t uMsr, uint64_t *puValue)
 static bool msrProberModifyNoChange(uint32_t uMsr)
 {
     SUPMSRPROBERMODIFYRESULT Result;
-    int rc = SUPR3MsrProberModify(uMsr, NIL_RTCPUID, UINT64_MAX, 0, &Result);
+    int rc = g_MsrAcc.msrModify(uMsr, NIL_RTCPUID, UINT64_MAX, 0, &Result);
     return RT_SUCCESS(rc)
         && !Result.fBeforeGp
         && !Result.fModifyGp
@@ -252,7 +256,7 @@ static bool msrProberModifyNoChange(uint32_t uMsr)
 static bool msrProberModifyZero(uint32_t uMsr)
 {
     SUPMSRPROBERMODIFYRESULT Result;
-    int rc = SUPR3MsrProberModify(uMsr, NIL_RTCPUID, 0, 0, &Result);
+    int rc = g_MsrAcc.msrModify(uMsr, NIL_RTCPUID, 0, 0, &Result);
     return RT_SUCCESS(rc)
         && !Result.fBeforeGp
         && !Result.fModifyGp
@@ -280,15 +284,15 @@ static int msrProberModifyBitChanges(uint32_t uMsr, uint64_t *pfIgnMask, uint64_
 
         /* Set it. */
         SUPMSRPROBERMODIFYRESULT ResultSet;
-        int rc = SUPR3MsrProberModify(uMsr, NIL_RTCPUID, ~fBitMask, fBitMask, &ResultSet);
+        int rc = g_MsrAcc.msrModify(uMsr, NIL_RTCPUID, ~fBitMask, fBitMask, &ResultSet);
         if (RT_FAILURE(rc))
-            return RTMsgErrorRc(rc, "SUPR3MsrProberModify(%#x,,%#llx,%#llx,): %Rrc", uMsr, ~fBitMask, fBitMask, rc);
+            return RTMsgErrorRc(rc, "msrModify(%#x,,%#llx,%#llx,): %Rrc", uMsr, ~fBitMask, fBitMask, rc);
 
         /* Clear it. */
         SUPMSRPROBERMODIFYRESULT ResultClear;
-        rc = SUPR3MsrProberModify(uMsr, NIL_RTCPUID, ~fBitMask, 0, &ResultClear);
+        rc = g_MsrAcc.msrModify(uMsr, NIL_RTCPUID, ~fBitMask, 0, &ResultClear);
         if (RT_FAILURE(rc))
-            return RTMsgErrorRc(rc, "SUPR3MsrProberModify(%#x,,%#llx,%#llx,): %Rrc", uMsr, ~fBitMask, 0, rc);
+            return RTMsgErrorRc(rc, "msrModify(%#x,,%#llx,%#llx,): %Rrc", uMsr, ~fBitMask, 0, rc);
 
         if (ResultSet.fModifyGp || ResultClear.fModifyGp)
             *pfGpMask |= fBitMask;
@@ -323,15 +327,15 @@ static int msrProberModifyBit(uint32_t uMsr, unsigned iBit)
 
     /* Set it. */
     SUPMSRPROBERMODIFYRESULT ResultSet;
-    int rc = SUPR3MsrProberModify(uMsr, NIL_RTCPUID, ~fBitMask, fBitMask, &ResultSet);
+    int rc = g_MsrAcc.msrModify(uMsr, NIL_RTCPUID, ~fBitMask, fBitMask, &ResultSet);
     if (RT_FAILURE(rc))
-        return RTMsgErrorRc(-2, "SUPR3MsrProberModify(%#x,,%#llx,%#llx,): %Rrc", uMsr, ~fBitMask, fBitMask, rc);
+        return RTMsgErrorRc(-2, "msrModify(%#x,,%#llx,%#llx,): %Rrc", uMsr, ~fBitMask, fBitMask, rc);
 
     /* Clear it. */
     SUPMSRPROBERMODIFYRESULT ResultClear;
-    rc = SUPR3MsrProberModify(uMsr, NIL_RTCPUID, ~fBitMask, 0, &ResultClear);
+    rc = g_MsrAcc.msrModify(uMsr, NIL_RTCPUID, ~fBitMask, 0, &ResultClear);
     if (RT_FAILURE(rc))
-        return RTMsgErrorRc(-2, "SUPR3MsrProberModify(%#x,,%#llx,%#llx,): %Rrc", uMsr, ~fBitMask, 0, rc);
+        return RTMsgErrorRc(-2, "msrModify(%#x,,%#llx,%#llx,): %Rrc", uMsr, ~fBitMask, 0, rc);
 
     if (ResultSet.fModifyGp || ResultClear.fModifyGp)
         return -1;
@@ -362,10 +366,10 @@ static int msrProberModifyBit(uint32_t uMsr, unsigned iBit)
 static bool msrProberModifySimpleGp(uint32_t uMsr, uint64_t fAndMask, uint64_t fOrMask)
 {
     SUPMSRPROBERMODIFYRESULT Result;
-    int rc = SUPR3MsrProberModify(uMsr, NIL_RTCPUID, fAndMask, fOrMask, &Result);
+    int rc = g_MsrAcc.msrModify(uMsr, NIL_RTCPUID, fAndMask, fOrMask, &Result);
     if (RT_FAILURE(rc))
     {
-        RTMsgError("SUPR3MsrProberModify(%#x,,%#llx,%#llx,): %Rrc", uMsr, fAndMask, fOrMask, rc);
+        RTMsgError("g_MsrAcc.msrModify(%#x,,%#llx,%#llx,): %Rrc", uMsr, fAndMask, fOrMask, rc);
         return false;
     }
     return !Result.fBeforeGp
@@ -530,12 +534,12 @@ static int findMsrs(VBCPUREPMSR **ppaMsrs, uint32_t *pcMsrs, uint32_t fMsrMask)
                 /* Read probing normally does it. */
                 uint64_t uValue = 0;
                 bool     fGp    = true;
-                int rc = SUPR3MsrProberRead(uMsr, NIL_RTCPUID, &uValue, &fGp);
+                int rc = g_MsrAcc.msrRead(uMsr, NIL_RTCPUID, &uValue, &fGp);
                 if (RT_FAILURE(rc))
                 {
                     RTMemFree(*ppaMsrs);
                     *ppaMsrs = NULL;
-                    return RTMsgErrorRc(rc, "SUPR3MsrProberRead failed on %#x: %Rrc\n", uMsr, rc);
+                    return RTMsgErrorRc(rc, "msrRead failed on %#x: %Rrc\n", uMsr, rc);
                 }
 
                 uint32_t fFlags;
@@ -561,12 +565,12 @@ static int findMsrs(VBCPUREPMSR **ppaMsrs, uint32_t *pcMsrs, uint32_t fMsrMask)
                     }
 #endif
                     fGp = true;
-                    rc = SUPR3MsrProberWrite(uMsr, NIL_RTCPUID, 0, &fGp);
+                    rc = g_MsrAcc.msrWrite(uMsr, NIL_RTCPUID, 0, &fGp);
                     if (RT_FAILURE(rc))
                     {
                         RTMemFree(*ppaMsrs);
                         *ppaMsrs = NULL;
-                        return RTMsgErrorRc(rc, "SUPR3MsrProberWrite failed on %#x: %Rrc\n", uMsr, rc);
+                        return RTMsgErrorRc(rc, "msrWrite failed on %#x: %Rrc\n", uMsr, rc);
                     }
                     uValue = 0;
                     fFlags = VBCPUREPMSR_F_WRITE_ONLY;
@@ -4342,24 +4346,32 @@ static int probeMsrs(bool fHacking, const char *pszNameC, const char *pszCpuDesc
     }
 
     /*
-     * Initialize the support library and check if we can read MSRs.
+     * First try the the support library (also checks if we can really read MSRs).
      */
-    int rc = SUPR3Init(NULL);
+    int rc = SupDrvMsrProberInit(&g_MsrAcc);
     if (RT_FAILURE(rc))
     {
-        vbCpuRepDebug("warning: Unable to initialize the support library (%Rrc), skipping MSR detection.\n", rc);
-        return VINF_SUCCESS;
+#ifdef VBCR_HAVE_PLATFORM_MSR_PROBER
+        /* Next try a platform-specific interface. */
+        rc = PlatformMsrProberInit(&g_MsrAcc);
+#endif
+        if (RT_FAILURE(rc))
+        {
+            vbCpuRepDebug("warning: Unable to initialize any MSR access interface (%Rrc), skipping MSR detection.\n", rc);
+            return VINF_SUCCESS;
+        }
     }
+
     uint64_t uValue;
     bool     fGp;
-    rc = SUPR3MsrProberRead(MSR_IA32_TSC, NIL_RTCPUID, &uValue, &fGp);
+    rc = g_MsrAcc.msrRead(MSR_IA32_TSC, NIL_RTCPUID, &uValue, &fGp);
     if (RT_FAILURE(rc))
     {
         vbCpuRepDebug("warning: MSR probing not supported by the support driver (%Rrc), skipping MSR detection.\n", rc);
         return VINF_SUCCESS;
     }
     vbCpuRepDebug("MSR_IA32_TSC: %#llx fGp=%RTbool\n", uValue, fGp);
-    rc = SUPR3MsrProberRead(0xdeadface, NIL_RTCPUID, &uValue, &fGp);
+    rc = g_MsrAcc.msrRead(0xdeadface, NIL_RTCPUID, &uValue, &fGp);
     vbCpuRepDebug("0xdeadface: %#llx fGp=%RTbool rc=%Rrc\n", uValue, fGp, rc);
 
     /*
@@ -4396,7 +4408,7 @@ static int probeMsrs(bool fHacking, const char *pszNameC, const char *pszCpuDesc
         VBCPUREPMSR    *paMsrs;
         uint32_t        cMsrs;
         rc = findMsrs(&paMsrs, &cMsrs, fMsrMask);
-        if (RT_FAILURE(rc))
+        if (!RT_FAILURE(rc))
             return rc;
 
         /* Probe the MSRs and spit out the database table. */
@@ -4417,6 +4429,8 @@ static int probeMsrs(bool fHacking, const char *pszNameC, const char *pszCpuDesc
         RTMemFree(paMsrs);
         paMsrs = NULL;
     }
+    g_MsrAcc.msrProberTerm();
+    RT_ZERO(g_MsrAcc);
     return rc;
 }
 
