@@ -26,6 +26,22 @@
 #include "VBoxCpuReport.h"
 
 
+/* Wrappers to mask funny SUPR3 calling conventions on some platforms. */
+static int supMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue, bool *pfGp)
+{
+    return SUPR3MsrProberRead(uMsr, idCpu, puValue, pfGp);
+}
+
+static int supMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uValue, bool *pfGp)
+{
+    return SUPR3MsrProberWrite(uMsr, idCpu, uValue, pfGp);
+}
+
+static int supMsrProberModify(uint32_t uMsr, RTCPUID idCpu, uint64_t fAndMask, uint64_t fOrMask, PSUPMSRPROBERMODIFYRESULT pResult)
+{
+    return SUPR3MsrProberModify(uMsr, idCpu, fAndMask, fOrMask, pResult);
+}
+
 static int supMsrProberTerm(void)
 {
     return VINF_SUCCESS;
@@ -50,9 +66,9 @@ int SupDrvMsrProberInit(VBMSRFNS *fnsMsr)
         return VERR_NOT_SUPPORTED;
     }
 
-    fnsMsr->msrRead       = SUPR3MsrProberRead;
-    fnsMsr->msrWrite      = SUPR3MsrProberWrite;
-    fnsMsr->msrModify     = SUPR3MsrProberModify;
+    fnsMsr->msrRead       = supMsrProberRead;
+    fnsMsr->msrWrite      = supMsrProberWrite;
+    fnsMsr->msrModify     = supMsrProberModify;
     fnsMsr->msrProberTerm = supMsrProberTerm;
 
     return VINF_SUCCESS;
