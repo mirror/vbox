@@ -1439,7 +1439,7 @@ class TestDriver(base.TestDriver):                                              
             self.oVBoxMgr.xcptToString          = types.MethodType(_xcptToString,        self.oVBoxMgr);
 
 
-    def _teardownVBoxApi(self):
+    def _teardownVBoxApi(self):  # pylint: disable=too-many-statements
         """
         Drop all VBox object references and shutdown com/xpcom.
         """
