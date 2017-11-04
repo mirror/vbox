@@ -1596,6 +1596,35 @@ def getXcptInfo(cFrames = 1):
     return asRet;
 
 
+def getObjectTypeName(oObject):
+    """
+    Get the type name of the given object.
+    """
+    if oObject is None:
+        return 'None';
+
+    # Get the type object.
+    try:
+        oType = type(oObject);
+    except:
+        return 'type-throws-exception';
+
+    # Python 2.x only: Handle old-style object wrappers.
+    if sys.version_info[0] < 3:
+        try:
+            from types import InstanceType;
+            if oType == InstanceType:
+                oType = oObject.__class__;
+        except:
+            pass;
+
+    # Get the name.
+    try:
+        return oType.__name__;
+    except:
+        return '__type__-throws-exception';
+
+
 #
 # TestSuite stuff.
 #
