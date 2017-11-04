@@ -1347,7 +1347,7 @@ class TestDriver(base.TestDriver):                                              
 
         # HACK ALERT! Keep COM alive past the python garbage collection on in case of dangling objects. @bugref{9037}
         #             This is a bit of an experiment at the moment...
-        if self.sHost == 'win':
+        if self.sHost == 'win' and self.fpApiVer < 5.2:
             try:
                 import pythoncom;           # pylint: disable=import-error
                 pythoncom.CoInitializeEx(0);   # pylint: disable=no-member
