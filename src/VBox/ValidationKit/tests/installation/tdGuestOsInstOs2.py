@@ -245,20 +245,5 @@ class tdGuestOsInstOs2(vbox.TestDriver):
         return False
 
 if __name__ == '__main__':
-    # sys.exit(tdGuestOsInstOs2().main(sys.argv);
-    # TEMPORARY hacking.
-    g_oDrv = tdGuestOsInstOs2();
-    g_iExitCode = g_oDrv.main(sys.argv);
-    if g_oDrv.fDoHeapChecks:
-        from testdriver import winbase;
-        winbase.checkProcessHeap();
-        del g_oDrv;
-        g_oDrv = None;
-        winbase.checkProcessHeap();
-        #import gc;
-        #for oObj in gc.get_objects():
-        #    if not callable(oObj):
-        #        reporter.log('type %s: object %s' % (type(oObj), oObj));
-
-    sys.exit(g_iExitCode);
+    sys.exit(tdGuestOsInstOs2().main(sys.argv);
 
