@@ -3363,7 +3363,7 @@ static int reportMsr_Ia32ApicBase(uint32_t uMsr, uint64_t uValue)
 
     /* If the OS uses the APIC, we have to be super careful. */
     if (!g_fAtomicMsrMod)
-        fSkipMask |= 0x0000000ffffff000;
+        fSkipMask |= UINT64_C(0x0000000ffffff000);
 
     return reportMsr_GenFunctionEx(uMsr, "Ia32ApicBase", uValue, fSkipMask, 0, NULL);
 }
