@@ -1447,6 +1447,7 @@ class TestDriver(base.TestDriver):                                              
             return True;
         import gc;
 
+        # Drop all references we've have to COM objects.
         self.aoRemoteSessions = [];
         self.aoVMs            = [];
         self.oVBoxMgr         = None;
@@ -1454,65 +1455,122 @@ class TestDriver(base.TestDriver):                                              
         vboxcon.goHackModuleClass.oVBoxMgr = None; # VBoxConstantWrappingHack.
         self.checkProcessHeap(); ## TEMPORARY
 
+        # Do garbage collection to try get rid of those objects.
         try:
             gc.collect();
-            aObjects = gc.get_objects();
-            try:
-                try:                from types import InstanceType; # For old-style python 2.x objects, not in python 3.
-                except ImportError: InstanceType = None;
-                for oObj in aObjects:
-                    oObjType = type(oObj)
-                    if oObjType == InstanceType: # Python 2.x codepath
-                        oObjType = oObj.__class__
-                    if oObjType.__name__ == 'VirtualBoxManager':
-                        reporter.log('actionCleanupAfter: CAUTION, there is still a VirtualBoxManager object, GC trouble')
-                        break
-            finally:
-                del aObjects;
         except:
             reporter.logXcpt();
         self.fImportedVBoxApi = False;
         self.checkProcessHeap(); ## TEMPORARY
 
+        # Check whether the python is still having any COM objects/interfaces around.
+        cVBoxMgrs = 0;
+        aoObjsLeftBehind = [];
         if self.sHost == 'win':
+            import pythoncom;                                   # pylint: disable=import-error
             try:
-                import pythoncom;                       # pylint: disable=import-error
-                cIfs  = pythoncom._GetInterfaceCount(); # pylint: disable=no-member,protected-access
-                cObjs = pythoncom._GetGatewayCount();   # pylint: disable=no-member,protected-access
+                cIfs  = pythoncom._GetInterfaceCount();         # pylint: disable=no-member,protected-access
+                cObjs = pythoncom._GetGatewayCount();           # pylint: disable=no-member,protected-access
                 if cObjs == 0 and cIfs == 0:
-                    reporter.log('actionCleanupAfter: no interfaces or objects left behind.');
+                    reporter.log('_teardownVBoxApi: no interfaces or objects left behind.');
                 else:
-                    reporter.log('actionCleanupAfter: Python COM still has %s objects and %s interfaces...' % ( cObjs, cIfs));
-                    from win32com.client import DispatchBaseClass; # pylint: disable=import-error
-                    for oObj in gc.get_objects():
-                        if isinstance(oObj, DispatchBaseClass):
-                            reporter.log('actionCleanupAfter:   %s' % (oObj,));
-                    oObj = None;
+                    reporter.log('_teardownVBoxApi: Python COM still has %s objects and %s interfaces...' % ( cObjs, cIfs));
+
+                from win32com.client import DispatchBaseClass;  # pylint: disable=import-error
+                for oObj in gc.get_objects():
+                    if isinstance(oObj, DispatchBaseClass):
+                        reporter.log('_teardownVBoxApi:   %s' % (oObj,));
+                        aoObjsLeftBehind.append(oObj);
+                    elif utils.getObjectTypeName(oObj) == 'VirtualBoxManager':
+                        reporter.log('_teardownVBoxApi:   %s' % (oObj,));
+                        cVBoxMgrs += 1;
+                        aoObjsLeftBehind.append(oObj);
+                oObj = None;
             except:
                 reporter.logXcpt();
+
+            # If not being used, we can safely uninitialize COM.
+            if cIfs == 0 and cObjs == 0 and cVBoxMgrs == 0 and len(aoObjsLeftBehind) == 0:
+                reporter.log('_teardownVBoxApi:   Calling CoUninitialize...');
+                try:    pythoncom.CoUninitialize();             # pylint: disable=no-member
+                except: reporter.logXcpt();
+                else:
+                    reporter.log('_teardownVBoxApi:   Returned from CoUninitialize.');
         else:
             try:
-                from xpcom import _xpcom as _xpcom;     # pylint: disable=import-error
+                from xpcom import _xpcom as _xpcom;             # pylint: disable=import-error
                 hrc   = _xpcom.NS_ShutdownXPCOM();
-                cIfs  = _xpcom._GetInterfaceCount();    # pylint: disable=W0212
-                cObjs = _xpcom._GetGatewayCount();      # pylint: disable=W0212
+                cIfs  = _xpcom._GetInterfaceCount();            # pylint: disable=W0212
+                cObjs = _xpcom._GetGatewayCount();              # pylint: disable=W0212
+
                 if cObjs == 0 and cIfs == 0:
-                    reporter.log('actionCleanupAfter: NS_ShutdownXPCOM -> %s, nothing left behind.' % (hrc, ));
+                    reporter.log('_teardownVBoxApi: NS_ShutdownXPCOM -> %s, nothing left behind.' % (hrc, ));
                 else:
-                    reporter.log('actionCleanupAfter: NS_ShutdownXPCOM -> %s, leaving %s objects and %s interfaces behind...' \
+                    reporter.log('_teardownVBoxApi: NS_ShutdownXPCOM -> %s, leaving %s objects and %s interfaces behind...'
                                  % (hrc, cObjs, cIfs));
                     if hasattr(_xpcom, '_DumpInterfaces'):
-                        try:
-                            _xpcom._DumpInterfaces();   # pylint: disable=W0212
-                        except:
-                            reporter.logXcpt('actionCleanupAfter: _DumpInterfaces failed');
+                        try:    _xpcom._DumpInterfaces();       # pylint: disable=W0212
+                        except: reporter.logXcpt('_teardownVBoxApi: _DumpInterfaces failed');
+
+                from xpcom.client import Component;             # pylint: disable=import-error
+                for oObj in gc.get_objects():
+                    if isinstance(oObj, Component):
+                        reporter.log('_teardownVBoxApi:   %s' % (oObj,));
+                        aoObjsLeftBehind.append(oObj);
+                    if utils.getObjectTypeName(oObj) == 'VirtualBoxManager':
+                        reporter.log('_teardownVBoxApi:   %s' % (oObj,));
+                        cVBoxMgrs += 1;
+                        aoObjsLeftBehind.append(oObj);
+                oObj = None;
+
             except:
                 reporter.logXcpt();
         self.checkProcessHeap(); ## TEMPORARY
 
+        # Try get the referrers to (XP)COM interfaces and objects that was left behind.
+        for iObj in range(len(aoObjsLeftBehind)): # pylint: disable=consider-using-enumerate
+            try:
+                aoReferrers = gc.get_referrers(aoObjsLeftBehind[iObj]);
+                reporter.log('_teardownVBoxApi:   Found %u referrers to %s:' % (len(aoReferrers), aoObjsLeftBehind[iObj],));
+                for oReferrer in aoReferrers:
+                    oMyFrame = sys._getframe(0);  # pylint: disable=protected-access
+                    if oReferrer is oMyFrame:
+                        reporter.log('_teardownVBoxApi:     - frame of this function');
+                    elif oReferrer is aoObjsLeftBehind:
+                        reporter.log('_teardownVBoxApi:     - aoObjsLeftBehind');
+                    else:
+                        fPrinted = False;
+                        if isinstance(oReferrer, dict) or isinstance(oReferrer, list) or isinstance(oReferrer, tuple):
+                            try:
+                                aoSubReferreres = gc.get_referrers(oReferrer);
+                                for oSubRef in aoSubReferreres:
+                                    if    not isinstance(oSubRef, list) \
+                                      and not isinstance(oSubRef, dict) \
+                                      and oSubRef is not oMyFrame \
+                                      and oSubRef is not aoSubReferreres:
+                                        reporter.log('_teardownVBoxApi:     - %s :: %s:'
+                                                     % (utils.getObjectTypeName(oSubRef), utils.getObjectTypeName(oReferrer)));
+                                        fPrinted = True;
+                                        break;
+                                del aoSubReferreres;
+                            except:
+                                reporter.logXcpt('subref');
+                        if not fPrinted:
+                            reporter.log('_teardownVBoxApi:     - %s:' % (utils.getObjectTypeName(oReferrer),));
+                        try:
+                            import pprint;
+                            for sLine in pprint.pformat(oReferrer, width = 130).split('\n'):
+                                reporter.log('_teardownVBoxApi:       %s' % (sLine,));
+                        except:
+                            reporter.log('_teardownVBoxApi:       %s' % (oReferrer,));
+            except:
+                reporter.logXcpt();
+        del aoObjsLeftBehind;
+
+        # Force garbage collection again, just for good measure.
         try:
             gc.collect();
-            time.sleep(0.5); # fudge factory
+            time.sleep(0.5); # fudge factor
         except:
             reporter.logXcpt();
         self.checkProcessHeap(); ## TEMPORARY
