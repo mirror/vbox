@@ -47,7 +47,7 @@ static int supMsrProberTerm(void)
     return VINF_SUCCESS;
 }
 
-int SupDrvMsrProberInit(VBMSRFNS *fnsMsr)
+int SupDrvMsrProberInit(VBMSRFNS *fnsMsr, bool *pfAtomicMsrMod)
 {
     int rc = SUPR3Init(NULL);
     if (RT_FAILURE(rc))
@@ -70,6 +70,7 @@ int SupDrvMsrProberInit(VBMSRFNS *fnsMsr)
     fnsMsr->msrWrite      = supMsrProberWrite;
     fnsMsr->msrModify     = supMsrProberModify;
     fnsMsr->msrProberTerm = supMsrProberTerm;
+    *pfAtomicMsrMod       = true;
 
     return VINF_SUCCESS;
 }

@@ -128,7 +128,7 @@ static int linuxMsrProberTerm(void)
     return VINF_SUCCESS;
 }
 
-int PlatformMsrProberInit(VBMSRFNS *fnsMsr)
+int PlatformMsrProberInit(VBMSRFNS *fnsMsr, bool *pfAtomicMsrMod)
 {
     if (access(MSR_DEV_NAME, F_OK))
     {
@@ -147,6 +147,7 @@ int PlatformMsrProberInit(VBMSRFNS *fnsMsr)
     fnsMsr->msrWrite      = linuxMsrProberWrite;
     fnsMsr->msrModify     = linuxMsrProberModify;
     fnsMsr->msrProberTerm = linuxMsrProberTerm;
+    *pfAtomicMsrMod       = false;  /* Can't modify/restore MSRs without trip to R3. */
 
     return VINF_SUCCESS;
 }

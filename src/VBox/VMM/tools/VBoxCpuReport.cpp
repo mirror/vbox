@@ -79,7 +79,9 @@ static uint64_t         g_uMsrIntelP6FsbFrequency = UINT64_MAX;
 
 /** MSR prober routines. */
 static VBMSRFNS         g_MsrAcc;
-
+/** Wheter MSR prober can read/modify/restore MSRs more or less
+ *  atomically, without allowing other code to be executed. */
+static bool             g_fAtomicMsrMod;
 
 void vbCpuRepDebug(const char *pszMsg, ...)
 {
@@ -2543,9 +2545,48 @@ static VBCPUREPBADNESS queryMsrWriteBadness(uint32_t uMsr)
                 return VBCPUREPBADNESS_MIGHT_BITE;
             break;
 
+        /* KVM MSRs that are unsafe to touch. */
+        case 0x00000011: /* KVM */
+        case 0x00000012: /* KVM */
+            return VBCPUREPBADNESS_BOND_VILLAIN;
+
+        /* 
+         * The TSC is tricky -- writing it isn't a problem, but if we put back the original 
+         * value, we'll throw it out of whack. If we're on an SMP OS that uses the TSC for timing, 
+         * we'll likely kill it, especially if we can't do the modification very quickly.
+         */
+        case 0x00000010: /* IA32_TIME_STAMP_COUNTER */
+            if (!g_fAtomicMsrMod)
+                return VBCPUREPBADNESS_BOND_VILLAIN;
+            break;
+
+        /* 
+         * The following MSRs are not safe to modify in a typical OS if we can't do it atomically, 
+         * i.e. read/modify/restore without allowing any other code to execute. Everything related 
+         * to syscalls will blow up in our face if we go back to userland with modified MSRs.
+         */ 
+//        case 0x0000001b: /* IA32_APIC_BASE */
+        case 0xc0000081: /* MSR_K6_STAR */
+        case 0xc0000082: /* AMD64_STAR64 */
+        case 0xc0000083: /* AMD64_STARCOMPAT */
+        case 0xc0000084: /* AMD64_SYSCALL_FLAG_MASK */
+        case 0xc0000100: /* AMD64_FS_BASE */
+        case 0xc0000101: /* AMD64_GS_BASE */
+        case 0xc0000102: /* AMD64_KERNEL_GS_BASE */
+            if (!g_fAtomicMsrMod)
+                return VBCPUREPBADNESS_MIGHT_BITE;
+            break;
+
         case 0x000001a0: /* IA32_MISC_ENABLE */
         case 0x00000199: /* IA32_PERF_CTL */
             return VBCPUREPBADNESS_MIGHT_BITE;
+
+        case 0x000005a0: /* C2_PECI_CTL */
+        case 0x000005a1: /* C2_UNK_0000_05a1 */
+            if (g_enmVendor == CPUMCPUVENDOR_INTEL)
+                return VBCPUREPBADNESS_MIGHT_BITE;
+            break;
+
         case 0x00002000: /* P6_CR0. */
         case 0x00002003: /* P6_CR3. */
         case 0x00002004: /* P6_CR4. */
@@ -3319,6 +3360,11 @@ static int reportMsr_Ia32ApicBase(uint32_t uMsr, uint64_t uValue)
     /* For some reason, twiddling this bit kills a Tualatin PIII-S. */
     if (g_enmMicroarch == kCpumMicroarch_Intel_P6_III)
         fSkipMask |= RT_BIT(9);
+
+    /* If the OS uses the APIC, we have to be super careful. */
+    if (!g_fAtomicMsrMod)
+        fSkipMask |= 0x0000000ffffff000;
+
     return reportMsr_GenFunctionEx(uMsr, "Ia32ApicBase", uValue, fSkipMask, 0, NULL);
 }
 
@@ -3344,6 +3390,10 @@ static int reportMsr_Ia32MiscEnable(uint32_t uMsr, uint64_t uValue)
         vbCpuRepPrintf("WARNING: IA32_MISC_ENABLE probing needs hacking on this CPU!\n");
         RTThreadSleep(128);
     }
+
+    /* If the OS is using MONITOR/MWAIT we'd better not disable it! */
+    if (!g_fAtomicMsrMod)
+        fSkipMask |= RT_BIT(18);
 
     /* The no execute related flag is deadly if clear.  */
     if (   !(uValue & MSR_IA32_MISC_ENABLE_XD_DISABLE)
@@ -3638,7 +3688,11 @@ static int reportMsr_Amd64Efer(uint32_t uMsr, uint64_t uValue)
 {
     uint64_t fSkipMask = 0;
     if (vbCpuRepSupportsLongMode())
+    {
         fSkipMask |= MSR_K6_EFER_LME;
+        if (!g_fAtomicMsrMod && (uValue & MSR_K6_EFER_SCE))
+            fSkipMask |= MSR_K6_EFER_SCE;
+    }
     if (   (uValue & MSR_K6_EFER_NXE)
         || vbCpuRepSupportsNX())
         fSkipMask |= MSR_K6_EFER_NXE;
@@ -4348,12 +4402,12 @@ static int probeMsrs(bool fHacking, const char *pszNameC, const char *pszCpuDesc
     /*
      * First try the the support library (also checks if we can really read MSRs).
      */
-    int rc = SupDrvMsrProberInit(&g_MsrAcc);
+    int rc = SupDrvMsrProberInit(&g_MsrAcc, &g_fAtomicMsrMod);
     if (RT_FAILURE(rc))
     {
 #ifdef VBCR_HAVE_PLATFORM_MSR_PROBER
         /* Next try a platform-specific interface. */
-        rc = PlatformMsrProberInit(&g_MsrAcc);
+        rc = PlatformMsrProberInit(&g_MsrAcc, &g_fAtomicMsrMod);
 #endif
         if (RT_FAILURE(rc))
         {
@@ -4408,7 +4462,7 @@ static int probeMsrs(bool fHacking, const char *pszNameC, const char *pszCpuDesc
         VBCPUREPMSR    *paMsrs;
         uint32_t        cMsrs;
         rc = findMsrs(&paMsrs, &cMsrs, fMsrMask);
-        if (!RT_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
         /* Probe the MSRs and spit out the database table. */

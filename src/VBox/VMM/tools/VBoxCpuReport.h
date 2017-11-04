@@ -24,7 +24,7 @@ typedef struct VBMSRFNS {
 
 extern void vbCpuRepDebug(const char *pszMsg, ...);
 extern void vbCpuRepPrintf(const char *pszMsg, ...);
-extern int SupDrvMsrProberInit(VBMSRFNS *fnsMsr);
-extern int PlatformMsrProberInit(VBMSRFNS *fnsMsr);
+extern int SupDrvMsrProberInit(VBMSRFNS *fnsMsr, bool *pfAtomicMsrMod);
+extern int PlatformMsrProberInit(VBMSRFNS *fnsMsr, bool *pfAtomicMsrMod);
 
 
