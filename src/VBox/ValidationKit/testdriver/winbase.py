@@ -40,6 +40,8 @@ import win32con;            # pylint: disable=import-error
 import win32console;        # pylint: disable=import-error
 import win32event;          # pylint: disable=import-error
 import win32process;        # pylint: disable=import-error
+import winerror;            # pylint: disable=import-error
+import pywintypes;          # pylint: disable=import-error
 
 # Validation Kit imports.
 from testdriver import reporter;
@@ -111,16 +113,22 @@ def processKill(uPid):
 
 def processExists(uPid):
     """ The Windows version of base.processExists """
-    # pylint: disable=no-member
-    fRc = False;
+    # We try open the process for waiting since this is generally only forbidden in a very few cases.
     try:
-        hProcess = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION, False, uPid);
-    except:
+        hProcess = win32api.OpenProcess(win32con.SYNCHRONIZE, False, uPid);     # pylint: disable=no-member
+    except pywintypes.error as oXcpt:                                           # pylint: disable=no-member
+        if oXcpt.winerror == winerror.ERROR_INVALID_PARAMETER:
+            return False;
+        if oXcpt.winerror != winerror.ERROR_ACCESS_DENIED:
+            reporter.logXcpt('uPid=%s oXcpt=%s' % (uPid, oXcpt));
+            return False;
+        reporter.logXcpt('uPid=%s oXcpt=%s' % (uPid, oXcpt));
+    except Exception as oXcpt:
         reporter.logXcpt('uPid=%s' % (uPid,));
+        return False;
     else:
         hProcess.Close(); #win32api.CloseHandle(hProcess)
-        fRc = True;
-    return fRc;
+    return True;
 
 def processCheckPidAndName(uPid, sName):
     """ The Windows version of base.processCheckPidAndName """

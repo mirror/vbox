@@ -50,6 +50,8 @@ if sys.platform == 'win32':
     import win32console;        # pylint: disable=import-error
     import win32file;           # pylint: disable=import-error
     import win32process;        # pylint: disable=import-error
+    import winerror;            # pylint: disable=import-error
+    import pywintypes;          # pylint: disable=import-error
 else:
     import signal;
 
@@ -782,18 +784,22 @@ def processExists(uPid):
     """
     if sys.platform == 'win32':
         fRc = False;
+        # We try open the process for waiting since this is generally only forbidden in a very few cases.
         try:
-            hProcess = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION, False, uPid);   # pylint: disable=no-member
-        except:
+            hProcess = win32api.OpenProcess(win32con.SYNCHRONIZE, False, uPid);     # pylint: disable=no-member
+        except pywintypes.error as oXcpt:                                           # pylint: disable=no-member
+            if oXcpt.winerror == winerror.ERROR_ACCESS_DENIED:
+                fRc = True;
+        except Exception as oXcpt:
             pass;
         else:
-            hProcess.Close(); # win32api.CloseHandle(hProcess);
+            hProcess.Close();
             fRc = True;
     else:
         try:
             os.kill(uPid, 0);
             fRc = True;
-        except:
+        except: ## @todo check error code.
             fRc = False;
     return fRc;
 
