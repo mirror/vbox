@@ -1478,16 +1478,19 @@ class TestDriver(base.TestDriver):                                              
                     reporter.log('_teardownVBoxApi:   Returned from CoUninitialize.');
         else:
             try:
+                # XPCOM doesn't crash and burn like COM if you shut it down with interfaces and objects around.
+                # Also, it keeps a number of internal objects and interfaces around to do its job, so shutting
+                # it down before we go looking for dangling interfaces is more or less required.
                 from xpcom import _xpcom as _xpcom;             # pylint: disable=import-error
-                hrc   = _xpcom.NS_ShutdownXPCOM();
+                hrc   = _xpcom.DeinitCOM();
                 cIfs  = _xpcom._GetInterfaceCount();            # pylint: disable=W0212
                 cObjs = _xpcom._GetGatewayCount();              # pylint: disable=W0212
 
                 if cObjs == 0 and cIfs == 0:
-                    reporter.log('_teardownVBoxApi: NS_ShutdownXPCOM -> %s, nothing left behind.' % (hrc, ));
+                    reporter.log('_teardownVBoxApi: No XPCOM interfaces or objects active. (hrc=%#x)' % (hrc,));
                 else:
-                    reporter.log('_teardownVBoxApi: NS_ShutdownXPCOM -> %s, leaving %s objects and %s interfaces behind...'
-                                 % (hrc, cObjs, cIfs));
+                    reporter.log('_teardownVBoxApi: %s XPCOM objects and %s interfaces still around! (hrc=%#x)' 
+                                 % (cObjs, cIfs, hrc));
                     if hasattr(_xpcom, '_DumpInterfaces'):
                         try:    _xpcom._DumpInterfaces();       # pylint: disable=W0212
                         except: reporter.logXcpt('_teardownVBoxApi: _DumpInterfaces failed');
@@ -1502,7 +1505,6 @@ class TestDriver(base.TestDriver):                                              
                         cVBoxMgrs += 1;
                         aoObjsLeftBehind.append(oObj);
                 oObj = None;
-
             except:
                 reporter.logXcpt();
 
