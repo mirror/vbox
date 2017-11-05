@@ -1489,7 +1489,7 @@ class TestDriver(base.TestDriver):                                              
                 if cObjs == 0 and cIfs == 0:
                     reporter.log('_teardownVBoxApi: No XPCOM interfaces or objects active. (hrc=%#x)' % (hrc,));
                 else:
-                    reporter.log('_teardownVBoxApi: %s XPCOM objects and %s interfaces still around! (hrc=%#x)' 
+                    reporter.log('_teardownVBoxApi: %s XPCOM objects and %s interfaces still around! (hrc=%#x)'
                                  % (cObjs, cIfs, hrc));
                     if hasattr(_xpcom, '_DumpInterfaces'):
                         try:    _xpcom._DumpInterfaces();       # pylint: disable=W0212
