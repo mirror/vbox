@@ -3677,7 +3677,7 @@ static DECLCALLBACK(int) rtFsFatDir_OpenDir(void *pvThis, const char *pszSubDir,
     bool        fLong;
     FATDIRENTRY DirEntry;
     int rc = rtFsFatDirShrd_FindEntry(pShared, pszSubDir, &offEntryInDir, &fLong, &DirEntry);
-    LogFlow(("rtFsFatDir_OpenDir: FindEntry(,%s,,,) -> %Rrc fLong=%d offEntryInDir=%#RX32\n", rc, fLong, offEntryInDir));
+    LogFlow(("rtFsFatDir_OpenDir: FindEntry(,%s,,,) -> %Rrc fLong=%d offEntryInDir=%#RX32\n", pszSubDir, rc, fLong, offEntryInDir));
     if (RT_SUCCESS(rc))
     {
         switch (DirEntry.fAttrib & (FAT_ATTR_DIRECTORY | FAT_ATTR_VOLUME))
