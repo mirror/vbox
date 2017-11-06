@@ -2288,8 +2288,10 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
         /* Buffers are uncompressed. */
         AssertReturn(pSurface->cxBlock == 1 && pSurface->cyBlock == 1, VERR_INTERNAL_ERROR);
 
+#ifdef OLD_DRAW_PRIMITIVES
         /* Current type of the buffer. */
         const bool fVertex = pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER;
+#endif
 
         /* Caller already clipped pBox and buffers are 1-dimensional. */
         Assert(pBox->y == 0 && pBox->h == 1 && pBox->z == 0 && pBox->d == 1);
@@ -2319,10 +2321,15 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
 
         Log4(("Buffer first line:\n%.*Rhxd\n", cbWidth, pu8HostData));
 
+        /* Do not bother to copy the data to the D3D resource now. vmsvga3dDrawPrimitives will do that.
+         * The SVGA driver may use the same surface for both index and vertex data.
+         */
+
+        /* Make sure that vmsvga3dDrawPrimitives fetches the new data. */
         pMipLevel->fDirty = true;
         pSurface->fDirty = true;
 
-        /// @todo Do not bother to copy the data to the D3D resource. DrawPrimitives should do that anyway.
+#ifdef OLD_DRAW_PRIMITIVES
         /* Also copy the data to the current D3D buffer object. */
         uint8_t *pu8Buffer = NULL;
         /** @todo lock only as much as we really need */
@@ -2343,6 +2350,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
         else
             hr = pSurface->u.pIndexBuffer->Unlock();
         AssertMsg(hr == D3D_OK, ("Unlock %s failed with %x\n", fVertex ? "vertex" : "index", hr));
+#endif
     }
     else
     {
@@ -5064,7 +5072,7 @@ int vmsvga3dCommandClear(PVGASTATE pThis, uint32_t cid, SVGA3dClearFlag clearFla
 }
 
 /* Convert VMWare vertex declaration to its D3D equivalent. */
-static int vmsvga3dVertexDecl2D3D(SVGA3dVertexArrayIdentity &identity, D3DVERTEXELEMENT9 *pVertexElement)
+static int vmsvga3dVertexDecl2D3D(const SVGA3dVertexArrayIdentity &identity, D3DVERTEXELEMENT9 *pVertexElement)
 {
     /* usage, method and type are identical; make sure. */
     AssertCompile(SVGA3D_DECLTYPE_FLOAT1 == D3DDECLTYPE_FLOAT1);
@@ -5111,6 +5119,8 @@ static int vmsvga3dPrimitiveType2D3D(SVGA3dPrimitiveType PrimitiveType, D3DPRIMI
     }
     return VINF_SUCCESS;
 }
+
+#ifdef OLD_DRAW_PRIMITIVES /* Old vmsvga3dDrawPrimitives */
 
 static int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t numVertexDecls, SVGA3dVertexDecl *pVertexDecl, uint32_t idStream, D3DVERTEXELEMENT9 *pVertexElement)
 {
@@ -5532,6 +5542,429 @@ internal_error:
 
     return rc;
 }
+
+#else /* New vmsvga3dDrawPrimitives */
+
+static int vmsvga3dDrawPrimitivesSyncVertexBuffer(PVMSVGA3DCONTEXT pContext,
+                                                  PVMSVGA3DSURFACE pVertexSurface)
+{
+    HRESULT hr;
+    if (   pVertexSurface->u.pSurface
+        && pVertexSurface->enmD3DResType != VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER)
+    {
+        /* The buffer object is not an vertex one. Recreate the D3D resource. */
+        Assert(pVertexSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_INDEX_BUFFER);
+        D3D_RELEASE(pVertexSurface->u.pIndexBuffer);
+        pVertexSurface->enmD3DResType = VMSVGA3D_D3DRESTYPE_NONE;
+
+        LogFunc(("index -> vertex buffer sid=%x\n", pVertexSurface->id));
+    }
+
+    bool fSync = pVertexSurface->fDirty;
+    if (!pVertexSurface->u.pVertexBuffer)
+    {
+        LogFunc(("Create vertex buffer fDirty=%d\n", pVertexSurface->fDirty));
+
+        const DWORD Usage = D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY; /* possible severe performance penalty otherwise (according to d3d debug output */
+        hr = pContext->pDevice->CreateVertexBuffer(pVertexSurface->pMipmapLevels[0].cbSurface,
+                                                   Usage,
+                                                   0, /* non-FVF */
+                                                   D3DPOOL_DEFAULT,
+                                                   &pVertexSurface->u.pVertexBuffer,
+                                                   NULL);
+        AssertMsgReturn(hr == D3D_OK, ("CreateVertexBuffer failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+        pVertexSurface->enmD3DResType = VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER;
+        pVertexSurface->idAssociatedContext = pContext->id;
+        pVertexSurface->surfaceFlags |= SVGA3D_SURFACE_HINT_VERTEXBUFFER;
+        fSync = true;
+    }
+
+    if (fSync)
+    {
+        LogFunc(("sync vertex buffer\n"));
+        Assert(pVertexSurface->u.pVertexBuffer);
+
+        void *pvData;
+        hr = pVertexSurface->u.pVertexBuffer->Lock(0, 0, &pvData, D3DLOCK_DISCARD);
+        AssertMsgReturn(hr == D3D_OK, ("Lock vertex failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+        memcpy(pvData, pVertexSurface->pMipmapLevels[0].pSurfaceData, pVertexSurface->pMipmapLevels[0].cbSurface);
+
+        hr = pVertexSurface->u.pVertexBuffer->Unlock();
+        AssertMsgReturn(hr == D3D_OK, ("Unlock vertex failed with %x\n", hr), VERR_INTERNAL_ERROR);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+static int vmsvga3dDrawPrimitivesSyncIndexBuffer(PVMSVGA3DCONTEXT pContext,
+                                                 PVMSVGA3DSURFACE pIndexSurface,
+                                                 uint32_t indexWidth)
+{
+    HRESULT hr;
+    if (   pIndexSurface->u.pSurface
+        && pIndexSurface->enmD3DResType != VMSVGA3D_D3DRESTYPE_INDEX_BUFFER)
+    {
+        /* The buffer object is not an index one. Must recreate the D3D resource. */
+        Assert(pIndexSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER);
+        D3D_RELEASE(pIndexSurface->u.pVertexBuffer);
+        pIndexSurface->enmD3DResType = VMSVGA3D_D3DRESTYPE_NONE;
+
+        LogFunc(("vertex -> index buffer sid=%x\n", pIndexSurface->id));
+    }
+
+    bool fSync = pIndexSurface->fDirty;
+    if (!pIndexSurface->u.pIndexBuffer)
+    {
+        LogFunc(("Create index buffer fDirty=%d\n", pIndexSurface->fDirty));
+
+        const DWORD Usage = D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY; /* possible severe performance penalty otherwise (according to d3d debug output */
+        const D3DFORMAT Format = (indexWidth == sizeof(uint16_t)) ? D3DFMT_INDEX16 : D3DFMT_INDEX32;
+        hr = pContext->pDevice->CreateIndexBuffer(pIndexSurface->pMipmapLevels[0].cbSurface,
+                                                  Usage,
+                                                  Format,
+                                                  D3DPOOL_DEFAULT,
+                                                  &pIndexSurface->u.pIndexBuffer,
+                                                  NULL);
+        AssertMsgReturn(hr == D3D_OK, ("CreateIndexBuffer failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+        pIndexSurface->enmD3DResType = VMSVGA3D_D3DRESTYPE_INDEX_BUFFER;
+        pIndexSurface->idAssociatedContext = pContext->id;
+        pIndexSurface->surfaceFlags |= SVGA3D_SURFACE_HINT_INDEXBUFFER;
+        fSync = true;
+    }
+
+    if (fSync)
+    {
+        LogFunc(("sync index buffer\n"));
+        Assert(pIndexSurface->u.pIndexBuffer);
+
+        void *pvData;
+        hr = pIndexSurface->u.pIndexBuffer->Lock(0, 0, &pvData, D3DLOCK_DISCARD);
+        AssertMsgReturn(hr == D3D_OK, ("Lock index failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+        memcpy(pvData, pIndexSurface->pMipmapLevels[0].pSurfaceData, pIndexSurface->pMipmapLevels[0].cbSurface);
+
+        hr = pIndexSurface->u.pIndexBuffer->Unlock();
+        AssertMsgReturn(hr == D3D_OK, ("Unlock index failed with %x\n", hr), VERR_INTERNAL_ERROR);
+    }
+
+    return VINF_SUCCESS;
+}
+
+static int vmsvga3dDrawPrimitivesProcessVertexDecls(const uint32_t numVertexDecls,
+                                                    const SVGA3dVertexDecl *pVertexDecl,
+                                                    const uint32_t idStream,
+                                                    const uint32_t uVertexMinOffset,
+                                                    const uint32_t uVertexMaxOffset,
+                                                    D3DVERTEXELEMENT9 *pVertexElement)
+{
+    RT_NOREF(uVertexMaxOffset); /* Logging only. */
+    Assert(numVertexDecls);
+
+    /* Create a vertex declaration array */
+    for (uint32_t iVertex = 0; iVertex < numVertexDecls; ++iVertex)
+    {
+        LogFunc(("vertex %d type=%s (%d) method=%s (%d) usage=%s (%d) usageIndex=%d stride=%d offset=%d (%d min=%d max=%d)\n",
+                 iVertex,
+                 vmsvgaDeclType2String(pVertexDecl[iVertex].identity.type), pVertexDecl[iVertex].identity.type,
+                 vmsvgaDeclMethod2String(pVertexDecl[iVertex].identity.method), pVertexDecl[iVertex].identity.method,
+                 vmsvgaDeclUsage2String(pVertexDecl[iVertex].identity.usage), pVertexDecl[iVertex].identity.usage,
+                 pVertexDecl[iVertex].identity.usageIndex,
+                 pVertexDecl[iVertex].array.stride,
+                 pVertexDecl[iVertex].array.offset - uVertexMinOffset,
+                 pVertexDecl[iVertex].array.offset,
+                 uVertexMinOffset, uVertexMaxOffset));
+
+        int rc = vmsvga3dVertexDecl2D3D(pVertexDecl[iVertex].identity, &pVertexElement[iVertex]);
+        AssertRCReturn(rc, rc);
+
+        pVertexElement[iVertex].Stream = idStream;
+        pVertexElement[iVertex].Offset = pVertexDecl[iVertex].array.offset - uVertexMinOffset;
+
+#ifdef LOG_ENABLED
+        if (pVertexDecl[iVertex].array.stride == 0)
+            LogFunc(("stride == 0! Can be valid\n"));
+
+        if (pVertexElement[iVertex].Offset >= pVertexDecl[0].array.stride)
+            LogFunc(("WARNING: offset > stride!!\n"));
+#endif
+    }
+
+    return VINF_SUCCESS;
+}
+
+int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecls, SVGA3dVertexDecl *pVertexDecl,
+                           uint32_t numRanges, SVGA3dPrimitiveRange *pRange,
+                           uint32_t cVertexDivisor, SVGA3dVertexDivisor *pVertexDivisor)
+{
+    static const D3DVERTEXELEMENT9 sVertexEnd = D3DDECL_END();
+
+    PVMSVGA3DSTATE pState = pThis->svga.p3dState;
+    AssertReturn(pState, VERR_INTERNAL_ERROR);
+
+    PVMSVGA3DCONTEXT pContext;
+    int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
+    AssertRCReturn(rc, rc);
+
+    HRESULT hr;
+    
+    /* SVGA driver may use the same surface for both index and vertex data. So we can not clear fDirty flag,
+     * after updating a vertex buffer for example, because the same surface might be used for index buffer later.
+     * So keep pointers to all used surfaces in the following two arrays and clear fDirty flag at the end.
+     */
+    PVMSVGA3DSURFACE aVertexSurfaces[SVGA3D_MAX_VERTEX_ARRAYS];
+    PVMSVGA3DSURFACE aIndexSurfaces[SVGA3D_MAX_DRAW_PRIMITIVE_RANGES];
+    RT_ZERO(aVertexSurfaces);
+    RT_ZERO(aIndexSurfaces);
+
+    LogFunc(("cid=%x numVertexDecls=%d numRanges=%d, cVertexDivisor=%d\n", cid, numVertexDecls, numRanges, cVertexDivisor));
+
+    AssertReturn(numVertexDecls && numVertexDecls <= SVGA3D_MAX_VERTEX_ARRAYS, VERR_INVALID_PARAMETER);
+    AssertReturn(numRanges && numRanges <= SVGA3D_MAX_DRAW_PRIMITIVE_RANGES, VERR_INVALID_PARAMETER);
+    AssertReturn(!cVertexDivisor || cVertexDivisor == numVertexDecls, VERR_INVALID_PARAMETER);
+
+    /*
+     * Process all vertex declarations. Each vertex buffer surface is represented by one stream source id.
+     */
+    D3DVERTEXELEMENT9 aVertexElements[SVGA3D_MAX_VERTEX_ARRAYS + 1];
+
+    uint32_t iCurrentVertex   = 0;
+    uint32_t iCurrentStreamId = 0;
+    while (iCurrentVertex < numVertexDecls)
+    {
+        const uint32_t sidVertex = pVertexDecl[iCurrentVertex].array.surfaceId;
+
+        PVMSVGA3DSURFACE pVertexSurface;
+        rc = vmsvga3dSurfaceFromSid(pState, sidVertex, &pVertexSurface);
+        AssertRCBreak(rc);
+
+        rc = vmsvga3dDrawPrimitivesSyncVertexBuffer(pContext, pVertexSurface);
+        AssertRCBreak(rc);
+
+        uint32_t uVertexMinOffset = UINT32_MAX;
+        uint32_t uVertexMaxOffset = 0;
+
+        uint32_t iVertex;
+        for (iVertex = iCurrentVertex; iVertex < numVertexDecls; ++iVertex)
+        {
+            /* Remember, so we can mark it as not dirty later. */
+            aVertexSurfaces[iVertex] = pVertexSurface;
+
+            /* New surface id -> new stream id. */
+            if (pVertexDecl[iVertex].array.surfaceId != sidVertex)
+                break;
+
+            const uint32_t uNewVertexMinOffset = RT_MIN(uVertexMinOffset, pVertexDecl[iVertex].array.offset);
+            const uint32_t uNewVertexMaxOffset = RT_MAX(uVertexMaxOffset, pVertexDecl[iVertex].array.offset);
+
+            /* We must put vertex declarations that start at a different element in another stream as d3d only handles offsets < stride. */
+            if (uNewVertexMaxOffset - uNewVertexMinOffset >= pVertexDecl[iCurrentVertex].array.stride)
+                break;
+
+            uVertexMinOffset = uNewVertexMinOffset;
+            uVertexMaxOffset = uNewVertexMaxOffset;
+        }
+
+        rc = vmsvga3dDrawPrimitivesProcessVertexDecls(iVertex - iCurrentVertex,
+                                                      &pVertexDecl[iCurrentVertex],
+                                                      iCurrentStreamId,
+                                                      uVertexMinOffset,
+                                                      uVertexMaxOffset,
+                                                      &aVertexElements[iCurrentVertex]);
+        AssertRCBreak(rc);
+
+        const uint32_t strideVertex = pVertexDecl[iCurrentVertex].array.stride;
+
+        LogFunc(("SetStreamSource vertex sid=%x stream %d min offset=%d stride=%d\n",
+                 pVertexSurface->id, iCurrentStreamId, uVertexMinOffset, strideVertex));
+
+        hr = pContext->pDevice->SetStreamSource(iCurrentStreamId,
+                                                pVertexSurface->u.pVertexBuffer,
+                                                uVertexMinOffset,
+                                                strideVertex);
+        AssertMsgBreakStmt(hr == D3D_OK, ("SetStreamSource failed with %x\n", hr), rc = VERR_INTERNAL_ERROR);
+
+        if (cVertexDivisor)
+        {
+            LogFunc(("SetStreamSourceFreq[%d]=%x\n", iCurrentStreamId, pVertexDivisor[iCurrentStreamId].value));
+            HRESULT hr2 = pContext->pDevice->SetStreamSourceFreq(iCurrentStreamId,
+                                                                 pVertexDivisor[iCurrentStreamId].value);
+            Assert(SUCCEEDED(hr2)); RT_NOREF(hr2);
+        }
+
+        iCurrentVertex = iVertex;
+        ++iCurrentStreamId;
+    }
+
+    AssertRCReturn(rc, rc);
+
+    /* Mark the end. */
+    memcpy(&aVertexElements[numVertexDecls], &sVertexEnd, sizeof(sVertexEnd));
+
+    /* Create and set the vertex declaration. */
+    IDirect3DVertexDeclaration9 *pVertexDeclD3D = NULL;
+    hr = pContext->pDevice->CreateVertexDeclaration(&aVertexElements[0], &pVertexDeclD3D);
+    AssertMsgReturn(hr == D3D_OK, ("CreateVertexDeclaration failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+    hr = pContext->pDevice->SetVertexDeclaration(pVertexDeclD3D);
+    AssertMsgReturnStmt(hr == D3D_OK, ("SetVertexDeclaration failed with %x\n", hr),
+                        D3D_RELEASE(pVertexDeclD3D), VERR_INTERNAL_ERROR);
+
+    /* Begin a scene before rendering anything. */
+    hr = pContext->pDevice->BeginScene();
+    AssertMsgReturnStmt(hr == D3D_OK, ("BeginScene failed with %x\n", hr),
+                        D3D_RELEASE(pVertexDeclD3D), VERR_INTERNAL_ERROR);
+
+    /* Now draw the primitives. */
+    for (uint32_t iPrimitive = 0; iPrimitive < numRanges; ++iPrimitive)
+    {
+        Log(("Primitive %d: type %s\n", iPrimitive, vmsvga3dPrimitiveType2String(pRange[iPrimitive].primType)));
+
+        const uint32_t sidIndex = pRange[iPrimitive].indexArray.surfaceId;
+        PVMSVGA3DSURFACE pIndexSurface = NULL;
+
+        D3DPRIMITIVETYPE PrimitiveTypeD3D;
+        rc = vmsvga3dPrimitiveType2D3D(pRange[iPrimitive].primType, &PrimitiveTypeD3D);
+        AssertRCBreak(rc);
+
+        /* Triangle strips or fans with just one primitive don't make much sense and are identical to triangle lists.
+         * Workaround for NVidia driver crash when encountering some of these.
+         */
+        if (    pRange[iPrimitive].primitiveCount == 1
+            &&  (   PrimitiveTypeD3D == D3DPT_TRIANGLESTRIP
+                 || PrimitiveTypeD3D == D3DPT_TRIANGLEFAN))
+            PrimitiveTypeD3D = D3DPT_TRIANGLELIST;
+
+        if (sidIndex != SVGA3D_INVALID_ID)
+        {
+            AssertMsg(pRange[iPrimitive].indexWidth == sizeof(uint32_t) || pRange[iPrimitive].indexWidth == sizeof(uint16_t),
+                      ("Unsupported primitive width %d\n", pRange[iPrimitive].indexWidth));
+
+            rc = vmsvga3dSurfaceFromSid(pState, sidIndex, &pIndexSurface);
+            AssertRCBreak(rc);
+
+            aIndexSurfaces[iPrimitive] = pIndexSurface;
+
+            Log(("vmsvga3dDrawPrimitives: index sid=%x\n", sidIndex));
+
+            rc = vmsvga3dDrawPrimitivesSyncIndexBuffer(pContext, pIndexSurface, pRange[iPrimitive].indexWidth);
+            AssertRCBreak(rc);
+
+            hr = pContext->pDevice->SetIndices(pIndexSurface->u.pIndexBuffer);
+            AssertMsg(hr == D3D_OK, ("SetIndices vertex failed with %x\n", hr));
+        }
+        else
+        {
+            hr = pContext->pDevice->SetIndices(NULL);
+            AssertMsg(hr == D3D_OK, ("SetIndices vertex (NULL) failed with %x\n", hr));
+        }
+
+        const uint32_t strideVertex = pVertexDecl[0].array.stride;
+
+        if (!pIndexSurface)
+        {
+            /* Render without an index buffer */
+            Log(("DrawPrimitive %x primitivecount=%d index index bias=%d stride=%d\n",
+                 PrimitiveTypeD3D, pRange[iPrimitive].primitiveCount,  pRange[iPrimitive].indexBias, strideVertex));
+
+            hr = pContext->pDevice->DrawPrimitive(PrimitiveTypeD3D,
+                                                  pRange[iPrimitive].indexBias,
+                                                  pRange[iPrimitive].primitiveCount);
+            AssertMsgBreakStmt(hr == D3D_OK, ("DrawPrimitive failed with %x\n", hr), rc = VERR_INTERNAL_ERROR);
+        }
+        else
+        {
+            Assert(pRange[iPrimitive].indexBias >= 0);  /** @todo */
+
+            UINT numVertices;
+            if (pVertexDecl[0].rangeHint.last)
+            {
+                /* Both SVGA3dArrayRangeHint definition and the SVGA driver code imply that 'last' is exclusive,
+                 * hence compute the difference.
+                 */
+                numVertices = pVertexDecl[0].rangeHint.last - pVertexDecl[0].rangeHint.first;
+            }
+            else
+            {
+                /* Range hint is not provided. */
+                PVMSVGA3DSURFACE pVertexSurface = aVertexSurfaces[0];
+                numVertices =   pVertexSurface->pMipmapLevels[0].cbSurface / strideVertex
+                              - pVertexDecl[0].array.offset / strideVertex
+                              - pVertexDecl[0].rangeHint.first
+                              - pRange[iPrimitive].indexBias;
+            }
+
+            /* Render with an index buffer */
+            Log(("DrawIndexedPrimitive %x startindex=%d numVertices=%d, primitivecount=%d index format=%s index bias=%d stride=%d\n",
+                 PrimitiveTypeD3D, pVertexDecl[0].rangeHint.first,  numVertices, pRange[iPrimitive].primitiveCount,
+                 (pRange[iPrimitive].indexWidth == sizeof(uint16_t)) ? "D3DFMT_INDEX16" : "D3DFMT_INDEX32",
+                 pRange[iPrimitive].indexBias, strideVertex));
+
+            hr = pContext->pDevice->DrawIndexedPrimitive(PrimitiveTypeD3D,
+                                                         pRange[iPrimitive].indexBias,      /* BaseVertexIndex */
+                                                         0,                                 /* MinVertexIndex */
+                                                         numVertices,
+                                                         pRange[iPrimitive].indexArray.offset / pRange[iPrimitive].indexWidth,    /* StartIndex */
+                                                         pRange[iPrimitive].primitiveCount);
+            AssertMsgBreakStmt(hr == D3D_OK, ("DrawIndexedPrimitive failed with %x\n", hr), rc = VERR_INTERNAL_ERROR);
+        }
+    }
+
+    /* Release vertex declaration, end the scene and do some cleanup regardless of the rc. */
+    D3D_RELEASE(pVertexDeclD3D);
+
+    hr = pContext->pDevice->EndScene();
+    AssertMsgReturn(hr == D3D_OK, ("EndScene failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+    /* Cleanup. */
+    uint32_t i;
+    /* Clear streams above 1 as they might accidentally be reused in the future. */
+    for (i = 1; i < iCurrentStreamId; ++i)
+    {
+        LogFunc(("clear stream %d\n", i));
+        HRESULT hr2 = pContext->pDevice->SetStreamSource(i, NULL, 0, 0);
+        AssertMsg(hr2 == D3D_OK, ("SetStreamSource(%d, NULL) failed with %x\n", i, hr2)); RT_NOREF(hr2);
+    }
+
+    /* "When you are finished rendering the instance data, be sure to reset the vertex stream frequency back..." */
+    for (i = 0; i < cVertexDivisor; ++i)
+    {
+        LogFunc(("reset stream freq %d\n", i));
+        HRESULT hr2 = pContext->pDevice->SetStreamSourceFreq(i, 1);
+        AssertMsg(hr2 == D3D_OK, ("SetStreamSourceFreq(%d, 1) failed with %x\n", i, hr2)); RT_NOREF(hr2);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        for (i = 0; i < numVertexDecls; ++i)
+        {
+            if (aVertexSurfaces[i])
+            {
+                aVertexSurfaces[i]->pMipmapLevels[0].fDirty = false;
+                aVertexSurfaces[i]->fDirty = false;
+            }
+        }
+
+        for (i = 0; i < numRanges; ++i)
+        {
+            if (aIndexSurfaces[i])
+            {
+                aIndexSurfaces[i]->pMipmapLevels[0].fDirty = false;
+                aIndexSurfaces[i]->fDirty = false;
+            }
+        }
+
+        /* Make sure we can track drawing usage of active render targets and textures. */
+        vmsvga3dContextTrackUsage(pThis, pContext);
+    }
+
+    return rc;
+}
+
+#endif /* New vmsvga3dDrawPrimitives */
 
 int vmsvga3dSetScissorRect(PVGASTATE pThis, uint32_t cid, SVGA3dRect *pRect)
 {
