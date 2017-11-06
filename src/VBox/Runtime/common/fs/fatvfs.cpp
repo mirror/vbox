@@ -3666,9 +3666,38 @@ static DECLCALLBACK(int) rtFsFatDir_OpenFile(void *pvThis, const char *pszFilena
  */
 static DECLCALLBACK(int) rtFsFatDir_OpenDir(void *pvThis, const char *pszSubDir, uint32_t fFlags, PRTVFSDIR phVfsDir)
 {
-    RT_NOREF(pvThis, pszSubDir, fFlags, phVfsDir);
-RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSubDir);
-    return VERR_NOT_IMPLEMENTED;
+    PRTFSFATDIR     pThis   = (PRTFSFATDIR)pvThis;
+    PRTFSFATDIRSHRD pShared = pThis->pShared;
+    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+
+    /*
+     * Try open directory.
+     */
+    uint32_t    offEntryInDir;
+    bool        fLong;
+    FATDIRENTRY DirEntry;
+    int rc = rtFsFatDirShrd_FindEntry(pShared, pszSubDir, &offEntryInDir, &fLong, &DirEntry);
+    LogFlow(("rtFsFatDir_OpenDir: FindEntry(,%s,,,) -> %Rrc fLong=%d offEntryInDir=%#RX32\n", rc, fLong, offEntryInDir));
+    if (RT_SUCCESS(rc))
+    {
+        switch (DirEntry.fAttrib & (FAT_ATTR_DIRECTORY | FAT_ATTR_VOLUME))
+        {
+            case FAT_ATTR_DIRECTORY:
+                rc = rtFsFatDir_New(pShared->Core.pVol, pShared, &DirEntry, offEntryInDir,
+                                    RTFSFAT_GET_CLUSTER(&DirEntry, pShared->Core.pVol), UINT64_MAX /*offDisk*/,
+                                    DirEntry.cbFile, phVfsDir);
+                break;
+
+            case 0:
+                rc = VERR_NOT_A_DIRECTORY;
+                break;
+
+            default:
+                rc = VERR_PATH_NOT_FOUND;
+                break;
+        }
+    }
+    return rc;
 }
 
 
@@ -3678,7 +3707,6 @@ RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSubDir);
 static DECLCALLBACK(int) rtFsFatDir_CreateDir(void *pvThis, const char *pszSubDir, RTFMODE fMode, PRTVFSDIR phVfsDir)
 {
     RT_NOREF(pvThis, pszSubDir, fMode, phVfsDir);
-RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSubDir);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -3689,7 +3717,6 @@ RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSubDir);
 static DECLCALLBACK(int) rtFsFatDir_OpenSymlink(void *pvThis, const char *pszSymlink, PRTVFSSYMLINK phVfsSymlink)
 {
     RT_NOREF(pvThis, pszSymlink, phVfsSymlink);
-RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSymlink);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -3701,7 +3728,6 @@ static DECLCALLBACK(int) rtFsFatDir_CreateSymlink(void *pvThis, const char *pszS
                                                   RTSYMLINKTYPE enmType, PRTVFSSYMLINK phVfsSymlink)
 {
     RT_NOREF(pvThis, pszSymlink, pszTarget, enmType, phVfsSymlink);
-RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSymlink);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -3743,7 +3769,6 @@ static DECLCALLBACK(int) rtFsFatDir_QueryEntryInfo(void *pvThis, const char *psz
 static DECLCALLBACK(int) rtFsFatDir_UnlinkEntry(void *pvThis, const char *pszEntry, RTFMODE fType)
 {
     RT_NOREF(pvThis, pszEntry, fType);
-RTAssertMsg2("%s: %s\n", __FUNCTION__, pszEntry);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -3754,7 +3779,6 @@ RTAssertMsg2("%s: %s\n", __FUNCTION__, pszEntry);
 static DECLCALLBACK(int) rtFsFatDir_RenameEntry(void *pvThis, const char *pszEntry, RTFMODE fType, const char *pszNewName)
 {
     RT_NOREF(pvThis, pszEntry, fType, pszNewName);
-RTAssertMsg2("%s: %s\n", __FUNCTION__, pszEntry);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -3764,9 +3788,148 @@ RTAssertMsg2("%s: %s\n", __FUNCTION__, pszEntry);
  */
 static DECLCALLBACK(int) rtFsFatDir_RewindDir(void *pvThis)
 {
-    RT_NOREF(pvThis);
-RTAssertMsg2("%s\n", __FUNCTION__);
-    return VERR_NOT_IMPLEMENTED;
+    PRTFSFATDIR pThis = (PRTFSFATDIR)pvThis;
+    pThis->offDir = 0;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Calculates the UTF-8 length of the name in the given directory entry.
+ *
+ * @returns The length in characters (bytes), excluding terminator.
+ * @param   pShared     The shared directory structure (for codepage).
+ * @param   pEntry      The directory entry.
+ */
+static size_t rtFsFatDir_CalcUtf8LengthForDirEntry(PRTFSFATDIRSHRD pShared, PCFATDIRENTRY pEntry)
+{
+    RT_NOREF(pShared);
+    PCRTUTF16 g_pawcMap = &g_awchFatCp437Chars[0];
+
+    /* The base name (this won't work with DBCS, but that's not a concern at the moment). */
+    size_t offSrc = 8;
+    while (offSrc > 1 && RTUniCpIsSpace(g_pawcMap[pEntry->achName[offSrc - 1]]))
+        offSrc--;
+
+    size_t cchRet = 0;
+    while (offSrc-- > 0)
+        cchRet += RTStrCpSize(g_pawcMap[pEntry->achName[offSrc]]);
+
+    /* Extension. */
+    offSrc = 11;
+    while (offSrc > 8 && RTUniCpIsSpace(g_pawcMap[pEntry->achName[offSrc - 1]]))
+        offSrc--;
+    if (offSrc > 8)
+    {
+        cchRet += 1; /* '.' */
+        while (offSrc-- > 8)
+            cchRet += RTStrCpSize(g_pawcMap[pEntry->achName[offSrc]]);
+    }
+
+    return cchRet;
+}
+
+
+/**
+ * Copies the name from the directory entry into a UTF-16 buffer.
+ *
+ * @returns Number of UTF-16 items written (excluding terminator).
+ * @param   pShared     The shared directory structure (for codepage).
+ * @param   pEntry      The directory entry.
+ * @param   pwszDst     The destination buffer.
+ * @param   cwcDst      The destination buffer size.
+ */
+static uint16_t rtFsFatDir_CopyDirEntryToUtf16(PRTFSFATDIRSHRD pShared, PCFATDIRENTRY pEntry, PRTUTF16 pwszDst, size_t cwcDst)
+{
+    Assert(cwcDst > 0);
+
+    RT_NOREF(pShared);
+    PCRTUTF16 g_pawcMap = &g_awchFatCp437Chars[0];
+
+    /* The base name (this won't work with DBCS, but that's not a concern at the moment). */
+    size_t cchSrc = 8;
+    while (cchSrc > 1 && RTUniCpIsSpace(g_pawcMap[pEntry->achName[cchSrc - 1]]))
+        cchSrc--;
+
+    size_t offDst = 0;
+    for (size_t offSrc = 0; offSrc < cchSrc; offSrc++)
+    {
+        AssertReturnStmt(offDst + 1 < cwcDst, pwszDst[cwcDst - 1] = '\0', (uint16_t)cwcDst);
+        pwszDst[offDst++] = g_pawcMap[pEntry->achName[offSrc]];
+    }
+
+    /* Extension. */
+    cchSrc = 3;
+    while (cchSrc > 0 && RTUniCpIsSpace(g_pawcMap[pEntry->achName[8 + cchSrc - 1]]))
+        cchSrc--;
+    if (cchSrc > 0)
+    {
+        AssertReturnStmt(offDst + 1 < cwcDst, pwszDst[cwcDst - 1] = '\0', (uint16_t)cwcDst);
+        pwszDst[offDst++] = '.';
+
+        for (size_t offSrc = 0; offSrc < cchSrc; offSrc++)
+        {
+            AssertReturnStmt(offDst + 1 < cwcDst, pwszDst[cwcDst - 1] = '\0', (uint16_t)cwcDst);
+            pwszDst[offDst++] = g_pawcMap[pEntry->achName[8 + offSrc]];
+        }
+    }
+
+    pwszDst[offDst] = '\0';
+    return (uint16_t)offDst;
+}
+
+
+/**
+ * Copies the name from the directory entry into a UTF-8 buffer.
+ *
+ * @returns Number of UTF-16 items written (excluding terminator).
+ * @param   pShared     The shared directory structure (for codepage).
+ * @param   pEntry      The directory entry.
+ * @param   pszDst      The destination buffer.
+ * @param   cbDst       The destination buffer size.
+ */
+static uint16_t rtFsFatDir_CopyDirEntryToUtf8(PRTFSFATDIRSHRD pShared, PCFATDIRENTRY pEntry, char *pszDst, size_t cbDst)
+{
+    Assert(cbDst > 0);
+
+    RT_NOREF(pShared);
+    PCRTUTF16 g_pawcMap = &g_awchFatCp437Chars[0];
+
+    /* The base name (this won't work with DBCS, but that's not a concern at the moment). */
+    size_t cchSrc = 8;
+    while (cchSrc > 1 && RTUniCpIsSpace(g_pawcMap[pEntry->achName[cchSrc - 1]]))
+        cchSrc--;
+
+    char * const pszDstEnd = pszDst + cbDst;
+    char *pszCurDst = pszDst;
+    for (size_t offSrc = 0; offSrc < cchSrc; offSrc++)
+    {
+        RTUNICP const uc = g_pawcMap[pEntry->achName[offSrc]];
+        size_t        cbCp = RTStrCpSize(uc);
+        AssertReturnStmt(cbCp < (size_t)(pszDstEnd - pszCurDst), *pszCurDst = '\0', (uint16_t)(pszDstEnd - pszCurDst));
+        pszCurDst = RTStrPutCp(pszCurDst, uc);
+    }
+
+    /* Extension. */
+    cchSrc = 3;
+    while (cchSrc > 0 && RTUniCpIsSpace(g_pawcMap[pEntry->achName[8 + cchSrc - 1]]))
+        cchSrc--;
+    if (cchSrc > 0)
+    {
+        AssertReturnStmt(1U < (size_t)(pszDstEnd - pszCurDst), *pszCurDst = '\0', (uint16_t)(pszDstEnd - pszCurDst));
+        *pszCurDst++ = '.';
+
+        for (size_t offSrc = 0; offSrc < cchSrc; offSrc++)
+        {
+            RTUNICP const uc = g_pawcMap[pEntry->achName[8 + offSrc]];
+            size_t        cbCp = RTStrCpSize(uc);
+            AssertReturnStmt(cbCp < (size_t)(pszDstEnd - pszCurDst), *pszCurDst = '\0', (uint16_t)(pszDstEnd - pszCurDst));
+            pszCurDst = RTStrPutCp(pszCurDst, uc);
+        }
+    }
+
+    *pszCurDst = '\0';
+    return (uint16_t)(pszDstEnd - pszCurDst);
 }
 
 
@@ -3776,9 +3939,187 @@ RTAssertMsg2("%s\n", __FUNCTION__);
 static DECLCALLBACK(int) rtFsFatDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry,
                                             RTFSOBJATTRADD enmAddAttr)
 {
-    RT_NOREF(pvThis, pDirEntry, pcbDirEntry, enmAddAttr);
-RTAssertMsg2("%s\n", __FUNCTION__);
-    return VERR_NOT_IMPLEMENTED;
+    PRTFSFATDIR     pThis   = (PRTFSFATDIR)pvThis;
+    PRTFSFATDIRSHRD pShared = pThis->pShared;
+
+    /*
+     * Fake '.' and '..' entries.
+     */
+    if (pThis->offDir < 2)
+    {
+        size_t cbNeeded = RT_OFFSETOF(RTDIRENTRYEX, szName[pThis->offDir + 2]);
+        if (cbNeeded < *pcbDirEntry)
+            *pcbDirEntry = cbNeeded;
+        else
+        {
+            *pcbDirEntry = cbNeeded;
+            return VERR_BUFFER_OVERFLOW;
+        }
+
+        int rc;
+        if (   pThis->offDir == 0
+            || pShared->Core.pParentDir == NULL)
+            rc = rtFsFatObj_QueryInfo(&pShared->Core, &pDirEntry->Info, enmAddAttr);
+        else
+            rc = rtFsFatObj_QueryInfo(&pShared->Core.pParentDir->Core, &pDirEntry->Info, enmAddAttr);
+
+        pDirEntry->cwcShortName = 0;
+        pDirEntry->wszShortName[0] = '\0';
+        pDirEntry->szName[0] = '.';
+        pDirEntry->szName[1] = '.';
+        pDirEntry->szName[++pThis->offDir] = '\0';
+        pDirEntry->cbName = pThis->offDir;
+        return rc;
+    }
+
+    /*
+     * Scan the directory buffer by buffer.
+     */
+    RTUTF16             wszName[260+1];
+    uint8_t             bChecksum       = UINT8_MAX;
+    uint8_t             idNextSlot      = UINT8_MAX;
+    size_t              cwcName         = 0;
+    uint32_t            offEntryInDir   = pThis->offDir - 2;
+    uint32_t const      cbDir           = pShared->Core.cbObject;
+    Assert(RT_ALIGN_32(cbDir, sizeof(*pDirEntry)) == cbDir);
+    AssertCompile(FATDIRNAMESLOT_MAX_SLOTS * FATDIRNAMESLOT_CHARS_PER_SLOT < RT_ELEMENTS(wszName));
+    wszName[260] = '\0';
+
+    while (offEntryInDir < cbDir)
+    {
+        /* Get chunk of entries starting at offEntryInDir. */
+        uint32_t            uBufferLock = UINT32_MAX;
+        uint32_t            cEntries    = 0;
+        PCFATDIRENTRYUNION  paEntries   = NULL;
+        int rc = rtFsFatDirShrd_GetEntriesAt(pShared, offEntryInDir, &paEntries, &cEntries, &uBufferLock);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /*
+         * Now work thru each of the entries.
+         */
+        for (uint32_t iEntry = 0; iEntry < cEntries; iEntry++, offEntryInDir += sizeof(FATDIRENTRY))
+        {
+            switch ((uint8_t)paEntries[iEntry].Entry.achName[0])
+            {
+                default:
+                    break;
+                case FATDIRENTRY_CH0_DELETED:
+                    cwcName = 0;
+                    continue;
+                case FATDIRENTRY_CH0_END_OF_DIR:
+                    if (pShared->Core.pVol->enmBpbVersion >= RTFSFATBPBVER_DOS_2_0)
+                    {
+                        pThis->offDir = cbDir + 2;
+                        rtFsFatDirShrd_ReleaseBufferAfterReading(pShared, uBufferLock);
+                        return VERR_NO_MORE_FILES;
+                    }
+                    cwcName = 0;
+                    break; /* Technically a valid entry before DOS 2.0, or so some claim. */
+            }
+
+            /*
+             * Check for long filename slot.
+             */
+            if (   paEntries[iEntry].Slot.fAttrib == FAT_ATTR_NAME_SLOT
+                && paEntries[iEntry].Slot.idxZero == 0
+                && paEntries[iEntry].Slot.fZero   == 0
+                && (paEntries[iEntry].Slot.idSlot & ~FATDIRNAMESLOT_FIRST_SLOT_FLAG) <= FATDIRNAMESLOT_HIGHEST_SLOT_ID
+                && (paEntries[iEntry].Slot.idSlot & ~FATDIRNAMESLOT_FIRST_SLOT_FLAG) != 0)
+            {
+                /* New slot? */
+                if (paEntries[iEntry].Slot.idSlot & FATDIRNAMESLOT_FIRST_SLOT_FLAG)
+                {
+                    idNextSlot = paEntries[iEntry].Slot.idSlot & ~FATDIRNAMESLOT_FIRST_SLOT_FLAG;
+                    bChecksum  = paEntries[iEntry].Slot.bChecksum;
+                    cwcName    = idNextSlot * FATDIRNAMESLOT_CHARS_PER_SLOT;
+                    wszName[cwcName] = '\0';
+                }
+                /* Is valid next entry? */
+                else if (   paEntries[iEntry].Slot.idSlot    == idNextSlot
+                         && paEntries[iEntry].Slot.bChecksum == bChecksum)
+                { /* likely */ }
+                else
+                    cwcName = 0;
+                if (cwcName)
+                {
+                    idNextSlot--;
+                    size_t offName = idNextSlot * FATDIRNAMESLOT_CHARS_PER_SLOT;
+                    memcpy(&wszName[offName],         paEntries[iEntry].Slot.awcName0, sizeof(paEntries[iEntry].Slot.awcName0));
+                    memcpy(&wszName[offName + 5],     paEntries[iEntry].Slot.awcName1, sizeof(paEntries[iEntry].Slot.awcName1));
+                    memcpy(&wszName[offName + 5 + 6], paEntries[iEntry].Slot.awcName2, sizeof(paEntries[iEntry].Slot.awcName2));
+                }
+            }
+            /*
+             * Got a regular directory entry.  Try return it to the caller.
+             */
+            else
+            {
+                /* Do the length calc and check for overflows. */
+                bool   fLongName = false;
+                size_t cchName = 0;
+                if (   cwcName != 0
+                    && idNextSlot == 0
+                    && rtFsFatDir_CalcChecksum(&paEntries[iEntry].Entry) == bChecksum)
+                {
+                    rc = RTUtf16CalcUtf8LenEx(wszName, cwcName, &cchName);
+                    if (RT_FAILURE(rc))
+                    {
+                        fLongName = false;
+                        cwcName = 0;
+                    }
+                }
+                if (!fLongName)
+                    cchName = rtFsFatDir_CalcUtf8LengthForDirEntry(pShared, &paEntries[iEntry].Entry);
+                size_t cbNeeded = RT_OFFSETOF(RTDIRENTRYEX, szName[cchName + 1]);
+                if (cbNeeded <= *pcbDirEntry)
+                    *pcbDirEntry = cbNeeded;
+                else
+                {
+                    *pcbDirEntry = cbNeeded;
+                    return VERR_BUFFER_OVERFLOW;
+                }
+
+                /* To avoid duplicating code in rtFsFatObj_InitFromDirRec and
+                   rtFsFatObj_QueryInfo, we create a dummy RTFSFATOBJ on the stack. */
+                RTFSFATOBJ TmpObj;
+                RT_ZERO(TmpObj);
+                rtFsFatObj_InitFromDirEntry(&TmpObj, &paEntries[iEntry].Entry, offEntryInDir, pShared->Core.pVol);
+
+                rtFsFatDirShrd_ReleaseBufferAfterReading(pShared, uBufferLock);
+
+                rc = rtFsFatObj_QueryInfo(&TmpObj, &pDirEntry->Info, enmAddAttr);
+
+                /* Copy out the names. */
+                pDirEntry->cbName = (uint16_t)cchName;
+                if (fLongName)
+                {
+                    char *pszDst = &pDirEntry->szName[0];
+                    int rc2 = RTUtf16ToUtf8Ex(wszName, cwcName, &pszDst, cchName + 1, NULL);
+                    AssertRC(rc2);
+
+                    pDirEntry->cwcShortName = rtFsFatDir_CopyDirEntryToUtf16(pShared, &paEntries[iEntry].Entry,
+                                                                             pDirEntry->wszShortName,
+                                                                             RT_ELEMENTS(pDirEntry->wszShortName));
+                }
+                else
+                {
+                    rtFsFatDir_CopyDirEntryToUtf8(pShared, &paEntries[iEntry].Entry, &pDirEntry->szName[0], cchName + 1);
+                    pDirEntry->wszShortName[0] = '\0';
+                    pDirEntry->cwcShortName = 0;
+                }
+
+                if (RT_SUCCESS(rc))
+                    pThis->offDir = offEntryInDir + sizeof(paEntries[iEntry]) + 2;
+                return rc;
+            }
+        }
+
+        rtFsFatDirShrd_ReleaseBufferAfterReading(pShared, uBufferLock);
+    }
+
+    pThis->offDir = cbDir + 2;
+    return VERR_NO_MORE_FILES;
 }
 
 
