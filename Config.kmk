@@ -4207,7 +4207,7 @@ ifeq ($(KBUILD_TARGET),linux)
 
  ifndef KERN_DIR
   ifndef KERN_VER
-   KERN_VER=$(notdir $(firstword $(patsubst %/build/.config,%,$(shell LC_ALL=C ls -t /lib/modules/*/build/.config 2>/dev/null))))
+   KERN_VER=$(patsubst /lib/modules/%/build/.config,%,$(firstword $(shell LC_ALL=C ls -t /lib/modules/*/build/.config 2>/dev/null)))
   endif
   ifeq ($(KERN_VER),)
    KERN_VER=`uname -r`
