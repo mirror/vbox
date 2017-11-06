@@ -2333,7 +2333,7 @@ class TestDriver(base.TestDriver):                                              
             if self.fpApiVer >= 4.0:
                 oVM = self.oVBox.findMachine(sNameOrId);
             else:
-                reporter.error('Port me!'); ## @todo Add support for older version < 4.0.
+                reporter.error('fpApiVer=%s - did you remember to initialize the API' % (self.fpApiVer,));
         except:
             reporter.errorXcpt('could not find vm "%s"' % (sNameOrId,));
             return None;
