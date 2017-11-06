@@ -122,12 +122,14 @@ typedef struct RTFSFATCHAIN
     /** List of chain parts (RTFSFATCHAINPART). */
     RTLISTANCHOR    ListParts;
 } RTFSFATCHAIN;
+/** Pointer to a FAT chain. */
 typedef RTFSFATCHAIN *PRTFSFATCHAIN;
+/** Pointer to a const FAT chain. */
 typedef RTFSFATCHAIN const *PCRTFSFATCHAIN;
 
 
 /**
- * FAT file system object (common part to files and dirs).
+ * FAT file system object (common part to files and dirs (shared)).
  */
 typedef struct RTFSFATOBJ
 {
@@ -159,16 +161,24 @@ typedef struct RTFSFATOBJ
     /** Set if we've maybe dirtied the directory entry. */
     bool                fMaybeDirtyDirEnt;
 } RTFSFATOBJ;
+/** Poitner to a FAT file system object. */
 typedef RTFSFATOBJ *PRTFSFATOBJ;
 
+/**
+ * Shared FAT file data.
+ */
 typedef struct RTFSFATFILESHRD
 {
     /** Core FAT object info.  */
     RTFSFATOBJ          Core;
 } RTFSFATFILESHRD;
+/** Pointer to shared FAT file data. */
 typedef RTFSFATFILESHRD *PRTFSFATFILESHRD;
 
 
+/**
+ * Per handle data for a FAT file.
+ */
 typedef struct RTFSFATFILE
 {
     /** Pointer to the shared data. */
@@ -176,11 +186,12 @@ typedef struct RTFSFATFILE
     /** The current file offset. */
     uint32_t            offFile;
 } RTFSFATFILE;
+/** Pointer to the per handle data of a FAT file. */
 typedef RTFSFATFILE *PRTFSFATFILE;
 
 
 /**
- * FAT directory.
+ * FAT shared directory structure.
  *
  * We work directories in one of two buffering modes.  If there are few entries
  * or if it's the FAT12/16 root directory, we map the whole thing into memory.
@@ -241,12 +252,12 @@ typedef struct RTFSFATDIRSHRD
         } Simple;
     } u;
 } RTFSFATDIRSHRD;
-/** Pointer to a FAT directory instance. */
+/** Pointer to a shared FAT directory instance. */
 typedef RTFSFATDIRSHRD *PRTFSFATDIRSHRD;
 
 
 /**
- * FAT directory.
+ * The per handle FAT directory data.
  */
 typedef struct RTFSFATDIR
 {
@@ -255,7 +266,7 @@ typedef struct RTFSFATDIR
     /** The current directory offset. */
     uint32_t            offDir;
 } RTFSFATDIR;
-/** Pointer to a FAT directory instance. */
+/** Pointer to a per handle FAT directory data. */
 typedef RTFSFATDIR *PRTFSFATDIR;
 
 
@@ -386,7 +397,7 @@ typedef struct RTFSFATVOL
     uint32_t        cRootDirEntries;
     /** The size of the root directory, rounded up to the nearest sector size. */
     uint32_t        cbRootDir;
-    /** The root directory instance data. */
+    /** The root directory data (shared). */
     PRTFSFATDIRSHRD pRootDir;
 
     /** Serial number. */
@@ -1565,33 +1576,6 @@ static int rtFsFatObj_Close(PRTFSFATOBJ pObj)
 
 
 /**
- * @interface_method_impl{RTVFSOBJOPS,pfnClose}
- */
-static DECLCALLBACK(int) rtFsFatFile_Close(void *pvThis)
-{
-    PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
-    LogFlow(("rtFsFatFile_Close(%p/%p)\n", pThis, pThis->pShared));
-
-    PRTFSFATFILESHRD pShared = pThis->pShared;
-    pThis->pShared = NULL;
-
-    int rc = VINF_SUCCESS;
-    if (pShared)
-    {
-        if (ASMAtomicDecU32(&pShared->Core.cRefs) == 0)
-        {
-            LogFlow(("rtFsFatFile_Close: Destroying shared structure %p\n", pShared));
-            rc = rtFsFatObj_Close(&pShared->Core);
-            RTMemFree(pShared);
-        }
-        else
-            rc = rtFsFatObj_FlushMetaData(&pShared->Core);
-    }
-    return rc;
-}
-
-
-/**
  * Worker for rtFsFatFile_QueryInfo and rtFsFatDir_QueryInfo
  */
 static int rtFsFatObj_QueryInfo(PRTFSFATOBJ pThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
@@ -1639,6 +1623,67 @@ static int rtFsFatObj_QueryInfo(PRTFSFATOBJ pThis, PRTFSOBJINFO pObjInfo, RTFSOB
 
 
 /**
+ * Worker for rtFsFatFile_SetMode and rtFsFatDir_SetMode.
+ */
+static int rtFsFatObj_SetMode(PRTFSFATOBJ pThis, RTFMODE fMode, RTFMODE fMask)
+{
+#if 0
+    if (fMask != ~RTFS_TYPE_MASK)
+    {
+        fMode |= ~fMask & ObjInfo.Attr.fMode;
+    }
+#else
+    RT_NOREF(pThis, fMode, fMask);
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
+
+/**
+ * Worker for rtFsFatFile_SetTimes and rtFsFatDir_SetTimes.
+ */
+static int rtFsFatObj_SetTimes(PRTFSFATOBJ pThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                               PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+{
+#if 0
+    PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
+#else
+    RT_NOREF(pThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
+
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnClose}
+ */
+static DECLCALLBACK(int) rtFsFatFile_Close(void *pvThis)
+{
+    PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
+    LogFlow(("rtFsFatFile_Close(%p/%p)\n", pThis, pThis->pShared));
+
+    PRTFSFATFILESHRD pShared = pThis->pShared;
+    pThis->pShared = NULL;
+
+    int rc = VINF_SUCCESS;
+    if (pShared)
+    {
+        if (ASMAtomicDecU32(&pShared->Core.cRefs) == 0)
+        {
+            LogFlow(("rtFsFatFile_Close: Destroying shared structure %p\n", pShared));
+            rc = rtFsFatObj_Close(&pShared->Core);
+            RTMemFree(pShared);
+        }
+        else
+            rc = rtFsFatObj_FlushMetaData(&pShared->Core);
+    }
+    return rc;
+}
+
+
+/**
  * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
  */
 static DECLCALLBACK(int) rtFsFatFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
@@ -1646,7 +1691,6 @@ static DECLCALLBACK(int) rtFsFatFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjIn
     PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
     return rtFsFatObj_QueryInfo(&pThis->pShared->Core, pObjInfo, enmAddAttr);
 }
-
 
 
 /**
@@ -1948,40 +1992,28 @@ static DECLCALLBACK(int) rtFsFatFile_Tell(void *pvThis, PRTFOFF poffActual)
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
  */
-static DECLCALLBACK(int) rtFsFatObj_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
+static DECLCALLBACK(int) rtFsFatFile_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
 {
-#if 0
     PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
-    if (fMask != ~RTFS_TYPE_MASK)
-    {
-        fMode |= ~fMask & ObjInfo.Attr.fMode;
-    }
-#else
-    RT_NOREF(pvThis, fMode, fMask);
-    return VERR_NOT_IMPLEMENTED;
-#endif
+    return rtFsFatObj_SetMode(&pThis->pShared->Core, fMode, fMask);
 }
 
 
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
  */
-static DECLCALLBACK(int) rtFsFatObj_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
-                                             PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+static DECLCALLBACK(int) rtFsFatFile_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                              PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
-#if 0
     PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
-#else
-    RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
-    return VERR_NOT_IMPLEMENTED;
-#endif
+    return rtFsFatObj_SetTimes(&pThis->pShared->Core, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
 }
 
 
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
  */
-static DECLCALLBACK(int) rtFsFatObj_SetOwner(void *pvThis, RTUID uid, RTGID gid)
+static DECLCALLBACK(int) rtFsFatFile_SetOwner(void *pvThis, RTUID uid, RTGID gid)
 {
     RT_NOREF(pvThis, uid, gid);
     return VERR_NOT_SUPPORTED;
@@ -2067,9 +2099,9 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsFatFileOps =
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
         RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
-        rtFsFatObj_SetMode,
-        rtFsFatObj_SetTimes,
-        rtFsFatObj_SetOwner,
+        rtFsFatFile_SetMode,
+        rtFsFatFile_SetTimes,
+        rtFsFatFile_SetOwner,
         RTVFSOBJSETOPS_VERSION
     },
     rtFsFatFile_Seek,
@@ -3487,6 +3519,37 @@ static DECLCALLBACK(int) rtFsFatDir_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInf
 
 
 /**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
+ */
+static DECLCALLBACK(int) rtFsFatDir_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
+{
+    PRTFSFATDIR pThis = (PRTFSFATDIR)pvThis;
+    return rtFsFatObj_SetMode(&pThis->pShared->Core, fMode, fMask);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
+ */
+static DECLCALLBACK(int) rtFsFatDir_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                             PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+{
+    PRTFSFATDIR pThis = (PRTFSFATDIR)pvThis;
+    return rtFsFatObj_SetTimes(&pThis->pShared->Core, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
+ */
+static DECLCALLBACK(int) rtFsFatDir_SetOwner(void *pvThis, RTUID uid, RTGID gid)
+{
+    RT_NOREF(pvThis, uid, gid);
+    return VERR_NOT_SUPPORTED;
+}
+
+
+/**
  * @interface_method_impl{RTVFSOBJOPS,pfnTraversalOpen}
  */
 static DECLCALLBACK(int) rtFsFatDir_TraversalOpen(void *pvThis, const char *pszEntry, PRTVFSDIR phVfsDir,
@@ -3737,9 +3800,9 @@ static const RTVFSDIROPS g_rtFsFatDirOps =
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
         RT_OFFSETOF(RTVFSDIROPS, Obj) - RT_OFFSETOF(RTVFSDIROPS, ObjSet),
-        rtFsFatObj_SetMode,
-        rtFsFatObj_SetTimes,
-        rtFsFatObj_SetOwner,
+        rtFsFatDir_SetMode,
+        rtFsFatDir_SetTimes,
+        rtFsFatDir_SetOwner,
         RTVFSOBJSETOPS_VERSION
     },
     rtFsFatDir_TraversalOpen,
