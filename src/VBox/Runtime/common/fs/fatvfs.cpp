@@ -3706,8 +3706,30 @@ static DECLCALLBACK(int) rtFsFatDir_OpenDir(void *pvThis, const char *pszSubDir,
  */
 static DECLCALLBACK(int) rtFsFatDir_CreateDir(void *pvThis, const char *pszSubDir, RTFMODE fMode, PRTVFSDIR phVfsDir)
 {
-    RT_NOREF(pvThis, pszSubDir, fMode, phVfsDir);
-    return VERR_NOT_IMPLEMENTED;
+    PRTFSFATDIR     pThis   = (PRTFSFATDIR)pvThis;
+    PRTFSFATDIRSHRD pShared = pThis->pShared;
+    RT_NOREF(fMode);
+
+    /*
+     * Check if it already exists in any form.
+     */
+    uint32_t    offEntryInDir;
+    bool        fLong;
+    FATDIRENTRY DirEntry;
+    int rc = rtFsFatDirShrd_FindEntry(pShared, pszSubDir, &offEntryInDir, &fLong, &DirEntry);
+    if (rc != VERR_FILE_NOT_FOUND)
+        return RT_SUCCESS(rc) ? VERR_ALREADY_EXISTS : rc;
+
+    /*
+     * Okay, create it.
+     */
+    rc = rtFsFatDirShrd_CreateEntry(pShared, pszSubDir, FAT_ATTR_ARCHIVE | FAT_ATTR_DIRECTORY,
+                                    pShared->Core.pVol->cbCluster, &offEntryInDir, &DirEntry);
+    if (RT_SUCCESS(rc))
+        rc = rtFsFatDir_New(pShared->Core.pVol, pShared, &DirEntry, offEntryInDir,
+                            RTFSFAT_GET_CLUSTER(&DirEntry, pShared->Core.pVol), UINT64_MAX /*offDisk*/,
+                            DirEntry.cbFile, phVfsDir);
+    return rc;
 }
 
 
