@@ -118,7 +118,7 @@ public:
         }
     }
 
-    static LoadVBoxDDU LoadVBoxDDU::s_LoadVBoxDDU;
+    static LoadVBoxDDU s_LoadVBoxDDU;
 };
 
 /* static*/ LoadVBoxDDU LoadVBoxDDU::s_LoadVBoxDDU;
