@@ -5736,6 +5736,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
     while (iCurrentVertex < numVertexDecls)
     {
         const uint32_t sidVertex = pVertexDecl[iCurrentVertex].array.surfaceId;
+        const uint32_t strideVertex = pVertexDecl[iCurrentVertex].array.stride;
 
         PVMSVGA3DSURFACE pVertexSurface;
         rc = vmsvga3dSurfaceFromSid(pState, sidVertex, &pVertexSurface);
@@ -5757,11 +5758,13 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
             if (pVertexDecl[iVertex].array.surfaceId != sidVertex)
                 break;
 
-            const uint32_t uNewVertexMinOffset = RT_MIN(uVertexMinOffset, pVertexDecl[iVertex].array.offset);
-            const uint32_t uNewVertexMaxOffset = RT_MAX(uVertexMaxOffset, pVertexDecl[iVertex].array.offset);
+            const uint32_t uVertexOffset = pVertexDecl[iVertex].array.offset;
+            const uint32_t uNewVertexMinOffset = RT_MIN(uVertexMinOffset, uVertexOffset);
+            const uint32_t uNewVertexMaxOffset = RT_MAX(uVertexMaxOffset, uVertexOffset);
 
             /* We must put vertex declarations that start at a different element in another stream as d3d only handles offsets < stride. */
-            if (uNewVertexMaxOffset - uNewVertexMinOffset >= pVertexDecl[iCurrentVertex].array.stride)
+            if (   uNewVertexMaxOffset - uNewVertexMinOffset >= strideVertex
+                && strideVertex != 0)
                 break;
 
             uVertexMinOffset = uNewVertexMinOffset;
@@ -5775,8 +5778,6 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
                                                       uVertexMaxOffset,
                                                       &aVertexElements[iCurrentVertex]);
         AssertRCBreak(rc);
-
-        const uint32_t strideVertex = pVertexDecl[iCurrentVertex].array.stride;
 
         LogFunc(("SetStreamSource vertex sid=%x stream %d min offset=%d stride=%d\n",
                  pVertexSurface->id, iCurrentStreamId, uVertexMinOffset, strideVertex));
