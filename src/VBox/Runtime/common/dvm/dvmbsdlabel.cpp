@@ -414,8 +414,7 @@ static DECLCALLBACK(int) rtDvmFmtBsdLblQueryFirstVolume(RTDVMFMT hVolMgrFmt, PRT
         {
             if (pThis->DiskLabel.aPartitions[i].cSectors)
             {
-                rc = rtDvmFmtBsdLblVolumeCreate(pThis, &pThis->DiskLabel.aPartitions[i],
-                                              i, phVolFmt);
+                rc = rtDvmFmtBsdLblVolumeCreate(pThis, &pThis->DiskLabel.aPartitions[i], i, phVolFmt);
                 break;
             }
         }

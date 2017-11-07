@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP RTLOGGROUP_FS /** @todo fix log group  */
 #include <iprt/types.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
@@ -39,6 +40,7 @@
 #include <iprt/sg.h>
 #include <iprt/vfslowlevel.h>
 #include <iprt/poll.h>
+#include <iprt/log.h>
 #include "internal/dvm.h"
 
 
@@ -58,6 +60,36 @@ typedef struct RTVFSDVMFILE
 } RTVFSDVMFILE;
 /** Pointer to a the internal data of a DVM volume file. */
 typedef RTVFSDVMFILE *PRTVFSDVMFILE;
+
+/**
+ * A volume manager VFS for use in chains (thing pseudo/devfs).
+ */
+typedef struct RTDVMVFSVOL
+{
+    /** The volume manager. */
+    RTDVM       hVolMgr;
+    /** Whether to close it on success. */
+    bool        fCloseDvm;
+    /** Whether the access is read-only. */
+    bool        fReadOnly;
+    /** Number of volumes. */
+    uint32_t    cVolumes;
+} RTDVMVFSVOL;
+/** Poitner to a volume manager VFS. */
+typedef RTDVMVFSVOL *PRTDVMVFSVOL;
+
+/**
+ * The volume manager VFS root dir data.
+ */
+typedef struct RTDVMVFSROOTDIR
+{
+    /** Pointer to the VFS volume. */
+    PRTDVMVFSVOL    pVfsVol;
+    /** The current directory offset. */
+    uint32_t        offDir;
+} RTDVMVFSROOTDIR;
+/** Poitner to a volume manager VFS root dir. */
+typedef RTDVMVFSROOTDIR *PRTDVMVFSROOTDIR;
 
 
 /**
@@ -411,4 +443,204 @@ RTDECL(int) RTDvmVolumeCreateVfsFile(RTDVMVOLUME hVol, PRTVFSFILE phVfsFileOut)
         RTDvmVolumeRelease(hVol);
     return rc;
 }
+
+
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS::Obj,pfnClose}
+ */
+static DECLCALLBACK(int) rtDvmVfsVol_Close(void *pvThis)
+{
+    PRTDVMVFSVOL pThis = (PRTDVMVFSVOL)pvThis;
+    LogFlow(("rtDvmVfsVol_Close(%p)\n", pThis));
+
+    if (   pThis->fCloseDvm
+        && pThis->hVolMgr != NIL_RTDVM )
+        RTDvmRelease(pThis->hVolMgr);
+    pThis->hVolMgr = NIL_RTDVM;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS::Obj,pfnQueryInfo}
+ */
+static DECLCALLBACK(int) rtDvmVfsVol_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    RT_NOREF(pvThis, pObjInfo, enmAddAttr);
+    return VERR_WRONG_TYPE;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOPS,pfnOpenRoot}
+ */
+static DECLCALLBACK(int) rtDvmVfsVol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
+{
+    //PRTDVMVFSVOL pThis = (PRTDVMVFSVOL)pvThis;
+
+    //rtDvmDirShrd_Retain(pThis->pRootDir); /* consumed by the next call */
+    //return rtDvmDir_NewWithShared(pThis, pThis->pRootDir, phVfsDir);
+    RT_NOREF(pvThis, phVfsDir);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOPS,pfnIsRangeInUse}
+ */
+static DECLCALLBACK(int) rtDvmVfsVol_IsRangeInUse(void *pvThis, RTFOFF off, size_t cb, bool *pfUsed)
+{
+    RT_NOREF(pvThis, off, cb, pfUsed);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+DECL_HIDDEN_CONST(const RTVFSOPS) g_rtDvmVfsVolOps =
+{
+    { /* Obj */
+        RTVFSOBJOPS_VERSION,
+        RTVFSOBJTYPE_VFS,
+        "DvmVol",
+        rtDvmVfsVol_Close,
+        rtDvmVfsVol_QueryInfo,
+        RTVFSOBJOPS_VERSION
+    },
+    RTVFSOPS_VERSION,
+    0 /* fFeatures */,
+    rtDvmVfsVol_OpenRoot,
+    rtDvmVfsVol_IsRangeInUse,
+    RTVFSOPS_VERSION
+};
+
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnValidate}
+ */
+static DECLCALLBACK(int) rtDvmVfsChain_Validate(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
+                                                PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(pProviderReg, pSpec);
+
+    /*
+     * Basic checks.
+     */
+    if (pElement->enmTypeIn != RTVFSOBJTYPE_FILE)
+        return pElement->enmTypeIn == RTVFSOBJTYPE_INVALID ? VERR_VFS_CHAIN_CANNOT_BE_FIRST_ELEMENT : VERR_VFS_CHAIN_TAKES_FILE;
+    if (pElement->enmType != RTVFSOBJTYPE_VFS)
+        return VERR_VFS_CHAIN_ONLY_VFS;
+
+    if (pElement->cArgs > 1)
+        return VERR_VFS_CHAIN_AT_MOST_ONE_ARG;
+
+    /*
+     * Parse the flag if present, save in pElement->uProvider.
+     */
+    /** @todo allow specifying sector size   */
+    bool fReadOnly = (pSpec->fOpenFile & RTFILE_O_ACCESS_MASK) == RTFILE_O_READ;
+    if (pElement->cArgs > 0)
+    {
+        const char *psz = pElement->paArgs[0].psz;
+        if (*psz)
+        {
+            if (   !strcmp(psz, "ro")
+                || !strcmp(psz, "r"))
+                fReadOnly = true;
+            else if (!strcmp(psz, "rw"))
+                fReadOnly = false;
+            else
+            {
+                *poffError = pElement->paArgs[0].offSpec;
+                return RTErrInfoSet(pErrInfo, VERR_VFS_CHAIN_INVALID_ARGUMENT, "Expected 'ro' or 'rw' as argument");
+            }
+        }
+    }
+
+    pElement->uProvider = fReadOnly;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnInstantiate}
+ */
+static DECLCALLBACK(int) rtDvmVfsChain_Instantiate(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
+                                                   PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
+                                                   PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(pProviderReg, pSpec, poffError, pErrInfo);
+    AssertReturn(hPrevVfsObj != NIL_RTVFSOBJ, VERR_VFS_CHAIN_IPE);
+
+    /*
+     * Instantiate the volume manager and open the map stuff.
+     */
+    RTVFSFILE hPrevVfsFile = RTVfsObjToFile(hPrevVfsObj);
+    AssertReturn(hPrevVfsFile != NIL_RTVFSFILE, VERR_VFS_CHAIN_CAST_FAILED);
+
+    RTDVM hVolMgr;
+    int rc = RTDvmCreate(&hVolMgr, hPrevVfsFile, 512, 0 /*fFlags*/);
+    RTVfsFileRelease(hPrevVfsFile);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTDvmMapOpen(hVolMgr);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Create a VFS instance for the volume manager.
+             */
+            RTVFS        hVfs  = NIL_RTVFS;
+            PRTDVMVFSVOL pThis = NULL;
+            int rc = RTVfsNew(&g_rtDvmVfsVolOps, sizeof(RTDVMVFSVOL), NIL_RTVFS, RTVFSLOCK_CREATE_RW, &hVfs, (void **)&pThis);
+            if (RT_SUCCESS(rc))
+            {
+                pThis->hVolMgr   = hVolMgr;
+                pThis->fCloseDvm = true;
+                pThis->fReadOnly = pElement->uProvider == (uint64_t)true;
+                pThis->cVolumes  = RTDvmMapGetValidVolumes(hVolMgr);
+
+                *phVfsObj = RTVfsObjFromVfs(hVfs);
+                RTVfsRelease(hVfs);
+                return *phVfsObj != NIL_RTVFSOBJ ? VINF_SUCCESS : VERR_VFS_CHAIN_CAST_FAILED;
+            }
+        }
+        else
+            rc = RTErrInfoSetF(pErrInfo, rc, "RTDvmMapOpen failed: %Rrc", rc);
+        RTDvmRelease(hVolMgr);
+    }
+    else
+        rc = RTErrInfoSetF(pErrInfo, rc, "RTDvmCreate failed: %Rrc", rc);
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnCanReuseElement}
+ */
+static DECLCALLBACK(bool) rtDvmVfsChain_CanReuseElement(PCRTVFSCHAINELEMENTREG pProviderReg,
+                                                        PCRTVFSCHAINSPEC pSpec, PCRTVFSCHAINELEMSPEC pElement,
+                                                        PCRTVFSCHAINSPEC pReuseSpec, PCRTVFSCHAINELEMSPEC pReuseElement)
+{
+    RT_NOREF(pProviderReg, pSpec, pElement, pReuseSpec, pReuseElement);
+    return false;
+}
+
+
+/** VFS chain element 'file'. */
+static RTVFSCHAINELEMENTREG g_rtVfsChainIsoFsVolReg =
+{
+    /* uVersion = */            RTVFSCHAINELEMENTREG_VERSION,
+    /* fReserved = */           0,
+    /* pszName = */             "dvm",
+    /* ListEntry = */           { NULL, NULL },
+    /* pszHelp = */             "Opens a container image using the VD API.\n",
+    /* pfnValidate = */         rtDvmVfsChain_Validate,
+    /* pfnInstantiate = */      rtDvmVfsChain_Instantiate,
+    /* pfnCanReuseElement = */  rtDvmVfsChain_CanReuseElement,
+    /* uEndMarker = */          RTVFSCHAINELEMENTREG_VERSION
+};
+
+RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER(&g_rtVfsChainIsoFsVolReg, rtVfsChainIsoFsVolReg);
 

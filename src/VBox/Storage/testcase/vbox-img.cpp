@@ -1488,26 +1488,24 @@ static int handleCompact(HandlerArg *a)
     if (   RT_SUCCESS(rc)
         && fFilesystemAware)
     {
-        uint64_t cbDisk = 0;
-
-        cbDisk = VDGetSize(pDisk, 0);
-        if (cbDisk > 0)
+        RTVFSFILE hVfsDisk;
+        rc = VDCreateVfsFileFromDisk(pDisk, 0 /*fFlags*/, &hVfsDisk);
+        if (RT_SUCCESS(rc))
         {
-            rc = RTDvmCreate(&hDvm, vboximgDvmRead, vboximgDvmWrite, cbDisk, 512,
-                             0 /* fFlags*/, pDisk);
+            rc = RTDvmCreate(&hDvm, hVfsDisk, 512 /*cbSector*/, 0 /*fFlags*/);
+            RTVfsFileRelease(hVfsDisk);
             if (RT_SUCCESS(rc))
             {
                 rc = RTDvmMapOpen(hDvm);
                 if (   RT_SUCCESS(rc)
-                    && RTDvmMapGetValidVolumes(hDvm))
+                    && RTDvmMapGetValidVolumes(hDvm) > 0)
                 {
-                    RTDVMVOLUME hVol;
-
                     /* Get all volumes and set the block query status callback. */
+                    RTDVMVOLUME hVol;
                     rc = RTDvmMapQueryFirstVolume(hDvm, &hVol);
                     AssertRC(rc);
 
-                    do
+                    while (RT_SUCCESS(rc))
                     {
                         RTVFSFILE hVfsFile;
                         rc = RTDvmVolumeCreateVfsFile(hVol, &hVfsFile);
@@ -1548,7 +1546,7 @@ static int handleCompact(HandlerArg *a)
                          */
                         RTDvmVolumeRelease(hVol);
                         hVol = hVolNext;
-                    } while (RT_SUCCESS(rc));
+                    }
 
                     if (rc == VERR_DVM_MAP_NO_VOLUME)
                         rc = VINF_SUCCESS;
@@ -1574,10 +1572,7 @@ static int handleCompact(HandlerArg *a)
                 errorRuntime("Error creating the volume manager: %Rrf (%Rrc)\n", rc, rc);
         }
         else
-        {
-            rc = VERR_INVALID_STATE;
-            errorRuntime("Error while getting the disk size\n");
-        }
+            errorRuntime("Error while creating VFS interface for the disk: %Rrf (%Rrc)\n", rc, rc);
     }
 
     if (RT_SUCCESS(rc))
