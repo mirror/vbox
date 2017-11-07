@@ -1122,6 +1122,10 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationStart()
     if (m_pActionRefresh)
         m_pActionRefresh->setEnabled(false);
 
+    /* Disable details-widget: */
+    if (m_pDetailsWidget)
+        m_pDetailsWidget->setOptionsEnabled(false);
+
     /* Reset and show progress-bar: */
     if (m_pProgressBar)
     {
@@ -1178,6 +1182,10 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationFinish()
     /* Hide progress-bar: */
     if (m_pProgressBar)
         m_pProgressBar->hide();
+
+    /* Enable details-widget: */
+    if (m_pDetailsWidget)
+        m_pDetailsWidget->setOptionsEnabled(true);
 
     /* Enable 'refresh' action: */
     if (m_pActionRefresh)

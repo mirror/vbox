@@ -201,6 +201,11 @@ public:
     /** Defines the @a data for passed @a enmType. */
     void setData(const UIDataMedium &data);
 
+public slots:
+
+    /** Defines whether the options tab is @a fEnabled. */
+    void setOptionsEnabled(bool fEnabled);
+
 protected:
 
     /** Handles translation event. */

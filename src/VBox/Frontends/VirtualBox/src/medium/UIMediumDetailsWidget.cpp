@@ -88,6 +88,11 @@ void UIMediumDetailsWidget::setData(const UIDataMedium &data)
     loadDataForDetails();
 }
 
+void UIMediumDetailsWidget::setOptionsEnabled(bool fEnabled)
+{
+    m_pTabWidget->widget(0)->setEnabled(fEnabled);
+}
+
 void UIMediumDetailsWidget::retranslateUi()
 {
     /* Translate tab-widget: */
