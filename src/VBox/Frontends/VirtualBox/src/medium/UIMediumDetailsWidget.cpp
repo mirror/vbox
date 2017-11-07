@@ -576,6 +576,7 @@ void UIMediumDetailsWidget::prepareInformationContainer(UIMediumType enmType, in
                 AssertPtrReturnVoid(pLabel);
                 {
                     /* Configure label: */
+                    pLabel->setMargin(2);
                     pLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
                     /* Add into layout: */
@@ -588,6 +589,7 @@ void UIMediumDetailsWidget::prepareInformationContainer(UIMediumType enmType, in
                 AssertPtrReturnVoid(pField);
                 {
                     /* Configure field: */
+                    pField->setMargin(2);
                     pField->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed));
                     pField->setFullSizeSelection(true);
 
