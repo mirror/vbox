@@ -593,7 +593,7 @@ static DECLCALLBACK(int) rtDvmVfsChain_Instantiate(PCRTVFSCHAINELEMENTREG pProvi
              */
             RTVFS        hVfs  = NIL_RTVFS;
             PRTDVMVFSVOL pThis = NULL;
-            int rc = RTVfsNew(&g_rtDvmVfsVolOps, sizeof(RTDVMVFSVOL), NIL_RTVFS, RTVFSLOCK_CREATE_RW, &hVfs, (void **)&pThis);
+            rc = RTVfsNew(&g_rtDvmVfsVolOps, sizeof(RTDVMVFSVOL), NIL_RTVFS, RTVFSLOCK_CREATE_RW, &hVfs, (void **)&pThis);
             if (RT_SUCCESS(rc))
             {
                 pThis->hVolMgr   = hVolMgr;
