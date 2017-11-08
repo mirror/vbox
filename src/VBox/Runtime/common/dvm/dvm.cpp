@@ -117,6 +117,7 @@ static const char * const g_apszDvmVolTypes[] =
     "Invalid",
     "Unknown",
     "NTFS",
+    "FAT12",
     "FAT16",
     "FAT32",
     "Linux swap",

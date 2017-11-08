@@ -99,10 +99,23 @@ typedef RTDVMMBRFS2VOLTYPE *PRTDVMMBRFS2VOLTYPE;
  */
 static const RTDVMMBRFS2VOLTYPE g_aFs2DvmVolTypes[] =
 {
-    { 0x06, RTDVMVOLTYPE_FAT16 },
+    { 0x01, RTDVMVOLTYPE_FAT12 },
+    { 0x04, RTDVMVOLTYPE_FAT16 },
+    { 0x06, RTDVMVOLTYPE_FAT16 }, /* big FAT16 */
     { 0x07, RTDVMVOLTYPE_NTFS }, /* Simplification: Used for HPFS, exFAT, ++, too but NTFS is the more common one. */
     { 0x0b, RTDVMVOLTYPE_FAT32 },
     { 0x0c, RTDVMVOLTYPE_FAT32 },
+    { 0x0e, RTDVMVOLTYPE_FAT16 },
+
+    /* Hidden variants of the above: */
+    { 0x11, RTDVMVOLTYPE_FAT12 },
+    { 0x14, RTDVMVOLTYPE_FAT16 },
+    { 0x16, RTDVMVOLTYPE_FAT16 },
+    { 0x17, RTDVMVOLTYPE_NTFS },
+    { 0x1b, RTDVMVOLTYPE_FAT32 },
+    { 0x1c, RTDVMVOLTYPE_FAT32 },
+    { 0x1e, RTDVMVOLTYPE_FAT16 },
+
     { 0x82, RTDVMVOLTYPE_LINUX_SWAP },
     { 0x83, RTDVMVOLTYPE_LINUX_NATIVE },
     { 0x8e, RTDVMVOLTYPE_LINUX_LVM },

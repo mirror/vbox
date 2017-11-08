@@ -48,6 +48,8 @@ typedef enum RTDVMVOLTYPE
     RTDVMVOLTYPE_UNKNOWN,
     /** Volume hosts a NTFS filesystem. */
     RTDVMVOLTYPE_NTFS,
+    /** Volume hosts a FAT12 filesystem. */
+    RTDVMVOLTYPE_FAT12,
     /** Volume hosts a FAT16 filesystem. */
     RTDVMVOLTYPE_FAT16,
     /** Volume hosts a FAT32 filesystem. */
