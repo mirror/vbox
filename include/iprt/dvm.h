@@ -197,7 +197,7 @@ typedef enum RTDVMFORMATTYPE
     /** End of valid values. */
     RTDVMFORMATTYPE_END,
     /** 32-bit type size hack. */
-    RTDVMFORMATTYPE_32BIT_HACK = 0x7fffffff,
+    RTDVMFORMATTYPE_32BIT_HACK = 0x7fffffff
 } RTDVMFORMATTYPE;
 
 /**
