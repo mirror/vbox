@@ -5011,6 +5011,7 @@ static int rtFsFatVolTryInitDos2Plus(PRTFSFATVOL pThis, PCFATBOOTSECTOR pBootSec
     if (pbFatSector[0] != pThis->bMedia)
         return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                              "Media byte and FAT ID mismatch: %#x vs %#x (%.7Rhxs)", pbFatSector[0], pThis->bMedia, pbFatSector);
+    uint32_t idxOurEndOfChain;
     switch (pThis->enmFatType)
     {
         case RTFSFATTYPE_FAT12:
@@ -5018,6 +5019,7 @@ static int rtFsFatVolTryInitDos2Plus(PRTFSFATVOL pThis, PCFATBOOTSECTOR pBootSec
                 return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Bogus FAT ID patting (FAT12): %.3Rhxs", pbFatSector);
             pThis->idxMaxLastCluster = FAT_LAST_FAT12_DATA_CLUSTER;
             pThis->idxEndOfChain     = (pbFatSector[1] >> 4) | ((uint32_t)pbFatSector[2] << 4);
+            idxOurEndOfChain         = FAT_FIRST_FAT12_EOC;
             break;
 
         case RTFSFATTYPE_FAT16:
@@ -5025,6 +5027,7 @@ static int rtFsFatVolTryInitDos2Plus(PRTFSFATVOL pThis, PCFATBOOTSECTOR pBootSec
                 return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Bogus FAT ID patting (FAT16): %.4Rhxs", pbFatSector);
             pThis->idxMaxLastCluster = FAT_LAST_FAT16_DATA_CLUSTER;
             pThis->idxEndOfChain     = RT_MAKE_U16(pbFatSector[2], pbFatSector[3]);
+            idxOurEndOfChain         = FAT_FIRST_FAT16_EOC;
             break;
 
         case RTFSFATTYPE_FAT32:
@@ -5034,13 +5037,17 @@ static int rtFsFatVolTryInitDos2Plus(PRTFSFATVOL pThis, PCFATBOOTSECTOR pBootSec
                 return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Bogus FAT ID patting (FAT32): %.8Rhxs", pbFatSector);
             pThis->idxMaxLastCluster = FAT_LAST_FAT32_DATA_CLUSTER;
             pThis->idxEndOfChain     = RT_MAKE_U32_FROM_U8(pbFatSector[4], pbFatSector[5], pbFatSector[6], pbFatSector[7]);
+            idxOurEndOfChain         = FAT_FIRST_FAT32_EOC;
             break;
 
         default: AssertFailedReturn(VERR_INTERNAL_ERROR_2);
     }
+
     if (pThis->idxEndOfChain <= pThis->idxMaxLastCluster)
-        return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Bogus formatter end-of-chain value: %#x, must be above %#x",
-                             pThis->idxEndOfChain, pThis->idxMaxLastCluster);
+    {
+        Log(("rtFsFatVolTryInitDos2Plus: Bogus idxEndOfChain=%#x, using %#x instead\n", pThis->idxEndOfChain, idxOurEndOfChain));
+        pThis->idxEndOfChain = idxOurEndOfChain;
+    }
 
     RT_NOREF(pbFatSector);
     return VINF_SUCCESS;
