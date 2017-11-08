@@ -36,9 +36,10 @@
 #include "fsw_hfs.h"
 
 #ifdef HOST_POSIX
+#include <assert.h>
 #define DPRINT(x) printf(x)
 #define DPRINT2(x,y) printf(x,y)
-#define BP(msg)    do { printf("ERROR: %s", msg); asm("int3"); } while (0)
+#define BP(msg)    do { printf("ERROR: %s", msg); assert(0); } while (0)
 #elif defined DEBUG_LEVEL
 #define CONCAT(x,y) x##y
 #define DPRINT(x) Print(CONCAT(L,x))
@@ -927,17 +928,17 @@ fsw_hfs_cmpi_catkey (BTreeKey *key1, BTreeKey *key2)
 
   while(1)
   {
-    /* get next valid character from ckey1 */
+    /* get next valid (non-zero) character from ckey1 */
     for (lc = 0; lc == 0 && apos < key1Len; apos++) {
       ac = be16_to_cpu(p1[apos]);
-      lc = ac ? fsw_to_lower(ac) : 0;
+      lc = fsw_to_lower(ac);    /* NB: 0x0000 is translated to 0xffff */
     };
     ac = (fsw_u16)lc;
 
-    /* get next valid character from ckey2 */
+    /* get next valid (non-zero) character from ckey2 */
     for (lc = 0; lc == 0 && bpos < ckey2->nodeName.length; bpos++) {
       bc = p2[bpos];
-      lc = bc ? fsw_to_lower(bc) : 0;
+      lc = fsw_to_lower(bc);    /* NB: 0x0000 is translated to 0xffff */
     };
     bc = (fsw_u16)lc;
 
