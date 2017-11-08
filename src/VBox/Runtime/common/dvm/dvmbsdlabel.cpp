@@ -520,6 +520,8 @@ DECLHIDDEN(RTDVMFMTOPS) g_rtDvmFmtBsdLbl =
 {
     /* pcszFmt */
     "BsdLabel",
+    /* enmFormat, */
+    RTDVMFORMATTYPE_BSD_LABLE,
     /* pfnProbe */
     rtDvmFmtBsdLblProbe,
     /* pfnOpen */

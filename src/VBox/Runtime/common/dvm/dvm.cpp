@@ -375,7 +375,7 @@ RTDECL(int) RTDvmMapInitialize(RTDVM hVolMgr, const char *pszFmt)
     for (unsigned i = 0; i < RT_ELEMENTS(g_aDvmFmts); i++)
     {
         PCRTDVMFMTOPS pDvmFmtOps = g_aDvmFmts[i];
-        if (!RTStrCmp(pDvmFmtOps->pcszFmt, pszFmt))
+        if (!RTStrCmp(pDvmFmtOps->pszFmt, pszFmt))
         {
             int rc = pDvmFmtOps->pfnInitialize(&pThis->DvmDisk, &pThis->hVolMgrFmt);
             if (RT_SUCCESS(rc))
@@ -386,14 +386,24 @@ RTDECL(int) RTDvmMapInitialize(RTDVM hVolMgr, const char *pszFmt)
     return VERR_NOT_SUPPORTED;
 }
 
-RTDECL(const char *) RTDvmMapGetFormat(RTDVM hVolMgr)
+RTDECL(const char *) RTDvmMapGetFormatName(RTDVM hVolMgr)
 {
     PRTDVMINTERNAL pThis = hVolMgr;
     AssertPtrReturn(pThis, NULL);
     AssertReturn(pThis->u32Magic == RTDVM_MAGIC, NULL);
     AssertReturn(pThis->hVolMgrFmt != NIL_RTDVMFMT, NULL);
 
-    return pThis->pDvmFmtOps->pcszFmt;
+    return pThis->pDvmFmtOps->pszFmt;
+}
+
+RTDECL(RTDVMFORMATTYPE) RTDvmMapGetFormatType(RTDVM hVolMgr)
+{
+    PRTDVMINTERNAL pThis = hVolMgr;
+    AssertPtrReturn(pThis, RTDVMFORMATTYPE_INVALID);
+    AssertReturn(pThis->u32Magic == RTDVM_MAGIC, RTDVMFORMATTYPE_INVALID);
+    AssertReturn(pThis->hVolMgrFmt != NIL_RTDVMFMT, RTDVMFORMATTYPE_INVALID);
+
+    return pThis->pDvmFmtOps->enmFormat;
 }
 
 RTDECL(uint32_t) RTDvmMapGetValidVolumes(RTDVM hVolMgr)
@@ -418,13 +428,13 @@ RTDECL(uint32_t) RTDvmMapGetMaxVolumes(RTDVM hVolMgr)
 
 RTDECL(int) RTDvmMapQueryFirstVolume(RTDVM hVolMgr, PRTDVMVOLUME phVol)
 {
-    int rc = VERR_DVM_MAP_EMPTY;
     PRTDVMINTERNAL pThis = hVolMgr;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDVM_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(pThis->hVolMgrFmt != NIL_RTDVMFMT, VERR_INVALID_HANDLE);
     AssertPtrReturn(phVol, VERR_INVALID_POINTER);
 
+    int rc = VERR_DVM_MAP_EMPTY;
     PRTDVMVOLUMEINTERNAL pVol = RTListGetFirst(&pThis->VolumeList, RTDVMVOLUMEINTERNAL, VolumeNode);
     if (pVol)
     {

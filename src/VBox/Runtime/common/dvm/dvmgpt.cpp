@@ -513,8 +513,10 @@ static DECLCALLBACK(int) rtDvmFmtGptVolumeWrite(RTDVMVOLUMEFMT hVolFmt, uint64_t
 
 RTDVMFMTOPS g_rtDvmFmtGpt =
 {
-    /* pcszFmt */
+    /* pszFmt */
     "GPT",
+    /* enmFormat, */
+    RTDVMFORMATTYPE_GPT,
     /* pfnProbe */
     rtDvmFmtGptProbe,
     /* pfnOpen */

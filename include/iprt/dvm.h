@@ -174,12 +174,39 @@ RTDECL(int) RTDvmMapOpen(RTDVM hVolMgr);
 RTDECL(int) RTDvmMapInitialize(RTDVM hVolMgr, const char *pszFmt);
 
 /**
- * Gets the currently used format of the disk map.
+ * Gets the name of the currently used format of the disk map.
  *
  * @returns Name of the format.
  * @param   hVolMgr     The volume manager handle.
  */
-RTDECL(const char *) RTDvmMapGetFormat(RTDVM hVolMgr);
+RTDECL(const char *) RTDvmMapGetFormatName(RTDVM hVolMgr);
+
+/**
+ * DVM format types.
+ */
+typedef enum RTDVMFORMATTYPE
+{
+    /** Invalid zero value. */
+    RTDVMFORMATTYPE_INVALID = 0,
+    /** Master boot record. */
+    RTDVMFORMATTYPE_MBR,
+    /** GUID partition table. */
+    RTDVMFORMATTYPE_GPT,
+    /** BSD labels. */
+    RTDVMFORMATTYPE_BSD_LABLE,
+    /** End of valid values. */
+    RTDVMFORMATTYPE_END,
+    /** 32-bit type size hack. */
+    RTDVMFORMATTYPE_32BIT_HACK = 0x7fffffff,
+} RTDVMFORMATTYPE;
+
+/**
+ * Gets the format type of the current disk map.
+ *
+ * @returns Format type. RTDVMFORMATTYPE_INVALID on invalid input.
+ * @param   hVolMgr     The volume manager handle.
+ */
+RTDECL(RTDVMFORMATTYPE) RTDvmMapGetFormatType(RTDVM hVolMgr);
 
 /**
  * Gets the number of valid partitions in the map.
@@ -332,9 +359,10 @@ RTDECL(const char *) RTDvmVolumeTypeGetDescr(RTDVMVOLTYPE enmVolType);
  *
  * @returns IPRT status code.
  * @param   hVol            The volume handle.
+ * @param   fOpen           RTFILE_O_XXX.
  * @param   phVfsFileOut    Where to store the VFS file handle on success.
  */
-RTDECL(int) RTDvmVolumeCreateVfsFile(RTDVMVOLUME hVol, PRTVFSFILE phVfsFileOut);
+RTDECL(int) RTDvmVolumeCreateVfsFile(RTDVMVOLUME hVol, uint64_t fOpen, PRTVFSFILE phVfsFileOut);
 
 RT_C_DECLS_END
 

@@ -400,8 +400,10 @@ static DECLCALLBACK(int) rtDvmFmtMbrVolumeWrite(RTDVMVOLUMEFMT hVolFmt, uint64_t
 
 RTDVMFMTOPS g_rtDvmFmtMbr =
 {
-    /* pcszFmt */
+    /* pszFmt */
     "MBR",
+    /* enmFormat */
+    RTDVMFORMATTYPE_MBR,
     /* pfnProbe */
     rtDvmFmtMbrProbe,
     /* pfnOpen */

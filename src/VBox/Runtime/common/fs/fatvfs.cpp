@@ -4146,7 +4146,7 @@ static DECLCALLBACK(int) rtFsFatDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntr
 
 
 /**
- * FAT file operations.
+ * FAT directory operations.
  */
 static const RTVFSDIROPS g_rtFsFatDirOps =
 {

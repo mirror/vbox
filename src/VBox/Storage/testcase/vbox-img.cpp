@@ -1441,7 +1441,7 @@ static int handleCompact(HandlerArg *a)
                     while (RT_SUCCESS(rc))
                     {
                         RTVFSFILE hVfsFile;
-                        rc = RTDvmVolumeCreateVfsFile(hVol, &hVfsFile);
+                        rc = RTDvmVolumeCreateVfsFile(hVol, RTFILE_O_READWRITE, &hVfsFile);
                         if (RT_FAILURE(rc))
                             break;
 

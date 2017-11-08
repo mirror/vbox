@@ -80,7 +80,9 @@ typedef const RTDVMDISK *PCRTDVMDISK;
 typedef struct RTDVMFMTOPS
 {
     /** Name of the format. */
-    const char *pcszFmt;
+    const char         *pszFmt;
+    /** The format type.   */
+    RTDVMFORMATTYPE     enmFormat;
 
     /**
      * Probes the given disk for known structures.
