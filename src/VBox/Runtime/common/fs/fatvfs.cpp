@@ -4020,7 +4020,7 @@ static DECLCALLBACK(int) rtFsFatDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntr
     PRTFSFATDIRSHRD pShared = pThis->pShared;
 
     /*
-     * Fake '.' and '..' entries.
+     * Fake '.' and '..' entries (required for root, we do it everywhere).
      */
     if (pThis->offDir < 2)
     {
@@ -4047,6 +4047,27 @@ static DECLCALLBACK(int) rtFsFatDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntr
         pDirEntry->szName[++pThis->offDir] = '\0';
         pDirEntry->cbName = pThis->offDir;
         return rc;
+    }
+    if (   pThis->offDir == 2
+        && pShared->cEntries >= 2)
+    {
+        /* Skip '.' and '..' entries if present. */
+        uint32_t            uBufferLock = UINT32_MAX;
+        uint32_t            cEntries    = 0;
+        PCFATDIRENTRYUNION  paEntries   = NULL;
+        int rc = rtFsFatDirShrd_GetEntriesAt(pShared, 0, &paEntries, &cEntries, &uBufferLock);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (   (paEntries[0].Entry.fAttrib & FAT_ATTR_DIRECTORY)
+            && memcmp(paEntries[0].Entry.achName, RT_STR_TUPLE(".          ")) == 0)
+        {
+            if (   (paEntries[1].Entry.fAttrib & FAT_ATTR_DIRECTORY)
+                && memcmp(paEntries[1].Entry.achName, RT_STR_TUPLE("..         ")) == 0)
+                pThis->offDir += sizeof(paEntries[0]) * 2;
+            else
+                pThis->offDir += sizeof(paEntries[0]);
+        }
+        rtFsFatDirShrd_ReleaseBufferAfterReading(pShared, uBufferLock);
     }
 
     /*
