@@ -2932,10 +2932,11 @@ static void *vmsvgaFIFOGetCmdPayload(uint32_t cbPayloadReq, uint32_t volatile *p
 
     /*
      * Do we have sufficient payload data available already?
+     * The host should not read beyond [SVGA_FIFO_NEXT_CMD], therefore '>=' in the condition below.
      */
     uint32_t cbAfter, cbBefore;
     uint32_t offNextCmd = pFIFO[SVGA_FIFO_NEXT_CMD];
-    if (offNextCmd > offCurrentCmd)
+    if (offNextCmd >= offCurrentCmd)
     {
         if (RT_LIKELY(offNextCmd < offFifoMax))
             cbAfter = offNextCmd - offCurrentCmd;
@@ -2981,7 +2982,7 @@ static void *vmsvgaFIFOGetCmdPayload(uint32_t cbPayloadReq, uint32_t volatile *p
             SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, i < 16 ? 1 : 2);
 
             offNextCmd = pFIFO[SVGA_FIFO_NEXT_CMD];
-            if (offNextCmd > offCurrentCmd)
+            if (offNextCmd >= offCurrentCmd)
             {
                 cbAfter = RT_MIN(offNextCmd, offFifoMax) - offCurrentCmd;
                 cbBefore = 0;
