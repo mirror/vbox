@@ -1053,8 +1053,37 @@ static int rtFsFatClusterMap_Fat12_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
 static int rtFsFatClusterMap_Fat16_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol, uint32_t idxCluster,
                                                     PRTFSFATCHAIN pChain)
 {
-    RT_NOREF(pFatCache, pVol, idxCluster, pChain);
-    return VERR_NOT_IMPLEMENTED;
+    /* ASSUME that for FAT16 we cache the whole FAT in a single entry.  That
+       way we don't need to deal with entries in different sectors and whatnot.  */
+    AssertReturn(pFatCache->cEntries == 1, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pFatCache->cbEntry == pVol->cbFat, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pFatCache->aEntries[0].offFat == 0, VERR_INTERNAL_ERROR_4);
+
+    /* Special case for empty files. */
+    if (idxCluster == 0)
+        return VINF_SUCCESS;
+
+    /* Work cluster by cluster. */
+    uint8_t const *pbFat = pFatCache->aEntries[0].pbData;
+    for (;;)
+    {
+        /* Validate the cluster, checking for end of file. */
+        if (   idxCluster >= pVol->cClusters
+            || idxCluster <  FAT_FIRST_DATA_CLUSTER)
+        {
+            if (idxCluster >= FAT_FIRST_FAT16_EOC)
+                return VINF_SUCCESS;
+            return VERR_VFS_BOGUS_OFFSET;
+        }
+
+        /* Add cluster to chain.  */
+        int rc = rtFsFatChain_Append(pChain, idxCluster);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /* Next cluster. */
+        idxCluster = RT_MAKE_U16(pbFat[idxCluster * 2], pbFat[idxCluster * 2 + 1]);
+    }
 }
 
 
@@ -3599,6 +3628,7 @@ static DECLCALLBACK(int) rtFsFatDir_TraversalOpen(void *pvThis, const char *pszE
     }
     else
         rc = VERR_PATH_NOT_FOUND;
+    LogFlow(("rtFsFatDir_TraversalOpen: %s -> %Rrc\n", pszEntry, rc));
     return rc;
 }
 
@@ -4290,6 +4320,17 @@ static int rtFsFatDirShrd_New(PRTFSFATVOL pThis, PRTFSFATDIRSHRD pParentDir, PCF
                     Assert(pShared->Core.Clusters.cbChain >= cbDir);
                     pShared->cbAllocatedForEntries = pShared->Core.Clusters.cbChain;
                     pShared->fFullyBuffered = true;
+                }
+
+                /* DOS doesn't set a size on directores, so use the cluster length instead. */
+                if (   cbDir == 0
+                    && pShared->Core.Clusters.cbChain > 0)
+                {
+                    cbDir = pShared->Core.Clusters.cbChain;
+                    pShared->Core.cbObject = cbDir;
+                    pShared->cEntries      = cbDir / sizeof(FATDIRENTRY);
+                    if (pShared->fFullyBuffered)
+                        pShared->cbAllocatedForEntries = RT_ALIGN_32(cbDir, pThis->cbSector);
                 }
             }
         }
@@ -5019,7 +5060,7 @@ static int rtFsFatVolTryInitDos2Plus(PRTFSFATVOL pThis, PCFATBOOTSECTOR pBootSec
                 return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Bogus FAT ID patting (FAT12): %.3Rhxs", pbFatSector);
             pThis->idxMaxLastCluster = FAT_LAST_FAT12_DATA_CLUSTER;
             pThis->idxEndOfChain     = (pbFatSector[1] >> 4) | ((uint32_t)pbFatSector[2] << 4);
-            idxOurEndOfChain         = FAT_FIRST_FAT12_EOC;
+            idxOurEndOfChain         = FAT_FIRST_FAT12_EOC | 0xf;
             break;
 
         case RTFSFATTYPE_FAT16:
@@ -5027,7 +5068,7 @@ static int rtFsFatVolTryInitDos2Plus(PRTFSFATVOL pThis, PCFATBOOTSECTOR pBootSec
                 return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Bogus FAT ID patting (FAT16): %.4Rhxs", pbFatSector);
             pThis->idxMaxLastCluster = FAT_LAST_FAT16_DATA_CLUSTER;
             pThis->idxEndOfChain     = RT_MAKE_U16(pbFatSector[2], pbFatSector[3]);
-            idxOurEndOfChain         = FAT_FIRST_FAT16_EOC;
+            idxOurEndOfChain         = FAT_FIRST_FAT16_EOC | 0xf;
             break;
 
         case RTFSFATTYPE_FAT32:
@@ -5037,7 +5078,7 @@ static int rtFsFatVolTryInitDos2Plus(PRTFSFATVOL pThis, PCFATBOOTSECTOR pBootSec
                 return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Bogus FAT ID patting (FAT32): %.8Rhxs", pbFatSector);
             pThis->idxMaxLastCluster = FAT_LAST_FAT32_DATA_CLUSTER;
             pThis->idxEndOfChain     = RT_MAKE_U32_FROM_U8(pbFatSector[4], pbFatSector[5], pbFatSector[6], pbFatSector[7]);
-            idxOurEndOfChain         = FAT_FIRST_FAT32_EOC;
+            idxOurEndOfChain         = FAT_FIRST_FAT32_EOC | 0xf;
             break;
 
         default: AssertFailedReturn(VERR_INTERNAL_ERROR_2);
