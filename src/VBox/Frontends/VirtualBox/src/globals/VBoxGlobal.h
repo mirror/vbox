@@ -454,7 +454,7 @@ public:
 
 #ifdef VBOX_WS_X11
     /** Assigns WM_CLASS property for passed @a pWidget. */
-    static void setWMClass(QWidget *pWidget, const char *pStrName, const char *pStrClass);
+    static void setWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString);
 #endif
 
 signals:

@@ -3323,25 +3323,22 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, const QRect &rect)
 }
 
 #ifdef VBOX_WS_X11
-void VBoxGlobal::setWMClass(QWidget *pWidget, const char *pStrName, const char *pStrClass)
+void VBoxGlobal::setWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString)
 {
     /* Make sure all arguments set: */
-    AssertReturnVoid(pWidget && pStrName && pStrClass);
+    AssertReturnVoid(pWidget && !strNameString.isNull() && !strClassString.isNull());
 
-    /* Create duplicates to avoid casting away constness: */
-    char *pWindowName = strdup(pStrName);
-    char *pWindowClass = strdup(pStrClass);
-    AssertReturnVoid(pWindowName && pWindowClass);
+    /* Define QByteArray object to make sure data is alive within the scope: */
+    QByteArray nameByteArray = strNameString.toLatin1();
+    QByteArray classByteArray = strClassString.toLatin1();
+
+    AssertReturnVoid(nameByteArray.data() && classByteArray.data());
 
     XClassHint windowClass;
-    windowClass.res_name = pWindowName;
-    windowClass.res_class = pWindowClass;
+    windowClass.res_name = nameByteArray.data();
+    windowClass.res_class = classByteArray.data();
     /* Set WM_CLASS of the window to passed name and class strings: */
     XSetClassHint(QX11Info::display(), pWidget->window()->winId(), &windowClass);
-
-    /* Free duplicates: */
-    XFree(windowClass.res_class);
-    XFree(windowClass.res_name);
 }
 #endif /* VBOX_WS_X11 */
 
