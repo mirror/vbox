@@ -561,10 +561,14 @@ void HGSMIMAUninit(HGSMIMADATA *pMA)
 {
     HGSMIMABLOCK *pIter;
     HGSMIMABLOCK *pNext;
-    RTListForEachSafe(&pMA->listBlocks, pIter, pNext, HGSMIMABLOCK, nodeBlock)
+    /* If it has been initialized. */
+    if (pMA->listBlocks.pNext)
     {
-        RTListNodeRemove(&pIter->nodeBlock);
-        hgsmiMABlockFree(pMA, pIter);
+        RTListForEachSafe(&pMA->listBlocks, pIter, pNext, HGSMIMABLOCK, nodeBlock)
+        {
+            RTListNodeRemove(&pIter->nodeBlock);
+            hgsmiMABlockFree(pMA, pIter);
+        }
     }
 
     RT_ZERO(*pMA);
