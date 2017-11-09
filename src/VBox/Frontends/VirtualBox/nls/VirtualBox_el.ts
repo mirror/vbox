@@ -6,7 +6,7 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translatorcomment>2017-10-01</translatorcomment>
+        <translatorcomment>2017-11-04</translatorcomment>
         <translation>Ελληνικά</translation>
     </message>
     <message>
@@ -5374,7 +5374,7 @@
     </message>
     <message>
         <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
-        <translation>Καθορίζει αν η εξομοιωμένη συσκευή του δείκτη είναι ένα τυπικό ποντίκι PS/2, μία ταμπλέτα USB ή ένα μία ταμπλέτα πολλαπλής αφής USB.</translation>
+        <translation>Καθορίζει αν η εξομοιωμένη συσκευή του δείκτη είναι ένα τυπικό ποντίκι PS/2, μία ταμπλέτα USB ή μία ταμπλέτα πολλαπλής αφής USB.</translation>
     </message>
     <message>
         <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. Not enough memory is left for the host operating system. Please select a smaller amount.</source>
@@ -5787,35 +5787,35 @@
     </message>
     <message>
         <source>Choose Medium Location</source>
-        <translation type="unfinished"></translation>
+        <translation>Επιλογή Τοποθεσίας Μέσου</translation>
     </message>
     <message>
         <source>Location can not be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η τοποθεσία δεν μπορεί να είναι κενή.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation type="unfinished">Αυτό το είδος του μέσου προσαρτάται άμεσα ή έμμεσα, διατηρείται όταν παίρνονται στιγμιότυπα.</translation>
+        <translation>Αυτό το είδος του μέσου προσαρτάται άμεσα ή έμμεσα, διατηρείται όταν παίρνονται στιγμιότυπα.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation type="unfinished">Αυτό το είδος του μέσου προσαρτάται έμμεσα, οι αλλαγές διαγράφονται κατά την επόμενη εκκίνηση της εικονικής μηχανής.</translation>
+        <translation>Αυτό το είδος του μέσου προσαρτάται έμμεσα, οι αλλαγές διαγράφονται κατά την επόμενη εκκίνηση της εικονικής μηχανής.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation type="unfinished">Αυτό το είδος του μέσου προσαρτάται άμεσα, αγνοείται όταν παίρνονται στιγμιότυπα.</translation>
+        <translation>Αυτό το είδος του μέσου προσαρτάται άμεσα, αγνοείται όταν παίρνονται στιγμιότυπα.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation type="unfinished">Αυτό το είδος του μέσου προσαρτάται άμεσα, επιτρέποντας την ταυτόχρονη χρήση από μερικές μηχανές.</translation>
+        <translation>Αυτό το είδος του μέσου προσαρτάται άμεσα, επιτρέποντας την ταυτόχρονη χρήση από μερικές μηχανές.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation type="unfinished">Αυτό το είδος του μέσου προσαρτάται άμεσα, και μπορεί να χρησιμοποιηθεί από μερικές μηχανές.</translation>
+        <translation>Αυτό το είδος του μέσου προσαρτάται άμεσα, και μπορεί να χρησιμοποιηθεί από μερικές μηχανές.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation type="unfinished">Αυτό το είδος του μέσου προσαρτάται έμμεσα, έτσι ώστε το βασικό μέσο να μπορεί να χρησιμοποιηθεί για μερικές μηχανές οι οποίες χρησιμοποιούν το διαφορικό μέσο για να αποθηκεύουν τις τροποποιήσεις τους.</translation>
+        <translation>Αυτό το είδος του μέσου προσαρτάται έμμεσα, έτσι ώστε το βασικό μέσο να μπορεί να χρησιμοποιηθεί για μερικές μηχανές οι οποίες χρησιμοποιούν το διαφορικό μέσο για να αποθηκεύουν τις τροποποιήσεις τους.</translation>
     </message>
 </context>
 <context>
@@ -6004,23 +6004,23 @@
     </message>
     <message>
         <source>Current extension (*.%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Τρέχουσα επέκταση (*.%1)</translation>
     </message>
     <message>
         <source>Choose the location of this medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Επιλογή της τοποθεσίας του μέσου</translation>
     </message>
     <message>
         <source>&amp;Move...</source>
-        <translation type="unfinished"></translation>
+        <translation>Μετακίνηση...</translation>
     </message>
     <message>
         <source>Move Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Μετακίνηση Αρχείου Σκληρού Δίσκου (%1)</translation>
     </message>
     <message>
         <source>Move selected disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Μετακίνηση επιλεγμένων αρχείων εικόνας δίσκου</translation>
     </message>
 </context>
 <context>
@@ -7302,7 +7302,7 @@
     </message>
     <message>
         <source>Failed to create the virtual disk image storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Αποτυχία δημιουργίας της αποθήκευσης του εικονικού μέσου &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -8493,7 +8493,7 @@
     </message>
     <message>
         <source>Copy Virtual Hard Disk</source>
-        <translation type="vanished">Αντιγραφή Εικονικού  Σκληρού Δίσκου</translation>
+        <translation type="vanished">Αντιγραφή Εικονικού Σκληρού Δίσκου</translation>
     </message>
     <message>
         <source>Hard disk to copy</source>
@@ -8569,76 +8569,76 @@
     </message>
     <message>
         <source>Copy Virtual Disk Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Αντιγραφή Εικονικού Αρχείου Δίσκου</translation>
     </message>
     <message>
         <source>Disk image to copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Αρχείο δίσκου για αντιγραφή</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual disk image file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Παρακαλώ επιλέξτε το εικονικό αρχείο δίσκου που θέλετε να αντιγράψετε αν δεν είναι ήδη επιλεγμένο. Μπορείτε να διαλέξετε είτε από τον κατάλογο, ή να χρησιμοποιήσετε το εικονίδιο φακέλου δίπλα από τον κατάλογο για να επιλέξετε.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual disk image file to copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>Παρακαλώ επιλέξτε έναν εικονικό αρχείο δίσκου για αντιγραφή...</translation>
     </message>
     <message>
         <source>Disk image file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Τύπος αρχείου δίσκου</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk image. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Επιλέξτε τον τύπο του αρχείου που θέλετε να χρησιμοποιήσετε για το νέο εικονικό σκληρό δίσκο. Αν δεν χρειάζεται να τον χρησιμοποιήσετε με άλλο λογισμικό εικονοποίησης μπορείτε να αφήσετε αυτή τη ρύθμιση όπως είναι.</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual disk image file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>Επιλέξτε αν ο νέος εικονικός σκληρός δίσκος θα μεγαλώνει δυναμικά με τη χρήση (δυναμική εκχώρηση) ή αν θα δημιουργηθεί με το μέγιστο μέγεθος (πάγιο μέγεθος).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; disk image file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Η &lt;b&gt;δυναμική εκχώρηση&lt;/b&gt; σκληρού δίσκου θα χρησιμοποιήσει χώρο στον πραγματικό σκληρό δίσκο καθώς χρησιμοποιείται (μέχρι το μέγιστο &lt;b&gt;πάγιο μέγεθος&lt;/b&gt;), αν και δεν θα συρρικνωθεί αυτόματα αν ελευθερωθεί χώρος στον εικονικό σκληρό δίσκο.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; disk image file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ένας σκληρός δίσκος με &lt;b&gt;πάγιο μέγεθος&lt;/b&gt; μπορεί να πάρει περισότερο να δημιουργηθεί σε κάποια συστήματα αλλά συχνά είναι πιο γρήγορος κατά τη χρήση.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the disk image file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Μπορείτε επίσης να επιλέξετε να &lt;b&gt;χωρίσετε&lt;/b&gt; το αρχείο του σκληρού δίσκου σε αρχεία μέγιστου μεγέθους 2 gigabytes το καθένα. Αυτό είναι κυρίως χρήσιμο αν θέλετε να αποθηκεύσετε την εικονική μηχανή σε αποσπώμενη συσκευή USB ή σε παλιά συστήματα, μερικά απ&apos; τα οποία δεν διαχειρίζονται πολύ μεγάλα αρχεία.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Παρακαλώ επιλέξτε μία θέση για το αρχείο του νέου εικονικού δίσκου</translation>
     </message>
     <message>
         <source>New disk image to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Δημιουργία νέου αρχείου δίσκου</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual disk image file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Παρακαλώ συμπληρώστε το όνομα του αρχείου του νέου εικονικού δίσκου στο κουτί παρακάτω ή κάντε κλικ στο εικονίδιο φακέλου για να επιλέξετε ένα φάκελο στον οποίο θα δημιουργηθεί το αρχείο.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual disk image file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Επιλέξτε μία θέση για το αρχείο του νέου εικονικού δίσκου...</translation>
     </message>
     <message>
         <source>%1_copy</source>
         <comment>copied virtual disk image name</comment>
-        <translation type="unfinished">%1_αντίγραφο</translation>
+        <translation>%1_αντίγραφο</translation>
     </message>
     <message>
         <source>Disk image to &amp;copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Αρχείο δίσκου για αντιγραφή</translation>
     </message>
     <message>
         <source>&amp;New disk image to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Δημιουργία νέου αρχείου δίσκου</translation>
     </message>
     <message>
         <source>Disk image file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>Τύπος αρχείου δίσκου</translation>
     </message>
 </context>
 <context>
