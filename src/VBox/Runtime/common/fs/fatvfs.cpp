@@ -2737,6 +2737,7 @@ static int rtFsFatDirShrd_FindEntry(PRTFSFATDIRSHRD pThis, const char *pszEntry,
              * Regular directory entry. Do the matching, first 8.3 then long name.
              */
             else if (   fIs8Dot3Name
+                     && !(paEntries[iEntry].Entry.fAttrib & FAT_ATTR_VOLUME)
                      && memcmp(paEntries[iEntry].Entry.achName, szName8Dot3, sizeof(paEntries[iEntry].Entry.achName)) == 0)
             {
                 *poffEntryInDir = offEntryInDir;
@@ -2747,6 +2748,7 @@ static int rtFsFatDirShrd_FindEntry(PRTFSFATDIRSHRD pThis, const char *pszEntry,
             }
             else if (   cwcName != 0
                      && idNextSlot == 0
+                     && !(paEntries[iEntry].Entry.fAttrib & FAT_ATTR_VOLUME)
                      && rtFsFatDir_CalcChecksum(&paEntries[iEntry].Entry) == bChecksum
                      && RTUtf16ICmpUtf8(wszName, pszEntry) == 0)
             {
@@ -4149,9 +4151,9 @@ static DECLCALLBACK(int) rtFsFatDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntr
                 }
             }
             /*
-             * Got a regular directory entry.  Try return it to the caller.
+             * Got a regular directory entry.  Try return it to the caller if not volume label.
              */
-            else
+            else if (!(paEntries[iEntry].Entry.fAttrib & FAT_ATTR_VOLUME))
             {
                 /* Do the length calc and check for overflows. */
                 bool   fLongName = false;
@@ -4212,6 +4214,8 @@ static DECLCALLBACK(int) rtFsFatDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntr
                 Assert(RTStrValidateEncoding(pDirEntry->szName) == VINF_SUCCESS);
                 return rc;
             }
+            else
+                cwcName = 0;
         }
 
         rtFsFatDirShrd_ReleaseBufferAfterReading(pShared, uBufferLock);
