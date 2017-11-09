@@ -1350,21 +1350,23 @@ static RTEXITCODE rtCmdLsProcessArgument(PRTCMDLSOPTS pOpts, const char *pszArg)
         if (   pOpts->cCollections > 0
             || rtCmdLsNewCollection(pOpts, "") != NULL)
         {
+            const char *pszOwner = NULL;
             RTFSOBJINFO OwnerInfo;
             if (Info.Attr.u.Unix.uid != NIL_RTUID && pOpts->fShowOwner)
+            {
                 rc = RTVfsChainQueryInfo(pszArg, &OwnerInfo, RTFSOBJATTRADD_UNIX_OWNER, fPath, NULL, NULL);
-            else
-                rc = VERR_NOT_SUPPORTED;
-            const char *pszOwner = RT_SUCCESS(rc) && OwnerInfo.Attr.u.UnixOwner.szName[0]
-                                 ? &OwnerInfo.Attr.u.UnixOwner.szName[0] : NULL;
+                if (RT_SUCCESS(rc) && OwnerInfo.Attr.u.UnixOwner.szName[0])
+                    pszOwner = &OwnerInfo.Attr.u.UnixOwner.szName[0];
+            }
 
+            const char *pszGroup = NULL;
             RTFSOBJINFO GroupInfo;
             if (Info.Attr.u.Unix.gid != NIL_RTGID && pOpts->fShowGroup)
+            {
                 rc = RTVfsChainQueryInfo(pszArg, &GroupInfo, RTFSOBJATTRADD_UNIX_GROUP, fPath, NULL, NULL);
-            else
-                rc = VERR_NOT_SUPPORTED;
-            const char *pszGroup = RT_SUCCESS(rc) && GroupInfo.Attr.u.UnixGroup.szName[0]
-                                 ? &GroupInfo.Attr.u.UnixGroup.szName[0] : NULL;
+                if (RT_SUCCESS(rc) && GroupInfo.Attr.u.UnixGroup.szName[0])
+                    pszGroup = &GroupInfo.Attr.u.UnixGroup.szName[0];
+            }
 
             return rtCmdLsAddOne(pOpts->papCollections[0], pszArg, &Info, pszOwner, pszGroup, NULL);
         }
