@@ -479,7 +479,7 @@ DECLINLINE(char *) rtVfsChainSpecDupStrN(const char *psz, size_t cch, int *prc)
                 char ch = *psz++;
                 if (ch == '\\' && cch > 0)
                 {
-                    char ch2 = psz[2];
+                    char ch2 = *psz;
                     if (rtVfsChainSpecIsEscapableChar(ch2))
                     {
                         psz++;
