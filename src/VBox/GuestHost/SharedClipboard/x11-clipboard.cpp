@@ -1958,7 +1958,10 @@ static void vboxClipboardReadX11Worker(void *pUserData,
             getSelectionValue(pCtx, pCtx->X11HTMLFormat, pReq);
     }
     else
+    {
         rc = VERR_NOT_IMPLEMENTED;
+        pCtx->fBusy = false;
+    }
     if (RT_FAILURE(rc))
     {
         /* The clipboard callback was never scheduled, so we must signal
@@ -2552,6 +2555,32 @@ static void testNoSelectionOwnership(CLIPBACKEND *pCtx, const char *pcszTestCtx)
     RTTESTI_CHECK_MSG(!g_ownsSel, ("context: %s\n", pcszTestCtx));
 }
 
+static void testBadFormatRequestFromHost(RTTEST hTest, CLIPBACKEND *pCtx)
+{
+    clipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world",
+                           sizeof("hello world"), 8);
+    clipSendTargetUpdate(pCtx);
+    if (clipQueryFormats() != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+        RTTestFailed(hTest, "Wrong targets reported: %02X\n",
+                     clipQueryFormats());
+    else
+    {
+        char *pc;
+        CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
+        ClipRequestDataFromX11(pCtx, 100, pReq);  /* Bad format. */
+        int rc = VINF_SUCCESS;
+        uint32_t cbActual = 0;
+        clipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
+        if (rc != VERR_NOT_IMPLEMENTED)
+            RTTestFailed(hTest, "Wrong return code, expected VERR_NOT_IMPLEMENTED, got %Rrc\n",
+                         rc);
+        clipSetSelectionValues("", XA_STRING, "", sizeof(""), 8);
+        clipSendTargetUpdate(pCtx);
+        if (clipQueryFormats() == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+            RTTestFailed(hTest, "Failed to report targets after bad host request.\n");
+    }
+}
+
 int main()
 {
     /*
@@ -2755,6 +2784,11 @@ int main()
     RTTEST_CHECK_MSG(hTest, g_ownsSel,
                      (hTest, "VBox grabbed the clipboard with unknown data and we ignored it\n"));
     testStringFromVBoxFailed(hTest, pCtx, "UTF8_STRING");
+
+    /*** VBox requests a bad format ***/
+    RTTestSub(hTest, "recovery from a bad format request");
+    testBadFormatRequestFromHost(hTest, pCtx);
+
     rc = ClipStopX11(pCtx);
     AssertRCReturn(rc, 1);
     ClipDestructX11(pCtx);
