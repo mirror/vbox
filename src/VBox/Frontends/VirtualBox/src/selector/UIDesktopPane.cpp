@@ -546,7 +546,10 @@ void UIDesktopPanePrivate::setToolsPaneIcon(const QIcon &icon)
     prepareToolsPane();
 
     /* Assign corresponding icon: */
-    m_pLabelToolsPaneIcon->setPixmap(icon.pixmap(QSize(200, 200)));
+    const QList<QSize> aSizes = icon.availableSizes();
+    const QSize firstOne = aSizes.isEmpty() ? QSize(200, 200) : aSizes.first();
+    const double dRatio = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize) / 32;
+    m_pLabelToolsPaneIcon->setPixmap(icon.pixmap(QSize(firstOne.width() * dRatio, firstOne.height() * dRatio)));
 
     /* Raise corresponding widget: */
     setCurrentWidget(m_pScrollArea);
