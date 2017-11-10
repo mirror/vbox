@@ -196,7 +196,7 @@ static bool vboxSvcClipboardReturnMsg (VBOXCLIPBOARDCLIENTDATA *pClient, VBOXHGC
     }
     else if (pClient->fMsgReadData)
     {
-        uint32_t fFormat;
+        uint32_t fFormat = 0;
 
         LogRelFlow(("vboxSvcClipboardReturnMsg: ReadData %02X\n", pClient->u32RequestedFormat));
         if (pClient->u32RequestedFormat & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
