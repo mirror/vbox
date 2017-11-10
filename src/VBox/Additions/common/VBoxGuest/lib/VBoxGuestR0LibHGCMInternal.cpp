@@ -890,8 +890,8 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(PVBGLIOCHGCMCALL pCallInfo, uint32_t cbCa
          */
         VMMDevHGCMCall *pHGCMCall;
         rc = VbglR0GRAlloc((VMMDevRequestHeader **)&pHGCMCall,
-                         sizeof(VMMDevHGCMCall) + pCallInfo->cParms * sizeof(HGCMFunctionParameter) + cbExtra,
-                         VMMDevReq_HGCMCall);
+                           sizeof(VMMDevHGCMCall) + pCallInfo->cParms * sizeof(HGCMFunctionParameter) + cbExtra,
+                           VMMDevReq_HGCMCall);
         if (RT_SUCCESS(rc))
         {
             bool fLeakIt;
