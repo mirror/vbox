@@ -19,23 +19,26 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <iprt/ctype.h>
-#include <iprt/thread.h>
-
-#include <VBox/sup.h>
 #include "VBoxCpuReport.h"
 
-#include <unistd.h>
+#include <iprt/file.h>
+#include <iprt/thread.h>
+
+#ifndef RT_OS_WINDOWS
+# include <unistd.h>
+#else /* RT_OS_WINDOWS: for test compiling this file on windows */
+# include <io.h>
+int pread(int, void *, size_t, off_t);
+int pwrite(int, void const *, size_t, off_t);
+#endif
 #include <fcntl.h>
 #include <errno.h>
 
 
-#define MSR_DEV_NAME    "/dev/cpu/0/msr"
-
-
 /*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
+*   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+#define MSR_DEV_NAME    "/dev/cpu/0/msr"
 
 
 /*********************************************************************************************************************************
@@ -45,6 +48,9 @@
 static int              g_fdMsr;
 
 
+/**
+ * @interface_method_impl{VBCPUREPMSRACCESSORS,pfnMsrProberRead}
+ */
 static int linuxMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue, bool *pfGp)
 {
     int  rc = VINF_SUCCESS;
@@ -64,6 +70,10 @@ static int linuxMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue, b
     return RT_SUCCESS(rc) && !pfGp;
 }
 
+
+/**
+ * @interface_method_impl{VBCPUREPMSRACCESSORS,pfnMsrProberWrite}
+ */
 static int linuxMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uValue, bool *pfGp)
 {
     int  rc = VINF_SUCCESS;
@@ -83,7 +93,11 @@ static int linuxMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uValue, bo
     return RT_SUCCESS(rc) && !pfGp;
 }
 
-static int linuxMsrProberModify(uint32_t uMsr, RTCPUID idCpu, uint64_t fAndMask, uint64_t fOrMask, PSUPMSRPROBERMODIFYRESULT pResult)
+/**
+ * @interface_method_impl{VBCPUREPMSRACCESSORS,pfnMsrProberModify}
+ */
+static DECLCALLBACK(int) linuxMsrProberModify(uint32_t uMsr, RTCPUID idCpu, uint64_t fAndMask, uint64_t fOrMask,
+                                              PSUPMSRPROBERMODIFYRESULT pResult)
 {
     int         rc = VINF_SUCCESS;
     uint64_t    uBefore, uWrite, uAfter;
@@ -99,11 +113,11 @@ static int linuxMsrProberModify(uint32_t uMsr, RTCPUID idCpu, uint64_t fAndMask,
     vbCpuRepDebug("MSR %#x\n", uMsr);
     RTThreadSleep(10);
 #endif
-    rcBefore = pread(g_fdMsr, &uBefore, sizeof(uBefore), uMsr) != sizeof(uBefore);
+    rcBefore = pread(g_fdMsr, &uBefore, sizeof(uBefore), uMsr);
     uWrite = (uBefore & fAndMask) | fOrMask;
     rcWrite = pwrite(g_fdMsr, &uWrite, sizeof(uWrite), uMsr);
-    rcAfter = pread(g_fdMsr, &uAfter, sizeof(uAfter), uMsr) != sizeof(uAfter);
-    rcRestore = pwrite(g_fdMsr, &uBefore, sizeof(uBefore), uMsr) != sizeof(uBefore);
+    rcAfter = pread(g_fdMsr, &uAfter, sizeof(uAfter), uMsr);
+    rcRestore = pwrite(g_fdMsr, &uBefore, sizeof(uBefore), uMsr);
 
 #if 0
     vbCpuRepDebug("MSR: %#x, %#llx -> %#llx -> %#llx (%d/%d/%d/%d)\n",
@@ -113,43 +127,43 @@ static int linuxMsrProberModify(uint32_t uMsr, RTCPUID idCpu, uint64_t fAndMask,
     pResult->uBefore    = uBefore;
     pResult->uWritten   = uWrite;
     pResult->uAfter     = uAfter;
-    pResult->fBeforeGp  = rcBefore;
-    pResult->fModifyGp  = rcWrite != sizeof(uWrite);
-    pResult->fAfterGp   = rcAfter;
-    pResult->fRestoreGp = rcRestore;
+    pResult->fBeforeGp  = rcBefore  != sizeof(uBefore);
+    pResult->fModifyGp  = rcWrite   != sizeof(uWrite);
+    pResult->fAfterGp   = rcAfter   != sizeof(uAfter);
+    pResult->fRestoreGp = rcRestore != sizeof(uBefore);
 
     return rc;
 }
 
-static int linuxMsrProberTerm(void)
-{
-    if (g_fdMsr < 0)
-        return VERR_INVALID_STATE;
 
-    close(g_fdMsr);
-    return VINF_SUCCESS;
+/**
+ * @interface_method_impl{VBCPUREPMSRACCESSORS,pfnTerm}
+ */
+static DECLCALLBACK(void) linuxMsrProberTerm(void)
+{
+    if (g_fdMsr >= 0)
+    {
+        close(g_fdMsr);
+        g_fdMsr = -1;
+    }
 }
 
-int PlatformMsrProberInit(VBMSRFNS *fnsMsr, bool *pfAtomicMsrMod)
+int VbCpuRepMsrProberInitPlatform(PVBCPUREPMSRACCESSORS pMsrAccessors)
 {
-    if (access(MSR_DEV_NAME, F_OK))
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, MSR_DEV_NAME, RTFILE_O_READWRITE | RTFILE_O_DENY_NONE | RTFILE_O_OPEN);
+    if (RT_SUCCESS(rc))
     {
-        vbCpuRepDebug("warning: The " MSR_DEV_NAME " device does not exist\n");
-        return VERR_NOT_FOUND;
+        g_fdMsr = RTFileToNative(hFile);
+        Assert(g_fdMsr != -1);
+
+        pMsrAccessors->fAtomic             = false; /* Can't modify/restore MSRs without trip to R3. */
+        pMsrAccessors->pfnMsrProberRead    = linuxMsrProberRead;
+        pMsrAccessors->pfnMsrProberWrite   = linuxMsrProberWrite;
+        pMsrAccessors->pfnMsrProberModify  = linuxMsrProberModify;
+        pMsrAccessors->pfnTerm             = linuxMsrProberTerm;
+        return VINF_SUCCESS;
     }
-
-    g_fdMsr = open(MSR_DEV_NAME, O_RDWR);
-    if (g_fdMsr <= 0)
-    {
-        vbCpuRepDebug("warning: Failed to open " MSR_DEV_NAME "\n");
-        return VERR_ACCESS_DENIED;
-    }
-
-    fnsMsr->msrRead       = linuxMsrProberRead;
-    fnsMsr->msrWrite      = linuxMsrProberWrite;
-    fnsMsr->msrModify     = linuxMsrProberModify;
-    fnsMsr->msrProberTerm = linuxMsrProberTerm;
-    *pfAtomicMsrMod       = false;  /* Can't modify/restore MSRs without trip to R3. */
-
-    return VINF_SUCCESS;
+    vbCpuRepDebug("warning: Failed to open " MSR_DEV_NAME ": %Rrc\n", rc);
+    return rc;
 }

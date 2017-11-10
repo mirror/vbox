@@ -15,15 +15,37 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-typedef struct VBMSRFNS {
-   int (*msrRead)(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue, bool *pfGp);
-   int (*msrWrite)(uint32_t uMsr, RTCPUID idCpu, uint64_t uValue, bool *pfGp);
-   int (*msrModify)(uint32_t uMsr, RTCPUID idCpu, uint64_t fAndMask, uint64_t fOrMask, PSUPMSRPROBERMODIFYRESULT pResult);
-   int (*msrProberTerm)(void);
-} VBMSRFNS;
+
+#ifndef ___VBoxCpuReport_h___
+#define ___VBoxCpuReport_h___
+
+#include <VBox/sup.h>
+
+RT_C_DECLS_BEGIN
+
+typedef struct VBCPUREPMSRACCESSORS
+{
+    /** Wheter MSR prober can read/modify/restore MSRs more or less
+     *  atomically, without allowing other code to be executed. */
+    bool                    fAtomic;
+    /** @copydoc SUPR3MsrProberRead  */
+    DECLCALLBACKMEMBER(int, pfnMsrProberRead)(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue, bool *pfGp);
+    /** @copydoc SUPR3MsrProberWrite  */
+    DECLCALLBACKMEMBER(int, pfnMsrProberWrite)(uint32_t uMsr, RTCPUID idCpu, uint64_t uValue, bool *pfGp);
+    /** @copydoc SUPR3MsrProberModify */
+    DECLCALLBACKMEMBER(int, pfnMsrProberModify)(uint32_t uMsr, RTCPUID idCpu, uint64_t fAndMask, uint64_t fOrMask,
+                                                PSUPMSRPROBERMODIFYRESULT pResult);
+    /** Termination callback, optional. */
+    DECLCALLBACKMEMBER(void, pfnTerm)(void);
+} VBCPUREPMSRACCESSORS;
+typedef VBCPUREPMSRACCESSORS *PVBCPUREPMSRACCESSORS;
 
 extern void vbCpuRepDebug(const char *pszMsg, ...);
 extern void vbCpuRepPrintf(const char *pszMsg, ...);
-extern int SupDrvMsrProberInit(VBMSRFNS *fnsMsr, bool *pfAtomicMsrMod);
-extern int PlatformMsrProberInit(VBMSRFNS *fnsMsr, bool *pfAtomicMsrMod);
+extern int  VbCpuRepMsrProberInitSupDrv(PVBCPUREPMSRACCESSORS pMsrAccessors);
+extern int  VbCpuRepMsrProberInitPlatform(PVBCPUREPMSRACCESSORS pMsrAccessors);
+
+RT_C_DECLS_END
+
+#endif
 
