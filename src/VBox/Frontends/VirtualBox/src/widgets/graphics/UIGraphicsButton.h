@@ -86,7 +86,6 @@ private:
 
     /* Variables: */
     QIcon m_icon;
-    UIGraphicsButtonType m_buttonType;
     bool m_fParentSelected;
 };
 
