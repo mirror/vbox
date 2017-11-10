@@ -41,6 +41,7 @@
 
 #include "VBoxCpuReport.h"
 
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -2550,9 +2551,9 @@ static VBCPUREPBADNESS queryMsrWriteBadness(uint32_t uMsr)
         case 0x00000012: /* KVM */
             return VBCPUREPBADNESS_BOND_VILLAIN;
 
-        /* 
-         * The TSC is tricky -- writing it isn't a problem, but if we put back the original 
-         * value, we'll throw it out of whack. If we're on an SMP OS that uses the TSC for timing, 
+        /*
+         * The TSC is tricky -- writing it isn't a problem, but if we put back the original
+         * value, we'll throw it out of whack. If we're on an SMP OS that uses the TSC for timing,
          * we'll likely kill it, especially if we can't do the modification very quickly.
          */
         case 0x00000010: /* IA32_TIME_STAMP_COUNTER */
@@ -2560,11 +2561,11 @@ static VBCPUREPBADNESS queryMsrWriteBadness(uint32_t uMsr)
                 return VBCPUREPBADNESS_BOND_VILLAIN;
             break;
 
-        /* 
-         * The following MSRs are not safe to modify in a typical OS if we can't do it atomically, 
-         * i.e. read/modify/restore without allowing any other code to execute. Everything related 
+        /*
+         * The following MSRs are not safe to modify in a typical OS if we can't do it atomically,
+         * i.e. read/modify/restore without allowing any other code to execute. Everything related
          * to syscalls will blow up in our face if we go back to userland with modified MSRs.
-         */ 
+         */
 //        case 0x0000001b: /* IA32_APIC_BASE */
         case 0xc0000081: /* MSR_K6_STAR */
         case 0xc0000082: /* AMD64_STAR64 */

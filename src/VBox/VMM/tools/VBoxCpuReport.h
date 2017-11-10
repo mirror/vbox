@@ -27,4 +27,3 @@ extern void vbCpuRepPrintf(const char *pszMsg, ...);
 extern int SupDrvMsrProberInit(VBMSRFNS *fnsMsr, bool *pfAtomicMsrMod);
 extern int PlatformMsrProberInit(VBMSRFNS *fnsMsr, bool *pfAtomicMsrMod);
 
-
