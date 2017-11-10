@@ -671,8 +671,8 @@ static int rtR0DbgKrnlDarwinLoadSymTab(RTDBGKRNLINFOINT *pThis, const char *pszK
                         && (   strcmp(pszSym, "__mh_execute_header") /* n_sect=1 in 10.7/amd64 */
                             || pSym->n_sect > pThis->cSections) )
                     {
-                        printf("RTR0DbgKrnlInfoOpen: %s: Abs symbol #%u '%s' problem: n_sect (%u) is not MACHO_NO_SECT\n",
-                               pszKernelFile, iSym, pszSym);
+                        printf("RTR0DbgKrnlInfoOpen: %s: Abs symbol #%u '%s' problem: n_sect (%u) is not MACHO_NO_SECT (cSections is %u)\n",
+                               pszKernelFile, iSym, pszSym, pSym->n_sect, pThis->cSections);
                         RETURN_VERR_BAD_EXE_FORMAT;
                     }
                     if (pSym->n_desc & ~(REFERENCED_DYNAMICALLY | N_WEAK_DEF))
@@ -1151,7 +1151,7 @@ RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
         { "/System/Library/Kernels/kernel.debug", VERR_WRONG_ORDER },
         { "/mach_kernel", VERR_WRONG_ORDER },
     };
-    int rc;
+    int rc = VERR_WRONG_ORDER; /* shut up stupid MSC */
     for (uint32_t i = 0; i < RT_ELEMENTS(aKernels); i++)
     {
         aKernels[i].rc = rc = rtR0DbgKrnlDarwinOpen(phKrnlInfo, aKernels[i].pszLocation);
