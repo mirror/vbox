@@ -29,14 +29,6 @@ class QGraphicsSceneMouseEvent;
 class QGraphicsSceneHoverEvent;
 class QPropertyAnimation;
 
-/* Graphics-button types: */
-enum UIGraphicsButtonType
-{
-    UIGraphicsButtonType_Iconified,
-    UIGraphicsButtonType_DirectArrow,
-    UIGraphicsButtonType_RoundArrow
-};
-
 /* Graphics-button representation: */
 class UIGraphicsButton : public QIGraphicsWidget
 {
@@ -51,7 +43,6 @@ public:
 
     /* Constructor: */
     UIGraphicsButton(QIGraphicsWidget *pParent, const QIcon &icon);
-    UIGraphicsButton(QIGraphicsWidget *pParent, UIGraphicsButtonType buttonType);
 
     /* API: Parent stuff: */
     void setParentSelected(bool fParentSelected);

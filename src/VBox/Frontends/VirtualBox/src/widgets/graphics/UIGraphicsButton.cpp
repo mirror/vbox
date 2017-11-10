@@ -40,14 +40,6 @@ UIGraphicsButton::UIGraphicsButton(QIGraphicsWidget *pParent, const QIcon &icon)
     refresh();
 }
 
-UIGraphicsButton::UIGraphicsButton(QIGraphicsWidget *pParent, UIGraphicsButtonType buttonType)
-    : QIGraphicsWidget(pParent)
-    , m_fParentSelected(false)
-{
-    /* Refresh finally: */
-    refresh();
-}
-
 void UIGraphicsButton::setParentSelected(bool fParentSelected)
 {
     if (m_fParentSelected == fParentSelected)
