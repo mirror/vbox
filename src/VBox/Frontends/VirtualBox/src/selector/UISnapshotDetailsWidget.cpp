@@ -868,6 +868,7 @@ void UISnapshotDetailsWidget::prepareTabDetails()
         m_pScrollAreaDetails->setWidgetResizable(true);
         m_pScrollAreaDetails->setFrameShadow(QFrame::Plain);
         m_pScrollAreaDetails->setFrameShape(QFrame::NoFrame);
+        m_pScrollAreaDetails->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
         m_pScrollAreaDetails->viewport()->setAutoFillBackground(false);
 
         /* Create details widget: */
@@ -878,8 +879,11 @@ void UISnapshotDetailsWidget::prepareTabDetails()
             m_pLayoutDetails = new QVBoxLayout(pWidgetDetails);
             AssertPtrReturnVoid(m_pLayoutDetails);
             {
+                /* Metric: */
+                const int iSpacing = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+
                 /* Configure layout: */
-                m_pLayoutDetails->setSpacing(5);
+                m_pLayoutDetails->setSpacing(iSpacing);
 #ifdef VBOX_WS_MAC
                 m_pLayoutDetails->setContentsMargins(10, 10, 10, 10);
 #endif
@@ -893,7 +897,7 @@ void UISnapshotDetailsWidget::prepareTabDetails()
                     AssertPtrReturnVoid(pLayoutLeft);
                     {
                         /* Configure layout: */
-                        pLayoutLeft->setSpacing(5);
+                        pLayoutLeft->setSpacing(iSpacing);
                         pLayoutLeft->setContentsMargins(0, 0, 0, 0);
 
                         /* Create 'General' element: */
@@ -915,6 +919,7 @@ void UISnapshotDetailsWidget::prepareTabDetails()
                     AssertPtrReturnVoid(pLayoutRight);
                     {
                         /* Configure layout: */
+                        pLayoutLeft->setSpacing(iSpacing);
                         pLayoutRight->setContentsMargins(0, 0, 0, 0);
 
                         /* Create 'Preview' element: */
@@ -937,7 +942,7 @@ void UISnapshotDetailsWidget::prepareTabDetails()
                 QIFlowLayout *pLayout2 = new QIFlowLayout;
                 {
                     /* Configure layout: */
-                    pLayout2->setSpacing(5);
+                    pLayout2->setSpacing(iSpacing);
 
                     /* Create 'Display' element: */
                     m_details[DetailsElementType_Display] = createDetailsElement(DetailsElementType_Display);
