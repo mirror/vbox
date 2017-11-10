@@ -113,8 +113,7 @@ protected:
     {
         /* Hints: */
         ElementData_Margin,
-        ElementData_Spacing,
-        ElementData_MinimumTextColumnWidth
+        ElementData_Spacing
     };
 
     /** This event handler is delivered after the widget has been resized. */

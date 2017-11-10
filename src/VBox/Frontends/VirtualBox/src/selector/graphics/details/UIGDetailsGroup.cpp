@@ -127,8 +127,8 @@ QVariant UIGDetailsGroup::data(int iKey) const
     switch (iKey)
     {
         /* Layout hints: */
-        case GroupData_Margin: return 2;
-        case GroupData_Spacing: return 10;
+        case GroupData_Margin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 6;
+        case GroupData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         /* Default: */
         default: break;
     }

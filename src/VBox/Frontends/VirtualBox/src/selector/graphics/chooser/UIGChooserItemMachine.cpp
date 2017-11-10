@@ -196,9 +196,9 @@ QVariant UIGChooserItemMachine::data(int iKey) const
     switch (iKey)
     {
         /* Layout hints: */
-        case MachineItemData_Margin: return 5;
-        case MachineItemData_MajorSpacing: return 10;
-        case MachineItemData_MinorSpacing: return 4;
+        case MachineItemData_Margin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+        case MachineItemData_MajorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
+        case MachineItemData_MinorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
         case MachineItemData_TextSpacing: return 0;
 
         /* Pixmaps: */
