@@ -629,7 +629,7 @@ static int rtR0DbgKrnlDarwinLoadSymTab(RTDBGKRNLINFOINT *pThis)
                         RETURN_VERR_BAD_EXE_FORMAT;
                     if (pSym->n_sect > pThis->cSections)
                         RETURN_VERR_BAD_EXE_FORMAT;
-                    if (pSym->n_desc & ~(REFERENCED_DYNAMICALLY))
+                    if (pSym->n_desc & ~(REFERENCED_DYNAMICALLY | N_WEAK_DEF))
                         RETURN_VERR_BAD_EXE_FORMAT;
                     if (   pSym->n_value < pThis->apSections[pSym->n_sect - 1]->addr
                         && strcmp(pszSym, "__mh_execute_header"))    /* in 10.8 it's no longer absolute (PIE?). */
