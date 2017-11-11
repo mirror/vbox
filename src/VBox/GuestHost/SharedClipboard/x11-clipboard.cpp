@@ -919,16 +919,12 @@ CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend, bool fHeadless)
  */
 void ClipDestructX11(CLIPBACKEND *pCtx)
 {
-    /*
-     * Immediately return if we are not connected to the X server.
-     */
-    if (!pCtx->fHaveX11)
-        return;
-
-    /* We set this to NULL when the event thread exits.  It really should
-     * have exited at this point, when we are about to unload the code from
-     * memory. */
-    Assert(pCtx->widget == NULL);
+    if (pCtx->fHaveX11)
+        /* We set this to NULL when the event thread exits.  It really should
+         * have exited at this point, when we are about to unload the code from
+         * memory. */
+        Assert(pCtx->widget == NULL);
+    RTMemFree(pCtx);
 }
 
 /**
@@ -2188,6 +2184,8 @@ void testRequestData(CLIPBACKEND *pCtx, CLIPX11FORMAT target, void *closure)
         format = 0;
     }
     clipConvertX11CB(closure, pValue, count * format / 8);
+    if (pValue)
+        RTMemFree(pValue);
 }
 
 /* The formats currently on offer from X11 via the shared clipboard */
@@ -2347,7 +2345,8 @@ void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc, CLIPREAD
     if (cb <= MAX_BUF_SIZE)
     {
         g_completedRC = rc;
-        memcpy(g_completedBuf, pv, cb);
+        if (cb != 0)
+            memcpy(g_completedBuf, pv, cb);
     }
     else
         g_completedRC = VERR_BUFFER_OVERFLOW;

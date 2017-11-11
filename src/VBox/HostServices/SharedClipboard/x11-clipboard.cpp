@@ -259,7 +259,7 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
 void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
                                     CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
-    if (cb <= pReq->cb)
+    if (cb <= pReq->cb && cb != 0)
         memcpy(pReq->pv, pv, cb);
     RTMemFree(pReq);
     vboxSvcClipboardCompleteReadData(pCtx->pClient, rc, cb);
