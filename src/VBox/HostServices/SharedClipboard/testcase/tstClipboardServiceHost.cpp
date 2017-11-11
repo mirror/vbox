@@ -92,6 +92,7 @@ static void testSetMode(void)
     u32Mode = TestClipSvcGetMode();
     RTTESTI_CHECK_MSG(u32Mode == VBOX_SHARED_CLIPBOARD_MODE_OFF,
                       ("u32Mode=%u\n", (unsigned) u32Mode));
+    table.pfnUnload(NULL);
 }
 
 static void testGetHostMsg(void)
@@ -191,6 +192,7 @@ static void testGetHostMsg(void)
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG,
                   2, parms);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
+    table.pfnUnload(NULL);
 }
 
 static void testSetHeadless(void)
@@ -232,6 +234,7 @@ static void testSetHeadless(void)
     RTTESTI_CHECK_RC_OK(rc);
     fHeadless = vboxSvcClipboardGetHeadless();
     RTTESTI_CHECK_MSG(fHeadless == true, ("fHeadless=%RTbool\n", fHeadless));
+    table.pfnUnload(NULL);
 }
 
 static void testHostCall(void)
@@ -269,7 +272,7 @@ int main(int argc, char *argv[])
 }
 
 int vboxClipboardInit() { return VINF_SUCCESS; }
-void vboxClipboardDestroy() { AssertFailed(); }
+void vboxClipboardDestroy() {}
 void vboxClipboardDisconnect(_VBOXCLIPBOARDCLIENTDATA*) { AssertFailed(); }
 int vboxClipboardConnect(_VBOXCLIPBOARDCLIENTDATA*, bool)
 { AssertFailed(); return VERR_WRONG_ORDER; }
