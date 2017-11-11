@@ -111,7 +111,7 @@ static void testGetHostMsg(void)
                            1, parms);
     RTTESTI_CHECK_RC_OK(rc);
 
-    RTTestISub("Testing VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG, one format, waiting guest call.");
+    RTTestISub("Testing FN_GET_HOST_MSG, one format, waiting guest call.");
     RT_ZERO(g_Client);
     parms[0].setUInt32(0);
     parms[1].setUInt32(0);
@@ -129,7 +129,7 @@ static void testGetHostMsg(void)
                   2, parms);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
 
-    RTTestISub("Testing VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG, one format, no waiting guest calls.");
+    RTTestISub("Testing FN_GET_HOST_MSG, one format, no waiting guest calls.");
     RT_ZERO(g_Client);
     vboxSvcClipboardReportMsg (&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
                                VBOX_SHARED_CLIPBOARD_FMT_HTML);
@@ -146,7 +146,7 @@ static void testGetHostMsg(void)
                   2, parms);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
 
-    RTTestISub("Testing VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG, two formats, waiting guest call.");
+    RTTestISub("Testing FN_GET_HOST_MSG, two formats, waiting guest call.");
     RT_ZERO(g_Client);
     parms[0].setUInt32(0);
     parms[1].setUInt32(0);
@@ -170,7 +170,7 @@ static void testGetHostMsg(void)
                   2, parms);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
 
-    RTTestISub("Testing VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG, two formats, no waiting guest calls.");
+    RTTestISub("Testing FN_GET_HOST_MSG, two formats, no waiting guest calls.");
     RT_ZERO(g_Client);
     vboxSvcClipboardReportMsg (&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
                                VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT | VBOX_SHARED_CLIPBOARD_FMT_HTML);
