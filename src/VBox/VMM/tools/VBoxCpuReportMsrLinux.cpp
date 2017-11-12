@@ -51,7 +51,7 @@ static int              g_fdMsr;
 /**
  * @interface_method_impl{VBCPUREPMSRACCESSORS,pfnMsrProberRead}
  */
-static int linuxMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue, bool *pfGp)
+static DECLCALLBACK(int) linuxMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue, bool *pfGp)
 {
     int  rc = VINF_SUCCESS;
 
@@ -74,7 +74,7 @@ static int linuxMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue, b
 /**
  * @interface_method_impl{VBCPUREPMSRACCESSORS,pfnMsrProberWrite}
  */
-static int linuxMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uValue, bool *pfGp)
+static DECLCALLBACK(int) linuxMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uValue, bool *pfGp)
 {
     int  rc = VINF_SUCCESS;
 
