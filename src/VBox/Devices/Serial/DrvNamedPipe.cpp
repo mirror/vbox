@@ -219,6 +219,7 @@ static DECLCALLBACK(int) drvNamedPipePoll(PPDMISTREAM pInterface, uint32_t fEvts
             {
                 LogFlowFunc(("Read completed: cbReallyRead=%u\n", cbReallyRead));
                 pThis->fReadPending = false;
+                pThis->cbReadBufUsed = cbReallyRead;
                 *pfEvts |= RTPOLL_EVT_READ;
                 return VINF_SUCCESS;
             }
