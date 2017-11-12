@@ -310,6 +310,8 @@ typedef struct RTFSFATCLUSTERMAPCACHE
     uint32_t                cbDirtyLine;
     /** The FAT size. */
     uint32_t                cbFat;
+    /** The Number of clusters in the FAT. */
+    uint32_t                cClusters;
     /** Cluster allocation search hint. */
     uint32_t                idxAllocHint;
     /** Pointer to the volume (for disk access). */
@@ -820,36 +822,37 @@ static int rtFsFatClusterMap_Create(PRTFSFATVOL pThis, uint8_t const *pbFirst512
     /*
      * Allocate and initialize it all.
      */
-    PRTFSFATCLUSTERMAPCACHE pCache;
-    pThis->pFatCache = pCache = (PRTFSFATCLUSTERMAPCACHE)RTMemAllocZ(RT_OFFSETOF(RTFSFATCLUSTERMAPCACHE, aEntries[cEntries]));
-    if (!pCache)
+    PRTFSFATCLUSTERMAPCACHE pFatCache;
+    pThis->pFatCache = pFatCache = (PRTFSFATCLUSTERMAPCACHE)RTMemAllocZ(RT_OFFSETOF(RTFSFATCLUSTERMAPCACHE, aEntries[cEntries]));
+    if (!pFatCache)
         return RTErrInfoSet(pErrInfo, VERR_NO_MEMORY, "Failed to allocate FAT cache");
-    pCache->cEntries            = cEntries;
-    pCache->fEntryIndexMask     = fEntryIndexMask;
-    pCache->cEntryIndexShift    = cEntryIndexShift;
-    pCache->cbEntry             = cbEntry;
-    pCache->fEntryOffsetMask    = fEntryOffsetMask;
-    pCache->pVol                = pThis;
-    pCache->cbFat               = pThis->cbFat;
+    pFatCache->cEntries            = cEntries;
+    pFatCache->fEntryIndexMask     = fEntryIndexMask;
+    pFatCache->cEntryIndexShift    = cEntryIndexShift;
+    pFatCache->cbEntry             = cbEntry;
+    pFatCache->fEntryOffsetMask    = fEntryOffsetMask;
+    pFatCache->pVol                = pThis;
+    pFatCache->cbFat               = pThis->cbFat;
+    pFatCache->cClusters           = pThis->cClusters;
 
     unsigned i = cEntries;
     while (i-- > 0)
     {
-        pCache->aEntries[i].pbData = (uint8_t *)RTMemAlloc(cbEntry);
-        if (pCache->aEntries[i].pbData == NULL)
+        pFatCache->aEntries[i].pbData = (uint8_t *)RTMemAlloc(cbEntry);
+        if (pFatCache->aEntries[i].pbData == NULL)
         {
             for (i++; i < cEntries; i++)
-                RTMemFree(pCache->aEntries[i].pbData);
-            RTMemFree(pCache);
+                RTMemFree(pFatCache->aEntries[i].pbData);
+            RTMemFree(pFatCache);
             return RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "Failed to allocate FAT cache entry (%#x bytes)", cbEntry);
         }
 
-        pCache->aEntries[i].offFat  = UINT32_MAX;
-        pCache->aEntries[i].bmDirty = 0;
+        pFatCache->aEntries[i].offFat  = UINT32_MAX;
+        pFatCache->aEntries[i].bmDirty = 0;
     }
     Log3(("rtFsFatClusterMap_Create:       cbFat=%#RX32 cEntries=%RU32 cEntryIndexShift=%RU32 fEntryIndexMask=%#RX32\n",
-          pCache->cbFat, pCache->cEntries, pCache->cEntryIndexShift, pCache->fEntryIndexMask));
-    Log3(("rtFsFatClusterMap_Create:   cbEntries=%#RX32 fEntryOffsetMask=%#RX32\n", pCache->cbEntry, pCache->fEntryOffsetMask));
+          pFatCache->cbFat, pFatCache->cEntries, pFatCache->cEntryIndexShift, pFatCache->fEntryIndexMask));
+    Log3(("rtFsFatClusterMap_Create:   cbEntries=%#RX32 fEntryOffsetMask=%#RX32\n", pFatCache->cbEntry, pFatCache->fEntryOffsetMask));
 
     /*
      * Calc the dirty shift factor.
@@ -858,31 +861,31 @@ static int rtFsFatClusterMap_Create(PRTFSFATVOL pThis, uint8_t const *pbFirst512
     if (cbEntry < pThis->cbSector)
         cbEntry = pThis->cbSector;
 
-    pCache->cDirtyShift = 1;
-    pCache->cbDirtyLine = 1;
-    while (pCache->cbDirtyLine < cbEntry)
+    pFatCache->cDirtyShift = 1;
+    pFatCache->cbDirtyLine = 1;
+    while (pFatCache->cbDirtyLine < cbEntry)
     {
-        pCache->cDirtyShift++;
-        pCache->cbDirtyLine <<= 1;
+        pFatCache->cDirtyShift++;
+        pFatCache->cbDirtyLine <<= 1;
     }
-    Assert(pCache->cEntries == 1 || pCache->cbDirtyLine == pThis->cbSector);
-    Log3(("rtFsFatClusterMap_Create: cbDirtyLine=%#RX32 cDirtyShift=%u\n", pCache->cbDirtyLine, pCache->cDirtyShift));
+    Assert(pFatCache->cEntries == 1 || pFatCache->cbDirtyLine == pThis->cbSector);
+    Log3(("rtFsFatClusterMap_Create: cbDirtyLine=%#RX32 cDirtyShift=%u\n", pFatCache->cbDirtyLine, pFatCache->cDirtyShift));
 
     /*
      * Fill the cache if single entry or entry size is 512.
      */
-    if (pCache->cEntries == 1 || pCache->cbEntry == 512)
+    if (pFatCache->cEntries == 1 || pFatCache->cbEntry == 512)
     {
-        memcpy(pCache->aEntries[0].pbData, pbFirst512FatBytes, RT_MIN(512, pCache->cbEntry));
-        if (pCache->cbEntry > 512)
+        memcpy(pFatCache->aEntries[0].pbData, pbFirst512FatBytes, RT_MIN(512, pFatCache->cbEntry));
+        if (pFatCache->cbEntry > 512)
         {
             int rc = RTVfsFileReadAt(pThis->hVfsBacking, pThis->aoffFats[0] + 512,
-                                     &pCache->aEntries[0].pbData[512], pCache->cbEntry - 512, NULL);
+                                     &pFatCache->aEntries[0].pbData[512], pFatCache->cbEntry - 512, NULL);
             if (RT_FAILURE(rc))
                 return RTErrInfoSet(pErrInfo, rc, "Error reading FAT into memory");
         }
-        pCache->aEntries[0].offFat  = 0;
-        pCache->aEntries[0].bmDirty = 0;
+        pFatCache->aEntries[0].offFat  = 0;
+        pFatCache->aEntries[0].bmDirty = 0;
     }
 
     return VINF_SUCCESS;
@@ -899,8 +902,7 @@ static int rtFsFatClusterMap_Create(PRTFSFATVOL pThis, uint8_t const *pbFirst512
  */
 static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirstEntry, uint32_t const iLastEntry)
 {
-    PRTFSFATCLUSTERMAPCACHE pCache = pThis->pFatCache;
-
+    PRTFSFATCLUSTERMAPCACHE pFatCache = pThis->pFatCache;
 
     /*
      * Walk the cache entries, accumulating segments to flush.
@@ -917,20 +919,20 @@ static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirs
     {
         for (uint32_t iEntry = iFirstEntry; iEntry <= iLastEntry; iEntry++)
         {
-            uint64_t bmDirty = pCache->aEntries[iEntry].bmDirty;
+            uint64_t bmDirty = pFatCache->aEntries[iEntry].bmDirty;
             if (   bmDirty != 0
-                && pCache->aEntries[iEntry].offFat != UINT32_MAX)
+                && pFatCache->aEntries[iEntry].offFat != UINT32_MAX)
             {
                 uint32_t offEntry   = 0;
                 uint64_t iDirtyLine = 1;
-                while (offEntry < pCache->cbEntry)
+                while (offEntry < pFatCache->cbEntry)
                 {
-                    if (pCache->aEntries[iEntry].bmDirty & iDirtyLine)
+                    if (pFatCache->aEntries[iEntry].bmDirty & iDirtyLine)
                     {
                         /*
                          * Found dirty cache line.
                          */
-                        uint64_t offDirtyLine = pThis->aoffFats[iFatCopy] + pCache->aEntries[iEntry].offFat + offEntry;
+                        uint64_t offDirtyLine = pThis->aoffFats[iFatCopy] + pFatCache->aEntries[iEntry].offFat + offEntry;
 
                         /* Can we simply extend the last segment? */
                         if (   offDirtyLine == offEdge
@@ -938,9 +940,9 @@ static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirs
                         {
                             Assert(SgBuf.cSegs > 0);
                             Assert(   (uintptr_t)aSgSegs[SgBuf.cSegs - 1].pvSeg + aSgSegs[SgBuf.cSegs - 1].cbSeg
-                                   == (uintptr_t)&pCache->aEntries[iEntry].pbData[offEntry]);
-                            aSgSegs[SgBuf.cSegs - 1].cbSeg += pCache->cbDirtyLine;
-                            offEdge += pCache->cbDirtyLine;
+                                   == (uintptr_t)&pFatCache->aEntries[iEntry].pbData[offEntry]);
+                            aSgSegs[SgBuf.cSegs - 1].cbSeg += pFatCache->cbDirtyLine;
+                            offEdge += pFatCache->cbDirtyLine;
                         }
                         else
                         {
@@ -963,10 +965,10 @@ static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirs
                             }
 
                             /* Append segment. */
-                            aSgSegs[SgBuf.cSegs].cbSeg = pCache->cbDirtyLine;
-                            aSgSegs[SgBuf.cSegs].pvSeg = &pCache->aEntries[iEntry].pbData[offEntry];
+                            aSgSegs[SgBuf.cSegs].cbSeg = pFatCache->cbDirtyLine;
+                            aSgSegs[SgBuf.cSegs].pvSeg = &pFatCache->aEntries[iEntry].pbData[offEntry];
                             SgBuf.cSegs++;
-                            offEdge = offDirtyLine + pCache->cbDirtyLine;
+                            offEdge = offDirtyLine + pFatCache->cbDirtyLine;
                         }
 
                         bmDirty &= ~iDirtyLine;
@@ -974,7 +976,7 @@ static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirs
                             break;
                     }
                     iDirtyLine <<= 1;
-                    offEntry += pCache->cbDirtyLine;
+                    offEntry += pFatCache->cbDirtyLine;
                 }
                 Assert(!bmDirty);
             }
@@ -996,7 +998,7 @@ static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirs
      */
     if (RT_SUCCESS(rc))
         for (uint32_t iEntry = iFirstEntry; iEntry <= iLastEntry; iEntry++)
-            pCache->aEntries[iEntry].bmDirty = 0;
+            pFatCache->aEntries[iEntry].bmDirty = 0;
 
     return rc;
 }
@@ -1021,12 +1023,12 @@ static int rtFsFatClusterMap_Flush(PRTFSFATVOL pThis)
  * This is typically called prior to reusing the cache entry.
  *
  * @returns IPRT status code.  On failure, we're currently kind of screwed.
- * @param   pThis       The FAT volume instance.
+ * @param   pFatCache   The FAT cache
  * @param   iEntry      The cache entry to flush.
  */
-static int rtFsFatClusterMap_FlushEntry(PRTFSFATVOL pThis, uint32_t iEntry)
+static int rtFsFatClusterMap_FlushEntry(PRTFSFATCLUSTERMAPCACHE pFatCache, uint32_t iEntry)
 {
-    return rtFsFatClusterMap_FlushWorker(pThis, iEntry, iEntry);
+    return rtFsFatClusterMap_FlushWorker(pFatCache->pVol, iEntry, iEntry);
 }
 
 
@@ -1034,24 +1036,23 @@ static int rtFsFatClusterMap_FlushEntry(PRTFSFATVOL pThis, uint32_t iEntry)
  * Gets a pointer to a FAT entry.
  *
  * @returns IPRT status code.  On failure, we're currently kind of screwed.
- * @param   pCache          The FAT cache.
- * @param   pThis           The FAT volume instance.
- * @param   offFat          The FAT byte offset to get the entry off.
- * @param   ppbEntry        Where to return the pointer to the entry.
+ * @param   pFatCache   The FAT cache.
+ * @param   offFat      The FAT byte offset to get the entry off.
+ * @param   ppbEntry    Where to return the pointer to the entry.
  */
-static int rtFsFatClusterMap_GetEntry(PRTFSFATCLUSTERMAPCACHE pCache, PRTFSFATVOL pThis, uint32_t offFat, uint8_t **ppbEntry)
+static int rtFsFatClusterMap_GetEntry(PRTFSFATCLUSTERMAPCACHE pFatCache, uint32_t offFat, uint8_t **ppbEntry)
 {
     int rc;
-    if (offFat < pThis->cbFat)
+    if (offFat < pFatCache->cbFat)
     {
-        uint32_t const iEntry      = (offFat >> pCache->cEntryIndexShift) & pCache->fEntryIndexMask;
-        uint32_t const offInEntry  = offFat & pCache->fEntryOffsetMask;
+        uint32_t const iEntry      = (offFat >> pFatCache->cEntryIndexShift) & pFatCache->fEntryIndexMask;
+        uint32_t const offInEntry  = offFat & pFatCache->fEntryOffsetMask;
         uint32_t const offFatEntry = offFat - offInEntry;
 
-        *ppbEntry = pCache->aEntries[iEntry].pbData + offInEntry;
+        *ppbEntry = pFatCache->aEntries[iEntry].pbData + offInEntry;
 
         /* If it's already ready, return immediately. */
-        if (pCache->aEntries[iEntry].offFat == offFatEntry)
+        if (pFatCache->aEntries[iEntry].offFat == offFatEntry)
         {
             Log3(("rtFsFatClusterMap_GetEntry: Hit entry %u for offFat=%#RX32\n", iEntry, offFat));
             return VINF_SUCCESS;
@@ -1059,29 +1060,29 @@ static int rtFsFatClusterMap_GetEntry(PRTFSFATCLUSTERMAPCACHE pCache, PRTFSFATVO
 
         /* Do we need to flush it? */
         rc = VINF_SUCCESS;
-        if (   pCache->aEntries[iEntry].bmDirty != 0
-            && pCache->aEntries[iEntry].offFat != UINT32_MAX)
+        if (   pFatCache->aEntries[iEntry].bmDirty != 0
+            && pFatCache->aEntries[iEntry].offFat != UINT32_MAX)
         {
             Log3(("rtFsFatClusterMap_GetEntry: Flushing entry %u for offFat=%#RX32\n", iEntry, offFat));
-            rc = rtFsFatClusterMap_FlushEntry(pThis, iEntry);
+            rc = rtFsFatClusterMap_FlushEntry(pFatCache, iEntry);
         }
         if (RT_SUCCESS(rc))
         {
-            pCache->aEntries[iEntry].bmDirty = 0;
+            pFatCache->aEntries[iEntry].bmDirty = 0;
 
             /* Read in the entry from disk */
-            rc = RTVfsFileReadAt(pThis->hVfsBacking, pThis->aoffFats[0] + offFatEntry, pCache->aEntries[iEntry].pbData,
-                                 pCache->cbEntry, NULL);
+            rc = RTVfsFileReadAt(pFatCache->pVol->hVfsBacking, pFatCache->pVol->aoffFats[0] + offFatEntry,
+                                 pFatCache->aEntries[iEntry].pbData, pFatCache->cbEntry, NULL);
             if (RT_SUCCESS(rc))
             {
                 Log3(("rtFsFatClusterMap_GetEntry: Loaded entry %u for offFat=%#RX32\n", iEntry, offFat));
-                pCache->aEntries[iEntry].offFat = offFatEntry;
+                pFatCache->aEntries[iEntry].offFat = offFatEntry;
                 return VINF_SUCCESS;
             }
             /** @todo We can try other FAT copies here... */
             LogRel(("rtFsFatClusterMap_GetEntry: Error loading entry %u for offFat=%#RX32 (%#64RX32 LB %#x): %Rrc\n",
-                    iEntry, offFat, pThis->aoffFats[0] + offFatEntry, pCache->cbEntry, rc));
-            pCache->aEntries[iEntry].offFat = UINT32_MAX;
+                    iEntry, offFat, pFatCache->pVol->aoffFats[0] + offFatEntry, pFatCache->cbEntry, rc));
+            pFatCache->aEntries[iEntry].offFat = UINT32_MAX;
         }
     }
     else
@@ -1095,27 +1096,26 @@ static int rtFsFatClusterMap_GetEntry(PRTFSFATCLUSTERMAPCACHE pCache, PRTFSFATVO
  * Gets a pointer to a FAT entry, extended version.
  *
  * @returns IPRT status code.  On failure, we're currently kind of screwed.
- * @param   pCache          The FAT cache.
- * @param   pThis           The FAT volume instance.
- * @param   offFat          The FAT byte offset to get the entry off.
- * @param   ppbEntry        Where to return the pointer to the entry.
- * @param   pidxEntry       Where to return the entry index.
+ * @param   pFatCache   The FAT cache.
+ * @param   offFat      The FAT byte offset to get the entry off.
+ * @param   ppbEntry    Where to return the pointer to the entry.
+ * @param   pidxEntry   Where to return the entry index.
  */
-static int rtFsFatClusterMap_GetEntryEx(PRTFSFATCLUSTERMAPCACHE pCache, PRTFSFATVOL pThis, uint32_t offFat,
+static int rtFsFatClusterMap_GetEntryEx(PRTFSFATCLUSTERMAPCACHE pFatCache, uint32_t offFat,
                                         uint8_t **ppbEntry, uint32_t *pidxEntry)
 {
     int rc;
-    if (offFat < pThis->cbFat)
+    if (offFat < pFatCache->cbFat)
     {
-        uint32_t const iEntry      = (offFat >> pCache->cEntryIndexShift) & pCache->fEntryIndexMask;
-        uint32_t const offInEntry  = offFat & pCache->fEntryOffsetMask;
+        uint32_t const iEntry      = (offFat >> pFatCache->cEntryIndexShift) & pFatCache->fEntryIndexMask;
+        uint32_t const offInEntry  = offFat & pFatCache->fEntryOffsetMask;
         uint32_t const offFatEntry = offFat - offInEntry;
 
-        *ppbEntry  = pCache->aEntries[iEntry].pbData + offInEntry;
+        *ppbEntry  = pFatCache->aEntries[iEntry].pbData + offInEntry;
         *pidxEntry = iEntry;
 
         /* If it's already ready, return immediately. */
-        if (pCache->aEntries[iEntry].offFat == offFatEntry)
+        if (pFatCache->aEntries[iEntry].offFat == offFatEntry)
         {
             Log3(("rtFsFatClusterMap_GetEntryEx: Hit entry %u for offFat=%#RX32\n", iEntry, offFat));
             return VINF_SUCCESS;
@@ -1123,29 +1123,29 @@ static int rtFsFatClusterMap_GetEntryEx(PRTFSFATCLUSTERMAPCACHE pCache, PRTFSFAT
 
         /* Do we need to flush it? */
         rc = VINF_SUCCESS;
-        if (   pCache->aEntries[iEntry].bmDirty != 0
-            && pCache->aEntries[iEntry].offFat != UINT32_MAX)
+        if (   pFatCache->aEntries[iEntry].bmDirty != 0
+            && pFatCache->aEntries[iEntry].offFat != UINT32_MAX)
         {
             Log3(("rtFsFatClusterMap_GetEntryEx: Flushing entry %u for offFat=%#RX32\n", iEntry, offFat));
-            rc = rtFsFatClusterMap_FlushEntry(pThis, iEntry);
+            rc = rtFsFatClusterMap_FlushEntry(pFatCache, iEntry);
         }
         if (RT_SUCCESS(rc))
         {
-            pCache->aEntries[iEntry].bmDirty = 0;
+            pFatCache->aEntries[iEntry].bmDirty = 0;
 
             /* Read in the entry from disk */
-            rc = RTVfsFileReadAt(pThis->hVfsBacking, pThis->aoffFats[0] + offFatEntry, pCache->aEntries[iEntry].pbData,
-                                 pCache->cbEntry, NULL);
+            rc = RTVfsFileReadAt(pFatCache->pVol->hVfsBacking, pFatCache->pVol->aoffFats[0] + offFatEntry,
+                                 pFatCache->aEntries[iEntry].pbData, pFatCache->cbEntry, NULL);
             if (RT_SUCCESS(rc))
             {
                 Log3(("rtFsFatClusterMap_GetEntryEx: Loaded entry %u for offFat=%#RX32\n", iEntry, offFat));
-                pCache->aEntries[iEntry].offFat = offFatEntry;
+                pFatCache->aEntries[iEntry].offFat = offFatEntry;
                 return VINF_SUCCESS;
             }
             /** @todo We can try other FAT copies here... */
             LogRel(("rtFsFatClusterMap_GetEntryEx: Error loading entry %u for offFat=%#RX32 (%#64RX32 LB %#x): %Rrc\n",
-                    iEntry, offFat, pThis->aoffFats[0] + offFatEntry, pCache->cbEntry, rc));
-            pCache->aEntries[iEntry].offFat = UINT32_MAX;
+                    iEntry, offFat, pFatCache->pVol->aoffFats[0] + offFatEntry, pFatCache->cbEntry, rc));
+            pFatCache->aEntries[iEntry].offFat = UINT32_MAX;
         }
     }
     else
@@ -1166,22 +1166,22 @@ static int rtFsFatClusterMap_GetEntryEx(PRTFSFATCLUSTERMAPCACHE pCache, PRTFSFAT
  */
 static int rtFsFatClusterMap_Destroy(PRTFSFATVOL pThis)
 {
-    int                     rc     = VINF_SUCCESS;
-    PRTFSFATCLUSTERMAPCACHE pCache = pThis->pFatCache;
-    if (pCache)
+    int                     rc        = VINF_SUCCESS;
+    PRTFSFATCLUSTERMAPCACHE pFatCache = pThis->pFatCache;
+    if (pFatCache)
     {
         /* flush stuff. */
         rc = rtFsFatClusterMap_Flush(pThis);
 
         /* free everything. */
-        uint32_t i = pCache->cEntries;
+        uint32_t i = pFatCache->cEntries;
         while (i-- > 0)
         {
-            RTMemFree(pCache->aEntries[i].pbData);
-            pCache->aEntries[i].pbData = NULL;
+            RTMemFree(pFatCache->aEntries[i].pbData);
+            pFatCache->aEntries[i].pbData = NULL;
         }
-        pCache->cEntries = 0;
-        RTMemFree(pCache);
+        pFatCache->cEntries = 0;
+        RTMemFree(pFatCache);
 
         pThis->pFatCache = NULL;
     }
@@ -1193,13 +1193,12 @@ static int rtFsFatClusterMap_Destroy(PRTFSFATVOL pThis)
 /**
  * Worker for rtFsFatClusterMap_ReadClusterChain handling FAT12.
  */
-static int rtFsFatClusterMap_Fat12_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol, uint32_t idxCluster,
-                                                    PRTFSFATCHAIN pChain)
+static int rtFsFatClusterMap_Fat12_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFatCache, uint32_t idxCluster, PRTFSFATCHAIN pChain)
 {
     /* ASSUME that for FAT12 we cache the whole FAT in a single entry.  That
        way we don't need to deal with entries in different sectors and whatnot.  */
     AssertReturn(pFatCache->cEntries == 1, VERR_INTERNAL_ERROR_4);
-    AssertReturn(pFatCache->cbEntry == pVol->cbFat, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pFatCache->cbEntry == pFatCache->cbFat, VERR_INTERNAL_ERROR_4);
     AssertReturn(pFatCache->aEntries[0].offFat == 0, VERR_INTERNAL_ERROR_4);
 
     /* Special case for empty files. */
@@ -1211,7 +1210,7 @@ static int rtFsFatClusterMap_Fat12_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
     for (;;)
     {
         /* Validate the cluster, checking for end of file. */
-        if (   idxCluster >= pVol->cClusters
+        if (   idxCluster >= pFatCache->cClusters
             || idxCluster <  FAT_FIRST_DATA_CLUSTER)
         {
             if (idxCluster >= FAT_FIRST_FAT12_EOC)
@@ -1239,13 +1238,12 @@ static int rtFsFatClusterMap_Fat12_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
 /**
  * Worker for rtFsFatClusterMap_ReadClusterChain handling FAT16.
  */
-static int rtFsFatClusterMap_Fat16_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol, uint32_t idxCluster,
-                                                    PRTFSFATCHAIN pChain)
+static int rtFsFatClusterMap_Fat16_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFatCache, uint32_t idxCluster, PRTFSFATCHAIN pChain)
 {
     /* ASSUME that for FAT16 we cache the whole FAT in a single entry.  That
        way we don't need to deal with entries in different sectors and whatnot.  */
     AssertReturn(pFatCache->cEntries == 1, VERR_INTERNAL_ERROR_4);
-    AssertReturn(pFatCache->cbEntry == pVol->cbFat, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pFatCache->cbEntry == pFatCache->cbFat, VERR_INTERNAL_ERROR_4);
     AssertReturn(pFatCache->aEntries[0].offFat == 0, VERR_INTERNAL_ERROR_4);
 
     /* Special case for empty files. */
@@ -1257,7 +1255,7 @@ static int rtFsFatClusterMap_Fat16_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
     for (;;)
     {
         /* Validate the cluster, checking for end of file. */
-        if (   idxCluster >= pVol->cClusters
+        if (   idxCluster >= pFatCache->cClusters
             || idxCluster <  FAT_FIRST_DATA_CLUSTER)
         {
             if (idxCluster >= FAT_FIRST_FAT16_EOC)
@@ -1279,8 +1277,7 @@ static int rtFsFatClusterMap_Fat16_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
 /**
  * Worker for rtFsFatClusterMap_ReadClusterChain handling FAT32.
  */
-static int rtFsFatClusterMap_Fat32_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol, uint32_t idxCluster,
-                                                    PRTFSFATCHAIN pChain)
+static int rtFsFatClusterMap_Fat32_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFatCache, uint32_t idxCluster, PRTFSFATCHAIN pChain)
 {
     /* Special case for empty files. */
     if (idxCluster == 0)
@@ -1290,7 +1287,7 @@ static int rtFsFatClusterMap_Fat32_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
     for (;;)
     {
         /* Validate the cluster, checking for end of file. */
-        if (   idxCluster >= pVol->cClusters
+        if (   idxCluster >= pFatCache->cClusters
             || idxCluster <  FAT_FIRST_DATA_CLUSTER)
         {
             if (idxCluster >= FAT_FIRST_FAT32_EOC)
@@ -1305,7 +1302,7 @@ static int rtFsFatClusterMap_Fat32_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
 
         /* Get the next cluster. */
         uint8_t *pbEntry;
-        rc = rtFsFatClusterMap_GetEntry(pFatCache, pVol, idxCluster * 4, &pbEntry);
+        rc = rtFsFatClusterMap_GetEntry(pFatCache, idxCluster * 4, &pbEntry);
         if (RT_SUCCESS(rc))
             idxCluster = RT_MAKE_U32_FROM_U8(pbEntry[0], pbEntry[1], pbEntry[2], pbEntry[3]);
         else
@@ -1332,9 +1329,9 @@ static int rtFsFatClusterMap_ReadClusterChain(PRTFSFATVOL pThis, uint32_t idxFir
     RTListInit(&pChain->ListParts);
     switch (pThis->enmFatType)
     {
-        case RTFSFATTYPE_FAT12: return rtFsFatClusterMap_Fat12_ReadClusterChain(pThis->pFatCache, pThis, idxFirstCluster, pChain);
-        case RTFSFATTYPE_FAT16: return rtFsFatClusterMap_Fat16_ReadClusterChain(pThis->pFatCache, pThis, idxFirstCluster, pChain);
-        case RTFSFATTYPE_FAT32: return rtFsFatClusterMap_Fat32_ReadClusterChain(pThis->pFatCache, pThis, idxFirstCluster, pChain);
+        case RTFSFATTYPE_FAT12: return rtFsFatClusterMap_Fat12_ReadClusterChain(pThis->pFatCache, idxFirstCluster, pChain);
+        case RTFSFATTYPE_FAT16: return rtFsFatClusterMap_Fat16_ReadClusterChain(pThis->pFatCache, idxFirstCluster, pChain);
+        case RTFSFATTYPE_FAT32: return rtFsFatClusterMap_Fat32_ReadClusterChain(pThis->pFatCache, idxFirstCluster, pChain);
         default:
             AssertFailedReturn(VERR_INTERNAL_ERROR_2);
     }
@@ -1370,13 +1367,12 @@ DECLINLINE(void) rtFsFatClusterMap_SetDirtyByteByPtr(PRTFSFATCLUSTERMAPCACHE pFa
 
 
 /** Sets a FAT12 cluster value. */
-static int rtFsFatClusterMap_SetCluster12(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol,
-                                          uint32_t idxCluster, uint32_t uValue)
+static int rtFsFatClusterMap_SetCluster12(PRTFSFATCLUSTERMAPCACHE pFatCache, uint32_t idxCluster, uint32_t uValue)
 {
     /* ASSUME that for FAT12 we cache the whole FAT in a single entry.  That
        way we don't need to deal with entries in different sectors and whatnot.  */
     AssertReturn(pFatCache->cEntries == 1, VERR_INTERNAL_ERROR_4);
-    AssertReturn(pFatCache->cbEntry == pVol->cbFat, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pFatCache->cbEntry == pFatCache->cbFat, VERR_INTERNAL_ERROR_4);
     AssertReturn(pFatCache->aEntries[0].offFat == 0, VERR_INTERNAL_ERROR_4);
     AssertReturn(uValue < 0x1000, VERR_INTERNAL_ERROR_2);
 
@@ -1403,12 +1399,11 @@ static int rtFsFatClusterMap_SetCluster12(PRTFSFATCLUSTERMAPCACHE pFatCache, PRT
 
 
 /** Sets a FAT16 cluster value. */
-static int rtFsFatClusterMap_SetCluster16(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol,
-                                          uint32_t idxCluster, uint32_t uValue)
+static int rtFsFatClusterMap_SetCluster16(PRTFSFATCLUSTERMAPCACHE pFatCache, uint32_t idxCluster, uint32_t uValue)
 {
     /* ASSUME that for FAT16 we cache the whole FAT in a single entry.  */
     AssertReturn(pFatCache->cEntries == 1, VERR_INTERNAL_ERROR_4);
-    AssertReturn(pFatCache->cbEntry == pVol->cbFat, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pFatCache->cbEntry == pFatCache->cbFat, VERR_INTERNAL_ERROR_4);
     AssertReturn(pFatCache->aEntries[0].offFat == 0, VERR_INTERNAL_ERROR_4);
     AssertReturn(uValue < 0x10000, VERR_INTERNAL_ERROR_2);
 
@@ -1426,15 +1421,14 @@ static int rtFsFatClusterMap_SetCluster16(PRTFSFATCLUSTERMAPCACHE pFatCache, PRT
 
 
 /** Sets a FAT32 cluster value. */
-static int rtFsFatClusterMap_SetCluster32(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol,
-                                          uint32_t idxCluster, uint32_t uValue)
+static int rtFsFatClusterMap_SetCluster32(PRTFSFATCLUSTERMAPCACHE pFatCache, uint32_t idxCluster, uint32_t uValue)
 {
     AssertReturn(uValue < 0x10000000, VERR_INTERNAL_ERROR_2);
 
     /* Get the fat cache entry. */
     uint8_t *pbEntry;
     uint32_t idxEntry;
-    int rc = rtFsFatClusterMap_GetEntryEx(pFatCache, pVol, idxCluster * 4, &pbEntry, &idxEntry);
+    int rc = rtFsFatClusterMap_GetEntryEx(pFatCache, idxCluster * 4, &pbEntry, &idxEntry);
     if (RT_SUCCESS(rc))
     {
         /* Make the change. */
@@ -1465,9 +1459,9 @@ static int rtFsFatClusterMap_SetEndOfChain(PRTFSFATVOL pThis, uint32_t idxCluste
                     VERR_VFS_BOGUS_OFFSET);
     switch (pThis->enmFatType)
     {
-        case RTFSFATTYPE_FAT12: return rtFsFatClusterMap_SetCluster12(pThis->pFatCache, pThis, idxCluster, FAT_FIRST_FAT12_EOC);
-        case RTFSFATTYPE_FAT16: return rtFsFatClusterMap_SetCluster16(pThis->pFatCache, pThis, idxCluster, FAT_FIRST_FAT16_EOC);
-        case RTFSFATTYPE_FAT32: return rtFsFatClusterMap_SetCluster32(pThis->pFatCache, pThis, idxCluster, FAT_FIRST_FAT32_EOC);
+        case RTFSFATTYPE_FAT12: return rtFsFatClusterMap_SetCluster12(pThis->pFatCache, idxCluster, FAT_FIRST_FAT12_EOC);
+        case RTFSFATTYPE_FAT16: return rtFsFatClusterMap_SetCluster16(pThis->pFatCache, idxCluster, FAT_FIRST_FAT16_EOC);
+        case RTFSFATTYPE_FAT32: return rtFsFatClusterMap_SetCluster32(pThis->pFatCache, idxCluster, FAT_FIRST_FAT32_EOC);
         default: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
     }
 }
@@ -1485,9 +1479,9 @@ static int rtFsFatClusterMap_FreeCluster(PRTFSFATVOL pThis, uint32_t idxCluster)
     AssertReturn(idxCluster < pThis->cClusters, VERR_VFS_BOGUS_OFFSET);
     switch (pThis->enmFatType)
     {
-        case RTFSFATTYPE_FAT12: return rtFsFatClusterMap_SetCluster12(pThis->pFatCache, pThis, idxCluster, 0);
-        case RTFSFATTYPE_FAT16: return rtFsFatClusterMap_SetCluster16(pThis->pFatCache, pThis, idxCluster, 0);
-        case RTFSFATTYPE_FAT32: return rtFsFatClusterMap_SetCluster32(pThis->pFatCache, pThis, idxCluster, 0);
+        case RTFSFATTYPE_FAT12: return rtFsFatClusterMap_SetCluster12(pThis->pFatCache, idxCluster, 0);
+        case RTFSFATTYPE_FAT16: return rtFsFatClusterMap_SetCluster16(pThis->pFatCache, idxCluster, 0);
+        case RTFSFATTYPE_FAT32: return rtFsFatClusterMap_SetCluster32(pThis->pFatCache, idxCluster, 0);
         default: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
     }
 }
@@ -1496,13 +1490,12 @@ static int rtFsFatClusterMap_FreeCluster(PRTFSFATVOL pThis, uint32_t idxCluster)
 /**
  * Worker for rtFsFatClusterMap_AllocateCluster that handles FAT12.
  */
-static int rtFsFatClusterMap_AllocateCluster12(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol,
-                                               uint32_t idxPrevCluster, uint32_t *pidxCluster)
+static int rtFsFatClusterMap_AllocateCluster12(PRTFSFATCLUSTERMAPCACHE pFatCache, uint32_t idxPrevCluster, uint32_t *pidxCluster)
 {
     /* ASSUME that for FAT12 we cache the whole FAT in a single entry.  That
        way we don't need to deal with entries in different sectors and whatnot.  */
     AssertReturn(pFatCache->cEntries == 1, VERR_INTERNAL_ERROR_4);
-    AssertReturn(pFatCache->cbEntry == pVol->cbFat, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pFatCache->cbEntry == pFatCache->cbFat, VERR_INTERNAL_ERROR_4);
     AssertReturn(pFatCache->aEntries[0].offFat == 0, VERR_INTERNAL_ERROR_4);
 
     /*
@@ -1530,7 +1523,7 @@ static int rtFsFatClusterMap_AllocateCluster12(PRTFSFATCLUSTERMAPCACHE pFatCache
      */
     uint32_t idxCluster = FAT_FIRST_DATA_CLUSTER;
     uint32_t offFat     = 3;
-    while (idxCluster < pVol->cClusters)
+    while (idxCluster < pFatCache->cClusters)
     {
         if (idxCluster & 1)
         {
@@ -1593,12 +1586,11 @@ static int rtFsFatClusterMap_AllocateCluster12(PRTFSFATCLUSTERMAPCACHE pFatCache
 /**
  * Worker for rtFsFatClusterMap_AllocateCluster that handles FAT16.
  */
-static int rtFsFatClusterMap_AllocateCluster16(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol,
-                                               uint32_t idxPrevCluster, uint32_t *pidxCluster)
+static int rtFsFatClusterMap_AllocateCluster16(PRTFSFATCLUSTERMAPCACHE pFatCache, uint32_t idxPrevCluster, uint32_t *pidxCluster)
 {
     /* ASSUME that for FAT16 we cache the whole FAT in a single entry. */
     AssertReturn(pFatCache->cEntries == 1, VERR_INTERNAL_ERROR_4);
-    AssertReturn(pFatCache->cbEntry == pVol->cbFat, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pFatCache->cbEntry == pFatCache->cbFat, VERR_INTERNAL_ERROR_4);
     AssertReturn(pFatCache->aEntries[0].offFat == 0, VERR_INTERNAL_ERROR_4);
 
     /*
@@ -1622,10 +1614,10 @@ static int rtFsFatClusterMap_AllocateCluster16(PRTFSFATCLUSTERMAPCACHE pFatCache
      */
     uint32_t idxCluster = RT_MIN(pFatCache->idxAllocHint, FAT_FIRST_DATA_CLUSTER);
     uint32_t offFat     = idxCluster * 2;
-    uint32_t cClusters  = pVol->cClusters;
+    uint32_t cClusters  = pFatCache->cClusters;
     for (uint32_t i = 0; i < 2; i++)
     {
-        while (idxCluster < pVol->cClusters)
+        while (idxCluster < cClusters)
         {
             if (   pbFat[offFat + 0] != 0x00
                 || pbFat[offFat + 1] != 0x00)
@@ -1662,7 +1654,7 @@ static int rtFsFatClusterMap_AllocateCluster16(PRTFSFATCLUSTERMAPCACHE pFatCache
         }
 
         /* Wrap around to the start of the map. */
-        cClusters  = RT_MIN(pFatCache->idxAllocHint, pVol->cClusters);
+        cClusters  = RT_MIN(pFatCache->idxAllocHint, pFatCache->cClusters);
         idxCluster = FAT_FIRST_DATA_CLUSTER;
         offFat     = 4;
     }
@@ -1674,8 +1666,7 @@ static int rtFsFatClusterMap_AllocateCluster16(PRTFSFATCLUSTERMAPCACHE pFatCache
 /**
  * Worker for rtFsFatClusterMap_AllocateCluster that handles FAT32.
  */
-static int rtFsFatClusterMap_AllocateCluster32(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol,
-                                               uint32_t idxPrevCluster, uint32_t *pidxCluster)
+static int rtFsFatClusterMap_AllocateCluster32(PRTFSFATCLUSTERMAPCACHE pFatCache, uint32_t idxPrevCluster, uint32_t *pidxCluster)
 {
     /*
      * Check that the previous cluster is a valid chain end.
@@ -1684,7 +1675,7 @@ static int rtFsFatClusterMap_AllocateCluster32(PRTFSFATCLUSTERMAPCACHE pFatCache
     uint8_t *pbEntry;
     if (idxPrevCluster != UINT32_MAX)
     {
-        rc = rtFsFatClusterMap_GetEntry(pFatCache, pVol, idxPrevCluster * 4, &pbEntry);
+        rc = rtFsFatClusterMap_GetEntry(pFatCache, idxPrevCluster * 4, &pbEntry);
         if (RT_SUCCESS(rc))
         {
             uint32_t idxPrevValue = RT_MAKE_U32_FROM_U8(pbEntry[0], pbEntry[1], pbEntry[2], pbEntry[3]);
@@ -1700,14 +1691,14 @@ static int rtFsFatClusterMap_AllocateCluster32(PRTFSFATCLUSTERMAPCACHE pFatCache
      */
     uint32_t idxCluster = RT_MIN(pFatCache->idxAllocHint, FAT_FIRST_DATA_CLUSTER);
     uint32_t offFat     = idxCluster * 4;
-    uint32_t cClusters  = pVol->cClusters;
+    uint32_t cClusters  = pFatCache->cClusters;
     for (uint32_t i = 0; i < 2; i++)
     {
-        while (idxCluster < pVol->cClusters)
+        while (idxCluster < cClusters)
         {
             /* Note! This could be done in cache entry chunks.  */
             uint32_t idxEntry;
-            rc = rtFsFatClusterMap_GetEntryEx(pFatCache, pVol, offFat, &pbEntry, &idxEntry);
+            rc = rtFsFatClusterMap_GetEntryEx(pFatCache, offFat, &pbEntry, &idxEntry);
             if (RT_SUCCESS(rc))
             {
                 if (   pbEntry[0] != 0x00
@@ -1734,7 +1725,7 @@ static int rtFsFatClusterMap_AllocateCluster32(PRTFSFATCLUSTERMAPCACHE pFatCache
                     /* Chain it on the previous cluster (if any). */
                     if (idxPrevCluster != UINT32_MAX)
                     {
-                        rc = rtFsFatClusterMap_GetEntryEx(pFatCache, pVol, idxPrevCluster * 4, &pbEntry, &idxEntry);
+                        rc = rtFsFatClusterMap_GetEntryEx(pFatCache, idxPrevCluster * 4, &pbEntry, &idxEntry);
                         if (RT_SUCCESS(rc))
                         {
                             pbEntry[0] = (uint8_t)idxCluster;
@@ -1746,7 +1737,7 @@ static int rtFsFatClusterMap_AllocateCluster32(PRTFSFATCLUSTERMAPCACHE pFatCache
                         else
                         {
                             /* Try free the cluster. */
-                            int rc2 = rtFsFatClusterMap_GetEntryEx(pFatCache, pVol, offFat, &pbEntry, &idxEntry);
+                            int rc2 = rtFsFatClusterMap_GetEntryEx(pFatCache, offFat, &pbEntry, &idxEntry);
                             if (RT_SUCCESS(rc2))
                             {
                                 pbEntry[0] = 0;
@@ -1770,7 +1761,7 @@ static int rtFsFatClusterMap_AllocateCluster32(PRTFSFATCLUSTERMAPCACHE pFatCache
         }
 
         /* Wrap around to the start of the map. */
-        cClusters  = RT_MIN(pFatCache->idxAllocHint, pVol->cClusters);
+        cClusters  = RT_MIN(pFatCache->idxAllocHint, pFatCache->cClusters);
         idxCluster = FAT_FIRST_DATA_CLUSTER;
         offFat     = 4;
     }
@@ -1795,9 +1786,9 @@ static int rtFsFatClusterMap_AllocateCluster(PRTFSFATVOL pThis, uint32_t idxPrev
     *pidxCluster = UINT32_MAX;
     switch (pThis->enmFatType)
     {
-        case RTFSFATTYPE_FAT12: return rtFsFatClusterMap_AllocateCluster12(pThis->pFatCache, pThis, idxPrevCluster, pidxCluster);
-        case RTFSFATTYPE_FAT16: return rtFsFatClusterMap_AllocateCluster16(pThis->pFatCache, pThis, idxPrevCluster, pidxCluster);
-        case RTFSFATTYPE_FAT32: return rtFsFatClusterMap_AllocateCluster32(pThis->pFatCache, pThis, idxPrevCluster, pidxCluster);
+        case RTFSFATTYPE_FAT12: return rtFsFatClusterMap_AllocateCluster12(pThis->pFatCache, idxPrevCluster, pidxCluster);
+        case RTFSFATTYPE_FAT16: return rtFsFatClusterMap_AllocateCluster16(pThis->pFatCache, idxPrevCluster, pidxCluster);
+        case RTFSFATTYPE_FAT32: return rtFsFatClusterMap_AllocateCluster32(pThis->pFatCache, idxPrevCluster, pidxCluster);
         default: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
     }
 }
