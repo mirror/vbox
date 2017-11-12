@@ -48,7 +48,7 @@ RT_C_DECLS_END
 # include <stdio.h> /* for printf */
 #endif
 
-#ifndef IN_RING0 /* A linking tweak for the testcase: */
+#if !defined(IN_RING0) && !defined(DOXYGEN_RUNNING) /* A linking tweak for the testcase: */
 # include <iprt/cdefs.h>
 # undef  RTR0DECL
 # define RTR0DECL(type) DECLHIDDEN(type) RTCALL
