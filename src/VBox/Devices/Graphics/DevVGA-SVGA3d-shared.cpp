@@ -428,6 +428,7 @@ uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format,
         *pcxBlock = 1;
         *pcyBlock = 1;
         return 8;
+    case SVGA3D_R8G8B8A8_UNORM:
     case SVGA3D_R8G8B8A8_SNORM:
         *pcxBlock = 1;
         *pcyBlock = 1;
