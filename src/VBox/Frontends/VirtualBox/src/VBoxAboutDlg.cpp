@@ -124,8 +124,11 @@ void VBoxAboutDlg::prepare()
     }
 
     /* Load image: */
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+    const double dRatio = (double)iIconMetric / 32;
     const QIcon icon = UIIconPool::iconSet(strPath);
     m_size = icon.availableSizes().first();
+    m_size *= dRatio;
     m_pixmap = icon.pixmap(m_size);
 
     /* Prepare main-layout: */
