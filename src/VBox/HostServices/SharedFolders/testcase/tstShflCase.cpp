@@ -105,9 +105,9 @@ static const char *g_apszSUBDIREntries[] =
     "z.bat",
 };
 
-int rtDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uitn32_t fFlags)
+int rtDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags)
 {
-    RT_NOREF1(enmFilter, fFlags);
+    RT_NOREF2(enmFilter, fFlags);
     if (!strcmp(pszPath, "c:\\*"))
         iDirList = 1;
     else if (!strcmp(pszPath, "c:\\test dir\\*"))
