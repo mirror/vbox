@@ -720,7 +720,7 @@ RTDECL(int) RTDirRelPathSetOwner(PRTDIR hDir, const char *pszRelPath, uint32_t u
  * @returns IPRT status code.
  * @param   hDirSrc         The directory the source path is relative to.
  * @param   pszSrc          The source path, relative to @a hDirSrc.
- * @param   hDirSrc         The directory the destination path is relative to.
+ * @param   hDirDst         The directory the destination path is relative to.
  * @param   pszDst          The destination path, relative to @a hDirDst.
  * @param   fRename         Rename flags, RTPATHRENAME_FLAGS_XXX.
  *

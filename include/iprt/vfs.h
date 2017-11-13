@@ -483,7 +483,7 @@ RTDECL(int) RTVfsDirOpenDir(RTVFSDIR hVfsDir, const char *pszPath, uint32_t fFla
  * @param   hDir            The standard IPRT directory handle.
  * @param   fLeaveOpen      Whether to leave the handle open when the VFS
  *                          directory is released, or to close it (@c false).
- * @param   phVfsDi         Where to return the VFS directory handle.
+ * @param   phVfsDir        Where to return the VFS directory handle.
  */
 RTDECL(int) RTVfsDirFromRTDir(PRTDIR hDir, bool fLeaveOpen, PRTVFSDIR phVfsDir);
 
@@ -493,9 +493,7 @@ RTDECL(int) RTVfsDirFromRTDir(PRTDIR hDir, bool fLeaveOpen, PRTVFSDIR phVfsDir);
  * @returns IPRT status code.
  * @param   hDir            The standard IPRT directory handle.
  * @param   fFlags          RTDIR_F_XXX.
- * @param   fLeaveOpen      Whether to leave the handle open when the VFS
- *                          directory is released, or to close it (@c false).
- * @param   phVfsDi         Where to return the VFS directory handle.
+ * @param   phVfsDir        Where to return the VFS directory handle.
  */
 RTDECL(int) RTVfsDirOpenNormal(const char *pszFilename, uint32_t fFlags, PRTVFSDIR phVfsDir);
 
