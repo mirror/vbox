@@ -677,6 +677,7 @@ void UIMediumDetailsWidget::loadDataForOptions()
     /* Load location: */
     m_pLabelLocation->setEnabled(m_newData.m_fValid);
     m_pEditorLocation->setEnabled(m_newData.m_fValid);
+    m_pButtonLocation->setEnabled(m_newData.m_fValid);
     m_pEditorLocation->setText(m_newData.m_options.m_strLocation);
 
     /* Load description: */
@@ -692,6 +693,9 @@ void UIMediumDetailsWidget::loadDataForOptions()
     m_pEditorSize->setEnabled(fEnableResize);
     m_pEditorSize->setMediumSize(m_newData.m_options.m_uLogicalSize);
     sltSizeValueChanged(m_pEditorSize->mediumSize());
+
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMediumDetailsWidget::loadDataForDetails()
@@ -727,8 +731,8 @@ void UIMediumDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
     }
     if (!pWidget || pWidget == m_pErrorPaneLocation)
     {
-        /* Always valid for now: */
-        const bool fError = m_newData.m_options.m_strLocation.isEmpty();
+        /* If medium is valid itself, details are valid only is location is set: */
+        const bool fError = m_newData.m_fValid && m_newData.m_options.m_strLocation.isEmpty();
         m_pErrorPaneLocation->setVisible(fError);
         if (fError)
             m_fValid = false;
