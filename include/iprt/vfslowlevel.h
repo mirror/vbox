@@ -251,6 +251,8 @@ typedef struct RTVFSOPS
     DECLCALLBACKMEMBER(int, pfnTraverse)(void *pvThis, const char *pszPath, size_t *poffPath, PRTVFS??? phVfs?, ???* p???);
 #endif
 
+    /** @todo need rename API */
+
     /** Marks the end of the structure (RTVFSOPS_VERSION). */
     uintptr_t               uEndMarker;
 } RTVFSOPS;
@@ -561,6 +563,7 @@ typedef struct RTVFSDIROPS
      * @returns IPRT status code.
      * @param   pvThis      The implementation specific directory data.
      * @param   pszSubDir   The name of the immediate subdirectory to open.
+     * @param   fFlags      RTDIR_F_XXX.
      * @param   phVfsDir    Where to return the handle to the opened directory.
      * @sa      RTDirOpen.
      */
@@ -644,6 +647,9 @@ typedef struct RTVFSDIROPS
      *                      (RTFS_TYPE_XXX).
      * @param   pszNewName  The new entry name.
      * @sa      RTPathRename
+     *
+     * @todo    This API is not flexible enough, must be able to rename between
+     *          directories within a file system.
      */
     DECLCALLBACKMEMBER(int, pfnRenameEntry)(void *pvThis, const char *pszEntry, RTFMODE fType, const char *pszNewName);
 

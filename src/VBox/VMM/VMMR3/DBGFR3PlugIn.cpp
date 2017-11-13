@@ -471,7 +471,7 @@ VMMR3DECL(void) DBGFR3PlugInLoadAll(PUVM pUVM)
     strcat(szPath, pszSuff);
 
     PRTDIR pDir;
-    rc = RTDirOpenFiltered(&pDir, szPath, RTDIRFILTER_WINNT, 0);
+    rc = RTDirOpenFiltered(&pDir, szPath, RTDIRFILTER_WINNT, 0 /*fFlags*/);
     if (RT_SUCCESS(rc))
     {
         /*

@@ -667,7 +667,7 @@ static int vbsfOpenDir(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszPa
             || (SHFL_CF_ACT_OPEN_IF_EXISTS == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS)))
         {
             /* Open the directory now */
-            rc = RTDirOpenFiltered(&pHandle->dir.Handle, pszPath, RTDIRFILTER_NONE, 0);
+            rc = RTDirOpenFiltered(&pHandle->dir.Handle, pszPath, RTDIRFILTER_NONE, 0 /*fFlags*/);
             if (RT_SUCCESS(rc))
             {
                 RTFSOBJINFO info;
@@ -1199,7 +1199,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
 
             if (RT_SUCCESS(rc))
             {
-                rc = RTDirOpenFiltered(&pHandle->dir.SearchHandle, pszFullPath, RTDIRFILTER_WINNT, 0);
+                rc = RTDirOpenFiltered(&pHandle->dir.SearchHandle, pszFullPath, RTDIRFILTER_WINNT, 0 /*fFlags*/);
 
                 /* free the path string */
                 vbsfFreeFullPath(pszFullPath);

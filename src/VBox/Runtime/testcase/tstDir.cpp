@@ -85,7 +85,7 @@ int main(int argc, char **argv)
             if (!fFiltered)
                 rc = RTDirOpen(&pDir, argv[i]);
             else
-                rc = RTDirOpenFiltered(&pDir, argv[i], RTDIRFILTER_WINNT, 0);
+                rc = RTDirOpenFiltered(&pDir, argv[i], RTDIRFILTER_WINNT, 0 /*fFlags*/);
             if (RT_SUCCESS(rc))
             {
                 /* list */

@@ -125,7 +125,7 @@ static int utsPlatformLnxDummyHcdQueryBusses(PUTSPLATFORMLNXDUMMYHCD pHcd, const
         return VERR_BUFFER_OVERFLOW;
 
     PRTDIR pDir = NULL;
-    rc = RTDirOpenFiltered(&pDir, aszPath, RTDIRFILTER_WINNT, 0);
+    rc = RTDirOpenFiltered(&pDir, aszPath, RTDIRFILTER_WINNT, 0 /*fFlags*/);
     if (RT_SUCCESS(rc))
     {
         do
@@ -205,7 +205,7 @@ static int utsPlatformLnxHcdScanByName(const char *pszHcdName, const char *pszUd
 
     /* Enumerate the available HCD and their bus numbers. */
     PRTDIR pDir = NULL;
-    int rc = RTDirOpenFiltered(&pDir, aszPath, RTDIRFILTER_WINNT, 0);
+    int rc = RTDirOpenFiltered(&pDir, aszPath, RTDIRFILTER_WINNT, 0 /*fFlags*/);
     if (RT_SUCCESS(rc))
     {
         unsigned idxHcdCur = g_cDummyHcd;

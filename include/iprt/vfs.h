@@ -477,6 +477,29 @@ RTDECL(int) RTVfsDirOpenFileAsIoStream(RTVFSDIR hVfsDir, const char *pszPath, ui
 RTDECL(int) RTVfsDirOpenDir(RTVFSDIR hVfsDir, const char *pszPath, uint32_t fFlags, PRTVFSDIR phVfsDir);
 
 /**
+ * Create a VFS directory handle from a standard IPRT directory handle (PRTDIR).
+ *
+ * @returns IPRT status code.
+ * @param   hDir            The standard IPRT directory handle.
+ * @param   fLeaveOpen      Whether to leave the handle open when the VFS
+ *                          directory is released, or to close it (@c false).
+ * @param   phVfsDi         Where to return the VFS directory handle.
+ */
+RTDECL(int) RTVfsDirFromRTDir(PRTDIR hDir, bool fLeaveOpen, PRTVFSDIR phVfsDir);
+
+/**
+ * RTDirOpen + RTVfsDirFromRTDir.
+ *
+ * @returns IPRT status code.
+ * @param   hDir            The standard IPRT directory handle.
+ * @param   fFlags          RTDIR_F_XXX.
+ * @param   fLeaveOpen      Whether to leave the handle open when the VFS
+ *                          directory is released, or to close it (@c false).
+ * @param   phVfsDi         Where to return the VFS directory handle.
+ */
+RTDECL(int) RTVfsDirOpenNormal(const char *pszFilename, uint32_t fFlags, PRTVFSDIR phVfsDir);
+
+/**
  * Queries information about a object in or under the given directory.
  *
  * @returns IPRT Status code.

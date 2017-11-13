@@ -72,8 +72,6 @@ typedef struct RTDIR
     const char         *pszPath;
     /** The length of the path. */
     size_t              cchPath;
-    /** Set to indicate that the Data member contains unread data. */
-    bool                fDataUnread;
     /** Pointer to the converted filename.
      * This can be NULL. */
 #ifdef RT_OS_WINDOWS
@@ -85,6 +83,10 @@ typedef struct RTDIR
     size_t              cchName;
     /** The size of this structure. */
     size_t              cbSelf;
+    /** The RTDIR_F_XXX flags passed to RTDirOpenFiltered */
+    uint32_t            fFlags;
+    /** Set to indicate that the Data member contains unread data. */
+    bool                fDataUnread;
 
 #ifndef RTDIR_AGNOSTIC
 # ifdef RT_OS_WINDOWS

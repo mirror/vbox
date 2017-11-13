@@ -644,7 +644,7 @@ DECLHIDDEN(int) vdPluginLoadFromPath(const char *pszPath)
     PRTDIRENTRYEX pPluginDirEntry = NULL;
     PRTDIR pPluginDir = NULL;
     size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
-    int rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0);
+    int rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0 /*fFlags*/);
     if (RT_SUCCESS(rc))
     {
         pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRYEX));
@@ -767,7 +767,7 @@ DECLHIDDEN(int) vdPluginUnloadFromPath(const char *pszPath)
     PRTDIRENTRYEX pPluginDirEntry = NULL;
     PRTDIR pPluginDir = NULL;
     size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
-    int rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0);
+    int rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0 /*fFlags*/);
     if (RT_SUCCESS(rc))
     {
         pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRYEX));

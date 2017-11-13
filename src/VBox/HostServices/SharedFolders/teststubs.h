@@ -33,7 +33,7 @@ extern int testRTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate)
 #define RTDirOpen            testRTDirOpen
 extern int testRTDirOpen(PRTDIR *ppDir, const char *pszPath);
 #define RTDirOpenFiltered    testRTDirOpenFiltered
-extern int testRTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fOpen);
+extern int testRTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags);
 #define RTDirQueryInfo       testRTDirQueryInfo
 extern int testRTDirQueryInfo(PRTDIR pDir, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs);
 #define RTDirRemove          testRTDirRemove

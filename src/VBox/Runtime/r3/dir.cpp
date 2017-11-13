@@ -509,8 +509,9 @@ static PFNRTDIRFILTER rtDirFilterWinNtInit(PRTDIR pDir)
  * @param   pszPath     The specified path.
  * @param   pszFilter   Pointer to where the filter start in the path. NULL if no filter.
  * @param   enmFilter   The type of filter to apply.
+ * @param   fFlags      RTDIR_F_XXX.
  */
-static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFilter, RTDIRFILTER enmFilter)
+static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFilter, RTDIRFILTER enmFilter, uint32_t fFlags)
 {
     /*
      * Expand the path.
@@ -613,9 +614,10 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
     pDir->cchPath = cchRealPath;
     pDir->pszPath = (char *)memcpy(pb, szRealPath, cchRealPath + 1);
     Assert(pb - (uint8_t *)pDir + cchRealPath + 1 <= cbAllocated);
-    pDir->fDataUnread = false;
     pDir->pszName = NULL;
     pDir->cchName = 0;
+    pDir->fFlags  = fFlags;
+    pDir->fDataUnread = false;
 
     /*
      * Hand it over to the native part.
@@ -642,20 +644,20 @@ RTDECL(int) RTDirOpen(PRTDIR *ppDir, const char *pszPath)
     /*
      * Take common cause with RTDirOpenFiltered().
      */
-    int rc = rtDirOpenCommon(ppDir, pszPath, NULL,  RTDIRFILTER_NONE);
+    int rc = rtDirOpenCommon(ppDir, pszPath, NULL, RTDIRFILTER_NONE, 0 /*fFlags*/);
     LogFlow(("RTDirOpen(%p:{%p}, %p:{%s}): return %Rrc\n", ppDir, *ppDir, pszPath, pszPath, rc));
     return rc;
 }
 
 
-RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fOpen)
+RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags)
 {
     /*
      * Validate input.
      */
     AssertMsgReturn(VALID_PTR(ppDir), ("%p\n", ppDir), VERR_INVALID_POINTER);
     AssertMsgReturn(VALID_PTR(pszPath), ("%p\n", pszPath), VERR_INVALID_POINTER);
-    AssertReturn(!(fOpen & ~RTDIROPEN_FLAGS_NO_SYMLINKS), VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~RTDIR_F_VALID_MASK), VERR_INVALID_FLAGS);
     switch (enmFilter)
     {
         case RTDIRFILTER_UNIX:
@@ -686,11 +688,18 @@ RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER en
      * Call worker common with RTDirOpen which will verify the path, allocate
      * and initialize the handle, and finally call the backend.
      */
-    int rc = rtDirOpenCommon(ppDir, pszPath, pszFilter, enmFilter);
+    int rc = rtDirOpenCommon(ppDir, pszPath, pszFilter, enmFilter, fFlags);
 
-    LogFlow(("RTDirOpenFiltered(%p:{%p}, %p:{%s}, %d): return %Rrc\n",
-             ppDir, *ppDir, pszPath, pszPath, enmFilter, rc));
+    LogFlow(("RTDirOpenFiltered(%p:{%p}, %p:{%s}, %d, %#x): return %Rrc\n",
+             ppDir, *ppDir, pszPath, pszPath, enmFilter, fFlags, rc));
     return rc;
+}
+
+
+RTDECL(bool) RTDirIsValid(PRTDIR hDir)
+{
+    return RT_VALID_PTR(hDir)
+        && hDir->u32Magic == RTDIR_MAGIC;
 }
 
 

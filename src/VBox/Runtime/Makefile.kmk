@@ -623,6 +623,7 @@ RuntimeR3_SOURCES       = \
 	common/vfs/vfsmsg.cpp \
 	common/vfs/vfsprogress.cpp \
 	common/vfs/vfsreadahead.cpp \
+	common/vfs/vfsstddir.cpp \
 	common/vfs/vfsstdfile.cpp \
 	common/vfs/vfsstdpipe.cpp \
 	common/zip/tar.cpp \
@@ -678,6 +679,7 @@ RuntimeR3_SOURCES       = \
 	r3/testi.cpp \
 	r3/tcp.cpp \
 	r3/udp.cpp \
+	r3/generic/dirrel-r3-generic.cpp \
 	r3/generic/semspinmutex-r3-generic.cpp \
 	r3/xml.cpp \
 	common/zip/xarvfs.cpp

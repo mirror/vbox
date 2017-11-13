@@ -105,9 +105,9 @@ static const char *g_apszSUBDIREntries[] =
     "z.bat",
 };
 
-int rtDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter)
+int rtDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uitn32_t fFlags)
 {
-    RT_NOREF1(enmFilter);
+    RT_NOREF1(enmFilter, fFlags);
     if (!strcmp(pszPath, "c:\\*"))
         iDirList = 1;
     else if (!strcmp(pszPath, "c:\\test dir\\*"))
@@ -224,7 +224,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
     szWildCard[2] = 0;
     strcat(pDirEntry->szName, szWildCard);
 
-    rc = RTDirOpenFiltered (&hSearch, pDirEntry->szName, RTDIRFILTER_WINNT);
+    rc = RTDirOpenFiltered(&hSearch, pDirEntry->szName, RTDIRFILTER_WINNT, 0 /*fFlags*/);
     *(pszStartComponent-1) = RTPATH_DELIMITER;
     if (RT_FAILURE(rc))
         goto end;
