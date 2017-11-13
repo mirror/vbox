@@ -491,11 +491,11 @@ RTDECL(int) RTVfsDirFromRTDir(PRTDIR hDir, bool fLeaveOpen, PRTVFSDIR phVfsDir);
  * RTDirOpen + RTVfsDirFromRTDir.
  *
  * @returns IPRT status code.
- * @param   hDir            The standard IPRT directory handle.
+ * @param   pszPath         The path to the directory.
  * @param   fFlags          RTDIR_F_XXX.
  * @param   phVfsDir        Where to return the VFS directory handle.
  */
-RTDECL(int) RTVfsDirOpenNormal(const char *pszFilename, uint32_t fFlags, PRTVFSDIR phVfsDir);
+RTDECL(int) RTVfsDirOpenNormal(const char *pszPath, uint32_t fFlags, PRTVFSDIR phVfsDir);
 
 /**
  * Queries information about a object in or under the given directory.
