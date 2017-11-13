@@ -1138,6 +1138,11 @@ void UIHostNetworkManager::configureButtonBox()
             button(ButtonType_Reset), &QPushButton::setEnabled);
     connect(buttonBox(), &QIDialogButtonBox::clicked,
             this, &UIHostNetworkManager::sltHandleButtonBoxClick);
+    // WORKAROUND:
+    // Since we connected signals later than extra-data loaded
+    // for signals above, we should handle that stuff here again:
+    button(ButtonType_Apply)->setVisible(gEDataManager->hostNetworkManagerDetailsExpanded());
+    button(ButtonType_Reset)->setVisible(gEDataManager->hostNetworkManagerDetailsExpanded());
 }
 
 void UIHostNetworkManager::finalize()
