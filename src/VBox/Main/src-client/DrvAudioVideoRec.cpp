@@ -89,7 +89,7 @@
 #include "ConsoleImpl.h"
 
 #include "../../Devices/Audio/DrvAudio.h"
-#include "EBMLWriter.h"
+#include "WebMWriter.h"
 
 #include <iprt/mem.h>
 #include <iprt/cdefs.h>

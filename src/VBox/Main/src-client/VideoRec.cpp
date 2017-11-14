@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef LOG_GROUP
+# undef LOG_GROUP
+#endif
 #define LOG_GROUP LOG_GROUP_MAIN_DISPLAY
 #include "LoggingNew.h"
 
@@ -31,7 +34,7 @@
 
 #include <VBox/com/VirtualBox.h>
 
-#include "EBMLWriter.h"
+#include "WebMWriter.h"
 #include "VideoRec.h"
 
 #ifdef VBOX_WITH_LIBVPX

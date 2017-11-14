@@ -781,7 +781,8 @@ VBoxC_SDKS = VBOX_LIBPNG VBOX_ZLIB
 
 ifdef VBOX_WITH_VIDEOREC
    VBoxC_SOURCES += \
-	src-client/EBMLWriter.cpp
+	src-client/EBMLWriter.cpp \
+	src-client/WebMWriter.cpp
   ifdef VBOX_WITH_LIBVPX
    VBoxC_SDKS += VBOX_VPX
    VBoxC_DEFS += VBOX_WITH_LIBVPX
