@@ -158,13 +158,16 @@ DECLINLINE(bool) rtDirValidHandle(PRTDIR pDir)
  * Called by rtDirOpenCommon().
  *
  * @returns IPRT status code.
- * @param   pDir        The directory to open. The pszPath member contains the
- *                      path to the directory.
- * @param   pszPathBuf  Pointer to a RTPATH_MAX sized buffer containing pszPath.
- *                      Find-first style systems can use this to setup the
- *                      wildcard expression.
+ * @param   pDir                The directory to open. The pszPath member contains the
+ *                              path to the directory.
+ * @param   pszPathBuf          Pointer to a RTPATH_MAX sized buffer containing
+ *                              pszPath.  Find-first style systems can use this
+ *                              to setup the wildcard expression.
+ * @param   hRelativeDir        The directory @a pvNativeRelative is relative,
+ *                              ~(uintptr_t)0 if absolute.
+ * @param   pvNativeRelative    The native relative path.  NULL if absolute.
  */
-int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf);
+int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uintptr_t hRelativeDir, void *pvNativeRelative);
 
 /**
  * Returns the size of the directory structure.
@@ -173,5 +176,9 @@ int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf);
  * @param   pszPath     The path to the directory we're about to open.
  */
 size_t rtDirNativeGetStructSize(const char *pszPath);
+
+
+DECLHIDDEN(int) rtDirOpenRelative(PRTDIR *ppDir, const char *pszRelativeAndFilter, RTDIRFILTER enmFilter, uint32_t fFlags,
+                                  uintptr_t hRelativeDir, void *pvNativeRelative);
 
 #endif

@@ -505,13 +505,18 @@ static PFNRTDIRFILTER rtDirFilterWinNtInit(PRTDIR pDir)
  * Common worker for opening a directory.
  *
  * @returns IPRT status code.
- * @param   ppDir       Where to store the directory handle.
- * @param   pszPath     The specified path.
- * @param   pszFilter   Pointer to where the filter start in the path. NULL if no filter.
- * @param   enmFilter   The type of filter to apply.
- * @param   fFlags      RTDIR_F_XXX.
+ * @param   ppDir               Where to store the directory handle.
+ * @param   pszPath             The specified path.
+ * @param   pszFilter           Pointer to where the filter start in the path.
+ *                              NULL if no filter.
+ * @param   enmFilter           The type of filter to apply.
+ * @param   fFlags              RTDIR_F_XXX.
+ * @param   hRelativeDir        The directory @a pvNativeRelative is relative,
+ *                              ~(uintptr_t)0 if absolute.
+ * @param   pvNativeRelative    The native relative path.  NULL if absolute.
  */
-static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFilter, RTDIRFILTER enmFilter, uint32_t fFlags)
+static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFilter, RTDIRFILTER enmFilter, uint32_t fFlags,
+                           uintptr_t hRelativeDir, void *pvNativeRelative)
 {
     /*
      * Expand the path.
@@ -622,7 +627,7 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
     /*
      * Hand it over to the native part.
      */
-    rc = rtDirNativeOpen(pDir, szRealPath);
+    rc = rtDirNativeOpen(pDir, szRealPath, hRelativeDir, pvNativeRelative);
     if (RT_SUCCESS(rc))
         *ppDir = pDir;
     else
@@ -630,7 +635,6 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
 
     return rc;
 }
-
 
 
 RTDECL(int) RTDirOpen(PRTDIR *ppDir, const char *pszPath)
@@ -644,13 +648,14 @@ RTDECL(int) RTDirOpen(PRTDIR *ppDir, const char *pszPath)
     /*
      * Take common cause with RTDirOpenFiltered().
      */
-    int rc = rtDirOpenCommon(ppDir, pszPath, NULL, RTDIRFILTER_NONE, 0 /*fFlags*/);
+    int rc = rtDirOpenCommon(ppDir, pszPath, NULL, RTDIRFILTER_NONE, 0 /*fFlags*/, ~(uintptr_t)0, NULL);
     LogFlow(("RTDirOpen(%p:{%p}, %p:{%s}): return %Rrc\n", ppDir, *ppDir, pszPath, pszPath, rc));
     return rc;
 }
 
 
-RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags)
+DECLHIDDEN(int) rtDirOpenRelative(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags,
+                                  uintptr_t hRelativeDir, void *pvNativeRelative)
 {
     /*
      * Validate input.
@@ -688,11 +693,17 @@ RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER en
      * Call worker common with RTDirOpen which will verify the path, allocate
      * and initialize the handle, and finally call the backend.
      */
-    int rc = rtDirOpenCommon(ppDir, pszPath, pszFilter, enmFilter, fFlags);
+    int rc = rtDirOpenCommon(ppDir, pszPath, pszFilter, enmFilter, fFlags, hRelativeDir, pvNativeRelative);
 
-    LogFlow(("RTDirOpenFiltered(%p:{%p}, %p:{%s}, %d, %#x): return %Rrc\n",
-             ppDir, *ppDir, pszPath, pszPath, enmFilter, fFlags, rc));
+    LogFlow(("RTDirOpenFiltered(%p:{%p}, %p:{%s}, %d, %#x, %p, %p): return %Rrc\n",
+             ppDir,*ppDir, pszPath, pszPath, enmFilter, fFlags, hRelativeDir, pvNativeRelative, rc));
     return rc;
+}
+
+
+RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags)
+{
+    return rtDirOpenRelative(ppDir, pszPath, enmFilter, fFlags, ~(uintptr_t)0, NULL);
 }
 
 

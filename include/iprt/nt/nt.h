@@ -263,6 +263,8 @@ RTDECL(int) RTNtPathOpen(const char *pszPath, ACCESS_MASK fDesiredAccess, ULONG 
                           PHANDLE phHandle, PULONG_PTR puDisposition);
 RTDECL(int) RTNtPathOpenDir(const char *pszPath, ACCESS_MASK fDesiredAccess, ULONG fShareAccess, ULONG fCreateOptions,
                             ULONG fObjAttribs, PHANDLE phHandle, bool *pfObjDir);
+RTDECL(int) RTNtPathOpenDirEx(HANDLE hRootDir, struct _UNICODE_STRING *pNtName, ACCESS_MASK fDesiredAccess,
+                              ULONG fShareAccess, ULONG fCreateOptions, ULONG fObjAttribs, PHANDLE phHandle, bool *pfObjDir);
 RTDECL(int) RTNtPathClose(HANDLE hHandle);
 
 /**

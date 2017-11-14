@@ -79,7 +79,7 @@ size_t rtDirNativeGetStructSize(const char *pszPath)
 }
 
 
-int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
+int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uintptr_t hRelativeDir, void *pvNativeRelative)
 {
     /*
      * Convert the filter to UTF-16.
@@ -102,20 +102,30 @@ int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
      * Try open the directory
      */
 #ifdef IPRT_WITH_NT_PATH_PASSTHRU
-    bool fObjDir;
+    bool fObjDir = false;
 #endif
-    rc = RTNtPathOpenDir(pszPathBuf,
-                         FILE_LIST_DIRECTORY | FILE_TRAVERSE | SYNCHRONIZE,
-                         FILE_SHARE_READ | FILE_SHARE_WRITE,
-                         FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
-                         OBJ_CASE_INSENSITIVE,
-                         &pDir->hDir,
+    if (pvNativeRelative == NULL)
+        rc = RTNtPathOpenDir(pszPathBuf,
+                             FILE_LIST_DIRECTORY | FILE_TRAVERSE | SYNCHRONIZE,
+                             FILE_SHARE_READ | FILE_SHARE_WRITE,
+                             FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
+                             OBJ_CASE_INSENSITIVE,
+                             &pDir->hDir,
 #ifdef IPRT_WITH_NT_PATH_PASSTHRU
-                         &fObjDir
+                             &fObjDir
 #else
-                         NULL
+                             NULL
 #endif
-                         );
+                             );
+    else
+        rc = RTNtPathOpenDirEx((HANDLE)hRelativeDir,
+                               (struct _UNICODE_STRING *)pvNativeRelative,
+                               FILE_LIST_DIRECTORY | FILE_TRAVERSE | SYNCHRONIZE,
+                               FILE_SHARE_READ | FILE_SHARE_WRITE,
+                               FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
+                               OBJ_CASE_INSENSITIVE,
+                               &pDir->hDir,
+                               NULL);
     if (RT_SUCCESS(rc))
     {
         /*

@@ -223,9 +223,11 @@ size_t rtDirNativeGetStructSize(const char *pszPath)
 }
 
 
-int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
+int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uintptr_t hRelativeDir, void *pvNativeRelative)
 {
     NOREF(pszPathBuf); /* only used on windows */
+    NOREF(hRelativeDir);
+    NOREF(pvNativeRelative);
 
     /*
      * Convert to a native path and try opendir.

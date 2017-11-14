@@ -50,8 +50,10 @@ size_t rtDirNativeGetStructSize(const char *pszPath)
 }
 
 
-int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
+int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uintptr_t hRelativeDir, void *pvNativeRelative))
 {
+    RT_NOREF(hRelativeDir, pvNativeRelative);
+
     /*
      * Setup the search expression.
      *

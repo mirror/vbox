@@ -762,72 +762,107 @@ RTDECL(int) RTNtPathOpenDir(const char *pszPath, ACCESS_MASK fDesiredAccess, ULO
     int rc = rtNtPathToNative(&NtName, &hRootDir, pszPath);
     if (RT_SUCCESS(rc))
     {
-        HANDLE              hFile = RTNT_INVALID_HANDLE_VALUE;
-        IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
-        OBJECT_ATTRIBUTES   ObjAttr;
-        InitializeObjectAttributes(&ObjAttr, &NtName, fObjAttribs, hRootDir, NULL);
-
-        NTSTATUS rcNt = NtCreateFile(&hFile,
-                                     fDesiredAccess,
-                                     &ObjAttr,
-                                     &Ios,
-                                     NULL /* AllocationSize*/,
-                                     FILE_ATTRIBUTE_NORMAL,
-                                     fShareAccess,
-                                     FILE_OPEN,
-                                     fCreateOptions,
-                                     NULL /*EaBuffer*/,
-                                     0 /*EaLength*/);
-        if (NT_SUCCESS(rcNt))
+        if (pfObjDir)
         {
-            if (pfObjDir)
-                *pfObjDir = false;
-            *phHandle = hFile;
-            rc = VINF_SUCCESS;
-        }
+            *pfObjDir = false;
 #ifdef IPRT_WITH_NT_PATH_PASSTHRU
-        else if (   pfObjDir
-                 && (rcNt == STATUS_OBJECT_NAME_INVALID || rcNt == STATUS_OBJECT_TYPE_MISMATCH)
-                 && RTPATH_IS_SLASH(pszPath[0])
-                 && RTPATH_IS_SLASH(pszPath[1])
-                 && pszPath[2] == '!'
-                 && RTPATH_IS_SLASH(pszPath[3]))
-        {
-            /* Strip trailing slash. */
-            if (   NtName.Length > 2
-                && RTPATH_IS_SLASH(NtName.Buffer[(NtName.Length / 2) - 1]))
-                NtName.Length -= 2;
-
-            /* Rought conversion of the access flags. */
-            ULONG fObjDesiredAccess = 0;
-            if (fDesiredAccess & (GENERIC_ALL | STANDARD_RIGHTS_ALL))
-                fObjDesiredAccess = DIRECTORY_ALL_ACCESS;
-            else
-            {
-                if (fDesiredAccess & (FILE_GENERIC_WRITE | GENERIC_WRITE | STANDARD_RIGHTS_WRITE))
-                    fObjDesiredAccess |= DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_OBJECT;
-                if (   (fDesiredAccess & (FILE_LIST_DIRECTORY | FILE_GENERIC_READ | GENERIC_READ | STANDARD_RIGHTS_READ))
-                    || !fObjDesiredAccess)
-                    fObjDesiredAccess |= DIRECTORY_QUERY | FILE_LIST_DIRECTORY;
-            }
-
-            rcNt = NtOpenDirectoryObject(&hFile, fObjDesiredAccess, &ObjAttr);
-            if (NT_SUCCESS(rcNt))
-            {
-                *pfObjDir = true;
-                *phHandle = hFile;
-                rc = VINF_SUCCESS;
-            }
-            else
-                rc = RTErrConvertFromNtStatus(rcNt);
-        }
+            if (   !RTPATH_IS_SLASH(pszPath[0])
+                || !RTPATH_IS_SLASH(pszPath[1])
+                || pszPath[2] != '!'
+                || RTPATH_IS_SLASH(pszPath[3]))
 #endif
-        else
-            rc = RTErrConvertFromNtStatus(rcNt);
+                pfObjDir = NULL;
+        }
+        rc = RTNtPathOpenDirEx(hRootDir, &NtName, fDesiredAccess, fShareAccess, fCreateOptions, fObjAttribs, phHandle, pfObjDir);
         rtNtPathFreeNative(&NtName, &hRootDir);
     }
     return rc;
 }
+
+
+
+/**
+ * Wrapper around NtCreateFile, extended version.
+ *
+ * @returns IPRT status code.
+ * @param   hRootDir            The root director the path is relative to.  NULL
+ *                              if none.
+ * @param   pNtName             The NT path.
+ * @param   fDesiredAccess      See NtCreateFile.
+ * @param   fShareAccess        See NtCreateFile.
+ * @param   fCreateOptions      See NtCreateFile.
+ * @param   fObjAttribs         The OBJECT_ATTRIBUTES::Attributes value, see
+ *                              NtCreateFile and InitializeObjectAttributes.
+ * @param   phHandle            Where to return the handle.
+ * @param   pfObjDir            If not NULL, the variable pointed to will be set
+ *                              to @c true if we opened an object directory and
+ *                              @c false if we opened an directory file (normal
+ *                              directory).
+ */
+RTDECL(int) RTNtPathOpenDirEx(HANDLE hRootDir, struct _UNICODE_STRING *pNtName, ACCESS_MASK fDesiredAccess, ULONG fShareAccess,
+                              ULONG fCreateOptions, ULONG fObjAttribs, PHANDLE phHandle, bool *pfObjDir)
+{
+    *phHandle = RTNT_INVALID_HANDLE_VALUE;
+
+    HANDLE              hFile = RTNT_INVALID_HANDLE_VALUE;
+    IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+    OBJECT_ATTRIBUTES   ObjAttr;
+    InitializeObjectAttributes(&ObjAttr, pNtName, fObjAttribs, hRootDir, NULL);
+
+    NTSTATUS rcNt = NtCreateFile(&hFile,
+                                 fDesiredAccess,
+                                 &ObjAttr,
+                                 &Ios,
+                                 NULL /* AllocationSize*/,
+                                 FILE_ATTRIBUTE_NORMAL,
+                                 fShareAccess,
+                                 FILE_OPEN,
+                                 fCreateOptions,
+                                 NULL /*EaBuffer*/,
+                                 0 /*EaLength*/);
+    if (NT_SUCCESS(rcNt))
+    {
+        if (pfObjDir)
+            *pfObjDir = false;
+        *phHandle = hFile;
+        return VINF_SUCCESS;
+    }
+
+    if (   pfObjDir
+        && (rcNt == STATUS_OBJECT_NAME_INVALID || rcNt == STATUS_OBJECT_TYPE_MISMATCH))
+    {
+        /* Strip trailing slash. */
+        struct _UNICODE_STRING NtName2 = *pNtName;
+        if (   NtName2.Length > 2
+            && RTPATH_IS_SLASH(NtName2.Buffer[(NtName2.Length / 2) - 1]))
+            NtName2.Length -= 2;
+        ObjAttr.ObjectName = &NtName2;
+
+        /* Rought conversion of the access flags. */
+        ULONG fObjDesiredAccess = 0;
+        if (fDesiredAccess & (GENERIC_ALL | STANDARD_RIGHTS_ALL))
+            fObjDesiredAccess = DIRECTORY_ALL_ACCESS;
+        else
+        {
+            if (fDesiredAccess & (FILE_GENERIC_WRITE | GENERIC_WRITE | STANDARD_RIGHTS_WRITE))
+                fObjDesiredAccess |= DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_OBJECT;
+            if (   (fDesiredAccess & (FILE_LIST_DIRECTORY | FILE_GENERIC_READ | GENERIC_READ | STANDARD_RIGHTS_READ))
+                || !fObjDesiredAccess)
+                fObjDesiredAccess |= DIRECTORY_QUERY | FILE_LIST_DIRECTORY;
+        }
+
+        rcNt = NtOpenDirectoryObject(&hFile, fObjDesiredAccess, &ObjAttr);
+        if (NT_SUCCESS(rcNt))
+        {
+            *pfObjDir = true;
+            *phHandle = hFile;
+            return VINF_SUCCESS;
+        }
+    }
+
+    return RTErrConvertFromNtStatus(rcNt);
+}
+
 
 
 /**
