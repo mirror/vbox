@@ -286,15 +286,15 @@ RTEXITCODE handleStorageAttach(HandlerArg *a)
                 bstrPassword = ValueUnion.psz;
                 break;
 
-			case 'w':   // --passwordFile
-			{
-				Utf8Str utf8Password;
-				RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &utf8Password);
-				if (rcExit != RTEXITCODE_SUCCESS)
-					rc = E_FAIL;
-				bstrPassword = utf8Password;
-				break;
-			}
+            case 'w':   // --passwordFile
+            {
+                Utf8Str utf8Password;
+                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &utf8Password);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    rc = E_FAIL;
+                bstrPassword = utf8Password;
+                break;
+            }
             case 'N':   // --initiator
                 bstrInitiator = ValueUnion.psz;
                 break;
