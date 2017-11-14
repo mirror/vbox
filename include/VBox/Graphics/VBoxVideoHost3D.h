@@ -123,7 +123,7 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP
     {
         void *pvVRamBase;
         uint64_t uAlignment;
-    };
+    } RT_UNION_NM(u);
     uint64_t cbVRam;
     PPDMLED pLed;
     VBOXCRCLIENT_INFO CrClientInfo;

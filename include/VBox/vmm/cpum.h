@@ -1209,7 +1209,7 @@ VMM_INT_DECL(void)      CPUMSvmVmExitRestoreHostState(PVMCPU pVCpu, PCPUMCTX pCt
 VMM_INT_DECL(void)      CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr);
 /** @} */
 
-#ifndef VBOX_WITHOUT_UNNAMED_UNIONS
+#ifndef IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS
 
 /**
  * Tests if the guest is running in real mode or not.
@@ -1452,7 +1452,7 @@ DECLINLINE(bool) CPUMIsGuestInNestedHwVirtMode(PCCPUMCTX pCtx)
 {
     return CPUMIsGuestInSvmNestedHwVirtMode(pCtx) || CPUMIsGuestInVmxNestedHwVirtMode(pCtx);
 }
-#endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
+#endif /* IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS */
 
 /** @} */
 

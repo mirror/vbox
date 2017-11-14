@@ -134,7 +134,7 @@ typedef struct CPUMSYSENTER
 #ifdef VBOX_FOR_DTRACE_LIB
 # define CPUM_UNION_NM(a_Nm)  a_Nm
 # define CPUM_STRUCT_NM(a_Nm) a_Nm
-#elif defined(VBOX_WITHOUT_UNNAMED_UNIONS)
+#elif defined(IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS)
 # define CPUM_UNION_NM(a_Nm)  a_Nm
 # define CPUM_STRUCT_NM(a_Nm) a_Nm
 #else

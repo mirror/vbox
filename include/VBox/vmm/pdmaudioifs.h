@@ -660,7 +660,7 @@ typedef struct PDMAUDMIXBUFCONVOPTS
             /** Volume to use for conversion. */
             PDMAUDMIXBUFVOL Volume;
         } From;
-    };
+    } RT_UNION_NM(u);
 } PDMAUDMIXBUFCONVOPTS;
 /** Pointer to conversion parameters for the audio mixer.   */
 typedef PDMAUDMIXBUFCONVOPTS *PPDMAUDMIXBUFCONVOPTS;
@@ -917,7 +917,7 @@ typedef struct PDMAUDIOSTREAM
     {
         PDMAUDIOSTREAMIN   In;
         PDMAUDIOSTREAMOUT  Out;
-    };
+    } RT_UNION_NM(u);
     /** Data to backend-specific stream data.
      *  This data block will be casted by the backend to access its backend-dependent data.
      *
@@ -925,7 +925,7 @@ typedef struct PDMAUDIOSTREAM
     void                  *pvBackend;
     /** Size (in bytes) of the backend-specific stream data. */
     size_t                 cbBackend;
-} PDMAUDIOSTREAM, *PPDMAUDIOSTREAM;
+} PDMAUDIOSTREAM;
 
 /** Pointer to a audio connector interface. */
 typedef struct PDMIAUDIOCONNECTOR *PPDMIAUDIOCONNECTOR;
@@ -1036,7 +1036,7 @@ typedef struct PDMAUDIOCBRECORD
         {
             PDMAUDIODEVICECBTYPE enmType;
         } Device;
-    };
+    } RT_UNION_NM(u);
     /** Pointer to context data. Optional. */
     void               *pvCtx;
     /** Size (in bytes) of context data.
@@ -1240,7 +1240,7 @@ typedef struct PDMIAUDIOCONNECTOR
      */
     DECLR3CALLBACKMEMBER(int, pfnRegisterCallbacks, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOCBRECORD paCallbacks, size_t cCallbacks));
 
-} PDMIAUDIOCONNECTOR, *PPDMIAUDIOCONNECTOR;
+} PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
 #define PDMIAUDIOCONNECTOR_IID                  "A643B40C-733F-4307-9549-070AF0EE0ED6"
@@ -1470,7 +1470,7 @@ typedef struct PDMIHOSTAUDIO
      */
     DECLR3CALLBACKMEMBER(void, pfnStreamCaptureEnd, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
-} PDMIHOSTAUDIO, *PPDMIHOSTAUDIO;
+} PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
 #define PDMIHOSTAUDIO_IID                           "640F5A31-8245-491C-538F-29A0F9D08881"
