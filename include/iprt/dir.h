@@ -553,6 +553,13 @@ RTR3DECL(int) RTDirSetTimes(PRTDIR pDir, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC 
  * directory, therebye eliminating some classic path related race conditions on
  * systems with native support for these kinds of operations.
  *
+ * On NT (Windows) there is native support for addressing files, directories and
+ * stuff _below_ the open directory.  It is not possible to go upwards
+ * (hDir:../../grandparent), at least not with NTFS, forcing us to use the
+ * directory path as a fallback and opening us to potential races.
+ *
+ * On most unix-like systems here is now native support for all of this.
+ *
  * @{ */
 
 /**

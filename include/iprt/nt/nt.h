@@ -291,6 +291,37 @@ RTDECL(int) RTNtPathFromWinUtf8(struct _UNICODE_STRING *pNtName, PHANDLE phRootD
 RTDECL(int) RTNtPathFromWinUtf16Ex(struct _UNICODE_STRING *pNtName, HANDLE *phRootDir, PCRTUTF16 pwszPath, size_t cwcPath);
 
 /**
+ * How to handle ascent ('..' relative to a root handle).
+ */
+typedef enum RTNTPATHRELATIVEASCENT
+{
+    kRTNtPathRelativeAscent_Invalid = 0,
+    kRTNtPathRelativeAscent_Allow,
+    kRTNtPathRelativeAscent_Fail,
+    kRTNtPathRelativeAscent_Ignore,
+    kRTNtPathRelativeAscent_End,
+    kRTNtPathRelativeAscent_32BitHack = 0x7fffffff
+} RTNTPATHRELATIVEASCENT;
+
+/**
+ * Converts a relative windows-style path to relative NT format and encoding.
+ *
+ * @returns IPRT status code.
+ * @param   pNtName             Where to return the NT name.  Free using
+ *                              rtTNtPathToNative with phRootDir set to NULL.
+ * @param   phRootDir           On input, the handle to the directory the path
+ *                              is relative to.  On output, the handle to
+ *                              specify as root directory in the object
+ *                              attributes when accessing the path.  If
+ *                              enmAscent is kRTNtPathRelativeAscent_Allow, it
+ *                              may have been set to NULL.
+ * @param   pszPath             The relative UTF-8 path.
+ * @param   enmAscent           How to handle ascent.
+ */
+RTDECL(int) RTNtPathRelativeFromUtf8(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir,
+                                     const char *pszPath, RTNTPATHRELATIVEASCENT enmAscent);
+
+/**
  * Ensures that the NT string has sufficient storage to hold @a cwcMin RTUTF16
  * chars plus a terminator.
  *
@@ -307,9 +338,9 @@ RTDECL(int) RTNtPathEnsureSpace(struct _UNICODE_STRING *pNtName, size_t cwcMin);
 /**
  * Frees the native path and root handle.
  *
- * @param   pNtName             The NT path from a successful call to
- *                              RTNtPathFromWinUtf8 or RTNtPathFromWinUtf16Ex.
- * @param   phRootDir           The root handle variable from the same call.
+ * @param   pNtName             The NT path after a successful rtNtPathToNative
+ *                              call or RTNtPathRelativeFromUtf8.
+ * @param   phRootDir           The root handle variable from rtNtPathToNative,
  */
 RTDECL(void) RTNtPathFree(struct _UNICODE_STRING *pNtName, HANDLE *phRootDir);
 

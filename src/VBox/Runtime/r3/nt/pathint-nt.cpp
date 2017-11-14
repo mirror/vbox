@@ -32,6 +32,7 @@
 #include "internal-r3-nt.h"
 
 #include <iprt/path.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
@@ -405,27 +406,272 @@ RTDECL(int) RTNtPathEnsureSpace(struct _UNICODE_STRING *pNtName, size_t cwcMin)
 
 
 /**
- * Frees the native path and root handle.
+ * Gets the NT path to the object represented by the given handle.
  *
- * @param   pNtName             The NT path after a successful rtNtPathToNative
- *                              call.
- * @param   phRootDir           The root handle variable from the same call.
+ * @returns IPRT status code.
+ * @param   pNtName             Where to return the NT path.  Free using
+ *                              RTUtf16Alloc.
+ * @param   hHandle             The handle.
+ * @param   cwcExtra            How much extra space is needed.
  */
-static void rtNtPathFreeNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir)
+static int rtNtPathFromHandle(struct _UNICODE_STRING *pNtName, HANDLE hHandle, size_t cwcExtra)
 {
-    RTUtf16Free(pNtName->Buffer);
-    pNtName->Buffer = NULL;
+    /*
+     * Query the name into a buffer.
+     */
+    ULONG cbBuf = _2K;
+    PUNICODE_STRING pUniStrBuf = (PUNICODE_STRING)RTMemTmpAllocZ(cbBuf);
+    if (!pUniStrBuf)
+        return VERR_NO_TMP_MEMORY;
 
-    RT_NOREF_PV(phRootDir); /* never returned by rtNtPathToNative */
+    ULONG cbNameBuf = cbBuf;
+    NTSTATUS rcNt = NtQueryObject(hHandle, ObjectNameInformation, pUniStrBuf, cbBuf, &cbNameBuf);
+    while (   rcNt == STATUS_BUFFER_OVERFLOW
+           || rcNt == STATUS_BUFFER_TOO_SMALL)
+    {
+        do
+            cbBuf *= 2;
+        while (cbBuf <= cbNameBuf);
+        RTMemTmpFree(pUniStrBuf);
+        pUniStrBuf = (PUNICODE_STRING)RTMemTmpAllocZ(cbBuf);
+        if (!pUniStrBuf)
+            return VERR_NO_TMP_MEMORY;
+
+        cbNameBuf = cbBuf;
+        rcNt = NtQueryObject(hHandle, ObjectNameInformation, pUniStrBuf, cbBuf, &cbNameBuf);
+    }
+    int rc;
+    if (NT_SUCCESS(rcNt))
+    {
+        /*
+         * Copy the result into the return string.
+         */
+        size_t cbNeeded = cwcExtra * sizeof(RTUTF16) + pNtName->Length + sizeof(RTUTF16);
+        if (cbNeeded < _64K)
+        {
+            pNtName->Length        = pUniStrBuf->Length;
+            pNtName->MaximumLength = (uint16_t)cbNeeded;
+            pNtName->Buffer        = RTUtf16Alloc(cbNeeded);
+            if (pNtName->Buffer)
+            {
+                memcpy(pNtName->Buffer, pUniStrBuf->Buffer, pUniStrBuf->Length);
+                pNtName->Buffer[pUniStrBuf->Length / sizeof(RTUTF16)] = '\0';
+                rc = VINF_SUCCESS;
+            }
+            else
+                rc = VERR_NO_UTF16_MEMORY;
+        }
+        else
+            rc = VERR_FILENAME_TOO_LONG;
+    }
+    else
+        rc = RTErrConvertFromNtStatus(rcNt);
+    RTMemTmpFree(pUniStrBuf);
+    return rc;
+}
+
+
+/**
+ * Rewinds the path back to the start of the previous component.
+ *
+ * Will preserve root slash.
+ *
+ * @returns Pointer to character after the start-of-component slash, or
+ *          pwszStart.
+ * @param   pwcEnd              The current end of the path.
+ * @param   pwszStart           The start of the path.
+ */
+static PRTUTF16 rtNtPathGetPrevComponent(PRTUTF16 pwcEnd, PRTUTF16 pwszStart)
+{
+    if ((uintptr_t)pwcEnd > (uintptr_t)pwszStart)
+    {
+        RTUTF16 wc = pwcEnd[-1];
+        if (   (wc == '\\' || wc == '/')
+            && (uintptr_t)(pwcEnd - pwszStart) != 1)
+            pwcEnd--;
+
+        while (   (uintptr_t)pwcEnd > (uintptr_t)pwszStart
+               && (wc = pwcEnd[-1]) != '\\'
+               && (wc = pwcEnd[-1]) != '/')
+            pwcEnd--;
+    }
+    return pwcEnd;
+}
+
+
+/**
+ * Converts a relative windows-style path to relative NT format and encoding.
+ *
+ * @returns IPRT status code.
+ * @param   pNtName             Where to return the NT name.  Free using
+ *                              rtTNtPathToNative with phRootDir set to NULL.
+ * @param   phRootDir           On input, the handle to the directory the path
+ *                              is relative to.  On output, the handle to
+ *                              specify as root directory in the object
+ *                              attributes when accessing the path.  If
+ *                              enmAscent is kRTNtPathRelativeAscent_Allow, it
+ *                              may have been set to NULL.
+ * @param   pszPath             The relative UTF-8 path.
+ * @param   enmAscent           How to handle ascent.
+ */
+RTDECL(int) RTNtPathRelativeFromUtf8(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, const char *pszPath,
+                                     RTNTPATHRELATIVEASCENT enmAscent)
+{
+    size_t cwcMax;
+    int rc = RTStrCalcUtf16LenEx(pszPath, RTSTR_MAX, &cwcMax);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (cwcMax + 2 >= _32K)
+        return VERR_FILENAME_TOO_LONG;
+
+    PRTUTF16 pwszDst;
+    pNtName->Length        = 0;
+    pNtName->MaximumLength = (uint16_t)((cwcMax + 2) * sizeof(RTUTF16));
+    pNtName->Buffer        = pwszDst = RTUtf16Alloc((cwcMax + 2) * sizeof(RTUTF16));
+    if (!pwszDst)
+        return VERR_NO_UTF16_MEMORY;
+
+    PRTUTF16 pwszDstCur  = pwszDst;
+    PRTUTF16 pwszDstComp = pwszDst;
+    for (;;)
+    {
+        RTUNICP uc;
+        rc = RTStrGetCpEx(&pszPath, &uc);
+        if (RT_SUCCESS(rc))
+        {
+            switch (uc)
+            {
+                default:
+                    pwszDstCur = RTUtf16PutCp(pwszDst, uc);
+                    break;
+
+                case '\\':
+                case '/':
+                    if (pwszDstCur != pwszDstComp)
+                        pwszDstComp = pwszDstCur = RTUtf16PutCp(pwszDstCur, '\\');
+                    /* else: only one slash between components. */
+                    break;
+
+                case '.':
+                    if (pwszDstCur == pwszDstComp)
+                    {
+                        /*
+                         * Single dot changes nothing.
+                         */
+                        char ch2 = *pszPath;
+                        if (ch2 == '\0')
+                        {
+                            /* Trailing single dot means we need to drop trailing slash. */
+                            if (pwszDstCur != pwszDst)
+                                pwszDstCur--;
+                            *pwszDstCur = '\0';
+                            pNtName->Length = (uint16_t)(pwszDstCur - pwszDst);
+                            return VINF_SUCCESS;
+                        }
+
+                        if (ch2 == '\\' || ch2 == '/')
+                        {
+                            pszPath++; /* Ignore lone dot followed but another component. */
+                            break;
+                        }
+
+                        /*
+                         * Two dots drops off the last directory component.  This gets complicated
+                         * when we start out without any path and we need to consult enmAscent.
+                         */
+                        if (ch2 == '.')
+                        {
+                            char ch3 = pszPath[1];
+                            if (   ch3 == '\\'
+                                || ch3 == '/'
+                                || ch3 == '\0')
+                            {
+                                /* Drop a path component. */
+                                if (pwszDstComp != pwszDst)
+                                    pwszDstComp = pwszDstCur = rtNtPathGetPrevComponent(pwszDstCur, pwszDst);
+                                /* Hit the start, which is a bit complicated. */
+                                else
+                                    switch (enmAscent)
+                                    {
+                                        case kRTNtPathRelativeAscent_Allow:
+                                            if (*phRootDir != RTNT_INVALID_HANDLE_VALUE)
+                                            {
+                                                RTUtf16Free(pwszDst);
+                                                rc = rtNtPathFromHandle(pNtName, *phRootDir, cwcMax + 2);
+                                                if (RT_FAILURE(rc))
+                                                    return rc;
+
+                                                *phRootDir = RTNT_INVALID_HANDLE_VALUE;
+                                                pwszDst    = pNtName->Buffer;
+                                                pwszDstCur = &pwszDst[pNtName->Length / sizeof(RTUTF16)];
+                                                if (   pwszDst != pwszDstCur
+                                                    && pwszDstCur[-1] != '\\'
+                                                    && pwszDstCur[-1] != '/')
+                                                    *pwszDstCur++ = '\\';
+                                                pwszDstComp = pwszDstCur = rtNtPathGetPrevComponent(pwszDstCur, pwszDst);
+                                            }
+                                            /* else: ignore attempt to ascend beyond the NT root (won't get here). */
+                                            break;
+
+                                        case kRTNtPathRelativeAscent_Ignore:
+                                            /* nothing to do here */
+                                            break;
+
+                                        default:
+                                        case kRTNtPathRelativeAscent_Fail:
+                                            RTUtf16Free(pwszDst);
+                                            return VERR_PATH_NOT_FOUND;
+                                    }
+
+                                if (ch3 == '\0')
+                                {
+                                    *pwszDstCur = '\0';
+                                    pNtName->Length = (uint16_t)(pwszDstCur - pwszDst);
+                                    return VINF_SUCCESS;
+                                }
+                                pszPath += 2;
+                                break;
+                            }
+                        }
+                    }
+
+                    /* Neither '.' nor '..'. */
+                    pwszDstCur = RTUtf16PutCp(pwszDstCur, '.');
+                    break;
+
+                case '\0':
+                    *pwszDstCur = '\0';
+                    pNtName->Length = (uint16_t)(pwszDstCur - pwszDst);
+                    return VINF_SUCCESS;
+            }
+        }
+    }
 }
 
 
 /**
  * Frees the native path and root handle.
  *
- * @param   pNtName             The NT path from a successful RTNtPathToNative
- *                              or RTNtPathFromWinUtf16Ex call.
- * @param   phRootDir           The root handle variable from the same call.
+ * @param   pNtName             The NT path after a successful rtNtPathToNative
+ *                              call or RTNtPathRelativeFromUtf8.
+ * @param   phRootDir           The root handle variable from rtNtPathToNative,
+ *                              but NOT RTNtPathRelativeFromUtf8.
+ */
+static void rtNtPathFreeNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir)
+{
+    RTUtf16Free(pNtName->Buffer);
+    pNtName->Buffer = NULL;
+
+    RT_NOREF_PV(phRootDir); /* never returned by rtNtPathToNative, shouldn't be freed in connection with RTNtPathRelativeFromUtf8 */
+}
+
+
+/**
+ * Frees the native path and root handle.
+ *
+ * @param   pNtName             The NT path after a successful rtNtPathToNative
+ *                              call or RTNtPathRelativeFromUtf8.
+ * @param   phRootDir           The root handle variable from rtNtPathToNative,
  */
 RTDECL(void) RTNtPathFree(struct _UNICODE_STRING *pNtName, HANDLE *phRootDir)
 {
