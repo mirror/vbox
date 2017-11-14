@@ -901,6 +901,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--encodedlun <lun>]\n"
                      "                            [--username <username>]\n"
                      "                            [--password <password>]\n"
+                     "                            [--passwordfile <file>]\n"
                      "                            [--initiator <initiator>]\n"
                      "                            [--intnet]\n"
                      "\n", SEP);
