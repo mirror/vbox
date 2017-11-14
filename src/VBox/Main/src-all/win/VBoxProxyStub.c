@@ -169,6 +169,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 
             /* Init IPRT. */
             RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
+            Log12(("VBoxProxyStub[%u]/DllMain: DLL_PROCESS_ATTACH\n", GetCurrentProcessId()));
 
 #ifdef VBOX_STRICT
             {
@@ -194,6 +195,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
             break;
 
         case DLL_PROCESS_DETACH:
+            Log12(("VBoxProxyStub[%u]/DllMain: DLL_PROCESS_DETACH\n", GetCurrentProcessId()));
             break;
     }
 
@@ -209,6 +211,7 @@ void RPC_ENTRY GetProxyDllInfo(const ProxyFileInfo ***ppapInfo, const CLSID **pp
 {
     *ppapInfo = &g_apProxyFiles[0];
     *ppClsid  = &g_ProxyClsId;
+    Log12(("VBoxProxyStub[%u]/GetProxyDllInfo:\n", GetCurrentProcessId()));
 }
 
 
@@ -236,6 +239,8 @@ HRESULT STDAPICALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID riid, void **pp
      * /target being set to NT51.
      */
     AssertLogRelMsg(hrc == S_OK, ("%Rhrc\n",  hrc));
+    Log12(("VBoxProxyStub[%u]/DllGetClassObject(%RTuuid, %RTuuid, %p): %#x + *ppv=%p\n",
+           GetCurrentProcessId(), rclsid, riid, ppv, hrc, ppv ? *ppv : NULL));
     return hrc;
 }
 
@@ -247,7 +252,9 @@ HRESULT STDAPICALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID riid, void **pp
  */
 HRESULT STDAPICALLTYPE DllCanUnloadNow(void)
 {
-    return NdrDllCanUnloadNow(&g_ProxyStubFactory);                                        /* see DLLCANUNLOADNOW in RpcProxy.h */
+    HRESULT hrc = NdrDllCanUnloadNow(&g_ProxyStubFactory);                                 /* see DLLCANUNLOADNOW in RpcProxy.h */
+    Log12(("VBoxProxyStub[%u]/DllCanUnloadNow: %Rhrc\n", GetCurrentProcessId(), hrc));
+    return hrc;
 }
 
 
@@ -261,7 +268,9 @@ HRESULT STDAPICALLTYPE DllCanUnloadNow(void)
  */
 ULONG STDMETHODCALLTYPE CStdStubBuffer_Release(IRpcStubBuffer *pThis)                /* see CSTDSTUBBUFFERRELEASE in RpcProxy.h */
 {
-    return NdrCStdStubBuffer_Release(pThis, (IPSFactoryBuffer *)&g_ProxyStubFactory);
+    ULONG cRefs =  NdrCStdStubBuffer_Release(pThis, (IPSFactoryBuffer *)&g_ProxyStubFactory);
+    Log12(("VBoxProxyStub[%u]/CStdStubBuffer_Release: %p -> %#x\n", GetCurrentProcessId(), pThis, cRefs));
+    return cRefs;
 }
 
 
@@ -274,7 +283,9 @@ ULONG STDMETHODCALLTYPE CStdStubBuffer_Release(IRpcStubBuffer *pThis)           
  */
 ULONG WINAPI CStdStubBuffer2_Release(IRpcStubBuffer *pThis)                         /* see CSTDSTUBBUFFER2RELEASE in RpcProxy.h */
 {
-    return NdrCStdStubBuffer2_Release(pThis, (IPSFactoryBuffer *)&g_ProxyStubFactory);
+    ULONG cRefs = NdrCStdStubBuffer2_Release(pThis, (IPSFactoryBuffer *)&g_ProxyStubFactory);
+    Log12(("VBoxProxyStub[%u]/CStdStubBuffer2_Release: %p -> %#x\n", GetCurrentProcessId(), pThis, cRefs));
+    return cRefs;
 }
 
 
