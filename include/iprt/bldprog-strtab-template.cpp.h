@@ -1044,4 +1044,3 @@ static void BldProgStrTab_WriteStringTable(PBLDPROGSTRTAB pThis, FILE *pOut,
 
 #endif /* __cplusplus && IN_RING3 */
 
-

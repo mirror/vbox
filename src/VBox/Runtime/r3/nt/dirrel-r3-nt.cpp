@@ -557,4 +557,3 @@ RTDECL(int) RTDirRelSymlinkRead(PRTDIR hDir, const char *pszSymlink, char *pszTa
     return rc;
 }
 
-
