@@ -660,16 +660,25 @@ static int kbd_load(PSSMHANDLE pSSM, KBDState *s, uint32_t version_id)
  */
 PDMBOTHCBDECL(int) kbdIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
+    uint32_t    fluff = 0;
+    KBDState    *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+
     NOREF(pvUser);
-    if (cb == 1)
-    {
-        KBDState *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
-        *pu32 = kbd_read_data(pThis, Port);
+    switch (cb) {
+    case 4:
+        fluff |= 0xffff0000;    /* Crazy Apple (Darwin 6.0.2 and earlier). */
+        RT_FALL_THRU();
+    case 2:
+        fluff |= 0x0000ff00;
+        RT_FALL_THRU();
+    case 1:
+        *pu32 = fluff | kbd_read_data(pThis, Port);
         Log2(("kbdIOPortDataRead: Port=%#x cb=%d *pu32=%#x\n", Port, cb, *pu32));
         return VINF_SUCCESS;
+    default:
+        AssertMsgFailed(("Port=%#x cb=%d\n", Port, cb));
+        return VERR_IOM_IOPORT_UNUSED;
     }
-    AssertMsgFailed(("Port=%#x cb=%d\n", Port, cb));
-    return VERR_IOM_IOPORT_UNUSED;
 }
 
 /**
@@ -711,13 +720,16 @@ PDMBOTHCBDECL(int) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  */
 PDMBOTHCBDECL(int) kbdIOPortStatusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    uint16_t    fluff = 0;
+    uint32_t    fluff = 0;
     KBDState    *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
 
     NOREF(pvUser);
     switch (cb) {
+    case 4:
+        fluff |= 0xffff0000;    /* Crazy Apple (Darwin 6.0.2 and earlier). */
+        RT_FALL_THRU();
     case 2:
-        fluff = 0xff00;
+        fluff |= 0x0000ff00;
         RT_FALL_THRU();
     case 1:
         *pu32 = fluff | kbd_read_status(pThis, Port);
