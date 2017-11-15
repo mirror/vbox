@@ -2269,7 +2269,7 @@
 <context>
     <name>UIDetailsPagePrivate</name>
     <message>
-        <location filename="../src/selector/UIDesktopPane.cpp" line="+590"/>
+        <location filename="../src/selector/UIDesktopPane.cpp" line="+593"/>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
         <translation>Hautaturiko makina birtuala &lt;i&gt;eskuraezina&lt;/i&gt; da. Mesedez aztertu behean erakusten den akats mezua eta sakatu &lt;b&gt;Berritu&lt;/b&gt; botoia sarbidetasun egiaztapena berregitea nahi baduzu:</translation>
     </message>
@@ -2539,7 +2539,7 @@
 <context>
     <name>UIGChooserItemGroup</name>
     <message>
-        <location filename="../src/selector/graphics/chooser/UIGChooserItemGroup.cpp" line="+673"/>
+        <location filename="../src/selector/graphics/chooser/UIGChooserItemGroup.cpp" line="+674"/>
         <source>&lt;b&gt;%1&lt;/b&gt;</source>
         <comment>Group item tool-tip / Group name</comment>
         <translation>&lt;b&gt;%1&lt;/b&gt;</translation>
@@ -2642,7 +2642,7 @@
 <context>
     <name>UIGDetails</name>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+1156"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+1161"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+248"/>
         <source>Name</source>
         <comment>details (general)</comment>
@@ -3242,7 +3242,7 @@
 <context>
     <name>UIGMachinePreview</name>
     <message>
-        <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="+355"/>
+        <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="+356"/>
         <source>Every 0.5 s</source>
         <translation>0.5 seg-tik behin</translation>
     </message>
@@ -8654,7 +8654,7 @@
 <context>
     <name>UIMachineWindow</name>
     <message>
-        <location filename="../src/runtime/UIMachineWindow.cpp" line="+252"/>
+        <location filename="../src/runtime/UIMachineWindow.cpp" line="+245"/>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
         <translation> ESPERIMENTALA eraiketa %1r%2 - %3</translation>
     </message>
@@ -8755,7 +8755,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+633"/>
+        <location line="+637"/>
         <source>Location can not be empty.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9060,7 +9060,7 @@
         <translation type="obsolete">It&amp;xi</translation>
     </message>
     <message>
-        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="-662"/>
+        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="-666"/>
         <location filename="../src/medium/UIMediumManager.cpp" line="-2128"/>
         <source>Current extension (*.%1)</source>
         <translation type="unfinished"></translation>
@@ -9114,7 +9114,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+912"/>
+        <location line="+915"/>
         <source>Virtual Screen Resize</source>
         <translation>Ikusleiho Birtual Birneurriratzea</translation>
     </message>
@@ -11156,7 +11156,7 @@
 <context>
     <name>UIPortForwardingTable</name>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="+661"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="+662"/>
         <source>Name</source>
         <translation>Izena</translation>
     </message>
@@ -11259,7 +11259,7 @@
 <context>
     <name>UIScreenshotViewer</name>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-1397"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-1402"/>
         <source>Screenshot of %1 (%2)</source>
         <translation type="unfinished">Ikusleiho-argazkiak %1 (%2)</translation>
     </message>
@@ -11609,7 +11609,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+448"/>
+        <location line="+453"/>
         <source>Snapshot name is empty</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11789,7 +11789,7 @@
         <translation>&lt;nobr&gt;&lt;b&gt;Klikatu&lt;/b&gt; adierazle egona aldatzeko.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Arrastatu-eta-&amp;Askatu&lt;/b&gt; adierazlearen kokapena aldatzeko.&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location line="+367"/>
+        <location line="+370"/>
         <source>Close</source>
         <translation>Itxi</translation>
     </message>
