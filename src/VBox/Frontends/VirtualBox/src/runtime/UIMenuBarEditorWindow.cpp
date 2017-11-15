@@ -876,11 +876,11 @@ void UIMenuBarEditorWidget::prepare()
         /* Acquire metric: */
         const int iStandardMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         const int iMinimumMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
-        /* Standard margins should not be too small: */
-        iLeft   = qMax(iLeft,   iStandardMetric);
-        iTop    = qMax(iTop,    iStandardMetric);
-        iRight  = qMax(iRight,  iStandardMetric);
-        iBottom = qMax(iBottom, iStandardMetric);
+        /* Standard margins should not be too small/large: */
+        iLeft   = iStandardMetric;
+        iTop    = iStandardMetric;
+        iRight  = iStandardMetric;
+        iBottom = iStandardMetric;
         /* Top margin should be smaller for the common case: */
         if (iTop >= iMinimumMetric)
             iTop -= iMinimumMetric;
