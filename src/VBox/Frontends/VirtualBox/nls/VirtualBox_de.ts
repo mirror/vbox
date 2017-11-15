@@ -5769,35 +5769,35 @@
     </message>
     <message>
         <source>Choose Medium Location</source>
-        <translation type="unfinished"></translation>
+        <translation>Speicherort des Mediums auswählen</translation>
     </message>
     <message>
         <source>Location can not be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Speicherort darf nicht leer sein.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation type="unfinished">Das Medium wird normal an die VM gebunden und beim Laden von Sicherungspunkten ordungsgemäß wieder hergestellt.</translation>
+        <translation>Das Medium ist direkt oder indirekt angeschlossen und wird beim Laden von Sicherungspunkten wieder hergestellt.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation type="unfinished">Schreibzugriffe auf das Medium werden nur temporär gespeichert und gehen beim Ausschalten der VM verloren.</translation>
+        <translation>Änderungen von diesem indirekt angeschlossenen Medium gehen beim nächsten Start der virtuellen Maschine verloren.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation type="unfinished">In diesem Modus wird immer direkt auf das virtuelle Medium geschrieben und Sicherungspunkte werden nicht berücksichtigt.</translation>
+        <translation>Das Medium ist direkt angeschlossen und wird beim Speichern von Sicherungspunkten ignoriert.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation type="unfinished">Das Medium kann zugleich von mehreren VMs benutzt werden. Die Gäste müssen gemeinsame Zugriffe auf das Medium aber untereinander koordinieren.</translation>
+        <translation>Das Medium ist direkt angeschlossen und kann gleichzeitig von mehreren Maschinen benutzt werden.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation type="unfinished">Das Medium ist direkt angeschlossen und kann von mehreren Maschinen benutzt werden.</translation>
+        <translation>Das Medium ist direkt angeschlossen und kann von mehreren Maschinen benutzt werden.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation type="unfinished">Das Medium kann zugleich von mehreren VMs benutzt werden. Schreibzugriffe gehen auf jeweils gesonderte virtuelle Differenzmedien, die separat für jede VM angelegt werden.</translation>
+        <translation>Das Medium kann zugleich von mehreren VMs benutzt werden. Schreibzugriffe gehen auf jeweils gesonderte virtuelle Differenzmedien, die separat für jede VM angelegt werden.</translation>
     </message>
 </context>
 <context>
@@ -6026,23 +6026,23 @@
     </message>
     <message>
         <source>Current extension (*.%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktuelle Erweiterung (*.%1)</translation>
     </message>
     <message>
         <source>Choose the location of this medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Ort für dieses Medium auswählen</translation>
     </message>
     <message>
         <source>&amp;Move...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Verschieben...</translation>
     </message>
     <message>
         <source>Move Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Plattenabbild verschieben (%1)</translation>
     </message>
     <message>
         <source>Move selected disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausgewähltes Plattenabbild verschieben</translation>
     </message>
 </context>
 <context>
@@ -7310,7 +7310,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation>Konnte das Abbild &lt;b&gt;%1&lt;/b&gt; nicht zur virtuellen Maschine lt;b&gt;%2&lt;/b&gt; hinzufügen, da diese kein optisches Laufwerk enthält. Bitte ein optisches Laufwerk in den VM-Einstellungen hinzufügen.</translation>
+        <translation>&lt;p&gt;Konnte das Abbild &lt;b&gt;%1&lt;/b&gt; nicht zur virtuellen Maschine lt;b&gt;%2&lt;/b&gt; hinzufügen, da diese kein optisches Laufwerk enthält. Bitte ein optisches Laufwerk in den VM-Einstellungen hinzufügen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -7318,7 +7318,7 @@
     </message>
     <message>
         <source>Failed to create the virtual disk image storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Plattenabbilddatei &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht erstellt werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The changes you requested require this disk to be released from the machines it is attached to.&lt;/p&gt;&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
@@ -8629,11 +8629,11 @@
     </message>
     <message>
         <source>Copy Virtual Disk Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Plattenabbild kopieren</translation>
     </message>
     <message>
         <source>Disk image to copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Zu kopierendes Plattenabbild</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual disk image file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
