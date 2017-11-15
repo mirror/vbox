@@ -313,7 +313,10 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
                                                                   restrictedCloseActions);
         /* Configure close-dialog: */
         if (uisession() && uisession()->machineWindowIcon())
-            pCloseDlg->setPixmap(uisession()->machineWindowIcon()->pixmap(QSize(32, 32)));
+        {
+            const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+            pCloseDlg->setPixmap(uisession()->machineWindowIcon()->pixmap(QSize(iIconMetric, iIconMetric)));
+        }
 
         /* Make sure close-dialog is valid: */
         if (pCloseDlg->isValid())

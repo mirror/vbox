@@ -29,6 +29,7 @@
 # include <QPushButton>
 
 /* GUI includes: */
+# include "UIIconPool.h"
 # include "UIVMCloseDialog.h"
 # include "UIExtraDataManager.h"
 # include "UIMessageCenter.h"
@@ -183,7 +184,9 @@ void UIVMCloseDialog::prepare()
                 {
                     /* Configure icon: */
                     m_pIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                    m_pIcon->setPixmap(QPixmap(":/os_unknown.png"));
+                    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+                    const QIcon icon = UIIconPool::iconSet(":/os_unknown.png");
+                    m_pIcon->setPixmap(icon.pixmap(iIconMetric, iIconMetric));
                 }
                 /* Configure layout: */
                 pTopLeftLayout->setSpacing(0);
@@ -199,12 +202,15 @@ void UIVMCloseDialog::prepare()
                 /* Prepare 'choice' layout: */
                 QGridLayout *pChoiceLayout = new QGridLayout;
                 {
+                    /* Prepare icon metric: */
+                    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
                     /* Prepare 'detach' icon: */
                     m_pDetachIcon = new QLabel(this);
                     {
                         /* Configure icon: */
                         m_pDetachIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                        m_pDetachIcon->setPixmap(QPixmap(":/vm_create_shortcut_16px.png"));
+                        const QIcon icon = UIIconPool::iconSet(":/vm_create_shortcut_16px.png");
+                        m_pDetachIcon->setPixmap(icon.pixmap(iIconMetric, iIconMetric));
                     }
                     /* Prepare 'detach' radio-button: */
                     m_pDetachRadio = new QRadioButton(this);
@@ -218,7 +224,8 @@ void UIVMCloseDialog::prepare()
                     {
                         /* Configure icon: */
                         m_pSaveIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                        m_pSaveIcon->setPixmap(QPixmap(":/vm_save_state_16px.png"));
+                        const QIcon icon = UIIconPool::iconSet(":/vm_save_state_16px.png");
+                        m_pSaveIcon->setPixmap(icon.pixmap(iIconMetric, iIconMetric));
                     }
                     /* Prepare 'save' radio-button: */
                     m_pSaveRadio = new QRadioButton(this);
@@ -232,7 +239,8 @@ void UIVMCloseDialog::prepare()
                     {
                         /* Configure icon: */
                         m_pShutdownIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                        m_pShutdownIcon->setPixmap(QPixmap(":/vm_shutdown_16px.png"));
+                        const QIcon icon = UIIconPool::iconSet(":/vm_shutdown_16px.png");
+                        m_pShutdownIcon->setPixmap(icon.pixmap(iIconMetric, iIconMetric));
                     }
                     /* Prepare 'shutdown' radio-button: */
                     m_pShutdownRadio = new QRadioButton(this);
@@ -246,7 +254,8 @@ void UIVMCloseDialog::prepare()
                     {
                         /* Configure icon: */
                         m_pPowerOffIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                        m_pPowerOffIcon->setPixmap(QPixmap(":/vm_poweroff_16px.png"));
+                        const QIcon icon = UIIconPool::iconSet(":/vm_poweroff_16px.png");
+                        m_pPowerOffIcon->setPixmap(icon.pixmap(iIconMetric, iIconMetric));
                     }
                     /* Prepare 'shutdown' radio-button: */
                     m_pPowerOffRadio = new QRadioButton(this);
