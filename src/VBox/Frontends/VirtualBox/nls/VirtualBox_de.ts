@@ -6452,7 +6452,7 @@
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>Die virtuelle Festplatte &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht erzeugt werden.</translation>
+        <translation>Die virtuelle Festplatte konnte nicht erzeugt werden: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -6681,23 +6681,23 @@
     </message>
     <message>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation>Der USB-Proxy-Dienst konnte nicht gestarted werden. Dieser Dienst ist möglicherweise nicht auf diesem Computer installiert.</translation>
+        <translation>Der USB-Proxy-Dienst konnte nicht gestarted werden (VERR_FILE_NOT_FOUND). Dieser Dienst ist möglicherweise nicht auf diesem Computer installiert</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox kann nicht auf USB-Geräte zugreifen. Dieses Problem kann dadurch gelöst werden, indem der aktuelle Nutzer Mitglied der Gruppe &apos;vboxusers&apos; wird. In der Dokumentation finden Sie weitere Erläuterungen.</translation>
+        <translation>VirtualBox kann nicht auf USB-Geräte zugreifen. Dieses Problem kann dadurch gelöst werden, indem der aktuelle Nutzer Mitglied der Gruppe &apos;vboxusers&apos; wird. In der Dokumentation finden Sie weitere Erläuterungen</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox kann nicht auf USB-Geräte zugreifen. Dieses Problem wird gelöst, wenn der aktuelle Nutzer auf die Dateien und Order des USB-Dateisystems (usbfs) zugreifen kann. In der Dokumentation finden Sie eine genauere Erklärung.</translation>
+        <translation>VirtualBox kann nicht auf USB-Geräte zugreifen. Dieses Problem wird gelöst, wenn der aktuelle Nutzer auf die Dateien und Order des USB-Dateisystems (usbfs) zugreifen kann. In der Dokumentation finden Sie eine genauere Erklärung</translation>
     </message>
     <message>
         <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation>Der USB-Proxy-Dienst wurde nicht auf diesen Host portiert.</translation>
+        <translation>Der USB-Proxy-Dienst wurde noch nicht auf diesen Host portiert</translation>
     </message>
     <message>
         <source>Could not load the Host USB Proxy service</source>
-        <translation>Der USB-Proxy-Dienst konnte nicht gestartet werden.</translation>
+        <translation>Der USB-Proxy-Dienst konnte nicht geladen werden</translation>
     </message>
     <message>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -7318,11 +7318,11 @@
     </message>
     <message>
         <source>Failed to create the virtual disk image storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>Die Plattenabbilddatei &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht erstellt werden.</translation>
+        <translation>Die Plattenabbilddatei konnte nicht erstellt werden: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The changes you requested require this disk to be released from the machines it is attached to.&lt;/p&gt;&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die Änderungen die Sie vornehmen möchten erfordern, dass diese Festplatte von der Maschine abgelöst wird.&lt;/p&gt;&lt;p&gt;Sind Sie sicher, dass Sie die Festplatte &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ablösen wollen?&lt;/p&gt;&lt;p&gt;Diese wird dann von den folgenden Maschinen abgelöst: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -8637,68 +8637,68 @@
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual disk image file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Bitte wählen Sie eine virtuelle Festplatte zum Kopieren aus sofern noch keine gewählt ist. Diese können Sie entweder aus der Liste oder mit Hilfe des Icons neben der Liste mittels Dateidialog auswählen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual disk image file to copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie eine virtuelle Festplatte zum Kopieren...</translation>
     </message>
     <message>
         <source>Disk image file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateityp der Festplatte</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk image. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie den Typ der neuen virtuelle Festplatte. Falls Sie diese nicht mit anderer Virtualisierungssoftware verwenden, können Sie diese Einstellung unverändert lassen.</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual disk image file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie, ob die neue virtuelle Festplatte erst nach und nach zur Laufzeit (dynamisch) alloziert werden soll oder ob die Platte jetzt sofort vollständig alloziert werden soll (feste Größe).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; disk image file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Eine &lt;b&gt;dynamisch allozierte&lt;/b&gt; Datei einer virtuellen Platte belegt nur dann Platz auf der physischen Platte des Hosts, wenn der Gast Daten schreibt. Einmal belegter Platz wird nicht automatisch freigegeben.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; disk image file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das Erzeugen einer Datei &lt;b&gt;fester Größe&lt;/b&gt; dauert auf manchen Systemen länger aber bietet eine etwas bessere Performance.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the disk image file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die virtuelle Platte kann ebenfalls auf mehrere Dateien mit einer maximalen Größe von 2 GB aufgeteilt werden. Dies ist sinnvoll, wenn die virtuelle Maschine auf einem USB-Gerät oder auf älteren Systemen gespeichert werden soll, die keine größeren Dateien unterstützen.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie einen Dateinamen für die neue virtuelle Festplatte</translation>
     </message>
     <message>
         <source>New disk image to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Neue Festplatte</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual disk image file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte geben Sie unten in das Feld den Namen der neuen Festplatte an oder wählen Sie das Ordner-Icon, um einen anderen Ordner für die Datei zu wählen.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual disk image file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie einen Dateinamen für die neue virtuelle Festplatte...</translation>
     </message>
     <message>
         <source>%1_copy</source>
         <comment>copied virtual disk image name</comment>
-        <translation type="unfinished">%1_Kopie</translation>
+        <translation>%1_Kopie</translation>
     </message>
     <message>
         <source>Disk image to &amp;copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Zu &amp;kopierendes Plattenabbild</translation>
     </message>
     <message>
         <source>&amp;New disk image to create</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Neue Platte erzeugen</translation>
     </message>
     <message>
         <source>Disk image file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>Datei&amp;typ der Festplatte</translation>
     </message>
 </context>
 <context>
