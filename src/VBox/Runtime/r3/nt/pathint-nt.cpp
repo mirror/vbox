@@ -446,7 +446,7 @@ static int rtNtPathFromHandle(struct _UNICODE_STRING *pNtName, HANDLE hHandle, s
         /*
          * Copy the result into the return string.
          */
-        size_t cbNeeded = cwcExtra * sizeof(RTUTF16) + pNtName->Length + sizeof(RTUTF16);
+        size_t cbNeeded = cwcExtra * sizeof(RTUTF16) + pUniStrBuf->Length + sizeof(RTUTF16);
         if (cbNeeded < _64K)
         {
             pNtName->Length        = pUniStrBuf->Length;
@@ -467,6 +467,47 @@ static int rtNtPathFromHandle(struct _UNICODE_STRING *pNtName, HANDLE hHandle, s
     else
         rc = RTErrConvertFromNtStatus(rcNt);
     RTMemTmpFree(pUniStrBuf);
+    return rc;
+}
+
+static int rtNtPathRelativeToAbs(struct _UNICODE_STRING *pNtName, HANDLE *phRootDir)
+{
+    int rc;
+    if (pNtName->Length == 0)
+    {
+        RTUtf16Free(pNtName->Buffer);
+        rc = rtNtPathFromHandle(pNtName, *phRootDir, pNtName->Length / sizeof(RTUTF16) + 2);
+        if (RT_SUCCESS(rc))
+        {
+            *phRootDir = NULL;
+            return VINF_SUCCESS;
+        }
+    }
+    else
+    {
+
+        UNICODE_STRING RootDir;
+        size_t const   cwcAppend = pNtName->Length / sizeof(RTUTF16);
+        rc = rtNtPathFromHandle(&RootDir, *phRootDir, cwcAppend + 2);
+        if (RT_SUCCESS(rc))
+        {
+            size_t cwcRoot = RootDir.Length / sizeof(RTUTF16);
+            if (RootDir.Buffer[cwcRoot - 1] != '\\')
+                RootDir.Buffer[cwcRoot++] = '\\';
+            memcpy(&RootDir.Buffer[cwcRoot], pNtName->Buffer, cwcAppend * sizeof(RTUTF16));
+            RTUtf16Free(pNtName->Buffer);
+            pNtName->Length        = (uint16_t)((cwcRoot + cwcAppend) * sizeof(RTUTF16));
+            pNtName->MaximumLength = RootDir.MaximumLength;
+            pNtName->Buffer        = RootDir.Buffer;
+
+            *phRootDir = NULL;
+            return VINF_SUCCESS;
+        }
+        RTUtf16Free(pNtName->Buffer);
+    }
+    pNtName->Length        = 0;
+    pNtName->MaximumLength = 0;
+    pNtName->Buffer        = NULL;
     return rc;
 }
 
@@ -513,9 +554,13 @@ static PRTUTF16 rtNtPathGetPrevComponent(PRTUTF16 pwcEnd, PRTUTF16 pwszStart)
  *                              may have been set to NULL.
  * @param   pszPath             The relative UTF-8 path.
  * @param   enmAscent           How to handle ascent.
+ * @param   fMustReturnAbsolute Must convert to an absolute path.  This
+ *                              is necessary if the root dir is a NT directory
+ *                              object (e.g. /Devices) since they cannot parse
+ *                              relative paths it seems.
  */
 RTDECL(int) RTNtPathRelativeFromUtf8(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, const char *pszPath,
-                                     RTNTPATHRELATIVEASCENT enmAscent)
+                                     RTNTPATHRELATIVEASCENT enmAscent, bool fMustReturnAbsolute)
 {
     size_t cwcMax;
     int rc = RTStrCalcUtf16LenEx(pszPath, RTSTR_MAX, &cwcMax);
@@ -542,7 +587,7 @@ RTDECL(int) RTNtPathRelativeFromUtf8(struct _UNICODE_STRING *pNtName, PHANDLE ph
             switch (uc)
             {
                 default:
-                    pwszDstCur = RTUtf16PutCp(pwszDst, uc);
+                    pwszDstCur = RTUtf16PutCp(pwszDstCur, uc);
                     break;
 
                 case '\\':
@@ -565,8 +610,10 @@ RTDECL(int) RTNtPathRelativeFromUtf8(struct _UNICODE_STRING *pNtName, PHANDLE ph
                             if (pwszDstCur != pwszDst)
                                 pwszDstCur--;
                             *pwszDstCur = '\0';
-                            pNtName->Length = (uint16_t)(pwszDstCur - pwszDst);
-                            return VINF_SUCCESS;
+                            pNtName->Length = (uint16_t)((uintptr_t)pwszDstCur - (uintptr_t)pwszDst);
+                            if (!fMustReturnAbsolute || *phRootDir == NULL)
+                                return VINF_SUCCESS;
+                            return rtNtPathRelativeToAbs(pNtName, phRootDir);
                         }
 
                         if (ch2 == '\\' || ch2 == '/')
@@ -594,14 +641,14 @@ RTDECL(int) RTNtPathRelativeFromUtf8(struct _UNICODE_STRING *pNtName, PHANDLE ph
                                     switch (enmAscent)
                                     {
                                         case kRTNtPathRelativeAscent_Allow:
-                                            if (*phRootDir != RTNT_INVALID_HANDLE_VALUE)
+                                            if (*phRootDir != NULL)
                                             {
                                                 RTUtf16Free(pwszDst);
                                                 rc = rtNtPathFromHandle(pNtName, *phRootDir, cwcMax + 2);
                                                 if (RT_FAILURE(rc))
                                                     return rc;
 
-                                                *phRootDir = RTNT_INVALID_HANDLE_VALUE;
+                                                *phRootDir = NULL;
                                                 pwszDst    = pNtName->Buffer;
                                                 pwszDstCur = &pwszDst[pNtName->Length / sizeof(RTUTF16)];
                                                 if (   pwszDst != pwszDstCur
@@ -626,8 +673,10 @@ RTDECL(int) RTNtPathRelativeFromUtf8(struct _UNICODE_STRING *pNtName, PHANDLE ph
                                 if (ch3 == '\0')
                                 {
                                     *pwszDstCur = '\0';
-                                    pNtName->Length = (uint16_t)(pwszDstCur - pwszDst);
-                                    return VINF_SUCCESS;
+                                    pNtName->Length = (uint16_t)((uintptr_t)pwszDstCur - (uintptr_t)pwszDst);
+                                    if (!fMustReturnAbsolute || *phRootDir == NULL)
+                                        return VINF_SUCCESS;
+                                    return rtNtPathRelativeToAbs(pNtName, phRootDir);
                                 }
                                 pszPath += 2;
                                 break;
@@ -641,8 +690,10 @@ RTDECL(int) RTNtPathRelativeFromUtf8(struct _UNICODE_STRING *pNtName, PHANDLE ph
 
                 case '\0':
                     *pwszDstCur = '\0';
-                    pNtName->Length = (uint16_t)(pwszDstCur - pwszDst);
-                    return VINF_SUCCESS;
+                    pNtName->Length = (uint16_t)((uintptr_t)pwszDstCur - (uintptr_t)pwszDst);
+                    if (!fMustReturnAbsolute || *phRootDir == NULL)
+                        return VINF_SUCCESS;
+                    return rtNtPathRelativeToAbs(pNtName, phRootDir);
             }
         }
     }
@@ -828,8 +879,58 @@ RTDECL(int) RTNtPathOpenDirEx(HANDLE hRootDir, struct _UNICODE_STRING *pNtName, 
         return VINF_SUCCESS;
     }
 
+    /*
+     * Try add a slash in case this is a device object with a file system attached.
+     */
+    if (   rcNt == STATUS_INVALID_PARAMETER
+        && pNtName->Length < _64K - 4
+        && (   pNtName->Length == 0
+            || pNtName->Buffer[pNtName->Length / sizeof(RTUTF16)] != '\\') )
+    {
+        UNICODE_STRING NtTmp;
+        NtTmp.Length        = pNtName->Length + 2;
+        NtTmp.MaximumLength = NtTmp.Length + 2;
+        NtTmp.Buffer        = (PRTUTF16)RTMemTmpAlloc(NtTmp.MaximumLength);
+        if (NtTmp.Buffer)
+        {
+            memcpy(NtTmp.Buffer, pNtName->Buffer, pNtName->Length);
+            NtTmp.Buffer[pNtName->Length / sizeof(RTUTF16)] = '\\';
+            NtTmp.Buffer[pNtName->Length / sizeof(RTUTF16) + 1] = '\0';
+
+            hFile = RTNT_INVALID_HANDLE_VALUE;
+            Ios.Status = -1;
+            Ios.Information = 0;
+            ObjAttr.ObjectName = &NtTmp;
+
+            rcNt = NtCreateFile(&hFile,
+                                fDesiredAccess,
+                                &ObjAttr,
+                                &Ios,
+                                NULL /* AllocationSize*/,
+                                FILE_ATTRIBUTE_NORMAL,
+                                fShareAccess,
+                                FILE_OPEN,
+                                fCreateOptions,
+                                NULL /*EaBuffer*/,
+                                0 /*EaLength*/);
+            RTMemTmpFree(NtTmp.Buffer);
+            if (NT_SUCCESS(rcNt))
+            {
+                if (pfObjDir)
+                    *pfObjDir = false;
+                *phHandle = hFile;
+                return VINF_SUCCESS;
+            }
+            ObjAttr.ObjectName = pNtName;
+        }
+    }
+
+    /*
+     * Try open it as a directory object if it makes sense.
+     */
     if (   pfObjDir
-        && (rcNt == STATUS_OBJECT_NAME_INVALID || rcNt == STATUS_OBJECT_TYPE_MISMATCH))
+        && (   rcNt == STATUS_OBJECT_NAME_INVALID
+            || rcNt == STATUS_OBJECT_TYPE_MISMATCH ))
     {
         /* Strip trailing slash. */
         struct _UNICODE_STRING NtName2 = *pNtName;

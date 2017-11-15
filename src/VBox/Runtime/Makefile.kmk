@@ -792,7 +792,6 @@ RuntimeR3_SOURCES.win = \
 	common/dbg/dbgmoddbghelp.cpp \
 	generic/cdrom-generic.cpp \
 	generic/RTDirExists-generic.cpp \
-	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileExists-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
@@ -837,7 +836,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/alloc-win.cpp \
 	r3/win/allocex-win.cpp \
 	r3/win/dir-win.cpp \
-	$(if-expr defined(VBOX_WITH_NT_DIRENUM),r3/nt/direnum-r3-nt.cpp,r3/win/direnum-win.cpp) \
+	$(if-expr defined(VBOX_WITH_NT_DIRENUM),r3/nt/direnum-r3-nt.cpp,r3/win/direnum-win.cpp generic/RTDirQueryInfo-generic.cpp) \
 	r3/win/errvars-win.cpp \
 	r3/win/fileio-win.cpp \
 	r3/win/init-win.cpp \

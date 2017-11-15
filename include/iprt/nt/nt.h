@@ -319,9 +319,13 @@ typedef enum RTNTPATHRELATIVEASCENT
  *                              may have been set to NULL.
  * @param   pszPath             The relative UTF-8 path.
  * @param   enmAscent           How to handle ascent.
+ * @param   fMustReturnAbsolute Must convert to an absolute path.  This
+ *                              is necessary if the root dir is a NT directory
+ *                              object (e.g. /Devices) since they cannot parse
+ *                              relative paths it seems.
  */
-RTDECL(int) RTNtPathRelativeFromUtf8(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir,
-                                     const char *pszPath, RTNTPATHRELATIVEASCENT enmAscent);
+RTDECL(int) RTNtPathRelativeFromUtf8(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, const char *pszPath,
+                                     RTNTPATHRELATIVEASCENT enmAscent, bool fMustReturnAbsolute);
 
 /**
  * Ensures that the NT string has sufficient storage to hold @a cwcMin RTUTF16

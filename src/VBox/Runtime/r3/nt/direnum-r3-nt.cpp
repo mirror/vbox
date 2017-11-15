@@ -41,6 +41,7 @@
 #include <iprt/log.h>
 #include "internal/fs.h"
 #include "internal/dir.h"
+#include "internal/path.h"
 
 
 /*********************************************************************************************************************************
@@ -106,7 +107,7 @@ int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uintptr_t hRelativeDir, void 
 #endif
     if (pvNativeRelative == NULL)
         rc = RTNtPathOpenDir(pszPathBuf,
-                             FILE_LIST_DIRECTORY | FILE_TRAVERSE | SYNCHRONIZE,
+                             FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES | FILE_TRAVERSE | SYNCHRONIZE,
                              FILE_SHARE_READ | FILE_SHARE_WRITE,
                              FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
                              OBJ_CASE_INSENSITIVE,
@@ -120,12 +121,18 @@ int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uintptr_t hRelativeDir, void 
     else
         rc = RTNtPathOpenDirEx((HANDLE)hRelativeDir,
                                (struct _UNICODE_STRING *)pvNativeRelative,
-                               FILE_LIST_DIRECTORY | FILE_TRAVERSE | SYNCHRONIZE,
+                               FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES | FILE_TRAVERSE | SYNCHRONIZE,
                                FILE_SHARE_READ | FILE_SHARE_WRITE,
                                FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
                                OBJ_CASE_INSENSITIVE,
                                &pDir->hDir,
-                               NULL);
+#ifdef IPRT_WITH_NT_PATH_PASSTHRU
+                               &fObjDir
+#else
+                               NULL
+#endif
+
+                               );
     if (RT_SUCCESS(rc))
     {
         /*
@@ -758,8 +765,8 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
 
         case RTFSOBJATTRADD_UNIX:
             pDirEntry->Info.Attr.enmAdditional          = RTFSOBJATTRADD_UNIX;
-            pDirEntry->Info.Attr.u.Unix.uid             = ~0U;
-            pDirEntry->Info.Attr.u.Unix.gid             = ~0U;
+            pDirEntry->Info.Attr.u.Unix.uid             = NIL_RTUID;
+            pDirEntry->Info.Attr.u.Unix.gid             = NIL_RTGID;
             pDirEntry->Info.Attr.u.Unix.cHardlinks      = 1;
             pDirEntry->Info.Attr.u.Unix.INodeIdDevice   = pDir->uDirDev;
             pDirEntry->Info.Attr.u.Unix.INodeId         = 0;
@@ -777,13 +784,13 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
 
         case RTFSOBJATTRADD_UNIX_OWNER:
             pDirEntry->Info.Attr.enmAdditional          = RTFSOBJATTRADD_UNIX_OWNER;
-            pDirEntry->Info.Attr.u.UnixOwner.uid        = ~0U;
+            pDirEntry->Info.Attr.u.UnixOwner.uid        = NIL_RTUID;
             pDirEntry->Info.Attr.u.UnixOwner.szName[0]  = '\0'; /** @todo return something sensible here. */
             break;
 
         case RTFSOBJATTRADD_UNIX_GROUP:
             pDirEntry->Info.Attr.enmAdditional          = RTFSOBJATTRADD_UNIX_GROUP;
-            pDirEntry->Info.Attr.u.UnixGroup.gid        = ~0U;
+            pDirEntry->Info.Attr.u.UnixGroup.gid        = NIL_RTGID;
             pDirEntry->Info.Attr.u.UnixGroup.szName[0]  = '\0';
             break;
 
@@ -806,5 +813,71 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
      * Finally advance the buffer.
      */
     return rtDirNtAdvanceBuffer(pDir);
+}
+
+
+
+RTR3DECL(int) RTDirQueryInfo(PRTDIR pDir, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
+{
+    AssertPtrReturn(pDir, VERR_INVALID_POINTER);
+    AssertReturn(pDir->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(enmAdditionalAttribs >= RTFSOBJATTRADD_NOTHING && enmAdditionalAttribs <= RTFSOBJATTRADD_LAST,
+                 VERR_INVALID_PARAMETER);
+
+    if (pDir->enmInfoClass == FileMaximumInformation)
+    {
+        /*
+         * Directory object (see similar code above and rtPathNtQueryInfoInDirectoryObject).
+         */
+        pObjInfo->cbObject    = 0;
+        pObjInfo->cbAllocated = 0;
+        RTTimeSpecSetNtTime(&pObjInfo->BirthTime,         0);
+        RTTimeSpecSetNtTime(&pObjInfo->AccessTime,        0);
+        RTTimeSpecSetNtTime(&pObjInfo->ModificationTime,  0);
+        RTTimeSpecSetNtTime(&pObjInfo->ChangeTime,        0);
+        pObjInfo->Attr.fMode = RTFS_DOS_DIRECTORY | RTFS_TYPE_DIRECTORY | 0777;
+        pObjInfo->Attr.enmAdditional = enmAdditionalAttribs;
+        switch (enmAdditionalAttribs)
+        {
+            case RTFSOBJATTRADD_NOTHING:
+            case RTFSOBJATTRADD_UNIX:
+                pObjInfo->Attr.u.Unix.uid             = NIL_RTUID;
+                pObjInfo->Attr.u.Unix.gid             = NIL_RTGID;
+                pObjInfo->Attr.u.Unix.cHardlinks      = 1;
+                pObjInfo->Attr.u.Unix.INodeIdDevice   = pDir->uDirDev;
+                pObjInfo->Attr.u.Unix.INodeId         = 0;
+                pObjInfo->Attr.u.Unix.fFlags          = 0;
+                pObjInfo->Attr.u.Unix.GenerationId    = 0;
+                pObjInfo->Attr.u.Unix.Device          = 0;
+                break;
+
+            case RTFSOBJATTRADD_EASIZE:
+                pObjInfo->Attr.u.EASize.cb            = 0;
+                break;
+
+            case RTFSOBJATTRADD_UNIX_OWNER:
+                pObjInfo->Attr.enmAdditional          = RTFSOBJATTRADD_UNIX_OWNER;
+                pObjInfo->Attr.u.UnixOwner.uid        = NIL_RTUID;
+                pObjInfo->Attr.u.UnixOwner.szName[0]  = '\0'; /** @todo return something sensible here. */
+                break;
+
+            case RTFSOBJATTRADD_UNIX_GROUP:
+                pObjInfo->Attr.enmAdditional          = RTFSOBJATTRADD_UNIX_GROUP;
+                pObjInfo->Attr.u.UnixGroup.gid        = NIL_RTGID;
+                pObjInfo->Attr.u.UnixGroup.szName[0]  = '\0';
+                break;
+
+            default:
+                AssertMsgFailed(("Impossible!\n"));
+                return VERR_INTERNAL_ERROR_2;
+        }
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Regular directory file.
+     */
+    uint8_t abBuf[_2K];
+    return rtPathNtQueryInfoFromHandle(pDir->hDir, abBuf, sizeof(abBuf), pObjInfo, enmAdditionalAttribs, "", 0);
 }
 

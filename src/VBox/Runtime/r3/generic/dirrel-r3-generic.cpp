@@ -442,7 +442,7 @@ RTDECL(int) RTDirRelPathRename(PRTDIR hDirSrc, const char *pszSrc, PRTDIR hDirDs
         char szDstPath[RTPATH_MAX];
         rc = rtDirRelBuildFullPath(pThis, szDstPath, sizeof(szDstPath), pszDst);
         if (RT_SUCCESS(rc))
-            rc = RTPathRename(pszSrc, pszDst, fRename);
+            rc = RTPathRename(szSrcPath, szDstPath, fRename);
     }
     return rc;
 }

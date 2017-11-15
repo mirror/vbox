@@ -41,6 +41,7 @@
 #include "internal/dir.h"
 #include "internal/file.h"
 #include "internal/fs.h"
+#include "internal/path.h"
 
 
 /*********************************************************************************************************************************
@@ -138,7 +139,8 @@ RTDECL(int)  RTDirRelFileOpen(PRTDIR hDir, const char *pszRelFilename, uint64_t 
          */
         UNICODE_STRING NtName;
         HANDLE hRoot = pThis->hDir;
-        rc = RTNtPathRelativeFromUtf8(&NtName, &hRoot, pszRelFilename, RTDIRREL_NT_GET_ASCENT(pThis));
+        rc = RTNtPathRelativeFromUtf8(&NtName, &hRoot, pszRelFilename, RTDIRREL_NT_GET_ASCENT(pThis),
+                                      pThis->enmInfoClass == FileMaximumInformation);
         if (RT_SUCCESS(rc))
         {
             HANDLE              hFile = RTNT_INVALID_HANDLE_VALUE;
@@ -203,7 +205,8 @@ RTDECL(int) RTDirRelDirOpenFiltered(PRTDIR hDir, const char *pszDirAndFilter, RT
      */
     UNICODE_STRING NtName;
     HANDLE hRoot = pThis->hDir;
-    int rc = RTNtPathRelativeFromUtf8(&NtName, &hRoot, pszDirAndFilter, RTDIRREL_NT_GET_ASCENT(pThis));
+    int rc = RTNtPathRelativeFromUtf8(&NtName, &hRoot, pszDirAndFilter, RTDIRREL_NT_GET_ASCENT(pThis),
+                                      pThis->enmInfoClass == FileMaximumInformation);
     if (RT_SUCCESS(rc))
     {
         rc = rtDirOpenRelative(phDir, pszDirAndFilter, enmFilter, fFlags, (uintptr_t)hRoot, &NtName);
@@ -233,7 +236,10 @@ RTDECL(int) RTDirRelDirCreate(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode
     char szPath[RTPATH_MAX];
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);
     if (RT_SUCCESS(rc))
+    {
+RTAssertMsg2("DBG: RTDirRelDirCreate(%s)...\n", szPath);
         rc = RTDirCreate(szPath, fMode, fCreate);
+    }
     return rc;
 }
 
@@ -256,7 +262,10 @@ RTDECL(int) RTDirRelDirRemove(PRTDIR hDir, const char *pszRelPath)
     char szPath[RTPATH_MAX];
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);
     if (RT_SUCCESS(rc))
+    {
+RTAssertMsg2("DBG: RTDirRelDirRemove(%s)...\n", szPath);
         rc = RTDirRemove(szPath);
+    }
     return rc;
 }
 
@@ -271,26 +280,6 @@ RTDECL(int) RTDirRelDirRemove(PRTDIR hDir, const char *pszRelPath)
  */
 
 
-/**
- * Query information about a file system object relative to @a hDir.
- *
- * @returns IPRT status code.
- * @retval  VINF_SUCCESS if the object exists, information returned.
- * @retval  VERR_PATH_NOT_FOUND if any but the last component in the specified
- *          path was not found or was not a directory.
- * @retval  VERR_FILE_NOT_FOUND if the object does not exist (but path to the
- *          parent directory exists).
- *
- * @param   hDir            The directory @a pszRelPath is relative to.
- * @param   pszRelPath      The relative path to the file system object.
- * @param   pObjInfo        Object information structure to be filled on successful
- *                          return.
- * @param   enmAddAttr      Which set of additional attributes to request.
- *                          Use RTFSOBJATTRADD_NOTHING if this doesn't matter.
- * @param   fFlags          RTPATH_F_ON_LINK or RTPATH_F_FOLLOW_LINK.
- *
- * @sa      RTPathQueryInfoEx
- */
 RTDECL(int) RTDirRelPathQueryInfo(PRTDIR hDir, const char *pszRelPath, PRTFSOBJINFO pObjInfo,
                                   RTFSOBJATTRADD enmAddAttr, uint32_t fFlags)
 {
@@ -298,10 +287,18 @@ RTDECL(int) RTDirRelPathQueryInfo(PRTDIR hDir, const char *pszRelPath, PRTFSOBJI
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
 
-    char szPath[RTPATH_MAX];
-    int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);
+    /*
+     * Validate and convert flags.
+     */
+    UNICODE_STRING NtName;
+    HANDLE hRoot = pThis->hDir;
+    int rc = RTNtPathRelativeFromUtf8(&NtName, &hRoot, pszRelPath, RTDIRREL_NT_GET_ASCENT(pThis),
+                                      pThis->enmInfoClass == FileMaximumInformation);
     if (RT_SUCCESS(rc))
-        rc = RTPathQueryInfoEx(szPath, pObjInfo, enmAddAttr, fFlags);
+    {
+        rc = rtPathNtQueryInfoWorker(hRoot, &NtName, pObjInfo, enmAddAttr, fFlags, pszRelPath);
+        RTNtPathFree(&NtName, NULL);
+    }
     return rc;
 }
 
@@ -331,6 +328,7 @@ RTDECL(int) RTDirRelPathSetMode(PRTDIR hDir, const char *pszRelPath, RTFMODE fMo
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);
     if (RT_SUCCESS(rc))
     {
+RTAssertMsg2("DBG: RTDirRelPathSetMode(%s)...\n", szPath);
 #ifndef RT_OS_WINDOWS
         rc = RTPathSetMode(szPath, fMode); /** @todo fFlags is currently ignored. */
 #else
@@ -378,7 +376,10 @@ RTDECL(int) RTDirRelPathSetTimes(PRTDIR hDir, const char *pszRelPath, PCRTTIMESP
     char szPath[RTPATH_MAX];
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);
     if (RT_SUCCESS(rc))
+    {
+RTAssertMsg2("DBG: RTDirRelPathSetTimes(%s)...\n", szPath);
         rc = RTPathSetTimesEx(szPath, pAccessTime, pModificationTime, pChangeTime, pBirthTime, fFlags);
+    }
     return rc;
 }
 
@@ -407,6 +408,7 @@ RTDECL(int) RTDirRelPathSetOwner(PRTDIR hDir, const char *pszRelPath, uint32_t u
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);
     if (RT_SUCCESS(rc))
     {
+RTAssertMsg2("DBG: RTDirRelPathSetOwner(%s)...\n", szPath);
 #ifndef RT_OS_WINDOWS
         rc = RTPathSetOwnerEx(szPath, uid, gid, fFlags);
 #else
@@ -453,7 +455,10 @@ RTDECL(int) RTDirRelPathRename(PRTDIR hDirSrc, const char *pszSrc, PRTDIR hDirDs
         char szDstPath[RTPATH_MAX];
         rc = rtDirRelBuildFullPath(pThis, szDstPath, sizeof(szDstPath), pszDst);
         if (RT_SUCCESS(rc))
-            rc = RTPathRename(pszSrc, pszDst, fRename);
+        {
+RTAssertMsg2("DBG: RTDirRelPathRename(%s,%s)...\n", szSrcPath, szDstPath);
+            rc = RTPathRename(szSrcPath, szDstPath, fRename);
+        }
     }
     return rc;
 }
@@ -478,7 +483,10 @@ RTDECL(int) RTDirRelPathUnlink(PRTDIR hDir, const char *pszRelPath, uint32_t fUn
     char szPath[RTPATH_MAX];
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);
     if (RT_SUCCESS(rc))
+    {
+RTAssertMsg2("DBG: RTDirRelPathUnlink(%s)...\n", szPath);
         rc = RTPathUnlink(szPath, fUnlink);
+    }
     return rc;
 }
 
@@ -521,7 +529,10 @@ RTDECL(int) RTDirRelSymlinkCreate(PRTDIR hDir, const char *pszSymlink, const cha
     char szPath[RTPATH_MAX];
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszSymlink);
     if (RT_SUCCESS(rc))
+    {
+RTAssertMsg2("DBG: RTDirRelSymlinkCreate(%s)...\n", szPath);
         rc = RTSymlinkCreate(szPath, pszTarget, enmType, fCreate);
+    }
     return rc;
 }
 
@@ -553,7 +564,10 @@ RTDECL(int) RTDirRelSymlinkRead(PRTDIR hDir, const char *pszSymlink, char *pszTa
     char szPath[RTPATH_MAX];
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszSymlink);
     if (RT_SUCCESS(rc))
+    {
+RTAssertMsg2("DBG: RTDirRelSymlinkRead(%s)...\n", szPath);
         rc = RTSymlinkRead(szPath, pszTarget, cbTarget, fRead);
+    }
     return rc;
 }
 
