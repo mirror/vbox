@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Creates directory.
+ * IPRT - Removes directory.
  */
 
 /*
@@ -43,19 +43,19 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-typedef struct RTCMDMKDIROPTS
+typedef struct RTCMDRMDIROPTS
 {
     /** -v, --verbose */
     bool        fVerbose;
     /** -p, --parents */
     bool        fParents;
+    /** Don't fail if directories that aren't empty. */
+    bool        fIgnoreNotEmpty;
+    /** Don't fail a directory doesn't exist (i.e. has already been removed). */
+    bool        fIgnoreNonExisting;
     /** Whether to always use the VFS chain API (for testing). */
     bool        fAlwaysUseChainApi;
-    /** Directory creation flags (RTDIRCREATE_FLAGS_XXX).   */
-    uint32_t    fCreateFlags;
-    /** The directory mode. */
-    RTFMODE     fMode;
-} RTCMDMKDIROPTS;
+} RTCMDRMDIROPTS;
 
 
 /**
@@ -65,46 +65,65 @@ typedef struct RTCMDMKDIROPTS
  * @param   pOpts               The mkdir option.
  * @param   pszDir              The path to the new directory.
  */
-static int rtCmdMkDirOneWithParents(RTCMDMKDIROPTS const *pOpts, const char *pszDir)
+static int rtCmdRmDirOneWithParents(RTCMDRMDIROPTS const *pOpts, const char *pszDir)
 {
+    /* We need a copy we can work with here. */
+    char *pszCopy = RTStrDup(pszDir);
+    if (!pszCopy)
+        return RTMsgErrorExitFailure("Out of string memory!");
+
     int rc;
     if (!pOpts->fAlwaysUseChainApi && !RTVfsChainIsSpec(pszDir) )
     {
-        /*
-         * Use the API for doing the entire job.  Unfortuantely, this means we
-         * can't be very  verbose about what we're doing.
-         */
-        rc = RTDirCreateFullPath(pszDir, pOpts->fMode);
-        if (RT_FAILURE(rc))
-            RTMsgError("Failed to create directory '%s' (or a parent): %Rrc", pszDir, rc);
-        else if (pOpts->fVerbose)
-            RTPrintf("%s\n", pszDir);
+        size_t cchCopy = strlen(pszCopy);
+        do
+        {
+            rc = RTDirRemove(pszCopy);
+            if (RT_SUCCESS(rc))
+            {
+                if (pOpts->fVerbose)
+                    RTPrintf("%s\n", pszCopy);
+            }
+            else if ((rc == VERR_PATH_NOT_FOUND || rc == VERR_FILE_NOT_FOUND) && pOpts->fIgnoreNonExisting)
+                rc = VINF_SUCCESS;
+            else
+            {
+                if ((rc == VERR_DIR_NOT_EMPTY || rc == VERR_SHARING_VIOLATION) && pOpts->fIgnoreNotEmpty)
+                    rc = VINF_SUCCESS;
+                else
+                    RTMsgError("Failed to remove directory '%s': %Rrc", pszCopy, rc);
+                break;
+            }
+
+            /* Strip off a component. */
+            while (cchCopy > 0 && RTPATH_IS_SLASH(pszCopy[cchCopy - 1]))
+                cchCopy--;
+            while (cchCopy > 0 && !RTPATH_IS_SLASH(pszCopy[cchCopy - 1]))
+                cchCopy--;
+            while (cchCopy > 0 && RTPATH_IS_SLASH(pszCopy[cchCopy - 1]))
+                cchCopy--;
+            pszCopy[cchCopy] = '\0';
+        } while (cchCopy > 0);
     }
     else
     {
         /*
          * Strip the final path element from the pszDir spec.
          */
-        char *pszCopy = RTStrDup(pszDir);
-        if (!pszCopy)
-            return RTMsgErrorExitFailure("Out of string memory!");
-
         char       *pszFinalPath;
         char       *pszSpec;
         uint32_t    offError;
         rc = RTVfsChainSplitOffFinalPath(pszCopy, &pszSpec, &pszFinalPath, &offError);
         if (RT_SUCCESS(rc))
         {
-            const char * const pszFullFinalPath = pszFinalPath;
-
             /*
              * Open the root director/whatever.
              */
             RTERRINFOSTATIC ErrInfo;
-            RTVFSDIR hVfsCurDir;
+            RTVFSDIR hVfsBaseDir;
             if (pszSpec)
             {
-                rc = RTVfsChainOpenDir(pszSpec, 0 /*fOpen*/, &hVfsCurDir, &offError, RTErrInfoInitStatic(&ErrInfo));
+                rc = RTVfsChainOpenDir(pszSpec, 0 /*fOpen*/, &hVfsBaseDir, &offError, RTErrInfoInitStatic(&ErrInfo));
                 if (RT_FAILURE(rc))
                     RTVfsChainMsgError("RTVfsChainOpenDir", pszSpec, rc, offError, &ErrInfo.Core);
                 else if (!pszFinalPath)
@@ -112,7 +131,7 @@ static int rtCmdMkDirOneWithParents(RTCMDMKDIROPTS const *pOpts, const char *psz
             }
             else if (!RTPathStartsWithRoot(pszFinalPath))
             {
-                rc = RTVfsDirOpenNormal(".", 0 /*fOpen*/, &hVfsCurDir);
+                rc = RTVfsDirOpenNormal(".", 0 /*fOpen*/, &hVfsBaseDir);
                 if (RT_FAILURE(rc))
                     RTMsgError("Failed to open '.' (for %s): %Rrc", rc, pszFinalPath);
             }
@@ -122,105 +141,72 @@ static int rtCmdMkDirOneWithParents(RTCMDMKDIROPTS const *pOpts, const char *psz
                 pszFinalPath = RTPathSkipRootSpec(pszFinalPath);
                 char const chSaved = *pszFinalPath;
                 *pszFinalPath = '\0';
-                rc = RTVfsDirOpenNormal(pszRoot, 0 /*fOpen*/, &hVfsCurDir);
+                rc = RTVfsDirOpenNormal(pszRoot, 0 /*fOpen*/, &hVfsBaseDir);
                 *pszFinalPath = chSaved;
                 if (RT_FAILURE(rc))
                     RTMsgError("Failed to open root dir for '%s': %Rrc", rc, pszRoot);
             }
 
             /*
-             * Walk the path component by component.
+             * Walk the path component by component, starting at the end.
              */
-            while (RT_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
-                /*
-                 * Strip leading slashes.
-                 */
-                while (RTPATH_IS_SLASH(*pszFinalPath))
-                    pszFinalPath++;
-                if (*pszFinalPath == '\0')
+                size_t cchFinalPath = strlen(pszFinalPath);
+                while (RT_SUCCESS(rc) && cchFinalPath > 0)
                 {
-                    RTVfsDirRelease(hVfsCurDir);
-                    break;
-                }
-
-                /*
-                 * Find the end of the next path component.
-                 */
-                size_t cchComponent = 0;
-                char   ch;
-                while (   (ch = pszFinalPath[cchComponent]) != '\0'
-                       && !RTPATH_IS_SLASH(ch))
-                    cchComponent++;
-
-                /*
-                 * Open or create the component.
-                 */
-                pszFinalPath[cchComponent] = '\0';
-                RTVFSDIR hVfsNextDir = NIL_RTVFSDIR;
-                for (uint32_t cTries = 0; cTries < 8; cTries++)
-                {
-                    /* Try open it. */
-                    rc = RTVfsDirOpenDir(hVfsCurDir, pszFinalPath, 0 /*fFlags*/, &hVfsNextDir);
+                    rc = RTVfsDirRemoveDir(hVfsBaseDir, pszFinalPath, 0 /*fFlags*/);
                     if (RT_SUCCESS(rc))
-                        break;
-                    if (   rc != VERR_FILE_NOT_FOUND
-                        && rc != VERR_PATH_NOT_FOUND)
                     {
-                        if (ch == '\0')
-                            RTMsgError("Failed opening directory '%s': %Rrc", pszDir, rc);
+                        if (pOpts->fVerbose)
+                            RTPrintf("%s\n", pszCopy);
+                    }
+                    else if ((rc == VERR_PATH_NOT_FOUND || rc == VERR_FILE_NOT_FOUND) && pOpts->fIgnoreNonExisting)
+                        rc = VINF_SUCCESS;
+                    else
+                    {
+                        if ((rc == VERR_DIR_NOT_EMPTY || rc == VERR_SHARING_VIOLATION) && pOpts->fIgnoreNotEmpty)
+                            rc = VINF_SUCCESS;
+                        else if (pszSpec)
+                            RTMsgError("Failed to remove directory '%s:%s': %Rrc", pszSpec, pszFinalPath, rc);
                         else
-                            RTMsgError("Failed opening dir '%s' (for creating '%s'): %Rrc", pszFullFinalPath, pszDir, rc);
+                            RTMsgError("Failed to remove directory '%s': %Rrc", pszFinalPath, rc);
                         break;
                     }
 
-                    /* Not found, so try create it. */
-                    rc = RTVfsDirCreateDir(hVfsCurDir, pszFinalPath, pOpts->fMode, pOpts->fCreateFlags, &hVfsNextDir);
-                    if (rc == VERR_ALREADY_EXISTS)
-                        continue; /* We lost a creation race, try again. */
-                    if (RT_SUCCESS(rc) && pOpts->fVerbose)
-                    {
-                        if (pszSpec)
-                            RTPrintf("%s:%s\n", pszSpec, pszFullFinalPath);
-                        else
-                            RTPrintf("%s\n", pszFullFinalPath);
-                    }
-                    else if (RT_FAILURE(rc))
-                    {
-                        if (ch == '\0')
-                            RTMsgError("Failed creating directory '%s': %Rrc", pszDir, rc);
-                        else
-                            RTMsgError("Failed creating dir '%s' (for '%s'): %Rrc", pszFullFinalPath, pszDir, rc);
-                    }
-                    break;
+                    /* Strip off a component. */
+                    while (cchFinalPath > 0 && RTPATH_IS_SLASH(pszFinalPath[cchFinalPath - 1]))
+                        cchFinalPath--;
+                    while (cchFinalPath > 0 && !RTPATH_IS_SLASH(pszFinalPath[cchFinalPath - 1]))
+                        cchFinalPath--;
+                    while (cchFinalPath > 0 && RTPATH_IS_SLASH(pszFinalPath[cchFinalPath - 1]))
+                        cchFinalPath--;
+                    pszFinalPath[cchFinalPath] = '\0';
                 }
-                pszFinalPath[cchComponent] = ch;
 
-                RTVfsDirRelease(hVfsCurDir);
-                hVfsCurDir = hVfsNextDir;
-                pszFinalPath += cchComponent;
+                RTVfsDirRelease(hVfsBaseDir);
             }
         }
         else
             RTVfsChainMsgError("RTVfsChainOpenParentDir", pszCopy, rc, offError, NULL);
-        RTStrFree(pszCopy);
     }
+    RTStrFree(pszCopy);
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 
 /**
- * Create one directory.
+ * Removes one directory.
  *
  * @returns exit code
  * @param   pOpts               The mkdir option.
  * @param   pszDir              The path to the new directory.
  */
-static RTEXITCODE rtCmdMkDirOne(RTCMDMKDIROPTS const *pOpts, const char *pszDir)
+static RTEXITCODE rtCmdRmDirOne(RTCMDRMDIROPTS const *pOpts, const char *pszDir)
 {
     int rc;
     if (!pOpts->fAlwaysUseChainApi && !RTVfsChainIsSpec(pszDir) )
-        rc = RTDirCreate(pszDir, pOpts->fMode, 0);
+        rc = RTDirRemove(pszDir);
     else
     {
         RTVFSDIR        hVfsDir;
@@ -230,7 +216,7 @@ static RTEXITCODE rtCmdMkDirOne(RTCMDMKDIROPTS const *pOpts, const char *pszDir)
         rc = RTVfsChainOpenParentDir(pszDir, 0 /*fOpen*/, &hVfsDir, &pszChild, &offError, RTErrInfoInitStatic(&ErrInfo));
         if (RT_SUCCESS(rc))
         {
-            rc = RTVfsDirCreateDir(hVfsDir, pszChild, pOpts->fMode, 0 /*fFlags*/, NULL);
+            rc = RTVfsDirRemoveDir(hVfsDir, pszChild, 0 /*fFlags*/);
             RTVfsDirRelease(hVfsDir);
         }
         else
@@ -242,11 +228,15 @@ static RTEXITCODE rtCmdMkDirOne(RTCMDMKDIROPTS const *pOpts, const char *pszDir)
             RTPrintf("%s\n", pszDir);
         return RTEXITCODE_SUCCESS;
     }
-    return RTMsgErrorExitFailure("Failed to create '%s': %Rrc", pszDir, rc);
+    if ((rc == VERR_DIR_NOT_EMPTY || rc == VERR_SHARING_VIOLATION) && pOpts->fIgnoreNotEmpty)
+        return RTEXITCODE_SUCCESS; /** @todo be verbose about this? */
+    if ((rc == VERR_PATH_NOT_FOUND || rc == VERR_FILE_NOT_FOUND) && pOpts->fIgnoreNonExisting)
+        return RTEXITCODE_SUCCESS; /** @todo be verbose about this? */
+    return RTMsgErrorExitFailure("Failed to remove '%s': %Rrc", pszDir, rc);
 }
 
 
-static RTEXITCODE RTCmdMkDir(unsigned cArgs,  char **papszArgs)
+static RTEXITCODE RTCmdRmDir(unsigned cArgs,  char **papszArgs)
 {
     /*
      * Parse the command line.
@@ -254,10 +244,10 @@ static RTEXITCODE RTCmdMkDir(unsigned cArgs,  char **papszArgs)
     static const RTGETOPTDEF s_aOptions[] =
     {
         /* operations */
-        { "--mode",                     'm', RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
         { "--parents",                  'p', RTGETOPT_REQ_NOTHING },
+        { "--ignore-fail-on-non-empty", 'F', RTGETOPT_REQ_NOTHING },
+        { "--ignore-non-existing",      'E', RTGETOPT_REQ_NOTHING },
         { "--always-use-vfs-chain-api", 'A', RTGETOPT_REQ_NOTHING },
-        { "--allow-content-indexing",   'i', RTGETOPT_REQ_NOTHING },
         { "--verbose",                  'v', RTGETOPT_REQ_NOTHING },
     };
 
@@ -267,12 +257,12 @@ static RTEXITCODE RTCmdMkDir(unsigned cArgs,  char **papszArgs)
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOpt failed: %Rrc", rc);
 
-    RTCMDMKDIROPTS Opts;
+    RTCMDRMDIROPTS Opts;
     Opts.fVerbose               = false;
     Opts.fParents               = false;
+    Opts.fIgnoreNotEmpty        = false;
+    Opts.fIgnoreNonExisting     = false;
     Opts.fAlwaysUseChainApi     = false;
-    Opts.fCreateFlags           = RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_NOT_CRITICAL | RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_SET;
-    Opts.fMode                  = 0775 | RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY;
 
     RTGETOPTUNION ValueUnion;
     while (   (rc = RTGetOpt(&GetState, &ValueUnion)) != 0
@@ -280,12 +270,6 @@ static RTEXITCODE RTCmdMkDir(unsigned cArgs,  char **papszArgs)
     {
         switch (rc)
         {
-            case 'm':
-                /** @todo DOS+NT attributes and symbolic notation. */
-                Opts.fMode &= ~07777;
-                Opts.fMode |= ValueUnion.u32 & 07777;
-                break;
-
             case 'p':
                 Opts.fParents = true;
                 break;
@@ -298,25 +282,31 @@ static RTEXITCODE RTCmdMkDir(unsigned cArgs,  char **papszArgs)
                 Opts.fAlwaysUseChainApi = true;
                 break;
 
-            case 'i':
-                Opts.fCreateFlags &= ~RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_SET;
-                Opts.fCreateFlags |= RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_DONT_SET;
+            case 'E':
+                Opts.fIgnoreNonExisting = true;
+                break;
+
+            case 'F':
+                Opts.fIgnoreNotEmpty = true;
                 break;
 
             case 'h':
                 RTPrintf("Usage: %s [options] <dir> [..]\n"
                          "\n"
+                         "Removes empty directories.\n"
+                         "\n"
                          "Options:\n"
-                         "  -m <mode>, --mode <mode>\n"
-                         "      The creation mode. Default is 0775.\n"
                          "  -p, --parent\n"
-                         "      Create parent directories too. Ignore any existing directories.\n"
+                         "      Remove specified parent directories too.\n"
+                         "  -F, --ignore-fail-on-non-empty\n"
+                         "      Do not fail if a directory is not empty, just ignore it.\n"
+                         "      This is really handy with the -p option.\n"
+                         "  -E, --ignore-non-existing\n"
+                         "      Do not fail if a specified directory is not there.\n"
                          "  -v, --verbose\n"
-                         "      Tell which directories get created.\n"
+                         "      Tell which directories get remove.\n"
                          "  -A, --always-use-vfs-chain-api\n"
                          "      Always use the VFS API.\n"
-                         "  -i, --allow-content-indexing\n"
-                         "      Don't set flags to disable context indexing on windows.\n"
                          , papszArgs[0]);
                 return RTEXITCODE_SUCCESS;
 
@@ -343,9 +333,9 @@ static RTEXITCODE RTCmdMkDir(unsigned cArgs,  char **papszArgs)
     while (rc == VINF_GETOPT_NOT_OPTION)
     {
         if (Opts.fParents)
-            rc = rtCmdMkDirOneWithParents(&Opts, ValueUnion.psz);
+            rc = rtCmdRmDirOneWithParents(&Opts, ValueUnion.psz);
         else
-            rc = rtCmdMkDirOne(&Opts, ValueUnion.psz);
+            rc = rtCmdRmDirOne(&Opts, ValueUnion.psz);
         if (RT_FAILURE(rc))
             rcExit = RTEXITCODE_FAILURE;
 
@@ -364,6 +354,6 @@ int main(int argc, char **argv)
     int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
-    return RTCmdMkDir(argc, argv);
+    return RTCmdRmDir(argc, argv);
 }
 

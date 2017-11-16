@@ -216,19 +216,6 @@ RTDECL(int) RTDirRelDirOpenFiltered(PRTDIR hDir, const char *pszDirAndFilter, RT
 }
 
 
-/**
- * Creates a directory relative to @a hDir.
- *
- * @returns IPRT status code.
- * @param   hDir            The directory @a pszRelPath is relative to.
- * @param   pszRelPath      The relative path to the directory to create.
- * @param   fMode           The mode of the new directory.
- * @param   fCreate         Create flags, RTDIRCREATE_FLAGS_XXX.
- * @param   phSubDir        Where to return the handle of the created directory.
- *                          Optional.
- *
- * @sa      RTDirCreate
- */
 RTDECL(int) RTDirRelDirCreate(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fCreate, PRTDIR *phSubDir)
 {
     PRTDIR pThis = hDir;
@@ -320,28 +307,55 @@ RTDECL(int) RTDirRelDirCreate(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode
 }
 
 
-/**
- * Removes a directory relative to @a hDir if empty.
- *
- * @returns IPRT status code.
- * @param   hDir            The directory @a pszRelPath is relative to.
- * @param   pszRelPath      The relative path to the directory to remove.
- *
- * @sa      RTDirRemove
- */
 RTDECL(int) RTDirRelDirRemove(PRTDIR hDir, const char *pszRelPath)
 {
     PRTDIR pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
 
-
-    char szPath[RTPATH_MAX];
-    int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);
+    /*
+     * Convert and normalize the path.
+     */
+    UNICODE_STRING NtName;
+    HANDLE hRoot = pThis->hDir;
+    int rc = RTNtPathRelativeFromUtf8(&NtName, &hRoot, pszRelPath, RTDIRREL_NT_GET_ASCENT(pThis),
+                                      pThis->enmInfoClass == FileMaximumInformation);
     if (RT_SUCCESS(rc))
     {
-RTAssertMsg2("DBG: RTDirRelDirRemove(%s)...\n", szPath);
-        rc = RTDirRemove(szPath);
+        HANDLE              hSubDir = RTNT_INVALID_HANDLE_VALUE;
+        IO_STATUS_BLOCK     Ios     = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        OBJECT_ATTRIBUTES   ObjAttr;
+        InitializeObjectAttributes(&ObjAttr, &NtName, 0 /*fAttrib*/, hRoot, NULL);
+
+        NTSTATUS rcNt = NtCreateFile(&hSubDir,
+                                     DELETE | SYNCHRONIZE,
+                                     &ObjAttr,
+                                     &Ios,
+                                     NULL /*AllocationSize*/,
+                                     FILE_ATTRIBUTE_NORMAL,
+                                     FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                     FILE_OPEN,
+                                     FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT | FILE_OPEN_REPARSE_POINT,
+                                     NULL /*EaBuffer*/,
+                                     0 /*EaLength*/);
+        if (NT_SUCCESS(rcNt))
+        {
+            FILE_DISPOSITION_INFORMATION DispInfo;
+            DispInfo.DeleteFile = TRUE;
+            RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
+            rcNt = NtSetInformationFile(hSubDir, &Ios, &DispInfo, sizeof(DispInfo), FileDispositionInformation);
+
+            NTSTATUS rcNt2 = NtClose(hSubDir);
+            if (!NT_SUCCESS(rcNt2) && NT_SUCCESS(rcNt))
+                rcNt = rcNt2;
+        }
+
+        if (NT_SUCCESS(rcNt))
+            rc = VINF_SUCCESS;
+        else
+            rc = RTErrConvertFromNtStatus(rcNt);
+
+        RTNtPathFree(&NtName, NULL);
     }
     return rc;
 }

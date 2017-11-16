@@ -527,6 +527,17 @@ RTDECL(int) RTVfsDirQueryPathInfo(RTVFSDIR hVfsDir, const char *pszPath, PRTFSOB
                                   RTFSOBJATTRADD enmAddAttr, uint32_t fFlags);
 
 /**
+ * Removes a directory relative to @a hVfsDir.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsDir         The VFS directory to start walking the @a pszRelPath
+ *                          relative to.
+ * @param   pszRelPath      The path to the directory that should be removed.
+ * @param   fFlags          Reserved, MBZ.
+ */
+RTDECL(int) RTVfsDirRemoveDir(RTVFSDIR hVfsDir, const char *pszRelPath, uint32_t fFlags);
+
+/**
  * Reads the next entry in the directory returning extended information.
  *
  * @returns VINF_SUCCESS and data in pDirEntry on success.

@@ -2437,6 +2437,7 @@
 # define RTVfsDirOpenFileAsIoStream                     RT_MANGLER(RTVfsDirOpenFileAsIoStream)
 # define RTVfsDirQueryPathInfo                          RT_MANGLER(RTVfsDirQueryPathInfo)
 # define RTVfsDirReadEx                                 RT_MANGLER(RTVfsDirReadEx)
+# define RTVfsDirRemoveDir                              RT_MANGLER(RTVfsDirRemoveDir)
 # define RTVfsFileFlush                                 RT_MANGLER(RTVfsFileFlush)
 # define RTVfsFileFromBuffer                            RT_MANGLER(RTVfsFileFromBuffer)
 # define RTVfsFileFromRTFile                            RT_MANGLER(RTVfsFileFromRTFile)

@@ -2539,6 +2539,52 @@ RTDECL(int) RTVfsDirQueryPathInfo(RTVFSDIR hVfsDir, const char *pszPath, PRTFSOB
 }
 
 
+RTDECL(int) RTVfsDirRemoveDir(RTVFSDIR hVfsDir, const char *pszRelPath, uint32_t fFlags)
+{
+    /*
+     * Validate input.
+     */
+    RTVFSDIRINTERNAL *pThis = hVfsDir;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pszRelPath, VERR_INVALID_POINTER);
+    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+
+    /*
+     * Parse the path, it's always relative to the given directory.
+     */
+    PRTVFSPARSEDPATH pPath;
+    int rc = RTVfsParsePathA(pszRelPath, NULL, &pPath);
+    if (RT_SUCCESS(rc))
+    {
+        if (pPath->cComponents > 0)
+        {
+            /*
+             * Tranverse the path, resolving the parent node, not checking for symbolic
+             * links in the final element, and ask the directory to remove the subdir.
+             */
+            RTVFSDIRINTERNAL *pVfsParentDir;
+            rc = rtVfsDirTraverseToParent(pThis, pPath, RTPATH_F_ON_LINK, &pVfsParentDir);
+            if (RT_SUCCESS(rc))
+            {
+                const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
+
+                RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
+                rc = pVfsParentDir->pOps->pfnUnlinkEntry(pVfsParentDir->Base.pvThis, pszEntryName, RTFS_TYPE_DIRECTORY);
+                RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
+
+                RTVfsDirRelease(pVfsParentDir);
+            }
+        }
+        else
+            rc = VERR_PATH_ZERO_LENGTH;
+        RTVfsParsePathFree(pPath);
+    }
+    return rc;
+}
+
+
+
 RTDECL(int) RTVfsDirReadEx(RTVFSDIR hVfsDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAddAttr)
 {
     /*

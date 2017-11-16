@@ -442,6 +442,9 @@ static DECLCALLBACK(int) rtVfsStdDir_UnlinkEntry(void *pvThis, const char *pszEn
     PRTVFSSTDDIR pThis = (PRTVFSSTDDIR)pvThis;
     if (fType != 0)
     {
+        if (fType == RTFS_TYPE_DIRECTORY)
+            return RTDirRelDirRemove(pThis->hDir, pszEntry);
+
         RTFSOBJINFO ObjInfo;
         int rc = rtVfsStdDir_QueryEntryInfo(pThis, pszEntry, &ObjInfo, RTFSOBJATTRADD_NOTHING);
         if (RT_FAILURE(rc))
