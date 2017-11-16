@@ -2875,14 +2875,14 @@ static void hdaGCTLReset(PHDASTATE pThis)
     hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_REAR      , 5 /* SD4 */, 0 /* Channel */);
 #endif
 
-    pThis->cbCorbBuf = 256 * sizeof(uint32_t); /** @todo Use a define here. */
+    pThis->cbCorbBuf = HDA_CORB_SIZE * sizeof(uint32_t);
 
     if (pThis->pu32CorbBuf)
         RT_BZERO(pThis->pu32CorbBuf, pThis->cbCorbBuf);
     else
         pThis->pu32CorbBuf = (uint32_t *)RTMemAllocZ(pThis->cbCorbBuf);
 
-    pThis->cbRirbBuf = 256 * sizeof(uint64_t); /** @todo Use a define here. */
+    pThis->cbRirbBuf = HDA_RIRB_SIZE * sizeof(uint64_t);
     if (pThis->pu64RirbBuf)
         RT_BZERO(pThis->pu64RirbBuf, pThis->cbRirbBuf);
     else
