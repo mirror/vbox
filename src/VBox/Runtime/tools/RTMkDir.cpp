@@ -51,10 +51,10 @@ typedef struct RTCMDMKDIROPTS
     bool        fParents;
     /** Whether to always use the VFS chain API (for testing). */
     bool        fAlwaysUseChainApi;
+    /** Directory creation flags (RTDIRCREATE_FLAGS_XXX).   */
+    uint32_t    fCreateFlags;
     /** The directory mode. */
     RTFMODE     fMode;
-    /** The mode to apply to parent directories we create. */
-    RTFMODE     fParentMode;
 } RTCMDMKDIROPTS;
 
 
@@ -173,8 +173,7 @@ static int rtCmdMkDirOneWithParents(RTCMDMKDIROPTS const *pOpts, const char *psz
                     }
 
                     /* Not found, so try create it. */
-                    rc = RTVfsDirCreateDir(hVfsCurDir, pszFinalPath, ch == '\0' ? pOpts->fMode : pOpts->fParentMode,
-                                           0 /*fFlags*/, &hVfsNextDir);
+                    rc = RTVfsDirCreateDir(hVfsCurDir, pszFinalPath, pOpts->fMode, pOpts->fCreateFlags, &hVfsNextDir);
                     if (rc == VERR_ALREADY_EXISTS)
                         continue; /* We lost a creation race, try again. */
                     if (RT_SUCCESS(rc) && pOpts->fVerbose)
@@ -256,6 +255,7 @@ static RTEXITCODE RTCmdMkDir(unsigned cArgs,  char **papszArgs)
         { "--mode",                     'm', RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
         { "--parents",                  'p', RTGETOPT_REQ_NOTHING },
         { "--always-use-vfs-chain-api", 'A', RTGETOPT_REQ_NOTHING },
+        { "--allow-content-indexing",   'i', RTGETOPT_REQ_NOTHING },
         { "--verbose",                  'v', RTGETOPT_REQ_NOTHING },
     };
 
@@ -266,11 +266,11 @@ static RTEXITCODE RTCmdMkDir(unsigned cArgs,  char **papszArgs)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOpt failed: %Rrc", rc);
 
     RTCMDMKDIROPTS Opts;
-    Opts.fVerbose           = false;
-    Opts.fParents           = false;
-    Opts.fAlwaysUseChainApi = false;
-    Opts.fMode              = 0775 | RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY;
-    Opts.fParentMode        = 0775 | RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY;
+    Opts.fVerbose               = false;
+    Opts.fParents               = false;
+    Opts.fAlwaysUseChainApi     = false;
+    Opts.fCreateFlags           = RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_NOT_CRITICAL | RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_SET;
+    Opts.fMode                  = 0775 | RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY;
 
     RTGETOPTUNION ValueUnion;
     while (   (rc = RTGetOpt(&GetState, &ValueUnion)) != 0
@@ -280,10 +280,8 @@ static RTEXITCODE RTCmdMkDir(unsigned cArgs,  char **papszArgs)
         {
             case 'm':
                 /** @todo DOS+NT attributes and symbolic notation. */
-                Opts.fMode       &= ~07777;
-                Opts.fMode       |= ValueUnion.u32 & 07777;
-                Opts.fParentMode &= ~07777;
-                Opts.fParentMode |= ValueUnion.u32 & 07777;
+                Opts.fMode &= ~07777;
+                Opts.fMode |= ValueUnion.u32 & 07777;
                 break;
 
             case 'p':
@@ -297,8 +295,27 @@ static RTEXITCODE RTCmdMkDir(unsigned cArgs,  char **papszArgs)
             case 'A':
                 Opts.fAlwaysUseChainApi = true;
                 break;
+
+            case 'i':
+                Opts.fCreateFlags &= ~RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_SET;
+                Opts.fCreateFlags |= RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_DONT_SET;
+                break;
+
             case 'h':
-                RTPrintf("Usage: %s [-pv] [-m|--mode <mode>] <dir> [..]\n", papszArgs[0]);
+                RTPrintf("Usage: %s [options] <dir> [..]\n"
+                         "\n"
+                         "Options:\n"
+                         "  -m <mode>, --mode <mode>\n"
+                         "      The creation mode. Default is 0775.\n"
+                         "  -p, --parent\n"
+                         "      Create parent directories too. Ignore any existing directories.\n"
+                         "  -v, --verbose\n"
+                         "      Tell which directories get created.\n"
+                         "  -A, --always-use-vfs-chain-api\n"
+                         "      Always use the VFS API.\n"
+                         "  -i, --allow-content-indexing\n"
+                         "      Don't set flags to disable context indexing on windows.\n"
+                         , papszArgs[0]);
                 return RTEXITCODE_SUCCESS;
 
             case 'V':

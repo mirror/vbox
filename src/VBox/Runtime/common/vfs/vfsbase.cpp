@@ -2359,7 +2359,7 @@ RTDECL(int) RTVfsDirCreateDir(RTVFSDIR hVfsDir, const char *pszRelPath, RTFMODE 
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrReturn(pszRelPath, VERR_INVALID_POINTER);
-    AssertPtrReturn(phVfsDir, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(phVfsDir, VERR_INVALID_POINTER);
     AssertReturn(!(fFlags & ~RTDIRCREATE_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
     fMode = rtFsModeNormalize(fMode, pszRelPath, 0);
     AssertReturn(rtFsModeIsValidPermissions(fMode), VERR_INVALID_FMODE);

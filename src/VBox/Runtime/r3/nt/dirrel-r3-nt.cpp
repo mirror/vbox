@@ -257,7 +257,7 @@ RTDECL(int) RTDirRelDirCreate(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode
         if (!(fCreate & RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_DONT_SET))
             fDirAttribs |= FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
         if (!fDirAttribs)
-            fDirAttribs = RTFS_DOS_NT_NORMAL;
+            fDirAttribs = FILE_ATTRIBUTE_NORMAL;
 
         NTSTATUS rcNt = NtCreateFile(&hNewDir,
                                      phSubDir
@@ -272,6 +272,31 @@ RTDECL(int) RTDirRelDirCreate(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode
                                      FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
                                      NULL /*EaBuffer*/,
                                      0 /*EaLength*/);
+
+        /* Just in case someone takes offence at FILE_ATTRIBUTE_NOT_CONTENT_INDEXED. */
+        if (   (   rcNt == STATUS_INVALID_PARAMETER
+                || rcNt == STATUS_INVALID_PARAMETER_7)
+            && (fDirAttribs & FILE_ATTRIBUTE_NOT_CONTENT_INDEXED)
+            && (fCreate & RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_NOT_CRITICAL) )
+        {
+            fDirAttribs &= ~FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
+            if (!fDirAttribs)
+                fDirAttribs = FILE_ATTRIBUTE_NORMAL;
+            rcNt = NtCreateFile(&hNewDir,
+                                phSubDir
+                                ? FILE_WRITE_ATTRIBUTES | FILE_READ_ATTRIBUTES | FILE_LIST_DIRECTORY | FILE_TRAVERSE | SYNCHRONIZE
+                                : SYNCHRONIZE,
+                                &ObjAttr,
+                                &Ios,
+                                NULL /*AllocationSize*/,
+                                fDirAttribs,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                FILE_CREATE,
+                                FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
+                                NULL /*EaBuffer*/,
+                                0 /*EaLength*/);
+        }
+
         if (NT_SUCCESS(rcNt))
         {
             if (!phSubDir)
