@@ -66,6 +66,15 @@ UIGMachinePreview::UIGMachinePreview(QIGraphicsWidget *pParent)
     const QIcon full16x10 = UIIconPool::iconSet(":/preview_full_16to10_242x167px.png");
     const QIcon full16x9 = UIIconPool::iconSet(":/preview_full_16to9_242x155px.png");
     const QIcon full4x3 = UIIconPool::iconSet(":/preview_full_4to3_242x192px.png");
+
+    // WORKAROUND:
+    // Since we don't have x3 and x4 HiDPI icons yet,
+    // and we hadn't enabled automatic up-scaling for now,
+    // we have to make sure m_dRatio is within possible bounds.
+    const QList<QSize> sizes = empty16x10.availableSizes();
+    if (sizes.size() >= 2)
+        m_dRatio = qMin(m_dRatio, (double)sizes.last().width() / sizes.first().width());
+
     m_sizes.insert(AspectRatioPreset_16x10, QSize(242 * m_dRatio, 167 * m_dRatio));
     m_sizes.insert(AspectRatioPreset_16x9, QSize(242 * m_dRatio, 155 * m_dRatio));
     m_sizes.insert(AspectRatioPreset_4x3, QSize(242 * m_dRatio, 192 * m_dRatio));

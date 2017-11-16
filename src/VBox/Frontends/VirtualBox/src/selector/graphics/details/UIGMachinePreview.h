@@ -112,7 +112,7 @@ private:
     QTimer *m_pUpdateTimer;
     QMenu *m_pUpdateTimerMenu;
     QHash<PreviewUpdateIntervalType, QAction*> m_actions;
-    const double m_dRatio;
+    double m_dRatio;
     const int m_iMargin;
     QRect m_vRect;
     AspectRatioPreset m_preset;
