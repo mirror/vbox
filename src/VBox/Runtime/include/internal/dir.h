@@ -165,7 +165,8 @@ DECLINLINE(bool) rtDirValidHandle(PRTDIR pDir)
  *                              to setup the wildcard expression.
  * @param   hRelativeDir        The directory @a pvNativeRelative is relative,
  *                              ~(uintptr_t)0 if absolute.
- * @param   pvNativeRelative    The native relative path.  NULL if absolute.
+ * @param   pvNativeRelative    The native relative path.  NULL if absolute or
+ *                              we're to use (consume) hRelativeDir.
  */
 int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uintptr_t hRelativeDir, void *pvNativeRelative);
 
@@ -178,7 +179,7 @@ int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uintptr_t hRelativeDir, void 
 size_t rtDirNativeGetStructSize(const char *pszPath);
 
 
-DECLHIDDEN(int) rtDirOpenRelative(PRTDIR *ppDir, const char *pszRelativeAndFilter, RTDIRFILTER enmFilter, uint32_t fFlags,
-                                  uintptr_t hRelativeDir, void *pvNativeRelative);
+DECLHIDDEN(int) rtDirOpenRelativeOrHandle(PRTDIR *ppDir, const char *pszRelativeAndFilter, RTDIRFILTER enmFilter, uint32_t fFlags,
+                                          uintptr_t hRelativeDir, void *pvNativeRelative);
 
 #endif

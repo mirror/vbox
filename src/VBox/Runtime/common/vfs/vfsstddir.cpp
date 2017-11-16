@@ -346,20 +346,22 @@ static DECLCALLBACK(int) rtVfsStdDir_OpenDir(void *pvThis, const char *pszSubDir
 static DECLCALLBACK(int) rtVfsStdDir_CreateDir(void *pvThis, const char *pszSubDir, RTFMODE fMode, PRTVFSDIR phVfsDir)
 {
     PRTVFSSTDDIR pThis = (PRTVFSSTDDIR)pvThis;
-    int rc = RTDirRelDirCreate(pThis->hDir, pszSubDir, fMode, 0 /* fFlags */);
-    if (   RT_SUCCESS(rc)
-        && phVfsDir)
+    int rc;
+    if (!phVfsDir)
+        rc = RTDirRelDirCreate(pThis->hDir, pszSubDir, fMode, 0 /* fFlags */, NULL);
+    else
     {
-        /** @todo subdir open flags */
         PRTDIR hSubDir;
-        rc = RTDirRelDirOpen(pThis->hDir, pszSubDir, &hSubDir);
+        rc = RTDirRelDirCreate(pThis->hDir, pszSubDir, fMode, 0 /* fFlags */, &hSubDir);
         if (RT_SUCCESS(rc))
         {
+            /** @todo subdir open flags...   */
             rc = rtVfsDirFromRTDir(hSubDir, 0, false, phVfsDir);
             if (RT_FAILURE(rc))
                 RTDirClose(hSubDir);
         }
     }
+
     return rc;
 }
 

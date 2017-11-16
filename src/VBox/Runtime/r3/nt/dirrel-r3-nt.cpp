@@ -209,7 +209,7 @@ RTDECL(int) RTDirRelDirOpenFiltered(PRTDIR hDir, const char *pszDirAndFilter, RT
                                       pThis->enmInfoClass == FileMaximumInformation);
     if (RT_SUCCESS(rc))
     {
-        rc = rtDirOpenRelative(phDir, pszDirAndFilter, enmFilter, fFlags, (uintptr_t)hRoot, &NtName);
+        rc = rtDirOpenRelativeOrHandle(phDir, pszDirAndFilter, enmFilter, fFlags, (uintptr_t)hRoot, &NtName);
         RTNtPathFree(&NtName, NULL);
     }
     return rc;
@@ -224,21 +224,72 @@ RTDECL(int) RTDirRelDirOpenFiltered(PRTDIR hDir, const char *pszDirAndFilter, RT
  * @param   pszRelPath      The relative path to the directory to create.
  * @param   fMode           The mode of the new directory.
  * @param   fCreate         Create flags, RTDIRCREATE_FLAGS_XXX.
+ * @param   phSubDir        Where to return the handle of the created directory.
+ *                          Optional.
  *
  * @sa      RTDirCreate
  */
-RTDECL(int) RTDirRelDirCreate(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fCreate)
+RTDECL(int) RTDirRelDirCreate(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fCreate, PRTDIR *phSubDir)
 {
     PRTDIR pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(!(fCreate & ~RTDIRCREATE_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+    fMode = rtFsModeNormalize(fMode, pszRelPath, 0);
+    AssertReturn(rtFsModeIsValidPermissions(fMode), VERR_INVALID_FMODE);
+    AssertPtrNullReturn(phSubDir, VERR_INVALID_POINTER);
 
-    char szPath[RTPATH_MAX];
-    int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);
+    /*
+     * Convert and normalize the path.
+     */
+    UNICODE_STRING NtName;
+    HANDLE hRoot = pThis->hDir;
+    int rc = RTNtPathRelativeFromUtf8(&NtName, &hRoot, pszRelPath, RTDIRREL_NT_GET_ASCENT(pThis),
+                                      pThis->enmInfoClass == FileMaximumInformation);
     if (RT_SUCCESS(rc))
     {
-RTAssertMsg2("DBG: RTDirRelDirCreate(%s)...\n", szPath);
-        rc = RTDirCreate(szPath, fMode, fCreate);
+        HANDLE              hNewDir = RTNT_INVALID_HANDLE_VALUE;
+        IO_STATUS_BLOCK     Ios     = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        OBJECT_ATTRIBUTES   ObjAttr;
+        InitializeObjectAttributes(&ObjAttr, &NtName, 0 /*fAttrib*/, hRoot, NULL);
+
+        ULONG fDirAttribs = (fCreate & RTFS_DOS_MASK_NT) >> RTFS_DOS_SHIFT;
+        if (!(fCreate & RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_DONT_SET))
+            fDirAttribs |= FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
+        if (!fDirAttribs)
+            fDirAttribs = RTFS_DOS_NT_NORMAL;
+
+        NTSTATUS rcNt = NtCreateFile(&hNewDir,
+                                     phSubDir
+                                     ? FILE_WRITE_ATTRIBUTES | FILE_READ_ATTRIBUTES | FILE_LIST_DIRECTORY | FILE_TRAVERSE | SYNCHRONIZE
+                                     : SYNCHRONIZE,
+                                     &ObjAttr,
+                                     &Ios,
+                                     NULL /*AllocationSize*/,
+                                     fDirAttribs,
+                                     FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                     FILE_CREATE,
+                                     FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
+                                     NULL /*EaBuffer*/,
+                                     0 /*EaLength*/);
+        if (NT_SUCCESS(rcNt))
+        {
+            if (!phSubDir)
+            {
+                NtClose(hNewDir);
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                rc = rtDirOpenRelativeOrHandle(phSubDir, pszRelPath, RTDIRFILTER_NONE, 0 /*fFlags*/,
+                                               (uintptr_t)hNewDir, NULL /*pvNativeRelative*/);
+                if (RT_FAILURE(rc))
+                    NtClose(hNewDir);
+            }
+        }
+        else
+            rc = RTErrConvertFromNtStatus(rcNt);
+        RTNtPathFree(&NtName, NULL);
     }
     return rc;
 }
@@ -258,6 +309,7 @@ RTDECL(int) RTDirRelDirRemove(PRTDIR hDir, const char *pszRelPath)
     PRTDIR pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
+
 
     char szPath[RTPATH_MAX];
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);

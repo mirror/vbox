@@ -1522,6 +1522,7 @@ static int rtVfsDirTraverseToParent(RTVFSDIRINTERNAL *pThis, PRTVFSPARSEDPATH pP
             RTVfsLockReleaseRead(pCurDir->Base.hLock);
             *pszEntryEnd = '\0';
             if (   rc == VERR_PATH_NOT_FOUND
+                || rc == VERR_FILE_NOT_FOUND
                 || rc == VERR_NOT_A_DIRECTORY
                 || rc == VERR_NOT_SYMLINK)
                 rc = VINF_SUCCESS;
@@ -2343,6 +2344,65 @@ RTDECL(int) RTVfsDirOpenDir(RTVFSDIR hVfsDir, const char *pszPath, uint32_t fFla
             rc = pThis->pOps->pfnOpenDir(pThis->Base.pvThis, ".", fFlags, phVfsDir);
             RTVfsLockReleaseWrite(pThis->Base.hLock);
         }
+        RTVfsParsePathFree(pPath);
+    }
+    return rc;
+}
+
+
+RTDECL(int) RTVfsDirCreateDir(RTVFSDIR hVfsDir, const char *pszRelPath, RTFMODE fMode, uint32_t fFlags, PRTVFSDIR phVfsDir)
+{
+    /*
+     * Validate input.
+     */
+    RTVFSDIRINTERNAL *pThis = hVfsDir;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pszRelPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(phVfsDir, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~RTDIRCREATE_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+    fMode = rtFsModeNormalize(fMode, pszRelPath, 0);
+    AssertReturn(rtFsModeIsValidPermissions(fMode), VERR_INVALID_FMODE);
+    if (!(fFlags & RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_DONT_SET))
+        fMode |= RTFS_DOS_NT_NOT_CONTENT_INDEXED;
+
+    /*
+     * Parse the path, it's always relative to the given directory.
+     */
+    PRTVFSPARSEDPATH pPath;
+    int rc = RTVfsParsePathA(pszRelPath, NULL, &pPath);
+    if (RT_SUCCESS(rc))
+    {
+        if (pPath->cComponents > 0)
+        {
+            /*
+             * Tranverse the path, resolving the parent node, not checking for symbolic
+             * links in the final element, and ask the directory to create the subdir.
+             */
+            RTVFSDIRINTERNAL *pVfsParentDir;
+            rc = rtVfsDirTraverseToParent(pThis, pPath,
+                                            fFlags & RTDIRCREATE_FLAGS_NO_SYMLINKS
+                                          ? RTPATH_F_NO_SYMLINKS | RTPATH_F_ON_LINK : RTPATH_F_FOLLOW_LINK,
+                                          &pVfsParentDir);
+            if (RT_SUCCESS(rc))
+            {
+                const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
+
+                RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
+                rc = pVfsParentDir->pOps->pfnCreateDir(pVfsParentDir->Base.pvThis, pszEntryName, fMode, phVfsDir);
+                RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
+
+                RTVfsDirRelease(pVfsParentDir);
+
+                if (RT_SUCCESS(rc) && phVfsDir)
+                {
+                    AssertPtr(*phVfsDir);
+                    Assert((*phVfsDir)->uMagic == RTVFSDIR_MAGIC);
+                }
+            }
+        }
+        else
+            rc = VERR_PATH_ZERO_LENGTH;
         RTVfsParsePathFree(pPath);
     }
     return rc;

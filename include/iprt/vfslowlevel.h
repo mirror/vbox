@@ -565,6 +565,7 @@ typedef struct RTVFSDIROPS
      * @param   pszSubDir   The name of the immediate subdirectory to open.
      * @param   fFlags      RTDIR_F_XXX.
      * @param   phVfsDir    Where to return the handle to the opened directory.
+     *                      Optional.
      * @sa      RTDirOpen.
      */
     DECLCALLBACKMEMBER(int, pfnOpenDir)(void *pvThis, const char *pszSubDir, uint32_t fFlags, PRTVFSDIR phVfsDir);

@@ -511,9 +511,10 @@ static PFNRTDIRFILTER rtDirFilterWinNtInit(PRTDIR pDir)
  *                              NULL if no filter.
  * @param   enmFilter           The type of filter to apply.
  * @param   fFlags              RTDIR_F_XXX.
- * @param   hRelativeDir        The directory @a pvNativeRelative is relative,
- *                              ~(uintptr_t)0 if absolute.
- * @param   pvNativeRelative    The native relative path.  NULL if absolute.
+ * @param   hRelativeDir        The directory @a pvNativeRelative is relative
+ *                              to, ~(uintptr_t)0 if absolute.
+ * @param   pvNativeRelative    The native relative path.  NULL if absolute or
+ *                              we're to use (consume) hRelativeDir.
  */
 static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFilter, RTDIRFILTER enmFilter, uint32_t fFlags,
                            uintptr_t hRelativeDir, void *pvNativeRelative)
@@ -654,8 +655,8 @@ RTDECL(int) RTDirOpen(PRTDIR *ppDir, const char *pszPath)
 }
 
 
-DECLHIDDEN(int) rtDirOpenRelative(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags,
-                                  uintptr_t hRelativeDir, void *pvNativeRelative)
+DECLHIDDEN(int) rtDirOpenRelativeOrHandle(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags,
+                                          uintptr_t hRelativeDir, void *pvNativeRelative)
 {
     /*
      * Validate input.
@@ -703,7 +704,7 @@ DECLHIDDEN(int) rtDirOpenRelative(PRTDIR *ppDir, const char *pszPath, RTDIRFILTE
 
 RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags)
 {
-    return rtDirOpenRelative(ppDir, pszPath, enmFilter, fFlags, ~(uintptr_t)0, NULL);
+    return rtDirOpenRelativeOrHandle(ppDir, pszPath, enmFilter, fFlags, ~(uintptr_t)0, NULL);
 }
 
 

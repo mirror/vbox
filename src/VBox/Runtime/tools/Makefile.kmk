@@ -112,6 +112,11 @@ if !defined(VBOX_ONLY_BUILD)
   RTHttp_SOURCES = RTHttp.cpp
  endif
 
+ # RTMkDir - our mkdir clone.
+ PROGRAMS += RTMkDir
+ RTMkDir_TEMPLATE = VBoxR3Tool
+ RTMkDir_SOURCES = RTMkDir.cpp
+
  # RTShutdown - similar (but not identical) to a typical unix shutdown command.
  PROGRAMS += RTShutdown
  RTShutdown_TEMPLATE = VBoxR3Tool

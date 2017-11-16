@@ -619,10 +619,12 @@ RTDECL(int) RTDirRelDirOpenFiltered(PRTDIR hDir, const char *pszDirAndFilter, RT
  * @param   pszRelPath      The relative path to the directory to create.
  * @param   fMode           The mode of the new directory.
  * @param   fCreate         Create flags, RTDIRCREATE_FLAGS_XXX.
+ * @param   phSubDir        Where to return the handle of the created directory.
+ *                          Optional.
  *
  * @sa      RTDirCreate
  */
-RTDECL(int) RTDirRelDirCreate(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fCreate);
+RTDECL(int) RTDirRelDirCreate(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fCreate, PRTDIR *phSubDir);
 
 /**
  * Removes a directory relative to @a hDir if empty.

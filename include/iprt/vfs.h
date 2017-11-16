@@ -477,6 +477,20 @@ RTDECL(int) RTVfsDirOpenFileAsIoStream(RTVFSDIR hVfsDir, const char *pszPath, ui
 RTDECL(int) RTVfsDirOpenDir(RTVFSDIR hVfsDir, const char *pszPath, uint32_t fFlags, PRTVFSDIR phVfsDir);
 
 /**
+ * Creates a directory relative to @a hVfsDir.
+ *
+ * @returns IPRT status code
+ * @param   hVfsDir             The directory the path is relative to.
+ * @param   pszRelPath          The relative path to the new directory.
+ * @param   fMode               The file mode for the new directory.
+ * @param   fFlags              Directory creation flags, RTDIRCREATE_FLAGS_XXX.
+ * @param   phVfsDir            Where to return the handle to the newly created
+ *                              directory.  Optional.
+ * @sa      RTDirCreate, RTDirRelDirCreate
+ */
+RTDECL(int) RTVfsDirCreateDir(RTVFSDIR hVfsDir, const char *pszRelPath, RTFMODE fMode, uint32_t fFlags, PRTVFSDIR phVfsDir);
+
+/**
  * Create a VFS directory handle from a standard IPRT directory handle (PRTDIR).
  *
  * @returns IPRT status code.
@@ -1534,6 +1548,8 @@ RTDECL(int) RTVfsFsStrmToDirUndo(RTVFSFSSTREAM hVfsFss);
 RTDECL(int) RTVfsChainOpenVfs(const char *pszSpec, PRTVFS phVfs, uint32_t *poffError, PRTERRINFO pErrInfo);
 RTDECL(int) RTVfsChainOpenFsStream(const char *pszSpec, PRTVFSFSSTREAM  phVfsFss, uint32_t *poffError, PRTERRINFO pErrInfo);
 RTDECL(int) RTVfsChainOpenDir(const char *pszSpec, uint32_t fOpen, PRTVFSDIR phVfsDir, uint32_t *poffError, PRTERRINFO pErrInfo);
+RTDECL(int) RTVfsChainOpenParentDir(const char *pszSpec, uint32_t fOpen, PRTVFSDIR phVfsDir, const char **ppszChild,
+                                    uint32_t *poffError, PRTERRINFO pErrInfo);
 RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint64_t fOpen, PRTVFSFILE phVfsFile, uint32_t *poffError, PRTERRINFO pErrInfo);
 RTDECL(int) RTVfsChainOpenIoStream(const char *pszSpec, uint64_t fOpen, PRTVFSIOSTREAM phVfsIos, uint32_t *poffError, PRTERRINFO pErrInfo);
 RTDECL(int) RTVfsChainOpenSymlink(const char *pszSpec, PRTVFSSYMLINK phVfsSym, uint32_t *poffError, PRTERRINFO pErrInfo);
@@ -1563,6 +1579,23 @@ RTDECL(bool) RTVfsChainIsSpec(const char *pszSpec);
  *
  */
 RTDECL(int) RTVfsChainQueryFinalPath(const char *pszSpec, char **ppszFinalPath, uint32_t *poffError);
+
+/**
+ * Splits the given chain spec into a final path and the preceeding spec.
+ *
+ * This works on plain paths too.
+ *
+ * @returns IPRT status code.
+ * @param   pszSpec         The chain spec to split.  This will be modified!
+ * @param   ppszSpec        Where to return the pointer to the chain spec part.
+ *                          This is set to NULL if it's a plain path or a chain
+ *                          spec with only a final-path element.
+ * @param   ppszFinalPath   Where to return the pointer to the final path.  This
+ *                          is set to NULL if no final path.
+ * @param   poffError       Where to on error return an offset into @a pszSpec
+ *                          of what cause the error.  Optional.
+ */
+RTDECL(int) RTVfsChainSplitOffFinalPath(char *pszSpec, char **ppszSpec, char **ppszFinalPath, uint32_t *poffError);
 
 /**
  * Common code for reporting errors of a RTVfsChainOpen* API.
