@@ -86,12 +86,21 @@ QSizeF UIGraphicsButton::sizeHint(Qt::SizeHint which, const QSizeF &constraint /
 void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem* /* pOption */, QWidget* /* pWidget = 0 */)
 {
     /* Prepare variables: */
-    int iMargin = data(GraphicsButton_Margin).toInt();
-    QIcon icon = data(GraphicsButton_Icon).value<QIcon>();
-    QSize iconSize = data(GraphicsButton_IconSize).toSize();
+    const int iMargin = data(GraphicsButton_Margin).toInt();
+    const QIcon icon = data(GraphicsButton_Icon).value<QIcon>();
+    const QSize expectedIconSize = data(GraphicsButton_IconSize).toSize();
+    const QPixmap pixmap = icon.pixmap(expectedIconSize);
+    const QSize actualIconSize = pixmap.size() / pixmap.devicePixelRatio();
+    QPoint position = QPoint(iMargin, iMargin);
+    if (actualIconSize != expectedIconSize)
+    {
+        const int iDx = (expectedIconSize.width() - actualIconSize.width()) / 2;
+        const int iDy = (expectedIconSize.height() - actualIconSize.height()) / 2;
+        position += QPoint(iDx, iDy);
+    }
 
     /* Just draw the pixmap: */
-    pPainter->drawPixmap(QRect(QPoint(iMargin, iMargin), iconSize), icon.pixmap(iconSize));
+    pPainter->drawPixmap(position, pixmap);
 }
 
 void UIGraphicsButton::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
