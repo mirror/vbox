@@ -1426,6 +1426,28 @@ static void ohciPhysReadCacheRead(POHCI pThis, POHCIPAGECACHE pPageCache, RTGCPH
     }
 }
 
+
+/**
+ * Updates the data in the given page cache if the given guest physical address is currently contained
+ * in the cache.
+ *
+ * @returns nothing.
+ * @param   pPageCache  The page cache to update.
+ * @param   GCPhys      The guest physical address needing the update.
+ * @param   pvBuf       Pointer to the buffer to update the page cache with.
+ * @param   cbBuf       Number of bytes to update.
+ */
+static void ohciPhysCacheUpdate(POHCIPAGECACHE pPageCache, RTGCPHYS GCPhys, const void *pvBuf, size_t cbBuf)
+{
+    const RTGCPHYS GCPhysPage = PAGE_ADDRESS(GCPhys);
+
+    if (GCPhysPage == pPageCache->GCPhysReadCacheAddr)
+    {
+        uint32_t offPage = GCPhys & PAGE_OFFSET_MASK;
+        memcpy(&pPageCache->au8PhysReadCache[offPage], pvBuf, RT_MIN(PAGE_SIZE - offPage, cbBuf));
+    }
+}
+
 static void ohciReadEdCached(POHCI pThis, uint32_t EdAddr, POHCIED pEd)
 {
     ohciPhysReadCacheRead(pThis, pThis->pCacheED, EdAddr, pEd, sizeof(*pEd));
@@ -1434,6 +1456,34 @@ static void ohciReadEdCached(POHCI pThis, uint32_t EdAddr, POHCIED pEd)
 static void ohciReadTdCached(POHCI pThis, uint32_t TdAddr, POHCITD pTd)
 {
     ohciPhysReadCacheRead(pThis, pThis->pCacheTD, TdAddr, pTd, sizeof(*pTd));
+}
+
+
+/**
+ * Update any cached ED data with the given endpoint descriptor at the given address.
+ *
+ * @returns nothing.
+ * @param   pThis       The OHCI instance data.
+ * @param   EdAddr      Endpoint descriptor address.
+ * @param   pEd         The endpoint descriptor which got updated.
+ */
+DECLINLINE(void) ohciCacheEdUpdate(POHCI pThis, RTGCPHYS32 EdAddr, PCOHCIED pEd)
+{
+    ohciPhysCacheUpdate(pThis->pCacheED, EdAddr, pEd, sizeof(*pEd));
+}
+
+
+/**
+ * Update any cached TD data with the given transfer descriptor at the given address.
+ *
+ * @returns nothing.
+ * @param   pThis       The OHCI instance data.
+ * @param   TdAddr      Transfer descriptor address.
+ * @param   pTd         The transfer descriptor which got updated.
+ */
+DECLINLINE(void) ohciCacheTdUpdate(POHCI pThis, RTGCPHYS32 TdAddr, PCOHCITD pTd)
+{
+    ohciPhysCacheUpdate(pThis->pCacheTD, TdAddr, pTd, sizeof(*pTd));
 }
 
 # endif /* VBOX_WITH_OHCI_PHYS_READ_CACHE */
@@ -1570,6 +1620,9 @@ DECLINLINE(void) ohciWriteEd(POHCI pThis, uint32_t EdAddr, PCOHCIED pEd)
 # endif
 
     ohciPutDWords(pThis, EdAddr, (uint32_t *)pEd, sizeof(*pEd) >> 2);
+#ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
+    ohciCacheEdUpdate(pThis, EdAddr, pEd);
+#endif
 }
 
 
@@ -1601,6 +1654,9 @@ DECLINLINE(void) ohciWriteTd(POHCI pThis, uint32_t TdAddr, PCOHCITD pTd, const c
     RT_NOREF(pszLogMsg);
 # endif
     ohciPutDWords(pThis, TdAddr, (uint32_t *)pTd, sizeof(*pTd) >> 2);
+#ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
+    ohciCacheTdUpdate(pThis, TdAddr, pTd);
+#endif
 }
 
 /**
