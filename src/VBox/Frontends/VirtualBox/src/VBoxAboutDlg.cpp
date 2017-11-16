@@ -131,6 +131,15 @@ void VBoxAboutDlg::prepare()
     m_size *= dRatio;
     m_pixmap = icon.pixmap(m_size);
 
+    // WORKAROUND:
+    // Since we don't have x3 and x4 HiDPI icons yet,
+    // and we hadn't enabled automatic up-scaling for now,
+    // we have to make sure m_pixmap is upscaled to required size.
+    const QSize actualSize = m_pixmap.size() / m_pixmap.devicePixelRatio();
+    if (   actualSize.width() < m_size.width()
+        || actualSize.height() < m_size.height())
+        m_pixmap = m_pixmap.scaled(m_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+
     /* Prepare main-layout: */
     prepareMainLayout();
 
