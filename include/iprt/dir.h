@@ -59,9 +59,11 @@ RTDECL(bool) RTDirExists(const char *pszPath);
 /** Set the not-content-indexed flag (default).  Windows only atm. */
 #define RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_DONT_SET      RT_BIT(1)
 /** Do not set the not-content-indexed flag.  Windows only atm. */
-#define RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_DONT_SET      RT_BIT(1)
+#define RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_SET           UINT32_C(0)
 /** Ignore errors setting the not-content-indexed flag.  Windows only atm. */
 #define RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_NOT_CRITICAL  RT_BIT(2)
+/** Valid mask. */
+#define RTDIRCREATE_FLAGS_VALID_MASK                        UINT32_C(0x00000007)
 /** @} */
 
 /**
