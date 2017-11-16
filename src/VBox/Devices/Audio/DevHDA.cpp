@@ -730,7 +730,18 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
         rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), pThis->u64CORBBase, pThis->pu32CorbBuf, pThis->cbCorbBuf);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
-# ifdef DEBUG_CMD_BUFFER
+    }
+    else
+    {
+        Assert((HDA_REG(pThis, RIRBCTL) & HDA_RIRBCTL_RDMAEN));
+        rc = PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), pThis->u64RIRBBase, pThis->pu64RirbBuf, pThis->cbRirbBuf);
+        if (RT_FAILURE(rc))
+            AssertRCReturn(rc, rc);
+    }
+
+#ifdef DEBUG_CMD_BUFFER
+        LogFunc(("fLocal=%RTbool\n", fLocal));
+
         uint8_t i = 0;
         do
         {
@@ -739,28 +750,19 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
             do
             {
                 const char *pszPrefix;
-                if ((i + j) == HDA_REG(pThis, CORBRP));
+                if ((i + j) == HDA_REG(pThis, CORBRP))
                     pszPrefix = "[R]";
-                else if ((i + j) == HDA_REG(pThis, CORBWP));
+                else if ((i + j) == HDA_REG(pThis, CORBWP))
                     pszPrefix = "[W]";
                 else
                     pszPrefix = "   "; /* three spaces */
-                LogFunc(("%s%08x", pszPrefix, pThis->pu32CorbBuf[i + j]));
+                Log((" %s%08x", pszPrefix, pThis->pu32CorbBuf[i + j]));
                 j++;
             } while (j < 8);
-            LogFunc(("\n"));
+            Log(("\n"));
             i += 8;
         } while(i != 0);
-# endif
-    }
-    else
-    {
-        Assert((HDA_REG(pThis, RIRBCTL) & HDA_RIRBCTL_RDMAEN));
-        rc = PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), pThis->u64RIRBBase, pThis->pu64RirbBuf, pThis->cbRirbBuf);
-        if (RT_FAILURE(rc))
-            AssertRCReturn(rc, rc);
-# ifdef DEBUG_CMD_BUFFER
-        uint8_t i = 0;
+
         do {
             LogFunc(("RIRB%02x: ", i));
             uint8_t j = 0;
@@ -770,13 +772,12 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
                     prefix = "[W]";
                 else
                     prefix = "   ";
-                LogFunc((" %s%016lx", prefix, pThis->pu64RirbBuf[i + j]));
+                Log((" %s%016lx", prefix, pThis->pu64RirbBuf[i + j]));
             } while (++j < 8);
-            LogFunc(("\n"));
+            Log(("\n"));
             i += 8;
         } while (i != 0);
-# endif
-    }
+#endif
     return rc;
 }
 
@@ -789,65 +790,75 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
  */
 static int hdaCORBCmdProcess(PHDASTATE pThis)
 {
-    int rc = hdaCmdSync(pThis, true);
-    if (RT_FAILURE(rc))
-        AssertRCReturn(rc, rc);
+    int rc = hdaCmdSync(pThis, true /* Sync from guest */);
+    AssertRCReturn(rc, rc);
 
     uint8_t corbRp = HDA_REG(pThis, CORBRP);
     uint8_t corbWp = HDA_REG(pThis, CORBWP);
     uint8_t rirbWp = HDA_REG(pThis, RIRBWP);
 
-    Assert((corbWp != corbRp));
-    Log3Func(("CORB(RP:%x, WP:%x) RIRBWP:%x\n", HDA_REG(pThis, CORBRP), HDA_REG(pThis, CORBWP), HDA_REG(pThis, RIRBWP)));
+    Log3Func(("CORB(RP:%x, WP:%x) RIRBWP:%x\n", corbRp, corbWp, rirbWp));
 
     while (corbRp != corbWp)
     {
-        uint64_t uResp;
-        uint32_t uCmd = pThis->pu32CorbBuf[++corbRp];
+        corbRp = (corbRp + 1) % HDA_CORB_SIZE; /* Advance +1 as the first command(s) are at CORBWP + 1. */
 
-        int rc2 = pThis->pCodec->pfnLookup(pThis->pCodec, HDA_CODEC_CMD(uCmd, 0 /* Codec index */), &uResp);
-        if (RT_FAILURE(rc2))
-            LogFunc(("Codec lookup failed with rc=%Rrc\n", rc2));
+        uint64_t uResp = 0;
+        uint32_t uCmd = pThis->pu32CorbBuf[corbRp];
 
-        (rirbWp)++;
+        rc = pThis->pCodec->pfnLookup(pThis->pCodec, HDA_CODEC_CMD(uCmd, 0 /* Codec index */), &uResp);
+        if (RT_FAILURE(rc))
+            LogFunc(("Codec lookup failed with rc=%Rrc\n", rc));
+
+        LogFunc(("verb:%08x -> %016lx\n", uCmd, uResp));
 
         if (   (uResp & CODEC_RESPONSE_UNSOLICITED)
             && !(HDA_REG(pThis, GCTL) & HDA_GCTL_UNSOL))
         {
-            LogFunc(("Unexpected unsolicited response\n"));
+            LogFunc(("Unexpected unsolicited response.\n"));
             HDA_REG(pThis, CORBRP) = corbRp;
+
+            /** @todo r=andy No CORB/RIRB syncing to guest required in that case? */
             return rc;
         }
 
+        rirbWp = (rirbWp + 1) % HDA_RIRB_SIZE;
+
         pThis->pu64RirbBuf[rirbWp] = uResp;
 
-        pThis->u8RespIntCnt++;
-        if (pThis->u8RespIntCnt == RINTCNT_N(pThis))
+        pThis->u16RespIntCnt++;
+        if (pThis->u16RespIntCnt > HDA_MAX_RINTCNT) /* Make sure that the guest can't hang the host. */
+        {
+            LogRel(("HDA: Maximum response interrupt count (%d) reached, bailing out\n", HDA_MAX_RINTCNT));
+            pThis->u16RespIntCnt = HDA_MAX_RINTCNT;
             break;
+        }
     }
 
     HDA_REG(pThis, CORBRP) = corbRp;
     HDA_REG(pThis, RIRBWP) = rirbWp;
 
-    rc = hdaCmdSync(pThis, false);
+    rc = hdaCmdSync(pThis, false /* Sync to guest */);
+    AssertRCReturn(rc, rc);
 
-    Log3Func(("CORB(RP:%x, WP:%x) RIRBWP:%x\n",
-              HDA_REG(pThis, CORBRP), HDA_REG(pThis, CORBWP), HDA_REG(pThis, RIRBWP)));
+    Log3Func(("CORB(RP:%x, WP:%x) RIRBWP:%x, uRespIntCnt=%RU16\n", corbRp, corbWp, rirbWp, pThis->u16RespIntCnt));
 
-    if (HDA_REG(pThis, RIRBCTL) & HDA_RIRBCTL_RINTCTL) /* Response Interrupt Control (RINTCTL) enabled? */
+    if (pThis->u16RespIntCnt)
     {
-        if (pThis->u8RespIntCnt)
+        if (HDA_REG(pThis, RIRBCTL) & HDA_RIRBCTL_RINTCTL) /* Response Interrupt Control (RINTCTL) enabled? */
         {
-            pThis->u8RespIntCnt = 0;
-
             HDA_REG(pThis, RIRBSTS) |= HDA_RIRBSTS_RINTFL;
+            HDA_REG(pThis, RINTCNT)  = RT_LO_U8(pThis->u16RespIntCnt);
 
 #ifndef DEBUG
             rc = hdaProcessInterrupt(pThis);
 #else
             rc = hdaProcessInterrupt(pThis, __FUNCTION__);
 #endif
+            pThis->u16RespIntCnt--;
         }
+        else /* Not enabled -- just reset our internal counter. */
+            pThis->u16RespIntCnt = 0;
     }
 
     if (RT_FAILURE(rc))
@@ -2829,6 +2840,9 @@ static void hdaGCTLReset(PHDASTATE pThis)
     HDA_REG(pThis, INPAY)    = 0x001D;                   /* see 6.2.5 */
     HDA_REG(pThis, CORBSIZE) = 0x42;                     /* see 6.2.1 */
     HDA_REG(pThis, RIRBSIZE) = 0x42;                     /* see 6.2.1 */
+    HDA_REG(pThis, CORBRP)   = 0x0;
+    HDA_REG(pThis, RIRBWP)   = 0x0;
+    HDA_REG(pThis, RINTCNT)  = 0x0;
 
     /*
      * Stop any audio currently playing and/or recording.
@@ -2887,6 +2901,9 @@ static void hdaGCTLReset(PHDASTATE pThis)
         RT_BZERO(pThis->pu64RirbBuf, pThis->cbRirbBuf);
     else
         pThis->pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->cbRirbBuf);
+
+    /* Clear our internal response interrupt counter. */
+    pThis->u16RespIntCnt = 0;
 
     for (uint8_t uSD = 0; uSD < HDA_MAX_STREAMS; ++uSD)
     {

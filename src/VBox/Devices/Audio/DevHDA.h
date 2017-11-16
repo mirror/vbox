@@ -203,11 +203,11 @@ typedef struct HDASTATE
     uint8_t                            au8Padding2[7];
 #endif
     /** Response Interrupt Count (RINTCNT). */
-    uint8_t                            u8RespIntCnt;
+    uint16_t                           u16RespIntCnt;
     /** Current IRQ level. */
     uint8_t                            u8IRQL;
     /** Padding for alignment. */
-    uint8_t                            au8Padding3[6];
+    uint8_t                            au8Padding3[5];
 #ifdef DEBUG
     HDASTATEDBGINFO                    Dbg;
 #endif
