@@ -1005,6 +1005,8 @@ typedef struct SVMNESTEDVMCBCACHE
     uint64_t            u64CR3;
     /** Cache of CR4. */
     uint64_t            u64CR4;
+    /** Cache of EFER. */
+    uint64_t            u64EFER;
     /** @} */
 
     /** @name Other miscellaneous state.
