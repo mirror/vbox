@@ -973,7 +973,7 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
     {
         /* Prepare variables: */
         int iMachinePixmapX = iLeftColumnIndent;
-        int iMachinePixmapY = (iFullHeight - m_pixmapSize.height()) / 2;
+        int iMachinePixmapY = (iFullHeight - m_pixmap.height() / m_pixmap.devicePixelRatio()) / 2;
         /* Paint pixmap: */
         paintPixmap(/* Painter: */
                     pPainter,
