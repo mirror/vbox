@@ -206,6 +206,8 @@ typedef struct VIDEORECSTREAM
         VIDEORECVIDEOFRAME  Frame;
         bool                fHasVideoData;
 #endif
+        /** Number of failed attempts to encode the current video frame in a row. */
+        uint16_t            cFailedEncodingFrames;
     } Video;
 } VIDEORECSTREAM, *PVIDEORECSTREAM;
 
@@ -1043,9 +1045,11 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
     PVIDEORECCFG pCfg = &pCtx->Cfg;
 
     pStream->pCtx          = pCtx;
+
     /** @todo Make the following parameters configurable on a per-stream basis? */
-    pStream->Video.uWidth  = pCfg->Video.uWidth;
-    pStream->Video.uHeight = pCfg->Video.uHeight;
+    pStream->Video.uWidth                = pCfg->Video.uWidth;
+    pStream->Video.uHeight               = pCfg->Video.uHeight;
+    pStream->Video.cFailedEncodingFrames = 0;
 
 #ifndef VBOX_VIDEOREC_WITH_QUEUE
     /* When not using a queue, we only use one frame per stream at once.
@@ -1173,13 +1177,13 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
     rcv = vpx_codec_enc_init(&pVC->VPX.Ctx, DEFAULTCODEC, &pVC->VPX.Cfg, 0);
     if (rcv != VPX_CODEC_OK)
     {
-        LogFlow(("Failed to initialize VP8 encoder: %s\n", vpx_codec_err_to_string(rcv)));
+        LogRel(("VideoRec: Failed to initialize VP8 encoder: %s\n", vpx_codec_err_to_string(rcv)));
         return VERR_INVALID_PARAMETER;
     }
 
     if (!vpx_img_alloc(&pVC->VPX.RawImage, VPX_IMG_FMT_I420, pCfg->Video.uWidth, pCfg->Video.uHeight, 1))
     {
-        LogFlow(("Failed to allocate image %RU32x%RU32\n", pCfg->Video.uWidth, pCfg->Video.uHeight));
+        LogRel(("VideoRec: Failed to allocate image %RU32x%RU32\n", pCfg->Video.uWidth, pCfg->Video.uHeight));
         return VERR_NO_MEMORY;
     }
 
@@ -1337,9 +1341,14 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, PVIDEORECVIDEOFRAME p
                                            pCfg->Video.Codec.VPX.uEncoderDeadline /* Quality setting */);
     if (rcv != VPX_CODEC_OK)
     {
-        LogFunc(("Failed to encode video frame: %s\n", vpx_codec_err_to_string(rcv)));
-        return VERR_GENERAL_FAILURE;
+        if (pStream->Video.cFailedEncodingFrames++ < 64)
+        {
+            LogRel(("VideoRec: Failed to encode video frame: %s\n", vpx_codec_err_to_string(rcv)));
+            return VERR_GENERAL_FAILURE;
+        }
     }
+
+    pStream->Video.cFailedEncodingFrames = 0;
 
     vpx_codec_iter_t iter = NULL;
     rc = VERR_NO_DATA;

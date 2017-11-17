@@ -2764,6 +2764,10 @@ int Display::i_videoRecStart(void)
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+
+    if (RT_FAILURE(rc))
+        LogRel(("VideoRec: Failed to start video recording (%Rrc)\n", rc));
+
     return rc;
 }
 
