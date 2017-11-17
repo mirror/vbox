@@ -76,20 +76,22 @@ void hdaStreamPeriodDestroy(PHDASTREAMPERIOD pPeriod)
 /**
  * Initializes a given stream period with needed parameters.
  *
+ * @return  VBox status code.
  * @param   pPeriod             Stream period to (re-)initialize. Must be created with hdaStreamPeriodCreate() first.
  * @param   u8SD                Stream descriptor (serial data #) number to assign this stream period to.
  * @param   u16LVI              The HDA stream's LVI value to use for the period calculation.
  * @param   u32CBL              The HDA stream's CBL value to use for the period calculation.
  * @param   pStreamCfg          Audio stream configuration to use for this period.
  */
-void hdaStreamPeriodInit(PHDASTREAMPERIOD pPeriod,
-                         uint8_t u8SD, uint16_t u16LVI, uint32_t u32CBL, PPDMAUDIOSTREAMCFG pStreamCfg)
+int hdaStreamPeriodInit(PHDASTREAMPERIOD pPeriod,
+                        uint8_t u8SD, uint16_t u16LVI, uint32_t u32CBL, PPDMAUDIOSTREAMCFG pStreamCfg)
 {
-
-    /* Sanity. */
-    AssertReturnVoid(u16LVI);
-    AssertReturnVoid(u32CBL);
-    AssertReturnVoid(DrvAudioHlpStreamCfgIsValid(pStreamCfg));
+    if (   !u16LVI
+        || !u32CBL
+        || !DrvAudioHlpStreamCfgIsValid(pStreamCfg))
+    {
+        return VERR_INVALID_PARAMETER;
+    }
 
     /*
      * Linux guests (at least Ubuntu):
@@ -118,6 +120,8 @@ void hdaStreamPeriodInit(PHDASTREAMPERIOD pPeriod,
     Log3Func(("[SD%RU8] %RU64 long, Hz=%RU32, CBL=%RU32, LVI=%RU16 -> %u periods, %RU32 frames each\n",
               pPeriod->u8SD, pPeriod->u64DurationWalClk, pPeriod->u32Hz, u32CBL, u16LVI,
               cTotalPeriods, pPeriod->framesToTransfer));
+
+    return VINF_SUCCESS;
 }
 
 /**

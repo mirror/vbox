@@ -84,7 +84,7 @@ typedef struct HDASTREAMPERIOD
 #ifdef IN_RING3
 int      hdaStreamPeriodCreate(PHDASTREAMPERIOD pPeriod);
 void     hdaStreamPeriodDestroy(PHDASTREAMPERIOD pPeriod);
-void     hdaStreamPeriodInit(PHDASTREAMPERIOD pPeriod, uint8_t u8SD, uint16_t u16LVI, uint32_t u32CBL, PPDMAUDIOSTREAMCFG pStreamCfg);
+int      hdaStreamPeriodInit(PHDASTREAMPERIOD pPeriod, uint8_t u8SD, uint16_t u16LVI, uint32_t u32CBL, PPDMAUDIOSTREAMCFG pStreamCfg);
 void     hdaStreamPeriodReset(PHDASTREAMPERIOD pPeriod);
 int      hdaStreamPeriodBegin(PHDASTREAMPERIOD pPeriod, uint64_t u64WalClk);
 void     hdaStreamPeriodEnd(PHDASTREAMPERIOD pPeriod);
