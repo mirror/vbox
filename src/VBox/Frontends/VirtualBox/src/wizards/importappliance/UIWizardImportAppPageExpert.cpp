@@ -39,8 +39,6 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(const QString &strFileN
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
-        pMainLayout->setContentsMargins(8, 6, 8, 6);
-        pMainLayout->setSpacing(10);
         m_pApplianceCnt = new QGroupBox(this);
         {
             QVBoxLayout *pApplianceCntLayout = new QVBoxLayout(m_pApplianceCnt);

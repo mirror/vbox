@@ -70,7 +70,6 @@ UINetworkManagerDialog::UINetworkManagerDialog()
 
     /* Create main-layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(centralWidget());
-    pMainLayout->setContentsMargins(6, 6, 6, 6);
 
     /* Create description-label: */
     m_pLabel = new QLabel(centralWidget());

@@ -59,7 +59,6 @@ void UIInformationConfiguration::prepareLayout()
     AssertPtrReturnVoid(m_pMainLayout);
     {
         /* Configure layout: */
-        m_pMainLayout->setContentsMargins(2, 0, 0, 0);
         m_pMainLayout->setSpacing(0);
     }
 }

@@ -568,7 +568,6 @@ void UIMediumDetailsWidget::prepareInformationContainer(UIMediumType enmType, in
         {
             /* Configure layout: */
             pLayout->setVerticalSpacing(0);
-            pLayout->setContentsMargins(5, 5, 5, 5);
             pLayout->setColumnStretch(1, 1);
 
             /* Create labels & fields: */

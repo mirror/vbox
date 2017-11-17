@@ -57,8 +57,6 @@ VBoxLicenseViewer::VBoxLicenseViewer(QWidget *pParent /* = 0 */)
     connect (mDisagreeButton, SIGNAL (clicked()), SLOT (reject()));
 
     QVBoxLayout *mainLayout = new QVBoxLayout (this);
-    mainLayout->setSpacing (10);
-    mainLayout->setContentsMargins(10, 10, 10, 10);
     mainLayout->addWidget (mLicenseText);
     mainLayout->addWidget (dbb);
 

@@ -173,10 +173,7 @@ void QIMessageBox::prepare()
 #ifdef VBOX_WS_MAC
         pMainLayout->setContentsMargins(40, 11, 40, 11);
         pMainLayout->setSpacing(15);
-#else /* !VBOX_WS_MAC */
-        pMainLayout->setContentsMargins(11, 11, 11, 11);
-        pMainLayout->setSpacing(10);
-#endif /* !VBOX_WS_MAC */
+#endif /* VBOX_WS_MAC */
         /* Create top-layout: */
         QHBoxLayout *pTopLayout = new QHBoxLayout;
         AssertPtrReturnVoid(pTopLayout);

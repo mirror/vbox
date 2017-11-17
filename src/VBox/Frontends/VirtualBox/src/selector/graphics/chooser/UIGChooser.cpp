@@ -22,6 +22,7 @@
 /* Qt includes: */
 # include <QVBoxLayout>
 # include <QStatusBar>
+# include <QStyle>
 
 /* GUI includes: */
 # include "UIGChooser.h"
@@ -108,7 +109,8 @@ void UIGChooser::prepareLayout()
 {
     /* Setup main-layout: */
     m_pMainLayout = new QVBoxLayout(this);
-    m_pMainLayout->setContentsMargins(0, 0, 2, 0);
+    const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 9;
+    m_pMainLayout->setContentsMargins(0, 0, iR, 0);
     m_pMainLayout->setSpacing(0);
 }
 

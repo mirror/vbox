@@ -168,9 +168,7 @@ void UIFilm::prepareLayout()
     /* Configure layout: */
 #ifdef VBOX_WS_MAC
     m_pMainLayout->setContentsMargins(10, 10, 15, 10);
-#else /* VBOX_WS_MAC */
-    m_pMainLayout->setContentsMargins(10, 10, 10, 10);
-#endif /* !VBOX_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Add strech: */
     m_pMainLayout->addStretch();

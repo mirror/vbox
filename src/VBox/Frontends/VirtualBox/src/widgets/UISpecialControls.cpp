@@ -245,6 +245,7 @@ UIRoundRectSegmentedButton::UIRoundRectSegmentedButton(QWidget *pParent, int aCo
     m_pSignalMapper = new QSignalMapper(this);
 
     QHBoxLayout *layout = new QHBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
     for (int i=0; i < aCount; ++i)
     {
         QIToolButton *button = new QIToolButton(this);

@@ -1840,7 +1840,9 @@ void UISelectorWindow::prepareToolbar()
         AssertPtrReturnVoid(m_pTabBarMachine);
         {
             /* Configure tab-bar: */
-            m_pTabBarMachine->setContentsMargins(10, 0, 10, 0);
+            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2;
+            const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2;
+            m_pTabBarMachine->setContentsMargins(iL, 0, iR, 0);
 
             /* Add into toolbar: */
             m_pActionTabBarMachine = m_pToolBar->addWidget(m_pTabBarMachine);
@@ -1851,7 +1853,9 @@ void UISelectorWindow::prepareToolbar()
         AssertPtrReturnVoid(m_pTabBarGlobal);
         {
             /* Configure tab-bar: */
-            m_pTabBarGlobal->setContentsMargins(10, 0, 10, 0);
+            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2;
+            const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2;
+            m_pTabBarGlobal->setContentsMargins(iL, 0, iR, 0);
 
             /* Add into toolbar: */
             m_pActionTabBarGlobal = m_pToolBar->addWidget(m_pTabBarGlobal);

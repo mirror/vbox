@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QApplication>
+# include <QStyle>
 # include <QVBoxLayout>
 
 /* GUI includes: */
@@ -72,7 +73,8 @@ void UIGDetails::prepareLayout()
 {
     /* Setup main-layout: */
     m_pMainLayout = new QVBoxLayout(this);
-    m_pMainLayout->setContentsMargins(2, 0, 0, 0);
+    const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 9;
+    m_pMainLayout->setContentsMargins(iL, 0, 0, 0);
     m_pMainLayout->setSpacing(0);
 }
 

@@ -49,7 +49,6 @@ UIPopupBox::UIPopupBox(QWidget *pParent)
 {
     /* Setup main-layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    pMainLayout->setContentsMargins(10, 5, 5, 5);
     /* Setup title-layout: */
     QHBoxLayout *pTitleLayout = new QHBoxLayout;
     pTitleLayout->addWidget(m_pTitleIcon);

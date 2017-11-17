@@ -1444,8 +1444,11 @@ void UIExtraDataManagerWindow::prepareCentralWidget()
             m_pMainLayout->insertSpacing(0, 10);
 #else /* !VBOX_WS_MAC */
             /* Set spacing/margin like in the selector window: */
-            m_pMainLayout->setSpacing(5);
-            m_pMainLayout->setContentsMargins(5, 5, 5, 5);
+            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2;
+            const int iT = qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) / 2;
+            const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2;
+            const int iB = qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) / 2;
+            m_pMainLayout->setContentsMargins(iL, iT, iR, iB);
 #endif /* !VBOX_WS_MAC */
             /* Prepare tool-bar: */
             prepareToolBar();
@@ -1535,7 +1538,8 @@ void UIExtraDataManagerWindow::preparePaneChooser()
                          pLayout == m_pPaneOfChooser->layout());
         {
             /* Configure layout: */
-            pLayout->setContentsMargins(0, 0, 3, 0);
+            const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 3;
+            pLayout->setContentsMargins(0, 0, iR, 0);
             /* Create chooser-filter: */
             m_pFilterOfChooser = new QLineEdit;
             {
@@ -1600,7 +1604,8 @@ void UIExtraDataManagerWindow::preparePaneData()
                          pLayout == m_pPaneOfData->layout());
         {
             /* Configure layout: */
-            pLayout->setContentsMargins(3, 0, 0, 0);
+            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 3;
+            pLayout->setContentsMargins(iL, 0, 0, 0);
             /* Create data-filter: */
             m_pFilterOfData = new QLineEdit;
             {

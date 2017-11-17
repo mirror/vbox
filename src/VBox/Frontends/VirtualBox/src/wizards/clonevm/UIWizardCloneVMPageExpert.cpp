@@ -42,8 +42,6 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
     /* Create widgets: */
     QGridLayout *pMainLayout = new QGridLayout(this);
     {
-        pMainLayout->setContentsMargins(8, 6, 8, 6);
-        pMainLayout->setSpacing(10);
         m_pNameCnt = new QGroupBox(this);
         {
             QVBoxLayout *pNameCntLayout = new QVBoxLayout(m_pNameCnt);
