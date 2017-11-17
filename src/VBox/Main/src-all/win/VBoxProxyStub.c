@@ -2316,8 +2316,19 @@ static BOOL vbpsIsInstalledWindowsService(const WCHAR *pwszServiceName)
 }
 
 
-BOOL vbpsInstallWindowsService(const WCHAR *pwszVBoxDir, const WCHAR *pwszServiceModule, const WCHAR *pwszServiceName,
-                               const WCHAR *pwszServiceDisplayName, const WCHAR *pwszServiceDescription)
+/**
+ * Worker for installing a SCM service.
+ *
+ * @returns Success indicator.
+ * @param   pwszVBoxDir         The VirtualBox install directory (unicode),
+ *                              trailing slash.
+ * @param   pwszModule          The service module.
+ * @param   pwszServiceName     The service name.
+ * @param   pwszDisplayName     The service display name.
+ * @param   pwszDescription     The service description.
+ */
+static BOOL vbpsInstallWindowsService(const WCHAR *pwszVBoxDir, const WCHAR *pwszModule, const WCHAR *pwszServiceName,
+                                      const WCHAR *pwszDisplayName, const WCHAR *pwszDescription)
 {
     BOOL fRet = vbpsIsInstalledWindowsService(pwszServiceName);
     if (!fRet)
@@ -2328,7 +2339,7 @@ BOOL vbpsInstallWindowsService(const WCHAR *pwszVBoxDir, const WCHAR *pwszServic
         if (RT_SUCCESS(rc))
             rc = RTUtf16Cat(wszFilePath, RT_ELEMENTS(wszFilePath), pwszVBoxDir);
         if (RT_SUCCESS(rc))
-            rc = RTUtf16Cat(wszFilePath, RT_ELEMENTS(wszFilePath), pwszServiceModule);
+            rc = RTUtf16Cat(wszFilePath, RT_ELEMENTS(wszFilePath), pwszModule);
         if (RT_SUCCESS(rc))
             rc = RTUtf16CatAscii(wszFilePath, RT_ELEMENTS(wszFilePath), "\"");
         if (RT_SUCCESS(rc))
@@ -2336,14 +2347,14 @@ BOOL vbpsInstallWindowsService(const WCHAR *pwszVBoxDir, const WCHAR *pwszServic
             SC_HANDLE hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
             if (hSCM != NULL)
             {
-                SC_HANDLE hService = CreateService(hSCM, pwszServiceName, pwszServiceDisplayName,
+                SC_HANDLE hService = CreateService(hSCM, pwszServiceName, pwszDisplayName,
                                                    SERVICE_ALL_ACCESS, SERVICE_WIN32_OWN_PROCESS,
                                                    SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL,
                                                    wszFilePath, NULL, NULL, L"RPCSS\0", NULL, NULL);
                 if (hService != NULL)
                 {
                     SERVICE_DESCRIPTION sd;
-                    sd.lpDescription = (WCHAR *)pwszServiceDescription;
+                    sd.lpDescription = (WCHAR *)pwszDescription;
                     if (ChangeServiceConfig2(hService, SERVICE_CONFIG_DESCRIPTION, &sd))
                         fRet = TRUE;
                     else
@@ -2364,7 +2375,13 @@ BOOL vbpsInstallWindowsService(const WCHAR *pwszVBoxDir, const WCHAR *pwszServic
 }
 
 
-BOOL vbpsUninstallWindowsService(const WCHAR *pwszServiceName)
+/**
+ * Worker for uninstalling a SCM service.
+ *
+ * @returns Success indicator.
+ * @param   pwszServiceName The name of the SCM service.
+ */
+static BOOL vbpsUninstallWindowsService(const WCHAR *pwszServiceName)
 {
     BOOL fRet = !vbpsIsInstalledWindowsService(pwszServiceName);
     if (!fRet)
@@ -2403,6 +2420,13 @@ BOOL vbpsUninstallWindowsService(const WCHAR *pwszServiceName)
 }
 
 
+/**
+ * Updates the VBoxSDS service with SCM.
+ *
+ * @param   pState              The registry modifier state.
+ * @param   pwszVBoxDir         The VirtualBox install directory (unicode),
+ *                              trailing slash.
+ */
 static void vbpsUpdateVBoxSDSWindowsService(VBPSREGSTATE *pState, const WCHAR *pwszVBoxDir)
 {
     const WCHAR s_wszModuleName[]         = L"VBoxSDS.exe";
