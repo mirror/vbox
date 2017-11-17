@@ -109,6 +109,10 @@ private:
     */
     HRESULT getVirtualBox(ComPtr<IVirtualBox> &aVirtualBox, ComPtr<IToken> &aToken);
 
+    /* SDS plan B interfaces: */
+    HRESULT registerVBoxSVC(const ComPtr<IVBoxSVC> &aVBoxSVC, LONG aPid, ComPtr<IUnknown> &aExistingVirtualBox);
+    HRESULT deregisterVBoxSVC(const ComPtr<IVBoxSVC> &aVBoxSVC, LONG aPid);
+
     // Wrapped IVirtualBoxSDS methods
 
     // Inner methods

@@ -24372,6 +24372,33 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 >
 
 <if target="midl">
+
+  <!-- VBOX_SDS_PLAN_B start -->
+  <!--
+  // IVBoxSVC
+  //////////////////////////////////////////////////////////////////////////
+  -->
+  <interface
+    name="IVBoxSVC" extends="$unknown"
+    uuid="8876e618-8936-4b2c-3015-aaebe6d479b9"
+    wsmap="suppress"
+    reservedMethods="2" reservedAttributes="4"
+    >
+      <desc>
+          Implemented by the VirtualBox class factory and registered with VBoxSDS
+          so it can retrieve IVirtualBox on behalf of other VBoxSVCs.
+      </desc>
+
+      <method name="getVirtualBox" >
+        <desc> Gets an IUnknown interface to the VirtualBox object in the VBoxSVC process. </desc>
+        <param name="result" type="$unknown" dir="return" >
+          <desc> Where to return the IUnknown interface. </desc>
+        </param>
+      </method>
+
+  </interface>
+  <!-- VBOX_SDS_PLAN_B end -->
+
   <!--
   // IVirtualBoxSDS
   //////////////////////////////////////////////////////////////////////////
@@ -24406,7 +24433,35 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       </method>
 
+      <!-- VBOX_SDS_PLAN_B start -->
+      <method name="registerVBoxSVC">
+        <desc>Registers a VBoxSVC instance with the SDS.</desc>
+        <param name="vboxSVC" type="IVBoxSVC" dir="in">
+          <desc>Interface implemented by the VirtualBox class factory.</desc>
+        </param>
+        <param name="pid" type="long" dir="in">
+          <desc>The process ID of the VBoxSVC instance.</desc>
+        </param>
+        <param name="existingVirtualBox" type="$unknown" dir="return">
+          <desc>If there is already an VBoxSVC for this user, the an IUnknown
+            interface to its VirtualBox object is returned here, otherwise it
+            is set to NULL.</desc>
+        </param>
+      </method>
+
+      <method name="deregisterVBoxSVC">
+        <desc>Registers a VBoxSVC instance with the SDS.</desc>
+        <param name="vboxSVC" type="IVBoxSVC" dir="in">
+          <desc>Same as specified during registration.</desc>
+        </param>
+        <param name="pid" type="long" dir="in">
+          <desc>The process ID of the VBoxSVC instance (same as during registration).</desc>
+        </param>
+      </method>
+      <!-- VBOX_SDS_PLAN_B end -->
+
   </interface>
+
 </if>
 
   <module name="VBoxSDS" context="LocalService">

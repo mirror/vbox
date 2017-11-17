@@ -137,6 +137,178 @@ bool CExeModule::StartMonitor()
 }
 
 
+#ifdef VBOX_WITH_SDS_PLAN_B
+
+/**
+ * Custom class factory for the VirtualBox singleton.
+ *
+ * The implementation of CreateInstance is found in win/svcmain.cpp.
+ */
+class VirtualBoxClassFactory : public ATL::CComClassFactory
+{
+private:
+    /** Tri state: 0=uninitialized or initializing; 1=success; -1=failure.
+     * This will be updated after both m_hrcCreate and m_pObj have been set. */
+    volatile int32_t    m_iState;
+    /** The result of the instantiation attempt. */
+    HRESULT             m_hrcCreate;
+    /** The IUnknown of the VirtualBox object/interface we're working with. */
+    IUnknown           *m_pObj;
+
+public:
+    VirtualBoxClassFactory() : m_iState(0), m_hrcCreate(S_OK), m_pObj(NULL) { }
+    virtual ~VirtualBoxClassFactory()
+    {
+        if (m_pObj)
+        {
+            m_pObj->Release();
+            m_pObj = NULL;
+        }
+        /** @todo Need to check if this is okay wrt COM termination. */
+        i_deregisterWithSds();
+    }
+
+    // IClassFactory
+    STDMETHOD(CreateInstance)(LPUNKNOWN pUnkOuter, REFIID riid, void **ppvObj);
+
+    // IVBoxSVC
+    STDMETHOD(GetVirtualBox)(IUnknown **ppOtherObj);
+
+private:
+    HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox);
+    void    VirtualBoxClassFactory::i_deregisterWithSds(void);
+};
+
+
+HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox)
+{
+    *ppOtherVirtualBox = NULL;
+    return S_OK;
+}
+
+
+void VirtualBoxClassFactory::i_deregisterWithSds(void)
+{
+    Log(("VirtualBoxClassFactory::i_deregisterWithSds\n"));
+}
+
+
+STDMETHODIMP VirtualBoxClassFactory::GetVirtualBox(IUnknown **ppUnkVirtualBox)
+{
+    IUnknown *pObj = m_pObj;
+    if (pObj)
+    {
+        /** @todo Do we need to do something regarding server locking?  Hopefully COM
+         *        deals with that........... */
+        pObj->AddRef();
+        *ppUnkVirtualBox = pObj;
+        Log(("VirtualBoxClassFactory::GetVirtualBox: S_OK - %p\n", pObj));
+        return S_OK;
+    }
+    *ppUnkVirtualBox = NULL;
+    Log(("VirtualBoxClassFactory::GetVirtualBox: E_FAIL\n"));
+    return E_FAIL;
+}
+
+
+/**
+ * Custom class factory impl for the VirtualBox singleton.
+ *
+ * This will consult with VBoxSDS on whether this VBoxSVC instance should
+ * provide the actual VirtualBox instance or just forward the instance from
+ * some other SVC instance.
+ *
+ * @param   pUnkOuter       This must be NULL.
+ * @param   riid            Reference to the interface ID to provide.
+ * @param   ppvObj          Where to return the pointer to the riid instance.
+ *
+ * @return  COM status code.
+ */
+STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID riid, void **ppvObj)
+{
+    HRESULT hrc = E_POINTER;
+    if (ppvObj != NULL)
+    {
+        *ppvObj = NULL;
+        // no aggregation for singletons
+        AssertReturn(pUnkOuter == NULL, CLASS_E_NOAGGREGATION);
+
+        /*
+         * We must make sure there is only one instance around.
+         * So, we check without locking and then again after locking.
+         */
+        if (ASMAtomicReadS32(&m_iState) == 0)
+        {
+            Lock();
+            __try
+            {
+                if (ASMAtomicReadS32(&m_iState) == 0)
+                {
+                    /*
+                     * lock the module to indicate activity
+                     * (necessary for the monitor shutdown thread to correctly
+                     * terminate the module in case when CreateInstance() fails)
+                     */
+                    ATL::_pAtlModule->Lock();
+                    __try
+                    {
+                        /*
+                         * Now we need to connect to VBoxSDS to register ourselves.
+                         */
+                        IUnknown *pOtherVirtualBox = NULL;
+                        m_hrcCreate = hrc = i_registerWithSds(&pOtherVirtualBox);
+                        if (SUCCEEDED(hrc) && pOtherVirtualBox)
+                            m_pObj = pOtherVirtualBox;
+                        else if (SUCCEEDED(hrc))
+                        {
+                            ATL::_pAtlModule->Lock();
+                            ATL::CComObjectCached<VirtualBox> *p;
+                            m_hrcCreate = hrc = ATL::CComObjectCached<VirtualBox>::CreateInstance(&p);
+                            if (SUCCEEDED(hrc))
+                            {
+                                m_hrcCreate = hrc = p->QueryInterface(IID_IUnknown, (void **)&m_pObj);
+                                if (FAILED(hrc))
+                                {
+                                    delete p;
+                                    i_deregisterWithSds();
+                                    m_pObj = NULL;
+                                }
+                            }
+                        }
+                        ASMAtomicWriteS32(&m_iState, SUCCEEDED(hrc) ? 1 : -1);
+                    }
+                    __finally
+                    {
+                        ATL::_pAtlModule->Unlock();
+                    }
+                }
+            }
+            __finally
+            {
+                if (ASMAtomicReadS32(&m_iState) == 0)
+                {
+                    ASMAtomicWriteS32(&m_iState, -1);
+                    if (SUCCEEDED(m_hrcCreate))
+                        m_hrcCreate = E_FAIL;
+                }
+                Unlock();
+            }
+        }
+
+        /*
+         * Query the requested interface from the IUnknown one we're keeping around.
+         */
+        if (m_hrcCreate == S_OK)
+            hrc = m_pObj->QueryInterface(riid, ppvObj);
+        else
+            hrc = m_hrcCreate;
+    }
+    return hrc;
+}
+
+#endif /* VBOX_WITH_SDS_PLAN_B */
+
+
 BEGIN_OBJECT_MAP(ObjectMap)
     OBJECT_ENTRY(CLSID_VirtualBox, VirtualBox)
 END_OBJECT_MAP()
@@ -145,6 +317,7 @@ CExeModule* g_pModule = NULL;
 HWND g_hMainWindow = NULL;
 HINSTANCE g_hInstance = NULL;
 #define MAIN_WND_CLASS L"VirtualBox Interface"
+
 
 /*
 * Wrapper for Win API function ShutdownBlockReasonCreate

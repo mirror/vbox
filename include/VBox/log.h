@@ -635,6 +635,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_USBPROXYBACKEND,
     /** Main group, IVBoxSVCAvailabilityChangedEvent. */
     LOG_GROUP_MAIN_VBOXSVCAVAILABILITYCHANGEDEVENT,
+    /** Main group, IVBoxSVC. */
+    LOG_GROUP_MAIN_VBOXSVC,
     /** Main group, IVetoEvent. */
     LOG_GROUP_MAIN_VETOEVENT,
     /** Main group, IVFSExplorer. */

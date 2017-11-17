@@ -58,6 +58,12 @@ namespace settings
     struct MediaRegistry;
 }
 
+
+#if defined(VBOX_WITH_SDS_PLAN_B) && !defined(VBOX_WITH_XPCOM)
+class VirtualBoxClassFactory; /* See ../src-server/win/svcmain.cpp  */
+#endif
+
+
 class ATL_NO_VTABLE VirtualBox :
     public VirtualBoxWrap
 #ifdef RT_OS_WINDOWS
@@ -73,7 +79,13 @@ public:
     class CallbackEvent;
     friend class CallbackEvent;
 
+#ifndef VBOX_WITH_XPCOM
+# ifdef VBOX_WITH_SDS_PLAN_B
+    DECLARE_CLASSFACTORY_EX(VirtualBoxClassFactory)
+# else
     DECLARE_CLASSFACTORY_SINGLETON(VirtualBox)
+# endif
+#endif
 
     // Do not use any ATL registry support.
     //DECLARE_REGISTRY_RESOURCEID(IDR_VIRTUALBOX)

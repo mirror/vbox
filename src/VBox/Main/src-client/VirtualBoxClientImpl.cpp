@@ -66,7 +66,7 @@ void VirtualBoxClient::FinalRelease()
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS) && !defined(VBOX_WITH_SDS_PLAN_B)
 
 HRESULT CreateVirtualBoxThroughSDS(ComPtr<IVirtualBox> &aVirtualBox, ComPtr<IToken> &aToken)
 {
@@ -237,7 +237,7 @@ HRESULT VirtualBoxClient::isServiceDisabled(const wchar_t *pwszServiceName, bool
     return S_OK;
 }
 
-#endif
+#endif /* RT_OS_WINDOWS && VBOX_WITH_SDS && !VBOX_WITH_SDS_PLAN_B */
 
 /**
  * Initializes the VirtualBoxClient object.
@@ -249,7 +249,7 @@ HRESULT VirtualBoxClient::init()
 
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
     // setup COM Security to enable impersonation
-    // This works for console Virtual Box clients, GUI has own security settings
+    // This works for console VirtualBox clients, GUI has own security settings
     //  For GUI Virtual Box it will be second call so can return TOO_LATE error
     HRESULT hrGUICoInitializeSecurity = CoInitializeSecurity(NULL,
                                                              -1,
@@ -288,7 +288,7 @@ HRESULT VirtualBoxClient::init()
         mData.m_ThreadWatcher = NIL_RTTHREAD;
         mData.m_SemEvWatcher = NIL_RTSEMEVENT;
 
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS) && !defined(VBOX_WITH_SDS_PLAN_B)
         rc = CreateVirtualBoxThroughSDS(mData.m_pVirtualBox, mData.m_pToken);
 #else
         rc = mData.m_pVirtualBox.createLocalObject(CLSID_VirtualBox);
@@ -382,7 +382,7 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
      */
     IUnknown *pUnknown = NULL;
 
-# ifdef VBOX_WITH_SDS
+# if defined(VBOX_WITH_SDS) && !defined(VBOX_WITH_SDS_PLAN_B)
     // Check the VBOXSDS service running account name is SYSTEM
     wchar_t wszBuffer[256];
     int vrc = getServiceAccount(L"VBoxSDS", wszBuffer, RT_ELEMENTS(wszBuffer));
@@ -745,7 +745,7 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
                  * and disk load. */
                 ComPtr<IVirtualBox> pVirtualBox;
                 ComPtr<IToken> pToken;
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS) && !defined(VBOX_WITH_SDS_PLAN_B)
                 rc = CreateVirtualBoxThroughSDS(pVirtualBox, pToken);
 #else
                 rc = pVirtualBox.createLocalObject(CLSID_VirtualBox);
