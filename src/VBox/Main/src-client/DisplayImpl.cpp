@@ -2745,24 +2745,21 @@ int Display::i_videoRecStart(void)
         return VINF_SUCCESS;
 
     int rc = VideoRecContextCreate(mcMonitors, &mVideoRecCfg, &mpVideoRecCtx);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
     {
-        LogFlow(("Failed to create video recording context (%Rrc)!\n", rc));
-        return rc;
-    }
-
-    for (unsigned uScreen = 0; uScreen < mcMonitors; uScreen++)
-    {
-        int rc2 = VideoRecStreamInit(mpVideoRecCtx, uScreen);
-        if (RT_SUCCESS(rc2))
+        for (unsigned uScreen = 0; uScreen < mcMonitors; uScreen++)
         {
-            i_videoRecScreenChanged(uScreen);
-        }
-        else
-            LogRel(("VideoRec: Failed to initialize video recording context #%u (%Rrc)\n", uScreen, rc2));
+            int rc2 = VideoRecStreamInit(mpVideoRecCtx, uScreen);
+            if (RT_SUCCESS(rc2))
+            {
+                i_videoRecScreenChanged(uScreen);
+            }
+            else
+                LogRel(("VideoRec: Failed to initialize video recording context #%u (%Rrc)\n", uScreen, rc2));
 
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
     }
 
     if (RT_FAILURE(rc))
