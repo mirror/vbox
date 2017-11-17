@@ -633,10 +633,10 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_USBDEVICESTATECHANGEDEVENT,
     /** Main group, IUSBProxyBackend. */
     LOG_GROUP_MAIN_USBPROXYBACKEND,
-    /** Main group, IVBoxSVCAvailabilityChangedEvent. */
-    LOG_GROUP_MAIN_VBOXSVCAVAILABILITYCHANGEDEVENT,
     /** Main group, IVBoxSVC. */
     LOG_GROUP_MAIN_VBOXSVC,
+    /** Main group, IVBoxSVCAvailabilityChangedEvent. */
+    LOG_GROUP_MAIN_VBOXSVCAVAILABILITYCHANGEDEVENT,
     /** Main group, IVetoEvent. */
     LOG_GROUP_MAIN_VETOEVENT,
     /** Main group, IVFSExplorer. */
@@ -1115,6 +1115,7 @@ typedef enum LOGGROUP
     "MAIN_USBDEVICEFILTERS", \
     "MAIN_USBDEVICESTATECHANGEDEVENT", \
     "MAIN_USBPROXYBACKEND", \
+    "MAIN_VBOXSVC", \
     "MAIN_VBOXSVCAVAILABILITYCHANGEDEVENT", \
     "MAIN_VETOEVENT", \
     "MAIN_VFSEXPLORER", \
