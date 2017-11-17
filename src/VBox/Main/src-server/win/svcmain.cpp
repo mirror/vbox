@@ -26,6 +26,9 @@
 #include "VBox/com/VirtualBox.h"
 
 #include "VirtualBoxImpl.h"
+#ifdef VBOX_WITH_SDS_PLAN_B
+# include "VBoxSVCWrap.h"
+#endif
 #include "Logging.h"
 
 #include "svchlp.h"
@@ -138,6 +141,7 @@ bool CExeModule::StartMonitor()
 
 
 #ifdef VBOX_WITH_SDS_PLAN_B
+class VBoxSVC;
 
 /**
  * Custom class factory for the VirtualBox singleton.
@@ -149,11 +153,15 @@ class VirtualBoxClassFactory : public ATL::CComClassFactory
 private:
     /** Tri state: 0=uninitialized or initializing; 1=success; -1=failure.
      * This will be updated after both m_hrcCreate and m_pObj have been set. */
-    volatile int32_t    m_iState;
+    volatile int32_t       m_iState;
     /** The result of the instantiation attempt. */
-    HRESULT             m_hrcCreate;
+    HRESULT                m_hrcCreate;
     /** The IUnknown of the VirtualBox object/interface we're working with. */
-    IUnknown           *m_pObj;
+    IUnknown              *m_pObj;
+    /** Pointer to the IVBoxSVC implementation that VBoxSDS works with. */
+    ComObjPtr<VBoxSVC>     m_ptrVBoxSVC;
+    /** The VBoxSDS interface. */
+    ComPtr<IVirtualBoxSDS> m_ptrVirtualBoxSDS;
 
 public:
     VirtualBoxClassFactory() : m_iState(0), m_hrcCreate(S_OK), m_pObj(NULL) { }
@@ -171,8 +179,8 @@ public:
     // IClassFactory
     STDMETHOD(CreateInstance)(LPUNKNOWN pUnkOuter, REFIID riid, void **ppvObj);
 
-    // IVBoxSVC
-    STDMETHOD(GetVirtualBox)(IUnknown **ppOtherObj);
+    /** Worker for VBoxSVC::getVirtualBox. */
+    HRESULT i_getVirtualBox(ComPtr<IUnknown> &aResult);
 
 private:
     HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox);
@@ -180,10 +188,93 @@ private:
 };
 
 
+/**
+ * The VBoxSVC class is handed to VBoxSDS so it can call us back and ask for the
+ * VirtualBox object when the next VBoxSVC for this user registers itself.
+ */
+class ATL_NO_VTABLE VBoxSVC : public VBoxSVCWrap
+{
+public:
+    DECLARE_EMPTY_CTOR_DTOR(VBoxSVC)
+
+    HRESULT FinalConstruct()
+    {
+        return BaseFinalConstruct();
+    }
+
+    void FinalRelease()
+    {
+        uninit();
+        BaseFinalRelease();
+    }
+
+    // public initializer/uninitializer for internal purposes only
+    HRESULT init(VirtualBoxClassFactory *pFactory)
+    {
+        AutoInitSpan autoInitSpan(this);
+        AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+        m_pFactory = pFactory;
+
+        autoInitSpan.setSucceeded();
+        return S_OK;
+    }
+
+    void uninit()
+    {
+        AutoUninitSpan autoUninitSpan(this);
+        if (!autoUninitSpan.uninitDone())
+            m_pFactory = NULL;
+    }
+
+private:
+    // Wrapped IVBoxSVC method.
+    HRESULT getVirtualBox(ComPtr<IUnknown> &aResult)
+    {
+        if (m_pFactory)
+            return m_pFactory->i_getVirtualBox(aResult);
+        return E_FAIL;
+    }
+
+public:
+    /** Pointer to the factory. */
+    VirtualBoxClassFactory *m_pFactory;
+};
+
+DEFINE_EMPTY_CTOR_DTOR(VBoxSVC);
+
+
 HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox)
 {
+    /*
+     * Connect to VBoxSDS.
+     */
+    ComPtr<IVirtualBoxSDS> m_ptrVirtualBoxSDS;
+    HRESULT hrc = CoCreateInstance(CLSID_VirtualBoxSDS, NULL, CLSCTX_LOCAL_SERVER, IID_IVirtualBoxSDS,
+                                   (void **)m_ptrVirtualBoxSDS.asOutParam());
+    if (SUCCEEDED(hrc))
+    {
+        /*
+         * Create VBoxSVC object and hand that to VBoxSDS.
+         */
+        hrc = m_ptrVBoxSVC.createObject();
+        if (SUCCEEDED(hrc))
+        {
+            hrc = m_ptrVBoxSVC->init(this);
+            if (SUCCEEDED(hrc))
+            {
+                hrc = m_ptrVirtualBoxSDS->RegisterVBoxSVC(m_ptrVBoxSVC, GetCurrentProcessId(), ppOtherVirtualBox);
+                if (SUCCEEDED(hrc))
+                {
+                    return hrc;
+                }
+            }
+        }
+    }
+    m_ptrVirtualBoxSDS.setNull();
+    m_ptrVBoxSVC.setNull();
     *ppOtherVirtualBox = NULL;
-    return S_OK;
+    return hrc;
 }
 
 
@@ -193,19 +284,18 @@ void VirtualBoxClassFactory::i_deregisterWithSds(void)
 }
 
 
-STDMETHODIMP VirtualBoxClassFactory::GetVirtualBox(IUnknown **ppUnkVirtualBox)
+HRESULT VirtualBoxClassFactory::i_getVirtualBox(ComPtr<IUnknown> &aResult)
 {
     IUnknown *pObj = m_pObj;
     if (pObj)
     {
         /** @todo Do we need to do something regarding server locking?  Hopefully COM
          *        deals with that........... */
-        pObj->AddRef();
-        *ppUnkVirtualBox = pObj;
+        aResult = pObj;
         Log(("VirtualBoxClassFactory::GetVirtualBox: S_OK - %p\n", pObj));
         return S_OK;
     }
-    *ppUnkVirtualBox = NULL;
+    aResult.setNull();
     Log(("VirtualBoxClassFactory::GetVirtualBox: E_FAIL\n"));
     return E_FAIL;
 }
