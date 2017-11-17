@@ -1981,6 +1981,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_Fullscreen << GUI_Seamless << GUI_Scale
 #ifdef VBOX_WS_X11
            << GUI_Fullscreen_LegacyMode
+           << GUI_DistinguishMachineWindowGroups
 #endif /* VBOX_WS_X11 */
            << GUI_AutoresizeGuest << GUI_LastVisibilityStatusForGuestScreen << GUI_LastGuestSizeHint
            << GUI_VirtualScreenToHostScreen << GUI_AutomountGuestScreens
@@ -3555,6 +3556,18 @@ bool UIExtraDataManager::legacyFullscreenModeRequested()
 {
     /* 'False' unless feature allowed: */
     return isFeatureAllowed(GUI_Fullscreen_LegacyMode);
+}
+
+bool UIExtraDataManager::distinguishMachineWindowGroups(const QString &strID)
+{
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_DistinguishMachineWindowGroups, strID);
+}
+
+void UIExtraDataManager::setDistinguishMachineWindowGroups(const QString &strID, bool fEnabled)
+{
+    /* 'True' if feature allowed, null-string otherwise: */
+    setExtraDataString(GUI_DistinguishMachineWindowGroups, toFeatureAllowed(fEnabled), strID);
 }
 #endif /* VBOX_WS_X11 */
 
