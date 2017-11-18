@@ -24379,10 +24379,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   //////////////////////////////////////////////////////////////////////////
   -->
   <interface
-    name="IVBoxSVC" extends="$unknown"
-    uuid="8876e618-8936-4b2c-3015-aaebe6d479b9"
-    wsmap="suppress"
-    reservedMethods="2" reservedAttributes="4"
+    name="IVBoxSVC" extends="IUnknown"
+    uuid="902659ea-d14e-4444-4bc1-40b0d01ae9b3"
+    wsmap="suppress" internal="yes"  notdual="yes"
+    reservedMethods="0" reservedAttributes="0"
     >
       <desc>
           Implemented by the VirtualBox class factory and registered with VBoxSDS

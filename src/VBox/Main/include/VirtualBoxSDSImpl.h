@@ -138,6 +138,12 @@ private:
     class VirtualBoxCache;
     static VirtualBoxCache m_cache;
     friend VirtualBoxToken;
+
+#ifdef VBOX_WITH_SDS_PLAN_B
+    // quick and dirty for checking the concept.
+    IVBoxSVC *m_pVBoxSVC;
+    uint32_t  m_pidVBoxSVC;
+#endif
 };
 
 

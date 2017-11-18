@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * SVCMAIN - COM out-of-proc server main entry
  */
 
@@ -16,6 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF // DONT COMMIT
+#define RTMEM_WRAP_TO_EF_APIS
+#include <iprt/mem.h>
 #include <iprt/win/windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,9 +32,9 @@
 #include "VBox/com/VirtualBox.h"
 
 #include "VirtualBoxImpl.h"
-#ifdef VBOX_WITH_SDS_PLAN_B
-# include "VBoxSVCWrap.h"
-#endif
+//#ifdef VBOX_WITH_SDS_PLAN_B
+//# include "VBoxSVCWrap.h"
+//#endif
 #include "Logging.h"
 
 #include "svchlp.h"
@@ -43,6 +49,16 @@
 #include <iprt/message.h>
 #include <iprt/asm.h>
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#define MAIN_WND_CLASS L"VirtualBox Interface"
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 class CExeModule : public ATL::CComModule
 {
 public:
@@ -53,11 +69,31 @@ public:
     bool StartMonitor();
     bool HasActiveConnection();
     bool bActivity;
+    static bool isIdleLockCount(LONG cLocks);
 };
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+BEGIN_OBJECT_MAP(ObjectMap)
+    OBJECT_ENTRY(CLSID_VirtualBox, VirtualBox)
+END_OBJECT_MAP()
+
+CExeModule *g_pModule     = NULL;
+HWND        g_hMainWindow = NULL;
+HINSTANCE   g_hInstance   = NULL;
+#ifdef VBOX_WITH_SDS_PLAN_B
+/** This is set if we're connected to SDS and should discount a server lock
+ * that it is holding when deciding whether we're idle or not. */
+bool        g_fRegisteredWithVBoxSDS = false;
+#endif
 
 /* Normal timeout usually used in Shutdown Monitor */
 const DWORD dwNormalTimeout = 5000;
 volatile uint32_t dwTimeOut = dwNormalTimeout; /* time for EXE to be idle before shutting down. Can be decreased at system shutdown phase. */
+
+
 
 /* Passed to CreateThread to monitor the shutdown event */
 static DWORD WINAPI MonitorProc(void* pv)
@@ -69,18 +105,32 @@ static DWORD WINAPI MonitorProc(void* pv)
 
 LONG CExeModule::Unlock()
 {
-    LONG l = ATL::CComModule::Unlock();
-    if (l == 0)
+    LONG cLocks = ATL::CComModule::Unlock();
+    if (isIdleLockCount(cLocks))
     {
         bActivity = true;
         SetEvent(hEventShutdown); /* tell monitor that we transitioned to zero */
     }
-    return l;
+    return cLocks;
 }
 
 bool CExeModule::HasActiveConnection()
 {
-    return bActivity || GetLockCount() > 0;
+    return bActivity || !isIdleLockCount(GetLockCount());
+}
+
+/**
+ * Checks if @a cLocks signifies an IDLE server lock load.
+ *
+ * This takes VBoxSDS into account (i.e. ignores it).
+ */
+/*static*/ bool CExeModule::isIdleLockCount(LONG cLocks)
+{
+#ifdef VBOX_WITH_SDS_PLAN_B
+    if (g_fRegisteredWithVBoxSDS)
+        return cLocks <= 1;
+#endif
+    return cLocks <= 0;
 }
 
 /* Monitors the shutdown event */
@@ -89,7 +139,7 @@ void CExeModule::MonitorShutdown()
     while (1)
     {
         WaitForSingleObject(hEventShutdown, INFINITE);
-        DWORD dwWait=0;
+        DWORD dwWait;
         do
         {
             bActivity = false;
@@ -159,12 +209,14 @@ private:
     /** The IUnknown of the VirtualBox object/interface we're working with. */
     IUnknown              *m_pObj;
     /** Pointer to the IVBoxSVC implementation that VBoxSDS works with. */
-    ComObjPtr<VBoxSVC>     m_ptrVBoxSVC;
+    VBoxSVC               *m_pVBoxSVC;
     /** The VBoxSDS interface. */
     ComPtr<IVirtualBoxSDS> m_ptrVirtualBoxSDS;
 
 public:
-    VirtualBoxClassFactory() : m_iState(0), m_hrcCreate(S_OK), m_pObj(NULL) { }
+    VirtualBoxClassFactory() : m_iState(0), m_hrcCreate(S_OK), m_pObj(NULL), m_pVBoxSVC(NULL)
+    { }
+
     virtual ~VirtualBoxClassFactory()
     {
         if (m_pObj)
@@ -172,6 +224,7 @@ public:
             m_pObj->Release();
             m_pObj = NULL;
         }
+
         /** @todo Need to check if this is okay wrt COM termination. */
         i_deregisterWithSds();
     }
@@ -180,11 +233,13 @@ public:
     STDMETHOD(CreateInstance)(LPUNKNOWN pUnkOuter, REFIID riid, void **ppvObj);
 
     /** Worker for VBoxSVC::getVirtualBox. */
-    HRESULT i_getVirtualBox(ComPtr<IUnknown> &aResult);
+    HRESULT i_getVirtualBox(IUnknown **ppResult);
 
 private:
     HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox);
     void    VirtualBoxClassFactory::i_deregisterWithSds(void);
+
+    friend VBoxSVC;
 };
 
 
@@ -192,56 +247,69 @@ private:
  * The VBoxSVC class is handed to VBoxSDS so it can call us back and ask for the
  * VirtualBox object when the next VBoxSVC for this user registers itself.
  */
-class ATL_NO_VTABLE VBoxSVC : public VBoxSVCWrap
+class VBoxSVC : public IVBoxSVC
 {
-public:
-    DECLARE_EMPTY_CTOR_DTOR(VBoxSVC)
-
-    HRESULT FinalConstruct()
-    {
-        return BaseFinalConstruct();
-    }
-
-    void FinalRelease()
-    {
-        uninit();
-        BaseFinalRelease();
-    }
-
-    // public initializer/uninitializer for internal purposes only
-    HRESULT init(VirtualBoxClassFactory *pFactory)
-    {
-        AutoInitSpan autoInitSpan(this);
-        AssertReturn(autoInitSpan.isOk(), E_FAIL);
-
-        m_pFactory = pFactory;
-
-        autoInitSpan.setSucceeded();
-        return S_OK;
-    }
-
-    void uninit()
-    {
-        AutoUninitSpan autoUninitSpan(this);
-        if (!autoUninitSpan.uninitDone())
-            m_pFactory = NULL;
-    }
-
 private:
-    // Wrapped IVBoxSVC method.
-    HRESULT getVirtualBox(ComPtr<IUnknown> &aResult)
-    {
-        if (m_pFactory)
-            return m_pFactory->i_getVirtualBox(aResult);
-        return E_FAIL;
-    }
+    /** Number of references. */
+    uint32_t volatile m_cRefs;
 
 public:
     /** Pointer to the factory. */
     VirtualBoxClassFactory *m_pFactory;
-};
 
-DEFINE_EMPTY_CTOR_DTOR(VBoxSVC);
+public:
+    VBoxSVC(VirtualBoxClassFactory *pFactory)
+        : m_cRefs(1), m_pFactory(pFactory)
+    { }
+    virtual ~VBoxSVC()
+    {
+        if (m_pFactory)
+        {
+            if (m_pFactory->m_pVBoxSVC)
+                m_pFactory->m_pVBoxSVC = NULL;
+            m_pFactory = NULL;
+        }
+    }
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
+
+    // IUnknown
+    STDMETHOD(QueryInterface)(REFIID riid, void **ppvObject)
+    {
+        if (riid == __uuidof(IUnknown))
+            *ppvObject = (void *)(IUnknown *)this;
+        else if (riid == __uuidof(IVBoxSVC))
+            *ppvObject = (void *)(IVBoxSVC *)this;
+        else
+        {
+            return E_NOINTERFACE;
+        }
+        AddRef();
+        return S_OK;
+
+    }
+
+    STDMETHOD_(ULONG,AddRef)(void)
+    {
+        uint32_t cRefs = ASMAtomicIncU32(&m_cRefs);
+        return cRefs;
+    }
+
+    STDMETHOD_(ULONG,Release)(void)
+    {
+        uint32_t cRefs = ASMAtomicDecU32(&m_cRefs);
+        if (cRefs == 0)
+            delete this;
+        return cRefs;
+    }
+
+    // IVBoxSVC
+    STDMETHOD(GetVirtualBox)(IUnknown **ppResult)
+    {
+        if (m_pFactory)
+            return m_pFactory->i_getVirtualBox(ppResult);
+        return E_FAIL;
+    }
+};
 
 
 HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox)
@@ -249,7 +317,6 @@ HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox)
     /*
      * Connect to VBoxSDS.
      */
-    ComPtr<IVirtualBoxSDS> m_ptrVirtualBoxSDS;
     HRESULT hrc = CoCreateInstance(CLSID_VirtualBoxSDS, NULL, CLSCTX_LOCAL_SERVER, IID_IVirtualBoxSDS,
                                    (void **)m_ptrVirtualBoxSDS.asOutParam());
     if (SUCCEEDED(hrc))
@@ -257,22 +324,17 @@ HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox)
         /*
          * Create VBoxSVC object and hand that to VBoxSDS.
          */
-        hrc = m_ptrVBoxSVC.createObject();
+        m_pVBoxSVC = new VBoxSVC(this);
+        hrc = m_ptrVirtualBoxSDS->RegisterVBoxSVC(m_pVBoxSVC, GetCurrentProcessId(), ppOtherVirtualBox);
         if (SUCCEEDED(hrc))
         {
-            hrc = m_ptrVBoxSVC->init(this);
-            if (SUCCEEDED(hrc))
-            {
-                hrc = m_ptrVirtualBoxSDS->RegisterVBoxSVC(m_ptrVBoxSVC, GetCurrentProcessId(), ppOtherVirtualBox);
-                if (SUCCEEDED(hrc))
-                {
-                    return hrc;
-                }
-            }
+            g_fRegisteredWithVBoxSDS = true;
+            return hrc;
         }
+        m_pVBoxSVC->Release();
     }
     m_ptrVirtualBoxSDS.setNull();
-    m_ptrVBoxSVC.setNull();
+    m_pVBoxSVC = NULL;
     *ppOtherVirtualBox = NULL;
     return hrc;
 }
@@ -281,21 +343,39 @@ HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox)
 void VirtualBoxClassFactory::i_deregisterWithSds(void)
 {
     Log(("VirtualBoxClassFactory::i_deregisterWithSds\n"));
+
+    if (m_ptrVirtualBoxSDS.isNotNull())
+    {
+        if (m_pVBoxSVC)
+        {
+            HRESULT hrc = m_ptrVirtualBoxSDS->DeregisterVBoxSVC(m_pVBoxSVC, GetCurrentProcessId());
+            NOREF(hrc);
+        }
+        m_ptrVirtualBoxSDS.setNull();
+        g_fRegisteredWithVBoxSDS = false;
+    }
+    if (m_pVBoxSVC)
+    {
+        m_pVBoxSVC->m_pFactory = NULL;
+        m_pVBoxSVC->Release();
+        m_pVBoxSVC = NULL;
+    }
 }
 
 
-HRESULT VirtualBoxClassFactory::i_getVirtualBox(ComPtr<IUnknown> &aResult)
+HRESULT VirtualBoxClassFactory::i_getVirtualBox(IUnknown **ppResult)
 {
     IUnknown *pObj = m_pObj;
     if (pObj)
     {
         /** @todo Do we need to do something regarding server locking?  Hopefully COM
          *        deals with that........... */
-        aResult = pObj;
+        pObj->AddRef();
+        *ppResult = pObj;
         Log(("VirtualBoxClassFactory::GetVirtualBox: S_OK - %p\n", pObj));
         return S_OK;
     }
-    aResult.setNull();
+    *ppResult = NULL;
     Log(("VirtualBoxClassFactory::GetVirtualBox: E_FAIL\n"));
     return E_FAIL;
 }
@@ -397,16 +477,6 @@ STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID 
 }
 
 #endif /* VBOX_WITH_SDS_PLAN_B */
-
-
-BEGIN_OBJECT_MAP(ObjectMap)
-    OBJECT_ENTRY(CLSID_VirtualBox, VirtualBox)
-END_OBJECT_MAP()
-
-CExeModule* g_pModule = NULL;
-HWND g_hMainWindow = NULL;
-HINSTANCE g_hInstance = NULL;
-#define MAIN_WND_CLASS L"VirtualBox Interface"
 
 
 /*
