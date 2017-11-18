@@ -5192,7 +5192,7 @@ public class VirtualBoxManager
             <xsl:with-param name="filename" select="concat(@name, '.java')" />
           </xsl:call-template>
         </xsl:if>
-      </xsl:otherwise>
+      </xsl:when>
 
       <xsl:otherwise>
         <!-- We don't need WSDL-specific interfaces here -->
