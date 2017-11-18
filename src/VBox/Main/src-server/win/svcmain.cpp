@@ -796,22 +796,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
     {
         /** @todo Merge this code with server.cpp (use Logging.cpp?). */
         char szLogFile[RTPATH_MAX];
-        if (!pszLogFile)
+        if (!pszLogFile || !*pszLogFile)
         {
             vrc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
             if (RT_SUCCESS(vrc))
                 vrc = RTPathAppend(szLogFile, sizeof(szLogFile), "VBoxSVC.log");
+            if (RT_FAILURE(vrc))
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to construct release log filename, rc=%Rrc", vrc);
+            pszLogFile = szLogFile;
         }
-        else
-        {
-            if (!RTStrPrintf(szLogFile, sizeof(szLogFile), "%s", pszLogFile))
-                vrc = VERR_NO_MEMORY;
-        }
-        if (RT_FAILURE(vrc))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to create logging file name, rc=%Rrc", vrc);
 
         char szError[RTPATH_MAX + 128];
-        vrc = com::VBoxLogRelCreate("COM Server", szLogFile,
+        vrc = com::VBoxLogRelCreate("COM Server", pszLogFile,
                                     RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
                                     VBOXSVC_LOG_DEFAULT, "VBOXSVC_RELEASE_LOG",
                                     RTLOGDEST_FILE, UINT32_MAX /* cMaxEntriesPerGroup */,
