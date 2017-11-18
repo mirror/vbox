@@ -274,16 +274,10 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
 		return ret;
 
 	ret = vbox_bo_pin(bo, TTM_PL_FLAG_VRAM, &gpu_addr);
-	if (ret) {
-		vbox_bo_unreserve(bo);
-		return ret;
-	}
-
-	if (&vbox->fbdev->afb == vbox_fb)
-		vbox_fbdev_set_base(vbox, gpu_addr);
 	vbox_bo_unreserve(bo);
+	if (ret)
+		return ret;
 
-	/* vbox_set_start_address_crt1(crtc, (u32)gpu_addr); */
 	vbox_crtc->fb_offset = gpu_addr;
 	if (vbox_set_up_input_mapping(vbox)) {
 		struct drm_crtc *crtci;
