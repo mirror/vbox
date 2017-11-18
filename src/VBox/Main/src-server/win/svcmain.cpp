@@ -437,7 +437,9 @@ STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID 
                             if (SUCCEEDED(hrc))
                             {
                                 m_hrcCreate = hrc = p->QueryInterface(IID_IUnknown, (void **)&m_pObj);
-                                if (FAILED(hrc))
+                                if (SUCCEEDED(hrc))
+                                    RTLogClearFileDelayFlag(RTLogRelGetDefaultInstance(),  NULL);
+                                else
                                 {
                                     delete p;
                                     i_deregisterWithSds();
@@ -810,8 +812,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         vrc = com::VBoxLogRelCreate("COM Server", pszLogFile,
                                     RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
                                     VBOXSVC_LOG_DEFAULT, "VBOXSVC_RELEASE_LOG",
-                                    RTLOGDEST_FILE, UINT32_MAX /* cMaxEntriesPerGroup */,
-                                    cHistory, uHistoryFileTime, uHistoryFileSize,
+#ifdef VBOX_WITH_SDS_PLAN_B
+                                    RTLOGDEST_FILE | RTLOGDEST_F_DELAY_FILE,
+#else
+                                    RTLOGDEST_FILE,
+#endif
+                                    UINT32_MAX /* cMaxEntriesPerGroup */, cHistory, uHistoryFileTime, uHistoryFileSize,
                                     szError, sizeof(szError));
         if (RT_FAILURE(vrc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szError, vrc);
