@@ -141,8 +141,8 @@ private:
 
 #ifdef VBOX_WITH_SDS_PLAN_B
     // quick and dirty for checking the concept.
-    IVBoxSVC *m_pVBoxSVC;
-    uint32_t  m_pidVBoxSVC;
+    ComPtr<IVBoxSVC> m_ptrVBoxSVC;
+    ComPtr<IVBoxSVC> m_ptrOtherVBoxSVC;
 #endif
 };
 
