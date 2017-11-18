@@ -1233,6 +1233,7 @@
 # define RTLogBackdoorPrintf                            RT_MANGLER(RTLogBackdoorPrintf) /* r0drv-guest */
 # define RTLogBackdoorPrintfV                           RT_MANGLER(RTLogBackdoorPrintfV) /* r0drv-guest */
 # define RTLogCalcSizeForR0                             RT_MANGLER(RTLogCalcSizeForR0)
+# define RTLogClearFileDelayFlag                        RT_MANGLER(RTLogClearFileDelayFlag)
 # define RTLogCloneRC                                   RT_MANGLER(RTLogCloneRC)
 # define RTLogComPrintf                                 RT_MANGLER(RTLogComPrintf)
 # define RTLogComPrintfV                                RT_MANGLER(RTLogComPrintfV)

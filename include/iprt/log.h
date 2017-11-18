@@ -456,6 +456,9 @@ typedef enum RTLOGDEST
     RTLOGDEST_RINGBUF       = 0x00000020,
     /** Open files with no deny (share read, write, delete) on Windows. */
     RTLOGDEST_F_NO_DENY     = 0x00010000,
+    /** Delay opening the log file, logging to the buffer untill
+     * RTLogClearFileDelayFlag is called. */
+    RTLOGDEST_F_DELAY_FILE  = 0x00020000,
     /** Just a dummy flag to be used when no other flag applies. */
     RTLOGDEST_DUMMY         = 0x20000000,
     /** Log to a user defined output stream. */
@@ -2266,6 +2269,16 @@ RTDECL(int) RTLogGetFlags(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
  * @param   pszValue            The value to parse.
  */
 RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszValue);
+
+/**
+ * Clear the file delay flag if set, opening the destination and flushing.
+ *
+ * @returns IPRT status code.
+ * @param   pLogger             Logger instance (NULL for default logger).
+ * @param   pszValue            The value to parse.
+ * @param   pErrInfo            Where to return extended error info.  Optional.
+ */
+RTDECL(int) RTLogClearFileDelayFlag(PRTLOGGER pLogger, PRTERRINFO pErrInfo);
 
 /**
  * Get the current log destinations as a string.
