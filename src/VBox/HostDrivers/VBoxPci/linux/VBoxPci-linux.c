@@ -366,7 +366,11 @@ static int vboxPciFileWrite(struct file* file, unsigned long long offset, unsign
 
     fs_save = get_fs();
     set_fs(get_ds());
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+    ret = kernel_write(file, data, size, &offset);
+#else
     ret = vfs_write(file, data, size, &offset);
+#endif
     set_fs(fs_save);
     if (ret < 0)
         printk(KERN_DEBUG "vboxPciFileWrite: error %d\n", ret);
