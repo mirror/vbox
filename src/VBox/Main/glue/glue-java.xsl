@@ -5184,6 +5184,16 @@ public class VirtualBoxManager
         </xsl:if>
       </xsl:when>
 
+      <xsl:when test="$G_vboxGlueStyle='xpcom'">
+        <!-- We don't need WSDL-specific nor MIDL-specific interfaces here -->
+        <xsl:if test="not(@internal='yes') and not($self_target='midl') and not($module)">
+          <xsl:call-template name="genIface">
+            <xsl:with-param name="ifname" select="@name" />
+            <xsl:with-param name="filename" select="concat(@name, '.java')" />
+          </xsl:call-template>
+        </xsl:if>
+      </xsl:otherwise>
+
       <xsl:otherwise>
         <!-- We don't need WSDL-specific interfaces here -->
         <xsl:if test="not(@internal='yes') and not($self_target='wsdl') and not($module)">
