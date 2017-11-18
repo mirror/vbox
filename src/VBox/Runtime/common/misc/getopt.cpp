@@ -827,3 +827,30 @@ RTDECL(RTEXITCODE) RTGetOptPrintError(int ch, PCRTGETOPTUNION pValueUnion)
 }
 RT_EXPORT_SYMBOL(RTGetOptPrintError);
 
+
+RTDECL(ssize_t) RTGetOptFormatError(char *pszBuf, size_t cbBuf, int ch, PCRTGETOPTUNION pValueUnion)
+{
+    ssize_t cchRet;
+    if (ch == VINF_GETOPT_NOT_OPTION)
+        cchRet = RTStrPrintf2(pszBuf, cbBuf, "Invalid parameter: %s", pValueUnion->psz);
+    else if (ch > 0)
+    {
+        if (RT_C_IS_GRAPH(ch))
+            cchRet = RTStrPrintf2(pszBuf, cbBuf, "Unhandled option: -%c", ch);
+        else
+            cchRet = RTStrPrintf2(pszBuf, cbBuf, "Unhandled option: %i (%#x)", ch, ch);
+    }
+    else if (ch == VERR_GETOPT_UNKNOWN_OPTION)
+        cchRet = RTStrPrintf2(pszBuf, cbBuf, "Unknown option: '%s'", pValueUnion->psz);
+    else if (pValueUnion->pDef && ch == VERR_GETOPT_INVALID_ARGUMENT_FORMAT)
+        /** @todo r=klaus not really ideal, as the value isn't available */
+        cchRet = RTStrPrintf2(pszBuf, cbBuf, "The value given '%s' has an invalid format.", pValueUnion->pDef->pszLong);
+    else if (pValueUnion->pDef)
+        cchRet = RTStrPrintf2(pszBuf, cbBuf, "%s: %Rrs\n", pValueUnion->pDef->pszLong, ch);
+    else
+        cchRet = RTStrPrintf2(pszBuf, cbBuf, "%Rrs\n", ch);
+
+    return cchRet;
+}
+RT_EXPORT_SYMBOL(RTGetOptFormatError);
+

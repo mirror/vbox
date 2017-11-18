@@ -1004,6 +1004,7 @@
 # define RTGetOptFetchValue                             RT_MANGLER(RTGetOptFetchValue)
 # define RTGetOptInit                                   RT_MANGLER(RTGetOptInit)
 # define RTGetOptNonOptionArrayPtr                      RT_MANGLER(RTGetOptNonOptionArrayPtr)
+# define RTGetOptFormatError                            RT_MANGLER(RTGetOptFormatError)
 # define RTGetOptPrintError                             RT_MANGLER(RTGetOptPrintError)
 # define RTHandleClose                                  RT_MANGLER(RTHandleClose)
 # define RTHandleGetStandard                            RT_MANGLER(RTHandleGetStandard)
