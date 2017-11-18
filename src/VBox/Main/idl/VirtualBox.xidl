@@ -24376,12 +24376,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <!-- VBOX_SDS_PLAN_B start -->
   <!--
   // IVBoxSVC
+  // Note! This actually extends IUnknown rather than IDispatch, notdual=yes
+  //       sees to that.
   //////////////////////////////////////////////////////////////////////////
   -->
   <interface
-    name="IVBoxSVC" extends="IUnknown"
-    uuid="902659ea-d14e-4444-4bc1-40b0d01ae9b3"
-    wsmap="suppress" internal="yes"  notdual="yes"
+    name="IVBoxSVC" extends="$unknown" notdual="yes"
+    uuid="f22181fb-921b-4f2a-7801-0cc5ec28cdae"
+    wsmap="suppress" internal="yes"
     reservedMethods="0" reservedAttributes="0"
     >
       <desc>
@@ -24462,7 +24464,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   </interface>
 
-</if>
+</if> <!-- bird: shouldn't this if-element at leat include the VBoxSDS module, if not the whole system service application? -->
 
   <module name="VBoxSDS" context="LocalService">
     <class name="VirtualBoxSDS" uuid="74ab5ffe-8726-4435-aa7e-876d705bcba5"

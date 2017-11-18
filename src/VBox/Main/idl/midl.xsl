@@ -233,6 +233,7 @@ import "unknwn.idl";
   <xsl:value-of select="$name"/>
   <xsl:text> : </xsl:text>
   <xsl:choose>
+    <xsl:when test="(@extends = '$unknown') and (@notdual = 'yes')">IUnknown</xsl:when>
     <xsl:when test="@extends='$unknown'">IDispatch</xsl:when>
     <xsl:when test="@extends='$errorinfo'">IErrorInfo</xsl:when>
     <!-- TODO/FIXME/BUGBUG: The above $errorinfo value causes the following warning (/W4):
