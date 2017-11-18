@@ -2366,7 +2366,8 @@ static BOOL vbpsInstallWindowsService(const WCHAR *pwszVBoxDir, const WCHAR *pws
                 CloseServiceHandle(hSCM);
             }
             else
-                AssertMsgFailed(("Could not open service %ls: %u\n", pwszServiceName, GetLastError()));
+                AssertMsg(GetLastError() == ERROR_ACCESS_DENIED,
+                          ("Could not open service %ls: %u\n", pwszServiceName, GetLastError()));
         }
         else
             AssertMsgFailed(("Could not open Service Manager: %u\n", GetLastError()));
@@ -2406,11 +2407,13 @@ static BOOL vbpsUninstallWindowsService(const WCHAR *pwszServiceName)
                     AssertMsg(fRet, ("Could not delete service %ls: %u\n", pwszServiceName, GetLastError()));
                 }
                 else
-                    AssertMsgFailed(("Could not stop service %ls: %u (state=%u)\n", pwszServiceName, dwErr, Status.dwCurrentState));
+                    AssertMsg(dwErr == ERROR_ACCESS_DENIED,
+                              ("Could not stop service %ls: %u (state=%u)\n", pwszServiceName, dwErr, Status.dwCurrentState));
                 CloseServiceHandle(hService);
             }
             else
-                AssertMsgFailed(("Could not open service %ls: %u\n", pwszServiceName, GetLastError()));
+                AssertMsg(GetLastError() == ERROR_ACCESS_DENIED,
+                          ("Could not open service %ls: %u\n", pwszServiceName, GetLastError()));
             CloseServiceHandle(hSCM);
         }
         else
