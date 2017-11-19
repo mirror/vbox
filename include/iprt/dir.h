@@ -212,11 +212,6 @@ RTDECL(int) RTDirFlush(const char *pszPath);
 RTDECL(int) RTDirFlushParent(const char *pszChild);
 
 
-/** Open directory handle. */
-typedef struct RTDIRINTERNAL *RTDIR;
-/** NIL open directory handle. */
-#define NIL_RTDIR ((RTDIR)0)
-
 
 /**
  * Filter option for RTDirOpenFiltered().
