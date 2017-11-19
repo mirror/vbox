@@ -318,7 +318,7 @@ int VGSvcLogCreate(const char *pszLogFile)
                            RT_ELEMENTS(s_apszGroups), s_apszGroups,
                            RTLOGDEST_STDOUT | RTLOGDEST_USER,
                            vgsvcLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
-                           NULL /*pErrInfo*/, pszLogFile);
+                           NULL /*pErrInfo*/, "%s", pszLogFile);
     if (RT_SUCCESS(rc))
     {
         /* register this logger as the release logger */
