@@ -288,11 +288,13 @@ typedef struct RTDIRENTRY
      * available. */
     RTINODE         INodeId;
     /** The entry type. (d_type)
-     * RTDIRENTRYTYPE_UNKNOWN is a common return value here since not all file
-     * systems (or Unixes) stores the type of a directory entry and instead
-     * expects the user to use stat() to get it.  So, when you see this you
-     * should use RTDirQueryUnknownType or RTDirQueryUnknownTypeEx to get the type,
-     * or if if you're lazy, use RTDirReadEx. */
+     *
+     * @warning RTDIRENTRYTYPE_UNKNOWN is a common return value here since not all
+     *          file systems (or Unixes) stores the type of a directory entry and
+     *          instead expects the user to use stat() to get it.  So, when you see
+     *          this you should use RTDirQueryUnknownType or RTDirQueryUnknownTypeEx
+     *          to get the type, or if if you're lazy, use RTDirReadEx.
+     */
     RTDIRENTRYTYPE  enmType;
     /** The length of the filename, excluding the terminating nul character. */
     uint16_t        cbName;
