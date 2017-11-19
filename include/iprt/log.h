@@ -2019,15 +2019,15 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGro
  * @param   cSecsHistoryTimeSlot Maximum time interval per log file when
  *                              performing history rotation, in seconds.
  *                              0 means time limit.
- * @param   pszErrorMsg         A buffer which is filled with an error message if something fails. May be NULL.
- * @param   cchErrorMsg         The size of the error message buffer.
+ * @param   pErrInfo            Where to return extended error information.
+ *                              Optional.
  * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
  * @param   ...                 Format arguments.
  */
 RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                           const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
                           uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
-                          uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot, char *pszErrorMsg, size_t cchErrorMsg,
+                          uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot, PRTERRINFO pErrInfo,
                           const char *pszFilenameFmt, ...) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(14, 15);
 
 /**
@@ -2056,9 +2056,8 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszG
  * @param   cSecsHistoryTimeSlot  Maximum time interval per log file when
  *                              performing history rotation, in seconds.
  *                              0 means no time limit.
- * @param   pszErrorMsg         A buffer which is filled with an error message
- *                              if something fails.  May be NULL.
- * @param   cchErrorMsg         The size of the error message buffer.
+ * @param   pErrInfo            Where to return extended error information.
+ *                              Optional.
  * @param   pszFilenameFmt      Log filename format string.  Standard
  *                              RTStrFormat().
  * @param   args                Format arguments.
@@ -2066,7 +2065,7 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszG
 RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                            const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
                            uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
-                           uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot, char *pszErrorMsg, size_t cchErrorMsg,
+                           uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot, PRTERRINFO pErrInfo,
                            const char *pszFilenameFmt, va_list args) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(14, 0);
 
 /**

@@ -227,7 +227,7 @@ static void rtR0LogLoggerExFallback(uint32_t fDestFlags, uint32_t fFlags, PRTLOG
                                     const char *pszFormat, va_list va);
 #endif
 #ifdef IN_RING3
-static int  rtR3LogOpenFileDestination(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMsg);
+static int  rtR3LogOpenFileDestination(PRTLOGGER pLogger, PRTERRINFO pErrInfo);
 #endif
 #ifndef IN_RC
 static void rtLogRingBufFlush(PRTLOGGER pLogger);
@@ -780,7 +780,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                            const char *pszEnvVarBase, unsigned cGroups, const char * const *papszGroups,
                            uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
                            uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
-                           char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, va_list args)
+                           PRTERRINFO pErrInfo, const char *pszFilenameFmt, va_list args)
 {
     int         rc;
     size_t      offInternal;
@@ -790,16 +790,13 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
     /*
      * Validate input.
      */
-    if (    (cGroups && !papszGroups)
-        ||  !VALID_PTR(ppLogger) )
+    if (   (cGroups && !papszGroups)
+        || !VALID_PTR(ppLogger) )
     {
         AssertMsgFailed(("Invalid parameters!\n"));
         return VERR_INVALID_PARAMETER;
     }
     *ppLogger = NULL;
-
-    if (pszErrorMsg)
-        RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("unknown error"));
 
     AssertMsgReturn(cHistory < _1M, ("%#x", cHistory), VERR_OUT_OF_RANGE);
 
@@ -881,11 +878,11 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
         }
         else
         {
-#  ifdef RT_OS_LINUX
-            if (pszErrorMsg) /* Most probably SELinux causing trouble since the larger RTMemAlloc succeeded. */
-                RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("mmap(PROT_WRITE | PROT_EXEC) failed -- SELinux?"));
-#  endif
             rc = VERR_NO_MEMORY;
+#  ifdef RT_OS_LINUX
+                /* Most probably SELinux causing trouble since the larger RTMemAlloc succeeded. */
+            RTErrInfoSet(rc, N_("mmap(PROT_WRITE | PROT_EXEC) failed -- SELinux?"));
+#  endif
         }
         if (RT_SUCCESS(rc))
 # endif /* X86 wrapper code*/
@@ -947,7 +944,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                 pLogger->fDestFlags &= ~RTLOGDEST_F_DELAY_FILE;
 # ifdef IN_RING3
             if ((pLogger->fDestFlags & (RTLOGDEST_FILE | RTLOGDEST_F_DELAY_FILE)) == RTLOGDEST_FILE)
-                rc = rtR3LogOpenFileDestination(pLogger, pszErrorMsg, cchErrorMsg);
+                rc = rtR3LogOpenFileDestination(pLogger, pErrInfo);
 # endif
 
             if ((pLogger->fDestFlags & RTLOGDEST_RINGBUF) && RT_SUCCESS(rc))
@@ -983,8 +980,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                     return VINF_SUCCESS;
                 }
 
-                if (pszErrorMsg)
-                    RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("failed to create semaphore"));
+                RTErrInfoSet(pErrInfo, rc, N_("failed to create semaphore"));
             }
 # ifdef IN_RING3
             RTFileClose(pLogger->pInt->hFile);
@@ -1015,7 +1011,7 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGro
     va_start(args, pszFilenameFmt);
     rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups,
                         fDestFlags, NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
-                        NULL /*pszErrorMsg*/, 0 /*cchErrorMsg*/, pszFilenameFmt, args);
+                        NULL /*pErrInfo*/, pszFilenameFmt, args);
     va_end(args);
     return rc;
 }
@@ -1026,7 +1022,7 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszG
                           const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
                           uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
                           uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
-                          char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, ...)
+                          PRTERRINFO pErrInfo, const char *pszFilenameFmt, ...)
 {
     va_list args;
     int rc;
@@ -1034,7 +1030,7 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszG
     va_start(args, pszFilenameFmt);
     rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups,
                         fDestFlags, pfnPhase, cHistory, cbHistoryFileMax, cSecsHistoryTimeSlot,
-                        pszErrorMsg, cchErrorMsg, pszFilenameFmt, args);
+                        pErrInfo, pszFilenameFmt, args);
     va_end(args);
     return rc;
 }
@@ -2457,7 +2453,7 @@ RTDECL(int) RTLogClearFileDelayFlag(PRTLOGGER pLogger, PRTERRINFO pErrInfo)
             if (   pLogger->fDestFlags & RTLOGDEST_FILE
                 && pLogger->pInt->hFile == NIL_RTFILE)
             {
-                rc = rtR3LogOpenFileDestination(pLogger, NULL, 0);
+                rc = rtR3LogOpenFileDestination(pLogger, pErrInfo);
                 if (RT_SUCCESS(rc))
                     rtlogFlush(pLogger, false /*fNeedSpace*/);
             }
@@ -3173,11 +3169,10 @@ RT_EXPORT_SYMBOL(RTLogDumpPrintfV);
  * Opens/creates the log file.
  *
  * @param   pLogger         The logger instance to update. NULL is not allowed!
- * @param   pszErrorMsg     A buffer which is filled with an error message if
- *                          something fails.  May be NULL.
- * @param   cchErrorMsg     The size of the error message buffer.
+ * @param   pErrInfo        Where to return extended error information.
+ *                          Optional.
  */
-static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMsg)
+static int rtlogFileOpen(PRTLOGGER pLogger, PRTERRINFO pErrInfo)
 {
     uint32_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_NONE;
     if (pLogger->fFlags & RTLOGFLAGS_APPEND)
@@ -3210,8 +3205,7 @@ static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMs
     else
     {
         pLogger->pInt->hFile = NIL_RTFILE;
-        if (pszErrorMsg)
-            RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("could not open file '%s' (fOpen=%#x)"), pLogger->pInt->szFilename, fOpen);
+        RTErrInfoSetF(pErrInfo, rc, N_("could not open file '%s' (fOpen=%#x)"), pLogger->pInt->szFilename, fOpen);
     }
     return rc;
 }
@@ -3227,8 +3221,9 @@ static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMs
  * @param   fFirst      Flag whether this is the beginning of logging, i.e.
  *                      called from RTLogCreateExV.  Prevents pfnPhase from
  *                      being called.
+ * @param   pErrInfo    Where to return extended error information. Optional.
  */
-static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
+static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst, PRTERRINFO pErrInfo)
 {
     /* Suppress rotating empty log files simply because the time elapsed. */
     if (RT_UNLIKELY(!pLogger->pInt->cbHistoryFileWritten))
@@ -3320,7 +3315,7 @@ static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
      */
     pLogger->pInt->cbHistoryFileWritten = 0;
     pLogger->pInt->uHistoryTimeSlotStart = uTimeSlot;
-    rtlogFileOpen(pLogger, NULL, 0);
+    rtlogFileOpen(pLogger, pErrInfo);
 
     /*
      * Use the callback to generate some initial log contents, but only if this
@@ -3348,31 +3343,31 @@ static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
  *
  * @returns IPRT status code.
  * @param   pLogger             The logger.
- * @param   pszErrorMsg         Where to return error info. Optional.
- * @param   cchErrorMsg         Size of @a pszErrorMsg buffer.
+ * @param   pErrInfo            Where to return extended error information.
+ *                              Optional.
  */
-static int rtR3LogOpenFileDestination(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMsg)
+static int rtR3LogOpenFileDestination(PRTLOGGER pLogger, PRTERRINFO pErrInfo)
 {
     int rc;
     if (pLogger->fFlags & RTLOGFLAGS_APPEND)
     {
-        rc = rtlogFileOpen(pLogger, pszErrorMsg, cchErrorMsg);
+        rc = rtlogFileOpen(pLogger, pErrInfo);
 
         /* Rotate in case of appending to a too big log file,
            otherwise this simply doesn't do anything. */
-        rtlogRotate(pLogger, 0, true /* fFirst */);
+        rtlogRotate(pLogger, 0, true /* fFirst */, pErrInfo);
     }
     else
     {
         /* Force rotation if it is configured. */
         pLogger->pInt->cbHistoryFileWritten = UINT64_MAX;
-        rtlogRotate(pLogger, 0, true /* fFirst */);
+        rtlogRotate(pLogger, 0, true /* fFirst */, pErrInfo);
 
         /* If the file is not open then rotation is not set up. */
         if (pLogger->pInt->hFile == NIL_RTFILE)
         {
             pLogger->pInt->cbHistoryFileWritten = 0;
-            rc = rtlogFileOpen(pLogger, pszErrorMsg, cchErrorMsg);
+            rc = rtlogFileOpen(pLogger, pErrInfo);
         }
         else
             rc = VINF_SUCCESS;
@@ -3480,7 +3475,7 @@ static void rtlogFlush(PRTLOGGER pLogger, bool fNeedSpace)
          */
         if (   (pLogger->fDestFlags & RTLOGDEST_FILE)
             && pLogger->pInt->cHistory)
-            rtlogRotate(pLogger, RTTimeProgramSecTS() / pLogger->pInt->cSecsHistoryTimeSlot, false /* fFirst */);
+            rtlogRotate(pLogger, RTTimeProgramSecTS() / pLogger->pInt->cSecsHistoryTimeSlot, false /*fFirst*/, NULL /*pErrInfo*/);
 #endif
     }
 #ifdef IN_RING3

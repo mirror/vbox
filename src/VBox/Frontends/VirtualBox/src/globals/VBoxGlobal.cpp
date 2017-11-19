@@ -3858,7 +3858,6 @@ void VBoxGlobal::prepare()
         RTPathAppend(szLogFile, sizeof(szLogFile), "selectorwindow.log");
         pszLogFile = szLogFile;
         /* Create release logger, to file: */
-        char szError[RTPATH_MAX + 128];
         com::VBoxLogRelCreate("GUI VM Selector Window",
                               pszLogFile,
                               RTLOGFLAGS_PREFIX_TIME_PROG,
@@ -3869,8 +3868,7 @@ void VBoxGlobal::prepare()
                               1,
                               60 * 60,
                               _1M,
-                              szError,
-                              sizeof(szError));
+                              NULL /*pErrInfo*/);
 
         LogRel(("Qt version: %s\n", qtRTVersionString().toUtf8().constData()));
     }

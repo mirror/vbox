@@ -935,12 +935,11 @@ static int vboxGreeterLogCreate(const char *pszLogFile)
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     fFlags |= RTLOGFLAGS_USECRLF;
 #endif
-    char szError[RTPATH_MAX + 128] = "";
     int rc = RTLogCreateEx(&g_pLoggerRelease, fFlags, "all",
                            "VBOXGREETER_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
                            RTLOGDEST_STDOUT,
                            vboxGreeterLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
-                           szError, sizeof(szError), pszLogFile);
+                           NULL /*pErrInfo*/, pszLogFile);
     if (RT_SUCCESS(rc))
     {
         /* register this logger as the release logger */

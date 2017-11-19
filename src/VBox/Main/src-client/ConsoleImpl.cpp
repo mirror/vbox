@@ -7216,17 +7216,16 @@ HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
         }
     }
 
-    char szError[RTPATH_MAX + 128];
+    RTERRINFOSTATIC ErrInfo;
     int vrc = com::VBoxLogRelCreate("VM", logFile.c_str(),
                                     RTLOGFLAGS_PREFIX_TIME_PROG | RTLOGFLAGS_RESTRICT_GROUPS,
                                     "all all.restrict -default.restrict",
                                     "VBOX_RELEASE_LOG", RTLOGDEST_FILE,
                                     32768 /* cMaxEntriesPerGroup */,
                                     0 /* cHistory */, 0 /* uHistoryFileTime */,
-                                    0 /* uHistoryFileSize */, szError, sizeof(szError));
+                                    0 /* uHistoryFileSize */, RTErrInfoInitStatic(&ErrInfo));
     if (RT_FAILURE(vrc))
-        hrc = setError(E_FAIL, tr("Failed to open release log (%s, %Rrc)"),
-                       szError, vrc);
+        hrc = setError(E_FAIL, tr("Failed to open release log (%s, %Rrc)"), ErrInfo.Core.pszMsg, vrc);
 
     /* If we've made any directory changes, flush the directory to increase
        the likelihood that the log file will be usable after a system panic.

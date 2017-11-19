@@ -114,7 +114,6 @@ static int vboxInitLogging(const char *pszFilename, bool bGenNameSuffix)
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     fFlags |= RTLOGFLAGS_USECRLF;
 #endif
-    char szError[RTPATH_MAX + 128] = "";
     const char * pszFilenameFmt;
     RTLOGDEST enmLogDest;
     if(pszFilename)
@@ -134,7 +133,7 @@ static int vboxInitLogging(const char *pszFilename, bool bGenNameSuffix)
     int vrc = RTLogCreateEx(&loggerRelease, fFlags, "all",
                             "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups, enmLogDest,
                             NULL /* pfnBeginEnd */, 0 /* cHistory */, 0 /* cbHistoryFileMax */, 0 /* uHistoryTimeMax */,
-                            szError, sizeof(szError), pszFilenameFmt, pszFilename, RTTimeMilliTS());
+                            NULL /* pErrInfo */, pszFilenameFmt, pszFilename, RTTimeMilliTS());
     if (RT_SUCCESS(vrc))
     {
         /* some introductory information */
