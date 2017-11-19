@@ -179,7 +179,7 @@ RTDECL(uint32_t) RTKrnlModLoadedGetCount(void)
         rc = RTDirRead(hDir, &DirEnt, NULL);
         while (RT_SUCCESS(rc))
         {
-            if (!RTDirEntryIsStdDotLink(&DirEntry))
+            if (!RTDirEntryIsStdDotLink(&DirEnt))
                 cKmodsLoaded++;
             rc = RTDirRead(hDir, &DirEnt, NULL);
         }
@@ -206,7 +206,7 @@ RTDECL(int) RTKrnlModLoadedQueryInfoAll(PRTKRNLMODINFO pahKrnlModInfo, uint32_t 
     }
 
     RTDIR hDir = NULL;
-    int rc = RTDirOpen(&pDir, "/sys/module");
+    int rc = RTDirOpen(&hDir, "/sys/module");
     if (RT_SUCCESS(rc))
     {
         unsigned idxKrnlModInfo = 0;

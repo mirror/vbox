@@ -109,7 +109,7 @@ RTR3DECL(bool) RTProcIsRunningByName(const char *pszName)
                 }
             }
         }
-        RTDirClose(pDir);
+        RTDirClose(hDir);
     }
 
     return false;
