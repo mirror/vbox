@@ -881,7 +881,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
             rc = VERR_NO_MEMORY;
 #  ifdef RT_OS_LINUX
                 /* Most probably SELinux causing trouble since the larger RTMemAlloc succeeded. */
-            RTErrInfoSet(rc, N_("mmap(PROT_WRITE | PROT_EXEC) failed -- SELinux?"));
+            RTErrInfoSet(pErrInfo, rc, N_("mmap(PROT_WRITE | PROT_EXEC) failed -- SELinux?"));
 #  endif
         }
         if (RT_SUCCESS(rc))
