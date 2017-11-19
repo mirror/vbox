@@ -52,8 +52,8 @@ typedef struct _SHFLFILEHANDLE
         } file;
         struct
         {
-            PRTDIR        Handle;
-            PRTDIR        SearchHandle;
+            RTDIR         Handle;
+            RTDIR         SearchHandle;
             PRTDIRENTRYEX pLastValidEntry; /* last found file in a directory search */
         } dir;
     };

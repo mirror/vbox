@@ -642,15 +642,15 @@ DECLHIDDEN(int) vdPluginLoadFromPath(const char *pszPath)
         return VERR_NO_STR_MEMORY;
 
     PRTDIRENTRYEX pPluginDirEntry = NULL;
-    PRTDIR pPluginDir = NULL;
+    RTDIR hPluginDir;
     size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
-    int rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0 /*fFlags*/);
+    int rc = RTDirOpenFiltered(&hPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0 /*fFlags*/);
     if (RT_SUCCESS(rc))
     {
         pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRYEX));
         if (pPluginDirEntry)
         {
-            while (   (rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK))
+            while (   (rc = RTDirReadEx(hPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK))
                    != VERR_NO_MORE_FILES)
             {
                 char *pszPluginPath = NULL;
@@ -666,7 +666,7 @@ DECLHIDDEN(int) vdPluginLoadFromPath(const char *pszPath)
                         break;
                     }
                     /* Retry. */
-                    rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                    rc = RTDirReadEx(hPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
                     if (RT_FAILURE(rc))
                         break;
                 }
@@ -694,7 +694,7 @@ DECLHIDDEN(int) vdPluginLoadFromPath(const char *pszPath)
         else
             rc = VERR_NO_MEMORY;
 
-        RTDirClose(pPluginDir);
+        RTDirClose(hPluginDir);
     }
     else
     {
@@ -765,15 +765,15 @@ DECLHIDDEN(int) vdPluginUnloadFromPath(const char *pszPath)
         return VERR_NO_STR_MEMORY;
 
     PRTDIRENTRYEX pPluginDirEntry = NULL;
-    PRTDIR pPluginDir = NULL;
+    RTDIR hPluginDir;
     size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
-    int rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0 /*fFlags*/);
+    int rc = RTDirOpenFiltered(&hPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0 /*fFlags*/);
     if (RT_SUCCESS(rc))
     {
         pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRYEX));
         if (pPluginDirEntry)
         {
-            while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK)) != VERR_NO_MORE_FILES)
+            while ((rc = RTDirReadEx(hPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK)) != VERR_NO_MORE_FILES)
             {
                 char *pszPluginPath = NULL;
 
@@ -788,7 +788,7 @@ DECLHIDDEN(int) vdPluginUnloadFromPath(const char *pszPath)
                         break;
                     }
                     /* Retry. */
-                    rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                    rc = RTDirReadEx(hPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
                     if (RT_FAILURE(rc))
                         break;
                 }
@@ -816,7 +816,7 @@ DECLHIDDEN(int) vdPluginUnloadFromPath(const char *pszPath)
         else
             rc = VERR_NO_MEMORY;
 
-        RTDirClose(pPluginDir);
+        RTDirClose(hPluginDir);
     }
     else
     {

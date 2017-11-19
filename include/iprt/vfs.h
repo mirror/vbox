@@ -491,7 +491,7 @@ RTDECL(int) RTVfsDirOpenDir(RTVFSDIR hVfsDir, const char *pszPath, uint32_t fFla
 RTDECL(int) RTVfsDirCreateDir(RTVFSDIR hVfsDir, const char *pszRelPath, RTFMODE fMode, uint32_t fFlags, PRTVFSDIR phVfsDir);
 
 /**
- * Create a VFS directory handle from a standard IPRT directory handle (PRTDIR).
+ * Create a VFS directory handle from a standard IPRT directory handle (RTDIR).
  *
  * @returns IPRT status code.
  * @param   hDir            The standard IPRT directory handle.
@@ -499,7 +499,7 @@ RTDECL(int) RTVfsDirCreateDir(RTVFSDIR hVfsDir, const char *pszRelPath, RTFMODE 
  *                          directory is released, or to close it (@c false).
  * @param   phVfsDir        Where to return the VFS directory handle.
  */
-RTDECL(int) RTVfsDirFromRTDir(PRTDIR hDir, bool fLeaveOpen, PRTVFSDIR phVfsDir);
+RTDECL(int) RTVfsDirFromRTDir(RTDIR hDir, bool fLeaveOpen, PRTVFSDIR phVfsDir);
 
 /**
  * RTDirOpen + RTVfsDirFromRTDir.

@@ -62,7 +62,7 @@
  * @param   cbPathDst           The size of the destination buffer.
  * @param   pszRelPath          The relative path.
  */
-static int rtDirRelBuildFullPath(PRTDIR pThis, char *pszPathDst, size_t cbPathDst, const char *pszRelPath)
+static int rtDirRelBuildFullPath(PRTDIRINTERNAL pThis, char *pszPathDst, size_t cbPathDst, const char *pszRelPath)
 {
     AssertMsgReturn(!RTPathStartsWithRoot(pszRelPath), ("pszRelPath='%s'\n", pszRelPath), VERR_PATH_IS_NOT_RELATIVE);
 
@@ -115,9 +115,9 @@ static int rtDirRelBuildFullPath(PRTDIR pThis, char *pszPathDst, size_t cbPathDs
  */
 
 
-RTDECL(int)  RTDirRelFileOpen(PRTDIR hDir, const char *pszRelFilename, uint64_t fOpen, PRTFILE phFile)
+RTDECL(int)  RTDirRelFileOpen(RTDIR hDir, const char *pszRelFilename, uint64_t fOpen, PRTFILE phFile)
 {
-    PRTDIR pThis = hDir;
+    PRTDIRINTERNAL pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
 
@@ -187,16 +187,16 @@ RTDECL(int)  RTDirRelFileOpen(PRTDIR hDir, const char *pszRelFilename, uint64_t 
 
 
 
-RTDECL(int) RTDirRelDirOpen(PRTDIR hDir, const char *pszDir, PRTDIR *phDir)
+RTDECL(int) RTDirRelDirOpen(RTDIR hDir, const char *pszDir, RTDIR *phDir)
 {
     return RTDirRelDirOpenFiltered(hDir, pszDir, RTDIRFILTER_NONE, 0 /*fFlags*/, phDir);
 }
 
 
-RTDECL(int) RTDirRelDirOpenFiltered(PRTDIR hDir, const char *pszDirAndFilter, RTDIRFILTER enmFilter,
-                                    uint32_t fFlags, PRTDIR *phDir)
+RTDECL(int) RTDirRelDirOpenFiltered(RTDIR hDir, const char *pszDirAndFilter, RTDIRFILTER enmFilter,
+                                    uint32_t fFlags, RTDIR *phDir)
 {
-    PRTDIR pThis = hDir;
+    PRTDIRINTERNAL pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
 
@@ -216,9 +216,9 @@ RTDECL(int) RTDirRelDirOpenFiltered(PRTDIR hDir, const char *pszDirAndFilter, RT
 }
 
 
-RTDECL(int) RTDirRelDirCreate(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fCreate, PRTDIR *phSubDir)
+RTDECL(int) RTDirRelDirCreate(RTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fCreate, RTDIR *phSubDir)
 {
-    PRTDIR pThis = hDir;
+    PRTDIRINTERNAL pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(!(fCreate & ~RTDIRCREATE_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
@@ -307,9 +307,9 @@ RTDECL(int) RTDirRelDirCreate(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode
 }
 
 
-RTDECL(int) RTDirRelDirRemove(PRTDIR hDir, const char *pszRelPath)
+RTDECL(int) RTDirRelDirRemove(RTDIR hDir, const char *pszRelPath)
 {
-    PRTDIR pThis = hDir;
+    PRTDIRINTERNAL pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
 
@@ -371,10 +371,10 @@ RTDECL(int) RTDirRelDirRemove(PRTDIR hDir, const char *pszRelPath)
  */
 
 
-RTDECL(int) RTDirRelPathQueryInfo(PRTDIR hDir, const char *pszRelPath, PRTFSOBJINFO pObjInfo,
+RTDECL(int) RTDirRelPathQueryInfo(RTDIR hDir, const char *pszRelPath, PRTFSOBJINFO pObjInfo,
                                   RTFSOBJATTRADD enmAddAttr, uint32_t fFlags)
 {
-    PRTDIR pThis = hDir;
+    PRTDIRINTERNAL pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
 
@@ -408,9 +408,9 @@ RTDECL(int) RTDirRelPathQueryInfo(PRTDIR hDir, const char *pszRelPath, PRTFSOBJI
  *
  * @sa      RTPathSetMode
  */
-RTDECL(int) RTDirRelPathSetMode(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fFlags)
+RTDECL(int) RTDirRelPathSetMode(RTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fFlags)
 {
-    PRTDIR pThis = hDir;
+    PRTDIRINTERNAL pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
     AssertMsgReturn(RTPATH_F_IS_VALID(fFlags, 0), ("%#x\n", fFlags), VERR_INVALID_FLAGS);
@@ -457,10 +457,10 @@ RTAssertMsg2("DBG: RTDirRelPathSetMode(%s)...\n", szPath);
  *
  * @sa      RTPathSetTimesEx
  */
-RTDECL(int) RTDirRelPathSetTimes(PRTDIR hDir, const char *pszRelPath, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+RTDECL(int) RTDirRelPathSetTimes(RTDIR hDir, const char *pszRelPath, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                                  PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime, uint32_t fFlags)
 {
-    PRTDIR pThis = hDir;
+    PRTDIRINTERNAL pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
 
@@ -489,9 +489,9 @@ RTAssertMsg2("DBG: RTDirRelPathSetTimes(%s)...\n", szPath);
  *
  * @sa      RTPathSetOwnerEx
  */
-RTDECL(int) RTDirRelPathSetOwner(PRTDIR hDir, const char *pszRelPath, uint32_t uid, uint32_t gid, uint32_t fFlags)
+RTDECL(int) RTDirRelPathSetOwner(RTDIR hDir, const char *pszRelPath, uint32_t uid, uint32_t gid, uint32_t fFlags)
 {
-    PRTDIR pThis = hDir;
+    PRTDIRINTERNAL pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
 
@@ -526,13 +526,13 @@ RTAssertMsg2("DBG: RTDirRelPathSetOwner(%s)...\n", szPath);
  *
  * @sa      RTPathRename
  */
-RTDECL(int) RTDirRelPathRename(PRTDIR hDirSrc, const char *pszSrc, PRTDIR hDirDst, const char *pszDst, unsigned fRename)
+RTDECL(int) RTDirRelPathRename(RTDIR hDirSrc, const char *pszSrc, RTDIR hDirDst, const char *pszDst, unsigned fRename)
 {
-    PRTDIR pThis = hDirSrc;
+    PRTDIRINTERNAL pThis = hDirSrc;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
 
-    PRTDIR pThat = hDirDst;
+    PRTDIRINTERNAL pThat = hDirDst;
     if (pThat != pThis)
     {
         AssertPtrReturn(pThat, VERR_INVALID_HANDLE);
@@ -565,9 +565,9 @@ RTAssertMsg2("DBG: RTDirRelPathRename(%s,%s)...\n", szSrcPath, szDstPath);
  *
  * @sa      RTPathUnlink
  */
-RTDECL(int) RTDirRelPathUnlink(PRTDIR hDir, const char *pszRelPath, uint32_t fUnlink)
+RTDECL(int) RTDirRelPathUnlink(RTDIR hDir, const char *pszRelPath, uint32_t fUnlink)
 {
-    PRTDIR pThis = hDir;
+    PRTDIRINTERNAL pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
 
@@ -610,10 +610,10 @@ RTAssertMsg2("DBG: RTDirRelPathUnlink(%s)...\n", szPath);
  *
  * @sa      RTSymlinkCreate
  */
-RTDECL(int) RTDirRelSymlinkCreate(PRTDIR hDir, const char *pszSymlink, const char *pszTarget,
+RTDECL(int) RTDirRelSymlinkCreate(RTDIR hDir, const char *pszSymlink, const char *pszTarget,
                                   RTSYMLINKTYPE enmType, uint32_t fCreate)
 {
-    PRTDIR pThis = hDir;
+    PRTDIRINTERNAL pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
 
@@ -646,9 +646,9 @@ RTAssertMsg2("DBG: RTDirRelSymlinkCreate(%s)...\n", szPath);
  *
  * @sa      RTSymlinkRead
  */
-RTDECL(int) RTDirRelSymlinkRead(PRTDIR hDir, const char *pszSymlink, char *pszTarget, size_t cbTarget, uint32_t fRead)
+RTDECL(int) RTDirRelSymlinkRead(RTDIR hDir, const char *pszSymlink, char *pszTarget, size_t cbTarget, uint32_t fRead)
 {
-    PRTDIR pThis = hDir;
+    PRTDIRINTERNAL pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
 

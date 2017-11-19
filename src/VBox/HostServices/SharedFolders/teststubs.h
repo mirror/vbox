@@ -27,21 +27,21 @@
 #include <iprt/time.h>
 
 #define RTDirClose           testRTDirClose
-extern int testRTDirClose(PRTDIR pDir);
+extern int testRTDirClose(RTDIR hDir);
 #define RTDirCreate          testRTDirCreate
 extern int testRTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate);
 #define RTDirOpen            testRTDirOpen
-extern int testRTDirOpen(PRTDIR *ppDir, const char *pszPath);
+extern int testRTDirOpen(RTDIR *phDir, const char *pszPath);
 #define RTDirOpenFiltered    testRTDirOpenFiltered
-extern int testRTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags);
+extern int testRTDirOpenFiltered(RTDIR *phDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags);
 #define RTDirQueryInfo       testRTDirQueryInfo
-extern int testRTDirQueryInfo(PRTDIR pDir, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs);
+extern int testRTDirQueryInfo(RTDIR hDir, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs);
 #define RTDirRemove          testRTDirRemove
 extern int testRTDirRemove(const char *pszPath);
 #define RTDirReadEx          testRTDirReadEx
-extern int testRTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags);
+extern int testRTDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags);
 #define RTDirSetTimes        testRTDirSetTimes
-extern int testRTDirSetTimes(PRTDIR pDir, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime, PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime);
+extern int testRTDirSetTimes(RTDIR hDir, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime, PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime);
 #define RTFileClose          testRTFileClose
 extern int testRTFileClose(RTFILE hFile);
 #define RTFileDelete         testRTFileDelete

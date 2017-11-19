@@ -1073,8 +1073,8 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
     /*
      * Ok, down to business.
      */
-    PRTDIR pDir;
-    rc = RTDirOpen(&pDir, pszBaseDir);
+    RTDIR hDir;
+    rc = RTDirOpen(&hDir, pszBaseDir);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed open the base directory: %Rrc ('%s')", rc, pszBaseDir);
 
@@ -1083,7 +1083,7 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
     for (;;)
     {
         RTDIRENTRYEX Entry;
-        rc = RTDirReadEx(pDir, &Entry, NULL /*pcbDirEntry*/, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+        rc = RTDirReadEx(hDir, &Entry, NULL /*pcbDirEntry*/, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
         if (RT_FAILURE(rc))
         {
             if (rc != VERR_NO_MORE_FILES)
@@ -1126,7 +1126,7 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
             }
         }
     }
-    RTDirClose(pDir);
+    RTDirClose(hDir);
     if (!cCleaned)
         RTMsgInfo("Nothing to clean.");
     return rcExit;

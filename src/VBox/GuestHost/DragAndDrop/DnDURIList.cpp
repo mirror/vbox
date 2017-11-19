@@ -130,7 +130,7 @@ int DnDURIList::appendPathRecursive(const char *pcszSrcPath,
 
             if (RT_SUCCESS(rc))
             {
-                PRTDIR hDir;
+                RTDIR hDir;
                 rc = RTDirOpen(&hDir, pcszSrcPath);
                 if (RT_SUCCESS(rc))
                 {

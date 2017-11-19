@@ -1002,8 +1002,8 @@ static RTEXITCODE processDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX pDirE
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Path too long: '%s'\n", pszDir);
 
     /* Open directory. */
-    PRTDIR pDir;
-    int rc = RTDirOpen(&pDir, pszDir);
+    RTDIR hDir;
+    int rc = RTDirOpen(&hDir, pszDir);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDirOpen failed on '%s': %Rrc\n", pszDir, rc);
 
@@ -1022,13 +1022,12 @@ static RTEXITCODE processDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX pDirE
     {
         /* Get the next directory. */
         size_t cbDirEntry = MY_DIRENTRY_BUF_SIZE;
-        rc = RTDirReadEx(pDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
+        rc = RTDirReadEx(hDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
         if (RT_FAILURE(rc))
             break;
 
         /* Skip the dot and dot-dot links. */
-        if (   (pDirEntry->cbName == 1 && pDirEntry->szName[0] == '.')
-            || (pDirEntry->cbName == 2 && pDirEntry->szName[0] == '.' && pDirEntry->szName[1] == '.'))
+        if (RTDirEntryExIsStdDotLink(pDirEntry))
             continue;
 
         /* Check length. */
@@ -1076,7 +1075,7 @@ static RTEXITCODE processDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX pDirE
     if (rc != VERR_NO_MORE_FILES)
         rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDirReadEx failed: %Rrc\npszDir=%.*s", rc, cchDir, pszDir);
 
-    rc = RTDirClose(pDir);
+    rc = RTDirClose(hDir);
     if (RT_FAILURE(rc))
         rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDirClose failed: %Rrc\npszDir=%.*s", rc, cchDir, pszDir);
     return rcExit;

@@ -1154,7 +1154,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
     uint32_t       cbDirEntry, cbBufferOrg;
     PSHFLDIRINFO   pSFDEntry;
     PRTUTF16       pwszString;
-    PRTDIR         DirHandle;
+    RTDIR          hDir;
     const bool     fUtf8 = BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8) != 0;
 
     AssertPtrReturn(pClient, VERR_INVALID_PARAMETER);
@@ -1167,7 +1167,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
         return rc;
 
     Assert(*pIndex == 0);
-    DirHandle = pHandle->dir.Handle;
+    hDir = pHandle->dir.Handle;
 
     cbDirEntry = 4096;
     pDirEntryOrg = pDirEntry  = (PRTDIRENTRYEX)RTMemAlloc(cbDirEntry);
@@ -1211,7 +1211,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
                 goto end;
         }
         Assert(pHandle->dir.SearchHandle);
-        DirHandle = pHandle->dir.SearchHandle;
+        hDir = pHandle->dir.SearchHandle;
     }
 
     while (cbBufferOrg)
@@ -1228,7 +1228,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
         {
             pDirEntry = pDirEntryOrg;
 
-            rc = RTDirReadEx(DirHandle, pDirEntry, &cbDirEntrySize, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
+            rc = RTDirReadEx(hDir, pDirEntry, &cbDirEntrySize, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
             if (rc == VERR_NO_MORE_FILES)
             {
                 *pIndex = 0; /* listing completed */

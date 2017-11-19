@@ -212,8 +212,10 @@ RTDECL(int) RTDirFlush(const char *pszPath);
 RTDECL(int) RTDirFlushParent(const char *pszChild);
 
 
-/** Pointer to an open directory (sort of handle). */
-typedef struct RTDIR *PRTDIR;
+/** Open directory handle. */
+typedef struct RTDIRINTERNAL *RTDIR;
+/** NIL open directory handle. */
+#define NIL_RTDIR ((RTDIR)0)
 
 
 /**
@@ -340,10 +342,10 @@ typedef RTDIRENTRYEX const *PCRTDIRENTRYEX;
  * Opens a directory.
  *
  * @returns iprt status code.
- * @param   ppDir       Where to store the open directory pointer.
+ * @param   phDir       Where to store the open directory pointer.
  * @param   pszPath     Path to the directory to open.
  */
-RTDECL(int) RTDirOpen(PRTDIR *ppDir, const char *pszPath);
+RTDECL(int) RTDirOpen(RTDIR *phDir, const char *pszPath);
 
 /** @name RTDIR_F_XXX - RTDirOpenFiltered flags.
  * @{ */
@@ -360,13 +362,13 @@ RTDECL(int) RTDirOpen(PRTDIR *ppDir, const char *pszPath);
  * Opens a directory with flags and optional filtering.
  *
  * @returns iprt status code.
- * @param   ppDir       Where to store the open directory pointer.
+ * @param   phDir       Where to store the open directory pointer.
  * @param   pszPath     Path to the directory to search, this must include wildcards.
  * @param   enmFilter   The kind of filter to apply. Setting this to RTDIRFILTER_NONE makes
  *                      this function behave like RTDirOpen.
  * @param   fFlags      Open flags, RTDIR_F_XXX.
  */
-RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags);
+RTDECL(int) RTDirOpenFiltered(RTDIR *phDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags);
 
 /**
  * Closes a directory.
@@ -374,7 +376,7 @@ RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER en
  * @returns iprt status code.
  * @param   pDir        Pointer to open directory returned by RTDirOpen() or RTDirOpenFiltered().
  */
-RTDECL(int) RTDirClose(PRTDIR pDir);
+RTDECL(int) RTDirClose(RTDIR hDir);
 
 /**
  * Checks if the supplied directory handle is valid.
@@ -383,7 +385,7 @@ RTDECL(int) RTDirClose(PRTDIR pDir);
  * @returns false if invalid.
  * @param   hDir        The directory handle.
  */
-RTDECL(bool) RTDirIsValid(PRTDIR hDir);
+RTDECL(bool) RTDirIsValid(RTDIR hDir);
 
 /**
  * Reads the next entry in the directory.
@@ -410,7 +412,7 @@ RTDECL(bool) RTDirIsValid(PRTDIR hDir);
  *
  *                      The value is unchanged in all other cases.
  */
-RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry);
+RTDECL(int) RTDirRead(RTDIR hDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry);
 
 /**
  * Reads the next entry in the directory returning extended information.
@@ -441,7 +443,7 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry);
  *                      Use RTFSOBJATTRADD_NOTHING if this doesn't matter.
  * @param   fFlags      RTPATH_F_ON_LINK or RTPATH_F_FOLLOW_LINK.
  */
-RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags);
+RTDECL(int) RTDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags);
 
 /**
  * Resolves RTDIRENTRYTYPE_UNKNOWN values returned by RTDirRead.
@@ -519,7 +521,7 @@ RTDECL(int) RTDirRename(const char *pszSrc, const char *pszDst, unsigned fRename
  * @param   enmAdditionalAttribs    Which set of additional attributes to request.
  *                                  Use RTFSOBJATTRADD_NOTHING if this doesn't matter.
  */
-RTR3DECL(int) RTDirQueryInfo(PRTDIR pDir, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs);
+RTR3DECL(int) RTDirQueryInfo(RTDIR hDir, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs);
 
 
 /**
@@ -545,7 +547,7 @@ RTR3DECL(int) RTDirQueryInfo(PRTDIR pDir, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD 
  *
  * @remark  POSIX can only set Access & Modification and will always set both.
  */
-RTR3DECL(int) RTDirSetTimes(PRTDIR pDir, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+RTR3DECL(int) RTDirSetTimes(RTDIR hDir, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                             PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime);
 
 
@@ -577,7 +579,7 @@ RTR3DECL(int) RTDirSetTimes(PRTDIR pDir, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC 
  *
  * @sa      RTFileOpen
  */
-RTDECL(int)  RTDirRelFileOpen(PRTDIR hDir, const char *pszRelFilename, uint64_t fOpen, PRTFILE phFile);
+RTDECL(int)  RTDirRelFileOpen(RTDIR hDir, const char *pszRelFilename, uint64_t fOpen, PRTFILE phFile);
 
 
 
@@ -591,7 +593,7 @@ RTDECL(int)  RTDirRelFileOpen(PRTDIR hDir, const char *pszRelFilename, uint64_t 
  *
  * @sa      RTDirOpen
  */
-RTDECL(int) RTDirRelDirOpen(PRTDIR hDir, const char *pszDir, PRTDIR *phDir);
+RTDECL(int) RTDirRelDirOpen(RTDIR hDir, const char *pszDir, RTDIR *phDir);
 
 /**
  * Opens a directory relative to @a hDir, with flags and optional filtering.
@@ -608,8 +610,8 @@ RTDECL(int) RTDirRelDirOpen(PRTDIR hDir, const char *pszDir, PRTDIR *phDir);
  *
  * @sa      RTDirOpenFiltered
  */
-RTDECL(int) RTDirRelDirOpenFiltered(PRTDIR hDir, const char *pszDirAndFilter, RTDIRFILTER enmFilter,
-                                    uint32_t fFlags, PRTDIR *phDir);
+RTDECL(int) RTDirRelDirOpenFiltered(RTDIR hDir, const char *pszDirAndFilter, RTDIRFILTER enmFilter,
+                                    uint32_t fFlags, RTDIR *phDir);
 
 /**
  * Creates a directory relative to @a hDir.
@@ -624,7 +626,7 @@ RTDECL(int) RTDirRelDirOpenFiltered(PRTDIR hDir, const char *pszDirAndFilter, RT
  *
  * @sa      RTDirCreate
  */
-RTDECL(int) RTDirRelDirCreate(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fCreate, PRTDIR *phSubDir);
+RTDECL(int) RTDirRelDirCreate(RTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fCreate, RTDIR *phSubDir);
 
 /**
  * Removes a directory relative to @a hDir if empty.
@@ -635,7 +637,7 @@ RTDECL(int) RTDirRelDirCreate(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode
  *
  * @sa      RTDirRemove
  */
-RTDECL(int) RTDirRelDirRemove(PRTDIR hDir, const char *pszRelPath);
+RTDECL(int) RTDirRelDirRemove(RTDIR hDir, const char *pszRelPath);
 
 
 /**
@@ -658,7 +660,7 @@ RTDECL(int) RTDirRelDirRemove(PRTDIR hDir, const char *pszRelPath);
  *
  * @sa      RTPathQueryInfoEx
  */
-RTDECL(int) RTDirRelPathQueryInfo(PRTDIR hDir, const char *pszRelPath, PRTFSOBJINFO pObjInfo,
+RTDECL(int) RTDirRelPathQueryInfo(RTDIR hDir, const char *pszRelPath, PRTFSOBJINFO pObjInfo,
                                   RTFSOBJATTRADD enmAddAttr, uint32_t fFlags);
 
 /**
@@ -675,7 +677,7 @@ RTDECL(int) RTDirRelPathQueryInfo(PRTDIR hDir, const char *pszRelPath, PRTFSOBJI
  *
  * @sa      RTPathSetMode
  */
-RTDECL(int) RTDirRelPathSetMode(PRTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fFlags);
+RTDECL(int) RTDirRelPathSetMode(RTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fFlags);
 
 /**
  * Changes one or more of the timestamps associated of file system object
@@ -703,7 +705,7 @@ RTDECL(int) RTDirRelPathSetMode(PRTDIR hDir, const char *pszRelPath, RTFMODE fMo
  *
  * @sa      RTPathSetTimesEx
  */
-RTDECL(int) RTDirRelPathSetTimes(PRTDIR hDir, const char *pszRelPath, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+RTDECL(int) RTDirRelPathSetTimes(RTDIR hDir, const char *pszRelPath, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                                  PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime, uint32_t fFlags);
 
 /**
@@ -720,7 +722,7 @@ RTDECL(int) RTDirRelPathSetTimes(PRTDIR hDir, const char *pszRelPath, PCRTTIMESP
  *
  * @sa      RTPathSetOwnerEx
  */
-RTDECL(int) RTDirRelPathSetOwner(PRTDIR hDir, const char *pszRelPath, uint32_t uid, uint32_t gid, uint32_t fFlags);
+RTDECL(int) RTDirRelPathSetOwner(RTDIR hDir, const char *pszRelPath, uint32_t uid, uint32_t gid, uint32_t fFlags);
 
 /**
  * Renames a directory relative path within a filesystem.
@@ -737,7 +739,7 @@ RTDECL(int) RTDirRelPathSetOwner(PRTDIR hDir, const char *pszRelPath, uint32_t u
  *
  * @sa      RTPathRename
  */
-RTDECL(int) RTDirRelPathRename(PRTDIR hDirSrc, const char *pszSrc, PRTDIR hDirDst, const char *pszDst, unsigned fRename);
+RTDECL(int) RTDirRelPathRename(RTDIR hDirSrc, const char *pszSrc, RTDIR hDirDst, const char *pszDst, unsigned fRename);
 
 /**
  * Removes the last component of the directory relative path.
@@ -749,7 +751,7 @@ RTDECL(int) RTDirRelPathRename(PRTDIR hDirSrc, const char *pszSrc, PRTDIR hDirDs
  *
  * @sa      RTPathUnlink
  */
-RTDECL(int) RTDirRelPathUnlink(PRTDIR hDir, const char *pszRelPath, uint32_t fUnlink);
+RTDECL(int) RTDirRelPathUnlink(RTDIR hDir, const char *pszRelPath, uint32_t fUnlink);
 
 
 
@@ -771,7 +773,7 @@ RTDECL(int) RTDirRelPathUnlink(PRTDIR hDir, const char *pszRelPath, uint32_t fUn
  *
  * @sa      RTSymlinkCreate
  */
-RTDECL(int) RTDirRelSymlinkCreate(PRTDIR hDir, const char *pszSymlink, const char *pszTarget,
+RTDECL(int) RTDirRelSymlinkCreate(RTDIR hDir, const char *pszSymlink, const char *pszTarget,
                                   RTSYMLINKTYPE enmType, uint32_t fCreate);
 
 /**
@@ -792,7 +794,7 @@ RTDECL(int) RTDirRelSymlinkCreate(PRTDIR hDir, const char *pszSymlink, const cha
  *
  * @sa      RTSymlinkRead
  */
-RTDECL(int) RTDirRelSymlinkRead(PRTDIR hDir, const char *pszSymlink, char *pszTarget, size_t cbTarget, uint32_t fRead);
+RTDECL(int) RTDirRelSymlinkRead(RTDIR hDir, const char *pszSymlink, char *pszTarget, size_t cbTarget, uint32_t fRead);
 
 /** @} */
 

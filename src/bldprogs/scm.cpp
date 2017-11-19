@@ -2296,8 +2296,8 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
     /*
      * Try open and read the directory.
      */
-    PRTDIR pDir;
-    rc = RTDirOpenFiltered(&pDir, pszBuf, RTDIRFILTER_NONE, 0 /*fFlags*/);
+    RTDIR hDir;
+    rc = RTDirOpenFiltered(&hDir, pszBuf, RTDIRFILTER_NONE, 0 /*fFlags*/);
     if (RT_FAILURE(rc))
     {
         RTMsgError("Failed to enumerate directory '%s': %Rrc", pszBuf, rc);
@@ -2306,7 +2306,7 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
     for (;;)
     {
         /* Read the next entry. */
-        rc = RTDirRead(pDir, pEntry, NULL);
+        rc = RTDirRead(hDir, pEntry, NULL);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_NO_MORE_FILES)
@@ -2371,7 +2371,7 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
         if (RT_FAILURE(rc))
             break;
     }
-    RTDirClose(pDir);
+    RTDirClose(hDir);
     return rc;
 
 }

@@ -119,29 +119,29 @@ typedef std::list<MachineInfo*> MachineInfoList;
 class VBRDir
 {
 public:
-    VBRDir(const char *pcszPath)
-        {
-            int rc = RTDirOpenFiltered(&m_pDir, pcszPath, RTDIRFILTER_WINNT, 0);
-            if (RT_FAILURE(rc))
-                throw RTCError(com::Utf8StrFmt("Failed to open directory '%s'\n", pcszPath));
-        };
+    VBRDir(const char *pcszPath) : m_hDir(NIL_RTDIR)
+    {
+        int rc = RTDirOpenFiltered(&m_hDir, pcszPath, RTDIRFILTER_WINNT, 0);
+        if (RT_FAILURE(rc))
+            throw RTCError(com::Utf8StrFmt("Failed to open directory '%s'\n", pcszPath));
+    };
     ~VBRDir()
-        {
-            int rc = RTDirClose(m_pDir);
-            AssertRC(rc);
-        };
+    {
+        int rc = RTDirClose(m_hDir);
+        AssertRC(rc);
+    };
     const char *next(void)
-        {
-            int rc = RTDirRead(m_pDir, &m_DirEntry, NULL);
-            if (RT_SUCCESS(rc))
-                return m_DirEntry.szName;
-            else if (rc == VERR_NO_MORE_FILES)
-                return NULL;
-            throw RTCError("Failed to read directory element\n");
-        };
+    {
+        int rc = RTDirRead(m_hDir, &m_DirEntry, NULL);
+        if (RT_SUCCESS(rc))
+            return m_DirEntry.szName;
+        if (rc == VERR_NO_MORE_FILES)
+            return NULL;
+        throw RTCError("Failed to read directory element\n");
+    };
 
 private:
-    PRTDIR m_pDir;
+    RTDIR m_hDir;
     RTDIRENTRY m_DirEntry;
 };
 

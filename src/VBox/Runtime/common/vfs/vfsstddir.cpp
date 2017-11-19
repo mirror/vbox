@@ -53,7 +53,7 @@
 typedef struct RTVFSSTDDIR
 {
     /** The directory handle. */
-    PRTDIR          hDir;
+    RTDIR           hDir;
     /** Whether to leave the handle open when the VFS handle is closed. */
     bool            fLeaveOpen;
     /** Open flags, RTDIR_F_XXX. */
@@ -87,7 +87,7 @@ static DECLCALLBACK(int) rtVfsStdDir_OpenDir(void *pvThis, const char *pszSubDir
 static DECLCALLBACK(int) rtVfsStdDir_OpenSymlink(void *pvThis, const char *pszSymlink, PRTVFSSYMLINK phVfsSymlink);
 static DECLCALLBACK(int) rtVfsStdDir_QueryEntryInfo(void *pvThis, const char *pszEntry,
                                                     PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
-static int rtVfsDirFromRTDir(PRTDIR hDir, uint32_t fFlags, bool fLeaveOpen, PRTVFSDIR phVfsDir);
+static int rtVfsDirFromRTDir(RTDIR hDir, uint32_t fFlags, bool fLeaveOpen, PRTVFSDIR phVfsDir);
 
 
 
@@ -328,7 +328,7 @@ static DECLCALLBACK(int) rtVfsStdDir_OpenDir(void *pvThis, const char *pszSubDir
 {
     PRTVFSSTDDIR pThis = (PRTVFSSTDDIR)pvThis;
     /** @todo subdir open flags */
-    PRTDIR hSubDir;
+    RTDIR hSubDir;
     int rc = RTDirRelDirOpenFiltered(pThis->hDir, pszSubDir, RTDIRFILTER_NONE, fFlags, &hSubDir);
     if (RT_SUCCESS(rc))
     {
@@ -351,7 +351,7 @@ static DECLCALLBACK(int) rtVfsStdDir_CreateDir(void *pvThis, const char *pszSubD
         rc = RTDirRelDirCreate(pThis->hDir, pszSubDir, fMode, 0 /* fFlags */, NULL);
     else
     {
-        PRTDIR hSubDir;
+        RTDIR hSubDir;
         rc = RTDirRelDirCreate(pThis->hDir, pszSubDir, fMode, 0 /* fFlags */, &hSubDir);
         if (RT_SUCCESS(rc))
         {
@@ -546,7 +546,7 @@ DECL_HIDDEN_CONST(const RTVFSDIROPS) g_rtVfsStdDirOps =
  * @param   fLeaveOpen          Whether to leave it open or close it.
  * @param   phVfsDir            Where to return the handle.
  */
-static int rtVfsDirFromRTDir(PRTDIR hDir, uint32_t fFlags, bool fLeaveOpen, PRTVFSDIR phVfsDir)
+static int rtVfsDirFromRTDir(RTDIR hDir, uint32_t fFlags, bool fLeaveOpen, PRTVFSDIR phVfsDir)
 {
     PRTVFSSTDDIR    pThis;
     RTVFSDIR        hVfsDir;
@@ -566,7 +566,7 @@ static int rtVfsDirFromRTDir(PRTDIR hDir, uint32_t fFlags, bool fLeaveOpen, PRTV
 }
 
 
-RTDECL(int) RTVfsDirFromRTDir(PRTDIR hDir, bool fLeaveOpen, PRTVFSDIR phVfsDir)
+RTDECL(int) RTVfsDirFromRTDir(RTDIR hDir, bool fLeaveOpen, PRTVFSDIR phVfsDir)
 {
     AssertReturn(RTDirIsValid(hDir), VERR_INVALID_HANDLE);
     return rtVfsDirFromRTDir(hDir, hDir->fFlags, fLeaveOpen, phVfsDir);
@@ -578,7 +578,7 @@ RTDECL(int) RTVfsDirOpenNormal(const char *pszPath, uint32_t fFlags, PRTVFSDIR p
     /*
      * Open the file the normal way and pass it to RTVfsFileFromRTFile.
      */
-    PRTDIR hDir;
+    RTDIR hDir;
     int rc = RTDirOpenFiltered(&hDir, pszPath, RTDIRFILTER_NONE, fFlags);
     if (RT_SUCCESS(rc))
     {

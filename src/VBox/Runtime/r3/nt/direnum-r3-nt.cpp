@@ -47,7 +47,7 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** Whether to return a single record (TRUE) or multiple (FALSE)o. */
+/** Whether to return a single record (TRUE) or multiple (FALSE). */
 #define RTDIR_NT_SINGLE_RECORD  FALSE
 
 /** Go hard on record chaining (has slight performance impact). */
@@ -76,11 +76,11 @@ AssertCompileMembersSameSizeAndOffset(FILE_BOTH_DIR_INFORMATION, ShortName      
 size_t rtDirNativeGetStructSize(const char *pszPath)
 {
     NOREF(pszPath);
-    return sizeof(RTDIR);
+    return sizeof(RTDIRINTERNAL);
 }
 
 
-int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uintptr_t hRelativeDir, void *pvNativeRelative)
+int rtDirNativeOpen(PRTDIRINTERNAL pDir, char *pszPathBuf, uintptr_t hRelativeDir, void *pvNativeRelative)
 {
     /*
      * Convert the filter to UTF-16.
@@ -154,8 +154,10 @@ int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uintptr_t hRelativeDir, void 
 }
 
 
-RTDECL(int) RTDirClose(PRTDIR pDir)
+RTDECL(int) RTDirClose(RTDIR hDir)
 {
+    PRTDIRINTERNAL pDir = hDir;
+
     /*
      * Validate input.
      */
@@ -195,7 +197,7 @@ RTDECL(int) RTDirClose(PRTDIR pDir)
  * @returns IPRT status code
  * @param   pThis       The directory instance data.
  */
-static int rtDirNtCheckRecord(PRTDIR pThis)
+static int rtDirNtCheckRecord(PRTDIRINTERNAL pThis)
 {
 #ifdef RTDIR_NT_STRICT
 # ifdef IPRT_WITH_NT_PATH_PASSTHRU
@@ -231,7 +233,7 @@ static int rtDirNtCheckRecord(PRTDIR pThis)
  *
  * @param   pThis       The directory instance data.
  */
-static int rtDirNtAdvanceBuffer(PRTDIR pThis)
+static int rtDirNtAdvanceBuffer(PRTDIRINTERNAL pThis)
 {
     int rc;
 
@@ -274,7 +276,7 @@ static int rtDirNtAdvanceBuffer(PRTDIR pThis)
  * @returns IPRT status code
  * @param   pThis       The directory instance data.
  */
-static int rtDirNtFetchMore(PRTDIR pThis)
+static int rtDirNtFetchMore(PRTDIRINTERNAL pThis)
 {
     Assert(!pThis->fDataUnread);
 
@@ -495,7 +497,7 @@ static int rtDirNtFetchMore(PRTDIR pThis)
  * @param   cbName      The file name length in bytes.
  * @param   pwsName     The file name, not terminated.
  */
-static int rtDirNtConvertName(PRTDIR pThis, uint32_t cbName, PCRTUTF16 pwsName)
+static int rtDirNtConvertName(PRTDIRINTERNAL pThis, uint32_t cbName, PCRTUTF16 pwsName)
 {
     int rc = RTUtf16ToUtf8Ex(pwsName, cbName / 2, &pThis->pszName, pThis->cbNameAlloc, &pThis->cchName);
     if (RT_SUCCESS(rc))
@@ -524,7 +526,7 @@ static int rtDirNtConvertName(PRTDIR pThis, uint32_t cbName, PCRTUTF16 pwsName)
  * @returns IPRT status code.
  * @param   pThis       The directory instance data.
  */
-static int rtDirNtConvertCurName(PRTDIR pThis)
+static int rtDirNtConvertCurName(PRTDIRINTERNAL pThis)
 {
     switch (pThis->enmInfoClass)
     {
@@ -543,8 +545,9 @@ static int rtDirNtConvertCurName(PRTDIR pThis)
 }
 
 
-RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
+RTDECL(int) RTDirRead(RTDIR hDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
 {
+    PRTDIRINTERNAL pDir = hDir;
     int rc;
 
     /*
@@ -641,9 +644,10 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
 }
 
 
-RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry,
+RTDECL(int) RTDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry,
                         RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags)
 {
+    PRTDIRINTERNAL pDir = hDir;
     int rc;
 
     /*
@@ -822,8 +826,9 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
 
 
 
-RTR3DECL(int) RTDirQueryInfo(PRTDIR pDir, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
+RTR3DECL(int) RTDirQueryInfo(RTDIR hDir, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
 {
+    PRTDIRINTERNAL pDir = hDir;
     AssertPtrReturn(pDir, VERR_INVALID_POINTER);
     AssertReturn(pDir->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(enmAdditionalAttribs >= RTFSOBJATTRADD_NOTHING && enmAdditionalAttribs <= RTFSOBJATTRADD_LAST,

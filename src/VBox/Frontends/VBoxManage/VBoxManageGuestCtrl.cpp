@@ -2222,129 +2222,127 @@ static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
      * Open directory without a filter - RTDirOpenFiltered unfortunately
      * cannot handle sub directories so we have to do the filtering ourselves.
      */
-    PRTDIR pDir = NULL;
     if (RT_SUCCESS(vrc))
     {
-        vrc = RTDirOpen(&pDir, szCurDir);
-        if (RT_FAILURE(vrc))
-            pDir = NULL;
-    }
-    if (RT_SUCCESS(vrc))
-    {
-        /*
-         * Enumerate the directory tree.
-         */
-        while (RT_SUCCESS(vrc))
+        RTDIR hDir;
+        vrc = RTDirOpen(&hDir, szCurDir);
+        if (RT_SUCCESS(vrc))
         {
-            RTDIRENTRY DirEntry;
-            vrc = RTDirRead(pDir, &DirEntry, NULL);
-            if (RT_FAILURE(vrc))
+            /*
+             * Enumerate the directory tree.
+             */
+            while (RT_SUCCESS(vrc))
             {
-                if (vrc == VERR_NO_MORE_FILES)
-                    vrc = VINF_SUCCESS;
-                break;
-            }
-            /** @todo r=bird: This ain't gonna work on most UNIX file systems because
-             *        enmType is RTDIRENTRYTYPE_UNKNOWN.  This is clearly documented in
-             *        RTDIRENTRY::enmType. For trunk, RTDirQueryUnknownType can be used. */
-            switch (DirEntry.enmType)
-            {
-                case RTDIRENTRYTYPE_DIRECTORY:
+                RTDIRENTRY DirEntry;
+                vrc = RTDirRead(hDir, &DirEntry, NULL);
+                if (RT_FAILURE(vrc))
                 {
-                    /* Skip "." and ".." entries. */
-                    if (   !strcmp(DirEntry.szName, ".")
-                        || !strcmp(DirEntry.szName, ".."))
-                        break;
-
-                    if (pContext->pCmdCtx->cVerbose)
-                        RTPrintf("Directory: %s\n", DirEntry.szName);
-
-                    if (enmFlags & kGctlCopyFlags_Recursive)
-                    {
-                        char *pszNewSub = NULL;
-                        if (pszSubDir)
-                            pszNewSub = RTPathJoinA(pszSubDir, DirEntry.szName);
-                        else
-                        {
-                            pszNewSub = RTStrDup(DirEntry.szName);
-                            RTPathStripTrailingSlash(pszNewSub);
-                        }
-
-                        if (pszNewSub)
-                        {
-                            vrc = gctlCopyDirToGuest(pContext,
-                                                     pszSource, pszFilter,
-                                                     pszDest, enmFlags, pszNewSub);
-                            RTStrFree(pszNewSub);
-                        }
-                        else
-                            vrc = VERR_NO_MEMORY;
-                    }
+                    if (vrc == VERR_NO_MORE_FILES)
+                        vrc = VINF_SUCCESS;
                     break;
                 }
-
-                case RTDIRENTRYTYPE_SYMLINK:
-                    if (   (enmFlags & kGctlCopyFlags_Recursive)
-                        && (enmFlags & kGctlCopyFlags_FollowLinks))
-                    {
-                        /* Fall through to next case is intentional. */
-                    }
-                    else
-                        break;
-
-                case RTDIRENTRYTYPE_FILE:
+                /** @todo r=bird: This ain't gonna work on most UNIX file systems because
+                 *        enmType is RTDIRENTRYTYPE_UNKNOWN.  This is clearly documented in
+                 *        RTDIRENTRY::enmType. For trunk, RTDirQueryUnknownType can be used. */
+                switch (DirEntry.enmType)
                 {
-                    if (   pszFilter
-                        && !RTStrSimplePatternMatch(pszFilter, DirEntry.szName))
+                    case RTDIRENTRYTYPE_DIRECTORY:
                     {
-                        break; /* Filter does not match. */
-                    }
+                        /* Skip "." and ".." entries. */
+                        if (   !strcmp(DirEntry.szName, ".")
+                            || !strcmp(DirEntry.szName, ".."))
+                            break;
 
-                    if (pContext->pCmdCtx->cVerbose)
-                        RTPrintf("File: %s\n", DirEntry.szName);
+                        if (pContext->pCmdCtx->cVerbose)
+                            RTPrintf("Directory: %s\n", DirEntry.szName);
 
-                    if (!fDirCreated)
-                    {
-                        char *pszDestDir;
-                        vrc = gctlCopyTranslatePath(pszSource, szCurDir,
-                                                    pszDest, &pszDestDir);
-                        if (RT_SUCCESS(vrc))
+                        if (enmFlags & kGctlCopyFlags_Recursive)
                         {
-                            vrc = gctlCopyDirCreate(pContext, pszDestDir);
-                            RTStrFree(pszDestDir);
+                            char *pszNewSub = NULL;
+                            if (pszSubDir)
+                                pszNewSub = RTPathJoinA(pszSubDir, DirEntry.szName);
+                            else
+                            {
+                                pszNewSub = RTStrDup(DirEntry.szName);
+                                RTPathStripTrailingSlash(pszNewSub);
+                            }
 
-                            fDirCreated = true;
+                            if (pszNewSub)
+                            {
+                                vrc = gctlCopyDirToGuest(pContext,
+                                                         pszSource, pszFilter,
+                                                         pszDest, enmFlags, pszNewSub);
+                                RTStrFree(pszNewSub);
+                            }
+                            else
+                                vrc = VERR_NO_MEMORY;
                         }
+                        break;
                     }
 
-                    if (RT_SUCCESS(vrc))
-                    {
-                        char *pszFileSource = RTPathJoinA(szCurDir, DirEntry.szName);
-                        if (pszFileSource)
+                    case RTDIRENTRYTYPE_SYMLINK:
+                        if (   (enmFlags & kGctlCopyFlags_Recursive)
+                            && (enmFlags & kGctlCopyFlags_FollowLinks))
                         {
-                            char *pszFileDest;
-                            vrc = gctlCopyTranslatePath(pszSource, pszFileSource,
-                                                       pszDest, &pszFileDest);
+                            /* Fall through to next case is intentional. */
+                        }
+                        else
+                            break;
+
+                    case RTDIRENTRYTYPE_FILE:
+                    {
+                        if (   pszFilter
+                            && !RTStrSimplePatternMatch(pszFilter, DirEntry.szName))
+                        {
+                            break; /* Filter does not match. */
+                        }
+
+                        if (pContext->pCmdCtx->cVerbose)
+                            RTPrintf("File: %s\n", DirEntry.szName);
+
+                        if (!fDirCreated)
+                        {
+                            char *pszDestDir;
+                            vrc = gctlCopyTranslatePath(pszSource, szCurDir,
+                                                        pszDest, &pszDestDir);
                             if (RT_SUCCESS(vrc))
                             {
-                                vrc = gctlCopyFileToDest(pContext, pszFileSource,
-                                                         pszFileDest, kGctlCopyFlags_None);
-                                RTStrFree(pszFileDest);
-                            }
-                            RTStrFree(pszFileSource);
-                        }
-                    }
-                    break;
-                }
+                                vrc = gctlCopyDirCreate(pContext, pszDestDir);
+                                RTStrFree(pszDestDir);
 
-                default:
+                                fDirCreated = true;
+                            }
+                        }
+
+                        if (RT_SUCCESS(vrc))
+                        {
+                            char *pszFileSource = RTPathJoinA(szCurDir, DirEntry.szName);
+                            if (pszFileSource)
+                            {
+                                char *pszFileDest;
+                                vrc = gctlCopyTranslatePath(pszSource, pszFileSource,
+                                                           pszDest, &pszFileDest);
+                                if (RT_SUCCESS(vrc))
+                                {
+                                    vrc = gctlCopyFileToDest(pContext, pszFileSource,
+                                                             pszFileDest, kGctlCopyFlags_None);
+                                    RTStrFree(pszFileDest);
+                                }
+                                RTStrFree(pszFileSource);
+                            }
+                        }
+                        break;
+                    }
+
+                    default:
+                        break;
+                }
+                if (RT_FAILURE(vrc))
                     break;
             }
-            if (RT_FAILURE(vrc))
-                break;
-        }
 
-        RTDirClose(pDir);
+            RTDirClose(hDir);
+        }
     }
     return vrc;
 }

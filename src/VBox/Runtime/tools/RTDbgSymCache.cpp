@@ -947,7 +947,7 @@ static int rtDbgSymCacheAddDirWorker(char *pszPath, size_t cchPath, PRTDIRENTRYE
     /*
      * Open the directory.
      */
-    PRTDIR pDir;
+    RTDIR hDir;
     int rc, rc2;
     if (pCfg->pszFilter)
     {
@@ -957,10 +957,10 @@ static int rtDbgSymCacheAddDirWorker(char *pszPath, size_t cchPath, PRTDIRENTRYE
             pszPath[cchPath] = '\0';
             return RTMsgErrorRc(rc, "Filename too long (%Rrc): '%s" RTPATH_SLASH_STR "%s'", rc, pszPath, pCfg->pszFilter);
         }
-        rc = RTDirOpenFiltered(&pDir, pszPath, RTDIRFILTER_WINNT, 0 /*fFlags*/);
+        rc = RTDirOpenFiltered(&hDir, pszPath, RTDIRFILTER_WINNT, 0 /*fFlags*/);
     }
     else
-        rc = RTDirOpen(&pDir, pszPath);
+        rc = RTDirOpen(&hDir, pszPath);
     if (RT_FAILURE(rc))
         return RTMsgErrorRc(rc, "RTDirOpen%s failed on '%s': %Rrc", pCfg->pszFilter ? "Filtered" : "", pszPath, rc);
 
@@ -969,7 +969,7 @@ static int rtDbgSymCacheAddDirWorker(char *pszPath, size_t cchPath, PRTDIRENTRYE
      */
     for (;;)
     {
-        rc2 = RTDirReadEx(pDir, pDirEntry, NULL, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+        rc2 = RTDirReadEx(hDir, pDirEntry, NULL, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
         if (RT_FAILURE(rc2))
         {
             pszPath[cchPath] = '\0';
@@ -1048,7 +1048,7 @@ static int rtDbgSymCacheAddDirWorker(char *pszPath, size_t cchPath, PRTDIRENTRYE
     /*
      * Clean up.
      */
-    rc2 = RTDirClose(pDir);
+    rc2 = RTDirClose(hDir);
     if (RT_FAILURE(rc2))
     {
         RTMsgError("RTDirClose failed in '%s': %Rrc", pszPath, rc);

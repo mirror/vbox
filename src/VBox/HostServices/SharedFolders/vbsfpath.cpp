@@ -96,7 +96,7 @@ static int vbsfCorrectCasing(SHFLCLIENTDATA *pClient, char *pszFullPath, char *p
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
-        PRTDIR hSearch = NULL;
+        RTDIR hSearch = NULL;
         rc = RTDirOpenFiltered(&hSearch, pDirEntry->szName, RTDIRFILTER_WINNT, 0 /*fFlags*/);
         if (RT_SUCCESS(rc))
         {

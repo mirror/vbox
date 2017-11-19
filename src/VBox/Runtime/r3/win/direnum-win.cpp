@@ -46,11 +46,11 @@
 size_t rtDirNativeGetStructSize(const char *pszPath)
 {
     NOREF(pszPath);
-    return sizeof(RTDIR);
+    return sizeof(RTDIRINTERNAL);
 }
 
 
-int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uintptr_t hRelativeDir, void *pvNativeRelative))
+int rtDirNativeOpen(PRTDIRINTERNAL pDir, char *pszPathBuf, uintptr_t hRelativeDir, void *pvNativeRelative))
 {
     RT_NOREF(hRelativeDir, pvNativeRelative);
 
@@ -106,7 +106,7 @@ int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uintptr_t hRelativeDir, void 
 }
 
 
-RTDECL(int) RTDirClose(PRTDIR pDir)
+RTDECL(int) RTDirClose(PRTDIRINTERNAL pDir)
 {
     /*
      * Validate input.
@@ -137,8 +137,10 @@ RTDECL(int) RTDirClose(PRTDIR pDir)
 }
 
 
-RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
+RTDECL(int) RTDirRead(RTDIR hDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
 {
+    PPRTDIRINTERNAL pDir = hDir;
+
     /*
      * Validate input.
      */
@@ -221,8 +223,9 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
 }
 
 
-RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags)
+RTDECL(int) RTDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags)
 {
+    PPRTDIRINTERNAL pDir = hDir;
     /** @todo Symlinks: Find[First|Next]FileW will return info about
         the link, so RTPATH_F_FOLLOW_LINK is not handled correctly. */
     /*

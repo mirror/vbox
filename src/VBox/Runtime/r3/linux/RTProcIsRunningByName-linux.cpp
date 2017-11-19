@@ -53,13 +53,13 @@ RTR3DECL(bool) RTProcIsRunningByName(const char *pszName)
     /*
      * Enumerate /proc.
      */
-    PRTDIR pDir;
-    int rc = RTDirOpen(&pDir, "/proc");
+    RTDIR hDir;
+    int rc = RTDirOpen(&hDir, "/proc");
     AssertMsgRCReturn(rc, ("RTDirOpen on /proc failed: rc=%Rrc\n", rc), false);
     if (RT_SUCCESS(rc))
     {
         RTDIRENTRY DirEntry;
-        while (RT_SUCCESS(RTDirRead(pDir, &DirEntry, NULL)))
+        while (RT_SUCCESS(RTDirRead(hDir, &DirEntry, NULL)))
         {
             /*
              * Filter numeric directory entries only.
@@ -103,7 +103,7 @@ RTR3DECL(bool) RTProcIsRunningByName(const char *pszName)
                     if (RTStrCmp(pszProcName, pszName) == 0)
                     {
                         /* Found it! */
-                        RTDirClose(pDir);
+                        RTDirClose(hDir);
                         return true;
                     }
                 }

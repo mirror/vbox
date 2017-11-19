@@ -105,7 +105,7 @@ static const char *g_apszSUBDIREntries[] =
     "z.bat",
 };
 
-int rtDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags)
+int rtDirOpenFiltered(RTDIR *phDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags)
 {
     RT_NOREF2(enmFilter, fFlags);
     if (!strcmp(pszPath, "c:\\*"))
@@ -117,20 +117,20 @@ int rtDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter,
     else
         AssertFailed();
 
-    *ppDir = (PRTDIR)1;
+    *phDir = (RTDIR)1;
     return VINF_SUCCESS;
 }
 
-int rtDirClose(PRTDIR pDir)
+int rtDirClose(RTDIR hDir)
 {
-    RT_NOREF1(pDir);
+    RT_NOREF1(hDir);
     iDirFile = 0;
     return VINF_SUCCESS;
 }
 
-int rtDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags)
+int rtDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags)
 {
-    RT_NOREF4(pDir, pcbDirEntry, enmAdditionalAttribs, fFlags);
+    RT_NOREF4(hDir, pcbDirEntry, enmAdditionalAttribs, fFlags);
     switch (iDirList)
     {
         case 1:
@@ -199,7 +199,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
     uint32_t       cbDirEntry;
     size_t         cbComponent;
     int            rc = VERR_FILE_NOT_FOUND;
-    PRTDIR         hSearch = 0;
+    RTDIR          hSearch = NIL_RTDIR;
     char           szWildCard[4];
 
     Log2(("vbsfCorrectCasing: %s %s\n", pszFullPath, pszStartComponent));
