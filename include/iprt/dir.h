@@ -447,6 +447,31 @@ RTDECL(int) RTDirRead(RTDIR hDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry);
 RTDECL(int) RTDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags);
 
 /**
+ * Wrapper around RTDirReadEx that does the directory entry buffer handling.
+ *
+ * Call RTDirReadExAFree to free the buffers allocated by this function.
+ *
+ * @returns IPRT status code, see RTDirReadEx() for details.
+ *
+ * @param   hDir        Handle to the open directory.
+ * @param   ppDirEntry  Pointer to the directory entry pointer.  Initialize this
+ *                      to NULL before the first call.
+ * @param   pcbDirEntry Where the API caches the allocation size.  Set this to
+ *                      zero before the first call.
+ * @param   enmAddAttr  See RTDirReadEx.
+ * @param   fFlags      See RTDirReadEx.
+ */
+RTDECL(int) RTDirReadExA(RTDIR hDir, PRTDIRENTRYEX *ppDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAddAttr, uint32_t fFlags);
+
+/**
+ * Frees the buffer allocated by RTDirReadExA.
+ *
+ * @param   ppDirEntry  Pointer to the directory entry pointer.
+ * @param   pcbDirEntry Where the API caches the allocation size.
+ */
+RTDECL(void) RTDirReadExAFree(PRTDIRENTRYEX *ppDirEntry, size_t *pcbDirEntry);
+
+/**
  * Resolves RTDIRENTRYTYPE_UNKNOWN values returned by RTDirRead.
  *
  * @returns IPRT status code (see RTPathQueryInfo).
