@@ -64,8 +64,9 @@ RTR3DECL(bool) RTProcIsRunningByName(const char *pszName)
             /*
              * Filter numeric directory entries only.
              */
-            if (    DirEntry.enmType == RTDIRENTRYTYPE_DIRECTORY
-                &&  RTStrToUInt32(DirEntry.szName) > 0)
+            if (   (   DirEntry.enmType == RTDIRENTRYTYPE_DIRECTORY
+                    || DirEntry.enmType == RTDIRENTRYTYPE_UNKNOWN)
+                && RTStrToUInt32(DirEntry.szName) > 0)
             {
                 /*
                  * Try readlink on exe first since it's more faster and reliable.
