@@ -98,6 +98,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/alloc/heapsimple.cpp=>alloc/heapsimple.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/err/RTErrConvertFromErrno.cpp=>common/err/RTErrConvertFromErrno.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/err/RTErrConvertToErrno.cpp=>common/err/RTErrConvertToErrno.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/err/errinfo.cpp=>common/err/errinfo.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/log/log.cpp=>common/log/log.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/log/logellipsis.cpp=>common/log/logellipsis.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/log/logrel.cpp=>common/log/logrel.c \

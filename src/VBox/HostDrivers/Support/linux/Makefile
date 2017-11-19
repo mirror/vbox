@@ -68,6 +68,7 @@ MOD_OBJS = \
 	common/checksum/ipv6.o \
 	common/err/RTErrConvertFromErrno.o \
 	common/err/RTErrConvertToErrno.o \
+	common/err/errinfo.o \
 	common/log/log.o \
 	common/log/logellipsis.o \
 	common/log/logrel.o \

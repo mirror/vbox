@@ -55,7 +55,8 @@ SRCS += \
 .PATH:	${.CURDIR}/common/err
 SRCS += \
 	RTErrConvertFromErrno.c \
-	RTErrConvertToErrno.c
+	RTErrConvertToErrno.c \
+	errinfo.c
 
 .PATH:	${.CURDIR}/common/log
 SRCS += \

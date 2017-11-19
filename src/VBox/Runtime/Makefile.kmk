@@ -2119,6 +2119,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/checksum/ipv6.cpp \
 	common/err/RTErrConvertToErrno.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
+	common/err/errinfo.cpp \
 	common/log/log.cpp \
 	common/log/logellipsis.cpp \
 	common/log/logrel.cpp \
@@ -2337,7 +2338,6 @@ RuntimeR0Drv_SOURCES.win = \
 	common/checksum/sha512str.cpp \
 	common/checksum/sha512t224str.cpp \
 	common/checksum/sha512t256str.cpp \
-	common/err/errinfo.cpp \
 	common/err/errinfolog.cpp \
 	common/path/RTPathChangeToUnixSlashes.cpp \
 	common/math/bignum.cpp \
