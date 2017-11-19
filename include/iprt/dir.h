@@ -342,7 +342,7 @@ typedef RTDIRENTRYEX const *PCRTDIRENTRYEX;
  * Opens a directory.
  *
  * @returns iprt status code.
- * @param   phDir       Where to store the open directory pointer.
+ * @param   phDir       Where to store the open directory handle.
  * @param   pszPath     Path to the directory to open.
  */
 RTDECL(int) RTDirOpen(RTDIR *phDir, const char *pszPath);
@@ -362,7 +362,7 @@ RTDECL(int) RTDirOpen(RTDIR *phDir, const char *pszPath);
  * Opens a directory with flags and optional filtering.
  *
  * @returns iprt status code.
- * @param   phDir       Where to store the open directory pointer.
+ * @param   phDir       Where to store the open directory handle.
  * @param   pszPath     Path to the directory to search, this must include wildcards.
  * @param   enmFilter   The kind of filter to apply. Setting this to RTDIRFILTER_NONE makes
  *                      this function behave like RTDirOpen.
@@ -374,7 +374,8 @@ RTDECL(int) RTDirOpenFiltered(RTDIR *phDir, const char *pszPath, RTDIRFILTER enm
  * Closes a directory.
  *
  * @returns iprt status code.
- * @param   pDir        Pointer to open directory returned by RTDirOpen() or RTDirOpenFiltered().
+ * @param   hDir        Handle to open directory returned by RTDirOpen() or
+ *                      RTDirOpenFiltered().
  */
 RTDECL(int) RTDirClose(RTDIR hDir);
 
@@ -396,7 +397,7 @@ RTDECL(bool) RTDirIsValid(RTDIR hDir);
  *          pcbDirEntry is specified it will be updated with the required buffer size.
  * @returns suitable iprt status code on other errors.
  *
- * @param   pDir        Pointer to the open directory.
+ * @param   hDir        Handle to the open directory.
  * @param   pDirEntry   Where to store the information about the next
  *                      directory entry on success.
  * @param   pcbDirEntry Optional parameter used for variable buffer size.
@@ -423,7 +424,7 @@ RTDECL(int) RTDirRead(RTDIR hDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry);
  *          pcbDirEntry is specified it will be updated with the required buffer size.
  * @returns suitable iprt status code on other errors.
  *
- * @param   pDir        Pointer to the open directory.
+ * @param   hDir        Handle to the open directory.
  * @param   pDirEntry   Where to store the information about the next
  *                      directory entry on success.
  * @param   pcbDirEntry Optional parameter used for variable buffer size.
@@ -516,7 +517,7 @@ RTDECL(int) RTDirRename(const char *pszSrc, const char *pszDst, unsigned fRename
  *
  * @returns iprt status code.
  *
- * @param   pDir        Pointer to the open directory.
+ * @param   hDir                    Handle to the open directory.
  * @param   pObjInfo                Object information structure to be filled on successful return.
  * @param   enmAdditionalAttribs    Which set of additional attributes to request.
  *                                  Use RTFSOBJATTRADD_NOTHING if this doesn't matter.
@@ -530,7 +531,7 @@ RTR3DECL(int) RTDirQueryInfo(RTDIR hDir, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD e
  * @returns iprt status code.
  * @returns VERR_NOT_SUPPORTED is returned if the operation isn't supported by the OS.
  *
- * @param   pDir        Pointer to the open directory.
+ * @param   hDir                Handle to the open directory.
  * @param   pAccessTime         Pointer to the new access time. NULL if not to be changed.
  * @param   pModificationTime   Pointer to the new modifcation time. NULL if not to be changed.
  * @param   pChangeTime         Pointer to the new change time. NULL if not to be changed.
