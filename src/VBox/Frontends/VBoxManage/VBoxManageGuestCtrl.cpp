@@ -2231,39 +2231,37 @@ static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
             /*
              * Enumerate the directory tree.
              */
+            size_t        cbDirEntry = 0;
+            PRTDIRENTRYEX pDirEntry  = NULL;
             while (RT_SUCCESS(vrc))
             {
-                RTDIRENTRY DirEntry;
-                vrc = RTDirRead(hDir, &DirEntry, NULL);
+                vrc = RTDirReadExA(hDir, &pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, 0);
                 if (RT_FAILURE(vrc))
                 {
                     if (vrc == VERR_NO_MORE_FILES)
                         vrc = VINF_SUCCESS;
                     break;
                 }
-                /** @todo r=bird: This ain't gonna work on most UNIX file systems because
-                 *        enmType is RTDIRENTRYTYPE_UNKNOWN.  This is clearly documented in
-                 *        RTDIRENTRY::enmType. For trunk, RTDirQueryUnknownType can be used. */
-                switch (DirEntry.enmType)
+
+                switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
                 {
-                    case RTDIRENTRYTYPE_DIRECTORY:
+                    case RTFS_TYPE_DIRECTORY:
                     {
                         /* Skip "." and ".." entries. */
-                        if (   !strcmp(DirEntry.szName, ".")
-                            || !strcmp(DirEntry.szName, ".."))
+                        if (RTDirEntryExIsStdDotLink(pDirEntry))
                             break;
 
                         if (pContext->pCmdCtx->cVerbose)
-                            RTPrintf("Directory: %s\n", DirEntry.szName);
+                            RTPrintf("Directory: %s\n", pDirEntry->szName);
 
                         if (enmFlags & kGctlCopyFlags_Recursive)
                         {
                             char *pszNewSub = NULL;
                             if (pszSubDir)
-                                pszNewSub = RTPathJoinA(pszSubDir, DirEntry.szName);
+                                pszNewSub = RTPathJoinA(pszSubDir, pDirEntry->szName);
                             else
                             {
-                                pszNewSub = RTStrDup(DirEntry.szName);
+                                pszNewSub = RTStrDup(pDirEntry->szName);
                                 RTPathStripTrailingSlash(pszNewSub);
                             }
 
@@ -2280,31 +2278,29 @@ static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
                         break;
                     }
 
-                    case RTDIRENTRYTYPE_SYMLINK:
+                    case RTFS_TYPE_SYMLINK:
                         if (   (enmFlags & kGctlCopyFlags_Recursive)
                             && (enmFlags & kGctlCopyFlags_FollowLinks))
-                        {
-                            /* Fall through to next case is intentional. */
-                        }
+                        { /* Fall through to next case is intentional. */ }
                         else
                             break;
+                        RT_FALL_THRU();
 
-                    case RTDIRENTRYTYPE_FILE:
+                    case RTFS_TYPE_FILE:
                     {
                         if (   pszFilter
-                            && !RTStrSimplePatternMatch(pszFilter, DirEntry.szName))
+                            && !RTStrSimplePatternMatch(pszFilter, pDirEntry->szName))
                         {
                             break; /* Filter does not match. */
                         }
 
                         if (pContext->pCmdCtx->cVerbose)
-                            RTPrintf("File: %s\n", DirEntry.szName);
+                            RTPrintf("File: %s\n", pDirEntry->szName);
 
                         if (!fDirCreated)
                         {
                             char *pszDestDir;
-                            vrc = gctlCopyTranslatePath(pszSource, szCurDir,
-                                                        pszDest, &pszDestDir);
+                            vrc = gctlCopyTranslatePath(pszSource, szCurDir, pszDest, &pszDestDir);
                             if (RT_SUCCESS(vrc))
                             {
                                 vrc = gctlCopyDirCreate(pContext, pszDestDir);
@@ -2316,12 +2312,11 @@ static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
 
                         if (RT_SUCCESS(vrc))
                         {
-                            char *pszFileSource = RTPathJoinA(szCurDir, DirEntry.szName);
+                            char *pszFileSource = RTPathJoinA(szCurDir, pDirEntry->szName);
                             if (pszFileSource)
                             {
                                 char *pszFileDest;
-                                vrc = gctlCopyTranslatePath(pszSource, pszFileSource,
-                                                           pszDest, &pszFileDest);
+                                vrc = gctlCopyTranslatePath(pszSource, pszFileSource, pszDest, &pszFileDest);
                                 if (RT_SUCCESS(vrc))
                                 {
                                     vrc = gctlCopyFileToDest(pContext, pszFileSource,
@@ -2341,6 +2336,7 @@ static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
                     break;
             }
 
+            RTDirReadExAFree(&pDirEntry, &cbDirEntry);
             RTDirClose(hDir);
         }
     }

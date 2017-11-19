@@ -127,39 +127,37 @@ int DnDURIList::appendPathRecursive(const char *pcszSrcPath,
         if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
         {
             rc = addEntry(pcszSrcPath, &pcszDstPath[cchDstBase], fFlags);
-
             if (RT_SUCCESS(rc))
             {
                 RTDIR hDir;
                 rc = RTDirOpen(&hDir, pcszSrcPath);
                 if (RT_SUCCESS(rc))
                 {
+                    size_t        cbDirEntry = 0;
+                    PRTDIRENTRYEX pDirEntry  = NULL;
                     do
                     {
-                        RTDIRENTRY DirEntry;
-                        rc = RTDirRead(hDir, &DirEntry, NULL);
+                        /* Retrieve the next directory entry. */
+                        rc = RTDirReadExA(hDir, &pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
                         if (RT_FAILURE(rc))
                         {
                             if (rc == VERR_NO_MORE_FILES)
                                 rc = VINF_SUCCESS;
                             break;
                         }
-                        /** @todo r=bird: you really need to read the documentation! I already
-                         *        pointed out that this isn't goint to work in the guest control
-                         *        code. sigh. */
 
-                        switch (DirEntry.enmType)
+                        switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
                         {
-                            case RTDIRENTRYTYPE_DIRECTORY:
+                            case RTFS_TYPE_DIRECTORY:
                             {
                                 /* Skip "." and ".." entries. */
-                                if (RTDirEntryIsStdDotLink(&DirEntry))
+                                if (RTDirEntryExIsStdDotLink(pDirEntry))
                                     break;
 
-                                char *pszSrc = RTPathJoinA(pcszSrcPath, DirEntry.szName);
+                                char *pszSrc = RTPathJoinA(pcszSrcPath, pDirEntry->szName);
                                 if (pszSrc)
                                 {
-                                    char *pszDst = RTPathJoinA(pcszDstPath, DirEntry.szName);
+                                    char *pszDst = RTPathJoinA(pcszDstPath, pDirEntry->szName);
                                     if (pszDst)
                                     {
                                         rc = appendPathRecursive(pszSrc, pszDst, pcszDstBase, cchDstBase, fFlags);
@@ -175,12 +173,12 @@ int DnDURIList::appendPathRecursive(const char *pcszSrcPath,
                                 break;
                             }
 
-                            case RTDIRENTRYTYPE_FILE:
+                            case RTFS_TYPE_FILE:
                             {
-                                char *pszSrc = RTPathJoinA(pcszSrcPath, DirEntry.szName);
+                                char *pszSrc = RTPathJoinA(pcszSrcPath, pDirEntry->szName);
                                 if (pszSrc)
                                 {
-                                    char *pszDst = RTPathJoinA(pcszDstPath, DirEntry.szName);
+                                    char *pszDst = RTPathJoinA(pcszDstPath, pDirEntry->szName);
                                     if (pszDst)
                                     {
                                         rc = addEntry(pszSrc, &pszDst[cchDstBase], fFlags);
@@ -194,7 +192,7 @@ int DnDURIList::appendPathRecursive(const char *pcszSrcPath,
                                     rc = VERR_NO_MEMORY;
                                 break;
                             }
-                            case RTDIRENTRYTYPE_SYMLINK:
+                            case RTFS_TYPE_SYMLINK:
                             {
                                 if (fFlags & DNDURILIST_FLAGS_RESOLVE_SYMLINKS)
                                 {
@@ -232,6 +230,7 @@ int DnDURIList::appendPathRecursive(const char *pcszSrcPath,
 
                     } while (RT_SUCCESS(rc));
 
+                    RTDirReadExAFree(&pDirEntry, &cbDirEntry);
                     RTDirClose(hDir);
                 }
             }
