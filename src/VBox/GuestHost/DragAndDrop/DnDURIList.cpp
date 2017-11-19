@@ -144,14 +144,16 @@ int DnDURIList::appendPathRecursive(const char *pcszSrcPath,
                                 rc = VINF_SUCCESS;
                             break;
                         }
+                        /** @todo r=bird: you really need to read the documentation! I already
+                         *        pointed out that this isn't goint to work in the guest control
+                         *        code. sigh. */
 
                         switch (DirEntry.enmType)
                         {
                             case RTDIRENTRYTYPE_DIRECTORY:
                             {
                                 /* Skip "." and ".." entries. */
-                                if (   RTStrCmp(DirEntry.szName, ".")  == 0
-                                    || RTStrCmp(DirEntry.szName, "..") == 0)
+                                if (RTDirEntryIsStdDotLink(&DirEntry))
                                     break;
 
                                 char *pszSrc = RTPathJoinA(pcszSrcPath, DirEntry.szName);
