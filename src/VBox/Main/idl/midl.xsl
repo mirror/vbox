@@ -218,9 +218,7 @@ import "unknwn.idl";
 <xsl:template match="interface" name="template_interface">[
     uuid(<xsl:value-of select="@uuid"/>),
     object,
-<xsl:if test="@notdual != 'yes'">
-    dual,
-</xsl:if>
+<xsl:if test="not(@notdual = 'yes')">    dual,</xsl:if>
     oleautomation
 <xsl:if test="$g_fGenProxy = 'yes'">
   <!-- Indicates to the typelib that we are using a proxy stub DLL and that interfaces
