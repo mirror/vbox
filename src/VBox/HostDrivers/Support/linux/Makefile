@@ -86,6 +86,7 @@ MOD_OBJS = \
 	common/misc/handletable.o \
 	common/misc/handletablectx.o \
 	common/misc/thread.o \
+	common/string/RTStrCat.o \
 	common/string/RTStrCopy.o \
 	common/string/RTStrCopyEx.o \
 	common/string/RTStrCopyP.o \

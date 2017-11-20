@@ -81,6 +81,7 @@ MOD_OBJS   = \
 	common/misc/RTAssertMsg2WeakV.o \
 	common/misc/assert.o \
 	common/misc/thread.o \
+	common/string/RTStrCat.o \
 	common/string/RTStrCopy.o \
 	common/string/RTStrCopyEx.o \
 	common/string/RTStrCopyP.o \

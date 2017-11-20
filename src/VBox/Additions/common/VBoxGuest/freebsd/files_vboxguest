@@ -118,6 +118,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/misc/RTAssertMsg2Weak.cpp=>common/misc/RTAssertMsg2Weak.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/misc/RTAssertMsg2WeakV.cpp=>common/misc/RTAssertMsg2WeakV.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/misc/assert.cpp=>common/misc/assert.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrCat.cpp=>common/string/RTStrCat.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrCopy.cpp=>common/string/RTStrCopy.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrCopyEx.cpp=>common/string/RTStrCopyEx.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrCopyP.cpp=>common/string/RTStrCopyP.c \
