@@ -19,9 +19,6 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF // DONT COMMIT
-#define RTMEM_WRAP_TO_EF_APIS
-#include <iprt/mem.h>
 #include <iprt/win/windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,9 +29,6 @@
 #include "VBox/com/VirtualBox.h"
 
 #include "VirtualBoxImpl.h"
-//#ifdef VBOX_WITH_SDS_PLAN_B
-//# include "VBoxSVCWrap.h"
-//#endif
 #include "Logging.h"
 
 #include "svchlp.h"
