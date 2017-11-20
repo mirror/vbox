@@ -185,7 +185,7 @@ bool CExeModule::StartMonitor()
 
 
 #ifdef VBOX_WITH_SDS_PLAN_B
-class VBoxSVC;
+class VBoxSVCRegistration;
 
 /**
  * Custom class factory for the VirtualBox singleton.
@@ -202,8 +202,8 @@ private:
     HRESULT                m_hrcCreate;
     /** The IUnknown of the VirtualBox object/interface we're working with. */
     IUnknown              *m_pObj;
-    /** Pointer to the IVBoxSVC implementation that VBoxSDS works with. */
-    VBoxSVC               *m_pVBoxSVC;
+    /** Pointer to the IVBoxSVCRegistration implementation that VBoxSDS works with. */
+    VBoxSVCRegistration   *m_pVBoxSVC;
     /** The VBoxSDS interface. */
     ComPtr<IVirtualBoxSDS> m_ptrVirtualBoxSDS;
 
@@ -226,14 +226,14 @@ public:
     // IClassFactory
     STDMETHOD(CreateInstance)(LPUNKNOWN pUnkOuter, REFIID riid, void **ppvObj);
 
-    /** Worker for VBoxSVC::getVirtualBox. */
+    /** Worker for VBoxSVCRegistration::getVirtualBox. */
     HRESULT i_getVirtualBox(IUnknown **ppResult);
 
 private:
     HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox);
     void    VirtualBoxClassFactory::i_deregisterWithSds(void);
 
-    friend VBoxSVC;
+    friend VBoxSVCRegistration;
 };
 
 
@@ -241,7 +241,7 @@ private:
  * The VBoxSVC class is handed to VBoxSDS so it can call us back and ask for the
  * VirtualBox object when the next VBoxSVC for this user registers itself.
  */
-class VBoxSVC : public IVBoxSVC
+class VBoxSVCRegistration : public IVBoxSVCRegistration
 {
 private:
     /** Number of references. */
@@ -252,10 +252,10 @@ public:
     VirtualBoxClassFactory *m_pFactory;
 
 public:
-    VBoxSVC(VirtualBoxClassFactory *pFactory)
+    VBoxSVCRegistration(VirtualBoxClassFactory *pFactory)
         : m_cRefs(1), m_pFactory(pFactory)
     { }
-    virtual ~VBoxSVC()
+    virtual ~VBoxSVCRegistration()
     {
         if (m_pFactory)
         {
@@ -271,8 +271,8 @@ public:
     {
         if (riid == __uuidof(IUnknown))
             *ppvObject = (void *)(IUnknown *)this;
-        else if (riid == __uuidof(IVBoxSVC))
-            *ppvObject = (void *)(IVBoxSVC *)this;
+        else if (riid == __uuidof(IVBoxSVCRegistration))
+            *ppvObject = (void *)(IVBoxSVCRegistration *)this;
         else
         {
             return E_NOINTERFACE;
@@ -296,7 +296,7 @@ public:
         return cRefs;
     }
 
-    // IVBoxSVC
+    // IVBoxSVCRegistration
     STDMETHOD(GetVirtualBox)(IUnknown **ppResult)
     {
         if (m_pFactory)
@@ -316,9 +316,9 @@ HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox)
     if (SUCCEEDED(hrc))
     {
         /*
-         * Create VBoxSVC object and hand that to VBoxSDS.
+         * Create VBoxSVCRegistration object and hand that to VBoxSDS.
          */
-        m_pVBoxSVC = new VBoxSVC(this);
+        m_pVBoxSVC = new VBoxSVCRegistration(this);
         hrc = m_ptrVirtualBoxSDS->RegisterVBoxSVC(m_pVBoxSVC, GetCurrentProcessId(), ppOtherVirtualBox);
         if (SUCCEEDED(hrc))
         {

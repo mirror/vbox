@@ -24381,7 +24381,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   //////////////////////////////////////////////////////////////////////////
   -->
   <interface
-    name="IVBoxSVC" extends="$unknown" notdual="yes"
+    name="IVBoxSVCRegistration" extends="$unknown" notdual="yes"
     uuid="f22181fb-921b-4f2a-7801-0cc5ec28cdae"
     wsmap="suppress" internal="yes"
     reservedMethods="0" reservedAttributes="0"
@@ -24438,7 +24438,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <!-- VBOX_SDS_PLAN_B start -->
       <method name="registerVBoxSVC">
         <desc>Registers a VBoxSVC instance with the SDS.</desc>
-        <param name="vboxSVC" type="IVBoxSVC" dir="in">
+        <param name="vboxSVC" type="IVBoxSVCRegistration" dir="in">
           <desc>Interface implemented by the VirtualBox class factory.</desc>
         </param>
         <param name="pid" type="long" dir="in">
@@ -24453,7 +24453,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       <method name="deregisterVBoxSVC">
         <desc>Registers a VBoxSVC instance with the SDS.</desc>
-        <param name="vboxSVC" type="IVBoxSVC" dir="in">
+        <param name="vboxSVC" type="IVBoxSVCRegistration" dir="in">
           <desc>Same as specified during registration.</desc>
         </param>
         <param name="pid" type="long" dir="in">

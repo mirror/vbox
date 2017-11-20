@@ -71,12 +71,64 @@ private:
     Data m;
 };
 
+#ifdef VBOX_WITH_SDS_PLAN_B
+/**
+ * Per user data.
+ */
+class VBoxSDSPerUserData
+{
+public:
+    /** The SID (secure identifier) for the user.  This is the key. */
+    com::Utf8Str                 m_strUserSid;
+    /** The user name (if we could get it). */
+    com::Utf8Str                 m_strUsername;
+    /** The VBoxSVC chosen to instantiate CLSID_VirtualBox.
+     * This is NULL if not set. */
+    ComPtr<IVBoxSVCRegistration> m_ptrTheChosenOne;
+    /** Critical section protecting everything here. */
+    RTCRITSECT                   m_Lock;
+
+
+public:
+    VBoxSDSPerUserData(com::Utf8Str const &a_rStrUserSid, com::Utf8Str const &a_rStrUsername)
+        : m_strUserSid(a_rStrUserSid), m_strUsername(a_rStrUsername)
+    {
+        RTCritSectInit(&m_Lock);
+    }
+
+    ~VBoxSDSPerUserData()
+    {
+        RTCritSectDelete(&m_Lock);
+    }
+
+    void i_lock()
+    {
+        RTCritSectEnter(&m_Lock);
+    }
+
+    void i_unlock()
+    {
+        RTCritSectLeave(&m_Lock);
+    }
+};
+#endif
+
+
 class ATL_NO_VTABLE VirtualBoxSDS :
     public VirtualBoxSDSWrap
 #ifdef RT_OS_WINDOWS
     , public ATL::CComCoClass<VirtualBoxSDS, &CLSID_VirtualBoxSDS>
 #endif
 {
+#ifdef VBOX_WITH_SDS_PLAN_B
+private:
+    typedef std::map<com::Utf8Str, VBoxSDSPerUserData *> UserDataMap_T;
+    /** Per user data map (key is SID string). */
+    UserDataMap_T       m_UserDataMap;
+    /** Lock protecting m_UserDataMap.*/
+    RTCRITSECTRW        m_MapCritSect;
+#endif
+
 public:
 
     DECLARE_CLASSFACTORY_SINGLETON(VirtualBoxSDS)
@@ -110,13 +162,37 @@ private:
     HRESULT getVirtualBox(ComPtr<IVirtualBox> &aVirtualBox, ComPtr<IToken> &aToken);
 
     /* SDS plan B interfaces: */
-    HRESULT registerVBoxSVC(const ComPtr<IVBoxSVC> &aVBoxSVC, LONG aPid, ComPtr<IUnknown> &aExistingVirtualBox);
-    HRESULT deregisterVBoxSVC(const ComPtr<IVBoxSVC> &aVBoxSVC, LONG aPid);
+    HRESULT registerVBoxSVC(const ComPtr<IVBoxSVCRegistration> &aVBoxSVC, LONG aPid, ComPtr<IUnknown> &aExistingVirtualBox);
+    HRESULT deregisterVBoxSVC(const ComPtr<IVBoxSVCRegistration> &aVBoxSVC, LONG aPid);
 
     // Wrapped IVirtualBoxSDS methods
 
-    // Inner methods
+    // Private methods
 
+    /**
+     * Gets the cliedt user SID of the
+     */
+    static bool i_getClientUserSID(com::Utf8Str *a_pStrSid, com::Utf8Str *a_pStrUsername);
+
+#ifdef VBOX_WITH_SDS_PLAN_B
+    /**
+     * Looks up the given user.
+     *
+     * @returns Pointer to the LOCKED per user data.  NULL if not found.
+     * @param   a_rStrUserSid   The user SID.
+     */
+    VBoxSDSPerUserData *i_lookupPerUserData(com::Utf8Str const &a_rUserSid);
+
+    /**
+     * Looks up the given user, creating it if not found
+     *
+     * @returns Pointer to the LOCKED per user data.  NULL on allocation error.
+     * @param   a_rStrUserSid   The user SID.
+     * @param   a_rStrUsername  The user name if available.
+     */
+    VBoxSDSPerUserData *i_lookupOrCreatePerUserData(com::Utf8Str const &a_rStrUserSid, com::Utf8Str const &a_rStrUsername);
+
+#else
     /**
     *  Gets the current user name of current thread
     */
@@ -130,19 +206,14 @@ private:
     void LogUserName(char *prefix);
 
     /**
-    *  Thread that periodically checks items in cache and cleans obsolete items
-    */
+     * Thread that periodically checks items in cache and cleans obsolete items
+     */
     static DWORD WINAPI CheckCacheThread(LPVOID);
 
     // data fields
     class VirtualBoxCache;
     static VirtualBoxCache m_cache;
     friend VirtualBoxToken;
-
-#ifdef VBOX_WITH_SDS_PLAN_B
-    // quick and dirty for checking the concept.
-    ComPtr<IVBoxSVC> m_ptrVBoxSVC;
-    ComPtr<IVBoxSVC> m_ptrOtherVBoxSVC;
 #endif
 };
 
