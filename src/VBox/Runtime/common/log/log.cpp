@@ -895,7 +895,8 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
             {
                 /** @todo validate the length, fail on overflow. */
                 RTStrPrintfV(pLogger->pInt->szFilename, sizeof(pLogger->pInt->szFilename), pszFilenameFmt, args);
-                pLogger->fDestFlags |= RTLOGDEST_FILE;
+                if (pLogger->pInt->szFilename[0])
+                    pLogger->fDestFlags |= RTLOGDEST_FILE;
             }
 
             /*

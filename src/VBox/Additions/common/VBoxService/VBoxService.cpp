@@ -299,7 +299,8 @@ static DECLCALLBACK(void) vgsvcLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPH
  * Pass NULL to disabled logging.
  *
  * @return  IPRT status code.
- * @param   pszLogFile      Filename for log output.  NULL disables logging.
+ * @param   pszLogFile      Filename for log output.  NULL disables logging
+ *                          (r=bird: No, it doesn't!).
  */
 int VGSvcLogCreate(const char *pszLogFile)
 {
@@ -318,7 +319,7 @@ int VGSvcLogCreate(const char *pszLogFile)
                            RT_ELEMENTS(s_apszGroups), s_apszGroups,
                            RTLOGDEST_STDOUT | RTLOGDEST_USER,
                            vgsvcLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
-                           NULL /*pErrInfo*/, "%s", pszLogFile);
+                           NULL /*pErrInfo*/, "%s", pszLogFile ? pszLogFile : "");
     if (RT_SUCCESS(rc))
     {
         /* register this logger as the release logger */
