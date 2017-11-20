@@ -24373,7 +24373,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 <if target="midl">
 
-  <!-- VBOX_SDS_PLAN_B start -->
   <!--
   // IVBoxSVC
   // Note! This actually extends IUnknown rather than IDispatch, notdual=yes
@@ -24399,18 +24398,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </method>
 
   </interface>
-  <!-- VBOX_SDS_PLAN_B end -->
 
   <!--
   // IVirtualBoxSDS
   //////////////////////////////////////////////////////////////////////////
   -->
 
+  <!-- This is now an internal interface, it doesn't need to be dual either. -->
   <interface
     name="IVirtualBoxSDS" extends="$unknown"
-    uuid="28932695-fb72-4708-8904-e1077dac7f9a"
+    uuid="787d20ed-faf3-4170-6697-3a2a7de6e086"
     wsmap="suppress"
-    reservedMethods="4" reservedAttributes="8"
+    reservedMethods="0" reservedAttributes="0"
     >
       <desc>
           The IVirtualBoxSDS interface represents the system-wide directory service
@@ -24421,21 +24420,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           behavior.
       </desc>
 
-      <method name="getVirtualBox" >
-       <param name="result" type="IVirtualBox" dir="out" >
-        <desc>
-          Reference to the server-side API root object.
-        </desc>
-      </param>
-      <param name="token" type="IToken" dir="out">
-        <desc>
-          Reference to the token object given to client and linked with IVirtualBox.
-          Client should keep it till the end.
-        </desc>
-      </param>
-      </method>
-
-      <!-- VBOX_SDS_PLAN_B start -->
       <method name="registerVBoxSVC">
         <desc>Registers a VBoxSVC instance with the SDS.</desc>
         <param name="vboxSVC" type="IVBoxSVCRegistration" dir="in">
@@ -24460,7 +24444,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           <desc>The process ID of the VBoxSVC instance (same as during registration).</desc>
         </param>
       </method>
-      <!-- VBOX_SDS_PLAN_B end -->
 
   </interface>
 

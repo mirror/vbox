@@ -25,53 +25,7 @@
 # include "win/resource.h"
 #endif
 
- /**
- * The MediumLockToken class automates cleanup of a Medium lock.
- */
-class ATL_NO_VTABLE VirtualBoxToken :
-    public TokenWrap
-{
-public:
 
-    DECLARE_EMPTY_CTOR_DTOR(VirtualBoxToken)
-
-    HRESULT FinalConstruct();
-    void FinalRelease();
-
-    // public initializer/uninitializer for internal purposes only
-    HRESULT init(const std::wstring& wstrUserName);
-    void uninit();
-
-    /**
-    * Fabrique method to create and initialize COM token object.
-    *
-    * @param aToken         Pointer to result Token COM object.
-    * @param wstrUserName   User name of client for that we create the token
-    */
-    static HRESULT CreateToken(ComPtr<IToken>& aToken, const std::wstring& wstrUserName);
-
-    // Trace COM reference counting in debug mode
-#ifdef RT_STRICT
-    virtual ULONG InternalAddRef();
-    virtual ULONG InternalRelease();
-#endif
-
-private:
-
-    // wrapped IToken methods
-    HRESULT abandon(AutoCaller &aAutoCaller);
-    HRESULT dummy();
-
-    // data
-    struct Data
-    {
-        std::wstring wstrUserName;
-    };
-
-    Data m;
-};
-
-#ifdef VBOX_WITH_SDS_PLAN_B
 /**
  * Per user data.
  */
@@ -111,7 +65,6 @@ public:
         RTCritSectLeave(&m_Lock);
     }
 };
-#endif
 
 
 class ATL_NO_VTABLE VirtualBoxSDS :
@@ -120,14 +73,12 @@ class ATL_NO_VTABLE VirtualBoxSDS :
     , public ATL::CComCoClass<VirtualBoxSDS, &CLSID_VirtualBoxSDS>
 #endif
 {
-#ifdef VBOX_WITH_SDS_PLAN_B
 private:
     typedef std::map<com::Utf8Str, VBoxSDSPerUserData *> UserDataMap_T;
     /** Per user data map (key is SID string). */
     UserDataMap_T       m_UserDataMap;
     /** Lock protecting m_UserDataMap.*/
     RTCRITSECTRW        m_MapCritSect;
-#endif
 
 public:
 
@@ -152,29 +103,18 @@ public:
 
 private:
 
-    // Wrapped IVirtualBoxSDS properties
-
-    /**
-    *    Returns the instance of VirtualBox for client.
-    *    It impersonates client and returns his VirtualBox instance
-    *    either from cahce or makes new one.
-    */
-    HRESULT getVirtualBox(ComPtr<IVirtualBox> &aVirtualBox, ComPtr<IToken> &aToken);
-
-    /* SDS plan B interfaces: */
+    // Wrapped IVirtualBoxSDS methods
     HRESULT registerVBoxSVC(const ComPtr<IVBoxSVCRegistration> &aVBoxSVC, LONG aPid, ComPtr<IUnknown> &aExistingVirtualBox);
     HRESULT deregisterVBoxSVC(const ComPtr<IVBoxSVCRegistration> &aVBoxSVC, LONG aPid);
 
-    // Wrapped IVirtualBoxSDS methods
 
     // Private methods
 
     /**
-     * Gets the cliedt user SID of the
+     * Gets the client user SID of the
      */
-    static bool i_getClientUserSID(com::Utf8Str *a_pStrSid, com::Utf8Str *a_pStrUsername);
+    static bool i_getClientUserSid(com::Utf8Str *a_pStrSid, com::Utf8Str *a_pStrUsername);
 
-#ifdef VBOX_WITH_SDS_PLAN_B
     /**
      * Looks up the given user.
      *
@@ -191,30 +131,6 @@ private:
      * @param   a_rStrUsername  The user name if available.
      */
     VBoxSDSPerUserData *i_lookupOrCreatePerUserData(com::Utf8Str const &a_rStrUserSid, com::Utf8Str const &a_rStrUsername);
-
-#else
-    /**
-    *  Gets the current user name of current thread
-    */
-    int GetCurrentUserName(std::wstring& wstrUserName);
-
-    /**
-    *  Prints current user name of this thread to the log
-    *  @param prefix    string fragment that will be inserted at the beginning
-    *                   of the logging line
-    */
-    void LogUserName(char *prefix);
-
-    /**
-     * Thread that periodically checks items in cache and cleans obsolete items
-     */
-    static DWORD WINAPI CheckCacheThread(LPVOID);
-
-    // data fields
-    class VirtualBoxCache;
-    static VirtualBoxCache m_cache;
-    friend VirtualBoxToken;
-#endif
 };
 
 
