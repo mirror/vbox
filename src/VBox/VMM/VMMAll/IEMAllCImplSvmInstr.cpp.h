@@ -204,10 +204,11 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         pVmcbCtrl->EventInject.n.u1Valid = 0;
 
         /*
-         * Notify HM in case the VMRUN was executed using SVM R0, HM would have modified some VMCB
-         * state that we need to restore on #VMEXIT before writing it back to guest memory.
+         * Notify HM in case the nested-guest was executed using hardware-assisted SVM (which
+         * would have modified some VMCB state) that need to be restored on #VMEXIT before
+         * writing the VMCB back to guest memory.
          */
-        HMSvmNstGstVmExitNotify(pVCpu, pVmcbNstGst);
+        HMSvmNstGstVmExitNotify(pVCpu, pCtx);
 
         /*
          * Write back the nested-guest's VMCB to its guest physical memory location.
