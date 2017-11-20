@@ -59,7 +59,7 @@ namespace settings
 }
 
 
-#if defined(VBOX_WITH_SDS_PLAN_B) && !defined(VBOX_WITH_XPCOM)
+#if defined(VBOX_WITH_SDS) && !defined(VBOX_WITH_XPCOM)
 class VirtualBoxClassFactory; /* See ../src-server/win/svcmain.cpp  */
 #endif
 
@@ -80,7 +80,7 @@ public:
     friend class CallbackEvent;
 
 #ifndef VBOX_WITH_XPCOM
-# ifdef VBOX_WITH_SDS_PLAN_B
+# ifdef VBOX_WITH_SDS
     DECLARE_CLASSFACTORY_EX(VirtualBoxClassFactory)
 # else
     DECLARE_CLASSFACTORY_SINGLETON(VirtualBox)

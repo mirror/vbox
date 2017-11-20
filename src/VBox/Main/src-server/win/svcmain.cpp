@@ -77,7 +77,7 @@ END_OBJECT_MAP()
 CExeModule *g_pModule     = NULL;
 HWND        g_hMainWindow = NULL;
 HINSTANCE   g_hInstance   = NULL;
-#ifdef VBOX_WITH_SDS_PLAN_B
+#ifdef VBOX_WITH_SDS
 /** This is set if we're connected to SDS and should discount a server lock
  * that it is holding when deciding whether we're idle or not. */
 bool        g_fRegisteredWithVBoxSDS = false;
@@ -120,7 +120,7 @@ bool CExeModule::HasActiveConnection()
  */
 /*static*/ bool CExeModule::isIdleLockCount(LONG cLocks)
 {
-#ifdef VBOX_WITH_SDS_PLAN_B
+#ifdef VBOX_WITH_SDS
     if (g_fRegisteredWithVBoxSDS)
         return cLocks <= 1;
 #endif
@@ -184,7 +184,7 @@ bool CExeModule::StartMonitor()
 }
 
 
-#ifdef VBOX_WITH_SDS_PLAN_B
+#ifdef VBOX_WITH_SDS
 class VBoxSVCRegistration;
 
 /**
@@ -472,7 +472,7 @@ STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID 
     return hrc;
 }
 
-#endif /* VBOX_WITH_SDS_PLAN_B */
+#endif /* VBOX_WITH_SDS */
 
 
 /*
@@ -806,7 +806,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         vrc = com::VBoxLogRelCreate("COM Server", pszLogFile,
                                     RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
                                     VBOXSVC_LOG_DEFAULT, "VBOXSVC_RELEASE_LOG",
-#ifdef VBOX_WITH_SDS_PLAN_B
+#ifdef VBOX_WITH_SDS
                                     RTLOGDEST_FILE | RTLOGDEST_F_DELAY_FILE,
 #else
                                     RTLOGDEST_FILE,
