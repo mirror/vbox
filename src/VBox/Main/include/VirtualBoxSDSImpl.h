@@ -121,7 +121,7 @@ private:
      * @returns Pointer to the LOCKED per user data.  NULL if not found.
      * @param   a_rStrUserSid   The user SID.
      */
-    VBoxSDSPerUserData *i_lookupPerUserData(com::Utf8Str const &a_rUserSid);
+    VBoxSDSPerUserData *i_lookupPerUserData(com::Utf8Str const &a_rStrUserSid);
 
     /**
      * Looks up the given user, creating it if not found
