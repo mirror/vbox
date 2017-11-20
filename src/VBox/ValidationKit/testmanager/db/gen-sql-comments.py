@@ -213,7 +213,10 @@ def main(asArgs):
     print("--");
     print("");
     for sLine in __copyright__.split('\n'):
-        print("-- %s" % (sLine,));
+        if len(sLine) > 0:
+            print("-- %s" % (sLine,));
+        else:
+            print("--");
     print("");
     print("");
     me = SqlDox(oFile, sInput);
