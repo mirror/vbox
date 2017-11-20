@@ -1332,6 +1332,7 @@ DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCCPUMCTX pCtx)
  */
 DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCCPUMCTX pCtx, uint64_t fIntercept)
 {
+    Assert(!pCtx->hwvirt.svm.fHMCachedVmcb);
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     return pVmcb && (pVmcb->ctrl.u64InterceptCtrl & fIntercept);
 }
@@ -1346,6 +1347,7 @@ DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCCPUMCTX pCtx, uint64_t fInterc
  */
 DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCCPUMCTX pCtx, uint8_t uCr)
 {
+    Assert(!pCtx->hwvirt.svm.fHMCachedVmcb);
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     return pVmcb && (pVmcb->ctrl.u16InterceptRdCRx & (1 << uCr));
 }
@@ -1360,6 +1362,7 @@ DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCCPUMCTX pCtx, uint8_t uCr)
  */
 DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCCPUMCTX pCtx, uint8_t uCr)
 {
+    Assert(!pCtx->hwvirt.svm.fHMCachedVmcb);
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     return pVmcb && (pVmcb->ctrl.u16InterceptWrCRx & (1 << uCr));
 }
@@ -1374,6 +1377,7 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCCPUMCTX pCtx, uint8_t uCr)
  */
 DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCCPUMCTX pCtx, uint8_t uDr)
 {
+    Assert(!pCtx->hwvirt.svm.fHMCachedVmcb);
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     return pVmcb && (pVmcb->ctrl.u16InterceptRdDRx & (1 << uDr));
 }
@@ -1388,6 +1392,7 @@ DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCCPUMCTX pCtx, uint8_t uDr)
  */
 DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCCPUMCTX pCtx, uint8_t uDr)
 {
+    Assert(!pCtx->hwvirt.svm.fHMCachedVmcb);
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     return pVmcb && (pVmcb->ctrl.u16InterceptWrDRx & (1 << uDr));
 }
@@ -1402,6 +1407,7 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCCPUMCTX pCtx, uint8_t uDr)
  */
 DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCCPUMCTX pCtx, uint8_t uVector)
 {
+    Assert(!pCtx->hwvirt.svm.fHMCachedVmcb);
     Assert(uVector < 32);
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     return pVmcb && (pVmcb->ctrl.u32InterceptXcpt & (UINT32_C(1) << uVector));

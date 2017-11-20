@@ -1011,15 +1011,10 @@ typedef struct SVMNESTEDVMCBCACHE
 
     /** @name Other miscellaneous state.
      * @{ */
-    /** Whether the VMCB exit code and info fields are updated during \#VMEXIT
-     *  processing. */
-    bool                fExitCodeAndInfoUpdated;
     /** Cache of V_INTR_MASKING bit. */
     bool                fVIntrMasking;
-    /** Whether the fields above are updated or not. */
-    bool                fValid;
     /** Alignment. */
-    bool                afPadding0[5];
+    bool                afPadding0[7];
     /** @} */
 } SVMNESTEDVMCBCACHE;
 #pragma pack()

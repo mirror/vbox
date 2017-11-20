@@ -2001,11 +2001,12 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Caches the nested-guest VMCB fields before we modify them for execution using
  * hardware-assisted SVM.
  *
+ * @returns true if the VMCB was previously already cached, false otherwise.
  * @param   pCtx            Pointer to the guest-CPU context.
  *
  * @sa      HMSvmNstGstVmExitNotify.
  */
-static void hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
+static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     PCSVMVMCBCTRL       pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
@@ -2019,7 +2020,8 @@ static void hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
      * Nested-paging CR3 is not saved back into the VMCB on #VMEXIT, hence no need to
      * cache and restore it, see AMD spec. 15.25.4 "Nested Paging and VMRUN/#VMEXIT".
      */
-    if (!pNstGstVmcbCache->fValid)
+    bool const fWasCached = pCtx->hwvirt.svm.fHMCachedVmcb;
+    if (!fWasCached)
     {
         pNstGstVmcbCache->u16InterceptRdCRx = pVmcbNstGstCtrl->u16InterceptRdCRx;
         pNstGstVmcbCache->u16InterceptWrCRx = pVmcbNstGstCtrl->u16InterceptWrCRx;
@@ -2036,9 +2038,11 @@ static void hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
         pNstGstVmcbCache->fVIntrMasking     = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
         pNstGstVmcbCache->TLBCtrl           = pVmcbNstGstCtrl->TLBCtrl;
         pNstGstVmcbCache->NestedPagingCtrl  = pVmcbNstGstCtrl->NestedPaging;
-        pNstGstVmcbCache->fValid            = true;
+        pCtx->hwvirt.svm.fHMCachedVmcb      = true;
         Log4(("hmR0SvmVmRunCacheVmcb: Cached VMCB fields\n"));
     }
+
+    return fWasCached;
 }
 
 
@@ -2057,27 +2061,35 @@ static void hmR0SvmVmRunSetupVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * First cache the nested-guest VMCB fields we may potentially modify.
      */
-    hmR0SvmVmRunCacheVmcb(pVCpu, pCtx);
+    bool const fVmcbCached = hmR0SvmVmRunCacheVmcb(pVCpu, pCtx);
+    if (!fVmcbCached)
+    {
+        /*
+         * The IOPM of the nested-guest can be ignored because the the guest always
+         * intercepts all IO port accesses. Thus, we'll swap to the guest IOPM rather
+         * into the nested-guest one and swap it back on the #VMEXIT.
+         */
+        pVmcbNstGstCtrl->u64IOPMPhysAddr = g_HCPhysIOBitmap;
 
-    /*
-     * The IOPM of the nested-guest can be ignored because the the guest always
-     * intercepts all IO port accesses. Thus, we'll swap to the guest IOPM rather
-     * into the nested-guest one and swap it back on the #VMEXIT.
-     */
-    pVmcbNstGstCtrl->u64IOPMPhysAddr = g_HCPhysIOBitmap;
+        /*
+         * Load the host-physical address into the MSRPM rather than the nested-guest
+         * physical address (currently we trap all MSRs in the nested-guest).
+         */
+        pVmcbNstGstCtrl->u64MSRPMPhysAddr = g_HCPhysNstGstMsrBitmap;
 
-    /*
-     * Load the host-physical address into the MSRPM rather than the nested-guest
-     * physical address (currently we trap all MSRs in the nested-guest).
-     */
-    pVmcbNstGstCtrl->u64MSRPMPhysAddr = g_HCPhysNstGstMsrBitmap;
-
-    /*
-     * Use the same nested-paging as the "outer" guest. We can't dynamically
-     * switch off nested-paging suddenly while executing a VM (see assertion at the
-     * end of Trap0eHandler in PGMAllBth.h).
-     */
-    pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging = pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging;
+        /*
+         * Use the same nested-paging as the "outer" guest. We can't dynamically
+         * switch off nested-paging suddenly while executing a VM (see assertion at the
+         * end of Trap0eHandler in PGMAllBth.h).
+         */
+        pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging = pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging;
+    }
+    else
+    {
+        Assert(pVmcbNstGstCtrl->u64IOPMPhysAddr == g_HCPhysIOBitmap);
+        Assert(pVmcbNstGstCtrl->u64MSRPMPhysAddr = g_HCPhysNstGstMsrBitmap);
+        Assert(pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging == pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+    }
 }
 
 
@@ -2096,8 +2108,6 @@ static int hmR0SvmLoadGuestStateNested(PVMCPU pVCpu, PCPUMCTX pCtx)
 
     PSVMVMCB pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     Assert(pVmcbNstGst);
-
-    hmR0SvmVmRunSetupVmcb(pVCpu, pCtx);
 
     hmR0SvmLoadGuestSegmentRegs(pVCpu, pVmcbNstGst, pCtx);
     hmR0SvmLoadGuestMsrs(pVCpu, pVmcbNstGst, pCtx);
@@ -2540,7 +2550,8 @@ static int hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
 
     /* Please, no longjumps here (any logging shouldn't flush jump back to ring-3). NO LOGGING BEFORE THIS POINT! */
     VMMRZCallRing3Disable(pVCpu);
-    Log4(("hmR0SvmExitToRing3: rcExit=%d\n", rcExit));
+    Log4(("hmR0SvmExitToRing3: VCPU[%u]: rcExit=%d LocalFF=%#RX32 GlobalFF=%#RX32\n", pVCpu->idCpu, rcExit,
+          pVCpu->fLocalForcedActions, pVM->fGlobalForcedActions));
 
     /* We need to do this only while truly exiting the "inner loop" back to ring-3 and -not- for any longjmp to ring3. */
     if (pVCpu->hm.s.Event.fPending)
@@ -2569,6 +2580,16 @@ static int hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
     /* On our way back from ring-3 reload the guest state if there is a possibility of it being changed. */
     if (rcExit != VINF_EM_RAW_INTERRUPT)
         HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    /*
+     * We may inspect the nested-guest VMCB state in ring-3 (e.g. for injecting interrupts)
+     * and thus we need to restore any modifications we may have made to it here if we're
+     * still executing the nested-guest.
+     */
+    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+        HMSvmNstGstVmExitNotify(pVCpu, pCtx);
+#endif
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExitToR3);
 
@@ -3021,6 +3042,31 @@ DECLINLINE(void) hmR0SvmClearIretIntercept(PSVMVMCB pVmcb)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
 /**
+ * Checks whether the SVM nested-guest is in a state to receive physical (APIC)
+ * interrupts.
+ *
+ * @returns true if it's ready, false otherwise.
+ * @param   pCtx        The guest-CPU context.
+ *
+ * @remarks This function looks at the VMCB cache rather than directly at the
+ *          nested-guest VMCB which may have been suitably modified for executing
+ *          using hardware-assisted SVM.
+ */
+static bool hmR0SvmCanNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    X86EFLAGS fEFlags;
+    if (pVmcbNstGstCache->fVIntrMasking)
+        fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
+    else
+        fEFlags.u = pCtx->eflags.u;
+
+    return fEFlags.Bits.u1IF;
+}
+
+
+/**
  * Evaluates the event to be delivered to the nested-guest and sets it as the
  * pending event.
  *
@@ -3087,12 +3133,14 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCt
          * Physical interrupts always take priority over virtual interrupts,
          * see AMD spec. 15.21.4 "Injecting Virtual (INTR) Interrupts".
          */
+        PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+        Assert(pCtx->hwvirt.svm.fHMCachedVmcb);
         if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
             && !fIntShadow
             && !pVCpu->hm.s.fSingleInstruction
-            && CPUMCanSvmNstGstTakePhysIntr(pCtx))
+            && hmR0SvmCanNstGstTakePhysIntr(pVCpu, pCtx))
         {
-            if (CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_INTR))
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_INTR)
             {
                 Log4(("Intercepting external interrupt -> #VMEXIT\n"));
                 return IEMExecSvmVmexit(pVCpu, SVM_EXIT_INTR, 0, 0);
@@ -3127,12 +3175,12 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCt
 
         /*
          * Check if the nested-guest can receive virtual (injected by VMRUN) interrupts.
-         * We can call CPUMCanSvmNstGstTakeVirtIntr here as we don't cache/modify any
+         * We can safely call CPUMCanSvmNstGstTakeVirtIntr here as we don't cache/modify any
          * nested-guest VMCB interrupt control fields besides V_INTR_MASKING, see hmR0SvmVmRunCacheVmcb.
          */
-        if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
-            && CPUMCanSvmNstGstTakeVirtIntr(pCtx)
-            && CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_VINTR))
+        if (   (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR)
+            && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
+            && CPUMCanSvmNstGstTakeVirtIntr(pCtx))
         {
             Log4(("Intercepting virtual interrupt -> #VMEXIT\n"));
             return IEMExecSvmVmexit(pVCpu, SVM_EXIT_VINTR, 0, 0);
@@ -3568,6 +3616,8 @@ static int hmR0SvmPreRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTR
     if (rc != VINF_SUCCESS)
         return rc;
 
+    hmR0SvmVmRunSetupVmcb(pVCpu, pCtx);
+
     if (TRPMHasTrap(pVCpu))
         hmR0SvmTrpmTrapToPendingEvent(pVCpu);
     else if (!pVCpu->hm.s.Event.fPending)
@@ -3597,7 +3647,7 @@ static int hmR0SvmPreRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTR
     /** @todo Get new STAM counter for this? */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
 
-    Assert(pVCpu->hm.s.svm.NstGstVmcbCache.fValid);
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb);
 
     /*
      * No longjmps to ring-3 from this point on!!!
@@ -4132,13 +4182,6 @@ static void hmR0SvmPostRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx,
     Assert(!pVCpu->hm.s.svm.fSyncVTpr);
     hmR0SvmSaveGuestState(pVCpu, pMixedCtx, pVmcbNstGst);       /* Save the nested-guest state from the VMCB to the
                                                                    guest-CPU context. */
-
-    /*
-     * Currently, reload the entire nested-guest VMCB due to code that directly inspects
-     * the nested-guest VMCB instead of the cache, e.g. hmR0SvmEvaluatePendingEventNested.
-     */
-    HMSvmNstGstVmExitNotify(pVCpu, pVmcbNstGst);
-    HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 }
 #endif
 

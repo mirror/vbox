@@ -270,7 +270,7 @@ struc CPUMCTX
     .hwvirt.svm.cPauseFilter           resw          1
     .hwvirt.svm.cPauseFilterThreshold  resw          1
     .hwvirt.svm.fInterceptEvents       resb          1
-    .hwvirt.svm.u8Padding1             resb          1
+    .hwvirt.svm.fHMCachedVmcb          resb          1
     .hwvirt.svm.pvMsrBitmapR0          RTR0PTR_RES   1
     .hwvirt.svm.pvMsrBitmapR3          RTR3PTR_RES   1
     .hwvirt.svm.pvIoBitmapR0           RTR0PTR_RES   1
