@@ -18,12 +18,7 @@
 #ifndef ____H_VIRTUALBOXSDSIMPL
 #define ____H_VIRTUALBOXSDSIMPL
 
-#include "VirtualBoxSDSWrap.h"
-#include "TokenWrap.h"
-
-#ifdef RT_OS_WINDOWS
-# include "win/resource.h"
-#endif
+#include "VirtualBoxBase.h"
 
 
 /**
@@ -67,11 +62,28 @@ public:
 };
 
 
-class ATL_NO_VTABLE VirtualBoxSDS :
-    public VirtualBoxSDSWrap
-#ifdef RT_OS_WINDOWS
+/**
+ * The IVirtualBoxSDS implementation.
+ *
+ * This class helps different VBoxSVC processes make sure a user only have a
+ * single VirtualBox instance.
+ *
+ * @note This is a simple internal class living in a privileged process.  So, we
+ *       do not use the API wrappers as they add complexity.  In particular,
+ *       they add the auto caller logic, which is an excellent tool to create
+ *       unkillable processes.  If an API method during development or product
+ *       for instance triggers an NT exception like STATUS_ACCESS_VIOLATION, the
+ *       caller will be unwound without releasing the caller.  When uninit is
+ *       called during COM shutdown/whatever, the thread gets stuck waiting for
+ *       the long gone caller and cannot be killed (Windows 10, build 16299),
+ *       requiring a reboot to continue.
+ *
+ * @todo Would be very nice to get rid of the ATL cruft too here.
+ */
+class VirtualBoxSDS
+    : public IVirtualBoxSDS
+    , public ATL::CComObjectRootEx<ATL::CComMultiThreadModel>
     , public ATL::CComCoClass<VirtualBoxSDS, &CLSID_VirtualBoxSDS>
-#endif
 {
 private:
     typedef std::map<com::Utf8Str, VBoxSDSPerUserData *> UserDataMap_T;
@@ -81,31 +93,24 @@ private:
     RTCRITSECTRW        m_MapCritSect;
 
 public:
-
     DECLARE_CLASSFACTORY_SINGLETON(VirtualBoxSDS)
-
-    //DECLARE_REGISTRY_RESOURCEID(IDR_VIRTUALBOX)
-
-    // Kind of redundant (VirtualBoxSDSWrap declares itself not aggregatable
-    // and CComCoClass<VirtualBoxSDS, &CLSID_VirtualBoxSDS> as aggregatable,
-    // the former is the first inheritance), but the C multiple inheritance
-    // rules and the class factory in VBoxSDS.cpp needs this to disambiguate.
     DECLARE_NOT_AGGREGATABLE(VirtualBoxSDS)
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+    BEGIN_COM_MAP(VirtualBoxSDS)
+        COM_INTERFACE_ENTRY(IVirtualBoxSDS)
+    END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR(VirtualBoxSDS)
 
     HRESULT FinalConstruct();
-    void FinalRelease();
-
-    // public initializers/uninitializers for internal purposes only
-    HRESULT init();
-    void uninit();
+    void    FinalRelease();
 
 private:
 
-    // Wrapped IVirtualBoxSDS methods
-    HRESULT registerVBoxSVC(const ComPtr<IVBoxSVCRegistration> &aVBoxSVC, LONG aPid, ComPtr<IUnknown> &aExistingVirtualBox);
-    HRESULT deregisterVBoxSVC(const ComPtr<IVBoxSVCRegistration> &aVBoxSVC, LONG aPid);
+    // IVirtualBoxSDS methods
+    HRESULT RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid, IUnknown **aExistingVirtualBox);
+    HRESULT DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid);
 
 
     // Private methods

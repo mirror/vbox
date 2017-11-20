@@ -24401,14 +24401,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <!--
   // IVirtualBoxSDS
+  // Note! This actually extends IUnknown rather than IDispatch, notdual=yes
+  //       sees to that.
   //////////////////////////////////////////////////////////////////////////
   -->
 
-  <!-- This is now an internal interface, it doesn't need to be dual either. -->
   <interface
-    name="IVirtualBoxSDS" extends="$unknown"
+    name="IVirtualBoxSDS" extends="$unknown" notdual="yes"
     uuid="787d20ed-faf3-4170-6697-3a2a7de6e086"
-    wsmap="suppress"
+    wsmap="suppress" internal="yes"
     reservedMethods="0" reservedAttributes="0"
     >
       <desc>
