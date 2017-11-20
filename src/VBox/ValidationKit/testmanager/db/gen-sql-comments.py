@@ -70,7 +70,7 @@ class SqlDox(object):
 
     def commitComment2(self, sSqlObj):
         if self.sComment is not None and sSqlObj is not None:
-            print("COMMENT ON %s IS\n  '%s';\n\n" % (sSqlObj, self.quoteSqlString(self.sComment.strip())));
+            print("COMMENT ON %s IS\n  '%s';\n" % (sSqlObj, self.quoteSqlString(self.sComment.strip())));
         self.resetComment();
         return True;
 
