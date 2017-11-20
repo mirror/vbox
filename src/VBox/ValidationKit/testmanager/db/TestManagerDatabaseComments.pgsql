@@ -453,7 +453,7 @@ COMMENT ON COLUMN TestGroups.sDescription IS
 
 
 COMMENT ON TABLE TestGroupMembers IS
-  'The N:M relation ship between test case configurations and test groups.
+  'The N:M relationship between test case configurations and test groups.
 
 @remarks This table stores history.  Never update or delete anything.  The
          equivalent of deleting is done by setting the ''tsExpire'' field to
