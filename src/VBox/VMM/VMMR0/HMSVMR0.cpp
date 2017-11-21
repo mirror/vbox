@@ -4182,6 +4182,8 @@ static void hmR0SvmPostRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx,
     Assert(!pVCpu->hm.s.svm.fSyncVTpr);
     hmR0SvmSaveGuestState(pVCpu, pMixedCtx, pVmcbNstGst);       /* Save the nested-guest state from the VMCB to the
                                                                    guest-CPU context. */
+
+    HMSvmNstGstVmExitNotify(pVCpu, pMixedCtx);                  /* Restore modified VMCB fields for now, see @bugref{7243#c52} .*/
 }
 #endif
 
@@ -6374,7 +6376,10 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     /*
      * Lazy DR0-3 loading.
      */
-    if (!pSvmTransient->fWasHyperDebugStateActive)
+    if (   !pSvmTransient->fWasHyperDebugStateActive
+#ifdef VBOX_WITH_NESTED_HWVIRT
+           && !CPUMIsGuestInSvmNestedHwVirtMode(pCtx)) /** @todo implement single-stepping when executing a nested-guest. */
+#endif
     {
         Assert(!DBGFIsStepping(pVCpu)); Assert(!pVCpu->hm.s.fSingleInstruction);
         Log5(("hmR0SvmExitReadDRx: Lazy loading guest debug registers\n"));
