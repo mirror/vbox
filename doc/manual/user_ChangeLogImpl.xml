@@ -12,12 +12,27 @@
     <itemizedlist>
 
       <listitem>
+        <para>VMM: fixed emulation so that Plan 9 guests can start once more
+          (5.1.0 regression)</para>
+      </listitem>
+
+      <listitem>
         <para>Storage: fixed regression breaking iSCSI (bug #17196)</para>
       </listitem>
 
       <listitem>
         <para>Serial: fixed hanging I/O when using named pipes on Windows
           (5.2.0 regression; bug #17227)</para>
+      </listitem>
+
+      <listitem>
+        <para>USB/OHCI: improved behavior so that the controller state after a VM reset
+           is closer to the initial state after VM start</para>
+      </listitem>
+
+      <listitem>
+        <para>EFI: fixed HFS+ driver which in rare cases failed to access most files
+          on a volume</para>
       </listitem>
 
     </itemizedlist>
