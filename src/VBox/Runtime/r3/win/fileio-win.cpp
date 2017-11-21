@@ -976,6 +976,7 @@ RTR3DECL(int) RTFileSetTimes(RTFILE hFile, PCRTTIMESPEC pAccessTime, PCRTTIMESPE
 }
 
 
+#if 0 /* RTFileSetMode is implemented by RTFileSetMode-r3-nt.cpp */
 /* This comes from a source file with a different set of system headers (DDK)
  * so it can't be declared in a common header, like internal/file.h.
  */
@@ -1002,6 +1003,7 @@ RTR3DECL(int) RTFileSetMode(RTFILE hFile, RTFMODE fMode)
     }
     return VINF_SUCCESS;
 }
+#endif
 
 
 /* RTFileQueryFsSizes is implemented by ../nt/RTFileQueryFsSizes-nt.cpp */

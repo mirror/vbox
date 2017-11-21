@@ -71,6 +71,7 @@ RTFILE rtFileGetStandard(RTHANDLESTD enmStdHandle);
 DECLHIDDEN(int) rtFileNtValidateAndConvertFlags(uint64_t fOpen, uint32_t *pfDesiredAccess, uint32_t *pfObjAttribs,
                                                 uint32_t *pfFileAttribs, uint32_t *pfShareAccess, uint32_t *pfCreateDisposition,
                                                 uint32_t *pfCreateOptions);
+
 #endif
 
 RT_C_DECLS_END

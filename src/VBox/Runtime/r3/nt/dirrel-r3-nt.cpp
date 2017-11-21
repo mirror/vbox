@@ -413,19 +413,50 @@ RTDECL(int) RTDirRelPathSetMode(RTDIR hDir, const char *pszRelPath, RTFMODE fMod
     PRTDIRINTERNAL pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
+    fMode = rtFsModeNormalize(fMode, pszRelPath, 0);
+    AssertReturn(rtFsModeIsValidPermissions(fMode), VERR_INVALID_FMODE);
     AssertMsgReturn(RTPATH_F_IS_VALID(fFlags, 0), ("%#x\n", fFlags), VERR_INVALID_FLAGS);
 
-    char szPath[RTPATH_MAX];
-    int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);
+    /*
+     * Convert and normalize the path.
+     */
+    UNICODE_STRING NtName;
+    HANDLE hRoot = pThis->hDir;
+    int rc = RTNtPathRelativeFromUtf8(&NtName, &hRoot, pszRelPath, RTDIRREL_NT_GET_ASCENT(pThis),
+                                      pThis->enmInfoClass == FileMaximumInformation);
     if (RT_SUCCESS(rc))
     {
-RTAssertMsg2("DBG: RTDirRelPathSetMode(%s)...\n", szPath);
-#ifndef RT_OS_WINDOWS
-        rc = RTPathSetMode(szPath, fMode); /** @todo fFlags is currently ignored. */
-#else
-        rc = VERR_NOT_IMPLEMENTED; /** @todo implement RTPathSetMode on windows. */
-        RT_NOREF(fMode);
-#endif
+        HANDLE              hSubDir = RTNT_INVALID_HANDLE_VALUE;
+        IO_STATUS_BLOCK     Ios     = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        OBJECT_ATTRIBUTES   ObjAttr;
+        InitializeObjectAttributes(&ObjAttr, &NtName, 0 /*fAttrib*/, hRoot, NULL);
+
+        ULONG fOpenOptions = FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT | FILE_OPEN_REPARSE_POINT;
+        if (fFlags & RTPATH_F_ON_LINK)
+            fOpenOptions |= FILE_OPEN_REPARSE_POINT;
+        NTSTATUS rcNt = NtCreateFile(&hSubDir,
+                                     FILE_WRITE_ATTRIBUTES | SYNCHRONIZE,
+                                     &ObjAttr,
+                                     &Ios,
+                                     NULL /*AllocationSize*/,
+                                     FILE_ATTRIBUTE_NORMAL,
+                                     FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                     FILE_OPEN,
+                                     fOpenOptions,
+                                     NULL /*EaBuffer*/,
+                                     0 /*EaLength*/);
+        if (NT_SUCCESS(rcNt))
+        {
+            rc = rtNtFileSetModeWorker(hSubDir, fMode);
+
+            rcNt = NtClose(hSubDir);
+            if (!NT_SUCCESS(rcNt) && RT_SUCCESS(rc))
+                rc = RTErrConvertFromNtStatus(rcNt);
+        }
+        else
+            rc = RTErrConvertFromNtStatus(rcNt);
+
+        RTNtPathFree(&NtName, NULL);
     }
     return rc;
 }
