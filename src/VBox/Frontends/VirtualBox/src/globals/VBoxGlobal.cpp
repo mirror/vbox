@@ -3328,8 +3328,14 @@ void VBoxGlobal::setWMClass(QWidget *pWidget, const QString &strNameString, cons
     /* Make sure all arguments set: */
     AssertReturnVoid(pWidget && !strNameString.isNull() && !strClassString.isNull());
 
-    /* Define QByteArray object to make sure data is alive within the scope: */
-    QByteArray nameByteArray = strNameString.toLatin1();
+    /* Define QByteArray objects to make sure data is alive within the scope: */
+    QByteArray nameByteArray;
+    /* Check the existence of RESOURCE_NAME env. variable and override name string if necessary: */
+    const char resourceName[] = "RESOURCE_NAME";
+    if (qEnvironmentVariableIsSet(resourceName))
+        nameByteArray = qgetenv(resourceName);
+    else
+        nameByteArray = strNameString.toLatin1();
     QByteArray classByteArray = strClassString.toLatin1();
 
     AssertReturnVoid(nameByteArray.data() && classByteArray.data());
