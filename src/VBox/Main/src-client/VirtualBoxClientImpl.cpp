@@ -109,8 +109,7 @@ HRESULT VirtualBoxClient::init()
     try
     {
         if (ASMAtomicIncU32(&g_cInstances) != 1)
-            AssertFailedStmt(throw setError(E_FAIL,
-                                            tr("Attempted to create more than one VirtualBoxClient instance")));
+            AssertFailedStmt(throw setError(E_FAIL, tr("Attempted to create more than one VirtualBoxClient instance")));
 
         mData.m_ThreadWatcher = NIL_RTTHREAD;
         mData.m_SemEvWatcher = NIL_RTSEMEVENT;
@@ -130,11 +129,9 @@ HRESULT VirtualBoxClient::init()
             throw rc;
 
         rc = unconst(mData.m_pEventSource).createObject();
-        AssertComRCThrow(rc, setError(rc,
-                                      tr("Could not create EventSource for VirtualBoxClient")));
+        AssertComRCThrow(rc, setError(rc, tr("Could not create EventSource for VirtualBoxClient")));
         rc = mData.m_pEventSource->init();
-        AssertComRCThrow(rc, setError(rc,
-                                      tr("Could not initialize EventSource for VirtualBoxClient")));
+        AssertComRCThrow(rc, setError(rc, tr("Could not initialize EventSource for VirtualBoxClient")));
 
         /* HACK ALERT! This is for DllCanUnloadNow(). */
         s_cUnnecessaryAtlModuleLocks++;
@@ -147,9 +144,7 @@ HRESULT VirtualBoxClient::init()
         if (RT_FAILURE(vrc))
         {
             mData.m_SemEvWatcher = NIL_RTSEMEVENT;
-            AssertRCStmt(vrc, throw setError(VBOX_E_IPRT_ERROR,
-                                             tr("Failed to create semaphore (rc=%Rrc)"),
-                                             vrc));
+            AssertRCStmt(vrc, throw setError(VBOX_E_IPRT_ERROR, tr("Failed to create semaphore (rc=%Rrc)"), vrc));
         }
 
         vrc = RTThreadCreate(&mData.m_ThreadWatcher, SVCWatcherThread, this, 0,
@@ -158,9 +153,7 @@ HRESULT VirtualBoxClient::init()
         {
             RTSemEventDestroy(mData.m_SemEvWatcher);
             mData.m_SemEvWatcher = NIL_RTSEMEVENT;
-            AssertRCStmt(vrc, throw setError(VBOX_E_IPRT_ERROR,
-                                             tr("Failed to create watcher thread (rc=%Rrc)"),
-                                             vrc));
+            AssertRCStmt(vrc, throw setError(VBOX_E_IPRT_ERROR,  tr("Failed to create watcher thread (rc=%Rrc)"), vrc));
         }
     }
     catch (HRESULT err)
@@ -188,6 +181,7 @@ HRESULT VirtualBoxClient::init()
 }
 
 #ifdef RT_OS_WINDOWS
+
 /**
  * Looks into why we failed to create the VirtualBox object.
  *
@@ -196,6 +190,34 @@ HRESULT VirtualBoxClient::init()
  */
 HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT hrcCaller)
 {
+# ifdef VBOX_WITH_SDS
+    /*
+     * Check that the VBoxSDS service is configured to run as LocalSystem and is enabled.
+     */
+    WCHAR wszBuffer[256];
+    int vrc = i_getServiceAccount(L"VBoxSDS", wszBuffer, RT_ELEMENTS(wszBuffer));
+    if (RT_SUCCESS(vrc))
+    {
+        LogRelFunc(("VBoxSDS service is running under the '%ls' account.\n", wszBuffer));
+        if (RTUtf16Cmp(wszBuffer, L"LocalSystem") != 0)
+            return setError(hrcCaller,
+                            tr("VBoxSDS should be run under SYSTEM account, but it started under '%ls' account:\n"
+                               "Change VBoxSDS Windows Service Logon parameters in Service Control Manager. \n%Rhrc"),
+                            wszBuffer, hrcCaller);
+    }
+    else
+        LogRelFunc(("VirtualBoxClient::i_getServiceAccount failed: %Rrc\n", vrc));
+
+    bool fIsVBoxSDSDisabled = false;
+    HRESULT hrc = i_isServiceDisabled(L"VBoxSDS", &fIsVBoxSDSDisabled);
+    if (SUCCEEDED(hrc) && fIsVBoxSDSDisabled)
+        return setError(hrcCaller,
+                        tr("The VBoxSDS windows service is disabled.\n"
+                           "Enable VBoxSDS Windows Service using Windows Service Management Console.\n %Rhrc"), hrcCaller);
+    if (FAILED(hrc))
+        LogRelFunc(("Warning: Failed to get information about VBoxSDS using WMI:: %Rhrc", hrc));
+# endif /* VBOX_WITH_SDS */
+
     /*
      * First step is to try get an IUnknown interface of the VirtualBox object.
      *
@@ -353,6 +375,158 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
     pUnknown->Release();
     return hrcCaller;
 }
+
+# ifdef VBOX_WITH_SDS
+
+int VirtualBoxClient::i_getServiceAccount(const wchar_t *pwszServiceName, wchar_t *pwszAccountName, size_t cwcAccountName)
+{
+    AssertPtr(pwszServiceName);
+    AssertPtr(pwszAccountName);
+    Assert(cwcAccountName);
+    *pwszAccountName = '\0';
+
+    int vrc;
+
+    // Get a handle to the SCM database.
+    SC_HANDLE hSCManager = OpenSCManagerW(NULL /*pwszMachineName*/, NULL /*pwszDatabaseName*/, SC_MANAGER_ALL_ACCESS);
+    if (hSCManager != NULL)
+    {
+        SC_HANDLE hService = OpenServiceW(hSCManager, pwszServiceName, SERVICE_QUERY_CONFIG);
+        if (hService != NULL)
+        {
+            DWORD cbNeeded = sizeof(QUERY_SERVICE_CONFIGW) + _1K;
+            if (!QueryServiceConfigW(hService, NULL, 0, &cbNeeded))
+            {
+                Assert(GetLastError() == ERROR_INSUFFICIENT_BUFFER);
+                LPQUERY_SERVICE_CONFIGW pSc = (LPQUERY_SERVICE_CONFIGW)RTMemTmpAllocZ(cbNeeded);
+                if (pSc)
+                {
+                    DWORD cbNeeded2 = 0;
+                    if (QueryServiceConfigW(hService, pSc, cbNeeded, &cbNeeded2))
+                    {
+                        vrc = RTUtf16Copy(pwszAccountName, cwcAccountName, pSc->lpServiceStartName);
+                        if (RT_FAILURE(vrc))
+                            LogRel(("Error: SDS service name is too long (%Rrc): %ls\n", vrc, pSc->lpServiceStartName));
+                    }
+                    else
+                    {
+                        int dwError = GetLastError();
+                        vrc = RTErrConvertFromWin32(dwError);
+                        LogRel(("Error: Failed querying service config: %Rwc (%u) -> %Rrc; cbNeeded=%d cbNeeded2=%d\n",
+                                dwError, dwError, vrc, cbNeeded, cbNeeded2));
+                    }
+                    RTMemTmpFree(pSc);
+                }
+                else
+                {
+                    LogRel(("Error: Failed allocating %#x bytes of memory for service config!\n", cbNeeded));
+                    vrc = VERR_NO_TMP_MEMORY;
+                }
+            }
+            else
+            {
+                AssertLogRelMsgFailed(("Error: QueryServiceConfigW returns success with zero buffer!\n"));
+                vrc = VERR_IPE_UNEXPECTED_STATUS;
+            }
+            CloseServiceHandle(hService);
+        }
+        else
+        {
+            int dwError = GetLastError();
+            vrc = RTErrConvertFromWin32(dwError);
+            LogRel(("Error: Could not open service: %Rwc (%u) -> %Rrc\n", dwError, dwError, vrc));
+        }
+        CloseServiceHandle(hSCManager);
+    }
+    else
+    {
+        int dwError = GetLastError();
+        vrc = RTErrConvertFromWin32(dwError);
+        LogRel(("Error: Could not open SCM: %Rwc (%u) -> %Rrc\n", dwError, dwError, vrc));
+    }
+    return vrc;
+}
+
+
+HRESULT VirtualBoxClient::i_isServiceDisabled(const wchar_t *pwszServiceName, bool* pfOutIsDisabled)
+{
+    /** @todo r=bird: there must be a way we can get this information from the
+     *        service manager.  This is overly complicated. */
+    AssertPtr(pwszServiceName);
+    AssertPtr(pfOutIsDisabled);
+    *pfOutIsDisabled = false;
+
+    ComPtr<IWbemLocator> aLocator;
+    HRESULT hr = CoCreateInstance(CLSID_WbemLocator, 0, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void **)aLocator.asOutParam());
+    if (FAILED(hr))
+    {
+        LogRel(("Error: Cannot instantiate WbemLocator: %Rhrc", hr));
+        return hr;
+    }
+
+    ComPtr<IWbemServices> aService;
+    hr = aLocator->ConnectServer(com::Bstr(L"ROOT\\CIMV2").raw(), // Object path of WMI namespace
+                                 NULL,                    // User name. NULL = current user
+                                 NULL,                    // User password. NULL = current
+                                 0,                       // Locale. NULL indicates current
+                                 NULL,                    // Security flags.
+                                 0,                       // Authority (for example, Kerberos)
+                                 0,                       // Context object
+                                 aService.asOutParam());  // pointer to IWbemServices proxy
+    if (FAILED(hr))
+    {
+        LogRel(("Error: Cannot connect to Wbem Service: %Rhrc\n", hr));
+        return hr;
+    }
+
+    // query settings for VBoxSDS windows service
+    ComPtr<IEnumWbemClassObject> aEnumerator;
+    hr = aService->ExecQuery(com::Bstr("WQL").raw(),
+                             com::BstrFmt("SELECT * FROM Win32_Service WHERE Name='%ls'", pwszServiceName).raw(),
+                             WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
+                             NULL,
+                             aEnumerator.asOutParam());
+    if (FAILED(hr) || aEnumerator == NULL)
+    {
+        LogRel(("Error: querying service settings from WMI: %Rhrc\n", hr));
+        return hr;
+    }
+
+    ULONG uReturn = 0;
+    ComPtr<IWbemClassObject> aVBoxSDSObj;
+    hr = aEnumerator->Next(WBEM_INFINITE, 1, aVBoxSDSObj.asOutParam(), &uReturn);
+    if (FAILED(hr))
+    {
+        LogRel(("Error: Cannot get Service WMI record: %Rhrc\n", hr));
+        return hr;
+    }
+    if (aVBoxSDSObj == NULL || uReturn == 0)
+    {
+        LogRel(("Error: Service record didn't exist in WMI: %Rhrc\n", hr));
+        return hr;
+    }
+
+    // Get "StartMode" property
+    VARIANT vtProp;
+    VariantInit(&vtProp);
+    hr = aVBoxSDSObj->Get(L"StartMode", 0, &vtProp, 0, 0);
+    if (FAILED(hr) || (vtProp.vt & VT_NULL) == VT_NULL)
+    {
+        LogRel(("Error: Didn't found StartMode property: %Rhrc\n", hr));
+        return hr;
+    }
+
+    Assert((vtProp.vt & VT_BSTR) == VT_BSTR);
+
+    *pfOutIsDisabled = RTUtf16Cmp((RTUTF16*)vtProp.bstrVal, (RTUTF16*)L"Disabled") == 0;
+
+    LogRel(("Service start mode is '%ls' \n", vtProp.bstrVal));
+    VariantClear(&vtProp);
+    return S_OK;
+}
+
+# endif /* VBOX_WITH_SDS */
+
 #endif /* RT_OS_WINDOWS */
 
 /**
