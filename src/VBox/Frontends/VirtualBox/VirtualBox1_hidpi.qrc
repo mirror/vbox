@@ -66,13 +66,13 @@
         <file alias="commit_host_iface_22px_hidpi.png">images/hidpi/commit_host_iface_22px_hidpi.png</file>
         <file alias="commit_host_iface_disabled_22px_hidpi.png">images/hidpi/commit_host_iface_disabled_22px_hidpi.png</file>
         <file alias="connect_16px_hidpi.png">images/hidpi/connect_16px_hidpi.png</file>
+        <file alias="connect_on_16px_hidpi.png">images/hidpi/connect_on_16px_hidpi.png</file>
         <file alias="controller_add_16px_hidpi.png">images/hidpi/controller_add_16px_hidpi.png</file>
         <file alias="controller_add_disabled_16px_hidpi.png">images/hidpi/controller_add_disabled_16px_hidpi.png</file>
         <file alias="controller_remove_16px_hidpi.png">images/hidpi/controller_remove_16px_hidpi.png</file>
         <file alias="controller_remove_disabled_16px_hidpi.png">images/hidpi/controller_remove_disabled_16px_hidpi.png</file>
         <file alias="cpu_16px_hidpi.png">images/hidpi/cpu_16px_hidpi.png</file>
         <file alias="description_16px_hidpi.png">images/hidpi/description_16px_hidpi.png</file>
-        <file alias="disconnect_16px_hidpi.png">images/hidpi/disconnect_16px_hidpi.png</file>
         <file alias="diskimage_16px_hidpi.png">images/hidpi/diskimage_16px_hidpi.png</file>
         <file alias="diskimage_22px_hidpi.png">images/hidpi/diskimage_22px_hidpi.png</file>
         <file alias="diskimage_32px_hidpi.png">images/hidpi/diskimage_32px_hidpi.png</file>

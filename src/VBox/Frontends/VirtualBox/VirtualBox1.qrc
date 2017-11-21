@@ -66,13 +66,13 @@
         <file alias="commit_host_iface_22px.png">images/commit_host_iface_22px.png</file>
         <file alias="commit_host_iface_disabled_22px.png">images/commit_host_iface_disabled_22px.png</file>
         <file alias="connect_16px.png">images/connect_16px.png</file>
+        <file alias="connect_on_16px.png">images/connect_on_16px.png</file>
         <file alias="controller_add_16px.png">images/controller_add_16px.png</file>
         <file alias="controller_add_disabled_16px.png">images/controller_add_disabled_16px.png</file>
         <file alias="controller_remove_16px.png">images/controller_remove_16px.png</file>
         <file alias="controller_remove_disabled_16px.png">images/controller_remove_disabled_16px.png</file>
         <file alias="cpu_16px.png">images/cpu_16px.png</file>
         <file alias="description_16px.png">images/description_16px.png</file>
-        <file alias="disconnect_16px.png">images/disconnect_16px.png</file>
         <file alias="diskimage_16px.png">images/diskimage_16px.png</file>
         <file alias="diskimage_22px.png">images/diskimage_22px.png</file>
         <file alias="diskimage_32px.png">images/diskimage_32px.png</file>
