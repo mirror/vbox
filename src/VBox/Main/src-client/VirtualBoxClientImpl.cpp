@@ -190,6 +190,8 @@ HRESULT VirtualBoxClient::init()
  */
 HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT hrcCaller)
 {
+    HRESULT hrc;
+
 # ifdef VBOX_WITH_SDS
     /*
      * Check that the VBoxSDS service is configured to run as LocalSystem and is enabled.
@@ -209,7 +211,7 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
         LogRelFunc(("VirtualBoxClient::i_getServiceAccount failed: %Rrc\n", vrc));
 
     bool fIsVBoxSDSDisabled = false;
-    HRESULT hrc = i_isServiceDisabled(L"VBoxSDS", &fIsVBoxSDSDisabled);
+    hrc = i_isServiceDisabled(L"VBoxSDS", &fIsVBoxSDSDisabled);
     if (SUCCEEDED(hrc) && fIsVBoxSDSDisabled)
         return setError(hrcCaller,
                         tr("The VBoxSDS windows service is disabled.\n"
@@ -226,7 +228,7 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
      * registration is partially broken (though that's unlikely to happen these days).
      */
     IUnknown *pUnknown = NULL;
-    HRESULT hrc = CoCreateInstance(CLSID_VirtualBox, NULL, CLSCTX_LOCAL_SERVER, IID_IUnknown, (void **)&pUnknown);
+    hrc = CoCreateInstance(CLSID_VirtualBox, NULL, CLSCTX_LOCAL_SERVER, IID_IUnknown, (void **)&pUnknown);
     if (FAILED(hrc))
     {
         if (hrc == hrcCaller)
