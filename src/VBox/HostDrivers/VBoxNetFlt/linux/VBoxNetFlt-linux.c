@@ -866,7 +866,8 @@ static void vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf,
         struct vlan_ethhdr *pVHdr = (struct vlan_ethhdr *)pExtra;
         Assert(ETH_ALEN * 2 + VLAN_HLEN <= cbExtra);
         memmove(pVHdr, pMac, ETH_ALEN * 2);
-        cbConsumed += ETH_ALEN * 2;
+        /* Consume whole Ethernet header: 2 addresses + EtherType (see @bugref{8599}) */
+        cbConsumed += ETH_ALEN * 2 + sizeof(uint16_t);
         pVHdr->h_vlan_proto = RT_H2N_U16(ETH_P_8021Q);
         pVHdr->h_vlan_TCI   = RT_H2N_U16(vlan_tx_tag_get(pBuf));
         pVHdr->h_vlan_encapsulated_proto = *(uint16_t*)(pMac + ETH_ALEN * 2);
@@ -897,9 +898,9 @@ static void vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf,
 #endif /* VBOXNETFLT_SG_SUPPORT */
 
     if (!pGsoCtx)
-        IntNetSgInitTempSegs(pSG, pBuf->len, cSegs, 0 /*cSegsUsed*/);
+        IntNetSgInitTempSegs(pSG, pBuf->len + cbProduced - cbConsumed, cSegs, 0 /*cSegsUsed*/);
     else
-        IntNetSgInitTempSegsGso(pSG, pBuf->len, cSegs, 0 /*cSegsUsed*/, pGsoCtx);
+        IntNetSgInitTempSegsGso(pSG, pBuf->len + cbProduced - cbConsumed, cSegs, 0 /*cSegsUsed*/, pGsoCtx);
 
     int iSeg = 0;
 #ifdef VBOXNETFLT_SG_SUPPORT
@@ -955,6 +956,21 @@ static void vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf,
 #endif
 
     pSG->cSegsUsed = iSeg;
+
+#if 0
+    if (cbProduced)
+    {
+        LogRel(("vboxNetFltLinuxSkBufToSG: original packet dump:\n%.*Rhxd\n", pBuf->len-pBuf->data_len, skb_mac_header(pBuf)));
+        LogRel(("vboxNetFltLinuxSkBufToSG: cbConsumed=%u cbProduced=%u cbExtra=%u\n", cbConsumed, cbProduced, cbExtra));
+        uint32_t offset = 0;
+        for (i = 0; i < pSG->cSegsUsed; ++i)
+        {
+            LogRel(("vboxNetFltLinuxSkBufToSG: seg#%d (%d bytes, starting at 0x%x):\n%.*Rhxd\n",
+                    i, pSG->aSegs[i].cb, offset, pSG->aSegs[i].cb, pSG->aSegs[i].pv));
+            offset += pSG->aSegs[i].cb;
+        }
+    }
+#endif
 
 #ifdef PADD_RUNT_FRAMES_FROM_HOST
     /*
