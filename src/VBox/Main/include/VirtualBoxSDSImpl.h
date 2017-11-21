@@ -21,46 +21,7 @@
 #include "VirtualBoxBase.h"
 
 
-/**
- * Per user data.
- */
-class VBoxSDSPerUserData
-{
-public:
-    /** The SID (secure identifier) for the user.  This is the key. */
-    com::Utf8Str                 m_strUserSid;
-    /** The user name (if we could get it). */
-    com::Utf8Str                 m_strUsername;
-    /** The VBoxSVC chosen to instantiate CLSID_VirtualBox.
-     * This is NULL if not set. */
-    ComPtr<IVBoxSVCRegistration> m_ptrTheChosenOne;
-    /** Critical section protecting everything here. */
-    RTCRITSECT                   m_Lock;
-
-
-public:
-    VBoxSDSPerUserData(com::Utf8Str const &a_rStrUserSid, com::Utf8Str const &a_rStrUsername)
-        : m_strUserSid(a_rStrUserSid), m_strUsername(a_rStrUsername)
-    {
-        RTCritSectInit(&m_Lock);
-    }
-
-    ~VBoxSDSPerUserData()
-    {
-        RTCritSectDelete(&m_Lock);
-    }
-
-    void i_lock()
-    {
-        RTCritSectEnter(&m_Lock);
-    }
-
-    void i_unlock()
-    {
-        RTCritSectLeave(&m_Lock);
-    }
-};
-
+class VBoxSDSPerUserData; /* See VirtualBoxSDSImpl.cpp. */
 
 /**
  * The IVirtualBoxSDS implementation.
@@ -87,7 +48,8 @@ class VirtualBoxSDS
 {
 private:
     typedef std::map<com::Utf8Str, VBoxSDSPerUserData *> UserDataMap_T;
-    /** Per user data map (key is SID string). */
+    /** Per user data map (key is SID string).
+     * This is an insert-only map! */
     UserDataMap_T       m_UserDataMap;
     /** Lock protecting m_UserDataMap.*/
     RTCRITSECTRW        m_MapCritSect;
