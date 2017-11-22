@@ -228,13 +228,13 @@ static int rtCmdChModRecursive(RTCMDCHMODOPTS const *pOpts, const char *pszPath)
     RTVFSDIR hVfsDir;
     if (!fUseChainApi)
     {
-        rc = RTVfsDirOpenNormal(pszPath, 0 /**@todo write attrib flag*/, &hVfsDir);
+        rc = RTVfsDirOpenNormal(pszPath, 0 /** @todo write attrib flag*/, &hVfsDir);
         if (RT_FAILURE(rc))
             return RTMsgErrorExitFailure("RTVfsDirOpenNormal failed on '%s': %Rrc", pszPath, rc);
     }
     else
     {
-        rc = RTVfsChainOpenDir(pszPath, 0 /**@todo write attrib flag*/, &hVfsDir, &offError, RTErrInfoInitStatic(&ErrInfo));
+        rc = RTVfsChainOpenDir(pszPath, 0 /** @todo write attrib flag*/, &hVfsDir, &offError, RTErrInfoInitStatic(&ErrInfo));
         if (RT_FAILURE(rc))
             return RTVfsChainMsgErrorExitFailure("RTVfsChainQueryInfo", pszPath, rc, offError, &ErrInfo.Core);
     }

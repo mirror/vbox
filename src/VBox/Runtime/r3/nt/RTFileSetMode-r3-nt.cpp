@@ -80,5 +80,3 @@ RTDECL(int) RTFileSetMode(RTFILE hFile, RTFMODE fMode)
 
     return rtNtFileSetModeWorker(hNative, fMode);
 }
-
-
