@@ -196,29 +196,26 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
     /*
      * Check that the VBoxSDS service is configured to run as LocalSystem and is enabled.
      */
-    WCHAR wszBuffer[256];
-    int vrc = i_getServiceAccount(L"VBoxSDS", wszBuffer, RT_ELEMENTS(wszBuffer));
+    WCHAR    wszBuffer[256];
+    uint32_t uStartType;
+    int vrc = i_getServiceAccountAndStartType(L"VBoxSDS", wszBuffer, RT_ELEMENTS(wszBuffer), &uStartType);
     if (RT_SUCCESS(vrc))
     {
-        LogRelFunc(("VBoxSDS service is running under the '%ls' account.\n", wszBuffer));
+        LogRelFunc(("VBoxSDS service is running under the '%ls' account with start type %u.\n", wszBuffer, uStartType));
         if (RTUtf16Cmp(wszBuffer, L"LocalSystem") != 0)
             return setError(hrcCaller,
-                            tr("VBoxSDS should be run under SYSTEM account, but it started under '%ls' account:\n"
-                               "Change VBoxSDS Windows Service Logon parameters in Service Control Manager. \n%Rhrc"),
-                            wszBuffer, hrcCaller);
+                            tr("VBoxSDS is misconfigured to run under the '%ls' account instead of the SYSTEM one.\n"
+                               "You ccan fix this by using the Windows Service Control Manager or by running\n"
+                               "'qc config VBoxSDS obj=LocalSystem' on a command line."),  wszBuffer);
+        if (uStartType == SERVICE_DISABLED)
+            return setError(hrcCaller,
+                            tr("The VBoxSDS windows service is disabled.\n"
+                               "To reenable the service, set it to 'Manual' startup type in the Windows Service\n"
+                               "management console, or run 'sc config VBoxSDS start=demand' on a command line"));
     }
     else
         LogRelFunc(("VirtualBoxClient::i_getServiceAccount failed: %Rrc\n", vrc));
-
-    bool fIsVBoxSDSDisabled = false;
-    hrc = i_isServiceDisabled(L"VBoxSDS", &fIsVBoxSDSDisabled);
-    if (SUCCEEDED(hrc) && fIsVBoxSDSDisabled)
-        return setError(hrcCaller,
-                        tr("The VBoxSDS windows service is disabled.\n"
-                           "Enable VBoxSDS Windows Service using Windows Service Management Console.\n %Rhrc"), hrcCaller);
-    if (FAILED(hrc))
-        LogRelFunc(("Warning: Failed to get information about VBoxSDS using WMI:: %Rhrc", hrc));
-# endif /* VBOX_WITH_SDS */
+# endif
 
     /*
      * First step is to try get an IUnknown interface of the VirtualBox object.
@@ -379,18 +376,19 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
 }
 
 # ifdef VBOX_WITH_SDS
-
-int VirtualBoxClient::i_getServiceAccount(const wchar_t *pwszServiceName, wchar_t *pwszAccountName, size_t cwcAccountName)
+int VirtualBoxClient::i_getServiceAccountAndStartType(const wchar_t *pwszServiceName,
+                                                      wchar_t *pwszAccountName, size_t cwcAccountName, uint32_t *puStartType)
 {
     AssertPtr(pwszServiceName);
     AssertPtr(pwszAccountName);
     Assert(cwcAccountName);
     *pwszAccountName = '\0';
+    *puStartType     = SERVICE_DEMAND_START;
 
     int vrc;
 
     // Get a handle to the SCM database.
-    SC_HANDLE hSCManager = OpenSCManagerW(NULL /*pwszMachineName*/, NULL /*pwszDatabaseName*/, SC_MANAGER_ALL_ACCESS);
+    SC_HANDLE hSCManager = OpenSCManagerW(NULL /*pwszMachineName*/, NULL /*pwszDatabaseName*/, SC_MANAGER_CONNECT);
     if (hSCManager != NULL)
     {
         SC_HANDLE hService = OpenServiceW(hSCManager, pwszServiceName, SERVICE_QUERY_CONFIG);
@@ -400,12 +398,13 @@ int VirtualBoxClient::i_getServiceAccount(const wchar_t *pwszServiceName, wchar_
             if (!QueryServiceConfigW(hService, NULL, 0, &cbNeeded))
             {
                 Assert(GetLastError() == ERROR_INSUFFICIENT_BUFFER);
-                LPQUERY_SERVICE_CONFIGW pSc = (LPQUERY_SERVICE_CONFIGW)RTMemTmpAllocZ(cbNeeded);
+                LPQUERY_SERVICE_CONFIGW pSc = (LPQUERY_SERVICE_CONFIGW)RTMemTmpAllocZ(cbNeeded + _1K);
                 if (pSc)
                 {
                     DWORD cbNeeded2 = 0;
-                    if (QueryServiceConfigW(hService, pSc, cbNeeded, &cbNeeded2))
+                    if (QueryServiceConfigW(hService, pSc, cbNeeded + _1K, &cbNeeded2))
                     {
+                        *puStartType = pSc->dwStartType;
                         vrc = RTUtf16Copy(pwszAccountName, cwcAccountName, pSc->lpServiceStartName);
                         if (RT_FAILURE(vrc))
                             LogRel(("Error: SDS service name is too long (%Rrc): %ls\n", vrc, pSc->lpServiceStartName));
@@ -421,7 +420,7 @@ int VirtualBoxClient::i_getServiceAccount(const wchar_t *pwszServiceName, wchar_
                 }
                 else
                 {
-                    LogRel(("Error: Failed allocating %#x bytes of memory for service config!\n", cbNeeded));
+                    LogRel(("Error: Failed allocating %#x bytes of memory for service config!\n", cbNeeded + _1K));
                     vrc = VERR_NO_TMP_MEMORY;
                 }
             }
@@ -448,85 +447,6 @@ int VirtualBoxClient::i_getServiceAccount(const wchar_t *pwszServiceName, wchar_
     }
     return vrc;
 }
-
-
-HRESULT VirtualBoxClient::i_isServiceDisabled(const wchar_t *pwszServiceName, bool* pfOutIsDisabled)
-{
-    /** @todo r=bird: there must be a way we can get this information from the
-     *        service manager.  This is overly complicated. */
-    AssertPtr(pwszServiceName);
-    AssertPtr(pfOutIsDisabled);
-    *pfOutIsDisabled = false;
-
-    ComPtr<IWbemLocator> aLocator;
-    HRESULT hr = CoCreateInstance(CLSID_WbemLocator, 0, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void **)aLocator.asOutParam());
-    if (FAILED(hr))
-    {
-        LogRel(("Error: Cannot instantiate WbemLocator: %Rhrc", hr));
-        return hr;
-    }
-
-    ComPtr<IWbemServices> aService;
-    hr = aLocator->ConnectServer(com::Bstr(L"ROOT\\CIMV2").raw(), // Object path of WMI namespace
-                                 NULL,                    // User name. NULL = current user
-                                 NULL,                    // User password. NULL = current
-                                 0,                       // Locale. NULL indicates current
-                                 NULL,                    // Security flags.
-                                 0,                       // Authority (for example, Kerberos)
-                                 0,                       // Context object
-                                 aService.asOutParam());  // pointer to IWbemServices proxy
-    if (FAILED(hr))
-    {
-        LogRel(("Error: Cannot connect to Wbem Service: %Rhrc\n", hr));
-        return hr;
-    }
-
-    // query settings for VBoxSDS windows service
-    ComPtr<IEnumWbemClassObject> aEnumerator;
-    hr = aService->ExecQuery(com::Bstr("WQL").raw(),
-                             com::BstrFmt("SELECT * FROM Win32_Service WHERE Name='%ls'", pwszServiceName).raw(),
-                             WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
-                             NULL,
-                             aEnumerator.asOutParam());
-    if (FAILED(hr) || aEnumerator == NULL)
-    {
-        LogRel(("Error: querying service settings from WMI: %Rhrc\n", hr));
-        return hr;
-    }
-
-    ULONG uReturn = 0;
-    ComPtr<IWbemClassObject> aVBoxSDSObj;
-    hr = aEnumerator->Next(WBEM_INFINITE, 1, aVBoxSDSObj.asOutParam(), &uReturn);
-    if (FAILED(hr))
-    {
-        LogRel(("Error: Cannot get Service WMI record: %Rhrc\n", hr));
-        return hr;
-    }
-    if (aVBoxSDSObj == NULL || uReturn == 0)
-    {
-        LogRel(("Error: Service record didn't exist in WMI: %Rhrc\n", hr));
-        return hr;
-    }
-
-    // Get "StartMode" property
-    VARIANT vtProp;
-    VariantInit(&vtProp);
-    hr = aVBoxSDSObj->Get(L"StartMode", 0, &vtProp, 0, 0);
-    if (FAILED(hr) || (vtProp.vt & VT_NULL) == VT_NULL)
-    {
-        LogRel(("Error: Didn't found StartMode property: %Rhrc\n", hr));
-        return hr;
-    }
-
-    Assert((vtProp.vt & VT_BSTR) == VT_BSTR);
-
-    *pfOutIsDisabled = RTUtf16Cmp((RTUTF16*)vtProp.bstrVal, (RTUTF16*)L"Disabled") == 0;
-
-    LogRel(("Service start mode is '%ls' \n", vtProp.bstrVal));
-    VariantClear(&vtProp);
-    return S_OK;
-}
-
 # endif /* VBOX_WITH_SDS */
 
 #endif /* RT_OS_WINDOWS */
