@@ -12,6 +12,19 @@
     <itemizedlist>
 
       <listitem>
+        <para>User interface: various improvements for high resolution screens</para>
+      </listitem>
+
+      <listitem>
+        <para>User interface: added functionality to duplicate optical and floppy
+          images</para>
+      </listitem>
+
+      <listitem>
+        <para>User interface: various improvements for the virtual media manager</para>
+      </listitem>
+
+      <listitem>
         <para>VMM: fixed emulation so that Plan 9 guests can start once more
           (5.1.0 regression)</para>
       </listitem>
@@ -21,8 +34,18 @@
       </listitem>
 
       <listitem>
+        <para>Audio: added HDA support for more exotic guests (e.g. Haiku)</para
+>
+      </listitem>
+
+      <listitem>
         <para>Serial: fixed hanging I/O when using named pipes on Windows
           (5.2.0 regression; bug #17227)</para>
+      </listitem>
+
+      <listitem>
+        <para>Serial: fixed broken communication with certain devices on Linux
+          hosts</para>
       </listitem>
 
       <listitem>
@@ -33,6 +56,34 @@
       <listitem>
         <para>EFI: fixed HFS+ driver which in rare cases failed to access most files
           on a volume</para>
+      </listitem>
+
+      <listitem>
+        <para>Shared clipboard: fixed hang with OS X host and Linux guest
+         (bug #15782)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: fixed kernel module compilation and start failures
+          with Linux kernel 4.14 (bug #17267)</para>
+      </listitem>
+
+      <listitem>
+        <para>X11 hosts: better handle WM_CLASS setting (bug #12534)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux guests: fixed kernel module compilation and other problems
+         with Linux kernel 4.14 (bug #12534)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux guests: fixed kernel module compilation and other problems
+         with Linux kernel 4.14</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux guests: fixed various 5.2.0 regressions (bug #17163)</para>
       </listitem>
 
     </itemizedlist>
