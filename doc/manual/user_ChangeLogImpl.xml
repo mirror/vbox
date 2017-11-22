@@ -86,6 +86,11 @@
         <para>Linux guests: fixed various 5.2.0 regressions (bug #17163)</para>
       </listitem>
 
+      <listitem>
+        <para>Bridged networking: fixed duplicate EtherType in VLAN/priority tags
+          on Linux (5.2.0 regression; bug #17277)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
