@@ -78,8 +78,14 @@ CExeModule *g_pModule     = NULL;
 HWND        g_hMainWindow = NULL;
 HINSTANCE   g_hInstance   = NULL;
 #ifdef VBOX_WITH_SDS
-/** This is set if we're connected to SDS and should discount a server lock
- * that it is holding when deciding whether we're idle or not. */
+/** This is set if we're connected to SDS.
+ *
+ * It means that we should discount a server lock that it is holding when
+ * deciding whether we're idle or not.
+ *
+ * Also, when set we deregister with SDS during class factory destruction.  We
+ * exploit this to prevent attempts to deregister during or after COM shutdown.
+ */
 bool        g_fRegisteredWithVBoxSDS = false;
 #endif
 
@@ -219,8 +225,10 @@ public:
             m_pObj = NULL;
         }
 
-        /** @todo Need to check if this is okay wrt COM termination. */
-        i_deregisterWithSds();
+        /* We usually get here during g_pModule->Term() via CoRevokeClassObjec, so COM
+           probably working well enough to talk to SDS when we get here. */
+        if (g_fRegisteredWithVBoxSDS)
+            i_deregisterWithSds();
     }
 
     // IClassFactory
@@ -322,7 +330,7 @@ HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox)
         hrc = m_ptrVirtualBoxSDS->RegisterVBoxSVC(m_pVBoxSVC, GetCurrentProcessId(), ppOtherVirtualBox);
         if (SUCCEEDED(hrc))
         {
-            g_fRegisteredWithVBoxSDS = true;
+            g_fRegisteredWithVBoxSDS = !*ppOtherVirtualBox;
             return hrc;
         }
         m_pVBoxSVC->Release();
@@ -900,6 +908,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 
     g_pModule->Term();
 
+#ifdef VBOX_WITH_SDS
+    g_fRegisteredWithVBoxSDS = false; /* Don't trust COM LPC to work right from now on.  */
+#endif
     com::Shutdown();
 
     if(g_pModule)
