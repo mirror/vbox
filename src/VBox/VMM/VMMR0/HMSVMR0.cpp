@@ -4620,11 +4620,14 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     Assert(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID);
     Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
 
-#define HM_SVM_RET_VMEXIT_NESTED(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
-    do \
-    { \
-        return VBOXSTRICTRC_TODO(IEMExecSvmVmexit(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2)); \
-    } while (0) \
+#define HM_SVM_VMEXIT_NESTED(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
+            VBOXSTRICTRC_TODO(IEMExecSvmVmexit(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2))
+#define HM_SVM_IS_CTRL_INTERCEPT_SET(a_pCtx, a_Intercept)       CPUMIsGuestSvmCtrlInterceptSet(a_pCtx, (a_Intercept))
+#define HM_SVM_IS_XCPT_INTERCEPT_SET(a_pCtx, a_Xcpt)            CPUMIsGuestSvmXcptInterceptSet(a_pCtx, (a_Xcpt))
+#define HM_SVM_IS_READ_CR_INTERCEPT_SET(a_pCtx, a_uCr)          CPUMIsGuestSvmReadCRxInterceptSet(a_pCtx, (a_uCr))
+#define HM_SVM_IS_READ_DR_INTERCEPT_SET(a_pCtx, a_uDr)          CPUMIsGuestSvmReadDRxInterceptSet(a_pCtx, (a_uDr))
+#define HM_SVM_IS_WRITE_CR_INTERCEPT_SET(a_pCtx, a_uCr)         CPUMIsGuestSvmWriteCRxInterceptSet(a_pCtx, (a_uCr))
+#define HM_SVM_IS_WRITE_DR_INTERCEPT_SET(a_pCtx, a_uDr)         CPUMIsGuestSvmWriteDRxInterceptSet(a_pCtx, (a_uDr))
 
     /*
      * For all the #VMEXITs here we primarily figure out if the #VMEXIT is expected
@@ -4632,7 +4635,6 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
      */
     PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     PSVMVMCBCTRL        pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
-    PSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     uint64_t const      uExitCode        = pVmcbNstGstCtrl->u64ExitCode;
     uint64_t const      uExitInfo1       = pVmcbNstGstCtrl->u64ExitInfo1;
     uint64_t const      uExitInfo2       = pVmcbNstGstCtrl->u64ExitInfo2;
@@ -4642,50 +4644,50 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     {
         case SVM_EXIT_CPUID:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_CPUID)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_CPUID))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitCpuid(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_RDTSC:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSC)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_RDTSC))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitRdtsc(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_RDTSCP:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSCP)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_RDTSCP))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitRdtscp(pVCpu, pCtx, pSvmTransient);
         }
 
 
         case SVM_EXIT_MONITOR:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_MONITOR)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_MONITOR))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitMonitor(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_MWAIT:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_MWAIT)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_MWAIT))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitMwait(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_HLT:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_HLT)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_HLT))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitHlt(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_MSR:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_MSR_PROT)
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_MSR_PROT))
             {
                 uint32_t const idMsr = pCtx->ecx;
                 uint16_t offMsrpm;
@@ -4700,7 +4702,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                     if (   (fInterceptWrite && pVmcbNstGstCtrl->u64ExitInfo1 == SVM_EXIT1_MSR_WRITE)
                         || (fInterceptRead  && pVmcbNstGstCtrl->u64ExitInfo1 == SVM_EXIT1_MSR_READ))
                     {
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     }
                 }
                 else
@@ -4710,7 +4712,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                      * See AMD-V spec. "15.11 MSR Intercepts".
                      */
                     Assert(rc == VERR_OUT_OF_RANGE);
-                    HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                 }
             }
             return hmR0SvmExitMsr(pVCpu, pCtx, pSvmTransient);
@@ -4721,14 +4723,14 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             /*
              * Figure out if the IO port access is intercepted by the nested-guest.
              */
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_IOIO_PROT)
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_IOIO_PROT))
             {
                 void *pvIoBitmap = pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
                 SVMIOIOEXITINFO IoExitInfo;
                 IoExitInfo.u = pVmcbNstGst->ctrl.u64ExitInfo1;
                 bool const fIntercept = hmR0SvmIsIoInterceptActive(pvIoBitmap, &IoExitInfo);
                 if (fIntercept)
-                    HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             }
             return hmR0SvmExitIOInstr(pVCpu, pCtx, pSvmTransient);
         }
@@ -4742,8 +4744,8 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 uint64_t const uFaultAddress = pVmcbNstGstCtrl->u64ExitInfo2;
 
                 /* If the nested-guest is intercepting #PFs, cause a #PF #VMEXIT. */
-                if (pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(X86_XCPT_PF))
-                    HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, u32ErrCode, uFaultAddress);
+                if (HM_SVM_IS_XCPT_INTERCEPT_SET(pCtx, X86_XCPT_PF))
+                    return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, u32ErrCode, uFaultAddress);
 
                 /* If the nested-guest is not intercepting #PFs, forward the #PF to the nested-guest. */
                 hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
@@ -4754,46 +4756,46 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
         case SVM_EXIT_EXCEPTION_7:   /* X86_XCPT_NM */
         {
-            if (pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(X86_XCPT_NM))
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_XCPT_INTERCEPT_SET(pCtx, X86_XCPT_NM))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             hmR0SvmSetPendingXcptNM(pVCpu);
             return VINF_SUCCESS;
         }
 
         case SVM_EXIT_EXCEPTION_6:   /* X86_XCPT_UD */
         {
-            if (pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(X86_XCPT_UD))
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_XCPT_INTERCEPT_SET(pCtx, X86_XCPT_UD))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             hmR0SvmSetPendingXcptUD(pVCpu);
             return VINF_SUCCESS;
         }
 
         case SVM_EXIT_EXCEPTION_16:  /* X86_XCPT_MF */
         {
-            if (pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(X86_XCPT_MF))
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_XCPT_INTERCEPT_SET(pCtx, X86_XCPT_MF))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             hmR0SvmSetPendingXcptMF(pVCpu);
             return VINF_SUCCESS;
         }
 
         case SVM_EXIT_EXCEPTION_1:   /* X86_XCPT_DB */
         {
-            if (pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(X86_XCPT_DB))
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_XCPT_INTERCEPT_SET(pCtx, X86_XCPT_DB))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmNestedExitXcptDB(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_EXCEPTION_17:  /* X86_XCPT_AC */
         {
-            if (pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(X86_XCPT_AC))
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_XCPT_INTERCEPT_SET(pCtx, X86_XCPT_AC))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitXcptAC(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_EXCEPTION_3:   /* X86_XCPT_BP */
         {
-            if (pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(X86_XCPT_BP))
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_XCPT_INTERCEPT_SET(pCtx, X86_XCPT_BP))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmNestedExitXcptBP(pVCpu, pCtx, pSvmTransient);
         }
 
@@ -4801,8 +4803,8 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         case SVM_EXIT_READ_CR3:
         case SVM_EXIT_READ_CR4:
         {
-            if (pVmcbNstGstCache->u16InterceptRdCRx & (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0)))
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_READ_CR_INTERCEPT_SET(pCtx, (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0))))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitReadCRx(pVCpu, pCtx, pSvmTransient);
         }
 
@@ -4812,24 +4814,25 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         case SVM_EXIT_WRITE_CR8:   /** @todo Shouldn't writes to CR8 go to V_TPR instead since we run with V_INTR_MASKING set?? */
         {
             Log4(("hmR0SvmHandleExitNested: Write CRx: u16InterceptWrCRx=%#x u64ExitCode=%#RX64 %#x\n",
-                  pVmcbNstGstCache->u16InterceptWrCRx, pSvmTransient->u64ExitCode,
+                  pVmcbNstGstCtrl->u16InterceptWrCRx, pSvmTransient->u64ExitCode,
                   (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0))));
-            if (pVmcbNstGstCache->u16InterceptWrCRx & (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0)))
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+
+            if (HM_SVM_IS_WRITE_CR_INTERCEPT_SET(pCtx, (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0))))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitWriteCRx(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_PAUSE:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_PAUSE)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_PAUSE))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitPause(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_VINTR:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_VINTR))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
         }
 
@@ -4841,43 +4844,43 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
         case SVM_EXIT_FERR_FREEZE:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_FERR_FREEZE)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_FERR_FREEZE))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_NMI:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_NMI)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_NMI))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_INVLPG:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_INVLPG)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_INVLPG))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitInvlpg(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_WBINVD:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_WBINVD)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_WBINVD))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitWbinvd(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_INVD:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_INVD)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_INVD))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitInvd(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_RDPMC:
         {
-            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDPMC)
-                HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_RDPMC))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitRdpmc(pVCpu, pCtx, pSvmTransient);
         }
 
@@ -4890,8 +4893,8 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 case SVM_EXIT_READ_DR10:    case SVM_EXIT_READ_DR11:    case SVM_EXIT_READ_DR12:    case SVM_EXIT_READ_DR13:
                 case SVM_EXIT_READ_DR14:    case SVM_EXIT_READ_DR15:
                 {
-                    if (pVmcbNstGstCache->u16InterceptRdDRx & (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_READ_DR0)))
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_READ_DR_INTERCEPT_SET(pCtx, (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_READ_DR0))))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitReadDRx(pVCpu, pCtx, pSvmTransient);
                 }
 
@@ -4900,8 +4903,8 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 case SVM_EXIT_WRITE_DR10:   case SVM_EXIT_WRITE_DR11:   case SVM_EXIT_WRITE_DR12:   case SVM_EXIT_WRITE_DR13:
                 case SVM_EXIT_WRITE_DR14:   case SVM_EXIT_WRITE_DR15:
                 {
-                    if (pVmcbNstGstCache->u16InterceptWrDRx & (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_DR0)))
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_WRITE_DR_INTERCEPT_SET(pCtx, (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_DR0))))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitWriteDRx(pVCpu, pCtx, pSvmTransient);
                 }
 
@@ -4918,115 +4921,115 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 case SVM_EXIT_EXCEPTION_27:      case SVM_EXIT_EXCEPTION_28:    case SVM_EXIT_EXCEPTION_29:
                 case SVM_EXIT_EXCEPTION_30:      case SVM_EXIT_EXCEPTION_31:
                 {
-                    if (pVmcbNstGstCache->u32InterceptXcpt & (1U << (uint32_t)(pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0)))
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_XCPT_INTERCEPT_SET(pCtx, (uint32_t)(pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0)))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     /** @todo Write hmR0SvmExitXcptGeneric! */
                     return VERR_NOT_IMPLEMENTED;
                 }
 
                 case SVM_EXIT_XSETBV:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_XSETBV)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_XSETBV))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitXsetbv(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_TASK_SWITCH:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_TASK_SWITCH)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_TASK_SWITCH))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitTaskSwitch(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_IRET:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_IRET)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_IRET))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmNestedExitIret(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_SHUTDOWN:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_SHUTDOWN)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_SHUTDOWN))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitShutdown(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_SMI:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_SMI)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_SMI))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_INIT:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_INIT)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_INIT))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_VMMCALL:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMMCALL)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_VMMCALL))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitVmmCall(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_CLGI:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_CLGI)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_CLGI))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                      return hmR0SvmExitClgi(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_STGI:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_STGI)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_STGI))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                      return hmR0SvmExitStgi(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_VMLOAD:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMLOAD)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_VMLOAD))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitVmload(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_VMSAVE:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMSAVE)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_VMSAVE))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitVmsave(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_INVLPGA:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_INVLPGA)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_INVLPGA))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitInvlpga(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_VMRUN:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_VMRUN))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitVmrun(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_RSM:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_RSM)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_RSM))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     hmR0SvmSetPendingXcptUD(pVCpu);
                     return VINF_SUCCESS;
                 }
 
                 case SVM_EXIT_SKINIT:
                 {
-                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_SKINIT)
-                        HM_SVM_RET_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+                    if (HM_SVM_IS_CTRL_INTERCEPT_SET(pCtx, SVM_CTRL_INTERCEPT_SKINIT))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     hmR0SvmSetPendingXcptUD(pVCpu);
                     return VINF_SUCCESS;
                 }
@@ -5049,7 +5052,13 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     }
     /* not reached */
 
-#undef HM_SVM_RET_VMEXIT_NESTED
+#undef HM_SVM_VMEXIT_NESTED
+#undef HM_SVM_IS_CTRL_INTERCEPT_SET
+#undef HM_SVM_IS_XCPT_INTERCEPT_SET
+#undef HM_SVM_IS_READ_CR_INTERCEPT_SET
+#undef HM_SVM_IS_READ_DR_INTERCEPT_SET
+#undef HM_SVM_IS_WRITE_CR_INTERCEPT_SET
+#undef HM_SVM_IS_WRITE_DR_INTERCEPT_SET
 }
 #endif
 
