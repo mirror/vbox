@@ -1706,7 +1706,7 @@ RTDECL(int) RTVfsChainOpenFsStream(const char *pszSpec, PRTVFSFSSTREAM  phVfsFss
  * @param   pErrInfo        Where to return additional error information.
  *                          Optional.
  */
-RTDECL(int) RTVfsChainOpenObj(const char *pszSpec, uint64_t fFileOpen, uint32_t fObjOpen,
+RTDECL(int) RTVfsChainOpenObj(const char *pszSpec, uint64_t fFileOpen, uint32_t fObjFlags,
                               PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo);
 
 RTDECL(int) RTVfsChainOpenDir(const char *pszSpec, uint32_t fOpen, PRTVFSDIR phVfsDir, uint32_t *poffError, PRTERRINFO pErrInfo);
