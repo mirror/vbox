@@ -1220,7 +1220,7 @@ RTDECL(int)             RTVfsObjOpen(RTVFS hVfs, const char *pszPath, uint64_t f
 
                 /*
                  * If we've got a trailing directory slash, use pfnOpenDir
-                 * instead of pfnOpenObj.
+                 * instead of pfnOpen.
                  */
                 if (pPath->fDirSlash)
                 {

@@ -2073,7 +2073,6 @@ static int rtFsFatObj_QueryInfo(PRTFSFATOBJ pThis, PRTFSOBJINFO pObjInfo, RTFSOB
  */
 static int rtFsFatObj_SetMode(PRTFSFATOBJ pThis, RTFMODE fMode, RTFMODE fMask)
 {
-    __debugbreak();
 #if 0
     if (fMask != ~RTFS_TYPE_MASK)
     {
