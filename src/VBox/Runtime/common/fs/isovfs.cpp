@@ -2992,9 +2992,148 @@ static DECLCALLBACK(int) rtFsIsoDir_TraversalOpen(void *pvThis, const char *pszE
 
 
 /**
+ * @interface_method_impl{RTVFSDIROPS,pfnOpen}
+ */
+static DECLCALLBACK(int) rtFsIsoDir_Open(void *pvThis, const char *pszEntry, uint64_t fOpen,
+                                         uint32_t fFlags, PRTVFSOBJ phVfsObj)
+{
+    PRTFSISODIROBJ  pThis   = (PRTFSISODIROBJ)pvThis;
+    PRTFSISODIRSHRD pShared = pThis->pShared;
+
+    /*
+     * We cannot create or replace anything, just open stuff.
+     */
+    if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE
+        || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
+        return VERR_WRITE_PROTECT;
+
+    /*
+     * Try open whatever it is.
+     */
+    int rc;
+    if (pShared->Core.pVol->enmType != RTFSISOVOLTYPE_UDF)
+    {
+        /*
+         * ISO 9660
+         */
+        PCISO9660DIRREC pDirRec;
+        uint64_t        offDirRec;
+        uint32_t        cDirRecs;
+        RTFMODE         fMode;
+        uint32_t        uVersion;
+        rc = rtFsIsoDir_FindEntry9660(pShared, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
+        Log2(("rtFsIsoDir_Open: FindEntry9660(,%s,) -> %Rrc\n", pszEntry, rc));
+        if (RT_SUCCESS(rc))
+        {
+            switch (fMode & RTFS_TYPE_MASK)
+            {
+                case RTFS_TYPE_FILE:
+                    if (fFlags & RTVFSOBJ_F_OPEN_FILE)
+                    {
+                        RTVFSFILE hVfsFile;
+                        rc = rtFsIsoFile_New9660(pShared->Core.pVol, pShared, pDirRec, cDirRecs,
+                                                 offDirRec, fOpen, uVersion, &hVfsFile);
+                        if (RT_SUCCESS(rc))
+                        {
+                            *phVfsObj = RTVfsObjFromFile(hVfsFile);
+                            RTVfsFileRelease(hVfsFile);
+                            AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                        }
+                    }
+                    else
+                        rc = VERR_IS_A_FILE;
+                    break;
+
+                case RTFS_TYPE_DIRECTORY:
+                    if (fFlags & RTVFSOBJ_F_OPEN_DIRECTORY)
+                    {
+                        RTVFSDIR hVfsDir;
+                        rc = rtFsIsoDir_New9660(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, &hVfsDir);
+                        if (RT_SUCCESS(rc))
+                        {
+                            *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                            RTVfsDirRelease(hVfsDir);
+                            AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                        }
+                    }
+                    else
+                        rc = VERR_IS_A_DIRECTORY;
+                    break;
+
+                case RTFS_TYPE_SYMLINK:
+                case RTFS_TYPE_DEV_BLOCK:
+                case RTFS_TYPE_DEV_CHAR:
+                case RTFS_TYPE_FIFO:
+                case RTFS_TYPE_SOCKET:
+                case RTFS_TYPE_WHITEOUT:
+                    rc = VERR_NOT_IMPLEMENTED;
+                    break;
+
+                default:
+                    rc = VERR_PATH_NOT_FOUND;
+                    break;
+            }
+        }
+    }
+    else
+    {
+        /*
+         * UDF
+         */
+        PCUDFFILEIDDESC pFid;
+        rc = rtFsIsoDir_FindEntryUdf(pShared, pszEntry, &pFid);
+        Log2(("rtFsIsoDir_Open: FindEntryUdf(,%s,) -> %Rrc\n", pszEntry, rc));
+        if (RT_SUCCESS(rc))
+        {
+            if (!(pFid->fFlags & UDF_FILE_FLAGS_DELETED))
+            {
+                if (!(pFid->fFlags & UDF_FILE_FLAGS_DIRECTORY))
+                {
+                    if (fFlags & RTVFSOBJ_F_OPEN_FILE)
+                    {
+                        RTVFSFILE hVfsFile;
+                        rc = rtFsIsoFile_NewUdf(pShared->Core.pVol, pShared, pFid, fOpen, &hVfsFile);
+                        if (RT_SUCCESS(rc))
+                        {
+                            *phVfsObj = RTVfsObjFromFile(hVfsFile);
+                            RTVfsFileRelease(hVfsFile);
+                            AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                        }
+                    }
+                    else
+                        rc = VERR_IS_A_FILE;
+                }
+                else
+                {
+                    if (fFlags & RTVFSOBJ_F_OPEN_DIRECTORY)
+                    {
+                        RTVFSDIR hVfsDir;
+                        rc = rtFsIsoDir_NewUdf(pShared->Core.pVol, pShared, pFid, &hVfsDir);
+                        if (RT_SUCCESS(rc))
+                        {
+                            *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                            RTVfsDirRelease(hVfsDir);
+                            AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                        }
+                    }
+                    else
+                        rc = VERR_IS_A_DIRECTORY;
+                }
+            }
+            /* We treat UDF_FILE_FLAGS_DELETED like RTFS_TYPE_WHITEOUT for now. */
+            else
+                rc = VERR_PATH_NOT_FOUND;
+        }
+    }
+    return rc;
+
+}
+
+
+/**
  * @interface_method_impl{RTVFSDIROPS,pfnOpenFile}
  */
-static DECLCALLBACK(int) rtFsIsoDir_OpenFile(void *pvThis, const char *pszFilename, uint32_t fOpen, PRTVFSFILE phVfsFile)
+static DECLCALLBACK(int) rtFsIsoDir_OpenFile(void *pvThis, const char *pszFilename, uint64_t fOpen, PRTVFSFILE phVfsFile)
 {
     PRTFSISODIROBJ  pThis   = (PRTFSISODIROBJ)pvThis;
     PRTFSISODIRSHRD pShared = pThis->pShared;
@@ -3653,6 +3792,7 @@ static const RTVFSDIROPS g_rtFsIsoDirOps =
         rtFsIsoDir_SetOwner,
         RTVFSOBJSETOPS_VERSION
     },
+    rtFsIsoDir_Open,
     rtFsIsoDir_TraversalOpen,
     rtFsIsoDir_OpenFile,
     rtFsIsoDir_OpenDir,

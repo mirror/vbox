@@ -351,6 +351,7 @@ typedef struct RTVFSSOCKETINTERNAL
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 DECLINLINE(uint32_t) rtVfsObjRelease(RTVFSOBJINTERNAL *pThis);
+static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, uint32_t fFlags, RTVFSDIRINTERNAL **ppVfsParentDir);
 
 
 
@@ -965,6 +966,19 @@ RTDECL(uint32_t) RTVfsObjRelease(RTVFSOBJ hVfsObj)
 }
 
 
+RTDECL(RTVFSOBJTYPE)    RTVfsObjGetType(RTVFSOBJ hVfsObj)
+{
+    RTVFSOBJINTERNAL *pThis = hVfsObj;
+    if (pThis != NIL_RTVFSOBJ)
+    {
+        AssertPtrReturn(pThis, RTVFSOBJTYPE_INVALID);
+        AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, RTVFSOBJTYPE_INVALID);
+        return pThis->pOps->enmType;
+    }
+    return RTVFSOBJTYPE_INVALID;
+}
+
+
 RTDECL(RTVFS)           RTVfsObjToVfs(RTVFSOBJ hVfsObj)
 {
     RTVFSOBJINTERNAL *pThis = hVfsObj;
@@ -1166,6 +1180,94 @@ RTDECL(RTVFSOBJ)        RTVfsObjFromSymlink(RTVFSSYMLINK hVfsSym)
 }
 
 
+RTDECL(int)             RTVfsObjOpen(RTVFS hVfs, const char *pszPath, uint64_t fFileOpen, uint32_t fObjFlags, PRTVFSOBJ phVfsObj)
+{
+    /*
+     * Validate input.
+     */
+    RTVFSINTERNAL *pThis = hVfs;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFS_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(phVfsObj, VERR_INVALID_POINTER);
+
+    int rc = rtFileRecalcAndValidateFlags(&fFileOpen);
+    if (RT_FAILURE(rc))
+        return rc;
+    AssertMsgReturn(   RTPATH_F_IS_VALID(fObjFlags, RTVFSOBJ_F_VALID_MASK)
+                    && (fObjFlags & RTVFSOBJ_F_CREATE_MASK) <= RTVFSOBJ_F_CREATE_DIRECTORY,
+                    ("fObjFlags=%#x\n", fObjFlags),
+                    VERR_INVALID_FLAGS);
+    /*
+     * Parse the path, assume current directory is root since we've got no
+     * caller context here.
+     */
+    PRTVFSPARSEDPATH pPath;
+    rc = RTVfsParsePathA(pszPath, "/", &pPath);
+    if (RT_SUCCESS(rc))
+    {
+        if (pPath->cComponents > 0)
+        {
+            /*
+             * Tranverse the path, resolving the parent node, not
+             * checking for symbolic links in the final element.
+             */
+            RTVFSDIRINTERNAL *pVfsParentDir;
+            rc = rtVfsTraverseToParent(pThis, pPath, RTPATH_F_ON_LINK, &pVfsParentDir);
+            if (RT_SUCCESS(rc))
+            {
+                const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
+
+                /*
+                 * If we've got a trailing directory slash, use pfnOpenDir
+                 * instead of pfnOpenObj.
+                 */
+                if (pPath->fDirSlash)
+                {
+                    RTVFSDIR hVfsDir;
+                    RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
+                    rc = pVfsParentDir->pOps->pfnOpenDir(pVfsParentDir->Base.pvThis, pszEntryName, 0 /** @todo fFlags*/, &hVfsDir);
+                    RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
+                    if (RT_SUCCESS(rc))
+                    {
+                        *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                        RTVfsDirRelease(hVfsDir);
+                        AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                    }
+                }
+                else
+                {
+                    RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
+                    rc = pVfsParentDir->pOps->pfnOpen(pVfsParentDir->Base.pvThis, pszEntryName, fFileOpen, fObjFlags, phVfsObj);
+                    RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
+                }
+                RTVfsDirRelease(pVfsParentDir);
+            }
+        }
+        /*
+         * The path boils down to '.', call pfnOpenDir on pThis with '.' as input.
+         * The caller may wish for a new directory instance to enumerate the entries
+         * in parallel or some such thing.
+         */
+        else
+        {
+            RTVFSDIR hVfsDir;
+            RTVfsLockAcquireRead(pThis->Base.hLock);
+            rc = pThis->pOps->pfnOpenRoot(pThis->Base.pvThis, &hVfsDir); /** @todo flags */
+            RTVfsLockReleaseRead(pThis->Base.hLock);
+            if (RT_SUCCESS(rc))
+            {
+                *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                RTVfsDirRelease(hVfsDir);
+                AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+            }
+        }
+
+        RTVfsParsePathFree(pPath);
+    }
+    return rc;
+}
+
 
 RTDECL(int)         RTVfsObjQueryInfo(RTVFSOBJ hVfsObj, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
@@ -1179,6 +1281,85 @@ RTDECL(int)         RTVfsObjQueryInfo(RTVFSOBJ hVfsObj, PRTFSOBJINFO pObjInfo, R
     return rc;
 }
 
+
+/**
+ * Gets the RTVFSOBJSETOPS for the given base object.
+ *
+ * @returns Pointer to the vtable if supported by the type, otherwise NULL.
+ * @param   pThis               The base object.
+ */
+static PCRTVFSOBJSETOPS rtVfsObjGetSetOps(RTVFSOBJINTERNAL *pThis)
+{
+    switch (pThis->pOps->enmType)
+    {
+        case RTVFSOBJTYPE_DIR:
+            return &RT_FROM_MEMBER(pThis, RTVFSDIRINTERNAL, Base)->pOps->ObjSet;
+        case RTVFSOBJTYPE_FILE:
+            return &RT_FROM_MEMBER(pThis, RTVFSFILEINTERNAL, Stream.Base)->pOps->ObjSet;
+        case RTVFSOBJTYPE_SYMLINK:
+            return &RT_FROM_MEMBER(pThis, RTVFSSYMLINKINTERNAL, Base)->pOps->ObjSet;
+        default:
+            return NULL;
+    }
+}
+
+
+RTDECL(int)         RTVfsObjSetMode(RTVFSOBJ hVfsObj, RTFMODE fMode, RTFMODE fMask)
+{
+    RTVFSOBJINTERNAL *pThis = hVfsObj;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, VERR_INVALID_HANDLE);
+
+    fMode = rtFsModeNormalize(fMode, NULL, 0);
+    if (!rtFsModeIsValid(fMode))
+        return VERR_INVALID_PARAMETER;
+
+    PCRTVFSOBJSETOPS pObjSetOps = rtVfsObjGetSetOps(pThis);
+    AssertReturn(pObjSetOps, VERR_INVALID_FUNCTION);
+
+    RTVfsLockAcquireWrite(pThis->hLock);
+    int rc = pObjSetOps->pfnSetMode(pThis->pvThis, fMode, fMask);
+    RTVfsLockReleaseWrite(pThis->hLock);
+    return rc;
+}
+
+
+RTDECL(int)         RTVfsObjSetTimes(RTVFSOBJ hVfsObj, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                     PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+{
+    RTVFSOBJINTERNAL *pThis = hVfsObj;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, VERR_INVALID_HANDLE);
+
+    AssertPtrNullReturn(pAccessTime, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pModificationTime, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pChangeTime, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pBirthTime, VERR_INVALID_POINTER);
+
+    PCRTVFSOBJSETOPS pObjSetOps = rtVfsObjGetSetOps(pThis);
+    AssertReturn(pObjSetOps, VERR_INVALID_FUNCTION);
+
+    RTVfsLockAcquireWrite(pThis->hLock);
+    int rc = pObjSetOps->pfnSetTimes(pThis->pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
+    RTVfsLockReleaseWrite(pThis->hLock);
+    return rc;
+}
+
+
+RTDECL(int)         RTVfsObjSetOwner(RTVFSOBJ hVfsObj, RTUID uid, RTGID gid)
+{
+    RTVFSOBJINTERNAL *pThis = hVfsObj;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, VERR_INVALID_HANDLE);
+
+    PCRTVFSOBJSETOPS pObjSetOps = rtVfsObjGetSetOps(pThis);
+    AssertReturn(pObjSetOps, VERR_INVALID_FUNCTION);
+
+    RTVfsLockAcquireWrite(pThis->hLock);
+    int rc = pObjSetOps->pfnSetOwner(pThis->pvThis, uid, gid);
+    RTVfsLockReleaseWrite(pThis->hLock);
+    return rc;
+}
 
 
 /*
@@ -2425,8 +2606,7 @@ RTDECL(int) RTVfsDirOpenFile(RTVFSDIR hVfsDir, const char *pszPath, uint64_t fOp
         return rc;
 
     /*
-     * Parse the path, assume current directory is root since we've got no
-     * caller context here.
+     * Parse the relative path.
      */
     PRTVFSPARSEDPATH pPath;
     rc = RTVfsParsePathA(pszPath, NULL, &pPath);
@@ -2480,6 +2660,94 @@ RTDECL(int) RTVfsDirOpenFileAsIoStream(RTVFSDIR hVfsDir, const char *pszPath, ui
     return rc;
 }
 
+
+RTDECL(int) RTVfsDirOpenObj(RTVFSDIR hVfsDir, const char *pszPath, uint64_t fFileOpen, uint32_t fObjFlags, PRTVFSOBJ phVfsObj)
+{
+    /*
+     * Validate input.
+     */
+    RTVFSDIRINTERNAL *pThis = hVfsDir;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(phVfsObj, VERR_INVALID_POINTER);
+
+    int rc = rtFileRecalcAndValidateFlags(&fFileOpen);
+    if (RT_FAILURE(rc))
+        return rc;
+    AssertMsgReturn(   RTPATH_F_IS_VALID(fObjFlags, RTVFSOBJ_F_VALID_MASK)
+                    && (fObjFlags & RTVFSOBJ_F_CREATE_MASK) <= RTVFSOBJ_F_CREATE_DIRECTORY,
+                    ("fObjFlags=%#x\n", fObjFlags),
+                    VERR_INVALID_FLAGS);
+
+    /*
+     * Parse the relative path.
+     */
+    PRTVFSPARSEDPATH pPath;
+    rc = RTVfsParsePathA(pszPath, NULL, &pPath);
+    if (RT_SUCCESS(rc))
+    {
+        if (pPath->cComponents > 0)
+        {
+            /*
+             * Tranverse the path, resolving the parent node, not
+             * checking for symbolic links in the final element.
+             */
+            RTVFSDIRINTERNAL *pVfsParentDir;
+            rc = rtVfsDirTraverseToParent(pThis, pPath, RTPATH_F_ON_LINK, &pVfsParentDir);
+            if (RT_SUCCESS(rc))
+            {
+                const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
+
+                /*
+                 * If we've got a trailing directory slash, use pfnOpenDir
+                 * instead of pfnOpenObj.
+                 */
+                if (pPath->fDirSlash)
+                {
+                    RTVFSDIR hVfsDir;
+                    RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
+                    rc = pVfsParentDir->pOps->pfnOpenDir(pVfsParentDir->Base.pvThis, pszEntryName, 0 /** @todo fFlags*/, &hVfsDir);
+                    RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
+                    if (RT_SUCCESS(rc))
+                    {
+                        *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                        RTVfsDirRelease(hVfsDir);
+                        AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                    }
+                }
+                else
+                {
+                    RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
+                    rc = pVfsParentDir->pOps->pfnOpen(pVfsParentDir->Base.pvThis, pszEntryName, fFileOpen, fObjFlags, phVfsObj);
+                    RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
+                }
+                RTVfsDirRelease(pVfsParentDir);
+            }
+        }
+        /*
+         * The path boils down to '.', call pfnOpenDir on pThis with '.' as input.
+         * The caller may wish for a new directory instance to enumerate the entries
+         * in parallel or some such thing.
+         */
+        else
+        {
+            RTVFSDIR hVfsDir;
+            RTVfsLockAcquireWrite(pThis->Base.hLock);
+            rc = pThis->pOps->pfnOpenDir(pThis->Base.pvThis, ".", 0 /** @todo fFlags*/, &hVfsDir);
+            RTVfsLockReleaseWrite(pThis->Base.hLock);
+            if (RT_SUCCESS(rc))
+            {
+                *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                RTVfsDirRelease(hVfsDir);
+                AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+            }
+        }
+
+        RTVfsParsePathFree(pPath);
+    }
+    return rc;
+}
 
 
 RTDECL(int) RTVfsDirQueryPathInfo(RTVFSDIR hVfsDir, const char *pszPath, PRTFSOBJINFO pObjInfo,
@@ -3244,7 +3512,7 @@ RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fO
     Assert(!pFileOps->fReserved);
     RTVFSIOSTREAM_ASSERT_OPS(&pFileOps->Stream, RTVFSOBJTYPE_FILE);
     Assert(cbInstance > 0);
-    Assert(fOpen & RTFILE_O_ACCESS_MASK);
+    Assert(fOpen & (RTFILE_O_ACCESS_MASK | RTFILE_O_ACCESS_ATTR_MASK));
     AssertPtr(ppvInstance);
     AssertPtr(phVfsFile);
     RTVFS_ASSERT_VALID_HANDLE_OR_NIL_RETURN(hVfs, VERR_INVALID_HANDLE);

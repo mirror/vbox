@@ -522,6 +522,47 @@ typedef struct RTVFSDIROPS
     RTVFSOBJSETOPS          ObjSet;
 
     /**
+     * Generic method for opening any kind of file system object.
+     *
+     * Can also create files and directories.  Symbolic links, devices and such
+     * needs to be created using special methods or this would end up being way more
+     * complicated than it already is.
+     *
+     * There are optional specializations available.
+     *
+     * @returns IPRT status code.
+     * @retval  VERR_PATH_NOT_FOUND or VERR_FILE_NOT_FOUND if @a pszEntry was not
+     *          found.
+     * @retval  VERR_IS_A_FILE if @a pszEntry is a file or similar but @a fFlags
+     *          indicates that the type of object should not be opened.
+     * @retval  VERR_IS_A_DIRECTORY if @a pszEntry is a directory but @a fFlags
+     *          indicates that directories should not be opened.
+     * @retval  VERR_IS_A_SYMLINK if @a pszEntry is a symbolic link but @a fFlags
+     *          indicates that symbolic links should not be opened (or followed).
+     * @retval  VERR_IS_A_FIFO if @a pszEntry is a FIFO but @a fFlags indicates that
+     *          FIFOs should not be opened.
+     * @retval  VERR_IS_A_SOCKET if @a pszEntry is a socket but @a fFlags indicates
+     *          that sockets should not be opened.
+     * @retval  VERR_IS_A_BLOCK_DEVICE if @a pszEntry is a block device but
+     *          @a fFlags indicates that block devices should not be opened.
+     * @retval  VERR_IS_A_BLOCK_DEVICE if @a pszEntry is a character device but
+     *          @a fFlags indicates that character devices should not be opened.
+     *
+     * @param   pvThis      The implementation specific directory data.
+     * @param   pszEntry    The name of the immediate file to open or create.
+     * @param   fOpenFile   RTFILE_O_XXX combination.  Currently RTFILE_O_OPEN is
+     *                      required, but this may change.
+     * @param   fObjFlags   More flags: RTVFSOBJ_F_XXX, RTPATH_F_XXX.
+     *                      The meaning of RTPATH_F_FOLLOW_LINK differs here, if
+     *                      @a pszEntry is a symlink it should be opened for
+     *                      traversal rather than according to @a fOpenFile.
+     * @param   phVfsObj    Where to return the handle to the opened object.
+     * @sa      RTFileOpen, RTDirOpen
+     */
+    DECLCALLBACKMEMBER(int, pfnOpen)(void *pvThis, const char *pszEntry, uint64_t fOpenFile,
+                                     uint32_t fObjFlags, PRTVFSOBJ phVfsObj);
+
+    /**
      * Opens a directory entry for traversal purposes.
      *
      * Method which sole purpose is helping the path traversal.  Only one of
@@ -541,6 +582,7 @@ typedef struct RTVFSDIROPS
      *                          reference it and return the handle here.
      * @todo    Should com dir, symlinks and mount points using some common
      *          ancestor "class".
+     * @note    Will be replaced by pfnOpenObj.
      */
     DECLCALLBACKMEMBER(int, pfnTraversalOpen)(void *pvThis, const char *pszEntry, PRTVFSDIR phVfsDir,
                                               PRTVFSSYMLINK phVfsSymlink, PRTVFS phVfsMounted);
@@ -552,10 +594,11 @@ typedef struct RTVFSDIROPS
      * @param   pvThis      The implementation specific directory data.
      * @param   pszFilename The name of the immediate file to open or create.
      * @param   fOpen       The open flags (RTFILE_O_XXX).
-     * @param   phVfsFile   Where to return the thandle to the opened file.
+     * @param   phVfsFile   Where to return the handle to the opened file.
+     * @note    Optional.  RTVFSDIROPS::pfnOpenObj will be used if NULL.
      * @sa      RTFileOpen.
      */
-    DECLCALLBACKMEMBER(int, pfnOpenFile)(void *pvThis, const char *pszFilename, uint32_t fOpen, PRTVFSFILE phVfsFile);
+    DECLCALLBACKMEMBER(int, pfnOpenFile)(void *pvThis, const char *pszFilename, uint64_t fOpen, PRTVFSFILE phVfsFile);
 
     /**
      * Open an existing subdirectory.
@@ -566,6 +609,7 @@ typedef struct RTVFSDIROPS
      * @param   fFlags      RTDIR_F_XXX.
      * @param   phVfsDir    Where to return the handle to the opened directory.
      *                      Optional.
+     * @note    Optional.  RTVFSDIROPS::pfnOpenObj will be used if NULL.
      * @sa      RTDirOpen.
      */
     DECLCALLBACKMEMBER(int, pfnOpenDir)(void *pvThis, const char *pszSubDir, uint32_t fFlags, PRTVFSDIR phVfsDir);
@@ -579,6 +623,7 @@ typedef struct RTVFSDIROPS
      * @param   fMode       The mode mask of the new directory.
      * @param   phVfsDir    Where to optionally return the handle to the newly
      *                      create directory.
+     * @note    Optional.  RTVFSDIROPS::pfnOpenObj will be used if NULL.
      * @sa      RTDirCreate.
      */
     DECLCALLBACKMEMBER(int, pfnCreateDir)(void *pvThis, const char *pszSubDir, RTFMODE fMode, PRTVFSDIR phVfsDir);
@@ -591,6 +636,7 @@ typedef struct RTVFSDIROPS
      * @param   pszSymlink  The name of the immediate symbolic link to open.
      * @param   phVfsSymlink    Where to optionally return the handle to the
      *                      newly create symbolic link.
+     * @note    Optional.  RTVFSDIROPS::pfnOpenObj will be used if NULL.
      * @sa      RTSymlinkCreate.
      */
     DECLCALLBACKMEMBER(int, pfnOpenSymlink)(void *pvThis, const char *pszSymlink, PRTVFSSYMLINK phVfsSymlink);
@@ -618,7 +664,8 @@ typedef struct RTVFSDIROPS
      * @param   pszEntry    The name of the directory entry to remove.
      * @param   pObjInfo    Where to return the info on success.
      * @param   enmAddAttr  Which set of additional attributes to request.
-     *
+     * @note    Optional.  RTVFSDIROPS::pfnOpenObj and RTVFSOBJOPS::pfnQueryInfo
+     *          will be used if NULL.
      * @sa      RTPathQueryInfo, RTVFSOBJOPS::pfnQueryInfo
      */
     DECLCALLBACKMEMBER(int, pfnQueryEntryInfo)(void *pvThis, const char *pszEntry,
@@ -1168,7 +1215,7 @@ typedef RTVFSCHAINELEMSPEC const *PCRTVFSCHAINELEMSPEC;
 typedef struct RTVFSCHAINSPEC
 {
     /** Open directory flags (RTFILE_O_XXX). */
-    uint32_t                fOpenFile;
+    uint64_t                fOpenFile;
     /** To be defined. */
     uint32_t                fOpenDir;
     /** The type desired by the caller. */

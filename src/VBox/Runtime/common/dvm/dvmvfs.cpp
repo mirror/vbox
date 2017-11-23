@@ -735,28 +735,58 @@ static int rtDvmVfsDir_FindEntry(PRTDVMVFSDIR pThis, const char *pszEntry, PRTDV
 
 
 /**
- * @interface_method_impl{RTVFSDIROPS,pfnOpenFile}
+ * @interface_method_impl{RTVFSDIROPS,pfnOpen}
  */
-static DECLCALLBACK(int) rtDvmVfsDir_OpenFile(void *pvThis, const char *pszFilename, uint32_t fOpen, PRTVFSFILE phVfsFile)
+static DECLCALLBACK(int) rtDvmVfsDir_Open(void *pvThis, const char *pszEntry, uint64_t fOpen, uint32_t fFlags, PRTVFSOBJ phVfsObj)
 {
     PRTDVMVFSDIR pThis = (PRTDVMVFSDIR)pvThis;
     RTDVMVOLUME  hVolume;
-    int rc = rtDvmVfsDir_FindEntry(pThis, pszFilename, &hVolume);
+    int rc = rtDvmVfsDir_FindEntry(pThis, pszEntry, &hVolume);
     if (RT_SUCCESS(rc))
     {
         if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN
             || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
             || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
         {
-            if (   !(fOpen & RTFILE_O_WRITE)
-                || !pThis->pVfsVol->fReadOnly)
-                rc = rtDvmVfsCreateFileForVolume(pThis->pVfsVol, hVolume, fOpen, phVfsFile);
+            if (fFlags & (RTVFSOBJ_F_OPEN_FILE | RTVFSOBJ_F_OPEN_DEV_BLOCK))
+            {
+                if (   !(fOpen & RTFILE_O_WRITE)
+                    || !pThis->pVfsVol->fReadOnly)
+                {
+                    RTVFSFILE hVfsFile;
+                    rc = rtDvmVfsCreateFileForVolume(pThis->pVfsVol, hVolume, fOpen, &hVfsFile);
+                    if (RT_SUCCESS(rc))
+                    {
+                        *phVfsObj = RTVfsObjFromFile(hVfsFile);
+                        RTVfsFileRelease(hVfsFile);
+                        AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                    }
+                }
+                else
+                    rc = VERR_WRITE_PROTECT;
+            }
             else
-                rc = VERR_WRITE_PROTECT;
+                rc = VERR_IS_A_FILE;
         }
         else
             rc = VERR_ALREADY_EXISTS;
         RTDvmVolumeRelease(hVolume);
+    }
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSDIROPS,pfnOpenFile}
+ */
+static DECLCALLBACK(int) rtDvmVfsDir_OpenFile(void *pvThis, const char *pszFilename, uint64_t fOpen, PRTVFSFILE phVfsFile)
+{
+    RTVFSOBJ hVfsObj;
+    int rc = rtDvmVfsDir_Open(pvThis, pszFilename, fOpen, RTVFSOBJ_F_OPEN_FILE, &hVfsObj);
+    if (RT_SUCCESS(rc))
+    {
+        *phVfsFile = RTVfsObjToFile(hVfsObj);
+        RTVfsObjRelease(hVfsObj);
     }
     return rc;
 }
@@ -982,6 +1012,7 @@ static const RTVFSDIROPS g_rtDvmVfsDirOps =
         rtDvmVfsDir_SetOwner,
         RTVFSOBJSETOPS_VERSION
     },
+    rtDvmVfsDir_Open,
     rtDvmVfsDir_TraversalOpen,
     rtDvmVfsDir_OpenFile,
     rtDvmVfsDir_OpenDir,

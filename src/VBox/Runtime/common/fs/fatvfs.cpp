@@ -2073,6 +2073,7 @@ static int rtFsFatObj_QueryInfo(PRTFSFATOBJ pThis, PRTFSOBJINFO pObjInfo, RTFSOB
  */
 static int rtFsFatObj_SetMode(PRTFSFATOBJ pThis, RTFMODE fMode, RTFMODE fMask)
 {
+    __debugbreak();
 #if 0
     if (fMask != ~RTFS_TYPE_MASK)
     {
@@ -4053,9 +4054,147 @@ static DECLCALLBACK(int) rtFsFatDir_TraversalOpen(void *pvThis, const char *pszE
 
 
 /**
+ * @interface_method_impl{RTVFSDIROPS,pfnOpen}
+ */
+static DECLCALLBACK(int) rtFsFatDir_Open(void *pvThis, const char *pszEntry, uint64_t fOpen,
+                                         uint32_t fFlags, PRTVFSOBJ phVfsObj)
+{
+    PRTFSFATDIR     pThis   = (PRTFSFATDIR)pvThis;
+    PRTFSFATDIRSHRD pShared = pThis->pShared;
+
+    /*
+     * Try open existing file.
+     */
+    uint32_t    offEntryInDir;
+    bool        fLong;
+    FATDIRENTRY DirEntry;
+    int rc = rtFsFatDirShrd_FindEntry(pShared, pszEntry, &offEntryInDir, &fLong, &DirEntry);
+    if (RT_SUCCESS(rc))
+    {
+        switch (DirEntry.fAttrib & (FAT_ATTR_DIRECTORY | FAT_ATTR_VOLUME))
+        {
+            case 0:
+                if (fFlags & RTVFSOBJ_F_OPEN_FILE)
+                {
+                    if (   !(DirEntry.fAttrib & FAT_ATTR_READONLY)
+                        || !(fOpen & RTFILE_O_WRITE))
+                    {
+                        if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN
+                            || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
+                            || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
+                        {
+                            RTVFSFILE hVfsFile;
+                            rc = rtFsFatFile_New(pShared->Core.pVol, pShared, &DirEntry, offEntryInDir, fOpen, &hVfsFile);
+                            if (RT_SUCCESS(rc))
+                            {
+                                *phVfsObj = RTVfsObjFromFile(hVfsFile);
+                                RTVfsFileRelease(hVfsFile);
+                                AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                            }
+                        }
+                        else
+                            rc = VERR_ALREADY_EXISTS;
+                    }
+                    else
+                        rc = VERR_ACCESS_DENIED;
+                }
+                else
+                    rc = VERR_IS_A_FILE;
+                break;
+
+            case FAT_ATTR_DIRECTORY:
+                if (fFlags & RTVFSOBJ_F_OPEN_DIRECTORY)
+                {
+                    if (   !(DirEntry.fAttrib & FAT_ATTR_READONLY)
+                        || !(fOpen & RTFILE_O_WRITE))
+                    {
+                        if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN
+                            || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE)
+                        {
+                            RTVFSDIR hVfsDir;
+                            rc = rtFsFatDir_New(pShared->Core.pVol, pShared, &DirEntry, offEntryInDir,
+                                                RTFSFAT_GET_CLUSTER(&DirEntry, pShared->Core.pVol), UINT64_MAX /*offDisk*/,
+                                                DirEntry.cbFile, &hVfsDir);
+                            if (RT_SUCCESS(rc))
+                            {
+                                *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                                RTVfsDirRelease(hVfsDir);
+                                AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                            }
+                        }
+                        else if ((fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
+                            rc = VERR_INVALID_FUNCTION;
+                        else
+                            rc = VERR_ALREADY_EXISTS;
+                    }
+                    else
+                        rc = VERR_ACCESS_DENIED;
+                }
+                else
+                    rc = VERR_IS_A_DIRECTORY;
+                break;
+
+            default:
+                rc = VERR_PATH_NOT_FOUND;
+                break;
+        }
+    }
+    /*
+     * Create a file or directory?
+     */
+    else if (rc == VERR_FILE_NOT_FOUND)
+    {
+        if (   (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE
+                || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
+                || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
+            && (fFlags & RTVFSOBJ_F_CREATE_MASK) != RTVFSOBJ_F_CREATE_NOTHING)
+        {
+            if ((fFlags & RTVFSOBJ_F_CREATE_MASK) == RTVFSOBJ_F_CREATE_FILE)
+            {
+                rc = rtFsFatDirShrd_CreateEntry(pShared, pszEntry, FAT_ATTR_ARCHIVE, 0 /*cbInitial*/, &offEntryInDir, &DirEntry);
+                if (RT_SUCCESS(rc))
+                {
+                    RTVFSFILE hVfsFile;
+                    rc = rtFsFatFile_New(pShared->Core.pVol, pShared, &DirEntry, offEntryInDir, fOpen, &hVfsFile);
+                    if (RT_SUCCESS(rc))
+                    {
+                        *phVfsObj = RTVfsObjFromFile(hVfsFile);
+                        RTVfsFileRelease(hVfsFile);
+                        AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                    }
+                }
+            }
+            else if ((fFlags & RTVFSOBJ_F_CREATE_MASK) == RTVFSOBJ_F_CREATE_DIRECTORY)
+            {
+                rc = rtFsFatDirShrd_CreateEntry(pShared, pszEntry, FAT_ATTR_ARCHIVE | FAT_ATTR_DIRECTORY,
+                                                pShared->Core.pVol->cbCluster, &offEntryInDir, &DirEntry);
+                if (RT_SUCCESS(rc))
+                {
+                    RTVFSDIR hVfsDir;
+                    rc = rtFsFatDir_New(pShared->Core.pVol, pShared, &DirEntry, offEntryInDir,
+                                        RTFSFAT_GET_CLUSTER(&DirEntry, pShared->Core.pVol), UINT64_MAX /*offDisk*/,
+                                        DirEntry.cbFile, &hVfsDir);
+                    if (RT_SUCCESS(rc))
+                    {
+                        *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                        RTVfsDirRelease(hVfsDir);
+                        AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                    }
+                }
+            }
+            else
+                rc = VERR_VFS_UNSUPPORTED_CREATE_TYPE;
+        }
+    }
+
+    return rc;
+}
+
+
+/**
  * @interface_method_impl{RTVFSDIROPS,pfnOpenFile}
  */
-static DECLCALLBACK(int) rtFsFatDir_OpenFile(void *pvThis, const char *pszFilename, uint32_t fOpen, PRTVFSFILE phVfsFile)
+static DECLCALLBACK(int) rtFsFatDir_OpenFile(void *pvThis, const char *pszFilename, uint64_t fOpen, PRTVFSFILE phVfsFile)
 {
     PRTFSFATDIR     pThis   = (PRTFSFATDIR)pvThis;
     PRTFSFATDIRSHRD pShared = pThis->pShared;
@@ -4638,6 +4777,7 @@ static const RTVFSDIROPS g_rtFsFatDirOps =
         rtFsFatDir_SetOwner,
         RTVFSOBJSETOPS_VERSION
     },
+    rtFsFatDir_Open,
     rtFsFatDir_TraversalOpen,
     rtFsFatDir_OpenFile,
     rtFsFatDir_OpenDir,

@@ -1197,6 +1197,16 @@ RT_C_DECLS_END
 #define VERR_NS_SYMLINK_CHANGE_OWNER        (-158)
 /** Symbolic link not allowed. */
 #define VERR_SYMLINK_NOT_ALLOWED            (-159)
+/** Is a symbolic link. */
+#define VERR_IS_A_SYMLINK                   (-160)
+/** Is a FIFO. */
+#define VERR_IS_A_FIFO                      (-161)
+/** Is a socket. */
+#define VERR_IS_A_SOCKET                    (-162)
+/** Is a block device. */
+#define VERR_IS_A_BLOCK_DEVICE              (-163)
+/** Is a character device. */
+#define VERR_IS_A_CHAR_DEVICE               (-164)
 /** @} */
 
 
@@ -2785,6 +2795,8 @@ RT_C_DECLS_END
 #define VERR_VFS_BOGUS_OFFSET                       (-24802)
 /** Unsupported file system format. */
 #define VERR_VFS_UNSUPPORTED_FORMAT                 (-24803)
+/** Unsupported create type in an RTVfsObjOpen or RTVfsDirOpenObj call.  */
+#define VERR_VFS_UNSUPPORTED_CREATE_TYPE            (-24804)
 /** @} */
 
 /** @name RTFsIsoMaker status codes.
