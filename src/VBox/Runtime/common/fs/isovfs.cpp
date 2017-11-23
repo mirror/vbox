@@ -2889,109 +2889,6 @@ static DECLCALLBACK(int) rtFsIsoDir_SetOwner(void *pvThis, RTUID uid, RTGID gid)
 
 
 /**
- * @interface_method_impl{RTVFSOBJOPS,pfnTraversalOpen}
- */
-static DECLCALLBACK(int) rtFsIsoDir_TraversalOpen(void *pvThis, const char *pszEntry, PRTVFSDIR phVfsDir,
-                                                  PRTVFSSYMLINK phVfsSymlink, PRTVFS phVfsMounted)
-{
-    /*
-     * We may have symbolic links if rock ridge is being used, though currently
-     * we won't have nested mounts.
-     */
-    int rc;
-    if (phVfsMounted)
-        *phVfsMounted = NIL_RTVFS;
-    if (phVfsDir || phVfsSymlink)
-    {
-        if (phVfsSymlink)
-            *phVfsSymlink = NIL_RTVFSSYMLINK;
-        if (phVfsDir)
-            *phVfsDir = NIL_RTVFSDIR;
-
-        PRTFSISODIROBJ      pThis = (PRTFSISODIROBJ)pvThis;
-        PRTFSISODIRSHRD     pShared = pThis->pShared;
-        if (pShared->Core.pVol->enmType != RTFSISOVOLTYPE_UDF)
-        {
-            /*
-             * ISO 9660
-             */
-            PCISO9660DIRREC     pDirRec;
-            uint64_t            offDirRec;
-            uint32_t            cDirRecs;
-            RTFMODE             fMode;
-            uint32_t            uVersion;
-            rc = rtFsIsoDir_FindEntry9660(pShared, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
-            Log2(("rtFsIsoDir_TraversalOpen: FindEntry9660(,%s,) -> %Rrc\n", pszEntry, rc));
-            if (RT_SUCCESS(rc))
-            {
-                switch (fMode & RTFS_TYPE_MASK)
-                {
-                    case RTFS_TYPE_DIRECTORY:
-                        if (phVfsDir)
-                            rc = rtFsIsoDir_New9660(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, phVfsDir);
-                        else
-                            rc = VERR_NOT_SYMLINK;
-                        break;
-
-                    case RTFS_TYPE_SYMLINK:
-                        rc = VERR_NOT_IMPLEMENTED;
-                        break;
-                    case RTFS_TYPE_FILE:
-                    case RTFS_TYPE_DEV_BLOCK:
-                    case RTFS_TYPE_DEV_CHAR:
-                    case RTFS_TYPE_FIFO:
-                    case RTFS_TYPE_SOCKET:
-                        rc = VERR_NOT_A_DIRECTORY;
-                        break;
-                    default:
-                    case RTFS_TYPE_WHITEOUT:
-                        rc = VERR_PATH_NOT_FOUND;
-                        break;
-                }
-            }
-            else if (rc == VERR_FILE_NOT_FOUND)
-                rc = VERR_PATH_NOT_FOUND;
-        }
-        else
-        {
-            /*
-             * UDF
-             */
-            PCUDFFILEIDDESC pFid;
-            rc = rtFsIsoDir_FindEntryUdf(pShared, pszEntry, &pFid);
-            Log2(("rtFsIsoDir_TraversalOpen: FindEntryUdf(,%s,) -> %Rrc\n", pszEntry, rc));
-            if (RT_SUCCESS(rc))
-            {
-                if (!(pFid->fFlags & UDF_FILE_FLAGS_DELETED))
-                {
-                    if (pFid->fFlags & UDF_FILE_FLAGS_DIRECTORY)
-                    {
-                        if (phVfsDir)
-                            rc = rtFsIsoDir_NewUdf(pShared->Core.pVol, pShared, pFid, phVfsDir);
-                        else
-                            rc = VERR_NOT_SYMLINK;
-                    }
-                    else if (phVfsSymlink)
-                    {
-                        /** @todo symlink support */
-                        rc = VERR_NOT_A_DIRECTORY;
-                    }
-                    else
-                        rc = VERR_NOT_A_DIRECTORY;
-                }
-                /* We treat UDF_FILE_FLAGS_DELETED like RTFS_TYPE_WHITEOUT for now. */
-                else
-                    rc = VERR_PATH_NOT_FOUND;
-            }
-        }
-    }
-    else
-        rc = VERR_PATH_NOT_FOUND;
-    return rc;
-}
-
-
-/**
  * @interface_method_impl{RTVFSDIROPS,pfnOpen}
  */
 static DECLCALLBACK(int) rtFsIsoDir_Open(void *pvThis, const char *pszEntry, uint64_t fOpen,
@@ -3793,7 +3690,6 @@ static const RTVFSDIROPS g_rtFsIsoDirOps =
         RTVFSOBJSETOPS_VERSION
     },
     rtFsIsoDir_Open,
-    rtFsIsoDir_TraversalOpen,
     rtFsIsoDir_OpenFile,
     rtFsIsoDir_OpenDir,
     rtFsIsoDir_CreateDir,

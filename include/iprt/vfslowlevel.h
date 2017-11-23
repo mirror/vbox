@@ -563,31 +563,6 @@ typedef struct RTVFSDIROPS
                                      uint32_t fObjFlags, PRTVFSOBJ phVfsObj);
 
     /**
-     * Opens a directory entry for traversal purposes.
-     *
-     * Method which sole purpose is helping the path traversal.  Only one of
-     * the three output variables will be set, the others will left untouched
-     * (caller sets them to NIL).
-     *
-     * @returns IPRT status code.
-     * @retval  VERR_PATH_NOT_FOUND if @a pszEntry was not found.
-     * @retval  VERR_NOT_A_DIRECTORY if @a pszEntry isn't a directory or symlink.
-     * @param   pvThis          The implementation specific directory data.
-     * @param   pszEntry        The name of the directory entry to remove.
-     * @param   phVfsDir        If not NULL and it is a directory, open it and
-     *                          return the handle here.
-     * @param   phVfsSymlink    If not NULL and it is a symbolic link, open it
-     *                          and return the handle here.
-     * @param   phVfsMounted    If not NULL and it is a mounted VFS directory,
-     *                          reference it and return the handle here.
-     * @todo    Should com dir, symlinks and mount points using some common
-     *          ancestor "class".
-     * @note    Will be replaced by pfnOpenObj.
-     */
-    DECLCALLBACKMEMBER(int, pfnTraversalOpen)(void *pvThis, const char *pszEntry, PRTVFSDIR phVfsDir,
-                                              PRTVFSSYMLINK phVfsSymlink, PRTVFS phVfsMounted);
-
-    /**
      * Open or create a file.
      *
      * @returns IPRT status code.

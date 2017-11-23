@@ -3998,61 +3998,6 @@ static DECLCALLBACK(int) rtFsFatDir_SetOwner(void *pvThis, RTUID uid, RTGID gid)
 
 
 /**
- * @interface_method_impl{RTVFSOBJOPS,pfnTraversalOpen}
- */
-static DECLCALLBACK(int) rtFsFatDir_TraversalOpen(void *pvThis, const char *pszEntry, PRTVFSDIR phVfsDir,
-                                                  PRTVFSSYMLINK phVfsSymlink, PRTVFS phVfsMounted)
-{
-    /*
-     * FAT doesn't do symbolic links and mounting file systems within others
-     * haven't been implemented yet, I think, so only care if a directory is
-     * asked for.
-     */
-    int rc;
-    if (phVfsSymlink)
-        *phVfsSymlink = NIL_RTVFSSYMLINK;
-    if (phVfsMounted)
-        *phVfsMounted = NIL_RTVFS;
-    if (phVfsDir)
-    {
-        *phVfsDir = NIL_RTVFSDIR;
-
-        PRTFSFATDIR     pThis   = (PRTFSFATDIR)pvThis;
-        PRTFSFATDIRSHRD pShared = pThis->pShared;
-        uint32_t        offEntryInDir;
-        bool            fLong;
-        FATDIRENTRY     DirEntry;
-        rc = rtFsFatDirShrd_FindEntry(pShared, pszEntry, &offEntryInDir, &fLong, &DirEntry);
-        if (RT_SUCCESS(rc))
-        {
-            switch (DirEntry.fAttrib & (FAT_ATTR_DIRECTORY | FAT_ATTR_VOLUME))
-            {
-                case FAT_ATTR_DIRECTORY:
-                {
-                    rc = rtFsFatDir_New(pShared->Core.pVol, pShared, &DirEntry, offEntryInDir,
-                                        RTFSFAT_GET_CLUSTER(&DirEntry, pShared->Core.pVol), UINT64_MAX /*offDisk*/,
-                                        DirEntry.cbFile, phVfsDir);
-                    break;
-                }
-                case 0:
-                    rc = VERR_NOT_A_DIRECTORY;
-                    break;
-                default:
-                    rc = VERR_PATH_NOT_FOUND;
-                    break;
-            }
-        }
-        else if (rc == VERR_FILE_NOT_FOUND)
-            rc = VERR_PATH_NOT_FOUND;
-    }
-    else
-        rc = VERR_PATH_NOT_FOUND;
-    LogFlow(("rtFsFatDir_TraversalOpen: %s -> %Rrc\n", pszEntry, rc));
-    return rc;
-}
-
-
-/**
  * @interface_method_impl{RTVFSDIROPS,pfnOpen}
  */
 static DECLCALLBACK(int) rtFsFatDir_Open(void *pvThis, const char *pszEntry, uint64_t fOpen,
@@ -4777,7 +4722,6 @@ static const RTVFSDIROPS g_rtFsFatDirOps =
         RTVFSOBJSETOPS_VERSION
     },
     rtFsFatDir_Open,
-    rtFsFatDir_TraversalOpen,
     rtFsFatDir_OpenFile,
     rtFsFatDir_OpenDir,
     rtFsFatDir_CreateDir,

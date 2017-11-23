@@ -64,12 +64,14 @@ RT_C_DECLS_BEGIN
 /** @name RTPATH_F_XXX - Generic flags for APIs working on the file system.
  * @{ */
 /** Last component: Work on the link. */
-#define RTPATH_F_ON_LINK          RT_BIT_32(0)
+#define RTPATH_F_ON_LINK            RT_BIT_32(0)
 /** Last component: Follow if link. */
-#define RTPATH_F_FOLLOW_LINK      RT_BIT_32(1)
+#define RTPATH_F_FOLLOW_LINK        RT_BIT_32(1)
 /** Don't allow symbolic links as part of the path.
  * @remarks this flag is currently not implemented and will be ignored. */
-#define RTPATH_F_NO_SYMLINKS      RT_BIT_32(2)
+#define RTPATH_F_NO_SYMLINKS        RT_BIT_32(2)
+/** Current RTPATH_F_XXX flag mask. */
+#define RTPATH_F_MASK               UINT32_C(0x00000007)
 /** @} */
 
 /** Validates a flags parameter containing RTPATH_F_*.

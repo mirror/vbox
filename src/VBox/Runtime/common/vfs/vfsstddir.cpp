@@ -250,64 +250,11 @@ static DECLCALLBACK(int) rtVfsStdDir_SetOwner(void *pvThis, RTUID uid, RTGID gid
 }
 
 
-
 /**
- * @interface_method_impl{RTVFSDIROPS,pfnTraversalOpen}
+ * @interface_method_impl{RTVFSDIROPS,pfnOpen}
  */
-static DECLCALLBACK(int) rtVfsStdDir_TraversalOpen(void *pvThis, const char *pszEntry, PRTVFSDIR phVfsDir,
-                                                   PRTVFSSYMLINK phVfsSymlink, PRTVFS phVfsMounted)
-{
-    /* No union mounting or mount points here (yet). */
-    if (phVfsMounted)
-        *phVfsMounted = NIL_RTVFS;
-
-    int rc;
-    if (phVfsDir || phVfsSymlink)
-    {
-        if (phVfsDir)
-            *phVfsDir = NIL_RTVFSDIR;
-        if (phVfsSymlink)
-            *phVfsSymlink = NIL_RTVFSSYMLINK;
-
-        RTFSOBJINFO ObjInfo;
-        rc = rtVfsStdDir_QueryEntryInfo(pvThis, pszEntry, &ObjInfo, RTFSOBJATTRADD_NOTHING);
-        if (RT_SUCCESS(rc))
-        {
-            switch (ObjInfo.Attr.fMode & RTFS_TYPE_MASK)
-            {
-                case RTFS_TYPE_DIRECTORY:
-                    if (phVfsDir)
-                        rc = rtVfsStdDir_OpenDir(pvThis, pszEntry, 0, phVfsDir);
-                    else
-                        rc = VERR_NOT_SYMLINK;
-                    break;
-
-                case RTFS_TYPE_SYMLINK:
-                    if (phVfsSymlink)
-                        rc = rtVfsStdDir_OpenSymlink(pvThis, pszEntry, phVfsSymlink);
-                    else
-                        rc = VERR_NOT_A_DIRECTORY;
-                    break;
-
-                default:
-                    rc = phVfsDir ? VERR_NOT_A_DIRECTORY : VERR_NOT_SYMLINK;
-                    break;
-            }
-        }
-    }
-    else
-        rc = VERR_PATH_NOT_FOUND;
-
-    LogFlow(("rtVfsStdDir_TraversalOpen: %s -> %Rrc\n", pszEntry, rc));
-    return rc;
-}
-
-
-/**
- * @interface_method_impl{RTVFSDIROPS,pfnOpenObj}
- */
-static DECLCALLBACK(int) rtVfsStdDir_OpenObj(void *pvThis, const char *pszEntry, uint64_t fOpen,
-                                             uint32_t fFlags, PRTVFSOBJ phVfsObj)
+static DECLCALLBACK(int) rtVfsStdDir_Open(void *pvThis, const char *pszEntry, uint64_t fFileOpen,
+                                          uint32_t fVfsFlags, PRTVFSOBJ phVfsObj)
 {
     PRTVFSSTDDIR pThis = (PRTVFSSTDDIR)pvThis;
 
@@ -322,14 +269,14 @@ static DECLCALLBACK(int) rtVfsStdDir_OpenObj(void *pvThis, const char *pszEntry,
         switch (ObjInfo.Attr.fMode & RTFS_TYPE_MASK)
         {
             case RTFS_TYPE_DIRECTORY:
-                if (!(fFlags & RTVFSOBJ_F_OPEN_DIRECTORY))
+                if (!(fVfsFlags & RTVFSOBJ_F_OPEN_DIRECTORY))
                 {
-                    if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN
-                        || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
-                        || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
+                    if (   (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN
+                        || (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
+                        || (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
                     {
                         RTDIR hSubDir;
-                        rc = RTDirRelDirOpenFiltered(pThis->hDir, pszEntry, RTDIRFILTER_NONE, fFlags, &hSubDir);
+                        rc = RTDirRelDirOpenFiltered(pThis->hDir, pszEntry, RTDIRFILTER_NONE, fVfsFlags, &hSubDir);
                         if (RT_SUCCESS(rc))
                         {
                             RTVFSDIR hVfsDir;
@@ -338,7 +285,7 @@ static DECLCALLBACK(int) rtVfsStdDir_OpenObj(void *pvThis, const char *pszEntry,
                             {
                                 *phVfsObj = RTVfsObjFromDir(hVfsDir);
                                 RTVfsDirRelease(hVfsDir);
-                                AssertStmt(*phVfsObj == NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                                AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
                             }
                             else
                                 RTDirClose(hSubDir);
@@ -359,21 +306,21 @@ static DECLCALLBACK(int) rtVfsStdDir_OpenObj(void *pvThis, const char *pszEntry,
                 switch (ObjInfo.Attr.fMode & RTFS_TYPE_MASK)
                 {
                     case RTFS_TYPE_FILE:
-                        rc = fFlags & RTVFSOBJ_F_OPEN_FILE      ? VINF_SUCCESS : VERR_IS_A_FILE;
+                        rc = fVfsFlags & RTVFSOBJ_F_OPEN_FILE      ? VINF_SUCCESS : VERR_IS_A_FILE;
                         break;
                     case RTFS_TYPE_DEV_BLOCK:
-                        rc = fFlags & RTVFSOBJ_F_OPEN_DEV_BLOCK ? VINF_SUCCESS : VERR_IS_A_BLOCK_DEVICE;
+                        rc = fVfsFlags & RTVFSOBJ_F_OPEN_DEV_BLOCK ? VINF_SUCCESS : VERR_IS_A_BLOCK_DEVICE;
                         break;
                     case RTFS_TYPE_DEV_CHAR:
-                        rc = fFlags & RTVFSOBJ_F_OPEN_DEV_CHAR  ? VINF_SUCCESS : VERR_IS_A_CHAR_DEVICE;
+                        rc = fVfsFlags & RTVFSOBJ_F_OPEN_DEV_CHAR  ? VINF_SUCCESS : VERR_IS_A_CHAR_DEVICE;
                         break;
                     /** @todo These two types should not result in files, but pure I/O streams.
                      *        possibly char device too.  */
                     case RTFS_TYPE_FIFO:
-                        rc = fFlags & RTVFSOBJ_F_OPEN_FIFO      ? VINF_SUCCESS : VERR_IS_A_FIFO;
+                        rc = fVfsFlags & RTVFSOBJ_F_OPEN_FIFO      ? VINF_SUCCESS : VERR_IS_A_FIFO;
                         break;
                     case RTFS_TYPE_SOCKET:
-                        rc = fFlags & RTVFSOBJ_F_OPEN_SOCKET    ? VINF_SUCCESS : VERR_IS_A_SOCKET;
+                        rc = fVfsFlags & RTVFSOBJ_F_OPEN_SOCKET    ? VINF_SUCCESS : VERR_IS_A_SOCKET;
                         break;
                     default:
                         rc = VERR_INVALID_FLAGS;
@@ -381,21 +328,21 @@ static DECLCALLBACK(int) rtVfsStdDir_OpenObj(void *pvThis, const char *pszEntry,
                 }
                 if (RT_SUCCESS(rc))
                 {
-                    if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN
-                        || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
-                        || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
+                    if (   (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN
+                        || (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
+                        || (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
                     {
                         RTFILE hFile;
-                        rc = RTDirRelFileOpen(pThis->hDir, pszEntry, fOpen, &hFile);
+                        rc = RTDirRelFileOpen(pThis->hDir, pszEntry, fFileOpen, &hFile);
                         if (RT_SUCCESS(rc))
                         {
                             RTVFSFILE hVfsFile;
-                            rc = RTVfsFileFromRTFile(hFile, fOpen, false /*fLeaveOpen*/, &hVfsFile);
+                            rc = RTVfsFileFromRTFile(hFile, fFileOpen, false /*fLeaveOpen*/, &hVfsFile);
                             if (RT_SUCCESS(rc))
                             {
                                 *phVfsObj = RTVfsObjFromFile(hVfsFile);
                                 RTVfsFileRelease(hVfsFile);
-                                AssertStmt(*phVfsObj == NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                                AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
                             }
                             else
                                 RTFileClose(hFile);
@@ -407,7 +354,7 @@ static DECLCALLBACK(int) rtVfsStdDir_OpenObj(void *pvThis, const char *pszEntry,
                 break;
 
             case RTFS_TYPE_SYMLINK:
-                if (fFlags & RTVFSOBJ_F_OPEN_SYMLINK)
+                if (fVfsFlags & RTVFSOBJ_F_OPEN_SYMLINK)
                 {
                     uint32_t cRefs = RTVfsDirRetain(pThis->hSelf);
                     if (cRefs != UINT32_MAX)
@@ -447,35 +394,35 @@ static DECLCALLBACK(int) rtVfsStdDir_OpenObj(void *pvThis, const char *pszEntry,
         /*
          * Consider file or directory creation.
          */
-        if (   (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE
-                || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
-                || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
-            && (fFlags & RTVFSOBJ_F_CREATE_MASK) != RTVFSOBJ_F_CREATE_NOTHING)
+        if (   (   (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE
+                || (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
+                || (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
+            && (fVfsFlags & RTVFSOBJ_F_CREATE_MASK) != RTVFSOBJ_F_CREATE_NOTHING)
         {
 
-            if ((fFlags & RTVFSOBJ_F_CREATE_MASK) == RTVFSOBJ_F_CREATE_FILE)
+            if ((fVfsFlags & RTVFSOBJ_F_CREATE_MASK) == RTVFSOBJ_F_CREATE_FILE)
             {
                 RTFILE hFile;
-                rc = RTDirRelFileOpen(pThis->hDir, pszEntry, fOpen, &hFile);
+                rc = RTDirRelFileOpen(pThis->hDir, pszEntry, fFileOpen, &hFile);
                 if (RT_SUCCESS(rc))
                 {
                     RTVFSFILE hVfsFile;
-                    rc = RTVfsFileFromRTFile(hFile, fOpen, false /*fLeaveOpen*/, &hVfsFile);
+                    rc = RTVfsFileFromRTFile(hFile, fFileOpen, false /*fLeaveOpen*/, &hVfsFile);
                     if (RT_SUCCESS(rc))
                     {
                         *phVfsObj = RTVfsObjFromFile(hVfsFile);
                         RTVfsFileRelease(hVfsFile);
-                        AssertStmt(*phVfsObj == NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                        AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
                     }
                     else
                         RTFileClose(hFile);
                 }
             }
-            else if ((fFlags & RTVFSOBJ_F_CREATE_MASK) == RTVFSOBJ_F_CREATE_DIRECTORY)
+            else if ((fVfsFlags & RTVFSOBJ_F_CREATE_MASK) == RTVFSOBJ_F_CREATE_DIRECTORY)
             {
                 RTDIR hSubDir;
-                rc = RTDirRelDirCreate(pThis->hDir, pszEntry, (fOpen & RTFILE_O_CREATE_MODE_MASK) >> RTFILE_O_CREATE_MODE_SHIFT,
-                                       0 /* fFlags */, &hSubDir);
+                rc = RTDirRelDirCreate(pThis->hDir, pszEntry, (fFileOpen & RTFILE_O_CREATE_MODE_MASK) >> RTFILE_O_CREATE_MODE_SHIFT,
+                                       0 /* fVfsFlags */, &hSubDir);
                 if (RT_SUCCESS(rc))
                 {
                     RTVFSDIR hVfsDir;
@@ -719,8 +666,7 @@ DECL_HIDDEN_CONST(const RTVFSDIROPS) g_rtVfsStdDirOps =
         rtVfsStdDir_SetOwner,
         RTVFSOBJSETOPS_VERSION
     },
-    rtVfsStdDir_OpenObj,
-    rtVfsStdDir_TraversalOpen,
+    rtVfsStdDir_Open,
     rtVfsStdDir_OpenFile,
     rtVfsStdDir_OpenDir,
     rtVfsStdDir_CreateDir,

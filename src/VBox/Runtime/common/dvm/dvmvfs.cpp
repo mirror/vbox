@@ -647,25 +647,6 @@ static DECLCALLBACK(int) rtDvmVfsDir_SetOwner(void *pvThis, RTUID uid, RTGID gid
 }
 
 
-/**
- * @interface_method_impl{RTVFSOBJOPS,pfnTraversalOpen}
- */
-static DECLCALLBACK(int) rtDvmVfsDir_TraversalOpen(void *pvThis, const char *pszEntry, PRTVFSDIR phVfsDir,
-                                                  PRTVFSSYMLINK phVfsSymlink, PRTVFS phVfsMounted)
-{
-    RT_NOREF(pvThis, pszEntry);
-
-    /* We don't do any subdirs. */
-    if (phVfsSymlink)
-        *phVfsSymlink = NIL_RTVFSSYMLINK;
-    if (phVfsMounted)
-        *phVfsMounted = NIL_RTVFS;
-    if (phVfsDir)
-        *phVfsDir = NIL_RTVFSDIR;
-    return VERR_PATH_NOT_FOUND;
-}
-
-
 static int rtDvmVfsDir_FindEntry(PRTDVMVFSDIR pThis, const char *pszEntry, PRTDVMVOLUME phVolume)
 {
     /*
@@ -1013,7 +994,6 @@ static const RTVFSDIROPS g_rtDvmVfsDirOps =
         RTVFSOBJSETOPS_VERSION
     },
     rtDvmVfsDir_Open,
-    rtDvmVfsDir_TraversalOpen,
     rtDvmVfsDir_OpenFile,
     rtDvmVfsDir_OpenDir,
     rtDvmVfsDir_CreateDir,

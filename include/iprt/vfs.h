@@ -182,13 +182,16 @@ RTDECL(uint32_t)        RTVfsObjRelease(RTVFSOBJ hVfsObj);
 #define RTVFSOBJ_F_OPEN_FIFO                RT_BIT_32(13)
 /** Socket (RTFS_TYPE_SOCKET). */
 #define RTVFSOBJ_F_OPEN_SOCKET              RT_BIT_32(14)
+/** Mounted VFS. */
+#define RTVFSOBJ_F_OPEN_MOUNT               RT_BIT_32(15)
 /** Mask object types we wish to open. */
-#define RTVFSOBJ_F_OPEN_MASK                UINT32_C(0x00003f00)
+#define RTVFSOBJ_F_OPEN_MASK                UINT32_C(0x0000ff00)
 /** Any kind of object that translates to RTVFSOBJTYPE_FILE. */
-#define RTVFSOBJ_F_OPEN_ANY_FILE            (RTVFSOBJ_F_FILE | RTVFSOBJ_F_DEV_BLOCK)
+#define RTVFSOBJ_F_OPEN_ANY_FILE            (RTVFSOBJ_F_OPEN_FILE | RTVFSOBJ_F_OPEN_DEV_BLOCK)
 /** Any kind of object that translates to RTVFSOBJTYPE_IOS or
  *  RTVFSOBJTYPE_FILE. */
-#define RTVFSOBJ_F_OPEN_ANY_IO_STREAM       (RTVFSOBJ_F_ANY_FILE | RTVFSOBJ_F_DEV_BLOCK | RTVFSOBJ_F_FIFO | RTVFSOBJ_F_SOCKET)
+#define RTVFSOBJ_F_OPEN_ANY_IO_STREAM       (  RTVFSOBJ_F_ANY_OPEN_FILE | RTVFSOBJ_F_DEV_OPEN_BLOCK \
+                                             | RTVFSOBJ_F_OPEN_FIFO     | RTVFSOBJ_F_OPEN_SOCKET)
 /** Any kind of object. */
 #define RTVFSOBJ_F_OPEN_ANY                 RTVFSOBJ_F_OPEN_MASK
 
@@ -207,7 +210,7 @@ RTDECL(uint32_t)        RTVfsObjRelease(RTVFSOBJ hVfsObj);
  * @internal only  */
 #define RTVFSOBJ_F_TRAVERSAL                RT_BIT_32(31)
 /** Valid mask for external callers. */
-#define RTVFSOBJ_F_VALID_MASK               UINT32_C(0x00003f00)
+#define RTVFSOBJ_F_VALID_MASK               UINT32_C(0x0007ff00)
 /** @} */
 
 /**
