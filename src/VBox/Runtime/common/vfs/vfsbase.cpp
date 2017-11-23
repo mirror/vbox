@@ -2732,14 +2732,14 @@ RTDECL(int) RTVfsDirOpenObj(RTVFSDIR hVfsDir, const char *pszPath, uint64_t fFil
          */
         else
         {
-            RTVFSDIR hVfsDir;
+            RTVFSDIR hVfsSubDir;
             RTVfsLockAcquireWrite(pThis->Base.hLock);
-            rc = pThis->pOps->pfnOpenDir(pThis->Base.pvThis, ".", 0 /** @todo fFlags*/, &hVfsDir);
+            rc = pThis->pOps->pfnOpenDir(pThis->Base.pvThis, ".", 0 /** @todo fFlags*/, &hVfsSubDir);
             RTVfsLockReleaseWrite(pThis->Base.hLock);
             if (RT_SUCCESS(rc))
             {
-                *phVfsObj = RTVfsObjFromDir(hVfsDir);
-                RTVfsDirRelease(hVfsDir);
+                *phVfsObj = RTVfsObjFromDir(hVfsSubDir);
+                RTVfsDirRelease(hVfsSubDir);
                 AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
             }
         }
