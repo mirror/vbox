@@ -1285,7 +1285,8 @@ void UIIndicatorsPool::prepareContents()
     {
         /* Configure main-layout: */
         m_pMainLayout->setContentsMargins(0, 0, 0, 0);
-        m_pMainLayout->setSpacing(5);
+        const int iS = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2;
+        m_pMainLayout->setSpacing(iS);
         /* Update pool: */
         updatePool();
     }

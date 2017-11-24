@@ -825,8 +825,11 @@ UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rul
 #ifdef VBOX_WS_MAC
         /* On macOS we can do a bit of smoothness: */
         pMainLayout->setContentsMargins(0, 0, 0, 0);
-#endif
         pMainLayout->setSpacing(3);
+#else
+        const int iS = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 3;
+        pMainLayout->setSpacing(iS);
+#endif
         /* Create table: */
         m_pTableView = new UIPortForwardingView;
         {

@@ -24,6 +24,7 @@
 # include <QVBoxLayout>
 # include <QScrollArea>
 # include <QScrollBar>
+# include <QStyle>
 # include <QCheckBox>
 # include <QPainter>
 
@@ -67,7 +68,8 @@ void UIFilmContainer::setValue(const QVector<BOOL> &value)
         {
             /* Configure viewport layout: */
             pWidgetLayout->setMargin(0);
-            pWidgetLayout->setSpacing(4);
+            const int iS = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2;
+            pWidgetLayout->setSpacing(iS);
             /* Create new widgets according passed vector: */
             for (int iScreenIndex = 0; iScreenIndex < value.size(); ++iScreenIndex)
             {

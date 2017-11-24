@@ -480,7 +480,8 @@ void UIHostComboEditor::prepare()
     QHBoxLayout *pLayout = new QHBoxLayout(this);
     {
         /* Configure layout: */
-        pLayout->setSpacing(4);
+        const int iS = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2;
+        pLayout->setSpacing(iS);
         pLayout->setContentsMargins(0, 0, 0, 0);
         /* Create UIHostComboEditorPrivate instance: */
         m_pEditor = new UIHostComboEditorPrivate;

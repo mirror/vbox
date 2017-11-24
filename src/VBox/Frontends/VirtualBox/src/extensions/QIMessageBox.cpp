@@ -180,7 +180,6 @@ void QIMessageBox::prepare()
         {
             /* Configure top-layout: */
             pTopLayout->setContentsMargins(0, 0, 0, 0);
-            pTopLayout->setSpacing(10);
             /* Create icon-label: */
             m_pLabelIcon = new QLabel;
             AssertPtrReturnVoid(m_pLabelIcon);

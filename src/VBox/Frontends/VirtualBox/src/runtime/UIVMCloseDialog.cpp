@@ -189,7 +189,6 @@ void UIVMCloseDialog::prepare()
                     m_pIcon->setPixmap(icon.pixmap(iIconMetric, iIconMetric));
                 }
                 /* Configure layout: */
-                pTopLeftLayout->setSpacing(0);
                 pTopLeftLayout->setContentsMargins(0, 0, 0, 0);
                 pTopLeftLayout->addWidget(m_pIcon);
                 pTopLeftLayout->addStretch();
@@ -197,11 +196,23 @@ void UIVMCloseDialog::prepare()
             /* Prepare 'top-right' layout: */
             QVBoxLayout *pTopRightLayout = new QVBoxLayout;
             {
+                /* Configure layout: */
+                // WORKAROUND:
+                // Why do we need it? It should be the default one, but it's not..
+                const int iS1 = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing);
+                pTopRightLayout->setSpacing(iS1);
+
                 /* Prepare 'text' label: */
                 m_pLabel = new QLabel(this);
                 /* Prepare 'choice' layout: */
                 QGridLayout *pChoiceLayout = new QGridLayout;
                 {
+                    /* Configure layout: */
+                    // WORKAROUND:
+                    // Why do we need it? It should be the default one, but it's not..
+                    const int iS2 = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing);
+                    pChoiceLayout->setSpacing(iS2);
+
                     /* Prepare icon metric: */
                     const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
                     /* Prepare 'detach' icon: */
@@ -269,9 +280,7 @@ void UIVMCloseDialog::prepare()
                     /* Configure layout: */
 #ifdef VBOX_WS_MAC
                     pChoiceLayout->setSpacing(15);
-#else /* VBOX_WS_MAC */
-                    pChoiceLayout->setSpacing(6);
-#endif /* !VBOX_WS_MAC */
+#endif
                     pChoiceLayout->setContentsMargins(0, 0, 0, 0);
                     pChoiceLayout->addWidget(m_pDetachIcon, 0, 0);
                     pChoiceLayout->addWidget(m_pDetachRadio, 0, 1);
@@ -286,16 +295,17 @@ void UIVMCloseDialog::prepare()
                 /* Configure layout: */
 #ifdef VBOX_WS_MAC
                 pTopRightLayout->setSpacing(15);
-#else /* VBOX_WS_MAC */
-                pTopRightLayout->setSpacing(6);
-#endif /* !VBOX_WS_MAC */
+#endif
                 pTopRightLayout->setContentsMargins(0, 0, 0, 0);
                 pTopRightLayout->addWidget(m_pLabel);
                 pTopRightLayout->addItem(pChoiceLayout);
             }
             /* Configure layout: */
-            pTopLayout->setSpacing(20);
             pTopLayout->setContentsMargins(0, 0, 0, 0);
+            // WORKAROUND:
+            // Why do we need it? It should be the default one, but it's not..
+            const int iS3 = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
+            pTopLayout->setSpacing(iS3);
             pTopLayout->addItem(pTopLeftLayout);
             pTopLayout->addItem(pTopRightLayout);
         }
@@ -309,7 +319,6 @@ void UIVMCloseDialog::prepare()
             connect(pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
         }
         /* Configure layout: */
-        pMainLayout->setSpacing(20);
 #ifdef VBOX_WS_MAC
         pMainLayout->setContentsMargins(40, 20, 40, 20);
 #endif /* VBOX_WS_MAC */
