@@ -2551,6 +2551,8 @@ VMMDECL(uint32_t) CPUMGetGuestMxCsrMask(PVM pVM)
  * @retval  true if it's ready, false otherwise.
  *
  * @param   pCtx        The guest-CPU context.
+ *
+ * @sa      hmR0SvmCanNstGstTakePhysIntr.
  */
 VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PCCPUMCTX pCtx)
 {
@@ -2590,6 +2592,7 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PCCPUMCTX pCtx)
     AssertReleaseFailedReturn(false);
 #else
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+    Assert(pCtx->hwvirt.svm.fGif);
 
     PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
     if (   !pVmcbCtrl->IntCtrl.n.u1IgnoreTPR
@@ -2597,9 +2600,6 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PCCPUMCTX pCtx)
         return false;
 
     if (!pCtx->rflags.Bits.u1IF)
-        return false;
-
-    if (!pCtx->hwvirt.svm.fGif)
         return false;
 
     return true;

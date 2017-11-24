@@ -2736,6 +2736,7 @@ DECLINLINE(void) hmR0SvmSetPendingXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t u
     if (pCtx->cr2 != uFaultAddress)
     {
         pCtx->cr2 = uFaultAddress;
+        /* The VMCB clean bit for CR2 will be updated while re-loading the guest state. */
         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR2);
     }
 
@@ -3051,6 +3052,8 @@ DECLINLINE(void) hmR0SvmClearIretIntercept(PSVMVMCB pVmcb)
  * @remarks This function looks at the VMCB cache rather than directly at the
  *          nested-guest VMCB which may have been suitably modified for executing
  *          using hardware-assisted SVM.
+ *
+ * @sa      CPUMCanSvmNstGstTakePhysIntr.
  */
 static bool hmR0SvmCanNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
@@ -3178,8 +3181,8 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCt
          * We can safely call CPUMCanSvmNstGstTakeVirtIntr here as we don't cache/modify any
          * nested-guest VMCB interrupt control fields besides V_INTR_MASKING, see hmR0SvmVmRunCacheVmcb.
          */
-        if (   (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR)
-            && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
+        if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
+            && (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR)
             && CPUMCanSvmNstGstTakeVirtIntr(pCtx))
         {
             Log4(("Intercepting virtual interrupt -> #VMEXIT\n"));
