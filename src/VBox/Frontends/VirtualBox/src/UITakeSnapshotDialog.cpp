@@ -100,6 +100,10 @@ void UITakeSnapshotDialog::prepare()
     QGridLayout *pLayout = new QGridLayout(this);
     AssertPtrReturnVoid(pLayout);
     {
+        /* Configure layout: */
+        const int iS0 = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) * 2;
+        pLayout->setSpacing(iS0);
+
         /* Create sub-layout: */
         QVBoxLayout *pSubLayout1 = new QVBoxLayout;
         AssertPtrReturnVoid(pSubLayout1);
@@ -127,8 +131,8 @@ void UITakeSnapshotDialog::prepare()
         AssertPtrReturnVoid(pSubLayout2);
         {
             /* Configure layout: */
-            const int iS = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2;
-            pSubLayout2->setSpacing(iS);
+            const int iS2 = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2;
+            pSubLayout2->setSpacing(iS2);
 
             /* Create name label: */
             m_pLabelName = new QLabel;
@@ -160,8 +164,8 @@ void UITakeSnapshotDialog::prepare()
         AssertPtrReturnVoid(pSubLayout3);
         {
             /* Configure layout: */
-            const int iS = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2;
-            pSubLayout3->setSpacing(iS);
+            const int iS3 = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2;
+            pSubLayout3->setSpacing(iS3);
 
             /* Create description label: */
             m_pLabelDescription = new QLabel;

@@ -302,9 +302,7 @@ void UIVMCloseDialog::prepare()
             }
             /* Configure layout: */
             pTopLayout->setContentsMargins(0, 0, 0, 0);
-            // WORKAROUND:
-            // Why do we need it? It should be the default one, but it's not..
-            const int iS3 = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
+            const int iS3 = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) * 2;
             pTopLayout->setSpacing(iS3);
             pTopLayout->addItem(pTopLeftLayout);
             pTopLayout->addItem(pTopRightLayout);
