@@ -3067,6 +3067,7 @@ static DECLCALLBACK(int) rtFsIsoDir_Open(void *pvThis, const char *pszEntry, uin
 }
 
 
+#if 0
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnOpenFile}
  */
@@ -3149,6 +3150,7 @@ static DECLCALLBACK(int) rtFsIsoDir_OpenFile(void *pvThis, const char *pszFilena
     }
     return rc;
 }
+#endif
 
 
 #if 0
@@ -3735,7 +3737,7 @@ static const RTVFSDIROPS g_rtFsIsoDirOps =
     },
     rtFsIsoDir_Open,
     NULL /* pfnFollowAbsoluteSymlink */,
-    rtFsIsoDir_OpenFile,
+    NULL /* pfnOpenFile */,
     NULL /* pfnOpenDir */,
     rtFsIsoDir_CreateDir,
     rtFsIsoDir_OpenSymlink,

@@ -4179,6 +4179,7 @@ static DECLCALLBACK(int) rtFsFatDir_Open(void *pvThis, const char *pszEntry, uin
 }
 
 
+#if 0
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnOpenFile}
  */
@@ -4235,8 +4236,10 @@ static DECLCALLBACK(int) rtFsFatDir_OpenFile(void *pvThis, const char *pszFilena
     }
     return rc;
 }
+#endif
 
 
+#if 0
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnCreateDir}
  */
@@ -4271,6 +4274,7 @@ static DECLCALLBACK(int) rtFsFatDir_CreateDir(void *pvThis, const char *pszSubDi
                             DirEntry.cbFile, phVfsDir);
     return rc;
 }
+#endif
 
 
 /**
@@ -4733,9 +4737,9 @@ static const RTVFSDIROPS g_rtFsFatDirOps =
     },
     rtFsFatDir_Open,
     NULL /* pfnFollowAbsoluteSymlink */,
-    rtFsFatDir_OpenFile,
+    NULL /* pfnOpenFile*/,
     NULL /* pfnOpenDir */,
-    rtFsFatDir_CreateDir,
+    NULL /* pfnCreateDir */,
     rtFsFatDir_OpenSymlink,
     rtFsFatDir_CreateSymlink,
     NULL /* pfnQueryEntryInfo */,
