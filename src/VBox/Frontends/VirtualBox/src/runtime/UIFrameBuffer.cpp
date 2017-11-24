@@ -1520,16 +1520,14 @@ void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
         }
 
 #ifdef VBOX_WS_MAC
-# ifdef VBOX_GUI_WITH_HIDPI
         /* Should we
-         * do not perform logical HiDPI scaling or
+         * not perform logical HiDPI scaling or
          * perform logical HiDPI scaling and optimize it for performance? */
         if (fUseUnscaledHiDPIOutput || hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Mark sub-pixmap as HiDPI: */
             subPixmap.setDevicePixelRatio(dBackingScaleFactor);
         }
-# endif /* VBOX_GUI_WITH_HIDPI */
 #endif /* VBOX_WS_MAC */
     }
 
@@ -1580,16 +1578,14 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
         }
 
 #ifdef VBOX_WS_MAC
-# ifdef VBOX_GUI_WITH_HIDPI
         /* Should we
-         * do not perform logical HiDPI scaling or
+         * not perform logical HiDPI scaling or
          * perform logical HiDPI scaling and optimize it for performance? */
         if (fUseUnscaledHiDPIOutput || hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Mark sub-pixmap as HiDPI: */
             subPixmap.setDevicePixelRatio(dBackingScaleFactor);
         }
-# endif /* VBOX_GUI_WITH_HIDPI */
 #endif /* VBOX_WS_MAC */
     }
 

@@ -90,13 +90,11 @@ NativeNSImageRef darwinToNSImageRef(const QImage *pImage)
     CGImageRef pCGImage = ::darwinToCGImageRef(pImage);
     NativeNSImageRef pNSImage = ::darwinToNSImageRef(pCGImage);
     CGImageRelease(pCGImage);
-#ifdef VBOX_GUI_WITH_HIDPI
     /* Apply device pixel ratio: */
     double dScaleFactor = pImage->devicePixelRatio();
     NSSize imageSize = { (CGFloat)pImage->width() / dScaleFactor,
                          (CGFloat)pImage->height() / dScaleFactor };
     [pNSImage setSize:imageSize];
-#endif /* VBOX_GUI_WITH_HIDPI */
     /* Return result: */
     return pNSImage;
 }

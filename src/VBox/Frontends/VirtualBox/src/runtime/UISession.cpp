@@ -1776,7 +1776,6 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
     /* Create cursor-pixmap from the image: */
     QPixmap cursorPixmap = QPixmap::fromImage(image);
 # ifdef VBOX_WS_MAC
-#  ifdef VBOX_GUI_WITH_HIDPI
     /* Adjust backing-scale-factor: */
     /// @todo In case of multi-monitor setup check whether backing-scale factor and cursor are screen specific.
     /* Get screen-id of main-window: */
@@ -1790,7 +1789,6 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
         uYHot /= dBackingScaleFactor;
         cursorPixmap.setDevicePixelRatio(dBackingScaleFactor);
     }
-#  endif /* VBOX_GUI_WITH_HIDPI */
 # endif /* VBOX_WS_MAC */
     /* Set the new cursor: */
     m_cursor = QCursor(cursorPixmap, uXHot, uYHot);
