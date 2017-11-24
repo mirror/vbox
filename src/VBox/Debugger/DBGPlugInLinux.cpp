@@ -169,6 +169,10 @@ typedef LNXPRINTKHDR const *PCLNXPRINTKHDR;
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+/** First kernel map address for 32bit Linux hosts (__START_KERNEL_map). */
+#define LNX32_KERNEL_ADDRESS_START      UINT32_C(0xc0000000)
+/** First kernel map address for 64bit Linux hosts (__START_KERNEL_map). */
+#define LNX64_KERNEL_ADDRESS_START      UINT64_C(0xffffffff80000000)
 /** Validates a 32-bit linux kernel address */
 #define LNX32_VALID_ADDRESS(Addr)       ((Addr) > UINT32_C(0x80000000) && (Addr) < UINT32_C(0xfffff000))
 /** Validates a 64-bit linux kernel address */
@@ -2411,6 +2415,94 @@ static int dbgDiggerLinuxCfgFind(PDBGDIGGERLINUX pThis, PUVM pUVM)
 }
 
 /**
+ * Probes for a Linux kernel starting at the given address.
+ *
+ * @returns Flag whether something which looks like a valid Linux kernel was found.
+ * @param   pThis               The Linux digger data.
+ * @param   pUVM                The user mode VM handle.
+ * @param   uAddrStart          The address to start scanning at.
+ * @param   cbScan              How much to scan.
+ */
+static bool dbgDiggerLinuxProbeWithAddr(PDBGDIGGERLINUX pThis, PUVM pUVM, RTGCUINTPTR uAddrStart, size_t cbScan)
+{
+    /*
+     * Look for "Linux version " at the start of the rodata segment.
+     * Hope that this comes before any message buffer or other similar string.
+     */
+    DBGFADDRESS KernelAddr;
+    DBGFR3AddrFromFlat(pUVM, &KernelAddr, uAddrStart);
+    DBGFADDRESS HitAddr;
+    int rc = DBGFR3MemScan(pUVM, 0, &KernelAddr, cbScan, 1,
+                           g_abLinuxVersion, sizeof(g_abLinuxVersion) - 1, &HitAddr);
+    if (RT_SUCCESS(rc))
+    {
+        char szTmp[128];
+        char const *pszX = &szTmp[sizeof(g_abLinuxVersion) - 1];
+        rc = DBGFR3MemReadString(pUVM, 0, &HitAddr, szTmp, sizeof(szTmp));
+        if (    RT_SUCCESS(rc)
+            &&  (   (   pszX[0] == '2'  /* 2.x.y with x in {0..6} */
+                     && pszX[1] == '.'
+                     && pszX[2] >= '0'
+                     && pszX[2] <= '6')
+                 || (   pszX[0] >= '3'  /* 3.x, 4.x, ... 9.x */
+                     && pszX[0] <= '9'
+                     && pszX[1] == '.'
+                     && pszX[2] >= '0'
+                     && pszX[2] <= '9')
+                 )
+            )
+        {
+            pThis->AddrKernelBase  = KernelAddr;
+            pThis->AddrLinuxBanner = HitAddr;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Probes for a Linux kernel which has KASLR enabled.
+ *
+ * @returns Flag whether a possible candidate location was found.
+ * @param   pThis               The Linux digger data.
+ * @param   pUVM                The user mode VM handle.
+ * @param   uAddrKernelStart    The first address the kernel is expected at.
+ */
+static bool dbgDiggerLinuxProbeKaslr(PDBGDIGGERLINUX pThis, PUVM pUVM, RTGCUINTPTR uAddrKernelStart)
+{
+    /**
+     * With KASLR the kernel is loaded at a different address at each boot making detection
+     * more difficult for us.
+     *
+     * The randomization is done in arch/x86/boot/compressed/kaslr.c:choose_random_location() (as of Nov 2017).
+     * At the end of the method a random offset is chosen using find_random_virt_addr() which is added to the
+     * kernel map start in the caller (the start of the kernel depends on the bit size, see LNX32_KERNEL_ADDRESS_START
+     * and LNX64_KERNEL_ADDRESS_START for 32bit and 64bit kernels respectively).
+     * The lowest offset possible is LOAD_PHYSICAL_ADDR which is defined in arch/x86/include/asm/boot.h
+     * using CONFIG_PHYSICAL_START aligned to CONFIG_PHYSICAL_ALIGN.
+     * The default CONFIG_PHYSICAL_START and CONFIG_PHYSICAL_ALIGN are both 0x1000000 no matter whether a 32bit
+     * or a 64bit kernel is used. So the lowest offset to the kernel start address is 0x1000000.
+     * The find_random_virt_addr() the number of possible slots where the kernel can be placed based on the image size
+     * is calculated using the following formula:
+     *    cSlots = ((KERNEL_IMAGE_SIZE - 0x1000000 (minimum) - image_size) / 0x1000000 (CONFIG_PHYSICAL_ALIGN)) + 1
+     *
+     * KERNEL_IMAGE_SIZE is 1GB for 64bit kernels and 512MB for 32bit kernels, so the maximum number of slots (resulting
+     * in the largest possible offset) can be achieved when image_size (which contains the real size of the kernel image
+     * which is unknown for us) goes to 0 and a 1GB KERNEL_IMAGE_SIZE is assumed. With that the biggest cSlots which can be
+     * achieved is 64. The chosen random offset is taken from a random long integer using kaslr_get_random_long() modulo the
+     * number of slots which selects a slot between 0 and 63. The final offset is calculated using:
+     *    offAddr = random_addr * 0x1000000 (CONFIG_PHYSICAL_ALIGN) + 0x1000000 (minimum)
+     *
+     * So the highest offset the kernel can start is 0x40000000 which is 1GB (plus the maximum kernel size we defined).
+     */
+    if (dbgDiggerLinuxProbeWithAddr(pThis, pUVM, uAddrKernelStart, _1G + LNX_MAX_KERNEL_SIZE))
+        return true;
+
+    return false;
+}
+
+/**
  * @copydoc DBGFOSREG::pfnInit
  */
 static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
@@ -2461,41 +2553,19 @@ static DECLCALLBACK(bool)  dbgDiggerLinuxProbe(PUVM pUVM, void *pvData)
 {
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
 
-    /*
-     * Look for "Linux version " at the start of the rodata segment.
-     * Hope that this comes before any message buffer or other similar string.
-     */
     for (unsigned i = 0; i < RT_ELEMENTS(g_au64LnxKernelAddresses); i++)
     {
-        DBGFADDRESS KernelAddr;
-        DBGFR3AddrFromFlat(pUVM, &KernelAddr, g_au64LnxKernelAddresses[i]);
-        DBGFADDRESS HitAddr;
-        int rc = DBGFR3MemScan(pUVM, 0, &KernelAddr, LNX_MAX_KERNEL_SIZE, 1,
-                               g_abLinuxVersion, sizeof(g_abLinuxVersion) - 1, &HitAddr);
-        if (RT_SUCCESS(rc))
-        {
-            char szTmp[128];
-            char const *pszX = &szTmp[sizeof(g_abLinuxVersion) - 1];
-            rc = DBGFR3MemReadString(pUVM, 0, &HitAddr, szTmp, sizeof(szTmp));
-            if (    RT_SUCCESS(rc)
-                &&  (   (   pszX[0] == '2'  /* 2.x.y with x in {0..6} */
-                         && pszX[1] == '.'
-                         && pszX[2] >= '0'
-                         && pszX[2] <= '6')
-                     || (   pszX[0] >= '3'  /* 3.x, 4.x, ... 9.x */
-                         && pszX[0] <= '9'
-                         && pszX[1] == '.'
-                         && pszX[2] >= '0'
-                         && pszX[2] <= '9')
-                     )
-                )
-            {
-                pThis->AddrKernelBase  = KernelAddr;
-                pThis->AddrLinuxBanner = HitAddr;
-                return true;
-            }
-        }
+        if (dbgDiggerLinuxProbeWithAddr(pThis, pUVM, g_au64LnxKernelAddresses[i], LNX_MAX_KERNEL_SIZE))
+            return true;
     }
+
+    /* Maybe the kernel uses KASLR. */
+    if (dbgDiggerLinuxProbeKaslr(pThis, pUVM, LNX32_KERNEL_ADDRESS_START))
+        return true;
+
+    if (dbgDiggerLinuxProbeKaslr(pThis, pUVM, LNX64_KERNEL_ADDRESS_START))
+        return true;
+
     return false;
 }
 
