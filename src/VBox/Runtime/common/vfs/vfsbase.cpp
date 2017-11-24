@@ -2567,12 +2567,12 @@ RTDECL(int) RTVfsDirOpen(RTVFS hVfs, const char *pszPath, uint32_t fFlags, PRTVF
                 /* Do the querying.  If pfnOpenDir is available, we use it first, falling
                    back on pfnOpen in case of symbolic links that needs following. */
                 const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
-                if (pVfsParentDir->pOps->pfnQueryEntryInfo)
+                if (pVfsParentDir->pOps->pfnOpenDir)
                 {
                     RTVfsLockAcquireRead(pVfsParentDir->Base.hLock);
                     rc = pVfsParentDir->pOps->pfnOpenDir(pVfsParentDir->Base.pvThis, pszEntryName, fFlags, phVfsDir);
                     RTVfsLockReleaseRead(pVfsParentDir->Base.hLock);
-                    if (RT_SUCCESS(rc)
+                    if (   RT_SUCCESS(rc)
                         || (   rc != VERR_NOT_A_DIRECTORY
                             && rc != VERR_IS_A_SYMLINK))
                         break;
@@ -2636,25 +2636,26 @@ RTDECL(int) RTVfsDirOpenDir(RTVFSDIR hVfsDir, const char *pszPath, uint32_t fFla
          * We'll do the symbolic link checking here with help of pfnOpen/pfnOpenDir.
          */
         RTVFSDIRINTERNAL *pVfsParentDir;
-        rc = rtVfsDirTraverseToParent(pThis, pPath, (fFlags & RTPATH_F_NO_SYMLINKS) | RTPATH_F_ON_LINK, &pVfsParentDir);
+        uint32_t const    fTraverse = (fFlags & RTPATH_F_NO_SYMLINKS) | RTPATH_F_ON_LINK;
+        rc = rtVfsDirTraverseToParent(pThis, pPath, fTraverse, &pVfsParentDir);
         if (RT_SUCCESS(rc))
         {
             /*
              * Do the opening.  Loop if we need to follow symbolic links.
              */
             uint64_t fOpenFlags = RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN;
-            uint32_t fObjFlags  = RTVFSOBJ_F_OPEN_DIRECTORY | RTVFSOBJ_F_OPEN_SYMLINK | RTVFSOBJ_F_CREATE_NOTHING;
+            uint32_t fObjFlags  = RTVFSOBJ_F_OPEN_DIRECTORY | RTVFSOBJ_F_OPEN_SYMLINK | RTVFSOBJ_F_CREATE_NOTHING | fTraverse;
             for (uint32_t cLoops = 1; ; cLoops++)
             {
                 /* Do the querying.  If pfnOpenDir is available, we use it first, falling
                    back on pfnOpen in case of symbolic links that needs following. */
                 const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
-                if (pVfsParentDir->pOps->pfnQueryEntryInfo)
+                if (pVfsParentDir->pOps->pfnOpenDir)
                 {
                     RTVfsLockAcquireRead(pVfsParentDir->Base.hLock);
                     rc = pVfsParentDir->pOps->pfnOpenDir(pVfsParentDir->Base.pvThis, pszEntryName, fFlags, phVfsDir);
                     RTVfsLockReleaseRead(pVfsParentDir->Base.hLock);
-                    if (RT_SUCCESS(rc)
+                    if (   RT_SUCCESS(rc)
                         || (   rc != VERR_NOT_A_DIRECTORY
                             && rc != VERR_IS_A_SYMLINK))
                         break;
@@ -2679,7 +2680,7 @@ RTDECL(int) RTVfsDirOpenDir(RTVFSDIR hVfsDir, const char *pszPath, uint32_t fFla
 
                 /* Follow symbolic link. */
                 if (cLoops < RTVFS_MAX_LINKS)
-                    rc = rtVfsDirFollowSymlinkObjToParent(&pVfsParentDir, hVfsObj, pPath, fObjFlags & RTPATH_F_MASK);
+                    rc = rtVfsDirFollowSymlinkObjToParent(&pVfsParentDir, hVfsObj, pPath, fTraverse);
                 else
                     rc = VERR_TOO_MANY_SYMLINKS;
                 RTVfsObjRelease(hVfsObj);
@@ -2717,36 +2718,68 @@ RTDECL(int) RTVfsDirCreateDir(RTVFSDIR hVfsDir, const char *pszRelPath, RTFMODE 
     int rc = RTVfsParsePathA(pszRelPath, NULL, &pPath);
     if (RT_SUCCESS(rc))
     {
-        if (pPath->cComponents > 0)
+        /*
+         * Tranverse the path, resolving the parent node.
+         * We'll do the symbolic link checking here with help of pfnOpen/pfnOpenDir.
+         */
+        RTVFSDIRINTERNAL *pVfsParentDir;
+        uint32_t          fTraverse = (fFlags & RTDIRCREATE_FLAGS_NO_SYMLINKS ? RTPATH_F_NO_SYMLINKS : 0) | RTPATH_F_ON_LINK;
+        rc = rtVfsDirTraverseToParent(pThis, pPath, fTraverse, &pVfsParentDir);
+        if (RT_SUCCESS(rc))
         {
             /*
-             * Tranverse the path, resolving the parent node, not checking for symbolic
-             * links in the final element, and ask the directory to create the subdir.
+             * Do the opening.  Loop if we need to follow symbolic links.
              */
-            RTVFSDIRINTERNAL *pVfsParentDir;
-            rc = rtVfsDirTraverseToParent(pThis, pPath,
-                                            fFlags & RTDIRCREATE_FLAGS_NO_SYMLINKS
-                                          ? RTPATH_F_NO_SYMLINKS | RTPATH_F_ON_LINK : RTPATH_F_FOLLOW_LINK,
-                                          &pVfsParentDir);
-            if (RT_SUCCESS(rc))
+            uint64_t fOpenFlags = RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_CREATE
+                                | ((fMode << RTFILE_O_CREATE_MODE_SHIFT) & RTFILE_O_CREATE_MODE_MASK);
+            uint32_t fObjFlags  = RTVFSOBJ_F_OPEN_SYMLINK | RTVFSOBJ_F_CREATE_DIRECTORY | fTraverse;
+            for (uint32_t cLoops = 1; ; cLoops++)
             {
+                /* Do the querying.  If pfnOpenDir is available, we use it first, falling
+                   back on pfnOpen in case of symbolic links that needs following. */
                 const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
-
-                RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
-                rc = pVfsParentDir->pOps->pfnCreateDir(pVfsParentDir->Base.pvThis, pszEntryName, fMode, phVfsDir);
-                RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
-
-                RTVfsDirRelease(pVfsParentDir);
-
-                if (RT_SUCCESS(rc) && phVfsDir)
+                if (pVfsParentDir->pOps->pfnCreateDir)
                 {
-                    AssertPtr(*phVfsDir);
-                    Assert((*phVfsDir)->uMagic == RTVFSDIR_MAGIC);
+                    RTVfsLockAcquireRead(pVfsParentDir->Base.hLock);
+                    rc = pVfsParentDir->pOps->pfnCreateDir(pVfsParentDir->Base.pvThis, pszEntryName, fMode, phVfsDir);
+                    RTVfsLockReleaseRead(pVfsParentDir->Base.hLock);
+                    if (   RT_SUCCESS(rc)
+                        || (   rc != VERR_NOT_A_DIRECTORY
+                            && rc != VERR_IS_A_SYMLINK))
+                        break;
                 }
+
+                RTVFSOBJ hVfsObj;
+                RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
+                rc = pVfsParentDir->pOps->pfnOpen(pVfsParentDir->Base.pvThis, pszEntryName, fOpenFlags, fObjFlags, &hVfsObj);
+                RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
+                if (RT_FAILURE(rc))
+                    break;
+
+                /* If we don't follow links or this wasn't a link we just have to do the query and we're done. */
+                if (   !(fObjFlags & RTPATH_F_FOLLOW_LINK)
+                    || RTVfsObjGetType(hVfsObj) != RTVFSOBJTYPE_SYMLINK)
+                {
+                    if (phVfsDir)
+                    {
+                        *phVfsDir = RTVfsObjToDir(hVfsObj);
+                        AssertStmt(*phVfsDir != NIL_RTVFSDIR, rc = VERR_INTERNAL_ERROR_3);
+                    }
+                    RTVfsObjRelease(hVfsObj);
+                    break;
+                }
+
+                /* Follow symbolic link. */
+                if (cLoops < RTVFS_MAX_LINKS)
+                    rc = rtVfsDirFollowSymlinkObjToParent(&pVfsParentDir, hVfsObj, pPath, fTraverse);
+                else
+                    rc = VERR_TOO_MANY_SYMLINKS;
+                RTVfsObjRelease(hVfsObj);
+                if (RT_FAILURE(rc))
+                    break;
             }
+            RTVfsDirRelease(pVfsParentDir);
         }
-        else
-            rc = VERR_PATH_ZERO_LENGTH;
         RTVfsParsePathFree(pPath);
     }
     return rc;
@@ -2769,67 +2802,83 @@ RTDECL(int) RTVfsDirOpenFile(RTVFSDIR hVfsDir, const char *pszPath, uint64_t fOp
         return rc;
 
     /*
-     * Parse the relative path.
+     * Parse the path, it's always relative to the given directory.
      */
     PRTVFSPARSEDPATH pPath;
     rc = RTVfsParsePathA(pszPath, NULL, &pPath);
     if (RT_SUCCESS(rc))
     {
-        if (pPath->cComponents > 0)
+        /*
+         * Tranverse the path, resolving the parent node.
+         * We'll do the symbolic link checking here with help of pfnOpen/pfnOpenFile.
+         */
+        RTVFSDIRINTERNAL *pVfsParentDir;
+        uint32_t const    fTraverse = (fOpen & RTFILE_O_NO_SYMLINKS ? RTPATH_F_NO_SYMLINKS : 0) | RTPATH_F_ON_LINK;
+        rc = rtVfsDirTraverseToParent(pThis, pPath, fTraverse, &pVfsParentDir);
+        if (RT_SUCCESS(rc))
         {
+            /** @todo join path with RTVfsFileOpen.   */
+
             /*
-             * Tranverse the path, resolving the parent node and any symlinks
-             * in the final element, and ask the directory to open the file.
+             * Do the opening.  Loop if we need to follow symbolic links.
              */
-            RTVFSDIRINTERNAL *pVfsParentDir;
-            rc = rtVfsDirTraverseToParent(pThis, pPath,
-                                          (fOpen & RTFILE_O_NO_SYMLINKS ? RTPATH_F_NO_SYMLINKS : 0) | RTPATH_F_FOLLOW_LINK,
-                                          &pVfsParentDir);
-            if (RT_SUCCESS(rc))
+            bool     fDirSlash = pPath->fDirSlash;
+
+            uint32_t fObjFlags = RTVFSOBJ_F_OPEN_ANY_FILE | RTVFSOBJ_F_OPEN_SYMLINK;
+            if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE
+                || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
+                fObjFlags |= RTVFSOBJ_F_CREATE_FILE;
+            else
+                fObjFlags |= RTVFSOBJ_F_CREATE_NOTHING;
+            fObjFlags  |= fTraverse & RTPATH_F_MASK;
+
+            for (uint32_t cLoops = 1;; cLoops++)
             {
+                /* Do the querying.  If pfnOpenFile is available, we use it first, falling
+                   back on pfnOpen in case of symbolic links that needs following or we got
+                   a trailing directory slash (to get file-not-found error). */
                 const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
-
-                if (   pVfsParentDir->pOps->pfnOpenFile == NULL
-                    || pPath->fDirSlash)
+                if (   pVfsParentDir->pOps->pfnOpenFile
+                    && !fDirSlash)
                 {
-                    RTVFSOBJ hVfsObj;
-                    RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
-                    rc = pVfsParentDir->pOps->pfnOpen(pVfsParentDir->Base.pvThis, pszEntryName, fOpen,
-                                                      RTVFSOBJ_F_OPEN_ANY_FILE | RTVFSOBJ_F_CREATE_FILE
-                                                      | RTPATH_F_FOLLOW_LINK, &hVfsObj);
-                    RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (RTVfsObjGetType(hVfsObj) != RTVFSOBJTYPE_SYMLINK)
-                            *phVfsFile = RTVfsObjToFile(hVfsObj);
-                        else
-                        {
-                            /** @todo parse symbolic links. */
-                            AssertFailed();
-                            rc = VERR_NOT_IMPLEMENTED;
-                        }
-                        RTVfsObjRelease(hVfsObj);
-                    }
-                }
-                else
-                {
-                    /** @todo there is a symlink creation race here. */
-                    RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
+                    RTVfsLockAcquireRead(pVfsParentDir->Base.hLock);
                     rc = pVfsParentDir->pOps->pfnOpenFile(pVfsParentDir->Base.pvThis, pszEntryName, fOpen, phVfsFile);
-                    RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
+                    RTVfsLockReleaseRead(pVfsParentDir->Base.hLock);
+                    if (   RT_SUCCESS(rc)
+                        || (   rc != VERR_NOT_A_FILE
+                            && rc != VERR_IS_A_SYMLINK))
+                        break;
                 }
 
-                if (RT_SUCCESS(rc))
+                RTVFSOBJ hVfsObj;
+                RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
+                rc = pVfsParentDir->pOps->pfnOpen(pVfsParentDir->Base.pvThis, pszEntryName, fOpen, fObjFlags, &hVfsObj);
+                RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
+                if (RT_FAILURE(rc))
+                    break;
+
+                /* If we don't follow links or this wasn't a link we just have to do the query and we're done. */
+                if (   !(fObjFlags & RTPATH_F_FOLLOW_LINK)
+                    || RTVfsObjGetType(hVfsObj) != RTVFSOBJTYPE_SYMLINK)
                 {
-                    AssertPtr(*phVfsFile);
-                    Assert((*phVfsFile)->uMagic == RTVFSFILE_MAGIC);
+                    *phVfsFile = RTVfsObjToFile(hVfsObj);
+                    AssertStmt(*phVfsFile != NIL_RTVFSFILE, rc = VERR_INTERNAL_ERROR_3);
+                    RTVfsObjRelease(hVfsObj);
+                    break;
                 }
 
-                RTVfsDirRelease(pVfsParentDir);
+                /* Follow symbolic link. */
+                if (cLoops < RTVFS_MAX_LINKS)
+                    rc = rtVfsDirFollowSymlinkObjToParent(&pVfsParentDir, hVfsObj, pPath, fTraverse);
+                else
+                    rc = VERR_TOO_MANY_SYMLINKS;
+                RTVfsObjRelease(hVfsObj);
+                if (RT_FAILURE(rc))
+                    break;
+                fDirSlash |= pPath->fDirSlash;
             }
+            RTVfsDirRelease(pVfsParentDir);
         }
-        else
-            rc = VERR_NOT_A_FILE;
         RTVfsParsePathFree(pPath);
     }
     return rc;
@@ -3756,38 +3805,80 @@ RTDECL(int) RTVfsFileOpen(RTVFS hVfs, const char *pszFilename, uint64_t fOpen, P
     rc = RTVfsParsePathA(pszFilename, "/", &pPath);
     if (RT_SUCCESS(rc))
     {
-        if (   !pPath->fDirSlash
-            && pPath->cComponents > 0)
+        /*
+         * Tranverse the path, resolving the parent node.
+         * We'll do the symbolic link checking here with help of pfnOpen/pfnOpenFile.
+         */
+        RTVFSDIRINTERNAL *pVfsParentDir;
+        uint32_t const    fTraverse = (fOpen & RTFILE_O_NO_SYMLINKS ? RTPATH_F_NO_SYMLINKS : 0) | RTPATH_F_ON_LINK;
+        rc = rtVfsTraverseToParent(pThis, pPath, fTraverse, &pVfsParentDir);
+        if (RT_SUCCESS(rc))
         {
+            /** @todo join path with RTVfsDirOpenFile.   */
             /*
-             * Tranverse the path, resolving the parent node and any symlinks
-             * in the final element, and ask the directory to open the file.
+             * Do the opening.  Loop if we need to follow symbolic links.
              */
-            RTVFSDIRINTERNAL *pVfsParentDir;
-            rc = rtVfsTraverseToParent(pThis, pPath, RTPATH_F_FOLLOW_LINK, &pVfsParentDir);
-            if (RT_SUCCESS(rc))
+            bool     fDirSlash = pPath->fDirSlash;
+
+            uint32_t fObjFlags = RTVFSOBJ_F_OPEN_ANY_FILE | RTVFSOBJ_F_OPEN_SYMLINK;
+            if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE
+                || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
+                fObjFlags |= RTVFSOBJ_F_CREATE_FILE;
+            else
+                fObjFlags |= RTVFSOBJ_F_CREATE_NOTHING;
+            fObjFlags  |= fTraverse & RTPATH_F_MASK;
+
+            for (uint32_t cLoops = 1;; cLoops++)
             {
+                /* Do the querying.  If pfnOpenFile is available, we use it first, falling
+                   back on pfnOpen in case of symbolic links that needs following or we got
+                   a trailing directory slash (to get file-not-found error). */
                 const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
-
-                /** @todo there is a symlink creation race here. */
-                RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
-                rc = pVfsParentDir->pOps->pfnOpenFile(pVfsParentDir->Base.pvThis, pszEntryName, fOpen, phVfsFile);
-                RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
-
-                RTVfsDirRelease(pVfsParentDir);
-
-                if (RT_SUCCESS(rc))
+                if (   pVfsParentDir->pOps->pfnOpenFile
+                    && !fDirSlash)
                 {
-                    AssertPtr(*phVfsFile);
-                    Assert((*phVfsFile)->uMagic == RTVFSFILE_MAGIC);
+                    RTVfsLockAcquireRead(pVfsParentDir->Base.hLock);
+                    rc = pVfsParentDir->pOps->pfnOpenFile(pVfsParentDir->Base.pvThis, pszEntryName, fOpen, phVfsFile);
+                    RTVfsLockReleaseRead(pVfsParentDir->Base.hLock);
+                    if (   RT_SUCCESS(rc)
+                        || (   rc != VERR_NOT_A_FILE
+                            && rc != VERR_IS_A_SYMLINK))
+                        break;
                 }
+
+                RTVFSOBJ hVfsObj;
+                RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
+                rc = pVfsParentDir->pOps->pfnOpen(pVfsParentDir->Base.pvThis, pszEntryName, fOpen, fObjFlags, &hVfsObj);
+                RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
+                if (RT_FAILURE(rc))
+                    break;
+
+                /* If we don't follow links or this wasn't a link we just have to do the query and we're done. */
+                if (   !(fObjFlags & RTPATH_F_FOLLOW_LINK)
+                    || RTVfsObjGetType(hVfsObj) != RTVFSOBJTYPE_SYMLINK)
+                {
+                    *phVfsFile = RTVfsObjToFile(hVfsObj);
+                    AssertStmt(*phVfsFile != NIL_RTVFSFILE, rc = VERR_INTERNAL_ERROR_3);
+                    RTVfsObjRelease(hVfsObj);
+                    break;
+                }
+
+                /* Follow symbolic link. */
+                if (cLoops < RTVFS_MAX_LINKS)
+                    rc = rtVfsDirFollowSymlinkObjToParent(&pVfsParentDir, hVfsObj, pPath, fTraverse);
+                else
+                    rc = VERR_TOO_MANY_SYMLINKS;
+                RTVfsObjRelease(hVfsObj);
+                if (RT_FAILURE(rc))
+                    break;
+                fDirSlash |= pPath->fDirSlash;
             }
+            RTVfsDirRelease(pVfsParentDir);
         }
-        else
-            rc = VERR_NOT_A_FILE;
         RTVfsParsePathFree(pPath);
     }
     return rc;
+
 }
 
 
