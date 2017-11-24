@@ -460,6 +460,7 @@ typedef RTFSISOVDSINFO *PRTFSISOVDSINFO;
 *********************************************************************************************************************************/
 static void rtFsIsoDirShrd_AddOpenChild(PRTFSISODIRSHRD pDir, PRTFSISOCORE pChild);
 static void rtFsIsoDirShrd_RemoveOpenChild(PRTFSISODIRSHRD pDir, PRTFSISOCORE pChild);
+static int  rtFsIsoDir_NewWithShared(PRTFSISOVOL pThis, PRTFSISODIRSHRD pShared, PRTVFSDIR phVfsDir);
 static int  rtFsIsoDir_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
                                uint32_t cDirRecs, uint64_t offDirRec, PRTVFSDIR phVfsDir);
 static int  rtFsIsoDir_NewUdf(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, PCUDFFILEIDDESC pFid, PRTVFSDIR phVfsDir);
@@ -2896,20 +2897,59 @@ static DECLCALLBACK(int) rtFsIsoDir_Open(void *pvThis, const char *pszEntry, uin
 {
     PRTFSISODIROBJ  pThis   = (PRTFSISODIROBJ)pvThis;
     PRTFSISODIRSHRD pShared = pThis->pShared;
+    int rc;
 
     /*
      * We cannot create or replace anything, just open stuff.
      */
-    if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE
-        || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
+    if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN
+        || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE)
+    { /* likely */ }
+    else
         return VERR_WRITE_PROTECT;
+
+    /*
+     * Special cases '.' and '.'
+     */
+    if (pszEntry[0] == '.')
+    {
+        PRTFSISODIRSHRD pSharedToOpen;
+        if (pszEntry[1] == '\0')
+            pSharedToOpen = pShared;
+        else if (pszEntry[1] == '.' && pszEntry[2] == '\0')
+        {
+            pSharedToOpen = pShared->Core.pParentDir;
+            if (!pSharedToOpen)
+                pSharedToOpen = pShared;
+        }
+        else
+            pSharedToOpen = NULL;
+        if (pSharedToOpen)
+        {
+            if (fFlags & RTVFSOBJ_F_OPEN_DIRECTORY)
+            {
+                rtFsIsoDirShrd_Retain(pSharedToOpen);
+                RTVFSDIR hVfsDir;
+                rc = rtFsIsoDir_NewWithShared(pShared->Core.pVol, pSharedToOpen, &hVfsDir);
+                if (RT_SUCCESS(rc))
+                {
+                    *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                    RTVfsDirRelease(hVfsDir);
+                    AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                }
+            }
+            else
+                rc = VERR_IS_A_DIRECTORY;
+            return rc;
+        }
+    }
 
     /*
      * Try open whatever it is.
      */
-    int rc;
     if (pShared->Core.pVol->enmType != RTFSISOVOLTYPE_UDF)
     {
+
         /*
          * ISO 9660
          */
@@ -3111,6 +3151,7 @@ static DECLCALLBACK(int) rtFsIsoDir_OpenFile(void *pvThis, const char *pszFilena
 }
 
 
+#if 0
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnOpenDir}
  */
@@ -3184,6 +3225,7 @@ static DECLCALLBACK(int) rtFsIsoDir_OpenDir(void *pvThis, const char *pszSubDir,
     }
     return rc;
 }
+#endif
 
 
 /**
@@ -3217,6 +3259,7 @@ static DECLCALLBACK(int) rtFsIsoDir_CreateSymlink(void *pvThis, const char *pszS
 }
 
 
+#if 0
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnQueryEntryInfo}
  */
@@ -3280,6 +3323,7 @@ static DECLCALLBACK(int) rtFsIsoDir_QueryEntryInfo(void *pvThis, const char *psz
     }
     return rc;
 }
+#endif
 
 
 /**
@@ -3692,11 +3736,11 @@ static const RTVFSDIROPS g_rtFsIsoDirOps =
     rtFsIsoDir_Open,
     NULL /* pfnFollowAbsoluteSymlink */,
     rtFsIsoDir_OpenFile,
-    rtFsIsoDir_OpenDir,
+    NULL /* pfnOpenDir */,
     rtFsIsoDir_CreateDir,
     rtFsIsoDir_OpenSymlink,
     rtFsIsoDir_CreateSymlink,
-    rtFsIsoDir_QueryEntryInfo,
+    NULL /* pfnQueryEntryInfo */,
     rtFsIsoDir_UnlinkEntry,
     rtFsIsoDir_RenameEntry,
     rtFsIsoDir_RewindDir,

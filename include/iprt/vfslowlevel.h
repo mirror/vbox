@@ -596,6 +596,9 @@ typedef struct RTVFSDIROPS
      * Open an existing subdirectory.
      *
      * @returns IPRT status code.
+     * @retval  VERR_IS_A_SYMLINK if @a pszSubDir is a symbolic link.
+     * @retval  VERR_NOT_A_DIRECTORY is okay for symbolic links too.
+     *
      * @param   pvThis      The implementation specific directory data.
      * @param   pszSubDir   The name of the immediate subdirectory to open.
      * @param   fFlags      RTDIR_F_XXX.

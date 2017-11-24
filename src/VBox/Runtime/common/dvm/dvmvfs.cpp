@@ -103,6 +103,12 @@ typedef struct RTVFSDVMFILE
 typedef RTVFSDVMFILE *PRTVFSDVMFILE;
 
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static DECLCALLBACK(int) rtDvmVfsVol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir);
+
+
 /**
  * @interface_method_impl{RTVFSOBJOPS,pfnClose}
  */
@@ -721,7 +727,40 @@ static int rtDvmVfsDir_FindEntry(PRTDVMVFSDIR pThis, const char *pszEntry, PRTDV
 static DECLCALLBACK(int) rtDvmVfsDir_Open(void *pvThis, const char *pszEntry, uint64_t fOpen, uint32_t fFlags, PRTVFSOBJ phVfsObj)
 {
     PRTDVMVFSDIR pThis = (PRTDVMVFSDIR)pvThis;
-    RTDVMVOLUME  hVolume;
+
+    /*
+     * Special case: '.' and '..'
+     */
+    if (   pszEntry[0] == '.'
+        && (   pszEntry[1] == '\0'
+            || (   pszEntry[1] == '.'
+                && pszEntry[2] == '\0')))
+    {
+        if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN
+            || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
+            || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
+        {
+            if (fFlags & RTVFSOBJ_F_OPEN_DIRECTORY)
+            {
+                RTVFSDIR hVfsDir;
+                int rc = rtDvmVfsVol_OpenRoot(pThis->pVfsVol, &hVfsDir);
+                if (RT_SUCCESS(rc))
+                {
+                    *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                    RTVfsDirRelease(hVfsDir);
+                    AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                }
+                return rc;
+            }
+            return VERR_IS_A_DIRECTORY;
+        }
+        return VERR_ACCESS_DENIED;
+    }
+
+    /*
+     * Open volume file.
+     */
+    RTDVMVOLUME hVolume;
     int rc = rtDvmVfsDir_FindEntry(pThis, pszEntry, &hVolume);
     if (RT_SUCCESS(rc))
     {
@@ -774,16 +813,6 @@ static DECLCALLBACK(int) rtDvmVfsDir_OpenFile(void *pvThis, const char *pszFilen
 
 
 /**
- * @interface_method_impl{RTVFSDIROPS,pfnOpenDir}
- */
-static DECLCALLBACK(int) rtDvmVfsDir_OpenDir(void *pvThis, const char *pszSubDir, uint32_t fFlags, PRTVFSDIR phVfsDir)
-{
-    NOREF(pvThis); NOREF(pszSubDir); NOREF(fFlags); NOREF(phVfsDir);
-    return VERR_FILE_NOT_FOUND;
-}
-
-
-/**
  * @interface_method_impl{RTVFSDIROPS,pfnCreateDir}
  */
 static DECLCALLBACK(int) rtDvmVfsDir_CreateDir(void *pvThis, const char *pszSubDir, RTFMODE fMode, PRTVFSDIR phVfsDir)
@@ -811,24 +840,6 @@ static DECLCALLBACK(int) rtDvmVfsDir_CreateSymlink(void *pvThis, const char *psz
 {
     RT_NOREF(pvThis, pszSymlink, pszTarget, enmType, phVfsSymlink);
     return VERR_NOT_SUPPORTED;
-}
-
-
-/**
- * @interface_method_impl{RTVFSDIROPS,pfnQueryEntryInfo}
- */
-static DECLCALLBACK(int) rtDvmVfsDir_QueryEntryInfo(void *pvThis, const char *pszEntry,
-                                                    PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
-{
-    PRTDVMVFSDIR pThis = (PRTDVMVFSDIR)pvThis;
-    RTDVMVOLUME  hVolume;
-    int rc = rtDvmVfsDir_FindEntry(pThis, pszEntry, &hVolume);
-    if (RT_SUCCESS(rc))
-    {
-        rc = rtDvmVfsFile_QueryInfoWorker(hVolume, pThis->pVfsVol->hVolMgr, pThis->pVfsVol->fReadOnly, pObjInfo, enmAddAttr);
-        RTDvmVolumeRelease(hVolume);
-    }
-    return rc;
 }
 
 
@@ -996,11 +1007,11 @@ static const RTVFSDIROPS g_rtDvmVfsDirOps =
     rtDvmVfsDir_Open,
     NULL /* pfnFollowAbsoluteSymlink */,
     rtDvmVfsDir_OpenFile,
-    rtDvmVfsDir_OpenDir,
+    NULL /* pfnOpenDir */,
     rtDvmVfsDir_CreateDir,
     rtDvmVfsDir_OpenSymlink,
     rtDvmVfsDir_CreateSymlink,
-    rtDvmVfsDir_QueryEntryInfo,
+    NULL /* pfnQueryEntryInfo */,
     rtDvmVfsDir_UnlinkEntry,
     rtDvmVfsDir_RenameEntry,
     rtDvmVfsDir_RewindDir,

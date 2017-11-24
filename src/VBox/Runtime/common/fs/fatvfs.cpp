@@ -506,6 +506,7 @@ static int  rtFsFatDirShrd_GetEntryForUpdate(PRTFSFATDIRSHRD pThis, uint32_t off
                                              PFATDIRENTRY *ppDirEntry, uint32_t *puWriteLock);
 static int  rtFsFatDirShrd_PutEntryAfterUpdate(PRTFSFATDIRSHRD pThis, PFATDIRENTRY pDirEntry, uint32_t uWriteLock);
 static int  rtFsFatDirShrd_Flush(PRTFSFATDIRSHRD pThis);
+static int  rtFsFatDir_NewWithShared(PRTFSFATVOL pThis, PRTFSFATDIRSHRD pShared, PRTVFSDIR phVfsDir);
 static int  rtFsFatDir_New(PRTFSFATVOL pThis, PRTFSFATDIRSHRD pParentDir, PCFATDIRENTRY pDirEntry, uint32_t offEntryInDir,
                            uint32_t idxCluster, uint64_t offDisk, uint32_t cbDir, PRTVFSDIR phVfsDir);
 
@@ -4005,6 +4006,49 @@ static DECLCALLBACK(int) rtFsFatDir_Open(void *pvThis, const char *pszEntry, uin
 {
     PRTFSFATDIR     pThis   = (PRTFSFATDIR)pvThis;
     PRTFSFATDIRSHRD pShared = pThis->pShared;
+    int             rc;
+
+    /*
+     * Special cases '.' and '.'
+     */
+    if (pszEntry[0] == '.')
+    {
+        PRTFSFATDIRSHRD pSharedToOpen;
+        if (pszEntry[1] == '\0')
+            pSharedToOpen = pShared;
+        else if (pszEntry[1] == '.' && pszEntry[2] == '\0')
+        {
+            pSharedToOpen = pShared->Core.pParentDir;
+            if (!pSharedToOpen)
+                pSharedToOpen = pShared;
+        }
+        else
+            pSharedToOpen = NULL;
+        if (pSharedToOpen)
+        {
+            if (fFlags & RTVFSOBJ_F_OPEN_DIRECTORY)
+            {
+                if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN
+                    || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE)
+                {
+                    rtFsFatDirShrd_Retain(pSharedToOpen);
+                    RTVFSDIR hVfsDir;
+                    rc = rtFsFatDir_NewWithShared(pShared->Core.pVol, pSharedToOpen, &hVfsDir);
+                    if (RT_SUCCESS(rc))
+                    {
+                        *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                        RTVfsDirRelease(hVfsDir);
+                        AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                    }
+                }
+                else
+                    rc = VERR_ACCESS_DENIED;
+            }
+            else
+                rc = VERR_IS_A_DIRECTORY;
+            return rc;
+        }
+    }
 
     /*
      * Try open existing file.
@@ -4012,7 +4056,7 @@ static DECLCALLBACK(int) rtFsFatDir_Open(void *pvThis, const char *pszEntry, uin
     uint32_t    offEntryInDir;
     bool        fLong;
     FATDIRENTRY DirEntry;
-    int rc = rtFsFatDirShrd_FindEntry(pShared, pszEntry, &offEntryInDir, &fLong, &DirEntry);
+    rc = rtFsFatDirShrd_FindEntry(pShared, pszEntry, &offEntryInDir, &fLong, &DirEntry);
     if (RT_SUCCESS(rc))
     {
         switch (DirEntry.fAttrib & (FAT_ATTR_DIRECTORY | FAT_ATTR_VOLUME))
@@ -4194,46 +4238,6 @@ static DECLCALLBACK(int) rtFsFatDir_OpenFile(void *pvThis, const char *pszFilena
 
 
 /**
- * @interface_method_impl{RTVFSDIROPS,pfnOpenDir}
- */
-static DECLCALLBACK(int) rtFsFatDir_OpenDir(void *pvThis, const char *pszSubDir, uint32_t fFlags, PRTVFSDIR phVfsDir)
-{
-    PRTFSFATDIR     pThis   = (PRTFSFATDIR)pvThis;
-    PRTFSFATDIRSHRD pShared = pThis->pShared;
-    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
-
-    /*
-     * Try open directory.
-     */
-    uint32_t    offEntryInDir;
-    bool        fLong;
-    FATDIRENTRY DirEntry;
-    int rc = rtFsFatDirShrd_FindEntry(pShared, pszSubDir, &offEntryInDir, &fLong, &DirEntry);
-    LogFlow(("rtFsFatDir_OpenDir: FindEntry(,%s,,,) -> %Rrc fLong=%d offEntryInDir=%#RX32\n", pszSubDir, rc, fLong, offEntryInDir));
-    if (RT_SUCCESS(rc))
-    {
-        switch (DirEntry.fAttrib & (FAT_ATTR_DIRECTORY | FAT_ATTR_VOLUME))
-        {
-            case FAT_ATTR_DIRECTORY:
-                rc = rtFsFatDir_New(pShared->Core.pVol, pShared, &DirEntry, offEntryInDir,
-                                    RTFSFAT_GET_CLUSTER(&DirEntry, pShared->Core.pVol), UINT64_MAX /*offDisk*/,
-                                    DirEntry.cbFile, phVfsDir);
-                break;
-
-            case 0:
-                rc = VERR_NOT_A_DIRECTORY;
-                break;
-
-            default:
-                rc = VERR_PATH_NOT_FOUND;
-                break;
-        }
-    }
-    return rc;
-}
-
-
-/**
  * @interface_method_impl{RTVFSDIROPS,pfnCreateDir}
  */
 static DECLCALLBACK(int) rtFsFatDir_CreateDir(void *pvThis, const char *pszSubDir, RTFMODE fMode, PRTVFSDIR phVfsDir)
@@ -4251,6 +4255,10 @@ static DECLCALLBACK(int) rtFsFatDir_CreateDir(void *pvThis, const char *pszSubDi
     int rc = rtFsFatDirShrd_FindEntry(pShared, pszSubDir, &offEntryInDir, &fLong, &DirEntry);
     if (rc != VERR_FILE_NOT_FOUND)
         return RT_SUCCESS(rc) ? VERR_ALREADY_EXISTS : rc;
+
+    if (   strcmp(pszSubDir, ".") == 0
+        || strcmp(pszSubDir, "..") == 0)
+        return VERR_ALREADY_EXISTS;
 
     /*
      * Okay, create it.
@@ -4286,6 +4294,7 @@ static DECLCALLBACK(int) rtFsFatDir_CreateSymlink(void *pvThis, const char *pszS
 }
 
 
+#if 0
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnQueryEntryInfo}
  */
@@ -4315,6 +4324,7 @@ static DECLCALLBACK(int) rtFsFatDir_QueryEntryInfo(void *pvThis, const char *psz
     }
     return rc;
 }
+#endif
 
 
 /**
@@ -4724,11 +4734,11 @@ static const RTVFSDIROPS g_rtFsFatDirOps =
     rtFsFatDir_Open,
     NULL /* pfnFollowAbsoluteSymlink */,
     rtFsFatDir_OpenFile,
-    rtFsFatDir_OpenDir,
+    NULL /* pfnOpenDir */,
     rtFsFatDir_CreateDir,
     rtFsFatDir_OpenSymlink,
     rtFsFatDir_CreateSymlink,
-    rtFsFatDir_QueryEntryInfo,
+    NULL /* pfnQueryEntryInfo */,
     rtFsFatDir_UnlinkEntry,
     rtFsFatDir_RenameEntry,
     rtFsFatDir_RewindDir,
