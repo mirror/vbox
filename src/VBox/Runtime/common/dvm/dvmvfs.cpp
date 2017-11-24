@@ -760,7 +760,7 @@ static DECLCALLBACK(int) rtDvmVfsDir_Open(void *pvThis, const char *pszEntry, ui
     /*
      * Open volume file.
      */
-    RTDVMVOLUME hVolume;
+    RTDVMVOLUME hVolume = NIL_RTDVMVOLUME;
     int rc = rtDvmVfsDir_FindEntry(pThis, pszEntry, &hVolume);
     if (RT_SUCCESS(rc))
     {
