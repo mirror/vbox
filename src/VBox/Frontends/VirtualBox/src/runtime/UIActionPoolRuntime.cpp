@@ -1065,7 +1065,7 @@ class UIActionSimplePerformTypeCAD : public UIActionSimple
 public:
 
     UIActionSimplePerformTypeCAD(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png") {}
+        : UIActionSimple(pParent) {}
 
 protected:
 
@@ -1101,7 +1101,7 @@ class UIActionSimplePerformTypeCABS : public UIActionSimple
 public:
 
     UIActionSimplePerformTypeCABS(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png") {}
+        : UIActionSimple(pParent) {}
 
 protected:
 
@@ -1137,7 +1137,7 @@ class UIActionSimplePerformTypeCtrlBreak : public UIActionSimple
 public:
 
     UIActionSimplePerformTypeCtrlBreak(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png") {}
+        : UIActionSimple(pParent) {}
 
 protected:
 
@@ -1167,7 +1167,7 @@ class UIActionSimplePerformTypeInsert : public UIActionSimple
 public:
 
     UIActionSimplePerformTypeInsert(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png") {}
+        : UIActionSimple(pParent) {}
 
 protected:
 
@@ -1197,7 +1197,7 @@ class UIActionSimplePerformTypePrintScreen : public UIActionSimple
 public:
 
     UIActionSimplePerformTypePrintScreen(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png") {}
+        : UIActionSimple(pParent) {}
 
 protected:
 
@@ -1227,7 +1227,7 @@ class UIActionSimplePerformTypeAltPrintScreen : public UIActionSimple
 public:
 
     UIActionSimplePerformTypeAltPrintScreen(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png") {}
+        : UIActionSimple(pParent) {}
 
 protected:
 
