@@ -929,10 +929,10 @@ VirtualBox_SOURCES            += VirtualBox1.qrc
 VirtualBox1.qrc_RCCFLAGS       = -name BASIC1
 VirtualBox_SOURCES            += VirtualBox2.qrc
 VirtualBox2.qrc_RCCFLAGS       = -name BASIC2
-VirtualBox_SOURCES             += VirtualBox1_hidpi.qrc
-VirtualBox1_hidpi.qrc_RCCFLAGS  = -name BASIC1_HIDPI
-VirtualBox_SOURCES             += VirtualBox2_hidpi.qrc
-VirtualBox2_hidpi.qrc_RCCFLAGS  = -name BASIC2_HIDPI
+VirtualBox_SOURCES             += VirtualBox1_x2.qrc
+VirtualBox1_x2.qrc_RCCFLAGS  = -name BASIC1_HIDPI
+VirtualBox_SOURCES             += VirtualBox2_x2.qrc
+VirtualBox2_x2.qrc_RCCFLAGS  = -name BASIC2_HIDPI
 ifeq ($(KBUILD_TARGET),darwin)
  VirtualBox_SOURCES           += VirtualBoxMac.qrc
  VirtualBoxMac.qrc_RCCFLAGS    = -name MAC
