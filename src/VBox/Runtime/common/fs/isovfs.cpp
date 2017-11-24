@@ -3690,6 +3690,7 @@ static const RTVFSDIROPS g_rtFsIsoDirOps =
         RTVFSOBJSETOPS_VERSION
     },
     rtFsIsoDir_Open,
+    NULL /* pfnFollowAbsoluteSymlink */,
     rtFsIsoDir_OpenFile,
     rtFsIsoDir_OpenDir,
     rtFsIsoDir_CreateDir,

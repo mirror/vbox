@@ -550,8 +550,7 @@ typedef struct RTVFSDIROPS
      *
      * @param   pvThis      The implementation specific directory data.
      * @param   pszEntry    The name of the immediate file to open or create.
-     * @param   fOpenFile   RTFILE_O_XXX combination.  Currently RTFILE_O_OPEN is
-     *                      required, but this may change.
+     * @param   fOpenFile   RTFILE_O_XXX combination.
      * @param   fObjFlags   More flags: RTVFSOBJ_F_XXX, RTPATH_F_XXX.
      *                      The meaning of RTPATH_F_FOLLOW_LINK differs here, if
      *                      @a pszEntry is a symlink it should be opened for
@@ -561,6 +560,24 @@ typedef struct RTVFSDIROPS
      */
     DECLCALLBACKMEMBER(int, pfnOpen)(void *pvThis, const char *pszEntry, uint64_t fOpenFile,
                                      uint32_t fObjFlags, PRTVFSOBJ phVfsObj);
+
+    /**
+     * Optional method for symbolic link handling in the vfsstddir.cpp.
+     *
+     * This is really just a hack to make symbolic link handling work when working
+     * with directory objects that doesn't have an associated VFS.  It also helps
+     * deal with drive letters in symbolic links on Windows and OS/2.
+     *
+     * @returns IPRT status code.
+     * @retval  VERR_PATH_IS_RELATIVE if @a pszPath isn't absolute and should be
+     *          handled using pfnOpen().
+     *
+     * @param   pvThis      The implementation specific directory data.
+     * @param   pszRoot     Path to the alleged root.
+     * @param   phVfsDir    Where to return the handle to the specified root
+     *                      directory (or may current dir on a drive letter).
+     */
+    DECLCALLBACKMEMBER(int, pfnFollowAbsoluteSymlink)(void *pvThis, const char *pszRoot, PRTVFSDIR phVfsDir);
 
     /**
      * Open or create a file.

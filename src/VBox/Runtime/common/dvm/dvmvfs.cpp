@@ -994,6 +994,7 @@ static const RTVFSDIROPS g_rtDvmVfsDirOps =
         RTVFSOBJSETOPS_VERSION
     },
     rtDvmVfsDir_Open,
+    NULL /* pfnFollowAbsoluteSymlink */,
     rtDvmVfsDir_OpenFile,
     rtDvmVfsDir_OpenDir,
     rtDvmVfsDir_CreateDir,

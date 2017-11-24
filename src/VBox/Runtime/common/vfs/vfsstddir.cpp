@@ -254,7 +254,7 @@ static DECLCALLBACK(int) rtVfsStdDir_SetOwner(void *pvThis, RTUID uid, RTGID gid
  * @interface_method_impl{RTVFSDIROPS,pfnOpen}
  */
 static DECLCALLBACK(int) rtVfsStdDir_Open(void *pvThis, const char *pszEntry, uint64_t fFileOpen,
-                                          uint32_t fVfsFlags, PRTVFSOBJ phVfsObj)
+                                          uint32_t fObjFlags, PRTVFSOBJ phVfsObj)
 {
     PRTVFSSTDDIR pThis = (PRTVFSSTDDIR)pvThis;
 
@@ -269,14 +269,14 @@ static DECLCALLBACK(int) rtVfsStdDir_Open(void *pvThis, const char *pszEntry, ui
         switch (ObjInfo.Attr.fMode & RTFS_TYPE_MASK)
         {
             case RTFS_TYPE_DIRECTORY:
-                if (!(fVfsFlags & RTVFSOBJ_F_OPEN_DIRECTORY))
+                if (fObjFlags & RTVFSOBJ_F_OPEN_DIRECTORY)
                 {
                     if (   (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN
                         || (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
                         || (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
                     {
                         RTDIR hSubDir;
-                        rc = RTDirRelDirOpenFiltered(pThis->hDir, pszEntry, RTDIRFILTER_NONE, fVfsFlags, &hSubDir);
+                        rc = RTDirRelDirOpenFiltered(pThis->hDir, pszEntry, RTDIRFILTER_NONE, 0 /*fFlags*/, &hSubDir);
                         if (RT_SUCCESS(rc))
                         {
                             RTVFSDIR hVfsDir;
@@ -306,21 +306,21 @@ static DECLCALLBACK(int) rtVfsStdDir_Open(void *pvThis, const char *pszEntry, ui
                 switch (ObjInfo.Attr.fMode & RTFS_TYPE_MASK)
                 {
                     case RTFS_TYPE_FILE:
-                        rc = fVfsFlags & RTVFSOBJ_F_OPEN_FILE      ? VINF_SUCCESS : VERR_IS_A_FILE;
+                        rc = fObjFlags & RTVFSOBJ_F_OPEN_FILE      ? VINF_SUCCESS : VERR_IS_A_FILE;
                         break;
                     case RTFS_TYPE_DEV_BLOCK:
-                        rc = fVfsFlags & RTVFSOBJ_F_OPEN_DEV_BLOCK ? VINF_SUCCESS : VERR_IS_A_BLOCK_DEVICE;
+                        rc = fObjFlags & RTVFSOBJ_F_OPEN_DEV_BLOCK ? VINF_SUCCESS : VERR_IS_A_BLOCK_DEVICE;
                         break;
                     case RTFS_TYPE_DEV_CHAR:
-                        rc = fVfsFlags & RTVFSOBJ_F_OPEN_DEV_CHAR  ? VINF_SUCCESS : VERR_IS_A_CHAR_DEVICE;
+                        rc = fObjFlags & RTVFSOBJ_F_OPEN_DEV_CHAR  ? VINF_SUCCESS : VERR_IS_A_CHAR_DEVICE;
                         break;
                     /** @todo These two types should not result in files, but pure I/O streams.
                      *        possibly char device too.  */
                     case RTFS_TYPE_FIFO:
-                        rc = fVfsFlags & RTVFSOBJ_F_OPEN_FIFO      ? VINF_SUCCESS : VERR_IS_A_FIFO;
+                        rc = fObjFlags & RTVFSOBJ_F_OPEN_FIFO      ? VINF_SUCCESS : VERR_IS_A_FIFO;
                         break;
                     case RTFS_TYPE_SOCKET:
-                        rc = fVfsFlags & RTVFSOBJ_F_OPEN_SOCKET    ? VINF_SUCCESS : VERR_IS_A_SOCKET;
+                        rc = fObjFlags & RTVFSOBJ_F_OPEN_SOCKET    ? VINF_SUCCESS : VERR_IS_A_SOCKET;
                         break;
                     default:
                         rc = VERR_INVALID_FLAGS;
@@ -354,7 +354,7 @@ static DECLCALLBACK(int) rtVfsStdDir_Open(void *pvThis, const char *pszEntry, ui
                 break;
 
             case RTFS_TYPE_SYMLINK:
-                if (fVfsFlags & RTVFSOBJ_F_OPEN_SYMLINK)
+                if (fObjFlags & RTVFSOBJ_F_OPEN_SYMLINK)
                 {
                     uint32_t cRefs = RTVfsDirRetain(pThis->hSelf);
                     if (cRefs != UINT32_MAX)
@@ -397,10 +397,10 @@ static DECLCALLBACK(int) rtVfsStdDir_Open(void *pvThis, const char *pszEntry, ui
         if (   (   (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE
                 || (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
                 || (fFileOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
-            && (fVfsFlags & RTVFSOBJ_F_CREATE_MASK) != RTVFSOBJ_F_CREATE_NOTHING)
+            && (fObjFlags & RTVFSOBJ_F_CREATE_MASK) != RTVFSOBJ_F_CREATE_NOTHING)
         {
 
-            if ((fVfsFlags & RTVFSOBJ_F_CREATE_MASK) == RTVFSOBJ_F_CREATE_FILE)
+            if ((fObjFlags & RTVFSOBJ_F_CREATE_MASK) == RTVFSOBJ_F_CREATE_FILE)
             {
                 RTFILE hFile;
                 rc = RTDirRelFileOpen(pThis->hDir, pszEntry, fFileOpen, &hFile);
@@ -418,11 +418,11 @@ static DECLCALLBACK(int) rtVfsStdDir_Open(void *pvThis, const char *pszEntry, ui
                         RTFileClose(hFile);
                 }
             }
-            else if ((fVfsFlags & RTVFSOBJ_F_CREATE_MASK) == RTVFSOBJ_F_CREATE_DIRECTORY)
+            else if ((fObjFlags & RTVFSOBJ_F_CREATE_MASK) == RTVFSOBJ_F_CREATE_DIRECTORY)
             {
                 RTDIR hSubDir;
                 rc = RTDirRelDirCreate(pThis->hDir, pszEntry, (fFileOpen & RTFILE_O_CREATE_MODE_MASK) >> RTFILE_O_CREATE_MODE_SHIFT,
-                                       0 /* fVfsFlags */, &hSubDir);
+                                       0 /* fFlags */, &hSubDir);
                 if (RT_SUCCESS(rc))
                 {
                     RTVFSDIR hVfsDir;
@@ -444,6 +444,18 @@ static DECLCALLBACK(int) rtVfsStdDir_Open(void *pvThis, const char *pszEntry, ui
             rc = VERR_FILE_NOT_FOUND;
     }
     return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSDIROPS,pfnFollowAbsoluteSymlink}
+ */
+static DECLCALLBACK(int) rtVfsStdDir_FollowAbsoluteSymlink(void *pvThis, const char *pszRoot, PRTVFSDIR phVfsDir)
+{
+    //PRTVFSSTDDIR pThis = (PRTVFSSTDDIR)pvThis;
+    RT_NOREF(pvThis);
+    /** @todo walking restriction. */
+    return RTVfsDirOpenNormal(pszRoot, 0 /*fFlags*/, phVfsDir);
 }
 
 
@@ -667,6 +679,7 @@ DECL_HIDDEN_CONST(const RTVFSDIROPS) g_rtVfsStdDirOps =
         RTVFSOBJSETOPS_VERSION
     },
     rtVfsStdDir_Open,
+    rtVfsStdDir_FollowAbsoluteSymlink,
     rtVfsStdDir_OpenFile,
     rtVfsStdDir_OpenDir,
     rtVfsStdDir_CreateDir,
