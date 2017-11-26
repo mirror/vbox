@@ -534,35 +534,14 @@ static const char *rtCmdLsFormatSizeHumanReadable(PRTCMDLSOPTS pOpts, uint64_t c
 {
     if (pOpts->fHumanReadableSizes)
     {
-        static const struct
+        if (!pOpts->fSiUnits)
         {
-            const char *pszSuffix;
-            uint64_t    cbFactor;
-            uint64_t    cbMin;
-        } s_aUnits[] =
-        {
-            {  "E", _1E, _1E + _1E/2 },
-            {  "P", _1P, _1P + _1P/2 },
-            {  "T", _1T, _1T + _1T/2 },
-            {  "G", _1G, _1G + _1G/2 },
-            {  "M", _1M, _1M + _1M/2 },
-            {  "k", _1K, _1K + _1K/2 },
-
-            {  "E", UINT64_C(1000000000000000000), UINT64_C(1010000000000000000),  },
-            {  "P", UINT64_C(1000000000000000),    UINT64_C(1010000000000000),     },
-            {  "T", UINT64_C(1000000000000),       UINT64_C(1010000000000),        },
-            {  "G", UINT64_C(1000000000),          UINT64_C(1010000000),           },
-            {  "M", UINT64_C(1000000),             UINT64_C(1010000),              },
-            {  "K", UINT64_C(1000),                UINT64_C(1010),                 },
-        };
-        unsigned const iEnd = !pOpts->fSiUnits ? 6 : 12;
-        for (unsigned i = !pOpts->fSiUnits ? 0 : 6; i < iEnd; i++)
-            if (cb >= s_aUnits[i].cbMin)
-            {
-                RTStrFormatU64(pszDst, cbDst, cb / s_aUnits[i].cbFactor, 10, 0, 0, 0);
-                RTStrCat(pszDst, cbDst, s_aUnits[i].pszSuffix);
-                return pszDst;
-            }
+            size_t cch = RTStrPrintf(pszDst, cbDst, "%Rhub", cb);
+            if (pszDst[cch - 1] == 'i')
+                pszDst[cch - 1] = '\0'; /* drop the trailing 'i' */
+        }
+        else
+            RTStrPrintf(pszDst, cbDst, "%Rhui", cb);
     }
     else if (pOpts->cbBlock)
         RTStrFormatU64(pszDst, cbDst, (cb + pOpts->cbBlock - 1) / pOpts->cbBlock, 10, 0, 0, 0);
