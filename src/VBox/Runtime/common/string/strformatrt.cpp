@@ -1021,7 +1021,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                 {  "Ti", 40, _1T,  _1T*2 },
                                 {  "Gi", 30, _1G,  _1G64*2 },
                                 {  "Mi", 20, _1M,  _1M*2 },
-                                {  "ki", 10, _1K,  _1K*2 },
+                                {  "Ki", 10, _1K,  _1K*2 },
                             };
                             for (i = 0; i < RT_ELEMENTS(s_aUnits); i++)
                                 if (   uValue >= s_aUnits[i].cbMin
@@ -1053,7 +1053,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                 {  "T", UINT64_C(1000000000000),       UINT64_C(1010000000000),        },
                                 {  "G", UINT64_C(1000000000),          UINT64_C(1010000000),           },
                                 {  "M", UINT64_C(1000000),             UINT64_C(1010000),              },
-                                {  "K", UINT64_C(1000),                UINT64_C(1010),                 },
+                                {  "k", UINT64_C(1000),                UINT64_C(1010),                 },
                             };
                             for (i = 0; i < RT_ELEMENTS(s_aUnits); i++)
                                 if (   uValue >= s_aUnits[i].cbFactor
