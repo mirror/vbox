@@ -1443,6 +1443,20 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  *                            i.e. a series of space separated bytes formatted as two digit hex value.
  *                            Use the precision to specify the length. Default length is 16 bytes.
  *                            The width, if specified, is ignored.
+ *
+ *      - \%Rhcb            - Human readable byte size formatting, using
+ *                            binary unit prefixes (GiB, MiB and such).  Takes a
+ *                            64-bit unsigned integer as input.  Does one
+ *                            decimal point by default, can do 0-3 via precision
+ *                            field.  No rounding when calculating fraction.
+ *      - \%Rhci            - SI variant of \%Rhcb, fraction is rounded.
+ *      - \%Rhub            - Human readable number formatting, using
+ *                            binary unit prefixes. Takes a 64-bit unsigned
+ *                            integer as input. Does one decimal point by
+ *                            default, can do 0-3 via precision field.  No
+ *                            rounding when calculating fraction.
+ *      - \%Rhui            - SI variant of \%Rhub, fraction is rounded.
+ *
  *      - \%Rrc             - Takes an integer iprt status code as argument. Will insert the
  *                            status code define corresponding to the iprt status code.
  *      - \%Rrs             - Takes an integer iprt status code as argument. Will insert the

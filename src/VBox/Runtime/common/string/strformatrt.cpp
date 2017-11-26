@@ -816,11 +816,12 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
 
 
             /*
-             * hex dumping and COM/XPCOM.
+             * hex dumping, COM/XPCOM, human readable sizes.
              */
             case 'h':
             {
-                switch (*(*ppszFormat)++)
+                ch = *(*ppszFormat)++;
+                switch (ch)
                 {
                     /*
                      * Hex stuff.
@@ -982,6 +983,125 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                         break;
                     }
 #endif /* IN_RING3 */
+
+                    case 'c':
+                    case 'u':
+                    {
+                        unsigned    i;
+                        ssize_t     cchBuf;
+                        uint64_t    uValue;
+                        uint64_t    uFraction = 0;
+                        const char *pszPrefix = NULL;
+                        unsigned    cchFixedPart;
+                        char        ch2 = *(*ppszFormat)++;
+                        AssertMsgReturn(ch2 == 'b' || ch2 == 'i', ("invalid type '%.10s'!\n", pszFormatOrg), 0);
+                        uValue = va_arg(*pArgs, uint64_t);
+
+                        if (!(fFlags & RTSTR_F_PRECISION))
+                            cchPrecision = 1;
+                        else if (cchPrecision > 3)
+                            cchPrecision = 3;
+                        else if (cchPrecision < 0)
+                            cchPrecision = 0;
+
+                        cchFixedPart = cchPrecision + (cchPrecision != 0) + (ch == 'c');
+
+                        if (ch2 == 'b')
+                        {
+                            static const struct
+                            {
+                                const char *pszPrefix;
+                                uint8_t     cShift;
+                                uint64_t    cbMin;
+                                uint64_t    cbMinZeroPrecision;
+                            } s_aUnits[] =
+                            {
+                                {  "Ei", 60, _1E,  _1E*2 },
+                                {  "Pi", 50, _1P,  _1P*2 },
+                                {  "Ti", 40, _1T,  _1T*2 },
+                                {  "Gi", 30, _1G,  _1G64*2 },
+                                {  "Mi", 20, _1M,  _1M*2 },
+                                {  "ki", 10, _1K,  _1K*2 },
+                            };
+                            for (i = 0; i < RT_ELEMENTS(s_aUnits); i++)
+                                if (   uValue >= s_aUnits[i].cbMin
+                                    && (cchPrecision > 0 || uValue >= s_aUnits[i].cbMinZeroPrecision))
+                                {
+                                    if (cchPrecision != 0)
+                                    {
+                                        uFraction   = uValue & (RT_BIT_64(s_aUnits[i].cShift) - 1);
+                                        uFraction  *= cchPrecision == 1 ? 10 : cchPrecision == 2 ? 100 : 1000;
+                                        uFraction >>= s_aUnits[i].cShift;
+                                    }
+                                    uValue  >>= s_aUnits[i].cShift;
+                                    pszPrefix = s_aUnits[i].pszPrefix;
+                                    cchFixedPart += 2;
+                                    break;
+                                }
+                        }
+                        else
+                        {
+                            static const struct
+                            {
+                                const char *pszPrefix;
+                                uint64_t    cbFactor;
+                                uint64_t    cbMinZeroPrecision;
+                            } s_aUnits[] =
+                            {
+                                {  "E", UINT64_C(1000000000000000000), UINT64_C(1010000000000000000),  },
+                                {  "P", UINT64_C(1000000000000000),    UINT64_C(1010000000000000),     },
+                                {  "T", UINT64_C(1000000000000),       UINT64_C(1010000000000),        },
+                                {  "G", UINT64_C(1000000000),          UINT64_C(1010000000),           },
+                                {  "M", UINT64_C(1000000),             UINT64_C(1010000),              },
+                                {  "K", UINT64_C(1000),                UINT64_C(1010),                 },
+                            };
+                            for (i = 0; i < RT_ELEMENTS(s_aUnits); i++)
+                                if (   uValue >= s_aUnits[i].cbFactor
+                                    && (cchPrecision > 0 || uValue >= s_aUnits[i].cbMinZeroPrecision))
+                                {
+                                    if (cchPrecision == 0)
+                                        uValue /= s_aUnits[i].cbFactor;
+                                    else
+                                    {
+                                        uFraction   = uValue % s_aUnits[i].cbFactor;
+                                        uValue      = uValue / s_aUnits[i].cbFactor;
+                                        uFraction  *= cchPrecision == 1 ? 10 : cchPrecision == 2 ? 100 : 1000;
+                                        uFraction  += s_aUnits[i].cbFactor >> 1;
+                                        uFraction  /= s_aUnits[i].cbFactor;
+                                    }
+                                    pszPrefix = s_aUnits[i].pszPrefix;
+                                    cchFixedPart += 1;
+                                    break;
+                                }
+                        }
+
+                        cchBuf = RTStrFormatU64(szBuf, sizeof(szBuf), uValue, 10, 0, 0, 0);
+                        if (pszPrefix)
+                        {
+                            if (cchPrecision)
+                            {
+                                szBuf[cchBuf++] = '.';
+                                cchBuf += RTStrFormatU64(&szBuf[cchBuf], sizeof(szBuf) - cchBuf, uFraction, 10, cchPrecision, 0,
+                                                         RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+                            }
+                            szBuf[cchBuf++] = *pszPrefix++;
+                            if (*pszPrefix)
+                                szBuf[cchBuf++] = *pszPrefix;
+                        }
+                        if (ch == 'c')
+                            szBuf[cchBuf++] = 'B';
+                        szBuf[cchBuf] = '\0';
+
+                        cch = 0;
+                        if ((fFlags & RTSTR_F_WIDTH) && !(fFlags & RTSTR_F_LEFT))
+                            while (cchBuf < cchWidth)
+                            {
+                                cch += pfnOutput(pvArgOutput, fFlags & RTSTR_F_ZEROPAD ? "0" : " ", 1);
+                                cchWidth--;
+                            }
+                        cch += pfnOutput(pvArgOutput, szBuf, cchBuf);
+                        return cch;
+                    }
 
                     default:
                         AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));

@@ -741,6 +741,34 @@ int main()
     CHECKSTR(pszBuf2);
 
     /*
+     * human readable sizes and numbers.
+     */
+    RTTestSub(hTest, "Human readable (%Rhc?, %Rhn?)");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%Rhcb%u", UINT64_C(1235467), 42);
+    CHECKSTR("1.1MiB42");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%Rhcb%u", UINT64_C(999), 42);
+    CHECKSTR("999B42");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%Rhcb%u", UINT64_C(8), 42);
+    CHECKSTR("8B42");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%Rhcb%u", UINT64_C(0), 42);
+    CHECKSTR("0B42");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%.2Rhcb%u", UINT64_C(129957349834756374), 42);
+    CHECKSTR("115.42PiB42");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%.3Rhcb%u", UINT64_C(1957349834756374), 42);
+    CHECKSTR("1.738PiB42");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%.0Rhcb%u", UINT64_C(1957349834756374), 42);
+    CHECKSTR("1780TiB42");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%10Rhcb%u", UINT64_C(6678345), 42);
+    CHECKSTR("    6.3MiB42");
+
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%10Rhub%u", UINT64_C(6678345), 42);
+    CHECKSTR("     6.3Mi42");
+
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%10Rhci%u", UINT64_C(6678345), 42);
+    CHECKSTR("     6.7MB42"); /* rounded, unlike the binary variant.*/
+
+
+    /*
      * x86 register formatting.
      */
     RTTestSub(hTest, "x86 register format types (%RAx86[*])");
