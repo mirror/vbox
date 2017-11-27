@@ -1277,15 +1277,17 @@ static int vdmaVBVAEnableProcess(struct VBOXVDMAHOST *pVdma, uint32_t u32Offset)
         return VERR_INVALID_PARAMETER;
     }
 
+    if (!pVdma->CrSrvInfo.pfnEnable)
+    {
+# ifdef DEBUG_misha
+        WARN(("pfnEnable is NULL\n"));
+        return VERR_NOT_SUPPORTED;
+# endif
+    }
+
     int rc = VBoxVBVAExHSEnable(&pVdma->CmdVbva, pVBVA);
     if (RT_SUCCESS(rc))
     {
-        if (!pVdma->CrSrvInfo.hSvr)
-        {
-            /* "HGCM-less" mode. All inited. */
-            return VINF_SUCCESS;
-        }
-
         VBOXCRCMDCTL_DISABLE Disable;
         Disable.Hdr.enmType = VBOXCRCMDCTL_TYPE_DISABLE;
         Disable.Data.hNotifyTerm = pVdma;
@@ -1324,13 +1326,6 @@ static int vdmaVBVADisableProcess(struct VBOXVDMAHOST *pVdma, bool fDoHgcmEnable
     if (!VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva))
     {
         Log(("vdma VBVA is already disabled\n"));
-        return VINF_SUCCESS;
-    }
-
-    if (!pVdma->CrSrvInfo.hSvr)
-    {
-        /* "HGCM-less" mode. Just undo what vdmaVBVAEnableProcess did. */
-        VBoxVBVAExHSDisable(&pVdma->CmdVbva);
         return VINF_SUCCESS;
     }
 
@@ -1378,12 +1373,6 @@ static int vboxVDMACrHostCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *p
                 WARN(("VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE for disabled vdma VBVA\n"));
                 return VERR_INVALID_STATE;
             }
-            if (!pVdma->CrSrvInfo.hSvr)
-            {
-                /* Should not be. */
-                WARN(("VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE for HGCM-less mode\n"));
-                return VERR_INVALID_STATE;
-            }
             return pVdma->CrSrvInfo.pfnHostCtl(pVdma->CrSrvInfo.hSvr, pCmd->u.cmd.pu8Cmd, pCmd->u.cmd.cbCmd);
         }
         case VBVAEXHOSTCTL_TYPE_GHH_DISABLE:
@@ -1428,12 +1417,6 @@ static int vboxVDMACrHostCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *p
             }
             VGA_SAVED_STATE_PUT_MARKER(pCmd->u.state.pSSM, 4);
 
-            if (!pVdma->CrSrvInfo.hSvr)
-            {
-                /* Done. */
-                return VINF_SUCCESS;
-            }
-
             return pVdma->CrSrvInfo.pfnSaveState(pVdma->CrSrvInfo.hSvr, pCmd->u.state.pSSM);
         }
         case VBVAEXHOSTCTL_TYPE_HH_LOADSTATE:
@@ -1449,12 +1432,6 @@ static int vboxVDMACrHostCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *p
             }
 
             VGA_SAVED_STATE_GET_MARKER_RETURN_ON_MISMATCH(pCmd->u.state.pSSM, pCmd->u.state.u32Version, 4);
-            if (!pVdma->CrSrvInfo.hSvr)
-            {
-                /* Done. */
-                return VINF_SUCCESS;
-            }
-
             rc = pVdma->CrSrvInfo.pfnLoadState(pVdma->CrSrvInfo.hSvr, pCmd->u.state.pSSM, pCmd->u.state.u32Version);
             if (RT_FAILURE(rc))
             {
@@ -1571,15 +1548,11 @@ static int vboxVDMACrGuestCtlResizeEntryProcess(struct VBOXVDMAHOST *pVdma, VBOX
     memcpy(aTargetMap, pEntry->aTargetMap, sizeof(aTargetMap));
     ASMBitClearRange(aTargetMap, pVGAState->cMonitors, VBOX_VIDEO_MAX_SCREENS);
 
-    if (pVdma->CrSrvInfo.hSvr)
+    rc = pVdma->CrSrvInfo.pfnResize(pVdma->CrSrvInfo.hSvr, &Screen, aTargetMap);
+    if (RT_FAILURE(rc))
     {
-        /* Also inform the HGCM service, if it is there. */
-        rc = pVdma->CrSrvInfo.pfnResize(pVdma->CrSrvInfo.hSvr, &Screen, aTargetMap);
-        if (RT_FAILURE(rc))
-        {
-            WARN(("pfnResize failed %d\n", rc));
-            return rc;
-        }
+        WARN(("pfnResize failed %d\n", rc));
+        return rc;
     }
 
     /* A fake view which contains the current screen for the 2D VBVAInfoView. */
@@ -1640,12 +1613,6 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
             if (!VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva))
             {
                 WARN(("VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE for disabled vdma VBVA\n"));
-                return VERR_INVALID_STATE;
-            }
-            if (!pVdma->CrSrvInfo.hSvr)
-            {
-                /* Unexpected. */
-                WARN(("VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE in HGCM-less mode\n"));
                 return VERR_INVALID_STATE;
             }
             return pVdma->CrSrvInfo.pfnGuestCtl(pVdma->CrSrvInfo.hSvr, pCmd->u.cmd.pu8Cmd, pCmd->u.cmd.cbCmd);
@@ -1927,12 +1894,6 @@ static int8_t vboxVDMACrCmdVbvaProcessCmdData(struct VBOXVDMAHOST *pVdma, const 
             return vboxVDMACrCmdVbvaPagingFill(pVGAState, (VBOXCMDVBVA_PAGING_FILL*)pCmd);
         }
         default:
-            if (!pVdma->CrSrvInfo.hSvr)
-            {
-                /* Unexpected. */
-                WARN(("no HGCM"));
-                return -1;
-            }
             return pVdma->CrSrvInfo.pfnCmd(pVdma->CrSrvInfo.hSvr, pCmd, cbCmd);
     }
 }
@@ -2838,12 +2799,7 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
                 if (RT_SUCCESS(rc))
                 {
                     pVGAState->pVdma = pVdma;
-
-                    /* No HGCM service if VMSVGA is enabled. */
-                    if (!pVGAState->fVMSVGAEnabled)
-                    {
-                        int rcIgnored = vboxVDMACrCtlHgsmiSetup(pVdma); NOREF(rcIgnored); /** @todo is this ignoring intentional? */
-                    }
+                    int rcIgnored = vboxVDMACrCtlHgsmiSetup(pVdma); NOREF(rcIgnored); /** @todo is this ignoring intentional? */
                     return VINF_SUCCESS;
                 }
                 WARN(("RTCritSectInit failed %d\n", rc));
@@ -2886,15 +2842,7 @@ int vboxVDMADestruct(struct VBOXVDMAHOST *pVdma)
     if (!pVdma)
         return VINF_SUCCESS;
 #ifdef VBOX_WITH_CRHGSMI
-    if (pVdma->pVGAState->fVMSVGAEnabled)
-        VBoxVBVAExHSDisable(&pVdma->CmdVbva);
-    else
-    {
-        /** @todo Remove. It does nothing because pVdma->CmdVbva is already disabled at this point
-         *        as the result of the SharedOpenGL HGCM service unloading.
-         */
-        vdmaVBVACtlDisableSync(pVdma);
-    }
+    vdmaVBVACtlDisableSync(pVdma);
     VBoxVDMAThreadCleanup(&pVdma->Thread);
     VBoxVBVAExHSTerm(&pVdma->CmdVbva);
     RTSemEventMultiDestroy(pVdma->HostCrCtlCompleteEvent);
