@@ -16,6 +16,7 @@ DocPath=file://@VBOX_DOC_PATH@/UserManual.pdf
 Icon=virtualbox
 Categories=Emulator;System;
 Actions=Manager;
+StartupWMClass=VirtualBox Manager
 Comment=Run several virtual systems on a single host computer
 Comment[de]=Mehrere virtuelle Maschinen auf einem einzigen Rechner ausführen
 Comment[it]=Esegui più macchine virtuali su un singolo computer
