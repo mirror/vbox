@@ -1456,7 +1456,7 @@ static int handleCompact(HandlerArg *a)
                             rc = RTDvmVolumeQueryName(hVol, &pszVolName);
                             if (RT_FAILURE(rc))
                                 pszVolName = NULL;
-                            RTMsgInfo("Vol%u: %Rhcb %u %s%s%s\n", iVol, RTDvmVolumeGetSize(hVol),
+                            RTMsgInfo("Vol%u: %Rhcb %s%s%s\n", iVol, RTDvmVolumeGetSize(hVol),
                                       RTDvmVolumeTypeGetDescr(RTDvmVolumeGetType(hVol)),
                                       pszVolName ? " " : "", pszVolName ? pszVolName : "");
                             RTStrFree(pszVolName);
