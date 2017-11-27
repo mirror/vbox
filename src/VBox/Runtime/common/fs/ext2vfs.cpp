@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Filesystem API (FileSys) - ext2/3 format.
+ * IPRT - Ext2/3/4 Virtual Filesystem.
  */
 
 /*
@@ -91,16 +91,11 @@ typedef RTFILESYSTEMEXT *PRTFILESYSTEMEXT;
  */
 static int rtFsExtLoadBlkGrpDesc(PRTFILESYSTEMEXT pThis, uint32_t iBlkGrp)
 {
-    int rc = VINF_SUCCESS;
-    PRTFILESYSTEMEXTBLKGRP pBlkGrpDesc = pThis->pBlkGrpDesc;
-    uint64_t offRead = (pThis->iSbBlock + 1) * pThis->cbBlock;
-    EXT2BLOCKGROUPDESC BlkDesc;
-    size_t cbBlockBitmap;
-
-    cbBlockBitmap = pThis->cBlocksPerGroup / 8;
+    size_t cbBlockBitmap = pThis->cBlocksPerGroup / 8;
     if (pThis->cBlocksPerGroup % 8)
         cbBlockBitmap++;
 
+    PRTFILESYSTEMEXTBLKGRP pBlkGrpDesc = pThis->pBlkGrpDesc;
     if (!pBlkGrpDesc)
     {
         size_t cbBlkDesc = RT_OFFSETOF(RTFILESYSTEMEXTBLKGRP, abBlockBitmap[cbBlockBitmap]);
@@ -109,7 +104,9 @@ static int rtFsExtLoadBlkGrpDesc(PRTFILESYSTEMEXT pThis, uint32_t iBlkGrp)
             return VERR_NO_MEMORY;
     }
 
-    rc = RTVfsFileReadAt(pThis->hVfsFile, offRead, &BlkDesc, sizeof(BlkDesc), NULL);
+    uint64_t            offRead = (pThis->iSbBlock + 1) * pThis->cbBlock;
+    EXT2BLOCKGROUPDESC  BlkDesc;
+    int rc = RTVfsFileReadAt(pThis->hVfsFile, offRead, &BlkDesc, sizeof(BlkDesc), NULL);
     if (RT_SUCCESS(rc))
     {
         pBlkGrpDesc->offStart = pThis->iSbBlock + (uint64_t)iBlkGrp * pThis->cBlocksPerGroup * pThis->cbBlock;
@@ -119,30 +116,25 @@ static int rtFsExtLoadBlkGrpDesc(PRTFILESYSTEMEXT pThis, uint32_t iBlkGrp)
     }
 
     pThis->pBlkGrpDesc = pBlkGrpDesc;
-
     return rc;
 }
 
+
 static bool rtFsExtIsBlockRangeInUse(PRTFILESYSTEMEXTBLKGRP pBlkGrpDesc, uint32_t offBlockStart, size_t cBlocks)
 {
-    bool fUsed = false;
-
     while (cBlocks)
     {
         uint32_t idxByte = offBlockStart / 8;
         uint32_t iBit = offBlockStart % 8;
 
         if (pBlkGrpDesc->abBlockBitmap[idxByte] & RT_BIT(iBit))
-        {
-            fUsed = true;
-            break;
-        }
+            return true;
 
         cBlocks--;
         offBlockStart++;
     }
 
-    return fUsed;
+    return false;
 }
 
 
@@ -186,22 +178,19 @@ static DECLCALLBACK(int) rtFsExt2_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
  */
 static DECLCALLBACK(int) rtFsExt2_QueryRangeState(void *pvThis, uint64_t off, size_t cb, bool *pfUsed)
 {
-    int rc = VINF_SUCCESS;
-    uint64_t offStart = (uint64_t)off;
-    PRTFILESYSTEMEXT pThis = (PRTFILESYSTEMEXT)pvThis;
+    int                 rc    = VINF_SUCCESS;
+    PRTFILESYSTEMEXT    pThis = (PRTFILESYSTEMEXT)pvThis;
 
     *pfUsed = false;
 
     while (cb > 0)
     {
-        bool fUsed;
-        uint32_t offBlockStart = (uint32_t)(offStart / pThis->cbBlock);
-        uint32_t iBlockGroup = (offBlockStart - pThis->iSbBlock) / pThis->cBlocksPerGroup;
-        uint32_t offBlockRelStart = offBlockStart - iBlockGroup * pThis->cBlocksPerGroup;
-        size_t cbThis = 0;
+        uint32_t const offBlockStart    = (uint32_t)(off / pThis->cbBlock);
+        uint32_t const iBlockGroup      = (offBlockStart - pThis->iSbBlock) / pThis->cBlocksPerGroup;
+        uint32_t const offBlockRelStart = offBlockStart - iBlockGroup * pThis->cBlocksPerGroup;
 
-        if (   offStart < pThis->pBlkGrpDesc->offStart
-            || offStart > pThis->pBlkGrpDesc->offLast)
+        if (   off < pThis->pBlkGrpDesc->offStart
+            || off > pThis->pBlkGrpDesc->offLast)
         {
             /* Load new block descriptor. */
             rc = rtFsExtLoadBlkGrpDesc(pThis, iBlockGroup);
@@ -209,19 +198,17 @@ static DECLCALLBACK(int) rtFsExt2_QueryRangeState(void *pvThis, uint64_t off, si
                 break;
         }
 
-        cbThis = RT_MIN(cb, pThis->pBlkGrpDesc->offLast - offStart + 1);
-        fUsed = rtFsExtIsBlockRangeInUse(pThis->pBlkGrpDesc, offBlockRelStart,
-                                         cbThis / pThis->cbBlock +
-                                         (cbThis % pThis->cbBlock ? 1 : 0));
-
-        if (fUsed)
+        size_t cbThis = RT_MIN(cb, pThis->pBlkGrpDesc->offLast - off + 1);
+        if (rtFsExtIsBlockRangeInUse(pThis->pBlkGrpDesc,
+                                     offBlockRelStart,
+                                     cbThis / pThis->cbBlock + (cbThis % pThis->cbBlock ? 1 : 0)) )
         {
             *pfUsed = true;
             break;
         }
 
-        cb       -= cbThis;
-        offStart += cbThis;
+        cb  -= cbThis;
+        off += cbThis;
     }
 
     return rc;
