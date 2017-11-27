@@ -95,6 +95,7 @@ SRCS += \
 	RTStrCopyEx.c \
 	RTStrCopyP.c \
 	strformat.c \
+	strformatnum.c \
 	strformatrt.c \
 	strformattype.c \
 	strprintf.c \

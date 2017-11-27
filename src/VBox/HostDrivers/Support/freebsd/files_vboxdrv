@@ -128,6 +128,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrNCmp.cpp=>common/string/RTStrNCmp.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrNLen.cpp=>common/string/RTStrNLen.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strformat.cpp=>common/string/strformat.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/string/strformatnum.cpp=>common/string/strformatnum.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strformatrt.cpp=>common/string/strformatrt.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strformattype.cpp=>common/string/strformattype.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strprintf.cpp=>common/string/strprintf.c \

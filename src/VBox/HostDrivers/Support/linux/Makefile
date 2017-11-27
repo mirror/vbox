@@ -94,6 +94,7 @@ MOD_OBJS = \
 	common/string/RTStrNLen.o \
 	common/string/stringalloc.o \
 	common/string/strformat.o \
+	common/string/strformatnum.o \
 	common/string/strformatrt.o \
 	common/string/strformattype.o \
 	common/string/strprintf.o \
