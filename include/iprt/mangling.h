@@ -998,6 +998,7 @@
 # define RTFsIsoMakerCreateVfsOutputFile                RT_MANGLER(RTFsIsoMakerCreateVfsOutputFile)
 # define RTFsIsoMakerCmd                                RT_MANGLER(RTFsIsoMakerCmd)
 # define RTFsIsoMakerCmdEx                              RT_MANGLER(RTFsIsoMakerCmdEx)
+# define RTFsNtfsVolOpen                                RT_MANGLER(RTFsNtfsVolOpen)
 # define RTGetOpt                                       RT_MANGLER(RTGetOpt)
 # define RTGetOptArgvFree                               RT_MANGLER(RTGetOptArgvFree)
 # define RTGetOptArgvFreeEx                             RT_MANGLER(RTGetOptArgvFreeEx)

@@ -161,6 +161,19 @@ RTDECL(int) RTFsExt2VolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t f
 RTDECL(int) RTFsIso9660VolOpen(RTVFSFILE hVfsFileIn, uint32_t fFlags, PRTVFS phVfs, PRTERRINFO pErrInfo);
 
 
+/**
+ * Opens an NTFS file system volume.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFileIn      The file or device backing the volume.
+ * @param   fMntFlags       RTVFSMNT_F_XXX.
+ * @param   fNtfsFlags      Reserved, MBZ.
+ * @param   phVfs           Where to return the virtual file system handle.
+ * @param   pErrInfo        Where to return additional error information.
+ */
+RTDECL(int) RTFsNtfsVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t fNtfsFlags, PRTVFS phVfs, PRTERRINFO pErrInfo);
+
+
 /** @} */
 
 RT_C_DECLS_END
