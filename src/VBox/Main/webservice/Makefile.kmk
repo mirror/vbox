@@ -328,6 +328,11 @@ ifdef VBOX_GSOAP_INSTALLED
 		-DMAC_OS_X_VERSION_MIN_REQUIRED=1040 -DMAC_OS_X_VERSION_MAX_ALLOWED=1040 \
 		$< -o $@
   endif
+
+  # Tweak for systems with too many CPUs compared to memory.
+  ifdef VBOX_WITH_SOAP_NOT_PARALLEL
+   .NOTPARALLEL: $$(vboxsoap_2_OBJS)
+  endif
  endif # !VBOX_ONLY_SDK
 
 
