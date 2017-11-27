@@ -32,7 +32,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_fs_fat  FAT VFS File System
+/** @defgroup grp_rt_fs_vfs  VFS File System Implementations
  * @ingroup grp_rt_fs
  * @{
  */
@@ -116,6 +116,21 @@ RTDECL(int) RTFsFatVolFormat(RTVFSFILE hVfsFile, uint64_t offVol, uint64_t cbVol
  * @param   fQuick              Whether to quick format the floppy or not.
  */
 RTDECL(int) RTFsFatVolFormat144(RTVFSFILE hVfsFile, bool fQuick);
+
+
+
+/**
+ * Opens an EXT2 file system volume.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFileIn      The file or device backing the volume.
+ * @param   fMntFlags       RTVFSMNT_F_XXX.
+ * @param   fExt2Flags      Reserved, MBZ.
+ * @param   phVfs           Where to return the virtual file system handle.
+ * @param   pErrInfo        Where to return additional error information.
+ */
+RTDECL(int) RTFsExt2VolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t fExtFlags, PRTVFS phVfs, PRTERRINFO pErrInfo);
+
 
 
 /** @name RTFSISO9660_F_XXX - ISO 9660 mount flags.

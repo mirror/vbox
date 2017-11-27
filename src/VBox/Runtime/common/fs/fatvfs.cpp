@@ -5605,7 +5605,7 @@ static int rtFsFatVolTryInit(PRTFSFATVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
      * Extract info from the BPB and validate the two special FAT entries.
      *
      * Check the DOS signature first.  The PC-DOS 1.0 boot floppy does not have
-     * a signature and we ASSUME this is the case for all flopies formated by it.
+     * a signature and we ASSUME this is the case for all floppies formated by it.
      */
     if (Buf.BootSector.uSignature != FATBOOTSECTOR_SIGNATURE)
     {

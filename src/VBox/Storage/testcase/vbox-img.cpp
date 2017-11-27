@@ -35,7 +35,6 @@
 #include <iprt/getopt.h>
 #include <iprt/assert.h>
 #include <iprt/dvm.h>
-#include <iprt/filesystem.h>
 #include <iprt/vfs.h>
 
 
@@ -1359,10 +1358,7 @@ typedef struct VBOXIMGVFS
 
 static int handleCompact(HandlerArg *a)
 {
-    int rc = VINF_SUCCESS;
     PVDISK pDisk = NULL;
-    const char *pszFilename = NULL;
-    bool fFilesystemAware = false;
     VDINTERFACEQUERYRANGEUSE VDIfQueryRangeUse;
     PVDINTERFACE pIfsCompact = NULL;
     RTDVM hDvm = NIL_RTDVM;
@@ -1371,9 +1367,15 @@ static int handleCompact(HandlerArg *a)
     /* Parse the command line. */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--filename",        'f', RTGETOPT_REQ_STRING },
-        { "--filesystemaware", 'a', RTGETOPT_REQ_NOTHING }
+        { "--filename",          'f', RTGETOPT_REQ_STRING },
+        { "--filesystemaware",   'a', RTGETOPT_REQ_NOTHING },
+        { "--file-system-aware", 'a', RTGETOPT_REQ_NOTHING },
     };
+
+    const char *pszFilename      = NULL;
+    bool        fFilesystemAware = false;
+    bool        fVerbose         = true;
+
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
@@ -1404,7 +1406,7 @@ static int handleCompact(HandlerArg *a)
     /* just try it */
     char *pszFormat = NULL;
     VDTYPE enmType = VDTYPE_INVALID;
-    rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat, &enmType);
+    int rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat, &enmType);
     if (RT_FAILURE(rc))
         return errorSyntax("Format autodetect failed: %Rrc\n", rc);
 
@@ -1418,6 +1420,10 @@ static int handleCompact(HandlerArg *a)
     if (RT_FAILURE(rc))
         return errorRuntime("Error while opening the image: %Rrf (%Rrc)\n", rc, rc);
 
+    /*
+     * If --file-system-aware, we first ask the disk volume manager (DVM) to
+     * find the volumes on the disk.
+     */
     if (   RT_SUCCESS(rc)
         && fFilesystemAware)
     {
@@ -1433,52 +1439,76 @@ static int handleCompact(HandlerArg *a)
                 if (   RT_SUCCESS(rc)
                     && RTDvmMapGetValidVolumes(hDvm) > 0)
                 {
-                    /* Get all volumes and set the block query status callback. */
+                    /*
+                     * Enumerate the volumes: Try finding a file system interpreter and
+                     * set the block query status callback to work with the FS.
+                     */
+                    uint32_t    iVol = 0;
                     RTDVMVOLUME hVol;
                     rc = RTDvmMapQueryFirstVolume(hDvm, &hVol);
                     AssertRC(rc);
 
                     while (RT_SUCCESS(rc))
                     {
+                        if (fVerbose)
+                        {
+                            char *pszVolName;
+                            rc = RTDvmVolumeQueryName(hVol, &pszVolName);
+                            if (RT_FAILURE(rc))
+                                pszVolName = NULL;
+                            RTMsgInfo("Vol%u: %Rhcb %u %s%s%s\n", iVol, RTDvmVolumeGetSize(hVol),
+                                      RTDvmVolumeTypeGetDescr(RTDvmVolumeGetType(hVol)),
+                                      pszVolName ? " " : "", pszVolName ? pszVolName : "");
+                            RTStrFree(pszVolName);
+                        }
+
                         RTVFSFILE hVfsFile;
                         rc = RTDvmVolumeCreateVfsFile(hVol, RTFILE_O_READWRITE, &hVfsFile);
                         if (RT_FAILURE(rc))
+                        {
+                            errorRuntime("RTDvmVolumeCreateVfsFile failed: %Rrc\n");
                             break;
+                        }
 
                         /* Try to detect the filesystem in this volume. */
+                        RTERRINFOSTATIC ErrInfo;
                         RTVFS hVfs;
-                        rc = RTFilesystemVfsFromFile(hVfsFile, &hVfs);
-                        if (rc == VERR_NOT_SUPPORTED)
-                        {
-                            /* Release the file handle and continue.*/
-                            RTVfsFileRelease(hVfsFile);
-                        }
-                        else if (RT_FAILURE(rc))
-                            break;
-                        else
+                        rc = RTVfsMountVol(hVfsFile, RTVFSMNT_F_READ_ONLY | RTVFSMNT_F_FOR_RANGE_IN_USE, &hVfs,
+                                           RTErrInfoInitStatic(&ErrInfo));
+                        RTVfsFileRelease(hVfsFile);
+                        if (RT_SUCCESS(rc))
                         {
                             PVBOXIMGVFS pVBoxImgVfs = (PVBOXIMGVFS)RTMemAllocZ(sizeof(VBOXIMGVFS));
                             if (!pVBoxImgVfs)
-                                rc = VERR_NO_MEMORY;
-                            else
                             {
-                                pVBoxImgVfs->hVfs = hVfs;
-                                pVBoxImgVfs->pNext = pVBoxImgVfsHead;
-                                pVBoxImgVfsHead = pVBoxImgVfs;
-                                RTDvmVolumeSetQueryBlockStatusCallback(hVol, vboximgQueryBlockStatus, hVfs);
+                                RTVfsRelease(hVfs);
+                                rc = VERR_NO_MEMORY;
+                                break;
                             }
+                            pVBoxImgVfs->hVfs = hVfs;
+                            pVBoxImgVfs->pNext = pVBoxImgVfsHead;
+                            pVBoxImgVfsHead = pVBoxImgVfs;
+                            RTDvmVolumeSetQueryBlockStatusCallback(hVol, vboximgQueryBlockStatus, hVfs);
                         }
+                        else if (rc != VERR_NOT_SUPPORTED)
+                        {
+                            if (RTErrInfoIsSet(&ErrInfo.Core))
+                                errorRuntime("RTVfsMountVol failed: %s\n", ErrInfo.Core.pszMsg);
+                            break;
+                        }
+                        else if (fVerbose && RTErrInfoIsSet(&ErrInfo.Core))
+                            RTMsgInfo("Unsupported file system: %s", ErrInfo.Core.pszMsg);
 
+                        /*
+                         * Advance.  (Releasing hVol here is fine since RTDvmVolumeCreateVfsFile
+                         * retained a reference and the hVfs a reference of it again.)
+                         */
                         RTDVMVOLUME hVolNext = NIL_RTDVMVOLUME;
                         if (RT_SUCCESS(rc))
                             rc = RTDvmMapQueryNextVolume(hDvm, hVol, &hVolNext);
-
-                        /*
-                         * Release the volume handle, the file handle has a reference
-                         * to keep it open.
-                         */
                         RTDvmVolumeRelease(hVol);
                         hVol = hVolNext;
+                        iVol++;
                     }
 
                     if (rc == VERR_DVM_MAP_NO_VOLUME)
@@ -1495,8 +1525,8 @@ static int handleCompact(HandlerArg *a)
                     RTPrintf("There are no partitions in the volume map\n");
                 else if (rc == VERR_NOT_FOUND)
                 {
-                    rc = VINF_SUCCESS;
                     RTPrintf("No known volume format on disk found\n");
+                    rc = VINF_SUCCESS;
                 }
                 else
                     errorRuntime("Error while opening the volume manager: %Rrf (%Rrc)\n", rc, rc);

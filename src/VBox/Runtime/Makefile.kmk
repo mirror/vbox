@@ -428,7 +428,6 @@ RuntimeR3_SOURCES       = \
 	common/err/errmsg.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/err/RTErrConvertToErrno.cpp \
-	common/fs/filesystem.cpp \
 	common/fs/filesystemext.cpp \
 	common/fs/fatvfs.cpp \
 	common/fs/isovfs.cpp \
@@ -620,6 +619,7 @@ RuntimeR3_SOURCES       = \
 	common/vfs/vfsiosmisc.cpp \
 	common/vfs/vfsmemory.cpp \
 	common/vfs/vfsmisc.cpp \
+	common/vfs/vfsmount.cpp \
 	common/vfs/vfsmsg.cpp \
 	common/vfs/vfsprogress.cpp \
 	common/vfs/vfsreadahead.cpp \

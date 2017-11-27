@@ -112,6 +112,31 @@ RTDECL(int)         RTVfsCreate(const char *pszName, uint32_t fFlags, PRTVFS phV
 RTDECL(uint32_t)    RTVfsRetain(RTVFS hVfs);
 RTDECL(uint32_t)    RTVfsRetainDebug(RTVFS hVfs, RT_SRC_POS_DECL);
 RTDECL(uint32_t)    RTVfsRelease(RTVFS hVfs);
+
+/** @name RTVFSMNT_F_XXX - Flags for RTVfsMount
+ * @{ */
+/** Mount read-only. */
+#define RTVFSMNT_F_READ_ONLY            RT_BIT_32(0)
+/** Purpose is . */
+#define RTVFSMNT_F_FOR_RANGE_IN_USE     RT_BIT_32(1)
+/** Valid mask. */
+#define RTVFSMNT_F_VALID_MASK           UINT32_C(0x00000003)
+/** @} */
+
+/**
+ * Does the file system detection and mounting.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_VFS_UNSUPPORTED_FORMAT if not recognized as a support file
+ *          system.
+ * @param   hVfsFileIn      The file handle of the volume.
+ * @param   fFlags          RTVFSMTN_F_XXX.
+ * @param   phVfs           Where to return the VFS handle on success.
+ * @param   pErrInfo        Where to return additional error information.
+ *                          Optional.
+ */
+RTDECL(int)         RTVfsMountVol(RTVFSFILE hVfsFileIn, uint32_t fFlags, PRTVFS phVfs, PRTERRINFO pErrInfo);
+
 RTDECL(int)         RTVfsAttach(RTVFS hVfs, const char *pszMountPoint, uint32_t fFlags, RTVFS hVfsAttach);
 RTDECL(int)         RTVfsDetach(RTVFS hVfs, const char *pszMountPoint, RTVFS hVfsToDetach, PRTVFS *phVfsDetached);
 RTDECL(uint32_t)    RTVfsGetAttachmentCount(RTVFS hVfs);
@@ -143,6 +168,7 @@ RTDECL(int) RTVfsQueryPathInfo(RTVFS hVfs, const char *pszPath, PRTFSOBJINFO pOb
  * @param   pfUsed      Where to store the result.
  */
 RTDECL(int) RTVfsIsRangeInUse(RTVFS hVfs, uint64_t off, size_t cb, bool *pfUsed);
+
 
 /** @defgroup grp_vfs_obj           VFS Base Object API
  * @{
