@@ -70,7 +70,7 @@ static int tstRTFilesystem(RTTEST hTest, RTVFSFILE hVfsFile)
     {
         bool fUsed = false;
 
-        rc = RTVfsIsRangeInUse(hVfs, off, 1024, &fUsed);
+        rc = RTVfsQueryRangeState(hVfs, off, 1024, &fUsed);
         if (RT_FAILURE(rc))
         {
             RTTestIFailed("RTVfsIsRangeInUse -> %Rrc", rc);

@@ -167,7 +167,7 @@ RTDECL(int) RTVfsQueryPathInfo(RTVFS hVfs, const char *pszPath, PRTFSOBJINFO pOb
  * @param   cb          Number of bytes to check.
  * @param   pfUsed      Where to store the result.
  */
-RTDECL(int) RTVfsIsRangeInUse(RTVFS hVfs, uint64_t off, size_t cb, bool *pfUsed);
+RTDECL(int) RTVfsQueryRangeState(RTVFS hVfs, uint64_t off, size_t cb, bool *pfUsed);
 
 
 /** @defgroup grp_vfs_obj           VFS Base Object API

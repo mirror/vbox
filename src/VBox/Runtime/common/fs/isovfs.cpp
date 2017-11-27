@@ -3992,9 +3992,9 @@ static DECLCALLBACK(int) rtFsIsoVol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
 
 
 /**
- * @interface_method_impl{RTVFSOPS,pfnIsRangeInUse}
+ * @interface_method_impl{RTVFSOPS,pfnQueryRangeState}
  */
-static DECLCALLBACK(int) rtFsIsoVol_IsRangeInUse(void *pvThis, RTFOFF off, size_t cb, bool *pfUsed)
+static DECLCALLBACK(int) rtFsIsoVol_QueryRangeState(void *pvThis, uint64_t off, size_t cb, bool *pfUsed)
 {
     RT_NOREF(pvThis, off, cb, pfUsed);
     return VERR_NOT_IMPLEMENTED;
@@ -4014,7 +4014,7 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsIsoVolOps =
     RTVFSOPS_VERSION,
     0 /* fFeatures */,
     rtFsIsoVol_OpenRoot,
-    rtFsIsoVol_IsRangeInUse,
+    rtFsIsoVol_QueryRangeState,
     RTVFSOPS_VERSION
 };
 

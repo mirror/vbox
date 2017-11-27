@@ -2114,7 +2114,7 @@ RTDECL(int) RTVfsOpenRoot(RTVFS hVfs, PRTVFSDIR phDir)
     AssertPtrReturn(phDir, VERR_INVALID_POINTER);
     *phDir = NIL_RTVFSDIR;
 
-    if (!pThis->pOps->pfnIsRangeInUse)
+    if (!pThis->pOps->pfnOpenRoot)
         return VERR_NOT_SUPPORTED;
     RTVfsLockAcquireRead(pThis->Base.hLock);
     int rc = pThis->pOps->pfnOpenRoot(pThis->Base.pvThis, phDir);
@@ -2223,16 +2223,16 @@ RTDECL(int) RTVfsQueryPathInfo(RTVFS hVfs, const char *pszPath, PRTFSOBJINFO pOb
 
 
 
-RTDECL(int) RTVfsIsRangeInUse(RTVFS hVfs, uint64_t off, size_t cb, bool *pfUsed)
+RTDECL(int) RTVfsQueryRangeState(RTVFS hVfs, uint64_t off, size_t cb, bool *pfUsed)
 {
     RTVFSINTERNAL *pThis = hVfs;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFS_MAGIC, VERR_INVALID_HANDLE);
 
-    if (!pThis->pOps->pfnIsRangeInUse)
+    if (!pThis->pOps->pfnQueryRangeState)
         return VERR_NOT_SUPPORTED;
     RTVfsLockAcquireRead(pThis->Base.hLock);
-    int rc = pThis->pOps->pfnIsRangeInUse(pThis->Base.pvThis, off, cb, pfUsed);
+    int rc = pThis->pOps->pfnQueryRangeState(pThis->Base.pvThis, off, cb, pfUsed);
     RTVfsLockReleaseRead(pThis->Base.hLock);
 
     return rc;

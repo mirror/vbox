@@ -1336,7 +1336,7 @@ static DECLCALLBACK(int) vboximgQueryBlockStatus(void *pvUser, uint64_t off,
                                                  uint64_t cb, bool *pfAllocated)
 {
     RTVFS hVfs = (RTVFS)pvUser;
-    return RTVfsIsRangeInUse(hVfs, off, cb, pfAllocated);
+    return RTVfsQueryRangeState(hVfs, off, cb, pfAllocated);
 }
 
 

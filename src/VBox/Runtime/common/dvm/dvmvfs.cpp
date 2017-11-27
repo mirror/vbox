@@ -1070,9 +1070,9 @@ static DECLCALLBACK(int) rtDvmVfsVol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
 
 
 /**
- * @interface_method_impl{RTVFSOPS,pfnIsRangeInUse}
+ * @interface_method_impl{RTVFSOPS,pfnQueryRangeState}
  */
-static DECLCALLBACK(int) rtDvmVfsVol_IsRangeInUse(void *pvThis, RTFOFF off, size_t cb, bool *pfUsed)
+static DECLCALLBACK(int) rtDvmVfsVol_QueryRangeState(void *pvThis, uint64_t off, size_t cb, bool *pfUsed)
 {
     RT_NOREF(pvThis, off, cb, pfUsed);
     return VERR_NOT_IMPLEMENTED;
@@ -1092,7 +1092,7 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtDvmVfsVolOps =
     RTVFSOPS_VERSION,
     0 /* fFeatures */,
     rtDvmVfsVol_OpenRoot,
-    rtDvmVfsVol_IsRangeInUse,
+    rtDvmVfsVol_QueryRangeState,
     RTVFSOPS_VERSION
 };
 

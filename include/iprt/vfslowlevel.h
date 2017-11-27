@@ -222,8 +222,10 @@ typedef struct RTVFSOPS
     DECLCALLBACKMEMBER(int, pfnOpenRoot)(void *pvThis, PRTVFSDIR phVfsDir);
 
     /**
-     * Optional entry point to check whether a given range in the underlying medium
-     * is in use by the virtual filesystem.
+     * Query the status of the given storage range (optional).
+     *
+     * This can be used by the image compaction utilites to evict non-zero blocks
+     * that aren't currently being used by the file system.
      *
      * @returns IPRT status code.
      * @param   pvThis      The implementation specific data.
@@ -231,7 +233,7 @@ typedef struct RTVFSOPS
      * @param   cb          Number of bytes to check.
      * @param   pfUsed      Where to store whether the given range is in use.
      */
-    DECLCALLBACKMEMBER(int, pfnIsRangeInUse)(void *pvThis, RTFOFF off, size_t cb, bool *pfUsed);
+    DECLCALLBACKMEMBER(int, pfnQueryRangeState)(void *pvThis, uint64_t off, size_t cb, bool *pfUsed);
 
     /** @todo There will be more methods here to optimize opening and
      *        querying. */
