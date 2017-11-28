@@ -129,7 +129,7 @@ RTDECL(int) RTFsFatVolFormat144(RTVFSFILE hVfsFile, bool fQuick);
  * @param   phVfs           Where to return the virtual file system handle.
  * @param   pErrInfo        Where to return additional error information.
  */
-RTDECL(int) RTFsExt2VolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t fExtFlags, PRTVFS phVfs, PRTERRINFO pErrInfo);
+RTDECL(int) RTFsExt2VolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t fExt2Flags, PRTVFS phVfs, PRTERRINFO pErrInfo);
 
 
 
