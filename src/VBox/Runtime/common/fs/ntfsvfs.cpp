@@ -414,7 +414,7 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec)
                         int64_t iVnc = pHdr->NonRes.iVcnFirst;
                         Log2(("NTFS:     Mapping Pairs: %.*Rhxsd\n", cbMaxPairs, pbPairs));
                         if (!iVnc && !*pbPairs)
-                            Log2(("NTFS:         [0]: Empty\n", cbMaxPairs, pbPairs));
+                            Log2(("NTFS:         [0]: Empty\n"));
                         else
                         {
                             if (iVnc != 0)
