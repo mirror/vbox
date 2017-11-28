@@ -368,11 +368,11 @@ uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format,
     case SVGA3D_ARGB_S10E5:   /* 16-bit floating-point ARGB */
         *pcxBlock = 1;
         *pcyBlock = 1;
-        return 2;
+        return 8;
     case SVGA3D_ARGB_S23E8:   /* 32-bit floating-point ARGB */
         *pcxBlock = 1;
         *pcyBlock = 1;
-        return 4;
+        return 16;
 
     case SVGA3D_A2R10G10B10:
         *pcxBlock = 1;
