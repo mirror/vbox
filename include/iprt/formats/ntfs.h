@@ -289,13 +289,13 @@ typedef struct NTFSATTRIBHDR
             /** 0x38: Compressed size if compressed, otherwise absent. */
             int64_t         cbCompressed;
         } NonRes;
-    } RT_UNION_NM(u);
+    } u;
 } NTFSATTRIBHDR;
 AssertCompileSize(NTFSATTRIBHDR, 0x40);
-AssertCompileMemberOffset(NTFSATTRIBHDR, RT_UNION_NM(u.) Res, 0x10);
-AssertCompileMemberOffset(NTFSATTRIBHDR, RT_UNION_NM(u.) Res.bReserved, 0x17);
-AssertCompileMemberOffset(NTFSATTRIBHDR, RT_UNION_NM(u.) NonRes, 0x10);
-AssertCompileMemberOffset(NTFSATTRIBHDR, RT_UNION_NM(u.) NonRes.cbCompressed, 0x38);
+AssertCompileMemberOffset(NTFSATTRIBHDR, u.Res, 0x10);
+AssertCompileMemberOffset(NTFSATTRIBHDR, u.Res.bReserved, 0x17);
+AssertCompileMemberOffset(NTFSATTRIBHDR, u.NonRes, 0x10);
+AssertCompileMemberOffset(NTFSATTRIBHDR, u.NonRes.cbCompressed, 0x38);
 /** Pointer to a NTFS attribute header. */
 typedef NTFSATTRIBHDR *PNTFSATTRIBHDR;
 /** Pointer to a const NTFS attribute header. */

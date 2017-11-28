@@ -269,10 +269,10 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec)
                 size_t const cbMaxAttrib = cbRec - offRec;
                 if (!pHdr->fNonResident)
                 {
-                    uint16_t const offValue = RT_LE2H_U16(pHdr->Res.offValue);
-                    uint32_t const cbValue  = RT_LE2H_U32(pHdr->Res.cbValue);
+                    uint16_t const offValue = RT_LE2H_U16(pHdr->u.Res.offValue);
+                    uint32_t const cbValue  = RT_LE2H_U32(pHdr->u.Res.cbValue);
                     Log2(("NTFS:     Value: %#x LB %#x, fFlags=%#x bReserved=%#x\n",
-                          offValue, cbValue, pHdr->Res.fFlags, pHdr->Res.bReserved));
+                          offValue, cbValue, pHdr->u.Res.fFlags, pHdr->u.Res.bReserved));
                     if (   offValue < cbMaxAttrib
                         && cbValue  < cbMaxAttrib
                         && offValue + cbValue <= cbMaxAttrib)
@@ -383,27 +383,27 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec)
                 else if (RT_MAX(cbAttrib, NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED) <= cbMaxAttrib)
                 {
                     Log2(("NTFS:     VNC range          %#RX64 .. %#RX64 (%#RX64 clusters)\n",
-                          RT_LE2H_U64(pHdr->NonRes.iVcnFirst), RT_LE2H_U64(pHdr->NonRes.iVcnLast),
-                          RT_LE2H_U64(pHdr->NonRes.iVcnLast) - RT_LE2H_U64(pHdr->NonRes.iVcnFirst) + 1));
+                          RT_LE2H_U64(pHdr->u.NonRes.iVcnFirst), RT_LE2H_U64(pHdr->u.NonRes.iVcnLast),
+                          RT_LE2H_U64(pHdr->u.NonRes.iVcnLast) - RT_LE2H_U64(pHdr->u.NonRes.iVcnFirst) + 1));
                     Log2(("NTFS:     cbAllocated        %#RX64 (%Rhcb)\n",
-                          RT_LE2H_U64(pHdr->NonRes.cbAllocated), RT_LE2H_U64(pHdr->NonRes.cbAllocated)));
+                          RT_LE2H_U64(pHdr->u.NonRes.cbAllocated), RT_LE2H_U64(pHdr->u.NonRes.cbAllocated)));
                     Log2(("NTFS:     cbInitialized      %#RX64 (%Rhcb)\n",
-                          RT_LE2H_U64(pHdr->NonRes.cbInitialized), RT_LE2H_U64(pHdr->NonRes.cbInitialized)));
-                    uint16_t const offMappingPairs = RT_LE2H_U16(pHdr->NonRes.offMappingPairs);
+                          RT_LE2H_U64(pHdr->u.NonRes.cbInitialized), RT_LE2H_U64(pHdr->u.NonRes.cbInitialized)));
+                    uint16_t const offMappingPairs = RT_LE2H_U16(pHdr->u.NonRes.offMappingPairs);
                     Log2(("NTFS:     offMappingPairs    %#RX16\n", offMappingPairs));
-                    if (   pHdr->NonRes.abReserved[0] || pHdr->NonRes.abReserved[1]
-                        || pHdr->NonRes.abReserved[2] || pHdr->NonRes.abReserved[3] || pHdr->NonRes.abReserved[4] )
-                        Log2(("NTFS:     abReserved         %.7Rhxs\n", pHdr->NonRes.abReserved));
-                    if (pHdr->NonRes.uCompressionUnit != 0)
-                        Log2(("NTFS:     Compression unit   2^%u clusters\n", pHdr->NonRes.uCompressionUnit));
+                    if (   pHdr->u.NonRes.abReserved[0] || pHdr->u.NonRes.abReserved[1]
+                        || pHdr->u.NonRes.abReserved[2] || pHdr->u.NonRes.abReserved[3] || pHdr->u.NonRes.abReserved[4] )
+                        Log2(("NTFS:     abReserved         %.7Rhxs\n", pHdr->u.NonRes.abReserved));
+                    if (pHdr->u.NonRes.uCompressionUnit != 0)
+                        Log2(("NTFS:     Compression unit   2^%u clusters\n", pHdr->u.NonRes.uCompressionUnit));
 
                     if (   NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED <= cbMaxAttrib
                         && NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED <= cbAttrib
                         && (   offMappingPairs >= NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED
                             || offMappingPairs <  NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED))
                         Log2(("NTFS:     cbCompressed       %#RX64 (%Rhcb)\n",
-                              RT_LE2H_U64(pHdr->NonRes.cbCompressed), RT_LE2H_U64(pHdr->NonRes.cbCompressed)));
-                    else if (pHdr->NonRes.uCompressionUnit != 0 && pHdr->NonRes.uCompressionUnit != 64)
+                              RT_LE2H_U64(pHdr->u.NonRes.cbCompressed), RT_LE2H_U64(pHdr->u.NonRes.cbCompressed)));
+                    else if (pHdr->u.NonRes.uCompressionUnit != 0 && pHdr->u.NonRes.uCompressionUnit != 64)
                         Log2(("NTFS:     !Error! Compressed attrib fields are out of bound!\n"));
 
                     if (   offMappingPairs < cbAttrib
@@ -411,7 +411,7 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec)
                     {
                         uint8_t const *pbPairs    = &pbRec[offRec + offMappingPairs];
                         uint32_t const cbMaxPairs = cbAttrib - offMappingPairs;
-                        int64_t iVnc = pHdr->NonRes.iVcnFirst;
+                        int64_t iVnc = pHdr->u.NonRes.iVcnFirst;
                         Log2(("NTFS:     Mapping Pairs: %.*Rhxsd\n", cbMaxPairs, pbPairs));
                         if (!iVnc && !*pbPairs)
                             Log2(("NTFS:         [0]: Empty\n"));
