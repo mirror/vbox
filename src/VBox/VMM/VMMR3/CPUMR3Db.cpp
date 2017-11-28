@@ -247,7 +247,7 @@ static CPUMDBENTRY const * const g_apCpumDbEntries[] =
 #ifdef VBOX_CPUDB_Intel_Atom_330_1_60GHz
     &g_Entry_Intel_Atom_330_1_60GHz,
 #endif
-#ifdef Intel_Pentium_M_processor_2_00GHz
+#ifdef VBOX_CPUDB_Intel_Pentium_M_processor_2_00GHz
     &g_Entry_Intel_Pentium_M_processor_2_00GHz,
 #endif
 #ifdef VBOX_CPUDB_Intel_Xeon_X5482_3_20GHz
