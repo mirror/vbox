@@ -34,10 +34,12 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/fsvfs.h>
 #include <iprt/mem.h>
 #include <iprt/log.h>
 #include <iprt/string.h>
+#include <iprt/vfslowlevel.h>
 
 #include <iprt/formats/fat.h>
 #include <iprt/formats/iso9660.h>
@@ -421,7 +423,7 @@ static int rtVfsMountInner(RTVFSFILE hVfsFileIn, uint32_t fFlags, RTVFSMOUNTBUF 
         return RTErrInfoSet(pErrInfo, rc, "Error reading boot sector");
 
     if (rtVfsMountIsNtfs(&pBuf->Bootsector))
-        return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "NTFS not yet supported");
+        return RTFsNtfsVolOpen(hVfsFileIn, fFlags, 0 /*fNtfsFlags*/, phVfs, pErrInfo);
 
     if (rtVfsMountIsHpfs(&pBuf->Bootsector, hVfsFileIn, pBuf2))
         return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "HPFS not yet supported");
@@ -460,4 +462,113 @@ RTDECL(int) RTVfsMountVol(RTVFSFILE hVfsFileIn, uint32_t fFlags, PRTVFS phVfs, P
 
     return rc;
 }
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnValidate}
+ */
+static DECLCALLBACK(int) rtVfsChainMountVol_Validate(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
+                                                     PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(pProviderReg);
+
+    /*
+     * Basic checks.
+     */
+    if (pElement->enmTypeIn != RTVFSOBJTYPE_FILE)
+        return pElement->enmTypeIn == RTVFSOBJTYPE_INVALID ? VERR_VFS_CHAIN_CANNOT_BE_FIRST_ELEMENT : VERR_VFS_CHAIN_TAKES_FILE;
+    if (   pElement->enmType != RTVFSOBJTYPE_VFS
+        && pElement->enmType != RTVFSOBJTYPE_DIR)
+        return VERR_VFS_CHAIN_ONLY_DIR_OR_VFS;
+    if (pElement->cArgs > 1)
+        return VERR_VFS_CHAIN_AT_MOST_ONE_ARG;
+
+    /*
+     * Parse the flag if present, save in pElement->uProvider.
+     */
+    bool fReadOnly = (pSpec->fOpenFile & RTFILE_O_ACCESS_MASK) == RTFILE_O_READ;
+    if (pElement->cArgs > 0)
+    {
+        const char *psz = pElement->paArgs[0].psz;
+        if (*psz)
+        {
+            if (!strcmp(psz, "ro"))
+                fReadOnly = true;
+            else if (!strcmp(psz, "rw"))
+                fReadOnly = false;
+            else
+            {
+                *poffError = pElement->paArgs[0].offSpec;
+                return RTErrInfoSet(pErrInfo, VERR_VFS_CHAIN_INVALID_ARGUMENT, "Expected 'ro' or 'rw' as argument");
+            }
+        }
+    }
+
+    pElement->uProvider = fReadOnly ? RTVFSMNT_F_READ_ONLY : 0;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnInstantiate}
+ */
+static DECLCALLBACK(int) rtVfsChainMountVol_Instantiate(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
+                                                        PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
+                                                        PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(pProviderReg, pSpec, poffError);
+
+    int         rc;
+    RTVFSFILE   hVfsFileIn = RTVfsObjToFile(hPrevVfsObj);
+    if (hVfsFileIn != NIL_RTVFSFILE)
+    {
+        RTVFS hVfs;
+        rc = RTVfsMountVol(hVfsFileIn, (uint32_t)pElement->uProvider, &hVfs, pErrInfo);
+        RTVfsFileRelease(hVfsFileIn);
+        if (RT_SUCCESS(rc))
+        {
+            *phVfsObj = RTVfsObjFromVfs(hVfs);
+            RTVfsRelease(hVfs);
+            if (*phVfsObj != NIL_RTVFSOBJ)
+                return VINF_SUCCESS;
+            rc = VERR_VFS_CHAIN_CAST_FAILED;
+        }
+    }
+    else
+        rc = VERR_VFS_CHAIN_CAST_FAILED;
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnCanReuseElement}
+ */
+static DECLCALLBACK(bool) rtVfsChainMountVol_CanReuseElement(PCRTVFSCHAINELEMENTREG pProviderReg,
+                                                             PCRTVFSCHAINSPEC pSpec, PCRTVFSCHAINELEMSPEC pElement,
+                                                             PCRTVFSCHAINSPEC pReuseSpec, PCRTVFSCHAINELEMSPEC pReuseElement)
+{
+    RT_NOREF(pProviderReg, pSpec, pReuseSpec);
+    if (   pElement->paArgs[0].uProvider == pReuseElement->paArgs[0].uProvider
+        || !pReuseElement->paArgs[0].uProvider)
+        return true;
+    return false;
+}
+
+
+/** VFS chain element 'file'. */
+static RTVFSCHAINELEMENTREG g_rtVfsChainMountVolReg =
+{
+    /* uVersion = */            RTVFSCHAINELEMENTREG_VERSION,
+    /* fReserved = */           0,
+    /* pszName = */             "mount",
+    /* ListEntry = */           { NULL, NULL },
+    /* pszHelp = */             "Open a file system, requires a file object on the left side.\n"
+                                "First argument is an optional 'ro' (read-only) or 'rw' (read-write) flag.\n",
+    /* pfnValidate = */         rtVfsChainMountVol_Validate,
+    /* pfnInstantiate = */      rtVfsChainMountVol_Instantiate,
+    /* pfnCanReuseElement = */  rtVfsChainMountVol_CanReuseElement,
+    /* uEndMarker = */          RTVFSCHAINELEMENTREG_VERSION
+};
+
+RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER(&g_rtVfsChainMountVolReg, rtVfsChainMountVolReg);
 

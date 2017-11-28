@@ -237,7 +237,7 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsExt2VolOps =
 RTDECL(int) RTFsExt2VolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t fExtFlags, PRTVFS phVfs, PRTERRINFO pErrInfo)
 {
     AssertPtrReturn(phVfs, VERR_INVALID_POINTER);
-    AssertReturn(!(fMntFlags & RTVFSMNT_F_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(!(fMntFlags & ~RTVFSMNT_F_VALID_MASK), VERR_INVALID_FLAGS);
     AssertReturn(!fExtFlags, VERR_INVALID_FLAGS);
 
     uint32_t cRefs = RTVfsFileRetain(hVfsFileIn);

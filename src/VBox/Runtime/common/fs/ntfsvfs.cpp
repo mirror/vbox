@@ -32,6 +32,7 @@
 #include <iprt/fsvfs.h>
 
 #include <iprt/asm.h>
+#include <iprt/avl.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/log.h>
@@ -45,6 +46,37 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/** Pointer to the instance data for a NTFS volume. */
+typedef struct RTFSNTFSVOL *PRTFSNTFSVOL;
+/** Pointer to a NTFS MFT record. */
+typedef struct RTFSNTFSMFTREC *PRTFSNTFSMFTREC;
+
+/**
+ * NTFS MFT record.
+ */
+typedef struct RTFSNTFSMFTREC
+{
+    /** MFT record number as key. */
+    AVLU64NODECORE      Core;
+    /** Pointer to the next MFT record if chained. */
+    PRTFSNTFSMFTREC     pNext;
+    /** Pointer back to the volume. */
+    PRTFSNTFSVOL        pVol;
+    /** The disk offset of this MFT entry. */
+    uint64_t            offDisk;
+    union
+    {
+        /** Generic pointer. */
+        uint8_t        *pbRec;
+        /** Pointer to the file record. */
+        PNTFSRECFILE    pFileRec;
+    } RT_UNION_NM(u);
+
+    /** Reference counter. */
+    uint32_t volatile   cRefs;
+
+    // ....
+} RTFSNTFSMFTREC;
 
 /**
  * Instance data for an NTFS volume.
@@ -90,9 +122,380 @@ typedef struct RTFSNTFSVOL
     /** The volume serial number. */
     uint64_t        uSerialNo;
 
+    /** Pointer to the MFT record for the MFT. */
+    PRTFSNTFSMFTREC pMft;
+
+    /** Root of the MFT record tree (RTFSNTFSMFTREC). */
+    AVLU64TREE      MftRoot;
 } RTFSNTFSVOL;
-/** Pointer to the instance data for a NTFS volume. */
-typedef RTFSNTFSVOL *PRTFSNTFSVOL;
+
+
+static PRTFSNTFSMFTREC rtFsNtfsMftRec_New(PRTFSNTFSVOL pVol, uint64_t idMft)
+{
+    PRTFSNTFSMFTREC pRec = (PRTFSNTFSMFTREC)RTMemAllocZ(sizeof(*pRec));
+    if (pRec)
+    {
+        pRec->pbRec = (uint8_t *)RTMemAllocZ(pVol->cbMftRecord);
+        if (pRec->pbRec)
+        {
+            pRec->Core.Key = idMft;
+            pRec->pNext    = NULL;
+            pRec->offDisk  = UINT64_MAX / 2;
+            pRec->pVol     = pVol;
+            pRec->cRefs    = 1;
+            return pRec;
+        }
+    }
+    return NULL;
+}
+
+
+static uint32_t rtFsNtfsMftRec_Destroy(PRTFSNTFSMFTREC pThis)
+{
+    RTMemFree(pThis->pbRec);
+    pThis->pbRec = NULL;
+
+    PAVLU64NODECORE pRemoved = RTAvlU64Remove(&pThis->pVol->MftRoot, pThis->Core.Key);
+    Assert(pRemoved == &pThis->Core); NOREF(pRemoved);
+
+    pThis->pVol = NULL;
+    RTMemFree(pThis);
+
+    return 0;
+}
+
+
+static uint32_t rtFsNtfsMftRec_Retain(PRTFSNTFSMFTREC pThis)
+{
+    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    Assert(cRefs < 64);
+    return cRefs;
+}
+
+
+static uint32_t rtFsNtfsMftRec_Release(PRTFSNTFSMFTREC pThis)
+{
+    uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
+    Assert(cRefs < 64);
+    if (cRefs != 0)
+        return cRefs;
+    return rtFsNtfsMftRec_Destroy(pThis);
+}
+
+
+#ifdef LOG_ENABLED
+/**
+ * Logs the MFT record
+ *
+ * @param   pRec        The MFT record to log.
+ */
+static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec)
+{
+    if (LogIs2Enabled())
+    {
+        PCNTFSRECFILE  pFileRec = pRec->pFileRec;
+        Log2(("NTFS: MFT #%#RX64 at %#RX64\n", pRec->Core.Key, pRec->offDisk));
+        if (pFileRec->Hdr.uMagic == NTFSREC_MAGIC_FILE)
+        {
+            size_t const          cbRec = pRec->pVol->cbMftRecord;
+            uint8_t const * const pbRec = pRec->pbRec;
+
+            Log2(("NTFS: FILE record: \n"));
+            Log2(("NTFS:   UpdateSeqArray  %#x L %#x\n", RT_LE2H_U16(pFileRec->Hdr.offUpdateSeqArray), RT_LE2H_U16(pFileRec->Hdr.cUpdateSeqEntries) ));
+            Log2(("NTFS:   uLsn            %#RX64\n", RT_LE2H_U64(pFileRec->uLsn)));
+            Log2(("NTFS:   uRecReuseSeqNo  %#RX16\n", RT_LE2H_U16(pFileRec->uRecReuseSeqNo)));
+            Log2(("NTFS:   cLinks          %#RX16\n", RT_LE2H_U16(pFileRec->cLinks)));
+            Log2(("NTFS:   offFirstAttrib  %#RX16\n", RT_LE2H_U16(pFileRec->offFirstAttrib)));
+            Log2(("NTFS:   fFlags          %#RX16%s%s\n", RT_LE2H_U16(pFileRec->fFlags),
+                  RT_LE2H_U16(pFileRec->fFlags) & NTFSRECFILE_F_IN_USE    ? " in-use"    : "",
+                  RT_LE2H_U16(pFileRec->fFlags) & NTFSRECFILE_F_DIRECTORY ? " directory" : ""));
+            Log2(("NTFS:   cbRecUsed       %#RX32\n", RT_LE2H_U32(pFileRec->cbRecUsed)));
+            Log2(("NTFS:   BaseMftRec      %#RX64, sqn %#x\n",
+                  NTFSMFTREF_GET_IDX(&pFileRec->BaseMftRec), NTFSMFTREF_GET_SEQ(&pFileRec->BaseMftRec)));
+            Log2(("NTFS:   idNextAttrib    %#RX16\n", RT_LE2H_U16(pFileRec->idNextAttrib)));
+            if (   RT_LE2H_U16(pFileRec->offFirstAttrib)         >= sizeof(*pFileRec)
+                && (   RT_LE2H_U16(pFileRec->Hdr.offUpdateSeqArray) >= sizeof(*pFileRec)
+                    || pFileRec->Hdr.offUpdateSeqArray == 0))
+            {
+                Log2(("NTFS:   uPaddingOrUsa   %#RX16\n", pFileRec->uPaddingOrUsa));
+                Log2(("NTFS:   idxMftSelf      %#RX32\n", RT_LE2H_U32(pFileRec->idxMftSelf)));
+            }
+
+            uint32_t offRec = pFileRec->offFirstAttrib;
+            size_t   cbRecUsed = RT_MIN(cbRec, pFileRec->cbRecUsed);
+            while (offRec + NTFSATTRIBHDR_SIZE_RESIDENT <= cbRecUsed)
+            {
+                PCNTFSATTRIBHDR pHdr     = (PCNTFSATTRIBHDR)&pbRec[offRec];
+                uint32_t const  cbAttrib = RT_LE2H_U32(pHdr->cbAttrib);
+                Log2(("NTFS:   @%#05x: Attrib record: %#x LB %#x, instance #%#x, fFlags=%#RX16, %s\n", offRec,
+                      RT_LE2H_U32(pHdr->uAttrType), cbAttrib, RT_LE2H_U16(pHdr->idAttrib), RT_LE2H_U16(pHdr->fFlags),
+                      pHdr->fNonResident == 0 ? "resident" : pHdr->fNonResident == 1 ? "non-resident" : "bad-resident-flag"));
+                if (pHdr->offName && pHdr->cwcName)
+                {
+                    if (offRec + RT_LE2H_U16(pHdr->offName) + pHdr->cwcName * sizeof(RTUTF16) <= cbRec)
+                        Log2(("NTFS:     Name %.*ls\n", pHdr->cwcName,&pbRec[offRec + RT_LE2H_U16(pHdr->offName)]));
+                    else
+                        Log2(("NTFS:     Name <!out of bounds!> %#x L %#x\n", RT_LE2H_U16(pHdr->offName), pHdr->cwcName));
+                }
+                switch (pHdr->uAttrType)
+                {
+                    case NTFS_AT_UNUSED:                    Log2(("NTFS:     Type: UNUSED\n")); break;
+                    case NTFS_AT_STANDARD_INFORMATION:      Log2(("NTFS:     Type: STANDARD_INFORMATION\n")); break;
+                    case NTFS_AT_ATTRIBUTE_LIST:            Log2(("NTFS:     Type: ATTRIBUTE_LIST\n")); break;
+                    case NTFS_AT_FILENAME:                  Log2(("NTFS:     Type: FILENAME\n")); break;
+                    case NTFS_AT_OBJECT_ID:                 Log2(("NTFS:     Type: OBJECT_ID\n")); break;
+                    case NTFS_AT_SECURITY_DESCRIPTOR:       Log2(("NTFS:     Type: SECURITY_DESCRIPTOR\n")); break;
+                    case NTFS_AT_VOLUME_NAME:               Log2(("NTFS:     Type: VOLUME_NAME\n")); break;
+                    case NTFS_AT_VOLUME_INFORMATION:        Log2(("NTFS:     Type: VOLUME_INFORMATION\n")); break;
+                    case NTFS_AT_DATA:                      Log2(("NTFS:     Type: DATA\n")); break;
+                    case NTFS_AT_INDEX_ROOT:                Log2(("NTFS:     Type: INDEX_ROOT\n")); break;
+                    case NTFS_AT_INDEX_ALLOCATION:          Log2(("NTFS:     Type: INDEX_ALLOCATION\n")); break;
+                    case NTFS_AT_BITMAP:                    Log2(("NTFS:     Type: BITMAP\n")); break;
+                    case NTFS_AT_REPARSE_POINT:             Log2(("NTFS:     Type: REPARSE_POINT\n")); break;
+                    case NTFS_AT_EA_INFORMATION:            Log2(("NTFS:     Type: EA_INFORMATION\n")); break;
+                    case NTFS_AT_EA:                        Log2(("NTFS:     Type: EA\n")); break;
+                    case NTFS_AT_PROPERTY_SET:              Log2(("NTFS:     Type: PROPERTY_SET\n")); break;
+                    case NTFS_AT_LOGGED_UTILITY_STREAM:     Log2(("NTFS:     Type: LOGGED_UTILITY_STREAM\n")); break;
+                    default:
+                        if (RT_LE2H_U32(pHdr->uAttrType) >= RT_LE2H_U32_C(NTFS_AT_FIRST_USER_DEFINED))
+                            Log2(("NTFS:     Type: unknown user defined - %#x!\n", RT_LE2H_U32(pHdr->uAttrType)));
+                        else
+                            Log2(("NTFS:     Type: unknown - %#x!\n", RT_LE2H_U32(pHdr->uAttrType)));
+                        break;
+                }
+
+                size_t const cbMaxAttrib = cbRec - offRec;
+                if (!pHdr->fNonResident)
+                {
+                    uint16_t const offValue = RT_LE2H_U16(pHdr->Res.offValue);
+                    uint32_t const cbValue  = RT_LE2H_U32(pHdr->Res.cbValue);
+                    Log2(("NTFS:     Value: %#x LB %#x, fFlags=%#x bReserved=%#x\n",
+                          offValue, cbValue, pHdr->Res.fFlags, pHdr->Res.bReserved));
+                    if (   offValue < cbMaxAttrib
+                        && cbValue  < cbMaxAttrib
+                        && offValue + cbValue <= cbMaxAttrib)
+                    {
+                        uint8_t const *pbValue = &pbRec[offRec + offValue];
+                        RTTIMESPEC     Spec;
+                        char           sz[80];
+                        switch (pHdr->uAttrType)
+                        {
+                            case NTFS_AT_STANDARD_INFORMATION:
+                            {
+                                PCNTFSATSTDINFO pInfo = (PCNTFSATSTDINFO)pbValue;
+                                if (cbValue >= NTFSATSTDINFO_SIZE_NTFS_V12)
+                                {
+                                    Log2(("NTFS:     iCreationTime      %#RX64 %s\n", RT_LE2H_U64(pInfo->iCreationTime),
+                                          RTTimeSpecToString(RTTimeSpecSetNtTime(&Spec, RT_LE2H_U64(pInfo->iCreationTime)), sz, sizeof(sz)) ));
+                                    Log2(("NTFS:     iLastDataModTime   %#RX64 %s\n", RT_LE2H_U64(pInfo->iLastDataModTime),
+                                          RTTimeSpecToString(RTTimeSpecSetNtTime(&Spec, RT_LE2H_U64(pInfo->iLastDataModTime)), sz, sizeof(sz)) ));
+                                    Log2(("NTFS:     iLastMftModTime    %#RX64 %s\n", RT_LE2H_U64(pInfo->iLastMftModTime),
+                                          RTTimeSpecToString(RTTimeSpecSetNtTime(&Spec, RT_LE2H_U64(pInfo->iLastMftModTime)), sz, sizeof(sz)) ));
+                                    Log2(("NTFS:     iLastAccessTime    %#RX64 %s\n", RT_LE2H_U64(pInfo->iLastAccessTime),
+                                          RTTimeSpecToString(RTTimeSpecSetNtTime(&Spec, RT_LE2H_U64(pInfo->iLastAccessTime)), sz, sizeof(sz)) ));
+                                    Log2(("NTFS:     fFileAttribs       %#RX32\n", RT_LE2H_U32(pInfo->fFileAttribs) ));
+                                    Log2(("NTFS:     cMaxFileVersions   %#RX32\n", RT_LE2H_U32(pInfo->cMaxFileVersions) ));
+                                    Log2(("NTFS:     uFileVersion       %#RX32\n", RT_LE2H_U32(pInfo->uFileVersion) ));
+                                }
+                                else
+                                    Log2(("NTFS:     Error! cbValue=%#x is smaller than expected (%#x) for NTFSATSTDINFO!\n",
+                                          cbValue, NTFSATSTDINFO_SIZE_NTFS_V12));
+                                if (cbValue >= sizeof(*pInfo))
+                                {
+                                    Log2(("NTFS:     idClass            %#RX32\n", RT_LE2H_U32(pInfo->idClass) ));
+                                    Log2(("NTFS:     idOwner            %#RX32\n", RT_LE2H_U32(pInfo->idOwner) ));
+                                    Log2(("NTFS:     idSecurity         %#RX32\n", RT_LE2H_U32(pInfo->idSecurity) ));
+                                    Log2(("NTFS:     cbQuotaChared      %#RX64\n", RT_LE2H_U64(pInfo->cbQuotaChared) ));
+                                    Log2(("NTFS:     idxUpdateSequence  %#RX64\n", RT_LE2H_U64(pInfo->idxUpdateSequence) ));
+                                }
+                                if (cbValue > sizeof(*pInfo))
+                                    Log2(("NTFS:     Undefined data: %.*Rhxs\n", cbValue - sizeof(*pInfo), &pbValue[sizeof(*pInfo)]));
+                                break;
+                            }
+
+                            //case NTFS_AT_ATTRIBUTE_LIST:
+
+                            case NTFS_AT_FILENAME:
+                            {
+                                PCNTFSATFILENAME pInfo = (PCNTFSATFILENAME)pbValue;
+                                if (cbValue >= RT_OFFSETOF(NTFSATFILENAME, wszFilename))
+                                {
+                                    Log2(("NTFS:     ParentDirMftRec    %#RX64, sqn %#x\n",
+                                          NTFSMFTREF_GET_IDX(&pInfo->ParentDirMftRec), NTFSMFTREF_GET_SEQ(&pInfo->ParentDirMftRec) ));
+                                    Log2(("NTFS:     iCreationTime      %#RX64 %s\n", RT_LE2H_U64(pInfo->iCreationTime),
+                                          RTTimeSpecToString(RTTimeSpecSetNtTime(&Spec, RT_LE2H_U64(pInfo->iCreationTime)), sz, sizeof(sz)) ));
+                                    Log2(("NTFS:     iLastDataModTime   %#RX64 %s\n", RT_LE2H_U64(pInfo->iLastDataModTime),
+                                          RTTimeSpecToString(RTTimeSpecSetNtTime(&Spec, RT_LE2H_U64(pInfo->iLastDataModTime)), sz, sizeof(sz)) ));
+                                    Log2(("NTFS:     iLastMftModTime    %#RX64 %s\n", RT_LE2H_U64(pInfo->iLastMftModTime),
+                                          RTTimeSpecToString(RTTimeSpecSetNtTime(&Spec, RT_LE2H_U64(pInfo->iLastMftModTime)), sz, sizeof(sz)) ));
+                                    Log2(("NTFS:     iLastAccessTime    %#RX64 %s\n", RT_LE2H_U64(pInfo->iLastAccessTime),
+                                          RTTimeSpecToString(RTTimeSpecSetNtTime(&Spec, RT_LE2H_U64(pInfo->iLastAccessTime)), sz, sizeof(sz)) ));
+                                    Log2(("NTFS:     cbAllocated        %#RX64 (%Rhcb)\n",
+                                          RT_LE2H_U64(pInfo->cbAllocated), RT_LE2H_U64(pInfo->cbAllocated)));
+                                    Log2(("NTFS:     cbData             %#RX64 (%Rhcb)\n",
+                                          RT_LE2H_U64(pInfo->cbData), RT_LE2H_U64(pInfo->cbData)));
+                                    Log2(("NTFS:     fFileAttribs       %#RX32\n", RT_LE2H_U32(pInfo->fFileAttribs) ));
+                                    if (RT_LE2H_U32(pInfo->fFileAttribs) & NTFS_FA_REPARSE_POINT)
+                                        Log2(("NTFS:     uReparseTag        %#RX32\n", RT_LE2H_U32(pInfo->uReparseTag) ));
+                                    else
+                                        Log2(("NTFS:     cbPackedEas        %#RX16\n", RT_LE2H_U16(pInfo->cbPackedEas) ));
+                                    Log2(("NTFS:     cwcFilename        %#x\n", pInfo->cwcFilename));
+                                    Log2(("NTFS:     fFilenameType      %#x\n", pInfo->fFilenameType));
+                                    if (cbValue >= RT_UOFFSETOF(NTFSATFILENAME, wszFilename))
+                                        Log2(("NTFS:     wszFilename       '%.*ls'\n", pInfo->cwcFilename, pInfo->wszFilename ));
+                                    else
+                                        Log2(("NTFS:     Error! Truncated filename!!\n"));
+                                }
+                                else
+                                    Log2(("NTFS:     Error! cbValue=%#x is smaller than expected (%#x) for NTFSATFILENAME!\n",
+                                          cbValue, RT_OFFSETOF(NTFSATFILENAME, wszFilename) ));
+                                break;
+                            }
+
+                            //case NTFS_AT_OBJECT_ID:
+                            //case NTFS_AT_SECURITY_DESCRIPTOR:
+                            //case NTFS_AT_VOLUME_NAME:
+                            //case NTFS_AT_VOLUME_INFORMATION:
+                            //case NTFS_AT_DATA:
+                            //case NTFS_AT_INDEX_ROOT:
+                            //case NTFS_AT_INDEX_ALLOCATION:
+                            //case NTFS_AT_BITMAP:
+                            //case NTFS_AT_REPARSE_POINT:
+                            //case NTFS_AT_EA_INFORMATION:
+                            //case NTFS_AT_EA:
+                            //case NTFS_AT_PROPERTY_SET:
+                            //case NTFS_AT_LOGGED_UTILITY_STREAM:
+
+                            default:
+                                if (cbValue <= 24)
+                                    Log2(("NTFS:     %.*Rhxs\n", cbValue, pbValue));
+                                else
+                                    Log2(("%.*Rhxd\n", cbValue, pbValue));
+                                break;
+                        }
+
+                    }
+                    else
+                        Log2(("NTFS:     !Value is out of bounds!\n"));
+                }
+                else if (RT_MAX(cbAttrib, NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED) <= cbMaxAttrib)
+                {
+                    Log2(("NTFS:     VNC range          %#RX64 .. %#RX64 (%#RX64 clusters)\n",
+                          RT_LE2H_U64(pHdr->NonRes.iVcnFirst), RT_LE2H_U64(pHdr->NonRes.iVcnLast),
+                          RT_LE2H_U64(pHdr->NonRes.iVcnLast) - RT_LE2H_U64(pHdr->NonRes.iVcnFirst) + 1));
+                    Log2(("NTFS:     cbAllocated        %#RX64 (%Rhcb)\n",
+                          RT_LE2H_U64(pHdr->NonRes.cbAllocated), RT_LE2H_U64(pHdr->NonRes.cbAllocated)));
+                    Log2(("NTFS:     cbInitialized      %#RX64 (%Rhcb)\n",
+                          RT_LE2H_U64(pHdr->NonRes.cbInitialized), RT_LE2H_U64(pHdr->NonRes.cbInitialized)));
+                    uint16_t const offMappingPairs = RT_LE2H_U16(pHdr->NonRes.offMappingPairs);
+                    Log2(("NTFS:     offMappingPairs    %#RX16\n", offMappingPairs));
+                    if (   pHdr->NonRes.abReserved[0] || pHdr->NonRes.abReserved[1]
+                        || pHdr->NonRes.abReserved[2] || pHdr->NonRes.abReserved[3] || pHdr->NonRes.abReserved[4] )
+                        Log2(("NTFS:     abReserved         %.7Rhxs\n", pHdr->NonRes.abReserved));
+                    if (pHdr->NonRes.uCompressionUnit != 0)
+                        Log2(("NTFS:     Compression unit   2^%u clusters\n", pHdr->NonRes.uCompressionUnit));
+
+                    if (   NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED <= cbMaxAttrib
+                        && NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED <= cbAttrib
+                        && (   offMappingPairs >= NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED
+                            || offMappingPairs <  NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED))
+                        Log2(("NTFS:     cbCompressed       %#RX64 (%Rhcb)\n",
+                              RT_LE2H_U64(pHdr->NonRes.cbCompressed), RT_LE2H_U64(pHdr->NonRes.cbCompressed)));
+                    else if (pHdr->NonRes.uCompressionUnit != 0 && pHdr->NonRes.uCompressionUnit != 64)
+                        Log2(("NTFS:     !Error! Compressed attrib fields are out of bound!\n"));
+
+                    if (   offMappingPairs < cbAttrib
+                        && offMappingPairs >= NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED)
+                    {
+                        uint8_t const *pbPairs    = &pbRec[offRec + offMappingPairs];
+                        uint32_t const cbMaxPairs = cbAttrib - offMappingPairs;
+                        int64_t iVnc = pHdr->NonRes.iVcnFirst;
+                        Log2(("NTFS:     Mapping Pairs: %.*Rhxsd\n", cbMaxPairs, pbPairs));
+                        if (!iVnc && !*pbPairs)
+                            Log2(("NTFS:         [0]: Empty\n", cbMaxPairs, pbPairs));
+                        else
+                        {
+                            if (iVnc != 0)
+                                Log2(("NTFS:         [0]: VCN=%#012RX64 L %#012RX64 - not mapped\n", 0, iVnc));
+                            int64_t  iLnc     = 0;
+                            uint32_t iPair    = 0;
+                            uint32_t offPairs = 0;
+                            while (offPairs < cbMaxPairs)
+                            {
+                                /* First byte: 4-bit length of each of the pair values */
+                                uint8_t const bLengths = pbPairs[offPairs];
+                                if (!bLengths)
+                                    break;
+                                uint8_t const cbRun    = (bLengths & 0x0f) + (bLengths >> 4);
+                                if (offPairs + cbRun > cbMaxPairs)
+                                {
+                                    Log2(("NTFS:         [%d]: run overrun! cbRun=%#x bLengths=%#x offPairs=%#x cbMaxPairs=%#x\n",
+                                          iPair, cbRun, bLengths, offPairs, cbMaxPairs));
+                                    break;
+                                }
+
+                                /* Value 1: Number of (virtual) clusters in this run. */
+                                int64_t cClustersInRun;
+                                uint8_t cbNum = (bLengths & 0xf);
+                                if (cbNum)
+                                {
+                                    int8_t const *pbNum = (int8_t const *)&pbPairs[offPairs + cbNum]; /* last byte */
+                                    cClustersInRun = *pbNum--;
+                                    while (cbNum-- > 1)
+                                        cClustersInRun = (cClustersInRun << 8) + *pbNum--;
+                                }
+                                else
+                                    cClustersInRun = -1;
+
+                                /* Value 2: The logical cluster delta to get to the first cluster in the run. */
+                                cbNum = bLengths >> 4;
+                                if (cbNum)
+                                {
+                                    int8_t const *pbNum  = (int8_t const *)&pbPairs[offPairs + cbNum + (bLengths & 0xf)]; /* last byte */
+                                    int64_t cLcnDelta = *pbNum--;
+                                    while (cbNum-- > 1)
+                                        cLcnDelta = (cLcnDelta << 8) + *pbNum--;
+                                    iLnc += cLcnDelta;
+                                    Log2(("NTFS:         [%d]: VNC=%#012RX64 L %#012RX64 => LNC=%#012RX64\n",
+                                          iPair, iVnc, cClustersInRun, iLnc));
+                                }
+                                else
+                                    Log2(("NTFS:         [%d]: VNC=%#012RX64 L %#012RX64 => HOLE\n",
+                                          iPair, iVnc, cClustersInRun));
+
+                                /* Advance. */
+                                iVnc     += cClustersInRun;
+                                offPairs += 1 + cbRun;
+                                iPair++;
+                            }
+                        }
+                    }
+                    else if (   cbAttrib != NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED
+                             && cbAttrib != NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED)
+                    {
+                        Log2(("NTFS:     Warning! Odd non-resident attribute size: %#x!\n", cbAttrib));
+                        if (cbAttrib >= NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED)
+                            Log2(("NTFS:     @%05x: %.*Rhxs!\n", offRec + NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED,
+                                  cbAttrib - NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED,
+                                  &pbRec[offRec + NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED]));
+                    }
+                }
+                else
+                    Log2(("NTFS:     !Attrib header is out of bound!\n"));
+
+                /* Advance. */
+                offRec += RT_MAX(cbAttrib, NTFSATTRIBHDR_SIZE_RESIDENT);
+            }
+
+            /* Anything left? */
+            if (offRec < cbRecUsed)
+                Log2(("NTFS:   @%#05x: Tail: %.*Rhxs\n", offRec, cbRecUsed - offRec, &pbRec[offRec]));
+        }
+        else
+            Log2(("NTFS:   Unknown record type: %.4Rhxs\n", pFileRec));
+    }
+}
+#endif /* LOG_ENABLED */
 
 
 /**
@@ -164,6 +567,20 @@ static int rtFsNtfsVolLoadMft(PRTFSNTFSVOL pThis, void *pvBuf, size_t cbBuf, PRT
     NOREF(pThis); NOREF(pvBuf); NOREF(cbBuf); NOREF(pErrInfo);
     /** @todo read MFT, find bitmap allocation, implement
      *        rtFsNtfsVol_QueryRangeState. */
+
+    PRTFSNTFSMFTREC pRec = rtFsNtfsMftRec_New(pThis, 0);
+    AssertReturn(pRec, VERR_NO_MEMORY);
+    pThis->pMft = pRec;
+
+    int rc = RTVfsFileReadAt(pThis->hVfsBacking, pThis->uLcnMft << pThis->cClusterShift, pRec->pbRec, pThis->cbMftRecord, NULL);
+    if (RT_FAILURE(rc))
+        return RTERRINFO_LOG_SET(pErrInfo, rc, "Error reading MFT record #0");
+#ifdef LOG_ENABLED
+    rtfsNtfsMftRec_Log(pRec);
+#endif
+
+    //Log(("MFT#0:\n%.*Rhxd\n", pThis->cbMftRecord, pRec->pbRec));
+
     return VINF_SUCCESS;
 }
 
@@ -188,7 +605,7 @@ static int rtFsNtfsVolLoadAndParseBootsector(PRTFSNTFSVOL pThis, void *pvBuf, si
      *       currently don't implement falling back on these on corruption/read errors.
      */
     PFATBOOTSECTOR pBootSector = (PFATBOOTSECTOR)pvBuf;
-    int rc = RTVfsFileRead(pThis->hVfsBacking, pBootSector, sizeof(*pBootSector), NULL);
+    int rc = RTVfsFileReadAt(pThis->hVfsBacking, 0, pBootSector, sizeof(*pBootSector), NULL);
     if (RT_FAILURE(rc))
         return RTERRINFO_LOG_SET(pErrInfo, rc, "Error reading boot sector");
 
@@ -286,6 +703,10 @@ static int rtFsNtfsVolLoadAndParseBootsector(PRTFSNTFSVOL pThis, void *pvBuf, si
     else
         pThis->cbMftRecord = UINT32_C(1) << -pBootSector->Bpb.Ntfs.cClustersPerMftRecord;
     Log2(("NTFS BPB: cbMftRecord=%#x\n", pThis->cbMftRecord));
+    if (   pThis->cbMftRecord > _32K
+        || pThis->cbMftRecord < 256)
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                   "Unsupported NTFS MFT record size: %#x", pThis->cbMftRecord);
 
     /* NTFS BPB: Index block size */
     if (pBootSector->Bpb.Ntfs.cClusterPerIndexBlock >= 0)
@@ -318,7 +739,7 @@ static int rtFsNtfsVolLoadAndParseBootsector(PRTFSNTFSVOL pThis, void *pvBuf, si
 RTDECL(int) RTFsNtfsVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t fNtfsFlags, PRTVFS phVfs, PRTERRINFO pErrInfo)
 {
     AssertPtrReturn(phVfs, VERR_INVALID_POINTER);
-    AssertReturn(!(fMntFlags & RTVFSMNT_F_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(!(fMntFlags & ~RTVFSMNT_F_VALID_MASK), VERR_INVALID_FLAGS);
     AssertReturn(!fNtfsFlags, VERR_INVALID_FLAGS);
 
     uint32_t cRefs = RTVfsFileRetain(hVfsFileIn);
@@ -474,5 +895,4 @@ static RTVFSCHAINELEMENTREG g_rtVfsChainNtfsVolReg =
 };
 
 RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER(&g_rtVfsChainNtfsVolReg, rtVfsChainNtfsVolReg);
-
 
