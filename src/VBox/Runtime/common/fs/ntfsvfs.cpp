@@ -150,6 +150,7 @@ static PRTFSNTFSMFTREC rtFsNtfsMftRec_New(PRTFSNTFSVOL pVol, uint64_t idMft)
 }
 
 
+#if 0 /* currently unused */
 static uint32_t rtFsNtfsMftRec_Destroy(PRTFSNTFSMFTREC pThis)
 {
     RTMemFree(pThis->pbRec);
@@ -181,6 +182,7 @@ static uint32_t rtFsNtfsMftRec_Release(PRTFSNTFSMFTREC pThis)
         return cRefs;
     return rtFsNtfsMftRec_Destroy(pThis);
 }
+#endif
 
 
 #ifdef LOG_ENABLED
