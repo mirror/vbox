@@ -2343,7 +2343,7 @@ static void vbpsUpdateWindowsService(VBPSREGSTATE *pState, const WCHAR *pwszVBox
         {
             QUERY_SERVICE_CONFIGW   Config;
             SERVICE_STATUS          Status;
-            SERVICE_DESCRIPTION     Desc;
+            SERVICE_DESCRIPTIONW     Desc;
             uint8_t                 abPadding[sizeof(QUERY_SERVICE_CONFIGW) + 5 * _1K];
         } uBuf;
         SC_HANDLE   hService;
