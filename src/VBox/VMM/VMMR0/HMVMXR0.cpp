@@ -9528,7 +9528,6 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugStateRevert(PVMCPU pVCpu, PVMXRUNDBGSTAT
         int rc2 = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pDbgState->fProcCtlsInitial);
         AssertRCReturn(rc2, rc2);
         pVCpu->hm.s.vmx.u32ProcCtls = pDbgState->fProcCtlsInitial;
-        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0 | HM_CHANGED_GUEST_DEBUG);
     }
 
     /* We're currently the only ones messing with this one, so just restore the
@@ -9544,18 +9543,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugStateRevert(PVMCPU pVCpu, PVMXRUNDBGSTAT
     /* If we've modified the exception bitmap, we restore it and trigger
        reloading and partial recalculation the next time around. */
     if (pDbgState->fModifiedXcptBitmap)
-    {
         pVCpu->hm.s.vmx.u32XcptBitmap = pDbgState->bmXcptInitial;
-        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS | HM_CHANGED_GUEST_CR0);
-    }
-
-    /* We assume hmR0VmxLoadSharedCR0 will recalculate and load the CR0 mask. */
-    if (pDbgState->fClearCr0Mask)
-        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
-
-    /* We assume hmR0VmxLoadGuestCR3AndCR4 will recalculate and load the CR4 mask. */
-    if (pDbgState->fClearCr4Mask)
-        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR4);
 
     return rcStrict;
 }
