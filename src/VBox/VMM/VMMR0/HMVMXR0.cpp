@@ -9221,7 +9221,6 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     hmR0VmxCheckHostEferMsr(pVCpu);                                   /* Verify that VMRUN/VMLAUNCH didn't modify host EFER. */
 #endif
     ASMSetFlags(pVmxTransient->fEFlags);                              /* Enable interrupts. */
-    VMMRZCallRing3Enable(pVCpu);                                      /* It is now safe to do longjmps to ring-3!!! */
 
     /* Save the basic VM-exit reason. Refer Intel spec. 24.9.1 "Basic VM-exit Information". */
     uint32_t uExitReason;
@@ -9231,54 +9230,66 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     pVmxTransient->uExitReason    = (uint16_t)VMX_EXIT_REASON_BASIC(uExitReason);
     pVmxTransient->fVMEntryFailed = VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uEntryIntInfo);
 
-    /* If the VMLAUNCH/VMRESUME failed, we can bail out early. This does -not- cover VMX_EXIT_ERR_*. */
-    if (RT_UNLIKELY(rcVMRun != VINF_SUCCESS))
+    if (rcVMRun == VINF_SUCCESS)
     {
-        Log4(("VM-entry failure: pVCpu=%p idCpu=%RU32 rcVMRun=%Rrc fVMEntryFailed=%RTbool\n", pVCpu, pVCpu->idCpu, rcVMRun,
-              pVmxTransient->fVMEntryFailed));
-        return;
-    }
+        /*
+         * Update the VM-exit history array here even if the VM-entry failed due to:
+         *   - Invalid guest state.
+         *   - MSR loading.
+         *   - Machine-check event.
+         *
+         * In any of the above cases we will still have a "valid" VM-exit reason
+         * despite @a fVMEntryFailed being false.
+         *
+         * See Intel spec. 26.7 "VM-Entry failures during or after loading guest state".
+         */
+        HMCPU_EXIT_HISTORY_ADD(pVCpu, pVmxTransient->uExitReason);
 
-    /*
-     * Update the VM-exit history array here even if the VM-entry failed due to:
-     *   - Invalid guest state.
-     *   - MSR loading.
-     *   - Machine-check event.
-     *
-     * In any of the above cases we will still have a "valid" VM-exit reason
-     * despite @a fVMEntryFailed being false.
-     *
-     * See Intel spec. 26.7 "VM-Entry failures during or after loading guest state".
-     */
-    HMCPU_EXIT_HISTORY_ADD(pVCpu, pVmxTransient->uExitReason);
+        if (!pVmxTransient->fVMEntryFailed)
+        {
+            /** @todo We can optimize this by only syncing with our force-flags when
+             *        really needed and keeping the VMCS state as it is for most
+             *        VM-exits. */
+            /* Update the guest interruptibility-state from the VMCS. */
+            hmR0VmxSaveGuestIntrState(pVCpu, pMixedCtx);
 
-    if (RT_LIKELY(!pVmxTransient->fVMEntryFailed))
-    {
-        /** @todo We can optimize this by only syncing with our force-flags when
-         *        really needed and keeping the VMCS state as it is for most
-         *        VM-exits. */
-        /* Update the guest interruptibility-state from the VMCS. */
-        hmR0VmxSaveGuestIntrState(pVCpu, pMixedCtx);
+            /*
+             * Allow longjmps to ring-3 -after- saving the guest-interruptibility state
+             * as it's not part of hmR0VmxSaveGuestState() and thus would trigger an assertion
+             * on the longjmp path to ring-3 while saving the (rest of) the guest state,
+             * see @bugref{6208#c63}.
+             */
+            VMMRZCallRing3Enable(pVCpu);
 
 #if defined(HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE) || defined(HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE)
-        rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
-        AssertRC(rc);
+            rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+            AssertRC(rc);
 #elif defined(HMVMX_ALWAYS_SAVE_GUEST_RFLAGS)
-        rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
-        AssertRC(rc);
+            rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
+            AssertRC(rc);
 #endif
 
-        /*
-         * Sync the TPR shadow with our APIC state.
-         */
-        if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
-            && pVmxTransient->u8GuestTpr != pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR])
-        {
-            rc = APICSetTpr(pVCpu, pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR]);
-            AssertRC(rc);
-            HMCPU_CF_SET(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
+            /*
+             * Sync the TPR shadow with our APIC state.
+             */
+            if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
+                && pVmxTransient->u8GuestTpr != pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR])
+            {
+                rc = APICSetTpr(pVCpu, pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR]);
+                AssertRC(rc);
+                HMCPU_CF_SET(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
+            }
+
+            return;
         }
     }
+    else
+    {
+        Log4(("VM-entry failure: pVCpu=%p idCpu=%RU32 rcVMRun=%Rrc fVMEntryFailed=%RTbool\n", pVCpu, pVCpu->idCpu, rcVMRun,
+          pVmxTransient->fVMEntryFailed));
+    }
+
+    VMMRZCallRing3Enable(pVCpu);
 }
 
 
