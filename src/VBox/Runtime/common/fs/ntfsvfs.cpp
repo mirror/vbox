@@ -338,9 +338,9 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec)
                                           RT_LE2H_U64(pInfo->cbData), RT_LE2H_U64(pInfo->cbData)));
                                     Log2(("NTFS:     fFileAttribs       %#RX32\n", RT_LE2H_U32(pInfo->fFileAttribs) ));
                                     if (RT_LE2H_U32(pInfo->fFileAttribs) & NTFS_FA_REPARSE_POINT)
-                                        Log2(("NTFS:     uReparseTag        %#RX32\n", RT_LE2H_U32(pInfo->uReparseTag) ));
+                                        Log2(("NTFS:     uReparseTag        %#RX32\n", RT_LE2H_U32(pInfo->u.uReparseTag) ));
                                     else
-                                        Log2(("NTFS:     cbPackedEas        %#RX16\n", RT_LE2H_U16(pInfo->cbPackedEas) ));
+                                        Log2(("NTFS:     cbPackedEas        %#RX16\n", RT_LE2H_U16(pInfo->u.cbPackedEas) ));
                                     Log2(("NTFS:     cwcFilename        %#x\n", pInfo->cwcFilename));
                                     Log2(("NTFS:     fFilenameType      %#x\n", pInfo->fFilenameType));
                                     if (cbValue >= RT_UOFFSETOF(NTFSATFILENAME, wszFilename))
