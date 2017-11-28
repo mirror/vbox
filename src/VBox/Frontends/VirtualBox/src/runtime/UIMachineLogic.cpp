@@ -782,6 +782,11 @@ void UIMachineLogic::sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong,
     /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         pMachineWindow->showInNecessaryMode();
+
+#ifdef VBOX_WS_MAC
+    /* Update dock: */
+    updateDock();
+#endif
 }
 
 void UIMachineLogic::sltHostScreenCountChange()
@@ -832,6 +837,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_fIsDockIconEnabled(true)
     , m_pDockIconPreview(0)
     , m_pDockPreviewSelectMonitorGroup(0)
+    , m_pDockSettingsMenuSeparator(0)
     , m_DockIconPreviewMonitor(0)
 #endif /* VBOX_WS_MAC */
     , m_pHostLedsState(NULL)
@@ -1252,20 +1258,29 @@ void UIMachineLogic::prepareDock()
     /* Add dock icon disable overlay action to the dock settings menu: */
     pDockSettingsMenu->addAction(pDockIconDisableOverlay);
 
-    /* Monitor selection if there are more than one monitor */
-    int cGuestScreens = machine().GetMonitorCount();
-    if (cGuestScreens > 1)
+    /* If we have more than one visible window: */
+    const QList<int> visibleWindowsList = uisession()->listOfVisibleWindows();
+    const int cVisibleGuestScreens = visibleWindowsList.size();
+    if (cVisibleGuestScreens > 1)
     {
-        pDockSettingsMenu->addSeparator();
-        m_DockIconPreviewMonitor = qMin(gEDataManager->realtimeDockIconUpdateMonitor(vboxGlobal().managedVMUuid()),
-                                        cGuestScreens - 1);
+        /* Add separator: */
+        m_pDockSettingsMenuSeparator = pDockSettingsMenu->addSeparator();
+
+        int extraDataUpdateMonitor = gEDataManager->realtimeDockIconUpdateMonitor(vboxGlobal().managedVMUuid());
+        if (visibleWindowsList.contains(extraDataUpdateMonitor))
+            m_DockIconPreviewMonitor = extraDataUpdateMonitor;
+        else
+            m_DockIconPreviewMonitor = visibleWindowsList.at(cVisibleGuestScreens - 1);
+
         m_pDockPreviewSelectMonitorGroup = new QActionGroup(this);
-        for (int i = 0; i < cGuestScreens; ++i)
+
+        /* And dock preview actions: */
+        for (int i = 0; i < cVisibleGuestScreens; ++i)
         {
             QAction *pAction = new QAction(m_pDockPreviewSelectMonitorGroup);
             pAction->setCheckable(true);
-            pAction->setData(i);
-            if (m_DockIconPreviewMonitor == i)
+            pAction->setData(visibleWindowsList.at(i));
+            if (m_DockIconPreviewMonitor == visibleWindowsList.at(i))
                 pAction->setChecked(true);
         }
         pDockSettingsMenu->addActions(m_pDockPreviewSelectMonitorGroup->actions());
@@ -1296,6 +1311,63 @@ void UIMachineLogic::prepareDock()
     }
     setDockIconPreviewEnabled(fEnabled);
     updateDockOverlay();
+}
+
+void UIMachineLogic::updateDock()
+{
+    QMenu *pDockSettingsMenu = actionPool()->action(UIActionIndexRT_M_Dock_M_DockSettings)->menu();
+    /* Clean the previous preview actions: */
+    if (m_pDockPreviewSelectMonitorGroup)
+    {
+        QList<QAction*> previewActions = m_pDockPreviewSelectMonitorGroup->actions();
+        foreach (QAction *pAction, previewActions)
+        {
+            pDockSettingsMenu->removeAction(pAction);
+            m_pDockPreviewSelectMonitorGroup->removeAction(pAction);
+            delete pAction;
+        }
+    }
+    const QList<int> visibleWindowsList = uisession()->listOfVisibleWindows();
+    const int cVisibleGuestScreens = visibleWindowsList.size();
+    if (cVisibleGuestScreens > 1)
+    {
+        if (!m_pDockPreviewSelectMonitorGroup)
+            m_pDockPreviewSelectMonitorGroup = new QActionGroup(this);
+        /* Only if currently selected monitor for icon preview is not enabled: */
+        if (!visibleWindowsList.contains(m_DockIconPreviewMonitor))
+        {
+            int iExtraDataUpdateMonitor = gEDataManager->realtimeDockIconUpdateMonitor(vboxGlobal().managedVMUuid());
+            if (visibleWindowsList.contains(iExtraDataUpdateMonitor))
+                m_DockIconPreviewMonitor = iExtraDataUpdateMonitor;
+            else
+                m_DockIconPreviewMonitor = visibleWindowsList.at(cVisibleGuestScreens - 1);
+        }
+        if (!m_pDockSettingsMenuSeparator)
+            m_pDockSettingsMenuSeparator = pDockSettingsMenu->addSeparator();
+        for (int i = 0; i < cVisibleGuestScreens; ++i)
+        {
+            QAction *pAction = new QAction(m_pDockPreviewSelectMonitorGroup);
+            pAction->setCheckable(true);
+            pAction->setData(visibleWindowsList.at(i));
+            pAction->setText(QApplication::translate("UIActionPool", "Preview Monitor %1").arg(pAction->data().toInt() + 1));
+            if (m_DockIconPreviewMonitor == visibleWindowsList.at(i))
+                pAction->setChecked(true);
+        }
+        pDockSettingsMenu->addActions(m_pDockPreviewSelectMonitorGroup->actions());
+        connect(m_pDockPreviewSelectMonitorGroup, SIGNAL(triggered(QAction*)),
+                this, SLOT(sltDockPreviewMonitorChanged(QAction*)));
+    }
+    else
+    {
+        m_DockIconPreviewMonitor = 0;
+        /* Remove the seperator as well: */
+        if (m_pDockSettingsMenuSeparator)
+        {
+            pDockSettingsMenu->removeAction(m_pDockSettingsMenuSeparator);
+            delete m_pDockSettingsMenuSeparator;
+            m_pDockSettingsMenuSeparator = 0;
+        }
+    }
 }
 #endif /* VBOX_WS_MAC */
 

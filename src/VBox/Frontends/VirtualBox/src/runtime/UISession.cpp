@@ -2075,6 +2075,15 @@ int UISession::countOfVisibleWindows()
     return cCountOfVisibleWindows;
 }
 
+QList<int> UISession::listOfVisibleWindows() const
+{
+    QList<int> visibleWindows;
+    for (int i = 0; i < m_monitorVisibilityVector.size(); ++i)
+        if (m_monitorVisibilityVector.at(i))
+            visibleWindows.push_back(i);
+    return visibleWindows;
+}
+
 void UISession::loadVMSettings()
 {
     /* Load CPU hardware virtualization extension: */

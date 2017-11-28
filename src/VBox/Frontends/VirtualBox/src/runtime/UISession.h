@@ -274,6 +274,9 @@ public:
     /** Returns VM's effective paravirtualization provider. */
     KParavirtProvider paraVirtProvider() const { return m_paraVirtProvider; }
 
+    /** Returns the list of visible guest windows. */
+    QList<int> listOfVisibleWindows() const;
+
 signals:
 
     /** Notifies about frame-buffer resize. */
