@@ -6263,6 +6263,7 @@ static int hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                     *     sxi "xcpt_ss"
                     *     sxi "xcpt_np"
                     */
+        /** @todo r=ramshankar: Should be fixed after r119291. */
         Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR0));
 #endif
         uint32_t uVal    = 0;
