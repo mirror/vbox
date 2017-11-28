@@ -75,7 +75,7 @@ typedef union NTFSMFTREF
         uint64_t        idxMft : 48;
         /** MFT record reuse sequence number (for catching dangling references). */
         uint64_t        uRecReuseSeqNo : 16;
-    } RT_UNION_NM(s);
+    } s;
 } NTFSMFTREF;
 AssertCompileSize(NTFSMFTREF, 8);
 /** Pointer to a NTFS MFT record reference. */
@@ -94,14 +94,14 @@ typedef NTFSMFTREF const *PCNTFSMFTREF;
 /** @name NTFSMFTREF_SET
  * Sets the values of a MFT reference. */
 #ifdef RT_LITTLE_ENDIAN
-# define NTFSMFTREF_GET_IDX(a_pMftRef)              ((a_pMftRef)->RT_UNION_NM(s.)idxMft)
-# define NTFSMFTREF_GET_SEQ(a_pMftRef)              ((a_pMftRef)->RT_UNION_NM(s.)uRecReuseSeqNo)
-# define NTFSMFTREF_SET_SEQ(a_pMftRef, a_uValue)    do { (a_pMftRef)->RT_UNION_NM(s.)uRecReuseSeqNo = (a_uValue); } while (0)
-# define NTFSMFTREF_SET_IDX(a_pMftRef, a_uValue)    do { (a_pMftRef)->RT_UNION_NM(s.)idxMft         = (a_uValue); } while (0)
+# define NTFSMFTREF_GET_IDX(a_pMftRef)              ((a_pMftRef)->s.idxMft)
+# define NTFSMFTREF_GET_SEQ(a_pMftRef)              ((a_pMftRef)->s.uRecReuseSeqNo)
+# define NTFSMFTREF_SET_SEQ(a_pMftRef, a_uValue)    do { (a_pMftRef)->s.uRecReuseSeqNo = (a_uValue); } while (0)
+# define NTFSMFTREF_SET_IDX(a_pMftRef, a_uValue)    do { (a_pMftRef)->s.idxMft         = (a_uValue); } while (0)
 # define NTFSMFTREF_SET(a_pMftRef, a_idx, a_uSeq)  \
     do { \
-        (a_pMftRef)->RT_UNION_NM(s.)idxMft         = (a_idx); \
-        (a_pMftRef)->RT_UNION_NM(s.)uRecReuseSeqNo = (a_uSeq); \
+        (a_pMftRef)->s.idxMft         = (a_idx); \
+        (a_pMftRef)->s.uRecReuseSeqNo = (a_uSeq); \
     } while (0)
 #else
 # define NTFSMFTREF_GET_IDX(a_pMftRef)              (RT_LE2H_U64((a_pMftRef)->u64) & UINT64_C(0x0000ffffffffffff))
