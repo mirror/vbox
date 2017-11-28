@@ -794,8 +794,6 @@ typedef struct VMSVGA3DCONTEXT
     void                   *pShaderContext;
 #endif
 
-    /* Current active render target (if any) */
-    uint32_t                sidRenderTarget;
     /* Current selected texture surfaces (if any) */
     uint32_t                aSidActiveTextures[SVGA3D_MAX_SAMPLERS];
     /* Per context pixel and vertex shaders. */
@@ -870,7 +868,6 @@ static SSMFIELD const g_aVMSVGA3DCONTEXTFields[] =
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DCONTEXT, pShaderContext),
 #endif
 
-    SSMFIELD_ENTRY_IGNORE(          VMSVGA3DCONTEXT, sidRenderTarget),
     SSMFIELD_ENTRY_IGNORE(          VMSVGA3DCONTEXT, aSidActiveTextures),
     SSMFIELD_ENTRY(                 VMSVGA3DCONTEXT, cPixelShaders),
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DCONTEXT, paPixelShader),

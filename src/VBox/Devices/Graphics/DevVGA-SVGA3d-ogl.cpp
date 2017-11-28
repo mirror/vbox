@@ -3311,7 +3311,6 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
     for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTextures); i++)
         pContext->aSidActiveTextures[i] = SVGA3D_INVALID_ID;
 
-    pContext->sidRenderTarget   = SVGA3D_INVALID_ID;
     pContext->state.shidVertex  = SVGA3D_INVALID_ID;
     pContext->state.shidPixel   = SVGA3D_INVALID_ID;
     pContext->idFramebuffer     = OPENGL_INVALID_ID;
@@ -4799,7 +4798,6 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
         case SVGA3D_RT_COLOR5:
         case SVGA3D_RT_COLOR6:
         case SVGA3D_RT_COLOR7:
-            pContext->sidRenderTarget = SVGA3D_INVALID_ID;
             pState->ext.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + type - SVGA3D_RT_COLOR0, 0, 0, 0);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             break;
@@ -4882,8 +4880,6 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
 
         pState->ext.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + type - SVGA3D_RT_COLOR0, GL_TEXTURE_2D, pRenderTarget->oglId.texture, target.mipmap);
         VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-
-        pContext->sidRenderTarget = target.sid;
 
 #ifdef DEBUG
         GLenum status = pState->ext.glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -6247,9 +6243,9 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
     {
         uint32_t rtHeight = 0;
 
-        if (pContext->sidRenderTarget != SVGA_ID_INVALID)
+        if (pContext->state.aRenderTargets[SVGA3D_RT_COLOR0] != SVGA_ID_INVALID)
         {
-            PVMSVGA3DSURFACE pRenderTarget = pState->papSurfaces[pContext->sidRenderTarget];
+            PVMSVGA3DSURFACE pRenderTarget = pState->papSurfaces[pContext->state.aRenderTargets[SVGA3D_RT_COLOR0]];
             rtHeight = pRenderTarget->pMipmapLevels[0].mipmapSize.height;
         }
 
@@ -6455,14 +6451,14 @@ internal_error:
 #endif
 
 #ifdef DEBUG_GFX_WINDOW
-    if (pContext->sidRenderTarget)
+    if (pContext->state.aRenderTargets[SVGA3D_RT_COLOR0])
     {
         SVGA3dCopyRect rect;
 
         rect.srcx = rect.srcy = rect.x = rect.y = 0;
         rect.w = pContext->state.RectViewPort.w;
         rect.h = pContext->state.RectViewPort.h;
-        vmsvga3dCommandPresent(pThis, pContext->sidRenderTarget, 0, NULL);
+        vmsvga3dCommandPresent(pThis, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0], 0, NULL);
     }
 #endif
 

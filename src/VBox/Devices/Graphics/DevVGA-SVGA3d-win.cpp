@@ -2795,7 +2795,6 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
     pContext->id               = cid;
     for (uint32_t i = 0; i< RT_ELEMENTS(pContext->aSidActiveTextures); i++)
         pContext->aSidActiveTextures[i] = SVGA3D_INVALID_ID;
-    pContext->sidRenderTarget  = SVGA3D_INVALID_ID;
     pContext->state.shidVertex = SVGA3D_INVALID_ID;
     pContext->state.shidPixel  = SVGA3D_INVALID_ID;
 
@@ -3025,8 +3024,9 @@ static int vmsvga3dContextTrackUsage(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
         if (pContext->aSidActiveTextures[i] != SVGA3D_INVALID_ID)
             vmsvga3dSurfaceTrackUsageById(pState, pContext, pContext->aSidActiveTextures[i]);
     }
-    if (pContext->sidRenderTarget != SVGA3D_INVALID_ID)
-        vmsvga3dSurfaceTrackUsageById(pState, pContext, pContext->sidRenderTarget);
+    for (uint32_t i = 0; i < RT_ELEMENTS(pContext->state.aRenderTargets); ++i)
+        if (pContext->state.aRenderTargets[i] != SVGA3D_INVALID_ID)
+            vmsvga3dSurfaceTrackUsageById(pState, pContext, pContext->state.aRenderTargets[i]);
 #endif
     return VINF_SUCCESS;
 }
@@ -4156,8 +4156,6 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
         case SVGA3D_RT_COLOR5:
         case SVGA3D_RT_COLOR6:
         case SVGA3D_RT_COLOR7:
-            pContext->sidRenderTarget = SVGA3D_INVALID_ID;
-
             if (pState->fSupportedSurfaceNULL)
             {
                 /* Create a dummy render target to satisfy D3D. This path is usually taken only to render
@@ -4394,8 +4392,6 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
         if (fTexture)
             D3D_RELEASE(pSurface);    /* Release reference to texture level 0 */
         AssertMsgReturn(hr == D3D_OK, ("SetRenderTarget failed with %x\n", hr), VERR_INTERNAL_ERROR);
-
-        pContext->sidRenderTarget = target.sid;
 
         /* Changing the render target resets the viewport; restore it here. */
         if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_VIEWPORT)
@@ -5068,8 +5064,9 @@ int vmsvga3dCommandClear(PVGASTATE pThis, uint32_t cid, SVGA3dClearFlag clearFla
     AssertMsgReturn(hr == D3D_OK, ("Clear failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
     /* Make sure we can track drawing usage of active render targets. */
-    if (pContext->sidRenderTarget != SVGA3D_INVALID_ID)
-        vmsvga3dSurfaceTrackUsageById(pState, pContext, pContext->sidRenderTarget);
+    for (uint32_t i = 0; i < RT_ELEMENTS(pContext->state.aRenderTargets); ++i)
+        if (pContext->state.aRenderTargets[i] != SVGA3D_INVALID_ID)
+            vmsvga3dSurfaceTrackUsageById(pState, pContext, pContext->state.aRenderTargets[i]);
 
     return VINF_SUCCESS;
 }
@@ -5530,7 +5527,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         rect.srcx = rect.srcy = rect.x = rect.y = 0;
         rect.w = 800;
         rect.h = 600;
-        vmsvga3dCommandPresent(pThis, pContext->sidRenderTarget /*pContext->aSidActiveTexture[0] */, 0, &rect);
+        vmsvga3dCommandPresent(pThis, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0] /*pContext->aSidActiveTexture[0] */, 0, &rect);
     }
 #endif
     return rc;
