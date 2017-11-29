@@ -967,6 +967,7 @@ static uint32_t rtFsNtfsCore_Release(PRTFSNTFSCORE pThis)
 }
 
 
+#if 0 /* currently unused */
 /**
  * Retains a refernece to a core structure.
  *
@@ -979,6 +980,7 @@ static uint32_t rtFsNtfsCore_Retain(PRTFSNTFSCORE pThis)
     Assert(cRefs < 128);
     return cRefs;
 }
+#endif
 
 
 /**
