@@ -847,9 +847,9 @@ static int rtFsNtfsVol_ParseMft(PRTFSNTFSVOL pThis, PRTFSNTFSMFTREC pRec, PRTERR
     {
         PNTFSATTRIBHDR  pAttrHdr  = (PNTFSATTRIBHDR)&pbRec[offRec];
         uint32_t const  cbAttrib  = RT_LE2H_U32(pAttrHdr->cbAttrib);
-        uint32_t const  cbMin     = !pAttrHdr->fNonResident                   ? NTFSATTRIBHDR_SIZE_RESIDENT
-                                  : !pAttrHdr->u.NonRes.uCompressionUnit == 0 ? NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED
-                                  :                                             NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED;
+        uint32_t const  cbMin     = !pAttrHdr->fNonResident                  ? NTFSATTRIBHDR_SIZE_RESIDENT
+                                  : pAttrHdr->u.NonRes.uCompressionUnit == 0 ? NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED
+                                  :                                            NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED;
         if (cbAttrib < cbMin)
             return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                            "Bad MFT record %#RX64: Attribute (@%#x) is too small (%#x, cbMin=%#x)",
