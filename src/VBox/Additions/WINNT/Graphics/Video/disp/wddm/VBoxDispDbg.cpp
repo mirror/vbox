@@ -17,6 +17,10 @@
 
 #include "VBoxDispD3DCmn.h"
 
+#ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
+#include <Psapi.h>
+#endif
+
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -687,13 +691,65 @@ BOOL vboxVDbgDoCheckExe(const char * pszName)
 
 #ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
 
+typedef BOOL WINAPI FNGetModuleInformation(HANDLE hProcess, HMODULE hModule, LPMODULEINFO lpmodinfo, DWORD cb);
+typedef FNGetModuleInformation *PFNGetModuleInformation;
+
+static PFNGetModuleInformation g_pfnGetModuleInformation = NULL;
+static HMODULE g_hModPsapi = NULL;
 static PVOID g_VBoxWDbgVEHandler = NULL;
+
+static bool vboxVDbgIsAddressInModule(PVOID pv, const char *pszModuleName)
+{
+    HMODULE hMod = GetModuleHandleA(pszModuleName);
+    if (!hMod)
+        return false;
+
+    HANDLE hProcess = GetCurrentProcess();
+
+    if (!g_pfnGetModuleInformation)
+        return false;
+
+    MODULEINFO ModuleInfo = {0};
+    if (!g_pfnGetModuleInformation(hProcess, hMod, &ModuleInfo, sizeof(ModuleInfo)))
+        return false;
+
+    return    (uintptr_t)ModuleInfo.lpBaseOfDll <= (uintptr_t)pv
+           && (uintptr_t)pv < (uintptr_t)ModuleInfo.lpBaseOfDll + ModuleInfo.SizeOfImage;
+}
+
+static bool vboxVDbgIsExceptionIgnored(PEXCEPTION_RECORD pExceptionRecord)
+{
+    /* Module (dll) names for GetModuleHandle.
+     * Exceptions originated from these modules will be ignored.
+     */
+    static const char *apszIgnoredModuleNames[] =
+    {
+        NULL
+    };
+
+    int i = 0;
+    while (apszIgnoredModuleNames[i])
+    {
+        if (vboxVDbgIsAddressInModule(pExceptionRecord->ExceptionAddress, apszIgnoredModuleNames[i]))
+            return true;
+
+        ++i;
+    }
+
+    return false;
+}
+
 LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
 {
+    static volatile bool g_fAllowIgnore = true; /* Might be changed in kernel debugger. */
+
     PEXCEPTION_RECORD pExceptionRecord = pExceptionInfo->ExceptionRecord;
-    PCONTEXT pContextRecord = pExceptionInfo->ContextRecord;
+    /* PCONTEXT pContextRecord = pExceptionInfo->ContextRecord; */
+
     switch (pExceptionRecord->ExceptionCode)
     {
+        default:
+            break;
         case EXCEPTION_BREAKPOINT:
         case EXCEPTION_ACCESS_VIOLATION:
         case EXCEPTION_STACK_OVERFLOW:
@@ -702,9 +758,12 @@ LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
         case EXCEPTION_FLT_INVALID_OPERATION:
         case EXCEPTION_INT_DIVIDE_BY_ZERO:
         case EXCEPTION_ILLEGAL_INSTRUCTION:
-            AssertRelease(0);
+            if (g_fAllowIgnore && vboxVDbgIsExceptionIgnored(pExceptionRecord))
+                break;
+            ASMBreakpoint();
             break;
-        default:
+        case 0x40010006: /* OutputDebugStringA? */
+        case 0x4001000a: /* OutputDebugStringW? */
             break;
     }
     return EXCEPTION_CONTINUE_SEARCH;
@@ -715,17 +774,24 @@ void vboxVDbgVEHandlerRegister()
     Assert(!g_VBoxWDbgVEHandler);
     g_VBoxWDbgVEHandler = AddVectoredExceptionHandler(1,vboxVDbgVectoredHandler);
     Assert(g_VBoxWDbgVEHandler);
+
+    g_hModPsapi = GetModuleHandleA("Psapi.dll"); /* Usually already loaded. */
+    if (g_hModPsapi)
+        g_pfnGetModuleInformation = (PFNGetModuleInformation)GetProcAddress(g_hModPsapi, "GetModuleInformation");
 }
 
 void vboxVDbgVEHandlerUnregister()
 {
     Assert(g_VBoxWDbgVEHandler);
     ULONG uResult = RemoveVectoredExceptionHandler(g_VBoxWDbgVEHandler);
-    Assert(uResult);
+    Assert(uResult); RT_NOREF(uResult);
     g_VBoxWDbgVEHandler = NULL;
+
+    g_hModPsapi = NULL;
+    g_pfnGetModuleInformation = NULL;
 }
 
-#endif
+#endif /* VBOXWDDMDISP_DEBUG_VEHANDLER */
 
 #if defined(VBOXWDDMDISP_DEBUG) || defined(LOG_TO_BACKDOOR_DRV)
 void vboxDispLogDrvF(char * szString, ...)
