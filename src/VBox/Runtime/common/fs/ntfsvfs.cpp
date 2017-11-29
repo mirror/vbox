@@ -320,7 +320,7 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec)
                             case NTFS_AT_FILENAME:
                             {
                                 PCNTFSATFILENAME pInfo = (PCNTFSATFILENAME)pbValue;
-                                if (cbValue >= RT_OFFSETOF(NTFSATFILENAME, wszFilename))
+                                if (cbValue >= RT_UOFFSETOF(NTFSATFILENAME, wszFilename))
                                 {
                                     Log2(("NTFS:     ParentDirMftRec    %#RX64, sqn %#x\n",
                                           NTFSMFTREF_GET_IDX(&pInfo->ParentDirMftRec), NTFSMFTREF_GET_SEQ(&pInfo->ParentDirMftRec) ));
