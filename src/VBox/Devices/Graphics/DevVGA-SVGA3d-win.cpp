@@ -3791,7 +3791,7 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
 
         case SVGA3D_RS_ALPHAREF:               /* float (0.0 .. 1.0) */
             renderState = D3DRS_ALPHAREF;
-            val = pRenderState[i].uintValue;
+            val = (uint8_t)(pRenderState[i].floatValue * 255.0f); /* D3DRS_ALPHAREF 0..255 */
             break;
 
         case SVGA3D_RS_FRONTWINDING:           /* SVGA3dFrontWinding */
@@ -4396,6 +4396,8 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
         /* Changing the render target resets the viewport; restore it here. */
         if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_VIEWPORT)
             vmsvga3dSetViewPort(pThis, cid, &pContext->state.RectViewPort);
+        if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_ZRANGE)
+            vmsvga3dSetZRange(pThis, cid, pContext->state.zRange);
         /* Changing the render target also resets the scissor rectangle; restore it as well. */
         if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_SCISSORRECT)
             vmsvga3dSetScissorRect(pThis, cid, &pContext->state.RectScissor);
