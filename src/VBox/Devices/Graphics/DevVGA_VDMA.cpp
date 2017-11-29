@@ -2440,39 +2440,26 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESEN
 
     if (pBlt->cDstSubRects)
     {
-        VBOXVDMA_RECTL dstRectl, srcRectl;
-        const VBOXVDMA_RECTL *pDstRectl, *pSrcRectl;
         for (uint32_t i = 0; i < pBlt->cDstSubRects; ++i)
         {
-            pDstRectl = &pBlt->aDstSubRects[i];
-            if (pBlt->dstRectl.left || pBlt->dstRectl.top)
-            {
-                dstRectl.left = pDstRectl->left + pBlt->dstRectl.left;
-                dstRectl.top = pDstRectl->top + pBlt->dstRectl.top;
-                dstRectl.width = pDstRectl->width;
-                dstRectl.height = pDstRectl->height;
-                pDstRectl = &dstRectl;
-            }
+            VBOXVDMA_RECTL dstSubRectl = pBlt->aDstSubRects[i];
+            VBOXVDMA_RECTL srcSubRectl = dstSubRectl;
 
-            pSrcRectl = &pBlt->aDstSubRects[i];
-            if (pBlt->srcRectl.left || pBlt->srcRectl.top)
-            {
-                srcRectl.left = pSrcRectl->left + pBlt->srcRectl.left;
-                srcRectl.top = pSrcRectl->top + pBlt->srcRectl.top;
-                srcRectl.width = pSrcRectl->width;
-                srcRectl.height = pSrcRectl->height;
-                pSrcRectl = &srcRectl;
-            }
+            dstSubRectl.left += pBlt->dstRectl.left;
+            dstSubRectl.top  += pBlt->dstRectl.top;
+
+            srcSubRectl.left += pBlt->srcRectl.left;
+            srcSubRectl.top  += pBlt->srcRectl.top;
 
             int rc = vboxVDMACmdExecBltPerform(pVdma, pvRam + pBlt->offDst, pvRam + pBlt->offSrc,
                     &pBlt->dstDesc, &pBlt->srcDesc,
-                    pDstRectl,
-                    pSrcRectl);
+                    &dstSubRectl,
+                    &srcSubRectl);
             AssertRC(rc);
             if (!RT_SUCCESS(rc))
                 return rc;
 
-            vboxVDMARectlUnite(&updateRectl, pDstRectl);
+            vboxVDMARectlUnite(&updateRectl, &dstSubRectl);
         }
     }
     else
