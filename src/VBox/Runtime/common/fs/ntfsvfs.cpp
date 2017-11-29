@@ -44,39 +44,145 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** Max clusters in an allocation run.
+ * This ASSUMES that the cluster size is at most 64KB. */
+#define RTFSNTFS_MAX_CLUSTER_IN_RUN     UINT64_C(0x00007fffffffffff)
+
+
+/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /** Pointer to the instance data for a NTFS volume. */
 typedef struct RTFSNTFSVOL *PRTFSNTFSVOL;
 /** Pointer to a NTFS MFT record. */
 typedef struct RTFSNTFSMFTREC *PRTFSNTFSMFTREC;
+/** Poitner to a NTFS core object record.   */
+typedef struct RTFSNTFSCORE *PRTFSNTFSCORE;
+
+
+/**
+ * NTFS disk allocation extent (internal representation).
+ */
+typedef struct RTFSNTFSEXTENT
+{
+    /** The disk or partition byte offset.
+     * This is set to UINT64_MAX for parts of sparse files that aren't recorded. */
+    uint64_t            off;
+    /** The size of the extent in bytes. */
+    uint64_t            cbExtent;
+} RTFSNTFSEXTENT;
+/** Pointer to an NTFS 9660 extent. */
+typedef RTFSNTFSEXTENT *PRTFSNTFSEXTENT;
+/** Pointer to a const NTFS 9660 extent. */
+typedef RTFSNTFSEXTENT const *PCRTFSNTFSEXTENT;
+
+/**
+ * An array of zero or more extents.
+ */
+typedef struct RTFSNTFSEXTENTS
+{
+    /** Number of bytes covered by the extents. */
+    uint64_t            cbData;
+    /** Number of allocation extents. */
+    uint32_t            cExtents;
+    /** Array of allocation extents. */
+    PRTFSNTFSEXTENT     paExtents;
+} RTFSNTFSEXTENTS;
+/** Pointer to an extent array. */
+typedef RTFSNTFSEXTENTS *PRTFSNTFSEXTENTS;
+/** Pointer to a const extent array. */
+typedef RTFSNTFSEXTENTS const *PCRTFSNTFSEXTENTS;
+
 
 /**
  * NTFS MFT record.
+ *
+ * These are kept in a tree to , so
  */
 typedef struct RTFSNTFSMFTREC
 {
-    /** MFT record number as key. */
-    AVLU64NODECORE      Core;
-    /** Pointer to the next MFT record if chained. */
+    /** MFT record number (index) as key. */
+    AVLU64NODECORE      TreeNode;
+    /** Pointer to the next MFT record if chained.  Holds a reference.  */
     PRTFSNTFSMFTREC     pNext;
-    /** Pointer back to the volume. */
-    PRTFSNTFSVOL        pVol;
-    /** The disk offset of this MFT entry. */
-    uint64_t            offDisk;
     union
     {
-        /** Generic pointer. */
+        /** Generic record pointer.  RTFSNTFSVOL::cbMftRecord in size. */
         uint8_t        *pbRec;
         /** Pointer to the file record. */
         PNTFSRECFILE    pFileRec;
     } RT_UNION_NM(u);
-
+    /** Pointer to the core object with the parsed data.
+     * This is a weak reference.  Non-base MFT record all point to the base one. */
+    PRTFSNTFSCORE       pCore;
     /** Reference counter. */
     uint32_t volatile   cRefs;
-
-    // ....
+    /** Set if this is a base MFT record. */
+    bool                fIsBase;
+    /** The disk offset of this MFT entry. */
+    uint64_t            offDisk;
 } RTFSNTFSMFTREC;
+
+
+/** Pointer to a attribute subrecord structure. */
+typedef struct RTFSNTFSATTRSUBREC *PRTFSNTFSATTRSUBREC;
+
+/**
+ * An attribute subrecord.
+ *
+ * This is for covering non-resident attributes that have had their allocation
+ * list split.
+ */
+typedef struct RTFSNTFSATTRSUBREC
+{
+    /** Pointer to the next one. */
+    PRTFSNTFSATTRSUBREC pNext;
+    /** Pointer to the attribute header.
+     * The MFT is held down by RTFSNTFSCORE via pMftEntry. */
+    PNTFSATTRIBHDR      pAttrHdr;
+    /** Disk space allocation if non-resident. */
+    RTFSNTFSEXTENTS     Extents;
+} RTFSNTFSATTRSUBREC;
+
+/**
+ * An attribute.
+ */
+typedef struct RTFSNTFSATTR
+{
+    /** List entry (head RTFSNTFSCORE::AttribHead). */
+    RTLISTNODE          ListEntry;
+    /** Pointer to the core object this attribute belongs to. */
+    PRTFSNTFSCORE       pCore;
+    /** Pointer to the attribute header.
+     * The MFT is held down by RTFSNTFSCORE via pMftEntry. */
+    PNTFSATTRIBHDR      pAttrHdr;
+    /** Disk space allocation if non-resident. */
+    RTFSNTFSEXTENTS     Extents;
+    /** Pointer to any subrecords containing further allocation extents. */
+    PRTFSNTFSATTRSUBREC pSubRecHead;
+} RTFSNTFSATTR;
+/** Pointer to a attribute structure. */
+typedef RTFSNTFSATTR *PRTFSNTFSATTR;
+
+
+/**
+ * NTFS file system object, shared part.
+ */
+typedef struct RTFSNTFSCORE
+{
+    /** Reference counter.   */
+    uint32_t volatile   cRefs;
+    /** Pointer to the volume. */
+    PRTFSNTFSVOL        pVol;
+    /** Pointer to the head of the MFT record chain for this object.
+     * Holds a reference.  */
+    PRTFSNTFSMFTREC     pMftRec;
+    /** List of attributes (RTFSNTFSATTR). */
+    RTLISTANCHOR        AttribHead;
+} RTFSNTFSCORE;
+
 
 /**
  * Instance data for an NTFS volume.
@@ -122,15 +228,15 @@ typedef struct RTFSNTFSVOL
     /** The volume serial number. */
     uint64_t        uSerialNo;
 
-    /** Pointer to the MFT record for the MFT. */
-    PRTFSNTFSMFTREC pMft;
+    /** The MFT data attribute. */
+    PRTFSNTFSATTR   pMftData;
 
     /** Root of the MFT record tree (RTFSNTFSMFTREC). */
     AVLU64TREE      MftRoot;
 } RTFSNTFSVOL;
 
 
-static PRTFSNTFSMFTREC rtFsNtfsMftRec_New(PRTFSNTFSVOL pVol, uint64_t idMft)
+static PRTFSNTFSMFTREC rtFsNtfsMftVol_New(PRTFSNTFSVOL pVol, uint64_t idMft)
 {
     PRTFSNTFSMFTREC pRec = (PRTFSNTFSMFTREC)RTMemAllocZ(sizeof(*pRec));
     if (pRec)
@@ -138,28 +244,27 @@ static PRTFSNTFSMFTREC rtFsNtfsMftRec_New(PRTFSNTFSVOL pVol, uint64_t idMft)
         pRec->pbRec = (uint8_t *)RTMemAllocZ(pVol->cbMftRecord);
         if (pRec->pbRec)
         {
-            pRec->Core.Key = idMft;
-            pRec->pNext    = NULL;
-            pRec->offDisk  = UINT64_MAX / 2;
-            pRec->pVol     = pVol;
-            pRec->cRefs    = 1;
-            return pRec;
+            pRec->TreeNode.Key = idMft;
+            pRec->pNext        = NULL;
+            pRec->offDisk      = UINT64_MAX;
+            pRec->cRefs        = 1;
+            if (RTAvlU64Insert(&pVol->MftRoot, &pRec->TreeNode))
+                return pRec;
+            RTMemFree(pRec);
         }
     }
     return NULL;
 }
 
 
-#if 0 /* currently unused */
-static uint32_t rtFsNtfsMftRec_Destroy(PRTFSNTFSMFTREC pThis)
+static uint32_t rtFsNtfsMftRec_Destroy(PRTFSNTFSMFTREC pThis, PRTFSNTFSVOL pVol)
 {
     RTMemFree(pThis->pbRec);
     pThis->pbRec = NULL;
 
-    PAVLU64NODECORE pRemoved = RTAvlU64Remove(&pThis->pVol->MftRoot, pThis->Core.Key);
-    Assert(pRemoved == &pThis->Core); NOREF(pRemoved);
+    PAVLU64NODECORE pRemoved = RTAvlU64Remove(&pVol->MftRoot, pThis->TreeNode.Key);
+    Assert(pRemoved == &pThis->TreeNode); NOREF(pRemoved);
 
-    pThis->pVol = NULL;
     RTMemFree(pThis);
 
     return 0;
@@ -173,33 +278,32 @@ static uint32_t rtFsNtfsMftRec_Retain(PRTFSNTFSMFTREC pThis)
     return cRefs;
 }
 
-
-static uint32_t rtFsNtfsMftRec_Release(PRTFSNTFSMFTREC pThis)
+static uint32_t rtFsNtfsMftRec_Release(PRTFSNTFSMFTREC pThis, PRTFSNTFSVOL pVol)
 {
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
     Assert(cRefs < 64);
     if (cRefs != 0)
         return cRefs;
-    return rtFsNtfsMftRec_Destroy(pThis);
+    return rtFsNtfsMftRec_Destroy(pThis, pVol);
 }
-#endif
 
 
 #ifdef LOG_ENABLED
 /**
  * Logs the MFT record
  *
- * @param   pRec        The MFT record to log.
+ * @param   pRec            The MFT record to log.
+ * @param   cbMftRecord     MFT record size (from RTFSNTFSVOL).
  */
-static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec)
+static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec, uint32_t cbMftRecord)
 {
     if (LogIs2Enabled())
     {
         PCNTFSRECFILE  pFileRec = pRec->pFileRec;
-        Log2(("NTFS: MFT #%#RX64 at %#RX64\n", pRec->Core.Key, pRec->offDisk));
+        Log2(("NTFS: MFT #%#RX64 at %#RX64\n", pRec->TreeNode.Key, pRec->offDisk));
         if (pFileRec->Hdr.uMagic == NTFSREC_MAGIC_FILE)
         {
-            size_t const          cbRec = pRec->pVol->cbMftRecord;
+            size_t const          cbRec = cbMftRecord;
             uint8_t const * const pbRec = pRec->pbRec;
 
             Log2(("NTFS: FILE record: \n"));
@@ -315,7 +419,33 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec)
                                 break;
                             }
 
-                            //case NTFS_AT_ATTRIBUTE_LIST:
+                            case NTFS_AT_ATTRIBUTE_LIST:
+                            {
+                                uint32_t iEntry   = 0;
+                                uint32_t offEntry = 0;
+                                while (offEntry + NTFSATLISTENTRY_SIZE_MINIMAL < cbValue)
+                                {
+                                    PCNTFSATLISTENTRY pInfo = (PCNTFSATLISTENTRY)&pbValue[offEntry];
+                                    Log2(("NTFS:     attr[%u]: %#x in %#RX64 (sqn %#x), instance %#x, VNC=%#RX64-, name %#x L %#x\n",
+                                          iEntry, RT_LE2H_U32(pInfo->uAttrType),  NTFSMFTREF_GET_IDX(&pInfo->InMftRec),
+                                          NTFSMFTREF_GET_SEQ(&pInfo->InMftRec), RT_LE2H_U16(pInfo->idAttrib),
+                                          RT_LE2H_U64(pInfo->iVcnFirst), pInfo->offName, pInfo->cwcName));
+                                    if (   pInfo->cwcName > 0
+                                        && pInfo->offName < pInfo->cbEntry)
+                                        Log2(("NTFS:               name '%.*ls'\n", pInfo->cwcName, (uint8_t *)pInfo + pInfo->offName));
+
+                                    /* next */
+                                    if (pInfo->cbEntry < NTFSATLISTENTRY_SIZE_MINIMAL)
+                                    {
+                                        Log2(("NTFS:     cbEntry is too small! cbEntry=%#x, min %#x\n",
+                                              pInfo->cbEntry, NTFSATLISTENTRY_SIZE_MINIMAL));
+                                        break;
+                                    }
+                                    iEntry++;
+                                    offEntry += RT_ALIGN_32(pInfo->cbEntry, 8);
+                                }
+                                break;
+                            }
 
                             case NTFS_AT_FILENAME:
                             {
@@ -441,8 +571,8 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec)
                                 uint8_t cbNum = (bLengths & 0xf);
                                 if (cbNum)
                                 {
-                                    int8_t const *pbNum = (int8_t const *)&pbPairs[offPairs + cbNum]; /* last byte */
-                                    cClustersInRun = *pbNum--;
+                                    uint8_t const *pbNum = &pbPairs[offPairs + cbNum]; /* last byte */
+                                    cClustersInRun = (int8_t)*pbNum--;
                                     while (cbNum-- > 1)
                                         cClustersInRun = (cClustersInRun << 8) + *pbNum--;
                                 }
@@ -453,8 +583,8 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec)
                                 cbNum = bLengths >> 4;
                                 if (cbNum)
                                 {
-                                    int8_t const *pbNum  = (int8_t const *)&pbPairs[offPairs + cbNum + (bLengths & 0xf)]; /* last byte */
-                                    int64_t cLcnDelta = *pbNum--;
+                                    uint8_t const *pbNum = &pbPairs[offPairs + cbNum + (bLengths & 0xf)]; /* last byte */
+                                    int64_t cLcnDelta = (int8_t)*pbNum--;
                                     while (cbNum-- > 1)
                                         cLcnDelta = (cLcnDelta << 8) + *pbNum--;
                                     iLnc += cLcnDelta;
@@ -498,6 +628,379 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec)
     }
 }
 #endif /* LOG_ENABLED */
+
+
+static int rtFsNtfsAttr_ParseExtents(PRTFSNTFSATTR pAttrib, PRTFSNTFSEXTENTS pExtents, uint8_t cClusterShift, int64_t iVcnFirst,
+                                     PRTERRINFO pErrInfo, uint64_t idxMft, uint32_t offAttrib)
+{
+    PCNTFSATTRIBHDR pAttrHdr = pAttrib->pAttrHdr;
+    Assert(pAttrHdr->fNonResident);
+    Assert(pExtents->cExtents  == 0);
+    Assert(pExtents->paExtents == NULL);
+
+    /** @todo Not entirely sure how to best detect empty mapping pair program.
+     *        Not sure if this is a real problem as zero length stuff can be
+     *        resident.  */
+    uint16_t const offMappingPairs = RT_LE2H_U16(pAttrHdr->u.NonRes.offMappingPairs);
+    uint32_t const cbAttrib        = RT_LE2H_U32(pAttrHdr->cbAttrib);
+    if (   offMappingPairs != cbAttrib
+        && offMappingPairs != 0)
+    {
+        if (pAttrHdr->u.NonRes.iVcnFirst < iVcnFirst)
+            return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                           "Bad MFT record %#RX64: Attribute (@%#x) has a lower starting VNC than expected: %#RX64, %#RX64",
+                                           idxMft, offAttrib, pAttrHdr->u.NonRes.iVcnFirst, iVcnFirst);
+
+        if (   offMappingPairs >= cbAttrib
+            || offMappingPairs < NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED)
+            return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                           "Bad MFT record %#RX64: Mapping pair program for attribute (@%#x) is out of bounds: %#x, cbAttrib=%#x",
+                                           idxMft, offAttrib, offMappingPairs, cbAttrib);
+
+        /*
+         * Count the pairs.
+         */
+        uint8_t const  * const  pbPairs  = (const uint8_t *)pAttrHdr + pAttrHdr->u.NonRes.offMappingPairs;
+        uint32_t const          cbPairs  = cbAttrib - offMappingPairs;
+        uint32_t                offPairs = 0;
+        uint32_t                cPairs   = 0;
+        while (offPairs < cbPairs)
+        {
+            uint8_t const bLengths = pbPairs[offPairs];
+            if (bLengths)
+            {
+                uint8_t const cbRunField = bLengths & 0x0f;
+                uint8_t const cbLcnField = bLengths >> 4;
+                if (   cbRunField > 0
+                    && cbRunField <= 8)
+                {
+                    if (cbLcnField <= 8)
+                    {
+                        cPairs++;
+
+                        /* Advance and check for overflow/end. */
+                        offPairs += 1 + cbRunField + cbLcnField;
+                        if (offPairs <= cbAttrib)
+                            continue;
+                        return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                       "Bad MFT record %#RX64: Mapping pair #%#x for attribute (@%#x) is out of bounds",
+                                                       idxMft, cPairs - 1, offAttrib);
+                    }
+                    return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                   "Bad MFT record %#RX64: Mapping pair #%#x for attribute (@%#x): cbLcnField is out of bound: %u",
+                                                   idxMft, cPairs - 1, offAttrib, cbLcnField);
+
+                }
+                return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                               "Bad MFT record %#RX64: Mapping pair #%#x for attribute (@%#x): cbRunField is out of bound: %u",
+                                               idxMft, cPairs - 1, offAttrib, cbRunField);
+            }
+            break;
+        }
+
+        /*
+         * Allocate an the extent table for them.
+         */
+        uint32_t const cExtents  = cPairs + (pAttrHdr->u.NonRes.iVcnFirst != iVcnFirst);
+        if (cExtents)
+        {
+            PRTFSNTFSEXTENT paExtents = (PRTFSNTFSEXTENT)RTMemAllocZ(sizeof(paExtents[0]) * cExtents);
+            AssertReturn(paExtents, VERR_NO_MEMORY);
+
+            /*
+             * Fill the table.
+             */
+            uint32_t iExtent = 0;
+
+            /* A sparse hole between this and the previous extent table? */
+            if (pAttrHdr->u.NonRes.iVcnFirst != iVcnFirst)
+            {
+                paExtents[iExtent].off      = UINT64_MAX;
+                paExtents[iExtent].cbExtent = (pAttrHdr->u.NonRes.iVcnFirst - iVcnFirst) << cClusterShift;
+                Log3(("   paExtent[%#04x]: %#018RX64 LB %#010RX64\n", iExtent, paExtents[iExtent].off, paExtents[iExtent].cbExtent));
+                iExtent++;
+            }
+
+            /* Run the program again, now with values and without verbose error checking. */
+            uint64_t cMaxClustersInRun = (INT64_MAX >> cClusterShift) - pAttrHdr->u.NonRes.iVcnFirst;
+            uint64_t cbData            = 0;
+            int64_t  iLcn              = 0;
+            int      rc                = VINF_SUCCESS;
+            offPairs = 0;
+            for (; iExtent < cExtents; iExtent++)
+            {
+                uint8_t const bLengths = pbPairs[offPairs++];
+                uint8_t const cbRunField = bLengths & 0x0f;
+                uint8_t const cbLcnField = bLengths >> 4;
+                AssertBreakStmt((unsigned)cbRunField - 1U <= 7U, rc = VERR_VFS_BOGUS_FORMAT);
+                AssertBreakStmt((unsigned)cbLcnField      <= 8U, rc = VERR_VFS_BOGUS_FORMAT);
+
+                AssertBreakStmt(!(pbPairs[offPairs + cbRunField - 1] & 0x80),
+                                rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                             "Bad MFT record %#RX64: Extent #%#x for attribute (@%#x): Negative runlength value",
+                                                             idxMft, iExtent, offAttrib));
+                uint64_t cClustersInRun = 0;
+                switch (cbRunField)
+                {
+                    case 8: cClustersInRun |= (uint64_t)pbPairs[offPairs + 7] << 56; RT_FALL_THRU();
+                    case 7: cClustersInRun |= (uint64_t)pbPairs[offPairs + 6] << 48; RT_FALL_THRU();
+                    case 6: cClustersInRun |= (uint64_t)pbPairs[offPairs + 5] << 40; RT_FALL_THRU();
+                    case 5: cClustersInRun |= (uint64_t)pbPairs[offPairs + 4] << 32; RT_FALL_THRU();
+                    case 4: cClustersInRun |= (uint32_t)pbPairs[offPairs + 3] << 24; RT_FALL_THRU();
+                    case 3: cClustersInRun |= (uint32_t)pbPairs[offPairs + 2] << 16; RT_FALL_THRU();
+                    case 2: cClustersInRun |= (uint16_t)pbPairs[offPairs + 1] <<  8; RT_FALL_THRU();
+                    case 1: cClustersInRun |= (uint16_t)pbPairs[offPairs + 0] <<  0; RT_FALL_THRU();
+                }
+                offPairs += cbRunField;
+                AssertBreakStmt(cClustersInRun <= cMaxClustersInRun,
+                                rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                             "Bad MFT record %#RX64: Extent #%#x for attribute (@%#x): too many clusters %#RX64, max %#RX64",
+                                                             idxMft, iExtent, offAttrib, cClustersInRun, cMaxClustersInRun));
+                cMaxClustersInRun          -= cClustersInRun;
+                paExtents[iExtent].cbExtent = cClustersInRun << cClusterShift;
+                cbData                     += cClustersInRun << cClusterShift;
+
+                if (cbLcnField)
+                {
+                    unsigned offVncDelta = cbLcnField;
+                    int64_t  cLncDelta   = (int8_t)pbPairs[--offVncDelta + offPairs];
+                    while (offVncDelta-- > 0)
+                        cLncDelta = (cLncDelta << 8) | pbPairs[offVncDelta + offPairs];
+                    offPairs += cbLcnField;
+
+                    iLcn += cLncDelta;
+                    if (iLcn >= 0)
+                    {
+                        paExtents[iExtent].off = (uint64_t)iLcn << cClusterShift;
+                        AssertBreakStmt((paExtents[iExtent].off >> cClusterShift) == (uint64_t)iLcn,
+                                        rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                                     "Bad MFT record %#RX64: Extent #%#x for attribute (@%#x): iLcn %RX64 overflows when shifted by %u",
+                                                                     idxMft, iExtent, offAttrib, iLcn, cClusterShift));
+                    }
+                    else
+                        paExtents[iExtent].off = UINT64_MAX;
+                }
+                else
+                    paExtents[iExtent].off = UINT64_MAX;
+                Log3(("   paExtent[%#04x]: %#018RX64 LB %#010RX64\n", iExtent, paExtents[iExtent].off, paExtents[iExtent].cbExtent));
+            }
+
+            /* Commit if everything went fine? */
+            if (RT_SUCCESS(rc))
+            {
+                pExtents->cbData    = cbData;
+                pExtents->cExtents  = cExtents;
+                pExtents->paExtents = paExtents;
+            }
+            else
+            {
+                RTMemFree(paExtents);
+                return rc;
+            }
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+static int rtFsNtfsVol_ParseMft(PRTFSNTFSVOL pThis, PRTFSNTFSMFTREC pRec, PRTERRINFO pErrInfo)
+{
+    AssertReturn(!pRec->pCore, VERR_INTERNAL_ERROR_4);
+
+    /*
+     * Check that it is a file record and that its base MFT record number is zero.
+     * Caller should do the base record resolving.
+     */
+    PNTFSRECFILE pFileRec = pRec->pFileRec;
+    if (pFileRec->Hdr.uMagic != NTFSREC_MAGIC_FILE)
+        return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                       "Bad MFT record %#RX64: Not a FILE entry (%.4Rhxs)",
+                                       pRec->TreeNode.Key, &pFileRec->Hdr);
+    if (pFileRec->BaseMftRec.u64 != 0)
+        return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                       "Bad MFT record %#RX64: Not a base record (%#RX64, sqn %#x)",
+                                       pRec->TreeNode.Key, NTFSMFTREF_GET_IDX(&pFileRec->BaseMftRec),
+                                       NTFSMFTREF_GET_SEQ(&pFileRec->BaseMftRec) );
+
+     /*
+      * Create a core node (1 reference, returned even on error).
+      */
+    PRTFSNTFSCORE pCore = (PRTFSNTFSCORE)RTMemAllocZ(sizeof(*pCore));
+    AssertReturn(pCore, VERR_NO_MEMORY);
+
+    pCore->cRefs    = 1;
+    pCore->pVol     = pThis;
+    RTListInit(&pCore->AttribHead);
+    pCore->pMftRec  = pRec;
+    rtFsNtfsMftRec_Retain(pRec);
+    pRec->pCore     = pCore;
+
+    /*
+     * Parse attributes.
+     * We process any attribute list afterwards, skipping attributes in this MFT record.
+     */
+    PRTFSNTFSATTR       pAttrList = NULL;
+    uint8_t * const     pbRec     = pRec->pbRec;
+    uint32_t            offRec    = pFileRec->offFirstAttrib;
+    uint32_t const      cbRecUsed = RT_MIN(pThis->cbMftRecord, pFileRec->cbRecUsed);
+    while (offRec + NTFSATTRIBHDR_SIZE_RESIDENT <= cbRecUsed)
+    {
+        PNTFSATTRIBHDR  pAttrHdr  = (PNTFSATTRIBHDR)&pbRec[offRec];
+        uint32_t const  cbAttrib  = RT_LE2H_U32(pAttrHdr->cbAttrib);
+        uint32_t const  cbMin     = !pAttrHdr->fNonResident                   ? NTFSATTRIBHDR_SIZE_RESIDENT
+                                  : !pAttrHdr->u.NonRes.uCompressionUnit == 0 ? NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED
+                                  :                                             NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED;
+        if (cbAttrib < cbMin)
+            return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                           "Bad MFT record %#RX64: Attribute (@%#x) is too small (%#x, cbMin=%#x)",
+                                           pRec->TreeNode.Key, offRec, cbAttrib, cbMin);
+        if (offRec + cbAttrib > cbRecUsed)
+            return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                           "Bad MFT record %#RX64: Attribute (@%#x) is too long (%#x, cbRecUsed=%#x)",
+                                           pRec->TreeNode.Key, offRec, cbAttrib, cbRecUsed);
+        PRTFSNTFSATTR pAttrib = (PRTFSNTFSATTR)RTMemAllocZ(sizeof(*pAttrib));
+        AssertReturn(pAttrib, VERR_NO_MEMORY);
+        pAttrib->pAttrHdr           = pAttrHdr;
+        pAttrib->pCore              = pCore;
+        //pAttrib->Extents.cExtents   = 0;
+        //pAttrib->Extents.paExtents  = NULL;
+        //pAttrib->pSubRecHead        = NULL;
+        if (pAttrHdr->fNonResident)
+        {
+            int rc = rtFsNtfsAttr_ParseExtents(pAttrib, &pAttrib->Extents, pThis->cClusterShift, 0 /*iVncFirst*/,
+                                               pErrInfo, pRec->TreeNode.Key, offRec);
+            if (RT_FAILURE(rc))
+            {
+                RTMemFree(pAttrib);
+                return rc;
+            }
+        }
+        RTListAppend(&pCore->AttribHead, &pAttrib->ListEntry);
+
+        if (pAttrHdr->uAttrType == NTFS_AT_ATTRIBUTE_LIST)
+            pAttrList = pAttrib;
+
+        /* Advance. */
+        offRec += cbAttrib;
+    }
+
+    /*
+     * Process any attribute list.
+     */
+    if (pAttrList)
+    {
+        /** @todo    */
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Destroys a core structure.
+ *
+ * @returns 0
+ * @param   pThis               The core structure.
+ */
+static uint32_t rtFsNtfsCore_Destroy(PRTFSNTFSCORE pThis)
+{
+    /*
+     * Free attributes.
+     */
+    PRTFSNTFSATTR pCurAttr;
+    PRTFSNTFSATTR pNextAttr;
+    RTListForEachSafe(&pThis->AttribHead, pCurAttr, pNextAttr, RTFSNTFSATTR, ListEntry)
+    {
+        PRTFSNTFSATTRSUBREC pSub = pCurAttr->pSubRecHead;
+        while (pSub)
+        {
+            pCurAttr->pSubRecHead = pSub->pNext;
+            RTMemFree(pSub->Extents.paExtents);
+            pSub->Extents.paExtents = NULL;
+            pSub->pAttrHdr          = NULL;
+            pSub->pNext             = NULL;
+            RTMemFree(pSub);
+
+            pSub = pCurAttr->pSubRecHead;
+        }
+
+        pCurAttr->pCore    = NULL;
+        pCurAttr->pAttrHdr = NULL;
+        RTMemFree(pCurAttr->Extents.paExtents);
+        pCurAttr->Extents.paExtents = NULL;
+    }
+
+    /*
+     * Release the MFT chain.
+     */
+    PRTFSNTFSMFTREC pMftRec = pThis->pMftRec;
+    while (pMftRec)
+    {
+        pThis->pMftRec = pMftRec->pNext;
+        Assert(pMftRec->pCore == pThis);
+        pMftRec->pNext = NULL;
+        pMftRec->pCore = NULL;
+        rtFsNtfsMftRec_Release(pMftRec, pThis->pVol);
+
+        pMftRec = pThis->pMftRec;
+    }
+
+    RTMemFree(pThis);
+
+    return 0;
+}
+
+
+/**
+ * Releases a refernece to a core structure, maybe destroying it.
+ *
+ * @returns New reference count.
+ * @param   pThis               The core structure.
+ */
+static uint32_t rtFsNtfsCore_Release(PRTFSNTFSCORE pThis)
+{
+    uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
+    Assert(cRefs < 128);
+    if (cRefs != 0)
+        return cRefs;
+    return rtFsNtfsCore_Destroy(pThis);
+}
+
+
+/**
+ * Retains a refernece to a core structure.
+ *
+ * @returns New reference count.
+ * @param   pThis               The core structure.
+ */
+static uint32_t rtFsNtfsCore_Retain(PRTFSNTFSCORE pThis)
+{
+    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    Assert(cRefs < 128);
+    return cRefs;
+}
+
+
+/**
+ * Finds an unnamed attribute.
+ *
+ * @returns Pointer to the attribute structure if found, NULL if not.
+ * @param   pThis               The core object structure to search.
+ * @param   uAttrType           The attribute type to find.
+ */
+static PRTFSNTFSATTR rtFsNtfsCore_FindUnnamedAttribute(PRTFSNTFSCORE pThis, uint32_t uAttrType)
+{
+    PRTFSNTFSATTR pCurAttr;
+    RTListForEach(&pThis->AttribHead, pCurAttr, RTFSNTFSATTR, ListEntry)
+    {
+        PNTFSATTRIBHDR pAttrHdr = pCurAttr->pAttrHdr;
+        if (   pAttrHdr->uAttrType == uAttrType
+            && pAttrHdr->cwcName == 0)
+            return pCurAttr;
+    }
+    return NULL;
+}
+
 
 
 /**
@@ -563,6 +1066,8 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsNtfsVolOps =
     /* .uEndMarker = */         RTVFSOPS_VERSION
 };
 
+
+
 static int rtFsNtfsVolLoadMft(PRTFSNTFSVOL pThis, void *pvBuf, size_t cbBuf, PRTERRINFO pErrInfo)
 {
     AssertReturn(cbBuf >= _64K, VERR_INTERNAL_ERROR_2);
@@ -570,20 +1075,50 @@ static int rtFsNtfsVolLoadMft(PRTFSNTFSVOL pThis, void *pvBuf, size_t cbBuf, PRT
     /** @todo read MFT, find bitmap allocation, implement
      *        rtFsNtfsVol_QueryRangeState. */
 
-    PRTFSNTFSMFTREC pRec = rtFsNtfsMftRec_New(pThis, 0);
+    /*
+     * Bootstrap the MFT data stream.
+     */
+    PRTFSNTFSMFTREC pRec = rtFsNtfsMftVol_New(pThis, 0);
     AssertReturn(pRec, VERR_NO_MEMORY);
-    pThis->pMft = pRec;
 
-    int rc = RTVfsFileReadAt(pThis->hVfsBacking, pThis->uLcnMft << pThis->cClusterShift, pRec->pbRec, pThis->cbMftRecord, NULL);
-    if (RT_FAILURE(rc))
-        return RTERRINFO_LOG_SET(pErrInfo, rc, "Error reading MFT record #0");
-#ifdef LOG_ENABLED
-    rtfsNtfsMftRec_Log(pRec);
+#if 0 //def LOG_ENABLED
+    for (uint32_t i = 0; i < 64; i++)
+    {
+        RTVfsFileReadAt(pThis->hVfsBacking, (pThis->uLcnMft << pThis->cClusterShift) + i * pThis->cbMftRecord,
+                        pRec->pbRec, pThis->cbMftRecord, NULL);
+        pRec->TreeNode.Key = i;
+        Log(("\n"));
+        rtfsNtfsMftRec_Log(pRec, pThis->cbMftRecord);
+    }
+    pRec->TreeNode.Key = 0;
 #endif
 
-    //Log(("MFT#0:\n%.*Rhxd\n", pThis->cbMftRecord, pRec->pbRec));
-
-    return VINF_SUCCESS;
+    pRec->offDisk = pThis->uLcnMft << pThis->cClusterShift;
+    int rc = RTVfsFileReadAt(pThis->hVfsBacking, pRec->offDisk, pRec->pbRec, pThis->cbMftRecord, NULL);
+    if (RT_SUCCESS(rc))
+    {
+#ifdef LOG_ENABLED
+        rtfsNtfsMftRec_Log(pRec, pThis->cbMftRecord);
+#endif
+        rc = rtFsNtfsVol_ParseMft(pThis, pRec, pErrInfo);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->pMftData = rtFsNtfsCore_FindUnnamedAttribute(pRec->pCore, NTFS_AT_DATA);
+            if (pThis->pMftData)
+            {
+                /** @todo sanity check the attribute. */
+                rtFsNtfsMftRec_Release(pRec, pThis);
+                return rc;
+            }
+            rc = RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 has no unnamed DATA attribute!");
+        }
+        if (pRec->pCore)
+            rtFsNtfsCore_Release(pRec->pCore);
+        rtFsNtfsMftRec_Release(pRec, pThis);
+    }
+    else
+        rc = RTERRINFO_LOG_SET(pErrInfo, rc, "Error reading MFT record #0");
+    return rc;
 }
 
 

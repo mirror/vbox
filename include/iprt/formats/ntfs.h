@@ -194,8 +194,9 @@ typedef NTFSRECFILE const *PCNTFSRECFILE;
 #define NTFS_AT_UNUSED                      RT_H2LE_U32_C(UINT32_C(0x00000000))
 /** NTFSATSTDINFO */
 #define NTFS_AT_STANDARD_INFORMATION        RT_H2LE_U32_C(UINT32_C(0x00000010))
+/** NTFSATLISTENTRY */
 #define NTFS_AT_ATTRIBUTE_LIST              RT_H2LE_U32_C(UINT32_C(0x00000020))
-/** PCNTFSATFILENAME */
+/** NTFSATFILENAME */
 #define NTFS_AT_FILENAME                    RT_H2LE_U32_C(UINT32_C(0x00000030))
 #define NTFS_AT_OBJECT_ID                   RT_H2LE_U32_C(UINT32_C(0x00000040))
 #define NTFS_AT_SECURITY_DESCRIPTOR         RT_H2LE_U32_C(UINT32_C(0x00000050))
@@ -310,6 +311,47 @@ typedef NTFSATTRIBHDR const *PCNTFSATTRIBHDR;
 /** Attribute header size for compressed non-resident values. */
 #define NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED        (0x40)
 /** @} */
+
+
+/**
+ * Attribute list entry (NTFS_AT_ATTRIBUTE_LIST).
+ *
+ * This is used to deal with a file having attributes in more than one MFT
+ * record.  A prominent example is an fragment file (unnamed data attribute)
+ * which mapping pairs doesn't fit in a single MFT record.
+ *
+ * This attribute can be non-resident, however it's mapping pair program must
+ * fit in the base MFT record.
+ */
+typedef struct NTFSATLISTENTRY
+{
+    /** 0x00: Attribute type (NTFS_AT_XXX). */
+    uint32_t            uAttrType;
+    /** 0x04: Length of this entry. */
+    uint16_t            cbEntry;
+    /** 0x06: Attribute name length (zero if none). */
+    uint8_t             cwcName;
+    /** 0x07: Name offset. */
+    uint8_t             offName;
+    /** 0x08: The first VNC for this part of the attribute value. */
+    int64_t             iVcnFirst;
+    /** 0x10: The MFT record holding the actual attribute. */
+    NTFSMFTREF          InMftRec;
+    /** 0x18: Attribute instance number.  Unique within the MFT record. */
+    uint16_t            idAttrib;
+    /** 0x1a: Maybe where the attribute name starts. */
+    RTUTF16             wszName[RT_FLEXIBLE_ARRAY];
+} NTFSATLISTENTRY;
+AssertCompileMemberOffset(NTFSATLISTENTRY, idAttrib, 0x18);
+/** Pointer to a NTFS attribute list entry. */
+typedef NTFSATLISTENTRY *PNTFSATLISTENTRY;
+/** Pointer to a const NTFS attribute list entry. */
+typedef NTFSATLISTENTRY const *PCNTFSATLISTENTRY;
+
+/** Unaligned minimum entry size (no name). */
+#define NTFSATLISTENTRY_SIZE_MINIMAL        0x1a
+
+
 
 /**
  * NTFS standard file info attribute (NTFS_AT_STANDARD_INFORMATION).
