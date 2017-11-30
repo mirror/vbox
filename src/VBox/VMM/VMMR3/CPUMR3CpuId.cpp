@@ -2566,7 +2566,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            | X86_CPUID_FEATURE_EDX_SSE
                            | X86_CPUID_FEATURE_EDX_SSE2
                            //| X86_CPUID_FEATURE_EDX_SS    - no self snoop.
-                           //| X86_CPUID_FEATURE_EDX_HTT   - no hyperthreading/cores - see below.
+                           | X86_CPUID_FEATURE_EDX_HTT
                            //| X86_CPUID_FEATURE_EDX_TM    - no thermal monitor.
                            //| RT_BIT_32(30)               - not defined
                            //| X86_CPUID_FEATURE_EDX_PBE   - no pending break enabled.
@@ -2652,15 +2652,26 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
 
     /* Set up APIC ID for CPU 0, configure multi core/threaded smp. */
     pStdFeatureLeaf->uEbx &= UINT32_C(0x0000ffff); /* (APIC-ID := 0 and #LogCpus := 0) */
+
+    /* The HTT bit is architectural and does not directly indicate hyper-threading or multiple cores;
+     * it was set even on single-core/non-HT Northwood P4s for example. The HTT bit only means that the
+     * information in EBX[23:16] (max number of addressable logical processor IDs) is valid.
+     */
 #ifdef VBOX_WITH_MULTI_CORE
     if (pVM->cCpus > 1)
+        pStdFeatureLeaf->uEdx |= X86_CPUID_FEATURE_EDX_HTT;  /* Force if emulating a multi-core CPU. */
+#endif
+    if (pStdFeatureLeaf->uEdx & X86_CPUID_FEATURE_EDX_HTT)
     {
         /* If CPUID Fn0000_0001_EDX[HTT] = 1 then LogicalProcessorCount is the number of threads per CPU
            core times the number of CPU cores per processor */
+#ifdef VBOX_WITH_MULTI_CORE
         pStdFeatureLeaf->uEbx |= pVM->cCpus <= 0xff ? (pVM->cCpus << 16) : UINT32_C(0x00ff0000);
-        pStdFeatureLeaf->uEdx |= X86_CPUID_FEATURE_EDX_HTT;  /* necessary for hyper-threading *or* multi-core CPUs */
-    }
+#else
+        /* Single logical processor in a package. */
+        pStdFeatureLeaf->uEbx |= (1 << 16);
 #endif
+    }
 
     uint32_t uMicrocodeRev;
     int rc = SUPR3QueryMicrocodeRev(&uMicrocodeRev);
