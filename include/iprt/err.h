@@ -3103,6 +3103,16 @@ RT_C_DECLS_END
 
 /** @} */
 
+
+/** @name RTSerialPort status codes
+ * @{ */
+/** A break was detected until all requested data could be received. */
+#define VERR_SERIALPORT_BREAK_DETECTED                  (-25500)
+/** The chosen baudrate is invalid or not supported by the given serial port. */
+#define VERR_SERIALPORT_INVALID_BAUDRATE                (-25501)
+
+/** @} */
+
 /* SED-END */
 
 /** @} */

@@ -945,6 +945,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/process-creation-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/semrw-posix.cpp \
+	r3/posix/serialport-posix.cpp \
 	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/thread2-posix.cpp \
@@ -1126,6 +1127,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/semevent-posix.cpp \
 	r3/posix/semeventmulti-posix.cpp \
 	r3/posix/semmutex-posix.cpp \
+	r3/posix/serialport-posix.cpp \
 	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/thread2-posix.cpp \
@@ -1206,6 +1208,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/semeventmulti-posix.cpp \
 	r3/posix/semmutex-posix.cpp \
 	r3/posix/semrw-posix.cpp \
+	r3/posix/serialport-posix.cpp \
 	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/thread2-posix.cpp \
@@ -1280,6 +1283,7 @@ RuntimeR3_SOURCES.netbsd = \
 	r3/posix/semeventmulti-posix.cpp \
 	r3/posix/semmutex-posix.cpp \
 	r3/posix/semrw-posix.cpp \
+	r3/posix/serialport-posix.cpp \
 	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/thread2-posix.cpp \
@@ -1348,6 +1352,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/semeventmulti-posix.cpp \
 	r3/posix/semmutex-posix.cpp \
 	r3/posix/semrw-posix.cpp \
+	r3/posix/serialport-posix.cpp \
 	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/thread2-posix.cpp \
@@ -1437,6 +1442,7 @@ RuntimeR3_SOURCES.haiku = \
 	r3/posix/semevent-posix.cpp \
 	r3/posix/semeventmulti-posix.cpp \
 	r3/posix/semmutex-posix.cpp \
+	r3/posix/serialport-posix.cpp \
 	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/thread2-posix.cpp \
