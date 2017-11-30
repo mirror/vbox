@@ -252,11 +252,16 @@ void UIIconPool::addName(QIcon &icon, const QString &strName,
     /* Parse name to prefix and suffix: */
     QString strPrefix = strName.section('.', 0, -2);
     QString strSuffix = strName.section('.', -1, -1);
-    /* Prepare HiDPI pixmap on the basis of values above: */
-    QPixmap pixmapHiDPI(strPrefix + "_x2." + strSuffix);
-    /* Add HiDPI pixmap (if any): */
-    if (!pixmapHiDPI.isNull())
-        icon.addPixmap(pixmapHiDPI, mode, state);
+    /* Prepare HiDPI pixmaps: */
+    const QStringList aPixmapNames = QStringList() << (strPrefix + "_x2." + strSuffix)
+                                                   << (strPrefix + "_x3." + strSuffix)
+                                                   << (strPrefix + "_x4." + strSuffix);
+    foreach (const QString &strPixmapName, aPixmapNames)
+    {
+        QPixmap pixmapHiDPI(strPixmapName);
+        if (!pixmapHiDPI.isNull())
+            icon.addPixmap(pixmapHiDPI, mode, state);
+    }
 }
 
 
