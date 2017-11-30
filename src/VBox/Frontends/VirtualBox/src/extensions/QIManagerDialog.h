@@ -95,29 +95,29 @@ protected:
     /** @name Prepare/cleanup cascade.
       * @{ */
         /** Prepares all.
-          * @note Normally you no need to reimplement it. */
+          * @note Normally you don't need to reimplement it. */
         void prepare();
         /** Configures all.
           * @note Injected into prepare(), reimplement to configure all there. */
         virtual void configure() {}
         /** Prepares central-widget.
-          * @note Injected into prepare(), normally you no need to reimplement it. */
+          * @note Injected into prepare(), normally you don't need to reimplement it. */
         void prepareCentralWidget();
         /** Configures central-widget.
           * @note Injected into prepareCentralWidget(), reimplement to configure central-widget there. */
         virtual void configureCentralWidget() {}
         /** Prepares button-box.
-          * @note Injected into prepareCentralWidget(), normally you no need to reimplement it. */
+          * @note Injected into prepareCentralWidget(), normally you don't need to reimplement it. */
         void prepareButtonBox();
         /** Configures button-box.
           * @note Injected into prepareButtonBox(), reimplement to configure button-box there. */
         virtual void configureButtonBox() {}
         /** Prepares menu-bar.
-          * @note Injected into prepare(), normally you no need to reimplement it. */
+          * @note Injected into prepare(), normally you don't need to reimplement it. */
         void prepareMenuBar();
 #ifdef VBOX_WS_MAC
         /** Prepares toolbar.
-          * @note Injected into prepare(), normally you no need to reimplement it. */
+          * @note Injected into prepare(), normally you don't need to reimplement it. */
         void prepareToolBar();
 #endif
         /** Performs final preparations.
@@ -125,10 +125,10 @@ protected:
         virtual void finalize() {}
 
         /** Cleanup menu-bar.
-          * @note Injected into cleanup(), normally you no need to reimplement it. */
+          * @note Injected into cleanup(), normally you don't need to reimplement it. */
         void cleanupMenuBar();
         /** Cleanups all.
-          * @note Normally you no need to reimplement it. */
+          * @note Normally you don't need to reimplement it. */
         void cleanup();
     /** @} */
 
