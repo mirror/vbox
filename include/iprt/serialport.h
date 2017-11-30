@@ -319,7 +319,7 @@ RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, RTSERIALPORTEVT *penmE
  * @returns IPRT status code.
  * @param   hSerialPort             The IPRT serial port handle.
  *
- * @thread Any thread.
+ * @note Any thread.
  */
 RTDECL(int) RTSerialPortEvtPollInterrupt(RTSERIALPORT hSerialPort);
 
