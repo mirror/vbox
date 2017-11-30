@@ -222,6 +222,7 @@ static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
 
         if (RT_SUCCESS(rc))
         {
+#ifdef RT_OS_LINUX
             if (pThis->fOpenFlags & RT_SERIALPORT_OPEN_F_ENABLE_LOOPBACK)
             {
                 int fTiocmSet = TIOCM_LOOP;
@@ -237,6 +238,10 @@ static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
                 if (rcPsx == -1)
                     rc = RTErrConvertFromErrno(errno);
             }
+#else
+            if (pThis->fOpenFlags & RT_SERIALPORT_OPEN_F_ENABLE_LOOPBACK)
+                return VERR_NOT_SUPPORTED;
+#endif
         }
     }
     else
@@ -434,8 +439,6 @@ static DECLCALLBACK(int) rtSerialPortStsLineMonitorThrd(RTTHREAD hThreadSelf, vo
     uint32_t cStsLineGetErrors = 0;
 #ifdef RT_OS_LINUX
     bool fPoll = false;
-#else
-    const bool fPoll = true;
 #endif
 
     int rcPsx = ioctl(pThis->iFd, TIOCMGET, &fStsLinesOld);
