@@ -1,0 +1,78 @@
+# $Id: Makefile.kmk 118412 2017-10-17 14:26:02Z bird $
+## @file
+# Sub-Makefile for OpenSSL ssl.
+#
+
+#
+# Copyright (C) 2006-2017 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+#
+# The main target: libssl.
+#
+if "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)"
+ LIBRARIES += VBox-libssl
+endif
+VBox-libssl_TEMPLATE = LIBCRYPTO
+VBox-libssl_DEFS.win = NOCRYPT # Exclude WinCrypt.h
+VBox-libssl_DEFS = OPENSSL_NO_DEPRECATED
+VBox-libssl_SOURCES  = \
+	bio_ssl.c \
+	d1_lib.c \
+	d1_msg.c \
+	d1_srtp.c \
+	methods.c \
+	pqueue.c \
+	s3_cbc.c \
+	s3_enc.c \
+	s3_lib.c \
+	s3_msg.c \
+	ssl_asn1.c \
+	ssl_cert.c \
+	ssl_ciph.c \
+	ssl_conf.c \
+	ssl_err.c \
+	ssl_init.c \
+	ssl_lib.c \
+	ssl_mcnf.c \
+	ssl_rsa.c \
+	ssl_sess.c \
+	ssl_stat.c \
+	ssl_txt.c \
+	t1_enc.c \
+	t1_ext.c \
+	t1_lib.c \
+	t1_reneg.c \
+	tls_srp.c \
+	record/dtls1_bitmap.c \
+	record/rec_layer_d1.c \
+	record/rec_layer_s3.c \
+	record/ssl3_buffer.c \
+	record/ssl3_record.c \
+	statem/statem.c \
+	statem/statem_clnt.c \
+	statem/statem_dtls.c \
+	statem/statem_lib.c \
+	statem/statem_srvr.c
+
+ifdef VBOX_WITH_32_ON_64_MAIN_API # 32-bit edition.
+ LIBRARIES += VBox-libssl-x86
+ VBox-libssl-x86_TEMPLATE = VBoxLibCrypto-x86
+ VBox-libssl-x86_EXTENDS = VBox-libssl
+endif
+
+
+#
+# For the extension pack.
+#
+LIBRARIES += VBoxExtPack-libssl
+VBoxExtPack-libssl_EXTENDS = VBox-libssl
+VBoxExtPack-libssl_DEFS = VBOX_IN_EXTPACK
+
+include $(FILE_KBUILD_SUB_FOOTER)

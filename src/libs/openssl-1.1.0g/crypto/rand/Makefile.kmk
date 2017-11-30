@@ -1,0 +1,32 @@
+# $Id: Makefile.kmk 118412 2017-10-17 14:26:02Z bird $
+## @file
+# OpenSSL Sub-Makefile.
+#
+
+#
+# Copyright (C) 2006-2017 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+LIBRARIES += crypto_rand
+crypto_rand_TEMPLATE = SUBLIBCRYPTO
+crypto_rand_DEFS = OPENSSL_NO_DEPRECATED
+crypto_rand_SOURCES = \
+	md_rand.c \
+	randfile.c \
+	rand_err.c \
+	rand_egd.c \
+	rand_lib.c \
+	rand_unix.c
+#rypto_rand_SOURCES.os2 = \
+#   rand_os2.c
+crypto_rand_SOURCES.win = \
+	rand_win.c
+$(evalcall VBOX_OPENSSL_X86,crypto_rand)
+
+include $(FILE_KBUILD_SUB_FOOTER)

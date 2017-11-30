@@ -1,0 +1,55 @@
+# $Id: Makefile.kmk 118412 2017-10-17 14:26:02Z bird $
+## @file
+# OpenSSL Sub-Makefile.
+#
+
+#
+# Copyright (C) 2006-2017 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+LIBRARIES += crypto_x509
+crypto_x509_TEMPLATE = SUBLIBCRYPTO
+crypto_x509_DEFS = OPENSSL_NO_DEPRECATED
+crypto_x509_SOURCES = \
+ 	by_dir.c \
+ 	by_file.c \
+	t_x509.c \
+	x509_att.c \
+	x509_cmp.c \
+ 	x509cset.c \
+ 	x509_d2.c \
+ 	x509_def.c \
+ 	x509_err.c \
+	x509_ext.c \
+ 	x509_lu.c \
+	x509name.c \
+	x509_obj.c \
+ 	x509_r2x.c \
+	x509_req.c \
+	x509rset.c \
+ 	x509_set.c \
+ 	x509spki.c \
+ 	x509_trs.c \
+ 	x509_txt.c \
+ 	x509type.c \
+	x509_v3.c \
+ 	x509_vfy.c \
+ 	x509_vpm.c \
+	x_all.c \
+	x_attrib.c \
+	x_crl.c \
+	x_exten.c \
+	x_name.c \
+	x_pubkey.c \
+	x_req.c \
+	x_x509a.c \
+	x_x509.c
+$(evalcall VBOX_OPENSSL_X86,crypto_x509)
+
+include $(FILE_KBUILD_SUB_FOOTER)
