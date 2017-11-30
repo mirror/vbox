@@ -170,6 +170,10 @@
 #define RTSEMXROADS_MAGIC               UINT32_C(0x19350917)
 /** RTSEMXROADSINTERNAL::u32Magic value after RTSemXRoadsDestroy. */
 #define RTSEMXROADS_MAGIC_DEAD          UINT32_C(0x20011110)
+/** RTSERIALPORTINTERNAL::u32Magic value (Jules-Gabriel Verne). */
+#define RTSERIALPORT_MAGIC              UINT32_C(0x18280208)
+/** RTSERIALPORTINTERNAL::u32Magic value after RTSerialPortClose. */
+#define RTSERIALPORT_MAGIC_DEAD         UINT32_C(0x19050324)
 /** The magic value for RTSOCKETINT::u32Magic. (Stanislaw Lem) */
 #define RTSOCKET_MAGIC                  UINT32_C(0x19210912)
 /** The magic value for RTSOCKETINT::u32Magic after destruction. */
