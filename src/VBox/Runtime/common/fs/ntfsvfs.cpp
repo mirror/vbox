@@ -40,15 +40,15 @@
 #include <iprt/string.h>
 #include <iprt/vfs.h>
 #include <iprt/vfslowlevel.h>
+#include <iprt/utf16.h>
 #include <iprt/formats/ntfs.h>
 
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** Max clusters in an allocation run.
- * This ASSUMES that the cluster size is at most 64KB. */
-#define RTFSNTFS_MAX_CLUSTER_IN_RUN     UINT64_C(0x00007fffffffffff)
+/** The maximum bitmap cache size. */
+#define RTFSNTFS_MAX_BITMAP_CACHE           _64K
 
 
 /*********************************************************************************************************************************
@@ -121,8 +121,6 @@ typedef struct RTFSNTFSMFTREC
     uint32_t volatile   cRefs;
     /** Set if this is a base MFT record. */
     bool                fIsBase;
-    /** The disk offset of this MFT entry. */
-    uint64_t            offDisk;
 } RTFSNTFSMFTREC;
 
 
@@ -158,6 +156,9 @@ typedef struct RTFSNTFSATTR
     /** Pointer to the attribute header.
      * The MFT is held down by RTFSNTFSCORE via pMftEntry. */
     PNTFSATTRIBHDR      pAttrHdr;
+    /** The offset of the attribute header in the MFT record.
+     * This is needed to validate header relative offsets. */
+    uint32_t            offAttrHdrInMftRec;
     /** Disk space allocation if non-resident. */
     RTFSNTFSEXTENTS     Extents;
     /** Pointer to any subrecords containing further allocation extents. */
@@ -228,15 +229,57 @@ typedef struct RTFSNTFSVOL
     /** The volume serial number. */
     uint64_t        uSerialNo;
 
-    /** The MFT data attribute. */
+    /** The '$Mft' data attribute. */
     PRTFSNTFSATTR   pMftData;
+
+
+    /** @name Allocation bitmap and cache.
+     * @{ */
+    /** The '$Bitmap' data attribute. */
+    PRTFSNTFSATTR   pMftBitmap;
+    /** The first cluster currently loaded into the bitmap cache . */
+    uint64_t        iFirstBitmapCluster;
+    /** The number of clusters currently loaded into the bitmap cache */
+    uint32_t        cBitmapClusters;
+    /** The size of the pvBitmap allocation. */
+    uint32_t        cbBitmapAlloc;
+    /** Allocation bitmap cache buffer. */
+    void           *pvBitmap;
+    /** @} */
 
     /** Root of the MFT record tree (RTFSNTFSMFTREC). */
     AVLU64TREE      MftRoot;
 } RTFSNTFSVOL;
 
 
-static PRTFSNTFSMFTREC rtFsNtfsMftVol_New(PRTFSNTFSVOL pVol, uint64_t idMft)
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static uint32_t rtFsNtfsCore_Release(PRTFSNTFSCORE pThis);
+
+
+
+/**
+ * Checks if a bit is set in an NTFS bitmap (little endian).
+ *
+ * @returns true if set, false if not.
+ * @param   pvBitmap            The bitmap buffer.
+ * @param   iBit                The bit.
+ */
+DECLINLINE(bool) rtFsNtfsBitmap_IsSet(void *pvBitmap, uint32_t iBit)
+{
+#if 0 //def RT_LITTLE_ENDIAN
+    return ASMBitTest(pvBitmap, iBit);
+#else
+    uint8_t b = ((uint8_t const *)pvBitmap)[iBit >> 3];
+    return RT_BOOL(b & (1 << (iBit & 7)));
+#endif
+}
+
+
+
+static PRTFSNTFSMFTREC rtFsNtfsVol_NewMftRec(PRTFSNTFSVOL pVol, uint64_t idMft)
 {
     PRTFSNTFSMFTREC pRec = (PRTFSNTFSMFTREC)RTMemAllocZ(sizeof(*pRec));
     if (pRec)
@@ -246,7 +289,6 @@ static PRTFSNTFSMFTREC rtFsNtfsMftVol_New(PRTFSNTFSVOL pVol, uint64_t idMft)
         {
             pRec->TreeNode.Key = idMft;
             pRec->pNext        = NULL;
-            pRec->offDisk      = UINT64_MAX;
             pRec->cRefs        = 1;
             if (RTAvlU64Insert(&pVol->MftRoot, &pRec->TreeNode))
                 return pRec;
@@ -300,7 +342,7 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec, uint32_t cbMftRecord)
     if (LogIs2Enabled())
     {
         PCNTFSRECFILE  pFileRec = pRec->pFileRec;
-        Log2(("NTFS: MFT #%#RX64 at %#RX64\n", pRec->TreeNode.Key, pRec->offDisk));
+        Log2(("NTFS: MFT #%#RX64\n", pRec->TreeNode.Key));
         if (pFileRec->Hdr.uMagic == NTFSREC_MAGIC_FILE)
         {
             size_t const          cbRec = cbMftRecord;
@@ -517,6 +559,8 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec, uint32_t cbMftRecord)
                           RT_LE2H_U64(pHdr->u.NonRes.iVcnLast) - RT_LE2H_U64(pHdr->u.NonRes.iVcnFirst) + 1));
                     Log2(("NTFS:     cbAllocated        %#RX64 (%Rhcb)\n",
                           RT_LE2H_U64(pHdr->u.NonRes.cbAllocated), RT_LE2H_U64(pHdr->u.NonRes.cbAllocated)));
+                    Log2(("NTFS:     cbData             %#RX64 (%Rhcb)\n",
+                          RT_LE2H_U64(pHdr->u.NonRes.cbData), RT_LE2H_U64(pHdr->u.NonRes.cbData)));
                     Log2(("NTFS:     cbInitialized      %#RX64 (%Rhcb)\n",
                           RT_LE2H_U64(pHdr->u.NonRes.cbInitialized), RT_LE2H_U64(pHdr->u.NonRes.cbInitialized)));
                     uint16_t const offMappingPairs = RT_LE2H_U16(pHdr->u.NonRes.offMappingPairs);
@@ -527,13 +571,15 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec, uint32_t cbMftRecord)
                     if (pHdr->u.NonRes.uCompressionUnit != 0)
                         Log2(("NTFS:     Compression unit   2^%u clusters\n", pHdr->u.NonRes.uCompressionUnit));
 
-                    if (   NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED <= cbMaxAttrib
-                        && NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED <= cbAttrib
+                    if (   cbMaxAttrib >= NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED
+                        && cbAttrib    >= NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED
                         && (   offMappingPairs >= NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED
                             || offMappingPairs <  NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED))
                         Log2(("NTFS:     cbCompressed       %#RX64 (%Rhcb)\n",
                               RT_LE2H_U64(pHdr->u.NonRes.cbCompressed), RT_LE2H_U64(pHdr->u.NonRes.cbCompressed)));
-                    else if (pHdr->u.NonRes.uCompressionUnit != 0 && pHdr->u.NonRes.uCompressionUnit != 64)
+                    else if (   pHdr->u.NonRes.uCompressionUnit != 0
+                             && pHdr->u.NonRes.uCompressionUnit != 64
+                             && pHdr->u.NonRes.iVcnFirst == 0)
                         Log2(("NTFS:     !Error! Compressed attrib fields are out of bound!\n"));
 
                     if (   offMappingPairs < cbAttrib
@@ -631,7 +677,7 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec, uint32_t cbMftRecord)
 
 
 static int rtFsNtfsAttr_ParseExtents(PRTFSNTFSATTR pAttrib, PRTFSNTFSEXTENTS pExtents, uint8_t cClusterShift, int64_t iVcnFirst,
-                                     PRTERRINFO pErrInfo, uint64_t idxMft, uint32_t offAttrib)
+                                     uint64_t cbVolume, PRTERRINFO pErrInfo, uint64_t idxMft, uint32_t offAttrib)
 {
     PCNTFSATTRIBHDR pAttrHdr = pAttrib->pAttrHdr;
     Assert(pAttrHdr->fNonResident);
@@ -776,6 +822,13 @@ static int rtFsNtfsAttr_ParseExtents(PRTFSNTFSATTR pAttrib, PRTFSNTFSEXTENTS pEx
                                         rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                                      "Bad MFT record %#RX64: Extent #%#x for attribute (@%#x): iLcn %RX64 overflows when shifted by %u",
                                                                      idxMft, iExtent, offAttrib, iLcn, cClusterShift));
+                        AssertBreakStmt(   paExtents[iExtent].off < cbVolume
+                                        || paExtents[iExtent].cbExtent < cbVolume
+                                        || paExtents[iExtent].off + paExtents[iExtent].cbExtent <= cbVolume,
+                                        rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                                     "Bad MFT record %#RX64: Extent #%#x for attribute (@%#x) outside volume: %#RX64 LB %#RX64, cbVolume=%#RX64",
+                                                                     idxMft, iExtent, offAttrib, paExtents[iExtent].off,
+                                                                     paExtents[iExtent].cbExtent, cbVolume));
                     }
                     else
                         paExtents[iExtent].off = UINT64_MAX;
@@ -803,6 +856,17 @@ static int rtFsNtfsAttr_ParseExtents(PRTFSNTFSATTR pAttrib, PRTFSNTFSEXTENTS pEx
 }
 
 
+/**
+ * Parses the given MTF record and all related records, putting the result in
+ * pRec->pCore (with one reference for the caller).
+ *
+ * ASSUMES caller will release pRec->pCore on failure.
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The volume.
+ * @param   pRec        The MFT record to parse.
+ * @param   pErrInfo    Where to return additional error information.  Optional.
+ */
 static int rtFsNtfsVol_ParseMft(PRTFSNTFSVOL pThis, PRTFSNTFSMFTREC pRec, PRTERRINFO pErrInfo)
 {
     AssertReturn(!pRec->pCore, VERR_INTERNAL_ERROR_4);
@@ -861,6 +925,7 @@ static int rtFsNtfsVol_ParseMft(PRTFSNTFSVOL pThis, PRTFSNTFSMFTREC pRec, PRTERR
         PRTFSNTFSATTR pAttrib = (PRTFSNTFSATTR)RTMemAllocZ(sizeof(*pAttrib));
         AssertReturn(pAttrib, VERR_NO_MEMORY);
         pAttrib->pAttrHdr           = pAttrHdr;
+        pAttrib->offAttrHdrInMftRec = offRec;
         pAttrib->pCore              = pCore;
         //pAttrib->Extents.cExtents   = 0;
         //pAttrib->Extents.paExtents  = NULL;
@@ -868,7 +933,7 @@ static int rtFsNtfsVol_ParseMft(PRTFSNTFSVOL pThis, PRTFSNTFSMFTREC pRec, PRTERR
         if (pAttrHdr->fNonResident)
         {
             int rc = rtFsNtfsAttr_ParseExtents(pAttrib, &pAttrib->Extents, pThis->cClusterShift, 0 /*iVncFirst*/,
-                                               pErrInfo, pRec->TreeNode.Key, offRec);
+                                               pThis->cbVolume, pErrInfo, pRec->TreeNode.Key, offRec);
             if (RT_FAILURE(rc))
             {
                 RTMemFree(pAttrib);
@@ -894,6 +959,198 @@ static int rtFsNtfsVol_ParseMft(PRTFSNTFSVOL pThis, PRTFSNTFSMFTREC pRec, PRTERR
 
     return VINF_SUCCESS;
 }
+
+
+static int rtFsNtfsAttr_Read(PRTFSNTFSATTR pAttr, uint64_t off, void *pvBuf, size_t cbToRead)
+{
+    PRTFSNTFSVOL pVol = pAttr->pCore->pVol;
+    int          rc;
+    if (!pAttr->pAttrHdr->fNonResident)
+    {
+        /*
+         * The attribute is resident.
+         */
+        uint32_t cbAttrib = RT_LE2H_U32(pAttr->pAttrHdr->cbAttrib);
+        uint32_t cbValue  = RT_LE2H_U32(pAttr->pAttrHdr->u.Res.cbValue);
+        uint16_t offValue = RT_LE2H_U16(pAttr->pAttrHdr->u.Res.offValue);
+        if (   off            <  cbValue
+            && cbToRead       <= cbValue
+            && off + cbToRead <= cbValue)
+        {
+            if (offValue <= cbAttrib)
+            {
+                cbAttrib -= offValue;
+                if (off < cbAttrib)
+                {
+                    /** @todo check if its possible to have cbValue larger than the attribute and
+                     *        reading those extra bytes as zero. */
+                    if (   pAttr->offAttrHdrInMftRec + offValue + cbAttrib <= pVol->cbMftRecord
+                        && cbAttrib <= pVol->cbMftRecord)
+                    {
+                        size_t cbToCopy = cbAttrib - off;
+                        if (cbToCopy > cbToRead)
+                            cbToCopy = cbToRead;
+                        memcpy(pvBuf, (uint8_t *)pAttr->pAttrHdr + offValue, cbToCopy);
+                        pvBuf     = (uint8_t *)pvBuf + cbToCopy;
+                        cbToRead -= cbToCopy;
+                        rc = VINF_SUCCESS;
+                    }
+                    else
+                    {
+                        rc = VERR_VFS_BOGUS_OFFSET;
+                        Log(("rtFsNtfsAttr_Read: bad resident attribute!\n"));
+                    }
+                }
+                else
+                    rc = VINF_SUCCESS;
+            }
+            else
+                rc = VERR_VFS_BOGUS_FORMAT;
+        }
+        else
+            rc = VERR_EOF;
+    }
+    else if (pAttr->pAttrHdr->u.NonRes.uCompressionUnit == 0)
+    {
+        /*
+         * Uncompressed non-resident attribute.
+         */
+        uint64_t const cbAllocated   = RT_LE2H_U64(pAttr->pAttrHdr->u.NonRes.cbAllocated);
+        if (   off >= cbAllocated
+            || cbToRead > cbAllocated
+            || off + cbToRead > cbAllocated)
+            rc = VERR_EOF;
+        else
+        {
+            rc = VINF_SUCCESS;
+
+            uint64_t const cbInitialized = RT_LE2H_U64(pAttr->pAttrHdr->u.NonRes.cbInitialized);
+            if (   off < cbInitialized
+                && cbToRead > 0)
+            {
+                /*
+                 * Locate the first extent.  This is a tad complicated.
+                 *
+                 * We move off along as we traverse the extent tables, so that it is relative
+                 * to the start of the current extent.
+                 */
+                PRTFSNTFSEXTENTS    pTable   = &pAttr->Extents;
+                uint32_t            iExtent  = 0;
+                PRTFSNTFSATTRSUBREC pCurSub  = NULL;
+                for (;;)
+                {
+                    if (off < pTable->cbData)
+                    {
+                        while (   iExtent < pTable->cExtents
+                               && off >= pTable->paExtents[iExtent].cbExtent)
+                        {
+                            off -= pTable->paExtents[iExtent].cbExtent;
+                            iExtent++;
+                        }
+                        AssertReturn(iExtent < pTable->cExtents, VERR_INTERNAL_ERROR_2);
+                        break;
+                    }
+
+                    /* Next table. */
+                    off -= pTable->cbData;
+                    if (!pCurSub)
+                        pCurSub = pAttr->pSubRecHead;
+                    else
+                        pCurSub = pCurSub->pNext;
+                    if (!pCurSub)
+                    {
+                        iExtent = UINT32_MAX;
+                        break;
+                    }
+                    pTable  = &pCurSub->Extents;
+                    iExtent = 0;
+                }
+
+                /*
+                 * The read loop.
+                 */
+                while (iExtent != UINT32_MAX)
+                {
+                    uint64_t cbMaxRead = pTable->paExtents[iExtent].cbExtent;
+                    Assert(off < cbMaxRead);
+                    cbMaxRead -= off;
+                    size_t const cbThisRead = cbMaxRead >= cbToRead ? cbToRead : (size_t)cbMaxRead;
+                    if (pTable->paExtents[iExtent].off == UINT64_MAX)
+                        RT_BZERO(pvBuf, cbThisRead);
+                    else
+                    {
+                        rc = RTVfsFileReadAt(pVol->hVfsBacking, pTable->paExtents[iExtent].off + off, pvBuf, cbThisRead, NULL);
+                        if (RT_FAILURE(rc))
+                            break;
+                    }
+                    pvBuf     = (uint8_t *)pvBuf + cbThisRead;
+                    cbToRead -= cbThisRead;
+                    if (!cbToRead)
+                        break;
+
+                    /*
+                     * Advance to the next extent.
+                     */
+                    iExtent++;
+                    if (iExtent >= pTable->cExtents)
+                    {
+                        pCurSub = pCurSub ? pCurSub->pNext : pAttr->pSubRecHead;
+                        if (!pCurSub)
+                            break;
+                        pTable  = &pCurSub->Extents;
+                        iExtent = 0;
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        LogRel(("rtFsNtfsAttr_Read: Compressed files are not supported\n"));
+        rc = VERR_NOT_SUPPORTED;
+    }
+
+    /*
+     * Anything else beyond the end of what's stored/initialized?
+     */
+    if (   cbToRead > 0
+        && RT_SUCCESS(rc))
+    {
+        RT_BZERO(pvBuf, cbToRead);
+    }
+
+    return rc;
+}
+
+
+static int rtFsNtfsVol_NewCoreForMftIdx(PRTFSNTFSVOL pThis, uint64_t idxMft, PRTFSNTFSCORE *ppCore, PRTERRINFO pErrInfo)
+{
+    Assert(pThis->pMftData);
+    Assert(RTAvlU64Get(&pThis->MftRoot, idxMft) == NULL);
+
+    PRTFSNTFSMFTREC pRec = rtFsNtfsVol_NewMftRec(pThis, idxMft);
+    AssertReturn(pRec, VERR_NO_MEMORY);
+
+    uint64_t offRec = idxMft * pThis->cbMftRecord;
+    int rc = rtFsNtfsAttr_Read(pThis->pMftData, offRec, pRec->pbRec, pThis->cbMftRecord);
+    if (RT_SUCCESS(rc))
+    {
+#ifdef LOG_ENABLED
+        rtfsNtfsMftRec_Log(pRec, pThis->cbMftRecord);
+#endif
+        rc = rtFsNtfsVol_ParseMft(pThis, pRec, pErrInfo);
+        if (RT_SUCCESS(rc))
+        {
+            rtFsNtfsMftRec_Release(pRec, pThis);
+            *ppCore = pRec->pCore;
+            return VINF_SUCCESS;
+        }
+        rtFsNtfsCore_Release(pRec->pCore);
+        rtFsNtfsMftRec_Release(pRec, pThis);
+    }
+    return rc;
+}
+
 
 
 /**
@@ -959,11 +1216,15 @@ static uint32_t rtFsNtfsCore_Destroy(PRTFSNTFSCORE pThis)
  */
 static uint32_t rtFsNtfsCore_Release(PRTFSNTFSCORE pThis)
 {
-    uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
-    Assert(cRefs < 128);
-    if (cRefs != 0)
-        return cRefs;
-    return rtFsNtfsCore_Destroy(pThis);
+    if (pThis)
+    {
+        uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
+        Assert(cRefs < 128);
+        if (cRefs != 0)
+            return cRefs;
+        return rtFsNtfsCore_Destroy(pThis);
+    }
+    return 0;
 }
 
 
@@ -1001,6 +1262,108 @@ static PRTFSNTFSATTR rtFsNtfsCore_FindUnnamedAttribute(PRTFSNTFSCORE pThis, uint
             return pCurAttr;
     }
     return NULL;
+}
+
+
+/**
+ * Slow path for querying the allocation state of a cluster.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The NTFS volume instance.
+ * @param   iCluster            The cluster to query.
+ * @param   pfState             Where to return the state.
+ */
+static int rtFsNtfsVol_QueryClusterStateSlow(PRTFSNTFSVOL pThis, uint64_t iCluster, bool *pfState)
+{
+    int rc;
+    uint64_t const cbWholeBitmap = RT_LE2H_U64(pThis->pMftBitmap->pAttrHdr->u.NonRes.cbData);
+    uint64_t const offInBitmap   = iCluster >> 3;
+    if (offInBitmap < cbWholeBitmap)
+    {
+        if (!pThis->pvBitmap)
+        {
+            /*
+             * Try cache the whole bitmap if it's not too large.
+             */
+            if (   cbWholeBitmap <= RTFSNTFS_MAX_BITMAP_CACHE
+                && cbWholeBitmap >= RT_ALIGN_64(pThis->cClusters >> 3, 8))
+            {
+                pThis->cbBitmapAlloc = RT_ALIGN_Z((uint32_t)cbWholeBitmap, 8);
+                pThis->pvBitmap      = RTMemAlloc(pThis->cbBitmapAlloc);
+                if (pThis->pvBitmap)
+                {
+                    memset(pThis->pvBitmap, 0xff, pThis->cbBitmapAlloc);
+                    rc = rtFsNtfsAttr_Read(pThis->pMftBitmap, 0, pThis->pvBitmap, (uint32_t)cbWholeBitmap);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pThis->iFirstBitmapCluster = 0;
+                        pThis->cBitmapClusters     = pThis->cClusters;
+                        *pfState = rtFsNtfsBitmap_IsSet(pThis->pvBitmap, (uint32_t)iCluster);
+                        return VINF_SUCCESS;
+                    }
+                    RTMemFree(pThis->pvBitmap);
+                    pThis->pvBitmap      = NULL;
+                    pThis->cbBitmapAlloc = 0;
+                    return rc;
+                }
+            }
+
+            /*
+             * Do a cluster/4K cache.
+             */
+            pThis->cbBitmapAlloc = RT_MAX(pThis->cbCluster, _4K);
+            pThis->pvBitmap      = RTMemAlloc(pThis->cbBitmapAlloc);
+            if (!pThis->pvBitmap)
+            {
+                pThis->cbBitmapAlloc = 0;
+                return VERR_NO_MEMORY;
+            }
+        }
+
+        /*
+         * Load a cache line.
+         */
+        Assert(RT_IS_POWER_OF_TWO(pThis->cbBitmapAlloc));
+        uint64_t offLoad = offInBitmap & ~(pThis->cbBitmapAlloc - 1);
+        uint32_t cbLoad  = (uint32_t)RT_MIN(cbWholeBitmap - offLoad, pThis->cbBitmapAlloc);
+
+        memset(pThis->pvBitmap, 0xff, pThis->cbBitmapAlloc);
+        rc = rtFsNtfsAttr_Read(pThis->pMftBitmap, offLoad, pThis->pvBitmap, cbLoad);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->iFirstBitmapCluster = offLoad << 3;
+            pThis->cBitmapClusters     = cbLoad  << 3;
+            *pfState = rtFsNtfsBitmap_IsSet(pThis->pvBitmap, (uint32_t)(iCluster - pThis->iFirstBitmapCluster));
+            return VINF_SUCCESS;
+        }
+        pThis->cBitmapClusters = 0;
+    }
+    else
+    {
+        LogRel(("rtFsNtfsVol_QueryClusterStateSlow: iCluster=%#RX64 is outside the bitmap (%#RX64)\n", iCluster, cbWholeBitmap));
+        rc = VERR_OUT_OF_RANGE;
+    }
+    return rc;
+}
+
+
+/**
+ * Query the allocation state of the given cluster.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The NTFS volume instance.
+ * @param   iCluster            The cluster to query.
+ * @param   pfState             Where to return the state.
+ */
+static int rtFsNtfsVol_QueryClusterState(PRTFSNTFSVOL pThis, uint64_t iCluster, bool *pfState)
+{
+    uint64_t iClusterInCache = iCluster - pThis->iFirstBitmapCluster;
+    if (iClusterInCache < pThis->cBitmapClusters)
+    {
+        *pfState = rtFsNtfsBitmap_IsSet(pThis->pvBitmap, (uint32_t)iClusterInCache);
+        return VINF_SUCCESS;
+    }
+    return rtFsNtfsVol_QueryClusterStateSlow(pThis, iCluster, pfState);
 }
 
 
@@ -1045,8 +1408,42 @@ static DECLCALLBACK(int) rtFsNtfsVol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
  */
 static DECLCALLBACK(int) rtFsNtfsVol_QueryRangeState(void *pvThis, uint64_t off, size_t cb, bool *pfUsed)
 {
-    NOREF(pvThis); NOREF(off); NOREF(cb); NOREF(pfUsed);
-    return VERR_NOT_IMPLEMENTED;
+    PRTFSNTFSVOL pThis = (PRTFSNTFSVOL)pvThis;
+    *pfUsed = true;
+
+    /*
+     * Round to a cluster range.
+     */
+    uint64_t iCluster  = off >> pThis->cClusterShift;
+
+    Assert(RT_IS_POWER_OF_TWO(pThis->cbCluster));
+    cb += off & (pThis->cbCluster - 1);
+    cb = RT_ALIGN_Z(cb, pThis->cbCluster);
+    size_t   cClusters = cb >> pThis->cClusterShift;
+
+    /*
+     * Check the clusters one-by-one.
+     * Just to be cautious, we will always check the cluster at off, even when cb is zero.
+     */
+    do
+    {
+        bool fState = true;
+        int rc = rtFsNtfsVol_QueryClusterState(pThis, iCluster, &fState);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (fState)
+        {
+            *pfUsed = true;
+            LogFlow(("rtFsNtfsVol_QueryRangeState: %RX64 LB %#x - used\n", off, cb));
+            return VINF_SUCCESS;
+        }
+
+        iCluster++;
+    } while (cClusters-- > 0);
+
+    LogFlow(("rtFsNtfsVol_QueryRangeState: %RX64 LB %#x - unused\n", off, cb));
+    *pfUsed = false;
+    return VINF_SUCCESS;
 }
 
 
@@ -1069,34 +1466,208 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsNtfsVolOps =
 };
 
 
-
-static int rtFsNtfsVolLoadMft(PRTFSNTFSVOL pThis, void *pvBuf, size_t cbBuf, PRTERRINFO pErrInfo)
+/**
+ * Checks that the storage for the given attribute is all marked allocated in
+ * the allocation bitmap of the volume.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The NTFS volume instance.
+ * @param   pAttr               The attribute to check.
+ * @param   pszDesc             Description of the attribute.
+ * @param   pErrInfo            Where to return error details.
+ */
+static int rtFsNtfsVolCheckBitmap(PRTFSNTFSVOL pThis, PRTFSNTFSATTR pAttr, const char *pszDesc, PRTERRINFO pErrInfo)
 {
-    AssertReturn(cbBuf >= _64K, VERR_INTERNAL_ERROR_2);
-    NOREF(pThis); NOREF(pvBuf); NOREF(cbBuf); NOREF(pErrInfo);
-    /** @todo read MFT, find bitmap allocation, implement
-     *        rtFsNtfsVol_QueryRangeState. */
+    PRTFSNTFSATTRSUBREC pSubRec = NULL;
+    PRTFSNTFSEXTENTS    pTable  = &pAttr->Extents;
+    uint64_t            offFile = 0;
+    for (;;)
+    {
+        uint32_t const  cExtents  = pTable->cExtents;
+        PRTFSNTFSEXTENT paExtents = pTable->paExtents;
+        for (uint32_t iExtent = 0; iExtent < cExtents; iExtent++)
+        {
+            uint64_t const off = paExtents[iExtent].off;
+            if (off == UINT64_MAX)
+                offFile += paExtents[iExtent].cbExtent;
+            else
+            {
+                uint64_t iCluster  = off >> pThis->cClusterShift;
+                uint64_t cClusters = paExtents[iExtent].cbExtent >> pThis->cClusterShift;
+                Assert((cClusters << pThis->cClusterShift) == paExtents[iExtent].cbExtent);
+                Assert(cClusters != 0);
 
+                while (cClusters-- > 0)
+                {
+                    bool fState = false;
+                    int rc = rtFsNtfsVol_QueryClusterState(pThis, iCluster, &fState);
+                    if (RT_FAILURE(rc))
+                        return RTERRINFO_LOG_REL_SET_F(pErrInfo, rc,
+                                                       "Error querying allocation bitmap entry %#RX64 (for %s offset %#RX64)",
+                                                       iCluster, pszDesc, offFile);
+                    if (!fState)
+                        return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                       "Cluster %#RX64 at offset %#RX64 in %s is not marked allocated",
+                                                       iCluster, offFile, pszDesc);
+                    offFile += pThis->cbCluster;
+                }
+            }
+        }
+
+        /* Next table. */
+        pSubRec = pSubRec ? pSubRec->pNext : pAttr->pSubRecHead;
+        if (!pSubRec)
+            return VINF_SUCCESS;
+        pTable = &pSubRec->Extents;
+    }
+}
+
+
+/**
+ * Loads the allocation bitmap and does basic validation of.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The NTFS volume instance.  Will set up the
+ *                              'Allocation bitmap and cache' fields.
+ * @param   pErrInfo            Where to return error details.
+ */
+static int rtFsNtfsVolLoadBitmap(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
+{
+    PRTFSNTFSCORE pCore;
+    int rc = rtFsNtfsVol_NewCoreForMftIdx(pThis, NTFS_MFT_IDX_BITMAP, &pCore, pErrInfo);
+    if (RT_SUCCESS(rc))
+    {
+        PRTFSNTFSATTR pMftBitmap;
+        pThis->pMftBitmap = pMftBitmap = rtFsNtfsCore_FindUnnamedAttribute(pCore, NTFS_AT_DATA);
+        if (pMftBitmap)
+        {
+            /*
+             * Validate the '$Bitmap' MFT record.
+             * We expect the bitmap to be fully initialized and be sized according to the
+             * formatted volume size.  Allegedly, NTFS pads it to an even 8 byte in size.
+             */
+            uint64_t const cbMinBitmap      = RT_ALIGN_64(pThis->cbVolume >> (pThis->cClusterShift + 3), 8);
+            uint64_t const cbMaxBitmap      = RT_ALIGN_64(cbMinBitmap, pThis->cbCluster);
+            //uint64_t const cbMinInitialized = RT_ALIGN_64((RT_MAX(pThis->uLcnMft, pThis->uLcnMftMirror) + 16) >> 3, 8);
+            if (!pMftBitmap->pAttrHdr->fNonResident)
+                rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #6 unnamed DATA attribute is resident!");
+            else if (   (uint64_t)RT_LE2H_U64(pMftBitmap->pAttrHdr->u.NonRes.cbAllocated) < cbMinBitmap
+                     || (uint64_t)RT_LE2H_U64(pMftBitmap->pAttrHdr->u.NonRes.cbAllocated) > cbMaxBitmap)
+                rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                             "MFT record #6 unnamed DATA attribute allocated size is out of range: %#RX64, expected at least %#RX64 and no more than %#RX64",
+                                             RT_LE2H_U64(pMftBitmap->pAttrHdr->u.NonRes.cbAllocated), cbMinBitmap, cbMaxBitmap);
+            else if (   (uint64_t)RT_LE2H_U64(pMftBitmap->pAttrHdr->u.NonRes.cbData) < cbMinBitmap
+                     ||    (uint64_t)RT_LE2H_U64(pMftBitmap->pAttrHdr->u.NonRes.cbData)
+                         > (uint64_t)RT_LE2H_U64(pMftBitmap->pAttrHdr->u.NonRes.cbData))
+                rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                             "MFT record #6 unnamed DATA attribute initialized size is out of range: %#RX64, expected at least %#RX64 and no more than %#RX64",
+                                             RT_LE2H_U64(pMftBitmap->pAttrHdr->u.NonRes.cbData), cbMinBitmap,
+                                             RT_LE2H_U64(pMftBitmap->pAttrHdr->u.NonRes.cbAllocated) );
+            else if (   (uint64_t)RT_LE2H_U64(pMftBitmap->pAttrHdr->u.NonRes.cbInitialized) < cbMinBitmap
+                     ||    (uint64_t)RT_LE2H_U64(pMftBitmap->pAttrHdr->u.NonRes.cbInitialized)
+                         > (uint64_t)RT_LE2H_U64(pMftBitmap->pAttrHdr->u.NonRes.cbAllocated))
+                rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                             "MFT record #6 unnamed DATA attribute initialized size is out of range: %#RX64, expected at least %#RX64 and no more than %#RX64",
+                                             RT_LE2H_U64(pMftBitmap->pAttrHdr->u.NonRes.cbInitialized), cbMinBitmap,
+                                             RT_LE2H_U64(pMftBitmap->pAttrHdr->u.NonRes.cbAllocated) );
+            else if (pMftBitmap->pAttrHdr->u.NonRes.uCompressionUnit != 0)
+                rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                             "MFT record #6 unnamed DATA attribute is compressed: %#x",
+                                             pMftBitmap->pAttrHdr->u.NonRes.uCompressionUnit);
+            else if (pMftBitmap->Extents.cExtents != 1) /* paranoia for now */
+                rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                             "MFT record #6 unnamed DATA attribute is expected to have a single extent: %u extents",
+                                             pMftBitmap->Extents.cExtents);
+            else if (pMftBitmap->Extents.paExtents[0].off == UINT64_MAX)
+                rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #6 unnamed DATA attribute is sparse");
+            else
+            {
+                PRTFSNTFSATTR pFilenameAttr = rtFsNtfsCore_FindUnnamedAttribute(pCore, NTFS_AT_FILENAME);
+                if (!pFilenameAttr)
+                    rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #6 has no FILENAME attribute!");
+                else if (pFilenameAttr->pAttrHdr->fNonResident)
+                    rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #6 FILENAME attribute is non-resident!");
+                else if (pFilenameAttr->pAttrHdr->u.Res.cbValue < RT_UOFFSETOF(NTFSATFILENAME, wszFilename[7]))
+                    rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                 "MFT record #6 FILENAME attribute value size is too small: %#x",
+                                                 pFilenameAttr->pAttrHdr->u.Res.cbValue);
+                else
+                {
+                    PNTFSATFILENAME pFilename = (PNTFSATFILENAME)(  (uint8_t *)pFilenameAttr->pAttrHdr
+                                                                  + pFilenameAttr->pAttrHdr->u.Res.offValue);
+                    if (   pFilename->cwcFilename != 7
+                        || RTUtf16NICmpAscii(pFilename->wszFilename, "$Bitmap", 7) != 0)
+                        rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                     "MFT record #6 FILENAME isn't '$Bitmap': '%.*ls'",
+                                                     pFilename->cwcFilename, pFilename->wszFilename);
+                    else
+                    {
+                        /*
+                         * Read some of it into the buffer and check that essential stuff is flagged as allocated.
+                         */
+                        /* The boot sector. */
+                        bool fState = false;
+                        rc = rtFsNtfsVol_QueryClusterState(pThis, 0, &fState);
+                        if (RT_SUCCESS(rc) && !fState)
+                            rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                       "MFT allocation bitmap error: Bootsector isn't marked allocated!");
+                        else if (RT_FAILURE(rc))
+                            rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                         "MFT allocation bitmap (offset 0) read error: %Rrc", rc);
+
+                        /* The bitmap ifself, the MFT data, and the MFT bitmap. */
+                        if (RT_SUCCESS(rc))
+                            rc = rtFsNtfsVolCheckBitmap(pThis, pThis->pMftBitmap, "allocation bitmap", pErrInfo);
+                        if (RT_SUCCESS(rc))
+                            rc = rtFsNtfsVolCheckBitmap(pThis, pThis->pMftData, "MFT", pErrInfo);
+                        if (RT_SUCCESS(rc))
+                            rc = rtFsNtfsVolCheckBitmap(pThis,
+                                                        rtFsNtfsCore_FindUnnamedAttribute(pThis->pMftData->pCore, NTFS_AT_BITMAP),
+                                                        "MFT Bitmap", pErrInfo);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /*
+                             * Looks like the bitmap is good.
+                             */
+                            return VINF_SUCCESS;
+                        }
+                    }
+                }
+            }
+            pThis->pMftBitmap = NULL;
+        }
+        else
+            rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 has no unnamed DATA attribute!");
+        rtFsNtfsCore_Release(pCore);
+    }
+    else
+        rc = RTERRINFO_LOG_REL_SET(pErrInfo, rc, "Error reading MFT record #6");
+    return rc;
+}
+
+
+
+/**
+ * Loads, validates and setups the '$Mft' (NTFS_MFT_IDX_MFT) MFT entry.
+ *
+ * This is the first thing we do after we've checked out the boot sector and
+ * extracted information from it, since everything else depends on us being able
+ * to access the MFT data.
+ *
+ * @returns IPRT status code
+ * @param   pThis               The NTFS volume instance.  Will set pMftData.
+ * @param   pErrInfo            Where to return additional error info.
+ */
+static int rtFsNtfsVolLoadMft(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
+{
     /*
      * Bootstrap the MFT data stream.
      */
-    PRTFSNTFSMFTREC pRec = rtFsNtfsMftVol_New(pThis, 0);
+    PRTFSNTFSMFTREC pRec = rtFsNtfsVol_NewMftRec(pThis, NTFS_MFT_IDX_MFT);
     AssertReturn(pRec, VERR_NO_MEMORY);
 
-#if 0 //def LOG_ENABLED
-    for (uint32_t i = 0; i < 64; i++)
-    {
-        RTVfsFileReadAt(pThis->hVfsBacking, (pThis->uLcnMft << pThis->cClusterShift) + i * pThis->cbMftRecord,
-                        pRec->pbRec, pThis->cbMftRecord, NULL);
-        pRec->TreeNode.Key = i;
-        Log(("\n"));
-        rtfsNtfsMftRec_Log(pRec, pThis->cbMftRecord);
-    }
-    pRec->TreeNode.Key = 0;
-#endif
-
-    pRec->offDisk = pThis->uLcnMft << pThis->cClusterShift;
-    int rc = RTVfsFileReadAt(pThis->hVfsBacking, pRec->offDisk, pRec->pbRec, pThis->cbMftRecord, NULL);
+    uint64_t const offDisk = pThis->uLcnMft << pThis->cClusterShift;
+    int rc = RTVfsFileReadAt(pThis->hVfsBacking, offDisk, pRec->pbRec, pThis->cbMftRecord, NULL);
     if (RT_SUCCESS(rc))
     {
 #ifdef LOG_ENABLED
@@ -1108,18 +1679,78 @@ static int rtFsNtfsVolLoadMft(PRTFSNTFSVOL pThis, void *pvBuf, size_t cbBuf, PRT
             pThis->pMftData = rtFsNtfsCore_FindUnnamedAttribute(pRec->pCore, NTFS_AT_DATA);
             if (pThis->pMftData)
             {
-                /** @todo sanity check the attribute. */
-                rtFsNtfsMftRec_Release(pRec, pThis);
-                return rc;
+                /*
+                 * Validate the '$Mft' MFT record.
+                 */
+                if (!pThis->pMftData->pAttrHdr->fNonResident)
+                    rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 unnamed DATA attribute is resident!");
+                else if (   (uint64_t)RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbAllocated) <  pThis->cbMftRecord * 16U
+                         || (uint64_t)RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbAllocated) >= pThis->cbBacking)
+                    rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                 "MFT record #0 unnamed DATA attribute allocated size is out of range: %#RX64",
+                                                 RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbAllocated));
+                else if (   (uint64_t)RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbInitialized) <  pThis->cbMftRecord * 16U
+                         || (uint64_t)RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbInitialized) >= pThis->cbBacking)
+                    rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                 "MFT record #0 unnamed DATA attribute initialized size is out of range: %#RX64",
+                                                 RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbInitialized));
+                else if (   (uint64_t)RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbData) <  pThis->cbMftRecord * 16U
+                         || (uint64_t)RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbData) >= pThis->cbBacking)
+                    rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                 "MFT record #0 unnamed DATA attribute allocated size is out of range: %#RX64",
+                                                 RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbData));
+                else if (pThis->pMftData->pAttrHdr->u.NonRes.uCompressionUnit != 0)
+                    rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                 "MFT record #0 unnamed DATA attribute is compressed: %#x",
+                                                 pThis->pMftData->pAttrHdr->u.NonRes.uCompressionUnit);
+                else if (pThis->pMftData->Extents.cExtents == 0)
+                    rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                               "MFT record #0 unnamed DATA attribute has no data on the disk");
+                else if (pThis->pMftData->Extents.paExtents[0].off != offDisk)
+                    rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                 "MFT record #0 unnamed DATA attribute has a bogus disk offset: %#RX64, expected %#RX64",
+                                                 pThis->pMftData->Extents.paExtents[0].off, offDisk);
+                else if (!rtFsNtfsCore_FindUnnamedAttribute(pRec->pCore, NTFS_AT_BITMAP))
+                    rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 has no unnamed BITMAP attribute!");
+                else
+                {
+                    PRTFSNTFSATTR pFilenameAttr = rtFsNtfsCore_FindUnnamedAttribute(pRec->pCore, NTFS_AT_FILENAME);
+                    if (!pFilenameAttr)
+                        rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 has no FILENAME attribute!");
+                    else if (pFilenameAttr->pAttrHdr->fNonResident)
+                        rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 FILENAME attribute is non-resident!");
+                    else if (pFilenameAttr->pAttrHdr->u.Res.cbValue < RT_UOFFSETOF(NTFSATFILENAME, wszFilename[4]))
+                        rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                     "MFT record #0 FILENAME attribute value size is too small: %#x",
+                                                     pFilenameAttr->pAttrHdr->u.Res.cbValue);
+                    else
+                    {
+                        PNTFSATFILENAME pFilename = (PNTFSATFILENAME)(  (uint8_t *)pFilenameAttr->pAttrHdr
+                                                                      + pFilenameAttr->pAttrHdr->u.Res.offValue);
+                        if (   pFilename->cwcFilename != 4
+                            || RTUtf16NICmpAscii(pFilename->wszFilename, "$Mft", 4) != 0)
+                            rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                         "MFT record #0 FILENAME isn't '$Mft': '%.*ls'",
+                                                         pFilename->cwcFilename, pFilename->wszFilename);
+                        else
+                        {
+                            /*
+                             * Looks like we're good.
+                             */
+                            return VINF_SUCCESS;
+                        }
+                    }
+                }
+                pThis->pMftData = NULL;
             }
-            rc = RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 has no unnamed DATA attribute!");
+            else
+                rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 has no unnamed DATA attribute!");
         }
-        if (pRec->pCore)
-            rtFsNtfsCore_Release(pRec->pCore);
+        rtFsNtfsCore_Release(pRec->pCore);
         rtFsNtfsMftRec_Release(pRec, pThis);
     }
     else
-        rc = RTERRINFO_LOG_SET(pErrInfo, rc, "Error reading MFT record #0");
+        rc = RTERRINFO_LOG_REL_SET(pErrInfo, rc, "Error reading MFT record #0");
     return rc;
 }
 
@@ -1305,7 +1936,9 @@ RTDECL(int) RTFsNtfsVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t f
             {
                 rc = rtFsNtfsVolLoadAndParseBootsector(pThis, pvBuf, _64K, pErrInfo);
                 if (RT_SUCCESS(rc))
-                    rc = rtFsNtfsVolLoadMft(pThis, pvBuf, _64K, pErrInfo);
+                    rc = rtFsNtfsVolLoadMft(pThis, pErrInfo);
+                if (RT_SUCCESS(rc))
+                    rc = rtFsNtfsVolLoadBitmap(pThis, pErrInfo);
                 RTMemTmpFree(pvBuf);
                 if (RT_SUCCESS(rc))
                 {

@@ -271,7 +271,11 @@ typedef struct NTFSATTRIBHDR
         /** Non-resident attributes. */
         struct
         {
-            /** 0x10: The first virtual cluster containing data. */
+            /** 0x10: The first virtual cluster containing data.
+             *
+             * This is mainly for internal checking when the run list doesn't fit in one
+             * MFT record.  It can also be used to avoid recording a sparse run at the
+             * beginning of the data covered by this attribute record. */
             int64_t         iVcnFirst;
             /** 0x18: The last virtual cluster containing data (inclusive). */
             int64_t         iVcnLast;
@@ -283,20 +287,25 @@ typedef struct NTFSATTRIBHDR
             uint8_t         uCompressionUnit;
             /** 0x23: Reserved */
             uint8_t         abReserved[5];
-            /** 0x28: Allocated size. */
+            /** 0x28: Allocated size (rouneded to cluster).
+             * @note Only set in the first attribute record (iVcnFirst == 0). */
             int64_t         cbAllocated;
-            /** 0x30: Initialized size. */
+            /** 0x30: The exact length of the data.
+             * @note Only set in the first attribute record (iVcnFirst == 0). */
+            int64_t         cbData;
+            /** 0x38: The length of the initialized data (rounded to cluster).
+             * @note Only set in the first attribute record (iVcnFirst == 0). */
             int64_t         cbInitialized;
-            /** 0x38: Compressed size if compressed, otherwise absent. */
+            /** 0x40: Compressed size if compressed, otherwise absent. */
             int64_t         cbCompressed;
         } NonRes;
     } u;
 } NTFSATTRIBHDR;
-AssertCompileSize(NTFSATTRIBHDR, 0x40);
+AssertCompileSize(NTFSATTRIBHDR, 0x48);
 AssertCompileMemberOffset(NTFSATTRIBHDR, u.Res, 0x10);
 AssertCompileMemberOffset(NTFSATTRIBHDR, u.Res.bReserved, 0x17);
 AssertCompileMemberOffset(NTFSATTRIBHDR, u.NonRes, 0x10);
-AssertCompileMemberOffset(NTFSATTRIBHDR, u.NonRes.cbCompressed, 0x38);
+AssertCompileMemberOffset(NTFSATTRIBHDR, u.NonRes.cbCompressed, 0x40);
 /** Pointer to a NTFS attribute header. */
 typedef NTFSATTRIBHDR *PNTFSATTRIBHDR;
 /** Pointer to a const NTFS attribute header. */
@@ -307,9 +316,9 @@ typedef NTFSATTRIBHDR const *PCNTFSATTRIBHDR;
 /** Attribute header size for resident values. */
 #define NTFSATTRIBHDR_SIZE_RESIDENT                 (0x18)
 /** Attribute header size for uncompressed non-resident values. */
-#define NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED      (0x38)
+#define NTFSATTRIBHDR_SIZE_NONRES_UNCOMPRESSED      (0x40)
 /** Attribute header size for compressed non-resident values. */
-#define NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED        (0x40)
+#define NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED        (0x48)
 /** @} */
 
 
