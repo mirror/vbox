@@ -1123,8 +1123,18 @@ static int rtFsNtfsAttr_Read(PRTFSNTFSATTR pAttr, uint64_t off, void *pvBuf, siz
 }
 
 
+/**
+ * Allocate and parse an MFT record, returning a core object structure.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The NTFS volume instance.
+ * @param   idxMft              The index of the MTF record.
+ * @param   ppCore              Where to return the core object structure.
+ * @param   pErrInfo            Where to return error details.  Optional.
+ */
 static int rtFsNtfsVol_NewCoreForMftIdx(PRTFSNTFSVOL pThis, uint64_t idxMft, PRTFSNTFSCORE *ppCore, PRTERRINFO pErrInfo)
 {
+    *ppCore = NULL;
     Assert(pThis->pMftData);
     Assert(RTAvlU64Get(&pThis->MftRoot, idxMft) == NULL);
 
@@ -1434,14 +1444,14 @@ static DECLCALLBACK(int) rtFsNtfsVol_QueryRangeState(void *pvThis, uint64_t off,
         if (fState)
         {
             *pfUsed = true;
-            LogFlow(("rtFsNtfsVol_QueryRangeState: %RX64 LB %#x - used\n", off, cb));
+            LogFlow(("rtFsNtfsVol_QueryRangeState: %RX64 LB %#x - used\n", off & ~(uint64_t)(pThis->cbCluster - 1), cb));
             return VINF_SUCCESS;
         }
 
         iCluster++;
     } while (cClusters-- > 0);
 
-    LogFlow(("rtFsNtfsVol_QueryRangeState: %RX64 LB %#x - unused\n", off, cb));
+    LogFlow(("rtFsNtfsVol_QueryRangeState: %RX64 LB %#x - unused\n", off & ~(uint64_t)(pThis->cbCluster - 1), cb));
     *pfUsed = false;
     return VINF_SUCCESS;
 }
