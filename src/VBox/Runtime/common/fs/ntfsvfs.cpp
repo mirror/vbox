@@ -247,6 +247,10 @@ typedef struct RTFSNTFSVOL
     void           *pvBitmap;
     /** @} */
 
+    /** Lower to uppercase conversion table for this filesystem.
+     * This always has 64K valid entries.  */
+    PRTUTF16        pawcUpcase;
+
     /** Root of the MFT record tree (RTFSNTFSMFTREC). */
     AVLU64TREE      MftRoot;
 } RTFSNTFSVOL;
@@ -1162,7 +1166,6 @@ static int rtFsNtfsVol_NewCoreForMftIdx(PRTFSNTFSVOL pThis, uint64_t idxMft, PRT
 }
 
 
-
 /**
  * Destroys a core structure.
  *
@@ -1534,6 +1537,129 @@ static int rtFsNtfsVolCheckBitmap(PRTFSNTFSVOL pThis, PRTFSNTFSATTR pAttr, const
 
 
 /**
+ * Loads, validates and setups the '$UpCase' (NTFS_MFT_IDX_UP_CASE) MFT entry.
+ *
+ * This is needed for filename lookups, I think.
+ *
+ * @returns IPRT status code
+ * @param   pThis               The NTFS volume instance.  Will set pawcUpcase.
+ * @param   pErrInfo            Where to return additional error info.
+ */
+static int rtFsNtfsVolLoadUpCase(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
+{
+    PRTFSNTFSCORE pCore;
+    int rc = rtFsNtfsVol_NewCoreForMftIdx(pThis, NTFS_MFT_IDX_UP_CASE, &pCore, pErrInfo);
+    if (RT_SUCCESS(rc))
+    {
+        PRTFSNTFSATTR pDataAttr = rtFsNtfsCore_FindUnnamedAttribute(pCore, NTFS_AT_DATA);
+        if (pDataAttr)
+        {
+            /*
+             * Validate the '$Upcase' MFT record.
+             */
+            uint32_t const cbMin = 512;
+            uint32_t const cbMax = _128K;
+            if (!pDataAttr->pAttrHdr->fNonResident)
+                rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "$UpCasea unnamed DATA attribute is resident!");
+            else if (   (uint64_t)RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbAllocated) < cbMin
+                     || (uint64_t)RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbAllocated) > cbMax)
+                rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                             "$UpCase unnamed DATA attribute allocated size is out of range: %#RX64, expected at least %#RX32 and no more than %#RX32",
+                                             RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbAllocated), cbMin, cbMax);
+            else if (   (uint64_t)RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbData) < cbMin
+                     ||   (uint64_t)RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbData)
+                        > (uint64_t)RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbData)
+                     || ((uint64_t)RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbData) & 1) )
+                rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                             "$UpCase unnamed DATA attribute initialized size is out of range: %#RX64, expected at least %#RX32 and no more than %#RX64",
+                                             RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbData), cbMin,
+                                             RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbAllocated) );
+            else if (   (uint64_t)RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbInitialized) < cbMin
+                     ||    (uint64_t)RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbInitialized)
+                         > (uint64_t)RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbAllocated)
+                     || ((uint64_t)RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbInitialized) & 1) )
+                rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                             "$UpCase unnamed DATA attribute initialized size is out of range: %#RX64, expected at least %#RX32 and no more than %#RX64",
+                                             RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbInitialized), cbMin,
+                                             RT_LE2H_U64(pDataAttr->pAttrHdr->u.NonRes.cbAllocated) );
+            else if (pDataAttr->pAttrHdr->u.NonRes.uCompressionUnit != 0)
+                rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                             "$UpCase unnamed DATA attribute is compressed: %#x",
+                                             pDataAttr->pAttrHdr->u.NonRes.uCompressionUnit);
+            else
+            {
+                PRTFSNTFSATTR pFilenameAttr = rtFsNtfsCore_FindUnnamedAttribute(pCore, NTFS_AT_FILENAME);
+                if (!pFilenameAttr)
+                    rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "$UpCase has no FILENAME attribute!");
+                else if (pFilenameAttr->pAttrHdr->fNonResident)
+                    rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "$UpCase FILENAME attribute is non-resident!");
+                else if (pFilenameAttr->pAttrHdr->u.Res.cbValue < RT_UOFFSETOF(NTFSATFILENAME, wszFilename[7]))
+                    rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                 "$UpCase FILENAME attribute value size is too small: %#x",
+                                                 pFilenameAttr->pAttrHdr->u.Res.cbValue);
+                else
+                {
+                    PNTFSATFILENAME pFilename = (PNTFSATFILENAME)(  (uint8_t *)pFilenameAttr->pAttrHdr
+                                                                  + pFilenameAttr->pAttrHdr->u.Res.offValue);
+                    if (   pFilename->cwcFilename != 7
+                        || RTUtf16NICmpAscii(pFilename->wszFilename, "$UpCase", 7) != 0)
+                        rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                     "$UpCase FILENAME isn't '$UpCase': '%.*ls'",
+                                                     pFilename->cwcFilename, pFilename->wszFilename);
+                    else
+                    {
+                        /*
+                         * Allocate memory for the uppercase table and read it.
+                         */
+                        PRTUTF16 pawcUpcase;
+                        pThis->pawcUpcase = pawcUpcase = (PRTUTF16)RTMemAlloc(_64K * sizeof(pThis->pawcUpcase[0]));
+                        if (pawcUpcase)
+                        {
+                            for (size_t i = 0; i < _64K; i++)
+                                pawcUpcase[i] = (uint16_t)i;
+
+                            rc = rtFsNtfsAttr_Read(pDataAttr, 0, pawcUpcase, pDataAttr->pAttrHdr->u.NonRes.cbData);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /*
+                                 * Check the data.
+                                 */
+                                for (size_t i = 1; i < _64K; i++)
+                                    if (pawcUpcase[i] == 0)
+                                    {
+                                        rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                                                     "$UpCase entry %#x is zero!", i);
+                                        break;
+                                    }
+
+                                /*
+                                 * While we still have the $UpCase file open, check it against the allocation bitmap.
+                                 */
+                                if (RT_SUCCESS(rc))
+                                    rc = rtFsNtfsVolCheckBitmap(pThis, pDataAttr, "$UpCase", pErrInfo);
+
+                                /* We're done, no need for special success return here though. */
+                            }
+                            else
+                                rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, rc, "Error reading $UpCase data into memory");
+                        }
+                        else
+                            rc = VERR_NO_MEMORY;
+                    }
+                }
+            }
+        }
+        else
+            rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 has no unnamed DATA attribute!");
+        rtFsNtfsCore_Release(pCore);
+    }
+    else
+        rc = RTERRINFO_LOG_REL_SET(pErrInfo, rc, "Error reading $UpCase MFT record");
+    return rc;
+}
+
+
+/**
  * Loads the allocation bitmap and does basic validation of.
  *
  * @returns IPRT status code.
@@ -1654,7 +1780,6 @@ static int rtFsNtfsVolLoadBitmap(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
         rc = RTERRINFO_LOG_REL_SET(pErrInfo, rc, "Error reading MFT record #6");
     return rc;
 }
-
 
 
 /**
@@ -1949,6 +2074,8 @@ RTDECL(int) RTFsNtfsVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t f
                     rc = rtFsNtfsVolLoadMft(pThis, pErrInfo);
                 if (RT_SUCCESS(rc))
                     rc = rtFsNtfsVolLoadBitmap(pThis, pErrInfo);
+                if (RT_SUCCESS(rc))
+                    rc = rtFsNtfsVolLoadUpCase(pThis, pErrInfo);
                 RTMemTmpFree(pvBuf);
                 if (RT_SUCCESS(rc))
                 {
