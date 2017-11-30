@@ -2332,21 +2332,27 @@ int vboxVDMACrHgsmiControlCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PV
     return VINF_SUCCESS;
 }
 
-static int vboxVDMACmdExecBltPerform(PVBOXVDMAHOST pVdma, uint8_t *pvDstSurf, const uint8_t *pvSrcSurf,
+static int vboxVDMACmdExecBltPerform(PVBOXVDMAHOST pVdma, const VBOXVIDEOOFFSET offDst, const VBOXVIDEOOFFSET offSrc,
                                      const PVBOXVDMA_SURF_DESC pDstDesc, const PVBOXVDMA_SURF_DESC pSrcDesc,
                                      const VBOXVDMA_RECTL * pDstRectl, const VBOXVDMA_RECTL * pSrcRectl)
 {
-    RT_NOREF(pVdma);
     /* we do not support color conversion */
     Assert(pDstDesc->format == pSrcDesc->format);
     /* we do not support stretching */
     Assert(pDstRectl->height == pSrcRectl->height);
     Assert(pDstRectl->width == pSrcRectl->width);
+
     if (pDstDesc->format != pSrcDesc->format)
         return VERR_INVALID_FUNCTION;
+
+    uint8_t *pvRam = pVdma->pVGAState->vram_ptrR3;
+    uint8_t *pvDstSurf = pvRam + offDst;
+    uint8_t *pvSrcSurf = pvRam + offSrc;
+
     if (pDstDesc->width == pDstRectl->width
             && pSrcDesc->width == pSrcRectl->width
-            && pSrcDesc->width == pDstDesc->width)
+            && pSrcDesc->width == pDstDesc->width
+            && pSrcDesc->pitch == pDstDesc->pitch)
     {
         Assert(!pDstRectl->left);
         Assert(!pSrcRectl->left);
@@ -2435,7 +2441,6 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESEN
         return VERR_INVALID_FUNCTION;
     Assert(pBlt->cDstSubRects);
 
-    uint8_t * pvRam = pVdma->pVGAState->vram_ptrR3;
     VBOXVDMA_RECTL updateRectl = {0, 0, 0, 0};
 
     if (pBlt->cDstSubRects)
@@ -2451,7 +2456,7 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESEN
             srcSubRectl.left += pBlt->srcRectl.left;
             srcSubRectl.top  += pBlt->srcRectl.top;
 
-            int rc = vboxVDMACmdExecBltPerform(pVdma, pvRam + pBlt->offDst, pvRam + pBlt->offSrc,
+            int rc = vboxVDMACmdExecBltPerform(pVdma, pBlt->offDst, pBlt->offSrc,
                     &pBlt->dstDesc, &pBlt->srcDesc,
                     &dstSubRectl,
                     &srcSubRectl);
@@ -2464,7 +2469,7 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESEN
     }
     else
     {
-        int rc = vboxVDMACmdExecBltPerform(pVdma, pvRam + pBlt->offDst, pvRam + pBlt->offSrc,
+        int rc = vboxVDMACmdExecBltPerform(pVdma, pBlt->offDst, pBlt->offSrc,
                 &pBlt->dstDesc, &pBlt->srcDesc,
                 &pBlt->dstRectl,
                 &pBlt->srcRectl);
