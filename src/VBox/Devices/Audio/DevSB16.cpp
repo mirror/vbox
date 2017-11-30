@@ -1213,34 +1213,66 @@ static uint8_t sb16MixRegToVol(PSB16STATE pThis, int reg)
     return vol;
 }
 
-static void sb16SetMasterVolume(PSB16STATE pThis)
+/**
+ * Returns the device's current master volume.
+ *
+ * @param   pThis               SB16 state.
+ * @param   pVol                Where to store the master volume information.
+ */
+static void sb16GetMasterVolume(PSB16STATE pThis, PPDMAUDIOVOLUME pVol)
 {
     /* There's no mute switch, only volume controls. */
     uint8_t lvol = sb16MixRegToVol(pThis, 0x30);
     uint8_t rvol = sb16MixRegToVol(pThis, 0x31);
 
-    PDMAUDIOVOLUME Vol = { false /* fMute */, lvol, rvol };
-
-    PSB16DRIVER pDrv;
-    RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
-    {
-        int rc2 = pDrv->pConnector->pfnStreamSetVolume(pDrv->pConnector, pDrv->Out.pStream, &Vol);
-        AssertRC(rc2);
-    }
+    pVol->fMuted = false;
+    pVol->uLeft  = lvol;
+    pVol->uRight = rvol;
 }
 
-static void sb16SetPcmOutVolume(PSB16STATE pThis)
+/**
+ * Returns the device's current output stream volume.
+ *
+ * @param   pThis               SB16 state.
+ * @param   pVol                Where to store the output stream volume information.
+ */
+static void sb16GetPcmOutVolume(PSB16STATE pThis, PPDMAUDIOVOLUME pVol)
 {
     /* There's no mute switch, only volume controls. */
     uint8_t lvol = sb16MixRegToVol(pThis, 0x32);
     uint8_t rvol = sb16MixRegToVol(pThis, 0x33);
 
-    PDMAUDIOVOLUME Vol = { false /* fMute */, lvol, rvol };
+    pVol->fMuted = false;
+    pVol->uLeft  = lvol;
+    pVol->uRight = rvol;
+}
+
+static void sb16UpdateVolume(PSB16STATE pThis)
+{
+    PDMAUDIOVOLUME VolMaster;
+    sb16GetMasterVolume(pThis, &VolMaster);
+
+    PDMAUDIOVOLUME VolOut;
+    sb16GetPcmOutVolume(pThis, &VolOut);
+
+    /* Combine the master + output stream volume. */
+    PDMAUDIOVOLUME VolCombined;
+    RT_ZERO(VolCombined);
+
+    VolCombined.fMuted = VolMaster.fMuted || VolOut.fMuted;
+    if (!VolCombined.fMuted)
+    {
+        VolCombined.uLeft  = (   (VolOut.uLeft    ? VolOut.uLeft     : 1)
+                               * (VolMaster.uLeft ? VolMaster.uLeft  : 1)) / PDMAUDIO_VOLUME_MAX;
+
+        VolCombined.uRight = (  (VolOut.uRight    ? VolOut.uRight    : 1)
+                              * (VolMaster.uRight ? VolMaster.uRight : 1)) / PDMAUDIO_VOLUME_MAX;
+    }
 
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
-        int rc2 = pDrv->pConnector->pfnStreamSetVolume(pDrv->pConnector, pDrv->Out.pStream, &Vol);
+        int rc2 = pDrv->pConnector->pfnStreamSetVolume(pDrv->pConnector, pDrv->Out.pStream, &VolCombined);
         AssertRC(rc2);
     }
 }
@@ -1510,8 +1542,7 @@ static void sb16MixerReset(PSB16STATE pThis)
         pThis->mixer_regs[i] = 0x80;
 
     /* Update the master (mixer) and PCM out volumes. */
-    sb16SetMasterVolume(pThis);
-    sb16SetPcmOutVolume(pThis);
+    sb16UpdateVolume(pThis);
 }
 
 static IO_WRITE_PROTO(mixer_write_indexb)
@@ -1685,12 +1716,11 @@ static IO_WRITE_PROTO(mixer_write_datab)
     pThis->mixer_regs[pThis->mixer_nreg] = val;
 
     /* Update the master (mixer) volume. */
-    if (fUpdateMaster)
-        sb16SetMasterVolume(pThis);
-
-    /* Update the stream (PCM) volume. */
-    if (fUpdateStream)
-        sb16SetPcmOutVolume(pThis);
+    if (   fUpdateMaster
+        || fUpdateStream)
+    {
+        sb16UpdateVolume(pThis);
+    }
 
     return VINF_SUCCESS;
 }
@@ -2183,8 +2213,7 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis)
     }
 
     /* Update the master (mixer) and PCM out volumes. */
-    sb16SetMasterVolume(pThis);
-    sb16SetPcmOutVolume(pThis);
+    sb16UpdateVolume(pThis);
 
     return VINF_SUCCESS;
 }
@@ -2341,6 +2370,8 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+
+    sb16UpdateVolume(pThis);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
