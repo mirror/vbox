@@ -261,7 +261,7 @@ static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
  */
 static int rtSerialPortCfg2Termios(PCRTSERIALPORTCFG pCfg, struct termios *pTermios, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(pErrInfo); /** @todo: Make use of the error info. */
+    RT_NOREF(pErrInfo); /** @todo Make use of the error info. */
     speed_t enmSpeed = rtSerialPortGetTermiosSpeedFromBaudrate(pCfg->uBaudRate);
     if (enmSpeed != B0)
     {
@@ -342,7 +342,7 @@ static int rtSerialPortCfg2Termios(PCRTSERIALPORTCFG pCfg, struct termios *pTerm
         return VERR_SERIALPORT_INVALID_BAUDRATE;
 
 #ifdef RT_OS_LINUX
-    /** @todo: Handle custom baudrates supported by Linux. */
+    /** @todo Handle custom baudrates supported by Linux. */
 #endif
 
     return VINF_SUCCESS;
@@ -470,7 +470,7 @@ static DECLCALLBACK(int) rtSerialPortStsLineMonitorThrd(RTTHREAD hThreadSelf, vo
         {
             rcPsx = ioctl(pThis->iFd, TIOCMIWAIT, fStsLinesChk);
             if (!rcPsx)
-            { /** @todo: Notify any event waiter. */ }
+            { /** @todo Notify any event waiter. */ }
             else if (rcPsx == -1 && errno != EINTR)
                 fPoll = true;
         }
@@ -485,7 +485,7 @@ static DECLCALLBACK(int) rtSerialPortStsLineMonitorThrd(RTTHREAD hThreadSelf, vo
 
                 if (((fStsLines ^ fStsLinesOld) & fStsLinesChk))
                 {
-                    /** @todo: Notify any event waiter. */
+                    /** @todo Notify any event waiter. */
                     fStsLinesOld = fStsLines;
                 }
                 else /* No change, sleep for a bit. */
@@ -498,7 +498,7 @@ static DECLCALLBACK(int) rtSerialPortStsLineMonitorThrd(RTTHREAD hThreadSelf, vo
                  * thread and notify the user of the serial port.
                  */
                 if (cStsLineGetErrors++ >= 10)
-                { /** @todo: Send error notification */ }
+                { /** @todo Send error notification */ }
 
                 RTThreadSleep(100 /*ms*/);
             }
@@ -844,7 +844,4 @@ RTDECL(int) RTSerialPortQueryStatusLines(RTSERIALPORT hSerialPort, uint32_t *pfS
 
     return rc;
 }
-
-
-
 
