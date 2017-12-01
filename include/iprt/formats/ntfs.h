@@ -201,8 +201,10 @@ typedef NTFSRECFILE const *PCNTFSRECFILE;
 #define NTFS_AT_OBJECT_ID                   RT_H2LE_U32_C(UINT32_C(0x00000040))
 #define NTFS_AT_SECURITY_DESCRIPTOR         RT_H2LE_U32_C(UINT32_C(0x00000050))
 #define NTFS_AT_VOLUME_NAME                 RT_H2LE_U32_C(UINT32_C(0x00000060))
+/** NTFSATVOLUMEINFO */
 #define NTFS_AT_VOLUME_INFORMATION          RT_H2LE_U32_C(UINT32_C(0x00000070))
 #define NTFS_AT_DATA                        RT_H2LE_U32_C(UINT32_C(0x00000080))
+/** NTFSATINDEXROOT */
 #define NTFS_AT_INDEX_ROOT                  RT_H2LE_U32_C(UINT32_C(0x00000090))
 #define NTFS_AT_INDEX_ALLOCATION            RT_H2LE_U32_C(UINT32_C(0x000000a0))
 #define NTFS_AT_BITMAP                      RT_H2LE_U32_C(UINT32_C(0x000000b0))
@@ -217,13 +219,16 @@ typedef NTFSRECFILE const *PCNTFSRECFILE;
 
 /** @name NTFS_AF_XXX - Attribute flags.
  * @{ */
-#define NTFS_AF_COMPR_FMT_NONE              UINT16_C(0x0000)
-#define NTFS_AF_COMPR_FMT_LZNT1             UINT16_C(0x0001)    /**< See RtlCompressBuffer / COMPRESSION_FORMAT_LZNT1. */
-#define NTFS_AF_COMPR_FMT_XPRESS            UINT16_C(0x0002)    /**< See RtlCompressBuffer / COMPRESSION_FORMAT_XPRESS_HUFF. */
-#define NTFS_AF_COMPR_FMT_XPRESS_HUFF       UINT16_C(0x0003)    /**< See RtlCompressBuffer / COMPRESSION_FORMAT_XPRESS_HUFF. */
-#define NTFS_AF_COMPR_FMT_MASK              UINT16_C(0x00ff)
-#define NTFS_AF_ENCRYPTED                   UINT16_C(0x4000)
-#define NTFS_AF_SPARSE                      UINT16_C(0x8000)
+#define NTFS_AF_COMPR_FMT_NONE              RT_H2LE_U16_C(UINT16_C(0x0000))
+/** See RtlCompressBuffer / COMPRESSION_FORMAT_LZNT1. */
+#define NTFS_AF_COMPR_FMT_LZNT1             RT_H2LE_U16_C(UINT16_C(0x0001))
+/** See RtlCompressBuffer / COMPRESSION_FORMAT_XPRESS_HUFF. */
+#define NTFS_AF_COMPR_FMT_XPRESS            RT_H2LE_U16_C(UINT16_C(0x0002))
+/** See RtlCompressBuffer / COMPRESSION_FORMAT_XPRESS_HUFF. */
+#define NTFS_AF_COMPR_FMT_XPRESS_HUFF       RT_H2LE_U16_C(UINT16_C(0x0003))
+#define NTFS_AF_COMPR_FMT_MASK              RT_H2LE_U16_C(UINT16_C(0x00ff))
+#define NTFS_AF_ENCRYPTED                   RT_H2LE_U16_C(UINT16_C(0x4000))
+#define NTFS_AF_SPARSE                      RT_H2LE_U16_C(UINT16_C(0x8000))
 /** @} */
 
 /**
@@ -293,7 +298,8 @@ typedef struct NTFSATTRIBHDR
             /** 0x30: The exact length of the data.
              * @note Only set in the first attribute record (iVcnFirst == 0). */
             int64_t         cbData;
-            /** 0x38: The length of the initialized data (rounded to cluster).
+            /** 0x38: The length of the initialized data.  (Not necessarily
+             *  rounded up to cluster size.)
              * @note Only set in the first attribute record (iVcnFirst == 0). */
             int64_t         cbInitialized;
             /** 0x40: Compressed size if compressed, otherwise absent. */
@@ -321,6 +327,16 @@ typedef NTFSATTRIBHDR const *PCNTFSATTRIBHDR;
 #define NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED        (0x48)
 /** @} */
 
+/** Get the pointer to the embedded name from an attribute.
+ * @note  ASSUMES the caller check that there is a name.   */
+#define NTFSATTRIBHDR_GET_NAME(a_pAttrHdr)          ( (PRTUTF16)((uintptr_t)(a_pAttrHdr) + (a_pAttrHdr)->offName) )
+
+
+/** @name NTFS_RES_AF_XXX
+ *  @{ */
+/** Attribute is referenced in an index. */
+#define NTFS_RES_AF_INDEXED                         UINT8_C(0x01)
+/** @} */
 
 /**
  * Attribute list entry (NTFS_AT_ATTRIBUTE_LIST).
@@ -485,6 +501,183 @@ typedef NTFSATFILENAME const *PCNTFSATFILENAME;
 #define NTFS_FILENAME_T_DOS             2
 #define NTFS_FILENAME_T_WINDOWS_AND_DSO 3
 /** @} */
+
+
+/**
+ * NTFS volume information (NTFS_AT_VOLUME_INFORMATION).
+ *
+ * This is found in the special NTFS_MFT_IDX_VOLUME file.
+ */
+typedef struct NTFSATVOLUMEINFO
+{
+    /** 0x00: Reserved bytes. */
+    uint8_t         abReserved[8];
+    /** 0x08: Major NTFS version number.   */
+    uint8_t         uMajorVersion;
+    /** 0x09: Minor NTFS version number.   */
+    uint8_t         uMinorVersion;
+    /** 0x0a: Volume flags (NTFS_VOLUME_F_XXX)  */
+    uint16_t        fFlags;
+} NTFSATVOLUMEINFO;
+AssertCompileSize(NTFSATVOLUMEINFO, 12);
+/** Pointer to NTFS volume information. */
+typedef NTFSATVOLUMEINFO *PNTFSATVOLUMEINFO;
+/** Pointer to const NTFS volume information. */
+typedef NTFSATVOLUMEINFO const *PCNTFSATVOLUMEINFO;
+
+/** @name NTFS_VOLUME_F_XXX
+ *  @{ */
+#define NTFS_VOLUME_F_DIRTY                 RT_H2LE_U16_C(0x0001) /**< Volume is dirty. */
+#define NTFS_VOLUME_F_RESIZE_LOG_FILE       RT_H2LE_U16_C(0x0002) /**< */
+#define NTFS_VOLUME_F_UPGRADE_ON_MOUNT      RT_H2LE_U16_C(0x0004) /**< */
+#define NTFS_VOLUME_F_MOUNTED_ON_NT4        RT_H2LE_U16_C(0x0008) /**< */
+#define NTFS_VOLUME_F_DELETE_USN_UNDERWAY   RT_H2LE_U16_C(0x0010) /**< */
+#define NTFS_VOLUME_F_REPAIR_OBJECT_ID      RT_H2LE_U16_C(0x0020) /**< */
+#define NTFS_VOLUME_F_CHKDSK_UNDERWAY       RT_H2LE_U16_C(0x4000) /**< */
+#define NTFS_VOLUME_F_MODIFIED_BY_CHKDSK    RT_H2LE_U16_C(0x8000) /**< */
+
+#define NTFS_VOLUME_F_KNOWN_MASK            RT_H2LE_U16_C(0xc03f)
+#define NTFS_VOLUME_F_MOUNT_READONLY_MASK   RT_H2LE_U16_C(0xc027)
+/** @} */
+
+
+/** The attribute name used by the index attributes on NTFS directories,
+ *  ASCII stirng variant. */
+#define NTFS_DIR_ATTRIBUTE_NAME             "$I30"
+
+/**
+ * NTFS index header.
+ *
+ * This is used by NTFSATINDEXROOT and NTFSATINDEXALLOC.
+ */
+typedef struct NTFSINDEXHEADER
+{
+    /** 0x00: Offset of the first entry relative to this header. */
+    uint32_t        offFirstEntry;
+    /** 0x04: Size of the index in bytes, including this header.  */
+    uint32_t        cbIndex;
+    /** 0x08: Number of bytes allocated for the index (including this header). */
+    uint32_t        cbAllocated;
+    /** 0x0c: Flags (NTFSINDEXHEADER_F_XXX).   */
+    uint8_t         fFlags;
+    /** 0x0d: Reserved bytes. */
+    uint8_t         abReserved[3];
+} NTFSINDEXHEADER;
+AssertCompileSize(NTFSINDEXHEADER, 16);
+/** Pointer to a NTFS index header. */
+typedef NTFSINDEXHEADER *PNTFSINDEXHEADER;
+/** Pointer to a const NTFS index header. */
+typedef NTFSINDEXHEADER const *PCNTFSINDEXHEADER;
+
+/** Index root only: Small enough to fit inside the index root attrib.  */
+#define NTFSINDEXHEADER_F_ROOT_SMALL        UINT8_C(0x00)
+/** Index root only: Too large to fit inside the index root attrib and/or an
+ *  index allocation attribute is present. */
+#define NTFSINDEXHEADER_F_ROOT_LARGE        UINT8_C(0x01)
+
+
+/**
+ * NTFS index root (NTFS_AT_INDEX_ROOT).
+ *
+ * This is a generic index structure, but is most prominently used for
+ * implementating directories.
+ */
+typedef struct NTFSATINDEXROOT
+{
+    /** 0x00: The index type (NTFSATINDEXROOT_TYPE_XXX). */
+    uint32_t        uType;
+    /** 0x04: The sorting rules to use (NTFS_COLLATION_XXX). */
+    uint32_t        uCollationRules;
+    /** 0x08: Index buffer size (in bytes). */
+    uint32_t        cbIndexBuffer;
+    /** 0x0c: Number of clusters allocated for each index buffer if
+     * cbIndexBuffer is larger than a cluster, otherwise log2(cbIndexBuffer)?  */
+    uint8_t         cClustersPerBuffer;
+    /** 0x0d: Reserved padding or something. */
+    uint8_t         abReserved[3];
+    /** 0x10: Index header detailing the entries that follows. */
+    NTFSINDEXHEADER Hdr;
+    /* NTFSINDEXENTRYHDR array typically follows */
+} NTFSATINDEXROOT;
+AssertCompileSize(NTFSATINDEXROOT, 32);
+/** Pointer to a NTFS index root. */
+typedef NTFSATINDEXROOT *PNTFSATINDEXROOT;
+/** Pointer to a const NTFS index root. */
+typedef NTFSATINDEXROOT const *PCNTFSATINDEXROOT;
+
+/** @name NTFSATINDEXROOT_TYPE_XXX
+ * @{ */
+/** View index. */
+#define NTFSATINDEXROOT_TYPE_VIEW           RT_H2LE_U32_C(UINT32_C(0x00000000))
+/** Directory index, NTFSATFILENAME follows NTFSINDEXENTRY. */
+#define NTFSATINDEXROOT_TYPE_DIRECTORY      RT_H2LE_U32_C(UINT32_C(0x00000030))
+/** @} */
+
+/** @name NTFS_COLLATION_XXX - index sorting rules
+ * @{ */
+/** Little endian binary compare (or plain byte compare if you like). */
+#define NTFS_COLLATION_BINARY               RT_H2LE_U32_C(UINT32_C(0x00000000))
+/** Same as NTFS_COLLATION_UNICODE_STRING. */
+#define NTFS_COLLATION_FILENAME             RT_H2LE_U32_C(UINT32_C(0x00000001))
+/** Compare the uppercased unicode characters. */
+#define NTFS_COLLATION_UNICODE_STRING       RT_H2LE_U32_C(UINT32_C(0x00000002))
+
+/** Single little endian 32-bit unsigned integer value as sort key. */
+#define NTFS_COLLATION_UINT32               RT_H2LE_U32_C(UINT32_C(0x00000010))
+/** Little endian SID value as sort key. */
+#define NTFS_COLLATION_SID                  RT_H2LE_U32_C(UINT32_C(0x00000011))
+/** Two little endian 32-bit unsigned integer values used as sorting key. */
+#define NTFS_COLLATION_UINT32_PAIR          RT_H2LE_U32_C(UINT32_C(0x00000012))
+/** Sequence of little endian 32-bit unsigned integer values used as sorting key. */
+#define NTFS_COLLATION_UINT32_SEQ           RT_H2LE_U32_C(UINT32_C(0x00000013))
+
+/** @} */
+
+
+/**
+ * NTFS index entry header.
+ */
+typedef struct NTFSINDEXENTRYHDR
+{
+    union
+    {
+        /** 0x00: Non-View: Reference to the MFT record being indexed here.
+         * This is invalid if NTFSINDEX_EF_LAST is set.  */
+        NTFSMFTREF      FileMftRec;
+        /** 0x00: View   */
+        struct
+        {
+            /** 0x00: Offset to the data relative to this header. */
+            uint16_t    offData;
+            /** 0x02: Size of data at offData. */
+            uint16_t    cbData;
+            /** 0x04: Reserved.   */
+            uint32_t    uReserved;
+        } View;
+    } u;
+
+    /** 0x08: Size of this entry, 8-byte aligned. */
+    uint16_t        cbEntry;
+    /** 0x0a: Key length (unaligned). */
+    uint16_t        cbKey;
+    /** 0x0c: Entry flags, NTFSINDEX_EF_XXX. */
+    uint16_t        fFlags;
+    /** 0x0d: Entry flags, NTFSINDEX_EF_XXX. */
+    uint16_t        uReserved;
+} NTFSINDEXENTRYHDR;
+AssertCompileSize(NTFSINDEXENTRYHDR, 16);
+/** Pointer to a NTFS index entry header. */
+typedef NTFSINDEXENTRYHDR *PNTFSINDEXENTRYHDR;
+/** Pointer to a const NTFS index entry header. */
+typedef NTFSINDEXENTRYHDR const *PCNTFSINDEXENTRYHDR;
+
+/** @name  NTFSINDEX_EF_XXX - NTFSINDEXENTRYHDR::fFlags
+ * @{ */
+/** Indicates an internal node, as opposed to a leaf node. */
+#define NTFSINDEX_EF_NODE           RT_H2LE_U16_C(UINT16_C(0x0001))
+/** Last entry in a block, may point to the next node. */
+#define NTFSINDEX_EF_LAST           RT_H2LE_U16_C(UINT16_C(0x0002))
+/** @}  */
 
 /** @} */
 
