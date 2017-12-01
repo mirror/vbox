@@ -2088,7 +2088,7 @@ static void hmR0SvmVmRunSetupVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         Assert(pVmcbNstGstCtrl->u64IOPMPhysAddr == g_HCPhysIOBitmap);
         Assert(pVmcbNstGstCtrl->u64MSRPMPhysAddr = g_HCPhysNstGstMsrBitmap);
-        Assert(pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging == pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+        Assert(RT_BOOL(pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging) == pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
     }
 }
 
