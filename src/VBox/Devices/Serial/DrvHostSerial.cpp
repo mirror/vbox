@@ -336,7 +336,8 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
      * modem irqs and so the monitor thread never gets released. The workaround
      * is to send a signal after each tcsetattr.
      */
-    RTThreadPoke(pThis->pMonitorThread->Thread);
+    if (RT_LIKELY(pThis->pMonitorThread != NULL))
+        RTThreadPoke(pThis->pMonitorThread->Thread);
 #endif
 
 #elif defined(RT_OS_WINDOWS)
