@@ -486,6 +486,8 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
     SSMFIELD_ENTRY(                 VMSVGAState, uHeight),
     SSMFIELD_ENTRY(                 VMSVGAState, uBpp),
     SSMFIELD_ENTRY(                 VMSVGAState, cbScanline),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, uScreenOffset, VGA_SAVEDSTATE_VERSION_VMSVGA),
+    SSMFIELD_ENTRY_IGNORE(          VMSVGAState, uLastScreenOffset), /* VGA_SAVEDSTATE_VERSION_VMSVGA */
     SSMFIELD_ENTRY(                 VMSVGAState, u32MaxWidth),
     SSMFIELD_ENTRY(                 VMSVGAState, u32MaxHeight),
     SSMFIELD_ENTRY(                 VMSVGAState, u32ActionFlags),
@@ -1232,6 +1234,7 @@ int vmsvgaChangeMode(PVGASTATE pThis)
         &&  pThis->last_scr_height  == (unsigned)pThis->svga.uHeight
         &&  pThis->last_width       == (unsigned)pThis->svga.uWidth
         &&  pThis->last_height      == (unsigned)pThis->svga.uHeight
+        &&  pThis->svga.uLastScreenOffset == pThis->svga.uScreenOffset
         )
     {
         /* Nothing to do. */
@@ -1239,11 +1242,29 @@ int vmsvgaChangeMode(PVGASTATE pThis)
         return VINF_SUCCESS;
     }
 
-    Log(("vmsvgaChangeMode: sEnable LFB mode and resize to (%d,%d) bpp=%d\n", pThis->svga.uWidth, pThis->svga.uHeight, pThis->svga.uBpp));
+    LogFunc(("Enable LFB mode and resize to (%d,%d) bpp=%d uScreenOffset 0x%x\n", pThis->svga.uWidth, pThis->svga.uHeight, pThis->svga.uBpp, pThis->svga.uScreenOffset));
     pThis->svga.cbScanline = ((pThis->svga.uWidth * pThis->svga.uBpp + 7) & ~7) / 8;
 
     pThis->pDrv->pfnLFBModeChange(pThis->pDrv, true);
-    rc = pThis->pDrv->pfnResize(pThis->pDrv, pThis->svga.uBpp, pThis->CTX_SUFF(vram_ptr), pThis->svga.cbScanline, pThis->svga.uWidth, pThis->svga.uHeight);
+
+    VBVAINFOVIEW view;
+    view.u32ViewIndex     = 0;
+    view.u32ViewOffset    = 0;
+    view.u32ViewSize      = pThis->vram_size;
+    view.u32MaxScreenSize = pThis->vram_size;
+
+    VBVAINFOSCREEN screen;
+    screen.u32ViewIndex    = 0;
+    screen.i32OriginX      = 0;
+    screen.i32OriginY      = 0;
+    screen.u32StartOffset  = pThis->svga.uScreenOffset;
+    screen.u32LineSize     = pThis->svga.cbScanline;
+    screen.u32Width        = pThis->svga.uWidth;
+    screen.u32Height       = pThis->svga.uHeight;
+    screen.u16BitsPerPixel = pThis->svga.uBpp;
+    screen.u16Flags        = VBVA_SCREEN_F_ACTIVE;
+
+    rc = pThis->pDrv->pfnVBVAResize(pThis->pDrv, &view, &screen, pThis->CTX_SUFF(vram_ptr), /*fResetInputMapping=*/ true);
     AssertRC(rc);
     AssertReturn(rc == VINF_SUCCESS || rc == VINF_VGA_RESIZE_IN_PROGRESS, rc);
 
@@ -1253,6 +1274,7 @@ int vmsvgaChangeMode(PVGASTATE pThis)
     pThis->last_scr_height  = pThis->svga.uHeight;
     pThis->last_width       = pThis->svga.uWidth;
     pThis->last_height      = pThis->svga.uHeight;
+    pThis->svga.uLastScreenOffset = pThis->svga.uScreenOffset;
 
     ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
 
@@ -3608,7 +3630,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 Assert(!(pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] & SVGA_FIFO_CAP_SCREEN_OBJECT));
                 SVGAFifoCmdDefineScreen *pCmd;
                 VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdDefineScreen, sizeof(pCmd->screen.structSize));
-                RT_BZERO(&pCmd->screen.id, sizeof(*pCmd) - RT_OFFSETOF(SVGAFifoCmdDefineScreen, screen.structSize));
+                RT_BZERO(&pCmd->screen.id, sizeof(*pCmd) - RT_OFFSETOF(SVGAFifoCmdDefineScreen, screen.id));
                 VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdDefineScreen, RT_MAX(sizeof(pCmd->screen.structSize), pCmd->screen.structSize));
                 STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdDefineScreen);
 
@@ -3624,9 +3646,26 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 if (pCmd->screen.flags & SVGA_SCREEN_BLANKING)
                     Log(("vmsvgaFIFOLoop: SVGA_CMD_DEFINE_SCREEN flags SVGA_SCREEN_BLANKING\n"));
 
+                const uint32_t uWidth = pCmd->screen.size.width;
+                AssertBreak(0 < uWidth && uWidth <= pThis->svga.u32MaxWidth);
+
+                const uint32_t uHeight = pCmd->screen.size.height;
+                AssertBreak(0 < uHeight && uHeight <= pThis->svga.u32MaxHeight);
+
+                const uint32_t cbWidth = uWidth * ((pThis->svga.uBpp + 7) / 8);
+                const uint32_t cbPitch = pCmd->screen.backingStore.pitch ? pCmd->screen.backingStore.pitch : cbWidth;
+                AssertBreak(0 < cbWidth && cbWidth <= cbPitch);
+
+                const uint32_t uScreenOffset = pCmd->screen.backingStore.ptr.offset;
+                AssertBreak(uScreenOffset < pThis->vram_size);
+
+                const uint32_t cbVram = pThis->vram_size - uScreenOffset;
+                AssertBreak(uHeight <= cbVram / cbPitch);
+
                 /** @todo multi monitor support and screen object capabilities.   */
-                pThis->svga.uWidth  = pCmd->screen.size.width;
-                pThis->svga.uHeight = pCmd->screen.size.height;
+                pThis->svga.uWidth        = uWidth;
+                pThis->svga.uHeight       = uHeight;
+                pThis->svga.uScreenOffset = uScreenOffset;
                 vmsvgaChangeMode(pThis);
                 break;
             }
@@ -3693,7 +3732,10 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 AssertBreak(pSVGAState->GMRFB.bytesPerLine != 0);
                 AssertBreak(pSVGAState->GMRFB.format.s.bitsPerPixel != 0);
 
-                const uint32_t cScanlines = pThis->vram_size / pSVGAState->GMRFB.bytesPerLine;
+                AssertBreak(pThis->svga.uScreenOffset < pThis->vram_size); /* Paranoia. Ensured by SVGA_CMD_DEFINE_SCREEN. */
+                const uint32_t cbVram = pThis->vram_size - pThis->svga.uScreenOffset;
+
+                const uint32_t cScanlines = cbVram / pSVGAState->GMRFB.bytesPerLine;
                 AssertBreak(pCmd->srcOrigin.y < (int32_t)cScanlines);
 
                 AssertBreak(pCmd->srcOrigin.x < (int32_t)(pSVGAState->GMRFB.bytesPerLine / ((pSVGAState->GMRFB.format.s.bitsPerPixel + 7) / 8)));
@@ -3702,7 +3744,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 unsigned offsetDest   = (pCmd->destRect.left * RT_ALIGN(pThis->svga.uBpp, 8)) / 8 + pThis->svga.cbScanline * pCmd->destRect.top;
                 unsigned cbCopyWidth  = (width * RT_ALIGN(pThis->svga.uBpp, 8)) / 8;
 
-                AssertBreak(offsetDest < pThis->vram_size);
+                AssertBreak(offsetDest < cbVram);
+                offsetDest += pThis->svga.uScreenOffset;
 
                 rc = vmsvgaGMRTransfer(pThis, SVGA3D_WRITE_HOST_VRAM, pThis->CTX_SUFF(vram_ptr) + offsetDest, pThis->svga.cbScanline, pSVGAState->GMRFB.ptr, offsetSource, pSVGAState->GMRFB.bytesPerLine, cbCopyWidth, height);
                 AssertRC(rc);

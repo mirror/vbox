@@ -44,7 +44,8 @@
         } \
     } while (0)
 
-#define VGA_SAVEDSTATE_VERSION              19
+#define VGA_SAVEDSTATE_VERSION              20
+#define VGA_SAVEDSTATE_VERSION_VMSVGA       20 /* Multiple updates and fixes for VMSVGA saved state. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_TEX_STAGES 19
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_GMR_COUNT  18
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_VGA_FB_FIX 17

@@ -344,8 +344,7 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
                 }
             }
 
-#if 0 /** @todo */
-            if (uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_TEX_STAGES) /** @todo VGA_SAVEDSTATE_VERSION_VMSVGA_3D */
+            if (uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA)
             {
                 VMSVGA3DQUERY query;
                 RT_ZERO(query);
@@ -383,7 +382,6 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
                         break;
                 }
             }
-#endif
         }
     }
 
@@ -503,7 +501,7 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
 
 static int vmsvga3dSaveContext(PVGASTATE pThis, PSSMHANDLE pSSM, PVMSVGA3DCONTEXT pContext)
 {
-    RT_NOREF(pThis);
+    PVMSVGA3DSTATE pState = pThis->svga.p3dState;
     uint32_t cid = pContext->id;
 
     /* Save the id first. */
@@ -600,8 +598,6 @@ static int vmsvga3dSaveContext(PVGASTATE pThis, PSSMHANDLE pSSM, PVMSVGA3DCONTEX
             }
         }
 
-#if 0 /** @todo Enable later. */
-        PVMSVGA3DSTATE pState = pThis->svga.p3dState;
         /* Occlusion query. */
         if (!VMSVGA3DQUERY_EXISTS(&pContext->occlusion))
         {
@@ -634,7 +630,6 @@ static int vmsvga3dSaveContext(PVGASTATE pThis, PSSMHANDLE pSSM, PVMSVGA3DCONTEX
 
         rc = SSMR3PutStructEx(pSSM, &pContext->occlusion, sizeof(pContext->occlusion), 0, g_aVMSVGA3DQUERYFields, NULL);
         AssertRCReturn(rc, rc);
-#endif
     }
 
     return VINF_SUCCESS;

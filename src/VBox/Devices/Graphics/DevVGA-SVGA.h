@@ -209,6 +209,8 @@ typedef struct VMSVGAState
     uint32_t                    uHeight;
     uint32_t                    uBpp;
     uint32_t                    cbScanline;
+    uint32_t                    uScreenOffset;
+    uint32_t                    uLastScreenOffset;
     /** Maximum width supported. */
     uint32_t                    u32MaxWidth;
     /** Maximum height supported. */
