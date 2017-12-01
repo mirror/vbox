@@ -1009,7 +1009,7 @@ static int rtFsNtfsVol_ParseMft(PRTFSNTFSVOL pThis, PRTFSNTFSMFTREC pRec, PRTERR
             if (cbAllocated < 0)
                 return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                "Bad MFT record %#RX64: Attribute (@%#x): cbAllocated (%#RX64) is negative",
-                                               pRec->TreeNode.Key, offRec, cbAllocated, pThis->cbCluster);
+                                               pRec->TreeNode.Key, offRec, cbAllocated);
             if ((uint64_t)cbAllocated & (pThis->cbCluster - 1))
                 return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                "Bad MFT record %#RX64: Attribute (@%#x): cbAllocated (%#RX64) isn't cluster aligned (cbCluster=%#x)",
@@ -1019,20 +1019,20 @@ static int rtFsNtfsVol_ParseMft(PRTFSNTFSVOL pThis, PRTFSNTFSMFTREC pRec, PRTERR
             if (cbData < 0)
                 return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                "Bad MFT record %#RX64: Attribute (@%#x): cbData (%#RX64) is negative",
-                                               pRec->TreeNode.Key, offRec, cbData, pThis->cbCluster);
+                                               pRec->TreeNode.Key, offRec, cbData);
 
             int64_t const cbInitialized = RT_LE2H_U64(pAttrHdr->u.NonRes.cbInitialized);
             if (cbInitialized < 0)
                 return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                "Bad MFT record %#RX64: Attribute (@%#x): cbInitialized (%#RX64) is negative",
-                                               pRec->TreeNode.Key, offRec, cbInitialized, pThis->cbCluster);
+                                               pRec->TreeNode.Key, offRec, cbInitialized);
             if (cbMin >= NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED)
             {
                 int64_t const cbCompressed = RT_LE2H_U64(pAttrHdr->u.NonRes.cbCompressed);
                 if (cbAllocated < 0)
                     return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                    "Bad MFT record %#RX64: Attribute (@%#x): cbCompressed (%#RX64) is negative",
-                                                   pRec->TreeNode.Key, offRec, cbCompressed, pThis->cbCluster);
+                                                   pRec->TreeNode.Key, offRec, cbCompressed);
             }
         }
         else
