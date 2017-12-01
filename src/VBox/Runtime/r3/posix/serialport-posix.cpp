@@ -96,6 +96,10 @@ typedef struct RTSERIALPORTINTERNAL
     RTTHREAD            hMonThrd;
     /** Flag whether the monitoring thread should shutdown. */
     volatile bool       fMonThrdShutdown;
+    /** Reading end of wakeup pipe. */
+    int                 iFdPipeR;
+    /** Writing end of wakeup pipe. */
+    int                 iFdPipeW;
     /** The current active config (we assume no one changes this behind our back). */
     struct termios      PortCfg;
 } RTSERIALPORTINTERNAL;
@@ -118,10 +122,17 @@ typedef RTSERIALPORTBRATECONVDESC *PRTSERIALPORTBRATECONVDESC;
 /** Pointer to a const baud rate conversion table descriptor. */
 typedef const RTSERIALPORTBRATECONVDESC *PCRTSERIALPORTBRATECONVDESC;
 
+
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
+/** The event poller was woken up due to an external interrupt. */
+#define RTSERIALPORT_WAKEUP_PIPE_REASON_INTERRUPT               0x0
+/** The event poller was woken up due to a change in the monitored status lines. */
+#define RTSERIALPORT_WAKEUP_PIPE_REASON_STS_LINE_CHANGED        0x1
+/** The monitor thread encoutnered repeating errors querying the status lines and terminated. */
+#define RTSERIALPORT_WAKEUP_PIPE_REASON_STS_LINE_MONITOR_FAILED 0x2
 
 
 /*********************************************************************************************************************************
@@ -423,6 +434,23 @@ static int rtSerialPortTermios2Cfg(struct termios *pTermios, PRTSERIALPORTCFG pC
 
 
 /**
+ * Wakes up any thread polling for a serial port event with the given reason.
+ *
+ * @returns IPRT status code.
+ * @param   pThis                   The internal serial port instance data.
+ * @param   bWakeupReason           The wakeup reason to pass to the event poller.
+ */
+DECLINLINE(int) rtSerialPortWakeupEvtPoller(PRTSERIALPORTINTERNAL pThis, uint8_t bWakeupReason)
+{
+    int rcPsx = write(pThis->iFdPipeW, &bWakeupReason, 1);
+    if (rcPsx != 1)
+        return RTErrConvertFromErrno(errno);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * The status line monitor thread worker.
  *
  * @returns IPRT status code.
@@ -470,7 +498,11 @@ static DECLCALLBACK(int) rtSerialPortStsLineMonitorThrd(RTTHREAD hThreadSelf, vo
         {
             rcPsx = ioctl(pThis->iFd, TIOCMIWAIT, fStsLinesChk);
             if (!rcPsx)
-            { /** @todo Notify any event waiter. */ }
+            {
+                rc = rtSerialPortWakeupEvtPoller(pThis, RTSERIALPORT_WAKEUP_PIPE_REASON_STS_LINE_CHANGED);
+                if (RT_FAILURE(rc))
+                    break;
+            }
             else if (rcPsx == -1 && errno != EINTR)
                 fPoll = true;
         }
@@ -485,7 +517,10 @@ static DECLCALLBACK(int) rtSerialPortStsLineMonitorThrd(RTTHREAD hThreadSelf, vo
 
                 if (((fStsLines ^ fStsLinesOld) & fStsLinesChk))
                 {
-                    /** @todo Notify any event waiter. */
+                    rc = rtSerialPortWakeupEvtPoller(pThis, RTSERIALPORT_WAKEUP_PIPE_REASON_STS_LINE_CHANGED);
+                    if (RT_FAILURE(rc))
+                        break;
+
                     fStsLinesOld = fStsLines;
                 }
                 else /* No change, sleep for a bit. */
@@ -498,7 +533,11 @@ static DECLCALLBACK(int) rtSerialPortStsLineMonitorThrd(RTTHREAD hThreadSelf, vo
                  * thread and notify the user of the serial port.
                  */
                 if (cStsLineGetErrors++ >= 10)
-                { /** @todo Send error notification */ }
+                {
+                    rc = RTErrConvertFromErrno(errno);
+                    rtSerialPortWakeupEvtPoller(pThis, RTSERIALPORT_WAKEUP_PIPE_REASON_STS_LINE_MONITOR_FAILED);
+                    break;
+                }
 
                 RTThreadSleep(100 /*ms*/);
             }
@@ -590,16 +629,41 @@ RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAdd
         pThis->iFd        = open(pszPortAddress, fPsxFlags);
         if (pThis->iFd != -1)
         {
-            rc = rtSerialPortSetDefaultCfg(pThis);
-            if (   RT_SUCCESS(rc)
-                && (fFlags & RT_SERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING))
-                rc = rtSerialPortMonitorThreadCreate(pThis);
-
-            if (RT_SUCCESS(rc))
+            /* Create wakeup pipe for the event API. */
+            int aPipeFds[2];
+            int rcPsx = pipe(&aPipeFds[0]);
+            if (!rcPsx)
             {
-                *phSerialPort = pThis;
-                return VINF_SUCCESS;
+                /* Make the pipes close on exec. */
+                pThis->iFdPipeR = aPipeFds[0];
+                pThis->iFdPipeW = aPipeFds[1];
+
+                if (fcntl(pThis->iFdPipeR, F_SETFD, FD_CLOEXEC))
+                    rc = RTErrConvertFromErrno(errno);
+
+                if (   RT_SUCCESS(rc)
+                    && fcntl(pThis->iFdPipeW, F_SETFD, FD_CLOEXEC))
+                    rc = RTErrConvertFromErrno(errno);
+
+                if (RT_SUCCESS(rc))
+                {
+                    rc = rtSerialPortSetDefaultCfg(pThis);
+                    if (   RT_SUCCESS(rc)
+                        && (fFlags & RT_SERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING))
+                        rc = rtSerialPortMonitorThreadCreate(pThis);
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        *phSerialPort = pThis;
+                        return VINF_SUCCESS;
+                    }
+                }
+
+                close(pThis->iFdPipeR);
+                close(pThis->iFdPipeW);
             }
+            else
+                rc = RTErrConvertFromErrno(errno);
 
             close(pThis->iFd);
         }
@@ -632,6 +696,8 @@ RTDECL(int)  RTSerialPortClose(RTSERIALPORT hSerialPort)
         rtSerialPortMonitorThreadShutdown(pThis);
 
     close(pThis->iFd);
+    close(pThis->iFdPipeR);
+    close(pThis->iFdPipeW);
     RTMemFree(pThis);
     return VINF_SUCCESS;
 }
@@ -769,8 +835,11 @@ RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, RTSERIALPORTEVT *penmE
 
 RTDECL(int) RTSerialPortEvtPollInterrupt(RTSERIALPORT hSerialPort)
 {
-    RT_NOREF(hSerialPort);
-    return VERR_NOT_IMPLEMENTED;
+    PRTSERIALPORTINTERNAL pThis = hSerialPort;
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->u32Magic == RTSERIALPORT_MAGIC, VERR_INVALID_HANDLE);
+
+    return rtSerialPortWakeupEvtPoller(pThis, RTSERIALPORT_WAKEUP_PIPE_REASON_INTERRUPT);
 }
 
 
