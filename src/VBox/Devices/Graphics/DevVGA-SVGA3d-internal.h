@@ -830,6 +830,20 @@ typedef struct VMSVGA3DCONTEXT
 
     /* Occlusion query. */
     VMSVGA3DQUERY occlusion;
+
+#ifdef VMSVGA3D_DIRECT3D
+    /* State which is currently applied to the D3D device. It is recreated as needed and not saved.
+     * The purpose is to remember the currently applied state and do not re-apply it if it has not changed.
+     * Unnecessary state changes are very bad for performance.
+     */
+    struct
+    {
+        /* Vertex declaration. */
+        IDirect3DVertexDeclaration9 *pVertexDecl;
+        uint32_t cVertexElements;
+        D3DVERTEXELEMENT9 aVertexElements[SVGA3D_MAX_VERTEX_ARRAYS + 1];
+    } d3dState;
+#endif
 } VMSVGA3DCONTEXT;
 /** Pointer to a VMSVGA3d context. */
 typedef VMSVGA3DCONTEXT *PVMSVGA3DCONTEXT;

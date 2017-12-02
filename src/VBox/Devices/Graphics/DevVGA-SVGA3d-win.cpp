@@ -2892,6 +2892,9 @@ int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
 
         Log(("vmsvga3dContextDestroy id %x\n", cid));
 
+        /* Cleanup the device runtime state. */
+        D3D_RELEASE(pContext->d3dState.pVertexDecl);
+
         /* Check for all surfaces that are associated with this context to remove all dependencies */
         for (uint32_t sid = 0; sid < pState->cSurfaces; sid++)
         {
@@ -3164,6 +3167,10 @@ int vmsvga3dChangeMode(PVGASTATE pThis)
                 }
             }
 #endif /* #ifdef VMSVGA3D_DIRECT3D9_RESET */
+
+            /* Cleanup the device runtime state. */
+            D3D_RELEASE(pContext->d3dState.pVertexDecl);
+
             memset(&cs, 0, sizeof(cs));
             cs.cx = pThis->svga.uWidth;
             cs.cy = pThis->svga.uHeight;
@@ -5809,19 +5816,37 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
     /* Mark the end. */
     memcpy(&aVertexElements[numVertexDecls], &sVertexEnd, sizeof(sVertexEnd));
 
-    /* Create and set the vertex declaration. */
-    IDirect3DVertexDeclaration9 *pVertexDeclD3D = NULL;
-    hr = pContext->pDevice->CreateVertexDeclaration(&aVertexElements[0], &pVertexDeclD3D);
-    AssertMsgReturn(hr == D3D_OK, ("CreateVertexDeclaration failed with %x\n", hr), VERR_INTERNAL_ERROR);
+    /* Check if this context already has the same vertex declaration. */
+    if (   pContext->d3dState.pVertexDecl
+        && pContext->d3dState.cVertexElements == numVertexDecls + 1
+        && memcmp(pContext->d3dState.aVertexElements,
+                  aVertexElements,
+                  pContext->d3dState.cVertexElements * sizeof(aVertexElements[0])) == 0)
+    {
+       /* Same. */
+    }
+    else
+    {
+        D3D_RELEASE(pContext->d3dState.pVertexDecl);
 
-    hr = pContext->pDevice->SetVertexDeclaration(pVertexDeclD3D);
-    AssertMsgReturnStmt(hr == D3D_OK, ("SetVertexDeclaration failed with %x\n", hr),
-                        D3D_RELEASE(pVertexDeclD3D), VERR_INTERNAL_ERROR);
+        pContext->d3dState.cVertexElements = numVertexDecls + 1;
+        memcpy(pContext->d3dState.aVertexElements,
+               aVertexElements,
+               pContext->d3dState.cVertexElements * sizeof(aVertexElements[0]));
+
+        /* Create and set the vertex declaration. */
+        hr = pContext->pDevice->CreateVertexDeclaration(&aVertexElements[0], &pContext->d3dState.pVertexDecl);
+        AssertMsgReturn(hr == D3D_OK, ("CreateVertexDeclaration failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+        hr = pContext->pDevice->SetVertexDeclaration(pContext->d3dState.pVertexDecl);
+        AssertMsgReturnStmt(hr == D3D_OK, ("SetVertexDeclaration failed with %x\n", hr),
+                            D3D_RELEASE(pContext->d3dState.pVertexDecl),
+                            VERR_INTERNAL_ERROR);
+    }
 
     /* Begin a scene before rendering anything. */
     hr = pContext->pDevice->BeginScene();
-    AssertMsgReturnStmt(hr == D3D_OK, ("BeginScene failed with %x\n", hr),
-                        D3D_RELEASE(pVertexDeclD3D), VERR_INTERNAL_ERROR);
+    AssertMsgReturn(hr == D3D_OK, ("BeginScene failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
     /* Now draw the primitives. */
     for (uint32_t iPrimitive = 0; iPrimitive < numRanges; ++iPrimitive)
@@ -5918,9 +5943,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         }
     }
 
-    /* Release vertex declaration, end the scene and do some cleanup regardless of the rc. */
-    D3D_RELEASE(pVertexDeclD3D);
-
+    /* End the scene and do some cleanup regardless of the rc. */
     hr = pContext->pDevice->EndScene();
     AssertMsgReturn(hr == D3D_OK, ("EndScene failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
