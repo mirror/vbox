@@ -1727,7 +1727,7 @@ static int rtFsNtfsVol_NewSharedDirFromCore(PRTFSNTFSVOL pThis, PRTFSNTFSCORE pC
         return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "%s: INDEX_ROOT is is not resident", pszWhat);
     if (pRootAttr->cbResident < sizeof(NTFSATINDEXROOT))
         return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "%s: INDEX_ROOT is too small: %#x, min %#x ",
-                                       pRootAttr->cbResident, sizeof(pRootAttr->cbResident));
+                                       pszWhat, pRootAttr->cbResident, sizeof(pRootAttr->cbResident));
 
     PCNTFSATINDEXROOT pIdxRoot = (PCNTFSATINDEXROOT)NTFSATTRIBHDR_GET_RES_VALUE_PTR(pRootAttr->pAttrHdr);
 #ifdef LOG_ENABLED
