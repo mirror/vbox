@@ -54,29 +54,6 @@ typedef RTSERIALPORT                 *PRTSERIALPORT;
 
 
 /**
- * Serial port event.
- */
-typedef enum RTSERIALPORTEVT
-{
-    /** Invalid event. */
-    RTSERIALPORTEVT_INVALID = 0,
-    /** Data was received and can be read. */
-    RTSERIALPORTEVT_DATA_RX,
-    /** All data was transmitted and there is room again in the transmit buffer. */
-    RTSERIALPORTEVT_DATA_TX,
-    /** A BREAK condition was detected on the communication channel. */
-    RTSERIALPORTEVT_BREAK_DETECTED,
-    /** One of the monitored status lines changed, check with RTSerialPortQueryStatusLines(). */
-    RTSERIALPORTEVT_STATUS_LINE_CHANGED,
-    /** Status line monitor failed with an error and status line monitoring is disabled. */
-    RTSERIALPORTEVT_STATUS_LINE_MONITOR_FAILED,
-    /** 32bit hack. */
-    RTSERIALPORTEVT_32BIT_HACK = 0x7fffffff
-} RTSERIALPORTEVT;
-/** Pointer to a serial port event enum. */
-typedef RTSERIALPORTEVT *PRTSERIALPORTEVT;
-
-/**
  * Supported parity settings.
  */
 typedef enum RTSERIALPORTPARITY
@@ -159,41 +136,62 @@ typedef const RTSERIALPORTCFG *PCRTSERIALPORTCFG;
 /** @name RTSerialPortOpen flags
  * @{ */
 /** Open the serial port with the receiver enabled to receive data. */
-#define RT_SERIALPORT_OPEN_F_READ                           RT_BIT(0)
+#define RTSERIALPORT_OPEN_F_READ                           RT_BIT(0)
 /** Open the serial port with the transmitter enabled to transmit data. */
-#define RT_SERIALPORT_OPEN_F_WRITE                          RT_BIT(1)
+#define RTSERIALPORT_OPEN_F_WRITE                          RT_BIT(1)
 /** Open the serial port with status line monitoring enabled to get notified about status line changes. */
-#define RT_SERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING RT_BIT(2)
+#define RTSERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING RT_BIT(2)
 /** Open the serial port with BREAK condition detection enabled (Requires extra work on some hosts). */
-#define RT_SERIALPORT_OPEN_F_DETECT_BREAK_CONDITION         RT_BIT(3)
+#define RTSERIALPORT_OPEN_F_DETECT_BREAK_CONDITION         RT_BIT(3)
 /** Open the serial port with loopback mode enabled. */
-#define RT_SERIALPORT_OPEN_F_ENABLE_LOOPBACK                RT_BIT(4)
+#define RTSERIALPORT_OPEN_F_ENABLE_LOOPBACK                RT_BIT(4)
 /** Bitmask of valid flags. */
-#define RT_SERIALPORT_OPEN_F_VALID_MASK                     UINT32_C(0x0000001f)
+#define RTSERIALPORT_OPEN_F_VALID_MASK                     UINT32_C(0x0000001f)
 /** @} */
 
 
 /** @name RTSerialPortChgModemLines flags
  * @{ */
 /** Change the RTS (Ready To Send) line signal. */
-#define RT_SERIALPORT_CHG_STS_LINES_F_RTS                   RT_BIT(0)
+#define RTSERIALPORT_CHG_STS_LINES_F_RTS                   RT_BIT(0)
 /** Change the DTR (Data Terminal Ready) line signal. */
-#define RT_SERIALPORT_CHG_STS_LINES_F_DTR                   RT_BIT(1)
+#define RTSERIALPORT_CHG_STS_LINES_F_DTR                   RT_BIT(1)
 /** Bitmask of valid flags. */
-#define RT_SERIALPORT_CHG_STS_LINES_F_VALID_MASK            UINT32_C(0x00000003)
+#define RTSERIALPORT_CHG_STS_LINES_F_VALID_MASK            UINT32_C(0x00000003)
 /** @} */
 
 
 /** @name RTSerialPortQueryStatusLines flags
  * @{ */
 /** The DCD (Data Carrier Detect) signal is active. */
-#define RT_SERIALPORT_STS_LINE_DCD                          RT_BIT(0)
+#define RTSERIALPORT_STS_LINE_DCD                          RT_BIT(0)
 /** The RI (Ring Indicator) signal is active. */
-#define RT_SERIALPORT_STS_LINE_RI                           RT_BIT(1)
+#define RTSERIALPORT_STS_LINE_RI                           RT_BIT(1)
 /** The DSR (Data Set Ready) signal is active. */
-#define RT_SERIALPORT_STS_LINE_DSR                          RT_BIT(2)
+#define RTSERIALPORT_STS_LINE_DSR                          RT_BIT(2)
 /** The CTS (Clear To Send) signal is active. */
-#define RT_SERIALPORT_STS_LINE_CTS                          RT_BIT(3)
+#define RTSERIALPORT_STS_LINE_CTS                          RT_BIT(3)
+/** @} */
+
+
+/** @name RTSerialPortEvtPoll flags
+ * @{ */
+/** Data was received and can be read. */
+#define RTSERIALPORT_EVT_F_DATA_RX                         RT_BIT(0)
+/** All data was transmitted and there is room again in the transmit buffer. */
+#define RTSERIALPORT_EVT_F_DATA_TX                         RT_BIT(1)
+/** A BREAK condition was detected on the communication channel.
+ * Only available when BREAK condition detection was enabled when opening the serial port .*/
+#define RTSERIALPORT_EVT_F_BREAK_DETECTED                  RT_BIT(2)
+/** One of the monitored status lines changed, check with RTSerialPortQueryStatusLines().
+ * Only available if status line monitoring was enabled when opening the serial port. */
+#define RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED             RT_BIT(3)
+/** Status line monitor failed with an error and status line monitoring is disabled,
+ * this cannot be given in the event mask but will be set if status line
+ * monitoring is enabled and the monitor failed. */
+#define RTSERIALPORT_EVT_F_STATUS_LINE_MONITOR_FAILED      RT_BIT(4)
+/** Bitmask of valid flags. */
+#define RTSERIALPORT_EVT_F_VALID_MASK                      UINT32_C(0x0000001f)
 /** @} */
 
 
@@ -203,7 +201,7 @@ typedef const RTSERIALPORTCFG *PCRTSERIALPORTCFG;
  * @returns IPRT status code.
  * @param   phSerialPort            Where to store the IPRT serial port handle on success.
  * @param   pszPortAddress          The address of the serial port (host dependent).
- * @param   fFlags                  Flags to open the serial port with, see RT_SERIALPORT_OPEN_F_*.
+ * @param   fFlags                  Flags to open the serial port with, see RTSERIALPORT_OPEN_F_*.
  */
 RTDECL(int) RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAddress, uint32_t fFlags);
 
@@ -307,10 +305,12 @@ RTDECL(int) RTSerialPortCfgSet(RTSERIALPORT hSerialPort, PCRTSERIALPORTCFG pCfg,
  * @retval VERR_TIMEOUT if the timeout was reached before an event happened.
  * @retval VERR_INTERRUPTED if another thread interrupted the polling through RTSerialPortEvtPollInterrupt().
  * @param   hSerialPort             The IPRT serial port handle.
- * @param   penmEvt                 Where to store the event on success.
+ * @param   fEvtMask                The mask of events to receive, see RTSERIALPORT_EVT_F_*
+ * @param   pfEvtsRecv              Where to store the bitmask of events received.
  * @param   msTimeout               Number of milliseconds to wait for an event.
  */
-RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, RTSERIALPORTEVT *penmEvt, RTMSINTERVAL msTimeout);
+RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, uint32_t fEvtMask, uint32_t *pfEvtsRecv,
+                                RTMSINTERVAL msTimeout);
 
 
 /**
@@ -339,8 +339,8 @@ RTDECL(int) RTSerialPortChgBreakCondition(RTSERIALPORT hSerialPort, bool fSet);
  *
  * @returns IPRT status code.
  * @param   hSerialPort             The IPRT serial port handle.
- * @param   fClear                  Combination of status lines to clear, see RT_SERIALPORT_CHG_STS_LINES_F_*.
- * @param   fSet                    Combination of status lines to set, see RT_SERIALPORT_CHG_STS_LINES_F_*.
+ * @param   fClear                  Combination of status lines to clear, see RTSERIALPORT_CHG_STS_LINES_F_*.
+ * @param   fSet                    Combination of status lines to set, see RTSERIALPORT_CHG_STS_LINES_F_*.
  *
  * @note fClear takes precedence over fSet in case the same status line bit is set in both arguments.
  */
@@ -353,7 +353,7 @@ RTDECL(int) RTSerialPortChgStatusLines(RTSERIALPORT hSerialPort, uint32_t fClear
  * @returns IPRT status code.
  * @param   hSerialPort             The IPRT serial port handle.
  * @param   pfStsLines              Where to store the bitmask of active status lines on success,
- *                                  see RT_SERIALPORT_STS_LINE_*.
+ *                                  see RTSERIALPORT_STS_LINE_*.
  */
 RTDECL(int) RTSerialPortQueryStatusLines(RTSERIALPORT hSerialPort, uint32_t *pfStsLines);
 

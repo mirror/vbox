@@ -38,6 +38,7 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
+#include <iprt/time.h>
 #include "internal/magics.h"
 
 #include <errno.h>
@@ -100,6 +101,8 @@ typedef struct RTSERIALPORTINTERNAL
     int                 iFdPipeR;
     /** Writing end of wakeup pipe. */
     int                 iFdPipeW;
+    /** Event pending mask. */
+    volatile uint32_t   fEvtsPending;
     /** The current active config (we assume no one changes this behind our back). */
     struct termios      PortCfg;
 } RTSERIALPORTINTERNAL;
@@ -215,7 +218,7 @@ static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
     cfsetispeed(&pThis->PortCfg, B9600);
     cfsetospeed(&pThis->PortCfg, B9600);
     pThis->PortCfg.c_cflag = CS8 | CLOCAL; /* 8 data bits, ignore modem control lines. */
-    if (pThis->fOpenFlags & RT_SERIALPORT_OPEN_F_READ)
+    if (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_READ)
         pThis->PortCfg.c_cflag |= CREAD;   /* Enable receiver. */
 
     /* Set to raw input mode. */
@@ -234,7 +237,7 @@ static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
         if (RT_SUCCESS(rc))
         {
 #ifdef RT_OS_LINUX
-            if (pThis->fOpenFlags & RT_SERIALPORT_OPEN_F_ENABLE_LOOPBACK)
+            if (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_ENABLE_LOOPBACK)
             {
                 int fTiocmSet = TIOCM_LOOP;
                 rcPsx = ioctl(pThis->iFd, TIOCMBIS, &fTiocmSet);
@@ -250,7 +253,7 @@ static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
                     rc = RTErrConvertFromErrno(errno);
             }
 #else
-            if (pThis->fOpenFlags & RT_SERIALPORT_OPEN_F_ENABLE_LOOPBACK)
+            if (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_ENABLE_LOOPBACK)
                 return VERR_NOT_SUPPORTED;
 #endif
         }
@@ -557,26 +560,41 @@ static DECLCALLBACK(int) rtSerialPortStsLineMonitorThrd(RTTHREAD hThreadSelf, vo
  */
 static int rtSerialPortMonitorThreadCreate(PRTSERIALPORTINTERNAL pThis)
 {
-    pThis->fMonThrdShutdown = false;
-    int rc = RTThreadCreate(&pThis->hMonThrd, rtSerialPortStsLineMonitorThrd, pThis, 0 /*cbStack*/,
-                            RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "IPRT-SerPortMon");
-    if (RT_SUCCESS(rc))
+    int rc = VINF_SUCCESS;
+
+    /*
+     * Check whether querying the status lines is supported at all, pseudo terminals
+     * don't support it so an error returned in that case.
+     */
+    uint32_t fStsLines = 0;
+    int rcPsx = ioctl(pThis->iFd, TIOCMGET, &fStsLines);
+    if (!rcPsx)
     {
-        /* Wait for the thread to start up. */
-        rc = RTThreadUserWait(pThis->hMonThrd, 20*RT_MS_1SEC);
-        if (   rc == VERR_TIMEOUT
-            || pThis->fMonThrdShutdown)
+        pThis->fMonThrdShutdown = false;
+        rc = RTThreadCreate(&pThis->hMonThrd, rtSerialPortStsLineMonitorThrd, pThis, 0 /*cbStack*/,
+                            RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "IPRT-SerPortMon");
+        if (RT_SUCCESS(rc))
         {
-            /* Startup failed, try to reap the thread. */
-            int rcThrd;
-            rc = RTThreadWait(pThis->hMonThrd, 20*RT_MS_1SEC, &rcThrd);
-            if (RT_SUCCESS(rc))
-                rc = rcThrd;
-            else
-                rc = VERR_INTERNAL_ERROR;
-            /* The thread is lost otherwise. */
+            /* Wait for the thread to start up. */
+            rc = RTThreadUserWait(pThis->hMonThrd, 20*RT_MS_1SEC);
+            if (   rc == VERR_TIMEOUT
+                || pThis->fMonThrdShutdown)
+            {
+                /* Startup failed, try to reap the thread. */
+                int rcThrd;
+                rc = RTThreadWait(pThis->hMonThrd, 20*RT_MS_1SEC, &rcThrd);
+                if (RT_SUCCESS(rc))
+                    rc = rcThrd;
+                else
+                    rc = VERR_INTERNAL_ERROR;
+                /* The thread is lost otherwise. */
+            }
         }
     }
+    else if (errno == ENOTTY)
+        rc = VERR_NOT_SUPPORTED;
+    else
+        rc = RTErrConvertFromErrno(errno);
 
     return rc;
 }
@@ -608,8 +626,8 @@ RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAdd
 {
     AssertPtrReturn(phSerialPort, VERR_INVALID_POINTER);
     AssertReturn(VALID_PTR(pszPortAddress) && *pszPortAddress != '\0', VERR_INVALID_PARAMETER);
-    AssertReturn(!(fFlags & ~RT_SERIALPORT_OPEN_F_VALID_MASK), VERR_INVALID_PARAMETER);
-    AssertReturn((fFlags & RT_SERIALPORT_OPEN_F_READ) || (fFlags & RT_SERIALPORT_OPEN_F_WRITE),
+    AssertReturn(!(fFlags & ~RTSERIALPORT_OPEN_F_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn((fFlags & RTSERIALPORT_OPEN_F_READ) || (fFlags & RTSERIALPORT_OPEN_F_WRITE),
                  VERR_INVALID_PARAMETER);
 
     int rc = VINF_SUCCESS;
@@ -618,15 +636,16 @@ RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAdd
     {
         int fPsxFlags = O_NOCTTY;
 
-        if ((fFlags & RT_SERIALPORT_OPEN_F_READ) && !(fFlags & RT_SERIALPORT_OPEN_F_WRITE))
+        if ((fFlags & RTSERIALPORT_OPEN_F_READ) && !(fFlags & RTSERIALPORT_OPEN_F_WRITE))
             fPsxFlags |= O_RDONLY;
-        else if (!(fFlags & RT_SERIALPORT_OPEN_F_READ) && (fFlags & RT_SERIALPORT_OPEN_F_WRITE))
+        else if (!(fFlags & RTSERIALPORT_OPEN_F_READ) && (fFlags & RTSERIALPORT_OPEN_F_WRITE))
             fPsxFlags |= O_WRONLY;
         else
             fPsxFlags |= O_RDWR;
 
-        pThis->fOpenFlags = fFlags;
-        pThis->iFd        = open(pszPortAddress, fPsxFlags);
+        pThis->fOpenFlags   = fFlags;
+        pThis->fEvtsPending = 0;
+        pThis->iFd          = open(pszPortAddress, fPsxFlags);
         if (pThis->iFd != -1)
         {
             /* Create wakeup pipe for the event API. */
@@ -649,7 +668,7 @@ RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAdd
                 {
                     rc = rtSerialPortSetDefaultCfg(pThis);
                     if (   RT_SUCCESS(rc)
-                        && (fFlags & RT_SERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING))
+                        && (fFlags & RTSERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING))
                         rc = rtSerialPortMonitorThreadCreate(pThis);
 
                     if (RT_SUCCESS(rc))
@@ -692,7 +711,7 @@ RTDECL(int)  RTSerialPortClose(RTSERIALPORT hSerialPort)
      */
     AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, RTSERIALPORT_MAGIC_DEAD, RTSERIALPORT_MAGIC), VERR_INVALID_HANDLE);
 
-    if (pThis->fOpenFlags & RT_SERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING)
+    if (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING)
         rtSerialPortMonitorThreadShutdown(pThis);
 
     close(pThis->iFd);
@@ -739,7 +758,7 @@ RTDECL(int) RTSerialPortReadNB(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbT
          * The read data needs to be scanned for the BREAK condition marker encoded in the data stream,
          * if break detection was enabled during open.
          */
-        if (pThis->fOpenFlags & RT_SERIALPORT_OPEN_F_DETECT_BREAK_CONDITION)
+        if (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_DETECT_BREAK_CONDITION)
         { /** @todo */ }
 
         *pcbRead = cbThisRead;
@@ -817,7 +836,7 @@ RTDECL(int) RTSerialPortCfgSet(RTSERIALPORT hSerialPort, PCRTSERIALPORTCFG pCfg,
          * modem irqs and so the monitor thread never gets released. The workaround
          * is to send a signal after each tcsetattr.
          */
-        if (pThis->fOpenFlags & RT_SERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING)
+        if (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING)
             RTThreadPoke(pThis->hMonThrd);
 #endif
     }
@@ -826,10 +845,117 @@ RTDECL(int) RTSerialPortCfgSet(RTSERIALPORT hSerialPort, PCRTSERIALPORTCFG pCfg,
 }
 
 
-RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, RTSERIALPORTEVT *penmEvt, RTMSINTERVAL msTimeout)
+RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, uint32_t fEvtMask, uint32_t *pfEvtsRecv,
+                                RTMSINTERVAL msTimeout)
 {
-    RT_NOREF(hSerialPort, penmEvt, msTimeout);
-    return VERR_NOT_IMPLEMENTED;
+    PRTSERIALPORTINTERNAL pThis = hSerialPort;
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->u32Magic == RTSERIALPORT_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(!(fEvtMask & ~RTSERIALPORT_EVT_F_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfEvtsRecv, VERR_INVALID_POINTER);
+
+    *pfEvtsRecv = 0;
+
+    fEvtMask |= RTSERIALPORT_EVT_F_STATUS_LINE_MONITOR_FAILED; /* This will be reported always, no matter what the caller wants. */
+
+    /* Return early if there are events pending from previous calls which weren't fetched yet. */
+    for (;;)
+    {
+        uint32_t fEvtsPending = ASMAtomicReadU32(&pThis->fEvtsPending);
+        if (fEvtsPending & fEvtMask)
+        {
+            *pfEvtsRecv = fEvtsPending & fEvtMask;
+            /* Write back, repeat the whole procedure if someone else raced us. */
+            if (ASMAtomicCmpXchgU32(&pThis->fEvtsPending, fEvtsPending & ~fEvtMask, fEvtsPending))
+                return VINF_SUCCESS;
+        }
+        else
+            break;
+    }
+
+    struct pollfd aPollFds[2]; RT_ZERO(aPollFds);
+    aPollFds[0].fd = pThis->iFd;
+    aPollFds[0].events = POLLERR | POLLHUP;
+    aPollFds[0].revents = 0;
+    if (   (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_READ)
+        && (fEvtMask & RTSERIALPORT_EVT_F_DATA_RX))
+        aPollFds[0].events |= POLLIN;
+    if (   (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_WRITE)
+        && (fEvtMask & RTSERIALPORT_EVT_F_DATA_TX))
+        aPollFds[0].events |= POLLOUT;
+
+    aPollFds[1].fd      = pThis->iFdPipeR;
+    aPollFds[1].events  = POLLIN | POLLERR | POLLHUP;
+    aPollFds[1].revents = 0;
+
+    int rcPsx = 0;
+    int msTimeoutLeft = msTimeout == RT_INDEFINITE_WAIT ? -1 : msTimeout;
+    while (msTimeoutLeft != 0)
+    {
+        uint64_t tsPollStart = RTTimeMilliTS();
+
+        rcPsx = poll(&aPollFds[0], RT_ELEMENTS(aPollFds), msTimeoutLeft);
+        if (rcPsx != -1 || errno != EINTR)
+            break;
+        /* Restart when getting interrupted. */
+        if (msTimeoutLeft > -1)
+        {
+            uint64_t tsPollEnd = RTTimeMilliTS();
+            uint64_t tsPollSpan = tsPollEnd - tsPollStart;
+            msTimeoutLeft -= RT_MIN(tsPollSpan, (uint32_t)msTimeoutLeft);
+        }
+    }
+
+    int rc = VINF_SUCCESS;
+    uint32_t fEvtsPending = 0;
+    if (rcPsx < 0 && errno != EINTR)
+        rc = RTErrConvertFromErrno(errno);
+    else if (rcPsx > 0)
+    {
+        if (aPollFds[0].revents != 0)
+        {
+            fEvtsPending |= (aPollFds[0].revents & POLLIN) ? RTSERIALPORT_EVT_F_DATA_RX : 0;
+            fEvtsPending |= (aPollFds[0].revents & POLLIN) ? RTSERIALPORT_EVT_F_DATA_TX : 0;
+            /** @todo BREAK condition detection. */
+        }
+
+        if (aPollFds[1].revents != 0)
+        {
+            AssertReturn(!(aPollFds[1].revents & (POLLHUP | POLLERR | POLLNVAL)), VERR_INTERNAL_ERROR);
+            Assert(aPollFds[1].revents & POLLIN);
+
+            uint8_t bWakeupReason = 0;
+            ssize_t cbRead = read(pThis->iFdPipeR, &bWakeupReason, 1);
+            if (cbRead == 1)
+            {
+                switch (bWakeupReason)
+                {
+                    case RTSERIALPORT_WAKEUP_PIPE_REASON_INTERRUPT:
+                        rc = VERR_INTERRUPTED;
+                        break;
+                    case RTSERIALPORT_WAKEUP_PIPE_REASON_STS_LINE_CHANGED:
+                        fEvtsPending |= RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED;
+                        break;
+                    case RTSERIALPORT_WAKEUP_PIPE_REASON_STS_LINE_MONITOR_FAILED:
+                        fEvtsPending |= RTSERIALPORT_EVT_F_STATUS_LINE_MONITOR_FAILED;
+                        break;
+                    default:
+                        AssertFailed();
+                        rc = VERR_INTERNAL_ERROR;
+                }
+            }
+            else
+                rc = VERR_INTERNAL_ERROR;
+        }
+    }
+    else
+        rc = VERR_TIMEOUT;
+
+    *pfEvtsRecv = fEvtsPending & fEvtMask;
+    fEvtsPending &= ~fEvtMask;
+    ASMAtomicOrU32(&pThis->fEvtsPending, fEvtsPending);
+
+    return rc;
 }
 
 
@@ -868,14 +994,14 @@ RTDECL(int) RTSerialPortChgStatusLines(RTSERIALPORT hSerialPort, uint32_t fClear
     int fTiocmSet = 0;
     int fTiocmClear = 0;
 
-    if (fClear & RT_SERIALPORT_CHG_STS_LINES_F_RTS)
+    if (fClear & RTSERIALPORT_CHG_STS_LINES_F_RTS)
         fTiocmClear |= TIOCM_RTS;
-    if (fClear & RT_SERIALPORT_CHG_STS_LINES_F_DTR)
+    if (fClear & RTSERIALPORT_CHG_STS_LINES_F_DTR)
         fTiocmClear |= TIOCM_DTR;
 
-    if (fSet & RT_SERIALPORT_CHG_STS_LINES_F_RTS)
+    if (fSet & RTSERIALPORT_CHG_STS_LINES_F_RTS)
         fTiocmSet |= TIOCM_RTS;
-    if (fSet & RT_SERIALPORT_CHG_STS_LINES_F_DTR)
+    if (fSet & RTSERIALPORT_CHG_STS_LINES_F_DTR)
         fTiocmSet |= TIOCM_DTR;
 
     int rcPsx = ioctl(pThis->iFd, TIOCMBIS, &fTiocmSet);
@@ -903,10 +1029,18 @@ RTDECL(int) RTSerialPortQueryStatusLines(RTSERIALPORT hSerialPort, uint32_t *pfS
     int rcPsx = ioctl(pThis->iFd, TIOCMGET, &fStsLines);
     if (!rcPsx)
     {
-        *pfStsLines |= (fStsLines & TIOCM_CAR) ? RT_SERIALPORT_STS_LINE_DCD : 0;
-        *pfStsLines |= (fStsLines & TIOCM_RNG) ? RT_SERIALPORT_STS_LINE_RI  : 0;
-        *pfStsLines |= (fStsLines & TIOCM_DSR) ? RT_SERIALPORT_STS_LINE_DSR : 0;
-        *pfStsLines |= (fStsLines & TIOCM_CTS) ? RT_SERIALPORT_STS_LINE_CTS : 0;
+        /* This resets the status line event pending flag. */
+        for (;;)
+        {
+            uint32_t fEvtsPending = ASMAtomicReadU32(&pThis->fEvtsPending);
+            if (ASMAtomicCmpXchgU32(&pThis->fEvtsPending, fEvtsPending & ~RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED, fEvtsPending))
+                break;
+        }
+
+        *pfStsLines |= (fStsLines & TIOCM_CAR) ? RTSERIALPORT_STS_LINE_DCD : 0;
+        *pfStsLines |= (fStsLines & TIOCM_RNG) ? RTSERIALPORT_STS_LINE_RI  : 0;
+        *pfStsLines |= (fStsLines & TIOCM_DSR) ? RTSERIALPORT_STS_LINE_DSR : 0;
+        *pfStsLines |= (fStsLines & TIOCM_CTS) ? RTSERIALPORT_STS_LINE_CTS : 0;
     }
     else
         rc = RTErrConvertFromErrno(errno);
