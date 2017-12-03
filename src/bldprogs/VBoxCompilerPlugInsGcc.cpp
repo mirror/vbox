@@ -38,6 +38,10 @@ extern "C" {
 #include "basic-block.h"
 #include "tree.h"
 #include "tree-pass.h"
+#if __GNUC__ == 5 && __GNUC_MINOR__ == 4
+# include "tree-ssa-alias.h"
+# include "gimple-expr.h"
+#endif
 #include "gimple.h"
 #if RT_GNUC_PREREQ(4, 9)
 # include "gimple-iterator.h"
@@ -367,8 +371,10 @@ static location_t MyGetFormatStringLocation(PVFMTCHKSTATE pState, const char *ps
         unsigned            uCol    = 1 + offString;
         expanded_location   XLoc    = expand_location_to_spelling_point(hLoc);
         int                 cchLine = 0;
-# if RT_GNUC_PREREQ(5,0)
+# if RT_GNUC_PREREQ(6,0)
         const char         *pszLine = location_get_source_line(XLoc.file, XLoc.line, &cchLine);
+# elif RT_GNUC_PREREQ(5,0)
+        const char         *pszLine = location_get_source_line(XLoc, &cchLine);
 # else
         const char         *pszLine = location_get_source_line(XLoc);
         if (pszLine)
@@ -697,8 +703,8 @@ static unsigned int     MyPassExecuteCallbackWithFunction(struct function *pFun)
                         MyCheckFormatRecursive(&State, gimple_call_arg(hStmt, State.iFmt - 1));
                     else
                         error_at(gimple_location(hStmt),
-                                 "Call has only %d arguments; %s() format string is argument #%u (1-based), thus missing\n",
-                                 cCallArgs, DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>",State.iFmt);
+                                 "Call has only %d arguments; %s() format string is argument #%lu (1-based), thus missing\n",
+                                 cCallArgs, DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>", State.iFmt);
                 }
             }
         }
