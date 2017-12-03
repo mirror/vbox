@@ -230,7 +230,7 @@ static void rtDvmFmtMbrDestroy(PRTDVMFMTINTERNAL pThis)
 
 static int rtDvmFmtMbrReadExtended(PRTDVMFMTINTERNAL pThis, PRTDVMMBRENTRY pPrimaryEntry)
 {
-    uint32_t const  cbExt       = pPrimaryEntry->cbPart;
+    uint64_t const  cbExt       = pPrimaryEntry->cbPart;
     uint64_t const  offExtBegin = pPrimaryEntry->offPart;
 
     uint64_t        offCurBegin = offExtBegin;
