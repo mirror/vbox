@@ -247,7 +247,7 @@ static DECLCALLBACK(int) rtDvmVfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
      */
     if (cbLeftToRead > 0)
     {
-        rc = RTDvmVolumeRead(pThis->hVol, (uint64_t)off, pSgBuf->paSegs[0].pvSeg, cbLeftToRead);
+        rc = RTDvmVolumeRead(pThis->hVol, offUnsigned, pSgBuf->paSegs[0].pvSeg, cbLeftToRead);
         if (RT_SUCCESS(rc))
             offUnsigned += cbLeftToRead;
     }
@@ -302,7 +302,7 @@ static DECLCALLBACK(int) rtDvmVfsFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
      */
     if (cbLeftToWrite > 0)
     {
-        rc = RTDvmVolumeWrite(pThis->hVol, (uint64_t)off, pSgBuf->paSegs[0].pvSeg, cbLeftToWrite);
+        rc = RTDvmVolumeWrite(pThis->hVol, offUnsigned, pSgBuf->paSegs[0].pvSeg, cbLeftToWrite);
         if (RT_SUCCESS(rc))
             offUnsigned += cbLeftToWrite;
     }
