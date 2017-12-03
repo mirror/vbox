@@ -1647,6 +1647,7 @@ static void rtFsNtfsVol_LogIndexHdrAndEntries(PCNTFSINDEXHDR pIdxHdr, uint32_t c
         Log2(("NTFS: %s: Warning! Missing NTFSIDXENTRYHDR_F_END node!\n", pszPrefix));
 }
 
+# if 0 /* unused */
 static void rtFsNtfsVol_LogIndexNode(PCNTFSATINDEXALLOC pIdxNode, uint32_t cbIdxNode, uint32_t uType)
 {
     if (!LogIs2Enabled())
@@ -1667,7 +1668,7 @@ static void rtFsNtfsVol_LogIndexNode(PCNTFSATINDEXALLOC pIdxNode, uint32_t cbIdx
             Log2(("NTFS: Index Node: !Error! Invalid magic!\n"));
     }
 }
-
+# endif
 
 /**
  * Logs a index root structure and what follows (index header + entries).
