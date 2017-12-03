@@ -264,8 +264,8 @@ typedef struct RTFSNTFSVOL
 
     /** The MFT record size. */
     uint32_t        cbMftRecord;
-    /** The index record size. */
-    uint32_t        cbIndexRecord;
+    /** The default index (B-tree) node size. */
+    uint32_t        cbDefaultIndexNode;
 
     /** The volume serial number. */
     uint64_t        uSerialNo;
@@ -305,6 +305,9 @@ typedef struct RTFSNTFSVOL
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static uint32_t rtFsNtfsCore_Release(PRTFSNTFSCORE pThis);
+#ifdef LOG_ENABLED
+static void     rtFsNtfsVol_LogIndexRoot(PCNTFSATINDEXROOT pIdxRoot, uint32_t cbIdxRoot);
+#endif
 
 
 
@@ -579,7 +582,11 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec, uint32_t cbMftRecord)
                             //case NTFS_AT_VOLUME_NAME:
                             //case NTFS_AT_VOLUME_INFORMATION:
                             //case NTFS_AT_DATA:
-                            //case NTFS_AT_INDEX_ROOT:
+
+                            case NTFS_AT_INDEX_ROOT:
+                                rtFsNtfsVol_LogIndexRoot((PCNTFSATINDEXROOT)pbValue, cbValue);
+                                break;
+
                             //case NTFS_AT_INDEX_ALLOCATION:
                             //case NTFS_AT_BITMAP:
                             //case NTFS_AT_REPARSE_POINT:
@@ -636,13 +643,16 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec, uint32_t cbMftRecord)
                         uint8_t const *pbPairs    = &pbRec[offRec + offMappingPairs];
                         uint32_t const cbMaxPairs = cbAttrib - offMappingPairs;
                         int64_t iVnc = pHdr->u.NonRes.iVcnFirst;
-                        Log2(("NTFS:     Mapping Pairs: %.*Rhxsd\n", cbMaxPairs, pbPairs));
+                        if (cbMaxPairs < 48)
+                            Log2(("NTFS:     Mapping Pairs: cbMaxPairs=%#x %.*Rhxs\n", cbMaxPairs, cbMaxPairs, pbPairs));
+                        else
+                            Log2(("NTFS:     Mapping Pairs: cbMaxPairs=%#x\n%.*Rhxd\n", cbMaxPairs, cbMaxPairs, pbPairs));
                         if (!iVnc && !*pbPairs)
                             Log2(("NTFS:         [0]: Empty\n"));
                         else
                         {
                             if (iVnc != 0)
-                                Log2(("NTFS:         [0]: VCN=%#012RX64 L %#012RX64 - not mapped\n", 0, iVnc));
+                                Log2(("NTFS:         [00/0x000]: VCN=%#012RX64 L %#012RX64 - not mapped\n", 0, iVnc));
                             int64_t  iLnc     = 0;
                             uint32_t iPair    = 0;
                             uint32_t offPairs = 0;
@@ -655,10 +665,11 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec, uint32_t cbMftRecord)
                                 uint8_t const cbRun    = (bLengths & 0x0f) + (bLengths >> 4);
                                 if (offPairs + cbRun > cbMaxPairs)
                                 {
-                                    Log2(("NTFS:         [%d]: run overrun! cbRun=%#x bLengths=%#x offPairs=%#x cbMaxPairs=%#x\n",
-                                          iPair, cbRun, bLengths, offPairs, cbMaxPairs));
+                                    Log2(("NTFS:         [%02d/%#05x]: run overrun! cbRun=%#x bLengths=%#x offPairs=%#x cbMaxPairs=%#x\n",
+                                          iPair, offPairs, cbRun, bLengths, offPairs, cbMaxPairs));
                                     break;
                                 }
+                                //Log2(("NTFS:         @%#05x: %.*Rhxs\n", offPairs, cbRun + 1, &pbPairs[offPairs]));
 
                                 /* Value 1: Number of (virtual) clusters in this run. */
                                 int64_t cClustersInRun;
@@ -682,12 +693,12 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec, uint32_t cbMftRecord)
                                     while (cbNum-- > 1)
                                         cLcnDelta = (cLcnDelta << 8) + *pbNum--;
                                     iLnc += cLcnDelta;
-                                    Log2(("NTFS:         [%d]: VNC=%#012RX64 L %#012RX64 => LNC=%#012RX64\n",
-                                          iPair, iVnc, cClustersInRun, iLnc));
+                                    Log2(("NTFS:         [%02d/%#05x]: VNC=%#012RX64 L %#012RX64 => LNC=%#012RX64\n",
+                                          iPair, offPairs, iVnc, cClustersInRun, iLnc));
                                 }
                                 else
-                                    Log2(("NTFS:         [%d]: VNC=%#012RX64 L %#012RX64 => HOLE\n",
-                                          iPair, iVnc, cClustersInRun));
+                                    Log2(("NTFS:         [%02d/%#05x]: VNC=%#012RX64 L %#012RX64 => HOLE\n",
+                                          iPair, offPairs, iVnc, cClustersInRun));
 
                                 /* Advance. */
                                 iVnc     += cClustersInRun;
@@ -1239,6 +1250,7 @@ static int rtFsNtfsAttr_Read(PRTFSNTFSATTR pAttr, uint64_t off, void *pvBuf, siz
                     else
                     {
                         rc = RTVfsFileReadAt(pVol->hVfsBacking, pTable->paExtents[iExtent].off + off, pvBuf, cbThisRead, NULL);
+                        Log4(("NTFS: Volume read: @%#RX64 LB %#zx -> %Rrc\n", pTable->paExtents[iExtent].off + off, cbThisRead, rc));
                         if (RT_FAILURE(rc))
                             break;
                     }
@@ -1283,15 +1295,89 @@ static int rtFsNtfsAttr_Read(PRTFSNTFSATTR pAttr, uint64_t off, void *pvBuf, siz
 
 
 /**
+ *
+ * @returns
+ * @param   pRecHdr             .
+ * @param   cbRec               .
+ * @param   fRelaxedUsa         .
+ * @param   pErrInfo            .
+ *
+ * @see https://msdn.microsoft.com/en-us/library/bb470212%28v=vs.85%29.aspx
+ */
+static int rtFsNtfsRec_DoMultiSectorFixups(PNTFSRECHDR pRecHdr, uint32_t cbRec, bool fRelaxedUsa, PRTERRINFO pErrInfo)
+{
+    /*
+     * Do sanity checking.
+     */
+    uint16_t offUpdateSeqArray = RT_LE2H_U16(pRecHdr->offUpdateSeqArray);
+    uint16_t cUpdateSeqEntries = RT_LE2H_U16(pRecHdr->cUpdateSeqEntries);
+    if (   !(cbRec & (NTFS_MULTI_SECTOR_STRIDE - 1))
+        && !(offUpdateSeqArray & 1) /* two byte aligned */
+        && cUpdateSeqEntries == 1 + cbRec / NTFS_MULTI_SECTOR_STRIDE
+        && offUpdateSeqArray + (uint32_t)cUpdateSeqEntries * 2U < NTFS_MULTI_SECTOR_STRIDE - 2U)
+    {
+        uint16_t const *pauUsa = (uint16_t const *)((uint8_t *)pRecHdr + offUpdateSeqArray);
+
+        /*
+         * The first update seqence array entry is the value stored at
+         * the fixup locations at the end of the blocks.  We read this
+         * and check each of the blocks.
+         */
+        uint16_t const uCheck = *pauUsa++;
+        cUpdateSeqEntries--;
+        for (uint16_t iBlock = 0; iBlock < cUpdateSeqEntries; iBlock++)
+        {
+            uint16_t const *puBlockCheck = (uint16_t const *)((uint8_t *)pRecHdr + (iBlock + 1) * NTFS_MULTI_SECTOR_STRIDE - 2U);
+            if (*puBlockCheck == uCheck)
+            { /* likely */ }
+            else if (!fRelaxedUsa)
+                return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_OFFSET,
+                                               "Multisector transfer error: block #%u ends with %#x instead of %#x (fixup: %#x)",
+                                               iBlock, RT_LE2H_U16(*puBlockCheck), RT_LE2H_U16(uCheck), RT_LE2H_U16(pauUsa[iBlock]) );
+            else
+            {
+                Log(("NTFS: Multisector transfer warning: block #%u ends with %#x instead of %#x (fixup: %#x)\n",
+                     iBlock, RT_LE2H_U16(*puBlockCheck), RT_LE2H_U16(uCheck), RT_LE2H_U16(pauUsa[iBlock]) ));
+                return VINF_SUCCESS;
+            }
+        }
+
+        /*
+         * Apply the fixups.
+         * Note! We advanced pauUsa above, so it's now at the fixup values.
+         */
+        for (uint16_t iBlock = 0; iBlock < cUpdateSeqEntries; iBlock++)
+        {
+            uint16_t *puFixup = (uint16_t *)((uint8_t *)pRecHdr + (iBlock + 1) * NTFS_MULTI_SECTOR_STRIDE - 2U);
+            *puFixup = pauUsa[iBlock];
+        }
+        return VINF_SUCCESS;
+    }
+    if (fRelaxedUsa)
+    {
+        Log(("NTFS: Ignoring bogus multisector update sequence: cbRec=%#x uMagic=%#RX32 offUpdateSeqArray=%#x cUpdateSeqEntries=%#x\n",
+             cbRec, RT_LE2H_U32(pRecHdr->uMagic), offUpdateSeqArray, cUpdateSeqEntries ));
+        return VINF_SUCCESS;
+    }
+    return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_OFFSET,
+                                   "Bogus multisector update sequence: cbRec=%#x uMagic=%#RX32 offUpdateSeqArray=%#x cUpdateSeqEntries=%#x",
+                                   cbRec, RT_LE2H_U32(pRecHdr->uMagic), offUpdateSeqArray, cUpdateSeqEntries);
+}
+
+
+/**
  * Allocate and parse an MFT record, returning a core object structure.
  *
  * @returns IPRT status code.
  * @param   pThis               The NTFS volume instance.
  * @param   idxMft              The index of the MTF record.
+ * @param   fRelaxedUsa         Relaxed update sequence checking. Won't fail if
+ *                              checks doesn't work or not present.
  * @param   ppCore              Where to return the core object structure.
  * @param   pErrInfo            Where to return error details.  Optional.
  */
-static int rtFsNtfsVol_NewCoreForMftIdx(PRTFSNTFSVOL pThis, uint64_t idxMft, PRTFSNTFSCORE *ppCore, PRTERRINFO pErrInfo)
+static int rtFsNtfsVol_NewCoreForMftIdx(PRTFSNTFSVOL pThis, uint64_t idxMft, bool fRelaxedUsa,
+                                        PRTFSNTFSCORE *ppCore, PRTERRINFO pErrInfo)
 {
     *ppCore = NULL;
     Assert(pThis->pMftData);
@@ -1302,6 +1388,8 @@ static int rtFsNtfsVol_NewCoreForMftIdx(PRTFSNTFSVOL pThis, uint64_t idxMft, PRT
 
     uint64_t offRec = idxMft * pThis->cbMftRecord;
     int rc = rtFsNtfsAttr_Read(pThis->pMftData, offRec, pRec->pbRec, pThis->cbMftRecord);
+    if (RT_SUCCESS(rc))
+        rc = rtFsNtfsRec_DoMultiSectorFixups(&pRec->pFileRec->Hdr, pThis->cbMftRecord, fRelaxedUsa, pErrInfo);
     if (RT_SUCCESS(rc))
     {
 #ifdef LOG_ENABLED
@@ -1468,6 +1556,159 @@ static PRTFSNTFSATTR rtFsNtfsCore_FindNamedAttributeAscii(PRTFSNTFSCORE pThis, u
  *
  */
 
+#ifdef LOG_ENABLED
+
+/**
+ * Logs an index header and all the entries.
+ *
+ * @param   pIdxHdr     The index header.
+ * @param   cbIndex     The number of valid bytes starting with the header.
+ * @param   offIndex    The offset of the index header into the parent
+ *                      structure.
+ * @param   pszPrefix   The log prefix.
+ * @param   uIdxType    The index type.
+ */
+static void rtFsNtfsVol_LogIndexHdrAndEntries(PCNTFSINDEXHDR pIdxHdr, uint32_t cbIndex, uint32_t offIndex,
+                                              const char *pszPrefix, uint32_t uIdxType)
+{
+    if (!LogIs2Enabled())
+        return;
+
+    /*
+     * Do the header.
+     */
+    if (cbIndex <= sizeof(*pIdxHdr))
+    {
+        Log2(("NTFS: %s: Error! Not enough space for the index header! cbIndex=%#x, index head needs %#x\n",
+              pszPrefix, cbIndex, sizeof(*pIdxHdr)));
+        return;
+    }
+
+    Log2(("NTFS: %s:    offFirstEntry %#x%s\n", pszPrefix, RT_LE2H_U32(pIdxHdr->offFirstEntry),
+          RT_LE2H_U32(pIdxHdr->offFirstEntry) >= cbIndex ? " !out-of-bounds!" : ""));
+    Log2(("NTFS: %s:           cbUsed %#x%s\n", pszPrefix, RT_LE2H_U32(pIdxHdr->cbUsed),
+          RT_LE2H_U32(pIdxHdr->cbUsed) > cbIndex ? " !out-of-bounds!" : ""));
+    Log2(("NTFS: %s:      cbAllocated %#x%s\n", pszPrefix, RT_LE2H_U32(pIdxHdr->cbAllocated),
+          RT_LE2H_U32(pIdxHdr->cbAllocated) > cbIndex ? " !out-of-bounds!" : ""));
+    Log2(("NTFS: %s:           fFlags %#x (%s%s)\n", pszPrefix, pIdxHdr->fFlags,
+          pIdxHdr->fFlags & NTFSINDEXHDR_F_INTERNAL ? "internal" : "leaf",
+          pIdxHdr->fFlags & ~NTFSINDEXHDR_F_INTERNAL ? " !!unknown-flags!!" : ""));
+    if (pIdxHdr->abReserved[0]) Log2(("NTFS: %s:    abReserved[0] %#x\n", pszPrefix, pIdxHdr->abReserved[0]));
+    if (pIdxHdr->abReserved[1]) Log2(("NTFS: %s:    abReserved[0] %#x\n", pszPrefix, pIdxHdr->abReserved[1]));
+    if (pIdxHdr->abReserved[2]) Log2(("NTFS: %s:    abReserved[0] %#x\n", pszPrefix, pIdxHdr->abReserved[2]));
+
+    /*
+     * The entries.
+     */
+    bool        fSeenEnd    = false;
+    uint32_t    iEntry      = 0;
+    uint32_t    offCurEntry = RT_LE2H_U32(pIdxHdr->offFirstEntry);
+    while (offCurEntry < cbIndex)
+    {
+        if (offCurEntry + sizeof(NTFSIDXENTRYHDR) > cbIndex)
+        {
+            Log2(("NTFS:    Entry[%#04x]:  Out of bounds: %#x LB %#x, max %#x\n",
+                  iEntry, offCurEntry, sizeof(NTFSIDXENTRYHDR), cbIndex));
+            break;
+        }
+        PCNTFSIDXENTRYHDR pEntryHdr = (PCNTFSIDXENTRYHDR)((uint8_t const *)pIdxHdr + offCurEntry);
+        Log2(("NTFS:    [%#04x]: @%#05x/@%#05x cbEntry=%#x cbKey=%#x fFlags=%#x (%s%s%s)\n",
+              iEntry, offCurEntry, offCurEntry + offIndex, RT_LE2H_U16(pEntryHdr->cbEntry), RT_LE2H_U16(pEntryHdr->cbKey),
+              RT_LE2H_U16(pEntryHdr->fFlags),
+              pEntryHdr->fFlags & NTFSIDXENTRYHDR_F_INTERNAL ? "internal" : "leaf",
+              pEntryHdr->fFlags & NTFSIDXENTRYHDR_F_END ? " end" : "",
+              pEntryHdr->fFlags & ~(NTFSIDXENTRYHDR_F_INTERNAL | NTFSIDXENTRYHDR_F_END) ? " !unknown!" : ""));
+        if (uIdxType == NTFSATINDEXROOT_TYPE_DIR)
+            Log2(("NTFS:             FileMftRec %#RX64 sqn %#x\n",
+                  NTFSMFTREF_GET_IDX(&pEntryHdr->u.FileMftRec), NTFSMFTREF_GET_SEQ(&pEntryHdr->u.FileMftRec) ));
+        else
+            Log2(("NTFS:             offData=%#x cbData=%#x uReserved=%#x\n",
+                  RT_LE2H_U16(pEntryHdr->u.View.offData), RT_LE2H_U16(pEntryHdr->u.View.cbData),
+                  RT_LE2H_U32(pEntryHdr->u.View.uReserved) ));
+        if (pEntryHdr->fFlags & NTFSIDXENTRYHDR_F_INTERNAL)
+            Log2(("NTFS:             Subnode=%#RX64\n", RT_LE2H_U64(NTFSIDXENTRYHDR_GET_SUBNODE(pEntryHdr)) ));
+
+        if (   RT_LE2H_U16(pEntryHdr->cbKey) >= sizeof(NTFSATFILENAME)
+            && uIdxType == NTFSATINDEXROOT_TYPE_DIR)
+        {
+            PCNTFSATFILENAME pFilename = (PCNTFSATFILENAME)(pEntryHdr + 1);
+            Log2(("NTFS:             Filename=%.*ls\n", pFilename->cwcFilename, pFilename->wszFilename));
+        }
+
+
+        /* next */
+        iEntry++;
+        offCurEntry += RT_LE2H_U16(pEntryHdr->cbEntry);
+        fSeenEnd = RT_BOOL(pEntryHdr->fFlags & NTFSIDXENTRYHDR_F_END);
+        if (fSeenEnd || RT_LE2H_U16(pEntryHdr->cbEntry) < sizeof(*pEntryHdr))
+            break;
+    }
+    if (!fSeenEnd)
+        Log2(("NTFS: %s: Warning! Missing NTFSIDXENTRYHDR_F_END node!\n", pszPrefix));
+}
+
+static void rtFsNtfsVol_LogIndexNode(PCNTFSATINDEXALLOC pIdxNode, uint32_t cbIdxNode, uint32_t uType)
+{
+    if (!LogIs2Enabled())
+        return;
+    if (cbIdxNode < sizeof(*pIdxNode))
+        Log2(("NTFS: Index Node: Error! Too small! cbIdxNode=%#x, index node needs %#x\n", cbIdxNode, sizeof(*pIdxNode)));
+    else
+    {
+        Log2(("NTFS: Index Node:            uMagic %#x\n", RT_LE2H_U32(pIdxNode->RecHdr.uMagic)));
+        Log2(("NTFS: Index Node:    UpdateSeqArray %#x L %#x\n",
+              RT_LE2H_U16(pIdxNode->RecHdr.offUpdateSeqArray), RT_LE2H_U16(pIdxNode->RecHdr.cUpdateSeqEntries) ));
+        Log2(("NTFS: Index Node:              uLsn %#RX64\n", RT_LE2H_U64(pIdxNode->uLsn) ));
+        Log2(("NTFS: Index Node:      iSelfAddress %#RX64\n", RT_LE2H_U64(pIdxNode->iSelfAddress) ));
+        if (pIdxNode->RecHdr.uMagic == NTFSREC_MAGIC_INDEX_ALLOC)
+            rtFsNtfsVol_LogIndexHdrAndEntries(&pIdxNode->Hdr, cbIdxNode - RT_UOFFSETOF(NTFSATINDEXALLOC, Hdr),
+                                              RT_UOFFSETOF(NTFSATINDEXALLOC, Hdr), "Index Node Hdr", uType);
+        else
+            Log2(("NTFS: Index Node: !Error! Invalid magic!\n"));
+    }
+}
+
+
+/**
+ * Logs a index root structure and what follows (index header + entries).
+ *
+ * @param   pIdxRoot    The index root.
+ * @param   cbIdxRoot   Number of valid bytes starting with @a pIdxRoot.
+ */
+static void rtFsNtfsVol_LogIndexRoot(PCNTFSATINDEXROOT pIdxRoot, uint32_t cbIdxRoot)
+{
+    if (!LogIs2Enabled())
+        return;
+    if (cbIdxRoot < sizeof(*pIdxRoot))
+        Log2(("NTFS: Index Root: Error! Too small! cbIndex=%#x, index head needs %#x\n", cbIdxRoot, sizeof(*pIdxRoot)));
+    else
+    {
+        Log2(("NTFS: Index Root:              cbIdxRoot %#x\n", cbIdxRoot));
+        Log2(("NTFS: Index Root:                  uType %#x %s\n", RT_LE2H_U32(pIdxRoot->uType),
+              pIdxRoot->uType == NTFSATINDEXROOT_TYPE_VIEW ? "view"
+              : pIdxRoot->uType == NTFSATINDEXROOT_TYPE_DIR ? "directory" : "!unknown!"));
+        Log2(("NTFS: Index Root:        uCollationRules %#x %s\n", RT_LE2H_U32(pIdxRoot->uCollationRules),
+              pIdxRoot->uCollationRules == NTFS_COLLATION_BINARY ? "binary"
+              : pIdxRoot->uCollationRules == NTFS_COLLATION_FILENAME ? "filename"
+              : pIdxRoot->uCollationRules == NTFS_COLLATION_UNICODE_STRING ? "unicode-string"
+              : pIdxRoot->uCollationRules == NTFS_COLLATION_UINT32 ? "uint32"
+              : pIdxRoot->uCollationRules == NTFS_COLLATION_SID ? "sid"
+              : pIdxRoot->uCollationRules == NTFS_COLLATION_UINT32_PAIR ? "uint32-pair"
+              : pIdxRoot->uCollationRules == NTFS_COLLATION_UINT32_SEQ ? "uint32-sequence" : "!unknown!"));
+        Log2(("NTFS: Index Root:            cbIndexNode %#x\n", RT_LE2H_U32(pIdxRoot->cbIndexNode) ));
+        Log2(("NTFS: Index Root: cAddressesPerIndexNode %#x => cbNodeAddressingUnit=%#x\n",
+              pIdxRoot->cAddressesPerIndexNode, RT_LE2H_U32(pIdxRoot->cbIndexNode) / RT_MAX(1, pIdxRoot->cAddressesPerIndexNode) ));
+        if (pIdxRoot->abReserved[0]) Log2(("NTFS: Index Root:          abReserved[0] %#x\n", pIdxRoot->abReserved[0]));
+        if (pIdxRoot->abReserved[1]) Log2(("NTFS: Index Root:          abReserved[1] %#x\n", pIdxRoot->abReserved[1]));
+        if (pIdxRoot->abReserved[2]) Log2(("NTFS: Index Root:          abReserved[2] %#x\n", pIdxRoot->abReserved[2]));
+
+        rtFsNtfsVol_LogIndexHdrAndEntries(&pIdxRoot->Hdr, cbIdxRoot - RT_UOFFSETOF(NTFSATINDEXROOT, Hdr),
+                                          RT_UOFFSETOF(NTFSATINDEXROOT, Hdr), "Index Root Hdr", pIdxRoot->uType);
+    }
+}
+
+#endif /* LOG_ENABLED */
+
 
 static int rtFsNtfsVol_NewSharedDirFromCore(PRTFSNTFSVOL pThis, PRTFSNTFSCORE pCore, PRTFSNTFSDIRSHRD *ppSharedDir,
                                             PRTERRINFO pErrInfo, const char *pszWhat)
@@ -1477,13 +1718,24 @@ static int rtFsNtfsVol_NewSharedDirFromCore(PRTFSNTFSVOL pThis, PRTFSNTFSCORE pC
     /*
      * Look for the index root and do some quick checks of it first.
      */
-    PRTFSNTFSATTR pRootAttr = rtFsNtfsCore_FindNamedAttributeAscii(pCore, NTFS_AT_FILENAME,
-                                                                      NTFS_DIR_ATTRIBUTE_NAME, NTFS_AT_INDEX_ROOT);
+    PRTFSNTFSATTR pRootAttr = rtFsNtfsCore_FindNamedAttributeAscii(pCore, NTFS_AT_INDEX_ROOT,
+                                                                   RT_STR_TUPLE(NTFS_DIR_ATTRIBUTE_NAME));
     if (!pRootAttr)
         return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "%s: Found no INDEX_ROOT attribute named $I30", pszWhat);
     if (pRootAttr->pAttrHdr->fNonResident)
         return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "%s: INDEX_ROOT is is not resident", pszWhat);
+    if (pRootAttr->cbResident < sizeof(NTFSATINDEXROOT))
+        return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "%s: INDEX_ROOT is too small: %#x, min %#x ",
+                                       pRootAttr->cbResident, sizeof(pRootAttr->cbResident));
 
+    PCNTFSATINDEXROOT pIdxRoot = (PCNTFSATINDEXROOT)NTFSATTRIBHDR_GET_RES_VALUE_PTR(pRootAttr->pAttrHdr);
+#ifdef LOG_ENABLED
+    rtFsNtfsVol_LogIndexRoot(pIdxRoot, pRootAttr->cbResident);
+#endif
+    NOREF(pIdxRoot);
+//    if (pIdxRoot->uType)
+//    {
+//    }
 
 #if 1 /* later */
     NOREF(pThis);
@@ -1491,10 +1743,10 @@ static int rtFsNtfsVol_NewSharedDirFromCore(PRTFSNTFSVOL pThis, PRTFSNTFSCORE pC
     /*
      *
      */
-    PRTFSNTFSATTR pAllocAttr  = rtFsNtfsCore_FindNamedAttributeAscii(pCore, NTFS_AT_FILENAME,
-                                                                      NTFS_DIR_ATTRIBUTE_NAME, NTFS_AT_INDEX_ALLOCATION);
-    PRTFSNTFSATTR pBitmapAttr = rtFsNtfsCore_FindNamedAttributeAscii(pCore, NTFS_AT_FILENAME,
-                                                                      NTFS_DIR_ATTRIBUTE_NAME, NTFS_AT_BITMAP);
+    PRTFSNTFSATTR pIndexAlloc  = rtFsNtfsCore_FindNamedAttributeAscii(pCore, NTFS_AT_INDEX_ALLOCATION,
+                                                                      RT_STR_TUPLE(NTFS_DIR_ATTRIBUTE_NAME));
+    PRTFSNTFSATTR pIndexBitmap = rtFsNtfsCore_FindNamedAttributeAscii(pCore, NTFS_AT_BITMAP,
+                                                                      RT_STR_TUPLE(NTFS_DIR_ATTRIBUTE_NAME));
 #endif
     return VINF_SUCCESS;
 }
@@ -1780,7 +2032,7 @@ static int rtFsNtfsVolLoadRootDir(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
      * Load it and do some checks.
      */
     PRTFSNTFSCORE pCore;
-    int rc = rtFsNtfsVol_NewCoreForMftIdx(pThis, NTFS_MFT_IDX_ROOT, &pCore, pErrInfo);
+    int rc = rtFsNtfsVol_NewCoreForMftIdx(pThis, NTFS_MFT_IDX_ROOT, false /*fRelaxedUsa*/, &pCore, pErrInfo); // DON'T COMMIT
     if (RT_SUCCESS(rc))
     {
         PRTFSNTFSATTR pFilenameAttr = rtFsNtfsCore_FindUnnamedAttribute(pCore, NTFS_AT_FILENAME);
@@ -1804,12 +2056,12 @@ static int rtFsNtfsVolLoadRootDir(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
                                              pFilename->cwcFilename, pFilename->wszFilename);
             else
             {
-                PRTFSNTFSATTR pIndexRoot   = rtFsNtfsCore_FindNamedAttributeAscii(pCore, NTFS_AT_FILENAME,
-                                                                                  NTFS_DIR_ATTRIBUTE_NAME, NTFS_AT_INDEX_ROOT);
-                PRTFSNTFSATTR pIndexAlloc  = rtFsNtfsCore_FindNamedAttributeAscii(pCore, NTFS_AT_FILENAME,
-                                                                                  NTFS_DIR_ATTRIBUTE_NAME, NTFS_AT_INDEX_ALLOCATION);
-                PRTFSNTFSATTR pIndexBitmap = rtFsNtfsCore_FindNamedAttributeAscii(pCore, NTFS_AT_FILENAME,
-                                                                                  NTFS_DIR_ATTRIBUTE_NAME, NTFS_AT_BITMAP);
+                PRTFSNTFSATTR pIndexRoot   = rtFsNtfsCore_FindNamedAttributeAscii(pCore, NTFS_AT_INDEX_ROOT,
+                                                                                  RT_STR_TUPLE(NTFS_DIR_ATTRIBUTE_NAME));
+                PRTFSNTFSATTR pIndexAlloc  = rtFsNtfsCore_FindNamedAttributeAscii(pCore, NTFS_AT_INDEX_ALLOCATION,
+                                                                                  RT_STR_TUPLE(NTFS_DIR_ATTRIBUTE_NAME));
+                PRTFSNTFSATTR pIndexBitmap = rtFsNtfsCore_FindNamedAttributeAscii(pCore, NTFS_AT_BITMAP,
+                                                                                  RT_STR_TUPLE(NTFS_DIR_ATTRIBUTE_NAME));
                 if (!pIndexRoot)
                     rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "RootDir: Found no INDEX_ROOT attribute named $I30");
                 else if (!pIndexAlloc && pIndexBitmap)
@@ -1856,7 +2108,7 @@ static int rtFsNtfsVolLoadRootDir(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
 static int rtFsNtfsVolLoadUpCase(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
 {
     PRTFSNTFSCORE pCore;
-    int rc = rtFsNtfsVol_NewCoreForMftIdx(pThis, NTFS_MFT_IDX_UP_CASE, &pCore, pErrInfo);
+    int rc = rtFsNtfsVol_NewCoreForMftIdx(pThis, NTFS_MFT_IDX_UP_CASE, false /*fRelaxedUsa*/, &pCore, pErrInfo);
     if (RT_SUCCESS(rc))
     {
         PRTFSNTFSATTR pDataAttr = rtFsNtfsCore_FindUnnamedAttribute(pCore, NTFS_AT_DATA);
@@ -1978,7 +2230,7 @@ static int rtFsNtfsVolLoadUpCase(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
 static int rtFsNtfsVolLoadBitmap(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
 {
     PRTFSNTFSCORE pCore;
-    int rc = rtFsNtfsVol_NewCoreForMftIdx(pThis, NTFS_MFT_IDX_BITMAP, &pCore, pErrInfo);
+    int rc = rtFsNtfsVol_NewCoreForMftIdx(pThis, NTFS_MFT_IDX_BITMAP, false /*fRelaxedUsa*/, &pCore, pErrInfo);
     if (RT_SUCCESS(rc))
     {
         PRTFSNTFSATTR pMftBitmap;
@@ -2101,7 +2353,7 @@ static int rtFsNtfsVolLoadBitmap(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
 static int rtFsNtfsVolLoadVolumeInfo(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
 {
     PRTFSNTFSCORE pCore;
-    int rc = rtFsNtfsVol_NewCoreForMftIdx(pThis, NTFS_MFT_IDX_VOLUME, &pCore, pErrInfo);
+    int rc = rtFsNtfsVol_NewCoreForMftIdx(pThis, NTFS_MFT_IDX_VOLUME, false /*fRelaxedUsa*/, &pCore, pErrInfo);
     if (RT_SUCCESS(rc))
     {
         PRTFSNTFSATTR pVolInfoAttr = rtFsNtfsCore_FindUnnamedAttribute(pCore, NTFS_AT_VOLUME_INFORMATION);
@@ -2183,14 +2435,32 @@ static int rtFsNtfsVolLoadMft(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
     PRTFSNTFSMFTREC pRec = rtFsNtfsVol_NewMftRec(pThis, NTFS_MFT_IDX_MFT);
     AssertReturn(pRec, VERR_NO_MEMORY);
 
+#if 0 && defined(LOG_ENABLED)
+    for (uint32_t i = 0; i < 128; i++)
+    {
+        uint64_t const offDisk = (pThis->uLcnMft << pThis->cClusterShift) + i * pThis->cbMftRecord;
+        int rc = RTVfsFileReadAt(pThis->hVfsBacking, offDisk, pRec->pbRec, pThis->cbMftRecord, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            pRec->TreeNode.Key = i;
+            rtfsNtfsMftRec_Log(pRec, pThis->cbMftRecord);
+            pRec->TreeNode.Key = 0;
+        }
+    }
+#endif
+
     uint64_t const offDisk = pThis->uLcnMft << pThis->cClusterShift;
     int rc = RTVfsFileReadAt(pThis->hVfsBacking, offDisk, pRec->pbRec, pThis->cbMftRecord, NULL);
     if (RT_SUCCESS(rc))
     {
+        rc = rtFsNtfsRec_DoMultiSectorFixups(&pRec->pFileRec->Hdr, pThis->cbMftRecord, true, pErrInfo);
+        if (RT_SUCCESS(rc))
+        {
 #ifdef LOG_ENABLED
-        rtfsNtfsMftRec_Log(pRec, pThis->cbMftRecord);
+            rtfsNtfsMftRec_Log(pRec, pThis->cbMftRecord);
 #endif
-        rc = rtFsNtfsVol_ParseMft(pThis, pRec, pErrInfo);
+            rc = rtFsNtfsVol_ParseMft(pThis, pRec, pErrInfo);
+        }
         if (RT_SUCCESS(rc))
         {
             pThis->pMftData = rtFsNtfsCore_FindUnnamedAttribute(pRec->pCore, NTFS_AT_DATA);
@@ -2397,25 +2667,25 @@ static int rtFsNtfsVolLoadAndParseBootsector(PRTFSNTFSVOL pThis, void *pvBuf, si
         return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
                                    "Unsupported NTFS MFT record size: %#x", pThis->cbMftRecord);
 
-    /* NTFS BPB: Index block size */
-    if (pBootSector->Bpb.Ntfs.cClusterPerIndexBlock >= 0)
+    /* NTFS BPB: Default index node size */
+    if (pBootSector->Bpb.Ntfs.cClustersPerIndexNode >= 0)
     {
-        if (   !RT_IS_POWER_OF_TWO((uint32_t)pBootSector->Bpb.Ntfs.cClusterPerIndexBlock)
-            || pBootSector->Bpb.Ntfs.cClusterPerIndexBlock == 0)
+        if (   !RT_IS_POWER_OF_TWO((uint32_t)pBootSector->Bpb.Ntfs.cClustersPerIndexNode)
+            || pBootSector->Bpb.Ntfs.cClustersPerIndexNode == 0)
             return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                                       "NTFS clusters-per-index-block is zero or not a power of two: %#x",
-                                        pBootSector->Bpb.Ntfs.cClusterPerIndexBlock);
-        pThis->cbIndexRecord = (uint32_t)pBootSector->Bpb.Ntfs.cClusterPerIndexBlock << pThis->cClusterShift;
-        Assert(pThis->cbIndexRecord == pBootSector->Bpb.Ntfs.cClusterPerIndexBlock * pThis->cbCluster);
+                                       "NTFS default clusters-per-index-tree-node is zero or not a power of two: %#x",
+                                        pBootSector->Bpb.Ntfs.cClustersPerIndexNode);
+        pThis->cbDefaultIndexNode = (uint32_t)pBootSector->Bpb.Ntfs.cClustersPerIndexNode << pThis->cClusterShift;
+        Assert(pThis->cbDefaultIndexNode == pBootSector->Bpb.Ntfs.cClustersPerIndexNode * pThis->cbCluster);
     }
-    else if (   pBootSector->Bpb.Ntfs.cClusterPerIndexBlock < -32
-             || pBootSector->Bpb.Ntfs.cClusterPerIndexBlock > -9)
+    else if (   pBootSector->Bpb.Ntfs.cClustersPerIndexNode < -32
+             || pBootSector->Bpb.Ntfs.cClustersPerIndexNode > -9)
         return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
-                                   "NTFS clusters-per-index-block is out of shift range: %d",
-                                    pBootSector->Bpb.Ntfs.cClusterPerIndexBlock);
+                                   "NTFS default clusters-per-index-tree-node is out of shift range: %d",
+                                    pBootSector->Bpb.Ntfs.cClustersPerIndexNode);
     else
-        pThis->cbIndexRecord = UINT32_C(1) << -pBootSector->Bpb.Ntfs.cClustersPerMftRecord;
-    Log2(("NTFS BPB: cbIndexRecord=%#x\n", pThis->cbIndexRecord));
+        pThis->cbDefaultIndexNode = UINT32_C(1) << -pBootSector->Bpb.Ntfs.cClustersPerMftRecord;
+    Log2(("NTFS BPB: cbDefaultIndexNode=%#x\n", pThis->cbDefaultIndexNode));
 
     pThis->uSerialNo = RT_LE2H_U64(pBootSector->Bpb.Ntfs.uSerialNumber);
     Log2(("NTFS BPB: uSerialNo=%#x\n", pThis->uSerialNo));

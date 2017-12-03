@@ -139,6 +139,12 @@ typedef NTFSRECHDR *PNTFSRECHDR;
 /** Pointer to a const NTFS record header. */
 typedef NTFSRECHDR const *PCNTFSRECHDR;
 
+/** The multi-sector update sequence stride.
+ * @see https://msdn.microsoft.com/en-us/library/bb470212%28v=vs.85%29.aspx
+ * @see NTFSRECHDR::offUpdateSeqArray, NTFSRECHDR::cUpdateSeqEntries
+ */
+#define NTFS_MULTI_SECTOR_STRIDE        512
+
 
 /**
  * NTFS file record (in the MFT).
@@ -330,6 +336,10 @@ typedef NTFSATTRIBHDR const *PCNTFSATTRIBHDR;
 /** Get the pointer to the embedded name from an attribute.
  * @note  ASSUMES the caller check that there is a name.   */
 #define NTFSATTRIBHDR_GET_NAME(a_pAttrHdr)          ( (PRTUTF16)((uintptr_t)(a_pAttrHdr) + (a_pAttrHdr)->offName) )
+
+/** Get the pointer to resident value.
+ * @note  ASSUMES the caller checks that it's resident and valid. */
+#define NTFSATTRIBHDR_GET_RES_VALUE_PTR(a_pAttrHdr) ( (uint8_t *)(a_pAttrHdr) + (a_pAttrHdr)->u.Res.offValue )
 
 
 /** @name NTFS_RES_AF_XXX
@@ -548,39 +558,50 @@ typedef NTFSATVOLUMEINFO const *PCNTFSATVOLUMEINFO;
 /**
  * NTFS index header.
  *
- * This is used by NTFSATINDEXROOT and NTFSATINDEXALLOC.
+ * This is used by NTFSATINDEXROOT and NTFSATINDEXALLOC as a prelude to the
+ * sequence of entries in a node.
  */
-typedef struct NTFSINDEXHEADER
+typedef struct NTFSINDEXHDR
 {
     /** 0x00: Offset of the first entry relative to this header. */
     uint32_t        offFirstEntry;
-    /** 0x04: Size of the index in bytes, including this header.  */
-    uint32_t        cbIndex;
+    /** 0x04: Current index size in bytes, including this header.  */
+    uint32_t        cbUsed;
     /** 0x08: Number of bytes allocated for the index (including this header). */
     uint32_t        cbAllocated;
-    /** 0x0c: Flags (NTFSINDEXHEADER_F_XXX).   */
+    /** 0x0c: Flags (NTFSINDEXHDR_F_XXX).   */
     uint8_t         fFlags;
     /** 0x0d: Reserved bytes. */
     uint8_t         abReserved[3];
-} NTFSINDEXHEADER;
-AssertCompileSize(NTFSINDEXHEADER, 16);
+    /* NTFSIDXENTRYHDR sequence typically follows here */
+} NTFSINDEXHDR;
+AssertCompileSize(NTFSINDEXHDR, 16);
 /** Pointer to a NTFS index header. */
-typedef NTFSINDEXHEADER *PNTFSINDEXHEADER;
+typedef NTFSINDEXHDR *PNTFSINDEXHDR;
 /** Pointer to a const NTFS index header. */
-typedef NTFSINDEXHEADER const *PCNTFSINDEXHEADER;
+typedef NTFSINDEXHDR const *PCNTFSINDEXHDR;
 
-/** Index root only: Small enough to fit inside the index root attrib.  */
-#define NTFSINDEXHEADER_F_ROOT_SMALL        UINT8_C(0x00)
-/** Index root only: Too large to fit inside the index root attrib and/or an
- *  index allocation attribute is present. */
-#define NTFSINDEXHEADER_F_ROOT_LARGE        UINT8_C(0x01)
+/** @name NTFSINDEXHDR_F_XXX
+ * @{ */
+/** An internal node (as opposed to a leaf node if clear).
+ * This means that the entries will have trailing node references (VCN). */
+#define NTFSINDEXHDR_F_INTERNAL        UINT8_C(0x01)
+/** @} */
 
 
 /**
- * NTFS index root (NTFS_AT_INDEX_ROOT).
+ * NTFS index root node (NTFS_AT_INDEX_ROOT).
  *
  * This is a generic index structure, but is most prominently used for
- * implementating directories.
+ * implementating directories.  The index is structured like B-tree, meaning
+ * each node contains multiple entries, and each entry contains data regardless
+ * of whether it's a leaf node or not.
+ *
+ * The index is sorted in ascending order according to the collation rules
+ * defined by the root node (NTFSATINDEXROOT::uCollationRules, see also (see
+ * NTFS_COLLATION_XXX).
+ *
+ * @note    The root directory contains a '.' entry, others don't.
  */
 typedef struct NTFSATINDEXROOT
 {
@@ -588,16 +609,22 @@ typedef struct NTFSATINDEXROOT
     uint32_t        uType;
     /** 0x04: The sorting rules to use (NTFS_COLLATION_XXX). */
     uint32_t        uCollationRules;
-    /** 0x08: Index buffer size (in bytes). */
-    uint32_t        cbIndexBuffer;
-    /** 0x0c: Number of clusters allocated for each index buffer if
-     * cbIndexBuffer is larger than a cluster, otherwise log2(cbIndexBuffer)?  */
-    uint8_t         cClustersPerBuffer;
+    /** 0x08: Number of bytes in
+     *  Index node size (in bytes). */
+    uint32_t        cbIndexNode;
+    /** 0x0c: Number of node addresses per node.
+     * This sounds weird right?  A subnode is generally addressed as a virtual
+     * cluster when cbIndexNode >= cbCluster, but when clusters are large NTFS uses
+     * 512 bytes chunks.
+     *
+     * (You would've thought it would be simpler to just use cbIndexNode as the
+     * addressing unit, maybe storing the log2 here to avoid a ffs call.) */
+    uint8_t         cAddressesPerIndexNode;
     /** 0x0d: Reserved padding or something. */
     uint8_t         abReserved[3];
     /** 0x10: Index header detailing the entries that follows. */
-    NTFSINDEXHEADER Hdr;
-    /* NTFSINDEXENTRYHDR array typically follows */
+    NTFSINDEXHDR    Hdr;
+    /*  0x20: NTFSIDXENTRYHDR sequence typically follows here */
 } NTFSATINDEXROOT;
 AssertCompileSize(NTFSATINDEXROOT, 32);
 /** Pointer to a NTFS index root. */
@@ -610,7 +637,7 @@ typedef NTFSATINDEXROOT const *PCNTFSATINDEXROOT;
 /** View index. */
 #define NTFSATINDEXROOT_TYPE_VIEW           RT_H2LE_U32_C(UINT32_C(0x00000000))
 /** Directory index, NTFSATFILENAME follows NTFSINDEXENTRY. */
-#define NTFSATINDEXROOT_TYPE_DIRECTORY      RT_H2LE_U32_C(UINT32_C(0x00000030))
+#define NTFSATINDEXROOT_TYPE_DIR            RT_H2LE_U32_C(UINT32_C(0x00000030))
 /** @} */
 
 /** @name NTFS_COLLATION_XXX - index sorting rules
@@ -630,26 +657,59 @@ typedef NTFSATINDEXROOT const *PCNTFSATINDEXROOT;
 #define NTFS_COLLATION_UINT32_PAIR          RT_H2LE_U32_C(UINT32_C(0x00000012))
 /** Sequence of little endian 32-bit unsigned integer values used as sorting key. */
 #define NTFS_COLLATION_UINT32_SEQ           RT_H2LE_U32_C(UINT32_C(0x00000013))
-
 /** @} */
 
 
 /**
- * NTFS index entry header.
+ * NTFS index non-root node.
  */
-typedef struct NTFSINDEXENTRYHDR
+typedef struct NTFSATINDEXALLOC
+{
+    /** 0x00: Header with NTFSREC_MAGIC_INDEX_ALLOC. */
+    NTFSRECHDR      RecHdr;
+    /** 0x08: Log file sequence number. */
+    uint64_t        uLsn;
+    /** 0x10: The node address of this node (for consistency checking and
+     * perhaps data reconstruction).
+     * @see NTFSATINDEXROOT::cAddressesPerIndexNode for node addressing. */
+    int64_t         iSelfAddress;
+    /** 0x18: Index header detailing the entries that follows. */
+    NTFSINDEXHDR    Hdr;
+    /*  0x28: NTFSIDXENTRYHDR sequence typically follows here */
+} NTFSATINDEXALLOC;
+AssertCompileSize(NTFSATINDEXALLOC, 40);
+/** Pointer to a NTFS index non-root node. */
+typedef NTFSATINDEXALLOC *PNTFSATINDEXALLOC;
+/** Pointer to a const NTFS index non-root node. */
+typedef NTFSATINDEXALLOC const *PCNTFSATINDEXALLOC;
+
+/** NTFS 'INDX' attribute magic value (NTFSATINDEXALLOC).
+ * @todo sort out the record / attribute name clash here.  */
+#define NTFSREC_MAGIC_INDEX_ALLOC           RT_H2LE_U32_C(UINT32_C(0x58444e49))
+
+
+/**
+ * NTFS index entry header.
+ *
+ * Each entry in a node starts with this header.  It is immediately followed by
+ * the key data (NTFSIDXENTRYHDR::cbKey).  When
+ *
+ */
+typedef struct NTFSIDXENTRYHDR
 {
     union
     {
-        /** 0x00: Non-View: Reference to the MFT record being indexed here.
-         * This is invalid if NTFSINDEX_EF_LAST is set.  */
+        /** 0x00: NTFSATINDEXROOT_TYPE_DIR: Reference to the MFT record being indexed here.
+         * @note This is invalid if NTFSIDXENTRYHDR_F_END is set (no key data). */
         NTFSMFTREF      FileMftRec;
-        /** 0x00: View   */
+        /** 0x00: NTFSATINDEXROOT_TYPE_VIEW: Go figure later if necessary. */
         struct
         {
-            /** 0x00: Offset to the data relative to this header. */
+            /** 0x00: Offset to the data relative to this header.
+             * @note This is invalid if NTFSIDXENTRYHDR_F_END is set (no key data). */
             uint16_t    offData;
-            /** 0x02: Size of data at offData. */
+            /** 0x02: Size of data at offData.
+             * @note This is invalid if NTFSIDXENTRYHDR_F_END is set (no key data). */
             uint16_t    cbData;
             /** 0x04: Reserved.   */
             uint32_t    uReserved;
@@ -660,24 +720,40 @@ typedef struct NTFSINDEXENTRYHDR
     uint16_t        cbEntry;
     /** 0x0a: Key length (unaligned). */
     uint16_t        cbKey;
-    /** 0x0c: Entry flags, NTFSINDEX_EF_XXX. */
+    /** 0x0c: Entry flags, NTFSIDXENTRYHDR_F_XXX. */
     uint16_t        fFlags;
-    /** 0x0d: Entry flags, NTFSINDEX_EF_XXX. */
+    /** 0x0e: Reserved. */
     uint16_t        uReserved;
-} NTFSINDEXENTRYHDR;
-AssertCompileSize(NTFSINDEXENTRYHDR, 16);
+} NTFSIDXENTRYHDR;
+AssertCompileSize(NTFSIDXENTRYHDR, 16);
 /** Pointer to a NTFS index entry header. */
-typedef NTFSINDEXENTRYHDR *PNTFSINDEXENTRYHDR;
+typedef NTFSIDXENTRYHDR *PNTFSIDXENTRYHDR;
 /** Pointer to a const NTFS index entry header. */
-typedef NTFSINDEXENTRYHDR const *PCNTFSINDEXENTRYHDR;
+typedef NTFSIDXENTRYHDR const *PCNTFSIDXENTRYHDR;
 
-/** @name  NTFSINDEX_EF_XXX - NTFSINDEXENTRYHDR::fFlags
+/** @name  NTFSIDXENTRYHDR_F_XXX - NTFSIDXENTRYHDR::fFlags
  * @{ */
-/** Indicates an internal node, as opposed to a leaf node. */
-#define NTFSINDEX_EF_NODE           RT_H2LE_U16_C(UINT16_C(0x0001))
-/** Last entry in a block, may point to the next node. */
-#define NTFSINDEX_EF_LAST           RT_H2LE_U16_C(UINT16_C(0x0002))
+/** Indicates an internal node (as opposed to a leaf node).
+ * This indicates that there is a 64-bit integer value at the very end of the
+ * entry (NTFSIDXENTRYHDR::cbEntry - 8) giving the virtual cluster number of the
+ * subnode.  The subnode and all its decendants contain keys that are lower than
+ * the key in this entry.
+ */
+#define NTFSIDXENTRYHDR_F_INTERNAL          RT_H2LE_U16_C(UINT16_C(0x0001))
+/** Set if special end entry in a node.
+ * This does not have any key data, but can point to a subnode with
+ * higher keys.  */
+#define NTFSIDXENTRYHDR_F_END               RT_H2LE_U16_C(UINT16_C(0x0002))
 /** @}  */
+
+/** Gets the pointer to the next index entry header. */
+#define NTFSIDXENTRYHDR_GET_NEXT(a_pEntryHdr) \
+    ( (PNTFSIDXENTRYHDR)((uintptr_t)(a_pEntryHdr) + RT_LE2H_U16((a_pEntryHdr)->cbEntry)) )
+/** Gets the subnode address from an index entry.
+ * @see NTFSATINDEXROOT::cAddressesPerIndexNode for node addressing.
+ * @note Only invoke when NTFSIDXENTRYHDR_F_INTERNAL is set! */
+#define NTFSIDXENTRYHDR_GET_SUBNODE(a_pEntryHdr) \
+    ( *(int64_t *)((uintptr_t)(a_pEntryHdr) + RT_LE2H_U16((a_pEntryHdr)->cbEntry) - sizeof(int64_t)) )
 
 /** @} */
 

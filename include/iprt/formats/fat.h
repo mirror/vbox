@@ -467,9 +467,9 @@ typedef struct NTFSEBPB
     int8_t          cClustersPerMftRecord;
     /** 0x41 / 0x36: Reserved. */
     uint8_t         abReserved3[3];
-    /** 0x44 / 0x39: Logical clusters pre index block.
+    /** 0x44 / 0x39: The default logical clusters count per index node.
      * This is a shift count if negative.  */
-    int8_t          cClusterPerIndexBlock;
+    int8_t          cClustersPerIndexNode;
     /** 0x45 / 0x3a: Reserved. */
     uint8_t         abReserved4[3];
     /** 0x48 / 0x3d: Volume serial number.
