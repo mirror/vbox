@@ -52,7 +52,7 @@
 #include <string.h>
 #include <unistd.h>
 #ifdef RT_OS_DARWIN
-# include <sys/select.h>
+# include <sys/poll.h>
 #else
 # include <sys/poll.h>
 #endif
