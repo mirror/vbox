@@ -84,9 +84,9 @@ typedef NTFSMFTREF *PNTFSMFTREF;
 typedef NTFSMFTREF const *PCNTFSMFTREF;
 
 /** @name NTFSMFTREF_GET_IDX
- * Gets the MFT index number from a MFT reference. */
+ * Gets the MFT index number (host endian) from a MFT reference. */
 /** @name NTFSMFTREF_GET_SEQ
- * Gets the MFT reuse sequence number from a MFT reference. */
+ * Gets the MFT reuse sequence number (host endian) from a MFT reference. */
 /** @name NTFSMFTREF_SET_IDX
  * Sets the MFT index number of a MFT reference. */
 /** @name NTFSMFTREF_SET_SEQ
@@ -119,6 +119,8 @@ typedef NTFSMFTREF const *PCNTFSMFTREF;
         (a_pMftRef)->au16[3] = RT_H2LE_U16((uint16_t)(a_uSeq)); \
     } while (0)
 #endif
+/** Check that the reference is zero. */
+#define NTFSMFTREF_IS_ZERO(a_pMftRef)               ((a_pMftRef)->u64 == 0)
 
 
 /**
@@ -436,7 +438,7 @@ typedef NTFSATSTDINFO const *PCNTFSATSTDINFO;
 /** The size of NTFSATSTDINFO in NTFS v1.2 and earlier. */
 #define NTFSATSTDINFO_SIZE_NTFS_V12     (0x30)
 
-/** @name NTFS_FA_XXX - NTFS file attributes.
+/** @name NTFS_FA_XXX - NTFS file attributes (host endian).
  * @{ */
 #define NTFS_FA_READONLY                            UINT32_C(0x00000001)
 #define NTFS_FA_HIDDEN                              UINT32_C(0x00000002)
@@ -479,7 +481,7 @@ typedef struct NTFSATFILENAME
     int64_t             cbAllocated;
     /** 0x30: Actual size of unnamed data attribute. */
     int64_t             cbData;
-    /** 0x38: File attributes. */
+    /** 0x38: File attributes (NTFS_FA_XXX). */
     uint32_t            fFileAttribs;
     union
     {
@@ -587,6 +589,10 @@ typedef NTFSINDEXHDR const *PCNTFSINDEXHDR;
  * This means that the entries will have trailing node references (VCN). */
 #define NTFSINDEXHDR_F_INTERNAL        UINT8_C(0x01)
 /** @} */
+
+/** Gets the pointer to the first entry header for an index.  */
+#define NTFSINDEXHDR_GET_FIRST_ENTRY(a_pIndexHdr) \
+    ( (PNTFSIDXENTRYHDR)((uint8_t *)(a_pIndexHdr) + RT_LE2H_U32((a_pIndexHdr)->offFirstEntry)) )
 
 
 /**

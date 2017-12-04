@@ -2209,7 +2209,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIsoFileOps =
  * Instantiates a new file, from ISO 9660 info.
  *
  * @returns IPRT status code.
- * @param   pThis           The FAT volume instance.
+ * @param   pThis           The ISO volume instance.
  * @param   pParentDir      The parent directory (shared part).
  * @param   pDirRec         The directory record.
  * @param   cDirRecs        Number of directory records if more than one.
@@ -2280,7 +2280,7 @@ static int rtFsIsoFile_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, PC
  * Instantiates a new file, from UDF info.
  *
  * @returns IPRT status code.
- * @param   pThis           The FAT volume instance.
+ * @param   pThis           The ISO volume instance.
  * @param   pParentDir      The parent directory (shared part).
  * @param   pFid            The file ID descriptor.  (Points to parent directory
  *                          content.)
@@ -2909,7 +2909,7 @@ static DECLCALLBACK(int) rtFsIsoDir_Open(void *pvThis, const char *pszEntry, uin
         return VERR_WRITE_PROTECT;
 
     /*
-     * Special cases '.' and '.'
+     * Special cases '.' and '..'
      */
     if (pszEntry[0] == '.')
     {
@@ -3483,7 +3483,7 @@ static DECLCALLBACK(int) rtFsIsoDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntr
 
 
 /**
- * FAT file operations.
+ * ISO file operations.
  */
 static const RTVFSDIROPS g_rtFsIsoDirOps =
 {
@@ -3637,7 +3637,7 @@ static void rtFsIsoDirShrd_Log9660Content(PRTFSISODIRSHRD pThis)
  * Instantiates a new shared directory structure, given 9660 records.
  *
  * @returns IPRT status code.
- * @param   pThis           The FAT volume instance.
+ * @param   pThis           The ISO volume instance.
  * @param   pParentDir      The parent directory.  This is NULL for the root
  *                          directory.
  * @param   pDirRec         The directory record.  Will access @a cDirRecs
@@ -3784,7 +3784,7 @@ static void rtFsIsoDirShrd_LogUdfContent(PRTFSISODIRSHRD pThis)
  * Instantiates a new shared directory structure, given UDF descriptors.
  *
  * @returns IPRT status code.
- * @param   pThis           The FAT volume instance.
+ * @param   pThis           The ISO volume instance.
  * @param   pParentDir      The parent directory.  This is NULL for the root
  *                          directory.
  * @param   pAllocDesc      The allocation descriptor for the directory ICB.
@@ -3848,7 +3848,7 @@ static int rtFsIsoDirShrd_NewUdf(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, 
  * Instantiates a new directory with a shared structure presupplied.
  *
  * @returns IPRT status code.
- * @param   pThis           The FAT volume instance.
+ * @param   pThis           The ISO volume instance.
  * @param   pShared         Referenced pointer to the shared structure.  The
  *                          reference is always CONSUMED.
  * @param   phVfsDir        Where to return the directory handle.
@@ -3884,7 +3884,7 @@ static int rtFsIsoDir_NewWithShared(PRTFSISOVOL pThis, PRTFSISODIRSHRD pShared, 
  * structure as necessary.
  *
  * @returns IPRT status code.
- * @param   pThis           The FAT volume instance.
+ * @param   pThis           The ISO volume instance.
  * @param   pParentDir      The parent directory.  This is NULL for the root
  *                          directory.
  * @param   pDirRec         The directory record.
@@ -3917,7 +3917,7 @@ static int  rtFsIsoDir_New9660(PRTFSISOVOL pThis, PRTFSISODIRSHRD pParentDir, PC
  * structure as necessary.
  *
  * @returns IPRT status code.
- * @param   pThis           The FAT volume instance.
+ * @param   pThis           The ISO volume instance.
  * @param   pParentDir      The parent directory.
  * @param   pFid            The file ID descriptor for the directory.
  * @param   phVfsDir        Where to return the directory handle.
@@ -5656,7 +5656,7 @@ static int rtFsIsoVolHandleSupplementaryVolDesc(PRTFSISOVOL pThis, PCISO9660SUPV
  * @returns IPRT status code.
  * @param   pThis           The ISO VFS instance to initialize.
  * @param   hVfsSelf        The ISO VFS handle (no reference consumed).
- * @param   hVfsBacking     The file backing the alleged FAT file system.
+ * @param   hVfsBacking     The file backing the alleged ISO file system.
  *                          Reference is consumed (via rtFsIsoVol_Close).
  * @param   fFlags          Flags, RTFSISO9660_F_XXX.
  * @param   pErrInfo        Where to return additional error info.  Can be NULL.
@@ -5924,7 +5924,7 @@ RTDECL(int) RTFsIso9660VolOpen(RTVFSFILE hVfsFileIn, uint32_t fFlags, PRTVFS phV
     AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
 
     /*
-     * Create a new FAT VFS instance and try initialize it using the given input file.
+     * Create a new ISO VFS instance and try initialize it using the given input file.
      */
     RTVFS hVfs   = NIL_RTVFS;
     void *pvThis = NULL;
