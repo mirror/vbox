@@ -170,6 +170,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/extradata \
 	./src/globals \
 	./src/hostnetwork \
+	./src/logviewer \
 	./src/medium \
 	./src/objects \
 	./src/platform \
@@ -288,8 +289,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/VBoxAboutDlg.h \
 	src/VBoxLicenseViewer.h \
 	src/UITakeSnapshotDialog.h \
-	src/UIVMLogViewerDialog.h \
-        src/UIVMLogViewerWidget.h \
 	src/extensions/QIAdvancedSlider.h \
 	src/extensions/QIArrowButtonPress.h \
 	src/extensions/QIArrowButtonSwitch.h \
@@ -335,6 +334,8 @@ VirtualBox_QT_MOCHDRS = \
 	src/globals/VBoxUtils.h \
 	src/hostnetwork/UIHostNetworkDetailsWidget.h \
 	src/hostnetwork/UIHostNetworkManager.h \
+	src/logviewer/UIVMLogViewerDialog.h \
+	src/logviewer/UIVMLogViewerWidget.h \
 	src/medium/UIMediumDetailsWidget.h \
 	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumManager.h \
@@ -535,13 +536,13 @@ VirtualBox_QT_MOCHDRS.darwin += \
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
-	src/UIVMLogViewerWidget.cpp \
 	src/extensions/QIArrowSplitter.cpp \
 	src/extensions/QISplitter.cpp \
 	src/extradata/UIExtraDataManager.cpp \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
+	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIAddDiskEncryptionPasswordDialog.cpp \
@@ -594,8 +595,6 @@ VirtualBox_SOURCES = \
 	src/VBoxAboutDlg.cpp \
 	src/VBoxLicenseViewer.cpp \
 	src/UITakeSnapshotDialog.cpp \
-	src/UIVMLogViewerDialog.cpp \
-	src/UIVMLogViewerWidget.cpp \
 	src/converter/UIConverter.cpp \
 	src/converter/UIConverterBackendCOM.cpp \
 	src/converter/UIConverterBackendGlobal.cpp \
@@ -648,6 +647,8 @@ VirtualBox_SOURCES = \
 	src/hostnetwork/UIHostNetworkDetailsWidget.cpp \
 	src/hostnetwork/UIHostNetworkManager.cpp \
 	src/hostnetwork/UIHostNetworkUtils.cpp \
+	src/logviewer/UIVMLogViewerDialog.cpp \
+	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumDetailsWidget.cpp \
