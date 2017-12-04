@@ -1517,7 +1517,9 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     Assert(tsNow >= pStream->State.tsTransferLast);
 
     const uint64_t cTicksElapsed     = tsNow - pStream->State.tsTransferLast;
+#ifdef LOG_ENABLED
     const uint64_t cTicksTransferred = pStream->State.cbTransferProcessed * pStream->State.cTicksPerByte;
+#endif
 
     uint64_t cTicksToNext = pStream->State.cTransferTicks;
 

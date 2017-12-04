@@ -555,10 +555,10 @@ int hdaStreamWrite(PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32
         if (RT_FAILURE(rc))
             break;
 
-        Assert(cbLeft  >= cbDst);
-        cbLeft         -= cbDst;
+        Assert(cbLeft  >= (uint32_t)cbDst);
+        cbLeft         -= (uint32_t)cbDst;
 
-        cbWrittenTotal += cbDst;
+        cbWrittenTotal += (uint32_t)cbDst;
     }
 
     if (pcbWritten)
@@ -741,7 +741,7 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
         /* If there are position adjustment frames left to be processed,
          * make sure that we process them first as a whole. */
         if (pStream->State.cPosAdjustFramesLeft)
-            cbChunk = RT_MIN(cbChunk, pStream->State.cPosAdjustFramesLeft * HDA_FRAME_SIZE);
+            cbChunk = RT_MIN(cbChunk, uint32_t(pStream->State.cPosAdjustFramesLeft * HDA_FRAME_SIZE));
 
         Log3Func(("[SD%RU8] cbChunk=%RU32, cPosAdjustFramesLeft=%RU16\n",
                   pStream->u8SD, cbChunk, pStream->State.cPosAdjustFramesLeft));
