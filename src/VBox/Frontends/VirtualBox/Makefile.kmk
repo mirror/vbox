@@ -288,7 +288,8 @@ VirtualBox_QT_MOCHDRS = \
 	src/VBoxAboutDlg.h \
 	src/VBoxLicenseViewer.h \
 	src/UITakeSnapshotDialog.h \
-	src/UIVMLogViewer.h \
+	src/UIVMLogViewerDialog.h \
+        src/UIVMLogViewerWidget.h \
 	src/extensions/QIAdvancedSlider.h \
 	src/extensions/QIArrowButtonPress.h \
 	src/extensions/QIArrowButtonSwitch.h \
@@ -534,7 +535,7 @@ VirtualBox_QT_MOCHDRS.darwin += \
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
-	src/UIVMLogViewer.cpp \
+	src/UIVMLogViewerWidget.cpp \
 	src/extensions/QIArrowSplitter.cpp \
 	src/extensions/QISplitter.cpp \
 	src/extradata/UIExtraDataManager.cpp \
@@ -593,7 +594,8 @@ VirtualBox_SOURCES = \
 	src/VBoxAboutDlg.cpp \
 	src/VBoxLicenseViewer.cpp \
 	src/UITakeSnapshotDialog.cpp \
-	src/UIVMLogViewer.cpp \
+	src/UIVMLogViewerDialog.cpp \
+	src/UIVMLogViewerWidget.cpp \
 	src/converter/UIConverter.cpp \
 	src/converter/UIConverterBackendCOM.cpp \
 	src/converter/UIConverterBackendGlobal.cpp \

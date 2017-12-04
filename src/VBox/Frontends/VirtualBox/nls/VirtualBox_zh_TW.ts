@@ -7459,7 +7459,7 @@
     </message>
 </context>
 <context>
-    <name>UIVMLogViewer</name>
+    <name>UIVMLogViewerWidget</name>
     <message>
         <source>Close the search panel</source>
         <translation>關閉搜尋面板</translation>

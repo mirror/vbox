@@ -14756,7 +14756,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
 </context>
 <context>
-    <name>UIVMLogViewer</name>
+    <name>UIVMLogViewerWidget</name>
     <message>
         <source>Close the search panel</source>
         <translation>Cerrar el panel de búsqueda</translation>

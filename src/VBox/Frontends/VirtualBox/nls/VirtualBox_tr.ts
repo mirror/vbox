@@ -13143,7 +13143,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
 </context>
 <context>
-    <name>UIVMLogViewer</name>
+    <name>UIVMLogViewerWidget</name>
     <message>
         <source>Close the search panel</source>
         <translation>Arama bölmesini kapat</translation>

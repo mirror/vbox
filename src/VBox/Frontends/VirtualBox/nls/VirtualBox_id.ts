@@ -13181,7 +13181,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
 </context>
 <context>
-    <name>UIVMLogViewer</name>
+    <name>UIVMLogViewerWidget</name>
     <message>
         <source>Close the search panel</source>
         <translation>Tutup panel pencarian</translation>

@@ -46,7 +46,7 @@
 # include "UISlidingWidget.h"
 # include "UITabBar.h"
 # include "UIToolBar.h"
-# include "UIVMLogViewer.h"
+# include "UIVMLogViewerDialog.h"
 # include "UIVMItem.h"
 # include "UIToolsPaneMachine.h"
 # include "UIToolsToolbar.h"
@@ -1024,7 +1024,7 @@ void UISelectorWindow::sltOpenMachineLogDialog()
             continue;
 
         /* Show VM Log Viewer: */
-        UIVMLogViewer::showLogViewerFor(this, pItem->machine());
+        UIVMLogViewerDialog::showLogViewerFor(this, pItem->machine());
     }
 }
 

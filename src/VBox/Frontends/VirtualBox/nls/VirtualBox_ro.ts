@@ -11968,7 +11968,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
 </context>
 <context>
-    <name>UIVMLogViewer</name>
+    <name>UIVMLogViewerWidget</name>
     <message>
         <source>Close the search panel</source>
         <translation type="unfinished">Închide panoul de căutare</translation>

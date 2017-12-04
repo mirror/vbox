@@ -12484,7 +12484,7 @@
     </message>
 </context>
 <context>
-    <name>UIVMLogViewer</name>
+    <name>UIVMLogViewerWidget</name>
     <message>
         <source>Log Viewer</source>
         <translation type="obsolete">Žurnalų peržiūra</translation>

@@ -15237,7 +15237,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
-    <name>UIVMLogViewer</name>
+    <name>UIVMLogViewerWidget</name>
     <message>
         <source>Log Viewer</source>
         <translation type="obsolete">Visualizador de Log</translation>

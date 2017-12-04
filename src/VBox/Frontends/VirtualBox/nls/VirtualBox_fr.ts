@@ -12627,7 +12627,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
 </context>
 <context>
-    <name>UIVMLogViewer</name>
+    <name>UIVMLogViewerWidget</name>
     <message>
         <source>Log Viewer</source>
         <translation type="obsolete">Affichage des journaux</translation>

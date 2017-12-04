@@ -14341,7 +14341,7 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
 </context>
 <context>
-    <name>UIVMLogViewer</name>
+    <name>UIVMLogViewerWidget</name>
     <message>
         <source>Log Viewer</source>
         <translation type="obsolete">Prohlížeč záznamu</translation>

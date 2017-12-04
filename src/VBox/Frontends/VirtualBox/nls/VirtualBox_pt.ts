@@ -12086,7 +12086,7 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
-    <name>UIVMLogViewer</name>
+    <name>UIVMLogViewerWidget</name>
     <message>
         <source>Close the search panel</source>
         <translation type="unfinished">Fecha o painel de procura</translation>

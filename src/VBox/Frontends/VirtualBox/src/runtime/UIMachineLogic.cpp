@@ -57,7 +57,7 @@
 # include "UIPopupCenter.h"
 # include "UISettingsDialogSpecific.h"
 # include "UITakeSnapshotDialog.h"
-# include "UIVMLogViewer.h"
+# include "UIVMLogViewerDialog.h"
 # include "UIConverter.h"
 # include "UIModalWindowManager.h"
 # include "UIMedium.h"
@@ -2326,7 +2326,7 @@ void UIMachineLogic::sltLoggingToggled(bool fState)
 void UIMachineLogic::sltShowLogDialog()
 {
     /* Show VM Log Viewer: */
-    UIVMLogViewer::showLogViewerFor(activeMachineWindow(), machine());
+    UIVMLogViewerDialog::showLogViewerFor(activeMachineWindow(), machine());
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */

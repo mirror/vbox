@@ -40,7 +40,7 @@
 # include "UIIconPool.h"
 # include "UIMessageCenter.h"
 # include "UISpecialControls.h"
-# include "UIVMLogViewer.h"
+# include "UIVMLogViewerWidget.h"
 # include "UIDesktopWidgetWatchdog.h"
 # include "VBoxGlobal.h"
 # include "VBoxUtils.h"
@@ -62,7 +62,7 @@ public:
 
     /** Constructs search-panel by passing @a pParent to the QWidget base-class constructor.
       * @param  pViewer  Specifies instance of VM Log-Viewer. */
-    UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewer *pViewer)
+    UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
         : QIWithRetranslateUI<QWidget>(pParent)
         , m_pViewer(pViewer)
         , m_pMainLayout(0)
@@ -75,7 +75,6 @@ public:
         /* Prepare: */
         prepare();
     }
-
 private slots:
 
     /** Handles find next/back action triggering.
@@ -269,20 +268,20 @@ private:
     /** Handles translation event. */
     void retranslateUi()
     {
-        m_pCloseButton->setToolTip(UIVMLogViewer::tr("Close the search panel"));
+        m_pCloseButton->setToolTip(UIVMLogViewerWidget::tr("Close the search panel"));
 
-        m_pSearchLabel->setText(QString("%1 ").arg(UIVMLogViewer::tr("&Find")));
-        m_pSearchEditor->setToolTip(UIVMLogViewer::tr("Enter a search string here"));
+        m_pSearchLabel->setText(QString("%1 ").arg(UIVMLogViewerWidget::tr("&Find")));
+        m_pSearchEditor->setToolTip(UIVMLogViewerWidget::tr("Enter a search string here"));
 
-        m_pNextPrevButtons->setTitle(0, UIVMLogViewer::tr("&Previous"));
-        m_pNextPrevButtons->setToolTip(0, UIVMLogViewer::tr("Search for the previous occurrence of the string"));
-        m_pNextPrevButtons->setTitle(1, UIVMLogViewer::tr("&Next"));
-        m_pNextPrevButtons->setToolTip(1, UIVMLogViewer::tr("Search for the next occurrence of the string"));
+        m_pNextPrevButtons->setTitle(0, UIVMLogViewerWidget::tr("&Previous"));
+        m_pNextPrevButtons->setToolTip(0, UIVMLogViewerWidget::tr("Search for the previous occurrence of the string"));
+        m_pNextPrevButtons->setTitle(1, UIVMLogViewerWidget::tr("&Next"));
+        m_pNextPrevButtons->setToolTip(1, UIVMLogViewerWidget::tr("Search for the next occurrence of the string"));
 
-        m_pCaseSensitiveCheckBox->setText(UIVMLogViewer::tr("C&ase Sensitive"));
-        m_pCaseSensitiveCheckBox->setToolTip(UIVMLogViewer::tr("Perform case sensitive search (when checked)"));
+        m_pCaseSensitiveCheckBox->setText(UIVMLogViewerWidget::tr("C&ase Sensitive"));
+        m_pCaseSensitiveCheckBox->setToolTip(UIVMLogViewerWidget::tr("Perform case sensitive search (when checked)"));
 
-        m_pWarningLabel->setText(UIVMLogViewer::tr("String not found"));
+        m_pWarningLabel->setText(UIVMLogViewerWidget::tr("String not found"));
     }
 
     /** Handles Qt key-press @a pEevent. */
@@ -484,7 +483,7 @@ private:
     }
 
     /** Holds the reference to the VM Log-Viewer this search-panel belongs to. */
-    UIVMLogViewer *m_pViewer;
+    UIVMLogViewerWidget *m_pViewer;
     /** Holds the instance of main-layout we create. */
     QHBoxLayout *m_pMainLayout;
     /** Holds the instance of close-button we create. */
@@ -518,7 +517,7 @@ public:
 
     /** Constructs the filter-panel by passing @a pParent to the QWidget base-class constructor.
       * @param  pViewer  Specifies reference to the VM Log-Viewer this filter-panel belongs to. */
-    UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogViewer *pViewer)
+    UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
         : QIWithRetranslateUI<QWidget>(pParent)
         , m_pViewer(pViewer)
         , m_pMainLayout(0)
@@ -660,9 +659,9 @@ private:
     /** Handles the translation event. */
     void retranslateUi()
     {
-        m_pCloseButton->setToolTip(UIVMLogViewer::tr("Close the search panel"));
-        m_pFilterLabel->setText(UIVMLogViewer::tr("Filter"));
-        m_pFilterComboBox->setToolTip(UIVMLogViewer::tr("Enter filtering string here"));
+        m_pCloseButton->setToolTip(UIVMLogViewerWidget::tr("Close the search panel"));
+        m_pFilterLabel->setText(UIVMLogViewerWidget::tr("Filter"));
+        m_pFilterComboBox->setToolTip(UIVMLogViewerWidget::tr("Enter filtering string here"));
     }
 
     /** Handles Qt @a pEvent, used for keyboard processing. */
@@ -721,7 +720,7 @@ private:
     }
 
     /** Holds the reference to VM Log-Viewer this filter-panel belongs to. */
-    UIVMLogViewer *m_pViewer;
+    UIVMLogViewerWidget *m_pViewer;
     /** Holds the instance of main-layout we create. */
     QHBoxLayout *m_pMainLayout;
     /** Holds the instance of close-button we create. */
@@ -736,62 +735,68 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIVMLogViewer implementation.                                                                                          *
+*   Class UIVMLogViewerWidget implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-/** Holds the VM Log-Viewer array. */
-VMLogViewerMap UIVMLogViewer::m_viewers = VMLogViewerMap();
 
-void UIVMLogViewer::showLogViewerFor(QWidget *pCenterWidget, const CMachine &machine)
-{
-    /* If there is no corresponding VM Log-Viewer created: */
-    if (!m_viewers.contains(machine.GetName()))
-    {
-        /* Create new VM Log-Viewer: */
-        UIVMLogViewer *pLogViewer = new UIVMLogViewer(pCenterWidget, Qt::Window, machine);
-        AssertPtrReturnVoid(pLogViewer);
-        {
-            /* Configure VM Log-Viewer: */
-            pLogViewer->setAttribute(Qt::WA_DeleteOnClose);
-            m_viewers[machine.GetName()] = pLogViewer;
-        }
-    }
+// void UIVMLogViewerWidget::showLogViewerFor(QWidget *pCenterWidget, const CMachine &machine)
+// {
+//     /* If there is no corresponding VM Log-Viewer created: */
+//     if (!m_viewers.contains(machine.GetHardwareUUID()))
+//     {
+//         /* Create new VM Log-Viewer: */
+//         UIVMLogViewerWidget *pLogViewer = new UIVMLogViewerWidget(pCenterWidget, machine);
+//         AssertPtrReturnVoid(pLogViewer);
+//         {
+//             /* Configure VM Log-Viewer: */
+//             pLogViewer->setAttribute(Qt::WA_DeleteOnClose);
+//             m_viewers[machine.GetHardwareUUID()] = pLogViewer;
+//         }
+//     }
 
-    /* Show VM Log Viewer: */
-    UIVMLogViewer *pViewer = m_viewers[machine.GetName()];
-    pViewer->show();
-    pViewer->raise();
-    pViewer->setWindowState(pViewer->windowState() & ~Qt::WindowMinimized);
-    pViewer->activateWindow();
-}
+//     /* Show VM Log Viewer: */
+//     UIVMLogViewerWidget *pViewer = m_viewers[machine.GetHardwareUUID()];
+//     pViewer->show();
+//     pViewer->raise();
+//     pViewer->setWindowState(pViewer->windowState() & ~Qt::WindowMinimized);
+//     pViewer->activateWindow();
+// }
 
-UIVMLogViewer::UIVMLogViewer(QWidget *pParent, Qt::WindowFlags flags, const CMachine &machine)
-    : QIWithRetranslateUI2<QIMainWindow>(pParent, flags)
+UIVMLogViewerWidget::UIVMLogViewerWidget(QWidget *pParent, const CMachine &machine)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_fIsPolished(false)
     , m_machine(machine)
+    , m_pButtonBox(0)
+    , m_pMainLayout(0)
+    , m_pButtonFind(0)
+    , m_pButtonRefresh(0)
+    , m_pButtonSave(0)
+    , m_pButtonFilter(0)
+
 {
     /* Prepare VM Log-Viewer: */
     prepare();
 }
 
-UIVMLogViewer::~UIVMLogViewer()
+UIVMLogViewerWidget::~UIVMLogViewerWidget()
 {
     /* Cleanup VM Log-Viewer: */
     cleanup();
 }
 
-bool UIVMLogViewer::shouldBeMaximized() const
+
+bool UIVMLogViewerWidget::shouldBeMaximized() const
 {
     return gEDataManager->logWindowShouldBeMaximized();
 }
 
-void UIVMLogViewer::search()
+void UIVMLogViewerWidget::search()
 {
     /* Show/hide search-panel: */
     m_pSearchPanel->isHidden() ? m_pSearchPanel->show() : m_pSearchPanel->hide();
 }
 
-void UIVMLogViewer::refresh()
+void UIVMLogViewerWidget::refresh()
 {
     /* Disconnect this connection to avoid initial signals during page creation/deletion: */
     disconnect(m_pViewerContainer, SIGNAL(currentChanged(int)), m_pFilterPanel, SLOT(applyFilter(int)));
@@ -878,17 +883,7 @@ void UIVMLogViewer::refresh()
     m_pViewerContainer->setEnabled(isAnyLogPresent);
 }
 
-bool UIVMLogViewer::close()
-{
-    /* Close search-panel: */
-    m_pSearchPanel->hide();
-    /* Close filter-panel: */
-    m_pFilterPanel->hide();
-    /* Call to base-class: */
-    return QIMainWindow::close();
-}
-
-void UIVMLogViewer::save()
+void UIVMLogViewerWidget::save()
 {
     /* Prepare "save as" dialog: */
     const QFileInfo fileInfo(m_book.at(m_pViewerContainer->currentIndex()).first);
@@ -916,16 +911,18 @@ void UIVMLogViewer::save()
     }
 }
 
-void UIVMLogViewer::filter()
+void UIVMLogViewerWidget::filter()
 {
     /* Show/hide filter-panel: */
     m_pFilterPanel->isHidden() ? m_pFilterPanel->show() : m_pFilterPanel->hide();
 }
 
-void UIVMLogViewer::prepare()
+void UIVMLogViewerWidget::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UIVMLogViewer::setupUi(this);
+    m_pButtonBox = new QDialogButtonBox(this);
+    m_pMainLayout = new QVBoxLayout(this);
+
+    m_pMainLayout->addWidget(m_pButtonBox);
 
     /* Apply window icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
@@ -946,10 +943,11 @@ void UIVMLogViewer::prepare()
     retranslateUi();
 }
 
-void UIVMLogViewer::prepareWidgets()
+void UIVMLogViewerWidget::prepareWidgets()
 {
     /* Create VM Log-Viewer container: */
-    m_pViewerContainer = new QITabWidget(centralWidget());
+    //m_pViewerContainer = new QITabWidget(centralWidget());
+    m_pViewerContainer = new QITabWidget(this);
     AssertPtrReturnVoid(m_pViewerContainer);
     {
         /* Add VM Log-Viewer container to main-layout: */
@@ -957,91 +955,86 @@ void UIVMLogViewer::prepareWidgets()
     }
 
     /* Create VM Log-Viewer search-panel: */
-    m_pSearchPanel = new UIVMLogViewerSearchPanel(centralWidget(), this);
+    m_pSearchPanel = new UIVMLogViewerSearchPanel(this, this);
     AssertPtrReturnVoid(m_pSearchPanel);
     {
         /* Configure VM Log-Viewer search-panel: */
-        centralWidget()->installEventFilter(m_pSearchPanel);
+        //centralWidget()->installEventFilter(m_pSearchPanel);
         m_pSearchPanel->hide();
         /* Add VM Log-Viewer search-panel to main-layout: */
         m_pMainLayout->insertWidget(1, m_pSearchPanel);
     }
 
     /* Create VM Log-Viewer filter-panel: */
-    m_pFilterPanel = new UIVMLogViewerFilterPanel(centralWidget(), this);
+    m_pFilterPanel = new UIVMLogViewerFilterPanel(this, this);
     AssertPtrReturnVoid(m_pFilterPanel);
     {
         /* Configure VM Log-Viewer filter-panel: */
-        centralWidget()->installEventFilter(m_pFilterPanel);
+        //centralWidget()->installEventFilter(m_pFilterPanel);
         m_pFilterPanel->hide();
         /* Add VM Log-Viewer filter-panel to main-layout: */
         m_pMainLayout->insertWidget(2, m_pFilterPanel);
     }
 
-    /* Get help-button: */
-    m_pButtonHelp = m_pButtonBox->button(QDialogButtonBox::Help);
-    AssertPtrReturnVoid(m_pButtonHelp);
     /* Create find-button: */
     m_pButtonFind = m_pButtonBox->addButton(QString::null, QDialogButtonBox::ActionRole);
     AssertPtrReturnVoid(m_pButtonFind);
     /* Create filter-button: */
     m_pButtonFilter = m_pButtonBox->addButton(QString::null, QDialogButtonBox::ActionRole);
     AssertPtrReturnVoid(m_pButtonFilter);
-    /* Create close-button: */
-    m_pButtonClose = m_pButtonBox->button(QDialogButtonBox::Close);
-    AssertPtrReturnVoid(m_pButtonClose);
+
     /* Create save-button: */
-    m_pButtonSave = m_pButtonBox->button(QDialogButtonBox::Save);
+    m_pButtonSave = m_pButtonBox->addButton(QDialogButtonBox::Save);
     AssertPtrReturnVoid(m_pButtonSave);
     /* Create refresh-button: */
     m_pButtonRefresh = m_pButtonBox->addButton(QString::null, QDialogButtonBox::ActionRole);
     AssertPtrReturnVoid(m_pButtonRefresh);
 }
 
-void UIVMLogViewer::prepareConnections()
+void UIVMLogViewerWidget::prepareConnections()
 {
     /* Prepare connections: */
     connect(m_pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
     connect(m_pButtonFind, SIGNAL(clicked()), this, SLOT(search()));
     connect(m_pButtonRefresh, SIGNAL(clicked()), this, SLOT(refresh()));
-    connect(m_pButtonClose, SIGNAL(clicked()), this, SLOT(close()));
     connect(m_pButtonSave, SIGNAL(clicked()), this, SLOT(save()));
     connect(m_pButtonFilter, SIGNAL(clicked()), this, SLOT(filter()));
 }
 
-void UIVMLogViewer::loadSettings()
+/// this is move to container dialog
+void UIVMLogViewerWidget::loadSettings()
 {
-    /* Restore window geometry: */
-    {
-        /* Getting available geometry to calculate default geometry: */
-        const QRect desktopRect = gpDesktop->availableGeometry(this);
-        int iDefaultWidth = desktopRect.width() / 2;
-        int iDefaultHeight = desktopRect.height() * 3 / 4;
+    // /* Restore window geometry: */
+    // {
+    //     /* Getting available geometry to calculate default geometry: */
+    //     const QRect desktopRect = gpDesktop->availableGeometry(this);
+    //     int iDefaultWidth = desktopRect.width() / 2;
+    //     int iDefaultHeight = desktopRect.height() * 3 / 4;
 
-        /* Calculate default width to fit 132 characters: */
-        QTextEdit *pCurrentLogPage = currentLogPage();
-        if (pCurrentLogPage)
-        {
-            iDefaultWidth = pCurrentLogPage->fontMetrics().width(QChar('x')) * 132 +
-                            pCurrentLogPage->verticalScrollBar()->width() +
-                            pCurrentLogPage->frameWidth() * 2 +
-                            10 * 2 /* m_pViewerContainer margin */ +
-                            10 * 2 /* CentralWidget margin */;
-        }
-        QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
-        defaultGeometry.moveCenter(parentWidget()->geometry().center());
+    //     /* Calculate default width to fit 132 characters: */
+    //     QTextEdit *pCurrentLogPage = currentLogPage();
+    //     if (pCurrentLogPage)
+    //     {
+    //         iDefaultWidth = pCurrentLogPage->fontMetrics().width(QChar('x')) * 132 +
+    //                         pCurrentLogPage->verticalScrollBar()->width() +
+    //                         pCurrentLogPage->frameWidth() * 2 +
+    //                         10 * 2 /* m_pViewerContainer margin */ +
+    //                         10 * 2 /* CentralWidget margin */;
+    //     }
+    //     QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
+    //     defaultGeometry.moveCenter(parentWidget()->geometry().center());
 
-        /* Load geometry: */
-        m_geometry = gEDataManager->logWindowGeometry(this, defaultGeometry);
+    //     /* Load geometry: */
+    //     m_geometry = gEDataManager->logWindowGeometry(this, defaultGeometry);
 
-        /* Restore geometry: */
-        LogRel2(("GUI: UIVMLogViewer: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
-                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
-        restoreGeometry();
-    }
+    //     /* Restore geometry: */
+    //     LogRel2(("GUI: UIVMLogViewer: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
+    //              m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+    //     restoreGeometry();
+    // }
 }
 
-void UIVMLogViewer::saveSettings()
+void UIVMLogViewerWidget::saveSettings()
 {
     /* Save window geometry: */
     {
@@ -1057,21 +1050,15 @@ void UIVMLogViewer::saveSettings()
     }
 }
 
-void UIVMLogViewer::cleanup()
+void UIVMLogViewerWidget::cleanup()
 {
     /* Save settings: */
     saveSettings();
 
-    /* Remove log-viewer: */
-    if (!m_machine.isNull())
-        m_viewers.remove(m_machine.GetName());
 }
 
-void UIVMLogViewer::retranslateUi()
+void UIVMLogViewerWidget::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIVMLogViewer::retranslateUi(this);
-
     /* Setup a dialog caption: */
     if (!m_machine.isNull())
         setWindowTitle(tr("%1 - VirtualBox Log Viewer").arg(m_machine.GetName()));
@@ -1080,13 +1067,12 @@ void UIVMLogViewer::retranslateUi()
     m_pButtonFind->setText(tr("&Find"));
     m_pButtonRefresh->setText(tr("&Refresh"));
     m_pButtonSave->setText(tr("&Save"));
-    m_pButtonClose->setText(tr("Close"));
     m_pButtonFilter->setText(tr("Fil&ter"));
 }
 
-void UIVMLogViewer::showEvent(QShowEvent *pEvent)
+void UIVMLogViewerWidget::showEvent(QShowEvent *pEvent)
 {
-    QIMainWindow::showEvent(pEvent);
+    QWidget::showEvent(pEvent);
 
     /* One may think that QWidget::polish() is the right place to do things
      * below, but apparently, by the time when QWidget::polish() is called,
@@ -1105,7 +1091,7 @@ void UIVMLogViewer::showEvent(QShowEvent *pEvent)
         pCurrentLogPage->setFocus();
 }
 
-void UIVMLogViewer::keyPressEvent(QKeyEvent *pEvent)
+void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
 {
     /* Depending on key pressed: */
     switch (pEvent->key())
@@ -1113,7 +1099,6 @@ void UIVMLogViewer::keyPressEvent(QKeyEvent *pEvent)
         /* Process key escape as VM Log Viewer close: */
         case Qt::Key_Escape:
         {
-            m_pButtonClose->animateClick();
             return;
         }
         /* Process Back key as switch to previous tab: */
@@ -1139,10 +1124,10 @@ void UIVMLogViewer::keyPressEvent(QKeyEvent *pEvent)
         default:
             break;
     }
-    QIMainWindow::keyReleaseEvent(pEvent);
+    QWidget::keyReleaseEvent(pEvent);
 }
 
-QTextEdit* UIVMLogViewer::currentLogPage()
+QTextEdit* UIVMLogViewerWidget::currentLogPage()
 {
     /* If viewer-container is enabled: */
     if (m_pViewerContainer->isEnabled())
@@ -1157,7 +1142,7 @@ QTextEdit* UIVMLogViewer::currentLogPage()
     return 0;
 }
 
-QTextEdit* UIVMLogViewer::createLogPage(const QString &strName)
+QTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
 {
     /* Create page-container: */
     QWidget *pPageContainer = new QWidget;
@@ -1191,10 +1176,10 @@ QTextEdit* UIVMLogViewer::createLogPage(const QString &strName)
     }
 }
 
-const QString& UIVMLogViewer::currentLog()
+const QString& UIVMLogViewerWidget::currentLog()
 {
     return m_logMap[currentLogPage()];
 }
 
-#include "UIVMLogViewer.moc"
+#include "UIVMLogViewerWidget.moc"
 

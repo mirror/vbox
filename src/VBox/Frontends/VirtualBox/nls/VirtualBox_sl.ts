@@ -10264,9 +10264,9 @@
     </message>
 </context>
 <context>
-    <name>UIVMLogViewer</name>
+    <name>UIVMLogViewerWidget</name>
     <message>
-        <location filename="../src/UIVMLogViewer.cpp" line="+274"/>
+        <location filename="../src/UIVMLogViewerWidget.cpp" line="+274"/>
         <location line="+393"/>
         <source>Close the search panel</source>
         <translation>Zapri iskalno ploščo</translation>

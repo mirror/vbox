@@ -11352,7 +11352,7 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     </message>
 </context>
 <context>
-    <name>UIVMLogViewer</name>
+    <name>UIVMLogViewerWidget</name>
     <message>
         <source>Close the search panel</source>
         <translation type="unfinished">បិទ​បន្ទះ​ស្វែងរក</translation>
