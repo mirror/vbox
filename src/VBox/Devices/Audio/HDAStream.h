@@ -108,9 +108,33 @@ typedef struct HDASTREAMSTATE
     HDABDLE                 BDLE;
     /** Circular buffer (FIFO) for holding DMA'ed data. */
     R3PTRTYPE(PRTCIRCBUF)   pCircBuf;
-    /** Timestamp of the last success DMA data transfer.
-     *  Used to calculate the time actually elapsed between two transfers. */
-    uint64_t                uTimerTS;
+    /** Timestamp of the last DMA data transfer. */
+    uint64_t                tsTransferLast;
+    /** Timestamp of the next DMA data transfer.
+     *  Next for determining the next scheduling window.
+     *  Can be 0 if no next transfer is scheduled. */
+    uint64_t                tsTransferNext;
+    /** Total transfer size (in bytes) of a transfer period. */
+    uint32_t                cbTransferSize;
+    /** Transfer chunk size (in bytes) of a transfer period. */
+    uint32_t                cbTransferChunk;
+    /** How many bytes already have been processed in within
+     *  the current transfer period. */
+    uint32_t                cbTransferProcessed;
+    /** How many interrupts are pending due to
+     *  BDLE interrupt-on-completion (IOC) bits set. */
+    uint8_t                 cTransferPendingInterrupts;
+    uint8_t                 Padding1[4];
+    /** How many audio data frames are left to be processed
+     *  for the position adjustment handling.
+     *
+     *  0 if position adjustment handling is done or inactive. */
+    uint16_t                cPosAdjustFramesLeft;
+    uint8_t                 Padding2[2];
+    /** (Virtual) clock ticks per byte. */
+    uint64_t                cTicksPerByte;
+    /** (Virtual) clock ticks per transfer. */
+    uint64_t                cTransferTicks;
     /** The stream's period. Need for timing. */
     HDASTREAMPERIOD         Period;
     /** The stream's current configuration.
@@ -121,7 +145,7 @@ typedef struct HDASTREAMSTATE
     RTLISTANCHORR3          lstDMAHandlers;
 #endif
     /** Unused, padding. */
-    uint8_t                 Padding1[3];
+    uint8_t                 Padding3[3];
 } HDASTREAMSTATE, *PHDASTREAMSTATE;
 
 /**
@@ -192,14 +216,17 @@ void              hdaStreamDestroy(PHDASTREAM pStream);
 int               hdaStreamInit(PHDASTREAM pStream, uint8_t uSD);
 void              hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD);
 int               hdaStreamEnable(PHDASTREAM pStream, bool fEnable);
-uint32_t          hdaStreamGetUsed(PHDASTREAM pStream);
+uint32_t          hdaStreamGetPosition(PHDASTATE pThis, PHDASTREAM pStream);
+void              hdaStreamSetPosition(PHDASTREAM pStream, uint32_t u32LPIB);
 uint32_t          hdaStreamGetFree(PHDASTREAM pStream);
+uint32_t          hdaStreamGetUsed(PHDASTREAM pStream);
+bool              hdaStreamTransferIsScheduled(PHDASTREAM pStream);
+uint64_t          hdaStreamTransferGetNext(PHDASTREAM pStream);
 int               hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax);
-uint32_t          hdaStreamUpdateLPIB(PHDASTREAM pStream, uint32_t u32LPIB);
 void              hdaStreamLock(PHDASTREAM pStream);
 void              hdaStreamUnlock(PHDASTREAM pStream);
 int               hdaStreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead);
-int               hdaStreamWrite(PHDASTREAM pStream, uint32_t cbToWrite, uint32_t *pcbWritten);
+int               hdaStreamWrite(PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 void              hdaStreamUpdate(PHDASTREAM pStream, bool fAsync);
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
 bool              hdaStreamRegisterDMAHandlers(PHDASTREAM pStream);

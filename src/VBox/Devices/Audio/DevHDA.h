@@ -153,21 +153,10 @@ typedef struct HDASTATE
     bool                               fRCEnabled;
     /** Number of active (running) SDn streams. */
     uint8_t                            cStreamsActive;
-#ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
     /** The timer for pumping data thru the attached LUN drivers. */
     PTMTIMERR3                         pTimer;
-    /** Flag indicating whether the timer is active or not. */
-    bool                               fTimerActive;
-    uint8_t                            u8Padding1[7];
-    /** Timer ticks per Hz. */
-    uint64_t                           cTimerTicks;
-    /** The current timer expire time (in timer ticks). */
-    uint64_t                           tsTimerExpire;
-#endif
 #ifdef VBOX_WITH_STATISTICS
-# ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
     STAMPROFILE                        StatTimer;
-# endif
     STAMPROFILE                        StatIn;
     STAMPROFILE                        StatOut;
     STAMCOUNTER                        StatBytesRead;
@@ -204,22 +193,29 @@ typedef struct HDASTATE
 #endif
     /** Response Interrupt Count (RINTCNT). */
     uint16_t                           u16RespIntCnt;
+    /** Position adjustment (in audio frames).
+     *
+     *  This is not an official feature of the HDA specs, but used by
+     *  certain OS drivers (e.g. snd_hda_intel) to work around certain
+     *  quirks by "real" HDA hardware implementations.
+     *
+     *  The position adjustment specifies how many audio frames
+     *  a stream is ahead from its actual reading/writing position when
+     *  starting a stream.
+     */
+    uint16_t                           cPosAdjustFrames;
+    /** Whether the position adjustment is enabled or not. */
+    bool                               fPosAdjustEnabled;
+    uint8_t                            Padding1[3];
     /** Current IRQ level. */
     uint8_t                            u8IRQL;
+    /** The device timer Hz rate. Defaults to HDA_TIMER_HZ_DEFAULT. */
+    uint16_t                           u16TimerHz;
     /** Padding for alignment. */
-    uint8_t                            au8Padding3[5];
+    uint8_t                            au8Padding3[3];
 #ifdef DEBUG
     HDASTATEDBGINFO                    Dbg;
 #endif
 } HDASTATE, *PHDASTATE;
-
-#ifdef VBOX_WITH_AUDIO_HDA_CALLBACKS
-typedef struct HDACALLBACKCTX
-{
-    PHDASTATE  pThis;
-    PHDADRIVER pDriver;
-} HDACALLBACKCTX, *PHDACALLBACKCTX;
-#endif
-
 #endif /* !DEV_HDA_H */
 
