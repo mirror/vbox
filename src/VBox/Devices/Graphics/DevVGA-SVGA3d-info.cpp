@@ -1814,6 +1814,7 @@ static DECLCALLBACK(int) vmsvga3dInfoSharedObjectCallback(PAVLU32NODECORE pNode,
 
 static int vmsvga3dInfoBmpWrite(const char *pszFilename, const void *pvBits, int w, int h, uint32_t cbPixel, uint32_t u32Mask)
 {
+#ifdef RT_OS_WINDOWS
     if (   cbPixel != 4
         && cbPixel != 2
         && cbPixel != 1)
@@ -1888,6 +1889,10 @@ static int vmsvga3dInfoBmpWrite(const char *pszFilename, const void *pvBits, int
     fclose(f);
 
     return VINF_SUCCESS;
+#else /* !RT_OS_WINDOWS */
+    RT_NOREF6(pszFilename, pvBits, w, h, cbPixel, u32Mask);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
