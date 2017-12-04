@@ -4615,13 +4615,13 @@ void vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(PVGASTATE pThis, uint32_t sid)
  */
 DECLCALLBACK(void) vmsvgaR3Info3dSurface(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    /* There might be a specific context ID at the start of the
-       arguments, if not show all contexts. */
-    uint32_t cid = UINT32_MAX;
+    /* There might be a specific surface ID at the start of the
+       arguments, if not show all surfaces. */
+    uint32_t sid = UINT32_MAX;
     if (pszArgs)
         pszArgs = RTStrStripL(pszArgs);
     if (pszArgs && RT_C_IS_DIGIT(*pszArgs))
-        cid = RTStrToUInt32(pszArgs);
+        sid = RTStrToUInt32(pszArgs);
 
     /* Verbose or terse display, we default to verbose. */
     bool fVerbose = true;
@@ -4650,7 +4650,32 @@ DECLCALLBACK(void) vmsvgaR3Info3dSurface(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
     if (RTStrIStr(pszArgs, "invy"))
         fInvY = true;
 
-    vmsvga3dInfoSurfaceWorker(PDMINS_2_DATA(pDevIns, PVGASTATE), pHlp, cid, fVerbose, cxAscii, fInvY);
+    vmsvga3dInfoSurfaceWorker(PDMINS_2_DATA(pDevIns, PVGASTATE), pHlp, sid, fVerbose, cxAscii, fInvY, NULL);
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV, "vmsvga3dsurf"}
+ */
+DECLCALLBACK(void) vmsvgaR3Info3dSurfaceBmp(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    /* pszArg = "sid[>dir]"
+     * Writes %dir%/info-S-sidI.bmp, where S - sequential bitmap number, I - decimal surface id.
+     */
+    char *pszBitmapPath = NULL;
+    uint32_t sid = UINT32_MAX;
+    if (pszArgs)
+        pszArgs = RTStrStripL(pszArgs);
+    if (pszArgs && RT_C_IS_DIGIT(*pszArgs))
+        RTStrToUInt32Ex(pszArgs, &pszBitmapPath, 0, &sid);
+    if (   pszBitmapPath
+        && *pszBitmapPath == '>')
+        ++pszBitmapPath;
+
+    const bool fVerbose = true;
+    const uint32_t cxAscii = 0; /* No ASCII */
+    const bool fInvY = false;   /* Do not invert. */
+    vmsvga3dInfoSurfaceWorker(PDMINS_2_DATA(pDevIns, PVGASTATE), pHlp, sid, fVerbose, cxAscii, fInvY, pszBitmapPath);
 }
 
 
@@ -5331,6 +5356,10 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
                               "VMSVGA 3d surface details. "
                               "Accepts 'terse', 'invy', and one of 'tiny', 'medium', 'normal', 'big', 'huge', or 'gigantic'.",
                               vmsvgaR3Info3dSurface);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "vmsvga3dsurf",
+                              "VMSVGA 3d surface details and bitmap: "
+                              "sid[>dir]",
+                              vmsvgaR3Info3dSurfaceBmp);
 # endif
 
     return VINF_SUCCESS;

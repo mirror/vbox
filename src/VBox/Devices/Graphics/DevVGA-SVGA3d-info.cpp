@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <stdio.h>
 #define LOG_GROUP LOG_GROUP_DEV_VMSVGA
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/err.h>
@@ -830,7 +831,7 @@ void vmsvga3dAsciiPrint(PFMVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void c
     /*
      * Skip stuff we can't or won't need to handle.
      */
-    if (!cx || !cy)
+    if (!cx || !cy || !cchMaxX || !cchMaxY)
         return;
     switch (enmFormat)
     {
@@ -1811,6 +1812,131 @@ static DECLCALLBACK(int) vmsvga3dInfoSharedObjectCallback(PAVLU32NODECORE pNode,
 #endif /* VMSVGA3D_DIRECT3D */
 
 
+static int vmsvga3dInfoBmpWrite(const char *pszFilename, const void *pvBits, int w, int h, uint32_t cbPixel, uint32_t u32Mask)
+{
+    if (   cbPixel != 4
+        && cbPixel != 2
+        && cbPixel != 1)
+        return VERR_NOT_SUPPORTED;
+
+    /* Always write BGRX bitmap for now. */
+    const int cbBitmap = w * h * 4;
+
+    FILE *f = fopen(pszFilename, "wb");
+    if (!f)
+        return VERR_FILE_NOT_FOUND;
+
+    BITMAPFILEHEADER bf;
+    bf.bfType = 'MB';
+    bf.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + cbBitmap;
+    bf.bfReserved1 = 0;
+    bf.bfReserved2 = 0;
+    bf.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
+    BITMAPINFOHEADER bi;
+    bi.biSize = sizeof(bi);
+    bi.biWidth = w;
+    bi.biHeight = -h;
+    bi.biPlanes = 1;
+    bi.biBitCount = 32;
+    bi.biCompression = 0;
+    bi.biSizeImage = cbBitmap;
+    bi.biXPelsPerMeter = 0;
+    bi.biYPelsPerMeter = 0;
+    bi.biClrUsed = 0;
+    bi.biClrImportant = 0;
+
+    fwrite(&bf, 1, sizeof(bf), f);
+    fwrite(&bi, 1, sizeof(bi), f);
+
+    if (cbPixel == 4)
+    {
+        const uint32_t *s = (uint32_t *)pvBits;
+        int i;
+        for (i = 0; i < w * h; ++i)
+        {
+            const uint32_t u32 = *s++;
+            uint32_t u = u32 & u32Mask;
+            fwrite(&u, 1, 4, f);
+        }
+    }
+    else if (cbPixel == 2)
+    {
+        const uint16_t *s = (uint16_t *)pvBits;
+        int i;
+        for (i = 0; i < w * h; ++i)
+        {
+            const uint16_t u16 = *s++;
+            uint32_t u32 = u16;
+            uint32_t u = u32 & u32Mask;
+            fwrite(&u, 1, 4, f);
+        }
+    }
+    else if (cbPixel == 1)
+    {
+        const uint8_t *s = (uint8_t *)pvBits;
+        int i;
+        for (i = 0; i < w * h; ++i)
+        {
+            const uint8_t u8 = *s++;
+            uint32_t u32 = u8 * 0x10000 + u8 * 0x100 + u8;
+            uint32_t u = u32 & u32Mask;
+            fwrite(&u, 1, 4, f);
+        }
+    }
+
+    fclose(f);
+
+    return VINF_SUCCESS;
+}
+
+void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
+                                 const char *pszPath, const char *pszNamePrefix, const char *pszNameSuffix)
+{
+    static volatile uint32_t sSeq = 0;
+
+    if (!pSurface->pMipmapLevels[0].pSurfaceData)
+        return;
+
+    const uint32_t u32Seq = ASMAtomicIncU32(&sSeq);
+
+    char szFilepath[4096];
+    RTStrPrintf(szFilepath, sizeof(szFilepath),
+                "%s\\%s-%u-sid%u%s.bmp",
+                pszPath, pszNamePrefix, u32Seq, pSurface->id, pszNameSuffix);
+
+    const uint32_t cbPixel = vmsvga3dSurfaceFormatSize(pSurface->format, NULL, NULL);
+    int rc = vmsvga3dInfoBmpWrite(szFilepath,
+                                  pSurface->pMipmapLevels[0].pSurfaceData,
+                                  pSurface->pMipmapLevels[0].mipmapSize.width,
+                                  pSurface->pMipmapLevels[0].mipmapSize.height,
+                                  cbPixel, 0xFFFFFFFF);
+    if (RT_SUCCESS(rc))
+    {
+        Log(("Bitmap: %s\n", szFilepath));
+        if (pHlp)
+            pHlp->pfnPrintf(pHlp, "Bitmap: %s\n", szFilepath);
+    }
+    else
+    {
+        Log(("Bitmap: %s %Rrc\n", szFilepath, rc));
+        if (pHlp)
+            pHlp->pfnPrintf(pHlp, "Bitmap: %s %Rrc\n", szFilepath, rc);
+    }
+
+#if 0
+    /* Alpha channel alone. */
+    RTStrPrintf(szFilepath, sizeof(szFilepath),
+                "%s\\%s-%u-sid%u%s-a.bmp",
+                pszPath, pszNamePrefix, u32Seq, pSurface->id, pszNameSuffix);
+    vmsvga3dInfoBmpWrite(szFilepath,
+                         pSurface->pMipmapLevels[0].pSurfaceData,
+                         pSurface->pMipmapLevels[0].mipmapSize.width,
+                         pSurface->pMipmapLevels[0].mipmapSize.height,
+                         cbPixel, 0xFF000000);
+#endif
+}
+
 static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
                                          bool fVerbose, uint32_t cxAscii, bool fInvY)
 {
@@ -1917,7 +2043,7 @@ static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pS
 }
 
 
-void vmsvga3dInfoSurfaceWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t sid, bool fVerbose, uint32_t cxAscii, bool fInvY)
+void vmsvga3dInfoSurfaceWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t sid, bool fVerbose, uint32_t cxAscii, bool fInvY, const char *pszBitmapPath)
 {
     /* Warning! This code is currently racing papSurfaces reallocation! */
     /* Warning! This code is currently racing papSurfaces reallocation! */
@@ -1938,6 +2064,8 @@ void vmsvga3dInfoSurfaceWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t sid
                     if (fVerbose)
                         vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(pThis, sid);
                     vmsvga3dInfoSurfaceWorkerOne(pHlp, pSurface, fVerbose, cxAscii, fInvY);
+                    if (pszBitmapPath && *pszBitmapPath)
+                        vmsvga3dInfoSurfaceToBitmap(pHlp, pSurface, pszBitmapPath, "info", "");
                     return;
                 }
             }
