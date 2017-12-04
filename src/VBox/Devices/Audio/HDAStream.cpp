@@ -408,7 +408,6 @@ uint32_t hdaStreamGetPosition(PHDASTATE pThis, PHDASTREAM pStream)
  * Updates an HDA stream's current read or write buffer position (depending on the stream type) by
  * updating its associated LPIB register and DMA position buffer (if enabled).
  *
- * @param   pThis               HDA state.
  * @param   pStream             HDA stream to update read / write position for.
  * @param   u32LPIB             Absolute position (in bytes) to set current read / write position to.
  */
@@ -653,6 +652,7 @@ int hdaStreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead)
  *
  * @returns IPRT status code.
  * @param   pStream             HDA stream to update.
+ * @param   cbToProcessMax      How much data (in bytes) to process as maximum.
  */
 int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 {
