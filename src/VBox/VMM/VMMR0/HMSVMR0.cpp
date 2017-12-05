@@ -1229,25 +1229,50 @@ DECLINLINE(void) hmR0SvmAddXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
  * Removes an exception from the intercept-exception bitmap in the VMCB and
  * updates the corresponding VMCB Clean bit.
  *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pVmcb       Pointer to the VM control block.
  * @param   u32Xcpt     The value of the exception (X86_XCPT_*).
+ *
+ * @remarks This takes into account if we're executing a nested-guest and only
+ *          removes the exception intercept if both the guest -and- nested-guest
+ *          are not intercepting it.
  */
-DECLINLINE(void) hmR0SvmRemoveXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
+DECLINLINE(void) hmR0SvmRemoveXcptIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb, uint32_t u32Xcpt)
 {
     Assert(u32Xcpt != X86_XCPT_DB);
     Assert(u32Xcpt != X86_XCPT_AC);
 #ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
     if (pVmcb->ctrl.u32InterceptXcpt & RT_BIT(u32Xcpt))
     {
-        pVmcb->ctrl.u32InterceptXcpt &= ~RT_BIT(u32Xcpt);
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+        bool fRemoveXcpt = true;
+#ifdef VBOX_WITH_NESTED_HWVIRT
+        /* Only remove the intercept if the nested-guest is also not intercepting it! */
+        if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+        {
+            Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
+            PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+            fRemoveXcpt = !(pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(u32Xcpt));
+        }
+#else
+        RT_NOREF2(pVCpu, pCtx);
+#endif
+        if (fRemoveXcpt)
+        {
+            pVmcb->ctrl.u32InterceptXcpt &= ~RT_BIT(u32Xcpt);
+            pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+        }
     }
+#else
+    RT_NOREF3(pVCpu, pCtx, pVmcb);
 #endif
 }
 
 
 /**
- * Loads the guest CR0 control register into the guest-state area in the VMCB.
+ * Loads the guest (or nested-guest) CR0 control register into the guest-state
+ * area in the VMCB.
+ *
  * Although the guest CR0 is a separate field in the VMCB we have to consider
  * the FPU state itself which is shared between the host and the guest.
  *
@@ -1302,12 +1327,12 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
     if (fInterceptNM)
         hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_NM);
     else
-        hmR0SvmRemoveXcptIntercept(pVmcb, X86_XCPT_NM);
+        hmR0SvmRemoveXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_NM);
 
     if (fInterceptMF)
         hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_MF);
     else
-        hmR0SvmRemoveXcptIntercept(pVmcb, X86_XCPT_MF);
+        hmR0SvmRemoveXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_MF);
 
     pVmcb->guest.u64CR0 = u64GuestCR0;
     pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
@@ -1815,8 +1840,9 @@ static int hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcb       Pointer to the VM control block.
+ * @param   pCtx        Pointer to the guest-CPU context.
  */
-static void hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb)
+static void hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS))
     {
@@ -1824,13 +1850,13 @@ static void hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb)
         if (pVCpu->hm.s.fGIMTrapXcptUD)
             hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_UD);
         else
-            hmR0SvmRemoveXcptIntercept(pVmcb, X86_XCPT_UD);
+            hmR0SvmRemoveXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_UD);
 
         /* Trap #BP for INT3 debug breakpoints set by the VM debugger. */
         if (pVCpu->CTX_SUFF(pVM)->dbgf.ro.cEnabledInt3Breakpoints)
             hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_BP);
         else
-            hmR0SvmRemoveXcptIntercept(pVmcb, X86_XCPT_BP);
+            hmR0SvmRemoveXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_BP);
 
         /* The remaining intercepts are handled elsewhere, e.g. in hmR0SvmLoadSharedCR0(). */
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
@@ -1848,14 +1874,15 @@ static void hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb)
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmcbNstGst     Pointer to the nested-guest VM control block.
+ * @param   pCtx            Pointer to the guest-CPU context.
  */
-static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst)
+static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst, PCPUMCTX pCtx)
 {
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS))
     {
         /* First, load the guest intercepts into the guest VMCB. */
         PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
-        hmR0SvmLoadGuestXcptIntercepts(pVCpu, pVmcb);
+        hmR0SvmLoadGuestXcptIntercepts(pVCpu, pVmcb, pCtx);
 
         /* Next, merge the intercepts into the nested-guest VMCB. */
         pVmcbNstGst->ctrl.u16InterceptRdCRx |= pVmcb->ctrl.u16InterceptRdCRx;
@@ -1892,9 +1919,6 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
         Assert(   (pVmcbNstGst->ctrl.u64InterceptCtrl & HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS)
                == HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS);
         pVmcbNstGst->ctrl.u64InterceptCtrl  &= ~SVM_CTRL_INTERCEPT_VMMCALL;
-
-        /* Remove exception intercepts that we don't need while executing the nested-guest. */
-        pVmcbNstGst->ctrl.u32InterceptXcpt  &= ~RT_BIT(X86_XCPT_UD);
 
         Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS));
     }
@@ -2084,7 +2108,7 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     rc = hmR0SvmLoadGuestApicState(pVCpu, pVmcb, pCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmLoadGuestApicState! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
-    hmR0SvmLoadGuestXcptIntercepts(pVCpu, pVmcb);
+    hmR0SvmLoadGuestXcptIntercepts(pVCpu, pVmcb, pCtx);
 
     rc = hmR0SvmSetupVMRunHandler(pVCpu);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
@@ -2240,7 +2264,7 @@ static int hmR0SvmLoadGuestStateNested(PVMCPU pVCpu, PCPUMCTX pCtx)
     AssertRCReturn(rc, rc);
 
     hmR0SvmLoadGuestApicStateNested(pVCpu, pVmcbNstGst);
-    hmR0SvmLoadGuestXcptInterceptsNested(pVCpu, pVmcbNstGst);
+    hmR0SvmLoadGuestXcptInterceptsNested(pVCpu, pVmcbNstGst, pCtx);
 
     rc = hmR0SvmSetupVMRunHandler(pVCpu);
     AssertRCReturn(rc, rc);
@@ -2288,21 +2312,13 @@ static void hmR0SvmLoadSharedState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR0))
     {
-#ifdef VBOX_WITH_NESTED_HWVIRT
-        /* We use nested-guest CR0 unmodified, hence nothing to do here. */
-        if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-            hmR0SvmLoadSharedCR0(pVCpu, pVmcb, pCtx);
-        else
-            Assert(pVmcb->guest.u64CR0 == pCtx->cr0);
-#else
         hmR0SvmLoadSharedCR0(pVCpu, pVmcb, pCtx);
-#endif
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR0);
     }
 
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_DEBUG))
     {
-        /* We use nested-guest CR0 unmodified, hence nothing to do here. */
+        /** @todo Figure out stepping with nested-guest. */
         if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
             hmR0SvmLoadSharedDebugState(pVCpu, pVmcb, pCtx);
         else
@@ -6480,45 +6496,45 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxRead);
 
-    /* We should -not- get this #VMEXIT if the guest's debug registers were active. */
-    if (pSvmTransient->fWasGuestDebugStateActive)
+    /** @todo Stepping with nested-guest. */
+    if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
-        AssertMsgFailed(("hmR0SvmExitReadDRx: Unexpected exit %#RX32\n", (uint32_t)pSvmTransient->u64ExitCode));
-        pVCpu->hm.s.u32HMError = (uint32_t)pSvmTransient->u64ExitCode;
-        return VERR_SVM_UNEXPECTED_EXIT;
-    }
+        /* We should -not- get this #VMEXIT if the guest's debug registers were active. */
+        if (pSvmTransient->fWasGuestDebugStateActive)
+        {
+            AssertMsgFailed(("hmR0SvmExitReadDRx: Unexpected exit %#RX32\n", (uint32_t)pSvmTransient->u64ExitCode));
+            pVCpu->hm.s.u32HMError = (uint32_t)pSvmTransient->u64ExitCode;
+            return VERR_SVM_UNEXPECTED_EXIT;
+        }
 
-    /*
-     * Lazy DR0-3 loading.
-     */
-    if (   !pSvmTransient->fWasHyperDebugStateActive
-#ifdef VBOX_WITH_NESTED_HWVIRT
-           && !CPUMIsGuestInSvmNestedHwVirtMode(pCtx) /** @todo implement single-stepping when executing a nested-guest. */
-#endif
-       )
-    {
-        Assert(!DBGFIsStepping(pVCpu)); Assert(!pVCpu->hm.s.fSingleInstruction);
-        Log5(("hmR0SvmExitReadDRx: Lazy loading guest debug registers\n"));
+        /*
+         * Lazy DR0-3 loading.
+         */
+        if (!pSvmTransient->fWasHyperDebugStateActive)
+        {
+            Assert(!DBGFIsStepping(pVCpu)); Assert(!pVCpu->hm.s.fSingleInstruction);
+            Log5(("hmR0SvmExitReadDRx: Lazy loading guest debug registers\n"));
 
-        /* Don't intercept DRx read and writes. */
-        PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
-        pVmcb->ctrl.u16InterceptRdDRx = 0;
-        pVmcb->ctrl.u16InterceptWrDRx = 0;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+            /* Don't intercept DRx read and writes. */
+            PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+            pVmcb->ctrl.u16InterceptRdDRx = 0;
+            pVmcb->ctrl.u16InterceptWrDRx = 0;
+            pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 
-        /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
-        VMMRZCallRing3Disable(pVCpu);
-        HM_DISABLE_PREEMPT();
+            /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
+            VMMRZCallRing3Disable(pVCpu);
+            HM_DISABLE_PREEMPT();
 
-        /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
-        CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
-        Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
+            /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
+            CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
+            Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
 
-        HM_RESTORE_PREEMPT();
-        VMMRZCallRing3Enable(pVCpu);
+            HM_RESTORE_PREEMPT();
+            VMMRZCallRing3Enable(pVCpu);
 
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxContextSwitch);
-        return VINF_SUCCESS;
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxContextSwitch);
+            return VINF_SUCCESS;
+        }
     }
 
     /*
