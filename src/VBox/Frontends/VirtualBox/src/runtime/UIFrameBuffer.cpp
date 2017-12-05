@@ -152,10 +152,10 @@ public:
     /** Define the scale-factor used by the frame-buffer. */
     void setScaleFactor(double dScaleFactor) { m_dScaleFactor = dScaleFactor; }
 
-    /** Returns backing-scale-factor used by HiDPI frame-buffer. */
-    double backingScaleFactor() const { return m_dBackingScaleFactor; }
-    /** Defines backing-scale-factor used by HiDPI frame-buffer. */
-    void setBackingScaleFactor(double dBackingScaleFactor) { m_dBackingScaleFactor = dBackingScaleFactor; }
+    /** Returns device-pixel-ratio set for HiDPI frame-buffer. */
+    double devicePixelRatio() const { return m_dDevicePixelRatio; }
+    /** Defines device-pixel-ratio set for HiDPI frame-buffer. */
+    void setDevicePixelRatio(double dDevicePixelRatio) { m_dDevicePixelRatio = dDevicePixelRatio; }
 
     /** Returns whether frame-buffer should use unscaled HiDPI output. */
     bool useUnscaledHiDPIOutput() const { return m_fUseUnscaledHiDPIOutput; }
@@ -300,13 +300,13 @@ protected:
     static void eraseImageRect(QPainter &painter, const QRect &rect,
                                bool fUseUnscaledHiDPIOutput,
                                HiDPIOptimizationType hiDPIOptimizationType,
-                               double dBackingScaleFactor);
+                               double dDevicePixelRatio);
     /** Draws corresponding @a rect of passed @a image with @a painter. */
     static void drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
                               int iContentsShiftX, int iContentsShiftY,
                               bool fUseUnscaledHiDPIOutput,
                               HiDPIOptimizationType hiDPIOptimizationType,
-                              double dBackingScaleFactor);
+                              double dDevicePixelRatio);
 
     /** Holds the screen-id. */
     ulong m_uScreenId;
@@ -381,8 +381,8 @@ protected:
 
     /** @name HiDPI screens related variables.
      * @{ */
-    /** Holds backing-scale-factor used by HiDPI frame-buffer. */
-    double m_dBackingScaleFactor;
+    /** Holds device-pixel-ratio set for HiDPI frame-buffer. */
+    double m_dDevicePixelRatio;
     /** Holds whether frame-buffer should use unscaled HiDPI output. */
     bool m_fUseUnscaledHiDPIOutput;
     /** Holds HiDPI frame-buffer optimization type. */
@@ -535,7 +535,7 @@ UIFrameBufferPrivate::UIFrameBufferPrivate()
     , m_fAutoEnabled(false)
     , m_dScaleFactor(1.0)
     , m_enmScalingOptimizationType(ScalingOptimizationType_None)
-    , m_dBackingScaleFactor(1.0)
+    , m_dDevicePixelRatio(1.0)
     , m_fUseUnscaledHiDPIOutput(false)
     , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
 {
@@ -979,7 +979,7 @@ STDMETHODIMP UIFrameBufferPrivate::SetVisibleRegion(BYTE *pRectangles, ULONG uCo
         ++rects;
     }
     /* Tune according scale-factor: */
-    if (scaleFactor() != 1.0 || backingScaleFactor() > 1.0)
+    if (scaleFactor() != 1.0 || devicePixelRatio() > 1.0)
         region = m_transform.map(region);
 
     if (m_fUpdatesAllowed)
@@ -1331,9 +1331,9 @@ void UIFrameBufferPrivate::updateCoordinateSystem()
     if (scaleFactor() != 1.0)
         m_transform = m_transform.scale(scaleFactor(), scaleFactor());
 
-    /* Apply the backing-scale-factor if necessary: */
-    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
-        m_transform = m_transform.scale(1.0 / backingScaleFactor(), 1.0 / backingScaleFactor());
+    /* Apply the device-pixel-ratio if necessary: */
+    if (useUnscaledHiDPIOutput() && devicePixelRatio() > 1.0)
+        m_transform = m_transform.scale(1.0 / devicePixelRatio(), 1.0 / devicePixelRatio());
 }
 
 void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
@@ -1365,11 +1365,11 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     /* Prepare the 'paint' rectangle: */
     QRect paintRect = pEvent->rect();
 
-    /* Take the backing-scale-factor into account: */
-    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
+    /* Take the device-pixel-ratio into account: */
+    if (useUnscaledHiDPIOutput() && devicePixelRatio() > 1.0)
     {
-        paintRect.moveTo(paintRect.topLeft() * backingScaleFactor());
-        paintRect.setSize(paintRect.size() * backingScaleFactor());
+        paintRect.moveTo(paintRect.topLeft() * devicePixelRatio());
+        paintRect.setSize(paintRect.size() * devicePixelRatio());
     }
 
     /* Make sure paint-rectangle is within the image boundary: */
@@ -1383,11 +1383,11 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
 #ifdef VBOX_WS_MAC
     /* On OSX for Qt5 we need to erase backing store first: */
     QRect eraseRect = paintRect;
-    /* Take the backing-scale-factor into account: */
-    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
+    /* Take the device-pixel-ratio into account: */
+    if (useUnscaledHiDPIOutput() && devicePixelRatio() > 1.0)
     {
-        eraseRect.moveTo(eraseRect.topLeft() / backingScaleFactor());
-        eraseRect.setSize(eraseRect.size() / backingScaleFactor());
+        eraseRect.moveTo(eraseRect.topLeft() / devicePixelRatio());
+        eraseRect.setSize(eraseRect.size() / devicePixelRatio());
     }
     /* Replace translucent background with black one: */
     painter.setCompositionMode(QPainter::CompositionMode_Source);
@@ -1398,7 +1398,7 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     /* Draw image rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
+                  useUnscaledHiDPIOutput(), hiDPIOptimizationType(), devicePixelRatio());
 }
 
 void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
@@ -1436,11 +1436,11 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     const QRegion paintRegion = QRegion(paintRect) & m_syncVisibleRegion;
     unlock();
 
-    /* Take the backing-scale-factor into account: */
-    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
+    /* Take the device-pixel-ratio into account: */
+    if (useUnscaledHiDPIOutput() && devicePixelRatio() > 1.0)
     {
-        paintRect.moveTo(paintRect.topLeft() * backingScaleFactor());
-        paintRect.setSize(paintRect.size() * backingScaleFactor());
+        paintRect.moveTo(paintRect.topLeft() * devicePixelRatio());
+        paintRect.setSize(paintRect.size() * devicePixelRatio());
     }
 
     /* Make sure paint-rectangle is within the image boundary: */
@@ -1457,7 +1457,7 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     painter.setCompositionMode(QPainter::CompositionMode_Clear);
     /* Erase rectangle: */
     eraseImageRect(painter, paintRect,
-                   useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
+                   useUnscaledHiDPIOutput(), hiDPIOptimizationType(), devicePixelRatio());
 
     /* Apply painter clipping for painting: */
     painter.setClipRegion(paintRegion);
@@ -1467,11 +1467,11 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
 #if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS)
     /* On OSX for Qt5 we need to erase backing store first: */
     QRect eraseRect = paintRect;
-    /* Take the backing-scale-factor into account: */
-    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
+    /* Take the device-pixel-ratio into account: */
+    if (useUnscaledHiDPIOutput() && devicePixelRatio() > 1.0)
     {
-        eraseRect.moveTo(eraseRect.topLeft() / backingScaleFactor());
-        eraseRect.setSize(eraseRect.size() / backingScaleFactor());
+        eraseRect.moveTo(eraseRect.topLeft() / devicePixelRatio());
+        eraseRect.setSize(eraseRect.size() / devicePixelRatio());
     }
     /* Replace translucent background with black one: */
     painter.setCompositionMode(QPainter::CompositionMode_Source);
@@ -1482,7 +1482,7 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     /* Draw image rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
+                  useUnscaledHiDPIOutput(), hiDPIOptimizationType(), devicePixelRatio());
 }
 
 /* static */
@@ -1502,21 +1502,21 @@ Qt::TransformationMode UIFrameBufferPrivate::transformationMode(ScalingOptimizat
 void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
                                           bool fUseUnscaledHiDPIOutput,
                                           HiDPIOptimizationType hiDPIOptimizationType,
-                                          double dBackingScaleFactor)
+                                          double dDevicePixelRatio)
 {
     /* Prepare sub-pixmap: */
     QPixmap subPixmap = QPixmap(rect.width(), rect.height());
 
-    /* If HiDPI 'backing-scale-factor' defined: */
-    if (dBackingScaleFactor > 1.0)
+    /* If HiDPI 'device-pixel-ratio' defined: */
+    if (dDevicePixelRatio > 1.0)
     {
         /* Should we
          * perform logical HiDPI scaling and optimize it for performance? */
         if (!fUseUnscaledHiDPIOutput && hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Adjust sub-pixmap: */
-            subPixmap = QPixmap((int)(rect.width() * dBackingScaleFactor),
-                                (int)(rect.height() * dBackingScaleFactor));
+            subPixmap = QPixmap((int)(rect.width() * dDevicePixelRatio),
+                                (int)(rect.height() * dDevicePixelRatio));
         }
 
 #ifdef VBOX_WS_MAC
@@ -1526,7 +1526,7 @@ void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
         if (fUseUnscaledHiDPIOutput || hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Mark sub-pixmap as HiDPI: */
-            subPixmap.setDevicePixelRatio(dBackingScaleFactor);
+            subPixmap.setDevicePixelRatio(dDevicePixelRatio);
         }
 #endif /* VBOX_WS_MAC */
     }
@@ -1534,9 +1534,9 @@ void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
     /* Which point we should draw corresponding sub-pixmap? */
     QPointF paintPoint = rect.topLeft();
 
-    /* Take the backing-scale-factor into account: */
-    if (fUseUnscaledHiDPIOutput && dBackingScaleFactor > 1.0)
-        paintPoint /= dBackingScaleFactor;
+    /* Take the device-pixel-ratio into account: */
+    if (fUseUnscaledHiDPIOutput && dDevicePixelRatio > 1.0)
+        paintPoint /= dDevicePixelRatio;
 
     /* Draw sub-pixmap: */
     painter.drawPixmap(paintPoint, subPixmap);
@@ -1547,7 +1547,7 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
                                          int iContentsShiftX, int iContentsShiftY,
                                          bool fUseUnscaledHiDPIOutput,
                                          HiDPIOptimizationType hiDPIOptimizationType,
-                                         double dBackingScaleFactor)
+                                         double dDevicePixelRatio)
 {
     /* Calculate offset: */
     size_t offset = (rect.x() + iContentsShiftX) * image.depth() / 8 +
@@ -1565,15 +1565,15 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
     /* Create sub-pixmap on the basis of sub-image above (1st copy involved): */
     QPixmap subPixmap = QPixmap::fromImage(subImage);
 
-    /* If HiDPI 'backing-scale-factor' defined: */
-    if (dBackingScaleFactor > 1.0)
+    /* If HiDPI 'device-pixel-ratio' defined: */
+    if (dDevicePixelRatio > 1.0)
     {
         /* Should we
          * perform logical HiDPI scaling and optimize it for performance? */
         if (!fUseUnscaledHiDPIOutput && hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Fast scale sub-pixmap (2nd copy involved): */
-            subPixmap = subPixmap.scaled(subPixmap.size() * dBackingScaleFactor,
+            subPixmap = subPixmap.scaled(subPixmap.size() * dDevicePixelRatio,
                                          Qt::IgnoreAspectRatio, Qt::FastTransformation);
         }
 
@@ -1584,7 +1584,7 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
         if (fUseUnscaledHiDPIOutput || hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Mark sub-pixmap as HiDPI: */
-            subPixmap.setDevicePixelRatio(dBackingScaleFactor);
+            subPixmap.setDevicePixelRatio(dDevicePixelRatio);
         }
 #endif /* VBOX_WS_MAC */
     }
@@ -1592,9 +1592,9 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
     /* Which point we should draw corresponding sub-pixmap? */
     QPointF paintPoint = rect.topLeft();
 
-    /* Take the backing-scale-factor into account: */
-    if (fUseUnscaledHiDPIOutput && dBackingScaleFactor > 1.0)
-        paintPoint /= dBackingScaleFactor;
+    /* Take the device-pixel-ratio into account: */
+    if (fUseUnscaledHiDPIOutput && dDevicePixelRatio > 1.0)
+        paintPoint /= dDevicePixelRatio;
 
     /* Draw sub-pixmap: */
     painter.drawPixmap(paintPoint, subPixmap);
@@ -1722,14 +1722,14 @@ void UIFrameBuffer::setScaleFactor(double dScaleFactor)
     m_pFrameBuffer->setScaleFactor(dScaleFactor);
 }
 
-double UIFrameBuffer::backingScaleFactor() const
+double UIFrameBuffer::devicePixelRatio() const
 {
-    return m_pFrameBuffer->backingScaleFactor();
+    return m_pFrameBuffer->devicePixelRatio();
 }
 
-void UIFrameBuffer::setBackingScaleFactor(double dBackingScaleFactor)
+void UIFrameBuffer::setDevicePixelRatio(double dDevicePixelRatio)
 {
-    m_pFrameBuffer->setBackingScaleFactor(dBackingScaleFactor);
+    m_pFrameBuffer->setDevicePixelRatio(dDevicePixelRatio);
 }
 
 bool UIFrameBuffer::useUnscaledHiDPIOutput() const

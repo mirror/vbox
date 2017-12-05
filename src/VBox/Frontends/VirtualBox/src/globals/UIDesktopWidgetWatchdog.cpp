@@ -354,6 +354,23 @@ bool UIDesktopWidgetWatchdog::isFakeScreenDetected() const
 }
 #endif /* VBOX_WS_X11 */
 
+double UIDesktopWidgetWatchdog::devicePixelRatio(int iHostScreenIndex)
+{
+    /* First, we should check whether the screen is valid: */
+    QScreen *pScreen = iHostScreenIndex == -1
+                     ? QGuiApplication::primaryScreen()
+                     : QGuiApplication::screens().value(iHostScreenIndex);
+    AssertPtrReturn(pScreen, 1.0);
+    /* Then acquire device-pixel-ratio: */
+    return pScreen->devicePixelRatio();
+}
+
+double UIDesktopWidgetWatchdog::devicePixelRatio(QWidget *pWidget)
+{
+    /* Redirect call to wrapper above: */
+    return devicePixelRatio(screenNumber(pWidget));
+}
+
 void UIDesktopWidgetWatchdog::sltHostScreenAdded(QScreen *pHostScreen)
 {
 //    printf("UIDesktopWidgetWatchdog::sltHostScreenAdded(%d)\n", screenCount());

@@ -105,6 +105,11 @@ public:
     bool isFakeScreenDetected() const;
 #endif
 
+    /** Returns device-pixel-ratio of the host-screen with @a iHostScreenIndex. */
+    double devicePixelRatio(int iHostScreenIndex = -1);
+    /** Returns device-pixel-ratio of the host-screen which contains @a pWidget. */
+    double devicePixelRatio(QWidget *pWidget);
+
 private slots:
 
 #if QT_VERSION == 0

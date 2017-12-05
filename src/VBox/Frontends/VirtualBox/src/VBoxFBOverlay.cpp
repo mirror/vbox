@@ -33,6 +33,7 @@
 
 /* GUI includes: */
 # include "VBoxFBOverlay.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIMessageCenter.h"
 # include "UIPopupCenter.h"
 # include "UIExtraDataManager.h"
@@ -4446,16 +4447,16 @@ bool VBoxQGLOverlay::onNotifyUpdate(ULONG uX, ULONG uY,
     }
 
 #ifdef VBOX_WS_MAC
-    /* Take the backing-scale-factor into account: */
+    /* Take the device-pixel-ratio into account: */
     if (mSizeInfo.useUnscaledHiDPIOutput())
     {
-        const double dBackingScaleFactor = darwinBackingScaleFactor(mpViewport->window());
-        if (dBackingScaleFactor > 1.0)
+        const double dDevicePixelRatio = gpDesktop->devicePixelRatio(mpViewport->window());
+        if (dDevicePixelRatio > 1.0)
         {
-            rect.moveTo((int)floor((double)rect.x() / dBackingScaleFactor) - 1,
-                        (int)floor((double)rect.y() / dBackingScaleFactor) - 1);
-            rect.setSize(QSize((int)ceil((double)rect.width()  / dBackingScaleFactor) + 2,
-                               (int)ceil((double)rect.height() / dBackingScaleFactor) + 2));
+            rect.moveTo((int)floor((double)rect.x() / dDevicePixelRatio) - 1,
+                        (int)floor((double)rect.y() / dDevicePixelRatio) - 1);
+            rect.setSize(QSize((int)ceil((double)rect.width()  / dDevicePixelRatio) + 2,
+                               (int)ceil((double)rect.height() / dDevicePixelRatio) + 2));
         }
     }
 #endif /* VBOX_WS_MAC */

@@ -1776,18 +1776,18 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
     /* Create cursor-pixmap from the image: */
     QPixmap cursorPixmap = QPixmap::fromImage(image);
 # ifdef VBOX_WS_MAC
-    /* Adjust backing-scale-factor: */
-    /// @todo In case of multi-monitor setup check whether backing-scale factor and cursor are screen specific.
+    /* Adjust device-pixel-ratio: */
+    /// @todo In case of multi-monitor setup check whether device-pixel-ratio and cursor are screen specific.
     /* Get screen-id of main-window: */
     const ulong uScreenID = machineLogic()->activeMachineWindow()->screenId();
-    /* Get backing-scale-factor: */
-    const double dBackingScaleFactor = frameBuffer(uScreenID)->backingScaleFactor();
-    /* Adjust backing-scale-factor if necessary: */
-    if (dBackingScaleFactor > 1.0 && frameBuffer(uScreenID)->useUnscaledHiDPIOutput())
+    /* Get device-pixel-ratio: */
+    const double dDevicePixelRatio = frameBuffer(uScreenID)->devicePixelRatio();
+    /* Adjust device-pixel-ratio if necessary: */
+    if (dDevicePixelRatio > 1.0 && frameBuffer(uScreenID)->useUnscaledHiDPIOutput())
     {
-        uXHot /= dBackingScaleFactor;
-        uYHot /= dBackingScaleFactor;
-        cursorPixmap.setDevicePixelRatio(dBackingScaleFactor);
+        uXHot /= dDevicePixelRatio;
+        uYHot /= dDevicePixelRatio;
+        cursorPixmap.setDevicePixelRatio(dDevicePixelRatio);
     }
 # endif /* VBOX_WS_MAC */
     /* Set the new cursor: */

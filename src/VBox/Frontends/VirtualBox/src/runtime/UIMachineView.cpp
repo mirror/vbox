@@ -434,21 +434,21 @@ void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeigh
                            (int)ceil((double)rect.height() * yScaleFactor) + 2));
     }
 
-    /* Shift has to be scaled by the backing-scale-factor
+    /* Shift has to be scaled by the device-pixel-ratio
      * but not scaled by the scale-factor. */
     rect.translate(-contentsX(), -contentsY());
 
 #ifdef VBOX_WS_MAC
-    /* Take the backing-scale-factor into account: */
+    /* Take the device-pixel-ratio into account: */
     if (frameBuffer()->useUnscaledHiDPIOutput())
     {
-        const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
-        if (dBackingScaleFactor > 1.0)
+        const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+        if (dDevicePixelRatio > 1.0)
         {
-            rect.moveTo((int)floor((double)rect.x() / dBackingScaleFactor) - 1,
-                        (int)floor((double)rect.y() / dBackingScaleFactor) - 1);
-            rect.setSize(QSize((int)ceil((double)rect.width()  / dBackingScaleFactor) + 2,
-                               (int)ceil((double)rect.height() / dBackingScaleFactor) + 2));
+            rect.moveTo((int)floor((double)rect.x() / dDevicePixelRatio) - 1,
+                        (int)floor((double)rect.y() / dDevicePixelRatio) - 1);
+            rect.setSize(QSize((int)ceil((double)rect.width()  / dDevicePixelRatio) + 2,
+                               (int)ceil((double)rect.height() / dDevicePixelRatio) + 2));
         }
     }
 #endif /* VBOX_WS_MAC */
@@ -705,8 +705,8 @@ void UIMachineView::prepareFrameBuffer()
         m_pFrameBuffer->setScalingOptimizationType(gEDataManager->scalingOptimizationType(vboxGlobal().managedVMUuid()));
 
 #ifdef VBOX_WS_MAC
-        /* Take backing scale-factor into account: */
-        m_pFrameBuffer->setBackingScaleFactor(darwinBackingScaleFactor(machineWindow()));
+        /* Take device-pixel-ratio into account: */
+        m_pFrameBuffer->setDevicePixelRatio(gpDesktop->devicePixelRatio(machineWindow()));
 #endif /* VBOX_WS_MAC */
 
         /* Take the scale-factor related attributes into account: */
@@ -1120,10 +1120,10 @@ void UIMachineView::takePausePixmapLive()
     /* Finally copy the screen-shot to pause-pixmap: */
     m_pausePixmap = QPixmap::fromImage(screenShot);
 #ifdef VBOX_WS_MAC
-    /* Adjust backing-scale-factor if necessary: */
-    const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
-    if (dBackingScaleFactor > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
-        m_pausePixmap.setDevicePixelRatio(dBackingScaleFactor);
+    /* Adjust device-pixel-ratio if necessary: */
+    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+    if (dDevicePixelRatio > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
+        m_pausePixmap.setDevicePixelRatio(dDevicePixelRatio);
 #endif /* VBOX_WS_MAC */
 
     /* Update scaled pause pixmap: */
@@ -1155,10 +1155,10 @@ void UIMachineView::takePausePixmapSnapshot()
     /* Finally copy the screen-shot to pause-pixmap: */
     m_pausePixmap = QPixmap::fromImage(screenShot);
 #ifdef VBOX_WS_MAC
-    /* Adjust backing-scale-factor if necessary: */
-    const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
-    if (dBackingScaleFactor > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
-        m_pausePixmap.setDevicePixelRatio(dBackingScaleFactor);
+    /* Adjust device-pixel-ratio if necessary: */
+    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+    if (dDevicePixelRatio > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
+        m_pausePixmap.setDevicePixelRatio(dDevicePixelRatio);
 #endif /* VBOX_WS_MAC */
 
     /* Update scaled pause pixmap: */
@@ -1179,10 +1179,10 @@ void UIMachineView::updateScaledPausePixmap()
     /* Update pause pixmap finally: */
     m_pausePixmapScaled = pausePixmap().scaled(scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 #ifdef VBOX_WS_MAC
-    /* Adjust backing-scale-factor if necessary: */
-    const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
-    if (dBackingScaleFactor > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
-        m_pausePixmapScaled.setDevicePixelRatio(dBackingScaleFactor);
+    /* Adjust device-pixel-ratio if necessary: */
+    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+    if (dDevicePixelRatio > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
+        m_pausePixmapScaled.setDevicePixelRatio(dDevicePixelRatio);
 #endif /* VBOX_WS_MAC */
 }
 
@@ -1208,15 +1208,15 @@ void UIMachineView::updateSliders()
 
 #ifdef VBOX_WS_MAC
     /* Due to Qt 4.x doesn't supports HiDPI directly
-     * we should take the backing-scale-factor into account.
+     * we should take the device-pixel-ratio into account.
      * See also viewportToContents()... */
     if (frameBuffer()->useUnscaledHiDPIOutput())
     {
-        const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
-        if (dBackingScaleFactor > 1.0)
+        const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+        if (dDevicePixelRatio > 1.0)
         {
-            xRange *= dBackingScaleFactor;
-            yRange *= dBackingScaleFactor;
+            xRange *= dDevicePixelRatio;
+            yRange *= dDevicePixelRatio;
         }
     }
 #endif /* VBOX_WS_MAC */
@@ -1236,15 +1236,15 @@ QPoint UIMachineView::viewportToContents(const QPoint &vp) const
 
 #ifdef VBOX_WS_MAC
     /* Due to Qt 4.x doesn't supports HiDPI directly
-     * we should take the backing-scale-factor into account.
+     * we should take the device-pixel-ratio into account.
      * See also updateSliders()... */
     if (frameBuffer()->useUnscaledHiDPIOutput())
     {
-        const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
-        if (dBackingScaleFactor > 1.0)
+        const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+        if (dDevicePixelRatio > 1.0)
         {
-            iContentsX /= dBackingScaleFactor;
-            iContentsY /= dBackingScaleFactor;
+            iContentsX /= dDevicePixelRatio;
+            iContentsY /= dDevicePixelRatio;
         }
     }
 #endif /* VBOX_WS_MAC */
@@ -1459,8 +1459,8 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                     /* Update frame-buffer arguments: */
                     if (m_pFrameBuffer)
                     {
-                        /* Update backing-scale-factor for underlying frame-buffer: */
-                        m_pFrameBuffer->setBackingScaleFactor(darwinBackingScaleFactor(machineWindow()));
+                        /* Update device-pixel-ratio for underlying frame-buffer: */
+                        m_pFrameBuffer->setDevicePixelRatio(gpDesktop->devicePixelRatio(machineWindow()));
                         /* Perform frame-buffer rescaling: */
                         m_pFrameBuffer->performRescale();
                     }
@@ -1868,12 +1868,12 @@ QSize UIMachineView::scaledForward(QSize size) const
         size = QSize((int)(size.width() * dScaleFactor), (int)(size.height() * dScaleFactor));
 
 #ifdef VBOX_WS_MAC
-    /* Take the backing-scale-factor into account: */
+    /* Take the device-pixel-ratio into account: */
     if (frameBuffer()->useUnscaledHiDPIOutput())
     {
-        const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
-        if (dBackingScaleFactor > 1.0)
-            size = QSize(size.width() / dBackingScaleFactor, size.height() / dBackingScaleFactor);
+        const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+        if (dDevicePixelRatio > 1.0)
+            size = QSize(size.width() / dDevicePixelRatio, size.height() / dDevicePixelRatio);
     }
 #endif /* VBOX_WS_MAC */
 
@@ -1884,12 +1884,12 @@ QSize UIMachineView::scaledForward(QSize size) const
 QSize UIMachineView::scaledBackward(QSize size) const
 {
 #ifdef VBOX_WS_MAC
-    /* Take the backing-scale-factor into account: */
+    /* Take the device-pixel-ratio into account: */
     if (frameBuffer()->useUnscaledHiDPIOutput())
     {
-        const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
-        if (dBackingScaleFactor > 1.0)
-            size = QSize(size.width() * dBackingScaleFactor, size.height() * dBackingScaleFactor);
+        const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+        if (dDevicePixelRatio > 1.0)
+            size = QSize(size.width() * dDevicePixelRatio, size.height() * dDevicePixelRatio);
     }
 #endif /* VBOX_WS_MAC */
 
