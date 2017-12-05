@@ -3597,6 +3597,9 @@ static int hdaLoadExecPost(PHDASTATE pThis)
                     tsExpire = hdaStreamTransferGetNext(pStream);
 
                 Log2Func(("[SD%RU8] tsExpire=%RU64\n", pStream->u8SD, tsExpire));
+
+                /* Also keep track of the currently active streams. */
+                pThis->cStreamsActive++;
             }
         }
     }
