@@ -125,6 +125,7 @@ struct vboxguest_session
 static int VBoxGuestNetBSDOpen(dev_t device, int flags, int fmt, struct lwp *process);
 static int VBoxGuestNetBSDClose(struct file *fp);
 static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long cmd, void *addr);
+static int VBoxGuestNetBSDIOCtlSlow(struct vboxguest_session *session, u_long command, void *data);
 static int VBoxGuestNetBSDPoll(struct file *fp, int events);
 static void VBoxGuestNetBSDAttach(device_t, device_t, void*);
 static int VBoxGuestNetBSDDetach(device_t pDevice, int flags);
@@ -261,97 +262,125 @@ static int VBoxGuestNetBSDClose(struct file *fp)
 static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long command, void *data)
 {
     struct vboxguest_session *session = fp->f_data;
+
+    if (VBGL_IOCTL_IS_FAST(command))
+        return VGDrvCommonIoCtlFast(command, &g_DevExt, session->session);
+
+    return VBoxGuestNetBSDIOCtlSlow(session, command, data);
+}
+
+static int VBoxGuestNetBSDIOCtlSlow(struct vboxguest_session *session, u_long command, void *data)
+{
     vboxguest_softc *vboxguest = session->sc;
+    size_t cbReq = IOCPARM_LEN(command);
+    PVBGLREQHDR pHdr = NULL;
+    void *pvUser = NULL;
+    int err, rc;
 
-    int rc = 0;
-
-    LogFlow((DEVICE_NAME ": %s: command=%#lx data=%p\n",
-             __func__, command, data));
+    LogFlow(("%s: command=%#lx data=%p\n", __func__, command, data));
 
     /*
-     * Validate the request wrapper.
+     * Buffered request?
      */
-    if (IOCPARM_LEN(command) != sizeof(VBGLBIGREQ))
+    if ((command & IOC_DIRMASK) == IOC_INOUT)
     {
-        Log((DEVICE_NAME ": %s: bad request %#lx size=%lu expected=%zu\n",
-             __func__, command, IOCPARM_LEN(command), sizeof(VBGLBIGREQ)));
-        return ENOTTY;
-    }
-
-    PVBGLBIGREQ ReqWrap = (PVBGLBIGREQ)data;
-    if (ReqWrap->u32Magic != VBGLBIGREQ_MAGIC)
-    {
-        Log((DEVICE_NAME ": %s: bad magic %#" PRIx32 "; pArg=%p Cmd=%#lx\n",
-             __func__, ReqWrap->u32Magic, data, command));
-        return EINVAL;
-    }
-    if (RT_UNLIKELY(   ReqWrap->cbData == 0
-                    || ReqWrap->cbData > _1M*16))
-    {
-        Log((DEVICE_NAME ": %s: bad size %" PRIu32 "; pArg=%p Cmd=%#lx\n",
-             __func__, ReqWrap->cbData, data, command));
-        return EINVAL;
+        /* will be validated by VGDrvCommonIoCtl() */
+        pHdr = (PVBGLREQHDR)data;
     }
 
     /*
-     * Read the request.
+     * Big unbuffered request?  "data" is the userland pointer.
      */
-    void *pvBuf = RTMemTmpAlloc(ReqWrap->cbData);
-    if (RT_UNLIKELY(!pvBuf))
+    else if ((command & IOC_DIRMASK) == IOC_VOID && cbReq != 0)
     {
-        Log((DEVICE_NAME ": %s: RTMemTmpAlloc failed to alloc %" PRIu32 " bytes.\n",
-             __func__, ReqWrap->cbData));
-        return ENOMEM;
-    }
+        /*
+         * Read the header, validate it and figure out how much that
+         * needs to be buffered.
+         */
+        VBGLREQHDR Hdr;
 
-    rc = copyin((void *)(uintptr_t)ReqWrap->pvDataR3, pvBuf, ReqWrap->cbData);
-    if (RT_UNLIKELY(rc))
-    {
-        RTMemTmpFree(pvBuf);
-        Log((DEVICE_NAME ": %s: copyin failed; pvBuf=%p pArg=%p Cmd=%#lx. rc=%d\n",
-             __func__, pvBuf, data, command, rc));
-        aprint_error_dev(vboxguest->sc_dev, "copyin failed\n");
-        return EFAULT;
-    }
-    if (RT_UNLIKELY(   ReqWrap->cbData != 0
-                    && !VALID_PTR(pvBuf)))
-    {
-        RTMemTmpFree(pvBuf);
-        Log((DEVICE_NAME ": %s: invalid pvBuf=%p\n",
-             __func__, pvBuf));
-        return EINVAL;
+        if (RT_UNLIKELY(cbReq < sizeof(Hdr)))
+            return ENOTTY;
+
+        pvUser = data;
+        err = copyin(pvUser, &Hdr, sizeof(Hdr));
+        if (RT_UNLIKELY(err != 0))
+            return err;
+
+        if (RT_UNLIKELY(Hdr.uVersion != VBGLREQHDR_VERSION))
+            return ENOTTY;
+
+        if (cbReq > 16 * _1M)
+            return EINVAL;
+
+        if (Hdr.cbOut == 0)
+            Hdr.cbOut = Hdr.cbIn;
+
+        if (RT_UNLIKELY(   Hdr.cbIn  < sizeof(Hdr) || Hdr.cbIn  > cbReq
+                        || Hdr.cbOut < sizeof(Hdr) || Hdr.cbOut > cbReq))
+            return EINVAL;
+
+        /*
+         * Allocate buffer and copy in the data.
+         */
+        cbReq = RT_MAX(Hdr.cbIn, Hdr.cbOut);
+
+        pHdr = (PVBGLREQHDR)RTMemTmpAlloc(cbReq);
+        if (RT_UNLIKELY(pHdr == NULL))
+        {
+            LogRel(("%s: command=%#lx data=%p: unable to allocate %zu bytes\n",
+                    __func__, command, data, cbReq));
+            return ENOMEM;
+        }
+
+        err = copyin(pvUser, pHdr, Hdr.cbIn);
+        if (err != 0)
+        {
+            RTMemTmpFree(pHdr);
+            return err;
+        }
+
+        if (Hdr.cbIn < cbReq)
+            memset((uint8_t *)pHdr + Hdr.cbIn, '\0', cbReq - Hdr.cbIn);
     }
 
     /*
      * Process the IOCtl.
      */
-    size_t cbDataReturned;
-    rc = VGDrvCommonIoCtl(command, &g_DevExt, session->session, pvBuf, ReqWrap->cbData, &cbDataReturned);
+    rc = VGDrvCommonIoCtl(command, &g_DevExt, session->session, pHdr, cbReq);
     if (RT_SUCCESS(rc))
     {
-        rc = 0;
-        if (RT_UNLIKELY(cbDataReturned > ReqWrap->cbData))
+        err = 0;
+
+        /*
+         * If unbuffered, copy back the result before returning.
+         */
+        if (pvUser != NULL)
         {
-            Log((DEVICE_NAME ": %s: too much output data %zu expected %" PRIu32 "\n",
-                 __func__, cbDataReturned, ReqWrap->cbData));
-            cbDataReturned = ReqWrap->cbData;
-        }
-        if (cbDataReturned > 0)
-        {
-            rc = copyout(pvBuf, (void *)(uintptr_t)ReqWrap->pvDataR3, cbDataReturned);
-            if (RT_UNLIKELY(rc))
+            size_t cbOut = pHdr->cbOut;
+            if (cbOut > cbReq)
             {
-                Log((DEVICE_NAME ": %s: copyout failed; pvBuf=%p pArg=%p. rc=%d\n",
-                     __func__, pvBuf, data, rc));
+                LogRel(("%s: command=%#lx data=%p: too much output: %zu > %zu\n",
+                        __func__, command, data, cbOut, cbReq));
+                cbOut = cbReq;
             }
+
+            err = copyout(pHdr, pvUser, cbOut);
+            RTMemTmpFree(pHdr);
         }
-    } else {
-        Log((DEVICE_NAME ": %s: VGDrvCommonIoCtl failed. rc=%d\n",
-             __func__, rc));
-        rc = -rc;
     }
-    RTMemTmpFree(pvBuf);
-    return rc;
+    else
+    {
+        LogRel(("%s: command=%#lx data=%p: error %Rrc\n",
+                __func__, command, data, rc));
+
+        if (pvUser != NULL)
+            RTMemTmpFree(pHdr);
+
+        err = RTErrConvertToErrno(rc);
+    }
+
+    return err;
 }
 
 static int VBoxGuestNetBSDPoll(struct file *fp, int events)
