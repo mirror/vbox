@@ -456,7 +456,7 @@ typedef NTFSATSTDINFO const *PCNTFSATSTDINFO;
 #define NTFS_FA_ENCRYPTED                           UINT32_C(0x00004000)
 #define NTFS_FA_VALID_FLAGS                         UINT32_C(0x00007fb7)
 #define NTFS_FA_VALID_SET_FLAGS                     UINT32_C(0x000031a7)
-#define NTFS_FA_DUP_FILE_NAME_INDEX_PRESENT         UINT32_C(0x10000000) /**< ?? */
+#define NTFS_FA_DUP_FILE_NAME_INDEX_PRESENT         UINT32_C(0x10000000) /**< This means directory apparently. */
 #define NTFS_FA_DUP_VIEW_INDEX_PRESENT              UINT32_C(0x20000000) /**< ?? */
 /** @} */
 

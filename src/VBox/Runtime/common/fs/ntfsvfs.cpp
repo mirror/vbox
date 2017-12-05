@@ -34,6 +34,7 @@
 #include <iprt/asm.h>
 #include <iprt/avl.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/file.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
@@ -42,6 +43,8 @@
 #include <iprt/vfslowlevel.h>
 #include <iprt/utf16.h>
 #include <iprt/formats/ntfs.h>
+
+#include <internal/fs.h> /* For RTFSMODE_SYMLINK_REPARSE_TAG. */
 
 
 /*********************************************************************************************************************************
@@ -1813,6 +1816,172 @@ static PRTFSNTFSATTR rtFsNtfsCore_FindNamedAttributeAscii(PRTFSNTFSCORE pThis, u
 }
 
 
+/**
+ * Worker for various QueryInfo methods.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The core object structure to return info for.
+ * @param   pAttr               The attribute that's being presented.  Take the
+ *                              allocation and timestamp info from it, if
+ *                              non-resident.
+ * @param   pObjInfo            Where to return object info.
+ * @param   enmAddAttr          What additional info to return.
+ */
+static int rtFsNtfsCore_QueryInfo(PRTFSNTFSCORE pThis, PRTFSNTFSATTR pAttr, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    /*
+     * Wipe the structure and fill in common dummy value.
+     */
+    RT_ZERO(*pObjInfo);
+    switch (enmAddAttr)
+    {
+        case RTFSOBJATTRADD_UNIX:
+            pObjInfo->Attr.u.Unix.uid           = NIL_RTUID;
+            pObjInfo->Attr.u.Unix.gid           = NIL_RTGID;
+            pObjInfo->Attr.u.Unix.cHardlinks    = 1;
+            //pObjInfo->Attr.u.Unix.INodeIdDevice = 0;
+            pObjInfo->Attr.u.Unix.INodeId       = pThis->pMftRec->TreeNode.Key;
+            //pObjInfo->Attr.u.Unix.fFlags        = 0;
+            //pObjInfo->Attr.u.Unix.GenerationId  = 0;
+            //pObjInfo->Attr.u.Unix.Device        = 0;
+            break;
+
+        case RTFSOBJATTRADD_UNIX_OWNER:
+            pObjInfo->Attr.u.UnixOwner.uid = NIL_RTUID;
+            break;
+
+        case RTFSOBJATTRADD_UNIX_GROUP:
+            pObjInfo->Attr.u.UnixGroup.gid = NIL_RTGID;
+            break;
+
+        default:
+            break;
+    }
+
+    /*
+     * Look for the standard information attribute and use that as basis.
+     */
+    uint32_t      fFileAttrs;
+    PRTFSNTFSATTR pStdInfoAttr = rtFsNtfsCore_FindUnnamedAttribute(pThis, NTFS_AT_STANDARD_INFORMATION);
+    if (   pStdInfoAttr
+        && pStdInfoAttr->cbResident >= sizeof(NTFSATSTDINFO) )
+    {
+        Assert(!pStdInfoAttr->pAttrHdr->fNonResident);
+        PCNTFSATSTDINFO pStdInfo = (PCNTFSATSTDINFO)NTFSATTRIBHDR_GET_RES_VALUE_PTR(pStdInfoAttr->pAttrHdr);
+        RTTimeSpecSetNtTime(&pObjInfo->BirthTime,        RT_LE2H_U64(pStdInfo->iCreationTime));
+        RTTimeSpecSetNtTime(&pObjInfo->ModificationTime, RT_LE2H_U64(pStdInfo->iLastDataModTime));
+        RTTimeSpecSetNtTime(&pObjInfo->ChangeTime,       RT_LE2H_U64(pStdInfo->iLastMftModTime));
+        RTTimeSpecSetNtTime(&pObjInfo->AccessTime,       RT_LE2H_U64(pStdInfo->iLastAccessTime));
+        if (enmAddAttr == RTFSOBJATTRADD_UNIX)
+        {
+            pObjInfo->Attr.u.Unix.uid          = pStdInfo->idOwner;
+            pObjInfo->Attr.u.Unix.GenerationId = pStdInfo->uFileVersion;
+        }
+        else if (enmAddAttr == RTFSOBJATTRADD_UNIX_OWNER)
+            pObjInfo->Attr.u.UnixOwner.uid = pStdInfo->idOwner;
+        fFileAttrs = pStdInfo->fFileAttribs;
+    }
+    else
+    {
+        /** @todo check out the filename record?   */
+        switch (pAttr->pAttrHdr->uAttrType)
+        {
+            default:
+                AssertFailed();
+            case NTFS_AT_DATA:
+                fFileAttrs = NTFS_FA_NORMAL;
+                break;
+
+            case NTFS_AT_INDEX_ROOT:
+            case NTFS_AT_INDEX_ALLOCATION:
+                fFileAttrs = NTFS_FA_DIRECTORY;
+                break;
+        }
+    }
+
+    /*
+     * Take the allocation info from the destilled attribute data.
+     */
+    pObjInfo->cbObject    = pAttr->cbValue;
+    pObjInfo->cbAllocated = pAttr->Extents.cbData;
+    if (   pAttr->pAttrHdr->fNonResident
+        && (int64_t)pObjInfo->cbAllocated < (int64_t)RT_LE2H_U64(pAttr->pAttrHdr->u.NonRes.cbAllocated))
+        pObjInfo->cbAllocated = RT_LE2H_U64(pAttr->pAttrHdr->u.NonRes.cbAllocated);
+
+
+    /*
+     * See if we can find a filename record before we try convert the file attributes to mode.
+     */
+    PCNTFSATFILENAME pFilename     = NULL;
+    PRTFSNTFSATTR    pFilenameAttr = rtFsNtfsCore_FindUnnamedAttribute(pThis, NTFS_AT_FILENAME);
+    if (   pFilenameAttr
+        && pFilenameAttr->cbResident >= RT_UOFFSETOF(NTFSATFILENAME, wszFilename) )
+    {
+        Assert(!pFilenameAttr->pAttrHdr->fNonResident);
+        pFilename = (PCNTFSATFILENAME)NTFSATTRIBHDR_GET_RES_VALUE_PTR(pFilenameAttr->pAttrHdr);
+        if (pStdInfoAttr)
+            fFileAttrs |= pFilename->fFileAttribs;
+        else
+            fFileAttrs = pFilename->fFileAttribs;
+    }
+
+    /*
+     * This attribute conversion code is a slightly modified version of rtFsModeFromDos.
+     */
+    pObjInfo->Attr.fMode = (fFileAttrs << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_NT;
+    if (fFileAttrs & NTFS_FA_DUP_FILE_NAME_INDEX_PRESENT)
+        pObjInfo->Attr.fMode |= RTFS_DOS_DIRECTORY;
+
+    /* everything is readable. */
+    pObjInfo->Attr.fMode |= RTFS_UNIX_IRUSR | RTFS_UNIX_IRGRP | RTFS_UNIX_IROTH;
+    if (pObjInfo->Attr.fMode & RTFS_DOS_DIRECTORY)
+        /* directories are executable. */
+        pObjInfo->Attr.fMode |= RTFS_TYPE_DIRECTORY | RTFS_UNIX_IXUSR | RTFS_UNIX_IXGRP | RTFS_UNIX_IXOTH;
+    else
+    {
+        pObjInfo->Attr.fMode |= RTFS_TYPE_FILE;
+        if (   pFilename
+            && pFilename->cwcFilename >= 4
+            && RT_UOFFSETOF(NTFSATFILENAME, wszFilename[pFilename->cwcFilename]) <= pFilenameAttr->cbResident)
+        {
+            PCRTUTF16 pwcExt = &pFilename->wszFilename[pFilename->cwcFilename - 4];
+            if ( *pwcExt++ == '.')
+            {
+                /* check for executable extension. */
+                if (   (unsigned)pwcExt[0] < 0x7fU
+                    && (unsigned)pwcExt[1] < 0x7fU
+                    && (unsigned)pwcExt[2] < 0x7fU)
+                {
+                    char szExt[4];
+                    szExt[0] = RT_C_TO_LOWER(pwcExt[0]);
+                    szExt[1] = RT_C_TO_LOWER(pwcExt[1]);
+                    szExt[2] = RT_C_TO_LOWER(pwcExt[2]);
+                    szExt[3] = '\0';
+                    if (    !memcmp(szExt, "exe", 4)
+                        ||  !memcmp(szExt, "bat", 4)
+                        ||  !memcmp(szExt, "com", 4)
+                        ||  !memcmp(szExt, "cmd", 4)
+                        ||  !memcmp(szExt, "btm", 4)
+                       )
+                        pObjInfo->Attr.fMode |= RTFS_UNIX_IXUSR | RTFS_UNIX_IXGRP | RTFS_UNIX_IXOTH;
+                }
+            }
+        }
+    }
+
+    /* Is it really a symbolic link? */
+    if (   (pObjInfo->Attr.fMode & RTFS_DOS_NT_REPARSE_POINT)
+        && pFilename
+        && pFilename->u.uReparseTag == RTFSMODE_SYMLINK_REPARSE_TAG)
+        pObjInfo->Attr.fMode = (pObjInfo->Attr.fMode & ~RTFS_TYPE_MASK) | RTFS_TYPE_SYMLINK;
+
+    /* writable? */
+    if (!(pObjInfo->Attr.fMode & RTFS_DOS_READONLY))
+        pObjInfo->Attr.fMode |= RTFS_UNIX_IWUSR | RTFS_UNIX_IWGRP | RTFS_UNIX_IWOTH;
+
+    return VINF_SUCCESS;
+}
+
 
 /*
  *
@@ -2495,9 +2664,12 @@ static int rtFsNtfsIdxComp_Filename(PCRTUTF16 pwszUpper1, uint8_t cwcUpper1, PCR
     {
         RTUTF16 uc1 = *pwszUpper1++;
         RTUTF16 uc2 = *pawcFilename2++;
-        if (   uc1 != uc2
-            && uc1 != pawcUpcase[uc2])
-            return uc1 < uc2 ? -1 : 1;
+        if (uc1 != uc2)
+        {
+            uc2 = pawcUpcase[uc2];
+            if (uc1 != uc2)
+                return uc1 < uc2 ? -1 : 1;
+        }
 
         /* Decrement the lengths and loop. */
         cwcUpper1--;
@@ -2614,11 +2786,7 @@ static int rtFsNtfsDirShrd_Lookup(PRTFSNTFSDIRSHRD pShared, const char *pszEntry
                         return VINF_SUCCESS;
                     }
                     else
-                    {
-                        rtFsNtfsIdxNode_Release(pNode);
-                        LogFlow(("rtFsNtfsDirShrd_Lookup(%s): Not found!\n", pszEntry));
-                        return VERR_FILE_NOT_FOUND;
-                    }
+                        break;
                 }
             }
             else
@@ -2811,11 +2979,12 @@ static DECLCALLBACK(int) rtFsNtfsDir_Close(void *pvThis)
  */
 static DECLCALLBACK(int) rtFsNtfsDir_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
+    PRTFSNTFSDIR pThis = (PRTFSNTFSDIR)pvThis;
     Log(("rtFsNtfsDir_QueryInfo\n"));
-    //PRTFSNTFSDIR pThis = (PRTFSNTFSDIR)pvThis;
-    //return rtFsNtfsCore_QueryInfo(&pThis->pShared->Core, pObjInfo, enmAddAttr);
-    NOREF(pvThis); NOREF(pObjInfo); NOREF(enmAddAttr);
-    return VERR_NOT_IMPLEMENTED;
+    return rtFsNtfsCore_QueryInfo(pThis->pShared->RootInfo.pRootAttr->pCore,
+                                  pThis->pShared->RootInfo.pAlloc ? pThis->pShared->RootInfo.pAlloc
+                                  : pThis->pShared->RootInfo.pRootAttr,
+                                  pObjInfo, enmAddAttr);
 }
 
 
@@ -2938,7 +3107,7 @@ static DECLCALLBACK(int) rtFsNtfsDir_Open(void *pvThis, const char *pszEntry, ui
     if (RT_SUCCESS(rc))
     {
         uint32_t fFileAttribs = RT_LE2H_U32(pFilename->fFileAttribs);
-        switch (fFileAttribs & (NTFS_FA_DIRECTORY | NTFS_FA_REPARSE_POINT))
+        switch (fFileAttribs & (NTFS_FA_DIRECTORY | NTFS_FA_REPARSE_POINT | NTFS_FA_DUP_FILE_NAME_INDEX_PRESENT))
         {
             /*
              * File.
@@ -2964,6 +3133,8 @@ static DECLCALLBACK(int) rtFsNtfsDir_Open(void *pvThis, const char *pszEntry, ui
             /*
              * Directory
              */
+            case NTFS_FA_DUP_FILE_NAME_INDEX_PRESENT:
+            case NTFS_FA_DIRECTORY | NTFS_FA_DUP_FILE_NAME_INDEX_PRESENT:
             case NTFS_FA_DIRECTORY:
                 if (fFlags & RTVFSOBJ_F_OPEN_DIRECTORY)
                 {
@@ -2991,12 +3162,15 @@ static DECLCALLBACK(int) rtFsNtfsDir_Open(void *pvThis, const char *pszEntry, ui
              * Possible symbolic links.
              */
             case NTFS_FA_REPARSE_POINT:
-            case NTFS_FA_DIRECTORY | NTFS_FA_REPARSE_POINT:
+            case NTFS_FA_REPARSE_POINT | NTFS_FA_DIRECTORY:
+            case NTFS_FA_REPARSE_POINT | NTFS_FA_DUP_FILE_NAME_INDEX_PRESENT:
+            case NTFS_FA_REPARSE_POINT | NTFS_FA_DIRECTORY | NTFS_FA_DUP_FILE_NAME_INDEX_PRESENT:
                 rc = VERR_NOT_IMPLEMENTED;
                 break;
 
             default:
-                rc = VERR_IPE_NOT_REACHED_DEFAULT_CASE;
+                AssertFailed();
+                rc = VERR_FILE_NOT_FOUND;
                 break;
         }
         rtFsNtfsIdxNode_Release(pNode);
