@@ -1001,6 +1001,8 @@ typedef struct SVMNESTEDVMCBCACHE
 
     /** @name Nested-guest VMCB guest state.
      * @{ */
+    /** Cache of CR0. */
+    uint64_t            u64CR0;
     /** Cache of CR3. */
     uint64_t            u64CR3;
     /** Cache of CR4. */

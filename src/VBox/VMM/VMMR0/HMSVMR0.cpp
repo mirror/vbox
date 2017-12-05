@@ -678,6 +678,72 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
 
 
 /**
+ * Returns whether VMCB Clean Bits feature is supported.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ */
+DECLINLINE(bool) hmR0SvmSupportsVmcbCleanBits(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+    {
+        return    (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN)
+               && pVM->cpum.ro.GuestFeatures.fSvmVmcbClean;
+    }
+#else
+    RT_NOREF(pCtx);
+#endif
+    return RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN);
+}
+
+
+/**
+ * Returns whether decode-assist feature is supported.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ */
+DECLINLINE(bool) hmR0SvmSupportsDecodeAssist(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+    {
+        return    (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST)
+               &&  pVM->cpum.ro.GuestFeatures.fSvmDecodeAssist;
+    }
+#else
+    RT_NOREF(pCtx);
+#endif
+    return RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST);
+}
+
+
+/**
+ * Returns whether NRIP_SAVE feature is supported.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ */
+DECLINLINE(bool) hmR0SvmSupportsNextRipSave(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+    {
+        return    (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
+               &&  pVM->cpum.ro.GuestFeatures.fSvmNextRipSave;
+    }
+#else
+    RT_NOREF(pCtx);
+#endif
+    return RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE);
+}
+
+
+/**
  * Sets the permission bits for the specified MSR in the MSRPM.
  *
  * @param   pVmcb           Pointer to the VM control block.
@@ -2077,6 +2143,7 @@ static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
         pNstGstVmcbCache->u16InterceptWrDRx = pVmcbNstGstCtrl->u16InterceptWrDRx;
         pNstGstVmcbCache->u32InterceptXcpt  = pVmcbNstGstCtrl->u32InterceptXcpt;
         pNstGstVmcbCache->u64InterceptCtrl  = pVmcbNstGstCtrl->u64InterceptCtrl;
+        pNstGstVmcbCache->u64CR0            = pVmcbNstGstState->u64CR0;
         pNstGstVmcbCache->u64CR3            = pVmcbNstGstState->u64CR3;
         pNstGstVmcbCache->u64CR4            = pVmcbNstGstState->u64CR4;
         pNstGstVmcbCache->u64EFER           = pVmcbNstGstState->u64EFER;
@@ -3988,8 +4055,8 @@ static void hmR0SvmPreRunGuestCommittedNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
      * If VMCB Clean bits isn't supported by the CPU or exposed by the guest,
      * mark all state-bits as dirty indicating to the CPU to re-load from VMCB.
      */
-    if (   !(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN)
-        || !(pVM->cpum.ro.GuestFeatures.fSvmVmcbClean))
+    bool const fSupportsVmcbCleanBits = hmR0SvmSupportsVmcbCleanBits(pVCpu, pCtx);
+    if (!fSupportsVmcbCleanBits)
         pVmcbNstGst->ctrl.u64VmcbCleanBits = 0;
 }
 #endif
@@ -4097,7 +4164,8 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     }
 
     /* If VMCB Clean bits isn't supported by the CPU, simply mark all state-bits as dirty, indicating (re)load-from-VMCB. */
-    if (!(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN))
+    bool const fSupportsVmcbCleanBits = hmR0SvmSupportsVmcbCleanBits(pVCpu, pCtx);
+    if (!fSupportsVmcbCleanBits)
         pVmcb->ctrl.u64VmcbCleanBits = 0;
 }
 
@@ -5827,50 +5895,6 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
 
 
 /**
- * Returns whether decode-assist feature is supported.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest-CPU context.
- */
-DECLINLINE(bool) hmR0SvmSupportsDecodeAssist(PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-#ifdef VBOX_WITH_NESTED_HWVIRT
-    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-    {
-        return    (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST)
-               &&  pVM->cpum.ro.GuestFeatures.fSvmDecodeAssist;
-    }
-#else
-    RT_NOREF(pCtx);
-#endif
-    return RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST);
-}
-
-
-/**
- * Returns whether NRIP_SAVE feature is supported.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest-CPU context.
- */
-DECLINLINE(bool) hmR0SvmSupportsNextRipSave(PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-#ifdef VBOX_WITH_NESTED_HWVIRT
-    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-    {
-        return    (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
-               &&  pVM->cpum.ro.GuestFeatures.fSvmNextRipSave;
-    }
-#else
-    RT_NOREF(pCtx);
-#endif
-    return RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE);
-}
-
-
-/**
  * Advances the guest RIP making use of the CPU's NRIP_SAVE feature if
  * supported, otherwise advances the RIP by the number of bytes specified in
  * @a cb.
@@ -6307,7 +6331,6 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
                 break;
 
             case 3:     /* CR3. */
-                Assert(!pVM->hm.s.fNestedPaging);
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR3);
                 break;
 
