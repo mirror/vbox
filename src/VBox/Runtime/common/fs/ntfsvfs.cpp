@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define RTMEM_WRAP_TO_EF_APIS // REMOVE REMOVE REMOVE
 #define LOG_GROUP RTLOGGROUP_FS
 #include <iprt/fsvfs.h>
 
@@ -311,6 +312,8 @@ typedef struct RTFSNTFSIDXSTACKENTRY
 {
     /** The next entry to process in this stack entry. */
     uint32_t                iNext;
+    /** Set if we need to descend first. */
+    bool                    fDescend;
     /** Pointer to the node info for this entry. */
     PRTFSNTFSIDXNODEINFO    pNodeInfo;
 } RTFSNTFSIDXSTACKENTRY;
@@ -1134,9 +1137,33 @@ static int rtFsNtfsVol_ParseMft(PRTFSNTFSVOL pThis, PRTFSNTFSMFTREC pRec, PRTERR
                                            pRec->TreeNode.Key, offRec, cbAttrib);
         if (pAttrHdr->fNonResident)
         {
+            int64_t const cbAllocated = RT_LE2H_U64(pAttrHdr->u.NonRes.cbAllocated);
+            if (cbAllocated < 0)
+                return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                               "Bad MFT record %#RX64: Attribute (@%#x): cbAllocated (%#RX64) is negative",
+                                               pRec->TreeNode.Key, offRec, cbAllocated);
+            if ((uint64_t)cbAllocated & (pThis->cbCluster - 1))
+                return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                               "Bad MFT record %#RX64: Attribute (@%#x): cbAllocated (%#RX64) isn't cluster aligned (cbCluster=%#x)",
+                                               pRec->TreeNode.Key, offRec, cbAllocated, pThis->cbCluster);
+
+            int64_t const cbData = RT_LE2H_U64(pAttrHdr->u.NonRes.cbData);
+            if (cbData < 0)
+                return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                               "Bad MFT record %#RX64: Attribute (@%#x): cbData (%#RX64) is negative",
+                                               pRec->TreeNode.Key, offRec, cbData);
+
+            int64_t const cbInitialized = RT_LE2H_U64(pAttrHdr->u.NonRes.cbInitialized);
+            if (cbInitialized < 0)
+                return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                               "Bad MFT record %#RX64: Attribute (@%#x): cbInitialized (%#RX64) is negative",
+                                               pRec->TreeNode.Key, offRec, cbInitialized);
+
             int64_t const iVcnFirst = RT_LE2H_U64(pAttrHdr->u.NonRes.iVcnFirst);
             int64_t const iVcnLast  = RT_LE2H_U64(pAttrHdr->u.NonRes.iVcnLast);
-            if (iVcnFirst > iVcnLast)
+            if (   iVcnFirst > iVcnLast
+                && (   iVcnLast != -1
+                    || cbAllocated != 0))
                 return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                "Bad MFT record %#RX64: Attribute (@%#x): iVcnFirst (%#RX64) is higher than iVcnLast (%#RX64)",
                                                pRec->TreeNode.Key, offRec, iVcnFirst, iVcnLast);
@@ -1159,27 +1186,6 @@ static int rtFsNtfsVol_ParseMft(PRTFSNTFSVOL pThis, PRTFSNTFSMFTREC pRec, PRTERR
                                                "Bad MFT record %#RX64: Attribute (@%#x): uCompressionUnit (%#x) is too high",
                                                pRec->TreeNode.Key, offRec, pAttrHdr->u.NonRes.uCompressionUnit);
 
-            int64_t const cbAllocated = RT_LE2H_U64(pAttrHdr->u.NonRes.cbAllocated);
-            if (cbAllocated < 0)
-                return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
-                                               "Bad MFT record %#RX64: Attribute (@%#x): cbAllocated (%#RX64) is negative",
-                                               pRec->TreeNode.Key, offRec, cbAllocated);
-            if ((uint64_t)cbAllocated & (pThis->cbCluster - 1))
-                return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
-                                               "Bad MFT record %#RX64: Attribute (@%#x): cbAllocated (%#RX64) isn't cluster aligned (cbCluster=%#x)",
-                                               pRec->TreeNode.Key, offRec, cbAllocated, pThis->cbCluster);
-
-            int64_t const cbData = RT_LE2H_U64(pAttrHdr->u.NonRes.cbData);
-            if (cbData < 0)
-                return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
-                                               "Bad MFT record %#RX64: Attribute (@%#x): cbData (%#RX64) is negative",
-                                               pRec->TreeNode.Key, offRec, cbData);
-
-            int64_t const cbInitialized = RT_LE2H_U64(pAttrHdr->u.NonRes.cbInitialized);
-            if (cbInitialized < 0)
-                return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
-                                               "Bad MFT record %#RX64: Attribute (@%#x): cbInitialized (%#RX64) is negative",
-                                               pRec->TreeNode.Key, offRec, cbInitialized);
             if (cbMin >= NTFSATTRIBHDR_SIZE_NONRES_COMPRESSED)
             {
                 int64_t const cbCompressed = RT_LE2H_U64(pAttrHdr->u.NonRes.cbCompressed);
@@ -1198,9 +1204,16 @@ static int rtFsNtfsVol_ParseMft(PRTFSNTFSVOL pThis, PRTFSNTFSMFTREC pRec, PRTERR
                                                "Bad MFT record %#RX64: Attribute (@%#x): offValue (%#RX16) is out of bounds (cbAttrib=%#RX32, cbValue=%#RX32)",
                                                pRec->TreeNode.Key, offRec, offValue, cbAttrib, RT_LE2H_U32(pAttrHdr->u.Res.cbValue));
             if ((pAttrHdr->fFlags & NTFS_AF_COMPR_FMT_MASK) != NTFS_AF_COMPR_FMT_NONE)
+            {
+#if 1 /* Seen on INDEX_ROOT of ReportQueue on w7, so turned into debug log warning. */
+                Log(("NTFS: Warning! Bad MFT record %#RX64: Attribute (@%#x): fFlags (%#RX16) indicate compression of a resident attribute\n",
+                     pRec->TreeNode.Key, offRec, RT_LE2H_U16(pAttrHdr->fFlags) ));
+#else
                 return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                "Bad MFT record %#RX64: Attribute (@%#x): fFlags (%#RX16) indicate compression of a resident attribute",
                                                pRec->TreeNode.Key, offRec, RT_LE2H_U16(pAttrHdr->fFlags));
+#endif
+            }
         }
 
         if (pAttrHdr->cwcName != 0)
@@ -1817,6 +1830,71 @@ static PRTFSNTFSATTR rtFsNtfsCore_FindNamedAttributeAscii(PRTFSNTFSCORE pThis, u
 
 
 /**
+ * This attribute conversion code is a slightly modified version of rtFsModeFromDos.
+ *
+ * @returns IPRT fmode mask.
+ * @param   fFileAttribs        The NT file attributes.
+ * @param   pFilename           The filename attribute structure, optional.
+ * @param   cbFilename          The size of the filename attribute structure.
+ */
+static RTFMODE rtFsNtfsConvertFileattribsToMode(uint32_t fFileAttribs, PCNTFSATFILENAME pFilename, uint32_t cbFilename)
+{
+    RTFMODE fMode = (fFileAttribs << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_NT;
+    if (fFileAttribs & NTFS_FA_DUP_FILE_NAME_INDEX_PRESENT)
+        fMode |= RTFS_DOS_DIRECTORY;
+
+    /* everything is readable. */
+    fMode |= RTFS_UNIX_IRUSR | RTFS_UNIX_IRGRP | RTFS_UNIX_IROTH;
+    if (fMode & RTFS_DOS_DIRECTORY)
+        /* directories are executable. */
+        fMode |= RTFS_TYPE_DIRECTORY | RTFS_UNIX_IXUSR | RTFS_UNIX_IXGRP | RTFS_UNIX_IXOTH;
+    else
+    {
+        fMode |= RTFS_TYPE_FILE;
+        if (   pFilename
+            && pFilename->cwcFilename >= 4
+            && RT_UOFFSETOF(NTFSATFILENAME, wszFilename[pFilename->cwcFilename]) <= cbFilename)
+        {
+            PCRTUTF16 pwcExt = &pFilename->wszFilename[pFilename->cwcFilename - 4];
+            if ( *pwcExt++ == '.')
+            {
+                /* check for executable extension. */
+                if (   (unsigned)pwcExt[0] < 0x7fU
+                    && (unsigned)pwcExt[1] < 0x7fU
+                    && (unsigned)pwcExt[2] < 0x7fU)
+                {
+                    char szExt[4];
+                    szExt[0] = RT_C_TO_LOWER(pwcExt[0]);
+                    szExt[1] = RT_C_TO_LOWER(pwcExt[1]);
+                    szExt[2] = RT_C_TO_LOWER(pwcExt[2]);
+                    szExt[3] = '\0';
+                    if (    !memcmp(szExt, "exe", 4)
+                        ||  !memcmp(szExt, "bat", 4)
+                        ||  !memcmp(szExt, "com", 4)
+                        ||  !memcmp(szExt, "cmd", 4)
+                        ||  !memcmp(szExt, "btm", 4)
+                       )
+                        fMode |= RTFS_UNIX_IXUSR | RTFS_UNIX_IXGRP | RTFS_UNIX_IXOTH;
+                }
+            }
+        }
+    }
+
+    /* Is it really a symbolic link? */
+    if (   (fMode & RTFS_DOS_NT_REPARSE_POINT)
+        && pFilename
+        && pFilename->u.uReparseTag == RTFSMODE_SYMLINK_REPARSE_TAG)
+        fMode = (fMode & ~RTFS_TYPE_MASK) | RTFS_TYPE_SYMLINK;
+
+    /* writable? */
+    if (!(fMode & RTFS_DOS_READONLY))
+        fMode |= RTFS_UNIX_IWUSR | RTFS_UNIX_IWGRP | RTFS_UNIX_IWOTH;
+
+    return fMode;
+}
+
+
+/**
  * Worker for various QueryInfo methods.
  *
  * @returns IPRT status code.
@@ -1861,7 +1939,7 @@ static int rtFsNtfsCore_QueryInfo(PRTFSNTFSCORE pThis, PRTFSNTFSATTR pAttr, PRTF
     /*
      * Look for the standard information attribute and use that as basis.
      */
-    uint32_t      fFileAttrs;
+    uint32_t      fFileAttribs;
     PRTFSNTFSATTR pStdInfoAttr = rtFsNtfsCore_FindUnnamedAttribute(pThis, NTFS_AT_STANDARD_INFORMATION);
     if (   pStdInfoAttr
         && pStdInfoAttr->cbResident >= sizeof(NTFSATSTDINFO) )
@@ -1879,7 +1957,7 @@ static int rtFsNtfsCore_QueryInfo(PRTFSNTFSCORE pThis, PRTFSNTFSATTR pAttr, PRTF
         }
         else if (enmAddAttr == RTFSOBJATTRADD_UNIX_OWNER)
             pObjInfo->Attr.u.UnixOwner.uid = pStdInfo->idOwner;
-        fFileAttrs = pStdInfo->fFileAttribs;
+        fFileAttribs = pStdInfo->fFileAttribs;
     }
     else
     {
@@ -1889,12 +1967,12 @@ static int rtFsNtfsCore_QueryInfo(PRTFSNTFSCORE pThis, PRTFSNTFSATTR pAttr, PRTF
             default:
                 AssertFailed();
             case NTFS_AT_DATA:
-                fFileAttrs = NTFS_FA_NORMAL;
+                fFileAttribs = NTFS_FA_NORMAL;
                 break;
 
             case NTFS_AT_INDEX_ROOT:
             case NTFS_AT_INDEX_ALLOCATION:
-                fFileAttrs = NTFS_FA_DIRECTORY;
+                fFileAttribs = NTFS_FA_DIRECTORY;
                 break;
         }
     }
@@ -1920,64 +1998,16 @@ static int rtFsNtfsCore_QueryInfo(PRTFSNTFSCORE pThis, PRTFSNTFSATTR pAttr, PRTF
         Assert(!pFilenameAttr->pAttrHdr->fNonResident);
         pFilename = (PCNTFSATFILENAME)NTFSATTRIBHDR_GET_RES_VALUE_PTR(pFilenameAttr->pAttrHdr);
         if (pStdInfoAttr)
-            fFileAttrs |= pFilename->fFileAttribs;
+            fFileAttribs |= pFilename->fFileAttribs;
         else
-            fFileAttrs = pFilename->fFileAttribs;
+            fFileAttribs = pFilename->fFileAttribs;
     }
 
     /*
-     * This attribute conversion code is a slightly modified version of rtFsModeFromDos.
+     * Convert attribs to file mode flags.
      */
-    pObjInfo->Attr.fMode = (fFileAttrs << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_NT;
-    if (fFileAttrs & NTFS_FA_DUP_FILE_NAME_INDEX_PRESENT)
-        pObjInfo->Attr.fMode |= RTFS_DOS_DIRECTORY;
-
-    /* everything is readable. */
-    pObjInfo->Attr.fMode |= RTFS_UNIX_IRUSR | RTFS_UNIX_IRGRP | RTFS_UNIX_IROTH;
-    if (pObjInfo->Attr.fMode & RTFS_DOS_DIRECTORY)
-        /* directories are executable. */
-        pObjInfo->Attr.fMode |= RTFS_TYPE_DIRECTORY | RTFS_UNIX_IXUSR | RTFS_UNIX_IXGRP | RTFS_UNIX_IXOTH;
-    else
-    {
-        pObjInfo->Attr.fMode |= RTFS_TYPE_FILE;
-        if (   pFilename
-            && pFilename->cwcFilename >= 4
-            && RT_UOFFSETOF(NTFSATFILENAME, wszFilename[pFilename->cwcFilename]) <= pFilenameAttr->cbResident)
-        {
-            PCRTUTF16 pwcExt = &pFilename->wszFilename[pFilename->cwcFilename - 4];
-            if ( *pwcExt++ == '.')
-            {
-                /* check for executable extension. */
-                if (   (unsigned)pwcExt[0] < 0x7fU
-                    && (unsigned)pwcExt[1] < 0x7fU
-                    && (unsigned)pwcExt[2] < 0x7fU)
-                {
-                    char szExt[4];
-                    szExt[0] = RT_C_TO_LOWER(pwcExt[0]);
-                    szExt[1] = RT_C_TO_LOWER(pwcExt[1]);
-                    szExt[2] = RT_C_TO_LOWER(pwcExt[2]);
-                    szExt[3] = '\0';
-                    if (    !memcmp(szExt, "exe", 4)
-                        ||  !memcmp(szExt, "bat", 4)
-                        ||  !memcmp(szExt, "com", 4)
-                        ||  !memcmp(szExt, "cmd", 4)
-                        ||  !memcmp(szExt, "btm", 4)
-                       )
-                        pObjInfo->Attr.fMode |= RTFS_UNIX_IXUSR | RTFS_UNIX_IXGRP | RTFS_UNIX_IXOTH;
-                }
-            }
-        }
-    }
-
-    /* Is it really a symbolic link? */
-    if (   (pObjInfo->Attr.fMode & RTFS_DOS_NT_REPARSE_POINT)
-        && pFilename
-        && pFilename->u.uReparseTag == RTFSMODE_SYMLINK_REPARSE_TAG)
-        pObjInfo->Attr.fMode = (pObjInfo->Attr.fMode & ~RTFS_TYPE_MASK) | RTFS_TYPE_SYMLINK;
-
-    /* writable? */
-    if (!(pObjInfo->Attr.fMode & RTFS_DOS_READONLY))
-        pObjInfo->Attr.fMode |= RTFS_UNIX_IWUSR | RTFS_UNIX_IWGRP | RTFS_UNIX_IWOTH;
+    pObjInfo->Attr.fMode = rtFsNtfsConvertFileattribsToMode(fFileAttribs, pFilename,
+                                                            pFilenameAttr ? pFilenameAttr->cbResident : 0);
 
     return VINF_SUCCESS;
 }
@@ -2205,7 +2235,8 @@ static int rtFsNtfsVol_LoadIndexNodeInfo(PCRTFSNTFSIDXROOTINFO pRootInfo, PRTFSN
                                        pszWhat, cbUsed, cbMinIndex, cbAllocated);
     uint32_t const offFirstEntry = RT_LE2H_U32(pIndexHdr->offFirstEntry);
     if (   offFirstEntry < sizeof(*pIndexHdr)
-        || offFirstEntry >= cbUsed - sizeof(NTFSIDXENTRYHDR)
+        || (   offFirstEntry > cbUsed - sizeof(NTFSIDXENTRYHDR)
+            && offFirstEntry != cbUsed /* empty dir */)
         || (offFirstEntry & 7) )
         return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                        "%s: Bogus first entry offset: %#x (min %#x, max %#x, 8 byte aligned)",
@@ -2531,10 +2562,10 @@ static int rtFsNtfsIdxRootInfo_QueryNode(PRTFSNTFSIDXROOTINFO pRootInfo, int64_t
         {
             rc = VERR_VFS_BOGUS_FORMAT;
             if (pNode->pNode->RecHdr.uMagic != NTFSREC_MAGIC_INDEX_ALLOC)
-                LogRel(("rtFsNtfsIdxRootInfo_QueryNode(iNode=%#x): Invalid node magic %#x\n",
+                LogRel(("rtFsNtfsIdxRootInfo_QueryNode(iNode=%#x): Invalid node magic %#x -> VERR_VFS_BOGUS_FORMAT\n",
                         iNode, RT_LE2H_U32(pNode->pNode->RecHdr.uMagic) ));
             else if ((int64_t)RT_LE2H_U64(pNode->pNode->iSelfAddress) != iNode)
-                LogRel(("rtFsNtfsIdxRootInfo_QueryNode(iNode=%#x): Wrong iSelfAddress: %#x\n",
+                LogRel(("rtFsNtfsIdxRootInfo_QueryNode(iNode=%#x): Wrong iSelfAddress: %#x -> VERR_VFS_BOGUS_FORMAT\n",
                         iNode, RT_LE2H_U64(pNode->pNode->iSelfAddress) ));
             else
             {
@@ -2677,8 +2708,12 @@ static int rtFsNtfsIdxComp_Filename(PCRTUTF16 pwszUpper1, uint8_t cwcUpper1, PCR
     }
 
     if (!cwcUpper1)
-        return cwcFilename2 ? -1 : 0;
-    return cwcFilename2 ? 1 : 0;
+    {
+        if (!cwcFilename2)
+            return 0;
+        return -1;
+    }
+    return 1;
 }
 
 
@@ -2782,7 +2817,9 @@ static int rtFsNtfsDirShrd_Lookup(PRTFSNTFSDIRSHRD pShared, const char *pszEntry
                         *ppNode     = pNode;
                         *ppEntryHdr = papEntries[iEntry];
                         *ppFilename = pFilename;
-                        LogFlow(("rtFsNtfsDirShrd_Lookup(%s): Found it!\n", pszEntry));
+                        LogFlow(("rtFsNtfsDirShrd_Lookup(%s): Found it! (iEntry=%u, FileMftRec=%#RX64 sqn %#x)\n",
+                                 pszEntry, iEntry, NTFSMFTREF_GET_IDX(&papEntries[iEntry]->u.FileMftRec),
+                                 NTFSMFTREF_GET_SEQ(&papEntries[iEntry]->u.FileMftRec) ));
                         return VINF_SUCCESS;
                     }
                     else
@@ -2825,6 +2862,54 @@ static int rtFsNtfsDirShrd_Lookup(PRTFSNTFSDIRSHRD pShared, const char *pszEntry
 
     /* not reached */
 }
+
+
+/**
+ * Gets the shared directory structure for the parent.
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The directory which parent we want.
+ * @param   ppDotDot    Where to return the referenced shared parent dir
+ *                      structure.
+ *
+ */
+static int rtFsNtfsDirShrd_QueryParent(PRTFSNTFSDIRSHRD pThis, PRTFSNTFSDIRSHRD *ppDotDot)
+{
+    /*
+     * The root directory has no parent from our perspective.
+     */
+    if (pThis == pThis->RootInfo.NodeInfo.pVol->pRootDir)
+    {
+        rtFsNtfsDirShrd_Retain(pThis);
+        *ppDotDot = pThis;
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Look for a filename record so we know where we go from here.
+     */
+    PRTFSNTFSCORE pCore = pThis->RootInfo.pRootAttr->pCore;
+    PRTFSNTFSATTR pCurAttr;
+    RTListForEach(&pCore->AttribHead, pCurAttr, RTFSNTFSATTR, ListEntry)
+    {
+        if (   pCurAttr->pAttrHdr->uAttrType == NTFS_AT_FILENAME
+            && pCurAttr->cbResident >= RT_UOFFSETOF(NTFSATFILENAME, wszFilename))
+        {
+            PCNTFSATFILENAME pFilename = (PCNTFSATFILENAME)NTFSATTRIBHDR_GET_RES_VALUE_PTR(pCurAttr->pAttrHdr);
+            int rc = rtFsNtfsVol_QueryOrCreateSharedDirByMftRef(pThis->RootInfo.NodeInfo.pVol, &pFilename->ParentDirMftRec,
+                                                                ppDotDot, NULL /*pErrInfo*/, "..");
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+            LogRel(("rtFsNtfsDirShrd_QueryParent: rtFsNtfsVol_QueryOrCreateSharedDirByMftRef failed: %Rrc\n", rc));
+            return rc;
+        }
+    }
+
+    LogRel(("rtFsNtfsDirShrd_QueryParent: Couldn't find '..' filename for MFT record %RX64!\n",
+            pThis->RootInfo.pRootAttr->pCore->pMftRec->TreeNode.Key));
+    return VERR_VFS_BOGUS_FORMAT;
+}
+
 
 
 /**
@@ -3055,8 +3140,7 @@ static DECLCALLBACK(int) rtFsNtfsDir_Open(void *pvThis, const char *pszEntry, ui
             return VERR_IS_A_DIRECTORY;
 
         PRTFSNTFSDIRSHRD pSharedToOpen;
-        if (   pszEntry[1] == '\0'
-            || pVol->pRootDir == pShared)
+        if (pszEntry[1] == '\0')
         {
             pSharedToOpen = pShared;
             rtFsNtfsDirShrd_Retain(pSharedToOpen);
@@ -3064,22 +3148,8 @@ static DECLCALLBACK(int) rtFsNtfsDir_Open(void *pvThis, const char *pszEntry, ui
         }
         else
         {
-            /* Find a parent mft reference */
             pSharedToOpen = NULL;
-            rc = VERR_VFS_BOGUS_FORMAT;
-            PRTFSNTFSCORE pCore = pShared->RootInfo.pRootAttr->pCore;
-            PRTFSNTFSATTR pCurAttr;
-            RTListForEach(&pCore->AttribHead, pCurAttr, RTFSNTFSATTR, ListEntry)
-            {
-                if (   pCurAttr->pAttrHdr->uAttrType == NTFS_AT_FILENAME
-                    && pCurAttr->cbResident >= sizeof(NTFSATFILENAME))
-                {
-                    PCNTFSATFILENAME pFilename = (PCNTFSATFILENAME)NTFSATTRIBHDR_GET_RES_VALUE_PTR(pCurAttr->pAttrHdr);
-                    rc = rtFsNtfsVol_QueryOrCreateSharedDirByMftRef(pVol, &pFilename->ParentDirMftRec,
-                                                                    &pSharedToOpen, NULL /*pErrInfo*/, "..");
-                    break;
-                }
-            }
+            rc = rtFsNtfsDirShrd_QueryParent(pShared, &pSharedToOpen);
         }
         if (RT_SUCCESS(rc))
         {
@@ -3238,6 +3308,24 @@ static DECLCALLBACK(int) rtFsNtfsDir_RenameEntry(void *pvThis, const char *pszEn
 
 
 /**
+ * Cleans up the directory enumeration stack, releasing all node references.
+ *
+ * @param   pThis               The open directory instance data.
+ */
+static void rtFsNtfsDir_StackCleanup(PRTFSNTFSDIR pThis)
+{
+    while (pThis->cEnumStackEntries > 0)
+    {
+        PRTFSNTFSIDXSTACKENTRY pEntry = &pThis->paEnumStack[--pThis->cEnumStackEntries];
+        rtFsNtfsIdxNode_Release(pEntry->pNodeInfo->pNode);
+        pEntry->pNodeInfo = NULL;
+    }
+    if (pThis->paEnumStack)
+        pThis->paEnumStack[0].iNext = 0;
+}
+
+
+/**
  * @interface_method_impl{RTVFSDIROPS,pfnRewindDir}
  */
 static DECLCALLBACK(int) rtFsNtfsDir_RewindDir(void *pvThis)
@@ -3245,15 +3333,77 @@ static DECLCALLBACK(int) rtFsNtfsDir_RewindDir(void *pvThis)
     PRTFSNTFSDIR pThis = (PRTFSNTFSDIR)pvThis;
     LogFlow(("rtFsNtfsDir_RewindDir\n"));
 
-    while (pThis->cEnumStackEntries > 0)
-    {
-        PRTFSNTFSIDXSTACKENTRY pEntry = &pThis->paEnumStack[--pThis->cEnumStackEntries];
-        rtFsNtfsIdxNode_Release(pEntry->pNodeInfo->pNode);
-        pEntry->pNodeInfo = NULL;
-    }
+    rtFsNtfsDir_StackCleanup(pThis);
     pThis->fNoMoreFiles = false;
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Descends down @a iSubnode to the first entry in left most leaf node.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The open directory instance data.
+ * @param   pRootInfo           The root info structure.
+ * @param   iSubnode            The subnode address to descend thru.
+ */
+static int rtFsNtfsDir_StackDescend(PRTFSNTFSDIR pThis, PRTFSNTFSIDXROOTINFO pRootInfo, int64_t iSubnode)
+{
+    for (;;)
+    {
+        /* Load the node. */
+        PRTFSNTFSIDXNODE pNode;
+        int rc = rtFsNtfsIdxRootInfo_QueryNode(pRootInfo, iSubnode, &pNode);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+        {
+            LogFlow(("rtFsNtfsDir_StackDescend: rtFsNtfsIdxRootInfo_QueryNode(%#RX64) error %Rrc!\n", iSubnode, rc));
+            return rc;
+        }
+
+        /* Push it onto the stack. */
+        uint32_t iStack = pThis->cEnumStackEntries;
+        if (iStack + 1 < pThis->cEnumStackMaxDepth)
+        { /* likely */ }
+        else if (pThis->cEnumStackMaxDepth < 1024)
+        {
+            Assert(pThis->cEnumStackMaxDepth> 0);
+            uint32_t cDepth = pThis->cEnumStackMaxDepth * 2;
+            Log5(("rtFsNtfsDir_ReadDir: Growing stack size to %u entries (from %u)\n", cDepth, pThis->cEnumStackMaxDepth));
+            void *pvNew = RTMemRealloc(pThis->paEnumStack, cDepth * sizeof(pThis->paEnumStack[0]));
+            if (pvNew)
+                pThis->paEnumStack = (PRTFSNTFSIDXSTACKENTRY)pvNew;
+            else
+                return VERR_NO_MEMORY;
+            pThis->cEnumStackMaxDepth = cDepth;
+        }
+        else
+        {
+            LogRel(("rtFsNtfsDir_StackDescend: Badly unbalanced index! (MFT record #%#RX64) -> VERR_VFS_BOGUS_FORMAT\n",
+                    pThis->pShared->RootInfo.pRootAttr->pCore->pMftRec->TreeNode.Key));
+            return VERR_VFS_BOGUS_FORMAT;
+        }
+
+        Log5(("rtFsNtfsDir_ReadDir: pushing %#RX64 (cEntries=%u, iStack=%u)\n", iSubnode, pNode->NodeInfo.cEntries, iStack));
+        pThis->paEnumStack[iStack].iNext     = 0;
+        pThis->paEnumStack[iStack].fDescend  = false;
+        pThis->paEnumStack[iStack].pNodeInfo = &pNode->NodeInfo;
+        pThis->cEnumStackEntries = iStack + 1;
+
+        /* Stop if this is a leaf node. */
+        if (   !pNode->NodeInfo.fInternal
+            || !pNode->NodeInfo.cEntries /* paranoia */)
+            return VINF_SUCCESS;
+
+        /* Get the first entry and check that it's an internal node before trying to following it. */
+        PCNTFSIDXENTRYHDR pFirstEntry = pNode->NodeInfo.papEntries[0];
+        if (pFirstEntry->fFlags & NTFSIDXENTRYHDR_F_INTERNAL)
+        { /* likely */ }
+        else
+            return VINF_SUCCESS;
+        iSubnode = NTFSIDXENTRYHDR_GET_SUBNODE(pFirstEntry);
+    }
 }
 
 
@@ -3263,13 +3413,270 @@ static DECLCALLBACK(int) rtFsNtfsDir_RewindDir(void *pvThis)
 static DECLCALLBACK(int) rtFsNtfsDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry,
                                             RTFSOBJATTRADD enmAddAttr)
 {
-    PRTFSNTFSDIR    pThis   = (PRTFSNTFSDIR)pvThis;
+    PRTFSNTFSDIR     pThis   = (PRTFSNTFSDIR)pvThis;
+    PRTFSNTFSDIRSHRD pShared = pThis->pShared;
+    int              rc;
+    Log(("rtFsNtfsDir_ReadDir\n"));
+
+    /*
+     * Return immediately if no files at hand.
+     */
     if (pThis->fNoMoreFiles)
         return VERR_NO_MORE_FILES;
-    Log(("rtFsNtfsDir_ReadDir\n"));
-    //PRTFSNTFSDIRSHRD pShared = pThis->pShared;
-    NOREF(pvThis); NOREF(pDirEntry); NOREF(pcbDirEntry); NOREF(enmAddAttr);
-    return VERR_NOT_IMPLEMENTED;
+
+    /*
+     * Make sure we've got a stack before we jump into the fray.
+     */
+    if (!pThis->cEnumStackMaxDepth)
+    {
+        uint32_t cDepth;
+        if (!pShared->RootInfo.pAlloc)
+            cDepth = 2;
+        else
+        {
+            cDepth = ASMBitFirstSetU64(pShared->RootInfo.pAlloc->cbValue / RT_LE2H_U32(pShared->RootInfo.pRoot->cbIndexNode));
+            cDepth += 3;
+        }
+
+        pThis->paEnumStack = (PRTFSNTFSIDXSTACKENTRY)RTMemAllocZ(cDepth * sizeof(pThis->paEnumStack[0]));
+        if (!pThis->paEnumStack)
+            return VERR_NO_MEMORY;
+        pThis->cEnumStackMaxDepth   = cDepth;
+        pThis->cEnumStackEntries    = 0;
+        Log5(("rtFsNtfsDir_ReadDir: Initial stack size: %u entries\n", cDepth));
+        //pThis->paEnumStack[0].iNext = 0;
+    }
+
+    /*
+     * Deal with '.' and '..' by using stack entry zero without setting cEnumStack to zero.
+     * This is fine because we've got the fNoMoreFiles flag that got checked already.
+     */
+    size_t const cbDirEntry = *pcbDirEntry;
+    if (pThis->cEnumStackEntries == 0)
+    {
+        if (pThis->paEnumStack[0].iNext <= 1)
+        {
+
+            *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName[pThis->paEnumStack[0].iNext + 2]);
+            if (*pcbDirEntry > cbDirEntry)
+                return VERR_BUFFER_OVERFLOW;
+
+            /* Names. */
+            pDirEntry->cbName = pThis->paEnumStack[0].iNext + 1;
+            pDirEntry->szName[0]                     = '.';
+            pDirEntry->szName[pDirEntry->cbName - 1] = '.';
+            pDirEntry->szName[pDirEntry->cbName]     = '\0';
+            pDirEntry->wszShortName[0]               = '\0';
+            pDirEntry->cwcShortName                  = 0;
+
+            /* Get referenced shared directory structure that we return info about. */
+            PRTFSNTFSDIRSHRD pDotShared;
+            if (pThis->paEnumStack[0].iNext == 0)
+            {
+                rtFsNtfsDirShrd_Retain(pShared);
+                pDotShared = pShared;
+            }
+            else
+            {
+                pDotShared = NULL;
+                rc = rtFsNtfsDirShrd_QueryParent(pShared, &pDotShared);
+                if (RT_FAILURE(rc))
+                {
+                    LogRel(("rtFsNtfsDir_ReadDir: couldn't find '..' filename! %Rrc\n", rc));
+                    return rc;
+                }
+            }
+
+            /* Get the info. */
+            rc = rtFsNtfsCore_QueryInfo(pDotShared->RootInfo.pRootAttr->pCore, pDotShared->RootInfo.pRootAttr,
+                                        &pDirEntry->Info, enmAddAttr);
+            rtFsNtfsDirShrd_Release(pDotShared);
+            if (RT_SUCCESS(rc))
+                pThis->paEnumStack[0].iNext++;
+            Log5(("rtFsNtfsDir_ReadDir: => '%s' (%Rrc)\n", pDirEntry->szName, rc));
+            return rc;
+        }
+
+        /*
+         * Push the root onto the stack and decend down the left side of the tree.
+         */
+        PRTFSNTFSIDXNODEINFO pNodeInfo  = &pShared->RootInfo.NodeInfo;
+        pThis->paEnumStack[0].pNodeInfo = pNodeInfo;
+        pThis->paEnumStack[0].iNext     = 0;
+        pThis->cEnumStackEntries        = 1;
+        Log5(("rtFsNtfsDir_ReadDir: pushing root\n"));
+        if (   pNodeInfo->fInternal
+            && pNodeInfo->cEntries > 0
+            && (pNodeInfo->papEntries[0]->fFlags & NTFSIDXENTRYHDR_F_INTERNAL) /* parnaoia */ )
+        {
+            rc = rtFsNtfsDir_StackDescend(pThis, &pShared->RootInfo, NTFSIDXENTRYHDR_GET_SUBNODE(pNodeInfo->papEntries[0]));
+            if (RT_FAILURE(rc))
+            {
+                pThis->fNoMoreFiles = true;
+                rtFsNtfsDir_StackCleanup(pThis);
+                return rc;
+            }
+        }
+    }
+
+    /*
+     * Work the stack.
+     */
+    int32_t iStack = pThis->cEnumStackEntries - 1;
+    while (iStack >= 0)
+    {
+        PRTFSNTFSIDXNODEINFO pNodeInfo  = pThis->paEnumStack[iStack].pNodeInfo;
+        uint32_t             iNext      = pThis->paEnumStack[iStack].iNext;
+        if (iNext < pNodeInfo->cEntries)
+        {
+            PCNTFSIDXENTRYHDR pEntry = pNodeInfo->papEntries[iNext];
+            if (   !(pEntry->fFlags & NTFSIDXENTRYHDR_F_INTERNAL)
+                || !pThis->paEnumStack[iStack].fDescend)
+            {
+                if (!(pEntry->fFlags & NTFSIDXENTRYHDR_F_END))
+                {
+                    /*
+                     * Try return the current entry.
+                     */
+                    PCNTFSATFILENAME pFilename = (PCNTFSATFILENAME)(pEntry + 1);
+
+                    /* Deal with the filename. */
+                    size_t cchFilename;
+                    rc = RTUtf16CalcUtf8LenEx(pFilename->wszFilename, pFilename->cwcFilename, &cchFilename);
+                    if (RT_FAILURE(rc))
+                    {
+                        cchFilename = 48;
+                        LogRel(("rtFsNtfsDir_ReadDir: Bad filename (%Rrc) %.*Rhxs\n",
+                                rc, pFilename->cwcFilename * sizeof(RTUTF16), pFilename->wszFilename));
+                    }
+                    *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName[cchFilename + 1]);
+                    if (*pcbDirEntry > cbDirEntry)
+                    {
+                        Log5(("rtFsNtfsDir_ReadDir: returns VERR_BUFFER_OVERFLOW (for '%.*ls')\n",
+                              pFilename->cwcFilename, pFilename->wszFilename));
+                        return VERR_BUFFER_OVERFLOW;
+                    }
+
+                    char *pszDst = pDirEntry->szName;
+                    if (RT_SUCCESS(rc))
+                        rc = RTUtf16ToUtf8Ex(pFilename->wszFilename, pFilename->cwcFilename, &pszDst,
+                                             cbDirEntry - RT_UOFFSETOF(RTDIRENTRYEX, szName), &cchFilename);
+                    if (RT_FAILURE(rc))
+                        cchFilename = RTStrPrintf(pDirEntry->szName, cbDirEntry - RT_UOFFSETOF(RTDIRENTRYEX, szName),
+                                                  "{invalid-name-%#RX64}", NTFSMFTREF_GET_IDX(&pEntry->u.FileMftRec));
+                    pDirEntry->cbName = (uint16_t)cchFilename;
+
+                    /* Figure out how to detect short names. */
+                    pDirEntry->cwcShortName    = 0;
+                    pDirEntry->wszShortName[0] = '\0';
+
+                    /* Standard attributes: file mode, sizes and timestamps. */
+                    pDirEntry->Info.cbObject    = RT_LE2H_U64(pFilename->cbData);
+                    pDirEntry->Info.cbAllocated = RT_LE2H_U64(pFilename->cbAllocated);
+                    RTTimeSpecSetNtTime(&pDirEntry->Info.BirthTime,        RT_LE2H_U64(pFilename->iCreationTime));
+                    RTTimeSpecSetNtTime(&pDirEntry->Info.ModificationTime, RT_LE2H_U64(pFilename->iLastDataModTime));
+                    RTTimeSpecSetNtTime(&pDirEntry->Info.ChangeTime,       RT_LE2H_U64(pFilename->iLastMftModTime));
+                    RTTimeSpecSetNtTime(&pDirEntry->Info.AccessTime,       RT_LE2H_U64(pFilename->iLastAccessTime));
+                    pDirEntry->Info.Attr.fMode = rtFsNtfsConvertFileattribsToMode(RT_LE2H_U32(pFilename->fFileAttribs), pFilename,
+                                                                                  RT_LE2H_U16(pEntry->cbKey));
+
+                    /* additional stuff. */
+                    switch (enmAddAttr)
+                    {
+                        case RTFSOBJATTRADD_NOTHING:
+                            enmAddAttr = RTFSOBJATTRADD_UNIX;
+                            RT_FALL_THRU();
+                        case RTFSOBJATTRADD_UNIX:
+                            pDirEntry->Info.Attr.u.Unix.uid             = NIL_RTUID;
+                            pDirEntry->Info.Attr.u.Unix.gid             = NIL_RTGID;
+                            pDirEntry->Info.Attr.u.Unix.cHardlinks      = 1;
+                            pDirEntry->Info.Attr.u.Unix.INodeIdDevice   = 0;
+                            pDirEntry->Info.Attr.u.Unix.INodeId         = NTFSMFTREF_GET_IDX(&pEntry->u.FileMftRec);
+                            pDirEntry->Info.Attr.u.Unix.fFlags          = 0;
+                            pDirEntry->Info.Attr.u.Unix.GenerationId    = 0;
+                            pDirEntry->Info.Attr.u.Unix.Device          = 0;
+                            break;
+
+                        case RTFSOBJATTRADD_UNIX_OWNER:
+                            pDirEntry->Info.Attr.u.UnixOwner.uid = NIL_RTUID;
+                            pDirEntry->Info.Attr.u.UnixOwner.szName[0] = '\0';
+                            break;
+
+                        case RTFSOBJATTRADD_UNIX_GROUP:
+                            pDirEntry->Info.Attr.u.UnixGroup.gid = NIL_RTGID;
+                            pDirEntry->Info.Attr.u.UnixGroup.szName[0] = '\0';
+                            break;
+
+                        case RTFSOBJATTRADD_EASIZE:
+                            if (!(pFilename->fFileAttribs & RT_H2LE_U32_C(NTFS_FA_REPARSE_POINT)))
+                                pDirEntry->Info.Attr.u.EASize.cb = pFilename->u.cbPackedEas;
+                            else
+                                pDirEntry->Info.Attr.u.EASize.cb = 0;
+                            break;
+
+                        default:
+                            AssertFailed();
+                            RT_ZERO(pDirEntry->Info.Attr.u);
+                            break;
+                    }
+                    pDirEntry->Info.Attr.enmAdditional = enmAddAttr;
+
+                    /*
+                     * Advance the stack entry to the next entry and return.
+                     */
+                    Log5(("rtFsNtfsDir_ReadDir: => iStack=%u iNext=%u - '%.*ls'\n",
+                          iStack, iNext, pFilename->cwcFilename,  pFilename->wszFilename));
+                    pThis->paEnumStack[iStack].iNext    = iNext + 1;
+                    pThis->paEnumStack[iStack].fDescend = true;
+                    return VINF_SUCCESS;
+                }
+
+                /*
+                 * End node, so pop it.  We join the beoynd-end-of-entries path
+                 * further down, forcing the descend code to use continue.
+                 */
+            }
+            else
+            {
+                /*
+                 * Descend.
+                 */
+                rc = rtFsNtfsDir_StackDescend(pThis, &pShared->RootInfo,
+                                              NTFSIDXENTRYHDR_GET_SUBNODE(pNodeInfo->papEntries[iNext]));
+                if (RT_SUCCESS(rc))
+                {
+                    pThis->paEnumStack[iStack].fDescend = false;
+                    iStack = pThis->cEnumStackEntries - 1;
+                    continue;
+                }
+                pThis->fNoMoreFiles = true;
+                rtFsNtfsDir_StackCleanup(pThis);
+                return rc;
+            }
+        }
+
+        /*
+         * Pop at stack entry.
+         */
+        Log5(("rtFsNtfsDir_ReadDir: popping %#RX64 (iNext=%u, cEntries=%u, iStack=%u) -> %#RX64 (iNext=%d, cEntries=%u)\n",
+              pNodeInfo->pNode ? pNodeInfo->pNode->pNode->iSelfAddress : 0, iNext, pNodeInfo->cEntries, iStack,
+              iStack > 0 && pThis->paEnumStack[iStack - 1].pNodeInfo->pNode
+              ? pThis->paEnumStack[iStack - 1].pNodeInfo->pNode->pNode->iSelfAddress : UINT64_MAX,
+              iStack > 0 ? pThis->paEnumStack[iStack - 1].iNext : -1,
+              iStack > 0 ? pThis->paEnumStack[iStack - 1].pNodeInfo->cEntries : 0 ));
+        rtFsNtfsIdxNode_Release(pNodeInfo->pNode);
+        pThis->paEnumStack[iStack].pNodeInfo = NULL;
+        pThis->cEnumStackEntries = iStack;
+        iStack--;
+        Assert(iStack < 0 || !pThis->paEnumStack[iStack].fDescend);
+    }
+
+    /*
+     * The End.
+     */
+    Log5(("rtFsNtfsDir_ReadDir: no more files\n"));
+    pThis->fNoMoreFiles = true;
+    return VERR_NO_MORE_FILES;
 }
 
 
