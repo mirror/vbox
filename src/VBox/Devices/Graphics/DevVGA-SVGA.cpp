@@ -4947,6 +4947,64 @@ int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 }
 
 /**
+ * Destructs PVMSVGAR3STATE structure.
+ *
+ * @param   pThis          The VGA instance.
+ * @param   pSVGAState     Pointer to the structure. It is not deallocated.
+ */
+static void vmsvgaR3StateDestruct(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
+{
+#ifndef VMSVGA_USE_EMT_HALT_CODE
+    if (pSVGAState->hBusyDelayedEmts != NIL_RTSEMEVENTMULTI)
+    {
+        RTSemEventMultiDestroy(pSVGAState->hBusyDelayedEmts);
+        pSVGAState->hBusyDelayedEmts = NIL_RTSEMEVENT;
+    }
+#endif
+
+    if (pSVGAState->Cursor.fActive)
+    {
+        RTMemFree(pSVGAState->Cursor.pData);
+        pSVGAState->Cursor.pData = NULL;
+        pSVGAState->Cursor.fActive = false;
+    }
+
+    if (pSVGAState->paGMR)
+    {
+        for (unsigned i = 0; i < pThis->svga.cGMR; ++i)
+            if (pSVGAState->paGMR[i].paDesc)
+                RTMemFree(pSVGAState->paGMR[i].paDesc);
+
+        RTMemFree(pSVGAState->paGMR);
+        pSVGAState->paGMR = NULL;
+    }
+}
+
+/**
+ * Constructs PVMSVGAR3STATE structure.
+ *
+ * @returns VBox status code.
+ * @param   pThis          The VGA instance.
+ * @param   pSVGAState     Pointer to the structure. It is already allocated.
+ */
+static int vmsvgaR3StateConstruct(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
+{
+    int rc = VINF_SUCCESS;
+    RT_ZERO(*pSVGAState);
+
+    pSVGAState->paGMR = (PGMR)RTMemAllocZ(pThis->svga.cGMR * sizeof(GMR));
+    AssertReturn(pSVGAState->paGMR, VERR_NO_MEMORY);
+
+#ifndef VMSVGA_USE_EMT_HALT_CODE
+    /* Create semaphore for delaying EMTs wait for the FIFO to stop being busy. */
+    rc = RTSemEventMultiCreate(&pSVGAState->hBusyDelayedEmts);
+    AssertRCReturn(rc, rc);
+#endif
+
+    return rc;
+}
+
+/**
  * Resets the SVGA hardware state
  *
  * @returns VBox status code.
@@ -4963,7 +5021,6 @@ int vmsvgaReset(PPDMDEVINS pDevIns)
 
     Log(("vmsvgaReset\n"));
 
-
     /* Reset the FIFO processing as well as the 3d state (if we have one). */
     pThis->svga.pFIFOR3[SVGA_FIFO_NEXT_CMD] = pThis->svga.pFIFOR3[SVGA_FIFO_STOP] = 0; /** @todo should probably let the FIFO thread do this ... */
     int rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_RESET, NULL /*pvParam*/, 10000 /*ms*/);
@@ -4971,7 +5028,10 @@ int vmsvgaReset(PPDMDEVINS pDevIns)
     /* Reset other stuff. */
     pThis->svga.cScratchRegion = VMSVGA_SCRATCH_SIZE;
     RT_ZERO(pThis->svga.au32ScratchRegion);
-    RT_ZERO(*pThis->svga.pSvgaR3State);
+
+    vmsvgaR3StateDestruct(pThis, pThis->svga.pSvgaR3State);
+    vmsvgaR3StateConstruct(pThis, pThis->svga.pSvgaR3State);
+
     RT_BZERO(pThis->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
 
     /* Register caps. */
@@ -5025,30 +5085,11 @@ int vmsvgaDestruct(PPDMDEVINS pDevIns)
     /*
      * Destroy the special SVGA state.
      */
-    PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
-    if (pSVGAState)
+    if (pThis->svga.pSvgaR3State)
     {
-# ifndef VMSVGA_USE_EMT_HALT_CODE
-        if (pSVGAState->hBusyDelayedEmts != NIL_RTSEMEVENTMULTI)
-        {
-            RTSemEventMultiDestroy(pSVGAState->hBusyDelayedEmts);
-            pSVGAState->hBusyDelayedEmts = NIL_RTSEMEVENT;
-        }
-# endif
-        if (pSVGAState->Cursor.fActive)
-            RTMemFree(pSVGAState->Cursor.pData);
+        vmsvgaR3StateDestruct(pThis, pThis->svga.pSvgaR3State);
 
-        if (pSVGAState->paGMR)
-        {
-            for (unsigned i = 0; i < pThis->svga.cGMR; ++i)
-                if (pSVGAState->paGMR[i].paDesc)
-                    RTMemFree(pSVGAState->paGMR[i].paDesc);
-
-            RTMemFree(pSVGAState->paGMR);
-            pSVGAState->paGMR = NULL;
-        }
-
-        RTMemFree(pSVGAState);
+        RTMemFree(pThis->svga.pSvgaR3State);
         pThis->svga.pSvgaR3State = NULL;
     }
 
@@ -5090,13 +5131,7 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     pThis->svga.cScratchRegion = VMSVGA_SCRATCH_SIZE;
     memset(pThis->svga.au32ScratchRegion, 0, sizeof(pThis->svga.au32ScratchRegion));
 
-    pThis->svga.pSvgaR3State = (PVMSVGAR3STATE)RTMemAllocZ(sizeof(VMSVGAR3STATE));
-    AssertReturn(pThis->svga.pSvgaR3State, VERR_NO_MEMORY);
-    pSVGAState = pThis->svga.pSvgaR3State;
-
     pThis->svga.cGMR = VMSVGA_MAX_GMR_IDS;
-    pSVGAState->paGMR = (PGMR)RTMemAllocZ(pThis->svga.cGMR * sizeof(GMR));
-    AssertReturn(pSVGAState->paGMR, VERR_NO_MEMORY);
 
     /* Necessary for creating a backup of the text mode frame buffer when switching into svga mode. */
     pThis->svga.pbVgaFrameBufferR3 = (uint8_t *)RTMemAllocZ(VMSVGA_VGA_FB_BACKUP_SIZE);
@@ -5120,11 +5155,13 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
         return rc;
     }
 
-# ifndef VMSVGA_USE_EMT_HALT_CODE
-    /* Create semaphore for delaying EMTs wait for the FIFO to stop being busy. */
-    rc = RTSemEventMultiCreate(&pSVGAState->hBusyDelayedEmts);
-    AssertRCReturn(rc, rc);
-# endif
+    pThis->svga.pSvgaR3State = (PVMSVGAR3STATE)RTMemAlloc(sizeof(VMSVGAR3STATE));
+    AssertReturn(pThis->svga.pSvgaR3State, VERR_NO_MEMORY);
+
+    rc = vmsvgaR3StateConstruct(pThis, pThis->svga.pSvgaR3State);
+    AssertMsgRCReturn(rc, ("Failed to create pSvgaR3State.\n"), rc);
+
+    pSVGAState = pThis->svga.pSvgaR3State;
 
     /* Register caps. */
     pThis->svga.u32RegCaps = SVGA_CAP_GMR | SVGA_CAP_GMR2 | SVGA_CAP_CURSOR | SVGA_CAP_CURSOR_BYPASS_2 | SVGA_CAP_EXTENDED_FIFO | SVGA_CAP_IRQMASK | SVGA_CAP_PITCHLOCK | SVGA_CAP_TRACES | SVGA_CAP_SCREEN_OBJECT_2 | SVGA_CAP_ALPHA_CURSOR;
