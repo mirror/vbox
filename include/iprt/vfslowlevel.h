@@ -882,6 +882,8 @@ typedef struct RTVFSIOSTREAMOPS
      *                      VERR_INTERRUPTED (@c true) or if this condition
      *                      should be hidden from the caller (@c false).
      * @param   pfRetEvents Where to return the event mask.
+     * @note    Optional.  If NULL, immediately return all requested non-error
+     *          events, waiting for errors works like sleep.
      * @sa      RTPollSetAdd, RTPoll, RTPollNoResume.
      */
     DECLCALLBACKMEMBER(int, pfnPollOne)(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,

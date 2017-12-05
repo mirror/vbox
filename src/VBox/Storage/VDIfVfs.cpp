@@ -160,25 +160,6 @@ static DECLCALLBACK(int) vdIfVfsIos_Flush(void *pvThis)
 
 
 /**
- * @interface_method_impl{RTVFSIOSTREAMOPS,pfnPollOne}
- */
-static DECLCALLBACK(int) vdIfVfsIos_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
-                                            uint32_t *pfRetEvents)
-{
-    NOREF(pvThis);
-    int rc;
-    if (fEvents != RTPOLL_EVT_ERROR)
-    {
-        *pfRetEvents = fEvents & ~RTPOLL_EVT_ERROR;
-        rc = VINF_SUCCESS;
-    }
-    else
-        rc = RTVfsUtilDummyPollOne(fEvents, cMillies, fIntr, pfRetEvents);
-    return rc;
-}
-
-
-/**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnTell}
  */
 static DECLCALLBACK(int) vdIfVfsIos_Tell(void *pvThis, PRTFOFF poffActual)
@@ -207,7 +188,7 @@ DECL_HIDDEN_CONST(const RTVFSIOSTREAMOPS) g_vdIfVfsIosOps =
     vdIfVfsIos_Read,
     vdIfVfsIos_Write,
     vdIfVfsIos_Flush,
-    vdIfVfsIos_PollOne,
+    NULL /*PollOne*/,
     vdIfVfsIos_Tell,
     NULL /*Skip*/,
     NULL /*ZeroFill*/,
@@ -365,7 +346,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_vdIfVfsFileOps =
         vdIfVfsIos_Read,
         vdIfVfsIos_Write,
         vdIfVfsIos_Flush,
-        vdIfVfsIos_PollOne,
+        NULL /*PollOne*/,
         vdIfVfsIos_Tell,
         NULL /*Skip*/,
         NULL /*ZeroFill*/,

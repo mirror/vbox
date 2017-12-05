@@ -7269,17 +7269,6 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_Flush(void *pvThis)
 
 
 /**
- * @interface_method_impl{RTVFSIOSTREAMOPS,pfnPollOne}
- */
-static DECLCALLBACK(int) rtFsIsoMakerOutFile_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
-                                                     uint32_t *pfRetEvents)
-{
-    NOREF(pvThis);
-    return RTVfsUtilDummyPollOne(fEvents, cMillies, fIntr, pfRetEvents);
-}
-
-
-/**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnTell}
  */
 static DECLCALLBACK(int) rtFsIsoMakerOutFile_Tell(void *pvThis, PRTFOFF poffActual)
@@ -7414,7 +7403,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIsoMakerOutputFileOps =
         rtFsIsoMakerOutFile_Read,
         rtFsIsoMakerOutFile_Write,
         rtFsIsoMakerOutFile_Flush,
-        rtFsIsoMakerOutFile_PollOne,
+        NULL /*PollOne*/,
         rtFsIsoMakerOutFile_Tell,
         rtFsIsoMakerOutFile_Skip,
         NULL /*ZeroFill*/,

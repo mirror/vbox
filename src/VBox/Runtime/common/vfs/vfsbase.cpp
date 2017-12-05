@@ -39,6 +39,7 @@
 #include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/poll.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/zero.h>
@@ -113,7 +114,7 @@
         AssertPtr((pIoStreamOps)->pfnRead); \
         AssertPtr((pIoStreamOps)->pfnWrite); \
         AssertPtr((pIoStreamOps)->pfnFlush); \
-        AssertPtr((pIoStreamOps)->pfnPollOne); \
+        AssertPtrNull((pIoStreamOps)->pfnPollOne); \
         AssertPtr((pIoStreamOps)->pfnTell); \
         AssertPtrNull((pIoStreamOps)->pfnSkip); \
         AssertPtrNull((pIoStreamOps)->pfnZeroFill); \
@@ -3646,9 +3647,35 @@ RTDECL(int) RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTMSINTERVA
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
 
-    RTVfsLockAcquireWrite(pThis->Base.hLock);
-    int rc = pThis->pOps->pfnPollOne(pThis->Base.pvThis, fEvents, cMillies, fIntr, pfRetEvents);
-    RTVfsLockReleaseWrite(pThis->Base.hLock);
+    int rc;
+    if (pThis->pOps->pfnPollOne)
+    {
+        RTVfsLockAcquireWrite(pThis->Base.hLock);
+        rc = pThis->pOps->pfnPollOne(pThis->Base.pvThis, fEvents, cMillies, fIntr, pfRetEvents);
+        RTVfsLockReleaseWrite(pThis->Base.hLock);
+    }
+    /*
+     * Default implementation.  Polling for non-error events returns
+     * immediately, waiting for errors will work like sleep.
+     */
+    else if (fEvents != RTPOLL_EVT_ERROR)
+    {
+        *pfRetEvents = fEvents & ~RTPOLL_EVT_ERROR;
+        rc = VINF_SUCCESS;
+    }
+    else if (fIntr)
+        rc = RTThreadSleep(cMillies);
+    else
+    {
+        uint64_t uMsStart = RTTimeMilliTS();
+        do
+            rc = RTThreadSleep(cMillies);
+        while (   rc == VERR_INTERRUPTED
+               && !fIntr
+               && RTTimeMilliTS() - uMsStart < cMillies);
+        if (rc == VERR_INTERRUPTED)
+            rc = VERR_TIMEOUT;
+    }
     return rc;
 }
 
