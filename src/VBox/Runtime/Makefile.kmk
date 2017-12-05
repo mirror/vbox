@@ -2570,11 +2570,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 
 RuntimeR0Drv_SOURCES.netbsd = \
 	common/misc/thread.cpp \
-	common/string/memchr.asm \
-	common/string/memmove.asm \
 	common/string/strpbrk.cpp \
-	common/string/memcmp.asm \
-	common/string/strchr.asm \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
