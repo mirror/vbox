@@ -6270,7 +6270,6 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     Assert(iCrReg <= 15);
 
     VBOXSTRICTRC rcStrict = VERR_SVM_IPE_5;
-    PVM          pVM = pVCpu->CTX_SUFF(pVM);
     bool         fDecodedInstr = false;
     bool const   fSupportsDecodeAssist = hmR0SvmSupportsDecodeAssist(pVCpu, pCtx);
     bool const   fSupportsNextRipSave  = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
