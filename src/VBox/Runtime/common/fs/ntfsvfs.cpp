@@ -295,7 +295,7 @@ typedef RTFSNTFSIDXROOTINFO *PRTFSNTFSIDXROOTINFO;
 typedef RTFSNTFSIDXROOTINFO const *PCRTFSNTFSIDXROOTINFO;
 
 /**
- * Pointer to a shared NTFS directory object.
+ * Shared NTFS directory object.
  */
 typedef struct RTFSNTFSDIRSHRD
 {
@@ -340,6 +340,33 @@ typedef struct RTFSNTFSDIR
 /** Pointer to an open directory instance. */
 typedef RTFSNTFSDIR *PRTFSNTFSDIR;
 
+
+/**
+ * Shared NTFS file object.
+ */
+typedef struct RTFSNTFSFILESHRD
+{
+    /** Reference counter. */
+    uint32_t volatile       cRefs;
+    /** Pointer to the data attribute (core is referenced thru this). */
+    PRTFSNTFSATTR           pData;
+} RTFSNTFSFILESHRD;
+/** Pointer to shared data for a file or data stream. */
+typedef RTFSNTFSFILESHRD *PRTFSNTFSFILESHRD;
+
+
+/**
+ * Open NTFS file instance.
+ */
+typedef struct RTFSNTFSFILE
+{
+    /** Pointer to the shared file data (referenced). */
+    PRTFSNTFSFILESHRD       pShared;
+    /** Current file offset. */
+    uint64_t                offFile;
+} RTFSNTFSFILE;
+/** Pointer to an NTFS open file instance. */
+typedef RTFSNTFSFILE *PRTFSNTFSFILE;
 
 /**
  * Instance data for an NTFS volume.
@@ -1986,7 +2013,6 @@ static int rtFsNtfsCore_QueryInfo(PRTFSNTFSCORE pThis, PRTFSNTFSATTR pAttr, PRTF
         && (int64_t)pObjInfo->cbAllocated < (int64_t)RT_LE2H_U64(pAttr->pAttrHdr->u.NonRes.cbAllocated))
         pObjInfo->cbAllocated = RT_LE2H_U64(pAttr->pAttrHdr->u.NonRes.cbAllocated);
 
-
     /*
      * See if we can find a filename record before we try convert the file attributes to mode.
      */
@@ -2011,6 +2037,351 @@ static int rtFsNtfsCore_QueryInfo(PRTFSNTFSCORE pThis, PRTFSNTFSATTR pAttr, PRTF
 
     return VINF_SUCCESS;
 }
+
+
+
+
+/*
+ *
+ * File operations.
+ * File operations.
+ * File operations.
+ *
+ */
+
+/**
+ * Releases a reference to a shared NTFS file structure.
+ *
+ * @returns New reference count.
+ * @param   pShared             The shared NTFS file structure.
+ */
+static uint32_t rtFsNtfsFileShrd_Release(PRTFSNTFSFILESHRD pShared)
+{
+    uint32_t cRefs = ASMAtomicDecU32(&pShared->cRefs);
+    Assert(cRefs < 64);
+    if (cRefs == 0)
+    {
+        LogFlow(("rtFsNtfsFileShrd_Release(%p): Destroying it\n", pShared));
+        Assert(pShared->pData->uObj.pSharedFile == pShared);
+        pShared->pData->uObj.pSharedFile = NULL;
+        rtFsNtfsCore_Release(pShared->pData->pCore);
+        pShared->pData = NULL;
+        RTMemFree(pShared);
+    }
+    return cRefs;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnClose}
+ */
+static DECLCALLBACK(int) rtFsNtfsFile_Close(void *pvThis)
+{
+    PRTFSNTFSFILE pThis = (PRTFSNTFSFILE)pvThis;
+    LogFlow(("rtFsNtfsFile_Close(%p/%p)\n", pThis, pThis->pShared));
+
+    PRTFSNTFSFILESHRD pShared = pThis->pShared;
+    pThis->pShared = NULL;
+    if (pShared)
+        rtFsNtfsFileShrd_Release(pShared);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
+ */
+static DECLCALLBACK(int) rtFsNtfsFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    PRTFSNTFSFILE       pThis   = (PRTFSNTFSFILE)pvThis;
+    PRTFSNTFSATTR       pDataAttr = pThis->pShared->pData;
+    return rtFsNtfsCore_QueryInfo(pDataAttr->pCore, pDataAttr, pObjInfo, enmAddAttr);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
+ */
+static DECLCALLBACK(int) rtFsNtfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+{
+    PRTFSNTFSFILE pThis = (PRTFSNTFSFILE)pvThis;
+    AssertReturn(pSgBuf->cSegs == 1, VERR_INTERNAL_ERROR_3);
+    RT_NOREF(fBlocking);
+
+    if (off == -1)
+        off = pThis->offFile;
+    else
+        AssertReturn(off >= 0, VERR_INTERNAL_ERROR_3);
+
+    int rc;
+    size_t cbRead = pSgBuf->paSegs[0].cbSeg;
+    if (!pcbRead)
+    {
+        rc = rtFsNtfsAttr_Read(pThis->pShared->pData, off, pSgBuf->paSegs[0].pvSeg, cbRead);
+        if (RT_SUCCESS(rc))
+            pThis->offFile = off + cbRead;
+        Log6(("rtFsNtfsFile_Read: off=%#RX64 cbSeg=%#x -> %Rrc\n", off, pSgBuf->paSegs[0].cbSeg, rc));
+    }
+    else
+    {
+        PRTFSNTFSATTR pDataAttr = pThis->pShared->pData;
+        if ((uint64_t)off >= pDataAttr->cbValue)
+        {
+            *pcbRead = 0;
+            rc = VINF_EOF;
+        }
+        else
+        {
+            if ((uint64_t)off + cbRead <= pDataAttr->cbValue)
+                rc = rtFsNtfsAttr_Read(pThis->pShared->pData, off, pSgBuf->paSegs[0].pvSeg, cbRead);
+            else
+            {
+                /* Return VINF_EOF if beyond end-of-file. */
+                cbRead = (size_t)(pDataAttr->cbValue - (uint64_t)off);
+                rc = rtFsNtfsAttr_Read(pThis->pShared->pData, off, pSgBuf->paSegs[0].pvSeg, cbRead);
+                if (RT_SUCCESS(rc))
+                    rc = VINF_EOF;
+            }
+            if (RT_SUCCESS(rc))
+            {
+                pThis->offFile = off + cbRead;
+                *pcbRead = cbRead;
+            }
+            else
+                *pcbRead = 0;
+        }
+        Log6(("rtFsNtfsFile_Read: off=%#RX64 cbSeg=%#x -> %Rrc *pcbRead=%#x\n", off, pSgBuf->paSegs[0].cbSeg, rc, *pcbRead));
+    }
+
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
+ */
+static DECLCALLBACK(int) rtFsNtfsFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+{
+    RT_NOREF(pvThis, off, pSgBuf, fBlocking, pcbWritten);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnFlush}
+ */
+static DECLCALLBACK(int) rtFsNtfsFile_Flush(void *pvThis)
+{
+    RT_NOREF(pvThis);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnTell}
+ */
+static DECLCALLBACK(int) rtFsNtfsFile_Tell(void *pvThis, PRTFOFF poffActual)
+{
+    PRTFSNTFSFILE pThis = (PRTFSNTFSFILE)pvThis;
+    *poffActual = pThis->offFile;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
+ */
+static DECLCALLBACK(int) rtFsNtfsFile_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
+{
+    RT_NOREF(pvThis, fMode, fMask);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
+ */
+static DECLCALLBACK(int) rtFsNtfsFile_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                                 PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+{
+    RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
+ */
+static DECLCALLBACK(int) rtFsNtfsFile_SetOwner(void *pvThis, RTUID uid, RTGID gid)
+{
+    RT_NOREF(pvThis, uid, gid);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnSeek}
+ */
+static DECLCALLBACK(int) rtFsNtfsFile_Seek(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual)
+{
+    PRTFSNTFSFILE pThis = (PRTFSNTFSFILE)pvThis;
+    RTFOFF offNew;
+    switch (uMethod)
+    {
+        case RTFILE_SEEK_BEGIN:
+            offNew = offSeek;
+            break;
+        case RTFILE_SEEK_END:
+            offNew = (RTFOFF)pThis->pShared->pData->cbValue + offSeek;
+            break;
+        case RTFILE_SEEK_CURRENT:
+            offNew = (RTFOFF)pThis->offFile + offSeek;
+            break;
+        default:
+            return VERR_INVALID_PARAMETER;
+    }
+    if (offNew >= 0)
+    {
+        pThis->offFile = offNew;
+        *poffActual    = offNew;
+        return VINF_SUCCESS;
+    }
+    return VERR_NEGATIVE_SEEK;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnQuerySize}
+ */
+static DECLCALLBACK(int) rtFsNtfsFile_QuerySize(void *pvThis, uint64_t *pcbFile)
+{
+    PRTFSNTFSFILE pThis = (PRTFSNTFSFILE)pvThis;
+    *pcbFile = pThis->pShared->pData->cbValue;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * NTFS FS file operations.
+ */
+DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsNtfsFileOps =
+{
+    { /* Stream */
+        { /* Obj */
+            RTVFSOBJOPS_VERSION,
+            RTVFSOBJTYPE_FILE,
+            "NTFS File",
+            rtFsNtfsFile_Close,
+            rtFsNtfsFile_QueryInfo,
+            RTVFSOBJOPS_VERSION
+        },
+        RTVFSIOSTREAMOPS_VERSION,
+        RTVFSIOSTREAMOPS_FEAT_NO_SG,
+        rtFsNtfsFile_Read,
+        rtFsNtfsFile_Write,
+        rtFsNtfsFile_Flush,
+        NULL /*PollOne*/,
+        rtFsNtfsFile_Tell,
+        NULL /*pfnSkip*/,
+        NULL /*pfnZeroFill*/,
+        RTVFSIOSTREAMOPS_VERSION,
+    },
+    RTVFSFILEOPS_VERSION,
+    0,
+    { /* ObjSet */
+        RTVFSOBJSETOPS_VERSION,
+        RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
+        rtFsNtfsFile_SetMode,
+        rtFsNtfsFile_SetTimes,
+        rtFsNtfsFile_SetOwner,
+        RTVFSOBJSETOPS_VERSION
+    },
+    rtFsNtfsFile_Seek,
+    rtFsNtfsFile_QuerySize,
+    RTVFSFILEOPS_VERSION
+};
+
+
+static int rtFsNtfsVol_NewFile(PRTFSNTFSVOL pThis, uint64_t fOpen, PCNTFSIDXENTRYHDR pEntryHdr, const char *pszStreamName,
+                               PRTVFSFILE phVfsFile, PRTERRINFO pErrInfo, const char *pszWhat)
+{
+    /*
+     * Get the core structure for the MFT record and check that it's a directory we've got.
+     */
+    PRTFSNTFSCORE pCore;
+    int rc = rtFsNtfsVol_QueryCoreForMftRef(pThis, &pEntryHdr->u.FileMftRec, false /*fRelaxedUsa*/, &pCore, pErrInfo);
+    if (RT_SUCCESS(rc))
+    {
+        if (!(pCore->pMftRec->pFileRec->fFlags & NTFSRECFILE_F_DIRECTORY))
+        {
+            /*
+             * Locate the data attribute.
+             */
+            PRTFSNTFSATTR pDataAttr;
+            if (pszStreamName == NULL)
+            {
+                pDataAttr = rtFsNtfsCore_FindUnnamedAttribute(pCore, NTFS_AT_DATA);
+                if (pDataAttr)
+                    rc = VINF_SUCCESS;
+                else
+                    rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_NOT_A_FILE, "%s: no unamed data stream", pszWhat);
+            }
+            else
+            {
+                NOREF(pszStreamName);
+                rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_NOT_IMPLEMENTED, "%s: named data streams not implemented yet", pszWhat);
+                pDataAttr = NULL;
+            }
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Get a referenced shared file structure, creating it if necessary.
+                 */
+                PRTFSNTFSFILESHRD pShared = pDataAttr->uObj.pSharedFile;
+                if (pShared)
+                {
+                    uint32_t cRefs = ASMAtomicIncU32(&pShared->cRefs);
+                    Assert(cRefs > 1); NOREF(cRefs);
+                }
+                else
+                {
+                    pShared = (PRTFSNTFSFILESHRD)RTMemAllocZ(sizeof(*pShared));
+                    if (pShared)
+                    {
+                        pShared->cRefs = 1;
+                        pShared->pData = pDataAttr;
+                        rtFsNtfsCore_Retain(pCore);
+                        pDataAttr->uObj.pSharedFile = pShared;
+                    }
+                }
+                if (pShared)
+                {
+                    /*
+                     * Create the open file instance.
+                     */
+                    PRTFSNTFSFILE pNewFile;
+                    rc = RTVfsNewFile(&g_rtFsNtfsFileOps, sizeof(*pNewFile), fOpen, pThis->hVfsSelf, NIL_RTVFSLOCK,
+                                      phVfsFile, (void **)&pNewFile);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pNewFile->offFile = 0;
+                        pNewFile->pShared = pShared;
+                        return VINF_SUCCESS;
+                    }
+
+                    rtFsNtfsFileShrd_Release(pShared);
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+        }
+        else
+            rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_NOT_A_FILE, "%s: fFlags=%#x", pszWhat, pCore->pMftRec->pFileRec->fFlags);
+        rtFsNtfsCore_Release(pCore);
+    }
+    return rc;
+}
+
 
 
 /*
@@ -3185,16 +3556,14 @@ static DECLCALLBACK(int) rtFsNtfsDir_Open(void *pvThis, const char *pszEntry, ui
             case 0:
                 if (fFlags & RTVFSOBJ_F_OPEN_FILE)
                 {
-                    //RTVFSFILE hVfsFile;
-                    //rc = rtFsIsoFile_New9660(pVol, pShared, pDirRec, cDirRecs,
-                    //                         offDirRec, fOpen, uVersion, &hVfsFile);
-                    //if (RT_SUCCESS(rc))
-                    //{
-                    //    *phVfsObj = RTVfsObjFromFile(hVfsFile);
-                    //    RTVfsFileRelease(hVfsFile);
-                    //    AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
-                    //}
-                    rc = VERR_NOT_IMPLEMENTED;
+                    RTVFSFILE hVfsFile;
+                    rc = rtFsNtfsVol_NewFile(pVol, fOpen, pEntryHdr, NULL /*pszStreamName*/, &hVfsFile, NULL, pszEntry);
+                    if (RT_SUCCESS(rc))
+                    {
+                        *phVfsObj = RTVfsObjFromFile(hVfsFile);
+                        RTVfsFileRelease(hVfsFile);
+                        AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                    }
                 }
                 else
                     rc = VERR_IS_A_FILE;
