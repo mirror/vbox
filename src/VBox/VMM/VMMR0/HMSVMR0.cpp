@@ -1003,6 +1003,10 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
     /*
      * Force a TLB flush for the first world switch if the current CPU differs from the one we ran on last.
      * This can happen both for start & resume due to long jumps back to ring-3.
+     *
+     * We also force a TLB flush every time when executing a nested-guest VCPU as there is no correlation
+     * between it and the physical CPU.
+     *
      * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB,
      * so we cannot reuse the ASIDs without flushing.
      */
