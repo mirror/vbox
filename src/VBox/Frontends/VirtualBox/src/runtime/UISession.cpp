@@ -1472,6 +1472,9 @@ void UISession::updateMenu()
         if (pMenuUI->isConsumable() && !pMenuUI->isConsumed())
             pMenuUI->setConsumed(true);
     }
+    /* Update the dock menu as well: */
+    if(machineLogic())
+        machineLogic()->updateDock();
 }
 #endif /* VBOX_WS_MAC */
 

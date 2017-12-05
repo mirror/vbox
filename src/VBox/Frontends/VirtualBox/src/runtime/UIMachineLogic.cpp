@@ -839,6 +839,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pDockPreviewSelectMonitorGroup(0)
     , m_pDockSettingsMenuSeparator(0)
     , m_DockIconPreviewMonitor(0)
+    , m_pDockSettingMenuAction(0)
 #endif /* VBOX_WS_MAC */
     , m_pHostLedsState(NULL)
     , m_fIsHidLedsSyncEnabled(false)
@@ -1213,9 +1214,12 @@ void UIMachineLogic::prepareHandlers()
 void UIMachineLogic::prepareDock()
 {
     QMenu *pDockMenu = actionPool()->action(UIActionIndexRT_M_Dock)->menu();
-
+    /* Clear the menu to get rid of any previously added actions and separators: */
+    pDockMenu->clear();
+    
     /* Add all the 'Machine' menu entries to the 'Dock' menu: */
     QList<QAction*> actions = actionPool()->action(UIActionIndexRT_M_Machine)->menu()->actions();
+    m_dockMachineMenuActions.clear();
     for (int i=0; i < actions.size(); ++i)
     {
         /* Check if we really have correct action: */
@@ -1229,11 +1233,19 @@ void UIMachineLogic::prepareDock()
         /* Skip actions which have menu (to prevent consuming): */
         if (qobject_cast<UIActionMenu*>(pAction))
             continue;
+        if (!pAction->isAllowed())
+            continue;
         pDockMenu->addAction(actions.at(i));
+        m_dockMachineMenuActions.push_back(actions.at(i));
     }
-    pDockMenu->addSeparator();
+    if (!m_dockMachineMenuActions.empty())
+    {
+        m_dockMachineMenuActions.push_back(pDockMenu->addSeparator());
+    }
 
     QMenu *pDockSettingsMenu = actionPool()->action(UIActionIndexRT_M_Dock_M_DockSettings)->menu();
+    /* Clear the menu to get rid of any previously added actions and separators: */
+    pDockSettingsMenu->clear();
     QActionGroup *pDockPreviewModeGroup = new QActionGroup(this);
     QAction *pDockDisablePreview = actionPool()->action(UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor);
     pDockPreviewModeGroup->addAction(pDockDisablePreview);
@@ -1288,7 +1300,7 @@ void UIMachineLogic::prepareDock()
                 this, SLOT(sltDockPreviewMonitorChanged(QAction*)));
     }
 
-    pDockMenu->addMenu(pDockSettingsMenu);
+    m_pDockSettingMenuAction = pDockMenu->addMenu(pDockSettingsMenu);
 
     /* Add it to the dock: */
     pDockMenu->setAsDockMenu();
@@ -1316,6 +1328,50 @@ void UIMachineLogic::prepareDock()
 void UIMachineLogic::updateDock()
 {
     QMenu *pDockSettingsMenu = actionPool()->action(UIActionIndexRT_M_Dock_M_DockSettings)->menu();
+    AssertReturnVoid(pDockSettingsMenu);
+
+    QMenu *pDockMenu = actionPool()->action(UIActionIndexRT_M_Dock)->menu();
+    AssertReturnVoid(pDockMenu);
+
+    /* Clean previous machine menu actions: */
+    for (int i=0; i < m_dockMachineMenuActions.size(); ++i)
+    {
+        pDockMenu->removeAction(m_dockMachineMenuActions.at(i));
+        if (m_dockMachineMenuActions.at(i)->isSeparator())
+            delete m_dockMachineMenuActions[i];
+    }
+    m_dockMachineMenuActions.clear();
+
+    /* Determine the list of actions to be inserted: */
+    QList<QAction*> actions = actionPool()->action(UIActionIndexRT_M_Machine)->menu()->actions();
+    QList<QAction*> allowedActions;
+    for (int i=0; i < actions.size(); ++i)
+    {
+        /* Check if we really have correct action: */
+        UIAction *pAction = qobject_cast<UIAction*>(actions.at(i));
+        /* Skip incorrect actions: */
+        if (!pAction)
+            continue;
+        /* Skip actions which have 'role' (to prevent consuming): */
+        if (pAction->menuRole() != QAction::NoRole)
+            continue;
+        /* Skip actions which have menu (to prevent consuming): */
+        if (qobject_cast<UIActionMenu*>(pAction))
+            continue;
+        if (!pAction->isAllowed())
+            continue;
+        allowedActions.push_back(actions.at(i));
+    }
+
+    if (!allowedActions.empty())
+    {
+        QAction *separator = new QAction(pDockMenu);
+        separator->setSeparator(true);
+        allowedActions.push_back(separator);
+        pDockMenu->insertActions(m_pDockSettingMenuAction, allowedActions);
+        m_dockMachineMenuActions = allowedActions;
+    }
+
     /* Clean the previous preview actions: */
     if (m_pDockPreviewSelectMonitorGroup)
     {
