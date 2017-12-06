@@ -404,6 +404,12 @@ static DECLCALLBACK(int) usbProxyWinUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB pU
     PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     Assert(pPriv);
 
+    /* Don't even bother if we can't wait for that many objects. */
+    if (pPriv->cPendingUrbs + pPriv->cQueuedUrbs >= (MAXIMUM_WAIT_OBJECTS - 1))
+        return VERR_OUT_OF_RESOURCES;
+    if (pPriv->cPendingUrbs >= RT_ELEMENTS(pPriv->aPendingUrbs))
+        return VERR_OUT_OF_RESOURCES;
+
     /*
      * Allocate and initialize a URB queue structure.
      */
@@ -475,6 +481,7 @@ static DECLCALLBACK(int) usbProxyWinUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB pU
             /* insert into the queue */
             RTCritSectEnter(&pPriv->CritSect);
             unsigned j = pPriv->cPendingUrbs;
+            Assert(j < RT_ELEMENTS(pPriv->aPendingUrbs));
             pPriv->aPendingUrbs[j] = pQUrbWin;
             pPriv->cPendingUrbs++;
             RTCritSectLeave(&pPriv->CritSect);
