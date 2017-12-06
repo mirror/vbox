@@ -978,6 +978,7 @@ static DECLCALLBACK(uint32_t) ohciR3RhGetUSBVersions(PVUSBIROOTHUBPORT pInterfac
 static DECLCALLBACK(int) ohciR3RhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE pDev, unsigned uPort)
 {
     POHCI pThis = VUSBIROOTHUBPORT_2_OHCI(pInterface);
+    VUSBSPEED enmSpeed;
     LogFlow(("ohciR3RhAttach: pDev=%p uPort=%u\n", pDev, uPort));
     PDMCritSectEnter(pThis->pDevInsR3->pCritSectRoR3, VERR_IGNORED);
 
@@ -987,13 +988,16 @@ static DECLCALLBACK(int) ohciR3RhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVI
     Assert(uPort >= 1 && uPort <= OHCI_NDP_CFG(pThis));
     uPort--;
     Assert(!pThis->RootHub.aPorts[uPort].pDev);
+    enmSpeed = pDev->pfnGetSpeed(pDev);
     /* Only LS/FS devices can end up here. */
-    Assert(pDev->pfnGetSpeed(pDev) == VUSB_SPEED_LOW || pDev->pfnGetSpeed(pDev) == VUSB_SPEED_FULL);
+    Assert(enmSpeed == VUSB_SPEED_LOW || enmSpeed == VUSB_SPEED_FULL);
 
     /*
      * Attach it.
      */
     pThis->RootHub.aPorts[uPort].fReg = OHCI_PORT_CCS | OHCI_PORT_CSC;
+    if (enmSpeed == VUSB_SPEED_LOW)
+        pThis->RootHub.aPorts[uPort].fReg |= OHCI_PORT_LSDA;
     pThis->RootHub.aPorts[uPort].pDev = pDev;
     ohciR3RhPortPower(&pThis->RootHub, uPort, 1 /* power on */);
 
