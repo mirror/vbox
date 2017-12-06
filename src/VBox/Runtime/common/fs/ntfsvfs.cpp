@@ -2066,6 +2066,7 @@ static int rtFsNtfsCore_QueryInfo(PRTFSNTFSCORE pThis, PRTFSNTFSATTR pAttr, PRTF
         {
             default:
                 AssertFailed();
+                RT_FALL_THRU();
             case NTFS_AT_DATA:
                 fFileAttribs = NTFS_FA_NORMAL;
                 break;
