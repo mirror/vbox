@@ -4947,12 +4947,12 @@ int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 }
 
 /**
- * Destructs PVMSVGAR3STATE structure.
+ * Destructor for PVMSVGAR3STATE structure.
  *
  * @param   pThis          The VGA instance.
  * @param   pSVGAState     Pointer to the structure. It is not deallocated.
  */
-static void vmsvgaR3StateDestruct(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
+static void vmsvgaR3StateTerm(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
 {
 #ifndef VMSVGA_USE_EMT_HALT_CODE
     if (pSVGAState->hBusyDelayedEmts != NIL_RTSEMEVENTMULTI)
@@ -4981,13 +4981,13 @@ static void vmsvgaR3StateDestruct(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
 }
 
 /**
- * Constructs PVMSVGAR3STATE structure.
+ * Constructor for PVMSVGAR3STATE structure.
  *
  * @returns VBox status code.
  * @param   pThis          The VGA instance.
  * @param   pSVGAState     Pointer to the structure. It is already allocated.
  */
-static int vmsvgaR3StateConstruct(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
+static int vmsvgaR3StateInit(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
 {
     int rc = VINF_SUCCESS;
     RT_ZERO(*pSVGAState);
@@ -5029,8 +5029,8 @@ int vmsvgaReset(PPDMDEVINS pDevIns)
     pThis->svga.cScratchRegion = VMSVGA_SCRATCH_SIZE;
     RT_ZERO(pThis->svga.au32ScratchRegion);
 
-    vmsvgaR3StateDestruct(pThis, pThis->svga.pSvgaR3State);
-    vmsvgaR3StateConstruct(pThis, pThis->svga.pSvgaR3State);
+    vmsvgaR3StateTerm(pThis, pThis->svga.pSvgaR3State);
+    vmsvgaR3StateInit(pThis, pThis->svga.pSvgaR3State);
 
     RT_BZERO(pThis->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
 
@@ -5087,7 +5087,7 @@ int vmsvgaDestruct(PPDMDEVINS pDevIns)
      */
     if (pThis->svga.pSvgaR3State)
     {
-        vmsvgaR3StateDestruct(pThis, pThis->svga.pSvgaR3State);
+        vmsvgaR3StateTerm(pThis, pThis->svga.pSvgaR3State);
 
         RTMemFree(pThis->svga.pSvgaR3State);
         pThis->svga.pSvgaR3State = NULL;
@@ -5158,7 +5158,7 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     pThis->svga.pSvgaR3State = (PVMSVGAR3STATE)RTMemAlloc(sizeof(VMSVGAR3STATE));
     AssertReturn(pThis->svga.pSvgaR3State, VERR_NO_MEMORY);
 
-    rc = vmsvgaR3StateConstruct(pThis, pThis->svga.pSvgaR3State);
+    rc = vmsvgaR3StateInit(pThis, pThis->svga.pSvgaR3State);
     AssertMsgRCReturn(rc, ("Failed to create pSvgaR3State.\n"), rc);
 
     pSVGAState = pThis->svga.pSvgaR3State;
