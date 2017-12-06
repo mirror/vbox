@@ -7249,16 +7249,6 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_Read(void *pvThis, RTFOFF off, PCRT
 
 
 /**
- * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
- */
-static DECLCALLBACK(int) rtFsIsoMakerOutFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
-{
-    RT_NOREF(pvThis, off, pSgBuf, fBlocking, pcbWritten);
-    return VERR_WRITE_PROTECT;
-}
-
-
-/**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnFlush}
  */
 static DECLCALLBACK(int) rtFsIsoMakerOutFile_Flush(void *pvThis)
@@ -7286,37 +7276,6 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_Skip(void *pvThis, RTFOFF cb)
 {
     RTFOFF offIgnored;
     return rtFsIsoMakerOutFile_Seek(pvThis, cb, RTFILE_SEEK_CURRENT, &offIgnored);
-}
-
-
-/**
- * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
- */
-static DECLCALLBACK(int) rtFsIsoMakerOutFile_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
-{
-    RT_NOREF(pvThis, fMode, fMask);
-    return VERR_WRITE_PROTECT;
-}
-
-
-/**
- * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
- */
-static DECLCALLBACK(int) rtFsIsoMakerOutFile_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
-                                                      PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
-{
-    RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
-    return VERR_WRITE_PROTECT;
-}
-
-
-/**
- * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
- */
-static DECLCALLBACK(int) rtFsIsoMakerOutFile_SetOwner(void *pvThis, RTUID uid, RTGID gid)
-{
-    RT_NOREF(pvThis, uid, gid);
-    return VERR_WRITE_PROTECT;
 }
 
 
@@ -7401,7 +7360,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIsoMakerOutputFileOps =
         RTVFSIOSTREAMOPS_VERSION,
         RTVFSIOSTREAMOPS_FEAT_NO_SG,
         rtFsIsoMakerOutFile_Read,
-        rtFsIsoMakerOutFile_Write,
+        NULL /*Write*/,
         rtFsIsoMakerOutFile_Flush,
         NULL /*PollOne*/,
         rtFsIsoMakerOutFile_Tell,
@@ -7414,9 +7373,9 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIsoMakerOutputFileOps =
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
         RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
-        rtFsIsoMakerOutFile_SetMode,
-        rtFsIsoMakerOutFile_SetTimes,
-        rtFsIsoMakerOutFile_SetOwner,
+        NULL /*SetMode*/,
+        NULL /*SetTimes*/,
+        NULL /*SetOwner*/,
         RTVFSOBJSETOPS_VERSION
     },
     rtFsIsoMakerOutFile_Seek,

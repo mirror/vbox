@@ -80,9 +80,9 @@
     { \
         Assert((a_pSetOps)->uVersion == RTVFSOBJSETOPS_VERSION); \
         Assert((a_pSetOps)->offObjOps == (a_offObjOps)); \
-        AssertPtr((a_pSetOps)->pfnSetMode); \
-        AssertPtr((a_pSetOps)->pfnSetTimes); \
-        AssertPtr((a_pSetOps)->pfnSetOwner); \
+        AssertPtrNull((a_pSetOps)->pfnSetMode); \
+        AssertPtrNull((a_pSetOps)->pfnSetTimes); \
+        AssertPtrNull((a_pSetOps)->pfnSetOwner); \
         Assert((a_pSetOps)->uEndMarker == RTVFSOBJSETOPS_VERSION); \
     } while (0)
 
@@ -112,7 +112,7 @@
         Assert((pIoStreamOps)->uVersion == RTVFSIOSTREAMOPS_VERSION); \
         Assert(!((pIoStreamOps)->fFeatures & ~RTVFSIOSTREAMOPS_FEAT_VALID_MASK)); \
         AssertPtr((pIoStreamOps)->pfnRead); \
-        AssertPtr((pIoStreamOps)->pfnWrite); \
+        AssertPtrNull((pIoStreamOps)->pfnWrite); \
         AssertPtr((pIoStreamOps)->pfnFlush); \
         AssertPtrNull((pIoStreamOps)->pfnPollOne); \
         AssertPtr((pIoStreamOps)->pfnTell); \
@@ -125,8 +125,7 @@
 #define RTVFSSYMLINK_ASSERT_OPS(pSymlinkOps, a_enmType) \
     do { \
         RTVFSOBJ_ASSERT_OPS(&(pSymlinkOps)->Obj, a_enmType); \
-        RTVFSOBJSET_ASSERT_OPS(&(pSymlinkOps)->ObjSet, \
-            RT_OFFSETOF(RTVFSSYMLINKOPS, Obj) - RT_OFFSETOF(RTVFSSYMLINKOPS, ObjSet)); \
+        RTVFSOBJSET_ASSERT_OPS(&(pSymlinkOps)->ObjSet, RT_OFFSETOF(RTVFSSYMLINKOPS, Obj) - RT_OFFSETOF(RTVFSSYMLINKOPS, ObjSet)); \
         Assert((pSymlinkOps)->uVersion == RTVFSSYMLINKOPS_VERSION); \
         Assert(!(pSymlinkOps)->fReserved); \
         AssertPtr((pSymlinkOps)->pfnRead); \
@@ -1316,9 +1315,15 @@ RTDECL(int)         RTVfsObjSetMode(RTVFSOBJ hVfsObj, RTFMODE fMode, RTFMODE fMa
     PCRTVFSOBJSETOPS pObjSetOps = rtVfsObjGetSetOps(pThis);
     AssertReturn(pObjSetOps, VERR_INVALID_FUNCTION);
 
-    RTVfsLockAcquireWrite(pThis->hLock);
-    int rc = pObjSetOps->pfnSetMode(pThis->pvThis, fMode, fMask);
-    RTVfsLockReleaseWrite(pThis->hLock);
+    int rc;
+    if (pObjSetOps->pfnSetMode)
+    {
+        RTVfsLockAcquireWrite(pThis->hLock);
+        rc = pObjSetOps->pfnSetMode(pThis->pvThis, fMode, fMask);
+        RTVfsLockReleaseWrite(pThis->hLock);
+    }
+    else
+        rc = VERR_WRITE_PROTECT;
     return rc;
 }
 
@@ -1338,9 +1343,15 @@ RTDECL(int)         RTVfsObjSetTimes(RTVFSOBJ hVfsObj, PCRTTIMESPEC pAccessTime,
     PCRTVFSOBJSETOPS pObjSetOps = rtVfsObjGetSetOps(pThis);
     AssertReturn(pObjSetOps, VERR_INVALID_FUNCTION);
 
-    RTVfsLockAcquireWrite(pThis->hLock);
-    int rc = pObjSetOps->pfnSetTimes(pThis->pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
-    RTVfsLockReleaseWrite(pThis->hLock);
+    int rc;
+    if (pObjSetOps->pfnSetTimes)
+    {
+        RTVfsLockAcquireWrite(pThis->hLock);
+        rc = pObjSetOps->pfnSetTimes(pThis->pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
+        RTVfsLockReleaseWrite(pThis->hLock);
+    }
+    else
+        rc = VERR_WRITE_PROTECT;
     return rc;
 }
 
@@ -1354,9 +1365,15 @@ RTDECL(int)         RTVfsObjSetOwner(RTVFSOBJ hVfsObj, RTUID uid, RTGID gid)
     PCRTVFSOBJSETOPS pObjSetOps = rtVfsObjGetSetOps(pThis);
     AssertReturn(pObjSetOps, VERR_INVALID_FUNCTION);
 
-    RTVfsLockAcquireWrite(pThis->hLock);
-    int rc = pObjSetOps->pfnSetOwner(pThis->pvThis, uid, gid);
-    RTVfsLockReleaseWrite(pThis->hLock);
+    int rc;
+    if (pObjSetOps->pfnSetOwner)
+    {
+        RTVfsLockAcquireWrite(pThis->hLock);
+        rc = pObjSetOps->pfnSetOwner(pThis->pvThis, uid, gid);
+        RTVfsLockReleaseWrite(pThis->hLock);
+    }
+    else
+        rc = VERR_WRITE_PROTECT;
     return rc;
 }
 
@@ -3498,13 +3515,19 @@ RTDECL(int) RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cb
     AssertReturn(fBlocking || pcbWritten, VERR_INVALID_PARAMETER);
     AssertReturn(pThis->fFlags & RTFILE_O_WRITE, VERR_ACCESS_DENIED);
 
-    RTSGSEG Seg = { (void *)pvBuf, cbToWrite };
-    RTSGBUF SgBuf;
-    RTSgBufInit(&SgBuf, &Seg, 1);
+    int rc;
+    if (pThis->pOps->pfnWrite)
+    {
+        RTSGSEG Seg = { (void *)pvBuf, cbToWrite };
+        RTSGBUF SgBuf;
+        RTSgBufInit(&SgBuf, &Seg, 1);
 
-    RTVfsLockAcquireWrite(pThis->Base.hLock);
-    int rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, -1 /*off*/, &SgBuf, fBlocking, pcbWritten);
-    RTVfsLockReleaseWrite(pThis->Base.hLock);
+        RTVfsLockAcquireWrite(pThis->Base.hLock);
+        rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, -1 /*off*/, &SgBuf, fBlocking, pcbWritten);
+        RTVfsLockReleaseWrite(pThis->Base.hLock);
+    }
+    else
+        rc = VERR_WRITE_PROTECT;
     return rc;
 }
 
@@ -3521,13 +3544,19 @@ RTDECL(int) RTVfsIoStrmWriteAt(RTVFSIOSTREAM hVfsIos, RTFOFF off, const void *pv
     AssertReturn(fBlocking || pcbWritten, VERR_INVALID_PARAMETER);
     AssertReturn(pThis->fFlags & RTFILE_O_WRITE, VERR_ACCESS_DENIED);
 
-    RTSGSEG Seg = { (void *)pvBuf, cbToWrite };
-    RTSGBUF SgBuf;
-    RTSgBufInit(&SgBuf, &Seg, 1);
+    int rc;
+    if (pThis->pOps->pfnWrite)
+    {
+        RTSGSEG Seg = { (void *)pvBuf, cbToWrite };
+        RTSGBUF SgBuf;
+        RTSgBufInit(&SgBuf, &Seg, 1);
 
-    RTVfsLockAcquireWrite(pThis->Base.hLock);
-    int rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, off, &SgBuf, fBlocking, pcbWritten);
-    RTVfsLockReleaseWrite(pThis->Base.hLock);
+        RTVfsLockAcquireWrite(pThis->Base.hLock);
+        rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, off, &SgBuf, fBlocking, pcbWritten);
+        RTVfsLockReleaseWrite(pThis->Base.hLock);
+    }
+    else
+        rc = VERR_WRITE_PROTECT;
     return rc;
 }
 
@@ -3589,40 +3618,45 @@ RTDECL(int) RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, RTFOFF off, PCRTSGBUF pSgB
     AssertReturn(fBlocking || pcbWritten, VERR_INVALID_PARAMETER);
     AssertReturn(pThis->fFlags & RTFILE_O_WRITE, VERR_ACCESS_DENIED);
 
-    RTVfsLockAcquireWrite(pThis->Base.hLock);
     int rc;
-    if (!(pThis->pOps->fFeatures & RTVFSIOSTREAMOPS_FEAT_NO_SG))
-        rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, off, pSgBuf, fBlocking, pcbWritten);
-    else
+    if (pThis->pOps->pfnWrite)
     {
-        size_t cbWritten = 0;
-        rc = VINF_SUCCESS;
-
-        for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+        RTVfsLockAcquireWrite(pThis->Base.hLock);
+        if (!(pThis->pOps->fFeatures & RTVFSIOSTREAMOPS_FEAT_NO_SG))
+            rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, off, pSgBuf, fBlocking, pcbWritten);
+        else
         {
-            RTSGBUF SgBuf;
-            RTSgBufInit(&SgBuf, &pSgBuf->paSegs[iSeg], 1);
+            size_t cbWritten = 0;
+            rc = VINF_SUCCESS;
 
-            size_t cbWrittenSeg = 0;
-            rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, off, &SgBuf, fBlocking, pcbWritten ? &cbWrittenSeg : NULL);
-            if (RT_FAILURE(rc))
-                break;
-            if (pcbWritten)
+            for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
             {
-                cbWritten += cbWrittenSeg;
-                if (cbWrittenSeg != SgBuf.paSegs[0].cbSeg)
-                    break;
-                if (off != -1)
-                    off += cbWrittenSeg;
-            }
-            else if (off != -1)
-                off += pSgBuf->paSegs[iSeg].cbSeg;
-        }
+                RTSGBUF SgBuf;
+                RTSgBufInit(&SgBuf, &pSgBuf->paSegs[iSeg], 1);
 
-        if (pcbWritten)
-            *pcbWritten = cbWritten;
+                size_t cbWrittenSeg = 0;
+                rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, off, &SgBuf, fBlocking, pcbWritten ? &cbWrittenSeg : NULL);
+                if (RT_FAILURE(rc))
+                    break;
+                if (pcbWritten)
+                {
+                    cbWritten += cbWrittenSeg;
+                    if (cbWrittenSeg != SgBuf.paSegs[0].cbSeg)
+                        break;
+                    if (off != -1)
+                        off += cbWrittenSeg;
+                }
+                else if (off != -1)
+                    off += pSgBuf->paSegs[iSeg].cbSeg;
+            }
+
+            if (pcbWritten)
+                *pcbWritten = cbWritten;
+        }
+        RTVfsLockReleaseWrite(pThis->Base.hLock);
     }
-    RTVfsLockReleaseWrite(pThis->Base.hLock);
+    else
+        rc = VERR_WRITE_PROTECT;
     return rc;
 }
 

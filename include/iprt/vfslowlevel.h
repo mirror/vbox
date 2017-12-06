@@ -326,6 +326,7 @@ typedef struct RTVFSOBJSETOPS
      * @param   fMode               The new mode bits.
      * @param   fMask               The mask indicating which bits we are
      *                              changing.
+     * @note    Optional, failing with VERR_WRITE_PROTECT if NULL.
      * @sa      RTFileSetMode
      */
     DECLCALLBACKMEMBER(int, pfnSetMode)(void *pvThis, RTFMODE fMode, RTFMODE fMask);
@@ -345,6 +346,7 @@ typedef struct RTVFSOBJSETOPS
      *                              not to be changed.
      * @remarks See RTFileSetTimes for restrictions and behavior imposed by the
      *          host OS or underlying VFS provider.
+     * @note    Optional, failing with VERR_WRITE_PROTECT if NULL.
      * @sa      RTFileSetTimes
      */
     DECLCALLBACKMEMBER(int, pfnSetTimes)(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
@@ -359,6 +361,7 @@ typedef struct RTVFSOBJSETOPS
      *                      unchanged.
      * @param   gid         The group ID of the new owner group.  NIL_RTGID if
      *                      unchanged.
+     * @note    Optional, failing with VERR_WRITE_PROTECT if NULL.
      * @sa      RTFileSetOwner
      */
     DECLCALLBACKMEMBER(int, pfnSetOwner)(void *pvThis, RTUID uid, RTGID gid);
@@ -858,6 +861,7 @@ typedef struct RTVFSIOSTREAMOPS
      * @param   pcbWritten  Where to return the number of bytes actually
      *                      written.  This is set it 0 by the caller.  If
      *                      NULL, try write it all and fail if incomplete.
+     * @note    Optional, failing with VERR_WRITE_PROTECT if NULL.
      * @sa      RTFileWrite, RTFileWriteAt.
      */
     DECLCALLBACKMEMBER(int, pfnWrite)(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten);

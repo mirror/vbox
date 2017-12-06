@@ -2027,16 +2027,6 @@ static DECLCALLBACK(int) rtFsIsoFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
 
 
 /**
- * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
- */
-static DECLCALLBACK(int) rtFsIsoFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
-{
-    RT_NOREF(pvThis, off, pSgBuf, fBlocking, pcbWritten);
-    return VERR_WRITE_PROTECT;
-}
-
-
-/**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnFlush}
  */
 static DECLCALLBACK(int) rtFsIsoFile_Flush(void *pvThis)
@@ -2084,37 +2074,6 @@ static DECLCALLBACK(int) rtFsIsoFile_Tell(void *pvThis, PRTFOFF poffActual)
     PRTFSISOFILEOBJ pThis = (PRTFSISOFILEOBJ)pvThis;
     *poffActual = pThis->offFile;
     return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
- */
-static DECLCALLBACK(int) rtFsIsoFile_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
-{
-    RT_NOREF(pvThis, fMode, fMask);
-    return VERR_WRITE_PROTECT;
-}
-
-
-/**
- * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
- */
-static DECLCALLBACK(int) rtFsIsoFile_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
-                                                 PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
-{
-    RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
-    return VERR_WRITE_PROTECT;
-}
-
-
-/**
- * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
- */
-static DECLCALLBACK(int) rtFsIsoFile_SetOwner(void *pvThis, RTUID uid, RTGID gid)
-{
-    RT_NOREF(pvThis, uid, gid);
-    return VERR_WRITE_PROTECT;
 }
 
 
@@ -2181,7 +2140,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIsoFileOps =
         RTVFSIOSTREAMOPS_VERSION,
         RTVFSIOSTREAMOPS_FEAT_NO_SG,
         rtFsIsoFile_Read,
-        rtFsIsoFile_Write,
+        NULL /*Write*/,
         rtFsIsoFile_Flush,
         rtFsIsoFile_PollOne,
         rtFsIsoFile_Tell,
@@ -2194,9 +2153,9 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIsoFileOps =
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
         RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
-        rtFsIsoFile_SetMode,
-        rtFsIsoFile_SetTimes,
-        rtFsIsoFile_SetOwner,
+        NULL /*SetMode*/,
+        NULL /*SetTimes*/,
+        NULL /*SetOwner*/,
         RTVFSOBJSETOPS_VERSION
     },
     rtFsIsoFile_Seek,
@@ -2859,37 +2818,6 @@ static DECLCALLBACK(int) rtFsIsoDir_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInf
 
 
 /**
- * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
- */
-static DECLCALLBACK(int) rtFsIsoDir_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
-{
-    RT_NOREF(pvThis, fMode, fMask);
-    return VERR_WRITE_PROTECT;
-}
-
-
-/**
- * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
- */
-static DECLCALLBACK(int) rtFsIsoDir_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
-                                                 PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
-{
-    RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
-    return VERR_WRITE_PROTECT;
-}
-
-
-/**
- * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
- */
-static DECLCALLBACK(int) rtFsIsoDir_SetOwner(void *pvThis, RTUID uid, RTGID gid)
-{
-    RT_NOREF(pvThis, uid, gid);
-    return VERR_WRITE_PROTECT;
-}
-
-
-/**
  * @interface_method_impl{RTVFSDIROPS,pfnOpen}
  */
 static DECLCALLBACK(int) rtFsIsoDir_Open(void *pvThis, const char *pszEntry, uint64_t fOpen,
@@ -3500,9 +3428,9 @@ static const RTVFSDIROPS g_rtFsIsoDirOps =
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
         RT_OFFSETOF(RTVFSDIROPS, Obj) - RT_OFFSETOF(RTVFSDIROPS, ObjSet),
-        rtFsIsoDir_SetMode,
-        rtFsIsoDir_SetTimes,
-        rtFsIsoDir_SetOwner,
+        NULL /*SetMode*/,
+        NULL /*SetTimes*/,
+        NULL /*SetOwner*/,
         RTVFSOBJSETOPS_VERSION
     },
     rtFsIsoDir_Open,
