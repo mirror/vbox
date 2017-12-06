@@ -409,7 +409,7 @@ private:
     QAction *m_pDockSettingsMenuSeparator;
     int m_DockIconPreviewMonitor;
     QAction *m_pDockSettingMenuAction;
-    /* Keep a list of machine menu actions that we add to dock menu: */
+    /* Keeps a list of machine menu actions that we add to dock menu. */
     QList<QAction*> m_dockMachineMenuActions;
 #endif /* VBOX_WS_MAC */
 

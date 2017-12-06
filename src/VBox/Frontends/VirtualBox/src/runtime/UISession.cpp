@@ -1473,7 +1473,7 @@ void UISession::updateMenu()
             pMenuUI->setConsumed(true);
     }
     /* Update the dock menu as well: */
-    if(machineLogic())
+    if (machineLogic())
         machineLogic()->updateDock();
 }
 #endif /* VBOX_WS_MAC */
