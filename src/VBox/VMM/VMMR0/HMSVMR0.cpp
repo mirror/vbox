@@ -1310,7 +1310,7 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
         /* Catch floating point exceptions if we need to report them to the guest in a different way. */
         if (!(pCtx->cr0 & X86_CR0_NE))
         {
-            Log4(("hmR0SvmLoadGuestControlRegs: Intercepting Guest CR0.MP Old-style FPU handling!!!\n"));
+            Log4(("hmR0SvmLoadSharedCR0: Intercepting Guest CR0.MP Old-style FPU handling!!!\n"));
             fInterceptMF = true;
         }
     }
@@ -2488,6 +2488,9 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pV
         CPUMSetGuestCR3(pVCpu, pVmcb->guest.u64CR3);
         PGMUpdateCR3(pVCpu,    pVmcb->guest.u64CR3);
     }
+
+    Log4(("hmR0SvmSaveGuestState: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX32 CR3=%#RX32 CR4=%#RX32\n", pMixedCtx->cs.Sel,
+          pMixedCtx->rip, pMixedCtx->eflags.u, pMixedCtx->cr0, pMixedCtx->cr3, pMixedCtx->cr4));
 }
 
 
@@ -4308,9 +4311,7 @@ static void hmR0SvmPostRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx,
     hmR0SvmSaveGuestState(pVCpu, pMixedCtx, pVmcbNstGst);       /* Save the nested-guest state from the VMCB to the
                                                                    guest-CPU context. */
 
-    /** @todo This could later be optimized. Not now. */
     HMSvmNstGstVmExitNotify(pVCpu, pMixedCtx);                  /* Restore modified VMCB fields for now, see @bugref{7243#c52} .*/
-    HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);                  /* Ensure we re-modify the fields before next reentry. */
 }
 #endif
 
@@ -6014,6 +6015,14 @@ HMSVM_EXIT_DECL hmR0SvmExitIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
      * Going back to executing guest code here unconditionally causes random scheduling problems (observed on an
      * AMD Phenom 9850 Quad-Core on Windows 64-bit host).
      */
+    Log4(("hmR0SvmExitIntr: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX32 CR3=%#RX32 CR4=%#RX32\n", pCtx->cs.Sel, pCtx->rip,
+          pCtx->eflags.u, pCtx->cr0, pCtx->cr3, pCtx->cr4));
+    Log4(("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
+          "eip=%08x esp=%08x ebp=%08x\n"
+          "cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n",
+          pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
+          pCtx->eip, pCtx->esp, pCtx->ebp, pCtx->cs.Sel, pCtx->ss.Sel, pCtx->ds.Sel, pCtx->fs.Sel,
+          pCtx->gs.Sel, pCtx->eflags.u32));
     return VINF_EM_RAW_INTERRUPT;
 }
 
