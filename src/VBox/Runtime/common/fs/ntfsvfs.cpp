@@ -55,9 +55,15 @@
 #define RTFSNTFS_MAX_WHOLE_BITMAP_CACHE     _64K
 /** The maximum node cache size (in bytes).    */
 #if ARCH_BITS >= 64
-# define RTFSNTFS_MAX_NODE_CACHE_SIZE        _1M
+# define RTFSNTFS_MAX_CORE_CACHE_SIZE       _512K
 #else
-# define RTFSNTFS_MAX_NODE_CACHE_SIZE        _256K
+# define RTFSNTFS_MAX_CORE_CACHE_SIZE       _128K
+#endif
+/** The maximum node cache size (in bytes).    */
+#if ARCH_BITS >= 64
+# define RTFSNTFS_MAX_NODE_CACHE_SIZE       _1M
+#else
+# define RTFSNTFS_MAX_NODE_CACHE_SIZE       _256K
 #endif
 
 /** Makes a combined NTFS version value.
@@ -207,8 +213,14 @@ typedef RTFSNTFSATTR *PRTFSNTFSATTR;
  */
 typedef struct RTFSNTFSCORE
 {
+    /** Entry in either the RTFSNTFSVOL::CoreInUseHead or CoreUnusedHead.
+     * Instances is moved to/from CoreUnusedHead as cRefs reaches zero and one
+     * respectively. */
+    RTLISTNODE          ListEntry;
     /** Reference counter.   */
     uint32_t volatile   cRefs;
+    /** The estimated memory cost of this object. */
+    uint32_t            cbCost;
     /** Pointer to the volume. */
     PRTFSNTFSVOL        pVol;
     /** Pointer to the head of the MFT record chain for this object.
@@ -420,8 +432,21 @@ typedef struct RTFSNTFSVOL
     /** The volume serial number. */
     uint64_t            uSerialNo;
 
+    /** @name MFT record and core object cache.
+     * @{ */
     /** The '$Mft' data attribute. */
     PRTFSNTFSATTR       pMftData;
+    /** Root of the MFT record tree (RTFSNTFSMFTREC). */
+    AVLU64TREE          MftRoot;
+    /** List of in use core objects (RTFSNTFSCORE::cRefs > 0). (RTFSNTFSCORE) */
+    RTLISTANCHOR        CoreInUseHead;
+    /** List of unused core objects (RTFSNTFSCORE::cRefs == 0). (RTFSNTFSCORE)
+     * The most recently used nodes are found at the of the list.  So, when
+     * cbCoreObjects gets to high, we remove and destroy objects from the tail. */
+    RTLISTANCHOR        CoreUnusedHead;
+    /** Total core object memory cost (sum of all RTFSNTFSCORE::cbCost). */
+    size_t              cbCoreObjects;
+    /** @} */
 
     /** @name Allocation bitmap and cache.
      * @{ */
@@ -436,9 +461,6 @@ typedef struct RTFSNTFSVOL
     /** Allocation bitmap cache buffer. */
     void               *pvBitmap;
     /** @} */
-
-    /** Root of the MFT record tree (RTFSNTFSMFTREC). */
-    AVLU64TREE          MftRoot;
 
     /** @name Directory/index related.
      * @{ */
@@ -472,6 +494,8 @@ typedef struct RTFSNTFSVOL
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static uint32_t rtFsNtfsCore_Destroy(PRTFSNTFSCORE pThis);
+static void     rtFsNtfsIdxVol_TrimCoreObjectCache(PRTFSNTFSVOL pThis);
 static uint32_t rtFsNtfsCore_Release(PRTFSNTFSCORE pThis);
 static uint32_t rtFsNtfsCore_Retain(PRTFSNTFSCORE pThis);
 #ifdef LOG_ENABLED
@@ -479,6 +503,7 @@ static void     rtFsNtfsVol_LogIndexRoot(PCNTFSATINDEXROOT pIdxRoot, uint32_t cb
 #endif
 static int      rtFsNtfsVol_NewDirFromShared(PRTFSNTFSVOL pThis, PRTFSNTFSDIRSHRD pSharedDir, PRTVFSDIR phVfsDir);
 static uint32_t rtFsNtfsDirShrd_Retain(PRTFSNTFSDIRSHRD pThis);
+static void     rtFsNtfsIdxVol_TrimIndexNodeCache(PRTFSNTFSVOL pThis);
 static uint32_t rtFsNtfsIdxNode_Release(PRTFSNTFSIDXNODE pNode);
 static uint32_t rtFsNtfsIdxNode_Retain(PRTFSNTFSIDXNODE pNode);
 
@@ -1092,7 +1117,11 @@ static int rtFsNtfsAttr_ParseExtents(PRTFSNTFSATTR pAttrib, PRTFSNTFSEXTENTS pEx
  * Parses the given MTF record and all related records, putting the result in
  * pRec->pCore (with one reference for the caller).
  *
- * ASSUMES caller will release pRec->pCore on failure.
+ * ASSUMES caller will insert pRec->pCore into the CoreInUseHead list on
+ * success, and destroy it on failure.  It is better to have caller do the
+ * inserting/destroy, since we don't want to cache a failed parsing attempt.
+ * (It is also preferable to add RTFSNTFSCORE::cbCost once it's fully calculated
+ * and in the place as the insertion.)
  *
  * @returns IPRT status code.
  * @param   pThis       The volume.
@@ -1125,6 +1154,7 @@ static int rtFsNtfsVol_ParseMft(PRTFSNTFSVOL pThis, PRTFSNTFSMFTREC pRec, PRTERR
     AssertReturn(pCore, VERR_NO_MEMORY);
 
     pCore->cRefs    = 1;
+    pCore->cbCost   = pThis->cbMftRecord + sizeof(*pCore);
     pCore->pVol     = pThis;
     RTListInit(&pCore->AttribHead);
     pCore->pMftRec  = pRec;
@@ -1633,11 +1663,20 @@ static int rtFsNtfsVol_NewCoreForMftIdx(PRTFSNTFSVOL pThis, uint64_t idxMft, boo
         rc = rtFsNtfsVol_ParseMft(pThis, pRec, pErrInfo);
         if (RT_SUCCESS(rc))
         {
+            PRTFSNTFSCORE pCore = pRec->pCore;
             rtFsNtfsMftRec_Release(pRec, pThis);
-            *ppCore = pRec->pCore;
+
+            /* Insert core into the cache list and update the cost, maybe trimming the cache. */
+            RTListAppend(&pThis->CoreInUseHead, &pCore->ListEntry);
+            pThis->cbCoreObjects += pCore->cbCost;
+            if (pThis->cbCoreObjects > RTFSNTFS_MAX_CORE_CACHE_SIZE)
+                rtFsNtfsIdxVol_TrimCoreObjectCache(pThis);
+
+            *ppCore = pCore;
             return VINF_SUCCESS;
         }
-        rtFsNtfsCore_Release(pRec->pCore);
+
+        rtFsNtfsCore_Destroy(pRec->pCore);
         rtFsNtfsMftRec_Release(pRec, pThis);
     }
     return rc;
@@ -1723,6 +1762,9 @@ static int rtFsNtfsVol_QueryCoreForMftRef(PRTFSNTFSVOL pThis, PCNTFSMFTREF pMftR
 /**
  * Destroys a core structure.
  *
+ * ASSUMES the caller has remove @a pThis from the list it's on and updated the
+ * cbCoreObjects as necessary.
+ *
  * @returns 0
  * @param   pThis               The core structure.
  */
@@ -1776,6 +1818,24 @@ static uint32_t rtFsNtfsCore_Destroy(PRTFSNTFSCORE pThis)
 
 
 /**
+ * Trims the core object cache down to RTFSNTFS_MAX_CORE_CACHE_SIZE.
+ *
+ * @param   pThis               The NTFS volume instance.
+ */
+static void rtFsNtfsIdxVol_TrimCoreObjectCache(PRTFSNTFSVOL pThis)
+{
+    while (pThis->cbCoreObjects > RTFSNTFS_MAX_CORE_CACHE_SIZE)
+    {
+        PRTFSNTFSCORE pCore = RTListRemoveFirst(&pThis->CoreUnusedHead, RTFSNTFSCORE, ListEntry);
+        if (!pCore)
+            break;
+        pThis->cbCoreObjects -= pCore->cbCost;
+        rtFsNtfsCore_Destroy(pCore);
+    }
+}
+
+
+/**
  * Releases a refernece to a core structure, maybe destroying it.
  *
  * @returns New reference count.
@@ -1789,7 +1849,14 @@ static uint32_t rtFsNtfsCore_Release(PRTFSNTFSCORE pThis)
         Assert(cRefs < 128);
         if (cRefs != 0)
             return cRefs;
-        return rtFsNtfsCore_Destroy(pThis);
+
+        /* Move from in-use list to unused list.  Trim the cache if too big. */
+        RTListNodeRemove(&pThis->ListEntry);
+
+        PRTFSNTFSVOL pVol = pThis->pVol;
+        RTListAppend(&pVol->CoreUnusedHead, &pThis->ListEntry);
+        if (pVol->cbCoreObjects > RTFSNTFS_MAX_CORE_CACHE_SIZE)
+            rtFsNtfsIdxVol_TrimCoreObjectCache(pVol);
     }
     return 0;
 }
@@ -1804,6 +1871,12 @@ static uint32_t rtFsNtfsCore_Release(PRTFSNTFSCORE pThis)
 static uint32_t rtFsNtfsCore_Retain(PRTFSNTFSCORE pThis)
 {
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    if (cRefs == 1)
+    {
+        /* Move from unused list to in-use list. */
+        RTListNodeRemove(&pThis->ListEntry);
+        RTListAppend(&pThis->pVol->CoreInUseHead, &pThis->ListEntry);
+    }
     Assert(cRefs < 128);
     return cRefs;
 }
@@ -2202,7 +2275,7 @@ static DECLCALLBACK(int) rtFsNtfsFile_SetMode(void *pvThis, RTFMODE fMode, RTFMO
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
  */
 static DECLCALLBACK(int) rtFsNtfsFile_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
-                                                 PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+                                               PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
     RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
     return VERR_WRITE_PROTECT;
@@ -2262,9 +2335,9 @@ static DECLCALLBACK(int) rtFsNtfsFile_QuerySize(void *pvThis, uint64_t *pcbFile)
 
 
 /**
- * NTFS FS file operations.
+ * NTFS file operations.
  */
-DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsNtfsFileOps =
+static const RTVFSFILEOPS g_rtFsNtfsFileOps =
 {
     { /* Stream */
         { /* Obj */
@@ -2366,6 +2439,7 @@ static int rtFsNtfsVol_NewFile(PRTFSNTFSVOL pThis, uint64_t fOpen, PCNTFSIDXENTR
                     {
                         pNewFile->offFile = 0;
                         pNewFile->pShared = pShared;
+                        rtFsNtfsCore_Release(pCore);
                         return VINF_SUCCESS;
                     }
 
@@ -2893,6 +2967,8 @@ static void rtFsNtfsIdxNodeInfo_Delete(PRTFSNTFSIDXNODEINFO pNodeInfo)
  */
 static int rtFsNtfsIdxRootInfo_QueryNode(PRTFSNTFSIDXROOTINFO pRootInfo, int64_t iNode, PRTFSNTFSIDXNODE *ppNode)
 {
+    PRTFSNTFSVOL pVol = pRootInfo->NodeInfo.pVol;
+
     /*
      * A bit of paranoia.  These has been checked already when loading, but it
      * usually doesn't hurt too much to be careful.
@@ -2906,7 +2982,7 @@ static int rtFsNtfsIdxRootInfo_QueryNode(PRTFSNTFSIDXROOTINFO pRootInfo, int64_t
      */
     uint64_t offNode = iNode << pRootInfo->cNodeAddressByteShift;
     uint64_t offNodeOnDisk = rtFsNtfsAttr_OffsetToDisk(pRootInfo->pAlloc, offNode, NULL);
-    PRTFSNTFSIDXNODE pNode = (PRTFSNTFSIDXNODE)RTAvlU64Get(&pRootInfo->NodeInfo.pVol->IdxNodeCacheRoot, offNodeOnDisk);
+    PRTFSNTFSIDXNODE pNode = (PRTFSNTFSIDXNODE)RTAvlU64Get(&pVol->IdxNodeCacheRoot, offNodeOnDisk);
     if (pNode)
     {
         rtFsNtfsIdxNode_Retain(pNode);
@@ -2960,12 +3036,17 @@ static int rtFsNtfsIdxRootInfo_QueryNode(PRTFSNTFSIDXROOTINFO pRootInfo, int64_t
                         pNode->cbCost += pNode->NodeInfo.cEntries * sizeof(pNode->NodeInfo.papEntries[0]);
 
                         /*
-                         * Insert it into the cache.
+                         * Insert it into the cache, trimming the cache if necessary.
                          */
-                        bool fInsertOkay = RTAvlU64Insert(&pRootInfo->NodeInfo.pVol->IdxNodeCacheRoot, &pNode->TreeNode);
+                        bool fInsertOkay = RTAvlU64Insert(&pVol->IdxNodeCacheRoot, &pNode->TreeNode);
                         Assert(fInsertOkay);
                         if (fInsertOkay)
                         {
+                            pVol->cIdxNodes  += 1;
+                            pVol->cbIdxNodes += pNode->cbCost;
+                            if (pVol->cbIdxNodes > RTFSNTFS_MAX_CORE_CACHE_SIZE)
+                                rtFsNtfsIdxVol_TrimIndexNodeCache(pVol);
+
                             *ppNode = pNode;
                             return VINF_SUCCESS;
                         }
@@ -3343,7 +3424,6 @@ static uint32_t rtFsNtfsIdxNode_MaybeDestroy(PRTFSNTFSIDXNODE pNode)
         pVol->cUnusedIdxNodes++;
         if (pVol->cbIdxNodes > RTFSNTFS_MAX_NODE_CACHE_SIZE)
             rtFsNtfsIdxVol_TrimIndexNodeCache(pVol);
-        rtFsNtfsIdxVol_TrimIndexNodeCache(pVol);
         return 0;
     }
     /* not sure if this is needed yet... */
@@ -4050,7 +4130,7 @@ static DECLCALLBACK(int) rtFsNtfsDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEnt
 
 
 /**
- * NTFS file operations.
+ * NTFS directory operations.
  */
 static const RTVFSDIROPS g_rtFsNtfsDirOps =
 {
@@ -4227,6 +4307,50 @@ static int rtFsNtfsVol_QueryClusterState(PRTFSNTFSVOL pThis, uint64_t iCluster, 
 }
 
 
+/**
+ * Callback for RTAvlU64Destroy used by rtFsNtfsVol_Close to destroy the MFT
+ * record cache.
+ *
+ * @returns VINF_SUCCESS
+ * @param   pNode               The MFT record to destroy.
+ * @param   pvUser              Ignored.
+ */
+static DECLCALLBACK(int) rtFsNtFsVol_DestroyCachedMftRecord(PAVLU64NODECORE pNode,  void *pvUser)
+{
+    PRTFSNTFSMFTREC pMftRec = (PRTFSNTFSMFTREC)pNode;
+    RT_NOREF(pvUser);
+
+    RTMemFree(pMftRec->pbRec);
+    pMftRec->pbRec = NULL;
+    RTMemFree(pMftRec);
+
+    return VINF_SUCCESS;
+}
+
+
+
+/**
+ * Callback for RTAvlU64Destroy used by rtFsNtfsVol_Close to destroy the index
+ * node cache.
+ *
+ * @returns VINF_SUCCESS
+ * @param   pNode               The index node to destroy.
+ * @param   pvUser              Ignored.
+ */
+static DECLCALLBACK(int) rtFsNtfsVol_DestroyIndexNode(PAVLU64NODECORE pNode,  void *pvUser)
+{
+    PRTFSNTFSIDXNODE pIdxNode = (PRTFSNTFSIDXNODE)pNode;
+    RT_NOREF(pvUser);
+
+    RTMemFree(pIdxNode->pNode);
+    RTMemFree(pIdxNode->NodeInfo.papEntries);
+    pIdxNode->pNode               = NULL;
+    pIdxNode->NodeInfo.papEntries = NULL;
+    pIdxNode->NodeInfo.pIndexHdr  = NULL;
+    pIdxNode->NodeInfo.pVol       = NULL;
+    return VINF_SUCCESS;
+}
+
 
 /**
  * @interface_method_impl{RTVFSOBJOPS::Obj,pfnClose}
@@ -4234,7 +4358,60 @@ static int rtFsNtfsVol_QueryClusterState(PRTFSNTFSVOL pThis, uint64_t iCluster, 
 static DECLCALLBACK(int) rtFsNtfsVol_Close(void *pvThis)
 {
     PRTFSNTFSVOL pThis = (PRTFSNTFSVOL)pvThis;
+    Log(("rtFsNtfsVol_Close(%p):\n", pThis));
 
+    /*
+     * Index / directory related members.
+     */
+    if (pThis->pRootDir)
+    {
+        rtFsNtfsDirShrd_Release(pThis->pRootDir);
+        pThis->pRootDir = NULL;
+    }
+
+    RTAvlU64Destroy(&pThis->IdxNodeCacheRoot, rtFsNtfsVol_DestroyIndexNode, NULL);
+
+    RTMemFree(pThis->pawcUpcase);
+    pThis->pawcUpcase = NULL;
+
+    pThis->IdxNodeUnusedHead.pPrev = pThis->IdxNodeUnusedHead.pNext = NULL;
+
+    /*
+     * Allocation bitmap cache.
+     */
+    if (pThis->pMftBitmap)
+    {
+        rtFsNtfsCore_Release(pThis->pMftBitmap->pCore);
+        pThis->pMftBitmap = NULL;
+    }
+    RTMemFree(pThis->pvBitmap);
+    pThis->pvBitmap = NULL;
+
+    /*
+     * The MFT and MFT cache.
+     */
+    if (pThis->pMftData)
+    {
+        rtFsNtfsCore_Release(pThis->pMftData->pCore);
+        pThis->pMftData = NULL;
+    }
+
+    Assert(RTListIsEmpty(&pThis->CoreInUseHead));
+    PRTFSNTFSCORE pCurCore, pNextCore;
+    RTListForEachSafe(&pThis->CoreInUseHead, pCurCore, pNextCore, RTFSNTFSCORE, ListEntry)
+        rtFsNtfsCore_Destroy(pCurCore);
+    RTListForEachSafe(&pThis->CoreUnusedHead, pCurCore, pNextCore, RTFSNTFSCORE, ListEntry)
+        rtFsNtfsCore_Destroy(pCurCore);
+
+    pThis->CoreInUseHead.pPrev  = pThis->CoreInUseHead.pNext  = NULL;
+    pThis->CoreUnusedHead.pPrev = pThis->CoreUnusedHead.pNext = NULL;
+
+    Assert(pThis->MftRoot == NULL);
+    RTAvlU64Destroy(&pThis->MftRoot, rtFsNtFsVol_DestroyCachedMftRecord, NULL);
+
+    /*
+     * Backing file and handles.
+     */
     RTVfsFileRelease(pThis->hVfsBacking);
     pThis->hVfsBacking = NIL_RTVFSFILE;
     pThis->hVfsSelf    = NIL_RTVFS;
@@ -4310,7 +4487,10 @@ static DECLCALLBACK(int) rtFsNtfsVol_QueryRangeState(void *pvThis, uint64_t off,
 }
 
 
-DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsNtfsVolOps =
+/**
+ * NTFS volume operations.
+ */
+static const RTVFSOPS g_rtFsNtfsVolOps =
 {
     /* .Obj = */
     {
@@ -4830,45 +5010,48 @@ static int rtFsNtfsVolLoadMft(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
         }
         if (RT_SUCCESS(rc))
         {
-            pThis->pMftData = rtFsNtfsCore_FindUnnamedAttribute(pRec->pCore, NTFS_AT_DATA);
-            if (pThis->pMftData)
+            PRTFSNTFSCORE pCore = pRec->pCore;
+            PRTFSNTFSATTR pMftData;
+            pThis->pMftData = pMftData = rtFsNtfsCore_FindUnnamedAttribute(pCore, NTFS_AT_DATA);
+            if (pMftData)
             {
                 /*
                  * Validate the '$Mft' MFT record.
                  */
-                if (!pThis->pMftData->pAttrHdr->fNonResident)
+                PNTFSATTRIBHDR pAttrHdr = pMftData->pAttrHdr;
+                if (!pAttrHdr->fNonResident)
                     rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 unnamed DATA attribute is resident!");
-                else if (   (uint64_t)RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbAllocated) <  pThis->cbMftRecord * 16U
-                         || (uint64_t)RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbAllocated) >= pThis->cbBacking)
+                else if (   (uint64_t)RT_LE2H_U64(pAttrHdr->u.NonRes.cbAllocated) <  pThis->cbMftRecord * 16U
+                         || (uint64_t)RT_LE2H_U64(pAttrHdr->u.NonRes.cbAllocated) >= pThis->cbBacking)
                     rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                  "MFT record #0 unnamed DATA attribute allocated size is out of range: %#RX64",
-                                                 RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbAllocated));
-                else if (   (uint64_t)RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbInitialized) <  pThis->cbMftRecord * 16U
-                         || (uint64_t)RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbInitialized) >= pThis->cbBacking)
+                                                 RT_LE2H_U64(pAttrHdr->u.NonRes.cbAllocated));
+                else if (   (uint64_t)RT_LE2H_U64(pAttrHdr->u.NonRes.cbInitialized) <  pThis->cbMftRecord * 16U
+                         || (uint64_t)RT_LE2H_U64(pAttrHdr->u.NonRes.cbInitialized) >= pThis->cbBacking)
                     rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                  "MFT record #0 unnamed DATA attribute initialized size is out of range: %#RX64",
-                                                 RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbInitialized));
-                else if (   (uint64_t)RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbData) <  pThis->cbMftRecord * 16U
-                         || (uint64_t)RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbData) >= pThis->cbBacking)
+                                                 RT_LE2H_U64(pAttrHdr->u.NonRes.cbInitialized));
+                else if (   (uint64_t)RT_LE2H_U64(pAttrHdr->u.NonRes.cbData) <  pThis->cbMftRecord * 16U
+                         || (uint64_t)RT_LE2H_U64(pAttrHdr->u.NonRes.cbData) >= pThis->cbBacking)
                     rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                  "MFT record #0 unnamed DATA attribute allocated size is out of range: %#RX64",
-                                                 RT_LE2H_U64(pThis->pMftData->pAttrHdr->u.NonRes.cbData));
-                else if (pThis->pMftData->pAttrHdr->u.NonRes.uCompressionUnit != 0)
+                                                 RT_LE2H_U64(pAttrHdr->u.NonRes.cbData));
+                else if (pAttrHdr->u.NonRes.uCompressionUnit != 0)
                     rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                  "MFT record #0 unnamed DATA attribute is compressed: %#x",
-                                                 pThis->pMftData->pAttrHdr->u.NonRes.uCompressionUnit);
-                else if (pThis->pMftData->Extents.cExtents == 0)
+                                                 pAttrHdr->u.NonRes.uCompressionUnit);
+                else if (pMftData->Extents.cExtents == 0)
                     rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                "MFT record #0 unnamed DATA attribute has no data on the disk");
-                else if (pThis->pMftData->Extents.paExtents[0].off != offDisk)
+                else if (pMftData->Extents.paExtents[0].off != offDisk)
                     rc = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                  "MFT record #0 unnamed DATA attribute has a bogus disk offset: %#RX64, expected %#RX64",
-                                                 pThis->pMftData->Extents.paExtents[0].off, offDisk);
-                else if (!rtFsNtfsCore_FindUnnamedAttribute(pRec->pCore, NTFS_AT_BITMAP))
+                                                 pMftData->Extents.paExtents[0].off, offDisk);
+                else if (!rtFsNtfsCore_FindUnnamedAttribute(pCore, NTFS_AT_BITMAP))
                     rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 has no unnamed BITMAP attribute!");
                 else
                 {
-                    PRTFSNTFSATTR pFilenameAttr = rtFsNtfsCore_FindUnnamedAttribute(pRec->pCore, NTFS_AT_FILENAME);
+                    PRTFSNTFSATTR pFilenameAttr = rtFsNtfsCore_FindUnnamedAttribute(pCore, NTFS_AT_FILENAME);
                     if (!pFilenameAttr)
                         rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 has no FILENAME attribute!");
                     else if (pFilenameAttr->pAttrHdr->fNonResident)
@@ -4889,8 +5072,15 @@ static int rtFsNtfsVolLoadMft(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
                         else
                         {
                             /*
-                             * Looks like we're good.
+                             * Looks like we're good.  Insert core record into the cache.
                              */
+                            RTListAppend(&pThis->CoreInUseHead, &pCore->ListEntry);
+                            pThis->cbCoreObjects += pCore->cbCost;
+
+                            Assert(pCore->cRefs == 1);
+                            Assert(pRec->cRefs == 2);
+                            rtFsNtfsMftRec_Release(pRec, pThis);
+
                             return VINF_SUCCESS;
                         }
                     }
@@ -4900,7 +5090,7 @@ static int rtFsNtfsVolLoadMft(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
             else
                 rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 has no unnamed DATA attribute!");
         }
-        rtFsNtfsCore_Release(pRec->pCore);
+        rtFsNtfsCore_Destroy(pRec->pCore);
         rtFsNtfsMftRec_Release(pRec, pThis);
     }
     else
@@ -5083,6 +5273,8 @@ RTDECL(int) RTFsNtfsVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t f
         pThis->hVfsSelf       = hVfs;
         pThis->fMntFlags      = fMntFlags;
         pThis->fNtfsFlags     = fNtfsFlags;
+        RTListInit(&pThis->CoreInUseHead);
+        RTListInit(&pThis->CoreUnusedHead);
         RTListInit(&pThis->IdxNodeUnusedHead);
 
         rc = RTVfsFileGetSize(pThis->hVfsBacking, &pThis->cbBacking);
