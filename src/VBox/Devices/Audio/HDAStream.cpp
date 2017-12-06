@@ -720,14 +720,28 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
     uint32_t cbToProcess = RT_MIN(pStream->State.cbTransferSize - pStream->State.cbTransferProcessed,
                                   pStream->State.cbTransferChunk);
+
+    Log3Func(("[SD%RU8] cbToProcess=%RU32, cbToProcessMax=%RU32\n", pStream->u8SD, cbToProcess, cbToProcessMax));
+
+    if (cbToProcess > cbToProcessMax)
+    {
+        if (pStream->State.Cfg.enmDir == PDMAUDIODIR_IN)
+            LogRelMax2(64, ("HDA: Warning: FIFO underflow for stream #%RU8 (still %RU32 bytes needed)\n",
+                            pStream->u8SD, cbToProcess - cbToProcessMax));
+        else
+            LogRelMax2(64, ("HDA: Warning: FIFO overflow for stream #%RU8 (%RU32 bytes outstanding)\n",
+                            pStream->u8SD, cbToProcess - cbToProcessMax));
+
+        LogFunc(("[SD%RU8] Warning: Limiting transfer (cbToProcess=%RU32, cbToProcessMax=%RU32)\n",
+                 pStream->u8SD, cbToProcess, cbToProcessMax));
+
+        /* Never process more than a stream currently can handle. */
+        cbToProcess = cbToProcessMax;
+    }
+
     uint32_t cbProcessed = 0;
     uint32_t cbLeft      = cbToProcess;
     Assert(cbLeft % HDA_FRAME_SIZE == 0);
-
-    if (cbToProcess > cbToProcessMax)
-        LogRel2(("HDA: More data to process\n"));
-
-    Log3Func(("[SD%RU8] cbToProcess=%RU32\n", pStream->u8SD, cbToProcess));
 
     uint8_t abChunk[HDA_FIFO_MAX + 1];
     while (cbLeft)
@@ -780,8 +794,6 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
             if (cbDMAToWrite)
             {
-                LogRel2(("HDA: FIFO underflow for stream #%RU8 (%RU32 bytes outstanding)\n", pStream->u8SD, cbDMAToWrite));
-
                 Assert(cbChunk == cbDMAWritten + cbDMAToWrite);
                 memset((uint8_t *)abChunk + cbDMAWritten, 0, cbDMAToWrite);
                 cbDMAWritten = cbChunk;
@@ -805,9 +817,6 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
                 if (cbDMALeft > RTCircBufFree(pCircBuf))
                 {
-                    LogRel2(("HDA: FIFO overflow for stream #%RU8 (%RU32 bytes outstanding)\n",
-                             pStream->u8SD, cbDMALeft - RTCircBufFree(pCircBuf)));
-
                     /* Try to read as much as possible. */
                     cbDMALeft = (uint32_t)RTCircBufFree(pCircBuf);
 
