@@ -6021,8 +6021,8 @@ HMSVM_EXIT_DECL hmR0SvmExitIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
           "eip=%08x esp=%08x ebp=%08x\n"
           "cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n",
           pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
-          pCtx->eip, pCtx->esp, pCtx->ebp, pCtx->cs.Sel, pCtx->ss.Sel, pCtx->ds.Sel, pCtx->fs.Sel,
-          pCtx->gs.Sel, pCtx->eflags.u32));
+          pCtx->eip, pCtx->esp, pCtx->ebp,
+          pCtx->cs.Sel, pCtx->ss.Sel, pCtx->ds.Sel, pCtx->es.Sel, pCtx->fs.Sel, pCtx->gs.Sel, pCtx->eflags.u32));
     return VINF_EM_RAW_INTERRUPT;
 }
 
