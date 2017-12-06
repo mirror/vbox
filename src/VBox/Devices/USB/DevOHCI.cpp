@@ -124,9 +124,8 @@
 
 
 /** Maximum supported number of Downstream Ports on the root hub. 15 ports
- * is the maximum defined by the OHCI spec.
- * If you change this you need to add more status register words to the 'opreg'
- * array.
+ * is the maximum defined by the OHCI spec. Must match the number of status
+ * register words to the 'opreg' array.
  */
 #define OHCI_NDP_MAX        15
 
@@ -609,30 +608,30 @@ typedef struct ohci_opreg
 
 
 /* OHCI Local stuff */
-#define OHCI_CTL_CBSR       ((1<<0)|(1<<1))
-#define OHCI_CTL_PLE        (1<<2)
-#define OHCI_CTL_IE         (1<<3)
-#define OHCI_CTL_CLE        (1<<4)
-#define OHCI_CTL_BLE        (1<<5)
-#define OHCI_CTL_HCFS       ((1<<6)|(1<<7))
+#define OHCI_CTL_CBSR       ((1<<0)|(1<<1)) /* Control/Bulk Service Ratio. */
+#define OHCI_CTL_PLE        (1<<2)          /* Periodic List Enable. */
+#define OHCI_CTL_IE         (1<<3)          /* Isochronous Enable. */
+#define OHCI_CTL_CLE        (1<<4)          /* Control List Enable. */
+#define OHCI_CTL_BLE        (1<<5)          /* Bulk List Enable. */
+#define OHCI_CTL_HCFS       ((1<<6)|(1<<7)) /* Host Controller Functional State. */
 #define  OHCI_USB_RESET         0x00
 #define  OHCI_USB_RESUME        0x40
 #define  OHCI_USB_OPERATIONAL   0x80
 #define  OHCI_USB_SUSPEND       0xc0
-#define OHCI_CTL_IR         (1<<8)
-#define OHCI_CTL_RWC        (1<<9)
-#define OHCI_CTL_RWE        (1<<10)
+#define OHCI_CTL_IR         (1<<8)          /* Interrupt Routing (host/SMI). */
+#define OHCI_CTL_RWC        (1<<9)          /* Remote Wakeup Connected. */
+#define OHCI_CTL_RWE        (1<<10)         /* Remote Wakeup Enabled. */
 
-#define OHCI_STATUS_HCR     (1<<0)
-#define OHCI_STATUS_CLF     (1<<1)
-#define OHCI_STATUS_BLF     (1<<2)
-#define OHCI_STATUS_OCR     (1<<3)
-#define OHCI_STATUS_SOC     ((1<<6)|(1<<7))
+#define OHCI_STATUS_HCR     (1<<0)          /* Host Controller Reset. */
+#define OHCI_STATUS_CLF     (1<<1)          /* Control List Filled. */
+#define OHCI_STATUS_BLF     (1<<2)          /* Bulk List Filled. */
+#define OHCI_STATUS_OCR     (1<<3)          /* Ownership Change Request. */
+#define OHCI_STATUS_SOC     ((1<<6)|(1<<7)) /* Scheduling Overrun Count. */
 
 /** @name Interrupt Status and Enabled/Disabled Flags
  * @{ */
 /** SO  - Scheduling overrun. */
-#define OHCI_INTR_SCHEDULEING_OVERRUN       RT_BIT(0)
+#define OHCI_INTR_SCHEDULING_OVERRUN        RT_BIT(0)
 /** WDH - HcDoneHead writeback. */
 #define OHCI_INTR_WRITE_DONE_HEAD           RT_BIT(1)
 /** SF  - Start of frame. */
@@ -654,30 +653,30 @@ typedef struct ohci_opreg
 #define OHCI_HCCA_SIZE      0x100
 #define OHCI_HCCA_MASK      UINT32_C(0xffffff00)
 
-#define OHCI_FMI_FI         UINT32_C(0x00003fff)
-#define OHCI_FMI_FSMPS      UINT32_C(0x7fff0000)
+#define OHCI_FMI_FI         UINT32_C(0x00003fff)    /* Frame Interval. */
+#define OHCI_FMI_FSMPS      UINT32_C(0x7fff0000)    /* Full-Speed Max Packet Size. */
 #define OHCI_FMI_FSMPS_SHIFT 16
-#define OHCI_FMI_FIT        UINT32_C(0x80000000)
+#define OHCI_FMI_FIT        UINT32_C(0x80000000)    /* Frame Interval Toggle. */
 #define OHCI_FMI_FIT_SHIFT  31
 
-#define OHCI_FR_RT          RT_BIT_32(31)
+#define OHCI_FR_FRT         RT_BIT_32(31)           /* Frame Remaining Toggle */
 
-#define OHCI_LS_THRESH      0x628
+#define OHCI_LS_THRESH      0x628                   /* Low-Speed Threshold. */
 
-#define OHCI_RHA_NDP        (0xff)
-#define OHCI_RHA_PSM        RT_BIT_32(8)
-#define OHCI_RHA_NPS        RT_BIT_32(9)
-#define OHCI_RHA_DT         RT_BIT_32(10)
-#define OHCI_RHA_OCPM       RT_BIT_32(11)
-#define OHCI_RHA_NOCP       RT_BIT_32(12)
-#define OHCI_RHA_POTPGP     UINT32_C(0xff000000)
+#define OHCI_RHA_NDP        (0xff)                  /* Number of Downstream Ports. */
+#define OHCI_RHA_PSM        RT_BIT_32(8)            /* Power Switching Mode. */
+#define OHCI_RHA_NPS        RT_BIT_32(9)            /* No Power Switching. */
+#define OHCI_RHA_DT         RT_BIT_32(10)           /* Device Type. */
+#define OHCI_RHA_OCPM       RT_BIT_32(11)           /* Over-Current Protection Mode. */
+#define OHCI_RHA_NOCP       RT_BIT_32(12)           /* No Over-Current Protection. */
+#define OHCI_RHA_POTPGP     UINT32_C(0xff000000)    /* Power On To Power Good Time. */
 
-#define OHCI_RHS_LPS        RT_BIT_32(0)
-#define OHCI_RHS_OCI        RT_BIT_32(1)
-#define OHCI_RHS_DRWE       RT_BIT_32(15)
-#define OHCI_RHS_LPSC       RT_BIT_32(16)
-#define OHCI_RHS_OCIC       RT_BIT_32(17)
-#define OHCI_RHS_CRWE       RT_BIT_32(31)
+#define OHCI_RHS_LPS        RT_BIT_32(0)            /* Local Power Status. */
+#define OHCI_RHS_OCI        RT_BIT_32(1)            /* Over-Current Indicator. */
+#define OHCI_RHS_DRWE       RT_BIT_32(15)           /* Device Remote Wakeup Enable. */
+#define OHCI_RHS_LPSC       RT_BIT_32(16)           /* Local Power Status Change. */
+#define OHCI_RHS_OCIC       RT_BIT_32(17)           /* Over-Current Indicator Change. */
+#define OHCI_RHS_CRWE       RT_BIT_32(31)           /* Clear Remote Wakeup Enable. */
 
 /** @name HcRhPortStatus[n] - RH Port Status register (read).
  * @{ */
