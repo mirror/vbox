@@ -502,6 +502,13 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
     RTThreadUserSignal(RTThreadSelf());
 
     /*
+     * Initialize the last host time to prevent log message.
+     */
+    RTTIMESPEC HostLast;
+    if (RT_FAILURE(VbglR3GetHostTime(&HostLast)))
+        RTTimeSpecSetNano(&HostLast, 0);
+
+    /*
      * The Work Loop.
      */
     for (;;)
@@ -512,9 +519,17 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
         int cTries = 3;
         do
         {
-            /* query it. */
-            RTTIMESPEC GuestNow0, GuestNow, HostNow;
+            /*
+             * Query the session id (first to keep lantency low) and the time.
+             */
+            uint64_t idNewSession = g_idTimeSyncSession;
+            if (g_fTimeSyncSetOnRestore)
+                VbglR3GetSessionId(&idNewSession);
+
+            RTTIMESPEC GuestNow0;
             RTTimeNow(&GuestNow0);
+
+            RTTIMESPEC HostNow;
             int rc2 = VbglR3GetHostTime(&HostNow);
             if (RT_FAILURE(rc2))
             {
@@ -522,28 +537,27 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
                     VGSvcError("vgsvcTimeSyncWorker: VbglR3GetHostTime failed; rc2=%Rrc\n", rc2);
                 break;
             }
+
+            RTTIMESPEC GuestNow;
             RTTimeNow(&GuestNow);
 
-            /* calc latency and check if it's ok. */
+            /*
+             * Calc latency and check if it's ok.
+             */
             RTTIMESPEC GuestElapsed = GuestNow;
             RTTimeSpecSub(&GuestElapsed, &GuestNow0);
             if ((uint32_t)RTTimeSpecGetMilli(&GuestElapsed) < g_cMsTimeSyncMaxLatency)
             {
                 /*
-                 * Set the time once after we were restored.
-                 * (Of course only if the drift is bigger than MinAdjust)
+                 * If we were just restored, set the adjustment threshold to zero to force a resync.
                  */
                 uint32_t TimeSyncSetThreshold = g_TimeSyncSetThreshold;
-                if (g_fTimeSyncSetOnRestore)
+                if (   g_fTimeSyncSetOnRestore
+                    && idNewSession != g_idTimeSyncSession)
                 {
-                    uint64_t idNewSession = g_idTimeSyncSession;
-                    VbglR3GetSessionId(&idNewSession);
-                    if (idNewSession != g_idTimeSyncSession)
-                    {
-                        VGSvcVerbose(3, "vgsvcTimeSyncWorker: The VM session ID changed, forcing resync.\n");
-                        TimeSyncSetThreshold = 0;
-                        g_idTimeSyncSession  = idNewSession;
-                    }
+                    VGSvcVerbose(3, "vgsvcTimeSyncWorker: The VM session ID changed, forcing resync.\n");
+                    g_idTimeSyncSession  = idNewSession;
+                    TimeSyncSetThreshold = 0;
                 }
 
                 /*
@@ -577,17 +591,25 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
                      * Try a gradual adjustment first, if that fails or the drift is
                      * too big, fall back on just setting the time.
                      */
-
-                    if (    AbsDriftMilli > TimeSyncSetThreshold
-                        ||  g_fTimeSyncSetNext
-                        ||  !vgsvcTimeSyncAdjust(&Drift))
+                    if (   AbsDriftMilli > TimeSyncSetThreshold
+                        || g_fTimeSyncSetNext
+                        || !vgsvcTimeSyncAdjust(&Drift))
                     {
                         vgsvcTimeSyncCancelAdjust();
                         vgsvcTimeSyncSet(&Drift);
                     }
+
+                    /*
+                     * Log radical host time changes.
+                     */
+                    int64_t cNsHostDelta = RTTimeSpecGetNano(&HostNow) - RTTimeSpecGetNano(&HostLast);
+                    if ((uint64_t)RT_ABS(cNsHostDelta) > RT_NS_1HOUR / 2)
+                        VGSvcVerbose(0, "vgsvcTimeSyncWorker: Radical host time change: %'RI64ns (HostNow=%RDtimespec HostLast=%RDtimespec)\n",
+                                     cNsHostDelta, &HostNow, &HostLast);
                 }
                 else
                     vgsvcTimeSyncCancelAdjust();
+                HostLast = HostNow;
                 break;
             }
             VGSvcVerbose(3, "vgsvcTimeSyncWorker: %RDtimespec: latency too high (%RDtimespec, max %ums) sleeping 1s\n",
