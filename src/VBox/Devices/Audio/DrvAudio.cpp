@@ -137,11 +137,9 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
 
 # endif /* unused */
 
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
 static char *drvAudioDbgGetFileNameA(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix);
 static void  drvAudioDbgPCMDelete(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix);
 static void  drvAudioDbgPCMDump(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix, const void *pvData, size_t cbData);
-#endif
 
 #ifdef LOG_ENABLED
 /**
@@ -966,9 +964,8 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
             break;
         }
 
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-        drvAudioDbgPCMDump(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "StreamWrite.pcm", pvBuf, cbBuf);
-#endif
+        if (pThis->fDebugEnabled)
+            drvAudioDbgPCMDump(pThis, pThis->szDebugPathOut, "StreamWrite.pcm", pvBuf, cbBuf);
 
 #ifdef VBOX_WITH_STATISTICS
         STAM_COUNTER_ADD(&pThis->Stats.TotalFramesWritten, cfWritten);
@@ -1335,10 +1332,9 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
                     break;
                 }
 
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-                drvAudioDbgPCMDump(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "PlayNonInterleaved.pcm",
-                                   auBuf, cbPlayed);
-#endif
+                if (pThis->fDebugEnabled)
+                    drvAudioDbgPCMDump(pThis, pThis->szDebugPathOut, "PlayNonInterleaved.pcm", auBuf, cbPlayed);
+
                 AssertMsg(cbPlayed <= cbRead, ("Played more than available (%RU32 available but got %RU32)\n", cbRead, cbPlayed));
 #if 0 /** @todo Also handle mono channels. Needs fixing */
                 AssertMsg(cbPlayed % 2 == 0,
@@ -1638,10 +1634,9 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
         }
         else if (cbCaptured)
         {
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-            drvAudioDbgPCMDump(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "CaptureNonInterleaved.pcm",
-                               auBuf, cbCaptured);
-#endif
+            if (pThis->fDebugEnabled)
+                drvAudioDbgPCMDump(pThis, pThis->szDebugPathOut, "CaptureNonInterleaved.pcm", auBuf, cbCaptured);
+
             Assert(cbCaptured <= cbBuf);
             if (cbCaptured > cbBuf) /* Paranoia. */
                 cbCaptured = (uint32_t)cbBuf;
@@ -2094,7 +2089,6 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
 }
 #endif /* VBOX_WITH_AUDIO_ENUM */
 
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
 /**
  * Returns an unique file name for this given audio connector instance.
  *
@@ -2166,7 +2160,6 @@ static void drvAudioDbgPCMDump(PDRVAUDIO pThis,
 
     RTStrFree(pszFileName);
 }
-#endif /* VBOX_AUDIO_DEBUG_DUMP_PCM_DATA */
 
 /**
  * Initializes the host backend and queries its initial configuration.
@@ -2300,17 +2293,16 @@ static int drvAudioInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         RTStrPrintf(pThis->szName, sizeof(pThis->szName), "Untitled");
 
     /* By default we don't enable anything if wrongly / not set-up. */
-    pThis->In.fEnabled  = false;
-    pThis->Out.fEnabled = false;
+    CFGMR3QueryBoolDef(pCfgHandle, "InputEnabled",  &pThis->In.fEnabled,   false);
+    CFGMR3QueryBoolDef(pCfgHandle, "OutputEnabled", &pThis->Out.fEnabled,  false);
 
-    uint64_t u64Temp;
-    rc2 = CFGMR3QueryInteger(pCfgHandle, "InputEnabled",  &u64Temp);
-    if (RT_SUCCESS(rc2))
-        pThis->In.fEnabled  = RT_BOOL(u64Temp);
+    CFGMR3QueryBoolDef(pCfgHandle, "DebugEnabled",      &pThis->fDebugEnabled,  false);
+    rc2 = CFGMR3QueryString(pCfgHandle, "DebugPathOut", pThis->szDebugPathOut, sizeof(pThis->szDebugPathOut));
+    if (RT_FAILURE(rc2))
+        RTStrPrintf(pThis->szDebugPathOut, sizeof(pThis->szDebugPathOut), VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
 
-    rc2 = CFGMR3QueryInteger(pCfgHandle, "OutputEnabled", &u64Temp);
-    if (RT_SUCCESS(rc2))
-        pThis->Out.fEnabled = RT_BOOL(u64Temp);
+    if (pThis->fDebugEnabled)
+        LogRel(("Audio: Debugging enabled (audio data written to '%s')\n", pThis->szDebugPathOut));
 
     LogRel2(("Audio: Initial status for driver '%s': Input is %s, output is %s\n",
              pThis->szName, pThis->In.fEnabled ? "enabled" : "disabled", pThis->Out.fEnabled ? "enabled" : "disabled"));
@@ -2406,10 +2398,10 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
 
         if (cReadTotal)
         {
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-            drvAudioDbgPCMDump(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "StreamRead.pcm",
-                               pvBuf, AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cReadTotal));
-#endif
+            if (pThis->fDebugEnabled)
+                drvAudioDbgPCMDump(pThis, pThis->szDebugPathOut, "StreamRead.pcm",
+                                   pvBuf, AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cReadTotal));
+
             AudioMixBufFinish(&pGstStream->MixBuf, cReadTotal);
 
             pGstStream->In.tsLastReadMS = RTTimeMilliTS();
@@ -3360,12 +3352,13 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
                                      STAMUNIT_NS_PER_CALL, "Profiling of output data processing.");
 #endif
 
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-        drvAudioDbgPCMDelete(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "StreamRead.pcm");
-        drvAudioDbgPCMDelete(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "StreamWrite.pcm");
-        drvAudioDbgPCMDelete(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "PlayNonInterleaved.pcm");
-        drvAudioDbgPCMDelete(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "CaptureNonInterleaved.pcm");
-#endif
+        if (pThis->fDebugEnabled)
+        {
+            drvAudioDbgPCMDelete(pThis, pThis->szDebugPathOut, "StreamRead.pcm");
+            drvAudioDbgPCMDelete(pThis, pThis->szDebugPathOut, "StreamWrite.pcm");
+            drvAudioDbgPCMDelete(pThis, pThis->szDebugPathOut, "PlayNonInterleaved.pcm");
+            drvAudioDbgPCMDelete(pThis, pThis->szDebugPathOut, "CaptureNonInterleaved.pcm");
+        }
     }
 
     LogFlowFuncLeaveRC(rc);

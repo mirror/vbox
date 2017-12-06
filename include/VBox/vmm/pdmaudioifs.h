@@ -147,6 +147,14 @@
  * @{
  */
 
+#ifndef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH
+# ifdef RT_OS_WINDOWS
+#  define VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
+# else
+#  define VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "/tmp/"
+# endif
+#endif
+
 /** PDM audio driver instance flags. */
 typedef uint32_t PDMAUDIODRVFLAGS;
 

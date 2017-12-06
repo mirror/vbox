@@ -29,14 +29,6 @@
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pdmaudioifs.h>
 
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-# ifdef RT_OS_WINDOWS
-#  define VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
-# else
-#  define VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "/tmp/"
-# endif
-#endif
-
 typedef enum
 {
     AUD_OPT_INT,
@@ -114,6 +106,11 @@ typedef struct DRVAUDIO
     /** Statistics for the statistics manager (STAM). */
     DRVAUDIOSTATS           Stats;
 #endif
+    /** Whether audio debugging is enabled or not. */
+    bool                    fDebugEnabled;
+    /** Where to store the debugging files.
+     *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH if not set. */
+    char                    szDebugPathOut[RTPATH_MAX + 1];
     struct
     {
         /** Whether this driver's input streams are enabled or not.
