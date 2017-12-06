@@ -3104,7 +3104,7 @@ static uint32_t rtFsNtfsDirShrd_Destroy(PRTFSNTFSDIRSHRD pThis)
 static uint32_t rtFsNtfsDirShrd_Release(PRTFSNTFSDIRSHRD pThis)
 {
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
-    Assert(cRefs < 128);
+    Assert(cRefs < 4096);
     if (cRefs > 0)
         return cRefs;
     return rtFsNtfsDirShrd_Destroy(pThis);
@@ -3121,7 +3121,7 @@ static uint32_t rtFsNtfsDirShrd_Retain(PRTFSNTFSDIRSHRD pThis)
 {
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
     Assert(cRefs > 1);
-    Assert(cRefs < 128);
+    Assert(cRefs < 4096);
     return cRefs;
 }
 
