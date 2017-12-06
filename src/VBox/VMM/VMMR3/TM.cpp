@@ -2809,7 +2809,9 @@ VMMR3DECL(int) TMR3TimerSetCritSect(PTMTIMERR3 pTimer, PPDMCRITSECT pCritSect)
  */
 VMMR3_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime)
 {
-    /* Get a stable set of VirtualSync parameters before querying UTC. */
+    /*
+     * Get a stable set of VirtualSync parameters and calc the lag.
+     */
     uint64_t offVirtualSync;
     uint64_t offVirtualSyncGivenUp;
     do
@@ -2821,9 +2823,22 @@ VMMR3_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime)
     Assert(offVirtualSync >= offVirtualSyncGivenUp);
     uint64_t const offLag = offVirtualSync - offVirtualSyncGivenUp;
 
+    /*
+     * Get current time and adjust for virtual sync lag and do time displacement.
+     */
     RTTimeNow(pTime);
     RTTimeSpecSubNano(pTime, offLag);
     RTTimeSpecAddNano(pTime, pVM->tm.s.offUTC);
+
+    /*
+     * Log details if the time changed radically (also triggers on first call).
+     */
+    int64_t nsPrev = ASMAtomicXchgS64(&pVM->tm.s.nsLastUtcNow, RTTimeSpecGetNano(pTime));
+    int64_t cNsDelta = RTTimeSpecGetNano(pTime) - nsPrev;
+    if (RT_ABS(cNsDelta) > RT_NS_1HOUR / 2)
+        LogRel(("TMR3UtcNow: nsNow=%RI64 nsPrev=%RI64 -> cNsDelta=%RI64 (offLag=%RI64 offVirtualSync=%RU64 offVirtualSyncGivenUp=%RU64)\n",
+                RTTimeSpecGetNano(pTime), nsPrev, cNsDelta, offLag, offVirtualSync, offVirtualSyncGivenUp));
+
     return pTime;
 }
 
