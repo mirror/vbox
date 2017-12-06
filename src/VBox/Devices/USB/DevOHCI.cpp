@@ -682,18 +682,24 @@ typedef struct ohci_opreg
  * @{ */
 /** CCS - CurrentConnectionStatus - 0 = no device, 1 = device. */
 #define OHCI_PORT_CCS       RT_BIT(0)
+/** ClearPortEnable (when writing CCS). */
+#define OHCI_PORT_CLRPE     OHCI_PORT_CCS
 /** PES - PortEnableStatus. */
 #define OHCI_PORT_PES       RT_BIT(1)
 /** PSS - PortSuspendStatus */
 #define OHCI_PORT_PSS       RT_BIT(2)
 /** POCI- PortOverCurrentIndicator. */
 #define OHCI_PORT_POCI      RT_BIT(3)
+/** ClearSuspendStatus (when writing POCI). */
+#define OHCI_PORT_CLRSS     OHCI_PORT_POCI
 /** PRS - PortResetStatus */
 #define OHCI_PORT_PRS       RT_BIT(4)
 /** PPS - PortPowerStatus */
 #define OHCI_PORT_PPS       RT_BIT(8)
 /** LSDA - LowSpeedDeviceAttached */
 #define OHCI_PORT_LSDA      RT_BIT(9)
+/** ClearPortPower (when writing LSDA). */
+#define OHCI_PORT_CLRPP     OHCI_PORT_LSDA
 /** CSC  - ConnectStatusChange */
 #define OHCI_PORT_CSC       RT_BIT(16)
 /** PESC - PortEnableStatusChange */
@@ -704,66 +710,8 @@ typedef struct ohci_opreg
 #define OHCI_PORT_OCIC      RT_BIT(19)
 /** PRSC - PortResetStatusChange */
 #define OHCI_PORT_PRSC      RT_BIT(20)
-/** @} */
-
-
-/** @name HcRhPortStatus[n] - Root Hub Port Status Registers - read.
- * @{ */
-/** CCS - CurrentConnectStatus - 0 = no device, 1 = device. */
-#define OHCI_PORT_R_CURRENT_CONNECT_STATUS      RT_BIT(0)
-/** PES - PortEnableStatus. */
-#define OHCI_PORT_R_ENABLE_STATUS               RT_BIT(1)
-/** PSS - PortSuspendStatus */
-#define OHCI_PORT_R_SUSPEND_STATUS              RT_BIT(2)
-/** POCI- PortOverCurrentIndicator. */
-#define OHCI_PORT_R_OVER_CURRENT_INDICATOR      RT_BIT(3)
-/** PRS - PortResetStatus */
-#define OHCI_PORT_R_RESET_STATUS                RT_BIT(4)
-/** PPS - PortPowerStatus */
-#define OHCI_PORT_R_POWER_STATUS                RT_BIT(8)
-/** LSDA - LowSpeedDeviceAttached */
-#define OHCI_PORT_R_LOW_SPEED_DEVICE_ATTACHED   RT_BIT(9)
-/** CSC  - ConnectStatusChange */
-#define OHCI_PORT_R_CONNECT_STATUS_CHANGE       RT_BIT(16)
-/** PESC - PortEnableStatusChange */
-#define OHCI_PORT_R_ENABLE_STATUS_CHANGE        RT_BIT(17)
-/** PSSC - PortSuspendStatusChange */
-#define OHCI_PORT_R_SUSPEND_STATUS_CHANGE       RT_BIT(18)
-/** OCIC - OverCurrentIndicatorChange */
-#define OHCI_PORT_R_OVER_CURRENT_INDICATOR_CHANGE   RT_BIT(19)
-/** PRSC - PortResetStatusChange */
-#define OHCI_PORT_R_RESET_STATUS_CHANGE         RT_BIT(20)
-/** @} */
-
-/** @name HcRhPortStatus[n] - Root Hub Port Status Registers - write.
- * @{ */
-/** CCS - ClearPortEnable. */
-#define OHCI_PORT_W_CLEAR_ENABLE                RT_BIT(0)
-/** PES - SetPortEnable. */
-#define OHCI_PORT_W_SET_ENABLE                  RT_BIT(1)
-/** PSS - SetPortSuspend */
-#define OHCI_PORT_W_SET_SUSPEND                 RT_BIT(2)
-/** POCI- ClearSuspendStatus. */
-#define OHCI_PORT_W_CLEAR_SUSPEND_STATUS        RT_BIT(3)
-/** PRS - SetPortReset */
-#define OHCI_PORT_W_SET_RESET                   RT_BIT(4)
-/** PPS - SetPortPower */
-#define OHCI_PORT_W_SET_POWER                   RT_BIT(8)
-/** LSDA - ClearPortPower */
-#define OHCI_PORT_W_CLEAR_POWER                 RT_BIT(9)
-/** CSC  - ClearConnectStatusChange */
-#define OHCI_PORT_W_CLEAR_CSC                   RT_BIT(16)
-/** PESC - PortEnableStatusChange */
-#define OHCI_PORT_W_CLEAR_PESC                  RT_BIT(17)
-/** PSSC - PortSuspendStatusChange */
-#define OHCI_PORT_W_CLEAR_PSSC                  RT_BIT(18)
-/** OCIC - OverCurrentIndicatorChange */
-#define OHCI_PORT_W_CLEAR_OCIC                  RT_BIT(19)
-/** PRSC - PortResetStatusChange */
-#define OHCI_PORT_W_CLEAR_PRSC                  RT_BIT(20)
-/** The mask of bit which are used to clear themselves. */
-#define OHCI_PORT_W_CLEAR_CHANGE_MASK           (  OHCI_PORT_W_CLEAR_CSC  | OHCI_PORT_W_CLEAR_PESC | OHCI_PORT_W_CLEAR_PSSC \
-                                                 | OHCI_PORT_W_CLEAR_OCIC | OHCI_PORT_W_CLEAR_PRSC)
+/** The mask of RW1C bits. */
+#define OHCI_PORT_CLEAR_CHANGE_MASK     (OHCI_PORT_CSC | OHCI_PORT_PESC | OHCI_PORT_PSSC | OHCI_PORT_OCIC | OHCI_PORT_PRSC)
 /** @} */
 
 
@@ -1045,7 +993,7 @@ static DECLCALLBACK(int) ohciR3RhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVI
     /*
      * Attach it.
      */
-    pThis->RootHub.aPorts[uPort].fReg = OHCI_PORT_R_CURRENT_CONNECT_STATUS | OHCI_PORT_R_CONNECT_STATUS_CHANGE;
+    pThis->RootHub.aPorts[uPort].fReg = OHCI_PORT_CCS | OHCI_PORT_CSC;
     pThis->RootHub.aPorts[uPort].pDev = pDev;
     ohciR3RhPortPower(&pThis->RootHub, uPort, 1 /* power on */);
 
@@ -1083,9 +1031,9 @@ static DECLCALLBACK(void) ohciR3RhDetach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEV
      */
     pThis->RootHub.aPorts[uPort].pDev = NULL;
     if (pThis->RootHub.aPorts[uPort].fReg & OHCI_PORT_PES)
-        pThis->RootHub.aPorts[uPort].fReg = OHCI_PORT_R_CONNECT_STATUS_CHANGE | OHCI_PORT_PESC;
+        pThis->RootHub.aPorts[uPort].fReg = OHCI_PORT_CSC | OHCI_PORT_PESC;
     else
-        pThis->RootHub.aPorts[uPort].fReg = OHCI_PORT_R_CONNECT_STATUS_CHANGE;
+        pThis->RootHub.aPorts[uPort].fReg = OHCI_PORT_CSC;
 
     ohciR3RemoteWakeup(pThis);
     ohciR3SetInterrupt(pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
@@ -1150,7 +1098,7 @@ static DECLCALLBACK(int) ohciR3RhReset(PVUSBIROOTHUBPORT pInterface, bool fReset
     {
         if (pThis->RootHub.aPorts[iPort].pDev)
         {
-            pThis->RootHub.aPorts[iPort].fReg = OHCI_PORT_R_CURRENT_CONNECT_STATUS | OHCI_PORT_R_CONNECT_STATUS_CHANGE | OHCI_PORT_PPS;
+            pThis->RootHub.aPorts[iPort].fReg = OHCI_PORT_CCS | OHCI_PORT_CSC | OHCI_PORT_PPS;
             if (fResetOnLinux)
             {
                 PVM pVM = PDMDevHlpGetVM(pThis->CTX_SUFF(pDevIns));
@@ -4257,19 +4205,16 @@ static void ohciR3RhPortPower(POHCIROOTHUB pRh, unsigned iPort, bool fPowerUp)
     {
         /* power up */
         if (pPort->pDev)
-            pPort->fReg |= OHCI_PORT_R_CURRENT_CONNECT_STATUS;
-        if (pPort->fReg & OHCI_PORT_R_CURRENT_CONNECT_STATUS)
-            pPort->fReg |= OHCI_PORT_R_POWER_STATUS;
+            pPort->fReg |= OHCI_PORT_CCS;
+        if (pPort->fReg & OHCI_PORT_CCS)
+            pPort->fReg |= OHCI_PORT_PPS;
         if (pPort->pDev && !fOldPPS)
             VUSBIDevPowerOn(pPort->pDev);
     }
     else
     {
         /* power down */
-        pPort->fReg &= ~(  OHCI_PORT_R_POWER_STATUS
-                         | OHCI_PORT_R_CURRENT_CONNECT_STATUS
-                         | OHCI_PORT_R_SUSPEND_STATUS
-                         | OHCI_PORT_R_RESET_STATUS);
+        pPort->fReg &= ~(OHCI_PORT_PPS | OHCI_PORT_CCS | OHCI_PORT_PSS | OHCI_PORT_PRS);
         if (pPort->pDev && fOldPPS)
             VUSBIDevPowerOff(pPort->pDev);
     }
@@ -5075,8 +5020,8 @@ static int HcRhStatus_w(POHCI pThis, uint32_t iReg, uint32_t val)
 static int HcRhPortStatus_r(PCOHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     const unsigned i = iReg - 21;
-    uint32_t val = pThis->RootHub.aPorts[i].fReg | OHCI_PORT_R_POWER_STATUS; /* PortPowerStatus: see todo on power in _w function. */
-    if (val & OHCI_PORT_R_RESET_STATUS)
+    uint32_t val = pThis->RootHub.aPorts[i].fReg | OHCI_PORT_PPS; /* PortPowerStatus: see todo on power in _w function. */
+    if (val & OHCI_PORT_PRS)
     {
 #ifdef IN_RING3
         RTThreadYield();
@@ -5085,7 +5030,7 @@ static int HcRhPortStatus_r(PCOHCI pThis, uint32_t iReg, uint32_t *pu32Value)
         return VINF_IOM_R3_MMIO_READ;
 #endif
     }
-    if (val & (OHCI_PORT_R_RESET_STATUS | OHCI_PORT_CSC | OHCI_PORT_PESC | OHCI_PORT_PSSC | OHCI_PORT_OCIC | OHCI_PORT_PRSC))
+    if (val & (OHCI_PORT_PRS | OHCI_PORT_CLEAR_CHANGE_MASK))
         Log2(("HcRhPortStatus_r(): port %u: -> %#010x - CCS=%d PES=%d PSS=%d POCI=%d RRS=%d PPS=%d LSDA=%d CSC=%d PESC=%d PSSC=%d OCIC=%d PRSC=%d\n",
               i, val, val & 1, (val >> 1) & 1, (val >> 2) & 1, (val >> 3) & 1, (val >> 4) & 1, (val >> 8) & 1, (val >> 9) & 1,
               (val >> 16) & 1, (val >> 17) & 1, (val >> 18) & 1, (val >> 19) & 1, (val >> 20) & 1));
@@ -5125,8 +5070,8 @@ static DECLCALLBACK(void) ohciR3PortResetDone(PVUSBIDEVICE pDev, int rc, void *p
          * Successful reset.
          */
         Log2(("ohciR3PortResetDone: Reset completed.\n"));
-        pPort->fReg &= ~(OHCI_PORT_R_RESET_STATUS | OHCI_PORT_R_SUSPEND_STATUS | OHCI_PORT_R_SUSPEND_STATUS_CHANGE);
-        pPort->fReg |= OHCI_PORT_R_ENABLE_STATUS | OHCI_PORT_R_RESET_STATUS_CHANGE;
+        pPort->fReg &= ~(OHCI_PORT_PRS | OHCI_PORT_PSS | OHCI_PORT_PSSC);
+        pPort->fReg |= OHCI_PORT_PES | OHCI_PORT_PRSC;
     }
     else
     {
@@ -5139,7 +5084,7 @@ static DECLCALLBACK(void) ohciR3PortResetDone(PVUSBIDEVICE pDev, int rc, void *p
              * incredible fast reconnect or something. (probably not gonna work)
              */
             Log2(("ohciR3PortResetDone: The reset failed (rc=%Rrc)!!! Pretending reconnect at the speed of light.\n", rc));
-            pPort->fReg = OHCI_PORT_R_CURRENT_CONNECT_STATUS | OHCI_PORT_R_CONNECT_STATUS_CHANGE;
+            pPort->fReg = OHCI_PORT_CCS | OHCI_PORT_CSC;
         }
         else
         {
@@ -5147,8 +5092,8 @@ static DECLCALLBACK(void) ohciR3PortResetDone(PVUSBIDEVICE pDev, int rc, void *p
              * The device have / will be disconnected.
              */
             Log2(("ohciR3PortResetDone: Disconnected (rc=%Rrc)!!!\n", rc));
-            pPort->fReg &= ~(OHCI_PORT_R_RESET_STATUS | OHCI_PORT_R_SUSPEND_STATUS | OHCI_PORT_R_SUSPEND_STATUS_CHANGE | OHCI_PORT_R_RESET_STATUS_CHANGE);
-            pPort->fReg |= OHCI_PORT_R_CONNECT_STATUS_CHANGE;
+            pPort->fReg &= ~(OHCI_PORT_PRS | OHCI_PORT_PSS | OHCI_PORT_PSSC | OHCI_PORT_PRSC);
+            pPort->fReg |= OHCI_PORT_CSC;
         }
     }
 
@@ -5174,9 +5119,9 @@ static bool ohciR3RhPortSetIfConnected(POHCIROOTHUB pRh, int iPort, uint32_t fVa
     /*
      * If CurrentConnectStatus is cleared we set ConnectStatusChange.
      */
-    if (!(pRh->aPorts[iPort].fReg & OHCI_PORT_R_CURRENT_CONNECT_STATUS))
+    if (!(pRh->aPorts[iPort].fReg & OHCI_PORT_CCS))
     {
-        pRh->aPorts[iPort].fReg |= OHCI_PORT_R_CONNECT_STATUS_CHANGE;
+        pRh->aPorts[iPort].fReg |= OHCI_PORT_CSC;
         ohciR3SetInterrupt(pRh->pOhci, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
         return false;
     }
@@ -5223,30 +5168,30 @@ static int HcRhPortStatus_w(POHCI pThis, uint32_t iReg, uint32_t val)
 # endif
 
     /* Write to clear any of the change bits: CSC, PESC, PSSC, OCIC and PRSC */
-    if (val & OHCI_PORT_W_CLEAR_CHANGE_MASK)
-        p->fReg &= ~(val & OHCI_PORT_W_CLEAR_CHANGE_MASK);
+    if (val & OHCI_PORT_CLEAR_CHANGE_MASK)
+        p->fReg &= ~(val & OHCI_PORT_CLEAR_CHANGE_MASK);
 
-    if (val & OHCI_PORT_W_CLEAR_ENABLE)
+    if (val & OHCI_PORT_CLRPE)
     {
-        p->fReg &= ~OHCI_PORT_R_ENABLE_STATUS;
+        p->fReg &= ~OHCI_PORT_PES;
         Log2(("HcRhPortStatus_w(): port %u: DISABLE\n", i));
     }
 
-    if (ohciR3RhPortSetIfConnected(&pThis->RootHub, i, val & OHCI_PORT_W_SET_ENABLE))
+    if (ohciR3RhPortSetIfConnected(&pThis->RootHub, i, val & OHCI_PORT_PES))
         Log2(("HcRhPortStatus_w(): port %u: ENABLE\n", i));
 
-    if (ohciR3RhPortSetIfConnected(&pThis->RootHub, i, val & OHCI_PORT_W_SET_SUSPEND))
+    if (ohciR3RhPortSetIfConnected(&pThis->RootHub, i, val & OHCI_PORT_PSS))
         Log2(("HcRhPortStatus_w(): port %u: SUSPEND - not implemented correctly!!!\n", i));
 
-    if (val & OHCI_PORT_W_SET_RESET)
+    if (val & OHCI_PORT_PRS)
     {
-        if (ohciR3RhPortSetIfConnected(&pThis->RootHub, i, val & OHCI_PORT_W_SET_RESET))
+        if (ohciR3RhPortSetIfConnected(&pThis->RootHub, i, val & OHCI_PORT_PRS))
         {
             PVM pVM = PDMDevHlpGetVM(pThis->CTX_SUFF(pDevIns));
-            p->fReg &= ~OHCI_PORT_R_RESET_STATUS_CHANGE;
+            p->fReg &= ~OHCI_PORT_PRSC;
             VUSBIDevReset(p->pDev, false /* don't reset on linux */, ohciR3PortResetDone, pThis, pVM);
         }
-        else if (p->fReg & OHCI_PORT_R_RESET_STATUS)
+        else if (p->fReg & OHCI_PORT_PRS)
         {
             /* the guest is getting impatient. */
             Log2(("HcRhPortStatus_w(): port %u: Impatient guest!\n", i));
@@ -5260,18 +5205,18 @@ static int HcRhPortStatus_w(POHCI pThis, uint32_t iReg, uint32_t val)
          * we need to check PortPowerControlMask to make
          * sure it isn't gang powered
          */
-        if (val & OHCI_PORT_W_CLEAR_POWER)
+        if (val & OHCI_PORT_CLRPP)
             ohciR3RhPortPower(&pThis->RootHub, i, false /* power down */);
-        if (val & OHCI_PORT_W_SET_POWER)
+        if (val & OHCI_PORT_PPS)
             ohciR3RhPortPower(&pThis->RootHub, i, true /* power up */);
     }
 
     /** @todo r=frank:  ClearSuspendStatus. Timing? */
-    if (val & OHCI_PORT_W_CLEAR_SUSPEND_STATUS)
+    if (val & OHCI_PORT_CLRSS)
     {
         ohciR3RhPortPower(&pThis->RootHub, i, true /* power up */);
-        pThis->RootHub.aPorts[i].fReg &= ~OHCI_PORT_R_SUSPEND_STATUS;
-        pThis->RootHub.aPorts[i].fReg |= OHCI_PORT_R_SUSPEND_STATUS_CHANGE;
+        pThis->RootHub.aPorts[i].fReg &= ~OHCI_PORT_PSS;
+        pThis->RootHub.aPorts[i].fReg |= OHCI_PORT_PSSC;
         ohciR3SetInterrupt(pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
     }
 
