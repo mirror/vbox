@@ -1519,7 +1519,6 @@ void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
                                 (int)(rect.height() * dDevicePixelRatio));
         }
 
-#ifdef VBOX_WS_MAC
         /* Should we
          * not perform logical HiDPI scaling or
          * perform logical HiDPI scaling and optimize it for performance? */
@@ -1528,7 +1527,6 @@ void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
             /* Mark sub-pixmap as HiDPI: */
             subPixmap.setDevicePixelRatio(dDevicePixelRatio);
         }
-#endif /* VBOX_WS_MAC */
     }
 
     /* Which point we should draw corresponding sub-pixmap? */
@@ -1577,7 +1575,6 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
                                          Qt::IgnoreAspectRatio, Qt::FastTransformation);
         }
 
-#ifdef VBOX_WS_MAC
         /* Should we
          * not perform logical HiDPI scaling or
          * perform logical HiDPI scaling and optimize it for performance? */
@@ -1586,7 +1583,6 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
             /* Mark sub-pixmap as HiDPI: */
             subPixmap.setDevicePixelRatio(dDevicePixelRatio);
         }
-#endif /* VBOX_WS_MAC */
     }
 
     /* Which point we should draw corresponding sub-pixmap? */

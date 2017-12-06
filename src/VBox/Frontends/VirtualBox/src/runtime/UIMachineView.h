@@ -350,10 +350,8 @@ protected:
      * Not explicitly initialised (i.e. invalid by default). */
     QSize m_sizeHintOverride;
 
-#ifdef VBOX_WS_MAC
     /** Holds current host-screen number. */
     int m_iHostScreenNumber;
-#endif /* VBOX_WS_MAC */
 
     /** The policy for calculating the maximum guest resolution which we wish
      * to handle. */

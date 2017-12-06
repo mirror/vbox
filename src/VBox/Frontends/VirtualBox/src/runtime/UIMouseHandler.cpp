@@ -1043,7 +1043,6 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                 }
             }
 
-#ifdef VBOX_WS_MAC
             /* Take the device-pixel-ratio into account: */
             if (pFrameBuffer->useUnscaledHiDPIOutput())
             {
@@ -1054,7 +1053,6 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                     cpnt.setY((int)(cpnt.y() * dDevicePixelRatio));
                 }
             }
-#endif /* VBOX_WS_MAC */
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
 # ifdef VBOX_WITH_DRAG_AND_DROP_GH

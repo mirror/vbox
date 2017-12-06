@@ -397,6 +397,10 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         /* Install Qt console message handler: */
         qInstallMessageHandler(QtMessageOutput);
 
+        /* Enable HiDPI support: */
+        QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+        QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+
         /* Create application: */
         QApplication a(argc, argv);
 
@@ -411,9 +415,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 #endif /* VBOX_WS_WIN */
 
 #ifdef VBOX_WS_MAC
-        /* Enable HiDPI icons: */
-        a.setAttribute(Qt::AA_UseHighDpiPixmaps);
-
         /* Disable menu icons on MacOS X host: */
         ::darwinDisableIconsInMenus();
 #endif /* VBOX_WS_MAC */

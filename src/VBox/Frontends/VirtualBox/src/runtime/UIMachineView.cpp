@@ -438,7 +438,6 @@ void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeigh
      * but not scaled by the scale-factor. */
     rect.translate(-contentsX(), -contentsY());
 
-#ifdef VBOX_WS_MAC
     /* Take the device-pixel-ratio into account: */
     if (frameBuffer()->useUnscaledHiDPIOutput())
     {
@@ -451,7 +450,6 @@ void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeigh
                                (int)ceil((double)rect.height() / dDevicePixelRatio) + 2));
         }
     }
-#endif /* VBOX_WS_MAC */
 
     /* Limit the resulting part by the viewport rectangle: */
     rect &= viewport()->rect();
@@ -630,9 +628,7 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_uScreenId(uScreenId)
     , m_pFrameBuffer(0)
     , m_previousState(KMachineState_Null)
-#ifdef VBOX_WS_MAC
     , m_iHostScreenNumber(0)
-#endif /* VBOX_WS_MAC */
     , m_maxGuestSizePolicy(MaxGuestResolutionPolicy_Automatic)
     , m_u64MaxGuestSize(0)
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -704,10 +700,8 @@ void UIMachineView::prepareFrameBuffer()
         /* Take scaling optimization type into account: */
         m_pFrameBuffer->setScalingOptimizationType(gEDataManager->scalingOptimizationType(vboxGlobal().managedVMUuid()));
 
-#ifdef VBOX_WS_MAC
         /* Take device-pixel-ratio into account: */
         m_pFrameBuffer->setDevicePixelRatio(gpDesktop->devicePixelRatio(machineWindow()));
-#endif /* VBOX_WS_MAC */
 
         /* Take the scale-factor related attributes into account: */
         const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
@@ -1119,12 +1113,10 @@ void UIMachineView::takePausePixmapLive()
 
     /* Finally copy the screen-shot to pause-pixmap: */
     m_pausePixmap = QPixmap::fromImage(screenShot);
-#ifdef VBOX_WS_MAC
     /* Adjust device-pixel-ratio if necessary: */
     const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
     if (dDevicePixelRatio > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
         m_pausePixmap.setDevicePixelRatio(dDevicePixelRatio);
-#endif /* VBOX_WS_MAC */
 
     /* Update scaled pause pixmap: */
     updateScaledPausePixmap();
@@ -1154,12 +1146,10 @@ void UIMachineView::takePausePixmapSnapshot()
 
     /* Finally copy the screen-shot to pause-pixmap: */
     m_pausePixmap = QPixmap::fromImage(screenShot);
-#ifdef VBOX_WS_MAC
     /* Adjust device-pixel-ratio if necessary: */
     const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
     if (dDevicePixelRatio > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
         m_pausePixmap.setDevicePixelRatio(dDevicePixelRatio);
-#endif /* VBOX_WS_MAC */
 
     /* Update scaled pause pixmap: */
     updateScaledPausePixmap();
@@ -1178,12 +1168,10 @@ void UIMachineView::updateScaledPausePixmap()
 
     /* Update pause pixmap finally: */
     m_pausePixmapScaled = pausePixmap().scaled(scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-#ifdef VBOX_WS_MAC
     /* Adjust device-pixel-ratio if necessary: */
     const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
     if (dDevicePixelRatio > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
         m_pausePixmapScaled.setDevicePixelRatio(dDevicePixelRatio);
-#endif /* VBOX_WS_MAC */
 }
 
 void UIMachineView::updateSliders()
@@ -1206,10 +1194,7 @@ void UIMachineView::updateSliders()
     int xRange = frameBufferSize.width()  - curViewportSize.width();
     int yRange = frameBufferSize.height() - curViewportSize.height();
 
-#ifdef VBOX_WS_MAC
-    /* Due to Qt 4.x doesn't supports HiDPI directly
-     * we should take the device-pixel-ratio into account.
-     * See also viewportToContents()... */
+    /* Take the device-pixel-ratio into account: */
     if (frameBuffer()->useUnscaledHiDPIOutput())
     {
         const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
@@ -1219,7 +1204,6 @@ void UIMachineView::updateSliders()
             yRange *= dDevicePixelRatio;
         }
     }
-#endif /* VBOX_WS_MAC */
 
     /* Configure scroll-bars: */
     horizontalScrollBar()->setRange(0, xRange);
@@ -1234,10 +1218,7 @@ QPoint UIMachineView::viewportToContents(const QPoint &vp) const
     int iContentsX = contentsX();
     int iContentsY = contentsY();
 
-#ifdef VBOX_WS_MAC
-    /* Due to Qt 4.x doesn't supports HiDPI directly
-     * we should take the device-pixel-ratio into account.
-     * See also updateSliders()... */
+    /* Take the device-pixel-ratio into account: */
     if (frameBuffer()->useUnscaledHiDPIOutput())
     {
         const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
@@ -1247,7 +1228,6 @@ QPoint UIMachineView::viewportToContents(const QPoint &vp) const
             iContentsY /= dDevicePixelRatio;
         }
     }
-#endif /* VBOX_WS_MAC */
 
     /* Return point shifted according scroll-bars: */
     return QPoint(vp.x() + iContentsX, vp.y() + iContentsY);
@@ -1446,7 +1426,6 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 }
                 break;
             }
-#ifdef VBOX_WS_MAC
             case QEvent::Move:
             {
                 /* Get current host-screen number: */
@@ -1470,7 +1449,6 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 }
                 break;
             }
-#endif /* VBOX_WS_MAC */
             default:
                 break;
         }
@@ -1867,7 +1845,6 @@ QSize UIMachineView::scaledForward(QSize size) const
     if (dScaleFactor != 1.0)
         size = QSize((int)(size.width() * dScaleFactor), (int)(size.height() * dScaleFactor));
 
-#ifdef VBOX_WS_MAC
     /* Take the device-pixel-ratio into account: */
     if (frameBuffer()->useUnscaledHiDPIOutput())
     {
@@ -1875,7 +1852,6 @@ QSize UIMachineView::scaledForward(QSize size) const
         if (dDevicePixelRatio > 1.0)
             size = QSize(size.width() / dDevicePixelRatio, size.height() / dDevicePixelRatio);
     }
-#endif /* VBOX_WS_MAC */
 
     /* Return result: */
     return size;
@@ -1883,7 +1859,6 @@ QSize UIMachineView::scaledForward(QSize size) const
 
 QSize UIMachineView::scaledBackward(QSize size) const
 {
-#ifdef VBOX_WS_MAC
     /* Take the device-pixel-ratio into account: */
     if (frameBuffer()->useUnscaledHiDPIOutput())
     {
@@ -1891,7 +1866,6 @@ QSize UIMachineView::scaledBackward(QSize size) const
         if (dDevicePixelRatio > 1.0)
             size = QSize(size.width() * dDevicePixelRatio, size.height() * dDevicePixelRatio);
     }
-#endif /* VBOX_WS_MAC */
 
     /* Take the scale-factor into account: */
     const double dScaleFactor = frameBuffer()->scaleFactor();
