@@ -2836,7 +2836,7 @@ VMMR3_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime)
     int64_t nsPrev = ASMAtomicXchgS64(&pVM->tm.s.nsLastUtcNow, RTTimeSpecGetNano(pTime));
     int64_t cNsDelta = RTTimeSpecGetNano(pTime) - nsPrev;
     if ((uint64_t)RT_ABS(cNsDelta) > RT_NS_1HOUR / 2)
-        LogRel(("TMR3UtcNow: nsNow=%RI64 nsPrev=%RI64 -> cNsDelta=%RI64 (offLag=%RI64 offVirtualSync=%RU64 offVirtualSyncGivenUp=%RU64)\n",
+        LogRel(("TMR3UtcNow: nsNow=%'RI64 nsPrev=%'RI64 -> cNsDelta=%'RI64 (offLag=%'RI64 offVirtualSync=%'RU64 offVirtualSyncGivenUp=%'RU64)\n",
                 RTTimeSpecGetNano(pTime), nsPrev, cNsDelta, offLag, offVirtualSync, offVirtualSyncGivenUp));
 
     return pTime;
