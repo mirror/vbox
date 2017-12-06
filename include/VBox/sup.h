@@ -776,7 +776,7 @@ DECLINLINE(const char *) SUPGetGIPTscDeltaModeName(PSUPGLOBALINFOPAGE pGip)
     {
         case SUPGIPUSETSCDELTA_NOT_APPLICABLE:   return "Not Applicable";
         case SUPGIPUSETSCDELTA_ZERO_CLAIMED:     return "Zero Claimed";
-        case SUPGIPUSETSCDELTA_PRACTICALLY_ZERO: return "Pratically Zero";
+        case SUPGIPUSETSCDELTA_PRACTICALLY_ZERO: return "Practically Zero";
         case SUPGIPUSETSCDELTA_ROUGHLY_ZERO:     return "Roughly Zero";
         case SUPGIPUSETSCDELTA_NOT_ZERO:         return "Not Zero";
         default:                                 return "???";
