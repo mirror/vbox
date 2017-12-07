@@ -617,7 +617,7 @@ static DECLCALLBACK(int) rtDvmVfsDir_SetMode(void *pvThis, RTFMODE fMode, RTFMOD
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
  */
 static DECLCALLBACK(int) rtDvmVfsDir_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
-                                             PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+                                              PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
     NOREF(pvThis); NOREF(pAccessTime); NOREF(pModificationTime); NOREF(pChangeTime); NOREF(pBirthTime);
     return VERR_NOT_SUPPORTED;

@@ -160,24 +160,22 @@ static int rtDvmVolumeCreate(PRTDVMINTERNAL pThis, RTDVMVOLUMEFMT hVolFmt, PRTDV
 /**
  * Destroys a volume handle.
  *
- * @param   pThis               The volume to destroy.
+ * @param   pThis   The volume manager instance.
+ * @param   pVol    The volume to destroy.
  */
-static void rtDvmVolumeDestroy(PRTDVMVOLUMEINTERNAL pThis)
+static void rtDvmVolumeDestroy(PRTDVMINTERNAL pThis, PRTDVMVOLUMEINTERNAL pVol)
 {
-    PRTDVMINTERNAL pVolMgr = pThis->pVolMgr;
-
-    AssertPtr(pVolMgr);
+    AssertPtr(pThis);
+    AssertPtr(pThis->pDvmFmtOps);
+    Assert(pVol->pVolMgr == pThis);
 
     /* Close the volume. */
-    pVolMgr->pDvmFmtOps->pfnVolumeClose(pThis->hVolFmt);
+    pThis->pDvmFmtOps->pfnVolumeClose(pVol->hVolFmt);
 
-    pThis->u32Magic = RTDVMVOLUME_MAGIC_DEAD;
-    pThis->pVolMgr  = NULL;
-    pThis->hVolFmt  = NIL_RTDVMVOLUMEFMT;
-    RTMemFree(pThis);
-
-    /* Release the reference of the volume manager. */
-    RTDvmRelease(pVolMgr);
+    pVol->u32Magic = RTDVMVOLUME_MAGIC_DEAD;
+    pVol->pVolMgr  = NULL;
+    pVol->hVolFmt  = NIL_RTDVMVOLUMEFMT;
+    RTMemFree(pVol);
 }
 
 
@@ -239,6 +237,14 @@ static void rtDvmDestroy(PRTDVMINTERNAL pThis)
     {
         AssertPtr(pThis->pDvmFmtOps);
 
+        /* */
+        PRTDVMVOLUMEINTERNAL pItNext, pIt;
+        RTListForEachSafe(&pThis->VolumeList, pIt, pItNext, RTDVMVOLUMEINTERNAL, VolumeNode)
+        {
+            RTListNodeRemove(&pIt->VolumeNode);
+            rtDvmVolumeDestroy(pThis, pIt);
+        }
+
         /* Let the backend do it's own cleanup first. */
         pThis->pDvmFmtOps->pfnClose(pThis->hVolMgrFmt);
         pThis->hVolMgrFmt = NIL_RTDVMFMT;
@@ -252,6 +258,7 @@ static void rtDvmDestroy(PRTDVMINTERNAL pThis)
         RTVfsFileRelease(pThis->DvmDisk.hVfsFile);
         pThis->DvmDisk.hVfsFile = NIL_RTVFSFILE;
     }
+
     RTMemFree(pThis);
 }
 
@@ -353,7 +360,7 @@ RTDECL(int) RTDvmMapOpen(RTDVM hVolMgr)
                 RTListForEachSafe(&pThis->VolumeList, pIt, pItNext, RTDVMVOLUMEINTERNAL, VolumeNode)
                 {
                     RTListNodeRemove(&pIt->VolumeNode);
-                    rtDvmVolumeDestroy(pIt);
+                    rtDvmVolumeDestroy(pThis, pIt);
                 }
             }
 
