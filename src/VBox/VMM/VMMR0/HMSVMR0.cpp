@@ -5166,7 +5166,6 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 case SVM_EXIT_NPF:
                 {
                     /* We don't yet support nested-paging for nested-guests, so this should never really happen. */
-                    Assert(pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging);
                     return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
                 }
 
