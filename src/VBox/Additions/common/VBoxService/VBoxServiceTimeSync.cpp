@@ -258,12 +258,10 @@ static void vgsvcTimeSyncLog(unsigned iLevel, const char *pszFormat, ...)
 {
     if (iLevel <= g_cTimeSyncVerbosity)
     {
-        va_list args;
-        va_start(args, pszFormat);
-
-        VGSvcLog(pszFormat, args);
-
-        va_end(args);
+        va_list va;
+        va_start(va, pszFormat);
+        VGSvcLogV(pszFormat, va);
+        va_end(va);
     }
 }
 

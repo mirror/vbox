@@ -337,20 +337,17 @@ int VGSvcLogCreate(const char *pszLogFile)
  * Logs a verbose message.
  *
  * @param   pszFormat   The message text.
- * @param   ...         Format arguments.
+ * @param   va          Format arguments.
  */
-void VGSvcLog(const char *pszFormat, ...)
+void VGSvcLogV(const char *pszFormat, va_list va)
 {
 #ifdef DEBUG
     int rc = RTCritSectEnter(&g_csLog);
     if (RT_SUCCESS(rc))
     {
 #endif
-        va_list args;
-        va_start(args, pszFormat);
         char *psz = NULL;
-        RTStrAPrintfV(&psz, pszFormat, args);
-        va_end(args);
+        RTStrAPrintfV(&psz, pszFormat, va);
 
         AssertPtr(psz);
         LogRel(("%s", psz));
@@ -458,12 +455,10 @@ void VGSvcVerbose(unsigned iLevel, const char *pszFormat, ...)
 {
     if (iLevel <= g_cVerbosity)
     {
-        va_list args;
-        va_start(args, pszFormat);
-
-        VGSvcLog(pszFormat, args);
-
-        va_end(args);
+        va_list va;
+        va_start(va, pszFormat);
+        VGSvcLogV(pszFormat, va);
+        va_end(va);
     }
 }
 
