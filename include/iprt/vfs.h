@@ -1403,10 +1403,57 @@ RTDECL(RTFOFF)      RTVfsFileTell(RTVFSFILE hVfsFile);
  */
 RTDECL(int)         RTVfsFileSeek(RTVFSFILE hVfsFile, RTFOFF offSeek, uint32_t uMethod, uint64_t *poffActual);
 
-RTDECL(int)         RTVfsFileSetSize(RTVFSFILE hVfsFile, uint64_t cbSize);
+/**
+ * Sets the size of a file.
+ *
+ * This may also be used for preallocating space
+ * (RTVFSFILE_SIZE_F_PREALLOC_KEEP_SIZE).
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_ACCESS_DENIED if handle isn't writable.
+ * @retval  VERR_WRITE_PROTECT if read-only file system.
+ * @retval  VERR_FILE_TOO_BIG if cbSize is larger than what the file system can
+ *          theoretically deal with.
+ * @retval  VERR_DISK_FULL if the file system if full.
+ * @retval  VERR_NOT_SUPPORTED if fFlags indicates some operation that's not
+ *          supported by the file system / host operating system.
+ *
+ * @param   hVfsFile        The VFS file handle.
+ * @param   cbSize          The new file size.
+ * @param   fFlags          RTVFSFILE_SIZE_F_NORMAL, RTVFSFILE_SIZE_F_GROW, or
+ *                          RTVFSFILE_SIZE_F_GROW_KEEP_SIZE.
+ *
+ * @sa      RTFileSetSize, RTFileSetAllocationSize
+ */
+RTDECL(int)         RTVfsFileSetSize(RTVFSFILE hVfsFile, uint64_t cbSize, uint32_t fFlags);
+
+/** @name RTVFSFILE_SIZE_F_XXX - RTVfsFileSetSize flags.
+ * @{ */
+/** Normal truncate or grow (zero'ed) like RTFileSetSize . */
+#define RTVFSFILE_SIZE_F_NORMAL             UINT32_C(0x00000001)
+/** Only grow the file, ignore call if cbSize would trunacte the file.
+ * This is what RTFileSetAllocationSize does by default.  */
+#define RTVFSFILE_SIZE_F_GROW               UINT32_C(0x00000002)
+/** Only grow the file, ignore call if cbSize would trunacte the file.
+ * This is what RTFileSetAllocationSize does by default.  */
+#define RTVFSFILE_SIZE_F_GROW_KEEP_SIZE     UINT32_C(0x00000003)
+/** Action mask. */
+#define RTVFSFILE_SIZE_F_ACTION_MASK        UINT32_C(0x00000003)
+/** Validate the flags.
+ * Will reference @a a_fFlags more than once.  */
+#define RTVFSFILE_SIZE_F_IS_VALID(a_fFlags) \
+    ( !((a_fFlags) & ~RTVFSFILE_SIZE_F_ACTION_MASK) && ((a_fFlags) & RTVFSFILE_SIZE_F_ACTION_MASK) != 0 )
+/** @} */
+
+
+/** Mask of valid flags. */
+#define RTFILE_ALLOC_SIZE_F_VALID           (RTFILE_ALLOC_SIZE_F_KEEP_SIZE)
+/** @} */
+
+
 RTDECL(int)         RTVfsFileGetSize(RTVFSFILE hVfsFile, uint64_t *pcbSize);
 RTDECL(RTFOFF)      RTVfsFileGetMaxSize(RTVFSFILE hVfsFile);
-RTDECL(int)         RTVfsFileGetMaxSizeEx(RTVFSFILE hVfsFile, PRTFOFF pcbMax);
+RTDECL(int)         RTVfsFileQueryMaxSize(RTVFSFILE hVfsFile, uint64_t *pcbMax);
 
 /**
  * Get the RTFILE_O_XXX flags for the I/O stream.

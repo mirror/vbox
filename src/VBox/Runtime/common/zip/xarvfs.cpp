@@ -1170,6 +1170,8 @@ static const RTVFSFILEOPS g_rtZipXarFssFileOps =
     },
     rtZipXarFssFile_Seek,
     rtZipXarFssFile_QuerySize,
+    NULL /*SetSize*/,
+    NULL /*QueryMaxSize*/,
     RTVFSFILEOPS_VERSION,
 };
 

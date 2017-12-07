@@ -680,6 +680,28 @@ static DECLCALLBACK(int) rtVfsMemFile_QuerySize(void *pvThis, uint64_t *pcbFile)
 
 
 /**
+ * @interface_method_impl{RTVFSFILEOPS,pfnSetSize}
+ */
+static DECLCALLBACK(int) rtVfsMemFile_SetSize(void *pvThis, uint64_t cbFile, uint32_t fFlags)
+{
+    NOREF(pvThis); NOREF(cbFile); NOREF(fFlags);
+    AssertMsgFailed(("Lucky you! You get to implement this (or bug bird about it).\n"));
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnQueryMaxSize}
+ */
+static DECLCALLBACK(int) rtVfsMemFile_QueryMaxSize(void *pvThis, uint64_t *pcbMax)
+{
+    RT_NOREF(pvThis);
+    *pcbMax = ~(size_t)0 >> 1;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Memory file operations.
  */
 DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtVfsMemFileOps =
@@ -716,6 +738,8 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtVfsMemFileOps =
     },
     rtVfsMemFile_Seek,
     rtVfsMemFile_QuerySize,
+    rtVfsMemFile_SetSize,
+    rtVfsMemFile_QueryMaxSize,
     RTVFSFILEOPS_VERSION
 };
 

@@ -364,6 +364,8 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_vdIfVfsFileOps =
     },
     vdIfVfsFile_Seek,
     vdIfVfsFile_QuerySize,
+    NULL /*SetSize*/,
+    NULL /*QueryMaxSize*/,
     RTVFSFILEOPS_VERSION,
 };
 

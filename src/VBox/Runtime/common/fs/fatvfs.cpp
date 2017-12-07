@@ -2517,6 +2517,31 @@ static DECLCALLBACK(int) rtFsFatFile_QuerySize(void *pvThis, uint64_t *pcbFile)
 
 
 /**
+ * @interface_method_impl{RTVFSFILEOPS,pfnSetSize}
+ */
+static DECLCALLBACK(int) rtFsFatFile_SetSize(void *pvThis, uint64_t cbFile, uint32_t fFlags)
+{
+    PRTFSFATFILE     pThis   = (PRTFSFATFILE)pvThis;
+    PRTFSFATFILESHRD pShared = pThis->pShared;
+    AssertReturn(!fFlags, VERR_NOT_SUPPORTED);
+    if (cbFile > UINT32_MAX)
+        return VERR_FILE_TOO_BIG;
+    return rtFsFatObj_SetSize(&pShared->Core, (uint32_t)cbFile);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnQueryMaxSize}
+ */
+static DECLCALLBACK(int) rtFsFatFile_QueryMaxSize(void *pvThis, uint64_t *pcbMax)
+{
+    RT_NOREF(pvThis);
+    *pcbMax = UINT32_MAX;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * FAT file operations.
  */
 DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsFatFileOps =
@@ -2553,6 +2578,8 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsFatFileOps =
     },
     rtFsFatFile_Seek,
     rtFsFatFile_QuerySize,
+    rtFsFatFile_SetSize,
+    rtFsFatFile_QueryMaxSize,
     RTVFSFILEOPS_VERSION
 };
 

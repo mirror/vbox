@@ -4195,6 +4195,56 @@ RTDECL(int) RTVfsFileGetSize(RTVFSFILE hVfsFile, uint64_t *pcbSize)
 }
 
 
+RTDECL(int)         RTVfsFileSetSize(RTVFSFILE hVfsFile, uint64_t cbSize, uint32_t fFlags)
+{
+    RTVFSFILEINTERNAL *pThis = hVfsFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(RTVFSFILE_SIZE_F_IS_VALID(fFlags), VERR_INVALID_FLAGS);
+    AssertReturn(pThis->Stream.fFlags & RTFILE_O_WRITE, VERR_ACCESS_DENIED);
+
+    int rc;
+    if (pThis->pOps->pfnSetSize)
+    {
+        RTVfsLockAcquireWrite(pThis->Stream.Base.hLock);
+        rc = pThis->pOps->pfnSetSize(pThis->Stream.Base.pvThis, cbSize, fFlags);
+        RTVfsLockReleaseWrite(pThis->Stream.Base.hLock);
+    }
+    else
+        rc = VERR_WRITE_PROTECT;
+    return rc;
+}
+
+
+RTDECL(RTFOFF)      RTVfsFileGetMaxSize(RTVFSFILE hVfsFile)
+{
+    uint64_t cbMax;
+    int rc = RTVfsFileQueryMaxSize(hVfsFile, &cbMax);
+    return RT_SUCCESS(rc) ? (RTFOFF)RT_MIN(cbMax, (uint64_t)RTFOFF_MAX) : -1;
+}
+
+
+RTDECL(int)         RTVfsFileQueryMaxSize(RTVFSFILE hVfsFile, uint64_t *pcbMax)
+{
+    RTVFSFILEINTERNAL *pThis = hVfsFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pcbMax, VERR_INVALID_POINTER);
+    *pcbMax = RTFOFF_MAX;
+
+    int rc;
+    if (pThis->pOps->pfnQueryMaxSize)
+    {
+        RTVfsLockAcquireWrite(pThis->Stream.Base.hLock);
+        rc = pThis->pOps->pfnQueryMaxSize(pThis->Stream.Base.pvThis, pcbMax);
+        RTVfsLockReleaseWrite(pThis->Stream.Base.hLock);
+    }
+    else
+        rc = VERR_WRITE_PROTECT;
+    return rc;
+}
+
+
 RTDECL(uint64_t) RTVfsFileGetOpenFlags(RTVFSFILE hVfsFile)
 {
     RTVFSFILEINTERNAL *pThis = hVfsFile;

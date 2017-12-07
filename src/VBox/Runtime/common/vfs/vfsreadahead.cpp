@@ -492,6 +492,38 @@ static DECLCALLBACK(int) rtVfsReadAhead_QuerySize(void *pvThis, uint64_t *pcbFil
 
 
 /**
+ * @interface_method_impl{RTVFSFILEOPS,pfnSetSize}
+ */
+static DECLCALLBACK(int) rtVfsReadAhead_SetSize(void *pvThis, uint64_t cbFile, uint32_t fFlags)
+{
+    PRTVFSREADAHEAD pThis = (PRTVFSREADAHEAD)pvThis;
+    AssertReturn(pThis->hFile != NIL_RTVFSFILE, VERR_NOT_SUPPORTED);
+
+    RTCritSectEnter(&pThis->IoCritSect); /* paranoia */
+    int rc = RTVfsFileSetSize(pThis->hFile, cbFile, fFlags);
+    RTCritSectLeave(&pThis->IoCritSect);
+
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnQueryMaxSize}
+ */
+static DECLCALLBACK(int) rtVfsReadAhead_QueryMaxSize(void *pvThis, uint64_t *pcbMax)
+{
+    PRTVFSREADAHEAD pThis = (PRTVFSREADAHEAD)pvThis;
+    AssertReturn(pThis->hFile != NIL_RTVFSFILE, VERR_NOT_SUPPORTED);
+
+    RTCritSectEnter(&pThis->IoCritSect); /* paranoia */
+    int rc = RTVfsFileQueryMaxSize(pThis->hFile, pcbMax);
+    RTCritSectLeave(&pThis->IoCritSect);
+
+    return rc;
+}
+
+
+/**
  * Read ahead I/O stream operations.
  */
 DECL_HIDDEN_CONST(const RTVFSIOSTREAMOPS) g_VfsReadAheadIosOps =
@@ -554,6 +586,8 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_VfsReadAheadFileOps =
     },
     rtVfsReadAhead_Seek,
     rtVfsReadAhead_QuerySize,
+    rtVfsReadAhead_SetSize,
+    rtVfsReadAhead_QueryMaxSize,
     RTVFSFILEOPS_VERSION
 };
 

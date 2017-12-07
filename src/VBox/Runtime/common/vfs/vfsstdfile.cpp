@@ -387,6 +387,40 @@ static DECLCALLBACK(int) rtVfsStdFile_QuerySize(void *pvThis, uint64_t *pcbFile)
 
 
 /**
+ * @interface_method_impl{RTVFSFILEOPS,pfnSetSize}
+ */
+static DECLCALLBACK(int) rtVfsStdFile_SetSize(void *pvThis, uint64_t cbFile, uint32_t fFlags)
+{
+    PRTVFSSTDFILE pThis = (PRTVFSSTDFILE)pvThis;
+    switch (fFlags & RTVFSFILE_SIZE_F_ACTION_MASK)
+    {
+        case RTVFSFILE_SIZE_F_NORMAL:
+            return RTFileSetSize(pThis->hFile, cbFile);
+        case RTVFSFILE_SIZE_F_GROW:
+            return RTFileSetAllocationSize(pThis->hFile, cbFile, RTFILE_ALLOC_SIZE_F_DEFAULT);
+        case RTVFSFILE_SIZE_F_GROW_KEEP_SIZE:
+            return RTFileSetAllocationSize(pThis->hFile, cbFile, RTFILE_ALLOC_SIZE_F_KEEP_SIZE);
+        default:
+            return VERR_NOT_SUPPORTED;
+    }
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnQueryMaxSize}
+ */
+static DECLCALLBACK(int) rtVfsStdFile_QueryMaxSize(void *pvThis, uint64_t *pcbMax)
+{
+    PRTVFSSTDFILE pThis = (PRTVFSSTDFILE)pvThis;
+    RTFOFF cbMax = 0;
+    int rc = RTFileGetMaxSizeEx(pThis->hFile, &cbMax);
+    if (RT_SUCCESS(rc))
+        *pcbMax = cbMax;
+    return rc;
+}
+
+
+/**
  * Standard file operations.
  */
 DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtVfsStdFileOps =
@@ -423,6 +457,8 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtVfsStdFileOps =
     },
     rtVfsStdFile_Seek,
     rtVfsStdFile_QuerySize,
+    rtVfsStdFile_SetSize,
+    rtVfsStdFile_QueryMaxSize,
     RTVFSFILEOPS_VERSION
 };
 

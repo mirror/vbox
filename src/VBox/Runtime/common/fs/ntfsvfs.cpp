@@ -2336,6 +2336,27 @@ static DECLCALLBACK(int) rtFsNtfsFile_QuerySize(void *pvThis, uint64_t *pcbFile)
 
 
 /**
+ * @interface_method_impl{RTVFSFILEOPS,pfnSetSize}
+ */
+static DECLCALLBACK(int) rtFsNtfsFile_SetSize(void *pvThis, uint64_t cbFile, uint32_t fFlags)
+{
+    NOREF(pvThis); NOREF(cbFile); NOREF(fFlags);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnQueryMaxSize}
+ */
+static DECLCALLBACK(int) rtFsNtfsFile_QueryMaxSize(void *pvThis, uint64_t *pcbMax)
+{
+    RT_NOREF(pvThis);
+    *pcbMax = INT64_MAX;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * NTFS file operations.
  */
 static const RTVFSFILEOPS g_rtFsNtfsFileOps =
@@ -2372,6 +2393,8 @@ static const RTVFSFILEOPS g_rtFsNtfsFileOps =
     },
     rtFsNtfsFile_Seek,
     rtFsNtfsFile_QuerySize,
+    rtFsNtfsFile_SetSize,
+    rtFsNtfsFile_QueryMaxSize,
     RTVFSFILEOPS_VERSION
 };
 

@@ -7380,6 +7380,8 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIsoMakerOutputFileOps =
     },
     rtFsIsoMakerOutFile_Seek,
     rtFsIsoMakerOutFile_QuerySize,
+    NULL /*SetSize*/,
+    NULL /*QueryMaxSize*/,
     RTVFSFILEOPS_VERSION
 };
 

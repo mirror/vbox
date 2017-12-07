@@ -1003,7 +1003,7 @@ typedef struct RTVFSFILEOPS
     DECLCALLBACKMEMBER(int, pfnSeek)(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual);
 
     /**
-     * Get the current file/stream size.
+     * Get the current file size.
      *
      * @returns IPRT status code.
      * @param   pvThis      The implementation specific file data.
@@ -1011,6 +1011,40 @@ typedef struct RTVFSFILEOPS
      * @sa      RTFileGetSize
      */
     DECLCALLBACKMEMBER(int, pfnQuerySize)(void *pvThis, uint64_t *pcbFile);
+
+    /**
+     * Change the file size.
+     *
+     * @returns IPRT status code.
+     * @retval  VERR_ACCESS_DENIED if handle isn't writable.
+     * @retval  VERR_WRITE_PROTECT if read-only file system.
+     * @retval  VERR_FILE_TOO_BIG if cbSize is larger than what the file system can
+     *          theoretically deal with.
+     * @retval  VERR_DISK_FULL if the file system if full.
+     * @retval  VERR_NOT_SUPPORTED if fFlags indicates some operation that's not
+     *          supported by the file system / host operating system.
+     *
+     * @param   pvThis      The implementation specific file data.
+     * @param   pcbFile     Where to store the current file size.
+     * @param   fFlags      RTVFSFILE_SET_SIZE_F_XXX.
+     * @note    Optional.  If NULL, VERR_WRITE_PROTECT will be returned.
+     * @sa      RTFileSetSize, RTFileSetAllocationSize
+     */
+    DECLCALLBACKMEMBER(int, pfnSetSize)(void *pvThis, uint64_t cbFile, uint32_t fFlags);
+
+    /**
+     * Determine the maximum file size.
+     *
+     * This won't take amount of freespace into account, just the limitations of the
+     * underlying file system / host operating system.
+     *
+     * @returns IPRT status code.
+     * @param   pvThis      The implementation specific file data.
+     * @param   pcbMax      Where to return the max file size.
+     * @note    Optional.  If NULL, VERR_NOT_IMPLEMENTED will be returned.
+     * @sa      RTFileGetMaxSizeEx
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryMaxSize)(void *pvThis, uint64_t *pcbMax);
 
     /** @todo There will be more methods here. */
 
@@ -1021,7 +1055,7 @@ typedef struct RTVFSFILEOPS
 typedef RTVFSFILEOPS const *PCRTVFSFILEOPS;
 
 /** The RTVFSFILEOPS structure version. */
-#define RTVFSFILEOPS_VERSION        RT_MAKE_U32_FROM_U8(0xff,0x7f,1,0)
+#define RTVFSFILEOPS_VERSION        RT_MAKE_U32_FROM_U8(0xff,0x7f,2,0)
 
 /**
  * Creates a new VFS file handle.

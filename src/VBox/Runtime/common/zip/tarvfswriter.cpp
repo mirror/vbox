@@ -826,6 +826,8 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtZipTarWriterFileOps =
     },
     rtZipTarWriterPush_Seek,
     rtZipTarWriterPush_QuerySize,
+    NULL /*SetSize*/,
+    NULL /*QueryMaxSize*/,
     RTVFSFILEOPS_VERSION
 };
 
