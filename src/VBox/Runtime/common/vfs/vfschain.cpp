@@ -655,16 +655,16 @@ static int rtVfsChainSpecMakeFinalPathElement(PRTVFSCHAINELEMSPEC pElement, cons
  * Finds the end of the argument string.
  *
  * @returns The offset of the end character relative to @a psz.
- * @param   psz                 The argument string.
+ * @param   psz             The argument string.
+ * @param   chCloseParen    The closing parenthesis.
  */
-static size_t rtVfsChainSpecFindArgEnd(const char *psz)
+static size_t rtVfsChainSpecFindArgEnd(const char *psz, char const chCloseParen)
 {
     size_t off = 0;
     char   ch;
     while (  (ch = psz[off]) != '\0'
            && ch != ','
-           && ch != ')'
-           && ch != '}')
+           && ch != chCloseParen)
     {
         if (   ch == '\\'
             && rtVfsChainSpecIsEscapableChar(psz[off+1]))
@@ -777,12 +777,13 @@ RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTY
                 rc = VERR_VFS_CHAIN_EXPECTED_LEFT_PARENTHESES;
             break;
         }
+        char const chCloseParen = (chOpenParen == '(' ? ')' : '}');
         pszSrc = RTStrStripL(pszSrc + cch + 1);
 
         /*
          * The name of the element provider.
          */
-        cch = rtVfsChainSpecFindArgEnd(pszSrc);
+        cch = rtVfsChainSpecFindArgEnd(pszSrc, chCloseParen);
         if (!cch)
         {
             rc = VERR_VFS_CHAIN_EXPECTED_PROVIDER_NAME;
@@ -799,7 +800,7 @@ RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTY
         while (*pszSrc == ',')
         {
             pszSrc = RTStrStripL(pszSrc + 1);
-            cch = rtVfsChainSpecFindArgEnd(pszSrc);
+            cch = rtVfsChainSpecFindArgEnd(pszSrc, chCloseParen);
             rc = rtVfsChainSpecElementAddArg(pElement, pszSrc, cch, (uint16_t)(pszSrc - pszSpec));
             if (RT_FAILURE(rc))
                 break;
@@ -809,7 +810,7 @@ RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTY
             break;
 
         /* Must end with a right parentheses/curly. */
-        if (*pszSrc != (chOpenParen == '(' ? ')' : '}'))
+        if (*pszSrc != chCloseParen)
         {
             rc = VERR_VFS_CHAIN_EXPECTED_RIGHT_PARENTHESES;
             break;
