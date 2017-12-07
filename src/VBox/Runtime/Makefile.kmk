@@ -858,6 +858,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/semevent-win.cpp \
 	r3/win/semeventmulti-win.cpp \
 	r3/win/semmutex-win.cpp \
+	r3/win/serialport-win.cpp \
 	r3/win/symlink-win.cpp \
 	r3/win/thread-win.cpp \
 	r3/win/thread2-win.cpp \
