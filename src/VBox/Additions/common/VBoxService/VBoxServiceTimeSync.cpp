@@ -206,23 +206,23 @@ static DECLCALLBACK(int) vgsvcTimeSyncPreInit(void)
         if (   RT_SUCCESS(rc)
             || rc == VERR_NOT_FOUND)
         {
-            char *pszValue;
-            rc = VGSvcReadProp(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-start",
-                               &pszValue, NULL /* ppszFlags */, NULL /* puTimestamp */);
+            rc = VGSvcCheckPropExist(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-start");
             if (RT_SUCCESS(rc))
-            {
                 g_fTimeSyncSetNext = true;
-                RTStrFree(pszValue);
-            }
         }
         if (   RT_SUCCESS(rc)
             || rc == VERR_NOT_FOUND)
         {
-            uint32_t uValue;
-            rc = VGSvcReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-on-restore",
-                                     &uValue, 0 /*uMin*/, 1 /*uMax*/);
+            rc = VGSvcCheckPropExist(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-on-restore");
             if (RT_SUCCESS(rc))
-                g_fTimeSyncSetOnRestore = uValue != 0;
+                g_fTimeSyncSetOnRestore = true;
+        }
+        if (   RT_SUCCESS(rc)
+            || rc == VERR_NOT_FOUND)
+        {
+            rc = VGSvcCheckPropExist(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-no-set-on-restore");
+            if (RT_SUCCESS(rc))
+                g_fTimeSyncSetOnRestore = false;
         }
         if (   RT_SUCCESS(rc)
             || rc == VERR_NOT_FOUND)
@@ -273,10 +273,9 @@ static void vgsvcTimeSyncLog(unsigned iLevel, const char *pszFormat, ...)
  */
 static DECLCALLBACK(int) vgsvcTimeSyncOption(const char **ppszShort, int argc, char **argv, int *pi)
 {
-    int rc = -1;
-    uint32_t value;
+    int rc = VINF_SUCCESS;
     if (ppszShort)
-        /* no short options */;
+        rc = -1 ;/* no short options */
     else if (!strcmp(argv[*pi], "--timesync-interval"))
         rc = VGSvcArgUInt32(argc, argv, "", pi, &g_TimeSyncInterval, 50, UINT32_MAX - 1);
     else if (!strcmp(argv[*pi], "--timesync-min-adjust"))
@@ -288,16 +287,13 @@ static DECLCALLBACK(int) vgsvcTimeSyncOption(const char **ppszShort, int argc, c
     else if (!strcmp(argv[*pi], "--timesync-set-threshold"))
         rc = VGSvcArgUInt32(argc, argv, "", pi, &g_TimeSyncSetThreshold, 0, 7*24*60*60*1000); /* a week */
     else if (!strcmp(argv[*pi], "--timesync-set-start"))
-    {
         g_fTimeSyncSetNext = true;
-        rc = VINF_SUCCESS;
-    }
     else if (!strcmp(argv[*pi], "--timesync-set-on-restore"))
-    {
-        rc = VGSvcArgUInt32(argc, argv, "", pi, &value, 1, 1);
-        if (RT_SUCCESS(rc))
-            g_fTimeSyncSetOnRestore = !!value;
-    }
+        g_fTimeSyncSetOnRestore = true;
+    else if (!strcmp(argv[*pi], "--timesync-no-set-on-restore"))
+        g_fTimeSyncSetOnRestore = false;
+    else
+        rc = -1;
 
     return rc;
 }
@@ -732,7 +728,7 @@ VBOXSERVICE g_TimeSync =
     "              [--timesync-interval <ms>] [--timesync-min-adjust <ms>]\n"
     "              [--timesync-latency-factor <x>] [--timesync-max-latency <ms>]\n"
     "              [--timesync-set-threshold <ms>] [--timesync-set-start]\n"
-    "              [--timesync-set-on-restore 0|1]"
+    "              [--timesync-set-on-restore|--timesync-no-set-on-restore]"
     ,
     /* pszOptions. */
     "    --timesync-interval     Specifies the interval at which to synchronize the\n"
@@ -751,9 +747,9 @@ VBOXSERVICE g_TimeSync =
     "                            where to start setting the time instead of trying to\n"
     "                            adjust it. The default is 20 min.\n"
     "    --timesync-set-start    Set the time when starting the time sync service.\n"
-    "    --timesync-set-on-restore 0|1\n"
-    "                            Immediately set the time when the VM was restored.\n"
-    "                            1 = set (default), 0 = don't set.\n"
+    "    --timesync-set-on-restore, --timesync-no-set-on-restore\n"
+    "                            Whether to immediately set the time when the VM is\n"
+    "                            restored or not.  Default: --timesync-set-on-restore\n"
     ,
     /* methods */
     vgsvcTimeSyncPreInit,
