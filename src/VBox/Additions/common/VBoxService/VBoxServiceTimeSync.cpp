@@ -536,11 +536,15 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
     RTThreadUserSignal(RTThreadSelf());
 
     /*
-     * Initialize the last host time to prevent log message.
+     * Initialize the last host and guest times to prevent log message.
+     * We also tracks whether we set the time in the previous loop.
      */
     RTTIMESPEC HostLast;
     if (RT_FAILURE(VbglR3GetHostTime(&HostLast)))
         RTTimeSpecSetNano(&HostLast, 0);
+    RTTIMESPEC GuestLast;
+    RTTimeNow(&GuestLast);
+    bool fSetTimeLastLoop = false;
 
     /*
      * The Work Loop.
@@ -616,6 +620,7 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
                                      RTTimeToString(RTTimeExplode(&Time, &GuestNow), sz, sizeof(sz)), &Drift);
                 }
 
+                bool fSetTimeInThisLoop = false;
                 uint32_t AbsDriftMilli = RTTimeSpecGetMilli(&AbsDrift);
                 if (AbsDriftMilli > MinAdjust)
                 {
@@ -631,6 +636,7 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
                     {
                         vgsvcTimeSyncCancelAdjust();
                         vgsvcTimeSyncSet(&Drift);
+                        fSetTimeInThisLoop = true;
                     }
 
                     /*
@@ -644,6 +650,18 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
                 else
                     vgsvcTimeSyncCancelAdjust();
                 HostLast = HostNow;
+
+                /*
+                 * Log radical guest time changes (we could be the cause of these, mind).
+                 * Note! Right now we don't care about an extra log line after we called
+                 *       vgsvcTimeSyncSet.  fSetTimeLastLoop helps show it though.
+                 */
+                int64_t cNsGuestDelta = RTTimeSpecGetNano(&GuestNow) - RTTimeSpecGetNano(&GuestLast);
+                if ((uint64_t)RT_ABS(cNsGuestDelta) > RT_NS_1HOUR / 2)
+                    vgsvcTimeSyncLog(0, "vgsvcTimeSyncWorker: Radical guest time change: %'RI64ns (GuestNow=%RDtimespec GuestLast=%RDtimespec fSetTimeLastLoop=%RTbool)\n",
+                                     cNsGuestDelta, &GuestNow, &GuestLast, fSetTimeLastLoop);
+                GuestLast = GuestNow;
+                fSetTimeLastLoop = fSetTimeInThisLoop;
                 break;
             }
             vgsvcTimeSyncLog(3, "vgsvcTimeSyncWorker: %RDtimespec: latency too high (%RDtimespec, max %ums) sleeping 1s\n",
