@@ -637,7 +637,6 @@ typedef enum
     SVMIOIOTYPE_OUT = SVM_IOIO_WRITE,
     SVMIOIOTYPE_IN  = SVM_IOIO_READ
 } SVMIOIOTYPE;
-/** @}*/
 
 /**
  * SVM nested paging structure.
@@ -1024,7 +1023,6 @@ typedef struct SVMNESTEDVMCBCACHE
 typedef SVMNESTEDVMCBCACHE *PSVMNESTEDVMCBCACHE;
 /** Pointer to a const SVMNESTEDVMCBCACHE structure. */
 typedef const SVMNESTEDVMCBCACHE *PCSVMNESTEDVMCBCACHE;
-/** @} */
 AssertCompileSizeAlignment(SVMNESTEDVMCBCACHE, 8);
 
 #ifdef IN_RING0
@@ -1085,7 +1083,6 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
         (a_pCtx)->a_reg.u64Base   = (a_pVmcbStateSave)->a_REG.u64Base;  \
         (a_pCtx)->a_reg.Attr.u    = HMSVM_VMCB_2_CPU_SEG_ATTR((a_pVmcbStateSave)->a_REG.u16Attr); \
     } while (0)
-/** @} */
 
 
 /** @} */
