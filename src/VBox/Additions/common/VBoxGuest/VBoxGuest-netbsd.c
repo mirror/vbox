@@ -141,6 +141,9 @@ static int VBoxGuestNetBSDPoll(struct file *fp, int events);
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+extern struct cfdriver vboxguest_cd; /* CFDRIVER_DECL */
+extern struct cfattach vboxguest_ca; /* CFATTACH_DECL */
+
 /*
  * The /dev/vboxguest character device entry points.
  */
@@ -176,9 +179,6 @@ static VBOXGUESTDEVEXT      g_DevExt;
 static volatile uint32_t    cUsers;
 /** selinfo structure used for polling. */
 static struct selinfo       g_SelInfo;
-
-CFDRIVER_DECL(vboxguest, DV_DULL, NULL);
-extern struct cfdriver vboxguest_cd;
 
 
 CFATTACH_DECL_NEW(vboxguest, sizeof(vboxguest_softc),
@@ -692,18 +692,25 @@ int VBOXCALL VBoxGuestIDC(void *pvSession, uintptr_t uReq, PVBGLREQHDR pReqHdr, 
 
 MODULE(MODULE_CLASS_DRIVER, vboxguest, "pci");
 
-static int loc[2] = {-1, -1};
+CFDRIVER_DECL(vboxguest, DV_DULL, NULL);
+
+static struct cfdriver * const cfdriver_ioconf_vboxguest[] = {
+    &vboxguest_cd, NULL
+};
+
+static int loc[2] = { -1, -1 };
 
 static const struct cfparent pspec = {
     "pci", "pci", DVUNIT_ANY
 };
 
-static struct cfdata vboxguest_cfdata[] = {
+/*  vboxguest0 at pci? dev ? function ? */
+static struct cfdata cfdata_ioconf_vboxguest[] = {
     {
         .cf_name = "vboxguest",
         .cf_atname = "vboxguest",
         .cf_unit = 0,           /* Only unit 0 is ever used  */
-        .cf_fstate = FSTATE_STAR,
+        .cf_fstate = FSTATE_NOTFOUND,
         .cf_loc = loc,
         .cf_flags = 0,
         .cf_pspec = &pspec,
@@ -711,63 +718,60 @@ static struct cfdata vboxguest_cfdata[] = {
     { NULL, NULL, 0, 0, NULL, 0, NULL }
 };
 
+static struct cfattach * const vboxguest_cfattachinit[] = {
+	&vboxguest_ca, NULL
+};
+
+static const struct cfattachinit cfattach_ioconf_vboxguest[] = {
+	{ "vboxguest", vboxguest_cfattachinit },
+	{ NULL, NULL }
+};
+
 static int
 vboxguest_modcmd(modcmd_t cmd, void *opaque)
 {
     devmajor_t bmajor, cmajor;
-    int error;
     register_t retval;
+    int error;
 
     LogFlow((DEVICE_NAME ": %s\n", __func__));
 
-    bmajor = cmajor = NODEVMAJOR;
     switch (cmd)
     {
         case MODULE_CMD_INIT:
-            error = config_cfdriver_attach(&vboxguest_cd);
+            error = config_init_component(cfdriver_ioconf_vboxguest,
+                                          cfattach_ioconf_vboxguest,
+                                          cfdata_ioconf_vboxguest);
+            if (error)
+                break;
+
+            bmajor = cmajor = NODEVMAJOR;
+            error = devsw_attach("vboxguest",
+                                 NULL, &bmajor,
+                                 &g_VBoxGuestNetBSDChrDevSW, &cmajor);
             if (error)
             {
-                printf("config_cfdriver_attach failed: %d", error);
-                break;
-            }
-            error = config_cfattach_attach(vboxguest_cd.cd_name, &vboxguest_ca);
-            if (error)
-            {
-                config_cfdriver_detach(&vboxguest_cd);
-                printf("%s: unable to register cfattach\n", vboxguest_cd.cd_name);
-                break;
-            }
-            error = config_cfdata_attach(vboxguest_cfdata, 1);
-            if (error)
-            {
-                printf("%s: unable to attach cfdata\n", vboxguest_cd.cd_name);
-                config_cfattach_detach(vboxguest_cd.cd_name, &vboxguest_ca);
-                config_cfdriver_detach(&vboxguest_cd);
-                break;
+                if (error == EEXIST)
+                    error = 0; /* maybe built-in ... improve eventually */
+                else
+                    break;
             }
 
-            error = devsw_attach("vboxguest", NULL, &bmajor, &g_VBoxGuestNetBSDChrDevSW, &cmajor);
-
-            if (error == EEXIST)
-                error = 0; /* maybe built-in ... improve eventually */
-
-            if (error)
-                break;
-
-            error = do_sys_mknod(curlwp, "/dev/vboxguest", 0666|S_IFCHR, makedev(cmajor, 0), &retval, UIO_SYSSPACE);
+            error = do_sys_mknod(curlwp, "/dev/vboxguest",
+                                 0666|S_IFCHR, makedev(cmajor, 0),
+                                 &retval, UIO_SYSSPACE);
             if (error == EEXIST)
                 error = 0;
             break;
 
         case MODULE_CMD_FINI:
-            error = config_cfdata_detach(vboxguest_cfdata);
+            error = config_fini_component(cfdriver_ioconf_vboxguest,
+                                          cfattach_ioconf_vboxguest,
+                                          cfdata_ioconf_vboxguest);
             if (error)
                 break;
-            error = config_cfattach_detach(vboxguest_cd.cd_name, &vboxguest_ca);
-            if (error)
-                break;
-            config_cfdriver_detach(&vboxguest_cd);
-            error = devsw_detach(NULL, &g_VBoxGuestNetBSDChrDevSW);
+
+            devsw_detach(NULL, &g_VBoxGuestNetBSDChrDevSW);
             break;
 
         default:
