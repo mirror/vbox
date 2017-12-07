@@ -65,8 +65,16 @@ typedef struct RTSERIALPORTINTERNAL
     HANDLE              hEvtDev;
     /** The event handle to wait on for waking up waiting threads externally. */
     HANDLE              hEvtIntr;
-    /** Events pending which were not queried yet. */
-    volatile uint32_t   fEvtsPending;
+    /** Events currently waited for. */
+    uint32_t            fEvtMask;
+    /** Flag whether a write is currently pending. */
+    bool                fWritePending;
+    /** Bounce buffer for writes. */
+    uint8_t            *pbBounceBuf;
+    /** Amount of used buffer space. */
+    size_t              cbBounceBufUsed;
+    /** Amount of allocated buffer space. */
+    size_t              cbBounceBufAlloc;
     /** The current active port config. */
     DCB                 PortCfg;
 } RTSERIALPORTINTERNAL;
@@ -78,6 +86,8 @@ typedef RTSERIALPORTINTERNAL *PRTSERIALPORTINTERNAL;
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+/** The pipe buffer size we prefer. */
+#define RTSERIALPORT_NT_SIZE      _32K
 
 
 
@@ -90,6 +100,35 @@ typedef RTSERIALPORTINTERNAL *PRTSERIALPORTINTERNAL;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+
+/**
+ * Updatest the current event mask to wait for.
+ *
+ * @returns IPRT status code.
+ * @param   pThis                   The internal serial port instance data.
+ * @param   fEvtMask                The new event mask to change to.
+ */
+static int rtSerialPortWinUpdateEvtMask(PRTSERIALPORTINTERNAL pThis, uint32_t fEvtMask)
+{
+    DWORD dwEvtMask = 0;
+
+    if (fEvtMask & RTSERIALPORT_EVT_F_DATA_RX)
+        dwEvtMask |= EV_RXCHAR;
+    if (fEvtMask & RTSERIALPORT_EVT_F_DATA_TX)
+        dwEvtMask |= EV_TXEMPTY;
+    if (fEvtMask & RTSERIALPORT_EVT_F_BREAK_DETECTED)
+        dwEvtMask |= EV_BREAK;
+    if (fEvtMask & RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED)
+        dwEvtMask |= EV_CTS | EV_DSR | EV_RING | EV_RLSD;
+
+    int rc = VINF_SUCCESS;
+    if (!SetCommMask(pThis->hDev, dwEvtMask))
+        rc = RTErrConvertFromWin32(GetLastError());
+    else
+        pThis->fEvtMask = fEvtMask;
+
+    return rc;
+}
 
 
 /**
@@ -122,6 +161,70 @@ static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
 }
 
 
+/**
+ * Common worker for handling I/O completion.
+ *
+ * This is used by RTSerialPortClose, RTSerialPortWrite and RTPipeSerialPortNB.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The pipe instance handle.
+ */
+static int rtSerialPortWriteCheckCompletion(PRTSERIALPORTINTERNAL pThis)
+{
+    int rc = VINF_SUCCESS;
+    DWORD dwRc = WaitForSingleObject(pThis->Overlapped.hEvent, 0);
+    if (dwRc == WAIT_OBJECT_0)
+    {
+        DWORD cbWritten = 0;
+        if (GetOverlappedResult(pThis->hDev, &pThis->Overlapped, &cbWritten, TRUE))
+        {
+            for (;;)
+            {
+                if (cbWritten >= pThis->cbBounceBufUsed)
+                {
+                    pThis->fWritePending = false;
+                    rc = VINF_SUCCESS;
+                    break;
+                }
+
+                /* resubmit the remainder of the buffer - can this actually happen? */
+                memmove(&pThis->pbBounceBuf[0], &pThis->pbBounceBuf[cbWritten], pThis->cbBounceBufUsed - cbWritten);
+                rc = ResetEvent(pThis->Overlapped.hEvent); Assert(rc == TRUE);
+                if (!WriteFile(pThis->hDev, pThis->pbBounceBuf, (DWORD)pThis->cbBounceBufUsed,
+                               &cbWritten, &pThis->Overlapped))
+                {
+                    if (GetLastError() == ERROR_IO_PENDING)
+                        rc = VINF_TRY_AGAIN;
+                    else
+                    {
+                        pThis->fWritePending = false;
+                        rc = RTErrConvertFromWin32(GetLastError());
+                    }
+                    break;
+                }
+                Assert(cbWritten > 0);
+            }
+        }
+        else
+        {
+            pThis->fWritePending = false;
+            rc = RTErrConvertFromWin32(GetLastError());
+        }
+    }
+    else if (dwRc == WAIT_TIMEOUT)
+        rc = VINF_TRY_AGAIN;
+    else
+    {
+        pThis->fWritePending = false;
+        if (dwRc == WAIT_ABANDONED)
+            rc = VERR_INVALID_HANDLE;
+        else
+            rc = RTErrConvertFromWin32(GetLastError());
+    }
+    return rc;
+}
+
+
 RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAddress, uint32_t fFlags)
 {
     AssertPtrReturn(phSerialPort, VERR_INVALID_POINTER);
@@ -134,11 +237,16 @@ RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAdd
     PRTSERIALPORTINTERNAL pThis = (PRTSERIALPORTINTERNAL)RTMemAllocZ(sizeof(*pThis));
     if (pThis)
     {
-        pThis->fOpenFlags   = fFlags;
-        pThis->fEvtsPending = 0;
-        pThis->hEvtDev      = CreateEvent(NULL, FALSE, FALSE, NULL);
+        pThis->fOpenFlags       = fFlags;
+        pThis->fEvtMask         = 0;
+        pThis->fWritePending    = false;
+        pThis->pbBounceBuf      = NULL;
+        pThis->cbBounceBufUsed  = 0;
+        pThis->cbBounceBufAlloc = 0;
+        pThis->hEvtDev          = CreateEvent(NULL, FALSE, FALSE, NULL);
         if (pThis->hEvtDev)
         {
+            pThis->Overlapped.hEvent = pThis->hEvtDev,
             pThis->hEvtIntr = CreateEvent(NULL, FALSE, FALSE, NULL);
             if (pThis->hEvtIntr)
             {
@@ -193,6 +301,9 @@ RTDECL(int)  RTSerialPortClose(RTSERIALPORT hSerialPort)
      */
     AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, RTSERIALPORT_MAGIC_DEAD, RTSERIALPORT_MAGIC), VERR_INVALID_HANDLE);
 
+    if (pThis->fWritePending)
+        rtSerialPortWriteCheckCompletion(pThis);
+
     CloseHandle(pThis->hDev);
     CloseHandle(pThis->hEvtDev);
     CloseHandle(pThis->hEvtIntr);
@@ -216,8 +327,15 @@ RTDECL(RTHCINTPTR) RTSerialPortToNative(RTSERIALPORT hSerialPort)
 
 RTDECL(int) RTSerialPortRead(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
-    RT_NOREF(hSerialPort, pvBuf, cbToRead, pcbRead);
-    return VERR_NOT_IMPLEMENTED;
+    PRTSERIALPORTINTERNAL pThis = hSerialPort;
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->u32Magic == RTSERIALPORT_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbToRead > 0, VERR_INVALID_PARAMETER);
+
+    RT_NOREF(pcbRead);
+    int rc = VERR_NOT_IMPLEMENTED;
+    return rc;
 }
 
 
@@ -232,7 +350,43 @@ RTDECL(int) RTSerialPortReadNB(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbT
 
     *pcbRead = 0;
 
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Kick of an overlapped read.  It should return immediately if
+     * there is bytes in the buffer.  If not, we'll cancel it and see
+     * what we get back.
+     */
+    int rc = VINF_SUCCESS;
+    BOOL fSucc = ResetEvent(pThis->Overlapped.hEvent); Assert(fSucc == TRUE);
+    DWORD cbRead = 0;
+    if (   cbToRead == 0
+        || ReadFile(pThis->hDev, pvBuf,
+                    cbToRead <= ~(DWORD)0 ? (DWORD)cbToRead : ~(DWORD)0,
+                    &cbRead, &pThis->Overlapped))
+    {
+        *pcbRead = cbRead;
+        rc = VINF_SUCCESS;
+    }
+    else if (GetLastError() == ERROR_IO_PENDING)
+    {
+        if (!CancelIo(pThis->hDev))
+            WaitForSingleObject(pThis->Overlapped.hEvent, INFINITE);
+        if (GetOverlappedResult(pThis->hDev, &pThis->Overlapped, &cbRead, TRUE /*fWait*/))
+        {
+            *pcbRead = cbRead;
+            rc = VINF_SUCCESS;
+        }
+        else if (GetLastError() == ERROR_OPERATION_ABORTED)
+        {
+            *pcbRead = 0;
+            rc = VINF_TRY_AGAIN;
+        }
+        else
+            rc = RTErrConvertFromWin32(GetLastError());
+    }
+    else
+        rc = RTErrConvertFromWin32(GetLastError());
+
+    return rc;
 }
 
 
@@ -252,7 +406,61 @@ RTDECL(int) RTSerialPortWriteNB(RTSERIALPORT hSerialPort, const void *pvBuf, siz
     AssertReturn(cbToWrite > 0, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
 
-    return VERR_NOT_IMPLEMENTED;
+    /* If I/O is pending, check if it has completed. */
+    int rc = VINF_SUCCESS;
+    if (pThis->fWritePending)
+        rc = rtSerialPortWriteCheckCompletion(pThis);
+    if (rc == VINF_SUCCESS)
+    {
+        Assert(!pThis->fWritePending);
+
+        /* Do the bounce buffering. */
+        if (    pThis->cbBounceBufAlloc < cbToWrite
+            &&  pThis->cbBounceBufAlloc < RTSERIALPORT_NT_SIZE)
+        {
+            if (cbToWrite > RTSERIALPORT_NT_SIZE)
+                cbToWrite = RTSERIALPORT_NT_SIZE;
+            void *pv = RTMemRealloc(pThis->pbBounceBuf, RT_ALIGN_Z(cbToWrite, _1K));
+            if (pv)
+            {
+                pThis->pbBounceBuf = (uint8_t *)pv;
+                pThis->cbBounceBufAlloc = RT_ALIGN_Z(cbToWrite, _1K);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else if (cbToWrite > RTSERIALPORT_NT_SIZE)
+            cbToWrite = RTSERIALPORT_NT_SIZE;
+        if (RT_SUCCESS(rc) && cbToWrite)
+        {
+            memcpy(pThis->pbBounceBuf, pvBuf, cbToWrite);
+            pThis->cbBounceBufUsed = (uint32_t)cbToWrite;
+
+            /* Submit the write. */
+            rc = ResetEvent(pThis->Overlapped.hEvent); Assert(rc == TRUE);
+            DWORD cbWritten = 0;
+            if (WriteFile(pThis->hDev, pThis->pbBounceBuf, (DWORD)pThis->cbBounceBufUsed,
+                          &cbWritten, &pThis->Overlapped))
+            {
+                *pcbWritten = RT_MIN(cbWritten, cbToWrite); /* paranoia^3 */
+                rc = VINF_SUCCESS;
+            }
+            else if (GetLastError() == ERROR_IO_PENDING)
+            {
+                *pcbWritten = cbToWrite;
+                pThis->fWritePending = true;
+                rc = VINF_SUCCESS;
+            }
+            else
+                rc = RTErrConvertFromWin32(GetLastError());
+        }
+        else if (RT_SUCCESS(rc))
+            *pcbWritten = 0;
+    }
+    else if (RT_SUCCESS(rc))
+        *pcbWritten = 0;
+
+    return rc;
 }
 
 
@@ -262,9 +470,65 @@ RTDECL(int) RTSerialPortCfgQueryCurrent(RTSERIALPORT hSerialPort, PRTSERIALPORTC
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
     AssertReturn(pThis->u32Magic == RTSERIALPORT_MAGIC, VERR_INVALID_HANDLE);
 
-    RT_NOREF(pCfg);
+    pCfg->uBaudRate = pThis->PortCfg.BaudRate;
+    switch (pThis->PortCfg.Parity)
+    {
+        case NOPARITY:
+            pCfg->enmParity = RTSERIALPORTPARITY_NONE;
+            break;
+        case EVENPARITY:
+            pCfg->enmParity = RTSERIALPORTPARITY_EVEN;
+            break;
+        case ODDPARITY:
+            pCfg->enmParity = RTSERIALPORTPARITY_ODD;
+            break;
+        case MARKPARITY:
+            pCfg->enmParity = RTSERIALPORTPARITY_MARK;
+            break;
+        case SPACEPARITY:
+            pCfg->enmParity = RTSERIALPORTPARITY_SPACE;
+            break;
+        default:
+            AssertFailed();
+            return VERR_INTERNAL_ERROR;
+    }
 
-    return VERR_NOT_IMPLEMENTED;
+    switch (pThis->PortCfg.ByteSize)
+    {
+        case 5:
+            pCfg->enmDataBitCount = RTSERIALPORTDATABITS_5BITS;
+            break;
+        case 6:
+            pCfg->enmDataBitCount = RTSERIALPORTDATABITS_6BITS;
+            break;
+        case 7:
+            pCfg->enmDataBitCount = RTSERIALPORTDATABITS_7BITS;
+            break;
+        case 8:
+            pCfg->enmDataBitCount = RTSERIALPORTDATABITS_8BITS;
+            break;
+        default:
+            AssertFailed();
+            return VERR_INTERNAL_ERROR;
+    }
+
+    switch (pThis->PortCfg.StopBits)
+    {
+        case ONESTOPBIT:
+            pCfg->enmStopBitCount = RTSERIALPORTSTOPBITS_ONE;
+            break;
+        case ONE5STOPBITS:
+            pCfg->enmStopBitCount = RTSERIALPORTSTOPBITS_ONEPOINTFIVE;
+            break;
+        case TWOSTOPBITS:
+            pCfg->enmStopBitCount = RTSERIALPORTSTOPBITS_TWO;
+            break;
+        default:
+            AssertFailed();
+            return VERR_INTERNAL_ERROR;
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -274,9 +538,75 @@ RTDECL(int) RTSerialPortCfgSet(RTSERIALPORT hSerialPort, PCRTSERIALPORTCFG pCfg,
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
     AssertReturn(pThis->u32Magic == RTSERIALPORT_MAGIC, VERR_INVALID_HANDLE);
 
-    RT_NOREF(pCfg, pErrInfo);
+    RT_NOREF(pErrInfo);
 
-    return VERR_NOT_IMPLEMENTED;
+    DCB DcbNew;
+    memcpy(&DcbNew, &pThis->PortCfg, sizeof(DcbNew));
+    DcbNew.BaudRate = pCfg->uBaudRate;
+
+    switch (pCfg->enmParity)
+    {
+        case RTSERIALPORTPARITY_NONE:
+            DcbNew.Parity = NOPARITY;
+            break;
+        case RTSERIALPORTPARITY_EVEN:
+            DcbNew.Parity = EVENPARITY;
+            break;
+        case RTSERIALPORTPARITY_ODD:
+            DcbNew.Parity = ODDPARITY;
+            break;
+        case RTSERIALPORTPARITY_MARK:
+            DcbNew.Parity = MARKPARITY;
+            break;
+        case RTSERIALPORTPARITY_SPACE:
+            DcbNew.Parity = SPACEPARITY;
+            break;
+        default:
+            AssertFailedReturn(VERR_INVALID_PARAMETER);
+    }
+
+    switch (pCfg->enmDataBitCount)
+    {
+        case RTSERIALPORTDATABITS_5BITS:
+            DcbNew.ByteSize = 5;
+            break;
+        case RTSERIALPORTDATABITS_6BITS:
+            DcbNew.ByteSize = 6;
+            break;
+        case RTSERIALPORTDATABITS_7BITS:
+            DcbNew.ByteSize = 7;
+            break;
+        case RTSERIALPORTDATABITS_8BITS:
+            DcbNew.ByteSize = 8;
+            break;
+        default:
+            AssertFailedReturn(VERR_INVALID_PARAMETER);
+    }
+
+    switch (pCfg->enmStopBitCount)
+    {
+        case RTSERIALPORTSTOPBITS_ONE:
+            DcbNew.StopBits = ONESTOPBIT;
+            break;
+        case RTSERIALPORTSTOPBITS_ONEPOINTFIVE:
+            AssertReturn(pCfg->enmDataBitCount == RTSERIALPORTDATABITS_5BITS, VERR_INVALID_PARAMETER);
+            DcbNew.StopBits = ONE5STOPBITS;
+            break;
+        case RTSERIALPORTSTOPBITS_TWO:
+            AssertReturn(pCfg->enmDataBitCount != RTSERIALPORTDATABITS_5BITS, VERR_INVALID_PARAMETER);
+            DcbNew.StopBits = TWOSTOPBITS;
+            break;
+        default:
+            AssertFailedReturn(VERR_INVALID_PARAMETER);
+    }
+
+    int rc = VINF_SUCCESS;
+    if (!SetCommState(pThis->hDev, &DcbNew))
+        rc = RTErrConvertFromWin32(GetLastError());
+    else
+        memcpy(&pThis->PortCfg, &DcbNew, sizeof(DcbNew));
+
+    return rc;
 }
 
 
@@ -289,9 +619,65 @@ RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, uint32_t fEvtMask, uin
     AssertReturn(!(fEvtMask & ~RTSERIALPORT_EVT_F_VALID_MASK), VERR_INVALID_PARAMETER);
     AssertPtrReturn(pfEvtsRecv, VERR_INVALID_POINTER);
 
-    RT_NOREF(msTimeout);
+    *pfEvtsRecv = 0;
 
-    return VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+    if (fEvtMask != pThis->fEvtMask)
+        rc = rtSerialPortWinUpdateEvtMask(pThis, fEvtMask);
+
+    if (RT_SUCCESS(rc))
+    {
+        DWORD dwEventMask = 0;
+        HANDLE ahWait[2];
+        ahWait[0] = pThis->hEvtDev;
+        ahWait[1] = pThis->hEvtIntr;
+
+        RT_ZERO(pThis->Overlapped);
+        pThis->Overlapped.hEvent = pThis->hEvtDev;
+
+        if (!WaitCommEvent(pThis->hDev, &dwEventMask, &pThis->Overlapped))
+        {
+            DWORD dwRet = GetLastError();
+            if (dwRet == ERROR_IO_PENDING)
+            {
+                dwRet = WaitForMultipleObjects(2, ahWait, FALSE, msTimeout == RT_INDEFINITE_WAIT ? INFINITE : msTimeout);
+                if (dwRet == WAIT_TIMEOUT)
+                    rc = VERR_TIMEOUT;
+                else if (dwRet == WAIT_FAILED)
+                    rc = RTErrConvertFromWin32(GetLastError());
+                else if (dwRet != WAIT_OBJECT_0)
+                    rc = VERR_INTERRUPTED;
+            }
+            else
+                rc = RTErrConvertFromWin32(dwRet);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            /* Check the event */
+            if (dwEventMask & EV_RXCHAR)
+                *pfEvtsRecv |= RTSERIALPORT_EVT_F_DATA_RX;
+            if (dwEventMask & EV_TXEMPTY)
+            {
+                if (pThis->fWritePending)
+                {
+                    rc = rtSerialPortWriteCheckCompletion(pThis);
+                    if (rc == VINF_SUCCESS)
+                        *pfEvtsRecv |= RTSERIALPORT_EVT_F_DATA_TX;
+                    else
+                        rc = VINF_SUCCESS;
+                }
+                else
+                    *pfEvtsRecv |= RTSERIALPORT_EVT_F_DATA_TX;
+            }
+            if (dwEventMask & EV_BREAK)
+                *pfEvtsRecv |= RTSERIALPORT_EVT_F_BREAK_DETECTED;
+            if (dwEventMask & (EV_CTS | EV_DSR | EV_RING | EV_RLSD))
+                *pfEvtsRecv |= RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED;
+        }
+    }
+
+    return rc;
 }
 
 
