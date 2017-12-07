@@ -205,7 +205,7 @@ DumpD3DCaps9_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 DumpD3DCaps9_DEFS     = UNICODE _UNICODE
 DumpD3DCaps9_SOURCES  = \
 	wddm/dbg/DumpD3DCaps9.cpp
-DumpD3DCaps9_LIBS     = $(VBOX_LIB_IPRT_GUEST_R3) d3d9.lib
+DumpD3DCaps9_LIBS     = d3d9.lib
 DumpD3DCaps9_LDFLAGS.win = /SUBSYSTEM:CONSOLE
 
 PROGRAMS += D3DFeatureLevel

@@ -5486,9 +5486,22 @@ static HRESULT APIENTRY vboxWddmDDevGetQueryData(HANDLE hDevice, CONST D3DDDIARG
     }
 #endif
     hr = pQuery->pQueryIf->GetData(pData->pData, cbData, 0);
-    if (hr != S_OK)
+    if (hr != S_OK && hr != S_FALSE)
         WARN(("GetData failed, hr = 0x%x", hr));
 
+#ifdef DEBUG
+    switch (pQuery->enmType)
+    {
+        case D3DDDIQUERYTYPE_EVENT:
+            vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p) D3DDDIQUERYTYPE_EVENT %d\n", hDevice, *(BOOL *)pData->pData));
+            break;
+        case D3DDDIQUERYTYPE_OCCLUSION:
+            vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p) D3DDDIQUERYTYPE_OCCLUSION %d\n", hDevice, *(UINT *)pData->pData));
+            break;
+        default:
+            break;
+    }
+#endif
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return hr;
 }
