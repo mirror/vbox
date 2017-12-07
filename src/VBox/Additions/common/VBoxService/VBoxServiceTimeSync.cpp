@@ -130,9 +130,9 @@ static uint32_t         g_TimeSyncSetThreshold = 20*60*1000;
 static bool volatile    g_fTimeSyncSetNext = false;
 /** Whether to set the time when the VM was restored. */
 static bool             g_fTimeSyncSetOnRestore = true;
-/** The logging verbosity.
+/** The logging verbosity level.
  *  This uses the global verbosity level by default. */
-static unsigned         g_uTimeSyncVerbosity = 0;
+static uint32_t         g_cTimeSyncVerbosity = 0;
 
 /** Current error count. Used to knowing when to bitch and when not to. */
 static uint32_t         g_cTimeSyncErrors = 0;
@@ -161,7 +161,7 @@ static BOOL             g_bWinTimeAdjustmentDisabled;
 static DECLCALLBACK(int) vgsvcTimeSyncPreInit(void)
 {
     /* Use global verbosity as default. */
-    g_uTimeSyncVerbosity = g_cVerbosity;
+    g_cTimeSyncVerbosity = g_cVerbosity;
 
 #ifdef VBOX_WITH_GUEST_PROPS
     /** @todo Merge this function with vgsvcTimeSyncOption() to generalize
@@ -231,7 +231,7 @@ static DECLCALLBACK(int) vgsvcTimeSyncPreInit(void)
             rc = VGSvcReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-verbosity",
                                      &uValue, 0 /*uMin*/, 255 /*uMax*/);
             if (RT_SUCCESS(rc))
-                g_uTimeSyncVerbosity = (unsigned)uValue;
+                g_cTimeSyncVerbosity = uValue;
         }
         VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
     }
@@ -256,7 +256,7 @@ static DECLCALLBACK(int) vgsvcTimeSyncPreInit(void)
  */
 static void vgsvcTimeSyncLog(unsigned iLevel, const char *pszFormat, ...)
 {
-    if (iLevel <= g_uTimeSyncVerbosity)
+    if (iLevel <= g_cTimeSyncVerbosity)
     {
         va_list args;
         va_start(args, pszFormat);
@@ -292,6 +292,8 @@ static DECLCALLBACK(int) vgsvcTimeSyncOption(const char **ppszShort, int argc, c
         g_fTimeSyncSetOnRestore = true;
     else if (!strcmp(argv[*pi], "--timesync-no-set-on-restore"))
         g_fTimeSyncSetOnRestore = false;
+    else if (!strcmp(argv[*pi], "--timesync-verbosity"))
+        rc = VGSvcArgUInt32(argc, argv, "", pi, &g_cTimeSyncVerbosity, 0 /*uMin*/, 255 /*uMax*/);
     else
         rc = -1;
 
@@ -728,7 +730,8 @@ VBOXSERVICE g_TimeSync =
     "              [--timesync-interval <ms>] [--timesync-min-adjust <ms>]\n"
     "              [--timesync-latency-factor <x>] [--timesync-max-latency <ms>]\n"
     "              [--timesync-set-threshold <ms>] [--timesync-set-start]\n"
-    "              [--timesync-set-on-restore|--timesync-no-set-on-restore]"
+    "              [--timesync-set-on-restore|--timesync-no-set-on-restore]\n"
+    "              [--timesync-verbosity <level>]"
     ,
     /* pszOptions. */
     "    --timesync-interval     Specifies the interval at which to synchronize the\n"
@@ -750,6 +753,8 @@ VBOXSERVICE g_TimeSync =
     "    --timesync-set-on-restore, --timesync-no-set-on-restore\n"
     "                            Whether to immediately set the time when the VM is\n"
     "                            restored or not.  Default: --timesync-set-on-restore\n"
+    "    --timesync-verbosity    Sets the verbosity level.  Defaults to service wide\n"
+    "                            verbosity level.\n"
     ,
     /* methods */
     vgsvcTimeSyncPreInit,
