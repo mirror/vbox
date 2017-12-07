@@ -727,7 +727,7 @@ VBoxEGL_SOURCES        = egl.c
 ifndef VBOX_USE_SYSTEM_GL_HEADERS
  VBoxEGL_INCS           = $(VBOX_PATH_X11_ROOT)/mesa-11.0.7
 endif
-VBoxEGL_LIBS           = $(VBOX_LIB_OGL) $(VBOX_LIB_IPRT_GUEST_R3_SHARED)
+VBoxEGL_LIBS           = $(VBOX_LIB_OGL) # $(VBOX_LIB_IPRT_GUEST_R3_SHARED)
 VBoxEGL_SONAME.linux   = libEGL.so.1
 
 include $(FILE_KBUILD_SUB_FOOTER)
