@@ -356,7 +356,7 @@ RTDECL(int) RTSerialPortReadNB(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbT
      * what we get back.
      */
     int rc = VINF_SUCCESS;
-    BOOL fSucc = ResetEvent(pThis->Overlapped.hEvent); Assert(fSucc == TRUE);
+    BOOL fSucc = ResetEvent(pThis->Overlapped.hEvent); Assert(fSucc == TRUE); RT_NOREF(fSucc);
     DWORD cbRead = 0;
     if (   cbToRead == 0
         || ReadFile(pThis->hDev, pvBuf,
