@@ -504,10 +504,11 @@ DECLINLINE(void) rtMemTrackerStateRecordFree(PRTMEMTRACKERSTATS pStats, size_t c
  *                              includes room for the header.
  * @param   cbUser              The size requested by the user.
  * @param   pszTag              The tag string.
+ * @param   pvCaller            The return address.
  * @param   enmMethod           The allocation method.
  */
 static void *rtMemTrackerHdrAllocEx(PRTMEMTRACKERINT pTracker, void *pv, size_t cbUser,
-                                    const char *pszTag, RTMEMTRACKERMETHOD enmMethod)
+                                    const char *pszTag, void *pvCaller, RTMEMTRACKERMETHOD enmMethod)
 {
     /*
      * Check input.
@@ -527,7 +528,9 @@ static void *rtMemTrackerHdrAllocEx(PRTMEMTRACKERINT pTracker, void *pv, size_t 
     pHdr->pUser             = NULL;
     pHdr->pszTag            = pszTag;
     pHdr->pTag              = NULL;
+    pHdr->pvCaller          = pvCaller;
     pHdr->pvUser            = pHdr + 1;
+    pHdr->uReserved         = 0;
 
     /*
      * Add it to the tracker if we've got one.
@@ -578,11 +581,12 @@ static void *rtMemTrackerHdrAllocEx(PRTMEMTRACKERINT pTracker, void *pv, size_t 
  * @param   pvUser              Pointer to the user memory.
  * @param   cbUser              The size of the user memory or 0.
  * @param   pszTag              The tag to associate the free with.
+ * @param   pvCaller            The return address.
  * @param   enmMethod           The free method.
  * @param   uDeadMagic          The dead magic value to use.
  */
 static void *rtMemTrackerHdrFreeCommon(PRTMEMTRACKERINT pTracker, void *pvUser, size_t cbUser,
-                                       const char *pszTag, RTMEMTRACKERMETHOD enmMethod,
+                                       const char *pszTag, void *pvCaller, RTMEMTRACKERMETHOD enmMethod,
                                        size_t uDeadMagic)
 {
     PRTMEMTRACKERHDR pHdr = (PRTMEMTRACKERHDR)pvUser - 1;
@@ -632,7 +636,7 @@ static void *rtMemTrackerHdrFreeCommon(PRTMEMTRACKERINT pTracker, void *pvUser, 
         rtMemTrackerStateRecordFree(&pTracker->GlobalStats, pHdr->cbUser, enmMethod);
 
         /** @todo we're currently ignoring pszTag, consider how to correctly
-         *        attribute the free operation if the tags differ - it
+         *        attribute the free operation if the tags differ - if it
          *        makes sense at all... */
         NOREF(pszTag);
         if (pHdr->pTag)
@@ -655,6 +659,7 @@ static void *rtMemTrackerHdrFreeCommon(PRTMEMTRACKERINT pTracker, void *pvUser, 
             ASMAtomicIncU64(&pTracker->cBusyFrees);
     }
 
+    NOREF(pvCaller);  /* Intended for We may later do some use-after-free tracking. */
     return pHdr;
 }
 
@@ -668,12 +673,14 @@ static void *rtMemTrackerHdrFreeCommon(PRTMEMTRACKERINT pTracker, void *pvUser, 
  * @param   pvOldUser           The user memory.
  * @param   cbOldUser           The size of the user memory, 0 if unknown.
  * @param   pszTag              The tag string.
+ * @param   pvCaller            The return address.
  */
-static void *rtMemTrackerHdrReallocPrepEx(PRTMEMTRACKERINT pTracker, void *pvOldUser, size_t cbOldUser, const char *pszTag)
+static void *rtMemTrackerHdrReallocPrepEx(PRTMEMTRACKERINT pTracker, void *pvOldUser, size_t cbOldUser,
+                                          const char *pszTag, void *pvCaller)
 {
     if (!pvOldUser)
         return NULL;
-    return rtMemTrackerHdrFreeCommon(pTracker, pvOldUser, cbOldUser, pszTag,
+    return rtMemTrackerHdrFreeCommon(pTracker, pvOldUser, cbOldUser, pszTag, pvCaller,
                                      RTMEMTRACKERMETHOD_REALLOC_PREP, RTMEMTRACKERHDR_MAGIC_REALLOC);
 }
 
@@ -688,13 +695,14 @@ static void *rtMemTrackerHdrReallocPrepEx(PRTMEMTRACKERINT pTracker, void *pvOld
  * @param   cbNewUser           The size of the new memory chunk.
  * @param   pvOldUser           Pointer to the old user memory.
  * @param   pszTag              The tag string.
+ * @param   pvCaller            The return address.
  */
 static void *rtMemTrackerHdrReallocDoneEx(PRTMEMTRACKERINT pTracker, void *pvNew, size_t cbNewUser,
-                                          void *pvOldUser, const char *pszTag)
+                                          void *pvOldUser, const char *pszTag, void *pvCaller)
 {
     /* Succeeded? */
     if (pvNew)
-        return rtMemTrackerHdrAllocEx(pTracker, pvNew, cbNewUser, pszTag, RTMEMTRACKERMETHOD_REALLOC_DONE);
+        return rtMemTrackerHdrAllocEx(pTracker, pvNew, cbNewUser, pszTag, pvCaller, RTMEMTRACKERMETHOD_REALLOC_DONE);
 
     /* Failed or just realloc to zero? */
     if (cbNewUser)
@@ -702,7 +710,7 @@ static void *rtMemTrackerHdrReallocDoneEx(PRTMEMTRACKERINT pTracker, void *pvNew
         PRTMEMTRACKERHDR pHdr = (PRTMEMTRACKERHDR)pvOldUser - 1;
         AssertReturn(pHdr->uMagic == RTMEMTRACKERHDR_MAGIC_REALLOC, NULL);
 
-        return rtMemTrackerHdrAllocEx(pTracker, pHdr, pHdr->cbUser, pszTag, RTMEMTRACKERMETHOD_REALLOC_FAILED);
+        return rtMemTrackerHdrAllocEx(pTracker, pHdr, pHdr->cbUser, pszTag, pvCaller, RTMEMTRACKERMETHOD_REALLOC_FAILED);
     }
 
     /* Tealloc to zero bytes, i.e. free. */
@@ -718,14 +726,15 @@ static void *rtMemTrackerHdrReallocDoneEx(PRTMEMTRACKERINT pTracker, void *pvNew
  * @param   pvUser              The user memory.
  * @param   cbUser              The size of the user memory, 0 if unknown.
  * @param   pszTag              The tag string.
+ * @param   pvCaller            The return address.
  * @param   enmMethod           The free method.
  */
 static void *rtMemTrackerHdrFreeEx(PRTMEMTRACKERINT pTracker, void *pvUser, size_t cbUser,
-                                   const char *pszTag, RTMEMTRACKERMETHOD enmMethod)
+                                   const char *pszTag, void *pvCaller, RTMEMTRACKERMETHOD enmMethod)
 {
     if (!pvUser)
         return NULL;
-    return rtMemTrackerHdrFreeCommon(pTracker, pvUser, cbUser, pszTag, enmMethod, RTMEMTRACKERHDR_MAGIC_FREE);
+    return rtMemTrackerHdrFreeCommon(pTracker, pvUser, cbUser, pszTag, pvCaller, enmMethod, RTMEMTRACKERHDR_MAGIC_FREE);
 }
 
 
@@ -824,17 +833,17 @@ static void rtMemTrackerDumpAllWorker(PRTMEMTRACKERINT pTracker, PRTMEMTRACKEROU
         {
             if (pCurHdr->pTag)
                 pOutput->pfnPrintf(pOutput,
-                                   "    %zu bytes at %p with tag %s\n"
-                                   "    %.*Rhxd\n"
+                                   "    %zu bytes at %p by %p with tag %s\n"
+                                   "%.*Rhxd\n"
                                    "\n",
-                                   pCurHdr->cbUser, pCurHdr->pvUser, pCurHdr->pTag->szTag,
+                                   pCurHdr->cbUser, pCurHdr->pvUser, pCurHdr->pvCaller, pCurHdr->pTag->szTag,
                                    RT_MIN(pCurHdr->cbUser, 16*3), pCurHdr->pvUser);
             else
                 pOutput->pfnPrintf(pOutput,
-                                   "    %zu bytes at %p without a tag\n"
-                                   "    %.*Rhxd\n"
+                                   "    %zu bytes at %p by %p without a tag\n"
+                                   "%.*Rhxd\n"
                                    "\n",
-                                   pCurHdr->cbUser, pCurHdr->pvUser,
+                                   pCurHdr->cbUser, pCurHdr->pvUser, pCurHdr->pvCaller,
                                    RT_MIN(pCurHdr->cbUser, 16*3), pCurHdr->pvUser);
         }
         pOutput->pfnPrintf(pOutput, "\n", pTag->szTag);
@@ -1213,39 +1222,39 @@ static PRTMEMTRACKERINT rtMemTrackerLazyInitDefaultTracker(void)
 
 
 
-RTDECL(void *) RTMemTrackerHdrAlloc(void *pv, size_t cb, const char *pszTag, RTMEMTRACKERMETHOD enmMethod)
+RTDECL(void *) RTMemTrackerHdrAlloc(void *pv, size_t cb, const char *pszTag, void *pvCaller, RTMEMTRACKERMETHOD enmMethod)
 {
     PRTMEMTRACKERINT pTracker = g_pDefaultTracker;
     if (RT_UNLIKELY(!pTracker))
         pTracker = rtMemTrackerLazyInitDefaultTracker();
-    return rtMemTrackerHdrAllocEx(pTracker, pv, cb, pszTag, enmMethod);
+    return rtMemTrackerHdrAllocEx(pTracker, pv, cb, pszTag, pvCaller, enmMethod);
 }
 
 
-RTDECL(void *) RTMemTrackerHdrReallocPrep(void *pvOldUser, size_t cbOldUser, const char *pszTag)
+RTDECL(void *) RTMemTrackerHdrReallocPrep(void *pvOldUser, size_t cbOldUser, const char *pszTag, void *pvCaller)
 {
     PRTMEMTRACKERINT pTracker = g_pDefaultTracker;
     if (RT_UNLIKELY(!pTracker))
         pTracker = rtMemTrackerLazyInitDefaultTracker();
-    return rtMemTrackerHdrReallocPrepEx(pTracker, pvOldUser, cbOldUser, pszTag);
+    return rtMemTrackerHdrReallocPrepEx(pTracker, pvOldUser, cbOldUser, pszTag, pvCaller);
 }
 
 
-RTDECL(void *) RTMemTrackerHdrReallocDone(void *pvNew, size_t cbNewUser, void *pvOld, const char *pszTag)
+RTDECL(void *) RTMemTrackerHdrReallocDone(void *pvNew, size_t cbNewUser, void *pvOld, const char *pszTag, void *pvCaller)
 {
     PRTMEMTRACKERINT pTracker = g_pDefaultTracker;
     if (RT_UNLIKELY(!pTracker))
         pTracker = rtMemTrackerLazyInitDefaultTracker();
-    return rtMemTrackerHdrReallocDoneEx(pTracker, pvNew, cbNewUser, pvOld, pszTag);
+    return rtMemTrackerHdrReallocDoneEx(pTracker, pvNew, cbNewUser, pvOld, pszTag, pvCaller);
 }
 
 
-RTDECL(void *) RTMemTrackerHdrFree(void *pvUser, size_t cbUser, const char *pszTag, RTMEMTRACKERMETHOD enmMethod)
+RTDECL(void *) RTMemTrackerHdrFree(void *pvUser, size_t cbUser, const char *pszTag, void *pvCaller, RTMEMTRACKERMETHOD enmMethod)
 {
     PRTMEMTRACKERINT pTracker = g_pDefaultTracker;
     if (RT_UNLIKELY(!pTracker))
         pTracker = rtMemTrackerLazyInitDefaultTracker();
-    return rtMemTrackerHdrFreeEx(pTracker, pvUser, cbUser, pszTag, enmMethod);
+    return rtMemTrackerHdrFreeEx(pTracker, pvUser, cbUser, pszTag, pvCaller, enmMethod);
 }
 
 

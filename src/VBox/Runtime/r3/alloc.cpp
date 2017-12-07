@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+#define RTMEMALLOC_USE_TRACKER
 #if defined(RTMEM_WRAP_TO_EF_APIS) && !defined(RTMEM_NO_WRAP_TO_EF_APIS)
 # undef RTMEM_WRAP_TO_EF_APIS
 # define RTALLOC_USE_EFENCE 1
@@ -112,7 +113,7 @@ RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 
     AssertMsg(cb, ("Allocating ZERO bytes is really not a good idea! Good luck with the next assertion!\n"));
 # ifdef RTMEMALLOC_USE_TRACKER
-    void *pv = RTMemTrackerHdrAlloc(malloc(cb + sizeof(RTMEMTRACKERHDR)), cb, pszTag, RTMEMTRACKERMETHOD_ALLOC);
+    void *pv = RTMemTrackerHdrAlloc(malloc(cb + sizeof(RTMEMTRACKERHDR)), cb, pszTag, ASMReturnAddress(), RTMEMTRACKERMETHOD_ALLOC);
 # else
     void *pv = malloc(cb); NOREF(pszTag);
 # endif
@@ -136,7 +137,7 @@ RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
     AssertMsg(cb, ("Allocating ZERO bytes is really not a good idea! Good luck with the next assertion!\n"));
 
 # ifdef RTMEMALLOC_USE_TRACKER
-    void *pv = RTMemTrackerHdrAlloc(calloc(1, cb + sizeof(RTMEMTRACKERHDR)), cb, pszTag, RTMEMTRACKERMETHOD_ALLOCZ);
+    void *pv = RTMemTrackerHdrAlloc(calloc(1, cb + sizeof(RTMEMTRACKERHDR)), cb, pszTag, ASMReturnAddress(), RTMEMTRACKERMETHOD_ALLOCZ);
 #else
     void *pv = calloc(1, cb); NOREF(pszTag);
 #endif
@@ -190,10 +191,10 @@ RTDECL(void *)  RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) R
 #else /* !RTALLOC_USE_EFENCE */
 
 # ifdef RTMEMALLOC_USE_TRACKER
-    void *pvRealOld  = RTMemTrackerHdrReallocPrep(pvOld, 0, pszTag);
+    void *pvRealOld  = RTMemTrackerHdrReallocPrep(pvOld, 0, pszTag, ASMReturnAddress());
     size_t cbRealNew = cbNew || !pvRealOld ? cbNew + sizeof(RTMEMTRACKERHDR) : 0;
     void *pvNew      = realloc(pvRealOld, cbRealNew);
-    void *pv         = RTMemTrackerHdrReallocDone(pvNew, cbNew, pvOld, pszTag);
+    void *pv         = RTMemTrackerHdrReallocDone(pvNew, cbNew, pvOld, pszTag, ASMReturnAddress());
 # else
     void *pv = realloc(pvOld, cbNew); NOREF(pszTag);
 # endif
@@ -214,7 +215,7 @@ RTDECL(void) RTMemFree(void *pv) RT_NO_THROW_DEF
         rtR3MemFree("Free", RTMEMTYPE_RTMEMFREE, pv, ASMReturnAddress(), NULL, 0, NULL);
 #else
 # ifdef RTMEMALLOC_USE_TRACKER
-        pv = RTMemTrackerHdrFree(pv, 0, NULL, RTMEMTRACKERMETHOD_FREE);
+        pv = RTMemTrackerHdrFree(pv, 0, NULL, ASMReturnAddress(), RTMEMTRACKERMETHOD_FREE);
 # endif
         free(pv);
 #endif
