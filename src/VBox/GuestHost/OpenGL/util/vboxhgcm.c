@@ -36,6 +36,7 @@
 #include "net_internals.h"
 #include "cr_process.h"
 
+#include <iprt/initterm.h>
 #include <iprt/thread.h>
 
 #include <VBox/VBoxGuestLib.h>
@@ -704,7 +705,7 @@ static void _crVBoxHGCMWriteExact(CRConnection *conn, const void *buf, unsigned 
         parms.pBuffer.u.Pointer.u.linearAddr = (uintptr_t) buf;
 
         rc = crVBoxHGCMCall(conn, &parms.hdr, sizeof(parms));
-        callRes = parms.hdr.Hdr.rc;
+        callRes = parms.hdr.Hdr.rc; /** @todo now rc == parms.hdr.Hdr.rc */
     }
     else
 #endif
@@ -718,7 +719,7 @@ static void _crVBoxHGCMWriteExact(CRConnection *conn, const void *buf, unsigned 
         parms.pBuffer.u.Pointer.u.linearAddr = (uintptr_t) buf;
 
         rc = crVBoxHGCMCall(conn, &parms.hdr, sizeof(parms));
-        callRes = parms.hdr.Hdr.rc;
+        callRes = parms.hdr.Hdr.rc; /** @todo now rc == parms.hdr.Hdr.rc */
     }
 
     if (RT_FAILURE(rc) || RT_FAILURE(callRes))
@@ -758,7 +759,7 @@ static void crVBoxHGCMReadExact( CRConnection *conn, const void *buf, unsigned i
 
     rc = crVBoxHGCMCall(conn, &parms.hdr, sizeof(parms));
 
-    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.Hdr.rc))
+    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.Hdr.rc) /** @todo now rc == parms.hdr.Hdr.rc */)
     {
         crWarning("SHCRGL_GUEST_FN_READ failed with %x %x\n", rc, parms.hdr.Hdr.rc);
         return;
@@ -834,7 +835,7 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
             crDebug("SHCRGL_GUEST_FN_WRITE_BUFFER, offset=%u, size=%u", wbParms.ui32Offset.u.value32, wbParms.pBuffer.u.Pointer.size);
 
             rc = crVBoxHGCMCall(conn, &wbParms.hdr, sizeof(wbParms));
-            if (RT_FAILURE(rc) || RT_FAILURE(wbParms.hdr.Hdr.rc))
+            if (RT_FAILURE(rc) || RT_FAILURE(wbParms.hdr.Hdr.rc) /** @todo now rc == wbParms.hdr.Hdr.rc */)
             {
                 crError("SHCRGL_GUEST_FN_WRITE_BUFFER (%i) failed with %x %x\n", wbParms.pBuffer.u.Pointer.size, rc, wbParms.hdr.Hdr.rc);
                 return;
@@ -865,10 +866,10 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
     }
 #endif
 
-    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.Hdr.rc))
+    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.Hdr.rc) /** @todo now rc == parms.hdr.Hdr.rc */)
     {
 
-        if ((VERR_BUFFER_OVERFLOW == parms.hdr.Hdr.rc) && RT_SUCCESS(rc))
+        if ((VERR_BUFFER_OVERFLOW == parms.hdr.Hdr.rc) /* && RT_SUCCESS(rc) */)
         {
             /* reallocate buffer and retry */
 
@@ -990,7 +991,7 @@ static void crVBoxHGCMPollHost(CRConnection *conn)
 
     rc = crVBoxHGCMCall(conn, &parms.hdr, sizeof(parms));
 
-    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.Hdr.rc))
+    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.Hdr.rc) /** @todo now rc == parms.hdr.Hdr.rc */)
     {
         crDebug("SHCRGL_GUEST_FN_READ failed with %x %x\n", rc, parms.hdr.Hdr.rc);
         return;
@@ -1193,7 +1194,7 @@ static int crVBoxHGCMSetVersion(CRConnection *conn, unsigned int vMajor, unsigne
 
     if (RT_SUCCESS(rc))
     {
-        rc =  parms.hdr.Hdr.rc;
+        rc =  parms.hdr.Hdr.rc; /** @todo now rc == parms.hdr.Hdr.rc */
         if (RT_SUCCESS(rc))
         {
             conn->vMajor = CR_PROTOCOL_VERSION_MAJOR;
@@ -1255,7 +1256,7 @@ static int crVBoxHGCMSetPID(CRConnection *conn, unsigned long long pid)
 
     rc = crVBoxHGCMCall(conn, &parms.hdr, sizeof(parms));
 
-    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.Hdr.rc))
+    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.Hdr.rc) /** @todo now rc == parms.hdr.Hdr.rc */)
     {
         crWarning("SHCRGL_GUEST_FN_SET_PID failed!");
         return FALSE;
@@ -1274,6 +1275,7 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
 #ifdef IN_GUEST
     int rc;
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+    RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
     rc = VbglR3InitUser();
     if (RT_SUCCESS(rc))
     {
