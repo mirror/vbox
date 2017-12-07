@@ -300,7 +300,7 @@ static int rtR3InitArgv(uint32_t fFlags, int cArgs, char ***ppapszArgs)
                 AssertMsg(cArgsW == cArgs, ("%d vs %d\n", cArgsW, cArgs));
                 for (int i = 0; i < cArgs; i++)
                 {
-                    int rc = RTUtf16ToUtf8(papwszArgs[i], &papszArgs[i]);
+                    int rc = RTUtf16ToUtf8Tag(papwszArgs[i], &papszArgs[i], "will-leak:rtR3InitArgv");
                     if (RT_FAILURE(rc))
                     {
                         while (i--)
