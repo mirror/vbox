@@ -93,7 +93,10 @@ static PCVDIMAGEBACKEND aStaticBackends[] =
 static unsigned g_cCacheBackends = 0;
 /** Array of pointers to the cache backends. */
 static PCVDCACHEBACKEND *g_apCacheBackends = NULL;
-/** Array of handles to the corresponding plugin. */
+/** Array of handles to the corresponding plugin.
+ *
+ * @todo r=bird: This looks rather pointless.
+ */
 static RTLDRMOD *g_ahCacheBackendPlugins = NULL;
 /** Builtin cache backends. */
 static PCVDCACHEBACKEND aStaticCacheBackends[] =
@@ -158,14 +161,16 @@ static int vdAddBackends(RTLDRMOD hPlugin, PCVDIMAGEBACKEND *ppBackends, unsigne
  */
 static int vdAddCacheBackends(RTLDRMOD hPlugin, PCVDCACHEBACKEND *ppBackends, unsigned cBackends)
 {
-    PCVDCACHEBACKEND *pTmp = (PCVDCACHEBACKEND*)RTMemRealloc(g_apCacheBackends,
-           (g_cCacheBackends + cBackends) * sizeof(PCVDCACHEBACKEND));
+    PCVDCACHEBACKEND *pTmp = (PCVDCACHEBACKEND*)RTMemReallocTag(g_apCacheBackends,
+                                                                (g_cCacheBackends + cBackends) * sizeof(PCVDCACHEBACKEND),
+                                                                "may-leak:vdAddCacheBackend");
     if (RT_UNLIKELY(!pTmp))
         return VERR_NO_MEMORY;
     g_apCacheBackends = pTmp;
 
-    RTLDRMOD *pTmpPlugins = (RTLDRMOD*)RTMemRealloc(g_ahCacheBackendPlugins,
-           (g_cCacheBackends + cBackends) * sizeof(RTLDRMOD));
+    RTLDRMOD *pTmpPlugins = (RTLDRMOD*)RTMemReallocTag(g_ahCacheBackendPlugins,
+                                                       (g_cCacheBackends + cBackends) * sizeof(RTLDRMOD),
+                                                       "may-leak:vdAddCacheBackend");
     if (RT_UNLIKELY(!pTmpPlugins))
         return VERR_NO_MEMORY;
     g_ahCacheBackendPlugins = pTmpPlugins;
@@ -369,8 +374,8 @@ static int vdRemovePlugin(const char *pszFilename)
     {
         while (i < g_cBackends && g_ahBackendPlugins[i] == pIt->hPlugin)
         {
-            memcpy(&g_apBackends[i], &g_apBackends[i + 1], (g_cBackends - i - 1) * sizeof(PCVDIMAGEBACKEND));
-            memcpy(&g_ahBackendPlugins[i], &g_ahBackendPlugins[i + 1], (g_cBackends - i - 1) * sizeof(RTLDRMOD));
+            memmove(&g_apBackends[i], &g_apBackends[i + 1], (g_cBackends - i - 1) * sizeof(PCVDIMAGEBACKEND));
+            memmove(&g_ahBackendPlugins[i], &g_ahBackendPlugins[i + 1], (g_cBackends - i - 1) * sizeof(RTLDRMOD));
             /** @todo for now skip reallocating, doesn't save much */
             g_cBackends--;
         }
@@ -379,8 +384,8 @@ static int vdRemovePlugin(const char *pszFilename)
     {
         while (i < g_cCacheBackends && g_ahCacheBackendPlugins[i] == pIt->hPlugin)
         {
-            memcpy(&g_apCacheBackends[i], &g_apCacheBackends[i + 1], (g_cCacheBackends - i - 1) * sizeof(PCVDCACHEBACKEND));
-            memcpy(&g_ahCacheBackendPlugins[i], &g_ahCacheBackendPlugins[i + 1], (g_cCacheBackends - i - 1) * sizeof(RTLDRMOD));
+            memmove(&g_apCacheBackends[i], &g_apCacheBackends[i + 1], (g_cCacheBackends - i - 1) * sizeof(PCVDCACHEBACKEND));
+            memmove(&g_ahCacheBackendPlugins[i], &g_ahCacheBackendPlugins[i + 1], (g_cCacheBackends - i - 1) * sizeof(RTLDRMOD));
             /** @todo for now skip reallocating, doesn't save much */
             g_cCacheBackends--;
         }
@@ -389,8 +394,8 @@ static int vdRemovePlugin(const char *pszFilename)
     {
         while (i < g_cFilterBackends && g_pahFilterBackendPlugins[i] == pIt->hPlugin)
         {
-            memcpy(&g_apFilterBackends[i], &g_apFilterBackends[i + 1], (g_cFilterBackends - i - 1) * sizeof(PCVDFILTERBACKEND));
-            memcpy(&g_pahFilterBackendPlugins[i], &g_pahFilterBackendPlugins[i + 1], (g_cFilterBackends - i - 1) * sizeof(RTLDRMOD));
+            memmove(&g_apFilterBackends[i], &g_apFilterBackends[i + 1], (g_cFilterBackends - i - 1) * sizeof(PCVDFILTERBACKEND));
+            memmove(&g_pahFilterBackendPlugins[i], &g_pahFilterBackendPlugins[i + 1], (g_cFilterBackends - i - 1) * sizeof(RTLDRMOD));
             /** @todo for now skip reallocating, doesn't save much */
             g_cFilterBackends--;
         }
@@ -869,6 +874,8 @@ DECLHIDDEN(int) vdPluginTerm(void)
     if (!g_apBackends)
         return VERR_INTERNAL_ERROR;
 
+    if (g_ahCacheBackendPlugins)
+        RTMemFree(g_ahCacheBackendPlugins);
     if (g_apCacheBackends)
         RTMemFree(g_apCacheBackends);
     RTMemFree(g_apBackends);
@@ -879,6 +886,7 @@ DECLHIDDEN(int) vdPluginTerm(void)
     /* Clear the supported cache backends. */
     g_cCacheBackends = 0;
     g_apCacheBackends = NULL;
+    g_ahCacheBackendPlugins = NULL;
 
 #ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
     PVDPLUGIN pPlugin, pPluginNext;
