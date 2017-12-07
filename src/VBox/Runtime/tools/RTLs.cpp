@@ -1277,6 +1277,7 @@ static RTEXITCODE rtCmdLsProcessDirectory(PRTCMDLSOPTS pOpts, RTVFSDIR hVfsDir, 
                 }
                 else
                     rcExit = RTMsgErrorExitFailure("Too deep recursion: %s%c%s", pszPath, RTPATH_SLASH, pEntry->szName);
+                RTVfsDirRelease(hSubDir);
             }
             else
                 rcExit = RTMsgErrorExitFailure("RTVfsDirOpenDir failed on %s in %s: %Rrc\n", pEntry->szName, pszPath, rc);
@@ -1505,15 +1506,9 @@ RTEXITCODE RTCmdLs(unsigned cArgs, char **papszArgs)
 
     RTEXITCODE      rcExit      = RTEXITCODE_SUCCESS;
     unsigned        cProcessed  = 0;
-    RTVFSIOSTREAM   hVfsOutput  = NIL_RTVFSIOSTREAM;
-    int rc = RTVfsIoStrmFromStdHandle(RTHANDLESTD_OUTPUT, RTFILE_O_WRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
-                                      true /*fLeaveOpen*/, &hVfsOutput);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("RTVfsIoStrmFromStdHandle: %Rrc", rc);
-
-    RTGETOPTSTATE GetState;
-    rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1,
-                      RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGETOPTSTATE   GetState;
+    int rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1,
+                          RTGETOPTINIT_FLAGS_OPTS_FIRST);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "RTGetOptInit: %Rrc", rc);
 
