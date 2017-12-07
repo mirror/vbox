@@ -472,6 +472,8 @@ static DECLCALLBACK(int) rtSerialPortStsLineMonitorThrd(RTTHREAD hThreadSelf, vo
     bool fPoll = false;
 #endif
 
+    RTThreadUserSignal(hThreadSelf);
+
     int rcPsx = ioctl(pThis->iFd, TIOCMGET, &fStsLinesOld);
     if (rcPsx == -1)
     {
@@ -643,6 +645,7 @@ RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAdd
         else
             fPsxFlags |= O_RDWR;
 
+        pThis->u32Magic     = RTSERIALPORT_MAGIC;
         pThis->fOpenFlags   = fFlags;
         pThis->fEvtsPending = 0;
         pThis->iFd          = open(pszPortAddress, fPsxFlags);

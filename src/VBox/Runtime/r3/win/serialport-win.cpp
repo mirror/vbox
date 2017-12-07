@@ -237,6 +237,7 @@ RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAdd
     PRTSERIALPORTINTERNAL pThis = (PRTSERIALPORTINTERNAL)RTMemAllocZ(sizeof(*pThis));
     if (pThis)
     {
+        pThis->u32Magic         = RTSERIALPORT_MAGIC;
         pThis->fOpenFlags       = fFlags;
         pThis->fEvtMask         = 0;
         pThis->fWritePending    = false;
