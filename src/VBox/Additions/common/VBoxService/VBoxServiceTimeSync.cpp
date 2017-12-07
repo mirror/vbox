@@ -621,7 +621,7 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
                 }
 
                 bool fSetTimeInThisLoop = false;
-                uint32_t AbsDriftMilli = RTTimeSpecGetMilli(&AbsDrift);
+                uint64_t AbsDriftMilli = RTTimeSpecGetMilli(&AbsDrift);
                 if (AbsDriftMilli > MinAdjust)
                 {
                     /*
