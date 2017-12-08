@@ -418,32 +418,32 @@ typedef enum IEMXCPTCLASS
 /**
  * Check if an SVM control/instruction intercept is set.
  */
-# define IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept) (CPUMIsGuestSvmCtrlInterceptSet(IEM_GET_CTX(a_pVCpu), (a_Intercept)))
+# define IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept) (CPUMIsGuestSvmCtrlInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_Intercept)))
 
 /**
  * Check if an SVM read CRx intercept is set.
  */
-# define IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)    (CPUMIsGuestSvmReadCRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uCr)))
+# define IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)    (CPUMIsGuestSvmReadCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
 
 /**
  * Check if an SVM write CRx intercept is set.
  */
-# define IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)   (CPUMIsGuestSvmWriteCRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uCr)))
+# define IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)   (CPUMIsGuestSvmWriteCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
 
 /**
  * Check if an SVM read DRx intercept is set.
  */
-# define IEM_IS_SVM_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)    (CPUMIsGuestSvmReadDRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uDr)))
+# define IEM_IS_SVM_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)    (CPUMIsGuestSvmReadDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
 
 /**
  * Check if an SVM write DRx intercept is set.
  */
-# define IEM_IS_SVM_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)   (CPUMIsGuestSvmWriteDRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uDr)))
+# define IEM_IS_SVM_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)   (CPUMIsGuestSvmWriteDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
 
 /**
  * Check if an SVM exception intercept is set.
  */
-# define IEM_IS_SVM_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)   (CPUMIsGuestSvmXcptInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uVector)))
+# define IEM_IS_SVM_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)   (CPUMIsGuestSvmXcptInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uVector)))
 
 /**
  * Invokes the SVM \#VMEXIT handler for the nested-guest.
@@ -13847,7 +13847,7 @@ IEM_STATIC void iemExecVerificationModeSetup(PVMCPU pVCpu)
     if (fIntrEnabled)
     {
         if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-            fIntrEnabled = CPUMCanSvmNstGstTakePhysIntr(pCtx);
+            fIntrEnabled = CPUMCanSvmNstGstTakePhysIntr(pVCpu, pCtx);
         else
             fIntrEnabled = pOrgCtx->eflags.Bits.u1IF;
     }
@@ -15208,7 +15208,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
     if (fIntrEnabled)
     {
         if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-            fIntrEnabled = CPUMCanSvmNstGstTakePhysIntr(pCtx);
+            fIntrEnabled = CPUMCanSvmNstGstTakePhysIntr(pVCpu, pCtx);
         else
             fIntrEnabled = pCtx->eflags.Bits.u1IF;
     }
@@ -15274,7 +15274,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
     if (fIntrEnabled)
     {
         if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-            fIntrEnabled = CPUMCanSvmNstGstTakePhysIntr(pCtx);
+            fIntrEnabled = CPUMCanSvmNstGstTakePhysIntr(pVCpu, pCtx);
         else
             fIntrEnabled = pCtx->eflags.Bits.u1IF;
     }
