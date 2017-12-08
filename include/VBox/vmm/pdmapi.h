@@ -158,9 +158,9 @@ VMMR3_INT_DECL(PPDMCRITSECT) PDMR3DevGetCritSect(PVM pVM, PPDMDEVINS pDevIns);
 VMMR3DECL(int)          PDMR3DriverAttach(PUVM pUVM, const char *pszDevice, unsigned iDevIns, unsigned iLun, uint32_t fFlags,
                                           PPPDMIBASE ppBase);
 VMMR3DECL(int)          PDMR3DriverDetach(PUVM pUVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
-                                          const char *pszDriver, unsigned iOccurance, uint32_t fFlags);
+                                          const char *pszDriver, unsigned iOccurrence, uint32_t fFlags);
 VMMR3DECL(int)          PDMR3DriverReattach(PUVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
-                                            const char *pszDriver, unsigned iOccurance, uint32_t fFlags, PCFGMNODE pCfg,
+                                            const char *pszDriver, unsigned iOccurrence, uint32_t fFlags, PCFGMNODE pCfg,
                                             PPPDMIBASE ppBase);
 VMMR3DECL(void)         PDMR3DmaRun(PVM pVM);
 VMMR3_INT_DECL(int)     PDMR3LockCall(PVM pVM);

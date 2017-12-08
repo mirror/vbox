@@ -1381,23 +1381,23 @@ VMMR3DECL(int)  PDMR3UsbDriverAttach(PUVM pUVM, const char *pszDevice, unsigned 
  * @param   iLun            The Logical Unit in which to look for the driver.
  * @param   pszDriver       The name of the driver which to detach.  If NULL
  *                          then the entire driver chain is detatched.
- * @param   iOccurance      The occurrence of that driver in the chain.  This is
+ * @param   iOccurrence     The occurrence of that driver in the chain.  This is
  *                          usually 0.
  * @param   fFlags          Flags, combination of the PDM_TACH_FLAGS_* \#defines.
  * @thread  EMT
  */
 VMMR3DECL(int)  PDMR3UsbDriverDetach(PUVM pUVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
-                                     const char *pszDriver, unsigned iOccurance, uint32_t fFlags)
+                                     const char *pszDriver, unsigned iOccurrence, uint32_t fFlags)
 {
-    LogFlow(("PDMR3UsbDriverDetach: pszDevice=%p:{%s} iDevIns=%u iLun=%u pszDriver=%p:{%s} iOccurance=%u fFlags=%#x\n",
-             pszDevice, pszDevice, iDevIns, iLun, pszDriver, pszDriver, iOccurance, fFlags));
+    LogFlow(("PDMR3UsbDriverDetach: pszDevice=%p:{%s} iDevIns=%u iLun=%u pszDriver=%p:{%s} iOccurrence=%u fFlags=%#x\n",
+             pszDevice, pszDevice, iDevIns, iLun, pszDriver, pszDriver, iOccurrence, fFlags));
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_EMT(pVM);
     AssertPtr(pszDevice);
     AssertPtrNull(pszDriver);
-    Assert(iOccurance == 0 || pszDriver);
+    Assert(iOccurrence == 0 || pszDriver);
     Assert(!(fFlags & ~(PDM_TACH_FLAGS_NOT_HOT_PLUG)));
 
     /*
@@ -1419,9 +1419,9 @@ VMMR3DECL(int)  PDMR3UsbDriverDetach(PUVM pUVM, const char *pszDevice, unsigned 
                 {
                     if (!strcmp(pDrvIns->pReg->szName, pszDriver))
                     {
-                        if (iOccurance == 0)
+                        if (iOccurrence == 0)
                             break;
-                        iOccurance--;
+                        iOccurrence--;
                     }
                     pDrvIns = pDrvIns->Internal.s.pDown;
                 }

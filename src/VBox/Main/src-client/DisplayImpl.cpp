@@ -2682,7 +2682,7 @@ DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg
         {
             if (fAttachDetach)
                 vrc2 = PDMR3DriverDetach(ptrVM.rawUVM(), strAudioDev.c_str(), uInstance, uLUN, "AUDIO",
-                                         0 /* iOccurance */, 0 /* fFlags */);
+                                         0 /* iOccurrence */, 0 /* fFlags */);
 
             if (RT_SUCCESS(vrc2))
             {
