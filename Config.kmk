@@ -670,14 +670,12 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 linux.x86
  VBOX_WITH_VIDEOREC = 1
  # Enable VPX (VP8 / VP9 codec), used for video capturing.
  VBOX_WITH_LIBVPX = 1
- if1of ($(KBUILD_TYPE), debug dbgopt) # Not enabled for release builds yet.
-  # Enables audio support for VM video capturing.
-  VBOX_WITH_AUDIO_VIDEOREC = 1
-  # Enables libopus (Opus), used for encoding audio into VM video capturing files.
-  VBOX_WITH_LIBOPUS = 1
-  # Enable SEE (+ AVX) optimizations for Opus.
-  VBOX_WITH_OPUS_SSE = 1
- endif
+ # Enables audio support for VM video capturing.
+ VBOX_WITH_AUDIO_VIDEOREC = 1
+ # Enables libopus (Opus), used for encoding audio into VM video capturing files.
+ VBOX_WITH_LIBOPUS = 1
+ # Enable SEE (+ AVX) optimizations for Opus.
+ VBOX_WITH_OPUS_SSE = 1
 endif
 # Enable shared folders
 VBOX_WITH_SHARED_FOLDERS = 1
