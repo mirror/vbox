@@ -1058,7 +1058,7 @@ void UISelectorWindow::sltCloseLogViewerWindow()
     QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sendersIterator.value());
     if (!pDialog)
         return;
-    
+
     /* First remove this log viewer dialog from the map. This should be
        done before closing the dialog which will incur a second call to
        this function and result in double delete!!!: */
