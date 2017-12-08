@@ -719,12 +719,12 @@ static struct cfdata cfdata_ioconf_vboxguest[] = {
 };
 
 static struct cfattach * const vboxguest_cfattachinit[] = {
-	&vboxguest_ca, NULL
+    &vboxguest_ca, NULL
 };
 
 static const struct cfattachinit cfattach_ioconf_vboxguest[] = {
-	{ "vboxguest", vboxguest_cfattachinit },
-	{ NULL, NULL }
+    { "vboxguest", vboxguest_cfattachinit },
+    { NULL, NULL }
 };
 
 static int
