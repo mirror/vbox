@@ -66,8 +66,10 @@ int hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
             rc = RTCritSectInit(&pStream->State.CritSect);
     }
 
+    int rc2;
+
 #ifdef DEBUG
-    int rc2 = RTCritSectInit(&pStream->Dbg.CritSect);
+    rc2 = RTCritSectInit(&pStream->Dbg.CritSect);
     AssertRC(rc2);
 #endif
 
