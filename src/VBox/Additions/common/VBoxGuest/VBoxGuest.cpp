@@ -54,6 +54,7 @@
 #include "VBoxGuestInternal.h"
 #include <VBox/VMMDev.h> /* for VMMDEV_RAM_SIZE */
 #include <VBox/log.h>
+#include <iprt/ctype.h>
 #include <iprt/mem.h>
 #include <iprt/time.h>
 #include <iprt/memobj.h>
@@ -1134,6 +1135,235 @@ int VGDrvCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     return rc; /* (failed) */
 }
 
+#if 0 /* needs testing */
+
+#include <VBox/HostServices/GuestPropertySvc.h>
+
+/**
+ * Checks if the given option can be taken to no mean 'false'.
+ *
+ * @returns true or false accordingly.
+ * @param   pszValue            The value to consider.
+ */
+bool VBDrvCommonIsOptionValueTrue(const char *pszValue)
+{
+    if (pszValue)
+    {
+        char ch;
+        while (  (ch = *pszValue) != '\0'
+               && RT_C_IS_SPACE(ch))
+            pszValue++;
+
+        return ch != '\0'
+            && ch != 'n' /* no */
+            && ch != 'N' /* NO */
+            && ch != 'd' /* disabled */
+            && ch != 'D' /* DISABLED */
+            && (   (ch != 'o' && ch != 'O') /* off, OFF, Off */
+                || (pszValue[1] != 'f' && pszValue[1] != 'F') )
+            && (ch != '0' || pszValue[1] != '\0') /* '0' */
+            ;
+    }
+    return false;
+}
+
+
+/**
+ * Hook for handling OS specfic options from the host.
+ *
+ * @returns true if handled, false if not.
+ * @param   pDevExt         The device extension.
+ * @param   pszName         The option name.
+ * @param   pszValue        The option value.
+ */
+bool VGDrvNativeProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, const char *pszValue)
+{
+    RT_NOREF(pDevExt); RT_NOREF(pszName); RT_NOREF(pszValue);
+    return false;
+}
+
+/**
+ * Processes a option.
+ *
+ * This will let the OS specific code have a go at it too.
+ *
+ * @param   pDevExt         The device extension.
+ * @param   pszName         The option name, sans prefix.
+ * @param   pszValue        The option value.
+ */
+void VGDrvCommonProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, const char *pszValue)
+{
+    if (strcmp(pszName, "r3_log_to_host") == 0)
+        pDevExt->fLoggingEnabled = VBDrvCommonIsOptionValueTrue(pszValue);
+    else if (VGDrvNativeProcessOption(pDevExt, pszName, pszValue))
+        LogRel(("VBoxGuest: Ignoring unknown option '%s' (value '%s')\n", pszName, pszValue));
+}
+
+
+/**
+ * Read driver configuration from the host.
+ *
+ * This involves connecting to the guest properties service, which means that
+ * interrupts needs to work and that the calling thread must be able to block.
+ *
+ * @param   pDevExt     The device extension.
+ */
+void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt)
+{
+    /*
+     * Create a kernel session without our selves, then connect to the HGCM service.
+     */
+    PVBOXGUESTSESSION pSession;
+    int rc = VGDrvCommonCreateKernelSession(pDevExt, &pSession);
+    if (RT_SUCCESS(rc))
+    {
+        union
+        {
+            VBGLIOCHGCMCONNECT          Connect;
+            VBGLIOCHGCMDISCONNECT       Disconnect;
+            guestProp::EnumProperties   EnumMsg;
+        } uBuf;
+
+        RT_ZERO(uBuf.Connect);
+        VBGLREQHDR_INIT(&uBuf.Connect.Hdr, HGCM_CONNECT);
+        uBuf.Connect.u.In.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
+        RTStrCopy(uBuf.Connect.u.In.Loc.u.host.achName, sizeof(uBuf.Connect.u.In.Loc.u.host.achName),
+                  "VBoxGuestPropSvc"); /** @todo Add a define to the header for the name. */
+        rc = VGDrvCommonIoCtl(VBGL_IOCTL_HGCM_CONNECT, pDevExt, pSession, &uBuf.Connect.Hdr, sizeof(uBuf.Connect));
+        if (RT_SUCCESS(rc))
+        {
+            static const char   g_szzPattern[] = "/VirtualBox/GuestAdd/VBoxGuest/*\0";
+            uint32_t const      idClient       = uBuf.Connect.u.Out.idClient;
+            char               *pszzStrings    = NULL;
+            uint32_t            cbStrings;
+
+            /*
+             * Enumerate all the relevant properties.  We try with a 2KB buffer, but
+             * will double it until we get what we want or go beyond 64KB.
+             */
+            for (cbStrings = _2K; cbStrings <= _64K; cbStrings *= 2)
+            {
+                pszzStrings = (char *)RTMemAllocZ(cbStrings);
+                if (pszzStrings)
+                {
+                    VBGL_HGCM_HDR_INIT(&uBuf.EnumMsg.hdr, idClient, guestProp::ENUM_PROPS, 3);
+
+                    uBuf.EnumMsg.patterns.type                    = VMMDevHGCMParmType_LinAddr;
+                    uBuf.EnumMsg.patterns.u.Pointer.size          = sizeof(g_szzPattern);
+                    uBuf.EnumMsg.patterns.u.Pointer.u.linearAddr  = (uintptr_t)g_szzPattern;
+
+                    uBuf.EnumMsg.strings.type                     = VMMDevHGCMParmType_LinAddr;
+                    uBuf.EnumMsg.strings.u.Pointer.size           = cbStrings;
+                    uBuf.EnumMsg.strings.u.Pointer.u.linearAddr   = (uintptr_t)pszzStrings;
+
+                    uBuf.EnumMsg.size.type                        = VMMDevHGCMParmType_32bit;
+                    uBuf.EnumMsg.size.u.value32                   = 0;
+
+                    rc = VGDrvCommonIoCtl(VBGL_IOCTL_HGCM_CALL(sizeof(uBuf.EnumMsg)), pDevExt, pSession,
+                                          &uBuf.EnumMsg.hdr.Hdr, sizeof(uBuf.EnumMsg));
+                    if (RT_SUCCESS(rc))
+                        break;
+
+                    RTMemFree(pszzStrings);
+                    pszzStrings = NULL;
+                }
+                else
+                {
+                    LogRel(("VGDrvCommonReadConfigurationFromHost: failed to allocate %#x bytes\n", cbStrings));
+                    break;
+                }
+            }
+
+            /*
+             * Disconnect and destroy the session.
+             */
+            VBGLREQHDR_INIT(&uBuf.Disconnect.Hdr, HGCM_DISCONNECT);
+            uBuf.Disconnect.u.In.idClient = idClient;
+            VGDrvCommonIoCtl(VBGL_IOCTL_HGCM_DISCONNECT, pDevExt, pSession, &uBuf.Disconnect.Hdr, sizeof(uBuf.Disconnect));
+
+            VGDrvCommonCloseSession(pDevExt, pSession);
+
+            /*
+             * Process the properties if we got any.
+             *
+             * The string buffer contains packed strings in groups of four - name, value,
+             * timestamp (as a decimal string) and flags.  It is terminated by four empty
+             * strings.  Layout:
+             *   Name\0Value\0Timestamp\0Flags\0
+             */
+            if (pszzStrings)
+            {
+                uint32_t off;
+                for (off = 0; off < cbStrings; off++)
+                {
+                    /*
+                     * Parse the four fields, checking that it's all plain ASCII w/o any control characters.
+                     */
+                    const char *apszFields[4] = { NULL, NULL, NULL, NULL };
+                    bool        fValidFields  = true;
+                    unsigned    iField;
+                    for (iField = 0; iField < RT_ELEMENTS(apszFields); iField++)
+                    {
+                        apszFields[0] = &pszzStrings[off];
+                        while (off < cbStrings)
+                        {
+                            char ch = pszzStrings[off++];
+                            if ((unsigned)ch < 0x20U || (unsigned)ch > 0x7fU)
+                            {
+                                if (!ch)
+                                    break;
+                                fValidFields = false;
+                            }
+                        }
+                    }
+                    if (   off < cbStrings
+                        && fValidFields
+                        && *apszFields[0] != '\0')
+                    {
+                        /*
+                         * Validate and convert the flags to integer, then process the option.
+                         */
+                        uint32_t fFlags = 0;
+                        rc = guestProp::validateFlags(apszFields[3], &fFlags);
+                        if (RT_SUCCESS(rc))
+                        {
+                            if (fFlags & guestProp::RDONLYGUEST)
+                            {
+                                apszFields[0] += sizeof(g_szzPattern) - 2;
+                                VGDrvCommonProcessOption(pDevExt, apszFields[0], apszFields[1]);
+                            }
+                            else
+                                LogRel(("VBoxGuest: Ignoring '%s' as it does not have RDONLYGUEST set\n", apszFields[0]));
+                        }
+                        else
+                            LogRel(("VBoxGuest: Invalid flags '%s' for '%s': %Rrc\n", apszFields[2], apszFields[0], rc));
+                    }
+                    else if (off < cbStrings)
+                    {
+                        LogRel(("VBoxGuest: Malformed guest properties enum result!\n"));
+                        break;
+                    }
+                    else if (fValidFields)
+                        LogRel(("VBoxGuest: Ignoring %.*Rhxs as it has invalid characters in one or more fields\n",
+                                (int)strlen(apszFields[0]), apszFields[0]));
+                    else
+                        break;
+                }
+
+                RTMemFree(pszzStrings);
+            }
+            else
+                LogRel(("VGDrvCommonReadConfigurationFromHost: failed to enumerate '%s': %Rrc\n", g_szzPattern, rc));
+
+        }
+        else
+            LogRel(("VGDrvCommonReadConfigurationFromHost: failed to connect: %Rrc\n", rc));
+    }
+    else
+        LogRel(("VGDrvCommonReadConfigurationFromHost: failed to connect: %Rrc\n", rc));
+}
+
+#endif /* needs testing */
 
 /**
  * Deletes all the items in a wait chain.

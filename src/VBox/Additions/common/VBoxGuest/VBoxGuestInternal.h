@@ -324,6 +324,8 @@ RT_C_DECLS_BEGIN
 
 int  VGDrvCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase, void *pvMMIOBase, uint32_t cbMMIO,
                            VBOXOSTYPE enmOSType, uint32_t fEvents);
+void VGDrvCommonProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, const char *pszValue);
+void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt);
 bool VGDrvCommonIsOurIRQ(PVBOXGUESTDEVEXT pDevExt);
 bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt);
 void VGDrvCommonDeleteDevExt(PVBOXGUESTDEVEXT pDevExt);
@@ -349,6 +351,16 @@ int  VGDrvCommonIoCtl(uintptr_t iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
  * @param   pDevExt     The device extension.
  */
 void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt);
+
+/**
+ * Hook for handling OS specfic options from the host.
+ *
+ * @returns true if handled, false if not.
+ * @param   pDevExt         The device extension.
+ * @param   pszName         The option name.
+ * @param   pszValue        The option value.
+ */
+bool VGDrvNativeProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, const char *pszValue);
 
 
 #ifdef VBOX_WITH_DPC_LATENCY_CHECKER

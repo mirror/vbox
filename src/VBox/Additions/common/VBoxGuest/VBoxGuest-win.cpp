@@ -60,7 +60,7 @@ static NTSTATUS vgdrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtDeviceControlSlow(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, PIRP pIrp, PIO_STACK_LOCATION pStack);
 static NTSTATUS vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vgdrvNtRegistryReadDWORD(ULONG ulRoot, PCWSTR pwszPath, PWSTR pwszName, PULONG puValue);
+static void     vgdrvNtReadConfiguration(PVBOXGUESTDEVEXTWIN pDevExt);
 static NTSTATUS vgdrvNtSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
@@ -534,14 +534,11 @@ NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_ST
 
     if (NT_SUCCESS(rcNt))
     {
-        ULONG uValue = 0x123;
-        NTSTATUS rcNt2 = vgdrvNtRegistryReadDWORD(RTL_REGISTRY_SERVICES, L"VBoxGuest", L"LoggingEnabled", &uValue);
-        if (NT_SUCCESS(rcNt2))
-        {
-            pDevExt->Core.fLoggingEnabled = uValue >= 0xFF;
-            if (pDevExt->Core.fLoggingEnabled)
-                LogRelFunc(("Logging to host log enabled (%#x)", uValue));
-        }
+        /*
+         * Once we've read configuration from register and host, we're finally read.
+         */
+        pDevExt->Core.fLoggingEnabled = true; /** @todo clean up guest ring-3 logging, keeping it separate from the kernel to avoid sharing limits with it. */
+        vgdrvNtReadConfiguration(pDevExt);
 
         /* Ready to rumble! */
         LogRelFunc(("Device is ready!\n"));
@@ -1097,28 +1094,55 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
  *                      not specified in ulRoot), on output this will retrieve the looked up
  *                      registry value if found.
  */
-static NTSTATUS vgdrvNtRegistryReadDWORD(ULONG ulRoot, PCWSTR pwszPath, PWSTR pwszName, PULONG puValue)
+static NTSTATUS vgdrvNtRegistryReadDWORD(ULONG uRoot, PCWSTR pwszPath, PWSTR pwszName, PULONG puValue)
 {
     if (!pwszPath || !pwszName || !puValue)
         return STATUS_INVALID_PARAMETER;
 
-    ULONG ulDefault = *puValue;
-
-    RTL_QUERY_REGISTRY_TABLE  tblQuery[2];
-    RtlZeroMemory(tblQuery, sizeof(tblQuery));
+    ULONG                       uDefault = *puValue;
+    RTL_QUERY_REGISTRY_TABLE    aQuery[2];
+    RT_ZERO(aQuery);
     /** @todo Add RTL_QUERY_REGISTRY_TYPECHECK! */
-    tblQuery[0].Flags         = RTL_QUERY_REGISTRY_DIRECT;
-    tblQuery[0].Name          = pwszName;
-    tblQuery[0].EntryContext  = puValue;
-    tblQuery[0].DefaultType   = REG_DWORD;
-    tblQuery[0].DefaultData   = &ulDefault;
-    tblQuery[0].DefaultLength = sizeof(ULONG);
+    aQuery[0].Flags         = RTL_QUERY_REGISTRY_DIRECT;
+    aQuery[0].Name          = pwszName;
+    aQuery[0].EntryContext  = puValue;
+    aQuery[0].DefaultType   = REG_DWORD;
+    aQuery[0].DefaultData   = &uDefault;
+    aQuery[0].DefaultLength = sizeof(uDefault);
 
-    return RtlQueryRegistryValues(ulRoot,
-                                  pwszPath,
-                                  &tblQuery[0],
-                                  NULL /* Context */,
-                                  NULL /* Environment */);
+    return RtlQueryRegistryValues(uRoot, pwszPath, &aQuery[0], NULL /* Context */, NULL /* Environment */);
+}
+
+
+/**
+ * Reads configuration from the registry and guest properties.
+ *
+ * We ignore failures and instead preserve existing configuration values.
+ *
+ * Thie routine will block.
+ *
+ * @param   pDevExt             The device extension.
+ */
+static void vgdrvNtReadConfiguration(PVBOXGUESTDEVEXTWIN pDevExt)
+{
+    /*
+     * First the registry.
+     */
+    ULONG    uValue = 0;
+    NTSTATUS rcNt   = vgdrvNtRegistryReadDWORD(RTL_REGISTRY_SERVICES, L"VBoxGuest", L"LoggingEnabled", &uValue);
+    if (NT_SUCCESS(rcNt))
+    {
+        pDevExt->Core.fLoggingEnabled = uValue >= 0xFF;
+        if (pDevExt->Core.fLoggingEnabled)
+            LogRelFunc(("Logging to host log enabled (%#x)", uValue));
+    }
+
+#if 0 /* test me */
+    /*
+     * Read configuration from the host.
+     */
+    VGDrvCommonProcessOptionsFromHost(&pDevExt->Core);
+#endif
 }
 
 
