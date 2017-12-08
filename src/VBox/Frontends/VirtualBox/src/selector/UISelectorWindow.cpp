@@ -1840,8 +1840,8 @@ void UISelectorWindow::prepareToolbar()
         AssertPtrReturnVoid(m_pTabBarMachine);
         {
             /* Configure tab-bar: */
-            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2;
-            const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2;
+            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
+            const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin);
             m_pTabBarMachine->setContentsMargins(iL, 0, iR, 0);
 
             /* Add into toolbar: */
@@ -1853,8 +1853,8 @@ void UISelectorWindow::prepareToolbar()
         AssertPtrReturnVoid(m_pTabBarGlobal);
         {
             /* Configure tab-bar: */
-            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2;
-            const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2;
+            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
+            const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin);
             m_pTabBarGlobal->setContentsMargins(iL, 0, iR, 0);
 
             /* Add into toolbar: */
