@@ -150,7 +150,10 @@ void hdaStreamDestroy(PHDASTREAM pStream)
     if (pStream->Dbg.Runtime.fEnabled)
     {
         DrvAudioHlpFileDestroy(pStream->Dbg.Runtime.pFileStream);
+        pStream->Dbg.Runtime.pFileStream = NULL;
+
         DrvAudioHlpFileDestroy(pStream->Dbg.Runtime.pFileDMA);
+        pStream->Dbg.Runtime.pFileDMA = NULL;
     }
 
     LogFlowFuncLeave();
