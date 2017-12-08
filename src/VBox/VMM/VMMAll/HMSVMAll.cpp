@@ -483,6 +483,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, ui
  * interrupts.
  *
  * @returns true if it's ready, false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        The guest-CPU context.
  *
  * @remarks This function looks at the VMCB cache rather than directly at the
