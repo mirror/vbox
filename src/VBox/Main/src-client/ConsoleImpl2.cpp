@@ -2986,14 +2986,14 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 default: AssertFailedBreak();
             }
 
-            uint8_t u8AudioLUN = 0;
+            unsigned uAudioLUN = 0;
 
             BOOL fAudioEnabledIn = FALSE;
             hrc = audioAdapter->COMGETTER(EnabledIn)(&fAudioEnabledIn);                     H();
             BOOL fAudioEnabledOut = FALSE;
             hrc = audioAdapter->COMGETTER(EnabledOut)(&fAudioEnabledOut);                   H();
 
-            CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", u8AudioLUN++);
+            CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", uAudioLUN++);
             InsertConfigString(pLunL0, "Driver", "AUDIO");
 
             InsertConfigNode(pLunL0,   "Config", &pCfg);
@@ -3016,7 +3016,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             /*
              * The VRDE audio backend driver.
              */
-            CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", u8AudioLUN++);
+            CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", uAudioLUN++);
             InsertConfigString(pLunL0, "Driver", "AUDIO");
 
             InsertConfigNode(pLunL0,   "Config", &pCfg);
@@ -3041,10 +3041,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             {
                 /* Note: Don't do any driver attaching (fAttachDetach) here, as this will
                  *       be done automatically as part of the VM startup process. */
-                rc = pDisplay->i_videoRecConfigure(pDisplay, pDisplay->i_videoRecGetConfig(), false /* fAttachDetach */);
-
-                /** @todo Fix this: Figure out what the next LUN might be. */
-                u8AudioLUN = 3;
+                rc = pDisplay->i_videoRecConfigure(pDisplay, pDisplay->i_videoRecGetConfig(), false /* fAttachDetach */,
+                                                   &uAudioLUN);
+                if (RT_SUCCESS(rc)) /* Successfully configured, use next LUN for drivers below. */
+                    uAudioLUN++;
             }
 #endif /* VBOX_WITH_AUDIO_VIDEOREC */
 
@@ -3054,7 +3054,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 /*
                  * The audio debugging backend.
                  */
-                CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", u8AudioLUN++);
+                CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", uAudioLUN++);
                 InsertConfigString(pLunL0, "Driver", "AUDIO");
 
                 InsertConfigNode(pLunL0,   "Config", &pCfg);
@@ -3092,7 +3092,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             /*
              * The ValidationKit backend.
              */
-            CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", u8AudioLUN++);
+            CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", uAudioLUN++);
             InsertConfigString(pLunL0, "Driver", "AUDIO");
             InsertConfigNode(pLunL0,   "Config", &pCfg);
                 InsertConfigString (pCfg, "DriverName",    "ValidationKitAudio");

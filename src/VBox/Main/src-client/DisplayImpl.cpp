@@ -2423,15 +2423,15 @@ bool Display::i_videoRecStarted(void)
  * @returns VBox status code.
  * @param   strDevice           The PDM device name.
  * @param   uInstance           The PDM device instance.
- * @param   uLun                The PDM LUN number of the drive.
+ * @param   uLUN                The PDM LUN number of the driver.
  * @param   fAttach             Whether to attach or detach the driver configuration to CFGM.
  *
  * @thread EMT
  */
 int Display::i_videoRecConfigureAudioDriver(const Utf8Str& strDevice,
-                                                unsigned       uInstance,
-                                                unsigned       uLun,
-                                                bool           fAttach)
+                                            unsigned       uInstance,
+                                            unsigned       uLUN,
+                                            bool           fAttach)
 {
     if (strDevice.isEmpty()) /* No audio device configured. Bail out. */
         return VINF_SUCCESS;
@@ -2452,7 +2452,7 @@ int Display::i_videoRecConfigureAudioDriver(const Utf8Str& strDevice,
     PCFGMNODE pDev0   = CFGMR3GetChildF(pRoot, "Devices/%s/%u/", strDevice.c_str(), uInstance);
     AssertPtr(pDev0);
 
-    PCFGMNODE pDevLun = CFGMR3GetChildF(pDev0, "LUN#%u/", uLun);
+    PCFGMNODE pDevLun = CFGMR3GetChildF(pDev0, "LUN#%u/", uLUN);
 
     if (fAttach)
     {
@@ -2461,7 +2461,7 @@ int Display::i_videoRecConfigureAudioDriver(const Utf8Str& strDevice,
             LogRel2(("VideoRec: Attaching audio driver\n"));
 
             PCFGMNODE pLunL0;
-            CFGMR3InsertNodeF(pDev0, &pLunL0, "LUN#%RU8", uLun);
+            CFGMR3InsertNodeF(pDev0, &pLunL0, "LUN#%RU8", uLUN);
             CFGMR3InsertString(pLunL0, "Driver", "AUDIO");
 
             PCFGMNODE pCfg;
@@ -2493,18 +2493,22 @@ int Display::i_videoRecConfigureAudioDriver(const Utf8Str& strDevice,
 #endif
 
 /**
- * Configures video capturing and attaches / detaches the associated driver(s).
+ * Configures video capturing (via CFGM) and attaches / detaches the associated driver.
+ * Currently this only is the audio driver (if available).
  *
  * @returns IPRT status code.
  * @param   pThis               Display instance to configure video capturing for.
  * @param   pCfg                Where to store the configuration into.
  * @param   fAttachDetach       Whether to attach/detach associated drivers or not.
+ * @param   puLUN               On input, this defines the LUN to which the audio driver shall be assigned to.
+ *                              On output, this returns the LUN the audio driver was assigned to.
  */
 /* static */
-DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg, bool fAttachDetach)
+DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg, bool fAttachDetach, unsigned *puLUN)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
+    AssertPtrReturn(puLUN, VERR_INVALID_POINTER);
 
     AssertPtr(pThis->mParent);
     ComPtr<IMachine> pMachine = pThis->mParent->i_machine();
@@ -2645,14 +2649,14 @@ DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg
     rc = pMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
     AssertComRC(rc);
 
+    unsigned uInstance = 0;
+    unsigned uLUN      = *puLUN;
+
     Utf8Str strAudioDev = pThis->mParent->i_getAudioAdapterDeviceName(audioAdapter);
     if (!strAudioDev.isEmpty())
     {
         Console::SafeVMPtr ptrVM(pThis->mParent);
         Assert(ptrVM.isOk());
-
-        unsigned uInstance = 0;
-        unsigned uLun      = 2; /** @todo Make this configurable. */
 
         /*
          * Configure + attach audio driver.
@@ -2663,11 +2667,11 @@ DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg
 
         if (pCfg->Audio.fEnabled) /* Enable */
         {
-            vrc2 = pThis->i_videoRecConfigureAudioDriver(strAudioDev, uInstance, uLun, true /* fAttach */);
+            vrc2 = pThis->i_videoRecConfigureAudioDriver(strAudioDev, uInstance, uLUN, true /* fAttach */);
             if (   RT_SUCCESS(vrc2)
                 && fAttachDetach)
             {
-                vrc2 = PDMR3DriverAttach(ptrVM.rawUVM(), strAudioDev.c_str(), uInstance, uLun, 0 /* fFlags */, NULL /* ppBase */);
+                vrc2 = PDMR3DriverAttach(ptrVM.rawUVM(), strAudioDev.c_str(), uInstance, uLUN, 0 /* fFlags */, NULL /* ppBase */);
             }
 
             if (RT_FAILURE(vrc2))
@@ -2676,12 +2680,12 @@ DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg
         else /* Disable */
         {
             if (fAttachDetach)
-                vrc2 = PDMR3DriverDetach(ptrVM.rawUVM(), strAudioDev.c_str(), uInstance, uLun, "AUDIO",
+                vrc2 = PDMR3DriverDetach(ptrVM.rawUVM(), strAudioDev.c_str(), uInstance, uLUN, "AUDIO",
                                          0 /* iOccurance */, 0 /* fFlags */);
 
             if (RT_SUCCESS(vrc2))
             {
-                vrc2 = pThis->i_videoRecConfigureAudioDriver(strAudioDev, uInstance, uLun, false /* fAttach */);
+                vrc2 = pThis->i_videoRecConfigureAudioDriver(strAudioDev, uInstance, uLUN, false /* fAttach */);
             }
 
             if (RT_FAILURE(vrc2))
@@ -2709,6 +2713,9 @@ DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg
             pThis->i_videoRecScreenChanged(i);
 
     }
+
+    if (puLUN)
+        *puLUN = uLUN;
 
     return S_OK;
 }

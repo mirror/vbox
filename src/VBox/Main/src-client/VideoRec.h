@@ -95,6 +95,8 @@ typedef struct VIDEORECCFG
     {
         /** Whether audio recording is enabled or not. */
         bool                fEnabled;
+        /** The device LUN the audio driver is attached / configured to. */
+        unsigned            uLUN;
         /** Hertz (Hz) rate. */
         uint16_t            uHz;
         /** Bits per sample. */
