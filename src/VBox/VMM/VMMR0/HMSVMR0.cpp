@@ -334,6 +334,7 @@ static FNSVMEXITHANDLER hmR0SvmExitVmload;
 static FNSVMEXITHANDLER hmR0SvmExitVmsave;
 static FNSVMEXITHANDLER hmR0SvmExitInvlpga;
 static FNSVMEXITHANDLER hmR0SvmExitVmrun;
+static FNSVMEXITHANDLER hmR0SvmExitXcptGeneric;
 static FNSVMEXITHANDLER hmR0SvmNestedExitXcptDB;
 static FNSVMEXITHANDLER hmR0SvmNestedExitXcptBP;
 #endif
@@ -4890,10 +4891,16 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         }
 
         case SVM_EXIT_INTR:
-        case SVM_EXIT_FERR_FREEZE:
         case SVM_EXIT_NMI:
         {
-            /* We shouldn't direct physical interrupts, NMI, FERR to the nested-guest. */
+            /* We shouldn't direct physical interrupts, NMIs to the nested-guest. */
+            return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
+        }
+
+        case SVM_EXIT_FERR_FREEZE:
+        {
+            if (HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_VINTR))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
         }
 
@@ -4967,8 +4974,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                     uint8_t const uVector = uExitCode - SVM_EXIT_EXCEPTION_0;
                     if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, uVector))
                         return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
-                    /** @todo Write hmR0SvmExitXcptGeneric! */
-                    return VERR_NOT_IMPLEMENTED;
+                    return hmR0SvmExitXcptGeneric(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_XSETBV:
@@ -4997,20 +5003,6 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                     if (HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_SHUTDOWN))
                         return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitShutdown(pVCpu, pCtx, pSvmTransient);
-                }
-
-                case SVM_EXIT_SMI:
-                {
-                    if (HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_SMI))
-                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
-                    return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
-                }
-
-                case SVM_EXIT_INIT:
-                {
-                    if (HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_INIT))
-                        return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
-                    return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
                 }
 
                 case SVM_EXIT_VMMCALL:
@@ -5078,9 +5070,10 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                     return VINF_SUCCESS;
                 }
 
-                case SVM_EXIT_NPF:
+                case SVM_EXIT_SMI:
+                case SVM_EXIT_INIT:
+                case SVM_EXIT_NPF: /* We don't yet support nested-paging for nested-guests, so this should never happen. */
                 {
-                    /* We don't yet support nested-paging for nested-guests, so this should never really happen. */
                     return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
                 }
 
@@ -7487,6 +7480,49 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     return VBOXSTRICTRC_VAL(rcStrict);
 #endif
     return VERR_EM_INTERPRETER;
+}
+
+
+/**
+ * \#VMEXIT handler for generic exceptions. Conditional \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    /** @todo if triple-fault is returned in nested-guest scenario convert to a
+     *        shutdown VMEXIT. */
+    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
+
+    PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
+    uint8_t const  uVector  = pVmcb->ctrl.u64ExitCode - SVM_EXIT_EXCEPTION_0;
+    uint32_t const uErrCode = pVmcb->ctrl.u64ExitInfo1;
+    Assert(pSvmTransient->u64ExitCode == pVmcb->ctrl.u64ExitCode);
+    Assert(uVector <= X86_XCPT_LAST);
+
+    SVMEVENT Event;
+    Event.u          = 0;
+    Event.n.u1Valid  = 1;
+    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector = uVector;
+    switch (uVector)
+    {
+        case X86_XCPT_PF:
+        case X86_XCPT_DF:
+        case X86_XCPT_TS:
+        case X86_XCPT_NP:
+        case X86_XCPT_SS:
+        case X86_XCPT_GP:
+        case X86_XCPT_AC:
+        {
+            Event.n.u1ErrorCodeValid = 1;
+            Event.n.u32ErrorCode     = uErrCode;
+            break;
+        }
+    }
+
+    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+    return VINF_SUCCESS;
 }
 
 
