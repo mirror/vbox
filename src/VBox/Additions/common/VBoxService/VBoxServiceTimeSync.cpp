@@ -367,7 +367,7 @@ static DECLCALLBACK(int) vgsvcTimeSyncInit(void)
     }
 
     if (GetSystemTimeAdjustment(&g_dwWinTimeAdjustment, &g_dwWinTimeIncrement, &g_bWinTimeAdjustmentDisabled))
-        vgsvcTimeSyncLog(3, "vgsvcTimeSyncInit: Initially %ld (100ns) units per %ld (100 ns) units interval, disabled=%d\n",
+        vgsvcTimeSyncLog(0, "vgsvcTimeSyncInit: Initially %ld (100ns) units per %ld (100 ns) units interval, disabled=%d\n",
                          g_dwWinTimeAdjustment, g_dwWinTimeIncrement, g_bWinTimeAdjustmentDisabled ? 1 : 0);
     else
     {
@@ -451,8 +451,7 @@ static bool vgsvcTimeSyncAdjust(PCRTTIMESPEC pDrift)
     RTTimeSpecGetTimeval(pDrift, &tv);
     if (adjtime(&tv, NULL) == 0)
     {
-        if (g_cVerbosity >= 1)
-            vgsvcTimeSyncLog(1, "vgsvcTimeSyncAdjust: adjtime by %RDtimespec\n", pDrift);
+        vgsvcTimeSyncLog(1, "vgsvcTimeSyncAdjust: adjtime by %RDtimespec\n", pDrift);
         g_cTimeSyncErrors = 0;
         return true;
     }
@@ -476,7 +475,7 @@ static void vgsvcTimeSyncCancelAdjust(void)
     if (g_hTokenProcess == NULL) /* No process token (anymore)? */
         return;
     if (SetSystemTimeAdjustment(0, TRUE /* Periodic adjustments disabled. */))
-        vgsvcTimeSyncLog(3, "vgsvcTimeSyncCancelAdjust: Windows Time Adjustment is now disabled.\n");
+        vgsvcTimeSyncLog(4, "vgsvcTimeSyncCancelAdjust: Windows Time Adjustment is now disabled.\n");
     else if (g_cTimeSyncErrors++ < 10)
         VGSvcError("vgsvcTimeSyncCancelAdjust: SetSystemTimeAdjustment(,disable) failed, error=%u\n", GetLastError());
 #endif /* !RT_OS_WINDOWS */
@@ -502,15 +501,14 @@ static void vgsvcTimeSyncSet(PCRTTIMESPEC pDrift)
         /* Succeeded - reset the error count and log the change. */
         g_cTimeSyncErrors = 0;
 
-        if (g_cVerbosity >= 1)
+        if (g_cTimeSyncVerbosity >= 1)
         {
             char        sz[64];
             RTTIME      Time;
             vgsvcTimeSyncLog(1, "time set to %s\n", RTTimeToString(RTTimeExplode(&Time, &NewGuestTime), sz, sizeof(sz)));
 #ifdef DEBUG
             RTTIMESPEC  Tmp;
-            if (g_cVerbosity >= 3)
-                vgsvcTimeSyncLog(3, "        now %s\n", RTTimeToString(RTTimeExplode(&Time, RTTimeNow(&Tmp)), sz, sizeof(sz)));
+            vgsvcTimeSyncLog(3, "        now %s\n", RTTimeToString(RTTimeExplode(&Time, RTTimeNow(&Tmp)), sz, sizeof(sz)));
 #endif
         }
     }
@@ -591,7 +589,7 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
                 if (   g_fTimeSyncSetOnRestore
                     && idNewSession != g_idTimeSyncSession)
                 {
-                    vgsvcTimeSyncLog(3, "vgsvcTimeSyncWorker: The VM session ID changed, forcing resync.\n");
+                    vgsvcTimeSyncLog(2, "vgsvcTimeSyncWorker: The VM session ID changed, forcing resync.\n");
                     g_idTimeSyncSession  = idNewSession;
                     TimeSyncSetThreshold = 0;
                 }
@@ -610,13 +608,11 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
 
                 RTTIMESPEC AbsDrift = Drift;
                 RTTimeSpecAbsolute(&AbsDrift);
-                if (g_cVerbosity >= 3)
-                {
-                    vgsvcTimeSyncLog(3, "vgsvcTimeSyncWorker: Host:    %s    (MinAdjust: %RU32 ms)\n",
-                                     RTTimeToString(RTTimeExplode(&Time, &HostNow), sz, sizeof(sz)), MinAdjust);
-                    vgsvcTimeSyncLog(3, "vgsvcTimeSyncWorker: Guest: - %s => %RDtimespec drift\n",
-                                     RTTimeToString(RTTimeExplode(&Time, &GuestNow), sz, sizeof(sz)), &Drift);
-                }
+
+                vgsvcTimeSyncLog(3, "vgsvcTimeSyncWorker: Host:    %s    (MinAdjust: %RU32 ms)\n",
+                                 RTTimeToString(RTTimeExplode(&Time, &HostNow), sz, sizeof(sz)), MinAdjust);
+                vgsvcTimeSyncLog(3, "vgsvcTimeSyncWorker: Guest: - %s => %RDtimespec drift\n",
+                                 RTTimeToString(RTTimeExplode(&Time, &GuestNow), sz, sizeof(sz)), &Drift);
 
                 bool fSetTimeInThisLoop = false;
                 uint64_t AbsDriftMilli = RTTimeSpecGetMilli(&AbsDrift);
