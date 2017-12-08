@@ -475,7 +475,7 @@ static void vgsvcTimeSyncCancelAdjust(void)
     if (g_hTokenProcess == NULL) /* No process token (anymore)? */
         return;
     if (SetSystemTimeAdjustment(0, TRUE /* Periodic adjustments disabled. */))
-        vgsvcTimeSyncLog(4, "vgsvcTimeSyncCancelAdjust: Windows Time Adjustment is now disabled.\n");
+        vgsvcTimeSyncLog(5, "vgsvcTimeSyncCancelAdjust: Windows Time Adjustment is now disabled.\n");
     else if (g_cTimeSyncErrors++ < 10)
         VGSvcError("vgsvcTimeSyncCancelAdjust: SetSystemTimeAdjustment(,disable) failed, error=%u\n", GetLastError());
 #endif /* !RT_OS_WINDOWS */
@@ -609,10 +609,13 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
                 RTTIMESPEC AbsDrift = Drift;
                 RTTimeSpecAbsolute(&AbsDrift);
 
-                vgsvcTimeSyncLog(3, "vgsvcTimeSyncWorker: Host:    %s    (MinAdjust: %RU32 ms)\n",
-                                 RTTimeToString(RTTimeExplode(&Time, &HostNow), sz, sizeof(sz)), MinAdjust);
-                vgsvcTimeSyncLog(3, "vgsvcTimeSyncWorker: Guest: - %s => %RDtimespec drift\n",
-                                 RTTimeToString(RTTimeExplode(&Time, &GuestNow), sz, sizeof(sz)), &Drift);
+                if (g_cTimeSyncVerbosity >= 4)
+                {
+                    vgsvcTimeSyncLog(4, "vgsvcTimeSyncWorker: Host:    %s    (MinAdjust: %RU32 ms)",
+                                     RTTimeToString(RTTimeExplode(&Time, &HostNow), sz, sizeof(sz)), MinAdjust);
+                    vgsvcTimeSyncLog(4, "vgsvcTimeSyncWorker: Guest: - %s => %RDtimespec drift\n",
+                                     RTTimeToString(RTTimeExplode(&Time, &GuestNow), sz, sizeof(sz)), &Drift);
+                }
 
                 bool fSetTimeInThisLoop = false;
                 uint64_t AbsDriftMilli = RTTimeSpecGetMilli(&AbsDrift);
