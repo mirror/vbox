@@ -373,3 +373,134 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 #endif
 
+
+/**
+ * Checks if the guest VMCB has the specified ctrl/instruction intercept active.
+ *
+ * @returns @c true if in intercept is set, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ * @param   fIntercept  The SVM control/instruction intercept, see
+ *                      SVM_CTRL_INTERCEPT_*.
+ */
+VMM_INT_DECL(bool) HMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fIntercept)
+{
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    return RT_BOOL(pVmcbNstGstCache->u64InterceptCtrl & fIntercept);
+}
+
+
+/**
+ * Checks if the guest VMCB has the specified CR read intercept active.
+ *
+ * @returns @c true if in intercept is set, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    Pointer to the context.
+ * @param   uCr     The CR register number (0 to 15).
+ */
+VMM_INT_DECL(bool) HMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr)
+{
+    Assert(uCr < 16);
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    return RT_BOOL(pVmcbNstGstCache->u16InterceptRdCRx & (1 << uCr));
+}
+
+
+/**
+ * Checks if the guest VMCB has the specified CR write intercept
+ * active.
+ *
+ * @returns @c true if in intercept is set, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    Pointer to the context.
+ * @param   uCr     The CR register number (0 to 15).
+ */
+VMM_INT_DECL(bool) HMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr)
+{
+    Assert(uCr < 16);
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    return RT_BOOL(pVmcbNstGstCache->u16InterceptWrCRx & (1 << uCr));
+}
+
+
+/**
+ * Checks if the guest VMCB has the specified DR read intercept
+ * active.
+ *
+ * @returns @c true if in intercept is set, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    Pointer to the context.
+ * @param   uDr     The DR register number (0 to 15).
+ */
+VMM_INT_DECL(bool) HMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr)
+{
+    Assert(uDr < 16);
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    return RT_BOOL(pVmcbNstGstCache->u16InterceptRdDRx & (1 << uDr));
+}
+
+
+/**
+ * Checks if the guest VMCB has the specified DR write intercept active.
+ *
+ * @returns @c true if in intercept is set, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    Pointer to the context.
+ * @param   uDr     The DR register number (0 to 15).
+ */
+VMM_INT_DECL(bool) HMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr)
+{
+    Assert(uDr < 16);
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    return RT_BOOL(pVmcbNstGstCache->u16InterceptWrDRx & (1 << uDr));
+}
+
+
+/**
+ * Checks if the guest VMCB has the specified exception intercept active.
+ *
+ * @returns true if in intercept is active, false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ * @param   uVector     The exception / interrupt vector.
+ */
+VMM_INT_DECL(bool) HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uVector)
+{
+    Assert(uVector < 32);
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    return RT_BOOL(pVmcbNstGstCache->u32InterceptXcpt & (1 << uVector));
+}
+
+
+/**
+ * Checks whether the SVM nested-guest is in a state to receive physical (APIC)
+ * interrupts.
+ *
+ * @returns true if it's ready, false otherwise.
+ * @param   pCtx        The guest-CPU context.
+ *
+ * @remarks This function looks at the VMCB cache rather than directly at the
+ *          nested-guest VMCB which may have been suitably modified for executing
+ *          using hardware-assisted SVM.
+ *
+ * @sa      CPUMCanSvmNstGstTakePhysIntr.
+ */
+VMM_INT_DECL(bool) HMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    X86EFLAGS fEFlags;
+    if (pVmcbNstGstCache->fVIntrMasking)
+        fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
+    else
+        fEFlags.u = pCtx->eflags.u;
+
+    return fEFlags.Bits.u1IF;
+}
+

@@ -1202,7 +1202,7 @@ VMM_INT_DECL(bool)  CPUMIsGuestInRawMode(PVMCPU pVCpu);
 
 /** @name Nested Hardware-Virtualization Helpers.
  * @{  */
-VMM_INT_DECL(bool)      CPUMCanSvmNstGstTakePhysIntr(PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)      CPUMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(bool)      CPUMCanSvmNstGstTakeVirtIntr(PCCPUMCTX pCtx);
 VMM_INT_DECL(uint8_t)   CPUMGetSvmNstGstInterrupt(PCCPUMCTX pCtx);
 VMM_INT_DECL(void)      CPUMSvmVmExitRestoreHostState(PVMCPU pVCpu, PCPUMCTX pCtx);
@@ -1326,98 +1326,121 @@ DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCCPUMCTX pCtx)
  * Checks if the guest VMCB has the specified ctrl/instruction intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
- * @param   pCtx          Pointer to the context.
- * @param   fIntercept    The SVM control/instruction intercept,
- *                        see SVM_CTRL_INTERCEPT_*.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ * @param   fIntercept  The SVM control/instruction intercept, see
+ *                      SVM_CTRL_INTERCEPT_*.
  */
-DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCCPUMCTX pCtx, uint64_t fIntercept)
+DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fIntercept)
 {
-    Assert(!pCtx->hwvirt.svm.fHMCachedVmcb);
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    return pVmcb && (pVmcb->ctrl.u64InterceptCtrl & fIntercept);
+    if (!pVmcb)
+        return false;
+    if (!pCtx->hwvirt.svm.fHMCachedVmcb)
+        return RT_BOOL(pVmcb->ctrl.u64InterceptCtrl & fIntercept);
+    return HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, fIntercept);
 }
 
 /**
- * Checks if the guest VMCB has the specified CR read intercept
- * active.
+ * Checks if the guest VMCB has the specified CR read intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
- * @param   pCtx          Pointer to the context.
- * @param   uCr           The CR register number (0 to 15).
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    Pointer to the context.
+ * @param   uCr     The CR register number (0 to 15).
  */
-DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCCPUMCTX pCtx, uint8_t uCr)
+DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr)
 {
-    Assert(!pCtx->hwvirt.svm.fHMCachedVmcb);
+    Assert(uCr < 16);
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    return pVmcb && (pVmcb->ctrl.u16InterceptRdCRx & (1 << uCr));
+    if (!pVmcb)
+        return false;
+    if (!pCtx->hwvirt.svm.fHMCachedVmcb)
+        return RT_BOOL(pVmcb->ctrl.u16InterceptRdCRx & (UINT16_C(1) << uCr));
+    return HMIsGuestSvmReadCRxInterceptSet(pVCpu, pCtx, uCr);
 }
 
 /**
- * Checks if the guest VMCB has the specified CR write intercept
- * active.
+ * Checks if the guest VMCB has the specified CR write intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
- * @param   pCtx          Pointer to the context.
- * @param   uCr           The CR register number (0 to 15).
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    Pointer to the context.
+ * @param   uCr     The CR register number (0 to 15).
  */
-DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCCPUMCTX pCtx, uint8_t uCr)
+DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr)
 {
-    Assert(!pCtx->hwvirt.svm.fHMCachedVmcb);
+    Assert(uCr < 16);
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    return pVmcb && (pVmcb->ctrl.u16InterceptWrCRx & (1 << uCr));
+    if (!pVmcb)
+        return false;
+    if (!pCtx->hwvirt.svm.fHMCachedVmcb)
+        return RT_BOOL(pVmcb->ctrl.u16InterceptWrCRx & (UINT16_C(1) << uCr));
+    return HMIsGuestSvmWriteCRxInterceptSet(pVCpu, pCtx, uCr);
 }
 
 /**
- * Checks if the guest VMCB has the specified DR read intercept
- * active.
+ * Checks if the guest VMCB has the specified DR read intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    Pointer to the context.
  * @param   uDr     The DR register number (0 to 15).
  */
-DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCCPUMCTX pCtx, uint8_t uDr)
+DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr)
 {
-    Assert(!pCtx->hwvirt.svm.fHMCachedVmcb);
+    Assert(uDr < 16);
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    return pVmcb && (pVmcb->ctrl.u16InterceptRdDRx & (1 << uDr));
+    if (!pVmcb)
+        return false;
+    if (!pCtx->hwvirt.svm.fHMCachedVmcb)
+        return RT_BOOL(pVmcb->ctrl.u16InterceptRdDRx & (UINT16_C(1) << uDr));
+    return HMIsGuestSvmReadDRxInterceptSet(pVCpu, pCtx, uDr);
 }
 
 /**
- * Checks if the guest VMCB has the specified DR write intercept
- * active.
+ * Checks if the guest VMCB has the specified DR write intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    Pointer to the context.
  * @param   uDr     The DR register number (0 to 15).
  */
-DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCCPUMCTX pCtx, uint8_t uDr)
+DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr)
 {
-    Assert(!pCtx->hwvirt.svm.fHMCachedVmcb);
+    Assert(uDr < 16);
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    return pVmcb && (pVmcb->ctrl.u16InterceptWrDRx & (1 << uDr));
+    if (!pVmcb)
+        return false;
+    if (!pCtx->hwvirt.svm.fHMCachedVmcb)
+        return RT_BOOL(pVmcb->ctrl.u16InterceptWrDRx & (UINT16_C(1) << uDr));
+    return HMIsGuestSvmWriteDRxInterceptSet(pVCpu, pCtx, uDr);
 }
 
 /**
- * Checks if the guest VMCB has the specified exception
- * intercept active.
+ * Checks if the guest VMCB has the specified exception intercept active.
  *
- * @returns true if in intercept is active, false otherwise.
+ * @returns @c true if in intercept is active, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  * @param   uVector     The exception / interrupt vector.
  */
-DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCCPUMCTX pCtx, uint8_t uVector)
+DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uVector)
 {
-    Assert(!pCtx->hwvirt.svm.fHMCachedVmcb);
     Assert(uVector < 32);
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    return pVmcb && (pVmcb->ctrl.u32InterceptXcpt & (UINT32_C(1) << uVector));
+    if (!pVmcb)
+        return false;
+    if (!pCtx->hwvirt.svm.fHMCachedVmcb)
+        return RT_BOOL(pVmcb->ctrl.u32InterceptXcpt & (UINT32_C(1) << uVector));
+    return HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, uVector);
 }
 #endif /* !IN_RC */
 
 /**
  * Checks if we are executing inside an SVM nested hardware-virtualized guest.
  *
- * @returns true if in SVM nested-guest mode, false otherwise.
+ * @returns @c true if in SVM nested-guest mode, @c false otherwise.
  * @param   pCtx        Pointer to the context.
  */
 DECLINLINE(bool) CPUMIsGuestInSvmNestedHwVirtMode(PCCPUMCTX pCtx)
@@ -1430,7 +1453,7 @@ DECLINLINE(bool) CPUMIsGuestInSvmNestedHwVirtMode(PCCPUMCTX pCtx)
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     return pVmcb && (pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN);
 #else
-    RT_NOREF(pCtx);
+    NOREF(pCtx);
     return false;
 #endif
 }
@@ -1438,20 +1461,20 @@ DECLINLINE(bool) CPUMIsGuestInSvmNestedHwVirtMode(PCCPUMCTX pCtx)
 /**
  * Checks if we are executing inside a VMX nested hardware-virtualized guest.
  *
- * @returns true if in VMX nested-guest mode, false otherwise.
+ * @returns @c true if in VMX nested-guest mode, @c false otherwise.
  * @param   pCtx        Pointer to the context.
  */
 DECLINLINE(bool) CPUMIsGuestInVmxNestedHwVirtMode(PCCPUMCTX pCtx)
 {
     /** @todo Intel. */
-    RT_NOREF(pCtx);
+    NOREF(pCtx);
     return false;
 }
 
 /**
  * Checks if we are executing inside a nested hardware-virtualized guest.
  *
- * @returns true if in SVM/VMX nested-guest mode, false otherwise.
+ * @returns @c true if in SVM/VMX nested-guest mode, @c false otherwise.
  * @param   pCtx        Pointer to the context.
  */
 DECLINLINE(bool) CPUMIsGuestInNestedHwVirtMode(PCCPUMCTX pCtx)
