@@ -3273,27 +3273,29 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int 
          * unconditionally.  By calling ConfigureWindow directly, Qt will see
          * our change request as an externally triggered one on success and not
          * at all if it is rejected. */
+        const double dDPR = gpDesktop->devicePixelRatio(pWidget);
         uint16_t fMask =   XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
                          | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
-        uint32_t values[] = { (uint32_t)x, (uint32_t)y, (uint32_t)w, (uint32_t)h };
+        uint32_t values[] = { (uint32_t)(x * dDPR), (uint32_t)(y * dDPR),
+                              (uint32_t)(w * dDPR), (uint32_t)(h * dDPR) };
         xcb_configure_window(QX11Info::connection(), (xcb_window_t)pWidget->winId(),
                              fMask, values);
         xcb_size_hints_t hints;
         hints.flags =   1 /* XCB_ICCCM_SIZE_HINT_US_POSITION */
                       | 2 /* XCB_ICCCM_SIZE_HINT_US_SIZE */
                       | 512 /* XCB_ICCCM_SIZE_P_WIN_GRAVITY */;
-        hints.x           = x;
-        hints.y           = y;
-        hints.width       = w;
-        hints.height      = h;
-        hints.min_width   = pWidget->minimumSize().width();
-        hints.min_height  = pWidget->minimumSize().height();
-        hints.max_width   = pWidget->maximumSize().width();
-        hints.max_height  = pWidget->maximumSize().height();
-        hints.width_inc   = pWidget->sizeIncrement().width();
-        hints.height_inc  = pWidget->sizeIncrement().height();
-        hints.base_width  = pWidget->baseSize().width();
-        hints.base_height = pWidget->baseSize().height();
+        hints.x           = x * dDPR;
+        hints.y           = y * dDPR;
+        hints.width       = w * dDPR;
+        hints.height      = h * dDPR;
+        hints.min_width   = pWidget->minimumSize().width() * dDPR;
+        hints.min_height  = pWidget->minimumSize().height() * dDPR;
+        hints.max_width   = pWidget->maximumSize().width() * dDPR;
+        hints.max_height  = pWidget->maximumSize().height() * dDPR;
+        hints.width_inc   = pWidget->sizeIncrement().width() * dDPR;
+        hints.height_inc  = pWidget->sizeIncrement().height() * dDPR;
+        hints.base_width  = pWidget->baseSize().width() * dDPR;
+        hints.base_height = pWidget->baseSize().height() * dDPR;
         hints.win_gravity = XCB_GRAVITY_STATIC;
         if (hints.min_width > 0 || hints.min_height > 0)
             hints.flags |= 16 /* XCB_ICCCM_SIZE_HINT_P_MIN_SIZE */;
