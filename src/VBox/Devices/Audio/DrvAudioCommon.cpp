@@ -1344,10 +1344,11 @@ int DrvAudioHlpFileClose(PPDMAUDIOFILE pFile)
         if (pFile->hFile != NIL_RTFILE)
         {
             PAUDIOWAVFILEDATA pData = (PAUDIOWAVFILEDATA)pFile->pvData;
-            AssertPtr(pData);
-
-            /* Update the header with the current data size. */
-            RTFileWriteAt(pFile->hFile, 0, &pData->Hdr, sizeof(pData->Hdr), NULL);
+            if (pData) /* The .WAV file data only is valid when a file actually has been created. */
+            {
+                /* Update the header with the current data size. */
+                RTFileWriteAt(pFile->hFile, 0, &pData->Hdr, sizeof(pData->Hdr), NULL);
+            }
 
             rc = RTFileClose(pFile->hFile);
             pFile->hFile = NIL_RTFILE;
@@ -1420,9 +1421,8 @@ size_t DrvAudioHlpFileGetDataSize(PPDMAUDIOFILE pFile)
     else if (pFile->enmType == PDMAUDIOFILETYPE_WAV)
     {
         PAUDIOWAVFILEDATA pData = (PAUDIOWAVFILEDATA)pFile->pvData;
-        AssertPtr(pData);
-
-        cbSize = pData->Hdr.u32Size2;
+        if (pData) /* The .WAV file data only is valid when a file actually has been created. */
+            cbSize = pData->Hdr.u32Size2;
     }
 
     return cbSize;
