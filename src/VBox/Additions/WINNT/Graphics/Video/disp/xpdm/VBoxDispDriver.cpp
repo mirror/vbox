@@ -236,7 +236,7 @@ static int VBoxDispInitDevice(PVBOXDISPDEV pDev, DEVMODEW *pdm, GDIINFO *pGdiInf
     pDev->mode.ulWidth = selectedMode.VisScreenWidth;
     pDev->mode.ulHeight = selectedMode.VisScreenHeight;
     pDev->mode.ulBitsPerPel = selectedMode.BitsPerPlane * selectedMode.NumberOfPlanes;
-    pDev->mode.lScanlineStride = selectedMode.ScreenStride;
+    pDev->mode.lScanlineStride = RT_ALIGN_32(selectedMode.ScreenStride, 4);
     pDev->mode.flMaskR = selectedMode.RedMask;
     pDev->mode.flMaskG = selectedMode.GreenMask;
     pDev->mode.flMaskB = selectedMode.BlueMask;
