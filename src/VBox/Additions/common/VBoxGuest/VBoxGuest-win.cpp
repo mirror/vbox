@@ -1087,7 +1087,7 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
  * Queries (gets) a DWORD value from the registry.
  *
  * @return  NTSTATUS
- * @param   ulRoot      Relative path root. See RTL_REGISTRY_SERVICES or RTL_REGISTRY_ABSOLUTE.
+ * @param   uRoot       Relative path root. See RTL_REGISTRY_SERVICES or RTL_REGISTRY_ABSOLUTE.
  * @param   pwszPath    Path inside path root.
  * @param   pwszName    Actual value name to look up.
  * @param   puValue     On input this can specify the default value (if RTL_REGISTRY_OPTIONAL is
