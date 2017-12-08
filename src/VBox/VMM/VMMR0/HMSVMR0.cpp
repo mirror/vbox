@@ -1444,34 +1444,6 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
 }
 
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
-/**
- * Loads the nested-guest control registers (CR0, CR2, CR3, CR4) into the VMCB.
- *
- * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pVmcbNstGst     Pointer to the nested-guest VM control block.
- * @param   pCtx            Pointer to the guest-CPU context.
- *
- * @remarks No-long-jump zone!!!
- */
-static int hmR0SvmLoadGuestControlRegsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst, PCPUMCTX pCtx)
-{
-    /*
-     * Guest CR0.
-     */
-    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR0))
-    {
-        pVmcbNstGst->guest.u64CR0 = pCtx->cr0;
-        pVmcbNstGst->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
-        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR0);
-    }
-
-    return hmR0SvmLoadGuestControlRegs(pVCpu, pVmcbNstGst, pCtx);
-}
-#endif
-
-
 /**
  * Loads the guest segment registers into the VMCB.
  *
@@ -2248,18 +2220,19 @@ static int hmR0SvmLoadGuestStateNested(PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(pVmcbNstGst);
 
     hmR0SvmVmRunSetupVmcb(pVCpu, pCtx);
+
+    int rc = hmR0SvmLoadGuestControlRegs(pVCpu, pVmcbNstGst, pCtx);
+    AssertRCReturn(rc, rc);
+
     hmR0SvmLoadGuestSegmentRegs(pVCpu, pVmcbNstGst, pCtx);
     hmR0SvmLoadGuestMsrs(pVCpu, pVmcbNstGst, pCtx);
+    hmR0SvmLoadGuestApicStateNested(pVCpu, pVmcbNstGst);
 
     pVmcbNstGst->guest.u64RIP    = pCtx->rip;
     pVmcbNstGst->guest.u64RSP    = pCtx->rsp;
     pVmcbNstGst->guest.u64RFlags = pCtx->eflags.u32;
     pVmcbNstGst->guest.u64RAX    = pCtx->rax;
 
-    int rc = hmR0SvmLoadGuestControlRegsNested(pVCpu, pVmcbNstGst, pCtx);
-    AssertRCReturn(rc, rc);
-
-    hmR0SvmLoadGuestApicStateNested(pVCpu, pVmcbNstGst);
     hmR0SvmLoadGuestXcptInterceptsNested(pVCpu, pVmcbNstGst, pCtx);
 
     rc = hmR0SvmSetupVMRunHandler(pVCpu);
@@ -5021,6 +4994,8 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
                 case SVM_EXIT_SHUTDOWN:
                 {
+                    /** @todo think about this... intercepting shutdown on host CPU shouldn't be needed
+                     *        for nested guest? */
                     if (HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_SHUTDOWN))
                         return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitShutdown(pVCpu, pCtx, pSvmTransient);
