@@ -431,8 +431,16 @@ STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID 
                         m_hrcCreate = hrc = i_registerWithSds(&pOtherVirtualBox);
                         if (SUCCEEDED(hrc) && pOtherVirtualBox)
                             m_pObj = pOtherVirtualBox;
-                        else if (SUCCEEDED(hrc))
+                        else
                         {
+                            /* 
+                            *  Create the instance of VirtualBox if it is primary VBoxSvc.
+                            *  Also do it if the VBoxSDS failed. 
+                            *  In this case the VBoxSVC should work as usual.
+                            */
+                            if(FAILED(hrc))
+                                LogRel(("Warning: registration in VBoxSDS failed with error: %Rhra. "
+                                        "This VBoxSVC instance will continue to work without VBoxSDS support.\n", hrc));
                             ATL::_pAtlModule->Lock();
                             ATL::CComObjectCached<VirtualBox> *p;
                             m_hrcCreate = hrc = ATL::CComObjectCached<VirtualBox>::CreateInstance(&p);
