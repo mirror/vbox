@@ -225,7 +225,10 @@ static struct pci_driver  g_PciDriver =
     remove:         vgdrvLinuxTermPci
 };
 
+#ifdef VBOXGUEST_WITH_INPUT_DRIVER
+/** Kernel IDC session to ourselves for use with the mouse events. */
 static PVBOXGUESTSESSION        g_pKernelSession = NULL;
+#endif
 
 
 
@@ -511,7 +514,6 @@ static void vgdrvLinuxTermInputDevice(void)
 
 #endif /* VBOXGUEST_WITH_INPUT_DRIVER */
 
-
 /**
  * Creates the device nodes.
  *
@@ -627,6 +629,7 @@ static int __init vgdrvLinuxModInit(void)
                                        VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
             if (RT_SUCCESS(rc))
             {
+#ifdef VBOXGUEST_WITH_INPUT_DRIVER
                 /*
                  * Create the kernel session for this driver.
                  */
@@ -636,7 +639,6 @@ static int __init vgdrvLinuxModInit(void)
                     /*
                      * Create the kernel input device.
                      */
-#ifdef VBOXGUEST_WITH_INPUT_DRIVER
                     rc = vgdrvLinuxCreateInputDevice();
                     if (rc >= 0)
                     {
@@ -664,8 +666,8 @@ static int __init vgdrvLinuxModInit(void)
                         LogRel((DEVICE_NAME ": vboxguestCreateInputDevice failed with rc=%Rrc\n", rc));
                         rc = RTErrConvertFromErrno(rc);
                     }
-#endif
                     VGDrvCommonCloseSession(&g_DevExt, g_pKernelSession);
+#endif
                 }
                 VGDrvCommonDeleteDevExt(&g_DevExt);
             }
@@ -701,8 +703,8 @@ static void __exit vgdrvLinuxModExit(void)
     vgdrvLinuxTermDeviceNodes();
 #ifdef VBOXGUEST_WITH_INPUT_DRIVER
     vgdrvLinuxTermInputDevice();
-#endif
     VGDrvCommonCloseSession(&g_DevExt, g_pKernelSession);
+#endif
     VGDrvCommonDeleteDevExt(&g_DevExt);
     vgdrvLinuxTermISR();
     pci_unregister_driver(&g_PciDriver);
