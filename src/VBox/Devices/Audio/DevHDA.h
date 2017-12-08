@@ -76,10 +76,10 @@ typedef struct HDATAG
     R3PTRTYPE(PHDASTREAM) pStream;
 } HDATAG, *PHDATAG;
 
-#ifdef DEBUG
 /** @todo Make STAM values out of this? */
 typedef struct HDASTATEDBGINFO
 {
+#ifdef DEBUG
     /** Timestamp (in ns) of the last timer callback (hdaTimer).
      * Used to calculate the time actually elapsed between two timer callbacks. */
     uint64_t                           tsTimerLastCalledNs;
@@ -101,13 +101,13 @@ typedef struct HDASTATEDBGINFO
         /** Accumulated elapsed time (in ns) of all IRQ being deasserted. */
         uint64_t                       tsDeassertedTotalNs;
     } IRQ;
+#endif
     /** Whether debugging is enabled or not. */
     bool                               fEnabled;
     /** Path where to dump the debug output to.
      *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH. */
     char                               szOutPath[RTPATH_MAX + 1];
 } HDASTATEDBGINFO, *PHDASTATEDBGINFO;
-#endif
 
 /**
  * ICH Intel HD Audio Controller state.
