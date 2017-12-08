@@ -5517,18 +5517,18 @@ HRESULT Console::i_onVideoCaptureChange()
             alock.release();
 
             const PVIDEORECCFG pCfg = pDisplay->i_videoRecGetConfig();
+# ifdef VBOX_WITH_AUDIO_VIDEOREC
             const unsigned     uLUN = pCfg->Audio.uLUN; /* Get the currently configured LUN. */
-
+# else
+            const unsigned     uLUN = 0;
+# endif
             int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY /*idDstCpu*/,
                                        (PFNRT)Display::i_videoRecConfigure, 4,
-                                       pDisplay, pCfg, true /* fAttachDetach */, &pCfg->Audio.uLUN);
+                                       pDisplay, pCfg, true /* fAttachDetach */, &uLUN);
             if (RT_SUCCESS(vrc))
             {
                 /* Make sure to acquire the lock again after we're done running in EMT. */
                 alock.acquire();
-
-                /* We don't support dynamic LUNs for this stuff yet. */
-                Assert(uLUN == pCfg->Audio.uLUN);
 
                 if (!mDisplay->i_videoRecStarted())
                 {
