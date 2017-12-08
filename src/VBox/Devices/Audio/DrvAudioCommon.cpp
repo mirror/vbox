@@ -1329,7 +1329,7 @@ int DrvAudioHlpFileClose(PPDMAUDIOFILE pFile)
 
     size_t cbSize = DrvAudioHlpFileGetDataSize(pFile);
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     if (pFile->enmType == PDMAUDIOFILETYPE_RAW)
     {
