@@ -843,6 +843,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
 #endif /* VBOX_WS_MAC */
     , m_pHostLedsState(NULL)
     , m_fIsHidLedsSyncEnabled(false)
+    , m_pLogViewerDialog(0)
 {
 }
 
@@ -2381,8 +2382,39 @@ void UIMachineLogic::sltLoggingToggled(bool fState)
 
 void UIMachineLogic::sltShowLogDialog()
 {
-    /* Show VM Log Viewer: */
-    UIVMLogViewerDialog::showLogViewerFor(activeMachineWindow(), machine());
+    if (machine().isNull() || !activeMachineWindow())
+        return;
+
+    /* Create a logviewer only if we don't have one already */
+    if (m_pLogViewerDialog)
+        return;
+
+    QIManagerDialog *pLogViewerDialog;
+    UIVMLogViewerDialogFactory dialogFactory(machine());
+    dialogFactory.prepare(pLogViewerDialog, activeMachineWindow());
+    if (pLogViewerDialog)
+    {
+        m_pLogViewerDialog = pLogViewerDialog;
+
+        /* Show instance: */
+        pLogViewerDialog->show();
+        pLogViewerDialog->setWindowState(pLogViewerDialog->windowState() & ~Qt::WindowMinimized);
+        pLogViewerDialog->activateWindow();
+        connect(pLogViewerDialog, &QIManagerDialog::sigClose,
+                this, &UIMachineLogic::sltCloseLogViewerWindow);
+    }
+}
+
+void UIMachineLogic::sltCloseLogViewerWindow()
+{
+    QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
+    if (m_pLogViewerDialog != pDialog || !pDialog)
+        return;
+
+    /* Set the m_pLogViewerDialog to NULL before closing the dialog. or we will have redundant deletes*/
+    m_pLogViewerDialog = 0;
+    pDialog->close();
+    UIVMLogViewerDialogFactory(CMachine()).cleanup(pDialog);
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */

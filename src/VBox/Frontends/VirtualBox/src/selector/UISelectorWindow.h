@@ -41,6 +41,8 @@ class UIToolBar;
 class UIToolsToolbar;
 class UIVMItem;
 
+/* Type definitions: */
+typedef QMap<QString, QIManagerDialog*> VMLogViewerMap;
 
 /** Singleton QIMainWindow extension
   * used as VirtualBox Manager (selector-window) instance. */
@@ -122,6 +124,8 @@ private slots:
         void sltOpenHostNetworkManagerWindow();
         /** Handles call to close Host Network Manager window. */
         void sltCloseHostNetworkManagerWindow();
+        /** Handles call to close a Machine LogViewer window. */
+        void sltCloseLogViewerWindow();
         /** Handles call to open Import Appliance wizard.
           * @param strFileName can bring the name of file to import appliance from. */
         void sltOpenImportApplianceWizard(const QString &strFileName = QString());
@@ -374,6 +378,8 @@ private:
     QIManagerDialog *m_pManagerVirtualMedia;
     /** Holds the Host Network Manager window instance. */
     QIManagerDialog *m_pManagerHostNetwork;
+    /** Holds a map of (machineUUID, UIVMLogViewerDialog). */
+    VMLogViewerMap m_logViewers;
 };
 
 #define gpSelectorWindow UISelectorWindow::instance()

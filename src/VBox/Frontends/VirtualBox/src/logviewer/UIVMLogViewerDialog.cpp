@@ -32,88 +32,52 @@
 # include <QVBoxLayout>
 
 /* GUI includes: */
+# include "UIIconPool.h"
 # include "UIVMLogViewerDialog.h"
 # include "UIVMLogViewerWidget.h"
 
-/* COM includes: */
-# include "COMEnums.h"
-
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/** Holds the VM Log-Viewer array. */
-VMLogViewerMap UIVMLogViewerDialog::m_viewers = VMLogViewerMap();
-
-
-UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pParent, const CMachine &machine)
-    : QIWithRetranslateUI<QIDialog>(pParent)
-    , m_strMachineUUID(machine.GetHardwareUUID())
+UIVMLogViewerDialogFactory::UIVMLogViewerDialogFactory(const CMachine &machine)
+    :m_comMachine(machine)
 {
-    prepare(machine);
 }
 
-UIVMLogViewerDialog::~UIVMLogViewerDialog()
+void UIVMLogViewerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    cleanup();
+    pDialog = new UIVMLogViewerDialog(pCenterWidget, m_comMachine);
 }
 
-void UIVMLogViewerDialog::showLogViewerFor(QWidget* parent, const CMachine &machine)
+UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, const CMachine &machine)
+    : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    , m_comMachine(machine)
 {
-    if (m_viewers.contains(machine.GetHardwareUUID()))
-    {
-        showLogViewerDialog(m_viewers[machine.GetHardwareUUID()]);
-        return;
-    }
-    UIVMLogViewerDialog dialog(parent, machine);
-    dialog.exec();
 }
 
 void UIVMLogViewerDialog::retranslateUi()
 {
-    m_pCloseButton->setText(UIVMLogViewerWidget::tr("Close"));
+    button(ButtonType_Close)->setText(UIVMLogViewerWidget::tr("Close"));
 }
 
-void UIVMLogViewerDialog::prepare(const CMachine& machine)
+void UIVMLogViewerDialog::configureCentralWidget()
 {
-    setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    /* According to QDoc passing widget to layout's ctor also handles setLayout(..) call: */
-    m_pMainLayout = new QVBoxLayout(this);
-
-    UIVMLogViewerWidget *viewerWidget = new UIVMLogViewerWidget(this, machine);
-    m_pMainLayout->addWidget(viewerWidget);
-
-    m_pButtonBox = new QDialogButtonBox(this);
-    m_pCloseButton = m_pButtonBox->addButton("Close", QDialogButtonBox::RejectRole);
-    m_pMainLayout->addWidget(m_pButtonBox);
-    connect(m_pCloseButton, &QPushButton::clicked, this, &UIVMLogViewerDialog::close);
-
-    m_viewers[m_strMachineUUID] = this;
-
-    /* Load settings: */
-    loadSettings();
-
-    showLogViewerDialog(this);
+    /* Create widget: */
+    UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(this, m_comMachine);
+    AssertPtrReturnVoid(pWidget);
+    {
+        /* Configure widget: */
+        setWidget(pWidget);
+        //setWidgetMenu(pWidget->menu());
+#ifdef VBOX_WS_MAC
+        //setWidgetToolbar(pWidget->toolbar());
+#endif
+        /* Add into layout: */
+        centralWidget()->layout()->addWidget(pWidget);
+    }
 }
 
-void UIVMLogViewerDialog::showLogViewerDialog(UIVMLogViewerDialog *logViewerDialog)
+void UIVMLogViewerDialog::configure()
 {
-    logViewerDialog->show();
-    logViewerDialog->raise();
-    logViewerDialog->setWindowState(logViewerDialog->windowState() & ~Qt::WindowMinimized);
-    logViewerDialog->activateWindow();
-}
-
-void UIVMLogViewerDialog::cleanup()
-{
-    saveSettings();
-    /* Remove log-viewer: */
-    if (!m_strMachineUUID.isNull())
-        m_viewers.remove(m_strMachineUUID);
-}
-
-void UIVMLogViewerDialog::loadSettings()
-{
-}
-
-void UIVMLogViewerDialog::saveSettings()
-{
+    /* Apply window icons: */
+    setWindowIcon(UIIconPool::iconSetFull(":/diskimage_32px.png", ":/diskimage_16px.png"));
 }

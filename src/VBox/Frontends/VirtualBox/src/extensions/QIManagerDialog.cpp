@@ -174,6 +174,8 @@ void QIManagerDialog::prepareButtonBox()
 
 void QIManagerDialog::prepareMenuBar()
 {
+    if (!m_pWidgetMenu)
+        return;
     /* Add widget menu: */
     menuBar()->addMenu(m_pWidgetMenu);
 

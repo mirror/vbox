@@ -28,6 +28,7 @@
 /* Forward declarations: */
 class QAction;
 class QActionGroup;
+class QIManagerDialog;
 class UISession;
 class UIActionPool;
 class UIKeyboardHandler;
@@ -193,6 +194,9 @@ protected slots:
     virtual void sltHostScreenGeometryChange();
     /** Handles host-screen available-area change. */
     virtual void sltHostScreenAvailableAreaChange();
+
+    /** Handles close signal from the log viewer dialog. */
+    void sltCloseLogViewerWindow();
 
 protected:
 
@@ -417,6 +421,9 @@ private:
 
     /** Holds whether VM should perform HID LEDs synchronization. */
     bool m_fIsHidLedsSyncEnabled;
+
+    /** Holds the log viewer dialog instance. */
+    QIManagerDialog *m_pLogViewerDialog;
 
     /* Friend classes: */
     friend class UIMachineWindow;

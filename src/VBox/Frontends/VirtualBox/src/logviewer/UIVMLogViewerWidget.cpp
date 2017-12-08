@@ -50,7 +50,7 @@
 UIVMLogViewerWidget::UIVMLogViewerWidget(QWidget *pParent, const CMachine &machine)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fIsPolished(false)
-    , m_machine(machine)
+    , m_comMachine(machine)
     , m_pButtonBox(0)
     , m_pMainLayout(0)
     , m_pButtonFind(0)
@@ -118,7 +118,7 @@ void UIVMLogViewerWidget::refresh()
     for (unsigned i = 0; i < cMaxLogs; ++i)
     {
         /* Query the log file name for index i: */
-        QString strFileName = m_machine.QueryLogFilename(i);
+        QString strFileName = m_comMachine.QueryLogFilename(i);
         if (!strFileName.isEmpty())
         {
             /* Try to read the log file with the index i: */
@@ -126,7 +126,7 @@ void UIVMLogViewerWidget::refresh()
             QString strText;
             while (true)
             {
-                QVector<BYTE> data = m_machine.ReadLog(i, uOffset, _1M);
+                QVector<BYTE> data = m_comMachine.ReadLog(i, uOffset, _1M);
                 if (data.size() == 0)
                     break;
                 strText.append(QString::fromUtf8((char*)data.data(), data.size()));
@@ -159,7 +159,7 @@ void UIVMLogViewerWidget::refresh()
         pDummyLog->setHtml(tr("<p>No log files found. Press the "
                               "<b>Refresh</b> button to rescan the log folder "
                               "<nobr><b>%1</b></nobr>.</p>")
-                              .arg(m_machine.GetLogFolder()));
+                              .arg(m_comMachine.GetLogFolder()));
         /* We don't want it to remain white: */
         QPalette pal = pDummyLog->palette();
         pal.setColor(QPalette::Base, pal.color(QPalette::Window));
@@ -189,7 +189,7 @@ void UIVMLogViewerWidget::save()
     /* Prepare default filename: */
     const QDateTime dtInfo = fileInfo.lastModified();
     const QString strDtString = dtInfo.toString("yyyy-MM-dd-hh-mm-ss");
-    const QString strDefaultFileName = QString("%1-%2.log").arg(m_machine.GetName()).arg(strDtString);
+    const QString strDefaultFileName = QString("%1-%2.log").arg(m_comMachine.GetName()).arg(strDtString);
     const QString strDefaultFullName = QDir::toNativeSeparators(QDir::home().absolutePath() + "/" + strDefaultFileName);
     /* Show "save as" dialog: */
     const QString strNewFileName = QIFileDialog::getSaveFileName(strDefaultFullName,
@@ -206,7 +206,7 @@ void UIVMLogViewerWidget::save()
         if (QFile::exists(strNewFileName))
             QFile::remove(strNewFileName);
         /* Copy log into the file: */
-        QFile::copy(m_machine.QueryLogFilename(m_pViewerContainer->currentIndex()), strNewFileName);
+        QFile::copy(m_comMachine.QueryLogFilename(m_pViewerContainer->currentIndex()), strNewFileName);
     }
 }
 
@@ -242,7 +242,6 @@ void UIVMLogViewerWidget::prepare()
 void UIVMLogViewerWidget::prepareWidgets()
 {
     /* Create VM Log-Viewer container: */
-    //m_pViewerContainer = new QITabWidget(centralWidget());
     m_pViewerContainer = new QITabWidget(this);
     AssertPtrReturnVoid(m_pViewerContainer);
     {
@@ -255,7 +254,7 @@ void UIVMLogViewerWidget::prepareWidgets()
     AssertPtrReturnVoid(m_pSearchPanel);
     {
         /* Configure VM Log-Viewer search-panel: */
-        //centralWidget()->installEventFilter(m_pSearchPanel);
+        installEventFilter(m_pSearchPanel);
         m_pSearchPanel->hide();
         /* Add VM Log-Viewer search-panel to main-layout: */
         m_pMainLayout->insertWidget(1, m_pSearchPanel);
@@ -266,7 +265,7 @@ void UIVMLogViewerWidget::prepareWidgets()
     AssertPtrReturnVoid(m_pFilterPanel);
     {
         /* Configure VM Log-Viewer filter-panel: */
-        //centralWidget()->installEventFilter(m_pFilterPanel);
+        installEventFilter(m_pFilterPanel);
         m_pFilterPanel->hide();
         /* Add VM Log-Viewer filter-panel to main-layout: */
         m_pMainLayout->insertWidget(2, m_pFilterPanel);
@@ -304,8 +303,8 @@ void UIVMLogViewerWidget::cleanup()
 void UIVMLogViewerWidget::retranslateUi()
 {
     /* Setup a dialog caption: */
-    if (!m_machine.isNull())
-        setWindowTitle(tr("%1 - VirtualBox Log Viewer").arg(m_machine.GetName()));
+    if (!m_comMachine.isNull())
+        setWindowTitle(tr("%1 - VirtualBox Log Viewer").arg(m_comMachine.GetName()));
 
     /* Translate other tags: */
     m_pButtonFind->setText(tr("&Find"));

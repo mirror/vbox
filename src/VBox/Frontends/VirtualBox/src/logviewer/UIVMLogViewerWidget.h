@@ -114,7 +114,7 @@ private:
     bool m_fIsPolished;
 
     /** Holds the machine instance. */
-    CMachine m_machine;
+    CMachine m_comMachine;
 
     /** Holds container for log-pages. */
     QITabWidget *m_pViewerContainer;
@@ -148,3 +148,4 @@ private:
 };
 
 #endif /* !___UIVMLogViewerWidget_h___ */
+

@@ -1024,8 +1024,47 @@ void UISelectorWindow::sltOpenMachineLogDialog()
             continue;
 
         /* Show VM Log Viewer: */
-        UIVMLogViewerDialog::showLogViewerFor(this, pItem->machine());
+        if (!m_logViewers[pItem->machine().GetHardwareUUID()])
+        {
+            QIManagerDialog *pLogViewerDialog;
+            UIVMLogViewerDialogFactory dialogFactory(pItem->machine());
+            dialogFactory.prepare(pLogViewerDialog, this);
+            if (pLogViewerDialog)
+            {
+                m_logViewers[pItem->machine().GetHardwareUUID()] = pLogViewerDialog;
+
+                /* Show instance: */
+                pLogViewerDialog->show();
+                pLogViewerDialog->setWindowState(pLogViewerDialog->windowState() & ~Qt::WindowMinimized);
+                pLogViewerDialog->activateWindow();
+                connect(pLogViewerDialog, &QIManagerDialog::sigClose,
+                        this, &UISelectorWindow::sltCloseLogViewerWindow);
+            }
+        }
     }
+}
+
+void UISelectorWindow::sltCloseLogViewerWindow()
+{
+    QMap<QString, QIManagerDialog*>::iterator sendersIterator = m_logViewers.begin();
+
+    /* Search for the sender of the signal within the m_logViewers map: */
+    while (sendersIterator != m_logViewers.end() && sendersIterator.value() != sender())
+        ++sendersIterator;
+    /* Do nothing if we cannot find it with the map: */
+    if (sendersIterator == m_logViewers.end())
+        return;
+
+    QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sendersIterator.value());
+    if (!pDialog)
+        return;
+    
+    /* First remove this log viewer dialog from the map. This should be
+       done before closing the dialog which will incur a second call to
+       this function and result in double delete!!!: */
+    m_logViewers.erase(sendersIterator);
+    pDialog->close();
+    UIVMLogViewerDialogFactory(CMachine()).cleanup(pDialog);
 }
 
 void UISelectorWindow::sltShowMachineInFileManager()
