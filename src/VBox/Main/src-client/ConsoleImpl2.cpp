@@ -3095,7 +3095,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", u8AudioLUN++);
             InsertConfigString(pLunL0, "Driver", "AUDIO");
             InsertConfigNode(pLunL0,   "Config", &pCfg);
-                InsertConfigString (pCfg, "DriverName",    "DebugAudio");
+                InsertConfigString (pCfg, "DriverName",    "ValidationKitAudio");
                 InsertConfigInteger(pCfg, "InputEnabled",  fAudioEnabledIn);
                 InsertConfigInteger(pCfg, "OutputEnabled", fAudioEnabledOut);
                 InsertConfigInteger(pCfg, "DebugEnabled",  fDebugEnabled);
