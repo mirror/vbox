@@ -752,10 +752,10 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
                                            (opus_int16 *)abSrc, csFrame, abDst, (opus_int32)cbDst);
         if (cbWritten > 0)
         {
-# ifdef VBOX_WITH_STATISTICS
             /* Get overall frames encoded. */
             const uint32_t cEncFrames     = opus_packet_get_nb_frames(abDst, cbWritten);
 
+# ifdef VBOX_WITH_STATISTICS
             pSink->Codec.STAM.cEncFrames += cEncFrames;
             pSink->Codec.STAM.msEncTotal += pSink->Codec.Opus.msFrame * cEncFrames;
 
