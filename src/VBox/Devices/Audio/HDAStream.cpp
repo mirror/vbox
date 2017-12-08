@@ -42,13 +42,14 @@
  * @returns IPRT status code.
  * @param   pStream             HDA stream to create.
  * @param   pThis               HDA state to assign the HDA stream to.
+ * @param   u8SD                Stream descriptor number to assign.
  */
-int hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis)
+int hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
 {
     RT_NOREF(pThis);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    pStream->u8SD           = UINT8_MAX;
+    pStream->u8SD           = u8SD;
     pStream->pMixSink       = NULL;
     pStream->pHDAState      = pThis;
 
@@ -69,6 +70,41 @@ int hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis)
     int rc2 = RTCritSectInit(&pStream->Dbg.CritSect);
     AssertRC(rc2);
 #endif
+
+    pStream->Dbg.Runtime.fEnabled = pThis->Dbg.fEnabled;
+
+    if (pStream->Dbg.Runtime.fEnabled)
+    {
+        char szFile[64];
+
+        if (pStream->State.Cfg.enmDir == PDMAUDIODIR_IN)
+            RTStrPrintf(szFile, sizeof(szFile), "hdaStreamWriteSD%RU8", pStream->u8SD);
+        else
+            RTStrPrintf(szFile, sizeof(szFile), "hdaStreamReadSD%RU8", pStream->u8SD);
+
+        char szPath[RTPATH_MAX + 1];
+        rc2 = DrvAudioHlpGetFileName(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
+                                     0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+        AssertRC(rc2);
+        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAG_NONE, &pStream->Dbg.Runtime.pFileStream);
+        AssertRC(rc2);
+
+        if (pStream->State.Cfg.enmDir == PDMAUDIODIR_IN)
+            RTStrPrintf(szFile, sizeof(szFile), "hdaDMAWriteSD%RU8", pStream->u8SD);
+        else
+            RTStrPrintf(szFile, sizeof(szFile), "hdaDMAReadSD%RU8", pStream->u8SD);
+
+        rc2 = DrvAudioHlpGetFileName(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
+                                     0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+        AssertRC(rc2);
+
+        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAG_NONE, &pStream->Dbg.Runtime.pFileDMA);
+        AssertRC(rc2);
+
+        /* Delete stale debugging files from a former run. */
+        DrvAudioHlpFileDelete(pStream->Dbg.Runtime.pFileStream);
+        DrvAudioHlpFileDelete(pStream->Dbg.Runtime.pFileDMA);
+    }
 
     return rc;
 }
@@ -108,6 +144,12 @@ void hdaStreamDestroy(PHDASTREAM pStream)
     rc2 = RTCritSectDelete(&pStream->Dbg.CritSect);
     AssertRC(rc2);
 #endif
+
+    if (pStream->Dbg.Runtime.fEnabled)
+    {
+        DrvAudioHlpFileDestroy(pStream->Dbg.Runtime.pFileStream);
+        DrvAudioHlpFileDestroy(pStream->Dbg.Runtime.pFileDMA);
+    }
 
     LogFlowFuncLeave();
 }
@@ -393,6 +435,31 @@ int hdaStreamEnable(PHDASTREAM pStream, bool fEnable)
         /* First, enable or disable the stream and the stream's sink, if any. */
         if (pStream->pMixSink->pMixSink)
             rc = AudioMixerSinkCtl(pStream->pMixSink->pMixSink, enmCmd);
+
+        if (   RT_SUCCESS(rc)
+            && pStream->Dbg.Runtime.fEnabled)
+        {
+            if (fEnable)
+            {
+                int rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileStream,
+                                              RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
+                                              &pStream->State.Cfg.Props);
+                AssertRC(rc2);
+
+                rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileDMA,
+                                          RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
+                                          &pStream->State.Cfg.Props);
+                AssertRC(rc2);
+            }
+            else
+            {
+                int rc2 = DrvAudioHlpFileClose(pStream->Dbg.Runtime.pFileStream);
+                AssertRC(rc2);
+
+                rc2 = DrvAudioHlpFileClose(pStream->Dbg.Runtime.pFileDMA);
+                AssertRC(rc2);
+            }
+        }
     }
 
     LogFunc(("[SD%RU8] rc=%Rrc\n", pStream->u8SD, rc));
@@ -540,13 +607,8 @@ int hdaStreamWrite(PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32
                 RT_BZERO(pvDst, cbDst);
             }
 
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-            RTFILE fh;
-            RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamWrite.pcm",
-                       RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-            RTFileWrite(fh, pvDst, cbDst, NULL);
-            RTFileClose(fh);
-#endif
+            if (pStream->Dbg.Runtime.fEnabled)
+                DrvAudioHlpFileWrite(pStream->Dbg.Runtime.pFileStream, pvDst, cbDst, 0 /* fFlags */);
         }
 
         RTCircBufReleaseWriteBlock(pCircBuf, cbDst);
@@ -610,13 +672,9 @@ int hdaStreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead)
 
         if (cbSrc)
         {
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-            RTFILE fh;
-            RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamRead.pcm",
-                       RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-            RTFileWrite(fh, pvSrc, cbSrc, NULL);
-            RTFileClose(fh);
-#endif
+            if (pStream->Dbg.Runtime.fEnabled)
+                DrvAudioHlpFileWrite(pStream->Dbg.Runtime.pFileStream, pvSrc, cbSrc, 0 /* fFlags */);
+
             rc = AudioMixerSinkWrite(pSink->pMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbWritten);
             AssertRC(rc);
 

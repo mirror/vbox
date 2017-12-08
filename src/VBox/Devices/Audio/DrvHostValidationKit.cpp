@@ -166,9 +166,9 @@ static int debugCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStre
             if (RT_SUCCESS(rc))
             {
                 LogFlowFunc(("%s\n", szFile));
-                rc = DrvAudioHlpWAVFileOpen(&pStreamDbg->File, szFile,
-                                            RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
-                                            &pCfgReq->Props, PDMAUDIOFILEFLAG_NONE);
+                rc = DrvAudioHlpFileOpen(&pStreamDbg->File, PDMAUDIOFILETYPE_WAV, szFile,
+                                         RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
+                                         &pCfgReq->Props, PDMAUDIOFILE_FLAG_NONE);
                 if (RT_FAILURE(rc))
                     LogRel(("VaKitAudio: Creating output file '%s' failed with %Rrc\n", szFile, rc));
 
@@ -276,7 +276,7 @@ static DECLCALLBACK(int) drvHostVaKitAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
     /* Remember when samples were consumed. */
    // pStreamDbg->Out.tsLastPlayed = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);;
 
-    int rc2 = DrvAudioHlpWAVFileWrite(&pStreamDbg->File, pvBuf, cxBuf, 0 /* fFlags */);
+    int rc2 = DrvAudioHlpFileWrite(&pStreamDbg->File, pvBuf, cxBuf, 0 /* fFlags */);
     if (RT_FAILURE(rc2))
         LogRel(("DebugAudio: Writing output failed with %Rrc\n", rc2));
 
@@ -320,9 +320,9 @@ static int debugDestroyStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStr
         pStreamDbg->Out.pu8PlayBuffer = NULL;
     }
 
-    size_t cbDataSize = DrvAudioHlpWAVFileGetDataSize(&pStreamDbg->File);
+    size_t cbDataSize = DrvAudioHlpFileGetDataSize(&pStreamDbg->File);
 
-    int rc = DrvAudioHlpWAVFileClose(&pStreamDbg->File);
+    int rc = DrvAudioHlpFileClose(&pStreamDbg->File);
     RTFileClose(pStreamDbg->hFileTiming);
 
     if (RT_SUCCESS(rc))

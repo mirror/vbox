@@ -71,7 +71,6 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/vmm/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach. */
-#include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmusb.h> /* For PDMR3UsbCreateEmulatedDevice. */
 #include <VBox/vmm/pdmdev.h> /* For PDMAPICMODE enum. */
 #include <VBox/vmm/pdmstorageifs.h>
@@ -2838,6 +2837,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             AudioCodecType_T audioCodec;
             hrc = audioAdapter->COMGETTER(AudioCodec)(&audioCodec);                         H();
 
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/Enabled", &strTmp);
+            const bool fDebugEnabled = strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1");
+
+            Utf8Str strDebugPathOut;
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/PathOut", &strDebugPathOut);
+
             switch (audioController)
             {
                 case AudioControllerType_AC97:
@@ -2888,6 +2893,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pInst,    "Trusted",               1); /* boolean */
                     hrc = pBusMgr->assignPCIDevice(strAudioDevice.c_str(), pInst);          H();
                     InsertConfigNode   (pInst,    "Config",                &pCfg);
+
+                        InsertConfigInteger(pCfg, "DebugEnabled", fDebugEnabled);
+                        InsertConfigString (pCfg, "DebugPathOut", strDebugPathOut);
                 }
             }
 
@@ -2905,14 +2913,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 Utf8Str strKey(audioProps[i]);
                 InsertConfigString(pCfgAudioSettings, strKey.c_str(), bstrValue);
             }
-
-            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/Enabled", &strTmp);
-            bool fDebugEnabled = strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1");
-
-            Utf8Str strDebugPathOut;
-            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/PathOut", &strDebugPathOut);
-            if (strDebugPathOut.isEmpty())
-                strDebugPathOut = VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH;
 
             /*
              * The audio driver.
@@ -2995,8 +2995,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
             CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", u8AudioLUN++);
             InsertConfigString(pLunL0, "Driver", "AUDIO");
-            InsertConfigNode(pLunL0,   "Config", &pCfg);
 
+            InsertConfigNode(pLunL0,   "Config", &pCfg);
                 InsertConfigString (pCfg, "DriverName",    strAudioDriver.c_str());
                 InsertConfigInteger(pCfg, "InputEnabled",  fAudioEnabledIn);
                 InsertConfigInteger(pCfg, "OutputEnabled", fAudioEnabledOut);
@@ -3041,11 +3041,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             {
                 /* Note: Don't do any driver attaching (fAttachDetach) here, as this will
                  *       be done automatically as part of the VM startup process. */
-                pDisplay->i_videoRecConfigure(pDisplay, pDisplay->i_videoRecGetConfig(), false /* fAttachDetach */);
+                rc = pDisplay->i_videoRecConfigure(pDisplay, pDisplay->i_videoRecGetConfig(), false /* fAttachDetach */);
+
+                /** @todo Fix this: Figure out what the next LUN might be. */
+                u8AudioLUN = 3;
             }
 #endif /* VBOX_WITH_AUDIO_VIDEOREC */
-
-            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/Enabled", &strTmp);
 
             if (fDebugEnabled)
             {
@@ -3055,8 +3056,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                  */
                 CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", u8AudioLUN++);
                 InsertConfigString(pLunL0, "Driver", "AUDIO");
+
                 InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigString (pCfg, "DriverName", "DebugAudio");
+                    InsertConfigString (pCfg, "DriverName",    "DebugAudio");
                     InsertConfigInteger(pCfg, "InputEnabled",  fAudioEnabledIn);
                     InsertConfigInteger(pCfg, "OutputEnabled", fAudioEnabledOut);
                     InsertConfigInteger(pCfg, "DebugEnabled",  fDebugEnabled);

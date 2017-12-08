@@ -21,6 +21,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <iprt/path.h>
+
 #include <VBox/vmm/pdmdev.h>
 
 #include "AudioMixer.h"
@@ -99,6 +101,11 @@ typedef struct HDASTATEDBGINFO
         /** Accumulated elapsed time (in ns) of all IRQ being deasserted. */
         uint64_t                       tsDeassertedTotalNs;
     } IRQ;
+    /** Whether debugging is enabled or not. */
+    bool                               fEnabled;
+    /** Path where to dump the debug output to.
+     *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH. */
+    char                               szOutPath[RTPATH_MAX + 1];
 } HDASTATEDBGINFO, *PHDASTATEDBGINFO;
 #endif
 
@@ -213,9 +220,7 @@ typedef struct HDASTATE
     uint16_t                           u16TimerHz;
     /** Padding for alignment. */
     uint8_t                            au8Padding3[3];
-#ifdef DEBUG
     HDASTATEDBGINFO                    Dbg;
-#endif
 } HDASTATE, *PHDASTATE;
 #endif /* !DEV_HDA_H */
 

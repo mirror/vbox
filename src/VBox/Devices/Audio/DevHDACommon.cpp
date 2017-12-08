@@ -25,6 +25,7 @@
 #define LOG_GROUP LOG_GROUP_DEV_HDA
 #include <VBox/log.h>
 
+#include "DrvAudio.h"
 
 #include "DevHDA.h"
 #include "DevHDACommon.h"
@@ -292,19 +293,8 @@ int hdaDMARead(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint32_t cbBuf,
             pu16Buf++;
         }
 #endif
-
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-        RTFILE fh;
-        int rc2 = RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaDMARead.pcm",
-                             RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        if (RT_SUCCESS(rc2))
-        {
-            RTFileWrite(fh, (uint8_t *)pvBuf + cbReadTotal, cbChunk, NULL);
-            RTFileClose(fh);
-        }
-        else
-            AssertRC(rc2);
-#endif
+        if (pStream->Dbg.Runtime.fEnabled)
+            DrvAudioHlpFileWrite(pStream->Dbg.Runtime.pFileDMA, (uint8_t *)pvBuf + cbReadTotal, cbChunk, 0 /* fFlags */);
 
 #ifdef VBOX_WITH_STATISTICS
         STAM_COUNTER_ADD(&pThis->StatBytesRead, cbChunk);
@@ -374,13 +364,9 @@ int hdaDMAWrite(PHDASTATE pThis, PHDASTREAM pStream, const void *pvBuf, uint32_t
         Assert(cbChunk % HDA_FRAME_SIZE == 0);
         Assert((cbChunk >> 1) >= 1);
 
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-        RTFILE fh;
-        RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaDMAWrite.pcm",
-                   RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        RTFileWrite(fh, pvBuf, cbChunk, NULL);
-        RTFileClose(fh);
-#endif
+        if (pStream->Dbg.Runtime.fEnabled)
+            DrvAudioHlpFileWrite(pStream->Dbg.Runtime.pFileDMA, (uint8_t *)pvBuf + cbWrittenTotal, cbChunk, 0 /* fFlags */);
+
         rc = PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns),
                                    addrChunk, (uint8_t *)pvBuf + cbWrittenTotal, cbChunk);
         if (RT_FAILURE(rc))

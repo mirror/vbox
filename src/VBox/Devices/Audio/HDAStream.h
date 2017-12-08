@@ -51,12 +51,33 @@ typedef struct HDASTREAMSTATEAIO
 } HDASTREAMSTATEAIO, *PHDASTREAMSTATEAIO;
 #endif
 
-#if defined (DEBUG) || defined(HDA_USE_DMA_ACCESS_HANDLER)
+/**
+ * Structure containing HDA stream debug stuff, configurable at runtime.
+ */
+typedef struct HDASTREAMDBGINFORT
+{
+    /** Whether debugging is enabled or not. */
+    bool                     fEnabled;
+    uint8_t                  Padding[7];
+    /** File for dumping stream reads / writes.
+     *  For input streams, this dumps data being written to the device FIFO,
+     *  whereas for output streams this dumps data being read from the device FIFO. */
+    R3PTRTYPE(PPDMAUDIOFILE) pFileStream;
+    /** File for dumping DMA reads / writes.
+     *  For input streams, this dumps data being written to the device DMA,
+     *  whereas for output streams this dumps data being read from the device DMA. */
+    R3PTRTYPE(PPDMAUDIOFILE) pFileDMA;
+} HDASTREAMDBGINFORT, *PHDASTREAMDBGINFORT;
+
+/**
+ * Structure containing HDA stream debug information.
+ */
 typedef struct HDASTREAMDBGINFO
 {
+#ifdef DEBUG
     /** Critical section to serialize access if needed. */
     RTCRITSECT              CritSect;
-    uint32_t                Padding1[2];
+    uint32_t                Padding0[2];
     /** Number of total read accesses. */
     uint64_t                cReadsTotal;
     /** Number of total DMA bytes read. */
@@ -80,8 +101,10 @@ typedef struct HDASTREAMDBGINFO
     /** How many bytes to skip in an audio stream before detecting silence.
      *  (useful for intros and silence at the beginning of a song). */
     uint64_t                cbSilenceReadMin;
+#endif
+    /** Runtime debug info. */
+    HDASTREAMDBGINFORT      Runtime;
 } HDASTREAMDBGINFO ,*PHDASTREAMDBGINFO;
-#endif /* defined (DEBUG) || defined(HDA_USE_DMA_ACCESS_HANDLER) */
 
 /**
  * Internal state of a HDA stream.
@@ -189,10 +212,8 @@ typedef struct HDASTREAM
     R3PTRTYPE(PHDAMIXERSINK) pMixSink;
     /** Internal state of this stream. */
     HDASTREAMSTATE           State;
-#ifdef DEBUG
     /** Debug information. */
     HDASTREAMDBGINFO         Dbg;
-#endif
 } HDASTREAM, *PHDASTREAM;
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -211,7 +232,7 @@ typedef struct HDASTREAMTHREADCTX
 /** @name Stream functions.
  * @{
  */
-int               hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis);
+int               hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD);
 void              hdaStreamDestroy(PHDASTREAM pStream);
 int               hdaStreamInit(PHDASTREAM pStream, uint8_t uSD);
 void              hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD);

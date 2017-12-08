@@ -137,10 +137,6 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
 
 # endif /* unused */
 
-static char *drvAudioDbgGetFileNameA(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix);
-static void  drvAudioDbgPCMDelete(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix);
-static void  drvAudioDbgPCMDump(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix, const void *pvData, size_t cbData);
-
 #ifdef LOG_ENABLED
 /**
  * Converts an audio stream status to a string.
@@ -964,8 +960,8 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
             break;
         }
 
-        if (pThis->fDebugEnabled)
-            drvAudioDbgPCMDump(pThis, pThis->szDebugPathOut, "StreamWrite.pcm", pvBuf, cbBuf);
+        if (pThis->Dbg.fEnabled)
+            DrvAudioHlpFileWrite(pHstStream->Out.Dbg.pFileStreamWrite, pvBuf, cbBuf, 0 /* fFlags */);
 
 #ifdef VBOX_WITH_STATISTICS
         STAM_COUNTER_ADD(&pThis->Stats.TotalFramesWritten, cfWritten);
@@ -1332,8 +1328,8 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
                     break;
                 }
 
-                if (pThis->fDebugEnabled)
-                    drvAudioDbgPCMDump(pThis, pThis->szDebugPathOut, "PlayNonInterleaved.pcm", auBuf, cbPlayed);
+                if (pThis->Dbg.fEnabled)
+                    DrvAudioHlpFileWrite(pHstStream->Out.Dbg.pFilePlayNonInterleaved, auBuf, cbPlayed, 0 /* fFlags */);
 
                 AssertMsg(cbPlayed <= cbRead, ("Played more than available (%RU32 available but got %RU32)\n", cbRead, cbPlayed));
 #if 0 /** @todo Also handle mono channels. Needs fixing */
@@ -1634,8 +1630,8 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
         }
         else if (cbCaptured)
         {
-            if (pThis->fDebugEnabled)
-                drvAudioDbgPCMDump(pThis, pThis->szDebugPathOut, "CaptureNonInterleaved.pcm", auBuf, cbCaptured);
+            if (pThis->Dbg.fEnabled)
+                DrvAudioHlpFileWrite(pHstStream->In.Dbg.pFileCaptureNonInterleaved, auBuf, cbCaptured, 0 /* fFlags */);
 
             Assert(cbCaptured <= cbBuf);
             if (cbCaptured > cbBuf) /* Paranoia. */
@@ -2090,78 +2086,6 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
 #endif /* VBOX_WITH_AUDIO_ENUM */
 
 /**
- * Returns an unique file name for this given audio connector instance.
- *
- * @return  Allocated file name. Must be free'd using RTStrFree().
- * @param   pThis               Driver instance.
- * @param   pszPath             Path name of the file to delete. The path must exist.
- * @param   pszSuffix           File name suffix to use.
- */
-static char *drvAudioDbgGetFileNameA(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix)
-{
-    char szFileName[64];
-    RTStrPrintf(szFileName, sizeof(szFileName), "drvAudio%RU32-%s", pThis->pDrvIns->iInstance, pszSuffix);
-
-    char szFilePath[RTPATH_MAX];
-    int rc2 = RTStrCopy(szFilePath, sizeof(szFilePath), pszPath);
-    AssertRC(rc2);
-    rc2 = RTPathAppend(szFilePath, sizeof(szFilePath), szFileName);
-    AssertRC(rc2);
-
-    return RTStrDup(szFilePath);
-}
-
-/**
- * Deletes a PCM audio dump file.
- *
- * @param   pThis               Driver instance.
- * @param   pszPath             Path name of the file to delete. The path must exist.
- * @param   pszSuffix           File name suffix to use.
- */
-static void drvAudioDbgPCMDelete(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix)
-{
-    char *pszFileName = drvAudioDbgGetFileNameA(pThis, pszPath, pszSuffix);
-    AssertPtr(pszFileName);
-
-    RTFileDelete(pszFileName);
-
-    RTStrFree(pszFileName);
-}
-
-/**
- * Dumps (raw) PCM audio data into a file by appending.
- * Every driver instance will have an own prefix to not introduce writing races.
- *
- * @param   pThis               Driver instance.
- * @param   pszPath             Path name to save file to. The path must exist.
- * @param   pszSuffix           File name suffix to use.
- * @param   pvData              Pointer to PCM data to dump.
- * @param   cbData              Size (in bytes) of PCM data to dump.
- */
-static void drvAudioDbgPCMDump(PDRVAUDIO pThis,
-                               const char *pszPath, const char *pszSuffix, const void *pvData, size_t cbData)
-{
-    if (!pvData || !cbData)
-        return;
-
-    AssertPtr(pThis->pDrvIns);
-
-    char *pszFileName = drvAudioDbgGetFileNameA(pThis, pszPath, pszSuffix);
-    AssertPtr(pszFileName);
-
-    RTFILE fh;
-    int rc2 = RTFileOpen(&fh, pszFileName, RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-    AssertRC(rc2);
-    if (RT_SUCCESS(rc2))
-    {
-        RTFileWrite(fh, pvData, cbData, NULL);
-        RTFileClose(fh);
-    }
-
-    RTStrFree(pszFileName);
-}
-
-/**
  * Initializes the host backend and queries its initial configuration.
  * If the host backend fails, VERR_AUDIO_BACKEND_INIT_FAILED will be returned.
  *
@@ -2296,13 +2220,16 @@ static int drvAudioInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     CFGMR3QueryBoolDef(pCfgHandle, "InputEnabled",  &pThis->In.fEnabled,   false);
     CFGMR3QueryBoolDef(pCfgHandle, "OutputEnabled", &pThis->Out.fEnabled,  false);
 
-    CFGMR3QueryBoolDef(pCfgHandle, "DebugEnabled",      &pThis->fDebugEnabled,  false);
-    rc2 = CFGMR3QueryString(pCfgHandle, "DebugPathOut", pThis->szDebugPathOut, sizeof(pThis->szDebugPathOut));
-    if (RT_FAILURE(rc2))
-        RTStrPrintf(pThis->szDebugPathOut, sizeof(pThis->szDebugPathOut), VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
+    CFGMR3QueryBoolDef(pCfgHandle, "DebugEnabled",      &pThis->Dbg.fEnabled,  false);
+    rc2 = CFGMR3QueryString(pCfgHandle, "DebugPathOut", pThis->Dbg.szPathOut, sizeof(pThis->Dbg.szPathOut));
+    if (   RT_FAILURE(rc2)
+        || !strlen(pThis->Dbg.szPathOut))
+    {
+        RTStrPrintf(pThis->Dbg.szPathOut, sizeof(pThis->Dbg.szPathOut), VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
+    }
 
-    if (pThis->fDebugEnabled)
-        LogRel(("Audio: Debugging enabled (audio data written to '%s')\n", pThis->szDebugPathOut));
+    if (pThis->Dbg.fEnabled)
+        LogRel(("Audio: Debugging enabled (audio data written to '%s')\n", pThis->Dbg.szPathOut));
 
     LogRel2(("Audio: Initial status for driver '%s': Input is %s, output is %s\n",
              pThis->szName, pThis->In.fEnabled ? "enabled" : "disabled", pThis->Out.fEnabled ? "enabled" : "disabled"));
@@ -2398,9 +2325,9 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
 
         if (cReadTotal)
         {
-            if (pThis->fDebugEnabled)
-                drvAudioDbgPCMDump(pThis, pThis->szDebugPathOut, "StreamRead.pcm",
-                                   pvBuf, AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cReadTotal));
+            if (pThis->Dbg.fEnabled)
+                DrvAudioHlpFileWrite(pHstStream->In.Dbg.pFileStreamRead,
+                                     pvBuf, AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cReadTotal), 0 /* fFlags */);
 
             AudioMixBufFinish(&pGstStream->MixBuf, cReadTotal);
 
@@ -2629,11 +2556,71 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
         if (pCfgHost->enmDir == PDMAUDIODIR_IN)
         {
+            if (pThis->Dbg.fEnabled)
+            {
+                char szFile[RTPATH_MAX + 1];
+
+                int rc2 = DrvAudioHlpGetFileName(szFile, RT_ELEMENTS(szFile), pThis->Dbg.szPathOut, "CaptureNonInterleaved",
+                                                 pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+                if (RT_SUCCESS(rc2))
+                {
+                    rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAG_NONE,
+                                                &pHstStrm->In.Dbg.pFileCaptureNonInterleaved);
+                    if (RT_SUCCESS(rc2))
+                        rc2 = DrvAudioHlpFileOpen(pHstStrm->In.Dbg.pFileCaptureNonInterleaved,
+                                                  RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE, &pHstStrm->Cfg.Props);
+                }
+
+                if (RT_SUCCESS(rc2))
+                {
+                    rc2 = DrvAudioHlpGetFileName(szFile, RT_ELEMENTS(szFile), pThis->Dbg.szPathOut, "StreamRead",
+                                                 pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+                    if (RT_SUCCESS(rc2))
+                    {
+                        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAG_NONE,
+                                                    &pHstStrm->In.Dbg.pFileStreamRead);
+                        if (RT_SUCCESS(rc2))
+                            rc2 = DrvAudioHlpFileOpen(pHstStrm->In.Dbg.pFileStreamRead,
+                                                      RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE, &pHstStrm->Cfg.Props);
+                    }
+                }
+            }
+
             if (pThis->In.cStreamsFree)
                 pThis->In.cStreamsFree--;
         }
         else /* Out */
         {
+            if (pThis->Dbg.fEnabled)
+            {
+                char szFile[RTPATH_MAX + 1];
+
+                int rc2 = DrvAudioHlpGetFileName(szFile, RT_ELEMENTS(szFile), pThis->Dbg.szPathOut, "PlayNonInterleaved",
+                                                 pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+                if (RT_SUCCESS(rc2))
+                {
+                    rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAG_NONE,
+                                                &pHstStrm->Out.Dbg.pFilePlayNonInterleaved);
+                    if (RT_SUCCESS(rc2))
+                        rc = DrvAudioHlpFileOpen(pHstStrm->Out.Dbg.pFilePlayNonInterleaved,
+                                                 RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE, &pHstStrm->Cfg.Props);
+                }
+
+                if (RT_SUCCESS(rc2))
+                {
+                    rc2 = DrvAudioHlpGetFileName(szFile, RT_ELEMENTS(szFile), pThis->Dbg.szPathOut, "StreamWrite",
+                                                 pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+                    if (RT_SUCCESS(rc2))
+                    {
+                        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAG_NONE,
+                                                    &pHstStrm->Out.Dbg.pFileStreamWrite);
+                        if (RT_SUCCESS(rc2))
+                            rc2 = DrvAudioHlpFileOpen(pHstStrm->Out.Dbg.pFileStreamWrite,
+                                                      RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE, &pHstStrm->Cfg.Props);
+                    }
+                }
+            }
+
             if (pThis->Out.cStreamsFree)
                 pThis->Out.cStreamsFree--;
         }
@@ -2962,18 +2949,31 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
             rc = drvAudioStreamUninitInternal(pThis, pHstStream);
             if (RT_SUCCESS(rc))
             {
-#ifdef VBOX_WITH_STATISTICS
                 if (pHstStream->enmDir == PDMAUDIODIR_IN)
                 {
+#ifdef VBOX_WITH_STATISTICS
                     PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pHstStream->In.StatFramesCaptured);
+#endif
+                    if (pThis->Dbg.fEnabled)
+                    {
+                        DrvAudioHlpFileDestroy(pHstStream->In.Dbg.pFileCaptureNonInterleaved);
+                        DrvAudioHlpFileDestroy(pHstStream->In.Dbg.pFileStreamRead);
+                    }
                 }
                 else if (pHstStream->enmDir == PDMAUDIODIR_OUT)
                 {
+#ifdef VBOX_WITH_STATISTICS
                     PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pHstStream->Out.StatFramesPlayed);
+#endif
+                    if (pThis->Dbg.fEnabled)
+                    {
+                        DrvAudioHlpFileDestroy(pHstStream->Out.Dbg.pFilePlayNonInterleaved);
+                        DrvAudioHlpFileDestroy(pHstStream->Out.Dbg.pFileStreamWrite);
+                    }
                 }
                 else
                     AssertFailed();
-#endif
+
                 RTListNodeRemove(&pHstStream->Node);
 
                 drvAudioStreamFree(pHstStream);
@@ -3351,14 +3351,6 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
         PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayOut,          "DelayOut",
                                      STAMUNIT_NS_PER_CALL, "Profiling of output data processing.");
 #endif
-
-        if (pThis->fDebugEnabled)
-        {
-            drvAudioDbgPCMDelete(pThis, pThis->szDebugPathOut, "StreamRead.pcm");
-            drvAudioDbgPCMDelete(pThis, pThis->szDebugPathOut, "StreamWrite.pcm");
-            drvAudioDbgPCMDelete(pThis, pThis->szDebugPathOut, "PlayNonInterleaved.pcm");
-            drvAudioDbgPCMDelete(pThis, pThis->szDebugPathOut, "CaptureNonInterleaved.pcm");
-        }
     }
 
     LogFlowFuncLeaveRC(rc);

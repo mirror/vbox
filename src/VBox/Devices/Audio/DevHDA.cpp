@@ -2840,13 +2840,14 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaDMAAccessHandler(PVM pVM, PVMCPU pVCpu, RTG
                      ASMDivU64ByU32RetU32(pStreamDbg->cbWrittenTotal, pStreamDbg->cWritesTotal)));
 # endif
 
-# ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-            RTFILE fh;
-            RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaDMAAccessWrite.pcm",
-                       RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-            RTFileWrite(fh, pvBuf, cbBuf, NULL);
-            RTFileClose(fh);
-# endif
+            if (pThis->fDebugEnabled)
+            {
+                RTFILE fh;
+                RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaDMAAccessWrite.pcm",
+                           RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+                RTFileWrite(fh, pvBuf, cbBuf, NULL);
+                RTFileClose(fh);
+            }
 
 # ifdef HDA_USE_DMA_ACCESS_HANDLER_WRITING
             PRTCIRCBUF pCircBuf = pStream->State.pCircBuf;
@@ -4756,7 +4757,9 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
                                     "RCEnabled\0"
                                     "TimerHz\0"
                                     "PosAdjustEnabled\0"
-                                    "PosAdjustFrames\0"))
+                                    "PosAdjustFrames\0"
+                                    "DebugEnabled\0"
+                                    "DebugPathOut\0"))
     {
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_ ("Invalid configuration for the Intel HDA device"));
@@ -4776,24 +4779,41 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
 
-     if (pThis->u16TimerHz != HDA_TIMER_HZ_DEFAULT)
-         LogRel(("HDA: Using custom device timer rate (%RU16Hz)\n", pThis->u16TimerHz));
+    if (pThis->u16TimerHz != HDA_TIMER_HZ_DEFAULT)
+        LogRel(("HDA: Using custom device timer rate (%RU16Hz)\n", pThis->u16TimerHz));
 
-     rc = CFGMR3QueryBoolDef(pCfg, "PosAdjustEnabled", &pThis->fPosAdjustEnabled, true);
-     if (RT_FAILURE(rc))
-         return PDMDEV_SET_ERROR(pDevIns, rc,
+    rc = CFGMR3QueryBoolDef(pCfg, "PosAdjustEnabled", &pThis->fPosAdjustEnabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read position adjustment enabled as boolean"));
 
-     if (!pThis->fPosAdjustEnabled)
-         LogRel(("HDA: Position adjustment is disabled\n"));
+    if (!pThis->fPosAdjustEnabled)
+        LogRel(("HDA: Position adjustment is disabled\n"));
 
-     rc = CFGMR3QueryU16Def(pCfg, "PosAdjustFrames", &pThis->cPosAdjustFrames, HDA_POS_ADJUST_DEFAULT);
-     if (RT_FAILURE(rc))
-         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                 N_("HDA configuration error: failed to read position adjustment frames as unsigned integer"));
+    rc = CFGMR3QueryU16Def(pCfg, "PosAdjustFrames", &pThis->cPosAdjustFrames, HDA_POS_ADJUST_DEFAULT);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("HDA configuration error: failed to read position adjustment frames as unsigned integer"));
 
-     if (pThis->cPosAdjustFrames)
-         LogRel(("HDA: Using custom position adjustment (%RU16 audio frames)\n", pThis->cPosAdjustFrames));
+    if (pThis->cPosAdjustFrames)
+        LogRel(("HDA: Using custom position adjustment (%RU16 audio frames)\n", pThis->cPosAdjustFrames));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "DebugEnabled", &pThis->Dbg.fEnabled, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("HDA configuration error: failed to read debugging enabled flag as boolean"));
+
+    rc = CFGMR3QueryStringDef(pCfg, "DebugPathOut", pThis->Dbg.szOutPath, sizeof(pThis->Dbg.szOutPath),
+                              VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("HDA configuration error: failed to read debugging output path flag as string"));
+
+    if (!strlen(pThis->Dbg.szOutPath))
+        RTStrPrintf(pThis->Dbg.szOutPath, sizeof(pThis->Dbg.szOutPath), VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
+
+    if (pThis->Dbg.fEnabled)
+        LogRel2(("HDA: Debug output will be saved to '%s'\n", pThis->Dbg.szOutPath));
 
     /*
      * Use an own critical section for the device instead of the default
@@ -5027,7 +5047,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
          */
         for (uint8_t i = 0; i < HDA_MAX_STREAMS; ++i)
         {
-            rc = hdaStreamCreate(&pThis->aStreams[i], pThis);
+            rc = hdaStreamCreate(&pThis->aStreams[i], pThis, i /* u8SD */);
             AssertRC(rc);
         }
 
@@ -5249,13 +5269,6 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten,     STAMTYPE_COUNTER, "/Devices/HDA/BytesWritten",      STAMUNIT_BYTES,          "Bytes written to HDA emulation.");
     }
 # endif
-
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaDMARead.pcm");
-    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaDMAWrite.pcm");
-    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamRead.pcm");
-    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamWrite.pcm");
-#endif
 
     LogFlowFuncLeaveRC(rc);
     return rc;
