@@ -90,13 +90,11 @@ typedef struct VBoxGuestDeviceState
     bus_addr_t sc_iobase;
     bus_size_t sc_iosize;
 
-    bus_space_tag_t iVMMDevMemResId;
-    bus_space_handle_t VMMDevMemHandle;
+    bus_space_tag_t sc_memt;
+    bus_space_handle_t sc_memh;
 
     /** Size of the memory area. */
-    bus_size_t         VMMDevMemSize;
-    /** Mapping of the register space */
-    bus_addr_t         pMMIOBase;
+    bus_size_t         sc_memsize;
 
     /** IRQ resource handle. */
     pci_intr_handle_t  ih;
@@ -289,17 +287,16 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
          * Map the MMIO region.
          */
         memh_valid = (pci_mapreg_map(pa, PCI_MAPREG_START+4, PCI_MAPREG_TYPE_MEM, BUS_SPACE_MAP_LINEAR,
-                                     &sc->iVMMDevMemResId, &sc->VMMDevMemHandle,
-                                     &sc->pMMIOBase, &sc->VMMDevMemSize) == 0);
+                                     &sc->sc_memt, &sc->sc_memh,
+                                     NULL, &sc->sc_memsize) == 0);
         if (memh_valid)
         {
             /*
              * Call the common device extension initializer.
              */
             rc = VGDrvCommonInitDevExt(&g_DevExt, sc->sc_iobase,
-                                       bus_space_vaddr(sc->iVMMDevMemResId,
-                                                       sc->VMMDevMemHandle),
-                                       sc->VMMDevMemSize,
+                                       bus_space_vaddr(sc->sc_memt, sc->sc_memh),
+                                       sc->sc_memsize,
 #if ARCH_BITS == 64
                                        VBOXOSTYPE_NetBSD_x64,
 #else
@@ -326,7 +323,7 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
             {
                 aprint_error_dev(sc->sc_dev, "init failed\n");
             }
-            bus_space_unmap(sc->iVMMDevMemResId, sc->VMMDevMemHandle, sc->VMMDevMemSize);
+            bus_space_unmap(sc->sc_memt, sc->sc_memh, sc->sc_memsize);
         }
         else
         {
@@ -449,7 +446,7 @@ static int VBoxGuestNetBSDDetach(device_t self, int flags)
 
     VGDrvCommonDeleteDevExt(&g_DevExt);
 
-    bus_space_unmap(sc->iVMMDevMemResId, sc->VMMDevMemHandle, sc->VMMDevMemSize);
+    bus_space_unmap(sc->sc_memt, sc->sc_memh, sc->sc_memsize);
     bus_space_unmap(sc->sc_iot, sc->sc_ioh, sc->sc_iosize);
 
     RTR0Term();
