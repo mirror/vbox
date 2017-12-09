@@ -84,10 +84,12 @@ typedef struct VBoxGuestDeviceState
 {
     device_t sc_dev;
     pci_chipset_tag_t sc_pc;
-    bus_space_tag_t io_tag;
-    bus_space_handle_t io_handle;
-    bus_addr_t uIOPortBase;
-    bus_size_t io_regsize;
+
+    bus_space_tag_t sc_iot;
+    bus_space_handle_t sc_ioh;
+    bus_addr_t sc_iobase;
+    bus_size_t sc_iosize;
+
     bus_space_tag_t iVMMDevMemResId;
     bus_space_handle_t VMMDevMemHandle;
 
@@ -277,8 +279,8 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
      * Allocate I/O port resource.
      */
     ioh_valid = (pci_mapreg_map(pa, PCI_MAPREG_START, PCI_MAPREG_TYPE_IO, 0,
-                                &sc->io_tag, &sc->io_handle,
-                                &sc->uIOPortBase, &sc->io_regsize) == 0);
+                                &sc->sc_iot, &sc->sc_ioh,
+                                &sc->sc_iobase, &sc->sc_iosize) == 0);
 
     if (ioh_valid)
     {
@@ -294,7 +296,7 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
             /*
              * Call the common device extension initializer.
              */
-            rc = VGDrvCommonInitDevExt(&g_DevExt, sc->uIOPortBase,
+            rc = VGDrvCommonInitDevExt(&g_DevExt, sc->sc_iobase,
                                        bus_space_vaddr(sc->iVMMDevMemResId,
                                                        sc->VMMDevMemHandle),
                                        sc->VMMDevMemSize,
@@ -330,7 +332,7 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
         {
             aprint_error_dev(sc->sc_dev, "MMIO mapping failed\n");
         }
-        bus_space_unmap(sc->io_tag, sc->io_handle, sc->io_regsize);
+        bus_space_unmap(sc->sc_iot, sc->sc_ioh, sc->sc_iosize);
     }
     else
     {
@@ -448,7 +450,7 @@ static int VBoxGuestNetBSDDetach(device_t self, int flags)
     VGDrvCommonDeleteDevExt(&g_DevExt);
 
     bus_space_unmap(sc->iVMMDevMemResId, sc->VMMDevMemHandle, sc->VMMDevMemSize);
-    bus_space_unmap(sc->io_tag, sc->io_handle, sc->io_regsize);
+    bus_space_unmap(sc->sc_iot, sc->sc_ioh, sc->sc_iosize);
 
     RTR0Term();
 
