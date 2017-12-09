@@ -276,7 +276,8 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
     /*
      * Allocate I/O port resource.
      */
-    ioh_valid = (pci_mapreg_map(pa, PCI_MAPREG_START, PCI_MAPREG_TYPE_IO, 0,
+    ioh_valid = (pci_mapreg_map(pa, PCI_BAR0,
+                                PCI_MAPREG_TYPE_IO, 0,
                                 &sc->sc_iot, &sc->sc_ioh,
                                 &sc->sc_iobase, &sc->sc_iosize) == 0);
 
@@ -286,7 +287,8 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
         /*
          * Map the MMIO region.
          */
-        memh_valid = (pci_mapreg_map(pa, PCI_MAPREG_START+4, PCI_MAPREG_TYPE_MEM, BUS_SPACE_MAP_LINEAR,
+        memh_valid = (pci_mapreg_map(pa, PCI_BAR1,
+                                     PCI_MAPREG_TYPE_MEM, BUS_SPACE_MAP_LINEAR,
                                      &sc->sc_memt, &sc->sc_memh,
                                      NULL, &sc->sc_memsize) == 0);
         if (memh_valid)
