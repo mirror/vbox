@@ -83,7 +83,7 @@
 typedef struct VBoxGuestDeviceState
 {
     device_t sc_dev;
-    pci_chipset_tag_t pc;
+    pci_chipset_tag_t sc_pc;
     bus_space_tag_t io_tag;
     bus_space_handle_t io_handle;
     bus_addr_t uIOPortBase;
@@ -271,7 +271,7 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
         return;
     }
 
-    sc->pc = pa->pa_pc;
+    sc->sc_pc = pa->pa_pc;
 
     /*
      * Allocate I/O port resource.
@@ -366,14 +366,14 @@ static int VBoxGuestNetBSDAddIRQ(vboxguest_softc *sc, struct pci_attach_args *pa
         return VERR_DEV_IO_ERROR;
     }
 
-    intrstr = pci_intr_string(sc->pc, sc->ih
+    intrstr = pci_intr_string(sc->sc_pc, sc->ih
 #if __NetBSD_Prereq__(6, 99, 39)
                               , intstrbuf, sizeof(intstrbuf)
 #endif
                               );
     aprint_normal_dev(sc->sc_dev, "interrupting at %s\n", intrstr);
 
-    sc->pfnIrqHandler = pci_intr_establish(sc->pc, sc->ih, IPL_BIO, VBoxGuestNetBSDISR, sc);
+    sc->pfnIrqHandler = pci_intr_establish(sc->sc_pc, sc->ih, IPL_BIO, VBoxGuestNetBSDISR, sc);
     if (sc->pfnIrqHandler == NULL)
     {
         aprint_error_dev(sc->sc_dev, "couldn't establish interrupt\n");
@@ -467,7 +467,7 @@ static void VBoxGuestNetBSDRemoveIRQ(vboxguest_softc *sc)
 
     if (sc->pfnIrqHandler)
     {
-        pci_intr_disestablish(sc->pc, sc->pfnIrqHandler);
+        pci_intr_disestablish(sc->sc_pc, sc->pfnIrqHandler);
     }
 }
 
