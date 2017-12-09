@@ -111,7 +111,7 @@ typedef struct VBoxGuestDeviceState
 } vboxguest_softc;
 
 
-struct vboxguest_session
+struct vboxguest_fdata
 {
     vboxguest_softc *sc;
     PVBOXGUESTSESSION session;
@@ -144,7 +144,7 @@ static int  VBoxGuestNetBSDISR(void *pvState);
 static int VBoxGuestNetBSDOpen(dev_t device, int flags, int fmt, struct lwp *process);
 static int VBoxGuestNetBSDClose(struct file *fp);
 static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long cmd, void *addr);
-static int VBoxGuestNetBSDIOCtlSlow(struct vboxguest_session *session, u_long command, void *data);
+static int VBoxGuestNetBSDIOCtlSlow(struct vboxguest_fdata *fdata, u_long command, void *data);
 static int VBoxGuestNetBSDPoll(struct file *fp, int events);
 
 /*
@@ -598,7 +598,7 @@ static int VBoxGuestNetBSDOpen(dev_t device, int flags, int fmt, struct lwp *pro
 {
     int rc;
     vboxguest_softc *sc;
-    struct vboxguest_session *session;
+    struct vboxguest_fdata *fdata;
     file_t *fp;
     int fd, error;
 
@@ -616,33 +616,33 @@ static int VBoxGuestNetBSDOpen(dev_t device, int flags, int fmt, struct lwp *pro
         return (ENXIO);
     }
 
-    session = kmem_alloc(sizeof(*session), KM_SLEEP);
-    if (session == NULL)
+    fdata = kmem_alloc(sizeof(*fdata), KM_SLEEP);
+    if (fdata == NULL)
     {
         return (ENOMEM);
     }
 
-    session->sc = sc;
+    fdata->sc = sc;
 
     if ((error = fd_allocfile(&fp, &fd)) != 0)
     {
-        kmem_free(session, sizeof(*session));
+        kmem_free(fdata, sizeof(*fdata));
         return error;
     }
 
     /*
      * Create a new session.
      */
-    rc = VGDrvCommonCreateUserSession(&g_DevExt, &session->session);
+    rc = VGDrvCommonCreateUserSession(&g_DevExt, &fdata->session);
     if (! RT_SUCCESS(rc))
     {
         aprint_error_dev(sc->sc_dev, "VBox session creation failed\n");
         closef(fp); /* ??? */
-        kmem_free(session, sizeof(*session));
+        kmem_free(fdata, sizeof(*fdata));
         return RTErrConvertToErrno(rc);
     }
     ASMAtomicIncU32(&cUsers);
-    return fd_clone(fp, fd, flags, &vboxguest_fileops, session);
+    return fd_clone(fp, fd, flags, &vboxguest_fileops, fdata);
 
 }
 
@@ -652,15 +652,15 @@ static int VBoxGuestNetBSDOpen(dev_t device, int flags, int fmt, struct lwp *pro
  */
 static int VBoxGuestNetBSDClose(struct file *fp)
 {
-    struct vboxguest_session *session = fp->f_data;
-    vboxguest_softc *sc = session->sc;
+    struct vboxguest_fdata *fdata = fp->f_data;
+    vboxguest_softc *sc = fdata->sc;
 
     LogFlow((DEVICE_NAME ": %s\n", __func__));
 
-    VGDrvCommonCloseSession(&g_DevExt, session->session);
+    VGDrvCommonCloseSession(&g_DevExt, fdata->session);
     ASMAtomicDecU32(&cUsers);
 
-    kmem_free(session, sizeof(*session));
+    kmem_free(fdata, sizeof(*fdata));
 
     return 0;
 }
@@ -671,17 +671,17 @@ static int VBoxGuestNetBSDClose(struct file *fp)
  */
 static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long command, void *data)
 {
-    struct vboxguest_session *session = fp->f_data;
+    struct vboxguest_fdata *fdata = fp->f_data;
 
     if (VBGL_IOCTL_IS_FAST(command))
-        return VGDrvCommonIoCtlFast(command, &g_DevExt, session->session);
+        return VGDrvCommonIoCtlFast(command, &g_DevExt, fdata->session);
 
-    return VBoxGuestNetBSDIOCtlSlow(session, command, data);
+    return VBoxGuestNetBSDIOCtlSlow(fdata, command, data);
 }
 
-static int VBoxGuestNetBSDIOCtlSlow(struct vboxguest_session *session, u_long command, void *data)
+static int VBoxGuestNetBSDIOCtlSlow(struct vboxguest_fdata *fdata, u_long command, void *data)
 {
-    vboxguest_softc *sc = session->sc;
+    vboxguest_softc *sc = fdata->sc;
     size_t cbReq = IOCPARM_LEN(command);
     PVBGLREQHDR pHdr = NULL;
     void *pvUser = NULL;
@@ -757,7 +757,7 @@ static int VBoxGuestNetBSDIOCtlSlow(struct vboxguest_session *session, u_long co
     /*
      * Process the IOCtl.
      */
-    rc = VGDrvCommonIoCtl(command, &g_DevExt, session->session, pHdr, cbReq);
+    rc = VGDrvCommonIoCtl(command, &g_DevExt, fdata->session, pHdr, cbReq);
     if (RT_SUCCESS(rc))
     {
         err = 0;
@@ -795,8 +795,8 @@ static int VBoxGuestNetBSDIOCtlSlow(struct vboxguest_session *session, u_long co
 
 static int VBoxGuestNetBSDPoll(struct file *fp, int events)
 {
-    struct vboxguest_session *session = fp->f_data;
-    vboxguest_softc *sc = session->sc;
+    struct vboxguest_fdata *fdata = fp->f_data;
+    vboxguest_softc *sc = fdata->sc;
 
     int rc = 0;
     int events_processed;
@@ -806,10 +806,10 @@ static int VBoxGuestNetBSDPoll(struct file *fp, int events)
     LogFlow((DEVICE_NAME ": %s\n", __func__));
 
     u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
-    if (session->session->u32MousePosChangedSeq != u32CurSeq)
+    if (fdata->session->u32MousePosChangedSeq != u32CurSeq)
     {
         events_processed = events & (POLLIN | POLLRDNORM);
-        session->session->u32MousePosChangedSeq = u32CurSeq;
+        fdata->session->u32MousePosChangedSeq = u32CurSeq;
     }
     else
     {
