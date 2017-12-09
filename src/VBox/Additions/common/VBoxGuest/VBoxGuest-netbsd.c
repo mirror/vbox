@@ -54,6 +54,10 @@
 #include <dev/pci/pcireg.h>
 #include <dev/pci/pcidevs.h>
 
+#include <dev/wscons/wsconsio.h>
+#include <dev/wscons/wsmousevar.h>
+#include <dev/wscons/tpcalibvar.h>
+
 #ifdef PVM
 #  undef PVM
 #endif
@@ -99,6 +103,11 @@ typedef struct VBoxGuestDeviceState
 
     /** Controller features, limits and status. */
     u_int              vboxguest_state;
+
+    device_t sc_wsmousedev;
+    VMMDevReqMouseStatus *sc_vmmmousereq;
+    PVBOXGUESTSESSION sc_session;
+    struct tpcalib_softc sc_tpcalib;
 } vboxguest_softc;
 
 
@@ -119,6 +128,7 @@ struct vboxguest_session
  */
 static int VBoxGuestNetBSDMatch(device_t parent, cfdata_t match, void *aux);
 static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux);
+static void VBoxGuestNetBSDWsmAttach(vboxguest_softc *sc);
 static int VBoxGuestNetBSDDetach(device_t self, int flags);
 
 /*
@@ -136,6 +146,15 @@ static int VBoxGuestNetBSDClose(struct file *fp);
 static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long cmd, void *addr);
 static int VBoxGuestNetBSDIOCtlSlow(struct vboxguest_session *session, u_long command, void *data);
 static int VBoxGuestNetBSDPoll(struct file *fp, int events);
+
+/*
+ * wsmouse(4) accessops
+ */
+static int VBoxGuestNetBSDWsmEnable(void *cookie);
+static void VBoxGuestNetBSDWsmDisable(void *cookie);
+static int VBoxGuestNetBSDWsmIOCtl(void *cookie, u_long cmd, void *data, int flag, struct lwp *l);
+
+static int VBoxGuestNetBSDSetMouseStatus(vboxguest_softc *sc, uint32_t fStatus);
 
 
 /*********************************************************************************************************************************
@@ -173,8 +192,27 @@ static const struct fileops vboxguest_fileops = {
     .fo_restart = fnullop_restart
 };
 
+
+const struct wsmouse_accessops vboxguest_wsm_accessops = {
+    VBoxGuestNetBSDWsmEnable,
+    VBoxGuestNetBSDWsmIOCtl,
+    VBoxGuestNetBSDWsmDisable,
+};
+
+
+static struct wsmouse_calibcoords vboxguest_wsm_default_calib = {
+    .minx = VMMDEV_MOUSE_RANGE_MIN,
+    .miny = VMMDEV_MOUSE_RANGE_MIN,
+    .maxx = VMMDEV_MOUSE_RANGE_MAX,
+    .maxy = VMMDEV_MOUSE_RANGE_MAX,
+    .samplelen = WSMOUSE_CALIBCOORDS_RESET,
+};
+
 /** Device extention & session data association structure. */
 static VBOXGUESTDEVEXT      g_DevExt;
+
+static vboxguest_softc     *g_SC;
+
 /** Reference counter */
 static volatile uint32_t    cUsers;
 /** selinfo structure used for polling. */
@@ -188,6 +226,9 @@ CFATTACH_DECL_NEW(vboxguest, sizeof(vboxguest_softc),
 static int VBoxGuestNetBSDMatch(device_t parent, cfdata_t match, void *aux)
 {
     const struct pci_attach_args *pa = aux;
+
+    if (RT_UNLIKELY(g_SC != NULL)) /* should not happen */
+        return 0;
 
     if (   PCI_VENDOR(pa->pa_id) == VMMDEV_VENDORID
         && PCI_PRODUCT(pa->pa_id) == VMMDEV_DEVICEID)
@@ -209,6 +250,8 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
     bus_space_handle_t ioh, memh;
     bus_dma_segment_t seg;
     int ioh_valid, memh_valid;
+
+    KASSERT(g_SC == NULL);
 
     cUsers = 0;
 
@@ -270,6 +313,9 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
                 if (RT_SUCCESS(rc))
                 {
                     vboxguest->vboxguest_state |= VBOXGUEST_STATE_INITOK;
+                    VBoxGuestNetBSDWsmAttach(vboxguest);
+
+                    g_SC = vboxguest;
                     return;
                 }
                 VGDrvCommonDeleteDevExt(&g_DevExt);
@@ -338,6 +384,46 @@ static int VBoxGuestNetBSDAddIRQ(vboxguest_softc *vboxguest, struct pci_attach_a
 }
 
 
+/*
+ * Optionally attach wsmouse(4) device as a child.
+ */
+static void VBoxGuestNetBSDWsmAttach(vboxguest_softc *sc)
+{
+    struct wsmousedev_attach_args am = { &vboxguest_wsm_accessops, sc };
+
+    PVBOXGUESTSESSION session = NULL;
+    VMMDevReqMouseStatus *req = NULL;
+    int rc;
+
+    rc = VGDrvCommonCreateKernelSession(&g_DevExt, &session);
+    if (RT_FAILURE(rc))
+        goto fail;
+
+    rc = VbglR0GRAlloc((VMMDevRequestHeader **)&req, sizeof(*req),
+                       VMMDevReq_GetMouseStatus);
+    if (RT_FAILURE(rc))
+        goto fail;
+
+    sc->sc_wsmousedev = config_found_ia(sc->sc_dev, "wsmousedev", &am, wsmousedevprint);
+    if (sc->sc_wsmousedev == NULL)
+        goto fail;
+
+    sc->sc_session = session;
+    sc->sc_vmmmousereq = req;
+
+    tpcalib_init(&sc->sc_tpcalib);
+    tpcalib_ioctl(&sc->sc_tpcalib, WSMOUSEIO_SCALIBCOORDS,
+                  &vboxguest_wsm_default_calib, 0, 0);
+    return;
+
+  fail:
+    if (session != NULL)
+        VGDrvCommonCloseSession(&g_DevExt, session);
+    if (req != NULL)
+        VbglR0GRFree((VMMDevRequestHeader *)req);
+}
+
+
 static int VBoxGuestNetBSDDetach(device_t self, int flags)
 {
     vboxguest_softc *vboxguest;
@@ -354,6 +440,8 @@ static int VBoxGuestNetBSDDetach(device_t self, int flags)
     /*
      * Reverse what we did in VBoxGuestNetBSDAttach.
      */
+    if (vboxguest->sc_vmmmousereq != NULL)
+        VbglR0GRFree((VMMDevRequestHeader *)vboxguest->sc_vmmmousereq);
 
     VBoxGuestNetBSDRemoveIRQ(vboxguest);
 
@@ -364,7 +452,7 @@ static int VBoxGuestNetBSDDetach(device_t self, int flags)
 
     RTR0Term();
 
-    return 0;
+    return config_detach_children(self, flags);
 }
 
 
@@ -405,12 +493,100 @@ static int VBoxGuestNetBSDISR(void *pvState)
  */
 void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
+    vboxguest_softc *sc = g_SC;
+
     LogFlow((DEVICE_NAME ": %s\n", __func__));
 
     /*
      * Wake up poll waiters.
      */
     selnotify(&g_SelInfo, 0, 0);
+
+    if (sc->sc_vmmmousereq != NULL) {
+        int x, y;
+        int rc;
+
+        sc->sc_vmmmousereq->mouseFeatures = 0;
+        sc->sc_vmmmousereq->pointerXPos = 0;
+        sc->sc_vmmmousereq->pointerYPos = 0;
+
+        rc = VbglR0GRPerform(&sc->sc_vmmmousereq->header);
+        if (RT_FAILURE(rc))
+            return;
+
+        tpcalib_trans(&sc->sc_tpcalib,
+                      sc->sc_vmmmousereq->pointerXPos,
+                      sc->sc_vmmmousereq->pointerYPos,
+                      &x, &y);
+
+        wsmouse_input(sc->sc_wsmousedev,
+                      0,    /* buttons */
+                      x, y,
+                      0, 0, /* z, w */
+                      WSMOUSE_INPUT_ABSOLUTE_X | WSMOUSE_INPUT_ABSOLUTE_Y);
+    }
+}
+
+
+static int VBoxGuestNetBSDSetMouseStatus(vboxguest_softc *sc, uint32_t fStatus)
+{
+    VBGLIOCSETMOUSESTATUS Req;
+    int rc;
+
+    VBGLREQHDR_INIT(&Req.Hdr, SET_MOUSE_STATUS);
+    Req.u.In.fStatus = fStatus;
+    rc = VGDrvCommonIoCtl(VBGL_IOCTL_SET_MOUSE_STATUS,
+                          &g_DevExt,
+                          sc->sc_session,
+                          &Req.Hdr, sizeof(Req));
+    if (RT_SUCCESS(rc))
+        rc = Req.Hdr.rc;
+
+    return rc;
+}
+
+
+static int
+VBoxGuestNetBSDWsmEnable(void *cookie)
+{
+    vboxguest_softc *sc = cookie;
+    int rc;
+
+    rc = VBoxGuestNetBSDSetMouseStatus(sc, VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
+                                         | VMMDEV_MOUSE_NEW_PROTOCOL);
+    if (RT_FAILURE(rc))
+        return RTErrConvertToErrno(rc);
+
+    return 0;
+}
+
+
+static void
+VBoxGuestNetBSDWsmDisable(void *cookie)
+{
+    vboxguest_softc *sc = cookie;
+    VBoxGuestNetBSDSetMouseStatus(sc, 0);
+}
+
+
+static int
+VBoxGuestNetBSDWsmIOCtl(void *cookie, u_long cmd, void *data, int flag, struct lwp *l)
+{
+    vboxguest_softc *sc = cookie;
+
+    switch (cmd) {
+    case WSMOUSEIO_GTYPE:
+        *(u_int *)data = WSMOUSE_TYPE_TPANEL;
+        break;
+
+    case WSMOUSEIO_SCALIBCOORDS:
+    case WSMOUSEIO_GCALIBCOORDS:
+        return tpcalib_ioctl(&sc->sc_tpcalib, cmd, data, flag, l);
+
+    default: 
+        return EPASSTHROUGH;
+    }
+    return 0;
 }
 
 
@@ -692,29 +868,48 @@ int VBOXCALL VBoxGuestIDC(void *pvSession, uintptr_t uReq, PVBGLREQHDR pReqHdr, 
 
 MODULE(MODULE_CLASS_DRIVER, vboxguest, "pci");
 
-CFDRIVER_DECL(vboxguest, DV_DULL, NULL);
+static const struct cfiattrdata wsmousedevcf_iattrdata = {
+    "wsmousedev", 1, {
+        { "mux", "0", 0 },
+    }
+};
+
+/* device vboxguest: wsmousedev */
+static const struct cfiattrdata * const vboxguest_attrs[] = { &wsmousedevcf_iattrdata, NULL };
+CFDRIVER_DECL(vboxguest, DV_DULL, vboxguest_attrs);
 
 static struct cfdriver * const cfdriver_ioconf_vboxguest[] = {
     &vboxguest_cd, NULL
 };
 
-static int loc[2] = { -1, -1 };
 
-static const struct cfparent pspec = {
+static const struct cfparent vboxguest_pspec = {
     "pci", "pci", DVUNIT_ANY
 };
+static int vboxguest_loc[] = { -1, -1 };
 
-/*  vboxguest0 at pci? dev ? function ? */
+
+static const struct cfparent wsmousedev_pspec = {
+    "wsmousedev", "vboxguest", DVUNIT_ANY
+};
+static int wsmousedev_loc[] = { 0 };
+
+
 static struct cfdata cfdata_ioconf_vboxguest[] = {
+    /*  vboxguest0 at pci? dev ? function ? */
     {
         .cf_name = "vboxguest",
         .cf_atname = "vboxguest",
         .cf_unit = 0,           /* Only unit 0 is ever used  */
         .cf_fstate = FSTATE_NOTFOUND,
-        .cf_loc = loc,
+        .cf_loc = vboxguest_loc,
         .cf_flags = 0,
-        .cf_pspec = &pspec,
+        .cf_pspec = &vboxguest_pspec,
     },
+
+    /* wsmouse* at vboxguest? */
+    { "wsmouse", "wsmouse", 0, FSTATE_STAR, wsmousedev_loc, 0, &wsmousedev_pspec },
+
     { NULL, NULL, 0, 0, NULL, 0, NULL }
 };
 
