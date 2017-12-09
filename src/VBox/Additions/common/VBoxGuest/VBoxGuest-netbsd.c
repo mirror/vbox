@@ -583,7 +583,7 @@ VBoxGuestNetBSDWsmIOCtl(void *cookie, u_long cmd, void *data, int flag, struct l
     case WSMOUSEIO_GCALIBCOORDS:
         return tpcalib_ioctl(&sc->sc_tpcalib, cmd, data, flag, l);
 
-    default: 
+    default:
         return EPASSTHROUGH;
     }
     return 0;
