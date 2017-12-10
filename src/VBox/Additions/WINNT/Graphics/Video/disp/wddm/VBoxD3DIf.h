@@ -129,13 +129,13 @@ DECLINLINE(IDirect3DDevice9*) VBoxD3DIfDeviceGet(PVBOXWDDMDISP_DEVICE pDevice)
     g_VBoxVDbgInternalDevice = pDevice;
 #endif
 
-    HRESULT hr = VBoxD3DIfDeviceCreateDummy(pDevice);
+    HRESULT hr = pDevice->pfnCreateDirect3DDevice(pDevice);
     Assert(hr == S_OK); NOREF(hr);
     Assert(pDevice->pDevice9If);
     return pDevice->pDevice9If;
 }
 
-#define VBOXDISPMODE_IS_3D(_p) (!!((_p)->D3D.pD3D9If))
+#define VBOXDISPMODE_IS_3D(_p) ((_p)->f3D)
 #ifdef VBOXDISP_EARLYCREATEDEVICE
 #define VBOXDISP_D3DEV(_p) (_p)->pDevice9If
 #else
