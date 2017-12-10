@@ -55,7 +55,8 @@ DECLINLINE(IUnknown*) vboxD3DIfGet(PVBOXWDDMDISP_ALLOCATION pAlloc)
         return NULL;
     }
 
-    return vboxD3DIfCreateSharedPrimary(pAlloc);
+    Assert(pAlloc->pRc->pDevice->pfnCreateSharedPrimary);
+    return pAlloc->pRc->pDevice->pfnCreateSharedPrimary(pAlloc);
 }
 
 /* on success increments the surface ref counter,
@@ -129,6 +130,7 @@ DECLINLINE(IDirect3DDevice9*) VBoxD3DIfDeviceGet(PVBOXWDDMDISP_DEVICE pDevice)
     g_VBoxVDbgInternalDevice = pDevice;
 #endif
 
+    Assert(pDevice->pfnCreateDirect3DDevice);
     HRESULT hr = pDevice->pfnCreateDirect3DDevice(pDevice);
     Assert(hr == S_OK); NOREF(hr);
     Assert(pDevice->pDevice9If);

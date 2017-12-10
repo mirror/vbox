@@ -6305,6 +6305,7 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
     {
         pDevice->cRTs = pAdapter->D3D.cMaxSimRTs;
         pDevice->pfnCreateDirect3DDevice = VBoxD3DIfDeviceCreateDummy;
+        pDevice->pfnCreateSharedPrimary  = vboxD3DIfCreateSharedPrimary;
         pDevice->hDevice = pCreateData->hDevice;
         pDevice->pAdapter = pAdapter;
         pDevice->u32IfVersion = pCreateData->Interface;
