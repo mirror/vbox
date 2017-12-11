@@ -1314,6 +1314,9 @@ VMM_INT_DECL(int) EMInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
         return VERR_EM_INTERPRETER; /* genuine #GP */
 
     uint64_t uTicks = TMCpuTickGet(pVCpu);
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    uTicks = CPUMApplyNestedGuestTscOffset(pVCpu, uTicks);
+#endif
 
     /* Same behaviour in 32 & 64 bits mode */
     pRegFrame->rax = RT_LO_U32(uTicks);
@@ -1350,6 +1353,9 @@ VMM_INT_DECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         return VERR_EM_INTERPRETER; /* genuine #GP */
 
     uint64_t uTicks = TMCpuTickGet(pVCpu);
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    uTicks = CPUMApplyNestedGuestTscOffset(pVCpu, uTicks);
+#endif
 
     /* Same behaviour in 32 & 64 bits mode */
     pCtx->rax = RT_LO_U32(uTicks);

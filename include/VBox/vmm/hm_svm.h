@@ -990,6 +990,8 @@ typedef struct SVMNESTEDVMCBCACHE
     uint64_t            u64IOPMPhysAddr;
     /** Cache of MSRPM nested-guest physical address. */
     uint64_t            u64MSRPMPhysAddr;
+    /** Cache of the TSC offset. */
+    uint64_t            u64TSCOffset;
     /** Cache of the VMCB clean bits. */
     uint64_t            u64VmcbCleanBits;
     /** Cache of the TLB control. */

@@ -2155,6 +2155,7 @@ static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
         pNstGstVmcbCache->u64EFER           = pVmcbNstGstState->u64EFER;
         pNstGstVmcbCache->u64IOPMPhysAddr   = pVmcbNstGstCtrl->u64IOPMPhysAddr;
         pNstGstVmcbCache->u64MSRPMPhysAddr  = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
+        pNstGstVmcbCache->u64TSCOffset      = pVmcbNstGstCtrl->u64TSCOffset;
         pNstGstVmcbCache->u64VmcbCleanBits  = pVmcbNstGstCtrl->u64VmcbCleanBits;
         pNstGstVmcbCache->fVIntrMasking     = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
         pNstGstVmcbCache->TLBCtrl           = pVmcbNstGstCtrl->TLBCtrl;
@@ -2706,6 +2707,66 @@ static int hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
 
     return rcExit;
 }
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Updates the use of TSC offsetting mode for the CPU and adjusts the necessary
+ * intercepts for the nested-guest.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the nested guest-CPU context.
+ * @param   pVmcbNstGst     Pointer to the nested-guest VM control block.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static void hmR0SvmUpdateTscOffsettingNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcbNstGst)
+{
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+
+    bool                 fParavirtTsc;
+    uint64_t             uTscOffset;
+    bool fCanUseRealTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &uTscOffset, &fParavirtTsc);
+
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    PSVMVMCBCTRL         pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
+
+    /*
+     * Only avoid intercepting if we determined the host TSC (++) is stable enough
+     * to not intercept -and- the nested-hypervisor itself does not want to intercept it.
+     */
+    if (    fCanUseRealTsc
+        && !(pVmcbNstGstCache->u64InterceptCtrl & (SVM_CTRL_INTERCEPT_RDTSC | SVM_CTRL_INTERCEPT_RDTSCP)))
+    {
+        pVmcbNstGstCtrl->u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_RDTSC;
+        pVmcbNstGstCtrl->u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_RDTSCP;
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
+    }
+    else
+    {
+        pVmcbNstGstCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_RDTSC;
+        pVmcbNstGstCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_RDTSCP;
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
+    }
+
+    /* Apply the nested-guest VMCB's TSC offset over the guest one. */
+    uTscOffset = CPUMApplyNestedGuestTscOffset(pVCpu, uTscOffset);
+
+    /* Update the nested-guest VMCB with the combined TSC offset (of guest and nested-guest). */
+    pVmcbNstGstCtrl->u64TSCOffset = uTscOffset;
+
+    /* Finally update the VMCB clean bits since we touched the intercepts as well as the TSC offset. */
+    pVmcbNstGstCtrl->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+
+    if (fParavirtTsc)
+    {
+        /* Currently neither Hyper-V nor KVM need to update their paravirt. TSC
+           information before every VM-entry, hence disable it for performance sake. */
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
+    }
+}
+#endif
 
 
 /**
@@ -3959,7 +4020,7 @@ static void hmR0SvmPreRunGuestCommittedNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
     if (   pSvmTransient->fUpdateTscOffsetting
         || idCurrentCpu != pVCpu->hm.s.idLastCpu)
     {
-        hmR0SvmUpdateTscOffsetting(pVM, pVCpu, pVmcbNstGst);
+        hmR0SvmUpdateTscOffsettingNested(pVM, pVCpu, pCtx, pVmcbNstGst);
         pSvmTransient->fUpdateTscOffsetting = false;
     }
 
@@ -4212,10 +4273,18 @@ static void hmR0SvmPostRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx,
     ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for EMT poking. */
 
     /* TSC read must be done early for maximum accuracy. */
-    PSVMVMCB     pVmcbNstGst     = pMixedCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
+    PSVMVMCB             pVmcbNstGst     = pMixedCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    PSVMVMCBCTRL         pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     if (!(pVmcbNstGstCtrl->u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSC))
-        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcbNstGstCtrl->u64TSCOffset);
+    {
+        /*
+         * Undo what we did in hmR0SvmUpdateTscOffsettingNested() but don't restore the
+         * nested-guest VMCB TSC offset here. It shall eventually be restored on #VMEXIT
+         * later by HMSvmNstGstVmExitNotify().
+         */
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcbNstGstCtrl->u64TSCOffset - pVmcbNstGstCache->u64TSCOffset);
+    }
 
     if (pSvmTransient->fRestoreTscAuxMsr)
     {

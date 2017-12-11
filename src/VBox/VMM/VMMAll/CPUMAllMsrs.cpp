@@ -183,6 +183,9 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32TimestampCounter(PVMCPU pVCpu, u
 {
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = TMCpuTickGet(pVCpu);
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    *puValue = CPUMApplyNestedGuestTscOffset(pVCpu, *puValue);
+#endif
     return VINF_SUCCESS;
 }
 
@@ -341,6 +344,9 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MPerf(PVMCPU pVCpu, uint32_t idM
     /** @todo Read MPERF: Adjust against previously written MPERF value.  Is TSC
      *        what we want? */
     *puValue = TMCpuTickGet(pVCpu);
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    *puValue = CPUMApplyNestedGuestTscOffset(pVCpu, *puValue);
+#endif
     return VINF_SUCCESS;
 }
 
@@ -361,6 +367,9 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32APerf(PVMCPU pVCpu, uint32_t idM
     /** @todo Read APERF: Adjust against previously written MPERF value.  Is TSC
      *        what we want? */
     *puValue = TMCpuTickGet(pVCpu);
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    *puValue = CPUMApplyNestedGuestTscOffset(pVCpu, *puValue);
+#endif
     return VINF_SUCCESS;
 }
 
