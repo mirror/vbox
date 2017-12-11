@@ -31,7 +31,7 @@
 #include <VBox/VBoxGuestCoreTypes.h>
 #include <VBox/log.h>
 #include <VBox/hgcmsvc.h>
-#include <iprt/assert.h>
+#include <iprt/assertcompile.h>
 #include <iprt/string.h>
 
 
@@ -295,7 +295,6 @@ namespace guestProp {
 /**
  * HGCM parameter structures.  Packing is explicitly defined as this is a wire format.
  */
-#pragma pack (1)
 /** The guest is requesting the value of a property */
 typedef struct _GetProperty
 {
@@ -330,6 +329,7 @@ typedef struct _GetProperty
      */
     HGCMFunctionParameter size;
 } GetProperty;
+AssertCompileSize(GetProperty, 40 + 4 * (ARCH_BITS == 64 ? 16 : 12));
 
 /** The guest is requesting to change a property */
 typedef struct _SetProperty
@@ -360,6 +360,7 @@ typedef struct _SetProperty
      */
     HGCMFunctionParameter flags;
 } SetProperty;
+AssertCompileSize(SetProperty, 40 + 3 * (ARCH_BITS == 64 ? 16 : 12));
 
 /** The guest is requesting to change the value of a property */
 typedef struct _SetPropertyValue
@@ -382,6 +383,7 @@ typedef struct _SetPropertyValue
      */
     HGCMFunctionParameter value;
 } SetPropertyValue;
+AssertCompileSize(SetPropertyValue, 40 + 2 * (ARCH_BITS == 64 ? 16 : 12));
 
 /** The guest is requesting to remove a property */
 typedef struct _DelProperty
@@ -396,6 +398,7 @@ typedef struct _DelProperty
      */
     HGCMFunctionParameter name;
 } DelProperty;
+AssertCompileSize(DelProperty, 40 + 1 * (ARCH_BITS == 64 ? 16 : 12));
 
 /** The guest is requesting to enumerate properties */
 typedef struct _EnumProperties
@@ -426,6 +429,7 @@ typedef struct _EnumProperties
      */
     HGCMFunctionParameter size;
 } EnumProperties;
+AssertCompileSize(EnumProperties, 40 + 3 * (ARCH_BITS == 64 ? 16 : 12));
 
 /**
  * The guest is polling for notifications on changes to properties, specifying
@@ -485,7 +489,7 @@ typedef struct _GetNotification
      */
     HGCMFunctionParameter size;
 } GetNotification;
-#pragma pack ()
+AssertCompileSize(GetNotification, 40 + 4 * (ARCH_BITS == 64 ? 16 : 12));
 
 } /* namespace guestProp */
 
