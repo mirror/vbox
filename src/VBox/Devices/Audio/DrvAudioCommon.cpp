@@ -1333,15 +1333,12 @@ int DrvAudioHlpFileClose(PPDMAUDIOFILE pFile)
 
     if (pFile->enmType == PDMAUDIOFILETYPE_RAW)
     {
-        if (pFile->hFile != NIL_RTFILE)
-        {
+        if (RTFileIsValid(pFile->hFile))
             rc = RTFileClose(pFile->hFile);
-            pFile->hFile = NIL_RTFILE;
-        }
     }
     else if (pFile->enmType == PDMAUDIOFILETYPE_WAV)
     {
-        if (pFile->hFile != NIL_RTFILE)
+        if (RTFileIsValid(pFile->hFile))
         {
             PAUDIOWAVFILEDATA pData = (PAUDIOWAVFILEDATA)pFile->pvData;
             if (pData) /* The .WAV file data only is valid when a file actually has been created. */
@@ -1351,7 +1348,6 @@ int DrvAudioHlpFileClose(PPDMAUDIOFILE pFile)
             }
 
             rc = RTFileClose(pFile->hFile);
-            pFile->hFile = NIL_RTFILE;
         }
 
         if (pFile->pvData)
@@ -1374,6 +1370,7 @@ int DrvAudioHlpFileClose(PPDMAUDIOFILE pFile)
 
     if (RT_SUCCESS(rc))
     {
+        pFile->hFile = NIL_RTFILE;
         LogRel2(("Audio: Closed file '%s' (%zu bytes)\n", pFile->szName, cbSize));
     }
     else
@@ -1393,6 +1390,10 @@ int DrvAudioHlpFileDelete(PPDMAUDIOFILE pFile)
     AssertPtrReturn(pFile, VERR_INVALID_POINTER);
 
     int rc = RTFileDelete(pFile->szName);
+
+    if (rc == VERR_FILE_NOT_FOUND) /* Don't bitch if the file is not around (anymore). */
+        rc = VINF_SUCCESS;
+
     if (RT_FAILURE(rc))
         LogRel(("Audio: Failed deleting file '%s', rc=%Rrc\n", pFile->szName, rc));
 
