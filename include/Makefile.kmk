@@ -41,7 +41,6 @@ VBOX_HDRS_R3_CPP := \
 	VBox/dbggui.h \
 	VBox/settings.h \
 	VBox/com/Guid.h \
-	VBox/HostServices/GuestPropertySvc.h \
 	iprt/cpp/% \
 	VBox/com/% \
 	$(subst $(PATH_SUB_CURRENT)/,,$(wildcard $(PATH_SUB_CURRENT)/iprt/*_cpp.h))

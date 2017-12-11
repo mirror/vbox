@@ -182,6 +182,7 @@ DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char *pszFlags)
     if ((fFlags & ~GUEST_PROP_F_ALLFLAGS) == GUEST_PROP_F_NILFLAG)
     {
         char *pszNext;
+        unsigned i;
 
         /* TRANSRESET implies TRANSIENT.  For compatability with old clients we
            always set TRANSIENT when TRANSRESET appears. */
@@ -189,7 +190,7 @@ DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char *pszFlags)
             fFlags |= GUEST_PROP_F_TRANSIENT;
 
         pszNext = pszFlags;
-        for (unsigned i = 0; i < RT_ELEMENTS(s_aFlagList); ++i)
+        for (i = 0; i < RT_ELEMENTS(s_aFlagList); ++i)
         {
             if (s_aFlagList[i] == (fFlags & s_aFlagList[i]))
             {
