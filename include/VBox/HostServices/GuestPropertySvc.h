@@ -1,6 +1,5 @@
 /** @file
- * Guest property service:
- * Common header for host service and guest clients.
+ * Guest property service - Common header for host service and guest clients.
  */
 
 /*
