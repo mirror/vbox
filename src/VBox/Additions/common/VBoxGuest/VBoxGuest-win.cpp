@@ -1131,6 +1131,123 @@ static NTSTATUS vgdrvNtRegistryReadDWORD(ULONG uRoot, PCWSTR pwszPath, PWSTR pws
 
 
 /**
+ * Implements RTL_QUERY_REGISTRY_ROUTINE for enumerating our registry key.
+ */
+static NTSTATUS NTAPI vbdrvNtRegistryEnumCallback(PWSTR pwszValueName, ULONG uValueType,
+                                                  PVOID pvValue, ULONG cbValue, PVOID pvUser, PVOID pvEntryCtx)
+{
+    /*
+     * Filter out general service config values.
+     */
+    if (   RTUtf16ICmpAscii(pwszValueName, "Type") == 0
+        || RTUtf16ICmpAscii(pwszValueName, "Start") == 0
+        || RTUtf16ICmpAscii(pwszValueName, "ErrorControl") == 0
+        || RTUtf16ICmpAscii(pwszValueName, "Tag") == 0
+        || RTUtf16ICmpAscii(pwszValueName, "ImagePath") == 0
+        || RTUtf16ICmpAscii(pwszValueName, "DisplayName") == 0
+        || RTUtf16ICmpAscii(pwszValueName, "Group") == 0
+       )
+    {
+        return STATUS_SUCCESS;
+    }
+
+    /*
+     * Convert the value name.
+     */
+    size_t cch = RTUtf16CalcUtf8Len(pwszValueName);
+    if (cch < 64 && cch > 0)
+    {
+        char szValueName[72];
+        char *pszTmp = szValueName;
+        int rc = RTUtf16ToUtf8Ex(pwszValueName, RTSTR_MAX, &pszTmp, sizeof(szValueName), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Convert the value.
+             */
+            char  szValue[72];
+            char *pszFree = NULL;
+            char *pszValue = NULL;
+            szValue[0] = '\0';
+            switch (uValueType)
+            {
+                case REG_SZ:
+                case REG_EXPAND_SZ:
+                    rc = RTUtf16CalcUtf8LenEx((PCRTUTF16)pvValue, cbValue / sizeof(RTUTF16), &cch);
+                    if (RT_SUCCESS(rc) && cch < _1K)
+                    {
+                        if (cch < sizeof(szValue))
+                        {
+                            pszValue = szValue;
+                            rc = RTUtf16ToUtf8Ex((PCRTUTF16)pvValue, cbValue / sizeof(RTUTF16), &pszValue, sizeof(szValue), NULL);
+                        }
+                        else
+                        {
+                            rc = RTUtf16ToUtf8Ex((PCRTUTF16)pvValue, cbValue / sizeof(RTUTF16), &pszValue, sizeof(szValue), NULL);
+                            if (RT_SUCCESS(rc))
+                                pszFree = pszValue;
+                        }
+                        if (RT_FAILURE(rc))
+                        {
+                            LogRel(("VBoxGuest: Failed to convert registry value '%ls' string data to UTF-8: %Rrc\n",
+                                    pwszValueName, rc));
+                            pszValue = NULL;
+                        }
+                    }
+                    else if (RT_SUCCESS(rc))
+                        LogRel(("VBoxGuest: Registry value '%ls' has a too long value: %#x (uvalueType=%#x)\n",
+                                pwszValueName, cbValue, uValueType));
+                    else
+                        LogRel(("VBoxGuest: Registry value '%ls' has an invalid string value (cbValue=%#x, uvalueType=%#x)\n",
+                                pwszValueName, cbValue, uValueType));
+                    break;
+
+                case REG_DWORD:
+                    if (cbValue == sizeof(uint32_t))
+                    {
+                        RTStrFormatU32(szValue, sizeof(szValue), *(uint32_t const *)pvValue, 10, 0, 0, 0);
+                        pszValue = szValue;
+                    }
+                    else
+                        LogRel(("VBoxGuest: Registry value '%ls' has wrong length for REG_DWORD: %#x\n", pwszValueName, cbValue));
+                    break;
+
+                case REG_QWORD:
+                    if (cbValue == sizeof(uint64_t))
+                    {
+                        RTStrFormatU32(szValue, sizeof(szValue), *(uint32_t const *)pvValue, 10, 0, 0, 0);
+                        pszValue = szValue;
+                    }
+                    else
+                        LogRel(("VBoxGuest: Registry value '%ls' has wrong length for REG_DWORD: %#x\n", pwszValueName, cbValue));
+                    break;
+
+                default:
+                    LogRel(("VBoxGuest: Ignoring registry value '%ls': Unsupported type %#x\n", pwszValueName, uValueType));
+                    break;
+            }
+            if (pszValue)
+            {
+                /*
+                 * Process it.
+                 */
+                PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
+                VGDrvCommonProcessOption(pDevExt, szValueName, pszValue);
+                if (pszFree)
+                    RTStrFree(pszFree);
+            }
+        }
+    }
+    else if (cch > 0)
+        LogRel(("VBoxGuest: Ignoring registery value '%ls': name too long\n", pwszValueName));
+    else
+        LogRel(("VBoxGuest: Ignoring registery value with bad name\n", pwszValueName));
+    NOREF(pvEntryCtx);
+    return STATUS_SUCCESS;
+}
+
+
+/**
  * Reads configuration from the registry and guest properties.
  *
  * We ignore failures and instead preserve existing configuration values.
@@ -1144,14 +1261,16 @@ static void vgdrvNtReadConfiguration(PVBOXGUESTDEVEXTWIN pDevExt)
     /*
      * First the registry.
      */
-    ULONG    uValue = 0;
-    NTSTATUS rcNt   = vgdrvNtRegistryReadDWORD(RTL_REGISTRY_SERVICES, L"VBoxGuest", L"LoggingEnabled", &uValue);
-    if (NT_SUCCESS(rcNt))
-    {
-        pDevExt->Core.fLoggingEnabled = uValue >= 0xFF;
-        if (pDevExt->Core.fLoggingEnabled)
-            LogRelFunc(("Logging to host log enabled (%#x)", uValue));
-    }
+    RTL_QUERY_REGISTRY_TABLE aQuery[2];
+    RT_ZERO(aQuery);
+    aQuery[0].QueryRoutine = vbdrvNtRegistryEnumCallback;
+    aQuery[0].Flags        = 0;
+    aQuery[0].Name         = NULL;
+    aQuery[0].EntryContext = NULL;
+    aQuery[0].DefaultType  = REG_NONE;
+    NTSTATUS rcNt = RtlQueryRegistryValues(RTL_REGISTRY_SERVICES, L"VBoxGuest", &aQuery[0], pDevExt, NULL /* Environment */);
+    if (!NT_SUCCESS(rcNt))
+        LogRel(("VBoxGuest: RtlQueryRegistryValues failed: %#x\n", rcNt));
 
     /*
      * Read configuration from the host.
