@@ -54,6 +54,9 @@
 #include "VBoxGuestInternal.h"
 #include <VBox/VMMDev.h> /* for VMMDEV_RAM_SIZE */
 #include <VBox/log.h>
+#if !defined(RT_OS_LINUX) && !defined(RT_OS_FREEBSD)
+# include <VBox/HostServices/GuestPropertySvc.h>
+#endif
 #include <iprt/ctype.h>
 #include <iprt/mem.h>
 #include <iprt/time.h>
@@ -1135,12 +1138,9 @@ int VGDrvCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     return rc; /* (failed) */
 }
 
-#if 0 /* needs testing */
-
-#include <VBox/HostServices/GuestPropertySvc.h>
 
 /**
- * Checks if the given option can be taken to no mean 'false'.
+ * Checks if the given option can be taken to not mean 'false'.
  *
  * @returns true or false accordingly.
  * @param   pszValue            The value to consider.
@@ -1158,6 +1158,8 @@ bool VBDrvCommonIsOptionValueTrue(const char *pszValue)
             && ch != 'n' /* no */
             && ch != 'N' /* NO */
             && ch != 'd' /* disabled */
+            && ch != 'f' /* false*/
+            && ch != 'F' /* FALSE */
             && ch != 'D' /* DISABLED */
             && (   (ch != 'o' && ch != 'O') /* off, OFF, Off */
                 || (pszValue[1] != 'f' && pszValue[1] != 'F') )
@@ -1167,20 +1169,6 @@ bool VBDrvCommonIsOptionValueTrue(const char *pszValue)
     return false;
 }
 
-
-/**
- * Hook for handling OS specfic options from the host.
- *
- * @returns true if handled, false if not.
- * @param   pDevExt         The device extension.
- * @param   pszName         The option name.
- * @param   pszValue        The option value.
- */
-bool VGDrvNativeProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, const char *pszValue)
-{
-    RT_NOREF(pDevExt); RT_NOREF(pszName); RT_NOREF(pszValue);
-    return false;
-}
 
 /**
  * Processes a option.
@@ -1210,6 +1198,7 @@ void VGDrvCommonProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, con
  */
 void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt)
 {
+#if !defined(RT_OS_LINUX) && !defined(RT_OS_FREEBSD)
     /*
      * Create a kernel session without our selves, then connect to the HGCM service.
      */
@@ -1221,7 +1210,7 @@ void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt)
         {
             VBGLIOCHGCMCONNECT          Connect;
             VBGLIOCHGCMDISCONNECT       Disconnect;
-            guestProp::EnumProperties   EnumMsg;
+            GuestPropMsgEnumProperties  EnumMsg;
         } uBuf;
 
         RT_ZERO(uBuf.Connect);
@@ -1238,15 +1227,15 @@ void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt)
             uint32_t            cbStrings;
 
             /*
-             * Enumerate all the relevant properties.  We try with a 2KB buffer, but
-             * will double it until we get what we want or go beyond 64KB.
+             * Enumerate all the relevant properties.  We try with a 1KB buffer, but
+             * will double it until we get what we want or go beyond 16KB.
              */
-            for (cbStrings = _2K; cbStrings <= _64K; cbStrings *= 2)
+            for (cbStrings = _1K; cbStrings <= _16K; cbStrings *= 2)
             {
                 pszzStrings = (char *)RTMemAllocZ(cbStrings);
                 if (pszzStrings)
                 {
-                    VBGL_HGCM_HDR_INIT(&uBuf.EnumMsg.hdr, idClient, guestProp::ENUM_PROPS, 3);
+                    VBGL_HGCM_HDR_INIT(&uBuf.EnumMsg.hdr, idClient, GUEST_PROP_FN_ENUM_PROPS, 3);
 
                     uBuf.EnumMsg.patterns.type                    = VMMDevHGCMParmType_LinAddr;
                     uBuf.EnumMsg.patterns.u.Pointer.size          = sizeof(g_szzPattern);
@@ -1262,7 +1251,15 @@ void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt)
                     rc = VGDrvCommonIoCtl(VBGL_IOCTL_HGCM_CALL(sizeof(uBuf.EnumMsg)), pDevExt, pSession,
                                           &uBuf.EnumMsg.hdr.Hdr, sizeof(uBuf.EnumMsg));
                     if (RT_SUCCESS(rc))
+                    {
+                        if (   uBuf.EnumMsg.size.type == VMMDevHGCMParmType_32bit
+                            && uBuf.EnumMsg.size.u.value32 <= cbStrings
+                            && uBuf.EnumMsg.size.u.value32 > 0)
+                            cbStrings = uBuf.EnumMsg.size.u.value32;
+                        Log(("VGDrvCommonReadConfigurationFromHost: GUEST_PROP_FN_ENUM_PROPS -> %#x bytes (cbStrings=%#x)\n",
+                             uBuf.EnumMsg.size.u.value32, cbStrings));
                         break;
+                    }
 
                     RTMemFree(pszzStrings);
                     pszzStrings = NULL;
@@ -1312,11 +1309,14 @@ void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt)
                             {
                                 if (!ch)
                                     break;
+                                if (fValidFields)
+                                    Log(("VGDrvCommonReadConfigurationFromHost: Invalid char %#x at %#x (field %u)\n",
+                                         ch, off - 1, iField));
                                 fValidFields = false;
                             }
                         }
                     }
-                    if (   off < cbStrings
+                    if (   off <= cbStrings
                         && fValidFields
                         && *apszFields[0] != '\0')
                     {
@@ -1341,9 +1341,10 @@ void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt)
                     else if (off < cbStrings)
                     {
                         LogRel(("VBoxGuest: Malformed guest properties enum result!\n"));
+                        Log(("VBoxGuest: off=%#x cbStrings=%#x\n%.*Rhxd\n", off, cbStrings, cbStrings, pszzStrings));
                         break;
                     }
-                    else if (fValidFields)
+                    else if (!fValidFields)
                         LogRel(("VBoxGuest: Ignoring %.*Rhxs as it has invalid characters in one or more fields\n",
                                 (int)strlen(apszFields[0]), apszFields[0]));
                     else
@@ -1361,9 +1362,12 @@ void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt)
     }
     else
         LogRel(("VGDrvCommonReadConfigurationFromHost: failed to connect: %Rrc\n", rc));
+
+#else   /* RT_OS_LINUX || RT_OS_FREEBSD */
+    RT_NOREF(pDevExt);
+#endif
 }
 
-#endif /* needs testing */
 
 /**
  * Deletes all the items in a wait chain.

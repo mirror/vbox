@@ -562,6 +562,7 @@ static int vgdrvFreeBSDDetach(device_t pDevice)
     return 0;
 }
 
+
 /**
  * Interrupt service routine.
  *
@@ -586,6 +587,14 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
      */
     selwakeup(&g_SelInfo);
 }
+
+
+bool VGDrvNativeProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, const char *pszValue)
+{
+    RT_NOREF(pDevExt); RT_NOREF(pszName); RT_NOREF(pszValue);
+    return false;
+}
+
 
 /**
  * Sets IRQ for VMMDev.
