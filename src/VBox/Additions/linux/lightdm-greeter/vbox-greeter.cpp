@@ -98,8 +98,7 @@
 
 #include <VBox/log.h>
 #ifdef VBOX_WITH_GUEST_PROPS
- #include <VBox/HostServices/GuestPropertySvc.h>
- using namespace guestProp;
+# include <VBox/HostServices/GuestPropertySvc.h>
 #endif
 
 /** The program name (derived from argv[0]). */

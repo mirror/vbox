@@ -6128,7 +6128,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev, uint32_t fFlags)
                                          pvConsole);
 
 #ifdef VBOX_WITH_GUEST_PROPS_RDONLY_GUEST
-        rc = configSetGlobalPropertyFlags(pConsole->m_pVMMDev, guestProp::RDONLYGUEST);
+        rc = configSetGlobalPropertyFlags(pConsole->m_pVMMDev, GUEST_PROP_F_RDONLYGUEST);
         AssertRCReturn(rc, rc);
 #endif
 

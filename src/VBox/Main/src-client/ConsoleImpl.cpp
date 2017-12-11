@@ -1757,8 +1757,6 @@ DECLCALLBACK(int) Console::i_doGuestPropNotification(void *pvExtension,
                                                      void *pvParms,
                                                      uint32_t cbParms)
 {
-    using namespace guestProp;
-
     Assert(u32Function == 0); NOREF(u32Function);
 
     /*
@@ -1802,10 +1800,7 @@ HRESULT Console::i_doEnumerateGuestProperties(const Utf8Str &aPatterns,
 {
     AssertReturn(m_pVMMDev, E_FAIL);
 
-    using namespace guestProp;
-
     VBOXHGCMSVCPARM parm[3];
-
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
     parm[0].u.pointer.addr = (void*)aPatterns.c_str();
     parm[0].u.pointer.size = (uint32_t)aPatterns.length() + 1;
@@ -5934,8 +5929,6 @@ HRESULT Console::i_getGuestProperty(const Utf8Str &aName, Utf8Str *aValue, LONG6
      * ptrVM, so there is no need to hold a lock of this */
 
     HRESULT rc = E_UNEXPECTED;
-    using namespace guestProp;
-
     try
     {
         VBOXHGCMSVCPARM parm[4];
@@ -6011,8 +6004,6 @@ HRESULT Console::i_setGuestProperty(const Utf8Str &aName, const Utf8Str &aValue,
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
      * ptrVM, so there is no need to hold a lock of this */
 
-    using namespace guestProp;
-
     VBOXHGCMSVCPARM parm[3];
 
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
@@ -6061,10 +6052,7 @@ HRESULT Console::i_deleteGuestProperty(const Utf8Str &aName)
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
      * ptrVM, so there is no need to hold a lock of this */
 
-    using namespace guestProp;
-
     VBOXHGCMSVCPARM parm[1];
-
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
     parm[0].u.pointer.addr = (void*)aName.c_str();
     parm[0].u.pointer.size = (uint32_t)aName.length() + 1; /* The + 1 is the null terminator */

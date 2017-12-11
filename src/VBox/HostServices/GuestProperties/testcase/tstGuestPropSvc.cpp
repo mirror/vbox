@@ -30,9 +30,12 @@
 *********************************************************************************************************************************/
 static RTTEST g_hTest = NIL_RTTEST;
 
-using namespace guestProp;
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *ptable);
+
 
 /** Simple call handle structure for the guest call completion callback */
 struct VBOXHGCMCALLHANDLE_TYPEDEF

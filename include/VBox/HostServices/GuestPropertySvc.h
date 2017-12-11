@@ -289,14 +289,11 @@ typedef GUESTPROPHOSTCALLBACKDATA *PGUESTPROPHOSTCALLBACKDATA;
 /** Magic number for sanity checking the HOSTCALLBACKDATA structure */
 #define GUESTPROPHOSTCALLBACKDATA_MAGIC     UINT32_C(0x69c87a78)
 
-/** Everything defined in this file lives in this namespace. */
-namespace guestProp {
-
 /**
  * HGCM parameter structures.  Packing is explicitly defined as this is a wire format.
  */
 /** The guest is requesting the value of a property */
-typedef struct _GetProperty
+typedef struct GuestPropMsgGetProperty
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -328,11 +325,11 @@ typedef struct _GetProperty
      * (OUT uint32_t)
      */
     HGCMFunctionParameter size;
-} GetProperty;
-AssertCompileSize(GetProperty, 40 + 4 * (ARCH_BITS == 64 ? 16 : 12));
+} GuestPropMsgGetProperty;
+AssertCompileSize(GuestPropMsgGetProperty, 40 + 4 * (ARCH_BITS == 64 ? 16 : 12));
 
 /** The guest is requesting to change a property */
-typedef struct _SetProperty
+typedef struct GuestPropMsgSetProperty
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -359,11 +356,11 @@ typedef struct _SetProperty
      * known flag names and values will be accepted.
      */
     HGCMFunctionParameter flags;
-} SetProperty;
-AssertCompileSize(SetProperty, 40 + 3 * (ARCH_BITS == 64 ? 16 : 12));
+} GuestPropMsgSetProperty;
+AssertCompileSize(GuestPropMsgSetProperty, 40 + 3 * (ARCH_BITS == 64 ? 16 : 12));
 
 /** The guest is requesting to change the value of a property */
-typedef struct _SetPropertyValue
+typedef struct GuestPropMsgSetPropertyValue
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -382,11 +379,11 @@ typedef struct _SetPropertyValue
      * MAX_VALUE_LEN.
      */
     HGCMFunctionParameter value;
-} SetPropertyValue;
-AssertCompileSize(SetPropertyValue, 40 + 2 * (ARCH_BITS == 64 ? 16 : 12));
+} GuestPropMsgSetPropertyValue;
+AssertCompileSize(GuestPropMsgSetPropertyValue, 40 + 2 * (ARCH_BITS == 64 ? 16 : 12));
 
 /** The guest is requesting to remove a property */
-typedef struct _DelProperty
+typedef struct GuestPropMsgDelProperty
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -397,11 +394,11 @@ typedef struct _DelProperty
      *  - Zero terminated
      */
     HGCMFunctionParameter name;
-} DelProperty;
-AssertCompileSize(DelProperty, 40 + 1 * (ARCH_BITS == 64 ? 16 : 12));
+} GuestPropMsgDelProperty;
+AssertCompileSize(GuestPropMsgDelProperty, 40 + 1 * (ARCH_BITS == 64 ? 16 : 12));
 
 /** The guest is requesting to enumerate properties */
-typedef struct _EnumProperties
+typedef struct GuestPropMsgEnumProperties
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -428,8 +425,8 @@ typedef struct _EnumProperties
      * too small, the size of buffer needed.  (OUT uint32_t)
      */
     HGCMFunctionParameter size;
-} EnumProperties;
-AssertCompileSize(EnumProperties, 40 + 3 * (ARCH_BITS == 64 ? 16 : 12));
+} GuestPropMsgEnumProperties;
+AssertCompileSize(GuestPropMsgEnumProperties, 40 + 3 * (ARCH_BITS == 64 ? 16 : 12));
 
 /**
  * The guest is polling for notifications on changes to properties, specifying
@@ -452,7 +449,7 @@ AssertCompileSize(EnumProperties, 40 + 3 * (ARCH_BITS == 64 ? 16 : 12));
  * parameter should be set to zero.  On subsequent calls, it should be set to
  * the outgoing timestamp from the previous call.
  */
-typedef struct _GetNotification
+typedef struct GuestPropMsgGetNotification
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -488,10 +485,9 @@ typedef struct _GetNotification
      * Undefined on failure.
      */
     HGCMFunctionParameter size;
-} GetNotification;
-AssertCompileSize(GetNotification, 40 + 4 * (ARCH_BITS == 64 ? 16 : 12));
+} GuestPropMsgGetNotification;
+AssertCompileSize(GuestPropMsgGetNotification, 40 + 4 * (ARCH_BITS == 64 ? 16 : 12));
 
-} /* namespace guestProp */
 
 #endif  /* !___VBox_HostService_GuestPropertySvc_h */
 

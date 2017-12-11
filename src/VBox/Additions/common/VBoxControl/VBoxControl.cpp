@@ -1157,8 +1157,6 @@ static DECLCALLBACK(RTEXITCODE) handleRemoveCustomMode(int argc, char *argv[])
  */
 static RTEXITCODE getGuestProperty(int argc, char **argv)
 {
-    using namespace guestProp;
-
     bool fVerbose = false;
     if (   argc == 2
         && (   strcmp(argv[1], "-verbose")  == 0
@@ -1431,8 +1429,6 @@ static RTEXITCODE enumGuestProperty(int argc, char *argv[])
  */
 static RTEXITCODE waitGuestProperty(int argc, char **argv)
 {
-    using namespace guestProp;
-
     /*
      * Handle arguments
      */

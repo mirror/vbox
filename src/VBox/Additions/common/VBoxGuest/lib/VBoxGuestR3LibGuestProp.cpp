@@ -116,7 +116,7 @@ struct VBGLR3GUESTPROPENUM
     char *pchNext;
 };
 
-using namespace guestProp;
+
 
 /**
  * Connects to the guest property service.
@@ -163,7 +163,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(HGCMCLIENTID idClient, const char *pszName,
 
     if (pszValue != NULL)
     {
-        SetProperty Msg;
+        GuestPropMsgSetProperty Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_SET_PROP_VALUE, 3);
         VbglHGCMParmPtrSetString(&Msg.name,  pszName);
         VbglHGCMParmPtrSetString(&Msg.value, pszValue);
@@ -172,7 +172,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(HGCMCLIENTID idClient, const char *pszName,
     }
     else
     {
-        DelProperty Msg;
+        GuestPropMsgDelProperty Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_DEL_PROP, 1);
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
@@ -200,7 +200,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(HGCMCLIENTID idClient, const char *psz
 
     if (pszValue != NULL)
     {
-        SetPropertyValue Msg;
+        GuestPropMsgSetPropertyValue Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_SET_PROP_VALUE, 2);
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
         VbglHGCMParmPtrSetString(&Msg.value, pszValue);
@@ -208,7 +208,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(HGCMCLIENTID idClient, const char *psz
     }
     else
     {
-        DelProperty Msg;
+        GuestPropMsgDelProperty Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_DEL_PROP, 1);
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
@@ -296,7 +296,7 @@ VBGLR3DECL(int) VbglR3GuestPropRead(HGCMCLIENTID idClient, const char *pszName,
     /*
      * Create the GET_PROP message and call the host.
      */
-    GetProperty Msg;
+    GuestPropMsgGetProperty Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_GET_PROP, 4);
     VbglHGCMParmPtrSetString(&Msg.name, pszName);
     VbglHGCMParmPtrSet(&Msg.buffer, pvBuf, cbBuf);
@@ -491,7 +491,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(HGCMCLIENTID idClient,
                                        uint32_t cbBuf,
                                        uint32_t *pcbBufActual)
 {
-    EnumProperties Msg;
+    GuestPropMsgEnumProperties Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_ENUM_PROPS, 3);
 
     /* Get the length of the patterns array... */
@@ -756,7 +756,7 @@ VBGLR3DECL(int) VbglR3GuestPropDelete(HGCMCLIENTID idClient, const char *pszName
 {
     AssertPtrReturn(pszName,  VERR_INVALID_POINTER);
 
-    DelProperty Msg;
+    GuestPropMsgDelProperty Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_DEL_PROP, 1);
     VbglHGCMParmPtrSetString(&Msg.name, pszName);
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
@@ -858,7 +858,7 @@ VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
     /*
      * Create the GET_NOTIFICATION message and call the host.
      */
-    GetNotification Msg;
+    GuestPropMsgGetNotification Msg;
     VBGL_HGCM_HDR_INIT_TIMED(&Msg.hdr, idClient, GUEST_PROP_FN_GET_NOTIFICATION, 4, cMillies);
 
     VbglHGCMParmPtrSetString(&Msg.patterns, pszPatterns);

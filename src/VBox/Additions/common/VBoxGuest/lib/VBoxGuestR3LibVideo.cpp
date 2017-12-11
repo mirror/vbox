@@ -313,8 +313,6 @@ VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBi
 VBGLR3DECL(int) VbglR3VideoModeGetHighestSavedScreen(unsigned *pcScreen)
 {
 #if defined(VBOX_WITH_GUEST_PROPS)
-    using namespace guestProp;
-
     int rc;
     HGCMCLIENTID idClient = 0;
     PVBGLR3GUESTPROPENUM pHandle = NULL;
@@ -373,8 +371,6 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(unsigned idScreen, unsigned cx, unsigned cy,
                                     unsigned x, unsigned y, bool fEnabled)
 {
 #ifdef VBOX_WITH_GUEST_PROPS
-    using namespace guestProp;
-
     unsigned cHighestScreen = 0;
     int rc = VbglR3VideoModeGetHighestSavedScreen(&cHighestScreen);
     if (RT_SUCCESS(rc))
@@ -456,8 +452,6 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned idScreen,
                                         bool *pfEnabled)
 {
 #ifdef VBOX_WITH_GUEST_PROPS
-    using namespace guestProp;
-
     /*
      * First we retrieve the video mode which is saved as a string in the
      * guest property store.

@@ -5646,11 +5646,9 @@ HRESULT Machine::i_getGuestPropertyFromService(const com::Utf8Str &aName,
                                                LONG64 *aTimestamp,
                                                com::Utf8Str &aFlags) const
 {
-    using namespace guestProp;
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HWData::GuestPropertyMap::const_iterator it = mHWData->mGuestProperties.find(aName);
 
+    HWData::GuestPropertyMap::const_iterator it = mHWData->mGuestProperties.find(aName);
     if (it != mHWData->mGuestProperties.end())
     {
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN + 1];
@@ -5741,12 +5739,8 @@ HRESULT Machine::getGuestPropertyTimestamp(const com::Utf8Str &aProperty, LONG64
 HRESULT Machine::i_setGuestPropertyToService(const com::Utf8Str &aName, const com::Utf8Str &aValue,
                                              const com::Utf8Str &aFlags, bool fDelete)
 {
-    using namespace guestProp;
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = S_OK;
-
-    rc = i_checkStateDependency(MutableOrSavedStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     try
@@ -5898,16 +5892,13 @@ HRESULT Machine::i_enumerateGuestPropertiesInService(const com::Utf8Str &aPatter
                                                      std::vector<LONG64> &aTimestamps,
                                                      std::vector<com::Utf8Str> &aFlags)
 {
-    using namespace guestProp;
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     Utf8Str strPatterns(aPatterns);
-
-    HWData::GuestPropertyMap propMap;
 
     /*
      * Look for matching patterns and build up a list.
      */
+    HWData::GuestPropertyMap propMap;
     for (HWData::GuestPropertyMap::const_iterator
          it = mHWData->mGuestProperties.begin();
          it != mHWData->mGuestProperties.end();
@@ -13523,8 +13514,6 @@ HRESULT SessionMachine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
     LogFlowThisFunc(("\n"));
 
 #ifdef VBOX_WITH_GUEST_PROPS
-    using namespace guestProp;
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     size_t cEntries = mHWData->mGuestProperties.size();
@@ -13533,7 +13522,7 @@ HRESULT SessionMachine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
     aTimestamps.resize(cEntries);
     aFlags.resize(cEntries);
 
-    size_t  i = 0;
+    size_t i = 0;
     for (HWData::GuestPropertyMap::const_iterator
          it = mHWData->mGuestProperties.begin();
          it != mHWData->mGuestProperties.end();
@@ -13567,8 +13556,6 @@ HRESULT SessionMachine::pushGuestProperty(const com::Utf8Str &aName,
     LogFlowThisFunc(("\n"));
 
 #ifdef VBOX_WITH_GUEST_PROPS
-    using namespace guestProp;
-
     try
     {
         /*
