@@ -460,7 +460,7 @@ static int VBoxGuestNetBSDDetach(device_t self, int flags)
 /**
  * Removes IRQ for VMMDev.
  *
- * @param   vboxguest  Opaque pointer to the state info structure.
+ * @param   sc      Opaque pointer to the state info structure.
  */
 static void VBoxGuestNetBSDRemoveIRQ(vboxguest_softc *sc)
 {
