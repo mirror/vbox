@@ -1833,7 +1833,7 @@ HRESULT Console::i_doEnumerateGuestProperties(const Utf8Str &aPatterns,
         parm[2].type = VBOX_HGCM_SVC_PARM_32BIT;
         parm[2].u.uint32 = 0;
 
-        vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_ENUM_PROPS_HOST, 3, &parm[0]);
+        vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_ENUM_PROPS, 3, &parm[0]);
         Utf8Buf.jolt();
         if (parm[2].type != VBOX_HGCM_SVC_PARM_32BIT)
             return setError(E_FAIL, tr("Internal application error"));
@@ -5948,7 +5948,7 @@ HRESULT Console::i_getGuestProperty(const Utf8Str &aName, Utf8Str *aValue, LONG6
         parm[3].type = VBOX_HGCM_SVC_PARM_32BIT;
         parm[3].u.uint32 = 0;
 
-        int vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_GET_PROP_HOST,
+        int vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_GET_PROP,
                                           4, &parm[0]);
         /* The returned string should never be able to be greater than our buffer */
         AssertLogRel(vrc != VERR_BUFFER_OVERFLOW);
@@ -6017,7 +6017,7 @@ HRESULT Console::i_setGuestProperty(const Utf8Str &aName, const Utf8Str &aValue,
     int vrc;
     if (aFlags.isEmpty())
     {
-        vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_SET_PROP_VALUE_HOST, 2, &parm[0]);
+        vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_SET_PROP_VALUE, 2, &parm[0]);
     }
     else
     {
@@ -6025,7 +6025,7 @@ HRESULT Console::i_setGuestProperty(const Utf8Str &aName, const Utf8Str &aValue,
         parm[2].u.pointer.addr = (void*)aFlags.c_str();
         parm[2].u.pointer.size = (uint32_t)aFlags.length() + 1; /* The + 1 is the null terminator */
 
-        vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_SET_PROP_HOST, 3, &parm[0]);
+        vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_SET_PROP, 3, &parm[0]);
     }
 
     HRESULT hrc = S_OK;
@@ -6057,7 +6057,7 @@ HRESULT Console::i_deleteGuestProperty(const Utf8Str &aName)
     parm[0].u.pointer.addr = (void*)aName.c_str();
     parm[0].u.pointer.size = (uint32_t)aName.length() + 1; /* The + 1 is the null terminator */
 
-    int vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_DEL_PROP_HOST, 1, &parm[0]);
+    int vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_DEL_PROP, 1, &parm[0]);
 
     HRESULT hrc = S_OK;
     if (RT_FAILURE(vrc))

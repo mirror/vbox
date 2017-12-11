@@ -5930,7 +5930,7 @@ static void configSetProperties(VMMDev * const pVMMDev,
     parms[3].u.pointer.addr = flags;
     parms[3].u.pointer.size = 0;  /* We don't actually care. */
 
-    pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_SET_PROPS_HOST, 4, &parms[0]);
+    pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_SET_PROPS, 4, &parms[0]);
 }
 
 /**
@@ -5955,7 +5955,7 @@ static void configSetProperty(VMMDev * const pVMMDev,
     parms[2].type = VBOX_HGCM_SVC_PARM_PTR;
     parms[2].u.pointer.addr = (void *)pszFlags;
     parms[2].u.pointer.size = (uint32_t)strlen(pszFlags) + 1;
-    pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_SET_PROP_HOST, 3, &parms[0]);
+    pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_SET_PROP, 3, &parms[0]);
 }
 
 /**
@@ -5969,7 +5969,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev, uint32_t fFlags)
 {
     VBOXHGCMSVCPARM paParm;
     paParm.setUInt32(fFlags);
-    int rc = pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_SET_GLOBAL_FLAGS_HOST, 1, &paParm);
+    int rc = pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_SET_GLOBAL_FLAGS, 1, &paParm);
     if (RT_FAILURE(rc))
     {
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
@@ -6014,12 +6014,12 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev, uint32_t fFlags)
 
         {
             VBOXHGCMSVCPARM Params[2];
-            int rc2 = pConsole->m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_GET_DBGF_INFO_FN, 2, &Params[0]);
+            int rc2 = pConsole->m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_GET_DBGF_INFO, 2, &Params[0]);
             if (RT_SUCCESS(rc2))
             {
                 PFNDBGFHANDLEREXT pfnHandler = (PFNDBGFHANDLEREXT)(uintptr_t)Params[0].u.pointer.addr;
-                void *pService = (void*)Params[1].u.pointer.addr;
-                DBGFR3InfoRegisterExternal(pUVM, "guestprops", "Display the guest properties", pfnHandler, pService);
+                void *pvService = Params[1].u.pointer.addr;
+                DBGFR3InfoRegisterExternal(pUVM, "guestprops", "Display the guest properties", pfnHandler, pvService);
             }
         }
 

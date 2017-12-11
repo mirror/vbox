@@ -221,29 +221,29 @@ DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char *pszFlags)
  * The parameters are pointers to NULL-terminated arrays containing the
  * parameters.  These are, in order, name, value, timestamp, flags.  Strings are
  * stored as pointers to mutable utf8 data.  All parameters must be supplied. */
-#define GUEST_PROP_FN_SET_PROPS_HOST        1
+#define GUEST_PROP_FN_HOST_SET_PROPS        1
 /** Get the value attached to a guest property.
  * The parameter format matches that of GET_PROP. */
-#define GUEST_PROP_FN_GET_PROP_HOST         2
+#define GUEST_PROP_FN_HOST_GET_PROP         2
 /** Set the value attached to a guest property.
  * The parameter format matches that of SET_PROP. */
-#define GUEST_PROP_FN_SET_PROP_HOST         3
+#define GUEST_PROP_FN_HOST_SET_PROP         3
 /** Set the value attached to a guest property.
  * The parameter format matches that of SET_PROP_VALUE. */
-#define GUEST_PROP_FN_SET_PROP_VALUE_HOST   4
+#define GUEST_PROP_FN_HOST_SET_PROP_VALUE   4
 /** Remove a guest property.
  * The parameter format matches that of DEL_PROP. */
-#define GUEST_PROP_FN_DEL_PROP_HOST         5
+#define GUEST_PROP_FN_HOST_DEL_PROP         5
 /** Enumerate guest properties.
  * The parameter format matches that of ENUM_PROPS. */
-#define GUEST_PROP_FN_ENUM_PROPS_HOST       6
+#define GUEST_PROP_FN_HOST_ENUM_PROPS       6
 /** Set global flags for the service.
  * Currently RDONLYGUEST is supported.  Takes one 32-bit unsigned integer
  * parameter for the flags. */
-#define GUEST_PROP_FN_SET_GLOBAL_FLAGS_HOST 7
+#define GUEST_PROP_FN_HOST_SET_GLOBAL_FLAGS 7
 /** Return the pointer to a debug info function enumerating all guest
  * properties. */
-#define GUEST_PROP_FN_GET_DBGF_INFO_FN      8
+#define GUEST_PROP_FN_HOST_GET_DBGF_INFO    8
 /** @} */
 
 

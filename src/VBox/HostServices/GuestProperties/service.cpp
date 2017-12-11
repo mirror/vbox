@@ -1455,43 +1455,43 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
         switch (eFunction)
         {
             /* The host wishes to set a block of properties */
-            case GUEST_PROP_FN_SET_PROPS_HOST:
+            case GUEST_PROP_FN_HOST_SET_PROPS:
                 LogFlowFunc(("SET_PROPS_HOST\n"));
                 rc = setPropertyBlock(cParms, paParms);
                 break;
 
             /* The host wishes to read a configuration value */
-            case GUEST_PROP_FN_GET_PROP_HOST:
+            case GUEST_PROP_FN_HOST_GET_PROP:
                 LogFlowFunc(("GET_PROP_HOST\n"));
                 rc = getProperty(cParms, paParms);
                 break;
 
             /* The host wishes to set a configuration value */
-            case GUEST_PROP_FN_SET_PROP_HOST:
+            case GUEST_PROP_FN_HOST_SET_PROP:
                 LogFlowFunc(("SET_PROP_HOST\n"));
                 rc = setProperty(cParms, paParms, false);
                 break;
 
             /* The host wishes to set a configuration value */
-            case GUEST_PROP_FN_SET_PROP_VALUE_HOST:
+            case GUEST_PROP_FN_HOST_SET_PROP_VALUE:
                 LogFlowFunc(("SET_PROP_VALUE_HOST\n"));
                 rc = setProperty(cParms, paParms, false);
                 break;
 
             /* The host wishes to remove a configuration value */
-            case GUEST_PROP_FN_DEL_PROP_HOST:
+            case GUEST_PROP_FN_HOST_DEL_PROP:
                 LogFlowFunc(("DEL_PROP_HOST\n"));
                 rc = delProperty(cParms, paParms, false);
                 break;
 
             /* The host wishes to enumerate all properties */
-            case GUEST_PROP_FN_ENUM_PROPS_HOST:
+            case GUEST_PROP_FN_HOST_ENUM_PROPS:
                 LogFlowFunc(("ENUM_PROPS\n"));
                 rc = enumProps(cParms, paParms);
                 break;
 
             /* The host wishes to set global flags for the service */
-            case GUEST_PROP_FN_SET_GLOBAL_FLAGS_HOST:
+            case GUEST_PROP_FN_HOST_SET_GLOBAL_FLAGS:
                 LogFlowFunc(("SET_GLOBAL_FLAGS_HOST\n"));
                 if (cParms == 1)
                 {
@@ -1504,7 +1504,7 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
                     rc = VERR_INVALID_PARAMETER;
                 break;
 
-            case GUEST_PROP_FN_GET_DBGF_INFO_FN:
+            case GUEST_PROP_FN_HOST_GET_DBGF_INFO:
                 if (cParms != 2)
                     return VERR_INVALID_PARAMETER;
                 paParms[0].u.pointer.addr = (void*)(uintptr_t)dbgInfo;

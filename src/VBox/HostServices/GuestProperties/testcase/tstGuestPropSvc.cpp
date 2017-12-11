@@ -228,7 +228,7 @@ static void testSetPropsHost(VBOXHGCMSVCFNTABLE *ptable)
     aParms[1].setPointer((void *)g_apcszValueBlock, 0);
     aParms[2].setPointer((void *)g_au64TimestampBlock, 0);
     aParms[3].setPointer((void *)g_apcszFlagsBlock, 0);
-    RTTESTI_CHECK_RC(ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_SET_PROPS_HOST, 4, &aParms[0]), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_HOST_SET_PROPS, 4, &aParms[0]), VINF_SUCCESS);
 }
 
 /** Result strings for zeroth enumeration test */
@@ -339,7 +339,7 @@ static void testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
         aParms[0].setPointer((void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
         aParms[1].setPointer((void *)abBuffer, g_aEnumStrings[i].cbBuffer - 1);
         memset(abBuffer, 0x55, sizeof(abBuffer));
-        int rc2 = ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_ENUM_PROPS_HOST, 3, aParms);
+        int rc2 = ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_HOST_ENUM_PROPS, 3, aParms);
         if (rc2 == VERR_BUFFER_OVERFLOW)
         {
             uint32_t cbNeeded;
@@ -355,7 +355,7 @@ static void testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
         aParms[0].setPointer((void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
         aParms[1].setPointer((void *)abBuffer, g_aEnumStrings[i].cbBuffer);
         memset(abBuffer, 0x55, sizeof(abBuffer));
-        rc2 = ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_ENUM_PROPS_HOST, 3, aParms);
+        rc2 = ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_HOST_ENUM_PROPS, 3, aParms);
         if (rc2 == VINF_SUCCESS)
         {
             /* Look for each of the result strings in the buffer which was returned */
@@ -400,9 +400,9 @@ int doSetProperty(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName,
     if (isHost)
     {
         if (useSetProp)
-            command = GUEST_PROP_FN_SET_PROP_HOST;
+            command = GUEST_PROP_FN_HOST_SET_PROP;
         else
-            command = GUEST_PROP_FN_SET_PROP_VALUE_HOST;
+            command = GUEST_PROP_FN_HOST_SET_PROP_VALUE;
     }
     else if (useSetProp)
         command = GUEST_PROP_FN_SET_PROP;
@@ -497,7 +497,7 @@ static int doDelProp(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName, bool isHo
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
     int command = GUEST_PROP_FN_DEL_PROP;
     if (isHost)
-        command = GUEST_PROP_FN_DEL_PROP_HOST;
+        command = GUEST_PROP_FN_HOST_DEL_PROP;
     VBOXHGCMSVCPARM aParms[1];
     aParms[0].setString(pcszName);
     if (isHost)
@@ -603,7 +603,7 @@ static void testGetProp(VBOXHGCMSVCFNTABLE *pTable)
         aParms[0].setString(s_aGetProperties[i].pcszName);
         memset(szBuffer, 0x55, sizeof(szBuffer));
         aParms[1].setPointer(szBuffer, sizeof(szBuffer));
-        int rc2 = pTable->pfnHostCall(pTable->pvService, GUEST_PROP_FN_GET_PROP_HOST, 4, aParms);
+        int rc2 = pTable->pfnHostCall(pTable->pvService, GUEST_PROP_FN_HOST_GET_PROP, 4, aParms);
 
         if (s_aGetProperties[i].exists && RT_FAILURE(rc2))
         {
@@ -823,7 +823,7 @@ static int doSetGlobalFlags(VBOXHGCMSVCFNTABLE *pTable, uint32_t fFlags)
 {
     VBOXHGCMSVCPARM paParm;
     paParm.setUInt32(fFlags);
-    int rc = pTable->pfnHostCall(pTable->pvService, GUEST_PROP_FN_SET_GLOBAL_FLAGS_HOST, 1, &paParm);
+    int rc = pTable->pfnHostCall(pTable->pvService, GUEST_PROP_FN_HOST_SET_GLOBAL_FLAGS, 1, &paParm);
     if (RT_FAILURE(rc))
     {
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
@@ -1008,7 +1008,7 @@ static void test4(void)
             VBOXHGCMSVCPARM aParms[4];
             aParms[0].setString(s_szProp);
             aParms[1].setPointer(pvBuf, cbBuf);
-            svcTable.pfnHostCall(svcTable.pvService, GUEST_PROP_FN_GET_PROP_HOST, RT_ELEMENTS(aParms), aParms);
+            svcTable.pfnHostCall(svcTable.pvService, GUEST_PROP_FN_HOST_GET_PROP, RT_ELEMENTS(aParms), aParms);
 
             RTTestGuardedFree(g_hTest, pvBuf);
         }
@@ -1044,7 +1044,7 @@ static void test5(void)
             VBOXHGCMSVCPARM aParms[3];
             aParms[0].setString("*");
             aParms[1].setPointer(pvBuf, cbBuf);
-            svcTable.pfnHostCall(svcTable.pvService, GUEST_PROP_FN_ENUM_PROPS_HOST, RT_ELEMENTS(aParms), aParms);
+            svcTable.pfnHostCall(svcTable.pvService, GUEST_PROP_FN_HOST_ENUM_PROPS, RT_ELEMENTS(aParms), aParms);
 
             RTTestGuardedFree(g_hTest, pvBuf);
         }
@@ -1113,7 +1113,7 @@ static void test6(void)
             char            szBuffer[256];
             aParms[0].setPointer(szProp, (uint32_t)cchProp + 1);
             aParms[1].setPointer(szBuffer, sizeof(szBuffer));
-            RTTESTI_CHECK_RC_BREAK(svcTable.pfnHostCall(svcTable.pvService, GUEST_PROP_FN_GET_PROP_HOST, 4, aParms), VINF_SUCCESS);
+            RTTESTI_CHECK_RC_BREAK(svcTable.pfnHostCall(svcTable.pvService, GUEST_PROP_FN_HOST_GET_PROP, 4, aParms), VINF_SUCCESS);
         }
         cNsElapsed = RTTimeNanoTS() - cNsElapsed;
         if (iCall)
