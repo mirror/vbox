@@ -546,8 +546,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
             PGMFlushTLB(pVCpu, pVmcbNstGst->u64CR3, true /* fGlobal */);
 #endif
 
-        /** @todo @bugref{7243}: SVM TSC offset, see tmCpuTickGetInternal. */
-
         /*
          * Copy the remaining guest state from the VMCB to the guest-CPU context.
          */

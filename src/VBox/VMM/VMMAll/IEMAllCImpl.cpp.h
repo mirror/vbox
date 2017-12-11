@@ -5806,6 +5806,9 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
      * Do the job.
      */
     uint64_t uTicks = TMCpuTickGet(pVCpu);
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    uTicks = CPUMApplyNestedGuestTscOffset(pVCpu, uTicks);
+#endif
     pCtx->rax = RT_LO_U32(uTicks);
     pCtx->rdx = RT_HI_U32(uTicks);
 #ifdef IEM_VERIFICATION_MODE_FULL
@@ -5854,6 +5857,9 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
         pCtx->rcx &= UINT32_C(0xffffffff);
 
         uint64_t uTicks = TMCpuTickGet(pVCpu);
+#ifdef VBOX_WITH_NESTED_HWVIRT
+        uTicks = CPUMApplyNestedGuestTscOffset(pVCpu, uTicks);
+#endif
         pCtx->rax = RT_LO_U32(uTicks);
         pCtx->rdx = RT_HI_U32(uTicks);
 #ifdef IEM_VERIFICATION_MODE_FULL
