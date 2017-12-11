@@ -52,7 +52,6 @@
 #include <VBox/log.h>
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
-  using namespace guestProp;
 #endif
 
 #define VBOX_MODULE_NAME                    "pam_vbox"
@@ -414,7 +413,7 @@ static int pam_vbox_read_prop(pam_handle_t *hPAM, uint32_t uClientID,
     /* The buffer for storing the data and its initial size.  We leave a bit
      * of space here in case the maximum values are raised. */
     void *pvBuf = NULL;
-    uint32_t cbBuf = MAX_VALUE_LEN + MAX_FLAGS_LEN + _1K;
+    uint32_t cbBuf = GUEST_PROP_MAX_VALUE_LEN + GUEST_PROP_MAX_FLAGS_LEN + _1K;
 
     /* Because there is a race condition between our reading the size of a
      * property and the guest updating it, we loop a few times here and
@@ -516,7 +515,7 @@ static int pam_vbox_wait_prop(pam_handle_t *hPAM, uint32_t uClientID,
     /* The buffer for storing the data and its initial size.  We leave a bit
      * of space here in case the maximum values are raised. */
     void *pvBuf = NULL;
-    uint32_t cbBuf = MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN + _1K;
+    uint32_t cbBuf = GUEST_PROP_MAX_NAME_LEN + GUEST_PROP_MAX_VALUE_LEN + GUEST_PROP_MAX_FLAGS_LEN + _1K;
 
     for (int i = 0; i < 10; i++)
     {
