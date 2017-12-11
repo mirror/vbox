@@ -485,7 +485,7 @@ static int VBoxGuestNetBSDISR(void *pvState)
 
     bool fOurIRQ = VGDrvCommonISR(&g_DevExt);
 
-    return fOurIRQ ? 0 : 1;
+    return fOurIRQ ? 1 : 0;
 }
 
 
