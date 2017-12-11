@@ -1324,10 +1324,10 @@ void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt)
                          * Validate and convert the flags to integer, then process the option.
                          */
                         uint32_t fFlags = 0;
-                        rc = guestProp::validateFlags(apszFields[3], &fFlags);
+                        rc = GuestPropValidateFlags(apszFields[3], &fFlags);
                         if (RT_SUCCESS(rc))
                         {
-                            if (fFlags & guestProp::RDONLYGUEST)
+                            if (fFlags & GUEST_PROP_F_RDONLYGUEST)
                             {
                                 apszFields[0] += sizeof(g_szzPattern) - 2;
                                 VGDrvCommonProcessOption(pDevExt, apszFields[0], apszFields[1]);

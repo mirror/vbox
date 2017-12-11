@@ -5905,6 +5905,7 @@ int Console::i_configNetwork(const char *pszDevice,
 }
 
 #ifdef VBOX_WITH_GUEST_PROPS
+
 /**
  * Set an array of guest properties
  */
@@ -5929,10 +5930,7 @@ static void configSetProperties(VMMDev * const pVMMDev,
     parms[3].u.pointer.addr = flags;
     parms[3].u.pointer.size = 0;  /* We don't actually care. */
 
-    pVMMDev->hgcmHostCall("VBoxGuestPropSvc",
-                          guestProp::SET_PROPS_HOST,
-                          4,
-                          &parms[0]);
+    pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_SET_PROPS_HOST, 4, &parms[0]);
 }
 
 /**
@@ -5957,8 +5955,7 @@ static void configSetProperty(VMMDev * const pVMMDev,
     parms[2].type = VBOX_HGCM_SVC_PARM_PTR;
     parms[2].u.pointer.addr = (void *)pszFlags;
     parms[2].u.pointer.size = (uint32_t)strlen(pszFlags) + 1;
-    pVMMDev->hgcmHostCall("VBoxGuestPropSvc", guestProp::SET_PROP_HOST, 3,
-                          &parms[0]);
+    pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_SET_PROP_HOST, 3, &parms[0]);
 }
 
 /**
@@ -5968,24 +5965,22 @@ static void configSetProperty(VMMDev * const pVMMDev,
  * @param   pTable  the service instance handle
  * @param   eFlags  the flags to set
  */
-int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
-                                 guestProp::ePropFlags eFlags)
+int configSetGlobalPropertyFlags(VMMDev * const pVMMDev, uint32_t fFlags)
 {
     VBOXHGCMSVCPARM paParm;
-    paParm.setUInt32(eFlags);
-    int rc = pVMMDev->hgcmHostCall("VBoxGuestPropSvc",
-                                   guestProp::SET_GLOBAL_FLAGS_HOST, 1,
-                                   &paParm);
+    paParm.setUInt32(fFlags);
+    int rc = pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_SET_GLOBAL_FLAGS_HOST, 1, &paParm);
     if (RT_FAILURE(rc))
     {
-        char szFlags[guestProp::MAX_FLAGS_LEN];
-        if (RT_FAILURE(writeFlags(eFlags, szFlags)))
+        char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
+        if (RT_FAILURE(GuestPropWriteFlags(fFlags, szFlags)))
             Log(("Failed to set the global flags.\n"));
         else
             Log(("Failed to set the global flags \"%s\".\n", szFlags));
     }
     return rc;
 }
+
 #endif /* VBOX_WITH_GUEST_PROPS */
 
 /**
@@ -6019,7 +6014,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
 
         {
             VBOXHGCMSVCPARM Params[2];
-            int rc2 = pConsole->m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", guestProp::GET_DBGF_INFO_FN, 2, &Params[0]);
+            int rc2 = pConsole->m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_GET_DBGF_INFO_FN, 2, &Params[0]);
             if (RT_SUCCESS(rc2))
             {
                 PFNDBGFHANDLEREXT pfnHandler = (PFNDBGFHANDLEREXT)(uintptr_t)Params[0].u.pointer.addr;
@@ -6133,8 +6128,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
                                          pvConsole);
 
 #ifdef VBOX_WITH_GUEST_PROPS_RDONLY_GUEST
-        rc = configSetGlobalPropertyFlags(pConsole->m_pVMMDev,
-                                          guestProp::RDONLYGUEST);
+        rc = configSetGlobalPropertyFlags(pConsole->m_pVMMDev, guestProp::RDONLYGUEST);
         AssertRCReturn(rc, rc);
 #endif
 

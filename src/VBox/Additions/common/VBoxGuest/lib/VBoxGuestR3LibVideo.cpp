@@ -384,8 +384,8 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(unsigned idScreen, unsigned cx, unsigned cy,
         if (RT_SUCCESS(rc))
         {
             int rc2;
-            char szModeName[MAX_NAME_LEN];
-            char szModeParms[MAX_VALUE_LEN];
+            char szModeName[GUEST_PROP_MAX_NAME_LEN];
+            char szModeParms[GUEST_PROP_MAX_VALUE_LEN];
             RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX "%u", idScreen);
             RTStrPrintf(szModeParms, sizeof(szModeParms), "%ux%ux%u,%ux%u,%u", cx, cy, cBits, x, y, (unsigned) fEnabled);
 
@@ -470,7 +470,7 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned idScreen,
         /* The buffer for VbglR3GuestPropReadValue.  If this is too small then
          * something is wrong with the data stored in the property. */
         char szModeParms[1024];
-        char szModeName[MAX_NAME_LEN]; /** @todo add a VbglR3GuestPropReadValueF/FV that does the RTStrPrintf for you. */
+        char szModeName[GUEST_PROP_MAX_NAME_LEN]; /** @todo add a VbglR3GuestPropReadValueF/FV that does the RTStrPrintf for you. */
         RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX "%u", idScreen);
         rc = VbglR3GuestPropReadValue(idClient, szModeName, szModeParms, sizeof(szModeParms), NULL);
         /* Try legacy single screen name. */

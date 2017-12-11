@@ -79,7 +79,7 @@ struct Property
     uint32_t mFlags;
 
     /** Default constructor */
-    Property() : mTimestamp(0), mFlags(NILFLAG)
+    Property() : mTimestamp(0), mFlags(GUEST_PROP_F_NILFLAG)
     {
         RT_ZERO(mStrCore);
     }
@@ -170,7 +170,7 @@ private:
     /** HGCM helper functions. */
     PVBOXHGCMSVCHELPERS mpHelpers;
     /** Global flags for the service */
-    ePropFlags meGlobalFlags;
+    uint32_t mfGlobalFlags;
     /** The property string space handle. */
     RTSTRSPACE mhProperties;
     /** The number of properties. */
@@ -254,14 +254,14 @@ private:
      *          side.
      * @retval  VINF_PERMISSION_DENIED if the side is globally marked read-only.
      *
-     * @param   eFlags   the flags on the property in question
+     * @param   fFlags   the flags on the property in question
      * @param   isGuest  is the guest or the host trying to make the change?
      */
-    int checkPermission(ePropFlags eFlags, bool isGuest)
+    int checkPermission(uint32_t fFlags, bool isGuest)
     {
-        if (eFlags & (isGuest ? RDONLYGUEST : RDONLYHOST))
+        if (fFlags & (isGuest ? GUEST_PROP_F_RDONLYGUEST : GUEST_PROP_F_RDONLYHOST))
             return VERR_PERMISSION_DENIED;
-        if (isGuest && (meGlobalFlags & RDONLYGUEST))
+        if (isGuest && (mfGlobalFlags & GUEST_PROP_F_RDONLYGUEST))
             return VINF_PERMISSION_DENIED;
         return VINF_SUCCESS;
     }
@@ -281,7 +281,7 @@ private:
 public:
     explicit Service(PVBOXHGCMSVCHELPERS pHelpers)
         : mpHelpers(pHelpers)
-        , meGlobalFlags(NILFLAG)
+        , mfGlobalFlags(GUEST_PROP_F_NILFLAG)
         , mhProperties(NULL)
         , mcProperties(0)
         , mpfnHostCallback(NULL)
@@ -525,7 +525,7 @@ int Service::setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
             else
             {
                 uint32_t fFlagsIgn;
-                rc = validateFlags(papszFlags[i], &fFlagsIgn);
+                rc = GuestPropValidateFlags(papszFlags[i], &fFlagsIgn);
             }
         }
         if (RT_SUCCESS(rc))
@@ -536,7 +536,7 @@ int Service::setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
             for (unsigned i = 0; papszNames[i] != NULL; ++i)
             {
                 uint32_t fFlags;
-                rc = validateFlags(papszFlags[i], &fFlags);
+                rc = GuestPropValidateFlags(papszFlags[i], &fFlags);
                 AssertRCBreak(rc);
 
                 Property *pProp = getPropertyInternal(papszNames[i]);
@@ -617,8 +617,8 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     Property *pProp = getPropertyInternal(pcszName);
     if (pProp)
     {
-        char szFlags[MAX_FLAGS_LEN];
-        rc = writeFlags(pProp->mFlags, szFlags);
+        char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
+        rc = GuestPropWriteFlags(pProp->mFlags, szFlags);
         if (RT_SUCCESS(rc))
         {
             /* Check that the buffer is big enough */
@@ -671,7 +671,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
     uint32_t cchName = 0;               /* ditto */
     uint32_t cchValue = 0;              /* ditto */
     uint32_t cchFlags = 0;
-    uint32_t fFlags = NILFLAG;
+    uint32_t fFlags = GUEST_PROP_F_NILFLAG;
     uint64_t u64TimeNano = getCurrentTimestamp();
 
     LogFlowThisFunc(("\n"));
@@ -701,7 +701,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
         rc = RTStrValidateEncodingEx(pcszFlags, cchFlags,
                                      RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
     if ((3 == cParms) && RT_SUCCESS(rc))
-        rc = validateFlags(pcszFlags, &fFlags);
+        rc = GuestPropValidateFlags(pcszFlags, &fFlags);
     if (RT_FAILURE(rc))
     {
         LogFlowThisFunc(("rc = %Rrc\n", rc));
@@ -713,7 +713,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
      * to change it.
      */
     Property *pProp = getPropertyInternal(pcszName);
-    rc = checkPermission(pProp ? (ePropFlags)pProp->mFlags : NILFLAG, isGuest);
+    rc = checkPermission(pProp ? pProp->mFlags : GUEST_PROP_F_NILFLAG, isGuest);
     if (rc == VINF_SUCCESS)
     {
         /*
@@ -725,7 +725,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
             pProp->mTimestamp = u64TimeNano;
             pProp->mFlags = fFlags;
         }
-        else if (mcProperties < MAX_PROPS)
+        else if (mcProperties < GUEST_PROP_MAX_PROPS)
         {
             try
             {
@@ -805,7 +805,7 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
      */
     Property *pProp = getPropertyInternal(pcszName);
     if (pProp)
-        rc = checkPermission((ePropFlags)pProp->mFlags, isGuest);
+        rc = checkPermission(pProp->mFlags, isGuest);
 
     /*
      * And delete the property if all is well.
@@ -855,8 +855,8 @@ static DECLCALLBACK(int) enumPropsCallback(PRTSTRSPACECORE pStr, void *pvUser)
     char            szTimestamp[256];
     size_t const    cbTimestamp = RTStrFormatNumber(szTimestamp, pProp->mTimestamp, 10, 0, 0, 0) + 1;
 
-    char            szFlags[MAX_FLAGS_LEN];
-    int rc = writeFlags(pProp->mFlags, szFlags);
+    char            szFlags[GUEST_PROP_MAX_FLAGS_LEN];
+    int rc = GuestPropWriteFlags(pProp->mFlags, szFlags);
     if (RT_FAILURE(rc))
         return rc;
     size_t const    cbFlags = strlen(szFlags) + 1;
@@ -921,13 +921,13 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         || RT_FAILURE(paParms[1].getBuffer((void **)&pchBuf, &cbBuf))  /* return buffer */
        )
         rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc) && cbPatterns > MAX_PATTERN_LEN)
+    if (RT_SUCCESS(rc) && cbPatterns > GUEST_PROP_MAX_PATTERN_LEN)
         rc = VERR_TOO_MUCH_DATA;
 
     /*
      * First repack the patterns into the format expected by RTStrSimplePatternMatch()
      */
-    char szPatterns[MAX_PATTERN_LEN];
+    char szPatterns[GUEST_PROP_MAX_PATTERN_LEN];
     if (RT_SUCCESS(rc))
     {
         for (unsigned i = 0; i < cbPatterns - 1; ++i)
@@ -1014,8 +1014,8 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
     int rc = paParms[2].getBuffer((void **)&pchBuf, &cbBuf);
     if (RT_SUCCESS(rc))
     {
-        char szFlags[MAX_FLAGS_LEN];
-        rc = writeFlags(prop.mFlags, szFlags);
+        char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
+        rc = GuestPropWriteFlags(prop.mFlags, szFlags);
         if (RT_SUCCESS(rc))
         {
             buffer += prop.mName;
@@ -1112,7 +1112,7 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
                         ++it;
                 }
 
-                mGuestWaiters.push_back(GuestCall(u32ClientId, callHandle, GET_NOTIFICATION,
+                mGuestWaiters.push_back(GuestCall(u32ClientId, callHandle, GUEST_PROP_FN_GET_NOTIFICATION,
                                                   cParms, paParms, rc));
                 rc = VINF_HGCM_ASYNC_EXECUTE;
             }
@@ -1194,7 +1194,7 @@ int Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
 
         /** @todo r=andy This list does not have a purpose but for tracking
           *              the timestamps ... */
-        if (mGuestNotifications.size() > MAX_GUEST_NOTIFICATIONS)
+        if (mGuestNotifications.size() > GUEST_PROP_MAX_GUEST_NOTIFICATIONS)
             mGuestNotifications.pop_front();
     }
     catch (std::bad_alloc)
@@ -1211,10 +1211,10 @@ int Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
          */
         if (pProp)
         {
-            char szFlags[MAX_FLAGS_LEN];
+            char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
             /* Send out a host notification */
             const char *pszValue = prop.mValue.c_str();
-            rc = writeFlags(prop.mFlags, szFlags);
+            rc = GuestPropWriteFlags(prop.mFlags, szFlags);
             if (RT_SUCCESS(rc))
                 rc = notifyHost(pszProperty, pszValue, u64Timestamp, szFlags);
         }
@@ -1236,11 +1236,11 @@ int Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
 #ifdef ASYNC_HOST_NOTIFY
 static DECLCALLBACK(void) notifyHostAsyncWorker(PFNHGCMSVCEXT pfnHostCallback,
                                                 void *pvHostData,
-                                                HOSTCALLBACKDATA *pHostCallbackData)
+                                                PGUESTPROPHOSTCALLBACKDATA pHostCallbackData)
 {
     pfnHostCallback(pvHostData, 0 /*u32Function*/,
                    (void *)pHostCallbackData,
-                   sizeof(HOSTCALLBACKDATA));
+                   sizeof(GUESTPROPHOSTCALLBACKDATA));
     RTMemFree(pHostCallbackData);
 }
 #endif
@@ -1265,14 +1265,14 @@ int Service::notifyHost(const char *pszName, const char *pszValue,
     size_t cbName = pszName? strlen(pszName): 0;
     size_t cbValue = pszValue? strlen(pszValue): 0;
     size_t cbFlags = pszFlags? strlen(pszFlags): 0;
-    size_t cbAlloc = sizeof(HOSTCALLBACKDATA) + cbName + cbValue + cbFlags + 3;
-    HOSTCALLBACKDATA *pHostCallbackData = (HOSTCALLBACKDATA *)RTMemAlloc(cbAlloc);
+    size_t cbAlloc = sizeof(GUESTPROPHOSTCALLBACKDATA) + cbName + cbValue + cbFlags + 3;
+    PGUESTPROPHOSTCALLBACKDATA pHostCallbackData = (PGUESTPROPHOSTCALLBACKDATA)RTMemAlloc(cbAlloc);
     if (pHostCallbackData)
     {
         uint8_t *pu8 = (uint8_t *)pHostCallbackData;
-        pu8 += sizeof(HOSTCALLBACKDATA);
+        pu8 += sizeof(GUESTPROPHOSTCALLBACKDATA);
 
-        pHostCallbackData->u32Magic     = HOSTCALLBACKMAGIC;
+        pHostCallbackData->u32Magic     = GUESTPROPHOSTCALLBACKDATA_MAGIC;
 
         pHostCallbackData->pcszName     = (const char *)pu8;
         memcpy(pu8, pszName, cbName);
@@ -1304,8 +1304,8 @@ int Service::notifyHost(const char *pszName, const char *pszValue,
         rc = VERR_NO_MEMORY;
     }
 #else
-    HOSTCALLBACKDATA HostCallbackData;
-    HostCallbackData.u32Magic     = HOSTCALLBACKMAGIC;
+    GUESTPROPHOSTCALLBACKDATA HostCallbackData;
+    HostCallbackData.u32Magic     = GUESTPROPHOSTCALLBACKDATA_MAGIC;
     HostCallbackData.pcszName     = pszName;
     HostCallbackData.pcszValue    = pszValue;
     HostCallbackData.u64Timestamp = u64Timestamp;
@@ -1341,37 +1341,37 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
         switch (eFunction)
         {
             /* The guest wishes to read a property */
-            case GET_PROP:
+            case GUEST_PROP_FN_GET_PROP:
                 LogFlowFunc(("GET_PROP\n"));
                 rc = getProperty(cParms, paParms);
                 break;
 
             /* The guest wishes to set a property */
-            case SET_PROP:
+            case GUEST_PROP_FN_SET_PROP:
                 LogFlowFunc(("SET_PROP\n"));
                 rc = setProperty(cParms, paParms, true);
                 break;
 
             /* The guest wishes to set a property value */
-            case SET_PROP_VALUE:
+            case GUEST_PROP_FN_SET_PROP_VALUE:
                 LogFlowFunc(("SET_PROP_VALUE\n"));
                 rc = setProperty(cParms, paParms, true);
                 break;
 
             /* The guest wishes to remove a configuration value */
-            case DEL_PROP:
+            case GUEST_PROP_FN_DEL_PROP:
                 LogFlowFunc(("DEL_PROP\n"));
                 rc = delProperty(cParms, paParms, true);
                 break;
 
             /* The guest wishes to enumerate all properties */
-            case ENUM_PROPS:
+            case GUEST_PROP_FN_ENUM_PROPS:
                 LogFlowFunc(("ENUM_PROPS\n"));
                 rc = enumProps(cParms, paParms);
                 break;
 
             /* The guest wishes to get the next property notification */
-            case GET_NOTIFICATION:
+            case GUEST_PROP_FN_GET_NOTIFICATION:
                 LogFlowFunc(("GET_NOTIFICATION\n"));
                 rc = getNotification(u32ClientID, callHandle, cParms, paParms);
                 break;
@@ -1404,8 +1404,8 @@ static DECLCALLBACK(int) dbgInfoCallback(PRTSTRSPACECORE pStr, void *pvUser)
     Property *pProp = (Property *)pStr;
     PCDBGFINFOHLP pHlp = ((ENUMDBGINFO*)pvUser)->pHlp;
 
-    char szFlags[MAX_FLAGS_LEN];
-    int rc = writeFlags(pProp->mFlags, szFlags);
+    char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
+    int rc = GuestPropWriteFlags(pProp->mFlags, szFlags);
     if (RT_FAILURE(rc))
         RTStrPrintf(szFlags, sizeof(szFlags), "???");
 
@@ -1455,56 +1455,56 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
         switch (eFunction)
         {
             /* The host wishes to set a block of properties */
-            case SET_PROPS_HOST:
+            case GUEST_PROP_FN_SET_PROPS_HOST:
                 LogFlowFunc(("SET_PROPS_HOST\n"));
                 rc = setPropertyBlock(cParms, paParms);
                 break;
 
             /* The host wishes to read a configuration value */
-            case GET_PROP_HOST:
+            case GUEST_PROP_FN_GET_PROP_HOST:
                 LogFlowFunc(("GET_PROP_HOST\n"));
                 rc = getProperty(cParms, paParms);
                 break;
 
             /* The host wishes to set a configuration value */
-            case SET_PROP_HOST:
+            case GUEST_PROP_FN_SET_PROP_HOST:
                 LogFlowFunc(("SET_PROP_HOST\n"));
                 rc = setProperty(cParms, paParms, false);
                 break;
 
             /* The host wishes to set a configuration value */
-            case SET_PROP_VALUE_HOST:
+            case GUEST_PROP_FN_SET_PROP_VALUE_HOST:
                 LogFlowFunc(("SET_PROP_VALUE_HOST\n"));
                 rc = setProperty(cParms, paParms, false);
                 break;
 
             /* The host wishes to remove a configuration value */
-            case DEL_PROP_HOST:
+            case GUEST_PROP_FN_DEL_PROP_HOST:
                 LogFlowFunc(("DEL_PROP_HOST\n"));
                 rc = delProperty(cParms, paParms, false);
                 break;
 
             /* The host wishes to enumerate all properties */
-            case ENUM_PROPS_HOST:
+            case GUEST_PROP_FN_ENUM_PROPS_HOST:
                 LogFlowFunc(("ENUM_PROPS\n"));
                 rc = enumProps(cParms, paParms);
                 break;
 
             /* The host wishes to set global flags for the service */
-            case SET_GLOBAL_FLAGS_HOST:
+            case GUEST_PROP_FN_SET_GLOBAL_FLAGS_HOST:
                 LogFlowFunc(("SET_GLOBAL_FLAGS_HOST\n"));
                 if (cParms == 1)
                 {
-                    uint32_t eFlags;
-                    rc = paParms[0].getUInt32(&eFlags);
+                    uint32_t fFlags;
+                    rc = paParms[0].getUInt32(&fFlags);
                     if (RT_SUCCESS(rc))
-                        meGlobalFlags = (ePropFlags)eFlags;
+                        mfGlobalFlags = fFlags;
                 }
                 else
                     rc = VERR_INVALID_PARAMETER;
                 break;
 
-            case GET_DBGF_INFO_FN:
+            case GUEST_PROP_FN_GET_DBGF_INFO_FN:
                 if (cParms != 2)
                     return VERR_INVALID_PARAMETER;
                 paParms[0].u.pointer.addr = (void*)(uintptr_t)dbgInfo;

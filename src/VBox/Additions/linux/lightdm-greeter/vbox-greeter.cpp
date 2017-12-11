@@ -216,7 +216,7 @@ static int vbox_read_prop(uint32_t uClientID,
     /* The buffer for storing the data and its initial size.  We leave a bit
      * of space here in case the maximum values are raised. */
     void *pvBuf = NULL;
-    uint32_t cbBuf = MAX_VALUE_LEN + MAX_FLAGS_LEN + _1K;
+    uint32_t cbBuf = GUEST_PROP_MAX_VALUE_LEN + GUEST_PROP_MAX_FLAGS_LEN + _1K;
 
     /* Because there is a race condition between our reading the size of a
      * property and the guest updating it, we loop a few times here and

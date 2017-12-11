@@ -5653,10 +5653,10 @@ HRESULT Machine::i_getGuestPropertyFromService(const com::Utf8Str &aName,
 
     if (it != mHWData->mGuestProperties.end())
     {
-        char szFlags[MAX_FLAGS_LEN + 1];
+        char szFlags[GUEST_PROP_MAX_FLAGS_LEN + 1];
         aValue = it->second.strValue;
         *aTimestamp = it->second.mTimestamp;
-        writeFlags(it->second.mFlags, szFlags);
+        GuestPropWriteFlags(it->second.mFlags, szFlags);
         aFlags = Utf8Str(szFlags);
     }
 
@@ -5751,8 +5751,8 @@ HRESULT Machine::i_setGuestPropertyToService(const com::Utf8Str &aName, const co
 
     try
     {
-        uint32_t fFlags = NILFLAG;
-        if (aFlags.length() && RT_FAILURE(validateFlags(aFlags.c_str(), &fFlags)))
+        uint32_t fFlags = GUEST_PROP_F_NILFLAG;
+        if (aFlags.length() && RT_FAILURE(GuestPropValidateFlags(aFlags.c_str(), &fFlags)))
             return setError(E_INVALIDARG, tr("Invalid guest property flag values: '%s'"), aFlags.c_str());
 
         HWData::GuestPropertyMap::iterator it = mHWData->mGuestProperties.find(aName);
@@ -5773,7 +5773,7 @@ HRESULT Machine::i_setGuestPropertyToService(const com::Utf8Str &aName, const co
         }
         else
         {
-            if (it->second.mFlags & (RDONLYHOST))
+            if (it->second.mFlags & (GUEST_PROP_F_RDONLYHOST))
             {
                 rc = setError(E_ACCESSDENIED, tr("The property '%s' cannot be changed by the host"), aName.c_str());
             }
@@ -5935,7 +5935,7 @@ HRESULT Machine::i_enumerateGuestPropertiesInService(const com::Utf8Str &aPatter
     aTimestamps.resize(cEntries);
     aFlags.resize(cEntries);
 
-    char szFlags[MAX_FLAGS_LEN + 1];
+    char szFlags[GUEST_PROP_MAX_FLAGS_LEN + 1];
     size_t i = 0;
     for (HWData::GuestPropertyMap::const_iterator
          it = propMap.begin();
@@ -5945,7 +5945,7 @@ HRESULT Machine::i_enumerateGuestPropertiesInService(const com::Utf8Str &aPatter
         aNames[i] = it->first;
         aValues[i] = it->second.strValue;
         aTimestamps[i] = it->second.mTimestamp;
-        writeFlags(it->second.mFlags, szFlags);
+        GuestPropWriteFlags(it->second.mFlags, szFlags);
         aFlags[i] = Utf8Str(szFlags);
     }
 
@@ -9157,11 +9157,11 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
              /*nothing*/)
         {
             const settings::GuestProperty &prop = *it;
-            uint32_t fFlags = guestProp::NILFLAG;
-            guestProp::validateFlags(prop.strFlags.c_str(), &fFlags);
+            uint32_t fFlags = GUEST_PROP_F_NILFLAG;
+            GuestPropValidateFlags(prop.strFlags.c_str(), &fFlags);
             if (   fSkipTransientGuestProperties
-                && (   fFlags & guestProp::TRANSIENT
-                    || fFlags & guestProp::TRANSRESET))
+                && (   fFlags & GUEST_PROP_F_TRANSIENT
+                    || fFlags & GUEST_PROP_F_TRANSRESET))
             {
                 it = llGuestProperties.erase(it);
                 continue;
@@ -10453,15 +10453,14 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
             if (   (   mData->mMachineState == MachineState_PoweredOff
                     || mData->mMachineState == MachineState_Aborted
                     || mData->mMachineState == MachineState_Teleported)
-                && (   property.mFlags & guestProp::TRANSIENT
-                    || property.mFlags & guestProp::TRANSRESET))
+                && (property.mFlags & (GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_TRANSRESET)))
                 continue;
-            settings::GuestProperty prop;
+            settings::GuestProperty prop; /// @todo r=bird: some excellent variable name choices here: 'prop' and 'property'; No 'const' clue either.
             prop.strName = it->first;
             prop.strValue = property.strValue;
             prop.timestamp = property.mTimestamp;
-            char szFlags[guestProp::MAX_FLAGS_LEN + 1];
-            guestProp::writeFlags(property.mFlags, szFlags);
+            char szFlags[GUEST_PROP_MAX_FLAGS_LEN + 1];
+            GuestPropWriteFlags(property.mFlags, szFlags);
             prop.strFlags = szFlags;
 
             data.llGuestProperties.push_back(prop);
@@ -13540,7 +13539,7 @@ HRESULT SessionMachine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
          it != mHWData->mGuestProperties.end();
          ++it, ++i)
     {
-        char szFlags[MAX_FLAGS_LEN + 1];
+        char szFlags[GUEST_PROP_MAX_FLAGS_LEN + 1];
         aNames[i] = it->first;
         aValues[i] = it->second.strValue;
         aTimestamps[i] = it->second.mTimestamp;
@@ -13548,7 +13547,7 @@ HRESULT SessionMachine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
         /* If it is NULL, keep it NULL. */
         if (it->second.mFlags)
         {
-            writeFlags(it->second.mFlags, szFlags);
+            GuestPropWriteFlags(it->second.mFlags, szFlags);
             aFlags[i] = szFlags;
         }
         else
@@ -13575,10 +13574,10 @@ HRESULT SessionMachine::pushGuestProperty(const com::Utf8Str &aName,
         /*
          * Convert input up front.
          */
-        uint32_t fFlags = NILFLAG;
+        uint32_t fFlags = GUEST_PROP_F_NILFLAG;
         if (aFlags.length())
         {
-            int vrc = validateFlags(aFlags.c_str(), &fFlags);
+            int vrc = GuestPropValidateFlags(aFlags.c_str(), &fFlags);
             AssertRCReturn(vrc, E_INVALIDARG);
         }
 
@@ -14802,8 +14801,7 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
              /*nothing*/)
         {
             uint32_t fFlags = it->second.mFlags;
-            if (   fFlags & guestProp::TRANSIENT
-                || fFlags & guestProp::TRANSRESET)
+            if (fFlags & (GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_TRANSRESET))
             {
                 /* iterator where we need to continue after the erase call
                  * (C++03 is a fact still, and it doesn't return the iterator

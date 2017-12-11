@@ -105,23 +105,23 @@ const char *g_apszInvalidFlagStrings[] =
 static void testConvertFlags(void)
 {
     int rc = VINF_SUCCESS;
-    char *pszFlagBuffer = (char *)RTTestGuardedAllocTail(g_hTest, MAX_FLAGS_LEN);
+    char *pszFlagBuffer = (char *)RTTestGuardedAllocTail(g_hTest, GUEST_PROP_MAX_FLAGS_LEN);
 
     RTTestISub("Conversion of valid flags strings");
     for (unsigned i = 0; i < RT_ELEMENTS(g_aValidFlagStrings) && RT_SUCCESS(rc); ++i)
     {
         uint32_t fFlags;
-        rc = validateFlags(g_aValidFlagStrings[i].pcszIn, &fFlags);
+        rc = GuestPropValidateFlags(g_aValidFlagStrings[i].pcszIn, &fFlags);
         if (RT_FAILURE(rc))
             RTTestIFailed("Failed to validate flag string '%s'", g_aValidFlagStrings[i].pcszIn);
         if (RT_SUCCESS(rc))
         {
-            rc = writeFlags(fFlags, pszFlagBuffer);
+            rc = GuestPropWriteFlags(fFlags, pszFlagBuffer);
             if (RT_FAILURE(rc))
                 RTTestIFailed("Failed to convert flag string '%s' back to a string.",
                               g_aValidFlagStrings[i].pcszIn);
         }
-        if (RT_SUCCESS(rc) && (strlen(pszFlagBuffer) > MAX_FLAGS_LEN - 1))
+        if (RT_SUCCESS(rc) && (strlen(pszFlagBuffer) > GUEST_PROP_MAX_FLAGS_LEN - 1))
         {
             RTTestIFailed("String '%s' converts back to a flag string which is too long.\n",
                           g_aValidFlagStrings[i].pcszIn);
@@ -142,7 +142,7 @@ static void testConvertFlags(void)
         {
             uint32_t fFlags;
             /* This is required to fail. */
-            if (RT_SUCCESS(validateFlags(g_apszInvalidFlagStrings[i], &fFlags)))
+            if (RT_SUCCESS(GuestPropValidateFlags(g_apszInvalidFlagStrings[i], &fFlags)))
             {
                 RTTestIFailed("String '%s' was incorrectly accepted as a valid flag string.\n",
                               g_apszInvalidFlagStrings[i]);
@@ -152,13 +152,13 @@ static void testConvertFlags(void)
     }
     if (RT_SUCCESS(rc))
     {
-        uint32_t u32BadFlags = ALLFLAGS << 1;
+        uint32_t u32BadFlags = GUEST_PROP_F_ALLFLAGS << 1;
         RTTestISub("Rejection of an invalid flags field");
         /* This is required to fail. */
-        if (RT_SUCCESS(writeFlags(u32BadFlags, pszFlagBuffer)))
+        if (RT_SUCCESS(GuestPropWriteFlags(u32BadFlags, pszFlagBuffer)))
         {
             RTTestIFailed("Flags 0x%x were incorrectly written out as '%.*s'\n",
-                          u32BadFlags, MAX_FLAGS_LEN, pszFlagBuffer);
+                          u32BadFlags, GUEST_PROP_MAX_FLAGS_LEN, pszFlagBuffer);
             rc = VERR_PARSE_ERROR;
         }
     }
@@ -225,7 +225,7 @@ static void testSetPropsHost(VBOXHGCMSVCFNTABLE *ptable)
     aParms[1].setPointer((void *)g_apcszValueBlock, 0);
     aParms[2].setPointer((void *)g_au64TimestampBlock, 0);
     aParms[3].setPointer((void *)g_apcszFlagsBlock, 0);
-    RTTESTI_CHECK_RC(ptable->pfnHostCall(ptable->pvService, SET_PROPS_HOST, 4, &aParms[0]), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_SET_PROPS_HOST, 4, &aParms[0]), VINF_SUCCESS);
 }
 
 /** Result strings for zeroth enumeration test */
@@ -336,7 +336,7 @@ static void testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
         aParms[0].setPointer((void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
         aParms[1].setPointer((void *)abBuffer, g_aEnumStrings[i].cbBuffer - 1);
         memset(abBuffer, 0x55, sizeof(abBuffer));
-        int rc2 = ptable->pfnHostCall(ptable->pvService, ENUM_PROPS_HOST, 3, aParms);
+        int rc2 = ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_ENUM_PROPS_HOST, 3, aParms);
         if (rc2 == VERR_BUFFER_OVERFLOW)
         {
             uint32_t cbNeeded;
@@ -352,7 +352,7 @@ static void testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
         aParms[0].setPointer((void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
         aParms[1].setPointer((void *)abBuffer, g_aEnumStrings[i].cbBuffer);
         memset(abBuffer, 0x55, sizeof(abBuffer));
-        rc2 = ptable->pfnHostCall(ptable->pvService, ENUM_PROPS_HOST, 3, aParms);
+        rc2 = ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_ENUM_PROPS_HOST, 3, aParms);
         if (rc2 == VINF_SUCCESS)
         {
             /* Look for each of the result strings in the buffer which was returned */
@@ -393,22 +393,22 @@ int doSetProperty(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName,
                   bool useSetProp)
 {
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
-    int command = SET_PROP_VALUE;
+    int command = GUEST_PROP_FN_SET_PROP_VALUE;
     if (isHost)
     {
         if (useSetProp)
-            command = SET_PROP_HOST;
+            command = GUEST_PROP_FN_SET_PROP_HOST;
         else
-            command = SET_PROP_VALUE_HOST;
+            command = GUEST_PROP_FN_SET_PROP_VALUE_HOST;
     }
     else if (useSetProp)
-        command = SET_PROP;
+        command = GUEST_PROP_FN_SET_PROP;
     VBOXHGCMSVCPARM aParms[3];
     /* Work around silly constant issues - we ought to allow passing
      * constant strings in the hgcm parameters. */
-    char szName[MAX_NAME_LEN];
-    char szValue[MAX_VALUE_LEN];
-    char szFlags[MAX_FLAGS_LEN];
+    char szName[GUEST_PROP_MAX_NAME_LEN];
+    char szValue[GUEST_PROP_MAX_VALUE_LEN];
+    char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
     RTStrPrintf(szName, sizeof(szName), "%s", pcszName);
     RTStrPrintf(szValue, sizeof(szValue), "%s", pcszValue);
     RTStrPrintf(szFlags, sizeof(szFlags), "%s", pcszFlags);
@@ -492,9 +492,9 @@ static void testSetProp(VBOXHGCMSVCFNTABLE *pTable)
 static int doDelProp(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName, bool isHost)
 {
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
-    int command = DEL_PROP;
+    int command = GUEST_PROP_FN_DEL_PROP;
     if (isHost)
-        command = DEL_PROP_HOST;
+        command = GUEST_PROP_FN_DEL_PROP_HOST;
     VBOXHGCMSVCPARM aParms[1];
     aParms[0].setString(pcszName);
     if (isHost)
@@ -594,13 +594,13 @@ static void testGetProp(VBOXHGCMSVCFNTABLE *pTable)
         VBOXHGCMSVCPARM aParms[4];
         /* Work around silly constant issues - we ought to allow passing
          * constant strings in the hgcm parameters. */
-        char szBuffer[MAX_VALUE_LEN + MAX_FLAGS_LEN];
+        char szBuffer[GUEST_PROP_MAX_VALUE_LEN + GUEST_PROP_MAX_FLAGS_LEN];
         RTTESTI_CHECK_RETV(s_aGetProperties[i].cchValue < sizeof(szBuffer));
 
         aParms[0].setString(s_aGetProperties[i].pcszName);
         memset(szBuffer, 0x55, sizeof(szBuffer));
         aParms[1].setPointer(szBuffer, sizeof(szBuffer));
-        int rc2 = pTable->pfnHostCall(pTable->pvService, GET_PROP_HOST, 4, aParms);
+        int rc2 = pTable->pfnHostCall(pTable->pvService, GUEST_PROP_FN_GET_PROP_HOST, 4, aParms);
 
         if (s_aGetProperties[i].exists && RT_FAILURE(rc2))
         {
@@ -688,7 +688,7 @@ static void testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
         aParms[0].setPointer((void *)s_szPattern, sizeof(s_szPattern));
         aParms[1].setUInt64(1);
         aParms[2].setPointer(pvBuf, cbBuf);
-        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GET_NOTIFICATION, 4, aParms);
+        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GUEST_PROP_FN_GET_NOTIFICATION, 4, aParms);
 
         if (   callHandle.rc != VERR_BUFFER_OVERFLOW
             || RT_FAILURE(aParms[3].getUInt32(&cbRetNeeded))
@@ -714,7 +714,7 @@ static void testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
         aParms[0].setPointer((void *)s_szPattern, sizeof(s_szPattern));
         aParms[1].setUInt64(u64Timestamp);
         aParms[2].setPointer(pvBuf, cbBuf);
-        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GET_NOTIFICATION, 4, aParms);
+        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GUEST_PROP_FN_GET_NOTIFICATION, 4, aParms);
         if (   RT_FAILURE(callHandle.rc)
             || (i == 0 && callHandle.rc != VWRN_NOT_FOUND)
             || RT_FAILURE(aParms[1].getUInt64(&u64Timestamp))
@@ -736,7 +736,7 @@ struct asyncNotification_
     /** Call parameters */
     VBOXHGCMSVCPARM aParms[4];
     /** Result buffer */
-    char abBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
+    char abBuffer[GUEST_PROP_MAX_NAME_LEN + GUEST_PROP_MAX_VALUE_LEN + GUEST_PROP_MAX_FLAGS_LEN];
     /** Return value */
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle;
 } g_AsyncNotification;
@@ -755,7 +755,7 @@ static void setupAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
                                              sizeof(g_AsyncNotification.abBuffer));
     g_AsyncNotification.callHandle.rc = VINF_HGCM_ASYNC_EXECUTE;
     pTable->pfnCall(pTable->pvService, &g_AsyncNotification.callHandle, 0, NULL,
-                    GET_NOTIFICATION, 4, g_AsyncNotification.aParms);
+                    GUEST_PROP_FN_GET_NOTIFICATION, 4, g_AsyncNotification.aParms);
     if (RT_FAILURE(g_AsyncNotification.callHandle.rc))
         RTTestIFailed("GET_NOTIFICATION call failed, rc=%Rrc.", g_AsyncNotification.callHandle.rc);
     else if (g_AsyncNotification.callHandle.rc != VINF_HGCM_ASYNC_EXECUTE)
@@ -814,17 +814,17 @@ static void test2(void)
  * @returns the status returned by the call to the service
  *
  * @param   pTable  the service instance handle
- * @param   eFlags  the flags to set
+ * @param   fFlags  the flags to set
  */
-static int doSetGlobalFlags(VBOXHGCMSVCFNTABLE *pTable, ePropFlags eFlags)
+static int doSetGlobalFlags(VBOXHGCMSVCFNTABLE *pTable, uint32_t fFlags)
 {
     VBOXHGCMSVCPARM paParm;
-    paParm.setUInt32(eFlags);
-    int rc = pTable->pfnHostCall(pTable->pvService, SET_GLOBAL_FLAGS_HOST, 1, &paParm);
+    paParm.setUInt32(fFlags);
+    int rc = pTable->pfnHostCall(pTable->pvService, GUEST_PROP_FN_SET_GLOBAL_FLAGS_HOST, 1, &paParm);
     if (RT_FAILURE(rc))
     {
-        char szFlags[MAX_FLAGS_LEN];
-        if (RT_FAILURE(writeFlags(eFlags, szFlags)))
+        char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
+        if (RT_FAILURE(GuestPropWriteFlags(fFlags, szFlags)))
             RTTestIFailed("Failed to set the global flags.");
         else
             RTTestIFailed("Failed to set the global flags \"%s\".", szFlags);
@@ -873,7 +873,7 @@ static void testSetPropROGuest(VBOXHGCMSVCFNTABLE *pTable)
     };
 
     RTTESTI_CHECK_RC_OK_RETV(VBoxHGCMSvcLoad(pTable));
-    int rc = doSetGlobalFlags(pTable, RDONLYGUEST);
+    int rc = doSetGlobalFlags(pTable, GUEST_PROP_F_RDONLYGUEST);
     if (RT_SUCCESS(rc))
     {
         for (unsigned i = 0; i < RT_ELEMENTS(s_aSetPropertiesROGuest); ++i)
@@ -941,7 +941,7 @@ static void testDelPropROGuest(VBOXHGCMSVCFNTABLE *pTable)
     };
 
     RTTESTI_CHECK_RC_OK_RETV(VBoxHGCMSvcLoad(pTable));
-    int rc = doSetGlobalFlags(pTable, RDONLYGUEST);
+    int rc = doSetGlobalFlags(pTable, GUEST_PROP_F_RDONLYGUEST);
     if (RT_SUCCESS(rc))
     {
         for (unsigned i = 0; i < RT_ELEMENTS(s_aDelPropertiesROGuest); ++i)
@@ -1005,7 +1005,7 @@ static void test4(void)
             VBOXHGCMSVCPARM aParms[4];
             aParms[0].setString(s_szProp);
             aParms[1].setPointer(pvBuf, cbBuf);
-            svcTable.pfnHostCall(svcTable.pvService, GET_PROP_HOST, RT_ELEMENTS(aParms), aParms);
+            svcTable.pfnHostCall(svcTable.pvService, GUEST_PROP_FN_GET_PROP_HOST, RT_ELEMENTS(aParms), aParms);
 
             RTTestGuardedFree(g_hTest, pvBuf);
         }
@@ -1041,7 +1041,7 @@ static void test5(void)
             VBOXHGCMSVCPARM aParms[3];
             aParms[0].setString("*");
             aParms[1].setPointer(pvBuf, cbBuf);
-            svcTable.pfnHostCall(svcTable.pvService, ENUM_PROPS_HOST, RT_ELEMENTS(aParms), aParms);
+            svcTable.pfnHostCall(svcTable.pvService, GUEST_PROP_FN_ENUM_PROPS_HOST, RT_ELEMENTS(aParms), aParms);
 
             RTTestGuardedFree(g_hTest, pvBuf);
         }
@@ -1110,7 +1110,7 @@ static void test6(void)
             char            szBuffer[256];
             aParms[0].setPointer(szProp, (uint32_t)cchProp + 1);
             aParms[1].setPointer(szBuffer, sizeof(szBuffer));
-            RTTESTI_CHECK_RC_BREAK(svcTable.pfnHostCall(svcTable.pvService, GET_PROP_HOST, 4, aParms), VINF_SUCCESS);
+            RTTESTI_CHECK_RC_BREAK(svcTable.pfnHostCall(svcTable.pvService, GUEST_PROP_FN_GET_PROP_HOST, 4, aParms), VINF_SUCCESS);
         }
         cNsElapsed = RTTimeNanoTS() - cNsElapsed;
         if (iCall)

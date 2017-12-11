@@ -164,7 +164,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(HGCMCLIENTID idClient, const char *pszName,
     if (pszValue != NULL)
     {
         SetProperty Msg;
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, SET_PROP_VALUE, 3);
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_SET_PROP_VALUE, 3);
         VbglHGCMParmPtrSetString(&Msg.name,  pszName);
         VbglHGCMParmPtrSetString(&Msg.value, pszValue);
         VbglHGCMParmPtrSetString(&Msg.flags, pszFlags);
@@ -173,7 +173,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(HGCMCLIENTID idClient, const char *pszName,
     else
     {
         DelProperty Msg;
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, DEL_PROP, 1);
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_DEL_PROP, 1);
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     }
@@ -201,7 +201,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(HGCMCLIENTID idClient, const char *psz
     if (pszValue != NULL)
     {
         SetPropertyValue Msg;
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, SET_PROP_VALUE, 2);
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_SET_PROP_VALUE, 2);
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
         VbglHGCMParmPtrSetString(&Msg.value, pszValue);
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
@@ -209,7 +209,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(HGCMCLIENTID idClient, const char *psz
     else
     {
         DelProperty Msg;
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, DEL_PROP, 1);
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_DEL_PROP, 1);
         VbglHGCMParmPtrSetString(&Msg.name, pszName);
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     }
@@ -297,7 +297,7 @@ VBGLR3DECL(int) VbglR3GuestPropRead(HGCMCLIENTID idClient, const char *pszName,
      * Create the GET_PROP message and call the host.
      */
     GetProperty Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GET_PROP, 4);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_GET_PROP, 4);
     VbglHGCMParmPtrSetString(&Msg.name, pszName);
     VbglHGCMParmPtrSet(&Msg.buffer, pvBuf, cbBuf);
     VbglHGCMParmUInt64Set(&Msg.timestamp, 0);
@@ -386,18 +386,17 @@ VBGLR3DECL(int) VbglR3GuestPropReadValueAlloc(HGCMCLIENTID idClient, const char 
      */
     char       *pszValue = NULL;
     void       *pvBuf    = NULL;
-    uint32_t    cchBuf   = MAX_VALUE_LEN;
+    uint32_t    cbBuf    = GUEST_PROP_MAX_VALUE_LEN;
     int         rc       = VERR_BUFFER_OVERFLOW;
     for (unsigned i = 0; i < 10 && rc == VERR_BUFFER_OVERFLOW; ++i)
     {
         /* We leave a bit of space here in case the maximum value is raised. */
-        cchBuf += 1024;
-        void *pvTmpBuf = RTMemRealloc(pvBuf, cchBuf);
+        cbBuf += 1024;
+        void *pvTmpBuf = RTMemRealloc(pvBuf, cbBuf);
         if (pvTmpBuf)
         {
             pvBuf = pvTmpBuf;
-            rc = VbglR3GuestPropRead(idClient, pszName, pvBuf, cchBuf,
-                                     &pszValue, NULL, NULL, &cchBuf);
+            rc = VbglR3GuestPropRead(idClient, pszName, pvBuf, cbBuf, &pszValue, NULL, NULL, &cbBuf);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -493,7 +492,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(HGCMCLIENTID idClient,
                                        uint32_t *pcbBufActual)
 {
     EnumProperties Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, ENUM_PROPS, 3);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_ENUM_PROPS, 3);
 
     /* Get the length of the patterns array... */
     size_t cchPatterns = 0;
@@ -758,7 +757,7 @@ VBGLR3DECL(int) VbglR3GuestPropDelete(HGCMCLIENTID idClient, const char *pszName
     AssertPtrReturn(pszName,  VERR_INVALID_POINTER);
 
     DelProperty Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, DEL_PROP, 1);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_PROP_FN_DEL_PROP, 1);
     VbglHGCMParmPtrSetString(&Msg.name, pszName);
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
@@ -860,7 +859,7 @@ VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
      * Create the GET_NOTIFICATION message and call the host.
      */
     GetNotification Msg;
-    VBGL_HGCM_HDR_INIT_TIMED(&Msg.hdr, idClient, GET_NOTIFICATION, 4, cMillies);
+    VBGL_HGCM_HDR_INIT_TIMED(&Msg.hdr, idClient, GUEST_PROP_FN_GET_NOTIFICATION, 4, cMillies);
 
     VbglHGCMParmPtrSetString(&Msg.patterns, pszPatterns);
     Msg.buffer.SetPtr(pvBuf, cbBuf);
