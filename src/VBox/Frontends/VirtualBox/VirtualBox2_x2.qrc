@@ -1,5 +1,16 @@
 <RCC>
     <qresource prefix="/">
+        <file alias="os_oraclesolaris_64_x2.png">images/x2/os_oraclesolaris_64_x2.png</file>
+        <file alias="os_oraclesolaris_x2.png">images/x2/os_oraclesolaris_x2.png</file>
+        <file alias="os_oracle_x2.png">images/x2/os_oracle_x2.png</file>
+        <file alias="os_os2ecs_x2.png">images/x2/os_os2ecs_x2.png</file>
+        <file alias="os_os2_other_x2.png">images/x2/os_os2_other_x2.png</file>
+        <file alias="os_os2warp3_x2.png">images/x2/os_os2warp3_x2.png</file>
+        <file alias="os_os2warp45_x2.png">images/x2/os_os2warp45_x2.png</file>
+        <file alias="os_os2warp4_x2.png">images/x2/os_os2warp4_x2.png</file>
+        <file alias="os_other_64_x2.png">images/x2/os_other_64_x2.png</file>
+        <file alias="os_other_x2.png">images/x2/os_other_x2.png</file>
+        <file alias="os_qnx_x2.png">images/x2/os_qnx_x2.png</file>
         <file alias="os_redhat_64_x2.png">images/x2/os_redhat_64_x2.png</file>
         <file alias="os_redhat_x2.png">images/x2/os_redhat_x2.png</file>
         <file alias="os_solaris_64_x2.png">images/x2/os_solaris_64_x2.png</file>
@@ -27,10 +38,10 @@
         <file alias="os_win8_x2.png">images/x2/os_win8_x2.png</file>
         <file alias="os_win95_x2.png">images/x2/os_win95_x2.png</file>
         <file alias="os_win98_x2.png">images/x2/os_win98_x2.png</file>
-        <file alias="os_win_other_x2.png">images/x2/os_win_other_x2.png</file>
-        <file alias="os_win_other_64_x2.png">images/x2/os_win_other_64_x2.png</file>
         <file alias="os_winme_x2.png">images/x2/os_winme_x2.png</file>
         <file alias="os_winnt4_x2.png">images/x2/os_winnt4_x2.png</file>
+        <file alias="os_win_other_64_x2.png">images/x2/os_win_other_64_x2.png</file>
+        <file alias="os_win_other_x2.png">images/x2/os_win_other_x2.png</file>
         <file alias="os_winvista_64_x2.png">images/x2/os_winvista_64_x2.png</file>
         <file alias="os_winvista_x2.png">images/x2/os_winvista_x2.png</file>
         <file alias="os_winxp_64_x2.png">images/x2/os_winxp_64_x2.png</file>
@@ -81,8 +92,8 @@
         <file alias="refresh_disabled_32px_x2.png">images/x2/refresh_disabled_32px_x2.png</file>
         <file alias="refresh_warning_16px_x2.png">images/x2/refresh_warning_16px_x2.png</file>
         <file alias="remove_host_iface_16px_x2.png">images/x2/remove_host_iface_16px_x2.png</file>
-        <file alias="remove_host_iface_disabled_16px_x2.png">images/x2/remove_host_iface_disabled_16px_x2.png</file>
         <file alias="remove_host_iface_22px_x2.png">images/x2/remove_host_iface_22px_x2.png</file>
+        <file alias="remove_host_iface_disabled_16px_x2.png">images/x2/remove_host_iface_disabled_16px_x2.png</file>
         <file alias="remove_host_iface_disabled_22px_x2.png">images/x2/remove_host_iface_disabled_22px_x2.png</file>
         <file alias="reset_warnings_16px_x2.png">images/x2/reset_warnings_16px_x2.png</file>
         <file alias="restore_16px_x2.png">images/x2/restore_16px_x2.png</file>
@@ -182,14 +193,14 @@
         <file alias="state_saved_16px_x2.png">images/x2/state_saved_16px_x2.png</file>
         <file alias="state_saving_16px_x2.png">images/x2/state_saving_16px_x2.png</file>
         <file alias="state_stuck_16px_x2.png">images/x2/state_stuck_16px_x2.png</file>
-        <file alias="status_check_16px_x2.png">images/x2/status_check_16px_x2.png</file>
-        <file alias="status_error_16px_x2.png">images/x2/status_error_16px_x2.png</file>
         <file alias="statusbar_16px_x2.png">images/x2/statusbar_16px_x2.png</file>
         <file alias="statusbar_disabled_16px_x2.png">images/x2/statusbar_disabled_16px_x2.png</file>
         <file alias="statusbar_on_16px_x2.png">images/x2/statusbar_on_16px_x2.png</file>
         <file alias="statusbar_on_disabled_16px_x2.png">images/x2/statusbar_on_disabled_16px_x2.png</file>
         <file alias="statusbar_settings_16px_x2.png">images/x2/statusbar_settings_16px_x2.png</file>
         <file alias="statusbar_settings_disabled_16px_x2.png">images/x2/statusbar_settings_disabled_16px_x2.png</file>
+        <file alias="status_check_16px_x2.png">images/x2/status_check_16px_x2.png</file>
+        <file alias="status_error_16px_x2.png">images/x2/status_error_16px_x2.png</file>
         <file alias="tools_banner_global_200px_x2.png">images/x2/tools_banner_global_200px_x2.png</file>
         <file alias="tools_banner_machine_200px_x2.png">images/x2/tools_banner_machine_200px_x2.png</file>
         <file alias="tools_global_32px_x2.png">images/x2/tools_global_32px_x2.png</file>

@@ -1,8 +1,8 @@
 <RCC>
     <qresource prefix="/">
         <file alias="add_host_iface_16px_x2.png">images/x2/add_host_iface_16px_x2.png</file>
-        <file alias="add_host_iface_disabled_16px_x2.png">images/x2/add_host_iface_disabled_16px_x2.png</file>
         <file alias="add_host_iface_22px_x2.png">images/x2/add_host_iface_22px_x2.png</file>
+        <file alias="add_host_iface_disabled_16px_x2.png">images/x2/add_host_iface_disabled_16px_x2.png</file>
         <file alias="add_host_iface_disabled_22px_x2.png">images/x2/add_host_iface_disabled_22px_x2.png</file>
         <file alias="adjust_win_size_16px_x2.png">images/x2/adjust_win_size_16px_x2.png</file>
         <file alias="adjust_win_size_disabled_16px_x2.png">images/x2/adjust_win_size_disabled_16px_x2.png</file>
@@ -62,8 +62,8 @@
         <file alias="close_16px_x2.png">images/x2/close_16px_x2.png</file>
         <file alias="close_popup_16px_x2.png">images/x2/close_popup_16px_x2.png</file>
         <file alias="commit_host_iface_16px_x2.png">images/x2/commit_host_iface_16px_x2.png</file>
-        <file alias="commit_host_iface_disabled_16px_x2.png">images/x2/commit_host_iface_disabled_16px_x2.png</file>
         <file alias="commit_host_iface_22px_x2.png">images/x2/commit_host_iface_22px_x2.png</file>
+        <file alias="commit_host_iface_disabled_16px_x2.png">images/x2/commit_host_iface_disabled_16px_x2.png</file>
         <file alias="commit_host_iface_disabled_22px_x2.png">images/x2/commit_host_iface_disabled_22px_x2.png</file>
         <file alias="connect_16px_x2.png">images/x2/connect_16px_x2.png</file>
         <file alias="connect_on_16px_x2.png">images/x2/connect_on_16px_x2.png</file>
@@ -89,10 +89,13 @@
         <file alias="edata_add_22px_x2.png">images/x2/edata_add_22px_x2.png</file>
         <file alias="edata_add_disabled_16px_x2.png">images/x2/edata_add_disabled_16px_x2.png</file>
         <file alias="edata_add_disabled_22px_x2.png">images/x2/edata_add_disabled_22px_x2.png</file>
+        <file alias="edataglobal_32px_x2.png">images/x2/edataglobal_32px_x2.png</file>
         <file alias="edata_load_16px_x2.png">images/x2/edata_load_16px_x2.png</file>
         <file alias="edata_load_22px_x2.png">images/x2/edata_load_22px_x2.png</file>
         <file alias="edata_load_disabled_16px_x2.png">images/x2/edata_load_disabled_16px_x2.png</file>
         <file alias="edata_load_disabled_22px_x2.png">images/x2/edata_load_disabled_22px_x2.png</file>
+        <file alias="edataman_16px_x2.png">images/x2/edataman_16px_x2.png</file>
+        <file alias="edataman_32px_x2.png">images/x2/edataman_32px_x2.png</file>
         <file alias="edata_remove_16px_x2.png">images/x2/edata_remove_16px_x2.png</file>
         <file alias="edata_remove_22px_x2.png">images/x2/edata_remove_22px_x2.png</file>
         <file alias="edata_remove_disabled_16px_x2.png">images/x2/edata_remove_disabled_16px_x2.png</file>
@@ -101,12 +104,9 @@
         <file alias="edata_save_22px_x2.png">images/x2/edata_save_22px_x2.png</file>
         <file alias="edata_save_disabled_16px_x2.png">images/x2/edata_save_disabled_16px_x2.png</file>
         <file alias="edata_save_disabled_22px_x2.png">images/x2/edata_save_disabled_22px_x2.png</file>
-        <file alias="edataglobal_32px_x2.png">images/x2/edataglobal_32px_x2.png</file>
-        <file alias="edataman_16px_x2.png">images/x2/edataman_16px_x2.png</file>
-        <file alias="edataman_32px_x2.png">images/x2/edataman_32px_x2.png</file>
         <file alias="edit_host_iface_16px_x2.png">images/x2/edit_host_iface_16px_x2.png</file>
-        <file alias="edit_host_iface_disabled_16px_x2.png">images/x2/edit_host_iface_disabled_16px_x2.png</file>
         <file alias="edit_host_iface_22px_x2.png">images/x2/edit_host_iface_22px_x2.png</file>
+        <file alias="edit_host_iface_disabled_16px_x2.png">images/x2/edit_host_iface_disabled_16px_x2.png</file>
         <file alias="edit_host_iface_disabled_22px_x2.png">images/x2/edit_host_iface_disabled_22px_x2.png</file>
         <file alias="eraser_16px_x2.png">images/x2/eraser_16px_x2.png</file>
         <file alias="exit_16px_x2.png">images/x2/exit_16px_x2.png</file>
@@ -227,6 +227,16 @@
         <file alias="list_movedown_disabled_16px_x2.png">images/x2/list_movedown_disabled_16px_x2.png</file>
         <file alias="list_moveup_16px_x2.png">images/x2/list_moveup_16px_x2.png</file>
         <file alias="list_moveup_disabled_16px_x2.png">images/x2/list_moveup_disabled_16px_x2.png</file>
+        <file alias="log_viewer_bookmark_24px_x2.png">images/x2/log_viewer_bookmark_24px_x2.png</file>
+        <file alias="log_viewer_bookmark_disabled_24px_x2.png">images/x2/log_viewer_bookmark_disabled_24px_x2.png</file>
+        <file alias="log_viewer_filter_24px_x2.png">images/x2/log_viewer_filter_24px_x2.png</file>
+        <file alias="log_viewer_filter_disabled_24px_x2.png">images/x2/log_viewer_filter_disabled_24px_x2.png</file>
+        <file alias="log_viewer_find_24px_x2.png">images/x2/log_viewer_find_24px_x2.png</file>
+        <file alias="log_viewer_find_disabled_24px_x2.png">images/x2/log_viewer_find_disabled_24px_x2.png</file>
+        <file alias="log_viewer_refresh_24px_x2.png">images/x2/log_viewer_refresh_24px_x2.png</file>
+        <file alias="log_viewer_refresh_disabled_24px_x2.png">images/x2/log_viewer_refresh_disabled_24px_x2.png</file>
+        <file alias="log_viewer_save_24px_x2.png">images/x2/log_viewer_save_24px_x2.png</file>
+        <file alias="log_viewer_save_disabled_24px_x2.png">images/x2/log_viewer_save_disabled_24px_x2.png</file>
         <file alias="machine_16px_x2.png">images/x2/machine_16px_x2.png</file>
         <file alias="machine_24px_x2.png">images/x2/machine_24px_x2.png</file>
         <file alias="machine_32px_x2.png">images/x2/machine_32px_x2.png</file>
@@ -284,8 +294,8 @@
         <file alias="os_linux24_x2.png">images/x2/os_linux24_x2.png</file>
         <file alias="os_linux26_64_x2.png">images/x2/os_linux26_64_x2.png</file>
         <file alias="os_linux26_x2.png">images/x2/os_linux26_x2.png</file>
-        <file alias="os_linux_x2.png">images/x2/os_linux_x2.png</file>
         <file alias="os_linux_64_x2.png">images/x2/os_linux_64_x2.png</file>
+        <file alias="os_linux_x2.png">images/x2/os_linux_x2.png</file>
         <file alias="os_macosx_64_x2.png">images/x2/os_macosx_64_x2.png</file>
         <file alias="os_macosx_x2.png">images/x2/os_macosx_x2.png</file>
         <file alias="os_mandriva_64_x2.png">images/x2/os_mandriva_64_x2.png</file>
@@ -298,16 +308,5 @@
         <file alias="os_opensuse_64_x2.png">images/x2/os_opensuse_64_x2.png</file>
         <file alias="os_opensuse_x2.png">images/x2/os_opensuse_x2.png</file>
         <file alias="os_oracle_64_x2.png">images/x2/os_oracle_64_x2.png</file>
-        <file alias="os_oracle_x2.png">images/x2/os_oracle_x2.png</file>
-        <file alias="os_oraclesolaris_64_x2.png">images/x2/os_oraclesolaris_64_x2.png</file>
-        <file alias="os_oraclesolaris_x2.png">images/x2/os_oraclesolaris_x2.png</file>
-        <file alias="os_os2_other_x2.png">images/x2/os_os2_other_x2.png</file>
-        <file alias="os_os2ecs_x2.png">images/x2/os_os2ecs_x2.png</file>
-        <file alias="os_os2warp3_x2.png">images/x2/os_os2warp3_x2.png</file>
-        <file alias="os_os2warp45_x2.png">images/x2/os_os2warp45_x2.png</file>
-        <file alias="os_os2warp4_x2.png">images/x2/os_os2warp4_x2.png</file>
-        <file alias="os_other_64_x2.png">images/x2/os_other_64_x2.png</file>
-        <file alias="os_other_x2.png">images/x2/os_other_x2.png</file>
-        <file alias="os_qnx_x2.png">images/x2/os_qnx_x2.png</file>
     </qresource>
 </RCC>
