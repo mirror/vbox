@@ -347,7 +347,7 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
  * Sets IRQ for VMMDev.
  *
  * @returns NetBSD error code.
- * @param   vboxguest  Pointer to the state info structure.
+ * @param   sc  Pointer to the state info structure.
  * @param   pa  Pointer to the PCI attach arguments.
  */
 static int VBoxGuestNetBSDAddIRQ(vboxguest_softc *sc, struct pci_attach_args *pa)
