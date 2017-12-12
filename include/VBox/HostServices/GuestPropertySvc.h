@@ -188,10 +188,7 @@ DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char *pszFlags)
         if (fFlags & GUEST_PROP_F_TRANSRESET)
             fFlags |= GUEST_PROP_F_TRANSIENT;
 
-        char *pszTemp = NULL;
-
-
-        unsigned i;
+        pszNext = pszFlags;
         for (i = 0; i < RT_ELEMENTS(s_aFlagList); ++i)
         {
             if (s_aFlagList[i] == (fFlags & s_aFlagList[i]))
