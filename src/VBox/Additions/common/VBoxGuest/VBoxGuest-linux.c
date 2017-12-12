@@ -644,6 +644,11 @@ static int __init vgdrvLinuxModInit(void)
                     {
 #endif
                         /*
+                         * Read host configuration.
+                         */
+                        VGDrvCommonProcessOptionsFromHost(&g_DevExt);
+
+                        /*
                          * Finally, create the device nodes.
                          */
                         rc = vgdrvLinuxInitDeviceNodes();

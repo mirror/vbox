@@ -925,7 +925,14 @@ bool org_virtualbox_VBoxGuest::start(IOService *pProvider)
                         {
                             if (setupVmmDevInterrupts(pProvider))
                             {
-                                /* register the service. */
+                                /*
+                                 * Read host configuration.
+                                 */
+                                VGDrvCommonProcessOptionsFromHost(&g_DevExt);
+
+                                /*
+                                 * Register the service.
+                                 */
                                 registerService();
                                 LogRel(("VBoxGuest: IOService started\n"));
                                 return true;

@@ -187,6 +187,11 @@ DECLASM(int) vgdrvOS2Init(const char *pszArgs)
                     if (RT_SUCCESS(rc))
                     {
                         /*
+                         * Read host configuration.
+                         */
+                        VGDrvCommonProcessOptionsFromHost(&g_DevExt);
+
+                        /*
                          * Success
                          */
                         if (fVerbose)

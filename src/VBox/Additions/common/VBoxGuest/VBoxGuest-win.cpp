@@ -1275,9 +1275,7 @@ static void vgdrvNtReadConfiguration(PVBOXGUESTDEVEXTWIN pDevExt)
     /*
      * Read configuration from the host.
      */
-    LogRelFunc(("Calling VGDrvCommonProcessOptionsFromHost...\n"));
     VGDrvCommonProcessOptionsFromHost(&pDevExt->Core);
-    LogRelFunc(("VGDrvCommonProcessOptionsFromHost returned\n"));
 }
 
 

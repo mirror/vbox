@@ -707,6 +707,11 @@ static int vgdrvFreeBSDAttach(device_t pDevice)
                 if (RT_SUCCESS(rc))
                 {
                     /*
+                     * Read host configuration.
+                     */
+                    VGDrvCommonProcessOptionsFromHost(&g_DevExt);
+
+                    /*
                      * Configure device cloning.
                      */
                     clone_setup(&g_pvgdrvFreeBSDClones);

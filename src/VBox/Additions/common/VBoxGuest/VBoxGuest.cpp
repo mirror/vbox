@@ -54,9 +54,7 @@
 #include "VBoxGuestInternal.h"
 #include <VBox/VMMDev.h> /* for VMMDEV_RAM_SIZE */
 #include <VBox/log.h>
-#if !defined(RT_OS_LINUX) && !defined(RT_OS_FREEBSD)
-# include <VBox/HostServices/GuestPropertySvc.h>
-#endif
+#include <VBox/HostServices/GuestPropertySvc.h>
 #include <iprt/ctype.h>
 #include <iprt/mem.h>
 #include <iprt/time.h>
@@ -1201,7 +1199,6 @@ void VGDrvCommonProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, con
  */
 void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt)
 {
-#if !defined(RT_OS_LINUX) && !defined(RT_OS_FREEBSD)
     /*
      * Create a kernel session without our selves, then connect to the HGCM service.
      */
@@ -1365,10 +1362,6 @@ void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt)
     }
     else
         LogRel(("VGDrvCommonReadConfigurationFromHost: failed to connect: %Rrc\n", rc));
-
-#else   /* RT_OS_LINUX || RT_OS_FREEBSD */
-    RT_NOREF(pDevExt);
-#endif
 }
 
 
