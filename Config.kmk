@@ -4234,7 +4234,8 @@ ifeq ($(KBUILD_TARGET),linux)
   $$(VBOX_TARGET_$(module)): $$$$($(module)_2_STAGE_TARGETS)
 	$(QUIET)$$(call MSG_L1,Doing a test build of the $(module) kernel module)
 	$(QUIET)$$(RM) -f -- "$$@"
-	$(QUIET)$$(RM) -Rf -- "$$(PATH_TARGET)/tst$(module)_mod"
+	$(QUIET)$$(TEST) -n "$$($(module)_INST)"
+	$(QUIET)$$(RM) -Rf   -- "$$(PATH_TARGET)/tst$(module)_mod"
 	$(QUIET)$$(MKDIR) -p -- "$$(PATH_TARGET)/tst$(module)_mod"
 	$(QUIET)$$(CP) -R -- "$$(PATH_STAGE_BIN)/../$$($(module)_INST)" "$$(PATH_TARGET)/tst$(module)_mod/"
 	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$(KERN_DIR) -C $$(PATH_TARGET)/tst$(module)_mod clean
