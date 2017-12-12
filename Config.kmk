@@ -4240,10 +4240,12 @@ ifeq ($(KBUILD_TARGET),linux)
 	$(QUIET)$$(CP) -R -- "$$(PATH_STAGE_BIN)/../$$($(module)_INST)" "$$(PATH_TARGET)/tst$(module)_mod/"
 	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$(KERN_DIR) -C $$(PATH_TARGET)/tst$(module)_mod clean
 	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$(KERN_DIR) $(if-expr $(KMK_OPTS_JOBS) != 1,JOBS=$(KMK_OPTS_JOBS),) -C $$(PATH_TARGET)/tst$(module)_mod
+  if1of ($(USERNAME), bird)
+	- nm -u "$$(PATH_TARGET)/tst$(module)_mod/"*.ko | sort
+  endif
 	$(QUIET)$$(RM) -Rf -- $$(PATH_TARGET)/tst$(module)_mod
 	$(QUIET)$$(APPEND) -t "$$@" "done"
  endef
-
 endif
 
 ifeq ($(KBUILD_TARGET),os2)
