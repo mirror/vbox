@@ -2567,8 +2567,8 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
                     rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAG_NONE,
                                                 &pHstStrm->In.Dbg.pFileCaptureNonInterleaved);
                     if (RT_SUCCESS(rc2))
-                        rc2 = DrvAudioHlpFileOpen(pHstStrm->In.Dbg.pFileCaptureNonInterleaved,
-                                                  RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE, &pHstStrm->Cfg.Props);
+                        rc2 = DrvAudioHlpFileOpen(pHstStrm->In.Dbg.pFileCaptureNonInterleaved, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                                  &pHstStrm->Cfg.Props);
                 }
 
                 if (RT_SUCCESS(rc2))
@@ -2580,8 +2580,8 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
                         rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAG_NONE,
                                                     &pHstStrm->In.Dbg.pFileStreamRead);
                         if (RT_SUCCESS(rc2))
-                            rc2 = DrvAudioHlpFileOpen(pHstStrm->In.Dbg.pFileStreamRead,
-                                                      RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE, &pHstStrm->Cfg.Props);
+                            rc2 = DrvAudioHlpFileOpen(pHstStrm->In.Dbg.pFileStreamRead, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                                      &pHstStrm->Cfg.Props);
                     }
                 }
             }
@@ -2602,8 +2602,8 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
                     rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAG_NONE,
                                                 &pHstStrm->Out.Dbg.pFilePlayNonInterleaved);
                     if (RT_SUCCESS(rc2))
-                        rc = DrvAudioHlpFileOpen(pHstStrm->Out.Dbg.pFilePlayNonInterleaved,
-                                                 RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE, &pHstStrm->Cfg.Props);
+                        rc = DrvAudioHlpFileOpen(pHstStrm->Out.Dbg.pFilePlayNonInterleaved, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                                 &pHstStrm->Cfg.Props);
                 }
 
                 if (RT_SUCCESS(rc2))
@@ -2615,8 +2615,8 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
                         rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAG_NONE,
                                                     &pHstStrm->Out.Dbg.pFileStreamWrite);
                         if (RT_SUCCESS(rc2))
-                            rc2 = DrvAudioHlpFileOpen(pHstStrm->Out.Dbg.pFileStreamWrite,
-                                                      RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE, &pHstStrm->Cfg.Props);
+                            rc2 = DrvAudioHlpFileOpen(pHstStrm->Out.Dbg.pFileStreamWrite, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                                      &pHstStrm->Cfg.Props);
                     }
                 }
             }

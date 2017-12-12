@@ -774,6 +774,9 @@ typedef uint32_t PDMAUDIOFILEFLAGS;
 /** Audio file flag validation mask. */
 #define PDMAUDIOFILE_FLAG_VALID_MASK    0x1
 
+/** Audio file default open flags. */
+#define PDMAUDIOFILE_DEFAULT_OPEN_FLAGS (RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE)
+
 /**
  * Audio file types.
  */

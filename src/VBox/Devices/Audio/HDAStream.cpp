@@ -446,13 +446,11 @@ int hdaStreamEnable(PHDASTREAM pStream, bool fEnable)
         {
             if (fEnable)
             {
-                int rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileStream,
-                                              RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
+                int rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileStream, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
                                               &pStream->State.Cfg.Props);
                 AssertRC(rc2);
 
-                rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileDMA,
-                                          RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
+                rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileDMA, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
                                           &pStream->State.Cfg.Props);
                 AssertRC(rc2);
             }
