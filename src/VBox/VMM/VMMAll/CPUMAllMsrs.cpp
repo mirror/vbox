@@ -4897,6 +4897,12 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam14hIbsBrTarget(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Gim(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    /* Raise #GP(0) like a physical CPU would since the nested-hypervisor hasn't intercept these MSRs. */
+    PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
+    if (CPUMIsGuestInNestedHwVirtMode(pCtx))
+        return VERR_CPUM_RAISE_GP_0;
+#endif
     return GIMReadMsr(pVCpu, idMsr, pRange, puValue);
 }
 
@@ -4904,6 +4910,12 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Gim(PVMCPU pVCpu, uint32_t idMsr, PC
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Gim(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    /* Raise #GP(0) like a physical CPU would since the nested-hypervisor hasn't intercept these MSRs. */
+    PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
+    if (CPUMIsGuestInNestedHwVirtMode(pCtx))
+        return VERR_CPUM_RAISE_GP_0;
+#endif
     return GIMWriteMsr(pVCpu, idMsr, pRange, uValue, uRawValue);
 }
 
