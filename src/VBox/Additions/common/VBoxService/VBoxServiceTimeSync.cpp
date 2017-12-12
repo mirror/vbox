@@ -21,9 +21,9 @@
  * The time sync subservice synchronizes the guest OS walltime with the host.
  *
  * The time sync service plays along with the Time Manager (TM) in the VMM
- * to keep the guest time accurate using the host machine as reference.
+ * to keep the guest time accurate using the host machine as a reference.
  * Communication is facilitated by VMMDev.  TM will try its best to make sure
- * all timer ticks gets delivered so that there isn't normally any need to
+ * all timer ticks get delivered so that there isn't normally any need to
  * adjust the guest time.
  *
  * There are three normal (= acceptable) cases:
@@ -40,16 +40,16 @@
  *      -# Timer device emulation inaccuracies (like rounding).
  *      -# Inaccuracies in time source VirtualBox uses.
  *      -# The Guest and/or Host OS doesn't perform proper time keeping. This
- *         come about as a result of OS and/or hardware issues.
+ *         can come about as a result of OS and/or hardware issues.
  *
  * The TM is our source for the host time and will make adjustments for
  * current timer delivery lag. The simplistic approach taken by TM is to
  * adjust the host time by the current guest timer delivery lag, meaning that
- * if the guest is behind 1 second with PIT/RTC/++ ticks this should be reflected
- * in the guest wall time as well.
+ * if the guest is behind 1 second with PIT/RTC/++ ticks, this should be
+ * reflected in the guest wall time as well.
  *
  * Now, there is any amount of trouble we can cause by changing the time.
- * Most applications probably uses the wall time when they need to measure
+ * Most applications probably use the wall time when they need to measure
  * things. A walltime that is being juggled about every so often, even if just
  * a little bit, could occasionally upset these measurements by for instance
  * yielding negative results.
@@ -59,12 +59,12 @@
  *
  * The implementation uses the latency it takes to query host time as the
  * absolute maximum precision to avoid messing up under timer tick catchup
- * and/or heavy host/guest load. (Rational is that a *lot* of stuff may happen
- * on our way back from ring-3 and TM/VMMDev since we're taking the route
- * thru the inner EM loop with it's force action processing.)
+ * and/or heavy host/guest load. (Rationale is that a *lot* of stuff may
+ * happen on our way back from ring-3 and TM/VMMDev since we're taking the
+ * route thru the inner EM loop with its force flag processing.)
  *
  * But this latency has to be measured from our perspective, which means it
- * could just as easily come out as 0. (OS/2 and Windows guest only updates
+ * could just as easily come out as 0. (OS/2 and Windows guests only update
  * the current time when the timer ticks for instance.) The good thing is
  * that this isn't really a problem since we won't ever do anything unless
  * the drift is noticeable.
@@ -134,7 +134,7 @@ static bool             g_fTimeSyncSetOnRestore = true;
  *  This uses the global verbosity level by default. */
 static uint32_t         g_cTimeSyncVerbosity = 0;
 
-/** Current error count. Used to knowing when to bitch and when not to. */
+/** Current error count. Used to decide when to bitch and when not to. */
 static uint32_t         g_cTimeSyncErrors = 0;
 
 /** The semaphore we're blocking on. */
@@ -382,7 +382,7 @@ static DECLCALLBACK(int) vgsvcTimeSyncInit(void)
 
 
 /**
- * Try adjust the time using adjtime or similar.
+ * Try adjusting the time using adjtime or similar.
  *
  * @returns true on success, false on failure.
  *
@@ -445,7 +445,7 @@ static bool vgsvcTimeSyncAdjust(PCRTTIMESPEC pDrift)
 
 #else /* PORTME */
     /*
-     * Try use adjtime(), most unix-like systems have this.
+     * Try using adjtime(), most unix-like systems have this.
      */
     struct timeval tv;
     RTTimeSpecGetTimeval(pDrift, &tv);
@@ -483,7 +483,7 @@ static void vgsvcTimeSyncCancelAdjust(void)
 
 
 /**
- * Try adjust the time using adjtime or similar.
+ * Set the wall clock to compensate for drift.
  *
  * @returns true on success, false on failure.
  *
@@ -532,7 +532,7 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
 
     /*
      * Initialize the last host and guest times to prevent log message.
-     * We also tracks whether we set the time in the previous loop.
+     * We also track whether we set the time in the previous loop.
      */
     RTTIMESPEC HostLast;
     if (RT_FAILURE(VbglR3GetHostTime(&HostLast)))
@@ -547,7 +547,7 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
     for (;;)
     {
         /*
-         * Try get a reliable time reading.
+         * Try to get a reliable time reading.
          */
         int cTries = 3;
         do
