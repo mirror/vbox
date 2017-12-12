@@ -5973,7 +5973,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev, uint32_t fFlags)
     if (RT_FAILURE(rc))
     {
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
-        if (RT_FAILURE(GuestPropWriteFlags(fFlags, szFlags)))
+        if (RT_FAILURE(GuestPropWriteFlags(fFlags, szFlags, sizeof(szFlags))))
             Log(("Failed to set the global flags.\n"));
         else
             Log(("Failed to set the global flags \"%s\".\n", szFlags));

@@ -163,12 +163,13 @@ DECLINLINE(int) GuestPropValidateFlags(const char *pcszFlags, uint32_t *pfFlags)
 
 /**
  * Write out flags to a string.
+ *
  * @returns  IPRT status code
- * @param    fFlags    the flags to write out
- * @param    pszFlags  where to write the flags string.  This must point to
- *                     a buffer of size (at least) MAX_FLAGS_LEN.
+ * @param    fFlags    The flags to write out.
+ * @param    pszFlags  Where to write the flags string.
+ * @param    cbFlags   The size of the destination buffer (in bytes).
  */
-DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char *pszFlags)
+DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char* pszFlags, size_t cbFlags)
 {
     /* Putting READONLY before the other RDONLY flags keeps the result short. */
     static const uint32_t s_aFlagList[] =
@@ -180,30 +181,30 @@ DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char *pszFlags)
     AssertLogRelReturn(VALID_PTR(pszFlags), VERR_INVALID_POINTER);
     if ((fFlags & ~GUEST_PROP_F_ALLFLAGS) == GUEST_PROP_F_NILFLAG)
     {
-        char *pszNext;
-        unsigned i;
-
         /* TRANSRESET implies TRANSIENT.  For compatability with old clients we
            always set TRANSIENT when TRANSRESET appears. */
         if (fFlags & GUEST_PROP_F_TRANSRESET)
             fFlags |= GUEST_PROP_F_TRANSIENT;
 
-        pszNext = pszFlags;
-        for (i = 0; i < RT_ELEMENTS(s_aFlagList); ++i)
+        char *pszTemp = NULL;
+
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aFlagList); ++i)
         {
             if (s_aFlagList[i] == (fFlags & s_aFlagList[i]))
             {
-                strcpy(pszNext, GuestPropFlagName(s_aFlagList[i]));
-                pszNext += GuestPropFlagNameLen(s_aFlagList[i]);
+                RTStrAAppend(&pszTemp, GuestPropFlagName(s_aFlagList[i]));
                 fFlags &= ~s_aFlagList[i];
                 if (fFlags != GUEST_PROP_F_NILFLAG)
-                {
-                    strcpy(pszNext, ", ");
-                    pszNext += 2;
-                }
+                    RTStrAAppend(&pszTemp, ", ");
             }
         }
-        *pszNext = '\0';
+
+        if (   RT_SUCCESS(rc)
+            && pszTemp)
+            rc = RTStrCopy(pszFlags, cbFlags, pszTemp);
+
+        if (pszTemp)
+            RTStrFree(pszTemp);
 
         Assert(fFlags == GUEST_PROP_F_NILFLAG); /* bad s_aFlagList */
     }
