@@ -2013,6 +2013,7 @@
 # define RTStrmQueryTerminalWidth                       RT_MANGLER(RTStrmQueryTerminalWidth)
 # define RTStrNCmp                                      RT_MANGLER(RTStrNCmp)
 # define RTStrNICmp                                     RT_MANGLER(RTStrNICmp)
+# define RTStrNICmpAscii                                RT_MANGLER(RTStrNICmpAscii)
 # define RTStrNLen                                      RT_MANGLER(RTStrNLen)
 # define RTStrNLenEx                                    RT_MANGLER(RTStrNLenEx)
 # define RTStrPrevCp                                    RT_MANGLER(RTStrPrevCp)

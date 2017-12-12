@@ -2339,7 +2339,7 @@ RTDECL(int) RTStrICmp(const char *psz1, const char *psz2);
  * both have been lower cased.
  *
  * If the string encoding is invalid the function will assert (strict builds)
- * and use RTStrCmp for the remainder of the string.
+ * and use RTStrNCmp for the remainder of the string.
  *
  * @returns < 0 if the first string less than the second string.
  * @returns 0 if the first string identical to the second string.
@@ -2365,9 +2365,29 @@ RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax);
  * @returns > 0 if the first string greater than the second string.
  * @param   psz1        First UTF-8 string. Null is allowed.
  * @param   psz2        Second string, 7-bit ASCII. Null is allowed.
- * @sa      RTUtf16ICmpAscii
+ * @sa      RTStrICmp, RTUtf16ICmpAscii
  */
 RTDECL(int) RTStrICmpAscii(const char *psz1, const char *psz2);
+
+/**
+ * Performs a case insensitive string compare between a UTF-8 string and a 7-bit
+ * ASCII string, given a maximum string length.
+ *
+ * This is potentially faster than RTStrNICmp and drags in less dependencies.
+ * It is really handy for hardcoded inputs.
+ *
+ * If the string encoding is invalid the function will assert (strict builds)
+ * and use RTStrNCmp for the remainder of the string.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   psz1        First UTF-8 string. Null is allowed.
+ * @param   psz2        Second string, 7-bit ASCII. Null is allowed.
+ * @param   cchMax      Maximum string length
+ * @sa      RTStrNICmp, RTUtf16NICmpAscii
+ */
+RTDECL(int) RTStrNICmpAscii(const char *psz1, const char *psz2, size_t cchMax);
 
 /**
  * Checks whether @a pszString starts with @a pszStart.
