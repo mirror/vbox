@@ -4215,17 +4215,17 @@ ifeq ($(KBUILD_TARGET),linux)
 
  ifndef KERN_DIR
   ifndef KERN_VER
-   KERN_VER=$(patsubst /lib/modules/%/build/.config,%,$(firstword $(shell LC_ALL=C ls -t /lib/modules/*/build/.config 2>/dev/null)))
+   KERN_VER := $(patsubst /lib/modules/%/build/.config,%,$(firstword $(shell LC_ALL=C ls -t /lib/modules/*/build/.config 2>/dev/null)))
   endif
   ifeq ($(KERN_VER),)
-   KERN_VER=$(shell uname -r)
+   KERN_VER := $(shell uname -r)
   endif
-  KERN_DIR=/lib/modules/$(KERN_VER)/build
+  KERN_DIR  := /lib/modules/$(KERN_VER)/build
  endif
 
-##
-# Using the extra expansion to replace $(module) before eval, thus everything
-# else needs escaped dollars.
+ ##
+ # Using the extra expansion to replace $(module) before eval, thus everything
+ # else needs escaped dollars.
  define VBOX_LINUX_GENERATE_KMOD_TEST
   VBOX_TARGET_$(module) = $$(PATH_TARGET)/tst$(module)$(subst /,_,$(KERN_DIR))_mod.run
   TESTING      += $$(VBOX_TARGET_$(module))
