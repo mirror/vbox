@@ -363,6 +363,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_CPUCHANGEDEVENT,
     /** Main group, ICPUExecutionCapChangedEvent. */
     LOG_GROUP_MAIN_CPUEXECUTIONCAPCHANGEDEVENT,
+    /** Main group, ICursorPositionChangedEvent. */
+    LOG_GROUP_MAIN_CURSORPOSITIONCHANGEDEVENT,
     /** Main group, IDHCPServer. */
     LOG_GROUP_MAIN_DHCPSERVER,
     /** Main group, IDirectory. */
@@ -980,6 +982,7 @@ typedef enum LOGGROUP
     "MAIN_CONSOLE", \
     "MAIN_CPUCHANGEDEVENT", \
     "MAIN_CPUEXECUTIONCAPCHANGEDEVENT", \
+    "MAIN_CURSORPOSITIONCHANGEDEVENT", \
     "MAIN_DHCPSERVER", \
     "MAIN_DIRECTORY", \
     "MAIN_DISPLAY", \

@@ -1026,9 +1026,21 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnVBVAInputMappingUpdate,(PPDMIDISPLAYCONNECTOR pInterface, int32_t xOrigin, int32_t yOrigin, uint32_t cx, uint32_t cy));
+
+    /**
+     * The guest is reporting the requested location of the host pointer.
+     *
+     * @param   pInterface  Pointer to this interface.
+     * @param   fData       Does this report contain valid X and Y data or is
+     *                      it only reporting interface support?
+     * @param   x           Cursor X offset.
+     * @param   y           Cursor Y offset.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnVBVAReportCursorPosition,(PPDMIDISPLAYCONNECTOR pInterface, bool fData, uint32_t x, uint32_t y));
 } PDMIDISPLAYCONNECTOR;
 /** PDMIDISPLAYCONNECTOR interface ID. */
-#define PDMIDISPLAYCONNECTOR_IID                "e883a720-85fb-11e4-a307-0b06689c9661"
+#define PDMIDISPLAYCONNECTOR_IID                "e648dac6-c918-11e7-8be6-a317e6b79645"
 
 
 /** Pointer to a secret key interface. */

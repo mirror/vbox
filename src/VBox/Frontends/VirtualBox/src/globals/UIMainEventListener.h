@@ -126,6 +126,9 @@ signals:
     /** Notifies about task complete for progress with @a strProgressId. */
     void sigProgressTaskComplete(QString strProgressId);
 
+    /** Notifies about guest requests to change the cursor position. If @a fData is not set this merely notifies that the guest supports this.  This notification must be sent after every screen configuration change. */
+    void sigCursorPositionChange(bool fData, unsigned long X, unsigned long Y);
+
 public:
 
     /** Constructs main event listener. */

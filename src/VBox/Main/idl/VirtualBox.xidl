@@ -22267,8 +22267,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IProgressTaskCompletedEvent">IProgressTaskCompletedEvent</link>.
       </desc>
     </const>
+    <const name="OnCursorPositionChanged" value="100">
+      <desc>
+        See <link to="ICursorPositionChangedEvent">ICursorPositionChangedEvent</link>.
+      </desc>
+    </const>
     <!-- Last event marker -->
-    <const name="Last" value="100">
+    <const name="Last" value="101">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -24339,6 +24344,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnProgressTaskCompleted">
     <desc>Progress task completion event.</desc>
     <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
+  </interface>
+
+  <interface
+    name="ICursorPositionChangedEvent" extends="IEvent"
+    uuid="6f302674-c927-11e7-b788-33c248e71fc7"
+    wsmap="managed" autogen="VBoxEvent" id="OnCursorPositionChanged">
+    <desc>The guest reports cursor position data.</desc>
+
+    <attribute name="hasData" readonly="yes" type="boolean">
+      <desc>Event contains valid data (alternative: notification of support)</desc>
+    </attribute>
+    <attribute name="x" readonly="yes" type="unsigned long">
+      <desc>Reported X position</desc>
+    </attribute>
+    <attribute name="y" readonly="yes" type="unsigned long">
+      <desc>Reported Y position</desc>
+    </attribute>
   </interface>
 
   <module name="VBoxSVC" context="LocalServer">

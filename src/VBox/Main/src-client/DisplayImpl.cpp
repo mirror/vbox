@@ -4560,6 +4560,16 @@ DECLCALLBACK(void) Display::i_displayVBVAInputMappingUpdate(PPDMIDISPLAYCONNECTO
     pThis->i_handleUpdateVBVAInputMapping(xOrigin, yOrigin, cx, cy);
 }
 
+DECLCALLBACK(void) Display::i_displayVBVAReportCursorPosition(PPDMIDISPLAYCONNECTOR pInterface, bool fData, uint32_t x, uint32_t y)
+{
+    LogFlowFunc(("\n"));
+
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+    Display *pThis = pDrv->pDisplay;
+
+    fireCursorPositionChangedEvent(pThis->mParent->i_getEventSource(), fData, x, y);
+}
+
 #endif /* VBOX_WITH_HGSMI */
 
 /**
@@ -4662,6 +4672,7 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IConnector.pfnVBVAMousePointerShape = Display::i_displayVBVAMousePointerShape;
     pThis->IConnector.pfnVBVAGuestCapabilityUpdate = Display::i_displayVBVAGuestCapabilityUpdate;
     pThis->IConnector.pfnVBVAInputMappingUpdate = Display::i_displayVBVAInputMappingUpdate;
+    pThis->IConnector.pfnVBVAReportCursorPosition = Display::i_displayVBVAReportCursorPosition;
 #endif
 
     /*

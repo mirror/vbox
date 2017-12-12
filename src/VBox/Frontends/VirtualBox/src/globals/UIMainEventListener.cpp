@@ -59,6 +59,7 @@
 # include "CShowWindowEvent.h"
 # include "CProgressPercentageChangedEvent.h"
 # include "CProgressTaskCompletedEvent.h"
+# include "CCursorPositionChangedEvent.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -415,6 +416,12 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
         {
             CProgressTaskCompletedEvent es(pEvent);
             emit sigProgressTaskComplete(es.GetProgressId());
+            break;
+        }
+        case KVBoxEventType_OnCursorPositionChanged:
+        {
+            CCursorPositionChangedEvent es(pEvent);
+            emit sigCursorPositionChange(es.GetHasData(), (unsigned long)es.GetX(), (unsigned long)es.GetY());
             break;
         }
 
