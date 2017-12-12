@@ -319,8 +319,7 @@ static int vgdrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                     rc = ddi_dev_regsize(pDip, 2, &g_cbMMIO);
                     if (rc == DDI_SUCCESS)
                     {
-                        rc = ddi_regs_map_setup(pDip, 2, &g_pMMIOBase, 0, g_cbMMIO, &deviceAttr,
-                                        &g_PciMMIOHandle);
+                        rc = ddi_regs_map_setup(pDip, 2, &g_pMMIOBase, 0, g_cbMMIO, &deviceAttr, &g_PciMMIOHandle);
                         if (rc == DDI_SUCCESS)
                         {
                             /*
@@ -341,6 +340,12 @@ static int vgdrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                                            VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
                                 if (RT_SUCCESS(rc))
                                 {
+                                    /*
+                                     * Read host configuration.
+                                     */
+                                    VGDrvCommonProcessOptionsFromHost(&g_DevExt);
+
+
                                     rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0 /* fFlags */);
                                     if (rc == DDI_SUCCESS)
                                     {

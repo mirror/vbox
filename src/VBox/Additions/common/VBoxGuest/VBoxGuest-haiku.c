@@ -481,6 +481,11 @@ static status_t vgdrvHaikuAttach(const pci_info *pDevice)
                 rc = vgdrvHaikuAddIRQ(pState);
                 if (RT_SUCCESS(rc))
                 {
+                    /*
+                     * Read host configuration.
+                     */
+                    VGDrvCommonProcessOptionsFromHost(&g_DevExt);
+
                     LogRel((MODULE_NAME ": loaded successfully\n"));
                     return B_OK;
                 }
