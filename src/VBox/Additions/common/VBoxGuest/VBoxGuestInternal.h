@@ -324,6 +324,7 @@ RT_C_DECLS_BEGIN
 
 int  VGDrvCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase, void *pvMMIOBase, uint32_t cbMMIO,
                            VBOXOSTYPE enmOSType, uint32_t fEvents);
+bool VBDrvCommonIsOptionValueTrue(const char *pszValue);
 void VGDrvCommonProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, const char *pszValue);
 void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt);
 bool VGDrvCommonIsOurIRQ(PVBOXGUESTDEVEXT pDevExt);
