@@ -88,6 +88,8 @@ SRCS += \
 	RTStrCopy.c \
 	RTStrCopyEx.c \
 	RTStrCopyP.c \
+	RTStrICmpAscii.c \
+	RTStrNICmpAscii.c \
 	strformat.c \
 	strformatnum.c \
 	strformatrt.c \

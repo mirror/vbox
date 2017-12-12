@@ -85,6 +85,8 @@ MOD_OBJS   = \
 	common/string/RTStrCopy.o \
 	common/string/RTStrCopyEx.o \
 	common/string/RTStrCopyP.o \
+	common/string/RTStrICmpAscii.o \
+	common/string/RTStrNICmpAscii.o \
 	common/string/strformat.o \
 	common/string/strformatnum.o \
 	common/string/strformatrt.o \

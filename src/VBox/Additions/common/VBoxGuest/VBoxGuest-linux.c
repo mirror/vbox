@@ -1150,18 +1150,7 @@ static int vgdrvLinuxParamLogDstGet(char *pszBuf, struct kernel_param *pParam)
 /** r3_log_to_host parameter setter. */
 static int vgdrvLinuxParamR3LogToHostSet(const char *pszValue, struct kernel_param *pParam)
 {
-    if (    pszValue == NULL
-        || *pszValue == '\0'
-        || *pszValue == 'n'
-        || *pszValue == 'N'
-        || *pszValue == 'd'
-        || *pszValue == 'D'
-        || (   (*pszValue == 'o' || *pszValue == 'O')
-            && (*pszValue == 'f' || *pszValue == 'F') )
-       )
-        g_DevExt.fLoggingEnabled = false;
-    else
-        g_DevExt.fLoggingEnabled = true;
+    g_DevExt.fLoggingEnabled = VBDrvCommonIsOptionValueTrue(pszValue);
     return 0;
 }
 
