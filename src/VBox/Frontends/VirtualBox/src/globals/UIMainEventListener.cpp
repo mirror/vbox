@@ -297,6 +297,12 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
             emit sigMouseCapabilityChange(es.GetSupportsAbsolute(), es.GetSupportsRelative(), es.GetSupportsMultiTouch(), es.GetNeedsHostCursor());
             break;
         }
+        case KVBoxEventType_OnCursorPositionChanged:
+        {
+            CCursorPositionChangedEvent es(pEvent);
+            emit sigCursorPositionChange(es.GetHasData(), (unsigned long)es.GetX(), (unsigned long)es.GetY());
+            break;
+        }
         case KVBoxEventType_OnKeyboardLedsChanged:
         {
             CKeyboardLedsChangedEvent es(pEvent);
@@ -416,12 +422,6 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
         {
             CProgressTaskCompletedEvent es(pEvent);
             emit sigProgressTaskComplete(es.GetProgressId());
-            break;
-        }
-        case KVBoxEventType_OnCursorPositionChanged:
-        {
-            CCursorPositionChangedEvent es(pEvent);
-            emit sigCursorPositionChange(es.GetHasData(), (unsigned long)es.GetX(), (unsigned long)es.GetY());
             break;
         }
 
