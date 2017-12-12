@@ -119,7 +119,7 @@ static void testConvertFlags(void)
             RTTestIFailed("Failed to validate flag string '%s'", g_aValidFlagStrings[i].pcszIn);
         if (RT_SUCCESS(rc))
         {
-            rc = GuestPropWriteFlags(fFlags, pszFlagBuffer, GUEST_PROP_MAX_FLAGS_LEN);
+            rc = GuestPropWriteFlags(fFlags, pszFlagBuffer);
             if (RT_FAILURE(rc))
                 RTTestIFailed("Failed to convert flag string '%s' back to a string.",
                               g_aValidFlagStrings[i].pcszIn);
@@ -158,7 +158,7 @@ static void testConvertFlags(void)
         uint32_t u32BadFlags = GUEST_PROP_F_ALLFLAGS << 1;
         RTTestISub("Rejection of an invalid flags field");
         /* This is required to fail. */
-        if (RT_SUCCESS(GuestPropWriteFlags(u32BadFlags, pszFlagBuffer, GUEST_PROP_MAX_FLAGS_LEN)))
+        if (RT_SUCCESS(GuestPropWriteFlags(u32BadFlags, pszFlagBuffer)))
         {
             RTTestIFailed("Flags 0x%x were incorrectly written out as '%.*s'\n",
                           u32BadFlags, GUEST_PROP_MAX_FLAGS_LEN, pszFlagBuffer);
@@ -827,7 +827,7 @@ static int doSetGlobalFlags(VBOXHGCMSVCFNTABLE *pTable, uint32_t fFlags)
     if (RT_FAILURE(rc))
     {
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
-        if (RT_FAILURE(GuestPropWriteFlags(fFlags, szFlags, sizeof(szFlags))))
+        if (RT_FAILURE(GuestPropWriteFlags(fFlags, szFlags)))
             RTTestIFailed("Failed to set the global flags.");
         else
             RTTestIFailed("Failed to set the global flags \"%s\".", szFlags);

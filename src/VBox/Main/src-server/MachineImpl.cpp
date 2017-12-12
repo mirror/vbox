@@ -5654,7 +5654,7 @@ HRESULT Machine::i_getGuestPropertyFromService(const com::Utf8Str &aName,
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN + 1];
         aValue = it->second.strValue;
         *aTimestamp = it->second.mTimestamp;
-        GuestPropWriteFlags(it->second.mFlags, szFlags, sizeof(szFlags));
+        GuestPropWriteFlags(it->second.mFlags, szFlags);
         aFlags = Utf8Str(szFlags);
     }
 
@@ -5936,7 +5936,7 @@ HRESULT Machine::i_enumerateGuestPropertiesInService(const com::Utf8Str &aPatter
         aNames[i] = it->first;
         aValues[i] = it->second.strValue;
         aTimestamps[i] = it->second.mTimestamp;
-        GuestPropWriteFlags(it->second.mFlags, szFlags, sizeof(szFlags));
+        GuestPropWriteFlags(it->second.mFlags, szFlags);
         aFlags[i] = Utf8Str(szFlags);
     }
 
@@ -10451,7 +10451,7 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
             prop.strValue = property.strValue;
             prop.timestamp = property.mTimestamp;
             char szFlags[GUEST_PROP_MAX_FLAGS_LEN + 1];
-            GuestPropWriteFlags(property.mFlags, szFlags, sizeof(szFlags));
+            GuestPropWriteFlags(property.mFlags, szFlags);
             prop.strFlags = szFlags;
 
             data.llGuestProperties.push_back(prop);
@@ -13536,7 +13536,7 @@ HRESULT SessionMachine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
         /* If it is NULL, keep it NULL. */
         if (it->second.mFlags)
         {
-            GuestPropWriteFlags(it->second.mFlags, szFlags, sizeof(szFlags));
+            GuestPropWriteFlags(it->second.mFlags, szFlags);
             aFlags[i] = szFlags;
         }
         else

@@ -163,13 +163,12 @@ DECLINLINE(int) GuestPropValidateFlags(const char *pcszFlags, uint32_t *pfFlags)
 
 /**
  * Write out flags to a string.
- *
  * @returns  IPRT status code
- * @param    fFlags    The flags to write out.
- * @param    pszFlags  Where to write the flags string.
- * @param    cbFlags   The size of the destination buffer (in bytes).
+ * @param    fFlags    the flags to write out
+ * @param    pszFlags  where to write the flags string.  This must point to
+ *                     a buffer of size (at least) MAX_FLAGS_LEN.
  */
-DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char* pszFlags, size_t cbFlags)
+DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char *pszFlags)
 {
     /* Putting READONLY before the other RDONLY flags keeps the result short. */
     static const uint32_t s_aFlagList[] =
@@ -181,6 +180,9 @@ DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char* pszFlags, size_t cbFl
     AssertLogRelReturn(VALID_PTR(pszFlags), VERR_INVALID_POINTER);
     if ((fFlags & ~GUEST_PROP_F_ALLFLAGS) == GUEST_PROP_F_NILFLAG)
     {
+        char *pszNext;
+        unsigned i;
+
         /* TRANSRESET implies TRANSIENT.  For compatability with old clients we
            always set TRANSIENT when TRANSRESET appears. */
         if (fFlags & GUEST_PROP_F_TRANSRESET)
@@ -194,19 +196,17 @@ DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char* pszFlags, size_t cbFl
         {
             if (s_aFlagList[i] == (fFlags & s_aFlagList[i]))
             {
-                RTStrAAppend(&pszTemp, GuestPropFlagName(s_aFlagList[i]));
+                strcpy(pszNext, GuestPropFlagName(s_aFlagList[i]));
+                pszNext += GuestPropFlagNameLen(s_aFlagList[i]);
                 fFlags &= ~s_aFlagList[i];
                 if (fFlags != GUEST_PROP_F_NILFLAG)
-                    RTStrAAppend(&pszTemp, ", ");
+                {
+                    strcpy(pszNext, ", ");
+                    pszNext += 2;
+                }
             }
         }
-
-        if (   RT_SUCCESS(rc)
-            && pszTemp)
-            rc = RTStrCopy(pszFlags, cbFlags, pszTemp);
-
-        if (pszTemp)
-            RTStrFree(pszTemp);
+        *pszNext = '\0';
 
         Assert(fFlags == GUEST_PROP_F_NILFLAG); /* bad s_aFlagList */
     }
