@@ -62,6 +62,7 @@ public:
 protected:
     virtual void configure() /* override */;
     virtual void configureCentralWidget() /* override */;
+    virtual void finalize() /* override */;
 
 private:
     void retranslateUi();

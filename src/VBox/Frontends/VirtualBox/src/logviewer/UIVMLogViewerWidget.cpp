@@ -22,12 +22,10 @@
 /* Qt includes: */
 # include <QDateTime>
 # include <QDir>
-# include <QDialogButtonBox>
 # include <QVBoxLayout>
 # if defined(RT_OS_SOLARIS)
 #  include <QFontDatabase>
 # endif
-# include <QPushButton>
 # include <QTextEdit>
 
 /* GUI includes: */
@@ -39,6 +37,7 @@
 # include "UIVMLogViewerWidget.h"
 # include "UIVMLogViewerFilterPanel.h"
 # include "UIVMLogViewerSearchPanel.h"
+# include "UIToolBar.h"
 
 /* COM includes: */
 # include "CSystemProperties.h"
@@ -47,17 +46,18 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-UIVMLogViewerWidget::UIVMLogViewerWidget(QWidget *pParent, const CMachine &machine)
+UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fIsPolished(false)
     , m_comMachine(machine)
-    , m_pButtonBox(0)
     , m_pMainLayout(0)
-    , m_pButtonFind(0)
-    , m_pButtonRefresh(0)
-    , m_pButtonSave(0)
-    , m_pButtonFilter(0)
-
+    , m_enmEmbedding(enmEmbedding)
+    , m_pToolBar(0)
+    , m_pActionFind(0)
+    , m_pActionFilter(0)
+    , m_pActionRefresh(0)
+    , m_pActionSave(0)
+    , m_pMenu(0)
 {
     /* Prepare VM Log-Viewer: */
     prepare();
@@ -89,13 +89,13 @@ bool UIVMLogViewerWidget::shouldBeMaximized() const
     return gEDataManager->logWindowShouldBeMaximized();
 }
 
-void UIVMLogViewerWidget::search()
+void UIVMLogViewerWidget::sltFind()
 {
     /* Show/hide search-panel: */
     m_pSearchPanel->isHidden() ? m_pSearchPanel->show() : m_pSearchPanel->hide();
 }
 
-void UIVMLogViewerWidget::refresh()
+void UIVMLogViewerWidget::sltRefresh()
 {
     /* Disconnect this connection to avoid initial signals during page creation/deletion: */
     disconnect(m_pViewerContainer, SIGNAL(currentChanged(int)), m_pFilterPanel, SLOT(applyFilter(int)));
@@ -175,14 +175,14 @@ void UIVMLogViewerWidget::refresh()
     /* Setup this connection after refresh to avoid initial signals during page creation: */
     connect(m_pViewerContainer, SIGNAL(currentChanged(int)), m_pFilterPanel, SLOT(applyFilter(int)));
 
-    /* Enable/Disable save button & tab widget according log presence: */
-    m_pButtonFind->setEnabled(isAnyLogPresent);
-    m_pButtonSave->setEnabled(isAnyLogPresent);
-    m_pButtonFilter->setEnabled(isAnyLogPresent);
+    /* Enable/Disable toolbar actions (except Refresh) & tab widget according log presence: */
+    m_pActionFind->setEnabled(isAnyLogPresent);
+    m_pActionFilter->setEnabled(isAnyLogPresent);
+    m_pActionSave->setEnabled(isAnyLogPresent);
     m_pViewerContainer->setEnabled(isAnyLogPresent);
 }
 
-void UIVMLogViewerWidget::save()
+void UIVMLogViewerWidget::sltSave()
 {
     /* Prepare "save as" dialog: */
     const QFileInfo fileInfo(m_book.at(m_pViewerContainer->currentIndex()).first);
@@ -210,7 +210,7 @@ void UIVMLogViewerWidget::save()
     }
 }
 
-void UIVMLogViewerWidget::filter()
+void UIVMLogViewerWidget::sltFilter()
 {
     /* Show/hide filter-panel: */
     m_pFilterPanel->isHidden() ? m_pFilterPanel->show() : m_pFilterPanel->hide();
@@ -218,22 +218,18 @@ void UIVMLogViewerWidget::filter()
 
 void UIVMLogViewerWidget::prepare()
 {
-    m_pButtonBox = new QDialogButtonBox(this);
     m_pMainLayout = new QVBoxLayout(this);
 
-    m_pMainLayout->addWidget(m_pButtonBox);
+    prepareActions();
 
-    /* Apply window icons: */
-    setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
+    prepareToolBar();
+    prepareMenu();
 
     /* Prepare widgets: */
     prepareWidgets();
 
-    /* Prepare connections: */
-    prepareConnections();
-
     /* Reading log files: */
-    refresh();
+    sltRefresh();
 
     /* Loading language constants: */
     retranslateUi();
@@ -246,7 +242,7 @@ void UIVMLogViewerWidget::prepareWidgets()
     AssertPtrReturnVoid(m_pViewerContainer);
     {
         /* Add VM Log-Viewer container to main-layout: */
-        m_pMainLayout->insertWidget(0, m_pViewerContainer);
+        m_pMainLayout->insertWidget(1, m_pViewerContainer);
     }
 
     /* Create VM Log-Viewer search-panel: */
@@ -257,7 +253,7 @@ void UIVMLogViewerWidget::prepareWidgets()
         installEventFilter(m_pSearchPanel);
         m_pSearchPanel->hide();
         /* Add VM Log-Viewer search-panel to main-layout: */
-        m_pMainLayout->insertWidget(1, m_pSearchPanel);
+        m_pMainLayout->insertWidget(2, m_pSearchPanel);
     }
 
     /* Create VM Log-Viewer filter-panel: */
@@ -268,32 +264,125 @@ void UIVMLogViewerWidget::prepareWidgets()
         installEventFilter(m_pFilterPanel);
         m_pFilterPanel->hide();
         /* Add VM Log-Viewer filter-panel to main-layout: */
-        m_pMainLayout->insertWidget(2, m_pFilterPanel);
+        m_pMainLayout->insertWidget(3, m_pFilterPanel);
     }
-
-    /* Create find-button: */
-    m_pButtonFind = m_pButtonBox->addButton(QString::null, QDialogButtonBox::ActionRole);
-    AssertPtrReturnVoid(m_pButtonFind);
-    /* Create filter-button: */
-    m_pButtonFilter = m_pButtonBox->addButton(QString::null, QDialogButtonBox::ActionRole);
-    AssertPtrReturnVoid(m_pButtonFilter);
-
-    /* Create save-button: */
-    m_pButtonSave = m_pButtonBox->addButton(QDialogButtonBox::Save);
-    AssertPtrReturnVoid(m_pButtonSave);
-    /* Create refresh-button: */
-    m_pButtonRefresh = m_pButtonBox->addButton(QString::null, QDialogButtonBox::ActionRole);
-    AssertPtrReturnVoid(m_pButtonRefresh);
 }
 
-void UIVMLogViewerWidget::prepareConnections()
+void UIVMLogViewerWidget::prepareActions()
 {
-    /* Prepare connections: */
-    connect(m_pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
-    connect(m_pButtonFind, SIGNAL(clicked()), this, SLOT(search()));
-    connect(m_pButtonRefresh, SIGNAL(clicked()), this, SLOT(refresh()));
-    connect(m_pButtonSave, SIGNAL(clicked()), this, SLOT(save()));
-    connect(m_pButtonFilter, SIGNAL(clicked()), this, SLOT(filter()));
+    /* Create and configure 'Find' action: */
+    m_pActionFind = new QAction(this);
+    AssertPtrReturnVoid(m_pActionFind);
+    {
+        m_pActionFind->setShortcut(QKeySequence("Ctrl+F"));
+        connect(m_pActionFind, &QAction::triggered, this, &UIVMLogViewerWidget::sltFind);
+    }
+
+    /* Create and configure 'Filter' action: */
+    m_pActionFilter = new QAction(this);
+    AssertPtrReturnVoid(m_pActionFilter);
+    {
+        m_pActionFilter->setShortcut(QKeySequence("Ctrl+T"));
+        connect(m_pActionFilter, &QAction::triggered, this, &UIVMLogViewerWidget::sltFilter);
+    }
+
+    /* Create and configure 'Refresh' action: */
+    m_pActionRefresh = new QAction(this);
+    AssertPtrReturnVoid(m_pActionRefresh);
+    {
+        m_pActionRefresh->setShortcut(QKeySequence("F5"));
+        connect(m_pActionRefresh, &QAction::triggered, this, &UIVMLogViewerWidget::sltRefresh);
+    }
+
+    /* Create and configure 'Save' action: */
+    m_pActionSave = new QAction(this);
+    AssertPtrReturnVoid(m_pActionSave);
+    {
+        m_pActionSave->setShortcut(QKeySequence("Ctrl+S"));
+        connect(m_pActionSave, &QAction::triggered, this, &UIVMLogViewerWidget::sltSave);
+    }
+
+    /* Update action icons: */
+    prepareActionIcons();
+}
+
+void UIVMLogViewerWidget::prepareActionIcons()
+{
+    QString strPrefix = "log_viewer";
+
+    if (m_pActionFind)
+        m_pActionFind->setIcon(UIIconPool::iconSet(QString(":/%1_find_24px.png").arg(strPrefix),
+                                                       QString(":/%1_find_disabled_24px.png").arg(strPrefix)));
+
+    if (m_pActionFilter)
+        m_pActionFilter->setIcon(UIIconPool::iconSet(QString(":/%1_filter_24px.png").arg(strPrefix),
+                                                         QString(":/%1_filter_disabled_24px.png").arg(strPrefix)));
+
+
+    if (m_pActionRefresh)
+        m_pActionRefresh->setIcon(UIIconPool::iconSet(QString(":/%1_refresh_24px.png").arg(strPrefix),
+                                                          QString(":/%1_refresh_disabled_24px.png").arg(strPrefix)));
+
+
+    if (m_pActionSave)
+        m_pActionSave->setIcon(UIIconPool::iconSet(QString(":/%1_save_24px.png").arg(strPrefix),
+                                                       QString(":/%1_save_disabled_24px.png").arg(strPrefix)));
+
+
+}
+
+void UIVMLogViewerWidget::prepareToolBar()
+{
+    /* Create toolbar: */
+    m_pToolBar = new UIToolBar(parentWidget());
+    AssertPtrReturnVoid(m_pToolBar);
+    {
+        /* Configure toolbar: */
+        const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);
+        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+        /* Add toolbar actions: */
+        if (m_pActionFind)
+            m_pToolBar->addAction(m_pActionFind);
+
+        if (m_pActionFilter)
+            m_pToolBar->addAction(m_pActionFilter);
+
+        if (m_pActionRefresh)
+            m_pToolBar->addAction(m_pActionRefresh);
+
+        if (m_pActionSave)
+            m_pToolBar->addAction(m_pActionSave);
+
+#ifdef VBOX_WS_MAC
+        /* Check whether we are embedded into a stack: */
+        if (m_enmEmbedding == EmbedTo_Stack)
+        {
+            /* Add into layout: */
+            layout()->addWidget(m_pToolBar);
+        }
+#else
+        /* Add into layout: */
+        m_pMainLayout->insertWidget(0, m_pToolBar);
+#endif
+    }
+}
+
+void UIVMLogViewerWidget::prepareMenu()
+{
+    /* Create 'LogViewer' menu: */
+    m_pMenu = new QMenu(this);
+    AssertPtrReturnVoid(m_pMenu);
+    {
+        if (m_pActionFind)
+            m_pMenu->addAction(m_pActionFind);
+        if (m_pActionFilter)
+            m_pMenu->addAction(m_pActionFilter);
+        if (m_pActionRefresh)
+            m_pMenu->addAction(m_pActionRefresh);
+        if (m_pActionSave)
+            m_pMenu->addAction(m_pActionSave);
+    }
 }
 
 void UIVMLogViewerWidget::cleanup()
@@ -302,15 +391,49 @@ void UIVMLogViewerWidget::cleanup()
 
 void UIVMLogViewerWidget::retranslateUi()
 {
-    /* Setup a dialog caption: */
-    if (!m_comMachine.isNull())
-        setWindowTitle(tr("%1 - VirtualBox Log Viewer").arg(m_comMachine.GetName()));
+    if(m_pMenu)
+    {
+        m_pMenu->setTitle(tr("&Log Viewer"));
+    }
 
-    /* Translate other tags: */
-    m_pButtonFind->setText(tr("&Find"));
-    m_pButtonRefresh->setText(tr("&Refresh"));
-    m_pButtonSave->setText(tr("&Save"));
-    m_pButtonFilter->setText(tr("Fil&ter"));
+    if (m_pActionFind)
+    {
+        m_pActionFind->setText(tr("&Find..."));
+        m_pActionFind->setToolTip(tr("Find a string within the log"));
+        m_pActionFind->setStatusTip(tr("Find a string within the log"));
+    }
+
+    if (m_pActionFilter)
+    {
+        m_pActionFilter->setText(tr("&Filter..."));
+        m_pActionFilter->setToolTip(tr("Filter the log wrt. the given string"));
+        m_pActionFilter->setStatusTip(tr("Filter the log wrt. the given string"));
+    }
+
+    if (m_pActionRefresh)
+    {
+        m_pActionRefresh->setText(tr("&Refresh..."));
+        m_pActionRefresh->setToolTip(tr("Reload the log"));
+        m_pActionRefresh->setStatusTip(tr("Reload the log"));
+    }
+
+    if (m_pActionSave)
+    {
+        m_pActionSave->setText(tr("&Save..."));
+        m_pActionSave->setToolTip(tr("Save the log"));
+        m_pActionSave->setStatusTip(tr("Save the log"));
+    }
+
+    /* Translate toolbar: */
+#ifdef VBOX_WS_MAC
+    // WORKAROUND:
+    // There is a bug in Qt Cocoa which result in showing a "more arrow" when
+    // the necessary size of the toolbar is increased. Also for some languages
+    // the with doesn't match if the text increase. So manually adjust the size
+    // after changing the text. */
+    if (m_pToolBar)
+        m_pToolBar->updateLayout();
+#endif
 }
 
 void UIVMLogViewerWidget::showEvent(QShowEvent *pEvent)
@@ -423,3 +546,4 @@ const QString& UIVMLogViewerWidget::currentLog()
 {
     return m_logMap[currentLogPage()];
 }
+

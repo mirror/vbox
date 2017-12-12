@@ -1023,23 +1023,29 @@ void UISelectorWindow::sltOpenMachineLogDialog()
         if (!isActionEnabled(UIActionIndexST_M_Group_S_ShowLogDialog, QList<UIVMItem*>() << pItem))
             continue;
 
-        /* Show VM Log Viewer: */
+        QIManagerDialog *pLogViewerDialog = 0;
+        /* Create and Show VM Log Viewer: */
         if (!m_logViewers[pItem->machine().GetHardwareUUID()])
         {
-            QIManagerDialog *pLogViewerDialog;
             UIVMLogViewerDialogFactory dialogFactory(pItem->machine());
             dialogFactory.prepare(pLogViewerDialog, this);
             if (pLogViewerDialog)
             {
                 m_logViewers[pItem->machine().GetHardwareUUID()] = pLogViewerDialog;
-
-                /* Show instance: */
-                pLogViewerDialog->show();
-                pLogViewerDialog->setWindowState(pLogViewerDialog->windowState() & ~Qt::WindowMinimized);
-                pLogViewerDialog->activateWindow();
                 connect(pLogViewerDialog, &QIManagerDialog::sigClose,
                         this, &UISelectorWindow::sltCloseLogViewerWindow);
             }
+        }
+        else
+        {
+            pLogViewerDialog = m_logViewers[pItem->machine().GetHardwareUUID()];
+        }
+        if (pLogViewerDialog)
+        {
+            /* Show instance: */
+            pLogViewerDialog->show();
+            pLogViewerDialog->setWindowState(pLogViewerDialog->windowState() & ~Qt::WindowMinimized);
+            pLogViewerDialog->activateWindow();
         }
     }
 }

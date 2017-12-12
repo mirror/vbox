@@ -57,19 +57,25 @@ UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, const CMachine 
 void UIVMLogViewerDialog::retranslateUi()
 {
     button(ButtonType_Close)->setText(UIVMLogViewerWidget::tr("Close"));
+    button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
+    /* Setup a dialog caption: */
+    if (!m_comMachine.isNull())
+        setWindowTitle(tr("%1 - Log Viewer").arg(m_comMachine.GetName()));
+    else
+        setWindowTitle(UIVMLogViewerWidget::tr("Log Viewer"));
 }
 
 void UIVMLogViewerDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(this, m_comMachine);
+    UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, this, m_comMachine);
     AssertPtrReturnVoid(pWidget);
     {
         /* Configure widget: */
         setWidget(pWidget);
-        //setWidgetMenu(pWidget->menu());
+        setWidgetMenu(pWidget->menu());
 #ifdef VBOX_WS_MAC
-        //setWidgetToolbar(pWidget->toolbar());
+        setWidgetToolbar(pWidget->toolbar());
 #endif
         /* Add into layout: */
         centralWidget()->layout()->addWidget(pWidget);
@@ -79,5 +85,11 @@ void UIVMLogViewerDialog::configureCentralWidget()
 void UIVMLogViewerDialog::configure()
 {
     /* Apply window icons: */
-    setWindowIcon(UIIconPool::iconSetFull(":/diskimage_32px.png", ":/diskimage_16px.png"));
+    setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
 }
+
+void UIVMLogViewerDialog::finalize()
+{
+    retranslateUi();
+}
+

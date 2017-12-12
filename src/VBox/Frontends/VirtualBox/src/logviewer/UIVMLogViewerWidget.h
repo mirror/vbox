@@ -24,6 +24,7 @@
 #include <QPair>
 
 /* GUI includes: */
+#include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 
 /* COM includes: */
@@ -31,11 +32,10 @@
 #include "CMachine.h"
 
 /* Forward declarations: */
-class QDialogButtonBox;
 class QITabWidget;
-class QPushButton;
 class QTextEdit;
 class QVBoxLayout;
+class UIToolBar;
 class UIVMLogViewerFilterPanel;
 class UIVMLogViewerSearchPanel;
 
@@ -53,12 +53,20 @@ class UIVMLogViewerWidget  : public QIWithRetranslateUI<QWidget>
 public:
     /** Constructs the VM Log-Viewer by passing @a pParent to QWidget base-class constructor.
       * @param  machine  Specifies the machine for which VM Log-Viewer is requested. */
-    UIVMLogViewerWidget(QWidget *pParent, const CMachine &machine);
+    UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine);
     /** Destructs the VM Log-Viewer. */
     ~UIVMLogViewerWidget();
     /* Returns the width of the current log page. return 0 if there is no current log page: */
     int currentLogPagewidth() const;
 
+    /** Returns the menu. */
+    QMenu *menu() const { return m_pMenu; }
+
+#ifdef VBOX_WS_MAC
+    /** Returns the toolbar. */
+    UIToolBar *toolbar() const { return m_pToolBar; }
+#endif
+    
 protected:
 
 
@@ -68,13 +76,13 @@ protected:
 private slots:
 
     /** Handles search action triggering. */
-    void search();
+    void sltFind();
     /** Handles refresh action triggering. */
-    void refresh();
+    void sltRefresh();
     /** Handles save action triggering. */
-    void save();
+    void sltSave();
     /** Handles filter action triggering. */
-    void filter();
+    void sltFilter();
 
 private:
 
@@ -84,8 +92,10 @@ private:
         void prepare();
         /** Prepares widgets. */
         void prepareWidgets();
-        /** Prepares connections. */
-        void prepareConnections();
+        void prepareActions();
+        void prepareActionIcons();
+        void prepareToolBar();
+        void prepareMenu();
 
         /** Cleanups VM Log-Viewer. */
         void cleanup();
@@ -109,7 +119,6 @@ private:
     /** Returns the content of current log-page. */
     const QString& currentLog();
 
-
     /** Holds whether the dialog is polished. */
     bool m_fIsPolished;
 
@@ -131,17 +140,26 @@ private:
     /** Holds the list of log-content. */
     VMLogMap m_logMap;
 
-    QDialogButtonBox *m_pButtonBox;
     QVBoxLayout      *m_pMainLayout;
 
-    /** Holds the find button instance. */
-    QPushButton *m_pButtonFind;
-    /** Holds the refresh button instance. */
-    QPushButton *m_pButtonRefresh;
-    /** Holds the save button instance. */
-    QPushButton *m_pButtonSave;
-    /** Holds the filter button instance. */
-    QPushButton *m_pButtonFilter;
+    /** Holds the widget embedding type. */
+    const EmbedTo m_enmEmbedding;
+
+    /** @name Toolbar and menu variables.
+      * @{ */
+        /** Holds the toolbar widget instance. */
+        UIToolBar *m_pToolBar;
+        /** Holds the Find action instance. */
+        QAction   *m_pActionFind;
+        /** Holds the Filter action instance. */
+        QAction   *m_pActionFilter;
+        /** Holds the Refresh action instance. */
+        QAction   *m_pActionRefresh;
+        /** Holds the Save action instance. */
+        QAction   *m_pActionSave;
+        /** Holds the menu object instance. */
+        QMenu     *m_pMenu;
+    /** @} */
 
     friend class UIVMLogViewerSearchPanel;
     friend class UIVMLogViewerFilterPanel;
