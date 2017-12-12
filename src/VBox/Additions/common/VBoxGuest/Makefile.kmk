@@ -226,6 +226,20 @@ ifeq ($(KBUILD_TARGET),linux)
  vboxguest-sh_MODE      = a+rx,u+w
  vboxguest-sh_SOURCES   = $(subst ",,$(FILES_VBOXGUEST_BIN))
 
+ #
+ # Build test for the Guest Additions kernel module (kmk check).
+ #
+ if   defined(VBOX_WITH_TESTCASES) \
+  && !defined(VBOX_ONLY_SDK) \
+  && !defined(VBOX_ONLY_DOCS) \
+  && !defined(VBOX_ONLY_VALIDATIONKIT) \
+  && !defined(VBOX_WITHOUT_LINUX_TEST_BUILDS) \
+  && "$(KBUILD_TARGET)" == "linux" \
+  && "$(KBUILD_HOST_ARCH)" == "$(KBUILD_TARGET_ARCH)"
+  ifneq ($(KERN_DIR),)
+   $(foreach module, vboxguest-src, $(evalcall2 VBOX_LINUX_GENERATE_KMOD_TEST))
+  endif
+ endif
 endif # Linux
 
 ifeq ($(KBUILD_TARGET),freebsd)

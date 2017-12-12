@@ -362,11 +362,9 @@ if   defined(VBOX_WITH_TESTCASES) \
  && !defined(VBOX_WITHOUT_LINUX_TEST_BUILDS) \
  && "$(KBUILD_TARGET)" == "linux" \
  && "$(KBUILD_HOST_ARCH)" == "$(KBUILD_TARGET_ARCH)"
-
  ifneq ($(KERN_DIR),)
-  $(foreach module, vboxguest-src vboxsf-src vboxvideo-src, $(eval $(VBOX_LINUX_GENERATE_KMOD_TEST)))
+  $(foreach module, vboxsf-src vboxvideo-src, $(evalcall2 VBOX_LINUX_GENERATE_KMOD_TEST))
  endif
-
 endif
 
 
