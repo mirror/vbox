@@ -66,7 +66,7 @@ public:
     /** Returns the toolbar. */
     UIToolBar *toolbar() const { return m_pToolBar; }
 #endif
-    
+
 protected:
 
 
