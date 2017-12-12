@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - RTUtf16ICmpAscii.
+ * IPRT - RTStrICmpAscii.
  */
 
 /*
