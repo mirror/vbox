@@ -399,7 +399,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 
         /* Enable HiDPI support: */
         QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#if (!defined(DEBUG_bird) || defined(RT_OS_DARWIN))
         QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
 
         /* Create application: */
         QApplication a(argc, argv);
