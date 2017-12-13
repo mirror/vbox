@@ -3673,12 +3673,12 @@ void VBoxGlobal::prepare()
     bool fSeparateProcess = false;
     QString vmNameOrUuid;
 
-    const QStringList arguments = qApp->arguments();
+    const QStringList &arguments = QCoreApplication::arguments();
     const int argc = arguments.size();
     int i = 1;
     while (i < argc)
     {
-        QByteArray  argBytes = arguments.at(i).toUtf8();
+        const QByteArray &argBytes = arguments.at(i).toUtf8();
         const char *arg = argBytes.constData();
         /* NOTE: the check here must match the corresponding check for the
          * options to start a VM in main.cpp and hardenedmain.cpp exactly,
@@ -3726,7 +3726,8 @@ void VBoxGlobal::prepare()
             if (++i < argc)
             {
                 size_t cbFile;
-                const char *pszFile = arguments.at(i).toLocal8Bit().constData();
+                const QByteArray &argFileBytes = arguments.at(i).toLocal8Bit();
+                const char *pszFile = argFileBytes.constData();
                 bool fStdIn = !::strcmp(pszFile, "stdin");
                 int vrc = VINF_SUCCESS;
                 PRTSTREAM pStrm;
