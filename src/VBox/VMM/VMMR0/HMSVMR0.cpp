@@ -133,10 +133,12 @@
 
 /**
  * Mandatory/unconditional guest control intercepts.
+ *
+ * SMIs can and do happen in normal operation. We need not intercept them
+ * while executing the guest or nested-guest.
  */
 #define HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS           (  SVM_CTRL_INTERCEPT_INTR        \
                                                          | SVM_CTRL_INTERCEPT_NMI         \
-                                                         | SVM_CTRL_INTERCEPT_SMI         \
                                                          | SVM_CTRL_INTERCEPT_INIT        \
                                                          | SVM_CTRL_INTERCEPT_RDPMC       \
                                                          | SVM_CTRL_INTERCEPT_CPUID       \
@@ -158,15 +160,6 @@
                                                          | SVM_CTRL_INTERCEPT_MONITOR     \
                                                          | SVM_CTRL_INTERCEPT_MWAIT       \
                                                          | SVM_CTRL_INTERCEPT_XSETBV)
-
-/**
- * Mandatory/unconditional nested-guest control intercepts.
- *
- * SMIs can and do happen in normal operation. We need to intercept them while
- * executing the nested-guest and make sure the host handles them.
- */
-#define HMSVM_MANDATORY_NESTED_GUEST_CTRL_INTERCEPTS    (  HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS \
-                                                         | SVM_CTRL_INTERCEPT_SMI)
 
 /** @name VMCB Clean Bits.
  *
@@ -1884,7 +1877,7 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
 
         pVmcbNstGst->ctrl.u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt;
         pVmcbNstGst->ctrl.u64InterceptCtrl  |= pVmcb->ctrl.u64InterceptCtrl
-                                            |  HMSVM_MANDATORY_NESTED_GUEST_CTRL_INTERCEPTS;
+                                            |  HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS;
 
         /*
          * Remove control intercepts that we don't need while executing the nested-guest.
@@ -1894,8 +1887,8 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
          * host as they can write to any location in physical memory, hence they always
          * need to be intercepted (they are included in HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS).
          */
-        Assert(   (pVmcbNstGst->ctrl.u64InterceptCtrl & HMSVM_MANDATORY_NESTED_GUEST_CTRL_INTERCEPTS)
-               == HMSVM_MANDATORY_NESTED_GUEST_CTRL_INTERCEPTS);
+        Assert(   (pVmcbNstGst->ctrl.u64InterceptCtrl & HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS)
+               == HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS);
         pVmcbNstGst->ctrl.u64InterceptCtrl  &= ~SVM_CTRL_INTERCEPT_VMMCALL;
 
         Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS));
@@ -4972,13 +4965,19 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         case SVM_EXIT_NMI:
         case SVM_EXIT_SMI:
         {
-            /* We shouldn't direct physical interrupts, NMIs, SMIs to the nested-guest. */
+            /*
+             * We shouldn't direct physical interrupts, NMIs, SMIs to the nested-guest.
+             *
+             * Although we don't intercept SMIs, the nested-guest might. Therefore, we
+             * might get an SMI #VMEXIT here so simply ignore rather than causing a
+             * corresponding nested-guest #VMEXIT.
+             */
             return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_FERR_FREEZE:
         {
-            if (HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_VINTR))
+            if (HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_FERR_FREEZE))
                 return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
         }
@@ -5149,8 +5148,8 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                     return VINF_SUCCESS;
                 }
 
-                case SVM_EXIT_INIT:
-                case SVM_EXIT_NPF: /* We don't yet support nested-paging for nested-guests, so this should never happen. */
+                case SVM_EXIT_INIT:  /* We shouldn't get INIT signals while executing a nested-guest. */
+                case SVM_EXIT_NPF:   /* We don't yet support nested-paging for nested-guests, so this should never happen. */
                 {
                     return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
                 }
@@ -5994,14 +5993,6 @@ HMSVM_EXIT_DECL hmR0SvmExitIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
      * Going back to executing guest code here unconditionally causes random scheduling problems (observed on an
      * AMD Phenom 9850 Quad-Core on Windows 64-bit host).
      */
-    Log4(("hmR0SvmExitIntr: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX32 CR3=%#RX32 CR4=%#RX32\n", pCtx->cs.Sel, pCtx->rip,
-          pCtx->eflags.u, pCtx->cr0, pCtx->cr3, pCtx->cr4));
-    Log4(("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
-          "eip=%08x esp=%08x ebp=%08x\n"
-          "cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n",
-          pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
-          pCtx->eip, pCtx->esp, pCtx->ebp,
-          pCtx->cs.Sel, pCtx->ss.Sel, pCtx->ds.Sel, pCtx->es.Sel, pCtx->fs.Sel, pCtx->gs.Sel, pCtx->eflags.u32));
     return VINF_EM_RAW_INTERRUPT;
 }
 
