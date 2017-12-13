@@ -104,7 +104,6 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
   	VBoxGuest.cpp
   ifeq ($(KBUILD_TARGET), win)
    VBoxGuest_SOURCES += \
-  	VBoxGuest-$(KBUILD_TARGET)-pnp.cpp \
   	win/VBoxGuest.rc
   endif
   VBoxGuest_LIBS        += \
