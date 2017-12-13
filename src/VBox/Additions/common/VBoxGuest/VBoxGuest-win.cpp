@@ -39,21 +39,14 @@
 #include <VBox/VBoxGuestLib.h>
 #include <iprt/string.h>
 
-/*
- * XP DDK #defines ExFreePool to ExFreePoolWithTag. The latter does not exist
- * on NT4, so... The same for ExAllocatePool.
- */
-#ifdef TARGET_NT4
-# undef ExAllocatePool
-# undef ExFreePool
-#endif
-
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
+#ifndef TARGET_NT4
 static NTSTATUS vgdrvNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj);
+#endif
 static void     vgdrvNtUnload(PDRIVER_OBJECT pDrvObj);
 static NTSTATUS vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
@@ -61,7 +54,9 @@ static NTSTATUS vgdrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtDeviceControlSlow(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, PIRP pIrp, PIO_STACK_LOCATION pStack);
 static NTSTATUS vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static void     vgdrvNtReadConfiguration(PVBOXGUESTDEVEXTWIN pDevExt);
+#ifndef TARGET_NT4
 static NTSTATUS vgdrvNtSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+#endif
 static NTSTATUS vgdrvNtShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 #ifdef VBOX_STRICT
@@ -84,13 +79,6 @@ RT_C_DECLS_END
 
 #ifdef ALLOC_PRAGMA
 # pragma alloc_text(INIT, DriverEntry)
-# pragma alloc_text(PAGE, vgdrvNtAddDevice)
-# pragma alloc_text(PAGE, vgdrvNtUnload)
-# pragma alloc_text(PAGE, vgdrvNtCreate)
-# pragma alloc_text(PAGE, vgdrvNtClose)
-# pragma alloc_text(PAGE, vgdrvNtShutdown)
-# pragma alloc_text(PAGE, vgdrvNtNotSupportedStub)
-# pragma alloc_text(PAGE, vgdrvNtScanPCIResourceList)
 #endif
 
 
@@ -909,6 +897,7 @@ static NTSTATUS vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 }
 
 
+#ifndef TARGET_NT4
 /**
  * IRP_MJ_SYSTEM_CONTROL handler.
  *
@@ -927,6 +916,7 @@ static NTSTATUS vgdrvNtSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
     return IoCallDriver(pDevExt->pNextLowerDriver, pIrp);
 }
+#endif /* TARGET_NT4 */
 
 
 /**
@@ -1708,7 +1698,7 @@ int VGDrvNtIOCtl_DpcLatencyChecker(void)
     /*
      * Allocate a block of non paged memory for samples and related data.
      */
-    DPCDATA *pData = (DPCDATA *)ExAllocatePoolWithTag(NonPagedPool, sizeof(DPCDATA), VBOXGUEST_DPC_TAG);
+    DPCDATA *pData = (DPCDATA *)RTMemAlloc(sizeof(DPCDATA));
     if (!pData)
     {
         RTLogBackdoorPrintf("VBoxGuest: DPC: DPCDATA allocation failed.\n");
@@ -1759,7 +1749,7 @@ int VGDrvNtIOCtl_DpcLatencyChecker(void)
                             pSample->u64TSC);
     }
 
-    ExFreePoolWithTag(pData, VBOXGUEST_DPC_TAG);
+    RTMemFree(pData);
     return VINF_SUCCESS;
 }
 

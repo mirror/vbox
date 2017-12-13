@@ -46,12 +46,6 @@ static NTSTATUS vgdrvNtPnPIrpComplete(PDEVICE_OBJECT pDevObj, PIRP pIrp, PKEVENT
 static VOID     vgdrvNtShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList);
 RT_C_DECLS_END
 
-#ifdef ALLOC_PRAGMA
-# pragma alloc_text(PAGE, vgdrvNtPnP)
-# pragma alloc_text(PAGE, vgdrvNtPower)
-# pragma alloc_text(PAGE, vgdrvNtSendIrpSynchronously)
-# pragma alloc_text(PAGE, vgdrvNtShowDeviceResources)
-#endif
 
 
 /**
