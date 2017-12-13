@@ -1146,6 +1146,8 @@ static NTSTATUS NTAPI vbdrvNtRegistryEnumCallback(PWSTR pwszValueName, ULONG uVa
         || RTUtf16ICmpAscii(pwszValueName, "ImagePath") == 0
         || RTUtf16ICmpAscii(pwszValueName, "DisplayName") == 0
         || RTUtf16ICmpAscii(pwszValueName, "Group") == 0
+        || RTUtf16ICmpAscii(pwszValueName, "DependOnGroup") == 0
+        || RTUtf16ICmpAscii(pwszValueName, "DependOnService") == 0
        )
     {
         return STATUS_SUCCESS;
