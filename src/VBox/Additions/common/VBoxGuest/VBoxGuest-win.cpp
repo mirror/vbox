@@ -501,51 +501,57 @@ static void vgdrvNtShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList)
 
 
 /**
- * Global initialisation stuff (PnP + NT4 legacy).
+ * Global initialization stuff.
  *
- * @param  pDevObj    Device object.
- * @param  pIrp       Request packet.
+ * @param   pDevExt     Our device extension data.
+ * @param   pDevObj     The device object.
+ * @param   pIrp        The request packet if NT5+, NULL for NT4 and earlier.
+ * @param   pDrvObj     The driver object for NT4, NULL for NT5+.
+ * @param   pRegPath    The registry path for NT4, NULL for NT5+.
  */
-#ifndef TARGET_NT4
-static NTSTATUS vgdrvNtInit(PDEVICE_OBJECT pDevObj, PIRP pIrp)
-#else
-static NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath)
-#endif
+static NTSTATUS vgdrvNtInit(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT pDevObj,
+                            PIRP pIrp, PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 {
-    PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
-#ifndef TARGET_NT4
-    PIO_STACK_LOCATION  pStack  = IoGetCurrentIrpStackLocation(pIrp);
-    LogFlowFunc(("ENTER: pDevObj=%p pIrp=%p\n", pDevObj, pIrp));
-#else
-    LogFlowFunc(("ENTER: pDrvObj=%p pDevObj=%p pRegPath=%p\n", pDrvObj, pDevObj, pRegPath));
-#endif
+    LogFlowFunc(("ENTER: pDevExt=%p pDevObj=%p pIrq=%p pDrvObj=%p pRegPath=%p\n", pDevExt, pDevObj, pIrp, pDrvObj, pRegPath));
 
     NTSTATUS rcNt;
-#ifdef TARGET_NT4
-    /*
-     * Let's have a look at what our PCI adapter offers.
-     */
-    LogFlowFunc(("Starting to scan PCI resources of VBoxGuest ...\n"));
+    if (!pIrp)
+    {
+#if ARCH_BITS == 32
+        /*
+         * NT4: Let's have a look at what our PCI adapter offers.
+         */
+        LogFlowFunc(("Starting to scan PCI resources of VBoxGuest ...\n"));
 
-    /* Assign the PCI resources. */
-    PCM_RESOURCE_LIST pResourceList = NULL;
-    UNICODE_STRING classNameString;
-    RtlInitUnicodeString(&classNameString, L"VBoxGuestAdapter");
-    rcNt = HalAssignSlotResources(pRegPath, &classNameString, pDrvObj, pDevObj,
-                                  PCIBus, pDevExt->uBus, pDevExt->uSlot, &pResourceList);
+        /* Assign the PCI resources. */
+        UNICODE_STRING      ClassName;
+        RtlInitUnicodeString(&ClassName, L"VBoxGuestAdapter");
+        PCM_RESOURCE_LIST   pResourceList = NULL;
+        rcNt = HalAssignSlotResources(pRegPath, &ClassName, pDrvObj, pDevObj,
+                                      PCIBus, pDevExt->uBus, pDevExt->uSlot, &pResourceList);
 # ifdef LOG_ENABLED
-    if (pResourceList && pResourceList->Count > 0)
-        vgdrvNtShowDeviceResources(&pResourceList->List[0].PartialResourceList);
+        if (pResourceList && pResourceList->Count > 0)
+            vgdrvNtShowDeviceResources(&pResourceList->List[0].PartialResourceList);
 # endif
-    if (NT_SUCCESS(rcNt))
-        rcNt = vgdrvNtScanPCIResourceList(pResourceList, pDevExt);
-#else
+        if (NT_SUCCESS(rcNt))
+            rcNt = vgdrvNtScanPCIResourceList(pResourceList, pDevExt);
+# else  /* ARCH_BITS != 32 */
+        RT_NOREF(pDrvObj, pRegPath);
+        rcNt = STATUS_INTERNAL_ERROR;
+# endif /* ARCH_BITS != 32 */
+    }
+    else
+    {
+        /*
+         * NT5+: Scan the PCI resource list from the IRP.
+         */
+        PIO_STACK_LOCATION pStack = IoGetCurrentIrpStackLocation(pIrp);
 # ifdef LOG_ENABLED
-    if (pStack->Parameters.StartDevice.AllocatedResources->Count > 0)
-        vgdrvNtShowDeviceResources(&pStack->Parameters.StartDevice.AllocatedResources->List[0].PartialResourceList);
+        if (pStack->Parameters.StartDevice.AllocatedResources->Count > 0)
+            vgdrvNtShowDeviceResources(&pStack->Parameters.StartDevice.AllocatedResources->List[0].PartialResourceList);
 # endif
-    rcNt = vgdrvNtScanPCIResourceList(pStack->Parameters.StartDevice.AllocatedResourcesTranslated, pDevExt);
-#endif
+        rcNt = vgdrvNtScanPCIResourceList(pStack->Parameters.StartDevice.AllocatedResourcesTranslated, pDevExt);
+    }
     if (NT_SUCCESS(rcNt))
     {
         /*
@@ -598,56 +604,45 @@ static NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNI
          * Register DPC and ISR.
          */
         LogFlowFunc(("Initializing DPC/ISR (pDevObj=%p)...\n", pDevExt->pDeviceObject));
-
         IoInitializeDpcRequest(pDevExt->pDeviceObject, vgdrvNtDpcHandler);
-#ifdef TARGET_NT4
-        ULONG uInterruptVector = UINT32_MAX;
-        KIRQL irqLevel = UINT8_MAX;
-        /* Get an interrupt vector. */
-        /* Only proceed if the device provides an interrupt. */
-        if (   pDevExt->uInterruptLevel
-            || pDevExt->uInterruptVector)
-        {
-            LogFlowFunc(("Getting interrupt vector (HAL): Bus=%u, IRQL=%u, Vector=%u\n",
-                         pDevExt->uBus, pDevExt->uInterruptLevel, pDevExt->uInterruptVector));
 
-            uInterruptVector = HalGetInterruptVector(PCIBus,
-                                                     pDevExt->uBus,
-                                                     pDevExt->uInterruptLevel,
-                                                     pDevExt->uInterruptVector,
-                                                     &irqLevel,
-                                                     &pDevExt->fInterruptAffinity);
-            LogFlowFunc(("HalGetInterruptVector returns vector=%u\n", uInterruptVector));
-            if (uInterruptVector == 0)
-                LogFunc(("No interrupt vector found!\n"));
-        }
-        else
-            LogFunc(("Device does not provide an interrupt!\n"));
-#endif
-        if (pDevExt->uInterruptVector)
+        ULONG uInterruptVector = pDevExt->uInterruptVector;
+        KIRQL uHandlerIrql     = (KIRQL)pDevExt->uInterruptLevel;
+        if (!pIrp)
         {
-#ifdef TARGET_NT4
-            LogFlowFunc(("Connecting interrupt (IntVector=%#u), IrqLevel=%u) ...\n", uInterruptVector, irqLevel));
-#else
-            LogFlowFunc(("Connecting interrupt (IntVector=%#u), IrqLevel=%u) ...\n", pDevExt->uInterruptVector, pDevExt->uInterruptLevel));
+#if ARCH_BITS == 32
+            /* NT4: Get an interrupt vector.  Only proceed if the device provides an interrupt. */
+            if (   uInterruptVector
+                || pDevExt->uInterruptLevel)
+            {
+                LogFlowFunc(("Getting interrupt vector (HAL): Bus=%u, IRQL=%u, Vector=%u\n",
+                             pDevExt->uBus, pDevExt->uInterruptLevel, pDevExt->uInterruptVector));
+                uInterruptVector = HalGetInterruptVector(PCIBus,
+                                                         pDevExt->uBus,
+                                                         pDevExt->uInterruptLevel,
+                                                         pDevExt->uInterruptVector,
+                                                         &uHandlerIrql,
+                                                         &pDevExt->fInterruptAffinity);
+                LogFlowFunc(("HalGetInterruptVector returns vector=%u\n", uInterruptVector));
+            }
+            else
+                LogFunc(("Device does not provide an interrupt!\n"));
 #endif
+        }
+        if (uInterruptVector)
+        {
+            LogFlowFunc(("Connecting interrupt (IntVector=%#u), uHandlerIrql=%u) ...\n", uInterruptVector, uHandlerIrql));
 
             rcNt = IoConnectInterrupt(&pDevExt->pInterruptObject,                 /* Out: interrupt object. */
-                                      (PKSERVICE_ROUTINE)vgdrvNtIsrHandler,        /* Our ISR handler. */
+                                      vgdrvNtIsrHandler,                          /* Our ISR handler. */
                                       pDevExt,                                    /* Device context. */
                                       NULL,                                       /* Optional spinlock. */
-#ifdef TARGET_NT4
                                       uInterruptVector,                           /* Interrupt vector. */
-                                      irqLevel,                                   /* Interrupt level. */
-                                      irqLevel,                                   /* Interrupt level. */
-#else
-                                      pDevExt->uInterruptVector,                   /* Interrupt vector. */
-                                      (KIRQL)pDevExt->uInterruptLevel,             /* Interrupt level. */
-                                      (KIRQL)pDevExt->uInterruptLevel,             /* Interrupt level. */
-#endif
-                                      pDevExt->enmInterruptMode,                     /* LevelSensitive or Latched. */
+                                      uHandlerIrql,                               /* Irql. */
+                                      uHandlerIrql,                               /* SynchronizeIrql. */
+                                      pDevExt->enmInterruptMode,                  /* LevelSensitive or Latched. */
                                       TRUE,                                       /* Shareable interrupt. */
-                                      pDevExt->fInterruptAffinity,                 /* CPU affinity. */
+                                      pDevExt->fInterruptAffinity,                /* CPU affinity. */
                                       FALSE);                                     /* Don't save FPU stack. */
             if (NT_ERROR(rcNt))
                 LogFunc(("Could not connect interrupt: rcNt=%#x!\n", rcNt));
@@ -698,9 +693,9 @@ static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRe
     /*
      * Find our virtual PCI device
      */
-    ULONG uuBusNumber;
+    ULONG           uBus;
     PCI_SLOT_NUMBER uSlot;
-    NTSTATUS rc = vgdrvNt4FindPciDevice(&uuBusNumber, &uSlot);
+    NTSTATUS rc = vgdrvNt4FindPciDevice(&uBus, &uSlot);
     if (NT_ERROR(rc))
     {
         Log(("vgdrvNt4CreateDevice: Device not found!\n"));
@@ -710,17 +705,17 @@ static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRe
     /*
      * Create device.
      */
-    UNICODE_STRING szDevName;
-    RtlInitUnicodeString(&szDevName, VBOXGUEST_DEVICE_NAME_NT);
+    UNICODE_STRING DevName;
+    RtlInitUnicodeString(&DevName, VBOXGUEST_DEVICE_NAME_NT);
     PDEVICE_OBJECT pDeviceObject = NULL;
-    rc = IoCreateDevice(pDrvObj, sizeof(VBOXGUESTDEVEXTWIN), &szDevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDeviceObject);
+    rc = IoCreateDevice(pDrvObj, sizeof(VBOXGUESTDEVEXTWIN), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDeviceObject);
     if (NT_SUCCESS(rc))
     {
         Log(("vgdrvNt4CreateDevice: Device created\n"));
 
         UNICODE_STRING DosName;
         RtlInitUnicodeString(&DosName, VBOXGUEST_DEVICE_NAME_DOS);
-        rc = IoCreateSymbolicLink(&DosName, &szDevName);
+        rc = IoCreateSymbolicLink(&DosName, &DevName);
         if (NT_SUCCESS(rc))
         {
             Log(("vgdrvNt4CreateDevice: Symlink created\n"));
@@ -739,17 +734,16 @@ static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRe
             pDevExt->pDeviceObject = pDeviceObject;
 
             /* Store bus and slot number we've queried before. */
-            pDevExt->uBus  = uuBusNumber;
+            pDevExt->uBus  = uBus;
             pDevExt->uSlot = uSlot.u.AsULONG;
 
-#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
+# ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
             rc = hlpRegisterBugCheckCallback(pDevExt);
-#endif
-
-            /* Do the actual VBox init ... */
+# endif
             if (NT_SUCCESS(rc))
             {
-                rc = vgdrvNtInit(pDrvObj, pDeviceObject, pRegPath);
+                /* Do the actual VBox init ... */
+                rc = vgdrvNtInit(pDevExt, pDeviceObject, NULL /*pIrp*/, pDrvObj, pRegPath);
                 if (NT_SUCCESS(rc))
                 {
                     Log(("vgdrvNt4CreateDevice: Returning rc = 0x%x (succcess)\n", rc));
@@ -1029,7 +1023,7 @@ static NTSTATUS vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                      pStack->Parameters.StartDevice.AllocatedResources));
 
                 if (pStack->Parameters.StartDevice.AllocatedResources)
-                    rc = vgdrvNtInit(pDevObj, pIrp);
+                    rc = vgdrvNtInit(pDevExt, pDevObj, pIrp, NULL, NULL);
                 else
                 {
                     Log(("vgdrvNtNt5PlusPnP: START_DEVICE: No resources, pDevExt = %p, nextLowerDriver = %p!\n",
@@ -1189,7 +1183,7 @@ static NTSTATUS vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         {
             Log(("vgdrvNtNt5PlusPnP: QUERY_STOP_DEVICE\n"));
 
-# ifdef VBOX_REBOOT_ON_UNINSTALL
+# ifdef VBOX_REBOOT_ON_UNINSTALL /** @todo  r=bird: this code and log msg is pointless as rc = success and status will be overwritten below. */
             Log(("vgdrvNtNt5PlusPnP: QUERY_STOP_DEVICE: Device cannot be stopped without a reboot!\n"));
             pIrp->IoStatus.Status = STATUS_UNSUCCESSFUL;
 # endif
@@ -1287,10 +1281,12 @@ static NTSTATUS vgdrvNtNt5PlusPowerComplete(IN PDEVICE_OBJECT pDevObj, IN PIRP p
                             {
                                 case PowerDeviceD0:
                                     break;
-                                default: /* Shut up MSC */ break;
+                                default:  /* Shut up MSC */
+                                    break;
                             }
                             break;
-                        default: /* Shut up MSC */ break;
+                        default: /* Shut up MSC */
+                            break;
                     }
                     break;
             }
@@ -1923,7 +1919,7 @@ int VGDrvNativeSetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, PVBGLIOCSETMOUSE
  * @param   pIrp        Interrupt request packet.
  * @param   pContext    Context specific pointer.
  */
-static void vgdrvNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext)
+static void NTAPI vgdrvNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext)
 {
     RT_NOREF3(pDPC, pIrp, pContext);
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
@@ -1956,7 +1952,7 @@ static void vgdrvNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVO
  * @param   pInterrupt      Interrupt that was triggered.
  * @param   pServiceContext Context specific pointer.
  */
-static BOOLEAN vgdrvNtIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceContext)
+static BOOLEAN NTAPI vgdrvNtIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceContext)
 {
     RT_NOREF1(pInterrupt);
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pServiceContext;
