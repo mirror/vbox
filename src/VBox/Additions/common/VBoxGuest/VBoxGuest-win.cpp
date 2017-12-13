@@ -64,7 +64,9 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/** Possible device states for our state machine. */
+/**
+ * Possible device states for our state machine.
+ */
 typedef enum VGDRVNTDEVSTATE
 {
     VGDRVNTDEVSTATE_STOPPED,
@@ -74,6 +76,7 @@ typedef enum VGDRVNTDEVSTATE
     VGDRVNTDEVSTATE_SURPRISEREMOVED,
     VGDRVNTDEVSTATE_REMOVED
 } VGDRVNTDEVSTATE;
+
 
 typedef struct VBOXGUESTWINBASEADDRESS
 {
@@ -89,64 +92,66 @@ typedef struct VBOXGUESTWINBASEADDRESS
     BOOLEAN MappedRangeInMemory;
     /** Flag: resource is mapped (i.e. MmMapIoSpace called). */
     BOOLEAN ResourceMapped;
-} VBOXGUESTWINBASEADDRESS, *PVBOXGUESTWINBASEADDRESS;
+} VBOXGUESTWINBASEADDRESS;
+typedef VBOXGUESTWINBASEADDRESS *PVBOXGUESTWINBASEADDRESS;
 
 
-/** Windows-specific device extension bits. */
+/**
+ * Subclassing the device extension for adding windows-specific bits.
+ */
 typedef struct VBOXGUESTDEVEXTWIN
 {
-    VBOXGUESTDEVEXT Core;
+    /** The common device extension core. */
+    VBOXGUESTDEVEXT         Core;
 
     /** Our functional driver object. */
-    PDEVICE_OBJECT pDeviceObject;
+    PDEVICE_OBJECT          pDeviceObject;
     /** Top of the stack. */
-    PDEVICE_OBJECT pNextLowerDriver;
+    PDEVICE_OBJECT          pNextLowerDriver;
     /** Currently active Irp. */
-    IRP *pCurrentIrp;
+    IRP                    *pCurrentIrp;
     /** Interrupt object pointer. */
-    PKINTERRUPT pInterruptObject;
+    PKINTERRUPT             pInterruptObject;
 
     /** Bus number where the device is located. */
-    ULONG busNumber;
+    ULONG                   uBus;
     /** Slot number where the device is located. */
-    ULONG slotNumber;
+    ULONG                   uSlot;
     /** Device interrupt level. */
-    ULONG interruptLevel;
+    ULONG                   uInterruptLevel;
     /** Device interrupt vector. */
-    ULONG interruptVector;
+    ULONG                   uInterruptVector;
     /** Affinity mask. */
-    KAFFINITY interruptAffinity;
+    KAFFINITY               fInterruptAffinity;
     /** LevelSensitive or Latched. */
-    KINTERRUPT_MODE interruptMode;
+    KINTERRUPT_MODE         enmInterruptMode;
 
     /** PCI base address information. */
-    ULONG pciAddressCount;
-    VBOXGUESTWINBASEADDRESS pciBaseAddress[PCI_TYPE0_ADDRESSES];
+    ULONG                   cPciAddresses;
+    VBOXGUESTWINBASEADDRESS aPciBaseAddresses[PCI_TYPE0_ADDRESSES];
 
     /** Physical address and length of VMMDev memory. */
-    PHYSICAL_ADDRESS vmmDevPhysMemoryAddress;
-    ULONG vmmDevPhysMemoryLength;
+    PHYSICAL_ADDRESS        uVmmDevMemoryPhysAddr;
+    /** Length of VMMDev memory.   */
+    ULONG                   cbVmmDevMemory;
 
     /** Device state. */
-    VGDRVNTDEVSTATE enmDevState;
-    /** The previous device state.   */
-    VGDRVNTDEVSTATE enmPrevDevState;
+    VGDRVNTDEVSTATE         enmDevState;
+    /** The previous device state. */
+    VGDRVNTDEVSTATE         enmPrevDevState;
 
     /** Last system power action set (see VBoxGuestPower). */
-    POWER_ACTION LastSystemPowerAction;
+    POWER_ACTION            enmLastSystemPowerAction;
     /** Preallocated generic request for shutdown. */
     VMMDevPowerStateRequest *pPowerStateRequest;
     /** Preallocated VMMDevEvents for IRQ handler. */
-    VMMDevEvents *pIrqAckEvents;
-
-    /** Pre-allocated kernel session data. This is needed
-     * for handling kernel IOCtls. */
-    struct VBOXGUESTSESSION *pKernelSession;
+    VMMDevEvents           *pIrqAckEvents;
 
     /** Spinlock protecting MouseNotifyCallback. Required since the consumer is
      *  in a DPC callback and not the ISR. */
-    KSPIN_LOCK MouseEventAccessLock;
-} VBOXGUESTDEVEXTWIN, *PVBOXGUESTDEVEXTWIN;
+    KSPIN_LOCK              MouseEventAccessSpinLock;
+} VBOXGUESTDEVEXTWIN;
+typedef VBOXGUESTDEVEXTWIN *PVBOXGUESTDEVEXTWIN;
 
 
 /** NT (windows) version identifier. */
@@ -171,7 +176,7 @@ extern VGDRVNTVER g_enmVGDrvNtVer;
 *********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
 #ifdef TARGET_NT4
-static NTSTATUS vgdrvNt4FindPciDevice(PULONG pulBusNumber, PPCI_SLOT_NUMBER pSlotNumber);
+static NTSTATUS vgdrvNt4FindPciDevice(PULONG puluBusNumber, PPCI_SLOT_NUMBER puSlotNumber);
 static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath);
 #else
 static NTSTATUS vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj);
@@ -461,7 +466,7 @@ static void vgdrvNtShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList)
             "CmResourceTypeMemory",
             "CmResourceTypeDma",
             "CmResourceTypeDeviceSpecific",
-            "CmResourceTypeBusNumber",
+            "CmResourceTypeuBusNumber",
             "CmResourceTypeDevicePrivate",
             "CmResourceTypeAssignedResource",
             "CmResourceTypeSubAllocateFrom",
@@ -527,7 +532,7 @@ static NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNI
     UNICODE_STRING classNameString;
     RtlInitUnicodeString(&classNameString, L"VBoxGuestAdapter");
     rcNt = HalAssignSlotResources(pRegPath, &classNameString, pDrvObj, pDevObj,
-                                  PCIBus, pDevExt->busNumber, pDevExt->slotNumber, &pResourceList);
+                                  PCIBus, pDevExt->uBus, pDevExt->uSlot, &pResourceList);
 # ifdef LOG_ENABLED
     if (pResourceList && pResourceList->Count > 0)
         vgdrvNtShowDeviceResources(&pResourceList->List[0].PartialResourceList);
@@ -550,8 +555,8 @@ static NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNI
         void *pvMMIOBase = NULL;
         uint32_t cbMMIO = 0;
         rcNt = vgdrvNtMapVMMDevMemory(pDevExt,
-                                      pDevExt->vmmDevPhysMemoryAddress,
-                                      pDevExt->vmmDevPhysMemoryLength,
+                                      pDevExt->uVmmDevMemoryPhysAddr,
+                                      pDevExt->cbVmmDevMemory,
                                       &pvMMIOBase,
                                       &cbMMIO);
         if (NT_SUCCESS(rcNt))
@@ -600,18 +605,18 @@ static NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNI
         KIRQL irqLevel = UINT8_MAX;
         /* Get an interrupt vector. */
         /* Only proceed if the device provides an interrupt. */
-        if (   pDevExt->interruptLevel
-            || pDevExt->interruptVector)
+        if (   pDevExt->uInterruptLevel
+            || pDevExt->uInterruptVector)
         {
             LogFlowFunc(("Getting interrupt vector (HAL): Bus=%u, IRQL=%u, Vector=%u\n",
-                         pDevExt->busNumber, pDevExt->interruptLevel, pDevExt->interruptVector));
+                         pDevExt->uBus, pDevExt->uInterruptLevel, pDevExt->uInterruptVector));
 
             uInterruptVector = HalGetInterruptVector(PCIBus,
-                                                     pDevExt->busNumber,
-                                                     pDevExt->interruptLevel,
-                                                     pDevExt->interruptVector,
+                                                     pDevExt->uBus,
+                                                     pDevExt->uInterruptLevel,
+                                                     pDevExt->uInterruptVector,
                                                      &irqLevel,
-                                                     &pDevExt->interruptAffinity);
+                                                     &pDevExt->fInterruptAffinity);
             LogFlowFunc(("HalGetInterruptVector returns vector=%u\n", uInterruptVector));
             if (uInterruptVector == 0)
                 LogFunc(("No interrupt vector found!\n"));
@@ -619,12 +624,12 @@ static NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNI
         else
             LogFunc(("Device does not provide an interrupt!\n"));
 #endif
-        if (pDevExt->interruptVector)
+        if (pDevExt->uInterruptVector)
         {
 #ifdef TARGET_NT4
             LogFlowFunc(("Connecting interrupt (IntVector=%#u), IrqLevel=%u) ...\n", uInterruptVector, irqLevel));
 #else
-            LogFlowFunc(("Connecting interrupt (IntVector=%#u), IrqLevel=%u) ...\n", pDevExt->interruptVector, pDevExt->interruptLevel));
+            LogFlowFunc(("Connecting interrupt (IntVector=%#u), IrqLevel=%u) ...\n", pDevExt->uInterruptVector, pDevExt->uInterruptLevel));
 #endif
 
             rcNt = IoConnectInterrupt(&pDevExt->pInterruptObject,                 /* Out: interrupt object. */
@@ -636,13 +641,13 @@ static NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNI
                                       irqLevel,                                   /* Interrupt level. */
                                       irqLevel,                                   /* Interrupt level. */
 #else
-                                      pDevExt->interruptVector,                   /* Interrupt vector. */
-                                      (KIRQL)pDevExt->interruptLevel,             /* Interrupt level. */
-                                      (KIRQL)pDevExt->interruptLevel,             /* Interrupt level. */
+                                      pDevExt->uInterruptVector,                   /* Interrupt vector. */
+                                      (KIRQL)pDevExt->uInterruptLevel,             /* Interrupt level. */
+                                      (KIRQL)pDevExt->uInterruptLevel,             /* Interrupt level. */
 #endif
-                                      pDevExt->interruptMode,                     /* LevelSensitive or Latched. */
+                                      pDevExt->enmInterruptMode,                     /* LevelSensitive or Latched. */
                                       TRUE,                                       /* Shareable interrupt. */
-                                      pDevExt->interruptAffinity,                 /* CPU affinity. */
+                                      pDevExt->fInterruptAffinity,                 /* CPU affinity. */
                                       FALSE);                                     /* Don't save FPU stack. */
             if (NT_ERROR(rcNt))
                 LogFunc(("Could not connect interrupt: rcNt=%#x!\n", rcNt));
@@ -693,9 +698,9 @@ static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRe
     /*
      * Find our virtual PCI device
      */
-    ULONG uBusNumber;
-    PCI_SLOT_NUMBER SlotNumber;
-    NTSTATUS rc = vgdrvNt4FindPciDevice(&uBusNumber, &SlotNumber);
+    ULONG uuBusNumber;
+    PCI_SLOT_NUMBER uSlot;
+    NTSTATUS rc = vgdrvNt4FindPciDevice(&uuBusNumber, &uSlot);
     if (NT_ERROR(rc))
     {
         Log(("vgdrvNt4CreateDevice: Device not found!\n"));
@@ -734,8 +739,8 @@ static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRe
             pDevExt->pDeviceObject = pDeviceObject;
 
             /* Store bus and slot number we've queried before. */
-            pDevExt->busNumber  = uBusNumber;
-            pDevExt->slotNumber = SlotNumber.u.AsULONG;
+            pDevExt->uBus  = uuBusNumber;
+            pDevExt->uSlot = uSlot.u.AsULONG;
 
 #ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
             rc = hlpRegisterBugCheckCallback(pDevExt);
@@ -771,32 +776,32 @@ static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRe
  *
  * @returns NT status code.
  *
- * @param   pulBusNumber    Where to return the bus number on success.
- * @param   pSlotNumber     Where to return the slot number on success.
+ * @param   puluBusNumber    Where to return the bus number on success.
+ * @param   puSlotNumber     Where to return the slot number on success.
  */
-static NTSTATUS vgdrvNt4FindPciDevice(PULONG pulBusNumber, PPCI_SLOT_NUMBER pSlotNumber)
+static NTSTATUS vgdrvNt4FindPciDevice(PULONG puluBusNumber, PPCI_SLOT_NUMBER puSlotNumber)
 {
     Log(("vgdrvNt4FindPciDevice\n"));
 
-    PCI_SLOT_NUMBER SlotNumber;
-    SlotNumber.u.AsULONG = 0;
+    PCI_SLOT_NUMBER uSlot;
+    uSlot.u.AsULONG = 0;
 
     /* Scan each bus. */
-    for (ULONG ulBusNumber = 0; ulBusNumber < PCI_MAX_BUSES; ulBusNumber++)
+    for (ULONG uluBusNumber = 0; uluBusNumber < PCI_MAX_BUSES; uluBusNumber++)
     {
         /* Scan each device. */
         for (ULONG deviceNumber = 0; deviceNumber < PCI_MAX_DEVICES; deviceNumber++)
         {
-            SlotNumber.u.bits.DeviceNumber = deviceNumber;
+            uSlot.u.bits.DeviceNumber = deviceNumber;
 
             /* Scan each function (not really required...). */
             for (ULONG functionNumber = 0; functionNumber < PCI_MAX_FUNCTION; functionNumber++)
             {
-                SlotNumber.u.bits.FunctionNumber = functionNumber;
+                uSlot.u.bits.FunctionNumber = functionNumber;
 
                 /* Have a look at what's in this slot. */
                 PCI_COMMON_CONFIG PciData;
-                if (!HalGetBusData(PCIConfiguration, ulBusNumber, SlotNumber.u.AsULONG, &PciData, sizeof(ULONG)))
+                if (!HalGetBusData(PCIConfiguration, uluBusNumber, uSlot.u.AsULONG, &PciData, sizeof(ULONG)))
                 {
                     /* No such bus, we're done with it. */
                     deviceNumber = PCI_MAX_DEVICES;
@@ -815,8 +820,8 @@ static NTSTATUS vgdrvNt4FindPciDevice(PULONG pulBusNumber, PPCI_SLOT_NUMBER pSlo
                 /* Hooray, we've found it! */
                 Log(("vgdrvNt4FindPciDevice: Device found!\n"));
 
-                *pulBusNumber = ulBusNumber;
-                *pSlotNumber  = SlotNumber;
+                *puluBusNumber = uluBusNumber;
+                *puSlotNumber  = uSlot;
                 return STATUS_SUCCESS;
             }
         }
@@ -864,7 +869,7 @@ static NTSTATUS vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT p
             PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDeviceObject->DeviceExtension;
             RT_ZERO(*pDevExt);
 
-            KeInitializeSpinLock(&pDevExt->MouseEventAccessLock);
+            KeInitializeSpinLock(&pDevExt->MouseEventAccessSpinLock);
 
             pDevExt->pDeviceObject   = pDeviceObject;
             pDevExt->enmPrevDevState = VGDRVNTDEVSTATE_STOPPED;
@@ -1336,7 +1341,7 @@ static NTSTATUS vgdrvNtNt5PlusPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                             if (PowerState.SystemState == PowerSystemWorking)
                             {
                                 if (   pDevExt
-                                    && pDevExt->LastSystemPowerAction == PowerActionHibernate)
+                                    && pDevExt->enmLastSystemPowerAction == PowerActionHibernate)
                                 {
                                     Log(("vgdrvNtNt5PlusPower: Returning from hibernation!\n"));
                                     int rc = VGDrvCommonReinitDevExtAfterHibernation(&pDevExt->Core,
@@ -1420,7 +1425,7 @@ static NTSTATUS vgdrvNtNt5PlusPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                      * This becomes handy when we return from hibernation for example.
                      */
                     if (pDevExt)
-                        pDevExt->LastSystemPowerAction = enmPowerAction;
+                        pDevExt->enmLastSystemPowerAction = enmPowerAction;
 
                     break;
                 }
@@ -1486,12 +1491,12 @@ static void vgdrvNtUnmapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt)
     LogFlowFunc(("pVMMDevMemory = %#x\n", pDevExt->Core.pVMMDevMemory));
     if (pDevExt->Core.pVMMDevMemory)
     {
-        MmUnmapIoSpace((void*)pDevExt->Core.pVMMDevMemory, pDevExt->vmmDevPhysMemoryLength);
+        MmUnmapIoSpace((void*)pDevExt->Core.pVMMDevMemory, pDevExt->cbVmmDevMemory);
         pDevExt->Core.pVMMDevMemory = NULL;
     }
 
-    pDevExt->vmmDevPhysMemoryAddress.QuadPart = 0;
-    pDevExt->vmmDevPhysMemoryLength = 0;
+    pDevExt->uVmmDevMemoryPhysAddr.QuadPart = 0;
+    pDevExt->cbVmmDevMemory = 0;
 }
 
 
@@ -1515,17 +1520,6 @@ static NTSTATUS vgdrvNtCleanup(PDEVICE_OBJECT pDevObj)
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
     if (pDevExt)
     {
-
-#if 0 /** @todo  test & enable cleaning global session data */
-#ifdef VBOX_WITH_HGCM
-        if (pDevExt->pKernelSession)
-        {
-            VGDrvCommonCloseSession(pDevExt, pDevExt->pKernelSession);
-            pDevExt->pKernelSession = NULL;
-        }
-#endif
-#endif
-
         if (pDevExt->pInterruptObject)
         {
             IoDisconnectInterrupt(pDevExt->pInterruptObject);
@@ -1913,10 +1907,10 @@ int VGDrvNativeSetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, PVBGLIOCSETMOUSE
     PVBOXGUESTDEVEXTWIN pDevExtWin = (PVBOXGUESTDEVEXTWIN)pDevExt;
     /* we need a lock here to avoid concurrency with the set event functionality */
     KIRQL OldIrql;
-    KeAcquireSpinLock(&pDevExtWin->MouseEventAccessLock, &OldIrql);
+    KeAcquireSpinLock(&pDevExtWin->MouseEventAccessSpinLock, &OldIrql);
     pDevExtWin->Core.pfnMouseNotifyCallback   = pNotify->u.In.pfnNotify;
     pDevExtWin->Core.pvMouseNotifyCallbackArg = pNotify->u.In.pvUser;
-    KeReleaseSpinLock(&pDevExtWin->MouseEventAccessLock, OldIrql);
+    KeReleaseSpinLock(&pDevExtWin->MouseEventAccessSpinLock, OldIrql);
     return VINF_SUCCESS;
 }
 
@@ -1941,12 +1935,12 @@ static void vgdrvNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVO
         /* we need a lock here to avoid concurrency with the set event ioctl handler thread,
          * i.e. to prevent the event from destroyed while we're using it */
         Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
-        KeAcquireSpinLockAtDpcLevel(&pDevExt->MouseEventAccessLock);
+        KeAcquireSpinLockAtDpcLevel(&pDevExt->MouseEventAccessSpinLock);
 
         if (pDevExt->Core.pfnMouseNotifyCallback)
             pDevExt->Core.pfnMouseNotifyCallback(pDevExt->Core.pvMouseNotifyCallbackArg);
 
-        KeReleaseSpinLockFromDpcLevel(&pDevExt->MouseEventAccessLock);
+        KeReleaseSpinLockFromDpcLevel(&pDevExt->MouseEventAccessSpinLock);
     }
 
     /* Process the wake-up list we were asked by the scheduling a DPC
@@ -2218,7 +2212,7 @@ static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUES
     PCM_PARTIAL_RESOURCE_DESCRIPTOR pPartialData = NULL;
     ULONG rangeCount = 0;
     ULONG cMMIORange = 0;
-    PVBOXGUESTWINBASEADDRESS pBaseAddress = pDevExt->pciBaseAddress;
+    PVBOXGUESTWINBASEADDRESS pBaseAddress = pDevExt->aPciBaseAddresses;
     for (ULONG i = 0; i < pResList->List->PartialResourceList.Count; i++)
     {
         pPartialData = &pResList->List->PartialResourceList.PartialDescriptors[i];
@@ -2264,15 +2258,15 @@ static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUES
                          pPartialData->Flags));
 
                 /* Save information. */
-                pDevExt->interruptLevel    = pPartialData->u.Interrupt.Level;
-                pDevExt->interruptVector   = pPartialData->u.Interrupt.Vector;
-                pDevExt->interruptAffinity = pPartialData->u.Interrupt.Affinity;
+                pDevExt->uInterruptLevel    = pPartialData->u.Interrupt.Level;
+                pDevExt->uInterruptVector   = pPartialData->u.Interrupt.Vector;
+                pDevExt->fInterruptAffinity = pPartialData->u.Interrupt.Affinity;
 
                 /* Check interrupt mode. */
                 if (pPartialData->Flags & CM_RESOURCE_INTERRUPT_LATCHED)
-                    pDevExt->interruptMode = Latched;
+                    pDevExt->enmInterruptMode = Latched;
                 else
-                    pDevExt->interruptMode = LevelSensitive;
+                    pDevExt->enmInterruptMode = LevelSensitive;
                 break;
             }
 
@@ -2292,8 +2286,8 @@ static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUES
                         && (pPartialData->Flags & VBOX_CM_PRE_VISTA_MASK) == CM_RESOURCE_MEMORY_READ_WRITE)
                     {
                         /* Save physical MMIO base + length for VMMDev. */
-                        pDevExt->vmmDevPhysMemoryAddress = pPartialData->u.Memory.Start;
-                        pDevExt->vmmDevPhysMemoryLength = (ULONG)pPartialData->u.Memory.Length;
+                        pDevExt->uVmmDevMemoryPhysAddr = pPartialData->u.Memory.Start;
+                        pDevExt->cbVmmDevMemory = (ULONG)pPartialData->u.Memory.Length;
 
                         /* Save resource information. */
                         pBaseAddress->RangeStart     = pPartialData->u.Memory.Start;
@@ -2324,7 +2318,7 @@ static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUES
     }
 
     /* Memorize the number of resources found. */
-    pDevExt->pciAddressCount = rangeCount;
+    pDevExt->cPciAddresses = rangeCount;
     return rc;
 }
 
