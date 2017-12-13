@@ -155,9 +155,7 @@ extern VGDRVNTVER g_enmVGDrvNtVer;
 
 RT_C_DECLS_BEGIN
 
-#ifdef TARGET_NT4
-NTSTATUS   vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath);
-#else
+#ifndef TARGET_NT4
 NTSTATUS   vgdrvNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 NTSTATUS   vgdrvNtPower(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 #endif

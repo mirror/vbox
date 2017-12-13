@@ -41,11 +41,22 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#ifndef PCI_MAX_BUSES
+# define PCI_MAX_BUSES 256
+#endif
+
+
+/*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
-#ifndef TARGET_NT4
-static NTSTATUS vgdrvNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj);
+#ifdef TARGET_NT4
+static NTSTATUS vgdrvNt4FindPciDevice(PULONG pulBusNumber, PPCI_SLOT_NUMBER pSlotNumber);
+static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath);
+#else
+static NTSTATUS vgdrvNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj);
 #endif
 static void     vgdrvNtUnload(PDRIVER_OBJECT pDrvObj);
 static NTSTATUS vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
@@ -55,7 +66,7 @@ static NTSTATUS vgdrvNtDeviceControlSlow(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
 static NTSTATUS vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static void     vgdrvNtReadConfiguration(PVBOXGUESTDEVEXTWIN pDevExt);
 #ifndef TARGET_NT4
-static NTSTATUS vgdrvNtSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS vgdrvNtNt5PlusSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 #endif
 static NTSTATUS vgdrvNtShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
@@ -78,7 +89,12 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath);
 RT_C_DECLS_END
 
 #ifdef ALLOC_PRAGMA
+/* We only do INIT allocations.  PAGE is too much work and risk for little gain. */
 # pragma alloc_text(INIT, DriverEntry)
+# ifdef TARGET_NT4
+#  pragma alloc_text(INIT, vgdrvNt4CreateDevice)
+#  pragma alloc_text(INIT, vgdrvNt4FindPciDevice)
+# endif
 #endif
 
 
@@ -100,7 +116,6 @@ VGDRVNTVER g_enmVGDrvNtVer = VGDRVNTVER_INVALID;
 ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 {
     RT_NOREF1(pRegPath);
-    NTSTATUS rc = STATUS_SUCCESS;
 
     LogFunc(("Driver built: %s %s\n", __DATE__, __TIME__));
 
@@ -120,6 +135,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 #ifdef VBOX_STRICT
     vgdrvNtDoTests();
 #endif
+    NTSTATUS rc = STATUS_SUCCESS;
     switch (ulMajorVer)
     {
         case 10:
@@ -209,8 +225,8 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 #else
         pDrvObj->MajorFunction[IRP_MJ_PNP]                     = vgdrvNtPnP;
         pDrvObj->MajorFunction[IRP_MJ_POWER]                   = vgdrvNtPower;
-        pDrvObj->MajorFunction[IRP_MJ_SYSTEM_CONTROL]          = vgdrvNtSystemControl;
-        pDrvObj->DriverExtension->AddDevice                    = (PDRIVER_ADD_DEVICE)vgdrvNtAddDevice;
+        pDrvObj->MajorFunction[IRP_MJ_SYSTEM_CONTROL]          = vgdrvNtNt5PlusSystemControl;
+        pDrvObj->DriverExtension->AddDevice                    = (PDRIVER_ADD_DEVICE)vgdrvNt5PlusAddDevice;
 #endif
     }
 
@@ -219,7 +235,157 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 }
 
 
-#ifndef TARGET_NT4
+#ifdef TARGET_NT4
+
+/**
+ * Legacy helper function to create the device object.
+ *
+ * @returns NT status code.
+ *
+ * @param   pDrvObj         The driver object.
+ * @param   pRegPath        The driver registry path.
+ */
+static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
+{
+    Log(("vgdrvNt4CreateDevice: pDrvObj=%p, pRegPath=%p\n", pDrvObj, pRegPath));
+
+    /*
+     * Find our virtual PCI device
+     */
+    ULONG uBusNumber;
+    PCI_SLOT_NUMBER SlotNumber;
+    NTSTATUS rc = vgdrvNt4FindPciDevice(&uBusNumber, &SlotNumber);
+    if (NT_ERROR(rc))
+    {
+        Log(("vgdrvNt4CreateDevice: Device not found!\n"));
+        return rc;
+    }
+
+    /*
+     * Create device.
+     */
+    UNICODE_STRING szDevName;
+    RtlInitUnicodeString(&szDevName, VBOXGUEST_DEVICE_NAME_NT);
+    PDEVICE_OBJECT pDeviceObject = NULL;
+    rc = IoCreateDevice(pDrvObj, sizeof(VBOXGUESTDEVEXTWIN), &szDevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDeviceObject);
+    if (NT_SUCCESS(rc))
+    {
+        Log(("vgdrvNt4CreateDevice: Device created\n"));
+
+        UNICODE_STRING DosName;
+        RtlInitUnicodeString(&DosName, VBOXGUEST_DEVICE_NAME_DOS);
+        rc = IoCreateSymbolicLink(&DosName, &szDevName);
+        if (NT_SUCCESS(rc))
+        {
+            Log(("vgdrvNt4CreateDevice: Symlink created\n"));
+
+            /*
+             * Setup the device extension.
+             */
+            Log(("vgdrvNt4CreateDevice: Setting up device extension ...\n"));
+
+            PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDeviceObject->DeviceExtension;
+            RT_ZERO(*pDevExt);
+
+            Log(("vgdrvNt4CreateDevice: Device extension created\n"));
+
+            /* Store a reference to ourself. */
+            pDevExt->pDeviceObject = pDeviceObject;
+
+            /* Store bus and slot number we've queried before. */
+            pDevExt->busNumber  = uBusNumber;
+            pDevExt->slotNumber = SlotNumber.u.AsULONG;
+
+#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
+            rc = hlpRegisterBugCheckCallback(pDevExt);
+#endif
+
+            /* Do the actual VBox init ... */
+            if (NT_SUCCESS(rc))
+            {
+                rc = vgdrvNtInit(pDrvObj, pDeviceObject, pRegPath);
+                if (NT_SUCCESS(rc))
+                {
+                    Log(("vgdrvNt4CreateDevice: Returning rc = 0x%x (succcess)\n", rc));
+                    return rc;
+                }
+
+                /* bail out */
+            }
+            IoDeleteSymbolicLink(&DosName);
+        }
+        else
+            Log(("vgdrvNt4CreateDevice: IoCreateSymbolicLink failed with rc = %#x\n", rc));
+        IoDeleteDevice(pDeviceObject);
+    }
+    else
+        Log(("vgdrvNt4CreateDevice: IoCreateDevice failed with rc = %#x\n", rc));
+    Log(("vgdrvNt4CreateDevice: Returning rc = 0x%x\n", rc));
+    return rc;
+}
+
+
+/**
+ * Helper function to handle the PCI device lookup.
+ *
+ * @returns NT status code.
+ *
+ * @param   pulBusNumber    Where to return the bus number on success.
+ * @param   pSlotNumber     Where to return the slot number on success.
+ */
+static NTSTATUS vgdrvNt4FindPciDevice(PULONG pulBusNumber, PPCI_SLOT_NUMBER pSlotNumber)
+{
+    Log(("vgdrvNt4FindPciDevice\n"));
+
+    PCI_SLOT_NUMBER SlotNumber;
+    SlotNumber.u.AsULONG = 0;
+
+    /* Scan each bus. */
+    for (ULONG ulBusNumber = 0; ulBusNumber < PCI_MAX_BUSES; ulBusNumber++)
+    {
+        /* Scan each device. */
+        for (ULONG deviceNumber = 0; deviceNumber < PCI_MAX_DEVICES; deviceNumber++)
+        {
+            SlotNumber.u.bits.DeviceNumber = deviceNumber;
+
+            /* Scan each function (not really required...). */
+            for (ULONG functionNumber = 0; functionNumber < PCI_MAX_FUNCTION; functionNumber++)
+            {
+                SlotNumber.u.bits.FunctionNumber = functionNumber;
+
+                /* Have a look at what's in this slot. */
+                PCI_COMMON_CONFIG PciData;
+                if (!HalGetBusData(PCIConfiguration, ulBusNumber, SlotNumber.u.AsULONG, &PciData, sizeof(ULONG)))
+                {
+                    /* No such bus, we're done with it. */
+                    deviceNumber = PCI_MAX_DEVICES;
+                    break;
+                }
+
+                if (PciData.VendorID == PCI_INVALID_VENDORID)
+                    /* We have to proceed to the next function. */
+                    continue;
+
+                /* Check if it's another device. */
+                if (   PciData.VendorID != VMMDEV_VENDORID
+                    || PciData.DeviceID != VMMDEV_DEVICEID)
+                    continue;
+
+                /* Hooray, we've found it! */
+                Log(("vgdrvNt4FindPciDevice: Device found!\n"));
+
+                *pulBusNumber = ulBusNumber;
+                *pSlotNumber  = SlotNumber;
+                return STATUS_SUCCESS;
+            }
+        }
+    }
+
+    return STATUS_DEVICE_DOES_NOT_EXIST;
+}
+
+#else /* !TARGET_NT4 */
+
 /**
  * Handle request from the Plug & Play subsystem.
  *
@@ -229,7 +395,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
  *
  * @remarks Parts of this is duplicated in VBoxGuest-win-legacy.cpp.
  */
-static NTSTATUS vgdrvNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
+static NTSTATUS vgdrvNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
 {
     NTSTATUS rc;
     LogFlowFuncEnter();
@@ -305,6 +471,7 @@ static NTSTATUS vgdrvNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
     LogFunc(("Returning with rc=%#x\n", rc));
     return rc;
 }
+
 #endif /* !TARGET_NT4 */
 
 
@@ -905,7 +1072,7 @@ static NTSTATUS vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pDevObj     Device object.
  * @param   pIrp        IRP.
  */
-static NTSTATUS vgdrvNtSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS vgdrvNtNt5PlusSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
 
