@@ -238,7 +238,7 @@ protected:
     static void Init(T &aElem) { aElem = 0; }
 
     /** Initializes memory occupied by aElem. */
-    static void Uninit(T &aElem) { aElem = 0; }
+    static void Uninit(T &aElem) { RT_NOREF(aElem); }
 
     /** Creates a deep copy of aFrom and stores it in aTo. */
     static void Copy(const T &aFrom, T &aTo) { aTo = aFrom; }
