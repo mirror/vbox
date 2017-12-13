@@ -112,10 +112,11 @@
 
 /* Other VBox includes: */
 # include <iprt/asm.h>
+# include <iprt/env.h>
+# include <iprt/getopt.h>
+# include <iprt/ldr.h>
 # include <iprt/param.h>
 # include <iprt/path.h>
-# include <iprt/env.h>
-# include <iprt/ldr.h>
 # include <iprt/system.h>
 # include <iprt/stream.h>
 # ifdef VBOX_WS_X11
@@ -1032,6 +1033,84 @@ void VBoxGlobal::deleteMedium(const QString &strMediumID)
     }
 }
 
+
+/**
+ * Create a VISO using the file open dialog.
+ *
+ * Temporarily caches (enumerate) it in GUI inner mediums cache.
+ *
+ * @returns Medium ID string, empty on abort.
+ */
+QString VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strMachineFolder, bool fUseLastFolder)
+{
+    AssertReturn(!strMachineFolder.isEmpty(), QString());
+
+    /* Where to start browsing for content. */
+    QString strLastFolder = gEDataManager->recentFolderForOpticalDisks();
+    if (strLastFolder.isEmpty())
+        strLastFolder = gEDataManager->recentFolderForFloppyDisks();
+    if (strLastFolder.isEmpty())
+        strLastFolder = gEDataManager->recentFolderForHardDrives();
+    QString strHomeFolder = fUseLastFolder && !strLastFolder.isEmpty() ? strLastFolder : strMachineFolder;
+
+    /* Execute the open file dialog: */
+    /** @todo make it possible to select directories... */
+    QStringList files = QIFileDialog::getOpenFileNames(strHomeFolder, tr("All files (*)"), pParent,
+                                                       /// @todo tr("Please select files and directories to be on the VISO"),
+                                                       tr("Please select files to be on the VISO"),
+                                                       0, true /*aResolveSymlinks*/, false /*aSingleFile*/);
+
+    /* Return if no result. */
+    if (files.empty() || files[0].isEmpty())
+        return QString();
+
+    /* Produce the VISO. */
+    char szVisoPath[RTPATH_MAX];
+    int vrc = RTPathJoin(szVisoPath, sizeof(szVisoPath), strMachineFolder.toUtf8().constData(), "ad-hoc.viso");
+    if (RT_SUCCESS(vrc))
+    {
+        PRTSTREAM pStrmViso;
+        vrc = RTStrmOpen(szVisoPath, "w", &pStrmViso);
+        if (RT_SUCCESS(vrc))
+        {
+            RTUUID Uuid;
+            vrc = RTUuidCreate(&Uuid);
+            if (RT_SUCCESS(vrc))
+            {
+                RTStrmPrintf(pStrmViso, "--iprt-iso-maker-file-marker-bourne-sh %RTuuid\n", &Uuid);
+
+                for (int iFile = 0; iFile < files.size(); iFile++)
+                {
+                    QByteArray const utf8Name = files[iFile].toUtf8();
+                    const char *apszArgv[2] = { utf8Name.constData(), NULL };
+                    char *pszQuoted;
+                    vrc = RTGetOptArgvToString(&pszQuoted, apszArgv, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        RTStrmPrintf(pStrmViso, "%s\n", pszQuoted);
+                        RTStrFree(pszQuoted);
+                    }
+                    else
+                        break;
+                }
+
+                RTStrmFlush(pStrmViso);
+                if (RT_SUCCESS(vrc))
+                    vrc = RTStrmError(pStrmViso);
+            }
+
+            RTStrmClose(pStrmViso);
+        }
+    }
+
+    /* Done. */
+    if (RT_SUCCESS(vrc))
+        return openMedium(UIMediumType_DVD, QString(szVisoPath), pParent);
+
+    /** @todo error message.   */
+    return QString();
+}
+
 /* Open some external medium using file open dialog
  * and temporary cache (enumerate) it in GUI inner mediums cache: */
 QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent,
@@ -1268,6 +1347,16 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
                                                                           mediumType)));
     pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose disk image...", "This is used for hard disks, optical media and floppies"));
 
+    /* Prepare ad-hoc-viso action for DVD-ROMs: */
+    if (mediumType == UIMediumType_DVD)
+    {
+        QAction *pActionAdHocViso = menu.addAction(UIIconPool::iconSet(":/select_file_16px.png"), QString(),
+                                                   pListener, pszSlotName);
+        pActionAdHocViso->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(),
+                                                                     currentAttachment.GetDevice(), mediumType,
+                                                                     UIMediumTarget::UIMediumTargetType_CreateAdHocVISO)));
+        pActionAdHocViso->setText(QApplication::translate("UIMachineSettingsStorage", "Create ad hoc VISO...", "This is used for optical media"));
+    }
 
     /* Insert separator: */
     menu.addSeparator();
@@ -1398,8 +1487,9 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
     /* Which additional info do we have? */
     switch (target.type)
     {
-        /* Do we have an exact ID? */
+        /* Do we have an exact ID or do we let the user open a medium? */
         case UIMediumTarget::UIMediumTargetType_WithID:
+        case UIMediumTarget::UIMediumTargetType_CreateAdHocVISO:
         {
             /* New mount-target attributes: */
             QString strNewID;
@@ -1418,8 +1508,12 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
                 }
                 /* Call for file-open dialog: */
                 const QString strMachineFolder(QFileInfo(constMachine.GetSettingsFilePath()).absolutePath());
-                const QString strMediumID = vboxGlobal().openMediumWithFileOpenDialog(target.mediumType, windowManager().mainWindowShown(),
-                                                                                      strMachineFolder);
+                const QString strMediumID = target.type != UIMediumTarget::UIMediumTargetType_CreateAdHocVISO
+                                          ? vboxGlobal().openMediumWithFileOpenDialog(target.mediumType,
+                                                                                      windowManager().mainWindowShown(),
+                                                                                      strMachineFolder)
+                                          : vboxGlobal().createVisoMediumWithFileOpenDialog(windowManager().mainWindowShown(),
+                                                                                            strMachineFolder, true /*fUseLastFolder*/);
                 /* Return focus back: */
                 if (pLastFocusedWidget)
                     pLastFocusedWidget->setFocus();
