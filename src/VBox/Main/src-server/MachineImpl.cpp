@@ -6688,10 +6688,11 @@ HRESULT Machine::readLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, std::vector<B
      * not need the lock and potentially takes a long time. */
     alock.release();
 
-    /* Limit the chunk size to 32K for now, as that gives better performance
-     * over (XP)COM, and keeps the SOAP reply size under 1M for the webservice.
-     * One byte expands to approx. 25 bytes of breathtaking XML. */
-    size_t cbData = (size_t)RT_MIN(aSize, 32768);
+    /* Limit the chunk size to 512K. Gives good performance over (XP)COM, and
+     * keeps the SOAP reply size under 1M for the webservice (we're using
+     * base64 encoded strings for binary data for years now, avoiding the
+     * expansion of each byte array element to approx. 25 bytes of XML. */
+    size_t cbData = (size_t)RT_MIN(aSize, _512K);
     aData.resize(cbData);
 
     RTFILE LogFile;
