@@ -584,7 +584,7 @@ static LSTATUS vbpsRegOpenInterfaceKeys(VBPSREGSTATE *pState)
                                &pState->aAltDeletes[i].hkeyInterface);
             if (rc != ERROR_SUCCESS)
             {
-                AssertMsgStmt(rc == ERROR_FILE_NOT_FOUND || ERROR_ACCESS_DENIED, ("%u\n", rc), pState->rc = rc);
+                AssertMsgStmt(rc == ERROR_FILE_NOT_FOUND || rc == ERROR_ACCESS_DENIED, ("%u\n", rc), pState->rc = rc);
                 pState->aAltDeletes[i].hkeyInterface = NULL;
             }
         }
