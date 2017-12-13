@@ -223,6 +223,15 @@ PHDASTREAM hdaGetStreamFromSD(PHDASTATE pThis, uint8_t uSD)
         return NULL;
     }
 
+    /* First, check if the SD# is in our tag mapping and return the
+     * correlating stream instead.
+     *  
+     * Note that our internal table is zero-based. */
+    PHDASTREAM pStream = pThis->aTags[uSD ? uSD - 1 : 0].pStream;
+    if (pStream)
+        return pStream;
+
+    /* No tagged stream found, just return the plain non-tagged SD# stream. */
     return &pThis->aStreams[uSD];
 }
 
