@@ -1321,6 +1321,11 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     LogFunc(("[SD%RU8] fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
              uSD, fRun, fInRun, fReset, fInReset, u32Value));
 
+    /* Make sure to write the actual register content so that routines further down don't freak out.
+     * Needed for macOS guests when enabling recording, for example. */
+    int rc2 = hdaRegWriteU24(pThis, iReg, u32Value);
+    AssertRC(rc2);
+
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
     AssertPtr(pStream);   
 
@@ -1404,7 +1409,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             hdaStreamAsyncIOEnable(pStream, fRun /* fEnable */);
 # endif
             /* (Re-)initialize the stream with current values. */
-            int rc2 = hdaStreamInit(pStream, pStream->u8SD);
+            rc2 = hdaStreamInit(pStream, pStream->u8SD);
             AssertRC(rc2);
 
             /* Enable/disable the stream. */
@@ -1450,9 +1455,6 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     }
 
     DEVHDA_UNLOCK_BOTH(pThis);
-
-    int rc2 = hdaRegWriteU24(pThis, iReg, u32Value);
-    AssertRC(rc2);
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
