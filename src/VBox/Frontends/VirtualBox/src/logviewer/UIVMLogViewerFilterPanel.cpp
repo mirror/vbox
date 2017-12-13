@@ -26,7 +26,7 @@
 #  include <QFontDatabase>
 # endif
 # include <QLabel>
-# include <QTextEdit>
+# include <QPlainTextEdit>
 # include <QTextCursor>
 
 /* GUI includes: */
@@ -52,7 +52,7 @@ UIVMLogViewerFilterPanel::UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogView
 void UIVMLogViewerFilterPanel::applyFilter(const int iCurrentIndex /* = 0 */)
 {
     Q_UNUSED(iCurrentIndex);
-    QTextEdit *pCurrentPage = m_pViewer->currentLogPage();
+    QPlainTextEdit *pCurrentPage = m_pViewer->currentLogPage();
     AssertReturnVoid(pCurrentPage);
     QString strInputText = m_pViewer->currentLog();
     if (!strInputText.isNull())

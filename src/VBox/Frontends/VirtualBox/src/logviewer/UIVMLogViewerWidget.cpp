@@ -26,7 +26,7 @@
 # if defined(RT_OS_SOLARIS)
 #  include <QFontDatabase>
 # endif
-# include <QTextEdit>
+# include <QPlainTextEdit>
 
 /* GUI includes: */
 # include "QIFileDialog.h"
@@ -136,13 +136,13 @@ void UIVMLogViewerWidget::sltRefresh()
             if (uOffset > 0)
             {
                 /* Create a log viewer page and append the read text to it: */
-                QTextEdit *pLogViewer = createLogPage(QFileInfo(strFileName).fileName());
+                QPlainTextEdit *pLogViewer = createLogPage(QFileInfo(strFileName).fileName());
                 pLogViewer->setPlainText(strText);
                 /* Move the cursor position to end: */
                 QTextCursor cursor = pLogViewer->textCursor();
                 cursor.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
                 pLogViewer->setTextCursor(cursor);
-                /* Add the actual file name and the QTextEdit containing the content to a list: */
+                /* Add the actual file name and the QPlainTextEdit containing the content to a list: */
                 m_book << qMakePair(strFileName, pLogViewer);
                 /* Add the log-text to the map: */
                 m_logMap[pLogViewer] = strText;
@@ -154,9 +154,9 @@ void UIVMLogViewerWidget::sltRefresh()
     /* Create an empty log page if there are no logs at all: */
     if (!isAnyLogPresent)
     {
-        QTextEdit *pDummyLog = createLogPage("VBox.log");
+        QPlainTextEdit *pDummyLog = createLogPage("VBox.log");
         pDummyLog->setWordWrapMode(QTextOption::WordWrap);
-        pDummyLog->setHtml(tr("<p>No log files found. Press the "
+        pDummyLog->appendHtml(tr("<p>No log files found. Press the "
                               "<b>Refresh</b> button to rescan the log folder "
                               "<nobr><b>%1</b></nobr>.</p>")
                               .arg(m_comMachine.GetLogFolder()));
@@ -493,14 +493,14 @@ void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
     QWidget::keyReleaseEvent(pEvent);
 }
 
-QTextEdit* UIVMLogViewerWidget::currentLogPage() const
+QPlainTextEdit* UIVMLogViewerWidget::currentLogPage() const
 {
     /* If viewer-container is enabled: */
     if (m_pViewerContainer->isEnabled())
     {
         /* Get and return current log-page: */
         QWidget *pContainer = m_pViewerContainer->currentWidget();
-        QTextEdit *pBrowser = pContainer->findChild<QTextEdit*>();
+        QPlainTextEdit *pBrowser = pContainer->findChild<QPlainTextEdit*>();
         Assert(pBrowser);
         return pBrowser ? pBrowser : 0;
     }
@@ -508,7 +508,7 @@ QTextEdit* UIVMLogViewerWidget::currentLogPage() const
     return 0;
 }
 
-QTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
+QPlainTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
 {
     /* Create page-container: */
     QWidget *pPageContainer = new QWidget;
@@ -518,7 +518,7 @@ QTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
         QVBoxLayout *pPageLayout = new QVBoxLayout(pPageContainer);
         AssertPtrReturn(pPageLayout, 0);
         /* Create Log-Viewer: */
-        QTextEdit *pLogViewer = new QTextEdit(pPageContainer);
+        QPlainTextEdit *pLogViewer = new QPlainTextEdit(pPageContainer);
         AssertPtrReturn(pLogViewer, 0);
         {
             /* Configure Log-Viewer: */
@@ -526,7 +526,7 @@ QTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
             /* Use system fixed-width font on Solaris hosts as the Courier family fonts don't render well. */
             QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
 #else
-            QFont font = pLogViewer->currentFont();
+            QFont font;
             font.setFamily("Courier New,courier");
 #endif
             pLogViewer->setFont(font);

@@ -28,7 +28,7 @@
 # include <QLabel>
 # include <QPushButton>
 # include <QScrollBar>
-# include <QTextEdit>
+# include <QPlainTextEdit>
 # include <QVBoxLayout>
 
 /* GUI includes: */
