@@ -1949,7 +1949,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_LanguageID
            << GUI_ActivateHoveredMachineWindow
            << GUI_Input_SelectorShortcuts << GUI_Input_MachineShortcuts
-           << GUI_RecentFolderHD << GUI_RecentFolderCD << GUI_RecentFolderFD
+           << GUI_RecentFolderHD << GUI_RecentFolderCD << GUI_RecentFolderFD << GUI_RecentFolderVISOContent
            << GUI_RecentListHD << GUI_RecentListCD << GUI_RecentListFD
            << GUI_LastSelectorWindowPosition << GUI_SplitterSizes
            << GUI_Toolbar << GUI_Toolbar_Text
@@ -2535,6 +2535,11 @@ QString UIExtraDataManager::recentFolderForFloppyDisks()
     return extraDataString(GUI_RecentFolderFD);
 }
 
+QString UIExtraDataManager::recentFolderForVISOContent()
+{
+    return extraDataString(GUI_RecentFolderVISOContent);
+}
+
 void UIExtraDataManager::setRecentFolderForHardDrives(const QString &strValue)
 {
     setExtraDataString(GUI_RecentFolderHD, strValue);
@@ -2548,6 +2553,11 @@ void UIExtraDataManager::setRecentFolderForOpticalDisks(const QString &strValue)
 void UIExtraDataManager::setRecentFolderForFloppyDisks(const QString &strValue)
 {
     setExtraDataString(GUI_RecentFolderFD, strValue);
+}
+
+void UIExtraDataManager::setRecentFolderForVISOContent(const QString &strValue)
+{
+    setExtraDataString(GUI_RecentFolderVISOContent, strValue);
 }
 
 QStringList UIExtraDataManager::recentListOfHardDrives()

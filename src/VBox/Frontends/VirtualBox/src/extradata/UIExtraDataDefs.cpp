@@ -74,6 +74,7 @@ const char* UIExtraDataDefs::GUI_ProxySettings = "GUI/ProxySettings";
 const char* UIExtraDataDefs::GUI_RecentFolderHD = "GUI/RecentFolderHD";
 const char* UIExtraDataDefs::GUI_RecentFolderCD = "GUI/RecentFolderCD";
 const char* UIExtraDataDefs::GUI_RecentFolderFD = "GUI/RecentFolderFD";
+const char* UIExtraDataDefs::GUI_RecentFolderVISOContent = "GUI/RecentFolderVISOContent";
 const char* UIExtraDataDefs::GUI_RecentListHD = "GUI/RecentListHD";
 const char* UIExtraDataDefs::GUI_RecentListCD = "GUI/RecentListCD";
 const char* UIExtraDataDefs::GUI_RecentListFD = "GUI/RecentListFD";

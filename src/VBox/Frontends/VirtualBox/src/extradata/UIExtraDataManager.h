@@ -262,12 +262,16 @@ public:
         QString recentFolderForOpticalDisks();
         /** Returns recent folder for floppy-disks. */
         QString recentFolderForFloppyDisks();
+        /** Returns recent folder for VISO creation content. */
+        QString recentFolderForVISOContent();
         /** Defines recent folder for hard-drives as @a strValue. */
         void setRecentFolderForHardDrives(const QString &strValue);
         /** Defines recent folder for optical-disk as @a strValue. */
         void setRecentFolderForOpticalDisks(const QString &strValue);
         /** Defines recent folder for floppy-disk as @a strValue. */
         void setRecentFolderForFloppyDisks(const QString &strValue);
+        /** Defines recent folder for VISO creation content as @a strValue. */
+        void setRecentFolderForVISOContent(const QString &strValue);
 
         /** Returns the list of recently used hard-drives. */
         QStringList recentListOfHardDrives();

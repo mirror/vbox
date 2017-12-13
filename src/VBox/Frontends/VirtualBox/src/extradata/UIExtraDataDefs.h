@@ -123,6 +123,8 @@ namespace UIExtraDataDefs
         extern const char* GUI_RecentFolderCD;
         /** Holds recent folder for floppy-disks. */
         extern const char* GUI_RecentFolderFD;
+        /** Holds recent folder for VISO creation content. */
+        extern const char* GUI_RecentFolderVISOContent;
         /** Holds the list of recently used hard-drives. */
         extern const char* GUI_RecentListHD;
         /** Holds the list of recently used optical-disks. */

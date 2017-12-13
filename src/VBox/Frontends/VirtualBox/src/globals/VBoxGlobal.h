@@ -312,7 +312,7 @@ public:
     /* API: Medium-processing stuff: */
     void createMedium(const UIMedium &medium);
     void deleteMedium(const QString &strMediumID);
-    QString createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strMachineFolder, bool fUseLastFolder);
+    QString createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strMachineFolder);
     QString openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent = 0,
                                          const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
     QString openMedium(UIMediumType mediumType, QString strMediumLocation, QWidget *pParent = 0);

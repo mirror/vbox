@@ -1041,21 +1041,20 @@ void VBoxGlobal::deleteMedium(const QString &strMediumID)
  *
  * @returns Medium ID string, empty on abort.
  */
-QString VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strMachineFolder, bool fUseLastFolder)
+QString VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strMachineFolder)
 {
     AssertReturn(!strMachineFolder.isEmpty(), QString());
 
-    /* Where to start browsing for content. */
-    QString strLastFolder = gEDataManager->recentFolderForOpticalDisks();
-    if (strLastFolder.isEmpty())
-        strLastFolder = gEDataManager->recentFolderForFloppyDisks();
-    if (strLastFolder.isEmpty())
-        strLastFolder = gEDataManager->recentFolderForHardDrives();
-    QString strHomeFolder = fUseLastFolder && !strLastFolder.isEmpty() ? strLastFolder : strMachineFolder;
+    /* Figure out where to start browsing for content. */
+    QString strDirectory = gEDataManager->recentFolderForVISOContent();
+    if (strDirectory.isEmpty())
+        strDirectory = QDir::homePath();
+    if (strDirectory.isEmpty())
+        strDirectory = homeFolder();
 
-    /* Execute the open file dialog: */
+    /* Execute the open file dialog, getting a list of files & dirs back. */
     /** @todo make it possible to select directories... */
-    QStringList files = QIFileDialog::getOpenFileNames(strHomeFolder, tr("All files (*)"), pParent,
+    QStringList files = QIFileDialog::getOpenFileNames(strDirectory, tr("All files (*)"), pParent,
                                                        /// @todo tr("Please select files and directories to be on the VISO"),
                                                        tr("Please select files to be on the VISO"),
                                                        0, true /*aResolveSymlinks*/, false /*aSingleFile*/);
@@ -1063,6 +1062,9 @@ QString VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const Q
     /* Return if no result. */
     if (files.empty() || files[0].isEmpty())
         return QString();
+
+    /* Remember folder for the next time. */
+    gEDataManager->setRecentFolderForVISOContent(QFileInfo(files[0]).absolutePath());
 
     /* Produce the VISO. */
     char szVisoPath[RTPATH_MAX];
@@ -1107,7 +1109,7 @@ QString VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const Q
     if (RT_SUCCESS(vrc))
         return openMedium(UIMediumType_DVD, QString(szVisoPath), pParent);
 
-    /** @todo error message.   */
+    /** @todo error message. */
     return QString();
 }
 
@@ -1513,7 +1515,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
                                                                                       windowManager().mainWindowShown(),
                                                                                       strMachineFolder)
                                           : vboxGlobal().createVisoMediumWithFileOpenDialog(windowManager().mainWindowShown(),
-                                                                                            strMachineFolder, true /*fUseLastFolder*/);
+                                                                                            strMachineFolder);
                 /* Return focus back: */
                 if (pLastFocusedWidget)
                     pLastFocusedWidget->setFocus();
