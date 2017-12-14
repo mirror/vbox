@@ -100,7 +100,7 @@ int hdaStreamPeriodInit(PHDASTREAMPERIOD pPeriod,
      * Windows guests (Win10 AU):
      * 3584  bytes (CBL) / 4 (frame size) = 896 frames / 2 (LVI)  = 448 frames per period
      */
-    unsigned cTotalPeriods = u16LVI;
+    unsigned cTotalPeriods = u16LVI + 1;
 
     if (cTotalPeriods <= 1)
         cTotalPeriods = 2; /* At least two periods *must* be present (LVI >= 1). */

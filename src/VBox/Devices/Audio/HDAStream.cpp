@@ -243,7 +243,7 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
 
         /** @todo Use a more dynamic fragment size? */
         Assert(pStream->u16LVI <= UINT8_MAX - 1);
-        uint8_t cFragments = pStream->u16LVI;
+        uint8_t cFragments = pStream->u16LVI + 1;
         if (cFragments <= 1)
             cFragments = 2; /* At least two fragments (BDLEs) must be present. */
 
