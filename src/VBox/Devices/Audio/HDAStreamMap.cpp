@@ -63,7 +63,7 @@ int hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOPCMPROPS pProps)
     for (uint8_t i = 0; i < pProps->cChannels; i++)
     {
         pChan->uChannel = i;
-        pChan->cbStep   = (pProps->cBits / 2);
+        pChan->cbStep   = (pProps->cBits / 8);
         pChan->cbFrame  = pChan->cbStep * pProps->cChannels;
         pChan->cbFirst  = i * pChan->cbStep;
         pChan->cbOff    = pChan->cbFirst;
