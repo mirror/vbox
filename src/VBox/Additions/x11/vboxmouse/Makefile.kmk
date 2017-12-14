@@ -226,23 +226,6 @@ vboxmouse_drv_112_SOURCES = \
 endif # neq ($(KBUILD_TARGET),linux)
 
 
-# XXX: should switch to the kernel driver but for now provide the
-# driver for X.Org 1.18 in NetBSD-8
-ifeq ($(KBUILD_TARGET), netbsd)
-
-DLLS += vboxmouse_drv_118
-vboxmouse_drv_118_TEMPLATE = VBOXGUESTR3XORGMOD
-vboxmouse_drv_118_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
-vboxmouse_drv_118_INCS := \
-    $(vboxmouse_xorg_INCS) \
-	$(VBOX_PATH_X11_ROOT)/xorg-server-1.18.0 \
-	$(PATH_SUB_CURRENT)
-vboxmouse_drv_118_SOURCES = \
-	vboxmouse.c
-
-endif # eq ($(KBUILD_TARGET), netbsd)
-
-
 ifdef VBOX_USE_SYSTEM_XORG_HEADERS
  # As vboxmouse_drv is not needed at all for X.Org Server 1.7 and later do not
  # build it in this case.
