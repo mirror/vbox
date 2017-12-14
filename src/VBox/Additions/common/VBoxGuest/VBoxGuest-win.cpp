@@ -536,7 +536,7 @@ static NTSTATUS vgdrvNtInit(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT pDevObj,
         if (NT_SUCCESS(rcNt))
             rcNt = vgdrvNtScanPCIResourceList(pResourceList, pDevExt);
 # else  /* ARCH_BITS != 32 */
-        RT_NOREF(pDrvObj, pRegPath);
+        RT_NOREF(pDevObj, pDrvObj, pRegPath);
         rcNt = STATUS_INTERNAL_ERROR;
 # endif /* ARCH_BITS != 32 */
     }
