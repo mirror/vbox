@@ -1375,6 +1375,9 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         hdaStreamAsyncIOLock(pStream);
         hdaStreamAsyncIOEnable(pStream, false /* fEnable */);
 # endif
+        /* Make sure to remove the run bit before doing the actual stream reset. */
+        HDA_STREAM_REG(pThis, CTL, uSD) &= ~HDA_SDCTL_RUN;
+
         hdaStreamReset(pThis, pStream, pStream->u8SD);
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -1444,10 +1447,10 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         }
     }
 
-    DEVHDA_UNLOCK_BOTH(pThis);
-
     int rc2 = hdaRegWriteU24(pThis, iReg, u32Value);
     AssertRC(rc2);
+
+    DEVHDA_UNLOCK_BOTH(pThis);
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
@@ -1815,7 +1818,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
     if (rc == VERR_NOT_SUPPORTED)
     {
-        LogRel2(("HDA: Unsupported channel count (%RU8), falling back to stereo channels\n", pCfg->Props.cChannels));
+        LogRel(("HDA: Warning: Unsupported channel count (%RU8), falling back to stereo channels (2)\n", pCfg->Props.cChannels));
 
         /* Fall back to 2 channels (see below in fUseFront block). */
         rc = VINF_SUCCESS;

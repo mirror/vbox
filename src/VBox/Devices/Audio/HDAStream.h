@@ -147,7 +147,8 @@ typedef struct HDASTREAMSTATE
     /** How many interrupts are pending due to
      *  BDLE interrupt-on-completion (IOC) bits set. */
     uint8_t                 cTransferPendingInterrupts;
-    uint8_t                 Padding1[4];
+    /** The stream's current audio frame size (in bytes). */
+    uint32_t                cbFrameSize;
     /** How many audio data frames are left to be processed
      *  for the position adjustment handling.
      *

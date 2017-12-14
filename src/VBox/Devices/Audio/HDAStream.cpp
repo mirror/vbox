@@ -180,9 +180,6 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
     pStream->u32CBL     = HDA_STREAM_REG(pThis, CBL, pStream->u8SD);
     pStream->u16FIFOS   = HDA_STREAM_REG(pThis, FIFOS, pStream->u8SD) + 1;
 
-    /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
-    hdaStreamSetPosition(pStream, HDA_STREAM_REG(pThis, LPIB, pStream->u8SD));
-
     PPDMAUDIOSTREAMCFG pCfg = &pStream->State.Cfg;
 
     int rc = hdaSDFMTToPCMProps(HDA_STREAM_REG(pThis, FMT, uSD), &pCfg->Props);
@@ -218,6 +215,9 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
             break;
     }
 
+    /* Set the stream's frame size. */
+    pStream->State.cbFrameSize = pCfg->Props.cChannels * (pCfg->Props.cBits / 8 /* To bytes */);
+
     /*
      * Initialize the stream mapping in any case, regardless if
      * we support surround audio or not. This is needed to handle
@@ -230,7 +230,7 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
     AssertRCReturn(rc, rc);
 
     LogFunc(("[SD%RU8] DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU16, Hz=%RU32, rc=%Rrc\n",
-             pStream->u8SD, pStream->u64BDLBase, pStream->u32CBL, pStream->u16LVI, pStream->u16FIFOS, 
+             pStream->u8SD, pStream->u64BDLBase, pStream->u32CBL, pStream->u16LVI, pStream->u16FIFOS,
              pStream->State.Cfg.Props.uHz, rc));
 
     if (   pStream->u32CBL
@@ -250,13 +250,13 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
         /* Calculate the fragment size the guest OS expects interrupt delivery at. */
         pStream->State.cbTransferSize = pStream->u32CBL / cFragments;
         Assert(pStream->State.cbTransferSize);
-        Assert(pStream->State.cbTransferSize % HDA_FRAME_SIZE == 0);
+        Assert(pStream->State.cbTransferSize % pStream->State.cbFrameSize == 0);
 
         /* Calculate the bytes we need to transfer to / from the stream's DMA per iteration.
          * This is bound to the device's Hz rate and thus to the (virtual) timing the device expects. */
-        pStream->State.cbTransferChunk = (pStream->State.Cfg.Props.uHz / pThis->u16TimerHz) * HDA_FRAME_SIZE;
+        pStream->State.cbTransferChunk = (pStream->State.Cfg.Props.uHz / pThis->u16TimerHz) * pStream->State.cbFrameSize;
         Assert(pStream->State.cbTransferChunk);
-        Assert(pStream->State.cbTransferChunk % HDA_FRAME_SIZE == 0);
+        Assert(pStream->State.cbTransferChunk % pStream->State.cbFrameSize == 0);
 
         /* Make sure that the transfer chunk does not exceed the overall transfer size. */
         if (pStream->State.cbTransferChunk > pStream->State.cbTransferSize)
@@ -302,12 +302,12 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
 
 #ifdef VBOX_WITH_INTEL_HDA
                 /* Intel ICH / PCH: 1 frame. */
-                if (BDLE.Desc.u32BufSize == 1 * HDA_FRAME_SIZE)
+                if (BDLE.Desc.u32BufSize == 1 * pStream->State.cbFrameSize)
                 {
                     cfPosAdjust = 1;
                 }
                 /* Intel Baytrail / Braswell: 32 frames. */
-                else if (BDLE.Desc.u32BufSize == 32 * HDA_FRAME_SIZE)
+                else if (BDLE.Desc.u32BufSize == 32 * pStream->State.cbFrameSize)
                 {
                     cfPosAdjust = 32;
                 }
@@ -327,6 +327,9 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
         }
 
         LogFunc(("[SD%RU8] cfPosAdjust=%RU32\n", pStream->u8SD, cfPosAdjust));
+
+        /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
+        hdaStreamSetPosition(pStream, HDA_STREAM_REG(pThis, LPIB, pStream->u8SD));
 
 #ifdef LOG_ENABLED
         hdaBDLEDumpAll(pThis, pStream->u64BDLBase, pStream->u16LVI + 1);
@@ -491,7 +494,7 @@ void hdaStreamSetPosition(PHDASTREAM pStream, uint32_t u32LPIB)
 {
     AssertPtrReturnVoid(pStream);
 
-    Assert(u32LPIB % HDA_FRAME_SIZE == 0);
+    Assert(u32LPIB % pStream->State.cbFrameSize == 0);
 
     Log3Func(("[SD%RU8] LPIB=%RU32 (DMA Position Buffer Enabled: %RTbool)\n",
               pStream->u8SD, u32LPIB, pStream->pHDAState->fDMAPosition));
@@ -810,7 +813,7 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
     uint32_t cbProcessed = 0;
     uint32_t cbLeft      = cbToProcess;
-    Assert(cbLeft % HDA_FRAME_SIZE == 0);
+    Assert(cbLeft % pStream->State.cbFrameSize == 0);
 
     uint8_t abChunk[HDA_FIFO_MAX + 1];
     while (cbLeft)
@@ -824,7 +827,7 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
         /* If there are position adjustment frames left to be processed,
          * make sure that we process them first as a whole. */
         if (pStream->State.cPosAdjustFramesLeft)
-            cbChunk = RT_MIN(cbChunk, uint32_t(pStream->State.cPosAdjustFramesLeft * HDA_FRAME_SIZE));
+            cbChunk = RT_MIN(cbChunk, uint32_t(pStream->State.cPosAdjustFramesLeft * pStream->State.cbFrameSize));
 
         Log3Func(("[SD%RU8] cbChunk=%RU32, cPosAdjustFramesLeft=%RU16\n",
                   pStream->u8SD, cbChunk, pStream->State.cPosAdjustFramesLeft));
@@ -842,6 +845,8 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
             uint32_t cbDMAWritten = 0;
             uint32_t cbDMAToWrite = cbChunk;
 
+            /** @todo Do we need interleaving streams support here as well?
+             *        Never saw anything else besides mono/stereo mics (yet). */
             while (cbDMAToWrite)
             {
                 void *pvBuf; size_t cbBuf;
@@ -892,19 +897,35 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
                     rc = VERR_BUFFER_OVERFLOW;
                 }
 
+#ifndef VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
+                /**
+                 * The following code extracts the required audio stream (channel) data
+                 * of non-interleaved  *and* interleaved audio streams.
+                 *
+                 * We by default only support 2 channels with 16-bit samples (HDA_FRAME_SIZE),
+                 * but an HDA audio stream can have interleaved audio data of multiple audio
+                 * channels in such a single stream ("AA,AA,AA vs. AA,BB,AA,BB").
+                 *
+                 * So take this into account by just handling the first channel in such a stream ("A")
+                 * and just discard the other channel's data.
+                 */
                 while (cbDMALeft)
                 {
                     void *pvBuf; size_t cbBuf;
-                    RTCircBufAcquireWriteBlock(pCircBuf, cbDMALeft, &pvBuf, &cbBuf);
+                    RTCircBufAcquireWriteBlock(pCircBuf, HDA_FRAME_SIZE, &pvBuf, &cbBuf);
 
                     if (cbBuf)
                         memcpy(pvBuf, abChunk + cbDMAWritten, cbBuf);
 
                     RTCircBufReleaseWriteBlock(pCircBuf, cbBuf);
 
-                    cbDMALeft    -= (uint32_t)cbBuf;
-                    cbDMAWritten += (uint32_t)cbBuf;
+                    cbDMALeft    -= (uint32_t)pStream->State.cbFrameSize;
+                    cbDMAWritten += (uint32_t)pStream->State.cbFrameSize;
                 }
+#else
+                /** @todo This needs making use of HDAStreamMap + HDAStreamChannel. */
+# error "Implement reading interleaving streams support here."
+#endif
             }
             else
                 LogRel(("HDA: Reading from stream #%RU8 DMA failed with %Rrc\n", pStream->u8SD, rc));
@@ -917,7 +938,7 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
         if (cbDMA)
         {
-            Assert(cbDMA % HDA_FRAME_SIZE == 0);
+            Assert(cbDMA % pStream->State.cbFrameSize == 0);
 
             /* We always increment the position of DMA buffer counter because we're always reading
              * into an intermediate buffer. */
@@ -984,7 +1005,7 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
         }
 
         /* Do the position adjustment accounting. */
-        pStream->State.cPosAdjustFramesLeft -= RT_MIN(pStream->State.cPosAdjustFramesLeft, cbDMA / HDA_FRAME_SIZE);
+        pStream->State.cPosAdjustFramesLeft -= RT_MIN(pStream->State.cPosAdjustFramesLeft, cbDMA / pStream->State.cbFrameSize);
 
         if (RT_FAILURE(rc))
             break;
@@ -994,7 +1015,7 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
               pStream->u8SD, cbToProcess, cbProcessed, cbLeft, pBDLE, rc));
 
     /* Sanity. */
-    Assert(cbProcessed % HDA_FRAME_SIZE == 0);
+    Assert(cbProcessed % pStream->State.cbFrameSize == 0);
     Assert(cbProcessed == cbToProcess);
     Assert(cbLeft      == 0);
 
@@ -1002,7 +1023,7 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
      * adjustment anymore. */
     if (pStream->State.cPosAdjustFramesLeft == 0)
     {
-        hdaStreamPeriodInc(pPeriod, RT_MIN(cbProcessed / HDA_FRAME_SIZE, hdaStreamPeriodGetRemainingFrames(pPeriod)));
+        hdaStreamPeriodInc(pPeriod, RT_MIN(cbProcessed / pStream->State.cbFrameSize, hdaStreamPeriodGetRemainingFrames(pPeriod)));
 
         pStream->State.cbTransferProcessed += cbProcessed;
     }
@@ -1031,7 +1052,7 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
          */
         const bool fWalClkSet = hdaWalClkSet(pThis,
                                                hdaWalClkGetCurrent(pThis)
-                                             + hdaStreamPeriodFramesToWalClk(pPeriod, pStream->State.cbTransferProcessed / HDA_FRAME_SIZE),
+                                             + hdaStreamPeriodFramesToWalClk(pPeriod, pStream->State.cbTransferProcessed / pStream->State.cbFrameSize),
                                              false /* fForce */);
         RT_NOREF(fWalClkSet);
     }
@@ -1077,13 +1098,13 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
         tsTransferNext = tsNow + (cbTransferNext * pStream->State.cTicksPerByte);
 
-        /** 
+        /**
          * If the current transfer is complete, reset our counter.
-         *  
+         *
          * This can happen for examlpe if the guest OS (like macOS) sets up
          * big BDLEs without IOC bits set (but for the last one) and the
-         * transfer is complete before we reach such a BDL entry. 
-         */ 
+         * transfer is complete before we reach such a BDL entry.
+         */
         if (fTransferComplete)
             pStream->State.cbTransferProcessed = 0;
     }

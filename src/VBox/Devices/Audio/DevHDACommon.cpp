@@ -361,7 +361,7 @@ int hdaDMAWrite(PHDASTATE pThis, PHDASTREAM pStream, const void *pvBuf, uint32_t
 
         /* Sanity checks. */
         Assert(cbChunk <= pBDLE->Desc.u32BufSize - pBDLE->State.u32BufOff);
-        Assert(cbChunk % HDA_FRAME_SIZE == 0);
+        Assert(cbChunk % pStream->State.cbFrameSize == 0);
         Assert((cbChunk >> 1) >= 1);
 
         if (pStream->Dbg.Runtime.fEnabled)
