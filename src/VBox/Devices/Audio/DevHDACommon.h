@@ -621,6 +621,9 @@ int           hdaSDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps);
  * @{
  */
 #ifdef IN_RING3
+# ifdef LOG_ENABLED
+void          hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE);
+# endif
 int           hdaBDLEFetch(PHDASTATE pThis, PHDABDLE pBDLE, uint64_t u64BaseDMA, uint16_t u16Entry);
 bool          hdaBDLEIsComplete(PHDABDLE pBDLE);
 bool          hdaBDLENeedsInterrupt(PHDABDLE pBDLE);

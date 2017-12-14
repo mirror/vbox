@@ -2268,44 +2268,6 @@ static int hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 }
 
 #ifdef IN_RING3
-
-#ifdef LOG_ENABLED
-static void hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE)
-{
-    LogFlowFunc(("BDLEs @ 0x%x (%RU16):\n", u64BDLBase, cBDLE));
-    if (!u64BDLBase)
-        return;
-
-    uint32_t cbBDLE = 0;
-    for (uint16_t i = 0; i < cBDLE; i++)
-    {
-        HDABDLEDESC bd;
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), u64BDLBase + i * sizeof(HDABDLEDESC), &bd, sizeof(bd));
-
-        LogFunc(("\t#%03d BDLE(adr:0x%llx, size:%RU32, ioc:%RTbool)\n",
-                 i, bd.u64BufAdr, bd.u32BufSize, bd.fFlags & HDA_BDLE_FLAG_IOC));
-
-        cbBDLE += bd.u32BufSize;
-    }
-
-    LogFlowFunc(("Total: %RU32 bytes\n", cbBDLE));
-
-    if (!pThis->u64DPBase) /* No DMA base given? Bail out. */
-        return;
-
-    LogFlowFunc(("DMA counters:\n"));
-
-    for (int i = 0; i < cBDLE; i++)
-    {
-        uint32_t uDMACnt;
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), (pThis->u64DPBase & DPBASE_ADDR_MASK) + (i * 2 * sizeof(uint32_t)),
-                          &uDMACnt, sizeof(uDMACnt));
-
-        LogFlowFunc(("\t#%03d DMA @ 0x%x\n", i , uDMACnt));
-    }
-}
-#endif /* LOG_ENABLED */
-
 /**
  * Retrieves a corresponding sink for a given mixer control.
  * Returns NULL if no sink is found.

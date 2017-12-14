@@ -229,8 +229,9 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
     rc = hdaStreamMapInit(&pStream->State.Mapping, &pCfg->Props);
     AssertRCReturn(rc, rc);
 
-    LogFunc(("[SD%RU8] DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU16, rc=%Rrc\n",
-             pStream->u8SD, pStream->u64BDLBase, pStream->u32CBL, pStream->u16LVI, pStream->u16FIFOS, rc));
+    LogFunc(("[SD%RU8] DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU16, Hz=%RU32, rc=%Rrc\n",
+             pStream->u8SD, pStream->u64BDLBase, pStream->u32CBL, pStream->u16LVI, pStream->u16FIFOS, 
+             pStream->State.Cfg.Props.uHz, rc));
 
     if (   pStream->u32CBL
         && pStream->u16LVI)
@@ -241,6 +242,7 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
                     pThis->u16TimerHz, pStream->State.Cfg.Props.uHz));
 
         /** @todo Use a more dynamic fragment size? */
+        Assert(pStream->u16LVI <= UINT8_MAX - 1);
         uint8_t cFragments = pStream->u16LVI;
         if (cFragments <= 1)
             cFragments = 2; /* At least two fragments (BDLEs) must be present. */
@@ -276,8 +278,8 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
         pStream->State.tsTransferLast     = 0;
         pStream->State.tsTransferNext     = 0;
 
-        LogFunc(("[SD%RU8] Timer %uHz (%RU64 ticks per Hz), ticks per byte: %RU64 (%RU64 bytes per iteration = %RU64 ticks)," \
-                 " transfer size = %RU64\n",
+        LogFunc(("[SD%RU8] Timer %uHz (%RU64 ticks per Hz), cTicksPerByte=%RU64, cbTransferChunk=%RU32, cTransferTicks=%RU64, " \
+                 "cbTransferSize=%RU32\n",
                  pStream->u8SD, pThis->u16TimerHz, cTicksPerHz, pStream->State.cTicksPerByte,
                  pStream->State.cbTransferChunk, pStream->State.cTransferTicks, pStream->State.cbTransferSize));
         /*
@@ -325,6 +327,10 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
         }
 
         LogFunc(("[SD%RU8] cfPosAdjust=%RU32\n", pStream->u8SD, cfPosAdjust));
+
+#ifdef LOG_ENABLED
+        hdaBDLEDumpAll(pThis, pStream->u64BDLBase, pStream->u16LVI + 1);
+#endif
     }
 
     return rc;
@@ -1086,7 +1092,7 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
     pStream->State.tsTransferLast = tsNow;
 
-    Log3Func(("[SD%RU8] cbTransferLeft=%RU32 -- %RU64/%RU64\n",
+    Log3Func(("[SD%RU8] cbTransferLeft=%RU32 -- %RU32/%RU32\n",
               pStream->u8SD, cbTransferLeft, pStream->State.cbTransferProcessed, pStream->State.cbTransferSize));
     Log3Func(("[SD%RU8] fTransferComplete=%RTbool, cTransferPendingInterrupts=%RU8\n",
               pStream->u8SD, fTransferComplete, pStream->State.cTransferPendingInterrupts));
