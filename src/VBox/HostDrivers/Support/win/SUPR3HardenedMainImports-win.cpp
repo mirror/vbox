@@ -107,6 +107,8 @@ typedef SUPHNTIMPSYSCALL const *PCSUPHNTIMPSYSCALL;
  *
  * This contains both static (like name & imports) and runtime information (like
  * load and export table locations).
+ *
+ * @sa RTDBGNTKRNLMODINFO
  */
 typedef struct SUPHNTIMPDLL
 {
@@ -289,6 +291,7 @@ static void supR3HardenedFindOrLoadModule(PSUPHNTIMPDLL pDll)
 }
 
 
+/** @sa rtR0DbgKrnlNtParseModule  */
 static void supR3HardenedParseModule(PSUPHNTIMPDLL pDll)
 {
     /*
@@ -373,6 +376,7 @@ static void supR3HardenedParseModule(PSUPHNTIMPDLL pDll)
 }
 
 
+/** @sa rtR0DbgKrnlInfoLookupSymbol */
 static const char *supR3HardenedResolveImport(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImport, bool fReportErrors)
 {
     /*
