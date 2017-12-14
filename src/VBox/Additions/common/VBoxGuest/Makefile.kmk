@@ -69,7 +69,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
  VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_WITH_HGCM
  VBoxGuest_INCS          = .
  VBoxGuest_INCS.freebsd  = $(VBoxGuest_0_OUTDIR) $(PATH_STAGE)/gen-sys-hdrs
- VBoxGuest_INCS.netbsd   = $(VBoxGuest_0_OUTDIR)
+ VBoxGuest_INCS.netbsd   = $(VBoxGuest_0_OUTDIR) netbsd
  ifeq ($(KBUILD_HOST),solaris)
   VBoxGuest_LDFLAGS.solaris         += -N misc/ctf
  else
