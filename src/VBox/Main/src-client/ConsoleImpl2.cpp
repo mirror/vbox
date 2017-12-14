@@ -920,6 +920,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          */
         PCFGMNODE pCPUM;
         InsertConfigNode(pRoot, "CPUM", &pCPUM);
+        PCFGMNODE pIsaExts;
+        InsertConfigNode(pCPUM, "IsaExts", &pIsaExts);
 
         /* Host CPUID leaf overrides. */
         for (uint32_t iOrdinal = 0; iOrdinal < _4K; iOrdinal++)
@@ -953,14 +955,14 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             || osTypeId == "Windows2016_64")
         {
             LogRel(("Enabling CMPXCHG16B for Windows 8.1 / 2k12 or newer guests\n"));
-            InsertConfigInteger(pCPUM, "CMPXCHG16B", true);
+            InsertConfigInteger(pIsaExts, "CMPXCHG16B", true);
         }
 
         if (fOsXGuest)
         {
             /* Expose extended MWAIT features to Mac OS X guests. */
             LogRel(("Using MWAIT extensions\n"));
-            InsertConfigInteger(pCPUM, "MWaitExtensions", true);
+            InsertConfigInteger(pIsaExts, "MWaitExtensions", true);
 
             /* Fake the CPU family/model so the guest works.  This is partly
                because older mac releases really doesn't work on newer cpus,
