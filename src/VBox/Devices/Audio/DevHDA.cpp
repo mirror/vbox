@@ -1321,13 +1321,33 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     LogFunc(("[SD%RU8] fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
              uSD, fRun, fInRun, fReset, fInReset, u32Value));
 
-    /* Make sure to write the actual register content so that routines further down don't freak out.
-     * Needed for macOS guests when enabling recording, for example. */
-    int rc2 = hdaRegWriteU24(pThis, iReg, u32Value);
-    AssertRC(rc2);
+    /*
+     * Extract the stream tag the guest wants to use for this specific
+     * stream descriptor (SDn). This only can happen if the stream is in a non-running
+     * state, so we're doing the lookup and assignment here.
+     *
+     * So depending on the guest OS, SD3 can use stream tag 4, for example.
+     */
+    uint8_t uTag = (u32Value >> HDA_SDCTL_NUM_SHIFT) & HDA_SDCTL_NUM_MASK;
+    if (uTag > HDA_MAX_TAGS)
+    {
+        LogFunc(("[SD%RU8] Warning: Invalid stream tag %RU8 specified!\n", uSD, uTag));
 
-    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
-    AssertPtr(pStream);   
+        DEVHDA_UNLOCK_BOTH(pThis);
+        return hdaRegWriteU24(pThis, iReg, u32Value);
+    }
+
+    PHDATAG pTag = &pThis->aTags[uTag];
+    AssertPtr(pTag);
+
+    LogFunc(("[SD%RU8] Using stream tag=%RU8\n", uSD, uTag));
+
+    /* Assign new values. */
+    pTag->uTag    = uTag;
+    pTag->pStream = hdaGetStreamFromSD(pThis, uSD);
+
+    PHDASTREAM pStream = pTag->pStream;
+    AssertPtr(pStream);
 
     if (fInReset)
     {
@@ -1374,42 +1394,12 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
             hdaStreamLock(pStream);
 
-            /*
-             * Extract the stream tag the guest wants to use for this specific
-             * stream descriptor (SDn). This only can happen if the stream is in a non-running
-             * state, so we're doing the lookup and assignment here.
-             *
-             * So depending on the guest OS, SD3 can use stream tag 4, for example.
-             */
-            uint8_t uTag = (u32Value >> HDA_SDCTL_NUM_SHIFT) & HDA_SDCTL_NUM_MASK;
-
-            LogFunc(("[SD%RU8] Using stream tag=%RU8\n", uSD, uTag));
-
-            if (   !uTag 
-                || uTag > HDA_MAX_TAGS)
-            {
-                LogRel(("HDA: Warning: Stream #%RU8 is using invalid stream tag %RU8, skipping SDCTL\n", uSD, uTag));
-
-                DEVHDA_UNLOCK_BOTH(pThis);
-                return hdaRegWriteU24(pThis, iReg, u32Value);
-            }
-
-            LogRel2(("HDA: Stream #%RU8 is stream tag %RU8\n", uSD, uTag));
-            
-            /* Our internal mapping table is zero-based. */
-            PHDATAG pTag = &pThis->aTags[uTag - 1];
-            AssertPtr(pTag);
-
-            /* Assign new values. */
-            pTag->uTag    = uTag;
-            pTag->pStream = pStream;
-
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             hdaStreamAsyncIOLock(pStream);
             hdaStreamAsyncIOEnable(pStream, fRun /* fEnable */);
 # endif
             /* (Re-)initialize the stream with current values. */
-            rc2 = hdaStreamInit(pStream, pStream->u8SD);
+            int rc2 = hdaStreamInit(pStream, pStream->u8SD);
             AssertRC(rc2);
 
             /* Enable/disable the stream. */
@@ -1455,6 +1445,9 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     }
 
     DEVHDA_UNLOCK_BOTH(pThis);
+
+    int rc2 = hdaRegWriteU24(pThis, iReg, u32Value);
+    AssertRC(rc2);
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
