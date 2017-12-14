@@ -1076,6 +1076,16 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
         }
 
         tsTransferNext = tsNow + (cbTransferNext * pStream->State.cTicksPerByte);
+
+        /** 
+         * If the current transfer is complete, reset our counter.
+         *  
+         * This can happen for examlpe if the guest OS (like macOS) sets up
+         * big BDLEs without IOC bits set (but for the last one) and the
+         * transfer is complete before we reach such a BDL entry. 
+         */ 
+        if (fTransferComplete)
+            pStream->State.cbTransferProcessed = 0;
     }
 
     /* If we need to do another transfer, (re-)arm the device timer.  */
