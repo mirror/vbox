@@ -36,7 +36,8 @@ VBoxClient_SOURCES += \
   	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-helper.cpp \
   	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/x11-clipboard.cpp \
 	clipboard.cpp \
-	display-svga.cpp
+	display-svga.cpp \
+	display-svga-x11.cpp
 VBoxClient_LIBPATH = \
 	$(VBOX_LIBPATH32_X11)
 VBoxClient_LIBS.freebsd = \
