@@ -731,8 +731,8 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
     AssertPtr(pThis);
 
     PHDASTREAMPERIOD pPeriod = &pStream->State.Period;
-    int rc = hdaStreamPeriodLock(pPeriod);
-    AssertRC(rc);
+    if (!hdaStreamPeriodLock(pPeriod))
+        return VERR_ACCESS_DENIED;
 
     bool fProceed = true;
 
@@ -776,6 +776,8 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
     /* State sanity checks. */
     Assert(ASMAtomicReadBool(&pStream->State.fInReset) == false);
+
+    int rc = VINF_SUCCESS;
 
     /* Fetch first / next BDL entry. */
     PHDABDLE pBDLE = &pStream->State.BDLE;
