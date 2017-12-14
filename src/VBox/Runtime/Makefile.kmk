@@ -2392,6 +2392,7 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/powernotification-r0drv.c \
 	r0drv/nt/alloc-r0drv-nt.cpp \
 	r0drv/nt/assert-r0drv-nt.cpp \
+	r0drv/nt/dbgkrnlinfo-r0drv-nt.cpp \
 	r0drv/nt/initterm-r0drv-nt.cpp \
 	r0drv/nt/memobj-r0drv-nt.cpp \
 	r0drv/nt/memuserkernel-r0drv-nt.cpp \
