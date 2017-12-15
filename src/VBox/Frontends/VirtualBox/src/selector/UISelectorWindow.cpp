@@ -452,10 +452,7 @@ void UISelectorWindow::sltCloseVirtualMediumManagerWindow()
 {
     /* Destroy instance if still exists: */
     if (m_pManagerVirtualMedia)
-    {
-        m_pManagerVirtualMedia->close();
         UIMediumManagerFactory().cleanup(m_pManagerVirtualMedia);
-    }
 }
 
 void UISelectorWindow::sltOpenHostNetworkManagerWindow()
@@ -485,10 +482,7 @@ void UISelectorWindow::sltCloseHostNetworkManagerWindow()
 {
     /* Destroy instance if still exists: */
     if (m_pManagerHostNetwork)
-    {
-        m_pManagerHostNetwork->close();
         UIHostNetworkManagerFactory().cleanup(m_pManagerHostNetwork);
-    }
 }
 
 void UISelectorWindow::sltOpenImportApplianceWizard(const QString &strFileName /* = QString() */)

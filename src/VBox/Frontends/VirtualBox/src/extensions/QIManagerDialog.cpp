@@ -60,6 +60,7 @@ void QIManagerDialogFactory::cleanup(QIManagerDialog *&pDialog)
 
 QIManagerDialog::QIManagerDialog(QWidget *pCenterWidget)
     : pCenterWidget(pCenterWidget)
+    , m_fCloseEmitted(false)
     , m_pWidget(0)
     , m_pWidgetMenu(0)
 #ifdef VBOX_WS_MAC
@@ -222,8 +223,12 @@ void QIManagerDialog::closeEvent(QCloseEvent *pEvent)
 {
     /* Ignore the event itself: */
     pEvent->ignore();
-    /* But tell the listener to close us: */
-    emit sigClose();
+    /* But tell the listener to close us (once): */
+    if (!m_fCloseEmitted)
+    {
+        m_fCloseEmitted = true;
+        emit sigClose();
+    }
 }
 
 void QIManagerDialog::setDialogGeometry(const QRect &geometry)
