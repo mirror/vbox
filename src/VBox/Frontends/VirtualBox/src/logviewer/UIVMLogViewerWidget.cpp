@@ -243,6 +243,15 @@ void UIVMLogViewerWidget::prepare()
 
 void UIVMLogViewerWidget::prepareWidgets()
 {
+    /* Configure layout: */
+    layout()->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+        layout()->setSpacing(10);
+#else
+        const int iS = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2;
+        layout()->setSpacing(iS);
+#endif
+
     /* Create VM Log-Viewer container: */
     m_pViewerContainer = new QITabWidget(this);
     AssertPtrReturnVoid(m_pViewerContainer);
