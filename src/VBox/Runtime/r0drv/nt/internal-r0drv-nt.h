@@ -57,6 +57,7 @@ extern uint32_t                                g_cRtMpNtMaxGroups;
 extern uint32_t                                g_cRtMpNtMaxCpus;
 extern RTCPUID                                 g_aidRtMpNtByCpuSetIdx[RTCPUSET_MAX_CPUS];
 
+extern decltype(ExAllocatePoolWithTag)        *g_pfnrtExAllocatePoolWithTag;
 extern PFNMYEXSETTIMERRESOLUTION               g_pfnrtNtExSetTimerResolution;
 extern PFNMYKEFLUSHQUEUEDDPCS                  g_pfnrtNtKeFlushQueuedDpcs;
 extern PFNHALREQUESTIPI_W7PLUS                 g_pfnrtHalRequestIpiW7Plus;

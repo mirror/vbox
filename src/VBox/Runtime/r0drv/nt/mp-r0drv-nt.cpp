@@ -1307,7 +1307,7 @@ static VOID rtmpNtDPCWrapper(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID Sy
     int32_t cRefs = ASMAtomicDecS32(&pArgs->cRefs);
     Assert(cRefs >= 0);
     if (cRefs == 0)
-        ExFreePool(pArgs);
+        RTMemFree(pArgs);
 }
 
 
@@ -1396,7 +1396,7 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
      * Allocate an RTMPARGS structure followed by cDpcsNeeded KDPCs
      * and initialize them.
      */
-    PRTMPARGS pArgs = (PRTMPARGS)ExAllocatePoolWithTag(NonPagedPool, sizeof(RTMPARGS) + cDpcsNeeded * sizeof(KDPC), (ULONG)'RTMp');
+    PRTMPARGS pArgs = (PRTMPARGS)RTMemAllocZ(sizeof(RTMPARGS) + cDpcsNeeded * sizeof(KDPC));
     if (!pArgs)
         return VERR_NO_MEMORY;
 
@@ -1443,7 +1443,7 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
     }
     if (RT_FAILURE(rc))
     {
-        ExFreePool(pArgs);
+        RTMemFree(pArgs);
         return rc;
     }
 
@@ -1513,7 +1513,7 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
     int32_t cRefs = ASMAtomicDecS32(&pArgs->cRefs);
     Assert(cRefs >= 0);
     if (cRefs == 0)
-        ExFreePool(pArgs);
+        RTMemFree(pArgs);
 
     return VINF_SUCCESS;
 }
@@ -1601,7 +1601,7 @@ DECLINLINE(void) rtMpNtOnSpecificRelease(PRTMPNTONSPECIFICARGS pArgs)
     uint32_t cRefs = ASMAtomicDecU32(&pArgs->cRefs);
     AssertMsg(cRefs <= 1, ("cRefs=%#x\n", cRefs));
     if (cRefs == 0)
-        ExFreePool(pArgs);
+        RTMemFree(pArgs);
 }
 
 
@@ -1678,7 +1678,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
      * The package is referenced counted to avoid unnecessary spinning to
      * synchronize cleanup and prevent stack corruption.
      */
-    PRTMPNTONSPECIFICARGS pArgs = (PRTMPNTONSPECIFICARGS)ExAllocatePoolWithTag(NonPagedPool, sizeof(*pArgs), (ULONG)'RTMp');
+    PRTMPNTONSPECIFICARGS pArgs = (PRTMPNTONSPECIFICARGS)RTMemAllocZ(sizeof(*pArgs));
     if (!pArgs)
         return VERR_NO_MEMORY;
     pArgs->cRefs                  = 2;
@@ -1696,7 +1696,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     rc = rtMpNtSetTargetProcessorDpc(&pArgs->Dpc, idCpu);
     if (RT_FAILURE(rc))
     {
-        ExFreePool(pArgs);
+        RTMemFree(pArgs);
         return rc;
     }
 
@@ -1713,7 +1713,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
         pfnWorker(idCpu, pvUser1, pvUser2);
         KeLowerIrql(bOldIrql);
 
-        ExFreePool(pArgs);
+        RTMemFree(pArgs);
         return VINF_SUCCESS;
     }
 
@@ -1774,7 +1774,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
          */
         if (KeRemoveQueueDpc(&pArgs->Dpc))
         {
-            ExFreePool(pArgs); /* DPC was still queued, so we can return without further ado. */
+            RTMemFree(pArgs); /* DPC was still queued, so we can return without further ado. */
             LogRel(("RTMpOnSpecific(%#x): Not processed after %llu ns: rcNt=%#x\n", idCpu, RTTimeNanoTS() - nsRealWaitTS, rcNt));
         }
         else

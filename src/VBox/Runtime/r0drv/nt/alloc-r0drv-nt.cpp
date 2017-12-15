@@ -45,14 +45,16 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 {
     if (!(fFlags & RTMEMHDR_FLAG_ANY_CTX))
     {
-#if 1 /* This allegedly makes the driver verifier happier... */
-        POOL_TYPE enmPoolType = NonPagedPool;
-        if (!(fFlags & RTMEMHDR_FLAG_EXEC) && g_uRtNtVersion >= RTNT_MAKE_VERSION(8,0))
-            enmPoolType = NonPagedPoolNx;
-        PRTMEMHDR pHdr = (PRTMEMHDR)ExAllocatePoolWithTag(enmPoolType, cb + sizeof(*pHdr), IPRT_NT_POOL_TAG);
-#else
-        PRTMEMHDR pHdr = (PRTMEMHDR)ExAllocatePoolWithTag(NonPagedPool, cb + sizeof(*pHdr), IPRT_NT_POOL_TAG);
-#endif
+        PRTMEMHDR pHdr;
+        if (g_pfnrtExAllocatePoolWithTag)
+        {
+            if (!(fFlags & RTMEMHDR_FLAG_EXEC) && g_uRtNtVersion >= RTNT_MAKE_VERSION(8,0))
+                pHdr = (PRTMEMHDR)ExAllocatePoolWithTag(NonPagedPoolNx, cb + sizeof(*pHdr), IPRT_NT_POOL_TAG);
+            else
+                pHdr = (PRTMEMHDR)ExAllocatePoolWithTag(NonPagedPool, cb + sizeof(*pHdr), IPRT_NT_POOL_TAG);
+        }
+        else
+            pHdr = (PRTMEMHDR)ExAllocatePool(NonPagedPool, cb + sizeof(*pHdr));
         if (pHdr)
         {
             pHdr->u32Magic  = RTMEMHDR_MAGIC;
