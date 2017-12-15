@@ -19,8 +19,6 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#undef _WIN32_WINNT           /// REMOVE WHEN VBoxServiceNT IS GONE
-#define _WIN32_WINNT 0x0501   /// REMOVE WHEN VBoxServiceNT IS GONE
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/ldr.h>

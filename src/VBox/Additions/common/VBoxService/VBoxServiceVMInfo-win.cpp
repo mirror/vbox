@@ -1330,58 +1330,53 @@ int VGSvcVMInfoWinGetComponentVersions(uint32_t uClientID)
     /* The file information table. */
     const VBOXSERVICEVMINFOFILE aVBoxFiles[] =
     {
-        { szSysDir, "VBoxControl.exe" },
-        { szSysDir, "VBoxHook.dll" },
-        { szSysDir, "VBoxDisp.dll" },
-        { szSysDir, "VBoxTray.exe" },
-#ifdef TARGET_NT4
-        { szSysDir, "VBoxServiceNT.exe" },
-#else
-        { szSysDir, "VBoxService.exe" },
-        { szSysDir, "VBoxMRXNP.dll" },
-        { szSysDir, "VBoxGINA.dll" },
-        { szSysDir, "VBoxCredProv.dll" },
-#endif
+        { szSysDir,     "VBoxControl.exe" },
+        { szSysDir,     "VBoxHook.dll" },
+        { szSysDir,     "VBoxDisp.dll" },
+        { szSysDir,     "VBoxTray.exe" },
+        { szSysDir,     "VBoxService.exe" },
+        { szSysDir,     "VBoxMRXNP.dll" },
+        { szSysDir,     "VBoxGINA.dll" },
+        { szSysDir,     "VBoxCredProv.dll" },
 
  /* On 64-bit we don't yet have the OpenGL DLLs in native format.
     So just enumerate the 32-bit files in the SYSWOW directory. */
 #ifdef RT_ARCH_AMD64
-        { szSysWowDir, "VBoxOGLarrayspu.dll" },
-        { szSysWowDir, "VBoxOGLcrutil.dll" },
-        { szSysWowDir, "VBoxOGLerrorspu.dll" },
-        { szSysWowDir, "VBoxOGLpackspu.dll" },
-        { szSysWowDir, "VBoxOGLpassthroughspu.dll" },
-        { szSysWowDir, "VBoxOGLfeedbackspu.dll" },
-        { szSysWowDir, "VBoxOGL.dll" },
+        { szSysWowDir,  "VBoxOGLarrayspu.dll" },
+        { szSysWowDir,  "VBoxOGLcrutil.dll" },
+        { szSysWowDir,  "VBoxOGLerrorspu.dll" },
+        { szSysWowDir,  "VBoxOGLpackspu.dll" },
+        { szSysWowDir,  "VBoxOGLpassthroughspu.dll" },
+        { szSysWowDir,  "VBoxOGLfeedbackspu.dll" },
+        { szSysWowDir,  "VBoxOGL.dll" },
 #else  /* !RT_ARCH_AMD64 */
-# ifndef TARGET_NT4
-        { szSysDir, "VBoxOGLarrayspu.dll" },
-        { szSysDir, "VBoxOGLcrutil.dll" },
-        { szSysDir, "VBoxOGLerrorspu.dll" },
-        { szSysDir, "VBoxOGLpackspu.dll" },
-        { szSysDir, "VBoxOGLpassthroughspu.dll" },
-        { szSysDir, "VBoxOGLfeedbackspu.dll" },
-        { szSysDir, "VBoxOGL.dll" },
-# endif
+        { szSysDir,     "VBoxOGLarrayspu.dll" },
+        { szSysDir,     "VBoxOGLcrutil.dll" },
+        { szSysDir,     "VBoxOGLerrorspu.dll" },
+        { szSysDir,     "VBoxOGLpackspu.dll" },
+        { szSysDir,     "VBoxOGLpassthroughspu.dll" },
+        { szSysDir,     "VBoxOGLfeedbackspu.dll" },
+        { szSysDir,     "VBoxOGL.dll" },
 #endif /* !RT_ARCH_AMD64 */
 
         { szDriversDir, "VBoxGuest.sys" },
-#ifdef TARGET_NT4
         { szDriversDir, "VBoxMouseNT.sys" },
-#else
         { szDriversDir, "VBoxMouse.sys" },
         { szDriversDir, "VBoxSF.sys"    },
-#endif
         { szDriversDir, "VBoxVideo.sys" },
     };
 
     for (unsigned i = 0; i < RT_ELEMENTS(aVBoxFiles); i++)
     {
         char szVer[128];
-        VGSvcUtilWinGetFileVersionString(aVBoxFiles[i].pszFilePath, aVBoxFiles[i].pszFileName, szVer, sizeof(szVer));
+        rc = VGSvcUtilWinGetFileVersionString(aVBoxFiles[i].pszFilePath, aVBoxFiles[i].pszFileName, szVer, sizeof(szVer));
         char szPropPath[256];
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestAdd/Components/%s", aVBoxFiles[i].pszFileName);
-        rc = VGSvcWritePropF(uClientID, szPropPath, "%s", szVer);
+        if (   rc != VERR_FILE_NOT_FOUND
+            && rc != VERR_PATH_NOT_FOUND)
+            VGSvcWritePropF(uClientID, szPropPath, "%s", szVer);
+        else
+            VGSvcWritePropF(uClientID, szPropPath, NULL);
     }
 
     return VINF_SUCCESS;

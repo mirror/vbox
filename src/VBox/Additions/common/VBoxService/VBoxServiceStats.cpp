@@ -29,10 +29,6 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #if defined(RT_OS_WINDOWS)
-# ifdef TARGET_NT4
-#  undef _WIN32_WINNT           /// REMOVE WHEN VBoxServiceNT IS GONE
-#  define _WIN32_WINNT 0x0501   /// REMOVE WHEN VBoxServiceNT IS GONE
-# endif
 # include <iprt/win/windows.h>
 # include <psapi.h>
 # include <winternl.h>
