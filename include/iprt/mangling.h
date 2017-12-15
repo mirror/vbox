@@ -1617,6 +1617,7 @@
 # define RTR0DbgKrnlInfoQueryMember                     RT_MANGLER(RTR0DbgKrnlInfoQueryMember) /* r0drv */
 # define RTR0DbgKrnlInfoQuerySize                       RT_MANGLER(RTR0DbgKrnlInfoQuerySize)   /* r0drv */
 # define RTR0DbgKrnlInfoQuerySymbol                     RT_MANGLER(RTR0DbgKrnlInfoQuerySymbol) /* r0drv */
+# define RTR0DbgKrnlInfoGetSymbol                       RT_MANGLER(RTR0DbgKrnlInfoGetSymbol)   /* r0drv */
 # define RTR0DbgKrnlInfoRelease                         RT_MANGLER(RTR0DbgKrnlInfoRelease)     /* r0drv */
 # define RTR0DbgKrnlInfoRetain                          RT_MANGLER(RTR0DbgKrnlInfoRetain)      /* r0drv */
 # define RTR0Init                                       RT_MANGLER(RTR0Init)                   /* r0drv */

@@ -2228,6 +2228,7 @@ RuntimeR0Drv_SOURCES    = \
 	r0drv/alloc-r0drv.cpp \
 	r0drv/initterm-r0drv.cpp \
 	r0drv/generic/semspinmutex-r0drv-generic.c \
+	r0drv/RTR0DbgKrnlInfoGetSymbol.cpp \
 	VBox/log-vbox.cpp \
 
 RuntimeR0Drv_SOURCES.amd64 = \

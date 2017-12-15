@@ -1620,11 +1620,22 @@ RTR0DECL(int)       RTR0DbgKrnlInfoQueryMember(RTDBGKRNLINFO hKrnlInfo, const ch
  *                          particular, it will be set to NULL when
  *                          VERR_SYMBOL_NOT_FOUND is returned.
  *
- * @sa      RTLdrGetSymbol.
+ * @sa      RTR0DbgKrnlInfoGetSymbol, RTLdrGetSymbol
  */
 RTR0DECL(int)       RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *pszModule,
                                                const char *pszSymbol, void **ppvSymbol);
 
+/**
+ * Wrapper around RTR0DbgKrnlInfoQuerySymbol that returns the symbol.
+ *
+ * @return  Symbol address if found, NULL if not found or some invalid parameter
+ *          or something.
+ * @param   hKrnlInfo       The kernel info handle.
+ * @param   pszModule       Reserved for future extensions. Pass NULL.
+ * @param   pszSymbol       The C name of the symbol.
+ * @sa      RTR0DbgKrnlInfoQuerySymbol, RTLdrGetSymbol
+ */
+RTR0DECL(void *)    RTR0DbgKrnlInfoGetSymbol(RTDBGKRNLINFO hKrnlInfo, const char *pszModule, const char *pszSymbol);
 
 /**
  * Queries the size (in bytes) of a kernel data type.
