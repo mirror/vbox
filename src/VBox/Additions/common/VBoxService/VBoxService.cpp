@@ -881,6 +881,9 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
     g_pszProgName = RTPathFilename(argv[0]);
+#ifdef RT_OS_WINDOWS
+    VGSvcWinResolveApis();
+#endif
 #ifdef DEBUG
     rc = RTCritSectInit(&g_csLog);
     AssertRC(rc);

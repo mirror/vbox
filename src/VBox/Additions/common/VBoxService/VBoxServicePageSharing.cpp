@@ -44,6 +44,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#undef _WIN32_WINNT           /// REMOVE WHEN VBoxServiceNT IS GONE
+#define _WIN32_WINNT 0x0501   /// REMOVE WHEN VBoxServiceNT IS GONE
 #include <iprt/assert.h>
 #include <iprt/avl.h>
 #include <iprt/asm.h>
@@ -61,14 +63,16 @@
 #include <iprt/time.h>
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestLib.h>
-#include "VBoxServiceInternal.h"
-#include "VBoxServiceUtils.h"
 
-#if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
+#ifdef RT_OS_WINDOWS
+#include <iprt/nt/nt-and-windows.h>
 # include <tlhelp32.h>
 # include <psapi.h>
 # include <winternl.h>
 #endif
+
+#include "VBoxServiceInternal.h"
+#include "VBoxServiceUtils.h"
 
 
 /*********************************************************************************************************************************
@@ -80,54 +84,19 @@ typedef struct
 #ifdef RT_OS_WINDOWS
     HMODULE         hModule;
     char            szFileVersion[16];
-# ifndef TARGET_NT4
     MODULEENTRY32   Info;
-# endif
-#endif /* RT_OS_WINDOWS */
+#endif
 } VGSVCPGSHKNOWNMOD, *PVGSVCPGSHKNOWNMOD;
-
-
-#ifdef RT_OS_WINDOWS
-/* NTDLL API we want to use: */
-# define SystemModuleInformation 11
-
-typedef struct _RTL_PROCESS_MODULE_INFORMATION
-{
-    ULONG Section;
-    PVOID MappedBase;
-    PVOID ImageBase;
-    ULONG ImageSize;
-    ULONG Flags;
-    USHORT LoadOrderIndex;
-    USHORT InitOrderIndex;
-    USHORT LoadCount;
-    USHORT OffsetToFileName;
-    CHAR FullPathName[256];
-} RTL_PROCESS_MODULE_INFORMATION, *PRTL_PROCESS_MODULE_INFORMATION;
-
-typedef struct _RTL_PROCESS_MODULES
-{
-    ULONG NumberOfModules;
-    RTL_PROCESS_MODULE_INFORMATION Modules[1];
-} RTL_PROCESS_MODULES, *PRTL_PROCESS_MODULES;
-
-typedef NTSTATUS (WINAPI *PFNZWQUERYSYSTEMINFORMATION)(ULONG, PVOID, ULONG, PULONG);
-
-#endif /* RT_OS_WINDOWS */
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#ifdef RT_OS_WINDOWS
-static PFNZWQUERYSYSTEMINFORMATION g_pfnZwQuerySystemInformation = NULL;
-#endif
-
 /** The semaphore we're blocking on. */
 static RTSEMEVENTMULTI  g_PageSharingEvent = NIL_RTSEMEVENTMULTI;
 
 static PAVLPVNODECORE   g_pKnownModuleTree = NULL;
-static uint64_t         g_idSession = 0;
+static uint64_t         g_idSession        = 0;
 
 
 /*********************************************************************************************************************************
@@ -136,7 +105,7 @@ static uint64_t         g_idSession = 0;
 static DECLCALLBACK(int) vgsvcPageSharingEmptyTreeCallback(PAVLPVNODECORE pNode, void *pvUser);
 
 
-#if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
+#ifdef RT_OS_WINDOWS
 
 /**
  * Registers a new module with the VMM
@@ -148,22 +117,21 @@ static void vgsvcPageSharingRegisterModule(PVGSVCPGSHKNOWNMOD pModule, bool fVal
     VMMDEVSHAREDREGIONDESC   aRegions[VMMDEVSHAREDREGIONDESC_MAX];
     DWORD                    dwModuleSize = pModule->Info.modBaseSize;
     BYTE                    *pBaseAddress = pModule->Info.modBaseAddr;
-    DWORD                    cbVersionSize, dummy;
-    BYTE                    *pVersionInfo;
 
     VGSvcVerbose(3, "vgsvcPageSharingRegisterModule\n");
 
-    cbVersionSize = GetFileVersionInfoSize(pModule->Info.szExePath, &dummy);
-    if (!cbVersionSize)
+    DWORD dwDummy;
+    DWORD cbVersion = GetFileVersionInfoSize(pModule->Info.szExePath, &dwDummy);
+    if (!cbVersion)
     {
         VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: GetFileVersionInfoSize failed with %d\n", GetLastError());
         return;
     }
-    pVersionInfo = (BYTE *)RTMemAlloc(cbVersionSize);
+    BYTE *pVersionInfo = (BYTE *)RTMemAllocZ(cbVersion);
     if (!pVersionInfo)
         return;
 
-    if (!GetFileVersionInfo(pModule->Info.szExePath, 0, cbVersionSize, pVersionInfo))
+    if (!GetFileVersionInfo(pModule->Info.szExePath, 0, cbVersion, pVersionInfo))
     {
         VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: GetFileVersionInfo failed with %d\n", GetLastError());
         goto end;
@@ -176,7 +144,7 @@ static void vgsvcPageSharingRegisterModule(PVGSVCPGSHKNOWNMOD pModule, bool fVal
         WORD wCodePage;
     } *lpTranslate;
 
-    UINT   cbTranslate;
+    UINT cbTranslate;
     BOOL fRet = VerQueryValue(pVersionInfo, TEXT("\\VarFileInfo\\Translation"), (LPVOID *)&lpTranslate, &cbTranslate);
     if (   !fRet
         || cbTranslate < 4)
@@ -321,7 +289,7 @@ static void vgsvcPageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *pp
         return;
     }
 
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwProcessId);
+    HANDLE hSnapshot = g_pfnCreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwProcessId);
     if (hSnapshot == INVALID_HANDLE_VALUE)
     {
         VGSvcVerbose(3, "vgsvcPageSharingInspectModules: CreateToolhelp32Snapshot failed with %d\n", GetLastError());
@@ -335,7 +303,7 @@ static void vgsvcPageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *pp
     BOOL          bRet;
 
     ModuleInfo.dwSize = sizeof(ModuleInfo);
-    bRet = Module32First(hSnapshot, &ModuleInfo);
+    bRet = g_pfnModule32First(hSnapshot, &ModuleInfo);
     do
     {
         /** @todo when changing this make sure VBoxService.exe is excluded! */
@@ -374,7 +342,7 @@ static void vgsvcPageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *pp
             bool ret = RTAvlPVInsert(ppNewTree, pRec);
             Assert(ret); NOREF(ret);
         }
-    } while (Module32Next(hSnapshot, &ModuleInfo));
+    } while (g_pfnModule32Next(hSnapshot, &ModuleInfo));
 
     CloseHandle(hSnapshot);
     CloseHandle(hProcess);
@@ -388,36 +356,45 @@ static void vgsvcPageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *pp
  */
 static void vgsvcPageSharingInspectGuest(void)
 {
-    HANDLE hSnapshot;
-    PAVLPVNODECORE pNewTree = NULL;
-    DWORD dwProcessId = GetCurrentProcessId();
-
     VGSvcVerbose(3, "vgsvcPageSharingInspectGuest\n");
+    PAVLPVNODECORE pNewTree = NULL;
 
-    hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (hSnapshot == INVALID_HANDLE_VALUE)
+    /*
+     * Check loaded modules for all running processes.
+     */
+    if (   g_pfnProcess32First
+        && g_pfnProcess32Next
+        && g_pfnModule32First
+        && g_pfnModule32Next
+        && g_pfnCreateToolhelp32Snapshot)
     {
-        VGSvcVerbose(3, "vgsvcPageSharingInspectGuest: CreateToolhelp32Snapshot failed with %d\n", GetLastError());
-        return;
+        HANDLE hSnapshot = g_pfnCreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (hSnapshot == INVALID_HANDLE_VALUE)
+        {
+            VGSvcVerbose(3, "vgsvcPageSharingInspectGuest: CreateToolhelp32Snapshot failed with %d\n", GetLastError());
+            return;
+        }
+
+        DWORD const dwProcessId = GetCurrentProcessId();
+
+        PROCESSENTRY32 ProcessInfo;
+        ProcessInfo.dwSize = sizeof(ProcessInfo);
+        g_pfnProcess32First(hSnapshot, &ProcessInfo);
+
+        do
+        {
+            /* Skip our own process. */
+            if (ProcessInfo.th32ProcessID != dwProcessId)
+                vgsvcPageSharingInspectModules(ProcessInfo.th32ProcessID, &pNewTree);
+        }
+        while (g_pfnProcess32Next(hSnapshot, &ProcessInfo));
+
+        CloseHandle(hSnapshot);
     }
 
-    /* Check loaded modules for all running processes. */
-    PROCESSENTRY32 ProcessInfo;
-
-    ProcessInfo.dwSize = sizeof(ProcessInfo);
-    Process32First(hSnapshot, &ProcessInfo);
-
-    do
-    {
-        /* Skip our own process. */
-        if (ProcessInfo.th32ProcessID != dwProcessId)
-            vgsvcPageSharingInspectModules(ProcessInfo.th32ProcessID, &pNewTree);
-    }
-    while (Process32Next(hSnapshot, &ProcessInfo));
-
-    CloseHandle(hSnapshot);
-
-    /* Check all loaded kernel modules. */
+    /*
+     * Check all loaded kernel modules.
+     */
     if (g_pfnZwQuerySystemInformation)
     {
         ULONG                cbBuffer = 0;
@@ -467,23 +444,24 @@ static void vgsvcPageSharingInspectGuest(void)
                     if (!pModule)
                         break;
 
-/** @todo Use unicode APIs! */
-                    strcpy(pModule->Info.szModule, &pSystemModules->Modules[i].FullPathName[pSystemModules->Modules[i].OffsetToFileName]);
+/** @todo FullPathName not an UTF-8 string is! An ANSI string it is. */
+                    strcpy(pModule->Info.szModule,
+                           (const char *)&pSystemModules->Modules[i].FullPathName[pSystemModules->Modules[i].OffsetToFileName]);
                     GetSystemDirectoryA(szFullFilePath, sizeof(szFullFilePath));
 
                     /* skip \Systemroot\system32 */
-                    char *lpPath = strchr(&pSystemModules->Modules[i].FullPathName[1], '\\');
+                    char *lpPath = strchr((char *)&pSystemModules->Modules[i].FullPathName[1], '\\');
                     if (!lpPath)
                     {
                         /* Seen just file names in XP; try to locate the file in the system32 and system32\drivers directories. */
                         strcat(szFullFilePath, "\\");
-                        strcat(szFullFilePath, pSystemModules->Modules[i].FullPathName);
+                        strcat(szFullFilePath, (const char *)pSystemModules->Modules[i].FullPathName);
                         VGSvcVerbose(3, "Unexpected kernel module name try %s\n", szFullFilePath);
                         if (RTFileExists(szFullFilePath) == false)
                         {
                             GetSystemDirectoryA(szFullFilePath, sizeof(szFullFilePath));
                             strcat(szFullFilePath, "\\drivers\\");
-                            strcat(szFullFilePath, pSystemModules->Modules[i].FullPathName);
+                            strcat(szFullFilePath, (const char *)pSystemModules->Modules[i].FullPathName);
                             VGSvcVerbose(3, "Unexpected kernel module name try %s\n", szFullFilePath);
                             if (RTFileExists(szFullFilePath) == false)
                             {
@@ -495,7 +473,7 @@ static void vgsvcPageSharingInspectGuest(void)
                     }
                     else
                     {
-                        lpPath = strchr(lpPath+1, '\\');
+                        lpPath = strchr(lpPath + 1, '\\');
                         if (!lpPath)
                         {
                             VGSvcVerbose(1, "Unexpected kernel module name %s (2)\n", pSystemModules->Modules[i].FullPathName);
@@ -567,21 +545,14 @@ static DECLCALLBACK(int) vgsvcPageSharingEmptyTreeCallback(PAVLPVNODECORE pNode,
 }
 
 
-#elif TARGET_NT4
-
-static void vgsvcPageSharingInspectGuest(void)
-{
-    /* not implemented */
-}
-
-#else
+#else  /* !RT_OS_WINDOWS */
 
 static void vgsvcPageSharingInspectGuest(void)
 {
     /** @todo other platforms */
 }
 
-#endif
+#endif /* !RT_OS_WINDOWS */
 
 /** @interface_method_impl{VBOXSERVICE,pfnInit} */
 static DECLCALLBACK(int) vgsvcPageSharingInit(void)
@@ -591,9 +562,7 @@ static DECLCALLBACK(int) vgsvcPageSharingInit(void)
     int rc = RTSemEventMultiCreate(&g_PageSharingEvent);
     AssertRCReturn(rc, rc);
 
-#if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
-    g_pfnZwQuerySystemInformation = (PFNZWQUERYSYSTEMINFORMATION)RTLdrGetSystemSymbol("ntdll.dll", "ZwQuerySystemInformation");
-
+#ifdef RT_OS_WINDOWS
     rc = VbglR3GetSessionId(&g_idSession);
     if (RT_FAILURE(rc))
     {
@@ -652,7 +621,7 @@ static DECLCALLBACK(int) vgsvcPageSharingWorker(bool volatile *pfShutdown)
             VGSvcError("vgsvcPageSharingWorker: RTSemEventMultiWait failed; rc=%Rrc\n", rc);
             break;
         }
-#if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
+#ifdef RT_OS_WINDOWS
         uint64_t idNewSession = g_idSession;
         rc =  VbglR3GetSessionId(&idNewSession);
         AssertRC(rc);

@@ -30,8 +30,8 @@
 *********************************************************************************************************************************/
 #if defined(RT_OS_WINDOWS)
 # ifdef TARGET_NT4
-#  undef _WIN32_WINNT
-#  define _WIN32_WINNT 0x501
+#  undef _WIN32_WINNT           /// REMOVE WHEN VBoxServiceNT IS GONE
+#  define _WIN32_WINNT 0x0501   /// REMOVE WHEN VBoxServiceNT IS GONE
 # endif
 # include <iprt/win/windows.h>
 # include <psapi.h>
@@ -62,6 +62,7 @@
 #include <iprt/thread.h>
 #include <VBox/VMMDev.h> /* For VMMDevReportGuestStats and indirectly VbglR3StatReport. */
 #include <VBox/VBoxGuestLib.h>
+
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
 

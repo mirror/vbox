@@ -19,15 +19,20 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#undef _WIN32_WINNT           /// REMOVE WHEN VBoxServiceNT IS GONE
+#define _WIN32_WINNT 0x0501   /// REMOVE WHEN VBoxServiceNT IS GONE
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/ldr.h>
 #include <iprt/system.h> /* For querying OS version. */
 #include <VBox/VBoxGuestLib.h>
-#include "VBoxServiceInternal.h"
 
-#include <iprt/win/windows.h>
+#include <iprt/nt/nt-and-windows.h>
 #include <process.h>
 #include <aclapi.h>
+#include <tlhelp32.h>
+
+#include "VBoxServiceInternal.h"
 
 
 /*********************************************************************************************************************************
@@ -50,6 +55,68 @@ static SERVICE_TABLE_ENTRY const g_aServiceTable[] =
     { NULL,             NULL}
 };
 
+/** @name APIs from ADVAPI32.DLL.
+ * @{ */
+decltype(RegisterServiceCtrlHandlerExA) *g_pfnRegisterServiceCtrlHandlerExA;    /**< W2K+ */
+decltype(ChangeServiceConfig2A)         *g_pfnChangeServiceConfig2A;            /**< W2K+ */
+/** @} */
+
+/** @name API from KERNEL32.DLL
+ * @{ */
+decltype(CreateToolhelp32Snapshot)      *g_pfnCreateToolhelp32Snapshot;         /**< W2K+, but Geoff says NT4. Hmm. */
+decltype(Process32First)                *g_pfnProcess32First;                   /**< W2K+, but Geoff says NT4. Hmm. */
+decltype(Process32Next)                 *g_pfnProcess32Next;                    /**< W2K+, but Geoff says NT4. Hmm. */
+decltype(Module32First)                 *g_pfnModule32First;                    /**< W2K+, but Geoff says NT4. Hmm. */
+decltype(Module32Next)                  *g_pfnModule32Next;                     /**< W2K+, but Geoff says NT4. Hmm. */
+/** @} */
+
+/** @name API from NTDLL.DLL
+ * @{ */
+decltype(ZwQuerySystemInformation)      *g_pfnZwQuerySystemInformation;         /**< NT4 (where as NtQuerySystemInformation is W2K). */
+/** @} */
+
+
+/**
+ * Resolve APIs not present on older windows versions.
+ */
+void VGSvcWinResolveApis(void)
+{
+    RTLDRMOD hLdrMod;
+#define RESOLVE_SYMBOL(a_fn) do { RT_CONCAT(g_pfn, a_fn) = (decltype(a_fn) *)RTLdrGetFunction(hLdrMod, #a_fn); } while (0)
+
+    /* From ADVAPI32.DLL: */
+    int rc = RTLdrLoadSystem("advapi32.dll", false /*fNoUnload*/, &hLdrMod);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        RESOLVE_SYMBOL(RegisterServiceCtrlHandlerExA);
+        RESOLVE_SYMBOL(ChangeServiceConfig2A);
+        RTLdrClose(hLdrMod);
+    }
+
+    /* From KERNEL32.DLL: */
+    rc = RTLdrLoadSystem("kernel32.dll", false /*fNoUnload*/, &hLdrMod);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        RESOLVE_SYMBOL(CreateToolhelp32Snapshot);
+        RESOLVE_SYMBOL(Process32First);
+        RESOLVE_SYMBOL(Process32Next);
+        RESOLVE_SYMBOL(Module32First);
+        RESOLVE_SYMBOL(Module32Next);
+        RTLdrClose(hLdrMod);
+    }
+
+    /* From NTDLL.DLL: */
+    rc = RTLdrLoadSystem("ntdll.dll", false /*fNoUnload*/, &hLdrMod);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        RESOLVE_SYMBOL(ZwQuerySystemInformation);
+        RTLdrClose(hLdrMod);
+    }
+}
+
 
 /**
  * @todo Format code style.
@@ -57,14 +124,13 @@ static SERVICE_TABLE_ENTRY const g_aServiceTable[] =
  * @todo Add event log capabilities / check return values.
  */
 static DWORD vgsvcWinAddAceToObjectsSecurityDescriptor(LPTSTR pszObjName,
-                                                             SE_OBJECT_TYPE ObjectType,
-                                                             LPTSTR pszTrustee,
-                                                             TRUSTEE_FORM TrusteeForm,
-                                                             DWORD dwAccessRights,
-                                                             ACCESS_MODE AccessMode,
-                                                             DWORD dwInheritance)
+                                                       SE_OBJECT_TYPE ObjectType,
+                                                       LPTSTR pszTrustee,
+                                                       TRUSTEE_FORM TrusteeForm,
+                                                       DWORD dwAccessRights,
+                                                       ACCESS_MODE AccessMode,
+                                                       DWORD dwInheritance)
 {
-    DWORD dwRes = 0;
     PACL pOldDACL = NULL, pNewDACL = NULL;
     PSECURITY_DESCRIPTOR pSD = NULL;
     EXPLICIT_ACCESS ea;
@@ -73,9 +139,7 @@ static DWORD vgsvcWinAddAceToObjectsSecurityDescriptor(LPTSTR pszObjName,
         return ERROR_INVALID_PARAMETER;
 
     /* Get a pointer to the existing DACL. */
-    dwRes = GetNamedSecurityInfo(pszObjName, ObjectType,
-                                 DACL_SECURITY_INFORMATION,
-                                 NULL, NULL, &pOldDACL, NULL, &pSD);
+    DWORD dwRes = GetNamedSecurityInfo(pszObjName, ObjectType, DACL_SECURITY_INFORMATION, NULL, NULL, &pOldDACL, NULL, &pSD);
     if (ERROR_SUCCESS != dwRes)
     {
         if (dwRes == ERROR_FILE_NOT_FOUND)
@@ -102,9 +166,7 @@ static DWORD vgsvcWinAddAceToObjectsSecurityDescriptor(LPTSTR pszObjName,
     }
 
     /* Attach the new ACL as the object's DACL. */
-    dwRes = SetNamedSecurityInfo(pszObjName, ObjectType,
-                                 DACL_SECURITY_INFORMATION,
-                                 NULL, NULL, pNewDACL, NULL);
+    dwRes = SetNamedSecurityInfo(pszObjName, ObjectType, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDACL, NULL);
     if (ERROR_SUCCESS != dwRes)
     {
         VGSvcError("AddAceToObjectsSecurityDescriptor: SetNamedSecurityInfo: Error %u\n", dwRes);
@@ -141,12 +203,10 @@ static BOOL vgsvcWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint)
     if (ss.dwCurrentState != SERVICE_START_PENDING)
     {
         ss.dwControlsAccepted     = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
-#ifndef TARGET_NT4
-        /* Don't use SERVICE_ACCEPT_SESSIONCHANGE on Windows 2000.
-         * This makes SCM angry. */
+
+        /* Don't use SERVICE_ACCEPT_SESSIONCHANGE on Windows 2000 or earlier.  This makes SCM angry. */
         char szOSVersion[32];
-        int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE,
-                                     szOSVersion, sizeof(szOSVersion));
+        int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szOSVersion, sizeof(szOSVersion));
         if (RT_SUCCESS(rc))
         {
             if (RTStrVersionCompare(szOSVersion, "5.1") >= 0)
@@ -154,7 +214,6 @@ static BOOL vgsvcWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint)
         }
         else
             VGSvcError("Error determining OS version, rc=%Rrc\n", rc);
-#endif
     }
 
     ss.dwWin32ExitCode            = NO_ERROR;
@@ -165,7 +224,7 @@ static BOOL vgsvcWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint)
     BOOL fStatusSet = SetServiceStatus(g_hWinServiceStatus, &ss);
     if (!fStatusSet)
         VGSvcError("Error reporting service status=%ld (controls=%x, checkpoint=%ld) to SCM: %ld\n",
-                         dwStatus, ss.dwControlsAccepted, dwCheckPoint, GetLastError());
+                   dwStatus, ss.dwControlsAccepted, dwCheckPoint, GetLastError());
     return fStatusSet;
 }
 
@@ -183,22 +242,19 @@ void VGSvcWinSetStopPendingStatus(uint32_t uCheckPoint)
 
 static RTEXITCODE vgsvcWinSetDesc(SC_HANDLE hService)
 {
-#ifndef TARGET_NT4
     /* On W2K+ there's ChangeServiceConfig2() which lets us set some fields
        like a longer service description. */
-    /** @todo On Vista+ SERVICE_DESCRIPTION also supports localized strings! */
-    SERVICE_DESCRIPTION desc;
-    desc.lpDescription = VBOXSERVICE_DESCRIPTION;
-    if (!ChangeServiceConfig2(hService,
-                              SERVICE_CONFIG_DESCRIPTION, /* Service info level */
-                              &desc))
+    if (g_pfnChangeServiceConfig2A)
     {
-        VGSvcError("Cannot set the service description! Error: %ld\n", GetLastError());
-        return RTEXITCODE_FAILURE;
+        /** @todo On Vista+ SERVICE_DESCRIPTION also supports localized strings! */
+        SERVICE_DESCRIPTION desc;
+        desc.lpDescription = VBOXSERVICE_DESCRIPTION;
+        if (!g_pfnChangeServiceConfig2A(hService, SERVICE_CONFIG_DESCRIPTION, &desc))
+        {
+            VGSvcError("Cannot set the service description! Error: %ld\n", GetLastError());
+            return RTEXITCODE_FAILURE;
+        }
     }
-#else
-    RT_NOREF(hService);
-#endif
     return RTEXITCODE_SUCCESS;
 }
 
@@ -326,27 +382,18 @@ static int vgsvcWinStart(void)
 {
     int rc = VINF_SUCCESS;
 
-#ifndef TARGET_NT4
     /* Create a well-known SID for the "Builtin Users" group. */
-    PSID pBuiltinUsersSID = NULL;
-    SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_LOCAL_SID_AUTHORITY;
-
-    if (!AllocateAndInitializeSid(&SIDAuthWorld, 1,
-                                  SECURITY_LOCAL_RID,
-                                  0, 0, 0, 0, 0, 0, 0,
-                                  &pBuiltinUsersSID))
-    {
-        rc = RTErrConvertFromWin32(GetLastError());
-    }
-    else
+    PSID                     pBuiltinUsersSID = NULL;
+    SID_IDENTIFIER_AUTHORITY SIDAuthWorld     = SECURITY_LOCAL_SID_AUTHORITY;
+    if (AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_LOCAL_RID, 0, 0, 0, 0, 0, 0, 0, &pBuiltinUsersSID))
     {
         DWORD dwRes = vgsvcWinAddAceToObjectsSecurityDescriptor(TEXT("\\\\.\\VBoxMiniRdrDN"),
-                                                                      SE_FILE_OBJECT,
-                                                                      (LPTSTR)pBuiltinUsersSID,
-                                                                      TRUSTEE_IS_SID,
-                                                                      FILE_GENERIC_READ | FILE_GENERIC_WRITE,
-                                                                      SET_ACCESS,
-                                                                      NO_INHERITANCE);
+                                                                SE_FILE_OBJECT,
+                                                                (LPTSTR)pBuiltinUsersSID,
+                                                                TRUSTEE_IS_SID,
+                                                                FILE_GENERIC_READ | FILE_GENERIC_WRITE,
+                                                                SET_ACCESS,
+                                                                NO_INHERITANCE);
         if (dwRes != ERROR_SUCCESS)
         {
             if (dwRes == ERROR_FILE_NOT_FOUND)
@@ -360,7 +407,8 @@ static int vgsvcWinStart(void)
                 rc = RTErrConvertFromWin32(dwRes);
         }
     }
-#endif
+    else
+        rc = RTErrConvertFromWin32(GetLastError());
 
     if (RT_SUCCESS(rc))
     {
@@ -403,71 +451,49 @@ RTEXITCODE VGSvcWinEnterCtrlDispatcher(void)
 {
     if (!StartServiceCtrlDispatcher(&g_aServiceTable[0]))
         return VGSvcError("StartServiceCtrlDispatcher: %u. Please start %s with option -f (foreground)!\n",
-                                GetLastError(), g_pszProgName);
+                          GetLastError(), g_pszProgName);
     return RTEXITCODE_SUCCESS;
 }
 
 
-#ifndef TARGET_NT4
-static const char* vgsvcWTSStateToString(DWORD dwEvent)
+/**
+ * Event code to description.
+ *
+ * @returns String.
+ * @param   dwEvent             The event code.
+ */
+static const char *vgsvcWTSStateToString(DWORD dwEvent)
 {
     switch (dwEvent)
     {
-        case WTS_CONSOLE_CONNECT:
-            return "A session was connected to the console terminal";
-
-        case WTS_CONSOLE_DISCONNECT:
-            return "A session was disconnected from the console terminal";
-
-        case WTS_REMOTE_CONNECT:
-            return "A session connected to the remote terminal";
-
-        case WTS_REMOTE_DISCONNECT:
-            return "A session was disconnected from the remote terminal";
-
-        case WTS_SESSION_LOGON:
-            return "A user has logged on to a session";
-
-        case WTS_SESSION_LOGOFF:
-            return "A user has logged off the session";
-
-        case WTS_SESSION_LOCK:
-            return "A session has been locked";
-
-        case WTS_SESSION_UNLOCK:
-            return "A session has been unlocked";
-
-        case WTS_SESSION_REMOTE_CONTROL:
-            return "A session has changed its remote controlled status";
-#if 0
-        case WTS_SESSION_CREATE:
-            return "A session has been created";
-
-        case WTS_SESSION_TERMINATE:
-            return "The session has been terminated";
+        case WTS_CONSOLE_CONNECT:           return "A session was connected to the console terminal";
+        case WTS_CONSOLE_DISCONNECT:        return "A session was disconnected from the console terminal";
+        case WTS_REMOTE_CONNECT:            return "A session connected to the remote terminal";
+        case WTS_REMOTE_DISCONNECT:         return "A session was disconnected from the remote terminal";
+        case WTS_SESSION_LOGON:             return "A user has logged on to a session";
+        case WTS_SESSION_LOGOFF:            return "A user has logged off the session";
+        case WTS_SESSION_LOCK:              return "A session has been locked";
+        case WTS_SESSION_UNLOCK:            return "A session has been unlocked";
+        case WTS_SESSION_REMOTE_CONTROL:    return "A session has changed its remote controlled status";
+#ifdef WTS_SESSION_CREATE
+        case WTS_SESSION_CREATE:            return "A session has been created";
 #endif
-        default:
-            break;
+#ifdef WTS_SESSION_TERMINATE
+        case WTS_SESSION_TERMINATE:         return "The session has been terminated";
+#endif
+        default:                            return "Uknonwn state";
     }
-
-    return "Uknonwn state";
 }
-#endif /* !TARGET_NT4 */
 
 
-#ifdef TARGET_NT4
-static VOID WINAPI vgsvcWinCtrlHandler(DWORD dwControl)
-#else
-static DWORD WINAPI vgsvcWinCtrlHandler(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext)
-#endif
+/**
+ * Common control handler.
+ *
+ * @returns Return code for NT5+.
+ * @param   dwControl           The control code.
+ */
+static DWORD vgsvcWinCtrlHandlerCommon(DWORD dwControl)
 {
-#ifdef TARGET_NT4
-    VGSvcVerbose(2, "Control handler: Control=%#x\n", dwControl);
-#else
-    RT_NOREF1(lpContext);
-    VGSvcVerbose(2, "Control handler: Control=%#x, EventType=%#x\n", dwControl, dwEventType);
-#endif
-
     DWORD rcRet = NO_ERROR;
     switch (dwControl)
     {
@@ -493,33 +519,55 @@ static DWORD WINAPI vgsvcWinCtrlHandler(DWORD dwControl, DWORD dwEventType, LPVO
             break;
         }
 
-# ifndef TARGET_NT4
-        case SERVICE_CONTROL_SESSIONCHANGE: /* Only Windows 2000 and up. */
-        {
-            AssertPtr(lpEventData);
-            PWTSSESSION_NOTIFICATION pNotify = (PWTSSESSION_NOTIFICATION)lpEventData;
-            Assert(pNotify->cbSize == sizeof(WTSSESSION_NOTIFICATION));
-
-            VGSvcVerbose(1, "Control handler: %s (Session=%ld, Event=%#x)\n",
-                               vgsvcWTSStateToString(dwEventType),
-                               pNotify->dwSessionId, dwEventType);
-
-            /* Handle all events, regardless of dwEventType. */
-            int rc2 = VGSvcVMInfoSignal();
-            AssertRC(rc2);
-            break;
-        }
-# endif /* !TARGET_NT4 */
-
         default:
             VGSvcVerbose(1, "Control handler: Function not implemented: %#x\n", dwControl);
             rcRet = ERROR_CALL_NOT_IMPLEMENTED;
             break;
     }
 
-#ifndef TARGET_NT4
     return rcRet;
-#endif
+}
+
+
+/**
+ * Callback registered by RegisterServiceCtrlHandler on NT4 and earlier.
+ */
+static VOID WINAPI vgsvcWinCtrlHandlerNt4(DWORD dwControl)
+{
+    VGSvcVerbose(2, "Control handler (NT4): dwControl=%#x\n", dwControl);
+    vgsvcWinCtrlHandlerCommon(dwControl);
+}
+
+
+/**
+ * Callback registered by RegisterServiceCtrlHandler on NT5 and later.
+ */
+static DWORD WINAPI vgsvcWinCtrlHandlerNt5Plus(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext)
+{
+    VGSvcVerbose(2, "Control handler: dwControl=%#x, dwEventType=%#x\n", dwControl, dwEventType);
+    RT_NOREF1(lpContext);
+
+    switch (dwControl)
+    {
+        default:
+            return vgsvcWinCtrlHandlerCommon(dwControl);
+
+        case SERVICE_CONTROL_SESSIONCHANGE:  /* Only Windows 2000 and up. */
+        {
+            AssertPtr(lpEventData);
+            PWTSSESSION_NOTIFICATION pNotify = (PWTSSESSION_NOTIFICATION)lpEventData;
+            Assert(pNotify->cbSize == sizeof(WTSSESSION_NOTIFICATION));
+
+            VGSvcVerbose(1, "Control handler: %s (Session=%ld, Event=%#x)\n",
+                         vgsvcWTSStateToString(dwEventType), pNotify->dwSessionId, dwEventType);
+
+            /* Handle all events, regardless of dwEventType. */
+            int rc2 = VGSvcVMInfoSignal();
+            AssertRC(rc2);
+
+            return NO_ERROR;
+        }
+    }
 }
 
 
@@ -527,11 +575,10 @@ static void WINAPI vgsvcWinMain(DWORD argc, LPTSTR *argv)
 {
     RT_NOREF2(argc, argv);
     VGSvcVerbose(2, "Registering service control handler ...\n");
-#ifdef TARGET_NT4
-    g_hWinServiceStatus = RegisterServiceCtrlHandler(VBOXSERVICE_NAME, vgsvcWinCtrlHandler);
-#else
-    g_hWinServiceStatus = RegisterServiceCtrlHandlerEx(VBOXSERVICE_NAME, vgsvcWinCtrlHandler, NULL);
-#endif
+    if (g_pfnRegisterServiceCtrlHandlerExA)
+        g_hWinServiceStatus = g_pfnRegisterServiceCtrlHandlerExA(VBOXSERVICE_NAME, vgsvcWinCtrlHandlerNt5Plus, NULL);
+    else
+        g_hWinServiceStatus = RegisterServiceCtrlHandlerA(VBOXSERVICE_NAME, vgsvcWinCtrlHandlerNt4);
     if (g_hWinServiceStatus != NULL)
     {
         VGSvcVerbose(2, "Service control handler registered.\n");

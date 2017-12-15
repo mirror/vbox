@@ -196,10 +196,21 @@ extern int                      VGSvcStopServices(void);
 extern void                     VGSvcMainWait(void);
 extern int                      VGSvcReportStatus(VBoxGuestFacilityStatus enmStatus);
 #ifdef RT_OS_WINDOWS
+extern void                     VGSvcWinResolveApis(void);
 extern RTEXITCODE               VGSvcWinInstall(void);
 extern RTEXITCODE               VGSvcWinUninstall(void);
 extern RTEXITCODE               VGSvcWinEnterCtrlDispatcher(void);
 extern void                     VGSvcWinSetStopPendingStatus(uint32_t uCheckPoint);
+# ifdef TH32CS_SNAPHEAPLIST
+extern decltype(CreateToolhelp32Snapshot)      *g_pfnCreateToolhelp32Snapshot;
+extern decltype(Process32First)                *g_pfnProcess32First;
+extern decltype(Process32Next)                 *g_pfnProcess32Next;
+extern decltype(Module32First)                 *g_pfnModule32First;
+extern decltype(Module32Next)                  *g_pfnModule32Next;
+# endif
+# ifdef ___iprt_nt_nt_h___
+extern decltype(ZwQuerySystemInformation)      *g_pfnZwQuerySystemInformation;
+# endif
 #endif
 
 #ifdef RT_OS_WINDOWS
