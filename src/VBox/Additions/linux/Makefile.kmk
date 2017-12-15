@@ -363,7 +363,12 @@ if   defined(VBOX_WITH_TESTCASES) \
  && "$(KBUILD_TARGET)" == "linux" \
  && "$(KBUILD_HOST_ARCH)" == "$(KBUILD_TARGET_ARCH)"
  ifneq ($(KERN_DIR),)
-  $(foreach module, vboxsf-src vboxvideo-src, $(evalcall2 VBOX_LINUX_GENERATE_KMOD_TEST))
+  use_symvers = vboxguest-src
+  module      = vboxsf-src
+  $(evalcall2 VBOX_LINUX_GENERATE_KMOD_TEST)
+  use_symvers =
+  module      = vboxvideo-src
+  $(evalcall2 VBOX_LINUX_GENERATE_KMOD_TEST)
  endif
 endif
 

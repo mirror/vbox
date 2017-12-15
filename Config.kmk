@@ -4226,12 +4226,21 @@ ifeq ($(KBUILD_TARGET),linux)
  ##
  # Using the extra expansion to replace $(module) before eval, thus everything
  # else needs escaped dollars.
+ #
+ # Since Linux KBuild will not abort due to undefined symbols when building
+ # external modules we need to grep the error output ourselves.  Since vboxdrv
+ # and vboxguest respectively provide symbols that other modules use, we use
+ # the rule target (tst*.run) to save those symbols so that KBuild can do its
+ # checking.  Note in this context the (unescaped) variables $(save_symvers)
+ # and $(use_symvers).
  define VBOX_LINUX_GENERATE_KMOD_TEST
   VBOX_TARGET_$(module) = $$(PATH_TARGET)/tst$(module)$(subst /,_,$(KERN_DIR))_mod.run
+  symvers_$(module)_dep = $$(if $(use_symvers),$$(if $$(eq $(use_symvers),$(module)),,\
+$$(PATH_TARGET)/tst$(use_symvers)$(subst /,_,$(KERN_DIR))_mod.run))
   TESTING      += $$(VBOX_TARGET_$(module))
   OTHERS       += $$(VBOX_TARGET_$(module))
   OTHERS_CLEAN += $$(VBOX_TARGET_$(module))
-  $$(VBOX_TARGET_$(module)): $$$$($(module)_2_STAGE_TARGETS)
+  $$(VBOX_TARGET_$(module)): $$$$($(module)_2_STAGE_TARGETS) $$(symvers_$(module)_dep)
 	$(QUIET)$$(call MSG_L1,Doing a test build of the $(module) kernel module)
 	$(QUIET)$$(RM) -f -- "$$@"
 	$(QUIET)$$(TEST) -n "$$($(module)_INST)"
@@ -4239,12 +4248,18 @@ ifeq ($(KBUILD_TARGET),linux)
 	$(QUIET)$$(MKDIR) -p -- "$$(PATH_TARGET)/tst$(module)_mod"
 	$(QUIET)$$(CP) -R -- "$$(PATH_STAGE_BIN)/../$$($(module)_INST)" "$$(PATH_TARGET)/tst$(module)_mod/"
 	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$(KERN_DIR) -C $$(PATH_TARGET)/tst$(module)_mod clean
-	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$(KERN_DIR) $(if-expr $(KMK_OPTS_JOBS) != 1,JOBS=$(KMK_OPTS_JOBS),) -C $$(PATH_TARGET)/tst$(module)_mod
+	$(QUIET)$$(if $$(eq $$(symvers_$(module)_dep),),,\
+$$(CP) $$(symvers_$(module)_dep) "$$(PATH_TARGET)/tst$(module)_mod/Module.symvers")
+	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$(KERN_DIR) $(if-expr $(KMK_OPTS_JOBS) != 1,JOBS=$(KMK_OPTS_JOBS),) -C $$(PATH_TARGET)/tst$(module)_mod \
+		2> "$$(PATH_TARGET)/tst$(module)_mod/make.err"
+	$(QUIET)! grep "^WARNING: .* undefined!$$$$" "$$(PATH_TARGET)/tst$(module)_mod/make.err"
   if1of ($(USERNAME), bird)
 	- nm -u "$$(PATH_TARGET)/tst$(module)_mod/"*.ko | sort
   endif
+	$(QUIET)$$(if $$(eq $(save_symvers),$(module)),\
+$$(CP) "$$(PATH_TARGET)/tst$(module)_mod/Module.symvers" "$$@",\
+$(QUIET)$$(APPEND) -t "$$@" "done")
 	$(QUIET)$$(RM) -Rf -- $$(PATH_TARGET)/tst$(module)_mod
-	$(QUIET)$$(APPEND) -t "$$@" "done"
  endef
 endif
 
