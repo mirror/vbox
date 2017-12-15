@@ -100,6 +100,9 @@ extern uint8_t                                 g_uRtNtMajorVer;
 extern uint8_t                                 g_uRtNtMinorVer;
 extern uint32_t                                g_uRtNtBuildNo;
 
+extern uintptr_t const                        *g_puRtMmHighestUserAddress;
+extern uintptr_t const                        *g_puRtMmSystemRangeStart;
+
 
 int __stdcall rtMpPokeCpuUsingDpc(RTCPUID idCpu);
 int __stdcall rtMpPokeCpuUsingBroadcastIpi(RTCPUID idCpu);

@@ -593,7 +593,6 @@ DECLHIDDEN(int) rtR0MpNtInit(RTNTSDBOSVER const *pOsVerInfo)
         g_pfnrtHalRequestIpiW7Plus = NULL;
 
     g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingDpc;
-#ifndef IPRT_TARGET_NT4
     if (   g_pfnrtHalRequestIpiW7Plus
         && g_pfnrtKeInitializeAffinityEx
         && g_pfnrtKeAddProcessorAffinityEx
@@ -610,7 +609,6 @@ DECLHIDDEN(int) rtR0MpNtInit(RTNTSDBOSVER const *pOsVerInfo)
     else
         DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingDpc\n");
     /* else: Windows XP should send always send an IPI -> VERIFY */
-#endif
 
     return VINF_SUCCESS;
 }
@@ -1361,18 +1359,12 @@ DECLHIDDEN(int) rtMpNtSetTargetProcessorDpc(KDPC *pDpc, RTCPUID idCpu)
 static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2,
                              RT_NT_CPUID enmCpuid, RTCPUID idCpu, RTCPUID idCpu2, uint32_t *pcHits)
 {
-#ifdef IPRT_TARGET_NT4
-    RT_NOREF(pfnWorker, pvUser1, pvUser2, enmCpuid, idCpu, idCpu2, pcHits);
-    /* g_pfnrtNt* are not present on NT anyway. */
-    return VERR_NOT_SUPPORTED;
-
-#else  /* !IPRT_TARGET_NT4 */
-# if 0
+#if 0
     /* KeFlushQueuedDpcs must be run at IRQL PASSIVE_LEVEL according to MSDN, but the
      * driver verifier doesn't complain...
      */
     AssertMsg(KeGetCurrentIrql() == PASSIVE_LEVEL, ("%d != %d (PASSIVE_LEVEL)\n", KeGetCurrentIrql(), PASSIVE_LEVEL));
-# endif
+#endif
     /* KeFlushQueuedDpcs is not present in Windows 2000; import it dynamically so we can just fail this call. */
     if (!g_pfnrtNtKeFlushQueuedDpcs)
         return VERR_NOT_SUPPORTED;
@@ -1511,7 +1503,8 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
     /** @todo Seems KeFlushQueuedDpcs doesn't wait for the DPCs to be completely
      *        executed. Seen pArgs being freed while some CPU was using it before
      *        cRefs was added. */
-    g_pfnrtNtKeFlushQueuedDpcs();
+    if (g_pfnrtNtKeFlushQueuedDpcs)
+        g_pfnrtNtKeFlushQueuedDpcs();
 
     if (pcHits)
         *pcHits = pArgs->cHits;
@@ -1523,7 +1516,6 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
         ExFreePool(pArgs);
 
     return VINF_SUCCESS;
-#endif /* !IPRT_TARGET_NT4 */
 }
 
 
@@ -1763,12 +1755,10 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
         /* If it hasn't respondend yet, maybe poke it and wait some more. */
         if (rcNt == STATUS_TIMEOUT)
         {
-#ifndef IPRT_TARGET_NT4
             if (   !pArgs->fExecuting
                 && (   g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalReqestIpiW7Plus
                     || g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalReqestIpiPreW7))
                 RTMpPokeCpu(idCpu);
-#endif
 
             Timeout.QuadPart = -1280000; /* 128ms */
             rcNt = KeWaitForSingleObject(&pArgs->DoneEvt, Executive, KernelMode, FALSE /* Alertable */, &Timeout);
@@ -1822,7 +1812,6 @@ static VOID rtMpNtPokeCpuDummy(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID 
     NOREF(SystemArgument2);
 }
 
-#ifndef IPRT_TARGET_NT4
 
 /** Callback used by rtMpPokeCpuUsingBroadcastIpi. */
 static ULONG_PTR rtMpIpiGenericCall(ULONG_PTR Argument)
@@ -1881,8 +1870,6 @@ int rtMpPokeCpuUsingHalReqestIpiPreW7(RTCPUID idCpu)
     return VINF_SUCCESS;
 }
 
-#endif /* !IPRT_TARGET_NT4 */
-
 
 int rtMpPokeCpuUsingDpc(RTCPUID idCpu)
 {
@@ -1909,8 +1896,7 @@ int rtMpPokeCpuUsingDpc(RTCPUID idCpu)
     }
 
     /* Raise the IRQL to DISPATCH_LEVEL so we can't be rescheduled to another cpu.
-     * KeInsertQueueDpc must also be executed at IRQL >= DISPATCH_LEVEL.
-     */
+       KeInsertQueueDpc must also be executed at IRQL >= DISPATCH_LEVEL. */
     KIRQL oldIrql;
     KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
 
@@ -1918,12 +1904,11 @@ int rtMpPokeCpuUsingDpc(RTCPUID idCpu)
     KeSetTargetProcessorDpc(&s_aPokeDpcs[idCpu], (int)idCpu);
 
     /* Assuming here that high importance DPCs will be delivered immediately; or at least an IPI will be sent immediately.
-     * @note: not true on at least Vista & Windows 7
-     */
-    BOOLEAN bRet = KeInsertQueueDpc(&s_aPokeDpcs[idCpu], 0, 0);
+       Note! Not true on at least Vista & Windows 7 */
+    BOOLEAN fRet = KeInsertQueueDpc(&s_aPokeDpcs[idCpu], 0, 0);
 
     KeLowerIrql(oldIrql);
-    return (bRet == TRUE) ? VINF_SUCCESS : VERR_ACCESS_DENIED /* already queued */;
+    return fRet == TRUE ? VINF_SUCCESS : VERR_ACCESS_DENIED /* already queued */;
 }
 
 
