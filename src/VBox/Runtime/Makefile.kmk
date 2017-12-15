@@ -36,7 +36,6 @@ ifdef VBOX_ONLY_ADDITIONS
  ifdef VBOX_WITH_ADDITION_DRIVERS
   LIBRARIES += RuntimeGuestR0
   #LIBRARIES.os2 += RuntimeGuestR0OS2Warp3
-  LIBRARIES.win.x86 += RuntimeGuestR0NT4
  endif
  ifndef VBOX_ONLY_ADDITIONS_WITHOUT_RTISOMAKER
   LIBRARIES += RuntimeBldProg
@@ -98,7 +97,6 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_VALIDATIONKIT && !VBOX_ONLY_DOCS
    LIBRARIES += RuntimeGuestR0
   endif
   #LIBRARIES.os2 += RuntimeGuestR0OS2Warp3
-  LIBRARIES.win.x86 += RuntimeGuestR0NT4
  endif # VBOX_WITH_ADDITIONS
  LIBRARIES.win.x86 += RuntimeR3VccTricks
  DLLS += VBoxRT
@@ -2688,19 +2686,12 @@ RuntimeR0Drv_ORDERDEPS.freebsd = \
 #
 RuntimeGuestR0_TEMPLATE  := VBOXGUESTR0LIB
 RuntimeGuestR0_EXTENDS    = RuntimeR0Drv
+RuntimeGuestR0_DEFS.win.x86 = $(RuntimeR0Drv_DEFS.win.x86) IPRT_TARGET_NT4 # The 32-bit version needs to work on NT4 too.
 RuntimeGuestR0_SOURCES   := $(filter-out generic/RTLogWriteUser-generic.cpp, $(RuntimeR0Drv_SOURCES))
 RuntimeGuestR0_SOURCES   += \
 	VBox/logbackdoor.cpp
 RuntimeGuestR0_SOURCES.win := \
 	$(filter-out common/checksum/md% common/checksum/sha%, $(RuntimeR0Drv_SOURCES.win))
-
-
-#
-# RuntimeGuestR0NT4 - Win32 NT4 guest driver runtime.
-#
-RuntimeGuestR0NT4_EXTENDS = RuntimeGuestR0
-RuntimeGuestR0NT4_EXTENDS_BY = appending
-RuntimeGuestR0NT4_DEFS = IPRT_TARGET_NT4
 
 
 ifdef VBOX_WITH_RAW_MODE

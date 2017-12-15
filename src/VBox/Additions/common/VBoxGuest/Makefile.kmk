@@ -49,6 +49,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
  VBoxGuest_DEFS.haiku    = VBOX_SVN_REV=$(VBOX_SVN_REV) _KERNEL_MODE=1
  VBoxGuest_DEFS.solaris  = VBOX_SVN_REV=$(VBOX_SVN_REV)
  VBoxGuest_DEFS.win      = VBOX_GUESTDRV_WITH_RELEASE_LOGGER
+ VBoxGuest_DEFS.win.x86  = TARGET_NT4
  VBoxGuest_DEFS.darwin   = VBOX_GUESTDRV_WITH_RELEASE_LOGGER
  ifeq ($(KBUILD_TYPE),release)
   # Allow stopping/removing the driver without a reboot
@@ -80,15 +81,16 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
   ifeq ($(KBUILD_TARGET),win)
    VBoxGuest_LDFLAGS.x86 = -Entry:DriverEntry@8
    VBoxGuest_LDFLAGS.amd64 = -Entry:DriverEntry
-   VBoxGuest_LIBS        = \
-  	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/ntoskrnl.lib \
-  	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/hal.lib
-   ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
-    VBoxGuest_LIBS      += \
-      	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB)/aux_klib.lib \
-      	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB)/ksecdd.lib \
-      	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB)/BufferOverflowK.lib
-    VBoxGuest.cpp_SDKS   = $(VBOX_WINDDK_GST_WLH)
+   ifeq ($(KBUILD_TARGET_ARCH),x86)
+    VBoxGuest_SDKS       = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
+    VBoxGuest_LIBS       = \
+    	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/exsup.lib \
+    	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
+    	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib
+   else
+    VBoxGuest_LIBS        = \
+    	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/ntoskrnl.lib \
+    	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/hal.lib
    endif
   endif # win
   ifn1of ($(KBUILD_TARGET), linux freebsd netbsd solaris haiku)
