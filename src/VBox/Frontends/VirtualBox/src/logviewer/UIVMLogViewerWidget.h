@@ -57,7 +57,7 @@ public:
     /** Destructs the VM Log-Viewer. */
     ~UIVMLogViewerWidget();
     /* Returns the width of the current log page. return 0 if there is no current log page: */
-    int currentLogPagewidth() const;
+    int defaultLogPageWidth() const;
 
     /** Returns the menu. */
     QMenu *menu() const { return m_pMenu; }

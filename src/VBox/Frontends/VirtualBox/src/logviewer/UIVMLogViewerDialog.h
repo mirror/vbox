@@ -57,14 +57,24 @@ class UIVMLogViewerDialog : public QIWithRetranslateUI<QIManagerDialog>
     Q_OBJECT;
 
 public:
+
     UIVMLogViewerDialog(QWidget *pCenterWidget, const CMachine &machine);
 
 protected:
-    virtual void configure() /* override */;
-    virtual void configureCentralWidget() /* override */;
-    virtual void finalize() /* override */;
+
+    /** @name Prepare/cleanup cascade.
+     * @{ */
+        virtual void configure() /* override */;
+        virtual void configureCentralWidget() /* override */;
+        virtual void finalize() /* override */;
+        virtual void saveSettings() const /* override */;
+        virtual void loadSettings() /* override */;
+    /** @} */
+    /* Reads the related extradata to determine if the dialog should be maximized. */
+    virtual bool shouldBeMaximized() const /* override */;
 
 private:
+
     void retranslateUi();
 
     CMachine m_comMachine;

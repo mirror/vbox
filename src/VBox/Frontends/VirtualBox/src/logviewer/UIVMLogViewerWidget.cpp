@@ -27,6 +27,7 @@
 #  include <QFontDatabase>
 # endif
 # include <QPlainTextEdit>
+# include <QScrollBar>
 
 /* GUI includes: */
 # include "QIFileDialog.h"
@@ -69,19 +70,24 @@ UIVMLogViewerWidget::~UIVMLogViewerWidget()
     cleanup();
 }
 
-int UIVMLogViewerWidget::currentLogPagewidth() const
+int UIVMLogViewerWidget::defaultLogPageWidth() const
 {
-    if(!currentLogPage())
+    if(!m_pViewerContainer)
         return 0;
 
-    QTextDocument *pTextDocument = currentLogPage()->document();
-    if(!pTextDocument)
+    QWidget *pContainer = m_pViewerContainer->currentWidget();
+    if(!pContainer)
         return 0;
-    /* Adjust text-edit size: */
-    pTextDocument->adjustSize();
-    /* Get corresponding QTextDocument size: */
-    QSize textSize = pTextDocument->size().toSize();
-    return textSize.width();
+
+    QPlainTextEdit *pBrowser = pContainer->findChild<QPlainTextEdit*>();
+    if (!pBrowser)
+        return 0;
+    /* Compute a width for 132 characters plus scrollbar and frame width: */
+    int iDefaultWidth = pBrowser->fontMetrics().width(QChar('x')) * 132 +
+                        pBrowser->verticalScrollBar()->width() +
+                        pBrowser->frameWidth() * 2;
+
+    return iDefaultWidth;
 }
 
 bool UIVMLogViewerWidget::shouldBeMaximized() const
