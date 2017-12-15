@@ -6058,8 +6058,16 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
 #ifdef VBOX_WITH_NESTED_HWVIRT
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
     {
-        rcStrict = iemSvmHandleIOIntercept(pVCpu, u16Port, SVMIOIOTYPE_IN, cbReg, 0 /* N/A - cAddrSizeBits */,
-                                           0 /* N/A - iEffSeg */, false /* fRep */, false /* fStrIo */, cbInstr);
+        uint8_t cAddrSizeBits;
+        switch (pVCpu->iem.s.enmEffAddrMode)
+        {
+            case IEMMODE_16BIT: cAddrSizeBits = 16; break;
+            case IEMMODE_32BIT: cAddrSizeBits = 32; break;
+            case IEMMODE_64BIT: cAddrSizeBits = 64; break;
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+        rcStrict = iemSvmHandleIOIntercept(pVCpu, u16Port, SVMIOIOTYPE_IN, cbReg, cAddrSizeBits, 0 /* N/A - iEffSeg */,
+                                           false /* fRep */, false /* fStrIo */, cbInstr);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
         if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
@@ -6147,8 +6155,16 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
 #ifdef VBOX_WITH_NESTED_HWVIRT
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
     {
-        rcStrict = iemSvmHandleIOIntercept(pVCpu, u16Port, SVMIOIOTYPE_OUT, cbReg, 0 /* N/A - cAddrSizeBits */,
-                                           0 /* N/A - iEffSeg */, false /* fRep */, false /* fStrIo */, cbInstr);
+        uint8_t cAddrSizeBits;
+        switch (pVCpu->iem.s.enmEffAddrMode)
+        {
+            case IEMMODE_16BIT: cAddrSizeBits = 16; break;
+            case IEMMODE_32BIT: cAddrSizeBits = 32; break;
+            case IEMMODE_64BIT: cAddrSizeBits = 64; break;
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+        rcStrict = iemSvmHandleIOIntercept(pVCpu, u16Port, SVMIOIOTYPE_OUT, cbReg, cAddrSizeBits, 0 /* N/A - iEffSeg */,
+                                           false /* fRep */, false /* fStrIo */, cbInstr);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
         if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
