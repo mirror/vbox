@@ -1184,7 +1184,7 @@ void VGDrvCommonProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, con
     if (   RTStrICmpAscii(pszName, "r3_log_to_host") == 0
         || RTStrICmpAscii(pszName, "LoggingEnabled") == 0 /*legacy*/ )
         pDevExt->fLoggingEnabled = VBDrvCommonIsOptionValueTrue(pszValue);
-    else if (   RTStrNICmp(pszName, RT_STR_TUPLE("log")) == 0
+    else if (   RTStrNICmpAscii(pszName, RT_STR_TUPLE("log")) == 0
              || RTStrNICmpAscii(pszName, RT_STR_TUPLE("dbg_log")) == 0)
     {
         bool const  fLogRel    = *pszName == 'd' || *pszName == 'D';
