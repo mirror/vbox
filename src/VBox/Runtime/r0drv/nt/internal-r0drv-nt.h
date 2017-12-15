@@ -79,6 +79,7 @@ extern PFNKEQUERYACTIVEPROCESSORCOUNTEX        g_pfnrtKeQueryActiveProcessorCoun
 extern PFNKEQUERYLOGICALPROCESSORRELATIONSHIP  g_pfnrtKeQueryLogicalProcessorRelationship;
 extern PFNKEREGISTERPROCESSORCHANGECALLBACK    g_pfnrtKeRegisterProcessorChangeCallback;
 extern PFNKEDEREGISTERPROCESSORCHANGECALLBACK  g_pfnrtKeDeregisterProcessorChangeCallback;
+extern decltype(MmProtectMdlSystemAddress)    *g_pfnrtMmProtectMdlSystemAddress;
 extern PFNRTRTLGETVERSION                      g_pfnrtRtlGetVersion;
 #ifndef RT_ARCH_AMD64
 extern PFNRTKEQUERYINTERRUPTTIME               g_pfnrtKeQueryInterruptTime;

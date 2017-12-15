@@ -78,34 +78,6 @@ typedef struct RTR0MEMOBJNT
 } RTR0MEMOBJNT, *PRTR0MEMOBJNT;
 
 
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-/** Pointer to the MmProtectMdlSystemAddress kernel function if it's available.
- * This API was introduced in XP. */
-static decltype(MmProtectMdlSystemAddress) *g_pfnMmProtectMdlSystemAddress = NULL;
-/** Set if we've resolved the dynamic APIs. */
-static bool volatile g_fResolvedDynamicApis = false;
-static ULONG g_uMajorVersion = 5;
-static ULONG g_uMinorVersion = 1;
-
-
-static void rtR0MemObjNtResolveDynamicApis(void)
-{
-    ULONG uBuildNumber  = 0;
-    PsGetVersion(&g_uMajorVersion, &g_uMinorVersion, &uBuildNumber, NULL);
-
-#ifndef IPRT_TARGET_NT4 /* MmGetSystemRoutineAddress was introduced in w2k. */
-
-    UNICODE_STRING RoutineName;
-    RtlInitUnicodeString(&RoutineName, L"MmProtectMdlSystemAddress");
-    g_pfnMmProtectMdlSystemAddress = (decltype(MmProtectMdlSystemAddress) *)MmGetSystemRoutineAddress(&RoutineName);
-
-#endif
-    ASMCompilerBarrier();
-    g_fResolvedDynamicApis = true;
-}
-
 
 DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 {
@@ -860,8 +832,6 @@ DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub,
 #if 0
     PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)pMem;
 #endif
-    if (!g_fResolvedDynamicApis)
-        rtR0MemObjNtResolveDynamicApis();
 
     /*
      * Seems there are some issues with this MmProtectMdlSystemAddress API, so
@@ -872,8 +842,8 @@ DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub,
      * The API we've got requires a kernel mapping.
      */
     if (   pMemNt->cMdls
-        && g_pfnMmProtectMdlSystemAddress
-        && (g_uMajorVersion > 6 || (g_uMajorVersion == 6 && g_uMinorVersion >= 1)) /* Windows 7 and later. */
+        && g_pfnrtMmProtectMdlSystemAddress
+        && (g_uRtNtMajorVer > 6 || (g_uRtNtMajorVer == 6 && g_uRtNtMinorVer >= 1)) /* Windows 7 and later. */
         && pMemNt->Core.pv != NULL
         && (   pMemNt->Core.enmType == RTR0MEMOBJTYPE_PAGE
             || pMemNt->Core.enmType == RTR0MEMOBJTYPE_LOW
@@ -925,7 +895,7 @@ DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub,
             uint32_t iMdl = pMemNt->cMdls;
             while (iMdl-- > 0)
             {
-                rcNt = g_pfnMmProtectMdlSystemAddress(pMemNt->apMdls[i], fAccess);
+                rcNt = g_pfnrtMmProtectMdlSystemAddress(pMemNt->apMdls[i], fAccess);
                 if (!NT_SUCCESS(rcNt))
                     break;
             }
@@ -961,7 +931,7 @@ DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub,
                     }
                     if (NT_SUCCESS(rcNt))
                     {
-                        rcNt = g_pfnMmProtectMdlSystemAddress(pMdl, fAccess);
+                        rcNt = g_pfnrtMmProtectMdlSystemAddress(pMdl, fAccess);
                         MmUnlockPages(pMdl);
                     }
                     IoFreeMdl(pMdl);
