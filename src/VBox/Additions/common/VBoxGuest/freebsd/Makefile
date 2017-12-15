@@ -92,6 +92,7 @@ SRCS += \
 	RTStrICmpAscii.c \
 	RTStrNICmpAscii.c \
 	RTStrNCmp.c \
+	RTStrNLen.c \
 	stringalloc.c \
 	strformat.c \
 	strformatnum.c \

@@ -89,6 +89,7 @@ MOD_OBJS   = \
 	common/string/RTStrICmpAscii.o \
 	common/string/RTStrNICmpAscii.o \
 	common/string/RTStrNCmp.o \
+	common/string/RTStrNLen.o \
 	common/string/stringalloc.o \
 	common/string/strformat.o \
 	common/string/strformatnum.o \

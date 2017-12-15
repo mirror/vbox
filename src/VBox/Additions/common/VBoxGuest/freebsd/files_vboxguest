@@ -127,6 +127,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrICmpAscii.cpp=>common/string/RTStrICmpAscii.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrNICmpAscii.cpp=>common/string/RTStrNICmpAscii.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrNCmp.cpp=>common/string/RTStrNCmp.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrNLen.cpp=>common/string/RTStrNLen.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/stringalloc.cpp=>common/string/stringalloc.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strformat.cpp=>common/string/strformat.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strformatnum.cpp=>common/string/strformatnum.c \
