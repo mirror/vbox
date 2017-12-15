@@ -5529,6 +5529,12 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_Close(void *pvThis)
     RTFsIsoMakerRelease(pThis->pIsoMaker);
     pThis->pIsoMaker = NULL;
 
+    if (pThis->hVfsSrcFile != NIL_RTVFSFILE)
+    {
+        RTVfsFileRelease(pThis->hVfsSrcFile);
+        pThis->hVfsSrcFile = NIL_RTVFSFILE;
+    }
+
     return VINF_SUCCESS;
 }
 
