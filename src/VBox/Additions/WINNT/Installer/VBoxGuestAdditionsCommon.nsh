@@ -207,9 +207,6 @@ Function ExtractFiles
   ; VBoxService
   SetOutPath "$0\Bin"
   FILE "$%PATH_OUT%\bin\additions\VBoxService.exe"
-!if $%BUILD_TARGET_ARCH% == "x86"
-  FILE "$%PATH_OUT%\bin\additions\VBoxServiceNT.exe"
-!endif
 
   ; Shared Folders
   SetOutPath "$0\VBoxSF"
@@ -418,11 +415,7 @@ exe_stop_loop:
   ${LogVerbose} "Stopping attempt #$3"
 !endif
 
-  ${If} $g_strWinVersion == "NT4"
-    StrCpy $2 "VBoxServiceNT.exe"
-  ${Else}
-    StrCpy $2 "VBoxService.exe"
-  ${EndIf}
+  StrCpy $2 "VBoxService.exe"
 
   ${nsProcess::FindProcess} $2 $0
   StrCmp $0 0 0 exit

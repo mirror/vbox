@@ -129,8 +129,8 @@ Function NT4_CopyFiles
   AccessControl::SetOnFile "$SYSDIR\VBoxControl.exe" "(BU)" "GenericRead"
 
   ; VBoxService
-  FILE "$%PATH_OUT%\bin\additions\VBoxServiceNT.exe"
-  AccessControl::SetOnFile "$SYSDIR\VBoxServiceNT.exe" "(BU)" "GenericRead"
+  FILE "$%PATH_OUT%\bin\additions\VBoxService.exe"
+  AccessControl::SetOnFile "$SYSDIR\VBoxService.exe" "(BU)" "GenericRead"
 
   ; The drivers into the "drivers" directory
   SetOutPath "$SYSDIR\drivers"
@@ -167,7 +167,7 @@ Function NT4_InstallFiles
 
   ; Create the VBoxService service
   ; No need to stop/remove the service here! Do this only on uninstallation!
-  ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service create $\"VBoxService$\" $\"VirtualBox Guest Additions Service$\" 16 2 $\"%SystemRoot%\system32\VBoxServiceNT.exe$\" $\"Base$\"" "false"
+  ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service create $\"VBoxService$\" $\"VirtualBox Guest Additions Service$\" 16 2 $\"%SystemRoot%\system32\VBoxService.exe$\" $\"Base$\"" "false"
 
    ; Create the Shared Folders service ...
   ;nsSCM::Install /NOUNLOAD "VBoxSF" "VirtualBox Shared Folders" 1 1 "$SYSDIR\drivers\VBoxSFNT.sys" "Network" "" "" ""
@@ -240,7 +240,7 @@ Function ${un}NT4_Uninstall
   Call ${un}StopVBoxService
   ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service delete VBoxService" "true"
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "VBoxService"
-  Delete /REBOOTOK "$SYSDIR\VBoxServiceNT.exe"
+  Delete /REBOOTOK "$SYSDIR\VBoxService.exe"
 
   ; Delete the VBoxTray app
   Call ${un}StopVBoxTray
