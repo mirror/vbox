@@ -38,6 +38,7 @@
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/dbg.h>
+#include <iprt/initterm.h>
 #include <iprt/memobj.h>
 #include <iprt/spinlock.h>
 #include <iprt/string.h>
@@ -169,7 +170,6 @@ typedef enum VGDRVNTVER
     VGDRVNTVER_WIN81,
     VGDRVNTVER_WIN10
 } VGDRVNTVER;
-extern VGDRVNTVER g_enmVGDrvNtVer;
 
 
 /*********************************************************************************************************************************
@@ -210,7 +210,7 @@ RT_C_DECLS_END
 *   Exported Functions                                                                                                           *
 *********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
-ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath);
+NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath);
 RT_C_DECLS_END
 
 #ifdef ALLOC_PRAGMA
@@ -227,13 +227,13 @@ RT_C_DECLS_END
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** The detected NT (windows) version. */
-VGDRVNTVER g_enmVGDrvNtVer = VGDRVNTVER_INVALID;
+static VGDRVNTVER                       g_enmVGDrvNtVer = VGDRVNTVER_INVALID;
 /** Pointer to the PoStartNextPowerIrp routine (in the NT kernel).
  * Introduced in Windows 2000. */
-static decltype(PoStartNextPowerIrp) *g_pfnPoStartNextPowerIrp = NULL;
+static decltype(PoStartNextPowerIrp)   *g_pfnPoStartNextPowerIrp = NULL;
 /** Pointer to the PoCallDriver routine (in the NT kernel).
  * Introduced in Windows 2000. */
-static decltype(PoCallDriver)        *g_pfnPoCallDriver = NULL;
+static decltype(PoCallDriver)          *g_pfnPoCallDriver = NULL;
 
 
 
@@ -244,9 +244,19 @@ static decltype(PoCallDriver)        *g_pfnPoCallDriver = NULL;
  * @param   pDrvObj     Pointer to driver object.
  * @param   pRegPath    Registry base path.
  */
-ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
+NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 {
     RT_NOREF1(pRegPath);
+
+    /*
+     * Start by initializing IPRT.
+     */
+    int rc = RTR0Init(0);
+    if (RT_FAILURE(rc))
+    {
+        RTLogBackdoorPrintf("VBoxGuest: RTR0Init failed: %Rrc!\n", rc);
+        return STATUS_UNSUCCESSFUL;
+    }
 
     LogFunc(("Driver built: %s %s\n", __DATE__, __TIME__));
 
@@ -258,7 +268,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
     ULONG ulBuildNo;
     BOOLEAN fCheckedBuild = PsGetVersion(&ulMajorVer, &ulMinorVer, &ulBuildNo, NULL);
 
-    /* Use RTLogBackdoorPrintf to make sure that this goes to VBox.log */
+    /* Use RTLogBackdoorPrintf to make sure that this goes to VBox.log on the host. */
     RTLogBackdoorPrintf("VBoxGuest: Windows version %u.%u, build %u\n", ulMajorVer, ulMinorVer, ulBuildNo);
     if (fCheckedBuild)
         RTLogBackdoorPrintf("VBoxGuest: Windows checked build\n");
@@ -386,10 +396,20 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                 pDrvObj->MajorFunction[IRP_MJ_SYSTEM_CONTROL]          = vgdrvNtNt5PlusSystemControl;
                 pDrvObj->DriverExtension->AddDevice                    = (PDRIVER_ADD_DEVICE)vgdrvNtNt5PlusAddDevice;
             }
+            if (NT_SUCCESS(rcNt))
+            {
+                LogFlowFunc(("Returning %#x\n", rcNt));
+                return rcNt;
+            }
+
         }
     }
 
-    LogFlowFunc(("Returning %#x\n", rcNt));
+    /*
+     * Failed.
+     */
+    LogRelFunc(("Failed! rcNt=%#x\n", rcNt));
+    RTR0Term();
     return rcNt;
 }
 
@@ -1602,6 +1622,7 @@ static void vgdrvNtUnload(PDRIVER_OBJECT pDrvObj)
     RT_NOREF1(pDrvObj);
 #endif /* !TARGET_NT4 */
 
+    RTR0Term();
     LogFlowFunc(("Returning\n"));
 }
 
