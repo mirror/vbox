@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Initialization & Termination, R0 Driver, NT.
+ * IPRT - Kernel Debug Information, R0 Driver, NT.
  */
 
 /*
@@ -141,8 +141,9 @@ typedef struct RTDBGKRNLINFOINT
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-/** Pointer to MmGetSystemRoutineAddress. */
-#ifdef RT_ARCH_X86
+/** Pointer to MmGetSystemRoutineAddress.
+ * @note Added in NT v5.0. */
+#ifdef IPRT_TARGET_NT4
 static decltype(MmGetSystemRoutineAddress) *g_pfnMmGetSystemRoutineAddress = NULL;
 #else
 static decltype(MmGetSystemRoutineAddress) *g_pfnMmGetSystemRoutineAddress = MmGetSystemRoutineAddress;

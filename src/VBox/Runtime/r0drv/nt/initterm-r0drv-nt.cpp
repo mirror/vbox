@@ -30,6 +30,7 @@
 *********************************************************************************************************************************/
 #include "the-nt-kernel.h"
 #include <iprt/asm-amd64-x86.h>
+#include <iprt/dbg.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include "internal/initterm.h"
@@ -83,6 +84,9 @@ PFNKEQUERYLOGICALPROCESSORRELATIONSHIP  g_pfnrtKeQueryLogicalProcessorRelationsh
 PFNKEREGISTERPROCESSORCHANGECALLBACK    g_pfnrtKeRegisterProcessorChangeCallback;
 /** KeDeregisterProcessorChangeCallback - Introducted in Windows 7. */
 PFNKEDEREGISTERPROCESSORCHANGECALLBACK  g_pfnrtKeDeregisterProcessorChangeCallback;
+/** Pointer to the MmProtectMdlSystemAddress kernel function if it's available.
+ * This API was introduced in XP. */
+decltype(MmProtectMdlSystemAddress)    *g_pfnrtMmProtectMdlSystemAddress;
 /** RtlGetVersion, introduced in ??. */
 PFNRTRTLGETVERSION                      g_pfnrtRtlGetVersion;
 #ifndef RT_ARCH_AMD64
@@ -243,16 +247,12 @@ DECLHIDDEN(int) rtR0InitNative(void)
     /*
      * Initialize the function pointers.
      */
-#ifdef IPRT_TARGET_NT4
-# define GET_SYSTEM_ROUTINE_EX(a_Prf, a_Name, a_pfnType) do { RT_CONCAT3(g_pfnrt, a_Prf, a_Name) = NULL; } while (0)
-#else
-    UNICODE_STRING RoutineName;
-# define GET_SYSTEM_ROUTINE_EX(a_Prf, a_Name, a_pfnType) \
-    do { \
-        RtlInitUnicodeString(&RoutineName, L#a_Name); \
-        RT_CONCAT3(g_pfnrt, a_Prf, a_Name) = (a_pfnType)MmGetSystemRoutineAddress(&RoutineName); \
-    } while (0)
-#endif
+    RTDBGKRNLINFO hKrnlInfo;
+    int rc = RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0/*fFlags*/);
+    AssertRCReturn(rc, rc);
+
+#define GET_SYSTEM_ROUTINE_EX(a_Prf, a_Name, a_pfnType) \
+    do { RT_CONCAT3(g_pfnrt, a_Prf, a_Name) = (a_pfnType)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, #a_Name); } while (0)
 #define GET_SYSTEM_ROUTINE(a_Name)                 GET_SYSTEM_ROUTINE_EX(RT_NOTHING, a_Name, decltype(a_Name) *)
 #define GET_SYSTEM_ROUTINE_PRF(a_Prf,a_Name)       GET_SYSTEM_ROUTINE_EX(a_Prf, a_Name, decltype(a_Name) *)
 #define GET_SYSTEM_ROUTINE_TYPE(a_Name, a_pfnType) GET_SYSTEM_ROUTINE_EX(RT_NOTHING, a_Name, a_pfnType)
@@ -275,6 +275,7 @@ DECLHIDDEN(int) rtR0InitNative(void)
     GET_SYSTEM_ROUTINE(KeQueryLogicalProcessorRelationship);
     GET_SYSTEM_ROUTINE(KeRegisterProcessorChangeCallback);
     GET_SYSTEM_ROUTINE(KeDeregisterProcessorChangeCallback);
+    GET_SYSTEM_ROUTINE(MmProtectMdlSystemAddress);
 
     GET_SYSTEM_ROUTINE_TYPE(RtlGetVersion, PFNRTRTLGETVERSION);
 #ifndef RT_ARCH_AMD64
@@ -284,14 +285,10 @@ DECLHIDDEN(int) rtR0InitNative(void)
     GET_SYSTEM_ROUTINE_TYPE(KeQueryInterruptTimePrecise, PFNRTKEQUERYINTERRUPTTIMEPRECISE);
     GET_SYSTEM_ROUTINE_TYPE(KeQuerySystemTimePrecise, PFNRTKEQUERYSYSTEMTIMEPRECISE);
 
-#ifdef IPRT_TARGET_NT4
-    g_pfnrtHalRequestIpiW7Plus = NULL;
-    g_pfnrtHalRequestIpiPreW7 = NULL;
-#else
-    RtlInitUnicodeString(&RoutineName, L"HalRequestIpi");
-    g_pfnrtHalRequestIpiW7Plus = (PFNHALREQUESTIPI_W7PLUS)MmGetSystemRoutineAddress(&RoutineName);
+    g_pfnrtHalRequestIpiW7Plus = (PFNHALREQUESTIPI_W7PLUS)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "HalRequestIpi");
     g_pfnrtHalRequestIpiPreW7 = (PFNHALREQUESTIPI_PRE_W7)g_pfnrtHalRequestIpiW7Plus;
-#endif
+
+    RTR0DbgKrnlInfoRelease(hKrnlInfo);
 
     /*
      * HACK ALERT! (and déjà vu warning - remember win32k.sys?)
@@ -431,7 +428,7 @@ DECLHIDDEN(int) rtR0InitNative(void)
      * Initialize multi processor stuff.  This registers a callback, so
      * we call rtR0TermNative to do the deregistration on failure.
      */
-    int rc = rtR0MpNtInit(&OsVerInfo);
+    rc = rtR0MpNtInit(&OsVerInfo);
     if (RT_FAILURE(rc))
     {
         rtR0TermNative();
