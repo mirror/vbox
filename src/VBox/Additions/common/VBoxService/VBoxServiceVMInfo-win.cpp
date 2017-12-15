@@ -1354,7 +1354,7 @@ int VGSvcVMInfoWinGetComponentVersions(uint32_t uClientID)
         { szSysWowDir, "VBoxOGLfeedbackspu.dll" },
         { szSysWowDir, "VBoxOGL.dll" },
 #else  /* !RT_ARCH_AMD64 */
-# ifdef TARGET_NT4
+# ifndef TARGET_NT4
         { szSysDir, "VBoxOGLarrayspu.dll" },
         { szSysDir, "VBoxOGLcrutil.dll" },
         { szSysDir, "VBoxOGLerrorspu.dll" },
