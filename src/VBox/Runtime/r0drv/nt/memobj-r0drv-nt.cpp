@@ -110,7 +110,10 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
         case RTR0MEMOBJTYPE_PAGE:
             Assert(pMemNt->Core.pv);
-            ExFreePool(pMemNt->Core.pv);
+            if (g_pfnrtExFreePoolWithTag)
+                g_pfnrtExFreePoolWithTag(pMemNt->Core.pv, IPRT_NT_POOL_TAG);
+            else
+                ExFreePool(pMemNt->Core.pv);
             pMemNt->Core.pv = NULL;
 
             Assert(pMemNt->cMdls == 1 && pMemNt->apMdls[0]);
@@ -367,7 +370,7 @@ static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bo
         PHYSICAL_ADDRESS PhysAddrLowest, PhysAddrBoundary;
         PhysAddrLowest.QuadPart   = 0;
         PhysAddrBoundary.QuadPart = (uAlignment == PAGE_SIZE) ? 0 : uAlignment;
-        pv = MmAllocateContiguousMemorySpecifyCache(cb, PhysAddrLowest, PhysAddrHighest, PhysAddrBoundary, MmCached);
+        pv = g_pfnrtMmAllocateContiguousMemorySpecifyCache(cb, PhysAddrLowest, PhysAddrHighest, PhysAddrBoundary, MmCached);
     }
     else if (uAlignment == PAGE_SIZE)
         pv = MmAllocateContiguousMemory(cb, PhysAddrHighest);

@@ -73,6 +73,7 @@ RT_C_DECLS_END
  * installed by the later DDKs.
  */
 #undef ExAllocatePool
+#undef ExFreePool
 
 /** @def IPRT_NT_POOL_TAG
  * Tag to use with the NT Pool APIs.

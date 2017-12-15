@@ -76,7 +76,10 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
 {
     pHdr->u32Magic += 1;
-    ExFreePool(pHdr);
+    if (g_pfnrtExFreePoolWithTag)
+        g_pfnrtExFreePoolWithTag(pHdr, IPRT_NT_POOL_TAG);
+    else
+        ExFreePool(pHdr);
 }
 
 

@@ -44,6 +44,8 @@
 *********************************************************************************************************************************/
 /** ExAllocatePoolWithTag, introduced in W2K. */
 decltype(ExAllocatePoolWithTag)        *g_pfnrtExAllocatePoolWithTag;
+/** ExFreePoolWithTag, introduced in W2K. */
+decltype(ExFreePoolWithTag)            *g_pfnrtExFreePoolWithTag;
 /** ExSetTimerResolution, introduced in W2K. */
 PFNMYEXSETTIMERRESOLUTION               g_pfnrtNtExSetTimerResolution;
 /** KeFlushQueuedDpcs, introduced in XP. */
@@ -273,6 +275,7 @@ DECLHIDDEN(int) rtR0InitNative(void)
 #define GET_SYSTEM_ROUTINE_TYPE(a_Name, a_pfnType) GET_SYSTEM_ROUTINE_EX(RT_NOTHING, a_Name, a_pfnType)
 
     GET_SYSTEM_ROUTINE(ExAllocatePoolWithTag);
+    GET_SYSTEM_ROUTINE(ExFreePoolWithTag);
     GET_SYSTEM_ROUTINE_PRF(Nt,ExSetTimerResolution);
     GET_SYSTEM_ROUTINE_PRF(Nt,KeFlushQueuedDpcs);
     GET_SYSTEM_ROUTINE(KeIpiGenericCall);
