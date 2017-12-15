@@ -1451,6 +1451,8 @@ int DrvAudioHlpFileWrite(PPDMAUDIOFILE pFile, const void *pvBuf, size_t cbBuf, u
     if (!cbBuf)
         return VINF_SUCCESS;
 
+    AssertReturn(RTFileIsValid(pFile->hFile), VERR_WRONG_ORDER);
+
     int rc;
 
     if (pFile->enmType == PDMAUDIOFILETYPE_RAW)
