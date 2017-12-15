@@ -670,14 +670,12 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 linux.x86
  VBOX_WITH_VIDEOREC = 1
  # Enable VPX (VP8 / VP9 codec), used for video capturing.
  VBOX_WITH_LIBVPX = 1
- if !defined(VBOX_OSE)
-  # Enables audio support for VM video capturing.
-  VBOX_WITH_AUDIO_VIDEOREC = 1
-  # Enables libopus (Opus), used for encoding audio into VM video capturing files.
-  VBOX_WITH_LIBOPUS = 1
-  # Enable SEE (+ AVX) optimizations for Opus.
-  VBOX_WITH_OPUS_SSE = 1
- endif
+ # Enables audio support for VM video capturing.
+ VBOX_WITH_AUDIO_VIDEOREC = 1
+ # Enables libopus (Opus), used for encoding audio into VM video capturing files.
+ VBOX_WITH_LIBOPUS = 1
+ # Enable SEE (+ AVX) optimizations for Opus.
+ VBOX_WITH_OPUS_SSE = 1
 endif
 # Enable shared folders
 VBOX_WITH_SHARED_FOLDERS = 1
@@ -1179,14 +1177,14 @@ ifdef VBOX_OSE
  ifn1of ($(KBUILD_TARGET), darwin linux solaris win)
   VBOX_WITH_INSTALLER=
  endif
- if1of ($(KBUILD_TARGET), win)
+ # if1of ($(KBUILD_TARGET), win)
   # Undefine codec libraries which are not needed.
   VBOX_WITH_LIBVPX=
   VBOX_WITH_LIBOPUS=
   # Disable video recording (with audio support).
   VBOX_WITH_VIDEOREC=
   VBOX_WITH_AUDIO_VIDEOREC=
- endif
+ # endif
  # branding
  VBOX_BRAND_LICENSE_HTML             := $(PATH_ROOT)/doc/License-gpl-2.0.html
  VBOX_BRAND_LICENSE_RTF              := $(PATH_ROOT)/doc/License-gpl-2.0.rtf
