@@ -1713,6 +1713,7 @@ static int rtHttpWinConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszU
                     {
                         DWORD dwErr = GetLastError();
                         if (   dwErr == ERROR_WINHTTP_AUTODETECTION_FAILED
+                            || dwErr == ERROR_WINHTTP_UNABLE_TO_DOWNLOAD_SCRIPT
                             || (   dwErr == ERROR_WINHTTP_UNRECOGNIZED_SCHEME
                                 && (   RTStrNICmp(pszUrl, RT_STR_TUPLE("https://")) == 0
                                     || RTStrNICmp(pszUrl, RT_STR_TUPLE("http://")) == 0) ) )
