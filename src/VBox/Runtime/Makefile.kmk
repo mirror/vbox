@@ -805,8 +805,8 @@ RuntimeR3_SOURCES.win = \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/RTRandAdvCreateSystemTruer-generic.cpp \
 	generic/RTSemEventWait-generic.cpp \
- 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTSemMutexRequest-generic.cpp \
 	generic/RTSemMutexRequestDebug-generic.cpp \
 	generic/RTThreadSetAffinityToCpu-generic.cpp \
@@ -817,28 +817,28 @@ RuntimeR3_SOURCES.win = \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
- 	nt/RTNtPathExpand8dot3Path.cpp \
- 	nt/RTNtPathFindPossible8dot3Name.cpp \
- 	nt/fileioutils-nt.cpp \
- 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+	nt/RTNtPathExpand8dot3Path.cpp \
+	nt/RTNtPathFindPossible8dot3Name.cpp \
+	nt/fileioutils-nt.cpp \
+	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
 	r3/nt/dirrel-r3-nt.cpp \
- 	r3/nt/fs-nt.cpp \
- 	r3/nt/pathint-nt.cpp \
- 	r3/nt/RTFileQueryFsSizes-nt.cpp \
- 	r3/nt/RTFileSetMode-r3-nt.cpp \
- 	r3/nt/RTPathQueryInfo-nt.cpp \
- 	r3/nt/RTPathSetMode-r3-nt.cpp \
- 	r3/nt/RTProcQueryParent-r3-nt.cpp \
+	r3/nt/fs-nt.cpp \
+	r3/nt/pathint-nt.cpp \
+	r3/nt/RTFileQueryFsSizes-nt.cpp \
+	r3/nt/RTFileSetMode-r3-nt.cpp \
+	r3/nt/RTPathQueryInfo-nt.cpp \
+	r3/nt/RTPathSetMode-r3-nt.cpp \
+	r3/nt/RTProcQueryParent-r3-nt.cpp \
 	r3/win/env-win.cpp \
 	r3/win/RTCrStoreCreateSnapshotById-win.cpp \
 	r3/win/RTHandleGetStandard-win.cpp \
- 	r3/win/RTLocaleQueryNormalizedBaseLocaleName-win.cpp \
+	r3/win/RTLocaleQueryNormalizedBaseLocaleName-win.cpp \
 	r3/win/RTLocaleQueryUserCountryCode-win.cpp \
 	r3/win/RTSystemQueryOSInfo-win.cpp \
 	r3/win/RTSystemShutdown-win.cpp \
 	r3/win/RTSystemQueryDmiString-win.cpp \
 	r3/win/RTSystemQueryTotalRam-win.cpp \
- 	r3/win/RTTimeZoneGetCurrent-win.cpp \
+	r3/win/RTTimeZoneGetCurrent-win.cpp \
 	r3/win/alloc-win.cpp \
 	r3/win/allocex-win.cpp \
 	r3/win/dir-win.cpp \
@@ -900,10 +900,10 @@ RuntimeR3_SOURCES.linux = \
 	generic/mppresent-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
- 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
- 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
- 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
+	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/posix/allocex-r3-posix.cpp \
 	r3/linux/RTThreadGetNativeState-linux.cpp \
@@ -1014,10 +1014,10 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTThreadGetNativeState-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	r3/generic/allocex-r3-generic.cpp \
- 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
- 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
- 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
+	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/os2/filelock-os2.cpp \
 	r3/os2/mp-os2.cpp \
@@ -1077,8 +1077,8 @@ RuntimeR3_SOURCES.darwin = \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
- 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),lockless-,)generic.cpp \
 	generic/RTSystemShutdown-generic.cpp \
 	generic/timer-generic.cpp \
@@ -1098,10 +1098,10 @@ RuntimeR3_SOURCES.darwin = \
 	r3/darwin/time-darwin.cpp \
 	r3/darwin/RTPathUserDocuments-darwin.cpp \
 	r3/generic/allocex-r3-generic.cpp \
- 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
- 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
- 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
+	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
@@ -1150,8 +1150,8 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTPathAbs-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
- 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp \
 	generic/RTSystemShutdown-generic.cpp \
 	generic/RTThreadGetAffinity-stub-generic.cpp \
@@ -1174,10 +1174,10 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/freebsd/systemmem-freebsd.cpp \
 	r3/freebsd/rtProcInitExePath-freebsd.cpp \
 	r3/generic/allocex-r3-generic.cpp \
- 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
- 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
- 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
+	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
@@ -1249,10 +1249,10 @@ RuntimeR3_SOURCES.netbsd = \
 	generic/RTThreadGetNativeState-generic.cpp \
 	r3/netbsd/rtProcInitExePath-netbsd.cpp \
 	r3/generic/allocex-r3-generic.cpp \
- 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
- 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
- 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
+	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
@@ -1306,8 +1306,8 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
- 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTThreadSetAffinityToCpu-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
@@ -1317,10 +1317,10 @@ RuntimeR3_SOURCES.solaris = \
 	generic/uuid-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	r3/generic/allocex-r3-generic.cpp \
- 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
- 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
- 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
+	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTFileSetAllocationSize-posix.cpp \
@@ -1396,8 +1396,8 @@ RuntimeR3_SOURCES.haiku = \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
- 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),lockless-,)generic.cpp \
 	generic/timer-generic.cpp \
@@ -1410,10 +1410,10 @@ RuntimeR3_SOURCES.haiku = \
 	r3/haiku/rtProcInitExePath-haiku.cpp \
 	r3/haiku/time-haiku.cpp \
 	r3/generic/allocex-r3-generic.cpp \
- 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
- 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
- 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
+	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
@@ -1503,12 +1503,12 @@ RuntimeBldProg_BLD_TRG_CPU     := $(KBUILD_HOST_CPU)
 RuntimeBldProg_DEFS            := $(filter-out IN_SUP_R3 IN_SUP, $(RuntimeR3_DEFS)) IPRT_WITHOUT_LDR_VERIFY RT_NO_GIP
 RuntimeBldProg_SOURCES          = $(filter-out \
 	r3/xml.cpp \
-       common/misc/buildconfig.cpp \
+	common/misc/buildconfig.cpp \
 	common/zip/xarvfs.cpp \
 	, $(RuntimeR3_SOURCES))
 if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_HOST)" != "win"
-RuntimeBldProg_SOURCES         += \
-	common/err/errmsgxpcom.cpp
+ RuntimeBldProg_SOURCES        += \
+ 	common/err/errmsgxpcom.cpp
 endif
 
 
@@ -1550,12 +1550,12 @@ RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).x86  := $(RuntimeR3_SOURCES.$(KBUILD_TAR
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).amd64:= $(RuntimeR3_SOURCES.$(KBUILD_TARGET).amd64)
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH))
 RuntimeGuestR3_SOURCES.win.x86               += \
- 	r3/win/vcc100-kernel32-fakes.cpp \
- 	r3/win/vcc100-kernel32-fakesA.asm \
+	r3/win/vcc100-kernel32-fakes.cpp \
+	r3/win/vcc100-kernel32-fakesA.asm \
 	r3/win/vcc100-ntdll-fakes.cpp \
 	r3/win/vcc100-ntdll-fakesA.asm \
- 	r3/win/vcc100-ws2_32-fakes.cpp \
- 	r3/win/vcc100-ws2_32-fakesA.asm
+	r3/win/vcc100-ws2_32-fakes.cpp \
+	r3/win/vcc100-ws2_32-fakesA.asm
 
 #
 # RuntimeGuestR3-x86 - Same as RuntimeGuestR3, except that it's targeting x86.
@@ -1613,7 +1613,7 @@ VBoxRT_DEFS.$(KBUILD_TYPE)    := $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                := \
 	VBox/VBoxRTDeps.cpp \
 	$(filter-out common/checksum/crc32.cpp, \
-       	$(if-expr defined(VBOX_WITH_ALT_HASH_CODE), $(RuntimeR3_SOURCES), \
+		$(if-expr defined(VBOX_WITH_ALT_HASH_CODE), $(RuntimeR3_SOURCES), \
 		$(patsubst common/checksum/alt-%,common/checksum/openssl-%,$(RuntimeR3_SOURCES)) ) ) \
 	common/checksum/crc32-zlib.cpp \
 	common/misc/aiomgr.cpp
@@ -1627,7 +1627,7 @@ ifdef VBOX_WITH_LIBCURL
 endif
 ifdef VBOX_WITH_DTRACE_R3
  VBoxRT_SOURCES               += \
-  	iprt.d
+ 	iprt.d
 endif
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
@@ -1749,9 +1749,9 @@ if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TAR
  	r3/win/vcc100-kernel32-fakesA.asm \
  	r3/win/vcc100-ws2_32-fakes.cpp \
  	r3/win/vcc100-ws2_32-fakesA.asm \
-	r3/win/vcc100-ntdll-fakes.cpp \
-	r3/win/vcc100-ntdll-fakesA.asm \
-	r3/win/vcc100-msvcrt-fakes.cpp
+ 	r3/win/vcc100-ntdll-fakes.cpp \
+ 	r3/win/vcc100-ntdll-fakesA.asm \
+ 	r3/win/vcc100-msvcrt-fakes.cpp
  VBoxRT_TEMPLATE         = VBoxR3RuntimeDllItself
  VBoxRT_TEMPLATE.win.x86 = VBoxR3RuntimeDllItself
  VBoxRT_DEFS.win.x86     = $(TEMPLATE_VBoxR3RuntimeDll_DEFS.win.x86) _CRTIMP_PURE="__declspec(dllexport)"
@@ -2218,10 +2218,10 @@ RuntimeR0Drv_SOURCES    = \
 	generic/RTLogWriteUser-generic.cpp \
 	generic/RTMpGetArraySize-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
- 	generic/RTSemEventWait-2-ex-generic.cpp \
- 	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/RTSemEventWait-2-ex-generic.cpp \
+	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
+	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/critsect-generic.cpp \
 	generic/errvars-generic.cpp \
 	generic/uuid-generic.cpp \
@@ -2514,7 +2514,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	r0drv/os2/time-r0drv-os2.cpp \
 	r0drv/os2/timer-r0drv-os2.cpp \
 	r0drv/os2/timerA-r0drv-os2.asm \
-       \
+	\
 	common/math/gcc/adddi3.c \
 	common/math/gcc/anddi3.c \
 	common/math/gcc/ashldi3.c \
@@ -2710,24 +2710,24 @@ ifdef VBOX_WITH_RAW_MODE
  RuntimeRC_DEFS          = IN_RT_RC RT_WITH_VBOX IN_SUP_RC IN_VMM_RC NOFILEID
  RuntimeRC_INCS          = include
  RuntimeRC_SOURCES      := \
-	common/asm/ASMMemFirstMismatchingU8.asm \
-	common/asm/ASMGetXcr0.asm \
-	common/asm/ASMSetXcr0.asm \
-	common/asm/ASMXSave.asm \
-	common/asm/ASMXRstor.asm \
-	common/asm/ASMFxSave.asm \
-	common/asm/ASMFxRstor.asm \
-	common/checksum/alt-md5.cpp \
-	common/checksum/crc32.cpp \
-	common/checksum/crc64.cpp \
+ 	common/asm/ASMMemFirstMismatchingU8.asm \
+ 	common/asm/ASMGetXcr0.asm \
+ 	common/asm/ASMSetXcr0.asm \
+ 	common/asm/ASMXSave.asm \
+ 	common/asm/ASMXRstor.asm \
+ 	common/asm/ASMFxSave.asm \
+ 	common/asm/ASMFxRstor.asm \
+ 	common/checksum/alt-md5.cpp \
+ 	common/checksum/crc32.cpp \
+ 	common/checksum/crc64.cpp \
  	common/log/log.cpp \
  	common/log/logellipsis.cpp \
  	common/log/logrel.cpp \
  	common/log/logrelellipsis.cpp \
  	common/log/logcom.cpp \
  	common/log/logformat.cpp \
-	common/log/tracebuf.cpp \
-	common/log/tracedefault.cpp \
+ 	common/log/tracebuf.cpp \
+ 	common/log/tracedefault.cpp \
  	common/misc/RTAssertMsg1Weak.cpp \
  	common/misc/RTAssertMsg2.cpp \
  	common/misc/RTAssertMsg2Add.cpp \
@@ -2748,10 +2748,10 @@ ifdef VBOX_WITH_RAW_MODE
  	common/string/strpbrk.cpp \
  	common/string/strprintf.cpp \
  	common/string/strprintf2.cpp \
-	common/string/RTStrCmp.cpp \
+ 	common/string/RTStrCmp.cpp \
  	common/string/RTStrCopy.cpp \
  	common/string/RTStrCopyEx.cpp \
-	common/string/RTStrICmpAscii.cpp \
+ 	common/string/RTStrICmpAscii.cpp \
  	common/table/avllu32.cpp \
  	common/table/avlou32.cpp \
  	common/table/avlogcphys.cpp \
@@ -2767,8 +2767,8 @@ ifdef VBOX_WITH_RAW_MODE
  	common/time/timesup.cpp \
  	gc/initterm-gc.cpp \
  	generic/RTAssertShouldPanic-generic.cpp \
-	generic/rtStrFormatKernelAddress-generic.cpp \
-	generic/errvars-generic.cpp \
+ 	generic/rtStrFormatKernelAddress-generic.cpp \
+ 	generic/errvars-generic.cpp \
  	\
  	$(RuntimeNoCrt_SOURCES)
 
@@ -2786,26 +2786,26 @@ ifdef VBOX_WITH_RAW_MODE
 
  if1of ($(KBUILD_TARGET), darwin solaris freebsd os2)
   RuntimeRC_SOURCES += \
- 	common/math/gcc/adddi3.c \
- 	common/math/gcc/anddi3.c \
- 	common/math/gcc/ashldi3.c \
- 	common/math/gcc/ashrdi3.c \
- 	common/math/gcc/cmpdi2.c \
- 	common/math/gcc/divdi3.c \
- 	common/math/gcc/iordi3.c \
- 	common/math/gcc/lshldi3.c \
- 	common/math/gcc/lshrdi3.c \
- 	common/math/gcc/moddi3.c \
- 	common/math/gcc/muldi3.c \
- 	common/math/gcc/negdi2.c \
- 	common/math/gcc/notdi2.c \
- 	common/math/gcc/qdivrem.c \
- 	common/math/gcc/subdi3.c \
- 	common/math/gcc/ucmpdi2.c \
- 	common/math/gcc/udivdi3.c \
-	common/math/gcc/udivmoddi4.c \
- 	common/math/gcc/umoddi3.c \
- 	common/math/gcc/xordi3.c
+  	common/math/gcc/adddi3.c \
+  	common/math/gcc/anddi3.c \
+  	common/math/gcc/ashldi3.c \
+  	common/math/gcc/ashrdi3.c \
+  	common/math/gcc/cmpdi2.c \
+  	common/math/gcc/divdi3.c \
+  	common/math/gcc/iordi3.c \
+  	common/math/gcc/lshldi3.c \
+  	common/math/gcc/lshrdi3.c \
+  	common/math/gcc/moddi3.c \
+  	common/math/gcc/muldi3.c \
+  	common/math/gcc/negdi2.c \
+  	common/math/gcc/notdi2.c \
+  	common/math/gcc/qdivrem.c \
+  	common/math/gcc/subdi3.c \
+  	common/math/gcc/ucmpdi2.c \
+  	common/math/gcc/udivdi3.c \
+  	common/math/gcc/udivmoddi4.c \
+  	common/math/gcc/umoddi3.c \
+  	common/math/gcc/xordi3.c
  endif
 
 
@@ -2814,7 +2814,7 @@ ifdef VBOX_WITH_RAW_MODE
  #
  RuntimeRCStub_TEMPLATE    = VBoxRc
  RuntimeRCStub_SOURCES.win = \
-	nt/NtProcessStartup-stub.cpp
+ 	nt/NtProcessStartup-stub.cpp
 
 
 endif # VBOX_WITH_RAW_MODE
@@ -2883,8 +2883,8 @@ endif
 #
 RuntimeR3VccTricks_TEMPLATE = VBoxR3Dll
 RuntimeR3VccTricks_SOURCES  = \
- 	r3/win/vcc100-kernel32-fakes.cpp \
- 	r3/win/vcc100-kernel32-fakesA.asm
+	r3/win/vcc100-kernel32-fakes.cpp \
+	r3/win/vcc100-kernel32-fakesA.asm
 
 if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" # Ugly hacks... :-)
 LIBRARIES += RuntimeR3VccTricks2
@@ -3095,9 +3095,9 @@ $(IPRT_DOXYFILE_OUTPUT)/Doxyfile.iprt: \
 	$(QUIET)$(APPEND) $@.tmp "PREDEFINED += $(ARCH_BITS_DEFS)"
 	$(QUIET)$(APPEND) $@.tmp 'EXCLUDE = '\
 		'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-flags.cpp' \
-       	'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-lower.cpp' \
-       	'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-upper.cpp' \
-       	'$(VBOX_PATH_RUNTIME_SRC)/common/ldr/ldrkStuff.cpp'
+		'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-lower.cpp' \
+		'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-upper.cpp' \
+		'$(VBOX_PATH_RUNTIME_SRC)/common/ldr/ldrkStuff.cpp'
 	$(QUIET)$(APPEND) $@.tmp
 	$(QUIET)$(APPEND) $@.tmp 'INPUT = $(foreach x,$(IPRT_DOXYFILE_INPUT),\$(NLTAB)$(x))'
 	$(QUIET)$(APPEND) $@.tmp
@@ -3111,11 +3111,10 @@ $(IPRT_DOXYFILE_OUTPUT)/docs.iprt: $(IPRT_DOXYFILE_OUTPUT)/Doxyfile.iprt $$(IPRT
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(RM) -Rf $(IPRT_DOXYFILE_OUTPUT)/html/
 	doxygen $(DOXYGEN_OPTS) $(IPRT_DOXYFILE_OUTPUT)/Doxyfile.iprt
-	$(SED) \
-                -e '/warning. Unexpected tag .dd. found/d' \
-                -e '/warning. Unsupported xml.html tag .globalScope. found/d' \
-                --output $(IPRT_DOXYFILE_OUTPUT)/errors2 \
-                $(IPRT_DOXYFILE_OUTPUT)/errors
+	$(SED)  -e '/warning. Unexpected tag .dd. found/d' \
+		-e '/warning. Unsupported xml.html tag .globalScope. found/d' \
+		--output $(IPRT_DOXYFILE_OUTPUT)/errors2 \
+		$(IPRT_DOXYFILE_OUTPUT)/errors
 	$(CAT) $(IPRT_DOXYFILE_OUTPUT)/errors2
 	$(SED) -e "/[^ ]/q 1" $(IPRT_DOXYFILE_OUTPUT)/errors2
 	$(APPEND) $@
@@ -3157,9 +3156,9 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 	$(QUIET)$(APPEND) -n '$@' \
 		':bad' \
 		's/^\(.*\)$(DOLLAR)/error: Missing # define \1 /' \
-               ':bad-pad' \
-               '/^.\{0,70\}$(DOLLAR)/ { s/$(DOLLAR)/ /; bbad-pad; }' \
-               's/define \([^ ]*\) \([ ]*\)$(DOLLAR)/define \1 \2RT_MANGLER(\1)/' \
+		':bad-pad' \
+		'/^.\{0,70\}$(DOLLAR)/ { s/$(DOLLAR)/ /; bbad-pad; }' \
+		's/define \([^ ]*\) \([ ]*\)$(DOLLAR)/define \1 \2RT_MANGLER(\1)/' \
 		'p' \
 		$(if-expr !defined(IPRT_IGNORE_TEST_MANGLING),'q 1') \
 		'' \
@@ -3170,7 +3169,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 	$(call MSG_L1,IPRT: Testing mangling and visiblity for newer gcc...)
 	$(QUIET)readelf -Ws $^ \
 		| $(SED) \
-               	-e 's/[[:space:]]\+/ /g' \
+			-e 's/[[:space:]]\+/ /g' \
 			-e '/^  *[[:digit:]]\+:/!d' \
 			-e 's/^ \+[[:digit:]]\+: \+[[:xdigit:]]\+ \+[[:digit:]]\+ \+//' \
 			-e '/^SECTION/d' \
@@ -3237,7 +3236,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			-e '/^[TUDB] /!d' \
 			-e 's/^. //' \
 			$(if-expr "$(KBUILD_TARGET)" == "darwin" || "$(KBUILD_TARGET)" == "os2" || "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86", \
-                       -e 's/^_//',) \
+			-e 's/^_//',) \
 			\
 			-e '/^g_cchrt/d'\
 			-e '/^g_frt/d'\
@@ -3259,7 +3258,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			-e '/^g_VM/d',) \
 			$(if-expr "$(KBUILD_TARGET)" == "linux", \
 			-e '/^g_kLdrRdrFileOps/d',) \
-                       \
+			\
 			-e '/^g_[ac]VTG/d' \
 			-e '/^g_VTGObjHeader/d' \
 			-e '/^g_VTGProbeData/d' \
