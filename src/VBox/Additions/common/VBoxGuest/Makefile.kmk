@@ -254,12 +254,12 @@ ifeq ($(KBUILD_TARGET),freebsd)
 endif # FreeBSD
 
 ifeq ($(KBUILD_TARGET),win)
-#
-# VBoxGuestInst - The installer.
-#
-#PROGRAMS += VBoxGuestInst
-VBoxGuestInst_TEMPLATE= VBoxGuestR3Exe
-VBoxGuestInst_SOURCES = win/VBoxGuestInst.cpp
+ #
+ # VBoxGuestInst - The installer.
+ #
+ PROGRAMS.win.x86 += VBoxGuestInstNT
+ VBoxGuestInstNT_TEMPLATE = VBoxGuestR3Exe
+ VBoxGuestInstNT_SOURCES  = win/VBoxGuestInst.cpp
 endif
 
 
