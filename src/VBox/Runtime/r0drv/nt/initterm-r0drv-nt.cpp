@@ -87,6 +87,14 @@ PFNKEDEREGISTERPROCESSORCHANGECALLBACK  g_pfnrtKeDeregisterProcessorChangeCallba
 /** Pointer to the MmProtectMdlSystemAddress kernel function if it's available.
  * This API was introduced in XP. */
 decltype(MmProtectMdlSystemAddress)    *g_pfnrtMmProtectMdlSystemAddress;
+/** MmAllocatePagesForMdl - Introduced in Windows 2000. */
+decltype(MmAllocatePagesForMdl)        *g_pfnrtMmAllocatePagesForMdl;
+/** MmFreePagesFromMdl - Introduced in Windows 2000. */
+decltype(MmFreePagesFromMdl)           *g_pfnrtMmFreePagesFromMdl;
+/** MmMapLockedPagesSpecifyCache - Introduced in Windows NT4 SP4. */
+decltype(MmMapLockedPagesSpecifyCache) *g_pfnrtMmMapLockedPagesSpecifyCache;
+/** MmAllocateContiguousMemorySpecifyCache - Introduced in Windows 2000. */
+decltype(MmAllocateContiguousMemorySpecifyCache) *g_pfnrtMmAllocateContiguousMemorySpecifyCache;
 /** RtlGetVersion, introduced in ??. */
 PFNRTRTLGETVERSION                      g_pfnrtRtlGetVersion;
 #ifndef RT_ARCH_AMD64
@@ -281,6 +289,10 @@ DECLHIDDEN(int) rtR0InitNative(void)
     GET_SYSTEM_ROUTINE(KeRegisterProcessorChangeCallback);
     GET_SYSTEM_ROUTINE(KeDeregisterProcessorChangeCallback);
     GET_SYSTEM_ROUTINE(MmProtectMdlSystemAddress);
+    GET_SYSTEM_ROUTINE(MmAllocatePagesForMdl);
+    GET_SYSTEM_ROUTINE(MmFreePagesFromMdl);
+    GET_SYSTEM_ROUTINE(MmMapLockedPagesSpecifyCache);
+    GET_SYSTEM_ROUTINE(MmAllocateContiguousMemorySpecifyCache);
 
     GET_SYSTEM_ROUTINE_TYPE(RtlGetVersion, PFNRTRTLGETVERSION);
 #ifndef RT_ARCH_AMD64

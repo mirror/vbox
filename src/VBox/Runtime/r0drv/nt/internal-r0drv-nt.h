@@ -80,6 +80,10 @@ extern PFNKEQUERYLOGICALPROCESSORRELATIONSHIP  g_pfnrtKeQueryLogicalProcessorRel
 extern PFNKEREGISTERPROCESSORCHANGECALLBACK    g_pfnrtKeRegisterProcessorChangeCallback;
 extern PFNKEDEREGISTERPROCESSORCHANGECALLBACK  g_pfnrtKeDeregisterProcessorChangeCallback;
 extern decltype(MmProtectMdlSystemAddress)    *g_pfnrtMmProtectMdlSystemAddress;
+extern decltype(MmAllocatePagesForMdl)        *g_pfnrtMmAllocatePagesForMdl;
+extern decltype(MmFreePagesFromMdl)           *g_pfnrtMmFreePagesFromMdl;
+extern decltype(MmMapLockedPagesSpecifyCache) *g_pfnrtMmMapLockedPagesSpecifyCache;
+extern decltype(MmAllocateContiguousMemorySpecifyCache) *g_pfnrtMmAllocateContiguousMemorySpecifyCache;
 extern PFNRTRTLGETVERSION                      g_pfnrtRtlGetVersion;
 #ifndef RT_ARCH_AMD64
 extern PFNRTKEQUERYINTERRUPTTIME               g_pfnrtKeQueryInterruptTime;
