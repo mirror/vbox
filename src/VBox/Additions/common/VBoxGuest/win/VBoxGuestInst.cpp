@@ -55,7 +55,7 @@ static int installDriver(void)
 
     char szDriver[MAX_PATH];
     GetSystemDirectory(szDriver, sizeof(szDriver));
-    strcat(szDriver, "\\drivers\\VBoxGuestNT.sys");
+    strcat(szDriver, "\\drivers\\VBoxGuest.sys");
 
     SC_HANDLE hService = CreateService(hSMgrCreate,
                                        VBOXGUEST_SERVICE_NAME,

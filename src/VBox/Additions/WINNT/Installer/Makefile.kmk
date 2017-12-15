@@ -89,8 +89,7 @@ ifeq ($(KBUILD_TARGET_ARCH),amd64)
 endif
 ifeq ($(KBUILD_TARGET_ARCH),x86)
 DRIVER_FILES += \
-	$(PATH_STAGE_BIN)/additions/VBoxMouseNT.sys \
-	$(PATH_STAGE_BIN)/additions/VBoxGuestNT.sys
+	$(PATH_STAGE_BIN)/additions/VBoxMouseNT.sys
 endif
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxVideo.inf \

@@ -1365,11 +1365,10 @@ int VGSvcVMInfoWinGetComponentVersions(uint32_t uClientID)
 # endif
 #endif /* !RT_ARCH_AMD64 */
 
+        { szDriversDir, "VBoxGuest.sys" },
 #ifdef TARGET_NT4
-        { szDriversDir, "VBoxGuestNT.sys" },
         { szDriversDir, "VBoxMouseNT.sys" },
 #else
-        { szDriversDir, "VBoxGuest.sys" },
         { szDriversDir, "VBoxMouse.sys" },
         { szDriversDir, "VBoxSF.sys"    },
 #endif

@@ -204,11 +204,6 @@ Function ExtractFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxHook.dll"
   FILE "$%PATH_OUT%\bin\additions\VBoxControl.exe"
 
-!if $%BUILD_TARGET_ARCH% == "x86"
-  SetOutPath "$0\VBoxGuest\NT4"
-  FILE "$%PATH_OUT%\bin\additions\VBoxGuestNT.sys"
-!endif
-
   ; VBoxService
   SetOutPath "$0\Bin"
   FILE "$%PATH_OUT%\bin\additions\VBoxService.exe"
