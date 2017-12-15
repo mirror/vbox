@@ -27,7 +27,6 @@ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 # Target lists.
 #
 PROGRAMS += VBoxService
-PROGRAMS.win.x86 += VBoxServiceNT
 
 # Enable the timesync service within VBoxService.
 VBOX_WITH_VBOXSERVICE_TIMESYNC      := 1
@@ -184,12 +183,6 @@ ifdef VBOX_WITH_GUEST_PROPS
 	kstat \
 	contract
 endif
-
-#
-# VBoxServiceNT - NT4 version of VBoxService.
-#
-VBoxServiceNT_TEMPLATE = VBoxGuestR3Exe
-VBoxServiceNT_EXTENDS  = VBoxService
 
 VBoxServiceVMInfo.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxServiceVMInfo.cpp_DEPS = $(VBOX_SVN_REV_KMK)
