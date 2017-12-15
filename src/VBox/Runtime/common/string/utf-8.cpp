@@ -1079,7 +1079,7 @@ RTDECL(int) RTStrToUtf16BigTag(const char *pszString, PRTUTF16 *ppwszString, con
     }
     return rc;
 }
-RT_EXPORT_SYMBOL(RTStrToUtf16TagBig);
+RT_EXPORT_SYMBOL(RTStrToUtf16BigTag);
 
 
 RTDECL(int)  RTStrToUtf16ExTag(const char *pszString, size_t cchString,
@@ -1596,7 +1596,7 @@ RTDECL(int)  RTStrToLatin1ExTag(const char *pszString, size_t cchString,
     }
     return rc;
 }
-RT_EXPORT_SYMBOL(RTStrToLatin1Tag);
+RT_EXPORT_SYMBOL(RTStrToLatin1ExTag);
 
 
 RTDECL(size_t) RTStrCalcLatin1Len(const char *psz)
