@@ -248,7 +248,7 @@ VMM_INT_DECL(int) HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm
     {
         /* AMD Seventh and Eighth Generation Processor MSRs. */
         *pbOffMsrpm = 0x1000;
-        *puMsrpmBit = (idMsr - 0xc0001000) << 1;
+        *puMsrpmBit = (idMsr - 0xc0010000) << 1;
         return VINF_SUCCESS;
     }
 
