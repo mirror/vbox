@@ -1853,6 +1853,7 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
     {
         /* First, load the guest intercepts into the guest VMCB. */
         PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+        Assert(!(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR));
         hmR0SvmLoadGuestXcptIntercepts(pVCpu, pVmcb, pCtx);
 
         /* Next, merge the intercepts into the nested-guest VMCB. */
@@ -1890,6 +1891,9 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
         Assert(   (pVmcbNstGst->ctrl.u64InterceptCtrl & HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS)
                == HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS);
         pVmcbNstGst->ctrl.u64InterceptCtrl  &= ~SVM_CTRL_INTERCEPT_VMMCALL;
+
+        /* Finally, update the VMCB clean bits. */
+        pVmcbNstGst->ctrl.u64VmcbCleanBits  &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 
         Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS));
     }
@@ -2260,9 +2264,11 @@ static int hmR0SvmLoadGuestStateNested(PVMCPU pVCpu, PCPUMCTX pCtx)
               ||  HMCPU_CF_IS_PENDING_ONLY(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE),
                ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
-    Log4(("hmR0SvmLoadGuestStateNested: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX32 CR3=%#RX32 (HyperCR3=%#RX64) CR4=%#RX32 rc=%d\n",
-          pCtx->cs.Sel, pCtx->rip, pCtx->eflags.u, pCtx->cr0, pCtx->cr3, pVmcbNstGst->guest.u64CR3, pCtx->cr4, rc));
+    Log4(("hmR0SvmLoadGuestStateNested: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX32 CR3=%#RX32 (HyperCR3=%#RX64) CR4=%#RX32 "
+          "ESP=%#RX32 EBP=%#RX32 rc=%d\n", pCtx->cs.Sel, pCtx->rip, pCtx->eflags.u, pCtx->cr0, pCtx->cr3,
+          pVmcbNstGst->guest.u64CR3, pCtx->cr4, pCtx->esp, pCtx->ebp, rc));
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
+
     return rc;
 }
 #endif
@@ -3116,27 +3122,32 @@ DECLINLINE(bool) hmR0SvmIsIntrShadowActive(PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
- * Sets the virtual interrupt intercept control in the VMCB which
- * instructs AMD-V to cause a \#VMEXIT as soon as the guest is in a state to
- * receive interrupts.
+ * Sets the virtual interrupt intercept control in the VMCB.
  *
  * @param   pVmcb       Pointer to the VM control block.
  */
 DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
 {
+    /*
+     * When AVIC isn't supported, indicate that a virtual interrupt is pending and to
+     * cause a #VMEXIT when the guest is ready to accept interrupts. At #VMEXIT, we
+     * then get the interrupt from the APIC (updating ISR at the right time) and
+     * inject the interrupt.
+     *
+     * With AVIC is supported, we could make use of the asynchronously delivery without
+     * #VMEXIT and we would be passing the AVIC page to SVM.
+     */
     if (!(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR))
     {
-        pVmcb->ctrl.IntCtrl.n.u1VIrqPending = 1;     /* A virtual interrupt is pending. */
-        pVmcb->ctrl.IntCtrl.n.u8VIntrVector = 0;     /* Vector not necessary as we #VMEXIT for delivering the interrupt. */
+        Assert(pVmcb->ctrl.IntCtrl.n.u1VIrqPending == 0);
+        pVmcb->ctrl.IntCtrl.n.u1VIrqPending = 1;
         pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VINTR;
         pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
-
-        Log4(("Setting VINTR intercept\n"));
+        Log4(("Set VINTR intercept\n"));
     }
 }
 
 
-#if 0
 /**
  * Clears the virtual interrupt intercept control in the VMCB as
  * we are figured the guest is unable process any interrupts
@@ -3148,12 +3159,13 @@ DECLINLINE(void) hmR0SvmClearVirtIntrIntercept(PSVMVMCB pVmcb)
 {
     if (pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR)
     {
+        Assert(pVmcb->ctrl.IntCtrl.n.u1VIrqPending == 1);
+        pVmcb->ctrl.IntCtrl.n.u1VIrqPending = 0;
         pVmcb->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_VINTR;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS);
-        Log4(("Clearing VINTR intercept\n"));
+        pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
+        Log4(("Cleared VINTR intercept\n"));
     }
 }
-#endif
 
 
 /**
@@ -6910,12 +6922,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);
 
     PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
-    pVmcb->ctrl.IntCtrl.n.u1VIrqPending = 0;  /* No virtual interrupts pending, we'll inject the current one/NMI before reentry. */
-    pVmcb->ctrl.IntCtrl.n.u8VIntrVector = 0;
-
-    /* Indicate that we no longer need to #VMEXIT when the guest is ready to receive interrupts/NMIs, it is now ready. */
-    pVmcb->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_VINTR;
-    pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
+    hmR0SvmClearVirtIntrIntercept(pVmcb);
 
     /* Deliver the pending interrupt/NMI via hmR0SvmEvaluatePendingEvent() and resume guest execution. */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIntWindow);
@@ -7458,6 +7465,14 @@ HMSVM_EXIT_DECL hmR0SvmExitClgi(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClgi); */
     uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
     VBOXSTRICTRC rcStrict = IEMExecDecodedClgi(pVCpu, cbInstr);
+
+    /*
+     * The guest should no longer receive interrupts. Until VGIF is supported,
+     * clear virtual interrupt intercepts here.
+     */
+    PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
+    hmR0SvmClearVirtIntrIntercept(pVmcb);
+
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 
