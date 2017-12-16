@@ -157,24 +157,24 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
  VBoxGuest.cpp_DEFS     = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
  ifeq ($(KBUILD_TARGET),win)
-  #
-  # Windows NT4 driver.
-  #
-  SYSMODS.x86 += VBoxGuestNT
-  VBoxGuestNT_EXTENDS = VBoxGuest
-  VBoxGuestNT_INSTTYPE.win = both
-  VBoxGuestNT_SDKS    = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
-  VBoxGuestNT_DEFS    = $(VBoxGuest_DEFS) TARGET_NT4
-  VBoxGuestNT_SOURCES = \
-  	VBoxGuest.cpp \
-  	VBoxGuest-$(KBUILD_TARGET).cpp \
-  	win/VBoxGuest.rc
-  VBoxGuestNT_LIBS    = \
-  	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/exsup.lib \
-  	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
-  	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib \
-  	$(VBOX_LIB_VBGL_R0BASE) \
-  	$(VBOX_LIB_IPRT_GUEST_R0_NT4)
+  ##
+  ## Windows NT4 driver.
+  ##
+  #SYSMODS.x86 += VBoxGuestNT
+  #VBoxGuestNT_EXTENDS = VBoxGuest
+  #VBoxGuestNT_INSTTYPE.win = both
+  #VBoxGuestNT_SDKS    = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
+  #VBoxGuestNT_DEFS    = $(VBoxGuest_DEFS) TARGET_NT4
+  #VBoxGuestNT_SOURCES = \
+  #	VBoxGuest.cpp \
+  #	VBoxGuest-$(KBUILD_TARGET).cpp \
+  #	win/VBoxGuest.rc
+  #VBoxGuestNT_LIBS    = \
+  #	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/exsup.lib \
+  #	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
+  #	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib \
+  #	$(VBOX_LIB_VBGL_R0BASE) \
+  #	$(VBOX_LIB_IPRT_GUEST_R0_NT4)
  endif # win
 endif # enabled
 
