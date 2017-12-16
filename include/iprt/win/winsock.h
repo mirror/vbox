@@ -24,8 +24,8 @@
  */
 
 
-#ifndef ___iprt_win_winsock2_h___
-#define ___iprt_win_winsock2_h___
+#ifndef ___iprt_win_winsock_h___
+#define ___iprt_win_winsock_h___
 
 #ifdef _MSC_VER
 /*
