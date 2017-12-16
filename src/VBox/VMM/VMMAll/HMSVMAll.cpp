@@ -276,7 +276,7 @@ VMM_INT_DECL(bool) HMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, 
                                             uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
                                             PSVMIOIOEXITINFO pIoExitInfo)
 {
-    Assert(cAddrSizeBits == 0 || cAddrSizeBits == 16 || cAddrSizeBits == 32 || cAddrSizeBits == 64);
+    Assert(cAddrSizeBits == 16 || cAddrSizeBits == 32 || cAddrSizeBits == 64);
     Assert(cbReg == 1 || cbReg == 2 || cbReg == 4 || cbReg == 8);
 
     /*
