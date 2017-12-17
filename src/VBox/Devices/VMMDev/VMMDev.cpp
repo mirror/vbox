@@ -2952,6 +2952,7 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPc
 static DECLCALLBACK(int) vmmdevIOPortRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
+    LogFlow(("vmmdevIOPortRegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
     RT_NOREF3(iRegion, cb, enmType);
     PVMMDEV pThis = RT_FROM_MEMBER(pPciDev, VMMDEV, PciDev);
 

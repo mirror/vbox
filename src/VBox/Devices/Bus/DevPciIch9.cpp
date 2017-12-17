@@ -313,7 +313,8 @@ static int ich9pciConfigWrite(PDEVPCIROOT pPciRoot, PciAddress* pAddr,
         if (pPciDev)
         {
 #ifdef IN_RING3
-            pPciDev->Int.s.pfnConfigWrite(pPciDev->Int.s.CTX_SUFF(pDevIns), pPciDev, pAddr->iRegister, val, cb);
+            rc = VBOXSTRICTRC_TODO(pPciDev->Int.s.pfnConfigWrite(pPciDev->Int.s.CTX_SUFF(pDevIns), pPciDev,
+                                                                 pAddr->iRegister, val, cb));
 #else
             rc = rcReschedule;
 #endif
@@ -991,6 +992,7 @@ static DECLCALLBACK(void) ich9pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t
         if (pPciDev)
         {
             LogFunc(("%s: addr=%02x val=%08x len=%d\n", pPciDev->pszNameR3, u32Address, u32Value, cb));
+            /** @todo return rc */
             pPciDev->Int.s.pfnConfigWrite(pPciDev->Int.s.CTX_SUFF(pDevIns), pPciDev, u32Address, u32Value, cb);
         }
     }
@@ -2263,10 +2265,11 @@ static int devpciR3UnmapRegion(PPDMPCIDEV pDev, int iRegion)
 /**
  * Worker for devpciR3CommonDefaultConfigWrite that updates BAR and ROM mappings.
  *
+ * @returns VINF_SUCCESS of DBGFSTOP result.
  * @param   pPciDev             The PCI device to update the mappings for.
  * @param   fP2PBridge          Whether this is a PCI to PCI bridge or not.
  */
-static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
+static VBOXSTRICTRC devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
 {
     /* safe, only needs to go to the config space array */
     uint16_t const u16Cmd = PDMPciDevGetWord(pPciDev, VBOX_PCI_COMMAND);
@@ -2331,8 +2334,8 @@ static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
                         && uMemBase > 0
                         && !(   uMemBase <= UINT32_C(0xffffffff)
                              && uLast    >= UINT32_C(0xfec00000))
-                        && uMemBase < UINT64_C(0xffffffff00000000) )
-                        uNew = uMemBase;
+                            && uMemBase < UINT64_C(0xffffffff00000000) )
+                            uNew = uMemBase;
                 }
             }
 
@@ -2360,6 +2363,8 @@ static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
         }
         /* else: size == 0: unused region */
     }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -2489,11 +2494,12 @@ DECLINLINE(bool) devpciR3IsConfigByteWritable(uint32_t uAddress, uint8_t bHeader
  * See paragraph 7.5 of PCI Express specification (p. 349) for
  * definition of registers and their writability policy.
  */
-DECLCALLBACK(void) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
-                                                    uint32_t uAddress, uint32_t u32Value, unsigned cb)
+DECLCALLBACK(VBOXSTRICTRC) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                            uint32_t uAddress, uint32_t u32Value, unsigned cb)
 {
     NOREF(pDevIns);
     Assert(cb <= 4);
+    VBOXSTRICTRC rcRet = VINF_SUCCESS;
 
     if (uAddress + cb <= 256)
     {
@@ -2620,7 +2626,7 @@ DECLCALLBACK(void) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDMPCID
              * Update the region mappings if anything changed related to them (command, BARs, ROM).
              */
             if (fUpdateMappings)
-                devpciR3UpdateMappings(pPciDev, fP2PBridge);
+                rcRet = devpciR3UpdateMappings(pPciDev, fP2PBridge);
         }
     }
     else if (uAddress + cb <= _4K)
@@ -2628,6 +2634,8 @@ DECLCALLBACK(void) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDMPCID
                 pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, uAddress));
     else
         AssertMsgFailed(("Write after end of PCI config space\n"));
+
+    return rcRet;
 }
 
 

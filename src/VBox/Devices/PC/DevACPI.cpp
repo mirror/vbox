@@ -3322,8 +3322,8 @@ static DECLCALLBACK(uint32_t) acpiR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV
 /**
  * @callback_method_impl{FNPCICONFIGWRITE}
  */
-static DECLCALLBACK(void) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
-                                               uint32_t u32Value, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
+                                                       uint32_t u32Value, unsigned cb)
 {
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
 
@@ -3336,7 +3336,7 @@ static DECLCALLBACK(void) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pP
         u32Value = SCI_INT;
     }
 
-    pThis->pfnAcpiPciConfigWrite(pDevIns, pPciDev, uAddress, u32Value, cb);
+    VBOXSTRICTRC rcBase = pThis->pfnAcpiPciConfigWrite(pDevIns, pPciDev, uAddress, u32Value, cb);
 
     /* Assume that the base address is only changed when the corresponding
      * hardware functionality is disabled. The IO region is mapped when the
@@ -3371,6 +3371,7 @@ static DECLCALLBACK(void) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pP
     }
 
     DEVACPI_UNLOCK(pThis);
+    return rcBase;
 }
 
 /**

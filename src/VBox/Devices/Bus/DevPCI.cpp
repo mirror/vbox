@@ -150,7 +150,7 @@ static int pci_data_write(PDEVPCIROOT pGlobals, uint32_t addr, uint32_t val, int
         {
 #ifdef IN_RING3
             LogFunc(("%s: addr=%02x val=%08x len=%d\n", pci_dev->pszNameR3, config_addr, val, len));
-            pci_dev->Int.s.pfnConfigWrite(pci_dev->Int.s.CTX_SUFF(pDevIns), pci_dev, config_addr, val, len);
+            return VBOXSTRICTRC_TODO(pci_dev->Int.s.pfnConfigWrite(pci_dev->Int.s.CTX_SUFF(pDevIns), pci_dev, config_addr, val, len));
 #else
             return VINF_IOM_R3_IOPORT_WRITE;
 #endif
@@ -1511,6 +1511,7 @@ static DECLCALLBACK(void) pcibridgeR3ConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t i
         if (pPciDev)
         {
             LogFunc(("%s: addr=%02x val=%08x len=%d\n", pPciDev->pszNameR3, u32Address, u32Value, cb));
+            /** @todo return rc   */
             pPciDev->Int.s.pfnConfigWrite(pPciDev->Int.s.CTX_SUFF(pDevIns), pPciDev, u32Address, u32Value, cb);
         }
     }
