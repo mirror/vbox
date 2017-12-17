@@ -584,7 +584,7 @@ typedef struct _KUSER_SHARED_DATA
     KSYSTEM_TIME volatile   TimeZoneBias;                               /**< 0x020 */
     USHORT                  ImageNumberLow;                             /**< 0x02c */
     USHORT                  ImageNumberHigh;                            /**< 0x02e */
-    WCHAR                   NtSystemRoot[260];                          /**< 0x030 */
+    WCHAR                   NtSystemRoot[260];                          /**< 0x030 - Seems to be last member in NT 3.51. */
     ULONG                   MaxStackTraceDepth;                         /**< 0x238 */
     ULONG                   CryptoExponent;                             /**< 0x23c */
     ULONG                   TimeZoneId;                                 /**< 0x240 */
