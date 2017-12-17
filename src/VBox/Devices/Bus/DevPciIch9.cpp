@@ -1787,11 +1787,12 @@ static bool ich9pciBiosInitDevicePrefetchableBARs(PDEVPCIROOT pPciRoot, PDEVPCIB
                 uNew = pPciRoot->uPciBiosMmio;
                 /* Align starting address to region size. */
                 uNew = (uNew + cbRegSize64 - 1) & ~(cbRegSize64 - 1);
-                /* Unconditionally exclude I/O-APIC/HPET/ROM. Pessimistic, but better than causing a mess. */
+                /* Unconditionally exclude I/O-APIC/HPET/ROM. Pessimistic, but better than causing a mess. Okay for BIOS. */
                 if (   !uNew
                     || (uNew <= UINT32_C(0xffffffff) && uNew + cbRegSize64 - 1 >= UINT32_C(0xfec00000))
                     || uNew >= _4G)
                 {
+                    Log2Func(("region #%u: Rejecting address range: %#x LB %#RX64\n", iRegion, uNew, cbRegSize64));
                     Assert(fDryrun);
                     return true;
                 }
@@ -2273,6 +2274,8 @@ static VBOXSTRICTRC devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
 {
     /* safe, only needs to go to the config space array */
     uint16_t const u16Cmd = PDMPciDevGetWord(pPciDev, VBOX_PCI_COMMAND);
+    Log4(("devpciR3UpdateMappings: dev %u/%u (%s): u16Cmd=%#x\n",
+          pPciDev->uDevFn >> VBOX_PCI_DEVFN_DEV_SHIFT, pPciDev->uDevFn & VBOX_PCI_DEVFN_FUN_MASK, pPciDev->pszNameR3, u16Cmd));
     for (unsigned iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
     {
         /* Skip over BAR2..BAR5 for bridges, as they have a different meaning there. */
@@ -2303,6 +2306,10 @@ static VBOXSTRICTRC devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
                         && uIoBase < uLast
                         && uIoBase > 0)
                         uNew = uIoBase;
+                    else
+                        Log4(("devpciR3UpdateMappings: dev %u/%u (%s): region #%u: Disregarding invalid I/O port range: %#RX32..%#RX64\n",
+                              pPciDev->uDevFn >> VBOX_PCI_DEVFN_DEV_SHIFT, pPciDev->uDevFn & VBOX_PCI_DEVFN_FUN_MASK,
+                              pPciDev->pszNameR3, iRegion, uIoBase, uLast));
                 }
             }
             /*
@@ -2313,7 +2320,13 @@ static VBOXSTRICTRC devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
              *       Additionally addresses with the top 32 bits all set are excluded, to
              *       catch silly OSes which probe 64-bit BARs without disabling the
              *       corresponding transactions.
+             *
+             * Update: The pure paranoia above broke NT 3.51, so it was changed to only
+             *         exclude the 64KB BIOS mapping at the top.  NT 3.51 excludes the
+             *         top 256KB, btw.
              */
+            /** @todo Query upper boundrary from CPUM and PGMPhysRom instead of making
+             *        incorrect assumptions. */
             else if (u16Cmd & VBOX_PCI_COMMAND_MEMORY)
             {
                 /* safe, only needs to go to the config space array */
@@ -2331,17 +2344,30 @@ static VBOXSTRICTRC devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
 
                     uint64_t uLast = uMemBase + cbRegion - 1;
                     if (   uMemBase < uLast
-                        && uMemBase > 0
-                        && !(   uMemBase <= UINT32_C(0xffffffff)
-                             && uLast    >= UINT32_C(0xfec00000))
+                        && uMemBase > 0)
+                    {
+                        if (   (   uMemBase > UINT32_C(0xffffffff)
+                                || uLast    < UINT32_C(0xffff0000) ) /* UINT32_C(0xfec00000) - breaks NT3.51! */
                             && uMemBase < UINT64_C(0xffffffff00000000) )
                             uNew = uMemBase;
+                        else
+                            Log(("devpciR3UpdateMappings: dev %u/%u (%s): region #%u: Rejecting address range: %#RX64..%#RX64!\n",
+                                 pPciDev->uDevFn >> VBOX_PCI_DEVFN_DEV_SHIFT, pPciDev->uDevFn & VBOX_PCI_DEVFN_FUN_MASK,
+                                 pPciDev->pszNameR3, iRegion, uMemBase, uLast));
+                    }
+                    else
+                        Log2(("devpciR3UpdateMappings: dev %u/%u (%s): region #%u: Disregarding invalid address range: %#RX64..%#RX64\n",
+                              pPciDev->uDevFn >> VBOX_PCI_DEVFN_DEV_SHIFT, pPciDev->uDevFn & VBOX_PCI_DEVFN_FUN_MASK,
+                              pPciDev->pszNameR3, iRegion, uMemBase, uLast));
                 }
             }
 
             /*
              * Do real unmapping and/or mapping if the address change.
              */
+            Log4(("devpciR3UpdateMappings: dev %u/%u (%s): iRegion=%u addr=%#RX64 uNew=%#RX64\n",
+                  pPciDev->uDevFn >> VBOX_PCI_DEVFN_DEV_SHIFT, pPciDev->uDevFn & VBOX_PCI_DEVFN_FUN_MASK, pPciDev->pszNameR3,
+                  iRegion, pRegion->addr, uNew));
             if (uNew != pRegion->addr)
             {
                 LogRel2(("PCI: config dev %u/%u (%s) BAR%i: %#RX64 -> %#RX64 (LB %RX64 (%RU64))\n",
