@@ -31,6 +31,7 @@
 # include "UISnapshotPane.h"
 # include "UIToolsPaneMachine.h"
 # include "UIVMItem.h"
+# include "UIVMLogViewerWidget.h"
 
 /* Other VBox includes: */
 # include <iprt/assert.h>
@@ -46,6 +47,7 @@ UIToolsPaneMachine::UIToolsPaneMachine(UIActionPool *pActionPool, QWidget *pPare
     , m_pPaneDesktop(0)
     , m_pPaneDetails(0)
     , m_pPaneSnapshots(0)
+    , m_pPaneLogViewer(0)
 {
     /* Prepare: */
     prepare();
@@ -140,6 +142,21 @@ void UIToolsPaneMachine::openTool(ToolTypeMachine enmType)
                 }
                 break;
             }
+            case ToolTypeMachine_LogViewer:
+            {
+                /* Create the Logviewer pane: */
+                m_pPaneLogViewer = new UIVMLogViewerWidget(EmbedTo_Stack);
+                AssertPtrReturnVoid(m_pPaneLogViewer);
+                {
+                    /* Configure pane: */
+                    m_pPaneLogViewer->setProperty("ToolType", QVariant::fromValue(ToolTypeMachine_LogViewer));
+
+                    /* Add into layout: */
+                    m_pLayout->addWidget(m_pPaneLogViewer);
+                    m_pLayout->setCurrentWidget(m_pPaneLogViewer);
+                }
+                break;
+            }
             default:
                 AssertFailedReturnVoid();
         }
@@ -163,6 +180,7 @@ void UIToolsPaneMachine::closeTool(ToolTypeMachine enmType)
             case ToolTypeMachine_Desktop:   m_pPaneDesktop = 0; break;
             case ToolTypeMachine_Details:   m_pPaneDetails = 0; break;
             case ToolTypeMachine_Snapshots: m_pPaneSnapshots = 0; break;
+            case ToolTypeMachine_LogViewer: m_pPaneLogViewer = 0; break;
             default: break;
         }
         /* Delete corresponding widget: */
@@ -202,9 +220,18 @@ void UIToolsPaneMachine::setItems(const QList<UIVMItem*> &items)
 
 void UIToolsPaneMachine::setMachine(const CMachine &comMachine)
 {
-    /* Update snapshots pane: */
-    AssertPtrReturnVoid(m_pPaneSnapshots);
-    m_pPaneSnapshots->setMachine(comMachine);
+    /* Update snapshots pane is it is open: */
+    if(isToolOpened(ToolTypeMachine_Snapshots))
+    {
+        AssertPtrReturnVoid(m_pPaneSnapshots);
+        m_pPaneSnapshots->setMachine(comMachine);
+    }
+    /* Update logviewer pane is it is open: */
+    if(isToolOpened(ToolTypeMachine_LogViewer))
+    {
+        AssertPtrReturnVoid(m_pPaneLogViewer);
+        m_pPaneLogViewer->setMachine(comMachine);
+    }
 }
 
 void UIToolsPaneMachine::retranslateUi()
@@ -264,6 +291,9 @@ void UIToolsPaneMachine::retranslateUi()
                                               "snapshot operations like <u>create</u>, <u>remove</u>, "
                                               "<u>restore</u> (make current) and observe their properties. Allows to "
                                               "<u>edit</u> snapshot attributes like <u>name</u> and <u>description</u>."));
+        QAction *pAction3 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer);
+        m_pPaneDesktop->addToolDescription(pAction3,
+                                           tr("Tool to display  virtual machine (VM) logs. "));
     }
 }
 

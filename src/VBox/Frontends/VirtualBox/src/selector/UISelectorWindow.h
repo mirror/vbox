@@ -92,7 +92,8 @@ private slots:
       * @param  fUpdateDetails    Brings whether details should be updated.
       * @param  fUpdateSnapshots  Brings whether tools should be updated. */
     void sltHandleChooserPaneIndexChange(bool fUpdateDetails = true,
-                                         bool fUpdateSnapshots = true);
+                                         bool fUpdateSnapshots = true,
+                                         bool fUpdateLogViewer = true);
 
     /** Handles signal about medium-enumeration finished. */
     void sltHandleMediumEnumerationFinish();

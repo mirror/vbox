@@ -639,6 +639,7 @@ enum ToolTypeMachine
     ToolTypeMachine_Desktop,
     ToolTypeMachine_Details,
     ToolTypeMachine_Snapshots,
+    ToolTypeMachine_LogViewer
 };
 Q_DECLARE_METATYPE(ToolTypeMachine);
 

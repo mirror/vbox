@@ -53,7 +53,7 @@ class UIVMLogViewerWidget  : public QIWithRetranslateUI<QWidget>
 public:
     /** Constructs the VM Log-Viewer by passing @a pParent to QWidget base-class constructor.
       * @param  machine  Specifies the machine for which VM Log-Viewer is requested. */
-    UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine);
+    UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent = 0, const CMachine &machine = CMachine());
     /** Destructs the VM Log-Viewer. */
     ~UIVMLogViewerWidget();
     /* Returns the width of the current log page. return 0 if there is no current log page: */
@@ -66,6 +66,9 @@ public:
     /** Returns the toolbar. */
     UIToolBar *toolbar() const { return m_pToolBar; }
 #endif
+
+    /** Sets the machine whose logs to show. */
+    void setMachine(const CMachine &machine);
 
 protected:
 
@@ -118,6 +121,9 @@ private:
     QPlainTextEdit* createLogPage(const QString &strPage);
     /** Returns the content of current log-page. */
     const QString& currentLog();
+
+    /** Attempts to read the logs through the API, returns true if there exists any logs, false otherwise. */
+    bool createLogViewerPages();
 
     /** Holds whether the dialog is polished. */
     bool m_fIsPolished;

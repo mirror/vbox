@@ -218,6 +218,13 @@ void UIToolsToolbar::prepareMenu()
                 this, &UIToolsToolbar::sltHandleOpenToolMachine);
         m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots)
             ->setProperty("ToolTypeMachine", QVariant::fromValue(ToolTypeMachine_Snapshots));
+
+        /* Add 'LogViewer' action: */
+        pMenuMachine->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer));
+        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer), &UIAction::triggered,
+                this, &UIToolsToolbar::sltHandleOpenToolMachine);
+        m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer)
+            ->setProperty("ToolTypeMachine", QVariant::fromValue(ToolTypeMachine_LogViewer));
     }
 
     /* Configure 'Machine' toggle action: */

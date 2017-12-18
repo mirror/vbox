@@ -32,6 +32,7 @@ class QVBoxLayout;
 class UIActionPool;
 class UIDesktopPane;
 class UIGDetails;
+class UIVMLogViewerWidget;
 class UISnapshotPane;
 class UIVMItem;
 class CMachine;
@@ -102,13 +103,15 @@ private:
     UIVMItem *m_pItem;
 
     /** Holds the stacked-layout instance. */
-    QStackedLayout *m_pLayout;
+    QStackedLayout      *m_pLayout;
     /** Holds the Desktop pane instance. */
-    UIDesktopPane  *m_pPaneDesktop;
+    UIDesktopPane       *m_pPaneDesktop;
     /** Holds the Details pane instance. */
-    UIGDetails     *m_pPaneDetails;
+    UIGDetails          *m_pPaneDetails;
     /** Holds the Snapshots pane instance. */
-    UISnapshotPane *m_pPaneSnapshots;
+    UISnapshotPane      *m_pPaneSnapshots;
+    /** Holds the Logviewer pane instance. */
+    UIVMLogViewerWidget *m_pPaneLogViewer;
 };
 
 #endif /* !___UIToolsPaneMachine_h___ */

@@ -47,7 +47,7 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine)
+UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */, const CMachine &machine /* = CMachine() */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fIsPolished(false)
     , m_comMachine(machine)
@@ -72,11 +72,11 @@ UIVMLogViewerWidget::~UIVMLogViewerWidget()
 
 int UIVMLogViewerWidget::defaultLogPageWidth() const
 {
-    if(!m_pViewerContainer)
+    if (!m_pViewerContainer)
         return 0;
 
     QWidget *pContainer = m_pViewerContainer->currentWidget();
-    if(!pContainer)
+    if (!pContainer)
         return 0;
 
     QPlainTextEdit *pBrowser = pContainer->findChild<QPlainTextEdit*>();
@@ -110,6 +110,8 @@ void UIVMLogViewerWidget::sltRefresh()
     m_book.clear();
     m_logMap.clear();
     m_pViewerContainer->setEnabled(true);
+    /* Hide the container widget during updates to avoid flickering: */
+    m_pViewerContainer->hide();
     while (m_pViewerContainer->count())
     {
         QWidget *pFirstPage = m_pViewerContainer->widget(0);
@@ -117,55 +119,29 @@ void UIVMLogViewerWidget::sltRefresh()
         delete pFirstPage;
     }
 
-    bool isAnyLogPresent = false;
-
-    const CSystemProperties &sys = vboxGlobal().virtualBox().GetSystemProperties();
-    unsigned cMaxLogs = sys.GetLogHistoryCount() + 1 /*VBox.log*/ + 1 /*VBoxHardening.log*/; /** @todo Add api for getting total possible log count! */
-    for (unsigned i = 0; i < cMaxLogs; ++i)
+    bool noLogsToShow = false;
+    QString strDummyTabText;
+    /* check if the machine is valid: */
+    if (m_comMachine.isNull())
     {
-        /* Query the log file name for index i: */
-        QString strFileName = m_comMachine.QueryLogFilename(i);
-        if (!strFileName.isEmpty())
-        {
-            /* Try to read the log file with the index i: */
-            ULONG uOffset = 0;
-            QString strText;
-            while (true)
-            {
-                QVector<BYTE> data = m_comMachine.ReadLog(i, uOffset, _1M);
-                if (data.size() == 0)
-                    break;
-                strText.append(QString::fromUtf8((char*)data.data(), data.size()));
-                uOffset += data.size();
-            }
-            /* Anything read at all? */
-            if (uOffset > 0)
-            {
-                /* Create a log viewer page and append the read text to it: */
-                QPlainTextEdit *pLogViewer = createLogPage(QFileInfo(strFileName).fileName());
-                pLogViewer->setPlainText(strText);
-                /* Move the cursor position to end: */
-                QTextCursor cursor = pLogViewer->textCursor();
-                cursor.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
-                pLogViewer->setTextCursor(cursor);
-                /* Add the actual file name and the QPlainTextEdit containing the content to a list: */
-                m_book << qMakePair(strFileName, pLogViewer);
-                /* Add the log-text to the map: */
-                m_logMap[pLogViewer] = strText;
-                isAnyLogPresent = true;
-            }
-        }
+        noLogsToShow = true;
+        strDummyTabText = QString(tr("<p><b>No machine</b> is currently selected. Please select a "
+                                     "Virtual Machine to see its logs"));
     }
-
-    /* Create an empty log page if there are no logs at all: */
-    if (!isAnyLogPresent)
+    /* If machine is valid and check if there are any log files and create viewer tabs: */
+    else if (!createLogViewerPages())
+    {
+        noLogsToShow = true;
+        strDummyTabText = QString(tr("<p>No log files found. Press the "
+                                     "<b>Refresh</b> button to rescan the log folder "
+                                     "<nobr><b>%1</b></nobr>.</p>"));
+    }
+    /* If the machine is not valid or has no log files show a single viewer tab: */
+    if (noLogsToShow)
     {
         QPlainTextEdit *pDummyLog = createLogPage("VBox.log");
         pDummyLog->setWordWrapMode(QTextOption::WordWrap);
-        pDummyLog->appendHtml(tr("<p>No log files found. Press the "
-                              "<b>Refresh</b> button to rescan the log folder "
-                              "<nobr><b>%1</b></nobr>.</p>")
-                              .arg(m_comMachine.GetLogFolder()));
+        pDummyLog->appendHtml(strDummyTabText);
         /* We don't want it to remain white: */
         QPalette pal = pDummyLog->palette();
         pal.setColor(QPalette::Base, pal.color(QPalette::Window));
@@ -182,14 +158,17 @@ void UIVMLogViewerWidget::sltRefresh()
     connect(m_pViewerContainer, SIGNAL(currentChanged(int)), m_pFilterPanel, SLOT(applyFilter(int)));
 
     /* Enable/Disable toolbar actions (except Refresh) & tab widget according log presence: */
-    m_pActionFind->setEnabled(isAnyLogPresent);
-    m_pActionFilter->setEnabled(isAnyLogPresent);
-    m_pActionSave->setEnabled(isAnyLogPresent);
-    m_pViewerContainer->setEnabled(isAnyLogPresent);
+    m_pActionFind->setEnabled(!noLogsToShow);
+    m_pActionFilter->setEnabled(!noLogsToShow);
+    m_pActionSave->setEnabled(!noLogsToShow);
+    m_pViewerContainer->setEnabled(!noLogsToShow);
+    m_pViewerContainer->show();
 }
 
 void UIVMLogViewerWidget::sltSave()
 {
+    if (m_comMachine.isNull())
+        return;
     /* Prepare "save as" dialog: */
     const QFileInfo fileInfo(m_book.at(m_pViewerContainer->currentIndex()).first);
     /* Prepare default filename: */
@@ -197,7 +176,7 @@ void UIVMLogViewerWidget::sltSave()
     const QString strDtString = dtInfo.toString("yyyy-MM-dd-hh-mm-ss");
     const QString strDefaultFileName = QString("%1-%2.log").arg(m_comMachine.GetName()).arg(strDtString);
     const QString strDefaultFullName = QDir::toNativeSeparators(QDir::home().absolutePath() + "/" + strDefaultFileName);
-    /* Show "save as" dialog: */
+
     const QString strNewFileName = QIFileDialog::getSaveFileName(strDefaultFullName,
                                                                  "",
                                                                  this,
@@ -220,6 +199,14 @@ void UIVMLogViewerWidget::sltFilter()
 {
     /* Show/hide filter-panel: */
     m_pFilterPanel->isHidden() ? m_pFilterPanel->show() : m_pFilterPanel->hide();
+}
+
+void UIVMLogViewerWidget::setMachine(const CMachine &machine)
+{
+    if (machine == m_comMachine)
+        return;
+    m_comMachine = machine;
+    sltRefresh();
 }
 
 void UIVMLogViewerWidget::prepare()
@@ -406,28 +393,28 @@ void UIVMLogViewerWidget::cleanup()
 
 void UIVMLogViewerWidget::retranslateUi()
 {
-    if(m_pMenu)
+    if (m_pMenu)
     {
         m_pMenu->setTitle(tr("&Log Viewer"));
     }
 
     if (m_pActionFind)
     {
-        m_pActionFind->setText(tr("&Find..."));
+        m_pActionFind->setText(tr("&Find"));
         m_pActionFind->setToolTip(tr("Find a string within the log"));
         m_pActionFind->setStatusTip(tr("Find a string within the log"));
     }
 
     if (m_pActionFilter)
     {
-        m_pActionFilter->setText(tr("&Filter..."));
+        m_pActionFilter->setText(tr("&Filter"));
         m_pActionFilter->setToolTip(tr("Filter the log wrt. the given string"));
         m_pActionFilter->setStatusTip(tr("Filter the log wrt. the given string"));
     }
 
     if (m_pActionRefresh)
     {
-        m_pActionRefresh->setText(tr("&Refresh..."));
+        m_pActionRefresh->setText(tr("&Refresh"));
         m_pActionRefresh->setToolTip(tr("Reload the log"));
         m_pActionRefresh->setStatusTip(tr("Reload the log"));
     }
@@ -523,6 +510,52 @@ QPlainTextEdit* UIVMLogViewerWidget::currentLogPage() const
     return 0;
 }
 
+bool UIVMLogViewerWidget::createLogViewerPages()
+{
+    if (m_comMachine.isNull())
+        return false;
+
+    bool logsExists = false;
+    const CSystemProperties &sys = vboxGlobal().virtualBox().GetSystemProperties();
+    unsigned cMaxLogs = sys.GetLogHistoryCount() + 1 /*VBox.log*/ + 1 /*VBoxHardening.log*/; /** @todo Add api for getting total possible log count! */
+    for (unsigned i = 0; i < cMaxLogs; ++i)
+    {
+        /* Query the log file name for index i: */
+        QString strFileName = m_comMachine.QueryLogFilename(i);
+        if (!strFileName.isEmpty())
+        {
+            /* Try to read the log file with the index i: */
+            ULONG uOffset = 0;
+            QString strText;
+            while (true)
+            {
+                QVector<BYTE> data = m_comMachine.ReadLog(i, uOffset, _1M);
+                if (data.size() == 0)
+                    break;
+                strText.append(QString::fromUtf8((char*)data.data(), data.size()));
+                uOffset += data.size();
+            }
+            /* Anything read at all? */
+            if (uOffset > 0)
+            {
+                /* Create a log viewer page and append the read text to it: */
+                QPlainTextEdit *pLogViewer = createLogPage(QFileInfo(strFileName).fileName());
+                pLogViewer->setPlainText(strText);
+                /* Move the cursor position to end: */
+                QTextCursor cursor = pLogViewer->textCursor();
+                cursor.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
+                pLogViewer->setTextCursor(cursor);
+                /* Add the actual file name and the QPlainTextEdit containing the content to a list: */
+                m_book << qMakePair(strFileName, pLogViewer);
+                /* Add the log-text to the map: */
+                m_logMap[pLogViewer] = strText;
+                logsExists = true;
+            }
+        }
+    }
+    return logsExists;
+}
+
 QPlainTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
 {
     /* Create page-container: */
@@ -561,4 +594,3 @@ const QString& UIVMLogViewerWidget::currentLog()
 {
     return m_logMap[currentLogPage()];
 }
-

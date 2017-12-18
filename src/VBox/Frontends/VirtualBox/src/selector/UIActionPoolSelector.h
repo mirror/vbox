@@ -96,6 +96,7 @@ enum UIActionIndexST
     UIActionIndexST_M_Tools_M_Machine,
     UIActionIndexST_M_Tools_M_Machine_S_Details,
     UIActionIndexST_M_Tools_M_Machine_S_Snapshots,
+    UIActionIndexST_M_Tools_M_Machine_S_LogViewer,
 
     /* Global Tools actions: */
     UIActionIndexST_M_Tools_T_Global,

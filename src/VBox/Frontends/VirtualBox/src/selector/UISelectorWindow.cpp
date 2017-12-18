@@ -158,6 +158,7 @@ void UISelectorWindow::sltHandlePolishEvent()
         QMap<ToolTypeMachine, QAction*> mapActionsMachine;
         mapActionsMachine[ToolTypeMachine_Details] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Details);
         mapActionsMachine[ToolTypeMachine_Snapshots] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots);
+        mapActionsMachine[ToolTypeMachine_LogViewer] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer);
         for (int i = m_orderMachine.size() - 1; i >= 0; --i)
             if (m_orderMachine.at(i) != ToolTypeMachine_Invalid)
                 mapActionsMachine.value(m_orderMachine.at(i))->trigger();
@@ -250,7 +251,8 @@ void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
 }
 
 void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = true */,
-                                                       bool fUpdateSnapshots /* = true */)
+                                                       bool fUpdateSnapshots /* = true */,
+                                                       bool fUpdateLogViewer /* = true*/)
 {
     /* Get current item: */
     UIVMItem *pItem = currentItem();
@@ -278,15 +280,17 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
             else
             if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
                 actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots)->trigger();
+            else
+            if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_LogViewer))
+                actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer)->trigger();
         }
 
         /* Update Details-pane (if requested): */
         if (   fUpdateDetails
             && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
             m_pPaneToolsMachine->setItems(currentItems());
-        /* Update Snapshots-pane (if requested): */
-        if (   fUpdateSnapshots
-            && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
+        /* Update the Snapshots-pane or/and Logviewer-pane (if requested): */
+        if (fUpdateSnapshots || fUpdateLogViewer)
             m_pPaneToolsMachine->setMachine(pItem->machine());
     }
     else
@@ -305,9 +309,8 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
         /* Update Details-pane (in any case): */
         if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
             m_pPaneToolsMachine->setItems(currentItems());
-        /* Update Snapshots-pane (in any case): */
-        if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
-            m_pPaneToolsMachine->setMachine(CMachine());
+        /* Update Snapshots-pane and Logviewer-pane (in any case): */
+        m_pPaneToolsMachine->setMachine(CMachine());
     }
 }
 
@@ -1140,7 +1143,7 @@ void UISelectorWindow::sltHandleToolsTypeSwitch()
     updateActionsVisibility();
 
     /* Make sure chosen item fetched: */
-    sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */);
+    sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */, false /* update the logviewer? */);
 }
 
 void UISelectorWindow::sltHandleShowTabBarMachine()
@@ -1169,8 +1172,7 @@ void UISelectorWindow::sltHandleToolOpenedMachine(ToolTypeMachine enmType)
         && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
         m_pPaneToolsMachine->setItems(currentItems());
     /* If that was 'Snapshot' => pass there current or null machine: */
-    if (   enmType == ToolTypeMachine_Snapshots
-        && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
+    if (enmType == ToolTypeMachine_Snapshots || enmType == ToolTypeMachine_LogViewer)
     {
         UIVMItem *pItem = currentItem();
         m_pPaneToolsMachine->setMachine(pItem ? pItem->machine() : CMachine());
@@ -1225,7 +1227,7 @@ void UISelectorWindow::retranslateUi()
     setWindowTitle(strTitle);
 
     /* Make sure chosen item fetched: */
-    sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */);
+    sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */, false /* update the logviewer? */);
 
 #ifdef VBOX_WS_MAC
     // WORKAROUND:
@@ -2429,6 +2431,7 @@ void UISelectorWindow::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Tools_M_Machine)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine, items));
     actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Details)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_S_Details, items));
     actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_S_Snapshots, items));
+    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_S_LogViewer, items));
 }
 
 bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items)
@@ -2558,6 +2561,7 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         case UIActionIndexST_M_Tools_M_Machine:
         case UIActionIndexST_M_Tools_M_Machine_S_Details:
         case UIActionIndexST_M_Tools_M_Machine_S_Snapshots:
+        case UIActionIndexST_M_Tools_M_Machine_S_LogViewer:
         {
             return pItem->accessible();
         }

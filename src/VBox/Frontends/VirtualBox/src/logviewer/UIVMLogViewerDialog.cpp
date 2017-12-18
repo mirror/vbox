@@ -40,7 +40,7 @@
 # include "VBoxGlobal.h"
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
-# endif
+# endif /* VBOX_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
