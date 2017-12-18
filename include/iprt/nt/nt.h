@@ -929,6 +929,9 @@ typedef struct _PEB_COMMON
     PVOID UnicodeCaseTableData;                                             /**< 0x0b0 / 0x060 */
     uint32_t NumberOfProcessors;                                            /**< 0x0b8 / 0x064 */
     uint32_t NtGlobalFlag;                                                  /**< 0x0bc / 0x068 */
+#if ARCH_BITS == 32
+    uint32_t Padding2b;
+#endif
     LARGE_INTEGER CriticalSectionTimeout;                                   /**< 0x0c0 / 0x070 */
     SIZE_T HeapSegmentReserve;                                              /**< 0x0c8 / 0x078 */
     SIZE_T HeapSegmentCommit;                                               /**< 0x0d0 / 0x07c */
@@ -936,8 +939,8 @@ typedef struct _PEB_COMMON
     SIZE_T HeapDeCommitFreeBlockThreshold;                                  /**< 0x0e0 / 0x084 */
     uint32_t NumberOfHeaps;                                                 /**< 0x0e8 / 0x088 */
     uint32_t MaximumNumberOfHeaps;                                          /**< 0x0ec / 0x08c */
-    PVOID *ProcessHeaps;                                                    /**< 0x0f0 / 0x090 */
-    PVOID GdiSharedHandleTable;                                             /**< 0x0f8 / 0x094 */
+    PVOID *ProcessHeaps;                                                    /**< 0x0f0 / 0x090 - Last NT 3.51 member. */
+    PVOID GdiSharedHandleTable;                                             /**< 0x0f8 / 0x094  */
     PVOID ProcessStarterHelper;                                             /**< 0x100 / 0x098 */
     uint32_t GdiDCAttributeList;                                            /**< 0x108 / 0x09c */
 #if ARCH_BITS == 64
@@ -1909,6 +1912,7 @@ NTSYSAPI NTSTATUS NTAPI NtQueryInformationToken(HANDLE, TOKEN_INFORMATION_CLASS,
 NTSYSAPI NTSTATUS NTAPI NtReadFile(HANDLE, HANDLE, PIO_APC_ROUTINE, PVOID, PIO_STATUS_BLOCK, PVOID, ULONG, PLARGE_INTEGER, PULONG);
 NTSYSAPI NTSTATUS NTAPI NtWriteFile(HANDLE, HANDLE, PIO_APC_ROUTINE, void const *, PIO_STATUS_BLOCK, PVOID, ULONG, PLARGE_INTEGER, PULONG);
 NTSYSAPI NTSTATUS NTAPI NtFlushBuffersFile(HANDLE, PIO_STATUS_BLOCK);
+NTSYSAPI NTSTATUS NTAPI NtCancelIoFile(HANDLE, PIO_STATUS_BLOCK);
 
 NTSYSAPI NTSTATUS NTAPI NtReadVirtualMemory(HANDLE, PVOID, PVOID, SIZE_T, PSIZE_T);
 NTSYSAPI NTSTATUS NTAPI NtWriteVirtualMemory(HANDLE, PVOID, void const *, SIZE_T, PSIZE_T);
