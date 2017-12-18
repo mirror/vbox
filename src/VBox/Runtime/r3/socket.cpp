@@ -459,6 +459,16 @@ DECLHIDDEN(int) rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int i
 #ifdef RT_OS_WINDOWS
     AssertReturn(g_pfnsocket, VERR_NOT_SUPPORTED);
     AssertReturn(g_pfnclosesocket, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnWSAStartup, VERR_NOT_SUPPORTED);
+
+    /* Initialize WinSock. */
+    WORD const  wVersionRequested = MAKEWORD(1, 1);
+    WSADATA     wsaData;
+    RT_ZERO(wsaData);
+    int rcWsa = g_pfnWSAStartup(wVersionRequested, &wsaData);
+    AssertMsgReturn(wsaData.wVersion >= wVersionRequested && rcWsa == 0,
+                    ("Wrong winsock version %#x rcWsa=%#x (%d)\n", wsaData.wVersion, rcWsa, rcWsa),
+                    VERR_NOT_SUPPORTED);
 #endif
 
     /*
@@ -687,15 +697,13 @@ RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRT
     if (   !g_pfnWSAStartup
         || !g_pfngethostbyname)
         return VERR_NOT_SUPPORTED;
-    WORD    wVersionRequested = MAKEWORD(1, 1);
-    WSADATA wsaData;
+    WORD const  wVersionRequested = MAKEWORD(1, 1);
+    WSADATA     wsaData;
     RT_ZERO(wsaData);
-    rc = g_pfnWSAStartup(wVersionRequested, &wsaData);
-    if (wsaData.wVersion != wVersionRequested)
-    {
-        AssertMsgFailed(("Wrong winsock version\n"));
-        return VERR_NOT_SUPPORTED;
-    }
+    int rcWsa = g_pfnWSAStartup(wVersionRequested, &wsaData);
+    AssertMsgReturn(wsaData.wVersion >= wVersionRequested && rcWsa == 0,
+                    ("Wrong winsock version %#x rcWsa=%#x (%d)\n", wsaData.wVersion, rcWsa, rcWsa),
+                    VERR_NOT_SUPPORTED);
 # define gethostbyname g_pfngethostbyname
 #endif
 
@@ -779,15 +787,13 @@ RTDECL(int) RTSocketQueryAddressStr(const char *pszHost, char *pszResult, size_t
         || !g_pfnfreeaddrinfo)
         return VERR_NOT_SUPPORTED;
     /** @todo someone should check if we really need 2, 2 here */
-    WORD    wVersionRequested = MAKEWORD(2, 2);
-    WSADATA wsaData;
-    RT_ZERO(wszData);
-    rc = WSAStartup(wVersionRequested, &wsaData);
-    if (wsaData.wVersion != wVersionRequested)
-    {
-        AssertMsgFailed(("Wrong winsock version\n"));
-        return VERR_NOT_SUPPORTED;
-    }
+    WORD const  wVersionRequested = MAKEWORD(2, 2);
+    WSADATA     wsaData;
+    RT_ZERO(wsaData);
+    int rcWsa = g_pfnWSAStartup(wVersionRequested, &wsaData);
+    AssertMsgReturn(wsaData.wVersion >= wVersionRequested && rcWsa == 0,
+                    ("Wrong winsock version %#x rcWsa=%#x (%d)\n", wsaData.wVersion, rcWsa, rcWsa),
+                    VERR_NOT_SUPPORTED);
 #  define getaddrinfo  g_pfngetaddrinfo
 #  define freeaddrinfo g_pfnfreeaddrinfo
 # endif
