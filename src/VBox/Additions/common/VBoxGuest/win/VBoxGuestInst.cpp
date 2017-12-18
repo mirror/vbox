@@ -100,16 +100,59 @@ static int uninstallDriver(void)
         printf("OpenSCManager(,,delete) failed rc=%d\n", GetLastError());
         return -1;
     }
-    SC_HANDLE hService = OpenService(hSMgr, VBOXGUEST_SERVICE_NAME, DELETE);
+    SC_HANDLE hService = OpenService(hSMgr, VBOXGUEST_SERVICE_NAME, SERVICE_STOP | SERVICE_QUERY_STATUS | DELETE);
     if (hService)
     {
         /*
+         * Try stop it if it's running.
+         */
+        SERVICE_STATUS  Status = { 0, 0, 0, 0, 0, 0, 0 };
+        QueryServiceStatus(hService, &Status);
+        if (Status.dwCurrentState == SERVICE_STOPPED)
+            rc = VINF_SUCCESS;
+        else if (ControlService(hService, SERVICE_CONTROL_STOP, &Status))
+        {
+            int iWait = 100;
+            while (Status.dwCurrentState == SERVICE_STOP_PENDING && iWait-- > 0)
+            {
+                Sleep(100);
+                QueryServiceStatus(hService, &Status);
+            }
+            if (Status.dwCurrentState == SERVICE_STOPPED)
+                rc = VINF_SUCCESS;
+            else
+            {
+                printf("Failed to stop service. status=%d (%#x)\n", Status.dwCurrentState, Status.dwCurrentState);
+                rc = VERR_GENERAL_FAILURE;
+            }
+        }
+        else
+        {
+            DWORD dwErr = GetLastError();
+            if (   Status.dwCurrentState == SERVICE_STOP_PENDING
+                && dwErr == ERROR_SERVICE_CANNOT_ACCEPT_CTRL)
+                rc = VERR_RESOURCE_BUSY;    /* better than VERR_GENERAL_FAILURE */
+            else
+            {
+                printf("ControlService failed with dwErr=%u. status=%d (%#x)\n",
+                       dwErr, Status.dwCurrentState, Status.dwCurrentState);
+                rc = -1;
+            }
+        }
+
+        /*
          * Delete the service.
          */
-        if (DeleteService(hService))
-            rc = 0;
-        else
-            printf("DeleteService failed lasterr=%d\n", GetLastError());
+        if (RT_SUCCESS(rc))
+        {
+            if (DeleteService(hService))
+                rc = 0;
+            else
+            {
+                printf("DeleteService failed lasterr=%d\n", GetLastError());
+                rc = -1;
+            }
+        }
         CloseServiceHandle(hService);
     }
     else if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST)
