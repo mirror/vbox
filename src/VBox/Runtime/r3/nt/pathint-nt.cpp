@@ -37,8 +37,6 @@
 #include <iprt/err.h>
 #include <iprt/assert.h>
 
-#include "../win/internal-r3-win.h"
-
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -68,8 +66,7 @@ static int rtNtPathFromWinUtf8PassThru(struct _UNICODE_STRING *pNtName, PHANDLE 
         if (cwcLen < _32K - 1)
         {
             *phRootDir = NULL;
-            if (   g_enmWinVer >=  kRTWinOSType_NT4
-                || g_enmWinVer == kRTWinOSType_UNKNOWN)
+            if (RT_MAKE_U64(RTNtCurrentPeb()->OSMinorVersion, RTNtCurrentPeb()->OSMajorVersion) >= RT_MAKE_U64(0, 4))
             {
                 pwszPath[0] = '\\';
                 pwszPath[1] = '?';
@@ -120,7 +117,9 @@ static int rtNtPathFromWinUtf16PassThru(struct _UNICODE_STRING *pNtName, PHANDLE
     int rc;
     if (cwcWinPath < _32K - 1)
     {
-        size_t const cwcExtraPrefix =  g_enmWinVer >=  kRTWinOSType_NT4 || g_enmWinVer == kRTWinOSType_UNKNOWN
+
+        size_t const cwcExtraPrefix =    RT_MAKE_U64(RTNtCurrentPeb()->OSMinorVersion, RTNtCurrentPeb()->OSMajorVersion)
+                                      >= RT_MAKE_U64(0, 4)
                                     ? 0 : sizeof(g_szPrefixNt3x) - 1 - 4;
         PRTUTF16 pwszNtPath = (PRTUTF16)RTUtf16Alloc((cwcExtraPrefix + cwcWinPath + 1) * sizeof(RTUTF16));
         if (pwszNtPath)
@@ -209,8 +208,7 @@ static int rtNtPathToNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, 
      */
     const char *pszPrefix;
     size_t      cchPrefix;
-    if (   g_enmWinVer >=  kRTWinOSType_NT4
-        || g_enmWinVer == kRTWinOSType_UNKNOWN)
+    if (RT_MAKE_U64(RTNtCurrentPeb()->OSMinorVersion, RTNtCurrentPeb()->OSMajorVersion) >= RT_MAKE_U64(0, 4))
     {
         pszPrefix = g_szPrefix;
         cchPrefix = sizeof(g_szPrefix) - 1;
@@ -250,8 +248,7 @@ static int rtNtPathToNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, 
         else
         {
             /* UNC */
-            if (   g_enmWinVer >=  kRTWinOSType_NT4
-                || g_enmWinVer == kRTWinOSType_UNKNOWN)
+            if (RT_MAKE_U64(RTNtCurrentPeb()->OSMinorVersion, RTNtCurrentPeb()->OSMajorVersion) >= RT_MAKE_U64(0, 4))
             {
                 pszPrefix = g_szPrefixUnc;
                 cchPrefix = sizeof(g_szPrefixUnc) - 1;
