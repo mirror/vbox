@@ -37,12 +37,16 @@
 #include <iprt/err.h>
 #include <iprt/assert.h>
 
+#include "../win/internal-r3-win.h"
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static char const g_szPrefixUnc[] = "\\??\\UNC\\";
-static char const g_szPrefix[]    = "\\??\\";
+static char const g_szPrefixUnc[]      = "\\??\\UNC\\";
+static char const g_szPrefix[]         = "\\??\\";
+static char const g_szPrefixNt3xUnc[]  = "\\DosDevices\\UNC\\";
+static char const g_szPrefixNt3x[]     = "\\DosDevices\\";
 
 
 /**
@@ -63,16 +67,33 @@ static int rtNtPathFromWinUtf8PassThru(struct _UNICODE_STRING *pNtName, PHANDLE 
     {
         if (cwcLen < _32K - 1)
         {
-            pwszPath[0] = '\\';
-            pwszPath[1] = '?';
-            pwszPath[2] = '?';
-            pwszPath[3] = '\\';
-
-            pNtName->Buffer = pwszPath;
-            pNtName->Length = (uint16_t)(cwcLen * sizeof(RTUTF16));
-            pNtName->MaximumLength = pNtName->Length + sizeof(RTUTF16);
             *phRootDir = NULL;
-            return VINF_SUCCESS;
+            if (   g_enmWinVer >=  kRTWinOSType_NT4
+                || g_enmWinVer == kRTWinOSType_UNKNOWN)
+            {
+                pwszPath[0] = '\\';
+                pwszPath[1] = '?';
+                pwszPath[2] = '?';
+                pwszPath[3] = '\\';
+
+                pNtName->Buffer = pwszPath;
+                pNtName->Length = (uint16_t)(cwcLen * sizeof(RTUTF16));
+                pNtName->MaximumLength = pNtName->Length + sizeof(RTUTF16);
+                return VINF_SUCCESS;
+            }
+
+            rc = RTUtf16Realloc(&pwszPath, cwcLen + sizeof(g_szPrefixNt3x));
+            if (RT_SUCCESS(rc))
+            {
+                memmove(&pwszPath[sizeof(g_szPrefixNt3x) - 1], &pwszPath[4], (cwcLen - 4 + 1) * sizeof(RTUTF16));
+                for (uint32_t i = 0; i < sizeof(g_szPrefixNt3x) - 1; i++)
+                    pwszPath[i] = g_szPrefixNt3x[i];
+
+                pNtName->Buffer = pwszPath;
+                pNtName->Length = (uint16_t)((cwcLen - 4 + sizeof(g_szPrefixNt3x) - 1) * sizeof(RTUTF16));
+                pNtName->MaximumLength = pNtName->Length + sizeof(RTUTF16);
+                return VINF_SUCCESS;
+            }
         }
 
         RTUtf16Free(pwszPath);
@@ -99,20 +120,28 @@ static int rtNtPathFromWinUtf16PassThru(struct _UNICODE_STRING *pNtName, PHANDLE
     int rc;
     if (cwcWinPath < _32K - 1)
     {
-        PRTUTF16 pwszNtPath = (PRTUTF16)RTUtf16Alloc((cwcWinPath + 1) * sizeof(RTUTF16));
+        size_t const cwcExtraPrefix =  g_enmWinVer >=  kRTWinOSType_NT4 || g_enmWinVer == kRTWinOSType_UNKNOWN
+                                    ? 0 : sizeof(g_szPrefixNt3x) - 1 - 4;
+        PRTUTF16 pwszNtPath = (PRTUTF16)RTUtf16Alloc((cwcExtraPrefix + cwcWinPath + 1) * sizeof(RTUTF16));
         if (pwszNtPath)
         {
             /* Intialize the path. */
-            pwszNtPath[0] = '\\';
-            pwszNtPath[1] = '?';
-            pwszNtPath[2] = '?';
-            pwszNtPath[3] = '\\';
-            memcpy(pwszNtPath + 4, pwszWinPath + 4, (cwcWinPath - 4) * sizeof(RTUTF16));
-            pwszNtPath[cwcWinPath] = '\0';
+            if (!cwcExtraPrefix)
+            {
+                pwszNtPath[0] = '\\';
+                pwszNtPath[1] = '?';
+                pwszNtPath[2] = '?';
+                pwszNtPath[3] = '\\';
+            }
+            else
+                for (uint32_t i = 0; i < sizeof(g_szPrefixNt3x) - 1; i++)
+                    pwszNtPath[i] = g_szPrefixNt3x[i];
+            memcpy(pwszNtPath + cwcExtraPrefix + 4, pwszWinPath + 4, (cwcWinPath - 4) * sizeof(RTUTF16));
+            pwszNtPath[cwcExtraPrefix + cwcWinPath] = '\0';
 
             /* Initialize the return values. */
             pNtName->Buffer = pwszNtPath;
-            pNtName->Length = (uint16_t)(cwcWinPath * sizeof(RTUTF16));
+            pNtName->Length = (uint16_t)(cwcExtraPrefix + cwcWinPath * sizeof(RTUTF16));
             pNtName->MaximumLength = pNtName->Length + sizeof(RTUTF16);
             *phRootDir = NULL;
 
@@ -178,10 +207,21 @@ static int rtNtPathToNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, 
     /*
      * Very simple conversion of a win32-like path into an NT path.
      */
-    const char *pszPrefix = g_szPrefix;
-    size_t      cchPrefix = sizeof(g_szPrefix) - 1;
-    size_t      cchSkip   = 0;
+    const char *pszPrefix;
+    size_t      cchPrefix;
+    if (   g_enmWinVer >=  kRTWinOSType_NT4
+        || g_enmWinVer == kRTWinOSType_UNKNOWN)
+    {
+        pszPrefix = g_szPrefix;
+        cchPrefix = sizeof(g_szPrefix) - 1;
+    }
+    else
+    {
+        pszPrefix = g_szPrefixNt3x;
+        cchPrefix = sizeof(g_szPrefixNt3x) - 1;
+    }
 
+    size_t      cchSkip   = 0;
     if (   RTPATH_IS_SLASH(pszPath[0])
         && RTPATH_IS_SLASH(pszPath[1])
         && !RTPATH_IS_SLASH(pszPath[2])
@@ -210,8 +250,17 @@ static int rtNtPathToNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, 
         else
         {
             /* UNC */
-            pszPrefix = g_szPrefixUnc;
-            cchPrefix = sizeof(g_szPrefixUnc) - 1;
+            if (   g_enmWinVer >=  kRTWinOSType_NT4
+                || g_enmWinVer == kRTWinOSType_UNKNOWN)
+            {
+                pszPrefix = g_szPrefixUnc;
+                cchPrefix = sizeof(g_szPrefixUnc) - 1;
+            }
+            else
+            {
+                pszPrefix = g_szPrefixNt3xUnc;
+                cchPrefix = sizeof(g_szPrefixNt3xUnc) - 1;
+            }
             cchSkip   = 2;
         }
     }

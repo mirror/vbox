@@ -97,9 +97,103 @@ extern DECLHIDDEN(RTWINOSTYPE)      g_enmWinVer;
 #ifdef _WINDEF_
 extern DECLHIDDEN(HMODULE)          g_hModKernel32;
 extern DECLHIDDEN(HMODULE)          g_hModNtDll;
+
 extern DECLHIDDEN(OSVERSIONINFOEXW) g_WinOsInfoEx;
 typedef UINT (WINAPI *PFNGETWINSYSDIR)(LPWSTR,UINT);
 extern DECLHIDDEN(PFNGETWINSYSDIR)  g_pfnGetSystemWindowsDirectoryW;
+typedef NTSTATUS (NTAPI *PFNNTQUERYFULLATTRIBUTESFILE)(struct _OBJECT_ATTRIBUTES *, struct _FILE_NETWORK_OPEN_INFORMATION *);
+extern DECLHIDDEN(PFNNTQUERYFULLATTRIBUTESFILE) g_pfnNtQueryFullAttributesFile;
+typedef NTSTATUS (NTAPI *PFNNTDUPLICATETOKEN)(HANDLE, ACCESS_MASK, struct _OBJECT_ATTRIBUTES *, BOOLEAN, TOKEN_TYPE, PHANDLE);
+extern DECLHIDDEN(PFNNTDUPLICATETOKEN)          g_pfnNtDuplicateToken;
+
+extern DECLHIDDEN(HMODULE)                         g_hModWinSock;
+
+/** WSAStartup */
+typedef int             (WINAPI *PFNWSASTARTUP)(WORD, struct WSAData *);
+/** WSACleanup */
+typedef int             (WINAPI *PFNWSACLEANUP)(void);
+/** WSAGetLastError */
+typedef int             (WINAPI *PFNWSAGETLASTERROR)(void);
+/** WSASetLastError */
+typedef int             (WINAPI *PFNWSASETLASTERROR)(int);
+/** WSACreateEvent */
+typedef HANDLE          (WINAPI *PFNWSACREATEEVENT)(void);
+/** WSACloseEvent */
+typedef BOOL            (WINAPI *PFNWSACLOSEEVENT)(HANDLE);
+/** WSAEventSelect */
+typedef BOOL            (WINAPI *PFNWSAEVENTSELECT)(UINT_PTR, HANDLE, LONG);
+/** WSAEnumNetworkEvents */
+typedef int             (WINAPI *PFNWSAENUMNETWORKEVENTS)(UINT_PTR, HANDLE, struct _WSANETWORKEVENTS *);
+/** WSASend */
+typedef int             (WINAPI *PFNWSASend)(UINT_PTR, struct _WSABUF *, DWORD, LPDWORD, DWORD dwFlags, struct _OVERLAPPED *, PFNRT /*LPWSAOVERLAPPED_COMPLETION_ROUTINE*/);
+
+/** socket */
+typedef UINT_PTR        (WINAPI *PFNWINSOCKSOCKET)(int, int, int);
+/** closesocket */
+typedef int             (WINAPI *PFNWINSOCKCLOSESOCKET)(UINT_PTR);
+/** recv */
+typedef int             (WINAPI *PFNWINSOCKRECV)(UINT_PTR, char *, int, int);
+/** send */
+typedef int             (WINAPI *PFNWINSOCKSEND)(UINT_PTR, const char *, int, int);
+/** recvfrom */
+typedef int             (WINAPI *PFNWINSOCKRECVFROM)(UINT_PTR, char *, int, int, struct sockaddr *, int *);
+/** sendto */
+typedef int             (WINAPI *PFNWINSOCKSENDTO)(UINT_PTR, const char *, int, int, const struct sockaddr *, int);
+/** bind */
+typedef int             (WINAPI *PFNWINSOCKBIND)(UINT_PTR, const struct sockaddr *, int);
+/** listen  */
+typedef int             (WINAPI *PFNWINSOCKLISTEN)(UINT_PTR, int);
+/** accept */
+typedef UINT_PTR        (WINAPI *PFNWINSOCKACCEPT)(UINT_PTR, struct sockaddr *, int *);
+/** connect */
+typedef int             (WINAPI *PFNWINSOCKCONNECT)(UINT_PTR, const struct sockaddr *, int);
+/** shutdown */
+typedef int             (WINAPI *PFNWINSOCKSHUTDOWN)(UINT_PTR, int);
+/** getsockopt */
+typedef int             (WINAPI *PFNWINSOCKGETSOCKOPT)(UINT_PTR, int, int, char *, int *);
+/** setsockopt */
+typedef int             (WINAPI *PFNWINSOCKSETSOCKOPT)(UINT_PTR, int, int, const char *, int);
+/** ioctlsocket */
+typedef int             (WINAPI *PFNWINSOCKIOCTLSOCKET)(UINT_PTR, long, unsigned long *);
+/** getpeername   */
+typedef int             (WINAPI *PFNWINSOCKGETPEERNAME)(UINT_PTR, struct sockaddr *, int *);
+/** getsockname */
+typedef int             (WINAPI *PFNWINSOCKGETSOCKNAME)(UINT_PTR, struct sockaddr *, int *);
+/** __WSAFDIsSet */
+typedef int             (WINAPI *PFNWINSOCK__WSAFDISSET)(UINT_PTR, struct fd_set *);
+/** select */
+typedef int             (WINAPI *PFNWINSOCKSELECT)(int, struct fd_set *, struct fd_set *, struct fd_set *, const struct timeval *);
+/** gethostbyname */
+typedef struct hostent *(WINAPI *PFNWINSOCKGETHOSTBYNAME)(const char *);
+
+extern DECLHIDDEN(PFNWSASTARTUP)                   g_pfnWSAStartup;
+extern DECLHIDDEN(PFNWSACLEANUP)                   g_pfnWSACleanup;
+extern PFNWSAGETLASTERROR                          g_pfnWSAGetLastError;
+extern PFNWSASETLASTERROR                          g_pfnWSASetLastError;
+extern DECLHIDDEN(PFNWSACREATEEVENT)               g_pfnWSACreateEvent;
+extern DECLHIDDEN(PFNWSACLOSEEVENT)                g_pfnWSACloseEvent;
+extern DECLHIDDEN(PFNWSAEVENTSELECT)               g_pfnWSAEventSelect;
+extern DECLHIDDEN(PFNWSAENUMNETWORKEVENTS)         g_pfnWSAEnumNetworkEvents;
+extern DECLHIDDEN(PFNWSASend)                      g_pfnWSASend;
+extern DECLHIDDEN(PFNWINSOCKSOCKET)                g_pfnsocket;
+extern DECLHIDDEN(PFNWINSOCKCLOSESOCKET)           g_pfnclosesocket;
+extern DECLHIDDEN(PFNWINSOCKRECV)                  g_pfnrecv;
+extern DECLHIDDEN(PFNWINSOCKSEND)                  g_pfnsend;
+extern DECLHIDDEN(PFNWINSOCKRECVFROM)              g_pfnrecvfrom;
+extern DECLHIDDEN(PFNWINSOCKSENDTO)                g_pfnsendto;
+extern DECLHIDDEN(PFNWINSOCKBIND)                  g_pfnbind;
+extern DECLHIDDEN(PFNWINSOCKLISTEN)                g_pfnlisten;
+extern DECLHIDDEN(PFNWINSOCKACCEPT)                g_pfnaccept;
+extern DECLHIDDEN(PFNWINSOCKCONNECT)               g_pfnconnect;
+extern DECLHIDDEN(PFNWINSOCKSHUTDOWN)              g_pfnshutdown;
+extern DECLHIDDEN(PFNWINSOCKGETSOCKOPT)            g_pfngetsockopt;
+extern DECLHIDDEN(PFNWINSOCKSETSOCKOPT)            g_pfnsetsockopt;
+extern DECLHIDDEN(PFNWINSOCKIOCTLSOCKET)           g_pfnioctlsocket;
+extern DECLHIDDEN(PFNWINSOCKGETPEERNAME)           g_pfngetpeername;
+extern DECLHIDDEN(PFNWINSOCKGETSOCKNAME)           g_pfngetsockname;
+extern DECLHIDDEN(PFNWINSOCK__WSAFDISSET)          g_pfn__WSAFDIsSet;
+extern DECLHIDDEN(PFNWINSOCKSELECT)                g_pfnselect;
+extern DECLHIDDEN(PFNWINSOCKGETHOSTBYNAME)         g_pfngethostbyname;
 #endif
 
 

@@ -427,18 +427,40 @@ static int rtProcWinGetProcessTokenHandle(DWORD dwPid, PSID pSid, PHANDLE phToke
                         if (   IsValidSid(pTokenUser->User.Sid)
                             && EqualSid(pTokenUser->User.Sid, pSid))
                         {
-                            if (DuplicateTokenEx(hTokenProc, MAXIMUM_ALLOWED,
-                                                 NULL, SecurityIdentification, TokenPrimary, phToken))
+                            /*
+                             * The following NT call is for v3.51 and does the equivalent of:
+                             *      DuplicateTokenEx(hTokenProc, MAXIMUM_ALLOWED, NULL,
+                             *                       SecurityIdentification, TokenPrimary, phToken);
+                             */
+                            if (g_pfnNtDuplicateToken)
                             {
-                                /*
-                                 * So we found the process instance which belongs to the user we want to
-                                 * to run our new process under. This duplicated token will be used for
-                                 * the actual CreateProcessAsUserW() call then.
-                                 */
-                                rc = VINF_SUCCESS;
+                                SECURITY_QUALITY_OF_SERVICE SecQoS;
+                                SecQoS.Length              = sizeof(SecQoS);
+                                SecQoS.ImpersonationLevel  = SecurityIdentification;
+                                SecQoS.ContextTrackingMode = SECURITY_DYNAMIC_TRACKING;
+                                SecQoS.EffectiveOnly       = FALSE;
+
+                                OBJECT_ATTRIBUTES ObjAttr;
+                                InitializeObjectAttributes(&ObjAttr, NULL /*Name*/, 0 /*OBJ_XXX*/, NULL /*Root*/, NULL /*SecDesc*/);
+                                ObjAttr.SecurityQualityOfService = &SecQoS;
+
+                                NTSTATUS rcNt = g_pfnNtDuplicateToken(hTokenProc, MAXIMUM_ALLOWED, &ObjAttr, FALSE,
+                                                                      TokenPrimary, phToken);
+                                if (NT_SUCCESS(rcNt))
+                                {
+                                    /*
+                                     * So we found the process instance which belongs to the user we want to
+                                     * to run our new process under. This duplicated token will be used for
+                                     * the actual CreateProcessAsUserW() call then.
+                                     */
+                                    rc = VINF_SUCCESS;
+                                }
+                                else
+                                    rc = RTErrConvertFromNtStatus(rcNt);
+
                             }
                             else
-                                rc = RTErrConvertFromWin32(GetLastError());
+                                rc = VERR_SYMBOL_NOT_FOUND; /** @todo do we really need to duplicate the token? */
                         }
                         else
                             rc = VERR_NOT_FOUND;

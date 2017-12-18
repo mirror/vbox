@@ -28,9 +28,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define RT_NO_STRICT /* Minimal deps so that it works on NT 3.51 too. */
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/asm.h>
+#include <iprt/assert.h>
 #include <iprt/string.h>
 
 #ifndef RT_ARCH_X86
@@ -52,8 +54,10 @@
 #define QueryDepthSList                         Ignore_QueryDepthSList
 #define VerifyVersionInfoA                      Ignore_VerifyVersionInfoA
 #define VerSetConditionMask                     Ignore_VerSetConditionMask
+#define IsProcessorFeaturePresent               Ignore_IsProcessorFeaturePresent /* NT 3.51 start */
+#define CancelIo                                Ignore_CancelIo
 
-#include <iprt/win/windows.h>
+#include <iprt/nt/nt-and-windows.h>
 
 #undef DecodePointer
 #undef EncodePointer
@@ -70,6 +74,8 @@
 #undef QueryDepthSList
 #undef VerifyVersionInfoA
 #undef VerSetConditionMask
+#undef IsProcessorFeaturePresent
+#undef CancelIo
 
 
 #ifndef HEAP_STANDARD
@@ -89,7 +95,22 @@
         pfnApi = (decltype(pfnApi))GetProcAddress(GetModuleHandleW(L"kernel32"), #ApiNm); \
         s_pfnApi = pfnApi; \
         s_fInitialized = true; \
-    } do {} while (0) \
+    } do {} while (0)
+
+
+/** Dynamically resolves an NTDLL API we need.   */
+#define RESOLVE_NTDLL_API(ApiNm) \
+    static bool volatile    s_fInitialized##ApiNm = false; \
+    static decltype(ApiNm) *s_pfn##ApiNm = NULL; \
+    decltype(ApiNm)        *pfn##ApiNm; \
+    if (!s_fInitialized##ApiNm) \
+        pfn##ApiNm = s_pfn##ApiNm; \
+    else \
+    { \
+        pfn##ApiNm = (decltype(pfn##ApiNm))GetProcAddress(GetModuleHandleW(L"ntdll"), #ApiNm); \
+        s_pfn##ApiNm = pfn##ApiNm; \
+        s_fInitialized##ApiNm = true; \
+    } do {} while (0)
 
 
 extern "C"
@@ -400,6 +421,7 @@ BOOL WINAPI VerifyVersionInfoA(LPOSVERSIONINFOEXA pInfo, DWORD fTypeMask, DWORDL
     return fRet;
 }
 
+
 extern "C"
 __declspec(dllexport)
 ULONGLONG WINAPI VerSetConditionMask(ULONGLONG fConditionMask, DWORD fTypeMask, BYTE bOperator)
@@ -420,6 +442,45 @@ ULONGLONG WINAPI VerSetConditionMask(ULONGLONG fConditionMask, DWORD fTypeMask, 
     return fConditionMask;
 }
 
+
+/*
+ * NT 3.51 stuff.
+ */
+
+extern "C" DECLEXPORT(BOOL) WINAPI IsProcessorFeaturePresent(DWORD enmProcessorFeature)
+{
+    RESOLVE_ME(IsProcessorFeaturePresent);
+    if (pfnApi)
+        return pfnApi(enmProcessorFeature);
+
+    /* Could make more of an effort here... */
+    return FALSE;
+}
+
+
+extern "C" DECLEXPORT(BOOL) WINAPI CancelIo(HANDLE hHandle)
+{
+    RESOLVE_ME(CancelIo);
+    if (pfnApi)
+        return pfnApi(hHandle);
+
+    /* NT 3.51 have the NTDLL API this corresponds to. */
+    RESOLVE_NTDLL_API(NtCancelIoFile);
+    if (pfnNtCancelIoFile)
+    {
+        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        NTSTATUS rcNt = pfnNtCancelIoFile(hHandle, &Ios);
+        if (RT_SUCCESS(rcNt))
+            return TRUE;
+        if (rcNt == STATUS_INVALID_HANDLE)
+            SetLastError(ERROR_INVALID_HANDLE);
+        else
+            SetLastError(ERROR_INVALID_FUNCTION);
+    }
+    else
+        SetLastError(ERROR_NOT_SUPPORTED);
+    return FALSE;
+}
 
 
 /* Dummy to force dragging in this object in the link, so the linker

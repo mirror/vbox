@@ -47,6 +47,12 @@
      && memcmp((a_UniStr)->Buffer, a_wszType, sizeof(a_wszType) - sizeof(RTUTF16)) == 0)
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+extern decltype(NtQueryFullAttributesFile) *g_pfnNtQueryFullAttributesFile; /* init-win.cpp */
+
+
 /* ASSUMES FileID comes after ShortName and the structs are identical up to that point. */
 AssertCompileMembersSameSizeAndOffset(FILE_BOTH_DIR_INFORMATION, NextEntryOffset, FILE_ID_BOTH_DIR_INFORMATION, NextEntryOffset);
 AssertCompileMembersSameSizeAndOffset(FILE_BOTH_DIR_INFORMATION, FileIndex      , FILE_ID_BOTH_DIR_INFORMATION, FileIndex      );
@@ -377,10 +383,11 @@ DECLHIDDEN(int) rtPathNtQueryInfoWorker(HANDLE hRootDir, UNICODE_STRING *pNtName
      * requested and it isn't a symbolic link.  NT directory object
      */
     int rc = VINF_TRY_AGAIN;
-    if (enmAddAttr != RTFSOBJATTRADD_UNIX)
+    if (   enmAddAttr != RTFSOBJATTRADD_UNIX
+        && g_pfnNtQueryFullAttributesFile)
     {
         InitializeObjectAttributes(&ObjAttr, pNtName, OBJ_CASE_INSENSITIVE, hRootDir, NULL);
-        rcNt = NtQueryFullAttributesFile(&ObjAttr, &uBuf.NetOpenInfo);
+        rcNt = g_pfnNtQueryFullAttributesFile(&ObjAttr, &uBuf.NetOpenInfo);
         if (NT_SUCCESS(rcNt))
         {
             if (!(uBuf.NetOpenInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))

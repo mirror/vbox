@@ -59,4 +59,6 @@ MAKE_IMPORT_ENTRY InterlockedPushEntrySList, 8
 MAKE_IMPORT_ENTRY QueryDepthSList, 4
 MAKE_IMPORT_ENTRY VerifyVersionInfoA, 16
 MAKE_IMPORT_ENTRY VerSetConditionMask, 16
+MAKE_IMPORT_ENTRY IsProcessorFeaturePresent, 4
+MAKE_IMPORT_ENTRY CancelIo, 4
 
