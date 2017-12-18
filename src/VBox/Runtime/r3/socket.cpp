@@ -794,7 +794,7 @@ RTDECL(int) RTSocketQueryAddressStr(const char *pszHost, char *pszResult, size_t
 
     /** @todo r=bird: getaddrinfo and freeaddrinfo breaks the additions on NT4. */
     struct addrinfo *pgrResults = NULL;
-    rc = g_pfngetaddrinfo(pszHost, "", &grHints, &pgrResults);
+    rc = getaddrinfo(pszHost, "", &grHints, &pgrResults);
     if (rc != 0)
         return VERR_NET_ADDRESS_NOT_AVAILABLE;
 
