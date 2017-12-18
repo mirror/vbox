@@ -361,7 +361,7 @@ static void rtR3InitWinSockApis(void)
             rc = RTLdrLoadSystem("wsock32.dll", true /*fNoUnload*/, &hLdrMod);
             if (RT_FAILURE(rc))
             {
-AssertMsgFailed(("rc=%Rrc\n", rc));
+                AssertMsgFailed(("rc=%Rrc\n", rc));
                 return;
             }
             g_fOldWinSock = true;
@@ -369,7 +369,6 @@ AssertMsgFailed(("rc=%Rrc\n", rc));
         g_hModWinSock = (HMODULE)RTLdrGetNativeHandle(hLdrMod);
         RTLdrClose(hLdrMod);
     }
-RTAssertMsg2("g_hModWinSock=%p\n", g_hModWinSock);
 
     g_pfnWSAStartup           = (decltype(g_pfnWSAStartup))         GetProcAddress(g_hModWinSock, "WSAStartup");
     g_pfnWSACleanup           = (decltype(g_pfnWSACleanup))         GetProcAddress(g_hModWinSock, "WSACleanup");
