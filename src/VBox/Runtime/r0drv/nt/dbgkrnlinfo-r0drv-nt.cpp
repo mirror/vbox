@@ -625,7 +625,7 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *ps
     {
         /*
          * Search both ntoskrnl and hal, may use MmGetSystemRoutineAddress as fallback.
-         * Note! MmGetSystemRoutineAddress was buggy in before XP SP2 according to Geoff Chappell.
+         * Note! MmGetSystemRoutineAddress was buggy before XP SP2 according to Geoff Chappell.
          */
         if (g_NtOsKrnlInfo.pbImageBase)
             rc = VINF_SUCCESS;
