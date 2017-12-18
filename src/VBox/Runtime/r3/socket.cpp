@@ -557,7 +557,7 @@ static int rtSocketCloseIt(RTSOCKETINT *pThis, bool fDestroy)
          * Close the event.
          */
         WSAEVENT hEvent = pThis->hEvent;
-        if (hEvent == WSA_INVALID_EVENT)
+        if (hEvent != WSA_INVALID_EVENT)
         {
             pThis->hEvent = WSA_INVALID_EVENT;
             Assert(g_pfnWSACloseEvent);
