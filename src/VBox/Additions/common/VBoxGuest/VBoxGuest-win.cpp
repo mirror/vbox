@@ -48,6 +48,8 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+#undef ExFreePool
+
 #ifndef PCI_MAX_BUSES
 # define PCI_MAX_BUSES 256
 #endif
@@ -160,6 +162,9 @@ typedef VBOXGUESTDEVEXTWIN *PVBOXGUESTDEVEXTWIN;
 typedef enum VGDRVNTVER
 {
     VGDRVNTVER_INVALID = 0,
+    VGDRVNTVER_WINNT31,
+    VGDRVNTVER_WINNT350,
+    VGDRVNTVER_WINNT351,
     VGDRVNTVER_WINNT4,
     VGDRVNTVER_WIN2K,
     VGDRVNTVER_WINXP,
@@ -331,6 +336,14 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
         case 4:
             g_enmVGDrvNtVer = VGDRVNTVER_WINNT4;
             break;
+        case 3:
+            if (ulMinorVer > 50)
+                g_enmVGDrvNtVer = VGDRVNTVER_WINNT351;
+            else if (ulMinorVer >= 50)
+                g_enmVGDrvNtVer = VGDRVNTVER_WINNT350;
+            else
+                g_enmVGDrvNtVer = VGDRVNTVER_WINNT31;
+            break;
         default:
             if (ulMajorVer > 6)
             {
@@ -425,6 +438,9 @@ static VBOXOSTYPE vgdrvNtVersionToOSType(VGDRVNTVER enmNtVer)
     VBOXOSTYPE enmOsType;
     switch (enmNtVer)
     {
+        case VGDRVNTVER_WINNT31:
+        case VGDRVNTVER_WINNT350:
+        case VGDRVNTVER_WINNT351:
         case VGDRVNTVER_WINNT4:
             enmOsType = VBOXOSTYPE_WinNT4;
             break;
@@ -504,50 +520,57 @@ static VBOXOSTYPE vgdrvNtVersionToOSType(VGDRVNTVER enmNtVer)
  *
  * @param pResourceList  list of device resources.
  */
-static void vgdrvNtShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList)
+static void vgdrvNtShowDeviceResources(PCM_RESOURCE_LIST pRsrcList)
 {
-    PCM_PARTIAL_RESOURCE_DESCRIPTOR pResource = pResourceList->PartialDescriptors;
-    ULONG cResources = pResourceList->Count;
-
-    for (ULONG i = 0; i < cResources; ++i, ++pResource)
+    for (uint32_t iList = 0; iList < pRsrcList->Count; iList++)
     {
-        ULONG uType = pResource->Type;
-        static char const * const s_apszName[] =
+        PCM_FULL_RESOURCE_DESCRIPTOR pList = &pRsrcList->List[iList];
+        LogFunc(("List #%u: InterfaceType=%#x BusNumber=%#x ListCount=%u ListRev=%#x ListVer=%#x\n",
+                 iList, pList->InterfaceType, pList->BusNumber, pList->PartialResourceList.Count,
+                 pList->PartialResourceList.Revision, pList->PartialResourceList.Version ));
+
+        PCM_PARTIAL_RESOURCE_DESCRIPTOR pResource = pList->PartialResourceList.PartialDescriptors;
+        for (ULONG i = 0; i < pList->PartialResourceList.Count; ++i, ++pResource)
         {
-            "CmResourceTypeNull",
-            "CmResourceTypePort",
-            "CmResourceTypeInterrupt",
-            "CmResourceTypeMemory",
-            "CmResourceTypeDma",
-            "CmResourceTypeDeviceSpecific",
-            "CmResourceTypeuBusNumber",
-            "CmResourceTypeDevicePrivate",
-            "CmResourceTypeAssignedResource",
-            "CmResourceTypeSubAllocateFrom",
-        };
+            ULONG uType = pResource->Type;
+            static char const * const s_apszName[] =
+            {
+                "CmResourceTypeNull",
+                "CmResourceTypePort",
+                "CmResourceTypeInterrupt",
+                "CmResourceTypeMemory",
+                "CmResourceTypeDma",
+                "CmResourceTypeDeviceSpecific",
+                "CmResourceTypeuBusNumber",
+                "CmResourceTypeDevicePrivate",
+                "CmResourceTypeAssignedResource",
+                "CmResourceTypeSubAllocateFrom",
+            };
 
-        LogFunc(("Type=%s", uType < RT_ELEMENTS(s_apszName) ? s_apszName[uType] : "Unknown"));
+            if (uType < RT_ELEMENTS(s_apszName))
+                LogFunc(("  %.30s Flags=%#x Share=%#x", s_apszName[uType], pResource->Flags, pResource->ShareDisposition));
+            else
+                LogFunc(("  Type=%#x Flags=%#x Share=%#x", uType, pResource->Flags, pResource->ShareDisposition));
+            switch (uType)
+            {
+                case CmResourceTypePort:
+                case CmResourceTypeMemory:
+                    Log(("  Start %#RX64, length=%#x\n", pResource->u.Port.Start.QuadPart, pResource->u.Port.Length));
+                    break;
 
-        switch (uType)
-        {
-            case CmResourceTypePort:
-            case CmResourceTypeMemory:
-                LogFunc(("Start %8X%8.8lX, length=%X\n",
-                         pResource->u.Port.Start.HighPart, pResource->u.Port.Start.LowPart, pResource->u.Port.Length));
-                break;
+                case CmResourceTypeInterrupt:
+                    Log(("  Level=%X, vector=%#x, affinity=%#x\n",
+                             pResource->u.Interrupt.Level, pResource->u.Interrupt.Vector, pResource->u.Interrupt.Affinity));
+                    break;
 
-            case CmResourceTypeInterrupt:
-                LogFunc(("Level=%X, vector=%X, affinity=%X\n",
-                         pResource->u.Interrupt.Level, pResource->u.Interrupt.Vector, pResource->u.Interrupt.Affinity));
-                break;
+                case CmResourceTypeDma:
+                    Log(("  Channel %d, Port %#x\n", pResource->u.Dma.Channel, pResource->u.Dma.Port));
+                    break;
 
-            case CmResourceTypeDma:
-                LogFunc(("Channel %d, Port %X\n", pResource->u.Dma.Channel, pResource->u.Dma.Port));
-                break;
-
-            default:
-                LogFunc(("\n"));
-                break;
+                default:
+                    Log(("\n"));
+                    break;
+            }
         }
     }
 }
@@ -581,14 +604,18 @@ static NTSTATUS vgdrvNtInit(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT pDevObj,
         UNICODE_STRING      ClassName;
         RtlInitUnicodeString(&ClassName, L"VBoxGuestAdapter");
         PCM_RESOURCE_LIST   pResourceList = NULL;
-        rcNt = HalAssignSlotResources(pRegPath, &ClassName, pDrvObj, pDevObj,
-                                      PCIBus, pDevExt->uBus, pDevExt->uSlot, &pResourceList);
+        rcNt = HalAssignSlotResources(pRegPath, &ClassName, pDrvObj, pDevObj, PCIBus, pDevExt->uBus, pDevExt->uSlot,
+                                      &pResourceList);
 # ifdef LOG_ENABLED
-        if (pResourceList && pResourceList->Count > 0)
-            vgdrvNtShowDeviceResources(&pResourceList->List[0].PartialResourceList);
+        if (pResourceList)
+            vgdrvNtShowDeviceResources(pResourceList);
 # endif
         if (NT_SUCCESS(rcNt))
+        {
             rcNt = vgdrvNtScanPCIResourceList(pResourceList, pDevExt);
+            ExFreePool(pResourceList);
+        }
+
 # else  /* !TARGET_NT4 */
         AssertFailed();
         RT_NOREF(pDevObj, pDrvObj, pRegPath);
@@ -602,8 +629,7 @@ static NTSTATUS vgdrvNtInit(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT pDevObj,
          */
         PIO_STACK_LOCATION pStack = IoGetCurrentIrpStackLocation(pIrp);
 # ifdef LOG_ENABLED
-        if (pStack->Parameters.StartDevice.AllocatedResources->Count > 0)
-            vgdrvNtShowDeviceResources(&pStack->Parameters.StartDevice.AllocatedResources->List[0].PartialResourceList);
+        vgdrvNtShowDeviceResources(pStack->Parameters.StartDevice.AllocatedResources);
 # endif
         rcNt = vgdrvNtScanPCIResourceList(pStack->Parameters.StartDevice.AllocatedResourcesTranslated, pDevExt);
     }
@@ -825,32 +851,32 @@ static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRe
  *
  * @returns NT status code.
  *
- * @param   puluBusNumber    Where to return the bus number on success.
- * @param   puSlotNumber     Where to return the slot number on success.
+ * @param   puBus           Where to return the bus number on success.
+ * @param   pSlot           Where to return the slot number on success.
  */
-static NTSTATUS vgdrvNt4FindPciDevice(PULONG puluBusNumber, PPCI_SLOT_NUMBER puSlotNumber)
+static NTSTATUS vgdrvNt4FindPciDevice(PULONG puBus, PPCI_SLOT_NUMBER pSlot)
 {
     Log(("vgdrvNt4FindPciDevice\n"));
 
-    PCI_SLOT_NUMBER uSlot;
-    uSlot.u.AsULONG = 0;
+    PCI_SLOT_NUMBER Slot;
+    Slot.u.AsULONG = 0;
 
     /* Scan each bus. */
-    for (ULONG uluBusNumber = 0; uluBusNumber < PCI_MAX_BUSES; uluBusNumber++)
+    for (ULONG uBus = 0; uBus < PCI_MAX_BUSES; uBus++)
     {
         /* Scan each device. */
         for (ULONG deviceNumber = 0; deviceNumber < PCI_MAX_DEVICES; deviceNumber++)
         {
-            uSlot.u.bits.DeviceNumber = deviceNumber;
+            Slot.u.bits.DeviceNumber = deviceNumber;
 
             /* Scan each function (not really required...). */
             for (ULONG functionNumber = 0; functionNumber < PCI_MAX_FUNCTION; functionNumber++)
             {
-                uSlot.u.bits.FunctionNumber = functionNumber;
+                Slot.u.bits.FunctionNumber = functionNumber;
 
                 /* Have a look at what's in this slot. */
                 PCI_COMMON_CONFIG PciData;
-                if (!HalGetBusData(PCIConfiguration, uluBusNumber, uSlot.u.AsULONG, &PciData, sizeof(ULONG)))
+                if (!HalGetBusData(PCIConfiguration, uBus, Slot.u.AsULONG, &PciData, sizeof(ULONG)))
                 {
                     /* No such bus, we're done with it. */
                     deviceNumber = PCI_MAX_DEVICES;
@@ -867,10 +893,11 @@ static NTSTATUS vgdrvNt4FindPciDevice(PULONG puluBusNumber, PPCI_SLOT_NUMBER puS
                     continue;
 
                 /* Hooray, we've found it! */
-                Log(("vgdrvNt4FindPciDevice: Device found!\n"));
+                Log(("vgdrvNt4FindPciDevice: Device found! Bus=%#x Slot=%#u (dev %#x, fun %#x, rvd %#x)\n",
+                     uBus, Slot.u.AsULONG, Slot.u.bits.DeviceNumber, Slot.u.bits.FunctionNumber, Slot.u.bits.Reserved));
 
-                *puluBusNumber = uluBusNumber;
-                *puSlotNumber  = uSlot;
+                *puBus  = uBus;
+                *pSlot  = Slot;
                 return STATUS_SUCCESS;
             }
         }
@@ -2338,6 +2365,22 @@ static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUES
                         /* Save physical MMIO base + length for VMMDev. */
                         pDevExt->uVmmDevMemoryPhysAddr = pPartialData->u.Memory.Start;
                         pDevExt->cbVmmDevMemory = (ULONG)pPartialData->u.Memory.Length;
+
+                        /* Technically we need to make the HAL translate the address.  since we
+                           didn't used to do this and it probably just returns the input address,
+                           we allow ourselves to ignore failures. */
+                        ULONG               uAddressSpace = 0;
+                        PHYSICAL_ADDRESS    PhysAddr = pPartialData->u.Memory.Start;
+                        if (HalTranslateBusAddress(pResList->List->InterfaceType, pResList->List->BusNumber, PhysAddr,
+                                                   &uAddressSpace, &PhysAddr))
+                        {
+                            Log(("HalTranslateBusAddress(%#RX64) -> %RX64, type %#x\n",
+                                 pPartialData->u.Memory.Start.QuadPart, PhysAddr.QuadPart, uAddressSpace));
+                            if (pPartialData->u.Memory.Start.QuadPart != PhysAddr.QuadPart)
+                                pDevExt->uVmmDevMemoryPhysAddr = PhysAddr;
+                        }
+                        else
+                            Log(("HalTranslateBusAddress(%#RX64) -> failed!\n", pPartialData->u.Memory.Start.QuadPart));
 
                         /* Save resource information. */
                         pBaseAddress->RangeStart     = pPartialData->u.Memory.Start;
