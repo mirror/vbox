@@ -135,7 +135,9 @@ void UIVMLogViewerDialog::saveSettings() const
     /* Save window geometry to extradata: */
     const QRect saveGeometry = geometry();
 #ifdef VBOX_WS_MAC
-    //gEDataManager->setLogWindowGeometry(saveGeometry, ::darwinIsWindowMaximized(qobject_cast<const QWidget*>(this)));
+    /* darwinIsWindowMaximized expects a non-const QWidget*. thus const_cast: */
+    QWidget *pw = const_cast<QWidget*>(qobject_cast<const QWidget*>(this));
+    gEDataManager->setLogWindowGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
 #else /* !VBOX_WS_MAC */
     gEDataManager->setLogWindowGeometry(saveGeometry, isMaximized());
 #endif /* !VBOX_WS_MAC */
