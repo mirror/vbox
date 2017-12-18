@@ -260,7 +260,8 @@ void UIMachineLogicNormal::sltHostScreenAvailableAreaChange()
 
     /* Make sure all machine-window(s) have previous but normalized geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        pMachineWindow->restoreCachedGeometry();
+        if (!pMachineWindow->isMaximized())
+            pMachineWindow->restoreCachedGeometry();
 #endif /* VBOX_WS_X11 */
 
     /* Call to base-class: */
