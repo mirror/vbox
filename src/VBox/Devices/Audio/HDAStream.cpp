@@ -79,7 +79,7 @@ int hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
     {
         char szFile[64];
 
-        if (pStream->State.Cfg.enmDir == PDMAUDIODIR_IN)
+        if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
             RTStrPrintf(szFile, sizeof(szFile), "hdaStreamWriteSD%RU8", pStream->u8SD);
         else
             RTStrPrintf(szFile, sizeof(szFile), "hdaStreamReadSD%RU8", pStream->u8SD);
@@ -91,7 +91,7 @@ int hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
         rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAG_NONE, &pStream->Dbg.Runtime.pFileStream);
         AssertRC(rc2);
 
-        if (pStream->State.Cfg.enmDir == PDMAUDIODIR_IN)
+        if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
             RTStrPrintf(szFile, sizeof(szFile), "hdaDMAWriteSD%RU8", pStream->u8SD);
         else
             RTStrPrintf(szFile, sizeof(szFile), "hdaDMAReadSD%RU8", pStream->u8SD);
