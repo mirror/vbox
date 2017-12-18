@@ -616,12 +616,16 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *ps
 
     RTR0DBG_NT_DEBUG_LOG(("RTR0DbgKrnlInfoQuerySymbol: pszModule=%s pszSymbol=%s\n", pszModule ? pszModule : "<null>", pszSymbol));
 
+    void  *pvTmpSymbol = NULL;
+    if (!ppvSymbol)
+        ppvSymbol = &pvTmpSymbol;
+
     int rc;
-    uintptr_t uValue = 0;
     if (!pszModule)
     {
         /*
          * Search both ntoskrnl and hal, may use MmGetSystemRoutineAddress as fallback.
+         * Note! MmGetSystemRoutineAddress was buggy in before XP SP2 according to Geoff Chappell.
          */
         if (g_NtOsKrnlInfo.pbImageBase)
             rc = VINF_SUCCESS;
@@ -631,14 +635,14 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *ps
         {
             Assert(g_NtOsKrnlInfo.fOkay);
             Assert(g_HalInfo.fOkay);
-            RTR0DBG_NT_DEBUG_LOG(("RTR0DbgKrnlInfoQuerySymbol: Calling RTR0DbgKrnlInfoQuerySymbol on NT kernel...\n"));
+            //RTR0DBG_NT_DEBUG_LOG(("RTR0DbgKrnlInfoQuerySymbol: Calling RTR0DbgKrnlInfoQuerySymbol on NT kernel...\n"));
             rc = rtR0DbgKrnlInfoLookupSymbol(&g_NtOsKrnlInfo, pszSymbol, ppvSymbol);
             if (RT_FAILURE(rc))
             {
-                RTR0DBG_NT_DEBUG_LOG(("RTR0DbgKrnlInfoQuerySymbol: Calling RTR0DbgKrnlInfoQuerySymbol on HAL kernel...\n"));
+                //RTR0DBG_NT_DEBUG_LOG(("RTR0DbgKrnlInfoQuerySymbol: Calling RTR0DbgKrnlInfoQuerySymbol on HAL kernel...\n"));
                 rc = rtR0DbgKrnlInfoLookupSymbol(&g_HalInfo, pszSymbol, ppvSymbol);
             }
-            RTR0DBG_NT_DEBUG_LOG(("RTR0DbgKrnlInfoQuerySymbol: returns %d\n", rc));
+            RTR0DBG_NT_DEBUG_LOG(("RTR0DbgKrnlInfoQuerySymbol: #1 returns %d *ppvSymbol=%p\n", rc, *ppvSymbol));
         }
         else
         {
@@ -667,6 +671,7 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *ps
                     else
                         rc = VERR_SYMBOL_NOT_FOUND;
                     RTUtf16Free(pwszSymbol);
+                    RTR0DBG_NT_DEBUG_LOG(("RTR0DbgKrnlInfoQuerySymbol: #2 returns %d *ppvSymbol=%p\n", rc, *ppvSymbol));
                 }
             }
         }
@@ -729,10 +734,11 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *ps
             }
         }
         if (pModInfo)
+        {
             rc = rtR0DbgKrnlInfoLookupSymbol(pModInfo, pszSymbol, ppvSymbol);
+            RTR0DBG_NT_DEBUG_LOG(("RTR0DbgKrnlInfoQuerySymbol: #3 returns %d *ppvSymbol=%p\n", rc, *ppvSymbol));
+        }
     }
-    if (ppvSymbol)
-        *ppvSymbol = (void *)uValue;
     return rc;
 }
 
