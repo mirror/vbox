@@ -218,11 +218,13 @@ static DECLCALLBACK(int) vgsvcWinVmInfoInitOnce(void *pvIgnored)
     g_WinVersion.dwOSVersionInfoSize = sizeof(g_WinVersion);
     if (!GetVersionExA((OSVERSIONINFO *)&g_WinVersion))
     {
-        AssertFailed();
         RT_ZERO(g_WinVersion);
         g_WinVersion.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
         if (!GetVersionExA((OSVERSIONINFO *)&g_WinVersion))
+        {
+            AssertFailed();
             RT_ZERO(g_WinVersion);
+        }
     }
 
     return VINF_SUCCESS;

@@ -25,7 +25,12 @@
 #include <iprt/system.h> /* For querying OS version. */
 #include <VBox/VBoxGuestLib.h>
 
+#define WIN32_NO_STATUS
+#include <iprt/win/ws2tcpip.h>
+#include <iprt/win/winsock2.h>
+#undef WIN32_NO_STATUS
 #include <iprt/nt/nt-and-windows.h>
+#include <iprt/win/iphlpapi.h>
 #include <process.h>
 #include <aclapi.h>
 #include <tlhelp32.h>
@@ -57,6 +62,9 @@ static SERVICE_TABLE_ENTRY const g_aServiceTable[] =
  * @{ */
 decltype(RegisterServiceCtrlHandlerExA) *g_pfnRegisterServiceCtrlHandlerExA;    /**< W2K+ */
 decltype(ChangeServiceConfig2A)         *g_pfnChangeServiceConfig2A;            /**< W2K+ */
+decltype(GetNamedSecurityInfoA)         *g_pfnGetNamedSecurityInfoA;            /**< NT4+ */
+decltype(SetEntriesInAclA)              *g_pfnSetEntriesInAclA;                 /**< NT4+ */
+decltype(SetNamedSecurityInfoA)         *g_pfnSetNamedSecurityInfoA;            /**< NT4+ */
 /** @} */
 
 /** @name API from KERNEL32.DLL
@@ -73,6 +81,24 @@ decltype(Module32Next)                  *g_pfnModule32Next;                     
 decltype(ZwQuerySystemInformation)      *g_pfnZwQuerySystemInformation;         /**< NT4 (where as NtQuerySystemInformation is W2K). */
 /** @} */
 
+/** @name API from IPHLPAPI.DLL
+ * @{ */
+decltype(GetAdaptersInfo)               *g_pfnGetAdaptersInfo;
+/** @} */
+
+/** @name APIs from WS2_32.DLL
+ * @note WSAIoctl is not present in wsock32.dll, so no point in trying the
+ *       fallback here.
+ * @{ */
+decltype(WSAStartup)                    *g_pfnWSAStartup;
+decltype(WSACleanup)                    *g_pfnWSACleanup;
+decltype(WSASocketA)                    *g_pfnWSASocketA;
+decltype(WSAIoctl)                      *g_pfnWSAIoctl;
+decltype(WSAGetLastError)               *g_pfnWSAGetLastError;
+decltype(closesocket)                   *g_pfnclosesocket;
+decltype(inet_ntoa)                     *g_pfninet_ntoa;
+
+/** @} */
 
 /**
  * Resolve APIs not present on older windows versions.
@@ -89,6 +115,9 @@ void VGSvcWinResolveApis(void)
     {
         RESOLVE_SYMBOL(RegisterServiceCtrlHandlerExA);
         RESOLVE_SYMBOL(ChangeServiceConfig2A);
+        RESOLVE_SYMBOL(GetNamedSecurityInfoA);
+        RESOLVE_SYMBOL(SetEntriesInAclA);
+        RESOLVE_SYMBOL(SetNamedSecurityInfoA);
         RTLdrClose(hLdrMod);
     }
 
@@ -113,73 +142,98 @@ void VGSvcWinResolveApis(void)
         RESOLVE_SYMBOL(ZwQuerySystemInformation);
         RTLdrClose(hLdrMod);
     }
+
+    /* From IPHLPAPI.DLL: */
+    rc = RTLdrLoadSystem("iphlpapi.dll", false /*fNoUnload*/, &hLdrMod);
+    if (RT_SUCCESS(rc))
+    {
+        RESOLVE_SYMBOL(GetAdaptersInfo);
+        RTLdrClose(hLdrMod);
+    }
+
+    /* From WS2_32.DLL: */
+    rc = RTLdrLoadSystem("ws2_32.dll", false /*fNoUnload*/, &hLdrMod);
+    if (RT_SUCCESS(rc))
+    {
+        RESOLVE_SYMBOL(WSAStartup);
+        RESOLVE_SYMBOL(WSACleanup);
+        RESOLVE_SYMBOL(WSASocketA);
+        RESOLVE_SYMBOL(WSAIoctl);
+        RESOLVE_SYMBOL(WSAGetLastError);
+        RESOLVE_SYMBOL(closesocket);
+        RESOLVE_SYMBOL(inet_ntoa);
+        RTLdrClose(hLdrMod);
+    }
 }
 
 
 /**
- * @todo Format code style.
  * @todo Add full unicode support.
  * @todo Add event log capabilities / check return values.
  */
-static DWORD vgsvcWinAddAceToObjectsSecurityDescriptor(LPTSTR pszObjName,
-                                                       SE_OBJECT_TYPE ObjectType,
-                                                       LPTSTR pszTrustee,
-                                                       TRUSTEE_FORM TrusteeForm,
-                                                       DWORD dwAccessRights,
-                                                       ACCESS_MODE AccessMode,
-                                                       DWORD dwInheritance)
+static int vgsvcWinAddAceToObjectsSecurityDescriptor(LPTSTR pszObjName, SE_OBJECT_TYPE enmObjectType, const char *pszTrustee,
+                                                     TRUSTEE_FORM enmTrusteeForm, DWORD dwAccessRights, ACCESS_MODE fAccessMode,
+                                                     DWORD dwInheritance)
 {
-    PACL pOldDACL = NULL, pNewDACL = NULL;
-    PSECURITY_DESCRIPTOR pSD = NULL;
-    EXPLICIT_ACCESS ea;
-
-    if (NULL == pszObjName)
-        return ERROR_INVALID_PARAMETER;
-
-    /* Get a pointer to the existing DACL. */
-    DWORD dwRes = GetNamedSecurityInfo(pszObjName, ObjectType, DACL_SECURITY_INFORMATION, NULL, NULL, &pOldDACL, NULL, &pSD);
-    if (ERROR_SUCCESS != dwRes)
+    int rc;
+    if (   g_pfnGetNamedSecurityInfoA
+        && g_pfnSetEntriesInAclA
+        && g_pfnSetNamedSecurityInfoA)
     {
-        if (dwRes == ERROR_FILE_NOT_FOUND)
-            VGSvcError("AddAceToObjectsSecurityDescriptor: Object not found/installed: %s\n", pszObjName);
+        /* Get a pointer to the existing DACL. */
+        PSECURITY_DESCRIPTOR    pSD      = NULL;
+        PACL                    pOldDACL = NULL;
+        DWORD rcWin = g_pfnGetNamedSecurityInfoA(pszObjName, enmObjectType, DACL_SECURITY_INFORMATION,
+                                                 NULL, NULL, &pOldDACL, NULL, &pSD);
+        if (rcWin == ERROR_SUCCESS)
+        {
+            /* Initialize an EXPLICIT_ACCESS structure for the new ACE. */
+            EXPLICIT_ACCESSA ExplicitAccess;
+            RT_ZERO(ExplicitAccess);
+            ExplicitAccess.grfAccessPermissions = dwAccessRights;
+            ExplicitAccess.grfAccessMode        = fAccessMode;
+            ExplicitAccess.grfInheritance       = dwInheritance;
+            ExplicitAccess.Trustee.TrusteeForm  = enmTrusteeForm;
+            ExplicitAccess.Trustee.ptstrName    = (char *)pszTrustee;
+
+            /* Create a new ACL that merges the new ACE into the existing DACL. */
+            PACL pNewDACL = NULL;
+            rcWin = g_pfnSetEntriesInAclA(1, &ExplicitAccess, pOldDACL, &pNewDACL);
+            if (rcWin == ERROR_SUCCESS)
+            {
+                /* Attach the new ACL as the object's DACL. */
+                rcWin = g_pfnSetNamedSecurityInfoA(pszObjName, enmObjectType, DACL_SECURITY_INFORMATION,
+                                                   NULL, NULL, pNewDACL, NULL);
+                if (rcWin == ERROR_SUCCESS)
+                    rc = VINF_SUCCESS;
+                else
+                {
+                    VGSvcError("AddAceToObjectsSecurityDescriptor: SetNamedSecurityInfo: Error %u\n", rcWin);
+                    rc = RTErrConvertFromWin32(rcWin);
+                }
+                if (pNewDACL)
+                    LocalFree(pNewDACL);
+            }
+            else
+            {
+                VGSvcError("AddAceToObjectsSecurityDescriptor: SetEntriesInAcl: Error %u\n", rcWin);
+                rc = RTErrConvertFromWin32(rcWin);
+            }
+            if (pSD)
+                LocalFree(pSD);
+        }
         else
-            VGSvcError("AddAceToObjectsSecurityDescriptor: GetNamedSecurityInfo: Error %u\n", dwRes);
-        goto l_Cleanup;
+        {
+            if (rcWin == ERROR_FILE_NOT_FOUND)
+                VGSvcError("AddAceToObjectsSecurityDescriptor: Object not found/installed: %s\n", pszObjName);
+            else
+                VGSvcError("AddAceToObjectsSecurityDescriptor: GetNamedSecurityInfo: Error %u\n", rcWin);
+            rc = RTErrConvertFromWin32(rcWin);
+        }
     }
-
-    /* Initialize an EXPLICIT_ACCESS structure for the new ACE. */
-    ZeroMemory(&ea, sizeof(EXPLICIT_ACCESS));
-    ea.grfAccessPermissions = dwAccessRights;
-    ea.grfAccessMode = AccessMode;
-    ea.grfInheritance= dwInheritance;
-    ea.Trustee.TrusteeForm = TrusteeForm;
-    ea.Trustee.ptstrName = pszTrustee;
-
-    /* Create a new ACL that merges the new ACE into the existing DACL. */
-    dwRes = SetEntriesInAcl(1, &ea, pOldDACL, &pNewDACL);
-    if (ERROR_SUCCESS != dwRes)
-    {
-        VGSvcError("AddAceToObjectsSecurityDescriptor: SetEntriesInAcl: Error %u\n", dwRes);
-        goto l_Cleanup;
-    }
-
-    /* Attach the new ACL as the object's DACL. */
-    dwRes = SetNamedSecurityInfo(pszObjName, ObjectType, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDACL, NULL);
-    if (ERROR_SUCCESS != dwRes)
-    {
-        VGSvcError("AddAceToObjectsSecurityDescriptor: SetNamedSecurityInfo: Error %u\n", dwRes);
-        goto l_Cleanup;
-    }
-
-    /** @todo get rid of that spaghetti jump ... */
-l_Cleanup:
-
-    if(pSD != NULL)
-        LocalFree((HLOCAL) pSD);
-    if(pNewDACL != NULL)
-        LocalFree((HLOCAL) pNewDACL);
-
-    return dwRes;
+    else
+        rc = VINF_SUCCESS; /* fake it */
+    return rc;
 }
 
 
@@ -380,36 +434,32 @@ static int vgsvcWinStart(void)
 {
     int rc = VINF_SUCCESS;
 
-    /* Create a well-known SID for the "Builtin Users" group. */
+    /*
+     * Create a well-known SID for the "Builtin Users" group and modify the ACE
+     * for the shared folders miniport redirector DN (whatever DN means).
+     */
     PSID                     pBuiltinUsersSID = NULL;
     SID_IDENTIFIER_AUTHORITY SIDAuthWorld     = SECURITY_LOCAL_SID_AUTHORITY;
     if (AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_LOCAL_RID, 0, 0, 0, 0, 0, 0, 0, &pBuiltinUsersSID))
     {
-        DWORD dwRes = vgsvcWinAddAceToObjectsSecurityDescriptor(TEXT("\\\\.\\VBoxMiniRdrDN"),
-                                                                SE_FILE_OBJECT,
-                                                                (LPTSTR)pBuiltinUsersSID,
-                                                                TRUSTEE_IS_SID,
-                                                                FILE_GENERIC_READ | FILE_GENERIC_WRITE,
-                                                                SET_ACCESS,
-                                                                NO_INHERITANCE);
-        if (dwRes != ERROR_SUCCESS)
-        {
-            if (dwRes == ERROR_FILE_NOT_FOUND)
-            {
-                /* If we don't find our "VBoxMiniRdrDN" (for Shared Folders) object above,
-                   don't report an error; it just might be not installed. Otherwise this
-                  would cause the SCM to hang on starting up the service. */
-                rc = VINF_SUCCESS;
-            }
-            else
-                rc = RTErrConvertFromWin32(dwRes);
-        }
+        rc = vgsvcWinAddAceToObjectsSecurityDescriptor(TEXT("\\\\.\\VBoxMiniRdrDN"), SE_FILE_OBJECT,
+                                                       (LPTSTR)pBuiltinUsersSID, TRUSTEE_IS_SID,
+                                                       FILE_GENERIC_READ | FILE_GENERIC_WRITE, SET_ACCESS, NO_INHERITANCE);
+        /* If we don't find our "VBoxMiniRdrDN" (for Shared Folders) object above,
+           don't report an error; it just might be not installed. Otherwise this
+           would cause the SCM to hang on starting up the service. */
+        if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
+            rc = VINF_SUCCESS;
+
+        FreeSid(pBuiltinUsersSID);
     }
     else
         rc = RTErrConvertFromWin32(GetLastError());
-
     if (RT_SUCCESS(rc))
     {
+        /*
+         * Start the service.
+         */
         vgsvcWinSetStatus(SERVICE_START_PENDING, 0);
 
         rc = VGSvcStartServices();

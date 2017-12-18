@@ -211,13 +211,22 @@ extern decltype(Module32Next)                  *g_pfnModule32Next;
 # ifdef ___iprt_nt_nt_h___
 extern decltype(ZwQuerySystemInformation)      *g_pfnZwQuerySystemInformation;
 # endif
-#endif
+extern ULONG (WINAPI *g_pfnGetAdaptersInfo)(struct _IP_ADAPTER_INFO *, PULONG);
+#ifdef WINSOCK_VERSION
+extern decltype(WSAStartup)                    *g_pfnWSAStartup;
+extern decltype(WSACleanup)                    *g_pfnWSACleanup;
+extern decltype(WSASocketA)                    *g_pfnWSASocketA;
+extern decltype(WSAIoctl)                      *g_pfnWSAIoctl;
+extern decltype(WSAGetLastError)               *g_pfnWSAGetLastError;
+extern decltype(closesocket)                   *g_pfnclosesocket;
+extern decltype(inet_ntoa)                     *g_pfninet_ntoa;
+# endif /* WINSOCK_VERSION */
 
-#ifdef RT_OS_WINDOWS
 # ifdef VBOX_WITH_GUEST_PROPS
 extern int                      VGSvcVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache, char **ppszUserList, uint32_t *pcUsersInList);
 extern int                      VGSvcVMInfoWinGetComponentVersions(uint32_t uClientID);
 # endif /* VBOX_WITH_GUEST_PROPS */
+
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_VBOXSERVICE_MANAGEMENT
