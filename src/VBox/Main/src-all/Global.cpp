@@ -65,7 +65,7 @@ const Global::OSType Global::sOSTypes[] =
         StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, AudioControllerType_SB16, AudioCodecType_SB16  },
 
     { "Windows", "Microsoft Windows", "WindowsNT4",         "Windows NT 4",
-      VBOXOSTYPE_WinNT4,          VBOXOSHINT_NONE,
+      VBOXOSTYPE_WinNT4,          VBOXOSHINT_NOUSB,
        128,  16,  2 * _1G64, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
         StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, AudioControllerType_SB16, AudioCodecType_SB16  },
 
