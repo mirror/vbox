@@ -222,6 +222,10 @@ extern decltype(closesocket)                   *g_pfnclosesocket;
 extern decltype(inet_ntoa)                     *g_pfninet_ntoa;
 # endif /* WINSOCK_VERSION */
 
+#ifdef SE_INTERACTIVE_LOGON_NAME
+extern decltype(LsaNtStatusToWinError)         *g_pfnLsaNtStatusToWinError;
+#endif
+
 # ifdef VBOX_WITH_GUEST_PROPS
 extern int                      VGSvcVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache, char **ppszUserList, uint32_t *pcUsersInList);
 extern int                      VGSvcVMInfoWinGetComponentVersions(uint32_t uClientID);

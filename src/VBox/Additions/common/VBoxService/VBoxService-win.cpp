@@ -34,6 +34,8 @@
 #include <process.h>
 #include <aclapi.h>
 #include <tlhelp32.h>
+#define _NTDEF_
+#include <Ntsecapi.h>
 
 #include "VBoxServiceInternal.h"
 
@@ -65,6 +67,7 @@ decltype(ChangeServiceConfig2A)         *g_pfnChangeServiceConfig2A;            
 decltype(GetNamedSecurityInfoA)         *g_pfnGetNamedSecurityInfoA;            /**< NT4+ */
 decltype(SetEntriesInAclA)              *g_pfnSetEntriesInAclA;                 /**< NT4+ */
 decltype(SetNamedSecurityInfoA)         *g_pfnSetNamedSecurityInfoA;            /**< NT4+ */
+decltype(LsaNtStatusToWinError)         *g_pfnLsaNtStatusToWinError;            /**< NT3.51+ */
 /** @} */
 
 /** @name API from KERNEL32.DLL
@@ -118,6 +121,7 @@ void VGSvcWinResolveApis(void)
         RESOLVE_SYMBOL(GetNamedSecurityInfoA);
         RESOLVE_SYMBOL(SetEntriesInAclA);
         RESOLVE_SYMBOL(SetNamedSecurityInfoA);
+        RESOLVE_SYMBOL(LsaNtStatusToWinError);
         RTLdrClose(hLdrMod);
     }
 
