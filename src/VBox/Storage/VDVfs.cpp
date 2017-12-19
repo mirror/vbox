@@ -592,8 +592,6 @@ static DECLCALLBACK(int) vdVfsChain_Validate(PCRTVFSCHAINELEMENTREG pProviderReg
 
     if (pElement->cArgs < 1)
         return VERR_VFS_CHAIN_AT_LEAST_ONE_ARG;
-    if (pElement->cArgs > 2)
-        return VERR_VFS_CHAIN_AT_MOST_TWO_ARGS;
 
     /*
      * Parse the flag if present, save in pElement->uProvider.
@@ -602,7 +600,8 @@ static DECLCALLBACK(int) vdVfsChain_Validate(PCRTVFSCHAINELEMENTREG pProviderReg
                     ? VD_OPEN_FLAGS_READONLY : VD_OPEN_FLAGS_NORMAL;
     if (pElement->cArgs > 1)
     {
-        const char *psz = pElement->paArgs[1].psz;
+        pElement->paArgs[pElement->cArgs - 1].uProvider = true; /* indicates flags  */
+        const char *psz = pElement->paArgs[pElement->cArgs - 1].psz;
         if (*psz)
         {
             if (   !strcmp(psz, "ro")
@@ -616,15 +615,20 @@ static DECLCALLBACK(int) vdVfsChain_Validate(PCRTVFSCHAINELEMENTREG pProviderReg
                 fFlags &= ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_NORMAL);
                 fFlags |= VD_OPEN_FLAGS_NORMAL;
             }
-            else
+            else if (strlen(psz) <= 4)
             {
-                *poffError = pElement->paArgs[0].offSpec;
+                *poffError = pElement->paArgs[pElement->cArgs - 1].offSpec;
                 return RTErrInfoSet(pErrInfo, VERR_VFS_CHAIN_INVALID_ARGUMENT, "Expected 'ro' or 'rw' as argument");
             }
+            else
+                pElement->paArgs[pElement->cArgs - 1].uProvider = false; /* indicates no flags  */
         }
     }
 
     pElement->uProvider = fFlags;
+    if (   pElement->cArgs > 2
+        || (pElement->cArgs == 2 && !pElement->paArgs[pElement->cArgs - 1].uProvider))
+           pElement->uProvider |= RT_BIT_64(63);
     return VINF_SUCCESS;
 }
 
@@ -649,7 +653,19 @@ static DECLCALLBACK(int) vdVfsChain_Instantiate(PCRTVFSCHAINELEMENTREG pProvider
         rc = VDCreate(NULL, enmType, &pDisk);
         if (RT_SUCCESS(rc))
         {
-            rc = VDOpen(pDisk, pszFormat, pElement->paArgs[0].psz, (uint32_t)pElement->uProvider, NULL);
+            if (!(pElement->uProvider & RT_BIT_64(63)))
+                rc = VDOpen(pDisk, pszFormat, pElement->paArgs[0].psz, (uint32_t)pElement->uProvider, NULL);
+            else
+            {
+                uint32_t cChain = pElement->cArgs;
+                if (pElement->cArgs == 2 && pElement->paArgs[pElement->cArgs - 1].uProvider != 0)
+                    cChain--;
+                uint32_t const  fFinal    = (uint32_t)pElement->uProvider;
+                uint32_t const  fReadOnly = (fFinal & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_NORMAL)) | VD_OPEN_FLAGS_READONLY;
+                uint32_t        iChain;
+                for (iChain = 0; iChain < cChain && RT_SUCCESS(rc); iChain++)
+                    rc = VDOpen(pDisk, pszFormat, pElement->paArgs[iChain].psz, iChain + 1 >= cChain ? fFinal : fReadOnly, NULL);
+            }
             if (RT_SUCCESS(rc))
             {
                 RTVFSFILE hVfsFile;
@@ -693,7 +709,9 @@ static RTVFSCHAINELEMENTREG g_rtVfsChainIsoFsVolReg =
     /* fReserved = */           0,
     /* pszName = */             "vd",
     /* ListEntry = */           { NULL, NULL },
-    /* pszHelp = */             "Opens a container image using the VD API.\n",
+    /* pszHelp = */             "Opens a container image using the VD API.\n"
+                                "To open a snapshot chain, start with the root image and end with the more recent diff image.\n"
+                                "The final argument can be a flag 'ro' or 'r' for read-only, 'rw' for read-write.",
     /* pfnValidate = */         vdVfsChain_Validate,
     /* pfnInstantiate = */      vdVfsChain_Instantiate,
     /* pfnCanReuseElement = */  vdVfsChain_CanReuseElement,
