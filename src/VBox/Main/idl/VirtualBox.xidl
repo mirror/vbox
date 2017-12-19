@@ -24472,6 +24472,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 </if> <!-- bird: shouldn't this if-element at leat include the VBoxSDS module, if not the whole system service application? -->
 
+<!-- Warning: the name of module should coincide with real windows service name.
+     VirtualBox_Typelib.xsl and VirtualBox_TypeLibWithInterfaces.xsl uses this name to make list of COM registration
+     actions in Wix. Installer will not able to register COM windows service properly if the name of module
+     differs from SCM windows service name.
+     The Name of windows service is referenced in different places.
+     Don't forget to change it in other places too If you change it here :
+         VBoxMergeApp.wxi (cp_VBoxSDS component),
+         VBoxSDS.cpp and VBoxProxyStub.cpp
+     -->
   <module name="VBoxSDS" context="LocalService">
     <class name="VirtualBoxSDS" uuid="74ab5ffe-8726-4435-aa7e-876d705bcba5"
            namespace="virtualbox.org">

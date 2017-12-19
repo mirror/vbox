@@ -233,11 +233,6 @@
     <CustomAction Id="ca_UninstallBranding" BinaryKey="VBoxInstallHelper" DllEntry="UninstallBranding" Execute="deferred" Return="check" Impersonate="no"/>
     <CustomAction Id="ca_UninstallBrandingArgs" Property="ca_UninstallBranding" Value="[INSTALLDIR]" Execute="immediate"/>
 
-<?if $(env.VBOX_WITH_SDS) = "yes" ?>
-    <CustomAction Id="ca_InstallVBoxSDS" Directory="INSTALLDIR" ExeCommand='"[INSTALLDIR]\VBoxSDS.exe" --regservice' Return="check" Impersonate="no" />
-    <CustomAction Id="ca_UninstallVBoxSDS" Directory="INSTALLDIR" ExeCommand='"[INSTALLDIR]\VBoxSDS.exe" --unregservice' Return="check" Impersonate="no" />
-<?endif?>
-
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
     <?include VBoxMergeAppCA.wxi ?>
     <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
@@ -461,6 +456,10 @@
         <ComponentRef Id="cp_UnattendedTemplates" />
 <?endif ?>
 
+<?if $(env.VBOX_WITH_SDS) = "yes" ?>
+        <ComponentRef Id="cp_VBoxSDS" />
+<?endif ?>
+
         <Feature Id="VBoxUSB" Title="VirtualBox USB Support" Level="1"
                  Description="!(loc.VB_USBDriver)"
                  ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
@@ -576,11 +575,6 @@
         <!-- Uninstall branding on complete uninstall, not on update -->
         <Custom Action="ca_UninstallBrandingArgs" Before="ca_UninstallBranding" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
         <Custom Action="ca_UninstallBranding" Before="InstallFinalize" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
-
-<?if $(env.VBOX_WITH_SDS) = "yes" ?>
-        <Custom Action="ca_InstallVBoxSDS" After="InstallFinalize" ><![CDATA[NOT REMOVE]]></Custom>
-        <Custom Action="ca_UninstallVBoxSDS" Before="InstallFinalize" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
-<?endif ?>
 
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
         <?include VBoxMergeAppSeq.wxi ?>

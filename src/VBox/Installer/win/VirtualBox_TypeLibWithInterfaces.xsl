@@ -26,6 +26,7 @@
 <xsl:strip-space elements="*"/>
 
 <xsl:param name="a_sTarget">all</xsl:param>
+<xsl:param name ="a_sWithSDS" select="no"/>
 <xsl:param name="a_sProxyStubClsid">{0BB3B78C-1807-4249-5BA5-EA42D66AF0BF}</xsl:param>
 <xsl:variable name="g_sProxyStubClsid" select="translate($a_sProxyStubClsid,'abcdef','ABCDEF')"/>
 
@@ -66,7 +67,7 @@
 * filters to skip VBoxSDS class and interfaces if a VBOX_WITH_SDS is not defined in kmk
 -->
     <xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']">
-        <xsl:if test="a_sWithSDS='yes'" >
+        <xsl:if test="$a_sWithSDS='yes'" >
             <xsl:call-template name="application_template" />
         </xsl:if>
     </xsl:template>
@@ -92,7 +93,7 @@
 <!--
 Applications.
 -->
-<xsl:template match="application">
+<xsl:template match="application" name="application_template">
     <AppId>
         <xsl:attribute name="Id">
             <xsl:value-of select="@uuid"/>
@@ -100,6 +101,15 @@ Applications.
         <xsl:attribute name="Description">
             <xsl:value-of select="@name"/> Application
         </xsl:attribute>
+        <!--
+            The name of windows service should be defined as module name in .xidl.
+            It's viable for correct registration of COM windows service.
+        -->
+        <xsl:if test="module/@context = 'LocalService'">
+            <xsl:attribute name="LocalService" >
+                <xsl:value-of select="module/@name"/>
+            </xsl:attribute>
+        </xsl:if>
         <xsl:choose>
             <xsl:when test="$a_sTarget = 'VBoxClient-x86'">
                 <xsl:apply-templates select="module[@name='VBoxC']/class"/>
@@ -130,8 +140,8 @@ Applications.
     <xsl:attribute name="Context">
       <xsl:choose>
         <xsl:when test="../@context='InprocServer'">InprocServer32</xsl:when>
-        <xsl:when test="../@context='LocalServer'">LocalServer32</xsl:when>
-          <xsl:when test="../@context='LocalService'">LocalServer32</xsl:when>
+        <xsl:when test="../@context='LocalServer'" >LocalServer32</xsl:when>
+        <xsl:when test="../@context='LocalService'">LocalServer32</xsl:when>
         <xsl:otherwise>
           <xsl:message terminate="yes">
             <xsl:value-of select="concat(../../@name,'::',../@name,': ')"/>
