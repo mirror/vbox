@@ -573,8 +573,8 @@ static NTSTATUS vgdrvNtInit(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT pDevObj,
          * Map physical address of VMMDev memory into MMIO region
          * and init the common device extension bits.
          */
-        void *pvMMIOBase = NULL;
-        uint32_t cbMMIO = 0;
+        void    *pvMMIOBase = NULL;
+        uint32_t cbMMIO     = 0;
         rcNt = vgdrvNtMapVMMDevMemory(pDevExt,
                                       pDevExt->uVmmDevMemoryPhysAddr,
                                       pDevExt->cbVmmDevMemory,
@@ -592,97 +592,99 @@ static NTSTATUS vgdrvNtInit(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT pDevObj,
                                             pvMMIOBase, cbMMIO,
                                             vgdrvNtVersionToOSType(g_enmVGDrvNtVer),
                                             VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
-            if (RT_FAILURE(vrc))
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = VbglR0GRAlloc((VMMDevRequestHeader **)&pDevExt->pPowerStateRequest,
+                                    sizeof(VMMDevPowerStateRequest), VMMDevReq_SetPowerStatus);
+                if (RT_SUCCESS(vrc))
+                {
+                    /*
+                     * Register DPC and ISR.
+                     */
+                    LogFlowFunc(("Initializing DPC/ISR (pDevObj=%p)...\n", pDevExt->pDeviceObject));
+                    IoInitializeDpcRequest(pDevExt->pDeviceObject, vgdrvNtDpcHandler);
+
+                    ULONG uInterruptVector = pDevExt->uInterruptVector;
+                    KIRQL uHandlerIrql     = (KIRQL)pDevExt->uInterruptLevel;
+#ifdef TARGET_NT4
+                    if (!pIrp)
+                    {
+                        /* NT4: Get an interrupt vector.  Only proceed if the device provides an interrupt. */
+                        if (   uInterruptVector
+                            || pDevExt->uInterruptLevel)
+                        {
+                            LogFlowFunc(("Getting interrupt vector (HAL): Bus=%u, IRQL=%u, Vector=%u\n",
+                                         pDevExt->uBus, pDevExt->uInterruptLevel, pDevExt->uInterruptVector));
+                            uInterruptVector = HalGetInterruptVector(PCIBus,
+                                                                     pDevExt->uBus,
+                                                                     pDevExt->uInterruptLevel,
+                                                                     pDevExt->uInterruptVector,
+                                                                     &uHandlerIrql,
+                                                                     &pDevExt->fInterruptAffinity);
+                            LogFlowFunc(("HalGetInterruptVector returns vector=%u\n", uInterruptVector));
+                        }
+                        else
+                            LogFunc(("Device does not provide an interrupt!\n"));
+                    }
+#endif
+                    if (uInterruptVector)
+                    {
+                        LogFlowFunc(("Connecting interrupt (IntVector=%#u), uHandlerIrql=%u) ...\n",
+                                     uInterruptVector, uHandlerIrql));
+
+                        rcNt = IoConnectInterrupt(&pDevExt->pInterruptObject,                 /* Out: interrupt object. */
+                                                  vgdrvNtIsrHandler,                          /* Our ISR handler. */
+                                                  pDevExt,                                    /* Device context. */
+                                                  NULL,                                       /* Optional spinlock. */
+                                                  uInterruptVector,                           /* Interrupt vector. */
+                                                  uHandlerIrql,                               /* Irql. */
+                                                  uHandlerIrql,                               /* SynchronizeIrql. */
+                                                  pDevExt->enmInterruptMode,                  /* LevelSensitive or Latched. */
+                                                  TRUE,                                       /* Shareable interrupt. */
+                                                  pDevExt->fInterruptAffinity,                /* CPU affinity. */
+                                                  FALSE);                                     /* Don't save FPU stack. */
+                        if (NT_ERROR(rcNt))
+                            LogFunc(("Could not connect interrupt: rcNt=%#x!\n", rcNt));
+                    }
+                    else
+                        LogFunc(("No interrupt vector found!\n"));
+                    if (NT_SUCCESS(rcNt))
+                    {
+                        /*
+                         * Once we've read configuration from register and host, we're finally read.
+                         */
+                        /** @todo clean up guest ring-3 logging, keeping it separate from the kernel to avoid sharing limits with it. */
+                        pDevExt->Core.fLoggingEnabled = true;
+                        vgdrvNtReadConfiguration(pDevExt);
+
+                        /* Ready to rumble! */
+                        LogRelFunc(("Device is ready!\n"));
+                        VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_WORKING);
+                        return STATUS_SUCCESS;
+                    }
+                    pDevExt->pInterruptObject = NULL;
+
+                    VbglR0GRFree(&pDevExt->pPowerStateRequest->header);
+                    pDevExt->pPowerStateRequest = NULL;
+                }
+                else
+                {
+                    LogFunc(("Alloc for pPowerStateRequest failed, vrc=%Rrc\n", vrc));
+                    rcNt = STATUS_UNSUCCESSFUL;
+                }
+
+                VGDrvCommonDeleteDevExt(&pDevExt->Core);
+            }
+            else
             {
                 LogFunc(("Could not init device extension, vrc=%Rrc\n", vrc));
                 rcNt = STATUS_DEVICE_CONFIGURATION_ERROR;
             }
+            vgdrvNtUnmapVMMDevMemory(pDevExt);
         }
         else
             LogFunc(("Could not map physical address of VMMDev, rcNt=%#x\n", rcNt));
     }
-
-    if (NT_SUCCESS(rcNt))
-    {
-        int vrc = VbglR0GRAlloc((VMMDevRequestHeader **)&pDevExt->pPowerStateRequest,
-                              sizeof(VMMDevPowerStateRequest), VMMDevReq_SetPowerStatus);
-        if (RT_FAILURE(vrc))
-        {
-            LogFunc(("Alloc for pPowerStateRequest failed, vrc=%Rrc\n", vrc));
-            rcNt = STATUS_UNSUCCESSFUL;
-        }
-    }
-
-    if (NT_SUCCESS(rcNt))
-    {
-        /*
-         * Register DPC and ISR.
-         */
-        LogFlowFunc(("Initializing DPC/ISR (pDevObj=%p)...\n", pDevExt->pDeviceObject));
-        IoInitializeDpcRequest(pDevExt->pDeviceObject, vgdrvNtDpcHandler);
-
-        ULONG uInterruptVector = pDevExt->uInterruptVector;
-        KIRQL uHandlerIrql     = (KIRQL)pDevExt->uInterruptLevel;
-#ifdef TARGET_NT4
-        if (!pIrp)
-        {
-            /* NT4: Get an interrupt vector.  Only proceed if the device provides an interrupt. */
-            if (   uInterruptVector
-                || pDevExt->uInterruptLevel)
-            {
-                LogFlowFunc(("Getting interrupt vector (HAL): Bus=%u, IRQL=%u, Vector=%u\n",
-                             pDevExt->uBus, pDevExt->uInterruptLevel, pDevExt->uInterruptVector));
-                uInterruptVector = HalGetInterruptVector(PCIBus,
-                                                         pDevExt->uBus,
-                                                         pDevExt->uInterruptLevel,
-                                                         pDevExt->uInterruptVector,
-                                                         &uHandlerIrql,
-                                                         &pDevExt->fInterruptAffinity);
-                LogFlowFunc(("HalGetInterruptVector returns vector=%u\n", uInterruptVector));
-            }
-            else
-                LogFunc(("Device does not provide an interrupt!\n"));
-        }
-#endif
-        if (uInterruptVector)
-        {
-            LogFlowFunc(("Connecting interrupt (IntVector=%#u), uHandlerIrql=%u) ...\n", uInterruptVector, uHandlerIrql));
-
-            rcNt = IoConnectInterrupt(&pDevExt->pInterruptObject,                 /* Out: interrupt object. */
-                                      vgdrvNtIsrHandler,                          /* Our ISR handler. */
-                                      pDevExt,                                    /* Device context. */
-                                      NULL,                                       /* Optional spinlock. */
-                                      uInterruptVector,                           /* Interrupt vector. */
-                                      uHandlerIrql,                               /* Irql. */
-                                      uHandlerIrql,                               /* SynchronizeIrql. */
-                                      pDevExt->enmInterruptMode,                  /* LevelSensitive or Latched. */
-                                      TRUE,                                       /* Shareable interrupt. */
-                                      pDevExt->fInterruptAffinity,                /* CPU affinity. */
-                                      FALSE);                                     /* Don't save FPU stack. */
-            if (NT_ERROR(rcNt))
-                LogFunc(("Could not connect interrupt: rcNt=%#x!\n", rcNt));
-        }
-        else
-            LogFunc(("No interrupt vector found!\n"));
-    }
-
-    if (NT_SUCCESS(rcNt))
-    {
-        /*
-         * Once we've read configuration from register and host, we're finally read.
-         */
-        pDevExt->Core.fLoggingEnabled = true; /** @todo clean up guest ring-3 logging, keeping it separate from the kernel to avoid sharing limits with it. */
-        vgdrvNtReadConfiguration(pDevExt);
-
-        /* Ready to rumble! */
-        LogRelFunc(("Device is ready!\n"));
-        VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_WORKING);
-    }
-    else
-        pDevExt->pInterruptObject = NULL;
-
-    /** @todo r=bird: The error cleanup here is completely missing. We'll leak a
-     *        whole bunch of things... */
 
     LogFunc(("Returned with rcNt=%#x\n", rcNt));
     return rcNt;
@@ -853,7 +855,6 @@ static NTSTATUS vgdrvNt4FindPciDevice(PULONG puBus, PPCI_SLOT_NUMBER pSlot)
  */
 static NTSTATUS vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
 {
-    NTSTATUS rc;
     LogFlowFuncEnter();
 
     /*
@@ -862,16 +863,16 @@ static NTSTATUS vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT p
     UNICODE_STRING DevName;
     RtlInitUnicodeString(&DevName, VBOXGUEST_DEVICE_NAME_NT);
     PDEVICE_OBJECT pDeviceObject = NULL;
-    rc = IoCreateDevice(pDrvObj, sizeof(VBOXGUESTDEVEXTWIN), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDeviceObject);
-    if (NT_SUCCESS(rc))
+    NTSTATUS rcNt = IoCreateDevice(pDrvObj, sizeof(VBOXGUESTDEVEXTWIN), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDeviceObject);
+    if (NT_SUCCESS(rcNt))
     {
         /*
          * Create symbolic link (DOS devices).
          */
         UNICODE_STRING DosName;
         RtlInitUnicodeString(&DosName, VBOXGUEST_DEVICE_NAME_DOS);
-        rc = IoCreateSymbolicLink(&DosName, &DevName);
-        if (NT_SUCCESS(rc))
+        rcNt = IoCreateSymbolicLink(&DosName, &DevName);
+        if (NT_SUCCESS(rcNt))
         {
             /*
              * Setup the device extension.
@@ -895,15 +896,15 @@ static NTSTATUS vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT p
 #ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
                 vgdrvNtBugCheckCallback(pDevExt); /* Ignore failure! */
 #endif
-                if (NT_SUCCESS(rc))
+                if (NT_SUCCESS(rcNt))
                 {
-                    /* VBoxGuestPower is pageable; ensure we are not called at elevated IRQL */
+                    /* Ensure we are not called at elevated IRQL, even if our code isn't pagable any more. */
                     pDeviceObject->Flags |= DO_POWER_PAGABLE;
 
                     /* Driver is ready now. */
                     pDeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
-                    LogFlowFunc(("Returning with rc=%#x (success)\n", rc));
-                    return rc;
+                    LogFlowFunc(("Returning with rcNt=%#x (success)\n", rcNt));
+                    return rcNt;
                 }
 
                 IoDetachDevice(pDevExt->pNextLowerDriver);
@@ -911,22 +912,23 @@ static NTSTATUS vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT p
             else
             {
                 LogFunc(("IoAttachDeviceToDeviceStack did not give a nextLowerDriver!\n"));
-                rc = STATUS_DEVICE_NOT_CONNECTED;
+                rcNt = STATUS_DEVICE_NOT_CONNECTED;
             }
 
             /* bail out */
             IoDeleteSymbolicLink(&DosName);
         }
         else
-            LogFunc(("IoCreateSymbolicLink failed with rc=%#x!\n", rc));
+            LogFunc(("IoCreateSymbolicLink failed with rcNt=%#x!\n", rcNt));
         IoDeleteDevice(pDeviceObject);
     }
     else
-        LogFunc(("IoCreateDevice failed with rc=%#x!\n", rc));
+        LogFunc(("IoCreateDevice failed with rcNt=%#x!\n", rcNt));
 
-    LogFunc(("Returning with rc=%#x\n", rc));
-    return rc;
+    LogFunc(("Returning with rcNt=%#x\n", rcNt));
+    return rcNt;
 }
+
 
 /**
  * Irp completion routine for PnP Irps we send.
@@ -961,22 +963,21 @@ static NTSTATUS vgdrvNt5PlusPnPSendIrpSynchronously(PDEVICE_OBJECT pDevObj, PIRP
     IoCopyCurrentIrpStackLocationToNext(pIrp);
     IoSetCompletionRoutine(pIrp, (PIO_COMPLETION_ROUTINE)vgdrvNt5PlusPnpIrpComplete, &Event, TRUE, TRUE, TRUE);
 
-    NTSTATUS rc = IoCallDriver(pDevObj, pIrp);
-
-    if (rc == STATUS_PENDING)
+    NTSTATUS rcNt = IoCallDriver(pDevObj, pIrp);
+    if (rcNt == STATUS_PENDING)
     {
         KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
-        rc = pIrp->IoStatus.Status;
+        rcNt = pIrp->IoStatus.Status;
     }
 
     if (   !fStrict
-        && (rc == STATUS_NOT_SUPPORTED || rc == STATUS_INVALID_DEVICE_REQUEST))
+        && (rcNt == STATUS_NOT_SUPPORTED || rcNt == STATUS_INVALID_DEVICE_REQUEST))
     {
-        rc = STATUS_SUCCESS;
+        rcNt = STATUS_SUCCESS;
     }
 
-    Log(("vgdrvNt5PlusPnPSendIrpSynchronously: Returning 0x%x\n", rc));
-    return rc;
+    Log(("vgdrvNt5PlusPnPSendIrpSynchronously: Returning %#x\n", rcNt));
+    return rcNt;
 }
 
 
@@ -1047,16 +1048,8 @@ static NTSTATUS vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                     rc = STATUS_UNSUCCESSFUL;
                 }
             }
-
             if (NT_ERROR(rc))
-            {
                 Log(("vgdrvNtNt5PlusPnP: START_DEVICE: Error: rc = 0x%x\n", rc));
-
-                /* Need to unmap memory in case of errors ... */
-/** @todo r=bird: vgdrvNtInit maps it and is responsible for cleaning up its own friggin mess...
- * Fix it instead of kind of working around things there!! */
-                vgdrvNtUnmapVMMDevMemory(pDevExt);
-            }
             break;
         }
 
