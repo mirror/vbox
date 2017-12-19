@@ -592,7 +592,6 @@ DECLHIDDEN(int) rtR0MpNtInit(RTNTSDBOSVER const *pOsVerInfo)
     else
         g_pfnrtHalRequestIpiW7Plus = NULL;
 
-    g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingDpc;
     if (   g_pfnrtHalRequestIpiW7Plus
         && g_pfnrtKeInitializeAffinityEx
         && g_pfnrtKeAddProcessorAffinityEx
@@ -606,9 +605,18 @@ DECLHIDDEN(int) rtR0MpNtInit(RTNTSDBOSVER const *pOsVerInfo)
         DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingBroadcastIpi\n");
         g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingBroadcastIpi;
     }
-    else
+    else if (g_pfnrtKeSetTargetProcessorDpc)
+    {
         DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingDpc\n");
-    /* else: Windows XP should send always send an IPI -> VERIFY */
+        g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingDpc;
+        /* Windows XP should send always send an IPI -> VERIFY */
+    }
+    else
+    {
+        DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingFailureNotSupported\n");
+        Assert(pOsVerInfo->uMajorVer == 3 && pOsVerInfo->uMinorVer <= 50);
+        g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingFailureNotSupported;
+    }
 
     return VINF_SUCCESS;
 }
@@ -1337,8 +1345,10 @@ DECLHIDDEN(int) rtMpNtSetTargetProcessorDpc(KDPC *pDpc, RTCPUID idCpu)
                         ("KeSetTargetProcessorDpcEx(,%u(%u/%u)) -> %#x\n", idCpu, ProcNum.Group, ProcNum.Number, rcNt),
                         RTErrConvertFromNtStatus(rcNt));
     }
+    else if (g_pfnrtKeSetTargetProcessorDpc)
+        g_pfnrtKeSetTargetProcessorDpc(pDpc, RTMpCpuIdToSetIndex(idCpu));
     else
-        KeSetTargetProcessorDpc(pDpc, RTMpCpuIdToSetIndex(idCpu));
+        return VERR_NOT_SUPPORTED;
     return VINF_SUCCESS;
 }
 
@@ -1413,19 +1423,22 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
     if (enmCpuid == RT_NT_CPUID_SPECIFIC)
     {
         KeInitializeDpc(&paExecCpuDpcs[0], rtmpNtDPCWrapper, pArgs);
-        KeSetImportanceDpc(&paExecCpuDpcs[0], HighImportance);
+        if (g_pfnrtKeSetImportanceDpc)
+            g_pfnrtKeSetImportanceDpc(&paExecCpuDpcs[0], HighImportance);
         rc = rtMpNtSetTargetProcessorDpc(&paExecCpuDpcs[0], idCpu);
         pArgs->idCpu = idCpu;
     }
     else if (enmCpuid == RT_NT_CPUID_PAIR)
     {
         KeInitializeDpc(&paExecCpuDpcs[0], rtmpNtDPCWrapper, pArgs);
-        KeSetImportanceDpc(&paExecCpuDpcs[0], HighImportance);
+        if (g_pfnrtKeSetImportanceDpc)
+            g_pfnrtKeSetImportanceDpc(&paExecCpuDpcs[0], HighImportance);
         rc = rtMpNtSetTargetProcessorDpc(&paExecCpuDpcs[0], idCpu);
         pArgs->idCpu = idCpu;
 
         KeInitializeDpc(&paExecCpuDpcs[1], rtmpNtDPCWrapper, pArgs);
-        KeSetImportanceDpc(&paExecCpuDpcs[1], HighImportance);
+        if (g_pfnrtKeSetImportanceDpc)
+            g_pfnrtKeSetImportanceDpc(&paExecCpuDpcs[1], HighImportance);
         if (RT_SUCCESS(rc))
             rc = rtMpNtSetTargetProcessorDpc(&paExecCpuDpcs[1], (int)idCpu2);
         pArgs->idCpu2 = idCpu2;
@@ -1437,7 +1450,8 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
             if (RTCpuSetIsMemberByIndex(&OnlineSet, i))
             {
                 KeInitializeDpc(&paExecCpuDpcs[i], rtmpNtDPCWrapper, pArgs);
-                KeSetImportanceDpc(&paExecCpuDpcs[i], HighImportance);
+                if (g_pfnrtKeSetImportanceDpc)
+                    g_pfnrtKeSetImportanceDpc(&paExecCpuDpcs[i], HighImportance);
                 rc = rtMpNtSetTargetProcessorDpc(&paExecCpuDpcs[i], RTMpCpuIdFromSetIndex(i));
             }
     }
@@ -1692,7 +1706,8 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     pArgs->CallbackArgs.cRefs     = 2;
     KeInitializeEvent(&pArgs->DoneEvt, SynchronizationEvent, FALSE /* not signalled */);
     KeInitializeDpc(&pArgs->Dpc, rtMpNtOnSpecificDpcWrapper, pArgs);
-    KeSetImportanceDpc(&pArgs->Dpc, HighImportance);
+    if (g_pfnrtKeSetImportanceDpc)
+        g_pfnrtKeSetImportanceDpc(&pArgs->Dpc, HighImportance);
     rc = rtMpNtSetTargetProcessorDpc(&pArgs->Dpc, idCpu);
     if (RT_FAILURE(rc))
     {
@@ -1870,6 +1885,11 @@ int rtMpPokeCpuUsingHalReqestIpiPreW7(RTCPUID idCpu)
     return VINF_SUCCESS;
 }
 
+int rtMpPokeCpuUsingFailureNotSupported(RTCPUID idCpu)
+{
+    NOREF(idCpu);
+    return VERR_NOT_SUPPORTED;
+}
 
 int rtMpPokeCpuUsingDpc(RTCPUID idCpu)
 {
@@ -1886,7 +1906,8 @@ int rtMpPokeCpuUsingDpc(RTCPUID idCpu)
         for (unsigned i = 0; i < g_cRtMpNtMaxCpus; i++)
         {
             KeInitializeDpc(&s_aPokeDpcs[i], rtMpNtPokeCpuDummy, NULL);
-            KeSetImportanceDpc(&s_aPokeDpcs[i], HighImportance);
+            if (g_pfnrtKeSetImportanceDpc)
+                g_pfnrtKeSetImportanceDpc(&s_aPokeDpcs[i], HighImportance);
             int rc = rtMpNtSetTargetProcessorDpc(&s_aPokeDpcs[i], idCpu);
             if (RT_FAILURE(rc))
                 return rc;
@@ -1900,8 +1921,9 @@ int rtMpPokeCpuUsingDpc(RTCPUID idCpu)
     KIRQL oldIrql;
     KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
 
-    KeSetImportanceDpc(&s_aPokeDpcs[idCpu], HighImportance);
-    KeSetTargetProcessorDpc(&s_aPokeDpcs[idCpu], (int)idCpu);
+    if (g_pfnrtKeSetImportanceDpc)
+        g_pfnrtKeSetImportanceDpc(&s_aPokeDpcs[idCpu], HighImportance);
+    g_pfnrtKeSetTargetProcessorDpc(&s_aPokeDpcs[idCpu], (int)idCpu);
 
     /* Assuming here that high importance DPCs will be delivered immediately; or at least an IPI will be sent immediately.
        Note! Not true on at least Vista & Windows 7 */

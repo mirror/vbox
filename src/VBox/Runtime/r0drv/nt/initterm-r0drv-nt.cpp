@@ -88,6 +88,10 @@ PFNKEQUERYLOGICALPROCESSORRELATIONSHIP  g_pfnrtKeQueryLogicalProcessorRelationsh
 PFNKEREGISTERPROCESSORCHANGECALLBACK    g_pfnrtKeRegisterProcessorChangeCallback;
 /** KeDeregisterProcessorChangeCallback - Introducted in Windows 7. */
 PFNKEDEREGISTERPROCESSORCHANGECALLBACK  g_pfnrtKeDeregisterProcessorChangeCallback;
+/** KeSetImportanceDpc - Introducted in NT 3.51. */
+decltype(KeSetImportanceDpc)           *g_pfnrtKeSetImportanceDpc;
+/** KeSetTargetProcessorDpc - Introducted in NT 3.51. */
+decltype(KeSetTargetProcessorDpc)      *g_pfnrtKeSetTargetProcessorDpc;
 /** Pointer to the MmProtectMdlSystemAddress kernel function if it's available.
  * This API was introduced in XP. */
 decltype(MmProtectMdlSystemAddress)    *g_pfnrtMmProtectMdlSystemAddress;
@@ -99,6 +103,10 @@ decltype(MmFreePagesFromMdl)           *g_pfnrtMmFreePagesFromMdl;
 decltype(MmMapLockedPagesSpecifyCache) *g_pfnrtMmMapLockedPagesSpecifyCache;
 /** MmAllocateContiguousMemorySpecifyCache - Introduced in Windows 2000. */
 decltype(MmAllocateContiguousMemorySpecifyCache) *g_pfnrtMmAllocateContiguousMemorySpecifyCache;
+/** MmSecureVirtualMemory - Introduced in NT 3.51.   */
+decltype(MmSecureVirtualMemory)        *g_pfnrtMmSecureVirtualMemory;
+/** MmUnsecureVirtualMemory - Introduced in NT 3.51.   */
+decltype(MmUnsecureVirtualMemory)      *g_pfnrtMmUnsecureVirtualMemory;
 /** RtlGetVersion, introduced in ??. */
 PFNRTRTLGETVERSION                      g_pfnrtRtlGetVersion;
 #ifndef RT_ARCH_AMD64
@@ -294,11 +302,15 @@ DECLHIDDEN(int) rtR0InitNative(void)
     GET_SYSTEM_ROUTINE(KeQueryLogicalProcessorRelationship);
     GET_SYSTEM_ROUTINE(KeRegisterProcessorChangeCallback);
     GET_SYSTEM_ROUTINE(KeDeregisterProcessorChangeCallback);
+    GET_SYSTEM_ROUTINE(KeSetImportanceDpc);
+    GET_SYSTEM_ROUTINE(KeSetTargetProcessorDpc);
     GET_SYSTEM_ROUTINE(MmProtectMdlSystemAddress);
     GET_SYSTEM_ROUTINE(MmAllocatePagesForMdl);
     GET_SYSTEM_ROUTINE(MmFreePagesFromMdl);
     GET_SYSTEM_ROUTINE(MmMapLockedPagesSpecifyCache);
     GET_SYSTEM_ROUTINE(MmAllocateContiguousMemorySpecifyCache);
+    GET_SYSTEM_ROUTINE(MmSecureVirtualMemory);
+    GET_SYSTEM_ROUTINE(MmUnsecureVirtualMemory);
 
     GET_SYSTEM_ROUTINE_TYPE(RtlGetVersion, PFNRTRTLGETVERSION);
 #ifndef RT_ARCH_AMD64

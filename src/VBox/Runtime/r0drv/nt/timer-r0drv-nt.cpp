@@ -532,7 +532,8 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
             }
             else
                 KeInitializeDpc(&pTimer->aSubTimers[iCpu].NtDpc, rtTimerNtOmniSlaveCallback, &pTimer->aSubTimers[iCpu]);
-            KeSetImportanceDpc(&pTimer->aSubTimers[iCpu].NtDpc, HighImportance);
+            if (g_pfnrtKeSetImportanceDpc)
+                g_pfnrtKeSetImportanceDpc(&pTimer->aSubTimers[iCpu].NtDpc, HighImportance);
             rc = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[iCpu].NtDpc, iCpu);
         }
         Assert(pTimer->idCpu != NIL_RTCPUID);
@@ -547,7 +548,8 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
         pTimer->aSubTimers[0].pParent = pTimer;
 
         KeInitializeDpc(&pTimer->aSubTimers[0].NtDpc, rtTimerNtSimpleCallback, pTimer);
-        KeSetImportanceDpc(&pTimer->aSubTimers[0].NtDpc, HighImportance);
+        if (g_pfnrtKeSetImportanceDpc)
+            g_pfnrtKeSetImportanceDpc(&pTimer->aSubTimers[0].NtDpc, HighImportance);
         if (pTimer->fSpecificCpu)
             rc = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[0].NtDpc, (int)pTimer->idCpu);
     }

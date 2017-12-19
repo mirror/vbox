@@ -95,7 +95,7 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 pMemNt->Core.pv = NULL;
                 if (pMemNt->pvSecureMem)
                 {
-                    MmUnsecureVirtualMemory(pMemNt->pvSecureMem);
+                    g_pfnrtMmUnsecureVirtualMemory(pMemNt->pvSecureMem);
                     pMemNt->pvSecureMem = NULL;
                 }
 
@@ -158,7 +158,7 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_LOCK:
             if (pMemNt->pvSecureMem)
             {
-                MmUnsecureVirtualMemory(pMemNt->pvSecureMem);
+                g_pfnrtMmUnsecureVirtualMemory(pMemNt->pvSecureMem);
                 pMemNt->pvSecureMem = NULL;
             }
             for (uint32_t i = 0; i < pMemNt->cMdls; i++)
@@ -601,13 +601,15 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uin
             break;
         }
 
-        if (R0Process != NIL_RTR0PROCESS)
+        if (   R0Process != NIL_RTR0PROCESS
+            && g_pfnrtMmSecureVirtualMemory
+            && g_pfnrtMmUnsecureVirtualMemory)
         {
             /* Make sure the user process can't change the allocation. */
-            pMemNt->pvSecureMem = MmSecureVirtualMemory(pv, cb,
-                                                        fAccess & RTMEM_PROT_WRITE
-                                                        ? PAGE_READWRITE
-                                                        : PAGE_READONLY);
+            pMemNt->pvSecureMem = g_pfnrtMmSecureVirtualMemory(pv, cb,
+                                                               fAccess & RTMEM_PROT_WRITE
+                                                               ? PAGE_READWRITE
+                                                               : PAGE_READONLY);
             if (!pMemNt->pvSecureMem)
             {
                 rc = VERR_NO_MEMORY;
@@ -638,7 +640,8 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uin
     }
     if (pMemNt->pvSecureMem)
     {
-        MmUnsecureVirtualMemory(pMemNt->pvSecureMem);
+        if (g_pfnrtMmUnsecureVirtualMemory)
+            g_pfnrtMmUnsecureVirtualMemory(pMemNt->pvSecureMem);
         pMemNt->pvSecureMem = NULL;
     }
 
