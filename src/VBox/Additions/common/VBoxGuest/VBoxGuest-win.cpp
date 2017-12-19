@@ -162,7 +162,7 @@ typedef VBOXGUESTDEVEXTWIN *PVBOXGUESTDEVEXTWIN;
 typedef enum VGDRVNTVER
 {
     VGDRVNTVER_INVALID = 0,
-    VGDRVNTVER_WINNT31,
+    VGDRVNTVER_WINNT310,
     VGDRVNTVER_WINNT350,
     VGDRVNTVER_WINNT351,
     VGDRVNTVER_WINNT4,
@@ -284,16 +284,8 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
     NTSTATUS rcNt = STATUS_SUCCESS;
     switch (ulMajorVer)
     {
-        case 10:
-            switch (ulMinorVer)
-            {
-                case 0:
-                    /* Windows 10 Preview builds starting with 9926. */
-                default:
-                    /* Also everything newer. */
-                    g_enmVGDrvNtVer = VGDRVNTVER_WIN10;
-                    break;
-            }
+        case 10: /* Windows 10 Preview builds starting with 9926. */
+            g_enmVGDrvNtVer = VGDRVNTVER_WIN10;
             break;
         case 6: /* Windows Vista or Windows 7 (based on minor ver) */
             switch (ulMinorVer)
@@ -310,10 +302,8 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                 case 3:
                     g_enmVGDrvNtVer = VGDRVNTVER_WIN81;
                     break;
-                case 4:
-                    /* Windows 10 Preview builds. */
+                case 4: /* Windows 10 Preview builds. */
                 default:
-                    /* Also everything newer. */
                     g_enmVGDrvNtVer = VGDRVNTVER_WIN10;
                     break;
             }
@@ -342,20 +332,15 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
             else if (ulMinorVer >= 50)
                 g_enmVGDrvNtVer = VGDRVNTVER_WINNT350;
             else
-                g_enmVGDrvNtVer = VGDRVNTVER_WINNT31;
+                g_enmVGDrvNtVer = VGDRVNTVER_WINNT310;
             break;
         default:
+            /* Major versions above 6 gets classified as windows 10. */
             if (ulMajorVer > 6)
-            {
-                /* "Windows 10 mode" for Windows 8.1+. */
                 g_enmVGDrvNtVer = VGDRVNTVER_WIN10;
-            }
             else
             {
-                if (ulMajorVer < 4)
-                    LogRelFunc(("At least Windows NT4 required! (%u.%u)\n", ulMajorVer, ulMinorVer));
-                else
-                    LogRelFunc(("Unknown version %u.%u!\n", ulMajorVer, ulMinorVer));
+                LogRelFunc(("At least Windows NT 3.10 required! Found %u.%u!\n", ulMajorVer, ulMinorVer));
                 rcNt = STATUS_DRIVER_UNABLE_TO_LOAD;
             }
             break;
@@ -428,7 +413,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 
 
 /**
- * Translates NT version to VBox OS.
+ * Translates our internal NT version enum to VBox OS.
  *
  * @returns VBox OS type.
  * @param   enmNtVer            The NT version.
@@ -438,78 +423,27 @@ static VBOXOSTYPE vgdrvNtVersionToOSType(VGDRVNTVER enmNtVer)
     VBOXOSTYPE enmOsType;
     switch (enmNtVer)
     {
-        case VGDRVNTVER_WINNT31:
-        case VGDRVNTVER_WINNT350:
-        case VGDRVNTVER_WINNT351:
-        case VGDRVNTVER_WINNT4:
-            enmOsType = VBOXOSTYPE_WinNT4;
-            break;
-
-        case VGDRVNTVER_WIN2K:
-            enmOsType = VBOXOSTYPE_Win2k;
-            break;
-
-        case VGDRVNTVER_WINXP:
-#if ARCH_BITS == 64
-            enmOsType = VBOXOSTYPE_WinXP_x64;
-#else
-            enmOsType = VBOXOSTYPE_WinXP;
-#endif
-            break;
-
-        case VGDRVNTVER_WIN2K3:
-#if ARCH_BITS == 64
-            enmOsType = VBOXOSTYPE_Win2k3_x64;
-#else
-            enmOsType = VBOXOSTYPE_Win2k3;
-#endif
-            break;
-
-        case VGDRVNTVER_WINVISTA:
-#if ARCH_BITS == 64
-            enmOsType = VBOXOSTYPE_WinVista_x64;
-#else
-            enmOsType = VBOXOSTYPE_WinVista;
-#endif
-            break;
-
-        case VGDRVNTVER_WIN7:
-#if ARCH_BITS == 64
-            enmOsType = VBOXOSTYPE_Win7_x64;
-#else
-            enmOsType = VBOXOSTYPE_Win7;
-#endif
-            break;
-
-        case VGDRVNTVER_WIN8:
-#if ARCH_BITS == 64
-            enmOsType = VBOXOSTYPE_Win8_x64;
-#else
-            enmOsType = VBOXOSTYPE_Win8;
-#endif
-            break;
-
-        case VGDRVNTVER_WIN81:
-#if ARCH_BITS == 64
-            enmOsType = VBOXOSTYPE_Win81_x64;
-#else
-            enmOsType = VBOXOSTYPE_Win81;
-#endif
-            break;
-
-        case VGDRVNTVER_WIN10:
-#if ARCH_BITS == 64
-            enmOsType = VBOXOSTYPE_Win10_x64;
-#else
-            enmOsType = VBOXOSTYPE_Win10;
-#endif
-            break;
+        case VGDRVNTVER_WINNT310:   enmOsType = VBOXOSTYPE_WinNT3x; break;
+        case VGDRVNTVER_WINNT350:   enmOsType = VBOXOSTYPE_WinNT3x; break;
+        case VGDRVNTVER_WINNT351:   enmOsType = VBOXOSTYPE_WinNT3x; break;
+        case VGDRVNTVER_WINNT4:     enmOsType = VBOXOSTYPE_WinNT4; break;
+        case VGDRVNTVER_WIN2K:      enmOsType = VBOXOSTYPE_Win2k; break;
+        case VGDRVNTVER_WINXP:      enmOsType = VBOXOSTYPE_WinXP; break;
+        case VGDRVNTVER_WIN2K3:     enmOsType = VBOXOSTYPE_Win2k3; break;
+        case VGDRVNTVER_WINVISTA:   enmOsType = VBOXOSTYPE_WinVista; break;
+        case VGDRVNTVER_WIN7:       enmOsType = VBOXOSTYPE_Win7; break;
+        case VGDRVNTVER_WIN8:       enmOsType = VBOXOSTYPE_Win8; break;
+        case VGDRVNTVER_WIN81:      enmOsType = VBOXOSTYPE_Win81; break;
+        case VGDRVNTVER_WIN10:      enmOsType = VBOXOSTYPE_Win10; break;
 
         default:
             /* We don't know, therefore NT family. */
             enmOsType = VBOXOSTYPE_WinNT;
             break;
     }
+#if ARCH_BITS == 64
+    enmOsType = (VBOXOSTYPE)((int)enmOsType | VBOXOSTYPE_x64);
+#endif
     return enmOsType;
 }
 
