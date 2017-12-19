@@ -163,13 +163,12 @@ DECLINLINE(int) GuestPropValidateFlags(const char *pcszFlags, uint32_t *pfFlags)
 
 /**
  * Write out flags to a string.
- *
  * @returns  IPRT status code
- * @param    fFlags    The flags to write out.
- * @param    pszFlags  Where to write the flags string.
- * @param    cbFlags   The size of the destination buffer (in bytes).
+ * @param    fFlags    the flags to write out
+ * @param    pszFlags  where to write the flags string.  This must point to
+ *                     a buffer of size (at least) MAX_FLAGS_LEN.
  */
-DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char* pszFlags, size_t cbFlags)
+DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char *pszFlags)
 {
     /* Putting READONLY before the other RDONLY flags keeps the result short. */
     static const uint32_t s_aFlagList[] =
@@ -179,12 +178,9 @@ DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char* pszFlags, size_t cbFl
     int rc = VINF_SUCCESS;
 
     AssertLogRelReturn(VALID_PTR(pszFlags), VERR_INVALID_POINTER);
-    AssertLogRelReturn(cbFlags,             VERR_INVALID_PARAMETER);
-
-    pszFlags[0] = '\0';
-
     if ((fFlags & ~GUEST_PROP_F_ALLFLAGS) == GUEST_PROP_F_NILFLAG)
     {
+        char *pszNext;
         unsigned i;
 
         /* TRANSRESET implies TRANSIENT.  For compatability with old clients we
@@ -192,24 +188,22 @@ DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char* pszFlags, size_t cbFl
         if (fFlags & GUEST_PROP_F_TRANSRESET)
             fFlags |= GUEST_PROP_F_TRANSIENT;
 
+        pszNext = pszFlags;
         for (i = 0; i < RT_ELEMENTS(s_aFlagList); ++i)
         {
             if (s_aFlagList[i] == (fFlags & s_aFlagList[i]))
             {
-                rc = RTStrCat(pszFlags, cbFlags, GuestPropFlagName(s_aFlagList[i]));
-                if (RT_FAILURE(rc))
-                    break;
-
+                strcpy(pszNext, GuestPropFlagName(s_aFlagList[i]));
+                pszNext += GuestPropFlagNameLen(s_aFlagList[i]);
                 fFlags &= ~s_aFlagList[i];
-
                 if (fFlags != GUEST_PROP_F_NILFLAG)
                 {
-                    rc = RTStrCat(pszFlags, cbFlags, ", ");
-                    if (RT_FAILURE(rc))
-                        break;
+                    strcpy(pszNext, ", ");
+                    pszNext += 2;
                 }
             }
         }
+        *pszNext = '\0';
 
         Assert(fFlags == GUEST_PROP_F_NILFLAG); /* bad s_aFlagList */
     }

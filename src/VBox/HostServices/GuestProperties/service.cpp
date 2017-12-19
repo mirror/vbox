@@ -618,7 +618,7 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (pProp)
     {
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
-        rc = GuestPropWriteFlags(pProp->mFlags, szFlags, sizeof(szFlags));
+        rc = GuestPropWriteFlags(pProp->mFlags, szFlags);
         if (RT_SUCCESS(rc))
         {
             /* Check that the buffer is big enough */
@@ -856,7 +856,7 @@ static DECLCALLBACK(int) enumPropsCallback(PRTSTRSPACECORE pStr, void *pvUser)
     size_t const    cbTimestamp = RTStrFormatNumber(szTimestamp, pProp->mTimestamp, 10, 0, 0, 0) + 1;
 
     char            szFlags[GUEST_PROP_MAX_FLAGS_LEN];
-    int rc = GuestPropWriteFlags(pProp->mFlags, szFlags, sizeof(szFlags));
+    int rc = GuestPropWriteFlags(pProp->mFlags, szFlags);
     if (RT_FAILURE(rc))
         return rc;
     size_t const    cbFlags = strlen(szFlags) + 1;
@@ -1015,7 +1015,7 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
     if (RT_SUCCESS(rc))
     {
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
-        rc = GuestPropWriteFlags(prop.mFlags, szFlags, sizeof(szFlags));
+        rc = GuestPropWriteFlags(prop.mFlags, szFlags);
         if (RT_SUCCESS(rc))
         {
             buffer += prop.mName;
@@ -1214,7 +1214,7 @@ int Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
             char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
             /* Send out a host notification */
             const char *pszValue = prop.mValue.c_str();
-            rc = GuestPropWriteFlags(prop.mFlags, szFlags, sizeof(szFlags));
+            rc = GuestPropWriteFlags(prop.mFlags, szFlags);
             if (RT_SUCCESS(rc))
                 rc = notifyHost(pszProperty, pszValue, u64Timestamp, szFlags);
         }
@@ -1405,7 +1405,7 @@ static DECLCALLBACK(int) dbgInfoCallback(PRTSTRSPACECORE pStr, void *pvUser)
     PCDBGFINFOHLP pHlp = ((ENUMDBGINFO*)pvUser)->pHlp;
 
     char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
-    int rc = GuestPropWriteFlags(pProp->mFlags, szFlags, sizeof(szFlags));
+    int rc = GuestPropWriteFlags(pProp->mFlags, szFlags);
     if (RT_FAILURE(rc))
         RTStrPrintf(szFlags, sizeof(szFlags), "???");
 
