@@ -88,7 +88,7 @@
         <File Id="VBoxSDS" Name="VBoxSDS.exe" Vital="yes" KeyPath="yes"
                     Source="$(env.PATH_OUT)\bin\VBoxSDS.exe">
         </File>
-        <!-- 
+        <!--
             The Name of windows service is referenced in different places.
             Don't forget to change it in other places too If you change it here :
                 VirtualBox.idl (module name),
