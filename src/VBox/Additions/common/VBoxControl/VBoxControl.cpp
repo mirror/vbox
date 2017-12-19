@@ -238,7 +238,9 @@ static RTEXITCODE VBoxControlSyntaxError(const char *pszFormat, ...)
 
 #if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
 
-LONG (WINAPI * gpfnChangeDisplaySettingsEx)(LPCTSTR lpszDeviceName, LPDEVMODE lpDevMode, HWND hwnd, DWORD dwflags, LPVOID lParam);
+decltype(ChangeDisplaySettingsExA) *g_pfnChangeDisplaySettingsExA;
+decltype(ChangeDisplaySettings)    *g_pfnChangeDisplaySettingsA;
+decltype(EnumDisplaySettingsA)     *g_pfnEnumDisplaySettingsA;
 
 static unsigned nextAdjacentRectXP(RECTL const *paRects, unsigned cRects, unsigned iRect)
 {
@@ -486,7 +488,7 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
 
             RT_BZERO(&paDeviceModes[DevNum], sizeof(DEVMODE));
             paDeviceModes[DevNum].dmSize = sizeof(DEVMODE);
-            if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName, ENUM_REGISTRY_SETTINGS, &paDeviceModes[DevNum]))
+            if (!g_pfnEnumDisplaySettingsA((LPSTR)DisplayDevice.DeviceName, ENUM_REGISTRY_SETTINGS, &paDeviceModes[DevNum]))
             {
                 Log(("EnumDisplaySettings err %d\n", GetLastError()));
                 return FALSE;
@@ -541,7 +543,7 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     DEVMODE tempDevMode;
     RT_ZERO(tempDevMode);
     tempDevMode.dmSize = sizeof(DEVMODE);
-    EnumDisplaySettings(NULL, 0xffffff, &tempDevMode);
+    g_pfnEnumDisplaySettingsA(NULL, 0xffffff, &tempDevMode);
 
     /* Assign the new rectangles to displays. */
     for (i = 0; i < NumDevices; i++)
@@ -559,14 +561,14 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
             paDeviceModes[i].dmFields |= DM_BITSPERPEL;
             paDeviceModes[i].dmBitsPerPel = BitsPerPixel;
         }
-        Log(("calling pfnChangeDisplaySettingsEx %x\n", gpfnChangeDisplaySettingsEx));
-        gpfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName,
-                 &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
-        Log(("ChangeDisplaySettings position err %d\n", GetLastError()));
+        Log(("calling pfnChangeDisplaySettingsEx %p\n", g_pfnChangeDisplaySettingsExA));
+        g_pfnChangeDisplaySettingsExA((LPSTR)paDisplayDevices[i].DeviceName,
+                                      &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
+        Log(("ChangeDisplaySettingsEx position err %d\n", GetLastError()));
     }
 
     /* A second call to ChangeDisplaySettings updates the monitor. */
-    LONG status = ChangeDisplaySettings(NULL, 0);
+    LONG status = g_pfnChangeDisplaySettingsA(NULL, 0);
     Log(("ChangeDisplaySettings update status %d\n", status));
     if (status == DISP_CHANGE_SUCCESSFUL || status == DISP_CHANGE_BADMODE)
     {
@@ -593,13 +595,21 @@ static DECLCALLBACK(RTEXITCODE) handleSetVideoMode(int argc, char *argv[])
     if (argc == 4)
         scr = atoi(argv[3]);
 
-    HMODULE hUser = GetModuleHandle("user32.dll");
-    if (hUser)
+    HMODULE hmodUser = GetModuleHandle("user32.dll");
+    if (hmodUser)
     {
-        *(uintptr_t *)&gpfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
-        Log(("VBoxService: pChangeDisplaySettingsEx = %p\n", gpfnChangeDisplaySettingsEx));
+        /* ChangeDisplaySettingsExA was probably added in W2K, whereas ChangeDisplaySettingsA
+           and EnumDisplaySettingsA was added in NT 3.51. */
+        g_pfnChangeDisplaySettingsExA = (decltype(g_pfnChangeDisplaySettingsExA))GetProcAddress(hmodUser, "ChangeDisplaySettingsExA");
+        g_pfnChangeDisplaySettingsA   = (decltype(g_pfnChangeDisplaySettingsA))  GetProcAddress(hmodUser, "ChangeDisplaySettingsA");
+        g_pfnEnumDisplaySettingsA     = (decltype(g_pfnEnumDisplaySettingsA))    GetProcAddress(hmodUser, "EnumDisplaySettingsA");
 
-        if (gpfnChangeDisplaySettingsEx)
+        Log(("VBoxService: g_pfnChangeDisplaySettingsExA=%p g_pfnChangeDisplaySettingsA=%p g_pfnEnumDisplaySettingsA=%p\n",
+             g_pfnChangeDisplaySettingsExA, g_pfnChangeDisplaySettingsA, g_pfnEnumDisplaySettingsA));
+
+        if (   g_pfnChangeDisplaySettingsExA
+            && g_pfnChangeDisplaySettingsA
+            && g_pfnEnumDisplaySettingsA)
         {
             /* The screen index is 0 based in the ResizeDisplayDevice call. */
             scr = scr > 0 ? scr - 1 : 0;
