@@ -61,4 +61,6 @@ MAKE_IMPORT_ENTRY VerifyVersionInfoA, 16
 MAKE_IMPORT_ENTRY VerSetConditionMask, 16
 MAKE_IMPORT_ENTRY IsProcessorFeaturePresent, 4
 MAKE_IMPORT_ENTRY CancelIo, 4
+MAKE_IMPORT_ENTRY IsDebuggerPresent, 0
+MAKE_IMPORT_ENTRY GetSystemTimeAsFileTime, 4
 

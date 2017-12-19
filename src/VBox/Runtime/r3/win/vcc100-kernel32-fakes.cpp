@@ -56,6 +56,8 @@
 #define VerSetConditionMask                     Ignore_VerSetConditionMask
 #define IsProcessorFeaturePresent               Ignore_IsProcessorFeaturePresent /* NT 3.51 start */
 #define CancelIo                                Ignore_CancelIo
+#define IsDebuggerPresent                       Ignore_IsDebuggerPresent /* NT 3.50 start */
+#define GetSystemTimeAsFileTime                 Ignore_GetSystemTimeAsFileTime
 
 #include <iprt/nt/nt-and-windows.h>
 
@@ -76,6 +78,8 @@
 #undef VerSetConditionMask
 #undef IsProcessorFeaturePresent
 #undef CancelIo
+#undef IsDebuggerPresent
+#undef GetSystemTimeAsFileTime
 
 
 #ifndef HEAP_STANDARD
@@ -480,6 +484,53 @@ extern "C" DECLEXPORT(BOOL) WINAPI CancelIo(HANDLE hHandle)
     else
         SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
+}
+
+
+/*
+ * NT 3.50 stuff.
+ */
+
+extern "C" DECLEXPORT(BOOL) WINAPI IsDebuggerPresent(VOID)
+{
+    RESOLVE_ME(IsDebuggerPresent);
+    if (pfnApi)
+        return pfnApi();
+    return FALSE;
+}
+
+
+extern "C" DECLEXPORT(VOID) WINAPI GetSystemTimeAsFileTime(LPFILETIME pTime)
+{
+    RESOLVE_ME(GetSystemTimeAsFileTime);
+    if (pfnApi)
+        pfnApi(pTime);
+    else
+    {
+        DWORD dwVersion = GetVersion();
+        if (   (dwVersion & 0xff) > 3
+            || (   (dwVersion & 0xff) == 3
+                && ((dwVersion >> 8) & 0xff) >= 50) )
+        {
+            PKUSER_SHARED_DATA pUsd = (PKUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA;
+
+            /* use interrupt time */
+            LARGE_INTEGER Time;
+            do
+            {
+                Time.HighPart = pUsd->SystemTime.High1Time;
+                Time.LowPart  = pUsd->SystemTime.LowPart;
+            } while (pUsd->SystemTime.High2Time != Time.HighPart);
+
+            pTime->dwHighDateTime = Time.HighPart;
+            pTime->dwLowDateTime  = Time.LowPart;
+        }
+        else
+        {
+            /** @todo    */
+            __debugbreak();
+        }
+    }
 }
 
 
