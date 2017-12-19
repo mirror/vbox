@@ -148,8 +148,6 @@ typedef struct VBOXGUESTDEVEXTWIN
     POWER_ACTION            enmLastSystemPowerAction;
     /** Preallocated generic request for shutdown. */
     VMMDevPowerStateRequest *pPowerStateRequest;
-    /** Preallocated VMMDevEvents for IRQ handler. */
-    VMMDevEvents           *pIrqAckEvents;
 
     /** Spinlock protecting MouseNotifyCallback. Required since the consumer is
      *  in a DPC callback and not the ISR. */
@@ -190,7 +188,6 @@ static NTSTATUS vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtNt5PlusPower(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtNt5PlusSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static void     vgdrvNtUnmapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt);
-static NTSTATUS vgdrvNtCleanup(PDEVICE_OBJECT pDevObj);
 static void     vgdrvNtUnload(PDRIVER_OBJECT pDrvObj);
 static NTSTATUS vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
@@ -262,6 +259,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
         RTLogBackdoorPrintf("VBoxGuest: RTR0Init failed: %Rrc!\n", rc);
         return STATUS_UNSUCCESSFUL;
     }
+    VGDrvCommonInitLoggers();
 
     LogFunc(("Driver built: %s %s\n", __DATE__, __TIME__));
 
@@ -399,7 +397,6 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                 LogFlowFunc(("Returning %#x\n", rcNt));
                 return rcNt;
             }
-
         }
     }
 
@@ -407,6 +404,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
      * Failed.
      */
     LogRelFunc(("Failed! rcNt=%#x\n", rcNt));
+    VGDrvCommonDestroyLoggers();
     RTR0Term();
     return rcNt;
 }
@@ -512,7 +510,7 @@ static void vgdrvNtShowDeviceResources(PCM_RESOURCE_LIST pRsrcList)
 
 
 /**
- * Global initialization stuff.
+ * Sets up the device and its resources.
  *
  * @param   pDevExt     Our device extension data.
  * @param   pDevObj     The device object.
@@ -520,8 +518,8 @@ static void vgdrvNtShowDeviceResources(PCM_RESOURCE_LIST pRsrcList)
  * @param   pDrvObj     The driver object for NT4, NULL for NT5+.
  * @param   pRegPath    The registry path for NT4, NULL for NT5+.
  */
-static NTSTATUS vgdrvNtInit(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT pDevObj,
-                            PIRP pIrp, PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
+static NTSTATUS vgdrvNtSetupDevice(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT pDevObj,
+                                   PIRP pIrp, PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 {
     LogFlowFunc(("ENTER: pDevExt=%p pDevObj=%p pIrq=%p pDrvObj=%p pRegPath=%p\n", pDevExt, pDevObj, pIrp, pDrvObj, pRegPath));
 
@@ -587,13 +585,14 @@ static NTSTATUS vgdrvNtInit(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT pDevObj,
             LogFunc(("pvMMIOBase=0x%p, pDevExt=0x%p, pDevExt->Core.pVMMDevMemory=0x%p\n",
                      pvMMIOBase, pDevExt, pDevExt ? pDevExt->Core.pVMMDevMemory : NULL));
 
-            int vrc = VGDrvCommonInitDevExt(&pDevExt->Core,
-                                            pDevExt->Core.IOPortBase,
-                                            pvMMIOBase, cbMMIO,
-                                            vgdrvNtVersionToOSType(g_enmVGDrvNtVer),
-                                            VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
+            int vrc = VGDrvCommonInitDevExtResources(&pDevExt->Core,
+                                                     pDevExt->Core.IOPortBase,
+                                                     pvMMIOBase, cbMMIO,
+                                                     vgdrvNtVersionToOSType(g_enmVGDrvNtVer),
+                                                     VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
             if (RT_SUCCESS(vrc))
             {
+
                 vrc = VbglR0GRAlloc((VMMDevRequestHeader **)&pDevExt->pPowerStateRequest,
                                     sizeof(VMMDevPowerStateRequest), VMMDevReq_SetPowerStatus);
                 if (RT_SUCCESS(vrc))
@@ -673,11 +672,11 @@ static NTSTATUS vgdrvNtInit(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT pDevObj,
                     rcNt = STATUS_UNSUCCESSFUL;
                 }
 
-                VGDrvCommonDeleteDevExt(&pDevExt->Core);
+                VGDrvCommonDeleteDevExtResources(&pDevExt->Core);
             }
             else
             {
-                LogFunc(("Could not init device extension, vrc=%Rrc\n", vrc));
+                LogFunc(("Could not init device extension resources: vrc=%Rrc\n", vrc));
                 rcNt = STATUS_DEVICE_CONFIGURATION_ERROR;
             }
             vgdrvNtUnmapVMMDevMemory(pDevExt);
@@ -694,93 +693,6 @@ static NTSTATUS vgdrvNtInit(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT pDevObj,
 
 
 #ifdef TARGET_NT4
-
-/**
- * Legacy helper function to create the device object.
- *
- * @returns NT status code.
- *
- * @param   pDrvObj         The driver object.
- * @param   pRegPath        The driver registry path.
- */
-static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
-{
-    Log(("vgdrvNt4CreateDevice: pDrvObj=%p, pRegPath=%p\n", pDrvObj, pRegPath));
-
-    /*
-     * Find our virtual PCI device
-     */
-    ULONG           uBus;
-    PCI_SLOT_NUMBER uSlot;
-    NTSTATUS rc = vgdrvNt4FindPciDevice(&uBus, &uSlot);
-    if (NT_ERROR(rc))
-    {
-        Log(("vgdrvNt4CreateDevice: Device not found!\n"));
-        return rc;
-    }
-
-    /*
-     * Create device.
-     */
-    UNICODE_STRING DevName;
-    RtlInitUnicodeString(&DevName, VBOXGUEST_DEVICE_NAME_NT);
-    PDEVICE_OBJECT pDeviceObject = NULL;
-    rc = IoCreateDevice(pDrvObj, sizeof(VBOXGUESTDEVEXTWIN), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDeviceObject);
-    if (NT_SUCCESS(rc))
-    {
-        Log(("vgdrvNt4CreateDevice: Device created\n"));
-
-        UNICODE_STRING DosName;
-        RtlInitUnicodeString(&DosName, VBOXGUEST_DEVICE_NAME_DOS);
-        rc = IoCreateSymbolicLink(&DosName, &DevName);
-        if (NT_SUCCESS(rc))
-        {
-            Log(("vgdrvNt4CreateDevice: Symlink created\n"));
-
-            /*
-             * Setup the device extension.
-             */
-            Log(("vgdrvNt4CreateDevice: Setting up device extension ...\n"));
-
-            PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDeviceObject->DeviceExtension;
-            RT_ZERO(*pDevExt);
-
-            Log(("vgdrvNt4CreateDevice: Device extension created\n"));
-
-            /* Store a reference to ourself. */
-            pDevExt->pDeviceObject = pDeviceObject;
-
-            /* Store bus and slot number we've queried before. */
-            pDevExt->uBus  = uBus;
-            pDevExt->uSlot = uSlot.u.AsULONG;
-
-# ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
-            rc = hlpRegisterBugCheckCallback(pDevExt);
-# endif
-            if (NT_SUCCESS(rc))
-            {
-                /* Do the actual VBox init ... */
-                rc = vgdrvNtInit(pDevExt, pDeviceObject, NULL /*pIrp*/, pDrvObj, pRegPath);
-                if (NT_SUCCESS(rc))
-                {
-                    Log(("vgdrvNt4CreateDevice: Returning rc = 0x%x (succcess)\n", rc));
-                    return rc;
-                }
-
-                /* bail out */
-            }
-            IoDeleteSymbolicLink(&DosName);
-        }
-        else
-            Log(("vgdrvNt4CreateDevice: IoCreateSymbolicLink failed with rc = %#x\n", rc));
-        IoDeleteDevice(pDeviceObject);
-    }
-    else
-        Log(("vgdrvNt4CreateDevice: IoCreateDevice failed with rc = %#x\n", rc));
-    Log(("vgdrvNt4CreateDevice: Returning rc = 0x%x\n", rc));
-    return rc;
-}
-
 
 /**
  * Helper function to handle the PCI device lookup.
@@ -842,6 +754,97 @@ static NTSTATUS vgdrvNt4FindPciDevice(PULONG puBus, PPCI_SLOT_NUMBER pSlot)
     return STATUS_DEVICE_DOES_NOT_EXIST;
 }
 
+
+/**
+ * Legacy helper function to create the device object.
+ *
+ * @returns NT status code.
+ *
+ * @param   pDrvObj         The driver object.
+ * @param   pRegPath        The driver registry path.
+ */
+static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
+{
+    Log(("vgdrvNt4CreateDevice: pDrvObj=%p, pRegPath=%p\n", pDrvObj, pRegPath));
+
+    /*
+     * Find our virtual PCI device
+     */
+    ULONG           uBus;
+    PCI_SLOT_NUMBER uSlot;
+    NTSTATUS rc = vgdrvNt4FindPciDevice(&uBus, &uSlot);
+    if (NT_ERROR(rc))
+    {
+        Log(("vgdrvNt4CreateDevice: Device not found!\n"));
+        return rc;
+    }
+
+    /*
+     * Create device.
+     */
+    UNICODE_STRING DevName;
+    RtlInitUnicodeString(&DevName, VBOXGUEST_DEVICE_NAME_NT);
+    PDEVICE_OBJECT pDeviceObject = NULL;
+    rc = IoCreateDevice(pDrvObj, sizeof(VBOXGUESTDEVEXTWIN), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDeviceObject);
+    if (NT_SUCCESS(rc))
+    {
+        Log(("vgdrvNt4CreateDevice: Device created\n"));
+
+        UNICODE_STRING DosName;
+        RtlInitUnicodeString(&DosName, VBOXGUEST_DEVICE_NAME_DOS);
+        rc = IoCreateSymbolicLink(&DosName, &DevName);
+        if (NT_SUCCESS(rc))
+        {
+            Log(("vgdrvNt4CreateDevice: Symlink created\n"));
+
+            /*
+             * Setup the device extension.
+             */
+            Log(("vgdrvNt4CreateDevice: Setting up device extension ...\n"));
+            PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDeviceObject->DeviceExtension;
+            RT_ZERO(*pDevExt);
+
+            /* Store a reference to ourself. */
+            pDevExt->pDeviceObject = pDeviceObject;
+
+            /* Store bus and slot number we've queried before. */
+            pDevExt->uBus  = uBus;
+            pDevExt->uSlot = uSlot.u.AsULONG;
+
+            /* Initialize common bits. */
+            int vrc = VGDrvCommonInitDevExtFundament(&pDevExt->Core);
+            if (RT_SUCCESS(vrc))
+            {
+                Log(("vgdrvNt4CreateDevice: Device extension created\n"));
+# ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
+                rc = hlpRegisterBugCheckCallback(pDevExt);
+# endif
+                if (NT_SUCCESS(rc))
+                {
+                    /* Do the actual VBox init ... */
+                    rc = vgdrvNtSetupDevice(pDevExt, pDeviceObject, NULL /*pIrp*/, pDrvObj, pRegPath);
+                    if (NT_SUCCESS(rc))
+                    {
+                        Log(("vgdrvNt4CreateDevice: Returning rc = 0x%x (succcess)\n", rc));
+                        return rc;
+                    }
+
+                    /* bail out */
+                }
+                VGDrvCommonDeleteDevExtFundament(&pDevExt->Core);
+            }
+            IoDeleteSymbolicLink(&DosName);
+        }
+        else
+            Log(("vgdrvNt4CreateDevice: IoCreateSymbolicLink failed with rc = %#x\n", rc));
+        IoDeleteDevice(pDeviceObject);
+    }
+    else
+        Log(("vgdrvNt4CreateDevice: IoCreateDevice failed with rc = %#x\n", rc));
+    Log(("vgdrvNt4CreateDevice: Returning rc = 0x%x\n", rc));
+    return rc;
+}
+
 #endif /* TARGET_NT4 */
 
 /**
@@ -881,39 +884,45 @@ static NTSTATUS vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT p
             RT_ZERO(*pDevExt);
 
             KeInitializeSpinLock(&pDevExt->MouseEventAccessSpinLock);
-
             pDevExt->pDeviceObject   = pDeviceObject;
             pDevExt->enmPrevDevState = VGDRVNTDEVSTATE_STOPPED;
             pDevExt->enmDevState     = VGDRVNTDEVSTATE_STOPPED;
 
-            pDevExt->pNextLowerDriver = IoAttachDeviceToDeviceStack(pDeviceObject, pDevObj);
-            if (pDevExt->pNextLowerDriver != NULL)
+            int vrc = VGDrvCommonInitDevExtFundament(&pDevExt->Core);
+            if (RT_SUCCESS(vrc))
             {
-                /*
-                 * If we reached this point we're fine with the basic driver setup,
-                 * so continue to init our own things.
-                 */
-#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
-                vgdrvNtBugCheckCallback(pDevExt); /* Ignore failure! */
-#endif
-                if (NT_SUCCESS(rcNt))
+                pDevExt->pNextLowerDriver = IoAttachDeviceToDeviceStack(pDeviceObject, pDevObj);
+                if (pDevExt->pNextLowerDriver != NULL)
                 {
-                    /* Ensure we are not called at elevated IRQL, even if our code isn't pagable any more. */
-                    pDeviceObject->Flags |= DO_POWER_PAGABLE;
+                    /*
+                     * If we reached this point we're fine with the basic driver setup,
+                     * so continue to init our own things.
+                     */
+#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
+                    vgdrvNtBugCheckCallback(pDevExt); /* Ignore failure! */
+#endif
+                    if (NT_SUCCESS(rcNt))
+                    {
+                        /* Ensure we are not called at elevated IRQL, even if our code isn't pagable any more. */
+                        pDeviceObject->Flags |= DO_POWER_PAGABLE;
 
-                    /* Driver is ready now. */
-                    pDeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
-                    LogFlowFunc(("Returning with rcNt=%#x (success)\n", rcNt));
-                    return rcNt;
+                        /* Driver is ready now. */
+                        pDeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
+                        LogFlowFunc(("Returning with rcNt=%#x (success)\n", rcNt));
+                        return rcNt;
+                    }
+
+                    IoDetachDevice(pDevExt->pNextLowerDriver);
                 }
-
-                IoDetachDevice(pDevExt->pNextLowerDriver);
+                else
+                {
+                    LogFunc(("IoAttachDeviceToDeviceStack did not give a nextLowerDriver!\n"));
+                    rcNt = STATUS_DEVICE_NOT_CONNECTED;
+                }
+                VGDrvCommonDeleteDevExtFundament(&pDevExt->Core);
             }
             else
-            {
-                LogFunc(("IoAttachDeviceToDeviceStack did not give a nextLowerDriver!\n"));
-                rcNt = STATUS_DEVICE_NOT_CONNECTED;
-            }
+                rcNt = STATUS_UNSUCCESSFUL;
 
             /* bail out */
             IoDeleteSymbolicLink(&DosName);
@@ -982,6 +991,58 @@ static NTSTATUS vgdrvNt5PlusPnPSendIrpSynchronously(PDEVICE_OBJECT pDevObj, PIRP
 
 
 /**
+ * Deletes the device hardware resources.
+ *
+ * Used during removal, stopping and legacy module unloading.
+ *
+ * @param   pDevExt         The device extension.
+ */
+static void vgdrvNtDeleteDeviceResources(PVBOXGUESTDEVEXTWIN pDevExt)
+{
+    if (pDevExt->pInterruptObject)
+    {
+        IoDisconnectInterrupt(pDevExt->pInterruptObject);
+        pDevExt->pInterruptObject = NULL;
+    }
+    if (pDevExt->Core.uInitState == VBOXGUESTDEVEXT_INIT_STATE_RESOURCES)
+        VGDrvCommonDeleteDevExtResources(&pDevExt->Core);
+    vgdrvNtUnmapVMMDevMemory(pDevExt);
+}
+
+
+/**
+ * Deletes the device extension fundament and unlinks the device
+ *
+ * Used during removal and legacy module unloading.  Must have called
+ * vgdrvNtDeleteDeviceResources.
+ *
+ * @param   pDevExt         The device extension.
+ */
+static void vgdrvNtDeleteDeviceFundamentAndUnlink(PDEVICE_OBJECT pDevObj, PVBOXGUESTDEVEXTWIN pDevExt)
+{
+    /*
+     * Delete the remainder of the device extension.
+     */
+    pDevExt->pPowerStateRequest = NULL; /* Will be deleted by the following call. */
+    VGDrvCommonDeleteDevExtFundament(&pDevExt->Core);
+
+#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
+    hlpDeregisterBugCheckCallback(pDevExt);
+#endif
+
+    /*
+     * Delete the DOS symlink to the device and finally the device itself.
+     */
+    UNICODE_STRING DosName;
+    RtlInitUnicodeString(&DosName, VBOXGUEST_DEVICE_NAME_DOS);
+    IoDeleteSymbolicLink(&DosName);
+
+    Log(("vgdrvNtDeleteDeviceFundamentAndUnlink: Deleting device ...\n"));
+    IoDeleteDevice(pDevObj);
+}
+
+
+/**
  * PnP Request handler.
  *
  * @param  pDevObj    Device object.
@@ -1038,9 +1099,12 @@ static NTSTATUS vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             {
                 Log(("vgdrvNtNt5PlusPnP: START_DEVICE: pStack->Parameters.StartDevice.AllocatedResources = %p\n",
                      pStack->Parameters.StartDevice.AllocatedResources));
-
                 if (pStack->Parameters.StartDevice.AllocatedResources)
-                    rc = vgdrvNtInit(pDevExt, pDevObj, pIrp, NULL, NULL);
+                {
+                    rc = vgdrvNtSetupDevice(pDevExt, pDevObj, pIrp, NULL, NULL);
+                    if (!NT_SUCCESS(rc))
+                        Log(("vgdrvNtNt5PlusPnP: START_DEVICE: vgdrvNtSetupDevice failed: %#x\n", rc));
+                }
                 else
                 {
                     Log(("vgdrvNtNt5PlusPnP: START_DEVICE: No resources, pDevExt = %p, nextLowerDriver = %p!\n",
@@ -1048,11 +1112,59 @@ static NTSTATUS vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                     rc = STATUS_UNSUCCESSFUL;
                 }
             }
-            if (NT_ERROR(rc))
-                Log(("vgdrvNtNt5PlusPnP: START_DEVICE: Error: rc = 0x%x\n", rc));
-            break;
+            else
+                Log(("vgdrvNtNt5PlusPnP: START_DEVICE: vgdrvNt5PlusPnPSendIrpSynchronously failed: %#x + %#x\n",
+                     rc, pIrp->IoStatus.Status));
+
+            pIrp->IoStatus.Status = rc;
+            IoCompleteRequest(pIrp, IO_NO_INCREMENT);
+            return rc;
         }
 
+
+        /*
+         * Sent before removing the device and/or driver.
+         */
+        case IRP_MN_QUERY_REMOVE_DEVICE:
+        {
+            Log(("vgdrvNtNt5PlusPnP: QUERY_REMOVE_DEVICE\n"));
+
+#ifdef VBOX_REBOOT_ON_UNINSTALL
+            Log(("vgdrvNtNt5PlusPnP: QUERY_REMOVE_DEVICE: Device cannot be removed without a reboot.\n"));
+            rc = STATUS_UNSUCCESSFUL;
+#endif
+            /** @todo refuse to remove ourselves when we've got client
+             *        sessions attached...  */
+
+            if (NT_SUCCESS(rc))
+            {
+                VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_PENDINGREMOVE);
+
+                /* This IRP passed down to lower driver. */
+                pIrp->IoStatus.Status = STATUS_SUCCESS;
+
+                IoSkipCurrentIrpStackLocation(pIrp);
+                rc = IoCallDriver(pDevExt->pNextLowerDriver, pIrp);
+                Log(("vgdrvNtNt5PlusPnP: QUERY_REMOVE_DEVICE: Next lower driver replied rc = 0x%x\n", rc));
+
+                /* We must not do anything the IRP after doing IoSkip & CallDriver
+                   since the driver below us will complete (or already have completed) the IRP.
+                   I.e. just return the status we got from IoCallDriver */
+            }
+            else
+            {
+                pIrp->IoStatus.Status = rc;
+                IoCompleteRequest(pIrp, IO_NO_INCREMENT);
+            }
+
+            Log(("vgdrvNtNt5PlusPnP: QUERY_REMOVE_DEVICE: Returning with rc = 0x%x\n", rc));
+            return rc;
+        }
+
+        /*
+         * Cancels a pending remove, IRP_MN_QUERY_REMOVE_DEVICE.
+         * We only have to revert the state.
+         */
         case IRP_MN_CANCEL_REMOVE_DEVICE:
         {
             Log(("vgdrvNtNt5PlusPnP: CANCEL_REMOVE_DEVICE\n"));
@@ -1067,43 +1179,84 @@ static NTSTATUS vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             }
 
             /* Complete the IRP. */
-            break;
+            pIrp->IoStatus.Status = rc;
+            IoCompleteRequest(pIrp, IO_NO_INCREMENT);
+            return rc;
         }
 
+        /*
+         * We do nothing here actually, esp. since this request is not expected for VBoxGuest.
+         * The cleanup will be done in IRP_MN_REMOVE_DEVICE, which follows this call.
+         */
         case IRP_MN_SURPRISE_REMOVAL:
         {
             Log(("vgdrvNtNt5PlusPnP: IRP_MN_SURPRISE_REMOVAL\n"));
-
             VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_SURPRISEREMOVED);
-
-            /* Do nothing here actually. Cleanup is done in IRP_MN_REMOVE_DEVICE.
-             * This request is not expected for VBoxGuest.
-             */
             LogRel(("VBoxGuest: unexpected device removal\n"));
 
             /* Pass to the lower driver. */
             pIrp->IoStatus.Status = STATUS_SUCCESS;
 
             IoSkipCurrentIrpStackLocation(pIrp);
-
             rc = IoCallDriver(pDevExt->pNextLowerDriver, pIrp);
 
             /* Do not complete the IRP. */
             return rc;
         }
 
-        case IRP_MN_QUERY_REMOVE_DEVICE:
+        /*
+         * Device and/or driver removal.  Destroy everything.
+         */
+        case IRP_MN_REMOVE_DEVICE:
         {
-            Log(("vgdrvNtNt5PlusPnP: QUERY_REMOVE_DEVICE\n"));
+            Log(("vgdrvNtNt5PlusPnP: REMOVE_DEVICE\n"));
+            VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_REMOVED);
 
-#ifdef VBOX_REBOOT_ON_UNINSTALL
-            Log(("vgdrvNtNt5PlusPnP: QUERY_REMOVE_DEVICE: Device cannot be removed without a reboot.\n"));
-            rc = STATUS_UNSUCCESSFUL;
-#endif
+            /*
+             * Disconnect interrupts and delete all hardware resources.
+             * Note! This may already have been done if we're STOPPED already, if that's a possibility.
+             */
+            vgdrvNtDeleteDeviceResources(pDevExt);
 
+            /*
+             * We need to send the remove down the stack before we detach, but we don't need
+             * to wait for the completion of this operation (nor register a completion routine).
+             */
+            pIrp->IoStatus.Status = STATUS_SUCCESS;
+
+            IoSkipCurrentIrpStackLocation(pIrp);
+            rc = IoCallDriver(pDevExt->pNextLowerDriver, pIrp);
+            Log(("vgdrvNtNt5PlusPnP: REMOVE_DEVICE: Next lower driver replied rc = 0x%x\n", rc));
+
+            IoDetachDevice(pDevExt->pNextLowerDriver);
+            Log(("vgdrvNtNt5PlusPnP: REMOVE_DEVICE: Removing device ...\n"));
+
+            /*
+             * Delete the remainder of the device extension data, unlink it from the namespace and delete it.
+             */
+            vgdrvNtDeleteDeviceFundamentAndUnlink(pDevObj, pDevExt);
+
+            pDevObj = NULL; /* invalid */
+            pDevExt = NULL; /* invalid */
+
+            Log(("vgdrvNtNt5PlusPnP: REMOVE_DEVICE: Device removed!\n"));
+            return rc; /* Propagating rc from IoCallDriver. */
+        }
+
+
+        /*
+         * Sent before stopping the device/driver to check whether it is okay to do so.
+         */
+        case IRP_MN_QUERY_STOP_DEVICE:
+        {
+            Log(("vgdrvNtNt5PlusPnP: QUERY_STOP_DEVICE\n"));
+
+            /** @todo Check whether we can stop the device.  Similar to
+             *        removal above */
+            rc = STATUS_SUCCESS;
             if (NT_SUCCESS(rc))
             {
-                VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_PENDINGREMOVE);
+                VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_PENDINGSTOP);
 
                 /* This IRP passed down to lower driver. */
                 pIrp->IoStatus.Status = STATUS_SUCCESS;
@@ -1111,66 +1264,26 @@ static NTSTATUS vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 IoSkipCurrentIrpStackLocation(pIrp);
 
                 rc = IoCallDriver(pDevExt->pNextLowerDriver, pIrp);
-                Log(("vgdrvNtNt5PlusPnP: QUERY_REMOVE_DEVICE: Next lower driver replied rc = 0x%x\n", rc));
+                Log(("vgdrvNtNt5PlusPnP: QUERY_STOP_DEVICE: Next lower driver replied rc = 0x%x\n", rc));
 
-                /* we must not do anything the IRP after doing IoSkip & CallDriver
-                 * since the driver below us will complete (or already have completed) the IRP.
-                 * I.e. just return the status we got from IoCallDriver */
-                return rc;
+                /* we must not do anything with the IRP after doing IoSkip & CallDriver since the
+                   driver below us will complete (or already have completed) the IRP.  I.e. just
+                   return the status we got from IoCallDriver. */
+            }
+            else
+            {
+                pIrp->IoStatus.Status = rc;
+                IoCompleteRequest(pIrp, IO_NO_INCREMENT);
             }
 
-            /* Complete the IRP on failure. */
-            break;
+            Log(("vgdrvNtNt5PlusPnP: QUERY_STOP_DEVICE: Returning with rc = 0x%x\n", rc));
+            return rc;
         }
 
-        case IRP_MN_REMOVE_DEVICE:
-        {
-            Log(("vgdrvNtNt5PlusPnP: REMOVE_DEVICE\n"));
-
-            VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_REMOVED);
-
-            /* Free hardware resources. */
-            /** @todo this should actually free I/O ports, interrupts, etc.
-             * Update/bird: vgdrvNtCleanup actually does that... So, what's there to do?  */
-            rc = vgdrvNtCleanup(pDevObj);
-            Log(("vgdrvNtNt5PlusPnP: REMOVE_DEVICE: vgdrvNtCleanup rc = 0x%08X\n", rc));
-
-            /*
-             * We need to send the remove down the stack before we detach,
-             * but we don't need to wait for the completion of this operation
-             * (and to register a completion routine).
-             */
-            pIrp->IoStatus.Status = STATUS_SUCCESS;
-
-            IoSkipCurrentIrpStackLocation(pIrp);
-
-            rc = IoCallDriver(pDevExt->pNextLowerDriver, pIrp);
-            Log(("vgdrvNtNt5PlusPnP: REMOVE_DEVICE: Next lower driver replied rc = 0x%x\n", rc));
-
-            IoDetachDevice(pDevExt->pNextLowerDriver);
-
-            Log(("vgdrvNtNt5PlusPnP: REMOVE_DEVICE: Removing device ...\n"));
-
-            /* Destroy device extension and clean up everything else. */
-            VGDrvCommonDeleteDevExt(&pDevExt->Core);
-
-            /* Remove DOS device + symbolic link. */
-            UNICODE_STRING win32Name;
-            RtlInitUnicodeString(&win32Name, VBOXGUEST_DEVICE_NAME_DOS);
-            IoDeleteSymbolicLink(&win32Name);
-
-            Log(("vgdrvNtNt5PlusPnP: REMOVE_DEVICE: Deleting device ...\n"));
-
-            /* Last action: Delete our device! pDevObj is *not* failed
-             * anymore after this call! */
-            IoDeleteDevice(pDevObj);
-
-            Log(("vgdrvNtNt5PlusPnP: REMOVE_DEVICE: Device removed!\n"));
-
-            /* Propagating rc from IoCallDriver. */
-            return rc; /* Make sure that we don't do anything below here anymore! */
-        }
-
+        /*
+         * Cancels a pending remove, IRP_MN_QUERY_STOP_DEVICE.
+         * We only have to revert the state.
+         */
         case IRP_MN_CANCEL_STOP_DEVICE:
         {
             Log(("vgdrvNtNt5PlusPnP: CANCEL_STOP_DEVICE\n"));
@@ -1185,60 +1298,31 @@ static NTSTATUS vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             }
 
             /* Complete the IRP. */
-            break;
+            pIrp->IoStatus.Status = rc;
+            IoCompleteRequest(pIrp, IO_NO_INCREMENT);
+            return rc;
         }
 
-        case IRP_MN_QUERY_STOP_DEVICE:
-        {
-            Log(("vgdrvNtNt5PlusPnP: QUERY_STOP_DEVICE\n"));
-
-#ifdef VBOX_REBOOT_ON_UNINSTALL /** @todo  r=bird: this code and log msg is pointless as rc = success and status will be overwritten below. */
-            Log(("vgdrvNtNt5PlusPnP: QUERY_STOP_DEVICE: Device cannot be stopped without a reboot!\n"));
-            pIrp->IoStatus.Status = STATUS_UNSUCCESSFUL;
-#endif
-
-            if (NT_SUCCESS(rc))
-            {
-                VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_PENDINGSTOP);
-
-                /* This IRP passed down to lower driver. */
-                pIrp->IoStatus.Status = STATUS_SUCCESS;
-
-                IoSkipCurrentIrpStackLocation(pIrp);
-
-                rc = IoCallDriver(pDevExt->pNextLowerDriver, pIrp);
-                Log(("vgdrvNtNt5PlusPnP: QUERY_STOP_DEVICE: Next lower driver replied rc = 0x%x\n", rc));
-
-                /* we must not do anything with the IRP after doing IoSkip & CallDriver
-                 * since the driver below us will complete (or already have completed) the IRP.
-                 * I.e. just return the status we got from IoCallDriver */
-                return rc;
-            }
-
-            /* Complete the IRP on failure. */
-            break;
-        }
-
+        /*
+         * Stop the device.
+         */
         case IRP_MN_STOP_DEVICE:
         {
             Log(("vgdrvNtNt5PlusPnP: STOP_DEVICE\n"));
-
             VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_STOPPED);
 
-            /* Free hardware resources. */
-            /** @todo this should actually free I/O ports, interrupts, etc.
-             * Update/bird: vgdrvNtCleanup actually does that... So, what's there to do?  */
-            rc = vgdrvNtCleanup(pDevObj);
-            Log(("vgdrvNtNt5PlusPnP: STOP_DEVICE: cleaning up, rc = 0x%x\n", rc));
+            /*
+             * Release the hardware resources.
+             */
+            vgdrvNtDeleteDeviceResources(pDevExt);
 
-            /* Pass to the lower driver. */
+            /*
+             * Pass the request to the lower driver.
+             */
             pIrp->IoStatus.Status = STATUS_SUCCESS;
-
             IoSkipCurrentIrpStackLocation(pIrp);
-
             rc = IoCallDriver(pDevExt->pNextLowerDriver, pIrp);
             Log(("vgdrvNtNt5PlusPnP: STOP_DEVICE: Next lower driver replied rc = 0x%x\n", rc));
-
             return rc;
         }
 
@@ -1246,15 +1330,10 @@ static NTSTATUS vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         {
             IoSkipCurrentIrpStackLocation(pIrp);
             rc = IoCallDriver(pDevExt->pNextLowerDriver, pIrp);
+            Log(("vgdrvNtNt5PlusPnP: Unknown request %#x: Lower driver replied: %x\n", pStack->MinorFunction, rc));
             return rc;
         }
     }
-
-    pIrp->IoStatus.Status = rc;
-    IoCompleteRequest(pIrp, IO_NO_INCREMENT);
-
-    Log(("vgdrvNtNt5PlusPnP: Returning with rc = 0x%x\n", rc));
-    return rc;
 }
 
 
@@ -1504,46 +1583,6 @@ static void vgdrvNtUnmapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt)
 
 
 /**
- * Cleans up hardware resources.
- * Do not delete DevExt here.
- *
- * @todo r=bird: HC SVNT DRACONES!
- *
- *       This code leaves clients hung when vgdrvNtInit is called afterwards.
- *       This happens when for instance hotplugging a CPU.  Problem is
- *       vgdrvNtInit doing a full VGDrvCommonInitDevExt, orphaning all pDevExt
- *       members, like session lists and stuff.
- *
- * @param   pDevObj     Device object.
- */
-static NTSTATUS vgdrvNtCleanup(PDEVICE_OBJECT pDevObj)
-{
-    LogFlowFuncEnter();
-
-    PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
-    if (pDevExt)
-    {
-        if (pDevExt->pInterruptObject)
-        {
-            IoDisconnectInterrupt(pDevExt->pInterruptObject);
-            pDevExt->pInterruptObject = NULL;
-        }
-
-        /** @todo cleanup the rest stuff */
-
-
-#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
-        hlpDeregisterBugCheckCallback(pDevExt); /* ignore failure! */
-#endif
-        /* According to MSDN we have to unmap previously mapped memory. */
-        vgdrvNtUnmapVMMDevMemory(pDevExt);
-    }
-
-    return STATUS_SUCCESS;
-}
-
-
-/**
  * Unload the driver.
  *
  * @param   pDrvObj     Driver object.
@@ -1553,21 +1592,23 @@ static void vgdrvNtUnload(PDRIVER_OBJECT pDrvObj)
     LogFlowFuncEnter();
 
 #ifdef TARGET_NT4
-    vgdrvNtCleanup(pDrvObj->DeviceObject);
-
-    /* Destroy device extension and clean up everything else. */
-    if (pDrvObj->DeviceObject && pDrvObj->DeviceObject->DeviceExtension)
-        VGDrvCommonDeleteDevExt((PVBOXGUESTDEVEXT)pDrvObj->DeviceObject->DeviceExtension);
-
     /*
-     * I don't think it's possible to unload a driver which processes have
-     * opened, at least we'll blindly assume that here.
+     * We need to destroy the device object here on NT4 and earlier.
      */
-    UNICODE_STRING DosName;
-    RtlInitUnicodeString(&DosName, VBOXGUEST_DEVICE_NAME_DOS);
-    IoDeleteSymbolicLink(&DosName);
+    PDEVICE_OBJECT pDevObj = pDrvObj->DeviceObject;
+    if (pDevObj)
+    {
+        if (g_enmVGDrvNtVer <= VGDRVNTVER_WINNT4)
+        {
+            PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
+            AssertPtr(pDevExt);
+            AssertMsg(pDevExt->Core.uInitState == VBOXGUESTDEVEXT_INIT_STATE_RESOURCES,
+                      ("uInitState=%#x\n", pDevExt->Core.uInitState));
 
-    IoDeleteDevice(pDrvObj->DeviceObject);
+            vgdrvNtDeleteDeviceResources(pDevExt);
+            vgdrvNtDeleteDeviceFundamentAndUnlink(pDevObj, pDevExt);
+        }
+    }
 #else  /* !TARGET_NT4 */
     /*
      * On a PnP driver this routine will be called after IRP_MN_REMOVE_DEVICE
@@ -1576,6 +1617,7 @@ static void vgdrvNtUnload(PDRIVER_OBJECT pDrvObj)
     RT_NOREF1(pDrvObj);
 #endif /* !TARGET_NT4 */
 
+    VGDrvCommonDestroyLoggers();
     RTR0Term();
     LogFlowFunc(("Returning\n"));
 }
@@ -1981,7 +2023,7 @@ static BOOLEAN NTAPI vgdrvNtIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceCon
                                || !RTListIsEmpty(&pDevExt->Core.WakeUpList))
         {
             Log3Func(("Requesting DPC ...\n"));
-            IoRequestDpc(pDevExt->pDeviceObject, pDevExt->pCurrentIrp, NULL);
+            IoRequestDpc(pDevExt->pDeviceObject, pDevExt->pCurrentIrp, NULL); /** @todo r=bird: pCurrentIrp is not set anywhere. sigh. */
         }
     }
     return fIRQTaken;
