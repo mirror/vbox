@@ -64,39 +64,32 @@
 /**
  * Get the name of a flag as a string.
  * @returns the name, or NULL if fFlag is invalid.
- * @param   fFlag  the flag.  Must be a value from the ePropFlags enumeration
- *                 list.
+ * @param   fFlag       The flag, GUEST_PROP_F_XXX.
+ * @param   pcchName    Where to return the name length.
  */
-DECLINLINE(const char *) GuestPropFlagName(uint32_t fFlag)
+DECLINLINE(const char *) GuestPropFlagNameAndLen(uint32_t fFlag, size_t *pcchName)
 {
     switch (fFlag)
     {
         case GUEST_PROP_F_TRANSIENT:
+            *pcchName = sizeof("TRANSIENT") - 1;
             return "TRANSIENT";
         case GUEST_PROP_F_RDONLYGUEST:
+            *pcchName = sizeof("RDONLYGUEST") - 1;
             return "RDONLYGUEST";
         case GUEST_PROP_F_RDONLYHOST:
+            *pcchName = sizeof("RDONLYHOST") - 1;
             return "RDONLYHOST";
         case GUEST_PROP_F_READONLY:
+            *pcchName = sizeof("READONLY") - 1;
             return "READONLY";
         case GUEST_PROP_F_TRANSRESET:
+            *pcchName = sizeof("TRANSRESET") - 1;
             return "TRANSRESET";
         default:
-            break;
+            *pcchName = 0;
+            return NULL;
     }
-    return NULL;
-}
-
-/**
- * Get the length of a flag name as returned by flagName.
- * @returns the length, or 0 if fFlag is invalid.
- * @param   fFlag  the flag.  Must be a value from the ePropFlags enumeration
- *                 list.
- */
-DECLINLINE(size_t) GuestPropFlagNameLen(uint32_t fFlag)
-{
-    const char *pcszName = GuestPropFlagName(fFlag);
-    return RT_LIKELY(pcszName != NULL) ? strlen(pcszName) : 0;
 }
 
 /**
@@ -130,28 +123,34 @@ DECLINLINE(int) GuestPropValidateFlags(const char *pcszFlags, uint32_t *pfFlags)
 
     if (pcszFlags)
     {
-        while (' ' == *pcszNext)
+        while (*pcszNext == ' ')
             ++pcszNext;
         while ((*pcszNext != '\0') && RT_SUCCESS(rc))
         {
-            unsigned i = 0;
-            for (; i < RT_ELEMENTS(s_aFlagList); ++i)
-                if (RTStrNICmp(pcszNext, GuestPropFlagName(s_aFlagList[i]), GuestPropFlagNameLen(s_aFlagList[i])) == 0)
-                    break;
-            if (RT_ELEMENTS(s_aFlagList) == i)
-                rc = VERR_PARSE_ERROR;
-            else
+            unsigned i;
+            rc = VERR_PARSE_ERROR;
+            for (i = 0; i < RT_ELEMENTS(s_aFlagList); ++i)
             {
-                fFlags |= s_aFlagList[i];
-                pcszNext += GuestPropFlagNameLen(s_aFlagList[i]);
-                while (' ' == *pcszNext)
-                    ++pcszNext;
-                if (',' == *pcszNext)
-                    ++pcszNext;
-                else if (*pcszNext != '\0')
-                    rc = VERR_PARSE_ERROR;
-                while (' ' == *pcszNext)
-                    ++pcszNext;
+                size_t      cchFlagName;
+                const char *pszFlagName = GuestPropFlagNameAndLen(s_aFlagList[i], &cchFlagName);
+                if (RTStrNICmp(pcszNext, pszFlagName, cchFlagName) == 0)
+                {
+                    char ch;
+                    fFlags |= s_aFlagList[i];
+                    pcszNext += cchFlagName;
+                    while ((ch = *pcszNext) == ' ')
+                        ++pcszNext;
+                    rc = VINF_SUCCESS;
+                    if (ch == ',')
+                    {
+                        ++pcszNext;
+                        while (*pcszNext == ' ')
+                            ++pcszNext;
+                    }
+                    else if (ch != '\0')
+                        rc = VERR_PARSE_ERROR;
+                    break;
+                }
             }
         }
     }
@@ -166,7 +165,7 @@ DECLINLINE(int) GuestPropValidateFlags(const char *pcszFlags, uint32_t *pfFlags)
  * @returns  IPRT status code
  * @param    fFlags    the flags to write out
  * @param    pszFlags  where to write the flags string.  This must point to
- *                     a buffer of size (at least) MAX_FLAGS_LEN.
+ *                     a buffer of size (at least) GUEST_PROP_MAX_FLAGS_LEN.
  */
 DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char *pszFlags)
 {
@@ -193,18 +192,21 @@ DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char *pszFlags)
         {
             if (s_aFlagList[i] == (fFlags & s_aFlagList[i]))
             {
-                strcpy(pszNext, GuestPropFlagName(s_aFlagList[i]));
-                pszNext += GuestPropFlagNameLen(s_aFlagList[i]);
+                size_t      cchFlagName;
+                const char *pszFlagName = GuestPropFlagNameAndLen(s_aFlagList[i], &cchFlagName);
+                memcpy(pszNext, pszFlagName, cchFlagName);
+                pszNext += cchFlagName;
                 fFlags &= ~s_aFlagList[i];
                 if (fFlags != GUEST_PROP_F_NILFLAG)
                 {
-                    strcpy(pszNext, ", ");
-                    pszNext += 2;
+                    *pszNext++ = ',';
+                    *pszNext++ = ' ';
                 }
             }
         }
         *pszNext = '\0';
 
+        Assert((uintptr_t)(pszNext - pszFlags) < GUEST_PROP_MAX_FLAGS_LEN);
         Assert(fFlags == GUEST_PROP_F_NILFLAG); /* bad s_aFlagList */
     }
     else
@@ -352,7 +354,7 @@ typedef struct GuestPropMsgSetProperty
     /**
      * The property flags (IN pointer)
      * This is a comma-separated list of the format flag=value
-     * The length must be less than or equal to MAX_FLAGS_LEN and only
+     * The length must be less than or equal to GUEST_PROP_MAX_FLAGS_LEN and only
      * known flag names and values will be accepted.
      */
     HGCMFunctionParameter flags;
