@@ -55,7 +55,8 @@ typedef enum RTWINOSTYPE
     kRTWinOSType_ME,
     kRTWinOSType_9XLAST     = 99,
     kRTWinOSType_NTFIRST    = 100,
-    kRTWinOSType_NT31       = kRTWinOSType_NTFIRST,
+    kRTWinOSType_NT310      = kRTWinOSType_NTFIRST,
+    kRTWinOSType_NT350,
     kRTWinOSType_NT351,
     kRTWinOSType_NT4,
     kRTWinOSType_2K,                        /* 5.0 */

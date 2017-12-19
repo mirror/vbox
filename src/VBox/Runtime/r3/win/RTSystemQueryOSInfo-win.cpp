@@ -190,6 +190,8 @@ static int rtSystemWinQueryOSVersion(RTSYSOSINFO enmInfo, char *pszInfo, size_t 
                 case kRTWinOSType_98SP1:        strcpy(szTmp, "Windows 98 (Service Pack 1)"); break;
                 case kRTWinOSType_98SE:         strcpy(szTmp, "Windows 98 (Second Edition)"); break;
                 case kRTWinOSType_ME:           strcpy(szTmp, "Windows Me"); break;
+                case kRTWinOSType_NT310:        strcpy(szTmp, "Windows NT 3.10"); break;
+                case kRTWinOSType_NT350:        strcpy(szTmp, "Windows NT 3.50"); break;
                 case kRTWinOSType_NT351:        strcpy(szTmp, "Windows NT 3.51"); break;
                 case kRTWinOSType_NT4:          strcpy(szTmp, "Windows NT 4.0"); break;
                 case kRTWinOSType_2K:           strcpy(szTmp, "Windows 2000"); break;

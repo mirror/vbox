@@ -140,6 +140,9 @@ static PFNENUMPROCESSES                 g_pfnEnumProcesses              = NULL;
 /* advapi32.dll: */
 static PFNCREATEPROCESSWITHLOGON        g_pfnCreateProcessWithLogonW    = NULL;
 static PFNLSALOOKUPNAMES2               g_pfnLsaLookupNames2            = NULL;
+static decltype(LogonUserW)            *g_pfnLogonUserW                 = NULL;
+static decltype(CreateProcessAsUserW)  *g_pfnCreateProcessAsUserW       = NULL;
+static decltype(LsaNtStatusToWinError) *g_pfnLsaNtStatusToWinError      = NULL;
 /* userenv.dll: */
 static PFNCREATEENVIRONMENTBLOCK        g_pfnCreateEnvironmentBlock     = NULL;
 static PFNPFNDESTROYENVIRONMENTBLOCK    g_pfnDestroyEnvironmentBlock    = NULL;
@@ -344,10 +347,19 @@ static DECLCALLBACK(int) rtProcWinResolveOnce(void *pvUser)
     if (RT_SUCCESS(rc))
     {
         rc = RTLdrGetSymbol(hMod, "CreateProcessWithLogonW", (void **)&g_pfnCreateProcessWithLogonW);
-        AssertStmt(RT_SUCCESS(rc), g_pfnCreateProcessWithLogonW = NULL);
+        if (RT_FAILURE(rc)) { g_pfnCreateProcessWithLogonW = NULL; Assert(g_enmWinVer <= kRTWinOSType_NT4); }
 
         rc = RTLdrGetSymbol(hMod, "LsaLookupNames2", (void **)&g_pfnLsaLookupNames2);
-        AssertStmt(RT_SUCCESS(rc), g_pfnLsaLookupNames2 = NULL);
+        if (RT_FAILURE(rc)) { g_pfnLsaLookupNames2 = NULL; Assert(g_enmWinVer <= kRTWinOSType_NT4); }
+
+        rc = RTLdrGetSymbol(hMod, "LogonUserW", (void **)&g_pfnLogonUserW);
+        if (RT_FAILURE(rc)) { g_pfnLogonUserW = NULL; Assert(g_enmWinVer <= kRTWinOSType_NT350); }
+
+        rc = RTLdrGetSymbol(hMod, "CreateProcessAsUserW", (void **)&g_pfnCreateProcessAsUserW);
+        if (RT_FAILURE(rc)) { g_pfnCreateProcessAsUserW = NULL; Assert(g_enmWinVer <= kRTWinOSType_NT350); }
+
+        rc = RTLdrGetSymbol(hMod, "LsaNtStatusToWinError", (void **)&g_pfnLsaNtStatusToWinError);
+        if (RT_FAILURE(rc)) { g_pfnLsaNtStatusToWinError = NULL; Assert(g_enmWinVer <= kRTWinOSType_NT350); }
 
         RTLdrClose(hMod);
     }
@@ -359,16 +371,16 @@ static DECLCALLBACK(int) rtProcWinResolveOnce(void *pvUser)
     if (RT_SUCCESS(rc))
     {
         rc = RTLdrGetSymbol(hMod, "LoadUserProfileW", (void **)&g_pfnLoadUserProfileW);
-        AssertStmt(RT_SUCCESS(rc), g_pfnLoadUserProfileW = NULL);
+        if (RT_FAILURE(rc)) { g_pfnLoadUserProfileW = NULL; Assert(g_enmWinVer <= kRTWinOSType_NT4); }
 
         rc = RTLdrGetSymbol(hMod, "UnloadUserProfile", (void **)&g_pfnUnloadUserProfile);
-        AssertStmt(RT_SUCCESS(rc), g_pfnUnloadUserProfile = NULL);
+        if (RT_FAILURE(rc)) { g_pfnUnloadUserProfile = NULL; Assert(g_enmWinVer <= kRTWinOSType_NT4); }
 
         rc = RTLdrGetSymbol(hMod, "CreateEnvironmentBlock", (void **)&g_pfnCreateEnvironmentBlock);
-        AssertStmt(RT_SUCCESS(rc), g_pfnCreateEnvironmentBlock = NULL);
+        if (RT_FAILURE(rc)) { g_pfnCreateEnvironmentBlock = NULL; Assert(g_enmWinVer <= kRTWinOSType_NT4); }
 
         rc = RTLdrGetSymbol(hMod, "DestroyEnvironmentBlock", (void **)&g_pfnDestroyEnvironmentBlock);
-        AssertStmt(RT_SUCCESS(rc), g_pfnDestroyEnvironmentBlock = NULL);
+        if (RT_FAILURE(rc)) { g_pfnDestroyEnvironmentBlock = NULL; Assert(g_enmWinVer <= kRTWinOSType_NT4); }
 
         RTLdrClose(hMod);
     }
@@ -661,6 +673,8 @@ static int rtProcWinUserLogon(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, HANDLE *
     AssertPtrReturn(pwszUser,     VERR_INVALID_POINTER);
     AssertPtrReturn(pwszPassword, VERR_INVALID_POINTER);
     AssertPtrReturn(phToken,      VERR_INVALID_POINTER);
+    if (!g_pfnLogonUserW)
+        return VERR_NOT_SUPPORTED;
 
     /*
      * Because we have to deal with http://support.microsoft.com/kb/245683
@@ -671,13 +685,13 @@ static int rtProcWinUserLogon(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, HANDLE *
      * is required on older windows versions (NT4, W2K, possibly XP).
      */
     PCRTUTF16 pwszDomainNone = g_enmWinVer < kRTWinOSType_2K ? L"" /* NT4 and older */ : NULL /* Windows 2000 and up */;
-    BOOL fRc = LogonUserW(pwszUser,
-                          /* The domain always is passed as part of the UPN (user name). */
-                          pwszDomainNone,
-                          pwszPassword,
-                          LOGON32_LOGON_INTERACTIVE,
-                          LOGON32_PROVIDER_DEFAULT,
-                          phToken);
+    BOOL fRc = g_pfnLogonUserW(pwszUser,
+                               /* The domain always is passed as part of the UPN (user name). */
+                               pwszDomainNone,
+                               pwszPassword,
+                               LOGON32_LOGON_INTERACTIVE,
+                               LOGON32_PROVIDER_DEFAULT,
+                               phToken);
     if (fRc)
         return VINF_SUCCESS;
 
@@ -1529,11 +1543,16 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                                 rc = dwErr != NO_ERROR ? RTErrConvertFromWin32(dwErr) : VERR_INTERNAL_ERROR_2;
                             }
                         }
-                        else
+                        else if (g_pfnLsaNtStatusToWinError)
                         {
-                            dwErr = LsaNtStatusToWinError(ntSts);
+                            dwErr = g_pfnLsaNtStatusToWinError(ntSts);
                             LogRelFunc(("LsaLookupNames2 failed with: %ld\n", dwErr));
                             rc = dwErr != NO_ERROR ? RTErrConvertFromWin32(dwErr) : VERR_INTERNAL_ERROR_2;
+                        }
+                        else
+                        {
+                            LogRelFunc(("LsaLookupNames2 failed with: %#x\n", ntSts));
+                            rc = RTErrConvertFromNtStatus(ntSts);
                         }
 
                         if (pDomainList)
@@ -1550,11 +1569,16 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                         rtProcWinFreeAccountInfo(&accountInfo);
                         LsaClose(lsahPolicy);
                     }
-                    else
+                    else if (g_pfnLsaNtStatusToWinError)
                     {
-                        dwErr = LsaNtStatusToWinError(ntSts);
+                        dwErr = g_pfnLsaNtStatusToWinError(ntSts);
                         LogRelFunc(("LsaOpenPolicy failed with: %ld\n", dwErr));
                         rc = dwErr != NO_ERROR ? RTErrConvertFromWin32(dwErr) : VERR_INTERNAL_ERROR_3;
+                    }
+                    else
+                    {
+                        LogRelFunc(("LsaOpenPolicy failed with: %#x\n", ntSts));
+                        rc = RTErrConvertFromNtStatus(ntSts);
                     }
 
                     /* Note: pSid will be free'd down below. */
@@ -1695,29 +1719,34 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                                  *      http://support.microsoft.com/kb/184802/
                                  *      http://support.microsoft.com/kb/327618/
                                  */
-                                fRc = CreateProcessAsUserW(hTokenToUse,
-                                                           *ppwszExec,
-                                                           pwszCmdLine,
-                                                           NULL,         /* pProcessAttributes */
-                                                           NULL,         /* pThreadAttributes */
-                                                           TRUE,         /* fInheritHandles */
-                                                           dwCreationFlags,
-                                                           /** @todo Warn about exceeding 8192 bytes
-                                                            *        on XP and up. */
-                                                           pwszzBlock,   /* lpEnvironment */
-                                                           NULL,         /* pCurrentDirectory */
-                                                           pStartupInfo,
-                                                           pProcInfo);
-                                if (fRc)
-                                    rc = VINF_SUCCESS;
-                                else
+                                if (g_pfnCreateProcessAsUserW)
                                 {
-                                    dwErr = GetLastError();
-                                    if (dwErr == ERROR_PRIVILEGE_NOT_HELD)
-                                        rc = rtProcWinFigureWhichPrivilegeNotHeld2();
+                                    fRc = g_pfnCreateProcessAsUserW(hTokenToUse,
+                                                                    *ppwszExec,
+                                                                    pwszCmdLine,
+                                                                    NULL,         /* pProcessAttributes */
+                                                                    NULL,         /* pThreadAttributes */
+                                                                    TRUE,         /* fInheritHandles */
+                                                                    dwCreationFlags,
+                                                                    /** @todo Warn about exceeding 8192 bytes
+                                                                     *        on XP and up. */
+                                                                    pwszzBlock,   /* lpEnvironment */
+                                                                    NULL,         /* pCurrentDirectory */
+                                                                    pStartupInfo,
+                                                                    pProcInfo);
+                                    if (fRc)
+                                        rc = VINF_SUCCESS;
                                     else
-                                        rc = RTErrConvertFromWin32(dwErr);
+                                    {
+                                        dwErr = GetLastError();
+                                        if (dwErr == ERROR_PRIVILEGE_NOT_HELD)
+                                            rc = rtProcWinFigureWhichPrivilegeNotHeld2();
+                                        else
+                                            rc = RTErrConvertFromWin32(dwErr);
+                                    }
                                 }
+                                else
+                                    rc = VERR_NOT_SUPPORTED;
 
                                 if (hOldWinStation)
                                     SetProcessWindowStation(hOldWinStation);

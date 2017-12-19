@@ -221,7 +221,10 @@ static RTWINOSTYPE rtR3InitWinSimplifiedVersion(OSVERSIONINFOEXW const *pOSInfoE
     {
         if (        dwMajorVersion == 3
                  && dwMinorVersion == 1)
-            enmVer = kRTWinOSType_NT31;
+            enmVer = kRTWinOSType_NT310;
+        else if (   dwMajorVersion == 3
+                 && dwMinorVersion == 50)
+            enmVer = kRTWinOSType_NT350;
         else if (   dwMajorVersion == 3
                  && dwMinorVersion == 51)
             enmVer = kRTWinOSType_NT351;
