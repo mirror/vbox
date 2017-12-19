@@ -4235,8 +4235,12 @@ static int vgdrvDispatchEventsLocked(PVBOXGUESTDEVEXT pDevExt, uint32_t fEvents)
  */
 bool VGDrvCommonIsOurIRQ(PVBOXGUESTDEVEXT pDevExt)
 {
+    VMMDevMemory volatile *pVMMDevMemory;
+    bool fOurIrq;
+
     RTSpinlockAcquire(pDevExt->EventSpinlock);
-    bool const fOurIrq = pDevExt->pVMMDevMemory->V.V1_04.fHaveEvents;
+    pVMMDevMemory = pDevExt->pVMMDevMemory;
+    fOurIrq = pVMMDevMemory ? pVMMDevMemory->V.V1_04.fHaveEvents : false;
     RTSpinlockRelease(pDevExt->EventSpinlock);
 
     return fOurIrq;
@@ -4256,6 +4260,7 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
     VMMDevEvents volatile  *pReq                  = pDevExt->pIrqAckEvents;
     bool                    fMousePositionChanged = false;
     int                     rc                    = 0;
+    VMMDevMemory volatile  *pVMMDevMemory;
     bool                    fOurIrq;
 
     /*
@@ -4268,7 +4273,8 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
      * Enter the spinlock and check if it's our IRQ or not.
      */
     RTSpinlockAcquire(pDevExt->EventSpinlock);
-    fOurIrq = pDevExt->pVMMDevMemory->V.V1_04.fHaveEvents;
+    pVMMDevMemory = pDevExt->pVMMDevMemory;
+    fOurIrq = pVMMDevMemory ? pVMMDevMemory->V.V1_04.fHaveEvents : false;
     if (fOurIrq)
     {
         /*
