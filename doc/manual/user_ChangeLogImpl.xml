@@ -27,8 +27,33 @@ are ordered as follows:
 <chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
+   <sect1>
+    <title>Version 5.3.0 (2018-xx-xx)</title>
+
+    <para>This is a major update. The following major new features
+      were added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>dummy</para>
+      </listitem>
+
+    </itemizedlist>
+
+    <para>In addition, the following items were fixed and/or added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>dummy</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
   <sect1>
-    <title>Version 5.2.4 (2017-xx-xx)</title>
+    <title>Version 5.2.4 (2017-12-19)</title>
 
     <para>This is a maintenance release. The following items were fixed and/or
       added:</para>
@@ -36,7 +61,34 @@ are ordered as follows:
     <itemizedlist>
 
       <listitem>
-        <para>GUI: Adjusting desktop file for X11 window managers (bug #17312)</para>
+        <para>User interface: Adjusting desktop file for X11 window managers
+          (bug #17312)</para>
+      </listitem>
+
+      <listitem>
+        <para>User interface: various high resolution display adjustments</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed SB16 volume handling (5.2 regression)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: various fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>USB/OHCI: fixed a problem where OHCI emulation might sporadically drop data transfers</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: fixed screen corruption when the host screen changes
+          and a virtual machine window is maximized</para>
+      </listitem>
+
+      <listitem>
+        <para>X11 Guest Additions: fixed a hang at the GNOME Shell login screen
+          with 3D enabled (5.2 regression, bugs #17189 and #17190)</para>
       </listitem>
 
     </itemizedlist>
