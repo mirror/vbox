@@ -1,5 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<!-- Release change log structure
+
+Each release has a matching log of changes which were made for that and
+earlier releases. Earlier releases means anything with a lower number (e.g.
+5.0.18 is lower than 5.1.2) which was released before this one. The log is
+kept in the file doc/manual/user_ChangeLogImpl.xml. Anything worth mentioning,
+particularly new features and fixed bugs, with a trac bug number if possible,
+should be added to the top of the change log (that is, the section for the
+upcoming release) for the branch in which it first appears - stable or
+development - before the next release. If you back-port it to older branches
+please add an entry there too. When a new major release is made, change log
+sections for earlier releases are merged in.
+
+Change log sections are split into two groups: major new features (normally
+only for dot zero releases) and fixes. In addition, the entries in each group
+are ordered as follows:
+
+    VMM-related entries (most important)
+    GUI-related entries (most visible for users)
+    Device-related entries
+    VBoxManage/API/Main-related entries
+    Host-related entries
+    Guest-related entries -->
+
 <chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
@@ -64,6 +88,11 @@
       </listitem>
 
       <listitem>
+        <para>Bridged networking: fixed duplicate EtherType in VLAN/priority tags
+          on Linux (5.2.0 regression; bug #17277)</para>
+      </listitem>
+
+      <listitem>
         <para>USB/OHCI: improved behavior so that the controller state after a VM reset
            is closer to the initial state after VM start</para>
       </listitem>
@@ -89,21 +118,12 @@
 
       <listitem>
         <para>Linux guests: fixed kernel module compilation and other problems
-         with Linux kernel 4.14 (bug #12534)</para>
-      </listitem>
-
-      <listitem>
-        <para>Linux guests: fixed kernel module compilation and other problems
          with Linux kernel 4.14</para>
       </listitem>
 
       <listitem>
-        <para>Linux guests: fixed various 5.2.0 regressions (bug #17163)</para>
-      </listitem>
-
-      <listitem>
-        <para>Bridged networking: fixed duplicate EtherType in VLAN/priority tags
-          on Linux (5.2.0 regression; bug #17277)</para>
+        <para>Linux guests: fixed various 5.2.0 regressions (bugs #17163,
+         #17203)</para>
       </listitem>
 
     </itemizedlist>
@@ -273,117 +293,6 @@
     </itemizedlist>
   </sect1>
 
-  <sect1>
-    <title>Version 5.1.30 (2017-10-16)</title>
-
-    <para>This is a maintenance release. The following items were fixed and/or
-      added:</para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>GUI: translation updates</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: Fixed double mouse cursor when using mouse integration
-          without Guest Additions, actually a Qt 5.6 bug fixed with QT 5.6.3
-          (Mac OS X hosts only; bug #15610)</para>
-      </listitem>
-
-      <listitem>
-        <para>Solaris hosts: allow increasing MTU size for host-only adapter to
-          9706 bytes to support jumbo frames</para>
-      </listitem>
-
-      <listitem>
-        <para>Linux hosts: glibc 2.26 compile fix</para>
-      </listitem>
-
-      <listitem>
-        <para>Windows Additions: 3D related crash fix (bugs #17082, #17092)</para>
-      </listitem>
-
-    </itemizedlist>
-  </sect1>
-
-  <sect1>
-    <title>Version 5.1.28 (2017-09-13)</title>
-
-    <para>This is a maintenance release. The following items were fixed and/or
-      added:</para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>GUI: mouse events did not reach host windows behind the transparent
-          VM window (Mac OS X hosts only; bug #16246)</para>
-      </listitem>
-
-      <listitem>
-        <para>Audio: fixed accidental crashes when using the AC'97 sound
-          emulation (bug #16959)</para>
-      </listitem>
-
-      <listitem>
-        <para>Audio: fixed crash when default input or output devices have changed
-          (bugs #16968, #16969, #17004)</para>
-      </listitem>
-      <listitem>
-        <para>Audio: fixed recording when using the ALSA backend</para>
-      </listitem>
-
-      <listitem>
-        <para>Audio: fixed handle leak when using the OSS backend</para>
-      </listitem>
-
-      <listitem>
-        <para>E1000: fixed a crash related to VLAN traffic over internal
-          network (5.1.26 regression; bug #16960)</para>
-      </listitem>
-
-      <listitem>
-        <para>NAT: apply <emphasis>--natbindip1</emphasis> to TCP connections
-          (bug #16478)</para>
-      </listitem>
-
-      <listitem>
-        <para>OVF: when importing an appliance with XHCI controller, don't
-          add an OHCI controller</para>
-      </listitem>
-
-      <listitem>
-        <para>Mac OS X hosts: fixed a GUI crash if Spotlight is used from
-          file dialogs (5.1.20 regression; bugs #16935, #16953)</para>
-      </listitem>
-
-      <listitem>
-        <para>Linux hosts: fixed creating fixed sized VDI images
-          (bug #17010)</para>
-      </listitem>
-
-      <listitem>
-        <para>Linux hosts / guests: fixes for Linux 4.4 of openSUSE Leap 42.3
-          (bug #16966)</para>
-      </listitem>
-
-      <listitem>
-        <para>Bridged networking: align outgoing packet at word boundary,
-          preventing Windows host crash in MsLbfoProvider</para>
-      </listitem>
-
-      <listitem>
-        <para>Linux Additions: kernel drm driver support for custom EL7
-          Linux 3.10 kernel</para>
-      </listitem>
-
-      <listitem>
-        <para>Solaris Additions: hide an informational message on the bootup
-          console</para>
-      </listitem>
-
-    </itemizedlist>
-  </sect1>
   <sect1>
     <title>Version 5.1.30 (2017-10-16)</title>
 
