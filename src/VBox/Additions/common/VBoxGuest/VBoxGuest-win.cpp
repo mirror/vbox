@@ -202,7 +202,7 @@ static void     vgdrvNtDoTests(void);
 #endif
 static VOID     vgdrvNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext);
 static BOOLEAN  vgdrvNtIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext);
-static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXTWIN pDevExt);
+static NTSTATUS vgdrvNtScanPCIResourceList(PVBOXGUESTDEVEXTWIN pDevExt, PCM_RESOURCE_LIST pResList, bool fTranslated);
 static NTSTATUS vgdrvNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS PhysAddr, ULONG cbToMap,
                                        void **ppvMMIOBase, uint32_t *pcbMMIO);
 RT_C_DECLS_END
@@ -544,7 +544,7 @@ static NTSTATUS vgdrvNtSetupDevice(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT p
 # endif
         if (NT_SUCCESS(rcNt))
         {
-            rcNt = vgdrvNtScanPCIResourceList(pResourceList, pDevExt);
+            rcNt = vgdrvNtScanPCIResourceList(pDevExt, pResourceList, false /*fTranslated*/);
             ExFreePool(pResourceList);
         }
 
@@ -563,7 +563,8 @@ static NTSTATUS vgdrvNtSetupDevice(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT p
 # ifdef LOG_ENABLED
         vgdrvNtShowDeviceResources(pStack->Parameters.StartDevice.AllocatedResources);
 # endif
-        rcNt = vgdrvNtScanPCIResourceList(pStack->Parameters.StartDevice.AllocatedResourcesTranslated, pDevExt);
+        rcNt = vgdrvNtScanPCIResourceList(pDevExt, pStack->Parameters.StartDevice.AllocatedResourcesTranslated,
+                                          true /*fTranslated*/);
     }
     if (NT_SUCCESS(rcNt))
     {
@@ -2213,10 +2214,11 @@ static void vgdrvNtReadConfiguration(PVBOXGUESTDEVEXTWIN pDevExt)
 /**
  * Helper to scan the PCI resource list and remember stuff.
  *
- * @param pResList  Resource list
- * @param pDevExt   Device extension
+ * @param   pDevExt         The device extension.
+ * @param   pResList        Resource list
+ * @param   fTranslated     Whether the addresses are translated or not.
  */
-static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXTWIN pDevExt)
+static NTSTATUS vgdrvNtScanPCIResourceList(PVBOXGUESTDEVEXTWIN pDevExt, PCM_RESOURCE_LIST pResList, bool fTranslated)
 {
     /* Enumerate the resource list. */
     LogFlowFunc(("Found %d resources\n",
@@ -2224,9 +2226,11 @@ static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUES
 
     NTSTATUS rc = STATUS_SUCCESS;
     PCM_PARTIAL_RESOURCE_DESCRIPTOR pPartialData = NULL;
-    ULONG rangeCount = 0;
-    ULONG cMMIORange = 0;
-    PVBOXGUESTWINBASEADDRESS pBaseAddress = pDevExt->aPciBaseAddresses;
+    PVBOXGUESTWINBASEADDRESS pBaseAddress   = pDevExt->aPciBaseAddresses;
+    uint32_t                 cBaseAddresses = 0;
+    bool                     fGotIrq        = false;
+    bool                     fGotMmio       = false;
+    bool                     fGotIoPorts    = false;
     for (ULONG i = 0; i < pResList->List->PartialResourceList.Count; i++)
     {
         pPartialData = &pResList->List->PartialResourceList.PartialDescriptors[i];
@@ -2234,18 +2238,20 @@ static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUES
         {
             case CmResourceTypePort:
             {
-                /* Overflow protection. */
-                if (rangeCount < PCI_TYPE0_ADDRESSES)
-                {
-                    LogFlowFunc(("I/O range: Base=%08x:%08x, length=%08x\n",
-                                 pPartialData->u.Port.Start.HighPart,
-                                 pPartialData->u.Port.Start.LowPart,
-                                 pPartialData->u.Port.Length));
+                LogFlowFunc(("I/O range: Base=%#RX64, length=%08x\n",
+                             pPartialData->u.Port.Start.QuadPart, pPartialData->u.Port.Length));
 
-                    /* Save the IO port base. */
-                    /** @todo Not so good.
-                     * Update/bird: What is not so good? That we just consider the last range?  */
-                    pDevExt->Core.IOPortBase = (RTIOPORT)pPartialData->u.Port.Start.LowPart;
+                /* Overflow protection. */
+                if (cBaseAddresses < PCI_TYPE0_ADDRESSES)
+                {
+                    /* Save the first I/O port base. */
+                    if (!fGotIoPorts)
+                    {
+                        pDevExt->Core.IOPortBase = (RTIOPORT)pPartialData->u.Port.Start.LowPart;
+                        fGotIoPorts = true;
+                    }
+                    else
+                        LogRelFunc(("More than one I/O port range?!?\n"));
 
                     /* Save resource information. */
                     pBaseAddress->RangeStart     = pPartialData->u.Port.Start;
@@ -2253,71 +2259,76 @@ static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUES
                     pBaseAddress->RangeInMemory  = FALSE;
                     pBaseAddress->ResourceMapped = FALSE;
 
-                    LogFunc(("I/O range for VMMDev found! Base=%08x:%08x, length=%08x\n",
-                             pPartialData->u.Port.Start.HighPart,
-                             pPartialData->u.Port.Start.LowPart,
-                             pPartialData->u.Port.Length));
+                    LogFunc(("I/O range for VMMDev found! Base=%#RX64, length=%08x\n",
+                             pPartialData->u.Port.Start.QuadPart, pPartialData->u.Port.Length));
 
                     /* Next item ... */
-                    rangeCount++; pBaseAddress++;
+                    pBaseAddress++;
+                    cBaseAddresses++;
                 }
+                else
+                    LogFunc(("Too many PCI addresses!\n"));
                 break;
             }
 
             case CmResourceTypeInterrupt:
             {
                 LogFunc(("Interrupt: Level=%x, vector=%x, mode=%x\n",
-                         pPartialData->u.Interrupt.Level,
-                         pPartialData->u.Interrupt.Vector,
-                         pPartialData->Flags));
+                         pPartialData->u.Interrupt.Level, pPartialData->u.Interrupt.Vector, pPartialData->Flags));
 
-                /* Save information. */
-                pDevExt->uInterruptLevel    = pPartialData->u.Interrupt.Level;
-                pDevExt->uInterruptVector   = pPartialData->u.Interrupt.Vector;
-                pDevExt->fInterruptAffinity = pPartialData->u.Interrupt.Affinity;
+                if (!fGotIrq)
+                {
+                    /* Save information. */
+                    pDevExt->uInterruptLevel    = pPartialData->u.Interrupt.Level;
+                    pDevExt->uInterruptVector   = pPartialData->u.Interrupt.Vector;
+                    pDevExt->fInterruptAffinity = pPartialData->u.Interrupt.Affinity;
 
-                /* Check interrupt mode. */
-                if (pPartialData->Flags & CM_RESOURCE_INTERRUPT_LATCHED)
-                    pDevExt->enmInterruptMode = Latched;
+                    /* Check interrupt mode. */
+                    if (pPartialData->Flags & CM_RESOURCE_INTERRUPT_LATCHED)
+                        pDevExt->enmInterruptMode = Latched;
+                    else
+                        pDevExt->enmInterruptMode = LevelSensitive;
+                    fGotIrq = true;
+                }
                 else
-                    pDevExt->enmInterruptMode = LevelSensitive;
+                    LogFunc(("More than one IRQ resource!\n"));
                 break;
             }
 
             case CmResourceTypeMemory:
             {
-                /* Overflow protection. */
-                if (rangeCount < PCI_TYPE0_ADDRESSES)
-                {
-                    LogFlowFunc(("Memory range: Base=%08x:%08x, length=%08x\n",
-                                 pPartialData->u.Memory.Start.HighPart,
-                                 pPartialData->u.Memory.Start.LowPart,
-                                 pPartialData->u.Memory.Length));
+                LogFlowFunc(("Memory range: Base=%#RX64, length=%08x\n",
+                             pPartialData->u.Memory.Start.QuadPart, pPartialData->u.Memory.Length));
 
-                    /* We only care about read/write memory. */
-                    /** @todo Reconsider memory type. */
-                    if (   cMMIORange == 0 /* Only care about the first MMIO range (!!!). */
-                        && (pPartialData->Flags & VBOX_CM_PRE_VISTA_MASK) == CM_RESOURCE_MEMORY_READ_WRITE)
+                /* Overflow protection. */
+                if (cBaseAddresses < PCI_TYPE0_ADDRESSES)
+                {
+                    /* We only care about the first read/write memory range. */
+                    if (   !fGotMmio
+                        && (pPartialData->Flags & CM_RESOURCE_MEMORY_WRITEABILITY_MASK) == CM_RESOURCE_MEMORY_READ_WRITE)
                     {
                         /* Save physical MMIO base + length for VMMDev. */
                         pDevExt->uVmmDevMemoryPhysAddr = pPartialData->u.Memory.Start;
                         pDevExt->cbVmmDevMemory = (ULONG)pPartialData->u.Memory.Length;
 
-                        /* Technically we need to make the HAL translate the address.  since we
-                           didn't used to do this and it probably just returns the input address,
-                           we allow ourselves to ignore failures. */
-                        ULONG               uAddressSpace = 0;
-                        PHYSICAL_ADDRESS    PhysAddr = pPartialData->u.Memory.Start;
-                        if (HalTranslateBusAddress(pResList->List->InterfaceType, pResList->List->BusNumber, PhysAddr,
-                                                   &uAddressSpace, &PhysAddr))
+                        if (!fTranslated)
                         {
-                            Log(("HalTranslateBusAddress(%#RX64) -> %RX64, type %#x\n",
-                                 pPartialData->u.Memory.Start.QuadPart, PhysAddr.QuadPart, uAddressSpace));
-                            if (pPartialData->u.Memory.Start.QuadPart != PhysAddr.QuadPart)
-                                pDevExt->uVmmDevMemoryPhysAddr = PhysAddr;
+                            /* Technically we need to make the HAL translate the address.  since we
+                               didn't used to do this and it probably just returns the input address,
+                               we allow ourselves to ignore failures. */
+                            ULONG               uAddressSpace = 0;
+                            PHYSICAL_ADDRESS    PhysAddr = pPartialData->u.Memory.Start;
+                            if (HalTranslateBusAddress(pResList->List->InterfaceType, pResList->List->BusNumber, PhysAddr,
+                                                       &uAddressSpace, &PhysAddr))
+                            {
+                                Log(("HalTranslateBusAddress(%#RX64) -> %RX64, type %#x\n",
+                                     pPartialData->u.Memory.Start.QuadPart, PhysAddr.QuadPart, uAddressSpace));
+                                if (pPartialData->u.Memory.Start.QuadPart != PhysAddr.QuadPart)
+                                    pDevExt->uVmmDevMemoryPhysAddr = PhysAddr;
+                            }
+                            else
+                                Log(("HalTranslateBusAddress(%#RX64) -> failed!\n", pPartialData->u.Memory.Start.QuadPart));
                         }
-                        else
-                            Log(("HalTranslateBusAddress(%#RX64) -> failed!\n", pPartialData->u.Memory.Start.QuadPart));
 
                         /* Save resource information. */
                         pBaseAddress->RangeStart     = pPartialData->u.Memory.Start;
@@ -2325,17 +2336,20 @@ static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUES
                         pBaseAddress->RangeInMemory  = TRUE;
                         pBaseAddress->ResourceMapped = FALSE;
 
-                        LogFunc(("Memory range for VMMDev found! Base = %08x:%08x, Length = %08x\n",
-                                 pPartialData->u.Memory.Start.HighPart,
-                                 pPartialData->u.Memory.Start.LowPart,
-                                 pPartialData->u.Memory.Length));
+                        LogFunc(("Found memory range for VMMDev! Base = %#RX64, Length = %08x\n",
+                                 pPartialData->u.Memory.Start.QuadPart, pPartialData->u.Memory.Length));
 
                         /* Next item ... */
-                        rangeCount++; pBaseAddress++; cMMIORange++;
+                        cBaseAddresses++;
+                        pBaseAddress++;
+                        fGotMmio = true;
                     }
                     else
-                        LogFunc(("Ignoring memory: Flags=%08x\n", pPartialData->Flags));
+                        LogFunc(("Ignoring memory: Flags=%08x Base=%#RX64\n",
+                                 pPartialData->Flags, pPartialData->u.Memory.Start.QuadPart));
                 }
+                else
+                    LogFunc(("Too many PCI addresses!\n"));
                 break;
             }
 
@@ -2348,7 +2362,7 @@ static NTSTATUS vgdrvNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUES
     }
 
     /* Memorize the number of resources found. */
-    pDevExt->cPciAddresses = rangeCount;
+    pDevExt->cPciAddresses = cBaseAddresses;
     return rc;
 }
 
