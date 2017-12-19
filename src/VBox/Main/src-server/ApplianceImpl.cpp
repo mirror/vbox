@@ -118,6 +118,7 @@ g_osTypes[] =
     { ovf::CIMOSType_CIMOS_WIN98,                                VBOXOSTYPE_Win98 },
     { ovf::CIMOSType_CIMOS_WINNT,                                VBOXOSTYPE_WinNT },
     { ovf::CIMOSType_CIMOS_WINNT,                                VBOXOSTYPE_WinNT4 },
+    { ovf::CIMOSType_CIMOS_WINNT,                                VBOXOSTYPE_WinNT3x },
     { ovf::CIMOSType_CIMOS_NetWare,                              VBOXOSTYPE_Netware },
     { ovf::CIMOSType_CIMOS_NovellOES,                            VBOXOSTYPE_Netware },
     { ovf::CIMOSType_CIMOS_Solaris,                              VBOXOSTYPE_Solaris },

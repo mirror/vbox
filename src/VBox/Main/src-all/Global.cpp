@@ -59,6 +59,11 @@ const Global::OSType Global::sOSTypes[] =
         128,  4,  4 * _1G64, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
         StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
+    { "Windows", "Microsoft Windows", "WindowsNT3x",       "Windows NT 3.x",
+       VBOXOSTYPE_WinNT3x,       VBOXOSHINT_NOUSB | VBOXOSHINT_FLOPPY,
+       128,  16,  2 * _1G64, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
+        StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, AudioControllerType_SB16, AudioCodecType_SB16  },
+
     { "Windows", "Microsoft Windows", "WindowsNT4",         "Windows NT 4",
       VBOXOSTYPE_WinNT4,          VBOXOSHINT_NONE,
        128,  16,  2 * _1G64, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,

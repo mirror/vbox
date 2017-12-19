@@ -52,6 +52,7 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_WinMe            = 0x23000,
     VBOXOSTYPE_WinNT            = 0x30000,
     VBOXOSTYPE_WinNT_x64        = 0x30100,
+    VBOXOSTYPE_WinNT3x          = 0x30800,
     VBOXOSTYPE_WinNT4           = 0x31000,
     VBOXOSTYPE_Win2k            = 0x32000,
     VBOXOSTYPE_WinXP            = 0x33000,

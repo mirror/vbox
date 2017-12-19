@@ -182,6 +182,7 @@ static void vmmdevLogGuestOsInfo(VBoxGuestInfo *pGuestInfo)
         case VBOXOSTYPE_Win98:                            pszOs = "Windows 98";     break;
         case VBOXOSTYPE_WinMe:                            pszOs = "Windows Me";     break;
         case VBOXOSTYPE_WinNT:                            pszOs = "Windows NT";     break;
+        case VBOXOSTYPE_WinNT3x:                          pszOs = "Windows NT 3.x"; break;
         case VBOXOSTYPE_WinNT4:                           pszOs = "Windows NT4";    break;
         case VBOXOSTYPE_Win2k:                            pszOs = "Windows 2k";     break;
         case VBOXOSTYPE_WinXP:                            pszOs = "Windows XP";     break;
