@@ -277,6 +277,7 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     m_guestOSTypeIconNames.insert("Windows95",       ":/os_win95.png");
     m_guestOSTypeIconNames.insert("Windows98",       ":/os_win98.png");
     m_guestOSTypeIconNames.insert("WindowsMe",       ":/os_winme.png");
+    m_guestOSTypeIconNames.insert("WindowsNT3x",     ":/os_winnt4.png");
     m_guestOSTypeIconNames.insert("WindowsNT4",      ":/os_winnt4.png");
     m_guestOSTypeIconNames.insert("Windows2000",     ":/os_win2k.png");
     m_guestOSTypeIconNames.insert("WindowsXP",       ":/os_winxp.png");

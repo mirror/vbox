@@ -56,7 +56,8 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp(  "Wi.*98",                         Qt::CaseInsensitive), "Windows98" },
     { QRegExp(  "Wi.*95",                         Qt::CaseInsensitive), "Windows95" },
     { QRegExp(  "Wi.*Me",                         Qt::CaseInsensitive), "WindowsMe" },
-    { QRegExp( "(Wi.*NT)|(NT4)",                  Qt::CaseInsensitive), "WindowsNT4" },
+    { QRegExp( "(Wi.*NT)|(NT[-._v]*4)",           Qt::CaseInsensitive), "WindowsNT4" },
+    { QRegExp( "NT[-._v]*3[.,]*[51x]",            Qt::CaseInsensitive), "WindowsNT3x" },
     /* Note: Do not automatically set WindowsXP_64 on 64-bit hosts, as Windows XP 64-bit
      *       is extremely rare -- most users never heard of it even. So always default to 32-bit. */
     { QRegExp("((Wi.*XP)|(XP)).*",                Qt::CaseInsensitive), "WindowsXP" },
