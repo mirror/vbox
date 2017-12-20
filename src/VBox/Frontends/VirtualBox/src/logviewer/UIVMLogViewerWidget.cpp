@@ -164,6 +164,8 @@ void UIVMLogViewerWidget::sltRefresh()
     m_pActionSave->setEnabled(!noLogsToShow);
     m_pViewerContainer->setEnabled(!noLogsToShow);
     m_pViewerContainer->show();
+    if (m_pSearchPanel && m_pSearchPanel->isVisible())
+        m_pSearchPanel->refresh();
 }
 
 void UIVMLogViewerWidget::sltSave()

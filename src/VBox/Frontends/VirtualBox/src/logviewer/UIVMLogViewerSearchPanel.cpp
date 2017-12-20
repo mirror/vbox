@@ -50,13 +50,42 @@ UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogView
     , m_pCaseSensitiveCheckBox(0)
     , m_pMatchWholeWordCheckBox(0)
     , m_pHighlightAllCheckBox(0)
-    , m_pWarningSpacer(0), m_pWarningIcon(0), m_pWarningLabel(0)
+    , m_pWarningSpacer(0), m_pWarningIcon(0), m_pInfoLabel(0)
     , m_iSearchPosition(0)
+    , m_iMatchCount(-1)
 {
     /* Prepare: */
     prepare();
 }
 
+void UIVMLogViewerSearchPanel::refresh()
+{
+    m_iSearchPosition = 0;
+    search(BackwardSearch, true);
+}
+
+void UIVMLogViewerSearchPanel::reset()
+{
+    m_iSearchPosition = 0;
+    if (m_pHighlightAllCheckBox)
+    {
+        if (m_pHighlightAllCheckBox->checkState() == Qt::Checked)
+            m_pHighlightAllCheckBox->setCheckState(Qt::Unchecked);
+    }
+}
+
+void UIVMLogViewerSearchPanel::hideEvent(QHideEvent *pEvent)
+{
+    /* Get focus-widget: */
+    QWidget *pFocus = QApplication::focusWidget();
+    /* If focus-widget is valid and child-widget of search-panel,
+     * focus next child-widget in line: */
+    if (pFocus && pFocus->parent() == this)
+        focusNextPrevChild(true);
+    /* Call to base-class: */
+    QWidget::hideEvent(pEvent);
+    reset();
+}
 
 void UIVMLogViewerSearchPanel::find(int iButton)
 {
@@ -79,7 +108,7 @@ void UIVMLogViewerSearchPanel::findCurrent(const QString &strSearchString)
     {
         /* Reset the position to force the search restart from the document's beginnig: */
         m_iSearchPosition = 0;
-        search(ForwardSearch);
+        search(BackwardSearch, true);
     }
     /* If search-string is not valid, reset cursor position: */
     else
@@ -110,12 +139,15 @@ void UIVMLogViewerSearchPanel::sltHighlightAllCheckBox()
         const QString &searchString = m_pSearchEditor->text();
         if (searchString.isEmpty())
             return;
-        highlightAll(pDocument, constructFindFlags(ForwardSearch), searchString);
+        highlightAll(pDocument, searchString);
     }
     else
     {
+        if (m_iMatchCount != 0)
+            m_iMatchCount = -1;
         pDocument->undo();
     }
+    configureInfoLabels();
 }
 
 void UIVMLogViewerSearchPanel::prepare()
@@ -231,7 +263,6 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
             m_pMainLayout->addWidget(m_pHighlightAllCheckBox);
         }
 
-
         /* Create warning-spacer: */
         m_pWarningSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
         AssertPtrReturnVoid(m_pWarningSpacer);
@@ -254,19 +285,19 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
         }
 
         /* Create warning-label: */
-        m_pWarningLabel = new QLabel;
-        AssertPtrReturnVoid(m_pWarningLabel);
+        m_pInfoLabel = new QLabel;
+        AssertPtrReturnVoid(m_pInfoLabel);
         {
             /* Configure warning-label: */
-            m_pWarningLabel->hide();
+            m_pInfoLabel->hide();
             /* Prepare font: */
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-            QFont font = m_pWarningLabel->font();
+            QFont font = m_pInfoLabel->font();
             font.setPointSize(::darwinSmallFontSize());
-            m_pWarningLabel->setFont(font);
+            m_pInfoLabel->setFont(font);
 #endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
             /* Add warning-label to main-layout: */
-            m_pMainLayout->addWidget(m_pWarningLabel);
+            m_pMainLayout->addWidget(m_pInfoLabel);
         }
 
         /* Create spacer-item: */
@@ -309,7 +340,10 @@ void UIVMLogViewerSearchPanel::retranslateUi()
     m_pHighlightAllCheckBox->setText(UIVMLogViewerWidget::tr("Highlight\nAll"));
     m_pHighlightAllCheckBox->setToolTip(UIVMLogViewerWidget::tr("All occurence of the search text are highlighted"));
 
-    m_pWarningLabel->setText(UIVMLogViewerWidget::tr("String not found"));
+    if (m_iMatchCount == 0)
+        m_pInfoLabel->setText(UIVMLogViewerWidget::tr("String not found"));
+    else if (m_iMatchCount > 0)
+        m_pInfoLabel->setText(UIVMLogViewerWidget::tr("%1 Matches Found").arg(m_iMatchCount));
 }
 
 void UIVMLogViewerSearchPanel::keyPressEvent(QKeyEvent *pEvent)
@@ -416,19 +450,7 @@ void UIVMLogViewerSearchPanel::showEvent(QShowEvent *pEvent)
     m_pSearchEditor->selectAll();
 }
 
-void UIVMLogViewerSearchPanel::hideEvent(QHideEvent *pEvent)
-{
-    /* Get focus-widget: */
-    QWidget *pFocus = QApplication::focusWidget();
-    /* If focus-widget is valid and child-widget of search-panel,
-     * focus next child-widget in line: */
-    if (pFocus && pFocus->parent() == this)
-        focusNextPrevChild(true);
-    /* Call to base-class: */
-    QWidget::hideEvent(pEvent);
-}
-
-void UIVMLogViewerSearchPanel::search(SearchDirection direction)
+void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
 {
    QPlainTextEdit *pTextEdit = m_pViewer->currentLogPage();
    if (!pTextEdit) return;
@@ -444,17 +466,19 @@ void UIVMLogViewerSearchPanel::search(SearchDirection direction)
    endCursor.movePosition(QTextCursor::End);
    QTextCursor startCursor(pDocument);
 
-   /* Construct the find flags for QTextDocument::find function: */
-   QTextDocument::FindFlags findFlags = constructFindFlags(direction);
-
    if (m_pHighlightAllCheckBox->isChecked())
-       highlightAll(pDocument, findFlags, searchString);
+   {
+       if (highlight)
+           highlightAll(pDocument, searchString);
+   }
+   else
+       m_iMatchCount = -1;
 
    QTextCursor resultCursor(pDocument);
    int startPosition = m_iSearchPosition;
    if (direction == BackwardSearch)
        startPosition -= searchString.length();
-   resultCursor = pDocument->find(searchString, startPosition, findFlags);
+   resultCursor = pDocument->find(searchString, startPosition, constructFindFlags(direction));
 
    /* Decide whether to wrap around or to end the search */
    if (resultCursor.isNull())
@@ -463,14 +487,17 @@ void UIVMLogViewerSearchPanel::search(SearchDirection direction)
        if ((direction == ForwardSearch && startPosition == startCursor.position()) ||
            (direction == BackwardSearch && startPosition == endCursor.position()))
        {
-           toggleWarning(false);
+           /* Set the match count 0 here since we did not call highLightAll function: */
+           if (!m_pHighlightAllCheckBox->isChecked())
+               m_iMatchCount = 0;
+           configureInfoLabels();
            return;
        }
        /* Wrap the search */
        if (direction == ForwardSearch)
        {
            m_iSearchPosition = startCursor.position();
-           search(ForwardSearch);
+           search(ForwardSearch, false);
            return;
        }
        else
@@ -478,29 +505,29 @@ void UIVMLogViewerSearchPanel::search(SearchDirection direction)
            /* Set the search position away from the end position to be
               able to find the string at the end of the document: */
            m_iSearchPosition = endCursor.position() + searchString.length();
-           search(BackwardSearch);
+           search(BackwardSearch, false);
            return;
        }
    }
    pTextEdit->setTextCursor(resultCursor);
    m_iSearchPosition = resultCursor.position();
-   toggleWarning(true);
+   configureInfoLabels();
 }
 
 void UIVMLogViewerSearchPanel::findNext()
 {
-    search(ForwardSearch);
+    search(ForwardSearch, false);
 }
 
 void UIVMLogViewerSearchPanel::findBack()
 {
-    search(BackwardSearch);
+    search(BackwardSearch, false);
 }
 
 void UIVMLogViewerSearchPanel::highlightAll(QTextDocument *pDocument,
-                                            const QTextDocument::FindFlags &findFlags,
                                             const QString &searchString)
 {
+    m_iMatchCount = 0;
     if (!pDocument)
         return;
     if (searchString.isEmpty())
@@ -511,33 +538,45 @@ void UIVMLogViewerSearchPanel::highlightAll(QTextDocument *pDocument,
     QTextCharFormat colorFormat(highlightCursor.charFormat());
     QTextCursor cursor(pDocument);
     cursor.beginEditBlock();
-
     colorFormat.setBackground(Qt::yellow);
 
     while (!highlightCursor.isNull() && !highlightCursor.atEnd())
     {
-        highlightCursor = pDocument->find(searchString, highlightCursor, findFlags);
+        /* Hightlighting searches is always from the top of the document forward: */
+        highlightCursor = pDocument->find(searchString, highlightCursor, constructFindFlags(ForwardSearch));
 
         if (!highlightCursor.isNull())
+        {
             highlightCursor.mergeCharFormat(colorFormat);
+            ++m_iMatchCount;
+        }
     }
     cursor.endEditBlock();
 }
 
-void UIVMLogViewerSearchPanel::toggleWarning(bool fHide)
+void UIVMLogViewerSearchPanel::configureInfoLabels()
 {
-    /* Adjust size of warning-spacer accordingly: */
-    m_pWarningSpacer->changeSize(fHide ? 0 : 16, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-    /* If visible mark the error for search-editor (changes text-color): */
-    if (!fHide)
+    /* If no match has been found, mark the search editor: */
+    if (m_iMatchCount == 0)
+    {
         m_pSearchEditor->markError();
-    /* If hidden unmark the error for search-editor (changes text-color): */
-    else
+        m_pWarningIcon->setVisible(true);
+        m_pInfoLabel->setVisible(true);
+    }
+    else if (m_iMatchCount == -1)
+    {
         m_pSearchEditor->unmarkError();
-    /* Show/hide the warning-icon: */
-    m_pWarningIcon->setHidden(fHide);
-    /* Show/hide the warning-label: */
-    m_pWarningLabel->setHidden(fHide);
+        m_pWarningIcon->setVisible(false);
+        m_pInfoLabel->setVisible(false);
+    }
+    else
+    {
+        m_pSearchEditor->unmarkError();
+        m_pWarningIcon->setVisible(false);
+        m_pInfoLabel->setVisible(true);
+    }
+    /* Retranslate to get the label text corectly: */
+    retranslateUi();
 }
 
 QTextDocument::FindFlags UIVMLogViewerSearchPanel::constructFindFlags(SearchDirection eDirection)

@@ -46,6 +46,13 @@ public:
     /** Constructs search-panel by passing @a pParent to the QWidget base-class constructor.
       * @param  pViewer  Specifies instance of VM Log-Viewer. */
     UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
+    /** Resets the saech position and starts a new search. */
+    void refresh();
+    void reset();
+
+protected:
+
+    virtual void hideEvent(QHideEvent* pEvent) /* override */;
 
 private slots:
 
@@ -74,19 +81,21 @@ private:
     bool eventFilter(QObject *pObject, QEvent *pEvent);
     /** Handles Qt show @a pEvent. */
     void showEvent(QShowEvent *pEvent);
-    /** Handles Qt hide @a pEvent. */
-    void hideEvent(QHideEvent *pEvent);
+
 
     /** Search routine.
-      * @param  eDirection     Specifies the seach direction */
-    void search(SearchDirection eDirection);
+      * @param  eDirection     Specifies the seach direction
+      * @param  highlight      if false highlight function is not called
+                               thus we avoid calling highlighting for the same string repeatedly. */
+    void search(SearchDirection eDirection, bool highlight);
     /** Forward search routine wrapper. */
     void findNext();
     /** Backward search routine wrapper. */
     void findBack();
-    void highlightAll(QTextDocument *pDocument, const QTextDocument::FindFlags &findFlags, const QString &searchString);
-    /** Shows/hides the search border warning using @a fHide as hint. */
-    void toggleWarning(bool fHide);
+    void highlightAll(QTextDocument *pDocument, const QString &searchString);
+    /** Controls the visibility of the warning icon and info labels.
+     Also marks the search editor in case of no match.*/
+    void configureInfoLabels();
     /** Constructs the find flags for QTextDocument::find function. */
     QTextDocument::FindFlags constructFindFlags(SearchDirection eDirection);
 
@@ -110,12 +119,17 @@ private:
     QSpacerItem *m_pWarningSpacer;
     /** Holds the instance of warning icon we create. */
     QLabel      *m_pWarningIcon;
-    /** Holds the instance of warning label we create. */
-    QLabel      *m_pWarningLabel;
+    /** Holds the instance of info label we create. */
+    QLabel      *m_pInfoLabel;
     /** Holds the instance of spacer item we create. */
     QSpacerItem *m_pSpacerItem;
     /** Holds the position where we start the next search. */
     int          m_iSearchPosition;
+    /** Holds the number of the matches for the string.
+     -1: highLightAll function is not called
+      0: no matches found
+      n > 0: n matches found. */
+    int          m_iMatchCount;
 };
 
 
