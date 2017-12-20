@@ -55,7 +55,7 @@ void vboxClipboardDestroy (void)
 int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient,
                           bool fHeadless)
 {
-    NOREF(pClient, fHeadless);
+    RT_NOREF(pClient, fHeadless);
     LogFlowFunc(("called, returning VINF_SUCCESS.\n"));
     return VINF_SUCCESS;
 }
@@ -77,7 +77,7 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA * /* pClient */)
  */
 void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
-    NOREF(pClient);
+    RT_NOREF(pClient);
     LogFlowFunc(("called, returning.\n"));
 }
 
@@ -91,7 +91,7 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient,
                                   uint32_t u32Formats)
 {
-    NOREF(pClient, u32Formats);
+    RT_NOREF(pClient, u32Formats);
     LogFlowFunc(("called, returning.\n"));
 }
 
@@ -107,7 +107,7 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient,
 int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
                            void *pv, uint32_t cb, uint32_t *pcbActual)
 {
-    NOREF(pClient, u32Format, pv, cb);
+    RT_NOREF(pClient, u32Format, pv, cb);
     LogFlowFunc(("called, returning VINF_SUCCESS.\n"));
     /* No data available. */
     *pcbActual = 0;
@@ -125,6 +125,6 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
 void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv,
                              uint32_t cb, uint32_t u32Format)
 {
-    NOREF(pClient, pv, cb, u32Format);
+    RT_NOREF(pClient, pv, cb, u32Format);
     LogFlowFunc(("called, returning.\n"));
 }
