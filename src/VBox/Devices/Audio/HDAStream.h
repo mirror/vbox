@@ -117,8 +117,8 @@ typedef struct HDASTREAMSTATE
     /** Flag indicating whether this stream currently is
      *  in reset mode and therefore not acccessible by the guest. */
     volatile bool           fInReset;
-	/** Flag indicating if the stream is in running state or not. */
-	volatile bool			fRunning;
+    /** Flag indicating if the stream is in running state or not. */
+    volatile bool           fRunning;
     /** Unused, padding. */
     uint8_t                 Padding0[3];
     /** Critical section to serialize access. */
@@ -192,8 +192,8 @@ typedef struct HDASTREAM
 {
     /** Stream descriptor number (SDn). */
     uint8_t                  u8SD;
-	/** Current channel index.
-	 *  For a stereo stream, this is u8Channel + 1. */
+    /** Current channel index.
+     *  For a stereo stream, this is u8Channel + 1. */
     uint8_t                  u8Channel;
     /** DMA base address (SDnBDPU - SDnBDPL). */
     uint64_t                 u64BDLBase;
