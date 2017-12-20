@@ -55,7 +55,7 @@
  */
 typedef struct HDAMIXERSINK
 {
-	R3PTRTYPE(PHDASTREAM)  pStream;
+    R3PTRTYPE(PHDASTREAM)  pStream;
     /** Pointer to the actual audio mixer sink. */
     R3PTRTYPE(PAUDMIXSINK) pMixSink;
 } HDAMIXERSINK, *PHDAMIXERSINK;
