@@ -186,6 +186,48 @@ bool hdaWalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce)
 }
 
 /**
+ * Returns the default (mixer) sink from a given SD#.
+ * Returns NULL if no sink is found.
+ *
+ * @return  PHDAMIXERSINK
+ * @param   pThis               HDA state.
+ * @param   uSD                 SD# to return mixer sink for.
+ *                              NULL if not found / handled.
+ */
+PHDAMIXERSINK hdaGetDefaultSink(PHDASTATE pThis, uint8_t uSD)
+{
+    if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN)
+    {
+        const uint8_t uFirstSDI = 0;
+
+        if (uSD == uFirstSDI) /* First SDI. */
+            return &pThis->SinkLineIn;
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+        else if (uSD == uFirstSDI + 1)
+            return &pThis->SinkMicIn;
+#else
+        else /* If we don't have a dedicated Mic-In sink, use the always present Line-In sink. */
+            return &pThis->SinkLineIn;
+#endif
+    }
+    else
+    {
+        const uint8_t uFirstSDO = HDA_MAX_SDI;
+
+        if (uSD == uFirstSDO)
+            return &pThis->SinkFront;
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+        else if (uSD == uFirstSDO + 1)
+            return &pThis->SinkCenterLFE;
+        else if (uSD == uFirstSDO + 2)
+            return &pThis->SinkRear;
+#endif
+    }
+
+    return NULL;
+}
+
+/**
  * Returns the audio direction of a specified stream descriptor.
  *
  * The register layout specifies that input streams (SDI) come first,
