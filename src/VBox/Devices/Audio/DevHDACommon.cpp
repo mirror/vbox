@@ -279,7 +279,7 @@ PHDASTREAM hdaGetStreamFromSink(PHDASTATE pThis, PHDAMIXERSINK pSink)
     AssertPtrReturn(pSink, NULL);
 
     /** @todo Do something with the channel mapping here? */
-    return hdaGetStreamFromSD(pThis, pSink->uSD);
+    return pSink->pStream;
 }
 
 /**

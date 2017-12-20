@@ -1071,13 +1071,16 @@ static int hdaRegReadLPIB(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 uint64_t hdaWalClkGetMax(PHDASTATE pThis)
 {
     const uint64_t u64WalClkCur       = ASMAtomicReadU64(&pThis->u64WalClk);
-    const uint64_t u64FrontAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkFront)->State.Period);
+    const uint64_t u64FrontAbsWalClk  = pThis->SinkFront.pStream
+                                      ? hdaStreamPeriodGetAbsElapsedWalClk(&pThis->SinkFront.pStream->State.Period) : 0;
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
 # error "Implement me!"
 #endif
-    const uint64_t u64LineInAbsWalClk = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkLineIn)->State.Period);
+    const uint64_t u64LineInAbsWalClk = pThis->SinkLineIn.pStream
+                                      ? hdaStreamPeriodGetAbsElapsedWalClk(&pThis->SinkLineIn.pStream->State.Period) : 0;
 #ifdef VBOX_WITH_HDA_MIC_IN
-    const uint64_t u64MicInAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkMicIn)->State.Period);
+    const uint64_t u64MicInAbsWalClk  = pThis->SinkMicIn.pStream
+                                      ? hdaStreamPeriodGetAbsElapsedWalClk(&pThis->SinkMicIn.pStream->State.Period) : 0;
 #endif
 
     uint64_t u64WalClkNew = RT_MAX(u64WalClkCur, u64FrontAbsWalClk);
@@ -2611,8 +2614,7 @@ static DECLCALLBACK(int) hdaMixerControl(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMi
         {
             hdaStreamLock(pStream);
 
-            pSink->uSD        = uSD;
-            pSink->uChannel   = uChannel;
+            pSink->pStream    = pStream;
             pStream->pMixSink = pSink;
 
             hdaStreamUnlock(pStream);
@@ -2886,17 +2888,22 @@ static void hdaGCTLReset(PHDASTATE pThis)
     /*
      * Stop any audio currently playing and/or recording.
      */
+    pThis->SinkFront.pStream = NULL;
     if (pThis->SinkFront.pMixSink)
         AudioMixerSinkReset(pThis->SinkFront.pMixSink);
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+    pThis->SinkMicIn.pStream = NULL;
     if (pThis->SinkMicIn.pMixSink)
         AudioMixerSinkReset(pThis->SinkMicIn.pMixSink);
 # endif
+    pThis->SinkLineIn.pStream = NULL;
     if (pThis->SinkLineIn.pMixSink)
         AudioMixerSinkReset(pThis->SinkLineIn.pMixSink);
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+    pThis->SinkCenterLFE = NULL;
     if (pThis->SinkCenterLFE.pMixSink)
         AudioMixerSinkReset(pThis->SinkCenterLFE.pMixSink);
+    pThis->SinkRear.pStream = NULL;
     if (pThis->SinkRear.pMixSink)
         AudioMixerSinkReset(pThis->SinkRear.pMixSink);
 # endif
@@ -2910,7 +2917,7 @@ static void hdaGCTLReset(PHDASTATE pThis)
         pThis->pCodec->pfnReset(pThis->pCodec);
     }
 
-       /*
+    /*
      * Set some sensible defaults for which HDA sinks
      * are connected to which stream number.
      *
