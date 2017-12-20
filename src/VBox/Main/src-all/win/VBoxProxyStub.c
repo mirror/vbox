@@ -1315,12 +1315,6 @@ void RegisterXidlModulesAndClassesGenerated(VBPSREGSTATE *pState, PCRTUTF16 pwsz
     const char *pszInprocDll        = !fIs32On64 ? "VBoxC.dll" : "x86\\VBoxClient-x86.dll";
     const char *pszLocalServer      = "VBoxSVC.exe";
 #ifdef VBOX_WITH_SDS
-    /**
-    * The Name of windows service is referenced in different places.
-    * Don't forget to change it in other places too If you change it here :
-    *      VBoxMergeApp.wxi (cp_VBoxSDS component),
-    *      VBoxSDS.cpp and VirtualBox.xidl
-    */
     const char *pszSdsAppId         = "{EC0E78E8-FA43-43E8-AC0A-02C784C4A4FA}";
     const char *pszSdsExe           = "VBoxSDS.exe";
     const char *pszSdsServiceName   = "VBoxSDS";
@@ -2425,7 +2419,7 @@ static void vbpsUpdateWindowsService(VBPSREGSTATE *pState, const WCHAR *pwszVBox
          */
         if (fDeleteIt)
         {
-            hService = OpenServiceW(hSCM, pwszServiceName, SERVICE_STOP);
+            hService = OpenServiceW(hSCM, pwszServiceName, SERVICE_STOP | DELETE);
             if (hService)
             {
                 BOOL            fRet;
@@ -2550,12 +2544,6 @@ DECLEXPORT(uint32_t) VbpsUpdateRegistrations(void)
     {
 
 #ifdef VBOX_WITH_SDS
-        /**
-        * The Name of windows service is referenced in different places.
-        * Don't forget to change it in other places too If you change it here :
-        *      VBoxMergeApp.wxi (cp_VBoxSDS component),
-        *      VBoxSDS.cpp and VirtualBox.xidl
-        */
         vbpsUpdateWindowsService(&State, wszVBoxDir, L"VBoxSDS.exe", L"VBoxSDS",
                                  L"VirtualBox system service", L"Used as a COM server for VirtualBox API.");
 #endif
