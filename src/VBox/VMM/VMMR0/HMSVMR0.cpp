@@ -3303,8 +3303,8 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCt
             {
                 /*
                  * AMD-V has no TPR thresholding feature. We just avoid posting the interrupt.
-                 * We just avoid delivering the TPR-masked interrupt here. TPR will be updated
-                 * always via hmR0SvmLoadGuestState() -> hmR0SvmLoadGuestApicState().
+                 * We just avoid delivering the TPR-masked interrupt here. TPR and the force-flag
+                 * will be updated eventually when the TPR is written by the guest.
                  */
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchTprMaskedIrq);
             }
@@ -3313,9 +3313,9 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCt
         }
 
         /*
-         * Check if the nested-guest can receive virtual (injected by VMRUN) interrupts.
-         * We can safely call CPUMCanSvmNstGstTakeVirtIntr here as we don't cache/modify any
-         * nested-guest VMCB interrupt control fields besides V_INTR_MASKING, see hmR0SvmVmRunCacheVmcb.
+         * Check if the nested-guest is intercepting virtual (using V_IRQ and related fields)
+         * interrupt injection. The virtual interrupt injection itself, if any, will be done
+         * by the physical CPU.
          */
         if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
             && (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR)
@@ -3418,8 +3418,8 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
                 {
                     /*
                      * AMD-V has no TPR thresholding feature. We just avoid posting the interrupt.
-                     * We just avoid delivering the TPR-masked interrupt here. TPR will be updated
-                     * always via hmR0SvmLoadGuestState() -> hmR0SvmLoadGuestApicState().
+                     * We just avoid delivering the TPR-masked interrupt here. TPR and the force-flag
+                     * will be updated eventually when the TPR is written by the guest.
                      */
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchTprMaskedIrq);
                 }
