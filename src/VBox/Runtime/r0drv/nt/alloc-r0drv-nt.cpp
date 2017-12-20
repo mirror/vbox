@@ -49,9 +49,9 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
         if (g_pfnrtExAllocatePoolWithTag)
         {
             if (!(fFlags & RTMEMHDR_FLAG_EXEC) && g_uRtNtVersion >= RTNT_MAKE_VERSION(8,0))
-                pHdr = (PRTMEMHDR)ExAllocatePoolWithTag(NonPagedPoolNx, cb + sizeof(*pHdr), IPRT_NT_POOL_TAG);
+                pHdr = (PRTMEMHDR)g_pfnrtExAllocatePoolWithTag(NonPagedPoolNx, cb + sizeof(*pHdr), IPRT_NT_POOL_TAG);
             else
-                pHdr = (PRTMEMHDR)ExAllocatePoolWithTag(NonPagedPool, cb + sizeof(*pHdr), IPRT_NT_POOL_TAG);
+                pHdr = (PRTMEMHDR)g_pfnrtExAllocatePoolWithTag(NonPagedPool, cb + sizeof(*pHdr), IPRT_NT_POOL_TAG);
         }
         else
             pHdr = (PRTMEMHDR)ExAllocatePool(NonPagedPool, cb + sizeof(*pHdr));
