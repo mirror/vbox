@@ -26,7 +26,6 @@
 #include "ConsoleImpl.h"
 #include "Global.h"
 
-#include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmnvram.h>
 #include <VBox/vmm/cfgm.h>
