@@ -1135,7 +1135,7 @@ RTDECL(int) RTSocketWriteTo(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
     else
         rc = VERR_TOO_MUCH_DATA;
 
-    ///@todo rtSocketUnlock(pThis);
+    /// @todo rtSocketUnlock(pThis);
 #ifdef RT_OS_WINDOWS
 # undef sendto
 #endif
