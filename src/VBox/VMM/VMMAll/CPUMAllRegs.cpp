@@ -2557,6 +2557,8 @@ VMMDECL(uint32_t) CPUMGetGuestMxCsrMask(PVM pVM)
  */
 VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
+    /** @todo Optimization: can avoid this function call and use a pointer to the
+     *        relevant eflags.u32 instead setup during VMRUN emulation. */
 #ifdef IN_RC
     RT_NOREF2(pVCpu, pCtx);
     AssertReleaseFailedReturn(false);
