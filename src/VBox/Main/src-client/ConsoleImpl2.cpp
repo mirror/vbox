@@ -557,40 +557,6 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr,
                 s_pszPCIRawExtPackName);
 # endif
 
-    PCFGMNODE pBridges = CFGMR3GetChild(pDevices, "ich9pcibridge");
-    Assert(pBridges);
-
-    /* Find required bridges, and add missing ones */
-    for (size_t iDev = 0; iDev < assignments.size(); iDev++)
-    {
-        ComPtr<IPCIDeviceAttachment> assignment = assignments[iDev];
-        LONG guest = 0;
-        PCIBusAddress GuestPCIAddress;
-
-        hrc = assignment->COMGETTER(GuestAddress)(&guest);   H();
-        GuestPCIAddress.fromLong(guest);
-        Assert(GuestPCIAddress.valid());
-
-        if (GuestPCIAddress.miBus > 0)
-        {
-            int iBridgesMissed = 0;
-            int iBase = GuestPCIAddress.miBus - 1;
-
-            while (!pBusMgr->hasPCIDevice("ich9pcibridge", iBase) && iBase > 0)
-            {
-                iBridgesMissed++; iBase--;
-            }
-            iBase++;
-
-            for (int iBridge = 0; iBridge < iBridgesMissed; iBridge++)
-            {
-                InsertConfigNode(pBridges, Utf8StrFmt("%d", iBase + iBridge).c_str(), &pInst);
-                InsertConfigInteger(pInst, "Trusted",              1);
-                hrc = pBusMgr->assignPCIDevice("ich9pcibridge", pInst);
-            }
-        }
-    }
-
     /* Now actually add devices */
     PCFGMNODE pPCIDevs = NULL;
 
@@ -1454,14 +1420,20 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         switch (chipsetType)
         {
             default:
-                Assert(false);
+                AssertFailed();
                 RT_FALL_THRU();
             case ChipsetType_PIIX3:
+                /* Create the base for adding bridges on demand */
+                InsertConfigNode(pDevices, "pcibridge", NULL);
+
                 InsertConfigNode(pDevices, "pci", &pDev);
                 uHbcPCIAddress = (0x0 << 16) | 0;
                 uIocPCIAddress = (0x1 << 16) | 0; // ISA controller
                 break;
             case ChipsetType_ICH9:
+                /* Create the base for adding bridges on demand */
+                InsertConfigNode(pDevices, "ich9pcibridge", NULL);
+
                 InsertConfigNode(pDevices, "ich9pci", &pDev);
                 uHbcPCIAddress = (0x1e << 16) | 0;
                 uIocPCIAddress = (0x1f << 16) | 0; // LPC controller
@@ -1477,20 +1449,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCfg,  "McfgBase",   uMcfgBase);
             InsertConfigInteger(pCfg,  "McfgLength", cbMcfgLength);
 
-
-            /* And register 2 bridges */
-            InsertConfigNode(pDevices, "ich9pcibridge", &pDev);
-            InsertConfigNode(pDev,     "0", &pInst);
-            InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-            hrc = pBusMgr->assignPCIDevice("ich9pcibridge", pInst);                         H();
-
-            InsertConfigNode(pDev,     "1", &pInst);
-            InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-            hrc = pBusMgr->assignPCIDevice("ich9pcibridge", pInst);                         H();
-
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
             /* Add PCI passthrough devices */
-            hrc = i_attachRawPCIDevices(pUVM, pBusMgr, pDevices);                             H();
+            hrc = i_attachRawPCIDevices(pUVM, pBusMgr, pDevices);                           H();
 #endif
         }
 
@@ -2375,19 +2336,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     ULONG cPorts = 0;
                     hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
                     InsertConfigInteger(pCfg, "NamespacesMax", cPorts);
-
-                    /* For ICH9 we need to create a new PCI bridge if there is more than one NVMe instance. */
-                    if (   ulInstance > 0
-                        && chipsetType == ChipsetType_ICH9
-                        && !pBusMgr->hasPCIDevice("ich9pcibridge", 2))
-                    {
-                        PCFGMNODE pBridges = CFGMR3GetChild(pDevices, "ich9pcibridge");
-                        Assert(pBridges);
-
-                        InsertConfigNode(pBridges, "2", &pInst);
-                        InsertConfigInteger(pInst, "Trusted",              1);
-                        hrc = pBusMgr->assignPCIDevice("ich9pcibridge", pInst);
-                    }
 
                     /* Attach the status driver */
                     AssertRelease(cPorts <= cLedSata);
