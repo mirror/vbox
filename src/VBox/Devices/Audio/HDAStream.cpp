@@ -54,6 +54,7 @@ int hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
     pStream->pHDAState      = pThis;
 
     pStream->State.fInReset = false;
+    pStream->State.fRunning = false;
 #ifdef HDA_USE_DMA_ACCESS_HANDLER
     RTListInit(&pStream->State.lstDMAHandlers);
 #endif
@@ -353,8 +354,7 @@ void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
     AssertReturnVoid(uSD < HDA_MAX_STREAMS);
 
 # ifdef VBOX_STRICT
-    AssertReleaseMsg(!RT_BOOL(HDA_STREAM_REG(pThis, CTL, uSD) & HDA_SDCTL_RUN),
-                     ("[SD%RU8] Cannot reset stream while in running state\n", uSD));
+    AssertReleaseMsg(!pStream->State.fRunning, ("[SD%RU8] Cannot reset stream while in running state\n", uSD));
 # endif
 
     LogFunc(("[SD%RU8]: Reset\n", uSD));
@@ -472,6 +472,11 @@ int hdaStreamEnable(PHDASTREAM pStream, bool fEnable)
                 AssertRC(rc2);
             }
         }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pStream->State.fRunning = fEnable;
     }
 
     LogFunc(("[SD%RU8] rc=%Rrc\n", pStream->u8SD, rc));
@@ -740,9 +745,9 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
     bool fProceed = true;
 
     /* Stream not running? */
-    if (!(HDA_STREAM_REG(pThis, CTL, pStream->u8SD) & HDA_SDCTL_RUN))
+    if (!pStream->State.fRunning)
     {
-        Log3Func(("[SD%RU8] RUN bit not set\n", pStream->u8SD));
+        Log3Func(("[SD%RU8] Not running\n", pStream->u8SD));
         fProceed = false;
     }
     else if (HDA_STREAM_REG(pThis, STS, pStream->u8SD) & HDA_SDSTS_BCIS)

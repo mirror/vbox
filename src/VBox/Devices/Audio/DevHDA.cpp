@@ -1481,9 +1481,9 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     /* Some guests tend to write SDnSTS even if the stream is not running.
      * So make sure to check if the RUN bit is set first. */
-    const bool fInRun = RT_BOOL(HDA_STREAM_REG(pThis, CTL, pStream->u8SD) & HDA_SDCTL_RUN);
+    const bool fRunning = pStream->State.fRunning;
 
-    Log3Func(("[SD%RU8] fRun=%RTbool %R[sdsts]\n", pStream->u8SD, fInRun, v));
+    Log3Func(("[SD%RU8] fRunning=%RTbool %R[sdsts]\n", pStream->u8SD, fRunning, v));
 
     PHDASTREAMPERIOD pPeriod = &pStream->State.Period;
 
@@ -1503,7 +1503,7 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
             hdaStreamPeriodEnd(pPeriod);
 
-            if (fInRun)
+            if (fRunning)
                 hdaStreamPeriodBegin(pPeriod, hdaWalClkGetCurrent(pThis) /* Use current wall clock time */);
         }
 

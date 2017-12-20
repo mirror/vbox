@@ -658,7 +658,7 @@ bool hdaTimerSet(PHDASTATE pThis, uint64_t tsExpire, bool fForce)
         {
             PHDASTREAM pStream = &pThis->aStreams[i];
 
-            if (!(HDA_STREAM_REG(pThis, CTL, pStream->u8SD) & HDA_SDCTL_RUN))
+            if (!pStream->State.fRunning)
                 continue;
 
             if (hdaStreamTransferIsScheduled(pStream))
