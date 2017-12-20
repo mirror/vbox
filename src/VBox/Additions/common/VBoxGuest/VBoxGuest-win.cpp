@@ -1017,6 +1017,7 @@ static void vgdrvNtDeleteDeviceResources(PVBOXGUESTDEVEXTWIN pDevExt)
  * Used during removal and legacy module unloading.  Must have called
  * vgdrvNtDeleteDeviceResources.
  *
+ * @param   pDevObj         Device object.
  * @param   pDevExt         The device extension.
  */
 static void vgdrvNtDeleteDeviceFundamentAndUnlink(PDEVICE_OBJECT pDevObj, PVBOXGUESTDEVEXTWIN pDevExt)
