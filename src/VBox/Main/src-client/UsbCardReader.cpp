@@ -26,7 +26,7 @@
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
 
-#include <VBox/vmm/pdm.h>
+#include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmcardreaderinfs.h>
 
 #include <iprt/req.h>
