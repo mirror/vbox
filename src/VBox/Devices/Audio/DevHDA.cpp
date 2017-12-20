@@ -2575,7 +2575,7 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
  *
  * @remarks Can be called as a callback by the HDA codec.
  */
-static DECLCALLBACK(int) hdaMixerSetStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel)
+static DECLCALLBACK(int) hdaMixerControl(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel)
 {
     LogFlowFunc(("enmMixerCtl=%RU32, uSD=%RU8, uChannel=%RU8\n", enmMixerCtl, uSD, uChannel));
 
@@ -2918,14 +2918,14 @@ static void hdaGCTLReset(PHDASTATE pThis)
      * These stream numbers can be changed by the guest dynamically lateron.
      */
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_MIC_IN    , 1 /* SD0 */, 0 /* Channel */);
+    hdaMixerControl(pThis, PDMAUDIOMIXERCTL_MIC_IN    , 1 /* SD0 */, 0 /* Channel */);
 #endif
-    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_LINE_IN   , 1 /* SD0 */, 0 /* Channel */);
+    hdaMixerControl(pThis, PDMAUDIOMIXERCTL_LINE_IN   , 1 /* SD0 */, 0 /* Channel */);
 
-    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_FRONT     , 5 /* SD4 */, 0 /* Channel */);
+    hdaMixerControl(pThis, PDMAUDIOMIXERCTL_FRONT     , 5 /* SD4 */, 0 /* Channel */);
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_CENTER_LFE, 5 /* SD4 */, 0 /* Channel */);
-    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_REAR      , 5 /* SD4 */, 0 /* Channel */);
+    hdaMixerControl(pThis, PDMAUDIOMIXERCTL_CENTER_LFE, 5 /* SD4 */, 0 /* Channel */);
+    hdaMixerControl(pThis, PDMAUDIOMIXERCTL_REAR      , 5 /* SD4 */, 0 /* Channel */);
 #endif
 
     pThis->cbCorbBuf = HDA_CORB_SIZE * sizeof(uint32_t);
@@ -4987,7 +4987,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         /* Set codec callbacks to this controller. */
         pThis->pCodec->pfnCbMixerAddStream    = hdaMixerAddStream;
         pThis->pCodec->pfnCbMixerRemoveStream = hdaMixerRemoveStream;
-        pThis->pCodec->pfnCbMixerSetStream    = hdaMixerSetStream;
+        pThis->pCodec->pfnCbMixerControl      = hdaMixerControl;
         pThis->pCodec->pfnCbMixerSetVolume    = hdaMixerSetVolume;
 
         pThis->pCodec->pHDAState = pThis; /* Assign HDA controller state to codec. */

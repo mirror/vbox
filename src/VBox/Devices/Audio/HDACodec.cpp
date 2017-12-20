@@ -2407,17 +2407,17 @@ static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
             /** @todo Check if non-interleaved streams need a different channel / SDn? */
 
             /* Propagate to the controller. */
-            pThis->pfnCbMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
+            pThis->pfnCbMixerControl(pThis->pHDAState, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-            pThis->pfnCbMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
-            pThis->pfnCbMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
+            pThis->pfnCbMixerControl(pThis->pHDAState, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
+            pThis->pfnCbMixerControl(pThis->pHDAState, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
 #endif
         }
         else if (enmDir == PDMAUDIODIR_IN)
         {
-            pThis->pfnCbMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
+            pThis->pfnCbMixerControl(pThis->pHDAState, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-            pThis->pfnCbMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
+            pThis->pfnCbMixerControl(pThis->pHDAState, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
 #endif
         }
     }

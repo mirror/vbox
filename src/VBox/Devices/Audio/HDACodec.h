@@ -105,7 +105,7 @@ typedef struct HDACODEC
     /** Callbacks to the HDA controller, mostly used for multiplexing to the various host backends. */
     DECLR3CALLBACKMEMBER(int,  pfnCbMixerAddStream, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg));
     DECLR3CALLBACKMEMBER(int,  pfnCbMixerRemoveStream, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl));
-    DECLR3CALLBACKMEMBER(int,  pfnCbMixerSetStream, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel));
+    DECLR3CALLBACKMEMBER(int,  pfnCbMixerControl, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel));
     DECLR3CALLBACKMEMBER(int,  pfnCbMixerSetVolume, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol));
 
     /** These callbacks are set by codec implementation to answer debugger requests. */
