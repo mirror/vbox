@@ -2874,13 +2874,13 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
         }
 
         {
-            /*check available place on the storage*/
+            /* check available space on the storage */
             RTFOFF pcbTotal = 0;
             RTFOFF pcbFree = 0;
             uint32_t pcbBlock = 0;
             uint32_t pcbSector = 0;
-            std::multimap<uint32_t,uint64_t> neededStorageFreeSpace;
-            std::map<uint32_t,const char*> serialMapToStoragePath;
+            std::multimap<uint32_t, uint64_t> neededStorageFreeSpace;
+            std::map<uint32_t, const char*> serialMapToStoragePath;
 
             for (MediumDeleteRecList::const_iterator
                  it = toDelete.begin();
@@ -2916,10 +2916,16 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
 
                     pSource_local->COMGETTER(Size)((LONG64*)&diskSize);
 
+                    /** @todo r=klaus this is too pessimistic... should take
+                     * the current size and maximum size of the target image
+                     * into account, because a X GB image with Y GB capacity
+                     * can only grow by Y-X GB (ignoring overhead, which
+                     * unfortunately is hard to estimate, some have next to
+                     * nothing, some have a certain percentage...) */
                     /* store needed free space in multimap */
-                    neededStorageFreeSpace.insert(std::make_pair(pu32Serial,diskSize));
+                    neededStorageFreeSpace.insert(std::make_pair(pu32Serial, diskSize));
                     /* linking storage UID with snapshot path, it is a helper container (just for easy finding needed path) */
-                    serialMapToStoragePath.insert(std::make_pair(pu32Serial,pTarget_local->i_getLocationFull().c_str()));
+                    serialMapToStoragePath.insert(std::make_pair(pu32Serial, pTarget_local->i_getLocationFull().c_str()));
                 }
             }
 
@@ -2928,7 +2934,7 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                 std::pair<std::multimap<uint32_t,uint64_t>::iterator,std::multimap<uint32_t,uint64_t>::iterator> ret;
                 uint64_t commonSourceStoragesSize = 0;
 
-                /* find all records in multimap with identical storage UID*/
+                /* find all records in multimap with identical storage UID */
                 ret = neededStorageFreeSpace.equal_range(neededStorageFreeSpace.begin()->first);
                 std::multimap<uint32_t,uint64_t>::const_iterator it_ns = ret.first;
 
@@ -2937,7 +2943,7 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                     commonSourceStoragesSize += it_ns->second;
                 }
 
-                /* find appropriate path by storage UID*/
+                /* find appropriate path by storage UID */
                 std::map<uint32_t,const char*>::const_iterator it_sm = serialMapToStoragePath.find(ret.first->first);
                 /* get info about a storage */
                 if (it_sm == serialMapToStoragePath.end())
@@ -2950,7 +2956,7 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                     throw rc;
                 }
 
-                int vrc = RTFsQuerySizes(it_sm->second, &pcbTotal, &pcbFree,&pcbBlock, &pcbSector);
+                int vrc = RTFsQuerySizes(it_sm->second, &pcbTotal, &pcbFree, &pcbBlock, &pcbSector);
                 if (RT_FAILURE(vrc))
                 {
                     rc = setError(E_FAIL,
