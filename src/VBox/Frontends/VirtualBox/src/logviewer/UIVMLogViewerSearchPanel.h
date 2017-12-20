@@ -19,6 +19,7 @@
 #define ___UIVMLogViewerSearchPanel_h___
 
 /* Qt includes: */
+#include <QTextDocument>
 #include <QWidget>
 
 /* GUI includes: */
@@ -54,8 +55,10 @@ private slots:
     /** Handles textchanged signal from search-editor.
       * @param  strSearchString  Specifies search-string. */
     void findCurrent(const QString &strSearchString);
-private:
 
+    void sltHighlightAllCheckBox();
+private:
+    enum SearchDirection { ForwardSearch, BackwardSearch };
     /** Prepares search-panel. */
     void prepare();
     /** Prepares widgets. */
@@ -75,15 +78,17 @@ private:
     void hideEvent(QHideEvent *pEvent);
 
     /** Search routine.
-      * @param  fForward       Specifies the direction of search.
-      * @param  fStartCurrent  Specifies whether search should start from beginning of the log. */
-    void search(bool fForward, bool fStartCurrent = false);
+      * @param  eDirection     Specifies the seach direction */
+    void search(SearchDirection eDirection);
     /** Forward search routine wrapper. */
     void findNext();
     /** Backward search routine wrapper. */
     void findBack();
+    void highlightAll(QTextDocument *pDocument, const QTextDocument::FindFlags &findFlags, const QString &searchString);
     /** Shows/hides the search border warning using @a fHide as hint. */
     void toggleWarning(bool fHide);
+    /** Constructs the find flags for QTextDocument::find function. */
+    QTextDocument::FindFlags constructFindFlags(SearchDirection eDirection);
 
     /** Holds the reference to the VM Log-Viewer this search-panel belongs to. */
     UIVMLogViewerWidget *m_pViewer;
@@ -98,15 +103,19 @@ private:
     /** Holds the instance of next/back button-box we create. */
     UIRoundRectSegmentedButton *m_pNextPrevButtons;
     /** Holds the instance of case-sensitive checkbox we create. */
-    QCheckBox *m_pCaseSensitiveCheckBox;
+    QCheckBox   *m_pCaseSensitiveCheckBox;
+    QCheckBox   *m_pMatchWholeWordCheckBox;
+    QCheckBox   *m_pHighlightAllCheckBox;
     /** Holds the instance of warning spacer-item we create. */
     QSpacerItem *m_pWarningSpacer;
     /** Holds the instance of warning icon we create. */
-    QLabel *m_pWarningIcon;
+    QLabel      *m_pWarningIcon;
     /** Holds the instance of warning label we create. */
-    QLabel *m_pWarningLabel;
+    QLabel      *m_pWarningLabel;
     /** Holds the instance of spacer item we create. */
     QSpacerItem *m_pSpacerItem;
+    /** Holds the position where we start the next search. */
+    int          m_iSearchPosition;
 };
 
 
