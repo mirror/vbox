@@ -112,8 +112,6 @@ typedef struct VBOXGUESTDEVEXTWIN
     PDEVICE_OBJECT          pDeviceObject;
     /** Top of the stack. */
     PDEVICE_OBJECT          pNextLowerDriver;
-    /** Currently active Irp. */
-    IRP                    *pCurrentIrp;
     /** Interrupt object pointer. */
     PKINTERRUPT             pInterruptObject;
 
@@ -2024,8 +2022,8 @@ static BOOLEAN NTAPI vgdrvNtIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceCon
         if (ASMAtomicUoReadU32(   &pDevExt->Core.u32MousePosChangedSeq)
                                || !RTListIsEmpty(&pDevExt->Core.WakeUpList))
         {
-            Log3Func(("Requesting DPC ...\n"));
-            IoRequestDpc(pDevExt->pDeviceObject, pDevExt->pCurrentIrp, NULL); /** @todo r=bird: pCurrentIrp is not set anywhere. sigh. */
+            Log3Func(("Requesting DPC...\n"));
+            IoRequestDpc(pDevExt->pDeviceObject, NULL /*pIrp*/, NULL /*pvContext*/);
         }
     }
     return fIRQTaken;
