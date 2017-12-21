@@ -37,6 +37,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
+#include <iprt/critsect.h>
 #include <iprt/dbg.h>
 #include <iprt/initterm.h>
 #include <iprt/memobj.h>
@@ -134,6 +135,13 @@ typedef struct VBOXGUESTDEVEXTWIN
     /** Spinlock protecting MouseNotifyCallback. Required since the consumer is
      *  in a DPC callback and not the ISR. */
     KSPIN_LOCK              MouseEventAccessSpinLock;
+
+    /** Read/write critical section for handling race between checking for idle
+     * driver (in IRP_MN_QUERY_REMOVE_DEVICE & IRP_MN_QUERY_STOP_DEVICE) and
+     * creating new sessions.  The session creation code enteres the critical
+     * section in  read (shared) access mode, whereas the idle checking code
+     * enteres is in write (exclusive) access mode.  */
+    RTCRITSECTRW            SessionCreateCritSect;
 } VBOXGUESTDEVEXTWIN;
 typedef VBOXGUESTDEVEXTWIN *PVBOXGUESTDEVEXTWIN;
 
@@ -445,6 +453,52 @@ static VBOXOSTYPE vgdrvNtVersionToOSType(VGDRVNTVER enmNtVer)
     enmOsType = (VBOXOSTYPE)((int)enmOsType | VBOXOSTYPE_x64);
 #endif
     return enmOsType;
+}
+
+
+/**
+ * Does the fundamental device extension initialization.
+ *
+ * @returns NT status.
+ * @param   pDevExt             The device extension.
+ * @param   pDevObj             The device object.
+ */
+static NTSTATUS vgdrvNtInitDevExtFundament(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT pDevObj)
+{
+    RT_ZERO(*pDevExt);
+
+    KeInitializeSpinLock(&pDevExt->MouseEventAccessSpinLock);
+    pDevExt->pDeviceObject   = pDevObj;
+    pDevExt->enmPrevDevState = VGDRVNTDEVSTATE_STOPPED;
+    pDevExt->enmDevState     = VGDRVNTDEVSTATE_STOPPED;
+
+    int rc = RTCritSectRwInit(&pDevExt->SessionCreateCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VGDrvCommonInitDevExtFundament(&pDevExt->Core);
+        if (RT_SUCCESS(rc))
+        {
+            LogFlow(("vgdrvNtInitDevExtFundament: returning success\n"));
+            return STATUS_SUCCESS;
+        }
+
+        RTCritSectRwDelete(&pDevExt->SessionCreateCritSect);
+    }
+    Log(("vgdrvNtInitDevExtFundament: failed: rc=%Rrc\n", rc));
+    return STATUS_UNSUCCESSFUL;
+}
+
+
+/**
+ * Counter part to vgdrvNtInitDevExtFundament.
+ *
+ * @param   pDevExt             The device extension.
+ */
+static void vgdrvNtDeleteDevExtFundament(PVBOXGUESTDEVEXTWIN pDevExt)
+{
+    LogFlow(("vgdrvNtDeleteDevExtFundament:\n"));
+    VGDrvCommonDeleteDevExtFundament(&pDevExt->Core);
+    RTCritSectRwDelete(&pDevExt->SessionCreateCritSect);
 }
 
 
@@ -985,19 +1039,13 @@ static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRe
              */
             Log(("vgdrvNt4CreateDevice: Setting up device extension ...\n"));
             PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDeviceObject->DeviceExtension;
-            RT_ZERO(*pDevExt);
-
-            /* Store a reference to ourself. */
-            pDevExt->pDeviceObject = pDeviceObject;
-
-            /* Store bus and slot number we've queried before. */
-            pDevExt->uBus  = uBus;
-            pDevExt->uSlot = uSlot.u.AsULONG;
-
-            /* Initialize common bits. */
-            int vrc = VGDrvCommonInitDevExtFundament(&pDevExt->Core);
+            int vrc = vgdrvNtInitDevExtFundament(pDevExt, pDeviceObject);
             if (RT_SUCCESS(vrc))
             {
+                /* Store bus and slot number we've queried before. */
+                pDevExt->uBus  = uBus;
+                pDevExt->uSlot = uSlot.u.AsULONG;
+
                 Log(("vgdrvNt4CreateDevice: Device extension created\n"));
 
                 /* Do the actual VBox init ... */
@@ -1009,7 +1057,7 @@ static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRe
                 }
 
                 /* bail out */
-                VGDrvCommonDeleteDevExtFundament(&pDevExt->Core);
+                vgdrvNtDeleteDevExtFundament(pDevExt);
             }
             IoDeleteSymbolicLink(&DosName);
         }
@@ -1059,15 +1107,8 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OB
              * Setup the device extension.
              */
             PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDeviceObject->DeviceExtension;
-            RT_ZERO(*pDevExt);
-
-            KeInitializeSpinLock(&pDevExt->MouseEventAccessSpinLock);
-            pDevExt->pDeviceObject   = pDeviceObject;
-            pDevExt->enmPrevDevState = VGDRVNTDEVSTATE_STOPPED;
-            pDevExt->enmDevState     = VGDRVNTDEVSTATE_STOPPED;
-
-            int vrc = VGDrvCommonInitDevExtFundament(&pDevExt->Core);
-            if (RT_SUCCESS(vrc))
+            rcNt = vgdrvNtInitDevExtFundament(pDevExt, pDeviceObject);
+            if (NT_SUCCESS(rcNt))
             {
                 pDevExt->pNextLowerDriver = IoAttachDeviceToDeviceStack(pDeviceObject, pDevObj);
                 if (pDevExt->pNextLowerDriver != NULL)
@@ -1080,15 +1121,11 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OB
                     LogFlowFunc(("Returning with rcNt=%#x (success)\n", rcNt));
                     return rcNt;
                 }
-
                 LogFunc(("IoAttachDeviceToDeviceStack did not give a nextLowerDriver!\n"));
                 rcNt = STATUS_DEVICE_NOT_CONNECTED;
-                VGDrvCommonDeleteDevExtFundament(&pDevExt->Core);
+                vgdrvNtDeleteDevExtFundament(pDevExt);
             }
-            else
-                rcNt = STATUS_UNSUCCESSFUL;
 
-            /* bail out */
             IoDeleteSymbolicLink(&DosName);
         }
         else
@@ -1168,6 +1205,7 @@ static void vgdrvNtDeleteDeviceResources(PVBOXGUESTDEVEXTWIN pDevExt)
         IoDisconnectInterrupt(pDevExt->pInterruptObject);
         pDevExt->pInterruptObject = NULL;
     }
+    pDevExt->pPowerStateRequest = NULL; /* Will be deleted by the following call. */
     if (pDevExt->Core.uInitState == VBOXGUESTDEVEXT_INIT_STATE_RESOURCES)
         VGDrvCommonDeleteDevExtResources(&pDevExt->Core);
     vgdrvNtUnmapVMMDevMemory(pDevExt);
@@ -1188,8 +1226,7 @@ static void vgdrvNtDeleteDeviceFundamentAndUnlink(PDEVICE_OBJECT pDevObj, PVBOXG
     /*
      * Delete the remainder of the device extension.
      */
-    pDevExt->pPowerStateRequest = NULL; /* Will be deleted by the following call. */
-    VGDrvCommonDeleteDevExtFundament(&pDevExt->Core);
+    vgdrvNtDeleteDevExtFundament(pDevExt);
 
     /*
      * Delete the DOS symlink to the device and finally the device itself.
@@ -1308,6 +1345,7 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         {
             Log(("vgdrvNtNt5PlusPnP: QUERY_REMOVE_DEVICE\n"));
 
+            RTCritSectRwEnterExcl(&pDevExt->SessionCreateCritSect);
 #ifdef VBOX_REBOOT_ON_UNINSTALL
             Log(("vgdrvNtNt5PlusPnP: QUERY_REMOVE_DEVICE: Device cannot be removed without a reboot.\n"));
             rc = STATUS_UNSUCCESSFUL;
@@ -1317,6 +1355,7 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             if (NT_SUCCESS(rc))
             {
                 pDevExt->enmDevState = VGDRVNTDEVSTATE_PENDINGREMOVE;
+                RTCritSectRwLeaveExcl(&pDevExt->SessionCreateCritSect);
 
                 /* This IRP passed down to lower driver. */
                 pIrp->IoStatus.Status = STATUS_SUCCESS;
@@ -1331,6 +1370,7 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             }
             else
             {
+                RTCritSectRwLeaveExcl(&pDevExt->SessionCreateCritSect);
                 pIrp->IoStatus.Status = rc;
                 IoCompleteRequest(pIrp, IO_NO_INCREMENT);
             }
@@ -1428,11 +1468,13 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         case IRP_MN_QUERY_STOP_DEVICE:
         {
             Log(("vgdrvNtNt5PlusPnP: QUERY_STOP_DEVICE\n"));
+            RTCritSectRwEnterExcl(&pDevExt->SessionCreateCritSect);
             rc = vgdrvNtCheckIdle(pDevExt, "QUERY_STOP_DEVICE");
             if (NT_SUCCESS(rc))
             {
                 pDevExt->enmPrevDevState = pDevExt->enmDevState;
                 pDevExt->enmDevState = VGDRVNTDEVSTATE_PENDINGSTOP;
+                RTCritSectRwLeaveExcl(&pDevExt->SessionCreateCritSect);
 
                 /* This IRP passed down to lower driver. */
                 pIrp->IoStatus.Status = STATUS_SUCCESS;
@@ -1448,6 +1490,7 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             }
             else
             {
+                RTCritSectRwLeaveExcl(&pDevExt->SessionCreateCritSect);
                 pIrp->IoStatus.Status = rc;
                 IoCompleteRequest(pIrp, IO_NO_INCREMENT);
             }
@@ -1835,45 +1878,57 @@ static NTSTATUS NTAPI vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
     /*
      * We are not remotely similar to a directory...
-     * (But this is possible.)
      */
-    if (pStack->Parameters.Create.Options & FILE_DIRECTORY_FILE)
+    NTSTATUS rcNt;
+    if (!(pStack->Parameters.Create.Options & FILE_DIRECTORY_FILE))
+    {
+        /*
+         * Check the device state.  We enter the critsect in shared mode to
+         * prevent race with PnP system requests checking whether we're idle.
+         */
+        RTCritSectRwEnterShared(&pDevExt->SessionCreateCritSect);
+        VGDRVNTDEVSTATE const enmDevState = pDevExt->enmDevState;
+        if (enmDevState == VGDRVNTDEVSTATE_OPERATIONAL)
+        {
+            /*
+             * Create a client session.
+             */
+            int                 rc;
+            PVBOXGUESTSESSION   pSession;
+            if (pIrp->RequestorMode == KernelMode)
+                rc = VGDrvCommonCreateKernelSession(&pDevExt->Core, &pSession);
+            else
+                rc = VGDrvCommonCreateUserSession(&pDevExt->Core, &pSession);
+            RTCritSectRwLeaveShared(&pDevExt->SessionCreateCritSect);
+            if (RT_SUCCESS(rc))
+            {
+                pFileObj->FsContext = pSession;
+                Log(("vgdrvNtCreate: Successfully created %s session %p\n",
+                     pIrp->RequestorMode == KernelMode ? "kernel" : "user", pSession));
+
+                return vgdrvNtCompleteRequestEx(STATUS_SUCCESS, FILE_OPENED, pIrp);
+            }
+
+            /* Note. the IoStatus is completely ignored on error. */
+            Log(("vgdrvNtCreate: Failed to create session: rc=%Rrc\n", rc));
+            if (rc == VERR_NO_MEMORY)
+                rcNt = STATUS_NO_MEMORY;
+            else
+                rcNt = STATUS_UNSUCCESSFUL;
+        }
+        else
+        {
+            RTCritSectRwLeaveShared(&pDevExt->SessionCreateCritSect);
+            LogFlow(("vgdrvNtCreate: Failed. Device is not in 'working' state: %d\n", enmDevState));
+            rcNt = STATUS_DEVICE_NOT_READY;
+        }
+    }
+    else
     {
         LogFlow(("vgdrvNtCreate: Failed. FILE_DIRECTORY_FILE set\n"));
-        return vgdrvNtCompleteRequest(STATUS_NOT_A_DIRECTORY, pIrp);
+        rcNt = STATUS_NOT_A_DIRECTORY;
     }
-
-    /*
-     * Check the device state.
-     */
-    if (pDevExt->enmDevState != VGDRVNTDEVSTATE_OPERATIONAL)
-    {
-        LogFlow(("vgdrvNtCreate: Failed. Device is not in 'working' state: %d\n", pDevExt->enmDevState));
-        return vgdrvNtCompleteRequest(STATUS_DEVICE_NOT_READY, pIrp);
-    }
-
-    /*
-     * Create a client session.
-     */
-    int                 rc;
-    PVBOXGUESTSESSION   pSession;
-    if (pIrp->RequestorMode == KernelMode)
-        rc = VGDrvCommonCreateKernelSession(&pDevExt->Core, &pSession);
-    else
-        rc = VGDrvCommonCreateUserSession(&pDevExt->Core, &pSession);
-    if (RT_SUCCESS(rc))
-    {
-        pFileObj->FsContext = pSession;
-        Log(("vgdrvNtCreate: Successfully created %s session %p\n",
-             pIrp->RequestorMode == KernelMode ? "kernel" : "user", pSession));
-        return vgdrvNtCompleteRequestEx(STATUS_SUCCESS, FILE_OPENED, pIrp);
-    }
-
-    Log(("vgdrvNtCreate: Failed to create session: rc=%Rrc\n", rc));
-    /* Note. the IoStatus is completely ignored on error. */
-    if (rc == VERR_NO_MEMORY)
-        return vgdrvNtCompleteRequest(STATUS_NO_MEMORY, pIrp);
-    return vgdrvNtCompleteRequest(STATUS_UNSUCCESSFUL, pIrp);
+    return vgdrvNtCompleteRequest(rcNt, pIrp);
 }
 
 
