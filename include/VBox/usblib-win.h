@@ -264,14 +264,6 @@ typedef struct
     char            DrvKeyName[512];
 } USBSUP_DEVID, *PUSBSUP_DEVID;
 
-typedef struct
-{
-    USBSUP_DEVID    DevId;
-    char            szName[512];
-    USBDEVICESTATE  enmState;
-    bool            fHiSpeed;
-} USBSUP_DEVINFO, *PUSBSUP_DEVINFO;
-
 #pragma pack()                          /* paranoia */
 
 
