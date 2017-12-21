@@ -272,13 +272,6 @@ typedef struct
     bool            fHiSpeed;
 } USBSUP_DEVINFO, *PUSBSUP_DEVINFO;
 
-typedef struct
-{
-    int             rc;
-    uint32_t        cDevices;
-    USBSUP_DEVINFO  aDevices[1];
-} USBSUP_GET_DEVICES, *PUSBSUP_GET_DEVICES;
-
 #pragma pack()                          /* paranoia */
 
 
