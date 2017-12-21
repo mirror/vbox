@@ -51,6 +51,9 @@
 #include <usbdi.h>
 #include <hidsdi.h>
 
+/* Defined in Windows 8 DDK (through usbdi.h) but we use Windows 7 DDK to build. */
+#define UsbSuperSpeed   3
+
 #define VBOX_USB_USE_DEVICE_NOTIFICATION
 
 #ifdef VBOX_USB_USE_DEVICE_NOTIFICATION
@@ -309,7 +312,23 @@ static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_E
         pDev->enmState = USBDEVICESTATE_UNUSED;
     else
         pDev->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
-    pDev->enmSpeed = USBDEVICESPEED_UNKNOWN;
+
+    /* Determine the speed the device is operating at. */
+    switch (pConInfo->Speed) 
+    {
+        case UsbLowSpeed:   pDev->enmSpeed = USBDEVICESPEED_LOW;    break;
+        case UsbFullSpeed:  pDev->enmSpeed = USBDEVICESPEED_FULL;   break;
+        case UsbHighSpeed:  pDev->enmSpeed = USBDEVICESPEED_HIGH;   break;
+        default:    /* If we don't know, most likely it's something new. */
+        case UsbSuperSpeed: pDev->enmSpeed = USBDEVICESPEED_SUPER;  break; 
+    }
+    /* Unfortunately USB_NODE_CONNECTION_INFORMATION_EX will not report UsbSuperSpeed, and
+     * it's not even defined in the Win7 DDK we use. So we go by the USB version, and 
+     * luckily we know that USB3 must mean SuperSpeed. The USB3 spec guarantees this (9.6.1).
+     */
+    if (pDev->bcdUSB >= 0x0300)
+        pDev->enmSpeed = USBDEVICESPEED_SUPER;
+
     int rc = RTStrAPrintf((char **)&pDev->pszAddress, "%s", lpszDrvKeyName);
     if (rc < 0)
         return VERR_NO_MEMORY;
@@ -990,12 +1009,6 @@ static int usbLibMonDevicesUpdate(PVBOXUSBGLOBALSTATE pGlobal, PUSBDEVICE pDevs,
                     || MonInfo.enmState == USBDEVICESTATE_HELD_BY_PROXY
                     || MonInfo.enmState == USBDEVICESTATE_USED_BY_GUEST);
             pDevs->enmState = MonInfo.enmState;
-            if (pDevs->bcdUSB == 0x300)
-                /* USB3 spec guarantees this (9.6.1). */
-                pDevs->enmSpeed = USBDEVICESPEED_SUPER;
-            else
-                /* The following is not 100% accurate but we only care about high-speed vs. non-high-speed */
-                pDevs->enmSpeed = Dev.fHiSpeed ? USBDEVICESPEED_HIGH : USBDEVICESPEED_FULL;
 
             if (pDevs->enmState != USBDEVICESTATE_USED_BY_HOST)
             {
