@@ -700,9 +700,6 @@ bool hdaTimerSet(PHDASTATE pThis, uint64_t tsExpire, bool fForce)
         {
             PHDASTREAM pStream = &pThis->aStreams[i];
 
-            if (!pStream->State.fRunning)
-                continue;
-
             if (hdaStreamTransferIsScheduled(pStream))
                 tsExpireMin = RT_MIN(tsExpireMin, hdaStreamTransferGetNext(pStream));
         }

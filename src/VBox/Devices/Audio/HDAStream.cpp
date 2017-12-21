@@ -570,7 +570,8 @@ bool hdaStreamTransferIsScheduled(PHDASTREAM pStream)
 
     AssertPtrReturn(pStream->pHDAState, false);
 
-    const bool fScheduled = pStream->State.tsTransferNext > TMTimerGet(pStream->pHDAState->pTimer);
+    const bool fScheduled =    pStream->State.fRunning
+                            && pStream->State.tsTransferNext > TMTimerGet(pStream->pHDAState->pTimer);
 
     Log3Func(("[SD%RU8] %RU64 -> %RTbool\n", pStream->u8SD, pStream->State.tsTransferNext, fScheduled));
 
