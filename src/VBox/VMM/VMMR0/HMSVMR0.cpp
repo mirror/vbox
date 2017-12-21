@@ -3536,12 +3536,13 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
 
         Log4(("ctrl.IntCtrl.u8VTPR               %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VTPR));
         Log4(("ctrl.IntCtrl.u1VIrqPending        %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIrqPending));
-        Log4(("ctrl.IntCtrl.u7Reserved           %#x\n",      pVmcb->ctrl.IntCtrl.n.u7Reserved));
+        Log4(("ctrl.IntCtrl.u1VGif               %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VGif));
+        Log4(("ctrl.IntCtrl.u6Reserved0          %#x\n",      pVmcb->ctrl.IntCtrl.n.u6Reserved0));
         Log4(("ctrl.IntCtrl.u4VIntrPrio          %#x\n",      pVmcb->ctrl.IntCtrl.n.u4VIntrPrio));
         Log4(("ctrl.IntCtrl.u1IgnoreTPR          %#x\n",      pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR));
         Log4(("ctrl.IntCtrl.u3Reserved           %#x\n",      pVmcb->ctrl.IntCtrl.n.u3Reserved));
         Log4(("ctrl.IntCtrl.u1VIntrMasking       %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIntrMasking));
-        Log4(("ctrl.IntCtrl.u6Reserved           %#x\n",      pVmcb->ctrl.IntCtrl.n.u6Reserved));
+        Log4(("ctrl.IntCtrl.u6Reserved1          %#x\n",      pVmcb->ctrl.IntCtrl.n.u6Reserved1));
         Log4(("ctrl.IntCtrl.u8VIntrVector        %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VIntrVector));
         Log4(("ctrl.IntCtrl.u24Reserved          %#x\n",      pVmcb->ctrl.IntCtrl.n.u24Reserved));
 
@@ -3555,7 +3556,9 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("ctrl.ExitIntInfo.u19Reserved      %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u19Reserved));
         Log4(("ctrl.ExitIntInfo.u1Valid          %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u1Valid));
         Log4(("ctrl.ExitIntInfo.u32ErrorCode     %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode));
-        Log4(("ctrl.u1NestedPaging               %RTbool\n",  pVmcb->ctrl.u1NestedPaging));
+        Log4(("ctrl.u1NestedPaging               %#x\n",      pVmcb->ctrl.u1NestedPaging));
+        Log4(("ctrl.u1Sev                        %#x\n",      pVmcb->ctrl.u1Sev));
+        Log4(("ctrl.u1SevEs                      %#x\n",      pVmcb->ctrl.u1SevEs));
         Log4(("ctrl.EventInject.u8Vector         %#x\n",      pVmcb->ctrl.EventInject.n.u8Vector));
         Log4(("ctrl.EventInject.u3Type           %#x\n",      pVmcb->ctrl.EventInject.n.u3Type));
         Log4(("ctrl.EventInject.u1ErrorCodeValid %#x\n",      pVmcb->ctrl.EventInject.n.u1ErrorCodeValid));
@@ -3564,7 +3567,9 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("ctrl.EventInject.u32ErrorCode     %#x\n",      pVmcb->ctrl.EventInject.n.u32ErrorCode));
 
         Log4(("ctrl.u64NestedPagingCR3           %#RX64\n",   pVmcb->ctrl.u64NestedPagingCR3));
+
         Log4(("ctrl.u1Lbrvirt                    %RTbool\n",  pVmcb->ctrl.u1LbrVirt));
+        Log4(("ctrl.u1VirtVmsaveVmload           %RTbool\n",  pVmcb->ctrl.u1VirtVmsaveVmload));
 
         Log4(("guest.CS.u16Sel                   %RTsel\n",   pVmcb->guest.CS.u16Sel));
         Log4(("guest.CS.u16Attr                  %#x\n",      pVmcb->guest.CS.u16Attr));

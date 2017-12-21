@@ -3638,6 +3638,7 @@ VMMR3_INT_DECL(void) HMR3InfoSvmVmcbCtrl(PCDBGFINFOHLP pHlp, PCSVMVMCBCTRL pVmcb
     pHlp->pfnPrintf(pHlp, "%sIntCtrl\n",                                pszPrefix);
     pHlp->pfnPrintf(pHlp, "%s  u8VTPR                     = %#RX8 (%u)\n",   pszPrefix, pVmcbCtrl->IntCtrl.n.u8VTPR, pVmcbCtrl->IntCtrl.n.u8VTPR);
     pHlp->pfnPrintf(pHlp, "%s  u1VIrqPending              = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VIrqPending);
+    pHlp->pfnPrintf(pHlp, "%s  u1VGif                     = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VGif);
     pHlp->pfnPrintf(pHlp, "%s  u4VIntrPrio                = %#RX8\n",   pszPrefix, pVmcbCtrl->IntCtrl.n.u4VIntrPrio);
     pHlp->pfnPrintf(pHlp, "%s  u1IgnoreTPR                = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1IgnoreTPR);
     pHlp->pfnPrintf(pHlp, "%s  u1VIntrMasking             = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VIntrMasking);
@@ -3653,8 +3654,10 @@ VMMR3_INT_DECL(void) HMR3InfoSvmVmcbCtrl(PCDBGFINFOHLP pHlp, PCSVMVMCBCTRL pVmcb
     pHlp->pfnPrintf(pHlp, "%s  u1ErrorCodeValid           = %RTbool\n", pszPrefix, pVmcbCtrl->ExitIntInfo.n.u1ErrorCodeValid);
     pHlp->pfnPrintf(pHlp, "%s  u1Valid                    = %RTbool\n", pszPrefix, pVmcbCtrl->ExitIntInfo.n.u1Valid);
     pHlp->pfnPrintf(pHlp, "%s  u32ErrorCode               = %#RX32\n",  pszPrefix, pVmcbCtrl->ExitIntInfo.n.u32ErrorCode);
-    pHlp->pfnPrintf(pHlp, "%sNestedPaging\n",                           pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u1NestedPaging             = %RTbool\n", pszPrefix, RT_BOOL(pVmcbCtrl->u1NestedPaging));
+    pHlp->pfnPrintf(pHlp, "%sNestedPaging and SEV\n",                   pszPrefix);
+    pHlp->pfnPrintf(pHlp, "%s  u1NestedPaging             = %RTbool\n", pszPrefix, pVmcbCtrl->u1NestedPaging);
+    pHlp->pfnPrintf(pHlp, "%s  u1Sev                      = %RTbool\n", pszPrefix, pVmcbCtrl->u1Sev);
+    pHlp->pfnPrintf(pHlp, "%s  u1SevEs                    = %RTbool\n", pszPrefix, pVmcbCtrl->u1SevEs);
     pHlp->pfnPrintf(pHlp, "%sAvicBar\n",                                pszPrefix);
     pHlp->pfnPrintf(pHlp, "%s  u40Addr                    = %#RX64\n",  pszPrefix, pVmcbCtrl->AvicBar.n.u40Addr);
     pHlp->pfnPrintf(pHlp, "%sEventInject\n",                            pszPrefix);
@@ -3666,6 +3669,7 @@ VMMR3_INT_DECL(void) HMR3InfoSvmVmcbCtrl(PCDBGFINFOHLP pHlp, PCSVMVMCBCTRL pVmcb
     pHlp->pfnPrintf(pHlp, "%s  u32ErrorCode               = %#RX32\n",  pszPrefix, pVmcbCtrl->EventInject.n.u32ErrorCode);
     pHlp->pfnPrintf(pHlp, "%su64NestedPagingCR3         = %#RX64\n",    pszPrefix, pVmcbCtrl->u64NestedPagingCR3);
     pHlp->pfnPrintf(pHlp, "%su1LbrVirt                  = %RTbool\n",   pszPrefix, pVmcbCtrl->u1LbrVirt);
+    pHlp->pfnPrintf(pHlp, "%su1VirtVmsaveVmload         = %RTbool\n",   pszPrefix, pVmcbCtrl->u1VirtVmsaveVmload);
     pHlp->pfnPrintf(pHlp, "%su32VmcbCleanBits           = %#RX32\n",    pszPrefix, pVmcbCtrl->u32VmcbCleanBits);
     pHlp->pfnPrintf(pHlp, "%su64NextRIP                 = %#RX64\n",    pszPrefix, pVmcbCtrl->u64NextRIP);
     pHlp->pfnPrintf(pHlp, "%scbInstrFetched             = %u\n",        pszPrefix, pVmcbCtrl->cbInstrFetched);
