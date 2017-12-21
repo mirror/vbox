@@ -3694,11 +3694,8 @@ VMMR3_INT_DECL(void) HMR3InfoSvmVmcbCtrl(PCDBGFINFOHLP pHlp, PCSVMVMCBCTRL pVmcb
  */
 DECLINLINE(void) hmR3InfoSvmVmcbStateSaveSelReg(PCDBGFINFOHLP pHlp, PCSVMSELREG pSel, const char *pszName, const char *pszPrefix)
 {
-    pHlp->pfnPrintf(pHlp, "%s%s\n",                                     pszPrefix, pszName);
-    pHlp->pfnPrintf(pHlp, "%s  u16Sel                     = %#RX16\n",  pszPrefix, pSel->u16Sel);
-    pHlp->pfnPrintf(pHlp, "%s  u16Attr                    = %#RX16\n",  pszPrefix, pSel->u16Attr);
-    pHlp->pfnPrintf(pHlp, "%s  u32Limit                   = %#RX32\n",  pszPrefix, pSel->u32Limit);
-    pHlp->pfnPrintf(pHlp, "%s  u64Base                    = %#RX64\n",  pszPrefix, pSel->u64Base);
+    pHlp->pfnPrintf(pHlp, "%s%-12s               = {%04x base=%016RX64 limit=%08x flags=%04x}\n", pszPrefix,
+                    pszName, pSel->u16Sel, pSel->u64Base, pSel->u32Limit, pSel->u16Attr);
 }
 
 
@@ -3712,9 +3709,7 @@ DECLINLINE(void) hmR3InfoSvmVmcbStateSaveSelReg(PCDBGFINFOHLP pHlp, PCSVMSELREG 
  */
 DECLINLINE(void) hmR3InfoSvmVmcbStateXdtr(PCDBGFINFOHLP pHlp, PCSVMXDTR pXdtr, const char *pszName, const char *pszPrefix)
 {
-    pHlp->pfnPrintf(pHlp, "%s%s\n",                                     pszPrefix, pszName);
-    pHlp->pfnPrintf(pHlp, "%s  u32Limit                   = %#RX32\n",  pszPrefix, pXdtr->u32Limit);
-    pHlp->pfnPrintf(pHlp, "%s  u64Base                    = %#RX64\n",  pszPrefix, pXdtr->u64Base);
+    pHlp->pfnPrintf(pHlp, "%s%-12s               = %016RX64:%04x\n", pszPrefix, pszName, pXdtr->u64Base, pXdtr->u32Limit);
 }
 
 
