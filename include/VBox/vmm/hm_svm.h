@@ -739,7 +739,8 @@ typedef struct
     /** Offset 0xb8 - LBR Virtualization. */
     uint64_t    u64LBRVirt;
     /** Offset 0xc0 - VMCB Clean Bits. */
-    uint64_t    u64VmcbCleanBits;
+    uint32_t    u32VmcbCleanBits;
+    uint32_t    u32Reserved0;
     /** Offset 0xc8 - Next sequential instruction pointer. */
     uint64_t    u64NextRIP;
     /** Offset 0xd0 - Number of bytes fetched. */
@@ -993,7 +994,8 @@ typedef struct SVMNESTEDVMCBCACHE
     /** Cache of the TSC offset. */
     uint64_t            u64TSCOffset;
     /** Cache of the VMCB clean bits. */
-    uint64_t            u64VmcbCleanBits;
+    uint32_t            u32VmcbCleanBits;
+    uint32_t            u32Reserved0;
     /** Cache of the TLB control. */
     SVMTLBCTRL          TLBCtrl;
     /** Cache of the nested-paging control. */

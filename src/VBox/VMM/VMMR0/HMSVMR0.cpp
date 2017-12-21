@@ -776,7 +776,7 @@ static void hmR0SvmSetMsrPermission(PSVMVMCB pVmcb, uint8_t *pbMsrBitmap, unsign
     else
         ASMBitClear(pbMsrBitmap, uMsrpmBit + 1);
 
-    pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
+    pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
 }
 
 
@@ -861,7 +861,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         pVmcb->ctrl.u64LBRVirt = 0;
 
         /* Initially set all VMCB clean bits to 0 indicating that everything should be loaded from the VMCB in memory. */
-        pVmcb->ctrl.u64VmcbCleanBits = 0;
+        pVmcb->ctrl.u32VmcbCleanBits = 0;
 
         /* The host ASID MBZ, for the guest start with 1. */
         pVmcb->ctrl.TLBCtrl.n.u32ASID = 1;
@@ -1048,7 +1048,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
         pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
 
         /* Clear the VMCB Clean Bit for NP while flushing the TLB. See @bugref{7152}. */
-        pVmcb->ctrl.u64VmcbCleanBits    &= ~HMSVM_VMCB_CLEAN_NP;
+        pVmcb->ctrl.u32VmcbCleanBits    &= ~HMSVM_VMCB_CLEAN_NP;
 
         /* Keep track of last CPU ID even when flushing all the time. */
         if (fNewAsid)
@@ -1060,7 +1060,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
         if (pVCpu->hm.s.fForceTLBFlush)
         {
             /* Clear the VMCB Clean Bit for NP while flushing the TLB. See @bugref{7152}. */
-            pVmcb->ctrl.u64VmcbCleanBits    &= ~HMSVM_VMCB_CLEAN_NP;
+            pVmcb->ctrl.u32VmcbCleanBits    &= ~HMSVM_VMCB_CLEAN_NP;
 
             if (fNewAsid)
             {
@@ -1101,7 +1101,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
     if (pVmcb->ctrl.TLBCtrl.n.u32ASID != pVCpu->hm.s.uCurrentAsid)
     {
         pVmcb->ctrl.TLBCtrl.n.u32ASID = pVCpu->hm.s.uCurrentAsid;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_ASID;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_ASID;
     }
 
     AssertMsg(pVCpu->hm.s.idLastCpu == pCpu->idCpu,
@@ -1222,7 +1222,7 @@ DECLINLINE(void) hmR0SvmAddXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
     if (!(pVmcb->ctrl.u32InterceptXcpt & RT_BIT(u32Xcpt)))
     {
         pVmcb->ctrl.u32InterceptXcpt |= RT_BIT(u32Xcpt);
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
     }
 }
 
@@ -1262,7 +1262,7 @@ DECLINLINE(void) hmR0SvmRemoveXcptIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMC
         if (fRemoveXcpt)
         {
             pVmcb->ctrl.u32InterceptXcpt &= ~RT_BIT(u32Xcpt);
-            pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+            pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
         }
     }
 #else
@@ -1337,7 +1337,7 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
         hmR0SvmRemoveXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_MF);
 
     pVmcb->guest.u64CR0 = u64GuestCR0;
-    pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
+    pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
 }
 
 
@@ -1361,7 +1361,7 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR2))
     {
         pVmcb->guest.u64CR2 = pCtx->cr2;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CR2;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CR2;
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR2);
     }
 
@@ -1381,7 +1381,7 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
                 enmShwPagingMode = PGMGetHostMode(pVM);
 
             pVmcb->ctrl.u64NestedPagingCR3 = PGMGetNestedCR3(pVCpu, enmShwPagingMode);
-            pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_NP;
+            pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_NP;
             Assert(pVmcb->ctrl.u64NestedPagingCR3);
             pVmcb->guest.u64CR3 = pCtx->cr3;
         }
@@ -1391,7 +1391,7 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
             Log4(("hmR0SvmLoadGuestControlRegs: CR3=%#RX64 (HyperCR3=%#RX64)\n", pCtx->cr3, pVmcb->guest.u64CR3));
         }
 
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR3);
     }
 
@@ -1438,7 +1438,7 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
         }
 
         pVmcb->guest.u64CR4 = u64GuestCR4;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
 
         /* Whether to save/load/restore XCR0 during world switch depends on CR4.OSXSAVE and host+guest XCR0. */
         pVCpu->hm.s.fLoadSaveGuestXcr0 = (u64GuestCR4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
@@ -1473,7 +1473,7 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
         HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &pVmcb->guest, GS, gs);
 
         pVmcb->guest.u8CPL = pCtx->ss.Attr.n.u2Dpl;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_SEG;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_SEG;
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_SEGMENT_REGS);
     }
 
@@ -1496,7 +1496,7 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
     {
         pVmcb->guest.GDTR.u32Limit = pCtx->gdtr.cbGdt;
         pVmcb->guest.GDTR.u64Base  = pCtx->gdtr.pGdt;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DT;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DT;
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_GDTR);
     }
 
@@ -1505,7 +1505,7 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
     {
         pVmcb->guest.IDTR.u32Limit = pCtx->idtr.cbIdt;
         pVmcb->guest.IDTR.u64Base  = pCtx->idtr.pIdt;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DT;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DT;
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_IDTR);
     }
 }
@@ -1535,7 +1535,7 @@ static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_EFER_MSR))
     {
         pVmcb->guest.u64EFER = pCtx->msrEFER | MSR_K6_EFER_SVME;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_EFER_MSR);
     }
 
@@ -1551,7 +1551,7 @@ static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
         if (pCtx->msrEFER & MSR_K6_EFER_LME)
         {
             pVmcb->guest.u64EFER &= ~MSR_K6_EFER_LME;
-            pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
+            pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
         }
     }
 
@@ -1628,7 +1628,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
         {
             pVmcb->guest.u64DR7 = CPUMGetHyperDR7(pVCpu);
             pVmcb->guest.u64DR6 = X86_DR6_INIT_VAL;
-            pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+            pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
             pVCpu->hm.s.fUsingHyperDR7 = true;
         }
 
@@ -1647,7 +1647,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
         {
             pVmcb->guest.u64DR7 = pCtx->dr[7];
             pVmcb->guest.u64DR6 = pCtx->dr[6];
-            pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+            pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
             pVCpu->hm.s.fUsingHyperDR7 = false;
         }
 
@@ -1704,7 +1704,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
         {
             pVmcb->ctrl.u16InterceptRdDRx = 0xffff;
             pVmcb->ctrl.u16InterceptWrDRx = 0xffff;
-            pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+            pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
         }
     }
     else
@@ -1714,7 +1714,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
         {
             pVmcb->ctrl.u16InterceptRdDRx = 0;
             pVmcb->ctrl.u16InterceptWrDRx = 0;
-            pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+            pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
         }
     }
     Log4(("hmR0SvmLoadSharedDebugState: DR6=%#RX64 DR7=%#RX64\n", pCtx->dr[6], pCtx->dr[7]));
@@ -1735,7 +1735,7 @@ static void hmR0SvmLoadGuestApicStateNested(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst)
         /* Always enable V_INTR_MASKING as we do not want to allow access to the physical APIC TPR. */
         pVmcbNstGst->ctrl.IntCtrl.n.u1VIntrMasking = 1;
         pVCpu->hm.s.svm.fSyncVTpr = false;
-        pVmcbNstGst->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_TPR;
+        pVmcbNstGst->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_TPR;
 
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
     }
@@ -1799,7 +1799,7 @@ static int hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx
                 pVCpu->hm.s.svm.fSyncVTpr = true;
             }
 
-            pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
+            pVmcb->ctrl.u32VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
         }
     }
 
@@ -1896,7 +1896,7 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
         pVmcbNstGst->ctrl.u64InterceptCtrl  &= ~SVM_CTRL_INTERCEPT_VMMCALL;
 
         /* Finally, update the VMCB clean bits. */
-        pVmcbNstGst->ctrl.u64VmcbCleanBits  &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+        pVmcbNstGst->ctrl.u32VmcbCleanBits  &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 
         Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS));
     }
@@ -2156,7 +2156,7 @@ static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
         pNstGstVmcbCache->u64IOPMPhysAddr   = pVmcbNstGstCtrl->u64IOPMPhysAddr;
         pNstGstVmcbCache->u64MSRPMPhysAddr  = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
         pNstGstVmcbCache->u64TSCOffset      = pVmcbNstGstCtrl->u64TSCOffset;
-        pNstGstVmcbCache->u64VmcbCleanBits  = pVmcbNstGstCtrl->u64VmcbCleanBits;
+        pNstGstVmcbCache->u32VmcbCleanBits  = pVmcbNstGstCtrl->u32VmcbCleanBits;
         pNstGstVmcbCache->fVIntrMasking     = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
         pNstGstVmcbCache->TLBCtrl           = pVmcbNstGstCtrl->TLBCtrl;
         pNstGstVmcbCache->NestedPagingCtrl  = pVmcbNstGstCtrl->NestedPaging;
@@ -2759,7 +2759,7 @@ static void hmR0SvmUpdateTscOffsettingNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     pVmcbNstGstCtrl->u64TSCOffset = uTscOffset;
 
     /* Finally update the VMCB clean bits since we touched the intercepts as well as the TSC offset. */
-    pVmcbNstGstCtrl->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+    pVmcbNstGstCtrl->u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 
     if (fParavirtTsc)
     {
@@ -2797,7 +2797,7 @@ static void hmR0SvmUpdateTscOffsetting(PVM pVM, PVMCPU pVCpu, PSVMVMCB pVmcb)
         pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_RDTSCP;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
-    pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+    pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 
     /** @todo later optimize this to be done elsewhere and not before every
      *        VM-entry. */
@@ -3145,7 +3145,7 @@ DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
         Assert(pVmcb->ctrl.IntCtrl.n.u1VIrqPending == 0);
         pVmcb->ctrl.IntCtrl.n.u1VIrqPending = 1;
         pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VINTR;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
+        pVmcb->ctrl.u32VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
         Log4(("Set VINTR intercept\n"));
     }
 }
@@ -3165,7 +3165,7 @@ DECLINLINE(void) hmR0SvmClearVirtIntrIntercept(PSVMVMCB pVmcb)
         Assert(pVmcb->ctrl.IntCtrl.n.u1VIrqPending == 1);
         pVmcb->ctrl.IntCtrl.n.u1VIrqPending = 0;
         pVmcb->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_VINTR;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
+        pVmcb->ctrl.u32VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
         Log4(("Cleared VINTR intercept\n"));
     }
 }
@@ -3183,7 +3183,7 @@ DECLINLINE(void) hmR0SvmSetIretIntercept(PSVMVMCB pVmcb)
     if (!(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_IRET))
     {
         pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_IRET;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 
         Log4(("Setting IRET intercept\n"));
     }
@@ -3200,7 +3200,7 @@ DECLINLINE(void) hmR0SvmClearIretIntercept(PSVMVMCB pVmcb)
     if (pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_IRET)
     {
         pVmcb->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_IRET;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS);
+        pVmcb->ctrl.u32VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS);
 
         Log4(("Clearing IRET intercept\n"));
     }
@@ -3519,7 +3519,7 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
     {
         hmR0DumpRegs(pVM, pVCpu, pCtx); NOREF(pVM);
 #ifdef VBOX_STRICT
-        Log4(("ctrl.u64VmcbCleanBits             %#RX64\n",   pVmcb->ctrl.u64VmcbCleanBits));
+        Log4(("ctrl.u32VmcbCleanBits             %#RX32\n",   pVmcb->ctrl.u32VmcbCleanBits));
         Log4(("ctrl.u16InterceptRdCRx            %#x\n",      pVmcb->ctrl.u16InterceptRdCRx));
         Log4(("ctrl.u16InterceptWrCRx            %#x\n",      pVmcb->ctrl.u16InterceptWrCRx));
         Log4(("ctrl.u16InterceptRdDRx            %#x\n",      pVmcb->ctrl.u16InterceptRdDRx));
@@ -4032,7 +4032,7 @@ static void hmR0SvmPreRunGuestCommittedNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
 
     /* If we've migrating CPUs, mark the VMCB Clean bits as dirty. */
     if (idCurrentCpu != pVCpu->hm.s.idLastCpu)
-        pVmcbNstGst->ctrl.u64VmcbCleanBits = 0;
+        pVmcbNstGst->ctrl.u32VmcbCleanBits = 0;
 
     /* Store status of the shared guest-host state at the time of VMRUN. */
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
@@ -4088,7 +4088,7 @@ static void hmR0SvmPreRunGuestCommittedNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
      */
     bool const fSupportsVmcbCleanBits = hmR0SvmSupportsVmcbCleanBits(pVCpu, pCtx);
     if (!fSupportsVmcbCleanBits)
-        pVmcbNstGst->ctrl.u64VmcbCleanBits = 0;
+        pVmcbNstGst->ctrl.u32VmcbCleanBits = 0;
 }
 #endif
 
@@ -4144,7 +4144,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
 
     /* If we've migrating CPUs, mark the VMCB Clean bits as dirty. */
     if (idCurrentCpu != pVCpu->hm.s.idLastCpu)
-        pVmcb->ctrl.u64VmcbCleanBits = 0;
+        pVmcb->ctrl.u32VmcbCleanBits = 0;
 
     /* Store status of the shared guest-host state at the time of VMRUN. */
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
@@ -4197,7 +4197,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     /* If VMCB Clean bits isn't supported by the CPU, simply mark all state-bits as dirty, indicating (re)load-from-VMCB. */
     bool const fSupportsVmcbCleanBits = hmR0SvmSupportsVmcbCleanBits(pVCpu, pCtx);
     if (!fSupportsVmcbCleanBits)
-        pVmcb->ctrl.u64VmcbCleanBits = 0;
+        pVmcb->ctrl.u32VmcbCleanBits = 0;
 }
 
 
@@ -4309,7 +4309,7 @@ static void hmR0SvmPostRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx,
     VMMRZCallRing3Enable(pVCpu);                                /* It is now safe to do longjmps to ring-3!!! */
 
     /* Mark the VMCB-state cache as unmodified by VMM. */
-    pVmcbNstGstCtrl->u64VmcbCleanBits = HMSVM_VMCB_CLEAN_ALL;
+    pVmcbNstGstCtrl->u32VmcbCleanBits = HMSVM_VMCB_CLEAN_ALL;
 
     /* If VMRUN failed, we can bail out early. This does -not- cover SVM_EXIT_INVALID. */
     if (RT_UNLIKELY(rcVMRun != VINF_SUCCESS))
@@ -4353,7 +4353,7 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
     ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for EMT poking. */
 
     PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
-    pVmcb->ctrl.u64VmcbCleanBits = HMSVM_VMCB_CLEAN_ALL;        /* Mark the VMCB-state cache as unmodified by VMM. */
+    pVmcb->ctrl.u32VmcbCleanBits = HMSVM_VMCB_CLEAN_ALL;        /* Mark the VMCB-state cache as unmodified by VMM. */
 
     /* TSC read must be done early for maximum accuracy. */
     if (!(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSC))
@@ -6511,7 +6511,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
             pVmcb->ctrl.u16InterceptRdDRx = 0;
             pVmcb->ctrl.u16InterceptWrDRx = 0;
-            pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+            pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 
             /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
             VMMRZCallRing3Disable(pVCpu);
@@ -6762,7 +6762,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 /* Raise #DB. */
                 pVmcb->guest.u64DR6 = pCtx->dr[6];
                 pVmcb->guest.u64DR7 = pCtx->dr[7];
-                pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+                pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
                 hmR0SvmSetPendingXcptDB(pVCpu);
             }
             /* rcStrict is VINF_SUCCESS, VINF_IOM_R3_IOPORT_COMMIT_WRITE, or in [VINF_EM_FIRST..VINF_EM_LAST],
@@ -7322,7 +7322,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     {
         Log5(("hmR0SvmExitXcptDB: DR6=%#RX64 -> %Rrc\n", pVmcb->guest.u64DR6, rc));
         pVmcb->guest.u64DR6 = X86_DR6_INIT_VAL;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
     }
     else
     {
