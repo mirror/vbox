@@ -450,12 +450,6 @@
 #define SVM_INTERRUPT_SHADOW_ACTIVE           RT_BIT_64(0)
 /** @} */
 
-/** @name SVMVMCB.u64LbrVirt
- * @{
- */
-#define SVM_LBR_VIRT_ENABLE                   RT_BIT_64(0)
-/** @} */
-
 /** @name SVMINTCTRL.u3Type
  * @{
  */
@@ -711,10 +705,10 @@ typedef struct
     /** Offset 0x90 - Nested Paging. */
     union
     {
-        uint32_t    u1NestedPaging   :  1;
-        uint32_t    u1EnableSev      :  1;
-        uint32_t    u1EnableSevEs    :  1;
-        uint32_t    u28Reserved0     : 28;
+        uint32_t    u1NestedPaging :  1;
+        uint32_t    u1Sev          :  1;
+        uint32_t    u1SevEs        :  1;
+        uint32_t    u28Reserved0   : 28;
         uint64_t    u64NpSevCtrl;
     } RT_UNION_NM(np);
     /** Offset 0x98 - AVIC APIC BAR.  */
@@ -726,7 +720,13 @@ typedef struct
     /** Offset 0xb0 - Host CR3 for nested paging. */
     uint64_t    u64NestedPagingCR3;
     /** Offset 0xb8 - LBR Virtualization. */
-    uint64_t    u64LBRVirt;
+    union
+    {
+        uint32_t    u1LbrVirt          :  1;
+        uint32_t    u1VirtVmsaveVmload :  1;
+        uint32_t    u29Reserved0       : 29;
+        uint64_t    u64LbrVirtCtrl;
+    } RT_UNION_NM(lbrvirt);
     /** Offset 0xc0 - VMCB Clean Bits. */
     uint32_t    u32VmcbCleanBits;
     uint32_t    u32Reserved0;
@@ -751,39 +751,39 @@ typedef SVMVMCBCTRL *PSVMVMCBCTRL;
 /** Pointer to a const SVMVMCBSTATESAVE structure. */
 typedef const SVMVMCBCTRL *PCSVMVMCBCTRL;
 AssertCompileSize(SVMVMCBCTRL, 0x100);
-AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptRdCRx,             0x00);
-AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptWrCRx,             0x02);
-AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptRdDRx,             0x04);
-AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptWrDRx,             0x06);
-AssertCompileMemberOffset(SVMVMCBCTRL, u32InterceptXcpt,              0x08);
-AssertCompileMemberOffset(SVMVMCBCTRL, u64InterceptCtrl,              0x0c);
-AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved,                    0x14);
-AssertCompileMemberOffset(SVMVMCBCTRL, u16PauseFilterThreshold,       0x3c);
-AssertCompileMemberOffset(SVMVMCBCTRL, u16PauseFilterCount,           0x3e);
-AssertCompileMemberOffset(SVMVMCBCTRL, u64IOPMPhysAddr,               0x40);
-AssertCompileMemberOffset(SVMVMCBCTRL, u64MSRPMPhysAddr,              0x48);
-AssertCompileMemberOffset(SVMVMCBCTRL, u64TSCOffset,                  0x50);
-AssertCompileMemberOffset(SVMVMCBCTRL, TLBCtrl,                       0x58);
-AssertCompileMemberOffset(SVMVMCBCTRL, IntCtrl,                       0x60);
-AssertCompileMemberOffset(SVMVMCBCTRL, u64IntShadow,                  0x68);
-AssertCompileMemberOffset(SVMVMCBCTRL, u64ExitCode,                   0x70);
-AssertCompileMemberOffset(SVMVMCBCTRL, u64ExitInfo1,                  0x78);
-AssertCompileMemberOffset(SVMVMCBCTRL, u64ExitInfo2,                  0x80);
-AssertCompileMemberOffset(SVMVMCBCTRL, ExitIntInfo,                   0x88);
-AssertCompileMemberOffset(SVMVMCBCTRL, RT_UNION_NM(np.) u64NpSevCtrl, 0x90);
-AssertCompileMemberOffset(SVMVMCBCTRL, AvicBar,                       0x98);
-AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved2,                   0xa0);
-AssertCompileMemberOffset(SVMVMCBCTRL, EventInject,                   0xa8);
-AssertCompileMemberOffset(SVMVMCBCTRL, u64NestedPagingCR3,            0xb0);
-AssertCompileMemberOffset(SVMVMCBCTRL, u64LBRVirt,                    0xb8);
-AssertCompileMemberOffset(SVMVMCBCTRL, u32VmcbCleanBits,              0xc0);
-AssertCompileMemberOffset(SVMVMCBCTRL, u64NextRIP,                    0xc8);
-AssertCompileMemberOffset(SVMVMCBCTRL, cbInstrFetched,                0xd0);
-AssertCompileMemberOffset(SVMVMCBCTRL, abInstr,                       0xd1);
-AssertCompileMemberOffset(SVMVMCBCTRL, AvicBackingPagePtr,            0xe0);
-AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved3,                   0xe8);
-AssertCompileMemberOffset(SVMVMCBCTRL, AvicLogicalTablePtr,           0xf0);
-AssertCompileMemberOffset(SVMVMCBCTRL, AvicPhysicalTablePtr,          0xf8);
+AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptRdCRx,                    0x00);
+AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptWrCRx,                    0x02);
+AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptRdDRx,                    0x04);
+AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptWrDRx,                    0x06);
+AssertCompileMemberOffset(SVMVMCBCTRL, u32InterceptXcpt,                     0x08);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64InterceptCtrl,                     0x0c);
+AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved,                           0x14);
+AssertCompileMemberOffset(SVMVMCBCTRL, u16PauseFilterThreshold,              0x3c);
+AssertCompileMemberOffset(SVMVMCBCTRL, u16PauseFilterCount,                  0x3e);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64IOPMPhysAddr,                      0x40);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64MSRPMPhysAddr,                     0x48);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64TSCOffset,                         0x50);
+AssertCompileMemberOffset(SVMVMCBCTRL, TLBCtrl,                              0x58);
+AssertCompileMemberOffset(SVMVMCBCTRL, IntCtrl,                              0x60);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64IntShadow,                         0x68);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64ExitCode,                          0x70);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64ExitInfo1,                         0x78);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64ExitInfo2,                         0x80);
+AssertCompileMemberOffset(SVMVMCBCTRL, ExitIntInfo,                          0x88);
+AssertCompileMemberOffset(SVMVMCBCTRL, RT_UNION_NM(np.) u64NpSevCtrl,        0x90);
+AssertCompileMemberOffset(SVMVMCBCTRL, AvicBar,                              0x98);
+AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved2,                          0xa0);
+AssertCompileMemberOffset(SVMVMCBCTRL, EventInject,                          0xa8);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64NestedPagingCR3,                   0xb0);
+AssertCompileMemberOffset(SVMVMCBCTRL, RT_UNION_NM(lbrvirt.) u64LbrVirtCtrl, 0xb8);
+AssertCompileMemberOffset(SVMVMCBCTRL, u32VmcbCleanBits,                     0xc0);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64NextRIP,                           0xc8);
+AssertCompileMemberOffset(SVMVMCBCTRL, cbInstrFetched,                       0xd0);
+AssertCompileMemberOffset(SVMVMCBCTRL, abInstr,                              0xd1);
+AssertCompileMemberOffset(SVMVMCBCTRL, AvicBackingPagePtr,                   0xe0);
+AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved3,                          0xe8);
+AssertCompileMemberOffset(SVMVMCBCTRL, AvicLogicalTablePtr,                  0xf0);
+AssertCompileMemberOffset(SVMVMCBCTRL, AvicPhysicalTablePtr,                 0xf8);
 
 /**
  * SVM VMCB state save area.

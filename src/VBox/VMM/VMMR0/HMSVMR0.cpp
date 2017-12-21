@@ -858,10 +858,10 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         pVmcb->ctrl.u64MSRPMPhysAddr = pVCpu->hm.s.svm.HCPhysMsrBitmap;
 
         /* No LBR virtualization. */
-        pVmcb->ctrl.u64LBRVirt = 0;
+        Assert(pVmcb->ctrl.u1LbrVirt == 0);
 
-        /* Initially set all VMCB clean bits to 0 indicating that everything should be loaded from the VMCB in memory. */
-        pVmcb->ctrl.u32VmcbCleanBits = 0;
+        /* Initially all VMCB clean bits MBZ indicating that everything should be loaded from the VMCB in memory. */
+        Assert(pVmcb->ctrl.u32VmcbCleanBits == 0);
 
         /* The host ASID MBZ, for the guest start with 1. */
         pVmcb->ctrl.TLBCtrl.n.u32ASID = 1;
@@ -3564,7 +3564,7 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("ctrl.EventInject.u32ErrorCode     %#x\n",      pVmcb->ctrl.EventInject.n.u32ErrorCode));
 
         Log4(("ctrl.u64NestedPagingCR3           %#RX64\n",   pVmcb->ctrl.u64NestedPagingCR3));
-        Log4(("ctrl.u64LBRVirt                   %#RX64\n",   pVmcb->ctrl.u64LBRVirt));
+        Log4(("ctrl.u1Lbrvirt                    %RTbool\n",  pVmcb->ctrl.u1LbrVirt));
 
         Log4(("guest.CS.u16Sel                   %RTsel\n",   pVmcb->guest.CS.u16Sel));
         Log4(("guest.CS.u16Attr                  %#x\n",      pVmcb->guest.CS.u16Attr));
