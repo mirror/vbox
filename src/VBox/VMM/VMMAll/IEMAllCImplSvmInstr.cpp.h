@@ -334,7 +334,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         }
 
         /* Nested paging. */
-        if (    pVmcbCtrl->NestedPaging.n.u1NestedPaging
+        if (    pVmcbCtrl->u1NestedPaging
             && !pVM->cpum.ro.GuestFeatures.fSvmNestedPaging)
         {
             Log(("iemSvmVmrun: Nested paging not supported -> #VMEXIT\n"));
