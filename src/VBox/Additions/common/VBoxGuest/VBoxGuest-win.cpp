@@ -1300,7 +1300,8 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 #endif
 
     NTSTATUS rc = STATUS_SUCCESS;
-    switch (pStack->MinorFunction)
+    uint8_t bMinorFunction = pStack->MinorFunction;
+    switch (bMinorFunction)
     {
         case IRP_MN_START_DEVICE:
         {
@@ -1549,7 +1550,7 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         {
             IoSkipCurrentIrpStackLocation(pIrp);
             rc = IoCallDriver(pDevExt->pNextLowerDriver, pIrp);
-            Log(("vgdrvNtNt5PlusPnP: Unknown request %#x: Lower driver replied: %x\n", pStack->MinorFunction, rc));
+            Log(("vgdrvNtNt5PlusPnP: Unknown request %#x: Lower driver replied: %x\n", bMinorFunction, rc));
             return rc;
         }
     }
@@ -2546,9 +2547,6 @@ typedef struct DPCDATA
 } DPCDATA;
 
 AssertCompileMemberAlignment(DPCDATA, aSamples, 64);
-
-# define VBOXGUEST_DPC_TAG 'DPCS'
-
 
 /**
  * DPC callback routine for the DPC latency measurement code.
