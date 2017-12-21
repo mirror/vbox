@@ -57,13 +57,6 @@
 #define VBOX_CM_PRE_VISTA_MASK (0x3f)
 
 
-#define VBOXGUEST_UPDATE_DEVSTATE(a_pDevExt, a_enmNewDevState) \
-    do { \
-        (a_pDevExt)->enmPrevDevState = (a_pDevExt)->enmDevState; \
-        (a_pDevExt)->enmDevState     = (a_enmNewDevState); \
-    } while (0)
-
-
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -72,12 +65,19 @@
  */
 typedef enum VGDRVNTDEVSTATE
 {
+    /** @name Stable states
+     * @{ */
+    VGDRVNTDEVSTATE_REMOVED = 0,
     VGDRVNTDEVSTATE_STOPPED,
-    VGDRVNTDEVSTATE_WORKING,
+    VGDRVNTDEVSTATE_OPERATIONAL,
+    /** @} */
+
+    /** @name Transitional states
+     *  @{ */
     VGDRVNTDEVSTATE_PENDINGSTOP,
     VGDRVNTDEVSTATE_PENDINGREMOVE,
-    VGDRVNTDEVSTATE_SURPRISEREMOVED,
-    VGDRVNTDEVSTATE_REMOVED
+    VGDRVNTDEVSTATE_SURPRISEREMOVED
+    /** @} */
 } VGDRVNTDEVSTATE;
 
 
@@ -123,7 +123,7 @@ typedef struct VBOXGUESTDEVEXTWIN
 
     /** Device state. */
     VGDRVNTDEVSTATE volatile enmDevState;
-    /** The previous device state. */
+    /** The previous stable device state. */
     VGDRVNTDEVSTATE         enmPrevDevState;
 
     /** Last system power action set (see VBoxGuestPower). */
@@ -839,9 +839,11 @@ static NTSTATUS vgdrvNtSetupDevice(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT p
 
                         /* Ready to rumble! */
                         LogRelFunc(("Device is ready!\n"));
-                        VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_WORKING);
+                        pDevExt->enmDevState     = VGDRVNTDEVSTATE_OPERATIONAL;
+                        pDevExt->enmPrevDevState = VGDRVNTDEVSTATE_OPERATIONAL;
                         return STATUS_SUCCESS;
                     }
+
                     pDevExt->pInterruptObject = NULL;
 
                     VbglR0GRFree(&pDevExt->pPowerStateRequest->header);
@@ -1277,7 +1279,9 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 if (pStack->Parameters.StartDevice.AllocatedResources)
                 {
                     rc = vgdrvNtSetupDevice(pDevExt, pDevObj, pIrp, NULL, NULL);
-                    if (!NT_SUCCESS(rc))
+                    if (NT_SUCCESS(rc))
+                        Log(("vgdrvNtNt5PlusPnP: START_DEVICE: success\n"));
+                    else
                         Log(("vgdrvNtNt5PlusPnP: START_DEVICE: vgdrvNtSetupDevice failed: %#x\n", rc));
                 }
                 else
@@ -1312,7 +1316,7 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 rc = vgdrvNtCheckIdle(pDevExt, "QUERY_REMOVE_DEVICE");
             if (NT_SUCCESS(rc))
             {
-                VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_PENDINGREMOVE);
+                pDevExt->enmDevState = VGDRVNTDEVSTATE_PENDINGREMOVE;
 
                 /* This IRP passed down to lower driver. */
                 pIrp->IoStatus.Status = STATUS_SUCCESS;
@@ -1365,7 +1369,7 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         case IRP_MN_SURPRISE_REMOVAL:
         {
             Log(("vgdrvNtNt5PlusPnP: IRP_MN_SURPRISE_REMOVAL\n"));
-            VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_SURPRISEREMOVED);
+            pDevExt->enmDevState = VGDRVNTDEVSTATE_SURPRISEREMOVED;
             LogRel(("VBoxGuest: unexpected device removal\n"));
 
             /* Pass to the lower driver. */
@@ -1384,7 +1388,7 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         case IRP_MN_REMOVE_DEVICE:
         {
             Log(("vgdrvNtNt5PlusPnP: REMOVE_DEVICE\n"));
-            VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_REMOVED);
+            pDevExt->enmDevState = VGDRVNTDEVSTATE_REMOVED;
 
             /*
              * Disconnect interrupts and delete all hardware resources.
@@ -1424,11 +1428,11 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         case IRP_MN_QUERY_STOP_DEVICE:
         {
             Log(("vgdrvNtNt5PlusPnP: QUERY_STOP_DEVICE\n"));
-            VGDRVNTDEVSTATE const enmOldState = pDevExt->enmDevState;
             rc = vgdrvNtCheckIdle(pDevExt, "QUERY_STOP_DEVICE");
             if (NT_SUCCESS(rc))
             {
-                VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_PENDINGSTOP);
+                pDevExt->enmPrevDevState = pDevExt->enmDevState;
+                pDevExt->enmDevState = VGDRVNTDEVSTATE_PENDINGSTOP;
 
                 /* This IRP passed down to lower driver. */
                 pIrp->IoStatus.Status = STATUS_SUCCESS;
@@ -1481,7 +1485,7 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         case IRP_MN_STOP_DEVICE:
         {
             Log(("vgdrvNtNt5PlusPnP: STOP_DEVICE\n"));
-            VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_STOPPED);
+            pDevExt->enmDevState = VGDRVNTDEVSTATE_STOPPED;
 
             /*
              * Release the hardware resources.
@@ -1842,7 +1846,7 @@ static NTSTATUS NTAPI vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     /*
      * Check the device state.
      */
-    if (pDevExt->enmDevState != VGDRVNTDEVSTATE_WORKING)
+    if (pDevExt->enmDevState != VGDRVNTDEVSTATE_OPERATIONAL)
     {
         LogFlow(("vgdrvNtCreate: Failed. Device is not in 'working' state: %d\n", pDevExt->enmDevState));
         return vgdrvNtCompleteRequest(STATUS_DEVICE_NOT_READY, pIrp);
