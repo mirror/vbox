@@ -117,6 +117,11 @@ if !defined(VBOX_ONLY_BUILD)
   RTHttp_SOURCES = RTHttp.cpp
  endif
 
+ # RTLdrCheckImports - import checker.
+ PROGRAMS += RTLdrCheckImports
+ RTLdrCheckImports_TEMPLATE = VBoxR3Tool
+ RTLdrCheckImports_SOURCES = RTLdrCheckImports.cpp
+
  # RTMkDir - our mkdir clone.
  PROGRAMS += RTMkDir
  RTMkDir_TEMPLATE = VBoxR3Tool
