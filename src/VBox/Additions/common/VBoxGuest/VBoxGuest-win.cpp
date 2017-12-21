@@ -93,13 +93,19 @@ typedef struct VBOXGUESTDEVEXTWIN
     PDEVICE_OBJECT          pDeviceObject;
     /** Top of the stack. */
     PDEVICE_OBJECT          pNextLowerDriver;
-    /** Interrupt object pointer. */
-    PKINTERRUPT             pInterruptObject;
 
+    /** @name PCI bus and slot (device+function) set by for legacy NT only.
+     * @{ */
     /** Bus number where the device is located. */
     ULONG                   uBus;
-    /** Slot number where the device is located. */
+    /** Slot number where the device is located (PCI_SLOT_NUMBER). */
     ULONG                   uSlot;
+    /** @} */
+
+    /** @name Interrupt stuff.
+     * @{  */
+    /** Interrupt object pointer. */
+    PKINTERRUPT             pInterruptObject;
     /** Device interrupt level. */
     ULONG                   uInterruptLevel;
     /** Device interrupt vector. */
@@ -108,6 +114,7 @@ typedef struct VBOXGUESTDEVEXTWIN
     KAFFINITY               fInterruptAffinity;
     /** LevelSensitive or Latched. */
     KINTERRUPT_MODE         enmInterruptMode;
+    /** @} */
 
     /** Physical address and length of VMMDev memory. */
     PHYSICAL_ADDRESS        uVmmDevMemoryPhysAddr;
@@ -115,7 +122,7 @@ typedef struct VBOXGUESTDEVEXTWIN
     ULONG                   cbVmmDevMemory;
 
     /** Device state. */
-    VGDRVNTDEVSTATE         enmDevState;
+    VGDRVNTDEVSTATE volatile enmDevState;
     /** The previous device state. */
     VGDRVNTDEVSTATE         enmPrevDevState;
 
@@ -1195,6 +1202,22 @@ static void vgdrvNtDeleteDeviceFundamentAndUnlink(PDEVICE_OBJECT pDevObj, PVBOXG
 
 
 /**
+ * Checks if the device is idle.
+ * @returns STATUS_SUCCESS if idle, STATUS_UNSUCCESSFUL if busy.
+ * @param   pDevExt             The device extension.
+ * @param   pszQueryNm          The query name.
+ */
+static NTSTATUS vgdrvNtCheckIdle(PVBOXGUESTDEVEXTWIN pDevExt, const char *pszQueryNm)
+{
+    uint32_t cSessions = pDevExt->Core.cSessions;
+    if (cSessions == 0)
+        return STATUS_SUCCESS;
+    LogRel(("vgdrvNtCheckIdle/%s: cSessions=%d\n", pszQueryNm, cSessions));
+    return STATUS_UNSUCCESSFUL;
+}
+
+
+/**
  * PnP Request handler.
  *
  * @param  pDevObj    Device object.
@@ -1285,9 +1308,8 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             Log(("vgdrvNtNt5PlusPnP: QUERY_REMOVE_DEVICE: Device cannot be removed without a reboot.\n"));
             rc = STATUS_UNSUCCESSFUL;
 #endif
-            /** @todo refuse to remove ourselves when we've got client
-             *        sessions attached...  */
-
+            if (NT_SUCCESS(rc))
+                rc = vgdrvNtCheckIdle(pDevExt, "QUERY_REMOVE_DEVICE");
             if (NT_SUCCESS(rc))
             {
                 VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_PENDINGREMOVE);
@@ -1402,10 +1424,8 @@ static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         case IRP_MN_QUERY_STOP_DEVICE:
         {
             Log(("vgdrvNtNt5PlusPnP: QUERY_STOP_DEVICE\n"));
-
-            /** @todo Check whether we can stop the device.  Similar to
-             *        removal above */
-            rc = STATUS_SUCCESS;
+            VGDRVNTDEVSTATE const enmOldState = pDevExt->enmDevState;
+            rc = vgdrvNtCheckIdle(pDevExt, "QUERY_STOP_DEVICE");
             if (NT_SUCCESS(rc))
             {
                 VBOXGUEST_UPDATE_DEVSTATE(pDevExt, VGDRVNTDEVSTATE_PENDINGSTOP);
@@ -2223,7 +2243,7 @@ bool VGDrvNativeProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, con
 /**
  * Implements RTL_QUERY_REGISTRY_ROUTINE for enumerating our registry key.
  */
-static NTSTATUS NTAPI vbdrvNtRegistryEnumCallback(PWSTR pwszValueName, ULONG uValueType,
+static NTSTATUS NTAPI vgdrvNtRegistryEnumCallback(PWSTR pwszValueName, ULONG uValueType,
                                                   PVOID pvValue, ULONG cbValue, PVOID pvUser, PVOID pvEntryCtx)
 {
     /*
@@ -2355,7 +2375,7 @@ static void vgdrvNtReadConfiguration(PVBOXGUESTDEVEXTWIN pDevExt)
      */
     RTL_QUERY_REGISTRY_TABLE aQuery[2];
     RT_ZERO(aQuery);
-    aQuery[0].QueryRoutine = vbdrvNtRegistryEnumCallback;
+    aQuery[0].QueryRoutine = vgdrvNtRegistryEnumCallback;
     aQuery[0].Flags        = 0;
     aQuery[0].Name         = NULL;
     aQuery[0].EntryContext = NULL;
