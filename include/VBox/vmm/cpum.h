@@ -1061,7 +1061,7 @@ typedef struct CPUMFEATURES
     /** SVM: Supports Flush-by-ASID. */
     uint32_t        fSvmFlusbByAsid : 1;
     /** SVM: Supports decode assist. */
-    uint32_t        fSvmDecodeAssist : 1;
+    uint32_t        fSvmDecodeAssists : 1;
     /** SVM: Supports Pause filter. */
     uint32_t        fSvmPauseFilter : 1;
     /** SVM: Supports Pause filter threshold. */

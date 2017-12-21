@@ -760,8 +760,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Bit 6 - FlushByAsid - Indicate TLB flushing for current ASID only, and that
  *  VMCB.TLB_Control is supported. */
 #define X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID             RT_BIT(6)
-/** Bit 7 - DecodeAssist - Indicate decode assist is supported. */
-#define X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST             RT_BIT(7)
+/** Bit 7 - DecodeAssists - Indicate decode assists is supported. */
+#define X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSISTS            RT_BIT(7)
 /** Bit 10 - PauseFilter - Indicates support for the PAUSE intercept filter. */
 #define X86_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER              RT_BIT(10)
 /** Bit 12 - PauseFilterThreshold - Indicates support for the PAUSE

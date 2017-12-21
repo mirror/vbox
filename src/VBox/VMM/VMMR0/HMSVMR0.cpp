@@ -677,8 +677,9 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
 
 
 /**
- * Returns whether VMCB Clean Bits feature is supported.
+ * Returns whether the VMCB Clean Bits feature is supported.
  *
+ * @return @c true if supported, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
@@ -699,30 +700,32 @@ DECLINLINE(bool) hmR0SvmSupportsVmcbCleanBits(PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
- * Returns whether decode-assist feature is supported.
+ * Returns whether the decode assists feature is supported.
  *
+ * @return @c true if supported, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
-DECLINLINE(bool) hmR0SvmSupportsDecodeAssist(PVMCPU pVCpu, PCPUMCTX pCtx)
+DECLINLINE(bool) hmR0SvmSupportsDecodeAssists(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 #ifdef VBOX_WITH_NESTED_HWVIRT
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
-        return    (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST)
-               &&  pVM->cpum.ro.GuestFeatures.fSvmDecodeAssist;
+        return    (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSISTS)
+               &&  pVM->cpum.ro.GuestFeatures.fSvmDecodeAssists;
     }
 #else
     RT_NOREF(pCtx);
 #endif
-    return RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST);
+    return RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSISTS);
 }
 
 
 /**
- * Returns whether NRIP_SAVE feature is supported.
+ * Returns whether the NRIP_SAVE feature is supported.
  *
+ * @return @c true if supported, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
@@ -3091,7 +3094,7 @@ static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu)
  * Checks if the guest (or nested-guest) has an interrupt shadow active right
  * now.
  *
- * @returns true if the interrupt shadow is active, false otherwise.
+ * @returns @c true if the interrupt shadow is active, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   pCtx    Pointer to the guest-CPU context.
  *
@@ -5594,7 +5597,7 @@ static uint32_t hmR0SvmGetIemXcptFlags(PCSVMEVENT pEvent)
  * original exception was a benign exception. Page-fault is intentionally not
  * included here as it's a conditional contributory exception.
  *
- * @returns true if the exception is contributory, false otherwise.
+ * @returns @c true if the exception is contributory, @c false otherwise.
  * @param   uVector     The exception vector.
  */
 DECLINLINE(bool) hmR0SvmIsContributoryXcpt(const uint32_t uVector)
@@ -6139,9 +6142,9 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     Assert(!pVM->hm.s.fNestedPaging);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvlpg);
 
-    bool const fSupportsDecodeAssist = hmR0SvmSupportsDecodeAssist(pVCpu, pCtx);
-    bool const fSupportsNextRipSave  = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
-    if (   fSupportsDecodeAssist
+    bool const fSupportsDecodeAssists = hmR0SvmSupportsDecodeAssists(pVCpu, pCtx);
+    bool const fSupportsNextRipSave   = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
+    if (   fSupportsDecodeAssists
         && fSupportsNextRipSave)
     {
         PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
@@ -6263,9 +6266,9 @@ HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     Log4(("hmR0SvmExitReadCRx: CS:RIP=%04x:%#RX64\n", pCtx->cs.Sel, pCtx->rip));
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCRxRead[pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0]);
 
-    bool const fSupportsDecodeAssist = hmR0SvmSupportsDecodeAssist(pVCpu, pCtx);
-    bool const fSupportsNextRipSave  = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
-    if (   fSupportsDecodeAssist
+    bool const fSupportsDecodeAssists = hmR0SvmSupportsDecodeAssists(pVCpu, pCtx);
+    bool const fSupportsNextRipSave   = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
+    if (   fSupportsDecodeAssists
         && fSupportsNextRipSave)
     {
         PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
@@ -6304,9 +6307,9 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 
     VBOXSTRICTRC rcStrict = VERR_SVM_IPE_5;
     bool         fDecodedInstr = false;
-    bool const   fSupportsDecodeAssist = hmR0SvmSupportsDecodeAssist(pVCpu, pCtx);
-    bool const   fSupportsNextRipSave  = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
-    if (   fSupportsDecodeAssist
+    bool const   fSupportsDecodeAssists = hmR0SvmSupportsDecodeAssists(pVCpu, pCtx);
+    bool const   fSupportsNextRipSave   = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
+    if (   fSupportsDecodeAssists
         && fSupportsNextRipSave)
     {
         PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
