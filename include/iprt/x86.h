@@ -1214,6 +1214,34 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 
 /** Trace/Profile Resource Control (R/W) */
 #define MSR_IA32_DEBUGCTL                   UINT32_C(0x000001d9)
+/** Last branch record. */
+#define MSR_IA32_DEBUGCTL_LBR               RT_BIT_64(0)
+/** Branch trace flag (single step on branches). */
+#define MSR_IA32_DEBUGCTL_BTF               RT_BIT_64(1)
+/** Performance monitoring pin control (AMD only). */
+#define MSR_IA32_DEBUGCTL_PB0               RT_BIT_64(2)
+#define MSR_IA32_DEBUGCTL_PB1               RT_BIT_64(3)
+#define MSR_IA32_DEBUGCTL_PB2               RT_BIT_64(4)
+#define MSR_IA32_DEBUGCTL_PB3               RT_BIT_64(5)
+/** Trace message enable (Intel only). */
+#define MSR_IA32_DEBUGCTL_TR                RT_BIT_64(6)
+/** Branch trace store (Intel only). */
+#define MSR_IA32_DEBUGCTL_BTS               RT_BIT_64(7)
+/** Branch trace interrupt (Intel only). */
+#define MSR_IA32_DEBUGCTL_BTINT             RT_BIT_64(8)
+/** Branch trace off in privileged code (Intel only). */
+#define MSR_IA32_DEBUGCTL_BTS_OFF_OS        RT_BIT_64(9)
+/** Branch trace off in user code (Intel only). */
+#define MSR_IA32_DEBUGCTL_BTS_OFF_USER      RT_BIT_64(10)
+/** Freeze LBR on PMI flag (Intel only). */
+#define MSR_IA32_DEBUGCTL_FREEZE_LBR_ON_PMI       RT_BIT_64(11)
+/** Freeze PERFMON on PMI flag (Intel only). */
+#define MSR_IA32_DEBUGCTL_FREEZE_PERFMON_ON_PMI   RT_BIT_64(12)
+/** Freeze while SMM enabled (Intel only). */
+#define MSR_IA32_DEBUGCTL_FREEZE_WHILE_SMM_EM     RT_BIT_64(14)
+/** Advanced debugging of RTM regions (Intel only). */
+#define MSR_IA32_DEBUGCTL_RTM               RT_BIT_64(15)
+
 /** The number (0..3 or 0..15) of the last branch record register on P4 and
  * related Xeons. */
 #define MSR_P4_LASTBRANCH_TOS               UINT32_C(0x000001da)
