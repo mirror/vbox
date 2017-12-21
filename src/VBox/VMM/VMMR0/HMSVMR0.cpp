@@ -874,7 +874,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         pVmcb->guest.u64GPAT = UINT64_C(0x0006060606060606);
 
         /* Setup Nested Paging. This doesn't change throughout the execution time of the VM. */
-        pVmcb->ctrl.NestedPaging.n.u1NestedPaging = pVM->hm.s.fNestedPaging;
+        pVmcb->ctrl.u1NestedPaging = pVM->hm.s.fNestedPaging;
 
         /* Without Nested Paging, we need additionally intercepts. */
         if (!pVM->hm.s.fNestedPaging)
@@ -2159,7 +2159,7 @@ static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
         pNstGstVmcbCache->u32VmcbCleanBits  = pVmcbNstGstCtrl->u32VmcbCleanBits;
         pNstGstVmcbCache->fVIntrMasking     = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
         pNstGstVmcbCache->TLBCtrl           = pVmcbNstGstCtrl->TLBCtrl;
-        pNstGstVmcbCache->NestedPagingCtrl  = pVmcbNstGstCtrl->NestedPaging;
+        pNstGstVmcbCache->u1NestedPaging    = pVmcbNstGstCtrl->u1NestedPaging;
         pCtx->hwvirt.svm.fHMCachedVmcb      = true;
         Log4(("hmR0SvmVmRunCacheVmcb: Cached VMCB fields\n"));
     }
@@ -2203,13 +2203,13 @@ static void hmR0SvmVmRunSetupVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
          * switch off nested-paging suddenly while executing a VM (see assertion at the
          * end of Trap0eHandler in PGMAllBth.h).
          */
-        pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging = pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging;
+        pVmcbNstGstCtrl->u1NestedPaging = pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging;
     }
     else
     {
         Assert(pVmcbNstGstCtrl->u64IOPMPhysAddr == g_HCPhysIOBitmap);
         Assert(pVmcbNstGstCtrl->u64MSRPMPhysAddr = g_HCPhysNstGstMsrBitmap);
-        Assert(RT_BOOL(pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging) == pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+        Assert(RT_BOOL(pVmcbNstGstCtrl->u1NestedPaging) == pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
     }
 }
 
@@ -2464,7 +2464,7 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pV
      * With Nested Paging, CR3 changes are not intercepted. Therefore, sync. it now.
      * This is done as the very last step of syncing the guest state, as PGMUpdateCR3() may cause longjmp's to ring-3.
      */
-    if (   pVmcb->ctrl.NestedPaging.n.u1NestedPaging
+    if (   pVmcb->ctrl.u1NestedPaging
         && pMixedCtx->cr3 != pVmcb->guest.u64CR3)
     {
         CPUMSetGuestCR3(pVCpu, pVmcb->guest.u64CR3);
@@ -3555,7 +3555,7 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("ctrl.ExitIntInfo.u19Reserved      %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u19Reserved));
         Log4(("ctrl.ExitIntInfo.u1Valid          %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u1Valid));
         Log4(("ctrl.ExitIntInfo.u32ErrorCode     %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode));
-        Log4(("ctrl.NestedPaging                 %#RX64\n",   pVmcb->ctrl.NestedPaging.u));
+        Log4(("ctrl.u1NestedPaging               %RTbool\n",  pVmcb->ctrl.u1NestedPaging));
         Log4(("ctrl.EventInject.u8Vector         %#x\n",      pVmcb->ctrl.EventInject.n.u8Vector));
         Log4(("ctrl.EventInject.u3Type           %#x\n",      pVmcb->ctrl.EventInject.n.u3Type));
         Log4(("ctrl.EventInject.u1ErrorCodeValid %#x\n",      pVmcb->ctrl.EventInject.n.u1ErrorCodeValid));

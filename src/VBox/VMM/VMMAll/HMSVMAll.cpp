@@ -368,7 +368,7 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
         pVmcbNstGstCtrl->u64TSCOffset             = pNstGstVmcbCache->u64TSCOffset;
         pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking = pNstGstVmcbCache->fVIntrMasking;
         pVmcbNstGstCtrl->TLBCtrl                  = pNstGstVmcbCache->TLBCtrl;
-        pVmcbNstGstCtrl->NestedPaging             = pNstGstVmcbCache->NestedPagingCtrl;
+        pVmcbNstGstCtrl->u1NestedPaging           = pNstGstVmcbCache->u1NestedPaging;
         pCtx->hwvirt.svm.fHMCachedVmcb = false;
     }
 }
