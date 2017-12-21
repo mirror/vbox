@@ -1528,36 +1528,38 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 #endif
 
     uint64_t cTicksToNext = pStream->State.cTransferTicks;
-
-    Log3Func(("[SD%RU8] cTicksElapsed=%RU64, cTicksTransferred=%RU64, cTicksToNext=%RU64\n",
-              pStream->u8SD, cTicksElapsed, cTicksTransferred, cTicksToNext));
-
-    Log3Func(("[SD%RU8] cbTransferProcessed=%RU32, cbTransferChunk=%RU32, cbTransferSize=%RU32\n",
-              pStream->u8SD, pStream->State.cbTransferProcessed, pStream->State.cbTransferChunk, pStream->State.cbTransferSize));
-
-    if (cTicksElapsed <= cTicksToNext)
+    if (cTicksToNext) /* Only do any calculations if the stream currently is set up for transfers. */
     {
-        cTicksToNext = cTicksToNext - cTicksElapsed;
+        Log3Func(("[SD%RU8] cTicksElapsed=%RU64, cTicksTransferred=%RU64, cTicksToNext=%RU64\n",
+                  pStream->u8SD, cTicksElapsed, cTicksTransferred, cTicksToNext));
+
+        Log3Func(("[SD%RU8] cbTransferProcessed=%RU32, cbTransferChunk=%RU32, cbTransferSize=%RU32\n",
+                  pStream->u8SD, pStream->State.cbTransferProcessed, pStream->State.cbTransferChunk, pStream->State.cbTransferSize));
+
+        if (cTicksElapsed <= cTicksToNext)
+        {
+            cTicksToNext = cTicksToNext - cTicksElapsed;
+        }
+        else /* Catch up. */
+        {
+            Log3Func(("[SD%RU8] Warning: Lagging behind (%RU64 ticks elapsed, maximum allowed is %RU64)\n",
+                     pStream->u8SD, cTicksElapsed, cTicksToNext));
+
+            LogRelMax2(64, ("HDA: Stream #%RU8 interrupt lagging behind (expected %uus, got %uus), trying to catch up ...\n",
+                            pStream->u8SD,
+                            (TMTimerGetFreq(pThis->pTimer) / pThis->u16TimerHz) / 1000, (tsNow - pStream->State.tsTransferLast) / 1000));
+
+            cTicksToNext = 0;
+        }
+
+        Log3Func(("[SD%RU8] -> cTicksToNext=%RU64\n", pStream->u8SD, cTicksToNext));
+
+        /* Reset processed data counter. */
+        pStream->State.cbTransferProcessed = 0;
+
+        /* Re-arm the timer. */
+        hdaTimerSet(pThis, tsNow + cTicksToNext, false /* fForce */);
     }
-    else /* Catch up. */
-    {
-        Log3Func(("[SD%RU8] Warning: Lagging behind (%RU64 ticks elapsed, maximum allowed is %RU64)\n",
-                 pStream->u8SD, cTicksElapsed, cTicksToNext));
-
-        LogRelMax2(64, ("HDA: Stream #%RU8 interrupt lagging behind (expected %uus, got %uus), trying to catch up ...\n",
-                        pStream->u8SD,
-                        (TMTimerGetFreq(pThis->pTimer) / pThis->u16TimerHz) / 1000, (tsNow - pStream->State.tsTransferLast) / 1000));
-
-        cTicksToNext = 0;
-    }
-
-    Log3Func(("[SD%RU8] -> cTicksToNext=%RU64\n", pStream->u8SD, cTicksToNext));
-
-    /* Reset processed data counter. */
-    pStream->State.cbTransferProcessed = 0;
-
-    /* Re-arm the timer. */
-    hdaTimerSet(pThis, tsNow + cTicksToNext, false /* fForce */);
 
     DEVHDA_UNLOCK_BOTH(pThis);
     return VINF_SUCCESS;
@@ -2480,7 +2482,7 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
         rc = hdaMixerAddDrvStreams(pThis, pSink->pMixSink, pCfg);
 
         AssertPtr(pSink->pMixSink);
-        LogFlowFunc(("Sink=%s, enmMixerCtl=%d\n", pSink->pMixSink->pszName, enmMixerCtl));
+        LogFlowFunc(("Sink=%s, Mixer control=%s\n", pSink->pMixSink->pszName, DrvAudioHlpAudMixerCtlToStr(enmMixerCtl)));
     }
     else
         rc = VERR_NOT_FOUND;
@@ -2563,12 +2565,13 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
     else
         rc = VERR_NOT_FOUND;
 
-    LogFlowFunc(("enmMixerCtl=%d, rc=%Rrc\n", enmMixerCtl, rc));
+    LogFunc(("Mixer control=%s, rc=%Rrc\n", DrvAudioHlpAudMixerCtlToStr(enmMixerCtl), rc));
     return rc;
 }
 
 /**
- * Sets a SDn stream number and channel to a particular mixer control.
+ * Controls an input / output converter widget, that is, which converter is connected
+ * to which stream (and channel).
  *
  * @returns IPRT status code.
  * @param   pThis               HDA State.
@@ -2580,11 +2583,11 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
  */
 static DECLCALLBACK(int) hdaMixerControl(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel)
 {
-    LogFlowFunc(("enmMixerCtl=%RU32, uSD=%RU8, uChannel=%RU8\n", enmMixerCtl, uSD, uChannel));
+    LogFunc(("enmMixerCtl=%s, uSD=%RU8, uChannel=%RU8\n", DrvAudioHlpAudMixerCtlToStr(enmMixerCtl), uSD, uChannel));
 
     if (uSD == 0) /* Stream number 0 is reserved. */
     {
-        LogFlowFunc(("Invalid SDn (%RU8) number for mixer control %d, ignoring\n", uSD, enmMixerCtl));
+        Log2Func(("Invalid SDn (%RU8) number for mixer control '%s', ignoring\n", uSD, DrvAudioHlpAudMixerCtlToStr(enmMixerCtl)));
         return VINF_SUCCESS;
     }
     /* uChannel is optional. */
@@ -2593,43 +2596,85 @@ static DECLCALLBACK(int) hdaMixerControl(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMi
     Assert(uSD);
     uSD--;
 
-    int rc;
+#ifndef VBOX_WITH_AUDIO_HDA_MIC_IN
+    /* Only SDI0 (Line-In) is supported. */
+    if (   hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN
+        && uSD >= 1)
+    {
+        LogRel2(("HDA: Dedicated Mic-In support not imlpemented / built-in (stream #%RU8), using Line-In (stream #0) instead\n", uSD));
+        uSD = 0;
+    }
+#endif
+
+    int rc = VINF_SUCCESS;
 
     PHDAMIXERSINK pSink = hdaMixerControlToSink(pThis, enmMixerCtl);
     if (pSink)
     {
+        AssertPtr(pSink->pMixSink);
+
+        /* If this an output stream, determine the correct SD#. */
         if (   (uSD < HDA_MAX_SDI)
             && AudioMixerSinkGetDir(pSink->pMixSink) == AUDMIXSINKDIR_OUTPUT)
         {
             uSD += HDA_MAX_SDI;
         }
 
-        LogFlowFunc(("%s: Setting to stream ID=%RU8, channel=%RU8, enmMixerCtl=%RU32\n",
-                     pSink->pMixSink->pszName, uSD, uChannel, enmMixerCtl));
+        /* Detach the existing stream from the sink. */
+        if (   pSink->pStream
+            && (   pSink->pStream->u8SD      != uSD
+                || pSink->pStream->u8Channel != uChannel)
+           )
+        {
+            LogFunc(("Sink '%s' was assigned to stream #%RU8 (channel %RU8) before\n",
+                     pSink->pMixSink->pszName, pSink->pStream->u8SD, pSink->pStream->u8Channel));
+
+            hdaStreamLock(pSink->pStream);
+
+            /* Only disable the stream if the stream descriptor # has changed. */
+            if (pSink->pStream->u8SD != uSD)
+                hdaStreamEnable(pSink->pStream, false);
+
+            pSink->pStream->pMixSink = NULL;
+
+            hdaStreamUnlock(pSink->pStream);
+
+            pSink->pStream = NULL;
+        }
 
         Assert(uSD < HDA_MAX_STREAMS);
 
-        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
-        if (pStream)
+        /* Attach the new stream to the sink.
+         * Enabling the stream will be done by the gust via a separate SDnCTL call then. */
+        if (pSink->pStream == NULL)
         {
-            hdaStreamLock(pStream);
+            LogRel2(("HDA: Setting sink '%s' to stream #%RU8 (channel %RU8), mixer control=%s\n",
+                     pSink->pMixSink->pszName, uSD, uChannel, DrvAudioHlpAudMixerCtlToStr(enmMixerCtl)));
 
-            pSink->pStream    = pStream;
-            pStream->pMixSink = pSink;
+            PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
+            if (pStream)
+            {
+                hdaStreamLock(pStream);
 
-            hdaStreamUnlock(pStream);
+                pSink->pStream = pStream;
 
-            rc = VINF_SUCCESS;
-        }
-        else
-        {
-            LogRel(("HDA: Guest wanted to assign invalid stream ID=%RU8 (channel %RU8) to mixer control %RU32, skipping\n",
-                    uSD, uChannel, enmMixerCtl));
-            rc = VERR_INVALID_PARAMETER;
+                pStream->u8Channel = uChannel;
+                pStream->pMixSink  = pSink;
+
+                hdaStreamUnlock(pStream);
+
+                rc = VINF_SUCCESS;
+            }
+            else
+                rc = VERR_NOT_IMPLEMENTED;
         }
     }
     else
         rc = VERR_NOT_FOUND;
+
+    if (RT_FAILURE(rc))
+        LogRel(("HDA: Converter control for stream #%RU8 (channel %RU8) / mixer control '%s' failed with %Rrc, skipping\n",
+                uSD, uChannel, DrvAudioHlpAudMixerCtlToStr(enmMixerCtl), rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;

@@ -387,6 +387,9 @@ void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
     hdaStreamUnregisterDMAHandlers(pThis, pStream);
 #endif
 
+    /* Assign the default mixer sink to the stream. */
+    pStream->pMixSink             = hdaGetDefaultSink(pThis, uSD);
+
     pStream->State.tsTransferLast = 0;
     pStream->State.tsTransferNext = 0;
 
@@ -441,20 +444,26 @@ int hdaStreamEnable(PHDASTREAM pStream, bool fEnable)
 
     int rc = VINF_SUCCESS;
 
-    if (pStream->pMixSink) /* Stream attached to a sink? */
+    if (!pStream->pMixSink) /* Stream attached to a sink? */
     {
-        AUDMIXSINKCMD enmCmd = fEnable
-                             ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE;
+        AssertMsgFailed(("Stream #%RU8 not has no mixer sink attached\n", pStream->u8SD));
+        return VERR_WRONG_ORDER;
+    }
 
-        /* First, enable or disable the stream and the stream's sink, if any. */
-        if (pStream->pMixSink->pMixSink)
-            rc = AudioMixerSinkCtl(pStream->pMixSink->pMixSink, enmCmd);
+    AUDMIXSINKCMD enmCmd = fEnable
+                         ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE;
 
-        if (   RT_SUCCESS(rc)
-            && pStream->Dbg.Runtime.fEnabled)
+    /* First, enable or disable the stream and the stream's sink, if any. */
+    if (pStream->pMixSink->pMixSink)
+        rc = AudioMixerSinkCtl(pStream->pMixSink->pMixSink, enmCmd);
+
+    if (   RT_SUCCESS(rc)
+        && pStream->Dbg.Runtime.fEnabled)
+    {
+        Assert(DrvAudioHlpPCMPropsAreValid(&pStream->State.Cfg.Props));
+
+        if (fEnable)
         {
-            if (fEnable)
-            {
                 int rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileStream, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
                                               &pStream->State.Cfg.Props);
                 AssertRC(rc2);
@@ -462,15 +471,14 @@ int hdaStreamEnable(PHDASTREAM pStream, bool fEnable)
                 rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileDMA, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
                                           &pStream->State.Cfg.Props);
                 AssertRC(rc2);
-            }
-            else
-            {
+        }
+        else
+        {
                 int rc2 = DrvAudioHlpFileClose(pStream->Dbg.Runtime.pFileStream);
                 AssertRC(rc2);
 
                 rc2 = DrvAudioHlpFileClose(pStream->Dbg.Runtime.pFileDMA);
                 AssertRC(rc2);
-            }
         }
     }
 
@@ -557,7 +565,9 @@ uint32_t hdaStreamGetFree(PHDASTREAM pStream)
  */
 bool hdaStreamTransferIsScheduled(PHDASTREAM pStream)
 {
-    AssertPtrReturn(pStream,            false);
+    if (!pStream)
+        return false;
+
     AssertPtrReturn(pStream->pHDAState, false);
 
     const bool fScheduled = pStream->State.tsTransferNext > TMTimerGet(pStream->pHDAState->pTimer);
@@ -818,7 +828,6 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
     uint32_t cbProcessed = 0;
     uint32_t cbLeft      = cbToProcess;
-    Assert(cbLeft % pStream->State.cbFrameSize == 0);
 
     uint8_t abChunk[HDA_FIFO_MAX + 1];
     while (cbLeft)
@@ -1155,6 +1164,9 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
  */
 void hdaStreamUpdate(PHDASTREAM pStream, bool fInTimer)
 {
+    if (!pStream)
+        return;
+
     PAUDMIXSINK pSink = NULL;
     if (   pStream->pMixSink
         && pStream->pMixSink->pMixSink)
@@ -1230,7 +1242,15 @@ void hdaStreamUpdate(PHDASTREAM pStream, bool fInTimer)
             /* Is the sink ready to be read (host input data) from? If so, by how much? */
             uint32_t cbReadable = AudioMixerSinkGetReadable(pSink);
 
-            Log3Func(("[SD%RU8] cbReadable=%RU32\n", pStream->u8SD, cbReadable));
+            /* How much (guest input) data is available for writing at the moment for the HDA stream? */
+            const uint32_t cbFree = hdaStreamGetFree(pStream);
+
+            Log3Func(("[SD%RU8] cbReadable=%RU32, cbFree=%RU32\n", pStream->u8SD, cbReadable, cbFree));
+
+            /* Do not write more than the sink can hold at the moment.
+             * The host sets the overall pace. */
+            if (cbReadable > cbFree)
+                cbReadable = cbFree;
 
             if (cbReadable)
             {
@@ -1242,9 +1262,22 @@ void hdaStreamUpdate(PHDASTREAM pStream, bool fInTimer)
                                              abFIFO, RT_MIN(cbReadable, (uint32_t)sizeof(abFIFO)), &cbRead);
                     AssertRCBreak(rc2);
 
+                    if (!cbRead)
+                    {
+                        AssertMsgFailed(("Nothing read from sink, even if %RU32 bytes were (still) announced\n", cbReadable));
+                        break;
+                    }
+
                     /* Write (guest input) data to the stream which was read from stream's sink before. */
-                    rc2 = hdaStreamWrite(pStream, abFIFO, cbRead, NULL /* pcbWritten */);
+                    uint32_t cbWritten;
+                    rc2 = hdaStreamWrite(pStream, abFIFO, cbRead, &cbWritten);
                     AssertRCBreak(rc2);
+
+                    if (!cbWritten)
+                    {
+                        AssertFailed(); /* Should never happen, as we know how much we can write. */
+                        break;
+                    }
 
                     Assert(cbReadable >= cbRead);
                     cbReadable -= cbRead;
