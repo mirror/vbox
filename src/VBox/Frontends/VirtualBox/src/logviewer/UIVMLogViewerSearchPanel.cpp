@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAction>
 # include <QCheckBox>
 # include <QComboBox>
 # if defined(RT_OS_SOLARIS)
@@ -28,6 +29,7 @@
 # include <QHBoxLayout>
 # include <QLabel>
 # include <QPlainTextEdit>
+# include <QTextBlock>
 
 /* GUI includes: */
 # include "UIIconPool.h"
@@ -72,6 +74,11 @@ void UIVMLogViewerSearchPanel::reset()
         if (m_pHighlightAllCheckBox->checkState() == Qt::Checked)
             m_pHighlightAllCheckBox->setCheckState(Qt::Unchecked);
     }
+}
+
+const QVector<float> &UIVMLogViewerSearchPanel::getMatchLocationVector() const
+{
+    return m_matchLocationVector;
 }
 
 void UIVMLogViewerSearchPanel::hideEvent(QHideEvent *pEvent)
@@ -145,9 +152,12 @@ void UIVMLogViewerSearchPanel::sltHighlightAllCheckBox()
     {
         if (m_iMatchCount != 0)
             m_iMatchCount = -1;
+
+        m_matchLocationVector.clear();
         pDocument->undo();
     }
     configureInfoLabels();
+    emit sigHighlightingUpdated();
 }
 
 void UIVMLogViewerSearchPanel::prepare()
@@ -472,7 +482,10 @@ void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
            highlightAll(pDocument, searchString);
    }
    else
+   {
        m_iMatchCount = -1;
+       m_matchLocationVector.clear();
+   }
 
    QTextCursor resultCursor(pDocument);
    int startPosition = m_iSearchPosition;
@@ -512,6 +525,7 @@ void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
    pTextEdit->setTextCursor(resultCursor);
    m_iSearchPosition = resultCursor.position();
    configureInfoLabels();
+   emit sigHighlightingUpdated();
 }
 
 void UIVMLogViewerSearchPanel::findNext()
@@ -528,6 +542,7 @@ void UIVMLogViewerSearchPanel::highlightAll(QTextDocument *pDocument,
                                             const QString &searchString)
 {
     m_iMatchCount = 0;
+    m_matchLocationVector.clear();
     if (!pDocument)
         return;
     if (searchString.isEmpty())
@@ -539,16 +554,19 @@ void UIVMLogViewerSearchPanel::highlightAll(QTextDocument *pDocument,
     QTextCursor cursor(pDocument);
     cursor.beginEditBlock();
     colorFormat.setBackground(Qt::yellow);
-
+    int lineCount = pDocument->lineCount();
     while (!highlightCursor.isNull() && !highlightCursor.atEnd())
     {
         /* Hightlighting searches is always from the top of the document forward: */
         highlightCursor = pDocument->find(searchString, highlightCursor, constructFindFlags(ForwardSearch));
-
         if (!highlightCursor.isNull())
         {
             highlightCursor.mergeCharFormat(colorFormat);
             ++m_iMatchCount;
+            /* The following assumes we have single line blocks only: */
+            int cursorLine = pDocument->findBlock(highlightCursor.position()).firstLineNumber();
+            if (lineCount != 0)
+                m_matchLocationVector.push_back(cursorLine / static_cast<float>(lineCount));
         }
     }
     cursor.endEditBlock();

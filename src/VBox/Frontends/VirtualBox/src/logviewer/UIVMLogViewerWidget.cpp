@@ -26,6 +26,7 @@
 # if defined(RT_OS_SOLARIS)
 #  include <QFontDatabase>
 # endif
+# include <QPainter>
 # include <QPlainTextEdit>
 # include <QScrollBar>
 
@@ -47,6 +48,72 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/** We use a modified scrollbar style for our QPlainTextEdits to get the
+    markings on the scrollbars correctly. The default scrollbarstyle does not
+    reveal the height of the pushbuttons on the scrollbar to compute the marking
+    locations correctlt. so we turn them off: */
+const QString verticalScrollBarStyle("QScrollBar:vertical {"
+                                     "border: 1px ridge grey; "
+                                     "margin: 0px 0px 0 0px;}"
+                                     "QScrollBar::handle:vertical {"
+                                     "min-height: 10px;"
+                                     "background: grey;}"
+                                     "QScrollBar::add-line:vertical {"
+                                     "width: 0px;}"
+                                     "QScrollBar::sub-line:vertical {"
+                                     "width: 0px;}");
+
+const QString horizontalScrollBarStyle("QScrollBar:horizontal {"
+                                       "border: 1px ridge grey; "
+                                       "margin: 0px 0px 0 0px;}"
+                                       "QScrollBar::handle:horizontal {"
+                                       "min-height: 10px;"
+                                       "background: grey;}"
+                                       "QScrollBar::add-line:horizontal {"
+                                       "height: 0px;}"
+                                       "QScrollBar::sub-line:horizontal {"
+                                       "height: 0px;}");
+
+class UIIndicatorScrollBar : public QScrollBar
+{
+    Q_OBJECT;
+
+public:
+
+    UIIndicatorScrollBar(QWidget *parent = 0)
+        :QScrollBar(parent)
+    {
+        setStyleSheet(verticalScrollBarStyle);
+    }
+
+    void setMarkingsVector(const QVector<float> &vector)
+    {
+        m_markingsVector = vector;
+    }
+
+protected:
+
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */
+    {
+        QScrollBar::paintEvent(pEvent);
+        /* Put a red line to marking position: */
+        for (int i = 0; i < m_markingsVector.size(); ++i)
+        {
+            QPointF p1 = QPointF(0, m_markingsVector[i] * height());
+            QPointF p2 = QPointF(width(), m_markingsVector[i] * height());
+
+            QPainter painter(this);
+            painter.setRenderHint(QPainter::Antialiasing, true);
+            painter.setPen(QPen(QColor(255, 0, 0, 255), 1.2f));
+            painter.drawLine(p1, p2);
+        }
+    }
+
+private:
+    /* Stores the relative (to scrollbar's height) positions of markings,
+       where we draw a horizontal line. */
+    QVector<float> m_markingsVector;
+};
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */, const CMachine &machine /* = CMachine() */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fIsPolished(false)
@@ -204,6 +271,21 @@ void UIVMLogViewerWidget::sltFilter()
     m_pFilterPanel->isHidden() ? m_pFilterPanel->show() : m_pFilterPanel->hide();
 }
 
+void UIVMLogViewerWidget::sltSearchResultHighLigting()
+{
+    if (!m_pSearchPanel)
+        return;
+
+    if (!currentLogPage())
+        return;
+    UIIndicatorScrollBar* scrollBar = qobject_cast<UIIndicatorScrollBar*>(currentLogPage()->verticalScrollBar());
+    if (scrollBar)
+        scrollBar->setMarkingsVector(m_pSearchPanel->getMatchLocationVector());
+
+    m_markingsVector = m_pSearchPanel->getMatchLocationVector();
+    currentLogPage()->repaint();
+}
+
 void UIVMLogViewerWidget::setMachine(const CMachine &machine)
 {
     if (machine == m_comMachine)
@@ -259,6 +341,8 @@ void UIVMLogViewerWidget::prepareWidgets()
         m_pSearchPanel->hide();
         /* Add VM Log-Viewer search-panel to main-layout: */
         m_pMainLayout->insertWidget(2, m_pSearchPanel);
+        connect(m_pSearchPanel, &UIVMLogViewerSearchPanel::sigHighlightingUpdated,
+                this, &UIVMLogViewerWidget::sltSearchResultHighLigting);
     }
 
     /* Create VM Log-Viewer filter-panel: */
@@ -578,6 +662,13 @@ QPlainTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
         AssertPtrReturn(pLogViewer, 0);
         {
             /* Configure Log-Viewer: */
+            pLogViewer->setVerticalScrollBar(new UIIndicatorScrollBar());
+            pLogViewer->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+            QScrollBar *pHorizontalScrollBar = pLogViewer->horizontalScrollBar();
+            if (pHorizontalScrollBar)
+            {
+                pHorizontalScrollBar->setStyleSheet(horizontalScrollBarStyle);
+            }
 #if defined(RT_OS_SOLARIS)
             /* Use system fixed-width font on Solaris hosts as the Courier family fonts don't render well. */
             QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
@@ -587,7 +678,6 @@ QPlainTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
 #endif
             pLogViewer->setFont(font);
             pLogViewer->setWordWrapMode(QTextOption::NoWrap);
-            pLogViewer->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
             pLogViewer->setReadOnly(true);
             /* Add Log-Viewer to page-layout: */
             pPageLayout->addWidget(pLogViewer);
@@ -602,3 +692,5 @@ const QString& UIVMLogViewerWidget::currentLog()
 {
     return m_logMap[currentLogPage()];
 }
+
+#include "UIVMLogViewerWidget.moc"

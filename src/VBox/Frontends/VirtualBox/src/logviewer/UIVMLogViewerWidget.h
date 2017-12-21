@@ -72,7 +72,6 @@ public:
 
 protected:
 
-
     /** Returns whether the window should be maximized when geometry being restored. */
     virtual bool shouldBeMaximized() const /* override */;
 
@@ -86,6 +85,9 @@ private slots:
     void sltSave();
     /** Handles filter action triggering. */
     void sltFilter();
+
+    /** Handles the search result highlight changes. */
+    void sltSearchResultHighLigting();
 
 private:
 
@@ -166,6 +168,8 @@ private:
         /** Holds the menu object instance. */
         QMenu     *m_pMenu;
     /** @} */
+
+    QVector<float> m_markingsVector;
 
     friend class UIVMLogViewerSearchPanel;
     friend class UIVMLogViewerFilterPanel;
