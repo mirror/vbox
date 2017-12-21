@@ -314,16 +314,16 @@ static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_E
         pDev->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
 
     /* Determine the speed the device is operating at. */
-    switch (pConInfo->Speed) 
+    switch (pConInfo->Speed)
     {
         case UsbLowSpeed:   pDev->enmSpeed = USBDEVICESPEED_LOW;    break;
         case UsbFullSpeed:  pDev->enmSpeed = USBDEVICESPEED_FULL;   break;
         case UsbHighSpeed:  pDev->enmSpeed = USBDEVICESPEED_HIGH;   break;
         default:    /* If we don't know, most likely it's something new. */
-        case UsbSuperSpeed: pDev->enmSpeed = USBDEVICESPEED_SUPER;  break; 
+        case UsbSuperSpeed: pDev->enmSpeed = USBDEVICESPEED_SUPER;  break;
     }
     /* Unfortunately USB_NODE_CONNECTION_INFORMATION_EX will not report UsbSuperSpeed, and
-     * it's not even defined in the Win7 DDK we use. So we go by the USB version, and 
+     * it's not even defined in the Win7 DDK we use. So we go by the USB version, and
      * luckily we know that USB3 must mean SuperSpeed. The USB3 spec guarantees this (9.6.1).
      */
     if (pDev->bcdUSB >= 0x0300)
