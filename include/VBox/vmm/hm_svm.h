@@ -787,7 +787,7 @@ AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved2,             0xa0);
 AssertCompileMemberOffset(SVMVMCBCTRL, EventInject,             0xa8);
 AssertCompileMemberOffset(SVMVMCBCTRL, u64NestedPagingCR3,      0xb0);
 AssertCompileMemberOffset(SVMVMCBCTRL, u64LBRVirt,              0xb8);
-AssertCompileMemberOffset(SVMVMCBCTRL, u64VmcbCleanBits,        0xc0);
+AssertCompileMemberOffset(SVMVMCBCTRL, u32VmcbCleanBits,        0xc0);
 AssertCompileMemberOffset(SVMVMCBCTRL, u64NextRIP,              0xc8);
 AssertCompileMemberOffset(SVMVMCBCTRL, cbInstrFetched,          0xd0);
 AssertCompileMemberOffset(SVMVMCBCTRL, abInstr,                 0xd1);
