@@ -280,7 +280,7 @@ static int rtCheckImportsForImage(PCRTCHECKIMPORTSOPTS pOpts, const char *pszIma
                     if (RT_SUCCESS(rc))
                         rc = pState->iRc;
                     else
-                        RTMsgError("%s: RTLdrGetBits failed: %Rrc", rc);
+                        RTMsgError("%s: RTLdrGetBits failed: %Rrc", pszImage, rc);
 
                     RTMemFree(pvImage);
                 }
