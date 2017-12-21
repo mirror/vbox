@@ -195,6 +195,7 @@ static NTSTATUS vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static void     vgdrvNtReadConfiguration(PVBOXGUESTDEVEXTWIN pDevExt);
 static NTSTATUS vgdrvNtShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vgdrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static VOID NTAPI vgdrvNtBugCheckCallback(PVOID pvBuffer, ULONG cbBuffer);
 #ifdef VBOX_STRICT
 static void     vgdrvNtDoTests(void);
 #endif
@@ -227,15 +228,26 @@ RT_C_DECLS_END
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** The detected NT (windows) version. */
-static VGDRVNTVER                       g_enmVGDrvNtVer = VGDRVNTVER_INVALID;
+static VGDRVNTVER                               g_enmVGDrvNtVer = VGDRVNTVER_INVALID;
 /** Pointer to the PoStartNextPowerIrp routine (in the NT kernel).
  * Introduced in Windows 2000. */
-static decltype(PoStartNextPowerIrp)   *g_pfnPoStartNextPowerIrp = NULL;
+static decltype(PoStartNextPowerIrp)           *g_pfnPoStartNextPowerIrp = NULL;
 /** Pointer to the PoCallDriver routine (in the NT kernel).
  * Introduced in Windows 2000. */
-static decltype(PoCallDriver)          *g_pfnPoCallDriver = NULL;
-
-
+static decltype(PoCallDriver)                  *g_pfnPoCallDriver = NULL;
+/** Pointer to the KeRegisterBugCheckCallback routine (in the NT kernel).
+ * Introduced in Windows 3.50. */
+static decltype(KeRegisterBugCheckCallback)    *g_pfnKeRegisterBugCheckCallback = NULL;
+/** Pointer to the KeRegisterBugCheckCallback routine (in the NT kernel).
+ * Introduced in Windows 3.50. */
+static decltype(KeDeregisterBugCheckCallback)  *g_pfnKeDeregisterBugCheckCallback = NULL;
+/** Pointer to the KiBugCheckData array (in the NT kernel).
+ * Introduced in Windows 4. */
+static uintptr_t const                         *g_pauKiBugCheckData = NULL;
+/** Set if the callback was successfully registered and needs deregistering.  */
+static bool                                     g_fBugCheckCallbackRegistered = false;
+/** The bugcheck callback record. */
+static KBUGCHECK_CALLBACK_RECORD                g_BugCheckCallbackRec;
 
 /**
  * Driver entry point.
@@ -346,25 +358,24 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
         /*
          * Dynamically resolve symbols not present in NT4.
          */
-        int rc;
-#ifdef TARGET_NT4
-        if (g_enmVGDrvNtVer <= VGDRVNTVER_WINNT4)
-            rc = VINF_SUCCESS;
-        else
-#endif
+        RTDBGKRNLINFO hKrnlInfo;
+        int rc = RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0 /*fFlags*/);
+        if (RT_SUCCESS(rc))
         {
-            RTDBGKRNLINFO hKrnlInfo;
-            rc = RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0 /*fFlags*/);
-            if (RT_SUCCESS(rc))
+            g_pfnKeRegisterBugCheckCallback   = (decltype(KeRegisterBugCheckCallback) *)  RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "KeRegisterBugCheckCallback");
+            g_pfnKeDeregisterBugCheckCallback = (decltype(KeDeregisterBugCheckCallback) *)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "KeDeregisterBugCheckCallback");
+            g_pauKiBugCheckData               = (uintptr_t const *)                       RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "KiBugCheckData");
+            g_pfnPoCallDriver                 = (decltype(PoCallDriver) *)                RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "PoCallDriver");
+            g_pfnPoStartNextPowerIrp          = (decltype(PoStartNextPowerIrp) *)         RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "PoStartNextPowerIrp");
+#ifdef TARGET_NT4
+            if (g_enmVGDrvNtVer > VGDRVNTVER_WINNT4)
+#endif
             {
-                int rc1 = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "PoCallDriver",        (void **)&g_pfnPoCallDriver);
-                int rc2 = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "PoStartNextPowerIrp", (void **)&g_pfnPoStartNextPowerIrp);
-                if (g_enmVGDrvNtVer > VGDRVNTVER_WINNT4 && RT_FAILURE(rc1))
-                    rc = rc1;
-                if (g_enmVGDrvNtVer > VGDRVNTVER_WINNT4 && RT_FAILURE(rc2))
-                    rc = rc2;
-                RTR0DbgKrnlInfoRelease(hKrnlInfo);
+                if (!g_pfnPoCallDriver)        { LogRelFunc(("Missing PoCallDriver!\n"));        rc = VERR_SYMBOL_NOT_FOUND; }
+                if (!g_pfnPoStartNextPowerIrp) { LogRelFunc(("Missing PoStartNextPowerIrp!\n")); rc = VERR_SYMBOL_NOT_FOUND; }
             }
+
+            RTR0DbgKrnlInfoRelease(hKrnlInfo);
         }
         if (RT_SUCCESS(rc))
         {
@@ -392,10 +403,29 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
             }
             if (NT_SUCCESS(rcNt))
             {
+                /*
+                 * Try register the bugcheck callback (non-fatal).
+                 */
+                if (   g_pfnKeRegisterBugCheckCallback
+                    && g_pfnKeDeregisterBugCheckCallback)
+                {
+                    AssertCompile(BufferEmpty == 0);
+                    KeInitializeCallbackRecord(&g_BugCheckCallbackRec);
+                    if (g_pfnKeRegisterBugCheckCallback(&g_BugCheckCallbackRec, vgdrvNtBugCheckCallback,
+                                                        NULL, 0, (PUCHAR)"VBoxGuest"))
+                        g_fBugCheckCallbackRegistered = true;
+                    else
+                        g_fBugCheckCallbackRegistered = false;
+                }
+                else
+                    Assert(g_pfnKeRegisterBugCheckCallback == NULL && g_pfnKeDeregisterBugCheckCallback);
+
                 LogFlowFunc(("Returning %#x\n", rcNt));
                 return rcNt;
             }
         }
+        else
+            rcNt = STATUS_PROCEDURE_NOT_FOUND;
     }
 
     /*
@@ -815,21 +845,16 @@ static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRe
             if (RT_SUCCESS(vrc))
             {
                 Log(("vgdrvNt4CreateDevice: Device extension created\n"));
-# ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
-                rc = hlpRegisterBugCheckCallback(pDevExt);
-# endif
+
+                /* Do the actual VBox init ... */
+                rc = vgdrvNtSetupDevice(pDevExt, pDeviceObject, NULL /*pIrp*/, pDrvObj, pRegPath);
                 if (NT_SUCCESS(rc))
                 {
-                    /* Do the actual VBox init ... */
-                    rc = vgdrvNtSetupDevice(pDevExt, pDeviceObject, NULL /*pIrp*/, pDrvObj, pRegPath);
-                    if (NT_SUCCESS(rc))
-                    {
-                        Log(("vgdrvNt4CreateDevice: Returning rc = 0x%x (succcess)\n", rc));
-                        return rc;
-                    }
-
-                    /* bail out */
+                    Log(("vgdrvNt4CreateDevice: Returning rc = 0x%x (succcess)\n", rc));
+                    return rc;
                 }
+
+                /* bail out */
                 VGDrvCommonDeleteDevExtFundament(&pDevExt->Core);
             }
             IoDeleteSymbolicLink(&DosName);
@@ -893,31 +918,17 @@ static NTSTATUS vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT p
                 pDevExt->pNextLowerDriver = IoAttachDeviceToDeviceStack(pDeviceObject, pDevObj);
                 if (pDevExt->pNextLowerDriver != NULL)
                 {
-                    /*
-                     * If we reached this point we're fine with the basic driver setup,
-                     * so continue to init our own things.
-                     */
-#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
-                    vgdrvNtBugCheckCallback(pDevExt); /* Ignore failure! */
-#endif
-                    if (NT_SUCCESS(rcNt))
-                    {
-                        /* Ensure we are not called at elevated IRQL, even if our code isn't pagable any more. */
-                        pDeviceObject->Flags |= DO_POWER_PAGABLE;
+                    /* Ensure we are not called at elevated IRQL, even if our code isn't pagable any more. */
+                    pDeviceObject->Flags |= DO_POWER_PAGABLE;
 
-                        /* Driver is ready now. */
-                        pDeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
-                        LogFlowFunc(("Returning with rcNt=%#x (success)\n", rcNt));
-                        return rcNt;
-                    }
+                    /* Driver is ready now. */
+                    pDeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
+                    LogFlowFunc(("Returning with rcNt=%#x (success)\n", rcNt));
+                    return rcNt;
+                }
 
-                    IoDetachDevice(pDevExt->pNextLowerDriver);
-                }
-                else
-                {
-                    LogFunc(("IoAttachDeviceToDeviceStack did not give a nextLowerDriver!\n"));
-                    rcNt = STATUS_DEVICE_NOT_CONNECTED;
-                }
+                LogFunc(("IoAttachDeviceToDeviceStack did not give a nextLowerDriver!\n"));
+                rcNt = STATUS_DEVICE_NOT_CONNECTED;
                 VGDrvCommonDeleteDevExtFundament(&pDevExt->Core);
             }
             else
@@ -1025,10 +1036,6 @@ static void vgdrvNtDeleteDeviceFundamentAndUnlink(PDEVICE_OBJECT pDevObj, PVBOXG
      */
     pDevExt->pPowerStateRequest = NULL; /* Will be deleted by the following call. */
     VGDrvCommonDeleteDevExtFundament(&pDevExt->Core);
-
-#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
-    hlpDeregisterBugCheckCallback(pDevExt);
-#endif
 
     /*
      * Delete the DOS symlink to the device and finally the device itself.
@@ -1619,7 +1626,15 @@ static void vgdrvNtUnload(PDRIVER_OBJECT pDrvObj)
 
     VGDrvCommonDestroyLoggers();
     RTR0Term();
-    LogFlowFunc(("Returning\n"));
+
+    /*
+     * Finally deregister the bugcheck callback.  Do it late to catch trouble in RTR0Term.
+     */
+    if (g_fBugCheckCallbackRegistered)
+    {
+        g_pfnKeDeregisterBugCheckCallback(&g_BugCheckCallbackRec);
+        g_fBugCheckCallbackRegistered = false;
+    }
 }
 
 
@@ -1938,6 +1953,27 @@ static NTSTATUS vgdrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 
     return STATUS_NOT_SUPPORTED;
+}
+
+
+/**
+ * Bug check callback (KBUGCHECK_CALLBACK_ROUTINE).
+ *
+ * This adds a log entry on the host, in case Hyper-V isn't active or the guest
+ * is too old for reporting it itself via the crash MSRs.
+ *
+ * @param   pvBuffer            Not used.
+ * @param   cbBuffer            Not used.
+ */
+static VOID NTAPI vgdrvNtBugCheckCallback(PVOID pvBuffer, ULONG cbBuffer)
+{
+    if (g_pauKiBugCheckData)
+        RTLogBackdoorPrintf("VBoxGuest: BugCheck! P0=%#zx P1=%#zx P2=%#zx P3=%#zx P4=%#zx\n", g_pauKiBugCheckData[0],
+                            g_pauKiBugCheckData[1],  g_pauKiBugCheckData[2], g_pauKiBugCheckData[3],  g_pauKiBugCheckData[4]);
+    else
+        RTLogBackdoorPrintf("VBoxGuest: BugCheck!\n");
+
+    RT_NOREF(pvBuffer, cbBuffer);
 }
 
 
