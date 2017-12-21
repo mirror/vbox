@@ -350,7 +350,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         }
 
         /* Last branch record (LBR) virtualization. */
-        if (    (pVmcbCtrl->u64LBRVirt & SVM_LBR_VIRT_ENABLE)
+        if (    pVmcbCtrl->u1LbrVirt
             && !pVM->cpum.ro.GuestFeatures.fSvmLbrVirt)
         {
             Log(("iemSvmVmrun: LBR virtualization not supported -> #VMEXIT\n"));
