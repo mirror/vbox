@@ -3610,7 +3610,7 @@ static DECLCALLBACK(void) hmR3InfoEventPending(PVM pVM, PCDBGFINFOHLP pHlp, cons
 
 
 /**
- * Displays SVM VMCB controls.
+ * Displays SVM VMCB control area.
  *
  * @param   pHlp        The info helper functions.
  * @param   pVmcbCtrl   Pointer to a SVM VMCB controls area.
@@ -3681,5 +3681,90 @@ VMMR3_INT_DECL(void) HMR3InfoSvmVmcbCtrl(PCDBGFINFOHLP pHlp, PCSVMVMCBCTRL pVmcb
     pHlp->pfnPrintf(pHlp, "%sAvicPhysicalTablePtr\n",                   pszPrefix);
     pHlp->pfnPrintf(pHlp, "%s  u8LastGuestCoreId          = %u\n",      pszPrefix, pVmcbCtrl->AvicPhysicalTablePtr.n.u8LastGuestCoreId);
     pHlp->pfnPrintf(pHlp, "%s  u40Addr                    = %#RX64\n",  pszPrefix, pVmcbCtrl->AvicPhysicalTablePtr.n.u40Addr);
+}
+
+
+/**
+ * Helper for dumping the SVM VMCB selector registers.
+ *
+ * @param   pHlp        The info helper functions.
+ * @param   pSel        Pointer to the SVM selector register.
+ * @param   pszName     Name of the selector.
+ * @param   pszPrefix   Caller specified string prefix.
+ */
+DECLINLINE(void) hmR3InfoSvmVmcbStateSaveSelReg(PCDBGFINFOHLP pHlp, PCSVMSELREG pSel, const char *pszName, const char *pszPrefix)
+{
+    pHlp->pfnPrintf(pHlp, "%s%s\n",                                     pszPrefix, pszName);
+    pHlp->pfnPrintf(pHlp, "%s  u16Sel                     = %#RX16\n",  pszPrefix, pSel->u16Sel);
+    pHlp->pfnPrintf(pHlp, "%s  u16Attr                    = %#RX16\n",  pszPrefix, pSel->u16Attr);
+    pHlp->pfnPrintf(pHlp, "%s  u32Limit                   = %#RX32\n",  pszPrefix, pSel->u32Limit);
+    pHlp->pfnPrintf(pHlp, "%s  u64Base                    = %#RX64\n",  pszPrefix, pSel->u64Base);
+}
+
+
+/**
+ * Helper for dumping the SVM VMCB GDTR/IDTR registers.
+ *
+ * @param   pHlp        The info helper functions.
+ * @param   pSel        Pointer to the descriptor table register.
+ * @param   pszName     Name of the descriptor table register.
+ * @param   pszPrefix   Caller specified string prefix.
+ */
+DECLINLINE(void) hmR3InfoSvmVmcbStateXdtr(PCDBGFINFOHLP pHlp, PCSVMXDTR pXdtr, const char *pszName, const char *pszPrefix)
+{
+    pHlp->pfnPrintf(pHlp, "%s%s\n",                                     pszPrefix, pszName);
+    pHlp->pfnPrintf(pHlp, "%s  u32Limit                   = %#RX32\n",  pszPrefix, pXdtr->u32Limit);
+    pHlp->pfnPrintf(pHlp, "%s  u64Base                    = %#RX64\n",  pszPrefix, pXdtr->u64Base);
+}
+
+
+/**
+ * Displays SVM VMCB state-save area.
+ *
+ * @param   pHlp            The info helper functions.
+ * @param   pVmcbStateSave  Pointer to a SVM VMCB controls area.
+ * @param   pszPrefix       Caller specified string prefix.
+ */
+VMMR3_INT_DECL(void) HMR3InfoSvmVmcbStateSave(PCDBGFINFOHLP pHlp, PCSVMVMCBSTATESAVE pVmcbStateSave, const char *pszPrefix)
+{
+    AssertReturnVoid(pHlp);
+    AssertReturnVoid(pVmcbStateSave);
+
+    hmR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->ES, "ES",     pszPrefix);
+    hmR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->CS, "CS",     pszPrefix);
+    hmR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->SS, "SS",     pszPrefix);
+    hmR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->DS, "DS",     pszPrefix);
+    hmR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->FS, "FS",     pszPrefix);
+    hmR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->GS, "GS",     pszPrefix);
+    hmR3InfoSvmVmcbStateXdtr(pHlp, &pVmcbStateSave->GDTR, "GDTR",       pszPrefix);
+    hmR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->LDTR, "LDTR", pszPrefix);
+    hmR3InfoSvmVmcbStateXdtr(pHlp, &pVmcbStateSave->IDTR, "IDTR",       pszPrefix);
+    hmR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->TR, "TR",     pszPrefix);
+    pHlp->pfnPrintf(pHlp, "%su8CPL                      = %u\n",        pszPrefix, pVmcbStateSave->u8CPL);
+    pHlp->pfnPrintf(pHlp, "%su64EFER                    = %#RX64\n",    pszPrefix, pVmcbStateSave->u64EFER);
+    pHlp->pfnPrintf(pHlp, "%su64CR4                     = %#RX64\n",    pszPrefix, pVmcbStateSave->u64CR4);
+    pHlp->pfnPrintf(pHlp, "%su64CR3                     = %#RX64\n",    pszPrefix, pVmcbStateSave->u64CR3);
+    pHlp->pfnPrintf(pHlp, "%su64CR0                     = %#RX64\n",    pszPrefix, pVmcbStateSave->u64CR0);
+    pHlp->pfnPrintf(pHlp, "%su64DR7                     = %#RX64\n",    pszPrefix, pVmcbStateSave->u64DR7);
+    pHlp->pfnPrintf(pHlp, "%su64DR6                     = %#RX64\n",    pszPrefix, pVmcbStateSave->u64DR6);
+    pHlp->pfnPrintf(pHlp, "%su64RFlags                  = %#RX64\n",    pszPrefix, pVmcbStateSave->u64RFlags);
+    pHlp->pfnPrintf(pHlp, "%su64RIP                     = %#RX64\n",    pszPrefix, pVmcbStateSave->u64RIP);
+    pHlp->pfnPrintf(pHlp, "%su64RSP                     = %#RX64\n",    pszPrefix, pVmcbStateSave->u64RSP);
+    pHlp->pfnPrintf(pHlp, "%su64RAX                     = %#RX64\n",    pszPrefix, pVmcbStateSave->u64RAX);
+    pHlp->pfnPrintf(pHlp, "%su64STAR                    = %#RX64\n",    pszPrefix, pVmcbStateSave->u64STAR);
+    pHlp->pfnPrintf(pHlp, "%su64LSTAR                   = %#RX64\n",    pszPrefix, pVmcbStateSave->u64LSTAR);
+    pHlp->pfnPrintf(pHlp, "%su64CSTAR                   = %#RX64\n",    pszPrefix, pVmcbStateSave->u64CSTAR);
+    pHlp->pfnPrintf(pHlp, "%su64SFMASK                  = %#RX64\n",    pszPrefix, pVmcbStateSave->u64SFMASK);
+    pHlp->pfnPrintf(pHlp, "%su64KernelGSBase            = %#RX64\n",    pszPrefix, pVmcbStateSave->u64KernelGSBase);
+    pHlp->pfnPrintf(pHlp, "%su64SysEnterCS              = %#RX64\n",    pszPrefix, pVmcbStateSave->u64SysEnterCS);
+    pHlp->pfnPrintf(pHlp, "%su64SysEnterEIP             = %#RX64\n",    pszPrefix, pVmcbStateSave->u64SysEnterEIP);
+    pHlp->pfnPrintf(pHlp, "%su64SysEnterESP             = %#RX64\n",    pszPrefix, pVmcbStateSave->u64SysEnterESP);
+    pHlp->pfnPrintf(pHlp, "%su64CR2                     = %#RX64\n",    pszPrefix, pVmcbStateSave->u64CR2);
+    pHlp->pfnPrintf(pHlp, "%su64GPAT                    = %#RX64\n",    pszPrefix, pVmcbStateSave->u64GPAT);
+    pHlp->pfnPrintf(pHlp, "%su64DBGCTL                  = %#RX64\n",    pszPrefix, pVmcbStateSave->u64DBGCTL);
+    pHlp->pfnPrintf(pHlp, "%su64BR_FROM                 = %#RX64\n",    pszPrefix, pVmcbStateSave->u64BR_FROM);
+    pHlp->pfnPrintf(pHlp, "%su64BR_TO                   = %#RX64\n",    pszPrefix, pVmcbStateSave->u64BR_TO);
+    pHlp->pfnPrintf(pHlp, "%su64LASTEXCPFROM            = %#RX64\n",    pszPrefix, pVmcbStateSave->u64LASTEXCPFROM);
+    pHlp->pfnPrintf(pHlp, "%su64LASTEXCPTO              = %#RX64\n",    pszPrefix, pVmcbStateSave->u64LASTEXCPTO);
 }
 

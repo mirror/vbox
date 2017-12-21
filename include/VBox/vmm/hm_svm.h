@@ -479,7 +479,7 @@
 
 
 /**
- * SVM Selector type; includes hidden parts.
+ * SVM selector/segment register type.
  */
 typedef struct
 {
@@ -487,8 +487,12 @@ typedef struct
     uint16_t    u16Attr;
     uint32_t    u32Limit;
     uint64_t    u64Base;        /**< Only lower 32 bits are implemented for CS, DS, ES & SS. */
-} SVMSEL;
-AssertCompileSize(SVMSEL, 16);
+} SVMSELREG;
+AssertCompileSize(SVMSELREG, 16);
+/** Pointer to the SVMSELREG struct. */
+typedef SVMSELREG *PSVMSELREG;
+/** Pointer to a const SVMSELREG struct. */
+typedef const SVMSELREG *PCSVMSELREG;
 
 /**
  * SVM GDTR/IDTR type.
@@ -499,9 +503,15 @@ typedef struct
     uint16_t    u16Reserved2;
     uint32_t    u32Limit;       /**< Only lower 16 bits are implemented. */
     uint64_t    u64Base;
-} SVMGDTR;
-AssertCompileSize(SVMGDTR, 16);
-typedef SVMGDTR SVMIDTR;
+} SVMXDTR;
+AssertCompileSize(SVMXDTR, 16);
+typedef SVMXDTR SVMIDTR;
+typedef SVMXDTR SVMGDTR;
+/** Pointer to the SVMXDTR struct. */
+typedef SVMXDTR *PSVMXDTR;
+/** Pointer to a const SVMXDTR struct. */
+typedef const SVMXDTR *PCSVMXDTR;
+
 
 /**
  * SVM Event injection structure (EVENTINJ and EXITINTINFO).
@@ -793,25 +803,25 @@ AssertCompileMemberOffset(SVMVMCBCTRL, AvicPhysicalTablePtr,                 0xf
 typedef struct
 {
     /** Offset 0x400 - Guest ES register + hidden parts. */
-    SVMSEL      ES;
+    SVMSELREG   ES;
     /** Offset 0x410 - Guest CS register + hidden parts. */
-    SVMSEL      CS;
+    SVMSELREG   CS;
     /** Offset 0x420 - Guest SS register + hidden parts. */
-    SVMSEL      SS;
+    SVMSELREG   SS;
     /** Offset 0x430 - Guest DS register + hidden parts. */
-    SVMSEL      DS;
+    SVMSELREG   DS;
     /** Offset 0x440 - Guest FS register + hidden parts. */
-    SVMSEL      FS;
+    SVMSELREG   FS;
     /** Offset 0x450 - Guest GS register + hidden parts. */
-    SVMSEL      GS;
+    SVMSELREG   GS;
     /** Offset 0x460 - Guest GDTR register. */
     SVMGDTR     GDTR;
     /** Offset 0x470 - Guest LDTR register + hidden parts. */
-    SVMSEL      LDTR;
+    SVMSELREG   LDTR;
     /** Offset 0x480 - Guest IDTR register. */
     SVMIDTR     IDTR;
     /** Offset 0x490 - Guest TR register + hidden parts. */
-    SVMSEL      TR;
+    SVMSELREG   TR;
     /** Offset 0x4A0-0x4CA - Reserved. */
     uint8_t     u8Reserved4[0x4CB - 0x4A0];
     /** Offset 0x4CB - CPL. */
