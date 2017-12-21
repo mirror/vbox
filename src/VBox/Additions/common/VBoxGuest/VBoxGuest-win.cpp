@@ -44,7 +44,6 @@
 #include <iprt/string.h>
 
 
-
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -181,26 +180,27 @@ RT_C_DECLS_BEGIN
 static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath);
 static NTSTATUS vgdrvNt4FindPciDevice(PULONG puluBusNumber, PPCI_SLOT_NUMBER puSlotNumber);
 #endif
-static NTSTATUS vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj);
-static NTSTATUS vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vgdrvNtNt5PlusPower(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vgdrvNtNt5PlusSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static void     vgdrvNtUnmapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt);
-static void     vgdrvNtUnload(PDRIVER_OBJECT pDrvObj);
-static NTSTATUS vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vgdrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vgdrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vgdrvNtDeviceControlSlow(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, PIRP pIrp, PIO_STACK_LOCATION pStack);
-static NTSTATUS vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static void     vgdrvNtReadConfiguration(PVBOXGUESTDEVEXTWIN pDevExt);
-static NTSTATUS vgdrvNtShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static NTSTATUS vgdrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-static VOID NTAPI vgdrvNtBugCheckCallback(PVOID pvBuffer, ULONG cbBuffer);
+static NTSTATUS NTAPI vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj);
+static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS NTAPI vgdrvNtNt5PlusPower(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS NTAPI vgdrvNtNt5PlusSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static void           vgdrvNtUnmapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt);
+static void     NTAPI vgdrvNtUnload(PDRIVER_OBJECT pDrvObj);
+static NTSTATUS NTAPI vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS NTAPI vgdrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS NTAPI vgdrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS       vgdrvNtDeviceControlSlow(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
+                                               PIRP pIrp, PIO_STACK_LOCATION pStack);
+static NTSTATUS NTAPI vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static void           vgdrvNtReadConfiguration(PVBOXGUESTDEVEXTWIN pDevExt);
+static NTSTATUS NTAPI vgdrvNtShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS NTAPI vgdrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static VOID     NTAPI vgdrvNtBugCheckCallback(PVOID pvBuffer, ULONG cbBuffer);
 #ifdef VBOX_STRICT
-static void     vgdrvNtDoTests(void);
+static void           vgdrvNtDoTests(void);
 #endif
-static VOID     vgdrvNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext);
-static BOOLEAN  vgdrvNtIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext);
+static VOID     NTAPI vgdrvNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext);
+static BOOLEAN  NTAPI vgdrvNtIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext);
 static NTSTATUS vgdrvNtScanPCIResourceList(PVBOXGUESTDEVEXTWIN pDevExt, PCM_RESOURCE_LIST pResList, bool fTranslated);
 static NTSTATUS vgdrvNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS PhysAddr, ULONG cbToMap,
                                        void **ppvMMIOBase, uint32_t *pcbMMIO);
@@ -399,7 +399,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                 pDrvObj->MajorFunction[IRP_MJ_PNP]                     = vgdrvNtNt5PlusPnP;
                 pDrvObj->MajorFunction[IRP_MJ_POWER]                   = vgdrvNtNt5PlusPower;
                 pDrvObj->MajorFunction[IRP_MJ_SYSTEM_CONTROL]          = vgdrvNtNt5PlusSystemControl;
-                pDrvObj->DriverExtension->AddDevice                    = (PDRIVER_ADD_DEVICE)vgdrvNtNt5PlusAddDevice;
+                pDrvObj->DriverExtension->AddDevice                    = vgdrvNtNt5PlusAddDevice;
             }
             if (NT_SUCCESS(rcNt))
             {
@@ -880,7 +880,7 @@ static NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRe
  *
  * @remarks Parts of this is duplicated in VBoxGuest-win-legacy.cpp.
  */
-static NTSTATUS vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
+static NTSTATUS NTAPI vgdrvNtNt5PlusAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
 {
     LogFlowFuncEnter();
 
@@ -1055,7 +1055,7 @@ static void vgdrvNtDeleteDeviceFundamentAndUnlink(PDEVICE_OBJECT pDevObj, PVBOXG
  * @param  pDevObj    Device object.
  * @param  pIrp       Request packet.
  */
-static NTSTATUS vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS NTAPI vgdrvNtNt5PlusPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
     PIO_STACK_LOCATION  pStack  = IoGetCurrentIrpStackLocation(pIrp);
@@ -1402,7 +1402,7 @@ static NTSTATUS vgdrvNtNt5PlusPowerComplete(IN PDEVICE_OBJECT pDevObj, IN PIRP p
  * @param     pDevObj   device object
  * @param     pIrp      IRP
  */
-static NTSTATUS vgdrvNtNt5PlusPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS NTAPI vgdrvNtNt5PlusPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     PIO_STACK_LOCATION  pStack   = IoGetCurrentIrpStackLocation(pIrp);
     PVBOXGUESTDEVEXTWIN pDevExt  = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
@@ -1556,7 +1556,7 @@ static NTSTATUS vgdrvNtNt5PlusPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pDevObj     Device object.
  * @param   pIrp        IRP.
  */
-static NTSTATUS vgdrvNtNt5PlusSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS NTAPI vgdrvNtNt5PlusSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
 
@@ -1594,7 +1594,7 @@ static void vgdrvNtUnmapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt)
  *
  * @param   pDrvObj     Driver object.
  */
-static void vgdrvNtUnload(PDRIVER_OBJECT pDrvObj)
+static void NTAPI vgdrvNtUnload(PDRIVER_OBJECT pDrvObj)
 {
     LogFlowFuncEnter();
 
@@ -1675,7 +1675,7 @@ DECLINLINE(NTSTATUS) vgdrvNtCompleteRequest(NTSTATUS rcNt, PIRP pIrp)
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
-static NTSTATUS vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS NTAPI vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     Log(("vgdrvNtCreate: RequestorMode=%d\n", pIrp->RequestorMode));
     PIO_STACK_LOCATION  pStack   = IoGetCurrentIrpStackLocation(pIrp);
@@ -1734,7 +1734,7 @@ static NTSTATUS vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
-static NTSTATUS vgdrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS NTAPI vgdrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     PVBOXGUESTDEVEXTWIN pDevExt  = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
     PIO_STACK_LOCATION  pStack   = IoGetCurrentIrpStackLocation(pIrp);
@@ -1764,7 +1764,7 @@ static NTSTATUS vgdrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
-NTSTATUS _stdcall vgdrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+NTSTATUS NTAPI vgdrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     PVBOXGUESTDEVEXTWIN pDevExt  = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
     PIO_STACK_LOCATION  pStack   = IoGetCurrentIrpStackLocation(pIrp);
@@ -1898,7 +1898,7 @@ static NTSTATUS vgdrvNtDeviceControlSlow(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
-static NTSTATUS vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS NTAPI vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     /* Currently no special code here. */
     return vgdrvNtDeviceControl(pDevObj, pIrp);
@@ -1912,7 +1912,7 @@ static NTSTATUS vgdrvNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param pDevObj    Device object.
  * @param pIrp       IRP.
  */
-static NTSTATUS vgdrvNtShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS NTAPI vgdrvNtShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
     LogFlowFuncEnter();
