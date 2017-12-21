@@ -112,7 +112,7 @@ void VGSvcWinResolveApis(void)
 #define RESOLVE_SYMBOL(a_fn) do { RT_CONCAT(g_pfn, a_fn) = (decltype(a_fn) *)RTLdrGetFunction(hLdrMod, #a_fn); } while (0)
 
     /* From ADVAPI32.DLL: */
-    int rc = RTLdrLoadSystem("advapi32.dll", false /*fNoUnload*/, &hLdrMod);
+    int rc = RTLdrLoadSystem("advapi32.dll", true /*fNoUnload*/, &hLdrMod);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
@@ -126,7 +126,7 @@ void VGSvcWinResolveApis(void)
     }
 
     /* From KERNEL32.DLL: */
-    rc = RTLdrLoadSystem("kernel32.dll", false /*fNoUnload*/, &hLdrMod);
+    rc = RTLdrLoadSystem("kernel32.dll", true /*fNoUnload*/, &hLdrMod);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
@@ -139,7 +139,7 @@ void VGSvcWinResolveApis(void)
     }
 
     /* From NTDLL.DLL: */
-    rc = RTLdrLoadSystem("ntdll.dll", false /*fNoUnload*/, &hLdrMod);
+    rc = RTLdrLoadSystem("ntdll.dll", true /*fNoUnload*/, &hLdrMod);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
@@ -148,7 +148,7 @@ void VGSvcWinResolveApis(void)
     }
 
     /* From IPHLPAPI.DLL: */
-    rc = RTLdrLoadSystem("iphlpapi.dll", false /*fNoUnload*/, &hLdrMod);
+    rc = RTLdrLoadSystem("iphlpapi.dll", true /*fNoUnload*/, &hLdrMod);
     if (RT_SUCCESS(rc))
     {
         RESOLVE_SYMBOL(GetAdaptersInfo);
@@ -156,7 +156,7 @@ void VGSvcWinResolveApis(void)
     }
 
     /* From WS2_32.DLL: */
-    rc = RTLdrLoadSystem("ws2_32.dll", false /*fNoUnload*/, &hLdrMod);
+    rc = RTLdrLoadSystem("ws2_32.dll", true /*fNoUnload*/, &hLdrMod);
     if (RT_SUCCESS(rc))
     {
         RESOLVE_SYMBOL(WSAStartup);
