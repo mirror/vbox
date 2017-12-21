@@ -288,7 +288,7 @@ static int rtCheckImportsForImage(PCRTCHECKIMPORTSOPTS pOpts, const char *pszIma
                     rc = RTMsgErrorRc(VERR_NO_MEMORY, "%s: out of memory", pszImage);
             }
 
-            AssertCompile(NIL_RTLDRMOD == NULL);
+            AssertCompile(NIL_RTLDRMOD == (RTLDRMOD)NULL);
             for (uint32_t iImport = 0; iImport < cImports; iImport++)
                 if (pState->aImports[iImport].hLdrMod != NIL_RTLDRMOD)
                     RTLdrClose(pState->aImports[iImport].hLdrMod);
