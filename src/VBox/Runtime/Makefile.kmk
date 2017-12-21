@@ -2221,6 +2221,7 @@ RuntimeR0Drv_SOURCES    = \
 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/critsect-generic.cpp \
+	generic/critsectrw-generic.cpp \
 	generic/errvars-generic.cpp \
 	generic/uuid-generic.cpp \
 	r0drv/alloc-r0drv.cpp \
