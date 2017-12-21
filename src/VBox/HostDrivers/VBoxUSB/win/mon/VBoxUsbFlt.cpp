@@ -35,10 +35,8 @@
 #include <iprt/process.h>
 #include <iprt/assert.h>
 #include <VBox/err.h>
-//#include <VBox/sup.h>
 
 #include <iprt/assert.h>
-#include <stdio.h>
 
 #pragma warning(disable : 4200)
 #include "usbdi.h"
