@@ -462,7 +462,7 @@ typedef enum IEMXCPTCLASS
     do \
     { \
         uint64_t uExitInfo1; \
-        if (   IEM_GET_GUEST_CPU_FEATURES(a_pVCpu)->fSvmDecodeAssist \
+        if (   IEM_GET_GUEST_CPU_FEATURES(a_pVCpu)->fSvmDecodeAssists \
             && (a_enmAccessCrX) == IEMACCESSCRX_MOV_CRX) \
             uExitInfo1 = SVM_EXIT1_MOV_CRX_MASK | ((a_iGReg) & 7); \
         else \

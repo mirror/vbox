@@ -5622,7 +5622,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Dd, uint8_t, iGReg, uint8_t, iDrReg)
     {
         Log(("mov r%u,dr%u: Guest intercept -> #VMEXIT\n", iGReg, iDrReg));
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_READ_DR0 + (iDrReg & 0xf),
-                              IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssist ? (iGReg & 7) : 0, 0 /* uExitInfo2 */);
+                              IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssists ? (iGReg & 7) : 0, 0 /* uExitInfo2 */);
     }
 
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
@@ -5723,7 +5723,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
     {
         Log2(("mov dr%u,r%u: Guest intercept -> #VMEXIT\n", iDrReg, iGReg));
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_WRITE_DR0 + (iDrReg & 0xf),
-                              IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssist ? (iGReg & 7) : 0, 0 /* uExitInfo2 */);
+                              IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssists ? (iGReg & 7) : 0, 0 /* uExitInfo2 */);
     }
 
     /*
@@ -5759,7 +5759,7 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, RTGCPTR, GCPtrPage)
     {
         Log(("invlpg: Guest intercept (%RGp) -> #VMEXIT\n", GCPtrPage));
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_INVLPG,
-                              IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssist ? GCPtrPage : 0, 0 /* uExitInfo2 */);
+                              IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssists ? GCPtrPage : 0, 0 /* uExitInfo2 */);
     }
 
     int rc = PGMInvalidatePage(pVCpu, GCPtrPage);
