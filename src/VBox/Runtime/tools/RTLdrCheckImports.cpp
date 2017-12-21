@@ -96,7 +96,7 @@ typedef struct RTCHECKIMPORTSTATE
     /** Number modules. */
     uint32_t                cImports;
     /** Import modules. */
-    RTCHECKIMPORTMODULE     aImports[];
+    RTCHECKIMPORTMODULE     aImports[RT_FLEXIBLE_ARRAY];
 } RTCHECKIMPORTSTATE;
 /** Pointer to the import checker state. */
 typedef RTCHECKIMPORTSTATE *PRTCHECKIMPORTSTATE;
