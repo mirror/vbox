@@ -118,6 +118,8 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent 
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fIsPolished(false)
     , m_comMachine(machine)
+    , m_pViewerContainer(0)
+    , m_iCurrentTabIndex(-1)
     , m_pMainLayout(0)
     , m_enmEmbedding(enmEmbedding)
     , m_pToolBar(0)
@@ -172,6 +174,7 @@ void UIVMLogViewerWidget::sltRefresh()
 {
     /* Disconnect this connection to avoid initial signals during page creation/deletion: */
     disconnect(m_pViewerContainer, SIGNAL(currentChanged(int)), m_pFilterPanel, SLOT(applyFilter(int)));
+    disconnect(m_pViewerContainer, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
 
     /* Clearing old data if any: */
     m_book.clear();
@@ -186,6 +189,7 @@ void UIVMLogViewerWidget::sltRefresh()
         delete pFirstPage;
     }
 
+    m_iCurrentTabIndex = -1;
     bool noLogsToShow = false;
     QString strDummyTabText;
     /* check if the machine is valid: */
@@ -224,6 +228,9 @@ void UIVMLogViewerWidget::sltRefresh()
 
     /* Setup this connection after refresh to avoid initial signals during page creation: */
     connect(m_pViewerContainer, SIGNAL(currentChanged(int)), m_pFilterPanel, SLOT(applyFilter(int)));
+    connect(m_pViewerContainer, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
+
+    m_iCurrentTabIndex = 0;
 
     /* Enable/Disable toolbar actions (except Refresh) & tab widget according log presence: */
     m_pActionFind->setEnabled(!noLogsToShow);
@@ -282,8 +289,18 @@ void UIVMLogViewerWidget::sltSearchResultHighLigting()
     if (scrollBar)
         scrollBar->setMarkingsVector(m_pSearchPanel->getMatchLocationVector());
 
-    m_markingsVector = m_pSearchPanel->getMatchLocationVector();
     currentLogPage()->repaint();
+}
+
+void UIVMLogViewerWidget::sltTabIndexChange(int tabIndex)
+{
+    if (m_iCurrentTabIndex == tabIndex)
+        return;
+
+    resetHighlighthing();
+    if (m_pSearchPanel)
+        m_pSearchPanel->reset();
+    m_iCurrentTabIndex = tabIndex;
 }
 
 void UIVMLogViewerWidget::setMachine(const CMachine &machine)
@@ -602,6 +619,17 @@ QPlainTextEdit* UIVMLogViewerWidget::currentLogPage() const
     return 0;
 }
 
+QPlainTextEdit* UIVMLogViewerWidget::logPage(int pIndex) const
+{
+    if (!m_pViewerContainer->isEnabled())
+        return 0;
+    QWidget* pContainer = m_pViewerContainer->widget(pIndex);
+    if (!pContainer)
+        return 0;
+    QPlainTextEdit *pBrowser = pContainer->findChild<QPlainTextEdit*>();
+    return pBrowser;
+}
+
 bool UIVMLogViewerWidget::createLogViewerPages()
 {
     if (m_comMachine.isNull())
@@ -666,9 +694,7 @@ QPlainTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
             pLogViewer->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
             QScrollBar *pHorizontalScrollBar = pLogViewer->horizontalScrollBar();
             if (pHorizontalScrollBar)
-            {
                 pHorizontalScrollBar->setStyleSheet(horizontalScrollBarStyle);
-            }
 #if defined(RT_OS_SOLARIS)
             /* Use system fixed-width font on Solaris hosts as the Courier family fonts don't render well. */
             QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
@@ -691,6 +717,24 @@ QPlainTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
 const QString& UIVMLogViewerWidget::currentLog()
 {
     return m_logMap[currentLogPage()];
+}
+
+void UIVMLogViewerWidget::resetHighlighthing()
+{
+    /* Undo the document changes to remove highlighting: */
+    QPlainTextEdit *pTextEdit = logPage(m_iCurrentTabIndex);
+    if (pTextEdit)
+    {
+        QTextDocument *pDocument = pTextEdit->document();
+        if (pDocument)
+            pDocument->undo();
+    }
+    UIIndicatorScrollBar* scrollBar = qobject_cast<UIIndicatorScrollBar*>(pTextEdit->verticalScrollBar());
+    if (scrollBar)
+    {
+        scrollBar->setMarkingsVector(QVector<float>());
+        pTextEdit->repaint();
+    }
 }
 
 #include "UIVMLogViewerWidget.moc"

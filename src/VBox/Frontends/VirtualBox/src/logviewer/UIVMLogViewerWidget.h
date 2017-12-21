@@ -89,6 +89,9 @@ private slots:
     /** Handles the search result highlight changes. */
     void sltSearchResultHighLigting();
 
+    /** Handles the tab change of the logviewer. */
+    void sltTabIndexChange(int tabIndex);
+
 private:
 
     /** @name Prepare/Cleanup
@@ -119,6 +122,8 @@ private:
 
     /** Returns the current log-page. */
     QPlainTextEdit* currentLogPage() const;
+    /** Returns the log-page from the tab with index @a pIndex. */
+    QPlainTextEdit* logPage(int pIndex) const;
     /** Returns the newly created log-page using @a strPage filename. */
     QPlainTextEdit* createLogPage(const QString &strPage);
     /** Returns the content of current log-page. */
@@ -126,6 +131,9 @@ private:
 
     /** Attempts to read the logs through the API, returns true if there exists any logs, false otherwise. */
     bool createLogViewerPages();
+
+    /** Resets document (of the curent tab) and scrollbar highligthing */
+    void resetHighlighthing();
 
     /** Holds whether the dialog is polished. */
     bool m_fIsPolished;
@@ -135,6 +143,9 @@ private:
 
     /** Holds container for log-pages. */
     QITabWidget *m_pViewerContainer;
+
+    /** Holds the index to the current tab: */
+    int          m_iCurrentTabIndex;
 
     /** Holds the instance of search-panel. */
     UIVMLogViewerSearchPanel *m_pSearchPanel;
@@ -169,11 +180,8 @@ private:
         QMenu     *m_pMenu;
     /** @} */
 
-    QVector<float> m_markingsVector;
-
     friend class UIVMLogViewerSearchPanel;
     friend class UIVMLogViewerFilterPanel;
 };
 
 #endif /* !___UIVMLogViewerWidget_h___ */
-

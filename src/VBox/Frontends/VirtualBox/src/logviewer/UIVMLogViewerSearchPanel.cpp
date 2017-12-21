@@ -69,11 +69,14 @@ void UIVMLogViewerSearchPanel::refresh()
 void UIVMLogViewerSearchPanel::reset()
 {
     m_iSearchPosition = 0;
+    m_matchLocationVector.clear();
+    m_iMatchCount = -1;
     if (m_pHighlightAllCheckBox)
     {
         if (m_pHighlightAllCheckBox->checkState() == Qt::Checked)
             m_pHighlightAllCheckBox->setCheckState(Qt::Unchecked);
     }
+    configureInfoLabels();
 }
 
 const QVector<float> &UIVMLogViewerSearchPanel::getMatchLocationVector() const
@@ -136,7 +139,8 @@ void UIVMLogViewerSearchPanel::findCurrent(const QString &strSearchString)
 void UIVMLogViewerSearchPanel::sltHighlightAllCheckBox()
 {
     QPlainTextEdit *pTextEdit = m_pViewer->currentLogPage();
-    if (!pTextEdit) return;
+    if (!pTextEdit)
+        return;
     QTextDocument *pDocument = pTextEdit->document();
     if (!pDocument)
         return;
