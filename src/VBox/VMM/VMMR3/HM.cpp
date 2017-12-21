@@ -3731,10 +3731,10 @@ VMMR3_INT_DECL(void) HMR3InfoSvmVmcbStateSave(PCDBGFINFOHLP pHlp, PCSVMVMCBSTATE
     hmR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->DS, "DS",     pszPrefix);
     hmR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->FS, "FS",     pszPrefix);
     hmR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->GS, "GS",     pszPrefix);
-    hmR3InfoSvmVmcbStateXdtr(pHlp, &pVmcbStateSave->GDTR, "GDTR",       pszPrefix);
     hmR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->LDTR, "LDTR", pszPrefix);
-    hmR3InfoSvmVmcbStateXdtr(pHlp, &pVmcbStateSave->IDTR, "IDTR",       pszPrefix);
     hmR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->TR, "TR",     pszPrefix);
+    hmR3InfoSvmVmcbStateXdtr(pHlp, &pVmcbStateSave->GDTR, "GDTR",       pszPrefix);
+    hmR3InfoSvmVmcbStateXdtr(pHlp, &pVmcbStateSave->IDTR, "IDTR",       pszPrefix);
     pHlp->pfnPrintf(pHlp, "%su8CPL                      = %u\n",        pszPrefix, pVmcbStateSave->u8CPL);
     pHlp->pfnPrintf(pHlp, "%su64EFER                    = %#RX64\n",    pszPrefix, pVmcbStateSave->u64EFER);
     pHlp->pfnPrintf(pHlp, "%su64CR4                     = %#RX64\n",    pszPrefix, pVmcbStateSave->u64CR4);
