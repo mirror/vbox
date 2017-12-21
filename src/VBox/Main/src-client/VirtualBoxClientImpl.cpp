@@ -211,10 +211,19 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
             return setError(hrcCaller,
                             tr("The VBoxSDS windows service is disabled.\n"
                                "To reenable the service, set it to 'Manual' startup type in the Windows Service\n"
-                               "management console, or run 'sc config VBoxSDS start=demand' on a command line"));
+                               "management console, or run 'sc config VBoxSDS start=demand' on a command line."));
     }
     else
+    {
+        if (vrc == VERR_NOT_FOUND)
+        {
+            return setError(hrcCaller,
+                tr("The VBoxSDS windows service doesn't exist, needs to reinstall it.\n"
+                    "To do this, start VirtualBox as Administrator, this automatically reinstall the service,"
+                    "or run 'VBoxSDS.exe --regservice' command from Administrator console."));
+        }
         LogRelFunc(("VirtualBoxClient::i_getServiceAccount failed: %Rrc\n", vrc));
+    }
 # endif
 
     /*
@@ -422,8 +431,8 @@ int VirtualBoxClient::i_getServiceAccountAndStartType(const wchar_t *pwszService
                     {
                         int dwError = GetLastError();
                         vrc = RTErrConvertFromWin32(dwError);
-                        LogRel(("Error: Failed querying service config: %Rwc (%u) -> %Rrc; cbNeeded=%d cbNeeded2=%d\n",
-                                dwError, dwError, vrc, cbNeeded, cbNeeded2));
+                        LogRel(("Error: Failed querying '%ls' service config: %Rwc (%u) -> %Rrc; cbNeeded=%d cbNeeded2=%d\n",
+                            pwszServiceName, dwError, dwError, vrc, cbNeeded, cbNeeded2));
                     }
                     RTMemTmpFree(pSc);
                 }
@@ -444,7 +453,7 @@ int VirtualBoxClient::i_getServiceAccountAndStartType(const wchar_t *pwszService
         {
             int dwError = GetLastError();
             vrc = RTErrConvertFromWin32(dwError);
-            LogRel(("Error: Could not open service: %Rwc (%u) -> %Rrc\n", dwError, dwError, vrc));
+            LogRel(("Error: Could not open service '%ls': %Rwc (%u) -> %Rrc\n", pwszServiceName, dwError, dwError, vrc));
         }
         CloseServiceHandle(hSCManager);
     }
