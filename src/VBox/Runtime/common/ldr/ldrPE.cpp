@@ -3375,7 +3375,10 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
 
 
 /**
- * Validates the section headers.
+ * Validates and touch up the section headers.
+ *
+ * The touching up is restricted to setting the VirtualSize field for old-style
+ * linkers that sets it to zero.
  *
  * @returns iprt status code.
  * @param   paSections  Pointer to the array of sections that is to be validated.
@@ -3386,16 +3389,33 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
  * @param   fFlags      Loader flags, RTLDR_O_XXX.
  * @param   fNoCode     Verify that the image contains no code.
  */
-static int rtldrPEValidateSectionHeaders(const IMAGE_SECTION_HEADER *paSections, unsigned cSections, const char *pszLogName,
-                                         const IMAGE_OPTIONAL_HEADER64 *pOptHdr, RTFOFF cbRawImage, uint32_t fFlags, bool fNoCode)
+static int rtldrPEValidateAndTouchUpSectionHeaders(IMAGE_SECTION_HEADER *paSections, unsigned cSections, const char *pszLogName,
+                                                   const IMAGE_OPTIONAL_HEADER64 *pOptHdr, RTFOFF cbRawImage, uint32_t fFlags,
+                                                   bool fNoCode)
 {
     RT_NOREF_PV(pszLogName);
 
+    /*
+     * Do a quick pass to detect linker setting VirtualSize to zero.
+     */
+    bool                  fFixupVirtualSize = true;
+    IMAGE_SECTION_HEADER *pSH = &paSections[0];
+    for (unsigned cSHdrsLeft = cSections; cSHdrsLeft > 0; cSHdrsLeft--, pSH++)
+        if (    pSH->Misc.VirtualSize != 0
+            && !(pSH->Characteristics & IMAGE_SCN_TYPE_NOLOAD))
+        {
+            fFixupVirtualSize = false;
+            break;
+        }
+
+    /*
+     * Actual pass.
+     */
     const uint32_t              cbImage  = pOptHdr->SizeOfImage;
-    const IMAGE_SECTION_HEADER *pSH      = &paSections[0];
     uint32_t                    uRvaPrev = pOptHdr->SizeOfHeaders;
+    pSH = &paSections[0];
     Log3(("RTLdrPE: Section Headers:\n"));
-    for (unsigned cSHdrsLeft = cSections;  cSHdrsLeft > 0; cSHdrsLeft--, pSH++)
+    for (unsigned cSHdrsLeft = cSections; cSHdrsLeft > 0; cSHdrsLeft--, pSH++)
     {
         const unsigned iSH = (unsigned)(pSH - &paSections[0]); NOREF(iSH);
         Log3(("RTLdrPE: #%d '%-8.8s'  Characteristics: %08RX32\n"
@@ -3418,42 +3438,6 @@ static int rtldrPEValidateSectionHeaders(const IMAGE_SECTION_HEADER *paSections,
             return VERR_BAD_EXE_FORMAT;
         }
 
-        if (    pSH->Misc.VirtualSize
-            &&  !(pSH->Characteristics & IMAGE_SCN_TYPE_NOLOAD)) /* binutils uses this for '.stab' even if it's reserved/obsoleted by MS. */
-        {
-            if (pSH->VirtualAddress < uRvaPrev)
-            {
-                Log(("rtldrPEOpen: %s: Overlaps previous section or sections aren't in ascending order, VirtualAddress=%#x uRvaPrev=%#x - section #%d '%.*s'!!!\n",
-                     pszLogName, pSH->VirtualAddress, uRvaPrev, iSH, sizeof(pSH->Name), pSH->Name));
-                return VERR_BAD_EXE_FORMAT;
-            }
-            if (pSH->VirtualAddress > cbImage)
-            {
-                Log(("rtldrPEOpen: %s: VirtualAddress=%#x - beyond image size (%#x) - section #%d '%.*s'!!!\n",
-                     pszLogName, pSH->VirtualAddress, cbImage, iSH, sizeof(pSH->Name), pSH->Name));
-                return VERR_BAD_EXE_FORMAT;
-            }
-
-            if (pSH->VirtualAddress & (pOptHdr->SectionAlignment - 1)) //ASSUMES power of 2 alignment.
-            {
-                Log(("rtldrPEOpen: %s: VirtualAddress=%#x misaligned (%#x) - section #%d '%.*s'!!!\n",
-                     pszLogName, pSH->VirtualAddress, pOptHdr->SectionAlignment, iSH, sizeof(pSH->Name), pSH->Name));
-                return VERR_BAD_EXE_FORMAT;
-            }
-
-#ifdef PE_FILE_OFFSET_EQUALS_RVA
-            /* Our loader code assume rva matches the file offset. */
-            if (    pSH->SizeOfRawData
-                &&  pSH->PointerToRawData != pSH->VirtualAddress)
-            {
-                Log(("rtldrPEOpen: %s: ASSUMPTION FAILED: file offset %#x != RVA %#x - section #%d '%.*s'!!!\n",
-                     pszLogName, pSH->PointerToRawData, pSH->VirtualAddress, iSH, sizeof(pSH->Name), pSH->Name));
-                return VERR_BAD_EXE_FORMAT;
-            }
-#endif
-        }
-
-        /// @todo only if SizeOfRawData > 0 ?
         if (    pSH->PointerToRawData > cbRawImage /// @todo pSH->PointerToRawData >= cbRawImage ?
             ||  pSH->SizeOfRawData > cbRawImage
             ||  pSH->PointerToRawData + pSH->SizeOfRawData > cbRawImage)
@@ -3471,9 +3455,60 @@ static int rtldrPEValidateSectionHeaders(const IMAGE_SECTION_HEADER *paSections,
             return VERR_BAD_EXE_FORMAT;
         }
 
-        /* ignore the relocations and linenumbers. */
+        if (!(pSH->Characteristics & IMAGE_SCN_TYPE_NOLOAD)) /* binutils uses this for '.stab' even if it's reserved/obsoleted by MS. */
+        {
+            /* Calc VirtualSize if necessary.  This is for internal reasons. */
+            if (   pSH->Misc.VirtualSize == 0
+                && fFixupVirtualSize)
+            {
+                pSH->Misc.VirtualSize = cbImage - RT_MIN(pSH->VirtualAddress, cbImage);
+                for (uint32_t i = 1; i < cSHdrsLeft; i++)
+                    if (   !(pSH[i].Characteristics & IMAGE_SCN_TYPE_NOLOAD)
+                        && pSH[i].VirtualAddress >= pSH->VirtualAddress)
+                    {
+                        pSH->Misc.VirtualSize = RT_MIN(pSH[i].VirtualAddress - pSH->VirtualAddress, pSH->Misc.VirtualSize);
+                        break;
+                    }
+            }
 
-        uRvaPrev = pSH->VirtualAddress + pSH->Misc.VirtualSize;
+            if (pSH->Misc.VirtualSize > 0)
+            {
+                if (pSH->VirtualAddress < uRvaPrev)
+                {
+                    Log(("rtldrPEOpen: %s: Overlaps previous section or sections aren't in ascending order, VirtualAddress=%#x uRvaPrev=%#x - section #%d '%.*s'!!!\n",
+                         pszLogName, pSH->VirtualAddress, uRvaPrev, iSH, sizeof(pSH->Name), pSH->Name));
+                    return VERR_BAD_EXE_FORMAT;
+                }
+                if (pSH->VirtualAddress > cbImage)
+                {
+                    Log(("rtldrPEOpen: %s: VirtualAddress=%#x - beyond image size (%#x) - section #%d '%.*s'!!!\n",
+                         pszLogName, pSH->VirtualAddress, cbImage, iSH, sizeof(pSH->Name), pSH->Name));
+                    return VERR_BAD_EXE_FORMAT;
+                }
+
+                if (pSH->VirtualAddress & (pOptHdr->SectionAlignment - 1)) //ASSUMES power of 2 alignment.
+                {
+                    Log(("rtldrPEOpen: %s: VirtualAddress=%#x misaligned (%#x) - section #%d '%.*s'!!!\n",
+                         pszLogName, pSH->VirtualAddress, pOptHdr->SectionAlignment, iSH, sizeof(pSH->Name), pSH->Name));
+                    return VERR_BAD_EXE_FORMAT;
+                }
+
+#ifdef PE_FILE_OFFSET_EQUALS_RVA
+                /* Our loader code assume rva matches the file offset. */
+                if (    pSH->SizeOfRawData
+                    &&  pSH->PointerToRawData != pSH->VirtualAddress)
+                {
+                    Log(("rtldrPEOpen: %s: ASSUMPTION FAILED: file offset %#x != RVA %#x - section #%d '%.*s'!!!\n",
+                         pszLogName, pSH->PointerToRawData, pSH->VirtualAddress, iSH, sizeof(pSH->Name), pSH->Name));
+                    return VERR_BAD_EXE_FORMAT;
+                }
+#endif
+
+                uRvaPrev = pSH->VirtualAddress + pSH->Misc.VirtualSize;
+            }
+        }
+
+        /* ignore the relocations and linenumbers. */
     }
 
     /*
@@ -3939,8 +3974,8 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
                           offNtHdrs + 4 + sizeof(IMAGE_FILE_HEADER) + FileHdr.SizeOfOptionalHeader);
     if (RT_SUCCESS(rc))
     {
-        rc = rtldrPEValidateSectionHeaders(paSections, FileHdr.NumberOfSections, pszLogName,
-                                           &OptHdr, pReader->pfnSize(pReader), fFlags, fArchNoCodeCheckPending);
+        rc = rtldrPEValidateAndTouchUpSectionHeaders(paSections, FileHdr.NumberOfSections, pszLogName,
+                                                     &OptHdr, pReader->pfnSize(pReader), fFlags, fArchNoCodeCheckPending);
         if (RT_SUCCESS(rc))
         {
             /*
