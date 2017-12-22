@@ -8921,15 +8921,14 @@ HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs,
             return E_INVALIDARG; /* The clientId is invalid then. */
     }
 
-    USHORT portVersion = 0;
-    hrc = aHostDevice->COMGETTER(PortVersion)(&portVersion);
+    USBConnectionSpeed_T enmSpeed;
+    hrc = aHostDevice->COMGETTER(Speed)(&enmSpeed);
     AssertComRCReturnRC(hrc);
-    Assert(portVersion == 1 || portVersion == 2 || portVersion == 3);
 
     int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), 0 /* idDstCpu (saved state, see #6232) */,
                                (PFNRT)i_usbAttachCallback, 10,
                                this, ptrVM.rawUVM(), aHostDevice, uuid.raw(), Backend.c_str(),
-                               Address.c_str(), pvRemoteBackend, portVersion, aMaskedIfs,
+                               Address.c_str(), pvRemoteBackend, enmSpeed, aMaskedIfs,
                                aCaptureFilename.isEmpty() ? NULL : aCaptureFilename.c_str());
     if (RT_SUCCESS(vrc))
     {
@@ -8980,7 +8979,7 @@ HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs,
 //static
 DECLCALLBACK(int)
 Console::i_usbAttachCallback(Console *that, PUVM pUVM, IUSBDevice *aHostDevice, PCRTUUID aUuid, const char *pszBackend,
-                             const char *aAddress, void *pvRemoteBackend, USHORT aPortVersion, ULONG aMaskedIfs,
+                             const char *aAddress, void *pvRemoteBackend, USBConnectionSpeed_T aEnmSpeed, ULONG aMaskedIfs,
                              const char *pszCaptureFilename)
 {
     RT_NOREF(aHostDevice);
@@ -8990,10 +8989,19 @@ Console::i_usbAttachCallback(Console *that, PUVM pUVM, IUSBDevice *aHostDevice, 
     AssertReturn(that && aUuid, VERR_INVALID_PARAMETER);
     AssertReturn(!that->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
 
+    VUSBSPEED enmSpeed = VUSB_SPEED_UNKNOWN;
+    switch (aEnmSpeed)
+    {
+        case USBConnectionSpeed_Low:        enmSpeed = VUSB_SPEED_LOW;          break;
+        case USBConnectionSpeed_Full:       enmSpeed = VUSB_SPEED_FULL;         break;
+        case USBConnectionSpeed_High:       enmSpeed = VUSB_SPEED_HIGH;         break;
+        case USBConnectionSpeed_Super:      enmSpeed = VUSB_SPEED_SUPER;        break;
+        case USBConnectionSpeed_SuperPlus:  enmSpeed = VUSB_SPEED_SUPERPLUS;    break;
+        default:                            AssertFailed();                     break;
+    }
+
     int vrc = PDMR3UsbCreateProxyDevice(pUVM, aUuid, pszBackend, aAddress, pvRemoteBackend,
-                                        aPortVersion == 3 ? VUSB_STDVER_30 :
-                                        aPortVersion == 2 ? VUSB_STDVER_20 : VUSB_STDVER_11,
-                                        aMaskedIfs, pszCaptureFilename);
+                                        enmSpeed, aMaskedIfs, pszCaptureFilename);
     LogFlowFunc(("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();
     return vrc;
