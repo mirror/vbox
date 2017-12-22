@@ -31,6 +31,9 @@ $(set-umask 022)
 
 # Add our own directories to the search paths.
 KBUILD_TOOL_PATHS = $(KBUILD_DEVTOOLS)/kBuildTools/
+# Add our own directories to the search paths.
+KBUILD_UNIT_PATHS = $(KBUILD_DEVTOOLS)/kBuildUnits/
+$(warning KBUILD_UNIT_PATHS=$(KBUILD_UNIT_PATHS))
 
 
 # Modify the build types.
@@ -1957,8 +1960,11 @@ VBOX_RTMANIFEST ?= $(PATH_OBJ)/bldRTManifest/bldRTManifest$(HOSTSUFF_EXE)
 # RTSignTool (certificate extraction tool)
 VBOX_RTSIGNTOOL ?= $(PATH_OBJ)/bldRTSignTool/bldRTSignTool$(HOSTSUFF_EXE)
 
-# RTIsoMaker - our own ISO maker.
+# RTIsoMaker (our own ISO maker).
 VBOX_RTISOMAKER  ?= $(PATH_OBJ)/bldRTIsoMaker/bldRTIsoMaker$(HOSTSUFF_EXE)
+
+# RTLdrCheckImports (checks imports against oldest supported OS version (GAs typically))
+VBOX_RTLDRCHECKIMPORTS ?= $(PATH_OBJ)/bldRTLdrCheckImports/bldRTLdrCheckImports$(HOSTSUFF_EXE)
 
 # VBoxCmp (simple /bin/cmp with more sensible output)
 VBOX_VBOXCMP    ?= $(PATH_OBJ)/VBoxCmp/VBoxCmp$(HOSTSUFF_EXE)
