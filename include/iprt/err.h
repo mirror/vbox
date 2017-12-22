@@ -644,13 +644,25 @@ RTDECL(int)         RTErrInfoLogAndAddV(PRTERRINFO pErrInfo, int rc, uint32_t iL
 
 /** @name Macros wrapping the RTErrInfoLog* functions.
  * @{ */
-#define RTERRINFO_LOG_SET(  a_pErrInfo, a_rc, a_pszMsg)             RTErrInfoLogAndSet( a_pErrInfo, a_rc, LOG_GROUP, 0, a_pszMsg)
-#define RTERRINFO_LOG_SET_V(a_pErrInfo, a_rc, a_pszMsg, a_va)       RTErrInfoLogAndSetV(a_pErrInfo, a_rc, LOG_GROUP, 0, a_pszMsg, a_va)
-#define RTERRINFO_LOG_ADD(  a_pErrInfo, a_rc, a_pszMsg)             RTErrInfoLogAndAdd( a_pErrInfo, a_rc, LOG_GROUP, 0, a_pszMsg)
-#define RTERRINFO_LOG_ADD_V(a_pErrInfo, a_rc, a_pszMsg, a_va)       RTErrInfoLogAndAddV(a_pErrInfo, a_rc, LOG_GROUP, 0, a_pszMsg, a_va)
-#ifdef RT_COMPILER_SUPPORTS_VA_ARGS
-# define RTERRINFO_LOG_ADD_F(a_pErrInfo, a_rc, ...)                 RTErrInfoLogAndAddF(a_pErrInfo, a_rc, LOG_GROUP, 0, __VA_ARGS__)
-# define RTERRINFO_LOG_SET_F(a_pErrInfo, a_rc, ...)                 RTErrInfoLogAndSetF(a_pErrInfo, a_rc, LOG_GROUP, 0, __VA_ARGS__)
+#ifndef LOG_DISABLED
+# define RTERRINFO_LOG_SET(  a_pErrInfo, a_rc, a_pszMsg)            RTErrInfoLogAndSet( a_pErrInfo, a_rc, LOG_GROUP, 0, a_pszMsg)
+# define RTERRINFO_LOG_SET_V(a_pErrInfo, a_rc, a_pszMsg, a_va)      RTErrInfoLogAndSetV(a_pErrInfo, a_rc, LOG_GROUP, 0, a_pszMsg, a_va)
+# define RTERRINFO_LOG_ADD(  a_pErrInfo, a_rc, a_pszMsg)            RTErrInfoLogAndAdd( a_pErrInfo, a_rc, LOG_GROUP, 0, a_pszMsg)
+# define RTERRINFO_LOG_ADD_V(a_pErrInfo, a_rc, a_pszMsg, a_va)      RTErrInfoLogAndAddV(a_pErrInfo, a_rc, LOG_GROUP, 0, a_pszMsg, a_va)
+# ifdef RT_COMPILER_SUPPORTS_VA_ARGS
+#  define RTERRINFO_LOG_ADD_F(a_pErrInfo, a_rc, ...)                RTErrInfoLogAndAddF(a_pErrInfo, a_rc, LOG_GROUP, 0, __VA_ARGS__)
+#  define RTERRINFO_LOG_SET_F(a_pErrInfo, a_rc, ...)                RTErrInfoLogAndSetF(a_pErrInfo, a_rc, LOG_GROUP, 0, __VA_ARGS__)
+# else
+#  define RTERRINFO_LOG_ADD_F                                       RTErrInfoSetF
+#  define RTERRINFO_LOG_SET_F                                       RTErrInfoAddF
+# endif
+#else
+# define RTERRINFO_LOG_SET(  a_pErrInfo, a_rc, a_pszMsg)            RTErrInfoSet( a_pErrInfo, a_rc, a_pszMsg)
+# define RTERRINFO_LOG_SET_V(a_pErrInfo, a_rc, a_pszMsg, a_va)      RTErrInfoSetV(a_pErrInfo, a_rc, a_pszMsg, a_va)
+# define RTERRINFO_LOG_ADD(  a_pErrInfo, a_rc, a_pszMsg)            RTErrInfoAdd( a_pErrInfo, a_rc, a_pszMsg)
+# define RTERRINFO_LOG_ADD_V(a_pErrInfo, a_rc, a_pszMsg, a_va)      RTErrInfoAddV(a_pErrInfo, a_rc, a_pszMsg, a_va)
+# define RTERRINFO_LOG_ADD_F                                        RTErrInfoSetF
+# define RTERRINFO_LOG_SET_F                                        RTErrInfoAddF
 #endif
 
 #define RTERRINFO_LOG_REL_SET(  a_pErrInfo, a_rc, a_pszMsg)         RTErrInfoLogAndSet( a_pErrInfo, a_rc, LOG_GROUP, RTERRINFO_LOG_F_RELEASE, a_pszMsg)
