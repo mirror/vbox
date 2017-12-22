@@ -1477,6 +1477,8 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
 
+    hdaStreamLock(pStream);
+
     uint32_t v = HDA_REG_IND(pThis, iReg);
 
     /* Clear (zero) FIFOE, DESE and BCIS bits when writing 1 to it (6.2.33). */
@@ -1556,10 +1558,17 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
         /* Reset processed data counter. */
         pStream->State.cbTransferProcessed = 0;
+        pStream->State.tsTransferNext      = tsNow + cTicksToNext;
+
+        Assert(pStream->State.cTransferPendingInterrupts);
+        if (pStream->State.cTransferPendingInterrupts)
+            pStream->State.cTransferPendingInterrupts--;
 
         /* Re-arm the timer. */
         hdaTimerSet(pThis, tsNow + cTicksToNext, false /* fForce */);
     }
+
+    hdaStreamUnlock(pStream);
 
     DEVHDA_UNLOCK_BOTH(pThis);
     return VINF_SUCCESS;

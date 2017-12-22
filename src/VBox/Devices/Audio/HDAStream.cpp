@@ -559,6 +559,8 @@ uint32_t hdaStreamGetFree(PHDASTREAM pStream)
 
 /**
  * Returns whether a next transfer for a given stream is scheduled or not.
+ * This takes pending stream interrupts into account as well as the next scheduled
+ * transfer timestamp.
  *
  * @returns True if a next transfer is scheduled, false if not.
  * @param   pStream             HDA stream to retrieve schedule status for.
@@ -571,9 +573,11 @@ bool hdaStreamTransferIsScheduled(PHDASTREAM pStream)
     AssertPtrReturn(pStream->pHDAState, false);
 
     const bool fScheduled =    pStream->State.fRunning
-                            && pStream->State.tsTransferNext > TMTimerGet(pStream->pHDAState->pTimer);
+                            && (   pStream->State.cTransferPendingInterrupts
+                                || pStream->State.tsTransferNext > TMTimerGet(pStream->pHDAState->pTimer));
 
-    Log3Func(("[SD%RU8] %RU64 -> %RTbool\n", pStream->u8SD, pStream->State.tsTransferNext, fScheduled));
+    Log3Func(("[SD%RU8] tsTransferNext=%RU64, cTransferPendingInterrupts=%RU8 -> %RTbool\n",
+              pStream->u8SD, pStream->State.tsTransferNext, fScheduled));
 
     return fScheduled;
 }
@@ -1097,7 +1101,6 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 #else
         hdaProcessInterrupt(pThis, __FUNCTION__);
 #endif
-        pStream->State.cTransferPendingInterrupts--;
     }
     else /* Transfer still in-flight -- schedule the next timing slot. */
     {
