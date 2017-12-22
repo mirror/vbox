@@ -68,6 +68,9 @@ VBoxDisp_LIBS = \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/win32k.lib \
 	$(VBOX_LIB_IPRT_GUEST_R0_NT4) \
 	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
+VBoxDisp_USES.win += vboximportchecker
+VBoxDisp_VBOX_IMPORT_CHECKER.win.x86 = nt4/r0
+VBoxDisp_VBOX_IMPORT_CHECKER.win.amd64 = xp64/r0
 
 # Signing requires both miniport and display drivers
 # so it'd be dealt with in the parent makefile.
