@@ -2346,7 +2346,7 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pV
     /*
      * Guest interrupt shadow.
      */
-    if (pVmcb->ctrl.u64IntShadow & SVM_INTERRUPT_SHADOW_ACTIVE)
+    if (pVmcb->ctrl.u1IntShadow)
         EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
     else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
@@ -3494,7 +3494,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmc
      * For nested-guests: We need to update it too for the scenario where IEM executes
      * the nested-guest but execution later continues here with an interrupt shadow active.
      */
-    pVmcb->ctrl.u64IntShadow = !!fIntShadow;
+    pVmcb->ctrl.u1IntShadow = fIntShadow;
 }
 
 
@@ -3546,7 +3546,8 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("ctrl.IntCtrl.u8VIntrVector        %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VIntrVector));
         Log4(("ctrl.IntCtrl.u24Reserved          %#x\n",      pVmcb->ctrl.IntCtrl.n.u24Reserved));
 
-        Log4(("ctrl.u64IntShadow                 %#RX64\n",   pVmcb->ctrl.u64IntShadow));
+        Log4(("ctrl.u1IntShadow                  %#x\n",      pVmcb->ctrl.u1IntShadow));
+        Log4(("ctrl.u1GuestIntMask               %#x\n",      pVmcb->ctrl.u1GuestIntMask));
         Log4(("ctrl.u64ExitCode                  %#RX64\n",   pVmcb->ctrl.u64ExitCode));
         Log4(("ctrl.u64ExitInfo1                 %#RX64\n",   pVmcb->ctrl.u64ExitInfo1));
         Log4(("ctrl.u64ExitInfo2                 %#RX64\n",   pVmcb->ctrl.u64ExitInfo2));
@@ -3568,8 +3569,8 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
 
         Log4(("ctrl.u64NestedPagingCR3           %#RX64\n",   pVmcb->ctrl.u64NestedPagingCR3));
 
-        Log4(("ctrl.u1Lbrvirt                    %RTbool\n",  pVmcb->ctrl.u1LbrVirt));
-        Log4(("ctrl.u1VirtVmsaveVmload           %RTbool\n",  pVmcb->ctrl.u1VirtVmsaveVmload));
+        Log4(("ctrl.u1Lbrvirt                    %#x\n",      pVmcb->ctrl.u1LbrVirt));
+        Log4(("ctrl.u1VirtVmsaveVmload           %#x\n",      pVmcb->ctrl.u1VirtVmsaveVmload));
 
         Log4(("guest.CS.u16Sel                   %RTsel\n",   pVmcb->guest.CS.u16Sel));
         Log4(("guest.CS.u16Attr                  %#x\n",      pVmcb->guest.CS.u16Attr));
