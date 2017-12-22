@@ -112,6 +112,7 @@ static int vdReadHelper(PVDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead)
         {
             Assert(cbRead < 512);
             Assert(!(off % 512));
+            Assert(cbMisalign > 0);
 
             rc = VDRead(pDisk, off, abBuf, 512);
             if (RT_SUCCESS(rc))
@@ -184,8 +185,9 @@ static int vdWriteHelper(PVDISK pDisk, uint64_t off, const void *pvBuf, size_t c
 
         /* Unaligned buffered read+write of tail. */
         if (   RT_SUCCESS(rc)
-            && cbMisalign)
+            && cbWrite > 0)
         {
+            Assert(cbMisalign > 0);
             Assert(cbWrite < 512);
             Assert(!(off % 512));
 
