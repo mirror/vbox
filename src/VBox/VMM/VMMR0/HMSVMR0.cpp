@@ -1585,15 +1585,13 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
      * trap flag in the guest EFLAGS since AMD-V doesn't have a trap flag on
      * the VMM level like the VT-x implementations does.
      */
-    bool const fStepping = pVCpu->hm.s.fSingleInstruction;
+    bool const fStepping = pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu);
     if (fStepping)
     {
         pVCpu->hm.s.fClearTrapFlag = true;
         pVmcb->guest.u64RFlags |= X86_EFL_TF;
         fInterceptMovDRx = true; /* Need clean DR6, no guest mess. */
     }
-    else
-        Assert(!DBGFIsStepping(pVCpu));
 
     if (   fStepping
         || (CPUMGetHyperDR7(pVCpu) & X86_DR7_ENABLED_MASK))
