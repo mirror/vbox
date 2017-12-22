@@ -887,6 +887,8 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
             if (cbDMAToWrite)
             {
+                LogRel2(("HDA: FIFO underflow for stream #%RU8 (%RU32 bytes outstanding)\n", pStream->u8SD, cbDMAToWrite));
+
                 Assert(cbChunk == cbDMAWritten + cbDMAToWrite);
                 memset((uint8_t *)abChunk + cbDMAWritten, 0, cbDMAToWrite);
                 cbDMAWritten = cbChunk;
@@ -910,6 +912,9 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
                 if (cbDMALeft > RTCircBufFree(pCircBuf))
                 {
+                    LogRel2(("HDA: FIFO overflow for stream #%RU8 (%RU32 bytes outstanding)\n",
+                             pStream->u8SD, cbDMALeft - RTCircBufFree(pCircBuf)));
+
                     /* Try to read as much as possible. */
                     cbDMALeft = (uint32_t)RTCircBufFree(pCircBuf);
 
