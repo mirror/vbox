@@ -1237,21 +1237,14 @@ static int rtldrPEEnumSymbolsSlow(PRTLDRMODPE pThis, unsigned fFlags, RTUINTPTR 
                 /*
                  * Get address.
                  */
-                uintptr_t   uRVAExport = paAddress[uOrdinal];
+                uint32_t  uRVAExport = paAddress[uOrdinal];
                 RTUINTPTR Value;
-                if (  uRVAExport - (uintptr_t)pThis->ExportDir.VirtualAddress
-                    < pThis->ExportDir.Size)
-                {
-                    if (!(fFlags & RTLDR_ENUM_SYMBOL_FLAGS_NO_FWD))
-                    {
-                        /* Resolve forwarder. */
-                        AssertMsgFailed(("Forwarders are not supported!\n"));
-                    }
+                if (uRVAExport - pThis->ExportDir.VirtualAddress >= pThis->ExportDir.Size)
+                    Value = PE_RVA2TYPE(BaseAddress, uRVAExport, RTUINTPTR);
+                else if (!(fFlags & RTLDR_ENUM_SYMBOL_FLAGS_NO_FWD))
+                    Value = RTLDR_ENUM_SYMBOL_FWD_ADDRESS;
+                else
                     continue;
-                }
-
-                /* Get plain export address */
-                Value = PE_RVA2TYPE(BaseAddress, uRVAExport, RTUINTPTR);
 
                 /* Read in the name if found one. */
                 char szAltName[32];
@@ -1335,8 +1328,8 @@ static DECLCALLBACK(int) rtldrPEEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFl
     uint32_t   *paAddress  = PE_RVA2TYPE(pvBits, pExpDir->AddressOfFunctions, uint32_t *);
     uint32_t   *paRVANames = PE_RVA2TYPE(pvBits, pExpDir->AddressOfNames, uint32_t *);
     uint16_t   *paOrdinals = PE_RVA2TYPE(pvBits, pExpDir->AddressOfNameOrdinals, uint16_t *);
-    uint32_t    uNamePrev = 0;
-    unsigned    cOrdinals = RT_MAX(pExpDir->NumberOfNames, pExpDir->NumberOfFunctions);
+    uint32_t    uNamePrev  = 0;
+    unsigned    cOrdinals  = RT_MAX(pExpDir->NumberOfNames, pExpDir->NumberOfFunctions);
     for (unsigned uOrdinal = 0; uOrdinal < cOrdinals; uOrdinal++)
     {
         if (paAddress[uOrdinal] /* needed? */)
@@ -1375,21 +1368,14 @@ static DECLCALLBACK(int) rtldrPEEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFl
             /*
              * Get address.
              */
-            uintptr_t   uRVAExport = paAddress[uOrdinal];
+            uint32_t  uRVAExport = paAddress[uOrdinal];
             RTUINTPTR Value;
-            if (  uRVAExport - (uintptr_t)pModPe->ExportDir.VirtualAddress
-                < pModPe->ExportDir.Size)
-            {
-                if (!(fFlags & RTLDR_ENUM_SYMBOL_FLAGS_NO_FWD))
-                {
-                    /* Resolve forwarder. */
-                    AssertMsgFailed(("Forwarders are not supported!\n"));
-                }
+            if (uRVAExport - pModPe->ExportDir.VirtualAddress >= pModPe->ExportDir.Size)
+                Value = PE_RVA2TYPE(BaseAddress, uRVAExport, RTUINTPTR);
+            else if (!(fFlags & RTLDR_ENUM_SYMBOL_FLAGS_NO_FWD))
+                Value = RTLDR_ENUM_SYMBOL_FWD_ADDRESS;
+            else
                 continue;
-            }
-
-            /* Get plain export address */
-            Value = PE_RVA2TYPE(BaseAddress, uRVAExport, RTUINTPTR);
 
             /*
              * Call back.
