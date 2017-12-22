@@ -2303,7 +2303,7 @@ DECLINLINE(void) cpumR3InfoSvmVmcbSelReg(PCDBGFINFOHLP pHlp, PCSVMSELREG pSel, c
  * Helper for dumping the SVM VMCB GDTR/IDTR registers.
  *
  * @param   pHlp        The info helper functions.
- * @param   pSel        Pointer to the descriptor table register.
+ * @param   pXdtr       Pointer to the descriptor table register.
  * @param   pszName     Name of the descriptor table register.
  * @param   pszPrefix   Caller specified string prefix.
  */
