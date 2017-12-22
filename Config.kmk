@@ -31,10 +31,7 @@ $(set-umask 022)
 
 # Add our own directories to the search paths.
 KBUILD_TOOL_PATHS = $(KBUILD_DEVTOOLS)/kBuildTools/
-# Add our own directories to the search paths.
 KBUILD_UNIT_PATHS = $(KBUILD_DEVTOOLS)/kBuildUnits/
-$(warning KBUILD_UNIT_PATHS=$(KBUILD_UNIT_PATHS))
-
 
 # Modify the build types.
 KBUILD_BLD_TYPES = release profile debug kprofile
