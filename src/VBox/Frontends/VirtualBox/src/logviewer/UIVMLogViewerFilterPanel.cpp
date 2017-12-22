@@ -55,38 +55,42 @@ void UIVMLogViewerFilterPanel::applyFilter(const int iCurrentIndex /* = 0 */)
     QPlainTextEdit *pCurrentPage = m_pViewer->currentLogPage();
     AssertReturnVoid(pCurrentPage);
     QString strInputText = m_pViewer->currentLog();
-    if (!strInputText.isNull())
+    if (strInputText.isNull())
+        return;
+
+    /* Prepare filter-data: */
+    QString strFilteredText;
+    const QRegExp rxFilterExp(m_strFilterText, Qt::CaseInsensitive);
+
+    /* If filter regular-expression is not empty and valid, filter the log: */
+    if (!rxFilterExp.isEmpty() && rxFilterExp.isValid())
     {
-        /* Prepare filter-data: */
-        QString strFilteredText;
-        const QRegExp rxFilterExp(m_strFilterText, Qt::CaseInsensitive);
-
-        /* If filter regular-expression is not empty and valid, filter the log: */
-        if (!rxFilterExp.isEmpty() && rxFilterExp.isValid())
+        while (!strInputText.isEmpty())
         {
-            while (!strInputText.isEmpty())
+            /* Read each line and check if it matches regular-expression: */
+            const int index = strInputText.indexOf('\n');
+            if (index > 0)
             {
-                /* Read each line and check if it matches regular-expression: */
-                const int index = strInputText.indexOf('\n');
-                if (index > 0)
-                {
-                    QString strLine = strInputText.left(index + 1);
-                    if (strLine.contains(rxFilterExp))
-                        strFilteredText.append(strLine);
-                }
-                strInputText.remove(0, index + 1);
+                QString strLine = strInputText.left(index + 1);
+                if (strLine.contains(rxFilterExp))
+                    strFilteredText.append(strLine);
             }
-            pCurrentPage->setPlainText(strFilteredText);
+            strInputText.remove(0, index + 1);
         }
-        /* Restore entire log when filter regular expression is empty or not valid: */
-        else
-            pCurrentPage->setPlainText(strInputText);
-
-        /* Move the cursor position to end: */
-        QTextCursor cursor = pCurrentPage->textCursor();
-        cursor.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
-        pCurrentPage->setTextCursor(cursor);
+        QTextDocument *document = pCurrentPage->document();
+        if(document)
+            document->setPlainText(strFilteredText);
     }
+    /* Restore entire log when filter regular expression is empty or not valid: */
+    else
+        pCurrentPage->setPlainText(strInputText);
+
+    /* Move the cursor position to end: */
+    QTextCursor cursor = pCurrentPage->textCursor();
+    cursor.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
+    pCurrentPage->setTextCursor(cursor);
+
+    emit sigFilterApplied();
 }
 
 void UIVMLogViewerFilterPanel::filter(const QString &strSearchString)
@@ -160,9 +164,8 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
 void UIVMLogViewerFilterPanel::prepareConnections()
 {
     /* Prepare connections: */
-    connect(m_pCloseButton, SIGNAL(clicked()), this, SLOT(hide()));
-    connect(m_pFilterComboBox, SIGNAL(editTextChanged(const QString &)),
-            this, SLOT(filter(const QString &)));
+    connect(m_pCloseButton, &UIMiniCancelButton::clicked, this, &UIVMLogViewerFilterPanel::hide);
+    connect(m_pFilterComboBox, &QComboBox::editTextChanged, this, &UIVMLogViewerFilterPanel::filter);
 }
 
 void UIVMLogViewerFilterPanel::retranslateUi()

@@ -92,6 +92,8 @@ private slots:
     /** Handles the tab change of the logviewer. */
     void sltTabIndexChange(int tabIndex);
 
+    void sltFilterApplied();
+
 private:
 
     /** @name Prepare/Cleanup

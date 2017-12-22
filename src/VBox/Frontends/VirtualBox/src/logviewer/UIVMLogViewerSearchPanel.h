@@ -42,6 +42,7 @@ class UIVMLogViewerSearchPanel : public QIWithRetranslateUI<QWidget>
     Q_OBJECT;
 
 signals:
+
     void sigHighlightingUpdated();
 
 public:
@@ -69,6 +70,7 @@ private slots:
     void sltHighlightAllCheckBox();
 
 private:
+
     enum SearchDirection { ForwardSearch, BackwardSearch };
     /** Prepares search-panel. */
     void prepare();
@@ -140,4 +142,3 @@ private:
 
 
 #endif /* !___UIVMLogViewerSearchPanel_h___ */
-

@@ -173,7 +173,7 @@ void UIVMLogViewerWidget::sltFind()
 void UIVMLogViewerWidget::sltRefresh()
 {
     /* Disconnect this connection to avoid initial signals during page creation/deletion: */
-    disconnect(m_pViewerContainer, SIGNAL(currentChanged(int)), m_pFilterPanel, SLOT(applyFilter(int)));
+    disconnect(m_pViewerContainer, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
     disconnect(m_pViewerContainer, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
 
     /* Clearing old data if any: */
@@ -227,7 +227,7 @@ void UIVMLogViewerWidget::sltRefresh()
     m_pFilterPanel->applyFilter();
 
     /* Setup this connection after refresh to avoid initial signals during page creation: */
-    connect(m_pViewerContainer, SIGNAL(currentChanged(int)), m_pFilterPanel, SLOT(applyFilter(int)));
+    connect(m_pViewerContainer, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
     connect(m_pViewerContainer, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
 
     m_iCurrentTabIndex = 0;
@@ -303,6 +303,14 @@ void UIVMLogViewerWidget::sltTabIndexChange(int tabIndex)
     m_iCurrentTabIndex = tabIndex;
 }
 
+void UIVMLogViewerWidget::
+sltFilterApplied()
+{
+    /* Reapply the search to get highlighting etc. correctly */
+    if (m_pSearchPanel && m_pSearchPanel->isVisible())
+        m_pSearchPanel->refresh();
+}
+
 void UIVMLogViewerWidget::setMachine(const CMachine &machine)
 {
     if (machine == m_comMachine)
@@ -371,6 +379,8 @@ void UIVMLogViewerWidget::prepareWidgets()
         m_pFilterPanel->hide();
         /* Add VM Log-Viewer filter-panel to main-layout: */
         m_pMainLayout->insertWidget(3, m_pFilterPanel);
+        connect(m_pFilterPanel, &UIVMLogViewerFilterPanel::sigFilterApplied,
+                this, &UIVMLogViewerWidget::sltFilterApplied);
     }
 }
 
