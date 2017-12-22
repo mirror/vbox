@@ -58,6 +58,8 @@ typedef struct RTCHECKIMPORTSOPTS
     char      **papszPaths;
     /** The loader architecture. */
     RTLDRARCH   enmLdrArch;
+    /** Verbosity level. */
+    unsigned    cVerbosity;
 } RTCHECKIMPORTSOPTS;
 /** Pointer to the checker options. */
 typedef RTCHECKIMPORTSOPTS *PRTCHECKIMPORTSOPTS;
@@ -249,7 +251,8 @@ static int LoadImportModule(PCRTCHECKIMPORTSOPTS pOpts, PRTCHECKIMPORTMODULE pMo
                     if (RT_SUCCESS(rc))
                     {
                         pModule->hLdrMod = hLdrMod;
-                        RTMsgInfo("Import '%s' -> '%s'\n", pModule->szModule, szPath);
+                        if (pOpts->cVerbosity > 0)
+                            RTMsgInfo("Import '%s' -> '%s'\n", pModule->szModule, szPath);
                     }
                     else if (RTErrInfoIsSet(pErrInfo))
                         RTMsgError("%s: Failed opening import image '%s': %Rrc - %s", pszImage, szPath, rc, pErrInfo->pszMsg);
@@ -352,7 +355,9 @@ static int LoadImportModule(PCRTCHECKIMPORTSOPTS pOpts, PRTCHECKIMPORTMODULE pMo
                                         iLine++;
                                     }
 
-                                    RTMsgInfo("Import '%s' -> '%s' (%u exports)\n", pModule->szModule, szPath, pModule->cExports);
+                                    if (pOpts->cVerbosity > 0)
+                                        RTMsgInfo("Import '%s' -> '%s' (%u exports)\n",
+                                                  pModule->szModule, szPath, pModule->cExports);
                                 }
                                 else
                                     RTMsgError("%s: %s: Invalid UTF-8 encoding in export file: %Rrc", pszImage, szPath, rc);
@@ -391,6 +396,9 @@ static int LoadImportModule(PCRTCHECKIMPORTSOPTS pOpts, PRTCHECKIMPORTMODULE pMo
  */
 static int rtCheckImportsForImage(PCRTCHECKIMPORTSOPTS pOpts, const char *pszImage)
 {
+    if (pOpts->cVerbosity > 0)
+        RTMsgInfo("Checking '%s'...\n", pszImage);
+
     /*
      * Open the image.
      */
@@ -591,11 +599,14 @@ int main(int argc, char **argv)
     Opts.cPaths     = 0;
     Opts.papszPaths = NULL;
     Opts.enmLdrArch = RTLDRARCH_WHATEVER;
+    Opts.cVerbosity = 1;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--path", 'p', RTGETOPT_REQ_STRING },
         { "--export", 'e', RTGETOPT_REQ_STRING },
+        { "--quiet", 'q', RTGETOPT_REQ_NOTHING },
+        { "--verbose", 'v', RTGETOPT_REQ_NOTHING },
     };
     RTGETOPTSTATE State;
     rc = RTGetOptInit(&State, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
@@ -625,6 +636,14 @@ int main(int argc, char **argv)
                     rcExit = RTEXITCODE_FAILURE;
                 break;
 
+            case 'q':
+                Opts.cVerbosity = 0;
+                break;
+
+            case 'v':
+                Opts.cVerbosity = 0;
+                break;
+
             case VINF_GETOPT_NOT_OPTION:
                 rc = rtCheckImportsForImage(&Opts, ValueUnion.psz);
                 if (RT_FAILURE(rc))
@@ -632,8 +651,10 @@ int main(int argc, char **argv)
                 break;
 
             case 'h':
-                RTPrintf("Usage: RTCheckImports [-p|--path <dir>] [-h|--help] [-V|--version] <image [..]>\n"
+                RTPrintf("Usage: RTCheckImports [-p|--path <dir>] [-v|--verbose] [-q|--quiet] <image [..]>\n"
                          "   or: RTCheckImports -e <image>\n"
+                         "   or: RTCheckImports <-h|--help>\n"
+                         "   or: RTCheckImports <-V|--version>\n"
                          "Checks library imports. VFS chain syntax supported.\n"
                          "\n"
                          "Options:\n"
@@ -641,6 +662,10 @@ int main(int argc, char **argv)
                          "    Search the specified directory for imported modules or their export lists.\n"
                          "  -e, --export <image>\n"
                          "    Write export list for the file to stdout.  (Redirect to a .export file.)\n"
+                         "  -q, --quiet\n"
+                         "    Quiet execution.\n"
+                         "  -v, --verbose\n"
+                         "    Increases verbosity.\n"
                          ""
                          );
                 return RTEXITCODE_SUCCESS;
