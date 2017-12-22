@@ -3152,7 +3152,7 @@ static int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, uint32_t fFlag
         default:
             Log(("rtldrPEOpen: %s: Unsupported Machine=%#x\n", pszLogName, pFileHdr->Machine));
             *penmArch = RTLDRARCH_INVALID;
-            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "Unsupported Machine=%#x", pszLogName, pFileHdr->Machine);
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "Unsupported Machine=%#x", pFileHdr->Machine);
     }
     if (pFileHdr->SizeOfOptionalHeader != cbOptionalHeader)
     {
