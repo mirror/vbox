@@ -577,7 +577,7 @@ bool hdaStreamTransferIsScheduled(PHDASTREAM pStream)
                                 || pStream->State.tsTransferNext > TMTimerGet(pStream->pHDAState->pTimer));
 
     Log3Func(("[SD%RU8] tsTransferNext=%RU64, cTransferPendingInterrupts=%RU8 -> %RTbool\n",
-              pStream->u8SD, pStream->State.tsTransferNext, fScheduled));
+              pStream->u8SD, pStream->State.tsTransferNext, pStream->State.cTransferPendingInterrupts, fScheduled));
 
     return fScheduled;
 }
