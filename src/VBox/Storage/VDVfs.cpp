@@ -62,47 +62,51 @@ typedef VDVFSFILE *PVDVFSFILE;
  */
 static int vdReadHelper(PVDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
 
-    /* Take shortcut if possible. */
-    if (   off % 512 == 0
-        && cbRead % 512 == 0)
+    /* Take direct route if the request is sector aligned. */
+    uint64_t const offMisalign = off & 511;
+    size_t   const cbMisalign  = (off + cbRead) & 511;
+    if (   !offMisalign
+        && !cbMisalign)
         rc = VDRead(pDisk, off, pvBuf, cbRead);
     else
     {
         uint8_t *pbBuf = (uint8_t *)pvBuf;
         uint8_t abBuf[512];
+        rc = VINF_SUCCESS; /* Make compilers happy. */
 
-        /* Unaligned access, make it aligned. */
-        if (off % 512 != 0)
+        /* Unaligned buffered read of head.  Aligns the offset. */
+        if (offMisalign)
         {
-            uint64_t offAligned = off & ~(uint64_t)(512 - 1);
-            size_t cbToCopy = 512 - (off - offAligned);
-            rc = VDRead(pDisk, offAligned, abBuf, 512);
+            rc = VDRead(pDisk, off - offMisalign, abBuf, 512);
             if (RT_SUCCESS(rc))
             {
-                memcpy(pbBuf, &abBuf[off - offAligned], cbToCopy);
-                pbBuf  += cbToCopy;
-                off    += cbToCopy;
-                cbRead -= cbToCopy;
+                size_t const cbPart = RT_MIN(512 - offMisalign, cbRead);
+                memcpy(pbBuf, &abBuf[offMisalign], cbPart);
+                pbBuf  += cbPart;
+                off    += cbPart;
+                cbRead -= cbPart;
             }
         }
 
+        /* Aligned direct read. */
         if (   RT_SUCCESS(rc)
-            && (cbRead & ~(uint64_t)(512 - 1)))
+            && cbRead >= 512)
         {
-            size_t cbReadAligned = cbRead & ~(uint64_t)(512 - 1);
-
             Assert(!(off % 512));
-            rc = VDRead(pDisk, off, pbBuf, cbReadAligned);
+
+            size_t cbPart = cbRead - cbMisalign;
+            rc = VDRead(pDisk, off, pbBuf, cbPart);
             if (RT_SUCCESS(rc))
             {
-                pbBuf  += cbReadAligned;
-                off    += cbReadAligned;
-                cbRead -= cbReadAligned;
+                pbBuf  += cbPart;
+                off    += cbPart;
+                cbRead -= cbPart;
             }
         }
 
+        /* Unaligned buffered read of tail. */
         if (   RT_SUCCESS(rc)
             && cbRead)
         {
@@ -130,51 +134,57 @@ static int vdReadHelper(PVDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead)
  */
 static int vdWriteHelper(PVDISK pDisk, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
 
-    /* Take shortcut if possible. */
-    if (   off % 512 == 0
-        && cbWrite % 512 == 0)
+    /* Take direct route if the request is sector aligned. */
+    uint64_t const offMisalign = off & 511;
+    size_t   const cbMisalign  = (off + cbWrite) & 511;
+    if (   !offMisalign
+        && !cbMisalign)
         rc = VDWrite(pDisk, off, pvBuf, cbWrite);
     else
     {
         uint8_t *pbBuf = (uint8_t *)pvBuf;
         uint8_t abBuf[512];
+        rc = VINF_SUCCESS; /* Make compilers happy. */
 
-        /* Unaligned access, make it aligned. */
-        if (off % 512 != 0)
+        /* Unaligned buffered read+write of head.  Aligns the offset. */
+        if (offMisalign)
         {
-            uint64_t offAligned = off & ~(uint64_t)(512 - 1);
-            size_t cbToCopy = 512 - (off - offAligned);
-            rc = VDRead(pDisk, offAligned, abBuf, 512);
+            rc = VDRead(pDisk, off - offMisalign, abBuf, 512);
             if (RT_SUCCESS(rc))
             {
-                memcpy(&abBuf[off - offAligned], pbBuf, cbToCopy);
-                rc = VDWrite(pDisk, offAligned, abBuf, 512);
-
-                pbBuf   += cbToCopy;
-                off     += cbToCopy;
-                cbWrite -= cbToCopy;
+                size_t const cbPart = RT_MIN(512 - offMisalign, cbWrite);
+                memcpy(&abBuf[offMisalign], pbBuf, cbPart);
+                rc = VDWrite(pDisk, off - offMisalign, abBuf, 512);
+                if (RT_SUCCESS(rc))
+                {
+                    pbBuf   += cbPart;
+                    off     += cbPart;
+                    cbWrite -= cbPart;
+                }
             }
         }
 
+        /* Aligned direct write. */
         if (   RT_SUCCESS(rc)
-            && (cbWrite & ~(uint64_t)(512 - 1)))
+            && cbWrite >= 512)
         {
-            size_t cbWriteAligned = cbWrite & ~(uint64_t)(512 - 1);
-
             Assert(!(off % 512));
-            rc = VDWrite(pDisk, off, pbBuf, cbWriteAligned);
+
+            size_t cbPart = cbWrite - cbMisalign;
+            rc = VDWrite(pDisk, off, pbBuf, cbPart);
             if (RT_SUCCESS(rc))
             {
-                pbBuf   += cbWriteAligned;
-                off     += cbWriteAligned;
-                cbWrite -= cbWriteAligned;
+                pbBuf   += cbPart;
+                off     += cbPart;
+                cbWrite -= cbPart;
             }
         }
 
+        /* Unaligned buffered read+write of tail. */
         if (   RT_SUCCESS(rc)
-            && cbWrite)
+            && cbMisalign)
         {
             Assert(cbWrite < 512);
             Assert(!(off % 512));
