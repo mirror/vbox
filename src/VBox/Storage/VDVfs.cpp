@@ -97,6 +97,7 @@ static int vdReadHelper(PVDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead)
             Assert(!(off % 512));
 
             size_t cbPart = cbRead - cbMisalign;
+            Assert(!(cbPart % 512));
             rc = VDRead(pDisk, off, pbBuf, cbPart);
             if (RT_SUCCESS(rc))
             {
@@ -110,9 +111,9 @@ static int vdReadHelper(PVDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead)
         if (   RT_SUCCESS(rc)
             && cbRead)
         {
+            Assert(cbWrite == cbMisalign);
             Assert(cbRead < 512);
             Assert(!(off % 512));
-            Assert(cbMisalign > 0);
 
             rc = VDRead(pDisk, off, abBuf, 512);
             if (RT_SUCCESS(rc))
@@ -174,6 +175,7 @@ static int vdWriteHelper(PVDISK pDisk, uint64_t off, const void *pvBuf, size_t c
             Assert(!(off % 512));
 
             size_t cbPart = cbWrite - cbMisalign;
+            Assert(!(cbPart % 512));
             rc = VDWrite(pDisk, off, pbBuf, cbPart);
             if (RT_SUCCESS(rc))
             {
@@ -187,7 +189,7 @@ static int vdWriteHelper(PVDISK pDisk, uint64_t off, const void *pvBuf, size_t c
         if (   RT_SUCCESS(rc)
             && cbWrite > 0)
         {
-            Assert(cbMisalign > 0);
+            Assert(cbWrite == cbMisalign);
             Assert(cbWrite < 512);
             Assert(!(off % 512));
 
