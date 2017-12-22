@@ -152,8 +152,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
         {
+            pVmcbCtrl->u1IntShadow = 1;
             LogFlow(("iemSvmVmexit: Interrupt shadow till %#RX64\n", pCtx->rip));
-            pVmcbCtrl->u64IntShadow |= SVM_INTERRUPT_SHADOW_ACTIVE;
         }
 
         /*
@@ -526,7 +526,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         /*
          * Interrupt shadow.
          */
-        if (pVmcbCtrl->u64IntShadow & SVM_INTERRUPT_SHADOW_ACTIVE)
+        if (pVmcbCtrl->u1IntShadow)
         {
             LogFlow(("iemSvmVmrun: setting interrupt shadow. inhibit PC=%#RX64\n", pVmcbNstGst->u64RIP));
             /** @todo will this cause trouble if the nested-guest is 64-bit but the guest is 32-bit? */
