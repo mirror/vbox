@@ -1,0 +1,41 @@
+# $Id$
+## @file
+# VBox import checker unit.
+#
+
+#
+# Copyright (C) 2017 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+UNIT_vboximportchecker = bldRTLdrCheckImports
+
+# Add our property.
+PROPS_SINGLE_LNK      += VBOX_IMPORT_CHECKER
+PROPS_PROGRAMS_SINGLE += VBOX_IMPORT_CHECKER
+PROPS_DLLS_SINGLE     += VBOX_IMPORT_CHECKER
+PROPS_SYSMODS_SINGLE  += VBOX_IMPORT_CHECKER
+
+# Helper for expanding certain variables while assigning.
+define def_unit_vboximportchecker_internal_expand_twice
+$(target)_POST_CMDS += $$(NLTAB)$$(VBOX_RTLDRCHECKIMPORTS) -q -p "$$(KBUILD_DEVTOOLS)/$(bld_trg).$(bld_trg_arch)/exports/$$($(target)_2_VBOX_IMPORT_CHECKER)" $$(out)
+endef
+
+define def_unit_vboximportchecker_target_pre
+
+# Set pass 2 variable (simpler) and act on it.
+$(target)_2_VBOX_IMPORT_CHECKER := $(evalcall def_fn_prop_get_first_defined,VBOX_IMPORT_CHECKER)
+ifdef $(target)_2_VBOX_IMPORT_CHECKER
+ $(target)_LNK_ORDERDEPS += $(VBOX_RTLDRCHECKIMPORTS)
+ $(eval $(def_unit_vboximportchecker_internal_expand_twice))
+endif
+
+endef
+
