@@ -111,7 +111,7 @@ static int vdReadHelper(PVDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead)
         if (   RT_SUCCESS(rc)
             && cbRead)
         {
-            Assert(cbWrite == cbMisalign);
+            Assert(cbRead == cbMisalign);
             Assert(cbRead < 512);
             Assert(!(off % 512));
 
