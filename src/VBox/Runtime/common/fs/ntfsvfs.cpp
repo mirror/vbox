@@ -1522,6 +1522,7 @@ static int rtFsNtfsAttr_Read(PRTFSNTFSATTR pAttr, uint64_t off, void *pvBuf, siz
                     cbToRead -= cbThisRead;
                     if (!cbToRead)
                         break;
+                    off = 0;
 
                     /*
                      * Advance to the next extent.
