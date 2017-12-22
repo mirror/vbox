@@ -47,6 +47,9 @@ VBoxControl_SOURCES = \
 VBoxControl_SOURCES.win = \
 	VBoxControl.rc
 VBoxControl_LDFLAGS.darwin = -framework IOKit
+VBoxControl_USES.win += vboximportchecker
+VBoxControl_VBOX_IMPORT_CHECKER.win.x86 = nt350
+VBoxControl_VBOX_IMPORT_CHECKER.win.amd64 = xp64
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

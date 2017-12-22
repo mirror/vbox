@@ -92,6 +92,9 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
     	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/ntoskrnl.lib \
     	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/hal.lib
    endif
+   VBoxGuest_USES.win += vboximportchecker
+   VBoxGuest_VBOX_IMPORT_CHECKER.win.x86 = nt4/r0
+   VBoxGuest_VBOX_IMPORT_CHECKER.win.amd64 = xp64/r0
   endif # win
   ifn1of ($(KBUILD_TARGET), linux freebsd netbsd solaris haiku)
    VBoxGuest_SOURCES    = VBoxGuest-$(KBUILD_TARGET).cpp
@@ -180,6 +183,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
   	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
   	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib \
   	$(VBOX_LIB_VBGL_R0BASE)
+  ##@todo VBoxGuestNT3_VBOX_IMPORT_CHECKER.win.x86 = nt31/r0
  endif # win
 endif # enabled
 
