@@ -437,6 +437,7 @@ RuntimeR3_SOURCES       = \
 	common/ldr/ldrELF.cpp \
 	common/ldr/ldrEx.cpp \
 	common/ldr/ldrFile.cpp \
+	common/ldr/ldrVfsFile.cpp \
 	common/ldr/ldrMemory.cpp \
 	common/ldr/ldrNative.cpp \
 	common/ldr/ldrPE.cpp \

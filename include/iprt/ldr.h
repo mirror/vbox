@@ -410,6 +410,37 @@ RTDECL(int) RTLdrOpenEx(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmA
 RTDECL(int) RTLdrOpenkLdr(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod);
 
 /**
+ * Open a binary image file allowing VFS chains in the filename.
+ *
+ * @returns iprt status code.
+ * @param   pszFilename Image filename, VFS chain specifiers allowed.
+ * @param   fFlags      Valid RTLDR_O_XXX combination.
+ * @param   enmArch     CPU architecture specifier for the image to be loaded.
+ * @param   phLdrMod    Where to store the handle to the loader module.
+ * @param   poffError   Where to return the offset into @a pszFilename of an VFS
+ *                      chain element causing trouble.  Optional.
+ * @param   pErrInfo    Where to return extended error information.  Optional.
+ */
+RTDECL(int) RTLdrOpenVfsChain(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch,
+                              PRTLDRMOD phLdrMod, uint32_t *poffError, PRTERRINFO pErrInfo);
+
+/**
+ * Open a binary image file using kLdr allowing VFS chains in the filename.
+ *
+ * @returns iprt status code.
+ * @param   pszFilename Image filename.
+ * @param   fFlags      Reserved, MBZ.
+ * @param   enmArch     CPU architecture specifier for the image to be loaded.
+ * @param   phLdrMod    Where to store the handle to the loaded module.
+ * @param   poffError   Where to return the offset into @a pszFilename of an VFS
+ *                      chain element causing trouble.  Optional.
+ * @param   pErrInfo    Where to return extended error information.  Optional.
+ * @remark  Primarily for testing the loader.
+ */
+RTDECL(int) RTLdrOpenVfsChainkLdr(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch,
+                                  PRTLDRMOD phLdrMod, uint32_t *poffError, PRTERRINFO pErrInfo);
+
+/**
  * Open part with reader.
  *
  * @returns iprt status code.
