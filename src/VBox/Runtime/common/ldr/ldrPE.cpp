@@ -3130,8 +3130,10 @@ static const char *rtldrPEGetArchName(uint16_t uMachine)
  * @param   fFlags      Valid RTLDR_O_XXX combination.
  * @param   pszLogName  The log name to  prefix the errors with.
  * @param   penmArch    Where to store the CPU architecture.
+ * @param   pErrInfo    Where to return additional error information.
  */
-static int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, uint32_t fFlags, const char *pszLogName, PRTLDRARCH penmArch)
+static int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, uint32_t fFlags, const char *pszLogName,
+                                     PRTLDRARCH penmArch, PRTERRINFO pErrInfo)
 {
     RT_NOREF_PV(pszLogName);
 
@@ -3148,35 +3150,34 @@ static int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, uint32_t fFlag
             break;
 
         default:
-            Log(("rtldrPEOpen: %s: Unsupported Machine=%#x\n",
-                 pszLogName, pFileHdr->Machine));
+            Log(("rtldrPEOpen: %s: Unsupported Machine=%#x\n", pszLogName, pFileHdr->Machine));
             *penmArch = RTLDRARCH_INVALID;
-            return VERR_BAD_EXE_FORMAT;
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "Unsupported Machine=%#x", pszLogName, pFileHdr->Machine);
     }
     if (pFileHdr->SizeOfOptionalHeader != cbOptionalHeader)
     {
-        Log(("rtldrPEOpen: %s: SizeOfOptionalHeader=%#x expected %#x\n",
-             pszLogName, pFileHdr->SizeOfOptionalHeader, cbOptionalHeader));
-        return VERR_BAD_EXE_FORMAT;
+        Log(("rtldrPEOpen: %s: SizeOfOptionalHeader=%#x expected %#x\n", pszLogName, pFileHdr->SizeOfOptionalHeader, cbOptionalHeader));
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "SizeOfOptionalHeader=%#x expected %#x",
+                                   pFileHdr->SizeOfOptionalHeader, cbOptionalHeader);
     }
     /* This restriction needs to be implemented elsewhere. */
     if (   (pFileHdr->Characteristics & IMAGE_FILE_RELOCS_STRIPPED)
         && !(fFlags & (RTLDR_O_FOR_DEBUG | RTLDR_O_FOR_VALIDATION)))
     {
         Log(("rtldrPEOpen: %s: IMAGE_FILE_RELOCS_STRIPPED\n", pszLogName));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "IMAGE_FILE_RELOCS_STRIPPED");
     }
     if (pFileHdr->NumberOfSections > 42)
     {
         Log(("rtldrPEOpen: %s: NumberOfSections=%d - our limit is 42, please raise it if the binary makes sense.(!!!)\n",
              pszLogName, pFileHdr->NumberOfSections));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "NumberOfSections=%d, implementation max is 42", pFileHdr->NumberOfSections);
     }
     if (pFileHdr->NumberOfSections < 1)
     {
         Log(("rtldrPEOpen: %s: NumberOfSections=%d - we can't have an image without sections (!!!)\n",
              pszLogName, pFileHdr->NumberOfSections));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET(pErrInfo, VERR_BAD_EXE_FORMAT, "Image has no sections");
     }
     return VINF_SUCCESS;
 }
@@ -3192,9 +3193,10 @@ static int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, uint32_t fFlag
  * @param   pFileHdr    Pointer to the file header (valid).
  * @param   cbRawImage  The raw image size.
  * @param   fFlags      Loader flags, RTLDR_O_XXX.
+ * @param   pErrInfo    Where to return additional error information.
  */
 static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr, const char *pszLogName, RTFOFF offNtHdrs,
-                                         const IMAGE_FILE_HEADER *pFileHdr, RTFOFF cbRawImage, uint32_t fFlags)
+                                         const IMAGE_FILE_HEADER *pFileHdr, RTFOFF cbRawImage, uint32_t fFlags, PRTERRINFO pErrInfo)
 {
     RT_NOREF_PV(pszLogName);
 
@@ -3203,51 +3205,54 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
     if (pOptHdr->Magic != CorrectMagic)
     {
         Log(("rtldrPEOpen: %s: Magic=%#x - expected %#x!!!\n", pszLogName, pOptHdr->Magic, CorrectMagic));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "Magic=%#x, expected %#x", pOptHdr->Magic, CorrectMagic);
     }
     const uint32_t cbImage = pOptHdr->SizeOfImage;
     if (cbImage > _1G)
     {
         Log(("rtldrPEOpen: %s: SizeOfImage=%#x - Our limit is 1GB (%#x)!!!\n", pszLogName, cbImage, _1G));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "SizeOfImage=%#x - Our limit is 1GB (%#x)", cbImage, _1G);
     }
     const uint32_t cbMinImageSize = pFileHdr->SizeOfOptionalHeader + sizeof(*pFileHdr) + 4 + (uint32_t)offNtHdrs;
     if (cbImage < cbMinImageSize)
     {
         Log(("rtldrPEOpen: %s: SizeOfImage=%#x to small, minimum %#x!!!\n", pszLogName, cbImage, cbMinImageSize));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "SizeOfImage=%#x to small, minimum %#x", cbImage, cbMinImageSize);
     }
     if (pOptHdr->AddressOfEntryPoint >= cbImage)
     {
         Log(("rtldrPEOpen: %s: AddressOfEntryPoint=%#x - beyond image size (%#x)!!!\n",
              pszLogName, pOptHdr->AddressOfEntryPoint, cbImage));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT,
+                                   "AddressOfEntryPoint=%#x - beyond image size (%#x)", pOptHdr->AddressOfEntryPoint, cbImage);
     }
     if (pOptHdr->BaseOfCode >= cbImage)
     {
         Log(("rtldrPEOpen: %s: BaseOfCode=%#x - beyond image size (%#x)!!!\n",
              pszLogName, pOptHdr->BaseOfCode, cbImage));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT,
+                                   "BaseOfCode=%#x - beyond image size (%#x)", pOptHdr->BaseOfCode, cbImage);
     }
 #if 0/* only in 32-bit header */
     if (pOptHdr->BaseOfData >= cbImage)
     {
         Log(("rtldrPEOpen: %s: BaseOfData=%#x - beyond image size (%#x)!!!\n",
              pszLogName, pOptHdr->BaseOfData, cbImage));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "BaseOfData=%#x - beyond image size (%#x)", pOptHdr->BaseOfData, cbImage);
     }
 #endif
     if (pOptHdr->SizeOfHeaders >= cbImage)
     {
         Log(("rtldrPEOpen: %s: SizeOfHeaders=%#x - beyond image size (%#x)!!!\n",
              pszLogName, pOptHdr->SizeOfHeaders, cbImage));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT,
+                                   "SizeOfHeaders=%#x - beyond image size (%#x)", pOptHdr->SizeOfHeaders, cbImage);
     }
     /* don't know how to do the checksum, so ignore it. */
     if (pOptHdr->Subsystem == IMAGE_SUBSYSTEM_UNKNOWN)
     {
         Log(("rtldrPEOpen: %s: Subsystem=%#x (unknown)!!!\n", pszLogName, pOptHdr->Subsystem));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "Subsystem=%#x (unknown)", pOptHdr->Subsystem);
     }
     if (pOptHdr->SizeOfHeaders < cbMinImageSize + pFileHdr->NumberOfSections * sizeof(IMAGE_SECTION_HEADER))
     {
@@ -3255,26 +3260,32 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
              pszLogName, pOptHdr->SizeOfHeaders,
              cbMinImageSize, pFileHdr->NumberOfSections * sizeof(IMAGE_SECTION_HEADER),
              cbMinImageSize + pFileHdr->NumberOfSections * sizeof(IMAGE_SECTION_HEADER)));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "SizeOfHeaders=%#x - cbMinImageSize %#x + sections %#x = %#llx",
+                                   pOptHdr->SizeOfHeaders, cbMinImageSize,
+                                   pFileHdr->NumberOfSections * sizeof(IMAGE_SECTION_HEADER),
+                                   cbMinImageSize + pFileHdr->NumberOfSections * sizeof(IMAGE_SECTION_HEADER) );
     }
     if (pOptHdr->SizeOfStackReserve < pOptHdr->SizeOfStackCommit)
     {
         Log(("rtldrPEOpen: %s: SizeOfStackReserve %#x < SizeOfStackCommit %#x!!!\n",
              pszLogName, pOptHdr->SizeOfStackReserve, pOptHdr->SizeOfStackCommit));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "SizeOfStackReserve %#x < SizeOfStackCommit %#x",
+                                   pOptHdr->SizeOfStackReserve, pOptHdr->SizeOfStackCommit);
     }
     if (pOptHdr->SizeOfHeapReserve < pOptHdr->SizeOfHeapCommit)
     {
         Log(("rtldrPEOpen: %s: SizeOfStackReserve %#x < SizeOfStackCommit %#x!!!\n",
              pszLogName, pOptHdr->SizeOfStackReserve, pOptHdr->SizeOfStackCommit));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "SizeOfStackReserve %#x < SizeOfStackCommit %#x\n",
+                                   pOptHdr->SizeOfStackReserve, pOptHdr->SizeOfStackCommit);
     }
 
     /* DataDirectory */
     if (pOptHdr->NumberOfRvaAndSizes != RT_ELEMENTS(pOptHdr->DataDirectory))
     {
         Log(("rtldrPEOpen: %s: NumberOfRvaAndSizes=%d!!!\n", pszLogName, pOptHdr->NumberOfRvaAndSizes));
-        return VERR_BAD_EXE_FORMAT;
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "NumberOfRvaAndSizes=%d, expected %d",
+                                   pOptHdr->NumberOfRvaAndSizes, RT_ELEMENTS(pOptHdr->DataDirectory));
     }
     for (unsigned i = 0; i < RT_ELEMENTS(pOptHdr->DataDirectory); i++)
     {
@@ -3303,7 +3314,8 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
                     break;
                 Log(("rtldrPEOpen: %s: dir no. %d (DELAY_IMPORT) VirtualAddress=%#x Size=%#x is not supported!!!\n",
                      pszLogName, i, pDir->VirtualAddress, pDir->Size));
-                return VERR_LDRPE_DELAY_IMPORT;
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDRPE_DELAY_IMPORT,
+                                           "DELAY_IMPORT VirtualAddress=%#x Size=%#x: not supported", pDir->VirtualAddress, pDir->Size);
 
             case IMAGE_DIRECTORY_ENTRY_SECURITY:      // 4
                 /* The VirtualAddress is a PointerToRawData. */
@@ -3313,17 +3325,20 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
                 if (pDir->Size < sizeof(WIN_CERTIFICATE))
                 {
                     Log(("rtldrPEOpen: %s: Security directory #%u is too small: %#x bytes\n", pszLogName, i, pDir->Size));
-                    return VERR_LDRPE_CERT_MALFORMED;
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDRPE_CERT_MALFORMED,
+                                               "Security directory is too small: %#x bytes", pDir->Size);
                 }
                 if (pDir->Size >= RTLDRMODPE_MAX_SECURITY_DIR_SIZE)
                 {
                     Log(("rtldrPEOpen: %s: Security directory #%u is too large: %#x bytes\n", pszLogName, i, pDir->Size));
-                    return VERR_LDRPE_CERT_MALFORMED;
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDRPE_CERT_MALFORMED,
+                                               "Security directory is too large: %#x bytes", pDir->Size);
                 }
                 if (pDir->VirtualAddress & 7)
                 {
                     Log(("rtldrPEOpen: %s: Security directory #%u is misaligned: %#x\n", pszLogName, i, pDir->VirtualAddress));
-                    return VERR_LDRPE_CERT_MALFORMED;
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDRPE_CERT_MALFORMED,
+                                               "Security directory is misaligned: %#x", pDir->VirtualAddress);
                 }
                 /* When using the in-memory reader with a debugger, we may get
                    into trouble here since we might not have access to the whole
@@ -3336,38 +3351,45 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
             case IMAGE_DIRECTORY_ENTRY_GLOBALPTR:     // 8   /* (MIPS GP) */
                 Log(("rtldrPEOpen: %s: dir no. %d (GLOBALPTR) VirtualAddress=%#x Size=%#x is not supported!!!\n",
                      pszLogName, i, pDir->VirtualAddress, pDir->Size));
-                return VERR_LDRPE_GLOBALPTR;
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDRPE_GLOBALPTR, "GLOBALPTR VirtualAddress=%#x Size=%#x: not supported",
+                                           pDir->VirtualAddress, pDir->Size);
 
             case IMAGE_DIRECTORY_ENTRY_TLS:           // 9
                 if (fFlags & (RTLDR_O_FOR_DEBUG | RTLDR_O_FOR_VALIDATION))
                     break;
                 Log(("rtldrPEOpen: %s: dir no. %d (TLS) VirtualAddress=%#x Size=%#x is not supported!!!\n",
                      pszLogName, i, pDir->VirtualAddress, pDir->Size));
-                return VERR_LDRPE_TLS;
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDRPE_TLS, "TLS VirtualAddress=%#x Size=%#x: not supported",
+                                           pDir->VirtualAddress, pDir->Size);
 
             case IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR:// 14
                 if (fFlags & (RTLDR_O_FOR_DEBUG | RTLDR_O_FOR_VALIDATION))
                     break;
                 Log(("rtldrPEOpen: %s: dir no. %d (COM_DESCRIPTOR) VirtualAddress=%#x Size=%#x is not supported!!!\n",
                      pszLogName, i, pDir->VirtualAddress, pDir->Size));
-                return VERR_LDRPE_COM_DESCRIPTOR;
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDRPE_COM_DESCRIPTOR,
+                                           "COM_DESCRIPTOR VirtualAddress=%#x Size=%#x: not supported",
+                                           pDir->VirtualAddress, pDir->Size);
 
             default:
                 Log(("rtldrPEOpen: %s: dir no. %d VirtualAddress=%#x Size=%#x is not supported!!!\n",
                      pszLogName, i, pDir->VirtualAddress, pDir->Size));
-                return VERR_BAD_EXE_FORMAT;
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "dir no. %d VirtualAddress=%#x Size=%#x is not supported",
+                                           i, pDir->VirtualAddress, pDir->Size);
         }
         if (pDir->VirtualAddress >= cb)
         {
             Log(("rtldrPEOpen: %s: dir no. %d VirtualAddress=%#x is invalid (limit %#x)!!!\n",
                  pszLogName, i, pDir->VirtualAddress, cb));
-            return VERR_BAD_EXE_FORMAT;
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "dir no. %d VirtualAddress=%#x is invalid (limit %#x)",
+                                       i, pDir->VirtualAddress, cb);
         }
         if (pDir->Size > cb - pDir->VirtualAddress)
         {
             Log(("rtldrPEOpen: %s: dir no. %d Size=%#x is invalid (rva=%#x, limit=%#x)!!!\n",
                  pszLogName, i, pDir->Size, pDir->VirtualAddress, cb));
-            return VERR_BAD_EXE_FORMAT;
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "dir no. %d Size=%#x is invalid (rva=%#x, limit=%#x)",
+                                       i, pDir->Size, pDir->VirtualAddress, cb);
         }
     }
     return VINF_SUCCESS;
@@ -3928,7 +3950,7 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
         return rc;
     RTLDRARCH enmArchImage;
     const char *pszLogName = pReader->pfnLogName(pReader);
-    rc = rtldrPEValidateFileHeader(&FileHdr, fFlags, pszLogName, &enmArchImage);
+    rc = rtldrPEValidateFileHeader(&FileHdr, fFlags, pszLogName, &enmArchImage, pErrInfo);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -3941,8 +3963,8 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
              && !(fFlags & RTLDR_O_WHATEVER_ARCH)) )
     {
         if (!(fFlags & RTLDR_O_IGNORE_ARCH_IF_NO_CODE))
-            return RTErrInfoSetF(pErrInfo, VERR_LDR_ARCH_MISMATCH, "Image is for '%s', only accepting images for '%s'.",
-                                 rtldrPEGetArchName(FileHdr.Machine), rtLdrArchName(enmArch));
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDR_ARCH_MISMATCH, "Image is for '%s', only accepting images for '%s'.",
+                                       rtldrPEGetArchName(FileHdr.Machine), rtLdrArchName(enmArch));
         fArchNoCodeCheckPending = true;
     }
 
@@ -3955,13 +3977,13 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
         return rc;
     if (FileHdr.SizeOfOptionalHeader != sizeof(OptHdr))
         rtldrPEConvert32BitOptionalHeaderTo64Bit(&OptHdr);
-    rc = rtldrPEValidateOptionalHeader(&OptHdr, pszLogName, offNtHdrs, &FileHdr, pReader->pfnSize(pReader), fFlags);
+    rc = rtldrPEValidateOptionalHeader(&OptHdr, pszLogName, offNtHdrs, &FileHdr, pReader->pfnSize(pReader), fFlags, pErrInfo);
     if (RT_FAILURE(rc))
         return rc;
     if (fArchNoCodeCheckPending && OptHdr.SizeOfCode != 0)
-        return RTErrInfoSetF(pErrInfo, VERR_LDR_ARCH_MISMATCH,
-                             "Image is for '%s' and contains code (%#x), only accepting images for '%s' with code.",
-                             rtldrPEGetArchName(FileHdr.Machine), OptHdr.SizeOfCode, rtLdrArchName(enmArch));
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDR_ARCH_MISMATCH,
+                                   "Image is for '%s' and contains code (%#x), only accepting images for '%s' with code.",
+                                   rtldrPEGetArchName(FileHdr.Machine), OptHdr.SizeOfCode, rtLdrArchName(enmArch));
 
     /*
      * Read and validate section headers.
