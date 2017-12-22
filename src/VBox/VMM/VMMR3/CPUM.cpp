@@ -2290,7 +2290,7 @@ static void cpumR3InfoSvmVmcbCtrl(PCDBGFINFOHLP pHlp, PCSVMVMCBCTRL pVmcbCtrl, c
  * @param   pszName     Name of the selector.
  * @param   pszPrefix   Caller specified string prefix.
  */
-DECLINLINE(void) cpumR3InfoSvmVmcbStateSaveSelReg(PCDBGFINFOHLP pHlp, PCSVMSELREG pSel, const char *pszName, const char *pszPrefix)
+DECLINLINE(void) cpumR3InfoSvmVmcbSelReg(PCDBGFINFOHLP pHlp, PCSVMSELREG pSel, const char *pszName, const char *pszPrefix)
 {
     /* The string width of 4 used below is to handle 'LDTR'. Change later if longer register names are used. */
     pHlp->pfnPrintf(pHlp, "%s%-4s                       = {%04x base=%016RX64 limit=%08x flags=%04x}\n", pszPrefix,
@@ -2306,7 +2306,7 @@ DECLINLINE(void) cpumR3InfoSvmVmcbStateSaveSelReg(PCDBGFINFOHLP pHlp, PCSVMSELRE
  * @param   pszName     Name of the descriptor table register.
  * @param   pszPrefix   Caller specified string prefix.
  */
-DECLINLINE(void) cpumR3InfoSvmVmcbStateXdtr(PCDBGFINFOHLP pHlp, PCSVMXDTR pXdtr, const char *pszName, const char *pszPrefix)
+DECLINLINE(void) cpumR3InfoSvmVmcbXdtr(PCDBGFINFOHLP pHlp, PCSVMXDTR pXdtr, const char *pszName, const char *pszPrefix)
 {
     /* The string width of 4 used below is to cover 'GDTR', 'IDTR'. Change later if longer register names are used. */
     pHlp->pfnPrintf(pHlp, "%s%-4s                       = %016RX64:%04x\n", pszPrefix, pszName, pXdtr->u64Base, pXdtr->u32Limit);
@@ -2325,42 +2325,45 @@ static void cpumR3InfoSvmVmcbStateSave(PCDBGFINFOHLP pHlp, PCSVMVMCBSTATESAVE pV
     AssertReturnVoid(pHlp);
     AssertReturnVoid(pVmcbStateSave);
 
-    cpumR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->CS,   "CS",   pszPrefix);
-    cpumR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->SS,   "SS",   pszPrefix);
-    cpumR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->ES,   "ES",   pszPrefix);
-    cpumR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->DS,   "DS",   pszPrefix);
-    cpumR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->FS,   "FS",   pszPrefix);
-    cpumR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->GS,   "GS",   pszPrefix);
-    cpumR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->LDTR, "LDTR", pszPrefix);
-    cpumR3InfoSvmVmcbStateSaveSelReg(pHlp, &pVmcbStateSave->TR,   "TR",   pszPrefix);
-    cpumR3InfoSvmVmcbStateXdtr(pHlp, &pVmcbStateSave->GDTR,       "GDTR", pszPrefix);
-    cpumR3InfoSvmVmcbStateXdtr(pHlp, &pVmcbStateSave->IDTR,       "IDTR", pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%su8CPL                      = %u\n",          pszPrefix, pVmcbStateSave->u8CPL);
-    pHlp->pfnPrintf(pHlp, "%su64EFER                    = %#RX64\n",      pszPrefix, pVmcbStateSave->u64EFER);
-    pHlp->pfnPrintf(pHlp, "%su64CR4                     = %#RX64\n",      pszPrefix, pVmcbStateSave->u64CR4);
-    pHlp->pfnPrintf(pHlp, "%su64CR3                     = %#RX64\n",      pszPrefix, pVmcbStateSave->u64CR3);
-    pHlp->pfnPrintf(pHlp, "%su64CR0                     = %#RX64\n",      pszPrefix, pVmcbStateSave->u64CR0);
-    pHlp->pfnPrintf(pHlp, "%su64DR7                     = %#RX64\n",      pszPrefix, pVmcbStateSave->u64DR7);
-    pHlp->pfnPrintf(pHlp, "%su64DR6                     = %#RX64\n",      pszPrefix, pVmcbStateSave->u64DR6);
-    pHlp->pfnPrintf(pHlp, "%su64RFlags                  = %#RX64\n",      pszPrefix, pVmcbStateSave->u64RFlags);
-    pHlp->pfnPrintf(pHlp, "%su64RIP                     = %#RX64\n",      pszPrefix, pVmcbStateSave->u64RIP);
-    pHlp->pfnPrintf(pHlp, "%su64RSP                     = %#RX64\n",      pszPrefix, pVmcbStateSave->u64RSP);
-    pHlp->pfnPrintf(pHlp, "%su64RAX                     = %#RX64\n",      pszPrefix, pVmcbStateSave->u64RAX);
-    pHlp->pfnPrintf(pHlp, "%su64STAR                    = %#RX64\n",      pszPrefix, pVmcbStateSave->u64STAR);
-    pHlp->pfnPrintf(pHlp, "%su64LSTAR                   = %#RX64\n",      pszPrefix, pVmcbStateSave->u64LSTAR);
-    pHlp->pfnPrintf(pHlp, "%su64CSTAR                   = %#RX64\n",      pszPrefix, pVmcbStateSave->u64CSTAR);
-    pHlp->pfnPrintf(pHlp, "%su64SFMASK                  = %#RX64\n",      pszPrefix, pVmcbStateSave->u64SFMASK);
-    pHlp->pfnPrintf(pHlp, "%su64KernelGSBase            = %#RX64\n",      pszPrefix, pVmcbStateSave->u64KernelGSBase);
-    pHlp->pfnPrintf(pHlp, "%su64SysEnterCS              = %#RX64\n",      pszPrefix, pVmcbStateSave->u64SysEnterCS);
-    pHlp->pfnPrintf(pHlp, "%su64SysEnterEIP             = %#RX64\n",      pszPrefix, pVmcbStateSave->u64SysEnterEIP);
-    pHlp->pfnPrintf(pHlp, "%su64SysEnterESP             = %#RX64\n",      pszPrefix, pVmcbStateSave->u64SysEnterESP);
-    pHlp->pfnPrintf(pHlp, "%su64CR2                     = %#RX64\n",      pszPrefix, pVmcbStateSave->u64CR2);
-    pHlp->pfnPrintf(pHlp, "%su64GPAT                    = %#RX64\n",      pszPrefix, pVmcbStateSave->u64GPAT);
-    pHlp->pfnPrintf(pHlp, "%su64DBGCTL                  = %#RX64\n",      pszPrefix, pVmcbStateSave->u64DBGCTL);
-    pHlp->pfnPrintf(pHlp, "%su64BR_FROM                 = %#RX64\n",      pszPrefix, pVmcbStateSave->u64BR_FROM);
-    pHlp->pfnPrintf(pHlp, "%su64BR_TO                   = %#RX64\n",      pszPrefix, pVmcbStateSave->u64BR_TO);
-    pHlp->pfnPrintf(pHlp, "%su64LASTEXCPFROM            = %#RX64\n",      pszPrefix, pVmcbStateSave->u64LASTEXCPFROM);
-    pHlp->pfnPrintf(pHlp, "%su64LASTEXCPTO              = %#RX64\n",      pszPrefix, pVmcbStateSave->u64LASTEXCPTO);
+    char szEFlags[80];
+    cpumR3InfoFormatFlags(&szEFlags[0], pVmcbStateSave->u64RFlags);
+
+    cpumR3InfoSvmVmcbSelReg(pHlp, &pVmcbStateSave->CS,   "CS",   pszPrefix);
+    cpumR3InfoSvmVmcbSelReg(pHlp, &pVmcbStateSave->SS,   "SS",   pszPrefix);
+    cpumR3InfoSvmVmcbSelReg(pHlp, &pVmcbStateSave->ES,   "ES",   pszPrefix);
+    cpumR3InfoSvmVmcbSelReg(pHlp, &pVmcbStateSave->DS,   "DS",   pszPrefix);
+    cpumR3InfoSvmVmcbSelReg(pHlp, &pVmcbStateSave->FS,   "FS",   pszPrefix);
+    cpumR3InfoSvmVmcbSelReg(pHlp, &pVmcbStateSave->GS,   "GS",   pszPrefix);
+    cpumR3InfoSvmVmcbSelReg(pHlp, &pVmcbStateSave->LDTR, "LDTR", pszPrefix);
+    cpumR3InfoSvmVmcbSelReg(pHlp, &pVmcbStateSave->TR,   "TR",   pszPrefix);
+    cpumR3InfoSvmVmcbXdtr(pHlp, &pVmcbStateSave->GDTR,   "GDTR", pszPrefix);
+    cpumR3InfoSvmVmcbXdtr(pHlp, &pVmcbStateSave->IDTR,   "IDTR", pszPrefix);
+    pHlp->pfnPrintf(pHlp, "%su8CPL                      = %u\n",     pszPrefix, pVmcbStateSave->u8CPL);
+    pHlp->pfnPrintf(pHlp, "%su64EFER                    = %#RX64\n", pszPrefix, pVmcbStateSave->u64EFER);
+    pHlp->pfnPrintf(pHlp, "%su64CR4                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64CR4);
+    pHlp->pfnPrintf(pHlp, "%su64CR3                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64CR3);
+    pHlp->pfnPrintf(pHlp, "%su64CR0                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64CR0);
+    pHlp->pfnPrintf(pHlp, "%su64DR7                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64DR7);
+    pHlp->pfnPrintf(pHlp, "%su64DR6                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64DR6);
+    pHlp->pfnPrintf(pHlp, "%su64RFlags                  = %#RX64 %31s\n", pszPrefix, pVmcbStateSave->u64RFlags, szEFlags);
+    pHlp->pfnPrintf(pHlp, "%su64RIP                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64RIP);
+    pHlp->pfnPrintf(pHlp, "%su64RSP                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64RSP);
+    pHlp->pfnPrintf(pHlp, "%su64RAX                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64RAX);
+    pHlp->pfnPrintf(pHlp, "%su64STAR                    = %#RX64\n", pszPrefix, pVmcbStateSave->u64STAR);
+    pHlp->pfnPrintf(pHlp, "%su64LSTAR                   = %#RX64\n", pszPrefix, pVmcbStateSave->u64LSTAR);
+    pHlp->pfnPrintf(pHlp, "%su64CSTAR                   = %#RX64\n", pszPrefix, pVmcbStateSave->u64CSTAR);
+    pHlp->pfnPrintf(pHlp, "%su64SFMASK                  = %#RX64\n", pszPrefix, pVmcbStateSave->u64SFMASK);
+    pHlp->pfnPrintf(pHlp, "%su64KernelGSBase            = %#RX64\n", pszPrefix, pVmcbStateSave->u64KernelGSBase);
+    pHlp->pfnPrintf(pHlp, "%su64SysEnterCS              = %#RX64\n", pszPrefix, pVmcbStateSave->u64SysEnterCS);
+    pHlp->pfnPrintf(pHlp, "%su64SysEnterEIP             = %#RX64\n", pszPrefix, pVmcbStateSave->u64SysEnterEIP);
+    pHlp->pfnPrintf(pHlp, "%su64SysEnterESP             = %#RX64\n", pszPrefix, pVmcbStateSave->u64SysEnterESP);
+    pHlp->pfnPrintf(pHlp, "%su64CR2                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64CR2);
+    pHlp->pfnPrintf(pHlp, "%su64GPAT                    = %#RX64\n", pszPrefix, pVmcbStateSave->u64GPAT);
+    pHlp->pfnPrintf(pHlp, "%su64DBGCTL                  = %#RX64\n", pszPrefix, pVmcbStateSave->u64DBGCTL);
+    pHlp->pfnPrintf(pHlp, "%su64BR_FROM                 = %#RX64\n", pszPrefix, pVmcbStateSave->u64BR_FROM);
+    pHlp->pfnPrintf(pHlp, "%su64BR_TO                   = %#RX64\n", pszPrefix, pVmcbStateSave->u64BR_TO);
+    pHlp->pfnPrintf(pHlp, "%su64LASTEXCPFROM            = %#RX64\n", pszPrefix, pVmcbStateSave->u64LASTEXCPFROM);
+    pHlp->pfnPrintf(pHlp, "%su64LASTEXCPTO              = %#RX64\n", pszPrefix, pVmcbStateSave->u64LASTEXCPTO);
 }
 
 
@@ -2414,6 +2417,9 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
     pHlp->pfnPrintf(pHlp, "%s hwvirt state%s\n", pcszHwvirtMode, fDumpState ? ":" : "");
     if (fDumpState & CPUMHWVIRTDUMP_SVM)
     {
+        char szEFlags[80];
+        cpumR3InfoFormatFlags(&szEFlags[0], pCtx->hwvirt.svm.HostState.rflags.u);
+
         pHlp->pfnPrintf(pHlp, "  uMsrHSavePa                = %#RX64\n",    pCtx->hwvirt.svm.uMsrHSavePa);
         pHlp->pfnPrintf(pHlp, "  GCPhysVmcb                 = %#RGp\n",     pCtx->hwvirt.svm.GCPhysVmcb);
         pHlp->pfnPrintf(pHlp, "  VmcbCtrl:\n");
@@ -2428,7 +2434,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "    uRip                       = %#RX64\n",  pCtx->hwvirt.svm.HostState.uRip);
         pHlp->pfnPrintf(pHlp, "    uRsp                       = %#RX64\n",  pCtx->hwvirt.svm.HostState.uRsp);
         pHlp->pfnPrintf(pHlp, "    uRax                       = %#RX64\n",  pCtx->hwvirt.svm.HostState.uRax);
-        pHlp->pfnPrintf(pHlp, "    rflags                     = %#RX64\n",  pCtx->hwvirt.svm.HostState.rflags.u64);
+        pHlp->pfnPrintf(pHlp, "    rflags                     = %#RX64 %31s\n", pCtx->hwvirt.svm.HostState.rflags.u64, szEFlags);
         PCPUMSELREG pSel = &pCtx->hwvirt.svm.HostState.es;
         pHlp->pfnPrintf(pHlp, "    es                         = {%04x base=%016RX64 limit=%08x flags=%08x}\n",
                         pSel->Sel, pSel->u64Base, pSel->u32Limit, pSel->fFlags);
