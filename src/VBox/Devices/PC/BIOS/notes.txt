@@ -104,6 +104,14 @@
   El Torito hard disk emulation) with the first five bytes being zero. It
   appears to be valid despite the oddity.
 
+- Darwin 6.0.2 also uses an El Torito emulated hard disk. In addition, if
+  INT 13h/41h succeeds, Darwin uses INT13X to read from the emulated drive.
+
+- Symantec Ghost 11.5 bootable CD also uses El Torito hard disk emulation,
+  uses INT13X without checking for support, and crashes if INT13X is not
+  supported on the emulated drive.
+
+
  286 BIOS
  --------
 

@@ -134,6 +134,140 @@ void set_geom_lba(chs_t __far *lgeo, uint64_t nsectors64)
     lgeo->spt       = 63;   /* Always 63 sectors per track, the maximum. */
 }
 
+int edd_fill_dpt(dpt_t __far *dpt, bio_dsk_t __far *bios_dsk, uint8_t device)
+{
+    uint16_t    ebda_seg = read_word(0x0040,0x000E);
+
+    /* Check if buffer is large enough. */
+    if (dpt->size < 0x1a)
+        return -1;
+
+    /* Fill in EDD 1.x table. */
+    if (dpt->size >= 0x1a) {
+        uint64_t    lba;
+
+        dpt->size      = 0x1a;
+        dpt->blksize   = bios_dsk->devices[device].blksize;
+
+        if (bios_dsk->devices[device].device == DSK_DEVICE_CDROM) {
+            dpt->infos         = 0x74;  /* Removable, media change, lockable, max values */
+            dpt->cylinders     = 0xffffffff;
+            dpt->heads         = 0xffffffff;
+            dpt->spt           = 0xffffffff;
+            dpt->sector_count1 = 0xffffffff;
+            dpt->sector_count2 = 0xffffffff;
+        } else {
+            dpt->infos     = 0x02;  // geometry is valid
+            dpt->cylinders = bios_dsk->devices[device].pchs.cylinders;
+            dpt->heads     = bios_dsk->devices[device].pchs.heads;
+            dpt->spt       = bios_dsk->devices[device].pchs.spt;
+            lba = bios_dsk->devices[device].sectors;
+            dpt->sector_count1 = lba;
+            dpt->sector_count2 = lba >> 32;
+        }
+    }
+
+    /* Fill in EDD 2.x table. */
+    if (dpt->size >= 0x1e) {
+        uint8_t     channel, irq, mode, checksum, i, xlation;
+        uint16_t    iobase1, iobase2, options;
+
+        dpt->size = 0x1e;
+        dpt->dpte_segment = ebda_seg;
+        dpt->dpte_offset  = (uint16_t)&EbdaData->bdisk.dpte;
+
+        // Fill in dpte
+        channel = device / 2;
+        iobase1 = bios_dsk->channels[channel].iobase1;
+        iobase2 = bios_dsk->channels[channel].iobase2;
+        irq     = bios_dsk->channels[channel].irq;
+        mode    = bios_dsk->devices[device].mode;
+        xlation = bios_dsk->devices[device].translation;
+
+        options  = (xlation == GEO_TRANSLATION_NONE ? 0 : 1 << 3);  /* CHS translation */
+        options |= (1 << 4);    /* LBA translation */
+        if (bios_dsk->devices[device].device == DSK_DEVICE_CDROM) {
+            options |= (1 << 5);    /* Removable device */
+            options |= (1 << 6);    /* ATAPI device */
+        }
+#if VBOX_BIOS_CPU >= 80386
+        options |= (mode == ATA_MODE_PIO32 ? 1 : 0 << 7);
+#endif
+        options |= (xlation == GEO_TRANSLATION_LBA ? 1 : 0 << 9);
+        options |= (xlation == GEO_TRANSLATION_RECHS ? 3 : 0 << 9);
+
+        bios_dsk->dpte.iobase1  = iobase1;
+        bios_dsk->dpte.iobase2  = iobase2;
+        bios_dsk->dpte.prefix   = (0xe | (device % 2)) << 4;
+        bios_dsk->dpte.unused   = 0xcb;
+        bios_dsk->dpte.irq      = irq;
+        bios_dsk->dpte.blkcount = 1;
+        bios_dsk->dpte.dma      = 0;
+        bios_dsk->dpte.pio      = 0;
+        bios_dsk->dpte.options  = options;
+        bios_dsk->dpte.reserved = 0;
+        bios_dsk->dpte.revision = 0x11;
+
+        checksum = 0;
+        for (i = 0; i < 15; ++i)
+            checksum += read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.dpte + i);
+        checksum = -checksum;
+        bios_dsk->dpte.checksum = checksum;
+    }
+
+    /* Fill in EDD 3.x table. */
+    if (dpt->size >= 0x42) {
+        uint8_t     channel, iface, checksum, i;
+        uint16_t    iobase1;
+
+        channel = device / 2;
+        iface   = bios_dsk->channels[channel].iface;
+        iobase1 = bios_dsk->channels[channel].iobase1;
+
+        dpt->size       = 0x42;
+        dpt->key        = 0xbedd;
+        dpt->dpi_length = 0x24;
+        dpt->reserved1  = 0;
+        dpt->reserved2  = 0;
+
+        if (iface == ATA_IFACE_ISA) {
+            dpt->host_bus[0] = 'I';
+            dpt->host_bus[1] = 'S';
+            dpt->host_bus[2] = 'A';
+            dpt->host_bus[3] = ' ';
+        }
+        else {
+            // FIXME PCI
+        }
+        dpt->iface_type[0] = 'A';
+        dpt->iface_type[1] = 'T';
+        dpt->iface_type[2] = 'A';
+        dpt->iface_type[3] = ' ';
+        dpt->iface_type[4] = ' ';
+        dpt->iface_type[5] = ' ';
+        dpt->iface_type[6] = ' ';
+        dpt->iface_type[7] = ' ';
+
+        if (iface == ATA_IFACE_ISA) {
+            ((uint16_t __far *)dpt->iface_path)[0] = iobase1;
+            ((uint16_t __far *)dpt->iface_path)[1] = 0;
+            ((uint32_t __far *)dpt->iface_path)[1] = 0;
+        }
+        else {
+            // FIXME PCI
+        }
+        ((uint16_t __far *)dpt->device_path)[0] = device & 1; // device % 2; @todo: correct?
+        ((uint16_t __far *)dpt->device_path)[1] = 0;
+        ((uint32_t __far *)dpt->device_path)[1] = 0;
+
+        checksum = 0;
+        for (i = 30; i < 64; i++)
+            checksum += ((uint8_t __far *)dpt)[i];
+        checksum = -checksum;
+        dpt->checksum = checksum;
+    }
+    return 0;
+}
 
 void BIOSCALL int13_harddisk(disk_regs_t r)
 {
@@ -348,15 +482,18 @@ int13_success_noah:
 void BIOSCALL int13_harddisk_ext(disk_regs_t r)
 {
     uint64_t            lba;
-    uint16_t            ebda_seg = read_word(0x0040,0x000E);
     uint16_t            segment, offset;
-    uint16_t            npc, nph, npspt;
-    uint16_t            size, count;
     uint8_t             device, status;
+    uint16_t            count;
     uint8_t             type;
     bio_dsk_t __far     *bios_dsk;
     int13ext_t __far    *i13_ext;
+#if 0
+    uint16_t            ebda_seg = read_word(0x0040,0x000E);
+    uint16_t            npc, nph, npspt;
+    uint16_t            size;
     dpt_t __far         *dpt;
+#endif
 
     bios_dsk = read_word(0x0040,0x000E) :> &EbdaData->bdisk;
 
@@ -455,130 +592,10 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         break;
 
     case 0x48: // IBM/MS get drive parameters
-        dpt = DS :> (dpt_t *)SI;
-        size = dpt->size;
-
-        /* Check if buffer is large enough. */
-        if (size < 0x1a)
+        if (edd_fill_dpt(DS :> (dpt_t *)SI, bios_dsk, device))
             goto int13x_fail;
-
-        /* Fill in EDD 1.x table. */
-        if (size >= 0x1a) {
-            uint16_t   blksize;
-
-            npc     = bios_dsk->devices[device].pchs.cylinders;
-            nph     = bios_dsk->devices[device].pchs.heads;
-            npspt   = bios_dsk->devices[device].pchs.spt;
-            lba     = bios_dsk->devices[device].sectors;
-            blksize = bios_dsk->devices[device].blksize;
-
-            dpt->size      = 0x1a;
-            dpt->infos     = 0x02;  // geometry is valid
-            dpt->cylinders = npc;
-            dpt->heads     = nph;
-            dpt->spt       = npspt;
-            dpt->blksize   = blksize;
-            dpt->sector_count1 = lba;
-            dpt->sector_count2 = lba >> 32;
-        }
-
-        /* Fill in EDD 2.x table. */
-        if (size >= 0x1e) {
-            uint8_t     channel, irq, mode, checksum, i, translation;
-            uint16_t    iobase1, iobase2, options;
-
-            dpt->size = 0x1e;
-            dpt->dpte_segment = ebda_seg;
-            dpt->dpte_offset  = (uint16_t)&EbdaData->bdisk.dpte;
-
-            // Fill in dpte
-            channel = device / 2;
-            iobase1 = bios_dsk->channels[channel].iobase1;
-            iobase2 = bios_dsk->channels[channel].iobase2;
-            irq     = bios_dsk->channels[channel].irq;
-            mode    = bios_dsk->devices[device].mode;
-            translation = bios_dsk->devices[device].translation;
-
-            options  = (translation == GEO_TRANSLATION_NONE ? 0 : 1 << 3);  // chs translation
-            options |= (1 << 4);    // lba translation
-#if VBOX_BIOS_CPU >= 80386
-            options |= (mode == ATA_MODE_PIO32 ? 1 : 0 << 7);
-#endif
-            options |= (translation == GEO_TRANSLATION_LBA ? 1 : 0 << 9);
-            options |= (translation == GEO_TRANSLATION_RECHS ? 3 : 0 << 9);
-
-            bios_dsk->dpte.iobase1  = iobase1;
-            bios_dsk->dpte.iobase2  = iobase2;
-            bios_dsk->dpte.prefix   = (0xe | (device % 2)) << 4;
-            bios_dsk->dpte.unused   = 0xcb;
-            bios_dsk->dpte.irq      = irq;
-            bios_dsk->dpte.blkcount = 1;
-            bios_dsk->dpte.dma      = 0;
-            bios_dsk->dpte.pio      = 0;
-            bios_dsk->dpte.options  = options;
-            bios_dsk->dpte.reserved = 0;
-            bios_dsk->dpte.revision = 0x11;
-
-            checksum = 0;
-            for (i = 0; i < 15; ++i)
-                checksum += read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.dpte + i);
-            checksum = -checksum;
-            bios_dsk->dpte.checksum = checksum;
-        }
-
-        /* Fill in EDD 3.x table. */
-        if(size >= 0x42) {
-            uint8_t     channel, iface, checksum, i;
-            uint16_t    iobase1;
-
-            channel = device / 2;
-            iface   = bios_dsk->channels[channel].iface;
-            iobase1 = bios_dsk->channels[channel].iobase1;
-
-            dpt->size       = 0x42;
-            dpt->key        = 0xbedd;
-            dpt->dpi_length = 0x24;
-            dpt->reserved1  = 0;
-            dpt->reserved2  = 0;
-
-            if (iface == ATA_IFACE_ISA) {
-                dpt->host_bus[0] = 'I';
-                dpt->host_bus[1] = 'S';
-                dpt->host_bus[2] = 'A';
-                dpt->host_bus[3] = ' ';
-            }
-            else {
-                // FIXME PCI
-            }
-            dpt->iface_type[0] = 'A';
-            dpt->iface_type[1] = 'T';
-            dpt->iface_type[2] = 'A';
-            dpt->iface_type[3] = ' ';
-            dpt->iface_type[4] = ' ';
-            dpt->iface_type[5] = ' ';
-            dpt->iface_type[6] = ' ';
-            dpt->iface_type[7] = ' ';
-
-            if (iface == ATA_IFACE_ISA) {
-                ((uint16_t __far *)dpt->iface_path)[0] = iobase1;
-                ((uint16_t __far *)dpt->iface_path)[1] = 0;
-                ((uint32_t __far *)dpt->iface_path)[1] = 0;
-            }
-            else {
-                // FIXME PCI
-            }
-            ((uint16_t __far *)dpt->device_path)[0] = device & 1; // device % 2; @todo: correct?
-            ((uint16_t __far *)dpt->device_path)[1] = 0;
-            ((uint32_t __far *)dpt->device_path)[1] = 0;
-
-            checksum = 0;
-            for (i = 30; i < 64; i++)
-                checksum += read_byte(DS, SI + i);
-            checksum = -checksum;
-            dpt->checksum = checksum;
-        }
-
-        goto int13x_success;
+        else
+            goto int13x_success;
         break;
 
     case 0x4e: // // IBM/MS set hardware configuration

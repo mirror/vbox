@@ -813,11 +813,12 @@ void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
 
                 removable = *(abBuffer+0) & 0x80 ? 1 : 0;
 
-                bios_dsk->ahcidev[devcount_ahci].port = u8Port;
-                bios_dsk->devices[hd_index].type      = DSK_TYPE_AHCI;
-                bios_dsk->devices[hd_index].device    = DSK_DEVICE_CDROM;
-                bios_dsk->devices[hd_index].removable = removable;
-                bios_dsk->devices[hd_index].blksize   = 2048;
+                bios_dsk->ahcidev[devcount_ahci].port   = u8Port;
+                bios_dsk->devices[hd_index].type        = DSK_TYPE_AHCI;
+                bios_dsk->devices[hd_index].device      = DSK_DEVICE_CDROM;
+                bios_dsk->devices[hd_index].removable   = removable;
+                bios_dsk->devices[hd_index].blksize     = 2048;
+                bios_dsk->devices[hd_index].translation = GEO_TRANSLATION_NONE;
 
                 /* Store the ID of the device in the BIOS cdidmap. */
                 cdcount = bios_dsk->cdcount;
