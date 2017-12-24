@@ -2413,7 +2413,9 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/RTTimerGetSystemGranularity-r0drv-nt.cpp
 
 RuntimeR0Drv_SOURCES.win.amd64 := $(RuntimeWin64ASM_SOURCES)
-RuntimeR0Drv_SOURCES.win.x86   := $(RuntimeWin32ASM_SOURCES)
+RuntimeR0Drv_SOURCES.win.x86   := $(RuntimeWin32ASM_SOURCES) \
+	r0drv/nt/nt3fakes-stub-r0drv-nt.cpp
+
 
 RuntimeR0Drv_SOURCES.darwin = \
 	common/misc/thread.cpp \

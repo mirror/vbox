@@ -28,34 +28,27 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define PsGetVersion                PsGetVersion_Nt4Plus
-#define ZwQuerySystemInformation    ZwQuerySystemInformation_Nt4Plus
-#define KeInitializeTimerEx         KeInitializeTimerEx_Nt4Plus
-#define KeSetTimerEx                KeSetTimerEx_Nt4Plus
-#define IoAttachDeviceToDeviceStack IoAttachDeviceToDeviceStack_Nt4Plus
-#define PsGetCurrentProcessId       PsGetCurrentProcessId_Nt4Plus
-#define ZwYieldExecution            ZwYieldExecution_Nt4Plus
-
 #define _IMAGE_NT_HEADERS           RT_CONCAT(_IMAGE_NT_HEADERS,ARCH_BITS)
 #include "the-nt-kernel.h"
 #include <iprt/mem.h>
 
 #include <iprt/assert.h>
+#include <iprt/asm.h>
 #include <iprt/ctype.h>
+#include <iprt/dbg.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/string.h>
+#include <iprt/x86.h>
 #include <iprt/formats/mz.h>
 #include <iprt/formats/pecoff.h>
 #include "internal-r0drv-nt.h"
 
-#undef PsGetVersion
-#undef ZwQuerySystemInformation
-#undef KeInitializeTimerEx
-#undef KeSetTimerEx
-#undef IoAttachDeviceToDeviceStack
-#undef PsGetCurrentProcessId
-#undef ZwYieldExecution
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+DECLASM(void) rtNt3InitSymbolsAssembly(void); /* in nt3fakesA-r0drv-nt.asm */
 
 
 /*********************************************************************************************************************************
@@ -73,6 +66,54 @@ static uint32_t         g_cbNt3OsKrnl   = 0x300000;
 static uint8_t         *g_pbNt3Hal      = (uint8_t *)UINT32_C(0x80400000);
 static uint32_t         g_cbNt3Hal      = _512K;
 static bool volatile    g_fNt3ModuleInfoInitialized = false;
+
+
+RT_C_DECLS_BEGIN
+/** @name KPIs we provide fallback implementations for.
+ *
+ * The assembly init routine will point the __imp_xxx variable to the NT
+ * implementation if available, using the fallback if not.
+ * @{  */
+decltype(PsGetVersion)                     *g_pfnrtPsGetVersion;
+decltype(ZwQuerySystemInformation)         *g_pfnrtZwQuerySystemInformation;
+decltype(KeSetTimerEx)                     *g_pfnrtKeSetTimerEx;
+decltype(IoAttachDeviceToDeviceStack)      *g_pfnrtIoAttachDeviceToDeviceStack;
+decltype(PsGetCurrentProcessId)            *g_pfnrtPsGetCurrentProcessId;
+decltype(ZwYieldExecution)                 *g_pfnrtZwYieldExecution;
+decltype(ExAcquireFastMutex)               *g_pfnrtExAcquireFastMutex;
+decltype(ExReleaseFastMutex)               *g_pfnrtExReleaseFastMutex;
+/** @} */
+
+/** @name Fastcall optimizations not present in NT 3.1.
+ *
+ * We try resolve both the stdcall and fastcall variants and patch it up in
+ * assembly. The last four routines are in the hal.
+ *
+ * @{  */
+decltype(IofCompleteRequest)               *g_pfnrtIofCompleteRequest;
+decltype(ObfDereferenceObject)             *g_pfnrtObfDereferenceObject;
+decltype(IofCallDriver)                    *g_pfnrtIofCallDriver;
+decltype(KfAcquireSpinLock)                *g_pfnrtKfAcquireSpinLock;
+decltype(KfReleaseSpinLock)                *g_pfnrtKfReleaseSpinLock;
+decltype(KfLowerIrql)                      *g_pfnrtKfLowerIrql;
+decltype(KfRaiseIrql)                      *g_pfnrtKfRaiseIrql;
+
+VOID                            (__stdcall *g_pfnrtIoCompleteRequest)(PIRP, CCHAR);
+LONG_PTR                        (__stdcall *g_pfnrtObDereferenceObject)(PVOID);
+NTSTATUS                        (__stdcall *g_pfnrtIoCallDriver)(PDEVICE_OBJECT, PIRP);
+KIRQL                           (__stdcall *g_pfnrtKeAcquireSpinLock)(PKSPIN_LOCK);
+VOID                            (__stdcall *g_pfnrtKeReleaseSpinLock)(PKSPIN_LOCK, KIRQL);
+VOID                            (__stdcall *g_pfnrtKeLowerIrql)(KIRQL);
+KIRQL                           (__stdcall *g_pfnrtKeRaiseIrql)(KIRQL);
+/** @} */
+
+/** @name DATA exports and associated stuff
+ * @{ */
+/** Import address table entry for KeTickCount (defined in asm). */
+extern KSYSTEM_TIME                        *_imp__KeTickCount;
+/** @} */
+
+RT_C_DECLS_END
 
 
 /**
@@ -236,6 +277,8 @@ static NTSTATUS NTAPI rtR0Nt3VerEnumCallback_CurrentType(PWSTR pwszValueName, UL
 
 /**
  * Figure out the NT 3 version from the registry.
+ *
+ * @note this will be called before the rtR0Nt3InitSymbols is called.
  */
 static void rtR0Nt3InitVersion(void)
 {
@@ -274,7 +317,7 @@ static void rtR0Nt3InitVersion(void)
 
 
 extern "C" DECLEXPORT(BOOLEAN) __stdcall
-PsGetVersion(ULONG *puMajor, ULONG *puMinor, ULONG *puBuildNo, UNICODE_STRING *pCsdStr)
+Nt3Fb_PsGetVersion(ULONG *puMajor, ULONG *puMinor, ULONG *puBuildNo, UNICODE_STRING *pCsdStr)
 {
     if (!g_fNt3VersionInitialized)
         rtR0Nt3InitVersion();
@@ -364,7 +407,7 @@ static void rtR0Nt3InitModuleInfo(void)
 
 
 extern "C" DECLEXPORT(NTSTATUS) __stdcall
-ZwQuerySystemInformation(SYSTEM_INFORMATION_CLASS enmClass, PVOID pvBuf, ULONG cbBuf, PULONG pcbActual)
+Nt3Fb_ZwQuerySystemInformation(SYSTEM_INFORMATION_CLASS enmClass, PVOID pvBuf, ULONG cbBuf, PULONG pcbActual)
 {
     switch (enmClass)
     {
@@ -414,9 +457,152 @@ ZwQuerySystemInformation(SYSTEM_INFORMATION_CLASS enmClass, PVOID pvBuf, ULONG c
     }
 }
 
+/**
+ * Calculates the length indicated by an ModR/M sequence.
+ *
+ * @returns Length, including RM byte.
+ * @param   bRm         The RM byte.
+ */
+static uint32_t rtR0Nt3CalcModRmLength(uint8_t bRm)
+{
+    uint32_t cbRm = 1;
+
+    if (   (bRm & X86_MODRM_MOD_MASK) == 3
+        || (bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
+        cbRm += 4; /* disp32 */
+    else if ((bRm & X86_MODRM_MOD_MASK) == 1)
+        cbRm += 1; /* disp8 */
+    else if ((bRm & X86_MODRM_MOD_MASK) == 2)
+        cbRm += 2; /* disp16 */
+
+    if ((bRm & X86_MODRM_RM_MASK) == 4 && (bRm & X86_MODRM_MOD_MASK) != 3)
+        cbRm += 1; /* SIB */
+
+    return cbRm;
+}
+
+
+/**
+ * Init symbols.
+ *
+ * This is called after both ZwQuerySystemInformation and PsGetVersion are used
+ * for the first time.
+ *
+ * @returns IPRT status code
+ * @param   hKrnlInfo           Kernel symbol digger handle.
+ */
+DECLHIDDEN(int) rtR0Nt3InitSymbols(RTDBGKRNLINFO hKrnlInfo)
+{
+    /*
+     * Resolve symbols.  (We set C variables (g_pfnrtXxx) here, not the __imp__Xxx ones.)
+     */
+#define GET_SYSTEM_ROUTINE(a_fnName) do { \
+            RT_CONCAT(g_pfnrt, a_fnName) = (decltype(RT_CONCAT(g_pfnrt, a_fnName)))RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, #a_fnName); \
+        } while (0)
+
+    GET_SYSTEM_ROUTINE(PsGetVersion);
+    GET_SYSTEM_ROUTINE(ZwQuerySystemInformation);
+    GET_SYSTEM_ROUTINE(KeSetTimerEx);
+    GET_SYSTEM_ROUTINE(IoAttachDeviceToDeviceStack);
+    GET_SYSTEM_ROUTINE(PsGetCurrentProcessId);
+    GET_SYSTEM_ROUTINE(ZwYieldExecution);
+    GET_SYSTEM_ROUTINE(ExAcquireFastMutex);
+    GET_SYSTEM_ROUTINE(ExReleaseFastMutex);
+
+#define GET_FAST_CALL_SYSTEM_ROUTINE(a_fnFastcall, a_fnStdcall) do { \
+            GET_SYSTEM_ROUTINE(a_fnFastcall); \
+            GET_SYSTEM_ROUTINE(a_fnStdcall); \
+            AssertLogRelReturn(RT_CONCAT(g_pfnrt,a_fnFastcall) || RT_CONCAT(g_pfnrt,a_fnStdcall), VERR_INTERNAL_ERROR_3); \
+        } while (0)
+    GET_FAST_CALL_SYSTEM_ROUTINE(IofCompleteRequest,   IoCompleteRequest);
+    GET_FAST_CALL_SYSTEM_ROUTINE(ObfDereferenceObject, ObDereferenceObject);
+    GET_FAST_CALL_SYSTEM_ROUTINE(IofCallDriver,        IofCallDriver);
+    GET_FAST_CALL_SYSTEM_ROUTINE(KfAcquireSpinLock,    KeAcquireSpinLock);
+    GET_FAST_CALL_SYSTEM_ROUTINE(KfReleaseSpinLock,    KeReleaseSpinLock);
+    GET_FAST_CALL_SYSTEM_ROUTINE(KfLowerIrql,          KeLowerIrql);
+    GET_FAST_CALL_SYSTEM_ROUTINE(KfRaiseIrql,          KeRaiseIrql);
+
+    /*
+     * We need to call assembly to update the __imp__Xxx entries, since C
+     * doesn't allow '@' in symbols.
+     */
+    rtNt3InitSymbolsAssembly();
+
+    /*
+     * Tick count data.  We disassemble KeQueryTickCount until we find the
+     * first absolute address referenced in it.
+     *      %80105b70 8b 44 24 04             mov eax, dword [esp+004h]
+     *      %80105b74 c7 40 04 00 00 00 00    mov dword [eax+004h], 000000000h
+     *      %80105b7b 8b 0d 88 70 19 80       mov ecx, dword [080197088h]
+     *      %80105b81 89 08                   mov dword [eax], ecx
+     *      %80105b83 c2 04 00                retn 00004h
+     */
+    _imp__KeTickCount = (decltype(_imp__KeTickCount))RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "KeTickCount");
+    if (!_imp__KeTickCount)
+    {
+        Assert(g_uNt3MajorVer == 3 && g_uNt3MinorVer < 50);
+        uint8_t const *pbCode = (uint8_t const *)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "KeQueryTickCount");
+        AssertLogRelReturn(pbCode, VERR_INTERNAL_ERROR_2);
+
+        for (uint32_t off = 0; off < 128 && _imp__KeTickCount == NULL;)
+        {
+            uint8_t const b1 = pbCode[off++];
+            switch (b1)
+            {
+                case 0x89:
+                    /* mov reg, r/m     ; We're looking for absolute address in r/m. */
+                    if ((pbCode[off] & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5 /*disp32*/)
+                        _imp__KeTickCount = *(KSYSTEM_TIME **)&pbCode[off + 1];
+                    RT_FALL_THRU();
+                case 0x8b:
+                    off += rtR0Nt3CalcModRmLength(pbCode[off]);
+                    break;
+
+                case 0xc7:
+                    if ((pbCode[off] & X86_MODRM_REG_MASK) == 0) /* mov r/m, imm32 */
+                        off += rtR0Nt3CalcModRmLength(pbCode[off]) + 4;
+                    else
+                    {
+                        RTLogBackdoorPrintf("rtR0Nt3InitSymbols: Failed to find KeTickCount! Encountered unknown opcode at %#x! %.*Rhxs\n",
+                                            off - 1, RT_MAX(off + 16, RT_MIN(PAGE_SIZE - ((uintptr_t)pbCode & PAGE_OFFSET_MASK), 128)), pbCode);
+                        return VERR_INTERNAL_ERROR_3;
+                    }
+                    break;
+
+                case 0xc2: /* ret iw */
+                    RTLogBackdoorPrintf("rtR0Nt3InitSymbols: Failed to find KeTickCount! Encountered RET! %.*Rhxs\n",
+                                        off + 2, pbCode);
+                    return VERR_INTERNAL_ERROR_3;
+
+                default:
+                    RTLogBackdoorPrintf("rtR0Nt3InitSymbols: Failed to find KeTickCount! Encountered unknown opcode at %#x! %.*Rhxs\n",
+                                        off - 1, RT_MAX(off + 16, RT_MIN(PAGE_SIZE - ((uintptr_t)pbCode & PAGE_OFFSET_MASK), 128)), pbCode);
+                    return VERR_INTERNAL_ERROR_3;
+
+                /* Just in case: */
+
+                case 0xa1: /* mov eax, [m32] */
+                    _imp__KeTickCount = *(KSYSTEM_TIME **)&pbCode[off];
+                    off += 4;
+                    break;
+
+                case 50: case 51: case 52: case 53: case 54: case 55: case 56: case 57: /* push reg */
+                    break;
+            }
+        }
+        if (!_imp__KeTickCount)
+        {
+            RTLogBackdoorPrintf("rtR0Nt3InitSymbols: Failed to find KeTickCount after 128 bytes! %.*Rhxs\n", 128, pbCode);
+            return VERR_INTERNAL_ERROR_3;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
 
 extern "C" DECLEXPORT(VOID)
-KeInitializeTimerEx(PKTIMER pTimer, TIMER_TYPE enmType)
+Nt3Fb_KeInitializeTimerEx(PKTIMER pTimer, TIMER_TYPE enmType)
 {
     KeInitializeTimer(pTimer);
     NOREF(enmType);
@@ -426,7 +612,7 @@ KeInitializeTimerEx(PKTIMER pTimer, TIMER_TYPE enmType)
 
 
 extern "C" DECLEXPORT(BOOLEAN) __stdcall
-KeSetTimerEx(PKTIMER pTimer, LARGE_INTEGER DueTime, LONG cMsPeriod, PKDPC pDpc)
+Nt3Fb_KeSetTimerEx(PKTIMER pTimer, LARGE_INTEGER DueTime, LONG cMsPeriod, PKDPC pDpc)
 {
     AssertReturn(cMsPeriod == 0, FALSE);
     return KeSetTimer(pTimer, DueTime, pDpc);
@@ -434,7 +620,7 @@ KeSetTimerEx(PKTIMER pTimer, LARGE_INTEGER DueTime, LONG cMsPeriod, PKDPC pDpc)
 
 
 extern "C" DECLEXPORT(PDEVICE_OBJECT)
-IoAttachDeviceToDeviceStack(PDEVICE_OBJECT pSourceDevice, PDEVICE_OBJECT pTargetDevice)
+Nt3Fb_IoAttachDeviceToDeviceStack(PDEVICE_OBJECT pSourceDevice, PDEVICE_OBJECT pTargetDevice)
 {
     NOREF(pSourceDevice); NOREF(pTargetDevice);
     return NULL;
@@ -442,7 +628,7 @@ IoAttachDeviceToDeviceStack(PDEVICE_OBJECT pSourceDevice, PDEVICE_OBJECT pTarget
 
 
 extern "C" DECLEXPORT(HANDLE)
-PsGetCurrentProcessId(void)
+Nt3Fb_PsGetCurrentProcessId(void)
 {
     if (!g_fNt3VersionInitialized)
         rtR0Nt3InitVersion();
@@ -456,11 +642,53 @@ PsGetCurrentProcessId(void)
 
 
 extern "C" DECLEXPORT(NTSTATUS)
-ZwYieldExecution(VOID)
+Nt3Fb_ZwYieldExecution(VOID)
 {
     LARGE_INTEGER Interval;
     Interval.QuadPart = 0;
     KeDelayExecutionThread(KernelMode, FALSE, &Interval);
     return STATUS_SUCCESS;
+}
+
+
+/**
+ * This is a simple implementation of the fast mutex api introduced in 3.50.
+ */
+extern "C" DECLEXPORT(VOID) FASTCALL
+Nt3Fb_ExAcquireFastMutex(PFAST_MUTEX pFastMtx)
+{
+    PETHREAD pSelf = PsGetCurrentThread();
+    KIRQL    OldIrql;
+    KeRaiseIrql(APC_LEVEL, &OldIrql);
+
+    /* The Count member is initialized to 1.  So if we decrement it to zero, we're
+       the first locker and owns the mutex.  Otherwise we must wait for our turn. */
+    int32_t  cLockers = ASMAtomicDecS32((int32_t volatile *)&pFastMtx->Count);
+    if (cLockers != 0)
+    {
+        ASMAtomicIncU32((uint32_t volatile *)&pFastMtx->Contention);
+        KeWaitForSingleObject(&pFastMtx->Event, Executive, KernelMode, FALSE /*fAlertable*/, NULL /*pTimeout*/);
+    }
+
+    pFastMtx->Owner   = (PKTHREAD)pSelf;
+    pFastMtx->OldIrql = OldIrql;
+}
+
+
+/**
+ * This is a simple implementation of the fast mutex api introduced in 3.50.
+ */
+extern "C" DECLEXPORT(VOID) FASTCALL
+Nt3Fb_ExReleaseFastMutex(PFAST_MUTEX pFastMtx)
+{
+    AssertMsg(pFastMtx->Owner == (PKTHREAD)PsGetCurrentThread(), ("Owner=%p, expected %p\n", pFastMtx->Owner, PsGetCurrentThread()));
+
+    KIRQL    OldIrql  = pFastMtx->OldIrql;
+    pFastMtx->Owner   = NULL;
+    int32_t  cLockers = ASMAtomicIncS32((int32_t volatile *)&pFastMtx->Count);
+    if (cLockers < 0)
+        KeSetEvent(&pFastMtx->Event, EVENT_INCREMENT, FALSE /*fWait*/);
+    if (OldIrql != APC_LEVEL)
+        KeLowerIrql(OldIrql);
 }
 

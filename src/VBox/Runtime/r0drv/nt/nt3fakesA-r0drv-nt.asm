@@ -29,33 +29,107 @@
 ;*******************************************************************************
 %include "iprt/asmdefs.mac"
 
+%undef NAME
+%define NAME(name) NAME_OVERLOAD(name)
+
 BEGINCODE
 
-extern      _PsGetVersion@16
-GLOBALNAME _imp__PsGetVersion@16
-    dd      _PsGetVersion@16
+;;
+; Called from rtR0Nt3InitSymbols after symbols have been resolved.
+BEGINPROC _rtNt3InitSymbolsAssembly
+        push    ebp
+        mov     ebp, esp
 
-extern      _ZwQuerySystemInformation@16
-GLOBALNAME _imp__ZwQuerySystemInformation@16
-    dd      _ZwQuerySystemInformation@16
+;;
+; @param 1  The fastcall name.
+; @param 2  Byte size of arguments.
+%macro DefineImportDataAndInitCode 3
+extern          $%1 %+ Nt3Fb_ %+ %2 %+ @ %+ %3
+BEGINDATA
+extern          _g_pfnrt %+ %2
+GLOBALNAME __imp_ %+ %1 %+ %2 %+ @ %+ %3
+        dd      $%1 %+ Nt3Fb_ %+ %2 %+ @ %+ %3
+BEGINCODE
+        mov     eax, [_g_pfnrt %+ %2]
+        test    eax, eax
+        jz      %%next
+        mov     [__imp_ %+ %1 %+ %2 %+ @ %+ %3], eax
+%%next:
+%endmacro
 
-extern      _KeInitializeTimerEx@8
-GLOBALNAME _imp__KeInitializeTimerEx@8
-    dd      _KeInitializeTimerEx@8
+        DefineImportDataAndInitCode _,PsGetVersion, 16
+        DefineImportDataAndInitCode _,ZwQuerySystemInformation, 16
+        DefineImportDataAndInitCode _,KeSetTimerEx, 20
+        DefineImportDataAndInitCode _,IoAttachDeviceToDeviceStack, 8
+        DefineImportDataAndInitCode _,PsGetCurrentProcessId, 0
+        DefineImportDataAndInitCode _,ZwYieldExecution, 0
+        DefineImportDataAndInitCode @,ExAcquireFastMutex, 4
+        DefineImportDataAndInitCode @,ExReleaseFastMutex, 4
 
-extern      _KeSetTimerEx@20
-GLOBALNAME _imp__KeSetTimerEx@20
-    dd      _KeSetTimerEx@20
+        xor     eax, eax
+        leave
+        ret
+ENDPROC _rtNt3InitSymbolsAssembly
 
-extern      _IoAttachDeviceToDeviceStack@8
-GLOBALNAME _imp__IoAttachDeviceToDeviceStack@8
-    dd      _IoAttachDeviceToDeviceStack@8
 
-extern      _PsGetCurrentProcessId@0
-GLOBALNAME _imp__PsGetCurrentProcessId@0
-    dd      _PsGetCurrentProcessId@0
+;;
+; @param 1  The fastcall name.
+; @param 2  The stdcall name.
+; @param 3  Byte size of arguments.
+%macro FastOrStdCallWrapper 3
+BEGINCODE
+extern _g_pfnrt %+ %1
+extern _g_pfnrt %+ %2
+BEGINPROC_EXPORTED $@ %+ %1 %+ @ %+ %3
+        mov     eax, [_g_pfnrt %+ %1]
+        cmp     eax, 0
+        jnz     .got_fast_call
+        mov     eax, .stdcall_wrapper
+        mov     [__imp_@ %+ %1 %+ @ %+ %3], eax
 
-extern      _ZwYieldExecution@0
-GLOBALNAME _imp__ZwYieldExecution@0
-    dd      _ZwYieldExecution@0
+.stdcall_wrapper:
+        push    ebp
+        mov     ebp, esp
+        push    edx
+        push    ecx
+        call    [_g_pfnrt %+ %2]
+        leave
+        ret
+
+.got_fast_call:
+        mov     [__imp_@ %+ %1 %+ @ %+ %3], eax
+        jmp     eax
+ENDPROC $@ %+ %1 %+ @ %+ %3
+
+BEGINDATA
+GLOBALNAME __imp_@ %+ %1 %+ @ %+ %3
+        dd       $@ %+ %1 %+ @ %+ %3
+%endmacro
+
+FastOrStdCallWrapper IofCompleteRequest, IoCompleteRequest, 8
+FastOrStdCallWrapper IofCallDriver, IoCallDriver, 8
+FastOrStdCallWrapper ObfDereferenceObject, ObDereferenceObject, 4
+FastOrStdCallWrapper KfAcquireSpinLock, KeAcquireSpinLock, 4
+FastOrStdCallWrapper KfReleaseSpinLock, KeReleaseSpinLock, 8
+FastOrStdCallWrapper KfLowerIrql, KeLowerIrql, 4
+FastOrStdCallWrapper KfRaiseIrql, KeRaiseIrql, 4
+
+
+BEGINCODE
+; LONG FASTCALL InterlockedExchange(LONG volatile *,LONG );
+BEGINPROC_EXPORTED $@InterlockedExchange@8
+        mov     eax, edx
+        xchg    [ecx], eax
+        ret
+
+BEGINDATA
+GLOBALNAME __imp_@InterlockedExchange@8
+        dd      $@InterlockedExchange@8
+
+
+BEGINDATA
+GLOBALNAME __imp__KeTickCount
+GLOBALNAME _KeTickCount
+        dd      0
+
 

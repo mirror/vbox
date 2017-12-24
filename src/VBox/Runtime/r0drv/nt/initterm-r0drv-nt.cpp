@@ -109,11 +109,9 @@ decltype(MmSecureVirtualMemory)        *g_pfnrtMmSecureVirtualMemory;
 decltype(MmUnsecureVirtualMemory)      *g_pfnrtMmUnsecureVirtualMemory;
 /** RtlGetVersion, introduced in ??. */
 PFNRTRTLGETVERSION                      g_pfnrtRtlGetVersion;
-#ifndef RT_ARCH_AMD64
+#ifdef RT_ARCH_X86
 /** KeQueryInterruptTime - exported/new in Windows 2000. */
 PFNRTKEQUERYINTERRUPTTIME               g_pfnrtKeQueryInterruptTime;
-/** KeQuerySystemTime - exported/new in Windows 2000. */
-PFNRTKEQUERYSYSTEMTIME                  g_pfnrtKeQuerySystemTime;
 #endif
 /** KeQueryInterruptTimePrecise - new in Windows 8. */
 PFNRTKEQUERYINTERRUPTTIMEPRECISE        g_pfnrtKeQueryInterruptTimePrecise;
@@ -128,7 +126,7 @@ uint32_t                                g_cbrtNtPbQuantumEnd;
 uint32_t                                g_offrtNtPbDpcQueueDepth;
 
 /** The combined NT version, see RTNT_MAKE_VERSION. */
-uint32_t                                g_uRtNtVersion;
+uint32_t                                g_uRtNtVersion = RTNT_MAKE_VERSION(4, 0);
 /** The major version number. */
 uint8_t                                 g_uRtNtMajorVer;
 /** The minor version number. */
@@ -313,9 +311,8 @@ DECLHIDDEN(int) rtR0InitNative(void)
     GET_SYSTEM_ROUTINE(MmUnsecureVirtualMemory);
 
     GET_SYSTEM_ROUTINE_TYPE(RtlGetVersion, PFNRTRTLGETVERSION);
-#ifndef RT_ARCH_AMD64
+#ifdef RT_ARCH_X86
     GET_SYSTEM_ROUTINE(KeQueryInterruptTime);
-    GET_SYSTEM_ROUTINE(KeQuerySystemTime);
 #endif
     GET_SYSTEM_ROUTINE_TYPE(KeQueryInterruptTimePrecise, PFNRTKEQUERYINTERRUPTTIMEPRECISE);
     GET_SYSTEM_ROUTINE_TYPE(KeQuerySystemTimePrecise, PFNRTKEQUERYSYSTEMTIMEPRECISE);
@@ -326,7 +323,14 @@ DECLHIDDEN(int) rtR0InitNative(void)
     g_puRtMmHighestUserAddress = (uintptr_t const *)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "MmHighestUserAddress");
     g_puRtMmSystemRangeStart   = (uintptr_t const *)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "MmSystemRangeStart");
 
+#ifdef RT_ARCH_X86
+    rc = rtR0Nt3InitSymbols(hKrnlInfo);
     RTR0DbgKrnlInfoRelease(hKrnlInfo);
+    if (RT_FAILURE(rc))
+        return rc;
+#else
+    RTR0DbgKrnlInfoRelease(hKrnlInfo);
+#endif
 
     /*
      * HACK ALERT! (and déjà vu warning - remember win32k.sys?)

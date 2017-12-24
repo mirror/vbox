@@ -92,9 +92,8 @@ extern decltype(MmSecureVirtualMemory)        *g_pfnrtMmSecureVirtualMemory;
 extern decltype(MmUnsecureVirtualMemory)      *g_pfnrtMmUnsecureVirtualMemory;
 
 extern PFNRTRTLGETVERSION                      g_pfnrtRtlGetVersion;
-#ifndef RT_ARCH_AMD64
+#ifdef RT_ARCH_X86
 extern PFNRTKEQUERYINTERRUPTTIME               g_pfnrtKeQueryInterruptTime;
-extern PFNRTKEQUERYSYSTEMTIME                  g_pfnrtKeQuerySystemTime;
 #endif
 extern PFNRTKEQUERYINTERRUPTTIMEPRECISE        g_pfnrtKeQueryInterruptTimePrecise;
 extern PFNRTKEQUERYSYSTEMTIMEPRECISE           g_pfnrtKeQuerySystemTimePrecise;
@@ -124,7 +123,10 @@ int __stdcall rtMpPokeCpuUsingHalReqestIpiPreW7(RTCPUID idCpu);
 struct RTNTSDBOSVER;
 DECLHIDDEN(int)  rtR0MpNtInit(struct RTNTSDBOSVER const *pOsVerInfo);
 DECLHIDDEN(void) rtR0MpNtTerm(void);
-DECLHIDDEN(int) rtMpNtSetTargetProcessorDpc(KDPC *pDpc, RTCPUID idCpu);
+DECLHIDDEN(int)  rtMpNtSetTargetProcessorDpc(KDPC *pDpc, RTCPUID idCpu);
+#if defined(RT_ARCH_X86) && defined(NIL_RTDBGKRNLINFO)
+DECLHIDDEN(int)  rtR0Nt3InitSymbols(RTDBGKRNLINFO hKrnlInfo);
+#endif
 
 RT_C_DECLS_END
 
