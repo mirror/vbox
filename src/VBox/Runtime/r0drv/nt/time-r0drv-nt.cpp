@@ -34,6 +34,16 @@
 #include <iprt/time.h>
 
 
+/*
+ * The KeQueryTickCount macro isn't compatible with NT 3.1, use the
+ * exported KPI instead.
+ */
+#ifdef RT_ARCH_X86
+# undef KeQueryTickCount
+extern "C" NTKERNELAPI void NTAPI KeQueryTickCount(PLARGE_INTEGER);
+#endif
+
+
 DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
 {
     /*
@@ -56,25 +66,46 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
         ULONG64 QpcTsIgnored;
         InterruptTime.QuadPart = g_pfnrtKeQueryInterruptTimePrecise(&QpcTsIgnored);
     }
-# ifdef RT_ARCH_AMD64
-    else
-        InterruptTime.QuadPart = KeQueryInterruptTime(); /* macro */
-# else
-    else if (g_pfnrtKeQueryInterruptTime)
+# ifdef RT_ARCH_X86
+    else if (g_pfnrtKeQueryInterruptTime) /* W2K+ */
         InterruptTime.QuadPart = g_pfnrtKeQueryInterruptTime();
-    else
+    else if (g_uRtNtVersion >= RTNT_MAKE_VERSION(3, 50))
     {
-        /* NT4 (no API) and pre-init fallback. */
+        /* NT 3.50 and later, also pre-init: Use the user shared data. */
         do
         {
             InterruptTime.HighPart = ((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.High1Time;
-            InterruptTime.LowPart = ((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.LowPart;
+            InterruptTime.LowPart  = ((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.LowPart;
         } while (((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.High2Time != InterruptTime.HighPart);
     }
+    else
+    {
+        /*
+         * There is no KUSER_SHARED_DATA structure on NT 3.1, so we have no choice
+         * but to use the tick count.  We must also avoid the KeQueryTickCount macro
+         * in the WDK, since NT 3.1 does have the KeTickCount data export either (see above).
+         */
+        static ULONG volatile s_uTimeIncrement = 0;
+        ULONG uTimeIncrement = s_uTimeIncrement;
+        if (!uTimeIncrement)
+        {
+            uTimeIncrement = KeQueryTimeIncrement();
+            Assert(uTimeIncrement != 0);
+            Assert(uTimeIncrement * 100 / 100 == uTimeIncrement);
+            uTimeIncrement *= 100;
+            s_uTimeIncrement = uTimeIncrement;
+        }
+
+        KeQueryTickCount(&InterruptTime);
+        return (uint64_t)InterruptTime.QuadPart * uTimeIncrement;
+    }
+# else
+    else
+        InterruptTime.QuadPart = KeQueryInterruptTime(); /* Macro on AMD64. */
 # endif
     return (uint64_t)InterruptTime.QuadPart * 100;
 #else
-    /* Tick Count (NT4 SP1 has these APIs, haven't got SP0 to check). */
+    /* Tick count.  Works all the way back to NT 3.1 with #undef above.  */
     LARGE_INTEGER Tick;
     KeQueryTickCount(&Tick);
     return (uint64_t)Tick.QuadPart * KeQueryTimeIncrement() * 100;
@@ -111,21 +142,8 @@ RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
     LARGE_INTEGER SystemTime;
     if (g_pfnrtKeQuerySystemTimePrecise)
         g_pfnrtKeQuerySystemTimePrecise(&SystemTime);
-#ifdef RT_ARCH_AMD64
     else
-        KeQuerySystemTime(&SystemTime); /* macro */
-#else
-    else if (g_pfnrtKeQuerySystemTime)
-        g_pfnrtKeQuerySystemTime(&SystemTime);
-    else
-    {
-        do
-        {
-            SystemTime.HighPart = ((KUSER_SHARED_DATA volatile *)SharedUserData)->SystemTime.High1Time;
-            SystemTime.LowPart = ((KUSER_SHARED_DATA volatile *)SharedUserData)->SystemTime.LowPart;
-        } while (((KUSER_SHARED_DATA volatile *)SharedUserData)->SystemTime.High2Time != SystemTime.HighPart);
-    }
-#endif
+        KeQuerySystemTime(&SystemTime); /* Macro on AMD64, export on X86.  */
     return RTTimeSpecSetNtTime(pTime, SystemTime.QuadPart);
 }
 
