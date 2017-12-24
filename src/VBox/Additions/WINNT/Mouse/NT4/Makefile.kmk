@@ -29,13 +29,28 @@ VBoxMouseNT_SOURCES     = \
 	VBoxPS2NT.cpp \
 	VBoxPS2NT.rc
 VBoxMouseNT_LIBS        = \
+	$(VBOX_LIB_IPRT_GUEST_R0_NT4) \
+	$(VBOX_LIB_VBGL_R0) \
+	$(if-expr defined(VBOX_WITH_NT3_ADDITIONS),$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/int64.lib,) \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/exsup.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib \
-	$(VBOX_LIB_VBGL_R0) \
-	$(VBOX_LIB_IPRT_GUEST_R0_NT4)
+	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib
 VBoxMouseNT_CLEAN       = \
 	$(VBoxMouseNT_0_OUTDIR)/VBoxMouseNT.pdb
+VBoxMouseNT_USES.win += vboximportchecker
+ifndef VBOX_WITH_NT3_ADDITIONS
+ VBoxMouseNT_VBOX_IMPORT_CHECKER.win.x86 = nt4/r0
+else
+ VBoxMouseNT_DEFS      += RT_WITHOUT_NOCRT_WRAPPERS TARGET_NT3
+ VBoxMouseNT_SOURCES   += \
+       ../../../../Runtime/r0drv/nt/nt3fakes-r0drv-nt.cpp \
+       ../../../../Runtime/r0drv/nt/nt3fakesA-r0drv-nt.asm \
+       ../../../../Runtime/common/string/strcmp.asm \
+       ../../../../Runtime/common/string/strchr.asm
+ VBoxMouseNT_VBOX_IMPORT_CHECKER.win.x86 = nt31/r0 #nt350/r0
+ VBoxMouseNT_LDFLAGS +=
+endif
+
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

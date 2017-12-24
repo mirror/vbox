@@ -37,6 +37,12 @@ RT_C_DECLS_END
 #undef ExFreePool
 #undef ExAllocatePool
 
+/* KeQueryTickCount is a macro accessing KeTickCount data export from NT 3.50+. */
+#if 0 //def TARGET_NT3
+# undef KeQueryTickCount
+extern "C" NTKERNELAPI VOID NTAPI KeQueryTickCount(PLARGE_INTEGER);
+#endif
+
 /* i8042 mouse status bits */
 #define LEFT_BUTTON_DOWN                        0x01
 #define RIGHT_BUTTON_DOWN                       0x02
@@ -1968,9 +1974,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING RegistryPath)
 
     if (pDevExt->HardwarePresent & KEYBOARD_HARDWARE_PRESENT)
     {
-        pDevExt->KbdExt.InputData = (PKEYBOARD_INPUT_DATA)
-            ExAllocatePool(NonPagedPool, pDevExt->Cfg.KbdAttr.InputDataQueueLength);
-
+        pDevExt->KbdExt.InputData = (PKEYBOARD_INPUT_DATA)ExAllocatePool(NonPagedPool, pDevExt->Cfg.KbdAttr.InputDataQueueLength);
         if (!pDevExt->KbdExt.InputData)
         {
             status = STATUS_INSUFFICIENT_RESOURCES;
@@ -1989,7 +1993,6 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING RegistryPath)
 
         MouNameFull.MaximumLength = sizeof(L"\\Device\\") + MouNameBase.Length + DevNameSuff.MaximumLength;
         MouNameFull.Buffer = (PWSTR)ExAllocatePool(PagedPool, MouNameFull.MaximumLength);
-
         if (!MouNameFull.Buffer)
         {
             status = STATUS_UNSUCCESSFUL;
@@ -2021,8 +2024,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING RegistryPath)
         if (!NT_SUCCESS(status))
             goto fail;
 
-        pDevExt->MouExt.InputData =
-            (PMOUSE_INPUT_DATA)ExAllocatePool(NonPagedPool, pDevExt->Cfg.MouAttr.InputDataQueueLength);
+        pDevExt->MouExt.InputData = (PMOUSE_INPUT_DATA)ExAllocatePool(NonPagedPool, pDevExt->Cfg.MouAttr.InputDataQueueLength);
         if (!pDevExt->MouExt.InputData)
         {
             status = STATUS_INSUFFICIENT_RESOURCES;
@@ -2705,8 +2707,7 @@ static VOID HwGetRegstry(PINITEXT pInit, PUNICODE_STRING RegistryPath,
     path = RegistryPath->Buffer;
     if (NT_SUCCESS(status))
     {
-        aQuery = (PRTL_QUERY_REGISTRY_TABLE)
-                        ExAllocatePool(PagedPool, sizeof(RTL_QUERY_REGISTRY_TABLE) * (queries + 1));
+        aQuery = (PRTL_QUERY_REGISTRY_TABLE)ExAllocatePool(PagedPool, sizeof(RTL_QUERY_REGISTRY_TABLE) * (queries + 1));
         if (!aQuery)
             status = STATUS_UNSUCCESSFUL;
         else
