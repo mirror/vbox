@@ -53,6 +53,8 @@ typedef struct NTMTE32
                     InInitializationOrderModuleList;
     uint32_t        DllBase;
     uint32_t        EntryPoint;
+    /** @note This field is not a size in NT 3.1. It's NULL for images loaded by the
+     *        boot loader, for other images it looks like some kind of pointer.  */
     uint32_t        SizeOfImage;
     struct
     {
@@ -194,6 +196,9 @@ typedef struct DBGDIGGERWINNT
     bool                fValid;
     /** 32-bit (true) or 64-bit (false) */
     bool                f32Bit;
+    /** Set if NT 3.1 was detected.
+     * This implies both Misc.VirtualSize and NTMTE32::SizeOfImage are zero. */
+    bool                fNt31;
 
     /** The NT version. */
     DBGDIGGERWINNTVER   enmVer;
@@ -393,9 +398,11 @@ static DECLCALLBACK(void) dbgDiggerWinNtRdr_Dtor(void *pvUser)
  * @param   paShs               Pointer to the section headers.
  * @param   cShs                Number of headers.
  * @param   cbImage             The image size reported by NT.
+ * @param   cbImageFromHdr      The image size by the linker in the header.
  * @param   uRvaRsrc            The RVA of the resource directory. UINT32_MAX if
  *                              no resource directory.
  * @param   cbSectAlign         The section alignment specified in the header.
+ * @param   fNt31               Set if NT 3.1.  Needed for chopped off HAL.
  * @param   pcbImageCorrect     The corrected image size.  This is derived from
  *                              cbImage and virtual range of the section tables.
  *
@@ -405,7 +412,8 @@ static DECLCALLBACK(void) dbgDiggerWinNtRdr_Dtor(void *pvUser)
  *                              a page aligned cbImage.
  */
 static bool dbgDiggerWinNtCheckSectHdrsAndImgSize(PCIMAGE_SECTION_HEADER paShs, uint32_t cShs, uint32_t cbImage,
-                                                  uint32_t uRvaRsrc, uint32_t cbSectAlign, uint32_t *pcbImageCorrect)
+                                                  uint32_t cbImageFromHdr, uint32_t uRvaRsrc, uint32_t cbSectAlign,
+                                                  bool fNt31, uint32_t *pcbImageCorrect)
 {
     *pcbImageCorrect = cbImage;
 
@@ -420,21 +428,42 @@ static bool dbgDiggerWinNtCheckSectHdrsAndImgSize(PCIMAGE_SECTION_HEADER paShs, 
         if (paShs[i].Characteristics & IMAGE_SCN_TYPE_NOLOAD)
             continue;
 
+        /* Tweak to determine the virtual size if the linker didn't set it (NT 3.1). */
+        /** @todo this isn't really perfect. cbImage is kind of wrong...   */
+        uint32_t cbVirtual = paShs[i].Misc.VirtualSize;
+        if (cbVirtual == 0)
+        {
+            for (uint32_t j = i + 1; j < cShs; j++)
+                if (!(paShs[j].Characteristics & IMAGE_SCN_TYPE_NOLOAD)
+                    && paShs[j].VirtualAddress > paShs[i].VirtualAddress)
+                {
+                    cbVirtual = paShs[j].VirtualAddress - paShs[i].VirtualAddress;
+                    break;
+                }
+            if (!cbVirtual)
+            {
+                if (paShs[i].VirtualAddress < cbImageFromHdr)
+                    cbVirtual = cbImageFromHdr - paShs[i].VirtualAddress;
+                else if (paShs[i].SizeOfRawData > 0)
+                    cbVirtual = RT_ALIGN(paShs[i].SizeOfRawData, _4K);
+            }
+        }
+
         /* Check that sizes are within the same range and that both sizes and
            addresses are within reasonable limits. */
-        if (   RT_ALIGN(paShs[i].Misc.VirtualSize, _64K) < RT_ALIGN(paShs[i].SizeOfRawData, _64K)
-            || paShs[i].Misc.VirtualSize >= _1G
-            || paShs[i].SizeOfRawData    >= _1G)
+        if (   RT_ALIGN(cbVirtual, _64K) < RT_ALIGN(paShs[i].SizeOfRawData, _64K)
+            || cbVirtual                >= _1G
+            || paShs[i].SizeOfRawData   >= _1G)
         {
-            Log(("DigWinNt: Section header #%u has a VirtualSize=%#x and SizeOfRawData=%#x, that's too much data!\n",
-                 i, paShs[i].Misc.VirtualSize, paShs[i].SizeOfRawData));
+            Log(("DigWinNt: Section header #%u (%.8s) has a VirtualSize=%#x (%#x) and SizeOfRawData=%#x, that's too much data!\n",
+                 i, paShs[i].Name, cbVirtual, paShs[i].Misc.VirtualSize, paShs[i].SizeOfRawData));
             return false;
         }
-        uint32_t uRvaEnd = paShs[i].VirtualAddress + paShs[i].Misc.VirtualSize;
+        uint32_t uRvaEnd = paShs[i].VirtualAddress + cbVirtual;
         if (uRvaEnd >= _1G || uRvaEnd < paShs[i].VirtualAddress)
         {
-            Log(("DigWinNt: Section header #%u has a VirtualSize=%#x and VirtualAddr=%#x, %#x in total, that's too much!\n",
-                 i, paShs[i].Misc.VirtualSize, paShs[i].VirtualAddress, uRvaEnd));
+            Log(("DigWinNt: Section header #%u (%.8s) has a VirtualSize=%#x (%#x) and VirtualAddr=%#x, %#x in total, that's too much!\n",
+                 i, paShs[i].Name, cbVirtual, paShs[i].Misc.VirtualSize, paShs[i].VirtualAddress, uRvaEnd));
             return false;
         }
 
@@ -444,7 +473,7 @@ static bool dbgDiggerWinNtCheckSectHdrsAndImgSize(PCIMAGE_SECTION_HEADER paShs, 
             cbImage = RT_ALIGN(uRvaEnd, cbSectAlign);
 
         /* Check that the section is within the image. */
-        if (uRvaEnd > cbImage)
+        if (uRvaEnd > cbImage && fNt31)
         {
             Log(("DigWinNt: Section header #%u has a virtual address range beyond the image: %#x TO %#x cbImage=%#x\n",
                  i, paShs[i].VirtualAddress, uRvaEnd, cbImage));
@@ -495,9 +524,9 @@ static int dbgDiggerWinNtCreateLdrMod(PDBGDIGGERWINNT pThis, PUVM pUVM, const ch
     uint32_t cbShs  = cShs * sizeof(IMAGE_SECTION_HEADER);
     PCIMAGE_SECTION_HEADER paShs = (PCIMAGE_SECTION_HEADER)(pbBuf + offShs);
     if (   offShs + cbShs <= RT_MIN(cbImage, cbBuf)
-        && dbgDiggerWinNtCheckSectHdrsAndImgSize(paShs, cShs, cbImage, uRvaRsrc,
-                                                 WINNT_UNION(pThis, pHdrs, OptionalHeader.SectionAlignment),
-                                                 &pRdr->cbCorrectImageSize))
+        && dbgDiggerWinNtCheckSectHdrsAndImgSize(paShs, cShs, cbImage, WINNT_UNION(pThis, pHdrs, OptionalHeader.SizeOfImage),
+                                                 uRvaRsrc, WINNT_UNION(pThis, pHdrs, OptionalHeader.SectionAlignment),
+                                                 pThis->fNt31, &pRdr->cbCorrectImageSize))
     {
         pRdr->cMappings = 0;
 
@@ -593,11 +622,17 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
     LogFlow(("DigWinNt: %RGp %#x %s\n", pImageAddr->FlatPtr, cbImage, pszName));
 
     /*
+     * NT 3.1 doesn't set the image size in the MTEs, so a little
+     * bit of tweaking is necessary here.
+     */
+    uint32_t const cbImageValidate = !pThis->fNt31 ? cbImage : _64M;
+
+    /*
      * Do some basic validation first.
      * This is the usual exteremely verbose and messy code...
      */
     Assert(cbBuf >= sizeof(IMAGE_NT_HEADERS64));
-    if (   cbImage < sizeof(IMAGE_NT_HEADERS64)
+    if (   (cbImage < sizeof(IMAGE_NT_HEADERS64) && !pThis->fNt31)
         || cbImage >= _1M * 256)
     {
         Log(("DigWinNt: %s: Bad image size: %#x\n", pszName, cbImage));
@@ -613,9 +648,9 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
         offHdrs = 0;
         pHdrs   = (PCNTHDRS)pbBuf;
     }
-    else if (   pMzHdr->e_lfanew >= cbImage
+    else if (   pMzHdr->e_lfanew >= cbImageValidate
              || pMzHdr->e_lfanew < sizeof(*pMzHdr)
-             || pMzHdr->e_lfanew + sizeof(IMAGE_NT_HEADERS64) > cbImage)
+             || pMzHdr->e_lfanew + sizeof(IMAGE_NT_HEADERS64) > cbImageValidate)
     {
         Log(("DigWinNt: %s: PE header to far into image: %#x  cbImage=%#x\n", pszName, pMzHdr->e_lfanew, cbImage));
         return;
@@ -663,7 +698,9 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
         return;
     }
     uint32_t cbImageFromHdr = WINNT_UNION(pThis, pHdrs, OptionalHeader.SizeOfImage);
-    if (RT_ALIGN(cbImageFromHdr, _4K) != RT_ALIGN(cbImage, _4K))
+    if (pThis->fNt31)
+        cbImage = RT_ALIGN(cbImageFromHdr, _4K);
+    else if (RT_ALIGN(cbImageFromHdr, _4K) != RT_ALIGN(cbImage, _4K))
     {
         Log(("DigWinNt: %s: Invalid OH.SizeOfImage: %#x, expected %#x\n", pszName, cbImageFromHdr, cbImage));
         return;
@@ -821,13 +858,25 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, void *pvData)
      */
     DBGFR3AddrFromFlat(pUVM, &Addr, pThis->f32Bit ? NTKUSERSHAREDDATA_WINNT32 : NTKUSERSHAREDDATA_WINNT64);
     rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, &u, PAGE_SIZE);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        pThis->NtProductType  = u.UserSharedData.ProductTypeIsValid && u.UserSharedData.NtProductType <= kNtProductType_Server
+                              ? (NTPRODUCTTYPE)u.UserSharedData.NtProductType
+                              : kNtProductType_Invalid;
+        pThis->NtMajorVersion = u.UserSharedData.NtMajorVersion;
+        pThis->NtMinorVersion = u.UserSharedData.NtMinorVersion;
+    }
+    else if (pThis->fNt31)
+    {
+        pThis->NtProductType  = kNtProductType_WinNt;
+        pThis->NtMajorVersion = 3;
+        pThis->NtMinorVersion = 1;
+    }
+    else
+    {
+        Log(("DigWinNt: Error reading KUSER_SHARED_DATA: %Rrc\n", rc));
         return rc;
-    pThis->NtProductType  = u.UserSharedData.ProductTypeIsValid && u.UserSharedData.NtProductType <= kNtProductType_Server
-                          ? (NTPRODUCTTYPE)u.UserSharedData.NtProductType
-                          : kNtProductType_Invalid;
-    pThis->NtMajorVersion = u.UserSharedData.NtMajorVersion;
-    pThis->NtMinorVersion = u.UserSharedData.NtMinorVersion;
+    }
 
     /*
      * Dig out the module chain.
@@ -861,12 +910,19 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, void *pvData)
             Log(("DigWinNt: Bad Mte at %RGv - FullDllName=%llx\n", Addr.FlatPtr, WINNT_UNION(pThis, &Mte, FullDllName.Buffer)));
             break;
         }
-        if (    !WINNT_VALID_ADDRESS(pThis, WINNT_UNION(pThis, &Mte, DllBase))
-            ||  WINNT_UNION(pThis, &Mte, SizeOfImage) > _1M*256
-            ||  WINNT_UNION(pThis, &Mte, EntryPoint) - WINNT_UNION(pThis, &Mte, DllBase) > WINNT_UNION(pThis, &Mte, SizeOfImage) )
+        if (!WINNT_VALID_ADDRESS(pThis, WINNT_UNION(pThis, &Mte, DllBase)))
+        {
+            Log(("DigWinNt: Bad Mte at %RGv - DllBase=%llx\n", Addr.FlatPtr, WINNT_UNION(pThis, &Mte, DllBase) ));
+            break;
+        }
+
+        uint32_t const cbImageMte = !pThis->fNt31 ? WINNT_UNION(pThis, &Mte, SizeOfImage) : 0;
+        if (   !pThis->fNt31
+            && (   cbImageMte > _256M
+                || WINNT_UNION(pThis, &Mte, EntryPoint) - WINNT_UNION(pThis, &Mte, DllBase) > cbImageMte) )
         {
             Log(("DigWinNt: Bad Mte at %RGv - EntryPoint=%llx SizeOfImage=%x DllBase=%llx\n",
-                 Addr.FlatPtr, WINNT_UNION(pThis, &Mte, EntryPoint), WINNT_UNION(pThis, &Mte, SizeOfImage), WINNT_UNION(pThis, &Mte, DllBase)));
+                 Addr.FlatPtr, WINNT_UNION(pThis, &Mte, EntryPoint), cbImageMte, WINNT_UNION(pThis, &Mte, DllBase)));
             break;
         }
 
@@ -897,14 +953,14 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, void *pvData)
                 /* Read the start of the PE image and pass it along to a worker. */
                 DBGFADDRESS ImageAddr;
                 DBGFR3AddrFromFlat(pUVM, &ImageAddr, WINNT_UNION(pThis, &Mte, DllBase));
-                uint32_t    cbImageBuf = RT_MIN(sizeof(u), WINNT_UNION(pThis, &Mte, SizeOfImage));
+                uint32_t    cbImageBuf = RT_MIN(sizeof(u), RT_MAX(cbImageMte, _4K));
                 rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &ImageAddr, &u, cbImageBuf);
                 if (RT_SUCCESS(rc))
                     dbgDiggerWinNtProcessImage(pThis,
                                                pUVM,
                                                pszName,
                                                &ImageAddr,
-                                               WINNT_UNION(pThis, &Mte, SizeOfImage),
+                                               cbImageMte,
                                                &u.au8[0],
                                                sizeof(u));
                 RTStrFree(pszName);
@@ -949,6 +1005,8 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
      * Then try find the module table entry for it.  Since it's the first entry
      * in the PsLoadedModuleList we can easily validate the list head and report
      * success.
+     *
+     * Note! We ASSUME the section name is 8 byte aligned.
      */
     CPUMMODE        enmMode = DBGFR3CpuGetMode(pUVM, 0 /*idCpu*/);
     uint64_t const  uStart  = enmMode == CPUMMODE_LONG ? UINT64_C(0xffff080000000000) : UINT32_C(0x80001000);
@@ -958,8 +1016,19 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
          KernelAddr.FlatPtr < uEnd;
          KernelAddr.FlatPtr += PAGE_SIZE)
     {
+        bool fNt31 = false;
+        DBGFADDRESS const RetryAddress = KernelAddr;
         int rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, uEnd - KernelAddr.FlatPtr,
-                               1, "PAGELK\0", sizeof("PAGELK\0"), &KernelAddr);
+                               8, "PAGELK\0", sizeof("PAGELK\0"), &KernelAddr);
+        if (   rc == VERR_DBGF_MEM_NOT_FOUND
+            && enmMode != CPUMMODE_LONG)
+        {
+            /* NT3.1 didn't have a PAGELK section, so look for _TEXT instead.  The
+               following VirtualSize is zero, so check for that too. */
+            rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &RetryAddress, uEnd - RetryAddress.FlatPtr,
+                               8, "_TEXT\0\0\0\0\0\0", sizeof("_TEXT\0\0\0\0\0\0"), &KernelAddr);
+            fNt31 = true;
+        }
         if (RT_FAILURE(rc))
             break;
         DBGFR3AddrSub(&KernelAddr, KernelAddr.FlatPtr & PAGE_OFFSET_MASK);
@@ -988,7 +1057,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                     RT_ZERO(uMte);
                     uMte.v32.DllBase     = KernelAddr.FlatPtr;
                     uMte.v32.EntryPoint  = KernelAddr.FlatPtr + pHdrs->OptionalHeader.AddressOfEntryPoint;
-                    uMte.v32.SizeOfImage = pHdrs->OptionalHeader.SizeOfImage;
+                    uMte.v32.SizeOfImage = !fNt31 ? pHdrs->OptionalHeader.SizeOfImage : 0; /* NT 3.1 didn't set the size. */
                     DBGFADDRESS HitAddr;
                     rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, uEnd - KernelAddr.FlatPtr,
                                        4 /*align*/, &uMte.v32.DllBase, 3 * sizeof(uint32_t), &HitAddr);
@@ -1031,6 +1100,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                                     pThis->KernelMteAddr            = MteAddr;
                                     pThis->PsLoadedModuleListAddr   = Addr;
                                     pThis->f32Bit                   = true;
+                                    pThis->fNt31                    = fNt31;
                                     return true;
                                 }
                             }
@@ -1116,6 +1186,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                                     pThis->KernelMteAddr            = MteAddr;
                                     pThis->PsLoadedModuleListAddr   = Addr;
                                     pThis->f32Bit                   = false;
+                                    pThis->fNt31                    = false;
                                     return true;
                                 }
                             }
