@@ -143,6 +143,9 @@ static PFNLSALOOKUPNAMES2               g_pfnLsaLookupNames2            = NULL;
 static decltype(LogonUserW)            *g_pfnLogonUserW                 = NULL;
 static decltype(CreateProcessAsUserW)  *g_pfnCreateProcessAsUserW       = NULL;
 static decltype(LsaNtStatusToWinError) *g_pfnLsaNtStatusToWinError      = NULL;
+/* user32.dll: */
+static decltype(OpenWindowStationW)    *g_pfnOpenWindowStationW         = NULL;
+static decltype(CloseWindowStation)    *g_pfnCloseWindowStation        = NULL;
 /* userenv.dll: */
 static PFNCREATEENVIRONMENTBLOCK        g_pfnCreateEnvironmentBlock     = NULL;
 static PFNPFNDESTROYENVIRONMENTBLOCK    g_pfnDestroyEnvironmentBlock    = NULL;
@@ -360,6 +363,21 @@ static DECLCALLBACK(int) rtProcWinResolveOnce(void *pvUser)
 
         rc = RTLdrGetSymbol(hMod, "LsaNtStatusToWinError", (void **)&g_pfnLsaNtStatusToWinError);
         if (RT_FAILURE(rc)) { g_pfnLsaNtStatusToWinError = NULL; Assert(g_enmWinVer <= kRTWinOSType_NT350); }
+
+        RTLdrClose(hMod);
+    }
+
+    /*
+     * user32.dll APIs.
+     */
+    rc = RTLdrLoadSystem("user32.dll", true /*fNoUnload*/, &hMod);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLdrGetSymbol(hMod, "OpenWindowStationW", (void **)&g_pfnOpenWindowStationW);
+        if (RT_FAILURE(rc)) { g_pfnOpenWindowStationW = NULL; Assert(g_enmWinVer <= kRTWinOSType_NT310); }
+
+        rc = RTLdrGetSymbol(hMod, "CloseWindowStation", (void **)&g_pfnCloseWindowStation);
+        if (RT_FAILURE(rc)) { g_pfnCloseWindowStation = NULL; Assert(g_enmWinVer <= kRTWinOSType_NT310); }
 
         RTLdrClose(hMod);
     }
@@ -1298,7 +1316,11 @@ static void rtProcWinStationPrep(HANDLE hTokenToUse, STARTUPINFOW *pStartupInfo,
 {
     /** @todo Always mess with the interactive one? Maybe it's not there...  */
     *phWinStationOld = GetProcessWindowStation();
-    HWINSTA hWinStation0 = OpenWindowStationW(L"winsta0", FALSE /*fInherit*/, READ_CONTROL | WRITE_DAC);
+    HWINSTA hWinStation0;
+    if (g_pfnOpenWindowStationW)
+        hWinStation0 = g_pfnOpenWindowStationW(L"winsta0", FALSE /*fInherit*/, READ_CONTROL | WRITE_DAC);
+    else
+        hWinStation0 = OpenWindowStationA("winsta0", FALSE /*fInherit*/, READ_CONTROL | WRITE_DAC); /* (for NT3.1) */
     if (hWinStation0)
     {
         if (SetProcessWindowStation(hWinStation0))
@@ -1325,7 +1347,8 @@ static void rtProcWinStationPrep(HANDLE hTokenToUse, STARTUPINFOW *pStartupInfo,
         }
         else
             AssertFailed();
-        CloseWindowStation(hWinStation0);
+        if (g_pfnCloseWindowStation)
+            g_pfnCloseWindowStation(hWinStation0);
     }
     else
         AssertFailed();
@@ -1710,7 +1733,8 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                             if (RT_SUCCESS(rc))
                             {
                                 HWINSTA hOldWinStation = NULL;
-                                if (!fFound && g_enmWinVer <= kRTWinOSType_NT4) /** @todo test newer versions... */
+                                if (   !fFound
+                                    && g_enmWinVer <= kRTWinOSType_NT4) /** @todo test newer versions... */
                                     rtProcWinStationPrep(hTokenToUse, pStartupInfo, &hOldWinStation);
 
                                 /*

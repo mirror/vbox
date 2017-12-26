@@ -96,16 +96,18 @@ typedef enum RTR3WINLDRPROT
 extern DECLHIDDEN(RTR3WINLDRPROT)   g_enmWinLdrProt;
 extern DECLHIDDEN(RTWINOSTYPE)      g_enmWinVer;
 #ifdef _WINDEF_
-extern DECLHIDDEN(HMODULE)          g_hModKernel32;
-extern DECLHIDDEN(HMODULE)          g_hModNtDll;
-
 extern DECLHIDDEN(OSVERSIONINFOEXW) g_WinOsInfoEx;
+
+extern DECLHIDDEN(HMODULE)                         g_hModKernel32;
 typedef UINT (WINAPI *PFNGETWINSYSDIR)(LPWSTR,UINT);
-extern DECLHIDDEN(PFNGETWINSYSDIR)  g_pfnGetSystemWindowsDirectoryW;
+extern DECLHIDDEN(PFNGETWINSYSDIR)                 g_pfnGetSystemWindowsDirectoryW;
+extern decltype(SystemTimeToTzSpecificLocalTime)  *g_pfnSystemTimeToTzSpecificLocalTime;
+
+extern DECLHIDDEN(HMODULE)          g_hModNtDll;
 typedef NTSTATUS (NTAPI *PFNNTQUERYFULLATTRIBUTESFILE)(struct _OBJECT_ATTRIBUTES *, struct _FILE_NETWORK_OPEN_INFORMATION *);
 extern DECLHIDDEN(PFNNTQUERYFULLATTRIBUTESFILE) g_pfnNtQueryFullAttributesFile;
 typedef NTSTATUS (NTAPI *PFNNTDUPLICATETOKEN)(HANDLE, ACCESS_MASK, struct _OBJECT_ATTRIBUTES *, BOOLEAN, TOKEN_TYPE, PHANDLE);
-extern DECLHIDDEN(PFNNTDUPLICATETOKEN)          g_pfnNtDuplicateToken;
+extern DECLHIDDEN(PFNNTDUPLICATETOKEN)             g_pfnNtDuplicateToken;
 
 extern DECLHIDDEN(HMODULE)                         g_hModWinSock;
 

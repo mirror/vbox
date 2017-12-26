@@ -291,6 +291,9 @@ static int rtR3InitArgv(uint32_t fFlags, int cArgs, char ***ppapszArgs)
                Unfortunately for us, __wargv is only initialized if we have a
                unicode main function.  So, we have to use CommandLineToArgvW to get
                something similar. It should do the same conversion... :-) */
+            /** @todo Replace this CommandLineToArgvW call with a call into
+             *        getoptargv.cpp so we don't depend on shell32 and an API not present
+             *        in NT 3.1.  */
             int    cArgsW     = -1;
             PWSTR *papwszArgs = NULL;
             if (   papszOrgArgs == __argv

@@ -1554,7 +1554,9 @@ RuntimeGuestR3_SOURCES.win.x86               += \
 	r3/win/vcc100-ntdll-fakes.cpp \
 	r3/win/vcc100-ntdll-fakesA.asm \
 	r3/win/vcc100-ws2_32-fakes.cpp \
-	r3/win/vcc100-ws2_32-fakesA.asm
+	r3/win/vcc100-ws2_32-fakesA.asm \
+	r3/win/vcc100-shell32-fakes.cpp \
+	r3/win/vcc100-shell32-fakesA.asm \
 
 #
 # RuntimeGuestR3-x86 - Same as RuntimeGuestR3, except that it's targeting x86.

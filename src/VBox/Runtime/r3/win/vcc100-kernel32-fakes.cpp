@@ -67,7 +67,8 @@
 #define IsValidLocale                           Ignore_IsValidLocale
 #define SetThreadAffinityMask                   Ignore_SetThreadAffinityMask
 #define GetProcessAffinityMask                  Ignore_GetProcessAffinityMask
-#define CommandLineToArgvW                      Ignore_CommandLineToArgvW
+#define GetHandleInformation                    Ignore_GetHandleInformation
+#define SetHandleInformation                    Ignore_SetHandleInformation
 
 #include <iprt/nt/nt-and-windows.h>
 
@@ -99,7 +100,8 @@
 #undef IsValidLocale
 #undef SetThreadAffinityMask
 #undef GetProcessAffinityMask
-#undef CommandLineToArgvW
+#undef GetHandleInformation
+#undef SetHandleInformation
 
 
 /*********************************************************************************************************************************
@@ -744,15 +746,37 @@ DECL_KERNEL32(BOOL) GetProcessAffinityMask(HANDLE hProcess, PDWORD_PTR pfProcess
 }
 
 
-/** @todo This is actually in SHELL32. */
-DECL_KERNEL32(LPWSTR *) CommandLineToArgvW(LPCWSTR pwszCmdLine, int *pcArgs)
+DECL_KERNEL32(BOOL) GetHandleInformation(HANDLE hObject, DWORD *pfFlags)
 {
-    RESOLVE_ME(CommandLineToArgvW);
+    RESOLVE_ME(GetHandleInformation);
     if (pfnApi)
-        return pfnApi(pwszCmdLine, pcArgs);
+        return pfnApi(hObject, pfFlags);
 
-    *pcArgs = 0;
-    return NULL;
+
+    OBJECT_HANDLE_FLAG_INFORMATION  Info  = { 0, 0 };
+    DWORD                           cbRet = sizeof(Info);
+    NTSTATUS rcNt = NtQueryObject(hObject, ObjectHandleFlagInformation, &Info, sizeof(Info), &cbRet);
+    if (NT_SUCCESS(rcNt))
+    {
+        *pfFlags = (Info.Inherit          ? HANDLE_FLAG_INHERIT : 0)
+                 | (Info.ProtectFromClose ? HANDLE_FLAG_PROTECT_FROM_CLOSE : 0);
+        return TRUE;
+    }
+    *pfFlags = 0;
+    AssertMsg(rcNt == STATUS_INVALID_HANDLE, ("rcNt=%#x\n", rcNt));
+    SetLastError(rcNt == STATUS_INVALID_HANDLE ? ERROR_INVALID_HANDLE : ERROR_INVALID_FUNCTION);
+    return FALSE;
+}
+
+
+DECL_KERNEL32(BOOL) SetHandleInformation(HANDLE hObject, DWORD fMask, DWORD fFlags)
+{
+    RESOLVE_ME(SetHandleInformation);
+    if (pfnApi)
+        return pfnApi(hObject, fMask, fFlags);
+
+    SetLastError(ERROR_INVALID_FUNCTION);
+    return FALSE;
 }
 
 

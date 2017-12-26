@@ -38,6 +38,7 @@
 #include <iprt/err.h>
 #include "internal/time.h"
 
+#include "internal-r3-win.h"
 
 
 RTDECL(int) RTTimeSet(PCRTTIMESPEC pTime)
@@ -55,27 +56,28 @@ RTDECL(int) RTTimeSet(PCRTTIMESPEC pTime)
 
 RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
 {
-    /*
-     * FileTimeToLocalFileTime does not do the right thing, so we'll have
-     * to convert to system time and SystemTimeToTzSpecificLocalTime instead.
-     */
     RTTIMESPEC LocalTime;
-    SYSTEMTIME SystemTimeIn;
-    FILETIME FileTime;
-    if (FileTimeToSystemTime(RTTimeSpecGetNtFileTime(pTimeSpec, &FileTime), &SystemTimeIn))
+    if (g_pfnSystemTimeToTzSpecificLocalTime)
     {
-        SYSTEMTIME SystemTimeOut;
-        if (SystemTimeToTzSpecificLocalTime(NULL /* use current TZI */,
-                                            &SystemTimeIn,
-                                            &SystemTimeOut))
+        /*
+         * FileTimeToLocalFileTime does not do the right thing, so we'll have
+         * to convert to system time and SystemTimeToTzSpecificLocalTime instead.
+         */
+        SYSTEMTIME SystemTimeIn;
+        FILETIME FileTime;
+        if (FileTimeToSystemTime(RTTimeSpecGetNtFileTime(pTimeSpec, &FileTime), &SystemTimeIn))
         {
-            if (SystemTimeToFileTime(&SystemTimeOut, &FileTime))
+            SYSTEMTIME SystemTimeOut;
+            if (g_pfnSystemTimeToTzSpecificLocalTime(NULL /* use current TZI */, &SystemTimeIn, &SystemTimeOut))
             {
-                RTTimeSpecSetNtFileTime(&LocalTime, &FileTime);
-                pTime = RTTimeExplode(pTime, &LocalTime);
-                if (pTime)
-                    pTime->fFlags = (pTime->fFlags & ~RTTIME_FLAGS_TYPE_MASK) | RTTIME_FLAGS_TYPE_LOCAL;
-                return pTime;
+                if (SystemTimeToFileTime(&SystemTimeOut, &FileTime))
+                {
+                    RTTimeSpecSetNtFileTime(&LocalTime, &FileTime);
+                    pTime = RTTimeExplode(pTime, &LocalTime);
+                    if (pTime)
+                        pTime->fFlags = (pTime->fFlags & ~RTTIME_FLAGS_TYPE_MASK) | RTTIME_FLAGS_TYPE_LOCAL;
+                    return pTime;
+                }
             }
         }
     }
