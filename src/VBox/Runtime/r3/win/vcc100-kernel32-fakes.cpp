@@ -28,7 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-//#define RT_NO_STRICT /* Minimal deps so that it works on NT 3.51 too. */
+#define RT_NO_STRICT /* Minimal deps so that it works on NT 3.51 too. */
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/asm.h>
