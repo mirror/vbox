@@ -53,7 +53,8 @@ static int installDriver(bool fStartIt)
         return -1;
     }
 
-    const char * const pszSlashName = (GetVersion() & 0xff) < 4 ? "\\VBoxGuestNT3.sys" : "\\VBoxGuestNT.sys";
+    uint32_t const uMajorNtVer  = GetVersion() & 0xff;
+    const char    *pszSlashName = uMajorNtVer < 4 ? "\\VBoxGuestNT3.sys" : "\\VBoxGuest.sys";
     char szDriver[MAX_PATH * 2];
     GetCurrentDirectory(MAX_PATH, szDriver);
     strcat(szDriver, pszSlashName);
@@ -61,6 +62,21 @@ static int installDriver(bool fStartIt)
     {
         GetSystemDirectory(szDriver, sizeof(szDriver));
         strcat(strcat(szDriver, "\\drivers"), pszSlashName);
+
+        /* Try FAT name abbreviation. */
+        if (   GetFileAttributesA(szDriver) == INVALID_FILE_ATTRIBUTES
+            && uMajorNtVer < 4)
+        {
+            pszSlashName = "\\VBoxGst3.sys";
+            GetCurrentDirectory(MAX_PATH, szDriver);
+            strcat(szDriver, pszSlashName);
+            if (GetFileAttributesA(szDriver) == INVALID_FILE_ATTRIBUTES)
+            {
+                GetSystemDirectory(szDriver, sizeof(szDriver));
+                strcat(strcat(szDriver, "\\drivers"), pszSlashName);
+
+            }
+        }
     }
 
     SC_HANDLE hService = CreateService(hSMgrCreate,

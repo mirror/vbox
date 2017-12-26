@@ -41,8 +41,17 @@
 #include <iprt/dbg.h>
 #include <iprt/initterm.h>
 #include <iprt/memobj.h>
+#include <iprt/mp.h>
 #include <iprt/spinlock.h>
 #include <iprt/string.h>
+
+#ifdef TARGET_NT4
+# include <VBox/pci.h>
+# define PIMAGE_NT_HEADERS32 PIMAGE_NT_HEADERS32_IPRT
+# include <iprt/formats/mz.h>
+# include <iprt/formats/pecoff.h>
+extern "C" IMAGE_DOS_HEADER __ImageBase;
+#endif
 
 
 /*********************************************************************************************************************************
@@ -189,6 +198,12 @@ static BOOLEAN  NTAPI vgdrvNtIsrHandler(PKINTERRUPT interrupt, PVOID serviceCont
 #ifdef VBOX_STRICT
 static void           vgdrvNtDoTests(void);
 #endif
+#ifdef TARGET_NT4
+static ULONG NTAPI    vgdrvNt31GetBusDataByOffset(BUS_DATA_TYPE enmBusDataType, ULONG idxBus, ULONG uSlot,
+                                                  void *pvData, ULONG offData, ULONG cbData);
+static ULONG NTAPI    vgdrvNt31SetBusDataByOffset(BUS_DATA_TYPE enmBusDataType, ULONG idxBus, ULONG uSlot,
+                                                  void *pvData, ULONG offData, ULONG cbData);
+#endif
 
 /*
  * We only do INIT allocations.  PAGE is too much work and risk for little gain.
@@ -217,6 +232,17 @@ static decltype(PoStartNextPowerIrp)           *g_pfnPoStartNextPowerIrp = NULL;
 /** Pointer to the PoCallDriver routine (in the NT kernel).
  * Introduced in Windows 2000. */
 static decltype(PoCallDriver)                  *g_pfnPoCallDriver = NULL;
+#ifdef TARGET_NT4
+/** Pointer to the HalAssignSlotResources routine (in the HAL).
+ * Introduced in NT 3.50.  */
+static decltype(HalAssignSlotResources)        *g_pfnHalAssignSlotResources= NULL;
+/** Pointer to the HalGetBusDataByOffset routine (in the HAL).
+ * Introduced in NT 3.50.  */
+static decltype(HalGetBusDataByOffset)         *g_pfnHalGetBusDataByOffset = NULL;
+/** Pointer to the HalSetBusDataByOffset routine (in the HAL).
+ * Introduced in NT 3.50 (we provide fallback and use it only for NT 3.1).  */
+static decltype(HalSetBusDataByOffset)         *g_pfnHalSetBusDataByOffset = NULL;
+#endif
 /** Pointer to the KeRegisterBugCheckCallback routine (in the NT kernel).
  * Introduced in Windows 3.50. */
 static decltype(KeRegisterBugCheckCallback)    *g_pfnKeRegisterBugCheckCallback = NULL;
@@ -231,6 +257,8 @@ static bool                                     g_fBugCheckCallbackRegistered = 
 /** The bugcheck callback record. */
 static KBUGCHECK_CALLBACK_RECORD                g_BugCheckCallbackRec;
 
+
+
 /**
  * Driver entry point.
  *
@@ -241,6 +269,40 @@ static KBUGCHECK_CALLBACK_RECORD                g_BugCheckCallbackRec;
 NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 {
     RT_NOREF1(pRegPath);
+#ifdef TARGET_NT4
+    /*
+     * Looks like NT 3.1 doesn't necessarily zero our uninitialized data segments
+     * (like ".bss"), at least not when loading at runtime, so do that.
+     */
+    PIMAGE_DOS_HEADER   pMzHdr  = &__ImageBase;
+    PIMAGE_NT_HEADERS32 pNtHdrs = (PIMAGE_NT_HEADERS32)((uint8_t *)pMzHdr + pMzHdr->e_lfanew);
+    if (   pNtHdrs->Signature == IMAGE_NT_SIGNATURE
+        && pNtHdrs->FileHeader.NumberOfSections > 2
+        && pNtHdrs->FileHeader.NumberOfSections < 64)
+    {
+        uint32_t                iShdr   = pNtHdrs->FileHeader.NumberOfSections;
+        uint32_t                uRvaEnd = pNtHdrs->OptionalHeader.SizeOfImage; /* (may be changed to exclude tail sections) */
+        PIMAGE_SECTION_HEADER   paShdrs;
+        paShdrs = (PIMAGE_SECTION_HEADER)&pNtHdrs->OptionalHeader.DataDirectory[pNtHdrs->OptionalHeader.NumberOfRvaAndSizes];
+        while (iShdr-- > 0)
+        {
+            if (   !(paShdrs[iShdr].Characteristics & IMAGE_SCN_TYPE_NOLOAD)
+                && paShdrs[iShdr].VirtualAddress < uRvaEnd)
+            {
+                uint32_t const cbSection        = uRvaEnd - paShdrs[iShdr].VirtualAddress;
+                uint32_t const offUninitialized = paShdrs[iShdr].SizeOfRawData;
+                //RTLogBackdoorPrintf("section #%u: rva=%#x  size=%#x calcsize=%#x) rawsize=%#x\n", iShdr,
+                //                    paShdrs[iShdr].VirtualAddress, paShdrs[iShdr].Misc.VirtualSize, cbSection, offUninitialized);
+                if (   offUninitialized < cbSection
+                    && (paShdrs[iShdr].Characteristics & IMAGE_SCN_MEM_WRITE))
+                    memset((uint8_t *)pMzHdr + paShdrs[iShdr].VirtualAddress + offUninitialized, 0, cbSection - offUninitialized);
+                uRvaEnd = paShdrs[iShdr].VirtualAddress;
+            }
+        }
+    }
+    else
+        RTLogBackdoorPrintf("VBoxGuest: Bad pNtHdrs=%p: %#x\n", pNtHdrs, pNtHdrs->Signature);
+#endif
 
     /*
      * Start by initializing IPRT.
@@ -330,7 +392,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                 g_enmVGDrvNtVer = VGDRVNTVER_WIN10;
             else
             {
-                LogRelFunc(("At least Windows NT 3.10 required! Found %u.%u!\n", ulMajorVer, ulMinorVer));
+                RTLogBackdoorPrintf("At least Windows NT 3.10 required! Found %u.%u!\n", ulMajorVer, ulMinorVer);
                 rcNt = STATUS_DRIVER_UNABLE_TO_LOAD;
             }
             break;
@@ -357,6 +419,32 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                 if (!g_pfnPoStartNextPowerIrp) { LogRelFunc(("Missing PoStartNextPowerIrp!\n")); rc = VERR_SYMBOL_NOT_FOUND; }
             }
 
+#ifdef TARGET_NT4
+            g_pfnHalAssignSlotResources       = (decltype(HalAssignSlotResources) *)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "HalAssignSlotResources");
+            if (!g_pfnHalAssignSlotResources && g_enmVGDrvNtVer >= VGDRVNTVER_WINNT350 && g_enmVGDrvNtVer < VGDRVNTVER_WIN2K)
+            {
+                RTLogBackdoorPrintf("VBoxGuest: Missing HalAssignSlotResources!\n");
+                rc = VERR_SYMBOL_NOT_FOUND;
+            }
+
+            g_pfnHalGetBusDataByOffset        = (decltype(HalGetBusDataByOffset) *)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "HalGetBusDataByOffset");
+            if (!g_pfnHalGetBusDataByOffset && g_enmVGDrvNtVer >= VGDRVNTVER_WINNT350 && g_enmVGDrvNtVer < VGDRVNTVER_WIN2K)
+            {
+                RTLogBackdoorPrintf("VBoxGuest: Missing HalGetBusDataByOffset!\n");
+                rc = VERR_SYMBOL_NOT_FOUND;
+            }
+            if (!g_pfnHalGetBusDataByOffset)
+                g_pfnHalGetBusDataByOffset = vgdrvNt31GetBusDataByOffset;
+
+            g_pfnHalSetBusDataByOffset        = (decltype(HalSetBusDataByOffset) *)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "HalSetBusDataByOffset");
+            if (!g_pfnHalSetBusDataByOffset && g_enmVGDrvNtVer >= VGDRVNTVER_WINNT350 && g_enmVGDrvNtVer < VGDRVNTVER_WIN2K)
+            {
+                RTLogBackdoorPrintf("VBoxGuest: Missing HalSetBusDataByOffset!\n");
+                rc = VERR_SYMBOL_NOT_FOUND;
+            }
+            if (!g_pfnHalSetBusDataByOffset)
+                g_pfnHalSetBusDataByOffset = vgdrvNt31SetBusDataByOffset;
+#endif
             RTR0DbgKrnlInfoRelease(hKrnlInfo);
         }
         if (RT_SUCCESS(rc))
@@ -400,7 +488,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                         g_fBugCheckCallbackRegistered = false;
                 }
                 else
-                    Assert(g_pfnKeRegisterBugCheckCallback == NULL && g_pfnKeDeregisterBugCheckCallback);
+                    Assert(g_pfnKeRegisterBugCheckCallback == NULL && g_pfnKeDeregisterBugCheckCallback == NULL);
 
                 LogFlowFunc(("Returning %#x\n", rcNt));
                 return rcNt;
@@ -671,6 +759,139 @@ static NTSTATUS vgdrvNtScanPCIResourceList(PVBOXGUESTDEVEXTWIN pDevExt, PCM_RESO
 }
 
 
+#ifdef TARGET_NT4
+
+/**
+ * Scans the PCI resources on NT 3.1.
+ *
+ * @returns STATUS_SUCCESS or STATUS_DEVICE_CONFIGURATION_ERROR.
+ * @param   pDevExt     The device extension.
+ * @param   uBus        The bus number.
+ * @param   uSlot       The PCI slot to scan.
+ */
+static NTSTATUS vgdrvNt31ScanSlotResources(PVBOXGUESTDEVEXTWIN pDevExt, ULONG uBus, ULONG uSlot)
+{
+    /*
+     * Disable memory mappings so we can determin the BAR lengths
+     * without upsetting other mappings.
+     */
+    uint16_t fCmd = 0;
+    g_pfnHalGetBusDataByOffset(PCIConfiguration, uBus, uSlot, &fCmd, VBOX_PCI_COMMAND, sizeof(fCmd));
+    if (fCmd & VBOX_PCI_COMMAND_MEMORY)
+    {
+        uint16_t fCmdTmp = fCmd & ~VBOX_PCI_COMMAND_MEMORY;
+        g_pfnHalSetBusDataByOffset(PCIConfiguration, uBus, uSlot, &fCmdTmp, VBOX_PCI_COMMAND, sizeof(fCmdTmp));
+    }
+
+    /*
+     * Scan the address resources first.
+     */
+    uint32_t aBars[6] = { UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX };
+    g_pfnHalGetBusDataByOffset(PCIConfiguration, uBus, uSlot, &aBars, VBOX_PCI_BASE_ADDRESS_0, sizeof(aBars));
+
+    bool fGotMmio    = false;
+    bool fGotIoPorts = false;
+    for (uint32_t i = 0; i < RT_ELEMENTS(aBars); i++)
+    {
+        uint32_t uBar = aBars[i];
+        if (uBar == UINT32_MAX)
+            continue;
+        if ((uBar & 1) == PCI_ADDRESS_SPACE_IO)
+        {
+            uint32_t uAddr = uBar & UINT32_C(0xfffffffc);
+            if (!uAddr)
+                continue;
+            if (!fGotIoPorts)
+            {
+                pDevExt->Core.IOPortBase = (uint16_t)uAddr & UINT16_C(0xfffc);
+                fGotIoPorts = true;
+                LogFunc(("I/O range for VMMDev found in BAR%u! %#x\n", i, pDevExt->Core.IOPortBase));
+            }
+            else
+                LogRelFunc(("More than one I/O port range?!? BAR%u=%#x\n", i, uBar));
+        }
+        else
+        {
+            uint32_t uAddr = uBar & UINT32_C(0xfffffff0);
+            if (!uAddr)
+                continue;
+
+            if (!fGotMmio)
+            {
+                /* Figure the length by trying to set all address bits and seeing
+                   how many we're allowed to set. */
+                uint32_t iBit = 4;
+                while (!(uAddr & RT_BIT_32(iBit)))
+                    iBit++;
+
+                uint32_t const offPciBar = VBOX_PCI_BASE_ADDRESS_0 + i * 4;
+                uint32_t       uTmpBar   = uBar | ((RT_BIT_32(iBit) - 1) & UINT32_C(0xfffffff0));
+                g_pfnHalSetBusDataByOffset(PCIConfiguration, uBus, uSlot, &uTmpBar, offPciBar, sizeof(uTmpBar));
+                uTmpBar = uBar;
+                g_pfnHalGetBusDataByOffset(PCIConfiguration, uBus, uSlot, &uTmpBar, offPciBar, sizeof(uTmpBar));
+                g_pfnHalSetBusDataByOffset(PCIConfiguration, uBus, uSlot, &uBar,    offPciBar, sizeof(uBar));
+
+                while (iBit > 4 && (uTmpBar & RT_BIT_32(iBit - 1)))
+                    iBit--;
+
+                /* got it */
+                pDevExt->cbVmmDevMemory = RT_BIT_32(iBit);
+                pDevExt->uVmmDevMemoryPhysAddr.QuadPart = uAddr;
+                fGotMmio = true;
+                LogFunc(("Found memory range for VMMDev in BAR%u! %#RX64 LB %#x (raw %#x)\n",
+                         i, pDevExt->uVmmDevMemoryPhysAddr.QuadPart, pDevExt->cbVmmDevMemory, uBar));
+            }
+            else
+                LogFunc(("Ignoring memory: BAR%u=%#x\n", i, uBar));
+        }
+    }
+
+    /*
+     * Get the IRQ
+     */
+    struct
+    {
+        uint8_t bInterruptLine;
+        uint8_t bInterruptPin;
+    } Buf = { 0, 0 };
+    g_pfnHalGetBusDataByOffset(PCIConfiguration, uBus, uSlot, &Buf, VBOX_PCI_INTERRUPT_LINE, sizeof(Buf));
+    if (Buf.bInterruptPin != 0)
+    {
+        pDevExt->uInterruptVector   = Buf.bInterruptLine;
+        pDevExt->uInterruptLevel    = Buf.bInterruptLine;
+        pDevExt->enmInterruptMode   = LevelSensitive;
+        pDevExt->fInterruptAffinity = RT_BIT_32(RTMpGetCount()) - 1;
+        LogFunc(("Interrupt for VMMDev found! Vector=%#x Level=%#x Affinity=%zx Mode=%d\n",
+                 pDevExt->uInterruptVector, pDevExt->uInterruptLevel, pDevExt->fInterruptAffinity, pDevExt->enmInterruptMode));
+    }
+
+    /*
+     * Got what we need?
+     */
+    if (fGotIoPorts && (!fGotMmio || Buf.bInterruptPin != 0))
+    {
+        /*
+         * Enable both MMIO, I/O space and busmastering so we can use the device.
+         */
+        uint16_t fCmdNew = fCmd | VBOX_PCI_COMMAND_IO | VBOX_PCI_COMMAND_MEMORY | VBOX_PCI_COMMAND_MASTER;
+        g_pfnHalSetBusDataByOffset(PCIConfiguration, uBus, uSlot, &fCmdNew, VBOX_PCI_COMMAND, sizeof(fCmdNew));
+
+        return STATUS_SUCCESS;
+    }
+
+    /* No. Complain, restore device command value and return failure. */
+    if (!fGotIoPorts)
+        LogRel(("VBoxGuest: Did not find I/O port range: %#x %#x %#x %#x %#x %#x\n",
+                aBars[0], aBars[1], aBars[2], aBars[3], aBars[4], aBars[5]));
+    if (!fGotMmio || Buf.bInterruptPin != 0)
+        LogRel(("VBoxGuest: Got MMIO but no interrupts!\n"));
+
+    g_pfnHalSetBusDataByOffset(PCIConfiguration, uBus, uSlot, &fCmd, VBOX_PCI_COMMAND, sizeof(fCmd));
+    return STATUS_DEVICE_CONFIGURATION_ERROR;
+}
+
+#endif /* TARGET_NT4 */
+
 /**
  * Unmaps the VMMDev I/O range from kernel space.
  *
@@ -762,7 +983,7 @@ static NTSTATUS vgdrvNtSetupDevice(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT p
     {
 #ifdef TARGET_NT4
         /*
-         * NT4: Let's have a look at what our PCI adapter offers.
+         * NT4, NT3.x: Let's have a look at what our PCI adapter offers.
          */
         LogFlowFunc(("Starting to scan PCI resources of VBoxGuest ...\n"));
 
@@ -770,17 +991,22 @@ static NTSTATUS vgdrvNtSetupDevice(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT p
         UNICODE_STRING      ClassName;
         RtlInitUnicodeString(&ClassName, L"VBoxGuestAdapter");
         PCM_RESOURCE_LIST   pResourceList = NULL;
-        rcNt = HalAssignSlotResources(pRegPath, &ClassName, pDrvObj, pDevObj, PCIBus, pDevExt->uBus, pDevExt->uSlot,
-                                      &pResourceList);
-# ifdef LOG_ENABLED
-        if (pResourceList)
-            vgdrvNtShowDeviceResources(pResourceList);
-# endif
-        if (NT_SUCCESS(rcNt))
+        if (g_pfnHalAssignSlotResources)
         {
-            rcNt = vgdrvNtScanPCIResourceList(pDevExt, pResourceList, false /*fTranslated*/);
-            ExFreePool(pResourceList);
+            rcNt = g_pfnHalAssignSlotResources(pRegPath, &ClassName, pDrvObj, pDevObj, PCIBus, pDevExt->uBus, pDevExt->uSlot,
+                                               &pResourceList);
+# ifdef LOG_ENABLED
+            if (pResourceList)
+                vgdrvNtShowDeviceResources(pResourceList);
+# endif
+            if (NT_SUCCESS(rcNt))
+            {
+                rcNt = vgdrvNtScanPCIResourceList(pDevExt, pResourceList, false /*fTranslated*/);
+                ExFreePool(pResourceList);
+            }
         }
+        else
+            rcNt = vgdrvNt31ScanSlotResources(pDevExt, pDevExt->uBus, pDevExt->uSlot);
 
 # else  /* !TARGET_NT4 */
         AssertFailed();
@@ -849,7 +1075,7 @@ static NTSTATUS vgdrvNtSetupDevice(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT p
                         {
                             LogFlowFunc(("Getting interrupt vector (HAL): Bus=%u, IRQL=%u, Vector=%u\n",
                                          pDevExt->uBus, pDevExt->uInterruptLevel, pDevExt->uInterruptVector));
-                            uInterruptVector = HalGetInterruptVector(PCIBus,
+                            uInterruptVector = HalGetInterruptVector(g_enmVGDrvNtVer == VGDRVNTVER_WINNT310 ? Isa : PCIBus,
                                                                      pDevExt->uBus,
                                                                      pDevExt->uInterruptLevel,
                                                                      pDevExt->uInterruptVector,
@@ -930,6 +1156,194 @@ static NTSTATUS vgdrvNtSetupDevice(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT p
 
 
 #ifdef TARGET_NT4
+# define PCI_CFG_ADDR   0xcf8
+# define PCI_CFG_DATA   0xcfc
+
+/**
+ * NT 3.1 doesn't do PCI nor HalSetBusDataByOffset, this is our fallback.
+ */
+static ULONG NTAPI vgdrvNt31SetBusDataByOffset(BUS_DATA_TYPE enmBusDataType, ULONG idxBus, ULONG uSlot,
+                                               void *pvData, ULONG offData, ULONG cbData)
+{
+    /*
+     * Validate input a little bit.
+     */
+    RT_NOREF(enmBusDataType);
+    Assert(idxBus  <= 255);
+    Assert(uSlot   <= 255);
+    Assert(offData <= 255);
+    Assert(cbData > 0);
+
+    PCI_SLOT_NUMBER PciSlot;
+    PciSlot.u.AsULONG = uSlot;
+    uint32_t const idxAddrTop = UINT32_C(0x80000000)
+                              | (idxBus                        << 16)
+                              | (PciSlot.u.bits.DeviceNumber   << 11)
+                              | (PciSlot.u.bits.FunctionNumber << 8);
+
+    /*
+     * Write the given bytes.
+     */
+    uint8_t const *pbData = (uint8_t const *)pvData;
+    uint32_t       off    = offData;
+    uint32_t       cbRet  = 0;
+
+    /* Unaligned start. */
+    if (off & 3)
+    {
+        ASMOutU32(PCI_CFG_ADDR, idxAddrTop | (off & ~3));
+        switch (off & 3)
+        {
+            case 1:
+                ASMOutU8(PCI_CFG_DATA + 1, pbData[cbRet++]);
+                if (cbRet >= cbData)
+                    break;
+                RT_FALL_THRU();
+            case 2:
+                ASMOutU8(PCI_CFG_DATA + 2, pbData[cbRet++]);
+                if (cbRet >= cbData)
+                    break;
+                RT_FALL_THRU();
+            case 3:
+                ASMOutU8(PCI_CFG_DATA + 3, pbData[cbRet++]);
+                break;
+        }
+        off = (off | 3) + 1;
+    }
+
+    /* Bulk. */
+    while (off < 256 && cbRet < cbData)
+    {
+        ASMOutU32(PCI_CFG_ADDR, idxAddrTop | off);
+        switch (cbData - cbRet)
+        {
+            case 1:
+                ASMOutU8(PCI_CFG_DATA, pbData[cbRet]);
+                cbRet += 1;
+                break;
+            case 2:
+                ASMOutU16(PCI_CFG_DATA, RT_MAKE_U16(pbData[cbRet], pbData[cbRet + 1]));
+                cbRet += 2;
+                break;
+            case 3:
+                ASMOutU16(PCI_CFG_DATA, RT_MAKE_U16(pbData[cbRet], pbData[cbRet + 1]));
+                ASMOutU8(PCI_CFG_DATA + 2, pbData[cbRet + 2]);
+                cbRet += 3;
+                break;
+            default:
+                ASMOutU32(PCI_CFG_DATA, RT_MAKE_U32_FROM_U8(pbData[cbRet], pbData[cbRet + 1],
+                                                            pbData[cbRet + 2], pbData[cbRet + 3]));
+                cbRet += 4;
+                break;
+        }
+        off += 4;
+    }
+
+    return cbRet;
+}
+
+
+/**
+ * NT 3.1 doesn't do PCI nor HalGetBusDataByOffset, this is our fallback.
+ */
+static ULONG NTAPI vgdrvNt31GetBusDataByOffset(BUS_DATA_TYPE enmBusDataType, ULONG idxBus, ULONG uSlot,
+                                               void *pvData, ULONG offData, ULONG cbData)
+{
+    /*
+     * Validate input a little bit.
+     */
+    RT_NOREF(enmBusDataType);
+    Assert(idxBus  <= 255);
+    Assert(uSlot   <= 255);
+    Assert(offData <= 255);
+    Assert(cbData > 0);
+
+    PCI_SLOT_NUMBER PciSlot;
+    PciSlot.u.AsULONG = uSlot;
+    uint32_t const idxAddrTop = UINT32_C(0x80000000)
+                              | (idxBus                        << 16)
+                              | (PciSlot.u.bits.DeviceNumber   << 11)
+                              | (PciSlot.u.bits.FunctionNumber << 8);
+
+    /*
+     * Read the header type.
+     */
+    ASMOutU32(PCI_CFG_ADDR,  idxAddrTop | (VBOX_PCI_HEADER_TYPE & ~3));
+    uint8_t bHdrType = ASMInU8(PCI_CFG_DATA + (VBOX_PCI_HEADER_TYPE & 3));
+    if (bHdrType == 0xff)
+        return idxBus < 8 ? 2 : 0; /* No device here */
+    if (   offData == VBOX_PCI_HEADER_TYPE
+        && cbData == 1)
+    {
+        *(uint8_t *)pvData = bHdrType;
+        /*Log("vgdrvNt31GetBusDataByOffset: PCI %#x/%#x -> %02x\n", idxAddrTop, offData, bHdrType);*/
+        return 1;
+    }
+
+    /*
+     * Read the requested bytes.
+     */
+    uint8_t *pbData = (uint8_t *)pvData;
+    uint32_t off    = offData;
+    uint32_t cbRet  = 0;
+
+    /* Unaligned start. */
+    if (off & 3)
+    {
+        ASMOutU32(PCI_CFG_ADDR, idxAddrTop | (off & ~3));
+        uint32_t uValue = ASMInU32(PCI_CFG_DATA);
+        switch (off & 3)
+        {
+            case 1:
+                pbData[cbRet++] = (uint8_t)(uValue >> 8);
+                if (cbRet >= cbData)
+                    break;
+                RT_FALL_THRU();
+            case 2:
+                pbData[cbRet++] = (uint8_t)(uValue >> 16);
+                if (cbRet >= cbData)
+                    break;
+                RT_FALL_THRU();
+            case 3:
+                pbData[cbRet++] = (uint8_t)(uValue >> 24);
+                break;
+        }
+        off = (off | 3) + 1;
+    }
+
+    /* Bulk. */
+    while (off < 256 && cbRet < cbData)
+    {
+        ASMOutU32(PCI_CFG_ADDR, idxAddrTop | off);
+        uint32_t uValue = ASMInU32(PCI_CFG_DATA);
+        switch (cbData - cbRet)
+        {
+            case 1:
+                pbData[cbRet++] = (uint8_t)uValue;
+                break;
+            case 2:
+                pbData[cbRet++] = (uint8_t)uValue;
+                pbData[cbRet++] = (uint8_t)(uValue >> 8);
+                break;
+            case 3:
+                pbData[cbRet++] = (uint8_t)uValue;
+                pbData[cbRet++] = (uint8_t)(uValue >> 8);
+                pbData[cbRet++] = (uint8_t)(uValue >> 16);
+                break;
+            default:
+                pbData[cbRet++] = (uint8_t)uValue;
+                pbData[cbRet++] = (uint8_t)(uValue >> 8);
+                pbData[cbRet++] = (uint8_t)(uValue >> 16);
+                pbData[cbRet++] = (uint8_t)(uValue >> 24);
+                break;
+        }
+        off += 4;
+    }
+
+    Log(("vgdrvNt31GetBusDataByOffset: PCI %#x/%#x -> %.*Rhxs\n", idxAddrTop, offData, cbRet, pvData));
+    return cbRet;
+}
+
 
 /**
  * Helper function to handle the PCI device lookup.
@@ -950,40 +1364,46 @@ static NTSTATUS vgdrvNt4FindPciDevice(PULONG puBus, PPCI_SLOT_NUMBER pSlot)
     for (ULONG uBus = 0; uBus < PCI_MAX_BUSES; uBus++)
     {
         /* Scan each device. */
-        for (ULONG deviceNumber = 0; deviceNumber < PCI_MAX_DEVICES; deviceNumber++)
+        for (ULONG idxDevice = 0; idxDevice < PCI_MAX_DEVICES; idxDevice++)
         {
-            Slot.u.bits.DeviceNumber = deviceNumber;
+            Slot.u.bits.DeviceNumber   = idxDevice;
+            Slot.u.bits.FunctionNumber = 0;
 
-            /* Scan each function (not really required...). */
-            for (ULONG functionNumber = 0; functionNumber < PCI_MAX_FUNCTION; functionNumber++)
+            /* Check the device header. */
+            uint8_t bHeaderType = 0xff;
+            ULONG cbRet = g_pfnHalGetBusDataByOffset(PCIConfiguration, uBus, Slot.u.AsULONG,
+                                                     &bHeaderType, VBOX_PCI_HEADER_TYPE, sizeof(bHeaderType));
+            if (cbRet == 0)
+                break;
+            if (cbRet == 2 || bHeaderType == 0xff)
+                continue;
+
+            /* Scan functions. */
+            uint32_t const cFunctionStep = bHeaderType & 0x80 ? 1 : 8;
+            Log(("vgdrvNt4FindPciDevice: %#x:%#x cFunctionStep=%d bHeaderType=%#x\n", uBus, idxDevice, cFunctionStep, bHeaderType));
+            for (ULONG idxFunction = 0; idxFunction < PCI_MAX_FUNCTION; idxFunction += cFunctionStep)
             {
-                Slot.u.bits.FunctionNumber = functionNumber;
+                Slot.u.bits.FunctionNumber = idxFunction;
 
-                /* Have a look at what's in this slot. */
-                PCI_COMMON_CONFIG PciData;
-                if (!HalGetBusData(PCIConfiguration, uBus, Slot.u.AsULONG, &PciData, sizeof(ULONG)))
+                /* Read the vendor and device IDs of this device and compare with the VMMDev. */
+                struct
                 {
-                    /* No such bus, we're done with it. */
-                    deviceNumber = PCI_MAX_DEVICES;
-                    break;
+                    uint16_t idVendor;
+                    uint16_t idDevice;
+                } Buf = { PCI_INVALID_VENDORID, PCI_INVALID_VENDORID };
+                cbRet = g_pfnHalGetBusDataByOffset(PCIConfiguration, uBus, Slot.u.AsULONG, &Buf, VBOX_PCI_VENDOR_ID, sizeof(Buf));
+                if (   cbRet == sizeof(Buf)
+                    && Buf.idVendor == VMMDEV_VENDORID
+                    && Buf.idDevice == VMMDEV_DEVICEID)
+                {
+                    /* Hooray, we've found it! */
+                    Log(("vgdrvNt4FindPciDevice: Device found! Bus=%#x Slot=%#u (dev %#x, fun %#x, rvd %#x)\n",
+                         uBus, Slot.u.AsULONG, Slot.u.bits.DeviceNumber, Slot.u.bits.FunctionNumber, Slot.u.bits.Reserved));
+
+                    *puBus  = uBus;
+                    *pSlot  = Slot;
+                    return STATUS_SUCCESS;
                 }
-
-                if (PciData.VendorID == PCI_INVALID_VENDORID)
-                    /* We have to proceed to the next function. */
-                    continue;
-
-                /* Check if it's another device. */
-                if (   PciData.VendorID != VMMDEV_VENDORID
-                    || PciData.DeviceID != VMMDEV_DEVICEID)
-                    continue;
-
-                /* Hooray, we've found it! */
-                Log(("vgdrvNt4FindPciDevice: Device found! Bus=%#x Slot=%#u (dev %#x, fun %#x, rvd %#x)\n",
-                     uBus, Slot.u.AsULONG, Slot.u.bits.DeviceNumber, Slot.u.bits.FunctionNumber, Slot.u.bits.Reserved));
-
-                *puBus  = uBus;
-                *pSlot  = Slot;
-                return STATUS_SUCCESS;
             }
         }
     }
@@ -2306,6 +2726,8 @@ bool VGDrvNativeProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, con
 static NTSTATUS NTAPI vgdrvNtRegistryEnumCallback(PWSTR pwszValueName, ULONG uValueType,
                                                   PVOID pvValue, ULONG cbValue, PVOID pvUser, PVOID pvEntryCtx)
 {
+    Log4(("vgdrvNtRegistryEnumCallback: pwszValueName=%ls uValueType=%#x Value=%.*Rhxs\n", pwszValueName, uValueType, cbValue, pvValue));
+
     /*
      * Filter out general service config values.
      */
@@ -2432,15 +2854,19 @@ static void vgdrvNtReadConfiguration(PVBOXGUESTDEVEXTWIN pDevExt)
 {
     /*
      * First the registry.
+     *
+     * Note! RTL_QUERY_REGISTRY_NOEXPAND is sensible (no environment) and also necessary to
+     *       avoid crash on NT 3.1 because RtlExpandEnvironmentStrings_U thinks its in ring-3
+     *       and tries to get the default heap from the PEB via the TEB.  No TEB in ring-0.
      */
     RTL_QUERY_REGISTRY_TABLE aQuery[2];
     RT_ZERO(aQuery);
     aQuery[0].QueryRoutine = vgdrvNtRegistryEnumCallback;
-    aQuery[0].Flags        = 0;
+    aQuery[0].Flags        = RTL_QUERY_REGISTRY_NOEXPAND;
     aQuery[0].Name         = NULL;
     aQuery[0].EntryContext = NULL;
     aQuery[0].DefaultType  = REG_NONE;
-    NTSTATUS rcNt = RtlQueryRegistryValues(RTL_REGISTRY_SERVICES, L"VBoxGuest", &aQuery[0], pDevExt, NULL /* Environment */);
+    NTSTATUS rcNt = RtlQueryRegistryValues(RTL_REGISTRY_SERVICES, L"VBoxGuest", &aQuery[0], pDevExt, NULL /*pwszzEnv*/);
     if (!NT_SUCCESS(rcNt))
         LogRel(("VBoxGuest: RtlQueryRegistryValues failed: %#x\n", rcNt));
 

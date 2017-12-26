@@ -159,7 +159,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
 
  VBoxGuest.cpp_DEFS     = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
- if "$(KBUILD_TARGET)" == "win" && 1
+ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_NT3_ADDITIONS)
   #
   # Windows NT 3.x driver.
   #
@@ -183,7 +183,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
   	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
   	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib \
   	$(VBOX_LIB_VBGL_R0BASE)
-  ##@todo VBoxGuestNT3_VBOX_IMPORT_CHECKER.win.x86 = nt31/r0
+  VBoxGuestNT3_VBOX_IMPORT_CHECKER.win.x86 = nt31/r0
  endif # win
 endif # enabled
 
@@ -272,6 +272,8 @@ ifeq ($(KBUILD_TARGET),win)
  PROGRAMS.win.x86 += VBoxGuestInstNT
  VBoxGuestInstNT_TEMPLATE = VBoxGuestR3Exe
  VBoxGuestInstNT_SOURCES  = win/VBoxGuestInst.cpp
+ VBoxGuestInstNT_USES     = vboximportchecker
+ VBoxGuestInstNT_VBOX_IMPORT_CHECKER.win.x86 = nt31
 endif
 
 
