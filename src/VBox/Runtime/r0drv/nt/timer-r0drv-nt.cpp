@@ -509,7 +509,10 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     pTimer->pfnTimer = pfnTimer;
     pTimer->pvUser = pvUser;
     pTimer->u64NanoInterval = u64NanoInterval;
-    KeInitializeTimerEx(&pTimer->NtTimer, SynchronizationTimer);
+    if (g_pfnrtKeInitializeTimerEx)
+        g_pfnrtKeInitializeTimerEx(&pTimer->NtTimer, SynchronizationTimer);
+    else
+        KeInitializeTimer(&pTimer->NtTimer);
     int rc = VINF_SUCCESS;
     if (pTimer->fOmniTimer)
     {

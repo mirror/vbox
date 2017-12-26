@@ -95,6 +95,8 @@ decltype(ObfDereferenceObject)             *g_pfnrtObfDereferenceObject;
 decltype(IofCallDriver)                    *g_pfnrtIofCallDriver;
 decltype(KfAcquireSpinLock)                *g_pfnrtKfAcquireSpinLock;
 decltype(KfReleaseSpinLock)                *g_pfnrtKfReleaseSpinLock;
+decltype(KefAcquireSpinLockAtDpcLevel)     *g_pfnrtKefAcquireSpinLockAtDpcLevel;
+decltype(KefReleaseSpinLockFromDpcLevel)   *g_pfnrtKefReleaseSpinLockFromDpcLevel;
 decltype(KfLowerIrql)                      *g_pfnrtKfLowerIrql;
 decltype(KfRaiseIrql)                      *g_pfnrtKfRaiseIrql;
 
@@ -103,6 +105,8 @@ LONG_PTR                        (__stdcall *g_pfnrtObDereferenceObject)(PVOID);
 NTSTATUS                        (__stdcall *g_pfnrtIoCallDriver)(PDEVICE_OBJECT, PIRP);
 KIRQL                           (__stdcall *g_pfnrtKeAcquireSpinLock)(PKSPIN_LOCK);
 VOID                            (__stdcall *g_pfnrtKeReleaseSpinLock)(PKSPIN_LOCK, KIRQL);
+KIRQL                           (__stdcall *g_pfnrtKeAcquireSpinLockAtDpcLevel)(PKSPIN_LOCK);
+VOID                            (__stdcall *g_pfnrtKeReleaseSpinLockFromDpcLevel)(PKSPIN_LOCK);
 VOID                            (__stdcall *g_pfnrtKeLowerIrql)(KIRQL);
 KIRQL                           (__stdcall *g_pfnrtKeRaiseIrql)(KIRQL);
 /** @} */
@@ -467,15 +471,15 @@ static uint32_t rtR0Nt3CalcModRmLength(uint8_t bRm)
 {
     uint32_t cbRm = 1;
 
-    if (   (bRm & X86_MODRM_MOD_MASK) == 3
+    if (   (bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT)
         || (bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
         cbRm += 4; /* disp32 */
-    else if ((bRm & X86_MODRM_MOD_MASK) == 1)
+    else if ((bRm & X86_MODRM_MOD_MASK) == (1 << X86_MODRM_MOD_SHIFT))
         cbRm += 1; /* disp8 */
-    else if ((bRm & X86_MODRM_MOD_MASK) == 2)
+    else if ((bRm & X86_MODRM_MOD_MASK) == (2 << X86_MODRM_MOD_SHIFT))
         cbRm += 2; /* disp16 */
 
-    if ((bRm & X86_MODRM_RM_MASK) == 4 && (bRm & X86_MODRM_MOD_MASK) != 3)
+    if ((bRm & X86_MODRM_RM_MASK) == 4 && (bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
         cbRm += 1; /* SIB */
 
     return cbRm;
@@ -514,13 +518,15 @@ DECLHIDDEN(int) rtR0Nt3InitSymbols(RTDBGKRNLINFO hKrnlInfo)
             GET_SYSTEM_ROUTINE(a_fnStdcall); \
             AssertLogRelReturn(RT_CONCAT(g_pfnrt,a_fnFastcall) || RT_CONCAT(g_pfnrt,a_fnStdcall), VERR_INTERNAL_ERROR_3); \
         } while (0)
-    GET_FAST_CALL_SYSTEM_ROUTINE(IofCompleteRequest,   IoCompleteRequest);
-    GET_FAST_CALL_SYSTEM_ROUTINE(ObfDereferenceObject, ObDereferenceObject);
-    GET_FAST_CALL_SYSTEM_ROUTINE(IofCallDriver,        IofCallDriver);
-    GET_FAST_CALL_SYSTEM_ROUTINE(KfAcquireSpinLock,    KeAcquireSpinLock);
-    GET_FAST_CALL_SYSTEM_ROUTINE(KfReleaseSpinLock,    KeReleaseSpinLock);
-    GET_FAST_CALL_SYSTEM_ROUTINE(KfLowerIrql,          KeLowerIrql);
-    GET_FAST_CALL_SYSTEM_ROUTINE(KfRaiseIrql,          KeRaiseIrql);
+    GET_FAST_CALL_SYSTEM_ROUTINE(IofCompleteRequest,                IoCompleteRequest);
+    GET_FAST_CALL_SYSTEM_ROUTINE(ObfDereferenceObject,              ObDereferenceObject);
+    GET_FAST_CALL_SYSTEM_ROUTINE(IofCallDriver,                     IoCallDriver);
+    GET_FAST_CALL_SYSTEM_ROUTINE(KfAcquireSpinLock,                 KeAcquireSpinLock);
+    GET_FAST_CALL_SYSTEM_ROUTINE(KfReleaseSpinLock,                 KeReleaseSpinLock);
+    GET_FAST_CALL_SYSTEM_ROUTINE(KfLowerIrql,                       KeLowerIrql);
+    GET_FAST_CALL_SYSTEM_ROUTINE(KfRaiseIrql,                       KeRaiseIrql);
+    GET_FAST_CALL_SYSTEM_ROUTINE(KefAcquireSpinLockAtDpcLevel,      KeAcquireSpinLockAtDpcLevel);
+    GET_FAST_CALL_SYSTEM_ROUTINE(KefReleaseSpinLockFromDpcLevel,    KeReleaseSpinLockFromDpcLevel);
 
     /*
      * We need to call assembly to update the __imp__Xxx entries, since C
@@ -540,7 +546,10 @@ DECLHIDDEN(int) rtR0Nt3InitSymbols(RTDBGKRNLINFO hKrnlInfo)
     _imp__KeTickCount = (decltype(_imp__KeTickCount))RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "KeTickCount");
     if (!_imp__KeTickCount)
     {
+        if (!g_fNt3VersionInitialized)
+            rtR0Nt3InitVersion();
         Assert(g_uNt3MajorVer == 3 && g_uNt3MinorVer < 50);
+
         uint8_t const *pbCode = (uint8_t const *)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "KeQueryTickCount");
         AssertLogRelReturn(pbCode, VERR_INTERNAL_ERROR_2);
 
@@ -549,12 +558,11 @@ DECLHIDDEN(int) rtR0Nt3InitSymbols(RTDBGKRNLINFO hKrnlInfo)
             uint8_t const b1 = pbCode[off++];
             switch (b1)
             {
-                case 0x89:
-                    /* mov reg, r/m     ; We're looking for absolute address in r/m. */
+                case 0x8b: /* mov reg, r/m     ; We're looking for absolute address in r/m. */
                     if ((pbCode[off] & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5 /*disp32*/)
                         _imp__KeTickCount = *(KSYSTEM_TIME **)&pbCode[off + 1];
                     RT_FALL_THRU();
-                case 0x8b:
+                case 0x89: /* mov r/m, reg */
                     off += rtR0Nt3CalcModRmLength(pbCode[off]);
                     break;
 

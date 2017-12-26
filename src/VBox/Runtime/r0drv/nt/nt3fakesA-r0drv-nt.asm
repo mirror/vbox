@@ -76,7 +76,10 @@ ENDPROC _rtNt3InitSymbolsAssembly
 ; @param 1  The fastcall name.
 ; @param 2  The stdcall name.
 ; @param 3  Byte size of arguments.
-%macro FastOrStdCallWrapper 3
+; @param 4  Zero if 1:1 mapping;
+;           One if 2nd parameter is a byte pointer that the farcall version
+;           instead returns in al.
+%macro FastOrStdCallWrapper 4
 BEGINCODE
 extern _g_pfnrt %+ %1
 extern _g_pfnrt %+ %2
@@ -90,9 +93,17 @@ BEGINPROC_EXPORTED $@ %+ %1 %+ @ %+ %3
 .stdcall_wrapper:
         push    ebp
         mov     ebp, esp
+%if %4 == 1
+        push    dword 0
+        push    esp
+%else
         push    edx
+%endif
         push    ecx
         call    [_g_pfnrt %+ %2]
+%if %4 == 1
+        movzx   eax, byte [ebp - 4]
+%endif
         leave
         ret
 
@@ -106,13 +117,15 @@ GLOBALNAME __imp_@ %+ %1 %+ @ %+ %3
         dd       $@ %+ %1 %+ @ %+ %3
 %endmacro
 
-FastOrStdCallWrapper IofCompleteRequest, IoCompleteRequest, 8
-FastOrStdCallWrapper IofCallDriver, IoCallDriver, 8
-FastOrStdCallWrapper ObfDereferenceObject, ObDereferenceObject, 4
-FastOrStdCallWrapper KfAcquireSpinLock, KeAcquireSpinLock, 4
-FastOrStdCallWrapper KfReleaseSpinLock, KeReleaseSpinLock, 8
-FastOrStdCallWrapper KfLowerIrql, KeLowerIrql, 4
-FastOrStdCallWrapper KfRaiseIrql, KeRaiseIrql, 4
+FastOrStdCallWrapper IofCompleteRequest,            IoCompleteRequest,              8, 0
+FastOrStdCallWrapper IofCallDriver,                 IoCallDriver,                   8, 0
+FastOrStdCallWrapper ObfDereferenceObject,          ObDereferenceObject,            4, 0
+FastOrStdCallWrapper KfAcquireSpinLock,             KeAcquireSpinLock,              4, 1
+FastOrStdCallWrapper KfReleaseSpinLock,             KeReleaseSpinLock,              8, 0
+FastOrStdCallWrapper KfRaiseIrql,                   KeRaiseIrql,                    4, 1
+FastOrStdCallWrapper KfLowerIrql,                   KeLowerIrql,                    4, 0
+FastOrStdCallWrapper KefAcquireSpinLockAtDpcLevel,  KeAcquireSpinLockAtDpcLevel,    4, 0
+FastOrStdCallWrapper KefReleaseSpinLockFromDpcLevel,KeReleaseSpinLockFromDpcLevel,  4, 0
 
 
 BEGINCODE

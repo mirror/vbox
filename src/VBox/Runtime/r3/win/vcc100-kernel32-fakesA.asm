@@ -44,6 +44,7 @@ __imp__ %+ %1 %+ @ %+ %2:
 BEGINDATA
 GLOBALNAME vcc100_kernel32_fakes_asm
 
+; NT 4
 MAKE_IMPORT_ENTRY DecodePointer, 4
 MAKE_IMPORT_ENTRY EncodePointer, 4
 MAKE_IMPORT_ENTRY InitializeCriticalSectionAndSpinCount, 8
@@ -59,8 +60,21 @@ MAKE_IMPORT_ENTRY InterlockedPushEntrySList, 8
 MAKE_IMPORT_ENTRY QueryDepthSList, 4
 MAKE_IMPORT_ENTRY VerifyVersionInfoA, 16
 MAKE_IMPORT_ENTRY VerSetConditionMask, 16
+; NT 3.51
 MAKE_IMPORT_ENTRY IsProcessorFeaturePresent, 4
 MAKE_IMPORT_ENTRY CancelIo, 4
+; NT 3.50
 MAKE_IMPORT_ENTRY IsDebuggerPresent, 0
 MAKE_IMPORT_ENTRY GetSystemTimeAsFileTime, 4
+; NT 3.1
+MAKE_IMPORT_ENTRY GetVersionExA, 4
+MAKE_IMPORT_ENTRY GetVersionExW, 4
+MAKE_IMPORT_ENTRY GetEnvironmentStringsW, 0
+MAKE_IMPORT_ENTRY FreeEnvironmentStringsW, 4
+MAKE_IMPORT_ENTRY GetLocaleInfoA, 16
+MAKE_IMPORT_ENTRY EnumSystemLocalesA, 8
+MAKE_IMPORT_ENTRY IsValidLocale, 8
+MAKE_IMPORT_ENTRY SetThreadAffinityMask, 8
+MAKE_IMPORT_ENTRY GetProcessAffinityMask, 12
+MAKE_IMPORT_ENTRY CommandLineToArgvW, 8 ; Lazy bird: this lives in shell32.
 
