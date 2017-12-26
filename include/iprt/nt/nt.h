@@ -2405,8 +2405,9 @@ NTSYSAPI NTSTATUS NTAPI RtlAddAccessDeniedAce(PACL, ULONG, ULONG, PSID);
 typedef struct _CURDIR
 {
     UNICODE_STRING  DosPath;
-    HANDLE          Handle;
+    HANDLE          Handle;     /**< 0x10 / 0x08 */
 } CURDIR;
+AssertCompileSize(CURDIR, ARCH_BITS == 32 ? 0x0c : 0x18);
 typedef CURDIR *PCURDIR;
 
 typedef struct _RTL_DRIVE_LETTER_CURDIR
@@ -2420,38 +2421,38 @@ typedef RTL_DRIVE_LETTER_CURDIR *PRTL_DRIVE_LETTER_CURDIR;
 
 typedef struct _RTL_USER_PROCESS_PARAMETERS
 {
-    ULONG           MaximumLength;
-    ULONG           Length;
-    ULONG           Flags;
-    ULONG           DebugFlags;
-    HANDLE          ConsoleHandle;
-    ULONG           ConsoleFlags;
-    HANDLE          StandardInput;
-    HANDLE          StandardOutput;
-    HANDLE          StandardError;
-    CURDIR          CurrentDirectory;
-    UNICODE_STRING  DllPath;
-    UNICODE_STRING  ImagePathName;
-    UNICODE_STRING  CommandLine;
-    PWSTR           Environment;
-    ULONG           StartingX;
-    ULONG           StartingY;
-    ULONG           CountX;
-    ULONG           CountY;
-    ULONG           CountCharsX;
-    ULONG           CountCharsY;
-    ULONG           FillAttribute;
-    ULONG           WindowFlags;
-    ULONG           ShowWindowFlags;
-    UNICODE_STRING  WindowTitle;
-    UNICODE_STRING  DesktopInfo;
-    UNICODE_STRING  ShellInfo;
-    UNICODE_STRING  RuntimeInfo;
-    RTL_DRIVE_LETTER_CURDIR  CurrentDirectories[0x20];
-    SIZE_T          EnvironmentSize;        /**< Added in Vista */
-    SIZE_T          EnvironmentVersion;     /**< Added in Windows 7. */
-    PVOID           PackageDependencyData;  /**< Added Windows 8? */
-    ULONG           ProcessGroupId;         /**< Added Windows 8? */
+    ULONG           MaximumLength;                      /**< 0x00 / 0x00 */
+    ULONG           Length;                             /**< 0x / 0x04 */
+    ULONG           Flags;                              /**< 0x / 0x08 */
+    ULONG           DebugFlags;                         /**< 0x / 0x0c */
+    HANDLE          ConsoleHandle;                      /**< 0x / 0x10 */
+    ULONG           ConsoleFlags;                       /**< 0x / 0x14 */
+    HANDLE          StandardInput;                      /**< 0x / 0x18 */
+    HANDLE          StandardOutput;                     /**< 0x / 0x1c */
+    HANDLE          StandardError;                      /**< 0x / 0x20 */
+    CURDIR          CurrentDirectory;                   /**< 0x / 0x24 */
+    UNICODE_STRING  DllPath;                            /**< 0x / 0x30 */
+    UNICODE_STRING  ImagePathName;                      /**< 0x / 0x38 */
+    UNICODE_STRING  CommandLine;                        /**< 0x / 0x40 */
+    PWSTR           Environment;                        /**< 0x / 0x48 */
+    ULONG           StartingX;                          /**< 0x / 0x4c */
+    ULONG           StartingY;                          /**< 0x / 0x50 */
+    ULONG           CountX;                             /**< 0x / 0x54 */
+    ULONG           CountY;                             /**< 0x / 0x58 */
+    ULONG           CountCharsX;                        /**< 0x / 0x5c */
+    ULONG           CountCharsY;                        /**< 0x / 0x60 */
+    ULONG           FillAttribute;                      /**< 0x / 0x64 */
+    ULONG           WindowFlags;                        /**< 0x / 0x68 */
+    ULONG           ShowWindowFlags;                    /**< 0x / 0x6c */
+    UNICODE_STRING  WindowTitle;                        /**< 0x / 0x70 */
+    UNICODE_STRING  DesktopInfo;                        /**< 0x / 0x78 */
+    UNICODE_STRING  ShellInfo;                          /**< 0x / 0x80 */
+    UNICODE_STRING  RuntimeInfo;                        /**< 0x / 0x88 */
+    RTL_DRIVE_LETTER_CURDIR  CurrentDirectories[0x20];  /**< 0x / 0x90 */
+    SIZE_T          EnvironmentSize;                    /**< 0x / 0x - Added in Vista */
+    SIZE_T          EnvironmentVersion;                 /**< 0x / 0x - Added in Windows 7. */
+    PVOID           PackageDependencyData;              /**< 0x / 0x - Added Windows 8? */
+    ULONG           ProcessGroupId;                     /**< 0x / 0x - Added Windows 8? */
 } RTL_USER_PROCESS_PARAMETERS;
 typedef RTL_USER_PROCESS_PARAMETERS *PRTL_USER_PROCESS_PARAMETERS;
 #define RTL_USER_PROCESS_PARAMS_FLAG_NORMALIZED     1
