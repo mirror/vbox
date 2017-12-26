@@ -49,7 +49,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
  VBoxGuest_DEFS.haiku    = VBOX_SVN_REV=$(VBOX_SVN_REV) _KERNEL_MODE=1
  VBoxGuest_DEFS.solaris  = VBOX_SVN_REV=$(VBOX_SVN_REV)
  VBoxGuest_DEFS.win      = VBOX_GUESTDRV_WITH_RELEASE_LOGGER
- VBoxGuest_DEFS.win.x86  = TARGET_NT4
+ VBoxGuest_DEFS.win.x86  = TARGET_NT4 TARGET_NT3 RT_WITHOUT_NOCRT_WRAPPERS
  VBoxGuest_DEFS.darwin   = VBOX_GUESTDRV_WITH_RELEASE_LOGGER
  ifeq ($(KBUILD_TYPE),release)
   # Allow stopping/removing the driver without a reboot
@@ -84,7 +84,10 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
    ifeq ($(KBUILD_TARGET_ARCH),x86)
     VBoxGuest_SDKS       = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
     VBoxGuest_LIBS       = \
+    	$(VBOX_LIB_VBGL_R0BASE) \
+    	$(VBOX_LIB_IPRT_GUEST_R0) \
     	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/exsup.lib \
+    	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/int64.lib \
     	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
     	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib
    else
@@ -93,7 +96,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
     	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/hal.lib
    endif
    VBoxGuest_USES.win += vboximportchecker
-   VBoxGuest_VBOX_IMPORT_CHECKER.win.x86 = nt4/r0
+   VBoxGuest_VBOX_IMPORT_CHECKER.win.x86 = nt31/r0
    VBoxGuest_VBOX_IMPORT_CHECKER.win.amd64 = xp64/r0
   endif # win
   ifn1of ($(KBUILD_TARGET), linux freebsd netbsd solaris haiku)
@@ -107,10 +110,13 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
   endif
   VBoxGuest_SOURCES     += \
   	VBoxGuest.cpp
-  ifeq ($(KBUILD_TARGET), win)
-   VBoxGuest_SOURCES += \
+  VBoxGuest_SOURCES.win += \
   	win/VBoxGuest.rc
-  endif
+  VBoxGuest_SOURCES.win.x86 += \
+       ../../../Runtime/common/string/strcmp.asm \
+       ../../../Runtime/common/string/strchr.asm \
+       ../../../Runtime/r0drv/nt/nt3fakes-r0drv-nt.cpp \
+       ../../../Runtime/r0drv/nt/nt3fakesA-r0drv-nt.asm
   VBoxGuest_LIBS        += \
   	$(VBOX_LIB_VBGL_R0BASE) \
   	$(VBOX_LIB_IPRT_GUEST_R0)
@@ -158,33 +164,6 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
  endif # OS/2
 
  VBoxGuest.cpp_DEFS     = VBOX_SVN_REV=$(VBOX_SVN_REV)
-
- if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_NT3_ADDITIONS)
-  #
-  # Windows NT 3.x driver.
-  #
-  SYSMODS.x86 += VBoxGuestNT3
-  VBoxGuestNT3_EXTENDS = VBoxGuest
-  VBoxGuestNT3_INSTTYPE.win = both
-  VBoxGuestNT3_SDKS    = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
-  VBoxGuestNT3_DEFS    = $(VBoxGuest_DEFS) TARGET_NT4 TARGET_NT3 RT_WITHOUT_NOCRT_WRAPPERS
-  VBoxGuestNT3_SOURCES = \
-  	VBoxGuest.cpp \
-  	VBoxGuest-$(KBUILD_TARGET).cpp \
-       ../../../Runtime/common/string/strcmp.asm \
-       ../../../Runtime/common/string/strchr.asm \
-       ../../../Runtime/r0drv/nt/nt3fakes-r0drv-nt.cpp \
-       ../../../Runtime/r0drv/nt/nt3fakesA-r0drv-nt.asm \
-  	win/VBoxGuest.rc
-  VBoxGuestNT3_LIBS    = \
-  	$(VBOX_LIB_IPRT_GUEST_R0_NT4) \
-  	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/exsup.lib \
-  	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/int64.lib \
-  	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
-  	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib \
-  	$(VBOX_LIB_VBGL_R0BASE)
-  VBoxGuestNT3_VBOX_IMPORT_CHECKER.win.x86 = nt31/r0
- endif # win
 endif # enabled
 
 
