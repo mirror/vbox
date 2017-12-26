@@ -1929,13 +1929,23 @@ NTSYSAPI PULONG   NTAPI RtlSubAuthoritySid(PSID, ULONG);
 
 #endif /* IPRT_NT_USE_WINTERNL */
 
+/** For use with ObjectHandleFlagInformation. */
+typedef struct _OBJECT_HANDLE_FLAG_INFORMATION
+{
+    BOOLEAN Inherit;
+    BOOLEAN ProtectFromClose;
+} OBJECT_HANDLE_FLAG_INFORMATION;
+typedef OBJECT_HANDLE_FLAG_INFORMATION *POBJECT_HANDLE_FLAG_INFORMATION;
+
 typedef enum _OBJECT_INFORMATION_CLASS
 {
     ObjectBasicInformation = 0,
     ObjectNameInformation,
     ObjectTypeInformation,
     ObjectAllInformation,
-    ObjectDataInformation
+    ObjectHandleFlagInformation,
+    ObjectSessionInformation,
+    MaxObjectInfoClass
 } OBJECT_INFORMATION_CLASS;
 typedef OBJECT_INFORMATION_CLASS *POBJECT_INFORMATION_CLASS;
 #ifdef IN_RING0
