@@ -188,7 +188,7 @@ VBoxServiceVMInfo.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxServiceVMInfo.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
 VBoxService_USES.win += vboximportchecker
-VBoxService_VBOX_IMPORT_CHECKER.win.x86 = nt4
+VBoxService_VBOX_IMPORT_CHECKER.win.x86 = nt31
 VBoxService_VBOX_IMPORT_CHECKER.win.amd64 = xp64
 
 

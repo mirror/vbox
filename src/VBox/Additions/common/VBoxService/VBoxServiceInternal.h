@@ -208,6 +208,8 @@ extern decltype(Process32Next)                 *g_pfnProcess32Next;
 extern decltype(Module32First)                 *g_pfnModule32First;
 extern decltype(Module32Next)                  *g_pfnModule32Next;
 # endif
+extern decltype(GetSystemTimeAdjustment)       *g_pfnGetSystemTimeAdjustment;
+extern decltype(SetSystemTimeAdjustment)       *g_pfnSetSystemTimeAdjustment;
 # ifdef ___iprt_nt_nt_h___
 extern decltype(ZwQuerySystemInformation)      *g_pfnZwQuerySystemInformation;
 # endif

@@ -366,14 +366,17 @@ static DECLCALLBACK(int) vgsvcTimeSyncInit(void)
         }
     }
 
-    if (GetSystemTimeAdjustment(&g_dwWinTimeAdjustment, &g_dwWinTimeIncrement, &g_bWinTimeAdjustmentDisabled))
-        vgsvcTimeSyncLog(0, "vgsvcTimeSyncInit: Initially %ld (100ns) units per %ld (100 ns) units interval, disabled=%d\n",
-                         g_dwWinTimeAdjustment, g_dwWinTimeIncrement, g_bWinTimeAdjustmentDisabled ? 1 : 0);
-    else
+    if (g_pfnGetSystemTimeAdjustment)
     {
-        DWORD dwErr = GetLastError();
-        rc = RTErrConvertFromWin32(dwErr);
-        VGSvcError("vgsvcTimeSyncInit: Could not get time adjustment values! Last error: %ld!\n", dwErr);
+        if (g_pfnGetSystemTimeAdjustment(&g_dwWinTimeAdjustment, &g_dwWinTimeIncrement, &g_bWinTimeAdjustmentDisabled))
+            vgsvcTimeSyncLog(0, "vgsvcTimeSyncInit: Initially %ld (100ns) units per %ld (100 ns) units interval, disabled=%d\n",
+                             g_dwWinTimeAdjustment, g_dwWinTimeIncrement, g_bWinTimeAdjustmentDisabled ? 1 : 0);
+        else
+        {
+            DWORD dwErr = GetLastError();
+            rc = RTErrConvertFromWin32(dwErr);
+            VGSvcError("vgsvcTimeSyncInit: Could not get time adjustment values! Last error: %ld!\n", dwErr);
+        }
     }
 #endif /* RT_OS_WINDOWS */
 
@@ -399,9 +402,14 @@ static bool vgsvcTimeSyncAdjust(PCRTTIMESPEC pDrift)
     if (g_hTokenProcess == NULL) /* Is the token already closed when shutting down? */
         return false;
 
+    /* The API appeared in NT 3.50. */
+    if (   !g_pfnSetSystemTimeAdjustment
+        || !g_pfnGetSystemTimeAdjustment)
+        return false;
+
     DWORD dwWinTimeAdjustment, dwWinNewTimeAdjustment, dwWinTimeIncrement;
     BOOL  fWinTimeAdjustmentDisabled;
-    if (GetSystemTimeAdjustment(&dwWinTimeAdjustment, &dwWinTimeIncrement, &fWinTimeAdjustmentDisabled))
+    if (g_pfnGetSystemTimeAdjustment(&dwWinTimeAdjustment, &dwWinTimeIncrement, &fWinTimeAdjustmentDisabled))
     {
         DWORD dwDiffMax = g_dwWinTimeAdjustment * 0.50;
         DWORD dwDiffNew =   dwWinTimeAdjustment * 0.10;
@@ -428,7 +436,7 @@ static bool vgsvcTimeSyncAdjust(PCRTTIMESPEC pDrift)
         vgsvcTimeSyncLog(3, "vgsvcTimeSyncAdjust: Drift=%lldms\n", RTTimeSpecGetMilli(pDrift));
         vgsvcTimeSyncLog(3, "vgsvcTimeSyncAdjust: OrgTA=%ld, CurTA=%ld, NewTA=%ld, DiffNew=%ld, DiffMax=%ld\n",
                          g_dwWinTimeAdjustment, dwWinTimeAdjustment, dwWinNewTimeAdjustment, dwDiffNew, dwDiffMax);
-        if (SetSystemTimeAdjustment(dwWinNewTimeAdjustment, FALSE /* Periodic adjustments enabled. */))
+        if (g_pfnSetSystemTimeAdjustment(dwWinNewTimeAdjustment, FALSE /* Periodic adjustments enabled. */))
         {
             g_cTimeSyncErrors = 0;
             return true;
@@ -474,7 +482,9 @@ static void vgsvcTimeSyncCancelAdjust(void)
  *        vgsvcTimeSyncAdjust.  */
     if (g_hTokenProcess == NULL) /* No process token (anymore)? */
         return;
-    if (SetSystemTimeAdjustment(0, TRUE /* Periodic adjustments disabled. */))
+    if (!g_pfnSetSystemTimeAdjustment)
+        return;
+    if (g_pfnSetSystemTimeAdjustment(0, TRUE /* Periodic adjustments disabled. */))
         vgsvcTimeSyncLog(5, "vgsvcTimeSyncCancelAdjust: Windows Time Adjustment is now disabled.\n");
     else if (g_cTimeSyncErrors++ < 10)
         VGSvcError("vgsvcTimeSyncCancelAdjust: SetSystemTimeAdjustment(,disable) failed, error=%u\n", GetLastError());
