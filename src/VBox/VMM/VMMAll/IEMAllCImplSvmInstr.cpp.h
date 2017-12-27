@@ -148,11 +148,14 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         Assert(CPUMGetGuestCPL(pVCpu) == pCtx->ss.Attr.n.u2Dpl);
 
         PSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-        /* Save interrupt shadow of the nested-guest instruction if any. */
+        /* Record any interrupt shadow of the nested-guest instruction into the nested-guest VMCB. */
         if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
         {
             pVmcbCtrl->IntShadow.n.u1IntShadow = 1;
+
+            /* Clear the inhibit-interrupt force-flag so as to not affect the outer guest. */
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
             LogFlow(("iemSvmVmexit: Interrupt shadow till %#RX64\n", pCtx->rip));
         }
 
