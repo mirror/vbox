@@ -200,11 +200,7 @@ static int Usage(FILE *pOutput)
             "    Quiet operation (default).\n"
             "  --nt31, --nt350, --nt351, --nt4, --w2k, --xp, --w2k3, --vista,\n"
             "  --w7, --w8, --w81, --w10\n"
-            "    Which version to set. Default is --nt31.\n"
-            "  --nt4\n"
-            "    Set versions to NT 4.0\n"
-            "  --nt4\n"
-            "    Set versions to NT 4.0\n"
+            "    Which version to set.  Default: --nt31\n"
             );
     return RTEXITCODE_SYNTAX;
 }
