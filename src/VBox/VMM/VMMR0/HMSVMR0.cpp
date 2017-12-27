@@ -67,7 +67,8 @@
 /** Macro for checking and returning from the using function for
  * \#VMEXIT intercepts that maybe caused during delivering of another
  * event in the guest. */
-#define HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY() \
+#ifdef VBOX_WITH_NESTED_HWVIRT
+# define HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY() \
     do \
     { \
         int rc = hmR0SvmCheckExitDueToEventDelivery(pVCpu, pCtx, pSvmTransient); \
@@ -79,6 +80,17 @@
         else \
             return rc; \
     } while (0)
+#else
+# define HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY() \
+    do \
+    { \
+        int rc = hmR0SvmCheckExitDueToEventDelivery(pVCpu, pCtx, pSvmTransient); \
+        if (RT_LIKELY(rc == VINF_SUCCESS))        { /* continue #VMEXIT handling */ } \
+        else if (     rc == VINF_HM_DOUBLE_FAULT) { return VINF_SUCCESS;            } \
+        else \
+            return rc; \
+    } while (0)
+#endif
 
 /**
  * Updates interrupt shadow for the current RIP.
