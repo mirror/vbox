@@ -5126,7 +5126,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                             && uVector == X86_XCPT_GP)
                         {
                             Log4(("#GP on IRET detected!\n"));
-                            return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+                            return VERR_SVM_UNKNOWN_EXIT;
                         }
                     }
                     else
