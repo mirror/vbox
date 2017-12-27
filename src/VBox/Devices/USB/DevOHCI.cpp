@@ -110,17 +110,10 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/** The saved state version. */
-#define OHCI_SAVED_STATE_VERSION            5
-// The saved state with support of 8 ports
-#define OHCI_SAVED_STATE_VERSION_8PORTS     4
-/** The saved state version used in 3.0 and earlier.
- *
- * @remarks Because of the SSMR3MemPut/Get laziness we ended up with an
- *          accidental format change between 2.0 and 2.1 that didn't get its own
- *          version number.  It is therefore not possible to restore states from
- *          2.0 and earlier with 2.1 and later. */
-#define OHCI_SAVED_STATE_VERSION_MEM_HELL   3
+/** The current saved state version. */
+#define OHCI_SAVED_STATE_VERSION            5   /* Introduced post-4.3. */
+/** The saved state with support of up to 8 ports. */
+#define OHCI_SAVED_STATE_VERSION_8PORTS     4   /* Introduced in 3.1 or so. */
 
 
 /** Maximum supported number of Downstream Ports on the root hub. 15 ports
@@ -786,6 +779,41 @@ static SSMFIELD const g_aOhciFields[] =
     SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[12].fReg),
     SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[13].fReg),
     SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[14].fReg),
+    SSMFIELD_ENTRY(         OHCI, ctl),
+    SSMFIELD_ENTRY(         OHCI, status),
+    SSMFIELD_ENTRY(         OHCI, intr_status),
+    SSMFIELD_ENTRY(         OHCI, intr),
+    SSMFIELD_ENTRY(         OHCI, hcca),
+    SSMFIELD_ENTRY(         OHCI, per_cur),
+    SSMFIELD_ENTRY(         OHCI, ctrl_cur),
+    SSMFIELD_ENTRY(         OHCI, ctrl_head),
+    SSMFIELD_ENTRY(         OHCI, bulk_cur),
+    SSMFIELD_ENTRY(         OHCI, bulk_head),
+    SSMFIELD_ENTRY(         OHCI, done),
+    SSMFIELD_ENTRY_CUSTOM(        fsmps+fit+fi+frt, RT_OFFSETOF(OHCI, done) + RT_SIZEOFMEMB(OHCI, done), 4),
+    SSMFIELD_ENTRY(         OHCI, HcFmNumber),
+    SSMFIELD_ENTRY(         OHCI, pstart),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/**
+ * SSM descriptor table for the older 8-port OHCI structure.
+ */
+static SSMFIELD const g_aOhciFields8Ports[] =
+{
+    SSMFIELD_ENTRY(         OHCI, SofTime),
+    SSMFIELD_ENTRY_CUSTOM(        dpic+fno, RT_OFFSETOF(OHCI, SofTime) + RT_SIZEOFMEMB(OHCI, SofTime), 4),
+    SSMFIELD_ENTRY(         OHCI, RootHub.status),
+    SSMFIELD_ENTRY(         OHCI, RootHub.desc_a),
+    SSMFIELD_ENTRY(         OHCI, RootHub.desc_b),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[0].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[1].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[2].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[3].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[4].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[5].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[6].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[7].fReg),
     SSMFIELD_ENTRY(         OHCI, ctl),
     SSMFIELD_ENTRY(         OHCI, status),
     SSMFIELD_ENTRY(         OHCI, intr_status),
@@ -5606,148 +5634,9 @@ static DECLCALLBACK(int) ohciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     }
     else if (uVersion == OHCI_SAVED_STATE_VERSION_8PORTS)
     {
-        static SSMFIELD const s_aOhciFields8Ports[] =
-        {
-            SSMFIELD_ENTRY(         OHCI, SofTime),
-            SSMFIELD_ENTRY_CUSTOM(        dpic+fno, RT_OFFSETOF(OHCI, SofTime) + RT_SIZEOFMEMB(OHCI, SofTime), 4),
-            SSMFIELD_ENTRY(         OHCI, RootHub.status),
-            SSMFIELD_ENTRY(         OHCI, RootHub.desc_a),
-            SSMFIELD_ENTRY(         OHCI, RootHub.desc_b),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[0].fReg),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[1].fReg),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[2].fReg),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[3].fReg),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[4].fReg),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[5].fReg),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[6].fReg),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[7].fReg),
-            SSMFIELD_ENTRY(         OHCI, ctl),
-            SSMFIELD_ENTRY(         OHCI, status),
-            SSMFIELD_ENTRY(         OHCI, intr_status),
-            SSMFIELD_ENTRY(         OHCI, intr),
-            SSMFIELD_ENTRY(         OHCI, hcca),
-            SSMFIELD_ENTRY(         OHCI, per_cur),
-            SSMFIELD_ENTRY(         OHCI, ctrl_cur),
-            SSMFIELD_ENTRY(         OHCI, ctrl_head),
-            SSMFIELD_ENTRY(         OHCI, bulk_cur),
-            SSMFIELD_ENTRY(         OHCI, bulk_head),
-            SSMFIELD_ENTRY(         OHCI, done),
-            SSMFIELD_ENTRY_CUSTOM(        fsmps+fit+fi+frt, RT_OFFSETOF(OHCI, done) + RT_SIZEOFMEMB(OHCI, done), 4),
-            SSMFIELD_ENTRY(         OHCI, HcFmNumber),
-            SSMFIELD_ENTRY(         OHCI, pstart),
-            SSMFIELD_ENTRY_TERM()
-        };
-
-        rc = SSMR3GetStructEx(pSSM, pThis, sizeof(*pThis), 0 /*fFlags*/, &s_aOhciFields8Ports[0], NULL);
+        rc = SSMR3GetStructEx(pSSM, pThis, sizeof(*pThis), 0 /*fFlags*/, &g_aOhciFields8Ports[0], NULL);
         if (RT_FAILURE(rc))
             return rc;
-    }
-    else if (uVersion == OHCI_SAVED_STATE_VERSION_MEM_HELL)
-    {
-        static SSMFIELD const s_aOhciFields22[] =
-        {
-            SSMFIELD_ENTRY_OLD(           PciDev.abConfig,              256),   /* DevPCI restores this. */
-            SSMFIELD_ENTRY_OLD(           PciDev.Int,                   224),
-            SSMFIELD_ENTRY_OLD(           PciDev.uDevFn,                4),
-            SSMFIELD_ENTRY_OLD(           PciDev.Alignment0,            4),
-            SSMFIELD_ENTRY_OLD_HCPTR(     PciDev.pszNameR3),
-            SSMFIELD_ENTRY_OLD_HCPTR(     PciDev.pvReserved),
-            SSMFIELD_ENTRY_OLD_HCPTR(     pDevInsR3),
-            SSMFIELD_ENTRY_OLD_HCPTR(     pEndOfFrameTimerR3),
-            SSMFIELD_ENTRY_OLD_HCPTR(     pDevInsR0),
-            SSMFIELD_ENTRY_OLD_HCPTR(     pEndOfFrameTimerR0),
-            SSMFIELD_ENTRY_OLD_RCPTR(     pDevInsRC),
-            SSMFIELD_ENTRY_OLD_RCPTR(     pEndOfFrameTimerRC),
-            SSMFIELD_ENTRY(         OHCI, SofTime),
-            SSMFIELD_ENTRY_CUSTOM(        dpic+fno, RT_OFFSETOF(OHCI, SofTime) + RT_SIZEOFMEMB(OHCI, SofTime), 4),
-            SSMFIELD_ENTRY_OLD(           MMIOBase,                     4),     /* DevPCI implicitly restores this. */
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.pIBase),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.pIRhConn),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.pIDev),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.IBase.pfnQueryInterface),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.IRhPort.pfnGetAvailablePorts),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.IRhPort.pfnGetUSBVersions),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.IRhPort.pfnAttach),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.IRhPort.pfnDetach),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.IRhPort.pfnReset),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.IRhPort.pfnXferCompletion),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.IRhPort.pfnXferError),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.IRhPort.Alignment),
-            SSMFIELD_ENTRY_OLD(           RootHub.Led,                  16),    /* No device restored. */
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.ILeds.pfnQueryStatusLed),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.pLedsConnector),
-            SSMFIELD_ENTRY(         OHCI, RootHub.status),
-            SSMFIELD_ENTRY(         OHCI, RootHub.desc_a),
-            SSMFIELD_ENTRY(         OHCI, RootHub.desc_b),
-            SSMFIELD_ENTRY_OLD_PAD_HC64(  RootHub.Alignment0,           4),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[0].fReg),
-            SSMFIELD_ENTRY_OLD_PAD_HC64(  RootHub.aPorts[0].Alignment0, 4),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.aPorts[0].pDev),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[1].fReg),
-            SSMFIELD_ENTRY_OLD_PAD_HC64(  RootHub.aPorts[1].Alignment0, 4),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.aPorts[1].pDev),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[2].fReg),
-            SSMFIELD_ENTRY_OLD_PAD_HC64(  RootHub.aPorts[2].Alignment0, 4),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.aPorts[2].pDev),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[3].fReg),
-            SSMFIELD_ENTRY_OLD_PAD_HC64(  RootHub.aPorts[3].Alignment0, 4),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.aPorts[3].pDev),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[4].fReg),
-            SSMFIELD_ENTRY_OLD_PAD_HC64(  RootHub.aPorts[4].Alignment0, 4),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.aPorts[4].pDev),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[5].fReg),
-            SSMFIELD_ENTRY_OLD_PAD_HC64(  RootHub.aPorts[5].Alignment0, 4),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.aPorts[5].pDev),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[6].fReg),
-            SSMFIELD_ENTRY_OLD_PAD_HC64(  RootHub.aPorts[6].Alignment0, 4),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.aPorts[6].pDev),
-            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[7].fReg),
-            SSMFIELD_ENTRY_OLD_PAD_HC64(  RootHub.aPorts[7].Alignment0, 4),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.aPorts[7].pDev),
-            SSMFIELD_ENTRY_OLD_HCPTR(     RootHub.pThis),
-            SSMFIELD_ENTRY(         OHCI, ctl),
-            SSMFIELD_ENTRY(         OHCI, status),
-            SSMFIELD_ENTRY(         OHCI, intr_status),
-            SSMFIELD_ENTRY(         OHCI, intr),
-            SSMFIELD_ENTRY(         OHCI, hcca),
-            SSMFIELD_ENTRY(         OHCI, per_cur),
-            SSMFIELD_ENTRY(         OHCI, ctrl_cur),
-            SSMFIELD_ENTRY(         OHCI, ctrl_head),
-            SSMFIELD_ENTRY(         OHCI, bulk_cur),
-            SSMFIELD_ENTRY(         OHCI, bulk_head),
-            SSMFIELD_ENTRY(         OHCI, done),
-            SSMFIELD_ENTRY_CUSTOM(        fsmps+fit+fi+frt, RT_OFFSETOF(OHCI, done) + RT_SIZEOFMEMB(OHCI, done), 4),
-            SSMFIELD_ENTRY(         OHCI, HcFmNumber),
-            SSMFIELD_ENTRY(         OHCI, pstart),
-            SSMFIELD_ENTRY_OLD(           cTicksPerFrame,               8),     /* done by the constructor */
-            SSMFIELD_ENTRY_OLD(           cTicksPerUsbTick,             8),     /* ditto */
-            SSMFIELD_ENTRY_OLD(           cInFlight,                    4),     /* no in-flight stuff when saving. */
-            SSMFIELD_ENTRY_OLD(           Alignment1,                   4),
-            SSMFIELD_ENTRY_OLD(           aInFlight,                    257 * 8),
-            SSMFIELD_ENTRY_OLD_PAD_HC64(  aInFlight,                    257 * 8),
-            SSMFIELD_ENTRY_OLD(           cInDoneQueue,                 4),     /* strict builds only, so don't bother. */
-            SSMFIELD_ENTRY_OLD(           aInDoneQueue,                 4*64),
-            SSMFIELD_ENTRY_OLD(           u32FmDoneQueueTail,           4),     /* logging only */
-            SSMFIELD_ENTRY_OLD_PAD_HC32(  Alignment2,                   4),
-            SSMFIELD_ENTRY_OLD_HCPTR(     pLoad),
-            SSMFIELD_ENTRY_OLD(           StatCanceledIsocUrbs,         8),
-            SSMFIELD_ENTRY_OLD(           StatCanceledGenUrbs,          8),
-            SSMFIELD_ENTRY_OLD(           StatDroppedUrbs,              8),
-            SSMFIELD_ENTRY_OLD(           StatTimer,                    32),
-            SSMFIELD_ENTRY_TERM()
-        };
-
-        /* deserialize the struct */
-        rc = SSMR3GetStructEx(pSSM, pThis, sizeof(*pThis), SSMSTRUCT_FLAGS_NO_MARKERS /*fFlags*/, &s_aOhciFields22[0], NULL);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        /* check delimiter */
-        uint32_t u32;
-        rc = SSMR3GetU32(pSSM, &u32);
-        if (RT_FAILURE(rc))
-            return rc;
-        AssertMsgReturn(u32 == ~0U, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
     }
     else
         AssertMsgFailedReturn(("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
