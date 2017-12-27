@@ -152,7 +152,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
         {
-            pVmcbCtrl->u1IntShadow = 1;
+            pVmcbCtrl->IntShadow.n.u1IntShadow = 1;
             LogFlow(("iemSvmVmexit: Interrupt shadow till %#RX64\n", pCtx->rip));
         }
 
@@ -334,7 +334,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         }
 
         /* Nested paging. */
-        if (    pVmcbCtrl->u1NestedPaging
+        if (    pVmcbCtrl->NestedPaging.n.u1NestedPaging
             && !pVM->cpum.ro.GuestFeatures.fSvmNestedPaging)
         {
             Log(("iemSvmVmrun: Nested paging not supported -> #VMEXIT\n"));
@@ -350,10 +350,18 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         }
 
         /* Last branch record (LBR) virtualization. */
-        if (    pVmcbCtrl->u1LbrVirt
+        if (    pVmcbCtrl->LbrVirt.n.u1LbrVirt
             && !pVM->cpum.ro.GuestFeatures.fSvmLbrVirt)
         {
             Log(("iemSvmVmrun: LBR virtualization not supported -> #VMEXIT\n"));
+            return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        }
+
+        /* Virtualized VMSAVE/VMLOAD. */
+        if (    pVmcbCtrl->LbrVirt.n.u1VirtVmsaveVmload
+            && !pVM->cpum.ro.GuestFeatures.fSvmVirtVmsaveVmload)
+        {
+            Log(("iemSvmVmrun: Virtualized VMSAVE/VMLOAD not supported -> #VMEXIT\n"));
             return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
         }
 
@@ -459,7 +467,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
             pCtx->cs.Attr.n.u2Dpl = pCtx->ss.Attr.n.u2Dpl = 3;
         if (CPUMIsGuestInRealModeEx(pCtx))
             pCtx->cs.Attr.n.u2Dpl = pCtx->ss.Attr.n.u2Dpl = 0;
-
         Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ss));
 
         /*
@@ -526,7 +533,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         /*
          * Interrupt shadow.
          */
-        if (pVmcbCtrl->u1IntShadow)
+        if (pVmcbCtrl->IntShadow.n.u1IntShadow)
         {
             LogFlow(("iemSvmVmrun: setting interrupt shadow. inhibit PC=%#RX64\n", pVmcbNstGst->u64RIP));
             /** @todo will this cause trouble if the nested-guest is 64-bit but the guest is 32-bit? */
