@@ -3294,7 +3294,7 @@ VMM_INT_DECL(IEMXCPTRAISE) IEMEvaluateRecursiveXcpt(PVMCPU pVCpu, uint32_t fPrev
                      && enmCurXcptClass  == IEMXCPTCLASS_CONTRIBUTORY)
             {
                 enmRaise = IEMXCPTRAISE_DOUBLE_FAULT;
-                Log2(("IEMEvaluateRecursiveXcpt: uPrevVector=%u uCurVector=%u -> #DF\n", uPrevVector, uCurVector));
+                Log2(("IEMEvaluateRecursiveXcpt: uPrevVector=%#x uCurVector=%#x -> #DF\n", uPrevVector, uCurVector));
             }
             else if (   enmPrevXcptClass == IEMXCPTCLASS_DOUBLE_FAULT
                      && (   enmCurXcptClass == IEMXCPTCLASS_CONTRIBUTORY
