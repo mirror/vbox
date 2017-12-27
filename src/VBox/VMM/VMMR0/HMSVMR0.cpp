@@ -5455,12 +5455,10 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
                             break;
 
                         case X86_XCPT_GP:
-                        {
                             Event.n.u1ErrorCodeValid    = 1;
                             Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
                             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
                             break;
-                        }
 
                         default:
                             AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit caused by exception %#x\n", Event.n.u8Vector));
