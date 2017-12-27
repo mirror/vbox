@@ -2966,19 +2966,20 @@ int VBVAInit (PVGASTATE pVGAState)
 
 }
 
-void VBVADestroy (PVGASTATE pVGAState)
+void VBVADestroy(PVGASTATE pVGAState)
 {
-    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pVGAState->pHGSMI);
-
-    if (pCtx)
+    PHGSMIINSTANCE pHgsmi = pVGAState->pHGSMI;
+    if (pHgsmi)
     {
+        VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pHgsmi);
         pCtx->mouseShapeInfo.fSet = false;
         RTMemFree(pCtx->mouseShapeInfo.pu8Shape);
         pCtx->mouseShapeInfo.pu8Shape = NULL;
         pCtx->mouseShapeInfo.cbAllocated = 0;
         pCtx->mouseShapeInfo.cbShape = 0;
-    }
 
-    HGSMIDestroy (pVGAState->pHGSMI);
-    pVGAState->pHGSMI = NULL;
+        HGSMIDestroy(pHgsmi);
+        pVGAState->pHGSMI = NULL;
+    }
 }
+
