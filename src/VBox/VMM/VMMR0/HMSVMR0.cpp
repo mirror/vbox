@@ -797,6 +797,9 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     bool const fPauseFilterThreshold = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER_THRESHOLD);
     bool const fUsePauseFilter       = fPauseFilter && pVM->hm.s.svm.cPauseFilter && pVM->hm.s.svm.cPauseFilterThresholdTicks;
 
+    bool const fLbrVirt              = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_LBR_VIRT);
+    bool const fUseLbrVirt           = fLbrVirt; /** @todo CFGM etc. */
+
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU   pVCpu = &pVM->aCpus[i];
@@ -857,8 +860,14 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         pVmcb->ctrl.u64IOPMPhysAddr  = g_HCPhysIOBitmap;
         pVmcb->ctrl.u64MSRPMPhysAddr = pVCpu->hm.s.svm.HCPhysMsrBitmap;
 
-        /* No LBR virtualization. */
-        Assert(pVmcb->ctrl.u1LbrVirt == 0);
+        /* LBR virtualization. */
+        if (fUseLbrVirt)
+        {
+            pVmcb->ctrl.LbrVirt.n.u1LbrVirt = fUseLbrVirt;
+            pVmcb->guest.u64DBGCTL = MSR_IA32_DEBUGCTL_LBR;
+        }
+        else
+            Assert(pVmcb->ctrl.LbrVirt.n.u1LbrVirt == 0);
 
         /* Initially all VMCB clean bits MBZ indicating that everything should be loaded from the VMCB in memory. */
         Assert(pVmcb->ctrl.u32VmcbCleanBits == 0);
@@ -874,7 +883,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         pVmcb->guest.u64GPAT = UINT64_C(0x0006060606060606);
 
         /* Setup Nested Paging. This doesn't change throughout the execution time of the VM. */
-        pVmcb->ctrl.u1NestedPaging = pVM->hm.s.fNestedPaging;
+        pVmcb->ctrl.NestedPaging.n.u1NestedPaging = pVM->hm.s.fNestedPaging;
 
         /* Without Nested Paging, we need additionally intercepts. */
         if (!pVM->hm.s.fNestedPaging)
@@ -2107,8 +2116,10 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
               ||  HMCPU_CF_IS_PENDING_ONLY(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE),
                ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
-    Log4(("hmR0SvmLoadGuestState: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX32 CR3=%#RX32 CR4=%#RX32\n", pCtx->cs.Sel, pCtx->rip,
-          pCtx->eflags.u, pCtx->cr0, pCtx->cr3, pCtx->cr4));
+    Log4(("hmR0SvmLoadGuestState: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX32 CR3=%#RX32 CR4=%#RX32 ESP=%#RX32 EBP=%#RX32\n",
+          pCtx->cs.Sel, pCtx->rip, pCtx->eflags.u, pCtx->cr0, pCtx->cr3, pCtx->cr4, pCtx->esp, pCtx->ebp));
+    Log4(("hmR0SvmLoadGuestState: SS={%04x base=%016RX64 limit=%08x flags=%08x}\n", pCtx->ss.Sel, pCtx->ss.u64Base,
+          pCtx->ss.u32Limit, pCtx->ss.Attr.u));
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
 }
@@ -2151,13 +2162,15 @@ static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
         pNstGstVmcbCache->u64CR3            = pVmcbNstGstState->u64CR3;
         pNstGstVmcbCache->u64CR4            = pVmcbNstGstState->u64CR4;
         pNstGstVmcbCache->u64EFER           = pVmcbNstGstState->u64EFER;
+        pNstGstVmcbCache->u64DBGCTL         = pVmcbNstGstState->u64DBGCTL;
         pNstGstVmcbCache->u64IOPMPhysAddr   = pVmcbNstGstCtrl->u64IOPMPhysAddr;
         pNstGstVmcbCache->u64MSRPMPhysAddr  = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
         pNstGstVmcbCache->u64TSCOffset      = pVmcbNstGstCtrl->u64TSCOffset;
         pNstGstVmcbCache->u32VmcbCleanBits  = pVmcbNstGstCtrl->u32VmcbCleanBits;
         pNstGstVmcbCache->fVIntrMasking     = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
         pNstGstVmcbCache->TLBCtrl           = pVmcbNstGstCtrl->TLBCtrl;
-        pNstGstVmcbCache->u1NestedPaging    = pVmcbNstGstCtrl->u1NestedPaging;
+        pNstGstVmcbCache->u1NestedPaging    = pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging;
+        pNstGstVmcbCache->u1LbrVirt         = pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt;
         pCtx->hwvirt.svm.fHMCachedVmcb      = true;
         Log4(("hmR0SvmVmRunCacheVmcb: Cached VMCB fields\n"));
     }
@@ -2201,13 +2214,19 @@ static void hmR0SvmVmRunSetupVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
          * switch off nested-paging suddenly while executing a VM (see assertion at the
          * end of Trap0eHandler in PGMAllBth.h).
          */
-        pVmcbNstGstCtrl->u1NestedPaging = pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging;
+        pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging = pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging;
+
+        /* For now copy the LBR info. from outer guest VMCB. */
+        /** @todo fix this later. */
+        PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+        pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt = pVmcb->ctrl.LbrVirt.n.u1LbrVirt;
+        pVmcbNstGst->guest.u64DBGCTL = pVmcb->guest.u64DBGCTL;
     }
     else
     {
         Assert(pVmcbNstGstCtrl->u64IOPMPhysAddr == g_HCPhysIOBitmap);
         Assert(pVmcbNstGstCtrl->u64MSRPMPhysAddr = g_HCPhysNstGstMsrBitmap);
-        Assert(RT_BOOL(pVmcbNstGstCtrl->u1NestedPaging) == pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+        Assert(RT_BOOL(pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging) == pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
     }
 }
 
@@ -2268,6 +2287,8 @@ static int hmR0SvmLoadGuestStateNested(PVMCPU pVCpu, PCPUMCTX pCtx)
     Log4(("hmR0SvmLoadGuestStateNested: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX32 CR3=%#RX32 (HyperCR3=%#RX64) CR4=%#RX32 "
           "ESP=%#RX32 EBP=%#RX32 rc=%d\n", pCtx->cs.Sel, pCtx->rip, pCtx->eflags.u, pCtx->cr0, pCtx->cr3,
           pVmcbNstGst->guest.u64CR3, pCtx->cr4, pCtx->esp, pCtx->ebp, rc));
+    Log4(("hmR0SvmLoadGuestStateNested: SS={%04x base=%016RX64 limit=%08x flags=%08x}\n", pCtx->ss.Sel, pCtx->ss.u64Base,
+          pCtx->ss.u32Limit, pCtx->ss.Attr.u));
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
 
     return rc;
@@ -2344,7 +2365,7 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pV
     /*
      * Guest interrupt shadow.
      */
-    if (pVmcb->ctrl.u1IntShadow)
+    if (pVmcb->ctrl.IntShadow.n.u1IntShadow)
         EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
     else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
@@ -2416,7 +2437,12 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pV
      * See AMD spec. 15.5.1 "Basic operation".
      */
     Assert(!(pVmcb->guest.u8CPL & ~0x3));
-    pMixedCtx->ss.Attr.n.u2Dpl = pVmcb->guest.u8CPL & 0x3;
+    uint8_t const uCpl = pVmcb->guest.u8CPL;
+    if (pMixedCtx->ss.Attr.n.u2Dpl != uCpl)
+    {
+        Log4(("hmR0SvmSaveGuestState: CPL differs. SS.DPL=%u, CPL=%u, overwriting SS.DPL!\n", pMixedCtx->ss.Attr.n.u2Dpl, uCpl));
+        pMixedCtx->ss.Attr.n.u2Dpl = pVmcb->guest.u8CPL & 0x3;
+    }
 
     /*
      * Guest TR.
@@ -2462,15 +2488,23 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pV
      * With Nested Paging, CR3 changes are not intercepted. Therefore, sync. it now.
      * This is done as the very last step of syncing the guest state, as PGMUpdateCR3() may cause longjmp's to ring-3.
      */
-    if (   pVmcb->ctrl.u1NestedPaging
+    if (   pVmcb->ctrl.NestedPaging.n.u1NestedPaging
         && pMixedCtx->cr3 != pVmcb->guest.u64CR3)
     {
         CPUMSetGuestCR3(pVCpu, pVmcb->guest.u64CR3);
         PGMUpdateCR3(pVCpu,    pVmcb->guest.u64CR3);
     }
 
-    Log4(("hmR0SvmSaveGuestState: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX32 CR3=%#RX32 CR4=%#RX32\n", pMixedCtx->cs.Sel,
-          pMixedCtx->rip, pMixedCtx->eflags.u, pMixedCtx->cr0, pMixedCtx->cr3, pMixedCtx->cr4));
+    if (CPUMIsGuestInSvmNestedHwVirtMode(pMixedCtx))
+    {
+        Log4(("hmR0SvmSaveGuestState: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX32 CR3=%#RX32 CR4=%#RX32 ESP=%#RX32 EBP=%#RX32\n",
+              pMixedCtx->cs.Sel, pMixedCtx->rip, pMixedCtx->eflags.u, pMixedCtx->cr0, pMixedCtx->cr3, pMixedCtx->cr4,
+              pMixedCtx->esp, pMixedCtx->ebp));
+        Log4(("hmR0SvmSaveGuestState: SS={%04x base=%016RX64 limit=%08x flags=%08x}\n", pMixedCtx->ss.Sel, pMixedCtx->ss.u64Base,
+              pMixedCtx->ss.u32Limit, pMixedCtx->ss.Attr.u));
+        Log4(("hmR0SvmSaveGuestState: DBGCTL BR_FROM=%#RX64 BR_TO=%#RX64 XcptFrom=%#RX64 XcptTo=%#RX64\n",
+              pVmcb->guest.u64BR_FROM, pVmcb->guest.u64BR_TO,pVmcb->guest.u64LASTEXCPFROM, pVmcb->guest.u64LASTEXCPTO));
+    }
 }
 
 
@@ -3492,7 +3526,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmc
      * For nested-guests: We need to update it too for the scenario where IEM executes
      * the nested-guest but execution later continues here with an interrupt shadow active.
      */
-    pVmcb->ctrl.u1IntShadow = fIntShadow;
+    pVmcb->ctrl.IntShadow.n.u1IntShadow = fIntShadow;
 }
 
 
@@ -3544,8 +3578,8 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("ctrl.IntCtrl.u8VIntrVector        %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VIntrVector));
         Log4(("ctrl.IntCtrl.u24Reserved          %#x\n",      pVmcb->ctrl.IntCtrl.n.u24Reserved));
 
-        Log4(("ctrl.u1IntShadow                  %#x\n",      pVmcb->ctrl.u1IntShadow));
-        Log4(("ctrl.u1GuestIntMask               %#x\n",      pVmcb->ctrl.u1GuestIntMask));
+        Log4(("ctrl.IntShadow.u1IntShadow        %#x\n",      pVmcb->ctrl.IntShadow.n.u1IntShadow));
+        Log4(("ctrl.IntShadow.u1GuestIntMask     %#x\n",      pVmcb->ctrl.IntShadow.n.u1GuestIntMask));
         Log4(("ctrl.u64ExitCode                  %#RX64\n",   pVmcb->ctrl.u64ExitCode));
         Log4(("ctrl.u64ExitInfo1                 %#RX64\n",   pVmcb->ctrl.u64ExitInfo1));
         Log4(("ctrl.u64ExitInfo2                 %#RX64\n",   pVmcb->ctrl.u64ExitInfo2));
@@ -3555,9 +3589,9 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("ctrl.ExitIntInfo.u19Reserved      %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u19Reserved));
         Log4(("ctrl.ExitIntInfo.u1Valid          %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u1Valid));
         Log4(("ctrl.ExitIntInfo.u32ErrorCode     %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode));
-        Log4(("ctrl.u1NestedPaging               %#x\n",      pVmcb->ctrl.u1NestedPaging));
-        Log4(("ctrl.u1Sev                        %#x\n",      pVmcb->ctrl.u1Sev));
-        Log4(("ctrl.u1SevEs                      %#x\n",      pVmcb->ctrl.u1SevEs));
+        Log4(("ctrl.NestedPaging.u1NestedPaging  %#x\n",      pVmcb->ctrl.NestedPaging.n.u1NestedPaging));
+        Log4(("ctrl.NestedPaging.u1Sev           %#x\n",      pVmcb->ctrl.NestedPaging.n.u1Sev));
+        Log4(("ctrl.NestedPaging.u1SevEs         %#x\n",      pVmcb->ctrl.NestedPaging.n.u1SevEs));
         Log4(("ctrl.EventInject.u8Vector         %#x\n",      pVmcb->ctrl.EventInject.n.u8Vector));
         Log4(("ctrl.EventInject.u3Type           %#x\n",      pVmcb->ctrl.EventInject.n.u3Type));
         Log4(("ctrl.EventInject.u1ErrorCodeValid %#x\n",      pVmcb->ctrl.EventInject.n.u1ErrorCodeValid));
@@ -3567,8 +3601,8 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
 
         Log4(("ctrl.u64NestedPagingCR3           %#RX64\n",   pVmcb->ctrl.u64NestedPagingCR3));
 
-        Log4(("ctrl.u1Lbrvirt                    %#x\n",      pVmcb->ctrl.u1LbrVirt));
-        Log4(("ctrl.u1VirtVmsaveVmload           %#x\n",      pVmcb->ctrl.u1VirtVmsaveVmload));
+        Log4(("ctrl.LbrVirt.u1LbrVirt            %#x\n",      pVmcb->ctrl.LbrVirt.n.u1LbrVirt));
+        Log4(("ctrl.LbrVirt.u1VirtVmsaveVmload   %#x\n",      pVmcb->ctrl.LbrVirt.n.u1VirtVmsaveVmload));
 
         Log4(("guest.CS.u16Sel                   %RTsel\n",   pVmcb->guest.CS.u16Sel));
         Log4(("guest.CS.u16Attr                  %#x\n",      pVmcb->guest.CS.u16Attr));
@@ -4861,9 +4895,6 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
         case SVM_EXIT_IOIO:
         {
-            /*
-             * Figure out if the IO port access is intercepted by the nested-guest.
-             */
             if (HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_IOIO_PROT))
             {
                 void *pvIoBitmap = pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
@@ -5069,6 +5100,24 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                     uint8_t const uVector = uExitCode - SVM_EXIT_EXCEPTION_0;
                     if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, uVector))
                         return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+#if 0
+                    /* Debugging DOS6 triple-fault nested-VM. */
+                    unsigned    cbInstr;
+                    DISCPUSTATE Dis;
+                    int rc = EMInterpretDisasCurrent(pVCpu->CTX_SUFF(pVM), pVCpu, &Dis, &cbInstr);
+                    if (RT_SUCCESS(rc))
+                    {
+                        RT_NOREF(cbInstr);
+                        if (   Dis.pCurInstr->uOpcode == OP_IRET
+                            && uVector == X86_XCPT_GP)
+                        {
+                            Log4(("#GP on IRET detected!\n"));
+                            return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+                        }
+                    }
+                    else
+                        Log4(("hmR0SvmExitXcptGeneric: failed to disassemble instr. rc=%Rrc\n", rc));
+#endif
                     return hmR0SvmExitXcptGeneric(pVCpu, pCtx, pSvmTransient);
                 }
 
@@ -5406,10 +5455,12 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
                             break;
 
                         case X86_XCPT_GP:
+                        {
                             Event.n.u1ErrorCodeValid    = 1;
                             Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
                             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
                             break;
+                        }
 
                         default:
                             AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit caused by exception %#x\n", Event.n.u8Vector));
@@ -7588,6 +7639,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
     uint32_t const uErrCode = pVmcb->ctrl.u64ExitInfo1;
     Assert(pSvmTransient->u64ExitCode == pVmcb->ctrl.u64ExitCode);
     Assert(uVector <= X86_XCPT_LAST);
+    Log4(("hmR0SvmExitXcptGeneric: uVector=%#x uErrCode=%u\n", uVector, uErrCode));
 
     SVMEVENT Event;
     Event.u          = 0;

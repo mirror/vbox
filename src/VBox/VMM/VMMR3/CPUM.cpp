@@ -2242,8 +2242,9 @@ static void cpumR3InfoSvmVmcbCtrl(PCDBGFINFOHLP pHlp, PCSVMVMCBCTRL pVmcbCtrl, c
     pHlp->pfnPrintf(pHlp, "%s  u1VIntrMasking             = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VIntrMasking);
     pHlp->pfnPrintf(pHlp, "%s  u1AvicEnable               = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1AvicEnable);
     pHlp->pfnPrintf(pHlp, "%s  u8VIntrVector              = %#RX8\n",   pszPrefix, pVmcbCtrl->IntCtrl.n.u8VIntrVector);
-    pHlp->pfnPrintf(pHlp, "%su1IntShadow                = %RTbool\n",   pszPrefix, pVmcbCtrl->u1IntShadow);
-    pHlp->pfnPrintf(pHlp, "%su1GuestIntMask             = %RTbool\n",   pszPrefix, pVmcbCtrl->u1GuestIntMask);
+    pHlp->pfnPrintf(pHlp, "%sIntShadow\n",                              pszPrefix);
+    pHlp->pfnPrintf(pHlp, "%s  u1IntShadow                = %RTbool\n", pszPrefix, pVmcbCtrl->IntShadow.n.u1IntShadow);
+    pHlp->pfnPrintf(pHlp, "%s  u1GuestIntMask             = %RTbool\n", pszPrefix, pVmcbCtrl->IntShadow.n.u1GuestIntMask);
     pHlp->pfnPrintf(pHlp, "%su64ExitCode                = %#RX64\n",    pszPrefix, pVmcbCtrl->u64ExitCode);
     pHlp->pfnPrintf(pHlp, "%su64ExitInfo1               = %#RX64\n",    pszPrefix, pVmcbCtrl->u64ExitInfo1);
     pHlp->pfnPrintf(pHlp, "%su64ExitInfo2               = %#RX64\n",    pszPrefix, pVmcbCtrl->u64ExitInfo2);
@@ -2254,9 +2255,9 @@ static void cpumR3InfoSvmVmcbCtrl(PCDBGFINFOHLP pHlp, PCSVMVMCBCTRL pVmcbCtrl, c
     pHlp->pfnPrintf(pHlp, "%s  u1Valid                    = %RTbool\n", pszPrefix, pVmcbCtrl->ExitIntInfo.n.u1Valid);
     pHlp->pfnPrintf(pHlp, "%s  u32ErrorCode               = %#RX32\n",  pszPrefix, pVmcbCtrl->ExitIntInfo.n.u32ErrorCode);
     pHlp->pfnPrintf(pHlp, "%sNestedPaging and SEV\n",                   pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u1NestedPaging             = %RTbool\n", pszPrefix, pVmcbCtrl->u1NestedPaging);
-    pHlp->pfnPrintf(pHlp, "%s  u1Sev                      = %RTbool\n", pszPrefix, pVmcbCtrl->u1Sev);
-    pHlp->pfnPrintf(pHlp, "%s  u1SevEs                    = %RTbool\n", pszPrefix, pVmcbCtrl->u1SevEs);
+    pHlp->pfnPrintf(pHlp, "%s  u1NestedPaging             = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPaging.n.u1NestedPaging);
+    pHlp->pfnPrintf(pHlp, "%s  u1Sev                      = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPaging.n.u1Sev);
+    pHlp->pfnPrintf(pHlp, "%s  u1SevEs                    = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPaging.n.u1SevEs);
     pHlp->pfnPrintf(pHlp, "%sAvicBar\n",                                pszPrefix);
     pHlp->pfnPrintf(pHlp, "%s  u40Addr                    = %#RX64\n",  pszPrefix, pVmcbCtrl->AvicBar.n.u40Addr);
     pHlp->pfnPrintf(pHlp, "%sEventInject\n",                            pszPrefix);
@@ -2267,8 +2268,9 @@ static void cpumR3InfoSvmVmcbCtrl(PCDBGFINFOHLP pHlp, PCSVMVMCBCTRL pVmcbCtrl, c
     pHlp->pfnPrintf(pHlp, "%s  u1Valid                    = %RTbool\n", pszPrefix, pVmcbCtrl->EventInject.n.u1Valid);
     pHlp->pfnPrintf(pHlp, "%s  u32ErrorCode               = %#RX32\n",  pszPrefix, pVmcbCtrl->EventInject.n.u32ErrorCode);
     pHlp->pfnPrintf(pHlp, "%su64NestedPagingCR3         = %#RX64\n",    pszPrefix, pVmcbCtrl->u64NestedPagingCR3);
-    pHlp->pfnPrintf(pHlp, "%su1LbrVirt                  = %RTbool\n",   pszPrefix, pVmcbCtrl->u1LbrVirt);
-    pHlp->pfnPrintf(pHlp, "%su1VirtVmsaveVmload         = %RTbool\n",   pszPrefix, pVmcbCtrl->u1VirtVmsaveVmload);
+    pHlp->pfnPrintf(pHlp, "%sLBR virtualization\n",                     pszPrefix);
+    pHlp->pfnPrintf(pHlp, "%s  u1LbrVirt                  = %RTbool\n", pszPrefix, pVmcbCtrl->LbrVirt.n.u1LbrVirt);
+    pHlp->pfnPrintf(pHlp, "%s  u1VirtVmsaveVmload         = %RTbool\n", pszPrefix, pVmcbCtrl->LbrVirt.n.u1VirtVmsaveVmload);
     pHlp->pfnPrintf(pHlp, "%su32VmcbCleanBits           = %#RX32\n",    pszPrefix, pVmcbCtrl->u32VmcbCleanBits);
     pHlp->pfnPrintf(pHlp, "%su64NextRIP                 = %#RX64\n",    pszPrefix, pVmcbCtrl->u64NextRIP);
     pHlp->pfnPrintf(pHlp, "%scbInstrFetched             = %u\n",        pszPrefix, pVmcbCtrl->cbInstrFetched);

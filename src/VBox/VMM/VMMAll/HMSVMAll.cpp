@@ -352,23 +352,25 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
         PSVMVMCBSTATESAVE   pVmcbNstGstState = &pVmcbNstGst->guest;
         PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
 
-        pVmcbNstGstCtrl->u16InterceptRdCRx        = pNstGstVmcbCache->u16InterceptRdCRx;
-        pVmcbNstGstCtrl->u16InterceptWrCRx        = pNstGstVmcbCache->u16InterceptWrCRx;
-        pVmcbNstGstCtrl->u16InterceptRdDRx        = pNstGstVmcbCache->u16InterceptRdDRx;
-        pVmcbNstGstCtrl->u16InterceptWrDRx        = pNstGstVmcbCache->u16InterceptWrDRx;
-        pVmcbNstGstCtrl->u32InterceptXcpt         = pNstGstVmcbCache->u32InterceptXcpt;
-        pVmcbNstGstCtrl->u64InterceptCtrl         = pNstGstVmcbCache->u64InterceptCtrl;
-        pVmcbNstGstState->u64CR0                  = pNstGstVmcbCache->u64CR0;
-        pVmcbNstGstState->u64CR3                  = pNstGstVmcbCache->u64CR3;
-        pVmcbNstGstState->u64CR4                  = pNstGstVmcbCache->u64CR4;
-        pVmcbNstGstState->u64EFER                 = pNstGstVmcbCache->u64EFER;
-        pVmcbNstGstCtrl->u32VmcbCleanBits         = pNstGstVmcbCache->u32VmcbCleanBits;
-        pVmcbNstGstCtrl->u64IOPMPhysAddr          = pNstGstVmcbCache->u64IOPMPhysAddr;
-        pVmcbNstGstCtrl->u64MSRPMPhysAddr         = pNstGstVmcbCache->u64MSRPMPhysAddr;
-        pVmcbNstGstCtrl->u64TSCOffset             = pNstGstVmcbCache->u64TSCOffset;
-        pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking = pNstGstVmcbCache->fVIntrMasking;
-        pVmcbNstGstCtrl->TLBCtrl                  = pNstGstVmcbCache->TLBCtrl;
-        pVmcbNstGstCtrl->u1NestedPaging           = pNstGstVmcbCache->u1NestedPaging;
+        pVmcbNstGstCtrl->u16InterceptRdCRx             = pNstGstVmcbCache->u16InterceptRdCRx;
+        pVmcbNstGstCtrl->u16InterceptWrCRx             = pNstGstVmcbCache->u16InterceptWrCRx;
+        pVmcbNstGstCtrl->u16InterceptRdDRx             = pNstGstVmcbCache->u16InterceptRdDRx;
+        pVmcbNstGstCtrl->u16InterceptWrDRx             = pNstGstVmcbCache->u16InterceptWrDRx;
+        pVmcbNstGstCtrl->u32InterceptXcpt              = pNstGstVmcbCache->u32InterceptXcpt;
+        pVmcbNstGstCtrl->u64InterceptCtrl              = pNstGstVmcbCache->u64InterceptCtrl;
+        pVmcbNstGstState->u64CR0                       = pNstGstVmcbCache->u64CR0;
+        pVmcbNstGstState->u64CR3                       = pNstGstVmcbCache->u64CR3;
+        pVmcbNstGstState->u64CR4                       = pNstGstVmcbCache->u64CR4;
+        pVmcbNstGstState->u64EFER                      = pNstGstVmcbCache->u64EFER;
+        pVmcbNstGstState->u64DBGCTL                    = pNstGstVmcbCache->u64DBGCTL;
+        pVmcbNstGstCtrl->u32VmcbCleanBits              = pNstGstVmcbCache->u32VmcbCleanBits;
+        pVmcbNstGstCtrl->u64IOPMPhysAddr               = pNstGstVmcbCache->u64IOPMPhysAddr;
+        pVmcbNstGstCtrl->u64MSRPMPhysAddr              = pNstGstVmcbCache->u64MSRPMPhysAddr;
+        pVmcbNstGstCtrl->u64TSCOffset                  = pNstGstVmcbCache->u64TSCOffset;
+        pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking      = pNstGstVmcbCache->fVIntrMasking;
+        pVmcbNstGstCtrl->TLBCtrl                       = pNstGstVmcbCache->TLBCtrl;
+        pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging = pNstGstVmcbCache->u1NestedPaging;
+        pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt           = pNstGstVmcbCache->u1LbrVirt;
         pCtx->hwvirt.svm.fHMCachedVmcb = false;
     }
 }
