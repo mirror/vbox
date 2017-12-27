@@ -60,6 +60,8 @@ typedef struct RTCHECKIMPORTSOPTS
     RTLDRARCH   enmLdrArch;
     /** Verbosity level. */
     unsigned    cVerbosity;
+    /** Whether to also list orinals in the export listing. */
+    bool        fListOrdinals;
 } RTCHECKIMPORTSOPTS;
 /** Pointer to the checker options. */
 typedef RTCHECKIMPORTSOPTS *PRTCHECKIMPORTSOPTS;
@@ -495,7 +497,7 @@ static DECLCALLBACK(int) PrintSymbolForExportList(RTLDRMOD hLdrMod, const char *
 {
     if (pszSymbol)
         RTPrintf("%s\n", pszSymbol);
-    else
+    if (uSymbol != ~(unsigned)0 && (!pszSymbol || ((PCRTCHECKIMPORTSOPTS)pvUser)->fListOrdinals))
         RTPrintf("#%u\n", uSymbol);
     RT_NOREF(hLdrMod, Value, pvUser);
     return VINF_SUCCESS;
@@ -506,9 +508,10 @@ static DECLCALLBACK(int) PrintSymbolForExportList(RTLDRMOD hLdrMod, const char *
  * Produces the export list for the given image.
  *
  * @returns IPRT status code.
+ * @param   pOpts               The check program options.
  * @param   pszImage            Path to the image.
  */
-static int ProduceExportList(const char *pszImage)
+static int ProduceExportList(PCRTCHECKIMPORTSOPTS pOpts, const char *pszImage)
 {
     /*
      * Open the image.
@@ -574,7 +577,7 @@ static int ProduceExportList(const char *pszImage)
         /*
          * The list of exports.
          */
-        rc = RTLdrEnumSymbols(hLdrMod, 0 /*fFlags*/, NULL, _4M, PrintSymbolForExportList, NULL);
+        rc = RTLdrEnumSymbols(hLdrMod, 0 /*fFlags*/, NULL, _4M, PrintSymbolForExportList, (void *)pOpts);
         if (RT_FAILURE(rc))
             RTMsgError("%s: RTLdrEnumSymbols failed: %Rrc", pszImage, rc);
 
@@ -605,6 +608,7 @@ int main(int argc, char **argv)
     {
         { "--path", 'p', RTGETOPT_REQ_STRING },
         { "--export", 'e', RTGETOPT_REQ_STRING },
+        { "--list-ordinals", 'O', RTGETOPT_REQ_NOTHING },
         { "--quiet", 'q', RTGETOPT_REQ_NOTHING },
         { "--verbose", 'v', RTGETOPT_REQ_NOTHING },
     };
@@ -631,9 +635,13 @@ int main(int argc, char **argv)
                 break;
 
             case 'e':
-                rc = ProduceExportList(ValueUnion.psz);
+                rc = ProduceExportList(&Opts, ValueUnion.psz);
                 if (RT_FAILURE(rc))
                     rcExit = RTEXITCODE_FAILURE;
+                break;
+
+            case 'O':
+                Opts.fListOrdinals = true;
                 break;
 
             case 'q':
@@ -662,6 +670,8 @@ int main(int argc, char **argv)
                          "    Search the specified directory for imported modules or their export lists.\n"
                          "  -e, --export <image>\n"
                          "    Write export list for the file to stdout.  (Redirect to a .export file.)\n"
+                         "  -O, --list-ordinals\n"
+                         "    Whether to list ordinals as well as names in the export list.\n"
                          "  -q, --quiet\n"
                          "    Quiet execution.\n"
                          "  -v, --verbose\n"
