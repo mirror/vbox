@@ -673,9 +673,9 @@ int VGSvcStartServices(void)
                     VGSvcReportStatus(VBoxGuestFacilityStatus_Failed);
                     return rc;
                 }
+
                 g_aServices[j].fEnabled = false;
                 VGSvcVerbose(0, "Service '%s' was disabled because of missing functionality\n", g_aServices[j].pDesc->pszName);
-
             }
         }
 
