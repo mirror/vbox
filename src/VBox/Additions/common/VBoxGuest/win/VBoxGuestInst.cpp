@@ -61,6 +61,20 @@ static int installDriver(bool fStartIt)
     {
         GetSystemDirectory(szDriver, sizeof(szDriver));
         strcat(strcat(szDriver, "\\drivers"), pszSlashName);
+
+        /* Try FAT name abbreviation. */
+        if (GetFileAttributesA(szDriver) == INVALID_FILE_ATTRIBUTES)
+        {
+            pszSlashName = "\\VBoxGst.sys";
+            GetCurrentDirectory(MAX_PATH, szDriver);
+            strcat(szDriver, pszSlashName);
+            if (GetFileAttributesA(szDriver) == INVALID_FILE_ATTRIBUTES)
+            {
+                GetSystemDirectory(szDriver, sizeof(szDriver));
+                strcat(strcat(szDriver, "\\drivers"), pszSlashName);
+
+            }
+        }
     }
 
     SC_HANDLE hService = CreateService(hSMgrCreate,
