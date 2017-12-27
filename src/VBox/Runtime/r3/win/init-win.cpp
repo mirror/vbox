@@ -221,68 +221,47 @@ static RTWINOSTYPE rtR3InitWinSimplifiedVersion(OSVERSIONINFOEXW const *pOSInfoE
     }
     else if (dwPlatformId == VER_PLATFORM_WIN32_NT)
     {
-        if (        dwMajorVersion == 3
-                 && dwMinorVersion == 1)
-            enmVer = kRTWinOSType_NT310;
-        else if (   dwMajorVersion == 3
-                 && dwMinorVersion == 50)
-            enmVer = kRTWinOSType_NT350;
-        else if (   dwMajorVersion == 3
-                 && dwMinorVersion == 51)
-            enmVer = kRTWinOSType_NT351;
-        else if (   dwMajorVersion == 4
-                 && dwMinorVersion == 0)
+        if (dwMajorVersion == 3)
+        {
+            if (     dwMinorVersion < 50)
+                enmVer = kRTWinOSType_NT310;
+            else if (dwMinorVersion == 50)
+                enmVer = kRTWinOSType_NT350;
+            else
+                enmVer = kRTWinOSType_NT351;
+        }
+        else if (dwMajorVersion == 4)
             enmVer = kRTWinOSType_NT4;
-        else if (   dwMajorVersion == 5
-                 && dwMinorVersion == 0)
-            enmVer = kRTWinOSType_2K;
-        else if (   dwMajorVersion == 5
-                 && dwMinorVersion == 1)
-            enmVer = kRTWinOSType_XP;
-        else if (   dwMajorVersion == 5
-                 && dwMinorVersion == 2)
-            enmVer = kRTWinOSType_2003;
-        else if (   dwMajorVersion == 6
-                 && dwMinorVersion == 0)
+        else if (dwMajorVersion == 5)
         {
-            if (bProductType != VER_NT_WORKSTATION)
-                enmVer = kRTWinOSType_2008;
+            if (dwMinorVersion == 0)
+                enmVer = kRTWinOSType_2K;
+            else if (dwMinorVersion == 1)
+                enmVer = kRTWinOSType_XP;
             else
-                enmVer = kRTWinOSType_VISTA;
+                enmVer = kRTWinOSType_2003;
         }
-        else if (   dwMajorVersion == 6
-                 && dwMinorVersion == 1)
+        else if (dwMajorVersion == 6)
         {
-            if (bProductType != VER_NT_WORKSTATION)
-                enmVer = kRTWinOSType_2008R2;
+            if (dwMinorVersion == 0)
+                enmVer = bProductType != VER_NT_WORKSTATION ? kRTWinOSType_2008   : kRTWinOSType_VISTA;
+            else if (dwMinorVersion == 1)
+                enmVer = bProductType != VER_NT_WORKSTATION ? kRTWinOSType_2008R2 : kRTWinOSType_7;
+            else if (dwMinorVersion == 2)
+                enmVer = bProductType != VER_NT_WORKSTATION ? kRTWinOSType_2012   : kRTWinOSType_8;
+            else if (dwMinorVersion == 3)
+                enmVer = bProductType != VER_NT_WORKSTATION ? kRTWinOSType_2012R2 : kRTWinOSType_81;
+            else if (dwMinorVersion == 4)
+                enmVer = bProductType != VER_NT_WORKSTATION ? kRTWinOSType_2016   : kRTWinOSType_10;
             else
-                enmVer = kRTWinOSType_7;
+                enmVer = kRTWinOSType_NT_UNKNOWN;
         }
-        else if (   dwMajorVersion == 6
-                 && dwMinorVersion == 2)
+        else if (dwMajorVersion == 10)
         {
-            if (bProductType != VER_NT_WORKSTATION)
-                enmVer = kRTWinOSType_2012;
+            if (dwMinorVersion == 0)
+                enmVer = bProductType != VER_NT_WORKSTATION ? kRTWinOSType_2016   : kRTWinOSType_10;
             else
-                enmVer = kRTWinOSType_8;
-        }
-        else if (   dwMajorVersion == 6
-                 && dwMinorVersion == 3)
-        {
-            if (bProductType != VER_NT_WORKSTATION)
-                enmVer = kRTWinOSType_2012R2;
-            else
-                enmVer = kRTWinOSType_81;
-        }
-        else if (   (   dwMajorVersion == 6
-                     && dwMinorVersion == 4)
-                 || (   dwMajorVersion == 10
-                     && dwMinorVersion == 0))
-        {
-            if (bProductType != VER_NT_WORKSTATION)
-                enmVer = kRTWinOSType_2016;
-            else
-                enmVer = kRTWinOSType_10;
+                enmVer = kRTWinOSType_NT_UNKNOWN;
         }
         else
             enmVer = kRTWinOSType_NT_UNKNOWN;
