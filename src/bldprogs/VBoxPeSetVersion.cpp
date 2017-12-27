@@ -1,6 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Change the OS and SubSystem version to 4.0 (VS2010 trick).
+ * IPRT - Change the OS and SubSystem version to value suitable for NT v3.1.
+ *
+ * Also make sure the IAT is writable, since NT v3.1 expects this.  These are
+ * tricks necessary to make binaries created by newer Visual C++ linkers work
+ * on ancient NT version like W2K, NT4 and NT 3.x.
  */
 
 /*
@@ -27,9 +31,16 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#define MK_VER(a_uHi, a_uLo)  ( ((a_uHi) << 8) | (a_uLo))
+
+
+/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 static const char *g_pszFilename;
+static unsigned    g_cVerbosity = 0;
 
 
 static int Error(const char *pszFormat, ...)
@@ -44,7 +55,21 @@ static int Error(const char *pszFormat, ...)
 }
 
 
-static int UpdateFile(FILE *pFile, bool fNt31, PIMAGE_SECTION_HEADER *ppaShdr)
+static void Info(unsigned iLevel, const char *pszFormat, ...)
+{
+    if (iLevel <= g_cVerbosity)
+    {
+        va_list va;
+        va_start(va, pszFormat);
+        char szTmp[1024];
+        _vsnprintf(szTmp, sizeof(szTmp), pszFormat, va);
+        va_end(va);
+        fprintf(stderr, "VBoxPeSetVersion: %s: info: %s\n", g_pszFilename, szTmp);
+    }
+}
+
+
+static int UpdateFile(FILE *pFile, unsigned uNtVersion, PIMAGE_SECTION_HEADER *ppaShdr)
 {
     /*
      * Locate and read the PE header.
@@ -81,27 +106,32 @@ static int UpdateFile(FILE *pFile, bool fNt31, PIMAGE_SECTION_HEADER *ppaShdr)
      * Do the header modifications.
      */
     IMAGE_NT_HEADERS32 NtHdrsNew = NtHdrs;
-    if (fNt31)
+    NtHdrsNew.OptionalHeader.MajorOperatingSystemVersion = uNtVersion >> 8;
+    NtHdrsNew.OptionalHeader.MinorOperatingSystemVersion = uNtVersion & 0xff;
+    NtHdrsNew.OptionalHeader.MajorSubsystemVersion       = uNtVersion >> 8;
+    NtHdrsNew.OptionalHeader.MinorSubsystemVersion       = uNtVersion & 0xff;
+
+    if (uNtVersion <= MK_VER(3, 50))
     {
         NtHdrsNew.OptionalHeader.MajorOperatingSystemVersion = 1;
         NtHdrsNew.OptionalHeader.MinorOperatingSystemVersion = 0;
-
-        NtHdrsNew.OptionalHeader.MajorSubsystemVersion       = 3;
-        NtHdrsNew.OptionalHeader.MinorSubsystemVersion       = 10;
-    }
-    else
-    {
-        NtHdrsNew.OptionalHeader.MajorOperatingSystemVersion = 4;
-        NtHdrsNew.OptionalHeader.MinorOperatingSystemVersion = 0;
-
-        NtHdrsNew.OptionalHeader.MajorSubsystemVersion       = 4;
-        NtHdrsNew.OptionalHeader.MinorSubsystemVersion       = 0;
     }
 
     if (memcmp(&NtHdrsNew, &NtHdrs, sizeof(NtHdrs)))
     {
         /** @todo calc checksum. */
         NtHdrsNew.OptionalHeader.CheckSum = 0;
+
+        if (   NtHdrsNew.OptionalHeader.MajorOperatingSystemVersion != NtHdrs.OptionalHeader.MajorOperatingSystemVersion
+            || NtHdrsNew.OptionalHeader.MinorOperatingSystemVersion != NtHdrs.OptionalHeader.MinorOperatingSystemVersion)
+            Info(1,"OperatingSystemVersion %u.%u -> %u.%u",
+                 NtHdrs.OptionalHeader.MajorOperatingSystemVersion, NtHdrs.OptionalHeader.MinorOperatingSystemVersion,
+                 NtHdrsNew.OptionalHeader.MajorOperatingSystemVersion, NtHdrsNew.OptionalHeader.MinorOperatingSystemVersion);
+        if (   NtHdrsNew.OptionalHeader.MajorSubsystemVersion != NtHdrs.OptionalHeader.MajorSubsystemVersion
+            || NtHdrsNew.OptionalHeader.MinorSubsystemVersion != NtHdrs.OptionalHeader.MinorSubsystemVersion)
+            Info(1,"SubsystemVersion %u.%u -> %u.%u",
+                 NtHdrs.OptionalHeader.MajorSubsystemVersion, NtHdrs.OptionalHeader.MinorSubsystemVersion,
+                 NtHdrsNew.OptionalHeader.MajorSubsystemVersion, NtHdrsNew.OptionalHeader.MinorSubsystemVersion);
 
         if (fseek(pFile, offNtHdrs, SEEK_SET) != 0)
             return Error("Failed to seek to PE header at %#lx: %s", offNtHdrs, strerror(errno));
@@ -112,7 +142,7 @@ static int UpdateFile(FILE *pFile, bool fNt31, PIMAGE_SECTION_HEADER *ppaShdr)
     /*
      * Make the IAT writable for NT 3.1.
      */
-    if (   fNt31
+    if (   uNtVersion <= MK_VER(3, 10)
         && NtHdrsNew.FileHeader.NumberOfSections > 0
         && NtHdrsNew.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size > 0)
     {
@@ -159,18 +189,132 @@ static int UpdateFile(FILE *pFile, bool fNt31, PIMAGE_SECTION_HEADER *ppaShdr)
 }
 
 
+static int Usage(FILE *pOutput)
+{
+    fprintf(pOutput,
+            "Usage: VBoxPeSetVersion [options] <PE-image>\n"
+            "Options:\n"
+            "  -v, --verbose\n"
+            "    Increases verbosity.\n"
+            "  -q, --quiet\n"
+            "    Quiet operation (default).\n"
+            "  --nt31, --nt350, --nt351, --nt4, --w2k, --xp, --w2k3, --vista,\n"
+            "  --w7, --w8, --w81, --w10\n"
+            "    Which version to set. Default is --nt31.\n"
+            "  --nt4\n"
+            "    Set versions to NT 4.0\n"
+            "  --nt4\n"
+            "    Set versions to NT 4.0\n"
+            );
+    return RTEXITCODE_SYNTAX;
+}
+
+
 /** @todo Rewrite this so it can take options and print out error messages. */
 int main(int argc, char **argv)
 {
     /*
      * Parse arguments.
+     * This stucks
      */
-    if (argc != 2)
+    unsigned    uNtVersion     = 31;
+    const char *pszFilename    = NULL;
+    bool        fAcceptOptions = true;
+    for (int i = 1; i < argc; i++)
     {
-        fprintf(stderr, "VBoxPeSetVersion: syntax error: Expected a only single argument!\n");
+        const char *psz = argv[i];
+        if (fAcceptOptions && *psz == '-')
+        {
+            char ch = psz[1];
+            psz += 2;
+            if (ch == '-')
+            {
+                if (!*psz)
+                {
+                    fAcceptOptions = false;
+                    continue;
+                }
+
+                if (strcmp(psz, "verbose") == 0)
+                    ch = 'v';
+                else if (strcmp(psz, "quiet") == 0)
+                    ch = 'q';
+                else if (strcmp(psz, "help") == 0)
+                    ch = 'h';
+                else if (strcmp(psz, "version") == 0)
+                    ch = 'V';
+                else
+                {
+                    if (strcmp(psz, "nt31") == 0)
+                        uNtVersion = MK_VER(3, 10);
+                    else if (strcmp(psz, "nt350") == 0)
+                        uNtVersion = MK_VER(3, 50);
+                    else if (strcmp(psz, "nt351") == 0)
+                        uNtVersion = MK_VER(3, 51);
+                    else if (strcmp(psz, "nt4") == 0)
+                        uNtVersion = MK_VER(4, 0);
+                    else if (strcmp(psz, "w2k") == 0)
+                        uNtVersion = MK_VER(5,0);
+                    else if (strcmp(psz, "xp") == 0)
+                        uNtVersion = MK_VER(5,1);
+                    else if (strcmp(psz, "w2k3") == 0)
+                        uNtVersion = MK_VER(5,2);
+                    else if (strcmp(psz, "vista") == 0)
+                        uNtVersion = MK_VER(6,0);
+                    else if (strcmp(psz, "w7") == 0)
+                        uNtVersion = MK_VER(6,1);
+                    else if (strcmp(psz, "w8") == 0)
+                        uNtVersion = MK_VER(6,2);
+                    else if (strcmp(psz, "w81") == 0)
+                        uNtVersion = MK_VER(6,3);
+                    else if (strcmp(psz, "w10") == 0)
+                        uNtVersion = MK_VER(10,0);
+                    else
+                    {
+                        fprintf(stderr, "VBoxPeSetVersion: syntax error: Unknown option: --%s\n", psz);
+                        return RTEXITCODE_SYNTAX;
+                    }
+                    continue;
+                }
+                psz = " ";
+            }
+            do
+            {
+                switch (ch)
+                {
+                    case 'q':
+                        g_cVerbosity = 0;
+                        break;
+                    case 'v':
+                        g_cVerbosity++;
+                        break;
+                    case 'V':
+                        printf("2.0\n");
+                        return RTEXITCODE_SUCCESS;
+                    case 'h':
+                        Usage(stdout);
+                        return RTEXITCODE_SUCCESS;
+                    default:
+                        fprintf(stderr, "VBoxPeSetVersion: syntax error: Unknown option: -%c\n", ch ? ch : ' ');
+                        return RTEXITCODE_SYNTAX;
+                }
+            } while ((ch = *psz++) != '\0');
+
+        }
+        else if (!pszFilename)
+            pszFilename = psz;
+        else
+        {
+            fprintf(stderr, "VBoxPeSetVersion: syntax error: More than one PE-image specified!\n");
+            return RTEXITCODE_SYNTAX;
+        }
+    }
+
+    if (!pszFilename)
+    {
+        fprintf(stderr, "VBoxPeSetVersion: syntax error: No PE-image specified!\n");
         return RTEXITCODE_SYNTAX;
     }
-    const char *pszFilename = argv[1];
     g_pszFilename = pszFilename;
 
     /*
@@ -181,7 +325,7 @@ int main(int argc, char **argv)
     if (pFile)
     {
         PIMAGE_SECTION_HEADER paShdrs = NULL;
-        rcExit = UpdateFile(pFile, true /*fNt31*/, &paShdrs);
+        rcExit = UpdateFile(pFile, uNtVersion, &paShdrs);
         if (paShdrs)
             free(paShdrs);
         if (fclose(pFile) != 0)
