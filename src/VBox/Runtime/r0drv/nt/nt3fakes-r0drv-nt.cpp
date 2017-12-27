@@ -44,6 +44,9 @@
 #include <iprt/formats/pecoff.h>
 #include "internal-r0drv-nt.h"
 
+typedef uint32_t DWORD;
+#include <VerRsrc.h>
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -58,7 +61,7 @@ static uint32_t         g_uNt3MajorVer  = 3;
 static uint32_t         g_uNt3MinorVer  = 51;
 static uint32_t         g_uNt3BuildNo   = 1057;
 static bool             g_fNt3Checked   = false;
-static bool             g_fNt3Smp       = false;
+static bool             g_fNt3Smp       = false; /**< Not reliable. */
 static bool volatile    g_fNt3VersionInitialized = false;
 
 static uint8_t         *g_pbNt3OsKrnl   = (uint8_t *)UINT32_C(0x80100000);
@@ -118,6 +121,12 @@ extern KSYSTEM_TIME                        *_imp__KeTickCount;
 /** @} */
 
 RT_C_DECLS_END
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static void rtR0Nt3InitModuleInfo(void);
 
 
 /**
@@ -286,6 +295,10 @@ static NTSTATUS NTAPI rtR0Nt3VerEnumCallback_CurrentType(PWSTR pwszValueName, UL
  */
 static void rtR0Nt3InitVersion(void)
 {
+    /*
+     * No PsGetVersion, so try the registry.  Unfortunately not necessarily
+     * initialized when we're loaded.
+     */
     RTL_QUERY_REGISTRY_TABLE aQuery[4];
     RT_ZERO(aQuery);
     aQuery[0].QueryRoutine = rtR0Nt3VerEnumCallback_CurrentVersion;
@@ -313,8 +326,102 @@ static void rtR0Nt3InitVersion(void)
                                            &aQuery[0], &fFound, NULL /*Environment*/);
     if (!NT_SUCCESS(rcNt))
         RTLogBackdoorPrintf("rtR0Nt3InitVersion: RtlQueryRegistryValues failed: %#x\n", rcNt);
-    else if (fFound != 7)
+    else
         RTLogBackdoorPrintf("rtR0Nt3InitVersion: Didn't get all values: fFound=%#x\n", fFound);
+
+    /*
+     * We really need the version number.  Build, type and SMP is off less importance.
+     * Derive it from the NT kernel PE header.
+     */
+    if (!(fFound & RT_BIT_32(0)))
+    {
+        if (!g_fNt3ModuleInfoInitialized)
+            rtR0Nt3InitModuleInfo();
+
+        PIMAGE_DOS_HEADER   pMzHdr  = (PIMAGE_DOS_HEADER)g_pbNt3OsKrnl;
+        PIMAGE_NT_HEADERS32 pNtHdrs = (PIMAGE_NT_HEADERS32)&g_pbNt3OsKrnl[pMzHdr->e_lfanew];
+        if (pNtHdrs->OptionalHeader.MajorOperatingSystemVersion == 1)
+        {
+            /* NT 3.1 and NT 3.50 both set OS version to 1.0 in the optional header. */
+            g_uNt3MajorVer = 3;
+            if (   pNtHdrs->OptionalHeader.MajorLinkerVersion == 2
+                && pNtHdrs->OptionalHeader.MinorLinkerVersion < 50)
+                g_uNt3MinorVer = 10;
+            else
+                g_uNt3MinorVer = 50;
+        }
+        else
+        {
+            g_uNt3MajorVer = pNtHdrs->OptionalHeader.MajorOperatingSystemVersion;
+            g_uNt3MinorVer = pNtHdrs->OptionalHeader.MinorOperatingSystemVersion;
+        }
+        RTLogBackdoorPrintf("rtR0Nt3InitVersion: guessed %u.%u from PE header\n", g_uNt3MajorVer, g_uNt3MinorVer);
+
+        /* Check out the resource section, looking for VS_FIXEDFILEINFO. */
+        __try
+        {
+            PIMAGE_SECTION_HEADER paShdrs = (PIMAGE_SECTION_HEADER)(pNtHdrs + 1);
+            uint32_t const        cShdrs  = pNtHdrs->FileHeader.NumberOfSections;
+            uint32_t              iShdr   = 0;
+            while (iShdr < cShdrs && memcmp(paShdrs[iShdr].Name, ".rsrc", 6) != 0)
+                iShdr++;
+            if (iShdr < cShdrs)
+            {
+                if (   paShdrs[iShdr].VirtualAddress > 0
+                    && paShdrs[iShdr].VirtualAddress < pNtHdrs->OptionalHeader.SizeOfImage)
+                {
+                    uint32_t const  cbRsrc   = RT_MIN(paShdrs[iShdr].Misc.VirtualSize
+                                                      ? paShdrs[iShdr].Misc.VirtualSize : paShdrs[iShdr].SizeOfRawData,
+                                                      pNtHdrs->OptionalHeader.SizeOfImage - paShdrs[iShdr].VirtualAddress);
+                    uint8_t const  *pbRsrc   = &g_pbNt3OsKrnl[paShdrs[iShdr].VirtualAddress];
+                    uint32_t const *puDwords = (uint32_t const *)pbRsrc;
+                    uint32_t        cDWords  = (cbRsrc - sizeof(VS_FIXEDFILEINFO) + sizeof(uint32_t)) / sizeof(uint32_t);
+                    while (cDWords-- > 0)
+                    {
+                        if (   puDwords[0] == VS_FFI_SIGNATURE
+                            && puDwords[1] == VS_FFI_STRUCVERSION)
+                        {
+                            VS_FIXEDFILEINFO const *pVerInfo = (VS_FIXEDFILEINFO const *)puDwords;
+                            g_uNt3MajorVer = pVerInfo->dwProductVersionMS >> 16;
+                            g_uNt3MinorVer = pVerInfo->dwProductVersionMS >> 16;
+                            g_uNt3BuildNo  = pVerInfo->dwProductVersionLS >> 16;
+                            RTLogBackdoorPrintf("rtR0Nt3InitVersion: Found version info %u.%u build %u\n",
+                                                g_uNt3MajorVer, g_uNt3MinorVer, g_uNt3BuildNo);
+                            break;
+                        }
+                        puDwords++;
+                    }
+                }
+            }
+        }
+        __except(EXCEPTION_EXECUTE_HANDLER)
+        {
+            RTLogBackdoorPrintf("rtR0Nt3InitVersion: Exception scanning .rsrc section for version info!\n");
+        }
+    }
+
+    /*
+     * If we've got PsGetVersion, use it to override the above finding!
+     * (We may end up here for reasons other than the PsGetVersion fallback.)
+     */
+    if (g_pfnrtPsGetVersion)
+    {
+        WCHAR          wszCsd[64];
+        UNICODE_STRING UniStr;
+        UniStr.Buffer        = wszCsd;
+        UniStr.MaximumLength = sizeof(wszCsd) - sizeof(WCHAR);
+        UniStr.Length        = 0;
+        RT_ZERO(wszCsd);
+        ULONG   uMajor   = 3;
+        ULONG   uMinor   = 51;
+        ULONG   uBuildNo = 1057;
+        BOOLEAN fChecked = g_pfnrtPsGetVersion(&uMajor, &uMinor, &uBuildNo, &UniStr);
+
+        g_uNt3MajorVer           = uMajor;
+        g_uNt3MinorVer           = uMinor;
+        g_uNt3BuildNo            = uBuildNo;
+        g_fNt3Checked            = fChecked != FALSE;
+    }
 
     g_fNt3VersionInitialized = true;
 }
