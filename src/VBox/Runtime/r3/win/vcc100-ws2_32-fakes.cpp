@@ -52,7 +52,7 @@
     static bool volatile    s_fInitialized = false; \
     static decltype(ApiNm) *s_pfnApi = NULL; \
     decltype(ApiNm)        *pfnApi; \
-    if (!s_fInitialized) \
+    if (s_fInitialized) \
         pfnApi = s_pfnApi; \
     else \
     { \

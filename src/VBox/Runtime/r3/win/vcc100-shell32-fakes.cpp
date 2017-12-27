@@ -52,7 +52,7 @@
     static decltype(ShellExecuteW) * volatile s_pfnInitialized = NULL; \
     static decltype(ApiNm) *s_pfnApi = NULL; \
     decltype(ApiNm)        *pfnApi; \
-    if (!s_pfnInitialized) \
+    if (s_pfnInitialized) \
         pfnApi = s_pfnApi; \
     else \
     { \
