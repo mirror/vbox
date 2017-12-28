@@ -42,6 +42,9 @@ VBoxTray_SOURCES  = \
 	VBoxIPC.cpp \
 	VBoxHelpers.cpp \
 	VBoxTray.rc
+VBoxTray_USES.win = vboximportchecker
+VBoxTray_VBOX_IMPORT_CHECKER.win.x86 = nt4 #nt350
+VBoxTray_VBOX_IMPORT_CHECKER.win.amd64 = xp64
 ifdef VBOX_WITH_DRAG_AND_DROP
  VBoxTray_DEFS     += \
 	VBOX_WITH_DRAG_AND_DROP \
