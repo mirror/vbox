@@ -1558,6 +1558,7 @@ RuntimeGuestR3_SOURCES.win.x86               += \
 	r3/win/vcc100-shell32-fakes.cpp \
 	r3/win/vcc100-shell32-fakesA.asm \
 
+
 #
 # RuntimeGuestR3-x86 - Same as RuntimeGuestR3, except that it's targeting x86.
 #
@@ -2877,9 +2878,9 @@ endif
 
 #
 # Bag of tricks required for making VCC100 output binaries work on NT4, W2K
-# early XP and early W2K3.
+# early XP and early W2K3.  Used by validation kit.
 #
-RuntimeR3VccTricks_TEMPLATE = VBoxR3Dll
+RuntimeR3VccTricks_TEMPLATE = VBoxR3Static
 RuntimeR3VccTricks_SOURCES  = \
 	r3/win/vcc100-kernel32-fakes.cpp \
 	r3/win/vcc100-kernel32-fakesA.asm
