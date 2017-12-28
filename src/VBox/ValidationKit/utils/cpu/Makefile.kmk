@@ -55,6 +55,7 @@ cidet-app_SOURCES  = \
 cidet-app_DEFS = IN_DIS
 cidet-app_DEFS.linux = CIDET_REDUCED_CTX
 cidet-app_LIBS = $(PATH_STAGE_LIB)/DisasmR3Static$(VBOX_SUFF_LIB)
+cidet-app_VBOX_IMPORT_CHECKER.win.x86 = $(NO_SUCH_VARIABLE) # doesn't work on NT4 yet.
 
 #PROGRAMS += rdtsc
 #rdtsc_TEMPLATE = VBoxValidationKitR3

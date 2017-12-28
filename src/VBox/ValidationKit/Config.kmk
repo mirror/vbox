@@ -90,22 +90,26 @@ ifneq ($(KBUILD_TARGET),win)
  	$(SDK_VBOX_ZLIB_LIBS)
 endif
 
-# Make VCC100 output work on NT4, W2K, XP and W2K3.
+# Make VCC100 output work on NT3.x, NT4, W2K, XP and W2K3.
 TEMPLATE_VBoxValidationKitR3_LIBS.win.x86 = \
        $(PATH_TOOL_$(TEMPLATE_VBoxValidationKitR3_TOOL.win.x86)_LIB)/oldnames.lib \
        $(PATH_TOOL_$(TEMPLATE_VBoxValidationKitR3_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
        $(PATH_TOOL_$(TEMPLATE_VBoxValidationKitR3_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
 	$(PATH_STAGE_LIB)/RuntimeR3VccTricks$(VBOX_SUFF_LIB)
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
-TEMPLATE_VBoxValidationKitR3_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB))$(TEMPLATE_VBoxValidationKitR3Base_POST_CMDS)$$(NLTAB)
+ TEMPLATE_VBoxValidationKitR3_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB))$(TEMPLATE_VBoxValidationKitR3Base_POST_CMDS)$$(NLTAB)
 endif
 TEMPLATE_VBoxValidationKitR3_LNK_DEPS.win.x86  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION))
 
 #TODO: TEMPLATE_VBoxValidationKitR3_EXTENDS = VBOXGUESTR3EXE
 
+TEMPLATE_VBoxValidationKitR3_USES += vboximportchecker
+TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER.win.x86   = nt350
+TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER.win.amd64 = xp64
+
 
 #
-# Template for building ring-3 progams for the Validation Kit.
+# Template for building ring-3 programs for the Validation Kit.
 # These programs can run on the host and may take advantage of the support
 # driver when installed.
 #

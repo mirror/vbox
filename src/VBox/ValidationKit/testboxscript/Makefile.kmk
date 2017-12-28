@@ -74,6 +74,7 @@ TestBoxHelper_INST     = $(INST_TESTBOXSCRIPT)$(KBUILD_TARGET)/$(KBUILD_TARGET_A
 TestBoxHelper_SOURCES  = TestBoxHelper.cpp
 TestBoxHelper_LIBS.win = $(PATH_SDK_$(VBOX_WINDDK)_LIB)/wbemuuid.lib
 TestBoxHelper_LDFLAGS.darwin = -framework CoreFoundation
+TestBoxHelper_VBOX_IMPORT_CHECKER.win.x86 = $(NO_SUCH_VARIABLE)
 
 
 #
