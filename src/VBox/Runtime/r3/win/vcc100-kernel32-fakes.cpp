@@ -28,80 +28,22 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define RT_NO_STRICT /* Minimal deps so that it works on NT 3.51 too. */
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#ifdef DEBUG
+# include <stdio.h> /* _snprintf */
+#endif
 
 #ifndef RT_ARCH_X86
 # error "This code is X86 only"
 #endif
 
-#define DecodePointer                           Ignore_DecodePointer
-#define EncodePointer                           Ignore_EncodePointer
-#define InitializeCriticalSectionAndSpinCount   Ignore_InitializeCriticalSectionAndSpinCount
-#define HeapSetInformation                      Ignore_HeapSetInformation
-#define HeapQueryInformation                    Ignore_HeapQueryInformation
-#define CreateTimerQueue                        Ignore_CreateTimerQueue
-#define CreateTimerQueueTimer                   Ignore_CreateTimerQueueTimer
-#define DeleteTimerQueueTimer                   Ignore_DeleteTimerQueueTimer
-#define InitializeSListHead                     Ignore_InitializeSListHead
-#define InterlockedFlushSList                   Ignore_InterlockedFlushSList
-#define InterlockedPopEntrySList                Ignore_InterlockedPopEntrySList
-#define InterlockedPushEntrySList               Ignore_InterlockedPushEntrySList
-#define QueryDepthSList                         Ignore_QueryDepthSList
-#define VerifyVersionInfoA                      Ignore_VerifyVersionInfoA
-#define VerSetConditionMask                     Ignore_VerSetConditionMask
-#define IsProcessorFeaturePresent               Ignore_IsProcessorFeaturePresent    /* NT 3.51 start */
-#define CancelIo                                Ignore_CancelIo
-#define IsDebuggerPresent                       Ignore_IsDebuggerPresent            /* NT 3.50 start */
-#define GetSystemTimeAsFileTime                 Ignore_GetSystemTimeAsFileTime
-#define GetVersionExA                           Ignore_GetVersionExA                /* NT 3.1 start */
-#define GetVersionExW                           Ignore_GetVersionExW
-#define GetEnvironmentStringsW                  Ignore_GetEnvironmentStringsW
-#define FreeEnvironmentStringsW                 Ignore_FreeEnvironmentStringsW
-#define GetLocaleInfoA                          Ignore_GetLocaleInfoA
-#define EnumSystemLocalesA                      Ignore_EnumSystemLocalesA
-#define IsValidLocale                           Ignore_IsValidLocale
-#define SetThreadAffinityMask                   Ignore_SetThreadAffinityMask
-#define GetProcessAffinityMask                  Ignore_GetProcessAffinityMask
-#define GetHandleInformation                    Ignore_GetHandleInformation
-#define SetHandleInformation                    Ignore_SetHandleInformation
-
 #include <iprt/nt/nt-and-windows.h>
 
-#undef DecodePointer
-#undef EncodePointer
-#undef InitializeCriticalSectionAndSpinCount
-#undef HeapSetInformation
-#undef HeapQueryInformation
-#undef CreateTimerQueue
-#undef CreateTimerQueueTimer
-#undef DeleteTimerQueueTimer
-#undef InitializeSListHead
-#undef InterlockedFlushSList
-#undef InterlockedPopEntrySList
-#undef InterlockedPushEntrySList
-#undef QueryDepthSList
-#undef VerifyVersionInfoA
-#undef VerSetConditionMask
-#undef IsProcessorFeaturePresent
-#undef CancelIo
-#undef IsDebuggerPresent
-#undef GetSystemTimeAsFileTime
-#undef GetVersionExA
-#undef GetVersionExW
-#undef GetEnvironmentStringsW
-#undef FreeEnvironmentStringsW
-#undef GetLocaleInfoA
-#undef EnumSystemLocalesA
-#undef IsValidLocale
-#undef SetThreadAffinityMask
-#undef GetProcessAffinityMask
-#undef GetHandleInformation
-#undef SetHandleInformation
+#include "vcc100-fakes.h"
 
 
 /*********************************************************************************************************************************
@@ -112,53 +54,42 @@
 #endif
 
 
-/** Dynamically resolves an kernel32 API.   */
-#define RESOLVE_ME(ApiNm) \
-    static bool volatile    s_fInitialized = false; \
-    static decltype(ApiNm) *s_pfnApi = NULL; \
-    decltype(ApiNm)        *pfnApi; \
-    if (s_fInitialized) \
-        pfnApi = s_pfnApi; \
-    else \
-    { \
-        pfnApi = (decltype(pfnApi))GetProcAddress(GetModuleHandleW(L"kernel32"), #ApiNm); \
-        s_pfnApi = pfnApi; \
-        s_fInitialized = true; \
-    } do {} while (0)
-
-
-/** Dynamically resolves an NTDLL API we need.   */
-#define RESOLVE_NTDLL_API(ApiNm) \
-    static bool volatile    s_fInitialized##ApiNm = false; \
-    static decltype(ApiNm) *s_pfn##ApiNm = NULL; \
-    decltype(ApiNm)        *pfn##ApiNm; \
-    if (s_fInitialized##ApiNm) \
-        pfn##ApiNm = s_pfn##ApiNm; \
-    else \
-    { \
-        pfn##ApiNm = (decltype(pfn##ApiNm))GetProcAddress(GetModuleHandleW(L"ntdll"), #ApiNm); \
-        s_pfn##ApiNm = pfn##ApiNm; \
-        s_fInitialized##ApiNm = true; \
-    } do {} while (0)
-
-
 /** Declare a kernel32 API.
  * @note We are not exporting them as that causes duplicate symbol troubles in
  *       the OpenGL bits. */
 #define DECL_KERNEL32(a_Type) extern "C" a_Type WINAPI
 
 
+
 /*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
+*   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-DECL_KERNEL32(BOOL) WINAPI GetVersionExA(LPOSVERSIONINFOA pInfo);
+static volatile bool g_fInitialized = false;
+#define MAKE_IMPORT_ENTRY(a_uMajorVer, a_uMinorVer, a_Name, a_cb) DECLARE_FUNCTION_POINTER(a_Name, a_cb)
+#include "vcc100-kernel32-fakes.h"
 
 
-DECL_KERNEL32(PVOID) DecodePointer(PVOID pvEncoded)
+/**
+ * Resolves all the APIs ones and for all, updating the fake IAT entries.
+ */
+static void InitFakes(void)
 {
-    RESOLVE_ME(DecodePointer);
-    if (pfnApi)
-        return pfnApi(pvEncoded);
+    CURRENT_VERSION_VARIABLE();
+
+    HMODULE hmod = GetModuleHandleW(L"kernel32");
+    MY_ASSERT(hmod != NULL, "kernel32");
+
+#undef MAKE_IMPORT_ENTRY
+#define MAKE_IMPORT_ENTRY(a_uMajorVer, a_uMinorVer, a_Name, a_cb) RESOLVE_IMPORT(a_uMajorVer, a_uMinorVer, a_Name, a_cb)
+#include "vcc100-kernel32-fakes.h"
+
+    g_fInitialized = true;
+}
+
+
+DECL_KERNEL32(PVOID) Fake_DecodePointer(PVOID pvEncoded)
+{
+    INIT_FAKES(DecodePointer,(pvEncoded));
 
     /*
      * Fallback code.
@@ -167,11 +98,9 @@ DECL_KERNEL32(PVOID) DecodePointer(PVOID pvEncoded)
 }
 
 
-DECL_KERNEL32(PVOID) EncodePointer(PVOID pvNative)
+DECL_KERNEL32(PVOID) Fake_EncodePointer(PVOID pvNative)
 {
-    RESOLVE_ME(EncodePointer);
-    if (pfnApi)
-        return pfnApi(pvNative);
+    INIT_FAKES(EncodePointer, (pvNative));
 
     /*
      * Fallback code.
@@ -180,11 +109,9 @@ DECL_KERNEL32(PVOID) EncodePointer(PVOID pvNative)
 }
 
 
-DECL_KERNEL32(BOOL) InitializeCriticalSectionAndSpinCount(LPCRITICAL_SECTION pCritSect, DWORD cSpin)
+DECL_KERNEL32(BOOL) Fake_InitializeCriticalSectionAndSpinCount(LPCRITICAL_SECTION pCritSect, DWORD cSpin)
 {
-    RESOLVE_ME(InitializeCriticalSectionAndSpinCount);
-    if (pfnApi)
-        return pfnApi(pCritSect, cSpin);
+    INIT_FAKES(InitializeCriticalSectionAndSpinCount, (pCritSect, cSpin));
 
     /*
      * Fallback code.
@@ -194,11 +121,9 @@ DECL_KERNEL32(BOOL) InitializeCriticalSectionAndSpinCount(LPCRITICAL_SECTION pCr
 }
 
 
-DECL_KERNEL32(BOOL) HeapSetInformation(HANDLE hHeap, HEAP_INFORMATION_CLASS enmInfoClass, PVOID pvBuf, SIZE_T cbBuf)
+DECL_KERNEL32(BOOL) Fake_HeapSetInformation(HANDLE hHeap, HEAP_INFORMATION_CLASS enmInfoClass, PVOID pvBuf, SIZE_T cbBuf)
 {
-    RESOLVE_ME(HeapSetInformation);
-    if (pfnApi)
-        return pfnApi(hHeap, enmInfoClass, pvBuf, cbBuf);
+    INIT_FAKES(HeapSetInformation, (hHeap, enmInfoClass, pvBuf, cbBuf));
 
     /*
      * Fallback code.
@@ -221,12 +146,10 @@ DECL_KERNEL32(BOOL) HeapSetInformation(HANDLE hHeap, HEAP_INFORMATION_CLASS enmI
 }
 
 
-DECL_KERNEL32(BOOL) HeapQueryInformation(HANDLE hHeap, HEAP_INFORMATION_CLASS enmInfoClass,
-                                         PVOID pvBuf, SIZE_T cbBuf, PSIZE_T pcbRet)
+DECL_KERNEL32(BOOL) Fake_HeapQueryInformation(HANDLE hHeap, HEAP_INFORMATION_CLASS enmInfoClass,
+                                              PVOID pvBuf, SIZE_T cbBuf, PSIZE_T pcbRet)
 {
-    RESOLVE_ME(HeapQueryInformation);
-    if (pfnApi)
-        return pfnApi(hHeap, enmInfoClass, pvBuf, cbBuf, pcbRet);
+    INIT_FAKES(HeapQueryInformation, (hHeap, enmInfoClass, pvBuf, cbBuf, pcbRet));
 
     /*
      * Fallback code.
@@ -250,51 +173,45 @@ DECL_KERNEL32(BOOL) HeapQueryInformation(HANDLE hHeap, HEAP_INFORMATION_CLASS en
 
 /* These are used by INTEL\mt_obj\Timer.obj: */
 
-DECL_KERNEL32(HANDLE) CreateTimerQueue(void)
+DECL_KERNEL32(HANDLE) Fake_CreateTimerQueue(void)
 {
-    RESOLVE_ME(CreateTimerQueue);
-    if (pfnApi)
-        return pfnApi();
+    INIT_FAKES(CreateTimerQueue, ());
+
     SetLastError(ERROR_NOT_SUPPORTED);
     return NULL;
 }
 
-DECL_KERNEL32(BOOL) CreateTimerQueueTimer(PHANDLE phTimer, HANDLE hTimerQueue, WAITORTIMERCALLBACK pfnCallback, PVOID pvUser,
-                                          DWORD msDueTime, DWORD msPeriod, ULONG fFlags)
+DECL_KERNEL32(BOOL) Fake_CreateTimerQueueTimer(PHANDLE phTimer, HANDLE hTimerQueue, WAITORTIMERCALLBACK pfnCallback, PVOID pvUser,
+                                               DWORD msDueTime, DWORD msPeriod, ULONG fFlags)
 {
-    RESOLVE_ME(CreateTimerQueueTimer);
-    if (pfnApi)
-        return pfnApi(phTimer, hTimerQueue, pfnCallback, pvUser, msDueTime, msPeriod, fFlags);
+    INIT_FAKES(CreateTimerQueueTimer, (phTimer, hTimerQueue, pfnCallback, pvUser, msDueTime, msPeriod, fFlags));
+
     SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
 
-DECL_KERNEL32(BOOL) DeleteTimerQueueTimer(HANDLE hTimerQueue, HANDLE hTimer, HANDLE hEvtCompletion)
+DECL_KERNEL32(BOOL) Fake_DeleteTimerQueueTimer(HANDLE hTimerQueue, HANDLE hTimer, HANDLE hEvtCompletion)
 {
-    RESOLVE_ME(DeleteTimerQueueTimer);
-    if (pfnApi)
-        return pfnApi(hTimerQueue, hTimer, hEvtCompletion);
+    INIT_FAKES(DeleteTimerQueueTimer, (hTimerQueue, hTimer, hEvtCompletion));
+
     SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
 
 /* This is used by several APIs. */
 
-DECL_KERNEL32(VOID) InitializeSListHead(PSLIST_HEADER pHead)
+DECL_KERNEL32(VOID) Fake_InitializeSListHead(PSLIST_HEADER pHead)
 {
-    RESOLVE_ME(InitializeSListHead);
-    if (pfnApi)
-        pfnApi(pHead);
-    else /* fallback: */
-        pHead->Alignment = 0;
+    INIT_FAKES_VOID(InitializeSListHead, (pHead));
+
+    /* fallback: */
+    pHead->Alignment = 0;
 }
 
 
-DECL_KERNEL32(PSLIST_ENTRY) InterlockedFlushSList(PSLIST_HEADER pHead)
+DECL_KERNEL32(PSLIST_ENTRY) Fake_InterlockedFlushSList(PSLIST_HEADER pHead)
 {
-    RESOLVE_ME(InterlockedFlushSList);
-    if (pfnApi)
-        return pfnApi(pHead);
+    INIT_FAKES(InterlockedFlushSList, (pHead));
 
     /* fallback: */
     PSLIST_ENTRY pRet = NULL;
@@ -316,11 +233,9 @@ DECL_KERNEL32(PSLIST_ENTRY) InterlockedFlushSList(PSLIST_HEADER pHead)
     return pRet;
 }
 
-DECL_KERNEL32(PSLIST_ENTRY) InterlockedPopEntrySList(PSLIST_HEADER pHead)
+DECL_KERNEL32(PSLIST_ENTRY) Fake_InterlockedPopEntrySList(PSLIST_HEADER pHead)
 {
-    RESOLVE_ME(InterlockedPopEntrySList);
-    if (pfnApi)
-        return pfnApi(pHead);
+    INIT_FAKES(InterlockedPopEntrySList, (pHead));
 
     /* fallback: */
     PSLIST_ENTRY pRet = NULL;
@@ -350,11 +265,9 @@ DECL_KERNEL32(PSLIST_ENTRY) InterlockedPopEntrySList(PSLIST_HEADER pHead)
     return pRet;
 }
 
-DECL_KERNEL32(PSLIST_ENTRY) InterlockedPushEntrySList(PSLIST_HEADER pHead, PSLIST_ENTRY pEntry)
+DECL_KERNEL32(PSLIST_ENTRY) Fake_InterlockedPushEntrySList(PSLIST_HEADER pHead, PSLIST_ENTRY pEntry)
 {
-    RESOLVE_ME(InterlockedPushEntrySList);
-    if (pfnApi)
-        return pfnApi(pHead, pEntry);
+    INIT_FAKES(InterlockedPushEntrySList, (pHead, pEntry));
 
     /* fallback: */
     PSLIST_ENTRY pRet = NULL;
@@ -373,21 +286,19 @@ DECL_KERNEL32(PSLIST_ENTRY) InterlockedPushEntrySList(PSLIST_HEADER pHead, PSLIS
     return pRet;
 }
 
-DECL_KERNEL32(WORD) QueryDepthSList(PSLIST_HEADER pHead)
+DECL_KERNEL32(WORD) Fake_QueryDepthSList(PSLIST_HEADER pHead)
 {
-    RESOLVE_ME(QueryDepthSList);
-    if (pfnApi)
-        return pfnApi(pHead);
+    INIT_FAKES(QueryDepthSList, (pHead));
+
+    /* fallback: */
     return pHead->Depth;
 }
 
 
 /* curl drags these in: */
-DECL_KERNEL32(BOOL) VerifyVersionInfoA(LPOSVERSIONINFOEXA pInfo, DWORD fTypeMask, DWORDLONG fConditionMask)
+DECL_KERNEL32(BOOL) Fake_VerifyVersionInfoA(LPOSVERSIONINFOEXA pInfo, DWORD fTypeMask, DWORDLONG fConditionMask)
 {
-    RESOLVE_ME(VerifyVersionInfoA);
-    if (pfnApi)
-        return pfnApi(pInfo, fTypeMask, fConditionMask);
+    INIT_FAKES(VerifyVersionInfoA, (pInfo, fTypeMask, fConditionMask));
 
     /* fallback to make curl happy: */
     OSVERSIONINFOEXA VerInfo;
@@ -397,7 +308,14 @@ DECL_KERNEL32(BOOL) VerifyVersionInfoA(LPOSVERSIONINFOEXA pInfo, DWORD fTypeMask
     {
         RT_ZERO(VerInfo);
         VerInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-        AssertReturn(GetVersionExA((OSVERSIONINFO *)&VerInfo), FALSE);
+        BOOL fRet = GetVersionExA((OSVERSIONINFO *)&VerInfo);
+        if (fRet)
+        { /* likely */ }
+        else
+        {
+            MY_ASSERT(false, "VerifyVersionInfoA: #1");
+            return FALSE;
+        }
     }
 
     BOOL fRet = TRUE;
@@ -417,7 +335,7 @@ DECL_KERNEL32(BOOL) VerifyVersionInfoA(LPOSVERSIONINFOEXA pInfo, DWORD fTypeMask
                 MY_CASE(VER_SUITENAME,          wSuiteMask);
                 MY_CASE(VER_PRODUCT_TYPE,       wProductType);
 #undef  MY_CASE
-                default: uLeft = uRight = 0; AssertFailed();
+                default: uLeft = uRight = 0; MY_ASSERT(false, "VerifyVersionInfoA: #2");
             }
             switch ((uint8_t)(fConditionMask >> (i*8)))
             {
@@ -428,7 +346,7 @@ DECL_KERNEL32(BOOL) VerifyVersionInfoA(LPOSVERSIONINFOEXA pInfo, DWORD fTypeMask
                 case VER_LESS_EQUAL:        fRet = uLeft <= uRight; break;
                 case VER_AND:               fRet = (uLeft & uRight) == uRight; break;
                 case VER_OR:                fRet = (uLeft & uRight) != 0; break;
-                default:                    fRet = FALSE; AssertFailed(); break;
+                default:                    fRet = FALSE; MY_ASSERT(false, "VerifyVersionInfoA: #3"); break;
             }
         }
 
@@ -436,11 +354,9 @@ DECL_KERNEL32(BOOL) VerifyVersionInfoA(LPOSVERSIONINFOEXA pInfo, DWORD fTypeMask
 }
 
 
-DECL_KERNEL32(ULONGLONG) VerSetConditionMask(ULONGLONG fConditionMask, DWORD fTypeMask, BYTE bOperator)
+DECL_KERNEL32(ULONGLONG) Fake_VerSetConditionMask(ULONGLONG fConditionMask, DWORD fTypeMask, BYTE bOperator)
 {
-    RESOLVE_ME(VerSetConditionMask);
-    if (pfnApi)
-        return pfnApi(fConditionMask, fTypeMask, bOperator);
+    INIT_FAKES(VerSetConditionMask, (fConditionMask, fTypeMask, bOperator));
 
     /* fallback: */
     for (unsigned i = 0; i < 8; i++)
@@ -459,22 +375,18 @@ DECL_KERNEL32(ULONGLONG) VerSetConditionMask(ULONGLONG fConditionMask, DWORD fTy
  * NT 3.51 stuff.
  */
 
-DECL_KERNEL32(BOOL) IsProcessorFeaturePresent(DWORD enmProcessorFeature)
+DECL_KERNEL32(BOOL) Fake_IsProcessorFeaturePresent(DWORD enmProcessorFeature)
 {
-    RESOLVE_ME(IsProcessorFeaturePresent);
-    if (pfnApi)
-        return pfnApi(enmProcessorFeature);
+    INIT_FAKES(IsProcessorFeaturePresent, (enmProcessorFeature));
 
     /* Could make more of an effort here... */
     return FALSE;
 }
 
 
-DECL_KERNEL32(BOOL) CancelIo(HANDLE hHandle)
+DECL_KERNEL32(BOOL) Fake_CancelIo(HANDLE hHandle)
 {
-    RESOLVE_ME(CancelIo);
-    if (pfnApi)
-        return pfnApi(hHandle);
+    INIT_FAKES(CancelIo, (hHandle));
 
     /* NT 3.51 have the NTDLL API this corresponds to. */
     RESOLVE_NTDLL_API(NtCancelIoFile);
@@ -499,47 +411,50 @@ DECL_KERNEL32(BOOL) CancelIo(HANDLE hHandle)
  * NT 3.50 stuff.
  */
 
-DECL_KERNEL32(BOOL) IsDebuggerPresent(VOID)
+DECL_KERNEL32(BOOL) Fake_IsDebuggerPresent(VOID)
 {
-    RESOLVE_ME(IsDebuggerPresent);
-    if (pfnApi)
-        return pfnApi();
+    INIT_FAKES(IsDebuggerPresent, ());
+
+    /* Fallback: */
     return FALSE;
 }
 
 
-DECL_KERNEL32(VOID) GetSystemTimeAsFileTime(LPFILETIME pTime)
+DECL_KERNEL32(VOID) Fake_GetSystemTimeAsFileTime(LPFILETIME pTime)
 {
-    RESOLVE_ME(GetSystemTimeAsFileTime);
-    if (pfnApi)
-        pfnApi(pTime);
+    INIT_FAKES_VOID(GetSystemTimeAsFileTime, (pTime));
+
+    DWORD dwVersion = GetVersion();
+    if (   (dwVersion & 0xff) > 3
+        || (   (dwVersion & 0xff) == 3
+            && ((dwVersion >> 8) & 0xff) >= 50) )
+    {
+        PKUSER_SHARED_DATA pUsd = (PKUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA;
+
+        /* use interrupt time */
+        LARGE_INTEGER Time;
+        do
+        {
+            Time.HighPart = pUsd->SystemTime.High1Time;
+            Time.LowPart  = pUsd->SystemTime.LowPart;
+        } while (pUsd->SystemTime.High2Time != Time.HighPart);
+
+        pTime->dwHighDateTime = Time.HighPart;
+        pTime->dwLowDateTime  = Time.LowPart;
+    }
     else
     {
-        DWORD dwVersion = GetVersion();
-        if (   (dwVersion & 0xff) > 3
-            || (   (dwVersion & 0xff) == 3
-                && ((dwVersion >> 8) & 0xff) >= 50) )
-        {
-            PKUSER_SHARED_DATA pUsd = (PKUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA;
-
-            /* use interrupt time */
-            LARGE_INTEGER Time;
-            do
-            {
-                Time.HighPart = pUsd->SystemTime.High1Time;
-                Time.LowPart  = pUsd->SystemTime.LowPart;
-            } while (pUsd->SystemTime.High2Time != Time.HighPart);
-
-            pTime->dwHighDateTime = Time.HighPart;
-            pTime->dwLowDateTime  = Time.LowPart;
-        }
+        /* NT 3.1 didn't have a KUSER_SHARED_DATA nor a GetSystemTimeAsFileTime export. */
+        SYSTEMTIME SystemTime;
+        GetSystemTime(&SystemTime);
+        BOOL fRet = SystemTimeToFileTime(&SystemTime, pTime);
+        if (fRet)
+        { /* likely */ }
         else
         {
-            /* NT 3.1 didn't have a KUSER_SHARED_DATA nor a GetSystemTimeAsFileTime export. */
-            SYSTEMTIME SystemTime;
-            GetSystemTime(&SystemTime);
-            BOOL fRet = SystemTimeToFileTime(&SystemTime, pTime);
-            AssertStmt(fRet, pTime->dwHighDateTime = pTime->dwLowDateTime = 0);
+            MY_ASSERT(false, "GetSystemTimeAsFileTime: #2");
+            pTime->dwHighDateTime = 0;
+            pTime->dwLowDateTime  = 0;
         }
     }
 }
@@ -549,12 +464,13 @@ DECL_KERNEL32(VOID) GetSystemTimeAsFileTime(LPFILETIME pTime)
  * NT 3.1 stuff.
  */
 
-DECL_KERNEL32(BOOL) GetVersionExA(LPOSVERSIONINFOA pInfo)
+DECL_KERNEL32(BOOL) Fake_GetVersionExA(LPOSVERSIONINFOA pInfo)
 {
-    RESOLVE_ME(GetVersionExA);
-    if (pfnApi)
-        return pfnApi(pInfo);
+    INIT_FAKES(GetVersionExA, (pInfo));
 
+    /*
+     * Fallback.
+     */
     DWORD dwVersion = GetVersion();
 
     /* Common fields: */
@@ -589,12 +505,13 @@ DECL_KERNEL32(BOOL) GetVersionExA(LPOSVERSIONINFOA pInfo)
 }
 
 
-DECL_KERNEL32(BOOL) GetVersionExW(LPOSVERSIONINFOW pInfo)
+DECL_KERNEL32(BOOL) Fake_GetVersionExW(LPOSVERSIONINFOW pInfo)
 {
-    RESOLVE_ME(GetVersionExW);
-    if (pfnApi)
-        return pfnApi(pInfo);
+    INIT_FAKES(GetVersionExW, (pInfo));
 
+    /*
+     * Fallback.
+     */
     DWORD dwVersion = GetVersion();
 
     /* Common fields: */
@@ -629,13 +546,13 @@ DECL_KERNEL32(BOOL) GetVersionExW(LPOSVERSIONINFOW pInfo)
 }
 
 
-DECL_KERNEL32(LPWCH) GetEnvironmentStringsW(void)
+DECL_KERNEL32(LPWCH) Fake_GetEnvironmentStringsW(void)
 {
-    RESOLVE_ME(GetEnvironmentStringsW);
-    if (pfnApi)
-        return pfnApi();
+    INIT_FAKES(GetEnvironmentStringsW, ());
 
     /*
+     * Fallback:
+     *
      * Environment is ANSI in NT 3.1. We should only be here for NT 3.1.
      * For now, don't try do a perfect job converting it, just do it.
      */
@@ -663,63 +580,59 @@ DECL_KERNEL32(LPWCH) GetEnvironmentStringsW(void)
 }
 
 
-DECL_KERNEL32(BOOL) FreeEnvironmentStringsW(LPWCH pwszzEnv)
+DECL_KERNEL32(BOOL) Fake_FreeEnvironmentStringsW(LPWCH pwszzEnv)
 {
-    RESOLVE_ME(FreeEnvironmentStringsW);
-    if (pfnApi)
-        return pfnApi(pwszzEnv);
+    INIT_FAKES(FreeEnvironmentStringsW, (pwszzEnv));
+
+    /* Fallback: */
     if (pwszzEnv)
         HeapFree(GetProcessHeap(), 0, pwszzEnv);
     return TRUE;
 }
 
 
-DECL_KERNEL32(int) GetLocaleInfoA(LCID idLocale, LCTYPE enmType, LPSTR pData, int cchData)
+DECL_KERNEL32(int) Fake_GetLocaleInfoA(LCID idLocale, LCTYPE enmType, LPSTR pData, int cchData)
 {
-    RESOLVE_ME(GetLocaleInfoA);
-    if (pfnApi)
-        return pfnApi(idLocale, enmType, pData, cchData);
+    INIT_FAKES(GetLocaleInfoA, (idLocale, enmType, pData, cchData));
 
-    AssertMsgFailed(("GetLocaleInfoA: idLocale=%#x enmType=%#x cchData=%#x\n", idLocale, enmType, cchData));
+    /* Fallback: */
+    MY_ASSERT(false, "GetLocaleInfoA: idLocale=%#x enmType=%#x cchData=%#x", idLocale, enmType, cchData);
     SetLastError(ERROR_NOT_SUPPORTED);
     return 0;
 }
 
 
-DECL_KERNEL32(BOOL) EnumSystemLocalesA(LOCALE_ENUMPROCA pfnCallback, DWORD fFlags)
+DECL_KERNEL32(BOOL) Fake_EnumSystemLocalesA(LOCALE_ENUMPROCA pfnCallback, DWORD fFlags)
 {
-    RESOLVE_ME(EnumSystemLocalesA);
-    if (pfnApi)
-        return pfnApi(pfnCallback, fFlags);
+    INIT_FAKES(EnumSystemLocalesA, (pfnCallback, fFlags));
 
-    AssertMsgFailed(("EnumSystemLocalesA: pfnCallback=%p fFlags=%#x\n", pfnCallback, fFlags));
+    /* Fallback: */
+    MY_ASSERT(false, "EnumSystemLocalesA: pfnCallback=%p fFlags=%#x", pfnCallback, fFlags);
     SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
 
 
-DECL_KERNEL32(BOOL) IsValidLocale(LCID idLocale, DWORD fFlags)
+DECL_KERNEL32(BOOL) Fake_IsValidLocale(LCID idLocale, DWORD fFlags)
 {
-    RESOLVE_ME(IsValidLocale);
-    if (pfnApi)
-        return pfnApi(idLocale, fFlags);
+    INIT_FAKES(IsValidLocale, (idLocale, fFlags));
 
-    AssertMsgFailed(("IsValidLocale: idLocale fFlags=%#x\n", idLocale, fFlags));
+    /* Fallback: */
+    MY_ASSERT(false, "IsValidLocale: idLocale fFlags=%#x", idLocale, fFlags);
     SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
 
 
-DECL_KERNEL32(DWORD_PTR) SetThreadAffinityMask(HANDLE hThread, DWORD_PTR fAffinityMask)
+DECL_KERNEL32(DWORD_PTR) Fake_SetThreadAffinityMask(HANDLE hThread, DWORD_PTR fAffinityMask)
 {
-    RESOLVE_ME(SetThreadAffinityMask);
-    if (pfnApi)
-        return pfnApi(hThread, fAffinityMask);
+    INIT_FAKES(SetThreadAffinityMask, (hThread, fAffinityMask));
 
+    /* Fallback: */
     SYSTEM_INFO SysInfo;
     GetSystemInfo(&SysInfo);
-    AssertMsgFailed(("SetThreadAffinityMask: hThread=%p fAffinityMask=%p SysInfo.dwActiveProcessorMask=%p\n",
-                     hThread, fAffinityMask, SysInfo.dwActiveProcessorMask));
+    MY_ASSERT(false, "SetThreadAffinityMask: hThread=%p fAffinityMask=%p SysInfo.dwActiveProcessorMask=%p",
+              hThread, fAffinityMask, SysInfo.dwActiveProcessorMask);
     if (   SysInfo.dwActiveProcessorMask == fAffinityMask
         || fAffinityMask                 == ~(DWORD_PTR)0)
         return fAffinityMask;
@@ -729,15 +642,14 @@ DECL_KERNEL32(DWORD_PTR) SetThreadAffinityMask(HANDLE hThread, DWORD_PTR fAffini
 }
 
 
-DECL_KERNEL32(BOOL) GetProcessAffinityMask(HANDLE hProcess, PDWORD_PTR pfProcessAffinityMask, PDWORD_PTR pfSystemAffinityMask)
+DECL_KERNEL32(BOOL) Fake_GetProcessAffinityMask(HANDLE hProcess, PDWORD_PTR pfProcessAffinityMask, PDWORD_PTR pfSystemAffinityMask)
 {
-    RESOLVE_ME(GetProcessAffinityMask);
-    if (pfnApi)
-        return pfnApi(hProcess, pfProcessAffinityMask, pfSystemAffinityMask);
+    INIT_FAKES(GetProcessAffinityMask, (hProcess, pfProcessAffinityMask, pfSystemAffinityMask));
 
+    /* Fallback: */
     SYSTEM_INFO SysInfo;
     GetSystemInfo(&SysInfo);
-    AssertMsgFailed(("GetProcessAffinityMask: SysInfo.dwActiveProcessorMask=%p\n", SysInfo.dwActiveProcessorMask));
+    MY_ASSERT(false, "GetProcessAffinityMask: SysInfo.dwActiveProcessorMask=%p", SysInfo.dwActiveProcessorMask);
     if (pfProcessAffinityMask)
         *pfProcessAffinityMask = SysInfo.dwActiveProcessorMask;
     if (pfSystemAffinityMask)
@@ -746,13 +658,11 @@ DECL_KERNEL32(BOOL) GetProcessAffinityMask(HANDLE hProcess, PDWORD_PTR pfProcess
 }
 
 
-DECL_KERNEL32(BOOL) GetHandleInformation(HANDLE hObject, DWORD *pfFlags)
+DECL_KERNEL32(BOOL) Fake_GetHandleInformation(HANDLE hObject, DWORD *pfFlags)
 {
-    RESOLVE_ME(GetHandleInformation);
-    if (pfnApi)
-        return pfnApi(hObject, pfFlags);
+    INIT_FAKES(GetHandleInformation, (hObject, pfFlags));
 
-
+    /* Fallback: */
     OBJECT_HANDLE_FLAG_INFORMATION  Info  = { 0, 0 };
     DWORD                           cbRet = sizeof(Info);
     NTSTATUS rcNt = NtQueryObject(hObject, ObjectHandleFlagInformation, &Info, sizeof(Info), &cbRet);
@@ -763,18 +673,17 @@ DECL_KERNEL32(BOOL) GetHandleInformation(HANDLE hObject, DWORD *pfFlags)
         return TRUE;
     }
     *pfFlags = 0;
-    AssertMsg(rcNt == STATUS_INVALID_HANDLE, ("rcNt=%#x\n", rcNt));
-    SetLastError(rcNt == STATUS_INVALID_HANDLE ? ERROR_INVALID_HANDLE : ERROR_INVALID_FUNCTION);
+    MY_ASSERT(rcNt == STATUS_INVALID_HANDLE, "rcNt=%#x", rcNt);
+    SetLastError(rcNt == STATUS_INVALID_HANDLE ? ERROR_INVALID_HANDLE : ERROR_INVALID_FUNCTION); /* see also process-win.cpp */
     return FALSE;
 }
 
 
-DECL_KERNEL32(BOOL) SetHandleInformation(HANDLE hObject, DWORD fMask, DWORD fFlags)
+DECL_KERNEL32(BOOL) Fake_SetHandleInformation(HANDLE hObject, DWORD fMask, DWORD fFlags)
 {
-    RESOLVE_ME(SetHandleInformation);
-    if (pfnApi)
-        return pfnApi(hObject, fMask, fFlags);
+    INIT_FAKES(SetHandleInformation, (hObject, fMask, fFlags));
 
+    /* Fallback: */
     SetLastError(ERROR_INVALID_FUNCTION);
     return FALSE;
 }

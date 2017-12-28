@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - Wrappers for kernel32 APIs missing in NT4 and earlier.
+; IPRT - Common macros for the Visual C++ 2010+ CRT import fakes.
 ;
 
 ;
@@ -25,10 +25,31 @@
 ;
 
 
-%include "vcc100-fakes.mac"
+%include "iprt/asmdefs.mac"
+
+%ifndef RT_ARCH_X86
+ %error "This is x86 only code.
+%endif
+
+
+;;
+; Fakes an API import table entry.
+;
+; @param 1  The function name
+; @param 2  Number of bytes of parameters for x86.
+%macro MAKE_IMPORT_ENTRY_INTERNAL 2
 
 BEGINDATA
-GLOBALNAME vcc100_kernel32_fakes_asm
 
-%include "vcc100-kernel32-fakes.h"
+extern _Fake_ %+ %1 %+ @ %+ %2
+global __imp__ %+ %1 %+ @ %+ %2         ; The import address table (IAT) entry name.
+__imp__ %+ %1 %+ @ %+ %2:
+global _g_pfn %+ %1                     ; C accessible label.
+_g_pfn %+ %1:
+    dd _Fake_ %+ %1 %+ @ %+ %2
+
+%endmacro
+
+%define MAKE_IMPORT_ENTRY(a_uMajorVer, a_uMinorVer, a_Name, a_cbParams) MAKE_IMPORT_ENTRY_INTERNAL a_Name, a_cbParams
+%define COMMENT(a_Text)
 
