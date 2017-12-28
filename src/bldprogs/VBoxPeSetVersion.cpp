@@ -213,7 +213,7 @@ int main(int argc, char **argv)
      * Parse arguments.
      * This stucks
      */
-    unsigned    uNtVersion     = 31;
+    unsigned    uNtVersion     = MK_VER(3,10);
     const char *pszFilename    = NULL;
     bool        fAcceptOptions = true;
     for (int i = 1; i < argc; i++)
@@ -242,13 +242,13 @@ int main(int argc, char **argv)
                 else
                 {
                     if (strcmp(psz, "nt31") == 0)
-                        uNtVersion = MK_VER(3, 10);
+                        uNtVersion = MK_VER(3,10);
                     else if (strcmp(psz, "nt350") == 0)
-                        uNtVersion = MK_VER(3, 50);
+                        uNtVersion = MK_VER(3,50);
                     else if (strcmp(psz, "nt351") == 0)
-                        uNtVersion = MK_VER(3, 51);
+                        uNtVersion = MK_VER(3,51);
                     else if (strcmp(psz, "nt4") == 0)
-                        uNtVersion = MK_VER(4, 0);
+                        uNtVersion = MK_VER(4,0);
                     else if (strcmp(psz, "w2k") == 0)
                         uNtVersion = MK_VER(5,0);
                     else if (strcmp(psz, "xp") == 0)
