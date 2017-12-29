@@ -920,11 +920,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ## @todo base.TestBase.
         self.asTestsDef = \
         [
-            'session_basic', 'session_env', 'session_file_ref', 'session_dir_ref', 'session_proc_ref', \
-            'exec_basic', 'exec_errorlevel', 'exec_timeout', \
-            'dir_create', 'dir_create_temp', 'dir_read', \
-            'file_remove', 'file_stat', 'file_read', 'file_write', \
-            'copy_to', 'copy_from', \
+            'session_basic', 'session_env', 'session_file_ref', 'session_dir_ref', 'session_proc_ref',
+            'exec_basic', 'exec_errorlevel', 'exec_timeout',
+            'dir_create', 'dir_create_temp', 'dir_read',
+            'file_remove', 'file_stat', 'file_read', 'file_write',
+            'copy_to', 'copy_from',
             'update_additions'
         ];
         self.asTests    = self.asTestsDef;
