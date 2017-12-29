@@ -1620,9 +1620,8 @@ public:
             GUID guid;
             rc = SafeArrayGetIID(arg, &guid);
             AssertComRCReturnVoid(rc);
-            AssertMsgReturnVoid(InlineIsEqualGUID(COM_IIDOF(I), guid),
-                                ("Expected IID {%RTuuid}, got {%RTuuid}.\n",
-                                 &COM_IIDOF(I), &guid));
+            AssertMsgReturnVoid(InlineIsEqualGUID(COM_IIDOF(I), guid) || arg->rgsabound[0].cElements == 0 /* IDispatch if empty */,
+                                ("Expected IID {%RTuuid}, got {%RTuuid}.\n", &COM_IIDOF(I), &guid));
 
             rc = SafeArrayAccessData(arg, (void HUGEP **)&m.raw);
             AssertComRCReturnVoid(rc);
