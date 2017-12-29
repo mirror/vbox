@@ -145,4 +145,3 @@ GLOBALNAME __imp__KeTickCount
 GLOBALNAME _KeTickCount
         dd      0
 
-
