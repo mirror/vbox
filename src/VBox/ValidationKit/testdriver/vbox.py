@@ -463,6 +463,9 @@ class EventHandlerBase(object):
         self.fShutdown  = False;
         self.oThread    = None;
         self.fpApiVer   = fpApiVer;
+        self.dEventNo2Name = {};
+        for sKey, iValue in self.oVBoxMgr.constants.all_values('VBoxEventType').items():
+            self.dEventNo2Name[iValue] = sKey;
 
     def threadForPassiveMode(self):
         """
@@ -672,7 +675,10 @@ class ConsoleEventHandlerBase(EventHandlerBase):
                 reporter.logXcpt();
         ## @todo implement the other events.
         if eType != vboxcon.VBoxEventType_OnMousePointerShapeChanged:
-            reporter.log2('%s/%s' % (str(eType), self.sName));
+            if eType in self.dEventNo2Name:
+                reporter.log2('%s(%s)/%s' % (self.dEventNo2Name[eType], str(eType), self.sName));
+            else:
+                reporter.log2('%s/%s' % (str(eType), self.sName));
         return None;
 
 
@@ -741,7 +747,10 @@ class VirtualBoxEventHandlerBase(EventHandlerBase):
             except:
                 reporter.logXcpt();
         ## @todo implement the other events.
-        reporter.log2('%s/%s' % (str(eType), self.sName));
+        if eType in self.dEventNo2Name:
+            reporter.log2('%s(%s)/%s' % (self.dEventNo2Name[eType], str(eType), self.sName));
+        else:
+            reporter.log2('%s/%s' % (str(eType), self.sName));
         return None;
 
 
