@@ -2065,9 +2065,7 @@ int GuestProcessTool::i_run(      GuestSession              *pGuestSession,
     if (RT_SUCCESS(vrc))
     {
         if (errorInfo.guestRc == VWRN_GSTCTL_PROCESS_EXIT_CODE)
-        {
-            guestRc = GuestProcessTool::i_exitCodeToRc(startupInfo, errorInfo.lExitCode);
-        }
+            guestRc = GuestProcessTool::i_exitCodeToRc(startupInfo, errorInfo.iExitCode);
         else
             guestRc = errorInfo.guestRc;
 
@@ -2121,9 +2119,7 @@ int GuestProcessTool::i_runEx(      GuestSession              *pGuestSession,
     if (RT_SUCCESS(vrc))
     {
         if (errorInfo.guestRc == VWRN_GSTCTL_PROCESS_EXIT_CODE)
-        {
-            guestRc = GuestProcessTool::i_exitCodeToRc(startupInfo, errorInfo.lExitCode);
-        }
+            guestRc = GuestProcessTool::i_exitCodeToRc(startupInfo, errorInfo.iExitCode);
         else
             guestRc = errorInfo.guestRc;
 
@@ -2192,10 +2188,10 @@ int GuestProcessTool::i_runExErrorInfo(      GuestSession              *pGuestSe
         /* Make sure the process runs until completion. */
         vrc = procTool.i_wait(GUESTPROCESSTOOL_FLAG_NONE, &errorInfo.guestRc);
         if (RT_SUCCESS(vrc))
-            errorInfo.guestRc = procTool.i_terminatedOk(&errorInfo.lExitCode);
+            errorInfo.guestRc = procTool.i_terminatedOk(&errorInfo.iExitCode);
     }
 
-    LogFlowFunc(("Returned rc=%Rrc, guestRc=%Rrc, exitCode=%ld\n", vrc, errorInfo.guestRc, errorInfo.lExitCode));
+    LogFlowFunc(("Returned rc=%Rrc, guestRc=%Rrc, iExitCode=%d\n", vrc, errorInfo.guestRc, errorInfo.iExitCode));
     return vrc;
 }
 
@@ -2206,9 +2202,9 @@ int GuestProcessTool::i_runExErrorInfo(      GuestSession              *pGuestSe
  *          VERR_GSTCTL_PROCESS_WRONG_STATE if the tool process is in a wrong state (e.g. still running),
  *          or VINF_SUCCESS otherwise.
  *
- * @param   plExitCode      Exit code of the tool. Optional.
+ * @param   piExitCode      Exit code of the tool. Optional.
  */
-int GuestProcessTool::i_terminatedOk(LONG *plExitCode /* = NULL */)
+int GuestProcessTool::i_terminatedOk(int32_t *piExitCode /* = NULL */)
 {
     Assert(!pProcess.isNull());
     /* pExitCode is optional. */
@@ -2216,15 +2212,14 @@ int GuestProcessTool::i_terminatedOk(LONG *plExitCode /* = NULL */)
     int vrc;
     if (!i_isRunning())
     {
-        LONG lExitCode = -1;
-        HRESULT hr = pProcess->COMGETTER(ExitCode(&lExitCode));
+        LONG iExitCode = -1;
+        HRESULT hr = pProcess->COMGETTER(ExitCode(&iExitCode));
         AssertComRC(hr);
 
-        if (plExitCode)
-            *plExitCode = lExitCode;
+        if (piExitCode)
+            *piExitCode = iExitCode;
 
-        vrc = (lExitCode != 0)
-            ? VWRN_GSTCTL_PROCESS_EXIT_CODE : VINF_SUCCESS;
+        vrc = iExitCode != 0 ? VWRN_GSTCTL_PROCESS_EXIT_CODE : VINF_SUCCESS;
     }
     else
         vrc = VERR_GSTCTL_PROCESS_WRONG_STATE;
@@ -2240,8 +2235,7 @@ int GuestProcessTool::i_wait(uint32_t fFlags, int *pGuestRc)
 
 int GuestProcessTool::i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBlkOut, int *pGuestRc)
 {
-    LogFlowThisFunc(("fFlags=0x%x, pStreamBlock=%p, pGuestRc=%p\n",
-                     fFlags, pStrmBlkOut, pGuestRc));
+    LogFlowThisFunc(("fFlags=0x%x, pStreamBlock=%p, pGuestRc=%p\n", fFlags, pStrmBlkOut, pGuestRc));
 
     /* Can we parse the next block without waiting? */
     int vrc;
@@ -2447,12 +2441,12 @@ int GuestProcessTool::i_terminate(uint32_t uTimeoutMS, int *pGuestRc)
 /**
  * Converts a toolbox tool's exit code to an IPRT error code.
  *
- * @return  int             Returned IPRT error for the particular tool.
- * @param   startupInfo     Startup info of the toolbox tool to lookup error code for.
- * @param   lExitCode       The toolbox tool's exit code to lookup IPRT error for.
+ * @return  int         Returned IPRT error for the particular tool.
+ * @param   startupInfo Startup info of the toolbox tool to lookup error code for.
+ * @param   iExitCode   The toolbox tool's exit code to lookup IPRT error for.
  */
 /* static */
-int GuestProcessTool::i_exitCodeToRc(const GuestProcessStartupInfo &startupInfo, LONG lExitCode)
+int GuestProcessTool::i_exitCodeToRc(const GuestProcessStartupInfo &startupInfo, int32_t iExitCode)
 {
     if (startupInfo.mArguments.size() == 0)
     {
@@ -2460,7 +2454,7 @@ int GuestProcessTool::i_exitCodeToRc(const GuestProcessStartupInfo &startupInfo,
         return VERR_GENERAL_FAILURE; /* Should not happen. */
     }
 
-    return i_exitCodeToRc(startupInfo.mArguments[0].c_str(), lExitCode);
+    return i_exitCodeToRc(startupInfo.mArguments[0].c_str(), iExitCode);
 }
 
 /**
@@ -2468,21 +2462,21 @@ int GuestProcessTool::i_exitCodeToRc(const GuestProcessStartupInfo &startupInfo,
  *
  * @return  Returned IPRT error for the particular tool.
  * @param   pszTool     Name of toolbox tool to lookup error code for.
- * @param   lExitCode   The toolbox tool's exit code to lookup IPRT error for.
+ * @param   iExitCode   The toolbox tool's exit code to lookup IPRT error for.
  */
 /* static */
-int GuestProcessTool::i_exitCodeToRc(const char *pszTool, LONG lExitCode)
+int GuestProcessTool::i_exitCodeToRc(const char *pszTool, int32_t iExitCode)
 {
     AssertPtrReturn(pszTool, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("%s: %ld\n", pszTool, lExitCode));
+    LogFlowFunc(("%s: %d\n", pszTool, iExitCode));
 
-    if (lExitCode == 0) /* No error? Bail out early. */
+    if (iExitCode == 0) /* No error? Bail out early. */
         return VINF_SUCCESS;
 
     if (!RTStrICmp(pszTool, VBOXSERVICE_TOOL_CAT))
     {
-        switch (lExitCode)
+        switch (iExitCode)
         {
             case VBOXSERVICETOOLBOX_CAT_EXITCODE_ACCESS_DENIED:     return VERR_ACCESS_DENIED;
             case VBOXSERVICETOOLBOX_CAT_EXITCODE_FILE_NOT_FOUND:    return VERR_FILE_NOT_FOUND;
@@ -2494,7 +2488,7 @@ int GuestProcessTool::i_exitCodeToRc(const char *pszTool, LONG lExitCode)
     }
     else if (!RTStrICmp(pszTool, VBOXSERVICE_TOOL_STAT))
     {
-        switch (lExitCode)
+        switch (iExitCode)
         {
             case VBOXSERVICETOOLBOX_STAT_EXITCODE_ACCESS_DENIED:    return VERR_ACCESS_DENIED;
             case VBOXSERVICETOOLBOX_STAT_EXITCODE_FILE_NOT_FOUND:   return VERR_FILE_NOT_FOUND;
@@ -2503,8 +2497,19 @@ int GuestProcessTool::i_exitCodeToRc(const char *pszTool, LONG lExitCode)
                 break;
         }
     }
+    else if (!RTStrICmp(pszTool, VBOXSERVICE_TOOL_MKDIR))
+    {
+        switch (iExitCode)
+        {
+            case RTEXITCODE_FAILURE:                                return VERR_CANT_CREATE;
+        }
+    }
 
-    AssertMsgFailed(("Error code %ld for tool '%s' not handled\n", lExitCode, pszTool));
+#ifdef DEBUG_andy
+    AssertMsgFailed(("Exit code %d for tool '%s' not handled\n", iExitCode, pszTool));
+#endif
+    if (iExitCode == RTEXITCODE_SYNTAX)
+        return VERR_INTERNAL_ERROR_5;
     return VERR_GENERAL_FAILURE;
 }
 
