@@ -47,4 +47,3 @@ GLOBALNAME vcc100_user32_fakes_asm
 ; NT 3.1
 MAKE_IMPORT_ENTRY CommandLineToArgvW, 8
 
-

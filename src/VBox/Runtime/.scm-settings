@@ -101,4 +101,3 @@
 /common/math/gcc/*                             : --external-copyright --no-convert-tabs --dont-set-svn-keywords
 /common/math/gcc/udivmoddi4.c                  : --no-external-copyright --convert-tabs --set-svn-keywords
 
-
