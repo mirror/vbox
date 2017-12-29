@@ -57,7 +57,6 @@ static DECLCALLBACK(int)    vgsvcGstCtrlProcessOnInput(PVBOXSERVICECTRLPROCESS p
                                                        bool fPendingClose, void *pvBuf, uint32_t cbBuf);
 static DECLCALLBACK(int)    vgsvcGstCtrlProcessOnOutput(PVBOXSERVICECTRLPROCESS pThis, const PVBGLR3GUESTCTRLCMDCTX pHostCtx,
                                                         uint32_t uHandle, uint32_t cbToRead, uint32_t uFlags);
-static DECLCALLBACK(int)    vgsvcGstCtrlProcessOnTerm(PVBOXSERVICECTRLPROCESS pThis);
 
 
 /**
@@ -253,6 +252,7 @@ int VGSvcGstCtrlProcessWait(const PVBOXSERVICECTRLPROCESS pProcess, RTMSINTERVAL
             rc = RTThreadWait(pProcess->Thread, msTimeout, &rcThread);
             if (RT_SUCCESS(rc))
             {
+                pProcess->Thread = NIL_RTTHREAD;
                 VGSvcVerbose(3, "[PID %RU32]: Thread shutdown complete, thread rc=%Rrc\n", pProcess->uPID, rcThread);
                 if (prc)
                     *prc = rcThread;
@@ -1484,12 +1484,12 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
      * Prepare argument list.
      */
     char **papszArgs;
-    uint32_t uNumArgs = 0; /* Initialize in case of RTGetOptArgvFromString() is failing ... */
-    rc = RTGetOptArgvFromString(&papszArgs, (int*)&uNumArgs,
-                                (pProcess->StartupInfo.uNumArgs > 0) ? pProcess->StartupInfo.szArgs : "",
+    int cArgs = 0; /* Initialize in case of RTGetOptArgvFromString() is failing ... */
+    rc = RTGetOptArgvFromString(&papszArgs, &cArgs,
+                                pProcess->StartupInfo.uNumArgs > 0 ? pProcess->StartupInfo.szArgs : "",
                                 RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, NULL);
     /* Did we get the same result? */
-    Assert(pProcess->StartupInfo.uNumArgs == uNumArgs + 1 /* Take argv[0] into account */);
+    Assert((int)pProcess->StartupInfo.uNumArgs == cArgs + 1 /* Take argv[0] into account */);
 
     /*
      * Prepare environment variables list.
@@ -1651,6 +1651,8 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                                          * the guest from getting stuck accessing them.
                                          * So, NIL the handles to avoid closing them again.
                                          */
+                                        /** @todo r=bird: Can't see how hNotificationPipeR could be closed here!  Found (and fixed)
+                                         * confused comments documenting hNotificationPipeW, probably related. */
                                         if (RT_FAILURE(RTPollSetQueryHandle(pProcess->hPollSet,
                                                                             VBOXSERVICECTRLPIPEID_IPC_NOTIFY, NULL)))
                                         {
@@ -1724,7 +1726,7 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
             RTStrFree(papszEnv[i]);
         RTMemFree(papszEnv);
     }
-    if (uNumArgs)
+    if (cArgs)
         RTGetOptArgvFree(papszArgs);
 
     /*
@@ -1738,7 +1740,8 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                  pProcess->uPID, pProcess->StartupInfo.szCmd, rc);
 
     /* Finally, update stopped status. */
-    ASMAtomicXchgBool(&pProcess->fStopped, true);
+    ASMAtomicWriteBool(&pProcess->fStopped, true);
+    ASMAtomicWriteBool(&pProcess->fShutdown, true);
 
     return rc;
 }
@@ -1825,9 +1828,13 @@ int VGSvcGstCtrlProcessStart(const PVBOXSERVICECTRLSESSION pSession,
             rc = RTThreadUserWait(pProcess->Thread, 60 * 1000 /* 60 seconds max. */);
             AssertRC(rc);
             if (   ASMAtomicReadBool(&pProcess->fShutdown)
+                || ASMAtomicReadBool(&pProcess->fStopped)
                 || RT_FAILURE(rc))
             {
                 VGSvcError("Thread for process '%s' failed to start, rc=%Rrc\n", pStartupInfo->szCmd, rc);
+                int rc2 = RTThreadWait(pProcess->Thread, RT_MS_1SEC * 30, NULL);
+                if (RT_SUCCESS(rc2))
+                    pProcess->Thread = NIL_RTTHREAD;
                 VGSvcGstCtrlProcessFree(pProcess);
             }
             else
@@ -2053,7 +2060,7 @@ static int vgsvcGstCtrlProcessRequestExV(PVBOXSERVICECTRLPROCESS pProcess, const
         {
             /* Wake up the process' notification pipe to get
              * the request being processed. */
-            Assert(pProcess->hNotificationPipeW != NIL_RTPIPE);
+            Assert(pProcess->hNotificationPipeW != NIL_RTPIPE || pProcess->fShutdown /* latter in case of race */);
             size_t cbWritten = 0;
             rc = RTPipeWrite(pProcess->hNotificationPipeW, "i", 1, &cbWritten);
             if (   RT_SUCCESS(rc)
@@ -2121,7 +2128,7 @@ static int vgsvcGstCtrlProcessRequestWait(PVBOXSERVICECTRLPROCESS pProcess, cons
 int VGSvcGstCtrlProcessHandleInput(PVBOXSERVICECTRLPROCESS pProcess, PVBGLR3GUESTCTRLCMDCTX pHostCtx,
                                    bool fPendingClose, void *pvBuf, uint32_t cbBuf)
 {
-    if (!ASMAtomicReadBool(&pProcess->fShutdown))
+    if (!ASMAtomicReadBool(&pProcess->fShutdown) && !ASMAtomicReadBool(&pProcess->fStopped))
         return vgsvcGstCtrlProcessRequestAsync(pProcess, pHostCtx, (PFNRT)vgsvcGstCtrlProcessOnInput,
                                                5 /* cArgs */, pProcess, pHostCtx, fPendingClose, pvBuf, cbBuf);
 
@@ -2132,7 +2139,7 @@ int VGSvcGstCtrlProcessHandleInput(PVBOXSERVICECTRLPROCESS pProcess, PVBGLR3GUES
 int VGSvcGstCtrlProcessHandleOutput(PVBOXSERVICECTRLPROCESS pProcess, PVBGLR3GUESTCTRLCMDCTX pHostCtx,
                                     uint32_t uHandle, uint32_t cbToRead, uint32_t fFlags)
 {
-    if (!ASMAtomicReadBool(&pProcess->fShutdown))
+    if (!ASMAtomicReadBool(&pProcess->fShutdown) && !ASMAtomicReadBool(&pProcess->fStopped))
         return vgsvcGstCtrlProcessRequestAsync(pProcess, pHostCtx, (PFNRT)vgsvcGstCtrlProcessOnOutput,
                                                5 /* cArgs */, pProcess, pHostCtx, uHandle, cbToRead, fFlags);
 
@@ -2142,7 +2149,7 @@ int VGSvcGstCtrlProcessHandleOutput(PVBOXSERVICECTRLPROCESS pProcess, PVBGLR3GUE
 
 int VGSvcGstCtrlProcessHandleTerm(PVBOXSERVICECTRLPROCESS pProcess)
 {
-    if (!ASMAtomicReadBool(&pProcess->fShutdown))
+    if (!ASMAtomicReadBool(&pProcess->fShutdown) && !ASMAtomicReadBool(&pProcess->fStopped))
         return vgsvcGstCtrlProcessRequestAsync(pProcess, NULL /* pHostCtx */, (PFNRT)vgsvcGstCtrlProcessOnTerm,
                                                1 /* cArgs */, pProcess);
 

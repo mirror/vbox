@@ -25,5 +25,5 @@ extern bool                     VGSvcToolboxMain(int argc, char **argv, RTEXITCO
 extern int                      VGSvcToolboxExitCodeConvertToRc(const char *pszTool, RTEXITCODE rcExit);
 RT_C_DECLS_END
 
-#endif /* ___VBoxServiceToolBox_h */
+#endif /* !___VBoxServiceToolBox_h */
 

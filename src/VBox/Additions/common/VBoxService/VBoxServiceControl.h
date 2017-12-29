@@ -243,11 +243,9 @@ typedef struct VBOXSERVICECTRLPROCESS
     /** Shutdown indicator; will be set when the thread
       * needs (or is asked) to shutdown. */
     bool volatile                   fShutdown;
-    /** Whether the guest process thread was stopped
-     *  or not. */
+    /** Whether the guest process thread was stopped or not. */
     bool volatile                   fStopped;
-    /** Whether the guest process thread was started
-     *  or not. */
+    /** Whether the guest process thread was started or not. */
     bool                            fStarted;
     /** Client ID. */
     uint32_t                        uClientID;
@@ -275,10 +273,12 @@ typedef struct VBOXSERVICECTRLPROCESS
     /** StdOut pipe for addressing reads from
      *  guest process' stdout.*/
     RTPIPE                          hPipeStdErrR;
-    /** The notification pipe associated with this guest process.
+
+    /** The write end of the notification pipe that is used to poke the thread
+     * monitoring the process.
      *  This is NIL_RTPIPE for output pipes. */
     RTPIPE                          hNotificationPipeW;
-    /** The other end of hNotificationPipeW. */
+    /** The other end of hNotificationPipeW, read by vgsvcGstCtrlProcessProcLoop(). */
     RTPIPE                          hNotificationPipeR;
 } VBOXSERVICECTRLPROCESS;
 /** Pointer to thread data. */
