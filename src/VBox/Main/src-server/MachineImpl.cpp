@@ -5082,6 +5082,54 @@ HRESULT Machine::saveSettings()
 
 HRESULT Machine::discardSettings()
 {
+    /*
+     *  We need to take the machine list lock here as well as the machine one
+     *  or we'll get into trouble should any media stuff require rolling back.
+     *
+     *  Details:
+     *
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  Wrong locking order!  [uId=00007ff6853f6c34  thrd=ALIEN-1]
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  Lock: s 000000000259ef40 RTCritSectRw-3 srec=000000000259f150 cls=4-LISTOFMACHINES/any [s]
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  Other lock:   00000000025ec710 RTCritSectRw-158 own=ALIEN-1 r=1 cls=5-MACHINEOBJECT/any pos={MachineImpl.cpp(5085) Machine::discardSettings 00007ff6853f6ce4} [x]
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  My class:    class=0000000000d5eb10 4-LISTOFMACHINES created={AutoLock.cpp(98) util::InitAutoLockSystem 00007ff6853f571f} sub-class=any
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  My class:    Prior: #00: 2-VIRTUALBOXOBJECT, manually    , 4 lookups
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  My class:           #01: 3-HOSTOBJECT, manually    , 0 lookups
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  My class:    Hash Stats: 3 hits, 1 misses
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  Other class: class=0000000000d5ecd0 5-MACHINEOBJECT created={AutoLock.cpp(98) util::InitAutoLockSystem 00007ff6853f571f} sub-class=any
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  Other class: Prior: #00: 2-VIRTUALBOXOBJECT, manually    , 2 lookups
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  Other class:        #01: 3-HOSTOBJECT, manually    , 6 lookups
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  Other class:        #02: 4-LISTOFMACHINES, manually    , 5 lookups
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  Other class: Hash Stats: 10 hits, 3 misses
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  ---- start of lock stack for 000000000259d2d0 ALIEN-1 - 2 entries ----
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  #00: 00000000025ec710 RTCritSectRw-158 own=ALIEN-1 r=2 cls=5-MACHINEOBJECT/any pos={MachineImpl.cpp(11705) Machine::i_rollback 00007ff6853f6ce4} [x/r]
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  #01: 00000000025ec710 RTCritSectRw-158 own=ALIEN-1 r=1 cls=5-MACHINEOBJECT/any pos={MachineImpl.cpp(5085) Machine::discardSettings 00007ff6853f6ce4} [x] (*)
+     * 11:06:01.934284 00:00:05.805182 ALIEN-1  ---- end of lock stack ----
+     * 0:005> k
+     *  # Child-SP          RetAddr           Call Site
+     * 00 00000000`0287bc90 00007ffc`8c0bc8dc VBoxRT!rtLockValComplainPanic+0x23 [e:\vbox\svn\trunk\src\vbox\runtime\common\misc\lockvalidator.cpp @ 807]
+     * 01 00000000`0287bcc0 00007ffc`8c0bc083 VBoxRT!rtLockValidatorStackWrongOrder+0xac [e:\vbox\svn\trunk\src\vbox\runtime\common\misc\lockvalidator.cpp @ 2149]
+     * 02 00000000`0287bd10 00007ffc`8c0bbfc3 VBoxRT!rtLockValidatorStackCheckLockingOrder2+0x93 [e:\vbox\svn\trunk\src\vbox\runtime\common\misc\lockvalidator.cpp @ 2227]
+     * 03 00000000`0287bdd0 00007ffc`8c0bf3c0 VBoxRT!rtLockValidatorStackCheckLockingOrder+0x523 [e:\vbox\svn\trunk\src\vbox\runtime\common\misc\lockvalidator.cpp @ 2406]
+     * 04 00000000`0287be40 00007ffc`8c180de4 VBoxRT!RTLockValidatorRecSharedCheckOrder+0x210 [e:\vbox\svn\trunk\src\vbox\runtime\common\misc\lockvalidator.cpp @ 3607]
+     * 05 00000000`0287be90 00007ffc`8c1819b8 VBoxRT!rtCritSectRwEnterShared+0x1a4 [e:\vbox\svn\trunk\src\vbox\runtime\generic\critsectrw-generic.cpp @ 222]
+     * 06 00000000`0287bf60 00007ff6`853f5e78 VBoxRT!RTCritSectRwEnterSharedDebug+0x58 [e:\vbox\svn\trunk\src\vbox\runtime\generic\critsectrw-generic.cpp @ 428]
+     * 07 00000000`0287bfb0 00007ff6`853f6c34 VBoxSVC!util::RWLockHandle::lockRead+0x58 [e:\vbox\svn\trunk\src\vbox\main\glue\autolock.cpp @ 245]
+     * 08 00000000`0287c000 00007ff6`853f68a1 VBoxSVC!util::AutoReadLock::callLockImpl+0x64 [e:\vbox\svn\trunk\src\vbox\main\glue\autolock.cpp @ 552]
+     * 09 00000000`0287c040 00007ff6`853f6a59 VBoxSVC!util::AutoLockBase::callLockOnAllHandles+0xa1 [e:\vbox\svn\trunk\src\vbox\main\glue\autolock.cpp @ 455]
+     * 0a 00000000`0287c0a0 00007ff6`85038fdb VBoxSVC!util::AutoLockBase::acquire+0x89 [e:\vbox\svn\trunk\src\vbox\main\glue\autolock.cpp @ 500]
+     * 0b 00000000`0287c0d0 00007ff6`85216dcf VBoxSVC!util::AutoReadLock::AutoReadLock+0x7b [e:\vbox\svn\trunk\include\vbox\com\autolock.h @ 370]
+     * 0c 00000000`0287c120 00007ff6`8521cf08 VBoxSVC!VirtualBox::i_findMachine+0x14f [e:\vbox\svn\trunk\src\vbox\main\src-server\virtualboximpl.cpp @ 3216]
+     * 0d 00000000`0287c260 00007ff6`8517a4b0 VBoxSVC!VirtualBox::i_markRegistryModified+0xa8 [e:\vbox\svn\trunk\src\vbox\main\src-server\virtualboximpl.cpp @ 4697]
+     * 0e 00000000`0287c2f0 00007ff6`8517fac0 VBoxSVC!Medium::i_markRegistriesModified+0x170 [e:\vbox\svn\trunk\src\vbox\main\src-server\mediumimpl.cpp @ 4056]
+     * 0f 00000000`0287c500 00007ff6`8511ca9d VBoxSVC!Medium::i_deleteStorage+0xb90 [e:\vbox\svn\trunk\src\vbox\main\src-server\mediumimpl.cpp @ 5114]
+     * 10 00000000`0287cad0 00007ff6`8511ef0e VBoxSVC!Machine::i_deleteImplicitDiffs+0x11ed [e:\vbox\svn\trunk\src\vbox\main\src-server\machineimpl.cpp @ 11117]
+     * 11 00000000`0287d2e0 00007ff6`8511f896 VBoxSVC!Machine::i_rollbackMedia+0x42e [e:\vbox\svn\trunk\src\vbox\main\src-server\machineimpl.cpp @ 11657]
+     * 12 00000000`0287d3c0 00007ff6`850fd17a VBoxSVC!Machine::i_rollback+0x6a6 [e:\vbox\svn\trunk\src\vbox\main\src-server\machineimpl.cpp @ 11786]
+     * 13 00000000`0287d710 00007ff6`85342dbe VBoxSVC!Machine::discardSettings+0x9a [e:\vbox\svn\trunk\src\vbox\main\src-server\machineimpl.cpp @ 5096]
+     * 14 00000000`0287d790 00007ffc`c06813ff VBoxSVC!MachineWrap::DiscardSettings+0x16e [e:\vbox\svn\trunk\out\win.amd64\debug\obj\vboxapiwrap\machinewrap.cpp @ 9171]
+     *
+     */
+    AutoReadLock alockMachines(mParent->i_getMachinesListLockHandle() COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
