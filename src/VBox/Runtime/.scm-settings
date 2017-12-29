@@ -41,7 +41,7 @@
 --filter-out-files /testcase/tstRTLdrMachORelocs-1.disas
 
 # Small C and ASM header, no copyright or license text for now.
-/r3/win/vcc100-kernel32-fakes.h:               : --external-copyright --no-update-license
+/r3/win/vcc100-kernel32-fakes.h: --external-copyright --no-update-license
 
 # external code
 /r0drv/freebsd/alloc-r0drv-freebsd.c           : --external-copyright
