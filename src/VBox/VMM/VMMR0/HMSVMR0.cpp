@@ -3016,6 +3016,7 @@ DECLINLINE(void) hmR0SvmInjectEventVmcb(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
 {
     NOREF(pVCpu); NOREF(pCtx);
 
+    Assert(!pVmcb->ctrl.EventInject.n.u1Valid);
     pVmcb->ctrl.EventInject.u = pEvent->u;
     STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedIrqsR0[pEvent->n.u8Vector & MASK_INJECT_IRQ_STAT]);
 
@@ -3492,24 +3493,19 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmc
     Assert(!TRPMHasTrap(pVCpu));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu, pCtx);
+    bool const fIsNestedGuest = CPUMIsGuestInSvmNestedHwVirtMode(pCtx);
+    bool const fIntShadow     = hmR0SvmIsIntrShadowActive(pVCpu, pCtx);
+    bool const fBlockInt      = !fIsNestedGuest ? !(pCtx->eflags.u32 & X86_EFL_IF) : CPUMCanSvmNstGstTakePhysIntr(pVCpu, pCtx);
 
-    /*
-     * When executing the nested-guest, we avoid assertions on whether the
-     * event injection is valid purely based on EFLAGS, as V_INTR_MASKING
-     * affects the interpretation of interruptibility (see CPUMCanSvmNstGstTakePhysIntr).
-     */
-#ifndef VBOX_WITH_NESTED_HWVIRT
-    bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
-#endif
-
-    if (pVCpu->hm.s.Event.fPending)                                /* First, inject any pending HM events. */
+    if (pVCpu->hm.s.Event.fPending)
     {
         SVMEVENT Event;
         Event.u = pVCpu->hm.s.Event.u64IntInfo;
         Assert(Event.n.u1Valid);
 
-#ifndef VBOX_WITH_NESTED_HWVIRT
+        /*
+         * Validate event injection pre-conditions.
+         */
         if (Event.n.u3Type == SVM_EVENT_EXTERNAL_IRQ)
         {
             Assert(!fBlockInt);
@@ -3518,20 +3514,32 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmc
         else if (Event.n.u3Type == SVM_EVENT_NMI)
             Assert(!fIntShadow);
         NOREF(fBlockInt);
-#else
-        Assert(!pVmcb->ctrl.EventInject.n.u1Valid);
-#endif
 
+        /*
+         * Inject it (update VMCB for injection by the hardware).
+         */
         Log4(("Injecting pending HM event\n"));
         hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
         pVCpu->hm.s.Event.fPending = false;
 
-#ifdef VBOX_WITH_STATISTICS
         if (Event.n.u3Type == SVM_EVENT_EXTERNAL_IRQ)
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
         else
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
+    }
+    else
+    {
+#ifdef VBOX_WITH_NESTED_HWVIRT
+        /*
+         * If IEM emulated VMRUN and injected an event it would not clear the EVENTINJ::Valid bit
+         * as a physical CPU clears it as part of the #VMEXIT. However, now we are continuing
+         * nested-guest execution using hardware-assisted SVM, so we need to clear this field
+         * otherwise we will inject the event twice, see @bugref{7243#78}.
+         */
+        if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+            pVmcb->ctrl.EventInject.n.u1Valid = 0;
 #endif
+        Assert(pVmcb->ctrl.EventInject.n.u1Valid == 0);
     }
 
     /*
