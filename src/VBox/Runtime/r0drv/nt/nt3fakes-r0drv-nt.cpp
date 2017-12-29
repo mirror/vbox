@@ -358,7 +358,7 @@ static void rtR0Nt3InitVersion(void)
         RTLogBackdoorPrintf("rtR0Nt3InitVersion: guessed %u.%u from PE header\n", g_uNt3MajorVer, g_uNt3MinorVer);
 
         /* Check out the resource section, looking for VS_FIXEDFILEINFO. */
-        __try
+        __try /* (pointless) */
         {
             PIMAGE_SECTION_HEADER paShdrs = (PIMAGE_SECTION_HEADER)(pNtHdrs + 1);
             uint32_t const        cShdrs  = pNtHdrs->FileHeader.NumberOfSections;
@@ -452,7 +452,7 @@ Nt3Fb_PsGetVersion(ULONG *puMajor, ULONG *puMinor, ULONG *puBuildNo, UNICODE_STR
  */
 static bool rtR0Nt3InitModuleInfoOne(const char *pszImage, uint8_t const *pbCode, uint8_t **ppbModule, uint32_t *pcbModule)
 {
-    uintptr_t const uImageAlign = _64K;
+    uintptr_t const uImageAlign = _4K; /* XP may put the kernel at */
 
     /* Align pbCode. */
     pbCode = (uint8_t const *)((uintptr_t)pbCode & ~(uintptr_t)(uImageAlign - 1));
@@ -460,9 +460,12 @@ static bool rtR0Nt3InitModuleInfoOne(const char *pszImage, uint8_t const *pbCode
     /* Scan backwards till we find a PE signature. */
     for (uint32_t cbChecked = 0; cbChecked < _64M; cbChecked += uImageAlign, pbCode -= uImageAlign)
     {
+        if (!MmIsAddressValid((void *)pbCode))
+            continue;
+
         uint32_t uZero     = 0;
         uint32_t offNewHdr = 0;
-        __try
+        __try /* pointless */
         {
             uZero     = *(uint32_t const *)pbCode;
             offNewHdr = *(uint32_t const *)&pbCode[RT_OFFSETOF(IMAGE_DOS_HEADER, e_lfanew)];
@@ -477,7 +480,7 @@ static bool rtR0Nt3InitModuleInfoOne(const char *pszImage, uint8_t const *pbCode
             && offNewHdr >= sizeof(IMAGE_DOS_HEADER))
         {
             RT_CONCAT(IMAGE_NT_HEADERS,ARCH_BITS) NtHdrs;
-            __try
+            __try /* pointless */
             {
                 NtHdrs = *(decltype(NtHdrs) const *)&pbCode[offNewHdr];
             }
