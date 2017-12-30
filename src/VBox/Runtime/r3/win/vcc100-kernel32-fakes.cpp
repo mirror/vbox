@@ -69,53 +69,22 @@ static volatile bool g_fInitialized = false;
 #include "vcc100-kernel32-fakes.h"
 
 
-/**
- * Resolves all the APIs ones and for all, updating the fake IAT entries.
- */
-static void InitFakes(void)
-{
-    CURRENT_VERSION_VARIABLE();
-
-    HMODULE hmod = GetModuleHandleW(L"kernel32");
-    MY_ASSERT(hmod != NULL, "kernel32");
-
-#undef MAKE_IMPORT_ENTRY
-#define MAKE_IMPORT_ENTRY(a_uMajorVer, a_uMinorVer, a_Name, a_cb) RESOLVE_IMPORT(a_uMajorVer, a_uMinorVer, a_Name, a_cb)
-#include "vcc100-kernel32-fakes.h"
-
-    g_fInitialized = true;
-}
-
 
 DECL_KERNEL32(PVOID) Fake_DecodePointer(PVOID pvEncoded)
 {
-    INIT_FAKES(DecodePointer,(pvEncoded));
-
-    /*
-     * Fallback code.
-     */
     return pvEncoded;
 }
 
 
 DECL_KERNEL32(PVOID) Fake_EncodePointer(PVOID pvNative)
 {
-    INIT_FAKES(EncodePointer, (pvNative));
-
-    /*
-     * Fallback code.
-     */
     return pvNative;
 }
 
 
 DECL_KERNEL32(BOOL) Fake_InitializeCriticalSectionAndSpinCount(LPCRITICAL_SECTION pCritSect, DWORD cSpin)
 {
-    INIT_FAKES(InitializeCriticalSectionAndSpinCount, (pCritSect, cSpin));
-
-    /*
-     * Fallback code.
-     */
+    RT_NOREF(cSpin);
     InitializeCriticalSection(pCritSect);
     return TRUE;
 }
@@ -123,11 +92,7 @@ DECL_KERNEL32(BOOL) Fake_InitializeCriticalSectionAndSpinCount(LPCRITICAL_SECTIO
 
 DECL_KERNEL32(BOOL) Fake_HeapSetInformation(HANDLE hHeap, HEAP_INFORMATION_CLASS enmInfoClass, PVOID pvBuf, SIZE_T cbBuf)
 {
-    INIT_FAKES(HeapSetInformation, (hHeap, enmInfoClass, pvBuf, cbBuf));
-
-    /*
-     * Fallback code.
-     */
+    RT_NOREF(hHeap);
     if (enmInfoClass == HeapCompatibilityInformation)
     {
         if (   cbBuf != sizeof(ULONG)
@@ -149,11 +114,7 @@ DECL_KERNEL32(BOOL) Fake_HeapSetInformation(HANDLE hHeap, HEAP_INFORMATION_CLASS
 DECL_KERNEL32(BOOL) Fake_HeapQueryInformation(HANDLE hHeap, HEAP_INFORMATION_CLASS enmInfoClass,
                                               PVOID pvBuf, SIZE_T cbBuf, PSIZE_T pcbRet)
 {
-    INIT_FAKES(HeapQueryInformation, (hHeap, enmInfoClass, pvBuf, cbBuf, pcbRet));
-
-    /*
-     * Fallback code.
-     */
+    RT_NOREF(hHeap);
     if (enmInfoClass == HeapCompatibilityInformation)
     {
         *pcbRet = sizeof(ULONG);
@@ -175,8 +136,6 @@ DECL_KERNEL32(BOOL) Fake_HeapQueryInformation(HANDLE hHeap, HEAP_INFORMATION_CLA
 
 DECL_KERNEL32(HANDLE) Fake_CreateTimerQueue(void)
 {
-    INIT_FAKES(CreateTimerQueue, ());
-
     SetLastError(ERROR_NOT_SUPPORTED);
     return NULL;
 }
@@ -184,16 +143,14 @@ DECL_KERNEL32(HANDLE) Fake_CreateTimerQueue(void)
 DECL_KERNEL32(BOOL) Fake_CreateTimerQueueTimer(PHANDLE phTimer, HANDLE hTimerQueue, WAITORTIMERCALLBACK pfnCallback, PVOID pvUser,
                                                DWORD msDueTime, DWORD msPeriod, ULONG fFlags)
 {
-    INIT_FAKES(CreateTimerQueueTimer, (phTimer, hTimerQueue, pfnCallback, pvUser, msDueTime, msPeriod, fFlags));
-
+    NOREF(phTimer); NOREF(hTimerQueue); NOREF(pfnCallback); NOREF(pvUser); NOREF(msDueTime); NOREF(msPeriod); NOREF(fFlags);
     SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
 
 DECL_KERNEL32(BOOL) Fake_DeleteTimerQueueTimer(HANDLE hTimerQueue, HANDLE hTimer, HANDLE hEvtCompletion)
 {
-    INIT_FAKES(DeleteTimerQueueTimer, (hTimerQueue, hTimer, hEvtCompletion));
-
+    NOREF(hTimerQueue); NOREF(hTimer); NOREF(hEvtCompletion);
     SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
@@ -202,18 +159,12 @@ DECL_KERNEL32(BOOL) Fake_DeleteTimerQueueTimer(HANDLE hTimerQueue, HANDLE hTimer
 
 DECL_KERNEL32(VOID) Fake_InitializeSListHead(PSLIST_HEADER pHead)
 {
-    INIT_FAKES_VOID(InitializeSListHead, (pHead));
-
-    /* fallback: */
     pHead->Alignment = 0;
 }
 
 
 DECL_KERNEL32(PSLIST_ENTRY) Fake_InterlockedFlushSList(PSLIST_HEADER pHead)
 {
-    INIT_FAKES(InterlockedFlushSList, (pHead));
-
-    /* fallback: */
     PSLIST_ENTRY pRet = NULL;
     if (pHead->Next.Next)
     {
@@ -235,9 +186,6 @@ DECL_KERNEL32(PSLIST_ENTRY) Fake_InterlockedFlushSList(PSLIST_HEADER pHead)
 
 DECL_KERNEL32(PSLIST_ENTRY) Fake_InterlockedPopEntrySList(PSLIST_HEADER pHead)
 {
-    INIT_FAKES(InterlockedPopEntrySList, (pHead));
-
-    /* fallback: */
     PSLIST_ENTRY pRet = NULL;
     for (;;)
     {
@@ -267,9 +215,6 @@ DECL_KERNEL32(PSLIST_ENTRY) Fake_InterlockedPopEntrySList(PSLIST_HEADER pHead)
 
 DECL_KERNEL32(PSLIST_ENTRY) Fake_InterlockedPushEntrySList(PSLIST_HEADER pHead, PSLIST_ENTRY pEntry)
 {
-    INIT_FAKES(InterlockedPushEntrySList, (pHead, pEntry));
-
-    /* fallback: */
     PSLIST_ENTRY pRet = NULL;
     for (;;)
     {
@@ -288,9 +233,6 @@ DECL_KERNEL32(PSLIST_ENTRY) Fake_InterlockedPushEntrySList(PSLIST_HEADER pHead, 
 
 DECL_KERNEL32(WORD) Fake_QueryDepthSList(PSLIST_HEADER pHead)
 {
-    INIT_FAKES(QueryDepthSList, (pHead));
-
-    /* fallback: */
     return pHead->Depth;
 }
 
@@ -298,9 +240,6 @@ DECL_KERNEL32(WORD) Fake_QueryDepthSList(PSLIST_HEADER pHead)
 /* curl drags these in: */
 DECL_KERNEL32(BOOL) Fake_VerifyVersionInfoA(LPOSVERSIONINFOEXA pInfo, DWORD fTypeMask, DWORDLONG fConditionMask)
 {
-    INIT_FAKES(VerifyVersionInfoA, (pInfo, fTypeMask, fConditionMask));
-
-    /* fallback to make curl happy: */
     OSVERSIONINFOEXA VerInfo;
     RT_ZERO(VerInfo);
     VerInfo.dwOSVersionInfoSize = sizeof(VerInfo);
@@ -356,9 +295,6 @@ DECL_KERNEL32(BOOL) Fake_VerifyVersionInfoA(LPOSVERSIONINFOEXA pInfo, DWORD fTyp
 
 DECL_KERNEL32(ULONGLONG) Fake_VerSetConditionMask(ULONGLONG fConditionMask, DWORD fTypeMask, BYTE bOperator)
 {
-    INIT_FAKES(VerSetConditionMask, (fConditionMask, fTypeMask, bOperator));
-
-    /* fallback: */
     for (unsigned i = 0; i < 8; i++)
         if (fTypeMask & RT_BIT_32(i))
         {
@@ -377,17 +313,14 @@ DECL_KERNEL32(ULONGLONG) Fake_VerSetConditionMask(ULONGLONG fConditionMask, DWOR
 
 DECL_KERNEL32(BOOL) Fake_IsProcessorFeaturePresent(DWORD enmProcessorFeature)
 {
-    INIT_FAKES(IsProcessorFeaturePresent, (enmProcessorFeature));
-
     /* Could make more of an effort here... */
+    RT_NOREF(enmProcessorFeature);
     return FALSE;
 }
 
 
 DECL_KERNEL32(BOOL) Fake_CancelIo(HANDLE hHandle)
 {
-    INIT_FAKES(CancelIo, (hHandle));
-
     /* NT 3.51 have the NTDLL API this corresponds to. */
     RESOLVE_NTDLL_API(NtCancelIoFile);
     if (pfnNtCancelIoFile)
@@ -413,8 +346,6 @@ DECL_KERNEL32(BOOL) Fake_CancelIo(HANDLE hHandle)
 
 DECL_KERNEL32(BOOL) Fake_IsDebuggerPresent(VOID)
 {
-    INIT_FAKES(IsDebuggerPresent, ());
-
     /* Fallback: */
     return FALSE;
 }
@@ -422,8 +353,6 @@ DECL_KERNEL32(BOOL) Fake_IsDebuggerPresent(VOID)
 
 DECL_KERNEL32(VOID) Fake_GetSystemTimeAsFileTime(LPFILETIME pTime)
 {
-    INIT_FAKES_VOID(GetSystemTimeAsFileTime, (pTime));
-
     DWORD dwVersion = GetVersion();
     if (   (dwVersion & 0xff) > 3
         || (   (dwVersion & 0xff) == 3
@@ -466,11 +395,6 @@ DECL_KERNEL32(VOID) Fake_GetSystemTimeAsFileTime(LPFILETIME pTime)
 
 DECL_KERNEL32(BOOL) Fake_GetVersionExA(LPOSVERSIONINFOA pInfo)
 {
-    INIT_FAKES(GetVersionExA, (pInfo));
-
-    /*
-     * Fallback.
-     */
     DWORD dwVersion = GetVersion();
 
     /* Common fields: */
@@ -507,11 +431,6 @@ DECL_KERNEL32(BOOL) Fake_GetVersionExA(LPOSVERSIONINFOA pInfo)
 
 DECL_KERNEL32(BOOL) Fake_GetVersionExW(LPOSVERSIONINFOW pInfo)
 {
-    INIT_FAKES(GetVersionExW, (pInfo));
-
-    /*
-     * Fallback.
-     */
     DWORD dwVersion = GetVersion();
 
     /* Common fields: */
@@ -548,11 +467,7 @@ DECL_KERNEL32(BOOL) Fake_GetVersionExW(LPOSVERSIONINFOW pInfo)
 
 DECL_KERNEL32(LPWCH) Fake_GetEnvironmentStringsW(void)
 {
-    INIT_FAKES(GetEnvironmentStringsW, ());
-
     /*
-     * Fallback:
-     *
      * Environment is ANSI in NT 3.1. We should only be here for NT 3.1.
      * For now, don't try do a perfect job converting it, just do it.
      */
@@ -582,9 +497,6 @@ DECL_KERNEL32(LPWCH) Fake_GetEnvironmentStringsW(void)
 
 DECL_KERNEL32(BOOL) Fake_FreeEnvironmentStringsW(LPWCH pwszzEnv)
 {
-    INIT_FAKES(FreeEnvironmentStringsW, (pwszzEnv));
-
-    /* Fallback: */
     if (pwszzEnv)
         HeapFree(GetProcessHeap(), 0, pwszzEnv);
     return TRUE;
@@ -593,10 +505,9 @@ DECL_KERNEL32(BOOL) Fake_FreeEnvironmentStringsW(LPWCH pwszzEnv)
 
 DECL_KERNEL32(int) Fake_GetLocaleInfoA(LCID idLocale, LCTYPE enmType, LPSTR pData, int cchData)
 {
-    INIT_FAKES(GetLocaleInfoA, (idLocale, enmType, pData, cchData));
-
-    /* Fallback: */
-    MY_ASSERT(false, "GetLocaleInfoA: idLocale=%#x enmType=%#x cchData=%#x", idLocale, enmType, cchData);
+    NOREF(idLocale); NOREF(enmType); NOREF(pData); NOREF(cchData);
+    //MY_ASSERT(false, "GetLocaleInfoA: idLocale=%#x enmType=%#x cchData=%#x", idLocale, enmType, cchData);
+    MY_ASSERT(false, "GetLocaleInfoA");
     SetLastError(ERROR_NOT_SUPPORTED);
     return 0;
 }
@@ -604,10 +515,9 @@ DECL_KERNEL32(int) Fake_GetLocaleInfoA(LCID idLocale, LCTYPE enmType, LPSTR pDat
 
 DECL_KERNEL32(BOOL) Fake_EnumSystemLocalesA(LOCALE_ENUMPROCA pfnCallback, DWORD fFlags)
 {
-    INIT_FAKES(EnumSystemLocalesA, (pfnCallback, fFlags));
-
-    /* Fallback: */
-    MY_ASSERT(false, "EnumSystemLocalesA: pfnCallback=%p fFlags=%#x", pfnCallback, fFlags);
+    NOREF(pfnCallback); NOREF(fFlags);
+    //MY_ASSERT(false, "EnumSystemLocalesA: pfnCallback=%p fFlags=%#x", pfnCallback, fFlags);
+    MY_ASSERT(false, "EnumSystemLocalesA");
     SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
@@ -615,10 +525,9 @@ DECL_KERNEL32(BOOL) Fake_EnumSystemLocalesA(LOCALE_ENUMPROCA pfnCallback, DWORD 
 
 DECL_KERNEL32(BOOL) Fake_IsValidLocale(LCID idLocale, DWORD fFlags)
 {
-    INIT_FAKES(IsValidLocale, (idLocale, fFlags));
-
-    /* Fallback: */
-    MY_ASSERT(false, "IsValidLocale: idLocale fFlags=%#x", idLocale, fFlags);
+    NOREF(idLocale); NOREF(fFlags);
+    //MY_ASSERT(false, "IsValidLocale: idLocale fFlags=%#x", idLocale, fFlags);
+    MY_ASSERT(false, "IsValidLocale");
     SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
@@ -626,43 +535,38 @@ DECL_KERNEL32(BOOL) Fake_IsValidLocale(LCID idLocale, DWORD fFlags)
 
 DECL_KERNEL32(DWORD_PTR) Fake_SetThreadAffinityMask(HANDLE hThread, DWORD_PTR fAffinityMask)
 {
-    INIT_FAKES(SetThreadAffinityMask, (hThread, fAffinityMask));
-
-    /* Fallback: */
     SYSTEM_INFO SysInfo;
     GetSystemInfo(&SysInfo);
-    MY_ASSERT(false, "SetThreadAffinityMask: hThread=%p fAffinityMask=%p SysInfo.dwActiveProcessorMask=%p",
-              hThread, fAffinityMask, SysInfo.dwActiveProcessorMask);
+    //MY_ASSERT(false, "SetThreadAffinityMask: hThread=%p fAffinityMask=%p SysInfo.dwActiveProcessorMask=%p",
+    //          hThread, fAffinityMask, SysInfo.dwActiveProcessorMask);
+    MY_ASSERT(false, "SetThreadAffinityMask");
     if (   SysInfo.dwActiveProcessorMask == fAffinityMask
         || fAffinityMask                 == ~(DWORD_PTR)0)
         return fAffinityMask;
 
     SetLastError(ERROR_NOT_SUPPORTED);
+    RT_NOREF(hThread);
     return 0;
 }
 
 
 DECL_KERNEL32(BOOL) Fake_GetProcessAffinityMask(HANDLE hProcess, PDWORD_PTR pfProcessAffinityMask, PDWORD_PTR pfSystemAffinityMask)
 {
-    INIT_FAKES(GetProcessAffinityMask, (hProcess, pfProcessAffinityMask, pfSystemAffinityMask));
-
-    /* Fallback: */
     SYSTEM_INFO SysInfo;
     GetSystemInfo(&SysInfo);
-    MY_ASSERT(false, "GetProcessAffinityMask: SysInfo.dwActiveProcessorMask=%p", SysInfo.dwActiveProcessorMask);
+    //MY_ASSERT(false, "GetProcessAffinityMask: SysInfo.dwActiveProcessorMask=%p", SysInfo.dwActiveProcessorMask);
+    MY_ASSERT(false, "GetProcessAffinityMask");
     if (pfProcessAffinityMask)
         *pfProcessAffinityMask = SysInfo.dwActiveProcessorMask;
     if (pfSystemAffinityMask)
         *pfSystemAffinityMask  = SysInfo.dwActiveProcessorMask;
+    RT_NOREF(hProcess);
     return TRUE;
 }
 
 
 DECL_KERNEL32(BOOL) Fake_GetHandleInformation(HANDLE hObject, DWORD *pfFlags)
 {
-    INIT_FAKES(GetHandleInformation, (hObject, pfFlags));
-
-    /* Fallback: */
     OBJECT_HANDLE_FLAG_INFORMATION  Info  = { 0, 0 };
     DWORD                           cbRet = sizeof(Info);
     NTSTATUS rcNt = NtQueryObject(hObject, ObjectHandleFlagInformation, &Info, sizeof(Info), &cbRet);
@@ -673,7 +577,8 @@ DECL_KERNEL32(BOOL) Fake_GetHandleInformation(HANDLE hObject, DWORD *pfFlags)
         return TRUE;
     }
     *pfFlags = 0;
-    MY_ASSERT(rcNt == STATUS_INVALID_HANDLE, "rcNt=%#x", rcNt);
+    //MY_ASSERT(rcNt == STATUS_INVALID_HANDLE, "rcNt=%#x", rcNt);
+    MY_ASSERT(rcNt == STATUS_INVALID_HANDLE, "GetHandleInformation");
     SetLastError(rcNt == STATUS_INVALID_HANDLE ? ERROR_INVALID_HANDLE : ERROR_INVALID_FUNCTION); /* see also process-win.cpp */
     return FALSE;
 }
@@ -681,11 +586,28 @@ DECL_KERNEL32(BOOL) Fake_GetHandleInformation(HANDLE hObject, DWORD *pfFlags)
 
 DECL_KERNEL32(BOOL) Fake_SetHandleInformation(HANDLE hObject, DWORD fMask, DWORD fFlags)
 {
-    INIT_FAKES(SetHandleInformation, (hObject, fMask, fFlags));
-
-    /* Fallback: */
+    NOREF(hObject); NOREF(fMask); NOREF(fFlags);
     SetLastError(ERROR_INVALID_FUNCTION);
     return FALSE;
+}
+
+
+
+/**
+ * Resolves all the APIs ones and for all, updating the fake IAT entries.
+ */
+DECLASM(void) FakeResolve_kernel32(void)
+{
+    CURRENT_VERSION_VARIABLE();
+
+    HMODULE hmod = GetModuleHandleW(L"kernel32");
+    MY_ASSERT(hmod != NULL, "kernel32");
+
+#undef MAKE_IMPORT_ENTRY
+#define MAKE_IMPORT_ENTRY(a_uMajorVer, a_uMinorVer, a_Name, a_cb) RESOLVE_IMPORT(a_uMajorVer, a_uMinorVer, a_Name, a_cb)
+#include "vcc100-kernel32-fakes.h"
+
+    g_fInitialized = true;
 }
 
 

@@ -35,9 +35,25 @@
 /** @def MY_ASSERT
  * We use a special assertion macro here to avoid dragging in IPRT bits in
  * places which cannot handle it (direct GA 3D bits or something like that).
+ *
+ * Turns out snprintf is off limits too.  Needs Locale info and runs out of
+ * stack
  */
 #ifdef RT_STRICT
-# define MY_ASSERT(a_Expr, ...) \
+# if 1
+#  define MY_ASSERT(a_Expr, g_szMsg) \
+    do { \
+        if ((a_Expr)) \
+        { /*likely*/ } \
+        else \
+        { \
+            OutputDebugStringA("Assertion failed on line " RT_XSTR(__LINE__) ": " RT_XSTR(a_Expr) "\n"); \
+            OutputDebugStringA("Assertion message: " g_szMsg "\n"); \
+            RT_BREAKPOINT(); \
+        } \
+    } while (0)
+# else
+#  define MY_ASSERT(a_Expr, ...) \
     do { \
         if ((a_Expr)) \
         { /*likely*/ } \
@@ -51,38 +67,10 @@
             RT_BREAKPOINT(); \
         } \
     } while (0)
+# endif
 #else
 # define MY_ASSERT(a_Expr, ...) do { } while (0)
 #endif
-
-/**
- * Lazily initializes the fakes.
- */
-#define INIT_FAKES(a_ApiNm, a_Params) \
-    do { \
-        if (g_fInitialized) \
-            MY_ASSERT(!RT_CONCAT(g_pfn, a_ApiNm), #a_ApiNm); \
-        else \
-            InitFakes(); \
-        if (RT_CONCAT(g_pfn, a_ApiNm)) \
-            return RT_CONCAT(g_pfn, a_ApiNm) a_Params; \
-    } while (0)
-
-/**
- * variant of INIT_FAKES for functions returning void.
- */
-#define INIT_FAKES_VOID(a_ApiNm, a_Params) \
-    do { \
-        if (g_fInitialized) \
-            MY_ASSERT(!RT_CONCAT(g_pfn, a_ApiNm), #a_ApiNm); \
-        else \
-            InitFakes(); \
-        if (RT_CONCAT(g_pfn, a_ApiNm)) \
-        { \
-            RT_CONCAT(g_pfn, a_ApiNm) a_Params; \
-            return; \
-        } \
-    } while (0)
 
 
 /** Dynamically resolves an NTDLL API we need.   */
@@ -124,13 +112,16 @@
 
 /** Used for MAKE_IMPORT_ENTRY when resolving an import. */
 #define RESOLVE_IMPORT(a_uMajorVer, a_uMinorVer, a_Name, a_cb) \
-        do { \
-            FARPROC pfnApi = GetProcAddress(hmod, #a_Name); \
-            if (pfnApi) \
-                RT_CONCAT(g_pfn, a_Name) = (decltype(a_Name) *)pfnApi; \
-            else \
-                MY_ASSERT(uCurVersion < (((a_uMajorVer) << 8) | (a_uMinorVer)), #a_Name); \
-        } while (0);
+    do { \
+        FARPROC pfnApi = GetProcAddress(hmod, #a_Name); \
+        if (pfnApi) \
+            RT_CONCAT(g_pfn, a_Name) = (decltype(a_Name) *)pfnApi; \
+        else \
+        { \
+            MY_ASSERT(uCurVersion < (((a_uMajorVer) << 8) | (a_uMinorVer)), #a_Name); \
+            RT_CONCAT(g_pfn, a_Name) = RT_CONCAT(Fake_,a_Name); \
+        } \
+    } while (0);
 
 
 #endif

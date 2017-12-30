@@ -40,13 +40,22 @@
 %macro MAKE_IMPORT_ENTRY_INTERNAL 2
 
 BEGINDATA
+extern _FakeResolve_ %+ FAKE_MODULE_NAME
 
 extern _Fake_ %+ %1 %+ @ %+ %2
 global __imp__ %+ %1 %+ @ %+ %2         ; The import address table (IAT) entry name.
 __imp__ %+ %1 %+ @ %+ %2:
 global _g_pfn %+ %1                     ; C accessible label.
 _g_pfn %+ %1:
-    dd _Fake_ %+ %1 %+ @ %+ %2
+        dd      FakeLazyInit_ %+ %1
+
+BEGINCODE
+FakeLazyInit_ %+ %1:
+        pusha
+        call    _FakeResolve_ %+ FAKE_MODULE_NAME
+        popa
+        jmp     [_g_pfn %+ %1]
+
 
 %endmacro
 

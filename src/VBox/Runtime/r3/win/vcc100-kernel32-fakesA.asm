@@ -27,6 +27,8 @@
 
 %include "vcc100-fakes.mac"
 
+%define FAKE_MODULE_NAME kernel32
+
 BEGINDATA
 GLOBALNAME vcc100_kernel32_fakes_asm
 
