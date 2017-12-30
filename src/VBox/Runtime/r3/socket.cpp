@@ -181,6 +181,62 @@ typedef union RTSOCKADDRUNION
 } RTSOCKADDRUNION;
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+#ifdef RT_OS_WINDOWS
+/** Indicates that we've successfully initialized winsock.  */
+static uint32_t volatile g_uWinSockInitedVersion = 0;
+#endif
+
+
+#ifdef RT_OS_WINDOWS
+/**
+ * Initializes winsock for the process.
+ *
+ * @returns IPRT status code.
+ */
+static int rtSocketInitWinsock(void)
+{
+    if (g_uWinSockInitedVersion != 0)
+        return VINF_SUCCESS;
+
+    if (   !g_pfnWSAGetLastError
+        || !g_pfnWSAStartup
+        || !g_pfnsocket
+        || !g_pfnclosesocket)
+        return VERR_NET_INIT_FAILED;
+
+    /*
+     * Initialize winsock. Try with 2.2 and back down till we get something that works.
+     */
+    static const WORD s_awVersions[] =
+    {
+        MAKEWORD(2, 2),
+        MAKEWORD(2, 1),
+        MAKEWORD(2, 0),
+        MAKEWORD(1, 1),
+        MAKEWORD(1, 0),
+    };
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_awVersions); i++)
+    {
+        WSADATA     wsaData;
+        RT_ZERO(wsaData);
+        int rcWsa = g_pfnWSAStartup(s_awVersions[i], &wsaData);
+        if (rcWsa == 0)
+        {
+            Assert(wsaData.wVersion >= s_awVersions[i]);
+            ASMAtomicWriteU32(&g_uWinSockInitedVersion, s_awVersions[i]);
+            return VINF_SUCCESS;
+        }
+        AssertLogRelMsg(rcWsa == WSAVERNOTSUPPORTED, ("rcWsa=%d (winsock version %#x)\n", rcWsa, s_awVersions[i]));
+    }
+    LogRel(("Failed to init winsock!\n"));
+    return VERR_NET_INIT_FAILED;
+}
+#endif
+
+
 /**
  * Get the last error as an iprt status code.
  *
@@ -362,7 +418,7 @@ DECLINLINE(void) rtSocketUnlock(RTSOCKETINT *pThis)
 static int rtSocketSwitchBlockingModeSlow(RTSOCKETINT *pThis, bool fBlocking)
 {
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnioctlsocket, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnioctlsocket, VERR_NET_NOT_UNSUPPORTED);
     u_long uBlocking = fBlocking ? 0 : 1;
     if (g_pfnioctlsocket(pThis->hNative, FIONBIO, &uBlocking))
         return rtSocketError();
@@ -457,18 +513,13 @@ RTDECL(int) RTSocketFromNative(PRTSOCKET phSocket, RTHCINTPTR uNative)
 DECLHIDDEN(int) rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int iProtocol)
 {
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnsocket, VERR_NOT_SUPPORTED);
-    AssertReturn(g_pfnclosesocket, VERR_NOT_SUPPORTED);
-    AssertReturn(g_pfnWSAStartup, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnsocket, VERR_NET_NOT_UNSUPPORTED);
+    AssertReturn(g_pfnclosesocket, VERR_NET_NOT_UNSUPPORTED);
 
     /* Initialize WinSock. */
-    WORD const  wVersionRequested = MAKEWORD(1, 1);
-    WSADATA     wsaData;
-    RT_ZERO(wsaData);
-    int rcWsa = g_pfnWSAStartup(wVersionRequested, &wsaData);
-    AssertMsgReturn(wsaData.wVersion >= wVersionRequested && rcWsa == 0,
-                    ("Wrong winsock version %#x rcWsa=%#x (%d)\n", wsaData.wVersion, rcWsa, rcWsa),
-                    VERR_NOT_SUPPORTED);
+    int rc2 = rtSocketInitWinsock();
+    if (RT_FAILURE(rc2))
+        return rc2;
 #endif
 
     /*
@@ -537,7 +588,7 @@ static int rtSocketCloseIt(RTSOCKETINT *pThis, bool fDestroy)
             pThis->hNative = NIL_RTSOCKETNATIVE;
 
 #ifdef RT_OS_WINDOWS
-            AssertReturn(g_pfnclosesocket, VERR_NOT_SUPPORTED);
+            AssertReturn(g_pfnclosesocket, VERR_NET_NOT_UNSUPPORTED);
             if (g_pfnclosesocket(hNative))
 #else
             if (close(hNative))
@@ -694,16 +745,13 @@ RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRT
 
 #ifdef RT_OS_WINDOWS
     /* Initialize WinSock and check version before we call gethostbyname. */
-    if (   !g_pfnWSAStartup
-        || !g_pfngethostbyname)
-        return VERR_NOT_SUPPORTED;
-    WORD const  wVersionRequested = MAKEWORD(1, 1);
-    WSADATA     wsaData;
-    RT_ZERO(wsaData);
-    int rcWsa = g_pfnWSAStartup(wVersionRequested, &wsaData);
-    AssertMsgReturn(wsaData.wVersion >= wVersionRequested && rcWsa == 0,
-                    ("Wrong winsock version %#x rcWsa=%#x (%d)\n", wsaData.wVersion, rcWsa, rcWsa),
-                    VERR_NOT_SUPPORTED);
+    if (!g_pfngethostbyname)
+        return VERR_NET_NOT_UNSUPPORTED;
+
+    int rc2 = rtSocketInitWinsock();
+    if (RT_FAILURE(rc2))
+        return rc2;
+
 # define gethostbyname g_pfngethostbyname
 #endif
 
@@ -782,18 +830,14 @@ RTDECL(int) RTSocketQueryAddressStr(const char *pszHost, char *pszResult, size_t
     /*
      * Winsock2 init
      */
-    if (   !g_pfnWSAStartup
-        || !g_pfngetaddrinfo
+    if (   !g_pfngetaddrinfo
         || !g_pfnfreeaddrinfo)
-        return VERR_NOT_SUPPORTED;
-    /** @todo someone should check if we really need 2, 2 here */
-    WORD const  wVersionRequested = MAKEWORD(2, 2);
-    WSADATA     wsaData;
-    RT_ZERO(wsaData);
-    int rcWsa = g_pfnWSAStartup(wVersionRequested, &wsaData);
-    AssertMsgReturn(wsaData.wVersion >= wVersionRequested && rcWsa == 0,
-                    ("Wrong winsock version %#x rcWsa=%#x (%d)\n", wsaData.wVersion, rcWsa, rcWsa),
-                    VERR_NOT_SUPPORTED);
+        return VERR_NET_NOT_UNSUPPORTED;
+
+    int rc2 = rtSocketInitWinsock();
+    if (RT_FAILURE(rc2))
+        return rc2;
+
 #  define getaddrinfo  g_pfngetaddrinfo
 #  define freeaddrinfo g_pfnfreeaddrinfo
 # endif
@@ -881,7 +925,7 @@ RTDECL(int) RTSocketRead(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, size
     AssertReturn(cbBuffer > 0, VERR_INVALID_PARAMETER);
     AssertPtr(pvBuffer);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnrecv, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnrecv, VERR_NET_NOT_UNSUPPORTED);
 # define recv g_pfnrecv
 #endif
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
@@ -957,7 +1001,7 @@ RTDECL(int) RTSocketReadFrom(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, 
     AssertPtr(pvBuffer);
     AssertPtr(pcbRead);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnrecvfrom, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnrecvfrom, VERR_NET_NOT_UNSUPPORTED);
 # define recvfrom g_pfnrecvfrom
 #endif
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
@@ -1015,7 +1059,7 @@ RTDECL(int) RTSocketWrite(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuffe
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnsend, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnsend, VERR_NET_NOT_UNSUPPORTED);
 # define send g_pfnsend
 #endif
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
@@ -1091,7 +1135,7 @@ RTDECL(int) RTSocketWriteTo(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnsendto, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnsendto, VERR_NET_NOT_UNSUPPORTED);
 # define sendto g_pfnsendto
 #endif
 
@@ -1152,7 +1196,7 @@ RTDECL(int) RTSocketWriteToNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbB
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnsendto, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnsendto, VERR_NET_NOT_UNSUPPORTED);
 # define sendto g_pfnsendto
 #endif
 
@@ -1276,7 +1320,7 @@ RTDECL(int) RTSocketSgWrite(RTSOCKET hSocket, PCRTSGBUF pSgBuf)
         }
     }
     else
-        rc = VERR_NOT_SUPPORTED;
+        rc = VERR_NET_NOT_UNSUPPORTED;
 
 #else  /* !RT_OS_WINDOWS */
     AssertCompileSize(struct iovec, sizeof(RTSGSEG));
@@ -1355,7 +1399,7 @@ RTDECL(int) RTSocketReadNB(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, si
     AssertPtr(pvBuffer);
     AssertPtrReturn(pcbRead, VERR_INVALID_PARAMETER);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnrecv, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnrecv, VERR_NET_NOT_UNSUPPORTED);
 #endif
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
 
@@ -1421,7 +1465,7 @@ RTDECL(int) RTSocketWriteNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrReturn(pcbWritten, VERR_INVALID_PARAMETER);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnsend, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnsend, VERR_NET_NOT_UNSUPPORTED);
 #endif
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
 
@@ -1544,7 +1588,7 @@ RTDECL(int) RTSocketSgWriteNB(RTSOCKET hSocket, PCRTSGBUF pSgBuf, size_t *pcbWri
         *pcbWritten = cbWrittenTotal;
     }
     else
-        rc = VERR_NOT_SUPPORTED;
+        rc = VERR_NET_NOT_UNSUPPORTED;
 
 #else  /* !RT_OS_WINDOWS */
     struct iovec *paMsg = NULL;
@@ -1617,7 +1661,7 @@ RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies)
     int const fdMax = (int)pThis->hNative + 1;
     AssertReturn((RTSOCKETNATIVE)(fdMax - 1) == pThis->hNative, VERR_INTERNAL_ERROR_5);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnselect, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnselect, VERR_NET_NOT_UNSUPPORTED);
 # define select g_pfnselect
 #endif
 
@@ -1678,8 +1722,8 @@ RTDECL(int) RTSocketSelectOneEx(RTSOCKET hSocket, uint32_t fEvents, uint32_t *pf
     int const fdMax = (int)hNative + 1;
     AssertReturn((RTSOCKETNATIVE)(fdMax - 1) == hNative, VERR_INTERNAL_ERROR_5);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnselect, VERR_NOT_SUPPORTED);
-    AssertReturn(g_pfn__WSAFDIsSet, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnselect, VERR_NET_NOT_UNSUPPORTED);
+    AssertReturn(g_pfn__WSAFDIsSet, VERR_NET_NOT_UNSUPPORTED);
 # define select         g_pfnselect
 # define __WSAFDIsSet   g_pfn__WSAFDIsSet
 #endif
@@ -1757,7 +1801,7 @@ RTDECL(int) RTSocketShutdown(RTSOCKET hSocket, bool fRead, bool fWrite)
     AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
     AssertReturn(fRead || fWrite, VERR_INVALID_PARAMETER);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnshutdown, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnshutdown, VERR_NET_NOT_UNSUPPORTED);
 # define shutdown g_pfnshutdown
 #endif
 
@@ -1792,7 +1836,7 @@ RTDECL(int) RTSocketGetLocalAddress(RTSOCKET hSocket, PRTNETADDR pAddr)
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfngetsockname, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfngetsockname, VERR_NET_NOT_UNSUPPORTED);
 # define getsockname g_pfngetsockname
 #endif
 
@@ -1829,7 +1873,7 @@ RTDECL(int) RTSocketGetPeerAddress(RTSOCKET hSocket, PRTNETADDR pAddr)
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfngetpeername, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfngetpeername, VERR_NET_NOT_UNSUPPORTED);
 # define getpeername g_pfngetpeername
 #endif
 
@@ -1894,7 +1938,7 @@ DECLHIDDEN(int) rtSocketBindRawAddr(RTSOCKET hSocket, void const *pvAddr, size_t
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrReturn(pvAddr, VERR_INVALID_POINTER);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnbind, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnbind, VERR_NET_NOT_UNSUPPORTED);
 # define bind g_pfnbind
 #endif
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
@@ -1930,7 +1974,7 @@ DECLHIDDEN(int) rtSocketListen(RTSOCKET hSocket, int cMaxPending)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnlisten, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnlisten, VERR_NET_NOT_UNSUPPORTED);
 # define listen g_pfnlisten
 #endif
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
@@ -1970,8 +2014,8 @@ DECLHIDDEN(int) rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sock
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnaccept, VERR_NOT_SUPPORTED);
-    AssertReturn(g_pfnclosesocket, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnaccept, VERR_NET_NOT_UNSUPPORTED);
+    AssertReturn(g_pfnclosesocket, VERR_NET_NOT_UNSUPPORTED);
 # define accept g_pfnaccept
 #endif
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
@@ -2035,9 +2079,9 @@ DECLHIDDEN(int) rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr, RTMSINTERVA
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnconnect, VERR_NOT_SUPPORTED);
-    AssertReturn(g_pfnselect, VERR_NOT_SUPPORTED);
-    AssertReturn(g_pfngetsockopt, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnconnect, VERR_NET_NOT_UNSUPPORTED);
+    AssertReturn(g_pfnselect, VERR_NET_NOT_UNSUPPORTED);
+    AssertReturn(g_pfngetsockopt, VERR_NET_NOT_UNSUPPORTED);
 # define connect        g_pfnconnect
 # define select         g_pfnselect
 # define getsockopt     g_pfngetsockopt
@@ -2145,7 +2189,7 @@ DECLHIDDEN(int) rtSocketConnectRaw(RTSOCKET hSocket, void const *pvAddr, size_t 
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnconnect, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnconnect, VERR_NET_NOT_UNSUPPORTED);
 # define connect        g_pfnconnect
 #endif
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
@@ -2183,7 +2227,7 @@ DECLHIDDEN(int) rtSocketSetOpt(RTSOCKET hSocket, int iLevel, int iOption, void c
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
 #ifdef RT_OS_WINDOWS
-    AssertReturn(g_pfnsetsockopt, VERR_NOT_SUPPORTED);
+    AssertReturn(g_pfnsetsockopt, VERR_NET_NOT_UNSUPPORTED);
 # define setsockopt g_pfnsetsockopt
 #endif
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
@@ -2229,7 +2273,7 @@ DECLHIDDEN(int) rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PRTHCI
             rc = rtSocketError();
     }
     else
-        rc = VERR_NOT_SUPPORTED;
+        rc = VERR_NET_NOT_UNSUPPORTED;
 
     rtSocketUnlock(pThis);
     return rc;
@@ -2281,7 +2325,7 @@ static int rtSocketPollClearEventAndRestoreBlocking(RTSOCKETINT *pThis)
             }
         }
         else
-            rc = VERR_NOT_SUPPORTED;
+            rc = VERR_NET_NOT_UNSUPPORTED;
     }
     return rc;
 }
@@ -2316,7 +2360,7 @@ static int rtSocketPollUpdateEvents(RTSOCKETINT *pThis, uint32_t fEvents)
         AssertMsgFailed(("fNetworkEvents=%#x rc=%Rrc\n", fNetworkEvents, rtSocketError()));
     }
     else
-        rc = VERR_NOT_SUPPORTED;
+        rc = VERR_NET_NOT_UNSUPPORTED;
     return rc;
 }
 
@@ -2376,7 +2420,7 @@ static uint32_t rtSocketPollCheck(RTSOCKETINT *pThis, uint32_t fEvents)
             rc = rtSocketError();
     }
     else if (RT_SUCCESS(rc))
-        rc = VERR_NOT_SUPPORTED;
+        rc = VERR_NET_NOT_UNSUPPORTED;
 
     /* Fall back on select if we hit an error above. */
     if (RT_FAILURE(rc))

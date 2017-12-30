@@ -1459,6 +1459,10 @@ RT_C_DECLS_END
 #define VERR_NET_PROTOCOL_ERROR                 (-466)
 /** Incomplete packet was submitted by guest. */
 #define VERR_NET_INCOMPLETE_TX_PACKET           (-467)
+/** Winsock init error. */
+#define VERR_NET_INIT_FAILED                    (-468)
+/** Trying to use too new winsock API. */
+#define VERR_NET_NOT_UNSUPPORTED                (-469)
 /** @} */
 
 

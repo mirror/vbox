@@ -388,6 +388,8 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
         case WSAEHOSTUNREACH:      return VERR_NET_HOST_UNREACHABLE;
         case WSAEALREADY:          return VERR_NET_ALREADY_IN_PROGRESS;
         case WSAEINPROGRESS:       return VERR_NET_IN_PROGRESS;
+        case WSAEPROVIDERFAILEDINIT: return VERR_NET_INIT_FAILED;
+
         //case WSAESTALE                116     /* Stale NFS file handle */
         //case WSAEUCLEAN               117     /* Structure needs cleaning */
         //case WSAENOTNAM               118     /* Not a XENIX named type file */
