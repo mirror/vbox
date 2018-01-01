@@ -2084,7 +2084,7 @@ static int rtFsIsoMakerCmdAddSomething(PRTFSISOMAKERCMDOPTS pOpts, const char *p
 static int rtFsIsoMakerCmdOptPushIso(PRTFSISOMAKERCMDOPTS pOpts, const char *pszIsoSpec, const char *pszOption, uint32_t fFlags)
 {
     int32_t iSrcStack = pOpts->iSrcStack + 1;
-    if (iSrcStack >= RT_ELEMENTS(pOpts->aSrcStack))
+    if ((uint32_t)iSrcStack >= RT_ELEMENTS(pOpts->aSrcStack))
         return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_IMPLEMENTED,
                                       "Too many pushes %s %s (previous: %s %s, %s %s, %s %s, ...)",
                                       pszOption, pszIsoSpec,
