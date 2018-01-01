@@ -676,7 +676,8 @@ typedef struct _KUSER_SHARED_DATA
     ULONG                   ImageFileExecutionOptions;                  /**< 0x3a0 */
     ULONG                   LangGenerationCount;                        /**< 0x3a4 */
     ULONGLONG               Reserved4;                                  /**< 0x3a8 */
-    ULONGLONG volatile      InterruptTimeBias;                          /**< 0x3b0 */
+    ULONGLONG volatile      InterruptTimeBias;                          /**< 0x3b0 - What QueryUnbiasedInterruptTimePrecise
+                                                                         * subtracts from interrupt time. */
     ULONGLONG volatile      QpcBias;                                    /**< 0x3b8 */
     ULONG volatile          ActiveProcessorCount;                       /**< 0x3c0 */
     UCHAR volatile          ActiveGroupCount;                           /**< 0x3c4 */
@@ -2812,6 +2813,10 @@ NTSYSAPI VOID NTAPI     RtlRestoreLastWin32Error(ULONG uError);
 NTSYSAPI BOOLEAN NTAPI  RtlQueryPerformanceCounter(PLARGE_INTEGER);
 NTSYSAPI uint64_t NTAPI RtlGetSystemTimePrecise(VOID);
 typedef uint64_t (NTAPI * PFNRTLGETSYSTEMTIMEPRECISE)(VOID);
+NTSYSAPI uint64_t NTAPI RtlGetInterruptTimePrecise(uint64_t *puPerfTime);
+typedef uint64_t (NTAPI * PFNRTLGETINTERRUPTTIMEPRECISE)(uint64_t *);
+NTSYSAPI BOOLEAN NTAPI RtlQueryUnbiasedInterruptTime(uint64_t *puInterruptTime);
+typedef BOOLEAN (NTAPI * PFNRTLQUERYUNBIASEDINTERRUPTTIME)(uint64_t *);
 
 RT_C_DECLS_END
 /** @} */
