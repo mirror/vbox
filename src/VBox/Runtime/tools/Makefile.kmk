@@ -81,6 +81,12 @@ if !defined(VBOX_ONLY_BUILD)
  RTChMod_TEMPLATE = VBoxR3Tool
  RTChMod_SOURCES = RTChMod.cpp
 
+ # RTCp - our cp clone.
+ PROGRAMS += RTCp
+ RTCp_TEMPLATE = VBoxR3Tool
+ RTCp_SOURCES = RTCp.cpp
+ RTCp_SOURCES += ../VBox/LoadVBoxDDU.cpp
+
  # RTIsoMaker - ISO image maker - build version.
  PROGRAMS += RTIsoMaker
  RTIsoMaker_TEMPLATE = VBoxR3Tool
