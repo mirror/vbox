@@ -38,6 +38,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include "internal/time.h"
+#include "internal-r3-win.h"
 
 /*
  * Note! The selected time source be the exact same one as we use in kernel land!
@@ -108,31 +109,42 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
     return u64 * 100;
 
 #elif defined USE_INTERRUPT_TIME
-# if 0 /* ASSUME 0x7ffe0000 is set in stone */
     /*
-     * This is exactly what we want, but we have to obtain it by non-official
-     * means.
+     * Use interrupt time if we can (not possible on NT 3.1).
      */
-    static MY_KUSER_SHARED_DATA *s_pUserSharedData = NULL;
-    if (!s_pUserSharedData)
+    /** @todo use RtlGetInterruptTimePrecise if available (W10+). */
+
+    static int volatile g_fCanUseUserSharedData = -1;
+    int fCanUseUserSharedData = g_fCanUseUserSharedData;
+    if (fCanUseUserSharedData != -1)
+    { /* likely */ }
+    else
     {
-        /** @todo find official way of getting this or some more clever
-         * detection algorithm if necessary. The com debugger class
-         * exports this too, windbg knows it too... */
-        s_pUserSharedData = (PMY_KUSER_SHARED_DATA)(uintptr_t)0x7ffe0000;
+        /* We may be called before g_enmWinVer has been initialized. */
+        if (g_enmWinVer != kRTWinOSType_UNKNOWN)
+            fCanUseUserSharedData = g_enmWinVer > kRTWinOSType_NT310;
+        else
+        {
+            DWORD dwVer = GetVersion();
+            fCanUseUserSharedData = (dwVer & 0xff) != 3 || ((dwVer >> 8) & 0xff) >= 50;
+        }
+        g_fCanUseUserSharedData = fCanUseUserSharedData;
     }
-# endif
-    PMY_KUSER_SHARED_DATA pUserSharedData = (PMY_KUSER_SHARED_DATA)(uintptr_t)0x7ffe0000;
 
-    /* use interrupt time */
-    LARGE_INTEGER Time;
-    do
+    if (fCanUseUserSharedData != 0)
     {
-        Time.HighPart = pUserSharedData->InterruptTime.High1Time;
-        Time.LowPart  = pUserSharedData->InterruptTime.LowPart;
-    } while (pUserSharedData->InterruptTime.High2Time != Time.HighPart);
+        PMY_KUSER_SHARED_DATA pUserSharedData = (PMY_KUSER_SHARED_DATA)(uintptr_t)0x7ffe0000;
+        LARGE_INTEGER Time;
+        do
+        {
+            Time.HighPart = pUserSharedData->InterruptTime.High1Time;
+            Time.LowPart  = pUserSharedData->InterruptTime.LowPart;
+        } while (pUserSharedData->InterruptTime.High2Time != Time.HighPart);
 
-    return (uint64_t)Time.QuadPart * 100;
+        return (uint64_t)Time.QuadPart * 100;
+    }
+
+    return (uint64_t)GetTickCount() * RT_NS_1MS_64;
 
 #else
 # error "Must select a method bright guy!"
