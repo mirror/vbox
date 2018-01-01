@@ -67,7 +67,7 @@ int main(int argc, char **argv)
         RTThreadSleep(cSeconds * 1000);
 
         uint64_t u64RTElapsedTS = RTTimeNanoTS();
-        uint64_t u64OSElapsedTS = OSNanoTS();
+        uint64_t u64OSElapsedTS = RTTimeSystemNanoTS();
         u64RTElapsedTS -= u64RTStartTS;
         u64OSElapsedTS -= u64OSStartTS;
 
