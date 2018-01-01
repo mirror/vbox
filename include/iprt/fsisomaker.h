@@ -682,9 +682,7 @@ typedef RTFSISOMAKERIMPORTRESULTS *PRTFSISOMAKERIMPORTRESULTS;
  * @param   hIsoMaker   The ISO maker handle.
  * @param   hIsoFile    VFS file handle to the existing image to import / clone.
  * @param   fFlags      Reserved for the future, MBZ.
- * @param   poffError   Where to return the position in @a pszIso
- *                      causing trouble when opening it for reading.
- *                      Optional.
+ * @param   pResults    Where to return import results.
  * @param   pErrInfo    Where to return additional error information.
  *                      Optional.
  */
