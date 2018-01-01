@@ -140,11 +140,14 @@ static int UpdateFile(FILE *pFile, unsigned uNtVersion, PIMAGE_SECTION_HEADER *p
     }
 
     /*
-     * Make the IAT writable for NT 3.1.
+     * Make the IAT writable for NT 3.1 and drop the non-cachable flag from .bss.
+     *
+     * The latter is a trick we use to prevent the linker from merging .data and .bss,
+     * because NT 3.1 does not honor Misc.VirtualSize and won't zero padd the .bss part
+     * if it's not zero padded in the file.  This seemed simpler than adding zero padding.
      */
     if (   uNtVersion <= MK_VER(3, 10)
-        && NtHdrsNew.FileHeader.NumberOfSections > 0
-        && NtHdrsNew.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size > 0)
+        && NtHdrsNew.FileHeader.NumberOfSections > 0)
     {
         uint32_t              cbShdrs = sizeof(IMAGE_SECTION_HEADER) * NtHdrsNew.FileHeader.NumberOfSections;
         PIMAGE_SECTION_HEADER paShdrs = (PIMAGE_SECTION_HEADER)calloc(1, cbShdrs);
@@ -160,27 +163,50 @@ static int UpdateFile(FILE *pFile, unsigned uNtVersion, PIMAGE_SECTION_HEADER *p
         if (fread(paShdrs, cbShdrs, 1, pFile) != 1)
             return Error("Failed to read section headers at %#lx: %s", offShdrs, strerror(errno));
 
-        uint32_t const uRvaIat = NtHdrsNew.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress;
-        uint32_t       uRvaEnd = NtHdrsNew.OptionalHeader.SizeOfImage;
-        uint32_t       i       = NtHdrsNew.FileHeader.NumberOfSections;
+        bool     fFoundBss = false;
+        uint32_t uRvaEnd   = NtHdrsNew.OptionalHeader.SizeOfImage;
+        uint32_t uRvaIat   = NtHdrsNew.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size > 0
+                           ? NtHdrsNew.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress : UINT32_MAX;
+        uint32_t i         = NtHdrsNew.FileHeader.NumberOfSections;
         while (i-- > 0)
             if (!(paShdrs[i].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
             {
-                uint32_t uRva = paShdrs[i].VirtualAddress;
-                if (uRvaIat >= uRva && uRvaIat < uRvaEnd)
+                bool     fModified = false;
+                if (uRvaIat >= paShdrs[i].VirtualAddress && uRvaIat < uRvaEnd)
                 {
                     if (!(paShdrs[i].Characteristics & IMAGE_SCN_MEM_WRITE))
                     {
                         paShdrs[i].Characteristics |= IMAGE_SCN_MEM_WRITE;
-                        unsigned long offShdr = offShdrs + i * sizeof(IMAGE_SECTION_HEADER);
-                        if (fseek(pFile, offShdr, SEEK_SET) != 0)
-                            return Error("Failed to seek to section header #%u at %#lx: %s", i, offShdr, strerror(errno));
-                        if (fwrite(&paShdrs[i], sizeof(IMAGE_SECTION_HEADER), 1, pFile) != 1)
-                            return Error("Failed to write IAT section header header at %#lx: %s", offShdr, strerror(errno));
+                        fModified = true;
                     }
-                    break;
+                    uRvaIat = UINT32_MAX;
                 }
-                uRvaEnd = uRva;
+
+                if (   !fFoundBss
+                    && strcmp((const char *)paShdrs[i].Name, ".bss") == 0)
+                {
+                    if (paShdrs[i].Characteristics & IMAGE_SCN_MEM_NOT_CACHED)
+                    {
+                        paShdrs[i].Characteristics &= ~IMAGE_SCN_MEM_NOT_CACHED;
+                        fModified = true;
+                    }
+                    fFoundBss = true;
+                }
+
+                if (fModified)
+                {
+                    unsigned long offShdr = offShdrs + i * sizeof(IMAGE_SECTION_HEADER);
+                    if (fseek(pFile, offShdr, SEEK_SET) != 0)
+                        return Error("Failed to seek to section header #%u at %#lx: %s", i, offShdr, strerror(errno));
+                    if (fwrite(&paShdrs[i], sizeof(IMAGE_SECTION_HEADER), 1, pFile) != 1)
+                        return Error("Failed to write %8.8s section header header at %#lx: %s",
+                                     paShdrs[i].Name, offShdr, strerror(errno));
+                    if (uRvaIat == UINT32_MAX && fFoundBss)
+                        break;
+                }
+
+                /* Advance */
+                uRvaEnd = paShdrs[i].VirtualAddress;
             }
 
     }

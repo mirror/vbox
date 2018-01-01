@@ -6459,10 +6459,14 @@ ifeq ($(KBUILD_TARGET),win)
  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/oldnames.lib \
  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
- # Hack for running on NT4, W2K and XP w/o SP: Change OS and subsystem version in the image.
+ # Hack for running on NT3x, NT4, W2K and XP w/o SP: Change OS and subsystem version in the image.
+ # The .bss section trick is for NT 3.1 which doesn't support merging initialized and uninitialized
+ # section because it doesn't recognize Misc.VirtualSize.  VBOX_PE_SET_VERSION will unset the !K flag.
  # HACK ALERT! Double expansion of $$(NLTAB).
  TEMPLATE_VBOXGUESTR3EXE_POST_CMDS.win.x86  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB)$(TEMPLATE_VBOXR3EXE_POST_CMDS))
  TEMPLATE_VBOXGUESTR3EXE_LNK_DEPS.win.x86   = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION))
+ TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.win.x86    = -Section:.bss,RW!K $(TEMPLATE_VBOXR3EXE_LDFLAGS.win.x86))
+
  if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86"
   TEMPLATE_VBOXGUESTR3EXE_LIBS.win.x86 = $(NO_SUCH_VARIABLE)# Ditch RuntimeR3VccTricks2
  endif
