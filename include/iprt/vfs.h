@@ -144,11 +144,19 @@ RTDECL(int)         RTVfsGetAttachment(RTVFS hVfs, uint32_t iOrdinal, PRTVFS *ph
                                        char *pszMountPoint, size_t cbMountPoint);
 
 /**
+ * Opens the root director of the given VFS.
+ *
+ * @returns IPRT status code.
+ * @param   hVfs        VFS handle.
+ * @param   phDir       Where to return the root directory handle.
+ */
+RTDECL(int) RTVfsOpenRoot(RTVFS hVfs, PRTVFSDIR phDir);
+
+/**
  * Queries information about a object in the virtual filesystem.
  *
  * @returns IPRT Status code.
  * @param   hVfs        VFS handle.
- *                      relative to.
  * @param   pszPath     Path to the object, relative to the VFS root.
  * @param   pObjInfo    Where to return info.
  * @param   enmAddAttr  What to return.

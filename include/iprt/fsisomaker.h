@@ -668,9 +668,6 @@ typedef struct RTFSISOMAKERIMPORTRESULTS
 
     /** Number of import errors. */
     uint32_t        cErrors;
-    /** Where to return the offset of the failing path element.
-     *  Set to UINT32_MAX if not a VFS chaining error. */
-    uint32_t        offError;
 } RTFSISOMAKERIMPORTRESULTS;
 /** Pointer to ISO maker import results. */
 typedef RTFSISOMAKERIMPORTRESULTS *PRTFSISOMAKERIMPORTRESULTS;
@@ -682,15 +679,16 @@ typedef RTFSISOMAKERIMPORTRESULTS *PRTFSISOMAKERIMPORTRESULTS;
  * unmodified till the ISO maker is done with it.
  *
  * @returns IRPT status code.
- * @param   hIsoMaker           The ISO maker handle.
- * @param   pszIso              Path to the existing image to import / clone.
- *                              This is fed to RTVfsChainOpenFile.
- * @param   fFlags              Reserved for the future, MBZ.
- * @param   pResults            Where to return import results.
- * @param   pErrInfo            Where to return additional error information.
- *                              Optional.
+ * @param   hIsoMaker   The ISO maker handle.
+ * @param   hIsoFile    VFS file handle to the existing image to import / clone.
+ * @param   fFlags      Reserved for the future, MBZ.
+ * @param   poffError   Where to return the position in @a pszIso
+ *                      causing trouble when opening it for reading.
+ *                      Optional.
+ * @param   pErrInfo    Where to return additional error information.
+ *                      Optional.
  */
-RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint32_t fFlags,
+RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, RTVFSFILE hIsoFile, uint32_t fFlags,
                                PRTFSISOMAKERIMPORTRESULTS pResults, PRTERRINFO pErrInfo);
 
 /** @name RTFSISOMK_IMPORT_F_XXX - Flags for RTFsIsoMakerImport.
@@ -766,14 +764,20 @@ RTDECL(RTEXITCODE) RTFsIsoMakerCmd(unsigned cArgs, char **papszArgs);
  * alternatively for setting up a virtual ISO in memory.
  *
  * @returns IPRT status code
- * @param   cArgs               Number of arguments.
- * @param   papszArgs           Pointer to argument array.
- * @param   phVfsFile           Where to return the virtual ISO.  Pass NULL to
- *                              for normal operation (creates file on disk).
- * @param   pErrInfo            Where to return extended error information in
- *                              the virtual ISO mode.
+ * @param   cArgs       Number of arguments.
+ * @param   papszArgs   Pointer to argument array.
+ * @param   hVfsCwd     The current working directory to assume when processing
+ *                      relative file/dir references.  Pass NIL_RTVFSDIR to use
+ *                      the current CWD of the process.
+ * @param   pszCwd    Path to @a hVfsCwdDir.  Use for error reporting and
+ *                      optimizing the open file count if possible.
+ * @param   phVfsFile   Where to return the virtual ISO.  Pass NULL to for
+ *                      normal operation (creates file on disk).
+ * @param   pErrInfo    Where to return extended error information in the
+ *                      virtual ISO mode.
  */
-RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfsFile, PRTERRINFO pErrInfo);
+RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, RTVFSDIR hVfsCwd, const char *pszCwd,
+                              PRTVFSFILE phVfsFile, PRTERRINFO pErrInfo);
 
 
 /** @} */

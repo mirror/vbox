@@ -24,12 +24,12 @@
 #include <VBox/err.h>
 
 #include <VBox/log.h>
-//#include <VBox/scsiinline.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/fsisomaker.h>
 #include <iprt/getopt.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 
@@ -67,9 +67,11 @@ typedef struct VISOIMAGE
 
     /** Open flags passed by VD layer. */
     uint32_t            fOpenFlags;
-    /** Image name (for debug).
-     * Allocation follows the region list, no need to free. */
+    /** Image name.  Allocation follows the region list, no need to free. */
     const char         *pszFilename;
+    /** The parent director of pszFilename.
+     * Allocation follows the region list, no need to free. */
+    const char         *pszCwd;
 
     /** I/O interface. */
     PVDINTERFACEIOINT   pIfIo;
@@ -311,47 +313,61 @@ static int visoOpenWorker(PVISOIMAGE pThis)
                                 if (RT_SUCCESS(rc))
                                 {
                                     /*
-                                     * Try instantiate the ISO image maker.
-                                     * Free the argument vector afterward to reduce memory pressure.
+                                     * Open the parent directory and use that as CWD for relative references.
                                      */
-                                    RTVFSFILE       hVfsFile;
-                                    RTERRINFOSTATIC ErrInfo;
-                                    rc = RTFsIsoMakerCmdEx(cArgs, papszArgs, &hVfsFile, RTErrInfoInitStatic(&ErrInfo));
-
-                                    RTGetOptArgvFreeEx(papszArgs, fGetOpt);
-                                    papszArgs = NULL;
-
+                                    RTVFSDIR hVfsCwd;
+                                    rc = RTVfsChainOpenDir(pThis->pszCwd, 0 /*fOpen*/, &hVfsCwd, NULL, NULL);
                                     if (RT_SUCCESS(rc))
                                     {
-                                        uint64_t cbImage;
-                                        rc = RTVfsFileGetSize(hVfsFile, &cbImage);
+                                        /*
+                                         * Try instantiate the ISO image maker.
+                                         * Free the argument vector afterward to reduce memory pressure.
+                                         */
+                                        RTVFSFILE       hVfsFile;
+                                        RTERRINFOSTATIC ErrInfo;
+                                        rc = RTFsIsoMakerCmdEx(cArgs, papszArgs, hVfsCwd, pThis->pszCwd,
+                                                               &hVfsFile, RTErrInfoInitStatic(&ErrInfo));
+
+                                        RTVfsDirRelease(hVfsCwd);
+
+                                        RTGetOptArgvFreeEx(papszArgs, fGetOpt);
+                                        papszArgs = NULL;
+
                                         if (RT_SUCCESS(rc))
                                         {
-                                            /*
-                                             * Update the state.
-                                             */
-                                            pThis->cbImage = cbImage;
-                                            pThis->RegionList.aRegions[0].cRegionBlocksOrBytes = cbImage;
+                                            uint64_t cbImage;
+                                            rc = RTVfsFileGetSize(hVfsFile, &cbImage);
+                                            if (RT_SUCCESS(rc))
+                                            {
+                                                /*
+                                                 * Update the state.
+                                                 */
+                                                pThis->cbImage = cbImage;
+                                                pThis->RegionList.aRegions[0].cRegionBlocksOrBytes = cbImage;
 
-                                            pThis->hIsoFile = hVfsFile;
-                                            hVfsFile = NIL_RTVFSFILE;
+                                                pThis->hIsoFile = hVfsFile;
+                                                hVfsFile = NIL_RTVFSFILE;
 
-                                            rc = VINF_SUCCESS;
-                                            LogRel(("VISO: %'RU64 bytes (%#RX64) - %s\n", cbImage, cbImage, pThis->pszFilename));
+                                                rc = VINF_SUCCESS;
+                                                LogRel(("VISO: %'RU64 bytes (%#RX64) - %s\n", cbImage, cbImage, pThis->pszFilename));
+                                            }
+
+                                            RTVfsFileRelease(hVfsFile);
                                         }
-
-                                        RTVfsFileRelease(hVfsFile);
-                                    }
-                                    else if (RTErrInfoIsSet(&ErrInfo.Core))
-                                    {
-                                        LogRel(("visoOpenWorker: RTFsIsoMakerCmdEx failed: %Rrc - %s\n", rc, ErrInfo.Core.pszMsg));
-                                        vdIfError(pThis->pIfError, rc, RT_SRC_POS, "VISO: %s", ErrInfo.Core.pszMsg);
+                                        else if (RTErrInfoIsSet(&ErrInfo.Core))
+                                        {
+                                            LogRel(("visoOpenWorker: RTFsIsoMakerCmdEx failed: %Rrc - %s\n", rc, ErrInfo.Core.pszMsg));
+                                            vdIfError(pThis->pIfError, rc, RT_SRC_POS, "VISO: %s", ErrInfo.Core.pszMsg);
+                                        }
+                                        else
+                                        {
+                                            LogRel(("visoOpenWorker: RTFsIsoMakerCmdEx failed: %Rrc\n", rc));
+                                            vdIfError(pThis->pIfError, rc, RT_SRC_POS, "VISO: RTFsIsoMakerCmdEx failed: %Rrc", rc);
+                                        }
                                     }
                                     else
-                                    {
-                                        LogRel(("visoOpenWorker: RTFsIsoMakerCmdEx failed: %Rrc\n", rc));
-                                        vdIfError(pThis->pIfError, rc, RT_SRC_POS, "VISO: RTFsIsoMakerCmdEx failed: %Rrc", rc);
-                                    }
+                                        vdIfError(pThis->pIfError, rc, RT_SRC_POS,
+                                                  "VISO: Failed to open parent dir of: %s", pThis->pszFilename);
                                 }
                             }
                             else
@@ -413,13 +429,12 @@ static DECLCALLBACK(int) visoOpen(const char *pszFilename, unsigned uOpenFlags, 
      */
     int         rc;
     size_t      cbFilename = strlen(pszFilename) + 1;
-    PVISOIMAGE  pThis = (PVISOIMAGE)RTMemAllocZ(RT_UOFFSETOF(VISOIMAGE, RegionList.aRegions[1]) + cbFilename);
+    PVISOIMAGE  pThis = (PVISOIMAGE)RTMemAllocZ(RT_UOFFSETOF(VISOIMAGE, RegionList.aRegions[1]) + cbFilename * 2);
     if (pThis)
     {
         pThis->hIsoFile    = NIL_RTVFSFILE;
         pThis->cbImage     = 0;
         pThis->fOpenFlags  = fOpenFlags;
-        pThis->pszFilename = (char *)memcpy(&pThis->RegionList.aRegions[1], pszFilename, cbFilename);
         pThis->pIfIo       = pIfIo;
         pThis->pIfError    = pIfError;
 
@@ -432,6 +447,17 @@ static DECLCALLBACK(int) visoOpen(const char *pszFilename, unsigned uOpenFlags, 
         pThis->RegionList.aRegions[0].enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
         pThis->RegionList.aRegions[0].cbData               = 2048;
         pThis->RegionList.aRegions[0].cbMetadata           = 0;
+
+        char *pszDst = (char *)&pThis->RegionList.aRegions[1];
+        memcpy(pszDst, pszFilename, cbFilename);
+        pThis->pszFilename = pszDst;
+        pszDst[cbFilename - 1] = '\0';
+        pszDst += cbFilename;
+
+        memcpy(pszDst, pszFilename, cbFilename);
+        pThis->pszCwd = pszDst;
+        pszDst[cbFilename - 1] = '\0';
+        RTPathStripFilename(pszDst);
 
         /*
          * Only go all the way if this isn't an info query.  Re-mastering an ISO

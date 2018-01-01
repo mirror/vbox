@@ -1874,9 +1874,16 @@ static int rtFsIsoImportProcessPrimaryDesc(PRTFSISOMKIMPORTER pThis, PISO9660PRI
                                "Mismatching volumes in set: {%#RX16,%#RX16}",
                                RT_BE2H_U16(pVolDesc->cVolumesInSet.be), RT_LE2H_U16(pVolDesc->cVolumesInSet.le));
     if (RT_LE2H_U16(pVolDesc->VolumeSeqNo.le) != RT_BE2H_U16(pVolDesc->VolumeSeqNo.be))
-        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BAD_PRIMARY_VOL_DESC,
-                               "Mismatching volume sequence no.: {%#RX16,%#RX16}",
-                               RT_BE2H_U16(pVolDesc->VolumeSeqNo.be), RT_LE2H_U16(pVolDesc->VolumeSeqNo.le));
+    {
+        /* Hack alert! An Windows NT 3.1 ISO was found to not have the big endian bit set here, so work around it. */
+        if (   pVolDesc->VolumeSeqNo.be == 0
+            && pVolDesc->VolumeSeqNo.le == RT_H2LE_U16_C(1))
+            pVolDesc->VolumeSeqNo.be = RT_H2BE_U16_C(1);
+        else
+            return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BAD_PRIMARY_VOL_DESC,
+                                   "Mismatching volume sequence no.: {%#RX16,%#RX16}",
+                                   RT_BE2H_U16(pVolDesc->VolumeSeqNo.be), RT_LE2H_U16(pVolDesc->VolumeSeqNo.le));
+    }
     if (RT_LE2H_U32(pVolDesc->cbPathTable.le) != RT_BE2H_U32(pVolDesc->cbPathTable.be))
         return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BAD_PRIMARY_VOL_DESC,
                                "Mismatching path table size: {%#RX32,%#RX32}",
@@ -2474,17 +2481,16 @@ static int rtFsIsoImportProcessElToritoDesc(PRTFSISOMKIMPORTER pThis, PISO9660BO
  * unmodified till the ISO maker is done with it.
  *
  * @returns IRPT status code.
- * @param   hIsoMaker           The ISO maker handle.
- * @param   pszIso              Path to the existing image to import / clone.
- *                              This is fed to RTVfsChainOpenFile.
- * @param   fFlags              Reserved for the future, MBZ.
- * @param   poffError           Where to return the position in @a pszIso
- *                              causing trouble when opening it for reading.
- *                              Optional.
- * @param   pErrInfo            Where to return additional error information.
- *                              Optional.
+ * @param   hIsoMaker   The ISO maker handle.
+ * @param   hIsoFile    VFS file handle to the existing image to import / clone.
+ * @param   fFlags      Reserved for the future, MBZ.
+ * @param   poffError   Where to return the position in @a pszIso
+ *                      causing trouble when opening it for reading.
+ *                      Optional.
+ * @param   pErrInfo    Where to return additional error information.
+ *                      Optional.
  */
-RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint32_t fFlags,
+RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, RTVFSFILE hIsoFile, uint32_t fFlags,
                                PRTFSISOMAKERIMPORTRESULTS pResults, PRTERRINFO pErrInfo)
 {
     /*
@@ -2499,24 +2505,13 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
     pResults->cBootCatEntries   = UINT32_MAX;
     pResults->cbSysArea         = 0;
     pResults->cErrors           = 0;
-    pResults->offError          = UINT32_MAX;
     AssertReturn(!(fFlags & ~RTFSISOMK_IMPORT_F_VALID_MASK), VERR_INVALID_FLAGS);
-
-    /*
-     * Open the input file and start working on it.
-     */
-    RTVFSFILE hSrcFile;
-    int rc = RTVfsChainOpenFile(pszIso, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE,
-                                &hSrcFile, &pResults->offError, pErrInfo);
-    if (RT_FAILURE(rc))
-        return rc;
-    pResults->offError = UINT32_MAX;
 
     /*
      * Get the file size.
      */
     uint64_t cbSrcFile = 0;
-    rc = RTVfsFileGetSize(hSrcFile, &cbSrcFile);
+    int rc = RTVfsFileGetSize(hIsoFile, &cbSrcFile);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -2529,7 +2524,7 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
             pThis->fFlags           = fFlags;
             pThis->rc               = VINF_SUCCESS;
             pThis->pErrInfo         = pErrInfo;
-            pThis->hSrcFile         = hSrcFile;
+            pThis->hSrcFile         = hIsoFile;
             pThis->cbSrcFile        = cbSrcFile;
             pThis->cBlocksInSrcFile = cbSrcFile / ISO9660_SECTOR_SIZE;
             pThis->idxSrcFile       = UINT32_MAX;
@@ -2547,7 +2542,7 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
             /*
              * Check if this looks like a plausible ISO by checking out the first volume descriptor.
              */
-            rc = RTVfsFileReadAt(hSrcFile, _32K, &pThis->uSectorBuf.PrimVolDesc, sizeof(pThis->uSectorBuf.PrimVolDesc), NULL);
+            rc = RTVfsFileReadAt(hIsoFile, _32K, &pThis->uSectorBuf.PrimVolDesc, sizeof(pThis->uSectorBuf.PrimVolDesc), NULL);
             if (RT_SUCCESS(rc))
             {
                 if (   pThis->uSectorBuf.VolDescHdr.achStdId[0] == ISO9660VOLDESC_STD_ID_0
@@ -2623,7 +2618,7 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
                             break;
                         }
 
-                        rc = RTVfsFileReadAt(hSrcFile, _32K + iVolDesc * ISO9660_SECTOR_SIZE,
+                        rc = RTVfsFileReadAt(hIsoFile, _32K + iVolDesc * ISO9660_SECTOR_SIZE,
                                              &pThis->uSectorBuf, sizeof(pThis->uSectorBuf), NULL);
                         if (RT_FAILURE(rc))
                         {
@@ -2654,7 +2649,7 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
                      */
                     if (RT_SUCCESS(pThis->rc) || pThis->idxSrcFile != UINT32_MAX)
                     {
-                        rc = RTVfsFileReadAt(hSrcFile, 0, pThis->abBuf, _32K, NULL);
+                        rc = RTVfsFileReadAt(hIsoFile, 0, pThis->abBuf, _32K, NULL);
                         if (RT_SUCCESS(rc))
                         {
                             if (!ASMMemIsAllU8(pThis->abBuf, _32K, 0))
@@ -2683,7 +2678,7 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
                         && !(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_BOOT)
                         && (RT_SUCCESS(pThis->rc) || pThis->idxSrcFile != UINT32_MAX))
                     {
-                        rc = RTVfsFileReadAt(hSrcFile, _32K + iElTorito * ISO9660_SECTOR_SIZE,
+                        rc = RTVfsFileReadAt(hIsoFile, _32K + iElTorito * ISO9660_SECTOR_SIZE,
                                              &pThis->uSectorBuf, sizeof(pThis->uSectorBuf), NULL);
                         if (RT_SUCCESS(rc))
                             rtFsIsoImportProcessElToritoDesc(pThis, &pThis->uSectorBuf.ElToritoDesc);
@@ -2711,8 +2706,6 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
         else
             rc = VERR_NO_MEMORY;
     }
-    RTVfsFileRelease(hSrcFile);
     return rc;
-
 }
 
