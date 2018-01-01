@@ -96,6 +96,9 @@ TEMPLATE_VBoxValidationKitR3_LIBS.win.x86 = \
        $(PATH_TOOL_$(TEMPLATE_VBoxValidationKitR3_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
        $(PATH_TOOL_$(TEMPLATE_VBoxValidationKitR3_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
 	$(PATH_STAGE_LIB)/RuntimeR3VccTricks$(VBOX_SUFF_LIB)
+TEMPLATE_VBoxValidationKitR3_LDFLAGS.win.x86 = \
+  	-Include:_vcc100_shell32_fakes_cpp \
+	-Include:_vcc100_shell32_fakes_asm
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
  TEMPLATE_VBoxValidationKitR3_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB))$(TEMPLATE_VBoxValidationKitR3Base_POST_CMDS)$$(NLTAB)
 endif

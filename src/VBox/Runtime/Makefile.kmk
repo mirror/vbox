@@ -2883,7 +2883,9 @@ endif
 RuntimeR3VccTricks_TEMPLATE = VBoxR3Static
 RuntimeR3VccTricks_SOURCES  = \
 	r3/win/vcc100-kernel32-fakes.cpp \
-	r3/win/vcc100-kernel32-fakesA.asm
+	r3/win/vcc100-kernel32-fakesA.asm \
+	r3/win/vcc100-shell32-fakes.cpp \
+	r3/win/vcc100-shell32-fakesA.asm
 
 if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" # Ugly hacks... :-)
 LIBRARIES += RuntimeR3VccTricks2
