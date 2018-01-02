@@ -42,6 +42,7 @@
 #include "internal/fs.h"
 #include "internal/dir.h"
 #include "internal/path.h"
+#include "../win/internal-r3-win.h"
 
 
 /*********************************************************************************************************************************
@@ -199,7 +200,7 @@ RTDECL(int) RTDirClose(RTDIR hDir)
  */
 static int rtDirNtCheckRecord(PRTDIRINTERNAL pThis)
 {
-#ifdef RTDIR_NT_STRICT
+#if defined(RTDIR_NT_STRICT) || defined(RT_ARCH_X86)
 # ifdef IPRT_WITH_NT_PATH_PASSTHRU
     if (pThis->enmInfoClass != FileMaximumInformation)
 # endif
@@ -209,8 +210,32 @@ static int rtDirNtCheckRecord(PRTDIRINTERNAL pThis)
             uEndAddr = (uintptr_t)&pThis->uCurData.pBothId->FileName[0];
         else
             uEndAddr = (uintptr_t)&pThis->uCurData.pBoth->FileName[0];
-        AssertReturn(uEndAddr < (uintptr_t)&pThis->pabBuffer[pThis->cbBuffer], VERR_IO_GEN_FAILURE);
 
+# ifdef RT_ARCH_X86
+        /* Workaround for NT 3.1 bug where FAT returns a too short buffer length.
+           Including all NT 3.x versions in case it bug was fixed till NT 4. */
+        uintptr_t const uEndBuffer = (uintptr_t)&pThis->pabBuffer[pThis->cbBuffer];
+        if (   uEndAddr < uEndBuffer
+            && uEndAddr + pThis->uCurData.pBoth->FileNameLength <= uEndBuffer)
+        { /* likely */ }
+        else if (   (   g_enmWinVer == kRTWinOSType_NT310
+                     || g_enmWinVer == kRTWinOSType_NT350 // not sure when it was fixed...
+                     || g_enmWinVer == kRTWinOSType_NT351)
+                 && pThis->enmInfoClass == FileBothDirectoryInformation)
+        {
+            size_t cbLeft = (uintptr_t)&pThis->pabBuffer[pThis->cbBufferAlloc] - (uintptr_t)pThis->uCurData.pBoth;
+            if (   cbLeft >= RT_UOFFSETOF(FILE_BOTH_DIR_INFORMATION, FileName)
+                && pThis->uCurData.pBoth->FileNameLength > 0
+                && cbLeft >= RT_UOFFSETOF(FILE_BOTH_DIR_INFORMATION, FileName) + pThis->uCurData.pBoth->FileNameLength)
+            {
+                pThis->cbBuffer = ((uintptr_t)&pThis->uCurData.pBoth->FileName[0] + pThis->uCurData.pBoth->FileNameLength)
+                                - (uintptr_t)&pThis->pabBuffer[0];
+            }
+        }
+# endif
+
+# ifdef RTDIR_NT_STRICT
+        AssertReturn(uEndAddr < (uintptr_t)&pThis->pabBuffer[pThis->cbBuffer], VERR_IO_GEN_FAILURE);
         AssertReturn(pThis->uCurData.pBoth->FileNameLength < _64K, VERR_FILENAME_TOO_LONG);
         AssertReturn((pThis->uCurData.pBoth->FileNameLength & 1) == 0, VERR_IO_GEN_FAILURE);
 
@@ -219,6 +244,7 @@ static int rtDirNtCheckRecord(PRTDIRINTERNAL pThis)
 
         AssertReturn((unsigned)pThis->uCurData.pBoth->ShortNameLength <= sizeof(pThis->uCurData.pBoth->ShortName),
                      VERR_IO_GEN_FAILURE);
+# endif
     }
 #else
     RT_NOREF_PV(pThis);
@@ -471,7 +497,9 @@ static int rtDirNtFetchMore(PRTDIRINTERNAL pThis)
             return VERR_NO_MORE_FILES;
         return RTErrConvertFromNtStatus(rcNt);
     }
-    Assert(Ios.Information > sizeof(*pThis->uCurData.pBoth));
+    AssertMsg(  Ios.Information
+              > (pThis->enmInfoClass == FileMaximumInformation ? sizeof(*pThis->uCurData.pObjDir) : sizeof(*pThis->uCurData.pBoth)),
+              ("Ios.Information=%#x\n", Ios.Information));
 
     /*
      * Set up the data members.
