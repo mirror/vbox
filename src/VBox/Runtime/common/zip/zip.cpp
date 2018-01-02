@@ -31,7 +31,9 @@
 #define RTZIP_USE_STORE 1
 #define RTZIP_USE_ZLIB 1
 //#define RTZIP_USE_BZLIB 1
-#define RTZIP_USE_LZF 1
+#ifndef IN_GUEST
+# define RTZIP_USE_LZF 1
+#endif
 #define RTZIP_LZF_BLOCK_BY_BLOCK
 //#define RTZIP_USE_LZJB 1
 //#define RTZIP_USE_LZO 1
