@@ -1558,20 +1558,20 @@ NTSYSAPI NTSTATUS NTAPI NtQueryVolumeInformationFile(HANDLE, PIO_STATUS_BLOCK, P
 
 typedef struct _FILE_BOTH_DIR_INFORMATION
 {
-    ULONG           NextEntryOffset;
-    ULONG           FileIndex;
-    LARGE_INTEGER   CreationTime;
-    LARGE_INTEGER   LastAccessTime;
-    LARGE_INTEGER   LastWriteTime;
-    LARGE_INTEGER   ChangeTime;
-    LARGE_INTEGER   EndOfFile;
-    LARGE_INTEGER   AllocationSize;
-    ULONG           FileAttributes;
-    ULONG           FileNameLength;
-    ULONG           EaSize;
-    CCHAR           ShortNameLength;
-    WCHAR           ShortName[12];
-    WCHAR           FileName[1];
+    ULONG           NextEntryOffset;    /**< 0x00: */
+    ULONG           FileIndex;          /**< 0x04: */
+    LARGE_INTEGER   CreationTime;       /**< 0x08: */
+    LARGE_INTEGER   LastAccessTime;     /**< 0x10: */
+    LARGE_INTEGER   LastWriteTime;      /**< 0x18: */
+    LARGE_INTEGER   ChangeTime;         /**< 0x20: */
+    LARGE_INTEGER   EndOfFile;          /**< 0x28: */
+    LARGE_INTEGER   AllocationSize;     /**< 0x30: */
+    ULONG           FileAttributes;     /**< 0x38: */
+    ULONG           FileNameLength;     /**< 0x3c: */
+    ULONG           EaSize;             /**< 0x40: */
+    CCHAR           ShortNameLength;    /**< 0x44: */
+    WCHAR           ShortName[12];      /**< 0x46: */
+    WCHAR           FileName[1];        /**< 0x5e: */
 } FILE_BOTH_DIR_INFORMATION;
 typedef FILE_BOTH_DIR_INFORMATION *PFILE_BOTH_DIR_INFORMATION;
 typedef struct _FILE_BASIC_INFORMATION

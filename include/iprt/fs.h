@@ -631,6 +631,17 @@ typedef FNRTFSMOUNTPOINTENUM *PFNRTFSMOUNTPOINTENUM;
 RTR3DECL(int) RTFsMountpointsEnum(PFNRTFSMOUNTPOINTENUM pfnCallback, void *pvUser);
 
 
+/**
+ * A /bin/ls clone.
+ *
+ * @returns Program exit code.
+ *
+ * @param   cArgs               The number of arguments.
+ * @param   papszArgs           The argument vector.  (Note that this may be
+ *                              reordered, so the memory must be writable.)
+ */
+RTEXITCODE RTFsCmdLs(unsigned cArgs, char **papszArgs);
+
 #endif /* IN_RING3 */
 
 /** @} */
