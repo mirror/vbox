@@ -578,6 +578,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  #VBoxDD_DEFS  += VBOX_WITH_AUDIO_AC97_ONETIME_INIT
  #VBoxDD_DEFS  += VBOX_WITH_AUDIO_HDA_ONETIME_INIT
 
+ VBoxDD_DEFS += \
+	$(if $(VBOX_WITH_HP_HDA),VBOX_WITH_HP_HDA,) \
+	$(if $(VBOX_WITH_INTEL_HDA),VBOX_WITH_INTEL_HDA,) \
+	$(if $(VBOX_WITH_NVIDIA_HDA),VBOX_WITH_NVIDIA_HDA,)
+
  #
  # Enables asynchronous audio data handling
  # to speed up the actual DMA data routines and keeping up
@@ -1126,7 +1131,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 	$(if $(VBOX_WITH_VDMA),VBOX_WITH_VDMA,) \
 	$(if $(VBOX_WITH_CRHGSMI),VBOX_WITH_CRHGSMI,) \
 	$(if $(VBOXWDDM_WITH_VBVA),VBOXWDDM_WITH_VBVA,) \
-	$(if $(VBOX_VDMA_WITH_WATCHDOG),VBOX_VDMA_WITH_WATCHDOG,)
+	$(if $(VBOX_VDMA_WITH_WATCHDOG),VBOX_VDMA_WITH_WATCHDOG,) \
+	$(if $(VBOX_WITH_HP_HDA),VBOX_WITH_HP_HDA,) \
+	$(if $(VBOX_WITH_INTEL_HDA),VBOX_WITH_INTEL_HDA,) \
+	$(if $(VBOX_WITH_NVIDIA_HDA),VBOX_WITH_NVIDIA_HDA,)
 
  ifdef VBOX_WITH_E1000
   VBoxDDR0_DEFS         += VBOX_WITH_E1000

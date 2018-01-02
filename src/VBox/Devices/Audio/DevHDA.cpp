@@ -65,7 +65,6 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 //#define HDA_AS_PCI_EXPRESS
-#define VBOX_WITH_INTEL_HDA
 
 /* Installs a DMA access handler (via PGM callback) to monitor
  * HDA's DMA operations, that is, writing / reading audio stream data.
