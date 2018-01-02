@@ -225,16 +225,25 @@ static int rtNtPathToNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, 
         && !RTPATH_IS_SLASH(pszPath[2])
         && pszPath[2])
     {
+#ifdef IPRT_WITH_NT_PATH_PASSTHRU
+        /*
+         * Special trick: The path starts with RTPATH_NT_PASSTHRU_PREFIX, we will skip past the bang and pass it thru.
+         */
+        if (   pszPath[2] == ':'
+            && pszPath[3] == 'i'
+            && pszPath[4] == 'p'
+            && pszPath[5] == 'r'
+            && pszPath[6] == 't'
+            && pszPath[7] == 'n'
+            && pszPath[8] == 't'
+            && pszPath[9] == ':'
+            && RTPATH_IS_SLASH(pszPath[10]))
+            return rtNtPathUtf8ToUniStr(pNtName, phRootDir, pszPath + 10);
+#endif
+
         if (   pszPath[2] == '?'
             && RTPATH_IS_SLASH(pszPath[3]))
             return rtNtPathFromWinUtf8PassThru(pNtName, phRootDir, pszPath);
-
-#ifdef IPRT_WITH_NT_PATH_PASSTHRU
-        /* Special hack: The path starts with "\\\\!\\", we will skip past the bang and pass it thru. */
-        if (   pszPath[2] == '!'
-            && RTPATH_IS_SLASH(pszPath[3]))
-            return rtNtPathUtf8ToUniStr(pNtName, phRootDir, pszPath + 3);
-#endif
 
         if (   pszPath[2] == '.'
             && RTPATH_IS_SLASH(pszPath[3]))
@@ -330,19 +339,23 @@ RTDECL(int) RTNtPathFromWinUtf16Ex(struct _UNICODE_STRING *pNtName, HANDLE *phRo
         && RTPATH_IS_SLASH(pwszWinPath[1])
         && !RTPATH_IS_SLASH(pwszWinPath[2]) )
     {
-        if (   pwszWinPath[2] == '?'
-            && cwcWinPath >= 4
-            && RTPATH_IS_SLASH(pwszWinPath[3]))
-            return rtNtPathFromWinUtf16PassThru(pNtName, phRootDir, pwszWinPath, cwcWinPath);
-
 #ifdef IPRT_WITH_NT_PATH_PASSTHRU
-        /* Special hack: The path starts with "\\\\!\\", we will skip past the bang and pass it thru. */
-        if (   pwszWinPath[2] == '!'
-            && cwcWinPath >= 4
-            && RTPATH_IS_SLASH(pwszWinPath[3]))
+        /*
+         * Special trick: The path starts with RTPATH_NT_PASSTHRU_PREFIX, we will skip past the bang and pass it thru.
+         */
+        if (   cwcWinPath >= sizeof(RTPATH_NT_PASSTHRU_PREFIX) - 1U
+            && pwszWinPath[2] == ':'
+            && pwszWinPath[3] == 'i'
+            && pwszWinPath[4] == 'p'
+            && pwszWinPath[5] == 'r'
+            && pwszWinPath[6] == 't'
+            && pwszWinPath[7] == 'n'
+            && pwszWinPath[8] == 't'
+            && pwszWinPath[9] == ':'
+            && RTPATH_IS_SLASH(pwszWinPath[10]) )
         {
-            pwszWinPath += 3;
-            cwcWinPath  -= 3;
+            pwszWinPath += 10;
+            cwcWinPath  -= 10;
             if (cwcWinPath < _32K - 1)
             {
                 PRTUTF16 pwszNtPath = RTUtf16Alloc((cwcWinPath + 1) * sizeof(RTUTF16));
@@ -363,6 +376,11 @@ RTDECL(int) RTNtPathFromWinUtf16Ex(struct _UNICODE_STRING *pNtName, HANDLE *phRo
             return rc;
         }
 #endif
+
+        if (   pwszWinPath[2] == '?'
+            && cwcWinPath >= 4
+            && RTPATH_IS_SLASH(pwszWinPath[3]))
+            return rtNtPathFromWinUtf16PassThru(pNtName, phRootDir, pwszWinPath, cwcWinPath);
 
         if (   pwszWinPath[2] == '.'
             && cwcWinPath >= 4
@@ -865,8 +883,15 @@ RTDECL(int) RTNtPathOpenDir(const char *pszPath, ACCESS_MASK fDesiredAccess, ULO
 #ifdef IPRT_WITH_NT_PATH_PASSTHRU
             if (   !RTPATH_IS_SLASH(pszPath[0])
                 || !RTPATH_IS_SLASH(pszPath[1])
-                || pszPath[2] != '!'
-                || RTPATH_IS_SLASH(pszPath[3]))
+                || pszPath[2] != ':'
+                || pszPath[3] != 'i'
+                || pszPath[4] != 'p'
+                || pszPath[5] != 'r'
+                || pszPath[6] != 't'
+                || pszPath[7] != 'n'
+                || pszPath[8] != 't'
+                || pszPath[9] != ':'
+                || !RTPATH_IS_SLASH(pszPath[10]) )
 #endif
                 pfObjDir = NULL;
         }
@@ -987,12 +1012,13 @@ RTDECL(int) RTNtPathOpenDirEx(HANDLE hRootDir, struct _UNICODE_STRING *pNtName, 
 
         /* Rought conversion of the access flags. */
         ULONG fObjDesiredAccess = 0;
-        if (fDesiredAccess & (GENERIC_ALL | STANDARD_RIGHTS_ALL))
+        if (   (fDesiredAccess & GENERIC_ALL)
+            || (fDesiredAccess & STANDARD_RIGHTS_ALL) == STANDARD_RIGHTS_ALL)
             fObjDesiredAccess = DIRECTORY_ALL_ACCESS;
         else
         {
-            if (fDesiredAccess & (FILE_GENERIC_WRITE | GENERIC_WRITE | STANDARD_RIGHTS_WRITE))
-                fObjDesiredAccess |= DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_OBJECT;
+            if (fDesiredAccess & (GENERIC_WRITE | STANDARD_RIGHTS_WRITE | FILE_WRITE_DATA))
+                fObjDesiredAccess |= DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY;
             if (   (fDesiredAccess & (FILE_LIST_DIRECTORY | FILE_GENERIC_READ | GENERIC_READ | STANDARD_RIGHTS_READ))
                 || !fObjDesiredAccess)
                 fObjDesiredAccess |= DIRECTORY_QUERY | FILE_LIST_DIRECTORY;

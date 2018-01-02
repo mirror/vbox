@@ -203,6 +203,12 @@ RT_C_DECLS_BEGIN
  */
 #define RTPATH_IS_SEP(a_ch)     ( RTPATH_IS_SLASH(a_ch) || RTPATH_IS_VOLSEP(a_ch) )
 
+#if defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
+/** @def RTPATH_NT_PASSTHRU_PREFIX
+ * Prefix used to access the NT namespace directly.
+ * This forms an invalid UNC name. */
+# define RTPATH_NT_PASSTHRU_PREFIX      "\\\\:iprtnt:\\"
+#endif
 
 /**
  * Checks if the path exists.

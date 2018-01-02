@@ -36,11 +36,12 @@
 #include "internal/iprt.h"
 
 
-#ifdef DEBUG_bird
+#if 1
 /** Enables the "\\!\" NT path pass thru as well as hacks for listing NT object
  * directories. */
 # define IPRT_WITH_NT_PATH_PASSTHRU 1
 #endif
+
 
 
 /**
