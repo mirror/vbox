@@ -1385,7 +1385,7 @@ static RTEXITCODE rtCmdLsProcessArgument(PRTCMDLSOPTS pOpts, const char *pszArg)
  * @param   papszArgs           The argument vector.  (Note that this may be
  *                              reordered, so the memory must be writable.)
  */
-RTEXITCODE RTFsCmdLs(unsigned cArgs, char **papszArgs)
+RTR3DECL(RTEXITCODE) RTFsCmdLs(unsigned cArgs, char **papszArgs)
 {
 
     /*
