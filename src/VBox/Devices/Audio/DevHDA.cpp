@@ -1559,7 +1559,6 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         pStream->State.cbTransferProcessed = 0;
         pStream->State.tsTransferNext      = tsNow + cTicksToNext;
 
-        Assert(pStream->State.cTransferPendingInterrupts);
         if (pStream->State.cTransferPendingInterrupts)
             pStream->State.cTransferPendingInterrupts--;
 

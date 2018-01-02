@@ -242,11 +242,85 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
             LogRel(("HDA: Device timer (%RU32) does not fit to stream #RU8 timing (%RU32)\n",
                     pThis->u16TimerHz, pStream->State.Cfg.Props.uHz));
 
+        /* Figure out how many transfer fragments we're going to use for this stream. */
         /** @todo Use a more dynamic fragment size? */
         Assert(pStream->u16LVI <= UINT8_MAX - 1);
         uint8_t cFragments = pStream->u16LVI + 1;
         if (cFragments <= 1)
             cFragments = 2; /* At least two fragments (BDLEs) must be present. */
+
+        /*
+         * Handle the stream's position adjustment.
+         */
+        uint32_t cfPosAdjust = 0;
+
+        LogFunc(("[SD%RU8] fPosAdjustEnabled=%RTbool, cPosAdjustFrames=%RU16\n",
+                 pStream->u8SD, pThis->fPosAdjustEnabled, pThis->cPosAdjustFrames));
+
+        if (pThis->fPosAdjustEnabled) /* Is the position adjustment enabled at all? */
+        {
+            HDABDLE BDLE;
+            RT_ZERO(BDLE);
+
+            Assert(pStream->u64BDLBase);
+
+            int rc2 = hdaBDLEFetch(pThis, &BDLE, pStream->u64BDLBase, 0 /* Entry */);
+            AssertRC(rc2);
+
+            Assert(BDLE.Desc.u32BufSize % pStream->State.cbFrameSize == 0);
+
+            /* If no custom set position adjustment is set, apply some
+             * simple heuristics to detect the appropriate position adjustment. */
+            if (   !pThis->cPosAdjustFrames
+            /* Position adjustmenet buffer *must* have the IOC bit set! */
+                && hdaBDLENeedsInterrupt(&BDLE))
+            {
+                /** @todo Implement / use a (dynamic) table once this gets more complicated. */
+#ifdef VBOX_WITH_INTEL_HDA
+                /* Intel ICH / PCH: 1 frame. */
+                if (BDLE.Desc.u32BufSize == 1 * pStream->State.cbFrameSize)
+                {
+                    cfPosAdjust = 1;
+                }
+                /* Intel Baytrail / Braswell: 32 frames. */
+                else if (BDLE.Desc.u32BufSize == 32 * pStream->State.cbFrameSize)
+                {
+                    cfPosAdjust = 32;
+                }
+#endif
+            }
+            else /* Go with the set default. */
+                cfPosAdjust = pThis->cPosAdjustFrames;
+
+            if (cfPosAdjust)
+            {
+                /* Also adjust the number of fragments, as the position adjustment buffer
+                 * does not count as an own fragment as such.
+                 *
+                 * This e.g. can happen on (newer) Ubuntu guests which use
+                 * 4 (IOC) + 4408 (IOC) + 4408 (IOC) + 4408 (IOC) + 4404 (= 17632) bytes,
+                 * where the first buffer (4) is used as position adjustment.
+                 *
+                 * Only skip a fragment if the whole buffer fragment is used for
+                 * position adjustment.
+                 */
+                if (   (cfPosAdjust * pStream->State.cbFrameSize) == BDLE.Desc.u32BufSize
+                    && cFragments)
+                {
+                    cFragments--;
+                }
+
+                /* Initialize position adjustment counter. */
+                pStream->State.cPosAdjustFramesLeft = cfPosAdjust;
+                LogRel2(("HDA: Position adjustment for stream #%RU8 active (%RU32 frames)\n", pStream->u8SD, cfPosAdjust));
+            }
+        }
+
+        LogFunc(("[SD%RU8] cfPosAdjust=%RU32, cFragments=%RU8\n", pStream->u8SD, cfPosAdjust, cFragments));
+
+        /*
+         * Set up data transfer transfer stuff.
+         */
 
         /* Calculate the fragment size the guest OS expects interrupt delivery at. */
         pStream->State.cbTransferSize = pStream->u32CBL / cFragments;
@@ -283,51 +357,6 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
                  "cbTransferSize=%RU32\n",
                  pStream->u8SD, pThis->u16TimerHz, cTicksPerHz, pStream->State.cTicksPerByte,
                  pStream->State.cbTransferChunk, pStream->State.cTransferTicks, pStream->State.cbTransferSize));
-        /*
-         * Handle the stream's position adjustment.
-         */
-        uint32_t cfPosAdjust = 0;
-
-        if (pThis->fPosAdjustEnabled) /* Is the position adjustment enabled at all? */
-        {
-            /* If no custom set position adjustment is set, apply some
-             * simple heuristics to detect the appropriate position adjustment. */
-            if (   pStream->u64BDLBase
-                && !pThis->cPosAdjustFrames)
-            {
-                HDABDLE BDLE;
-                int rc2 = hdaBDLEFetch(pThis, &BDLE, pStream->u64BDLBase, 0 /* Entry */);
-                AssertRC(rc2);
-
-                /** @todo Implement / use a (dynamic) table once this gets more complicated. */
-
-#ifdef VBOX_WITH_INTEL_HDA
-                /* Intel ICH / PCH: 1 frame. */
-                if (BDLE.Desc.u32BufSize == 1 * pStream->State.cbFrameSize)
-                {
-                    cfPosAdjust = 1;
-                }
-                /* Intel Baytrail / Braswell: 32 frames. */
-                else if (BDLE.Desc.u32BufSize == 32 * pStream->State.cbFrameSize)
-                {
-                    cfPosAdjust = 32;
-                }
-                else
-#endif
-                    cfPosAdjust = pThis->cPosAdjustFrames;
-            }
-            else /* Go with the set default. */
-                cfPosAdjust = pThis->cPosAdjustFrames;
-
-            if (cfPosAdjust)
-            {
-                /* Initialize position adjustment counter. */
-                pStream->State.cPosAdjustFramesLeft = cfPosAdjust;
-                LogRel2(("HDA: Position adjustment for stream #%RU8 active (%RU32 frames)\n", pStream->u8SD, cfPosAdjust));
-            }
-        }
-
-        LogFunc(("[SD%RU8] cfPosAdjust=%RU32\n", pStream->u8SD, cfPosAdjust));
 
         /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
         hdaStreamSetPosition(pStream, HDA_STREAM_REG(pThis, LPIB, pStream->u8SD));
