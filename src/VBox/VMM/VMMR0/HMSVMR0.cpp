@@ -1914,6 +1914,7 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
         pVmcbNstGst->ctrl.u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt;
         pVmcbNstGst->ctrl.u64InterceptCtrl  |= pVmcb->ctrl.u64InterceptCtrl
                                             |  HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS;
+
         /*
          * Remove control intercepts that we don't need while executing the nested-guest.
          *
