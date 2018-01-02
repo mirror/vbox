@@ -75,7 +75,7 @@
         if (RT_LIKELY(rc == VINF_SUCCESS))        { /* continue #VMEXIT handling */ } \
         else if (     rc == VINF_HM_DOUBLE_FAULT) { return VINF_SUCCESS;            } \
         else if (     rc == VINF_EM_RESET \
-                 &&   CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_SHUTDOWN)) \
+                 &&   hmIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_SHUTDOWN)) \
             return VBOXSTRICTRC_TODO(IEMExecSvmVmexit(pVCpu, SVM_EXIT_SHUTDOWN, 0, 0)); \
         else \
             return rc; \
