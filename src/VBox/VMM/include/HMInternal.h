@@ -521,7 +521,9 @@ typedef struct HM
         bool                        fAlwaysFlushTLB;
         /** Set when the hack to ignore VERR_SVM_IN_USE is active. */
         bool                        fIgnoreInUseError;
-        uint8_t                     u8Alignment0[4];
+        /** Whether to use virutalized VMSAVE/VMLOAD feature. */
+        bool                        fVirtVmsaveVmload;
+        uint8_t                     u8Alignment0[3];
 
         /** Physical address of the IO bitmap (12kb). */
         RTHCPHYS                    HCPhysIOBitmap;

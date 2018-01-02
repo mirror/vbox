@@ -165,8 +165,6 @@
                                                          | SVM_CTRL_INTERCEPT_FERR_FREEZE \
                                                          | SVM_CTRL_INTERCEPT_VMRUN       \
                                                          | SVM_CTRL_INTERCEPT_VMMCALL     \
-                                                         | SVM_CTRL_INTERCEPT_VMLOAD      \
-                                                         | SVM_CTRL_INTERCEPT_VMSAVE      \
                                                          | SVM_CTRL_INTERCEPT_STGI        \
                                                          | SVM_CTRL_INTERCEPT_CLGI        \
                                                          | SVM_CTRL_INTERCEPT_SKINIT      \
@@ -816,6 +814,9 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     bool const fLbrVirt              = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_LBR_VIRT);
     bool const fUseLbrVirt           = fLbrVirt; /** @todo CFGM etc. */
 
+    bool const fVirtVmsaveVmload     = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VIRT_VMSAVE_VMLOAD);
+    bool const fUseVirtVmsaveVmload  = fVirtVmsaveVmload && pVM->hm.s.svm.fVirtVmsaveVmload && pVM->hm.s.fNestedPaging;
+
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU   pVCpu = &pVM->aCpus[i];
@@ -884,6 +885,14 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         }
         else
             Assert(pVmcb->ctrl.LbrVirt.n.u1LbrVirt == 0);
+
+        /* Virtualized VMSAVE/VMLOAD. */
+        pVmcb->ctrl.LbrVirt.n.u1VirtVmsaveVmload = fUseVirtVmsaveVmload;
+        if (!fUseVirtVmsaveVmload)
+        {
+            pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VMSAVE
+                                         |  SVM_CTRL_INTERCEPT_VMLOAD;
+        }
 
         /* Initially all VMCB clean bits MBZ indicating that everything should be loaded from the VMCB in memory. */
         Assert(pVmcb->ctrl.u32VmcbCleanBits == 0);
@@ -1905,18 +1914,27 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
         pVmcbNstGst->ctrl.u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt;
         pVmcbNstGst->ctrl.u64InterceptCtrl  |= pVmcb->ctrl.u64InterceptCtrl
                                             |  HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS;
-
         /*
          * Remove control intercepts that we don't need while executing the nested-guest.
          *
          * VMMCALL when not intercepted raises a \#UD exception in the guest. However,
          * other SVM instructions like VMSAVE when not intercept can cause havoc on the
          * host as they can write to any location in physical memory, hence they always
-         * need to be intercepted (they are included in HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS).
+         * need to be intercepted (see below).
          */
         Assert(   (pVmcbNstGst->ctrl.u64InterceptCtrl & HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS)
                == HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS);
         pVmcbNstGst->ctrl.u64InterceptCtrl  &= ~SVM_CTRL_INTERCEPT_VMMCALL;
+
+        /*
+         * If we don't expose Virtualized-VMSAVE/VMLOAD feature to the outer guest, we
+         * need to intercept VMSAVE/VMLOAD instructions executed by the nested-guest.
+         */
+        if (!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fSvmVirtVmsaveVmload)
+        {
+            pVmcbNstGst->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VMSAVE
+                                               |  SVM_CTRL_INTERCEPT_VMLOAD;
+        }
 
         /* Finally, update the VMCB clean bits. */
         pVmcbNstGst->ctrl.u32VmcbCleanBits  &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
@@ -7562,6 +7580,13 @@ HMSVM_EXIT_DECL hmR0SvmExitVmload(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
+#ifdef VBOX_STRICT
+    PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
+    Assert(pVmcb);
+    Assert(!pVmcb->ctrl.LbrVirt.n.u1VirtVmsaveVmload);
+    RT_NOREF(pVmcb);
+#endif
+
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmload); */
     uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
@@ -7583,6 +7608,13 @@ HMSVM_EXIT_DECL hmR0SvmExitVmload(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 HMSVM_EXIT_DECL hmR0SvmExitVmsave(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+#ifdef VBOX_STRICT
+    PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
+    Assert(pVmcb);
+    Assert(!pVmcb->ctrl.LbrVirt.n.u1VirtVmsaveVmload);
+    RT_NOREF(pVmcb);
+#endif
 
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmsave); */
