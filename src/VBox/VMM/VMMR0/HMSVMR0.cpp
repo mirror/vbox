@@ -7400,6 +7400,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptBP(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 }
 
 
+#if defined(HMSVM_ALWAYS_TRAP_ALL_XCPTS) || defined(VBOX_WITH_NESTED_HWVIRT)
 /**
  * \#VMEXIT handler for generic exceptions. Conditional \#VMEXIT.
  */
@@ -7442,7 +7443,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
     hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
     return VINF_SUCCESS;
 }
-
+#endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
 /**
