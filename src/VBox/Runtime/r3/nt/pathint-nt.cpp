@@ -1019,9 +1019,13 @@ RTDECL(int) RTNtPathOpenDirEx(HANDLE hRootDir, struct _UNICODE_STRING *pNtName, 
         {
             if (fDesiredAccess & (GENERIC_WRITE | STANDARD_RIGHTS_WRITE | FILE_WRITE_DATA))
                 fObjDesiredAccess |= DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY;
-            if (   (fDesiredAccess & (FILE_LIST_DIRECTORY | FILE_GENERIC_READ | GENERIC_READ | STANDARD_RIGHTS_READ))
+
+            if (   (fDesiredAccess & (GENERIC_READ | STANDARD_RIGHTS_READ | FILE_LIST_DIRECTORY))
                 || !fObjDesiredAccess)
-                fObjDesiredAccess |= DIRECTORY_QUERY | FILE_LIST_DIRECTORY;
+                fObjDesiredAccess |= DIRECTORY_QUERY;
+
+            if (fDesiredAccess & FILE_TRAVERSE)
+                fObjDesiredAccess |= DIRECTORY_TRAVERSE;
         }
 
         rcNt = NtOpenDirectoryObject(&hFile, fObjDesiredAccess, &ObjAttr);
