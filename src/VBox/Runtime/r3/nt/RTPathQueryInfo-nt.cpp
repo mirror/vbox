@@ -412,7 +412,6 @@ DECLHIDDEN(int) rtPathNtQueryInfoWorker(HANDLE hRootDir, UNICODE_STRING *pNtName
             rc = rtPathNtQueryInfoInDirectoryObject(&ObjAttr, pObjInfo, enmAddAttr, fFlags, &uBuf, sizeof(uBuf));
             if (RT_SUCCESS(rc))
                 return rc;
-            rc = RTErrConvertFromNtStatus(rcNt);
         }
         else if (   rcNt != STATUS_ACCESS_DENIED
                  && rcNt != STATUS_SHARING_VIOLATION)
@@ -429,6 +428,12 @@ DECLHIDDEN(int) rtPathNtQueryInfoWorker(HANDLE hRootDir, UNICODE_STRING *pNtName
      */
     if (rc == VINF_TRY_AGAIN)
     {
+        static int volatile g_fReparsePoints = -1;
+        uint32_t            fOptions         = FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT;
+        int fReparsePoints = g_fReparsePoints;
+        if (fReparsePoints != 0 && !(fFlags & RTPATH_F_FOLLOW_LINK))
+            fOptions |= FILE_OPEN_REPARSE_POINT;
+
         InitializeObjectAttributes(&ObjAttr, pNtName, OBJ_CASE_INSENSITIVE, hRootDir, NULL);
         rcNt = NtCreateFile(&hFile,
                             FILE_READ_ATTRIBUTES | SYNCHRONIZE,
@@ -438,10 +443,29 @@ DECLHIDDEN(int) rtPathNtQueryInfoWorker(HANDLE hRootDir, UNICODE_STRING *pNtName
                             FILE_ATTRIBUTE_NORMAL,
                             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                             FILE_OPEN,
-                            FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT
-                            | (fFlags & RTPATH_F_FOLLOW_LINK ? 0 : FILE_OPEN_REPARSE_POINT),
+                            fOptions,
                             NULL /*pvEaBuffer*/,
                             0 /*cbEa*/);
+        if (   (   rcNt == STATUS_INVALID_PARAMETER
+                || rcNt == STATUS_INVALID_PARAMETER_9)
+            && fReparsePoints == -1
+            && (fOptions & FILE_OPEN_REPARSE_POINT))
+        {
+            fOptions &= ~FILE_OPEN_REPARSE_POINT;
+            rcNt = NtCreateFile(&hFile,
+                                FILE_READ_ATTRIBUTES | SYNCHRONIZE,
+                                &ObjAttr,
+                                &Ios,
+                                NULL /*pcbFile*/,
+                                FILE_ATTRIBUTE_NORMAL,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                FILE_OPEN,
+                                fOptions,
+                                NULL /*pvEaBuffer*/,
+                                0 /*cbEa*/);
+            if (rcNt != STATUS_INVALID_PARAMETER)
+                g_fReparsePoints = fReparsePoints = 0;
+        }
         if (NT_SUCCESS(rcNt))
         {
             /* Query tag information first in order to try re-open non-symlink reparse points. */
@@ -487,6 +511,14 @@ DECLHIDDEN(int) rtPathNtQueryInfoWorker(HANDLE hRootDir, UNICODE_STRING *pNtName
 
             if (RT_FAILURE(rc))
                 rc = VERR_TRY_AGAIN;
+        }
+        else if (   rcNt == STATUS_OBJECT_TYPE_MISMATCH
+                 || rcNt == STATUS_OBJECT_NAME_INVALID
+                 /*|| rcNt == STATUS_INVALID_PARAMETER*/)
+        {
+            rc = rtPathNtQueryInfoInDirectoryObject(&ObjAttr, pObjInfo, enmAddAttr, fFlags, &uBuf, sizeof(uBuf));
+            if (RT_SUCCESS(rc))
+                return rc;
         }
         else if (   rcNt != STATUS_ACCESS_DENIED
                  && rcNt != STATUS_SHARING_VIOLATION)
