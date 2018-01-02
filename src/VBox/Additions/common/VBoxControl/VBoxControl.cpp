@@ -29,6 +29,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
+#include <iprt/zip.h>
 #include <VBox/log.h>
 #include <VBox/version.h>
 #include <VBox/VBoxGuestLib.h>
@@ -1846,6 +1847,38 @@ static DECLCALLBACK(RTEXITCODE) handleHelp(int argc, char *argv[])
     return RTEXITCODE_SUCCESS;
 }
 
+/**
+ * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: ls}
+ */
+static DECLCALLBACK(RTEXITCODE) handleLs(int argc, char *argv[])
+{
+    return RTFsCmdLs(argc + 1, argv - 1);
+}
+
+/**
+ * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: tar}
+ */
+static DECLCALLBACK(RTEXITCODE) handleTar(int argc, char *argv[])
+{
+    return RTZipTarCmd(argc + 1, argv - 1);
+}
+
+/**
+ * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: tar}
+ */
+static DECLCALLBACK(RTEXITCODE) handleGzip(int argc, char *argv[])
+{
+    return RTZipGzipCmd(argc + 1, argv - 1);
+}
+
+/**
+ * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: unzip}
+ */
+static DECLCALLBACK(RTEXITCODE) handleUnzip(int argc, char *argv[])
+{
+    return RTZipUnzipCmd(argc + 1, argv - 1);
+}
+
 
 /** command handler type */
 typedef DECLCALLBACK(RTEXITCODE) FNVBOXCTRLCMDHANDLER(int argc, char *argv[]);
@@ -1854,41 +1887,47 @@ typedef FNVBOXCTRLCMDHANDLER *PFNVBOXCTRLCMDHANDLER;
 /** The table of all registered command handlers. */
 struct COMMANDHANDLER
 {
-    const char *pszCommand;
-    PFNVBOXCTRLCMDHANDLER pfnHandler;
+    const char             *pszCommand;
+    PFNVBOXCTRLCMDHANDLER   pfnHandler;
+    bool                    fNeedDevice;
 } g_aCommandHandlers[] =
 {
 #if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
-    { "getvideoacceleration",   handleGetVideoAcceleration },
-    { "setvideoacceleration",   handleSetVideoAcceleration },
-    { "videoflags",             handleVideoFlags },
-    { "listcustommodes",        handleListCustomModes },
-    { "addcustommode",          handleAddCustomMode },
-    { "removecustommode",       handleRemoveCustomMode },
-    { "setvideomode",           handleSetVideoMode },
+    { "getvideoacceleration",   handleGetVideoAcceleration, true  },
+    { "setvideoacceleration",   handleSetVideoAcceleration, true  },
+    { "videoflags",             handleVideoFlags,           true  },
+    { "listcustommodes",        handleListCustomModes,      true  },
+    { "addcustommode",          handleAddCustomMode,        true  },
+    { "removecustommode",       handleRemoveCustomMode,     true  },
+    { "setvideomode",           handleSetVideoMode,         true  },
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
-    { "guestproperty",          handleGuestProperty },
+    { "guestproperty",          handleGuestProperty,        true  },
 #endif
 #ifdef VBOX_WITH_SHARED_FOLDERS
-    { "sharedfolder",           handleSharedFolder },
+    { "sharedfolder",           handleSharedFolder,         true  },
 #endif
 #if !defined(VBOX_CONTROL_TEST)
-    { "writecoredump",          handleWriteCoreDump },
+    { "writecoredump",          handleWriteCoreDump,        true  },
 #endif
 #ifdef VBOX_WITH_DPC_LATENCY_CHECKER
-    { "dpc",                    handleDpc },
+    { "dpc",                    handleDpc,                  true  },
 #endif
-    { "writelog",               handleWriteLog },
-    { "takesnapshot",           handleTakeSnapshot },
-    { "savestate",              handleSaveState },
-    { "suspend",                handleSuspend },
-    { "pause",                  handleSuspend },
-    { "poweroff",               handlePowerOff },
-    { "powerdown",              handlePowerOff },
-    { "getversion",             handleVersion },
-    { "version",                handleVersion },
-    { "help",                   handleHelp }
+    { "writelog",               handleWriteLog,             true  },
+    { "takesnapshot",           handleTakeSnapshot,         true  },
+    { "savestate",              handleSaveState,            true  },
+    { "suspend",                handleSuspend,              true  },
+    { "pause",                  handleSuspend,              true  },
+    { "poweroff",               handlePowerOff,             true  },
+    { "powerdown",              handlePowerOff,             true  },
+    { "getversion",             handleVersion,              false },
+    { "version",                handleVersion,              false },
+    { "help",                   handleHelp,                 false },
+    /* Hany tricks that doesn't cost much space: */
+    { "gzip",                   handleGzip,                 false },
+    { "ls",                     handleLs,                   false },
+    { "tar",                    handleTar,                  false },
+    { "unzip",                  handleUnzip,                false },
 };
 
 /** Main function */
@@ -1962,24 +2001,8 @@ int main(int argc, char **argv)
         usage();
 
     /*
-     * Do global initialisation for the programme if we will be handling a command
-     */
-    if (!fOnlyInfo)
-    {
-        rrc = VbglR3Init();
-        if (RT_FAILURE(rrc))
-        {
-            VBoxControlError("Could not contact the host system.  Make sure that you are running this\n"
-                             "application inside a VirtualBox guest system, and that you have sufficient\n"
-                             "user permissions.\n");
-            rcExit = RTEXITCODE_FAILURE;
-        }
-    }
-
-    /*
      * Now look for an actual command in the argument list and handle it.
      */
-
     if (!fOnlyInfo && rcExit == RTEXITCODE_SUCCESS)
     {
         if (argc > iArg)
@@ -1991,20 +2014,32 @@ int main(int argc, char **argv)
             for (i = 0; i < RT_ELEMENTS(g_aCommandHandlers); i++)
                 if (!strcmp(argv[iArg], g_aCommandHandlers[i].pszCommand))
                 {
-                    rcExit = g_aCommandHandlers[i].pfnHandler(argc - iArg - 1, argv + iArg + 1);
+                    if (g_aCommandHandlers[i].fNeedDevice)
+                    {
+                        rrc = VbglR3Init();
+                        if (RT_FAILURE(rrc))
+                        {
+                            VBoxControlError("Could not contact the host system.  Make sure that you are running this\n"
+                                             "application inside a VirtualBox guest system, and that you have sufficient\n"
+                                             "user permissions.\n");
+                            rcExit = RTEXITCODE_FAILURE;
+                        }
+                    }
+                    if (rcExit == RTEXITCODE_SUCCESS)
+                        rcExit = g_aCommandHandlers[i].pfnHandler(argc - iArg - 1, argv + iArg + 1);
                     break;
                 }
             if (i >= RT_ELEMENTS(g_aCommandHandlers))
             {
-                rcExit = RTEXITCODE_FAILURE;
                 usage();
+                rcExit = RTEXITCODE_SYNTAX;
             }
         }
         else
         {
             /* The user didn't specify a command. */
-            rcExit = RTEXITCODE_FAILURE;
             usage();
+            rcExit = RTEXITCODE_SYNTAX;
         }
     }
 

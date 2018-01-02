@@ -42,6 +42,7 @@ VBoxControl_DEFS     += \
 	$(if $(VBOX_WITH_SHARED_FOLDERS),VBOX_WITH_SHARED_FOLDERS,)
 VBoxControl_DEFS.win += \
 	$(if $(VBOX_WITH_DPC_LATENCY_CHECKER),VBOX_WITH_DPC_LATENCY_CHECKER,)
+VBoxControl_SDKS = VBOX_ZLIB_STATIC
 VBoxControl_SOURCES = \
 	VBoxControl.cpp
 VBoxControl_SOURCES.win = \
