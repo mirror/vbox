@@ -2610,6 +2610,7 @@
 # define RTZipDecompress                                RT_MANGLER(RTZipDecompress)
 # define RTZipGzipCompressIoStream                      RT_MANGLER(RTZipGzipCompressIoStream)
 # define RTZipGzipDecompressIoStream                    RT_MANGLER(RTZipGzipDecompressIoStream)
+# define RTZipGzipCmd                                   RT_MANGLER(RTZipGzipCmd)
 # define RTZipPkzipFsStreamFromIoStream                 RT_MANGLER(RTZipPkzipFsStreamFromIoStream)
 # define RTZipPkzipMemDecompress                        RT_MANGLER(RTZipPkzipMemDecompress)
 # define RTZipTarCmd                                    RT_MANGLER(RTZipTarCmd)
