@@ -1559,11 +1559,16 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         pStream->State.cbTransferProcessed = 0;
         pStream->State.tsTransferNext      = tsNow + cTicksToNext;
 
+        /* Only re-arm the timer if there were pending transfer interrupts left
+         *  -- it could happen that we land in here if a guest writes to SDnSTS
+         * unconditionally. */
         if (pStream->State.cTransferPendingInterrupts)
+        {
             pStream->State.cTransferPendingInterrupts--;
 
-        /* Re-arm the timer. */
-        hdaTimerSet(pThis, tsNow + cTicksToNext, false /* fForce */);
+            /* Re-arm the timer. */
+            hdaTimerSet(pThis, tsNow + cTicksToNext, false /* fForce */);
+        }
     }
 
     hdaStreamUnlock(pStream);
