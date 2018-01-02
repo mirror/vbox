@@ -165,8 +165,6 @@
                                                          | SVM_CTRL_INTERCEPT_FERR_FREEZE \
                                                          | SVM_CTRL_INTERCEPT_VMRUN       \
                                                          | SVM_CTRL_INTERCEPT_VMMCALL     \
-                                                         | SVM_CTRL_INTERCEPT_STGI        \
-                                                         | SVM_CTRL_INTERCEPT_CLGI        \
                                                          | SVM_CTRL_INTERCEPT_SKINIT      \
                                                          | SVM_CTRL_INTERCEPT_WBINVD      \
                                                          | SVM_CTRL_INTERCEPT_MONITOR     \
@@ -812,10 +810,13 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     bool const fUsePauseFilter       = fPauseFilter && pVM->hm.s.svm.cPauseFilter && pVM->hm.s.svm.cPauseFilterThresholdTicks;
 
     bool const fLbrVirt              = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_LBR_VIRT);
-    bool const fUseLbrVirt           = fLbrVirt; /** @todo CFGM etc. */
+    bool const fUseLbrVirt           = fLbrVirt; /** @todo CFGM, IEM implementation etc. */
 
     bool const fVirtVmsaveVmload     = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VIRT_VMSAVE_VMLOAD);
     bool const fUseVirtVmsaveVmload  = fVirtVmsaveVmload && pVM->hm.s.svm.fVirtVmsaveVmload && pVM->hm.s.fNestedPaging;
+
+    bool const fVGif                 = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VGIF);
+    bool const fUseVGif              = fVGif && pVM->hm.s.svm.fVGif;
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
@@ -892,6 +893,14 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         {
             pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VMSAVE
                                          |  SVM_CTRL_INTERCEPT_VMLOAD;
+        }
+
+        /* Virtual GIF. */
+        pVmcb->ctrl.IntCtrl.n.u1VGifEnable = fUseVGif;
+        if (!fUseVGif)
+        {
+            pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_CLGI
+                                         |  SVM_CTRL_INTERCEPT_STGI;
         }
 
         /* Initially all VMCB clean bits MBZ indicating that everything should be loaded from the VMCB in memory. */
@@ -1916,7 +1925,8 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
                                             |  HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS;
 
         /*
-         * Remove control intercepts that we don't need while executing the nested-guest.
+         * Adjust control intercepts while executing the nested-guest that differ
+         * from the outer guest intercepts.
          *
          * VMMCALL when not intercepted raises a \#UD exception in the guest. However,
          * other SVM instructions like VMSAVE when not intercept can cause havoc on the
@@ -1935,6 +1945,16 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
         {
             pVmcbNstGst->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VMSAVE
                                                |  SVM_CTRL_INTERCEPT_VMLOAD;
+        }
+
+        /*
+         * If we don't expose Virtual GIF feature to the outer guest, we need to intercept
+         * CLGI/STGI instructions executed by the nested-guest.
+         */
+        if (!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fSvmVGif)
+        {
+            pVmcbNstGst->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_CLGI
+                                               |  SVM_CTRL_INTERCEPT_STGI;
         }
 
         /* Finally, update the VMCB clean bits. */
@@ -2125,6 +2145,14 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     pVmcb->guest.u64RFlags = pCtx->eflags.u32;
     pVmcb->guest.u64RAX    = pCtx->rax;
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    if (pVmcb->ctrl.IntCtrl.n.u1VGifEnable == 1)
+    {
+        Assert(pVM->hm.s.svm.fVGif);
+        pVmcb->ctrl.IntCtrl.n.u1VGif = pCtx->hwvirt.svm.fGif;
+    }
+#endif
+
     rc = hmR0SvmLoadGuestApicState(pVCpu, pVmcb, pCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmLoadGuestApicState! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
@@ -2296,6 +2324,10 @@ static int hmR0SvmLoadGuestStateNested(PVMCPU pVCpu, PCPUMCTX pCtx)
     pVmcbNstGst->guest.u64RFlags = pCtx->eflags.u32;
     pVmcbNstGst->guest.u64RAX    = pCtx->rax;
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    Assert(pVmcbNstGst->ctrl.IntCtrl.n.u1VGifEnable == 0);        /* Nested VGIF not supported yet. */
+#endif
+
     hmR0SvmLoadGuestXcptInterceptsNested(pVCpu, pVmcbNstGst, pCtx);
 
     rc = hmR0SvmSetupVMRunHandler(pVCpu);
@@ -2396,6 +2428,18 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pV
     pMixedCtx->rsp        = pVmcb->guest.u64RSP;
     pMixedCtx->eflags.u32 = pVmcb->guest.u64RFlags;
     pMixedCtx->rax        = pVmcb->guest.u64RAX;
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    /*
+     * Guest Virtual GIF (Global Interrupt Flag).
+     */
+    if (   pVmcb->ctrl.IntCtrl.n.u1VGifEnable == 1
+        && !CPUMIsGuestInSvmNestedHwVirtMode(pMixedCtx))
+    {
+        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.fVGif);
+        pMixedCtx->hwvirt.svm.fGif = pVmcb->ctrl.IntCtrl.n.u1VGif;
+    }
+#endif
 
     /*
      * Guest interrupt shadow.
@@ -3618,7 +3662,8 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("ctrl.IntCtrl.u1IgnoreTPR          %#x\n",      pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR));
         Log4(("ctrl.IntCtrl.u3Reserved           %#x\n",      pVmcb->ctrl.IntCtrl.n.u3Reserved));
         Log4(("ctrl.IntCtrl.u1VIntrMasking       %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIntrMasking));
-        Log4(("ctrl.IntCtrl.u6Reserved1          %#x\n",      pVmcb->ctrl.IntCtrl.n.u6Reserved1));
+        Log4(("ctrl.IntCtrl.u1VGifEnable         %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VGifEnable));
+        Log4(("ctrl.IntCtrl.u5Reserved1          %#x\n",      pVmcb->ctrl.IntCtrl.n.u5Reserved1));
         Log4(("ctrl.IntCtrl.u8VIntrVector        %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VIntrVector));
         Log4(("ctrl.IntCtrl.u24Reserved          %#x\n",      pVmcb->ctrl.IntCtrl.n.u24Reserved));
 
@@ -7543,6 +7588,13 @@ HMSVM_EXIT_DECL hmR0SvmExitClgi(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
+#ifdef VBOX_STRICT
+    PCSVMVMCB pVmcbTmp = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
+    Assert(pVmcbTmp);
+    Assert(!pVmcbTmp->ctrl.IntCtrl.n.u1VGifEnable);
+    RT_NOREF(pVmcbTmp);
+#endif
+
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClgi); */
     uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
@@ -7565,6 +7617,13 @@ HMSVM_EXIT_DECL hmR0SvmExitClgi(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
 HMSVM_EXIT_DECL hmR0SvmExitStgi(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+#ifdef VBOX_STRICT
+    PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
+    Assert(pVmcb);
+    Assert(!pVmcb->ctrl.IntCtrl.n.u1VGifEnable);
+    RT_NOREF(pVmcb);
+#endif
 
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitStgi); */

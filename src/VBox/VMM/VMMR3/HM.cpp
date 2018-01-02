@@ -460,7 +460,8 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                               "|Exclusive"
                               "|MaxResumeLoops"
                               "|UseVmxPreemptTimer"
-                              "|SvmVirtVmsaveVmload",
+                              "|SvmVirtVmsaveVmload"
+                              "|SvmVGif",
                               "" /* pszValidNodes */, "HM" /* pszWho */, 0 /* uInstance */);
     if (RT_FAILURE(rc))
         return rc;
@@ -565,6 +566,12 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * Whether to make use of virtualized VMSAVE/VMLOAD feature of the CPU if it's
      * available. */
     rc = CFGMR3QueryBoolDef(pCfgHm, "SvmVirtVmsaveVmload", &pVM->hm.s.svm.fVirtVmsaveVmload, true);
+    AssertRCReturn(rc, rc);
+
+    /** @cfgm{/HM/SvmVGif, bool, true}
+     * Whether to make use of Virtual GIF (Global Interrupt Flag) feature of the CPU
+     * if it's available. */
+    rc = CFGMR3QueryBoolDef(pCfgHm, "SvmVGif", &pVM->hm.s.svm.fVGif, true);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/Exclusive, bool}

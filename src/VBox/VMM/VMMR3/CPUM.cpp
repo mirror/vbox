@@ -2236,10 +2236,11 @@ static void cpumR3InfoSvmVmcbCtrl(PCDBGFINFOHLP pHlp, PCSVMVMCBCTRL pVmcbCtrl, c
     pHlp->pfnPrintf(pHlp, "%sIntCtrl\n",                                pszPrefix);
     pHlp->pfnPrintf(pHlp, "%s  u8VTPR                     = %#RX8 (%u)\n",   pszPrefix, pVmcbCtrl->IntCtrl.n.u8VTPR, pVmcbCtrl->IntCtrl.n.u8VTPR);
     pHlp->pfnPrintf(pHlp, "%s  u1VIrqPending              = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VIrqPending);
-    pHlp->pfnPrintf(pHlp, "%s  u1VGif                     = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VGif);
+    pHlp->pfnPrintf(pHlp, "%s  u1VGif                     = %u\n",      pszPrefix, pVmcbCtrl->IntCtrl.n.u1VGif);
     pHlp->pfnPrintf(pHlp, "%s  u4VIntrPrio                = %#RX8\n",   pszPrefix, pVmcbCtrl->IntCtrl.n.u4VIntrPrio);
     pHlp->pfnPrintf(pHlp, "%s  u1IgnoreTPR                = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1IgnoreTPR);
     pHlp->pfnPrintf(pHlp, "%s  u1VIntrMasking             = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VIntrMasking);
+    pHlp->pfnPrintf(pHlp, "%s  u1VGifEnable               = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VGifEnable);
     pHlp->pfnPrintf(pHlp, "%s  u1AvicEnable               = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1AvicEnable);
     pHlp->pfnPrintf(pHlp, "%s  u8VIntrVector              = %#RX8\n",   pszPrefix, pVmcbCtrl->IntCtrl.n.u8VIntrVector);
     pHlp->pfnPrintf(pHlp, "%sIntShadow\n",                              pszPrefix);

@@ -543,8 +543,9 @@ typedef union
         uint32_t    u1IgnoreTPR         : 1;    /* V_IGN_TPR */
         uint32_t    u3Reserved          : 3;
         uint32_t    u1VIntrMasking      : 1;    /* V_INTR_MASKING */
-        uint32_t    u6Reserved1         : 6;
-        uint32_t    u1AvicEnable        : 1;
+        uint32_t    u1VGifEnable        : 1;    /* VGIF enable */
+        uint32_t    u5Reserved1         : 5;
+        uint32_t    u1AvicEnable        : 1;    /* AVIC enable */
         uint32_t    u8VIntrVector       : 8;    /* V_INTR_VECTOR */
         uint32_t    u24Reserved         : 24;
     } n;
