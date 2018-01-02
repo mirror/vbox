@@ -368,6 +368,14 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
             return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
         }
 
+        /* Virtual GIF. */
+        if (    pVmcbCtrl->IntCtrl.n.u1VGifEnable
+            && !pVM->cpum.ro.GuestFeatures.fSvmVGif)
+        {
+            Log(("iemSvmVmrun: Virtual GIF not supported -> #VMEXIT\n"));
+            return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        }
+
         /* Guest ASID. */
         if (!pVmcbCtrl->TLBCtrl.n.u32ASID)
         {
