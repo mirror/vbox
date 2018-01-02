@@ -958,6 +958,7 @@
 # define RTFsFatVolOpen                                 RT_MANGLER(RTFsFatVolOpen)
 # define RTFsFatVolFormat                               RT_MANGLER(RTFsFatVolFormat)
 # define RTFsFatVolFormat144                            RT_MANGLER(RTFsFatVolFormat144)
+# define RTFsCmdLs                                      RT_MANGLER(RTFsCmdLs)
 # define RTFsIso9660VolOpen                             RT_MANGLER(RTFsIso9660VolOpen)
 # define RTFsIsoMakerCreate                             RT_MANGLER(RTFsIsoMakerCreate)
 # define RTFsIsoMakerRetain                             RT_MANGLER(RTFsIsoMakerRetain)
