@@ -342,6 +342,7 @@ static FNSVMEXITHANDLER hmR0SvmExitXcptMF;
 static FNSVMEXITHANDLER hmR0SvmExitXcptDB;
 static FNSVMEXITHANDLER hmR0SvmExitXcptAC;
 static FNSVMEXITHANDLER hmR0SvmExitXcptBP;
+static FNSVMEXITHANDLER hmR0SvmExitXcptGeneric;
 #ifdef VBOX_WITH_NESTED_HWVIRT
 static FNSVMEXITHANDLER hmR0SvmExitXcptPFNested;
 static FNSVMEXITHANDLER hmR0SvmExitClgi;
@@ -350,7 +351,6 @@ static FNSVMEXITHANDLER hmR0SvmExitVmload;
 static FNSVMEXITHANDLER hmR0SvmExitVmsave;
 static FNSVMEXITHANDLER hmR0SvmExitInvlpga;
 static FNSVMEXITHANDLER hmR0SvmExitVmrun;
-static FNSVMEXITHANDLER hmR0SvmExitXcptGeneric;
 static FNSVMEXITHANDLER hmR0SvmNestedExitXcptDB;
 static FNSVMEXITHANDLER hmR0SvmNestedExitXcptBP;
 #endif
@@ -821,7 +821,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
         AssertMsgReturn(pVmcb, ("Invalid pVmcb for vcpu[%u]\n", i), VERR_SVM_INVALID_PVMCB);
 
-       /* Initialize the #VMEXIT history array with end-of-array markers (UINT16_MAX). */
+        /* Initialize the #VMEXIT history array with end-of-array markers (UINT16_MAX). */
         Assert(!pVCpu->hm.s.idxExitHistoryFree);
         HMCPU_EXIT_HISTORY_RESET(pVCpu);
 
@@ -3531,7 +3531,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmc
     {
 #ifdef VBOX_WITH_NESTED_HWVIRT
         /*
-         * If IEM emulated VMRUN and injected an event it would not clear the EVENTINJ::Valid bit
+         * If IEM emulated VMRUN and injected an event, it would not clear the EVENTINJ::Valid bit
          * as a physical CPU clears it in the VMCB as part of the #VMEXIT (if the AMD spec. is to
          * believed, real behavior might differ). Regardless, IEM does it only on #VMEXIT for now
          * and since we are continuing nested-guest execution using hardware-assisted SVM, we need
@@ -5123,24 +5123,6 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                     uint8_t const uVector = uExitCode - SVM_EXIT_EXCEPTION_0;
                     if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, uVector))
                         return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
-#if 0
-                    /* Debugging DOS6 triple-fault nested-VM. */
-                    unsigned    cbInstr;
-                    DISCPUSTATE Dis;
-                    int rc = EMInterpretDisasCurrent(pVCpu->CTX_SUFF(pVM), pVCpu, &Dis, &cbInstr);
-                    if (RT_SUCCESS(rc))
-                    {
-                        RT_NOREF(cbInstr);
-                        if (   Dis.pCurInstr->uOpcode == OP_IRET
-                            && uVector == X86_XCPT_GP)
-                        {
-                            Log4(("#GP on IRET detected!\n"));
-                            return VERR_SVM_UNKNOWN_EXIT;
-                        }
-                    }
-                    else
-                        Log4(("hmR0SvmExitXcptGeneric: failed to disassemble instr. rc=%Rrc\n", rc));
-#endif
                     return hmR0SvmExitXcptGeneric(pVCpu, pCtx, pSvmTransient);
                 }
 
@@ -5276,8 +5258,8 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
      * The ordering of the case labels is based on most-frequently-occurring #VMEXITs for most guests under
      * normal workloads (for some definition of "normal").
      */
-    uint32_t u32ExitCode = pSvmTransient->u64ExitCode;
-    switch (pSvmTransient->u64ExitCode)
+    uint64_t const uExitCode = pSvmTransient->u64ExitCode;
+    switch (uExitCode)
     {
         case SVM_EXIT_NPF:
             return hmR0SvmExitNestedPF(pVCpu, pCtx, pSvmTransient);
@@ -5449,56 +5431,13 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
                 case SVM_EXIT_EXCEPTION_23: case SVM_EXIT_EXCEPTION_24: case SVM_EXIT_EXCEPTION_25:
                 case SVM_EXIT_EXCEPTION_26: case SVM_EXIT_EXCEPTION_27: case SVM_EXIT_EXCEPTION_28:
                 case SVM_EXIT_EXCEPTION_29: case SVM_EXIT_EXCEPTION_30: case SVM_EXIT_EXCEPTION_31:
-                {
-                    /** @todo r=ramshankar; We should be doing
-                     *        HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY here! */
-                    PSVMVMCB pVmcb   = pVCpu->hm.s.svm.pVmcb;
-                    SVMEVENT Event;
-                    Event.u          = 0;
-                    Event.n.u1Valid  = 1;
-                    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
-                    Event.n.u8Vector = pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0;
-
-                    switch (Event.n.u8Vector)
-                    {
-                        case X86_XCPT_DE:
-                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);
-                            break;
-
-                        case X86_XCPT_NP:
-                            Event.n.u1ErrorCodeValid    = 1;
-                            Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
-                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNP);
-                            break;
-
-                        case X86_XCPT_SS:
-                            Event.n.u1ErrorCodeValid    = 1;
-                            Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
-                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestSS);
-                            break;
-
-                        case X86_XCPT_GP:
-                            Event.n.u1ErrorCodeValid    = 1;
-                            Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
-                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
-                            break;
-
-                        default:
-                            AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit caused by exception %#x\n", Event.n.u8Vector));
-                            pVCpu->hm.s.u32HMError = Event.n.u8Vector;
-                            return VERR_SVM_UNEXPECTED_XCPT_EXIT;
-                    }
-
-                    Log4(("#Xcpt: Vector=%#x at CS:RIP=%04x:%RGv\n", Event.n.u8Vector, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
-                    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-                    return VINF_SUCCESS;
-                }
+                    return hmR0SvmExitXcptGeneric(pVCpu, pCtx, pSvmTransient);
 #endif  /* HMSVM_ALWAYS_TRAP_ALL_XCPTS */
 
                 default:
                 {
-                    AssertMsgFailed(("hmR0SvmHandleExit: Unknown exit code %#x\n", u32ExitCode));
-                    pVCpu->hm.s.u32HMError = u32ExitCode;
+                    AssertMsgFailed(("hmR0SvmHandleExit: Unknown exit code %#RX64\n", uExitCode));
+                    pVCpu->hm.s.u32HMError = uExitCode;
                     return VERR_SVM_UNKNOWN_EXIT;
                 }
             }
@@ -7459,6 +7398,50 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptBP(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 }
 
 
+/**
+ * \#VMEXIT handler for generic exceptions. Conditional \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
+
+    PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
+    uint8_t const  uVector  = pVmcb->ctrl.u64ExitCode - SVM_EXIT_EXCEPTION_0;
+    uint32_t const uErrCode = pVmcb->ctrl.u64ExitInfo1;
+    Assert(pSvmTransient->u64ExitCode == pVmcb->ctrl.u64ExitCode);
+    Assert(uVector <= X86_XCPT_LAST);
+    Log4(("hmR0SvmExitXcptGeneric: uVector=%#x uErrCode=%u\n", uVector, uErrCode));
+
+
+    SVMEVENT Event;
+    Event.u          = 0;
+    Event.n.u1Valid  = 1;
+    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector = uVector;
+    switch (uVector)
+    {
+        /* Shouldn't be here for reflecting #PFs (among other things, the fault address isn't passed along). */
+        case X86_XCPT_PF:   AssertMsgFailed(("hmR0SvmExitXcptGeneric: Unexpected exception")); return VERR_SVM_IPE_5;
+        case X86_XCPT_DF:
+        case X86_XCPT_TS:
+        case X86_XCPT_NP:
+        case X86_XCPT_SS:
+        case X86_XCPT_GP:
+        case X86_XCPT_AC:
+        {
+            Event.n.u1ErrorCodeValid = 1;
+            Event.n.u32ErrorCode     = uErrCode;
+            break;
+        }
+    }
+
+    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+    return VINF_SUCCESS;
+}
+
+
 #ifdef VBOX_WITH_NESTED_HWVIRT
 /**
  * \#VMEXIT handler for #PF occuring while in nested-guest execution
@@ -7641,50 +7624,6 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     return VBOXSTRICTRC_VAL(rcStrict);
 #endif
     return VERR_EM_INTERPRETER;
-}
-
-
-/**
- * \#VMEXIT handler for generic exceptions. Conditional \#VMEXIT.
- */
-HMSVM_EXIT_DECL hmR0SvmExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
-{
-    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-
-    /** @todo if triple-fault is returned in nested-guest scenario convert to a
-     *        shutdown VMEXIT. */
-    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
-
-    PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
-    uint8_t const  uVector  = pVmcb->ctrl.u64ExitCode - SVM_EXIT_EXCEPTION_0;
-    uint32_t const uErrCode = pVmcb->ctrl.u64ExitInfo1;
-    Assert(pSvmTransient->u64ExitCode == pVmcb->ctrl.u64ExitCode);
-    Assert(uVector <= X86_XCPT_LAST);
-    Log4(("hmR0SvmExitXcptGeneric: uVector=%#x uErrCode=%u\n", uVector, uErrCode));
-
-    SVMEVENT Event;
-    Event.u          = 0;
-    Event.n.u1Valid  = 1;
-    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
-    Event.n.u8Vector = uVector;
-    switch (uVector)
-    {
-        case X86_XCPT_PF:
-        case X86_XCPT_DF:
-        case X86_XCPT_TS:
-        case X86_XCPT_NP:
-        case X86_XCPT_SS:
-        case X86_XCPT_GP:
-        case X86_XCPT_AC:
-        {
-            Event.n.u1ErrorCodeValid = 1;
-            Event.n.u32ErrorCode     = uErrCode;
-            break;
-        }
-    }
-
-    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-    return VINF_SUCCESS;
 }
 
 
