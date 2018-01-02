@@ -20,9 +20,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
-if !defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_ADDITIONS_WITHOUT_RTISOMAKER)
- include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
-endif
+include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
 if defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) && defined(VBOX_WITH_REM)
  include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
 
