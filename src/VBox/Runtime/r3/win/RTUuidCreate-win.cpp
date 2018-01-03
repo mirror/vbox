@@ -34,6 +34,7 @@
 #include <iprt/uuid.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/rand.h>
 
 
 RTDECL(int)  RTUuidCreate(PRTUUID pUuid)
@@ -46,7 +47,13 @@ RTDECL(int)  RTUuidCreate(PRTUUID pUuid)
         || rc == RPC_S_UUID_LOCAL_ONLY)
         return VINF_SUCCESS;
 
-    /* error exit */
-    return RTErrConvertFromWin32(rc);
+    /* Seen on NT 3.1: */
+    AssertMsg(rc == RPC_S_UUID_NO_ADDRESS, ("UuidCreate -> %u (%#x)\n", rc, rc));
+
+    /* Use generic implementation as fallback (copy of RTUuidCreate-generic.cpp). */
+    RTRandBytes(pUuid, sizeof(*pUuid));
+    pUuid->Gen.u8ClockSeqHiAndReserved = (pUuid->Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
+    pUuid->Gen.u16TimeHiAndVersion     = (pUuid->Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
+    return VINF_SUCCESS;
 }
 
