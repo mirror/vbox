@@ -36,21 +36,34 @@
 #include <iprt/err.h>
 #include <iprt/rand.h>
 
+#include "internal-r3-win.h"
+
 
 RTDECL(int)  RTUuidCreate(PRTUUID pUuid)
 {
-    /* check params */
+    /*
+     * Input validation.
+     */
     AssertPtrReturn(pUuid, VERR_INVALID_POINTER);
 
-    RPC_STATUS rc = UuidCreate((UUID *)pUuid);
-    if (   rc == RPC_S_OK
-        || rc == RPC_S_UUID_LOCAL_ONLY)
-        return VINF_SUCCESS;
+    /*
+     * When using the UuidCreate API shortly after boot on NT 3.1 it typcially
+     * hangs for a long long time while polling for some service to start.
+     * What then usually happens next is a failure because it couldn't figure
+     * out the MAC address of the NIC.  So, on NT 3.1 we always use the fallback.
+     */
+    if (g_enmWinVer != kRTWinOSType_NT310)
+    {
+        RPC_STATUS rc = UuidCreate((UUID *)pUuid);
+        if (   rc == RPC_S_OK
+            || rc == RPC_S_UUID_LOCAL_ONLY)
+            return VINF_SUCCESS;
+        AssertMsg(rc == RPC_S_UUID_NO_ADDRESS, ("UuidCreate -> %u (%#x)\n", rc, rc));
+    }
 
-    /* Seen on NT 3.1: */
-    AssertMsg(rc == RPC_S_UUID_NO_ADDRESS, ("UuidCreate -> %u (%#x)\n", rc, rc));
-
-    /* Use generic implementation as fallback (copy of RTUuidCreate-generic.cpp). */
+    /*
+     * Use generic implementation as fallback (copy of RTUuidCreate-generic.cpp).
+     */
     RTRandBytes(pUuid, sizeof(*pUuid));
     pUuid->Gen.u8ClockSeqHiAndReserved = (pUuid->Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
     pUuid->Gen.u16TimeHiAndVersion     = (pUuid->Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
