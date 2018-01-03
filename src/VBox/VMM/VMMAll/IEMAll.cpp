@@ -3939,7 +3939,6 @@ iemTaskSwitch(PVMCPU          pVCpu,
         return iemRaiseTaskSwitchFaultWithErr(pVCpu, SelTSS & X86_SEL_MASK_OFF_RPL);
     }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
     /*
      * The SVM nested-guest intercept for task-switch takes priority over all exceptions
      * after validating the incoming (new) TSS, see AMD spec. 15.14.1 "Task Switch Intercept".
@@ -3962,9 +3961,7 @@ iemTaskSwitch(PVMCPU          pVCpu,
         Log(("iemTaskSwitch: Guest intercept -> #VMEXIT. uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", uExitInfo1, uExitInfo2));
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_TASK_SWITCH, uExitInfo1, uExitInfo2);
     }
-
     /** @todo Nested-VMX task-switch intercept. */
-#endif
 
     /*
      * Check the current TSS limit. The last written byte to the current TSS during the
