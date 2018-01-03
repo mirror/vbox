@@ -453,13 +453,13 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                               "|EnableVPID"
                               "|TPRPatchingEnabled"
                               "|64bitEnabled"
-                              "|VmxPleGap"
-                              "|VmxPleWindow"
-                              "|SvmPauseFilter"
-                              "|SvmPauseFilterThreshold"
                               "|Exclusive"
                               "|MaxResumeLoops"
+                              "|VmxPleGap"
+                              "|VmxPleWindow"
                               "|UseVmxPreemptTimer"
+                              "|SvmPauseFilter"
+                              "|SvmPauseFilterThreshold"
                               "|SvmVirtVmsaveVmload"
                               "|SvmVGif",
                               "" /* pszValidNodes */, "HM" /* pszWho */, 0 /* uInstance */);
