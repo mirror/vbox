@@ -4763,15 +4763,18 @@ static int hmR0SvmRunGuestCodeNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint3
            and guest into the guest-CPU state.  Re-enables interrupts! */
         hmR0SvmPostRunGuestNested(pVM, pVCpu, pCtx, &SvmTransient, rc);
 
-        /** @todo This needs some work... we probably should cause a \#VMEXIT on
-         *        SVM_EXIT_INVALID and handle rc != VINF_SUCCESS differently. */
-        if (RT_UNLIKELY(   rc != VINF_SUCCESS                               /* Check for VMRUN errors. */
-                        || SvmTransient.u64ExitCode == SVM_EXIT_INVALID))   /* Check for invalid guest-state errors. */
+        if (RT_LIKELY(   rc == VINF_SUCCESS
+                      && SvmTransient.u64ExitCode != SVM_EXIT_INVALID))
+        { /* extremely likely */ }
+        else
         {
-            if (rc == VINF_SUCCESS)
-                rc = VERR_SVM_INVALID_GUEST_STATE;
-            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit1, x);
-            hmR0SvmReportWorldSwitchError(pVM, pVCpu, rc, pCtx);
+            /* VMRUN failed, shouldn't really happen, Guru. */
+            if (rc != VINF_SUCCESS)
+                break;
+
+            /* Invalid nested-guest state. Cause a #VMEXIT but assert on strict builds. */
+            AssertMsgFailed(("Invalid nested-guest state. rc=%Rrc u64ExitCode=%#RX64\n", rc, SvmTransient.u64ExitCode));
+            rc = VBOXSTRICTRC_TODO(IEMExecSvmVmexit(pVCpu, SVM_EXIT_INVALID, 0, 0));
             break;
         }
 
