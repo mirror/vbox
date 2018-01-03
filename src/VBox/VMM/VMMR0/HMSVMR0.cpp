@@ -5079,8 +5079,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         case SVM_EXIT_WRITE_CR8:   /** @todo Shouldn't writes to CR8 go to V_TPR instead since we run with V_INTR_MASKING set?? */
         {
             uint8_t const uCr = uExitCode - SVM_EXIT_WRITE_CR0;
-            Log4(("hmR0SvmHandleExitNested: Write CRx: u16InterceptWrCRx=%#x u64ExitCode=%#RX64 %#x\n",
-                  pVmcbNstGstCtrl->u16InterceptWrCRx, pSvmTransient->u64ExitCode, uCr));
+            Log4(("hmR0SvmHandleExitNested: Write CR%u: uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", uCr, uExitInfo1, uExitInfo2));
 
             if (HMIsGuestSvmWriteCRxInterceptSet(pVCpu, pCtx, uCr))
                 return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
@@ -7006,10 +7005,11 @@ HMSVM_EXIT_DECL hmR0SvmExitVIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);
 
+    /* Indicate that we no longer need to #VMEXIT when the guest is ready to receive NMIs, it is now ready. */
     PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
     hmR0SvmClearVirtIntrIntercept(pVmcb);
 
-    /* Deliver the pending interrupt/NMI via hmR0SvmEvaluatePendingEvent() and resume guest execution. */
+    /* Deliver the pending interrupt via hmR0SvmEvaluatePendingEvent() and resume guest execution. */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIntWindow);
     return VINF_SUCCESS;
 }
@@ -7602,13 +7602,6 @@ HMSVM_EXIT_DECL hmR0SvmExitClgi(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClgi); */
     uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
     VBOXSTRICTRC rcStrict = IEMExecDecodedClgi(pVCpu, cbInstr);
-
-    /*
-     * The guest should no longer receive interrupts. Until VGIF is supported,
-     * clear virtual interrupt intercepts here.
-     */
-    PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
-    hmR0SvmClearVirtIntrIntercept(pVmcb);
 
     return VBOXSTRICTRC_VAL(rcStrict);
 }
