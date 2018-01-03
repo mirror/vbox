@@ -57,7 +57,7 @@ endif
 
 # OpenSSL.
 if  !defined(VBOX_ONLY_SDK) \
- && !defined(VBOX_ONLY_ADDITIONS) \
+ && (!defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_ADDITIONS_WITHOUT_RTISOMAKER))
  && (   "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)" \
      || defined(VBOX_WITH_EXTPACK_PUEL_BUILD))
  include $(PATH_SUB_CURRENT)/openssl-1.1.0g/Makefile.kmk
