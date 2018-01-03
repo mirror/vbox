@@ -140,26 +140,83 @@ static const CPUMMICROARCH g_aenmIntelFamily06[] =
     /* [82(0x52)] = */ kCpumMicroarch_Intel_Unknown,
     /* [83(0x53)] = */ kCpumMicroarch_Intel_Unknown,
     /* [84(0x54)] = */ kCpumMicroarch_Intel_Unknown,
-    /* [85(0x55)] = */ kCpumMicroarch_Intel_Core7_Skylake,      /* unconfirmed server cpu */
+    /* [85(0x55)] = */ kCpumMicroarch_Intel_Core7_Skylake,      /* server cpu */
     /* [86(0x56)] = */ kCpumMicroarch_Intel_Core7_Broadwell,    /* Xeon D-1540, Broadwell-DE */
-    /* [87(0x57)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [87(0x57)] = */ kCpumMicroarch_Intel_Phi_KnightsLanding,
     /* [88(0x58)] = */ kCpumMicroarch_Intel_Unknown,
     /* [89(0x59)] = */ kCpumMicroarch_Intel_Unknown,
     /* [90(0x5a)] = */ kCpumMicroarch_Intel_Atom_Silvermont,    /* Moorefield */
     /* [91(0x5b)] = */ kCpumMicroarch_Intel_Unknown,
-    /* [92(0x5c)] = */ kCpumMicroarch_Intel_Atom_Goldmont,      /* unconfirmed */
+    /* [92(0x5c)] = */ kCpumMicroarch_Intel_Atom_Goldmont,      /* Apollo Lake */
     /* [93(0x5d)] = */ kCpumMicroarch_Intel_Atom_Silvermont,    /* x3-C3230 */
     /* [94(0x5e)] = */ kCpumMicroarch_Intel_Core7_Skylake,      /* i7-6700K */
-    /* [95(0x5f)] = */ kCpumMicroarch_Intel_Unknown,
+    /* [95(0x5f)] = */ kCpumMicroarch_Intel_Atom_Goldmont,      /* Denverton */
     /* [96(0x60)] = */ kCpumMicroarch_Intel_Unknown,
     /* [97(0x61)] = */ kCpumMicroarch_Intel_Unknown,
     /* [98(0x62)] = */ kCpumMicroarch_Intel_Unknown,
     /* [99(0x63)] = */ kCpumMicroarch_Intel_Unknown,
-    /* [99(0x64)] = */ kCpumMicroarch_Intel_Unknown,
-    /* [99(0x65)] = */ kCpumMicroarch_Intel_Unknown,
-    /* [99(0x66)] = */ kCpumMicroarch_Intel_Core7_Cannonlake, /* unconfirmed */
+    /*[100(0x64)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[101(0x65)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[102(0x66)] = */ kCpumMicroarch_Intel_Core7_Cannonlake, /* unconfirmed */
+    /*[103(0x67)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[104(0x68)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[105(0x69)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[106(0x6a)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[107(0x6b)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[108(0x6c)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[109(0x6d)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[110(0x6e)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[111(0x6f)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[112(0x70)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[113(0x71)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[114(0x72)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[115(0x73)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[116(0x74)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[117(0x75)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[118(0x76)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[119(0x77)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[120(0x78)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[121(0x79)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[122(0x7a)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[123(0x7b)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[124(0x7c)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[125(0x7d)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[126(0x7e)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[127(0x7f)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[128(0x80)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[129(0x81)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[130(0x82)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[131(0x83)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[132(0x84)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[133(0x85)] = */ kCpumMicroarch_Intel_Phi_KnightsMill,
+    /*[134(0x86)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[135(0x87)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[136(0x88)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[137(0x89)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[138(0x8a)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[139(0x8b)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[140(0x8c)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[141(0x8d)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[142(0x8e)] = */ kCpumMicroarch_Intel_Core7_KabyLake, /* Stepping 0xA is CoffeeLake, 9 is KabyLake. */
+    /*[143(0x8f)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[144(0x90)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[145(0x91)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[146(0x92)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[147(0x93)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[148(0x94)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[149(0x95)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[150(0x96)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[151(0x97)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[152(0x98)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[153(0x99)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[154(0x9a)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[155(0x9b)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[156(0x9c)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[157(0x9d)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[158(0x9e)] = */ kCpumMicroarch_Intel_Core7_KabyLake, /* Stepping 0xA is CoffeeLake, 9 is KabyLake. */
+    /*[159(0x9f)] = */ kCpumMicroarch_Intel_Unknown,
 };
-
+AssertCompile(RT_ELEMENTS(g_aenmIntelFamily06) == 0x9f+1);
 
 
 /**
@@ -309,7 +366,13 @@ VMMR3DECL(CPUMMICROARCH) CPUMR3CpuIdDetermineMicroarchEx(CPUMCPUVENDOR enmVendor
                 return kCpumMicroarch_Intel_P5;
             case 6:
                 if (bModel < RT_ELEMENTS(g_aenmIntelFamily06))
-                    return g_aenmIntelFamily06[bModel];
+                {
+                    CPUMMICROARCH enmMicroArch = g_aenmIntelFamily06[bModel];
+                    if (   enmMicroArch == kCpumMicroarch_Intel_Core7_KabyLake
+                        && bStepping >= 0xa)
+                        enmMicroArch = kCpumMicroarch_Intel_Core7_CoffeeLake;
+                    return enmMicroArch;
+                }
                 return kCpumMicroarch_Intel_Atom_Unknown;
             case 15:
                 switch (bModel)
@@ -440,6 +503,8 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_Haswell);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_Broadwell);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_Skylake);
+        CASE_RET_STR(kCpumMicroarch_Intel_Core7_KabyLake);
+        CASE_RET_STR(kCpumMicroarch_Intel_Core7_CoffeeLake);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_Cannonlake);
 
         CASE_RET_STR(kCpumMicroarch_Intel_Atom_Bonnell);
@@ -449,6 +514,12 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
         CASE_RET_STR(kCpumMicroarch_Intel_Atom_Airmount);
         CASE_RET_STR(kCpumMicroarch_Intel_Atom_Goldmont);
         CASE_RET_STR(kCpumMicroarch_Intel_Atom_Unknown);
+
+        CASE_RET_STR(kCpumMicroarch_Intel_Phi_KnightsFerry);
+        CASE_RET_STR(kCpumMicroarch_Intel_Phi_KnightsCorner);
+        CASE_RET_STR(kCpumMicroarch_Intel_Phi_KnightsLanding);
+        CASE_RET_STR(kCpumMicroarch_Intel_Phi_KnightsHill);
+        CASE_RET_STR(kCpumMicroarch_Intel_Phi_KnightsMill);
 
         CASE_RET_STR(kCpumMicroarch_Intel_NB_Willamette);
         CASE_RET_STR(kCpumMicroarch_Intel_NB_Northwood);
@@ -532,6 +603,7 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
         case kCpumMicroarch_Intel_Core7_End:
         case kCpumMicroarch_Intel_Atom_End:
         case kCpumMicroarch_Intel_P6_Core_Atom_End:
+        case kCpumMicroarch_Intel_Phi_End:
         case kCpumMicroarch_Intel_NB_End:
         case kCpumMicroarch_AMD_K7_End:
         case kCpumMicroarch_AMD_K8_End:

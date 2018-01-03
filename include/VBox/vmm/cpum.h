@@ -136,6 +136,8 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_Intel_Core7_Haswell,
     kCpumMicroarch_Intel_Core7_Broadwell,
     kCpumMicroarch_Intel_Core7_Skylake,
+    kCpumMicroarch_Intel_Core7_KabyLake,
+    kCpumMicroarch_Intel_Core7_CoffeeLake,
     kCpumMicroarch_Intel_Core7_Cannonlake,
     kCpumMicroarch_Intel_Core7_End,
 
@@ -148,6 +150,15 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_Intel_Atom_Goldmont,     /**< 14nm */
     kCpumMicroarch_Intel_Atom_Unknown,
     kCpumMicroarch_Intel_Atom_End,
+
+
+    kCpumMicroarch_Intel_Phi_First,
+    kCpumMicroarch_Intel_Phi_KnightsFerry = kCpumMicroarch_Intel_Phi_First,
+    kCpumMicroarch_Intel_Phi_KnightsCorner,
+    kCpumMicroarch_Intel_Phi_KnightsLanding,
+    kCpumMicroarch_Intel_Phi_KnightsHill,
+    kCpumMicroarch_Intel_Phi_KnightsMill,
+    kCpumMicroarch_Intel_Phi_End,
 
     kCpumMicroarch_Intel_P6_Core_Atom_End,
 
