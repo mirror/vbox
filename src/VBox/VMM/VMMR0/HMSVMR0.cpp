@@ -812,11 +812,13 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     bool const fLbrVirt              = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_LBR_VIRT);
     bool const fUseLbrVirt           = fLbrVirt; /** @todo CFGM, IEM implementation etc. */
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
     bool const fVirtVmsaveVmload     = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VIRT_VMSAVE_VMLOAD);
     bool const fUseVirtVmsaveVmload  = fVirtVmsaveVmload && pVM->hm.s.svm.fVirtVmsaveVmload && pVM->hm.s.fNestedPaging;
 
     bool const fVGif                 = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VGIF);
     bool const fUseVGif              = fVGif && pVM->hm.s.svm.fVGif;
+#endif
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
@@ -887,6 +889,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         else
             Assert(pVmcb->ctrl.LbrVirt.n.u1LbrVirt == 0);
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
         /* Virtualized VMSAVE/VMLOAD. */
         pVmcb->ctrl.LbrVirt.n.u1VirtVmsaveVmload = fUseVirtVmsaveVmload;
         if (!fUseVirtVmsaveVmload)
@@ -902,6 +905,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
             pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_CLGI
                                          |  SVM_CTRL_INTERCEPT_STGI;
         }
+#endif
 
         /* Initially all VMCB clean bits MBZ indicating that everything should be loaded from the VMCB in memory. */
         Assert(pVmcb->ctrl.u32VmcbCleanBits == 0);
