@@ -425,7 +425,7 @@ RTDECL(int) RTUtf16CmpUtf8(PCRTUTF16 pwsz1, const char *psz2);
  * @returns > 0 if the first string greater than the second string.
  * @param   pwsz1       First UTF-16 string. Null is allowed.
  * @param   pwsz2       Second UTF-16 string. Null is allowed.
- * @param   cwcMax1     Maximum number of characters (RTUTF16) from the first
+ * @param   cwcMax      Maximum number of characters (RTUTF16) from the first
  * @remark  This function will not make any attempt to validate the encoding.
  */
 RTDECL(int) RTUtf16NCmp(PCRTUTF16 pwsz1, PCRTUTF16 pwsz2, size_t cwcMax);
