@@ -3888,7 +3888,7 @@ IEM_STATIC VBOXSTRICTRC iemHlpTaskSwitchLoadDataSelectorInProtMode(PVMCPU pVCpu,
  * @param   pCtx            The CPU context.
  * @param   enmTaskSwitch   What caused this task switch.
  * @param   uNextEip        The EIP effective after the task switch.
- * @param   fFlags          The flags.
+ * @param   fFlags          The flags, see IEM_XCPT_FLAGS_XXX.
  * @param   uErr            The error value if IEM_XCPT_FLAGS_ERR is set.
  * @param   uCr2            The CR2 value if IEM_XCPT_FLAGS_CR2 is set.
  * @param   SelTSS          The TSS selector of the new task.
@@ -3938,6 +3938,33 @@ iemTaskSwitch(PVMCPU          pVCpu,
              enmTaskSwitch, uNewTSSLimit, uNewTSSLimitMin));
         return iemRaiseTaskSwitchFaultWithErr(pVCpu, SelTSS & X86_SEL_MASK_OFF_RPL);
     }
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    /*
+     * The SVM nested-guest intercept for task-switch takes priority over all exceptions
+     * after validating the incoming (new) TSS, see AMD spec. 15.14.1 "Task Switch Intercept".
+     */
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_TASK_SWITCH))
+    {
+        uint32_t const uExitInfo1 = SelTSS;
+        uint32_t       uExitInfo2 = uErr;
+        switch (enmTaskSwitch)
+        {
+            case IEMTASKSWITCH_JUMP: uExitInfo2 |= SVM_EXIT2_TASK_SWITCH_JUMP; break;
+            case IEMTASKSWITCH_IRET: uExitInfo2 |= SVM_EXIT2_TASK_SWITCH_IRET; break;
+            default: break;
+        }
+        if (fFlags & IEM_XCPT_FLAGS_ERR)
+            uExitInfo2 |= SVM_EXIT2_TASK_SWITCH_HAS_ERROR_CODE;
+        if (pCtx->eflags.Bits.u1RF)
+            uExitInfo2 |= SVM_EXIT2_TASK_SWITCH_EFLAGS_RF;
+
+        Log(("iemTaskSwitch: Guest intercept -> #VMEXIT. uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", uExitInfo1, uExitInfo2));
+        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_TASK_SWITCH, uExitInfo1, uExitInfo2);
+    }
+
+    /** @todo Nested-VMX task-switch intercept. */
+#endif
 
     /*
      * Check the current TSS limit. The last written byte to the current TSS during the
