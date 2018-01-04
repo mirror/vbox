@@ -32,8 +32,10 @@
 
 #ifndef IN_RC
 /**
- * Emulates a simple MOV TPR (CR8) instruction, used for TPR patching on 32-bit
- * guests. This simply looks up the patch record at EIP and does the required.
+ * Emulates a simple MOV TPR (CR8) instruction.
+ *
+ * Used for TPR patching on 32-bit guests. This simply looks up the patch record
+ * at EIP and does the required.
  *
  * This VMMCALL is used a fallback mechanism when mov to/from cr8 isn't exactly
  * like how we want it to be (e.g. not followed by shr 4 as is usually done for
