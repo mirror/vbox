@@ -100,6 +100,12 @@
 #include <linux/slab.h>
 #include <linux/time.h>
 #include <linux/sched.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 23) && \
+    LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 31)
+#include  <linux/splice.h>
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
 # include <linux/sched/rt.h>
 #endif

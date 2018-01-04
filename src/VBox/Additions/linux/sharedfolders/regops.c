@@ -91,6 +91,161 @@ static int sf_reg_write_aux(const char *caller, struct sf_glob_info *sf_g,
     return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) && \
+    LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
+
+void free_pipebuf(struct page *kpage)
+{
+    kunmap(kpage);
+    __free_pages(kpage, 0);
+}
+
+void *sf_pipe_buf_map(struct pipe_inode_info *pipe,
+			   struct pipe_buffer *pipe_buf, int atomic)
+{
+    return 0;
+}
+
+void sf_pipe_buf_get(struct pipe_inode_info *pipe, struct pipe_buffer *pipe_buf)
+{
+}
+
+void sf_pipe_buf_unmap(struct pipe_inode_info *pipe,  struct pipe_buffer *pipe_buf, void *map_data)
+{
+}
+
+int sf_pipe_buf_steal(struct pipe_inode_info *pipe,
+			   struct pipe_buffer *pipe_buf) {
+	return 0;
+}
+
+static void sf_pipe_buf_release(struct pipe_inode_info *pipe,
+				  struct pipe_buffer *pipe_buf)
+{
+    free_pipebuf(pipe_buf->page);
+}
+
+int sf_pipe_buf_confirm(struct pipe_inode_info *info,
+			     struct pipe_buffer *pipe_buf)
+{
+	return 0;
+}
+
+static struct pipe_buf_operations sf_pipe_buf_ops = {
+    .can_merge = 0,
+    .map = sf_pipe_buf_map,
+    .unmap = sf_pipe_buf_unmap,
+    .confirm = sf_pipe_buf_confirm,
+    .release = sf_pipe_buf_release,
+    .steal = sf_pipe_buf_steal,
+    .get = sf_pipe_buf_get,
+};
+
+#define LOCK_PIPE(pipe) \
+    if (pipe->inode) \
+        mutex_lock(&pipe->inode->i_mutex);
+
+#define UNLOCK_PIPE(pipe) \
+    if (pipe->inode) \
+        mutex_unlock(&pipe->inode->i_mutex);
+
+ssize_t
+sf_splice_read(struct file *in, loff_t *poffset,
+				 struct pipe_inode_info *pipe, size_t len,
+				 unsigned int flags)
+{
+    size_t bytes_remaining = len;
+    loff_t orig_offset = *poffset;
+    loff_t offset = orig_offset;
+    struct inode *inode = GET_F_DENTRY(in)->d_inode;
+    struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
+    struct sf_reg_info *sf_r = in->private_data;
+    ssize_t retval;
+    struct page *kpage = 0;
+    size_t nsent = 0;
+
+    TRACE();
+    if (!S_ISREG(inode->i_mode))
+    {
+        LogFunc(("read from non regular file %d\n", inode->i_mode));
+        return -EINVAL;
+    }
+    if (!len) {
+        return 0;
+    }
+
+    LOCK_PIPE(pipe);
+
+    uint32_t req_size = 0;
+    while (bytes_remaining > 0)
+    {
+        kpage = alloc_page(GFP_KERNEL);
+        if (unlikely(kpage == NULL))
+        {
+            UNLOCK_PIPE(pipe);
+            return -ENOMEM;
+        }
+        req_size = 0;
+        uint32_t nread = req_size = (uint32_t)min(bytes_remaining, (size_t)PAGE_SIZE);
+        uint32_t chunk = 0;
+        void *kbuf = kmap(kpage);
+        while (chunk < req_size)
+        {
+            retval = sf_reg_read_aux(__func__, sf_g, sf_r, kbuf + chunk, &nread, offset);
+            if (retval < 0)
+                goto err;
+            if (nread == 0)
+                break;
+            chunk += nread;
+            offset += nread;
+            nread = req_size - chunk;
+        }
+        if (!pipe->readers)
+        {
+            send_sig(SIGPIPE, current, 0);
+            retval = -EPIPE;
+            goto err;
+        }
+        if (pipe->nrbufs < PIPE_BUFFERS)
+        {
+            struct pipe_buffer *pipebuf =
+                pipe->bufs + ((pipe->curbuf + pipe->nrbufs) & (PIPE_BUFFERS - 1));
+            pipebuf->page = kpage;
+            pipebuf->ops = &sf_pipe_buf_ops;
+            pipebuf->len = req_size;
+            pipebuf->offset = 0;
+            pipebuf->private = 0;
+            pipebuf->flags = 0;
+            pipe->nrbufs++;
+            nsent += req_size;
+            bytes_remaining -= req_size;
+            if (signal_pending(current))
+                break;
+        }
+        else /* pipe full */
+        {
+            if (flags & SPLICE_F_NONBLOCK) {
+                retval = -EAGAIN;
+                goto err;
+            }
+            free_pipebuf(kpage);
+            break;
+        }
+    }
+    UNLOCK_PIPE(pipe);
+    if (!nsent && signal_pending(current))
+        return -ERESTARTSYS;
+    *poffset += nsent;
+    return offset - orig_offset;
+
+err:
+    UNLOCK_PIPE(pipe);
+    free_pipebuf(kpage);
+    return retval;
+}
+
+#endif
+
 /**
  * Read from a regular file.
  *
@@ -566,7 +721,7 @@ struct file_operations sf_reg_fops =
 /** @todo This code is known to cause caching of data which should not be
  * cached.  Investigate. */
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
-    .splice_read = generic_file_splice_read,
+    .splice_read = sf_splice_read,
 #  else
     .sendfile    = generic_file_sendfile,
 #  endif
