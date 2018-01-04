@@ -101,7 +101,7 @@ void free_pipebuf(struct page *kpage)
 }
 
 void *sf_pipe_buf_map(struct pipe_inode_info *pipe,
-			   struct pipe_buffer *pipe_buf, int atomic)
+                struct pipe_buffer *pipe_buf, int atomic)
 {
     return 0;
 }
@@ -115,20 +115,20 @@ void sf_pipe_buf_unmap(struct pipe_inode_info *pipe,  struct pipe_buffer *pipe_b
 }
 
 int sf_pipe_buf_steal(struct pipe_inode_info *pipe,
-			   struct pipe_buffer *pipe_buf) {
-	return 0;
+                 struct pipe_buffer *pipe_buf) {
+    return 0;
 }
 
 static void sf_pipe_buf_release(struct pipe_inode_info *pipe,
-				  struct pipe_buffer *pipe_buf)
+                 struct pipe_buffer *pipe_buf)
 {
     free_pipebuf(pipe_buf->page);
 }
 
 int sf_pipe_buf_confirm(struct pipe_inode_info *info,
-			     struct pipe_buffer *pipe_buf)
+                 struct pipe_buffer *pipe_buf)
 {
-	return 0;
+    return 0;
 }
 
 static struct pipe_buf_operations sf_pipe_buf_ops = {
@@ -151,8 +151,8 @@ static struct pipe_buf_operations sf_pipe_buf_ops = {
 
 ssize_t
 sf_splice_read(struct file *in, loff_t *poffset,
-				 struct pipe_inode_info *pipe, size_t len,
-				 unsigned int flags)
+                 struct pipe_inode_info *pipe, size_t len,
+                 unsigned int flags)
 {
     size_t bytes_remaining = len;
     loff_t orig_offset = *poffset;
