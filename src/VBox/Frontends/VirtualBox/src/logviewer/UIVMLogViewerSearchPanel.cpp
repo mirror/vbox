@@ -187,7 +187,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
         m_pMainLayout->setSpacing(4);
 
         /* Create close-button: */
-        m_pCloseButton = new UIMiniCancelButton;
+        m_pCloseButton = new UIMiniCancelButton(this);
         AssertPtrReturnVoid(m_pCloseButton);
         {
             /* Add close-button to main-layout: */
@@ -205,7 +205,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
         }
 
         /* Create search-label: */
-        m_pSearchLabel = new QLabel;
+        m_pSearchLabel = new QLabel(this);
         AssertPtrReturnVoid(m_pSearchLabel);
         {
             /* Configure search-label: */
@@ -250,7 +250,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
             m_pMainLayout->addWidget(m_pCaseSensitiveCheckBox);
         }
 
-        m_pMatchWholeWordCheckBox = new QCheckBox;
+        m_pMatchWholeWordCheckBox = new QCheckBox(this);
         AssertPtrReturnVoid(m_pMatchWholeWordCheckBox);
         {
             /* Configure focus for case-sensitive checkbox: */
@@ -264,7 +264,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
             m_pMainLayout->addWidget(m_pMatchWholeWordCheckBox);
         }
 
-        m_pHighlightAllCheckBox = new QCheckBox;
+        m_pHighlightAllCheckBox = new QCheckBox(this);
         AssertPtrReturnVoid(m_pHighlightAllCheckBox);
         {
             /* Configure font: */
@@ -286,7 +286,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
         }
 
         /* Create warning-icon: */
-        m_pWarningIcon = new QLabel;
+        m_pWarningIcon = new QLabel(this);
         AssertPtrReturnVoid(m_pWarningIcon);
         {
             /* Confifure warning-icon: */
@@ -299,7 +299,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
         }
 
         /* Create warning-label: */
-        m_pInfoLabel = new QLabel;
+        m_pInfoLabel = new QLabel(this);
         AssertPtrReturnVoid(m_pInfoLabel);
         {
             /* Configure warning-label: */
@@ -351,7 +351,7 @@ void UIVMLogViewerSearchPanel::retranslateUi()
     m_pMatchWholeWordCheckBox->setText(UIVMLogViewerWidget::tr("Ma&tch\nWhole Word"));
     m_pMatchWholeWordCheckBox->setToolTip(UIVMLogViewerWidget::tr("Search matches only complete words when checked"));
 
-    m_pHighlightAllCheckBox->setText(UIVMLogViewerWidget::tr("Highlight\nAll"));
+    m_pHighlightAllCheckBox->setText(UIVMLogViewerWidget::tr("&Highlight\nAll"));
     m_pHighlightAllCheckBox->setToolTip(UIVMLogViewerWidget::tr("All occurence of the search text are highlighted"));
 
     if (m_iMatchCount == 0)

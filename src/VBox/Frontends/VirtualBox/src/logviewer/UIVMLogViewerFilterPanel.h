@@ -25,11 +25,17 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class QButtonGroup;
 class QComboBox;
 class QHBoxLayout;
 class QLabel;
+class QLineEdit;
+class QPushButton;
+class QRadioButton;
+class UIVMFilterLineEdit;
 class UIMiniCancelButton;
 class UIVMLogViewerWidget;
+
 
 /** QWidget extension
   * providing GUI for filter panel in VM Log Viewer. */
@@ -56,10 +62,19 @@ public slots:
 
 private slots:
 
-    /** Handles the textchanged event from filter editor. */
-    void filter(const QString &strSearchString);
+    /** Adds the new filter term and reapplies the filter. */
+    void sltAddFilterTerm();
+    /** Clear all the filter terms and reset the filtering. */
+    void sltClearFilterTerms();
+    void sltOperatorButtonChanged(int buttonId);
+    void sltRemoveFilterTerm(const QString &termString);
 
 private:
+    enum FilterOperatorButton{
+        AndButton = 0,
+        OrButton,
+        ButtonEnd
+    };
 
     /** Prepares filter-panel. */
     void prepare();
@@ -78,6 +93,8 @@ private:
     /** Handles the Qt hide @a pEvent. */
     void hideEvent(QHideEvent *pEvent);
 
+    bool applyFilterTermsToString(const QString& string);
+
     /** Holds the reference to VM Log-Viewer this filter-panel belongs to. */
     UIVMLogViewerWidget *m_pViewer;
     /** Holds the instance of main-layout we create. */
@@ -88,8 +105,14 @@ private:
     QLabel              *m_pFilterLabel;
     /** Holds instance of filter combo-box we create. */
     QComboBox           *m_pFilterComboBox;
-    /** Holds the filter text. */
-    QString              m_strFilterText;
+
+    QButtonGroup        *m_pButtonGroup;
+    QRadioButton        *m_pAndRadioButton;
+    QRadioButton        *m_pOrRadioButton;
+    QPushButton         *m_pAddFilterTermButton;
+    QStringList          m_filterTermList;
+    FilterOperatorButton m_eFilterOperatorButton;
+    UIVMFilterLineEdit  *m_pFilterTermsLineEdit;
 };
 
 #endif /* !___UIVMLogViewerFilterPanel_h___ */
