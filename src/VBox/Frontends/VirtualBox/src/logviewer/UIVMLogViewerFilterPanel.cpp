@@ -90,14 +90,14 @@ public:
 protected:
 
     /* Overload the mouseXXXEvent to control how selection is made: */
-    virtual void	mouseDoubleClickEvent(QMouseEvent *){}
-    virtual void	mouseMoveEvent(QMouseEvent *){}
-    virtual void	mousePressEvent(QMouseEvent * event)
+    virtual void        mouseDoubleClickEvent(QMouseEvent *){}
+    virtual void        mouseMoveEvent(QMouseEvent *){}
+    virtual void        mousePressEvent(QMouseEvent * event)
     {
         /* Simulate double mouse click to select a word with a single click. */
         QLineEdit::mouseDoubleClickEvent(event);
     }
-    virtual void	mouseReleaseEvent(QMouseEvent *){}
+    virtual void        mouseReleaseEvent(QMouseEvent *){}
     virtual void paintEvent(QPaintEvent *event)
     {
         QLineEdit::paintEvent(event);
