@@ -844,16 +844,16 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 #ifdef HMSVM_ALWAYS_TRAP_ALL_XCPTS
         /* If you add any exceptions here, make sure to update hmR0SvmHandleExit(). */
         pVmcb->ctrl.u32InterceptXcpt |= 0
-                                             | RT_BIT(X86_XCPT_BP)
-                                             | RT_BIT(X86_XCPT_DE)
-                                             | RT_BIT(X86_XCPT_NM)
-                                             | RT_BIT(X86_XCPT_UD)
-                                             | RT_BIT(X86_XCPT_NP)
-                                             | RT_BIT(X86_XCPT_SS)
-                                             | RT_BIT(X86_XCPT_GP)
-                                             | RT_BIT(X86_XCPT_PF)
-                                             | RT_BIT(X86_XCPT_MF)
-                                             ;
+                                     | RT_BIT(X86_XCPT_BP)
+                                     | RT_BIT(X86_XCPT_DE)
+                                     | RT_BIT(X86_XCPT_NM)
+                                     | RT_BIT(X86_XCPT_UD)
+                                     | RT_BIT(X86_XCPT_NP)
+                                     | RT_BIT(X86_XCPT_SS)
+                                     | RT_BIT(X86_XCPT_GP)
+                                     | RT_BIT(X86_XCPT_PF)
+                                     | RT_BIT(X86_XCPT_MF)
+                                     ;
 #endif
 
         /* Set up unconditional intercepts and conditions. */
