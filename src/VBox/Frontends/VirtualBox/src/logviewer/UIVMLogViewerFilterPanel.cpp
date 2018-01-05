@@ -31,6 +31,7 @@
 # include <QPlainTextEdit>
 # include <QPushButton>
 # include <QTextCursor>
+# include <QToolButton>
 # include <QRadioButton>
 # include <QScrollArea>
 
