@@ -101,6 +101,7 @@ DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExitCode, uint64_t uExitInfo1, uint64_t uExitInfo2)
 {
+    VBOXSTRICTRC rcStrict;
     if (   CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
         || uExitCode == SVM_EXIT_INVALID)
     {
@@ -179,8 +180,12 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         pVmcbCtrl->u64ExitInfo2 = uExitInfo2;
 
         /*
-         * Update the exit interrupt information field if this #VMEXIT happened as a result
-         * of delivering an event.
+         * Update the exit interrupt-information field if this #VMEXIT happened as a result
+         * of delivering an event through IEM.
+         *
+         * Don't update the exit interrupt-information field if the event wasn't being injected
+         * through IEM, as it may have been updated by real hardware if the nested-guest was
+         * executed using hardware-assisted SVM.
          */
         {
             uint8_t  uExitIntVector;
@@ -188,9 +193,9 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
             uint32_t fExitIntFlags;
             bool const fRaisingEvent = IEMGetCurrentXcpt(pVCpu, &uExitIntVector, &fExitIntFlags, &uExitIntErr,
                                                          NULL /* uExitIntCr2 */);
-            pVmcbCtrl->ExitIntInfo.n.u1Valid = fRaisingEvent;
             if (fRaisingEvent)
             {
+                pVmcbCtrl->ExitIntInfo.n.u1Valid  = 1;
                 pVmcbCtrl->ExitIntInfo.n.u8Vector = uExitIntVector;
                 pVmcbCtrl->ExitIntInfo.n.u3Type   = iemGetSvmEventType(uExitIntVector, fExitIntFlags);
                 if (fExitIntFlags & IEM_XCPT_FLAGS_ERR)
@@ -216,8 +221,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         /*
          * Write back the nested-guest's VMCB to its guest physical memory location.
          */
-        VBOXSTRICTRC rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), pCtx->hwvirt.svm.GCPhysVmcb, pVmcbNstGst,
-                                                         sizeof(*pVmcbNstGst));
+        rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), pCtx->hwvirt.svm.GCPhysVmcb, pVmcbNstGst, sizeof(*pVmcbNstGst));
+
         /*
          * Prepare for guest's "host mode" by clearing internal processor state bits.
          *
@@ -252,28 +257,37 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
              */
             rcStrict = iemSvmWorldSwitch(pVCpu, pCtx);
             if (rcStrict == VINF_SUCCESS)
-                return VINF_SVM_VMEXIT;
-
-            if (RT_SUCCESS(rcStrict))
+                rcStrict = VINF_SVM_VMEXIT;
+            else if (RT_SUCCESS(rcStrict))
             {
                 LogFlow(("iemSvmVmexit: Setting passup status from iemSvmWorldSwitch %Rrc\n", rcStrict));
                 iemSetPassUpStatus(pVCpu, rcStrict);
-                return VINF_SVM_VMEXIT;
+                rcStrict = VINF_SVM_VMEXIT;
             }
-
-            LogFlow(("iemSvmVmexit: iemSvmWorldSwitch unexpected failure. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            else
+                LogFlow(("iemSvmVmexit: iemSvmWorldSwitch unexpected failure. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
         }
         else
+        {
             LogFlow(("iemSvmVmexit: Writing VMCB at %#RGp failed. rc=%Rrc\n", pCtx->hwvirt.svm.GCPhysVmcb,
                      VBOXSTRICTRC_VAL(rcStrict)));
-
-        return VERR_SVM_VMEXIT_FAILED;
+            rcStrict = VERR_SVM_VMEXIT_FAILED;
+        }
+    }
+    else
+    {
+        Log(("iemSvmVmexit: Not in SVM guest mode! uExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", uExitCode,
+             uExitInfo1, uExitInfo2));
+        AssertMsgFailed(("iemSvmVmexit: Unexpected SVM-exit failure uExitCode=%#RX64\n", uExitCode));
+        rcStrict = VERR_SVM_IPE_5;
     }
 
-    Log(("iemSvmVmexit: Not in SVM guest mode! uExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", uExitCode,
-         uExitInfo1, uExitInfo2));
-    AssertMsgFailed(("iemSvmVmexit: Unexpected SVM-exit failure uExitCode=%#RX64\n", uExitCode));
-    return VERR_SVM_IPE_5;
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
+    /* CLGI/STGI may not have been intercepted and thus not executed in IEM. */
+    if (HMSvmIsVGifActive(pVCpu->CTX_SUFF(pVM)))
+        return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false);
+# endif
+    return rcStrict;
 }
 
 
@@ -654,11 +668,10 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
             }
 
             /*
-             * Update the exit interruption info field so that if an exception occurs
-             * while delivering the event causing a #VMEXIT, we only need to update
-             * the valid bit while the rest is already in place.
+             * Invalidate the exit interrupt-information field here. This field is fully updated
+             * on #VMEXIT as events other than the one below can also cause intercepts during
+             * their injection (e.g. exceptions).
              */
-            pVmcbCtrl->ExitIntInfo.u = pVmcbCtrl->EventInject.u;
             pVmcbCtrl->ExitIntInfo.n.u1Valid = 0;
 
             /** @todo NRIP: Software interrupts can only be pushed properly if we support
@@ -673,6 +686,13 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
                      pCtx->cs.Sel, pCtx->rip, pCtx->cr0, pCtx->cr3, pCtx->cr4, pCtx->msrEFER, pCtx->rflags.u64));
 
         LogFlow(("iemSvmVmrun: returns %d\n", VBOXSTRICTRC_VAL(rcStrict)));
+
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
+        /* If CLGI/STGI isn't intercepted we force IEM-only nested-guest execution here. */
+        if (HMSvmIsVGifActive(pVM))
+            return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
+# endif
+
         return rcStrict;
     }
 
