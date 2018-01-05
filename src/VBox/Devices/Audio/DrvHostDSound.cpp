@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,6 +25,7 @@
 #include <dsound.h>
 
 #include <iprt/alloc.h>
+#include <iprt/system.h>
 #include <iprt/uuid.h>
 
 #include "DrvAudio.h"
@@ -2640,19 +2641,35 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
-    try
-    {
-        pThis->m_pNotificationClient = new VBoxMMNotificationClient();
+    bool fUseNotificationClient = false;
 
-        HRESULT hr = pThis->m_pNotificationClient->Initialize();
-        if (FAILED(hr))
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
-    }
-    catch (std::bad_alloc &ex)
+    char szOSVersion[32];
+    rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szOSVersion, sizeof(szOSVersion));
+    if (RT_SUCCESS(rc))
     {
-        NOREF(ex);
-        rc = VERR_NO_MEMORY;
+        /* IMMNotificationClient is available starting at Windows Vista. */
+        if (RTStrVersionCompare(szOSVersion, "6.0") >= 0)
+            fUseNotificationClient = true;
     }
+
+    if (fUseNotificationClient)
+    {
+        try
+        {
+            pThis->m_pNotificationClient = new VBoxMMNotificationClient();
+
+            HRESULT hr = pThis->m_pNotificationClient->Initialize();
+            if (FAILED(hr))
+                rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+        }
+        catch (std::bad_alloc &ex)
+        {
+            NOREF(ex);
+            rc = VERR_NO_MEMORY;
+        }
+    }
+
+    LogRel2(("DSound: Notification client is %s\n", fUseNotificationClient ? "enabled" : "disabled"));
 #endif
 
     if (RT_SUCCESS(rc))
