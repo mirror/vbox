@@ -1118,6 +1118,10 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
         (a_pCtx)->a_reg.Attr.u    = HMSVM_VMCB_2_CPU_SEG_ATTR((a_pVmcbStateSave)->a_REG.u16Attr); \
     } while (0)
 
+/*
+ * These functions are only here because the inline functions in cpum.h calls them.
+ * Don't add any more functions here unless there is no other option.
+ */
 VMM_INT_DECL(bool) HMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fIntercept);
 VMM_INT_DECL(bool) HMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr);
 VMM_INT_DECL(bool) HMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr);

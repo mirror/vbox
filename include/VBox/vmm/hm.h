@@ -153,6 +153,10 @@ VMM_INT_DECL(void)              HMHypercallsDisable(PVMCPU pVCpu);
 /** @} */
 
 /** @name All-context SVM helpers.
+ *
+ * These are SVM functions (based on AMD specs.) that may be used by IEM/REM and
+ * not VirtualBox functions that are used for hardware-assisted SVM. Those are
+ * declared below under the !IN_RC section.
  * @{ */
 VMM_INT_DECL(TRPMEVENT)         HMSvmEventToTrpmEventType(PCSVMEVENT pSvmEvent);
 VMM_INT_DECL(int)               HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint32_t *puMsrpmBit);
@@ -160,14 +164,6 @@ VMM_INT_DECL(bool)              HMSvmIsIOInterceptActive(void *pvIoBitmap, uint1
                                                          uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
                                                          PSVMIOIOEXITINFO pIoExitInfo);
 VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfRipUpdated);
-/** @} */
-
-/** @name Nested hardware virtualization.
- * @{
- */
-#ifdef VBOX_WITH_NESTED_HWVIRT
-VMM_INT_DECL(void)              HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx);
-#endif
 /** @} */
 
 #ifndef IN_RC
@@ -180,6 +176,8 @@ VMM_INT_DECL(bool)              HMAreNestedPagingAndFullGuestExecEnabled(PVM pVM
 VMM_INT_DECL(bool)              HMIsLongModeAllowed(PVM pVM);
 VMM_INT_DECL(bool)              HMAreMsrBitmapsAvailable(PVM pVM);
 VMM_INT_DECL(PGMMODE)           HMGetShwPagingMode(PVM pVM);
+VMM_INT_DECL(void)              HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(bool)              HMSvmIsVGifActive(PVM pVM);
 #else /* Nops in RC: */
 # define HMFlushTLB(pVCpu)                              do { } while (0)
 # define HMIsNestedPagingActive(pVM)                    false
@@ -187,6 +185,8 @@ VMM_INT_DECL(PGMMODE)           HMGetShwPagingMode(PVM pVM);
 # define HMIsLongModeAllowed(pVM)                       false
 # define HMAreMsrBitmapsAvailable(pVM)                  false
 # define HMFlushTLBOnAllVCpus(pVM)                      do { } while (0)
+# define HMSvmNstGstVmExitNotify(pVCpu, pCtx)           do { } while (0)
+# define HMSvmIsVGifActive(pVM)                         false
 #endif
 
 #ifdef IN_RING0

@@ -125,6 +125,68 @@ static int hmSvmEmulateMovTpr(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfUpdateRipAndR
         return VINF_SUCCESS;
     return VERR_NOT_FOUND;
 }
+
+
+/**
+ * Notification callback for when a \#VMEXIT happens outside SVM R0 code (e.g.
+ * in IEM).
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ *
+ * @sa      hmR0SvmVmRunCacheVmcb.
+ */
+VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    /*
+     * Restore the nested-guest VMCB fields which have been modified for executing
+     * the nested-guest under SVM R0.
+     */
+    if (pCtx->hwvirt.svm.fHMCachedVmcb)
+    {
+        PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+        PSVMVMCBCTRL        pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
+        PSVMVMCBSTATESAVE   pVmcbNstGstState = &pVmcbNstGst->guest;
+        PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+
+        pVmcbNstGstCtrl->u16InterceptRdCRx             = pNstGstVmcbCache->u16InterceptRdCRx;
+        pVmcbNstGstCtrl->u16InterceptWrCRx             = pNstGstVmcbCache->u16InterceptWrCRx;
+        pVmcbNstGstCtrl->u16InterceptRdDRx             = pNstGstVmcbCache->u16InterceptRdDRx;
+        pVmcbNstGstCtrl->u16InterceptWrDRx             = pNstGstVmcbCache->u16InterceptWrDRx;
+        pVmcbNstGstCtrl->u32InterceptXcpt              = pNstGstVmcbCache->u32InterceptXcpt;
+        pVmcbNstGstCtrl->u64InterceptCtrl              = pNstGstVmcbCache->u64InterceptCtrl;
+        pVmcbNstGstState->u64CR0                       = pNstGstVmcbCache->u64CR0;
+        pVmcbNstGstState->u64CR3                       = pNstGstVmcbCache->u64CR3;
+        pVmcbNstGstState->u64CR4                       = pNstGstVmcbCache->u64CR4;
+        pVmcbNstGstState->u64EFER                      = pNstGstVmcbCache->u64EFER;
+        pVmcbNstGstState->u64DBGCTL                    = pNstGstVmcbCache->u64DBGCTL;
+        pVmcbNstGstCtrl->u32VmcbCleanBits              = pNstGstVmcbCache->u32VmcbCleanBits;
+        pVmcbNstGstCtrl->u64IOPMPhysAddr               = pNstGstVmcbCache->u64IOPMPhysAddr;
+        pVmcbNstGstCtrl->u64MSRPMPhysAddr              = pNstGstVmcbCache->u64MSRPMPhysAddr;
+        pVmcbNstGstCtrl->u64TSCOffset                  = pNstGstVmcbCache->u64TSCOffset;
+        pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking      = pNstGstVmcbCache->fVIntrMasking;
+        pVmcbNstGstCtrl->TLBCtrl                       = pNstGstVmcbCache->TLBCtrl;
+        pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging = pNstGstVmcbCache->u1NestedPaging;
+        pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt           = pNstGstVmcbCache->u1LbrVirt;
+        pCtx->hwvirt.svm.fHMCachedVmcb = false;
+    }
+}
+
+
+/**
+ * Checks if the Virtual GIF (Global Interrupt Flag) feature is supported and
+ * enabled for the VM.
+ *
+ * @returns @c true if VGIF is enabled, @c false otherwise.
+ * @param   pVM         The cross context VM structure.
+ */
+VMM_INT_DECL(bool) HMSvmIsVGifActive(PVM pVM)
+{
+    bool const fVGif    = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VGIF);
+    bool const fUseVGif = fVGif && pVM->hm.s.svm.fVGif;
+
+    return HMIsEnabled(pVM) && fVGif && fUseVGif;
+}
 #endif /* !IN_RC */
 
 
@@ -329,54 +391,6 @@ VMM_INT_DECL(bool) HMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, 
     AssertMsgFailed(("iemSvmHandleIOIntercept: We expect an IO intercept here!\n"));
     return false;
 }
-
-
-#ifdef VBOX_WITH_NESTED_HWVIRT
-/**
- * Notification callback for when a \#VMEXIT happens outside SVM R0 code (e.g.
- * in IEM).
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pCtx            Pointer to the guest-CPU context.
- *
- * @sa      hmR0SvmVmRunCacheVmcb.
- */
-VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    /*
-     * Restore the nested-guest VMCB fields which have been modified for executing
-     * the nested-guest under SVM R0.
-     */
-    if (pCtx->hwvirt.svm.fHMCachedVmcb)
-    {
-        PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-        PSVMVMCBCTRL        pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
-        PSVMVMCBSTATESAVE   pVmcbNstGstState = &pVmcbNstGst->guest;
-        PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
-
-        pVmcbNstGstCtrl->u16InterceptRdCRx             = pNstGstVmcbCache->u16InterceptRdCRx;
-        pVmcbNstGstCtrl->u16InterceptWrCRx             = pNstGstVmcbCache->u16InterceptWrCRx;
-        pVmcbNstGstCtrl->u16InterceptRdDRx             = pNstGstVmcbCache->u16InterceptRdDRx;
-        pVmcbNstGstCtrl->u16InterceptWrDRx             = pNstGstVmcbCache->u16InterceptWrDRx;
-        pVmcbNstGstCtrl->u32InterceptXcpt              = pNstGstVmcbCache->u32InterceptXcpt;
-        pVmcbNstGstCtrl->u64InterceptCtrl              = pNstGstVmcbCache->u64InterceptCtrl;
-        pVmcbNstGstState->u64CR0                       = pNstGstVmcbCache->u64CR0;
-        pVmcbNstGstState->u64CR3                       = pNstGstVmcbCache->u64CR3;
-        pVmcbNstGstState->u64CR4                       = pNstGstVmcbCache->u64CR4;
-        pVmcbNstGstState->u64EFER                      = pNstGstVmcbCache->u64EFER;
-        pVmcbNstGstState->u64DBGCTL                    = pNstGstVmcbCache->u64DBGCTL;
-        pVmcbNstGstCtrl->u32VmcbCleanBits              = pNstGstVmcbCache->u32VmcbCleanBits;
-        pVmcbNstGstCtrl->u64IOPMPhysAddr               = pNstGstVmcbCache->u64IOPMPhysAddr;
-        pVmcbNstGstCtrl->u64MSRPMPhysAddr              = pNstGstVmcbCache->u64MSRPMPhysAddr;
-        pVmcbNstGstCtrl->u64TSCOffset                  = pNstGstVmcbCache->u64TSCOffset;
-        pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking      = pNstGstVmcbCache->fVIntrMasking;
-        pVmcbNstGstCtrl->TLBCtrl                       = pNstGstVmcbCache->TLBCtrl;
-        pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging = pNstGstVmcbCache->u1NestedPaging;
-        pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt           = pNstGstVmcbCache->u1LbrVirt;
-        pCtx->hwvirt.svm.fHMCachedVmcb = false;
-    }
-}
-#endif
 
 
 /**
