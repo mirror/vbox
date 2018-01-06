@@ -27,6 +27,7 @@
 /* Forward declarations: */
 class QButtonGroup;
 class QComboBox;
+class QFrame;
 class QHBoxLayout;
 class QLabel;
 class QLineEdit;
@@ -78,9 +79,8 @@ private:
 
     /** Prepares filter-panel. */
     void prepare();
-    /** Prepares widgets. */
     void prepareWidgets();
-    /** Prepares connections. */
+    void prepareRadioButtonGroup();
     void prepareConnections();
 
     /** Handles the translation event. */
@@ -94,6 +94,7 @@ private:
     void hideEvent(QHideEvent *pEvent);
 
     bool applyFilterTermsToString(const QString& string);
+    void filter();
 
     /** Holds the reference to VM Log-Viewer this filter-panel belongs to. */
     UIVMLogViewerWidget *m_pViewer;
@@ -109,10 +110,14 @@ private:
     QButtonGroup        *m_pButtonGroup;
     QRadioButton        *m_pAndRadioButton;
     QRadioButton        *m_pOrRadioButton;
+    QFrame              *m_pRadioButtonContainer;
     QPushButton         *m_pAddFilterTermButton;
     QStringList          m_filterTermList;
     FilterOperatorButton m_eFilterOperatorButton;
     UIVMFilterLineEdit  *m_pFilterTermsLineEdit;
+    QLabel              *m_pResultLabel;
+    int                  m_iUnfilteredLineCount;
+    int                  m_iFilteredLineCount;
 };
 
 #endif /* !___UIVMLogViewerFilterPanel_h___ */

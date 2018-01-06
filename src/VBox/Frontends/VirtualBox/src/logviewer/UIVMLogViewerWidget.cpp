@@ -697,6 +697,7 @@ QPlainTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
         AssertPtrReturn(pPageLayout, 0);
         /* Create Log-Viewer: */
         QPlainTextEdit *pLogViewer = new QPlainTextEdit(pPageContainer);
+
         AssertPtrReturn(pLogViewer, 0);
         {
             /* Configure Log-Viewer: */

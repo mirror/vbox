@@ -22,6 +22,7 @@
 /* Qt includes: */
 # include <QButtonGroup>
 # include <QComboBox>
+# include <QFrame>
 # include <QHBoxLayout>
 # if defined(RT_OS_SOLARIS)
 #  include <QFontDatabase>
@@ -177,9 +178,13 @@ UIVMLogViewerFilterPanel::UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogView
     , m_pButtonGroup(0)
     , m_pAndRadioButton(0)
     , m_pOrRadioButton(0)
+    , m_pRadioButtonContainer(0)
     , m_pAddFilterTermButton(0)
     , m_eFilterOperatorButton(AndButton)
     , m_pFilterTermsLineEdit(0)
+    , m_pResultLabel(0)
+    , m_iUnfilteredLineCount(0)
+    , m_iFilteredLineCount(0)
 {
     prepare();
 }
@@ -187,20 +192,32 @@ UIVMLogViewerFilterPanel::UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogView
 void UIVMLogViewerFilterPanel::applyFilter(const int iCurrentIndex /* = 0 */)
 {
     Q_UNUSED(iCurrentIndex);
+    filter();
+    retranslateUi();
+}
+
+void UIVMLogViewerFilterPanel::filter()
+{
     QPlainTextEdit *pCurrentPage = m_pViewer->currentLogPage();
     AssertReturnVoid(pCurrentPage);
     const QString& strInputText = m_pViewer->currentLog();
+    m_iUnfilteredLineCount = 0;
+    m_iFilteredLineCount = 0;
     if (strInputText.isNull())
         return;
+    QTextDocument *document = pCurrentPage->document();
+    if (!document)
+        return;
+    QStringList stringLines = strInputText.split("\n");
+    m_iUnfilteredLineCount = stringLines.size();
     if (m_filterTermList.empty())
     {
-        QTextDocument *document = pCurrentPage->document();
-        if (document)
-            document->setPlainText(strInputText);
+        document->setPlainText(strInputText);
         emit sigFilterApplied();
+        m_iFilteredLineCount = document->lineCount();
         return;
     }
-    QStringList stringLines = strInputText.split("\n");
+
     /* Prepare filter-data: */
     QString strFilteredText;
     int count = 0;
@@ -216,9 +233,8 @@ void UIVMLogViewerFilterPanel::applyFilter(const int iCurrentIndex /* = 0 */)
         }
     }
 
-    QTextDocument *document = pCurrentPage->document();
-    if (document)
-        document->setPlainText(strFilteredText);
+    document->setPlainText(strFilteredText);
+    m_iFilteredLineCount = document->lineCount();
 
     /* Move the cursor position to end: */
     QTextCursor cursor = pCurrentPage->textCursor();
@@ -327,36 +343,9 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
 
     m_pCloseButton = new UIMiniCancelButton(this);
     AssertPtrReturnVoid(m_pCloseButton);
-    {
-        m_pMainLayout->addWidget(m_pCloseButton);
-    }
+    m_pMainLayout->addWidget(m_pCloseButton);
 
-    m_pFilterTermsLineEdit = new UIVMFilterLineEdit(this);
-    AssertPtrReturnVoid(m_pFilterTermsLineEdit);
-    {
-        m_pMainLayout->addWidget(m_pFilterTermsLineEdit, 4);
-        m_pFilterTermsLineEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum /*vertical */);
-    }
-
-    m_pButtonGroup = new QButtonGroup(this);
-    AssertPtrReturnVoid(m_pButtonGroup);
-    {
-        m_pAndRadioButton = new QRadioButton(this);
-        m_pOrRadioButton =  new QRadioButton(this);
-        AssertPtrReturnVoid(m_pAndRadioButton);
-        AssertPtrReturnVoid(m_pOrRadioButton);
-        m_pButtonGroup->addButton(m_pAndRadioButton, static_cast<int>(AndButton));
-        m_pButtonGroup->addButton(m_pOrRadioButton, static_cast<int>(OrButton));
-
-        m_pOrRadioButton->setText("Or");
-        m_pAndRadioButton->setText("And");
-
-        m_pOrRadioButton->setChecked(true);
-        m_eFilterOperatorButton = OrButton;
-
-        m_pMainLayout->addWidget(m_pOrRadioButton);
-        m_pMainLayout->addWidget(m_pAndRadioButton);
-    }
+    prepareRadioButtonGroup();
 
     m_pFilterComboBox = new QComboBox(this);
     AssertPtrReturnVoid(m_pFilterComboBox);
@@ -373,9 +362,22 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
     m_pAddFilterTermButton = new QPushButton(this);
     AssertPtrReturnVoid(m_pAddFilterTermButton);
     {
+        m_pAddFilterTermButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
         m_pMainLayout->addWidget(m_pAddFilterTermButton,0);
     }
 
+    m_pFilterTermsLineEdit = new UIVMFilterLineEdit(this);
+    AssertPtrReturnVoid(m_pFilterTermsLineEdit);
+    {
+        m_pMainLayout->addWidget(m_pFilterTermsLineEdit, 4);
+        m_pFilterTermsLineEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum /*vertical */);
+    }
+
+    m_pResultLabel = new QLabel(this);
+    AssertPtrReturnVoid(m_pResultLabel);
+    {
+        m_pMainLayout->addWidget(m_pResultLabel,0);
+    }
         /* Create filter-label: */
 //         m_pFilterLabel = new QLabel(this);
 //         AssertPtrReturnVoid(m_pFilterLabel);
@@ -392,6 +394,37 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
 //         }
 }
 
+void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
+{
+    m_pButtonGroup = new QButtonGroup(this);
+    AssertPtrReturnVoid(m_pButtonGroup);
+
+    m_pRadioButtonContainer = new QFrame(this);
+    m_pRadioButtonContainer->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    AssertPtrReturnVoid(m_pRadioButtonContainer);
+
+    QHBoxLayout* containerLayout = (new QHBoxLayout(m_pRadioButtonContainer));
+    AssertPtrReturnVoid(containerLayout);
+    containerLayout->setContentsMargins(0, 0, 0, 0);
+    containerLayout->setSpacing(0);
+
+    m_pAndRadioButton = new QRadioButton(this);
+    m_pOrRadioButton =  new QRadioButton(this);
+    AssertPtrReturnVoid(m_pAndRadioButton);
+    AssertPtrReturnVoid(m_pOrRadioButton);
+
+    m_pButtonGroup->addButton(m_pAndRadioButton, static_cast<int>(AndButton));
+    m_pButtonGroup->addButton(m_pOrRadioButton, static_cast<int>(OrButton));
+    m_pOrRadioButton->setText("Or");
+    m_pAndRadioButton->setText("And");
+    m_pOrRadioButton->setChecked(true);
+    m_eFilterOperatorButton = OrButton;
+
+    containerLayout->addWidget(m_pOrRadioButton);
+    containerLayout->addWidget(m_pAndRadioButton);
+    m_pMainLayout->addWidget(m_pRadioButtonContainer);
+}
+
 void UIVMLogViewerFilterPanel::prepareConnections()
 {
     connect(m_pCloseButton, &UIMiniCancelButton::clicked, this, &UIVMLogViewerFilterPanel::hide);
@@ -406,13 +439,15 @@ void UIVMLogViewerFilterPanel::prepareConnections()
             this, &UIVMLogViewerFilterPanel::sltClearFilterTerms);
 }
 
+
 void UIVMLogViewerFilterPanel::retranslateUi()
 {
-    m_pCloseButton->setToolTip(UIVMLogViewerWidget::tr("Close the search panel"));
-    //m_pFilterLabel->setText(UIVMLogViewerWidget::tr("Filter"));
-    m_pFilterComboBox->setToolTip(UIVMLogViewerWidget::tr("Enter filtering string here"));
-    m_pAddFilterTermButton->setText(UIVMLogViewerWidget::tr("Add"));
-    m_pAddFilterTermButton->setToolTip(UIVMLogViewerWidget::tr("Add filter term"));
+    m_pCloseButton->setToolTip(UIVMLogViewerWidget::tr("Close the search panel."));
+    m_pFilterComboBox->setToolTip(UIVMLogViewerWidget::tr("Enter filtering string here."));
+    m_pAddFilterTermButton->setToolTip(UIVMLogViewerWidget::tr("Add filter term."));
+    m_pResultLabel->setText(UIVMLogViewerWidget::tr("Showing %1/%2").arg(m_iFilteredLineCount).arg(m_iUnfilteredLineCount));
+    m_pFilterTermsLineEdit->setToolTip(UIVMLogViewerWidget::tr("The filter terms list. Select one to remove or click the button on the right side to remove them all."));
+    m_pRadioButtonContainer->setToolTip(UIVMLogViewerWidget::tr("The type of boolean operator for filter operation."));
 }
 
 bool UIVMLogViewerFilterPanel::eventFilter(QObject *pObject, QEvent *pEvent)
