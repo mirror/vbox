@@ -162,8 +162,11 @@ typedef struct RTSOCKETINT
     /** The events we're currently subscribing to with WSAEventSelect.
      * This is ZERO if we're currently not subscribing to anything. */
     uint32_t            fSubscribedEvts;
-    /** Saved events which are only posted once. */
+    /** Saved events which are only posted once and events harvested for
+     * sockets entetered multiple times into to a poll set. */
     uint32_t            fEventsSaved;
+    /** Set if fEventsSaved contains harvested events. */
+    bool                fHavestedEvents;
     /** Set if we're using the polling fallback. */
     bool                fPollFallback;
     /** Set if the fallback polling is active (event not set). */
@@ -504,6 +507,7 @@ DECLHIDDEN(int) rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE h
     pThis->fPollEvts                = 0;
     pThis->fSubscribedEvts          = 0;
     pThis->fEventsSaved             = 0;
+    pThis->fHavestedEvents          = false;
     pThis->fPollFallback            = g_uWinSockInitedVersion < MAKEWORD(2, 0)
                                    || g_pfnWSACreateEvent == NULL
                                    || g_pfnWSACloseEvent == NULL
@@ -685,7 +689,7 @@ static int rtSocketCreateNativeTcpPair(RTSOCKETNATIVE *phServer, RTSOCKETNATIVE 
      * Got socket pair, so use it.
      */
     int aSockets[2] = { -1, -1 };
-    int (socketpair(AF_INET, SOCK_STREAM, IPPROTO_TCP, aSockets) == 0)
+    if (socketpair(AF_INET, SOCK_STREAM, IPPROTO_TCP, aSockets) == 0)
     {
         *phServer = aSockets[0];
         *phClient = aSockets[0];
@@ -2820,26 +2824,23 @@ static uint32_t rtSocketPollCheck(RTSOCKETINT *pThis, uint32_t fEvents)
         RT_ZERO(NetEvts);
         if (g_pfnWSAEnumNetworkEvents(pThis->hNative, pThis->hEvent, &NetEvts) == 0)
         {
-            if (    (NetEvts.lNetworkEvents & FD_READ)
-                &&  (fEvents & RTPOLL_EVT_READ)
-                &&  NetEvts.iErrorCode[FD_READ_BIT] == 0)
+            if (   (NetEvts.lNetworkEvents & FD_READ)
+                && NetEvts.iErrorCode[FD_READ_BIT] == 0)
                 fRetEvents |= RTPOLL_EVT_READ;
 
-            if (    (NetEvts.lNetworkEvents & FD_WRITE)
-                &&  (fEvents & RTPOLL_EVT_WRITE)
-                &&  NetEvts.iErrorCode[FD_WRITE_BIT] == 0)
+            if (   (NetEvts.lNetworkEvents & FD_WRITE)
+                && NetEvts.iErrorCode[FD_WRITE_BIT] == 0)
                 fRetEvents |= RTPOLL_EVT_WRITE;
 
-            if (fEvents & RTPOLL_EVT_ERROR)
-            {
-                if (NetEvts.lNetworkEvents & FD_CLOSE)
-                    fRetEvents |= RTPOLL_EVT_ERROR;
-                else
-                    for (uint32_t i = 0; i < FD_MAX_EVENTS; i++)
-                        if (    (NetEvts.lNetworkEvents & (1L << i))
-                            &&  NetEvts.iErrorCode[i] != 0)
-                            fRetEvents |= RTPOLL_EVT_ERROR;
-            }
+            if (NetEvts.lNetworkEvents & FD_CLOSE)
+                fRetEvents |= RTPOLL_EVT_ERROR;
+            else
+                for (uint32_t i = 0; i < FD_MAX_EVENTS; i++)
+                    if (   (NetEvts.lNetworkEvents & (1L << i))
+                        && NetEvts.iErrorCode[i] != 0)
+                        fRetEvents |= RTPOLL_EVT_ERROR;
+
+            pThis->fEventsSaved = fRetEvents |= pThis->fEventsSaved;
         }
         else
             rc = rtSocketError();
@@ -3034,27 +3035,40 @@ DECLHIDDEN(uint32_t) rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool f
     /*
      * Harvest events and clear the event mask for the next round of polling.
      */
-    uint32_t fRetEvents = rtSocketPollCheck(pThis, fEvents);
+    uint32_t fRetEvents;
 # ifdef RT_OS_WINDOWS
-    pThis->fPollEvts = 0;
+    if (!pThis->fPollFallback)
+    {
+        if (!pThis->fHavestedEvents)
+        {
+            fRetEvents = rtSocketPollCheck(pThis, fEvents);
+            pThis->fHavestedEvents = true;
+        }
+        else
+            fRetEvents = pThis->fEventsSaved;
+        if (fHarvestEvents)
+            fRetEvents &= fEvents;
+        else
+            fRetEvents = 0;
+        pThis->fPollEvts = 0;
+    }
+    else
+# endif
+    {
+        if (fHarvestEvents)
+            fRetEvents = rtSocketPollCheck(pThis, fEvents);
+        else
+            fRetEvents = 0;
+    }
 
     /*
-     * Save the write event if required.
-     * It is only posted once and might get lost if the another source in the
-     * pollset with a higher priority has pending events.
+     * Make the socket blocking again and unlock the handle.
      */
-    if (   !fHarvestEvents
-        && fRetEvents)
-    {
-        pThis->fEventsSaved = fRetEvents;
-        fRetEvents = 0;
-    }
-# endif
-
-    /* Make the socket blocking again and unlock the handle. */
     if (pThis->cUsers == 1)
     {
 # ifdef RT_OS_WINDOWS
+        pThis->fEventsSaved   &= RTPOLL_EVT_ERROR;
+        pThis->fHavestedEvents = false;
         rtSocketPollClearEventAndRestoreBlocking(pThis);
 # endif
         pThis->hPollSet = NIL_RTPOLLSET;

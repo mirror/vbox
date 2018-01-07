@@ -193,8 +193,8 @@ static void tstRTPoll3(void)
         RTTESTI_CHECK_RC(RTPipeRead(hPipeR, achBuf, sizeof(achBuf), &cbRead), VINF_SUCCESS);
         RTTESTI_CHECK(cbRead == sizeof(g_szHello) - 1 && memcmp(achBuf, g_szHello, sizeof(g_szHello) - 1) == 0);
 
-//        RTTESTI_CHECK_RC(RTPoll(hSet, 0, NULL,  NULL), VERR_TIMEOUT);
-//        RTTESTI_CHECK_RC(RTPoll(hSet, 1, NULL,  NULL), VERR_TIMEOUT);
+        RTTESTI_CHECK_RC(RTPoll(hSet, 0, NULL,  NULL), VERR_TIMEOUT);
+        RTTESTI_CHECK_RC(RTPoll(hSet, 1, NULL,  NULL), VERR_TIMEOUT);
     }
 
 
@@ -228,7 +228,6 @@ static void tstRTPoll3(void)
     RTPipeClose(hPipeR);
 
     RTTESTI_CHECK_RC(RTPollSetDestroy(hSet), VINF_SUCCESS);
-RTLogFlush(NULL);
 }
 
 
