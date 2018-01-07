@@ -90,35 +90,37 @@ public:
 
 protected:
 
-    /* Overload the mouseXXXEvent to control how selection is made: */
+    /* Overload the mouseXXXEvent to control how selection is done: */
     virtual void        mouseDoubleClickEvent(QMouseEvent *){}
     virtual void        mouseMoveEvent(QMouseEvent *){}
     virtual void        mousePressEvent(QMouseEvent * event)
     {
-        /* Simulate double mouse click to select a word with a single click. */
+        /* Simulate double mouse click to select a word with a single click: */
         QLineEdit::mouseDoubleClickEvent(event);
     }
+
     virtual void        mouseReleaseEvent(QMouseEvent *){}
     virtual void paintEvent(QPaintEvent *event)
     {
         QLineEdit::paintEvent(event);
         int clearButtonSize = height();
         m_pClearAllButton->setGeometry(width() - clearButtonSize, 0, clearButtonSize, clearButtonSize);
+        /* If we have a selected term move the m_pRemoveTermButton to the end of the
+           or start of the word (depending on the location of the word within line edit itself: */
         if (hasSelectedText())
         {
             m_pRemoveTermButton->show();
             int buttonY = 0.5 * (height() - 16);
             int buttonSize = 16;
             int charWidth = fontMetrics().width('x');
-
             int buttonLeft = cursorRect().right() - 0.5 * charWidth;
-
+            /* If buttonLeft is in far left of the line edit, move the
+               button to left side of the selected word: */
             if (buttonLeft + buttonSize  >=  width() - clearButtonSize)
             {
                 int selectionWidth = charWidth * selectedText().length();
                 buttonLeft -= (selectionWidth + buttonSize);
             }
-
             m_pRemoveTermButton->setGeometry(buttonLeft, buttonY, buttonSize, buttonSize);
         }
         else
@@ -127,20 +129,21 @@ protected:
 
 private slots:
 
-    /* Nofifies the listeners that selected word (filter term) has been removed. */
+    /* Nofifies the listeners that selected word (filter term) has been removed: */
     void sltRemoveFilterTerm()
     {
-        if(!hasSelectedText())
+        if (!hasSelectedText())
             return;
         emit sigFilterTermRemoved(selectedText());
         /* Remove the string from text() including the trailing space: */
         setText(text().remove(selectionStart(), selectedText().length()+1));
     }
 
-    /* The whole content is removed. Listeners are notified. */
+    /* The whole content is removed. Listeners are notified: */
     void sltClearAll()
     {
-        if(text().isEmpty())
+        /* Check if we have some text to avoid recursive calls: */
+        if (text().isEmpty())
             return;
 
         clear();
@@ -277,9 +280,9 @@ bool UIVMLogViewerFilterPanel::applyFilterTermsToString(const QString& string)
 
 void UIVMLogViewerFilterPanel::sltAddFilterTerm()
 {
-    if(!m_pFilterComboBox)
+    if (!m_pFilterComboBox)
         return;
-    if(m_pFilterComboBox->currentText().isEmpty())
+    if (m_pFilterComboBox->currentText().isEmpty())
         return;
 
     /* Continue only if the term is new. */
@@ -298,7 +301,7 @@ void UIVMLogViewerFilterPanel::sltAddFilterTerm()
 
 void UIVMLogViewerFilterPanel::sltClearFilterTerms()
 {
-    if(m_filterTermList.empty())
+    if (m_filterTermList.empty())
         return;
     m_filterTermList.clear();
     applyFilter();

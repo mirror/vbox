@@ -220,7 +220,7 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
                                 return true;
                             }
                         }
-                        else if(pEvent->type() == QEvent::MouseMove)
+                        else if (pEvent->type() == QEvent::MouseMove)
                         {
                             /* If we are in the near of the handle or currently
                              * dragging, forward the mouse event. */
@@ -290,4 +290,3 @@ QSplitterHandle* QISplitter::createHandle()
 }
 
 #include "QISplitter.moc"
-

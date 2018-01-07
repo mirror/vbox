@@ -127,7 +127,7 @@ void UIPopupPane::layoutContent()
                           iHeight - m_iLayoutSpacing);
 
     /* Details-pane: */
-    if(m_pDetailsPane->isVisible())
+    if (m_pDetailsPane->isVisible())
     {
         m_pDetailsPane->move(m_iLayoutMargin,
                              iTextPaneYOffset + iTextPaneHeight + m_iLayoutSpacing);
@@ -536,4 +536,3 @@ void UIPopupPane::prepareDetailsList(QStringPairList &aDetailsList) const
         aDetailsList << QStringPair(aParts.at(0), aParts.at(1));
     }
 }
-

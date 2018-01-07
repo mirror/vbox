@@ -218,7 +218,7 @@ void UIPopupPaneDetails::updateSizeHint()
     {
         int iNewHeight = m_iMaximumPaneHeight;
         QTextDocument *pTextDocument = m_pTextEdit->document();
-        if(pTextDocument)
+        if (pTextDocument)
         {
             /* Adjust text-edit size: */
             pTextDocument->adjustSize();
@@ -254,4 +254,3 @@ QFont UIPopupPaneDetails::tuneFont(QFont font)
 #endif
     return font;
 }
-

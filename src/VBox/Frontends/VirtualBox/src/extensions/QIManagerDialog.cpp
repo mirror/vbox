@@ -194,7 +194,7 @@ void QIManagerDialog::prepareMenuBar()
 #ifdef VBOX_WS_MAC
 void QIManagerDialog::prepareToolBar()
 {
-    if(!m_pWidgetToolbar)
+    if (!m_pWidgetToolbar)
         return;
     /* Enable unified toolbar on macOS: */
     addToolBar(m_pWidgetToolbar);
@@ -246,4 +246,3 @@ void QIManagerDialog::setDialogGeometry(const QRect &geometry)
     if (shouldBeMaximized())
         showMaximized();
 }
-

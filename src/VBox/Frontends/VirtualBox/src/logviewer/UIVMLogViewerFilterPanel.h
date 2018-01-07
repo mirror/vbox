@@ -67,10 +67,12 @@ private slots:
     void sltAddFilterTerm();
     /** Clear all the filter terms and reset the filtering. */
     void sltClearFilterTerms();
+    /** Executes the necessary code to handle filter's boolean operator change ('And', 'Or'). */
     void sltOperatorButtonChanged(int buttonId);
     void sltRemoveFilterTerm(const QString &termString);
 
 private:
+
     enum FilterOperatorButton{
         AndButton = 0,
         OrButton,

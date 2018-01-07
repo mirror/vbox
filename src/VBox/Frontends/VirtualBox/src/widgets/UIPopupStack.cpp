@@ -341,7 +341,7 @@ int UIPopupStack::parentStatusBarHeight(QWidget *pParent)
         {
             /* Search for existing status-bar child: */
             if (QStatusBar *pStatusBar = pMainWindow->findChild<QStatusBar*>())
-                if(pStatusBar->isVisible())
+                if (pStatusBar->isVisible())
                     return pStatusBar->height();
 
         }
@@ -349,4 +349,3 @@ int UIPopupStack::parentStatusBarHeight(QWidget *pParent)
     /* Zero by default: */
     return 0;
 }
-
