@@ -230,6 +230,17 @@ RTR3DECL(int) RTTcpClientClose(RTSOCKET hSocket);
 RTR3DECL(int) RTTcpClientCloseEx(RTSOCKET hSocket, bool fGracefulShutdown);
 
 /**
+ * Creates connected pair of TCP sockets.
+ *
+ * @returns IPRT status code.
+ * @param   phServer            Where to return the "server" side of the pair.
+ * @param   phClient            Where to return the "client" side of the pair.
+ *
+ * @note    There is no server or client side, but we gotta call it something.
+ */
+RTR3DECL(int) RTTcpCreatePair(PRTSOCKET phServer, PRTSOCKET phClient, uint32_t fFlags);
+
+/**
  * Receive data from a socket.
  *
  * @returns iprt status code.

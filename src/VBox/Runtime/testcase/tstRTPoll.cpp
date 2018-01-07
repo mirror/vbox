@@ -32,10 +32,204 @@
 
 #include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/pipe.h>
+#include <iprt/socket.h>
 #include <iprt/string.h>
+#include <iprt/tcp.h>
 #include <iprt/test.h>
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** What we write from the threads in test 3. */
+static char g_szHello[] = "hello!";
+
+
+static DECLCALLBACK(int) tstRTPoll3PipeWriteThread(RTTHREAD hSelf, void *pvUser)
+{
+    RT_NOREF_PV(hSelf);
+    RTPIPE hPipe = (RTPIPE)pvUser;
+    RTThreadSleep(RT_MS_1SEC);
+    return RTPipeWriteBlocking(hPipe, g_szHello, sizeof(g_szHello) - 1, NULL);
+}
+
+
+static DECLCALLBACK(int) tstRTPoll3SockWriteThread(RTTHREAD hSelf, void *pvUser)
+{
+    RT_NOREF_PV(hSelf);
+    RTSOCKET hSocket = (RTSOCKET)pvUser;
+    RTThreadSleep(RT_MS_1SEC);
+    return RTTcpWrite(hSocket, g_szHello, sizeof(g_szHello) - 1);
+}
+
+
+static void tstRTPoll3(void)
+{
+    RTTestISub("Pipe & Sockets");
+
+    /*
+     * Create a set and a pair of pipes and a pair of sockets.
+     */
+    RTPOLLSET hSet = NIL_RTPOLLSET;
+    RTTESTI_CHECK_RC_RETV(RTPollSetCreate(&hSet), VINF_SUCCESS);
+    RTTESTI_CHECK_RETV(hSet != NIL_RTPOLLSET);
+
+    RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 0);
+    RTTESTI_CHECK_RC(RTPollSetQueryHandle(hSet, 0, NULL), VERR_POLL_HANDLE_ID_NOT_FOUND);
+
+    RTPIPE hPipeR;
+    RTPIPE hPipeW;
+    RTTESTI_CHECK_RC_RETV(RTPipeCreate(&hPipeR, &hPipeW, 0/*fFlags*/), VINF_SUCCESS);
+
+    RTSOCKET hSocketR;
+    RTSOCKET hSocketW;
+    RTTESTI_CHECK_RC_RETV(RTTcpCreatePair(&hSocketR, &hSocketW, 0/*fFlags*/), VINF_SUCCESS);
+
+    /*
+     * Add them for error checking.  These must be added first if want we their IDs
+     * to show up when disconnecting.
+     */
+    RTTESTI_CHECK_RC_RETV(RTPollSetAddPipe(hSet, hPipeR, RTPOLL_EVT_ERROR, 1 /*id*/), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTPollSetAddSocket(hSet, hSocketR, RTPOLL_EVT_ERROR, 2 /*id*/), VINF_SUCCESS);
+    RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 2);
+
+    /*
+     * Add the read ends.  Polling should time out.
+     */
+    RTTESTI_CHECK_RC_RETV(RTPollSetAddPipe(hSet, hPipeR, RTPOLL_EVT_READ, 11 /*id*/), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTPollSetAddSocket(hSet, hSocketR, RTPOLL_EVT_READ, 12 /*id*/), VINF_SUCCESS);
+
+    RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 4);
+
+    RTTESTI_CHECK_RC(RTPollSetQueryHandle(hSet, 11 /*id*/, NULL), VINF_SUCCESS);
+    RTHANDLE Handle;
+    RTTESTI_CHECK_RC_RETV(RTPollSetQueryHandle(hSet, 11 /*id*/, &Handle), VINF_SUCCESS);
+    RTTESTI_CHECK(Handle.enmType == RTHANDLETYPE_PIPE);
+    RTTESTI_CHECK(Handle.u.hPipe == hPipeR);
+
+    RTTESTI_CHECK_RC(RTPollSetQueryHandle(hSet, 12 /*id*/, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTPollSetQueryHandle(hSet, 12 /*id*/, &Handle), VINF_SUCCESS);
+    RTTESTI_CHECK(Handle.enmType == RTHANDLETYPE_SOCKET);
+    RTTESTI_CHECK(Handle.u.hSocket == hSocketR);
+
+    RTTESTI_CHECK_RC(RTPoll(hSet, 0, NULL,  NULL), VERR_TIMEOUT);
+    RTTESTI_CHECK_RC(RTPoll(hSet, 1, NULL,  NULL), VERR_TIMEOUT);
+
+    /*
+     * Add the write ends.  Should indicate that the first one is ready for writing.
+     */
+    RTTESTI_CHECK_RC_RETV(RTPollSetAddPipe(hSet, hPipeW, RTPOLL_EVT_WRITE, 21 /*id*/), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTPollSetAddSocket(hSet, hSocketW, RTPOLL_EVT_WRITE, 22 /*id*/), VINF_SUCCESS);
+
+    uint32_t idReady = UINT32_MAX;
+    RTTESTI_CHECK_RC(RTPoll(hSet, 0, NULL, &idReady), VINF_SUCCESS);
+    RTTESTI_CHECK(idReady == 21 || idReady == 22);
+
+    /*
+     * Remove the write ends again.
+     */
+    RTTESTI_CHECK_RC(RTPollSetRemove(hSet, 21), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTPollSetRemove(hSet, 22), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTPoll(hSet, 0, NULL,  NULL), VERR_TIMEOUT);
+
+    /*
+     * Kick off a thread that writes to the socket after 1 second.
+     * This will check that we can wait and wake up.
+     */
+    for (uint32_t i = 0; i < 2; i++)
+    {
+        RTTHREAD hThread;
+        RTTESTI_CHECK_RC(RTThreadCreate(&hThread, tstRTPoll3SockWriteThread, hSocketW, 0,
+                                        RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "test3sock"), VINF_SUCCESS);
+
+        uint32_t fEvents = 0;
+        idReady = 0;
+        uint64_t msStart = RTTimeSystemMilliTS();
+        RTTESTI_CHECK_RC(RTPoll(hSet, 5 * RT_MS_1SEC, &fEvents, &idReady), VINF_SUCCESS);
+        uint32_t msElapsed = RTTimeSystemMilliTS() - msStart;
+        RTTESTI_CHECK_MSG(msElapsed >= 250 && msElapsed < 4500, ("msElapsed=%RU64\n", msElapsed));
+        RTTESTI_CHECK(fEvents == RTPOLL_EVT_READ);
+        RTTESTI_CHECK(idReady == 12);
+
+        RTThreadWait(hThread, 5 * RT_MS_1SEC, NULL);
+
+        /* Drain the socket. */
+        char    achBuf[128];
+        size_t  cbRead = 0;
+        RTTESTI_CHECK_RC(RTTcpReadNB(hSocketR, achBuf, sizeof(achBuf), &cbRead), VINF_SUCCESS);
+        RTTESTI_CHECK(cbRead == sizeof(g_szHello) - 1 && memcmp(achBuf, g_szHello, sizeof(g_szHello) - 1) == 0);
+
+        RTTESTI_CHECK_RC(RTPoll(hSet, 0, NULL,  NULL), VERR_TIMEOUT);
+        RTTESTI_CHECK_RC(RTPoll(hSet, 1, NULL,  NULL), VERR_TIMEOUT);
+    }
+
+    /*
+     * Kick off a thread that writes to the pipe after 1 second.
+     * This will check that we can wait and wake up.
+     */
+    for (uint32_t i = 0; i < 2; i++)
+    {
+        RTTHREAD hThread;
+        RTTESTI_CHECK_RC(RTThreadCreate(&hThread, tstRTPoll3PipeWriteThread, hPipeW, 0,
+                                        RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "test3pipe"), VINF_SUCCESS);
+
+        uint32_t fEvents = 0;
+        idReady = 0;
+        uint64_t msStart = RTTimeSystemMilliTS();
+        RTTESTI_CHECK_RC(RTPoll(hSet, 5 * RT_MS_1SEC, &fEvents, &idReady), VINF_SUCCESS);
+        uint32_t msElapsed = RTTimeSystemMilliTS() - msStart;
+        RTTESTI_CHECK_MSG(msElapsed >= 250 && msElapsed < 4500, ("msElapsed=%RU64\n", msElapsed));
+        RTTESTI_CHECK(fEvents == RTPOLL_EVT_READ);
+        RTTESTI_CHECK(idReady == 11);
+
+        RTThreadWait(hThread, 5 * RT_MS_1SEC, NULL);
+
+        /* Drain the socket. */
+        char    achBuf[128];
+        size_t  cbRead = 0;
+        RTTESTI_CHECK_RC(RTPipeRead(hPipeR, achBuf, sizeof(achBuf), &cbRead), VINF_SUCCESS);
+        RTTESTI_CHECK(cbRead == sizeof(g_szHello) - 1 && memcmp(achBuf, g_szHello, sizeof(g_szHello) - 1) == 0);
+
+//        RTTESTI_CHECK_RC(RTPoll(hSet, 0, NULL,  NULL), VERR_TIMEOUT);
+//        RTTESTI_CHECK_RC(RTPoll(hSet, 1, NULL,  NULL), VERR_TIMEOUT);
+    }
+
+
+    /*
+     * Close the write socket, checking that we get error returns.
+     */
+    RTSocketShutdown(hSocketW, true, true);
+    RTSocketClose(hSocketW);
+
+    uint32_t fEvents = 0;
+    idReady = 0;
+    RTTESTI_CHECK_RC(RTPoll(hSet, 0, &fEvents, &idReady), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(idReady == 2 || idReady == 12, ("idReady=%u\n", idReady));
+    RTTESTI_CHECK_MSG(fEvents & RTPOLL_EVT_ERROR, ("fEvents=%#x\n", fEvents));
+
+    RTTESTI_CHECK_RC(RTPollSetRemove(hSet, 2), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTPollSetRemove(hSet, 12), VINF_SUCCESS);
+
+    RTSocketClose(hSocketR);
+
+    /*
+     * Ditto for the pipe end.
+     */
+    RTPipeClose(hPipeW);
+
+    idReady = fEvents = 0;
+    RTTESTI_CHECK_RC(RTPoll(hSet, 0, &fEvents, &idReady), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(idReady == 1 || idReady == 11, ("idReady=%u\n", idReady));
+    RTTESTI_CHECK_MSG(fEvents & RTPOLL_EVT_ERROR, ("fEvents=%#x\n", fEvents));
+
+    RTPipeClose(hPipeR);
+
+    RTTESTI_CHECK_RC(RTPollSetDestroy(hSet), VINF_SUCCESS);
+RTLogFlush(NULL);
+}
 
 
 static void tstRTPoll2(void)
@@ -98,9 +292,6 @@ static void tstRTPoll2(void)
     RTFileClose(hBitBucket);
 
     RTTESTI_CHECK_RC_RETV(RTPollSetDestroy(hSet), VINF_SUCCESS);
-
-
-
 }
 
 
@@ -424,6 +615,8 @@ int main()
         tstRTPoll2();
         RTAssertSetQuiet(fQuiet);
         RTAssertSetMayPanic(fMayPanic);
+
+        tstRTPoll3();
     }
 
     /*

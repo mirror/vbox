@@ -2113,6 +2113,7 @@
 # define RTTcpClientCloseEx                             RT_MANGLER(RTTcpClientCloseEx)
 # define RTTcpClientConnect                             RT_MANGLER(RTTcpClientConnect)
 # define RTTcpClientConnectEx                           RT_MANGLER(RTTcpClientConnectEx)
+# define RTTcpCreatePair                                RT_MANGLER(RTTcpCreatePair)
 # define RTTcpFlush                                     RT_MANGLER(RTTcpFlush)
 # define RTTcpGetLocalAddress                           RT_MANGLER(RTTcpGetLocalAddress)
 # define RTTcpGetPeerAddress                            RT_MANGLER(RTTcpGetPeerAddress)
