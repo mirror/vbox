@@ -50,7 +50,7 @@ public:
     /** Constructs search-panel by passing @a pParent to the QWidget base-class constructor.
       * @param  pViewer  Specifies instance of VM Log-Viewer. */
     UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
-    /** Resets the saech position and starts a new search. */
+    /** Resets the search position and starts a new search. */
     void refresh();
     void reset();
     const QVector<float> &getMatchLocationVector() const;
@@ -68,6 +68,8 @@ private slots:
       * @param  strSearchString  Specifies search-string. */
     void findCurrent(const QString &strSearchString);
     void sltHighlightAllCheckBox();
+    void sltCaseSentitiveCheckBox();
+    void sltMatchWholeWordCheckBox();
 
 private:
 

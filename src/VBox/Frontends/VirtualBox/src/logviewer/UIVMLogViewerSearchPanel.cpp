@@ -63,6 +63,7 @@ UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogView
 void UIVMLogViewerSearchPanel::refresh()
 {
     m_iSearchPosition = 0;
+    /* We start the search from the end of the doc. assuming log's end is more interesting: */
     search(BackwardSearch, true);
 }
 
@@ -116,7 +117,7 @@ void UIVMLogViewerSearchPanel::findCurrent(const QString &strSearchString)
     /* If search-string is valid: */
     if (strSearchString.length())
     {
-        /* Reset the position to force the search restart from the document's beginnig: */
+        /* Reset the position to force the search restart from the document's end: */
         m_iSearchPosition = 0;
         search(BackwardSearch, true);
     }
@@ -162,6 +163,16 @@ void UIVMLogViewerSearchPanel::sltHighlightAllCheckBox()
     }
     configureInfoLabels();
     emit sigHighlightingUpdated();
+}
+
+void UIVMLogViewerSearchPanel::sltCaseSentitiveCheckBox()
+{
+    refresh();
+}
+
+void UIVMLogViewerSearchPanel::sltMatchWholeWordCheckBox()
+{
+    refresh();
 }
 
 void UIVMLogViewerSearchPanel::prepare()
@@ -327,12 +338,15 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
 void UIVMLogViewerSearchPanel::prepareConnections()
 {
     /* Prepare connections: */
-    connect(m_pCloseButton, SIGNAL(clicked()), this, SLOT(hide()));
-    connect(m_pSearchEditor, SIGNAL(textChanged(const QString &)),
-            this, SLOT(findCurrent(const QString &)));
-    connect(m_pNextPrevButtons, SIGNAL(clicked(int)), this, SLOT(find(int)));
+    connect(m_pCloseButton, &UIMiniCancelButton::clicked, this, &UIVMLogViewerSearchPanel::hide);
+    connect(m_pSearchEditor, &UISearchField::textChanged, this, &UIVMLogViewerSearchPanel::findCurrent);
+    connect(m_pNextPrevButtons, &UIRoundRectSegmentedButton::clicked, this, &UIVMLogViewerSearchPanel::find);
     connect(m_pHighlightAllCheckBox, &QCheckBox::stateChanged,
             this, &UIVMLogViewerSearchPanel::sltHighlightAllCheckBox);
+    connect(m_pCaseSensitiveCheckBox, &QCheckBox::stateChanged,
+            this, &UIVMLogViewerSearchPanel::sltCaseSentitiveCheckBox);
+    connect(m_pMatchWholeWordCheckBox, &QCheckBox::stateChanged,
+            this, &UIVMLogViewerSearchPanel::sltMatchWholeWordCheckBox);
 }
 
 void UIVMLogViewerSearchPanel::retranslateUi()
