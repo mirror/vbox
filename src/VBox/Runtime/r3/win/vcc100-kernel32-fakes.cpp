@@ -321,7 +321,7 @@ DECL_KERNEL32(BOOL) Fake_IsProcessorFeaturePresent(DWORD enmProcessorFeature)
 
 DECL_KERNEL32(BOOL) Fake_CancelIo(HANDLE hHandle)
 {
-    /* NT 3.51 have the NTDLL API this corresponds to. */
+    /* All NT versions the NTDLL API this corresponds to. */
     RESOLVE_NTDLL_API(NtCancelIoFile);
     if (pfnNtCancelIoFile)
     {
