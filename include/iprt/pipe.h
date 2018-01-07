@@ -105,6 +105,14 @@ RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t f
 RTDECL(RTHCINTPTR) RTPipeToNative(RTPIPE hPipe);
 
 /**
+ * Get the creation inheritability of the pipe.
+ *
+ * @returns true if inherited by children (when pipe was created), false if not.
+ * @param   hPipe           The IPRT pipe handle.
+ */
+RTDECL(int) RTPipeGetCreationInheritability(RTPIPE hPipe);
+
+/**
  * Read bytes from a pipe, non-blocking.
  *
  * @returns IPRT status code.

@@ -45,6 +45,7 @@
 #include <iprt/time.h>
 #include "internal/pipe.h"
 #include "internal/magics.h"
+#include "internal-r3-win.h"
 
 
 /*********************************************************************************************************************************
@@ -73,6 +74,8 @@ typedef struct RTPIPEINTERNAL
     bool                fBrokenPipe;
     /** Set if we've promised that the handle is writable. */
     bool                fPromisedWritable;
+    /** Set if created inheritable. */
+    bool                fCreatedInheritable;
     /** Usage counter. */
     uint32_t            cUsers;
     /** The overlapped I/O structure we use. */
@@ -274,30 +277,32 @@ RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFla
                                                                 TRUE /*fInitialState*/, NULL /*pName*/);
                         if (pThisW->Overlapped.hEvent != NULL)
                         {
-                            pThisR->u32Magic        = RTPIPE_MAGIC;
-                            pThisW->u32Magic        = RTPIPE_MAGIC;
-                            pThisR->hPipe           = hPipeR;
-                            pThisW->hPipe           = hPipeW;
-                            pThisR->fRead           = true;
-                            pThisW->fRead           = false;
-                            //pThisR->fIOPending      = false;
-                            //pThisW->fIOPending      = false;
-                            //pThisR->fZeroByteRead   = false;
-                            //pThisW->fZeroByteRead   = false;
-                            //pThisR->fBrokenPipe     = false;
-                            //pThisW->fBrokenPipe     = false;
-                            //pThisW->fPromisedWritable= false;
-                            //pThisR->fPromisedWritable= false;
-                            //pThisR->cUsers          = 0;
-                            //pThisW->cUsers          = 0;
-                            //pThisR->pbBounceBuf     = NULL;
-                            //pThisW->pbBounceBuf     = NULL;
-                            //pThisR->cbBounceBufUsed = 0;
-                            //pThisW->cbBounceBufUsed = 0;
-                            //pThisR->cbBounceBufAlloc= 0;
-                            //pThisW->cbBounceBufAlloc= 0;
-                            pThisR->hPollSet        = NIL_RTPOLLSET;
-                            pThisW->hPollSet        = NIL_RTPOLLSET;
+                            pThisR->u32Magic            = RTPIPE_MAGIC;
+                            pThisW->u32Magic            = RTPIPE_MAGIC;
+                            pThisR->hPipe               = hPipeR;
+                            pThisW->hPipe               = hPipeW;
+                            pThisR->fRead               = true;
+                            pThisW->fRead               = false;
+                            //pThisR->fIOPending        = false;
+                            //pThisW->fIOPending        = false;
+                            //pThisR->fZeroByteRead     = false;
+                            //pThisW->fZeroByteRead     = false;
+                            //pThisR->fBrokenPipe       = false;
+                            //pThisW->fBrokenPipe       = false;
+                            //pThisW->fPromisedWritable = false;
+                            //pThisR->fPromisedWritable = false;
+                            pThisW->fCreatedInheritable = RT_BOOL(fFlags & RTPIPE_C_INHERIT_WRITE);
+                            pThisR->fCreatedInheritable = RT_BOOL(fFlags & RTPIPE_C_INHERIT_READ);
+                            //pThisR->cUsers            = 0;
+                            //pThisW->cUsers            = 0;
+                            //pThisR->pbBounceBuf       = NULL;
+                            //pThisW->pbBounceBuf       = NULL;
+                            //pThisR->cbBounceBufUsed   = 0;
+                            //pThisW->cbBounceBufUsed   = 0;
+                            //pThisR->cbBounceBufAlloc  = 0;
+                            //pThisW->cbBounceBufAlloc  = 0;
+                            pThisR->hPollSet            = NIL_RTPOLLSET;
+                            pThisW->hPollSet            = NIL_RTPOLLSET;
 
                             *phPipeRead  = pThisR;
                             *phPipeWrite = pThisW;
@@ -471,22 +476,25 @@ RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t f
                                                TRUE /*fInitialState*/, NULL /*pName*/);
         if (pThis->Overlapped.hEvent != NULL)
         {
-            pThis->u32Magic        = RTPIPE_MAGIC;
-            pThis->hPipe           = hNative;
-            pThis->fRead           = !!(fFlags & RTPIPE_N_READ);
-            //pThis->fIOPending      = false;
-            //pThis->fZeroByteRead   = false;
-            //pThis->fBrokenPipe     = false;
-            //pThisR->fPromisedWritable= false;
-            //pThis->cUsers          = 0;
-            //pThis->pbBounceBuf     = NULL;
-            //pThis->cbBounceBufUsed = 0;
-            //pThis->cbBounceBufAlloc= 0;
-            pThis->hPollSet        = NIL_RTPOLLSET;
+            pThis->u32Magic             = RTPIPE_MAGIC;
+            pThis->hPipe                = hNative;
+            pThis->fRead                = !!(fFlags & RTPIPE_N_READ);
+            //pThis->fIOPending         = false;
+            //pThis->fZeroByteRead      = false;
+            //pThis->fBrokenPipe        = false;
+            //pThis->fPromisedWritable  = false;
+            pThis->fCreatedInheritable  = RT_BOOL(fFlags & RTPIPE_N_INHERIT);
+            //pThis->cUsers             = 0;
+            //pThis->pbBounceBuf        = NULL;
+            //pThis->cbBounceBufUsed    = 0;
+            //pThis->cbBounceBufAlloc   = 0;
+            pThis->hPollSet             = NIL_RTPOLLSET;
 
-            HANDLE  hNative2 = INVALID_HANDLE_VALUE;
+            HANDLE                      hNative2 = INVALID_HANDLE_VALUE;
             FILE_PIPE_LOCAL_INFORMATION Info;
-            if (rtPipeQueryNtInfo(pThis, &Info))
+            RT_ZERO(Info);
+            if (   g_enmWinVer != kRTWinOSType_NT310
+                && rtPipeQueryNtInfo(pThis, &Info))
                 rc = VINF_SUCCESS;
             else
             {
@@ -535,11 +543,16 @@ RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t f
                 if (RT_SUCCESS(rc))
                 {
                     /*
-                     * Ok, we're good!
+                     * Ok, we're good!  If we replaced the handle, make sure it's not a standard
+                     * handle if we think we need to close it.
                      */
-/** @todo This is bogus for standard handles! */
                     if (hNative2 != INVALID_HANDLE_VALUE)
-                        CloseHandle(hNative);
+                    {
+                        if (   hNative != GetStdHandle(STD_INPUT_HANDLE)
+                            && hNative != GetStdHandle(STD_OUTPUT_HANDLE)
+                            && hNative != GetStdHandle(STD_ERROR_HANDLE))
+                            CloseHandle(hNative);
+                    }
                     *phPipe = pThis;
                     return VINF_SUCCESS;
                 }
@@ -564,6 +577,16 @@ RTDECL(RTHCINTPTR) RTPipeToNative(RTPIPE hPipe)
     AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, -1);
 
     return (RTHCINTPTR)pThis->hPipe;
+}
+
+
+RTDECL(int) RTPipeGetCreationInheritability(RTPIPE hPipe)
+{
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, false);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, false);
+
+    return pThis->fCreatedInheritable;
 }
 
 
