@@ -66,7 +66,7 @@ private slots:
     void find(int iButton);
     /** Handles textchanged signal from search-editor.
       * @param  strSearchString  Specifies search-string. */
-    void findCurrent(const QString &strSearchString);
+    void sltSearchTextChanged(const QString &strSearchString);
     void sltHighlightAllCheckBox();
     void sltCaseSentitiveCheckBox();
     void sltMatchWholeWordCheckBox();
@@ -89,7 +89,9 @@ private:
     bool eventFilter(QObject *pObject, QEvent *pEvent);
     /** Handles Qt show @a pEvent. */
     void showEvent(QShowEvent *pEvent);
-
+    /** Clear the result of highlight */
+    void clearHighlight();
+    void clearHighlighting(int count);
 
     /** Search routine.
       * @param  eDirection     Specifies the seach direction

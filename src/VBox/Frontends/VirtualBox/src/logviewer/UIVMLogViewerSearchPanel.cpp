@@ -65,6 +65,7 @@ void UIVMLogViewerSearchPanel::refresh()
     m_iSearchPosition = 0;
     /* We start the search from the end of the doc. assuming log's end is more interesting: */
     search(BackwardSearch, true);
+    emit sigHighlightingUpdated();
 }
 
 void UIVMLogViewerSearchPanel::reset()
@@ -108,20 +109,21 @@ void UIVMLogViewerSearchPanel::find(int iButton)
         findBack();
 }
 
-void UIVMLogViewerSearchPanel::findCurrent(const QString &strSearchString)
+void UIVMLogViewerSearchPanel::sltSearchTextChanged(const QString &strSearchString)
 {
     /* Enable/disable Next-Previous buttons as per search-string validity: */
     m_pNextPrevButtons->setEnabled(0, strSearchString.length());
     m_pNextPrevButtons->setEnabled(1, strSearchString.length());
 
-    /* If search-string is valid: */
-    if (strSearchString.length())
+    /* If search-string is not empty: */
+    if (!strSearchString.isEmpty())
     {
         /* Reset the position to force the search restart from the document's end: */
         m_iSearchPosition = 0;
         search(BackwardSearch, true);
+        emit sigHighlightingUpdated();
     }
-    /* If search-string is not valid, reset cursor position: */
+    /* If search-string is empty, reset cursor position: */
     else
     {
         /* Get current log-page: */
@@ -134,6 +136,8 @@ void UIVMLogViewerSearchPanel::findCurrent(const QString &strSearchString)
             cursor.setPosition(cursor.anchor());
             pBrowser->setTextCursor(cursor);
         }
+        m_iSearchPosition = -1;
+        clearHighlighting(-1);
     }
 }
 
@@ -155,11 +159,12 @@ void UIVMLogViewerSearchPanel::sltHighlightAllCheckBox()
     }
     else
     {
+        /* we need this check not to remove the 'not found' label
+           when the user toggles with this checkbox: */
         if (m_iMatchCount != 0)
-            m_iMatchCount = -1;
-
-        m_matchLocationVector.clear();
-        pDocument->undo();
+            clearHighlighting(-1);
+        else
+            clearHighlighting(0);
     }
     configureInfoLabels();
     emit sigHighlightingUpdated();
@@ -339,7 +344,7 @@ void UIVMLogViewerSearchPanel::prepareConnections()
 {
     /* Prepare connections: */
     connect(m_pCloseButton, &UIMiniCancelButton::clicked, this, &UIVMLogViewerSearchPanel::hide);
-    connect(m_pSearchEditor, &UISearchField::textChanged, this, &UIVMLogViewerSearchPanel::findCurrent);
+    connect(m_pSearchEditor, &UISearchField::textChanged, this, &UIVMLogViewerSearchPanel::sltSearchTextChanged);
     connect(m_pNextPrevButtons, &UIRoundRectSegmentedButton::clicked, this, &UIVMLogViewerSearchPanel::find);
     connect(m_pHighlightAllCheckBox, &QCheckBox::stateChanged,
             this, &UIVMLogViewerSearchPanel::sltHighlightAllCheckBox);
@@ -543,7 +548,6 @@ void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
    pTextEdit->setTextCursor(resultCursor);
    m_iSearchPosition = resultCursor.position();
    configureInfoLabels();
-   emit sigHighlightingUpdated();
 }
 
 void UIVMLogViewerSearchPanel::findNext()
@@ -556,17 +560,32 @@ void UIVMLogViewerSearchPanel::findBack()
     search(BackwardSearch, false);
 }
 
+void UIVMLogViewerSearchPanel::clearHighlighting(int count)
+{
+    m_iMatchCount = count;
+    m_matchLocationVector.clear();
+
+    QPlainTextEdit *pBrowser = m_pViewer->currentLogPage();
+    if(pBrowser)
+    {
+        QTextDocument* pDocument = pBrowser->document();
+        if(pDocument)
+            pDocument->undo();
+    }
+    configureInfoLabels();
+    emit sigHighlightingUpdated();
+}
+
 void UIVMLogViewerSearchPanel::highlightAll(QTextDocument *pDocument,
                                             const QString &searchString)
 {
-    m_iMatchCount = 0;
-    m_matchLocationVector.clear();
+    clearHighlighting(0);
+
     if (!pDocument)
         return;
     if (searchString.isEmpty())
         return;
 
-    pDocument->undo();
     QTextCursor highlightCursor(pDocument);
     QTextCharFormat colorFormat(highlightCursor.charFormat());
     QTextCursor cursor(pDocument);
