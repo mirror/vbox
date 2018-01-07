@@ -119,6 +119,15 @@ RTDECL(int)  RTPollSetDestroy(RTPOLLSET hPollSet);
 /**
  * Adds a generic handle to the poll set.
  *
+ * If a handle is entered more than once, it is recommended to add the one with
+ * RTPOLL_EVT_ERROR first to ensure that you get the right ID back when an error
+ * actually occurs.  On some hosts it is possible that polling for
+ * RTPOLL_EVT_READ on a socket may cause it to return error conditions because
+ * the two cannot so easily be distinguished.
+ *
+ * Also note that RTPOLL_EVT_ERROR may be returned by RTPoll even if not asked
+ * for.
+ *
  * @returns IPRT status code
  * @retval  VERR_CONCURRENT_ACCESS if another thread is already accessing the set. The
  *          user is responsible for ensuring single threaded access.
