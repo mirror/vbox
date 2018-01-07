@@ -1020,6 +1020,31 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg, bool fTryGracefulShutdo
 }
 
 
+/**
+ * Creates connected pair of TCP sockets.
+ *
+ * @returns IPRT status code.
+ * @param   phServer            Where to return the "server" side of the pair.
+ * @param   phClient            Where to return the "client" side of the pair.
+ *
+ * @note    There is no server or client side, but we gotta call it something.
+ */
+RTR3DECL(int) RTTcpCreatePair(PRTSOCKET phServer, PRTSOCKET phClient, uint32_t fFlags)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(phServer, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(phClient, VERR_INVALID_PARAMETER);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+
+    /*
+     * Do the job.
+     */
+    return rtSocketCreateTcpPair(phServer, phClient);
+}
+
+
 RTR3DECL(int) RTTcpRead(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
 {
     return RTSocketRead(Sock, pvBuffer, cbBuffer, pcbRead);
