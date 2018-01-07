@@ -848,8 +848,8 @@ RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvent
 
             if (iPrev != UINT32_MAX)
             {
-                Assert(pThis->paHandles[i].fFinalEntry);
-                pThis->paHandles[i].fFinalEntry = false;
+                Assert(pThis->paHandles[iPrev].fFinalEntry);
+                pThis->paHandles[iPrev].fFinalEntry = false;
             }
 
             /*
