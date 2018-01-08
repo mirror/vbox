@@ -693,7 +693,7 @@ static int rtSocketCreateNativeTcpPair(RTSOCKETNATIVE *phServer, RTSOCKETNATIVE 
     if (socketpair(AF_LOCAL, SOCK_STREAM, 0, aSockets) == 0)
     {
         *phServer = aSockets[0];
-        *phClient = aSockets[0];
+        *phClient = aSockets[1];
         return VINF_SUCCESS;
     }
     return rtSocketError();
