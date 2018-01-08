@@ -211,6 +211,8 @@ extern TXSTRANSPORT const g_FileSysTransport;
 extern TXSTRANSPORT const g_GuestPropTransport;
 extern TXSTRANSPORT const g_TestDevTransport;
 
+extern uint32_t           g_cVerbose;
+
 RT_C_DECLS_END
 
 #endif
