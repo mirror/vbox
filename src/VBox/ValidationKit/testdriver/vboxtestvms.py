@@ -72,6 +72,7 @@ g_iRegEx       = 5;
 # pylint: disable=C0301
 g_aaNameToDetails = \
 [
+    [ 'WindowsNT3x',    'WindowsNT3x',           g_k32,    1,  32, ['nt3',    'nt3[0-9]*']],                              # max cpus??
     [ 'WindowsNT4',     'WindowsNT4',            g_k32,    1,  32, ['nt4',    'nt4sp[0-9]']],                             # max cpus??
     [ 'Windows2000',    'Windows2000',           g_k32,    1,  32, ['w2k',    'w2ksp[0-9]', 'win2k', 'win2ksp[0-9]']],    # max cpus??
     [ 'WindowsXP',      'WindowsXP',             g_k32,    1,  32, ['xp',     'xpsp[0-9]']],
@@ -178,7 +179,7 @@ class TestVm(object):
     def __init__(self, oSet, sVmName, sHd = None, sKind = None, acCpusSup = None, asVirtModesSup = None, # pylint: disable=R0913
                  fIoApic = None, fPae = None, sNic0AttachType = None, sHddControllerType = 'IDE Controller',
                  sFloppy = None, fVmmDevTestingPart = None, fVmmDevTestingMmio = False, asParavirtModesSup = None,
-                 fRandomPvPMode = False, sFirmwareType = 'bios', sChipsetType = 'piix3'):
+                 fRandomPvPMode = False, sFirmwareType = 'bios', sChipsetType = 'piix3', sDvdControllerType = 'IDE Controller'):
         self.oSet                    = oSet;
         self.sVmName                 = sVmName;
         self.sHd                     = sHd;          # Relative to the testrsrc root.
@@ -190,6 +191,7 @@ class TestVm(object):
         self.sKind                   = sKind;
         self.sGuestOsType            = None;
         self.sDvdImage               = None;         # Relative to the testrsrc root.
+        self.sDvdControllerType      = sDvdControllerType;
         self.fIoApic                 = fIoApic;
         self.fPae                    = fPae;
         self.sNic0AttachType         = sNic0AttachType;
@@ -411,7 +413,7 @@ class TestVm(object):
               or self.sVmName.find('sp2') >= 0 \
               or self.sVmName.find('sp3') >= 0:
                 return True;
-        # XP x64 on a phyical VIA box hangs exactly like a VM.
+        # XP x64 on a physical VIA box hangs exactly like a VM.
         if self.aInfo[g_iKind] in ['WindowsXP_64', 'Windows2003_64']:
             return True;
         # Vista 64 throws BSOD 0x5D (UNSUPPORTED_PROCESSOR)
@@ -685,19 +687,20 @@ class TestVmSet(object):
                 else:
                     assert False, oTestVm.sNic0AttachType;
 
-                oVM = oTestDrv.createTestVM(oTestVm.sVmName, 1, \
-                                            sHd                = oTestVm.sHd, \
-                                            sKind              = oTestVm.sKind, \
-                                            fIoApic            = oTestVm.fIoApic, \
-                                            fPae               = oTestVm.fPae, \
-                                            eNic0AttachType    = eMyNic0AttachType, \
-                                            sDvdImage          = sMyDvdImage, \
+                oVM = oTestDrv.createTestVM(oTestVm.sVmName, 1,
+                                            sHd                = oTestVm.sHd,
+                                            sKind              = oTestVm.sKind,
+                                            fIoApic            = oTestVm.fIoApic,
+                                            fPae               = oTestVm.fPae,
+                                            eNic0AttachType    = eMyNic0AttachType,
+                                            sDvdImage          = sMyDvdImage,
+                                            sDvdControllerType = oTestVm.sDvdControllerType,
                                             sHddControllerType = oTestVm.sHddControllerType,
                                             sFloppy            = oTestVm.sFloppy,
                                             fVmmDevTestingPart = oTestVm.fVmmDevTestingPart,
                                             fVmmDevTestingMmio = oTestVm.fVmmDevTestingPart,
-                                            sFirmwareType = oTestVm.sFirmwareType,
-                                            sChipsetType = oTestVm.sChipsetType);
+                                            sFirmwareType      = oTestVm.sFirmwareType,
+                                            sChipsetType       = oTestVm.sChipsetType);
             if oVM is None:
                 return False;
 
@@ -861,37 +864,34 @@ class TestVmManager(object):
 
         oSet = TestVmSet(oTestVmManager = self);
 
-        oTestVm = TestVm(oSet, 'tst-win10-efi', sHd = '4.2/efi/win10-efi-x86.vdi',
-                         sKind = 'Windows10', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi');
-        oSet.aoTestVms.append(oTestVm);
-
-        oTestVm = TestVm(oSet, 'tst-win10-64-efi', sHd = '4.2/efi/win10-efi-amd64.vdi',
-                         sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi');
-        oSet.aoTestVms.append(oTestVm);
-
-        #oTestVm = TestVm(oSet, 'tst-win10-64-efi-ich9', sHd = '4.2/efi/win10-efi-amd64.vdi',
-        #                 sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
-        #                 sChipsetType = 'ich9');
-        #oSet.aoTestVms.append(oTestVm);
-
+        # Linux
         oTestVm = TestVm(oSet, 'tst-ubuntu-15_10-64-efi', sHd = '4.2/efi/ubuntu-15_10-efi-amd64.vdi',
                          sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi');
         oSet.aoTestVms.append(oTestVm);
 
+        ## NT 3.x
+        #oTestVm = TestVm(oSet, 'tst-nt310', sHd = '5.2/great-old-ones/t-nt310/t-nt310.vdi',
+        #                 sKind = 'WindowsNT3x', acCpusSup = [1],
+        #                 sHddControllerType = 'BusLogic SCSI Controller', sDvdControllerType = 'BusLogic SCSI Controller' );
+        #oSet.aoTestVms.append(oTestVm); ## @todo COM
+
+        # NT 4
         oTestVm = TestVm(oSet, 'tst-nt4sp1', sHd = '4.2/' + sTxsTransport + '/nt4sp1/t-nt4sp1.vdi',
                          sKind = 'WindowsNT4', acCpusSup = [1]);
-        oSet.aoTestVms.append(oTestVm);
-
-        oTestVm = TestVm(oSet, 'tst-xppro', sHd = '4.2/' + sTxsTransport + '/xppro/t-xppro.vdi',
-                         sKind = 'WindowsXP', acCpusSup = range(1, 33));
         oSet.aoTestVms.append(oTestVm);
 
         oTestVm = TestVm(oSet, 'tst-nt4sp6', sHd = '4.2/nt4sp6/t-nt4sp6.vdi',
                          sKind = 'WindowsNT4', acCpusSup = range(1, 33));
         oSet.aoTestVms.append(oTestVm);
 
+        # W2K
         oTestVm = TestVm(oSet, 'tst-2ksp4', sHd = '4.2/win2ksp4/t-win2ksp4.vdi',
                          sKind = 'Windows2000', acCpusSup = range(1, 33));
+        oSet.aoTestVms.append(oTestVm);
+
+        # XP
+        oTestVm = TestVm(oSet, 'tst-xppro', sHd = '4.2/' + sTxsTransport + '/xppro/t-xppro.vdi',
+                         sKind = 'WindowsXP', acCpusSup = range(1, 33));
         oSet.aoTestVms.append(oTestVm);
 
         oTestVm = TestVm(oSet, 'tst-xpsp2', sHd = '4.2/xpsp2/t-winxpsp2.vdi',
@@ -918,10 +918,12 @@ class TestVmManager(object):
                          sKind = 'WindowsXP', acCpusSup = range(2, 33), fIoApic = True);
         oSet.aoTestVms.append(oTestVm);
 
+        # W7
         oTestVm = TestVm(oSet, 'tst-win7', sHd = '4.2/win7-32/t-win7.vdi',
                          sKind = 'Windows7', acCpusSup = range(1, 33), fIoApic = True);
         oSet.aoTestVms.append(oTestVm);
 
+        # W8
         oTestVm = TestVm(oSet, 'tst-win8-64', sHd = '4.2/win8-64/t-win8-64.vdi',
                          sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True);
         oSet.aoTestVms.append(oTestVm);
@@ -930,15 +932,7 @@ class TestVmManager(object):
         #                 sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True, sChipsetType = 'ich9');
         #oSet.aoTestVms.append(oTestVm);
 
-        return oSet;
-
-    def getSmokeVmSet(self):
-        """
-        Gets a representative set of VMs for smoke testing.
-        """
-
-        oSet = TestVmSet(oTestVmManager = self);
-
+        # W10
         oTestVm = TestVm(oSet, 'tst-win10-efi', sHd = '4.2/efi/win10-efi-x86.vdi',
                          sKind = 'Windows10', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi');
         oSet.aoTestVms.append(oTestVm);
@@ -952,27 +946,27 @@ class TestVmManager(object):
         #                 sChipsetType = 'ich9');
         #oSet.aoTestVms.append(oTestVm);
 
+        return oSet;
+
+    def getSmokeVmSet(self):
+        """
+        Gets a representative set of VMs for smoke testing.
+        """
+
+        oSet = TestVmSet(oTestVmManager = self);
+
+        # Linux
+
         oTestVm = TestVm(oSet, 'tst-ubuntu-15_10-64-efi', sHd = '4.2/efi/ubuntu-15_10-efi-amd64.vdi',
                          sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
                          asParavirtModesSup = [g_ksParavirtProviderKVM,]);
-        oSet.aoTestVms.append(oTestVm);
-
-        oTestVm = TestVm(oSet, 'tst-nt4sp1', sHd = '4.2/nat/nt4sp1/t-nt4sp1.vdi',
-                         sKind = 'WindowsNT4', acCpusSup = [1], sNic0AttachType = 'nat');
-        oSet.aoTestVms.append(oTestVm);
-
-        oTestVm = TestVm(oSet, 'tst-xppro', sHd = '4.2/nat/xppro/t-xppro.vdi',
-                         sKind = 'WindowsXP', acCpusSup = range(1, 33), sNic0AttachType = 'nat');
         oSet.aoTestVms.append(oTestVm);
 
         oTestVm = TestVm(oSet, 'tst-rhel5', sHd = '3.0/tcp/rhel5.vdi',
                          sKind = 'RedHat', acCpusSup = range(1, 33), fIoApic = True, sNic0AttachType = 'nat');
         oSet.aoTestVms.append(oTestVm);
 
-        oTestVm = TestVm(oSet, 'tst-win2k3ent', sHd = '3.0/tcp/win2k3ent-acpi.vdi',
-                         sKind = 'Windows2003', acCpusSup = range(1, 33), fPae = True, sNic0AttachType = 'bridged');
-        oSet.aoTestVms.append(oTestVm);
-
+        # Solaris
         oTestVm = TestVm(oSet, 'tst-sol10', sHd = '3.0/tcp/solaris10.vdi',
                          sKind = 'Solaris', acCpusSup = range(1, 33), fPae = True, sNic0AttachType = 'bridged');
         oSet.aoTestVms.append(oTestVm);
@@ -991,12 +985,29 @@ class TestVmManager(object):
         #                 fIoApic = True, sHddControllerType = 'SATA Controller', sChipsetType = 'ich9');
         #oSet.aoTestVms.append(oTestVm);
 
+        ## NT 3.x
+        #oTestVm = TestVm(oSet, 'tst-nt310', sHd = '5.2/great-old-ones/t-nt310/t-nt310.vdi',
+        #                 sKind = 'WindowsNT3x', acCpusSup = [1],
+        #                 sHddControllerType = 'BusLogic SCSI Controller', sDvdControllerType = 'BusLogic SCSI Controller' );
+        #oSet.aoTestVms.append(oTestVm); ## @todo COM
+
+        # NT 4
+        oTestVm = TestVm(oSet, 'tst-nt4sp1', sHd = '4.2/nat/nt4sp1/t-nt4sp1.vdi',
+                         sKind = 'WindowsNT4', acCpusSup = [1], sNic0AttachType = 'nat');
+        oSet.aoTestVms.append(oTestVm);
+
         oTestVm = TestVm(oSet, 'tst-nt4sp6', sHd = '4.2/nt4sp6/t-nt4sp6.vdi',
                          sKind = 'WindowsNT4', acCpusSup = range(1, 33));
         oSet.aoTestVms.append(oTestVm);
 
+        # W2K
         oTestVm = TestVm(oSet, 'tst-2ksp4', sHd = '4.2/win2ksp4/t-win2ksp4.vdi',
                          sKind = 'Windows2000', acCpusSup = range(1, 33));
+        oSet.aoTestVms.append(oTestVm);
+
+        # XP
+        oTestVm = TestVm(oSet, 'tst-xppro', sHd = '4.2/nat/xppro/t-xppro.vdi',
+                         sKind = 'WindowsXP', acCpusSup = range(1, 33), sNic0AttachType = 'nat');
         oSet.aoTestVms.append(oTestVm);
 
         oTestVm = TestVm(oSet, 'tst-xpsp2', sHd = '4.2/xpsp2/t-winxpsp2.vdi',
@@ -1023,16 +1034,37 @@ class TestVmManager(object):
                          sKind = 'WindowsXP', acCpusSup = range(2, 33), fIoApic = True);
         oSet.aoTestVms.append(oTestVm);
 
+        # W2K3
+        oTestVm = TestVm(oSet, 'tst-win2k3ent', sHd = '3.0/tcp/win2k3ent-acpi.vdi',
+                         sKind = 'Windows2003', acCpusSup = range(1, 33), fPae = True, sNic0AttachType = 'bridged');
+        oSet.aoTestVms.append(oTestVm);
+
+        # W7
         oTestVm = TestVm(oSet, 'tst-win7', sHd = '4.2/win7-32/t-win7.vdi',
                          sKind = 'Windows7', acCpusSup = range(1, 33), fIoApic = True);
         oSet.aoTestVms.append(oTestVm);
 
+        # W8
         oTestVm = TestVm(oSet, 'tst-win8-64', sHd = '4.2/win8-64/t-win8-64.vdi',
                          sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True);
         oSet.aoTestVms.append(oTestVm);
 
         #oTestVm = TestVm(oSet, 'tst-win8-64-ich9', sHd = '4.2/win8-64/t-win8-64.vdi',
         #                 sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True, sChipsetType = 'ich9');
+        #oSet.aoTestVms.append(oTestVm);
+
+        # W10
+        oTestVm = TestVm(oSet, 'tst-win10-efi', sHd = '4.2/efi/win10-efi-x86.vdi',
+                         sKind = 'Windows10', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi');
+        oSet.aoTestVms.append(oTestVm);
+
+        oTestVm = TestVm(oSet, 'tst-win10-64-efi', sHd = '4.2/efi/win10-efi-amd64.vdi',
+                         sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi');
+        oSet.aoTestVms.append(oTestVm);
+
+        #oTestVm = TestVm(oSet, 'tst-win10-64-efi-ich9', sHd = '4.2/efi/win10-efi-amd64.vdi',
+        #                 sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
+        #                 sChipsetType = 'ich9');
         #oSet.aoTestVms.append(oTestVm);
 
         return oSet;
