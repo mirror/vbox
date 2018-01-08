@@ -235,6 +235,7 @@ RTR3DECL(int) RTTcpClientCloseEx(RTSOCKET hSocket, bool fGracefulShutdown);
  * @returns IPRT status code.
  * @param   phServer            Where to return the "server" side of the pair.
  * @param   phClient            Where to return the "client" side of the pair.
+ * @param   fFlags              Reserved, must be zero.
  *
  * @note    There is no server or client side, but we gotta call it something.
  */
