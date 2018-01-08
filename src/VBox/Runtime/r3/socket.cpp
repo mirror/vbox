@@ -687,9 +687,10 @@ static int rtSocketCreateNativeTcpPair(RTSOCKETNATIVE *phServer, RTSOCKETNATIVE 
 #else
     /*
      * Got socket pair, so use it.
+     * Note! This isn't TCP per se, but it should fool the users.
      */
     int aSockets[2] = { -1, -1 };
-    if (socketpair(AF_INET, SOCK_STREAM, IPPROTO_TCP, aSockets) == 0)
+    if (socketpair(AF_LOCAL, SOCK_STREAM, 0, aSockets) == 0)
     {
         *phServer = aSockets[0];
         *phClient = aSockets[0];
@@ -2876,7 +2877,7 @@ static uint32_t rtSocketPollCheck(RTSOCKETINT *pThis, uint32_t fEvents)
 # endif
                 /* If no bytes are available, assume error condition. */
                 u_long cbAvail = 0;
-                rc = ioctlsocket(pThis->hNative, FIONREAD, &cbAvail);
+                rc = g_pfnioctlsocket(pThis->hNative, FIONREAD, &cbAvail);
                 if (rc == 0 && cbAvail == 0)
                     fRetEvents |= RTPOLL_EVT_ERROR;
             }
