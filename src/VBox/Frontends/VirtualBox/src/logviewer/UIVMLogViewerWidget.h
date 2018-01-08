@@ -36,13 +36,18 @@ class QITabWidget;
 class QPlainTextEdit;
 class QVBoxLayout;
 class UIToolBar;
+class UIVMLogViewerBookmarksPanel;
 class UIVMLogViewerFilterPanel;
 class UIVMLogViewerSearchPanel;
 
 /* Type definitions: */
-typedef QPair<QString, QPlainTextEdit*> LogPage;
-typedef QList<LogPage> LogBook;
+/** value is the content of the log file */
 typedef QMap<QPlainTextEdit*, QString> VMLogMap;
+/** first is line number, second is block text */
+typedef QPair<int, QString> LogBookmark;
+/** key is log file name, value is a vector of bookmarks. */
+typedef QMap<QString, QVector<LogBookmark> > BookmarkMap;
+
 
 /** QIMainWindow extension
   * providing GUI with VirtualBox LogViewer. */
@@ -77,22 +82,25 @@ protected:
 
 private slots:
 
-    /** Handles search action triggering. */
-    void sltFind();
     /** Handles refresh action triggering. */
     void sltRefresh();
     /** Handles save action triggering. */
     void sltSave();
-    /** Handles filter action triggering. */
-    void sltFilter();
+
+    void sltShowHideFilterPanel();
+    void sltShowHideSearchPanel();
+    void sltShowHideBookmarkPanel();
 
     /** Handles the search result highlight changes. */
     void sltSearchResultHighLigting();
-
     /** Handles the tab change of the logviewer. */
     void sltTabIndexChange(int tabIndex);
-
     void sltFilterApplied();
+    /* create a bookmark out of line number and block text. */
+    void sltCreateBookmarkAtLine(QPair<int, QString> bookmark);
+    /* Determines the (middle) line number of the visible text and calls sltCreateBookmarkAtLine. */
+    void sltCreateBookmarkAtCurrent();
+
 
 private:
 
@@ -128,14 +136,18 @@ private:
     QPlainTextEdit* logPage(int pIndex) const;
     /** Returns the newly created log-page using @a strPage filename. */
     QPlainTextEdit* createLogPage(const QString &strPage);
-    /** Returns the content of current log-page. */
-    const QString& currentLog();
+    /** Returns the content of current log-file as it is read. */
+    const QString* currentLog();
 
     /** Attempts to read the logs through the API, returns true if there exists any logs, false otherwise. */
     bool createLogViewerPages();
 
     /** Resets document (of the curent tab) and scrollbar highligthing */
     void resetHighlighthing();
+
+    /** Returns the vector of bookmarks for the current log page */
+    QVector<LogBookmark>* currentBookmarkVector();
+    const QVector<LogBookmark>* currentBookmarkVector() const;
 
     /** Holds whether the dialog is polished. */
     bool m_fIsPolished;
@@ -151,15 +163,13 @@ private:
 
     /** Holds the instance of search-panel. */
     UIVMLogViewerSearchPanel *m_pSearchPanel;
-
-    /** Holds the list of log-pages. */
-    LogBook m_book;
-
     /** Holds the instance of filter panel. */
     UIVMLogViewerFilterPanel *m_pFilterPanel;
+    UIVMLogViewerBookmarksPanel *m_pBookmarksPanel;
 
-    /** Holds the list of log-content. */
-    VMLogMap m_logMap;
+    /** Holds the list of log file content. */
+    VMLogMap             m_logMap;
+    mutable BookmarkMap  m_bookmarkMap;
 
     QVBoxLayout      *m_pMainLayout;
 
@@ -178,12 +188,16 @@ private:
         QAction   *m_pActionRefresh;
         /** Holds the Save action instance. */
         QAction   *m_pActionSave;
+        /** Holds the Bookmark action instance. */
+        QAction   *m_pActionBookmark;
+
         /** Holds the menu object instance. */
         QMenu     *m_pMenu;
     /** @} */
 
-    friend class UIVMLogViewerSearchPanel;
+    friend class UIVMLogViewerBookmarksPanel;
     friend class UIVMLogViewerFilterPanel;
+    friend class UIVMLogViewerSearchPanel;
 };
 
 #endif /* !___UIVMLogViewerWidget_h___ */

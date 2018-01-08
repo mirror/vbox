@@ -2467,4 +2467,3 @@ UIMediumManagerWidget *UIMediumManager::widget()
 {
     return qobject_cast<UIMediumManagerWidget*>(QIManagerDialog::widget());
 }
-

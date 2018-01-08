@@ -29,6 +29,7 @@
 # include <QPainter>
 # include <QPlainTextEdit>
 # include <QScrollBar>
+# include <QTextBlock>
 
 /* GUI includes: */
 # include "QIFileDialog.h"
@@ -37,6 +38,7 @@
 # include "UIIconPool.h"
 # include "UIMessageCenter.h"
 # include "UIVMLogViewerWidget.h"
+# include "UIVMLogViewerBookmarksPanel.h"
 # include "UIVMLogViewerFilterPanel.h"
 # include "UIVMLogViewerSearchPanel.h"
 # include "UIToolBar.h"
@@ -47,6 +49,7 @@
 # include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /** We use a modified scrollbar style for our QPlainTextEdits to get the
     markings on the scrollbars correctly. The default scrollbarstyle does not
@@ -115,12 +118,78 @@ private:
     QVector<float> m_markingsVector;
 };
 
+/* Sub-class QPlainTextEdit for some addtional context menu items: */
+class UIVMLogViewerTextEdit : public QPlainTextEdit
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigContextMenuBookmarkAction(LogBookmark bookmark);
+
+public:
+    UIVMLogViewerTextEdit(QWidget* parent = 0, const QString& logFileName = QString())
+        :QPlainTextEdit(parent),
+         m_logFileName(logFileName)
+    {
+        //setStyleSheet("background-color: rgba(240, 240, 240, 75%) ");
+    }
+
+    const QString& logFileName() const
+    {
+        return m_logFileName;
+    }
+
+protected:
+
+    void contextMenuEvent(QContextMenuEvent *pEvent)
+    {
+        QMenu *menu = createStandardContextMenu();
+        QAction *pAction = menu->addAction(tr("Bookmark"));
+        QTextBlock block = cursorForPosition(pEvent->pos()).block();
+        m_iContextMenuBookmark.first = block.firstLineNumber();
+        m_iContextMenuBookmark.second = block.text();
+
+        if(pAction)
+            connect(pAction, &QAction::triggered, this, &UIVMLogViewerTextEdit::sltBookmark);
+
+        menu->exec(pEvent->globalPos());
+
+        if(pAction)
+            disconnect(pAction, &QAction::triggered, this, &UIVMLogViewerTextEdit::sltBookmark);
+
+        delete menu;
+    }
+
+    virtual void mousePressEvent(QMouseEvent *pEvent)
+    {
+        QPlainTextEdit::mousePressEvent(pEvent);
+    }
+
+private slots:
+    /// remove
+    void sltBookmark()
+    {
+        emit sigContextMenuBookmarkAction(m_iContextMenuBookmark);
+    }
+
+private:
+
+    /* Line number and text at the context menu position */
+    LogBookmark m_iContextMenuBookmark;
+    /* Name of the log file this text edit created to show. */
+    QString m_logFileName;
+};
+
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */, const CMachine &machine /* = CMachine() */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fIsPolished(false)
     , m_comMachine(machine)
     , m_pViewerContainer(0)
     , m_iCurrentTabIndex(-1)
+    , m_pSearchPanel(0)
+    , m_pFilterPanel(0)
+    , m_pBookmarksPanel(0)
     , m_pMainLayout(0)
     , m_enmEmbedding(enmEmbedding)
     , m_pToolBar(0)
@@ -128,6 +197,7 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent 
     , m_pActionFilter(0)
     , m_pActionRefresh(0)
     , m_pActionSave(0)
+    , m_pActionBookmark(0)
     , m_pMenu(0)
 {
     /* Prepare VM Log-Viewer: */
@@ -165,8 +235,10 @@ bool UIVMLogViewerWidget::shouldBeMaximized() const
     return gEDataManager->logWindowShouldBeMaximized();
 }
 
-void UIVMLogViewerWidget::sltFind()
+void UIVMLogViewerWidget::sltShowHideSearchPanel()
 {
+    if(!m_pSearchPanel)
+        return;
     /* Show/hide search-panel: */
     m_pSearchPanel->isHidden() ? m_pSearchPanel->show() : m_pSearchPanel->hide();
 }
@@ -177,8 +249,6 @@ void UIVMLogViewerWidget::sltRefresh()
     disconnect(m_pViewerContainer, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
     disconnect(m_pViewerContainer, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
 
-    /* Clearing old data if any: */
-    m_book.clear();
     m_logMap.clear();
     m_pViewerContainer->setEnabled(true);
     /* Hide the container widget during updates to avoid flickering: */
@@ -225,7 +295,8 @@ void UIVMLogViewerWidget::sltRefresh()
     m_pViewerContainer->setCurrentIndex(0);
 
     /* Apply the filter settings: */
-    m_pFilterPanel->applyFilter();
+    if(m_pFilterPanel)
+        m_pFilterPanel->applyFilter();
 
     /* Setup this connection after refresh to avoid initial signals during page creation: */
     connect(m_pViewerContainer, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
@@ -237,6 +308,7 @@ void UIVMLogViewerWidget::sltRefresh()
     m_pActionFind->setEnabled(!noLogsToShow);
     m_pActionFilter->setEnabled(!noLogsToShow);
     m_pActionSave->setEnabled(!noLogsToShow);
+    m_pActionBookmark->setEnabled(!noLogsToShow);
     m_pViewerContainer->setEnabled(!noLogsToShow);
     m_pViewerContainer->show();
     if (m_pSearchPanel && m_pSearchPanel->isVisible())
@@ -247,8 +319,11 @@ void UIVMLogViewerWidget::sltSave()
 {
     if (m_comMachine.isNull())
         return;
+    UIVMLogViewerTextEdit *logPage = qobject_cast<UIVMLogViewerTextEdit*>(currentLogPage());
+    if(!logPage)
+        return;
     /* Prepare "save as" dialog: */
-    const QFileInfo fileInfo(m_book.at(m_pViewerContainer->currentIndex()).first);
+    const QFileInfo fileInfo(logPage->logFileName());
     /* Prepare default filename: */
     const QDateTime dtInfo = fileInfo.lastModified();
     const QString strDtString = dtInfo.toString("yyyy-MM-dd-hh-mm-ss");
@@ -273,8 +348,10 @@ void UIVMLogViewerWidget::sltSave()
     }
 }
 
-void UIVMLogViewerWidget::sltFilter()
+void UIVMLogViewerWidget::sltShowHideFilterPanel()
 {
+    if(!m_pFilterPanel)
+        return;
     /* Show/hide filter-panel: */
     m_pFilterPanel->isHidden() ? m_pFilterPanel->show() : m_pFilterPanel->hide();
 }
@@ -304,12 +381,46 @@ void UIVMLogViewerWidget::sltTabIndexChange(int tabIndex)
     m_iCurrentTabIndex = tabIndex;
 }
 
-void UIVMLogViewerWidget::
-sltFilterApplied()
+void UIVMLogViewerWidget::sltFilterApplied()
 {
     /* Reapply the search to get highlighting etc. correctly */
     if (m_pSearchPanel && m_pSearchPanel->isVisible())
         m_pSearchPanel->refresh();
+}
+
+void UIVMLogViewerWidget::sltShowHideBookmarkPanel()
+{
+    if(!m_pBookmarksPanel)
+        return;
+    m_pBookmarksPanel->isHidden() ? m_pBookmarksPanel->show() : m_pBookmarksPanel->hide();
+}
+
+void UIVMLogViewerWidget::sltCreateBookmarkAtCurrent()
+{
+    if(!currentLogPage())
+        return;
+    QWidget* viewport = currentLogPage()->viewport();
+    if (!viewport)
+        return;
+    QPoint point(0.5 * viewport->width(), 0.5 * viewport->height());
+    QTextBlock block = currentLogPage()->cursorForPosition(point).block();
+    LogBookmark bookmark;
+    bookmark.first = block.firstLineNumber();
+    bookmark.second = block.text();
+    sltCreateBookmarkAtLine(bookmark);
+}
+
+void UIVMLogViewerWidget::sltCreateBookmarkAtLine(LogBookmark bookmark)
+{
+    QVector<LogBookmark> *pBookmarkVector = currentBookmarkVector();
+    if(!pBookmarkVector)
+        return;
+    pBookmarkVector->push_back(bookmark);
+    if(m_pBookmarksPanel)
+    {
+        m_pBookmarksPanel->update();
+        m_pBookmarksPanel->setBookmarkIndex(pBookmarkVector->size() - 1);
+    }
 }
 
 void UIVMLogViewerWidget::setMachine(const CMachine &machine)
@@ -383,6 +494,14 @@ void UIVMLogViewerWidget::prepareWidgets()
         connect(m_pFilterPanel, &UIVMLogViewerFilterPanel::sigFilterApplied,
                 this, &UIVMLogViewerWidget::sltFilterApplied);
     }
+
+    m_pBookmarksPanel = new UIVMLogViewerBookmarksPanel(this, this);
+    AssertPtrReturnVoid(m_pBookmarksPanel);
+    {
+        installEventFilter(m_pBookmarksPanel);
+        m_pBookmarksPanel->hide();
+        m_pMainLayout->insertWidget(4, m_pBookmarksPanel);
+    }
 }
 
 void UIVMLogViewerWidget::prepareActions()
@@ -392,7 +511,8 @@ void UIVMLogViewerWidget::prepareActions()
     AssertPtrReturnVoid(m_pActionFind);
     {
         m_pActionFind->setShortcut(QKeySequence("Ctrl+F"));
-        connect(m_pActionFind, &QAction::triggered, this, &UIVMLogViewerWidget::sltFind);
+        m_pActionFind->setCheckable(true);
+        connect(m_pActionFind, &QAction::triggered, this, &UIVMLogViewerWidget::sltShowHideSearchPanel);
     }
 
     /* Create and configure 'Filter' action: */
@@ -400,7 +520,8 @@ void UIVMLogViewerWidget::prepareActions()
     AssertPtrReturnVoid(m_pActionFilter);
     {
         m_pActionFilter->setShortcut(QKeySequence("Ctrl+T"));
-        connect(m_pActionFilter, &QAction::triggered, this, &UIVMLogViewerWidget::sltFilter);
+        m_pActionFilter->setCheckable(true);
+        connect(m_pActionFilter, &QAction::triggered, this, &UIVMLogViewerWidget::sltShowHideFilterPanel);
     }
 
     /* Create and configure 'Refresh' action: */
@@ -418,10 +539,20 @@ void UIVMLogViewerWidget::prepareActions()
         /* tie Ctrl+S to save only if we show this in a dialog since Ctrl+S is
            already assigned to another action in the selector UI: */
         if (m_enmEmbedding == EmbedTo_Dialog)
-        {
             m_pActionSave->setShortcut(QKeySequence("Ctrl+S"));
-            connect(m_pActionSave, &QAction::triggered, this, &UIVMLogViewerWidget::sltSave);
-        }
+        connect(m_pActionSave, &QAction::triggered, this, &UIVMLogViewerWidget::sltSave);
+     }
+
+    /* Create and configure 'Bookmark' action: */
+    m_pActionBookmark = new QAction(this);
+    AssertPtrReturnVoid(m_pActionBookmark);
+    {
+        /* tie Ctrl+D to save only if we show this in a dialog since Ctrl+D is
+           already assigned to another action in the selector UI: */
+        if (m_enmEmbedding == EmbedTo_Dialog)
+            m_pActionBookmark->setShortcut(QKeySequence("Ctrl+D"));
+        m_pActionBookmark->setCheckable(true);
+        connect(m_pActionBookmark, &QAction::triggered, this, &UIVMLogViewerWidget::sltShowHideBookmarkPanel);
     }
 
     /* Update action icons: */
@@ -450,7 +581,9 @@ void UIVMLogViewerWidget::prepareActionIcons()
         m_pActionSave->setIcon(UIIconPool::iconSet(QString(":/%1_save_24px.png").arg(strPrefix),
                                                        QString(":/%1_save_disabled_24px.png").arg(strPrefix)));
 
-
+    if (m_pActionBookmark)
+        m_pActionBookmark->setIcon(UIIconPool::iconSet(QString(":/%1_bookmark_24px.png").arg(strPrefix),
+                                                       QString(":/%1_bookmark_disabled_24px.png").arg(strPrefix)));
 }
 
 void UIVMLogViewerWidget::prepareToolBar()
@@ -475,6 +608,9 @@ void UIVMLogViewerWidget::prepareToolBar()
 
         if (m_pActionSave)
             m_pToolBar->addAction(m_pActionSave);
+
+        if (m_pActionBookmark)
+            m_pToolBar->addAction(m_pActionBookmark);
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -504,6 +640,9 @@ void UIVMLogViewerWidget::prepareMenu()
             m_pMenu->addAction(m_pActionRefresh);
         if (m_pActionSave)
             m_pMenu->addAction(m_pActionSave);
+        if (m_pActionBookmark)
+            m_pMenu->addAction(m_pActionBookmark);
+
     }
 }
 
@@ -544,6 +683,13 @@ void UIVMLogViewerWidget::retranslateUi()
         m_pActionSave->setText(tr("&Save..."));
         m_pActionSave->setToolTip(tr("Save the log"));
         m_pActionSave->setStatusTip(tr("Save the log"));
+    }
+
+    if (m_pActionBookmark)
+    {
+        m_pActionBookmark->setText(tr("&Bookmark..."));
+        m_pActionBookmark->setToolTip(tr("Bookmark the line"));
+        m_pActionBookmark->setStatusTip(tr("Bookmark the line"));
     }
 
     /* Translate toolbar: */
@@ -615,6 +761,13 @@ void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
     QWidget::keyReleaseEvent(pEvent);
 }
 
+const QString* UIVMLogViewerWidget::currentLog()
+{
+    if(!currentLogPage())
+        return 0;
+    return &(m_logMap[currentLogPage()]);
+}
+
 QPlainTextEdit* UIVMLogViewerWidget::currentLogPage() const
 {
     /* If viewer-container is enabled: */
@@ -629,6 +782,31 @@ QPlainTextEdit* UIVMLogViewerWidget::currentLogPage() const
     /* Return NULL by default: */
     return 0;
 }
+
+const QVector<LogBookmark>* UIVMLogViewerWidget::currentBookmarkVector() const
+{
+    UIVMLogViewerTextEdit *logPage = qobject_cast<UIVMLogViewerTextEdit*>(currentLogPage());
+    if(!logPage)
+        return 0;
+    QString logFileName = logPage->logFileName();
+    if(logFileName.isEmpty())
+        return 0;
+
+    return &(m_bookmarkMap[logFileName]);
+}
+
+QVector<LogBookmark>* UIVMLogViewerWidget::currentBookmarkVector()
+{
+    UIVMLogViewerTextEdit *logPage = qobject_cast<UIVMLogViewerTextEdit*>(currentLogPage());
+    if(!logPage)
+        return 0;
+    QString logFileName = logPage->logFileName();
+    if(logFileName.isEmpty())
+        return 0;
+
+    return &(m_bookmarkMap[logFileName]);
+}
+
 
 QPlainTextEdit* UIVMLogViewerWidget::logPage(int pIndex) const
 {
@@ -670,14 +848,12 @@ bool UIVMLogViewerWidget::createLogViewerPages()
             if (uOffset > 0)
             {
                 /* Create a log viewer page and append the read text to it: */
-                QPlainTextEdit *pLogViewer = createLogPage(QFileInfo(strFileName).fileName());
+                QPlainTextEdit *pLogViewer = createLogPage(strFileName);
                 pLogViewer->setPlainText(strText);
                 /* Move the cursor position to end: */
                 QTextCursor cursor = pLogViewer->textCursor();
                 cursor.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
                 pLogViewer->setTextCursor(cursor);
-                /* Add the actual file name and the QPlainTextEdit containing the content to a list: */
-                m_book << qMakePair(strFileName, pLogViewer);
                 /* Add the log-text to the map: */
                 m_logMap[pLogViewer] = strText;
                 logsExists = true;
@@ -687,7 +863,7 @@ bool UIVMLogViewerWidget::createLogViewerPages()
     return logsExists;
 }
 
-QPlainTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
+QPlainTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strFileName)
 {
     /* Create page-container: */
     QWidget *pPageContainer = new QWidget;
@@ -697,7 +873,9 @@ QPlainTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
         QVBoxLayout *pPageLayout = new QVBoxLayout(pPageContainer);
         AssertPtrReturn(pPageLayout, 0);
         /* Create Log-Viewer: */
-        QPlainTextEdit *pLogViewer = new QPlainTextEdit(pPageContainer);
+        UIVMLogViewerTextEdit *pLogViewer = new UIVMLogViewerTextEdit(pPageContainer, strFileName);
+        connect(pLogViewer, &UIVMLogViewerTextEdit::sigContextMenuBookmarkAction,
+                this, &UIVMLogViewerWidget::sltCreateBookmarkAtLine);
 
         AssertPtrReturn(pLogViewer, 0);
         {
@@ -721,14 +899,9 @@ QPlainTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strName)
             pPageLayout->addWidget(pLogViewer);
         }
         /* Add page-container to viewer-container: */
-        m_pViewerContainer->addTab(pPageContainer, strName);
+        m_pViewerContainer->addTab(pPageContainer, QFileInfo(strFileName).fileName());
         return pLogViewer;
     }
-}
-
-const QString& UIVMLogViewerWidget::currentLog()
-{
-    return m_logMap[currentLogPage()];
 }
 
 void UIVMLogViewerWidget::resetHighlighthing()

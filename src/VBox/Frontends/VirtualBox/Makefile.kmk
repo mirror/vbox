@@ -334,6 +334,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/globals/VBoxUtils.h \
 	src/hostnetwork/UIHostNetworkDetailsWidget.h \
 	src/hostnetwork/UIHostNetworkManager.h \
+	src/logviewer/UIVMLogViewerBookmarksPanel.h \
 	src/logviewer/UIVMLogViewerDialog.h \
 	src/logviewer/UIVMLogViewerFilterPanel.h \
 	src/logviewer/UIVMLogViewerSearchPanel.h \
@@ -650,6 +651,7 @@ VirtualBox_SOURCES = \
 	src/hostnetwork/UIHostNetworkDetailsWidget.cpp \
 	src/hostnetwork/UIHostNetworkManager.cpp \
 	src/hostnetwork/UIHostNetworkUtils.cpp \
+	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
 	src/logviewer/UIVMLogViewerDialog.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \

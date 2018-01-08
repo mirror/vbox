@@ -203,19 +203,19 @@ void UIVMLogViewerFilterPanel::filter()
 {
     QPlainTextEdit *pCurrentPage = m_pViewer->currentLogPage();
     AssertReturnVoid(pCurrentPage);
-    const QString& strInputText = m_pViewer->currentLog();
+    const QString* strInputText = m_pViewer->currentLog();
     m_iUnfilteredLineCount = 0;
     m_iFilteredLineCount = 0;
-    if (strInputText.isNull())
+    if (!strInputText || strInputText->isNull())
         return;
     QTextDocument *document = pCurrentPage->document();
     if (!document)
         return;
-    QStringList stringLines = strInputText.split("\n");
+    QStringList stringLines = strInputText->split("\n");
     m_iUnfilteredLineCount = stringLines.size();
     if (m_filterTermList.empty())
     {
-        document->setPlainText(strInputText);
+        document->setPlainText(*strInputText);
         emit sigFilterApplied();
         m_iFilteredLineCount = document->lineCount();
         return;
