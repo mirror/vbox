@@ -578,7 +578,7 @@ DECL_KERNEL32(BOOL) Fake_GetHandleInformation(HANDLE hObject, DWORD *pfFlags)
     }
     *pfFlags = 0;
     //MY_ASSERT(rcNt == STATUS_INVALID_HANDLE, "rcNt=%#x", rcNt);
-    MY_ASSERT(rcNt == STATUS_INVALID_HANDLE, "GetHandleInformation");
+    MY_ASSERT(rcNt == STATUS_INVALID_HANDLE || rcNt == STATUS_INVALID_INFO_CLASS, "GetHandleInformation");
     SetLastError(rcNt == STATUS_INVALID_HANDLE ? ERROR_INVALID_HANDLE : ERROR_INVALID_FUNCTION); /* see also process-win.cpp */
     return FALSE;
 }
