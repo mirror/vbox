@@ -2202,7 +2202,8 @@ class TestDriver(base.TestDriver):                                              
                      sDvdImage = None, sKind = "Other", fIoApic = None, fPae = None, fFastBootLogo = True, \
                      eNic0Type = None, eNic0AttachType = None, sNic0NetName = 'default', sNic0MacAddr = 'grouped', \
                      sFloppy = None, fNatForwardingForTxs = None, sHddControllerType = 'IDE Controller', \
-                     fVmmDevTestingPart = None, fVmmDevTestingMmio = False, sFirmwareType = 'bios', sChipsetType = 'piix3'):
+                     fVmmDevTestingPart = None, fVmmDevTestingMmio = False, sFirmwareType = 'bios', sChipsetType = 'piix3', \
+                     sDvdControllerType = 'IDE Controller',):
         """
         Creates a test VM with a immutable HD from the test resources.
         """
@@ -2263,7 +2264,7 @@ class TestDriver(base.TestDriver):                                              
             if fRc and fPae is not None:
                 fRc = oSession.enablePae(fPae);
             if fRc and sDvdImage is not None:
-                fRc = oSession.attachDvd(sDvdImage);
+                fRc = oSession.attachDvd(sDvdImage, sDvdControllerType);
             if fRc and sHd is not None:
                 fRc = oSession.attachHd(sHd, sHddControllerType);
             if fRc and sFloppy is not None:
@@ -3273,7 +3274,12 @@ class TestDriver(base.TestDriver):                                              
 
     # pylint: enable=C0111
 
-    def txsCdWait(self, oSession, oTxsSession, cMsTimeout = 30000, sFileCdWait = 'vboxtxs-readme.txt'):
+    def txsCdWait(self,
+                  oSession,             # type: vboxwrappers.SessionWrapper
+                  oTxsSession,          # type: txsclient.Session
+                  cMsTimeout = 30000,   # type: int
+                  asFiles = None        # type: list(String)
+                  ):                    # -> bool
         """
         Mostly an internal helper for txsRebootAndReconnectViaTcp and
         startVmAndConnectToTxsViaTcp that waits for the CDROM drive to become
@@ -3284,12 +3290,15 @@ class TestDriver(base.TestDriver):                                              
         Returns False on failure, logged.
         """
 
+        if asFiles is None:
+            asFiles = [ 'vboxtxs-readme.txt', 'vboxtxsreadme.txt' ];
         fRemoveVm   = self.addTask(oSession);
         fRemoveTxs  = self.addTask(oTxsSession);
         cMsTimeout  = self.adjustTimeoutMs(cMsTimeout);
         msStart     = base.timestampMilli();
         cMsTimeout2 = cMsTimeout;
-        fRc         = oTxsSession.asyncIsFile('${CDROM}/%s' % (sFileCdWait), cMsTimeout2);
+        iFile       = 0;
+        fRc         = oTxsSession.asyncIsFile('${CDROM}/%s' % (asFiles[iFile],), cMsTimeout2);
         if fRc is True:
             while True:
                 # wait for it to complete.
@@ -3297,12 +3306,12 @@ class TestDriver(base.TestDriver):                                              
                 if oTask is not oTxsSession:
                     oTxsSession.cancelTask();
                     if oTask is None:
-                        reporter.errorTimeout('txsToCdWait: The task timed out (after %s ms).'
+                        reporter.errorTimeout('txsCdWait: The task timed out (after %s ms).'
                                               % (base.timestampMilli() - msStart,));
                     elif oTask is oSession:
-                        reporter.error('txsToCdWait: The VM terminated unexpectedly');
+                        reporter.error('txsCdWait: The VM terminated unexpectedly');
                     else:
-                        reporter.error('txsToCdWait: An unknown task %s was returned' % (oTask,));
+                        reporter.error('txsCdWait: An unknown task %s was returned' % (oTask,));
                     fRc = False;
                     break;
                 if oTxsSession.isSuccess():
@@ -3311,7 +3320,7 @@ class TestDriver(base.TestDriver):                                              
                 # Check for timeout.
                 cMsElapsed = base.timestampMilli() - msStart;
                 if cMsElapsed >= cMsTimeout:
-                    reporter.error('txsToCdWait: timed out');
+                    reporter.error('txsCdWait: timed out');
                     fRc = False;
                     break;
 
@@ -3322,12 +3331,13 @@ class TestDriver(base.TestDriver):                                              
                 cMsTimeout2 = msStart + cMsTimeout - base.timestampMilli();
                 if cMsTimeout2 < 500:
                     cMsTimeout2 = 500;
-                fRc = oTxsSession.asyncIsFile('${CDROM}/%s' % (sFileCdWait), cMsTimeout2);
+                iFile = (iFile + 1) % len(asFiles);
+                fRc = oTxsSession.asyncIsFile('${CDROM}/%s' % (asFiles[iFile]), cMsTimeout2);
                 if fRc is not True:
-                    reporter.error('txsToCdWait: asyncIsFile failed');
+                    reporter.error('txsCdWait: asyncIsFile failed');
                     break;
         else:
-            reporter.error('txsToCdWait: asyncIsFile failed');
+            reporter.error('txsCdWait: asyncIsFile failed');
 
         if fRemoveTxs:
             self.removeTask(oTxsSession);
@@ -3377,7 +3387,7 @@ class TestDriver(base.TestDriver):                                              
         return (False, None);
 
     def startVmAndConnectToTxsViaTcp(self, sVmName, fCdWait = False, cMsTimeout = 15*60000, \
-                                     cMsCdWait = 30000, sFileCdWait = 'vboxtxs-readme.txt', \
+                                     cMsCdWait = 30000, sFileCdWait = None, \
                                      fNatForwardingForTxs = False):
         """
         Starts the specified VM and tries to connect to its TXS via TCP.
@@ -3426,7 +3436,7 @@ class TestDriver(base.TestDriver):                                              
         return (None, None);
 
     def txsRebootAndReconnectViaTcp(self, oSession, oTxsSession, fCdWait = False, cMsTimeout = 15*60000, \
-                                    cMsCdWait = 30000, sFileCdWait = 'vboxtxs-readme.txt', fNatForwardingForTxs = False):
+                                    cMsCdWait = 30000, sFileCdWait = None, fNatForwardingForTxs = False):
         """
         Executes the TXS reboot command
 
