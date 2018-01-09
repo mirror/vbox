@@ -51,6 +51,8 @@ UIVMLogViewerBookmarksPanel::UIVMLogViewerBookmarksPanel(QWidget *pParent, UIVML
     , m_pMainLayout(0)
     , m_pCloseButton(0)
     , m_pBookmarksComboBox(0)
+    , m_clearAllButton(0)
+    , m_clearCurrentButton(0)
 {
     prepare();
 }
@@ -112,9 +114,7 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
     AssertPtrReturnVoid(m_pBookmarksComboBox);
     m_pBookmarksComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
     m_pBookmarksComboBox->setMaximumWidth(fontMetrics.width('a') * (m_iMaxBookmarkTextLength + 2));
-    printf("max max %d\n", fontMetrics.width('a') * (m_iMaxBookmarkTextLength + 2));
     m_pMainLayout->addWidget(m_pBookmarksComboBox, 2, Qt::AlignLeft);
-
 }
 
 void UIVMLogViewerBookmarksPanel::prepareConnections()

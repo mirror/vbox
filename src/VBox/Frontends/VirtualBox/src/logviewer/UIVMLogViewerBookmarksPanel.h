@@ -88,7 +88,8 @@ private:
     /** Holds the instance of close-button we create. */
     UIMiniCancelButton  *m_pCloseButton;
     QComboBox           *m_pBookmarksComboBox;
-
+    QPushButton         *m_clearAllButton;
+    QPushButton         *m_clearCurrentButton;
 };
 
 #endif /* !___UIVMLogViewerBookmarksPanel_h___ */
