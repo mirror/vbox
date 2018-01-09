@@ -12630,6 +12630,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCRxRead[VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification)]);
             Log4(("CRX CR%d Read access rcStrict=%Rrc\n", VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification),
                   VBOXSTRICTRC_VAL(rcStrict)));
+            if (VMX_EXIT_QUALIFICATION_CRX_GENREG(uExitQualification) == X86_GREG_xSP)
+                HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RSP);
             break;
         }
 
