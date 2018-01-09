@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,7 +23,7 @@
 #include "DisplayImpl.h"
 #include "KeyboardImpl.h"
 #include "MouseImpl.h"
-#ifdef VBOX_WITH_VRDE_AUDIO
+#ifdef VBOX_WITH_AUDIO_VRDE
 #include "DrvAudioVRDE.h"
 #endif
 #ifdef VBOX_WITH_EXTPACK
@@ -960,7 +960,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallb
         LogFunc(("Disconnected client %u\n", u32ClientId));
         ASMAtomicWriteU32(&pServer->mu32AudioInputClientId, 0);
 
-#ifdef VBOX_WITH_VRDE_AUDIO
+#ifdef VBOX_WITH_AUDIO_VRDE
         AudioVRDE *pVRDE = pServer->mConsole->i_getAudioVRDE();
         if (pVRDE)
             pVRDE->onVRDEInputIntercept(false /* fIntercept */);
@@ -1023,7 +1023,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, uin
             {
                 LogFunc(("Intercepting audio input by client %RU32\n", u32ClientId));
 
-#ifdef VBOX_WITH_VRDE_AUDIO
+#ifdef VBOX_WITH_AUDIO_VRDE
                 AudioVRDE *pVRDE = pServer->mConsole->i_getAudioVRDE();
                 if (pVRDE)
                     pVRDE->onVRDEInputIntercept(true /* fIntercept */);
@@ -1298,7 +1298,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackAudioIn(void *pvCallback,
     ConsoleVRDPServer *pServer = static_cast<ConsoleVRDPServer*>(pvCallback);
     AssertPtrReturnVoid(pServer);
 
-#ifdef VBOX_WITH_VRDE_AUDIO
+#ifdef VBOX_WITH_AUDIO_VRDE
     AudioVRDE *pVRDE = pServer->mConsole->i_getAudioVRDE();
     if (!pVRDE) /* Nothing to do, bail out early. */
         return;
@@ -1324,7 +1324,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackAudioIn(void *pvCallback,
     }
 #else
     RT_NOREF(pvCtx, u32Event, pvData, cbData);
-#endif /* VBOX_WITH_VRDE_AUDIO */
+#endif /* VBOX_WITH_AUDIO_VRDE */
 }
 
 ConsoleVRDPServer::ConsoleVRDPServer(Console *console)

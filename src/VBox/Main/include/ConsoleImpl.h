@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2005-2017 Oracle Corporation
+ * Copyright (C) 2005-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -134,7 +134,7 @@ public:
     Mouse *i_getMouse() const { return mMouse; }
     Display *i_getDisplay() const { return mDisplay; }
     MachineDebugger *i_getMachineDebugger() const { return mDebugger; }
-#ifdef VBOX_WITH_VRDE_AUDIO
+#ifdef VBOX_WITH_AUDIO_VRDE
     AudioVRDE *i_getAudioVRDE() const { return mAudioVRDE; }
 #endif
 #ifdef VBOX_WITH_AUDIO_VIDEOREC

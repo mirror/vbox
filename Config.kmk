@@ -720,7 +720,7 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  endif
 endif
 # Enable audio support for VRDE.
-VBOX_WITH_VRDE_AUDIO = 1
+VBOX_WITH_AUDIO_VRDE = 1
 # Use the VRDE external authentication library from VBoxSVC.
 if1of ($(KBUILD_TARGET), win)
  VBOX_WITH_VRDEAUTH_IN_VBOXSVC = 1

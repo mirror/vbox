@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2962,7 +2962,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                     InsertConfigString(pLunL1, "Driver", strAudioDriver.c_str());
 
-#ifdef VBOX_WITH_VRDE_AUDIO
+#ifdef VBOX_WITH_AUDIO_VRDE
             /*
              * The VRDE audio backend driver.
              */
@@ -2983,7 +2983,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigString (pCfg, "StreamName", bstr);
                     InsertConfigInteger(pCfg, "Object", (uintptr_t)mAudioVRDE);
                     InsertConfigInteger(pCfg, "ObjectVRDPServer", (uintptr_t)mConsoleVRDPServer);
-#endif /* VBOX_WITH_VRDE_AUDIO */
+#endif /* VBOX_WITH_AUDIO_VRDE */
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
             Display *pDisplay = i_getDisplay();
