@@ -456,6 +456,9 @@ endif
 # Enable building debugging backend.
 # Only will be used at runtime when "VBoxInternal2/Audio/Debug/Enabled" (VM / global) is set.
 VBOX_WITH_AUDIO_DEBUG = 1
+ifdef VBOX_WITH_VALIDATIONKIT
+ VBOX_WITH_AUDIO_VALIDATIONKIT = 1
+endif
 # Enables the audio endpoint detection on Windows hosts.
 VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT = 1
 # Enable PCI passthrough support.
