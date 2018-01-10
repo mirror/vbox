@@ -18,29 +18,24 @@
 #ifndef ___UIVMLogViewerFilterPanel_h___
 #define ___UIVMLogViewerFilterPanel_h___
 
-/* Qt includes: */
-#include <QWidget>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIVMLogViewerPanel.h"
 
 /* Forward declarations: */
 class QButtonGroup;
 class QComboBox;
 class QFrame;
-class QHBoxLayout;
 class QLabel;
 class QLineEdit;
 class QPushButton;
 class QRadioButton;
 class UIVMFilterLineEdit;
-class UIMiniCancelButton;
-class UIVMLogViewerWidget;
 
 
 /** QWidget extension
   * providing GUI for filter panel in VM Log Viewer. */
-class UIVMLogViewerFilterPanel : public QIWithRetranslateUI<QWidget>
+class UIVMLogViewerFilterPanel : public UIVMLogViewerPanel
 {
     Q_OBJECT;
 
@@ -61,6 +56,18 @@ public slots:
       * @param  iCurrentIndex  Specifies index of current log-page, but it is actually not used in the method. */
     void applyFilter(const int iCurrentIndex = 0);
 
+protected:
+
+    virtual void prepareWidgets() /* override */;
+    virtual void prepareConnections() /* override */;
+
+    /** Handles the translation event. */
+    void retranslateUi() /* override */;
+    /** Handles Qt @a pEvent, used for keyboard processing. */
+    bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+    /** Handles the Qt show @a pEvent. */
+    void showEvent(QShowEvent *pEvent) /* override */;
+
 private slots:
 
     /** Adds the new filter term and reapplies the filter. */
@@ -79,36 +86,13 @@ private:
         ButtonEnd
     };
 
-    /** Prepares filter-panel. */
-    void prepare();
-    void prepareWidgets();
     void prepareRadioButtonGroup();
-    void prepareConnections();
-
-    /** Handles the translation event. */
-    void retranslateUi();
-
-    /** Handles Qt @a pEvent, used for keyboard processing. */
-    bool eventFilter(QObject *pObject, QEvent *pEvent);
-    /** Handles the Qt show @a pEvent. */
-    void showEvent(QShowEvent *pEvent);
-    /** Handles the Qt hide @a pEvent. */
-    void hideEvent(QHideEvent *pEvent);
 
     bool applyFilterTermsToString(const QString& string);
     void filter();
 
-    /** Holds the reference to VM Log-Viewer this filter-panel belongs to. */
-    UIVMLogViewerWidget *m_pViewer;
-    /** Holds the instance of main-layout we create. */
-    QHBoxLayout         *m_pMainLayout;
-    /** Holds the instance of close-button we create. */
-    UIMiniCancelButton  *m_pCloseButton;
-    /** Holds the instance of filter-label we create. */
     QLabel              *m_pFilterLabel;
-    /** Holds instance of filter combo-box we create. */
     QComboBox           *m_pFilterComboBox;
-
     QButtonGroup        *m_pButtonGroup;
     QRadioButton        *m_pAndRadioButton;
     QRadioButton        *m_pOrRadioButton;

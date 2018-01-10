@@ -20,10 +20,9 @@
 
 /* Qt includes: */
 #include <QTextDocument>
-#include <QWidget>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIVMLogViewerPanel.h"
 
 /* Forward declarations: */
 class QCheckBox;
@@ -37,7 +36,7 @@ class UIVMLogViewerWidget;
 
 /** QWidget extension
   * providing GUI for search-panel in VM Log-Viewer. */
-class UIVMLogViewerSearchPanel : public QIWithRetranslateUI<QWidget>
+class UIVMLogViewerSearchPanel : public UIVMLogViewerPanel
 {
     Q_OBJECT;
 
@@ -57,6 +56,18 @@ public:
 
 protected:
 
+
+    /** Prepares widgets. */
+    virtual void prepareWidgets() /* override */;
+    virtual void prepareConnections() /* override */;
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+    /** Handles Qt key-press @a pEevent. */
+    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
+    /** Handles Qt @a pEvent, used for keyboard processing. */
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+    /** Handles Qt show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
     virtual void hideEvent(QHideEvent* pEvent) /* override */;
 
 private slots:
@@ -74,21 +85,7 @@ private slots:
 private:
 
     enum SearchDirection { ForwardSearch, BackwardSearch };
-    /** Prepares search-panel. */
-    void prepare();
-    /** Prepares widgets. */
-    void prepareWidgets();
-    void prepareConnections();
 
-    /** Handles translation event. */
-    void retranslateUi();
-
-    /** Handles Qt key-press @a pEevent. */
-    void keyPressEvent(QKeyEvent *pEvent);
-    /** Handles Qt @a pEvent, used for keyboard processing. */
-    bool eventFilter(QObject *pObject, QEvent *pEvent);
-    /** Handles Qt show @a pEvent. */
-    void showEvent(QShowEvent *pEvent);
     /** Clear the result of highlight */
     void clearHighlight();
     void clearHighlighting(int count);
@@ -109,12 +106,6 @@ private:
     /** Constructs the find flags for QTextDocument::find function. */
     QTextDocument::FindFlags constructFindFlags(SearchDirection eDirection);
 
-    /** Holds the reference to the VM Log-Viewer this search-panel belongs to. */
-    UIVMLogViewerWidget *m_pViewer;
-    /** Holds the instance of main-layout we create. */
-    QHBoxLayout *m_pMainLayout;
-    /** Holds the instance of close-button we create. */
-    UIMiniCancelButton *m_pCloseButton;
     /** Holds the instance of search-label we create. */
     QLabel *m_pSearchLabel;
     /** Holds the instance of search-editor we create. */

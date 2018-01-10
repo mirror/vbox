@@ -172,10 +172,7 @@ private:
 };
 
 UIVMLogViewerFilterPanel::UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
-    : QIWithRetranslateUI<QWidget>(pParent)
-    , m_pViewer(pViewer)
-    , m_pMainLayout(0)
-    , m_pCloseButton(0)
+    : UIVMLogViewerPanel(pParent, pViewer)
     , m_pFilterLabel(0)
     , m_pFilterComboBox(0)
     , m_pButtonGroup(0)
@@ -201,9 +198,9 @@ void UIVMLogViewerFilterPanel::applyFilter(const int iCurrentIndex /* = 0 */)
 
 void UIVMLogViewerFilterPanel::filter()
 {
-    QPlainTextEdit *pCurrentPage = m_pViewer->currentLogPage();
+    QPlainTextEdit *pCurrentPage = viewer()->currentLogPage();
     AssertReturnVoid(pCurrentPage);
-    const QString* strInputText = m_pViewer->currentLog();
+    const QString* strInputText = viewer()->currentLog();
     m_iUnfilteredLineCount = 0;
     m_iFilteredLineCount = 0;
     if (!strInputText || strInputText->isNull())
@@ -330,23 +327,10 @@ void UIVMLogViewerFilterPanel::sltRemoveFilterTerm(const QString &termString)
     applyFilter();
 }
 
-void UIVMLogViewerFilterPanel::prepare()
-{
-    prepareWidgets();
-    prepareConnections();
-    retranslateUi();
-}
-
 void UIVMLogViewerFilterPanel::prepareWidgets()
 {
-    m_pMainLayout = new QHBoxLayout(this);
-    AssertPtrReturnVoid(m_pMainLayout);
-    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
-    m_pMainLayout->setSpacing(4);
-
-    m_pCloseButton = new UIMiniCancelButton(this);
-    AssertPtrReturnVoid(m_pCloseButton);
-    m_pMainLayout->addWidget(m_pCloseButton);
+    if (!mainLayout())
+        return;
 
     prepareRadioButtonGroup();
 
@@ -359,27 +343,27 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
                          << "HM" << "VMM" << "GIM" << "CPUM";
         strFilterPresets.sort();
         m_pFilterComboBox->addItems(strFilterPresets);
-        m_pMainLayout->addWidget(m_pFilterComboBox,1);
+        mainLayout()->addWidget(m_pFilterComboBox,1);
     }
 
     m_pAddFilterTermButton = new QPushButton(this);
     AssertPtrReturnVoid(m_pAddFilterTermButton);
     {
         m_pAddFilterTermButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
-        m_pMainLayout->addWidget(m_pAddFilterTermButton,0);
+        mainLayout()->addWidget(m_pAddFilterTermButton,0);
     }
 
     m_pFilterTermsLineEdit = new UIVMFilterLineEdit(this);
     AssertPtrReturnVoid(m_pFilterTermsLineEdit);
     {
-        m_pMainLayout->addWidget(m_pFilterTermsLineEdit, 4);
+        mainLayout()->addWidget(m_pFilterTermsLineEdit, 4);
         m_pFilterTermsLineEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum /*vertical */);
     }
 
     m_pResultLabel = new QLabel(this);
     AssertPtrReturnVoid(m_pResultLabel);
     {
-        m_pMainLayout->addWidget(m_pResultLabel,0);
+        mainLayout()->addWidget(m_pResultLabel,0);
     }
         /* Create filter-label: */
 //         m_pFilterLabel = new QLabel(this);
@@ -393,7 +377,7 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
 //             m_pFilterLabel->setFont(font);
 // #endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
 //             /* Add filter-label to main-layout: */
-//             m_pMainLayout->addWidget(m_pFilterLabel);
+//             mainLayout()->addWidget(m_pFilterLabel);
 //         }
 }
 
@@ -425,12 +409,11 @@ void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
 
     containerLayout->addWidget(m_pOrRadioButton);
     containerLayout->addWidget(m_pAndRadioButton);
-    m_pMainLayout->addWidget(m_pRadioButtonContainer);
+    mainLayout()->addWidget(m_pRadioButtonContainer);
 }
 
 void UIVMLogViewerFilterPanel::prepareConnections()
 {
-    connect(m_pCloseButton, &UIMiniCancelButton::clicked, this, &UIVMLogViewerFilterPanel::hide);
     connect(m_pAddFilterTermButton, &QPushButton::clicked, this,  &UIVMLogViewerFilterPanel::sltAddFilterTerm);
     connect(m_pButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked),
             this, &UIVMLogViewerFilterPanel::sltOperatorButtonChanged);
@@ -445,7 +428,7 @@ void UIVMLogViewerFilterPanel::prepareConnections()
 
 void UIVMLogViewerFilterPanel::retranslateUi()
 {
-    m_pCloseButton->setToolTip(UIVMLogViewerWidget::tr("Close the search panel."));
+    UIVMLogViewerPanel::retranslateUi();
     m_pFilterComboBox->setToolTip(UIVMLogViewerWidget::tr("Enter filtering string here."));
     m_pAddFilterTermButton->setToolTip(UIVMLogViewerWidget::tr("Add filter term."));
     m_pResultLabel->setText(UIVMLogViewerWidget::tr("Showing %1/%2").arg(m_iFilteredLineCount).arg(m_iUnfilteredLineCount));
@@ -468,7 +451,7 @@ bool UIVMLogViewerFilterPanel::eventFilter(QObject *pObject, QEvent *pEvent)
             if (pKeyEvent->QInputEvent::modifiers() == Qt::ControlModifier &&
                 pKeyEvent->key() == Qt::Key_T)
             {
-                if (m_pViewer->currentLogPage())
+                if (viewer()->currentLogPage())
                 {
                     if (isHidden())
                         show();
@@ -485,29 +468,15 @@ bool UIVMLogViewerFilterPanel::eventFilter(QObject *pObject, QEvent *pEvent)
         break;
     }
     /* Call to base-class: */
-    return QWidget::eventFilter(pObject, pEvent);
+    return UIVMLogViewerPanel::eventFilter(pObject, pEvent);
 }
 
 /** Handles the Qt show @a pEvent. */
 void UIVMLogViewerFilterPanel::showEvent(QShowEvent *pEvent)
 {
-    /* Call to base-class: */
-    QWidget::showEvent(pEvent);
+    UIVMLogViewerPanel::showEvent(pEvent);
     /* Set focus to combo-box: */
     m_pFilterComboBox->setFocus();
-}
-
-/** Handles the Qt hide @a pEvent. */
-void UIVMLogViewerFilterPanel::hideEvent(QHideEvent *pEvent)
-{
-    /* Get focused widget: */
-    QWidget *pFocus = QApplication::focusWidget();
-    /* If focus-widget is valid and child-widget of search-panel,
-     * focus next child-widget in line: */
-    if (pFocus && pFocus->parent() == this)
-        focusNextPrevChild(true);
-    /* Call to base-class: */
-    QWidget::hideEvent(pEvent);
 }
 
 #include "UIVMLogViewerFilterPanel.moc"

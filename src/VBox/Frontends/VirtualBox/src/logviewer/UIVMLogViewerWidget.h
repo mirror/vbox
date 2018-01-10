@@ -38,6 +38,7 @@ class QVBoxLayout;
 class UIToolBar;
 class UIVMLogViewerBookmarksPanel;
 class UIVMLogViewerFilterPanel;
+class UIVMLogViewerPanel;
 class UIVMLogViewerSearchPanel;
 
 /* Type definitions: */
@@ -87,9 +88,12 @@ private slots:
     /** Handles save action triggering. */
     void sltSave();
 
+    void sltPanelActionTriggered(bool checked);
     void sltShowHideFilterPanel();
     void sltShowHideSearchPanel();
     void sltShowHideBookmarkPanel();
+    /* Handles QAction sync. when a panel is closed (hidden) by panel's own close button */
+    //void sltPanelCloseButton();
 
     /** Handles the search result highlight changes. */
     void sltSearchResultHighLigting();
@@ -149,6 +153,9 @@ private:
     QVector<LogBookmark>* currentBookmarkVector();
     const QVector<LogBookmark>* currentBookmarkVector() const;
 
+    void hidePanel(UIVMLogViewerPanel* panel);
+    void showPanel(UIVMLogViewerPanel* panel);
+
     /** Holds whether the dialog is polished. */
     bool m_fIsPolished;
 
@@ -162,10 +169,11 @@ private:
     int          m_iCurrentTabIndex;
 
     /** Holds the instance of search-panel. */
-    UIVMLogViewerSearchPanel *m_pSearchPanel;
+    UIVMLogViewerSearchPanel    *m_pSearchPanel;
     /** Holds the instance of filter panel. */
-    UIVMLogViewerFilterPanel *m_pFilterPanel;
+    UIVMLogViewerFilterPanel    *m_pFilterPanel;
     UIVMLogViewerBookmarksPanel *m_pBookmarksPanel;
+    QMap<UIVMLogViewerPanel**, QAction**> m_panelActionMap;
 
     /** Holds the list of log file content. */
     VMLogMap             m_logMap;

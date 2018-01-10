@@ -337,6 +337,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/logviewer/UIVMLogViewerBookmarksPanel.h \
 	src/logviewer/UIVMLogViewerDialog.h \
 	src/logviewer/UIVMLogViewerFilterPanel.h \
+	src/logviewer/UIVMLogViewerPanel.h \
 	src/logviewer/UIVMLogViewerSearchPanel.h \
 	src/logviewer/UIVMLogViewerWidget.h \
 	src/medium/UIMediumDetailsWidget.h \
@@ -654,6 +655,7 @@ VirtualBox_SOURCES = \
 	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
 	src/logviewer/UIVMLogViewerDialog.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
+	src/logviewer/UIVMLogViewerPanel.cpp \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/medium/UIMediumDefs.cpp \

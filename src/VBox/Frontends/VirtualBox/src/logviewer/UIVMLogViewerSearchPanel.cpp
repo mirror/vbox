@@ -43,11 +43,9 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
-: QIWithRetranslateUI<QWidget>(pParent)
-    , m_pViewer(pViewer)
-    , m_pMainLayout(0)
-    , m_pCloseButton(0)
-    , m_pSearchLabel(0), m_pSearchEditor(0)
+    : UIVMLogViewerPanel(pParent, pViewer)
+    , m_pSearchLabel(0)
+    , m_pSearchEditor(0)
     , m_pNextPrevButtons(0)
     , m_pCaseSensitiveCheckBox(0)
     , m_pMatchWholeWordCheckBox(0)
@@ -95,7 +93,7 @@ void UIVMLogViewerSearchPanel::hideEvent(QHideEvent *pEvent)
     if (pFocus && pFocus->parent() == this)
         focusNextPrevChild(true);
     /* Call to base-class: */
-    QWidget::hideEvent(pEvent);
+    UIVMLogViewerPanel::hideEvent(pEvent);
     reset();
 }
 
@@ -126,24 +124,29 @@ void UIVMLogViewerSearchPanel::sltSearchTextChanged(const QString &strSearchStri
     /* If search-string is empty, reset cursor position: */
     else
     {
-        /* Get current log-page: */
-        QPlainTextEdit *pBrowser = m_pViewer->currentLogPage();
-        /* If current log-page is valid and cursor has selection: */
-        if (pBrowser && pBrowser->textCursor().hasSelection())
+        if (viewer())
         {
-            /* Get cursor and reset position: */
-            QTextCursor cursor = pBrowser->textCursor();
-            cursor.setPosition(cursor.anchor());
-            pBrowser->setTextCursor(cursor);
+            /* Get current log-page: */
+            QPlainTextEdit *pBrowser = viewer()->currentLogPage();
+            /* If current log-page is valid and cursor has selection: */
+            if (pBrowser && pBrowser->textCursor().hasSelection())
+            {
+                /* Get cursor and reset position: */
+                QTextCursor cursor = pBrowser->textCursor();
+                cursor.setPosition(cursor.anchor());
+                pBrowser->setTextCursor(cursor);
+            }
+            m_iSearchPosition = -1;
+            clearHighlighting(-1);
         }
-        m_iSearchPosition = -1;
-        clearHighlighting(-1);
     }
 }
 
 void UIVMLogViewerSearchPanel::sltHighlightAllCheckBox()
 {
-    QPlainTextEdit *pTextEdit = m_pViewer->currentLogPage();
+    if (!viewer())
+        return;
+    QPlainTextEdit *pTextEdit = viewer()->currentLogPage();
     if (!pTextEdit)
         return;
     QTextDocument *pDocument = pTextEdit->document();
@@ -180,170 +183,140 @@ void UIVMLogViewerSearchPanel::sltMatchWholeWordCheckBox()
     refresh();
 }
 
-void UIVMLogViewerSearchPanel::prepare()
-{
-    /* Prepare widgets: */
-    prepareWidgets();
-
-    /* Prepare connections: */
-    prepareConnections();
-
-    /* Retranslate finally: */
-    retranslateUi();
-}
-
 void UIVMLogViewerSearchPanel::prepareWidgets()
 {
-    /* Create main-layout: */
-    m_pMainLayout = new QHBoxLayout(this);
-    AssertPtrReturnVoid(m_pMainLayout);
+    if (!mainLayout())
+        return;
+
+    /* Create search-editor: */
+    m_pSearchEditor = new UISearchField(this);
+    AssertPtrReturnVoid(m_pSearchEditor);
     {
-        /* Configure main-layout: */
-        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
-        m_pMainLayout->setSpacing(4);
+        /* Configure search-editor: */
+        m_pSearchEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        /* Add search-editor to main-layout: */
+        mainLayout()->addWidget(m_pSearchEditor);
+    }
 
-        /* Create close-button: */
-        m_pCloseButton = new UIMiniCancelButton(this);
-        AssertPtrReturnVoid(m_pCloseButton);
-        {
-            /* Add close-button to main-layout: */
-            m_pMainLayout->addWidget(m_pCloseButton);
-        }
-
-        /* Create search-editor: */
-        m_pSearchEditor = new UISearchField(this);
-        AssertPtrReturnVoid(m_pSearchEditor);
-        {
-            /* Configure search-editor: */
-            m_pSearchEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-            /* Add search-editor to main-layout: */
-            m_pMainLayout->addWidget(m_pSearchEditor);
-        }
-
-        /* Create search-label: */
-        m_pSearchLabel = new QLabel(this);
-        AssertPtrReturnVoid(m_pSearchLabel);
-        {
-            /* Configure search-label: */
-            m_pSearchLabel->setBuddy(m_pSearchEditor);
-            /* Prepare font: */
+    /* Create search-label: */
+    m_pSearchLabel = new QLabel(this);
+    AssertPtrReturnVoid(m_pSearchLabel);
+    {
+        /* Configure search-label: */
+        m_pSearchLabel->setBuddy(m_pSearchEditor);
+        /* Prepare font: */
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-            QFont font = m_pSearchLabel->font();
-            font.setPointSize(::darwinSmallFontSize());
-            m_pSearchLabel->setFont(font);
+        QFont font = m_pSearchLabel->font();
+        font.setPointSize(::darwinSmallFontSize());
+        m_pSearchLabel->setFont(font);
 #endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-            /* Add search-label to main-layout: */
-            m_pMainLayout->addWidget(m_pSearchLabel);
-        }
+        /* Add search-label to main-layout: */
+        mainLayout()->addWidget(m_pSearchLabel);
+    }
 
-        /* Create Next/Prev button-box: */
-        m_pNextPrevButtons = new UIRoundRectSegmentedButton(this, 2);
-        AssertPtrReturnVoid(m_pNextPrevButtons);
-        {
-            /* Configure Next/Prev button-box: */
-            m_pNextPrevButtons->setEnabled(0, false);
-            m_pNextPrevButtons->setEnabled(1, false);
+    /* Create Next/Prev button-box: */
+    m_pNextPrevButtons = new UIRoundRectSegmentedButton(this, 2);
+    AssertPtrReturnVoid(m_pNextPrevButtons);
+    {
+        /* Configure Next/Prev button-box: */
+        m_pNextPrevButtons->setEnabled(0, false);
+        m_pNextPrevButtons->setEnabled(1, false);
 #ifndef VBOX_WS_MAC
-            /* No icons on the Mac: */
-            m_pNextPrevButtons->setIcon(0, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
-            m_pNextPrevButtons->setIcon(1, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
+        /* No icons on the Mac: */
+        m_pNextPrevButtons->setIcon(0, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
+        m_pNextPrevButtons->setIcon(1, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
 #endif /* !VBOX_WS_MAC */
-            /* Add Next/Prev button-box to main-layout: */
-            m_pMainLayout->addWidget(m_pNextPrevButtons);
-        }
+        /* Add Next/Prev button-box to main-layout: */
+        mainLayout()->addWidget(m_pNextPrevButtons);
+    }
 
-        /* Create case-sensitive checkbox: */
-        m_pCaseSensitiveCheckBox = new QCheckBox;
-        AssertPtrReturnVoid(m_pCaseSensitiveCheckBox);
-        {
-            /* Configure font: */
+    /* Create case-sensitive checkbox: */
+    m_pCaseSensitiveCheckBox = new QCheckBox;
+    AssertPtrReturnVoid(m_pCaseSensitiveCheckBox);
+    {
+        /* Configure font: */
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-            QFont font = m_pCaseSensitiveCheckBox->font();
-            font.setPointSize(::darwinSmallFontSize());
-            m_pCaseSensitiveCheckBox->setFont(font);
+        QFont font = m_pCaseSensitiveCheckBox->font();
+        font.setPointSize(::darwinSmallFontSize());
+        m_pCaseSensitiveCheckBox->setFont(font);
 #endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-            /* Add case-sensitive checkbox to main-layout: */
-            m_pMainLayout->addWidget(m_pCaseSensitiveCheckBox);
-        }
+        /* Add case-sensitive checkbox to main-layout: */
+        mainLayout()->addWidget(m_pCaseSensitiveCheckBox);
+    }
 
-        m_pMatchWholeWordCheckBox = new QCheckBox(this);
-        AssertPtrReturnVoid(m_pMatchWholeWordCheckBox);
-        {
-            /* Configure focus for case-sensitive checkbox: */
-            setFocusProxy(m_pMatchWholeWordCheckBox);
-            /* Configure font: */
+    m_pMatchWholeWordCheckBox = new QCheckBox(this);
+    AssertPtrReturnVoid(m_pMatchWholeWordCheckBox);
+    {
+        /* Configure focus for case-sensitive checkbox: */
+        setFocusProxy(m_pMatchWholeWordCheckBox);
+        /* Configure font: */
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-            QFont font = m_pMatchWholeWordCheckBox->font();
-            font.setPointSize(::darwinSmallFontSize());
-            m_pMatchWholeWordCheckBox->setFont(font);
+        QFont font = m_pMatchWholeWordCheckBox->font();
+        font.setPointSize(::darwinSmallFontSize());
+        m_pMatchWholeWordCheckBox->setFont(font);
 #endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-            m_pMainLayout->addWidget(m_pMatchWholeWordCheckBox);
-        }
+        mainLayout()->addWidget(m_pMatchWholeWordCheckBox);
+    }
 
-        m_pHighlightAllCheckBox = new QCheckBox(this);
-        AssertPtrReturnVoid(m_pHighlightAllCheckBox);
-        {
-            /* Configure font: */
+    m_pHighlightAllCheckBox = new QCheckBox(this);
+    AssertPtrReturnVoid(m_pHighlightAllCheckBox);
+    {
+        /* Configure font: */
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-            QFont font = m_pHighlightAllCheckBox->font();
-            font.setPointSize(::darwinSmallFontSize());
-            m_pHighlightAllCheckBox->setFont(font);
+        QFont font = m_pHighlightAllCheckBox->font();
+        font.setPointSize(::darwinSmallFontSize());
+        m_pHighlightAllCheckBox->setFont(font);
 #endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-            /* Add case-sensitive checkbox to main-layout: */
-            m_pMainLayout->addWidget(m_pHighlightAllCheckBox);
-        }
+        /* Add case-sensitive checkbox to main-layout: */
+        mainLayout()->addWidget(m_pHighlightAllCheckBox);
+    }
 
-        /* Create warning-spacer: */
-        m_pWarningSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-        AssertPtrReturnVoid(m_pWarningSpacer);
-        {
-            /* Add warning-spacer to main-layout: */
-            m_pMainLayout->addItem(m_pWarningSpacer);
-        }
+    /* Create warning-spacer: */
+    m_pWarningSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+    AssertPtrReturnVoid(m_pWarningSpacer);
+    {
+        /* Add warning-spacer to main-layout: */
+        mainLayout()->addItem(m_pWarningSpacer);
+    }
 
-        /* Create warning-icon: */
-        m_pWarningIcon = new QLabel(this);
-        AssertPtrReturnVoid(m_pWarningIcon);
-        {
-            /* Confifure warning-icon: */
-            m_pWarningIcon->hide();
-            QIcon icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning, this);
-            if (!icon.isNull())
-                m_pWarningIcon->setPixmap(icon.pixmap(16, 16));
-            /* Add warning-icon to main-layout: */
-            m_pMainLayout->addWidget(m_pWarningIcon);
-        }
+    /* Create warning-icon: */
+    m_pWarningIcon = new QLabel(this);
+    AssertPtrReturnVoid(m_pWarningIcon);
+    {
+        /* Confifure warning-icon: */
+        m_pWarningIcon->hide();
+        QIcon icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning, this);
+        if (!icon.isNull())
+            m_pWarningIcon->setPixmap(icon.pixmap(16, 16));
+        /* Add warning-icon to main-layout: */
+        mainLayout()->addWidget(m_pWarningIcon);
+    }
 
-        /* Create warning-label: */
-        m_pInfoLabel = new QLabel(this);
-        AssertPtrReturnVoid(m_pInfoLabel);
-        {
-            /* Configure warning-label: */
-            m_pInfoLabel->hide();
-            /* Prepare font: */
+    /* Create warning-label: */
+    m_pInfoLabel = new QLabel(this);
+    AssertPtrReturnVoid(m_pInfoLabel);
+    {
+        /* Configure warning-label: */
+        m_pInfoLabel->hide();
+        /* Prepare font: */
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-            QFont font = m_pInfoLabel->font();
-            font.setPointSize(::darwinSmallFontSize());
-            m_pInfoLabel->setFont(font);
+        QFont font = m_pInfoLabel->font();
+        font.setPointSize(::darwinSmallFontSize());
+        m_pInfoLabel->setFont(font);
 #endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-            /* Add warning-label to main-layout: */
-            m_pMainLayout->addWidget(m_pInfoLabel);
-        }
+        /* Add warning-label to main-layout: */
+        mainLayout()->addWidget(m_pInfoLabel);
+    }
 
-        /* Create spacer-item: */
-        m_pSpacerItem = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-        AssertPtrReturnVoid(m_pSpacerItem);
-        {
-            /* Add spacer-item to main-layout: */
-            m_pMainLayout->addItem(m_pSpacerItem);
-        }
+    m_pSpacerItem = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    AssertPtrReturnVoid(m_pSpacerItem);
+    {
+        mainLayout()->addItem(m_pSpacerItem);
     }
 }
 
 void UIVMLogViewerSearchPanel::prepareConnections()
 {
-    /* Prepare connections: */
-    connect(m_pCloseButton, &UIMiniCancelButton::clicked, this, &UIVMLogViewerSearchPanel::hide);
     connect(m_pSearchEditor, &UISearchField::textChanged, this, &UIVMLogViewerSearchPanel::sltSearchTextChanged);
     connect(m_pNextPrevButtons, &UIRoundRectSegmentedButton::clicked, this, &UIVMLogViewerSearchPanel::find);
     connect(m_pHighlightAllCheckBox, &QCheckBox::stateChanged,
@@ -356,8 +329,6 @@ void UIVMLogViewerSearchPanel::prepareConnections()
 
 void UIVMLogViewerSearchPanel::retranslateUi()
 {
-    m_pCloseButton->setToolTip(UIVMLogViewerWidget::tr("Close the search panel"));
-
     m_pSearchLabel->setText(QString("%1 ").arg(UIVMLogViewerWidget::tr("&Find")));
     m_pSearchEditor->setToolTip(UIVMLogViewerWidget::tr("Enter a search string here"));
 
@@ -401,7 +372,7 @@ void UIVMLogViewerSearchPanel::keyPressEvent(QKeyEvent *pEvent)
             break;
     }
     /* Call to base-class: */
-    QWidget::keyPressEvent(pEvent);
+    UIVMLogViewerPanel::keyPressEvent(pEvent);
 }
 
 bool UIVMLogViewerSearchPanel::eventFilter(QObject *pObject, QEvent *pEvent)
@@ -438,7 +409,7 @@ bool UIVMLogViewerSearchPanel::eventFilter(QObject *pObject, QEvent *pEvent)
             else if (pKeyEvent->QInputEvent::modifiers() == Qt::ControlModifier &&
                      pKeyEvent->key() == Qt::Key_F)
             {
-                if (m_pViewer->currentLogPage())
+                if (viewer() && viewer()->currentLogPage())
                 {
                     /* Make sure current log-page is visible: */
                     if (isHidden())
@@ -453,7 +424,7 @@ bool UIVMLogViewerSearchPanel::eventFilter(QObject *pObject, QEvent *pEvent)
                      pKeyEvent->key() >= Qt::Key_Exclam && pKeyEvent->key() <= Qt::Key_AsciiTilde)
             {
                 /* Make sure current log-page is visible: */
-                if (m_pViewer->currentLogPage())
+                if (viewer() && viewer()->currentLogPage())
                 {
                     if (isHidden())
                         show();
@@ -470,13 +441,13 @@ bool UIVMLogViewerSearchPanel::eventFilter(QObject *pObject, QEvent *pEvent)
         break;
     }
     /* Call to base-class: */
-    return QWidget::eventFilter(pObject, pEvent);
+    return UIVMLogViewerPanel::eventFilter(pObject, pEvent);
 }
 
 void UIVMLogViewerSearchPanel::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
-    QWidget::showEvent(pEvent);
+    UIVMLogViewerPanel::showEvent(pEvent);
     /* Set focus on search-editor: */
     m_pSearchEditor->setFocus();
     /* Select all the text: */
@@ -485,69 +456,71 @@ void UIVMLogViewerSearchPanel::showEvent(QShowEvent *pEvent)
 
 void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
 {
-   QPlainTextEdit *pTextEdit = m_pViewer->currentLogPage();
-   if (!pTextEdit) return;
-   QTextDocument *pDocument = pTextEdit->document();
-   if (!pDocument)
-       return;
+    if (!viewer())
+        return;
+    QPlainTextEdit *pTextEdit = viewer()->currentLogPage();
+    if (!pTextEdit) return;
+    QTextDocument *pDocument = pTextEdit->document();
+    if (!pDocument)
+        return;
 
-   const QString &searchString = m_pSearchEditor->text();
-   if (searchString.isEmpty())
-       return;
+    const QString &searchString = m_pSearchEditor->text();
+    if (searchString.isEmpty())
+        return;
 
-   QTextCursor endCursor(pDocument);
-   endCursor.movePosition(QTextCursor::End);
-   QTextCursor startCursor(pDocument);
+    QTextCursor endCursor(pDocument);
+    endCursor.movePosition(QTextCursor::End);
+    QTextCursor startCursor(pDocument);
 
-   if (m_pHighlightAllCheckBox->isChecked())
-   {
-       if (highlight)
-           highlightAll(pDocument, searchString);
-   }
-   else
-   {
-       m_iMatchCount = -1;
-       m_matchLocationVector.clear();
-   }
+    if (m_pHighlightAllCheckBox->isChecked())
+    {
+        if (highlight)
+            highlightAll(pDocument, searchString);
+    }
+    else
+    {
+        m_iMatchCount = -1;
+        m_matchLocationVector.clear();
+    }
 
-   QTextCursor resultCursor(pDocument);
-   int startPosition = m_iSearchPosition;
-   if (direction == BackwardSearch)
-       startPosition -= searchString.length();
-   resultCursor = pDocument->find(searchString, startPosition, constructFindFlags(direction));
+    QTextCursor resultCursor(pDocument);
+    int startPosition = m_iSearchPosition;
+    if (direction == BackwardSearch)
+        startPosition -= searchString.length();
+    resultCursor = pDocument->find(searchString, startPosition, constructFindFlags(direction));
 
-   /* Decide whether to wrap around or to end the search */
-   if (resultCursor.isNull())
-   {
-       /* End the search if we search the whole document with no find: */
-       if ((direction == ForwardSearch && startPosition == startCursor.position()) ||
-           (direction == BackwardSearch && startPosition == endCursor.position()))
-       {
-           /* Set the match count 0 here since we did not call highLightAll function: */
-           if (!m_pHighlightAllCheckBox->isChecked())
-               m_iMatchCount = 0;
-           configureInfoLabels();
-           return;
-       }
-       /* Wrap the search */
-       if (direction == ForwardSearch)
-       {
-           m_iSearchPosition = startCursor.position();
-           search(ForwardSearch, false);
-           return;
-       }
-       else
-       {
-           /* Set the search position away from the end position to be
-              able to find the string at the end of the document: */
-           m_iSearchPosition = endCursor.position() + searchString.length();
-           search(BackwardSearch, false);
-           return;
-       }
-   }
-   pTextEdit->setTextCursor(resultCursor);
-   m_iSearchPosition = resultCursor.position();
-   configureInfoLabels();
+    /* Decide whether to wrap around or to end the search */
+    if (resultCursor.isNull())
+    {
+        /* End the search if we search the whole document with no find: */
+        if ((direction == ForwardSearch && startPosition == startCursor.position()) ||
+            (direction == BackwardSearch && startPosition == endCursor.position()))
+        {
+            /* Set the match count 0 here since we did not call highLightAll function: */
+            if (!m_pHighlightAllCheckBox->isChecked())
+                m_iMatchCount = 0;
+            configureInfoLabels();
+            return;
+        }
+        /* Wrap the search */
+        if (direction == ForwardSearch)
+        {
+            m_iSearchPosition = startCursor.position();
+            search(ForwardSearch, false);
+            return;
+        }
+        else
+        {
+            /* Set the search position away from the end position to be
+               able to find the string at the end of the document: */
+            m_iSearchPosition = endCursor.position() + searchString.length();
+            search(BackwardSearch, false);
+            return;
+        }
+    }
+    pTextEdit->setTextCursor(resultCursor);
+    m_iSearchPosition = resultCursor.position();
+    configureInfoLabels();
 }
 
 void UIVMLogViewerSearchPanel::findNext()
@@ -562,14 +535,16 @@ void UIVMLogViewerSearchPanel::findBack()
 
 void UIVMLogViewerSearchPanel::clearHighlighting(int count)
 {
+    if (!viewer())
+        return;
     m_iMatchCount = count;
     m_matchLocationVector.clear();
 
-    QPlainTextEdit *pBrowser = m_pViewer->currentLogPage();
-    if(pBrowser)
+    QPlainTextEdit *pBrowser = viewer()->currentLogPage();
+    if (pBrowser)
     {
         QTextDocument* pDocument = pBrowser->document();
-        if(pDocument)
+        if (pDocument)
             pDocument->undo();
     }
     configureInfoLabels();

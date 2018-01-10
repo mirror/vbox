@@ -18,27 +18,19 @@
 #ifndef ___UIVMLogViewerBookmarksPanel_h___
 #define ___UIVMLogViewerBookmarksPanel_h___
 
-/* Qt includes: */
-#include <QWidget>
-
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIVMLogViewerPanel.h"
 
 /* Forward declarations: */
 class QComboBox;
-class QHBoxLayout;
-class QLabel;
-class QLineEdit;
 class QPushButton;
-class UIVMFilterLineEdit;
-class UIMiniCancelButton;
-class UIVMLogViewerWidget;
 
 
-/** QWidget extension
-  * providing GUI for bookmark management. Show a list of bookmarks currently set
+
+
+/** UIVMLogViewerPanel extension providing GUI for bookmark management. Show a list of bookmarks currently set
   for displayed log page. It has controls to navigate and clear bookmarks. */
-class UIVMLogViewerBookmarksPanel : public QIWithRetranslateUI<QWidget>
+class UIVMLogViewerBookmarksPanel : public UIVMLogViewerPanel
 {
     Q_OBJECT;
 
@@ -54,42 +46,28 @@ public:
     /* Clear the bookmark list and show this list instead. Probably done after
        user switches to another log page tab etc. */
     void setBookmarksList(const QVector<QPair<int, QString> > &bookmarkList);
-    void update();
+    void updateBookmarkList();
     /* @a index is the index of the curent bookmark. */
     void setBookmarkIndex(int index);
 
 public slots:
 
+protected:
 
-private slots:
-
-
-private:
-
-    void prepare();
-    void prepareWidgets();
-    void prepareConnections();
+    virtual void prepareWidgets() /* override */;
+    virtual void prepareConnections() /* override */;
 
     /** Handles the translation event. */
     void retranslateUi();
 
-    /** Handles Qt @a pEvent, used for keyboard processing. */
-    bool eventFilter(QObject *pObject, QEvent *pEvent);
-    /** Handles the Qt show @a pEvent. */
-    void showEvent(QShowEvent *pEvent);
-    /** Handles the Qt hide @a pEvent. */
-    void hideEvent(QHideEvent *pEvent);
+private slots:
 
-    const int m_iMaxBookmarkTextLength;
-    /** Holds the reference to VM Log-Viewer this panel belongs to. */
-    UIVMLogViewerWidget *m_pViewer;
-    /** Holds the instance of main-layout we create. */
-    QHBoxLayout         *m_pMainLayout;
-    /** Holds the instance of close-button we create. */
-    UIMiniCancelButton  *m_pCloseButton;
-    QComboBox           *m_pBookmarksComboBox;
-    QPushButton         *m_clearAllButton;
-    QPushButton         *m_clearCurrentButton;
+private:
+
+    const int     m_iMaxBookmarkTextLength;
+    QComboBox    *m_pBookmarksComboBox;
+    QPushButton  *m_clearAllButton;
+    QPushButton  *m_clearCurrentButton;
 };
 
 #endif /* !___UIVMLogViewerBookmarksPanel_h___ */
