@@ -54,6 +54,7 @@ from testdriver import vboxwrappers;
 import remoteexecutor;
 import storagecfg;
 
+
 def _ControllerTypeToName(eControllerType):
     """ Translate a controller type to a name. """
     if eControllerType == vboxcon.StorageControllerType_PIIX3 or eControllerType == vboxcon.StorageControllerType_PIIX4:

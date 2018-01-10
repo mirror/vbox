@@ -38,6 +38,8 @@ sys.path.insert(0, '..');
 sys.path.insert(0, '../..');
 import usbgadget;
 import testdriver.reporter as reporter
+from common import utils;
+
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:

@@ -32,6 +32,10 @@ __version__ = "$Revision$"
 import os;
 import re;
 
+# Validation Kit imports.
+from common import utils;
+
+
 class StorageDisk(object):
     """
     Class representing a disk for testing.
