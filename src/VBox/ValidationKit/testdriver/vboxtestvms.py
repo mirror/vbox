@@ -870,10 +870,10 @@ class TestVmManager(object):
         oSet.aoTestVms.append(oTestVm);
 
         # NT 3.x
-        oTestVm = TestVm(oSet, 'tst-nt310', sHd = '5.2/great-old-ones/t-nt310/t-nt310.vdi',
-                         sKind = 'WindowsNT3x', acCpusSup = [1],
-                         sHddControllerType = 'BusLogic SCSI Controller', sDvdControllerType = 'BusLogic SCSI Controller' );
-        oSet.aoTestVms.append(oTestVm); ## @todo COM
+        #oTestVm = TestVm(oSet, 'tst-nt310', sHd = '5.2/great-old-ones/t-nt310/t-nt310.vdi',
+        #                 sKind = 'WindowsNT3x', acCpusSup = [1],
+        #                 sHddControllerType = 'BusLogic SCSI Controller', sDvdControllerType = 'BusLogic SCSI Controller' );
+        #oSet.aoTestVms.append(oTestVm); ## @todo COM
 
         # NT 4
         oTestVm = TestVm(oSet, 'tst-nt4sp1', sHd = '4.2/' + sTxsTransport + '/nt4sp1/t-nt4sp1.vdi',
@@ -986,10 +986,10 @@ class TestVmManager(object):
         #oSet.aoTestVms.append(oTestVm);
 
         # NT 3.x
-        oTestVm = TestVm(oSet, 'tst-nt310', sHd = '5.2/great-old-ones/t-nt310/t-nt310.vdi',
-                         sKind = 'WindowsNT3x', acCpusSup = [1],
-                         sHddControllerType = 'BusLogic SCSI Controller', sDvdControllerType = 'BusLogic SCSI Controller' );
-        oSet.aoTestVms.append(oTestVm); ## @todo COM
+        #oTestVm = TestVm(oSet, 'tst-nt310', sHd = '5.2/great-old-ones/t-nt310/t-nt310.vdi',
+        #                 sKind = 'WindowsNT3x', acCpusSup = [1],
+        #                 sHddControllerType = 'BusLogic SCSI Controller', sDvdControllerType = 'BusLogic SCSI Controller' );
+        #oSet.aoTestVms.append(oTestVm); ## @todo COM
 
         # NT 4
         oTestVm = TestVm(oSet, 'tst-nt4sp1', sHd = '4.2/nat/nt4sp1/t-nt4sp1.vdi',
