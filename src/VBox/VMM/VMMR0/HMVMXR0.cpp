@@ -243,6 +243,29 @@ typedef struct VMXTRANSIENT
             uint32_t    iSegReg     : 3;
             uint32_t    uReserved2  : 14;
         } StrIo;
+        /** INVEPT, INVVPID, INVPCID information.  */
+        struct
+        {
+            /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
+            uint32_t    u2Scaling     : 2;
+            uint32_t    u5Reserved0   : 5;
+            /** The address size; 0=16-bit, 1=32-bit, 2=64-bit, rest undefined. */
+            uint32_t    u3AddrSize    : 3;
+            uint32_t    u1Reserved0   : 1;
+            uint32_t    u4Reserved0   : 4;
+            /** The segment register (X86_SREG_XXX). */
+            uint32_t    iSegReg       : 3;
+            /** The index register (X86_GREG_XXX). */
+            uint32_t    iIdxReg       : 4;
+            /** Set if index register is invalid. */
+            uint32_t    fIdxRegValid  : 1;
+            /** The base register (X86_GREG_XXX). */
+            uint32_t    iBaseReg      : 4;
+            /** Set if base register is invalid. */
+            uint32_t    fBaseRegValid : 1;
+            /** Register 2 (X86_GREG_XXX). */
+            uint32_t    iReg2         : 4;
+        } Inv;
     }               ExitInstrInfo;
     /** Whether the VM-entry failed or not. */
     bool            fVMEntryFailed;
@@ -12183,9 +12206,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXsetbv(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 HMVMX_EXIT_DECL hmR0VmxExitInvpcid(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-
-    /* The guest should not invalidate the host CPU's TLBs, fallback to interpreter. */
-    /** @todo implement EMInterpretInvpcid() */
+    /** @todo Use VM-exit instruction information. */
     return VERR_EM_INTERPRETER;
 }
 
