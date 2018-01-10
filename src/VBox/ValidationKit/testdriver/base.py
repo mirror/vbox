@@ -58,6 +58,10 @@ try:    __file__
 except: __file__ = sys.argv[0];
 g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)));
 
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    long = int;     # pylint: disable=redefined-builtin,invalid-name
+
 
 #
 # Some utility functions.

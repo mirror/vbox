@@ -29,22 +29,27 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 # Standard Python imports.
-import array
-import errno
-import os
-import select
-import socket
-import threading
-import time
-import types
-import zlib
-import uuid
+import array;
+import errno;
+import os;
+import select;
+import socket;
+import sys;
+import threading;
+import time;
+import types;
+import zlib;
+import uuid;
 
 # Validation Kit imports.
-from common     import utils;
-from testdriver import base;
-from testdriver import reporter;
+from common             import utils;
+from testdriver         import base;
+from testdriver         import reporter;
 from testdriver.base    import TdTaskBase;
+
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    long = int;     # pylint: disable=redefined-builtin,invalid-name
 
 #
 # Helpers for decoding data received from the TXS.
@@ -117,10 +122,10 @@ def isValidOpcodeEncoding(sOpcode):
 def u32ToByteArray(u32):
     """Encodes the u32 value as a little endian byte (B) array."""
     return array.array('B', \
-                       (  u32             % 256, \
-                         (u32 / 256)      % 256, \
-                         (u32 / 65536)    % 256, \
-                         (u32 / 16777216) % 256) );
+                       (  u32              % 256, \
+                         (u32 // 256)      % 256, \
+                         (u32 // 65536)    % 256, \
+                         (u32 // 16777216) % 256) );
 
 
 
@@ -351,11 +356,14 @@ class TransportBase(object):
         abPayload = array.array('B');
         for o in aoPayload:
             try:
-                if isinstance(o, basestring):
-                    # the primitive approach...
-                    sUtf8 = o.encode('utf_8');
-                    for i in range(0, len(sUtf8)):
-                        abPayload.append(ord(sUtf8[i]))
+                if utils.isString(o):
+                    if sys.version_info[0] >= 3:
+                        abPayload.extend(o.encode('utf_8'));
+                    else:
+                        # the primitive approach...
+                        sUtf8 = o.encode('utf_8');
+                        for i in range(0, len(sUtf8)):
+                            abPayload.append(ord(sUtf8[i]))
                     abPayload.append(0);
                 elif isinstance(o, types.LongType):
                     if o < 0 or o > 0xffffffff:
@@ -723,7 +731,7 @@ class Session(TdTaskBase):
         for sPutEnv in asAddEnv:
             aoPayload.append('%s' % (sPutEnv));
         for o in (oStdIn, oStdOut, oStdErr, oTestPipe):
-            if isinstance(o, basestring):
+            if utils.isString(o):
                 aoPayload.append(o);
             elif o is not None:
                 aoPayload.append('|');
@@ -747,7 +755,7 @@ class Session(TdTaskBase):
                 # Pending input?
                 if     msPendingInputReply is None \
                    and oStdIn is not None \
-                   and not isinstance(oStdIn, basestring):
+                   and not utils.isString(oStdIn):
                     try:
                         sInput = oStdIn.read(65536);
                     except:
@@ -909,7 +917,7 @@ class Session(TdTaskBase):
 
         # Cleanup.
         for o in (oStdIn, oStdOut, oStdErr, oTestPipe):
-            if o is not None and not isinstance(o, basestring):
+            if o is not None and not utils.isString(o):
                 del o.uTxsClientCrc32;      # pylint: disable=E1103
                 # Make sure all files are closed
                 o.close();                  # pylint: disable=E1103
@@ -1083,8 +1091,11 @@ class Session(TdTaskBase):
 
                 # Convert to array - this is silly!
                 abBuf = array.array('B');
-                for i, _ in enumerate(sRaw):
-                    abBuf.append(ord(sRaw[i]));
+                if utils.isString(sRaw):
+                    for i, _ in enumerate(sRaw):
+                        abBuf.append(ord(sRaw[i]));
+                else:
+                    abBuf.extend(sRaw);
                 sRaw = None;
 
                 # Update the file stream CRC and send it off.
@@ -1405,7 +1416,7 @@ class Session(TdTaskBase):
     # Public methods - file system
     #
 
-    def asyncMkDir(self, sRemoteDir, fMode = 0700, cMsTimeout = 30000, fIgnoreErrors = False):
+    def asyncMkDir(self, sRemoteDir, fMode = 0o700, cMsTimeout = 30000, fIgnoreErrors = False):
         """
         Initiates a mkdir task.
 
@@ -1415,11 +1426,11 @@ class Session(TdTaskBase):
         """
         return self.startTask(cMsTimeout, fIgnoreErrors, "mkDir", self.taskMkDir, (sRemoteDir, long(fMode)));
 
-    def syncMkDir(self, sRemoteDir, fMode = 0700, cMsTimeout = 30000, fIgnoreErrors = False):
+    def syncMkDir(self, sRemoteDir, fMode = 0o700, cMsTimeout = 30000, fIgnoreErrors = False):
         """Synchronous version."""
         return self.asyncToSync(self.asyncMkDir, sRemoteDir, long(fMode), cMsTimeout, fIgnoreErrors);
 
-    def asyncMkDirPath(self, sRemoteDir, fMode = 0700, cMsTimeout = 30000, fIgnoreErrors = False):
+    def asyncMkDirPath(self, sRemoteDir, fMode = 0o700, cMsTimeout = 30000, fIgnoreErrors = False):
         """
         Initiates a mkdir -p task.
 
@@ -1429,7 +1440,7 @@ class Session(TdTaskBase):
         """
         return self.startTask(cMsTimeout, fIgnoreErrors, "mkDirPath", self.taskMkDirPath, (sRemoteDir, long(fMode)));
 
-    def syncMkDirPath(self, sRemoteDir, fMode = 0700, cMsTimeout = 30000, fIgnoreErrors = False):
+    def syncMkDirPath(self, sRemoteDir, fMode = 0o700, cMsTimeout = 30000, fIgnoreErrors = False):
         """Synchronous version."""
         return self.asyncToSync(self.asyncMkDirPath, sRemoteDir, long(fMode), cMsTimeout, fIgnoreErrors);
 
@@ -1658,15 +1669,17 @@ class TransportTcp(TransportBase):
 
     def __isInProgressXcpt(self, oXcpt):
         """ In progress exception? """
+        reporter.log("oXcpt=%s" % (oXcpt)) ## TMP TMP
+        reporter.log("dir(oXcpt)=%s" % (dir(oXcpt))) ## TMP TMP
         try:
             if isinstance(oXcpt, socket.error):
                 try:
-                    if oXcpt[0] == errno.EINPROGRESS:
+                    if oXcpt.errno == errno.EINPROGRESS:
                         return True;
                 except: pass;
                 # Windows?
                 try:
-                    if oXcpt[0] == errno.EWOULDBLOCK:
+                    if oXcpt.errno == errno.EWOULDBLOCK:
                         return True;
                 except: pass;
         except:
@@ -1678,11 +1691,11 @@ class TransportTcp(TransportBase):
         try:
             if isinstance(oXcpt, socket.error):
                 try:
-                    if oXcpt[0] == errno.EWOULDBLOCK:
+                    if oXcpt.errno == errno.EWOULDBLOCK:
                         return True;
                 except: pass;
                 try:
-                    if oXcpt[0] == errno.EAGAIN:
+                    if oXcpt.errno == errno.EAGAIN:
                         return True;
                 except: pass;
         except:
@@ -1694,11 +1707,11 @@ class TransportTcp(TransportBase):
         try:
             if isinstance(oXcpt, socket.error):
                 try:
-                    if oXcpt[0] == errno.ECONNRESET:
+                    if oXcpt.errno == errno.ECONNRESET:
                         return True;
                 except: pass;
                 try:
-                    if oXcpt[0] == errno.ENETRESET:
+                    if oXcpt.errno == errno.ENETRESET:
                         return True;
                 except: pass;
         except:

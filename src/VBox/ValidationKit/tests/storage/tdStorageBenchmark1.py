@@ -1067,7 +1067,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 sMountPoint = self.prepareStorage(self.oStorCfg, self.fUseRamDisk, 2 * cbDisk);
                 if sMountPoint is not None:
                     # Create a directory where every normal user can write to.
-                    self.oStorCfg.mkDirOnVolume(sMountPoint, 'test', 0777);
+                    self.oStorCfg.mkDirOnVolume(sMountPoint, 'test', 0o777);
                     sDiskPath = sMountPoint + '/test';
                 else:
                     fRc = False;
@@ -1311,7 +1311,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     if sMountPoint is None:
                         reporter.testFailure('Failed to prepare host storage');
                         fRc = False;
-                    self.oStorCfg.mkDirOnVolume(sMountPoint, 'test', 0777);
+                    self.oStorCfg.mkDirOnVolume(sMountPoint, 'test', 0o777);
                     sMountPoint = sMountPoint + '/test';
                     reporter.testDone();
 

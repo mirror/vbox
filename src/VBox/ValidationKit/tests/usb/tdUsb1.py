@@ -50,6 +50,11 @@ from testdriver import vboxcon;
 # USB gadget control import
 import usbgadget;
 
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    xrange = range; # pylint: disable=redefined-builtin,invalid-name
+
+
 class tdUsbBenchmark(vbox.TestDriver):                                      # pylint: disable=R0902
     """
     USB benchmark.

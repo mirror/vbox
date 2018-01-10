@@ -168,16 +168,16 @@ def isValidOpcodeEncoding(sOpcode):
 def u32ToByteArray(u32):
     """Encodes the u32 value as a little endian byte (B) array."""
     return array.array('B', \
-                       (  u32             % 256, \
-                         (u32 / 256)      % 256, \
-                         (u32 / 65536)    % 256, \
-                         (u32 / 16777216) % 256) );
+                       (  u32              % 256, \
+                         (u32 // 256)      % 256, \
+                         (u32 // 65536)    % 256, \
+                         (u32 // 16777216) % 256) );
 
 def u16ToByteArray(u16):
     """Encodes the u16 value as a little endian byte (B) array."""
     return array.array('B', \
-                       (  u16        % 256, \
-                         (u16 / 256) % 256) );
+                       (  u16         % 256, \
+                         (u16 // 256) % 256) );
 
 def u8ToByteArray(uint8):
     """Encodes the u8 value as a little endian byte (B) array."""
@@ -443,7 +443,7 @@ class TransportBase(object):
         abPayload = array.array('B');
         for o in aoPayload:
             try:
-                if isinstance(o, basestring):
+                if utils.isString(o):
                     # the primitive approach...
                     sUtf8 = o.encode('utf_8');
                     for i in range(0, len(sUtf8)):

@@ -506,7 +506,7 @@ class tdUnitTest1(vbox.TestDriver):
         """
         reporter.log('_hardenedMkDir: %s' % (sPath,));
         if utils.getHostOs() in [ 'win', 'os2' ]:
-            os.makedirs(sPath, 0755);
+            os.makedirs(sPath, 0o755);
         else:
             fRc = self._sudoExecuteSync(['/bin/mkdir', '-p', '-m', '0755', sPath]);
             if fRc is not True:
@@ -583,7 +583,7 @@ class tdUnitTest1(vbox.TestDriver):
                 asDirsToRemove.append(sDstDir);
 
             sDst = os.path.join(sDstDir, os.path.basename(sFullPath));
-            self._hardenedCopyFile(sFullPath, sDst, 0755);
+            self._hardenedCopyFile(sFullPath, sDst, 0o755);
             asFilesToRemove.append(sDst);
 
             # Copy any associated .dll/.so/.dylib.
@@ -591,7 +591,7 @@ class tdUnitTest1(vbox.TestDriver):
                 sSrc = os.path.splitext(sFullPath)[0] + sSuff;
                 if os.path.exists(sSrc):
                     sDst = os.path.join(sDstDir, os.path.basename(sSrc));
-                    self._hardenedCopyFile(sSrc, sDst, 0644);
+                    self._hardenedCopyFile(sSrc, sDst, 0o644);
                     asFilesToRemove.append(sDst);
 
             # Copy any associated .r0, .rc and .gc modules.
@@ -601,7 +601,7 @@ class tdUnitTest1(vbox.TestDriver):
                     sSrc = sFullPath[:offDriver] + sSuff;
                     if os.path.exists(sSrc):
                         sDst = os.path.join(sDstDir, os.path.basename(sSrc));
-                        self._hardenedCopyFile(sSrc, sDst, 0644);
+                        self._hardenedCopyFile(sSrc, sDst, 0o644);
                         asFilesToRemove.append(sDst);
 
             sFullPath = os.path.join(sDstDir, os.path.basename(sFullPath));

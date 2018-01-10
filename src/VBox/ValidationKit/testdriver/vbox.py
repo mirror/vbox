@@ -54,6 +54,10 @@ from testdriver import reporter;
 from testdriver import vboxcon;
 from testdriver import vboxtestvms;
 
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    xrange = range; # pylint: disable=redefined-builtin,invalid-name
+    long = int;     # pylint: disable=redefined-builtin,invalid-name
 
 #
 # Exception and Error Unification Hacks.
@@ -2395,7 +2399,7 @@ class TestDriver(base.TestDriver):                                              
 
             tsNow = datetime.datetime.now()
             tsDelta = tsNow - tsStart
-            if ((tsDelta.microseconds + tsDelta.seconds * 1000000) / 1000) > cMsTimeout:
+            if ((tsDelta.microseconds + tsDelta.seconds * 1000000) // 1000) > cMsTimeout:
                 if fErrorOnTimeout:
                     reporter.errorTimeout('Timeout while waiting for progress.')
                 return -1

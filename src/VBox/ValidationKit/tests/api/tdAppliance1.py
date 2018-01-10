@@ -174,7 +174,7 @@ class tdAppliance1(vbox.TestDriver):
         # Unpack
         #
         try:
-            os.mkdir(sTmpDir, 0x1ed); # 0755 = 0x1ed
+            os.mkdir(sTmpDir, 0o755);
             oTarFile = tarfile.open(sOva, 'r:*');
             oTarFile.extractall(sTmpDir);
             oTarFile.close();

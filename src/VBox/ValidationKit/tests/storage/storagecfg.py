@@ -318,7 +318,7 @@ class StorageConfigOsLinux(StorageConfigOs):
                 # Create a partition with the requested size
                 sFdiskScript = ';\n'; # Single partition filling everything
                 if cbVol is not None:
-                    sFdiskScript = ',' + str(cbVol / 512) + '\n'; # Get number of sectors
+                    sFdiskScript = ',' + str(cbVol // 512) + '\n'; # Get number of sectors
                 fRc = oExec.execBinaryNoStdOut('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', sDiskPath), \
                                                sFdiskScript);
                 if fRc:
@@ -429,7 +429,7 @@ class StorageCfg(object):
 
         if fRc:
             self.oStorOs = oStorOs;
-            if isinstance(oDiskCfg, basestring):
+            if utils.isString(oDiskCfg):
                 self.lstDisks = oStorOs.getDisksMatchingRegExp(oDiskCfg);
             else:
                 # Assume a list of of disks and add.
@@ -590,7 +590,7 @@ class StorageCfg(object):
 
         return fRc;
 
-    def mkDirOnVolume(self, sMountPoint, sDir, fMode = 0700):
+    def mkDirOnVolume(self, sMountPoint, sDir, fMode = 0o700):
         """
         Creates a new directory on the volume pointed to by the given mount point.
         """

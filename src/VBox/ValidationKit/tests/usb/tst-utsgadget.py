@@ -39,6 +39,11 @@ sys.path.insert(0, '../..');
 import usbgadget;
 import testdriver.reporter as reporter
 
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    long = int;     # pylint: disable=redefined-builtin,invalid-name
+
+
 g_cTests = 0;
 g_cFailures = 0
 
@@ -56,7 +61,7 @@ def stringRes(rc, sExpect):
     """Checks a string result."""
     global g_cTests, g_cFailures;
     g_cTests = g_cTests + 1;
-    if isinstance(rc, basestring):
+    if utils.isString(rc):
         if rc == sExpect:
             return 'PASSED';
     g_cFailures = g_cFailures + 1;

@@ -245,7 +245,7 @@ class RemoteExecutor(object):
 
         return sFileId;
 
-    def mkDir(self, sDir, fMode = 0700, cMsTimeout = 30000):
+    def mkDir(self, sDir, fMode = 0o700, cMsTimeout = 30000):
         """
         Creates a new directory at the given location.
         """

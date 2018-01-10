@@ -135,7 +135,7 @@ class tdMoveMedium(vbox.TestDriver):
             sOrigLoc = self.sScratchPath
             sNewLoc = os.path.join(sOrigLoc, 'newLocation/')
 
-            os.makedirs(sNewLoc, 0775);
+            os.makedirs(sNewLoc, 0o775);
 
             aListOfAttach = oVM.getMediumAttachmentsOfController(sController)
             #case 1. Only path without file name

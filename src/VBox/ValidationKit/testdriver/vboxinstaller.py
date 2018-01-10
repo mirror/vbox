@@ -561,7 +561,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         sMountPath = self._darwinDmgPath();
         if not os.path.exists(sMountPath):
             try:
-                os.mkdir(sMountPath, 0755);
+                os.mkdir(sMountPath, 0o755);
             except:
                 reporter.logXcpt();
                 return False;
