@@ -5,6 +5,8 @@
 Simple testcase for txsclient.py.
 """
 
+from __future__ import print_function;
+
 __copyright__ = \
 """
 Copyright (C) 2010-2017 Oracle Corporation
@@ -90,10 +92,10 @@ def main(asArgs): # pylint: disable=C0111,R0914,R0915
             fStdTests = False;
             i = i + 1;
         elif asArgs[i] == '--help':
-            print 'tst-txsclient.py [--hostname <addr|name>] [--port <num>] [--timeout <cMS>] [--reboot] [--reversed-setup]'
+            print('tst-txsclient.py [--hostname <addr|name>] [--port <num>] [--timeout <cMS>] [--reboot] [--reversed-setup]');
             return 0;
         else:
-            print 'Unknown argument: %s' % (asArgs[i]);
+            print('Unknown argument: %s' % (asArgs[i]));
             return 2;
 
     if uPort is None:
@@ -101,73 +103,73 @@ def main(asArgs): # pylint: disable=C0111,R0914,R0915
     else:
         oSession = txsclient.openTcpSession(cMsTimeout, sAddress, uPort = uPort, fReversedSetup = fReversedSetup);
     if oSession is None:
-        print 'openTcpSession failed';
+        print('openTcpSession failed');
         return 1;
 
     fDone = oSession.waitForTask(30*1000);
-    print 'connect: waitForTask -> %s, result %s' % (fDone, oSession.getResult());
+    print('connect: waitForTask -> %s, result %s' % (fDone, oSession.getResult()));
     if fDone is True and oSession.isSuccess():
         if fStdTests:
             # Get the UUID of the remote instance.
             sUuid = oSession.syncUuid();
             if sUuid is not False:
-                print '%s: UUID = %s' % (boolRes(True), sUuid);
+                print('%s: UUID = %s' % (boolRes(True), sUuid));
             else:
-                print '%s: UUID' % (boolRes(False),);
+                print('%s: UUID' % (boolRes(False),));
 
             # Create and remove a directory on the scratch area.
             rc = oSession.syncMkDir('${SCRATCH}/testdir1');
-            print '%s: MKDIR(${SCRATCH}/testdir1) -> %s' % (boolRes(rc), rc);
+            print('%s: MKDIR(${SCRATCH}/testdir1) -> %s' % (boolRes(rc), rc));
 
             rc = oSession.syncIsDir('${SCRATCH}/testdir1');
-            print '%s: ISDIR(${SCRATCH}/testdir1) -> %s' % (boolRes(rc), rc);
+            print('%s: ISDIR(${SCRATCH}/testdir1) -> %s' % (boolRes(rc), rc));
 
             rc = oSession.syncRmDir('${SCRATCH}/testdir1');
-            print '%s: RMDIR(${SCRATCH}/testdir1) -> %s' % (boolRes(rc), rc);
+            print('%s: RMDIR(${SCRATCH}/testdir1) -> %s' % (boolRes(rc), rc));
 
             # Create a two-level subdir.
             rc = oSession.syncMkDirPath('${SCRATCH}/testdir2/subdir1');
-            print '%s: MKDRPATH(${SCRATCH}/testdir2/subdir1) -> %s' % (boolRes(rc), rc);
+            print('%s: MKDRPATH(${SCRATCH}/testdir2/subdir1) -> %s' % (boolRes(rc), rc));
 
             rc = oSession.syncIsDir('${SCRATCH}/testdir2');
-            print '%s: ISDIR(${SCRATCH}/testdir2) -> %s' % (boolRes(rc), rc);
+            print('%s: ISDIR(${SCRATCH}/testdir2) -> %s' % (boolRes(rc), rc));
             rc = oSession.syncIsDir('${SCRATCH}/testdir2/');
-            print '%s: ISDIR(${SCRATCH}/testdir2/) -> %s' % (boolRes(rc), rc);
+            print('%s: ISDIR(${SCRATCH}/testdir2/) -> %s' % (boolRes(rc), rc));
             rc = oSession.syncIsDir('${SCRATCH}/testdir2/subdir1');
-            print '%s: ISDIR(${SCRATCH}/testdir2/subdir1) -> %s' % (boolRes(rc), rc);
+            print('%s: ISDIR(${SCRATCH}/testdir2/subdir1) -> %s' % (boolRes(rc), rc));
 
             rc = oSession.syncRmTree('${SCRATCH}/testdir2');
-            print '%s: RMTREE(${SCRATCH}/testdir2) -> %s' % (boolRes(rc), rc);
+            print('%s: RMTREE(${SCRATCH}/testdir2) -> %s' % (boolRes(rc), rc));
 
             # Check out a simple file.
             rc = oSession.syncUploadString('howdy', '${SCRATCH}/howdyfile');
-            print '%s: PUT FILE(${SCRATCH}/howdyfile) -> %s' % (boolRes(rc), rc);
+            print('%s: PUT FILE(${SCRATCH}/howdyfile) -> %s' % (boolRes(rc), rc));
 
             rc = oSession.syncUploadString('howdy-replaced', '${SCRATCH}/howdyfile');
-            print '%s: PUT FILE(${SCRATCH}/howdyfile) -> %s' % (boolRes(rc), rc);
+            print('%s: PUT FILE(${SCRATCH}/howdyfile) -> %s' % (boolRes(rc), rc));
 
             rc = oSession.syncDownloadString('${SCRATCH}/howdyfile');
-            print '%s: GET FILE(${SCRATCH}/howdyfile) -> "%s" expected "howdy-replaced"' % (stringRes(rc, 'howdy-replaced'), rc);
+            print('%s: GET FILE(${SCRATCH}/howdyfile) -> "%s" expected "howdy-replaced"' % (stringRes(rc, 'howdy-replaced'), rc));
 
             rc = oSession.syncIsFile('${SCRATCH}/howdyfile');
-            print '%s: ISFILE(${SCRATCH}/howdyfile) -> %s' % (boolRes(rc), rc);
+            print('%s: ISFILE(${SCRATCH}/howdyfile) -> %s' % (boolRes(rc), rc));
             rc = oSession.syncIsDir('${SCRATCH}/howdyfile');
-            print '%s: ISDIR(${SCRATCH}/howdyfile) -> %s' % (boolRes(rc, False), rc);
+            print('%s: ISDIR(${SCRATCH}/howdyfile) -> %s' % (boolRes(rc, False), rc));
             rc = oSession.syncIsSymlink('${SCRATCH}/howdyfile');
-            print '%s: ISSYMLNK(${SCRATCH}/howdyfile) -> %s' % (boolRes(rc, False), rc);
+            print('%s: ISSYMLNK(${SCRATCH}/howdyfile) -> %s' % (boolRes(rc, False), rc));
 
             rc = oSession.syncRmFile('${SCRATCH}/howdyfile');
-            print '%s: RMFILE(${SCRATCH}/howdyfile) -> %s' % (boolRes(rc), rc);
+            print('%s: RMFILE(${SCRATCH}/howdyfile) -> %s' % (boolRes(rc), rc));
 
             # Unicode filename (may or may not work, LANG/LC_TYPE dependent on some hosts).
             rc = oSession.syncUploadString('howdy', u'${SCRATCH}/Schröder');
-            print (u'%s: PUT FILE(${SCRATCH}/Schröder) -> %s' % (boolRes(rc), rc)).encode('ascii', 'replace');
+            print((u'%s: PUT FILE(${SCRATCH}/Schröder) -> %s' % (boolRes(rc), rc)).encode('ascii', 'replace'));
 
             rc = oSession.syncIsFile(u'${SCRATCH}/Schröder');
-            print (u'%s: ISFILE(${SCRATCH}/Schröder) -> %s' % (boolRes(rc), rc)).encode('ascii', 'replace');
+            print((u'%s: ISFILE(${SCRATCH}/Schröder) -> %s' % (boolRes(rc), rc)).encode('ascii', 'replace'));
 
             rc = oSession.syncRmFile(u'${SCRATCH}/Schröder');
-            print (u'%s: RMFILE(${SCRATCH}/Schröder) -> %s' % (boolRes(rc), rc)).encode('ascii', 'replace');
+            print((u'%s: RMFILE(${SCRATCH}/Schröder) -> %s' % (boolRes(rc), rc)).encode('ascii', 'replace'));
 
             # Finally, some file uploading and downloading with unicode filenames.
             strUpFile  = 'tst-txsclient-upload.bin';
@@ -175,7 +177,7 @@ def main(asArgs): # pylint: disable=C0111,R0914,R0915
             try:
                 abRandFile = os.urandom(257897);
             except:
-                print 'INFO: no urandom... falling back on a simple string.'
+                print('INFO: no urandom... falling back on a simple string.');
                 abRandFile = 'asdflkjasdlfkjasdlfkjq023942relwjgkna9epr865u2nm345;hndafgoukhasre5kb2453km';
                 for i in range(1, 64):
                     abRandFile += abRandFile;
@@ -201,16 +203,16 @@ def main(asArgs): # pylint: disable=C0111,R0914,R0915
                     abDwnFile = oLocalFile.read();
                     oLocalFile.close();
                     if abRandFile == abDwnFile:
-                        print '%s: downloaded file matches the uploaded file' % (boolRes(True),);
+                        print('%s: downloaded file matches the uploaded file' % (boolRes(True),));
                     else:
-                        print '%s: downloaded file does not match the uploaded file' % (boolRes(False),);
-                        print 'abRandFile=%s' % (abRandFile,);
-                        print 'abDwnFile =%s' % (abRandFile,);
+                        print('%s: downloaded file does not match the uploaded file' % (boolRes(False),));
+                        print('abRandFile=%s' % (abRandFile,));
+                        print('abDwnFile =%s' % (abRandFile,));
                 except:
-                    print '%s: reading downloaded file (%s) failed....' % (boolRes(False), strDwnFile);
+                    print('%s: reading downloaded file (%s) failed....' % (boolRes(False), strDwnFile));
 
                 rc = oSession.syncRmFile(u'${SCRATCH}/tst-txsclient-uploaded.bin');
-                print '%s: RMFILE(${SCRATCH}/tst-txsclient-uploaded.bin) -> %s' % (boolRes(rc), rc);
+                print('%s: RMFILE(${SCRATCH}/tst-txsclient-uploaded.bin) -> %s' % (boolRes(rc), rc));
 
             try:    os.remove(strUpFile);
             except: pass;
@@ -224,7 +226,7 @@ def main(asArgs): # pylint: disable=C0111,R0914,R0915
             rc = oSession.syncIsFile(sProg, 30 * 1000, True);
             if rc is True:
                 rc = oSession.syncExecEx(sProg, (sProg, '--help'));
-                print '%s: EXEC(%s ${SCRATCH}) -> %s' % (boolRes(rc), sProg, rc);
+                print('%s: EXEC(%s ${SCRATCH}) -> %s' % (boolRes(rc), sProg, rc));
 
                 rc = oSession.syncExecEx(sProg, (sProg, 'there', 'is no such', 'parameter'), \
                                          oStdOut='${SCRATCH}/stdout', \
@@ -233,23 +235,23 @@ def main(asArgs): # pylint: disable=C0111,R0914,R0915
                       % (boolRes(rc, False), sProg, rc));
 
                 rc = oSession.syncDownloadString('${SCRATCH}/stdout');
-                print 'INFO:   GET FILE(${SCRATCH}/stdout) -> "%s"' % (rc);
+                print('INFO:   GET FILE(${SCRATCH}/stdout) -> "%s"' % (rc));
                 rc = oSession.syncDownloadString('${SCRATCH}/stderr');
-                print 'INFO:   GET FILE(${SCRATCH}/stderr) -> "%s"' % (rc);
+                print('INFO:   GET FILE(${SCRATCH}/stderr) -> "%s"' % (rc));
 
-                print 'TESTING: syncExec...'
+                print('TESTING: syncExec...');
                 rc = oSession.syncExec(sProg, (sProg, '--version'));
-                print '%s: EXEC(%s --version) -> %s' % (boolRes(rc), sProg, rc);
+                print('%s: EXEC(%s --version) -> %s' % (boolRes(rc), sProg, rc));
 
-                print 'TESTING: syncExec...'
+                print('TESTING: syncExec...');
                 rc = oSession.syncExec(sProg, (sProg, '--help'));
-                print '%s: EXEC(%s --help) -> %s' % (boolRes(rc), sProg, rc);
+                print('%s: EXEC(%s --help) -> %s' % (boolRes(rc), sProg, rc));
 
-                #print 'TESTING: syncExec sleep 30...'
-                #rc = oSession.syncExec('/usr/bin/sleep', ('/usr/bin/sleep', '30'));
-                #print '%s: EXEC(/bin/sleep 30) -> %s' % (boolRes(rc), rc);
+                #print('TESTING: syncExec sleep 30...'
+                #rc = oSession.syncExec('/usr/bin/sleep', ('/usr/bin/sleep', '30')));
+                #print('%s: EXEC(/bin/sleep 30) -> %s' % (boolRes(rc), rc));
             else:
-                print 'SKIP:   Execution of %s skipped, does not exist on CD-ROM' % (sProg,);
+                print('SKIP:   Execution of %s skipped, does not exist on CD-ROM' % (sProg,));
 
             # Execute a non-existing file on CD-ROM.
             sProg = '${CDROM}/${OS/ARCH}/NonExisting${EXESUFF}';
@@ -260,21 +262,21 @@ def main(asArgs): # pylint: disable=C0111,R0914,R0915
                 rc = True;
             else:
                 reporter.error('Unexpected value \"%s\" while executing non-existent file "%s"' % (rc, sProg));
-            print '%s: EXEC(%s ${SCRATCH}) -> %s' % (boolRes(rc), sProg, rc);
+            print('%s: EXEC(%s ${SCRATCH}) -> %s' % (boolRes(rc), sProg, rc));
 
             # Done
             rc = oSession.syncDisconnect();
-            print '%s: disconnect() -> %s' % (boolRes(rc), rc);
+            print('%s: disconnect() -> %s' % (boolRes(rc), rc));
 
         elif fReboot:
-            print 'TESTING: syncReboot...'
+            print('TESTING: syncReboot...');
             rc = oSession.syncReboot();
-            print '%s: REBOOT() -> %s' % (boolRes(rc), rc);
+            print('%s: REBOOT() -> %s' % (boolRes(rc), rc));
 
     if g_cFailures != 0:
-        print 'tst-txsclient.py: %u out of %u test failed' % (g_cFailures, g_cTests);
+        print('tst-txsclient.py: %u out of %u test failed' % (g_cFailures, g_cTests));
         return 1;
-    print 'tst-txsclient.py: all %u tests passed!' % (g_cTests);
+    print('tst-txsclient.py: all %u tests passed!' % (g_cTests));
     return 0;
 
 

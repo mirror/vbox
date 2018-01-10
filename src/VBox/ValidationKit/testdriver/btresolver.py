@@ -538,7 +538,7 @@ class BacktraceResolver(object):
         fRc = True;
         if not os.path.exists(self.sScratchDbgPath):
             try:
-                os.makedirs(self.sScratchDbgPath, 0750);
+                os.makedirs(self.sScratchDbgPath, 0o750);
             except:
                 fRc = False;
                 self.log('Failed to create scratch directory for debug symbols');

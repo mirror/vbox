@@ -39,7 +39,8 @@ import stat
 import subprocess
 import sys
 import time
-import thread
+if sys.version_info[0] < 3: import thread;            # pylint: disable=import-error
+else:                       import _thread as thread; # pylint: disable=import-error
 import threading
 import traceback
 import tempfile;
@@ -132,7 +133,7 @@ def getDirEnv(sVar, sAlternative = None, fLocalReq = False, fTryCreate = False):
                 reporter.error('the value of env.var. "%s" is not a dir: "%s"' % (sVar, sVal));
                 raise GenError('the value of env.var. "%s" is not a dir: "%s"' % (sVar, sVal));
             try:
-                os.makedirs(sVal, 0700);
+                os.makedirs(sVal, 0o700);
             except:
                 reporter.error('makedirs failed on the value of env.var. "%s": "%s"' % (sVar, sVal));
                 raise GenError('makedirs failed on the value of env.var. "%s": "%s"' % (sVar, sVal));
@@ -813,7 +814,7 @@ class TestDriverBase(object): # pylint: disable=R0902
                 sTmpDir = '/var/tmp';
             self.sScratchPath = os.path.abspath(os.path.join(sTmpDir, 'VBoxTestTmp'));
             if not os.path.isdir(self.sScratchPath):
-                os.makedirs(self.sScratchPath, 0700);
+                os.makedirs(self.sScratchPath, 0o700);
         os.environ['TESTBOX_PATH_SCRATCH'] = self.sScratchPath;
 
         self.sTestBoxName  = getEnv(   'TESTBOX_NAME', 'local');
@@ -858,27 +859,6 @@ class TestDriverBase(object): # pylint: disable=R0902
         os.environ['TMPDIR']      = self.sScratchPath;
         os.environ['IPRT_TMPDIR'] = self.sScratchPath; # IPRT/VBox specific.
 
-
-    def dump(self):
-        """
-        For debugging. --> __str__?
-        """
-        print >> sys.stderr, "testdriver.base: sBinPath          = '%s'" % self.sBinPath;
-        print >> sys.stderr, "testdriver.base: sScriptPath       = '%s'" % self.sScriptPath;
-        print >> sys.stderr, "testdriver.base: sScratchPath      = '%s'" % self.sScratchPath;
-        print >> sys.stderr, "testdriver.base: sTestBoxName      = '%s'" % self.sTestBoxName;
-        print >> sys.stderr, "testdriver.base: sBuildPath        = '%s'" % self.sBuildPath;
-        print >> sys.stderr, "testdriver.base: sResourcePath     = '%s'" % self.sResourcePath;
-        print >> sys.stderr, "testdriver.base: sUploadPath       = '%s'" % self.sUploadPath;
-        print >> sys.stderr, "testdriver.base: sTestSetId        = '%s'" % self.sTestSetId;
-        print >> sys.stderr, "testdriver.base: sHost             = '%s'" % self.sHost;
-        print >> sys.stderr, "testdriver.base: sHostArch         = '%s'" % self.sHostArch;
-        print >> sys.stderr, "testdriver.base: asSpecialActions  = '%s'" % self.asSpecialActions;
-        print >> sys.stderr, "testdriver.base: asNormalActions   = '%s'" % self.asNormalActions;
-        print >> sys.stderr, "testdriver.base: asActions         = '%s'" % self.asActions;
-        print >> sys.stderr, "testdriver.base: secTimeoutAbs     = '%s'" % self.secTimeoutAbs;
-        for sVar in sorted(os.environ):
-            print >> sys.stderr, "os.environ[%s] = '%s'" % (sVar, os.environ[sVar],);
 
     #
     # Resource utility methods.

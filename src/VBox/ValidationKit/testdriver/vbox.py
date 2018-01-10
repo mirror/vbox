@@ -433,17 +433,6 @@ class Build(object): # pylint: disable=R0903
 
         # __init__ end;
 
-    def dump(self):
-        """ Status dumper for debugging. """
-        print >> sys.stderr, "testdriver.vbox.Build: sInstallPath= '%s'" % self.sInstallPath;
-        print >> sys.stderr, "testdriver.vbox.Build: sSdkPath    = '%s'" % self.sSdkPath;
-        print >> sys.stderr, "testdriver.vbox.Build: sSrcRoot    = '%s'" % self.sSrcRoot;
-        print >> sys.stderr, "testdriver.vbox.Build: sKind       = '%s'" % self.sKind;
-        print >> sys.stderr, "testdriver.vbox.Build: sDesignation= '%s'" % self.sDesignation;
-        print >> sys.stderr, "testdriver.vbox.Build: sType       = '%s'" % self.sType;
-        print >> sys.stderr, "testdriver.vbox.Build: sOs         = '%s'" % self.sOs;
-        print >> sys.stderr, "testdriver.vbox.Build: sArch       = '%s'" % self.sArch;
-
     def isDevBuild(self):
         """ Returns True if it's development build (kind), otherwise False. """
         return self.sKind == 'development';
@@ -833,24 +822,6 @@ class TestDriver(base.TestDriver):                                              
         if 'VBOX_LOG_DEST' not in os.environ:
             os.environ['VBOX_LOG_DEST'] = 'nodeny dir=%s' % (self.sScratchPath);
 
-    def dump(self):
-        """
-        Dump object state, for debugging.
-        """
-        base.TestDriver.dump(self);
-        print >> sys.stderr, "testdriver.vbox: fImportedVBoxApi  = '%s'" % self.fImportedVBoxApi;
-        print >> sys.stderr, "testdriver.vbox: fpApiVer          = '%s'" % self.fpApiVer;
-        print >> sys.stderr, "testdriver.vbox: oBuild            = '%s'" % self.oBuild;
-        print >> sys.stderr, "testdriver.vbox: oVBoxMgr          = '%s'" % self.oVBoxMgr;
-        print >> sys.stderr, "testdriver.vbox: oVBox             = '%s'" % self.oVBox;
-        print >> sys.stderr, "testdriver.vbox: aoRemoteSessions  = '%s'" % self.aoRemoteSessions;
-        print >> sys.stderr, "testdriver.vbox: aoVMs             = '%s'" % self.aoVMs;
-        print >> sys.stderr, "testdriver.vbox: sVBoxValidationKit    = '%s'" % self.sVBoxValidationKit;
-        print >> sys.stderr, "testdriver.vbox: sVBoxValidationKitIso = '%s'" % self.sVBoxValidationKitIso;
-        print >> sys.stderr, "testdriver.vbox: sVBoxBootSectors  = '%s'" % self.sVBoxBootSectors;
-        if self.oBuild is not None:
-            self.oBuild.dump();
-
 
     def _detectBuild(self, fQuiet = False):
         """
@@ -991,10 +962,10 @@ class TestDriver(base.TestDriver):                                              
            and platform.architecture()[0] == '64bit' \
            and self.oBuild.sKind == 'development' \
            and os.getenv('VERSIONER_PYTHON_PREFER_32_BIT') != 'yes':
-            print "WARNING: 64-bit python on darwin, 32-bit VBox development build => crash"
-            print "WARNING:   bash-3.2$ /usr/bin/python2.5 ./testdriver"
-            print "WARNING: or"
-            print "WARNING:   bash-3.2$ VERSIONER_PYTHON_PREFER_32_BIT=yes ./testdriver"
+            reporter.log("WARNING: 64-bit python on darwin, 32-bit VBox development build => crash");
+            reporter.log("WARNING:   bash-3.2$ /usr/bin/python2.5 ./testdriver");
+            reporter.log("WARNING: or");
+            reporter.log("WARNING:   bash-3.2$ VERSIONER_PYTHON_PREFER_32_BIT=yes ./testdriver");
             return False;
 
         # Start VBoxSVC and load the vboxapi bits.
@@ -1843,9 +1814,9 @@ class TestDriver(base.TestDriver):                                              
             # Testbox debugging - START - TEMPORARY, REMOVE ASAP.
             if self.sHost in ('darwin', 'freebsd', 'linux', 'solaris', ):
                 try:
-                    print '> ls -la %s' % (os.path.join(self.sScratchPath, 'VBoxUserHome'),);
+                    reporter.log('> ls -la %s' % (os.path.join(self.sScratchPath, 'VBoxUserHome'),));
                     utils.processCall(['ls', '-la', os.path.join(self.sScratchPath, 'VBoxUserHome')]);
-                    print '> ls -la %s' % (self.sScratchPath,);
+                    reporter.log('> ls -la %s' % (self.sScratchPath,));
                     utils.processCall(['ls', '-la', self.sScratchPath]);
                 except: pass;
             # Testbox debugging - END   - TEMPORARY, REMOVE ASAP.
@@ -3185,11 +3156,11 @@ class TestDriver(base.TestDriver):                                              
         return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncUuid,
                               (self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
 
-    def txsMkDir(self, oSession, oTxsSession, sRemoteDir, fMode = 0700, cMsTimeout = 30000, fIgnoreErrors = False):
+    def txsMkDir(self, oSession, oTxsSession, sRemoteDir, fMode = 0o700, cMsTimeout = 30000, fIgnoreErrors = False):
         return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncMkDir,
                               (sRemoteDir, fMode, self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
 
-    def txsMkDirPath(self, oSession, oTxsSession, sRemoteDir, fMode = 0700, cMsTimeout = 30000, fIgnoreErrors = False):
+    def txsMkDirPath(self, oSession, oTxsSession, sRemoteDir, fMode = 0o700, cMsTimeout = 30000, fIgnoreErrors = False):
         return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncMkDirPath,
                               (sRemoteDir, fMode, self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
 
