@@ -1062,7 +1062,7 @@ class TransportTcp(TransportBase):
         try:
             oSocket.connect((self.sHostname, self.uPort));
             rc = True;
-        except socket.error, e:
+        except socket.error as e:
             iRc = e[0];
             if self.__isInProgressXcpt(e):
                 # Do the actual waiting.
@@ -1073,7 +1073,7 @@ class TransportTcp(TransportBase):
                         raise socket.error(errno.ETIMEDOUT, 'select timed out');
                     iRc = oSocket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR);
                     rc = iRc == 0;
-                except socket.error, e:
+                except socket.error as e:
                     iRc = e[0];
                 except:
                     iRc = -42;
@@ -1190,7 +1190,7 @@ class TransportTcp(TransportBase):
             cbSent = self.oSocket.send(abBuf);
             if cbSent == len(abBuf):
                 return True;
-        except Exception, oXcpt:
+        except Exception as oXcpt:
             if not self.__isWouldBlockXcpt(oXcpt):
                 reporter.errorXcpt('TranportTcp.sendBytes: %s bytes' % (len(abBuf)));
                 return False;
@@ -1222,7 +1222,7 @@ class TransportTcp(TransportBase):
                 cbSent += self.oSocket.send(abBuf[cbSent:]);
                 if cbSent == len(abBuf):
                     return True;
-            except Exception, oXcpt:
+            except Exception as oXcpt:
                 if not self.__isWouldBlockXcpt(oXcpt):
                     reporter.errorXcpt('TranportTcp.sendBytes: %s bytes' % (len(abBuf)));
                     break;
@@ -1247,7 +1247,7 @@ class TransportTcp(TransportBase):
                 abBuf = self.oSocket.recv(cb - len(self.abReadAhead));
                 if abBuf:
                     self.abReadAhead.extend(array.array('B', abBuf));
-            except Exception, oXcpt:
+            except Exception as oXcpt:
                 if not self.__isWouldBlockXcpt(oXcpt):
                     reporter.errorXcpt('TranportTcp.recvBytes: 0/%s bytes' % (cb,));
                     return None;
@@ -1290,7 +1290,7 @@ class TransportTcp(TransportBase):
 
                 self.abReadAhead.extend(array.array('B', abBuf));
 
-            except Exception, oXcpt:
+            except Exception as oXcpt:
                 reporter.log('recv => exception %s' % (oXcpt,));
                 if not self.__isWouldBlockXcpt(oXcpt):
                     if not fNoDataOk  or  not self.__isConnectionReset(oXcpt)  or  self.abReadAhead:

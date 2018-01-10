@@ -108,7 +108,9 @@ TEMPLATE_VBoxValidationKitR3_LNK_DEPS.win.x86  = $(if $(eq $(tool_do),LINK_LIBRA
 #TODO: TEMPLATE_VBoxValidationKitR3_EXTENDS = VBOXGUESTR3EXE
 
 TEMPLATE_VBoxValidationKitR3_USES += vboximportchecker
-TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER.win.x86   = nt350
+TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER   = nt31$(error fuck)
+TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER.x86   = nt31$(error fuck)
+TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER.win.x86   = nt31$(error fuck)
 TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER.win.amd64 = xp64
 
 

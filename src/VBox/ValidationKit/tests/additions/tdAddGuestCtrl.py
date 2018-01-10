@@ -538,7 +538,7 @@ class tdStepSessionSetEnv(tdSessionStepBase):
                 oGstCtrlSession.environmentScheduleSet(self.sVar, self.sValue);
             else:
                 oGstCtrlSession.environmentSet(self.sVar, self.sValue);
-        except vbox.ComException, oXcpt:
+        except vbox.ComException as oXcpt:
             # Is this an expected failure?
             if vbox.ComError.equal(oXcpt, self.hrcExpected):
                 return True;
@@ -579,7 +579,7 @@ class tdStepSessionUnsetEnv(tdSessionStepBase):
                 oGstCtrlSession.environmentScheduleUnset(self.sVar);
             else:
                 oGstCtrlSession.environmentUnset(self.sVar);
-        except vbox.ComException, oXcpt:
+        except vbox.ComException as oXcpt:
             # Is this an expected failure?
             if vbox.ComError.equal(oXcpt, self.hrcExpected):
                 return True;
@@ -620,7 +620,7 @@ class tdStepSessionBulkEnv(tdSessionStepBase):
                 oTstDrv.oVBoxMgr.setArray(oGstCtrlSession, 'environmentChanges', self.asEnv);
             else:
                 oTstDrv.oVBoxMgr.setArray(oGstCtrlSession, 'environment', self.asEnv);
-        except vbox.ComException, oXcpt:
+        except vbox.ComException as oXcpt:
             # Is this an expected failure?
             if vbox.ComError.equal(oXcpt, self.hrcExpected):
                 return True;
@@ -725,7 +725,7 @@ class tdStepStat(tdSessionStepBase):
                     oFsInfo = oGstCtrlSession.fsObjQueryInfo(self.sPath, self.fFollowLinks);
                 else:
                     oFsInfo = oGstCtrlSession.fileQueryInfo(self.sPath);
-            except vbox.ComException, oXcpt:
+            except vbox.ComException as oXcpt:
                 ## @todo: The error reporting in the API just plain sucks! Most of the errors are
                 ##        VBOX_E_IPRT_ERROR and there seems to be no way to distinguish between
                 ##        non-existing files/path and a lot of other errors.  Fix API and test!
@@ -1207,7 +1207,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         reporter.error('\tDirectory "%s" contains invalid directory entry "%s" (%d)' \
                                        % (sSubDir, oFsObjInfo.name, oFsObjInfo.type));
                         fRc = False;
-                except Exception, oXcpt:
+                except Exception as oXcpt:
                     # No necessarily an error -- could be VBOX_E_OBJECT_NOT_FOUND. See reference.
                     if vbox.ComError.equal(oXcpt, vbox.ComError.VBOX_E_OBJECT_NOT_FOUND):
                         #reporter.log2('\tNo more directory entries for "%s"' % (sCurDir,));
@@ -1358,7 +1358,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         reporter.error('\tDirectory "%s" contains invalid directory entry "%s" (type %d)' % \
                                        (sCurDir, oFsObjInfo.name, oFsObjInfo.type));
                         fRc = False;
-                except Exception, oXcpt:
+                except Exception as oXcpt:
                     # No necessarily an error -- could be VBOX_E_OBJECT_NOT_FOUND. See reference.
                     if vbox.ComError.equal(oXcpt, vbox.ComError.VBOX_E_OBJECT_NOT_FOUND):
                         #reporter.log2('\tNo more directory entries for "%s"' % (sCurDir,));
