@@ -33,6 +33,7 @@ include $(KBUILD_PATH)/subheader.kmk
 PROGRAMS.win += ntSetFreq
 ntSetFreq_TEMPLATE = VBoxValidationKitR3
 ntSetFreq_SOURCES  = ntsetfreq.cpp
+ntSetFreq_VBOX_IMPORT_CHECKER.win.x86 = nt350
 
 #
 # Test coherency among NT time sources.

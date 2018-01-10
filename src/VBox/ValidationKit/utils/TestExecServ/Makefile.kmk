@@ -36,7 +36,6 @@ TestExecService_DEFS = \
 TestExecService_SOURCES = \
 	TestExecService.cpp \
 	TestExecServiceTcp.cpp
-TestExecService_VBOX_IMPORT_CHECKER.win.x86   = nt31
 
 INSTALLS += TestExecServiceFiles
 TestExecServiceFiles_TEMPLATE                = VBoxValidationKitR3

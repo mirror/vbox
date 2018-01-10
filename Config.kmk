@@ -1643,7 +1643,7 @@ CXXDEFS  += $(CDEFS)
 OBJCDEFS += $(CDEFS)
 
 USES += dtrace
-USERS.win += vboximportchecker
+USES.win += vboximportchecker
 
 
 #
