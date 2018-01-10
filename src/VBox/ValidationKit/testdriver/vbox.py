@@ -560,7 +560,7 @@ class EventHandlerBase(object):
                 try:
                     oSrcParent.registerCallback(oRet);
                     return oRet;
-                except Exception, oXcpt:
+                except Exception as oXcpt:
                     if fMustSucceed or ComError.notEqual(oXcpt, ComError.E_UNEXPECTED):
                         reporter.errorXcpt('%s::registerCallback(%s)%s' % (sSrcParentNm, oRet, sLogSuffix));
         else:
@@ -579,7 +579,7 @@ class EventHandlerBase(object):
             else:
                 try:
                     oEventSrc.registerListener(oListener, [vboxcon.VBoxEventType_Any], not fPassive);
-                except Exception, oXcpt:
+                except Exception as oXcpt:
                     if fMustSucceed or ComError.notEqual(oXcpt, ComError.E_UNEXPECTED):
                         reporter.errorXcpt('%s::eventSource.registerListener(%s) failed%s' \
                                            % (sSrcParentNm, oListener, sLogSuffix));
@@ -2455,7 +2455,7 @@ class TestDriver(base.TestDriver):                                              
                 iCurPid   = iOrgPid   = oVM.sessionPID;
             else:
                 iCurPid   = iOrgPid   = oVM.sessionPid;
-        except Exception, oXcpt:
+        except Exception as oXcpt:
             if ComError.notEqual(oXcpt, ComError.E_ACCESSDENIED):
                 reporter.logXcpt();
             self.processPendingEvents();
@@ -2475,7 +2475,7 @@ class TestDriver(base.TestDriver):                                              
                 eCurState = oVM.sessionState;
                 sCurName  = oVM.sessionName if self.fpApiVer >= 5.0 else oVM.sessionType;
                 iCurPid   = oVM.sessionPID if self.fpApiVer >= 4.2 else oVM.sessionPid;
-            except Exception, oXcpt:
+            except Exception as oXcpt:
                 if ComError.notEqual(oXcpt, ComError.E_ACCESSDENIED):
                     reporter.logXcpt();
                 break;

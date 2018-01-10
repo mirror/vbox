@@ -1772,7 +1772,7 @@ class TransportTcp(TransportBase):
         tClientAddr   = None;
         try:
             (oClientSocket, tClientAddr) = oSocket.accept();
-        except socket.error, e:
+        except socket.error as e:
             if not self.__isInProgressXcpt(e):
                 raise;
 
@@ -1780,7 +1780,7 @@ class TransportTcp(TransportBase):
             reporter.log2('TransportTcp::accept: operation in progress (%s)...' % (e,));
             try:
                 select.select([oSocket, oWakeupR], [], [oSocket, oWakeupR], cMsTimeout / 1000.0);
-            except socket.error, e:
+            except socket.error as e:
                 if e[0] != errno.EBADF  or  not self.fConnectCanceled:
                     raise;
                 reporter.log('socket.select() on accept was canceled');
@@ -1791,7 +1791,7 @@ class TransportTcp(TransportBase):
             # Try accept again.
             try:
                 (oClientSocket, tClientAddr) = oSocket.accept();
-            except socket.error, e:
+            except socket.error as e:
                 if not self.__isInProgressXcpt(e):
                     if e[0] != errno.EBADF  or  not self.fConnectCanceled:
                         raise;
@@ -1824,7 +1824,7 @@ class TransportTcp(TransportBase):
         try:
             oSocket.connect((self.sHostname, self.uPort));
             rc = True;
-        except socket.error, e:
+        except socket.error as e:
             iRc = e[0];
             if self.__isInProgressXcpt(e):
                 # Do the actual waiting.
@@ -1835,7 +1835,7 @@ class TransportTcp(TransportBase):
                         raise socket.error(errno.ETIMEDOUT, 'select timed out');
                     iRc = oSocket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR);
                     rc = iRc == 0;
-                except socket.error, e:
+                except socket.error as e:
                     iRc = e[0];
                 except:
                     iRc = -42;
@@ -1955,7 +1955,7 @@ class TransportTcp(TransportBase):
             cbSent = self.oSocket.send(abBuf);
             if cbSent == len(abBuf):
                 return True;
-        except Exception, oXcpt:
+        except Exception as oXcpt:
             if not self.__isWouldBlockXcpt(oXcpt):
                 reporter.errorXcpt('TranportTcp.sendBytes: %s bytes' % (len(abBuf)));
                 return False;
@@ -1987,7 +1987,7 @@ class TransportTcp(TransportBase):
                 cbSent += self.oSocket.send(abBuf[cbSent:]);
                 if cbSent == len(abBuf):
                     return True;
-            except Exception, oXcpt:
+            except Exception as oXcpt:
                 if not self.__isWouldBlockXcpt(oXcpt):
                     reporter.errorXcpt('TranportTcp.sendBytes: %s bytes' % (len(abBuf)));
                     break;
@@ -2012,7 +2012,7 @@ class TransportTcp(TransportBase):
                 abBuf = self.oSocket.recv(cb - len(self.abReadAhead));
                 if abBuf:
                     self.abReadAhead.extend(array.array('B', abBuf));
-            except Exception, oXcpt:
+            except Exception as oXcpt:
                 if not self.__isWouldBlockXcpt(oXcpt):
                     reporter.errorXcpt('TranportTcp.recvBytes: 0/%s bytes' % (cb,));
                     return None;
@@ -2055,7 +2055,7 @@ class TransportTcp(TransportBase):
 
                 self.abReadAhead.extend(array.array('B', abBuf));
 
-            except Exception, oXcpt:
+            except Exception as oXcpt:
                 reporter.log('recv => exception %s' % (oXcpt,));
                 if not self.__isWouldBlockXcpt(oXcpt):
                     if not fNoDataOk  or  not self.__isConnectionReset(oXcpt)  or  self.abReadAhead:

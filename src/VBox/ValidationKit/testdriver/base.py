@@ -1079,7 +1079,7 @@ class TestDriverBase(object): # pylint: disable=R0902
         try:
             self.aoTasks[0].waitForTask(cMsTimeout);
             return True;
-        except Exception, oXcpt:
+        except Exception as oXcpt:
             reporter.log("waitForTasksSleepWorker: %s" % (str(oXcpt),));
             return False;
 
@@ -1443,7 +1443,7 @@ class TestDriverBase(object): # pylint: disable=R0902
                 try:
                     oFile = utils.openNoInherit(sFull, "rb");
                     oFile.close();
-                except Exception, oXcpt:
+                except Exception as oXcpt:
                     reporter.error('The file resource "%s" cannot be accessed: %s' % (sFull, oXcpt));
                     return False;
             elif os.path.isdir(sFull):
@@ -1613,9 +1613,9 @@ class TestDriverBase(object): # pylint: disable=R0902
                     if iNext == iArg:
                         raise InvalidOption('unknown option: %s' % (asArgs[iArg]))
                 iArg = iNext;
-        except QuietInvalidOption, oXcpt:
+        except QuietInvalidOption as oXcpt:
             return rtexitcode.RTEXITCODE_SYNTAX;
-        except InvalidOption, oXcpt:
+        except InvalidOption as oXcpt:
             reporter.error(oXcpt.str());
             return rtexitcode.RTEXITCODE_SYNTAX;
         except:

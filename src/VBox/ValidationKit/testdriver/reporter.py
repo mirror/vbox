@@ -431,7 +431,7 @@ class LocalReporter(ReporterBase):
     def __del__(self):
         """Ends and completes the log files."""
         try:    sTsIso = self.fnGetIsoTimestamp();
-        except Exception, oXcpt:
+        except Exception as oXcpt:
             sTsIso = str(oXcpt);
 
         if self.oLogFile is not None:
@@ -521,19 +521,19 @@ class LocalReporter(ReporterBase):
         fRc = True;
         try:
             oDstFile = utils.openNoInherit(sDstFilename, 'w');
-        except Exception, oXcpt:
+        except Exception as oXcpt:
             self.log(0, 'error opening %s: %s' % (sDstFilename, oXcpt), sCaller, sTsPrf);
         else:
             while True:
                 try:
                     abBuf = oSrcFile.read(65536);
-                except Exception, oXcpt:
+                except Exception as oXcpt:
                     fRc = False;
                     self.log(0, 'error reading %s: %s' % (sSrcFilename, oXcpt), sCaller, sTsPrf);
                 else:
                     try:
                         oDstFile.write(abBuf);
-                    except Exception, oXcpt:
+                    except Exception as oXcpt:
                         fRc = False;
                         self.log(0, 'error writing %s: %s' % (sDstFilename, oXcpt), sCaller, sTsPrf);
                     else:
@@ -561,12 +561,12 @@ class LocalReporter(ReporterBase):
         fRc = True;
         try:
             oDstFile = utils.openNoInherit(sDstFilename, 'w');
-        except Exception, oXcpt:
+        except Exception as oXcpt:
             self.log(0, 'error opening %s: %s' % (sDstFilename, oXcpt), sCaller, sTsPrf);
         else:
             try:
                 oDstFile.write(sLog);
-            except Exception, oXcpt:
+            except Exception as oXcpt:
                 fRc = False;
                 self.log(0, 'error writing %s: %s' % (sDstFilename, oXcpt), sCaller, sTsPrf);
 
@@ -718,7 +718,7 @@ class RemoteReporter(ReporterBase):
         oResponse = oConn.getresponse();
         try:
             sRspBody  = oResponse.read();
-        except httplib.IncompleteRead, oXcpt:
+        except httplib.IncompleteRead as oXcpt:
             self._writeOutput('%s: %s: Warning: httplib.IncompleteRead: %s [expected %s, got %s]'
                               % (utils.getTimePrefix(), sOperation, oXcpt, oXcpt.expected, len(oXcpt.partial),));
             sRspBody = oXcpt.partial;
@@ -860,7 +860,7 @@ class RemoteReporter(ReporterBase):
                 if fRc is False:
                     self._writeOutput('_xmlDoFlush: Failed - we should abort the test, really.');
                     return (None, True);
-            except Exception, oXcpt:
+            except Exception as oXcpt:
                 if not fDtor:
                     logXcpt('warning: exception during XML_RESULTS request');
                 else:
@@ -1422,7 +1422,7 @@ def addLogFile(sFilename, sKind, sDescription = '', sAltName = None):
 
     try:
         oSrcFile = utils.openNoInherit(sFilename, 'rb');
-    except IOError, oXcpt:
+    except IOError as oXcpt:
         if oXcpt.errno != errno.ENOENT:
             logXcpt('addLogFile(%s,%s,%s)' % (sFilename, sDescription, sKind));
         else:
@@ -1623,7 +1623,7 @@ def addSubXmlFile(sFilename):
     fRc = False;
     try:
         oSrcFile = utils.openNoInherit(sFilename, 'r');
-    except IOError, oXcpt:
+    except IOError as oXcpt:
         if oXcpt.errno != errno.ENOENT:
             logXcpt('addSubXmlFile(%s)' % (sFilename,));
     except:
