@@ -598,10 +598,11 @@ int main(int argc, char **argv)
         return RTMsgInitFailure(rc);
 
     RTCHECKIMPORTSOPTS Opts;
-    Opts.cPaths     = 0;
-    Opts.papszPaths = NULL;
-    Opts.enmLdrArch = RTLDRARCH_WHATEVER;
-    Opts.cVerbosity = 1;
+    Opts.cPaths        = 0;
+    Opts.papszPaths    = NULL;
+    Opts.enmLdrArch    = RTLDRARCH_WHATEVER;
+    Opts.cVerbosity    = 1;
+    Opts.fListOrdinals = false;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
