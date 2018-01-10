@@ -146,7 +146,7 @@ include $(FILE_KBUILD_SUB_FOOTER)
 # Construct the file spec for creating the Validation Kit guest iso.
 #
 VBOX_VALIDATIONKIT_FILESPEC = \
-	$(VBOX_PATH_VALIDATIONKIT)/docs/valkit.txt \
+	$(VBOX_PATH_VALIDATIONKIT_SRC)/docs/valkit.txt \
 	$(VBOX_PATH_VALIDATIONKIT)/vboxtxs-readme.txt
 ifneq ($(KBUILD_HOST),os2)
  VBOX_VALIDATIONKIT_FILESPEC += \
