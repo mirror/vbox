@@ -36,7 +36,7 @@ TestExecService_DEFS = \
 TestExecService_SOURCES = \
 	TestExecService.cpp \
 	TestExecServiceTcp.cpp
-TestExecService_VBOX_IMPORT_CHECKER.win.x86   = nt31 $(warning fix VBOX_IMPORT_CHECKER.win.x86 template bugbug!)
+TestExecService_VBOX_IMPORT_CHECKER.win.x86   = nt31
 
 INSTALLS += TestExecServiceFiles
 TestExecServiceFiles_TEMPLATE                = VBoxValidationKitR3
@@ -64,9 +64,4 @@ TestExecServiceFiles_EXEC_SOURCES.win     := \
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
-
-#%fffffe800000600c 0f 20 dc                mov esp, cr3
-#%fffffe800000600f 0f 1f 44 00 00          db 00fh, 01fh,044h,090h,090h
-#%fffffe8000006014 48 81 e4 ff e7 ff ff    and rsp, 0ffffffffffffe7ffh
-#%fffffe800000601b 0f 22 dc                mov cr3, esp
 
