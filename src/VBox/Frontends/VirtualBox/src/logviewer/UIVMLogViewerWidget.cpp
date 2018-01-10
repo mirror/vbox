@@ -237,6 +237,8 @@ bool UIVMLogViewerWidget::shouldBeMaximized() const
 
 void UIVMLogViewerWidget::sltPanelActionTriggered(bool checked)
 {
+    RT_NOREF(checked);
+
     QAction *pSenderAction = qobject_cast<QAction*>(sender());
     if(!pSenderAction)
         return;
