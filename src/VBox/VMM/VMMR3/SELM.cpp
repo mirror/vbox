@@ -315,9 +315,9 @@ VMMR3DECL(int) SELMR3Init(PVM pVM)
         DBGFR3InfoRegisterInternal(pVM, "ldt",      "Displays the shadow LDT. No arguments.",   &selmR3InfoLdt);
         //DBGFR3InfoRegisterInternal(pVM, "tss",      "Displays the shadow TSS. No arguments.",   &selmR3InfoTss);
     }
-    DBGFR3InfoRegisterInternal(pVM, "gdtguest", "Displays the guest GDT. No arguments.",    &selmR3InfoGdtGuest);
-    DBGFR3InfoRegisterInternal(pVM, "ldtguest", "Displays the guest LDT. No arguments.",    &selmR3InfoLdtGuest);
-    //DBGFR3InfoRegisterInternal(pVM, "tssguest", "Displays the guest TSS. No arguments.",    &selmR3InfoTssGuest);
+    DBGFR3InfoRegisterInternalEx(pVM, "gdtguest", "Displays the guest GDT. No arguments.", &selmR3InfoGdtGuest, DBGFINFO_FLAGS_RUN_ON_EMT);
+    DBGFR3InfoRegisterInternalEx(pVM, "ldtguest", "Displays the guest LDT. No arguments.", &selmR3InfoLdtGuest, DBGFINFO_FLAGS_RUN_ON_EMT);
+    //DBGFR3InfoRegisterInternal(pVM, "tssguest", "Displays the guest TSS. No arguments.", &selmR3InfoTssGuest, DBGFINFO_FLAGS_RUN_ON_EMT);
 
     return rc;
 }
