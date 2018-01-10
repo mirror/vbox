@@ -282,24 +282,30 @@ def openNoInherit(sFile, sMode = 'r'):
     multithreaded programs.
     """
 
-    try:
-        from fcntl import FD_CLOEXEC, F_GETFD, F_SETFD, fcntl; # pylint: disable=F0401
-    except:
-        # On windows, use the 'N' flag introduces in Visual C++ 7.0 or 7.1.
-        if getHostOs() == 'win':
-            offComma = sMode.find(',');
-            if offComma < 0:
-                return open(sFile, sMode + 'N');
-            return open(sFile, sMode[:offComma] + 'N' + sMode[offComma:]);
+    # Python 3.4 and later automatically creates non-inherit handles. See PEP-0446.
+    uPythonVer = (sys.version_info[0] << 16) | (sys.version_info[1] & 0xffff);
+    if uPythonVer >= ((3 << 16) | 4):
+        oFile = open(sFile, sMode);
+    else:
+        try:
+            from fcntl import FD_CLOEXEC, F_GETFD, F_SETFD, fcntl; # pylint: disable=F0401
+        except:
+            # On windows, we can use the 'N' flag introduced in Visual C++ 7.0 or 7.1 with python 2.x.
+            if getHostOs() == 'win':
+                if uPythonVer < (3 << 16):
+                    offComma = sMode.find(',');
+                    if offComma < 0:
+                        return open(sFile, sMode + 'N');
+                    return open(sFile, sMode[:offComma] + 'N' + sMode[offComma:]);
 
-        # Just in case.
-        return open(sFile, sMode);
+            # Just in case.
+            return open(sFile, sMode);
 
-    oFile = open(sFile, sMode)
-    #try:
-    fcntl(oFile, F_SETFD, fcntl(oFile, F_GETFD) | FD_CLOEXEC);
-    #except:
-    #    pass;
+        oFile = open(sFile, sMode);
+        #try:
+        fcntl(oFile, F_SETFD, fcntl(oFile, F_GETFD) | FD_CLOEXEC);
+        #except:
+        #    pass;
     return oFile;
 
 def openNoDenyDeleteNoInherit(sFile, sMode = 'r'):
@@ -312,58 +318,58 @@ def openNoDenyDeleteNoInherit(sFile, sMode = 'r'):
     multithreaded programs.
     """
 
-    try:
-        from fcntl import FD_CLOEXEC, F_GETFD, F_SETFD, fcntl; # pylint: disable=F0401
-    except:
-        if getHostOs() == 'win':
-            # Need to use CreateFile directly to open the file so we can feed it FILE_SHARE_DELETE.
-            fAccess = 0;
-            fDisposition = win32file.OPEN_EXISTING;                                                 # pylint: disable=no-member
-            if 'r' in sMode or '+' in sMode:
-                fAccess |= win32file.GENERIC_READ;                                                  # pylint: disable=no-member
-            if 'a' in sMode:
-                fAccess |= win32file.GENERIC_WRITE;                                                 # pylint: disable=no-member
-                fDisposition = win32file.OPEN_ALWAYS;                                               # pylint: disable=no-member
-            elif 'w' in sMode:
-                fAccess = win32file.GENERIC_WRITE;                                                  # pylint: disable=no-member
-                if '+' in sMode:
-                    fDisposition = win32file.OPEN_ALWAYS;                                           # pylint: disable=no-member
-                    fAccess |= win32file.GENERIC_READ;                                              # pylint: disable=no-member
-                else:
-                    fDisposition = win32file.CREATE_ALWAYS;                                         # pylint: disable=no-member
-            if not fAccess:
-                fAccess |= win32file.GENERIC_READ;                                                  # pylint: disable=no-member
-            fSharing = (win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE                      # pylint: disable=no-member
-                        | win32file.FILE_SHARE_DELETE);                                             # pylint: disable=no-member
-            hFile = win32file.CreateFile(sFile, fAccess, fSharing, None, fDisposition, 0, None);    # pylint: disable=no-member
-            if 'a' in sMode:
-                win32file.SetFilePointer(hFile, 0, win32file.FILE_END);                             # pylint: disable=no-member
-
-            # Turn the NT handle into a CRT file descriptor.
-            hDetachedFile = hFile.Detach();
-            if fAccess == win32file.GENERIC_READ:                                                   # pylint: disable=no-member
-                fOpen = os.O_RDONLY;
-            elif fAccess == win32file.GENERIC_WRITE:                                                # pylint: disable=no-member
-                fOpen = os.O_WRONLY;
+    if getHostOs() == 'win':
+        # Need to use CreateFile directly to open the file so we can feed it FILE_SHARE_DELETE.
+        fAccess = 0;
+        fDisposition = win32file.OPEN_EXISTING;                                                 # pylint: disable=no-member
+        if 'r' in sMode or '+' in sMode:
+            fAccess |= win32file.GENERIC_READ;                                                  # pylint: disable=no-member
+        if 'a' in sMode:
+            fAccess |= win32file.GENERIC_WRITE;                                                 # pylint: disable=no-member
+            fDisposition = win32file.OPEN_ALWAYS;                                               # pylint: disable=no-member
+        elif 'w' in sMode:
+            fAccess = win32file.GENERIC_WRITE;                                                  # pylint: disable=no-member
+            if '+' in sMode:
+                fDisposition = win32file.OPEN_ALWAYS;                                           # pylint: disable=no-member
+                fAccess |= win32file.GENERIC_READ;                                              # pylint: disable=no-member
             else:
-                fOpen = os.O_RDWR;
-            if 'a' in sMode:
-                fOpen |= os.O_APPEND;
-            if 'b' in sMode or 't' in sMode:
-                fOpen |= os.O_TEXT;                                                                 # pylint: disable=no-member
-            fdFile = msvcrt.open_osfhandle(hDetachedFile, fOpen);
+                fDisposition = win32file.CREATE_ALWAYS;                                         # pylint: disable=no-member
+        if not fAccess:
+            fAccess |= win32file.GENERIC_READ;                                                  # pylint: disable=no-member
+        fSharing = (win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE                      # pylint: disable=no-member
+                    | win32file.FILE_SHARE_DELETE);                                             # pylint: disable=no-member
+        hFile = win32file.CreateFile(sFile, fAccess, fSharing, None, fDisposition, 0, None);    # pylint: disable=no-member
+        if 'a' in sMode:
+            win32file.SetFilePointer(hFile, 0, win32file.FILE_END);                             # pylint: disable=no-member
 
-            # Tell python to use this handle.
-            return os.fdopen(fdFile, sMode);
+        # Turn the NT handle into a CRT file descriptor.
+        hDetachedFile = hFile.Detach();
+        if fAccess == win32file.GENERIC_READ:                                                   # pylint: disable=no-member
+            fOpen = os.O_RDONLY;
+        elif fAccess == win32file.GENERIC_WRITE:                                                # pylint: disable=no-member
+            fOpen = os.O_WRONLY;
+        else:
+            fOpen = os.O_RDWR;
+        if 'a' in sMode:
+            fOpen |= os.O_APPEND;
+        if 'b' in sMode or 't' in sMode:
+            fOpen |= os.O_TEXT;                                                                 # pylint: disable=no-member
+        fdFile = msvcrt.open_osfhandle(hDetachedFile, fOpen);
 
-        # Just in case.
-        return open(sFile, sMode);
+        # Tell python to use this handle.
+        oFile = os.fdopen(fdFile, sMode);
+    else:
+        oFile = open(sFile, sMode);
 
-    oFile = open(sFile, sMode)
-    #try:
-    fcntl(oFile, F_SETFD, fcntl(oFile, F_GETFD) | FD_CLOEXEC);
-    #except:
-    #    pass;
+        # Python 3.4 and later automatically creates non-inherit handles. See PEP-0446.
+        uPythonVer = (sys.version_info[0] << 16) | (sys.version_info[1] & 0xffff);
+        if uPythonVer < ((3 << 16) | 4):
+            try:
+                from fcntl import FD_CLOEXEC, F_GETFD, F_SETFD, fcntl; # pylint: disable=F0401
+            except:
+                pass;
+            else:
+                fcntl(oFile, F_SETFD, fcntl(oFile, F_GETFD) | FD_CLOEXEC);
     return oFile;
 
 def noxcptReadLink(sPath, sXcptRet):
