@@ -544,8 +544,11 @@ void UIStatusBarEditorWidget::prepare()
         {
             /* Configure button-layout: */
             m_pButtonLayout->setContentsMargins(0, 0, 0, 0);
-            const int iS = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2;
-            m_pButtonLayout->setSpacing(iS);
+#ifdef VBOX_WS_MAC
+            m_pButtonLayout->setSpacing(5);
+#else
+            m_pButtonLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+#endif
             /* Add button-layout into main-layout: */
             m_pMainLayout->addLayout(m_pButtonLayout);
         }

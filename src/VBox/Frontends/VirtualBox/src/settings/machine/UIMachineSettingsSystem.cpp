@@ -755,8 +755,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             m_pLayoutBootOrder->setContentsMargins(3, 3, 3, 3);
             m_pLayoutBootOrder->setSpacing(3);
 #else
-            const int iS = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 3;
-            m_pLayoutBootOrder->setSpacing(iS);
+            m_pLayoutBootOrder->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 3);
 #endif
 
             /* Boot-order tree-widget created in the .ui file. */

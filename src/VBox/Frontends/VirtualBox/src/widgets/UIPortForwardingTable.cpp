@@ -827,8 +827,7 @@ UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rul
         pMainLayout->setContentsMargins(0, 0, 0, 0);
         pMainLayout->setSpacing(3);
 #else
-        const int iS = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 3;
-        pMainLayout->setSpacing(iS);
+        pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 3);
 #endif
         /* Create table: */
         m_pTableView = new UIPortForwardingView;

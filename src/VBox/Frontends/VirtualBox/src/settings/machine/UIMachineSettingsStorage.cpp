@@ -3450,8 +3450,7 @@ void UIMachineSettingsStorage::prepare()
         mLtStorage->setContentsMargins(3, 0, 3, 0);
         mLtStorage->setSpacing(3);
 #else
-        const int iS = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 3;
-        mLtStorage->setSpacing(iS);
+        mLtStorage->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 3);
 #endif
 
         /* Prepare storage tree: */

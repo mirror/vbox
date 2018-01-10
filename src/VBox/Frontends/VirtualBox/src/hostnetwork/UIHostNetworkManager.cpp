@@ -814,8 +814,7 @@ void UIHostNetworkManagerWidget::prepareWidgets()
 #ifdef VBOX_WS_MAC
         layout()->setSpacing(10);
 #else
-        const int iS = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2;
-        layout()->setSpacing(iS);
+        layout()->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
 #endif
 
         /* Prepare toolbar: */

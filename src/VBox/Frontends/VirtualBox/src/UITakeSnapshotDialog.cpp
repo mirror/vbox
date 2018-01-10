@@ -101,8 +101,12 @@ void UITakeSnapshotDialog::prepare()
     AssertPtrReturnVoid(pLayout);
     {
         /* Configure layout: */
-        const int iS0 = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) * 2;
-        pLayout->setSpacing(iS0);
+#ifdef VBOX_WS_MAC
+        pLayout->setSpacing(20);
+        pLayout->setContentsMargins(40, 20, 40, 20);
+#else
+        pLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) * 2);
+#endif
 
         /* Create sub-layout: */
         QVBoxLayout *pSubLayout1 = new QVBoxLayout;
@@ -131,8 +135,11 @@ void UITakeSnapshotDialog::prepare()
         AssertPtrReturnVoid(pSubLayout2);
         {
             /* Configure layout: */
-            const int iS2 = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2;
-            pSubLayout2->setSpacing(iS2);
+#ifdef VBOX_WS_MAC
+            pSubLayout2->setSpacing(5);
+#else
+            pSubLayout2->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
+#endif
 
             /* Create name label: */
             m_pLabelName = new QLabel;
@@ -164,8 +171,11 @@ void UITakeSnapshotDialog::prepare()
         AssertPtrReturnVoid(pSubLayout3);
         {
             /* Configure layout: */
-            const int iS3 = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2;
-            pSubLayout3->setSpacing(iS3);
+#ifdef VBOX_WS_MAC
+            pSubLayout3->setSpacing(5);
+#else
+            pSubLayout3->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
+#endif
 
             /* Create description label: */
             m_pLabelDescription = new QLabel;
