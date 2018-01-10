@@ -40,10 +40,6 @@ class UIVMLogViewerPanel : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
-signals:
-
-    void sigHide();
-
 public:
 
     UIVMLogViewerPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);

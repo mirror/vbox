@@ -335,13 +335,13 @@ void UIVMLogViewerSearchPanel::retranslateUi()
     m_pNextPrevButtons->setToolTip(0, UIVMLogViewerWidget::tr("Search for the previous occurrence of the string"));
     m_pNextPrevButtons->setToolTip(1, UIVMLogViewerWidget::tr("Search for the next occurrence of the string"));
 
-    m_pCaseSensitiveCheckBox->setText(UIVMLogViewerWidget::tr("C&ase\nSensitive"));
+    m_pCaseSensitiveCheckBox->setText(UIVMLogViewerWidget::tr("C&ase Sensitive"));
     m_pCaseSensitiveCheckBox->setToolTip(UIVMLogViewerWidget::tr("Perform case sensitive search (when checked)"));
 
-    m_pMatchWholeWordCheckBox->setText(UIVMLogViewerWidget::tr("Ma&tch\nWhole Word"));
+    m_pMatchWholeWordCheckBox->setText(UIVMLogViewerWidget::tr("Ma&tch Whole Word"));
     m_pMatchWholeWordCheckBox->setToolTip(UIVMLogViewerWidget::tr("Search matches only complete words when checked"));
 
-    m_pHighlightAllCheckBox->setText(UIVMLogViewerWidget::tr("&Highlight\nAll"));
+    m_pHighlightAllCheckBox->setText(UIVMLogViewerWidget::tr("&Highlight All"));
     m_pHighlightAllCheckBox->setToolTip(UIVMLogViewerWidget::tr("All occurence of the search text are highlighted"));
 
     if (m_iMatchCount == 0)

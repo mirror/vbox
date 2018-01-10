@@ -181,6 +181,7 @@ private:
     QString m_logFileName;
 };
 
+
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */, const CMachine &machine /* = CMachine() */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fIsPolished(false)
@@ -237,18 +238,23 @@ bool UIVMLogViewerWidget::shouldBeMaximized() const
 
 void UIVMLogViewerWidget::sltPanelActionTriggered(bool checked)
 {
-    RT_NOREF(checked);
-
     QAction *pSenderAction = qobject_cast<QAction*>(sender());
     if(!pSenderAction)
         return;
+    UIVMLogViewerPanel* pPanel = 0;
     /* Look for the sender() within the m_panelActionMap's values: */
-    for(QMap<UIVMLogViewerPanel**, QAction**>::const_iterator iterator = m_panelActionMap.begin();
+    for(QMap<UIVMLogViewerPanel*, QAction*>::const_iterator iterator = m_panelActionMap.begin();
         iterator != m_panelActionMap.end(); ++iterator)
     {
-        if(iterator.value() == &pSenderAction)
-            continue;
+        if(iterator.value() == pSenderAction)
+            pPanel = iterator.key();
     }
+    if(!pPanel)
+        return;
+    if(checked)
+        showPanel(pPanel);
+    else
+        hidePanel(pPanel);
 }
 
 void UIVMLogViewerWidget::sltShowHideSearchPanel()
@@ -451,19 +457,24 @@ void UIVMLogViewerWidget::prepare()
 {
     m_pMainLayout = new QVBoxLayout(this);
 
+    /* Prepare widgets: */
+    prepareWidgets();
+
+
     prepareActions();
 
     prepareToolBar();
     prepareMenu();
-
-    /* Prepare widgets: */
-    prepareWidgets();
 
     /* Reading log files: */
     sltRefresh();
 
     /* Loading language constants: */
     retranslateUi();
+
+    m_panelActionMap.insert(m_pBookmarksPanel, m_pActionBookmark);
+    m_panelActionMap.insert(m_pSearchPanel, m_pActionFind);
+    m_panelActionMap.insert(m_pFilterPanel, m_pActionFilter);
 }
 
 void UIVMLogViewerWidget::prepareWidgets()
@@ -514,13 +525,11 @@ void UIVMLogViewerWidget::prepareWidgets()
     m_pBookmarksPanel = new UIVMLogViewerBookmarksPanel(this, this);
     AssertPtrReturnVoid(m_pBookmarksPanel);
     {
-        //QMap<UIVMLogViewerPanel*&, QAction*&> m_panelActionMap;
-        m_panelActionMap.insert(reinterpret_cast<UIVMLogViewerPanel**>(&m_pBookmarksPanel), &m_pActionBookmark);
-        //connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigHide, this, &UIVMLogViewerWidget::sltHidePanel);
         installEventFilter(m_pBookmarksPanel);
         m_pBookmarksPanel->hide();
         m_pMainLayout->insertWidget(4, m_pBookmarksPanel);
     }
+
 }
 
 void UIVMLogViewerWidget::prepareActions()
@@ -531,7 +540,7 @@ void UIVMLogViewerWidget::prepareActions()
     {
         m_pActionFind->setShortcut(QKeySequence("Ctrl+F"));
         m_pActionFind->setCheckable(true);
-        connect(m_pActionFind, &QAction::triggered, this, &UIVMLogViewerWidget::sltShowHideSearchPanel);
+        connect(m_pActionFind, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionTriggered);
     }
 
     /* Create and configure 'Filter' action: */
@@ -540,7 +549,18 @@ void UIVMLogViewerWidget::prepareActions()
     {
         m_pActionFilter->setShortcut(QKeySequence("Ctrl+T"));
         m_pActionFilter->setCheckable(true);
-        connect(m_pActionFilter, &QAction::triggered, this, &UIVMLogViewerWidget::sltShowHideFilterPanel);
+        connect(m_pActionFilter, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionTriggered);
+    }
+    /* Create and configure 'Bookmark' action: */
+    m_pActionBookmark = new QAction(this);
+    AssertPtrReturnVoid(m_pActionBookmark);
+    {
+        /* tie Ctrl+D to save only if we show this in a dialog since Ctrl+D is
+           already assigned to another action in the selector UI: */
+        if (m_enmEmbedding == EmbedTo_Dialog)
+            m_pActionBookmark->setShortcut(QKeySequence("Ctrl+D"));
+        m_pActionBookmark->setCheckable(true);
+        connect(m_pActionBookmark, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionTriggered);
     }
 
     /* Create and configure 'Refresh' action: */
@@ -561,18 +581,6 @@ void UIVMLogViewerWidget::prepareActions()
             m_pActionSave->setShortcut(QKeySequence("Ctrl+S"));
         connect(m_pActionSave, &QAction::triggered, this, &UIVMLogViewerWidget::sltSave);
      }
-
-    /* Create and configure 'Bookmark' action: */
-    m_pActionBookmark = new QAction(this);
-    AssertPtrReturnVoid(m_pActionBookmark);
-    {
-        /* tie Ctrl+D to save only if we show this in a dialog since Ctrl+D is
-           already assigned to another action in the selector UI: */
-        if (m_enmEmbedding == EmbedTo_Dialog)
-            m_pActionBookmark->setShortcut(QKeySequence("Ctrl+D"));
-        m_pActionBookmark->setCheckable(true);
-        connect(m_pActionBookmark, &QAction::triggered, this, &UIVMLogViewerWidget::sltShowHideBookmarkPanel);
-    }
 
     /* Update action icons: */
     prepareActionIcons();
@@ -828,16 +836,26 @@ QVector<LogBookmark>* UIVMLogViewerWidget::currentBookmarkVector()
 
 void UIVMLogViewerWidget::hidePanel(UIVMLogViewerPanel* panel)
 {
-    if (!panel || panel->isHidden())
-        return;
-    panel->setVisible(false);
+    if (panel && panel->isVisible())
+        panel->setVisible(false);
+    QMap<UIVMLogViewerPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
+    if(iterator != m_panelActionMap.end())
+    {
+        if(iterator.value()->isChecked())
+            iterator.value()->setChecked(false);
+    }
 }
 
 void UIVMLogViewerWidget::showPanel(UIVMLogViewerPanel* panel)
 {
-    if (!panel || panel->isVisible())
-        return;
-    panel->setVisible(true);
+    if (panel && panel->isHidden())
+        panel->setVisible(true);
+    QMap<UIVMLogViewerPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
+    if(iterator != m_panelActionMap.end())
+    {
+        if(!iterator.value()->isChecked())
+            iterator.value()->setChecked(true);
+    }
 }
 
 QPlainTextEdit* UIVMLogViewerWidget::logPage(int pIndex) const

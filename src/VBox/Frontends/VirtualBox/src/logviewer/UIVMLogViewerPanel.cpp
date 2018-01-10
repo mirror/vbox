@@ -119,7 +119,8 @@ void UIVMLogViewerPanel::hideEvent(QHideEvent *pEvent)
      * focus next child-widget in line: */
     if (pFocus && pFocus->parent() == this)
         focusNextPrevChild(true);
+    if(m_pViewer)
+        m_pViewer->hidePanel(this);
 
     QWidget::hideEvent(pEvent);
-    emit sigHide();
 }
