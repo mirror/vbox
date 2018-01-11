@@ -37,6 +37,7 @@
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
 # include "UIMessageCenter.h"
+# include "UIVMLogPage.h"
 # include "UIVMLogViewerWidget.h"
 # include "UIVMLogViewerBookmarksPanel.h"
 # include "UIVMLogViewerFilterPanel.h"
@@ -51,144 +52,11 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/** We use a modified scrollbar style for our QPlainTextEdits to get the
-    markings on the scrollbars correctly. The default scrollbarstyle does not
-    reveal the height of the pushbuttons on the scrollbar (on either side of it, with arrow on them)
-    to compute the marking locations correctly. Thus we turn these push buttons off: */
-const QString verticalScrollBarStyle("QScrollBar:vertical {"
-                                     "border: 1px ridge grey; "
-                                     "margin: 0px 0px 0 0px;}"
-                                     "QScrollBar::handle:vertical {"
-                                     "min-height: 10px;"
-                                     "background: grey;}"
-                                     "QScrollBar::add-line:vertical {"
-                                     "width: 0px;}"
-                                     "QScrollBar::sub-line:vertical {"
-                                     "width: 0px;}");
-
-const QString horizontalScrollBarStyle("QScrollBar:horizontal {"
-                                       "border: 1px ridge grey; "
-                                       "margin: 0px 0px 0 0px;}"
-                                       "QScrollBar::handle:horizontal {"
-                                       "min-height: 10px;"
-                                       "background: grey;}"
-                                       "QScrollBar::add-line:horizontal {"
-                                       "height: 0px;}"
-                                       "QScrollBar::sub-line:horizontal {"
-                                       "height: 0px;}");
-
-class UIIndicatorScrollBar : public QScrollBar
-{
-    Q_OBJECT;
-
-public:
-
-    UIIndicatorScrollBar(QWidget *parent = 0)
-        :QScrollBar(parent)
-    {
-        setStyleSheet(verticalScrollBarStyle);
-    }
-
-    void setMarkingsVector(const QVector<float> &vector)
-    {
-        m_markingsVector = vector;
-    }
-
-protected:
-
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */
-    {
-        QScrollBar::paintEvent(pEvent);
-        /* Put a red line to marking position: */
-        for (int i = 0; i < m_markingsVector.size(); ++i)
-        {
-            QPointF p1 = QPointF(0, m_markingsVector[i] * height());
-            QPointF p2 = QPointF(width(), m_markingsVector[i] * height());
-
-            QPainter painter(this);
-            painter.setRenderHint(QPainter::Antialiasing, true);
-            painter.setPen(QPen(QColor(255, 0, 0, 75), 1.1f));
-            painter.drawLine(p1, p2);
-        }
-    }
-
-private:
-
-    /* Stores the relative (to scrollbar's height) positions of markings,
-       where we draw a horizontal line. Values are in [0.0, 1.0]*/
-    QVector<float> m_markingsVector;
-};
-
-/* Sub-class QPlainTextEdit for some addtional context menu items: */
-class UIVMLogViewerTextEdit : public QPlainTextEdit
-{
-    Q_OBJECT;
-
-signals:
-
-    void sigContextMenuBookmarkAction(LogBookmark bookmark);
-
-public:
-    UIVMLogViewerTextEdit(QWidget* parent = 0, const QString& logFileName = QString())
-        :QPlainTextEdit(parent),
-         m_logFileName(logFileName)
-    {
-        //setStyleSheet("background-color: rgba(240, 240, 240, 75%) ");
-    }
-
-    const QString& logFileName() const
-    {
-        return m_logFileName;
-    }
-
-protected:
-
-    void contextMenuEvent(QContextMenuEvent *pEvent)
-    {
-        QMenu *menu = createStandardContextMenu();
-        QAction *pAction = menu->addAction(tr("Bookmark"));
-        QTextBlock block = cursorForPosition(pEvent->pos()).block();
-        m_iContextMenuBookmark.first = block.firstLineNumber();
-        m_iContextMenuBookmark.second = block.text();
-
-        if (pAction)
-            connect(pAction, &QAction::triggered, this, &UIVMLogViewerTextEdit::sltBookmark);
-
-        menu->exec(pEvent->globalPos());
-
-        if (pAction)
-            disconnect(pAction, &QAction::triggered, this, &UIVMLogViewerTextEdit::sltBookmark);
-
-        delete menu;
-    }
-
-    virtual void mousePressEvent(QMouseEvent *pEvent)
-    {
-        QPlainTextEdit::mousePressEvent(pEvent);
-    }
-
-private slots:
-    /// remove
-    void sltBookmark()
-    {
-        emit sigContextMenuBookmarkAction(m_iContextMenuBookmark);
-    }
-
-private:
-
-    /* Line number and text at the context menu position */
-    LogBookmark m_iContextMenuBookmark;
-    /* Name of the log file this text edit created to show. */
-    QString m_logFileName;
-};
-
-
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */, const CMachine &machine /* = CMachine() */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fIsPolished(false)
     , m_comMachine(machine)
-    , m_pViewerContainer(0)
-    , m_iCurrentTabIndex(-1)
+    , m_pTabWidget(0)
     , m_pSearchPanel(0)
     , m_pFilterPanel(0)
     , m_pBookmarksPanel(0)
@@ -215,10 +83,10 @@ UIVMLogViewerWidget::~UIVMLogViewerWidget()
 
 int UIVMLogViewerWidget::defaultLogPageWidth() const
 {
-    if (!m_pViewerContainer)
+    if (!m_pTabWidget)
         return 0;
 
-    QWidget *pContainer = m_pViewerContainer->currentWidget();
+    QWidget *pContainer = m_pTabWidget->currentWidget();
     if (!pContainer)
         return 0;
 
@@ -238,37 +106,37 @@ bool UIVMLogViewerWidget::shouldBeMaximized() const
     return gEDataManager->logWindowShouldBeMaximized();
 }
 
-void UIVMLogViewerWidget::sltDeleteBookmark(int index)
+void UIVMLogViewerWidget::sltDeleteBookmark(int /*index*/)
 {
-    QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
-    if(!bookmarkVector || bookmarkVector->size() <= index)
-        return;
-    bookmarkVector->remove(index, 1);
-    if (m_pBookmarksPanel)
-        m_pBookmarksPanel->updateBookmarkList(bookmarkVector);
+    // QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
+    // if (!bookmarkVector || bookmarkVector->size() <= index)
+    //     return;
+    // bookmarkVector->remove(index, 1);
+    // if (m_pBookmarksPanel)
+    //     m_pBookmarksPanel->updateBookmarkList(bookmarkVector);
 }
 
 void UIVMLogViewerWidget::sltDeleteAllBookmarks()
 {
-    QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
-    if(!bookmarkVector)
-        return;
-    bookmarkVector->clear();
-    if (m_pBookmarksPanel)
-        m_pBookmarksPanel->updateBookmarkList(bookmarkVector);
+    // QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
+    // if (!bookmarkVector)
+    //     return;
+    // bookmarkVector->clear();
+    // if (m_pBookmarksPanel)
+    //     m_pBookmarksPanel->updateBookmarkList(bookmarkVector);
 }
 
-void UIVMLogViewerWidget::sltBookmarkSelected(int index)
+void UIVMLogViewerWidget::sltBookmarkSelected(int /*index*/)
 {
-    QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
-    if(!bookmarkVector || index >= bookmarkVector->size())
-        return;
-    if(!currentLogPage() || !currentLogPage()->document())
-        return;
+    // QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
+    // if (!bookmarkVector || index >= bookmarkVector->size())
+    //     return;
+    // if (!currentLogPage() || !currentLogPage()->document())
+    //     return;
 
-    int lineNumber = bookmarkVector->at(index).first;
-    QTextCursor cursor(currentLogPage()->document()->findBlockByLineNumber(lineNumber));
-    currentLogPage()->setTextCursor(cursor);
+    // int lineNumber = bookmarkVector->at(index).first;
+    // QTextCursor cursor(currentLogPage()->document()->findBlockByLineNumber(lineNumber));
+    // currentLogPage()->setTextCursor(cursor);
 
 }
 
@@ -296,71 +164,43 @@ void UIVMLogViewerWidget::sltPanelActionTriggered(bool checked)
 void UIVMLogViewerWidget::sltRefresh()
 {
     /* Disconnect this connection to avoid initial signals during page creation/deletion: */
-    disconnect(m_pViewerContainer, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
-    disconnect(m_pViewerContainer, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
+    disconnect(m_pTabWidget, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
+    disconnect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
 
-    m_logMap.clear();
-    m_pViewerContainer->setEnabled(true);
+    // m_logMap.clear();
+    m_logPageList.clear();
+    m_pTabWidget->setEnabled(true);
     /* Hide the container widget during updates to avoid flickering: */
-    m_pViewerContainer->hide();
-    while (m_pViewerContainer->count())
+    m_pTabWidget->hide();
+    /* Clear the tab widget. This might be an overkill but most secure way to deal with the case where
+       number of the log files changes. */
+    while (m_pTabWidget->count())
     {
-        QWidget *pFirstPage = m_pViewerContainer->widget(0);
-        m_pViewerContainer->removeTab(0);
+        QWidget *pFirstPage = m_pTabWidget->widget(0);
+        m_pTabWidget->removeTab(0);
         delete pFirstPage;
     }
 
-    m_iCurrentTabIndex = -1;
-    bool noLogsToShow = false;
-    QString strDummyTabText;
-    /* check if the machine is valid: */
-    if (m_comMachine.isNull())
-    {
-        noLogsToShow = true;
-        strDummyTabText = QString(tr("<p><b>No machine</b> is currently selected. Please select a "
-                                     "Virtual Machine to see its logs"));
-    }
-    /* If machine is valid and check if there are any log files and create viewer tabs: */
-    else if (!createLogViewerPages())
-    {
-        noLogsToShow = true;
-        strDummyTabText = QString(tr("<p>No log files found. Press the "
-                                     "<b>Refresh</b> button to rescan the log folder "
-                                     "<nobr><b>%1</b></nobr>.</p>")
-                                     .arg(m_comMachine.GetLogFolder()));
-    }
-    /* If the machine is not valid or has no log files show a single viewer tab: */
-    if (noLogsToShow)
-    {
-        QPlainTextEdit *pDummyLog = createLogPage("VBox.log");
-        pDummyLog->setWordWrapMode(QTextOption::WordWrap);
-        pDummyLog->appendHtml(strDummyTabText);
-        /* We don't want it to remain white: */
-        QPalette pal = pDummyLog->palette();
-        pal.setColor(QPalette::Base, pal.color(QPalette::Window));
-        pDummyLog->setPalette(pal);
-    }
+    bool noLogsToShow = createLogViewerPages();
 
     /* Show the first tab widget's page after the refresh: */
-    m_pViewerContainer->setCurrentIndex(0);
+    m_pTabWidget->setCurrentIndex(0);
 
     /* Apply the filter settings: */
     if (m_pFilterPanel)
         m_pFilterPanel->applyFilter();
 
     /* Setup this connection after refresh to avoid initial signals during page creation: */
-    connect(m_pViewerContainer, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
-    connect(m_pViewerContainer, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
-
-    m_iCurrentTabIndex = 0;
+    connect(m_pTabWidget, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
+    connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
 
     /* Enable/Disable toolbar actions (except Refresh) & tab widget according log presence: */
     m_pActionFind->setEnabled(!noLogsToShow);
     m_pActionFilter->setEnabled(!noLogsToShow);
     m_pActionSave->setEnabled(!noLogsToShow);
     m_pActionBookmark->setEnabled(!noLogsToShow);
-    m_pViewerContainer->setEnabled(!noLogsToShow);
-    m_pViewerContainer->show();
+    m_pTabWidget->setEnabled(!noLogsToShow);
+    m_pTabWidget->show();
     if (m_pSearchPanel && m_pSearchPanel->isVisible())
         m_pSearchPanel->refresh();
 }
@@ -369,11 +209,16 @@ void UIVMLogViewerWidget::sltSave()
 {
     if (m_comMachine.isNull())
         return;
-    UIVMLogViewerTextEdit *logPage = qobject_cast<UIVMLogViewerTextEdit*>(currentLogPage());
+
+    UIVMLogPage *logPage = currentLogPage();
     if (!logPage)
         return;
+
+    const QString& fileName = logPage->fileName();
+    if (fileName.isEmpty())
+        return;
     /* Prepare "save as" dialog: */
-    const QFileInfo fileInfo(logPage->logFileName());
+    const QFileInfo fileInfo(fileName);
     /* Prepare default filename: */
     const QDateTime dtInfo = fileInfo.lastModified();
     const QString strDtString = dtInfo.toString("yyyy-MM-dd-hh-mm-ss");
@@ -394,7 +239,7 @@ void UIVMLogViewerWidget::sltSave()
         if (QFile::exists(strNewFileName))
             QFile::remove(strNewFileName);
         /* Copy log into the file: */
-        QFile::copy(m_comMachine.QueryLogFilename(m_pViewerContainer->currentIndex()), strNewFileName);
+        QFile::copy(m_comMachine.QueryLogFilename(m_pTabWidget->currentIndex()), strNewFileName);
     }
 }
 
@@ -405,26 +250,22 @@ void UIVMLogViewerWidget::sltSearchResultHighLigting()
 
     if (!currentLogPage())
         return;
-    UIIndicatorScrollBar* scrollBar = qobject_cast<UIIndicatorScrollBar*>(currentLogPage()->verticalScrollBar());
-    if (scrollBar)
-        scrollBar->setMarkingsVector(m_pSearchPanel->getMatchLocationVector());
-
-    currentLogPage()->repaint();
+    currentLogPage()->setScrollBarMarkingsVector(m_pSearchPanel->getMatchLocationVector());
 }
 
 void UIVMLogViewerWidget::sltTabIndexChange(int tabIndex)
 {
-    if (m_iCurrentTabIndex == tabIndex)
-        return;
+    // if (m_iCurrentTabIndex == tabIndex)
+    //     return;
 
     resetHighlighthing();
-    if (m_pSearchPanel)
-        m_pSearchPanel->reset();
-    m_iCurrentTabIndex = tabIndex;
+    // if (m_pSearchPanel)
+    //     m_pSearchPanel->reset();
+    // m_iCurrentTabIndex = tabIndex;
     /* We keep a separate QVector<LogBookmark> for each log page: */
-    QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
-    if(bookmarkVector && m_pBookmarksPanel)
-        m_pBookmarksPanel->updateBookmarkList(bookmarkVector);
+    // QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
+    // if (bookmarkVector && m_pBookmarksPanel)
+    //     m_pBookmarksPanel->updateBookmarkList(bookmarkVector);
 }
 
 void UIVMLogViewerWidget::sltFilterApplied()
@@ -436,27 +277,27 @@ void UIVMLogViewerWidget::sltFilterApplied()
 
 void UIVMLogViewerWidget::sltCreateBookmarkAtCurrent()
 {
-    if (!currentLogPage())
-        return;
-    QWidget* viewport = currentLogPage()->viewport();
-    if (!viewport)
-        return;
-    QPoint point(0.5 * viewport->width(), 0.5 * viewport->height());
-    QTextBlock block = currentLogPage()->cursorForPosition(point).block();
-    LogBookmark bookmark;
-    bookmark.first = block.firstLineNumber();
-    bookmark.second = block.text();
-    sltCreateBookmarkAtLine(bookmark);
+    // if (!currentTextEdit())
+    //     return;
+    // QWidget* viewport = currentTextEdit()->viewport();
+    // if (!viewport)
+    //     return;
+    // QPoint point(0.5 * viewport->width(), 0.5 * viewport->height());
+    // QTextBlock block = currentTextEdit()->cursorForPosition(point).block();
+    // LogBookmark bookmark;
+    // bookmark.first = block.firstLineNumber();
+    // bookmark.second = block.text();
+    // sltCreateBookmarkAtLine(bookmark);
 }
 
 void UIVMLogViewerWidget::sltCreateBookmarkAtLine(LogBookmark bookmark)
 {
-    QVector<LogBookmark> *pBookmarkVector = currentBookmarkVector();
-    if (!pBookmarkVector)
-        return;
-    pBookmarkVector->push_back(bookmark);
-    if (m_pBookmarksPanel)
-        m_pBookmarksPanel->updateBookmarkList(pBookmarkVector);
+    // QVector<LogBookmark> *pBookmarkVector = currentBookmarkVector();
+    // if (!pBookmarkVector)
+    //     return;
+    // pBookmarkVector->push_back(bookmark);
+    // if (m_pBookmarksPanel)
+    //     m_pBookmarksPanel->updateBookmarkList(pBookmarkVector);
 }
 
 void UIVMLogViewerWidget::setMachine(const CMachine &machine)
@@ -502,11 +343,11 @@ void UIVMLogViewerWidget::prepareWidgets()
 #endif
 
     /* Create VM Log-Viewer container: */
-    m_pViewerContainer = new QITabWidget(this);
-    AssertPtrReturnVoid(m_pViewerContainer);
+    m_pTabWidget = new QITabWidget(this);
+    AssertPtrReturnVoid(m_pTabWidget);
     {
         /* Add VM Log-Viewer container to main-layout: */
-        m_pMainLayout->insertWidget(1, m_pViewerContainer);
+        m_pMainLayout->insertWidget(1, m_pTabWidget);
     }
 
     /* Create VM Log-Viewer search-panel: */
@@ -765,9 +606,9 @@ void UIVMLogViewerWidget::showEvent(QShowEvent *pEvent)
     m_fIsPolished = true;
 
     /* Make sure the log view widget has the focus: */
-    QWidget *pCurrentLogPage = currentLogPage();
-    if (pCurrentLogPage)
-        pCurrentLogPage->setFocus();
+    // QWidget *pCurrentLogPage = currentTextEdit();
+    // if (pCurrentLogPage)
+    //     pCurrentLogPage->setFocus();
 }
 
 void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
@@ -783,9 +624,9 @@ void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
         /* Process Back key as switch to previous tab: */
         case Qt::Key_Back:
         {
-            if (m_pViewerContainer->currentIndex() > 0)
+            if (m_pTabWidget->currentIndex() > 0)
             {
-                m_pViewerContainer->setCurrentIndex(m_pViewerContainer->currentIndex() - 1);
+                m_pTabWidget->setCurrentIndex(m_pTabWidget->currentIndex() - 1);
                 return;
             }
             break;
@@ -793,9 +634,9 @@ void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
         /* Process Forward key as switch to next tab: */
         case Qt::Key_Forward:
         {
-            if (m_pViewerContainer->currentIndex() < m_pViewerContainer->count())
+            if (m_pTabWidget->currentIndex() < m_pTabWidget->count())
             {
-                m_pViewerContainer->setCurrentIndex(m_pViewerContainer->currentIndex() + 1);
+                m_pTabWidget->setCurrentIndex(m_pTabWidget->currentIndex() + 1);
                 return;
             }
             break;
@@ -806,51 +647,44 @@ void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
     QWidget::keyReleaseEvent(pEvent);
 }
 
-const QString* UIVMLogViewerWidget::currentLog()
+const UIVMLogPage *UIVMLogViewerWidget::currentLogPage() const
 {
-    if (!currentLogPage())
+    int currentTabIndex = m_pTabWidget->currentIndex();
+    if (currentTabIndex >= m_logPageList.size())
         return 0;
-    return &(m_logMap[currentLogPage()]);
+    return qobject_cast<const UIVMLogPage*>(m_logPageList.at(currentTabIndex));
+}
+UIVMLogPage *UIVMLogViewerWidget::currentLogPage()
+{
+    int currentTabIndex = m_pTabWidget->currentIndex();
+    if (currentTabIndex >= m_logPageList.size())
+        return 0;
+    return qobject_cast<UIVMLogPage*>(m_logPageList.at(currentTabIndex));
 }
 
-QPlainTextEdit* UIVMLogViewerWidget::currentLogPage() const
-{
-    /* If viewer-container is enabled: */
-    if (m_pViewerContainer->isEnabled())
-    {
-        /* Get and return current log-page: */
-        QWidget *pContainer = m_pViewerContainer->currentWidget();
-        QPlainTextEdit *pBrowser = pContainer->findChild<QPlainTextEdit*>();
-        Assert(pBrowser);
-        return pBrowser ? pBrowser : 0;
-    }
-    /* Return NULL by default: */
-    return 0;
-}
+// const QVector<LogBookmark>* UIVMLogViewerWidget::currentBookmarkVector() const
+// {
+//     UIVMLogViewerTextEdit *logPage = qobject_cast<UIVMLogViewerTextEdit*>(currentLogPage());
+//     if (!logPage)
+//         return 0;
+//     QString logFileName = logPage->logFileName();
+//     if (logFileName.isEmpty())
+//         return 0;
 
-const QVector<LogBookmark>* UIVMLogViewerWidget::currentBookmarkVector() const
-{
-    UIVMLogViewerTextEdit *logPage = qobject_cast<UIVMLogViewerTextEdit*>(currentLogPage());
-    if (!logPage)
-        return 0;
-    QString logFileName = logPage->logFileName();
-    if (logFileName.isEmpty())
-        return 0;
+//     return &(m_bookmarkMap[logFileName]);
+// }
 
-    return &(m_bookmarkMap[logFileName]);
-}
+// QVector<LogBookmark>* UIVMLogViewerWidget::currentBookmarkVector()
+// {
+//     UIVMLogViewerTextEdit *logPage = qobject_cast<UIVMLogViewerTextEdit*>(currentLogPage());
+//     if (!logPage)
+//         return 0;
+//     QString logFileName = logPage->logFileName();
+//     if (logFileName.isEmpty())
+//         return 0;
 
-QVector<LogBookmark>* UIVMLogViewerWidget::currentBookmarkVector()
-{
-    UIVMLogViewerTextEdit *logPage = qobject_cast<UIVMLogViewerTextEdit*>(currentLogPage());
-    if (!logPage)
-        return 0;
-    QString logFileName = logPage->logFileName();
-    if (logFileName.isEmpty())
-        return 0;
-
-    return &(m_bookmarkMap[logFileName]);
-}
+//     return &(m_bookmarkMap[logFileName]);
+// }
 
 void UIVMLogViewerWidget::hidePanel(UIVMLogViewerPanel* panel)
 {
@@ -878,9 +712,9 @@ void UIVMLogViewerWidget::showPanel(UIVMLogViewerPanel* panel)
 
 QPlainTextEdit* UIVMLogViewerWidget::logPage(int pIndex) const
 {
-    if (!m_pViewerContainer->isEnabled())
+    if (!m_pTabWidget->isEnabled())
         return 0;
-    QWidget* pContainer = m_pViewerContainer->widget(pIndex);
+    QWidget* pContainer = m_pTabWidget->widget(pIndex);
     if (!pContainer)
         return 0;
     QPlainTextEdit *pBrowser = pContainer->findChild<QPlainTextEdit*>();
@@ -889,105 +723,108 @@ QPlainTextEdit* UIVMLogViewerWidget::logPage(int pIndex) const
 
 bool UIVMLogViewerWidget::createLogViewerPages()
 {
-    if (m_comMachine.isNull())
-        return false;
+    bool noLogsToShow = false;
 
-    bool logsExists = false;
+    QString strDummyTabText;
+    /* check if the machine is valid: */
+    if (m_comMachine.isNull())
+    {
+        noLogsToShow = true;
+        strDummyTabText = QString(tr("<p><b>No machine</b> is currently selected. Please select a "
+                                     "Virtual Machine to see its logs"));
+    }
+
     const CSystemProperties &sys = vboxGlobal().virtualBox().GetSystemProperties();
     unsigned cMaxLogs = sys.GetLogHistoryCount() + 1 /*VBox.log*/ + 1 /*VBoxHardening.log*/; /** @todo Add api for getting total possible log count! */
-    for (unsigned i = 0; i < cMaxLogs; ++i)
+
+    /* If machine is valid then check if there are any log files and create viewer tabs: */
+    if (cMaxLogs == 0)
     {
-        /* Query the log file name for index i: */
-        QString strFileName = m_comMachine.QueryLogFilename(i);
-        if (!strFileName.isEmpty())
+        noLogsToShow = true;
+        strDummyTabText = QString(tr("<p>No log files found. Press the "
+                                     "<b>Refresh</b> button to rescan the log folder "
+                                     "<nobr><b>%1</b></nobr>.</p>")
+                                     .arg(m_comMachine.GetLogFolder()));
+    }
+    else{
+        for (unsigned i = 0; i < cMaxLogs; ++i)
         {
-            /* Try to read the log file with the index i: */
-            ULONG uOffset = 0;
-            QString strText;
-            while (true)
+            /* Query the log file name for index i: */
+            QString strFileName = m_comMachine.QueryLogFilename(i);
+            if (!strFileName.isEmpty())
             {
-                QVector<BYTE> data = m_comMachine.ReadLog(i, uOffset, _1M);
-                if (data.size() == 0)
-                    break;
-                strText.append(QString::fromUtf8((char*)data.data(), data.size()));
-                uOffset += data.size();
-            }
-            /* Anything read at all? */
-            if (uOffset > 0)
-            {
-                /* Create a log viewer page and append the read text to it: */
-                QPlainTextEdit *pLogViewer = createLogPage(strFileName);
-                pLogViewer->setPlainText(strText);
-                /* Move the cursor position to end: */
-                QTextCursor cursor = pLogViewer->textCursor();
-                cursor.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
-                pLogViewer->setTextCursor(cursor);
-                /* Add the log-text to the map: */
-                m_logMap[pLogViewer] = strText;
-                logsExists = true;
+                /* Try to read the log file with the index i: */
+                ULONG uOffset = 0;
+                QString strText;
+                while (true)
+                {
+                    QVector<BYTE> data = m_comMachine.ReadLog(i, uOffset, _1M);
+                    if (data.size() == 0)
+                        break;
+                    strText.append(QString::fromUtf8((char*)data.data(), data.size()));
+                    uOffset += data.size();
+                }
+                /* Anything read at all? */
+                if (uOffset > 0)
+                {
+                    createLogPage(strFileName, strText);
+                }
             }
         }
     }
-    return logsExists;
+    /* if noLogsToShow then ceate a single log page with an error message: */
+    if (noLogsToShow)
+    {
+        createLogPage("No Logs", strDummyTabText, noLogsToShow);
+    }
+    return noLogsToShow;
 }
 
-QPlainTextEdit* UIVMLogViewerWidget::createLogPage(const QString &strFileName)
+void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QString &strLogContent, bool noLogsToShow /* = false */)
 {
-    /* Create page-container: */
-    QWidget *pPageContainer = new QWidget;
-    AssertPtrReturn(pPageContainer, 0);
-    {
-        /* Create page-layout: */
-        QVBoxLayout *pPageLayout = new QVBoxLayout(pPageContainer);
-        AssertPtrReturn(pPageLayout, 0);
-        /* Create Log-Viewer: */
-        UIVMLogViewerTextEdit *pLogViewer = new UIVMLogViewerTextEdit(pPageContainer, strFileName);
-        connect(pLogViewer, &UIVMLogViewerTextEdit::sigContextMenuBookmarkAction,
-                this, &UIVMLogViewerWidget::sltCreateBookmarkAtLine);
+    AssertPtrReturnVoid(m_pTabWidget);
 
-        AssertPtrReturn(pLogViewer, 0);
-        {
-            /* Configure Log-Viewer: */
-            pLogViewer->setVerticalScrollBar(new UIIndicatorScrollBar());
-            pLogViewer->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-            QScrollBar *pHorizontalScrollBar = pLogViewer->horizontalScrollBar();
-            if (pHorizontalScrollBar)
-                pHorizontalScrollBar->setStyleSheet(horizontalScrollBarStyle);
-#if defined(RT_OS_SOLARIS)
-            /* Use system fixed-width font on Solaris hosts as the Courier family fonts don't render well. */
-            QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-#else
-            QFont font;
-            font.setFamily("Courier New,courier");
-#endif
-            pLogViewer->setFont(font);
-            pLogViewer->setWordWrapMode(QTextOption::NoWrap);
-            pLogViewer->setReadOnly(true);
-            /* Add Log-Viewer to page-layout: */
-            pPageLayout->addWidget(pLogViewer);
-        }
-        /* Add page-container to viewer-container: */
-        m_pViewerContainer->addTab(pPageContainer, QFileInfo(strFileName).fileName());
-        return pLogViewer;
-    }
+    /* Create page-container: */
+    UIVMLogPage* pLogPage = new UIVMLogPage(this);
+    AssertPtrReturnVoid(pLogPage);
+    /* Set the file name only if we really have log file to read. */
+    if (!noLogsToShow)
+        pLogPage->setFileName(strFileName);
+
+    /* Add page-container to viewer-container: */
+    int tabIndex = m_pTabWidget->insertTab(m_pTabWidget->count(), pLogPage, QFileInfo(strFileName).fileName());
+
+    pLogPage->setTabIndex(tabIndex);
+    m_logPageList.resize(m_pTabWidget->count());
+    m_logPageList[tabIndex] = pLogPage;
+
+    /* Set the log string of the UIVMLogPage: */
+    pLogPage->setLogString(strLogContent);
+    /* Also set text edit since we want to display this text: */
+    pLogPage->setTextEdit(strLogContent);
+    if (noLogsToShow)
+        pLogPage->markForError();
 }
 
 void UIVMLogViewerWidget::resetHighlighthing()
 {
     /* Undo the document changes to remove highlighting: */
-    QPlainTextEdit *pTextEdit = logPage(m_iCurrentTabIndex);
-    if (pTextEdit)
-    {
-        QTextDocument *pDocument = pTextEdit->document();
-        if (pDocument)
-            pDocument->undo();
-    }
-    UIIndicatorScrollBar* scrollBar = qobject_cast<UIIndicatorScrollBar*>(pTextEdit->verticalScrollBar());
-    if (scrollBar)
-    {
-        scrollBar->setMarkingsVector(QVector<float>());
-        pTextEdit->repaint();
-    }
+    UIVMLogPage* logPage = currentLogPage();
+    if (!logPage)
+        return;
+    logPage->documentUndo();
+    logPage->clearScrollBarMarkingsVector();
+    // QPlainTextEdit *pTextEdit = logPage(m_iCurrentTabIndex);
+    // if (pTextEdit)
+    // {
+    //     QTextDocument *pDocument = pTextEdit->document();
+    //     if (pDocument)
+    //         pDocument->undo();
+    // }
+    // UIIndicatorScrollBar* scrollBar = qobject_cast<UIIndicatorScrollBar*>(pTextEdit->verticalScrollBar());
+    // if (scrollBar)
+    // {
+    //     scrollBar->setMarkingsVector(QVector<float>());
+    //     pTextEdit->repaint();
+    // }
 }
-
-#include "UIVMLogViewerWidget.moc"

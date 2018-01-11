@@ -36,6 +36,7 @@ class QITabWidget;
 class QPlainTextEdit;
 class QVBoxLayout;
 class UIToolBar;
+class UIVMLogPage;
 class UIVMLogViewerBookmarksPanel;
 class UIVMLogViewerFilterPanel;
 class UIVMLogViewerPanel;
@@ -43,15 +44,16 @@ class UIVMLogViewerSearchPanel;
 
 /* Type definitions: */
 /** value is the content of the log file */
-typedef QMap<QPlainTextEdit*, QString> VMLogMap;
+//typedef QMap<QPlainTextEdit*, QString> VMLogMap;
 /** first is line number, second is block text */
-typedef QPair<int, QString> LogBookmark;
+//typedef QPair<int, QString> LogBookmark;
 /** key is log file name, value is a vector of bookmarks. */
-typedef QMap<QString, QVector<LogBookmark> > BookmarkMap;
+//typedef QMap<QString, QVector<LogBookmark> > BookmarkMap;
 
 
-/** QIMainWindow extension
-  * providing GUI with VirtualBox LogViewer. */
+/** QWidget extension providing GUI for VirtualBox LogViewer. It
+ *  encapsulates log pages, toolbar, a tab widget and manages
+ *  interaction between these classes. */
 class UIVMLogViewerWidget  : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -136,24 +138,21 @@ private:
         void keyPressEvent(QKeyEvent *pEvent);
     /** @} */
 
-    /** Returns the current log-page. */
-    QPlainTextEdit* currentLogPage() const;
+
     /** Returns the log-page from the tab with index @a pIndex. */
     QPlainTextEdit* logPage(int pIndex) const;
     /** Returns the newly created log-page using @a strPage filename. */
-    QPlainTextEdit* createLogPage(const QString &strPage);
-    /** Returns the content of current log-file as it is read. */
-    const QString* currentLog();
+    void createLogPage(const QString &strFileName, const QString &strLogContent, bool noLogsToShow = false);
+
+
+    UIVMLogPage *currentLogPage();
+    const UIVMLogPage *currentLogPage() const;
 
     /** Attempts to read the logs through the API, returns true if there exists any logs, false otherwise. */
     bool createLogViewerPages();
 
     /** Resets document (of the curent tab) and scrollbar highligthing */
     void resetHighlighthing();
-
-    /** Returns the vector of bookmarks for the current log page */
-    QVector<LogBookmark>* currentBookmarkVector();
-    const QVector<LogBookmark>* currentBookmarkVector() const;
 
     void hidePanel(UIVMLogViewerPanel* panel);
     void showPanel(UIVMLogViewerPanel* panel);
@@ -165,10 +164,13 @@ private:
     CMachine m_comMachine;
 
     /** Holds container for log-pages. */
-    QITabWidget *m_pViewerContainer;
+    QITabWidget        *m_pTabWidget;
+    /** Stores the UIVMLogPage instances. This is modified as we add and remove new tabs
+     *  to the m_pTabWidget. Index is the index of the tab widget. */
+    QVector<QWidget*>  m_logPageList;
 
     /** Holds the index to the current tab: */
-    int          m_iCurrentTabIndex;
+    //int          m_iCurrentTabIndex;
 
     /** Holds the instance of search-panel. */
     UIVMLogViewerSearchPanel    *m_pSearchPanel;
@@ -178,8 +180,8 @@ private:
     QMap<UIVMLogViewerPanel*, QAction*> m_panelActionMap;
 
     /** Holds the list of log file content. */
-    VMLogMap             m_logMap;
-    mutable BookmarkMap  m_bookmarkMap;
+    // VMLogMap             m_logMap;
+    // mutable BookmarkMap  m_bookmarkMap;
     QVBoxLayout         *m_pMainLayout;
 
     /** Holds the widget's embedding type. */

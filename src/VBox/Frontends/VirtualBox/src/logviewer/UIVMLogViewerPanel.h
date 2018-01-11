@@ -25,12 +25,9 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
-class QComboBox;
 class QHBoxLayout;
-class QLabel;
-class QLineEdit;
-class QPushButton;
-class UIVMFilterLineEdit;
+class QPlainTextEdit;
+class QTextDocument;
 class UIMiniCancelButton;
 class UIVMLogViewerWidget;
 
@@ -68,6 +65,10 @@ protected:
     /** Handles the Qt hide @a pEvent. */
     void hideEvent(QHideEvent *pEvent);
 
+    QTextDocument  *textDocument();
+    QPlainTextEdit *textEdit();
+    /* Return the unmodified log. */
+    const QString* logString() const;
 private slots:
 
 

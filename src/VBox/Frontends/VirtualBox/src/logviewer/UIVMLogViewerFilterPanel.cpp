@@ -198,21 +198,24 @@ void UIVMLogViewerFilterPanel::applyFilter(const int iCurrentIndex /* = 0 */)
 
 void UIVMLogViewerFilterPanel::filter()
 {
-    QPlainTextEdit *pCurrentPage = viewer()->currentLogPage();
-    AssertReturnVoid(pCurrentPage);
-    const QString* strInputText = viewer()->currentLog();
+    if (!viewer())
+        return;
+    QPlainTextEdit *pCurrentTextEdit = textEdit();
+    if (!pCurrentTextEdit)
+        return;
+    const QString* originalLogString = logString();
     m_iUnfilteredLineCount = 0;
     m_iFilteredLineCount = 0;
-    if (!strInputText || strInputText->isNull())
+    if (!originalLogString || originalLogString->isNull())
         return;
-    QTextDocument *document = pCurrentPage->document();
+    QTextDocument *document = textDocument();
     if (!document)
         return;
-    QStringList stringLines = strInputText->split("\n");
+    QStringList stringLines = originalLogString->split("\n");
     m_iUnfilteredLineCount = stringLines.size();
     if (m_filterTermList.empty())
     {
-        document->setPlainText(*strInputText);
+        document->setPlainText(*originalLogString);
         emit sigFilterApplied();
         m_iFilteredLineCount = document->lineCount();
         return;
@@ -237,9 +240,9 @@ void UIVMLogViewerFilterPanel::filter()
     m_iFilteredLineCount = document->lineCount();
 
     /* Move the cursor position to end: */
-    QTextCursor cursor = pCurrentPage->textCursor();
+    QTextCursor cursor = pCurrentTextEdit->textCursor();
     cursor.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
-    pCurrentPage->setTextCursor(cursor);
+    pCurrentTextEdit->setTextCursor(cursor);
 
     emit sigFilterApplied();
 }
@@ -451,13 +454,10 @@ bool UIVMLogViewerFilterPanel::eventFilter(QObject *pObject, QEvent *pEvent)
             if (pKeyEvent->QInputEvent::modifiers() == Qt::ControlModifier &&
                 pKeyEvent->key() == Qt::Key_T)
             {
-                if (viewer()->currentLogPage())
-                {
-                    if (isHidden())
-                        show();
-                    m_pFilterComboBox->setFocus();
-                    return true;
-                }
+                if (isHidden())
+                    show();
+                m_pFilterComboBox->setFocus();
+                return true;
             }
             else if (pKeyEvent->key() == Qt::Key_Return && m_pFilterComboBox && m_pFilterComboBox->hasFocus())
                 sltAddFilterTerm();

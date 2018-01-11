@@ -22,20 +22,15 @@
 /* Qt includes: */
 # include <QComboBox>
 # include <QHBoxLayout>
-# if defined(RT_OS_SOLARIS)
-#  include <QFontDatabase>
-# endif
 # include <QLabel>
-# include <QLineEdit>
 # include <QPlainTextEdit>
-# include <QPushButton>
 # include <QTextCursor>
 # include <QToolButton>
-# include <QScrollArea>
 
 /* GUI includes: */
 # include "UIIconPool.h"
 # include "UISpecialControls.h"
+# include "UIVMLogPage.h"
 # include "UIVMLogViewerPanel.h"
 # include "UIVMLogViewerWidget.h"
 # ifdef VBOX_WS_MAC
@@ -123,4 +118,32 @@ void UIVMLogViewerPanel::hideEvent(QHideEvent *pEvent)
         m_pViewer->hidePanel(this);
 
     QWidget::hideEvent(pEvent);
+}
+
+QTextDocument  *UIVMLogViewerPanel::textDocument()
+{
+    QPlainTextEdit *pEdit = textEdit();
+    if (!pEdit)
+        return 0;
+    return textEdit()->document();
+}
+
+QPlainTextEdit *UIVMLogViewerPanel::textEdit()
+{
+    if (!viewer())
+        return 0;
+    UIVMLogPage *logPage = viewer()->currentLogPage();
+    if (!logPage)
+        return 0;
+    return logPage->textEdit();
+}
+
+const QString* UIVMLogViewerPanel::logString() const
+{
+    if (!viewer())
+        return 0;
+    const UIVMLogPage* const page = qobject_cast<const UIVMLogPage* const>(viewer()->currentLogPage());
+    if (!page)
+        return 0;
+    return &(page->logString());
 }

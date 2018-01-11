@@ -106,6 +106,7 @@ private:
     /** Constructs the find flags for QTextDocument::find function. */
     QTextDocument::FindFlags constructFindFlags(SearchDirection eDirection);
 
+
     /** Holds the instance of search-label we create. */
     QLabel *m_pSearchLabel;
     /** Holds the instance of search-editor we create. */

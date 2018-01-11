@@ -334,6 +334,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/globals/VBoxUtils.h \
 	src/hostnetwork/UIHostNetworkDetailsWidget.h \
 	src/hostnetwork/UIHostNetworkManager.h \
+	src/logviewer/UIVMLogPage.h \
 	src/logviewer/UIVMLogViewerBookmarksPanel.h \
 	src/logviewer/UIVMLogViewerDialog.h \
 	src/logviewer/UIVMLogViewerFilterPanel.h \
@@ -546,8 +547,8 @@ VirtualBox_QT_MOCSRCS = \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
+	src/logviewer/UIVMLogPage.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
-	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIAddDiskEncryptionPasswordDialog.cpp \
@@ -652,6 +653,7 @@ VirtualBox_SOURCES = \
 	src/hostnetwork/UIHostNetworkDetailsWidget.cpp \
 	src/hostnetwork/UIHostNetworkManager.cpp \
 	src/hostnetwork/UIHostNetworkUtils.cpp \
+	src/logviewer/UIVMLogPage.cpp \
 	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
 	src/logviewer/UIVMLogViewerDialog.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \

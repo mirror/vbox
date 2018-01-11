@@ -34,6 +34,7 @@
 /* GUI includes: */
 # include "UIIconPool.h"
 # include "UISpecialControls.h"
+# include "UIVMLogPage.h"
 # include "UIVMLogViewerSearchPanel.h"
 # include "UIVMLogViewerWidget.h"
 # ifdef VBOX_WS_MAC
@@ -120,36 +121,33 @@ void UIVMLogViewerSearchPanel::sltSearchTextChanged(const QString &strSearchStri
         m_iSearchPosition = 0;
         search(BackwardSearch, true);
         emit sigHighlightingUpdated();
+        return;
     }
     /* If search-string is empty, reset cursor position: */
-    else
+    if (!viewer())
+        return;
+
+    QPlainTextEdit *pBrowser = textEdit();
+    if (!pBrowser)
+        return;
+    /* If  cursor has selection: */
+    if (pBrowser->textCursor().hasSelection())
     {
-        if (viewer())
-        {
-            /* Get current log-page: */
-            QPlainTextEdit *pBrowser = viewer()->currentLogPage();
-            /* If current log-page is valid and cursor has selection: */
-            if (pBrowser && pBrowser->textCursor().hasSelection())
-            {
-                /* Get cursor and reset position: */
-                QTextCursor cursor = pBrowser->textCursor();
-                cursor.setPosition(cursor.anchor());
-                pBrowser->setTextCursor(cursor);
-            }
-            m_iSearchPosition = -1;
-            clearHighlighting(-1);
-        }
+        /* Get cursor and reset position: */
+        QTextCursor cursor = pBrowser->textCursor();
+        cursor.setPosition(cursor.anchor());
+        pBrowser->setTextCursor(cursor);
     }
+    m_iSearchPosition = -1;
+    clearHighlighting(-1);
 }
 
 void UIVMLogViewerSearchPanel::sltHighlightAllCheckBox()
 {
     if (!viewer())
         return;
-    QPlainTextEdit *pTextEdit = viewer()->currentLogPage();
-    if (!pTextEdit)
-        return;
-    QTextDocument *pDocument = pTextEdit->document();
+
+    QTextDocument *pDocument = textDocument();
     if (!pDocument)
         return;
 
@@ -409,31 +407,25 @@ bool UIVMLogViewerSearchPanel::eventFilter(QObject *pObject, QEvent *pEvent)
             else if (pKeyEvent->QInputEvent::modifiers() == Qt::ControlModifier &&
                      pKeyEvent->key() == Qt::Key_F)
             {
-                if (viewer() && viewer()->currentLogPage())
-                {
-                    /* Make sure current log-page is visible: */
-                    if (isHidden())
-                        show();
-                    /* Set focus on search-editor: */
-                    m_pSearchEditor->setFocus();
-                    return true;
-                }
+                /* Make sure current log-page is visible: */
+                if (isHidden())
+                    show();
+                /* Set focus on search-editor: */
+                m_pSearchEditor->setFocus();
+                return true;
             }
             /* Handle alpha-numeric keys to implement the "find as you type" feature: */
             else if ((pKeyEvent->QInputEvent::modifiers() & ~Qt::ShiftModifier) == 0 &&
                      pKeyEvent->key() >= Qt::Key_Exclam && pKeyEvent->key() <= Qt::Key_AsciiTilde)
             {
                 /* Make sure current log-page is visible: */
-                if (viewer() && viewer()->currentLogPage())
-                {
-                    if (isHidden())
-                        show();
-                    /* Set focus on search-editor: */
-                    m_pSearchEditor->setFocus();
-                    /* Insert the text to search-editor, which triggers the search-operation for new text: */
-                    m_pSearchEditor->insert(pKeyEvent->text());
-                    return true;
-                }
+                if (isHidden())
+                    show();
+                /* Set focus on search-editor: */
+                m_pSearchEditor->setFocus();
+                /* Insert the text to search-editor, which triggers the search-operation for new text: */
+                m_pSearchEditor->insert(pKeyEvent->text());
+                return true;
             }
             break;
         }
@@ -456,11 +448,10 @@ void UIVMLogViewerSearchPanel::showEvent(QShowEvent *pEvent)
 
 void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
 {
-    if (!viewer())
+    QPlainTextEdit *pTextEdit = textEdit();
+    if (!pTextEdit)
         return;
-    QPlainTextEdit *pTextEdit = viewer()->currentLogPage();
-    if (!pTextEdit) return;
-    QTextDocument *pDocument = pTextEdit->document();
+    QTextDocument *pDocument = textDocument();
     if (!pDocument)
         return;
 
@@ -540,13 +531,10 @@ void UIVMLogViewerSearchPanel::clearHighlighting(int count)
     m_iMatchCount = count;
     m_matchLocationVector.clear();
 
-    QPlainTextEdit *pBrowser = viewer()->currentLogPage();
-    if (pBrowser)
-    {
-        QTextDocument* pDocument = pBrowser->document();
-        if (pDocument)
-            pDocument->undo();
-    }
+    QTextDocument* pDocument = textDocument();
+    if (pDocument)
+        pDocument->undo();
+
     configureInfoLabels();
     emit sigHighlightingUpdated();
 }
