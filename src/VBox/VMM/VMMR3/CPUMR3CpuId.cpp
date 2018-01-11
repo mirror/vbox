@@ -6271,14 +6271,14 @@ static void cpumR3CpuIdInfoStdLeaf7Details(PCDBGFINFOHLP pHlp, PCCPUMCPUIDLEAF p
                     cpumR3CpuIdInfoVerboseCompareListU32(pHlp, pCurLeaf->uEbx, Host.uEbx, g_aLeaf7Sub0EbxSubFields, 56);
                     cpumR3CpuIdInfoVerboseCompareListU32(pHlp, pCurLeaf->uEcx, Host.uEcx, g_aLeaf7Sub0EcxSubFields, 56);
                     if (pCurLeaf->uEdx || Host.uEdx)
-                        pHlp->pfnPrintf(pHlp, "%36 %#x (%#x)\n", "Ext Features EDX:", pCurLeaf->uEdx, Host.uEdx);
+                        pHlp->pfnPrintf(pHlp, "%36s %#x (%#x)\n", "Ext Features EDX:", pCurLeaf->uEdx, Host.uEdx);
                 }
                 else
                 {
                     cpumR3CpuIdInfoMnemonicListU32(pHlp, pCurLeaf->uEbx, g_aLeaf7Sub0EbxSubFields, "Ext Features EBX:", 36);
                     cpumR3CpuIdInfoMnemonicListU32(pHlp, pCurLeaf->uEcx, g_aLeaf7Sub0EcxSubFields, "Ext Features ECX:", 36);
                     if (pCurLeaf->uEdx)
-                        pHlp->pfnPrintf(pHlp, "%36 %#x\n", "Ext Features EDX:", pCurLeaf->uEdx);
+                        pHlp->pfnPrintf(pHlp, "%36s %#x\n", "Ext Features EDX:", pCurLeaf->uEdx);
                 }
                 break;
 
