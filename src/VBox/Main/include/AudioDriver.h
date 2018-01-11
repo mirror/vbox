@@ -24,21 +24,24 @@
 using namespace com;
 
 /**
- * Audio driver configuration for audio drivers implemented 
- * in Main. 
+ * Audio driver configuration for audio drivers implemented
+ * in Main.
  */
 struct AudioDriverCfg
 {
-    AudioDriverCfg(Utf8Str a_strDev = "", unsigned a_uInst = 0, unsigned a_uLUN = 0)
+    AudioDriverCfg(Utf8Str a_strDev = "", unsigned a_uInst = 0, unsigned a_uLUN = 0,
+                   Utf8Str a_strName = "")
         : strDev(a_strDev)
         , uInst(a_uInst)
-        , uLUN(a_uLUN) { }
+        , uLUN(a_uLUN)
+        , strName(a_strName) { }
 
     AudioDriverCfg& operator=(AudioDriverCfg that)
     {
-        this->strDev = that.strDev;
-        this->uInst  = that.uInst;
-        this->uLUN   = that.uLUN;
+        this->strDev  = that.strDev;
+        this->uInst   = that.uInst;
+        this->uLUN    = that.uLUN;
+        this->strName = that.strName;
 
         return *this;
     }
@@ -50,6 +53,8 @@ struct AudioDriverCfg
     /** The LUN the driver is attached to.
      *  Set the UINT8_MAX if not attached. */
     unsigned             uLUN;
+    /** The driver name. */
+    Utf8Str              strName;
 };
 
 class Console;
@@ -68,7 +73,7 @@ public:
 
     AudioDriverCfg *GetConfig(void) { return &mCfg; }
 
-    Console *GetParent(void) { return mpConsole; }    
+    Console *GetParent(void) { return mpConsole; }
 
     bool IsAttached(void) { return mfAttached; }
 
@@ -81,11 +86,11 @@ public:
 protected:
 
     /**
-     * Optional (virtual) function to give the derived audio driver 
-     * class the ability to add more driver configuration entries when 
+     * Optional (virtual) function to give the derived audio driver
+     * class the ability to add more driver configuration entries when
      * setting up.
-     * 
-     * @param pLunCfg           CFGM configuration node of the driver.    
+     *
+     * @param pLunCfg           CFGM configuration node of the driver.
      */
     virtual void configureDriver(PCFGMNODE pLunCfg) { RT_NOREF(pLunCfg); }
 

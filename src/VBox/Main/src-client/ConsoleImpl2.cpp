@@ -2974,7 +2974,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 ComAssertComRC(hrc);
             }
 
-            AudioDriverCfg Cfg(strAudioDevice, 0 /* Instance */, uAudioLUN);
+            AudioDriverCfg Cfg(strAudioDevice, 0 /* Instance */, uAudioLUN, "AudioVRDE");
             rc = mAudioVRDE->Configure(&Cfg, RT_BOOL(fVRDEEnabled) /* Attach */);
             if (   RT_SUCCESS(rc)
                 && fVRDEEnabled) /* Successfully configured, use next LUN for drivers below. */

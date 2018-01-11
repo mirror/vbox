@@ -93,7 +93,8 @@ DECLCALLBACK(int) AudioDriver::Attach(AudioDriver *pThis, AudioDriverCfg *pCfg)
     if (pCfg->uLUN == UINT8_MAX) /* No LUN assigned / configured yet? Retrieve it. */
         pCfg->uLUN = pThis->getFreeLUN();
 
-    LogFunc(("strDevice=%s, uInst=%u, uLUN=%u\n", pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN));
+    LogFunc(("strName=%s, strDevice=%s, uInst=%u, uLUN=%u\n",
+             pCfg->strName.c_str(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN));
 
     vrc = pThis->Configure(pCfg, true /* Attach */);
     if (RT_SUCCESS(vrc))
@@ -104,7 +105,7 @@ DECLCALLBACK(int) AudioDriver::Attach(AudioDriver *pThis, AudioDriverCfg *pCfg)
         pThis->mfAttached = true;
     }
     else
-        LogRel(("VRDE: Failed to attach audio driver, rc=%Rrc\n", vrc));
+        LogRel(("%s: Failed to attach audio driver, rc=%Rrc\n", pCfg->strName.c_str(), vrc));
 
     return vrc;
 }
@@ -130,7 +131,8 @@ DECLCALLBACK(int) AudioDriver::Detach(AudioDriver *pThis)
 
     AudioDriverCfg *pCfg = &pThis->mCfg;
 
-    LogFunc(("strDevice=%s, uInst=%u, uLUN=%u\n", pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN));
+    LogFunc(("strName=%s, strDevice=%s, uInst=%u, uLUN=%u\n",
+             pCfg->strName.c_str(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN));
 
     vrc = PDMR3DriverDetach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN, "AUDIO",
                             0 /* iOccurrence */, 0 /* fFlags */);
@@ -144,7 +146,7 @@ DECLCALLBACK(int) AudioDriver::Detach(AudioDriver *pThis)
         pThis->mfAttached = false;
     }
     else
-        LogRel(("VRDE: Failed to detach audio driver, rc=%Rrc\n", vrc));
+        LogRel(("%s: Failed to detach audio driver, rc=%Rrc\n", pCfg->strName.c_str(), vrc));
 
     return vrc;
 }
@@ -185,7 +187,7 @@ int AudioDriver::Configure(AudioDriverCfg *pCfg, bool fAttach)
     {
         if (!pDevLun)
         {
-            LogRel2(("VRDE: Configuring audio driver\n"));
+            LogRel2(("%s: Configuring audio driver\n", mCfg.strName.c_str()));
 
             PCFGMNODE pLunL0;
             CFGMR3InsertNodeF(pDev0, &pLunL0, "LUN#%RU8", mCfg.uLUN);
@@ -193,13 +195,13 @@ int AudioDriver::Configure(AudioDriverCfg *pCfg, bool fAttach)
 
             PCFGMNODE pLunCfg;
             CFGMR3InsertNode(pLunL0,   "Config", &pLunCfg);
-                CFGMR3InsertString (pLunCfg, "DriverName",    "AudioVRDE");
+                CFGMR3InsertStringF(pLunCfg, "DriverName",    "%s", mCfg.strName.c_str());
                 CFGMR3InsertInteger(pLunCfg, "InputEnabled",  0); /* Play safe by default. */
                 CFGMR3InsertInteger(pLunCfg, "OutputEnabled", 1);
 
             PCFGMNODE pLunL1;
             CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL1);
-                CFGMR3InsertString(pLunL1, "Driver", "AudioVRDE");
+                CFGMR3InsertStringF(pLunL1, "Driver", "%s", mCfg.strName.c_str());
 
                 CFGMR3InsertNode(pLunL1, "Config", &pLunCfg);
 
@@ -211,7 +213,7 @@ int AudioDriver::Configure(AudioDriverCfg *pCfg, bool fAttach)
     {
         if (pDevLun)
         {
-            LogRel2(("VRDE: Unconfiguring audio driver\n"));
+            LogRel2(("%s: Unconfiguring audio driver\n", mCfg.strName.c_str()));
             CFGMR3RemoveNode(pDevLun);
         }
     }
