@@ -2523,16 +2523,14 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
 
         if (pVM->hm.s.fNestedPaging)
             val |= VMX_VMCS_CTRL_PROC_EXEC2_EPT;                        /* Enable EPT. */
-        else
-        {
-            /*
-             * Without Nested Paging, INVPCID should cause a VM-exit. Enabling this bit causes the CPU to refer to
-             * VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT when INVPCID is executed by the guest.
-             * See Intel spec. 25.4 "Changes to instruction behaviour in VMX non-root operation".
-             */
-            if (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_INVPCID)
-                val |= VMX_VMCS_CTRL_PROC_EXEC2_INVPCID;
-        }
+
+        /*
+         * Enable the INVPCID instruction if supported by the hardware and we expose
+         * it to the guest. Without this, guest executing INVPCID would cause a #UD.
+         */
+        if (   (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_INVPCID)
+            && pVM->cpum.ro.GuestFeatures.fInvpcid)
+            val |= VMX_VMCS_CTRL_PROC_EXEC2_INVPCID;
 
         if (pVM->hm.s.vmx.fVpid)
             val |= VMX_VMCS_CTRL_PROC_EXEC2_VPID;                       /* Enable VPID. */
@@ -4141,6 +4139,8 @@ static VBOXSTRICTRC hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                             | X86_CR4_VMXE;
         if (pVM->cpum.ro.HostFeatures.fXSaveRstor)
             u32CR4Mask |= X86_CR4_OSXSAVE;
+        if (pVM->cpum.ro.GuestFeatures.fPcid)
+            u32CR4Mask |= X86_CR4_PCIDE;
         pVCpu->hm.s.vmx.u32CR4Mask = u32CR4Mask;
         rc = VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, u32CR4Mask);
         AssertRCReturn(rc, rc);
