@@ -147,6 +147,7 @@ public:
 
     bool i_useHostClipboard() { return mfUseHostClipboard; }
 
+    /** Method is called only from ConsoleVRDPServer */
     IVRDEServer *i_getVRDEServer() const { return mVRDEServer; }
 
     ConsoleVRDPServer *i_consoleVRDPServer() const { return mConsoleVRDPServer; }
@@ -204,10 +205,6 @@ public:
     void i_VRDPClientStatusChange(uint32_t u32ClientId, const char *pszStatus);
     void i_VRDPClientConnect(uint32_t u32ClientId);
     void i_VRDPClientDisconnect(uint32_t u32ClientId, uint32_t fu32Intercepted);
-#ifdef VBOX_WITH_AUDIO_VRDE
-    int i_VRDPConfigureAudio(bool fAttachDetach, unsigned *puLUN);
-    int i_VRDPConfigureAudioDriver(const Utf8Str& strDevice, unsigned uInstance, unsigned uLUN, bool fAttach);
-#endif
     void i_VRDPInterceptAudio(uint32_t u32ClientId);
     void i_VRDPInterceptUSB(uint32_t u32ClientId, void **ppvIntercept);
     void i_VRDPInterceptClipboard(uint32_t u32ClientId);
