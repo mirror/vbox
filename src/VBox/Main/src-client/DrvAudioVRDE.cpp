@@ -569,8 +569,8 @@ static DECLCALLBACK(void *) drvAudioVRDEQueryInterface(PPDMIBASE pInterface, con
 
 
 AudioVRDE::AudioVRDE(Console *pConsole)
-    : mpDrv(NULL),
-      mParent(pConsole)
+    : AudioDriver(pConsole)
+    , mpDrv(NULL)
 {
 }
 
@@ -584,6 +584,12 @@ AudioVRDE::~AudioVRDE(void)
     }
 }
 
+
+void AudioVRDE::configureDriver(PCFGMNODE pLunCfg)
+{
+    CFGMR3InsertInteger(pLunCfg, "Object", (uintptr_t)this);
+    CFGMR3InsertInteger(pLunCfg, "ObjectVRDPServer", (uintptr_t)mpConsole->i_consoleVRDPServer());
+}
 
 int AudioVRDE::onVRDEControl(bool fEnable, uint32_t uFlags)
 {

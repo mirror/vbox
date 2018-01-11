@@ -5404,7 +5404,17 @@ HRESULT Console::i_onVRDEServerChange(BOOL aRestart)
                             // we have to restart the server.
                             mConsoleVRDPServer->Stop();
 
-                            int vrc = mConsoleVRDPServer->Launch();
+                            int vrc;
+#ifdef VBOX_WITH_AUDIO_VRDE
+                            if (!mAudioVRDE->IsAttached())
+                            {
+                                vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY /*idDstCpu*/,
+                                                       (PFNRT)AudioVRDE::Attach, 2,
+                                                       mAudioVRDE, mAudioVRDE->GetConfig());
+                                AssertRC(vrc);
+                            }
+#endif
+                            vrc = mConsoleVRDPServer->Launch();
                             if (vrc != VINF_SUCCESS)
                             {
                                 Utf8Str errMsg = VRDPServerErrorToMsg(vrc);
@@ -5414,7 +5424,18 @@ HRESULT Console::i_onVRDEServerChange(BOOL aRestart)
                                 mConsoleVRDPServer->EnableConnections();
                         }
                         else
+                        {
                             mConsoleVRDPServer->Stop();
+#ifdef VBOX_WITH_AUDIO_VRDE
+                            if (mAudioVRDE->IsAttached())
+                            {
+                                int vrc2 = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY /*idDstCpu*/,
+                                                            (PFNRT)AudioVRDE::Detach, 1,
+                                                            mAudioVRDE);
+                                AssertRC(vrc2);
+                            }
+#endif
+                        }
 
                         alock.acquire();
                     }

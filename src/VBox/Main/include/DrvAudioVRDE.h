@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,13 +19,20 @@
 #define ____H_DRVAUDIOVRDE
 
 #include <VBox/com/ptr.h>
+#include <VBox/com/string.h>
+
 #include <VBox/RemoteDesktop/VRDE.h>
+
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmifs.h>
 
+#include "AudioDriver.h"
+
+using namespace com;
+
 class Console;
 
-class AudioVRDE
+class AudioVRDE : public AudioDriver
 {
 
 public:
@@ -36,8 +43,6 @@ public:
 public:
 
     static const PDMDRVREG DrvReg;
-
-    Console *getParent(void) { return mParent; }
 
 public:
 
@@ -54,10 +59,10 @@ public:
 
 private:
 
+    void configureDriver(PCFGMNODE pLunCfg);
+
     /** Pointer to the associated VRDE audio driver. */
     struct DRVAUDIOVRDE *mpDrv;
-    /** Pointer to parent. */
-    Console * const mParent;
 };
 
 #endif /* !____H_DRVAUDIOVRDE */

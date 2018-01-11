@@ -121,6 +121,9 @@
 # endif
 #endif /* VBOX_WITH_NETFLT */
 
+#ifdef VBOX_WITH_AUDIO_VRDE
+# include "DrvAudioVRDE.h"
+#endif
 #include "NetworkServiceRunner.h"
 #include "BusAssignmentManager.h"
 #ifdef VBOX_WITH_EXTPACK
@@ -2963,26 +2966,21 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigString(pLunL1, "Driver", strAudioDriver.c_str());
 
 #ifdef VBOX_WITH_AUDIO_VRDE
-            /*
-             * The VRDE audio backend driver.
-             */
-            CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", uAudioLUN++);
-            InsertConfigString(pLunL0, "Driver", "AUDIO");
+            BOOL fVRDEEnabled = FALSE;
 
-            InsertConfigNode(pLunL0,   "Config", &pCfg);
-                InsertConfigString (pCfg, "DriverName",    "AudioVRDE");
-                InsertConfigInteger(pCfg, "InputEnabled",  fAudioEnabledIn);
-                InsertConfigInteger(pCfg, "OutputEnabled", fAudioEnabledOut);
-                InsertConfigInteger(pCfg, "DebugEnabled",  fDebugEnabled);
-                InsertConfigString (pCfg, "DebugPathOut",  strDebugPathOut);
+            if (mVRDEServer)
+            {
+                hrc = mVRDEServer->COMGETTER(Enabled)(&fVRDEEnabled);
+                ComAssertComRC(hrc);
+            }
 
-            InsertConfigNode(pLunL0, "AttachedDriver", &pLunL1);
-                InsertConfigString(pLunL1, "Driver", "AudioVRDE");
-
-                InsertConfigNode(pLunL1, "Config", &pCfg);
-                    InsertConfigString (pCfg, "StreamName", bstr);
-                    InsertConfigInteger(pCfg, "Object", (uintptr_t)mAudioVRDE);
-                    InsertConfigInteger(pCfg, "ObjectVRDPServer", (uintptr_t)mConsoleVRDPServer);
+            AudioDriverCfg Cfg(strAudioDevice, 0 /* Instance */, uAudioLUN);
+            rc = mAudioVRDE->Configure(&Cfg, fVRDEEnabled /* Attach */);
+            if (   RT_SUCCESS(rc)
+                && fVRDEEnabled) /* Successfully configured, use next LUN for drivers below. */
+            {
+                uAudioLUN++;
+            }
 #endif /* VBOX_WITH_AUDIO_VRDE */
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
