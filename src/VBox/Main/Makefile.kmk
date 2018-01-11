@@ -911,6 +911,7 @@ VBoxC_SOURCES += \
 VBoxC_SOURCES += \
 	../Devices/Audio/AudioMixBuffer.cpp \
 	../Devices/Audio/DrvAudioCommon.cpp \
+	src-client/AudioDriver.cpp \
 	$(if $(VBOX_WITH_AUDIO_VRDE),src-client/DrvAudioVRDE.cpp,) \
 	$(if $(VBOX_WITH_AUDIO_VIDEOREC),src-client/DrvAudioVideoRec.cpp,)
 
