@@ -62,7 +62,7 @@ public:
     UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent = 0, const CMachine &machine = CMachine());
     /** Destructs the VM Log-Viewer. */
     ~UIVMLogViewerWidget();
-    /* Returns the width of the current log page. return 0 if there is no current log page: */
+    /** Returns the width of the current log page. return 0 if there is no current log page: */
     int defaultLogPageWidth() const;
 
     /** Returns the menu. */
@@ -88,23 +88,25 @@ private slots:
     /** Handles save action triggering. */
     void sltSave();
 
-    void sltPanelActionTriggered(bool checked);
-    void sltShowHideFilterPanel();
-    void sltShowHideSearchPanel();
-    void sltShowHideBookmarkPanel();
-    /* Handles QAction sync. when a panel is closed (hidden) by panel's own close button */
-    //void sltPanelCloseButton();
+    /** @name Bookmark related slots
+     * @{ */
+    /** Deletes the bookmark with @p index from the current logs bookmark list. */
+        void sltDeleteBookmark(int index);
+        void sltDeleteAllBookmarks();
+        /** Scroll the plain text edit to the selected bookmark. */
+        void sltBookmarkSelected(int index);
+        /** Creates a bookmark out of line number and block text. */
+        void sltCreateBookmarkAtLine(QPair<int, QString> bookmark);
+        /** Determines the (middle) line number of the visible text and calls sltCreateBookmarkAtLine. */
+        void sltCreateBookmarkAtCurrent();
+    /** @} */
 
+    void sltPanelActionTriggered(bool checked);
     /** Handles the search result highlight changes. */
     void sltSearchResultHighLigting();
     /** Handles the tab change of the logviewer. */
     void sltTabIndexChange(int tabIndex);
     void sltFilterApplied();
-    /* create a bookmark out of line number and block text. */
-    void sltCreateBookmarkAtLine(QPair<int, QString> bookmark);
-    /* Determines the (middle) line number of the visible text and calls sltCreateBookmarkAtLine. */
-    void sltCreateBookmarkAtCurrent();
-
 
 private:
 
@@ -178,10 +180,9 @@ private:
     /** Holds the list of log file content. */
     VMLogMap             m_logMap;
     mutable BookmarkMap  m_bookmarkMap;
+    QVBoxLayout         *m_pMainLayout;
 
-    QVBoxLayout      *m_pMainLayout;
-
-    /** Holds the widget embedding type. */
+    /** Holds the widget's embedding type. */
     const EmbedTo m_enmEmbedding;
 
     /** @name Toolbar and menu variables.
@@ -198,11 +199,10 @@ private:
         QAction   *m_pActionSave;
         /** Holds the Bookmark action instance. */
         QAction   *m_pActionBookmark;
-
         /** Holds the menu object instance. */
         QMenu     *m_pMenu;
     /** @} */
-
+    const bool     m_bMarkBookmarkLines;
     friend class UIVMLogViewerBookmarksPanel;
     friend class UIVMLogViewerFilterPanel;
     friend class UIVMLogViewerSearchPanel;

@@ -24,9 +24,8 @@
 /* Forward declarations: */
 class QComboBox;
 class QPushButton;
-
-
-
+class QSpacerItem;
+class QIToolButton;
 
 /** UIVMLogViewerPanel extension providing GUI for bookmark management. Show a list of bookmarks currently set
   for displayed log page. It has controls to navigate and clear bookmarks. */
@@ -35,6 +34,10 @@ class UIVMLogViewerBookmarksPanel : public UIVMLogViewerPanel
     Q_OBJECT;
 
 signals:
+
+    void sigDeleteBookmark(int bookmarkIndex);
+    void sigDeleteAllBookmarks();
+    void sigBookmarkSelected(int index);
 
 public:
 
@@ -46,9 +49,7 @@ public:
     /* Clear the bookmark list and show this list instead. Probably done after
        user switches to another log page tab etc. */
     void setBookmarksList(const QVector<QPair<int, QString> > &bookmarkList);
-    void updateBookmarkList();
-    /* @a index is the index of the curent bookmark. */
-    void setBookmarkIndex(int index);
+    void updateBookmarkList(const QVector<QPair<int, QString> > *bookmarkVector);
 
 public slots:
 
@@ -62,12 +63,19 @@ protected:
 
 private slots:
 
+    void sltDeleteCurrentBookmark();
+    void sltBookmarkSelected(int index);
+
 private:
+
+    /* @a index is the index of the curent bookmark. */
+    void setBookmarkIndex(int index);
 
     const int     m_iMaxBookmarkTextLength;
     QComboBox    *m_pBookmarksComboBox;
-    QPushButton  *m_clearAllButton;
-    QPushButton  *m_clearCurrentButton;
+    QPushButton  *m_pDeleteAllButton;
+    QIToolButton *m_pDeleteCurrentButton;
+    QSpacerItem  *m_pSpacerItem;
 };
 
 #endif /* !___UIVMLogViewerBookmarksPanel_h___ */

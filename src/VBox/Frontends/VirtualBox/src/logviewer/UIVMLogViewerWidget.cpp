@@ -53,8 +53,8 @@
 
 /** We use a modified scrollbar style for our QPlainTextEdits to get the
     markings on the scrollbars correctly. The default scrollbarstyle does not
-    reveal the height of the pushbuttons on the scrollbar to compute the marking
-    locations correctlt. so we turn them off: */
+    reveal the height of the pushbuttons on the scrollbar (on either side of it, with arrow on them)
+    to compute the marking locations correctly. Thus we turn these push buttons off: */
 const QString verticalScrollBarStyle("QScrollBar:vertical {"
                                      "border: 1px ridge grey; "
                                      "margin: 0px 0px 0 0px;}"
@@ -113,8 +113,9 @@ protected:
     }
 
 private:
+
     /* Stores the relative (to scrollbar's height) positions of markings,
-       where we draw a horizontal line. */
+       where we draw a horizontal line. Values are in [0.0, 1.0]*/
     QVector<float> m_markingsVector;
 };
 
@@ -200,6 +201,7 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent 
     , m_pActionSave(0)
     , m_pActionBookmark(0)
     , m_pMenu(0)
+    , m_bMarkBookmarkLines(0)
 {
     /* Prepare VM Log-Viewer: */
     prepare();
@@ -236,33 +238,59 @@ bool UIVMLogViewerWidget::shouldBeMaximized() const
     return gEDataManager->logWindowShouldBeMaximized();
 }
 
+void UIVMLogViewerWidget::sltDeleteBookmark(int index)
+{
+    QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
+    if(!bookmarkVector || bookmarkVector->size() <= index)
+        return;
+    bookmarkVector->remove(index, 1);
+    if (m_pBookmarksPanel)
+        m_pBookmarksPanel->updateBookmarkList(bookmarkVector);
+}
+
+void UIVMLogViewerWidget::sltDeleteAllBookmarks()
+{
+    QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
+    if(!bookmarkVector)
+        return;
+    bookmarkVector->clear();
+    if (m_pBookmarksPanel)
+        m_pBookmarksPanel->updateBookmarkList(bookmarkVector);
+}
+
+void UIVMLogViewerWidget::sltBookmarkSelected(int index)
+{
+    QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
+    if(!bookmarkVector || index >= bookmarkVector->size())
+        return;
+    if(!currentLogPage() || !currentLogPage()->document())
+        return;
+
+    int lineNumber = bookmarkVector->at(index).first;
+    QTextCursor cursor(currentLogPage()->document()->findBlockByLineNumber(lineNumber));
+    currentLogPage()->setTextCursor(cursor);
+
+}
+
 void UIVMLogViewerWidget::sltPanelActionTriggered(bool checked)
 {
     QAction *pSenderAction = qobject_cast<QAction*>(sender());
-    if(!pSenderAction)
+    if (!pSenderAction)
         return;
     UIVMLogViewerPanel* pPanel = 0;
     /* Look for the sender() within the m_panelActionMap's values: */
-    for(QMap<UIVMLogViewerPanel*, QAction*>::const_iterator iterator = m_panelActionMap.begin();
+    for (QMap<UIVMLogViewerPanel*, QAction*>::const_iterator iterator = m_panelActionMap.begin();
         iterator != m_panelActionMap.end(); ++iterator)
     {
-        if(iterator.value() == pSenderAction)
+        if (iterator.value() == pSenderAction)
             pPanel = iterator.key();
     }
-    if(!pPanel)
+    if (!pPanel)
         return;
-    if(checked)
+    if (checked)
         showPanel(pPanel);
     else
         hidePanel(pPanel);
-}
-
-void UIVMLogViewerWidget::sltShowHideSearchPanel()
-{
-    if (!m_pSearchPanel)
-        return;
-    /* Show/hide search-panel: */
-    m_pSearchPanel->isHidden() ? m_pSearchPanel->show() : m_pSearchPanel->hide();
 }
 
 void UIVMLogViewerWidget::sltRefresh()
@@ -370,14 +398,6 @@ void UIVMLogViewerWidget::sltSave()
     }
 }
 
-void UIVMLogViewerWidget::sltShowHideFilterPanel()
-{
-    if (!m_pFilterPanel)
-        return;
-    /* Show/hide filter-panel: */
-    m_pFilterPanel->isHidden() ? m_pFilterPanel->show() : m_pFilterPanel->hide();
-}
-
 void UIVMLogViewerWidget::sltSearchResultHighLigting()
 {
     if (!m_pSearchPanel)
@@ -401,6 +421,10 @@ void UIVMLogViewerWidget::sltTabIndexChange(int tabIndex)
     if (m_pSearchPanel)
         m_pSearchPanel->reset();
     m_iCurrentTabIndex = tabIndex;
+    /* We keep a separate QVector<LogBookmark> for each log page: */
+    QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
+    if(bookmarkVector && m_pBookmarksPanel)
+        m_pBookmarksPanel->updateBookmarkList(bookmarkVector);
 }
 
 void UIVMLogViewerWidget::sltFilterApplied()
@@ -408,13 +432,6 @@ void UIVMLogViewerWidget::sltFilterApplied()
     /* Reapply the search to get highlighting etc. correctly */
     if (m_pSearchPanel && m_pSearchPanel->isVisible())
         m_pSearchPanel->refresh();
-}
-
-void UIVMLogViewerWidget::sltShowHideBookmarkPanel()
-{
-    if (!m_pBookmarksPanel)
-        return;
-    m_pBookmarksPanel->isHidden() ? m_pBookmarksPanel->show() : m_pBookmarksPanel->hide();
 }
 
 void UIVMLogViewerWidget::sltCreateBookmarkAtCurrent()
@@ -439,10 +456,7 @@ void UIVMLogViewerWidget::sltCreateBookmarkAtLine(LogBookmark bookmark)
         return;
     pBookmarkVector->push_back(bookmark);
     if (m_pBookmarksPanel)
-    {
-        m_pBookmarksPanel->updateBookmarkList();
-        m_pBookmarksPanel->setBookmarkIndex(pBookmarkVector->size() - 1);
-    }
+        m_pBookmarksPanel->updateBookmarkList(pBookmarkVector);
 }
 
 void UIVMLogViewerWidget::setMachine(const CMachine &machine)
@@ -527,8 +541,13 @@ void UIVMLogViewerWidget::prepareWidgets()
         installEventFilter(m_pBookmarksPanel);
         m_pBookmarksPanel->hide();
         m_pMainLayout->insertWidget(4, m_pBookmarksPanel);
+        connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteBookmark,
+                this, &UIVMLogViewerWidget::sltDeleteBookmark);
+        connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks,
+                this, &UIVMLogViewerWidget::sltDeleteAllBookmarks);
+        connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
+                this, &UIVMLogViewerWidget::sltBookmarkSelected);
     }
-
 }
 
 void UIVMLogViewerWidget::prepareActions()
@@ -713,7 +732,7 @@ void UIVMLogViewerWidget::retranslateUi()
 
     if (m_pActionBookmark)
     {
-        m_pActionBookmark->setText(tr("&Bookmark..."));
+        m_pActionBookmark->setText(tr("&Bookmarks"));
         m_pActionBookmark->setToolTip(tr("Bookmark the line"));
         m_pActionBookmark->setStatusTip(tr("Bookmark the line"));
     }
@@ -838,9 +857,9 @@ void UIVMLogViewerWidget::hidePanel(UIVMLogViewerPanel* panel)
     if (panel && panel->isVisible())
         panel->setVisible(false);
     QMap<UIVMLogViewerPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
-    if(iterator != m_panelActionMap.end())
+    if (iterator != m_panelActionMap.end())
     {
-        if(iterator.value()->isChecked())
+        if (iterator.value()->isChecked())
             iterator.value()->setChecked(false);
     }
 }
@@ -850,9 +869,9 @@ void UIVMLogViewerWidget::showPanel(UIVMLogViewerPanel* panel)
     if (panel && panel->isHidden())
         panel->setVisible(true);
     QMap<UIVMLogViewerPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
-    if(iterator != m_panelActionMap.end())
+    if (iterator != m_panelActionMap.end())
     {
-        if(!iterator.value()->isChecked())
+        if (!iterator.value()->isChecked())
             iterator.value()->setChecked(true);
     }
 }
