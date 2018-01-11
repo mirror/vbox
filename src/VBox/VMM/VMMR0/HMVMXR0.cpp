@@ -4141,8 +4141,10 @@ static VBOXSTRICTRC hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                             | X86_CR4_VMXE;
         if (pVM->cpum.ro.HostFeatures.fXSaveRstor)
             u32CR4Mask |= X86_CR4_OSXSAVE;
+#if 0
         if (pVM->cpum.ro.GuestFeatures.fPcid)
             u32CR4Mask |= X86_CR4_PCIDE;
+#endif
         pVCpu->hm.s.vmx.u32CR4Mask = u32CR4Mask;
         rc = VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, u32CR4Mask);
         AssertRCReturn(rc, rc);
