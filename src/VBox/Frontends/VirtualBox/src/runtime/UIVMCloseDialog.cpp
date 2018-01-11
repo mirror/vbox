@@ -173,9 +173,24 @@ void UIVMCloseDialog::prepare()
     /* Prepare 'main' layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
+        /* Configure layout: */
+#ifdef VBOX_WS_MAC
+        pMainLayout->setContentsMargins(40, 20, 40, 20);
+        pMainLayout->setSpacing(15);
+#else
+        pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) * 2);
+#endif
+
         /* Prepare 'top' layout: */
         QHBoxLayout *pTopLayout = new QHBoxLayout;
         {
+            /* Configure layout: */
+#ifdef VBOX_WS_MAC
+            pTopLayout->setSpacing(20);
+#else
+            pTopLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) * 2);
+#endif
+
             /* Prepare 'top-left' layout: */
             QVBoxLayout *pTopLeftLayout = new QVBoxLayout;
             {
@@ -188,8 +203,8 @@ void UIVMCloseDialog::prepare()
                     const QIcon icon = UIIconPool::iconSet(":/os_unknown.png");
                     m_pIcon->setPixmap(icon.pixmap(iIconMetric, iIconMetric));
                 }
-                /* Configure layout: */
-                pTopLeftLayout->setContentsMargins(0, 0, 0, 0);
+
+                /* Add into layout: */
                 pTopLeftLayout->addWidget(m_pIcon);
                 pTopLeftLayout->addStretch();
             }
@@ -197,8 +212,6 @@ void UIVMCloseDialog::prepare()
             QVBoxLayout *pTopRightLayout = new QVBoxLayout;
             {
                 /* Configure layout: */
-                // WORKAROUND:
-                // Why do we need it? It should be the default one, but it's not..
 #ifdef VBOX_WS_MAC
                 pTopRightLayout->setSpacing(10);
 #else
@@ -211,8 +224,6 @@ void UIVMCloseDialog::prepare()
                 QGridLayout *pChoiceLayout = new QGridLayout;
                 {
                     /* Configure layout: */
-                    // WORKAROUND:
-                    // Why do we need it? It should be the default one, but it's not..
 #ifdef VBOX_WS_MAC
                     pChoiceLayout->setSpacing(10);
 #else
@@ -283,8 +294,8 @@ void UIVMCloseDialog::prepare()
                     }
                     /* Prepare 'discard' check-box: */
                     m_pDiscardCheckBox = new QCheckBox(this);
-                    /* Configure layout: */
-                    pChoiceLayout->setContentsMargins(0, 0, 0, 0);
+
+                    /* Add into layout: */
                     pChoiceLayout->addWidget(m_pDetachIcon, 0, 0);
                     pChoiceLayout->addWidget(m_pDetachRadio, 0, 1);
                     pChoiceLayout->addWidget(m_pSaveIcon, 1, 0);
@@ -295,21 +306,17 @@ void UIVMCloseDialog::prepare()
                     pChoiceLayout->addWidget(m_pPowerOffRadio, 3, 1);
                     pChoiceLayout->addWidget(m_pDiscardCheckBox, 4, 1);
                 }
-                /* Configure layout: */
-                pTopRightLayout->setContentsMargins(0, 0, 0, 0);
+
+                /* Add into layout: */
                 pTopRightLayout->addWidget(m_pLabel);
                 pTopRightLayout->addItem(pChoiceLayout);
             }
-            /* Configure layout: */
-            pTopLayout->setContentsMargins(0, 0, 0, 0);
-#ifdef VBOX_WS_MAC
-            pTopLayout->setSpacing(20);
-#else
-            pTopLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) * 2);
-#endif
+
+            /* Add into layout: */
             pTopLayout->addItem(pTopLeftLayout);
             pTopLayout->addItem(pTopRightLayout);
         }
+
         /* Prepare button-box: */
         QIDialogButtonBox *pButtonBox = new QIDialogButtonBox(this);
         {
@@ -319,10 +326,8 @@ void UIVMCloseDialog::prepare()
             connect(pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
             connect(pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
         }
-        /* Configure layout: */
-#ifdef VBOX_WS_MAC
-        pMainLayout->setContentsMargins(40, 20, 40, 20);
-#endif /* VBOX_WS_MAC */
+
+        /* Add into layout: */
         pMainLayout->addItem(pTopLayout);
         pMainLayout->addWidget(pButtonBox);
     }
