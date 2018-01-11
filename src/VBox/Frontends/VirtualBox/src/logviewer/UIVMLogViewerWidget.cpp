@@ -255,6 +255,8 @@ void UIVMLogViewerWidget::sltSearchResultHighLigting()
 
 void UIVMLogViewerWidget::sltTabIndexChange(int tabIndex)
 {
+    Q_UNUSED(tabIndex);
+
     // if (m_iCurrentTabIndex == tabIndex)
     //     return;
 
@@ -292,6 +294,7 @@ void UIVMLogViewerWidget::sltCreateBookmarkAtCurrent()
 
 void UIVMLogViewerWidget::sltCreateBookmarkAtLine(LogBookmark bookmark)
 {
+    Q_UNUSED(bookmark);
     // QVector<LogBookmark> *pBookmarkVector = currentBookmarkVector();
     // if (!pBookmarkVector)
     //     return;
