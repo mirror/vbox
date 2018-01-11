@@ -42,10 +42,10 @@ AudioDriver::~AudioDriver(void)
 }
 
 /**
- * Returns the next free LUN of the audio device driver 
+ * Returns the next free LUN of the audio device driver
  * chain.
- *  
- * @return unsigned             Next free LUN in audio device driver chain.    
+ *
+ * @return unsigned             Next free LUN in audio device driver chain.
  */
 unsigned AudioDriver::getFreeLUN(void)
 {
@@ -73,8 +73,8 @@ unsigned AudioDriver::getFreeLUN(void)
 /**
  * Configures the audio driver (to CFGM) and attaches it to the audio chain.
  *
- * @returns IPRT status code. 
- * @param   pThis               Audio driver to detach. 
+ * @returns IPRT status code.
+ * @param   pThis               Audio driver to detach.
  * @param   pCfg                Audio driver configuration to use for the audio driver to attach.
  */
 /* static */
@@ -94,16 +94,16 @@ DECLCALLBACK(int) AudioDriver::Attach(AudioDriver *pThis, AudioDriverCfg *pCfg)
         pCfg->uLUN = pThis->getFreeLUN();
 
     LogFunc(("strDevice=%s, uInst=%u, uLUN=%u\n", pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN));
-   
+
     vrc = pThis->Configure(pCfg, true /* Attach */);
     if (RT_SUCCESS(vrc))
         vrc = PDMR3DriverAttach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN, 0 /* fFlags */, NULL /* ppBase */);
 
     if (RT_SUCCESS(vrc))
-    {           
-        pThis->mfAttached = true;    
+    {
+        pThis->mfAttached = true;
     }
-    else                
+    else
         LogRel(("VRDE: Failed to attach audio driver, rc=%Rrc\n", vrc));
 
     return vrc;
@@ -112,7 +112,7 @@ DECLCALLBACK(int) AudioDriver::Attach(AudioDriver *pThis, AudioDriverCfg *pCfg)
 /**
  * Detaches an already attached audio driver from the audio chain.
  *
- * @returns IPRT status code. 
+ * @returns IPRT status code.
  * @param   pThis               Audio driver to detach.
  */
 /* static */
@@ -131,7 +131,7 @@ DECLCALLBACK(int) AudioDriver::Detach(AudioDriver *pThis)
     AudioDriverCfg *pCfg = &pThis->mCfg;
 
     LogFunc(("strDevice=%s, uInst=%u, uLUN=%u\n", pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN));
-   
+
     vrc = PDMR3DriverDetach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN, "AUDIO",
                             0 /* iOccurrence */, 0 /* fFlags */);
     if (RT_SUCCESS(vrc))
@@ -153,9 +153,7 @@ DECLCALLBACK(int) AudioDriver::Detach(AudioDriver *pThis)
  * Configures the audio driver via CFGM.
  *
  * @returns VBox status code.
- * @param   strDevice           The PDM device name.
- * @param   uInstance           The PDM device instance.
- * @param   uLUN                The PDM LUN number of the driver.
+ * @param   pCfg                Audio driver configuration to use.
  * @param   fAttach             Whether to attach or detach the driver configuration to CFGM.
  *
  * @thread EMT
@@ -186,7 +184,7 @@ int AudioDriver::Configure(AudioDriverCfg *pCfg, bool fAttach)
     if (fAttach)
     {
         if (!pDevLun)
-        {         
+        {
             LogRel2(("VRDE: Configuring audio driver\n"));
 
             PCFGMNODE pLunL0;
