@@ -1669,8 +1669,6 @@ class TransportTcp(TransportBase):
 
     def __isInProgressXcpt(self, oXcpt):
         """ In progress exception? """
-        reporter.log("oXcpt=%s" % (oXcpt)) ## TMP TMP
-        reporter.log("dir(oXcpt)=%s" % (dir(oXcpt))) ## TMP TMP
         try:
             if isinstance(oXcpt, socket.error):
                 try:
