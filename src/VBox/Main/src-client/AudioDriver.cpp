@@ -72,6 +72,7 @@ unsigned AudioDriver::getFreeLUN(void)
 
 /**
  * Configures the audio driver (to CFGM) and attaches it to the audio chain.
+ * Does nothing if the audio driver already is attached.
  *
  * @returns IPRT status code.
  * @param   pThis               Audio driver to detach.
@@ -112,6 +113,7 @@ DECLCALLBACK(int) AudioDriver::Attach(AudioDriver *pThis, AudioDriverCfg *pCfg)
 
 /**
  * Detaches an already attached audio driver from the audio chain.
+ * Does nothing if the audio driver already is detached or not attached.
  *
  * @returns IPRT status code.
  * @param   pThis               Audio driver to detach.
