@@ -46,7 +46,7 @@ are ordered as follows:
     <itemizedlist>
 
       <listitem>
-        <para>Audio: implemented support for attaching / detaching VRDE 
+        <para>Audio: implemented support for attaching / detaching VRDE
           audio drivers at runtime</para>
       </listitem>
 
