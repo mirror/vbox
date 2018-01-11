@@ -2975,7 +2975,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             }
 
             AudioDriverCfg Cfg(strAudioDevice, 0 /* Instance */, uAudioLUN);
-            rc = mAudioVRDE->Configure(&Cfg, fVRDEEnabled /* Attach */);
+            rc = mAudioVRDE->Configure(&Cfg, RT_BOOL(fVRDEEnabled) /* Attach */);
             if (   RT_SUCCESS(rc)
                 && fVRDEEnabled) /* Successfully configured, use next LUN for drivers below. */
             {
