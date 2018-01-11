@@ -1849,13 +1849,11 @@ void UISelectorWindow::prepareToolbar()
     AssertPtrReturnVoid(m_pToolBar);
     {
         /* Configure toolbar: */
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
         m_pToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-        /// @todo Get rid of hard-coded stuff:
-        const QSize toolBarIconSize = m_pToolBar->iconSize();
-        if (toolBarIconSize.width() < 32 || toolBarIconSize.height() < 32)
-            m_pToolBar->setIconSize(QSize(32, 32));
 
         /* Add main actions block: */
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
