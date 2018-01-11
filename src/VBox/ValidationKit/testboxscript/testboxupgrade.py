@@ -89,7 +89,7 @@ def _doUpgradeUnzipAndCheck(oZip, sUpgradeDir, asMembers):
         shutil.rmtree(sUpgradeDir);
     for sMember in asMembers:
         if sMember.endswith('/'):
-            os.makedirs(os.path.join(sUpgradeDir, sMember.replace('/', os.path.sep)), 0775);
+            os.makedirs(os.path.join(sUpgradeDir, sMember.replace('/', os.path.sep)), 0o775);
         else:
             oZip.extract(sMember, sUpgradeDir);
 
@@ -109,8 +109,8 @@ def _doUpgradeUnzipAndCheck(oZip, sUpgradeDir, asMembers):
                 testboxcommons.log('Not regular file: "%s"' % sFull);
                 return False;
             try:
-                os.chmod(sFull, 0755);
-            except Exception, oXcpt:
+                os.chmod(sFull, 0o755);
+            except Exception as oXcpt:
                 testboxcommons.log('warning chmod error on %s: %s' % (sFull, oXcpt));
     return True;
 
@@ -169,7 +169,7 @@ def _doUpgradeApply(sUpgradeDir, asMembers):
             if sMember != '':
                 sFull = os.path.join(g_ksValidationKitDir, sMember);
                 if not os.path.isdir(sFull):
-                    os.makedirs(sFull, 0755);
+                    os.makedirs(sFull, 0o755);
 
     #
     # Move the files into place.
@@ -188,16 +188,16 @@ def _doUpgradeApply(sUpgradeDir, asMembers):
                 sDstRm = '%s-delete-me-%s' % (sDst, uuid.uuid4(),);
                 try:
                     os.rename(sDst, sDstRm);
-                except Exception, oXcpt:
+                except Exception as oXcpt:
                     testboxcommons.log('Error: failed to rename (old) "%s" to "%s": %s' % (sDst, sDstRm, oXcpt));
                     try:
                         shutil.copy(sDst, sDstRm);
-                    except Exception, oXcpt:
+                    except Exception as oXcpt:
                         testboxcommons.log('Error: failed to copy (old) "%s" to "%s": %s' % (sDst, sDstRm, oXcpt));
                         break;
                     try:
                         os.unlink(sDst);
-                    except Exception, oXcpt:
+                    except Exception as oXcpt:
                         testboxcommons.log('Error: failed to unlink (old) "%s": %s' % (sDst, oXcpt));
                         break;
 
@@ -205,7 +205,7 @@ def _doUpgradeApply(sUpgradeDir, asMembers):
             testboxcommons.log2('Info: Installing "%s"' % (sDst,));
             try:
                 os.rename(sSrc, sDst);
-            except Exception, oXcpt:
+            except Exception as oXcpt:
                 testboxcommons.log('Warning: failed to rename (new) "%s" to "%s": %s' % (sSrc, sDst, oXcpt));
                 try:
                     shutil.copy(sSrc, sDst);
@@ -258,7 +258,7 @@ def _doUpgradeRemoveOldStuff(sUpgradeDir, asMembers):
                 testboxcommons.log2('Info: Removing obsolete directory "%s"' % (sFull,));
                 try:
                     os.rmdir(sFull);
-                except Exception, oXcpt:
+                except Exception as oXcpt:
                     testboxcommons.log('Warning: failed to rmdir obsolete dir "%s": %s' % (sFull, oXcpt));
 
         for sFile in asFiles:
@@ -267,7 +267,7 @@ def _doUpgradeRemoveOldStuff(sUpgradeDir, asMembers):
                 testboxcommons.log2('Info: Removing obsolete file "%s"' % (sFull,));
                 try:
                     os.unlink(sFull);
-                except Exception, oXcpt:
+                except Exception as oXcpt:
                     testboxcommons.log('Warning: failed to unlink obsolete file "%s": %s' % (sFull, oXcpt));
     return True;
 

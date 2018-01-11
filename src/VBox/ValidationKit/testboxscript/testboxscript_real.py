@@ -59,6 +59,10 @@ from testboxcommand     import TestBoxCommand;
 from testboxconnection  import TestBoxConnection;
 from testboxscript      import TBS_EXITCODE_SYNTAX, TBS_EXITCODE_FAILURE;
 
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    long = int;     # pylint: disable=redefined-builtin,invalid-name
+
 
 class TestBoxScriptException(Exception):
     """ For raising exceptions during TestBoxScript.__init__. """
@@ -142,7 +146,7 @@ class TestBoxScript(object):
 
         for sDir in [self._oOptions.sScratchRoot, self._sScratchSpill, self._sScratchScripts, self._sScratchState]:
             if not os.path.isdir(sDir):
-                os.makedirs(sDir, 0700);
+                os.makedirs(sDir, 0o700);
 
         # We count consecutive reinitScratch failures and will reboot the
         # testbox after a while in the hope that it will correct the issue.
@@ -694,7 +698,7 @@ class TestBoxScript(object):
                     os.remove(sFullName);
                 if os.path.exists(sFullName):
                     raise Exception('Still exists after deletion, weird.');
-            except Exception, oXcpt:
+            except Exception as oXcpt:
                 if    fUseTheForce is True \
                   and utils.getHostOs() not in ['win', 'os2'] \
                   and len(sFullName) >= 8 \
@@ -730,8 +734,8 @@ class TestBoxScript(object):
         for sDir in [self._oOptions.sScratchRoot, self._sScratchSpill, self._sScratchScripts, self._sScratchState]:
             if not os.path.isdir(sDir):
                 try:
-                    os.makedirs(sDir, 0700);
-                except Exception, oXcpt:
+                    os.makedirs(sDir, 0o700);
+                except Exception as oXcpt:
                     fnLog('Error creating "%s": %s' % (sDir, oXcpt));
                     oRc.fRc = False;
 
@@ -791,7 +795,7 @@ class TestBoxScript(object):
             oResponse.checkParameterCount(3);
             idTestBox    = oResponse.getIntChecked(constants.tbresp.SIGNON_PARAM_ID, 1, 0x7ffffffe);
             sTestBoxName = oResponse.getStringChecked(constants.tbresp.SIGNON_PARAM_NAME);
-        except TestBoxException, err:
+        except TestBoxException as err:
             testboxcommons.log('Failed to sign-on: %s' % (str(err),))
             testboxcommons.log('Server response: %s' % (oResponse.toString(),));
             return False;
@@ -1022,7 +1026,7 @@ class TestBoxScript(object):
         #
         try:
             oTestBoxScript = TestBoxScript(oOptions);
-        except TestBoxScriptException, oXcpt:
+        except TestBoxScriptException as oXcpt:
             print('Error: %s' % (oXcpt,));
             return TBS_EXITCODE_SYNTAX;
         oTestBoxScript.dispatch();
