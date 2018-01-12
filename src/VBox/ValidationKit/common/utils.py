@@ -599,8 +599,8 @@ def processOutputChecked(*aPositionalArgs, **dKeywordArgs):
     else:                       sEncoding = 'utf-8';
 
     fIgnoreEncoding = dKeywordArgs.get('fIgnoreEncoding');
-    if sEncoding is not None:   del dKeywordArgs['fIgnoreEncoding'];
-    else:                       fIgnoreEncoding = True;
+    if fIgnoreEncoding is not None:   del dKeywordArgs['fIgnoreEncoding'];
+    else:                             fIgnoreEncoding = True;
 
     _processFixPythonInterpreter(aPositionalArgs, dKeywordArgs);
     oProcess = processPopenSafe(stdout=subprocess.PIPE, *aPositionalArgs, **dKeywordArgs);
