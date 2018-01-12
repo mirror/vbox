@@ -98,6 +98,7 @@ private:
     void prepareWidgets();
     void cleanup();
     void retranslateUi();
+    void updateTextEditBookmarkLineSet();
 
     QHBoxLayout    *m_pMainLayout;
     UIVMLogViewerTextEdit *m_pTextEdit;

@@ -43,6 +43,10 @@ public:
     /** Forwards the call to scroll bar class */
     void clearScrollBarMarkingsVector();
 
+    void scrollToLine(int lineNumber);
+
+    void setBookmarkLineSet(const QSet<int>& lineSet);
+
 protected:
 
     void contextMenuEvent(QContextMenuEvent *pEvent);
@@ -53,6 +57,7 @@ private slots:
     void sltBookmark();
     void sltUpdateLineNumberAreaWidth(int newBlockCount);
     void sltUpdateLineNumberArea(const QRect &, int);
+    int  visibleLineCount();
 
 private:
 
@@ -62,6 +67,7 @@ private:
     /* Line number and text at the context menu position */
     QPair<int, QString>  m_iContextMenuBookmark;
     QWidget             *m_pLineNumberArea;
+    QSet<int>            m_bookmarkLineSet;
 };
 
 
