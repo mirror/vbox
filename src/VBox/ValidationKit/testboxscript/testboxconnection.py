@@ -33,11 +33,11 @@ __version__ = "$Revision$"
 import sys;
 import urllib
 if sys.version_info[0] >= 3:
-    import http.client as httplib;
-    import urllib.parse as urlparse;
+    import http.client as httplib;      # pylint: disable=import-error,no-name-in-module
+    import urllib.parse as urlparse;    # pylint: disable=import-error,no-name-in-module
 else:
-    import httplib;
-    import urlparse;
+    import httplib;                     # pylint: disable=import-error
+    import urlparse;                    # pylint: disable=import-error
 
 # Validation Kit imports.
 from common import constants
@@ -69,7 +69,7 @@ class TestBoxResponse(object):
             # Parse the body (this should be the exact reverse of what
             # TestBoxConnection.postRequestRaw).
             ##testboxcommons.log2('SERVER RESPONSE: "%s"' % (sBody,))
-            self._dResponse = urllib_parse_qs(sBody, strict_parsing=True);
+            self._dResponse = urlparse.parse_qs(sBody, strict_parsing=True);
 
             # Convert the dictionary from 'field:values' to 'field:value'. Fail
             # if a field has more than one value (i.e. given more than once).
