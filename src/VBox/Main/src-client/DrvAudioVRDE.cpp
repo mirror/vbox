@@ -755,6 +755,30 @@ DECLCALLBACK(void) AudioVRDE::drvDestruct(PPDMDRVINS pDrvIns)
     }
 }
 
+/**
+ * @interface_method_impl{PDMDRVREG,pfnAttach}
+ */
+/* static */
+DECLCALLBACK(int) AudioVRDE::drvAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    RT_NOREF(pDrvIns, fFlags);
+
+    LogFlowFuncEnter();
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnDetach}
+ */
+/* static */
+DECLCALLBACK(void) AudioVRDE::drvDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    RT_NOREF(pDrvIns, fFlags);
+
+    LogFlowFuncEnter();
+}
+
 
 /**
  * VRDE audio driver registration record.
@@ -795,9 +819,9 @@ const PDMDRVREG AudioVRDE::DrvReg =
     /* pfnResume */
     NULL,
     /* pfnAttach */
-    NULL,
+    AudioVRDE::drvAttach,
     /* pfnDetach */
-    NULL,
+    AudioVRDE::drvDetach,
     /* pfnPowerOff */
     NULL,
     /* pfnSoftReset */
