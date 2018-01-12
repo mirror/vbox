@@ -5417,7 +5417,7 @@ HRESULT Console::i_onVRDEServerChange(BOOL aRestart)
 
                                 PVMREQ pReq;
                                 int vrc2 = VMR3ReqCallU(mpUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                                        (PFNRT)AudioVRDE::Attach, 1, 
+                                                        (PFNRT)AudioVRDE::Attach, 1,
                                                         mAudioVRDE);
 
                                 /* Release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
@@ -5439,7 +5439,7 @@ HRESULT Console::i_onVRDEServerChange(BOOL aRestart)
 
                             PVMREQ pReq;
                             int vrc2 = VMR3ReqCallU(mpUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                                    (PFNRT)AudioVRDE::Detach, 1, 
+                                                    (PFNRT)AudioVRDE::Detach, 1,
                                                     mAudioVRDE);
 
                             /* Release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
@@ -5555,7 +5555,7 @@ HRESULT Console::i_onVideoCaptureChange()
                 {
                     PVMREQ pReq;
                     int vrc2 = VMR3ReqCallU(mpUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                            (PFNRT)AudioVideoRec::Attach, 1, 
+                                            (PFNRT)AudioVideoRec::Attach, 1,
                                             mAudioVideoRec);
 
                     /* Release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
@@ -5579,7 +5579,7 @@ HRESULT Console::i_onVideoCaptureChange()
 # ifdef VBOX_WITH_AUDIO_VIDEOREC
                 PVMREQ pReq;
                 int vrc2 = VMR3ReqCallU(mpUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                        (PFNRT)AudioVideoRec::Detach, 1, 
+                                        (PFNRT)AudioVideoRec::Detach, 1,
                                         mAudioVideoRec);
 
                 /* Release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
@@ -9897,7 +9897,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
             {
                 PVMREQ pReq;
                 int vrc2 = VMR3ReqCallU(pConsole->mpUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                        (PFNRT)AudioVRDE::Attach, 1, 
+                                        (PFNRT)AudioVRDE::Attach, 1,
                                         pConsole->mAudioVRDE);
 
                 /* Release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
@@ -9928,7 +9928,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
             {
                 PVMREQ pReq;
                 int vrc2 = VMR3ReqCallU(pConsole->mpUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                        (PFNRT)AudioVideoRec::Attach, 1, 
+                                        (PFNRT)AudioVideoRec::Attach, 1,
                                         pConsole->mAudioVideoRec);
 
                 /* Release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
