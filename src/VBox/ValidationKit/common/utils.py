@@ -380,7 +380,9 @@ def noxcptReadLink(sPath, sXcptRet, sEncoding = 'utf-8'):
         sRet = os.readlink(sPath); # pylint: disable=E1101
     except:
         return sXcptRet;
-    return sRet.decode(sEncoding, 'ignore');
+    if hasattr(sRet, 'decode'):
+        sRet = sRet.decode(sEncoding, 'ignore');
+    return sRet;
 
 def readFile(sFile, sMode = 'rb'):
     """
@@ -399,7 +401,7 @@ def noxcptReadFile(sFile, sXcptRet, sMode = 'rb', sEncoding = 'utf-8'):
         sRet = readFile(sFile, sMode);
     except:
         sRet = sXcptRet;
-    if sEncoding is not None:
+    if sEncoding is not None and hasattr(sRet, 'decode'):
         sRet = sRet.decode(sEncoding, 'ignore');
     return sRet;
 
@@ -587,11 +589,18 @@ def processOutputChecked(*aPositionalArgs, **dKeywordArgs):
     """
     Wrapper around subprocess.check_output to deal with its absense in older
     python versions.
-    Extra keyword: sEncoding='utf-8; for specifying now output is to be decoded.
+
+    Extra keywords for specifying now output is to be decoded:
+        sEncoding='utf-8
+        fIgnoreEncoding=True/False
     """
     sEncoding = dKeywordArgs.get('sEncoding');
     if sEncoding is not None:   del dKeywordArgs['sEncoding'];
     else:                       sEncoding = 'utf-8';
+
+    fIgnoreEncoding = dKeywordArgs.get('fIgnoreEncoding');
+    if sEncoding is not None:   del dKeywordArgs['fIgnoreEncoding'];
+    else:                       fIgnoreEncoding = True;
 
     _processFixPythonInterpreter(aPositionalArgs, dKeywordArgs);
     oProcess = processPopenSafe(stdout=subprocess.PIPE, *aPositionalArgs, **dKeywordArgs);
@@ -606,7 +615,9 @@ def processOutputChecked(*aPositionalArgs, **dKeywordArgs):
         print(sOutput);
         raise subprocess.CalledProcessError(iExitCode, asArgs);
 
-    return sOutput.decode(sEncoding);
+    if hasattr(sOutput, 'decode'):
+        sOutput = sOutput.decode(sEncoding, 'ignore' if fIgnoreEncoding else 'strict');
+    return sOutput;
 
 g_fOldSudo = None;
 def _sudoFixArguments(aPositionalArgs, dKeywordArgs, fInitialEnv = True):
