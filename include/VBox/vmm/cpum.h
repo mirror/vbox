@@ -138,7 +138,9 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_Intel_Core7_Skylake,
     kCpumMicroarch_Intel_Core7_KabyLake,
     kCpumMicroarch_Intel_Core7_CoffeeLake,
-    kCpumMicroarch_Intel_Core7_Cannonlake,
+    kCpumMicroarch_Intel_Core7_CannonLake,
+    kCpumMicroarch_Intel_Core7_IceLake,
+    kCpumMicroarch_Intel_Core7_TigerLake,
     kCpumMicroarch_Intel_Core7_End,
 
     kCpumMicroarch_Intel_Atom_First,

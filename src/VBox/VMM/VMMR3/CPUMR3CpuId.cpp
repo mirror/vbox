@@ -156,8 +156,8 @@ static const CPUMMICROARCH g_aenmIntelFamily06[] =
     /* [98(0x62)] = */ kCpumMicroarch_Intel_Unknown,
     /* [99(0x63)] = */ kCpumMicroarch_Intel_Unknown,
     /*[100(0x64)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[101(0x65)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[102(0x66)] = */ kCpumMicroarch_Intel_Core7_Cannonlake, /* unconfirmed */
+    /*[101(0x65)] = */ kCpumMicroarch_Intel_Atom_Silvermont,    /* SoFIA */
+    /*[102(0x66)] = */ kCpumMicroarch_Intel_Core7_CannonLake, /* unconfirmed */
     /*[103(0x67)] = */ kCpumMicroarch_Intel_Unknown,
     /*[104(0x68)] = */ kCpumMicroarch_Intel_Unknown,
     /*[105(0x69)] = */ kCpumMicroarch_Intel_Unknown,
@@ -181,7 +181,7 @@ static const CPUMMICROARCH g_aenmIntelFamily06[] =
     /*[123(0x7b)] = */ kCpumMicroarch_Intel_Unknown,
     /*[124(0x7c)] = */ kCpumMicroarch_Intel_Unknown,
     /*[125(0x7d)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[126(0x7e)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[126(0x7e)] = */ kCpumMicroarch_Intel_Core7_IceLake, /* unconfirmed */
     /*[127(0x7f)] = */ kCpumMicroarch_Intel_Unknown,
     /*[128(0x80)] = */ kCpumMicroarch_Intel_Unknown,
     /*[129(0x81)] = */ kCpumMicroarch_Intel_Unknown,
@@ -505,7 +505,9 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_Skylake);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_KabyLake);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_CoffeeLake);
-        CASE_RET_STR(kCpumMicroarch_Intel_Core7_Cannonlake);
+        CASE_RET_STR(kCpumMicroarch_Intel_Core7_CannonLake);
+        CASE_RET_STR(kCpumMicroarch_Intel_Core7_IceLake);
+        CASE_RET_STR(kCpumMicroarch_Intel_Core7_TigerLake);
 
         CASE_RET_STR(kCpumMicroarch_Intel_Atom_Bonnell);
         CASE_RET_STR(kCpumMicroarch_Intel_Atom_Lincroft);
