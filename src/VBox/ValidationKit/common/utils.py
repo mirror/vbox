@@ -372,15 +372,15 @@ def openNoDenyDeleteNoInherit(sFile, sMode = 'r'):
                 fcntl(oFile, F_SETFD, fcntl(oFile, F_GETFD) | FD_CLOEXEC);
     return oFile;
 
-def noxcptReadLink(sPath, sXcptRet):
+def noxcptReadLink(sPath, sXcptRet, sEncoding = 'utf-8'):
     """
     No exceptions os.readlink wrapper.
     """
     try:
         sRet = os.readlink(sPath); # pylint: disable=E1101
     except:
-        sRet = sXcptRet;
-    return sRet;
+        return sXcptRet;
+    return sRet.decode(sEncoding, 'ignore');
 
 def readFile(sFile, sMode = 'rb'):
     """
@@ -391,7 +391,7 @@ def readFile(sFile, sMode = 'rb'):
     oFile.close();
     return sRet;
 
-def noxcptReadFile(sFile, sXcptRet, sMode = 'rb'):
+def noxcptReadFile(sFile, sXcptRet, sMode = 'rb', sEncoding = 'utf-8'):
     """
     No exceptions common.readFile wrapper.
     """
@@ -399,6 +399,8 @@ def noxcptReadFile(sFile, sXcptRet, sMode = 'rb'):
         sRet = readFile(sFile, sMode);
     except:
         sRet = sXcptRet;
+    if sEncoding is not None:
+        sRet = sRet.decode(sEncoding, 'ignore');
     return sRet;
 
 def noxcptRmDir(sDir, oXcptRet = False):
