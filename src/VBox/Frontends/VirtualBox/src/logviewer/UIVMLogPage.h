@@ -49,6 +49,10 @@ class UIVMLogPage  : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
+signals:
+
+    void sigBookmarksUpdated();
+
 public:
 
     UIVMLogPage(QWidget *pParent = 0, int tabIndex = -1);
@@ -75,19 +79,27 @@ public:
         m_strLog. For example during filtering. */
     void setTextEdit(const QString &strText);
 
-    /* Marks the plain text edit When we dont have a log content. */
+    /** Marks the plain text edit When we dont have a log content. */
     void markForError();
 
     void setScrollBarMarkingsVector(const QVector<float> &vector);
     void clearScrollBarMarkingsVector();
 
-    /* Undos the changes done to textDocument */
+    /** Undos the changes done to textDocument */
     void documentUndo();
+
+    void deleteBookmark(int index);
+
+    const QVector<LogBookmark>& bookmarkVector() const;
+    void deleteAllBookmarks();
+    /** Scrolls the plain text edit to the bookmark with index @a bookmarkIndex. */
+    void scrollToBookmark(int bookmarkIndex);
 
 protected:
 
 private slots:
 
+    void sltAddBookmark(LogBookmark bookmark);
 
 private:
     void prepare();
@@ -104,7 +116,7 @@ private:
     /** This is the index of the tab containing this widget in UIVMLogViewerWidget. */
     int             m_tabIndex;
 
-    QVector<LogBookmark> m_bookmarkMap;
+    QVector<LogBookmark> m_bookmarkVector;
 
 };
 

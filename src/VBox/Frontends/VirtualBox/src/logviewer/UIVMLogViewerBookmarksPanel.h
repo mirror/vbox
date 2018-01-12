@@ -49,7 +49,7 @@ public:
     /* Clear the bookmark list and show this list instead. Probably done after
        user switches to another log page tab etc. */
     void setBookmarksList(const QVector<QPair<int, QString> > &bookmarkList);
-    void updateBookmarkList(const QVector<QPair<int, QString> > *bookmarkVector);
+    void updateBookmarkList(const QVector<QPair<int, QString> > &bookmarkVector);
 
 public slots:
 

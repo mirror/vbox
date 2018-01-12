@@ -106,38 +106,39 @@ bool UIVMLogViewerWidget::shouldBeMaximized() const
     return gEDataManager->logWindowShouldBeMaximized();
 }
 
-void UIVMLogViewerWidget::sltDeleteBookmark(int /*index*/)
+void UIVMLogViewerWidget::sltDeleteBookmark(int index)
 {
-    // QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
-    // if (!bookmarkVector || bookmarkVector->size() <= index)
-    //     return;
-    // bookmarkVector->remove(index, 1);
-    // if (m_pBookmarksPanel)
-    //     m_pBookmarksPanel->updateBookmarkList(bookmarkVector);
+    UIVMLogPage* logPage = currentLogPage();
+    if(!logPage)
+        return;
+    logPage->deleteBookmark(index);
+    if (m_pBookmarksPanel)
+        m_pBookmarksPanel->updateBookmarkList(logPage->bookmarkVector());
 }
 
 void UIVMLogViewerWidget::sltDeleteAllBookmarks()
 {
-    // QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
-    // if (!bookmarkVector)
-    //     return;
-    // bookmarkVector->clear();
-    // if (m_pBookmarksPanel)
-    //     m_pBookmarksPanel->updateBookmarkList(bookmarkVector);
+    UIVMLogPage* logPage = currentLogPage();
+    if(!logPage)
+        return;
+    logPage->deleteAllBookmarks();
+
+    if (m_pBookmarksPanel)
+        m_pBookmarksPanel->updateBookmarkList(logPage->bookmarkVector());
 }
 
-void UIVMLogViewerWidget::sltBookmarkSelected(int /*index*/)
+void UIVMLogViewerWidget::sltBoomarksUpdated()
 {
-    // QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
-    // if (!bookmarkVector || index >= bookmarkVector->size())
-    //     return;
-    // if (!currentLogPage() || !currentLogPage()->document())
-    //     return;
+    if(!currentLogPage() || !m_pBookmarksPanel)
+        return;
+    m_pBookmarksPanel->updateBookmarkList(currentLogPage()->bookmarkVector());
+}
 
-    // int lineNumber = bookmarkVector->at(index).first;
-    // QTextCursor cursor(currentLogPage()->document()->findBlockByLineNumber(lineNumber));
-    // currentLogPage()->setTextCursor(cursor);
-
+void UIVMLogViewerWidget::gotoBookmark(int bookmarkIndex)
+{
+    if(!currentLogPage())
+        return;
+    currentLogPage()->scrollToBookmark(bookmarkIndex);
 }
 
 void UIVMLogViewerWidget::sltPanelActionTriggered(bool checked)
@@ -167,7 +168,6 @@ void UIVMLogViewerWidget::sltRefresh()
     disconnect(m_pTabWidget, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
     disconnect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
 
-    // m_logMap.clear();
     m_logPageList.clear();
     m_pTabWidget->setEnabled(true);
     /* Hide the container widget during updates to avoid flickering: */
@@ -261,13 +261,13 @@ void UIVMLogViewerWidget::sltTabIndexChange(int tabIndex)
     //     return;
 
     resetHighlighthing();
-    // if (m_pSearchPanel)
-    //     m_pSearchPanel->reset();
+    if (m_pSearchPanel)
+        m_pSearchPanel->reset();
     // m_iCurrentTabIndex = tabIndex;
+
     /* We keep a separate QVector<LogBookmark> for each log page: */
-    // QVector<LogBookmark>* bookmarkVector = currentBookmarkVector();
-    // if (bookmarkVector && m_pBookmarksPanel)
-    //     m_pBookmarksPanel->updateBookmarkList(bookmarkVector);
+    if (m_pBookmarksPanel && currentLogPage())
+        m_pBookmarksPanel->updateBookmarkList(currentLogPage()->bookmarkVector());
 }
 
 void UIVMLogViewerWidget::sltFilterApplied()
@@ -275,32 +275,6 @@ void UIVMLogViewerWidget::sltFilterApplied()
     /* Reapply the search to get highlighting etc. correctly */
     if (m_pSearchPanel && m_pSearchPanel->isVisible())
         m_pSearchPanel->refresh();
-}
-
-void UIVMLogViewerWidget::sltCreateBookmarkAtCurrent()
-{
-    // if (!currentTextEdit())
-    //     return;
-    // QWidget* viewport = currentTextEdit()->viewport();
-    // if (!viewport)
-    //     return;
-    // QPoint point(0.5 * viewport->width(), 0.5 * viewport->height());
-    // QTextBlock block = currentTextEdit()->cursorForPosition(point).block();
-    // LogBookmark bookmark;
-    // bookmark.first = block.firstLineNumber();
-    // bookmark.second = block.text();
-    // sltCreateBookmarkAtLine(bookmark);
-}
-
-void UIVMLogViewerWidget::sltCreateBookmarkAtLine(LogBookmark bookmark)
-{
-    Q_UNUSED(bookmark);
-    // QVector<LogBookmark> *pBookmarkVector = currentBookmarkVector();
-    // if (!pBookmarkVector)
-    //     return;
-    // pBookmarkVector->push_back(bookmark);
-    // if (m_pBookmarksPanel)
-    //     m_pBookmarksPanel->updateBookmarkList(pBookmarkVector);
 }
 
 void UIVMLogViewerWidget::setMachine(const CMachine &machine)
@@ -390,7 +364,7 @@ void UIVMLogViewerWidget::prepareWidgets()
         connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks,
                 this, &UIVMLogViewerWidget::sltDeleteAllBookmarks);
         connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
-                this, &UIVMLogViewerWidget::sltBookmarkSelected);
+                this, &UIVMLogViewerWidget::gotoBookmark);
     }
 }
 
@@ -609,9 +583,8 @@ void UIVMLogViewerWidget::showEvent(QShowEvent *pEvent)
     m_fIsPolished = true;
 
     /* Make sure the log view widget has the focus: */
-    // QWidget *pCurrentLogPage = currentTextEdit();
-    // if (pCurrentLogPage)
-    //     pCurrentLogPage->setFocus();
+    if(currentLogPage())
+        currentLogPage()->setFocus();
 }
 
 void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
@@ -664,30 +637,6 @@ UIVMLogPage *UIVMLogViewerWidget::currentLogPage()
         return 0;
     return qobject_cast<UIVMLogPage*>(m_logPageList.at(currentTabIndex));
 }
-
-// const QVector<LogBookmark>* UIVMLogViewerWidget::currentBookmarkVector() const
-// {
-//     UIVMLogViewerTextEdit *logPage = qobject_cast<UIVMLogViewerTextEdit*>(currentLogPage());
-//     if (!logPage)
-//         return 0;
-//     QString logFileName = logPage->logFileName();
-//     if (logFileName.isEmpty())
-//         return 0;
-
-//     return &(m_bookmarkMap[logFileName]);
-// }
-
-// QVector<LogBookmark>* UIVMLogViewerWidget::currentBookmarkVector()
-// {
-//     UIVMLogViewerTextEdit *logPage = qobject_cast<UIVMLogViewerTextEdit*>(currentLogPage());
-//     if (!logPage)
-//         return 0;
-//     QString logFileName = logPage->logFileName();
-//     if (logFileName.isEmpty())
-//         return 0;
-
-//     return &(m_bookmarkMap[logFileName]);
-// }
 
 void UIVMLogViewerWidget::hidePanel(UIVMLogViewerPanel* panel)
 {
@@ -789,6 +738,7 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
 
     /* Create page-container: */
     UIVMLogPage* pLogPage = new UIVMLogPage(this);
+    connect(pLogPage, &UIVMLogPage::sigBookmarksUpdated, this, &UIVMLogViewerWidget::sltBoomarksUpdated);
     AssertPtrReturnVoid(pLogPage);
     /* Set the file name only if we really have log file to read. */
     if (!noLogsToShow)
@@ -817,17 +767,4 @@ void UIVMLogViewerWidget::resetHighlighthing()
         return;
     logPage->documentUndo();
     logPage->clearScrollBarMarkingsVector();
-    // QPlainTextEdit *pTextEdit = logPage(m_iCurrentTabIndex);
-    // if (pTextEdit)
-    // {
-    //     QTextDocument *pDocument = pTextEdit->document();
-    //     if (pDocument)
-    //         pDocument->undo();
-    // }
-    // UIIndicatorScrollBar* scrollBar = qobject_cast<UIIndicatorScrollBar*>(pTextEdit->verticalScrollBar());
-    // if (scrollBar)
-    // {
-    //     scrollBar->setMarkingsVector(QVector<float>());
-    //     pTextEdit->repaint();
-    // }
 }

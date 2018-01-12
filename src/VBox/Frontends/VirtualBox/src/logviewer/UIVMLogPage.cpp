@@ -167,7 +167,7 @@ protected:
     }
 
 private slots:
-    /// remove
+
     void sltBookmark()
     {
         emit sigContextMenuBookmarkAction(m_iContextMenuBookmark);
@@ -211,15 +211,6 @@ int UIVMLogPage::defaultLogPageWidth() const
 void UIVMLogPage::prepare()
 {
     prepareWidgets();
-//     prepareActions();
-
-//     prepareToolBar();
-//     prepareMenu();
-
-//     /* Reading log files: */
-//     sltRefresh();
-
-//     /* Loading language constants: */
     retranslateUi();
 }
 
@@ -249,7 +240,8 @@ void UIVMLogPage::prepareWidgets()
     m_pPlainTextEdit->setFont(font);
     m_pPlainTextEdit->setWordWrapMode(QTextOption::NoWrap);
     m_pPlainTextEdit->setReadOnly(true);
-
+    connect(qobject_cast<UIVMLogViewerTextEdit*>(m_pPlainTextEdit), &UIVMLogViewerTextEdit::sigContextMenuBookmarkAction,
+            this, &UIVMLogPage::sltAddBookmark);
 }
 
 QPlainTextEdit *UIVMLogPage::textEdit()
@@ -346,5 +338,60 @@ void UIVMLogPage::documentUndo()
     if (m_pPlainTextEdit->document())
         m_pPlainTextEdit->document()->undo();
 }
+
+
+void UIVMLogPage::deleteBookmark(int index)
+{
+    if (m_bookmarkVector.size() <= index)
+         return;
+    m_bookmarkVector.remove(index, 1);
+}
+
+void UIVMLogPage::deleteAllBookmarks()
+{
+    m_bookmarkVector.clear();
+}
+
+void UIVMLogPage::scrollToBookmark(int bookmarkIndex)
+{
+    if(!m_pPlainTextEdit)
+        return;
+    if (bookmarkIndex >= m_bookmarkVector.size())
+        return;
+
+    int lineNumber = m_bookmarkVector.at(bookmarkIndex).first;
+    QTextDocument* document = m_pPlainTextEdit->document();
+    if(!document)
+        return;
+
+    QTextCursor cursor(document->findBlockByLineNumber(lineNumber));
+    m_pPlainTextEdit->setTextCursor(cursor);
+}
+
+const QVector<LogBookmark>& UIVMLogPage::bookmarkVector() const
+{
+    return m_bookmarkVector;
+}
+
+void UIVMLogPage::sltAddBookmark(LogBookmark bookmark)
+{
+    m_bookmarkVector.push_back(bookmark);
+    emit sigBookmarksUpdated();
+}
+// void UIVMLogViewerWidget::sltCreateBookmarkAtCurrent()
+// {
+    // if (!currentTextEdit())
+    //     return;
+    // QWidget* viewport = currentTextEdit()->viewport();
+    // if (!viewport)
+    //     return;
+    // QPoint point(0.5 * viewport->width(), 0.5 * viewport->height());
+    // QTextBlock block = currentTextEdit()->cursorForPosition(point).block();
+    // LogBookmark bookmark;
+    // bookmark.first = block.firstLineNumber();
+    // bookmark.second = block.text();
+    // sltCreateBookmarkAtLine(bookmark);
+//}
+
 
 #include "UIVMLogPage.moc"

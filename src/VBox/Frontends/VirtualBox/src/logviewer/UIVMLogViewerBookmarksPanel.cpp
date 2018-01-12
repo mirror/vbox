@@ -47,20 +47,18 @@ UIVMLogViewerBookmarksPanel::UIVMLogViewerBookmarksPanel(QWidget *pParent, UIVML
     prepare();
 }
 
-void UIVMLogViewerBookmarksPanel::updateBookmarkList(const QVector<QPair<int, QString> > *bookmarkVector)
+void UIVMLogViewerBookmarksPanel::updateBookmarkList(const QVector<QPair<int, QString> > &bookmarkVector)
 {
     if (!m_pBookmarksComboBox || !viewer())
-        return;
-    if (!bookmarkVector)
         return;
 
     m_pBookmarksComboBox->clear();
     QStringList bList;
     bList << "Bookmarks List";
-    for(int i = 0; i < bookmarkVector->size(); ++i)
+    for(int i = 0; i < bookmarkVector.size(); ++i)
     {
         QString strItem = QString("BookMark %1 at Line %2: %3").arg(QString::number(i)).
-            arg(QString::number(bookmarkVector->at(i).first)).arg(bookmarkVector->at(i).second);
+            arg(QString::number(bookmarkVector.at(i).first)).arg(bookmarkVector.at(i).second);
 
         if (strItem.length() > m_iMaxBookmarkTextLength)
         {

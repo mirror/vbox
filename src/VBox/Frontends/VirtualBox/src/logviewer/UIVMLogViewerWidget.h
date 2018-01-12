@@ -94,13 +94,12 @@ private slots:
      * @{ */
     /** Deletes the bookmark with @p index from the current logs bookmark list. */
         void sltDeleteBookmark(int index);
+        /** Receives delete all signal from the bookmark panel and notifies UIVMLogPage. */
         void sltDeleteAllBookmarks();
-        /** Scroll the plain text edit to the selected bookmark. */
-        void sltBookmarkSelected(int index);
-        /** Creates a bookmark out of line number and block text. */
-        void sltCreateBookmarkAtLine(QPair<int, QString> bookmark);
-        /** Determines the (middle) line number of the visible text and calls sltCreateBookmarkAtLine. */
-        void sltCreateBookmarkAtCurrent();
+        /** Manages bookmark panel update when bookmark vector is updated */
+        void sltBoomarksUpdated();
+        /* Makes the current UIVMLogPage to goto (scroll) its bookmark with index @a index. */
+        void gotoBookmark(int bookmarkIndex);
     /** @} */
 
     void sltPanelActionTriggered(bool checked);
