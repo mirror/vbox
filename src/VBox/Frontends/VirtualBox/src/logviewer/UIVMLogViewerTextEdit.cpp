@@ -114,14 +114,14 @@ public:
         :QWidget(textEdit)
         , m_pTextEdit(textEdit){}
 
-    QSize sizeHint() const override
+    QSize sizeHint() const
     {
         return QSize(m_pTextEdit->lineNumberAreaWidth(), 0);
     }
 
 protected:
 
-    void paintEvent(QPaintEvent *event) override
+    void paintEvent(QPaintEvent *event)
     {
         m_pTextEdit->lineNumberAreaPaintEvent(event);
     }
