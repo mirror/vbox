@@ -148,6 +148,7 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_Intel_Atom_Silvermont,   /**< 22nm */
     kCpumMicroarch_Intel_Atom_Airmount,     /**< 14nm */
     kCpumMicroarch_Intel_Atom_Goldmont,     /**< 14nm */
+    kCpumMicroarch_Intel_Atom_GoldmontPlus, /**< 14nm */
     kCpumMicroarch_Intel_Atom_Unknown,
     kCpumMicroarch_Intel_Atom_End,
 
