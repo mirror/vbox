@@ -70,6 +70,15 @@ unsigned AudioDriver::getFreeLUN(void)
     return uLUN;
 }
 
+
+/**
+ * Initializes the audio driver with a certain (device) configuration.
+ * Note: The driver's LUN will be determined on runtime when attaching the
+ *       driver to the audio driver chain.
+ *
+ * @returns VBox status code.
+ * @param pCfg                  Audio driver configuration to use.
+ */
 int AudioDriver::Initialize(AudioDriverCfg *pCfg)
 {
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
@@ -84,7 +93,7 @@ int AudioDriver::Initialize(AudioDriverCfg *pCfg)
  * Configures the audio driver (to CFGM) and attaches it to the audio chain.
  * Does nothing if the audio driver already is attached.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Audio driver to detach.
  */
 /* static */
@@ -133,7 +142,7 @@ DECLCALLBACK(int) AudioDriver::Attach(AudioDriver *pThis)
  * Detaches an already attached audio driver from the audio chain.
  * Does nothing if the audio driver already is detached or not attached.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Audio driver to detach.
  */
 /* static */
