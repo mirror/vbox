@@ -695,7 +695,7 @@ static unsigned int     MyPassExecuteCallbackWithFunction(struct function *pFun)
                     State.hStmt         = hStmt;
                     State.hFmtLoc       = gimple_location(hStmt);
                     dprintf("     %s() __iprt_format%s__(iFmt=%ld, iArgs=%ld)\n",
-                            DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>",
+                            hFnDecl && DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>",
                             State.fMaybeNull ? "_maybe_null" : "", State.iFmt, State.iArgs);
 
                     unsigned cCallArgs = gimple_call_num_args(hStmt);

@@ -17,7 +17,7 @@
 
 /* Only valid stuff in this one. */
 extern void MyIprtPrintf(const char *pszFormat, ...) __attribute__((__iprt_format__(1,2)));
-extern void foo(void);
+extern void foo(const char *pszFormat, ...);
 
 extern unsigned long long g_ull;
 
