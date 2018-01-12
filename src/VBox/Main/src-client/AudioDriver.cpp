@@ -34,6 +34,7 @@
 AudioDriver::AudioDriver(Console *pConsole)
     : mpConsole(pConsole)
     , mfAttached(false)
+    , muLUN(UINT8_MAX)
 {
 }
 
@@ -57,7 +58,6 @@ unsigned AudioDriver::getFreeLUN(void)
 
     unsigned uLUN = 0;
 
-    /* First check if the LUN already exists. */
     PCFGMNODE pDevLUN;
     for (;;)
     {
@@ -70,16 +70,25 @@ unsigned AudioDriver::getFreeLUN(void)
     return uLUN;
 }
 
+int AudioDriver::Initialize(AudioDriverCfg *pCfg)
+{
+    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
+
+    /* Apply configuration. */
+    mCfg = *pCfg;
+
+    return VINF_SUCCESS;
+}
+
 /**
  * Configures the audio driver (to CFGM) and attaches it to the audio chain.
  * Does nothing if the audio driver already is attached.
  *
  * @returns IPRT status code.
  * @param   pThis               Audio driver to detach.
- * @param   pCfg                Audio driver configuration to use for the audio driver to attach.
  */
 /* static */
-DECLCALLBACK(int) AudioDriver::Attach(AudioDriver *pThis, AudioDriverCfg *pCfg)
+DECLCALLBACK(int) AudioDriver::Attach(AudioDriver *pThis)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
@@ -89,21 +98,30 @@ DECLCALLBACK(int) AudioDriver::Attach(AudioDriver *pThis, AudioDriverCfg *pCfg)
     int vrc = VINF_SUCCESS;
 
     if (pThis->mfAttached) /* Already attached? Bail out. */
+    {
+        LogFunc(("%s: Already attached\n", pThis->mCfg.strName.c_str()));
         return VINF_SUCCESS;
+    }
 
-    if (pCfg->uLUN == UINT8_MAX) /* No LUN assigned / configured yet? Retrieve it. */
-        pCfg->uLUN = pThis->getFreeLUN();
+    AudioDriverCfg *pCfg = &pThis->mCfg;
+
+    unsigned uLUN = pThis->muLUN;
+    if (uLUN == UINT8_MAX) /* No LUN assigned / configured yet? Retrieve it. */
+        uLUN = pThis->getFreeLUN();
 
     LogFunc(("strName=%s, strDevice=%s, uInst=%u, uLUN=%u\n",
-             pCfg->strName.c_str(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN));
+             pCfg->strName.c_str(), pCfg->strDev.c_str(), pCfg->uInst, uLUN));
 
-    vrc = pThis->Configure(pCfg, true /* Attach */);
+    vrc = pThis->configure(uLUN, true /* Attach */);
     if (RT_SUCCESS(vrc))
-        vrc = PDMR3DriverAttach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN, 0 /* fFlags */, NULL /* ppBase */);
-
+        vrc = PDMR3DeviceAttach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, uLUN, 0 /* fFlags */,
+                                NULL /* ppBase */);
     if (RT_SUCCESS(vrc))
     {
+        pThis->muLUN      = uLUN;
         pThis->mfAttached = true;
+
+        LogRel2(("%s: Driver attached (LUN #%u)\n", pCfg->strName.c_str(), pThis->muLUN));
     }
     else
         LogRel(("%s: Failed to attach audio driver, rc=%Rrc\n", pCfg->strName.c_str(), vrc));
@@ -123,29 +141,35 @@ DECLCALLBACK(int) AudioDriver::Detach(AudioDriver *pThis)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
+    if (!pThis->mfAttached) /* Not attached? Bail out. */
+    {
+        LogFunc(("%s: Not attached\n", pThis->mCfg.strName.c_str()));
+        return VINF_SUCCESS;
+    }
+
     Console::SafeVMPtrQuiet ptrVM(pThis->mpConsole);
     Assert(ptrVM.isOk());
 
-    if (!pThis->mfAttached) /* Not attached? Bail out. */
-        return VINF_SUCCESS;
+    Assert(pThis->muLUN != UINT8_MAX);
 
     int vrc = VINF_SUCCESS;
 
     AudioDriverCfg *pCfg = &pThis->mCfg;
 
     LogFunc(("strName=%s, strDevice=%s, uInst=%u, uLUN=%u\n",
-             pCfg->strName.c_str(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN));
+             pCfg->strName.c_str(), pCfg->strDev.c_str(), pCfg->uInst, pThis->muLUN));
 
-    vrc = PDMR3DriverDetach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN, "AUDIO",
+    vrc = PDMR3DriverDetach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pThis->muLUN, "AUDIO",
                             0 /* iOccurrence */, 0 /* fFlags */);
     if (RT_SUCCESS(vrc))
-        vrc = pThis->Configure(pCfg, false /* Detach */);
+        vrc = pThis->configure(pThis->muLUN, false /* Detach */);
 
     if (RT_SUCCESS(vrc))
     {
-        pCfg->uLUN = UINT8_MAX;
-
+        pThis->muLUN      = UINT8_MAX;
         pThis->mfAttached = false;
+
+        LogRel2(("%s: Driver detached\n", pCfg->strName.c_str()));
     }
     else
         LogRel(("%s: Failed to detach audio driver, rc=%Rrc\n", pCfg->strName.c_str(), vrc));
@@ -157,23 +181,17 @@ DECLCALLBACK(int) AudioDriver::Detach(AudioDriver *pThis)
  * Configures the audio driver via CFGM.
  *
  * @returns VBox status code.
- * @param   pCfg                Audio driver configuration to use.
+ * @param   uLUN                LUN to attach driver to.
  * @param   fAttach             Whether to attach or detach the driver configuration to CFGM.
  *
  * @thread EMT
  */
-int AudioDriver::Configure(AudioDriverCfg *pCfg, bool fAttach)
+int AudioDriver::configure(unsigned uLUN, bool fAttach)
 {
-    if (pCfg->strDev.isEmpty()) /* No audio device configured. Bail out. */
-        return VINF_SUCCESS;
-
     int rc = VINF_SUCCESS;
 
     Console::SafeVMPtrQuiet ptrVM(mpConsole);
     Assert(ptrVM.isOk());
-
-    /* Apply configuration. */
-    mCfg = *pCfg;
 
     PUVM pUVM = ptrVM.rawUVM();
     AssertPtr(pUVM);
@@ -183,16 +201,18 @@ int AudioDriver::Configure(AudioDriverCfg *pCfg, bool fAttach)
     PCFGMNODE pDev0   = CFGMR3GetChildF(pRoot, "Devices/%s/%u/", mCfg.strDev.c_str(), mCfg.uInst);
     AssertPtr(pDev0);
 
-    PCFGMNODE pDevLun = CFGMR3GetChildF(pDev0, "LUN#%u/", mCfg.uLUN);
+    PCFGMNODE pDevLun = CFGMR3GetChildF(pDev0, "LUN#%u/", uLUN);
 
     if (fAttach)
     {
+        AssertMsg(uLUN != UINT8_MAX, ("%s: LUN is undefined when it must not\n", mCfg.strName.c_str()));
+
         if (!pDevLun)
         {
-            LogRel2(("%s: Configuring audio driver\n", mCfg.strName.c_str()));
+            LogRel2(("%s: Configuring audio driver (to LUN #%RU8)\n", mCfg.strName.c_str(), uLUN));
 
             PCFGMNODE pLunL0;
-            CFGMR3InsertNodeF(pDev0, &pLunL0, "LUN#%RU8", mCfg.uLUN);
+            CFGMR3InsertNodeF(pDev0, &pLunL0, "LUN#%RU8", uLUN);
             CFGMR3InsertString(pLunL0, "Driver", "AUDIO");
 
             PCFGMNODE pLunCfg;
@@ -210,6 +230,8 @@ int AudioDriver::Configure(AudioDriverCfg *pCfg, bool fAttach)
                 /* Call the (virtual) method for driver-specific configuration. */
                 configureDriver(pLunCfg);
         }
+        else
+            rc = VERR_ALREADY_EXISTS;
     }
     else /* Detach */
     {
@@ -218,9 +240,18 @@ int AudioDriver::Configure(AudioDriverCfg *pCfg, bool fAttach)
             LogRel2(("%s: Unconfiguring audio driver\n", mCfg.strName.c_str()));
             CFGMR3RemoveNode(pDevLun);
         }
+        else
+            rc = VERR_NOT_FOUND;
     }
 
-    AssertRC(rc);
+#ifdef DEBUG_andy
+    CFGMR3Dump(pDev0);
+#endif
+
+    if (RT_FAILURE(rc))
+        LogRel(("%s: %s audio driver failed with rc=%Rrc\n",
+                mCfg.strName.c_str(), fAttach ? "Configuring" : "Unconfiguring", rc));
+
     return rc;
 }
 

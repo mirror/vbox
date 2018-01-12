@@ -2416,160 +2416,71 @@ bool Display::i_videoRecStarted(void)
     return VideoRecIsActive(mpVideoRecCtx);
 }
 
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
 /**
- * Configures the video recording audio driver in CFGM.
- *
- * @returns VBox status code.
- * @param   strDevice           The PDM device name.
- * @param   uInstance           The PDM device instance.
- * @param   uLUN                The PDM LUN number of the driver.
- * @param   fAttach             Whether to attach or detach the driver configuration to CFGM.
- *
- * @thread EMT
+ * Invalidates the video recording configuration.
  */
-int Display::i_videoRecConfigureAudioDriver(const Utf8Str& strDevice,
-                                            unsigned       uInstance,
-                                            unsigned       uLUN,
-                                            bool           fAttach)
+void Display::i_videoRecInvalidate(void)
 {
-    if (strDevice.isEmpty()) /* No audio device configured. Bail out. */
-        return VINF_SUCCESS;
-
     AssertPtr(mParent);
-
     ComPtr<IMachine> pMachine = mParent->i_machine();
     Assert(pMachine.isNotNull());
 
-    Console::SafeVMPtr ptrVM(mParent);
-    Assert(ptrVM.isOk());
-
-    PUVM pUVM = ptrVM.rawUVM();
-    AssertPtr(pUVM);
-
-    PCFGMNODE pRoot   = CFGMR3GetRootU(pUVM);
-    AssertPtr(pRoot);
-    PCFGMNODE pDev0   = CFGMR3GetChildF(pRoot, "Devices/%s/%u/", strDevice.c_str(), uInstance);
-    AssertPtr(pDev0);
-
-    PCFGMNODE pDevLun = CFGMR3GetChildF(pDev0, "LUN#%u/", uLUN);
-
-    if (fAttach)
-    {
-        if (!pDevLun)
-        {
-            LogRel2(("VideoRec: Attaching audio driver\n"));
-
-            PCFGMNODE pLunL0;
-            CFGMR3InsertNodeF(pDev0, &pLunL0, "LUN#%RU8", uLUN);
-            CFGMR3InsertString(pLunL0, "Driver", "AUDIO");
-
-            PCFGMNODE pCfg;
-            CFGMR3InsertNode(pLunL0,   "Config", &pCfg);
-                CFGMR3InsertString (pCfg, "DriverName",    "AudioVideoRec");
-                CFGMR3InsertInteger(pCfg, "InputEnabled",  0);
-                CFGMR3InsertInteger(pCfg, "OutputEnabled", 1);
-
-            PCFGMNODE pLunL1;
-            CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL1);
-                CFGMR3InsertString(pLunL1, "Driver", "AudioVideoRec");
-
-                CFGMR3InsertNode(pLunL1, "Config", &pCfg);
-                    CFGMR3InsertInteger(pCfg, "Object",        (uintptr_t)mParent->i_getAudioVideoRec());
-                    CFGMR3InsertInteger(pCfg, "ObjectConsole", (uintptr_t)mParent /* Console */);
-        }
-    }
-    else /* Detach */
-    {
-        if (pDevLun)
-        {
-            LogRel2(("VideoRec: Detaching audio driver\n"));
-            CFGMR3RemoveNode(pDevLun);
-        }
-    }
-
-    return VINF_SUCCESS;
-}
-#endif
-
-/**
- * Configures video capturing (via CFGM) and attaches / detaches the associated driver.
- * Currently this only is the audio driver (if available).
- *
- * @returns IPRT status code.
- * @param   pThis               Display instance to configure video capturing for.
- * @param   pCfg                Where to store the configuration into.
- * @param   fAttachDetach       Whether to attach/detach associated drivers or not.
- * @param   puLUN               On input, this defines the LUN to which the audio driver shall be assigned to.
- *                              On output, this returns the LUN the audio driver was assigned to.
- */
-/* static */
-DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg, bool fAttachDetach, unsigned *puLUN)
-{
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
-    AssertPtrReturn(puLUN, VERR_INVALID_POINTER);
-
-    AssertPtr(pThis->mParent);
-    ComPtr<IMachine> pMachine = pThis->mParent->i_machine();
-    Assert(pMachine.isNotNull());
-
-    pCfg->enmDst = VIDEORECDEST_FILE; /** @todo Make this configurable once we have more variations. */
+    mVideoRecCfg.enmDst = VIDEORECDEST_FILE; /** @todo Make this configurable once we have more variations. */
 
     /*
      * Cache parameters from API.
      */
     BOOL fEnabled;
-    HRESULT rc = pMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
-    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    pCfg->fEnabled = RT_BOOL(fEnabled);
+    HRESULT hrc = pMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
+    AssertComRCReturnVoid(hrc);
+    mVideoRecCfg.fEnabled = RT_BOOL(fEnabled);
 
     com::SafeArray<BOOL> aScreens;
-    rc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(aScreens));
-    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
+    hrc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(aScreens));
+    AssertComRCReturnVoid(hrc);
 
-    pCfg->aScreens.resize(aScreens.size());
+    mVideoRecCfg.aScreens.resize(aScreens.size());
     for (size_t i = 0; i < aScreens.size(); ++i)
-        pCfg->aScreens[i] = aScreens[i];
+        mVideoRecCfg.aScreens[i] = aScreens[i];
 
-    rc = pMachine->COMGETTER(VideoCaptureWidth)((ULONG *)&pCfg->Video.uWidth);
-    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureHeight)((ULONG *)&pCfg->Video.uHeight);
-    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureRate)((ULONG *)&pCfg->Video.uRate);
-    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureFPS)((ULONG *)&pCfg->Video.uFPS);
-    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureFile)(pCfg->File.strName.asOutParam());
-    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureMaxFileSize)((ULONG *)&pCfg->File.uMaxSizeMB);
-    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
-    rc = pMachine->COMGETTER(VideoCaptureMaxTime)((ULONG *)&pCfg->uMaxTimeS);
-    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
+    hrc = pMachine->COMGETTER(VideoCaptureWidth)((ULONG *)&mVideoRecCfg.Video.uWidth);
+    AssertComRCReturnVoid(hrc);
+    hrc = pMachine->COMGETTER(VideoCaptureHeight)((ULONG *)&mVideoRecCfg.Video.uHeight);
+    AssertComRCReturnVoid(hrc);
+    hrc = pMachine->COMGETTER(VideoCaptureRate)((ULONG *)&mVideoRecCfg.Video.uRate);
+    AssertComRCReturnVoid(hrc);
+    hrc = pMachine->COMGETTER(VideoCaptureFPS)((ULONG *)&mVideoRecCfg.Video.uFPS);
+    AssertComRCReturnVoid(hrc);
+    hrc = pMachine->COMGETTER(VideoCaptureFile)(mVideoRecCfg.File.strName.asOutParam());
+    AssertComRCReturnVoid(hrc);
+    hrc = pMachine->COMGETTER(VideoCaptureMaxFileSize)((ULONG *)&mVideoRecCfg.File.uMaxSizeMB);
+    AssertComRCReturnVoid(hrc);
+    hrc = pMachine->COMGETTER(VideoCaptureMaxTime)((ULONG *)&mVideoRecCfg.uMaxTimeS);
+    AssertComRCReturnVoid(hrc);
     BSTR bstrOptions;
-    rc = pMachine->COMGETTER(VideoCaptureOptions)(&bstrOptions);
-    AssertComRCReturn(rc, VERR_COM_UNEXPECTED);
+    hrc = pMachine->COMGETTER(VideoCaptureOptions)(&bstrOptions);
+    AssertComRCReturnVoid(hrc);
 
     /*
      * Set sensible defaults.
      */
-    pCfg->Video.fEnabled = pCfg->fEnabled;
+    mVideoRecCfg.Video.fEnabled = mVideoRecCfg.fEnabled;
 
-    if (!pCfg->Video.uFPS) /* Prevent division by zero. */
-        pCfg->Video.uFPS = 15;
+    if (!mVideoRecCfg.Video.uFPS) /* Prevent division by zero. */
+        mVideoRecCfg.Video.uFPS = 15;
 
 #ifdef VBOX_WITH_LIBVPX
-    pCfg->Video.Codec.VPX.uEncoderDeadline = 1000000 / pCfg->Video.uFPS;
+    mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = 1000000 / mVideoRecCfg.Video.uFPS;
 #endif
 
     /* Note: Audio support is considered as being experimental, thus it's disabled by default.
      * There be dragons! */
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-    pCfg->Audio.fEnabled  = false;
+    mVideoRecCfg.Audio.fEnabled  = false;
     /* By default we use 48kHz, 16-bit, stereo for the audio track. */
-    pCfg->Audio.uHz       = 48000;
-    pCfg->Audio.cBits     = 16;
-    pCfg->Audio.cChannels = 2;
+    mVideoRecCfg.Audio.uHz       = 48000;
+    mVideoRecCfg.Audio.cBits     = 16;
+    mVideoRecCfg.Audio.cChannels = 2;
 #endif
 
     /*
@@ -2584,15 +2495,15 @@ DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg
         {
 #ifdef VBOX_WITH_LIBVPX
             if (value.compare("realtime", Utf8Str::CaseInsensitive) == 0)
-                pCfg->Video.Codec.VPX.uEncoderDeadline = VPX_DL_REALTIME;
+                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = VPX_DL_REALTIME;
             else if (value.compare("good", Utf8Str::CaseInsensitive) == 0)
-                pCfg->Video.Codec.VPX.uEncoderDeadline = 1000000 / pCfg->Video.uFPS;
+                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = 1000000 / mVideoRecCfg.Video.uFPS;
             else if (value.compare("best", Utf8Str::CaseInsensitive) == 0)
-                pCfg->Video.Codec.VPX.uEncoderDeadline = VPX_DL_BEST_QUALITY;
+                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = VPX_DL_BEST_QUALITY;
             else
             {
                 LogRel(("VideoRec: Setting quality deadline to '%s'\n", value.c_str()));
-                pCfg->Video.Codec.VPX.uEncoderDeadline = value.toUInt32();
+                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = value.toUInt32();
 #endif
             }
         }
@@ -2600,7 +2511,7 @@ DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg
         {
             if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
             {
-                pCfg->Video.fEnabled = false;
+                mVideoRecCfg.Video.fEnabled = false;
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
                 LogRel(("VideoRec: Only audio will be recorded\n"));
 #endif
@@ -2611,7 +2522,7 @@ DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
             if (value.compare("true", Utf8Str::CaseInsensitive) == 0)
             {
-                pCfg->Audio.fEnabled = true;
+                mVideoRecCfg.Audio.fEnabled = true;
 
             }
             else
@@ -2623,15 +2534,15 @@ DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
             if (value.compare("low", Utf8Str::CaseInsensitive) == 0)
             {
-                pCfg->Audio.uHz       = 8000;
-                pCfg->Audio.cBits     = 16;
-                pCfg->Audio.cChannels = 1;
+                mVideoRecCfg.Audio.uHz       = 8000;
+                mVideoRecCfg.Audio.cBits     = 16;
+                mVideoRecCfg.Audio.cChannels = 1;
             }
             else if (value.startsWith("med" /* "med[ium]" */, Utf8Str::CaseInsensitive) == 0)
             {
-                pCfg->Audio.uHz       = 22050;
-                pCfg->Audio.cBits     = 16;
-                pCfg->Audio.cChannels = 2;
+                mVideoRecCfg.Audio.uHz       = 22050;
+                mVideoRecCfg.Audio.cBits     = 16;
+                mVideoRecCfg.Audio.cChannels = 2;
             }
             else if (value.compare("high", Utf8Str::CaseInsensitive) == 0)
             {
@@ -2644,81 +2555,19 @@ DECLCALLBACK(int) Display::i_videoRecConfigure(Display *pThis, PVIDEORECCFG pCfg
 
     } /* while */
 
-    unsigned uLUN = *puLUN;
-
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-    ComPtr<IAudioAdapter> audioAdapter;
-    rc = pMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
-    AssertComRC(rc);
-
-    unsigned uInstance = 0;
-
-    Utf8Str strAudioDev = pThis->mParent->i_getAudioAdapterDeviceName(audioAdapter);
-    if (!strAudioDev.isEmpty())
-    {
-        Console::SafeVMPtr ptrVM(pThis->mParent);
-        Assert(ptrVM.isOk());
-
-        /*
-         * Configure + attach audio driver.
-         */
-        int vrc2 = VINF_SUCCESS;
-
-        LogFunc(("Audio fAttachDetach=%RTbool, fEnabled=%RTbool\n", fAttachDetach, pCfg->Audio.fEnabled));
-
-        if (pCfg->Audio.fEnabled) /* Enable */
-        {
-            vrc2 = pThis->i_videoRecConfigureAudioDriver(strAudioDev, uInstance, uLUN, true /* fAttach */);
-            if (   RT_SUCCESS(vrc2)
-                && fAttachDetach)
-            {
-                vrc2 = PDMR3DriverAttach(ptrVM.rawUVM(), strAudioDev.c_str(), uInstance, uLUN, 0 /* fFlags */, NULL /* ppBase */);
-            }
-
-            if (RT_FAILURE(vrc2))
-                LogRel(("VideoRec: Failed to attach audio driver, rc=%Rrc\n", vrc2));
-        }
-        else /* Disable */
-        {
-            if (fAttachDetach)
-                vrc2 = PDMR3DriverDetach(ptrVM.rawUVM(), strAudioDev.c_str(), uInstance, uLUN, "AUDIO",
-                                         0 /* iOccurrence */, 0 /* fFlags */);
-
-            if (RT_SUCCESS(vrc2))
-            {
-                vrc2 = pThis->i_videoRecConfigureAudioDriver(strAudioDev, uInstance, uLUN, false /* fAttach */);
-            }
-
-            if (RT_FAILURE(vrc2))
-                LogRel(("VideoRec: Failed to detach audio driver, rc=%Rrc\n", vrc2));
-        }
-
-        AssertRC(vrc2);
-    }
-    else
-        LogRel2(("VideoRec: No audio hardware configured, skipping to record audio\n"));
-#else
-    RT_NOREF(fAttachDetach);
-#endif
-
     /*
      * Invalidate screens.
      */
-    for (unsigned i = 0; i < pCfg->aScreens.size(); i++)
+    for (unsigned i = 0; i < mVideoRecCfg.aScreens.size(); i++)
     {
-        bool fChanged = pThis->maVideoRecEnabled[i] != RT_BOOL(pCfg->aScreens[i]);
+        bool fChanged = maVideoRecEnabled[i] != RT_BOOL(mVideoRecCfg.aScreens[i]);
 
-        pThis->maVideoRecEnabled[i] = RT_BOOL(pCfg->aScreens[i]);
+        maVideoRecEnabled[i] = RT_BOOL(mVideoRecCfg.aScreens[i]);
 
-        if (fChanged && i < pThis->mcMonitors)
-            pThis->i_videoRecScreenChanged(i);
+        if (fChanged && i < mcMonitors)
+            i_videoRecScreenChanged(i);
 
     }
-
-    if (puLUN)
-        *puLUN = uLUN;
-
-    return S_OK;
 }
 
 /**

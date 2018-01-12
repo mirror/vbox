@@ -1015,8 +1015,8 @@ static DECLCALLBACK(void *) drvAudioVideoRecQueryInterface(PPDMIBASE pInterface,
 
 
 AudioVideoRec::AudioVideoRec(Console *pConsole)
-    : mpDrv(NULL)
-    , mpConsole(pConsole)
+    : AudioDriver(pConsole)
+    , mpDrv(NULL)
 {
 }
 
@@ -1028,6 +1028,13 @@ AudioVideoRec::~AudioVideoRec(void)
         mpDrv->pAudioVideoRec = NULL;
         mpDrv = NULL;
     }
+}
+
+
+void AudioVideoRec::configureDriver(PCFGMNODE pLunCfg)
+{
+    CFGMR3InsertInteger(pLunCfg, "Object",        (uintptr_t)mpConsole->i_getAudioVideoRec());
+    CFGMR3InsertInteger(pLunCfg, "ObjectConsole", (uintptr_t)mpConsole);
 }
 
 

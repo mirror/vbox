@@ -29,18 +29,15 @@ using namespace com;
  */
 struct AudioDriverCfg
 {
-    AudioDriverCfg(Utf8Str a_strDev = "", unsigned a_uInst = 0, unsigned a_uLUN = 0,
-                   Utf8Str a_strName = "")
+    AudioDriverCfg(Utf8Str a_strDev = "", unsigned a_uInst = 0, Utf8Str a_strName = "")
         : strDev(a_strDev)
         , uInst(a_uInst)
-        , uLUN(a_uLUN)
         , strName(a_strName) { }
 
     AudioDriverCfg& operator=(AudioDriverCfg that)
     {
         this->strDev  = that.strDev;
         this->uInst   = that.uInst;
-        this->uLUN    = that.uLUN;
         this->strName = that.strName;
 
         return *this;
@@ -50,9 +47,6 @@ struct AudioDriverCfg
     Utf8Str              strDev;
     /** The device instance. */
     unsigned             uInst;
-    /** The LUN the driver is attached to.
-     *  Set the UINT8_MAX if not attached. */
-    unsigned             uLUN;
     /** The driver name. */
     Utf8Str              strName;
 };
@@ -75,15 +69,17 @@ public:
 
     Console *GetParent(void) { return mpConsole; }
 
+    int Initialize(AudioDriverCfg *pCfg);
+
     bool IsAttached(void) { return mfAttached; }
 
-    static DECLCALLBACK(int) Attach(AudioDriver *pThis, AudioDriverCfg *pCfg);
+    static DECLCALLBACK(int) Attach(AudioDriver *pThis);
 
     static DECLCALLBACK(int) Detach(AudioDriver *pThis);
 
-    int Configure(AudioDriverCfg *pCfg, bool fAttach);
-
 protected:
+
+    int configure(unsigned uLUN, bool fAttach);
 
     /**
      * Optional (virtual) function to give the derived audio driver
@@ -104,6 +100,9 @@ protected:
     AudioDriverCfg       mCfg;
     /** Whether the driver is attached or not. */
     bool                 mfAttached;
+    /** The LUN the driver is attached to.
+     *  Set the UINT8_MAX if not attached. */
+    unsigned             muLUN;
 };
 
 #endif /* ____H_AUDIODRIVER */
