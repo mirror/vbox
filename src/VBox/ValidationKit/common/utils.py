@@ -103,7 +103,7 @@ def getHostArch():
                 sArch = 'amd64';
             else:
                 try:
-                    sArch = processOutputChecked(['/usr/bin/isainfo', '-n',]);
+                    sArch = str(processOutputChecked(['/usr/bin/isainfo', '-n',]));
                 except:
                     pass;
                 sArch = sArch.strip();
@@ -585,7 +585,12 @@ def processOutputChecked(*aPositionalArgs, **dKeywordArgs):
     """
     Wrapper around subprocess.check_output to deal with its absense in older
     python versions.
+    Extra keyword: sEncoding='utf-8; for specifying now output is to be decoded.
     """
+    sEncoding = dKeywordArgs.get('sEncoding');
+    if sEncoding is not None:   del dKeywordArgs['sEncoding'];
+    else:                       sEncoding = 'utf-8';
+
     _processFixPythonInterpreter(aPositionalArgs, dKeywordArgs);
     oProcess = processPopenSafe(stdout=subprocess.PIPE, *aPositionalArgs, **dKeywordArgs);
 
@@ -599,7 +604,7 @@ def processOutputChecked(*aPositionalArgs, **dKeywordArgs):
         print(sOutput);
         raise subprocess.CalledProcessError(iExitCode, asArgs);
 
-    return str(sOutput); # str() make pylint happy.
+    return sOutput.decode(sEncoding);
 
 g_fOldSudo = None;
 def _sudoFixArguments(aPositionalArgs, dKeywordArgs, fInitialEnv = True):
@@ -624,7 +629,7 @@ def _sudoFixArguments(aPositionalArgs, dKeywordArgs, fInitialEnv = True):
         global g_fOldSudo;
         if g_fOldSudo is None:
             try:
-                sVersion = processOutputChecked(['sudo', '-V']);
+                sVersion = str(processOutputChecked(['sudo', '-V']));
             except:
                 sVersion = '1.7.0';
             sVersion = sVersion.strip().split('\n')[0];

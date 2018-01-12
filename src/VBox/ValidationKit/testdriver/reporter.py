@@ -657,14 +657,20 @@ class RemoteReporter(ReporterBase):
         self.fDebugXml          = 'TESTDRIVER_REPORTER_DEBUG_XML' in os.environ;
 
         # Prepare the TM connecting.
-        import urlparse;
-        import httplib;
-        import urllib;
         from common import constants;
-
-        self._fnUrlEncode       = urllib.urlencode;
-        self._fnUrlParseQs      = urlparse.parse_qs;
-        self._oParsedTmUrl      = urlparse.urlparse(self.sTestManagerUrl);
+        if sys.version_info[0] >= 3:
+            import urllib;
+            self._fnUrlEncode       = urllib.parse.urlencode;                       # pylint: disable=no-member
+            self._fnUrlParseQs      = urllib.parse.parse_qs;                        # pylint: disable=no-member
+            self._oParsedTmUrl      = urllib.parse.urlparse(self.sTestManagerUrl);  # pylint: disable=no-member
+            import http.client as httplib;                                      # pylint: disable=no-name-in-module,import-error
+        else:
+            import urllib;
+            self._fnUrlEncode       = urllib.urlencode;                             # pylint: disable=no-member
+            import urlparse;                                                        # pylint: disable=import-error
+            self._fnUrlParseQs      = urlparse.parse_qs;                            # pylint: disable=no-member
+            self._oParsedTmUrl      = urlparse.urlparse(self.sTestManagerUrl);      # pylint: disable=no-member
+            import httplib;                                                     # pylint: disable=no-name-in-module,import-error
 
         if     sys.version_info[0] >= 3 \
            or (sys.version_info[0] == 2 and sys.version_info[1] >= 6):
@@ -696,7 +702,7 @@ class RemoteReporter(ReporterBase):
         };
         self._sTmServerPath = '/%s/testboxdisp.py?%s' \
                             % ( self._oParsedTmUrl.path.strip('/'), # pylint: disable=E1101
-                                urllib.urlencode(dParams), );
+                                self._fnUrlEncode(dParams), );
 
     def __del__(self):
         """Flush pending log messages?"""

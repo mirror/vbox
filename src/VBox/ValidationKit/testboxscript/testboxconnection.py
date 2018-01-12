@@ -31,13 +31,14 @@ __version__ = "$Revision$"
 
 # Standard python imports.
 import sys;
-import urllib
 if sys.version_info[0] >= 3:
-    import http.client as httplib;      # pylint: disable=import-error,no-name-in-module
-    import urllib.parse as urlparse;    # pylint: disable=import-error,no-name-in-module
+    import http.client as httplib;                          # pylint: disable=import-error,no-name-in-module
+    import urllib.parse as urlparse;                        # pylint: disable=import-error,no-name-in-module
+    from urllib.parse import urlencode as urllib_urlencode; # pylint: disable=import-error,no-name-in-module
 else:
-    import httplib;                     # pylint: disable=import-error
-    import urlparse;                    # pylint: disable=import-error
+    import httplib;                                         # pylint: disable=import-error
+    import urlparse;                                        # pylint: disable=import-error
+    from urllib import urlencode as urllib_urlencode;       # pylint: disable=import-error
 
 # Validation Kit imports.
 from common import constants
@@ -58,6 +59,7 @@ class TestBoxResponse(object):
         if oResponse is not None:
             # Read the whole response (so we can log it).
             sBody = oResponse.read();
+            sBody = sBody.decode('utf-8');
 
             # Check the content type.
             sContentType = oResponse.getheader('Content-Type');
@@ -198,7 +200,7 @@ class TestBoxConnection(object):
         };
         sServerPath = '/%s/testboxdisp.py' % (self._oParsedUrl.path.strip('/'),); # pylint: disable=E1101
         dParams[constants.tbreq.ALL_PARAM_ACTION] = sAction;
-        sBody = urllib.urlencode(dParams);
+        sBody = urllib_urlencode(dParams);
         ##testboxcommons.log2('sServerPath=%s' % (sServerPath,));
         try:
             self._oConn.request('POST', sServerPath, sBody, dHeader);

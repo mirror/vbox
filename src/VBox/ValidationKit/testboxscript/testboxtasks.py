@@ -641,6 +641,7 @@ class TestBoxCleanupTask(TestBoxTestDriverTask):
         try:
             oFile = open(sPath, "rb");
             sStr = oFile.read();
+            sStr = sStr.decode('utf-8');
             oFile.close();
             return sStr.strip();
         except Exception as oXcpt:
@@ -778,7 +779,7 @@ class TestBoxExecTask(TestBoxTestDriverTask):
         """
         try:
             oFile = open(sPath, "wb");
-            oFile.write(sContent);
+            oFile.write(sContent.encode('utf-8'));
             oFile.flush();
             try:     os.fsync(oFile.fileno());
             except:  pass;
