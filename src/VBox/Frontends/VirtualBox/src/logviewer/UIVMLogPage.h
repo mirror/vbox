@@ -27,19 +27,11 @@
 #include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 
-/* COM includes: */
-#include "COMEnums.h"
-#include "CMachine.h"
-
 /* Forward declarations: */
 class QITabWidget;
-class QPlainTextEdit;
 class QHBoxLayout;
-class UIToolBar;
-class UIVMLogViewerBookmarksPanel;
-class UIVMLogViewerFilterPanel;
-class UIVMLogViewerPanel;
-class UIVMLogViewerSearchPanel;
+class QPlainTextEdit;
+class UIVMLogViewerTextEdit;
 
 /* Type definitions: */
 /** first is line number, second is block text */
@@ -108,7 +100,7 @@ private:
     void retranslateUi();
 
     QHBoxLayout    *m_pMainLayout;
-    QPlainTextEdit *m_pPlainTextEdit;
+    UIVMLogViewerTextEdit *m_pTextEdit;
     /** Stores the log file (unmodified) content. */
     QString         m_strLog;
     /** Stores full path and name of the log file. */

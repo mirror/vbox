@@ -340,6 +340,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/logviewer/UIVMLogViewerFilterPanel.h \
 	src/logviewer/UIVMLogViewerPanel.h \
 	src/logviewer/UIVMLogViewerSearchPanel.h \
+	src/logviewer/UIVMLogViewerTextEdit.h \
 	src/logviewer/UIVMLogViewerWidget.h \
 	src/medium/UIMediumDetailsWidget.h \
 	src/medium/UIMediumEnumerator.h \
@@ -547,8 +548,8 @@ VirtualBox_QT_MOCSRCS = \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
-	src/logviewer/UIVMLogPage.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
+	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIAddDiskEncryptionPasswordDialog.cpp \
@@ -659,6 +660,7 @@ VirtualBox_SOURCES = \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerPanel.cpp \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
+	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMedium.cpp \
