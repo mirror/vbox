@@ -42,6 +42,7 @@ UIVMLogPage::UIVMLogPage(QWidget *pParent /* = 0 */, int tabIndex /*= -1 */)
     , m_pMainLayout(0)
     , m_pTextEdit(0)
     , m_tabIndex(tabIndex)
+    , m_bFiltered(false)
 {
     prepare();
 }
@@ -192,7 +193,7 @@ void UIVMLogPage::deleteBookmark(LogBookmark bookmark)
     int index = -1;
     for(int i = 0; i < m_bookmarkVector.size(); ++i)
     {
-        if(m_bookmarkVector.at(i).first)
+        if(m_bookmarkVector.at(i).first == bookmark.first)
         {
             index = i;
             break;
@@ -251,17 +252,20 @@ void UIVMLogPage::updateTextEditBookmarkLineSet()
     m_pTextEdit->setBookmarkLineSet(bookmarkLinesSet);
 }
 
-// void UIVMLogViewerWidget::sltCreateBookmarkAtCurrent()
-// {
-    // if (!currentTextEdit())
-    //     return;
-    // QWidget* viewport = currentTextEdit()->viewport();
-    // if (!viewport)
-    //     return;
-    // QPoint point(0.5 * viewport->width(), 0.5 * viewport->height());
-    // QTextBlock block = currentTextEdit()->cursorForPosition(point).block();
-    // LogBookmark bookmark;
-    // bookmark.first = block.firstLineNumber();
-    // bookmark.second = block.text();
-    // sltCreateBookmarkAtLine(bookmark);
-//}
+bool UIVMLogPage::isFiltered() const
+{
+    return m_bFiltered;
+}
+
+void UIVMLogPage::setFiltered(bool filtered)
+{
+    if(m_bFiltered == filtered)
+        return;
+    m_bFiltered = filtered;
+    if(m_pTextEdit)
+    {
+        m_pTextEdit->setShownTextIsFiltered(m_bFiltered);
+        m_pTextEdit->update();
+    }
+    emit sigLogPageFilteredChanged(m_bFiltered);
+}

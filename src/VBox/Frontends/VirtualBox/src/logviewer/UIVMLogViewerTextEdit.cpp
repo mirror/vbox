@@ -152,6 +152,7 @@ UIVMLogViewerTextEdit::UIVMLogViewerTextEdit(QWidget* parent /* = 0 */)
     :QPlainTextEdit(parent)
     , m_pLineNumberArea(0)
     , m_mouseCursorLine(-1)
+    , m_bShownTextIsFiltered(false)
 {
     setMouseTracking(true);
     //setStyleSheet("background-color: rgba(240, 240, 240, 75%) ");
@@ -218,7 +219,8 @@ void UIVMLogViewerTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
     while (block.isValid() && top <= event->rect().bottom()) {
         if (block.isVisible() && bottom >= event->rect().top()) {
             QString number = QString::number(blockNumber + 1);
-            if (m_bookmarkLineSet.contains(blockNumber + 1))
+            /* Mark this line if it is bookmarked, but only if the text is not filtered. */
+            if (m_bookmarkLineSet.contains(blockNumber + 1) && !m_bShownTextIsFiltered)
             {
                 QPainterPath path;
                 path.addRect(0, top, m_pLineNumberArea->width(), m_pLineNumberArea->fontMetrics().lineSpacing());
@@ -244,6 +246,14 @@ void UIVMLogViewerTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
 
 void UIVMLogViewerTextEdit::contextMenuEvent(QContextMenuEvent *pEvent)
 {
+    /* If shown text is filtered, do not create Bookmark action since
+       we disable all bookmarking related functionalities in this case. */
+    if(m_bShownTextIsFiltered)
+    {
+        QPlainTextEdit::contextMenuEvent(pEvent);
+        return;
+    }
+
     QMenu *menu = createStandardContextMenu();
     QAction *pAction = menu->addAction(tr("Bookmark"));
     m_iContextMenuBookmark = bookmarkForPos(pEvent->pos());
@@ -256,6 +266,29 @@ void UIVMLogViewerTextEdit::contextMenuEvent(QContextMenuEvent *pEvent)
         disconnect(pAction, &QAction::triggered, this, &UIVMLogViewerTextEdit::sltBookmark);
 
     delete menu;
+}
+
+void UIVMLogViewerTextEdit::paintEvent(QPaintEvent *pEvent)
+{
+    QPlainTextEdit::paintEvent(pEvent);
+    if (m_bShownTextIsFiltered && viewport())
+    {
+        int rectHeight = 24;
+        int rectWidth = 84;
+        int rectX = viewport()->width() - rectWidth;
+        int rectMargin = 4;
+        if(verticalScrollBar())
+            rectX -= verticalScrollBar()->width();
+        QPainter painter(viewport());
+        painter.fillRect(rectX, 0, rectWidth, rectHeight, QColor(125, 125, 125, 100));
+        QFont nFont(painter.font());
+        nFont.setPixelSize(rectHeight- 2 * rectMargin) ;
+        painter.setFont(nFont);
+        painter.setPen(QPen(QColor(255, 0, 0, 175), 1.8f));
+        painter.drawText(rectX + rectMargin, rectMargin, rectWidth, rectHeight,
+                         Qt::AlignLeft, "Filtered");
+        viewport()->update();
+    }
 }
 
 void UIVMLogViewerTextEdit::resizeEvent(QResizeEvent *pEvent)
@@ -358,12 +391,22 @@ void UIVMLogViewerTextEdit::setMouseCursorLine(int lineNumber)
 
 void UIVMLogViewerTextEdit::toggleBookmark(const QPair<int, QString>& bookmark)
 {
+    if(m_bShownTextIsFiltered)
+        return;
+
     int lineNumber = bookmark.first;
 
     if(m_bookmarkLineSet.contains(lineNumber))
         emit sigDeleteBookmark(bookmark);
     else
         emit sigAddBookmark(bookmark);
+}
+
+void UIVMLogViewerTextEdit::setShownTextIsFiltered(bool warning)
+{
+    if(m_bShownTextIsFiltered == warning)
+        return;
+    m_bShownTextIsFiltered = warning;
 }
 
 #include "UIVMLogViewerTextEdit.moc"

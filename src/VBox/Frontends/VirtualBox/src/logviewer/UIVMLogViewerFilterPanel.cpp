@@ -216,7 +216,7 @@ void UIVMLogViewerFilterPanel::filter()
     if (m_filterTermList.empty())
     {
         document->setPlainText(*originalLogString);
-        emit sigFilterApplied();
+        emit sigFilterApplied(true /* isOriginalLog */);
         m_iFilteredLineCount = document->lineCount();
         return;
     }
@@ -244,7 +244,7 @@ void UIVMLogViewerFilterPanel::filter()
     cursor.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
     pCurrentTextEdit->setTextCursor(cursor);
 
-    emit sigFilterApplied();
+    emit sigFilterApplied(false /* isOriginalLog */);
 }
 
 

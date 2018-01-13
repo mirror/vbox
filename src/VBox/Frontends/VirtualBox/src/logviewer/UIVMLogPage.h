@@ -44,6 +44,7 @@ class UIVMLogPage  : public QIWithRetranslateUI<QWidget>
 signals:
 
     void sigBookmarksUpdated();
+    void sigLogPageFilteredChanged(bool isFiltered);
 
 public:
 
@@ -81,14 +82,14 @@ public:
     void documentUndo();
 
     void deleteBookmark(int index);
-    void deleteBookmark(LogBookmark bookmark);
 
     const QVector<LogBookmark>& bookmarkVector() const;
     void deleteAllBookmarks();
     /** Scrolls the plain text edit to the bookmark with index @a bookmarkIndex. */
     void scrollToBookmark(int bookmarkIndex);
 
-protected:
+    bool isFiltered() const;
+    void setFiltered(bool filtered);
 
 private slots:
 
@@ -96,11 +97,13 @@ private slots:
     void sltDeleteBookmark(LogBookmark bookmark);
 
 private:
+
     void prepare();
     void prepareWidgets();
     void cleanup();
     void retranslateUi();
     void updateTextEditBookmarkLineSet();
+    void deleteBookmark(LogBookmark bookmark);
 
     QHBoxLayout    *m_pMainLayout;
     UIVMLogViewerTextEdit *m_pTextEdit;
@@ -110,9 +113,11 @@ private:
     QString         m_strFileName;
     /** This is the index of the tab containing this widget in UIVMLogViewerWidget. */
     int             m_tabIndex;
-
+    /** Stores the bookmarks of the logpage. All other bookmark related containers are updated wrt. this one. */
     QVector<LogBookmark> m_bookmarkVector;
-
+    /** Designates whether currently displayed text is log text or a filtered version of it. That is
+        if m_bFiltered is false than (m_strLog == m_pTextEdit->text()). */
+    bool m_bFiltered;
 };
 
 #endif /* !___UIVMLogPage_h___ */

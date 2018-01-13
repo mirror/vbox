@@ -127,7 +127,7 @@ void UIVMLogViewerWidget::sltDeleteAllBookmarks()
         m_pBookmarksPanel->updateBookmarkList(logPage->bookmarkVector());
 }
 
-void UIVMLogViewerWidget::sltBoomarksUpdated()
+void UIVMLogViewerWidget::sltUpdateBookmarkPanel()
 {
     if(!currentLogPage() || !m_pBookmarksPanel)
         return;
@@ -274,11 +274,29 @@ void UIVMLogViewerWidget::sltTabIndexChange(int tabIndex)
         m_pBookmarksPanel->updateBookmarkList(currentLogPage()->bookmarkVector());
 }
 
-void UIVMLogViewerWidget::sltFilterApplied()
+void UIVMLogViewerWidget::sltFilterApplied(bool isOriginal)
 {
+    if(currentLogPage())
+        currentLogPage()->setFiltered(!isOriginal);
     /* Reapply the search to get highlighting etc. correctly */
     if (m_pSearchPanel && m_pSearchPanel->isVisible())
         m_pSearchPanel->refresh();
+}
+
+void UIVMLogViewerWidget::sltLogPageFilteredChanged(bool isFiltered)
+{
+    /* Disable bookmark panel since bookmarks are stored as line numbers within
+       the original log text and does not mean much in a reduced/filtered one. */
+    if(m_pBookmarksPanel)
+    {
+        if(isFiltered)
+        {
+            m_pBookmarksPanel->setEnabled(false);
+            m_pBookmarksPanel->setVisible(false);
+        }
+        else
+            m_pBookmarksPanel->setEnabled(true);
+    }
 }
 
 void UIVMLogViewerWidget::setMachine(const CMachine &machine)
@@ -742,7 +760,8 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
 
     /* Create page-container: */
     UIVMLogPage* pLogPage = new UIVMLogPage(this);
-    connect(pLogPage, &UIVMLogPage::sigBookmarksUpdated, this, &UIVMLogViewerWidget::sltBoomarksUpdated);
+    connect(pLogPage, &UIVMLogPage::sigBookmarksUpdated, this, &UIVMLogViewerWidget::sltUpdateBookmarkPanel);
+    connect(pLogPage, &UIVMLogPage::sigLogPageFilteredChanged, this, &UIVMLogViewerWidget::sltLogPageFilteredChanged);
     AssertPtrReturnVoid(pLogPage);
     /* Set the file name only if we really have log file to read. */
     if (!noLogsToShow)

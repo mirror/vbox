@@ -24,7 +24,7 @@
 
 
 /* QPlainTextEdit extension for some addtional context menu items,
-   a special scrollbar, line number area, and bookmark support: */
+   a special scrollbar, line number area, and bookmarking support: */
 class UIVMLogViewerTextEdit : public QPlainTextEdit
 {
     Q_OBJECT;
@@ -45,14 +45,15 @@ public:
     void clearScrollBarMarkingsVector();
 
     void scrollToLine(int lineNumber);
-
     void setBookmarkLineSet(const QSet<int>& lineSet);
+    void setShownTextIsFiltered(bool warning);
 
 protected:
 
-    void contextMenuEvent(QContextMenuEvent *pEvent) /* override */;
-    void resizeEvent(QResizeEvent *pEvent) /* override */;
-    void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+    virtual void contextMenuEvent(QContextMenuEvent *pEvent) /* override */;
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+    virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
 
 private slots:
 
@@ -78,7 +79,10 @@ private:
     QSet<int>            m_bookmarkLineSet;
     /** Number of the line under the mouse cursor. */
     int                  m_mouseCursorLine;
-
+    /** If true the we draw a text near the top right corner of the text edit to warn
+        the user the text edit's content is filtered (as oppesed to whole log file content.
+        And we dont display bookmarks and adding/deleting bookmarks are disabled. */
+    bool                 m_bShownTextIsFiltered;
     friend class UILineNumberArea;
 };
 
