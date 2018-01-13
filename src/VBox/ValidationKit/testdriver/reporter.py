@@ -745,7 +745,7 @@ class RemoteReporter(ReporterBase):
             except: pass;
 
         # Make sure it's a string which encoding we grok.
-        if sys.version_info[0] >= 3 and hasattr(sRspBody, 'decode'):
+        if hasattr(sRspBody, 'decode'):
             sRspBody = sRspBody.decode('utf-8', 'ignore');
 
         # Check the content type.

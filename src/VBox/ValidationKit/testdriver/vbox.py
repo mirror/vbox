@@ -1087,6 +1087,9 @@ class TestDriver(base.TestDriver):                                              
                     sResponse = None;
                 os.close(iPipeR);
 
+                if hasattr(sResponse, 'decode'):
+                    sResponse = sResponse.decode('utf-8', 'ignore');
+
                 if sResponse is None  or  sResponse.strip() != 'READY':
                     reporter.error('VBoxSVC failed starting up... (sResponse=%s)' % (sResponse,));
                     if not self.oVBoxSvcProcess.wait(5000):
