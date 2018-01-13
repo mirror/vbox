@@ -1069,6 +1069,8 @@ class TestDriver(base.TestDriver):                                              
                 # XPCOM - We can use a pipe to let VBoxSVC notify us when it's ready.
                 #
                 iPipeR, iPipeW = os.pipe();
+                if hasattr(os, 'set_inheritable'):
+                    os.set_inheritable(iPipeW, fTrue);             # pylint: disable=no-member
                 os.environ['NSPR_INHERIT_FDS'] = 'vboxsvc:startup-pipe:5:0x%x' % (iPipeW,);
                 reporter.log2("NSPR_INHERIT_FDS=%s" % (os.environ['NSPR_INHERIT_FDS']));
 

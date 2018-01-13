@@ -286,11 +286,12 @@ def processCheckPidAndName(uPid, sName):
     if sys.platform == 'win32':
         fRc = winbase.processCheckPidAndName(uPid, sName);
     else:
-        if sys.platform in ('linux2', ):
+        sOs = utils.getHostOs();
+        if sOs == 'linux':
             asPsCmd = ['/bin/ps',     '-p', '%u' % (uPid,), '-o', 'fname='];
-        elif sys.platform in ('sunos5',):
+        elif sOs == 'solaris':
             asPsCmd = ['/usr/bin/ps', '-p', '%u' % (uPid,), '-o', 'fname='];
-        elif sys.platform in ('darwin',):
+        elif sOs == 'darwin':
             asPsCmd = ['/bin/ps',     '-p', '%u' % (uPid,), '-o', 'ucomm='];
         else:
             asPsCmd = None;

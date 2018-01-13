@@ -858,7 +858,7 @@ def processCheckPidAndName(uPid, sName):
             #reporter.logXcpt('uPid=%s sName=%s' % (uPid, sName));
             pass;
     else:
-        if sys.platform in ('linux2', ):
+        if sys.platform in ('linux2', 'linux', 'linux3', 'linux4', 'linux5', 'linux6'):
             asPsCmd = ['/bin/ps',     '-p', '%u' % (uPid,), '-o', 'fname='];
         elif sys.platform in ('sunos5',):
             asPsCmd = ['/usr/bin/ps', '-p', '%u' % (uPid,), '-o', 'fname='];
