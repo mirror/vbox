@@ -711,7 +711,10 @@ class RemoteReporter(ReporterBase):
 
     def _writeOutput(self, sText):
         """ Does the actual writing and flushing. """
-        print(sText.encode('ascii', 'replace'), file = self.oOutput);
+        if sys.version_info[0] >= 3:
+            print(sText, file = self.oOutput);
+        else:
+            print(sText.encode('ascii', 'replace'), file = self.oOutput);
         if self.fFlushEachLine: self.oOutput.flush();
         return None;
 
