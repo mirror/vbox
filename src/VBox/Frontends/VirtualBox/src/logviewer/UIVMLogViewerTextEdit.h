@@ -31,7 +31,8 @@ class UIVMLogViewerTextEdit : public QPlainTextEdit
 
 signals:
 
-    void sigContextMenuBookmarkAction(QPair<int, QString> bookmark);
+    void sigAddBookmark(QPair<int, QString> bookmark);
+    void sigDeleteBookmark(QPair<int, QString> bookmark);
 
 public:
 
@@ -49,8 +50,9 @@ public:
 
 protected:
 
-    void contextMenuEvent(QContextMenuEvent *pEvent);
-    void resizeEvent(QResizeEvent *pEvent);
+    void contextMenuEvent(QContextMenuEvent *pEvent) /* override */;
+    void resizeEvent(QResizeEvent *pEvent) /* override */;
+    void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
 
 private slots:
 
@@ -63,11 +65,21 @@ private:
 
     void prepare();
     void prepareWidgets();
-
-    /* Line number and text at the context menu position */
+    QPair<int, QString> bookmarkForPos(const QPoint &position);
+    int  lineNumberForPos(const QPoint &position);
+    void setMouseCursorLine(int lineNumber);
+    /** If bookmark exists this function removes it, if not it adds the bookmark. */
+    void toggleBookmark(const QPair<int, QString>& bookmark);
+    /** Line number and text at the context menu position */
     QPair<int, QString>  m_iContextMenuBookmark;
     QWidget             *m_pLineNumberArea;
+    /** Set of bookmarked lines. This set is updated from UIVMLogPage. This set is
+        used only for lookup in this class. */
     QSet<int>            m_bookmarkLineSet;
+    /** Number of the line under the mouse cursor. */
+    int                  m_mouseCursorLine;
+
+    friend class UILineNumberArea;
 };
 
 

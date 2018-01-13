@@ -81,6 +81,7 @@ public:
     void documentUndo();
 
     void deleteBookmark(int index);
+    void deleteBookmark(LogBookmark bookmark);
 
     const QVector<LogBookmark>& bookmarkVector() const;
     void deleteAllBookmarks();
@@ -92,6 +93,7 @@ protected:
 private slots:
 
     void sltAddBookmark(LogBookmark bookmark);
+    void sltDeleteBookmark(LogBookmark bookmark);
 
 private:
     void prepare();
