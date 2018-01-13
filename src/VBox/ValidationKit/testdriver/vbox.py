@@ -1070,7 +1070,7 @@ class TestDriver(base.TestDriver):                                              
                 #
                 iPipeR, iPipeW = os.pipe();
                 if hasattr(os, 'set_inheritable'):
-                    os.set_inheritable(iPipeW, fTrue);             # pylint: disable=no-member
+                    os.set_inheritable(iPipeW, True);             # pylint: disable=no-member
                 os.environ['NSPR_INHERIT_FDS'] = 'vboxsvc:startup-pipe:5:0x%x' % (iPipeW,);
                 reporter.log2("NSPR_INHERIT_FDS=%s" % (os.environ['NSPR_INHERIT_FDS']));
 
