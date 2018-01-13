@@ -744,6 +744,10 @@ class RemoteReporter(ReporterBase):
             try:    oConn.close();
             except: pass;
 
+        # Make sure it's a string which encoding we grok.
+        if sys.version_info[0] >= 3 and hasattr(sRspBody, 'decode'):
+            sRspBody = sRspBody.decode('utf-8', 'ignore');
+
         # Check the content type.
         sContentType = oResponse.getheader('Content-Type');
         if sContentType is not None  and  sContentType == 'application/x-www-form-urlencoded; charset=utf-8':
