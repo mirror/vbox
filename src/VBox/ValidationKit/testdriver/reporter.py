@@ -725,7 +725,8 @@ class RemoteReporter(ReporterBase):
         Returns True, False or None.  None should be retried, the others not.
         May raise exception on HTTP issue (retry ok).
         """
-        import httplib;
+        if sys.version_info[0] >= 3:    import http.client as httplib;  # pylint: disable=no-name-in-module,import-error
+        else:                           import httplib;                 # pylint: disable=import-error
         from common import constants;
 
         # Read the response and (optionally) close the connection.
