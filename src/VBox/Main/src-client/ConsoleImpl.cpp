@@ -5413,20 +5413,7 @@ HRESULT Console::i_onVRDEServerChange(BOOL aRestart)
                             else
                             {
 #ifdef VBOX_WITH_AUDIO_VRDE
-                                alock.acquire();
-
-                                PVMREQ pReq;
-                                int vrc2 = VMR3ReqCallU(mpUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                                        (PFNRT)AudioVRDE::Attach, 1,
-                                                        mAudioVRDE);
-
-                                /* Release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
-                                alock.release();
-
-                                if (vrc2 == VERR_TIMEOUT)
-                                    vrc2 = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-                                AssertRC(vrc2);
-                                VMR3ReqFree(pReq);
+                                mAudioVRDE->doAttachDriverViaEmt(mpUVM, NULL /*alock is not held*/);
 #endif
                                 mConsoleVRDPServer->EnableConnections();
                             }
@@ -5435,20 +5422,7 @@ HRESULT Console::i_onVRDEServerChange(BOOL aRestart)
                         {
                             mConsoleVRDPServer->Stop();
 #ifdef VBOX_WITH_AUDIO_VRDE
-                            alock.acquire();
-
-                            PVMREQ pReq;
-                            int vrc2 = VMR3ReqCallU(mpUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                                    (PFNRT)AudioVRDE::Detach, 1,
-                                                    mAudioVRDE);
-
-                            /* Release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
-                            alock.release();
-
-                            if (vrc2 == VERR_TIMEOUT)
-                                vrc2 = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-                            AssertRC(vrc2);
-                            VMR3ReqFree(pReq);
+                            mAudioVRDE->doDetachDriverViaEmt(mpUVM, NULL /*alock is not held*/);
 #endif
                         }
 
@@ -5552,22 +5526,7 @@ HRESULT Console::i_onVideoCaptureChange()
 # ifdef VBOX_WITH_AUDIO_VIDEOREC
                 /* Attach the video recording audio driver if required. */
                 if (mDisplay->i_videoRecGetEnabled() & VIDEORECFEATURE_AUDIO)
-                {
-                    PVMREQ pReq;
-                    int vrc2 = VMR3ReqCallU(mpUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                            (PFNRT)AudioVideoRec::Attach, 1,
-                                            mAudioVideoRec);
-
-                    /* Release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
-                    alock.release();
-
-                    if (vrc2 == VERR_TIMEOUT)
-                        vrc2 = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-                    AssertRC(vrc2);
-                    VMR3ReqFree(pReq);
-
-                    alock.acquire();
-                }
+                    mAudioVideoRec->doAttachDriverViaEmt(mpUVM, &alock);
 # endif
                 vrc = mDisplay->i_videoRecStart();
                 if (RT_FAILURE(vrc))
@@ -5577,20 +5536,7 @@ HRESULT Console::i_onVideoCaptureChange()
             {
                 mDisplay->i_videoRecStop();
 # ifdef VBOX_WITH_AUDIO_VIDEOREC
-                PVMREQ pReq;
-                int vrc2 = VMR3ReqCallU(mpUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                        (PFNRT)AudioVideoRec::Detach, 1,
-                                        mAudioVideoRec);
-
-                /* Release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
-                alock.release();
-
-                if (vrc2 == VERR_TIMEOUT)
-                    vrc2 = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-                AssertRC(vrc2);
-                VMR3ReqFree(pReq);
-
-                alock.acquire();
+                mAudioVideoRec->doDetachDriverViaEmt(mpUVM, &alock);
 # endif
             }
         }
@@ -9894,22 +9840,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
             AssertComRCReturnVoid(rc);
 
             if (fVRDEEnabled)
-            {
-                PVMREQ pReq;
-                int vrc2 = VMR3ReqCallU(pConsole->mpUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                        (PFNRT)AudioVRDE::Attach, 1,
-                                        pConsole->mAudioVRDE);
-
-                /* Release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
-                alock.release();
-
-                if (vrc2 == VERR_TIMEOUT)
-                    vrc2 = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-                AssertRC(vrc2);
-                VMR3ReqFree(pReq);
-
-                alock.acquire();
-            }
+                pConsole->mAudioVRDE->doAttachDriverViaEmt(pConsole->mpUVM, &alock);
         }
 #endif
 
@@ -9925,22 +9856,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
 
             /* Attach the video recording audio driver if required. */
             if (pDisplay->i_videoRecGetEnabled() & VIDEORECFEATURE_AUDIO)
-            {
-                PVMREQ pReq;
-                int vrc2 = VMR3ReqCallU(pConsole->mpUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                        (PFNRT)AudioVideoRec::Attach, 1,
-                                        pConsole->mAudioVideoRec);
-
-                /* Release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
-                alock.release();
-
-                if (vrc2 == VERR_TIMEOUT)
-                    vrc2 = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-                AssertRC(vrc2);
-                VMR3ReqFree(pReq);
-
-                alock.acquire();
-            }
+                pConsole->mAudioVideoRec->doAttachDriverViaEmt(pConsole->mpUVM, &alock);
         }
 #endif
         if (RT_SUCCESS(vrc))

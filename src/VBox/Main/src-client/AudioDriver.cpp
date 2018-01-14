@@ -73,13 +73,14 @@ unsigned AudioDriver::getFreeLUN(void)
 
 /**
  * Initializes the audio driver with a certain (device) configuration.
- * Note: The driver's LUN will be determined on runtime when attaching the
+ *
+ * @note The driver's LUN will be determined on runtime when attaching the
  *       driver to the audio driver chain.
  *
  * @returns VBox status code.
- * @param pCfg                  Audio driver configuration to use.
+ * @param   pCfg                Audio driver configuration to use.
  */
-int AudioDriver::Initialize(AudioDriverCfg *pCfg)
+int AudioDriver::InitializeConfig(AudioDriverCfg *pCfg)
 {
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
 
@@ -89,6 +90,42 @@ int AudioDriver::Initialize(AudioDriverCfg *pCfg)
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Attaches the driver via EMT, if configured.
+ *
+ * @returns IPRT status code.
+ * @param   pUVM                The user mode VM handle for talking to EMT.
+ * @param   pAutoLock           The callers auto lock instance.  Can be NULL if
+ *                              not locked.
+ */
+int AudioDriver::doAttachDriverViaEmt(PUVM pUVM, util::AutoWriteLock *pAutoLock)
+{
+    if (!isConfigured())
+        return VINF_SUCCESS;
+
+    PVMREQ pReq;
+    int vrc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+                           (PFNRT)attachDriverOnEmt, 1, this);
+    if (vrc == VERR_TIMEOUT)
+    {
+        /* Release the lock before a blocking VMR3* call (EMT might wait for it, @bugref{7648})! */
+        if (pAutoLock)
+            pAutoLock->release();
+
+        vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
+
+        if (pAutoLock)
+            pAutoLock->acquire();
+    }
+
+    AssertRC(vrc);
+    VMR3ReqFree(pReq);
+
+    return vrc;
+}
+
+
 /**
  * Configures the audio driver (to CFGM) and attaches it to the audio chain.
  * Does nothing if the audio driver already is attached.
@@ -97,14 +134,13 @@ int AudioDriver::Initialize(AudioDriverCfg *pCfg)
  * @param   pThis               Audio driver to detach.
  */
 /* static */
-DECLCALLBACK(int) AudioDriver::Attach(AudioDriver *pThis)
+DECLCALLBACK(int) AudioDriver::attachDriverOnEmt(AudioDriver *pThis)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
     Console::SafeVMPtrQuiet ptrVM(pThis->mpConsole);
     Assert(ptrVM.isOk());
 
-    int vrc = VINF_SUCCESS;
 
     if (pThis->mfAttached) /* Already attached? Bail out. */
     {
@@ -121,7 +157,7 @@ DECLCALLBACK(int) AudioDriver::Attach(AudioDriver *pThis)
     LogFunc(("strName=%s, strDevice=%s, uInst=%u, uLUN=%u\n",
              pCfg->strName.c_str(), pCfg->strDev.c_str(), pCfg->uInst, uLUN));
 
-    vrc = pThis->configure(uLUN, true /* Attach */);
+    int vrc = pThis->configure(uLUN, true /* Attach */);
     if (RT_SUCCESS(vrc))
         vrc = PDMR3DeviceAttach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, uLUN, 0 /* fFlags */,
                                 NULL /* ppBase */);
@@ -138,6 +174,42 @@ DECLCALLBACK(int) AudioDriver::Attach(AudioDriver *pThis)
     return vrc;
 }
 
+
+/**
+ * Detatches the driver via EMT, if configured.
+ *
+ * @returns IPRT status code.
+ * @param   pUVM                The user mode VM handle for talking to EMT.
+ * @param   pAutoLock           The callers auto lock instance.  Can be NULL if
+ *                              not locked.
+ */
+int AudioDriver::doDetachDriverViaEmt(PUVM pUVM, util::AutoWriteLock *pAutoLock)
+{
+    if (!isConfigured())
+        return VINF_SUCCESS;
+
+    PVMREQ pReq;
+    int vrc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+                           (PFNRT)detachDriverOnEmt, 1, this);
+    if (vrc == VERR_TIMEOUT)
+    {
+        /* Release the lock before a blocking VMR3* call (EMT might wait for it, @bugref{7648})! */
+        if (pAutoLock)
+            pAutoLock->release();
+
+        vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
+
+        if (pAutoLock)
+            pAutoLock->acquire();
+    }
+
+    AssertRC(vrc);
+    VMR3ReqFree(pReq);
+
+    return vrc;
+}
+
+
 /**
  * Detaches an already attached audio driver from the audio chain.
  * Does nothing if the audio driver already is detached or not attached.
@@ -146,7 +218,7 @@ DECLCALLBACK(int) AudioDriver::Attach(AudioDriver *pThis)
  * @param   pThis               Audio driver to detach.
  */
 /* static */
-DECLCALLBACK(int) AudioDriver::Detach(AudioDriver *pThis)
+DECLCALLBACK(int) AudioDriver::detachDriverOnEmt(AudioDriver *pThis)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
