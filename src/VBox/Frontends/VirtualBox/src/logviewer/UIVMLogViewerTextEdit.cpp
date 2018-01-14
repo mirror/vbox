@@ -119,7 +119,7 @@ public:
 
     QSize sizeHint() const
     {
-        if(!m_pTextEdit)
+        if (!m_pTextEdit)
             return QSize();
         return QSize(m_pTextEdit->lineNumberAreaWidth(), 0);
     }
@@ -128,7 +128,7 @@ protected:
 
     void paintEvent(QPaintEvent *event)
     {
-        if(m_pTextEdit)
+        if (m_pTextEdit)
             m_pTextEdit->lineNumberAreaPaintEvent(event);
     }
 
@@ -153,6 +153,8 @@ UIVMLogViewerTextEdit::UIVMLogViewerTextEdit(QWidget* parent /* = 0 */)
     , m_pLineNumberArea(0)
     , m_mouseCursorLine(-1)
     , m_bShownTextIsFiltered(false)
+    , m_bShowLineNumbers(true)
+    , m_bWrapLines(false)
 {
     setMouseTracking(true);
     //setStyleSheet("background-color: rgba(240, 240, 240, 75%) ");
@@ -189,13 +191,16 @@ void UIVMLogViewerTextEdit::prepareWidgets()
     setFont(font);
     setWordWrapMode(QTextOption::NoWrap);
     setReadOnly(true);
-    if(m_pLineNumberArea)
+    if (m_pLineNumberArea)
         m_pLineNumberArea->setFont(font);
 
 }
 
 int UIVMLogViewerTextEdit::lineNumberAreaWidth()
 {
+    if(!m_bShowLineNumbers)
+        return 0;
+
     int digits = 1;
     int max = qMax(1, blockCount());
     while (max >= 10) {
@@ -210,6 +215,8 @@ int UIVMLogViewerTextEdit::lineNumberAreaWidth()
 
 void UIVMLogViewerTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
 {
+    if(!m_bShowLineNumbers)
+        return;
     QPainter painter(m_pLineNumberArea);
     painter.fillRect(event->rect(), Qt::lightGray);
     QTextBlock block = firstVisibleBlock();
@@ -227,7 +234,7 @@ void UIVMLogViewerTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
                 painter.fillPath(path, QColor(204, 255, 51, 125));
                 painter.drawPath(path);
             }
-            if((blockNumber + 1) == m_mouseCursorLine)
+            if ((blockNumber + 1) == m_mouseCursorLine && underMouse())
             {
                 painter.setPen(Qt::red);
                 painter.drawRect(0, top, m_pLineNumberArea->width(), m_pLineNumberArea->fontMetrics().lineSpacing());
@@ -248,7 +255,7 @@ void UIVMLogViewerTextEdit::contextMenuEvent(QContextMenuEvent *pEvent)
 {
     /* If shown text is filtered, do not create Bookmark action since
        we disable all bookmarking related functionalities in this case. */
-    if(m_bShownTextIsFiltered)
+    if (m_bShownTextIsFiltered)
     {
         QPlainTextEdit::contextMenuEvent(pEvent);
         return;
@@ -277,7 +284,7 @@ void UIVMLogViewerTextEdit::paintEvent(QPaintEvent *pEvent)
         int rectWidth = 84;
         int rectX = viewport()->width() - rectWidth;
         int rectMargin = 4;
-        if(verticalScrollBar())
+        if (verticalScrollBar())
             rectX -= verticalScrollBar()->width();
         QPainter painter(viewport());
         painter.fillRect(rectX, 0, rectWidth, rectHeight, QColor(125, 125, 125, 100));
@@ -305,6 +312,13 @@ void UIVMLogViewerTextEdit::mouseMoveEvent(QMouseEvent *pEvent)
     m_pLineNumberArea->repaint();
 }
 
+void UIVMLogViewerTextEdit::leaveEvent(QEvent * pEvent)
+{
+    QPlainTextEdit::leaveEvent(pEvent);
+    /* Force a redraw as mouse leaves this to remove the mouse
+       cursor track rectangle (the red rectangle we draw on the line number area. */
+    update();
+}
 
 void UIVMLogViewerTextEdit::sltUpdateLineNumberAreaWidth(int /* newBlockCount */)
 {
@@ -330,21 +344,21 @@ void UIVMLogViewerTextEdit::sltBookmark()
 void UIVMLogViewerTextEdit::setScrollBarMarkingsVector(const QVector<float> &vector)
 {
     UIIndicatorScrollBar* vScrollBar = qobject_cast<UIIndicatorScrollBar*>(verticalScrollBar());
-    if(vScrollBar)
+    if (vScrollBar)
         vScrollBar->setMarkingsVector(vector);
 }
 
 void UIVMLogViewerTextEdit::clearScrollBarMarkingsVector()
 {
     UIIndicatorScrollBar* vScrollBar = qobject_cast<UIIndicatorScrollBar*>(verticalScrollBar());
-    if(vScrollBar)
+    if (vScrollBar)
         vScrollBar->clearMarkingsVector();
 }
 
 void UIVMLogViewerTextEdit::scrollToLine(int lineNumber)
 {
     QTextDocument* pDocument = document();
-    if(!pDocument)
+    if (!pDocument)
         return;
 
     int halfPageLineCount = 0.5 * visibleLineCount() ;
@@ -356,12 +370,12 @@ void UIVMLogViewerTextEdit::scrollToLine(int lineNumber)
 int UIVMLogViewerTextEdit::visibleLineCount()
 {
     int height = 0;
-    if(viewport())
+    if (viewport())
         height = viewport()->height();
-    if(verticalScrollBar() && verticalScrollBar()->isVisible())
+    if (verticalScrollBar() && verticalScrollBar()->isVisible())
         height -= horizontalScrollBar()->height();
     int singleLineHeight = fontMetrics().lineSpacing();
-    if(singleLineHeight == 0)
+    if (singleLineHeight == 0)
         return 0;
     return height / singleLineHeight;
 }
@@ -391,12 +405,12 @@ void UIVMLogViewerTextEdit::setMouseCursorLine(int lineNumber)
 
 void UIVMLogViewerTextEdit::toggleBookmark(const QPair<int, QString>& bookmark)
 {
-    if(m_bShownTextIsFiltered)
+    if (m_bShownTextIsFiltered)
         return;
 
     int lineNumber = bookmark.first;
 
-    if(m_bookmarkLineSet.contains(lineNumber))
+    if (m_bookmarkLineSet.contains(lineNumber))
         emit sigDeleteBookmark(bookmark);
     else
         emit sigAddBookmark(bookmark);
@@ -404,9 +418,26 @@ void UIVMLogViewerTextEdit::toggleBookmark(const QPair<int, QString>& bookmark)
 
 void UIVMLogViewerTextEdit::setShownTextIsFiltered(bool warning)
 {
-    if(m_bShownTextIsFiltered == warning)
+    if (m_bShownTextIsFiltered == warning)
         return;
     m_bShownTextIsFiltered = warning;
 }
+
+void UIVMLogViewerTextEdit::setShowLineNumbers(bool bShowLineNumbers)
+{
+    if(m_bShowLineNumbers == bShowLineNumbers)
+        return;
+    m_bShowLineNumbers = bShowLineNumbers;
+    emit updateRequest(viewport()->rect(), 0);
+}
+
+void UIVMLogViewerTextEdit::setWrapLines(bool bWrapLines)
+{
+    if(m_bWrapLines == bWrapLines)
+        return;
+    m_bWrapLines = bWrapLines;
+    update();
+}
+
 
 #include "UIVMLogViewerTextEdit.moc"

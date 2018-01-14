@@ -41,6 +41,7 @@ class UIVMLogViewerBookmarksPanel;
 class UIVMLogViewerFilterPanel;
 class UIVMLogViewerPanel;
 class UIVMLogViewerSearchPanel;
+class UIVMLogViewerSettingsPanel;
 
 /* Type definitions: */
 /** value is the content of the log file */
@@ -114,6 +115,9 @@ private slots:
        of UIVMLogPage is changed. */
     void sltLogPageFilteredChanged(bool isFiltered);
 
+    void sltShowLineNumbers(bool bShowLineNumbers);
+    void sltWrapLines(bool bWrapLine);
+
 private:
 
     /** @name Prepare/Cleanup
@@ -173,19 +177,14 @@ private:
      *  to the m_pTabWidget. Index is the index of the tab widget. */
     QVector<QWidget*>  m_logPageList;
 
-    /** Holds the index to the current tab: */
-    //int          m_iCurrentTabIndex;
-
-    /** Holds the instance of search-panel. */
-    UIVMLogViewerSearchPanel    *m_pSearchPanel;
-    /** Holds the instance of filter panel. */
-    UIVMLogViewerFilterPanel    *m_pFilterPanel;
-    UIVMLogViewerBookmarksPanel *m_pBookmarksPanel;
-    QMap<UIVMLogViewerPanel*, QAction*> m_panelActionMap;
-
-    /** Holds the list of log file content. */
-    // VMLogMap             m_logMap;
-    // mutable BookmarkMap  m_bookmarkMap;
+    /** @name Panel instances and a QMap for mapping panel instances to related actions.
+      * @{ */
+        UIVMLogViewerSearchPanel    *m_pSearchPanel;
+        UIVMLogViewerFilterPanel    *m_pFilterPanel;
+        UIVMLogViewerBookmarksPanel *m_pBookmarksPanel;
+        UIVMLogViewerSettingsPanel  *m_pSettingsPanel;
+        QMap<UIVMLogViewerPanel*, QAction*> m_panelActionMap;
+    /** @} */
     QVBoxLayout         *m_pMainLayout;
 
     /** Holds the widget's embedding type. */
@@ -193,25 +192,28 @@ private:
 
     /** @name Toolbar and menu variables.
       * @{ */
-        /** Holds the toolbar widget instance. */
         UIToolBar *m_pToolBar;
-        /** Holds the Find action instance. */
         QAction   *m_pActionFind;
-        /** Holds the Filter action instance. */
         QAction   *m_pActionFilter;
-        /** Holds the Refresh action instance. */
         QAction   *m_pActionRefresh;
-        /** Holds the Save action instance. */
         QAction   *m_pActionSave;
-        /** Holds the Bookmark action instance. */
         QAction   *m_pActionBookmark;
-        /** Holds the menu object instance. */
+        QAction   *m_pActionSettings;
         QMenu     *m_pMenu;
     /** @} */
-    const bool     m_bMarkBookmarkLines;
+
+    /** @name Toolbar and menu variables.
+     * @{ */
+        /** Showing/hiding line numbers and line wraping settings are set per
+            UIVMLogViewerWidget and applies to all log pages (all tabs) */
+        bool m_bShowLineNumbers;
+        bool m_bWrapLines;
+    /** @} */
+
     friend class UIVMLogViewerBookmarksPanel;
     friend class UIVMLogViewerFilterPanel;
     friend class UIVMLogViewerSearchPanel;
+    friend class UIVMLogViewerSettingsPanel;
     friend class UIVMLogViewerPanel;
 };
 

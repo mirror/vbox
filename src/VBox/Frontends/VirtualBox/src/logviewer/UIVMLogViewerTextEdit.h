@@ -48,12 +48,16 @@ public:
     void setBookmarkLineSet(const QSet<int>& lineSet);
     void setShownTextIsFiltered(bool warning);
 
+    void setShowLineNumbers(bool bShowLineNumbers);
+    void setWrapLines(bool bWrapLines);
+
 protected:
 
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
     virtual void contextMenuEvent(QContextMenuEvent *pEvent) /* override */;
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
     virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
+    virtual void leaveEvent(QEvent * event) /* override */;
 
 private slots:
 
@@ -83,6 +87,9 @@ private:
         the user the text edit's content is filtered (as oppesed to whole log file content.
         And we dont display bookmarks and adding/deleting bookmarks are disabled. */
     bool                 m_bShownTextIsFiltered;
+    bool                 m_bShowLineNumbers;
+    bool                 m_bWrapLines;
+
     friend class UILineNumberArea;
 };
 

@@ -51,7 +51,8 @@ UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogView
     , m_pCaseSensitiveCheckBox(0)
     , m_pMatchWholeWordCheckBox(0)
     , m_pHighlightAllCheckBox(0)
-    , m_pWarningSpacer(0), m_pWarningIcon(0), m_pInfoLabel(0)
+    , m_pWarningIcon(0)
+    , m_pInfoLabel(0)
     , m_iSearchPosition(0)
     , m_iMatchCount(-1)
 {
@@ -269,14 +270,6 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
         mainLayout()->addWidget(m_pHighlightAllCheckBox);
     }
 
-    /* Create warning-spacer: */
-    m_pWarningSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-    AssertPtrReturnVoid(m_pWarningSpacer);
-    {
-        /* Add warning-spacer to main-layout: */
-        mainLayout()->addItem(m_pWarningSpacer);
-    }
-
     /* Create warning-icon: */
     m_pWarningIcon = new QLabel(this);
     AssertPtrReturnVoid(m_pWarningIcon);
@@ -305,12 +298,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
         /* Add warning-label to main-layout: */
         mainLayout()->addWidget(m_pInfoLabel);
     }
-
-    m_pSpacerItem = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    AssertPtrReturnVoid(m_pSpacerItem);
-    {
-        mainLayout()->addItem(m_pSpacerItem);
-    }
+    mainLayout()->addStretch(2);
 }
 
 void UIVMLogViewerSearchPanel::prepareConnections()

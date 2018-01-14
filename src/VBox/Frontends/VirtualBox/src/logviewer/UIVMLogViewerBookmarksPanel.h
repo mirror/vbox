@@ -24,7 +24,6 @@
 /* Forward declarations: */
 class QComboBox;
 class QPushButton;
-class QSpacerItem;
 class QIToolButton;
 
 /** UIVMLogViewerPanel extension providing GUI for bookmark management. Show a list of bookmarks currently set
@@ -75,7 +74,6 @@ private:
     QComboBox    *m_pBookmarksComboBox;
     QPushButton  *m_pDeleteAllButton;
     QIToolButton *m_pDeleteCurrentButton;
-    QSpacerItem  *m_pSpacerItem;
 };
 
 #endif /* !___UIVMLogViewerBookmarksPanel_h___ */

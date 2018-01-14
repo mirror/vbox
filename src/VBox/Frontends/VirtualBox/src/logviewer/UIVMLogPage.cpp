@@ -43,6 +43,8 @@ UIVMLogPage::UIVMLogPage(QWidget *pParent /* = 0 */, int tabIndex /*= -1 */)
     , m_pTextEdit(0)
     , m_tabIndex(tabIndex)
     , m_bFiltered(false)
+    , m_bShowLineNumbers(true)
+    , m_bWrapLines(false)
 {
     prepare();
 }
@@ -191,15 +193,15 @@ void UIVMLogPage::deleteBookmark(int index)
 void UIVMLogPage::deleteBookmark(LogBookmark bookmark)
 {
     int index = -1;
-    for(int i = 0; i < m_bookmarkVector.size(); ++i)
+    for (int i = 0; i < m_bookmarkVector.size(); ++i)
     {
-        if(m_bookmarkVector.at(i).first == bookmark.first)
+        if (m_bookmarkVector.at(i).first == bookmark.first)
         {
             index = i;
             break;
         }
     }
-    if(index != -1)
+    if (index != -1)
         deleteBookmark(index);
 }
 
@@ -212,7 +214,7 @@ void UIVMLogPage::deleteAllBookmarks()
 
 void UIVMLogPage::scrollToBookmark(int bookmarkIndex)
 {
-    if(!m_pTextEdit)
+    if (!m_pTextEdit)
         return;
     if (bookmarkIndex >= m_bookmarkVector.size())
         return;
@@ -242,10 +244,10 @@ void UIVMLogPage::sltDeleteBookmark(LogBookmark bookmark)
 
 void UIVMLogPage::updateTextEditBookmarkLineSet()
 {
-    if(!m_pTextEdit)
+    if (!m_pTextEdit)
         return;
     QSet<int> bookmarkLinesSet;
-    for(int i = 0; i < m_bookmarkVector.size(); ++i)
+    for (int i = 0; i < m_bookmarkVector.size(); ++i)
     {
         bookmarkLinesSet.insert(m_bookmarkVector.at(i).first);
     }
@@ -259,13 +261,33 @@ bool UIVMLogPage::isFiltered() const
 
 void UIVMLogPage::setFiltered(bool filtered)
 {
-    if(m_bFiltered == filtered)
+    if (m_bFiltered == filtered)
         return;
     m_bFiltered = filtered;
-    if(m_pTextEdit)
+    if (m_pTextEdit)
     {
         m_pTextEdit->setShownTextIsFiltered(m_bFiltered);
         m_pTextEdit->update();
     }
     emit sigLogPageFilteredChanged(m_bFiltered);
+}
+
+void UIVMLogPage::setShowLineNumbers(bool bShowLineNumbers)
+{
+    if(m_bShowLineNumbers == bShowLineNumbers)
+        return;
+    m_bShowLineNumbers = bShowLineNumbers;
+    if(m_pTextEdit)
+        m_pTextEdit->setShowLineNumbers(m_bShowLineNumbers);
+    update();
+}
+
+void UIVMLogPage::setWrapLines(bool bWrapLines)
+{
+    if(m_bWrapLines == bWrapLines)
+        return;
+    m_bWrapLines = bWrapLines;
+    if(m_pTextEdit)
+        m_pTextEdit->setWrapLines(m_bWrapLines);
+    update();
 }

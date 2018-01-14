@@ -28,7 +28,6 @@
 class QCheckBox;
 class QHBoxLayout;
 class QLabel;
-class QSpacerItem;
 class UIMiniCancelButton;
 class UIRoundRectSegmentedButton;
 class UISearchField;
@@ -117,14 +116,12 @@ private:
     QCheckBox   *m_pCaseSensitiveCheckBox;
     QCheckBox   *m_pMatchWholeWordCheckBox;
     QCheckBox   *m_pHighlightAllCheckBox;
-    /** Holds the instance of warning spacer-item we create. */
-    QSpacerItem *m_pWarningSpacer;
+
     /** Holds the instance of warning icon we create. */
     QLabel      *m_pWarningIcon;
     /** Holds the instance of info label we create. */
     QLabel      *m_pInfoLabel;
-    /** Holds the instance of spacer item we create. */
-    QSpacerItem *m_pSpacerItem;
+
     /** Holds the position where we start the next search. */
     int          m_iSearchPosition;
     /** Holds the number of the matches for the string.

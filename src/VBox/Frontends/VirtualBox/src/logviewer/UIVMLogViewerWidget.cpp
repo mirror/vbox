@@ -42,6 +42,7 @@
 # include "UIVMLogViewerBookmarksPanel.h"
 # include "UIVMLogViewerFilterPanel.h"
 # include "UIVMLogViewerSearchPanel.h"
+# include "UIVMLogViewerSettingsPanel.h"
 # include "UIToolBar.h"
 
 /* COM includes: */
@@ -60,6 +61,7 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent 
     , m_pSearchPanel(0)
     , m_pFilterPanel(0)
     , m_pBookmarksPanel(0)
+    , m_pSettingsPanel(0)
     , m_pMainLayout(0)
     , m_enmEmbedding(enmEmbedding)
     , m_pToolBar(0)
@@ -69,7 +71,9 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent 
     , m_pActionSave(0)
     , m_pActionBookmark(0)
     , m_pMenu(0)
-    , m_bMarkBookmarkLines(0)
+    , m_bShowLineNumbers(true)
+    , m_bWrapLines(false)
+
 {
     /* Prepare VM Log-Viewer: */
     prepare();
@@ -109,7 +113,7 @@ bool UIVMLogViewerWidget::shouldBeMaximized() const
 void UIVMLogViewerWidget::sltDeleteBookmark(int index)
 {
     UIVMLogPage* logPage = currentLogPage();
-    if(!logPage)
+    if (!logPage)
         return;
     logPage->deleteBookmark(index);
     if (m_pBookmarksPanel)
@@ -119,7 +123,7 @@ void UIVMLogViewerWidget::sltDeleteBookmark(int index)
 void UIVMLogViewerWidget::sltDeleteAllBookmarks()
 {
     UIVMLogPage* logPage = currentLogPage();
-    if(!logPage)
+    if (!logPage)
         return;
     logPage->deleteAllBookmarks();
 
@@ -129,7 +133,7 @@ void UIVMLogViewerWidget::sltDeleteAllBookmarks()
 
 void UIVMLogViewerWidget::sltUpdateBookmarkPanel()
 {
-    if(!currentLogPage() || !m_pBookmarksPanel)
+    if (!currentLogPage() || !m_pBookmarksPanel)
         return;
     disconnect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
             this, &UIVMLogViewerWidget::gotoBookmark);
@@ -140,7 +144,7 @@ void UIVMLogViewerWidget::sltUpdateBookmarkPanel()
 
 void UIVMLogViewerWidget::gotoBookmark(int bookmarkIndex)
 {
-    if(!currentLogPage())
+    if (!currentLogPage())
         return;
     currentLogPage()->scrollToBookmark(bookmarkIndex);
 }
@@ -276,7 +280,7 @@ void UIVMLogViewerWidget::sltTabIndexChange(int tabIndex)
 
 void UIVMLogViewerWidget::sltFilterApplied(bool isOriginal)
 {
-    if(currentLogPage())
+    if (currentLogPage())
         currentLogPage()->setFiltered(!isOriginal);
     /* Reapply the search to get highlighting etc. correctly */
     if (m_pSearchPanel && m_pSearchPanel->isVisible())
@@ -287,9 +291,9 @@ void UIVMLogViewerWidget::sltLogPageFilteredChanged(bool isFiltered)
 {
     /* Disable bookmark panel since bookmarks are stored as line numbers within
        the original log text and does not mean much in a reduced/filtered one. */
-    if(m_pBookmarksPanel)
+    if (m_pBookmarksPanel)
     {
-        if(isFiltered)
+        if (isFiltered)
         {
             m_pBookmarksPanel->setEnabled(false);
             m_pBookmarksPanel->setVisible(false);
@@ -298,6 +302,37 @@ void UIVMLogViewerWidget::sltLogPageFilteredChanged(bool isFiltered)
             m_pBookmarksPanel->setEnabled(true);
     }
 }
+
+void UIVMLogViewerWidget::sltShowLineNumbers(bool bShowLineNumbers)
+{
+    if (m_bShowLineNumbers == bShowLineNumbers)
+        return;
+
+    m_bShowLineNumbers = bShowLineNumbers;
+    /* Set all log page instances. */
+    for (int i = 0; i < m_logPageList.size(); ++i)
+    {
+        UIVMLogPage* pLogPage = qobject_cast<UIVMLogPage*>(m_logPageList[i]);
+        if (pLogPage)
+            pLogPage->setShowLineNumbers(m_bShowLineNumbers);
+    }
+}
+
+void UIVMLogViewerWidget::sltWrapLines(bool bWrapLines)
+{
+    if (m_bWrapLines == bWrapLines)
+        return;
+
+    m_bWrapLines = bWrapLines;
+    /* Set all log page instances. */
+    for (int i = 0; i < m_logPageList.size(); ++i)
+    {
+        UIVMLogPage* pLogPage = qobject_cast<UIVMLogPage*>(m_logPageList[i]);
+        if (pLogPage)
+            pLogPage->setWrapLines(m_bWrapLines);
+    }
+}
+
 
 void UIVMLogViewerWidget::setMachine(const CMachine &machine)
 {
@@ -329,6 +364,7 @@ void UIVMLogViewerWidget::prepare()
     m_panelActionMap.insert(m_pBookmarksPanel, m_pActionBookmark);
     m_panelActionMap.insert(m_pSearchPanel, m_pActionFind);
     m_panelActionMap.insert(m_pFilterPanel, m_pActionFilter);
+    m_panelActionMap.insert(m_pSettingsPanel, m_pActionSettings);
 }
 
 void UIVMLogViewerWidget::prepareWidgets()
@@ -388,6 +424,20 @@ void UIVMLogViewerWidget::prepareWidgets()
         connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
                 this, &UIVMLogViewerWidget::gotoBookmark);
     }
+
+    m_pSettingsPanel = new UIVMLogViewerSettingsPanel(this, this);
+    AssertPtrReturnVoid(m_pSettingsPanel);
+    {
+        installEventFilter(m_pSettingsPanel);
+        m_pSettingsPanel->hide();
+        /* Initialize settings' panel checkboxes: */
+        m_pSettingsPanel->setShowLineNumbers(m_bShowLineNumbers);
+        m_pSettingsPanel->setWrapLines(m_bWrapLines);
+
+        m_pMainLayout->insertWidget(5, m_pSettingsPanel);
+        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigShowLineNumbers, this, &UIVMLogViewerWidget::sltShowLineNumbers);
+        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigWrapLines, this, &UIVMLogViewerWidget::sltWrapLines);
+    }
 }
 
 void UIVMLogViewerWidget::prepareActions()
@@ -420,6 +470,15 @@ void UIVMLogViewerWidget::prepareActions()
         m_pActionBookmark->setCheckable(true);
         connect(m_pActionBookmark, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionTriggered);
     }
+
+    /* Create and configure 'Settings' action: */
+    m_pActionSettings = new QAction(this);
+    AssertPtrReturnVoid(m_pActionSettings);
+    {
+        m_pActionSettings->setCheckable(true);
+        connect(m_pActionSettings, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionTriggered);
+    }
+
 
     /* Create and configure 'Refresh' action: */
     m_pActionRefresh = new QAction(this);
@@ -469,6 +528,10 @@ void UIVMLogViewerWidget::prepareActionIcons()
     if (m_pActionBookmark)
         m_pActionBookmark->setIcon(UIIconPool::iconSet(QString(":/%1_bookmark_24px.png").arg(strPrefix),
                                                        QString(":/%1_bookmark_disabled_24px.png").arg(strPrefix)));
+
+    if (m_pActionSettings)
+        m_pActionSettings->setIcon(UIIconPool::iconSet(QString(":/%1_bookmark_24px.png").arg(strPrefix),
+                                                       QString(":/%1_bookmark_disabled_24px.png").arg(strPrefix)));
 }
 
 void UIVMLogViewerWidget::prepareToolBar()
@@ -496,6 +559,9 @@ void UIVMLogViewerWidget::prepareToolBar()
 
         if (m_pActionBookmark)
             m_pToolBar->addAction(m_pActionBookmark);
+
+        if (m_pActionSettings)
+            m_pToolBar->addAction(m_pActionSettings);
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -527,7 +593,8 @@ void UIVMLogViewerWidget::prepareMenu()
             m_pMenu->addAction(m_pActionSave);
         if (m_pActionBookmark)
             m_pMenu->addAction(m_pActionBookmark);
-
+        if (m_pActionSettings)
+            m_pMenu->addAction(m_pActionSettings);
     }
 }
 
@@ -577,6 +644,13 @@ void UIVMLogViewerWidget::retranslateUi()
         m_pActionBookmark->setStatusTip(tr("Bookmark the line"));
     }
 
+    if (m_pActionSettings)
+    {
+        m_pActionSettings->setText(tr("&Settings"));
+        m_pActionSettings->setToolTip(tr("LogViewer Settings"));
+        m_pActionSettings->setStatusTip(tr("LogViewer Settings"));
+    }
+
     /* Translate toolbar: */
 #ifdef VBOX_WS_MAC
     // WORKAROUND:
@@ -605,7 +679,7 @@ void UIVMLogViewerWidget::showEvent(QShowEvent *pEvent)
     m_fIsPolished = true;
 
     /* Make sure the log view widget has the focus: */
-    if(currentLogPage())
+    if (currentLogPage())
         currentLogPage()->setFocus();
 }
 
@@ -760,9 +834,13 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
 
     /* Create page-container: */
     UIVMLogPage* pLogPage = new UIVMLogPage(this);
+    AssertPtrReturnVoid(pLogPage);
+
     connect(pLogPage, &UIVMLogPage::sigBookmarksUpdated, this, &UIVMLogViewerWidget::sltUpdateBookmarkPanel);
     connect(pLogPage, &UIVMLogPage::sigLogPageFilteredChanged, this, &UIVMLogViewerWidget::sltLogPageFilteredChanged);
-    AssertPtrReturnVoid(pLogPage);
+    /* Initialize setting for this log page */
+    pLogPage->setShowLineNumbers(m_bShowLineNumbers);
+    pLogPage->setWrapLines(m_bWrapLines);
     /* Set the file name only if we really have log file to read. */
     if (!noLogsToShow)
         pLogPage->setFileName(strFileName);

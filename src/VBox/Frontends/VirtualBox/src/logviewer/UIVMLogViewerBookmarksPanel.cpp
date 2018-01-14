@@ -27,7 +27,7 @@
 # endif
 # include <QLabel>
 # include <QPushButton>
-# include <QSpacerItem>
+
 /* GUI includes: */
 # include "QIToolButton.h"
 # include "UIVMLogViewerBookmarksPanel.h"
@@ -42,7 +42,6 @@ UIVMLogViewerBookmarksPanel::UIVMLogViewerBookmarksPanel(QWidget *pParent, UIVML
     , m_pBookmarksComboBox(0)
     , m_pDeleteAllButton(0)
     , m_pDeleteCurrentButton(0)
-    , m_pSpacerItem(0)
 {
     prepare();
 }
@@ -55,7 +54,7 @@ void UIVMLogViewerBookmarksPanel::updateBookmarkList(const QVector<QPair<int, QS
     m_pBookmarksComboBox->clear();
     QStringList bList;
     bList << "Bookmarks List";
-    for(int i = 0; i < bookmarkVector.size(); ++i)
+    for (int i = 0; i < bookmarkVector.size(); ++i)
     {
         QString strItem = QString("BookMark %1 at Line %2: %3").arg(QString::number(i)).
             arg(QString::number(bookmarkVector.at(i).first)).arg(bookmarkVector.at(i).second);
@@ -112,10 +111,7 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
     AssertPtrReturnVoid(m_pDeleteAllButton);
     mainLayout()->addWidget(m_pDeleteAllButton, 0);
 
-
-    m_pSpacerItem = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    AssertPtrReturnVoid(m_pSpacerItem);
-    mainLayout()->addItem(m_pSpacerItem);
+    mainLayout()->addStretch(4);
 }
 
 void UIVMLogViewerBookmarksPanel::prepareConnections()
