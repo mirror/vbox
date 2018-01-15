@@ -7995,10 +7995,10 @@ and "VAR" for unsetting. -->
 
       <param name="type" type="wstring" dir="in">
         <desc>Type of moving.
-              Possible values:
-              basic - Only the files which belong solely to this machine 
-                      are moved from the original machine's folder to 
-                      a new folder.
+          Possible values:
+          basic - Only the files which belong solely to this machine
+                  are moved from the original machine's folder to
+                  a new folder.
         </desc>
       </param>
 
