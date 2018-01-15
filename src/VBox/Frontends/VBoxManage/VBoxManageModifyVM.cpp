@@ -178,7 +178,7 @@ enum
     MODIFYVM_USBRENAME,
     MODIFYVM_USBXHCI,
     MODIFYVM_USBEHCI,
-    MODIFYVM_USB,
+    MODIFYVM_USBOHCI,
     MODIFYVM_SNAPSHOTFOLDER,
     MODIFYVM_TELEPORTER_ENABLED,
     MODIFYVM_TELEPORTER_PORT,
@@ -360,7 +360,8 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--usbrename",                MODIFYVM_USBRENAME,                 RTGETOPT_REQ_STRING },
     { "--usbxhci",                  MODIFYVM_USBXHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
-    { "--usb",                      MODIFYVM_USB,                       RTGETOPT_REQ_BOOL_ONOFF },
+    { "--usbohci",                  MODIFYVM_USBOHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
+    { "--usb",                      MODIFYVM_USBOHCI,                   RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
     { "--snapshotfolder",           MODIFYVM_SNAPSHOTFOLDER,            RTGETOPT_REQ_STRING },
     { "--teleporter",               MODIFYVM_TELEPORTER_ENABLED,        RTGETOPT_REQ_BOOL_ONOFF },
     { "--teleporterenabled",        MODIFYVM_TELEPORTER_ENABLED,        RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
@@ -2703,7 +2704,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_USB:
+            case MODIFYVM_USBOHCI:
             {
                 ULONG cOhciCtrls = 0;
                 rc = sessionMachine->GetUSBControllerCountByType(USBControllerType_OHCI, &cOhciCtrls);

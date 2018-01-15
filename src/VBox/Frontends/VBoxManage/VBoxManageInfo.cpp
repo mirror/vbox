@@ -1990,17 +1990,17 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("usb=\"%s\"\n", fOhciEnabled ? "on" : "off");
         else
-            RTPrintf("USB:             %s\n", fOhciEnabled ? "enabled" : "disabled");
+            RTPrintf("OHCI USB:        %s\n", fOhciEnabled ? "enabled" : "disabled");
 
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("ehci=\"%s\"\n", fEhciEnabled ? "on" : "off");
         else
-            RTPrintf("EHCI:            %s\n", fEhciEnabled ? "enabled" : "disabled");
+            RTPrintf("EHCI USB:        %s\n", fEhciEnabled ? "enabled" : "disabled");
 
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("xhci=\"%s\"\n", fXhciEnabled ? "on" : "off");
         else
-            RTPrintf("XHCI:            %s\n", fXhciEnabled ? "enabled" : "disabled");
+            RTPrintf("xHCI USB:        %s\n", fXhciEnabled ? "enabled" : "disabled");
     }
 
     ComPtr<IUSBDeviceFilters> USBFlts;
