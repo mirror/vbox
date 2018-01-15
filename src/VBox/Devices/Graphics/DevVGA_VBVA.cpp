@@ -2448,14 +2448,12 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
     {
 #ifdef VBOX_WITH_CRHGSMI
         case VBVA_CMDVBVA_SUBMIT:
-        {
             rc = vboxCmdVBVACmdSubmit(pVGAState);
-        } break;
+            break;
 
         case VBVA_CMDVBVA_FLUSH:
-        {
             rc = vboxCmdVBVACmdFlush(pVGAState);
-        } break;
+            break;
 
         case VBVA_CMDVBVA_CTL:
         {
@@ -2472,28 +2470,25 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
 
 #ifdef VBOX_WITH_VDMA
         case VBVA_VDMA_CMD:
-        {
-            if (cbBuffer < VBoxSHGSMIBufferHeaderSize() + sizeof(VBOXVDMACBUF_DR))
+            if (cbBuffer >= VBoxSHGSMIBufferHeaderSize() + sizeof(VBOXVDMACBUF_DR))
             {
-                rc = VERR_INVALID_PARAMETER;
-                break;
+                PVBOXVDMACBUF_DR pCmd = (PVBOXVDMACBUF_DR)VBoxSHGSMIBufferData((PVBOXSHGSMIHEADER)pvBuffer);
+                vboxVDMACommand(pVGAState->pVdma, pCmd, cbBuffer - VBoxSHGSMIBufferHeaderSize());
+                rc = VINF_SUCCESS;
             }
-
-            PVBOXVDMACBUF_DR pCmd = (PVBOXVDMACBUF_DR)VBoxSHGSMIBufferData((PVBOXSHGSMIHEADER)pvBuffer);
-            vboxVDMACommand(pVGAState->pVdma, pCmd, cbBuffer - VBoxSHGSMIBufferHeaderSize());
-        } break;
+            else
+                rc = VERR_INVALID_PARAMETER;
+            break;
 
         case VBVA_VDMA_CTL:
-        {
-            if (cbBuffer < VBoxSHGSMIBufferHeaderSize() + sizeof(VBOXVDMA_CTL))
+            if (cbBuffer >= VBoxSHGSMIBufferHeaderSize() + sizeof(VBOXVDMA_CTL))
             {
-                rc = VERR_INVALID_PARAMETER;
-                break;
+                PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMIBufferData((PVBOXSHGSMIHEADER)pvBuffer);
+                vboxVDMAControl(pVGAState->pVdma, pCmd, cbBuffer - VBoxSHGSMIBufferHeaderSize());
             }
-
-            PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMIBufferData((PVBOXSHGSMIHEADER)pvBuffer);
-            vboxVDMAControl(pVGAState->pVdma, pCmd, cbBuffer - VBoxSHGSMIBufferHeaderSize());
-        } break;
+            else
+                rc = VERR_INVALID_PARAMETER;
+            break;
 #endif /* VBOX_WITH_VDMA */
 
         case VBVA_QUERY_CONF32:
@@ -2918,8 +2913,7 @@ DECLCALLBACK(void) vbvaPortReportHostCursorCapabilities(PPDMIDISPLAYPORT pInterf
     PDMCritSectLeave(&pThis->CritSect);
 }
 
-DECLCALLBACK(void) vbvaPortReportHostCursorPosition
-                       (PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y)
+DECLCALLBACK(void) vbvaPortReportHostCursorPosition(PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y)
 {
     PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
     VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pThis->pHGSMI);
@@ -2930,31 +2924,30 @@ DECLCALLBACK(void) vbvaPortReportHostCursorPosition
     PDMCritSectLeave(&pThis->CritSect);
 }
 
-int VBVAInit (PVGASTATE pVGAState)
+int VBVAInit(PVGASTATE pVGAState)
 {
     PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
 
     PVM pVM = PDMDevHlpGetVM(pDevIns);
 
-    int rc = HGSMICreate (&pVGAState->pHGSMI,
-                          pVM,
-                          "VBVA",
-                          0,
-                          pVGAState->vram_ptrR3,
-                          pVGAState->vram_size,
-                          vbvaNotifyGuest,
-                          pVGAState,
-                          sizeof (VBVACONTEXT));
-
-     if (RT_SUCCESS (rc))
+    int rc = HGSMICreate(&pVGAState->pHGSMI,
+                         pVM,
+                         "VBVA",
+                         0,
+                         pVGAState->vram_ptrR3,
+                         pVGAState->vram_size,
+                         vbvaNotifyGuest,
+                         pVGAState,
+                         sizeof(VBVACONTEXT));
+     if (RT_SUCCESS(rc))
      {
-         rc = HGSMIHostChannelRegister (pVGAState->pHGSMI,
-                                    HGSMI_CH_VBVA,
-                                    vbvaChannelHandler,
-                                    pVGAState);
-         if (RT_SUCCESS (rc))
+         rc = HGSMIHostChannelRegister(pVGAState->pHGSMI,
+                                       HGSMI_CH_VBVA,
+                                       vbvaChannelHandler,
+                                       pVGAState);
+         if (RT_SUCCESS(rc))
          {
-             VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pVGAState->pHGSMI);
+             VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pVGAState->pHGSMI);
              pCtx->cViews = pVGAState->cMonitors;
              pCtx->fPaused = true;
              memset(pCtx->aModeHints, ~0, sizeof(pCtx->aModeHints));

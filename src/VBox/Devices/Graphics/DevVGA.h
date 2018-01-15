@@ -572,8 +572,8 @@ DECLCALLBACK(void) vbvaPortReportHostCursorPosition(PPDMIDISPLAYPORT pInterface,
 # ifdef VBOX_WITH_VDMA
 typedef struct VBOXVDMAHOST *PVBOXVDMAHOST;
 int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements);
-int vboxVDMADestruct(PVBOXVDMAHOST pVdma);
-int vboxVDMAReset(PVBOXVDMAHOST pVdma);
+void vboxVDMADestruct(PVBOXVDMAHOST pVdma);
+void vboxVDMAReset(PVBOXVDMAHOST pVdma);
 void vboxVDMAControl(PVBOXVDMAHOST pVdma, PVBOXVDMA_CTL pCmd, uint32_t cbCmd);
 void vboxVDMACommand(PVBOXVDMAHOST pVdma, PVBOXVDMACBUF_DR pCmd, uint32_t cbCmd);
 int vboxVDMASaveStateExecPrep(struct VBOXVDMAHOST *pVdma);
@@ -586,8 +586,8 @@ int vboxVDMASaveLoadDone(struct VBOXVDMAHOST *pVdma);
 # ifdef VBOX_WITH_CRHGSMI
 int vboxCmdVBVACmdSubmit(PVGASTATE pVGAState);
 int vboxCmdVBVACmdFlush(PVGASTATE pVGAState);
-void vboxCmdVBVACmdTimer(PVGASTATE pVGAState);
 int vboxCmdVBVACmdCtl(PVGASTATE pVGAState, VBOXCMDVBVA_CTL *pCtl, uint32_t cbCtl);
+void vboxCmdVBVATimerRefresh(PVGASTATE pVGAState);
 bool vboxCmdVBVAIsEnabled(PVGASTATE pVGAState);
 # endif /* VBOX_WITH_CRHGSMI */
 #endif /* VBOX_WITH_HGSMI */

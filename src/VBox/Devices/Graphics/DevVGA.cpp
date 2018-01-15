@@ -5404,7 +5404,7 @@ static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
 #endif
 
 #ifdef VBOX_WITH_CRHGSMI
-    vboxCmdVBVACmdTimer(pThis);
+    vboxCmdVBVATimerRefresh(pThis);
 #endif
 }
 

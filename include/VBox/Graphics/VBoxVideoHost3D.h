@@ -149,7 +149,7 @@ typedef struct VBOXCRCMDCTL
     VBOXCRCMDCTL_CALLOUT_LIST CalloutList;
     union
     {
-        void (*pfnInternal)(void);
+        PFNRT  pfnInternal;
         void  *pvInternal;
     } u;
 } VBOXCRCMDCTL;
