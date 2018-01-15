@@ -7983,7 +7983,7 @@ and "VAR" for unsetting. -->
 
     <method name="moveTo">
       <desc>
-	Move machine on to new place/folder
+        Move machine on to new place/folder
         <result name="E_INVALIDARG">
           @a target is @c null.
         </result>
@@ -7996,10 +7996,10 @@ and "VAR" for unsetting. -->
       <param name="type" type="wstring" dir="in">
         <desc>Type of moving.
 	   Possible values:
-		basic - Only the files which belong solely to this machine 
-		        are moved from the original machine's folder to 
-			a new folder.		   
-	</desc>
+              basic - Only the files which belong solely to this machine 
+                      are moved from the original machine's folder to 
+                      a new folder.		   
+        </desc>
       </param>
 
       <param name="progress" type="IProgress" dir="return">
