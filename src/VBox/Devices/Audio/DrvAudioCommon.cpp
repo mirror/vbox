@@ -1102,51 +1102,49 @@ int DrvAudioHlpGetFileName(char *pszFile, size_t cchFile, const char *pszPath, c
                 break;
         }
 
+        char szFileName[RTPATH_MAX + 1];
+        szFileName[0] = '\0';
+
         if (fFlags & PDMAUDIOFILENAME_FLAG_TS)
         {
-            char szTime[64];
             RTTIMESPEC time;
-            if (!RTTimeSpecToString(RTTimeNow(&time), szTime, sizeof(szTime)))
+            if (!RTTimeSpecToString(RTTimeNow(&time), szFileName, sizeof(szFileName)))
             {
                 rc = VERR_BUFFER_OVERFLOW;
                 break;
             }
 
-            rc = DrvAudioHlpSanitizeFileName(szTime, sizeof(szTime));
+            rc = DrvAudioHlpSanitizeFileName(szFileName, sizeof(szFileName));
             if (RT_FAILURE(rc))
                 break;
 
-            rc = RTStrCat(szFilePath, sizeof(szFilePath), szTime);
-            if (RT_FAILURE(rc))
-                break;
-
-            rc = RTStrCat(szFilePath, sizeof(szFilePath), "-");
+            rc = RTStrCat(szFileName, sizeof(szFileName), "-");
             if (RT_FAILURE(rc))
                 break;
         }
 
-        rc = RTStrCat(szFilePath, sizeof(szFilePath), pszName);
+        rc = RTStrCat(szFileName, sizeof(szFileName), pszName);
         if (RT_FAILURE(rc))
             break;
 
-        rc = RTStrCat(szFilePath, sizeof(szFilePath), "-");
+        rc = RTStrCat(szFileName, sizeof(szFileName), "-");
         if (RT_FAILURE(rc))
             break;
 
         char szInst[16];
         RTStrPrintf2(szInst, sizeof(szInst), "%RU32", uInstance);
-        rc = RTStrCat(szFilePath, sizeof(szFilePath), szInst);
+        rc = RTStrCat(szFileName, sizeof(szFileName), szInst);
         if (RT_FAILURE(rc))
             break;
 
         switch (enmType)
         {
             case PDMAUDIOFILETYPE_RAW:
-                rc = RTStrCat(szFilePath, sizeof(szFilePath), ".pcm");
+                rc = RTStrCat(szFileName, sizeof(szFileName), ".pcm");
                 break;
 
             case PDMAUDIOFILETYPE_WAV:
-                rc = RTStrCat(szFilePath, sizeof(szFilePath), ".wav");
+                rc = RTStrCat(szFileName, sizeof(szFileName), ".wav");
                 break;
 
             default:
@@ -1154,6 +1152,10 @@ int DrvAudioHlpGetFileName(char *pszFile, size_t cchFile, const char *pszPath, c
                 break;
         }
 
+        if (RT_FAILURE(rc))
+            break;
+
+        rc = RTPathAppend(szFilePath, sizeof(szFilePath), szFileName);
         if (RT_FAILURE(rc))
             break;
 
