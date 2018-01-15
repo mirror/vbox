@@ -671,7 +671,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--vrdevideochannel on|off]\n"
                      "                            [--vrdevideochannelquality <percent>]\n");
         RTStrmPrintf(pStrm,
-                     "                            [--usb on|off]\n"
+                     "                            [--usbohci on|off]\n"
                      "                            [--usbehci on|off]\n"
                      "                            [--usbxhci on|off]\n"
                      "                            [--usbrename <oldname> <newname>]\n"
