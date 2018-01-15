@@ -205,25 +205,23 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
         if (RTUtf16Cmp(wszBuffer, L"LocalSystem") != 0)
             return setError(hrcCaller,
                             tr("VBoxSDS is misconfigured to run under the '%ls' account instead of the SYSTEM one.\n"
-                               "You can fix this by using the Windows Service Control Manager or by running\n"
-                               "'qc config VBoxSDS obj=LocalSystem' on a command line."),  wszBuffer);
+                               "Reinstall VirtualBox to fix it.  Alternatively you can fix it using the Windows Service Control "
+                               "Manager or by running 'qc config VBoxSDS obj=LocalSystem' on a command line."), wszBuffer);
         if (uStartType == SERVICE_DISABLED)
             return setError(hrcCaller,
                             tr("The VBoxSDS windows service is disabled.\n"
-                               "To reenable the service, set it to 'Manual' startup type in the Windows Service\n"
-                               "management console, or run 'sc config VBoxSDS start=demand' on a command line."));
+                               "Reinstall VirtualBox to fix it.  Alternatively try reenable the service by setting it to "
+                               " 'Manual' startup type in the Windows Service management console, or by runing "
+                               "'sc config VBoxSDS start=demand' on the command line."));
     }
+    else if (vrc == VERR_NOT_FOUND)
+        return setError(hrcCaller,
+                        tr("The VBoxSDS windows service was not found.\n"
+                           "Reinstall VirtualBox to fix it.  Alternatively you can try start VirtualBox as Administrator, this "
+                           "should automatically reinstall the service, or you can run "
+                           "'VBoxSDS.exe --regservice' command from an elevated Administrator command line."));
     else
-    {
-        if (vrc == VERR_NOT_FOUND)
-        {
-            return setError(hrcCaller,
-                tr("The VBoxSDS windows service doesn't exist, needs to reinstall it.\n"
-                    "To do this, start VirtualBox as Administrator, this automatically reinstall the service,"
-                    "or run 'VBoxSDS.exe --regservice' command from Administrator console."));
-        }
         LogRelFunc(("VirtualBoxClient::i_getServiceAccount failed: %Rrc\n", vrc));
-    }
 # endif
 
     /*
@@ -432,7 +430,7 @@ int VirtualBoxClient::i_getServiceAccountAndStartType(const wchar_t *pwszService
                         int dwError = GetLastError();
                         vrc = RTErrConvertFromWin32(dwError);
                         LogRel(("Error: Failed querying '%ls' service config: %Rwc (%u) -> %Rrc; cbNeeded=%d cbNeeded2=%d\n",
-                            pwszServiceName, dwError, dwError, vrc, cbNeeded, cbNeeded2));
+                                pwszServiceName, dwError, dwError, vrc, cbNeeded, cbNeeded2));
                     }
                     RTMemTmpFree(pSc);
                 }
