@@ -190,6 +190,7 @@ void UIVMLogViewerTextEdit::prepareWidgets()
 #endif
     setFont(font);
     setWordWrapMode(QTextOption::NoWrap);
+    setWordWrapMode(QTextOption::NoWrap);
     setReadOnly(true);
     if (m_pLineNumberArea)
         m_pLineNumberArea->setFont(font);
@@ -388,14 +389,15 @@ void UIVMLogViewerTextEdit::setBookmarkLineSet(const QSet<int>& lineSet)
 
 int  UIVMLogViewerTextEdit::lineNumberForPos(const QPoint &position)
 {
-    QTextBlock block = cursorForPosition(position).block();
-    return block.firstLineNumber() + 1;
+    QTextCursor cursor = cursorForPosition(position);
+    QTextBlock block = cursor.block();
+    return block.blockNumber() + 1;
 }
 
 QPair<int, QString> UIVMLogViewerTextEdit::bookmarkForPos(const QPoint &position)
 {
     QTextBlock block = cursorForPosition(position).block();
-    return QPair<int, QString>(block.firstLineNumber() + 1, block.text());
+    return QPair<int, QString>(lineNumberForPos(position), block.text());
 }
 
 void UIVMLogViewerTextEdit::setMouseCursorLine(int lineNumber)
@@ -436,6 +438,17 @@ void UIVMLogViewerTextEdit::setWrapLines(bool bWrapLines)
     if(m_bWrapLines == bWrapLines)
         return;
     m_bWrapLines = bWrapLines;
+    if(m_bWrapLines)
+    {
+        setLineWrapMode(QPlainTextEdit::WidgetWidth);
+        setWordWrapMode(QTextOption::WordWrap);
+    }
+    else
+    {
+        setWordWrapMode(QTextOption::NoWrap);
+        setWordWrapMode(QTextOption::NoWrap);
+    }
+
     update();
 }
 

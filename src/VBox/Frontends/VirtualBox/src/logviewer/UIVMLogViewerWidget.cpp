@@ -207,7 +207,8 @@ void UIVMLogViewerWidget::sltRefresh()
     m_pActionFilter->setEnabled(!noLogsToShow);
     m_pActionSave->setEnabled(!noLogsToShow);
     m_pActionBookmark->setEnabled(!noLogsToShow);
-    m_pTabWidget->setEnabled(!noLogsToShow);
+    //m_pTabWidget->setEnabled(!noLogsToShow);
+    m_pActionSettings->setEnabled(!noLogsToShow);
     m_pTabWidget->show();
     if (m_pSearchPanel && m_pSearchPanel->isVisible())
         m_pSearchPanel->refresh();
@@ -729,8 +730,9 @@ const UIVMLogPage *UIVMLogViewerWidget::currentLogPage() const
 UIVMLogPage *UIVMLogViewerWidget::currentLogPage()
 {
     int currentTabIndex = m_pTabWidget->currentIndex();
-    if (currentTabIndex >= m_logPageList.size())
+    if (currentTabIndex >= m_logPageList.size() || currentTabIndex == -1)
         return 0;
+
     return qobject_cast<UIVMLogPage*>(m_logPageList.at(currentTabIndex));
 }
 
@@ -778,15 +780,39 @@ bool UIVMLogViewerWidget::createLogViewerPages()
     if (m_comMachine.isNull())
     {
         noLogsToShow = true;
-        strDummyTabText = QString(tr("<p><b>No machine</b> is currently selected. Please select a "
-                                     "Virtual Machine to see its logs"));
+        strDummyTabText = QString(tr("<p><b>No machine</b> is currently selected or the selected machine is not valid. "
+                                     "Please select a Virtual Machine to see its logs"));
     }
 
     const CSystemProperties &sys = vboxGlobal().virtualBox().GetSystemProperties();
     unsigned cMaxLogs = sys.GetLogHistoryCount() + 1 /*VBox.log*/ + 1 /*VBoxHardening.log*/; /** @todo Add api for getting total possible log count! */
-
-    /* If machine is valid then check if there are any log files and create viewer tabs: */
-    if (cMaxLogs == 0)
+    bool logFileRead = false;
+    for (unsigned i = 0; i < cMaxLogs && !noLogsToShow; ++i)
+    {
+        /* Query the log file name for index i: */
+        QString strFileName = m_comMachine.QueryLogFilename(i);
+        if (!strFileName.isEmpty())
+        {
+            /* Try to read the log file with the index i: */
+            ULONG uOffset = 0;
+            QString strText;
+            while (true)
+            {
+                QVector<BYTE> data = m_comMachine.ReadLog(i, uOffset, _1M);
+                if (data.size() == 0)
+                    break;
+                strText.append(QString::fromUtf8((char*)data.data(), data.size()));
+                uOffset += data.size();
+            }
+            /* Anything read at all? */
+            if (uOffset > 0)
+            {
+                logFileRead = true;
+                createLogPage(strFileName, strText);
+            }
+        }
+    }
+    if (!noLogsToShow && !logFileRead)
     {
         noLogsToShow = true;
         strDummyTabText = QString(tr("<p>No log files found. Press the "
@@ -794,32 +820,7 @@ bool UIVMLogViewerWidget::createLogViewerPages()
                                      "<nobr><b>%1</b></nobr>.</p>")
                                      .arg(m_comMachine.GetLogFolder()));
     }
-    else{
-        for (unsigned i = 0; i < cMaxLogs; ++i)
-        {
-            /* Query the log file name for index i: */
-            QString strFileName = m_comMachine.QueryLogFilename(i);
-            if (!strFileName.isEmpty())
-            {
-                /* Try to read the log file with the index i: */
-                ULONG uOffset = 0;
-                QString strText;
-                while (true)
-                {
-                    QVector<BYTE> data = m_comMachine.ReadLog(i, uOffset, _1M);
-                    if (data.size() == 0)
-                        break;
-                    strText.append(QString::fromUtf8((char*)data.data(), data.size()));
-                    uOffset += data.size();
-                }
-                /* Anything read at all? */
-                if (uOffset > 0)
-                {
-                    createLogPage(strFileName, strText);
-                }
-            }
-        }
-    }
+
     /* if noLogsToShow then ceate a single log page with an error message: */
     if (noLogsToShow)
     {
@@ -854,10 +855,15 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
 
     /* Set the log string of the UIVMLogPage: */
     pLogPage->setLogString(strLogContent);
-    /* Also set text edit since we want to display this text: */
-    pLogPage->setTextEdit(strLogContent);
-    if (noLogsToShow)
+    /* Set text edit since we want to display this text: */
+    if (!noLogsToShow)
+        pLogPage->setTextEdit(strLogContent);
+    /* In case there are some errors append the error text as html: */
+    else
+    {
+        pLogPage->setTextEditAsHtml(strLogContent);
         pLogPage->markForError();
+    }
 }
 
 void UIVMLogViewerWidget::resetHighlighthing()

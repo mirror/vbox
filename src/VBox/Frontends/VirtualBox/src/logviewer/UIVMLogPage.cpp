@@ -142,6 +142,9 @@ const QString& UIVMLogPage::fileName() const
 
 void UIVMLogPage::setTextEdit(const QString &strText)
 {
+    if(!m_pTextEdit)
+        return;
+
     m_pTextEdit->setPlainText(strText);
     /* Move the cursor position to end: */
     QTextCursor cursor = m_pTextEdit->textCursor();
@@ -150,11 +153,19 @@ void UIVMLogPage::setTextEdit(const QString &strText)
     repaint();
 }
 
+void UIVMLogPage::setTextEditAsHtml(const QString &strText)
+{
+    if(!m_pTextEdit)
+        return;
+    m_pTextEdit->appendHtml(strText);
+    repaint();
+}
+
 void UIVMLogPage::markForError()
 {
-    QPalette pal = m_pTextEdit->palette();
-    pal.setColor(QPalette::Base, pal.color(QPalette::Window));
-    m_pTextEdit->setPalette(pal);
+    if(!m_pTextEdit)
+        return;
+    m_pTextEdit->setWrapLines(true);
 }
 
 void UIVMLogPage::setScrollBarMarkingsVector(const QVector<float> &vector)

@@ -71,6 +71,7 @@ public:
         show currently might be different than
         m_strLog. For example during filtering. */
     void setTextEdit(const QString &strText);
+    void setTextEditAsHtml(const QString &strText);
 
     /** Marks the plain text edit When we dont have a log content. */
     void markForError();
