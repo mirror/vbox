@@ -386,7 +386,7 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("HDA: Initializing stream #%RU8 failed with %Rrc\n", rc));
+        LogRel(("HDA: Initializing stream #%RU8 failed with %Rrc\n", pStream->u8SD, rc));
 
     return rc;
 }
@@ -957,7 +957,7 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
             if (RT_SUCCESS(rc))
             {
                 uint32_t cbDMARead = pStream->State.cbDMALeft ? pStream->State.cbFrameSize - pStream->State.cbDMALeft : 0;
-                uint32_t cbDMALeft = RT_MIN(cbDMA, RTCircBufFree(pCircBuf));
+                uint32_t cbDMALeft = RT_MIN(cbDMA, (uint32_t)RTCircBufFree(pCircBuf));
 
 #ifndef VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
                 /**
