@@ -180,6 +180,15 @@ void UIVMLogViewerTextEdit::prepareWidgets()
     if (pHorizontalScrollBar)
         pHorizontalScrollBar->setStyleSheet(horizontalScrollBarStyle);
 
+    /* Configure this' wrap mode: */
+    setWordWrapMode(QTextOption::NoWrap);
+    setWordWrapMode(QTextOption::NoWrap);
+    setReadOnly(true);
+    /* Set colors to have a selection with bluebackground and white foreground: */
+    QPalette mPalette = palette();
+    mPalette.setColor(QPalette::Highlight, QColor(48, 140, 198, 255));
+    mPalette.setColor(QPalette::HighlightedText, QColor(255, 255, 255, 255));
+    setPalette(mPalette);
 
 #if defined(RT_OS_SOLARIS)
     /* Use system fixed-width font on Solaris hosts as the Courier family fonts don't render well. */
@@ -189,9 +198,6 @@ void UIVMLogViewerTextEdit::prepareWidgets()
     font.setFamily("Courier New,courier");
 #endif
     setFont(font);
-    setWordWrapMode(QTextOption::NoWrap);
-    setWordWrapMode(QTextOption::NoWrap);
-    setReadOnly(true);
     if (m_pLineNumberArea)
         m_pLineNumberArea->setFont(font);
 
