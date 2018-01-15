@@ -552,7 +552,7 @@ void UIVMLogViewerSearchPanel::highlightAll(QTextDocument *pDocument,
             highlightCursor.mergeCharFormat(colorFormat);
             ++m_iMatchCount;
             /* The following assumes we have single line blocks only: */
-            int cursorLine = pDocument->findBlock(highlightCursor.position()).firstLineNumber();
+            int cursorLine = pDocument->findBlock(highlightCursor.position()).blockNumber();
             if (lineCount != 0)
                 m_matchLocationVector.push_back(cursorLine / static_cast<float>(lineCount));
         }
