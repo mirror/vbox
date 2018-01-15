@@ -170,8 +170,13 @@ typedef struct HDASTREAMSTATE
     /** List of DMA handlers. */
     RTLISTANCHORR3          lstDMAHandlers;
 #endif
+    /** How much DMA data from a previous transfer is left to be processed (in bytes).
+     *  This can happen if the stream's frame size is bigger (e.g. 16 bytes) than
+     *  the current DMA FIFO can hold (e.g. 10 bytes). Mostly needed for more complex
+     *  stuff like interleaved surround streams. */
+    uint16_t                cbDMALeft;
     /** Unused, padding. */
-    uint8_t                 Padding3[3];
+    uint8_t                 Padding3;
 } HDASTREAMSTATE, *PHDASTREAMSTATE;
 
 /**

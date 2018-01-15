@@ -216,8 +216,19 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
             break;
     }
 
+    if (   !pStream->u32CBL
+        || !pStream->u16LVI
+        || !pStream->u64BDLBase
+        || !pStream->u16FIFOS)
+    {
+        return VINF_SUCCESS;
+    }
+
     /* Set the stream's frame size. */
     pStream->State.cbFrameSize = pCfg->Props.cChannels * (pCfg->Props.cBits / 8 /* To bytes */);
+    LogFunc(("[SD%RU8] cChannels=%RU8, cBits=%RU8 -> cbFrameSize=%RU32\n",
+             pStream->u8SD, pCfg->Props.cChannels, pCfg->Props.cBits, pStream->State.cbFrameSize));
+    Assert(pStream->State.cbFrameSize); /* Frame size must not be 0. */
 
     /*
      * Initialize the stream mapping in any case, regardless if
@@ -234,8 +245,11 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
              pStream->u8SD, pStream->u64BDLBase, pStream->u32CBL, pStream->u16LVI, pStream->u16FIFOS,
              pStream->State.Cfg.Props.uHz, rc));
 
-    if (   pStream->u32CBL
-        && pStream->u16LVI)
+    /* Make sure that mandatory parameters are set up correctly. */
+    AssertStmt(pStream->u32CBL %  pStream->State.cbFrameSize == 0, rc = VERR_INVALID_PARAMETER);
+    AssertStmt(pStream->u16LVI >= 1,                               rc = VERR_INVALID_PARAMETER);
+
+    if (RT_SUCCESS(rc))
     {
         /* Make sure that the chosen Hz rate dividable by the stream's rate. */
         if (pStream->State.Cfg.Props.uHz % pThis->u16TimerHz != 0)
@@ -262,12 +276,16 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
             HDABDLE BDLE;
             RT_ZERO(BDLE);
 
-            Assert(pStream->u64BDLBase);
-
             int rc2 = hdaBDLEFetch(pThis, &BDLE, pStream->u64BDLBase, 0 /* Entry */);
             AssertRC(rc2);
 
-            Assert(BDLE.Desc.u32BufSize % pStream->State.cbFrameSize == 0);
+            /* Note: Do *not* check if this BDLE aligns to the stream's frame size.
+             *       It can happen that this isn't the case on some guests, e.g.
+             *       on Windows with a 5.1 speaker setup.
+             *
+             *       The only thing which counts is that the stream's CBL value
+             *       properly aligns to the stream's frame size.
+             */
 
             /* If no custom set position adjustment is set, apply some
              * simple heuristics to detect the appropriate position adjustment. */
@@ -339,6 +357,7 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
 
         pStream->State.cbTransferProcessed        = 0;
         pStream->State.cTransferPendingInterrupts = 0;
+        pStream->State.cbDMALeft                  = 0;
 
         const uint64_t cTicksPerHz = TMTimerGetFreq(pThis->pTimer) / pThis->u16TimerHz;
 
@@ -365,6 +384,9 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
         hdaBDLEDumpAll(pThis, pStream->u64BDLBase, pStream->u16LVI + 1);
 #endif
     }
+
+    if (RT_FAILURE(rc))
+        LogRel(("HDA: Initializing stream #%RU8 failed with %Rrc\n", rc));
 
     return rc;
 }
@@ -535,8 +557,6 @@ uint32_t hdaStreamGetPosition(PHDASTATE pThis, PHDASTREAM pStream)
 void hdaStreamSetPosition(PHDASTREAM pStream, uint32_t u32LPIB)
 {
     AssertPtrReturnVoid(pStream);
-
-    Assert(u32LPIB % pStream->State.cbFrameSize == 0);
 
     Log3Func(("[SD%RU8] LPIB=%RU32 (DMA Position Buffer Enabled: %RTbool)\n",
               pStream->u8SD, u32LPIB, pStream->pHDAState->fDMAPosition));
@@ -936,24 +956,13 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
             rc = hdaDMARead(pThis, pStream, abChunk, cbChunk, &cbDMA /* pcbRead */);
             if (RT_SUCCESS(rc))
             {
-                uint32_t cbDMAWritten = 0;
-                uint32_t cbDMALeft    = cbDMA;
-
-                if (cbDMALeft > RTCircBufFree(pCircBuf))
-                {
-                    LogRel2(("HDA: FIFO overflow for stream #%RU8 (%RU32 bytes outstanding)\n",
-                             pStream->u8SD, cbDMALeft - RTCircBufFree(pCircBuf)));
-
-                    /* Try to read as much as possible. */
-                    cbDMALeft = (uint32_t)RTCircBufFree(pCircBuf);
-
-                    rc = VERR_BUFFER_OVERFLOW;
-                }
+                uint32_t cbDMARead = pStream->State.cbDMALeft ? pStream->State.cbFrameSize - pStream->State.cbDMALeft : 0;
+                uint32_t cbDMALeft = RT_MIN(cbDMA, RTCircBufFree(pCircBuf));
 
 #ifndef VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
                 /**
                  * The following code extracts the required audio stream (channel) data
-                 * of non-interleaved  *and* interleaved audio streams.
+                 * of non-interleaved *and* interleaved audio streams.
                  *
                  * We by default only support 2 channels with 16-bit samples (HDA_FRAME_SIZE),
                  * but an HDA audio stream can have interleaved audio data of multiple audio
@@ -961,20 +970,32 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
                  *
                  * So take this into account by just handling the first channel in such a stream ("A")
                  * and just discard the other channel's data.
+                 *
+                 * @todo Optimize this stuff -- copying only one frame a time is expensive.
                  */
-                while (cbDMALeft)
+                while (cbDMALeft >= pStream->State.cbFrameSize)
                 {
                     void *pvBuf; size_t cbBuf;
                     RTCircBufAcquireWriteBlock(pCircBuf, HDA_FRAME_SIZE, &pvBuf, &cbBuf);
 
+                    AssertBreak(cbDMARead <= sizeof(abChunk));
+
                     if (cbBuf)
-                        memcpy(pvBuf, abChunk + cbDMAWritten, cbBuf);
+                        memcpy(pvBuf, abChunk + cbDMARead, cbBuf);
 
                     RTCircBufReleaseWriteBlock(pCircBuf, cbBuf);
 
-                    cbDMALeft    -= (uint32_t)pStream->State.cbFrameSize;
-                    cbDMAWritten += (uint32_t)pStream->State.cbFrameSize;
+                    Assert(cbDMALeft >= pStream->State.cbFrameSize);
+                    cbDMALeft -= pStream->State.cbFrameSize;
+                    cbDMARead += pStream->State.cbFrameSize;
                 }
+
+                pStream->State.cbDMALeft = cbDMALeft;
+                Assert(pStream->State.cbDMALeft < pStream->State.cbFrameSize);
+
+                const size_t cbFree = RTCircBufFree(pCircBuf);
+                if (!cbFree)
+                    LogRel2(("HDA: FIFO of stream #%RU8 full, discarding audio data\n", pStream->u8SD));
 #else
                 /** @todo This needs making use of HDAStreamMap + HDAStreamChannel. */
 # error "Implement reading interleaving streams support here."
@@ -991,8 +1012,6 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
         if (cbDMA)
         {
-            Assert(cbDMA % pStream->State.cbFrameSize == 0);
-
             /* We always increment the position of DMA buffer counter because we're always reading
              * into an intermediate buffer. */
             pBDLE->State.u32BufOff += (uint32_t)cbDMA;
@@ -1068,7 +1087,6 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
               pStream->u8SD, cbToProcess, cbProcessed, cbLeft, pBDLE, rc));
 
     /* Sanity. */
-    Assert(cbProcessed % pStream->State.cbFrameSize == 0);
     Assert(cbProcessed == cbToProcess);
     Assert(cbLeft      == 0);
 
