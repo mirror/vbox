@@ -2456,16 +2456,14 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
             break;
 
         case VBVA_CMDVBVA_CTL:
-        {
-            if (cbBuffer < VBoxSHGSMIBufferHeaderSize() + sizeof(VBOXCMDVBVA_CTL))
+            if (cbBuffer >= VBoxSHGSMIBufferHeaderSize() + sizeof(VBOXCMDVBVA_CTL))
             {
-                rc = VERR_INVALID_PARAMETER;
-                break;
+                VBOXCMDVBVA_CTL *pCtl = (VBOXCMDVBVA_CTL *)VBoxSHGSMIBufferData((PVBOXSHGSMIHEADER)pvBuffer);
+                rc = vboxCmdVBVACmdCtl(pVGAState, pCtl, cbBuffer - VBoxSHGSMIBufferHeaderSize());
             }
-
-            VBOXCMDVBVA_CTL *pCtl = (VBOXCMDVBVA_CTL*)VBoxSHGSMIBufferData((PVBOXSHGSMIHEADER)pvBuffer);
-            rc = vboxCmdVBVACmdCtl(pVGAState, pCtl, cbBuffer - VBoxSHGSMIBufferHeaderSize());
-        } break;
+            else
+                rc = VERR_INVALID_PARAMETER;
+            break;
 #endif /* VBOX_WITH_CRHGSMI */
 
 #ifdef VBOX_WITH_VDMA

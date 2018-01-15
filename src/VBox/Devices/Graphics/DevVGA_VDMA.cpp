@@ -316,6 +316,10 @@ static VBVAEXHOSTCTL* VBoxVBVAExHPCheckHostCtlOnDisable(struct VBVAEXHOSTCONTEXT
     return pCtl;
 }
 
+/**
+ * Worker for vboxVBVAExHPCheckProcessCtlInternal() and
+ * vboxVDMACrGuestCtlProcess() / VBVAEXHOSTCTL_TYPE_GHH_ENABLE_PAUSED.
+ */
 static int VBoxVBVAExHPPause(struct VBVAEXHOSTCONTEXT *pCmdVbva)
 {
     if (pCmdVbva->i32EnableState < VBVAEXHOSTCONTEXT_ESTATE_PAUSED)
@@ -1585,6 +1589,15 @@ static int vboxVDMASetupScreenInfo(PVGASTATE pVGAState, VBVAINFOSCREEN *pScreen)
     return VERR_INVALID_PARAMETER;
 }
 
+/**
+ * Handles on entry in a VBVAEXHOSTCTL_TYPE_GHH_RESIZE command.
+ *
+ * @returns IPRT status code.
+ * @param   pVdma               The VDMA channel
+ * @param   pEntry              The entry to handle.  Considered volatile.
+ *
+ * @thread  VDMA
+ */
 static int vboxVDMACrGuestCtlResizeEntryProcess(struct VBOXVDMAHOST *pVdma, VBOXCMDVBVA_RESIZE_ENTRY *pEntry)
 {
     PVGASTATE pVGAState = pVdma->pVGAState;
@@ -1661,90 +1674,98 @@ static int vboxVDMACrGuestCtlResizeEntryProcess(struct VBOXVDMAHOST *pVdma, VBOX
     return rc;
 }
 
+
+/**
+ * Processes VBVAEXHOST_DATA_TYPE_GUESTCTL for vboxVDMAWorkerThread and
+ * vdmaVBVACtlThreadCreatedEnable.
+ *
+ * @returns VBox status code.
+ * @param   pVdma               The VDMA channel.
+ * @param   pCmd                The command to process.
+ *
+ * @thread  VDMA
+ */
 static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *pCmd)
 {
     VBVAEXHOSTCTL_TYPE enmType = pCmd->enmType;
     switch (enmType)
     {
+        /*
+         * See handling of VBOXCMDVBVACTL_TYPE_3DCTL in vboxCmdVBVACmdCtl().
+         */
         case VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE:
-        {
-            if (!VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva))
+            if (VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva))
             {
-                WARN(("VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE for disabled vdma VBVA\n"));
-                return VERR_INVALID_STATE;
-            }
-            if (!pVdma->CrSrvInfo.pfnGuestCtl)
-            {
+                if (pVdma->CrSrvInfo.pfnGuestCtl)
+                    return pVdma->CrSrvInfo.pfnGuestCtl(pVdma->CrSrvInfo.hSvr, pCmd->u.cmd.pu8Cmd, pCmd->u.cmd.cbCmd);
+
                 /* Unexpected. */
                 WARN(("VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE in HGCM-less mode\n"));
-                return VERR_INVALID_STATE;
             }
-            return pVdma->CrSrvInfo.pfnGuestCtl(pVdma->CrSrvInfo.hSvr, pCmd->u.cmd.pu8Cmd, pCmd->u.cmd.cbCmd);
-        }
-        case VBVAEXHOSTCTL_TYPE_GHH_RESIZE:
-        {
-            if (!VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva))
-            {
+            else
                 WARN(("VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE for disabled vdma VBVA\n"));
-                return VERR_INVALID_STATE;
-            }
+            return VERR_INVALID_STATE;
 
-            uint32_t cbCmd = pCmd->u.cmd.cbCmd;
-
-            if (cbCmd % sizeof (VBOXCMDVBVA_RESIZE_ENTRY))
+        /*
+         * See handling of VBOXCMDVBVACTL_TYPE_RESIZE in vboxCmdVBVACmdCtl().
+         */
+        case VBVAEXHOSTCTL_TYPE_GHH_RESIZE:
+            if (VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva))
             {
-                WARN(("invalid buffer size\n"));
-                return VERR_INVALID_PARAMETER;
-            }
-
-            uint32_t cElements = cbCmd / sizeof (VBOXCMDVBVA_RESIZE_ENTRY);
-            if (!cElements)
-            {
-                WARN(("invalid buffer size\n"));
-                return VERR_INVALID_PARAMETER;
-            }
-
-            VBOXCMDVBVA_RESIZE *pResize = (VBOXCMDVBVA_RESIZE*)pCmd->u.cmd.pu8Cmd;
-
-            int rc = VINF_SUCCESS;
-
-            for (uint32_t i = 0; i < cElements; ++i)
-            {
-                VBOXCMDVBVA_RESIZE_ENTRY *pEntry = &pResize->aEntries[i];
-                rc = vboxVDMACrGuestCtlResizeEntryProcess(pVdma, pEntry);
-                if (RT_FAILURE(rc))
+                uint32_t cbCmd = pCmd->u.cmd.cbCmd;
+                if (   !(cbCmd % sizeof(VBOXCMDVBVA_RESIZE_ENTRY))
+                    && cbCmd > 0)
                 {
-                    WARN(("vboxVDMACrGuestCtlResizeEntryProcess failed %d\n", rc));
-                    break;
+                    uint32_t cElements = cbCmd / sizeof(VBOXCMDVBVA_RESIZE_ENTRY);
+                    VBOXCMDVBVA_RESIZE *pResize = (VBOXCMDVBVA_RESIZE *)pCmd->u.cmd.pu8Cmd;
+                    for (uint32_t i = 0; i < cElements; ++i)
+                    {
+                        VBOXCMDVBVA_RESIZE_ENTRY *pEntry = &pResize->aEntries[i];
+                        int rc = vboxVDMACrGuestCtlResizeEntryProcess(pVdma, pEntry);
+                        if (RT_FAILURE(rc))
+                        {
+                            WARN(("vboxVDMACrGuestCtlResizeEntryProcess failed %d\n", rc));
+                            return rc;
+                        }
+                    }
+                    return VINF_SUCCESS;
                 }
+                else
+                    WARN(("invalid buffer size: cbCmd=%#x\n", cbCmd));
+                return VERR_INVALID_PARAMETER;
             }
-            return rc;
-        }
+            WARN(("VBVAEXHOSTCTL_TYPE_GHH_RESIZE for disabled vdma VBVA\n"));
+            return VERR_INVALID_STATE;
+
+        /*
+         * See vdmaVBVACtlEnableSubmitInternal().
+         */
         case VBVAEXHOSTCTL_TYPE_GHH_ENABLE:
         case VBVAEXHOSTCTL_TYPE_GHH_ENABLE_PAUSED:
         {
             VBVAENABLE *pEnable = (VBVAENABLE *)pCmd->u.cmd.pu8Cmd;
-            Assert(pCmd->u.cmd.cbCmd == sizeof (VBVAENABLE));
+            Assert(pCmd->u.cmd.cbCmd == sizeof(VBVAENABLE));
+
             uint32_t u32Offset = pEnable->u32Offset;
             int rc = vdmaVBVAEnableProcess(pVdma, u32Offset);
-            if (!RT_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
-                WARN(("vdmaVBVAEnableProcess failed %d\n", rc));
-                return rc;
-            }
+                if (enmType != VBVAEXHOSTCTL_TYPE_GHH_ENABLE_PAUSED)
+                    return VINF_SUCCESS;
 
-            if (enmType == VBVAEXHOSTCTL_TYPE_GHH_ENABLE_PAUSED)
-            {
                 rc = VBoxVBVAExHPPause(&pVdma->CmdVbva);
-                if (!RT_SUCCESS(rc))
-                {
-                    WARN(("VBoxVBVAExHPPause failed %d\n", rc));
-                    return rc;
-                }
+                if (RT_SUCCESS(rc))
+                    return VINF_SUCCESS;
+                WARN(("VBoxVBVAExHPPause failed %d\n", rc));
             }
-
-            return VINF_SUCCESS;
+            else
+                WARN(("vdmaVBVAEnableProcess failed %d\n", rc));
+            return rc;
         }
+
+        /*
+         * See vdmaVBVACtlDisableSubmitInternal().
+         */
         case VBVAEXHOSTCTL_TYPE_GHH_DISABLE:
         {
             int rc = vdmaVBVADisableProcess(pVdma, true);
@@ -1760,6 +1781,7 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
 
             return VBoxVDMAThreadTerm(&pVdma->Thread, NULL, NULL, false);
         }
+
         default:
             WARN(("unexpected ctl type %d\n", pCmd->enmType));
             return VERR_INVALID_PARAMETER;
@@ -2864,7 +2886,7 @@ void  vboxVDMAReset(struct VBOXVDMAHOST *pVdma)
 }
 
 /**
- * Called by vgaR3Destruct() to do cleanup..
+ * Called by vgaR3Destruct() to do cleanup.
  */
 void vboxVDMADestruct(struct VBOXVDMAHOST *pVdma)
 {
@@ -3006,23 +3028,25 @@ static DECLCALLBACK(void) vboxCmdVBVACmdCtlGuestCompletion(VBVAEXHOSTCONTEXT *pV
 static int vdmaVBVACtlGenericSubmit(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL_SOURCE enmSource, VBVAEXHOSTCTL_TYPE enmType,
                                     uint8_t* pu8Cmd, uint32_t cbCmd, PFNVBVAEXHOSTCTL_COMPLETE pfnComplete, void *pvComplete)
 {
+    int            rc;
     VBVAEXHOSTCTL *pHCtl = VBoxVBVAExHCtlCreate(&pVdma->CmdVbva, enmType);
-    if (!pHCtl)
+    if (pHCtl)
     {
-        WARN(("VBoxVBVAExHCtlCreate failed\n"));
-        return VERR_NO_MEMORY;
-    }
+        pHCtl->u.cmd.pu8Cmd = pu8Cmd;
+        pHCtl->u.cmd.cbCmd  = cbCmd;
+        rc = vdmaVBVACtlSubmit(pVdma, pHCtl, enmSource, pfnComplete, pvComplete);
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
 
-    pHCtl->u.cmd.pu8Cmd = pu8Cmd;
-    pHCtl->u.cmd.cbCmd = cbCmd;
-    int rc = vdmaVBVACtlSubmit(pVdma, pHCtl, enmSource, pfnComplete, pvComplete);
-    if (RT_FAILURE(rc))
-    {
         VBoxVBVAExHCtlFree(&pVdma->CmdVbva, pHCtl);
         Log(("vdmaVBVACtlSubmit failed rc %d\n", rc));
-        return rc;;
     }
-    return VINF_SUCCESS;
+    else
+    {
+        WARN(("VBoxVBVAExHCtlCreate failed\n"));
+        rc = VERR_NO_MEMORY;
+    }
+    return rc;
 }
 
 /**
@@ -3030,10 +3054,11 @@ static int vdmaVBVACtlGenericSubmit(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL_SOURCE en
  */
 static int vdmaVBVACtlGenericGuestSubmit(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL_TYPE enmType, VBOXCMDVBVA_CTL *pCtl, uint32_t cbCtl)
 {
-    Assert(cbCtl >= sizeof (VBOXCMDVBVA_CTL));
+    Assert(cbCtl >= sizeof(VBOXCMDVBVA_CTL)); /* Checked by callers caller, vbvaChannelHandler(). */
+
     VBoxSHGSMICommandMarkAsynchCompletion(pCtl);
-    int rc = vdmaVBVACtlGenericSubmit(pVdma, VBVAEXHOSTCTL_SOURCE_GUEST, enmType, (uint8_t*)(pCtl+1),
-                                      cbCtl - sizeof (VBOXCMDVBVA_CTL), vboxCmdVBVACmdCtlGuestCompletion, pVdma);
+    int rc = vdmaVBVACtlGenericSubmit(pVdma, VBVAEXHOSTCTL_SOURCE_GUEST, enmType, (uint8_t *)(pCtl + 1),
+                                      cbCtl - sizeof(VBOXCMDVBVA_CTL), vboxCmdVBVACmdCtlGuestCompletion, pVdma);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 
@@ -3118,6 +3143,8 @@ static int vdmaVBVANotifyDisable(PVGASTATE pVGAState)
 
 /**
  * Hook that is called by vboxVDMAWorkerThread when it starts.
+ *
+ * @thread VDMA
  */
 static DECLCALLBACK(void) vdmaVBVACtlThreadCreatedEnable(struct VBOXVDMATHREAD *pThread, int rc,
                                                          void *pvThreadContext, void *pvContext)
@@ -3161,10 +3188,10 @@ static int vdmaVBVACtlEnableSubmitInternal(PVBOXVDMAHOST pVdma, VBVAENABLE *pEna
                                                 fPaused ? VBVAEXHOSTCTL_TYPE_GHH_ENABLE_PAUSED : VBVAEXHOSTCTL_TYPE_GHH_ENABLE);
     if (pHCtl)
     {
-        pHCtl->u.cmd.pu8Cmd = (uint8_t*)pEnable;
-        pHCtl->u.cmd.cbCmd = sizeof (*pEnable);
-        pHCtl->pfnComplete = pfnComplete;
-        pHCtl->pvComplete = pvComplete;
+        pHCtl->u.cmd.pu8Cmd = (uint8_t *)pEnable;
+        pHCtl->u.cmd.cbCmd  = sizeof(*pEnable);
+        pHCtl->pfnComplete  = pfnComplete;
+        pHCtl->pvComplete   = pvComplete;
 
         rc = VBoxVDMAThreadCreate(&pVdma->Thread, vboxVDMAWorkerThread, pVdma, vdmaVBVACtlThreadCreatedEnable, pHCtl);
         if (RT_SUCCESS(rc))
@@ -3527,6 +3554,12 @@ DECLCALLBACK(int) vboxCmdVBVACmdHostCtlSync(PPDMIDISPLAYVBVACALLBACKS pInterface
 
 /**
  * Handler for VBVA_CMDVBVA_CTL, see vbvaChannelHandler().
+ *
+ * @returns VBox status code
+ * @param   pVGAState           The VGA state.
+ * @param   pCtl                The control command.
+ * @param   cbCtl               The size of it.  This is at least
+ *                              sizeof(VBOXCMDVBVA_CTL).
  */
 int vboxCmdVBVACmdCtl(PVGASTATE pVGAState, VBOXCMDVBVA_CTL *pCtl, uint32_t cbCtl)
 {
@@ -3535,8 +3568,10 @@ int vboxCmdVBVACmdCtl(PVGASTATE pVGAState, VBOXCMDVBVA_CTL *pCtl, uint32_t cbCtl
     {
         case VBOXCMDVBVACTL_TYPE_3DCTL:
             return vdmaVBVACtlGenericGuestSubmit(pVdma, VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE, pCtl, cbCtl);
+
         case VBOXCMDVBVACTL_TYPE_RESIZE:
             return vdmaVBVACtlGenericGuestSubmit(pVdma, VBVAEXHOSTCTL_TYPE_GHH_RESIZE, pCtl, cbCtl);
+
         case VBOXCMDVBVACTL_TYPE_ENABLE:
             if (cbCtl == sizeof(VBOXCMDVBVA_CTL_ENABLE))
                 return vdmaVBVACtlEnableDisableSubmit(pVdma, (VBOXCMDVBVA_CTL_ENABLE *)pCtl);
