@@ -104,6 +104,7 @@ static const VBMGCMD g_aCommands[] =
     { "registervm",         USAGE_REGISTERVM,       VBMG_CMD_TODO, handleRegisterVM,           0 },
     { "unregistervm",       USAGE_UNREGISTERVM,     VBMG_CMD_TODO, handleUnregisterVM,         0 },
     { "clonevm",            USAGE_CLONEVM,          VBMG_CMD_TODO, handleCloneVM,              0 },
+    { "movevm",             USAGE_MOVEVM,           VBMG_CMD_TODO, handleMoveVM,               0 },
     { "mediumproperty",     USAGE_MEDIUMPROPERTY,   VBMG_CMD_TODO, handleMediumProperty,       0 },
     { "hdproperty",         USAGE_MEDIUMPROPERTY,   VBMG_CMD_TODO, handleMediumProperty,       0 }, /* backward compatibility */
     { "createmedium",       USAGE_CREATEMEDIUM,     VBMG_CMD_TODO, handleCreateMedium,         0 },

@@ -733,6 +733,13 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--register]\n"
                      "\n", SEP);
 
+    if (fCategory & USAGE_MOVEVM)
+        RTStrmPrintf(pStrm,
+                           "%s movevm %s          <uuid|vmname>\n"
+                     "                            --type basic\n"
+                     "                            [--folder <path>]\n"
+                     "\n", SEP);
+
     if (fCategory & USAGE_IMPORTAPPLIANCE)
         RTStrmPrintf(pStrm,
                            "%s import %s          <ovfname/ovaname>\n"

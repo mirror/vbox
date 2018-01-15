@@ -460,6 +460,7 @@ VBoxSVC_SOURCES = \
 	src-server/HostVideoInputDeviceImpl.cpp \
 	src-server/MachineImpl.cpp \
 	src-server/MachineImplCloneVM.cpp \
+	src-server/MachineImplMoveVM.cpp \
 	src-server/Matching.cpp \
 	src-server/MediumAttachmentImpl.cpp \
 	src-server/MediumFormatImpl.cpp \

@@ -4775,7 +4775,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="85cd948e-a71f-4289-281e-0ca7ad48cd89"
+    uuid="fecae8e8-46da-44cf-8fc0-2ba9aeb796a7"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -7976,6 +7976,32 @@ and "VAR" for unsetting. -->
       <param name="options" type="CloneOptions" dir="in" safearray="yes">
         <desc>Options for the cloning operation.</desc>
       </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="moveTo">
+      <desc>
+	Move machine on to new place/folder
+        <result name="E_INVALIDARG">
+          @a target is @c null.
+        </result>
+      </desc>
+
+      <param name="folder" type="wstring" dir="in">
+        <desc>Target folder where machine is moved.</desc>
+      </param>
+
+      <param name="type" type="wstring" dir="in">
+        <desc>Type of moving.
+	   Possible values:
+		basic - Only the files which belong solely to this machine 
+		        are moved from the original machine's folder to 
+			a new folder.		   
+	</desc>
+      </param>
+
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>

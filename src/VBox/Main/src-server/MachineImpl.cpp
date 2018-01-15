@@ -44,6 +44,7 @@
 #include "MachineImplCloneVM.h"
 #include "AutostartDb.h"
 #include "SystemPropertiesImpl.h"
+#include "MachineImplMoveVM.h"
 
 // generated header
 #include "VBoxEvents.h"
@@ -7222,6 +7223,54 @@ HRESULT Machine::cloneTo(const ComPtr<IMachine> &aTarget, CloneMode_T aMode, con
     pP = static_cast<Progress *>(*pProgress);
     pP.queryInterfaceTo(aProgress.asOutParam());
 
+    return rc;
+
+}
+
+HRESULT Machine::moveTo(const com::Utf8Str &aTargetPath,
+                        const com::Utf8Str &aType,
+                        ComPtr<IProgress> &aProgress)
+{
+    LogFlowThisFuncEnter();
+
+    ComObjPtr<Progress> progress;
+
+    progress.createObject();
+
+    HRESULT rc = S_OK;
+    Utf8Str targetPath = aTargetPath;
+    Utf8Str type = aType;
+
+    /* Initialize our worker task */
+    MachineMoveVM* task = NULL;
+    try
+    {
+        task = new MachineMoveVM(this, targetPath, type, progress);
+    }
+    catch(...)
+    {
+        delete task;
+        return rc;
+    }
+
+    /*
+     * task pointer will be owned by the ThreadTask class.
+     * There is no need to call operator "delete" in the end.
+     */ 
+    rc = task->init();
+    if (SUCCEEDED(rc))
+    {
+        rc = task->createThread();
+        if (FAILED(rc)) 
+        {
+            setError(rc, tr("Could not run the thread for the task MachineMoveVM"));
+        }
+
+        /* Return progress to the caller */
+        progress.queryInterfaceTo(aProgress.asOutParam());
+    }
+
+    LogFlowThisFuncLeave();
     return rc;
 
 }

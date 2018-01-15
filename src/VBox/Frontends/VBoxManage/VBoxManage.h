@@ -61,6 +61,7 @@
 #define USAGE_CREATEMEDIUM          RT_BIT_64(13)
 #define USAGE_MODIFYMEDIUM          RT_BIT_64(14)
 #define USAGE_CLONEMEDIUM           RT_BIT_64(15)
+#define USAGE_MOVEVM                RT_BIT_64(16)
 #define USAGE_CREATEHOSTIF          RT_BIT_64(17)
 #define USAGE_REMOVEHOSTIF          RT_BIT_64(18)
 #define USAGE_GETEXTRADATA          RT_BIT_64(19)
@@ -276,6 +277,7 @@ RTEXITCODE handleSetProperty(HandlerArg *a);
 RTEXITCODE handleSharedFolder(HandlerArg *a);
 RTEXITCODE handleExtPack(HandlerArg *a);
 RTEXITCODE handleUnattended(HandlerArg *a);
+RTEXITCODE handleMoveVM(HandlerArg *a);
 
 /* VBoxManageDisk.cpp */
 HRESULT openMedium(HandlerArg *a, const char *pszFilenameOrUuid,

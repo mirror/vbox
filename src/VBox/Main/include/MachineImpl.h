@@ -826,7 +826,7 @@ protected:
     friend class VirtualBox;
 
     friend class MachineCloneVM;
-
+    friend class MachineMoveVM;
 private:
     // wrapped IMachine properties
     HRESULT getParent(ComPtr<IVirtualBox> &aParent);
@@ -1187,6 +1187,9 @@ private:
                     CloneMode_T aMode,
                     const std::vector<CloneOptions_T> &aOptions,
                     ComPtr<IProgress> &aProgress);
+    HRESULT moveTo(const com::Utf8Str &aTargetPath,
+                   const com::Utf8Str &aType,
+                   ComPtr<IProgress> &aProgress);
     HRESULT saveState(ComPtr<IProgress> &aProgress);
     HRESULT adoptSavedState(const com::Utf8Str &aSavedStateFile);
     HRESULT discardSavedState(BOOL aFRemoveFile);

@@ -293,6 +293,98 @@ RTEXITCODE handleCreateVM(HandlerArg *a)
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
+static const RTGETOPTDEF g_aMoveVMOptions[] =
+{
+    { "--type",           't', RTGETOPT_REQ_STRING },
+    { "--folder",         'f', RTGETOPT_REQ_STRING },
+};
+
+RTEXITCODE handleMoveVM(HandlerArg *a)
+{
+    HRESULT                        rc;
+    const char                    *pszSrcName      = NULL;
+    const char                    *pszTargetFolder = NULL;
+    const char                    *pszType         = NULL;
+
+    int c;
+    int vrc = VINF_SUCCESS;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aMoveVMOptions, RT_ELEMENTS(g_aMoveVMOptions),
+                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 't':   // --type
+                pszType = ValueUnion.psz;
+                break;
+
+            case 'f':   // --target folder
+
+                char szPath[RTPATH_MAX];
+                pszTargetFolder = ValueUnion.psz;
+
+                vrc = RTPathAbs(pszTargetFolder, szPath, sizeof(szPath));
+                if (RT_FAILURE(vrc))
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs(%s,,) failed with rc=%Rrc", pszTargetFolder, vrc);
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!pszSrcName)
+                    pszSrcName = ValueUnion.psz;
+                else
+                    return errorSyntax(USAGE_MOVEVM, "Invalid parameter '%s'", ValueUnion.psz);
+                break;
+
+            default:
+                return errorGetOpt(USAGE_MOVEVM, c, &ValueUnion);
+        }
+    }
+
+
+    /* Check for required options */
+    if (!pszSrcName)
+        return errorSyntax(USAGE_MOVEVM, "VM name required");
+
+    /* Get the machine object */
+    ComPtr<IMachine> srcMachine;
+    CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(pszSrcName).raw(),
+                                               srcMachine.asOutParam()),
+                    RTEXITCODE_FAILURE);
+
+    if (srcMachine)
+    {
+        /* Start the moving */
+        ComPtr<IProgress> progress;
+        do
+        {
+            /* we have to open a session for this task */
+            CHECK_ERROR_BREAK(srcMachine, LockMachine(a->session, LockType_Write));
+            ComPtr<IMachine> sessionMachine;
+            do
+            {
+                CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
+                CHECK_ERROR_BREAK(sessionMachine, MoveTo(Bstr(pszTargetFolder).raw(),
+                                       Bstr(pszType).raw(),
+                                       progress.asOutParam()));
+                rc = showProgress(progress);
+                CHECK_PROGRESS_ERROR_RET(progress, ("Move VM failed"), RTEXITCODE_FAILURE);
+//              CHECK_ERROR_BREAK(sessionMachine, SaveSettings());
+            } while (0);
+
+            sessionMachine.setNull();
+            CHECK_ERROR_BREAK(a->session, UnlockMachine());
+        } while (0);
+    }
+
+    RTPrintf("Machine has been successfully moved into %s\n", pszTargetFolder);
+
+    return RTEXITCODE_SUCCESS;
+}
+
 static const RTGETOPTDEF g_aCloneVMOptions[] =
 {
     { "--snapshot",       's', RTGETOPT_REQ_STRING },
