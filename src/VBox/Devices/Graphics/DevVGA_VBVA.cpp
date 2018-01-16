@@ -2244,23 +2244,19 @@ int VBVAInfoScreen(PVGASTATE pVGAState, const VBVAINFOSCREEN *pScreen)
         {
             const uint64_t u64ScreenSize = (uint64_t)screen.u32LineSize * screen.u32Height;
             if (   screen.u32StartOffset <= pView->u32ViewSize
-                && u64ScreenSize <= pView->u32MaxScreenSize
+                && u64ScreenSize         <= pView->u32MaxScreenSize
                 && screen.u32StartOffset <= pView->u32ViewSize - (uint32_t)u64ScreenSize)
             {
                 vbvaResize(pVGAState, &pCtx->aViews[screen.u32ViewIndex], &screen, true);
                 return VINF_SUCCESS;
             }
 
-            /** @todo why not use "%#RX" instead of "0x%RX"? */
-            LogRelFlow(("VBVA: InfoScreen: invalid data! size 0x%RX64, max 0x%RX32\n",
+            LogRelFlow(("VBVA: InfoScreen: invalid data! size %#RX64, max %#RX32\n",
                         u64ScreenSize, pView->u32MaxScreenSize));
         }
     }
     else
-    {
-        LogRelFlow(("VBVA: InfoScreen: invalid data! index %RU32(%RU32)\n", screen.u32ViewIndex,
-                    pCtx->cViews));
-    }
+        LogRelFlow(("VBVA: InfoScreen: invalid data! index %RU32(%RU32)\n", screen.u32ViewIndex, pCtx->cViews));
 
     return VERR_INVALID_PARAMETER;
 }
