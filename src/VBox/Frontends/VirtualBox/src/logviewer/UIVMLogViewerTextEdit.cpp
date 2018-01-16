@@ -134,13 +134,15 @@ protected:
 
     void mouseMoveEvent(QMouseEvent *pEvent)
     {
-        m_pTextEdit->setMouseCursorLine(m_pTextEdit->lineNumberForPos(pEvent->pos()));
+        if (m_pTextEdit)
+            m_pTextEdit->setMouseCursorLine(m_pTextEdit->lineNumberForPos(pEvent->pos()));
         repaint();
     }
 
     void mousePressEvent(QMouseEvent *pEvent)
     {
-        m_pTextEdit->toggleBookmark(m_pTextEdit->bookmarkForPos(pEvent->pos()));
+        if (m_pTextEdit)
+            m_pTextEdit->toggleBookmark(m_pTextEdit->bookmarkForPos(pEvent->pos()));
     }
 
 private:

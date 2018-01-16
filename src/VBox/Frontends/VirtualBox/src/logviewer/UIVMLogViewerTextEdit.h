@@ -37,6 +37,7 @@ signals:
 public:
 
     UIVMLogViewerTextEdit(QWidget* parent = 0);
+
     int  lineNumberAreaWidth();
     void lineNumberAreaPaintEvent(QPaintEvent *event);
     /** Forwards the call to scroll bar class */
@@ -57,7 +58,7 @@ protected:
     virtual void contextMenuEvent(QContextMenuEvent *pEvent) /* override */;
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
     virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
-    virtual void leaveEvent(QEvent * event) /* override */;
+    virtual void leaveEvent(QEvent * pEvent) /* override */;
 
 private slots:
 

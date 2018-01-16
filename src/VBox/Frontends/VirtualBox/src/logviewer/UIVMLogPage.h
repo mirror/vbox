@@ -95,6 +95,10 @@ public:
     void setShowLineNumbers(bool bShowLineNumbers);
     void setWrapLines(bool bWrapLines);
 
+protected:
+
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
+
 private slots:
 
     void sltAddBookmark(LogBookmark bookmark);

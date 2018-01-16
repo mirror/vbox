@@ -678,10 +678,6 @@ void UIVMLogViewerWidget::showEvent(QShowEvent *pEvent)
         return;
 
     m_fIsPolished = true;
-
-    /* Make sure the log view widget has the focus: */
-    if (currentLogPage())
-        currentLogPage()->setFocus();
 }
 
 void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
