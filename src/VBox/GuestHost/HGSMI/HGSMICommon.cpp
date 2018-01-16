@@ -281,9 +281,9 @@ void HGSMIHeapBufferFree(HGSMIHEAP *pHeap,
 
 typedef struct HGSMIBUFFERCONTEXT
 {
-    const HGSMIBUFFERHEADER *pHeader; /* The original buffer header. */
-    void *pvData;                     /* Payload data in the buffer./ */
-    uint32_t cbData;                  /* Size of data  */
+    const volatile HGSMIBUFFERHEADER *pHeader; /**< The original buffer header. */
+    void *pvData;                              /**< Payload data in the buffer./ */
+    uint32_t cbData;                           /**< Size of data  */
 } HGSMIBUFFERCONTEXT;
 
 /** Verify that the given offBuffer points to a valid buffer, which is within the area.
@@ -314,6 +314,7 @@ static int hgsmiVerifyBuffer(const HGSMIAREA *pArea,
     {
         void *pvBuffer = HGSMIOffsetToPointer(pArea, offBuffer);
         HGSMIBUFFERHEADER header = *HGSMIBufferHeaderFromPtr(pvBuffer);
+        ASMCompilerBarrier();
 
         /* Quick check of the data size, it should be less than the maximum
          * data size for the buffer at this offset.
@@ -324,6 +325,7 @@ static int hgsmiVerifyBuffer(const HGSMIAREA *pArea,
         if (header.u32DataSize <= pArea->offLast - offBuffer)
         {
             HGSMIBUFFERTAIL tail = *HGSMIBufferTailFromPtr(pvBuffer, header.u32DataSize);
+            ASMCompilerBarrier();
 
             /* At least both header and tail structures are in the area. Check the checksum. */
             uint32_t u32Checksum = HGSMIChecksum(offBuffer, &header, &tail);
