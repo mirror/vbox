@@ -616,9 +616,15 @@ static DECLCALLBACK(int) iface_hgcmConnect(PPDMIHGCMCONNECTOR pInterface, PVBOXH
         return VERR_INVALID_PARAMETER;
     }
 
+    /* Check if service name is a string terminated by zero*/
+    size_t cchInfo = 0;
+    if (RTStrNLenEx(pServiceLocation->u.host.achName, sizeof(pServiceLocation->u.host.achName), &cchInfo) != VINF_SUCCESS)
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+
     if (!pDrv->pVMMDev || !pDrv->pVMMDev->hgcmIsActive())
         return VERR_INVALID_STATE;
-
     return HGCMGuestConnect(pDrv->pHGCMPort, pCmd, pServiceLocation->u.host.achName, pu32ClientID);
 }
 
