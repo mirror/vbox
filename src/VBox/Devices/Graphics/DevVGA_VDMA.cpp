@@ -104,6 +104,7 @@ typedef struct VBOXVDMATHREAD
 typedef struct VBVAEXHOSTCONTEXT
 {
     VBVABUFFER *pVBVA;
+    uint32_t    cbMaxData; /**< Maximum number of data bytes addressible relative to pVBVA. */
     volatile int32_t i32State;
     volatile int32_t i32EnableState;
     volatile uint32_t u32cCtls;
@@ -183,7 +184,7 @@ typedef struct VBOXVDMA_SOURCE
 
 typedef struct VBOXVDMAHOST
 {
-    PHGSMIINSTANCE pHgsmi;
+    PHGSMIINSTANCE pHgsmi; /**< Same as VGASTATE::pHgsmi. */
     PVGASTATE pVGAState;
 #ifdef VBOX_WITH_CRHGSMI
     VBVAEXHOSTCONTEXT CmdVbva;
@@ -385,17 +386,15 @@ static bool vboxVBVAExHPCheckProcessCtlInternal(struct VBVAEXHOSTCONTEXT *pCmdVb
     switch (pCtl->enmType)
     {
         case VBVAEXHOSTCTL_TYPE_HH_INTERNAL_PAUSE:
-        {
             VBoxVBVAExHPPause(pCmdVbva);
             VBoxVBVAExHPDataCompleteCtl(pCmdVbva, pCtl, VINF_SUCCESS);
             return true;
-        }
+
         case VBVAEXHOSTCTL_TYPE_HH_INTERNAL_RESUME:
-        {
             VBoxVBVAExHPResume(pCmdVbva);
             VBoxVBVAExHPDataCompleteCtl(pCmdVbva, pCtl, VINF_SUCCESS);
             return true;
-        }
+
         default:
             return false;
     }
@@ -433,72 +432,82 @@ static void vboxVBVAExHPHgEventClear(struct VBVAEXHOSTCONTEXT *pCmdVbva)
 
 /**
  * Worker for vboxVBVAExHPDataGet.
+ *
+ * @retval VINF_SUCCESS
+ * @retval VINF_EOF
+ * @retval VINF_TRY_AGAIN
+ * @retval VERR_INVALID_STATE
+ *
  * @thread VDMA
- * @todo r=bird: revalidate this code.
  */
-static int vboxVBVAExHPCmdGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t **ppCmd, uint32_t *pcbCmd)
+static int vboxVBVAExHPCmdGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t **ppbCmd, uint32_t *pcbCmd)
 {
     Assert(pCmdVbva->i32State == VBVAEXHOSTCONTEXT_STATE_PROCESSING);
     Assert(pCmdVbva->i32EnableState > VBVAEXHOSTCONTEXT_ESTATE_PAUSED);
 
-    VBVABUFFER *pVBVA = pCmdVbva->pVBVA;
+    VBVABUFFER volatile *pVBVA = pCmdVbva->pVBVA; /* This is shared with the guest, so careful! */
 
-    uint32_t indexRecordFirst = pVBVA->indexRecordFirst;
-    uint32_t indexRecordFree = pVBVA->indexRecordFree;
+    /*
+     * Inspect records.
+     */
+    uint32_t idxRecordFirst = ASMAtomicUoReadU32(&pVBVA->indexRecordFirst);
+    uint32_t idxRecordFree  = ASMAtomicReadU32(&pVBVA->indexRecordFree);
+    Log(("first = %d, free = %d\n", idxRecordFirst, idxRecordFree));
+    if (idxRecordFirst == idxRecordFree)
+        return VINF_EOF; /* No records to process. Return without assigning output variables. */
+    AssertReturn(idxRecordFirst < VBVA_MAX_RECORDS, VERR_INVALID_STATE);
 
-    Log(("first = %d, free = %d\n", indexRecordFirst, indexRecordFree));
-
-    if (indexRecordFirst == indexRecordFree)
-    {
-        /* No records to process. Return without assigning output variables. */
-        return VINF_EOF;
-    }
-
-    uint32_t cbRecordCurrent = ASMAtomicReadU32(&pVBVA->aRecords[indexRecordFirst].cbRecord);
-
-    /* A new record need to be processed. */
-    if (cbRecordCurrent & VBVA_F_RECORD_PARTIAL)
-    {
-        /* the record is being recorded, try again */
-        return VINF_TRY_AGAIN;
-    }
-
-    uint32_t cbRecord = cbRecordCurrent & ~VBVA_F_RECORD_PARTIAL;
-
-    if (!cbRecord)
-    {
-        /* the record is being recorded, try again */
-        return VINF_TRY_AGAIN;
-    }
-
-    /* we should not get partial commands here actually */
+    /*
+     * Read the record size and check that it has been completly recorded.
+     */
+    uint32_t const cbRecordCurrent = ASMAtomicReadU32(&pVBVA->aRecords[idxRecordFirst].cbRecord);
+    uint32_t const cbRecord        = cbRecordCurrent & ~VBVA_F_RECORD_PARTIAL;
+    if (   (cbRecordCurrent & VBVA_F_RECORD_PARTIAL)
+        || !cbRecord)
+        return VINF_TRY_AGAIN; /* The record is being recorded, try again. */
     Assert(cbRecord);
 
-    /* The size of largest contiguous chunk in the ring biffer. */
-    uint32_t u32BytesTillBoundary = pVBVA->cbData - pVBVA->off32Data;
+    /*
+     * Get and validate the data area.
+     */
+    uint32_t const offData   = ASMAtomicReadU32(&pVBVA->off32Data);
+    uint32_t       cbMaxData = ASMAtomicReadU32(&pVBVA->cbData);
+    AssertLogRelMsgStmt(cbMaxData <= pCmdVbva->cbMaxData, ("%#x vs %#x\n", cbMaxData, pCmdVbva->cbMaxData),
+                        cbMaxData = pCmdVbva->cbMaxData);
+    AssertLogRelMsgReturn(   cbRecord <= cbMaxData
+                          && offData  <= cbMaxData - cbRecord,
+                          ("offData=%#x cbRecord=%#x cbMaxData=%#x cbRecord\n", offData, cbRecord, cbMaxData),
+                          VERR_INVALID_STATE);
 
-    /* The pointer to data in the ring buffer. */
-    uint8_t *pSrc = &pVBVA->au8Data[pVBVA->off32Data];
-
-    /* Fetch or point the data. */
-    if (u32BytesTillBoundary >= cbRecord)
-    {
-        /* The command does not cross buffer boundary. Return address in the buffer. */
-        *ppCmd = pSrc;
-        *pcbCmd = cbRecord;
-        return VINF_SUCCESS;
-    }
-
-    LogRel(("CmdVbva: cross-bound writes unsupported\n"));
-    return VERR_INVALID_STATE;
+    /*
+     * Just set the return values and we're done.
+     */
+    *ppbCmd  = (uint8_t *)&pVBVA->au8Data[offData];
+    *pcbCmd = cbRecord;
+    return VINF_SUCCESS;
 }
 
+/**
+ * Completion routine advancing our end of the ring and data buffers forward.
+ *
+ * @param   pCmdVbva            The VBVA context.
+ * @param   cbCmd               The size of the data.
+ */
 static void VBoxVBVAExHPDataCompleteCmd(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint32_t cbCmd)
 {
-    VBVABUFFER *pVBVA = pCmdVbva->pVBVA;
-    pVBVA->off32Data = (pVBVA->off32Data + cbCmd) % pVBVA->cbData;
+    VBVABUFFER volatile *pVBVA       = pCmdVbva->pVBVA;
 
-    pVBVA->indexRecordFirst = (pVBVA->indexRecordFirst + 1) % RT_ELEMENTS(pVBVA->aRecords);
+    /* Move data head. */
+    uint32_t const       cbData      = pVBVA->cbData;
+    uint32_t const       offData     = pVBVA->off32Data;
+    if (cbData > 0)
+        ASMAtomicWriteU32(&pVBVA->off32Data, (offData + cbCmd) % cbData);
+    else
+        ASMAtomicWriteU32(&pVBVA->off32Data, 0);
+
+    /* Increment record pointer. */
+    uint32_t const       idxRecFirst = pVBVA->indexRecordFirst;
+    ASMAtomicWriteU32(&pVBVA->indexRecordFirst, (idxRecFirst + 1) % RT_ELEMENTS(pVBVA->aRecords));
 }
 
 /**
@@ -706,7 +715,7 @@ DECLINLINE(bool) VBoxVBVAExHSIsDisabled(struct VBVAEXHOSTCONTEXT *pCmdVbva)
  *
  * @thread VDMA
  */
-static int VBoxVBVAExHSEnable(struct VBVAEXHOSTCONTEXT *pCmdVbva, VBVABUFFER *pVBVA)
+static int VBoxVBVAExHSEnable(struct VBVAEXHOSTCONTEXT *pCmdVbva, VBVABUFFER *pVBVA, uint8_t *pbVRam, uint32_t cbVRam)
 {
     if (VBoxVBVAExHSIsEnabled(pCmdVbva))
     {
@@ -714,8 +723,12 @@ static int VBoxVBVAExHSEnable(struct VBVAEXHOSTCONTEXT *pCmdVbva, VBVABUFFER *pV
         return VERR_INVALID_STATE;
     }
 
-    pCmdVbva->pVBVA = pVBVA;
-    pCmdVbva->pVBVA->hostFlags.u32HostEvents = 0;
+    uintptr_t offVRam = (uintptr_t)pVBVA - (uintptr_t)pbVRam;
+    AssertLogRelMsgReturn(offVRam < cbVRam - sizeof(*pVBVA), ("%#p cbVRam=%#x\n", offVRam, cbVRam), VERR_OUT_OF_RANGE);
+
+    pCmdVbva->pVBVA     = pVBVA;
+    pCmdVbva->cbMaxData = cbVRam - offVRam - RT_UOFFSETOF(VBVABUFFER, au8Data);
+    pVBVA->hostFlags.u32HostEvents = 0;
     ASMAtomicWriteS32(&pCmdVbva->i32EnableState, VBVAEXHOSTCONTEXT_ESTATE_ENABLED);
     return VINF_SUCCESS;
 }
@@ -1516,7 +1529,6 @@ static int vdmaVBVAEnableProcess(struct VBOXVDMAHOST *pVdma, uint32_t u32Offset)
         return VERR_INVALID_STATE;
     }
 
-/** @todo r=bird: This needs a closer look! */
     VBVABUFFER *pVBVA = (VBVABUFFER *)HGSMIOffsetToPointerHost(pVdma->pHgsmi, u32Offset);
     if (!pVBVA)
     {
@@ -1524,7 +1536,7 @@ static int vdmaVBVAEnableProcess(struct VBOXVDMAHOST *pVdma, uint32_t u32Offset)
         return VERR_INVALID_PARAMETER;
     }
 
-    int rc = VBoxVBVAExHSEnable(&pVdma->CmdVbva, pVBVA);
+    int rc = VBoxVBVAExHSEnable(&pVdma->CmdVbva, pVBVA, pVdma->pVGAState->vram_ptrR3, pVdma->pVGAState->vram_size);
     if (RT_SUCCESS(rc))
     {
         if (!pVdma->CrSrvInfo.pfnEnable)
