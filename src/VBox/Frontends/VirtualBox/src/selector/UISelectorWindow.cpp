@@ -1270,12 +1270,12 @@ bool UISelectorWindow::event(QEvent *pEvent)
 
             if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
             {
-#ifdef VBOX_WS_MAC
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
                 QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
                 m_geometry.moveTo(pMoveEvent->pos());
-#else /* VBOX_WS_MAC */
+#else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
                 m_geometry.moveTo(geometry().x(), geometry().y());
-#endif /* !VBOX_WS_MAC */
+#endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
             }
             break;
         }

@@ -22,6 +22,7 @@
 /* GUI includes: */
 # include "QIMainWindow.h"
 # include "VBoxGlobal.h"
+# include "UIDesktopWidgetWatchdog.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -33,14 +34,14 @@ QIMainWindow::QIMainWindow(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags 
 
 void QIMainWindow::restoreGeometry()
 {
-#ifdef VBOX_WS_MAC
-    /* Use the old approach for OSX: */
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
+    /* Use the old approach for OSX/Win: */
     move(m_geometry.topLeft());
     resize(m_geometry.size());
-#else /* VBOX_WS_MAC */
-    /* Use the new approach for Windows/X11: */
+#else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
+    /* Use the new approach for X11: */
     VBoxGlobal::setTopLevelGeometry(this, m_geometry);
-#endif /* !VBOX_WS_MAC */
+#endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
 
     /* Maximize (if necessary): */
     if (shouldBeMaximized())
