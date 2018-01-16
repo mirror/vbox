@@ -178,8 +178,17 @@ GLuint crServerTranslateProgramID( GLuint id )
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteProgramsARB(GLsizei n, const GLuint * programs)
 {
-    GLuint *pLocalProgs = (GLuint *) crAlloc(n * sizeof(GLuint));
+    GLuint *pLocalProgs;
     GLint i;
+
+    if (n >= UINT32_MAX / sizeof(GLuint))
+    {
+        crError("crServerDispatchDeleteProgramsARB: parameter 'n' is out of range");
+        return;
+    }
+
+    pLocalProgs = (GLuint *)crAlloc(n * sizeof(GLuint));
+
     if (!pLocalProgs) {
         crError("crServerDispatchDeleteProgramsARB: out of memory");
         return;

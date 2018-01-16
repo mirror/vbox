@@ -199,8 +199,16 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchBindTexture( GLenum target, GLuint
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteTextures( GLsizei n, const GLuint *textures)
 {
-    GLuint *newTextures = (GLuint *) crAlloc(n * sizeof(GLuint));
+    GLuint *newTextures;
     GLint i;
+
+    if (n >= UINT32_MAX / sizeof(GLuint))
+    {
+        crError("crServerDispatchDeleteTextures: parameter 'n' is out of range");
+        return;
+    }
+
+    newTextures = (GLuint *)crAlloc(n * sizeof(GLuint));
 
     if (!newTextures)
     {
