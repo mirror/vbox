@@ -416,11 +416,12 @@ typedef struct HM
     bool                        fVirtApicRegs;
     /** Set if posted interrupt processing is enabled. */
     bool                        fPostedIntrs;
-    /** Alignment. */
-    bool                        fAlignment0;
-
-    /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
-    uint32_t                    fHostKernelFeatures;
+    /** Set if indirect branch prediction barrier on VM exit. */
+    bool                        fIbpbOnVmExit;
+    /** Set if indirect branch prediction barrier on VM entry. */
+    bool                        fIbpbOnVmEntry;
+    /** Explicit padding. */
+    bool                        afPadding[3];
 
     /** Maximum ASID allowed. */
     uint32_t                    uMaxAsid;
@@ -428,13 +429,15 @@ typedef struct HM
      * This number is set much higher when RTThreadPreemptIsPending is reliable. */
     uint32_t                    cMaxResumeLoops;
 
+    /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
+    uint32_t                    fHostKernelFeatures;
+
+    /** Size of the guest patch memory block. */
+    uint32_t                    cbGuestPatchMem;
     /** Guest allocated memory for patching purposes. */
     RTGCPTR                     pGuestPatchMem;
     /** Current free pointer inside the patch block. */
     RTGCPTR                     pFreeGuestPatchMem;
-    /** Size of the guest patch memory block. */
-    uint32_t                    cbGuestPatchMem;
-    uint32_t                    u32Alignment0;
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
     /** 32 to 64 bits switcher entrypoint. */

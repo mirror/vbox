@@ -176,6 +176,9 @@
 %define X86_CPUID_STEXT_FEATURE_EBX_AVX512CD          RT_BIT_32(28)
 %define X86_CPUID_STEXT_FEATURE_EBX_SHA               RT_BIT_32(29)
 %define X86_CPUID_STEXT_FEATURE_ECX_PREFETCHWT1       RT_BIT_32(0)
+%define X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB         RT_BIT_32(26)
+%define X86_CPUID_STEXT_FEATURE_EDX_STIBP             RT_BIT_32(27)
+%define X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP           RT_BIT_32(29)
 %define X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF     RT_BIT_32(0)
 %define X86_CPUID_EXT_FEATURE_EDX_SYSCALL       RT_BIT_32(11)
 %define X86_CPUID_EXT_FEATURE_EDX_NX            RT_BIT_32(20)
@@ -379,6 +382,11 @@
 %define MSR_IA32_FEATURE_CONTROL_SMX_VMXON  RT_BIT_32(1)
 %define MSR_IA32_FEATURE_CONTROL_VMXON      RT_BIT_32(2)
 %define MSR_IA32_TSC_ADJUST                 0x3B
+%define MSR_IA32_SPEC_CTRL                  0x48
+%define MSR_IA32_SPEC_CTRL_F_IBRS           RT_BIT_32(0)
+%define MSR_IA32_SPEC_CTRL_F_STIBP          RT_BIT_32(1)
+%define MSR_IA32_PRED_CMD                   0x49
+%define MSR_IA32_PRED_CMD_F_IBPB            RT_BIT_32(0)
 %define MSR_IA32_BIOS_UPDT_TRIG             0x79
 %define MSR_IA32_BIOS_SIGN_ID               0x8B
 %define MSR_IA32_SMM_MONITOR_CTL            0x9B
@@ -392,6 +400,9 @@
 %define MSR_IA32_MPERF                      0xE7
 %define MSR_IA32_APERF                      0xE8
 %define MSR_IA32_MTRR_CAP                   0xFE
+%define MSR_IA32_ARCH_CAP                   0x10a
+%define MSR_IA32_ARCH_CAP_F_SPECTRE_FIX     RT_BIT_32(0)
+%define MSR_IA32_ARCH_CAP_F_BETTER_IBRS     RT_BIT_32(1)
 %define MSR_BBL_CR_CTL3                     0x11e
 %ifndef MSR_IA32_SYSENTER_CS
 %define MSR_IA32_SYSENTER_CS                0x174

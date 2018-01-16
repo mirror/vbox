@@ -1003,6 +1003,22 @@
         automatically enables the APIC feature when set.
       </desc>
     </const>
+    <const name="IBPBOnVMExit"          value="6">
+      <desc>
+        If set, force an indirect branch prediction barrier on VM exits if the
+        host CPU supports it.  This setting will significantly slow down workloads
+        causing many VM exits, so it is only recommended for situation where there
+        real need to be paranoid.
+      </desc>
+    </const>
+    <const name="IBPBOnVMEntry"         value="7">
+      <desc>
+        If set, force an indirect branch prediction barrier on VM entry if the
+        host CPU supports it.  This setting will significantly slow down workloads
+        causing many VM exits, so it is only recommended for situation where there
+        real need to be paranoid.
+      </desc>
+    </const>
   </enum>
 
 

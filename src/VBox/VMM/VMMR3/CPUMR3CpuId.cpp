@@ -1701,9 +1701,9 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
                                                                   pFeatures->uModel,
                                                                   pFeatures->uStepping);
 
-        PCCPUMCPUIDLEAF pLeaf = cpumR3CpuIdFindLeaf(paLeaves, cLeaves, 0x80000008);
-        if (pLeaf)
-            pFeatures->cMaxPhysAddrWidth = pLeaf->uEax & 0xff;
+        PCCPUMCPUIDLEAF const pExtLeaf8 = cpumR3CpuIdFindLeaf(paLeaves, cLeaves, 0x80000008);
+        if (pExtLeaf8)
+            pFeatures->cMaxPhysAddrWidth = pExtLeaf8->uEax & 0xff;
         else if (pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_PSE36)
             pFeatures->cMaxPhysAddrWidth = 36;
         else
@@ -1742,6 +1742,11 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
             pFeatures->fAvx2                = RT_BOOL(pSxfLeaf0->uEbx & X86_CPUID_STEXT_FEATURE_EBX_AVX2);
             pFeatures->fAvx512Foundation    = RT_BOOL(pSxfLeaf0->uEbx & X86_CPUID_STEXT_FEATURE_EBX_AVX512F);
             pFeatures->fClFlushOpt          = RT_BOOL(pSxfLeaf0->uEbx & X86_CPUID_STEXT_FEATURE_EBX_CLFLUSHOPT);
+
+            pFeatures->fIbpb                = RT_BOOL(pSxfLeaf0->uEdx & X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB);
+            pFeatures->fIbrs                = pFeatures->fIbpb;
+            pFeatures->fStibp               = RT_BOOL(pSxfLeaf0->uEdx & X86_CPUID_STEXT_FEATURE_EDX_STIBP);
+            pFeatures->fArchCap             = RT_BOOL(pSxfLeaf0->uEdx & X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP);
         }
 
         /* MWAIT/MONITOR leaf. */
@@ -1781,6 +1786,7 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
             pFeatures->fFxSaveRstor    |= RT_BOOL(pExtLeaf->uEdx & X86_CPUID_AMD_FEATURE_EDX_FXSR);
             pFeatures->fMmx            |= RT_BOOL(pExtLeaf->uEdx & X86_CPUID_AMD_FEATURE_EDX_MMX);
             pFeatures->fTsc            |= RT_BOOL(pExtLeaf->uEdx & X86_CPUID_AMD_FEATURE_EDX_TSC);
+            pFeatures->fIbpb           |= pExtLeaf8 && (pExtLeaf8->uEbx & X86_CPUID_AMD_EFEID_EBX_IBPB);
             pFeatures->fAmdMmxExts      = RT_BOOL(pExtLeaf->uEdx & X86_CPUID_AMD_FEATURE_EDX_AXMMX);
             pFeatures->fXop             = RT_BOOL(pExtLeaf->uEcx & X86_CPUID_AMD_FEATURE_ECX_XOP);
             pFeatures->fSvm             = RT_BOOL(pExtLeaf->uEcx & X86_CPUID_AMD_FEATURE_ECX_SVM);
@@ -2254,7 +2260,7 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLE
     }
 
     /*
-     * Configure XSAVE offsets according to the CPUID info.
+     * Configure XSAVE offsets according to the CPUID info and set the feature flags.
      */
     memset(&pVM->aCpus[0].cpum.s.Guest.aoffXState[0], 0xff, sizeof(pVM->aCpus[0].cpum.s.Guest.aoffXState));
     pVM->aCpus[0].cpum.s.Guest.aoffXState[XSAVE_C_X87_BIT] = 0;
@@ -3124,7 +3130,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                 pCurLeaf->uEcx &= 0
                                //| X86_CPUID_STEXT_FEATURE_ECX_PREFETCHWT1 - we do not do vector functions yet.
                                ;
-                pCurLeaf->uEdx &= 0;
+                pCurLeaf->uEdx &= 0; /** @todo X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB, X86_CPUID_STEXT_FEATURE_EDX_STIBP and X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP */
 
                 if (pCpum->u8PortableCpuIdLevel > 0)
                 {
@@ -3507,7 +3513,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     while ((pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, UINT32_C(0x80000008), uSubLeaf)) != NULL)
     {
         pCurLeaf->uEax &= UINT32_C(0x0000ffff); /* Virtual & physical address sizes only. */
-        pCurLeaf->uEbx  = 0;  /* reserved */
+        pCurLeaf->uEbx  = 0;  /* reserved - [12] == IBPB */
         pCurLeaf->uEdx  = 0;  /* reserved */
 
         /* Set APICIdCoreIdSize to zero (use legacy method to determine the number of cores per cpu).
@@ -5982,8 +5988,21 @@ static DBGFREGSUBFIELD const g_aLeaf7Sub0EbxSubFields[] =
 static DBGFREGSUBFIELD const g_aLeaf7Sub0EcxSubFields[] =
 {
     DBGFREGSUBFIELD_RO("PREFETCHWT1\0" "PREFETCHWT1 instruction",                        0, 1, 0),
+    DBGFREGSUBFIELD_RO("UMIP\0"         "User mode insturction prevention",              2, 1, 0),
     DBGFREGSUBFIELD_RO("PKU\0"          "Protection Key for Usermode pages",             3, 1, 0),
-    DBGFREGSUBFIELD_RO("OSPKU\0"        "CR4.PKU mirror",                                4, 1, 0),
+    DBGFREGSUBFIELD_RO("OSPKE\0"        "CR4.PKU mirror",                                4, 1, 0),
+    DBGFREGSUBFIELD_RO("MAWAU\0"        "Value used by BNDLDX & BNDSTX",                17, 5, 0),
+    DBGFREGSUBFIELD_RO("RDPID\0"        "Read processor ID support",                    22, 1, 0),
+    DBGFREGSUBFIELD_RO("SGX_LC\0"       "Supports SGX Launch Configuration",            30, 1, 0),
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
+/** CPUID(7,0).EDX field descriptions.   */
+static DBGFREGSUBFIELD const g_aLeaf7Sub0EdxSubFields[] =
+{
+    DBGFREGSUBFIELD_RO("IBRS_IBPB\0"    "IA32_SPEC_CTRL.IBRS and IA32_PRED_CMD.IBPB",   26, 1, 0),
+    DBGFREGSUBFIELD_RO("STIBP\0"        "Supports IA32_SPEC_CTRL.STIBP",                27, 1, 0),
+    DBGFREGSUBFIELD_RO("ARCHCAP\0"      "Supports IA32_ARCH_CAP",                       29, 1, 0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
@@ -6069,6 +6088,16 @@ static DBGFREGSUBFIELD const g_aExtLeaf1EcxSubFields[] =
     DBGFREGSUBFIELD_RO("NodeId\0"       "NodeId in MSR C001_100C",                      19, 1, 0),
     DBGFREGSUBFIELD_RO("TBM\0"          "Trailing Bit Manipulation instructions",       21, 1, 0),
     DBGFREGSUBFIELD_RO("TOPOEXT\0"      "Topology Extensions",                          22, 1, 0),
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
+/** CPUID(0x80000008,0).EBX field descriptions.   */
+static DBGFREGSUBFIELD const g_aExtLeaf8EbxSubFields[] =
+{
+    DBGFREGSUBFIELD_RO("CLZERO\0"       "Clear zero instruction (cacheline)",            0, 1, 0),
+    DBGFREGSUBFIELD_RO("IRPerf\0"       "Instructions retired count support",            1, 1, 0),
+    DBGFREGSUBFIELD_RO("XSaveErPtr\0"   "Save/restore error pointers (FXSAVE/RSTOR*)",   2, 1, 0),
+    DBGFREGSUBFIELD_RO("IBPB\0"         "Supports the IBPB command in IA32_PRED_CMD",   12, 1, 0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
@@ -6274,14 +6303,14 @@ static void cpumR3CpuIdInfoStdLeaf7Details(PCDBGFINFOHLP pHlp, PCCPUMCPUIDLEAF p
                     cpumR3CpuIdInfoVerboseCompareListU32(pHlp, pCurLeaf->uEbx, Host.uEbx, g_aLeaf7Sub0EbxSubFields, 56);
                     cpumR3CpuIdInfoVerboseCompareListU32(pHlp, pCurLeaf->uEcx, Host.uEcx, g_aLeaf7Sub0EcxSubFields, 56);
                     if (pCurLeaf->uEdx || Host.uEdx)
-                        pHlp->pfnPrintf(pHlp, "%36s %#x (%#x)\n", "Ext Features EDX:", pCurLeaf->uEdx, Host.uEdx);
+                        cpumR3CpuIdInfoVerboseCompareListU32(pHlp, pCurLeaf->uEdx, Host.uEdx, g_aLeaf7Sub0EdxSubFields, 56);
                 }
                 else
                 {
                     cpumR3CpuIdInfoMnemonicListU32(pHlp, pCurLeaf->uEbx, g_aLeaf7Sub0EbxSubFields, "Ext Features EBX:", 36);
                     cpumR3CpuIdInfoMnemonicListU32(pHlp, pCurLeaf->uEcx, g_aLeaf7Sub0EcxSubFields, "Ext Features ECX:", 36);
                     if (pCurLeaf->uEdx)
-                        pHlp->pfnPrintf(pHlp, "%36s %#x\n", "Ext Features EDX:", pCurLeaf->uEdx);
+                        cpumR3CpuIdInfoMnemonicListU32(pHlp, pCurLeaf->uEdx, g_aLeaf7Sub0EdxSubFields, "Ext Features EDX:", 36);
                 }
                 break;
 
@@ -6769,21 +6798,33 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
 
         }
 
-        if (iVerbosity && (pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000008), 0)) != NULL)
+        pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000008), 0);
+        if (pCurLeaf != NULL)
         {
-            uint32_t uEAX = pCurLeaf->uEax;
-            uint32_t uECX = pCurLeaf->uEcx;
+            if (pCurLeaf->uEbx || (Host.uEbx && iVerbosity))
+            {
+                if (iVerbosity < 1)
+                    cpumR3CpuIdInfoMnemonicListU32(pHlp, pCurLeaf->uEbx, g_aExtLeaf8EbxSubFields, "Ext Features ext IDs EBX:", 34);
+                else
+                    cpumR3CpuIdInfoVerboseCompareListU32(pHlp, pCurLeaf->uEbx, Host.uEbx, g_aExtLeaf8EbxSubFields, 56);
+            }
 
-            pHlp->pfnPrintf(pHlp,
-                            "Physical Address Width:          %d bits\n"
-                            "Virtual Address Width:           %d bits\n"
-                            "Guest Physical Address Width:    %d bits\n",
-                            (uEAX >> 0) & 0xff,
-                            (uEAX >> 8) & 0xff,
-                            (uEAX >> 16) & 0xff);
-            pHlp->pfnPrintf(pHlp,
-                            "Physical Core Count:             %d\n",
-                            ((uECX >> 0) & 0xff) + 1);
+            if (iVerbosity)
+            {
+                uint32_t uEAX = pCurLeaf->uEax;
+                uint32_t uECX = pCurLeaf->uEcx;
+
+                pHlp->pfnPrintf(pHlp,
+                                "Physical Address Width:          %d bits\n"
+                                "Virtual Address Width:           %d bits\n"
+                                "Guest Physical Address Width:    %d bits\n",
+                                (uEAX >> 0) & 0xff,
+                                (uEAX >> 8) & 0xff,
+                                (uEAX >> 16) & 0xff);
+                pHlp->pfnPrintf(pHlp,
+                                "Physical Core Count:             %d\n",
+                                ((uECX >> 0) & 0xff) + 1);
+            }
         }
 
         pCurLeaf = pNextLeaf;

@@ -1158,6 +1158,15 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, &fEnableUX); H();
         InsertConfigInteger(pHM, "EnableUX", fEnableUX);
 
+        /* Indirect branch prediction boundraries. */
+        BOOL fIBPBOnVMExit = false;
+        hrc = pMachine->GetCPUProperty(CPUPropertyType_IBPBOnVMExit, &fIBPBOnVMExit); H();
+        InsertConfigInteger(pHM, "IBPBOnVMExit", fIBPBOnVMExit);
+
+        BOOL fIBPBOnVMEntry = false;
+        hrc = pMachine->GetCPUProperty(CPUPropertyType_IBPBOnVMEntry, &fIBPBOnVMEntry); H();
+        InsertConfigInteger(pHM, "IBPBOnVMEntry", fIBPBOnVMEntry);
+
         /* Reset overwrite. */
         if (i_isResetTurnedIntoPowerOff())
             InsertConfigInteger(pRoot, "PowerOffInsteadOfReset", 1);

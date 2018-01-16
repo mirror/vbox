@@ -511,6 +511,8 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--vtxux on|off]\n"
                      "                            [--pae on|off]\n"
                      "                            [--longmode on|off]\n"
+                     "                            [--ibpb-on-vm-exit on|off]\n"
+                     "                            [--ibpb-on-vm-entry on|off]\n"
                      "                            [--cpu-profile \"host|Intel 80[86|286|386]\"]\n"
                      "                            [--cpuid-portability-level <0..3>\n"
                      "                            [--cpuid-set <leaf[:subleaf]> <eax> <ebx> <ecx> <edx>]\n"

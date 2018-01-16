@@ -452,6 +452,8 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                               "|EnableUX"
                               "|EnableLargePages"
                               "|EnableVPID"
+                              "|IBPBOnVMExit"
+                              "|IBPBOnVMEntry"
                               "|TPRPatchingEnabled"
                               "|64bitEnabled"
                               "|Exclusive"
@@ -610,6 +612,16 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * Whether to make use of the VMX-preemption timer feature of the CPU if it's
      * available. */
     rc = CFGMR3QueryBoolDef(pCfgHm, "UseVmxPreemptTimer", &pVM->hm.s.vmx.fUsePreemptTimer, true);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/HM/IBPBOnVMExit, bool}
+     * Costly paranoia setting. */
+    rc = CFGMR3QueryBoolDef(pCfgHm, "IBPBOnVMExit", &pVM->hm.s.fIbpbOnVmExit, false);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/HM/IBPBOnVMEntry, bool}
+     * Costly paranoia setting. */
+    rc = CFGMR3QueryBoolDef(pCfgHm, "IBPBOnVMEntry", &pVM->hm.s.fIbpbOnVmEntry, false);
     AssertLogRelRCReturn(rc, rc);
 
     /*
@@ -1162,6 +1174,28 @@ static int hmR3InitFinalizeR0(PVM pVM)
     {
         Assert(!pVM->hm.s.fTprPatchingAllowed); /* paranoia */
         pVM->hm.s.fTprPatchingAllowed = false;
+    }
+
+    /*
+     * Sync options.
+     */
+    /** @todo Move this out of of CPUMCTX and into some ring-0 only HM structure.
+     *        That will require a little bit of work, of course. */
+    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    {
+        PVMCPU   pVCpu   = &pVM->aCpus[iCpu];
+        PCPUMCTX pCpuCtx = CPUMQueryGuestCtxPtr(pVCpu);
+        pCpuCtx->fWorldSwitcher &= ~(CPUMCTX_WSF_IBPB_EXIT | CPUMCTX_WSF_IBPB_ENTRY);
+        if (pVM->cpum.ro.HostFeatures.fIbpb)
+        {
+            if (pVM->hm.s.fIbpbOnVmExit)
+                pCpuCtx->fWorldSwitcher |= CPUMCTX_WSF_IBPB_EXIT;
+            if (pVM->hm.s.fIbpbOnVmEntry)
+                pCpuCtx->fWorldSwitcher |= CPUMCTX_WSF_IBPB_ENTRY;
+        }
+        if (iCpu == 0)
+            LogRel(("HM: fWorldSwitcher=%#x (fIbpbOnVmExit=%d fIbpbOnVmEntry=%d)\n",
+                    pCpuCtx->fWorldSwitcher, pVM->hm.s.fIbpbOnVmExit, pVM->hm.s.fIbpbOnVmEntry));
     }
 
     /*

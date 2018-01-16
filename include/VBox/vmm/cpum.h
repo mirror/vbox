@@ -1025,6 +1025,14 @@ typedef struct CPUMFEATURES
     uint32_t        fClFlush : 1;
     /** Supports CLFLUSHOPT. */
     uint32_t        fClFlushOpt : 1;
+    /** Supports IA32_PRED_CMD.IBPB. */
+    uint32_t        fIbpb : 1;
+    /** Supports IA32_SPEC_CTRL.IBRS. */
+    uint32_t        fIbrs : 1;
+    /** Supports IA32_SPEC_CTRL.STIBP. */
+    uint32_t        fStibp : 1;
+    /** Supports IA32_ARCH_CAP. */
+    uint32_t        fArchCap : 1;
 
     /** Supports AMD 3DNow instructions. */
     uint32_t        f3DNow : 1;
@@ -1058,7 +1066,7 @@ typedef struct CPUMFEATURES
     uint32_t        fVmx : 1;
 
     /** Alignment padding / reserved for future use. */
-    uint32_t        fPadding : 23;
+    uint32_t        fPadding : 19;
 
     /** SVM: Supports Nested-paging. */
     uint32_t        fSvmNestedPaging : 1;

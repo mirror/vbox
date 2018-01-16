@@ -287,6 +287,8 @@ public:
         BOOL                mTripleFaultReset;
         BOOL                mAPIC;
         BOOL                mX2APIC;
+        BOOL                mIBPBOnVMExit;
+        BOOL                mIBPBOnVMEntry;
         ULONG               mCPUCount;
         BOOL                mCPUHotPlugEnabled;
         ULONG               mCpuExecutionCap;
