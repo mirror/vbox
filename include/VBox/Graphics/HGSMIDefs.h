@@ -40,17 +40,17 @@ typedef uint32_t HGSMIOFFSET;
 
 #define HGSMIOFFSET_VOID ((HGSMIOFFSET)~0)
 
-/* Describes a shared memory area buffer.
+/**
+ * Describes a shared memory area buffer.
+ *
  * Used for calculations with offsets and for buffers verification.
  */
 typedef struct HGSMIAREA
 {
-    uint8_t     *pu8Base; /* The starting address of the area. Corresponds to offset 'offBase'. */
-    HGSMIOFFSET  offBase; /* The starting offset of the area. */
-    HGSMIOFFSET  offLast; /* The last valid offset:
-                           * offBase + cbArea - 1 - (sizeof(header) + sizeof(tail)).
-                           */
-    HGSMISIZE    cbArea;  /* Size of the area. */
+    uint8_t     *pu8Base; /**< The starting address of the area. Corresponds to offset 'offBase'. */
+    HGSMIOFFSET  offBase; /**< The starting offset of the area. */
+    HGSMIOFFSET  offLast; /**< The last valid offset:  offBase + cbArea - 1 - (sizeof(header) + sizeof(tail)). */
+    HGSMISIZE    cbArea;  /**< Size of the area. */
 } HGSMIAREA;
 
 
