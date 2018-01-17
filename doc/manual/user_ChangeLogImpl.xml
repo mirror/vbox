@@ -54,6 +54,51 @@ are ordered as follows:
   </sect1>
 
   <sect1>
+    <title>Version 5.2.6 (2018-01-15)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>GUI: fixed occasional screen corruption when host screen resolutio
+n
+          is changed</para>
+      </listitem>
+
+      <listitem>
+        <para>User interface: increase proposed disk size when creating new VMs
+          for Windows 7 and newer</para>
+      </listitem>
+
+      <listitem>
+        <para>User interface: various improvements for high resolution
+           screens</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: Fixed problems using 256MB VRAM in raw-mode VMs</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: implemented support for audio playback and recording for
+          macOS guests</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: further timing improvements for Windows 10 guests</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: fixed problem accessing mini-toolbar under
+           XFCE (bug #17280, contributed by Dusan Gallo)</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
     <title>Version 5.2.4 (2017-12-19)</title>
 
     <para>This is a maintenance release. The following items were fixed and/or
@@ -341,6 +386,64 @@ are ordered as follows:
 
       <listitem>
         <para>many unlisted fixes and improvements</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Version 5.1.32 (2018-01-15)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>GUI: fixed occasional screen corruption when host screen resolution
+          is changed</para>
+      </listitem>
+
+      <listitem>
+        <para>User interface: increase proposed disk size when creating new VMs
+          for Windows 7 and newer</para>
+      </listitem>
+
+      <listitem>
+        <para>Serial: fixed broken communication with certain devices on Linux
+          hosts</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: Fixed problems using 256MB VRAM in raw-mode VMs</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: added HDA support for more exotic guests (e.g. Haiku)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed playback with ALSA backend (5.1.28 regression)</para>
+      </listitem>
+
+      <listitem>
+        <para>USB/OHCI: fixed a problem where OHCI emulation might sporadically
+          drop data transfers</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: VirtualBoxManager in the Python API no longer calls
+          CoUninitialize when destroyed</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: fixed VBoxNetFlt kernel module compilation failure
+          with Linux kernel 4.14</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux guests: fixed kernel module compilation and other problems
+          with Linux kernel 4.14</para>
       </listitem>
 
     </itemizedlist>
