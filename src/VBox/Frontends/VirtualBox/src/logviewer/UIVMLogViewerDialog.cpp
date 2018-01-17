@@ -26,9 +26,9 @@
 # include <QDialogButtonBox>
 # include <QKeyEvent>
 # include <QLabel>
-# include <QPushButton>
 # include <QScrollBar>
 # include <QPlainTextEdit>
+# include <QPushButton>
 # include <QVBoxLayout>
 
 /* GUI includes: */
@@ -149,4 +149,3 @@ bool UIVMLogViewerDialog::shouldBeMaximized() const
 {
     return gEDataManager->logWindowShouldBeMaximized();
 }
-

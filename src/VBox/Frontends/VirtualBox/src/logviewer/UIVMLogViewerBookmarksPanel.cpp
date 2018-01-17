@@ -26,7 +26,6 @@
 #  include <QFontDatabase>
 # endif
 # include <QLabel>
-# include <QPushButton>
 
 /* GUI includes: */
 # include "QIToolButton.h"
@@ -107,7 +106,7 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
     AssertPtrReturnVoid(m_pBookmarksComboBox);
     mainLayout()->addWidget(m_pDeleteCurrentButton, 0);
 
-    m_pDeleteAllButton = new QPushButton(this);
+    m_pDeleteAllButton = new QIToolButton(this);
     AssertPtrReturnVoid(m_pDeleteAllButton);
     mainLayout()->addWidget(m_pDeleteAllButton, 0);
 
@@ -118,8 +117,7 @@ void UIVMLogViewerBookmarksPanel::prepareConnections()
 {
     connect(m_pBookmarksComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIVMLogViewerBookmarksPanel::sltBookmarkSelected);
-
-    connect(m_pDeleteAllButton, &QPushButton::clicked, this, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks);
+    connect(m_pDeleteAllButton, &QIToolButton::clicked, this, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks);
     connect(m_pDeleteCurrentButton, &QIToolButton::clicked, this, &UIVMLogViewerBookmarksPanel::sltDeleteCurrentBookmark);
 }
 

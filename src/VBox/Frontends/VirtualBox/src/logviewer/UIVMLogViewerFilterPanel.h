@@ -28,7 +28,7 @@ class QComboBox;
 class QFrame;
 class QLabel;
 class QLineEdit;
-class QPushButton;
+class QIToolButton;
 class QRadioButton;
 class UIVMFilterLineEdit;
 
@@ -99,7 +99,7 @@ private:
     QRadioButton        *m_pAndRadioButton;
     QRadioButton        *m_pOrRadioButton;
     QFrame              *m_pRadioButtonContainer;
-    QPushButton         *m_pAddFilterTermButton;
+    QIToolButton        *m_pAddFilterTermButton;
     QStringList          m_filterTermList;
     FilterOperatorButton m_eFilterOperatorButton;
     UIVMFilterLineEdit  *m_pFilterTermsLineEdit;

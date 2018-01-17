@@ -30,13 +30,13 @@
 # include <QLabel>
 # include <QLineEdit>
 # include <QPlainTextEdit>
-# include <QPushButton>
 # include <QTextCursor>
 # include <QToolButton>
 # include <QRadioButton>
 # include <QScrollArea>
 
 /* GUI includes: */
+# include "QIToolButton.h"
 # include "UIIconPool.h"
 # include "UISpecialControls.h"
 # include "UIVMLogViewerFilterPanel.h"
@@ -349,7 +349,7 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
         mainLayout()->addWidget(m_pFilterComboBox,1);
     }
 
-    m_pAddFilterTermButton = new QPushButton(this);
+    m_pAddFilterTermButton = new QIToolButton(this);
     AssertPtrReturnVoid(m_pAddFilterTermButton);
     {
         m_pAddFilterTermButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
@@ -417,7 +417,7 @@ void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
 
 void UIVMLogViewerFilterPanel::prepareConnections()
 {
-    connect(m_pAddFilterTermButton, &QPushButton::clicked, this,  &UIVMLogViewerFilterPanel::sltAddFilterTerm);
+    connect(m_pAddFilterTermButton, &QIToolButton::clicked, this,  &UIVMLogViewerFilterPanel::sltAddFilterTerm);
     connect(m_pButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked),
             this, &UIVMLogViewerFilterPanel::sltOperatorButtonChanged);
     connect(m_pFilterComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
