@@ -5185,6 +5185,13 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 return iemRaiseGeneralProtectionFault0(pVCpu);
             }
 
+            if (   !(uNewCrX & X86_CR0_PG)
+                && (pCtx->cr4 & X86_CR4_PCIDE))
+            {
+                Log(("Trying to clear CR0.PG while leaving CR4.PCID set\n"));
+                return iemRaiseGeneralProtectionFault0(pVCpu);
+            }
+
             /* Long mode consistency checks. */
             if (    (uNewCrX & X86_CR0_PG)
                 && !(uOldCrX & X86_CR0_PG)
@@ -5305,6 +5312,17 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
          *        enabling paging. */
         case 3:
         {
+            /* clear bit 63 from the source operand and indicate no invalidations are required. */
+            if (   (pCtx->cr4 & X86_CR4_PCIDE)
+                && (uNewCrX & RT_BIT_64(63)))
+            {
+                /** @todo r=ramshankar: avoiding a TLB flush altogether here causes Windows 10
+                 *        SMP(w/o nested-paging) to hang during bootup on Skylake systems, see
+                 *        Intel spec. 4.10.4.1 "Operations that Invalidate TLBs and
+                 *        Paging-Structure Caches". */
+                uNewCrX &= ~RT_BIT_64(63);
+            }
+
             /* check / mask the value. */
             if (uNewCrX & UINT64_C(0xfff0000000000000))
             {
@@ -5379,16 +5397,32 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             //    fValid |= X86_CR4_VMXE;
             if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fXSaveRstor)
                 fValid |= X86_CR4_OSXSAVE;
+            if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fPcid)
+                fValid |= X86_CR4_PCIDE;
+            if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fFsGsBase)
+                fValid |= X86_CR4_FSGSBASE;
             if (uNewCrX & ~(uint64_t)fValid)
             {
                 Log(("Trying to set reserved CR4 bits: NewCR4=%#llx InvalidBits=%#llx\n", uNewCrX, uNewCrX & ~(uint64_t)fValid));
                 return iemRaiseGeneralProtectionFault0(pVCpu);
             }
 
-            /* long mode checks. */
-            if (   (uOldCrX & X86_CR4_PAE)
-                && !(uNewCrX & X86_CR4_PAE)
-                && CPUMIsGuestInLongModeEx(pCtx) )
+            bool const fPcide    = ((uNewCrX ^ uOldCrX) & X86_CR4_PCIDE) && (uNewCrX & X86_CR4_PCIDE);
+            bool const fLongMode = CPUMIsGuestInLongModeEx(pCtx);
+
+            /* PCIDE check. */
+            if (   fPcide
+                && (   !fLongMode
+                    || (pCtx->cr3 & UINT64_C(0xfff))))
+            {
+                Log(("Trying to set PCIDE with invalid PCID or outside long mode. Pcid=%#x\n", (pCtx->cr3 & UINT64_C(0xfff))));
+                return iemRaiseGeneralProtectionFault0(pVCpu);
+            }
+
+            /* PAE check. */
+            if (   fLongMode
+                && (uOldCrX & X86_CR4_PAE)
+                && !(uNewCrX & X86_CR4_PAE))
             {
                 Log(("Trying to set clear CR4.PAE while long mode is active\n"));
                 return iemRaiseGeneralProtectionFault0(pVCpu);
@@ -5429,7 +5463,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 }
 
                 /* PGM - flushing and mode. */
-                if ((uNewCrX ^ uOldCrX) & (X86_CR4_PSE | X86_CR4_PAE | X86_CR4_PGE))
+                if ((uNewCrX ^ uOldCrX) & (X86_CR4_PSE | X86_CR4_PAE | X86_CR4_PGE | X86_CR4_PCIDE /* | X86_CR4_SMEP */))
                 {
                     rc = PGMFlushTLB(pVCpu, pCtx->cr3, true /* global */);
                     AssertRCReturn(rc, rc);
@@ -5773,6 +5807,109 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, RTGCPTR, GCPtrPage)
     AssertMsg(rc == VINF_EM_RAW_EMULATE_INSTR || RT_FAILURE_NP(rc), ("%Rrc\n", rc));
     Log(("PGMInvalidatePage(%RGv) -> %Rrc\n", GCPtrPage, rc));
     return rc;
+}
+
+
+/**
+ * Implements INVPCID.
+ *
+ * @param   uInvpcidType         The invalidation type.
+ * @param   GCPtrInvpcidDesc     The effective address of invpcid descriptor.
+ * @remarks Updates the RIP.
+ */
+IEM_CIMPL_DEF_2(iemCImpl_invpcid, uint64_t, uInvpcidType, RTGCPTR, GCPtrInvpcidDesc)
+{
+    /*
+     * Check preconditions.
+     */
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fInvpcid)
+        return iemRaiseUndefinedOpcode(pVCpu);
+    if (pVCpu->iem.s.uCpl != 0)
+    {
+        Log(("invpcid: CPL != 0 -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+    if (IEM_IS_V86_MODE(pVCpu))
+    {
+        Log(("invpcid: v8086 mode -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+    if (uInvpcidType > X86_INVPCID_TYPE_MAX_VALID)
+    {
+        Log(("invpcid: invalid/unrecognized invpcid type %#x -> #GP(0)\n", uInvpcidType));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /*
+     * Fetch the invpcid descriptor from guest memory.
+     */
+    RTUINT128U uDesc;
+    VBOXSTRICTRC rcStrict = iemMemFetchDataU128(pVCpu, &uDesc, pVCpu->iem.s.iEffSeg, GCPtrInvpcidDesc);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        /*
+         * Validate the descriptor.
+         */
+        if (uDesc.s.Lo > 0xfff)
+        {
+            Log(("invpcid: reserved bits set in invpcid descriptor %#RX64 -> #GP(0)\n", uDesc.s.Lo));
+            return iemRaiseGeneralProtectionFault0(pVCpu);
+        }
+
+        RTGCUINTPTR64 const GCPtrInvAddr = uDesc.s.Hi;
+        uint8_t       const uPcid        = uDesc.s.Lo & UINT64_C(0xfff);
+        uint32_t      const uCr4         = IEM_GET_CTX(pVCpu)->cr4;
+        uint64_t      const uCr3         = IEM_GET_CTX(pVCpu)->cr3;
+        switch (uInvpcidType)
+        {
+            case X86_INVPCID_TYPE_INDV_ADDR:
+            {
+                if (!IEM_IS_CANONICAL(GCPtrInvAddr))
+                {
+                    Log(("invpcid: invalidation address %#RGP is not canonical -> #GP(0)\n", GCPtrInvAddr));
+                    return iemRaiseGeneralProtectionFault0(pVCpu);
+                }
+                if (  !(uCr4 & X86_CR4_PCIDE)
+                    && uPcid != 0)
+                {
+                    Log(("invpcid: invalid pcid %#x\n", uPcid));
+                    return iemRaiseGeneralProtectionFault0(pVCpu);
+                }
+
+                /* Invalidate mappings for the linear address tagged with PCID except global translations. */
+                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */);
+                break;
+            }
+
+            case X86_INVPCID_TYPE_SINGLE_CONTEXT:
+            {
+                if (  !(uCr4 & X86_CR4_PCIDE)
+                    && uPcid != 0)
+                {
+                    Log(("invpcid: invalid pcid %#x\n", uPcid));
+                    return iemRaiseGeneralProtectionFault0(pVCpu);
+                }
+                /* Invalidate all mappings associated with PCID except global translations. */
+                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */);
+                break;
+            }
+
+            case X86_INVPCID_TYPE_ALL_CONTEXT_INCL_GLOBAL:
+            {
+                PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
+                break;
+            }
+
+            case X86_INVPCID_TYPE_ALL_CONTEXT_EXCL_GLOBAL:
+            {
+                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */);
+                break;
+            }
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    }
+    return rcStrict;
 }
 
 

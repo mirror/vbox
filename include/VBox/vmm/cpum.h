@@ -1033,6 +1033,12 @@ typedef struct CPUMFEATURES
     uint32_t        fStibp : 1;
     /** Supports IA32_ARCH_CAP. */
     uint32_t        fArchCap : 1;
+    /** Supports PCID. */
+    uint32_t        fPcid : 1;
+    /** Supports INVPCID. */
+    uint32_t        fInvpcid : 1;
+    /** Supports read/write FSGSBASE instructions. */
+    uint32_t        fFsGsBase : 1;
 
     /** Supports AMD 3DNow instructions. */
     uint32_t        f3DNow : 1;
@@ -1066,7 +1072,7 @@ typedef struct CPUMFEATURES
     uint32_t        fVmx : 1;
 
     /** Alignment padding / reserved for future use. */
-    uint32_t        fPadding : 19;
+    uint32_t        fPadding : 16;
 
     /** SVM: Supports Nested-paging. */
     uint32_t        fSvmNestedPaging : 1;
