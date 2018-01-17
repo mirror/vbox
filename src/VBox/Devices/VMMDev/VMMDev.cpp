@@ -3371,6 +3371,12 @@ static DECLCALLBACK(int) vmmdevIPort_SetCredentials(PPDMIVMMDEVPORT pInterface, 
 {
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
     AssertReturn(fFlags & (VMMDEV_SETCREDENTIALS_GUESTLOGON | VMMDEV_SETCREDENTIALS_JUDGE), VERR_INVALID_PARAMETER);
+    size_t const cchUsername = strlen(pszUsername);
+    AssertReturn(cchUsername < VMMDEV_CREDENTIALS_SZ_SIZE, VERR_BUFFER_OVERFLOW);
+    size_t const cchPassword = strlen(pszPassword);
+    AssertReturn(cchPassword < VMMDEV_CREDENTIALS_SZ_SIZE, VERR_BUFFER_OVERFLOW);
+    size_t const cchDomain   = strlen(pszDomain);
+    AssertReturn(cchDomain < VMMDEV_CREDENTIALS_SZ_SIZE, VERR_BUFFER_OVERFLOW);
 
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
@@ -3380,9 +3386,12 @@ static DECLCALLBACK(int) vmmdevIPort_SetCredentials(PPDMIVMMDEVPORT pInterface, 
     if (fFlags & VMMDEV_SETCREDENTIALS_GUESTLOGON)
     {
         /* memorize the data */
-        strcpy(pThis->pCredentials->Logon.szUserName, pszUsername);
-        strcpy(pThis->pCredentials->Logon.szPassword, pszPassword);
-        strcpy(pThis->pCredentials->Logon.szDomain,   pszDomain);
+        memcpy(pThis->pCredentials->Logon.szUserName, pszUsername, cchUsername);
+        pThis->pCredentials->Logon.szUserName[cchUsername] = '\0';
+        memcpy(pThis->pCredentials->Logon.szPassword, pszPassword, cchPassword);
+        pThis->pCredentials->Logon.szPassword[cchPassword] = '\0';
+        memcpy(pThis->pCredentials->Logon.szDomain,   pszDomain, cchDomain);
+        pThis->pCredentials->Logon.szDomain[cchDomain]     = '\0';
         pThis->pCredentials->Logon.fAllowInteractiveLogon = !(fFlags & VMMDEV_SETCREDENTIALS_NOLOCALLOGON);
     }
     /*
@@ -3391,9 +3400,12 @@ static DECLCALLBACK(int) vmmdevIPort_SetCredentials(PPDMIVMMDEVPORT pInterface, 
     else
     {
         /* memorize the data */
-        strcpy(pThis->pCredentials->Judge.szUserName, pszUsername);
-        strcpy(pThis->pCredentials->Judge.szPassword, pszPassword);
-        strcpy(pThis->pCredentials->Judge.szDomain,   pszDomain);
+        memcpy(pThis->pCredentials->Judge.szUserName, pszUsername, cchUsername);
+        pThis->pCredentials->Judge.szUserName[cchUsername] = '\0';
+        memcpy(pThis->pCredentials->Judge.szPassword, pszPassword, cchPassword);
+        pThis->pCredentials->Judge.szPassword[cchPassword] = '\0';
+        memcpy(pThis->pCredentials->Judge.szDomain,   pszDomain,   cchDomain);
+        pThis->pCredentials->Judge.szDomain[cchDomain]     = '\0';
 
         VMMDevNotifyGuest(pThis, VMMDEV_EVENT_JUDGE_CREDENTIALS);
     }
