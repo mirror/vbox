@@ -1380,7 +1380,7 @@ class Session(TdTaskBase):
             cMsTimeout, fIgnoreErrors);
 
     #
-    # Public methods - file system
+    # Public methods - system
     #
 
     def asyncReboot(self, cMsTimeout = 30000, fIgnoreErrors = False):

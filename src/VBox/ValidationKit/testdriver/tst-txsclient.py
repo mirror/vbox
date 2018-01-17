@@ -74,6 +74,7 @@ def main(asArgs): # pylint: disable=C0111,R0914,R0915
     uPort           = None;
     fReversedSetup  = False;
     fReboot         = False;
+    fShutdown       = False;
     fStdTests       = True;
 
     i = 1;
@@ -92,10 +93,17 @@ def main(asArgs): # pylint: disable=C0111,R0914,R0915
             i = i + 2;
         elif asArgs[i] == '--reboot':
             fReboot   = True;
+            fShutdown = False;
+            fStdTests = False;
+            i = i + 1;
+        elif asArgs[i] == '--shutdown':
+            fShutdown = True;
+            fReboot   = False;
             fStdTests = False;
             i = i + 1;
         elif asArgs[i] == '--help':
-            print('tst-txsclient.py [--hostname <addr|name>] [--port <num>] [--timeout <cMS>] [--reboot] [--reversed-setup]');
+            print('tst-txsclient.py [--hostname <addr|name>] [--port <num>] [--timeout <cMS>] '
+                  '[--reboot|--shutdown] [--reversed-setup]');
             return 0;
         else:
             print('Unknown argument: %s' % (asArgs[i]));
@@ -275,6 +283,11 @@ def main(asArgs): # pylint: disable=C0111,R0914,R0915
             print('TESTING: syncReboot...');
             rc = oSession.syncReboot();
             print('%s: REBOOT() -> %s' % (boolRes(rc), rc));
+        elif fShutdown:
+            print('TESTING: syncShutdown...');
+            rc = oSession.syncShutdown();
+            print('%s: SHUTDOWN() -> %s' % (boolRes(rc), rc));
+
 
     if g_cFailures != 0:
         print('tst-txsclient.py: %u out of %u test failed' % (g_cFailures, g_cTests));
