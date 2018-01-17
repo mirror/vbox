@@ -457,6 +457,10 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
             pDrvObj->MajorFunction[IRP_MJ_CLOSE]                   = vgdrvNtClose;
             pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]          = vgdrvNtDeviceControl;
             pDrvObj->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL] = vgdrvNtInternalIOCtl;
+            /** @todo Need to call IoRegisterShutdownNotification or
+             *        IoRegisterLastChanceShutdownNotification, possibly hooking the
+             *        HalReturnToFirmware import in NTOSKRNL on older systems (<= ~NT4) and
+             *        check for power off requests. */
             pDrvObj->MajorFunction[IRP_MJ_SHUTDOWN]                = vgdrvNtShutdown;
             pDrvObj->MajorFunction[IRP_MJ_READ]                    = vgdrvNtNotSupportedStub;
             pDrvObj->MajorFunction[IRP_MJ_WRITE]                   = vgdrvNtNotSupportedStub;
