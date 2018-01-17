@@ -717,10 +717,11 @@ static DECLCALLBACK(int) parallelR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IOBase\" value"));
 
+    int port_count = (pThis->IOBase == 0x3BC) ? 4 : 8;
     /*
      * Register the I/O ports and saved state.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOBase, 8, 0,
+    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOBase, port_count, 0,
                                  parallelIOPortWrite, parallelIOPortRead,
                                  NULL, NULL, "Parallel");
     if (RT_FAILURE(rc))
@@ -737,13 +738,13 @@ static DECLCALLBACK(int) parallelR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     if (pThis->fGCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOBase, 8, 0, "parallelIOPortWrite",
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOBase, port_count, 0, "parallelIOPortWrite",
                                        "parallelIOPortRead", NULL, NULL, "Parallel");
         if (RT_FAILURE(rc))
             return rc;
 
 #if 0
-        rc = PDMDevHlpIOPortRegisterGC(pDevIns, io_base+0x400, 8, 0, "parallelIOPortWriteECP",
+        rc = PDMDevHlpIOPortRegisterGC(pDevIns, io_base+0x400, port_count, 0, "parallelIOPortWriteECP",
                                        "parallelIOPortReadECP", NULL, NULL, "Parallel Ecp");
         if (RT_FAILURE(rc))
             return rc;
@@ -752,7 +753,7 @@ static DECLCALLBACK(int) parallelR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     if (pThis->fR0Enabled)
     {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOBase, 8, 0, "parallelIOPortWrite",
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOBase, port_count, 0, "parallelIOPortWrite",
                                        "parallelIOPortRead", NULL, NULL, "Parallel");
         if (RT_FAILURE(rc))
             return rc;
