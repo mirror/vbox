@@ -505,7 +505,10 @@ class LocalReporter(ReporterBase):
                 sLogText = '%s %s' % (sTsPrf, sText);
 
             # output it.
-            sAscii = sLogText.encode('ascii', 'replace');
+            if sys.version_info[0] >= 3:
+                sAscii = sLogText;
+            else:
+                sAscii = sLogText.encode('ascii', 'replace');
             if self.iDebug == 0:
                 print('%s: %s' % (self.sName, sAscii), file = self.oStdErr);
             else:
@@ -1203,11 +1206,15 @@ class FileWrapperTestPipe(object):
                 traceback.print_exc();
             self.fStarted = True;
 
-        if isinstance(sText, array.array):
-            try:
-                sText = sText.tostring();
-            except:
-                pass;
+        # Turn non-string stuff into strings.
+        if not utils.isString(sText):
+            if isinstance(sText, array.array):
+                try:    sText = sText.tostring();
+                except: pass;
+            if not utils.isString(sText) and hasattr(sText, 'decode'):
+                try:    sText = sText.decode('utf-8', 'ignore');
+                except: pass;
+
         try:
             g_oReporter.subXmlWrite(self, sText, utils.getCallerName());
             # Parse the supplied text and look for <Failed.../> tags to keep track of the

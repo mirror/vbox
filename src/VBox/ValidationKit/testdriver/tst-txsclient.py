@@ -33,7 +33,6 @@ __version__ = "$Revision$"
 # Standard python imports.
 import os
 import sys
-import types
 
 # Validation Kit imports.
 sys.path.insert(0, '.');
@@ -53,7 +52,7 @@ def boolRes(rc, fExpect = True):
     """Checks a boolean result."""
     global g_cTests, g_cFailures;
     g_cTests = g_cTests + 1;
-    if isinstance(rc, types.BooleanType):
+    if isinstance(rc, bool):
         if rc == fExpect:
             return 'PASSED';
     g_cFailures = g_cFailures + 1;

@@ -37,7 +37,6 @@ import socket;
 import sys;
 import threading;
 import time;
-import types;
 import zlib;
 import uuid;
 
@@ -365,7 +364,7 @@ class TransportBase(object):
                         for i in range(0, len(sUtf8)):
                             abPayload.append(ord(sUtf8[i]))
                     abPayload.append(0);
-                elif isinstance(o, types.LongType):
+                elif isinstance(o, long):
                     if o < 0 or o > 0xffffffff:
                         reporter.fatal('sendMsg: uint32_t payload is out of range: %s' % (hex(o)));
                         return None;
@@ -735,7 +734,7 @@ class Session(TdTaskBase):
                 aoPayload.append(o);
             elif o is not None:
                 aoPayload.append('|');
-                o.uTxsClientCrc32 = zlib.crc32('');
+                o.uTxsClientCrc32 = zlib.crc32(b'');
             else:
                 aoPayload.append('');
         aoPayload.append('%s' % (sAsUser));
@@ -1080,7 +1079,7 @@ class Session(TdTaskBase):
             #
             # Push data packets until eof.
             #
-            uMyCrc32 = zlib.crc32("");
+            uMyCrc32 = zlib.crc32(b'');
             while True:
                 # Read up to 64 KB of data.
                 try:
@@ -1146,7 +1145,7 @@ class Session(TdTaskBase):
                 reporter.errorXcpt();
         return rc;
 
-    def taskDownloadString(self, sRemoteFile):
+    def taskDownloadString(self, sRemoteFile, sEncoding = 'utf-8', fIgnoreEncodingErrors = True):
         # Wrap sContent in a file like class.
         class OutStringFile(object): # pylint: disable=R0903
             def __init__(self):
@@ -1159,10 +1158,12 @@ class Session(TdTaskBase):
         oLocalString = OutStringFile();
         rc = self.taskDownloadCommon(sRemoteFile, oLocalString);
         if rc is True:
-            if not oLocalString.asContent:
-                rc = '';
-            else:
-                rc = ''.join(oLocalString.asContent);
+            rc = '';
+            for sBuf in oLocalString.asContent:
+                if hasattr(sBuf, 'decode'):
+                    rc += sBuf.decode(sEncoding, 'ignore' if fIgnoreEncodingErrors else 'strict');
+                else:
+                    rc += sBuf;
         return rc;
 
     def taskDownloadCommon(self, sRemoteFile, oLocalFile):
@@ -1172,7 +1173,7 @@ class Session(TdTaskBase):
             #
             # Process data packets until eof.
             #
-            uMyCrc32 = zlib.crc32("");
+            uMyCrc32 = zlib.crc32(b'');
             while rc is True:
                 cbMsg, sOpcode, abPayload = self.recvReply();
                 if cbMsg is None:
@@ -1609,7 +1610,8 @@ class Session(TdTaskBase):
         """Synchronous version."""
         return self.asyncToSync(self.asyncDownloadFile, sRemoteFile, sLocalFile, cMsTimeout, fIgnoreErrors);
 
-    def asyncDownloadString(self, sRemoteFile, cMsTimeout = 30000, fIgnoreErrors = False):
+    def asyncDownloadString(self, sRemoteFile, sEncoding = 'utf-8', fIgnoreEncodingErrors = True,
+                            cMsTimeout = 30000, fIgnoreErrors = False):
         """
         Initiates a download string task.
 
@@ -1617,11 +1619,14 @@ class Session(TdTaskBase):
 
         The task returns a byte string on success, False on failure (logged).
         """
-        return self.startTask(cMsTimeout, fIgnoreErrors, "downloadString", self.taskDownloadString, (sRemoteFile,));
+        return self.startTask(cMsTimeout, fIgnoreErrors, "downloadString",
+                              self.taskDownloadString, (sRemoteFile, sEncoding, fIgnoreEncodingErrors));
 
-    def syncDownloadString(self, sRemoteFile, cMsTimeout = 30000, fIgnoreErrors = False):
+    def syncDownloadString(self, sRemoteFile, sEncoding = 'utf-8', fIgnoreEncodingErrors = True,
+                           cMsTimeout = 30000, fIgnoreErrors = False):
         """Synchronous version."""
-        return self.asyncToSync(self.asyncDownloadString, sRemoteFile, cMsTimeout, fIgnoreErrors);
+        return self.asyncToSync(self.asyncDownloadString, sRemoteFile, sEncoding, fIgnoreEncodingErrors,
+                                cMsTimeout, fIgnoreErrors);
 
     def asyncUnpackFile(self, sRemoteFile, sRemoteDir, cMsTimeout = 30000, fIgnoreErrors = False):
         """
