@@ -426,12 +426,15 @@
     <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
         <ComponentRef Id="cp_MainCOM_x86" />
     <?endif ?>
-        <ComponentRef Id="cp_MainCOM" />
+    <ComponentRef Id="cp_MainCOM" />
+    <?if $(env.VBOX_WITH_SDS) = "yes" ?>
+        <ComponentRef Id="cp_VBoxSDS" />
+    <?endif ?>
     <?if $(env.VBOX_WITH_MIDL_PROXY_STUB) = "yes" ?>
         <ComponentRef Id="cp_ProxyStub" />
         <ComponentRef Id="cp_ProxyStubLegacy" />
     <?endif?>
-        <ComponentRef Id="cp_MainBinaries" />
+    <ComponentRef Id="cp_MainBinaries" />
     <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
         <ComponentRef Id="cp_QtPlatforms" />
     <?endif ?>
@@ -447,17 +450,12 @@
     <?if $(env.VBOX_WITH_WEBSERVICES) = "yes" ?>
         <ComponentRef Id="cp_VBoxWebService" />
     <?endif ?>
-        <ComponentRef Id="cp_VBoxCAPI" />
-        <ComponentRef Id="cp_VBoxDrv" />
-<?endif ?>
-
-<?if $(env.VBOX_WITH_UNATTENDED) = "yes" ?>
+    <ComponentRef Id="cp_VBoxCAPI" />
+    <?if $(env.VBOX_WITH_UNATTENDED) = "yes" ?>
         <!-- unattended template component -->
         <ComponentRef Id="cp_UnattendedTemplates" />
-<?endif ?>
-
-<?if $(env.VBOX_WITH_SDS) = "yes" ?>
-        <ComponentRef Id="cp_VBoxSDS" />
+    <?endif ?>
+    <ComponentRef Id="cp_VBoxDrv" />
 <?endif ?>
 
         <Feature Id="VBoxUSB" Title="VirtualBox USB Support" Level="1"
