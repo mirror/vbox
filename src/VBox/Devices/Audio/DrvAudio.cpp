@@ -3369,8 +3369,13 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
 
     LogFlowFuncEnter();
 
-    int rc2 = RTCritSectEnter(&pThis->CritSect);
-    AssertRC(rc2);
+    int rc2;
+
+    if (RTCritSectIsInitialized(&pThis->CritSect))
+    {
+        rc2 = RTCritSectEnter(&pThis->CritSect);
+        AssertRC(rc2);
+    }
 
     /*
      * Note: No calls here to the driver below us anymore,
@@ -3426,11 +3431,14 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
         drvAudioCallbackDestroy(pCB);
 #endif
 
-    rc2 = RTCritSectLeave(&pThis->CritSect);
-    AssertRC(rc2);
+    if (RTCritSectIsInitialized(&pThis->CritSect))
+    {
+        rc2 = RTCritSectLeave(&pThis->CritSect);
+        AssertRC(rc2);
 
-    rc2 = RTCritSectDelete(&pThis->CritSect);
-    AssertRC(rc2);
+        rc2 = RTCritSectDelete(&pThis->CritSect);
+        AssertRC(rc2);
+    }
 
 #ifdef VBOX_WITH_STATISTICS
     PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalStreamsActive);
