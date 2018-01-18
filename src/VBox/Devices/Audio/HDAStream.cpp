@@ -132,8 +132,11 @@ void hdaStreamDestroy(PHDASTREAM pStream)
     AssertRC(rc2);
 #endif
 
-    rc2 = RTCritSectDelete(&pStream->State.CritSect);
-    AssertRC(rc2);
+    if (RTCritSectIsInitialized(&pStream->State.CritSect))
+    {
+        rc2 = RTCritSectDelete(&pStream->State.CritSect);
+        AssertRC(rc2);
+    }
 
     if (pStream->State.pCircBuf)
     {
@@ -144,8 +147,11 @@ void hdaStreamDestroy(PHDASTREAM pStream)
     hdaStreamPeriodDestroy(&pStream->State.Period);
 
 #ifdef DEBUG
-    rc2 = RTCritSectDelete(&pStream->Dbg.CritSect);
-    AssertRC(rc2);
+    if (RTCritSectIsInitialized(&pStream->Dbg.CritSect))
+    {
+        rc2 = RTCritSectDelete(&pStream->Dbg.CritSect);
+        AssertRC(rc2);
+    }
 #endif
 
     if (pStream->Dbg.Runtime.fEnabled)
