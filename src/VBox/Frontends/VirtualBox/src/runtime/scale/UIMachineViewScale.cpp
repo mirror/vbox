@@ -61,12 +61,15 @@ UIMachineViewScale::UIMachineViewScale(  UIMachineWindow *pMachineWindow
 
 void UIMachineViewScale::sltPerformGuestScale()
 {
-    /* Adjust frame-buffer scaled-size: */
-    frameBuffer()->setScaledSize(size());
+    /* Assign new frame-buffer logical-size: */
+    QSize scaledSize = size();
+    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+    if (dDevicePixelRatio > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
+        scaledSize *= dDevicePixelRatio;
+    frameBuffer()->setScaledSize(scaledSize);
     frameBuffer()->performRescale();
 
     /* If scaled-size is valid: */
-    const QSize scaledSize = frameBuffer()->scaledSize();
     if (scaledSize.isValid())
     {
         /* Propagate scale-factor to 3D service if necessary: */
