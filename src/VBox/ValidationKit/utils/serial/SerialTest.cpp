@@ -106,7 +106,7 @@ typedef struct SERIALTESTTXRXBUFCNT
     /** Number of bytes left to receive/transmit. */
     size_t                      cbTxRxLeft;
     /** The offset into the buffer to receive to/send from. */
-    uint32_t                    offBuf;
+    size_t                      offBuf;
     /** Maximum size to send/receive before processing is needed again. */
     size_t                      cbTxRxMax;
     /** The data buffer. */
