@@ -45,18 +45,18 @@ UIVMLogViewerSettingsPanel::UIVMLogViewerSettingsPanel(QWidget *pParent, UIVMLog
 
 void UIVMLogViewerSettingsPanel::setShowLineNumbers(bool bShowLineNumbers)
 {
-    if(!m_pLineNumberCheckBox)
+    if (!m_pLineNumberCheckBox)
         return;
-    if(m_pLineNumberCheckBox->isChecked() == bShowLineNumbers)
+    if (m_pLineNumberCheckBox->isChecked() == bShowLineNumbers)
         return;
     m_pLineNumberCheckBox->setChecked(bShowLineNumbers);
 }
 
 void UIVMLogViewerSettingsPanel::setWrapLines(bool bWrapLines)
 {
-    if(!m_pWrapLinesCheckBox)
+    if (!m_pWrapLinesCheckBox)
         return;
-    if(m_pWrapLinesCheckBox->isChecked() == bWrapLines)
+    if (m_pWrapLinesCheckBox->isChecked() == bWrapLines)
         return;
     m_pWrapLinesCheckBox->setChecked(bWrapLines);
 }

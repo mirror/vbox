@@ -207,7 +207,7 @@ void UIVMLogViewerTextEdit::prepareWidgets()
 
 int UIVMLogViewerTextEdit::lineNumberAreaWidth()
 {
-    if(!m_bShowLineNumbers)
+    if (!m_bShowLineNumbers)
         return 0;
 
     int digits = 1;
@@ -224,7 +224,7 @@ int UIVMLogViewerTextEdit::lineNumberAreaWidth()
 
 void UIVMLogViewerTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
 {
-    if(!m_bShowLineNumbers)
+    if (!m_bShowLineNumbers)
         return;
     QPainter painter(m_pLineNumberArea);
     painter.fillRect(event->rect(), Qt::lightGray);
@@ -435,7 +435,7 @@ void UIVMLogViewerTextEdit::setShownTextIsFiltered(bool warning)
 
 void UIVMLogViewerTextEdit::setShowLineNumbers(bool bShowLineNumbers)
 {
-    if(m_bShowLineNumbers == bShowLineNumbers)
+    if (m_bShowLineNumbers == bShowLineNumbers)
         return;
     m_bShowLineNumbers = bShowLineNumbers;
     emit updateRequest(viewport()->rect(), 0);
@@ -443,10 +443,10 @@ void UIVMLogViewerTextEdit::setShowLineNumbers(bool bShowLineNumbers)
 
 void UIVMLogViewerTextEdit::setWrapLines(bool bWrapLines)
 {
-    if(m_bWrapLines == bWrapLines)
+    if (m_bWrapLines == bWrapLines)
         return;
     m_bWrapLines = bWrapLines;
-    if(m_bWrapLines)
+    if (m_bWrapLines)
     {
         setLineWrapMode(QPlainTextEdit::WidgetWidth);
         setWordWrapMode(QTextOption::WordWrap);

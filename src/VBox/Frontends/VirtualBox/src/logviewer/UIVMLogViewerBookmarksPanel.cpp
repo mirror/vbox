@@ -29,6 +29,8 @@
 
 /* GUI includes: */
 # include "QIToolButton.h"
+# include "UIIconPool.h"
+# include "UISpecialControls.h"
 # include "UIVMLogViewerBookmarksPanel.h"
 # include "UIVMLogViewerWidget.h"
 
@@ -36,11 +38,13 @@
 
 
 UIVMLogViewerBookmarksPanel::UIVMLogViewerBookmarksPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
-: UIVMLogViewerPanel(pParent, pViewer)
+    : UIVMLogViewerPanel(pParent, pViewer)
     , m_iMaxBookmarkTextLength(60)
     , m_pBookmarksComboBox(0)
+    , m_pGotoSelectedBookmark(0)
     , m_pDeleteAllButton(0)
     , m_pDeleteCurrentButton(0)
+    , m_pNextPrevButtons(0)
 {
     prepare();
 }
@@ -52,7 +56,7 @@ void UIVMLogViewerBookmarksPanel::updateBookmarkList(const QVector<QPair<int, QS
 
     m_pBookmarksComboBox->clear();
     QStringList bList;
-    bList << "Bookmarks List";
+    bList << "";
     for (int i = 0; i < bookmarkVector.size(); ++i)
     {
         QString strItem = QString("BookMark %1 at Line %2: %3").arg(QString::number(i)).
@@ -66,8 +70,12 @@ void UIVMLogViewerBookmarksPanel::updateBookmarkList(const QVector<QPair<int, QS
         bList << strItem;
     }
     m_pBookmarksComboBox->addItems(bList);
-    /* Goto last item of the combobox: */
+    /* Goto last item of the combobox. Avoid emitting sigBookmarkSelected since we dont want text edit to scroll to there: */
+    disconnect(m_pBookmarksComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+               this, &UIVMLogViewerBookmarksPanel::sltBookmarkSelected);
     m_pBookmarksComboBox->setCurrentIndex(m_pBookmarksComboBox->count()-1);
+    connect(m_pBookmarksComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIVMLogViewerBookmarksPanel::sltBookmarkSelected);
 }
 
 void UIVMLogViewerBookmarksPanel::setBookmarkIndex(int index)
@@ -95,16 +103,32 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
     m_pBookmarksComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
     m_pBookmarksComboBox->setMaximumWidth(fontMetrics.width('a') * (m_iMaxBookmarkTextLength + 2));
     /* Make sure we have 0th item in our combo box. */
-    m_pBookmarksComboBox->insertItem(0, "Bookmarks List");
+    m_pBookmarksComboBox->insertItem(0, "");
+    mainLayout()->addWidget(m_pBookmarksComboBox, 2);
+
+    m_pGotoSelectedBookmark = new QIToolButton(this);
+    AssertPtrReturnVoid(m_pGotoSelectedBookmark);
+    mainLayout()->addWidget(m_pGotoSelectedBookmark, 0);
+    m_pGotoSelectedBookmark->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
 
 
-    mainLayout()->addWidget(m_pBookmarksComboBox, 2/*, Qt::AlignLeft*/);
+    m_pNextPrevButtons = new UIRoundRectSegmentedButton(this, 2);
+    AssertPtrReturnVoid(m_pNextPrevButtons);
+    m_pNextPrevButtons->setEnabled(0, false);
+    m_pNextPrevButtons->setEnabled(1, false);
+#ifndef VBOX_WS_MAC
+    /* No icons on the Mac: */
+    m_pNextPrevButtons->setIcon(0, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
+    m_pNextPrevButtons->setIcon(1, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
+#endif /* !VBOX_WS_MAC */
+    mainLayout()->addWidget(m_pNextPrevButtons);
+    m_pNextPrevButtons->setEnabled(0, true);
+    m_pNextPrevButtons->setEnabled(1, true);
 
     m_pDeleteCurrentButton = new QIToolButton(this);
-    m_pDeleteCurrentButton->setIcon(m_pDeleteCurrentButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
-
-    AssertPtrReturnVoid(m_pBookmarksComboBox);
+    AssertPtrReturnVoid(m_pDeleteCurrentButton);
     mainLayout()->addWidget(m_pDeleteCurrentButton, 0);
+    m_pDeleteCurrentButton->setIcon(m_pDeleteCurrentButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
 
     m_pDeleteAllButton = new QIToolButton(this);
     AssertPtrReturnVoid(m_pDeleteAllButton);
@@ -117,6 +141,10 @@ void UIVMLogViewerBookmarksPanel::prepareConnections()
 {
     connect(m_pBookmarksComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIVMLogViewerBookmarksPanel::sltBookmarkSelected);
+
+    connect(m_pGotoSelectedBookmark, &QIToolButton::clicked, this, &UIVMLogViewerBookmarksPanel::sltGotoSelectedBookmark);
+    connect(m_pNextPrevButtons, &UIRoundRectSegmentedButton::clicked, this, &UIVMLogViewerBookmarksPanel::sltGotoNextPreviousBookmark);
+
     connect(m_pDeleteAllButton, &QIToolButton::clicked, this, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks);
     connect(m_pDeleteCurrentButton, &QIToolButton::clicked, this, &UIVMLogViewerBookmarksPanel::sltDeleteCurrentBookmark);
 }
@@ -126,11 +154,22 @@ void UIVMLogViewerBookmarksPanel::retranslateUi()
 {
     if (m_pDeleteCurrentButton)
         m_pDeleteCurrentButton->setToolTip(UIVMLogViewerWidget::tr("Delete the current bookmark."));
+
     if (m_pDeleteAllButton)
     {
         m_pDeleteAllButton->setToolTip(UIVMLogViewerWidget::tr("Delete all bookmarks."));
         m_pDeleteAllButton->setText(UIVMLogViewerWidget::tr("Delete all"));
     }
+
+    if (m_pNextPrevButtons)
+    {
+        m_pNextPrevButtons->setToolTip(0, UIVMLogViewerWidget::tr("Goto the previous bookmark"));
+        m_pNextPrevButtons->setToolTip(1, UIVMLogViewerWidget::tr("Goto the next bookmark"));
+    }
+
+    if (m_pGotoSelectedBookmark)
+        m_pGotoSelectedBookmark->setToolTip(UIVMLogViewerWidget::tr("Goto selected bookmark."));
+
     UIVMLogViewerPanel::retranslateUi();
 }
 
@@ -149,5 +188,35 @@ void UIVMLogViewerBookmarksPanel::sltBookmarkSelected(int index)
     /* Do nothing if the index is 0, that is combo box title item: */
     if (index <= 0)
         return;
-   emit sigBookmarkSelected(index - 1);
+    emit sigBookmarkSelected(index - 1);
+}
+
+void UIVMLogViewerBookmarksPanel::sltGotoNextPreviousBookmark(int buttonIndex)
+{
+    if (!m_pBookmarksComboBox || m_pBookmarksComboBox->count() <= 1)
+        return;
+
+    /* go to previous bookmark or wrap around to the end of the list: */
+    if (buttonIndex == 0)
+    {
+        if (m_pBookmarksComboBox->currentIndex() <= 1)
+            m_pBookmarksComboBox->setCurrentIndex(m_pBookmarksComboBox->count() - 1);
+        else
+            m_pBookmarksComboBox->setCurrentIndex(m_pBookmarksComboBox->currentIndex() - 1);
+    }
+    /* go to next bookmark or wrap around to the beginning of the list: */
+    else if (buttonIndex == 1)
+    {
+        if (m_pBookmarksComboBox->currentIndex() == m_pBookmarksComboBox->count()-1)
+            m_pBookmarksComboBox->setCurrentIndex(1);
+        else
+            m_pBookmarksComboBox->setCurrentIndex(m_pBookmarksComboBox->currentIndex() + 1);
+    }
+}
+
+void UIVMLogViewerBookmarksPanel::sltGotoSelectedBookmark()
+{
+    if (!m_pBookmarksComboBox || m_pBookmarksComboBox->count() <= 1)
+        return;
+    emit sigBookmarkSelected(m_pBookmarksComboBox->currentIndex() - 1);
 }

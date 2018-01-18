@@ -123,6 +123,11 @@ private:
     int             m_tabIndex;
     /** Stores the bookmarks of the logpage. All other bookmark related containers are updated wrt. this one. */
     QVector<LogBookmark> m_bookmarkVector;
+    use following two variables
+    /** Keeps the index of the selected bookmark. Used especially when moving from one tab to another. */
+    int                  m_iSelectedBookmarkIndex;
+    /** Keeps the scrolled line number. Used when switching between tabs. */
+    int                  m_iScrolledLineNumber;
     /** Designates whether currently displayed text is log text or a filtered version of it. That is
         if m_bFiltered is false than (m_strLog == m_pTextEdit->text()). */
     bool m_bFiltered;

@@ -43,14 +43,6 @@ class UIVMLogViewerPanel;
 class UIVMLogViewerSearchPanel;
 class UIVMLogViewerSettingsPanel;
 
-/* Type definitions: */
-/** value is the content of the log file */
-//typedef QMap<QPlainTextEdit*, QString> VMLogMap;
-/** first is line number, second is block text */
-//typedef QPair<int, QString> LogBookmark;
-/** key is log file name, value is a vector of bookmarks. */
-//typedef QMap<QString, QVector<LogBookmark> > BookmarkMap;
-
 
 /** QWidget extension providing GUI for VirtualBox LogViewer. It
  *  encapsulates log pages, toolbar, a tab widget and manages

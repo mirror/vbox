@@ -135,11 +135,7 @@ void UIVMLogViewerWidget::sltUpdateBookmarkPanel()
 {
     if (!currentLogPage() || !m_pBookmarksPanel)
         return;
-    disconnect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
-            this, &UIVMLogViewerWidget::gotoBookmark);
     m_pBookmarksPanel->updateBookmarkList(currentLogPage()->bookmarkVector());
-    connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
-            this, &UIVMLogViewerWidget::gotoBookmark);
 }
 
 void UIVMLogViewerWidget::gotoBookmark(int bookmarkIndex)

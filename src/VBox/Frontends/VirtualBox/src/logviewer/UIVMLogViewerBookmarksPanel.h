@@ -24,6 +24,7 @@
 /* Forward declarations: */
 class QComboBox;
 class QIToolButton;
+class UIRoundRectSegmentedButton;
 
 /** UIVMLogViewerPanel extension providing GUI for bookmark management. Show a list of bookmarks currently set
   for displayed log page. It has controls to navigate and clear bookmarks. */
@@ -63,6 +64,8 @@ private slots:
 
     void sltDeleteCurrentBookmark();
     void sltBookmarkSelected(int index);
+    void sltGotoNextPreviousBookmark(int buttonIndex);
+    void sltGotoSelectedBookmark();
 
 private:
 
@@ -71,8 +74,10 @@ private:
 
     const int     m_iMaxBookmarkTextLength;
     QComboBox    *m_pBookmarksComboBox;
+    QIToolButton *m_pGotoSelectedBookmark;
     QIToolButton *m_pDeleteAllButton;
     QIToolButton *m_pDeleteCurrentButton;
+    UIRoundRectSegmentedButton *m_pNextPrevButtons;
 };
 
 #endif /* !___UIVMLogViewerBookmarksPanel_h___ */

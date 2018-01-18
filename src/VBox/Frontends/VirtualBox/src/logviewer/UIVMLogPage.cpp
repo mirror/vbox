@@ -42,6 +42,7 @@ UIVMLogPage::UIVMLogPage(QWidget *pParent /* = 0 */, int tabIndex /*= -1 */)
     , m_pMainLayout(0)
     , m_pTextEdit(0)
     , m_tabIndex(tabIndex)
+    , m_iSelectedBookmarkIndex(-1)
     , m_bFiltered(false)
     , m_bShowLineNumbers(true)
     , m_bWrapLines(false)
@@ -142,7 +143,7 @@ const QString& UIVMLogPage::fileName() const
 
 void UIVMLogPage::setTextEdit(const QString &strText)
 {
-    if(!m_pTextEdit)
+    if (!m_pTextEdit)
         return;
 
     m_pTextEdit->setPlainText(strText);
@@ -155,7 +156,7 @@ void UIVMLogPage::setTextEdit(const QString &strText)
 
 void UIVMLogPage::setTextEditAsHtml(const QString &strText)
 {
-    if(!m_pTextEdit)
+    if (!m_pTextEdit)
         return;
     m_pTextEdit->appendHtml(strText);
     repaint();
@@ -163,7 +164,7 @@ void UIVMLogPage::setTextEditAsHtml(const QString &strText)
 
 void UIVMLogPage::markForError()
 {
-    if(!m_pTextEdit)
+    if (!m_pTextEdit)
         return;
     m_pTextEdit->setWrapLines(true);
 }
@@ -241,7 +242,7 @@ const QVector<LogBookmark>& UIVMLogPage::bookmarkVector() const
 
 void UIVMLogPage::showEvent(QShowEvent *pEvent)
 {
-    if(m_pTextEdit)
+    if (m_pTextEdit)
         m_pTextEdit->setFocus();
     QWidget::showEvent(pEvent);
 }
@@ -292,20 +293,20 @@ void UIVMLogPage::setFiltered(bool filtered)
 
 void UIVMLogPage::setShowLineNumbers(bool bShowLineNumbers)
 {
-    if(m_bShowLineNumbers == bShowLineNumbers)
+    if (m_bShowLineNumbers == bShowLineNumbers)
         return;
     m_bShowLineNumbers = bShowLineNumbers;
-    if(m_pTextEdit)
+    if (m_pTextEdit)
         m_pTextEdit->setShowLineNumbers(m_bShowLineNumbers);
     update();
 }
 
 void UIVMLogPage::setWrapLines(bool bWrapLines)
 {
-    if(m_bWrapLines == bWrapLines)
+    if (m_bWrapLines == bWrapLines)
         return;
     m_bWrapLines = bWrapLines;
-    if(m_pTextEdit)
+    if (m_pTextEdit)
         m_pTextEdit->setWrapLines(m_bWrapLines);
     update();
 }
