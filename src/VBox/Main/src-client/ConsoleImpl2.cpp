@@ -4953,7 +4953,7 @@ int Console::i_configNetwork(const char *pszDevice,
                 rc = VINF_SUCCESS;
             AssertLogRelRCReturn(rc, rc);
 
-            /* nuke anything which might have been left behind. */
+            /* Nuke anything which might have been left behind. */
             CFGMR3RemoveNode(CFGMR3GetChildF(pInst, "LUN#%u", uLun));
         }
 
@@ -4968,10 +4968,8 @@ int Console::i_configNetwork(const char *pszDevice,
         }
 #endif /* VBOX_WITH_NETSHAPER */
 
-        Utf8Str strNetDriver;
-
-
-        InsertConfigNode(pInst, "LUN#0", &pLunL0);
+        AssertMsg(uLun == 0, ("Network attachments with LUN > 0 are not supported yet\n"));
+        CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%u", uLun);
 
 #ifdef VBOX_WITH_NETSHAPER
         if (!strBwGroup.isEmpty())
