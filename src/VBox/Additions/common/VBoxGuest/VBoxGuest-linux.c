@@ -1072,7 +1072,11 @@ bool VGDrvNativeProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, con
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 
 /** log and dbg_log parameter setter. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+static int vgdrvLinuxParamLogGrpSet(const char *pszValue, const struct kernel_param *pParam)
+#else
 static int vgdrvLinuxParamLogGrpSet(const char *pszValue, struct kernel_param *pParam)
+#endif
 {
     if (g_fLoggerCreated)
     {
@@ -1087,7 +1091,11 @@ static int vgdrvLinuxParamLogGrpSet(const char *pszValue, struct kernel_param *p
 }
 
 /** log and dbg_log parameter getter. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+static int vgdrvLinuxParamLogGrpGet(char *pszBuf, const struct kernel_param *pParam)
+#else
 static int vgdrvLinuxParamLogGrpGet(char *pszBuf, struct kernel_param *pParam)
+#endif
 {
     PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelGetDefaultInstance();
     *pszBuf = '\0';
@@ -1098,7 +1106,11 @@ static int vgdrvLinuxParamLogGrpGet(char *pszBuf, struct kernel_param *pParam)
 
 
 /** log and dbg_log_flags parameter setter. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+static int vgdrvLinuxParamLogFlagsSet(const char *pszValue, const struct kernel_param *pParam)
+#else
 static int vgdrvLinuxParamLogFlagsSet(const char *pszValue, struct kernel_param *pParam)
+#endif
 {
     if (g_fLoggerCreated)
     {
@@ -1112,7 +1124,11 @@ static int vgdrvLinuxParamLogFlagsSet(const char *pszValue, struct kernel_param 
 }
 
 /** log and dbg_log_flags parameter getter. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+static int vgdrvLinuxParamLogFlagsGet(char *pszBuf, const struct kernel_param *pParam)
+#else
 static int vgdrvLinuxParamLogFlagsGet(char *pszBuf, struct kernel_param *pParam)
+#endif
 {
     PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelGetDefaultInstance();
     *pszBuf = '\0';
@@ -1123,7 +1139,11 @@ static int vgdrvLinuxParamLogFlagsGet(char *pszBuf, struct kernel_param *pParam)
 
 
 /** log and dbg_log_dest parameter setter. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+static int vgdrvLinuxParamLogDstSet(const char *pszValue, const struct kernel_param *pParam)
+#else
 static int vgdrvLinuxParamLogDstSet(const char *pszValue, struct kernel_param *pParam)
+#endif
 {
     if (g_fLoggerCreated)
     {
@@ -1137,7 +1157,11 @@ static int vgdrvLinuxParamLogDstSet(const char *pszValue, struct kernel_param *p
 }
 
 /** log and dbg_log_dest parameter getter. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+static int vgdrvLinuxParamLogDstGet(char *pszBuf, const struct kernel_param *pParam)
+#else
 static int vgdrvLinuxParamLogDstGet(char *pszBuf, struct kernel_param *pParam)
+#endif
 {
     PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelGetDefaultInstance();
     *pszBuf = '\0';
@@ -1148,14 +1172,22 @@ static int vgdrvLinuxParamLogDstGet(char *pszBuf, struct kernel_param *pParam)
 
 
 /** r3_log_to_host parameter setter. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+static int vgdrvLinuxParamR3LogToHostSet(const char *pszValue, const struct kernel_param *pParam)
+#else
 static int vgdrvLinuxParamR3LogToHostSet(const char *pszValue, struct kernel_param *pParam)
+#endif
 {
     g_DevExt.fLoggingEnabled = VBDrvCommonIsOptionValueTrue(pszValue);
     return 0;
 }
 
 /** r3_log_to_host parameter getter. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+static int vgdrvLinuxParamR3LogToHostGet(char *pszBuf, const struct kernel_param *pParam)
+#else
 static int vgdrvLinuxParamR3LogToHostGet(char *pszBuf, struct kernel_param *pParam)
+#endif
 {
     strcpy(pszBuf, g_DevExt.fLoggingEnabled ? "enabled" : "disabled");
     return strlen(pszBuf);
