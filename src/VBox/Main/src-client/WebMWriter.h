@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -90,8 +90,11 @@ class WebMWriter : public EBMLWriter
 
 public:
 
-    /** Defines a WebM timecode. */
-    typedef uint16_t WebMTimecode;
+    /** Defines an absolute WebM timecode (Block + Cluster). */
+    typedef uint64_t WebMTimecodeAbs;
+
+    /** Defines a relative WebM timecode (Block). */
+    typedef uint16_t WebMTimecodeRel;
 
     /** Defines the WebM block flags data type. */
     typedef uint8_t  WebMBlockFlags;
@@ -139,12 +142,12 @@ public:
     struct WebMSimpleBlock
     {
         WebMSimpleBlock(WebMTrack *a_pTrack,
-                        WebMTimecode a_tcPTSMs, const void *a_pvData, size_t a_cbData, WebMBlockFlags a_fFlags)
+                        WebMTimecodeAbs a_tcAbsPTSMs, const void *a_pvData, size_t a_cbData, WebMBlockFlags a_fFlags)
             : pTrack(a_pTrack)
         {
-            Data.tcPTSMs = a_tcPTSMs;
-            Data.cb      = a_cbData;
-            Data.fFlags  = a_fFlags;
+            Data.tcAbsPTSMs = a_tcAbsPTSMs;
+            Data.cb         = a_cbData;
+            Data.fFlags     = a_fFlags;
 
             if (Data.cb)
             {
@@ -168,8 +171,8 @@ public:
         /** Actual simple block data. */
         struct
         {
-            WebMTimecode   tcPTSMs;
-            WebMTimecode   tcRelToClusterMs;
+            WebMTimecodeAbs tcAbsPTSMs;
+            WebMTimecodeRel tcRelToClusterMs;
             void          *pv;
             size_t         cb;
             WebMBlockFlags fFlags;
@@ -211,7 +214,7 @@ public:
     /** A block map containing all currently queued blocks.
      *  The key specifies a unique timecode, whereas the value
      *  is a queue of blocks which all correlate to the key (timecode). */
-    typedef std::map<WebMTimecode, WebMTimecodeBlocks> WebMBlockMap;
+    typedef std::map<WebMTimecodeAbs, WebMTimecodeBlocks> WebMBlockMap;
 
     /**
      * Structure for defining a WebM (encoding) queue.
@@ -219,15 +222,15 @@ public:
     struct WebMQueue
     {
         WebMQueue(void)
-            : tcLastBlockWrittenMs(0)
-            , tslastProcessedMs(0) { }
+            : tcAbsLastBlockWrittenMs(0)
+            , tsLastProcessedMs(0) { }
 
         /** Blocks as FIFO (queue). */
-        WebMBlockMap Map;
-        /** Timecode (in ms) of last written block to queue. */
-        WebMTimecode tcLastBlockWrittenMs;
+        WebMBlockMap    Map;
+        /** Absolute timecode (in ms) of last written block to queue. */
+        WebMTimecodeAbs tcAbsLastBlockWrittenMs;
         /** Time stamp (in ms) of when the queue was processed last. */
-        uint64_t     tslastProcessedMs;
+        uint64_t        tsLastProcessedMs;
     };
 
     /**
@@ -240,7 +243,7 @@ public:
             , uTrack(a_uTrack)
             , offUUID(a_offID)
             , cTotalBlocks(0)
-            , tcLastWrittenMs(0)
+            , tcAbsLastWrittenMs(0)
         {
             uUUID = RTRandU32();
         }
@@ -280,8 +283,8 @@ public:
         uint64_t            offUUID;
         /** Total number of blocks. */
         uint64_t            cTotalBlocks;
-        /** Timecode (in ms) of last write. */
-        WebMTimecode        tcLastWrittenMs;
+        /** Absoute timecode (in ms) of last write. */
+        WebMTimecodeAbs     tcAbsLastWrittenMs;
     };
 
     /**
@@ -289,16 +292,16 @@ public:
      */
     struct WebMCuePoint
     {
-        WebMCuePoint(WebMTrack *a_pTrack, uint64_t a_offCluster, WebMTimecode a_tcAbs)
+        WebMCuePoint(WebMTrack *a_pTrack, uint64_t a_offCluster, WebMTimecodeAbs a_tcAbs)
             : pTrack(a_pTrack)
             , offCluster(a_offCluster), tcAbs(a_tcAbs) { }
 
         /** Associated track. */
-        WebMTrack   *pTrack;
+        WebMTrack      *pTrack;
         /** Offset (in bytes) of the related cluster containing the given position. */
-        uint64_t     offCluster;
-        /** Time code (absolute) of this cue point. */
-        WebMTimecode tcAbs;
+        uint64_t        offCluster;
+        /** Absolute time code according to the segment time base. */
+        WebMTimecodeAbs tcAbs;
     };
 
     /**
@@ -310,20 +313,20 @@ public:
             : uID(0)
             , offStart(0)
             , fOpen(false)
-            , tcStartMs(0)
+            , tcAbsStartMs(0)
             , cBlocks(0) { }
 
         /** This cluster's ID. */
-        uint64_t      uID;
+        uint64_t        uID;
         /** Absolute offset (in bytes) of this cluster.
          *  Needed for seeking info table. */
-        uint64_t      offStart;
+        uint64_t        offStart;
         /** Whether this cluster element is opened currently. */
-        bool          fOpen;
-        /** Timecode (in ms) when this cluster starts. */
-        WebMTimecode  tcStartMs;
+        bool            fOpen;
+        /** Absolute timecode (in ms) when this cluster starts. */
+        WebMTimecodeAbs tcAbsStartMs;
         /** Number of (simple) blocks in this cluster. */
-        uint64_t      cBlocks;
+        uint64_t        cBlocks;
     };
 
     /**
@@ -334,8 +337,8 @@ public:
     struct WebMSegment
     {
         WebMSegment(void)
-            : tcStartMs(0)
-            , tcLastWrittenMs(0)
+            : tcAbsStartMs(0)
+            , tcAbsLastWrittenMs(0)
             , offStart(0)
             , offInfo(0)
             , offSeekInfo(0)
@@ -363,10 +366,10 @@ public:
         /** The timecode scale factor of this segment. */
         uint64_t                        uTimecodeScaleFactor;
 
-        /** Timecode (in ms) when starting this segment. */
-        WebMTimecode                    tcStartMs;
-        /** Timecode (in ms) of last write. */
-        WebMTimecode                    tcLastWrittenMs;
+        /** Absolute timecode (in ms) when starting this segment. */
+        WebMTimecodeAbs                 tcAbsStartMs;
+        /** Absolute timecode (in ms) of last write. */
+        WebMTimecodeAbs                 tcAbsLastWrittenMs;
 
         /** Absolute offset (in bytes) of CurSeg. */
         uint64_t                        offStart;
@@ -406,7 +409,7 @@ public:
     /** Whether we're currently in the tracks section. */
     bool                        m_fInTracksSection;
 
-    /** Size of timecodes in bytes. */
+    /** Size of timecodes (in bytes). */
     size_t                      m_cbTimecode;
     /** Maximum value a timecode can have. */
     uint32_t                    m_uTimecodeMax;
@@ -473,7 +476,7 @@ protected:
 
     int writeHeader(void);
 
-    void writeSegSeekInfo(void);
+    void writeSeekHeader(void);
 
     int writeFooter(void);
 
@@ -486,7 +489,7 @@ protected:
 #endif
 
 #ifdef VBOX_WITH_LIBOPUS
-    int writeSimpleBlockOpus(WebMTrack *a_pTrack, const void *pvData, size_t cbData, WebMTimecode uPTSMs);
+    int writeSimpleBlockOpus(WebMTrack *a_pTrack, const void *pvData, size_t cbData, WebMTimecodeAbs tcAbsPTSMs);
 #endif
 
     int processQueues(WebMQueue *pQueue, bool fForce);
