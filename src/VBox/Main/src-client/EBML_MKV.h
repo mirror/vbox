@@ -69,6 +69,7 @@ enum MkvElem
     MkvElem_Video                   = 0xE0,
     MkvElem_PixelWidth              = 0xB0,
     MkvElem_PixelHeight             = 0xBA,
+    MkvElem_FrameRate               = 0x2383E3,
 
     MkvElem_Audio                   = 0xE1,
     MkvElem_SamplingFrequency       = 0xB5,
