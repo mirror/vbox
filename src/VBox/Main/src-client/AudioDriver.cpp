@@ -280,7 +280,10 @@ int AudioDriver::configure(unsigned uLUN, bool fAttach)
     PCFGMNODE pDev0   = CFGMR3GetChildF(pRoot, "Devices/%s/%u/", mCfg.strDev.c_str(), mCfg.uInst);
 
     if (!pDev0) /* No audio device configured? Bail out. */
+    {
+        LogRel2(("%s: No audio device configured, skipping to attach driver\n", mCfg.strName.c_str()));
         return VINF_SUCCESS;
+    }
 
     PCFGMNODE pDevLun = CFGMR3GetChildF(pDev0, "LUN#%u/", uLUN);
 
