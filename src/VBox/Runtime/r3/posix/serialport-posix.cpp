@@ -217,7 +217,7 @@ static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
     pThis->PortCfg.c_iflag = INPCK; /* Input parity checking. */
     cfsetispeed(&pThis->PortCfg, B9600);
     cfsetospeed(&pThis->PortCfg, B9600);
-    pThis->PortCfg.c_cflag = CS8 | CLOCAL; /* 8 data bits, ignore modem control lines. */
+    pThis->PortCfg.c_cflag |= CS8 | CLOCAL; /* 8 data bits, ignore modem control lines. */
     if (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_READ)
         pThis->PortCfg.c_cflag |= CREAD;   /* Enable receiver. */
 
@@ -269,11 +269,12 @@ static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
  * Converts the given serial port config to the appropriate termios counterpart.
  *
  * @returns IPRT status code.
+ * @param   pThis                   The internal serial port instance data.
  * @param   pCfg                    Pointer to the serial port config descriptor.
  * @param   pTermios                Pointer to the termios structure to fill.
  * @param   pErrInfo                Additional error to be set when the conversion fails.
  */
-static int rtSerialPortCfg2Termios(PCRTSERIALPORTCFG pCfg, struct termios *pTermios, PRTERRINFO pErrInfo)
+static int rtSerialPortCfg2Termios(PRTSERIALPORTINTERNAL pThis, PCRTSERIALPORTCFG pCfg, struct termios *pTermios, PRTERRINFO pErrInfo)
 {
     RT_NOREF(pErrInfo); /** @todo Make use of the error info. */
     speed_t enmSpeed = rtSerialPortGetTermiosSpeedFromBaudrate(pCfg->uBaudRate);
@@ -350,7 +351,15 @@ static int rtSerialPortCfg2Termios(PCRTSERIALPORTCFG pCfg, struct termios *pTerm
         }
 
         /* Assign new flags. */
+        if (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_READ)
+            pTermios->c_cflag |= CREAD;   /* Enable receiver. */
         pTermios->c_cflag = (pTermios->c_cflag & ~fCFlagMask) | fCFlagNew;
+        pTermios->c_lflag &= ~(ICANON | ECHO | ECHOE | ECHONL | ECHOK | ISIG | IEXTEN);
+        pTermios->c_iflag = INPCK; /* Input parity checking. */
+        pTermios->c_cc[VMIN]  = 0; /* Achieve non-blocking behavior. */
+        pTermios->c_cc[VTIME] = 0;
+        cfsetispeed(pTermios, enmSpeed);
+        cfsetospeed(pTermios, enmSpeed);
     }
     else
         return VERR_SERIALPORT_INVALID_BAUDRATE;
@@ -636,7 +645,7 @@ RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAdd
     PRTSERIALPORTINTERNAL pThis = (PRTSERIALPORTINTERNAL)RTMemAllocZ(sizeof(*pThis));
     if (pThis)
     {
-        int fPsxFlags = O_NOCTTY;
+        int fPsxFlags = O_NOCTTY | O_NONBLOCK;
 
         if ((fFlags & RTSERIALPORT_OPEN_F_READ) && !(fFlags & RTSERIALPORT_OPEN_F_WRITE))
             fPsxFlags |= O_RDONLY;
@@ -823,25 +832,31 @@ RTDECL(int) RTSerialPortCfgSet(RTSERIALPORT hSerialPort, PCRTSERIALPORTCFG pCfg,
     AssertReturn(pThis->u32Magic == RTSERIALPORT_MAGIC, VERR_INVALID_HANDLE);
 
     struct termios PortCfgNew; RT_ZERO(PortCfgNew);
-    int rc = rtSerialPortCfg2Termios(pCfg, &PortCfgNew, pErrInfo);
+    int rc = rtSerialPortCfg2Termios(pThis, pCfg, &PortCfgNew, pErrInfo);
     if (RT_SUCCESS(rc))
     {
-        int rcPsx = tcsetattr(pThis->iFd, TCSANOW, &PortCfgNew);
-        if (rcPsx == -1)
-            rc = RTErrConvertFromErrno(errno);
-        else
-            memcpy(&pThis->PortCfg, &PortCfgNew, sizeof(struct termios));
+        int rcPsx = tcflush(pThis->iFd, TCIOFLUSH);
+        if (!rcPsx)
+        {
+            rcPsx = tcsetattr(pThis->iFd, TCSANOW, &PortCfgNew);
+            if (rcPsx == -1)
+                rc = RTErrConvertFromErrno(errno);
+            else
+                memcpy(&pThis->PortCfg, &PortCfgNew, sizeof(struct termios));
 
 #ifdef RT_OS_LINUX
-        /*
-         * XXX In Linux, if a thread calls tcsetattr while the monitor thread is
-         * waiting in ioctl for a modem status change then 8250.c wrongly disables
-         * modem irqs and so the monitor thread never gets released. The workaround
-         * is to send a signal after each tcsetattr.
-         */
-        if (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING)
-            RTThreadPoke(pThis->hMonThrd);
+            /*
+             * XXX In Linux, if a thread calls tcsetattr while the monitor thread is
+             * waiting in ioctl for a modem status change then 8250.c wrongly disables
+             * modem irqs and so the monitor thread never gets released. The workaround
+             * is to send a signal after each tcsetattr.
+             */
+            if (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING)
+                RTThreadPoke(pThis->hMonThrd);
 #endif
+        }
+        else
+            rc = RTErrConvertFromErrno(errno);
     }
 
     return rc;
