@@ -1108,7 +1108,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
                     break;
                 }
 
-                LogRel(("VideoRec: Recording screen #%u with %RU32x%RU32 @ %RU32 kbps, %u FPS\n",
+                LogRel(("VideoRec: Recording screen #%u with %RU32x%RU32 @ %RU32 kbps, %RU32 FPS\n",
                         uScreen, pCfg->Video.uWidth, pCfg->Video.uHeight, pCfg->Video.uRate, pCfg->Video.uFPS));
             }
 
