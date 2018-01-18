@@ -202,7 +202,9 @@ int WebMWriter::AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits, ui
     if (RT_FAILURE(rc))
         return rc;
 
-    const uint8_t uTrack = (uint8_t)CurSeg.mapTracks.size();
+    /* Some players (e.g. Firefox with Nestegg) rely on track numbers starting at 1.
+     * Using a track number 0 will show those files as being corrupted. */
+    const uint8_t uTrack = (uint8_t)CurSeg.mapTracks.size() + 1;
 
     subStart(MkvElem_TrackEntry);
 
@@ -252,15 +254,15 @@ int WebMWriter::AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits, ui
  * @returns IPRT status code.
  * @param   uWidth              Width (in pixels) of the video track.
  * @param   uHeight             Height (in pixels) of the video track.
- * @param   dbFPS               FPS (Frames Per Second) of the video track.
+ * @param   uFPS                FPS (Frames Per Second) of the video track.
  * @param   puTrack             Track number of the added video track on success. Optional.
  */
-int WebMWriter::AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS, uint8_t *puTrack)
+int WebMWriter::AddVideoTrack(uint16_t uWidth, uint16_t uHeight, uint32_t uFPS, uint8_t *puTrack)
 {
 #ifdef VBOX_WITH_LIBVPX
-    RT_NOREF(dbFPS);
-
-    const uint8_t uTrack = (uint8_t)CurSeg.mapTracks.size();
+    /* Some players (e.g. Firefox with Nestegg) rely on track numbers starting at 1.
+     * Using a track number 0 will show those files as being corrupted. */
+    const uint8_t uTrack = (uint8_t)CurSeg.mapTracks.size() + 1;
 
     subStart(MkvElem_TrackEntry);
 
@@ -277,6 +279,9 @@ int WebMWriter::AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS, u
           .subStart(MkvElem_Video)
               .serializeUnsignedInteger(MkvElem_PixelWidth,  uWidth)
               .serializeUnsignedInteger(MkvElem_PixelHeight, uHeight)
+              /* Some players rely on the FPS rate for timing calculations.
+               * So make sure to *always* include that. */
+              .serializeFloat          (MkvElem_FrameRate,   (float)uFPS)
           .subEnd(MkvElem_Video);
 
     subEnd(MkvElem_TrackEntry);
@@ -666,8 +671,15 @@ int WebMWriter::processQueues(WebMQueue *pQueue, bool fForce)
                 AssertMsg(Cluster.tcAbsStartMs, ("[C%RU64] @ %RU64 starting timecode is 0 which is invalid\n",
                                                  Cluster.uID, Cluster.offStart));
 
-            Log2Func(("[C%RU64] Start @ %RU64ms (mapAbsPTSMs %RU64ms) / %RU64 bytes\n",
-                      Cluster.uID, Cluster.tcAbsStartMs, mapAbsPTSMs, Cluster.offStart));
+            WebMTracks::iterator itTrack = CurSeg.mapTracks.begin();
+            while (itTrack != CurSeg.mapTracks.end())
+            {
+                /* Insert cue points for all tracks if a new cluster has been started. */
+                WebMCuePoint cue(itTrack->second /* pTrack */, Cluster.offStart, Cluster.tcAbsStartMs);
+                CurSeg.lstCues.push_back(cue);
+
+                ++itTrack;
+            }
 
             subStart(MkvElem_Cluster)
                 .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcAbsStartMs);
@@ -701,8 +713,10 @@ int WebMWriter::processQueues(WebMQueue *pQueue, bool fForce)
             if (CurSeg.tcAbsLastWrittenMs < pTrack->tcAbsLastWrittenMs)
                 CurSeg.tcAbsLastWrittenMs = pTrack->tcAbsLastWrittenMs;
 
-            /* Save a cue point if this is a keyframe. */
-            if (pBlock->Data.fFlags & VBOX_WEBM_BLOCK_FLAG_KEY_FRAME)
+            /* Save a cue point if this is a keyframe (if no new cluster has been started,
+             * as this implies that a cue point already is present. */
+            if (   !fClusterStart
+                && (pBlock->Data.fFlags & VBOX_WEBM_BLOCK_FLAG_KEY_FRAME))
             {
                 WebMCuePoint cue(pBlock->pTrack, Cluster.offStart, Cluster.tcAbsStartMs);
                 CurSeg.lstCues.push_back(cue);
