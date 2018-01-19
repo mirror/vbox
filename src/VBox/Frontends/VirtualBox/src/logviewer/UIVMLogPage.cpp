@@ -336,11 +336,11 @@ int  UIVMLogPage::unfilteredLineCount() const
 bool UIVMLogPage::shouldFilterBeApplied(const QSet<QString> &filterTermSet, int filterOperationType) const
 {
     /* If filter terms set is different reapply the filter. */
-    if(filterTermSet != m_filterTermSet)
+    if (filterTermSet != m_filterTermSet)
         return true;
 
     /* If filter operation type set is different reapply the filter. */
-    if(filterOperationType != m_filterOperationType)
+    if (filterOperationType != m_filterOperationType)
         return true;
     return false;
 }

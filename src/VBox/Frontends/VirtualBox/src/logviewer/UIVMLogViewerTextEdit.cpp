@@ -315,7 +315,7 @@ void UIVMLogViewerTextEdit::paintEvent(QPaintEvent *pEvent)
 void UIVMLogViewerTextEdit::resizeEvent(QResizeEvent *pEvent)
 {
     QPlainTextEdit::resizeEvent(pEvent);
-    if(m_pLineNumberArea)
+    if (m_pLineNumberArea)
     {
         QRect cr = contentsRect();
         m_pLineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
@@ -325,7 +325,7 @@ void UIVMLogViewerTextEdit::resizeEvent(QResizeEvent *pEvent)
 void UIVMLogViewerTextEdit::mouseMoveEvent(QMouseEvent *pEvent)
 {
     setMouseCursorLine(lineNumberForPos(pEvent->pos()));
-    if(m_pLineNumberArea)
+    if (m_pLineNumberArea)
         m_pLineNumberArea->repaint();
     QPlainTextEdit::mouseMoveEvent(pEvent);
 }
@@ -472,20 +472,20 @@ void UIVMLogViewerTextEdit::setWrapLines(bool bWrapLines)
 
 int  UIVMLogViewerTextEdit::currentVerticalScrollBarValue() const
 {
-    if(!verticalScrollBar())
+    if (!verticalScrollBar())
         return -1;
     return verticalScrollBar()->value();
 }
+
 void UIVMLogViewerTextEdit::setCurrentVerticalScrollBarValue(int value)
 {
-    if(!verticalScrollBar())
+    if (!verticalScrollBar())
         return;
 
     setCenterOnScroll(true);
 
     verticalScrollBar()->setValue(value);
     verticalScrollBar()->setSliderPosition(value);
-    printf("value %d\n", value);
     viewport()->update();
     update();
 }

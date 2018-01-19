@@ -206,11 +206,11 @@ void UIVMLogViewerFilterPanel::filter()
         return;
 
     UIVMLogPage *logPage = viewer()->currentLogPage();
-    if(!logPage)
+    if (!logPage)
         return;
     /* Check if we have to reapply the filter. If not
        restore line counts etc. and return */
-    if(!logPage->shouldFilterBeApplied(m_filterTermSet, (int)m_eFilterOperatorButton))
+    if (!logPage->shouldFilterBeApplied(m_filterTermSet, (int)m_eFilterOperatorButton))
     {
         m_iFilteredLineCount = logPage->filteredLineCount();
         m_iUnfilteredLineCount = logPage->unfilteredLineCount();
