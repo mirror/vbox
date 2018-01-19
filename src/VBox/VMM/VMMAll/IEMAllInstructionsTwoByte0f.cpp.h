@@ -6998,7 +6998,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_rdfsbase, uint8_t, bRm)
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
         IEM_MC_ARG(uint64_t, u64Dst, 0);
         IEM_MC_FETCH_SREG_BASE_U64(u64Dst, X86_SREG_FS);
-        IEM_MC_STORE_GREG_U64(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg, u64Dst);
+        IEM_MC_STORE_GREG_U64((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, u64Dst);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -7008,7 +7008,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_rdfsbase, uint8_t, bRm)
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
         IEM_MC_ARG(uint32_t, u32Dst, 0);
         IEM_MC_FETCH_SREG_BASE_U32(u32Dst, X86_SREG_FS);
-        IEM_MC_STORE_GREG_U32(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg, u32Dst);
+        IEM_MC_STORE_GREG_U32((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, u32Dst);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -7026,7 +7026,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_rdgsbase, uint8_t, bRm)
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
         IEM_MC_ARG(uint64_t, u64Dst, 0);
         IEM_MC_FETCH_SREG_BASE_U64(u64Dst, X86_SREG_GS);
-        IEM_MC_STORE_GREG_U64(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg, u64Dst);
+        IEM_MC_STORE_GREG_U64((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, u64Dst);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -7036,7 +7036,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_rdgsbase, uint8_t, bRm)
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
         IEM_MC_ARG(uint32_t, u32Dst, 0);
         IEM_MC_FETCH_SREG_BASE_U32(u32Dst, X86_SREG_GS);
-        IEM_MC_STORE_GREG_U32(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg, u32Dst);
+        IEM_MC_STORE_GREG_U32((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, u32Dst);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -7053,7 +7053,8 @@ FNIEMOP_DEF_1(iemOp_Grp15_wrfsbase, uint8_t, bRm)
         IEM_MC_BEGIN(1, 0);
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
         IEM_MC_ARG(uint64_t, u64Dst, 0);
-        IEM_MC_FETCH_GREG_U64(u64Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_FETCH_GREG_U64(u64Dst, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+        IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0(u64Dst);
         IEM_MC_STORE_SREG_BASE_U64(X86_SREG_FS, u64Dst);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
@@ -7063,7 +7064,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_wrfsbase, uint8_t, bRm)
         IEM_MC_BEGIN(1, 0);
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
         IEM_MC_ARG(uint32_t, u32Dst, 0);
-        IEM_MC_FETCH_GREG_U32(u32Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_FETCH_GREG_U32(u32Dst, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
         IEM_MC_STORE_SREG_BASE_U64(X86_SREG_FS, u32Dst);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
@@ -7081,7 +7082,8 @@ FNIEMOP_DEF_1(iemOp_Grp15_wrgsbase, uint8_t, bRm)
         IEM_MC_BEGIN(1, 0);
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
         IEM_MC_ARG(uint64_t, u64Dst, 0);
-        IEM_MC_FETCH_GREG_U64(u64Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_FETCH_GREG_U64(u64Dst, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+        IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0(u64Dst);
         IEM_MC_STORE_SREG_BASE_U64(X86_SREG_GS, u64Dst);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
@@ -7091,7 +7093,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_wrgsbase, uint8_t, bRm)
         IEM_MC_BEGIN(1, 0);
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
         IEM_MC_ARG(uint32_t, u32Dst, 0);
-        IEM_MC_FETCH_GREG_U32(u32Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_FETCH_GREG_U32(u32Dst, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
         IEM_MC_STORE_SREG_BASE_U64(X86_SREG_GS, u32Dst);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();

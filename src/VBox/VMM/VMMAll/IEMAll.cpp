@@ -11273,6 +11273,11 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
             || !(IEM_GET_CTX(pVCpu)->cr4 & X86_CR4_FSGSBASE)) \
             return iemRaiseUndefinedOpcode(pVCpu); \
     } while (0)
+#define IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0(a_u64Addr) \
+    do { \
+        if (!IEM_IS_CANONICAL(a_u64Addr)) \
+            return iemRaiseGeneralProtectionFault0(pVCpu); \
+    } while (0)
 
 
 #define IEM_MC_LOCAL(a_Type, a_Name)                    a_Type a_Name
