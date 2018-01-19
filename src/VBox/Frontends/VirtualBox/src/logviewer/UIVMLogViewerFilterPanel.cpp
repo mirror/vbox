@@ -403,33 +403,68 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
 
 void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
 {
-    m_pButtonGroup = new QButtonGroup(this);
-    AssertPtrReturnVoid(m_pButtonGroup);
-
-    m_pRadioButtonContainer = new QFrame(this);
-    m_pRadioButtonContainer->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    /* Create radio-button container: */
+    m_pRadioButtonContainer = new QFrame;
     AssertPtrReturnVoid(m_pRadioButtonContainer);
+    {
+        /* Configure container: */
+        m_pRadioButtonContainer->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
 
-    QHBoxLayout* containerLayout = (new QHBoxLayout(m_pRadioButtonContainer));
-    AssertPtrReturnVoid(containerLayout);
-    containerLayout->setContentsMargins(0, 0, 0, 0);
-    containerLayout->setSpacing(0);
+        /* Create container layout: */
+        QHBoxLayout *pContainerLayout = new QHBoxLayout(m_pRadioButtonContainer);
+        AssertPtrReturnVoid(pContainerLayout);
+        {
+            /* Configure layout: */
+#ifdef VBOX_WS_MAC
+            pContainerLayout->setContentsMargins(5, 0, 0, 5);
+            pContainerLayout->setSpacing(5);
+#else
+            pContainerLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2, 0,
+                                                 qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2, 0);
+            pContainerLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+#endif
 
-    m_pAndRadioButton = new QRadioButton(this);
-    m_pOrRadioButton =  new QRadioButton(this);
-    AssertPtrReturnVoid(m_pAndRadioButton);
-    AssertPtrReturnVoid(m_pOrRadioButton);
+            /* Create button-group: */
+            m_pButtonGroup = new QButtonGroup(this);
+            AssertPtrReturnVoid(m_pButtonGroup);
+            {
+                /* Create 'Or' radio-button: */
+                m_pOrRadioButton = new QRadioButton;
+                AssertPtrReturnVoid(m_pOrRadioButton);
+                {
+                    /* Configure radio-button: */
+                    m_pButtonGroup->addButton(m_pOrRadioButton, static_cast<int>(OrButton));
+                    m_pOrRadioButton->setChecked(true);
+                    // Here goes only usual configuration, but not the NLS assignment,
+                    // is missed 'tr' intentional? Otherwise add it and move to retranslateUi().
+                    m_pOrRadioButton->setText("Or");
 
-    m_pButtonGroup->addButton(m_pAndRadioButton, static_cast<int>(AndButton));
-    m_pButtonGroup->addButton(m_pOrRadioButton, static_cast<int>(OrButton));
-    m_pOrRadioButton->setText("Or");
-    m_pAndRadioButton->setText("And");
-    m_pOrRadioButton->setChecked(true);
+                    /* Add into layout: */
+                    pContainerLayout->addWidget(m_pOrRadioButton);
+                }
+
+                /* Create 'And' radio-button: */
+                m_pAndRadioButton = new QRadioButton;
+                AssertPtrReturnVoid(m_pAndRadioButton);
+                {
+                    /* Configure radio-button: */
+                    m_pButtonGroup->addButton(m_pAndRadioButton, static_cast<int>(AndButton));
+                    // Here goes only usual configuration, but not the NLS assignment,
+                    // is missed 'tr' intentional? Otherwise add it and move to retranslateUi().
+                    m_pAndRadioButton->setText("And");
+
+                    /* Add into layout: */
+                    pContainerLayout->addWidget(m_pAndRadioButton);
+                }
+            }
+        }
+
+        /* Add into layout: */
+        mainLayout()->addWidget(m_pRadioButtonContainer);
+    }
+
+    /* Initialize other related stuff: */
     m_eFilterOperatorButton = OrButton;
-
-    containerLayout->addWidget(m_pOrRadioButton);
-    containerLayout->addWidget(m_pAndRadioButton);
-    mainLayout()->addWidget(m_pRadioButtonContainer);
 }
 
 void UIVMLogViewerFilterPanel::prepareConnections()
