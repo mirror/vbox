@@ -435,8 +435,6 @@ void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
                     /* Configure radio-button: */
                     m_pButtonGroup->addButton(m_pOrRadioButton, static_cast<int>(OrButton));
                     m_pOrRadioButton->setChecked(true);
-                    // Here goes only usual configuration, but not the NLS assignment,
-                    // is missed 'tr' intentional? Otherwise add it and move to retranslateUi().
                     m_pOrRadioButton->setText("Or");
 
                     /* Add into layout: */
@@ -449,8 +447,6 @@ void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
                 {
                     /* Configure radio-button: */
                     m_pButtonGroup->addButton(m_pAndRadioButton, static_cast<int>(AndButton));
-                    // Here goes only usual configuration, but not the NLS assignment,
-                    // is missed 'tr' intentional? Otherwise add it and move to retranslateUi().
                     m_pAndRadioButton->setText("And");
 
                     /* Add into layout: */
