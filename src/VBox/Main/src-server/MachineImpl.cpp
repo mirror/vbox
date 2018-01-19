@@ -7278,12 +7278,12 @@ HRESULT Machine::moveTo(const com::Utf8Str &aTargetPath,
     /*
      * task pointer will be owned by the ThreadTask class.
      * There is no need to call operator "delete" in the end.
-     */ 
+     */
     rc = task->init();
     if (SUCCEEDED(rc))
     {
         rc = task->createThread();
-        if (FAILED(rc)) 
+        if (FAILED(rc))
         {
             setError(rc, tr("Could not run the thread for the task MachineMoveVM"));
         }
