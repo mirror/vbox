@@ -1579,8 +1579,11 @@ static int ichac97MixerAddDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPD
     RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
     {
         int rc2 = ichac97MixerAddDrvStream(pThis, pMixSink, pCfg, pDrv);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        if (RT_FAILURE(rc2))
+            LogFunc(("Attaching stream failed with %Rrc\n", rc2));
+
+        /* Do not pass failure to rc here, as there might be drivers which aren't
+         * configured / ready yet. */
     }
 
     LogFlowFuncLeaveRC(rc);

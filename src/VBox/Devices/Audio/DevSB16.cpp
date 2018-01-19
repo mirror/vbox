@@ -2367,8 +2367,11 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
         int rc2 = sb16CreateDrvStream(pThis, pCfg, pDrv);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        if (RT_FAILURE(rc2))
+            LogFunc(("Attaching stream failed with %Rrc\n", rc2));
+
+        /* Do not pass failure to rc here, as there might be drivers which aren't
+         * configured / ready yet. */
     }
 
     sb16UpdateVolume(pThis);
