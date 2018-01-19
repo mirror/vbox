@@ -4568,19 +4568,6 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pDisplay->i_setupCrHgsmiData();
 #endif
 
-#ifdef VBOX_WITH_VIDEOREC
-    if (pDisplay->i_videoRecGetEnabled())
-    {
-        int rc2 = pDisplay->i_videoRecStart();
-        if (RT_SUCCESS(rc2))
-            fireVideoCaptureChangedEvent(pDisplay->mParent->i_getEventSource());
-
-        /* If video recording fails for whatever reason here, this is
-         * non-critical and should not be returned at this point -- otherwise
-         * the display driver construction fails completely. */
-    }
-#endif
-
     return rc;
 }
 

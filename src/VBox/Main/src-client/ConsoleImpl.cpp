@@ -9839,7 +9839,8 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
             rc = pVRDEServer->COMGETTER(Enabled)(&fVRDEEnabled);
             AssertComRCReturnVoid(rc);
 
-            if (fVRDEEnabled)
+            if (   fVRDEEnabled
+                && pConsole->mAudioVRDE)
                 pConsole->mAudioVRDE->doAttachDriverViaEmt(pConsole->mpUVM, &alock);
         }
 #endif
@@ -9847,18 +9848,32 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
         /* Enable client connections to the VRDP server. */
         pConsole->i_consoleVRDPServer()->EnableConnections();
 
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
         Display *pDisplay = pConsole->i_getDisplay();
         AssertPtr(pDisplay);
         if (pDisplay)
         {
             pDisplay->i_videoRecInvalidate();
 
+            /* If video recording fails for whatever reason here, this is
+             * non-critical and should not be returned at this point -- otherwise
+             * the display driver construction fails completely. */
+            int vrc2 = VINF_SUCCESS;
+
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
             /* Attach the video recording audio driver if required. */
-            if (pDisplay->i_videoRecGetEnabled() & VIDEORECFEATURE_AUDIO)
-                pConsole->mAudioVideoRec->doAttachDriverViaEmt(pConsole->mpUVM, &alock);
-        }
+            if (   pDisplay->i_videoRecGetEnabled() & VIDEORECFEATURE_AUDIO
+                && pConsole->mAudioVideoRec)
+                vrc2 = pConsole->mAudioVideoRec->doAttachDriverViaEmt(pConsole->mpUVM, &alock);
 #endif
+            if (   RT_SUCCESS(vrc2)
+                && pDisplay->i_videoRecGetEnabled()) /* Any video recording (audio and/or video) feature enabled? */
+            {
+                vrc2 = pDisplay->i_videoRecStart();
+                if (RT_SUCCESS(vrc2))
+                    fireVideoCaptureChangedEvent(pConsole->i_getEventSource());
+            }
+        }
+
         if (RT_SUCCESS(vrc))
         {
             do

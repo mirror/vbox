@@ -585,11 +585,17 @@ AudioVRDE::~AudioVRDE(void)
 }
 
 
-void AudioVRDE::configureDriver(PCFGMNODE pLunCfg)
+/**
+ * @copydoc AudioDriver::configureDriver
+ */
+int AudioVRDE::configureDriver(PCFGMNODE pLunCfg)
 {
     CFGMR3InsertInteger(pLunCfg, "Object", (uintptr_t)this);
     CFGMR3InsertInteger(pLunCfg, "ObjectVRDPServer", (uintptr_t)mpConsole->i_consoleVRDPServer());
+
+    return VINF_SUCCESS;
 }
+
 
 int AudioVRDE::onVRDEControl(bool fEnable, uint32_t uFlags)
 {

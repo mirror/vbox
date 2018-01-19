@@ -49,7 +49,7 @@ public:
 
 private:
 
-    void configureDriver(PCFGMNODE pLunCfg);
+    int configureDriver(PCFGMNODE pLunCfg);
 
     /** Pointer to the associated video recording audio driver. */
     struct DRVAUDIOVIDEOREC *mpDrv;

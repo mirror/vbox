@@ -30,15 +30,17 @@ using namespace com;
  */
 struct AudioDriverCfg
 {
-    AudioDriverCfg(Utf8Str a_strDev = "", unsigned a_uInst = 0, Utf8Str a_strName = "")
+    AudioDriverCfg(Utf8Str a_strDev = "", unsigned a_uInst = 0, unsigned a_uLUN = 0, Utf8Str a_strName = "")
         : strDev(a_strDev)
         , uInst(a_uInst)
+        , uLUN(a_uLUN)
         , strName(a_strName) { }
 
     AudioDriverCfg& operator=(AudioDriverCfg that)
     {
         this->strDev  = that.strDev;
         this->uInst   = that.uInst;
+        this->uLUN    = that.uLUN;
         this->strName = that.strName;
 
         return *this;
@@ -48,6 +50,9 @@ struct AudioDriverCfg
     Utf8Str              strDev;
     /** The device instance. */
     unsigned             uInst;
+    /** The LUN the driver is attached to.
+     *  Set the UINT8_MAX if not attached. */
+    unsigned             uLUN;
     /** The driver name. */
     Utf8Str              strName;
 };
@@ -85,14 +90,13 @@ protected:
 
     /**
      * Optional (virtual) function to give the derived audio driver
-     * class the ability to add more driver configuration entries when
-     * setting up.
+     * class the ability to add (or change) the driver configuration
+     * entries when setting up.
      *
-     * @param pLunCfg           CFGM configuration node of the driver.
+     * @return VBox status code.
+     * @param  pLunCfg          CFGM configuration node of the driver.
      */
-    virtual void configureDriver(PCFGMNODE pLunCfg) { RT_NOREF(pLunCfg); }
-
-    unsigned getFreeLUN(void);
+    virtual int configureDriver(PCFGMNODE pLunCfg) { RT_NOREF(pLunCfg); return VINF_SUCCESS; }
 
 protected:
 
@@ -102,9 +106,6 @@ protected:
     AudioDriverCfg       mCfg;
     /** Whether the driver is attached or not. */
     bool                 mfAttached;
-    /** The LUN the driver is attached to.
-     *  Set the UINT8_MAX if not attached. */
-    unsigned             muLUN;
 };
 
 #endif /* !____H_AUDIODRIVER */

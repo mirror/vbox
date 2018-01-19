@@ -61,7 +61,7 @@ public:
 
 private:
 
-    void configureDriver(PCFGMNODE pLunCfg);
+    int configureDriver(PCFGMNODE pLunCfg);
 
     /** Pointer to the associated VRDE audio driver. */
     struct DRVAUDIOVRDE *mpDrv;

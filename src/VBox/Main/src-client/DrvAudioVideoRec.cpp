@@ -1031,10 +1031,15 @@ AudioVideoRec::~AudioVideoRec(void)
 }
 
 
-void AudioVideoRec::configureDriver(PCFGMNODE pLunCfg)
+/**
+ * @copydoc AudioDriver::configureDriver
+ */
+int AudioVideoRec::configureDriver(PCFGMNODE pLunCfg)
 {
     CFGMR3InsertInteger(pLunCfg, "Object",        (uintptr_t)mpConsole->i_getAudioVideoRec());
     CFGMR3InsertInteger(pLunCfg, "ObjectConsole", (uintptr_t)mpConsole);
+
+    return VINF_SUCCESS;
 }
 
 
