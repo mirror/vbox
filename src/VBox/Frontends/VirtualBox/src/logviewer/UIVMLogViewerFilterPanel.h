@@ -18,6 +18,8 @@
 #ifndef ___UIVMLogViewerFilterPanel_h___
 #define ___UIVMLogViewerFilterPanel_h___
 
+/* Qt includes: */
+# include <QSet>
 
 /* GUI includes: */
 #include "UIVMLogViewerPanel.h"
@@ -83,7 +85,7 @@ private slots:
 private:
 
     enum FilterOperatorButton{
-        AndButton = 0,
+        AndButton = 0,/* Don't change this value */
         OrButton,
         ButtonEnd
     };
@@ -100,7 +102,7 @@ private:
     QRadioButton        *m_pOrRadioButton;
     QFrame              *m_pRadioButtonContainer;
     QIToolButton        *m_pAddFilterTermButton;
-    QStringList          m_filterTermList;
+    QSet<QString>        m_filterTermSet;
     FilterOperatorButton m_eFilterOperatorButton;
     UIVMFilterLineEdit  *m_pFilterTermsLineEdit;
     QLabel              *m_pResultLabel;

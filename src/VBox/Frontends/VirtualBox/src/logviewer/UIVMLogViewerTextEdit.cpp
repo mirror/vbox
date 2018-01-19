@@ -161,6 +161,8 @@ UIVMLogViewerTextEdit::UIVMLogViewerTextEdit(QWidget* parent /* = 0 */)
     setMouseTracking(true);
     //setStyleSheet("background-color: rgba(240, 240, 240, 75%) ");
     prepare();
+
+
 }
 
 void UIVMLogViewerTextEdit::prepare()
@@ -185,11 +187,14 @@ void UIVMLogViewerTextEdit::prepareWidgets()
     /* Configure this' wrap mode: */
     setWordWrapMode(QTextOption::NoWrap);
     setWordWrapMode(QTextOption::NoWrap);
+
     setReadOnly(true);
+
     /* Set colors to have a selection with bluebackground and white foreground: */
     QPalette mPalette = palette();
     mPalette.setColor(QPalette::Highlight, QColor(48, 140, 198, 255));
     mPalette.setColor(QPalette::HighlightedText, QColor(255, 255, 255, 255));
+    mPalette.setColor(QPalette::Text, QColor(0, 0, 0, 255));
     setPalette(mPalette);
 
 #if defined(RT_OS_SOLARIS)
@@ -310,22 +315,26 @@ void UIVMLogViewerTextEdit::paintEvent(QPaintEvent *pEvent)
 void UIVMLogViewerTextEdit::resizeEvent(QResizeEvent *pEvent)
 {
     QPlainTextEdit::resizeEvent(pEvent);
-
-    QRect cr = contentsRect();
-    m_pLineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+    if(m_pLineNumberArea)
+    {
+        QRect cr = contentsRect();
+        m_pLineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+    }
 }
 
 void UIVMLogViewerTextEdit::mouseMoveEvent(QMouseEvent *pEvent)
 {
     setMouseCursorLine(lineNumberForPos(pEvent->pos()));
-    m_pLineNumberArea->repaint();
+    if(m_pLineNumberArea)
+        m_pLineNumberArea->repaint();
+    QPlainTextEdit::mouseMoveEvent(pEvent);
 }
 
 void UIVMLogViewerTextEdit::leaveEvent(QEvent * pEvent)
 {
     QPlainTextEdit::leaveEvent(pEvent);
     /* Force a redraw as mouse leaves this to remove the mouse
-       cursor track rectangle (the red rectangle we draw on the line number area. */
+       cursor track rectangle (the red rectangle we draw on the line number area). */
     update();
 }
 
@@ -370,9 +379,9 @@ void UIVMLogViewerTextEdit::scrollToLine(int lineNumber)
     if (!pDocument)
         return;
 
+    moveCursor(QTextCursor::End);
     int halfPageLineCount = 0.5 * visibleLineCount() ;
     QTextCursor cursor(pDocument->findBlockByLineNumber(qMax(lineNumber - halfPageLineCount, 0)));
-    moveCursor(QTextCursor::End);
     setTextCursor(cursor);
 }
 
@@ -401,6 +410,7 @@ int  UIVMLogViewerTextEdit::lineNumberForPos(const QPoint &position)
     QTextBlock block = cursor.block();
     return block.blockNumber() + 1;
 }
+
 
 QPair<int, QString> UIVMLogViewerTextEdit::bookmarkForPos(const QPoint &position)
 {
@@ -457,6 +467,26 @@ void UIVMLogViewerTextEdit::setWrapLines(bool bWrapLines)
         setWordWrapMode(QTextOption::NoWrap);
     }
 
+    update();
+}
+
+int  UIVMLogViewerTextEdit::currentVerticalScrollBarValue() const
+{
+    if(!verticalScrollBar())
+        return -1;
+    return verticalScrollBar()->value();
+}
+void UIVMLogViewerTextEdit::setCurrentVerticalScrollBarValue(int value)
+{
+    if(!verticalScrollBar())
+        return;
+
+    setCenterOnScroll(true);
+
+    verticalScrollBar()->setValue(value);
+    verticalScrollBar()->setSliderPosition(value);
+    printf("value %d\n", value);
+    viewport()->update();
     update();
 }
 

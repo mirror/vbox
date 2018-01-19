@@ -41,9 +41,6 @@ public:
 
     UIVMLogViewerPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
 
-
-public slots:
-
 protected:
 
     virtual void prepare();
@@ -69,11 +66,8 @@ protected:
     QPlainTextEdit *textEdit();
     /* Return the unmodified log. */
     const QString* logString() const;
-private slots:
-
 
 private:
-
 
     /** Holds the reference to VM Log-Viewer this panel belongs to. */
     UIVMLogViewerWidget *m_pViewer;

@@ -73,11 +73,6 @@ void UIVMLogViewerSearchPanel::reset()
     m_iSearchPosition = 0;
     m_matchLocationVector.clear();
     m_iMatchCount = -1;
-    if (m_pHighlightAllCheckBox)
-    {
-        if (m_pHighlightAllCheckBox->checkState() == Qt::Checked)
-            m_pHighlightAllCheckBox->setCheckState(Qt::Unchecked);
-    }
     configureInfoLabels();
 }
 

@@ -52,6 +52,11 @@ public:
     void setShowLineNumbers(bool bShowLineNumbers);
     void setWrapLines(bool bWrapLines);
 
+    /** currentVerticalScrollBarValue is used by UIVMLogPage to store and restore scrolled
+        plain text position as we switch from a tab to another */
+    int  currentVerticalScrollBarValue() const;
+    void setCurrentVerticalScrollBarValue(int value);
+
 protected:
 
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;

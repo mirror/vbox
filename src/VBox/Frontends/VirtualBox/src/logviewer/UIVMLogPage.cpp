@@ -44,6 +44,8 @@ UIVMLogPage::UIVMLogPage(QWidget *pParent /* = 0 */, int tabIndex /*= -1 */)
     , m_tabIndex(tabIndex)
     , m_iSelectedBookmarkIndex(-1)
     , m_bFiltered(false)
+    , m_iFilteredLineCount(-1)
+    , m_iUnfilteredLineCount(-1)
     , m_bShowLineNumbers(true)
     , m_bWrapLines(false)
 {
@@ -141,7 +143,7 @@ const QString& UIVMLogPage::fileName() const
     return m_strFileName;
 }
 
-void UIVMLogPage::setTextEdit(const QString &strText)
+void UIVMLogPage::setTextEditText(const QString &strText)
 {
     if (!m_pTextEdit)
         return;
@@ -154,7 +156,7 @@ void UIVMLogPage::setTextEdit(const QString &strText)
     repaint();
 }
 
-void UIVMLogPage::setTextEditAsHtml(const QString &strText)
+void UIVMLogPage::setTextEditTextAsHtml(const QString &strText)
 {
     if (!m_pTextEdit)
         return;
@@ -244,6 +246,7 @@ void UIVMLogPage::showEvent(QShowEvent *pEvent)
 {
     if (m_pTextEdit)
         m_pTextEdit->setFocus();
+
     QWidget::showEvent(pEvent);
 }
 
@@ -309,4 +312,35 @@ void UIVMLogPage::setWrapLines(bool bWrapLines)
     if (m_pTextEdit)
         m_pTextEdit->setWrapLines(m_bWrapLines);
     update();
+}
+
+void UIVMLogPage::setFilterParameters(const QSet<QString> &filterTermSet, int filterOperationType,
+                                      int iFilteredLineCount, int iUnfilteredLineCount)
+{
+    m_filterTermSet = filterTermSet;
+    m_filterOperationType = filterOperationType;
+    m_iFilteredLineCount = iFilteredLineCount;
+    m_iUnfilteredLineCount = iUnfilteredLineCount;
+}
+
+int  UIVMLogPage::filteredLineCount() const
+{
+    return m_iFilteredLineCount;
+}
+
+int  UIVMLogPage::unfilteredLineCount() const
+{
+    return m_iUnfilteredLineCount;
+}
+
+bool UIVMLogPage::shouldFilterBeApplied(const QSet<QString> &filterTermSet, int filterOperationType) const
+{
+    /* If filter terms set is different reapply the filter. */
+    if(filterTermSet != m_filterTermSet)
+        return true;
+
+    /* If filter operation type set is different reapply the filter. */
+    if(filterOperationType != m_filterOperationType)
+        return true;
+    return false;
 }

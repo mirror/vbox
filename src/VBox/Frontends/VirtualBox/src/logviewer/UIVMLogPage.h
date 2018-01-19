@@ -37,6 +37,8 @@ class UIVMLogViewerTextEdit;
 /** first is line number, second is block text */
 typedef QPair<int, QString> LogBookmark;
 
+/** UIVMLogPage defines data and functionalities of the each tab page of a UIVMLogViewerWidget.
+    It stores the original log file content , a list of bookmarks, etc */
 class UIVMLogPage  : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -70,8 +72,8 @@ public:
     /** Ses plaintextEdit's text. Note that the text we
         show currently might be different than
         m_strLog. For example during filtering. */
-    void setTextEdit(const QString &strText);
-    void setTextEditAsHtml(const QString &strText);
+    void setTextEditText(const QString &strText);
+    void setTextEditTextAsHtml(const QString &strText);
 
     /** Marks the plain text edit When we dont have a log content. */
     void markForError();
@@ -94,6 +96,17 @@ public:
 
     void setShowLineNumbers(bool bShowLineNumbers);
     void setWrapLines(bool bWrapLines);
+
+    /** setFilterParameters is called at the end of filtering operation to store the parameter etc.
+        these parameters are used to decide whether we have to reapply the filter, and if not to
+        update filter panel with correct line counts etc.*/
+    void setFilterParameters(const QSet<QString> &filterTermSet, int filterOperationType,
+                             int iFilteredLineCount, int iUnfilteredLineCount);
+    int  filteredLineCount() const;
+    int  unfilteredLineCount() const;
+    /** Compares filter parameters with previous filter operation's parameters to decide if the
+        filter should be applied again. */
+    bool shouldFilterBeApplied(const QSet<QString> &filterTermSet, int filterOperationType) const;
 
 protected:
 
@@ -126,11 +139,25 @@ private:
 
     /** Keeps the index of the selected bookmark. Used especially when moving from one tab to another. */
     int                  m_iSelectedBookmarkIndex;
-    /** Keeps the scrolled line number. Used when switching between tabs. */
-    int                  m_iScrolledLineNumber;
+
+    /** @name Filtering related state variables
+     * @{ */
     /** Designates whether currently displayed text is log text or a filtered version of it. That is
         if m_bFiltered is false than (m_strLog == m_pTextEdit->text()). */
-    bool m_bFiltered;
+        bool           m_bFiltered;
+        /** The set of filter terms used in the last filtering.
+            Used when deciding whether we have to reapply the filter or not. see shouldFilterBeApplied function. */
+        QSet<QString>  m_filterTermSet;
+        /** The type of the boolean last filtering operation. Used in deciding whether we have to reapply the
+            filter. see shouldFilterBeApplied function. This is int cast of enum FilterOperatorButton
+            of UIVMLogViewerFilterPanel. */
+        int            m_filterOperationType;
+        /** These counts are saveds and restored during filtering operation. If filter is not reapplied these counts
+            are shown in the filter panel. */
+        int            m_iFilteredLineCount;
+        int            m_iUnfilteredLineCount;
+    /** @} */
+
     bool m_bShowLineNumbers;
     bool m_bWrapLines;
 };

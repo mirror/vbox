@@ -39,6 +39,7 @@
 # include "QIToolButton.h"
 # include "UIIconPool.h"
 # include "UISpecialControls.h"
+# include "UIVMLogPage.h"
 # include "UIVMLogViewerFilterPanel.h"
 # include "UIVMLogViewerWidget.h"
 # ifdef VBOX_WS_MAC
@@ -203,6 +204,21 @@ void UIVMLogViewerFilterPanel::filter()
     QPlainTextEdit *pCurrentTextEdit = textEdit();
     if (!pCurrentTextEdit)
         return;
+
+    UIVMLogPage *logPage = viewer()->currentLogPage();
+    if(!logPage)
+        return;
+    /* Check if we have to reapply the filter. If not
+       restore line counts etc. and return */
+    if(!logPage->shouldFilterBeApplied(m_filterTermSet, (int)m_eFilterOperatorButton))
+    {
+        m_iFilteredLineCount = logPage->filteredLineCount();
+        m_iUnfilteredLineCount = logPage->unfilteredLineCount();
+        emit sigFilterApplied(!logPage->isFiltered() /* isOriginalLog */);
+        return;
+    }
+
+
     const QString* originalLogString = logString();
     m_iUnfilteredLineCount = 0;
     m_iFilteredLineCount = 0;
@@ -213,11 +229,14 @@ void UIVMLogViewerFilterPanel::filter()
         return;
     QStringList stringLines = originalLogString->split("\n");
     m_iUnfilteredLineCount = stringLines.size();
-    if (m_filterTermList.empty())
+
+    if (m_filterTermSet.empty())
     {
         document->setPlainText(*originalLogString);
         emit sigFilterApplied(true /* isOriginalLog */);
         m_iFilteredLineCount = document->lineCount();
+        logPage->setFilterParameters(m_filterTermSet, (int)m_eFilterOperatorButton,
+                                     m_iFilteredLineCount, m_iUnfilteredLineCount);
         return;
     }
 
@@ -245,6 +264,8 @@ void UIVMLogViewerFilterPanel::filter()
     pCurrentTextEdit->setTextCursor(cursor);
 
     emit sigFilterApplied(false /* isOriginalLog */);
+    logPage->setFilterParameters(m_filterTermSet, (int)m_eFilterOperatorButton,
+                                 m_iFilteredLineCount, m_iUnfilteredLineCount);
 }
 
 
@@ -252,9 +273,12 @@ bool UIVMLogViewerFilterPanel::applyFilterTermsToString(const QString& string)
 {
     /* Number of the filter terms contained with the @p string: */
     int hitCount = 0;
-    for (int i = 0; i < m_filterTermList.size(); ++i)
+
+    for(QSet<QString>::const_iterator iterator = m_filterTermSet.begin();
+        iterator != m_filterTermSet.end(); ++iterator)
     {
-        const QRegExp rxFilterExp(m_filterTermList.at(i), Qt::CaseInsensitive);
+        const QString& filterTerm = *iterator;
+        const QRegExp rxFilterExp(filterTerm, Qt::CaseInsensitive);
         /* Disregard empty and invalid filter terms: */
         if (rxFilterExp.isEmpty() || !rxFilterExp.isValid())
             continue;
@@ -272,7 +296,7 @@ bool UIVMLogViewerFilterPanel::applyFilterTermsToString(const QString& string)
             return false;
     }
     /* All the terms are found within the @p string. To catch AND case: */
-    if (hitCount == m_filterTermList.size())
+    if (hitCount == m_filterTermSet.size())
         return true;
     return false;
 }
@@ -286,9 +310,9 @@ void UIVMLogViewerFilterPanel::sltAddFilterTerm()
         return;
 
     /* Continue only if the term is new. */
-    if (m_filterTermList.contains(m_pFilterComboBox->currentText()))
+    if (m_filterTermSet.contains(m_pFilterComboBox->currentText()))
         return;
-    m_filterTermList.push_back(m_pFilterComboBox->currentText());
+    m_filterTermSet.insert(m_pFilterComboBox->currentText());
 
     /* Add the new filter term to line edit: */
     if (m_pFilterTermsLineEdit)
@@ -301,9 +325,9 @@ void UIVMLogViewerFilterPanel::sltAddFilterTerm()
 
 void UIVMLogViewerFilterPanel::sltClearFilterTerms()
 {
-    if (m_filterTermList.empty())
+    if (m_filterTermSet.empty())
         return;
-    m_filterTermList.clear();
+    m_filterTermSet.clear();
     applyFilter();
     if (m_pFilterTermsLineEdit)
         m_pFilterTermsLineEdit->clearAll();
@@ -319,14 +343,7 @@ void UIVMLogViewerFilterPanel::sltOperatorButtonChanged(int buttonId)
 
 void UIVMLogViewerFilterPanel::sltRemoveFilterTerm(const QString &termString)
 {
-    QStringList newList;
-    for (QStringList::iterator iterator = m_filterTermList.begin();
-        iterator != m_filterTermList.end(); ++iterator)
-    {
-        if ((*iterator) != termString)
-            newList.push_back(*iterator);
-    }
-    m_filterTermList = newList;
+    m_filterTermSet.remove(termString);
     applyFilter();
 }
 
