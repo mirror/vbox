@@ -506,7 +506,7 @@ RTDECL(int) RTFileCopyByHandlesEx(RTFILE FileSrc, RTFILE FileDst, PFNRTPROGRESS 
                         {
                             uPercentage++;
                             offNextPercent += cbPercent;
-                        } while (offNextPercent < off && uPercentage < 100)
+                        } while (offNextPercent < off && uPercentage < 100);
                         rc = pfnProgress(uPercentage, pvUser);
                         if (RT_FAILURE(rc))
                             break;
