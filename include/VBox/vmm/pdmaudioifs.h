@@ -850,6 +850,8 @@ typedef enum PDMAUDIOBACKENDSTS
 {
     /** Unknown/invalid status. */
     PDMAUDIOBACKENDSTS_UNKNOWN = 0,
+    /** No backend attached. */
+    PDMAUDIOBACKENDSTS_NOT_ATTACHED,
     /** The backend is in its initialization phase.
      *  Not all backends support this status. */
     PDMAUDIOBACKENDSTS_INITIALIZING,
