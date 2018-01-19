@@ -2765,11 +2765,13 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioGetStatus(PPDMIAUDIOCONNECTOR pI
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        if (   pThis->pHostDrvAudio
-            && pThis->pHostDrvAudio->pfnGetStatus)
+        if (pThis->pHostDrvAudio)
         {
-             backendSts = pThis->pHostDrvAudio->pfnGetStatus(pThis->pHostDrvAudio, enmDir);
+            if (pThis->pHostDrvAudio->pfnGetStatus)
+                backendSts = pThis->pHostDrvAudio->pfnGetStatus(pThis->pHostDrvAudio, enmDir);
         }
+        else
+            backendSts = PDMAUDIOBACKENDSTS_NOT_ATTACHED;
 
         int rc2 = RTCritSectLeave(&pThis->CritSect);
         if (RT_SUCCESS(rc))

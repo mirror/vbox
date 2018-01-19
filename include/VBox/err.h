@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2777,6 +2777,8 @@
  *  reachable, audio hardware is not available or similar.  We should use the
  *  NULL audio driver. */
 #define VERR_AUDIO_BACKEND_INIT_FAILED              (-6600)
+/** No host backend attached / available. */
+#define VERR_AUDIO_BACKEND_NOT_ATTACHED             (-6605)
 /** No free input streams.  */
 #define VERR_AUDIO_NO_FREE_INPUT_STREAMS            (-6601)
 /** No free output streams.  */
