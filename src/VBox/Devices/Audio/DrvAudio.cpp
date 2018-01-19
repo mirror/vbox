@@ -2212,16 +2212,19 @@ static int drvAudioInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     CFGMR3Dump(pCfgHandle);
 #endif
 
-    int rc2 = CFGMR3QueryString(pCfgHandle, "DriverName", pThis->szName, sizeof(pThis->szName));
+    pThis->fTerminate = false;
+    pThis->pCFGMNode  = pCfgHandle;
+
+    int rc2 = CFGMR3QueryString(pThis->pCFGMNode, "DriverName", pThis->szName, sizeof(pThis->szName));
     if (RT_FAILURE(rc2))
         RTStrPrintf(pThis->szName, sizeof(pThis->szName), "Untitled");
 
     /* By default we don't enable anything if wrongly / not set-up. */
-    CFGMR3QueryBoolDef(pCfgHandle, "InputEnabled",  &pThis->In.fEnabled,   false);
-    CFGMR3QueryBoolDef(pCfgHandle, "OutputEnabled", &pThis->Out.fEnabled,  false);
+    CFGMR3QueryBoolDef(pThis->pCFGMNode, "InputEnabled",  &pThis->In.fEnabled,   false);
+    CFGMR3QueryBoolDef(pThis->pCFGMNode, "OutputEnabled", &pThis->Out.fEnabled,  false);
 
-    CFGMR3QueryBoolDef(pCfgHandle, "DebugEnabled",      &pThis->Dbg.fEnabled,  false);
-    rc2 = CFGMR3QueryString(pCfgHandle, "DebugPathOut", pThis->Dbg.szPathOut, sizeof(pThis->Dbg.szPathOut));
+    CFGMR3QueryBoolDef(pThis->pCFGMNode, "DebugEnabled",      &pThis->Dbg.fEnabled,  false);
+    rc2 = CFGMR3QueryString(pThis->pCFGMNode, "DebugPathOut", pThis->Dbg.szPathOut, sizeof(pThis->Dbg.szPathOut));
     if (   RT_FAILURE(rc2)
         || !strlen(pThis->Dbg.szPathOut))
     {
@@ -2234,12 +2237,7 @@ static int drvAudioInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     LogRel2(("Audio: Initial status for driver '%s': Input is %s, output is %s\n",
              pThis->szName, pThis->In.fEnabled ? "enabled" : "disabled", pThis->Out.fEnabled ? "enabled" : "disabled"));
 
-    /*
-     * If everything went well, initialize the lower driver.
-     */
-    rc = drvAudioHostInit(pThis, pCfgHandle);
-
-    LogFlowFuncLeaveRC(rc);
+    LogFunc(("[%s] rc=%Rrc\n", pThis->szName, rc));
     return rc;
 }
 
@@ -3198,6 +3196,47 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
     return rc;
 }
 
+/**
+ * Does the actual backend driver attaching and queries the backend's interface.
+ *
+ * @return VBox status code.
+ * @param  pThis                Pointer to driver instance.
+ * @param  fFlags               Attach flags; see PDMDrvHlpAttach().
+ */
+static int drvAudioDoAttachInternal(PDRVAUDIO pThis, uint32_t fFlags)
+{
+    Assert(pThis->pHostDrvAudio == NULL); /* No nested attaching. */
+
+    /*
+     * Attach driver below and query its connector interface.
+     */
+    PPDMIBASE pDownBase;
+    int rc = PDMDrvHlpAttach(pThis->pDrvIns, fFlags, &pDownBase);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->pHostDrvAudio = PDMIBASE_QUERY_INTERFACE(pDownBase, PDMIHOSTAUDIO);
+        if (!pThis->pHostDrvAudio)
+        {
+            LogRel(("Audio: Failed to query interface for underlying host driver\n"));
+            rc = PDMDRV_SET_ERROR(pThis->pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
+                                  N_("Host audio backend missing or invalid"));
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * If everything went well, initialize the lower driver.
+         */
+        AssertPtr(pThis->pCFGMNode);
+        rc = drvAudioHostInit(pThis, pThis->pCFGMNode);
+    }
+
+    LogFunc(("[%s] rc=%Rrc\n", pThis->szName, rc));
+    return rc;
+}
+
+
 /********************************************************************/
 
 /**
@@ -3226,6 +3265,9 @@ static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
     PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
 
     LogFlowFuncEnter();
+
+    if (!pThis->pHostDrvAudio) /* If not lower driver is configured, bail out. */
+        return;
 
     /* Just destroy the host stream on the backend side.
      * The rest will either be destructed by the device emulation or
@@ -3294,32 +3336,9 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     pThis->IAudioConnector.pfnRegisterCallbacks = drvAudioRegisterCallbacks;
 #endif
 
-    /*
-     * Attach driver below and query its connector interface.
-     */
-    PPDMIBASE pDownBase;
-    int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pDownBase);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("Audio: Failed to attach to driver %p below (flags=0x%x), rc=%Rrc\n",
-                pDrvIns, fFlags, rc));
-        return rc;
-    }
-
-    pThis->pHostDrvAudio = PDMIBASE_QUERY_INTERFACE(pDownBase, PDMIHOSTAUDIO);
-    if (!pThis->pHostDrvAudio)
-    {
-        LogRel(("Audio: Failed to query interface for underlying host driver\n"));
-        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
-                                N_("Host audio backend missing or invalid"));
-    }
-
-    rc = drvAudioInit(pDrvIns, pCfg);
+    int rc = drvAudioInit(pDrvIns, pCfg);
     if (RT_SUCCESS(rc))
     {
-        pThis->fTerminate = false;
-        pThis->pDrvIns    = pDrvIns;
-
 #ifdef VBOX_WITH_STATISTICS
         PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalStreamsActive,   "TotalStreamsActive",
                                   STAMUNIT_COUNT, "Total active audio streams.");
@@ -3351,6 +3370,14 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
         PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayOut,          "DelayOut",
                                      STAMUNIT_NS_PER_CALL, "Profiling of output data processing.");
 #endif
+    }
+
+    rc = drvAudioDoAttachInternal(pThis, fFlags);
+    if (RT_FAILURE(rc))
+    {
+        /* No lower attached driver (yet)? Not a failure, might get attached later at runtime, just skip. */
+        if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+            rc = VINF_SUCCESS;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -3496,9 +3523,9 @@ static DECLCALLBACK(int) drvAudioAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
     int rc2 = RTCritSectEnter(&pThis->CritSect);
     AssertRC(rc2);
 
-    int rc = VINF_SUCCESS;
-
     LogFunc(("%s\n", pThis->szName));
+
+    int rc = drvAudioDoAttachInternal(pThis, fFlags);
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))

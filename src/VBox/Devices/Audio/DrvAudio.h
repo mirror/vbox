@@ -92,6 +92,8 @@ typedef struct DRVAUDIO
     PPDMDRVINS              pDrvIns;
     /** Pointer to audio driver below us. */
     PPDMIHOSTAUDIO          pHostDrvAudio;
+    /** Pointer to CFGM configuration node of this driver. */
+    PCFGMNODE               pCFGMNode;
     /** List of host input/output audio streams. */
     RTLISTANCHOR            lstHstStreams;
     /** List of guest input/output audio streams. */
