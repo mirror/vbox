@@ -29,6 +29,7 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 # Standard Python imports.
+import copy;
 import os;
 import re;
 import random;
@@ -189,12 +190,28 @@ class TestVm(object):
     This is just a data object.
     """
 
-    def __init__(self, sVmName, fGrouping, sHd = None, sKind = None, acCpusSup = None, # pylint: disable=R0913
-                 asVirtModesSup = None, fIoApic = None, fPae = None, sNic0AttachType = None,
-                 sFloppy = None, fVmmDevTestingPart = None, fVmmDevTestingMmio = False, asParavirtModesSup = None,
-                 fRandomPvPMode = False, sFirmwareType = 'bios', sChipsetType = 'piix3',
-                 sHddControllerType = 'IDE Controller', sDvdControllerType = 'IDE Controller'):
-        self.oSet                    = None; ### ???
+    def __init__(self, # pylint: disable=R0913
+                 sVmName,                                   # type: str
+                 fGrouping,                                 # type: bool
+                 oSet = None,                               # type: TestVmSet
+                 sHd = None,                                # type: str
+                 sKind = None,                              # type: str
+                 acCpusSup = None,                          # type: List[int]
+                 asVirtModesSup = None,                     # type: List[str]
+                 fIoApic = None,                            # type: bool
+                 fPae = None,                               # type: bool
+                 sNic0AttachType = None,                    # type: str
+                 sFloppy = None,                            # type: str
+                 fVmmDevTestingPart = None,                 # type: bool
+                 fVmmDevTestingMmio = False,                # type: bool
+                 asParavirtModesSup = None,                 # type: List[str]
+                 fRandomPvPMode = False,                    # type: bool
+                 sFirmwareType = 'bios',                    # type: str
+                 sChipsetType = 'piix3',                    # type: str
+                 sHddControllerType = 'IDE Controller',     # type: str
+                 sDvdControllerType = 'IDE Controller'      # type: str
+                 ):
+        self.oSet                    = oSet;
         self.sVmName                 = sVmName;
         self.fGrouping               = fGrouping;
         self.sHd                     = sHd;          # Relative to the testrsrc root.
@@ -975,6 +992,20 @@ class TestVmManager(object):
     def __init__(self, sResourcePath):
         self.sResourcePath = sResourcePath;
 
+    def selectSet(self, fGrouping, sTxsTransport = None, fCheckResources = True):
+        """
+        Returns a VM set with the selected VMs.
+        """
+        oSet = TestVmSet(oTestVmManager = self);
+        for oVm in g_aTestVMs:
+            if oVm.fGrouping & fGrouping:
+                if sTxsTransport is None  or  oVm.sNic0AttachType is None  or  sTxsTransport == oVm.sNic0AttachType:
+                    if not fCheckResources  or  len(oVm.getMissingResources(self.sResourcePath)) == 0:
+                        oCopyVm = copy.deepcopy(oVm);
+                        oCopyVm.oSet = oSet;
+                        oSet.aoTestVms.append(oCopyVm);
+        return oSet;
+
     def getStandardVmSet(self, sTxsTransport):
         """
         Gets the set of standard test VMs.
@@ -982,29 +1013,13 @@ class TestVmManager(object):
         This is supposed to do something seriously clever, like searching the
         testrsrc tree for usable VMs, but for the moment it's all hard coded. :-)
         """
-
-
-        oSet = TestVmSet(oTestVmManager = self);
-        for oVm in g_aTestVMs:
-            if oVm.fGrouping & g_kfGrpStandard:
-                if sTxsTransport is None  or  oVm.sNic0AttachType is None  or  sTxsTransport == oVm.sNic0AttachType:
-                    if len(oVm.getMissingResources(self.sResourcePath)) == 0:
-                        oSet.aoTestVms.append(oVm);
-                        oVm.oSet = oSet; ## ???
-        return oSet;
+        return self.selectSet(g_kfGrpStandard, sTxsTransport)
 
     def getSmokeVmSet(self):
         """
         Gets a representative set of VMs for smoke testing.
         """
-
-        oSet = TestVmSet(oTestVmManager = self);
-        for oVm in g_aTestVMs:
-            if oVm.fGrouping & g_kfGrpSmoke:
-                if len(oVm.getMissingResources(self.sResourcePath)) == 0:
-                    oSet.aoTestVms.append(oVm);
-                    oVm.oSet = oSet; ## ???
-        return oSet;
+        return self.selectSet(g_kfGrpSmoke);
 
     def shutUpPyLint(self):
         """ Shut up already! """

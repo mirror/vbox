@@ -9,6 +9,8 @@ This script aimes at respawning the Test Box Script when it terminates
 abnormally or due to an UPGRADE request.
 """
 
+from __future__ import print_function;
+
 __copyright__ = \
 """
 Copyright (C) 2012-2017 Oracle Corporation
@@ -66,10 +68,10 @@ class TestBoxScriptWrapper(object): # pylint: disable=R0903
         Cleanup
         """
         if self.oTask is not None:
-            print('Wait for child task...')
+            print('Wait for child task...');
             self.oTask.terminate()
             self.oTask.wait()
-            print('done. Exiting')
+            print('done. Exiting');
             self.oTask = None;
 
     def run(self):

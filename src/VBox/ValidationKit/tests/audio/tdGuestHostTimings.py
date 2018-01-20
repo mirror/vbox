@@ -55,12 +55,13 @@ class tdGuestHostTimings(vbox.TestDriver):                                      
         vbox.TestDriver.__init__(self);
         self.sSessionTypeDef = 'gui';
 
-        self.oTestVmSet = self.oTestVmManager.getStandardVmSet('nat')
+        self.oTestVmSet = self.oTestVmManager.getStandardVmSet('nat') ## ???
 
         # Use the command line "--test-vms mw7x64 execute" to run the only "mw7x64" VM
-        oTestVm = vboxtestvms.TestVm(self.oTestVmSet, 'mw7x64', sHd = 'mw7x64.vdi',
-                         sKind = 'Windows7', acCpusSup = range(1, 2), fIoApic = True, sFirmwareType = 'bios',
-                            asParavirtModesSup = ['hyperv'], asVirtModesSup = ['hwvirt-np'], sHddControllerType = 'SATA Controller');
+        oTestVm = vboxtestvms.TestVm('mw7x64', oSet = self.oTestVmSet, sHd = 'mw7x64.vdi',
+                                     sKind = 'Windows7', acCpusSup = range(1, 2), fIoApic = True, sFirmwareType = 'bios',
+                                     asParavirtModesSup = ['hyperv'], asVirtModesSup = ['hwvirt-np'],
+                                     sHddControllerType = 'SATA Controller');
 
         self.oTestVmSet.aoTestVms.append(oTestVm);
 
