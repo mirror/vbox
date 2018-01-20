@@ -27,10 +27,12 @@
 # include <QPainter>
 # include <QPlainTextEdit>
 # include <QScrollBar>
+# include <QStyle>
 # include <QTextBlock>
 
 /* GUI includes: */
 # include "UIVMLogViewerTextEdit.h"
+# include "UIVMLogViewerWidget.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -151,7 +153,7 @@ private:
 
 
 UIVMLogViewerTextEdit::UIVMLogViewerTextEdit(QWidget* parent /* = 0 */)
-    :QPlainTextEdit(parent)
+    : QIWithRetranslateUI<QPlainTextEdit>(parent)
     , m_pLineNumberArea(0)
     , m_mouseCursorLine(-1)
     , m_bShownTextIsFiltered(false)
@@ -168,6 +170,7 @@ UIVMLogViewerTextEdit::UIVMLogViewerTextEdit(QWidget* parent /* = 0 */)
 void UIVMLogViewerTextEdit::prepare()
 {
     prepareWidgets();
+    retranslateUi();
 }
 
 void UIVMLogViewerTextEdit::prepareWidgets()
@@ -190,12 +193,6 @@ void UIVMLogViewerTextEdit::prepareWidgets()
 
     setReadOnly(true);
 
-    /* Set colors to have a selection with bluebackground and white foreground: */
-    QPalette mPalette = palette();
-    mPalette.setColor(QPalette::Highlight, QColor(48, 140, 198, 255));
-    mPalette.setColor(QPalette::HighlightedText, QColor(255, 255, 255, 255));
-    mPalette.setColor(QPalette::Text, QColor(0, 0, 0, 255));
-    setPalette(mPalette);
 
 #if defined(RT_OS_SOLARIS)
     /* Use system fixed-width font on Solaris hosts as the Courier family fonts don't render well. */
@@ -205,9 +202,9 @@ void UIVMLogViewerTextEdit::prepareWidgets()
     font.setFamily("Courier New,courier");
 #endif
     setFont(font);
+
     if (m_pLineNumberArea)
         m_pLineNumberArea->setFont(font);
-
 }
 
 int UIVMLogViewerTextEdit::lineNumberAreaWidth()
@@ -265,6 +262,45 @@ void UIVMLogViewerTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
     }
 }
 
+void UIVMLogViewerTextEdit::retranslateUi()
+{
+    m_strBackgroungText = QString(UIVMLogViewerWidget::tr("Filtered"));
+}
+
+void UIVMLogViewerTextEdit::setBackground()
+{
+    QPalette mPalette = palette();
+    /* When the text is marked as filtered blend a background indicating that */
+    if (m_bShownTextIsFiltered)
+    {
+        QImage image(300, 100, QImage::Format_ARGB32_Premultiplied);
+        QColor fillColor(QPalette::Light);
+        fillColor.setAlpha(0);
+        image.fill(fillColor);
+        QPainter painter(&image);
+
+        /* Configure the font size and color. */
+        QFont pfont = painter.font();
+        QColor fontColor(QPalette::Dark);
+        fontColor.setAlpha(22);
+        painter.setPen(fontColor);
+        pfont.setBold(true);
+        pfont.setPixelSize(40);
+        painter.setFont(pfont);
+
+        painter.drawText(image.rect(), Qt::AlignCenter | Qt::AlignVCenter, m_strBackgroungText);
+
+        mPalette.setBrush(QPalette::Base, QBrush(image));
+        setPalette(mPalette);
+    }
+    else
+    {
+        /* Reset this->palette back to standard one. */
+        if (style())
+            setPalette(style()->standardPalette());
+    }
+}
+
 void UIVMLogViewerTextEdit::contextMenuEvent(QContextMenuEvent *pEvent)
 {
     /* If shown text is filtered, do not create Bookmark action since
@@ -287,29 +323,6 @@ void UIVMLogViewerTextEdit::contextMenuEvent(QContextMenuEvent *pEvent)
         disconnect(pAction, &QAction::triggered, this, &UIVMLogViewerTextEdit::sltBookmark);
 
     delete menu;
-}
-
-void UIVMLogViewerTextEdit::paintEvent(QPaintEvent *pEvent)
-{
-    QPlainTextEdit::paintEvent(pEvent);
-    if (m_bShownTextIsFiltered && viewport())
-    {
-        int rectHeight = 24;
-        int rectWidth = 84;
-        int rectX = viewport()->width() - rectWidth;
-        int rectMargin = 4;
-        if (verticalScrollBar())
-            rectX -= verticalScrollBar()->width();
-        QPainter painter(viewport());
-        painter.fillRect(rectX, 0, rectWidth, rectHeight, QColor(125, 125, 125, 100));
-        QFont nFont(painter.font());
-        nFont.setPixelSize(rectHeight- 2 * rectMargin) ;
-        painter.setFont(nFont);
-        painter.setPen(QPen(QColor(255, 0, 0, 175), 1.8f));
-        painter.drawText(rectX + rectMargin, rectMargin, rectWidth, rectHeight,
-                         Qt::AlignLeft, "Filtered");
-        viewport()->update();
-    }
 }
 
 void UIVMLogViewerTextEdit::resizeEvent(QResizeEvent *pEvent)
@@ -441,6 +454,7 @@ void UIVMLogViewerTextEdit::setShownTextIsFiltered(bool warning)
     if (m_bShownTextIsFiltered == warning)
         return;
     m_bShownTextIsFiltered = warning;
+    setBackground();
 }
 
 void UIVMLogViewerTextEdit::setShowLineNumbers(bool bShowLineNumbers)

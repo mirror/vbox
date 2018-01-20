@@ -18,6 +18,9 @@
 #ifndef ___UIVMLogViewerTextEdit_h___
 #define ___UIVMLogViewerTextEdit_h___
 
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
+
 /* Qt includes: */
 #include <QPlainTextEdit>
 #include <QPair>
@@ -25,7 +28,7 @@
 
 /* QPlainTextEdit extension for some addtional context menu items,
    a special scrollbar, line number area, and bookmarking support: */
-class UIVMLogViewerTextEdit : public QPlainTextEdit
+class UIVMLogViewerTextEdit : public QIWithRetranslateUI<QPlainTextEdit>
 {
     Q_OBJECT;
 
@@ -59,11 +62,11 @@ public:
 
 protected:
 
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
     virtual void contextMenuEvent(QContextMenuEvent *pEvent) /* override */;
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
     virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
     virtual void leaveEvent(QEvent * pEvent) /* override */;
+    virtual void retranslateUi() /* override */;
 
 private slots:
 
@@ -81,6 +84,7 @@ private:
     void setMouseCursorLine(int lineNumber);
     /** If bookmark exists this function removes it, if not it adds the bookmark. */
     void toggleBookmark(const QPair<int, QString>& bookmark);
+    void setBackground();
     /** Line number and text at the context menu position */
     QPair<int, QString>  m_iContextMenuBookmark;
     QWidget             *m_pLineNumberArea;
@@ -95,7 +99,7 @@ private:
     bool                 m_bShownTextIsFiltered;
     bool                 m_bShowLineNumbers;
     bool                 m_bWrapLines;
-
+    QString              m_strBackgroungText;
     friend class UILineNumberArea;
 };
 
