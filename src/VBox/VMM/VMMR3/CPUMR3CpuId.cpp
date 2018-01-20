@@ -2695,7 +2695,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            //| X86_CPUID_FEATURE_ECX_HVP   - Set explicitly later.
                            ;
 
-    /* Mask out the PCID unless FSGSBASE is exposed due to a bug in Windows 10 SMP guests, see @bugref{9089#c15}. */
+    /* Mask out PCID unless FSGSBASE is exposed due to a bug in Windows 10 SMP guests, see @bugref{9089#c15}. */
     if (   !pVM->cpum.s.GuestFeatures.fFsGsBase
         && (pStdFeatureLeaf->uEcx & X86_CPUID_FEATURE_ECX_PCID))
     {
@@ -3146,6 +3146,14 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                //| X86_CPUID_STEXT_FEATURE_ECX_PREFETCHWT1 - we do not do vector functions yet.
                                ;
                 pCurLeaf->uEdx &= 0; /** @todo X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB, X86_CPUID_STEXT_FEATURE_EDX_STIBP and X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP */
+
+                /* Mask out INVPCID unless FSGSBASE is exposed due to a bug in Windows 10 SMP guests, see @bugref{9089#c15}. */
+                if (  !pVM->cpum.s.GuestFeatures.fFsGsBase
+                   && (pCurLeaf->uEbx & X86_CPUID_STEXT_FEATURE_EBX_INVPCID))
+                {
+                    pCurLeaf->uEbx &= ~X86_CPUID_STEXT_FEATURE_EBX_INVPCID;
+                    LogRel(("CPUM: Disabled INVPCID without FSGSBASE to workaround buggy guests\n"));
+                }
 
                 if (pCpum->u8PortableCpuIdLevel > 0)
                 {
@@ -4092,13 +4100,13 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     /** @cfgm{/CPUM/IsaExts/PCID, isaextcfg, true}
      * Whether to expose the PCID feature to the guest.
      */
-    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "PCID", &pConfig->enmPcid, true);
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "PCID", &pConfig->enmPcid, pConfig->enmFsGsBase);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/CPUM/IsaExts/INVPCID, isaextcfg, true}
      * Whether to expose the INVPCID instruction to the guest.
      */
-    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "INVPCID", &pConfig->enmInvpcid, true);
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "INVPCID", &pConfig->enmInvpcid, pConfig->enmFsGsBase);
     AssertLogRelRCReturn(rc, rc);
 
 
