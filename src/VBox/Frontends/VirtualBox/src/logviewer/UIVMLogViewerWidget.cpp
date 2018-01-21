@@ -73,7 +73,7 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent 
     , m_pMenu(0)
     , m_bShowLineNumbers(true)
     , m_bWrapLines(false)
-
+    , m_iFontSizeInPoints(9)
 {
     /* Prepare VM Log-Viewer: */
     prepare();
@@ -326,6 +326,18 @@ void UIVMLogViewerWidget::sltWrapLines(bool bWrapLines)
     }
 }
 
+void UIVMLogViewerWidget::sltFontSizeChanged(int fontSize)
+{
+    if (m_iFontSizeInPoints == fontSize)
+        return;
+    m_iFontSizeInPoints = fontSize;
+    for (int i = 0; i < m_logPageList.size(); ++i)
+    {
+        UIVMLogPage* pLogPage = qobject_cast<UIVMLogPage*>(m_logPageList[i]);
+        if (pLogPage)
+            pLogPage->setFontSizeInPoints(m_iFontSizeInPoints);
+    }
+}
 
 void UIVMLogViewerWidget::setMachine(const CMachine &machine)
 {
@@ -426,10 +438,12 @@ void UIVMLogViewerWidget::prepareWidgets()
         /* Initialize settings' panel checkboxes: */
         m_pSettingsPanel->setShowLineNumbers(m_bShowLineNumbers);
         m_pSettingsPanel->setWrapLines(m_bWrapLines);
+        m_pSettingsPanel->setFontSizeInPoints(m_iFontSizeInPoints);
 
         m_pMainLayout->insertWidget(5, m_pSettingsPanel);
         connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigShowLineNumbers, this, &UIVMLogViewerWidget::sltShowLineNumbers);
         connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigWrapLines, this, &UIVMLogViewerWidget::sltWrapLines);
+        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
     }
 }
 
@@ -830,6 +844,8 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
     /* Initialize setting for this log page */
     pLogPage->setShowLineNumbers(m_bShowLineNumbers);
     pLogPage->setWrapLines(m_bWrapLines);
+    pLogPage->setFontSizeInPoints(m_iFontSizeInPoints);
+
     /* Set the file name only if we really have log file to read. */
     if (!noLogsToShow)
         pLogPage->setFileName(strFileName);

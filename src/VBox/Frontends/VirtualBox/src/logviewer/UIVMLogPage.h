@@ -108,6 +108,9 @@ public:
         filter should be applied again. */
     bool shouldFilterBeApplied(const QSet<QString> &filterTermSet, int filterOperationType) const;
 
+    void setFontSizeInPoints(int fontSize);
+    int  fontSizeInPoints() const;
+
 protected:
 
     virtual void showEvent(QShowEvent *pEvent) /* override */;
@@ -125,6 +128,10 @@ private:
     void retranslateUi();
     void updateTextEditBookmarkLineSet();
     void deleteBookmark(LogBookmark bookmark);
+    /** When settings for this changed, they are applied immediately
+        only if this is visible, if not they are applied when this becomes
+        visible. */
+    void applySettings();
 
     QHBoxLayout    *m_pMainLayout;
     UIVMLogViewerTextEdit *m_pTextEdit;
@@ -160,6 +167,7 @@ private:
 
     bool m_bShowLineNumbers;
     bool m_bWrapLines;
+    int  m_iFontSizeInPoints;
 };
 
 #endif /* !___UIVMLogPage_h___ */

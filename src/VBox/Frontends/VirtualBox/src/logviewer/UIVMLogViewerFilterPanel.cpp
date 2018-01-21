@@ -274,7 +274,7 @@ bool UIVMLogViewerFilterPanel::applyFilterTermsToString(const QString& string)
     /* Number of the filter terms contained with the @p string: */
     int hitCount = 0;
 
-    for(QSet<QString>::const_iterator iterator = m_filterTermSet.begin();
+    for (QSet<QString>::const_iterator iterator = m_filterTermSet.begin();
         iterator != m_filterTermSet.end(); ++iterator)
     {
         const QString& filterTerm = *iterator;

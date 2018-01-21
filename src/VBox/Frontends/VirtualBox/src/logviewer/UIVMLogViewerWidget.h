@@ -107,8 +107,12 @@ private slots:
        of UIVMLogPage is changed. */
     void sltLogPageFilteredChanged(bool isFiltered);
 
-    void sltShowLineNumbers(bool bShowLineNumbers);
-    void sltWrapLines(bool bWrapLine);
+    /** @name Slots to handle signals from settings panel
+     * @{ */
+        void sltShowLineNumbers(bool bShowLineNumbers);
+        void sltWrapLines(bool bWrapLine);
+        void sltFontSizeChanged(int fontSize);
+    /** @} */
 
 private:
 
@@ -200,6 +204,7 @@ private:
             UIVMLogViewerWidget and applies to all log pages (all tabs) */
         bool m_bShowLineNumbers;
         bool m_bWrapLines;
+        int  m_iFontSizeInPoints;
     /** @} */
 
     friend class UIVMLogViewerBookmarksPanel;

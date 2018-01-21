@@ -26,6 +26,8 @@
 #  include <QFontDatabase>
 # endif
 # include <QCheckBox>
+# include <QLabel>
+# include <QSpinBox>
 
 /* GUI includes: */
 # include "QIToolButton.h"
@@ -39,6 +41,9 @@ UIVMLogViewerSettingsPanel::UIVMLogViewerSettingsPanel(QWidget *pParent, UIVMLog
     : UIVMLogViewerPanel(pParent, pViewer)
     , m_pLineNumberCheckBox(0)
     , m_pWrapLinesCheckBox(0)
+    , m_pFontSizeSpinBox(0)
+    , m_pFontSizeLabel(0)
+    , m_iDefaultFontSize(9)
 {
     prepare();
 }
@@ -61,22 +66,48 @@ void UIVMLogViewerSettingsPanel::setWrapLines(bool bWrapLines)
     m_pWrapLinesCheckBox->setChecked(bWrapLines);
 }
 
+void UIVMLogViewerSettingsPanel::setFontSizeInPoints(int fontSizeInPoints)
+{
+    if (!m_pFontSizeSpinBox)
+        return;
+    if (m_pFontSizeSpinBox->value() == fontSizeInPoints)
+        return;
+    m_pFontSizeSpinBox->setValue(fontSizeInPoints);
+}
 
 void UIVMLogViewerSettingsPanel::prepareWidgets()
 {
     if (!mainLayout())
         return;
 
-    m_pLineNumberCheckBox = new QCheckBox(this);
-    AssertPtrReturnVoid(m_pLineNumberCheckBox);
-    m_pLineNumberCheckBox->setChecked(true);
-    mainLayout()->addWidget(m_pLineNumberCheckBox, 0, Qt::AlignLeft);
+    m_pLineNumberCheckBox = new QCheckBox;
+    if (m_pLineNumberCheckBox)
+    {
+        m_pLineNumberCheckBox->setChecked(true);
+        mainLayout()->addWidget(m_pLineNumberCheckBox, 0, Qt::AlignLeft);
+    }
 
-    m_pWrapLinesCheckBox = new QCheckBox(this);
-    AssertPtrReturnVoid(m_pWrapLinesCheckBox);
-    m_pWrapLinesCheckBox->setChecked(false);
-    mainLayout()->addWidget(m_pWrapLinesCheckBox, 0, Qt::AlignLeft);
+    m_pWrapLinesCheckBox = new QCheckBox;
+    if (m_pWrapLinesCheckBox)
+    {
+        m_pWrapLinesCheckBox->setChecked(false);
+        mainLayout()->addWidget(m_pWrapLinesCheckBox, 0, Qt::AlignLeft);
+    }
 
+    m_pFontSizeSpinBox = new QSpinBox;
+    if (m_pFontSizeSpinBox)
+    {
+        mainLayout()->addWidget(m_pFontSizeSpinBox, 0, Qt::AlignLeft);
+        m_pFontSizeSpinBox->setValue(m_iDefaultFontSize);
+        m_pFontSizeSpinBox->setMaximum(44);
+        m_pFontSizeSpinBox->setMinimum(6);
+    }
+
+    m_pFontSizeLabel = new QLabel;
+    if (m_pFontSizeLabel)
+    {
+        mainLayout()->addWidget(m_pFontSizeLabel, 0, Qt::AlignLeft);
+    }
     mainLayout()->addStretch(2);
 }
 
@@ -86,6 +117,9 @@ void UIVMLogViewerSettingsPanel::prepareConnections()
         connect(m_pLineNumberCheckBox, &QCheckBox::toggled, this, &UIVMLogViewerSettingsPanel::sigShowLineNumbers);
     if (m_pWrapLinesCheckBox)
         connect(m_pWrapLinesCheckBox, &QCheckBox::toggled, this, &UIVMLogViewerSettingsPanel::sigWrapLines);
+    if (m_pFontSizeSpinBox)
+        connect(m_pFontSizeSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+                this, &UIVMLogViewerSettingsPanel::sigFontSizeInPoints);
 }
 
 void UIVMLogViewerSettingsPanel::retranslateUi()
@@ -96,4 +130,7 @@ void UIVMLogViewerSettingsPanel::retranslateUi()
 
     m_pWrapLinesCheckBox->setText(UIVMLogViewerWidget::tr("Wrap Lines"));
     m_pWrapLinesCheckBox->setToolTip(UIVMLogViewerWidget::tr("Wrap Lines"));
+
+    m_pFontSizeLabel->setText(UIVMLogViewerWidget::tr("Font Size"));
+    m_pFontSizeSpinBox->setToolTip(UIVMLogViewerWidget::tr("Log Viewer Font Size"));
 }

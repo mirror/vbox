@@ -465,6 +465,11 @@ void UIVMLogViewerTextEdit::setShowLineNumbers(bool bShowLineNumbers)
     emit updateRequest(viewport()->rect(), 0);
 }
 
+bool UIVMLogViewerTextEdit::showLineNumbers() const
+{
+    return m_bShowLineNumbers;
+}
+
 void UIVMLogViewerTextEdit::setWrapLines(bool bWrapLines)
 {
     if (m_bWrapLines == bWrapLines)
@@ -480,8 +485,26 @@ void UIVMLogViewerTextEdit::setWrapLines(bool bWrapLines)
         setWordWrapMode(QTextOption::NoWrap);
         setWordWrapMode(QTextOption::NoWrap);
     }
-
     update();
+}
+
+void UIVMLogViewerTextEdit::setFontSizeInPoints(int fontSize)
+{
+    if (fontSizeInPoints() == fontSize)
+        return;
+    QFont newFont(font());
+    newFont.setPointSize(fontSize);
+    setFont(newFont);
+}
+
+int  UIVMLogViewerTextEdit::fontSizeInPoints() const
+{
+    return font().pointSize();
+}
+
+bool UIVMLogViewerTextEdit::wrapLines() const
+{
+    return m_bWrapLines;
 }
 
 int  UIVMLogViewerTextEdit::currentVerticalScrollBarValue() const
