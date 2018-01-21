@@ -349,7 +349,7 @@ class TMDatabaseConnection(object):
             sBound = unicode(sOperation);
 
         if sys.version_info[0] >= 3 and not isinstance(sBound, str):
-            sBound = sBound.decode('utf-8');
+            sBound = sBound.decode('utf-8'); # pylint: disable=redefined-variable-type
 
         aasExplain = None;
         if self._oExplainCursor is not None and not sBound.startswith('DROP'):
