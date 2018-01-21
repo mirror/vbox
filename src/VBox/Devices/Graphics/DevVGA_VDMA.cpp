@@ -3067,11 +3067,13 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
 #endif
                         pVGAState->pVdma = pVdma;
 
+#ifdef VBOX_WITH_CRHGSMI
                         /* No HGCM service if VMSVGA is enabled. */
                         if (!pVGAState->fVMSVGAEnabled)
                         {
                             int rcIgnored = vboxVDMACrCtlHgsmiSetup(pVdma); NOREF(rcIgnored); /** @todo is this ignoring intentional? */
                         }
+#endif
                         return VINF_SUCCESS;
 
 #ifdef VBOX_WITH_CRHGSMI
@@ -3201,7 +3203,7 @@ void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd, uint32_t
 #else
     RT_NOREF(cbCmd);
     pCmd->rc = VERR_NOT_IMPLEMENTED;
-    rc = VBoxSHGSMICommandComplete(pVdma->pHgsmi, pCmd);
+    int rc = VBoxSHGSMICommandComplete(pVdma->pHgsmi, pCmd);
     AssertRC(rc);
 #endif
 }
