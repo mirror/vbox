@@ -545,7 +545,8 @@ class WebServerGlueBase(object):
         dInfo['sys.version']                = sys.version;
         dInfo['sys.hexversion']             = sys.hexversion;
         dInfo['sys.api_version']            = sys.api_version;
-        dInfo['sys.subversion']             = sys.subversion;
+        if hasattr(sys, 'subversion'):
+            dInfo['sys.subversion']         = sys.subversion;   # pylint: disable=no-member
         dInfo['sys.platform']               = sys.platform;
         dInfo['sys.executable']             = sys.executable;
         dInfo['sys.copyright']              = sys.copyright;

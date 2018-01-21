@@ -36,9 +36,9 @@ if sys.version_info[0] >= 3:
     import urllib.parse as urlparse;                        # pylint: disable=import-error,no-name-in-module
     from urllib.parse import urlencode as urllib_urlencode; # pylint: disable=import-error,no-name-in-module
 else:
-    import httplib;                                         # pylint: disable=import-error
-    import urlparse;                                        # pylint: disable=import-error
-    from urllib import urlencode as urllib_urlencode;       # pylint: disable=import-error
+    import httplib;                                         # pylint: disable=import-error,no-name-in-module
+    import urlparse;                                        # pylint: disable=import-error,no-name-in-module
+    from urllib import urlencode as urllib_urlencode;       # pylint: disable=import-error,no-name-in-module
 
 # Validation Kit imports.
 from common import constants

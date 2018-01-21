@@ -243,6 +243,7 @@ class TestBoxCommand(object):
         if fReboot:
             self.doReboot();
         sys.exit(TBS_EXITCODE_NEED_UPGRADE);
+        return False;                   # shuts up pylint (it will probably complain later when it learns DECL_NO_RETURN).
 
     def _cmdUpgrade(self, oResponse, oConnection):
         """

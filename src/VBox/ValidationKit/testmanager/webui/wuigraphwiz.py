@@ -103,7 +103,7 @@ class WuiGraphWiz(WuiReportBase):
                     daTestBoxes[oSeries.idTestBox].append(oSeries);
                 else:
                     daTestBoxes[oSeries.idTestBox] = [oSeries,];
-            for _, aoSeriesPerTestBox in daTestBoxes.iteritems():
+            for aoSeriesPerTestBox in daTestBoxes.values():
                 if len(aoSeriesPerTestBox) >= 0:
                     asOsArches = aoSeriesPerTestBox[0].oBuildCategory.asOsArches;
                     for i in range(1, len(aoSeriesPerTestBox)):

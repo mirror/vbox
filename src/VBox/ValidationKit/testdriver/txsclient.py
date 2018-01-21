@@ -361,8 +361,8 @@ class TransportBase(object):
                     else:
                         # the primitive approach...
                         sUtf8 = o.encode('utf_8');
-                        for i in range(0, len(sUtf8)):
-                            abPayload.append(ord(sUtf8[i]))
+                        for ch in sUtf8:
+                            abPayload.append(ord(ch))
                     abPayload.append(0);
                 elif isinstance(o, long):
                     if o < 0 or o > 0xffffffff:
@@ -1840,19 +1840,19 @@ class TransportTcp(TransportBase):
         try:
             oSocket.connect((self.sHostname, self.uPort));
             rc = True;
-        except socket.error as e:
-            iRc = e[0];
-            if self.__isInProgressXcpt(e):
+        except socket.error as oXcpt:
+            iRc = oXcpt.errno;
+            if self.__isInProgressXcpt(oXcpt):
                 # Do the actual waiting.
-                reporter.log2('TransportTcp::connect: operation in progress (%s)...' % (e,));
+                reporter.log2('TransportTcp::connect: operation in progress (%s)...' % (oXcpt,));
                 try:
                     ttRc = select.select([oWakeupR], [oSocket], [oSocket, oWakeupR], cMsTimeout / 1000.0);
                     if len(ttRc[1]) + len(ttRc[2]) == 0:
                         raise socket.error(errno.ETIMEDOUT, 'select timed out');
                     iRc = oSocket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR);
                     rc = iRc == 0;
-                except socket.error as e:
-                    iRc = e[0];
+                except socket.error as oXcpt2:
+                    iRc = oXcpt2.errno;
                 except:
                     iRc = -42;
                     reporter.fatalXcpt('socket.select() on connect failed');

@@ -385,8 +385,7 @@ class LocalReporter(ReporterBase):
         # Figure the main log directory.
         #
         try:
-            import user;
-            self.sDefLogDir = os.path.abspath(os.path.join(user.home, "VBoxTestLogs"));
+            self.sDefLogDir = os.path.abspath(os.path.expanduser(os.path.join('~', 'VBoxTestLogs')));
         except:
             self.sDefLogDir = os.path.abspath("VBoxTestLogs");
         try:

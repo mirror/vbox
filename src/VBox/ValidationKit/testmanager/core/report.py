@@ -29,6 +29,9 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 
+# Standard Python imports.
+import sys;
+
 # Validation Kit imports.
 from testmanager.core.base          import ModelLogicBase, TMExceptionBase;
 from testmanager.core.build         import BuildCategoryData;
@@ -39,6 +42,10 @@ from testmanager.core.testcase      import TestCaseLogic;
 from testmanager.core.testcaseargs  import TestCaseArgsLogic;
 from testmanager.core.testresults   import TestResultLogic, TestResultFilter;
 from common                         import constants;
+
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    xrange = range; # pylint: disable=redefined-builtin,invalid-name
 
 
 

@@ -7,6 +7,8 @@
 Maintenance tool for closing orphaned testsets.
 """
 
+from __future__ import print_function;
+
 __copyright__ = \
 """
 Copyright (C) 2012-2017 Oracle Corporation
@@ -33,7 +35,7 @@ __version__ = "$Revision$"
 # Standard python imports
 import sys
 import os
-from optparse import OptionParser
+from optparse import OptionParser;  # pylint: disable=deprecated-module
 
 # Add Test Manager's modules path
 g_ksTestManagerDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -71,20 +73,20 @@ class CloseOrphanedTestSets(object):
         if aoOrphans:
             # Complete them.
             if self.oConfig.fJustDoIt:
-                print 'Completing %u test sets as abandoned:' % (len(aoOrphans),);
+                print('Completing %u test sets as abandoned:' % (len(aoOrphans),));
                 for oTestSet in aoOrphans:
-                    print '#%-7u: idTestBox=%-3u tsCreated=%s tsDone=%s' \
-                        % (oTestSet.idTestSet, oTestSet.idTestBox, oTestSet.tsCreated, oTestSet.tsDone);
+                    print('#%-7u: idTestBox=%-3u tsCreated=%s tsDone=%s'
+                          % (oTestSet.idTestSet, oTestSet.idTestBox, oTestSet.tsCreated, oTestSet.tsDone));
                     oLogic.completeAsAbandoned(oTestSet.idTestSet);
-                print 'Committing...';
+                print('Committing...');
                 oDb.commit();
             else:
                 for oTestSet in aoOrphans:
-                    print '#%-7u: idTestBox=%-3u tsCreated=%s tsDone=%s' \
-                        % (oTestSet.idTestSet, oTestSet.idTestBox, oTestSet.tsCreated, oTestSet.tsDone);
-                print 'Not completing any testsets without seeing the --just-do-it option.'
+                    print('#%-7u: idTestBox=%-3u tsCreated=%s tsDone=%s'
+                          % (oTestSet.idTestSet, oTestSet.idTestBox, oTestSet.tsCreated, oTestSet.tsDone));
+                print('Not completing any testsets without seeing the --just-do-it option.');
         else:
-            print 'No orphaned test sets.\n'
+            print('No orphaned test sets.\n');
         return 0;
 
 

@@ -33,7 +33,7 @@ __version__ = "$Revision$"
 # Standard python imports
 import sys;
 import os;
-from optparse import OptionParser;
+from optparse import OptionParser;  # pylint: disable=deprecated-module
 
 # Add Test Manager's modules path
 g_ksTestManagerDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))));

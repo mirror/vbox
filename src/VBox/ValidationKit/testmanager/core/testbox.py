@@ -31,6 +31,7 @@ __version__ = "$Revision$"
 
 # Standard python imports.
 import copy;
+import sys;
 import unittest;
 
 # Validation Kit imports.
@@ -39,6 +40,10 @@ from testmanager.core.base          import ModelDataBase, ModelDataBaseTestCase,
                                            TMInvalidData, TMTooManyRows, TMRowNotFound, \
                                            ChangeLogEntry, AttributeChangeEntry, AttributeChangeEntryPre;
 from testmanager.core.useraccount   import UserAccountLogic;
+
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    xrange = range; # pylint: disable=redefined-builtin,invalid-name
 
 
 class TestBoxInSchedGroupData(ModelDataBase):

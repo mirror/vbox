@@ -33,18 +33,24 @@ __version__ = "$Revision$"
 import array;
 import os;
 import shutil;
-import StringIO
+import sys;
+if sys.version_info[0] >= 3:
+    from io import StringIO as StringIO;            # pylint: disable=import-error,no-name-in-module
+else:
+    from StringIO import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module
 import subprocess;
 
 # Validation Kit imports.
 from common     import utils;
 from testdriver import reporter;
 
+
+
 class StdInOutBuffer(object):
     """ Standard input output buffer """
 
     def __init__(self, sInput = None):
-        self.sInput = StringIO.StringIO();
+        self.sInput = StringIO();
         if sInput is not None:
             self.sInput.write(self._toString(sInput));
             self.sInput.seek(0);

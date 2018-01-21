@@ -47,7 +47,8 @@ class WuiTestResultFailureDetailsLink(WuiTmLink):
                            sUrlBase = WuiMain.ksScriptName,
                            dParams = { WuiMain.ksParamAction: WuiMain.ksActionTestResultFailureDetails,
                                        TestResultFailureData.ksParam_idTestResult: idTestResult, },
-                           fBracketed = fBracketed);
+                           fBracketed = fBracketed,
+                           sTitle = sTitle);
         self.idTestResult = idTestResult;
 
 

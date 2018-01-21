@@ -36,13 +36,13 @@ import os;
 import sys;
 
 # Windows specific imports.
-import win32api;            # pylint: disable=import-error
+import pywintypes;          # pylint: disable=import-error
+import winerror;            # pylint: disable=import-error
 import win32con;            # pylint: disable=import-error
+import win32api;            # pylint: disable=import-error
 import win32console;        # pylint: disable=import-error
 import win32event;          # pylint: disable=import-error
 import win32process;        # pylint: disable=import-error
-import winerror;            # pylint: disable=import-error
-import pywintypes;          # pylint: disable=import-error
 
 # Validation Kit imports.
 from testdriver import reporter;
@@ -64,7 +64,7 @@ def processInterrupt(uPid):
     """
     try:
         # pylint: disable=no-member
-        win32console.GenerateConsoleCtrlEvent(win32con.CTRL_BREAK_EVENT, uPid);
+        win32console.GenerateConsoleCtrlEvent(win32con.CTRL_BREAK_EVENT, uPid);         # pylint: disable=c-extension-no-member
         #GenerateConsoleCtrlEvent = ctypes.windll.kernel32.GenerateConsoleCtrlEvent
         #rc = GenerateConsoleCtrlEvent(1, uPid);
         #reporter.log('GenerateConsoleCtrlEvent -> %s' % (rc,));
@@ -78,7 +78,7 @@ def postThreadMesssageClose(uTid):
     """ Posts a WM_CLOSE message to the specified thread."""
     fRc = False;
     try:
-        win32api.PostThreadMessage(uTid, win32con.WM_CLOSE, 0, 0);                                  # pylint: disable=no-member
+        win32api.PostThreadMessage(uTid, win32con.WM_CLOSE, 0, 0);              # pylint: disable=no-member,c-extension-no-member
         fRc = True;
     except:
         reporter.logXcpt('uTid=%s' % (uTid,));
@@ -88,7 +88,8 @@ def postThreadMesssageQuit(uTid):
     """ Posts a WM_QUIT message to the specified thread."""
     fRc = False;
     try:
-        win32api.PostThreadMessage(uTid, win32con.WM_QUIT, 0x40010004, 0); # DBG_TERMINATE_PROCESS  # pylint: disable=no-member
+        win32api.PostThreadMessage(uTid, win32con.WM_QUIT,                      # pylint: disable=no-member,c-extension-no-member
+                                   0x40010004, 0); # DBG_TERMINATE_PROCESS
         fRc = True;
     except:
         reporter.logXcpt('uTid=%s' % (uTid,));
@@ -99,12 +100,14 @@ def processTerminate(uPid):
     # pylint: disable=no-member
     fRc = False;
     try:
-        hProcess = win32api.OpenProcess(win32con.PROCESS_TERMINATE, False, uPid);
+        hProcess = win32api.OpenProcess(win32con.PROCESS_TERMINATE,             # pylint: disable=no-member,c-extension-no-member
+                                        False, uPid);
     except:
         reporter.logXcpt('uPid=%s' % (uPid,));
     else:
         try:
-            win32process.TerminateProcess(hProcess, 0x40010004); # DBG_TERMINATE_PROCESS
+            win32process.TerminateProcess(hProcess,                             # pylint: disable=no-member,c-extension-no-member
+                                          0x40010004); # DBG_TERMINATE_PROCESS
             fRc = True;
         except:
             reporter.logXcpt('uPid=%s' % (uPid,));
@@ -119,7 +122,7 @@ def processExists(uPid):
     """ The Windows version of base.processExists """
     # We try open the process for waiting since this is generally only forbidden in a very few cases.
     try:
-        hProcess = win32api.OpenProcess(win32con.SYNCHRONIZE, False, uPid);     # pylint: disable=no-member
+        hProcess = win32api.OpenProcess(win32con.SYNCHRONIZE, False, uPid);     # pylint: disable=no-member,c-extension-no-member
     except pywintypes.error as oXcpt:                                           # pylint: disable=no-member
         if oXcpt.winerror == winerror.ERROR_INVALID_PARAMETER:
             return False;
@@ -181,9 +184,9 @@ def processCreate(sName, asArgs):
     # Try start the process.
     # pylint: disable=no-member
     dwCreationFlags = win32con.CREATE_NEW_PROCESS_GROUP;
-    oStartupInfo    = win32process.STARTUPINFO();
+    oStartupInfo    = win32process.STARTUPINFO();                                       # pylint: disable=c-extension-no-member
     try:
-        (hProcess, hThread, uPid, uTid) = win32process.CreateProcess(sName,
+        (hProcess, hThread, uPid, uTid) = win32process.CreateProcess(sName,             # pylint: disable=c-extension-no-member
             sCmdLine,                   # CommandLine
             None,                       # ProcessAttributes
             None,                       # ThreadAttibutes
@@ -204,10 +207,10 @@ def processCreate(sName, asArgs):
 
     # Try get full access to the process.
     try:
-        hProcessFullAccess = win32api.DuplicateHandle(
-            win32api.GetCurrentProcess(),
+        hProcessFullAccess = win32api.DuplicateHandle(                                  # pylint: disable=c-extension-no-member
+            win32api.GetCurrentProcess(),                                               # pylint: disable=c-extension-no-member
             hProcess,
-            win32api.GetCurrentProcess(),
+            win32api.GetCurrentProcess(),                                               # pylint: disable=c-extension-no-member
             win32con.PROCESS_TERMINATE
             | win32con.PROCESS_QUERY_INFORMATION
             | win32con.SYNCHRONIZE
@@ -226,7 +229,7 @@ def processPollByHandle(hProcess):
     Polls the process handle to see if it has finished (True) or not (False).
     """
     try:
-        dwWait = win32event.WaitForSingleObject(hProcess, 0);                                       # pylint: disable=no-member
+        dwWait = win32event.WaitForSingleObject(hProcess, 0);                   # pylint: disable=no-member,c-extension-no-member
     except:
         reporter.logXcpt('hProcess=%s %#x' % (hProcess, hProcess.handle,));
         return True;
@@ -238,7 +241,8 @@ def processTerminateByHandle(hProcess):
     Terminates the process.
     """
     try:
-        win32api.TerminateProcess(hProcess, 0x40010004); # DBG_TERMINATE_PROCESS                    # pylint: disable=no-member
+        win32api.TerminateProcess(hProcess,                                     # pylint: disable=no-member,c-extension-no-member
+                                  0x40010004); # DBG_TERMINATE_PROCESS
     except:
         reporter.logXcpt('hProcess=%s %#x' % (hProcess, hProcess.handle,));
         return False;

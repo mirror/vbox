@@ -32,6 +32,7 @@ __version__ = "$Revision$"
 
 
 # Standard python imports.
+import sys;
 import unittest;
 
 # Validation Kit imports.
@@ -48,6 +49,11 @@ from testmanager.core.testboxstatus     import TestBoxStatusData, TestBoxStatusL
 from testmanager.core.testcase          import TestCaseLogic;
 from testmanager.core.testcaseargs      import TestCaseArgsDataEx, TestCaseArgsLogic;
 from testmanager.core.testset           import TestSetData, TestSetLogic;
+
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    xrange = range; # pylint: disable=redefined-builtin,invalid-name
+
 
 
 class ReCreateQueueData(object):
@@ -302,9 +308,6 @@ class ReCreateQueueData(object):
                 i += 1; # Advance.
 
 
-        return True;
-
-
 
 class SchedQueueData(ModelDataBase):
     """
@@ -419,7 +422,7 @@ class SchedulerBase(object):
                 """Returns self, required by the language."""
                 return self;
 
-            def next(self):
+            def __next__(self):
                 """Returns the next build, raises StopIteration when the end has been reached."""
                 while True:
                     if self.iCur >= len(self.oCache.aoEntries):
@@ -431,7 +434,11 @@ class SchedulerBase(object):
                     self.iCur += 1;
                     if not oEntry.fRemoved:
                         return oEntry;
-                # end
+                return None; # not reached, but make pylint happy (for now).
+
+            def next(self):
+                """ For python 2.x. """
+                return self.__next__();
 
         class BuildCacheEntry(object):
             """ Build cache entry. """

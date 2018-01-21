@@ -35,7 +35,6 @@ import os
 import sys
 import time
 import threading
-import types
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -106,7 +105,7 @@ class tdPython1(vbox.TestDriver):
                 except:
                     reporter.errorXcpt();
                     break;
-                if not isinstance(rc, types.IntType):
+                if not isinstance(rc, int):
                     reporter.error('waitForEvents returns non-integer type');
                     break;
                 if rc == 1:
@@ -203,7 +202,7 @@ class tdPython1(vbox.TestDriver):
                     msElapsed = base.timestampMilli() - msNow;
 
                     # Check the return code and elapsed time.
-                    if not isinstance(rc, types.IntType):
+                    if not isinstance(rc, int):
                         reporter.error('waitForEvents returns non-integer type after %u ms, expected 1' % (msElapsed,));
                     elif rc != 1:
                         reporter.error('waitForEvents returned "%s" after %u ms, expected 1' % (rc, msElapsed));

@@ -497,6 +497,7 @@ class ProgressWrapper(TdTaskBase):
                 return -2;
             reporter.doPollWork('ProgressWrapper.waitForOperation');
         # Not reached.
+        return -3; # Make pylin happy (for now).
 
     def doQuickApiTest(self):
         """

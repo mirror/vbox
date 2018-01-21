@@ -1449,7 +1449,7 @@ class TestDriver(base.TestDriver):                                              
                 reporter.logXcpt();
 
             # If not being used, we can safely uninitialize COM.
-            if cIfs == 0 and cObjs == 0 and cVBoxMgrs == 0 and len(aoObjsLeftBehind) == 0:
+            if cIfs == 0 and cObjs == 0 and cVBoxMgrs == 0 and not aoObjsLeftBehind:
                 reporter.log('_teardownVBoxApi:   Calling CoUninitialize...');
                 try:    pythoncom.CoUninitialize();             # pylint: disable=no-member
                 except: reporter.logXcpt();
@@ -1500,7 +1500,7 @@ class TestDriver(base.TestDriver):                                              
                         reporter.log('_teardownVBoxApi:     - aoObjsLeftBehind');
                     else:
                         fPrinted = False;
-                        if isinstance(oReferrer, dict) or isinstance(oReferrer, list) or isinstance(oReferrer, tuple):
+                        if isinstance(oReferrer, (dict, list, tuple)):
                             try:
                                 aoSubReferreres = gc.get_referrers(oReferrer);
                                 for oSubRef in aoSubReferreres:

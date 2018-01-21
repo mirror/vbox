@@ -541,7 +541,8 @@ class BootSectorTestVm(TestVm):
         self.f64BitRequired = f64BitRequired;
         if asVirtModesSup is None:
             asVirtModesSup = list(g_asVirtModes);
-        TestVm.__init__(self, oSet, sVmName,
+        TestVm.__init__(self, sVmName,
+                        oSet = oSet,
                         acCpusSup = [1,],
                         sFloppy = sFloppy,
                         asVirtModesSup = asVirtModesSup,
@@ -1018,7 +1019,7 @@ class TestVmManager(object):
         for oVm in g_aTestVMs:
             if oVm.fGrouping & fGrouping:
                 if sTxsTransport is None  or  oVm.sNic0AttachType is None  or  sTxsTransport == oVm.sNic0AttachType:
-                    if not fCheckResources  or  len(oVm.getMissingResources(self.sResourcePath)) == 0:
+                    if not fCheckResources  or  not oVm.getMissingResources(self.sResourcePath):
                         oCopyVm = copy.deepcopy(oVm);
                         oCopyVm.oSet = oSet;
                         oSet.aoTestVms.append(oCopyVm);

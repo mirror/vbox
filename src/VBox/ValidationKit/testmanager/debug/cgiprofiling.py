@@ -51,7 +51,7 @@ def profileIt(fnMain, sAppendToElement = 'main', sSort = 'time'):
           '  <pre>');
     try:
         oProfiler.print_stats(sort = sSort);
-    except Exception, oXcpt:
+    except Exception as oXcpt:
         print('<p><pre>%s</pre></p>\n' % (oXcpt,));
     else:
         print('</pre>\n');

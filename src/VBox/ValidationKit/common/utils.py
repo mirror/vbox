@@ -320,36 +320,38 @@ def openNoDenyDeleteNoInherit(sFile, sMode = 'r'):
 
     if getHostOs() == 'win':
         # Need to use CreateFile directly to open the file so we can feed it FILE_SHARE_DELETE.
+        # pylint: disable=no-member,c-extension-no-member
         fAccess = 0;
-        fDisposition = win32file.OPEN_EXISTING;                                                 # pylint: disable=no-member
+        fDisposition = win32file.OPEN_EXISTING;
         if 'r' in sMode or '+' in sMode:
-            fAccess |= win32file.GENERIC_READ;                                                  # pylint: disable=no-member
+            fAccess |= win32file.GENERIC_READ;
         if 'a' in sMode:
-            fAccess |= win32file.GENERIC_WRITE;                                                 # pylint: disable=no-member
-            fDisposition = win32file.OPEN_ALWAYS;                                               # pylint: disable=no-member
+            fAccess |= win32file.GENERIC_WRITE;
+            fDisposition = win32file.OPEN_ALWAYS;
         elif 'w' in sMode:
-            fAccess = win32file.GENERIC_WRITE;                                                  # pylint: disable=no-member
+            fAccess = win32file.GENERIC_WRITE;
             if '+' in sMode:
-                fDisposition = win32file.OPEN_ALWAYS;                                           # pylint: disable=no-member
-                fAccess |= win32file.GENERIC_READ;                                              # pylint: disable=no-member
+                fDisposition = win32file.OPEN_ALWAYS;
+                fAccess |= win32file.GENERIC_READ;
             else:
-                fDisposition = win32file.CREATE_ALWAYS;                                         # pylint: disable=no-member
+                fDisposition = win32file.CREATE_ALWAYS;
         if not fAccess:
-            fAccess |= win32file.GENERIC_READ;                                                  # pylint: disable=no-member
-        fSharing = (win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE                      # pylint: disable=no-member
-                    | win32file.FILE_SHARE_DELETE);                                             # pylint: disable=no-member
-        hFile = win32file.CreateFile(sFile, fAccess, fSharing, None, fDisposition, 0, None);    # pylint: disable=no-member
+            fAccess |= win32file.GENERIC_READ;
+        fSharing = (win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE
+                    | win32file.FILE_SHARE_DELETE);
+        hFile = win32file.CreateFile(sFile, fAccess, fSharing, None, fDisposition, 0, None);
         if 'a' in sMode:
-            win32file.SetFilePointer(hFile, 0, win32file.FILE_END);                             # pylint: disable=no-member
+            win32file.SetFilePointer(hFile, 0, win32file.FILE_END);
 
         # Turn the NT handle into a CRT file descriptor.
         hDetachedFile = hFile.Detach();
-        if fAccess == win32file.GENERIC_READ:                                                   # pylint: disable=no-member
+        if fAccess == win32file.GENERIC_READ:
             fOpen = os.O_RDONLY;
-        elif fAccess == win32file.GENERIC_WRITE:                                                # pylint: disable=no-member
+        elif fAccess == win32file.GENERIC_WRITE:
             fOpen = os.O_WRONLY;
         else:
             fOpen = os.O_RDWR;
+        # pulint: enable=no-member,c-extension-no-member
         if 'a' in sMode:
             fOpen |= os.O_APPEND;
         if 'b' in sMode or 't' in sMode:
@@ -714,7 +716,8 @@ def processInterrupt(uPid):
     """
     if sys.platform == 'win32':
         try:
-            win32console.GenerateConsoleCtrlEvent(win32con.CTRL_BREAK_EVENT, uPid);             # pylint: disable=no-member
+            win32console.GenerateConsoleCtrlEvent(win32con.CTRL_BREAK_EVENT, # pylint: disable=no-member,c-extension-no-member
+                                                  uPid);
             fRc = True;
         except:
             fRc = False;
@@ -753,12 +756,14 @@ def processTerminate(uPid):
     fRc = False;
     if sys.platform == 'win32':
         try:
-            hProcess = win32api.OpenProcess(win32con.PROCESS_TERMINATE, False, uPid);           # pylint: disable=no-member
+            hProcess = win32api.OpenProcess(win32con.PROCESS_TERMINATE,     # pylint: disable=no-member,c-extension-no-member
+                                            False, uPid);
         except:
             pass;
         else:
             try:
-                win32process.TerminateProcess(hProcess, 0x40010004); # DBG_TERMINATE_PROCESS    # pylint: disable=no-member
+                win32process.TerminateProcess(hProcess,                     # pylint: disable=no-member,c-extension-no-member
+                                              0x40010004); # DBG_TERMINATE_PROCESS
                 fRc = True;
             except:
                 pass;
@@ -810,8 +815,9 @@ def processExists(uPid):
         fRc = False;
         # We try open the process for waiting since this is generally only forbidden in a very few cases.
         try:
-            hProcess = win32api.OpenProcess(win32con.SYNCHRONIZE, False, uPid);     # pylint: disable=no-member
-        except pywintypes.error as oXcpt:                                           # pylint: disable=no-member
+            hProcess = win32api.OpenProcess(win32con.SYNCHRONIZE,           # pylint: disable=no-member,c-extension-no-member
+                                            False, uPid);
+        except pywintypes.error as oXcpt:                                   # pylint: disable=no-member
             if oXcpt.winerror == winerror.ERROR_ACCESS_DENIED:
                 fRc = True;
         except Exception as oXcpt:
@@ -1642,7 +1648,7 @@ def getObjectTypeName(oObject):
     # Python 2.x only: Handle old-style object wrappers.
     if sys.version_info[0] < 3:
         try:
-            from types import InstanceType;
+            from types import InstanceType;     # pylint: disable=no-name-in-module
             if oType == InstanceType:
                 oType = oObject.__class__;
         except:
@@ -1777,7 +1783,7 @@ def isString(oString):
     """
     if sys.version_info[0] >= 3:
         return isinstance(oString, str);
-    return isinstance(oString, basestring);
+    return isinstance(oString, basestring);     # pylint: disable=undefined-variable
 
 
 def hasNonAsciiCharacters(sText):

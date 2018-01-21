@@ -34,7 +34,7 @@ __version__ = "$Revision$"
 import math
 import multiprocessing
 import os
-from optparse import OptionParser
+from optparse import OptionParser       # pylint: disable=deprecated-module
 import platform
 import random
 import shutil

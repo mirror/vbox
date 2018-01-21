@@ -34,7 +34,10 @@ __version__ = "$Revision$"
 import os;
 import socket;
 import sys;
-import StringIO;
+if sys.version_info[0] >= 3:
+    from io       import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module
+else:
+    from StringIO import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -96,7 +99,7 @@ class FioTest(object):
         if sIoEngine is None:
             return False;
 
-        cfgBuf = StringIO.StringIO();
+        cfgBuf = StringIO();
         cfgBuf.write('[global]\n');
         cfgBuf.write('bs=' + self.dCfg.get('RecordSize', '4k') + '\n');
         cfgBuf.write('ioengine=' + sIoEngine + '\n');
@@ -1142,8 +1145,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                             sCfgmPath = 'VBoxInternal/Devices/%s/0/LUN#%u/Config' % (sDrv, iLun);
 
                         sIoLogFile = '%s/%s.iolog' % (self.sIoLogPath, sDrv);
-                        print sCfgmPath;
-                        print sIoLogFile;
+                        print(sCfgmPath);
+                        print(sIoLogFile);
                         oSession.o.machine.setExtraData('%s/IoLog' % (sCfgmPath,), sIoLogFile);
                     except:
                         reporter.logXcpt();

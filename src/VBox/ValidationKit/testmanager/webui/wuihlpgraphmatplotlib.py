@@ -30,12 +30,16 @@ __version__ = "$Revision$"
 
 # Standard Python Import and extensions installed on the system.
 import re;
-import StringIO;
+import sys;
+if sys.version_info[0] >= 3:
+    from io       import StringIO as StringIO;  # pylint: disable=import-error,no-name-in-module
+else:
+    from StringIO import StringIO as StringIO;  # pylint: disable=import-error,no-name-in-module
 
-import matplotlib;                          # pylint: disable=F0401
+import matplotlib;                              # pylint: disable=F0401
 matplotlib.use('Agg'); # Force backend.
-import matplotlib.pyplot;                   # pylint: disable=F0401
-from numpy import arange as numpy_arange;   # pylint: disable=E0611,E0401
+import matplotlib.pyplot;                       # pylint: disable=F0401
+from numpy import arange as numpy_arange;       # pylint: disable=E0611,E0401
 
 # Validation Kit imports.
 from testmanager.webui.wuihlpgraphbase  import WuiHlpGraphBase;
@@ -69,7 +73,7 @@ class WuiHlpGraphMatplotlibBase(WuiHlpGraphBase):
 
     def _produceSvg(self, oFigure, fTightLayout = True):
         """ Creates an SVG string from the given figure. """
-        oOutput = StringIO.StringIO();
+        oOutput = StringIO();
         if fTightLayout:
             oFigure.tight_layout();
         oFigure.savefig(oOutput, format = 'svg');

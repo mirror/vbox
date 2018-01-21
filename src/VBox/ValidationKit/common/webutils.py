@@ -35,13 +35,13 @@ import unittest;
 
 # Python 3 hacks:
 if sys.version_info[0] < 3:
-    from urllib2        import quote        as urllib_quote;
-    from urllib         import urlencode    as urllib_urlencode;
-    from urllib         import urlopen      as urllib_urlopen;
+    from urllib2        import quote        as urllib_quote;        # pylint: disable=import-error,no-name-in-module
+    from urllib         import urlencode    as urllib_urlencode;    # pylint: disable=import-error,no-name-in-module
+    from urllib         import urlopen      as urllib_urlopen;      # pylint: disable=import-error,no-name-in-module
 else:
-    from urllib.parse   import quote        as urllib_quote;        # pylint: disable=F0401,E0611
-    from urllib.parse   import urlencode    as urllib_urlencode;    # pylint: disable=F0401,E0611
-    from urllib.request import urlopen      as urllib_urlopen;      # pylint: disable=F0401,E0611
+    from urllib.parse   import quote        as urllib_quote;        # pylint: disable=import-error,no-name-in-module
+    from urllib.parse   import urlencode    as urllib_urlencode;    # pylint: disable=import-error,no-name-in-module
+    from urllib.request import urlopen      as urllib_urlopen;      # pylint: disable=import-error,no-name-in-module
 
 # Validation Kit imports.
 from common import utils;

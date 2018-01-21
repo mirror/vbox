@@ -12,6 +12,8 @@ a lot of skipped tests because of missing builds, typically during
 bisecting problems.
 """
 
+from __future__ import print_function;
+
 __copyright__ = \
 """
 Copyright (C) 2012-2017 Oracle Corporation
@@ -38,7 +40,7 @@ __version__ = "$Revision$"
 # Standard python imports
 import sys;
 import os;
-from optparse import OptionParser;
+from optparse import OptionParser;  # pylint: disable=deprecated-module
 
 # Add Test Manager's modules path
 g_ksTestManagerDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))));
@@ -47,6 +49,8 @@ sys.path.append(g_ksTestManagerDir);
 # Test Manager imports
 from testmanager.core.db    import TMDatabaseConnection;
 from testmanager.core.build import BuildLogic;
+
+
 
 class BuildChecker(object): # pylint: disable=R0903
     """
@@ -69,9 +73,9 @@ class BuildChecker(object): # pylint: disable=R0903
         (self.oConfig, _) = oParser.parse_args();
         if not self.oConfig.fQuiet:
             if not self.oConfig.fRealRun:
-                print 'Dry run.';
+                print('Dry run.');
             else:
-                print 'Real run! Will commit findings!';
+                print('Real run! Will commit findings!');
 
 
     def checkBuilds(self):
@@ -87,24 +91,24 @@ class BuildChecker(object): # pylint: disable=R0903
         while True:
             aoBuilds = oBuildLogic.fetchForListing(iStart, cMaxRows, tsNow);
             if not self.oConfig.fQuiet and aoBuilds:
-                print 'Processing builds #%s thru #%s' % (aoBuilds[0].idBuild, aoBuilds[-1].idBuild);
+                print('Processing builds #%s thru #%s' % (aoBuilds[0].idBuild, aoBuilds[-1].idBuild));
 
             for oBuild in aoBuilds:
                 if oBuild.fBinariesDeleted is False:
                     rc = oBuild.areFilesStillThere();
                     if rc is False:
                         if not self.oConfig.fQuiet:
-                            print 'missing files for build #%s / r%s / %s / %s / %s / %s / %s' \
-                                % (oBuild.idBuild, oBuild.iRevision, oBuild.sVersion, oBuild.oCat.sType,
-                                   oBuild.oCat.sBranch, oBuild.oCat.sProduct, oBuild.oCat.asOsArches,);
-                            print '  %s' % (oBuild.sBinaries,);
+                            print('missing files for build #%s / r%s / %s / %s / %s / %s / %s'
+                                  % (oBuild.idBuild, oBuild.iRevision, oBuild.sVersion, oBuild.oCat.sType,
+                                     oBuild.oCat.sBranch, oBuild.oCat.sProduct, oBuild.oCat.asOsArches,));
+                            print('  %s' % (oBuild.sBinaries,));
                         if self.oConfig.fRealRun is True:
                             oBuild.fBinariesDeleted = True;
                             oBuildLogic.editEntry(oBuild, fCommit = True);
                     elif rc is True and not self.oConfig.fQuiet:
-                        print 'build #%s still have its files' % (oBuild.idBuild,);
+                        print('build #%s still have its files' % (oBuild.idBuild,));
                     elif rc is None and not self.oConfig.fQuiet:
-                        print 'Unable to determine state of build #%s' % (oBuild.idBuild,);
+                        print('Unable to determine state of build #%s' % (oBuild.idBuild,));
 
             # advance
             if len(aoBuilds) < cMaxRows:

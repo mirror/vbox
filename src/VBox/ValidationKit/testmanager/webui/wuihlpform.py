@@ -30,6 +30,7 @@ __version__ = "$Revision$"
 
 # Standard python imports.
 import copy;
+import sys;
 
 # Validation Kit imports.
 from common                         import utils;
@@ -38,6 +39,10 @@ from testmanager                    import config;
 from testmanager.core.schedgroup    import SchedGroupMemberData, SchedGroupDataEx;
 from testmanager.core.testcaseargs  import TestCaseArgsData;
 from testmanager.core.testgroup     import TestGroupMemberData, TestGroupDataEx;
+
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    unicode = str;  # pylint: disable=redefined-builtin,invalid-name
 
 
 class WuiHlpForm(object):

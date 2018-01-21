@@ -8,6 +8,8 @@ Interface used by the tinderbox server side software to mark build binaries
 deleted.
 """
 
+from __future__ import print_function;
+
 __copyright__ = \
 """
 Copyright (C) 2012-2017 Oracle Corporation
@@ -34,7 +36,7 @@ __version__ = "$Revision$"
 # Standard python imports
 import sys
 import os
-from optparse import OptionParser
+from optparse import OptionParser;  # pylint: disable=deprecated-module
 
 # Add Test Manager's modules path
 g_ksTestManagerDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -73,7 +75,7 @@ def markBuildsDeleted():
             raise;
         else:
             if not oConfig.fQuiet:
-                print "del_build.py: Marked %u builds associated with '%s' as deleted." % (cBuilds, sBuildBin,);
+                print("del_build.py: Marked %u builds associated with '%s' as deleted." % (cBuilds, sBuildBin,));
 
     oDb.close()
     return 0;

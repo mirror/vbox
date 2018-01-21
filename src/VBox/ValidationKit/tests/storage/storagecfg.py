@@ -314,7 +314,7 @@ class StorageConfigOsLinux(StorageConfigOs):
         """
         fRc = True;
         sBlkDev = None;
-        if self.dSimplePools.has_key(sPool):
+        if sPool in self.dSimplePools:
             sDiskPath = self.dSimplePools.get(sPool);
             if sDiskPath.find('zram') != -1:
                 sBlkDev = sDiskPath;
@@ -356,7 +356,7 @@ class StorageConfigOsLinux(StorageConfigOs):
         fRc = oExec.execBinaryNoStdOut('umount', (sMountPoint,));
         self.dMounts.pop(sPool + '/' + sVol);
         oExec.rmDir(sMountPoint);
-        if self.dSimplePools.has_key(sPool):
+        if sPool in self.dSimplePools:
             # Wipe partition table
             sDiskPath = self.dSimplePools.get(sPool);
             if sDiskPath.find('zram') == -1:
@@ -371,7 +371,7 @@ class StorageConfigOsLinux(StorageConfigOs):
         Destroys the given storage pool.
         """
         fRc = True;
-        if self.dSimplePools.has_key(sPool):
+        if sPool in self.dSimplePools:
             self.dSimplePools.pop(sPool);
         else:
             fRc = oExec.execBinaryNoStdOut('vgremove', (sPool,));
@@ -564,7 +564,7 @@ class StorageCfg(object):
 
         fRc = True;
         sMountPoint = None;
-        if self.dPools.has_key(sPool):
+        if sPool in self.dPools:
             sVol = 'vol' + str(self.iVolId);
             sMountPoint = self.oStorOs.getMntBase() + '/' + sVol;
             self.iVolId += 1;

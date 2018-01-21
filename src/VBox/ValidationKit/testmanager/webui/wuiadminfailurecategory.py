@@ -46,7 +46,8 @@ class WuiFailureReasonCategoryLink(WuiTmLink):
                            sUrlBase = WuiAdmin.ksScriptName,
                            dParams = { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureCategoryDetails,
                                        FailureCategoryData.ksParam_idFailureCategory: idFailureCategory, },
-                           fBracketed = fBracketed);
+                           fBracketed = fBracketed,
+                           sTitle = sTitle);
         self.idFailureCategory = idFailureCategory;
 
 

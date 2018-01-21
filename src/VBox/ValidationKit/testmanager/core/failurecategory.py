@@ -29,10 +29,17 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 
+# Standard Python imports.
+import sys;
+
 # Validation Kit imports.
 from testmanager.core.base          import ModelDataBase, ModelLogicBase, TMRowInUse, TMInvalidData, TMRowNotFound, \
                                            ChangeLogEntry, AttributeChangeEntry;
 from testmanager.core.useraccount   import UserAccountLogic;
+
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    xrange = range; # pylint: disable=redefined-builtin,invalid-name
 
 
 class FailureCategoryData(ModelDataBase):

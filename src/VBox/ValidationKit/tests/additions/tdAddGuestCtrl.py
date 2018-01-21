@@ -3167,13 +3167,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         for (i, aTest) in enumerate(aaTests):
             curTest = aTest[0]; # tdTestFileReadWrite, use an index, later.
             curRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sFile="%s", cbToReadWrite=%d, sOpenMode="%s", sDisposition="%s", cbOffset=%d ...' % \
+            reporter.log('Testing #%d, sFile="%s", cbToReadWrite=%d, sOpenMode="%s", sDisposition="%s", cbOffset=%d ...' %
                          (i, curTest.sFile, curTest.cbToReadWrite, curTest.sOpenMode, curTest.sDisposition, curTest.cbOffset));
             curTest.setEnvironment(oSession, oTxsSession, oTestVm);
             fRc, curGuestSession = curTest.createSession('testGuestCtrlFileWrite: Test #%d' % (i,));
             if fRc is False:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
+
             try:
                 if curTest.cbOffset > 0: # The offset parameter is gone.
                     if self.oTstDrv.fpApiVer >= 5.0:
@@ -3181,12 +3182,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                                              curTest.getSharingMode(), []);
                         curFile.seek(curTest.cbOffset, vboxcon.FileSeekOrigin_Begin);
                     else:
-                        curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
+                        curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.sOpenMode, curTest.sDisposition,
                                                              curTest.sSharingMode, curTest.lCreationMode, curTest.cbOffset);
                     curOffset = long(curFile.offset);
                     resOffset = long(curTest.cbOffset);
                     if curOffset != resOffset:
-                        reporter.error('Test #%d failed: Initial offset on open does not match: Got %d, expected %d' \
+                        reporter.error('Test #%d failed: Initial offset on open does not match: Got %d, expected %d'
                                        % (i, curOffset, resOffset));
                         fRc = False;
                 else:
@@ -3194,16 +3195,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         curFile = curGuestSession.fileOpen(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
                                                            curTest.lCreationMode);
                     else:
-                        curFile = curGuestSession.fileOpen(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
+                        curFile = curGuestSession.fileOpen(curTest.sFile, curTest.sOpenMode, curTest.sDisposition,
                                                            curTest.lCreationMode);
-                if  fRc \
-                and curTest.cbToReadWrite > 0:
+                if fRc and curTest.cbToReadWrite > 0:
                     ## @todo Split this up in 64K writes. Later.
                     ## @todo Test timeouts.
                     cBytesWritten = curFile.write(curTest.aBuf, 30 * 1000);
-                    if  curRes.cbProcessed > 0 \
-                    and curRes.cbProcessed != cBytesWritten:
-                        reporter.error('Test #%d failed: Written buffer length does not match: Got %d, expected %d' \
+                    if    curRes.cbProcessed > 0 \
+                      and curRes.cbProcessed != cBytesWritten:
+                        reporter.error('Test #%d failed: Written buffer length does not match: Got %d, expected %d'
                                        % (i, cBytesWritten, curRes.cbProcessed));
                         fRc = False;
                     if fRc:
@@ -3217,29 +3217,27 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         except:
                             reporter.logXcpt('Seeking back to initial write position failed:');
                             fRc = False;
-                        if  fRc \
-                        and long(curFile.offset) != curTest.cbOffset:
-                            reporter.error('Test #%d failed: Initial write position does not match current position, \
-                                           got %d, expected %d' \
-                                           % (i, long(curFile.offset), curTest.cbOffset));
+                        if fRc and long(curFile.offset) != curTest.cbOffset:
+                            reporter.error('Test #%d failed: Initial write position does not match current position, '
+                                           'got %d, expected %d' % (i, long(curFile.offset), curTest.cbOffset));
                             fRc = False;
                     if fRc:
                         aBufRead = curFile.read(curTest.cbToReadWrite, 30 * 1000);
                         if len(aBufRead) != curTest.cbToReadWrite:
-                            reporter.error('Test #%d failed: Got buffer length %d, expected %d' \
+                            reporter.error('Test #%d failed: Got buffer length %d, expected %d'
                                            % (i, len(aBufRead), curTest.cbToReadWrite));
                             fRc = False;
-                        if  fRc \
-                        and curRes.aBuf is not None \
-                        and buffer(curRes.aBuf) != aBufRead:
-                            reporter.error('Test #%d failed: Got buffer\n%s, expected\n%s' \
+                        if    fRc \
+                          and curRes.aBuf is not None \
+                          and curRes.aBuf != aBufRead:
+                            reporter.error('Test #%d failed: Got buffer\n%s, expected\n%s'
                                            % (i, aBufRead, curRes.aBuf));
                             fRc = False;
                 # Test final offset.
                 curOffset = long(curFile.offset);
                 resOffset = long(curRes.cbOffset);
                 if curOffset != resOffset:
-                    reporter.error('Test #%d failed: Final offset does not match: Got %d, expected %d' \
+                    reporter.error('Test #%d failed: Final offset does not match: Got %d, expected %d'
                                    % (i, curOffset, resOffset));
                     fRc = False;
                 curFile.close();
