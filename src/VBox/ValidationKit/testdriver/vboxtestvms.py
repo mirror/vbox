@@ -192,7 +192,7 @@ class TestVm(object):
 
     def __init__(self, # pylint: disable=R0913
                  sVmName,                                   # type: str
-                 fGrouping,                                 # type: bool
+                 fGrouping = 0,                             # type: int
                  oSet = None,                               # type: TestVmSet
                  sHd = None,                                # type: str
                  sKind = None,                              # type: str
