@@ -844,14 +844,20 @@ static bool bs3CpuInstr2_fsgsbase_VerifyWorker(uint8_t bMode, PBS3REGCTX pCtx, P
 }
 
 
-static void bs3CpuInstr2_rdfsbase_rdgsbase_Common(uint8_t bMode, bool fSupportsFsGsBase,
-                                                  BS3CI2FSGSBASE const *paFsGsBaseWorkers, unsigned cFsGsBaseWorkers)
+static void bs3CpuInstr2_rdfsbase_rdgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE const *paFsGsBaseWorkers,
+                                                  unsigned cFsGsBaseWorkers)
 {
     BS3REGCTX         Ctx;
     BS3REGCTX         ExpectCtx;
     BS3TRAPFRAME      TrapFrame;
     unsigned          iWorker;
     unsigned          iIter;
+    uint32_t          uDummy;
+    uint32_t          uStdExtFeatEbx;
+    bool              fSupportsFsGsBase;
+
+    ASMCpuId_Idx_ECX(7, 0, &uDummy, &uStdExtFeatEbx, &uDummy, &uDummy);
+    fSupportsFsGsBase = RT_BOOL(uStdExtFeatEbx & X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE);
 
     /* Ensure the structures are allocated before we sample the stack pointer. */
     Bs3MemSet(&Ctx, 0, sizeof(Ctx));
@@ -872,13 +878,13 @@ static void bs3CpuInstr2_rdfsbase_rdgsbase_Common(uint8_t bMode, bool fSupportsF
             Ctx.cr4.u &= ~X86_CR4_FSGSBASE;
             bs3CpuInstr2_fsgsbase_ExpectUD(bMode, &Ctx, &ExpectCtx, &TrapFrame);
 
-            /* Read null base address. */
+            /* Read existing base address. */
             Ctx.rbx.u  = 0xa0000;
             Ctx.cr4.u |= X86_CR4_FSGSBASE;
             Bs3MemCpy(&ExpectCtx, &Ctx, sizeof(ExpectCtx));
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
             ExpectCtx.rip.u       = Ctx.rip.u + paFsGsBaseWorkers[iWorker].offWorkerUd2;
-            ExpectCtx.rbx.u       = 0;
+            ExpectCtx.rbx.u       = TrapFrame.Ctx.rbx.u;
             ExpectCtx.rflags.u32 |= X86_EFL_RF;
             if (!Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, &ExpectCtx, 0 /*cbPcAdjust*/, 0 /*cbSpAdjust*/, 0 /*fExtraEfl*/, "lm64",
                                       0 /*idTestStep*/))
@@ -907,14 +913,20 @@ static void bs3CpuInstr2_rdfsbase_rdgsbase_Common(uint8_t bMode, bool fSupportsF
 }
 
 
-static void bs3CpuInstr2_wrfsbase_wrgsbase_Common(uint8_t bMode, bool fSupportsFsGsBase,
-                                                  BS3CI2FSGSBASE const *paFsGsBaseWorkers, unsigned cFsGsBaseWorkers)
+static void bs3CpuInstr2_wrfsbase_wrgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE const *paFsGsBaseWorkers,
+                                                  unsigned cFsGsBaseWorkers)
 {
     BS3REGCTX         Ctx;
     BS3REGCTX         ExpectCtx;
     BS3TRAPFRAME      TrapFrame;
     unsigned          iWorker;
     unsigned          iIter;
+    uint32_t          uDummy;
+    uint32_t          uStdExtFeatEbx;
+    bool              fSupportsFsGsBase;
+
+    ASMCpuId_Idx_ECX(7, 0, &uDummy, &uStdExtFeatEbx, &uDummy, &uDummy);
+    fSupportsFsGsBase = RT_BOOL(uStdExtFeatEbx & X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE);
 
     /* Ensure the structures are allocated before we sample the stack pointer. */
     Bs3MemSet(&Ctx, 0, sizeof(Ctx));
@@ -971,32 +983,28 @@ static void bs3CpuInstr2_wrfsbase_wrgsbase_Common(uint8_t bMode, bool fSupportsF
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_wrfsbase)(uint8_t bMode)
 {
-    bool const fSupportFsGsBase = RT_BOOL(ASMCpuId_EBX(7) & X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE);
-    bs3CpuInstr2_wrfsbase_wrgsbase_Common(bMode, fSupportFsGsBase, s_aWrFsBaseWorkers, RT_ELEMENTS(s_aWrFsBaseWorkers));
+    bs3CpuInstr2_wrfsbase_wrgsbase_Common(bMode, s_aWrFsBaseWorkers, RT_ELEMENTS(s_aWrFsBaseWorkers));
     return 0;
 }
 
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_wrgsbase)(uint8_t bMode)
 {
-    bool const fSupportFsGsBase = RT_BOOL(ASMCpuId_EBX(7) & X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE);
-    bs3CpuInstr2_wrfsbase_wrgsbase_Common(bMode, fSupportFsGsBase, s_aWrGsBaseWorkers, RT_ELEMENTS(s_aWrGsBaseWorkers));
+    bs3CpuInstr2_wrfsbase_wrgsbase_Common(bMode, s_aWrGsBaseWorkers, RT_ELEMENTS(s_aWrGsBaseWorkers));
     return 0;
 }
 
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_rdfsbase)(uint8_t bMode)
 {
-    bool const fSupportFsGsBase = RT_BOOL(ASMCpuId_EBX(7) & X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE);
-    bs3CpuInstr2_rdfsbase_rdgsbase_Common(bMode, fSupportFsGsBase, s_aRdFsBaseWorkers, RT_ELEMENTS(s_aRdFsBaseWorkers));
+    bs3CpuInstr2_rdfsbase_rdgsbase_Common(bMode, s_aRdFsBaseWorkers, RT_ELEMENTS(s_aRdFsBaseWorkers));
     return 0;
 }
 
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_rdgsbase)(uint8_t bMode)
 {
-    bool const fSupportFsGsBase = RT_BOOL(ASMCpuId_EBX(7) & X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE);
-    bs3CpuInstr2_rdfsbase_rdgsbase_Common(bMode, fSupportFsGsBase, s_aRdGsBaseWorkers, RT_ELEMENTS(s_aRdGsBaseWorkers));
+    bs3CpuInstr2_rdfsbase_rdgsbase_Common(bMode, s_aRdGsBaseWorkers, RT_ELEMENTS(s_aRdGsBaseWorkers));
     return 0;
 }
 # endif /* ARCH_BITS == 64 */
