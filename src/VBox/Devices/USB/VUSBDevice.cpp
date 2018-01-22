@@ -312,12 +312,12 @@ static bool vusbDevStdReqSetConfig(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, 
         int rc = vusbDevIoThreadExecSync(pDev, (PFNRT)pDev->pUsbIns->pReg->pfnUsbSetConfiguration, 5,
                                          pDev->pUsbIns, pNewCfgDesc->Core.bConfigurationValue,
                                          pDev->pCurCfgDesc, pDev->paIfStates, pNewCfgDesc);
+        RTCritSectLeave(&pDev->pHub->pRootHub->CritSectDevices);
         if (RT_FAILURE(rc))
         {
             Log(("vusb: error: %s: failed to set config %i (%Rrc) !!!\n", pDev->pUsbIns->pszName, iCfg, rc));
             return false;
         }
-        RTCritSectLeave(&pDev->pHub->pRootHub->CritSectDevices);
     }
     Log(("vusb: %p[%s]: SET_CONFIGURATION: Selected config %u\n", pDev, pDev->pUsbIns->pszName, iCfg));
     return vusbDevDoSelectConfig(pDev, pNewCfgDesc);
@@ -460,12 +460,12 @@ static bool vusbDevStdReqSetInterface(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetu
     {
         RTCritSectEnter(&pDev->pHub->pRootHub->CritSectDevices);
         int rc = vusbDevIoThreadExecSync(pDev, (PFNRT)pDev->pUsbIns->pReg->pfnUsbSetInterface, 3, pDev->pUsbIns, iIf, iAlt);
+        RTCritSectLeave(&pDev->pHub->pRootHub->CritSectDevices);
         if (RT_FAILURE(rc))
         {
             LogFlow(("vusbDevStdReqSetInterface: error: %s: couldn't find alt interface %u.%u (%Rrc)\n", pDev->pUsbIns->pszName, iIf, iAlt, rc));
             return false;
         }
-        RTCritSectLeave(&pDev->pHub->pRootHub->CritSectDevices);
     }
 
     for (unsigned i = 0; i < pIfState->pCurIfDesc->Core.bNumEndpoints; i++)
