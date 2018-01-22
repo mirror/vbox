@@ -678,8 +678,6 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         /* Moving Machine log files */
         {
             RTPrintf("\nMoving Machine log files \n");
-            Machine::Data *machineData = taskMoveVM->m_pMachine->mData.data();
-            settings::MachineConfigFile *machineConfFile = machineData->pMachineConfigFile;
 
             Utf8Str strTargetLogFolderPath = strTargetFolder;
 
