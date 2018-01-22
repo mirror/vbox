@@ -504,7 +504,21 @@ public:
     volatile uint32_t m_cMsShutdownTimeOut;
 
 public:
-    CComServiceModule(DWORD cMsShutdownTimeout = 10000)
+    /**
+     * Constructor.
+     *
+     * @param cMsShutdownTimeout  Number of milliseconds to idle without clients
+     *                            before autoamtically shutting down the service.
+     *
+     *                            The default is 2 seconds, because VBoxSVC (our
+     *                            only client) already does 5 seconds making the
+     *                            effective idle time 7 seconds from clients like
+     *                            VBoxManage's point of view.  We consider single
+     *                            user and development as the dominant usage
+     *                            patterns here, not configuration activity by
+     *                            multiple users via VBoxManage.
+     */
+    CComServiceModule(DWORD cMsShutdownTimeout = 2000)
         : m_fInitialized(false)
         , m_fComInitialized(false)
         , m_fActivity(false)
