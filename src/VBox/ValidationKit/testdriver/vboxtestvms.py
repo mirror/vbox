@@ -53,18 +53,6 @@ g_dsVirtModeDescs  = {
     'hwvirt-np' : 'NestedPaging'
 };
 
-## @name VM grouping flags
-## @{
-g_kfGrpSmoke     = 0x0001;               ##< Smoke test VM.
-g_kfGrpStandard  = 0x0002;               ##< Standard test VM.
-g_kfGrpStdSmoke  = g_kfGrpSmoke | g_kfGrpStandard;  ##< shorthand.
-g_kfGrpWithGAs   = 0x0004;               ##< The VM has guest additions installed.
-g_kfGrpNoTxs     = 0x0008;               ##< The VM lacks test execution service.
-g_kfGrpAncient   = 0x1000;               ##< Ancient OS.
-g_kfGrpExotic    = 0x2000;               ##< Exotic OS.
-## @}
-
-
 ## @name Flags.
 ## @{
 g_k32           = 32;                   # pylint: disable=C0103
@@ -557,7 +545,6 @@ class BootSectorTestVm(TestVm):
 
 
 
-
 #class AncientTestVm(object):
 #    """
 #    A ancient Test VM, using the serial port for communicating results.
@@ -570,85 +557,6 @@ class BootSectorTestVm(TestVm):
 #                 sChipsetType = 'piix3', sHddControllerType = 'IDE Controller', sDvdControllerType = 'IDE Controller'):
 #        TestVm.__init__(self, oSet, sVmName,
 #
-
-
-g_aTestVMs = [
-    # Linux
-    TestVm('tst-ubuntu-15_10-64-efi',   g_kfGrpStdSmoke,        sHd = '4.2/efi/ubuntu-15_10-efi-amd64.vdi',
-           sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
-           asParavirtModesSup = [g_ksParavirtProviderKVM,]),
-    TestVm('tst-rhel5',                 g_kfGrpSmoke,           sHd = '3.0/tcp/rhel5.vdi',
-           sKind = 'RedHat', acCpusSup = range(1, 33), fIoApic = True, sNic0AttachType = 'nat'),
-
-    # Solaris
-    TestVm('tst-sol10',                 g_kfGrpSmoke,           sHd = '3.0/tcp/solaris10.vdi',
-           sKind = 'Solaris', acCpusSup = range(1, 33), fPae = True,  sNic0AttachType = 'bridged'),
-    TestVm('tst-sol10-64',              g_kfGrpSmoke,           sHd = '3.0/tcp/solaris10.vdi',
-           sKind = 'Solaris_64', acCpusSup = range(1, 33), sNic0AttachType = 'bridged'),
-    TestVm('tst-sol11u1',               g_kfGrpSmoke,           sHd = '4.2/nat/sol11u1/t-sol11u1.vdi',
-           sKind = 'Solaris11_64', acCpusSup = range(1, 33), sNic0AttachType = 'nat', fIoApic = True,
-           sHddControllerType = 'SATA Controller'),
-    #TestVm('tst-sol11u1-ich9',          g_kfGrpSmoke,           sHd = '4.2/nat/sol11u1/t-sol11u1.vdi',
-    #       sKind = 'Solaris11_64', acCpusSup = range(1, 33), sNic0AttachType = 'nat', fIoApic = True,
-    #       sHddControllerType = 'SATA Controller', sChipsetType = 'ich9'),
-
-    # NT 3.x
-    TestVm('tst-nt310',                 g_kfGrpSmoke,           sHd = '5.2/great-old-ones/t-nt310/t-nt310.vdi',
-           sKind = 'WindowsNT3x', acCpusSup = [1], sHddControllerType = 'BusLogic SCSI Controller',
-           sDvdControllerType = 'BusLogic SCSI Controller'),
-
-    # NT 4
-    TestVm('tst-nt4sp1',                g_kfGrpStdSmoke,        sHd = '4.2/nat/nt4sp1/t-nt4sp1.vdi',
-           sKind = 'WindowsNT4', acCpusSup = [1], sNic0AttachType = 'nat'),
-
-    TestVm('tst-nt4sp6',                g_kfGrpStdSmoke,        sHd = '4.2/nt4sp6/t-nt4sp6.vdi',
-           sKind = 'WindowsNT4', acCpusSup = range(1, 33)),
-
-    # W2K
-    TestVm('tst-2ksp4',                 g_kfGrpStdSmoke,        sHd = '4.2/win2ksp4/t-win2ksp4.vdi',
-           sKind = 'Windows2000', acCpusSup = range(1, 33)),
-
-    # XP
-    TestVm('tst-xppro',                 g_kfGrpStdSmoke,        sHd = '4.2/nat/xppro/t-xppro.vdi',
-           sKind = 'WindowsXP', acCpusSup = range(1, 33), sNic0AttachType = 'nat'),
-    TestVm('tst-xpsp2',                 g_kfGrpStdSmoke,        sHd = '4.2/xpsp2/t-winxpsp2.vdi',
-           sKind = 'WindowsXP', acCpusSup = range(1, 33), fIoApic = True),
-    TestVm('tst-xpsp2-halaacpi',        g_kfGrpStdSmoke,        sHd = '4.2/xpsp2/t-winxp-halaacpi.vdi',
-           sKind = 'WindowsXP', acCpusSup = range(1, 33), fIoApic = True),
-    TestVm('tst-xpsp2-halacpi',         g_kfGrpStdSmoke,        sHd = '4.2/xpsp2/t-winxp-halacpi.vdi',
-           sKind = 'WindowsXP', acCpusSup = range(1, 33), fIoApic = True),
-    TestVm('tst-xpsp2-halapic',         g_kfGrpStdSmoke,        sHd = '4.2/xpsp2/t-winxp-halapic.vdi',
-           sKind = 'WindowsXP', acCpusSup = range(1, 33), fIoApic = True),
-    TestVm('tst-xpsp2-halmacpi',        g_kfGrpStdSmoke,        sHd = '4.2/xpsp2/t-winxp-halmacpi.vdi',
-           sKind = 'WindowsXP', acCpusSup = range(2, 33), fIoApic = True),
-    TestVm('tst-xpsp2-halmps',          g_kfGrpStdSmoke,        sHd = '4.2/xpsp2/t-winxp-halmps.vdi',
-           sKind = 'WindowsXP', acCpusSup = range(2, 33), fIoApic = True),
-
-    # W2K3
-    TestVm('tst-win2k3ent',             g_kfGrpSmoke,           sHd = '3.0/tcp/win2k3ent-acpi.vdi',
-           sKind = 'Windows2003', acCpusSup = range(1, 33), fPae = True, sNic0AttachType = 'bridged'),
-
-    # W7
-    TestVm('tst-win7',                  g_kfGrpStdSmoke,        sHd = '4.2/win7-32/t-win7.vdi',
-           sKind = 'Windows7', acCpusSup = range(1, 33), fIoApic = True),
-
-    # W8
-    TestVm('tst-win8-64',               g_kfGrpStdSmoke,        sHd = '4.2/win8-64/t-win8-64.vdi',
-           sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True),
-    #TestVm('tst-win8-64-ich9',          g_kfGrpStdSmoke,         sHd = '4.2/win8-64/t-win8-64.vdi',
-    #       sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True, sChipsetType = 'ich9'),
-
-    # W10
-    TestVm('tst-win10-efi',             g_kfGrpStdSmoke,        sHd = '4.2/efi/win10-efi-x86.vdi',
-           sKind = 'Windows10', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi'),
-    TestVm('tst-win10-64-efi',          g_kfGrpStdSmoke,        sHd = '4.2/efi/win10-efi-amd64.vdi',
-           sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi'),
-    #TestVm('tst-win10-64-efi-ich9',     g_kfGrpStdSmoke,         sHd = '4.2/efi/win10-efi-amd64.vdi',
-    #       sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi', sChipsetType = 'ich9'),
-
-    # DOS and Old Windows.
-    # todo ...
-];
 
 
 class TestVmSet(object):
@@ -675,8 +583,12 @@ class TestVmSet(object):
         Returns the TestVm object with the given name.
         Returns None if not found.
         """
+
+        # The 'tst-' prefix is optional.
+        sAltName = sVmName if sVmName.startswith('tst-') else 'tst-' + sVmName;
+
         for oTestVm in self.aoTestVms:
-            if oTestVm.sVmName == sVmName:
+            if oTestVm.sVmName == sVmName or oTestVm.sVmName == sAltName:
                 return oTestVm;
         return None;
 
@@ -687,10 +599,13 @@ class TestVmSet(object):
         """
         sVmNames = '';
         for oTestVm in self.aoTestVms:
+            sName = oTestVm.sVmName;
+            if sName.startswith('tst-'):
+                sName = sName[4:];
             if sVmNames == '':
-                sVmNames = oTestVm.sVmName;
+                sVmNames = sName;
             else:
-                sVmNames = sVmNames + sSep + oTestVm.sVmName;
+                sVmNames = sVmNames + sSep + sName;
         return sVmNames;
 
     def showUsage(self):
@@ -1008,6 +923,96 @@ class TestVmManager(object):
     Test VM manager.
     """
 
+    ## @name VM grouping flags
+    ## @{
+    kfGrpSmoke     = 0x0001;               ##< Smoke test VM.
+    kfGrpStandard  = 0x0002;               ##< Standard test VM.
+    kfGrpStdSmoke  = kfGrpSmoke | kfGrpStandard;  ##< shorthand.
+    kfGrpWithGAs   = 0x0004;               ##< The VM has guest additions installed.
+    kfGrpNoTxs     = 0x0008;               ##< The VM lacks test execution service.
+    kfGrpAncient   = 0x1000;               ##< Ancient OS.
+    kfGrpExotic    = 0x2000;               ##< Exotic OS.
+    ## @}
+
+    kaTestVMs = (
+        # Linux
+        TestVm('tst-ubuntu-15_10-64-efi',   kfGrpStdSmoke,        sHd = '4.2/efi/ubuntu-15_10-efi-amd64.vdi',
+               sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
+               asParavirtModesSup = [g_ksParavirtProviderKVM,]),
+        TestVm('tst-rhel5',                 kfGrpSmoke,           sHd = '3.0/tcp/rhel5.vdi',
+               sKind = 'RedHat', acCpusSup = range(1, 33), fIoApic = True, sNic0AttachType = 'nat'),
+
+        # Solaris
+        TestVm('tst-sol10',                 kfGrpSmoke,           sHd = '3.0/tcp/solaris10.vdi',
+               sKind = 'Solaris', acCpusSup = range(1, 33), fPae = True,  sNic0AttachType = 'bridged'),
+        TestVm('tst-sol10-64',              kfGrpSmoke,           sHd = '3.0/tcp/solaris10.vdi',
+               sKind = 'Solaris_64', acCpusSup = range(1, 33), sNic0AttachType = 'bridged'),
+        TestVm('tst-sol11u1',               kfGrpSmoke,           sHd = '4.2/nat/sol11u1/t-sol11u1.vdi',
+               sKind = 'Solaris11_64', acCpusSup = range(1, 33), sNic0AttachType = 'nat', fIoApic = True,
+               sHddControllerType = 'SATA Controller'),
+        #TestVm('tst-sol11u1-ich9',          kfGrpSmoke,           sHd = '4.2/nat/sol11u1/t-sol11u1.vdi',
+        #       sKind = 'Solaris11_64', acCpusSup = range(1, 33), sNic0AttachType = 'nat', fIoApic = True,
+        #       sHddControllerType = 'SATA Controller', sChipsetType = 'ich9'),
+
+        # NT 3.x
+        TestVm('tst-nt310',                 kfGrpSmoke,           sHd = '5.2/great-old-ones/t-nt310/t-nt310.vdi',
+               sKind = 'WindowsNT3x', acCpusSup = [1], sHddControllerType = 'BusLogic SCSI Controller',
+               sDvdControllerType = 'BusLogic SCSI Controller'),
+
+        # NT 4
+        TestVm('tst-nt4sp1',                kfGrpStdSmoke,        sHd = '4.2/nat/nt4sp1/t-nt4sp1.vdi',
+               sKind = 'WindowsNT4', acCpusSup = [1], sNic0AttachType = 'nat'),
+
+        TestVm('tst-nt4sp6',                kfGrpStdSmoke,        sHd = '4.2/nt4sp6/t-nt4sp6.vdi',
+               sKind = 'WindowsNT4', acCpusSup = range(1, 33)),
+
+        # W2K
+        TestVm('tst-2ksp4',                 kfGrpStdSmoke,        sHd = '4.2/win2ksp4/t-win2ksp4.vdi',
+               sKind = 'Windows2000', acCpusSup = range(1, 33)),
+
+        # XP
+        TestVm('tst-xppro',                 kfGrpStdSmoke,        sHd = '4.2/nat/xppro/t-xppro.vdi',
+               sKind = 'WindowsXP', acCpusSup = range(1, 33), sNic0AttachType = 'nat'),
+        TestVm('tst-xpsp2',                 kfGrpStdSmoke,        sHd = '4.2/xpsp2/t-winxpsp2.vdi',
+               sKind = 'WindowsXP', acCpusSup = range(1, 33), fIoApic = True),
+        TestVm('tst-xpsp2-halaacpi',        kfGrpStdSmoke,        sHd = '4.2/xpsp2/t-winxp-halaacpi.vdi',
+               sKind = 'WindowsXP', acCpusSup = range(1, 33), fIoApic = True),
+        TestVm('tst-xpsp2-halacpi',         kfGrpStdSmoke,        sHd = '4.2/xpsp2/t-winxp-halacpi.vdi',
+               sKind = 'WindowsXP', acCpusSup = range(1, 33), fIoApic = True),
+        TestVm('tst-xpsp2-halapic',         kfGrpStdSmoke,        sHd = '4.2/xpsp2/t-winxp-halapic.vdi',
+               sKind = 'WindowsXP', acCpusSup = range(1, 33), fIoApic = True),
+        TestVm('tst-xpsp2-halmacpi',        kfGrpStdSmoke,        sHd = '4.2/xpsp2/t-winxp-halmacpi.vdi',
+               sKind = 'WindowsXP', acCpusSup = range(2, 33), fIoApic = True),
+        TestVm('tst-xpsp2-halmps',          kfGrpStdSmoke,        sHd = '4.2/xpsp2/t-winxp-halmps.vdi',
+               sKind = 'WindowsXP', acCpusSup = range(2, 33), fIoApic = True),
+
+        # W2K3
+        TestVm('tst-win2k3ent',             kfGrpSmoke,           sHd = '3.0/tcp/win2k3ent-acpi.vdi',
+               sKind = 'Windows2003', acCpusSup = range(1, 33), fPae = True, sNic0AttachType = 'bridged'),
+
+        # W7
+        TestVm('tst-win7',                  kfGrpStdSmoke,        sHd = '4.2/win7-32/t-win7.vdi',
+               sKind = 'Windows7', acCpusSup = range(1, 33), fIoApic = True),
+
+        # W8
+        TestVm('tst-win8-64',               kfGrpStdSmoke,        sHd = '4.2/win8-64/t-win8-64.vdi',
+               sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True),
+        #TestVm('tst-win8-64-ich9',          kfGrpStdSmoke,         sHd = '4.2/win8-64/t-win8-64.vdi',
+        #       sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True, sChipsetType = 'ich9'),
+
+        # W10
+        TestVm('tst-win10-efi',             kfGrpStdSmoke,        sHd = '4.2/efi/win10-efi-x86.vdi',
+               sKind = 'Windows10', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi'),
+        TestVm('tst-win10-64-efi',          kfGrpStdSmoke,        sHd = '4.2/efi/win10-efi-amd64.vdi',
+               sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi'),
+        #TestVm('tst-win10-64-efi-ich9',     kfGrpStdSmoke,         sHd = '4.2/efi/win10-efi-amd64.vdi',
+        #       sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi', sChipsetType = 'ich9'),
+
+        # DOS and Old Windows.
+        # todo ...
+    );
+
+
     def __init__(self, sResourcePath):
         self.sResourcePath = sResourcePath;
 
@@ -1016,7 +1021,7 @@ class TestVmManager(object):
         Returns a VM set with the selected VMs.
         """
         oSet = TestVmSet(oTestVmManager = self);
-        for oVm in g_aTestVMs:
+        for oVm in self.kaTestVMs:
             if oVm.fGrouping & fGrouping:
                 if sTxsTransport is None  or  oVm.sNic0AttachType is None  or  sTxsTransport == oVm.sNic0AttachType:
                     if not fCheckResources  or  not oVm.getMissingResources(self.sResourcePath):
@@ -1032,13 +1037,11 @@ class TestVmManager(object):
         This is supposed to do something seriously clever, like searching the
         testrsrc tree for usable VMs, but for the moment it's all hard coded. :-)
         """
-        return self.selectSet(g_kfGrpStandard, sTxsTransport)
+        return self.selectSet(self.kfGrpStandard, sTxsTransport)
 
     def getSmokeVmSet(self):
-        """
-        Gets a representative set of VMs for smoke testing.
-        """
-        return self.selectSet(g_kfGrpSmoke);
+        """Gets a representative set of VMs for smoke testing. """
+        return self.selectSet(self.kfGrpSmoke);
 
     def shutUpPyLint(self):
         """ Shut up already! """
