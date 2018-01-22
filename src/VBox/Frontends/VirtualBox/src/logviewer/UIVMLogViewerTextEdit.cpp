@@ -276,11 +276,15 @@ void UIVMLogViewerTextEdit::setBackground()
     {
         /* For 100% scale PM_LargeIconSize is 32px, and since we want ~300x~100 pixmap we take it 9x3: */
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
-        QImage image(9 * iIconMetric, 3 * iIconMetric, QImage::Format_ARGB32_Premultiplied);
+        int imageW = 8 * iIconMetric;
+        int imageH = 8 * iIconMetric;
+        QImage image(imageW, imageH, QImage::Format_ARGB32_Premultiplied);
         QColor fillColor(QPalette::Light);
         fillColor.setAlpha(0);
         image.fill(fillColor);
         QPainter painter(&image);
+        painter.translate(0.5 * imageW, 0.5 * imageH);
+        painter.rotate(-45);
 
         /* Configure the font size and color: */
         QFont pfont = painter.font();
@@ -288,10 +292,10 @@ void UIVMLogViewerTextEdit::setBackground()
         fontColor.setAlpha(22);
         painter.setPen(fontColor);
         pfont.setBold(true);
-        pfont.setPixelSize(46);
+        pfont.setPixelSize(48);
         painter.setFont(pfont);
-
-        painter.drawText(image.rect(), Qt::AlignCenter | Qt::AlignVCenter, m_strBackgroungText);
+        QRect textRect(- 0.5 * imageW, - 0.5 * imageH, imageW, imageH);
+        painter.drawText(textRect, Qt::AlignCenter | Qt::AlignVCenter, m_strBackgroungText);
 
         mPalette.setBrush(QPalette::Base, QBrush(image));
         setPalette(mPalette);
