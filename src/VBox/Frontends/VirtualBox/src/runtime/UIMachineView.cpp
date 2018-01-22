@@ -495,6 +495,7 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
     /* Take the scale-factor into account: */
     const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
     const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
+    Q_UNUSED(fUseUnscaledHiDPIOutput);
     frameBuffer()->setScaleFactor(dScaleFactor);
     /* Propagate the scale-factor to 3D service if necessary: */
     if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
