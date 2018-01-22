@@ -362,10 +362,10 @@ void UIVMLogViewerWidget::prepare()
 
     prepareToolBar();
     prepareActions();
-    
+
     prepareMenu();
     prepareWidgets();
-    
+
     /* Reading log files: */
     sltRefresh();
 
