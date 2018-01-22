@@ -1107,7 +1107,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 const char *pszProductId = "CD-ROM";
                 const char *pszProductLevel = "1.0";
                 int rcTmp = vscsiLunQueryInqStrings(pVScsiLun, &pszVendorId, &pszProductId, &pszProductLevel);
-                Assert(RT_SUCCESS(rcTmp) || rcTmp == VERR_NOT_FOUND);
+                Assert(RT_SUCCESS(rcTmp) || rcTmp == VERR_NOT_FOUND); RT_NOREF(rcTmp);
 
                 scsiPadStrS(ScsiInquiryReply.achVendorId, pszVendorId, 8);
                 scsiPadStrS(ScsiInquiryReply.achProductId, pszProductId, 16);
