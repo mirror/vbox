@@ -32,7 +32,8 @@ INSTALLS += ValidationKitTestsSmokeTests
 ValidationKitTestsSmokeTests_TEMPLATE = VBoxValidationKitR3
 ValidationKitTestsSmokeTests_INST = $(INST_VALIDATIONKIT)tests/smoketests/
 ValidationKitTestsSmokeTests_EXEC_SOURCES := \
-	$(PATH_SUB_CURRENT)/tdSmokeTest1.py
+	$(PATH_SUB_CURRENT)/tdSmokeTest1.py \
+	$(PATH_SUB_CURRENT)/tdExoticOrAncient1.py
 
 VBOX_VALIDATIONKIT_PYTHON_SOURCES += $(ValidationKitTestsSmokeTests_EXEC_SOURCES)
 
