@@ -360,11 +360,12 @@ void UIVMLogViewerWidget::prepare()
 {
     m_pMainLayout = new QVBoxLayout(this);
 
-    prepareToolBar();
     prepareActions();
+    prepareToolBar();
 
     prepareMenu();
     prepareWidgets();
+
 
     /* Reading log files: */
     sltRefresh();
