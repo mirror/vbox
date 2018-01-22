@@ -109,7 +109,6 @@ struct fileList_t
 HRESULT MachineMoveVM::init()
 {
     HRESULT rc = S_OK;
-//  ComObjPtr<Machine> &machine = m_pMachine;
     Utf8Str strTargetFolder = m_targetPath;
 
     /*
@@ -168,16 +167,6 @@ HRESULT MachineMoveVM::init()
         fileList_t fullFileList;
         rc = getFilesList(strSettingsFilePath, fullFileList);
         if (FAILED(rc)) throw rc;
-
-//      {
-//          cit_t it = fullFileList.m_list.begin();
-//          while(it != fullFileList.m_list.end())
-//          {
-//              Utf8Str strFile = Utf8StrFmt("folder: %s, file %s", it->first.c_str(), it->second.c_str());
-//              RTPrintf("%s\n", strFile.c_str());
-//              ++it;
-//          }
-//      }
 
         /*
          * Collect all known folders used by the VM:
@@ -265,7 +254,6 @@ HRESULT MachineMoveVM::init()
         ULONG uCount       = 2; /* One init task and the machine creation. */
         ULONG uTotalWeight = 2; /* The init task and the machine creation is worth one. */
 
-        /* here we fill the lists llMedias and llSaveStateFiles */
         queryMediasForAllStates(machineList, uCount, uTotalWeight);
 
         {
@@ -303,6 +291,7 @@ HRESULT MachineMoveVM::init()
             neededFreeSpace += totalMediumsSize;
         }
 
+        /* Prepare data for moving ".sav" files */
         {
             uint64_t totalStateSize = 0;
 
@@ -325,6 +314,8 @@ HRESULT MachineMoveVM::init()
                     ret = finalSaveStateFilesMap.insert(std::make_pair(name, sst));
                     if (ret.second == true)
                     {
+                        uCount       += 1;
+                        uTotalWeight += 1;//just for now (should be correctly evaluated according its size)
                         RTPrintf("State file %s was added into the moved list\n", name.c_str());
                     }
                 }
@@ -332,9 +323,7 @@ HRESULT MachineMoveVM::init()
             neededFreeSpace += totalStateSize;
         }
 
-        /*
-         * Move log folder
-         */
+        /* Prepare data for moving the log files */
         {
             Utf8Str strFolder = vmFolders[VBox_LogFolder];
             if (strFolder.isNotEmpty())
@@ -343,8 +332,6 @@ HRESULT MachineMoveVM::init()
                 rc = getFolderSize(strFolder, totalLogSize);
                 if (SUCCEEDED(rc))
                 {
-//                  RTPrintf("total files size in the log folder is %llu\n", totalLogSize);
-
                     neededFreeSpace += totalLogSize;
                     if (totalFreeSpace - neededFreeSpace <= 1024*1024)
                     {
@@ -361,6 +348,9 @@ HRESULT MachineMoveVM::init()
                         RTPrintf("%s\n", strFile.c_str());
                         actualFileList.add(strFile);
 
+                        uCount       += 1;
+                        uTotalWeight += 1;//just for now (should be correctly evaluated according its size)
+
                         RTPrintf("The log file %s added into the moved list\n", strFile.c_str());
                         ++it;
                     }
@@ -376,10 +366,7 @@ HRESULT MachineMoveVM::init()
 
         /* Init both Progress instances */
         {
-            /** weak VirtualBox parent */
-            VirtualBox* const pVirtualBox = NULL;
-            unconst(pVirtualBox) = m_pMachine->i_getVirtualBox();
-            rc = m_pProgress->init(pVirtualBox,
+            rc = m_pProgress->init(m_pMachine->i_getVirtualBox(),
                                  static_cast<IMachine*>(m_pMachine) /* aInitiator */,
                                  Bstr(m_pMachine->tr("Moving Machine")).raw(),
                                  true /* fCancellable */,
@@ -396,7 +383,7 @@ HRESULT MachineMoveVM::init()
             }
 
             m_pRollBackProgress.createObject();
-            rc = m_pRollBackProgress->init(pVirtualBox,
+            rc = m_pRollBackProgress->init(m_pMachine->i_getVirtualBox(),
                                  static_cast<IMachine*>(m_pMachine) /* aInitiator */,
                                  Bstr(m_pMachine->tr("Moving back Machine")).raw(),
                                  true /* fCancellable */,
@@ -453,7 +440,6 @@ void MachineMoveVM::updateStateFile(settings::SnapshotsList &snl, const Guid &id
         if (it->uuid == id)
         {
             settings::Snapshot snap = (settings::Snapshot)(*it);
-//          RTPrintf("\nSnapshot %s address %#lx\n", snap.strName.c_str(), &(settings::Snapshot)(*it));
             RTPrintf("it->uuid = %s , id = %s\n", snap.uuid.toStringCurly().c_str(), id.toStringCurly().c_str());
             RTPrintf("it->strStateFile = %s , strFile = %s\n", snap.strStateFile.c_str(), strFile.c_str());
             it->strStateFile = strFile;
@@ -476,7 +462,6 @@ void MachineMoveVM::printStateFile(settings::SnapshotsList &snl)
         if (!it->strStateFile.isEmpty())
         {
             settings::Snapshot snap = (settings::Snapshot)(*it);
-//          RTPrintf("Snapshot %s address %#lx\n", snap.strName.c_str(), &(settings::Snapshot)(*it));
             RTPrintf("snap.uuid = %s\n", snap.uuid.toStringCurly().c_str());
             RTPrintf("snap.strStateFile = %s\n", snap.strStateFile.c_str());
         }
@@ -543,7 +528,6 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
     RTCList<Utf8Str> newFiles;       /* All extra created files (save states, ...) */
     RTCList<Utf8Str> originalFiles;  /* All original files except images */
     typedef std::map<Utf8Str, ComObjPtr<Medium> > MediumMap;
-//  typedef std::pair<Utf8Str, ComObjPtr<Medium> > MediumPair;
     MediumMap mapOriginalMedium;
 
     /*
@@ -582,8 +566,6 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
 
         {
             RTPrintf("0 Print all state files\n");
-//          Machine::Data *machineData = taskMoveVM->m_pMachine->mData.data();
-//          settings::MachineConfigFile *machineConfFile = machineData->pMachineConfigFile;
             taskMoveVM->printStateFile(taskMoveVM->m_pMachine->mData->pMachineConfigFile->llFirstSnapshot);
         }
 
@@ -649,8 +631,6 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
 
         {
             RTPrintf("\n1 Print all state files\n");
-//          Machine::Data *machineData = taskMoveVM->m_pMachine->mData.data();
-//          settings::MachineConfigFile *machineConfFile = machineData->pMachineConfigFile;
             taskMoveVM->printStateFile(taskMoveVM->m_pMachine->mData->pMachineConfigFile->llFirstSnapshot);
         }
 
@@ -690,10 +670,69 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         {
             RTPrintf("\n2 Print all state files\n");
             Machine::Data *machineData = taskMoveVM->m_pMachine->mData.data();
-//          settings::MachineConfigFile *machineConfFile = machineData->pMachineConfigFile;
             RTPrintf("\nmachineData->m_strConfigFileFull = %s\n", machineData->m_strConfigFileFull.c_str());
             RTPrintf("\nmachineData->m_strConfigFile = %s\n", machineData->m_strConfigFile.c_str());
             taskMoveVM->printStateFile(taskMoveVM->m_pMachine->mData->pMachineConfigFile->llFirstSnapshot);
+        }
+
+        /* Moving Machine log files */
+        {
+            RTPrintf("\nMoving Machine log files \n");
+            Machine::Data *machineData = taskMoveVM->m_pMachine->mData.data();
+            settings::MachineConfigFile *machineConfFile = machineData->pMachineConfigFile;
+
+            Utf8Str strTargetLogFolderPath = strTargetFolder;
+
+            if (taskMoveVM->vmFolders[VBox_LogFolder].isNotEmpty())
+            {
+                Bstr bstrMachineName;
+                taskMoveVM->m_pMachine->COMGETTER(Name)(bstrMachineName.asOutParam());
+                strTargetLogFolderPath.append(RTPATH_DELIMITER).append("Logs");
+
+                /* Check a log folder existing and create one if it's not */
+                if (!RTDirExists(strTargetLogFolderPath.c_str()))
+                {
+                    int vrc = RTDirCreateFullPath(strTargetLogFolderPath.c_str(), 0700);
+                    if (RT_FAILURE(vrc))
+                        throw machine->setError(VBOX_E_IPRT_ERROR,
+                                          machine->tr("Could not create log folder '%s' (%Rrc)"),
+                                                strTargetLogFolderPath.c_str(), vrc);
+                }
+
+                fileList_t filesList;
+                taskMoveVM->getFilesList(taskMoveVM->vmFolders[VBox_LogFolder], filesList);
+                cit_t it = filesList.m_list.begin();
+                while(it != filesList.m_list.end())
+                {
+                    Utf8Str strFullSourceFilePath = it->first.c_str();
+                    strFullSourceFilePath.append(RTPATH_DELIMITER).append(it->second.c_str());
+
+                    Utf8Str strFullTargetFilePath = strTargetLogFolderPath;
+                    strFullTargetFilePath.append(RTPATH_DELIMITER).append(it->second.c_str());
+
+                    /* Move to next sub-operation. */
+                    rc = taskMoveVM->m_pProgress->SetNextOperation(BstrFmt(machine->tr("Moving Machine log file '%s' ..."),
+                                                            RTPathFilename(strFullSourceFilePath.c_str())).raw(), 1);
+                    if (FAILED(rc)) throw rc;
+
+                    int vrc = RTFileCopyEx(strFullSourceFilePath.c_str(), strFullTargetFilePath.c_str(), 0,
+                                   MachineMoveVM::copyFileProgress, &taskMoveVM->m_pProgress);
+                    if (RT_FAILURE(vrc))
+                        throw machine->setError(VBOX_E_IPRT_ERROR,
+                                        machine->tr("Could not move log file '%s' to '%s' (%Rrc)"),
+                                        strFullSourceFilePath.c_str(), strFullTargetFilePath.c_str(), vrc);
+
+                    RTPrintf("The log file %s moved into the folder %s\n", strFullSourceFilePath.c_str(),
+                             strFullTargetFilePath.c_str());
+
+                    /* save new file in case of restoring */
+                    newFiles.append(strFullTargetFilePath);
+                    /* save original file for deletion in the end */
+                    originalFiles.append(strFullSourceFilePath);
+
+                    ++it;
+                }
+            }
         }
 
         /* save all VM data */
@@ -705,7 +744,6 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         {
             RTPrintf("\n3 Print all state files\n");
             Machine::Data *machineData = taskMoveVM->m_pMachine->mData.data();
-//          settings::MachineConfigFile *machineConfFile = machineData->pMachineConfigFile;
 
             Utf8Str strTargetSettingsFilePath = strTargetFolder;
             Bstr bstrMachineName;
@@ -732,8 +770,6 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
 
         {
             RTPrintf("\n4 Print all state files\n");
-//          Machine::Data *machineData = taskMoveVM->m_pMachine->mData.data();
-//          settings::MachineConfigFile *machineConfFile = machineData->pMachineConfigFile;
             taskMoveVM->printStateFile(taskMoveVM->m_pMachine->mData->pMachineConfigFile->llFirstSnapshot);
         }
 
@@ -765,7 +801,6 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         {
             RTPrintf("\nFailed: Print all state files\n");
             Machine::Data *machineData = taskMoveVM->m_pMachine->mData.data();
-//          settings::MachineConfigFile *machineConfFile = machineData->pMachineConfigFile;
             RTPrintf("\nmachineData->m_strConfigFileFull = %s\n", machineData->m_strConfigFileFull.c_str());
             RTPrintf("\nmachineData->m_strConfigFile = %s\n", machineData->m_strConfigFile.c_str());
             taskMoveVM->printStateFile(taskMoveVM->m_pMachine->mData->pMachineConfigFile->llFirstSnapshot);
@@ -775,6 +810,8 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         rc = taskMoveVM->deleteFiles(newFiles);
         if (FAILED(rc))
             RTPrintf("Can't delete all new files.");
+
+        RTDirRemove(strTargetFolder.c_str());
 
         /* Restoring the original mediums */
         try
@@ -808,7 +845,6 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         {
             RTPrintf("\nFailed: Print all state files\n");
             Machine::Data *machineData = taskMoveVM->m_pMachine->mData.data();
-//          settings::MachineConfigFile *machineConfFile = machineData->pMachineConfigFile;
 
             Utf8Str strOriginalSettingsFilePath = taskMoveVM->vmFolders[VBox_SettingFolder];
             Bstr bstrMachineName;
