@@ -226,9 +226,29 @@ typedef struct PDMIMEDIAPORT
     DECLR3CALLBACKMEMBER(int, pfnQueryDeviceLocation, (PPDMIMEDIAPORT pInterface, const char **ppcszController,
                                                        uint32_t *piInstance, uint32_t *piLUN));
 
+
+    /**
+     * Queries the vendor and product ID and revision to report for INQUIRY commands in underlying devices.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to this interface.
+     * @param   ppszVendorId    Where to store the pointer to the vendor ID string to report.
+     * @param   ppszProductId   Where to store the pointer to the product ID string to report.
+     * @param   ppszRevision    Where to store the pointer to the revision string to report.
+     *
+     * @note The strings for the inquiry data are stored in the storage controller rather than in the device
+     *       because if device attachments change (virtual CD/DVD drive versus host drive) there is currently no
+     *       way to keep the INQUIRY data in extradata keys without causing trouble when the attachment is changed.
+     *       Also Main currently doesn't has any settings for the attachment to store such information in the settings
+     *       properly. Last reason (but not the most important one) is to stay compatible with older versions
+     *       where the drive emulation was in AHCI but it now uses VSCSI and the settings overwrite should still work.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueryScsiInqStrings, (PPDMIMEDIAPORT pInterface, const char **ppszVendorId,
+                                                       const char **ppszProductId, const char **ppszRevision));
+
 } PDMIMEDIAPORT;
 /** PDMIMEDIAPORT interface ID. */
-#define PDMIMEDIAPORT_IID                           "9f7e8c9e-6d35-4453-bbef-1f78033174d6"
+#define PDMIMEDIAPORT_IID                           "77180ab8-6485-454f-b440-efca322b7bd7"
 
 /** Pointer to a media interface. */
 typedef struct PDMIMEDIA *PPDMIMEDIA;
