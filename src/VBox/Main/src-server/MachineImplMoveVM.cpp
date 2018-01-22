@@ -374,22 +374,43 @@ HRESULT MachineMoveVM::init()
             throw VERR_OUT_OF_RESOURCES;//less than 1Mb free space on the target location
         }
 
-        /** weak VirtualBox parent */
-        VirtualBox* const pVirtualBox = NULL;
-        unconst(pVirtualBox) = m_pMachine->i_getVirtualBox();
-        rc = m_pProgress->init(pVirtualBox,
-                             static_cast<IMachine*>(m_pMachine) /* aInitiator */,
-                             Bstr(m_pMachine->tr("Moving Machine")).raw(),
-                             true /* fCancellable */,
-                             uCount,
-                             uTotalWeight,
-                             Bstr(m_pMachine->tr("Initialize Moving")).raw(),
-                             1);
-        if (FAILED(rc))
+        /* Init both Progress instances */
         {
-            throw m_pMachine->setError(VBOX_E_IPRT_ERROR,
-                                 m_pMachine->tr("Couldn't correctly setup the progress object for moving VM operation (%Rrc)"),
-                                 rc);
+            /** weak VirtualBox parent */
+            VirtualBox* const pVirtualBox = NULL;
+            unconst(pVirtualBox) = m_pMachine->i_getVirtualBox();
+            rc = m_pProgress->init(pVirtualBox,
+                                 static_cast<IMachine*>(m_pMachine) /* aInitiator */,
+                                 Bstr(m_pMachine->tr("Moving Machine")).raw(),
+                                 true /* fCancellable */,
+                                 uCount,
+                                 uTotalWeight,
+                                 Bstr(m_pMachine->tr("Initialize Moving")).raw(),
+                                 1);
+            if (FAILED(rc))
+            {
+                throw m_pMachine->setError(VBOX_E_IPRT_ERROR,
+                                     m_pMachine->tr("Couldn't correctly setup the progress object "
+                                                    "for moving VM operation (%Rrc)"),
+                                     rc);
+            }
+
+            m_pRollBackProgress.createObject();
+            rc = m_pRollBackProgress->init(pVirtualBox,
+                                 static_cast<IMachine*>(m_pMachine) /* aInitiator */,
+                                 Bstr(m_pMachine->tr("Moving back Machine")).raw(),
+                                 true /* fCancellable */,
+                                 uCount,
+                                 uTotalWeight,
+                                 Bstr(m_pMachine->tr("Initialize Moving back")).raw(),
+                                 1);
+            if (FAILED(rc))
+            {
+                throw m_pMachine->setError(VBOX_E_IPRT_ERROR,
+                                     m_pMachine->tr("Couldn't correctly setup the progress object "
+                                                    "for possible rollback operation during moving VM (%Rrc)"),
+                                     rc);
+            }
         }
 
         /* save all VM data */
@@ -510,7 +531,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
     ComObjPtr<Machine> &machine = taskMoveVM->m_pMachine;
 
     AutoCaller autoCaller(machine);
-    if (FAILED(autoCaller.rc())) return;//Should we return something here?
+//  if (FAILED(autoCaller.rc())) return;//Should we return something here?
 
     Utf8Str strTargetFolder = taskMoveVM->m_targetPath;
     {
@@ -851,6 +872,9 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
             Bstr bstrLocation;
             Bstr bstrSrcName;
 
+            rc = pMedium->COMGETTER(Name)(bstrSrcName.asOutParam());
+            if (FAILED(rc)) throw rc;
+
             if (strTargetFolder != NULL && !strTargetFolder->isEmpty())
             {
                 strTargetImageName = *strTargetFolder;
@@ -868,19 +892,21 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
                 }
 
                 strTargetImageName.append(RTPATH_DELIMITER).append(strLocation);
+                rc = m_pProgress->SetNextOperation(BstrFmt(machine->tr("Moving Disk '%ls' ..."),
+                                                       bstrSrcName.raw()).raw(),
+                                                       mt.uWeight);
+                if (FAILED(rc)) throw rc;
             }
             else
             {
                 strTargetImageName = mt.strBaseName;//Should contain full path to the image
-            }
-
-            rc = pMedium->COMGETTER(Name)(bstrSrcName.asOutParam());
-            if (FAILED(rc)) throw rc;
-
-            rc = m_pProgress->SetNextOperation(BstrFmt(machine->tr("Moving Disk '%ls' ..."),
+                rc = m_pRollBackProgress->SetNextOperation(BstrFmt(machine->tr("Moving back Disk '%ls' ..."),
                                                        bstrSrcName.raw()).raw(),
                                                        mt.uWeight);
-            if (FAILED(rc)) throw rc;
+                if (FAILED(rc)) throw rc;
+            }
+
+
 
             /* consistency: use \ if appropriate on the platform */
             RTPathChangeToDosSlashes(strTargetImageName.mutableRaw(), false);
@@ -892,7 +918,15 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
 
             /* Wait until the async process has finished. */
             machineLock.release();
-            rc = m_pProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
+            if (strTargetFolder != NULL && !strTargetFolder->isEmpty())
+            {
+                rc = m_pProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
+            }
+            else
+            {
+                rc = m_pRollBackProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
+            }
+
             machineLock.acquire();
             if (FAILED(rc)) throw rc;
 
