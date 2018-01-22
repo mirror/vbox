@@ -4260,7 +4260,7 @@ $$(PATH_TARGET)/tst$(use_symvers)$(subst /,_,$(KERN_DIR))_mod.run))
 	$(QUIET)$$(if $$(eq $$(symvers_$(module)_dep),),,\
 $$(CP) $$(symvers_$(module)_dep) "$$(PATH_TARGET)/tst$(module)_mod/Module.symvers")
 	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$(KERN_DIR) $(if-expr $(KMK_OPTS_JOBS) != 1,JOBS=$(KMK_OPTS_JOBS),) -C $$(PATH_TARGET)/tst$(module)_mod \
-		2> "$$(PATH_TARGET)/tst$(module)_mod/make.err"
+		2>&1 | tee "$$(PATH_TARGET)/tst$(module)_mod/make.err"
 	$(QUIET)! grep "^WARNING: .* undefined!$$$$" "$$(PATH_TARGET)/tst$(module)_mod/make.err"
   if1of ($(USERNAME), bird)
 	- nm -u "$$(PATH_TARGET)/tst$(module)_mod/"*.ko | sort
