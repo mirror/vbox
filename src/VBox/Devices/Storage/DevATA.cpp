@@ -342,9 +342,9 @@ typedef struct ATADevState
     PDMIMOUNTNOTIFY                     IMountNotify;
     /** The LUN #. */
     RTUINT                              iLUN;
-#if HC_ARCH_BITS == 64
+
     RTUINT                              Alignment2; /**< Align pDevInsR3 correctly. */
-#endif
+
     /** Pointer to device instance. */
     PPDMDEVINSR3                        pDevInsR3;
     /** Pointer to controller instance. */
