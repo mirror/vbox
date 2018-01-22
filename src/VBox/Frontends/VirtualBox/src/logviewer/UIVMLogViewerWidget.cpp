@@ -384,7 +384,7 @@ void UIVMLogViewerWidget::prepareWidgets()
 
     /* Create VM Log-Viewer container: */
     m_pTabWidget = new QITabWidget(this);
-    AssertPtrReturnVoid(m_pTabWidget);
+    if (m_pTabWidget)
     {
         /* Add VM Log-Viewer container to main-layout: */
         m_pMainLayout->insertWidget(1, m_pTabWidget);
@@ -392,7 +392,7 @@ void UIVMLogViewerWidget::prepareWidgets()
 
     /* Create VM Log-Viewer search-panel: */
     m_pSearchPanel = new UIVMLogViewerSearchPanel(this, this);
-    AssertPtrReturnVoid(m_pSearchPanel);
+    if (m_pSearchPanel)
     {
         /* Configure VM Log-Viewer search-panel: */
         installEventFilter(m_pSearchPanel);
@@ -405,7 +405,7 @@ void UIVMLogViewerWidget::prepareWidgets()
 
     /* Create VM Log-Viewer filter-panel: */
     m_pFilterPanel = new UIVMLogViewerFilterPanel(this, this);
-    AssertPtrReturnVoid(m_pFilterPanel);
+    if (m_pFilterPanel)
     {
         /* Configure VM Log-Viewer filter-panel: */
         installEventFilter(m_pFilterPanel);
@@ -417,7 +417,7 @@ void UIVMLogViewerWidget::prepareWidgets()
     }
 
     m_pBookmarksPanel = new UIVMLogViewerBookmarksPanel(this, this);
-    AssertPtrReturnVoid(m_pBookmarksPanel);
+    if (m_pBookmarksPanel)
     {
         installEventFilter(m_pBookmarksPanel);
         m_pBookmarksPanel->hide();
@@ -431,11 +431,11 @@ void UIVMLogViewerWidget::prepareWidgets()
     }
 
     m_pSettingsPanel = new UIVMLogViewerSettingsPanel(this, this);
-    AssertPtrReturnVoid(m_pSettingsPanel);
+    if (m_pSettingsPanel)
     {
         installEventFilter(m_pSettingsPanel);
         m_pSettingsPanel->hide();
-        /* Initialize settings' panel checkboxes: */
+        /* Initialize settings' panel checkboxes and input fields: */
         m_pSettingsPanel->setShowLineNumbers(m_bShowLineNumbers);
         m_pSettingsPanel->setWrapLines(m_bWrapLines);
         m_pSettingsPanel->setFontSizeInPoints(m_iFontSizeInPoints);
@@ -451,7 +451,7 @@ void UIVMLogViewerWidget::prepareActions()
 {
     /* Create and configure 'Find' action: */
     m_pActionFind = new QAction(this);
-    AssertPtrReturnVoid(m_pActionFind);
+    if (m_pActionFind)
     {
         m_pActionFind->setShortcut(QKeySequence("Ctrl+F"));
         m_pActionFind->setCheckable(true);
@@ -460,7 +460,7 @@ void UIVMLogViewerWidget::prepareActions()
 
     /* Create and configure 'Filter' action: */
     m_pActionFilter = new QAction(this);
-    AssertPtrReturnVoid(m_pActionFilter);
+    if (m_pActionFilter)
     {
         m_pActionFilter->setShortcut(QKeySequence("Ctrl+T"));
         m_pActionFilter->setCheckable(true);
@@ -468,7 +468,7 @@ void UIVMLogViewerWidget::prepareActions()
     }
     /* Create and configure 'Bookmark' action: */
     m_pActionBookmark = new QAction(this);
-    AssertPtrReturnVoid(m_pActionBookmark);
+    if (m_pActionBookmark)
     {
         /* tie Ctrl+D to save only if we show this in a dialog since Ctrl+D is
            already assigned to another action in the selector UI: */
@@ -480,7 +480,7 @@ void UIVMLogViewerWidget::prepareActions()
 
     /* Create and configure 'Settings' action: */
     m_pActionSettings = new QAction(this);
-    AssertPtrReturnVoid(m_pActionSettings);
+    if (m_pActionSettings)
     {
         m_pActionSettings->setCheckable(true);
         connect(m_pActionSettings, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionTriggered);
@@ -489,7 +489,7 @@ void UIVMLogViewerWidget::prepareActions()
 
     /* Create and configure 'Refresh' action: */
     m_pActionRefresh = new QAction(this);
-    AssertPtrReturnVoid(m_pActionRefresh);
+    if (m_pActionRefresh)
     {
         m_pActionRefresh->setShortcut(QKeySequence("F5"));
         connect(m_pActionRefresh, &QAction::triggered, this, &UIVMLogViewerWidget::sltRefresh);
@@ -497,7 +497,7 @@ void UIVMLogViewerWidget::prepareActions()
 
     /* Create and configure 'Save' action: */
     m_pActionSave = new QAction(this);
-    AssertPtrReturnVoid(m_pActionSave);
+    if (m_pActionSave)
     {
         /* tie Ctrl+S to save only if we show this in a dialog since Ctrl+S is
            already assigned to another action in the selector UI: */
@@ -545,7 +545,7 @@ void UIVMLogViewerWidget::prepareToolBar()
 {
     /* Create toolbar: */
     m_pToolBar = new UIToolBar(parentWidget());
-    AssertPtrReturnVoid(m_pToolBar);
+    if (m_pToolBar)
     {
         /* Configure toolbar: */
         const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);
@@ -588,7 +588,7 @@ void UIVMLogViewerWidget::prepareMenu()
 {
     /* Create 'LogViewer' menu: */
     m_pMenu = new QMenu(this);
-    AssertPtrReturnVoid(m_pMenu);
+    if (m_pMenu)
     {
         if (m_pActionFind)
             m_pMenu->addAction(m_pActionFind);
@@ -833,40 +833,42 @@ bool UIVMLogViewerWidget::createLogViewerPages()
 
 void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QString &strLogContent, bool noLogsToShow /* = false */)
 {
-    AssertPtrReturnVoid(m_pTabWidget);
+    if (!m_pTabWidget)
+        return;
 
     /* Create page-container: */
     UIVMLogPage* pLogPage = new UIVMLogPage(this);
-    AssertPtrReturnVoid(pLogPage);
-
-    connect(pLogPage, &UIVMLogPage::sigBookmarksUpdated, this, &UIVMLogViewerWidget::sltUpdateBookmarkPanel);
-    connect(pLogPage, &UIVMLogPage::sigLogPageFilteredChanged, this, &UIVMLogViewerWidget::sltLogPageFilteredChanged);
-    /* Initialize setting for this log page */
-    pLogPage->setShowLineNumbers(m_bShowLineNumbers);
-    pLogPage->setWrapLines(m_bWrapLines);
-    pLogPage->setFontSizeInPoints(m_iFontSizeInPoints);
-
-    /* Set the file name only if we really have log file to read. */
-    if (!noLogsToShow)
-        pLogPage->setFileName(strFileName);
-
-    /* Add page-container to viewer-container: */
-    int tabIndex = m_pTabWidget->insertTab(m_pTabWidget->count(), pLogPage, QFileInfo(strFileName).fileName());
-
-    pLogPage->setTabIndex(tabIndex);
-    m_logPageList.resize(m_pTabWidget->count());
-    m_logPageList[tabIndex] = pLogPage;
-
-    /* Set the log string of the UIVMLogPage: */
-    pLogPage->setLogString(strLogContent);
-    /* Set text edit since we want to display this text: */
-    if (!noLogsToShow)
-        pLogPage->setTextEditText(strLogContent);
-    /* In case there are some errors append the error text as html: */
-    else
+    if (pLogPage)
     {
-        pLogPage->setTextEditTextAsHtml(strLogContent);
-        pLogPage->markForError();
+        connect(pLogPage, &UIVMLogPage::sigBookmarksUpdated, this, &UIVMLogViewerWidget::sltUpdateBookmarkPanel);
+        connect(pLogPage, &UIVMLogPage::sigLogPageFilteredChanged, this, &UIVMLogViewerWidget::sltLogPageFilteredChanged);
+        /* Initialize setting for this log page */
+        pLogPage->setShowLineNumbers(m_bShowLineNumbers);
+        pLogPage->setWrapLines(m_bWrapLines);
+        pLogPage->setFontSizeInPoints(m_iFontSizeInPoints);
+
+        /* Set the file name only if we really have log file to read. */
+        if (!noLogsToShow)
+            pLogPage->setFileName(strFileName);
+
+        /* Add page-container to viewer-container: */
+        int tabIndex = m_pTabWidget->insertTab(m_pTabWidget->count(), pLogPage, QFileInfo(strFileName).fileName());
+
+        pLogPage->setTabIndex(tabIndex);
+        m_logPageList.resize(m_pTabWidget->count());
+        m_logPageList[tabIndex] = pLogPage;
+
+        /* Set the log string of the UIVMLogPage: */
+        pLogPage->setLogString(strLogContent);
+        /* Set text edit since we want to display this text: */
+        if (!noLogsToShow)
+            pLogPage->setTextEditText(strLogContent);
+        /* In case there are some errors append the error text as html: */
+        else
+        {
+            pLogPage->setTextEditTextAsHtml(strLogContent);
+            pLogPage->markForError();
+        }
     }
 }
 

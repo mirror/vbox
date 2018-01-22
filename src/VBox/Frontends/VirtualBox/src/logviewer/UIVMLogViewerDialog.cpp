@@ -75,7 +75,7 @@ void UIVMLogViewerDialog::configureCentralWidget()
 {
     /* Create widget: */
     UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, this, m_comMachine);
-    AssertPtrReturnVoid(pWidget);
+    if (pWidget)
     {
         /* Configure widget: */
         setWidget(pWidget);

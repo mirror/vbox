@@ -99,40 +99,49 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
 
     m_pBookmarksComboBox = new QComboBox(this);
     QFontMetrics fontMetrics = m_pBookmarksComboBox->fontMetrics();
-    AssertPtrReturnVoid(m_pBookmarksComboBox);
-    m_pBookmarksComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
-    m_pBookmarksComboBox->setMaximumWidth(fontMetrics.width('a') * (m_iMaxBookmarkTextLength + 2));
-    /* Make sure we have 0th item in our combo box. */
-    m_pBookmarksComboBox->insertItem(0, "");
-    mainLayout()->addWidget(m_pBookmarksComboBox, 2);
+    if (m_pBookmarksComboBox)
+    {
+        m_pBookmarksComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+        m_pBookmarksComboBox->setMaximumWidth(fontMetrics.width('a') * (m_iMaxBookmarkTextLength + 2));
+        /* Make sure we have 0th item in our combo box. */
+        m_pBookmarksComboBox->insertItem(0, "");
+        mainLayout()->addWidget(m_pBookmarksComboBox, 2);
+    }
 
     m_pGotoSelectedBookmark = new QIToolButton(this);
-    AssertPtrReturnVoid(m_pGotoSelectedBookmark);
-    mainLayout()->addWidget(m_pGotoSelectedBookmark, 0);
-    m_pGotoSelectedBookmark->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
-
+    if (m_pGotoSelectedBookmark)
+    {
+        mainLayout()->addWidget(m_pGotoSelectedBookmark, 0);
+        m_pGotoSelectedBookmark->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
+    }
 
     m_pNextPrevButtons = new UIRoundRectSegmentedButton(this, 2);
-    AssertPtrReturnVoid(m_pNextPrevButtons);
-    m_pNextPrevButtons->setEnabled(0, false);
-    m_pNextPrevButtons->setEnabled(1, false);
+    if (m_pNextPrevButtons)
+    {
+        m_pNextPrevButtons->setEnabled(0, false);
+        m_pNextPrevButtons->setEnabled(1, false);
 #ifndef VBOX_WS_MAC
-    /* No icons on the Mac: */
-    m_pNextPrevButtons->setIcon(0, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
-    m_pNextPrevButtons->setIcon(1, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
+        /* No icons on the Mac: */
+        m_pNextPrevButtons->setIcon(0, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
+        m_pNextPrevButtons->setIcon(1, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
 #endif /* !VBOX_WS_MAC */
-    mainLayout()->addWidget(m_pNextPrevButtons);
-    m_pNextPrevButtons->setEnabled(0, true);
-    m_pNextPrevButtons->setEnabled(1, true);
+        mainLayout()->addWidget(m_pNextPrevButtons);
+        m_pNextPrevButtons->setEnabled(0, true);
+        m_pNextPrevButtons->setEnabled(1, true);
+    }
 
     m_pDeleteCurrentButton = new QIToolButton(this);
-    AssertPtrReturnVoid(m_pDeleteCurrentButton);
-    mainLayout()->addWidget(m_pDeleteCurrentButton, 0);
-    m_pDeleteCurrentButton->setIcon(m_pDeleteCurrentButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
+    if (m_pDeleteCurrentButton)
+    {
+        mainLayout()->addWidget(m_pDeleteCurrentButton, 0);
+        m_pDeleteCurrentButton->setIcon(m_pDeleteCurrentButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
+    }
 
     m_pDeleteAllButton = new QIToolButton(this);
-    AssertPtrReturnVoid(m_pDeleteAllButton);
-    mainLayout()->addWidget(m_pDeleteAllButton, 0);
+    if (m_pDeleteAllButton)
+    {
+        mainLayout()->addWidget(m_pDeleteAllButton, 0);
+    }
 
     mainLayout()->addStretch(4);
 }

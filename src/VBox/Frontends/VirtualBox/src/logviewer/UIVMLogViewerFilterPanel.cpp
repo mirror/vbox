@@ -156,16 +156,19 @@ private:
     void createButtons()
     {
         m_pRemoveTermButton = new QToolButton(this);
-        AssertReturnVoid(m_pRemoveTermButton);
-        m_pRemoveTermButton->setIcon(m_pRemoveTermButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
-        m_pRemoveTermButton->hide();
+        if (m_pRemoveTermButton)
+        {
+            m_pRemoveTermButton->setIcon(m_pRemoveTermButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
+            m_pRemoveTermButton->hide();
+            connect(m_pRemoveTermButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltRemoveFilterTerm);
+        }
 
         m_pClearAllButton = new QToolButton(this);
-        AssertReturnVoid(m_pClearAllButton);
-        m_pClearAllButton->setIcon(m_pRemoveTermButton->style()->standardIcon(QStyle::SP_LineEditClearButton));
-
-        connect(m_pRemoveTermButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltRemoveFilterTerm);
-        connect(m_pClearAllButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltClearAll);
+        if (m_pClearAllButton)
+        {
+            m_pClearAllButton->setIcon(m_pRemoveTermButton->style()->standardIcon(QStyle::SP_LineEditClearButton));
+            connect(m_pClearAllButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltClearAll);
+        }
     }
 
     QToolButton *m_pRemoveTermButton;
@@ -355,7 +358,7 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
     prepareRadioButtonGroup();
 
     m_pFilterComboBox = new QComboBox(this);
-    AssertPtrReturnVoid(m_pFilterComboBox);
+    if (m_pFilterComboBox)
     {
         m_pFilterComboBox->setEditable(true);
         QStringList strFilterPresets;
@@ -367,27 +370,27 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
     }
 
     m_pAddFilterTermButton = new QIToolButton(this);
-    AssertPtrReturnVoid(m_pAddFilterTermButton);
+    if (m_pAddFilterTermButton)
     {
         m_pAddFilterTermButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
         mainLayout()->addWidget(m_pAddFilterTermButton,0);
     }
 
     m_pFilterTermsLineEdit = new UIVMFilterLineEdit(this);
-    AssertPtrReturnVoid(m_pFilterTermsLineEdit);
+    if (m_pFilterTermsLineEdit)
     {
         mainLayout()->addWidget(m_pFilterTermsLineEdit, 4);
         m_pFilterTermsLineEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum /*vertical */);
     }
 
     m_pResultLabel = new QLabel(this);
-    AssertPtrReturnVoid(m_pResultLabel);
+    if (m_pResultLabel)
     {
         mainLayout()->addWidget(m_pResultLabel,0);
     }
         /* Create filter-label: */
 //         m_pFilterLabel = new QLabel(this);
-//         AssertPtrReturnVoid(m_pFilterLabel);
+//         if (m_pFilterLabel)
 //         {
 //             /* Configure filter-label: */
 //             m_pFilterLabel->setBuddy(m_pFilterComboBox);
@@ -405,14 +408,14 @@ void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
 {
     /* Create radio-button container: */
     m_pRadioButtonContainer = new QFrame;
-    AssertPtrReturnVoid(m_pRadioButtonContainer);
+    if (m_pRadioButtonContainer)
     {
         /* Configure container: */
         m_pRadioButtonContainer->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
 
         /* Create container layout: */
         QHBoxLayout *pContainerLayout = new QHBoxLayout(m_pRadioButtonContainer);
-        AssertPtrReturnVoid(pContainerLayout);
+        if (pContainerLayout)
         {
             /* Configure layout: */
 #ifdef VBOX_WS_MAC
@@ -426,11 +429,11 @@ void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
 
             /* Create button-group: */
             m_pButtonGroup = new QButtonGroup(this);
-            AssertPtrReturnVoid(m_pButtonGroup);
+            if (m_pButtonGroup)
             {
                 /* Create 'Or' radio-button: */
                 m_pOrRadioButton = new QRadioButton;
-                AssertPtrReturnVoid(m_pOrRadioButton);
+                if (m_pOrRadioButton)
                 {
                     /* Configure radio-button: */
                     m_pButtonGroup->addButton(m_pOrRadioButton, static_cast<int>(OrButton));
@@ -443,7 +446,7 @@ void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
 
                 /* Create 'And' radio-button: */
                 m_pAndRadioButton = new QRadioButton;
-                AssertPtrReturnVoid(m_pAndRadioButton);
+                if (m_pAndRadioButton)
                 {
                     /* Configure radio-button: */
                     m_pButtonGroup->addButton(m_pAndRadioButton, static_cast<int>(AndButton));

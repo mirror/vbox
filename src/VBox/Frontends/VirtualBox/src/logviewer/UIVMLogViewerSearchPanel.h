@@ -55,17 +55,13 @@ public:
 
 protected:
 
-
-    /** Prepares widgets. */
     virtual void prepareWidgets() /* override */;
     virtual void prepareConnections() /* override */;
-    /** Handles translation event. */
     virtual void retranslateUi() /* override */;
     /** Handles Qt key-press @a pEevent. */
     virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
     /** Handles Qt @a pEvent, used for keyboard processing. */
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
-    /** Handles Qt show @a pEvent. */
     virtual void showEvent(QShowEvent *pEvent) /* override */;
     virtual void hideEvent(QHideEvent* pEvent) /* override */;
 
@@ -85,7 +81,7 @@ private:
 
     enum SearchDirection { ForwardSearch, BackwardSearch };
 
-    /** Clear the result of highlight */
+    /** Clear the highlighting */
     void clearHighlight();
     void clearHighlighting(int count);
 
@@ -104,7 +100,6 @@ private:
     void configureInfoLabels();
     /** Constructs the find flags for QTextDocument::find function. */
     QTextDocument::FindFlags constructFindFlags(SearchDirection eDirection);
-
 
     /** Holds the instance of search-label we create. */
     QLabel *m_pSearchLabel;
@@ -129,7 +124,8 @@ private:
       0: no matches found
       n > 0: n matches found. */
     int          m_iMatchCount;
-    /** Stores relative positions of the lines of the matches. The values are [0,1] 0 being the first line 1 being the last. */
+    /** Stores relative positions of the lines of the matches. The values are [0,1]
+        0 being the first line 1 being the last. */
     QVector<float> m_matchLocationVector;
 };
 

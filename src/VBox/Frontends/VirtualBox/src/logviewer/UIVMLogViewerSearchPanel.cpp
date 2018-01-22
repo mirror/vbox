@@ -184,7 +184,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
 
     /* Create search-editor: */
     m_pSearchEditor = new UISearchField(this);
-    AssertPtrReturnVoid(m_pSearchEditor);
+    if (m_pSearchEditor)
     {
         /* Configure search-editor: */
         m_pSearchEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
@@ -194,7 +194,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
 
     /* Create search-label: */
     m_pSearchLabel = new QLabel(this);
-    AssertPtrReturnVoid(m_pSearchLabel);
+    if (m_pSearchLabel)
     {
         /* Configure search-label: */
         m_pSearchLabel->setBuddy(m_pSearchEditor);
@@ -210,7 +210,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
 
     /* Create Next/Prev button-box: */
     m_pNextPrevButtons = new UIRoundRectSegmentedButton(this, 2);
-    AssertPtrReturnVoid(m_pNextPrevButtons);
+    if (m_pNextPrevButtons)
     {
         /* Configure Next/Prev button-box: */
         m_pNextPrevButtons->setEnabled(0, false);
@@ -226,7 +226,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
 
     /* Create case-sensitive checkbox: */
     m_pCaseSensitiveCheckBox = new QCheckBox;
-    AssertPtrReturnVoid(m_pCaseSensitiveCheckBox);
+    if (m_pCaseSensitiveCheckBox)
     {
         /* Configure font: */
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
@@ -239,7 +239,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
     }
 
     m_pMatchWholeWordCheckBox = new QCheckBox(this);
-    AssertPtrReturnVoid(m_pMatchWholeWordCheckBox);
+    if (m_pMatchWholeWordCheckBox)
     {
         /* Configure focus for case-sensitive checkbox: */
         setFocusProxy(m_pMatchWholeWordCheckBox);
@@ -253,7 +253,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
     }
 
     m_pHighlightAllCheckBox = new QCheckBox(this);
-    AssertPtrReturnVoid(m_pHighlightAllCheckBox);
+    if (m_pHighlightAllCheckBox)
     {
         /* Configure font: */
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
@@ -267,7 +267,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
 
     /* Create warning-icon: */
     m_pWarningIcon = new QLabel(this);
-    AssertPtrReturnVoid(m_pWarningIcon);
+    if (m_pWarningIcon)
     {
         /* Confifure warning-icon: */
         m_pWarningIcon->hide();
@@ -280,7 +280,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
 
     /* Create warning-label: */
     m_pInfoLabel = new QLabel(this);
-    AssertPtrReturnVoid(m_pInfoLabel);
+    if (m_pInfoLabel)
     {
         /* Configure warning-label: */
         m_pInfoLabel->hide();

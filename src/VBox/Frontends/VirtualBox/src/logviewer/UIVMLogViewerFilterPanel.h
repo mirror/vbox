@@ -65,11 +65,9 @@ protected:
     virtual void prepareWidgets() /* override */;
     virtual void prepareConnections() /* override */;
 
-    /** Handles the translation event. */
     void retranslateUi() /* override */;
     /** Handles Qt @a pEvent, used for keyboard processing. */
     bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
-    /** Handles the Qt show @a pEvent. */
     void showEvent(QShowEvent *pEvent) /* override */;
 
 private slots:
