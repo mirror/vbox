@@ -357,7 +357,7 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
 
     prepareRadioButtonGroup();
 
-    m_pFilterComboBox = new QComboBox(this);
+    m_pFilterComboBox = new QComboBox;
     if (m_pFilterComboBox)
     {
         m_pFilterComboBox->setEditable(true);
@@ -369,21 +369,21 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
         mainLayout()->addWidget(m_pFilterComboBox,1);
     }
 
-    m_pAddFilterTermButton = new QIToolButton(this);
+    m_pAddFilterTermButton = new QIToolButton;
     if (m_pAddFilterTermButton)
     {
         m_pAddFilterTermButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
         mainLayout()->addWidget(m_pAddFilterTermButton,0);
     }
 
-    m_pFilterTermsLineEdit = new UIVMFilterLineEdit(this);
+    m_pFilterTermsLineEdit = new UIVMFilterLineEdit;
     if (m_pFilterTermsLineEdit)
     {
         mainLayout()->addWidget(m_pFilterTermsLineEdit, 4);
         m_pFilterTermsLineEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum /*vertical */);
     }
 
-    m_pResultLabel = new QLabel(this);
+    m_pResultLabel = new QLabel;
     if (m_pResultLabel)
     {
         mainLayout()->addWidget(m_pResultLabel,0);

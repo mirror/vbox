@@ -70,6 +70,7 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent 
     , m_pActionRefresh(0)
     , m_pActionSave(0)
     , m_pActionBookmark(0)
+    , m_pActionSettings(0)
     , m_pMenu(0)
     , m_bShowLineNumbers(true)
     , m_bWrapLines(false)
@@ -168,6 +169,8 @@ void UIVMLogViewerWidget::sltPanelActionTriggered(bool checked)
 
 void UIVMLogViewerWidget::sltRefresh()
 {
+    if (!m_pTabWidget)
+        return;
     /* Disconnect this connection to avoid initial signals during page creation/deletion: */
     disconnect(m_pTabWidget, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
     disconnect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
@@ -195,16 +198,22 @@ void UIVMLogViewerWidget::sltRefresh()
         m_pFilterPanel->applyFilter();
 
     /* Setup this connection after refresh to avoid initial signals during page creation: */
-    connect(m_pTabWidget, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
+    if (m_pFilterPanel)
+        connect(m_pTabWidget, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
     connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
 
     /* Enable/Disable toolbar actions (except Refresh) & tab widget according log presence: */
-    m_pActionFind->setEnabled(!noLogsToShow);
-    m_pActionFilter->setEnabled(!noLogsToShow);
-    m_pActionSave->setEnabled(!noLogsToShow);
-    m_pActionBookmark->setEnabled(!noLogsToShow);
+    if (m_pActionFind)
+        m_pActionFind->setEnabled(!noLogsToShow);
+    if (m_pActionFilter)
+        m_pActionFilter->setEnabled(!noLogsToShow);
+    if (m_pActionSave)
+        m_pActionSave->setEnabled(!noLogsToShow);
+    if (m_pActionBookmark)
+        m_pActionBookmark->setEnabled(!noLogsToShow);
     //m_pTabWidget->setEnabled(!noLogsToShow);
-    m_pActionSettings->setEnabled(!noLogsToShow);
+    if (m_pActionSettings)
+        m_pActionSettings->setEnabled(!noLogsToShow);
     m_pTabWidget->show();
     if (m_pSearchPanel && m_pSearchPanel->isVisible())
         m_pSearchPanel->refresh();
@@ -351,15 +360,12 @@ void UIVMLogViewerWidget::prepare()
 {
     m_pMainLayout = new QVBoxLayout(this);
 
-    /* Prepare widgets: */
-    prepareWidgets();
-
-
-    prepareActions();
-
     prepareToolBar();
+    prepareActions();
+    
     prepareMenu();
-
+    prepareWidgets();
+    
     /* Reading log files: */
     sltRefresh();
 
@@ -383,45 +389,45 @@ void UIVMLogViewerWidget::prepareWidgets()
 #endif
 
     /* Create VM Log-Viewer container: */
-    m_pTabWidget = new QITabWidget(this);
+    m_pTabWidget = new QITabWidget;
     if (m_pTabWidget)
     {
         /* Add VM Log-Viewer container to main-layout: */
-        m_pMainLayout->insertWidget(1, m_pTabWidget);
+        m_pMainLayout->addWidget(m_pTabWidget);
     }
 
     /* Create VM Log-Viewer search-panel: */
-    m_pSearchPanel = new UIVMLogViewerSearchPanel(this, this);
+    m_pSearchPanel = new UIVMLogViewerSearchPanel(0, this);
     if (m_pSearchPanel)
     {
         /* Configure VM Log-Viewer search-panel: */
         installEventFilter(m_pSearchPanel);
         m_pSearchPanel->hide();
         /* Add VM Log-Viewer search-panel to main-layout: */
-        m_pMainLayout->insertWidget(2, m_pSearchPanel);
+        m_pMainLayout->addWidget(m_pSearchPanel);
         connect(m_pSearchPanel, &UIVMLogViewerSearchPanel::sigHighlightingUpdated,
                 this, &UIVMLogViewerWidget::sltSearchResultHighLigting);
     }
 
     /* Create VM Log-Viewer filter-panel: */
-    m_pFilterPanel = new UIVMLogViewerFilterPanel(this, this);
+    m_pFilterPanel = new UIVMLogViewerFilterPanel(0, this);
     if (m_pFilterPanel)
     {
         /* Configure VM Log-Viewer filter-panel: */
         installEventFilter(m_pFilterPanel);
         m_pFilterPanel->hide();
         /* Add VM Log-Viewer filter-panel to main-layout: */
-        m_pMainLayout->insertWidget(3, m_pFilterPanel);
+        m_pMainLayout->addWidget(m_pFilterPanel);
         connect(m_pFilterPanel, &UIVMLogViewerFilterPanel::sigFilterApplied,
                 this, &UIVMLogViewerWidget::sltFilterApplied);
     }
 
-    m_pBookmarksPanel = new UIVMLogViewerBookmarksPanel(this, this);
+    m_pBookmarksPanel = new UIVMLogViewerBookmarksPanel(0, this);
     if (m_pBookmarksPanel)
     {
         installEventFilter(m_pBookmarksPanel);
         m_pBookmarksPanel->hide();
-        m_pMainLayout->insertWidget(4, m_pBookmarksPanel);
+        m_pMainLayout->addWidget(m_pBookmarksPanel);
         connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteBookmark,
                 this, &UIVMLogViewerWidget::sltDeleteBookmark);
         connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks,
@@ -430,7 +436,7 @@ void UIVMLogViewerWidget::prepareWidgets()
                 this, &UIVMLogViewerWidget::gotoBookmark);
     }
 
-    m_pSettingsPanel = new UIVMLogViewerSettingsPanel(this, this);
+    m_pSettingsPanel = new UIVMLogViewerSettingsPanel(0, this);
     if (m_pSettingsPanel)
     {
         installEventFilter(m_pSettingsPanel);
@@ -440,7 +446,7 @@ void UIVMLogViewerWidget::prepareWidgets()
         m_pSettingsPanel->setWrapLines(m_bWrapLines);
         m_pSettingsPanel->setFontSizeInPoints(m_iFontSizeInPoints);
 
-        m_pMainLayout->insertWidget(5, m_pSettingsPanel);
+        m_pMainLayout->addWidget(m_pSettingsPanel);
         connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigShowLineNumbers, this, &UIVMLogViewerWidget::sltShowLineNumbers);
         connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigWrapLines, this, &UIVMLogViewerWidget::sltWrapLines);
         connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
@@ -579,7 +585,7 @@ void UIVMLogViewerWidget::prepareToolBar()
         }
 #else
         /* Add into layout: */
-        m_pMainLayout->insertWidget(0, m_pToolBar);
+        m_pMainLayout->addWidget(m_pToolBar);
 #endif
     }
 }
@@ -837,7 +843,7 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
         return;
 
     /* Create page-container: */
-    UIVMLogPage* pLogPage = new UIVMLogPage(this);
+    UIVMLogPage* pLogPage = new UIVMLogPage();
     if (pLogPage)
     {
         connect(pLogPage, &UIVMLogPage::sigBookmarksUpdated, this, &UIVMLogViewerWidget::sltUpdateBookmarkPanel);

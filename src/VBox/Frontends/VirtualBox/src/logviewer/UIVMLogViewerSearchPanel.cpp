@@ -183,7 +183,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
         return;
 
     /* Create search-editor: */
-    m_pSearchEditor = new UISearchField(this);
+    m_pSearchEditor = new UISearchField(0 /* parent */);
     if (m_pSearchEditor)
     {
         /* Configure search-editor: */
@@ -193,7 +193,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
     }
 
     /* Create search-label: */
-    m_pSearchLabel = new QLabel(this);
+    m_pSearchLabel = new QLabel;
     if (m_pSearchLabel)
     {
         /* Configure search-label: */
@@ -209,7 +209,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
     }
 
     /* Create Next/Prev button-box: */
-    m_pNextPrevButtons = new UIRoundRectSegmentedButton(this, 2);
+    m_pNextPrevButtons = new UIRoundRectSegmentedButton(0 /* parent */, 2);
     if (m_pNextPrevButtons)
     {
         /* Configure Next/Prev button-box: */
@@ -238,7 +238,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
         mainLayout()->addWidget(m_pCaseSensitiveCheckBox);
     }
 
-    m_pMatchWholeWordCheckBox = new QCheckBox(this);
+    m_pMatchWholeWordCheckBox = new QCheckBox;
     if (m_pMatchWholeWordCheckBox)
     {
         /* Configure focus for case-sensitive checkbox: */
@@ -252,7 +252,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
         mainLayout()->addWidget(m_pMatchWholeWordCheckBox);
     }
 
-    m_pHighlightAllCheckBox = new QCheckBox(this);
+    m_pHighlightAllCheckBox = new QCheckBox;
     if (m_pHighlightAllCheckBox)
     {
         /* Configure font: */
@@ -266,7 +266,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
     }
 
     /* Create warning-icon: */
-    m_pWarningIcon = new QLabel(this);
+    m_pWarningIcon = new QLabel;
     if (m_pWarningIcon)
     {
         /* Confifure warning-icon: */
@@ -279,7 +279,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
     }
 
     /* Create warning-label: */
-    m_pInfoLabel = new QLabel(this);
+    m_pInfoLabel = new QLabel;
     if (m_pInfoLabel)
     {
         /* Configure warning-label: */
