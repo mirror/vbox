@@ -443,6 +443,21 @@ static DECLCALLBACK(int) drvscsiGetFeatureFlags(VSCSILUN hVScsiLun, void *pvScsi
     return VINF_SUCCESS;
 }
 
+/**
+ * @interface_method_impl{VSCSILUNIOCALLBACKS,pfnVScsiLunQueryInqStrings}
+ */
+static DECLCALLBACK(int) drvscsiQueryInqStrings(VSCSILUN hVScsiLun, void *pvScsiLunUser, const char **ppszVendorId,
+                                                const char **ppszProductId, const char **ppszProductLevel)
+{
+    RT_NOREF(hVScsiLun);
+    PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
+
+    if (pThis->pDevMediaPort->pfnQueryScsiInqStrings)
+        return pThis->pDevMediaPort->pfnQueryScsiInqStrings(pThis->pDevMediaPort, ppszVendorId,
+                                                            ppszProductId, ppszProductLevel);
+
+    return VERR_NOT_FOUND;
+}
 
 /* -=-=-=-=- IPortEx -=-=-=-=- */
 
@@ -1415,6 +1430,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->VScsiIoCallbacks.pfnVScsiLunReqTransferEnqueue                = drvscsiReqTransferEnqueue;
     pThis->VScsiIoCallbacks.pfnVScsiLunGetFeatureFlags                   = drvscsiGetFeatureFlags;
     pThis->VScsiIoCallbacks.pfnVScsiLunMediumSetLock                     = drvscsiSetLock;
+    pThis->VScsiIoCallbacks.pfnVScsiLunQueryInqStrings                   = drvscsiQueryInqStrings;
 
     rc = VSCSIDeviceCreate(&pThis->hVScsiDevice, drvscsiIoReqVScsiReqCompleted, pThis);
     AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create VSCSI device rc=%Rrc\n", rc), rc);
