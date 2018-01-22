@@ -96,26 +96,26 @@ extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rdgsbase_ebx_ud2);
 # if ARCH_BITS == 64
 static BS3CI2FSGSBASE const s_aWrFsBaseWorkers[] =
 {
-    { "wrfsbase rbx", true,  BS3_CMN_NM(bs3CpuInstr2_wrfsbase_rbx_ud2), 5, BS3_CMN_NM(bs3CpuInstr2_wrfsbase_rbx_rdfsbase_rcx_ud2), 10 },
-    { "wrfsbase ebx", false, BS3_CMN_NM(bs3CpuInstr2_wrfsbase_ebx_ud2), 4, BS3_CMN_NM(bs3CpuInstr2_wrfsbase_ebx_rdfsbase_ecx_ud2),  8 },
+    { "wrfsbase rbx", true,  BS3_CMN_NM(bs3CpuInstr2_wrfsbase_rbx_ud2), 5, BS3_CMN_NM(bs3CpuInstr2_wrfsbase_rbx_rdfsbase_rcx_ud2), 13 },
+    { "wrfsbase ebx", false, BS3_CMN_NM(bs3CpuInstr2_wrfsbase_ebx_ud2), 4, BS3_CMN_NM(bs3CpuInstr2_wrfsbase_ebx_rdfsbase_ecx_ud2), 10 },
 };
 
 static BS3CI2FSGSBASE const s_aWrGsBaseWorkers[] =
 {
-    { "wrgsbase rbx", true,  BS3_CMN_NM(bs3CpuInstr2_wrgsbase_rbx_ud2), 5, BS3_CMN_NM(bs3CpuInstr2_wrgsbase_rbx_rdgsbase_rcx_ud2), 10 },
-    { "wrgsbase ebx", false, BS3_CMN_NM(bs3CpuInstr2_wrgsbase_ebx_ud2), 4, BS3_CMN_NM(bs3CpuInstr2_wrgsbase_ebx_rdgsbase_ecx_ud2),  8 },
+    { "wrgsbase rbx", true,  BS3_CMN_NM(bs3CpuInstr2_wrgsbase_rbx_ud2), 5, BS3_CMN_NM(bs3CpuInstr2_wrgsbase_rbx_rdgsbase_rcx_ud2), 13 },
+    { "wrgsbase ebx", false, BS3_CMN_NM(bs3CpuInstr2_wrgsbase_ebx_ud2), 4, BS3_CMN_NM(bs3CpuInstr2_wrgsbase_ebx_rdgsbase_ecx_ud2), 10 },
 };
 
 static BS3CI2FSGSBASE const s_aRdFsBaseWorkers[] =
 {
-    { "rdfsbase rbx", true,  BS3_CMN_NM(bs3CpuInstr2_rdfsbase_rbx_ud2), 5, BS3_CMN_NM(bs3CpuInstr2_wrfsbase_rbx_rdfsbase_rcx_ud2), 10 },
-    { "rdfsbase ebx", false, BS3_CMN_NM(bs3CpuInstr2_rdfsbase_ebx_ud2), 4, BS3_CMN_NM(bs3CpuInstr2_wrfsbase_ebx_rdfsbase_ecx_ud2),  8 },
+    { "rdfsbase rbx", true,  BS3_CMN_NM(bs3CpuInstr2_rdfsbase_rbx_ud2), 5, BS3_CMN_NM(bs3CpuInstr2_wrfsbase_rbx_rdfsbase_rcx_ud2), 13 },
+    { "rdfsbase ebx", false, BS3_CMN_NM(bs3CpuInstr2_rdfsbase_ebx_ud2), 4, BS3_CMN_NM(bs3CpuInstr2_wrfsbase_ebx_rdfsbase_ecx_ud2), 10 },
 };
 
 static BS3CI2FSGSBASE const s_aRdGsBaseWorkers[] =
 {
-    { "rdgsbase rbx", true,  BS3_CMN_NM(bs3CpuInstr2_rdgsbase_rbx_ud2), 5, BS3_CMN_NM(bs3CpuInstr2_wrgsbase_rbx_rdgsbase_rcx_ud2), 10 },
-    { "rdgsbase ebx", false, BS3_CMN_NM(bs3CpuInstr2_rdgsbase_ebx_ud2), 4, BS3_CMN_NM(bs3CpuInstr2_wrgsbase_ebx_rdgsbase_ecx_ud2),  8 },
+    { "rdgsbase rbx", true,  BS3_CMN_NM(bs3CpuInstr2_rdgsbase_rbx_ud2), 5, BS3_CMN_NM(bs3CpuInstr2_wrgsbase_rbx_rdgsbase_rcx_ud2), 13 },
+    { "rdgsbase ebx", false, BS3_CMN_NM(bs3CpuInstr2_rdgsbase_ebx_ud2), 4, BS3_CMN_NM(bs3CpuInstr2_wrgsbase_ebx_rdgsbase_ecx_ud2), 10 },
 };
 # endif
 #endif /* BS3_INSTANTIATING_CMN - global */
@@ -805,6 +805,7 @@ static bool bs3CpuInstr2_fsgsbase_VerifyWorker(uint8_t bMode, PBS3REGCTX pCtx, P
             Bs3MemCpy(pExpectCtx, pCtx, sizeof(*pExpectCtx));
             Bs3TrapSetJmpAndRestore(pCtx, pTrapFrame);
             pExpectCtx->rip.u       = pCtx->rip.u + (!fGP ? pFsGsBaseWorker->offVerifyWorkerUd2 : 0);
+            pExpectCtx->rbx.u       = !fGP ? 0 : s_aValues64[iValue].u64Base;
             pExpectCtx->rcx.u       = !fGP ? s_aValues64[iValue].u64Base : 0;
             pExpectCtx->rflags.u32 |= X86_EFL_RF;
             if (  !Bs3TestCheckRegCtxEx(&pTrapFrame->Ctx, pExpectCtx, 0 /*cbPcAdjust*/, 0 /*cbSpAdjust*/,
@@ -828,6 +829,7 @@ static bool bs3CpuInstr2_fsgsbase_VerifyWorker(uint8_t bMode, PBS3REGCTX pCtx, P
             Bs3MemCpy(pExpectCtx, pCtx, sizeof(*pExpectCtx));
             Bs3TrapSetJmpAndRestore(pCtx, pTrapFrame);
             pExpectCtx->rip.u       = pCtx->rip.u + pFsGsBaseWorker->offVerifyWorkerUd2;
+            pExpectCtx->rbx.u       = 0;
             pExpectCtx->rcx.u       = s_aValues64[iValue].u64Base & UINT64_C(0x00000000ffffffff);
             pExpectCtx->rflags.u32 |= X86_EFL_RF;
             if (!Bs3TestCheckRegCtxEx(&pTrapFrame->Ctx, pExpectCtx, 0 /*cbPcAdjust*/, 0 /*cbSpAdjust*/,
@@ -878,7 +880,7 @@ static void bs3CpuInstr2_rdfsbase_rdgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE 
             Ctx.cr4.u &= ~X86_CR4_FSGSBASE;
             bs3CpuInstr2_fsgsbase_ExpectUD(bMode, &Ctx, &ExpectCtx, &TrapFrame);
 
-            /* Read existing base address. */
+            /* Read any existing base address. */
             Ctx.rbx.u  = 0xa0000;
             Ctx.cr4.u |= X86_CR4_FSGSBASE;
             Bs3MemCpy(&ExpectCtx, &Ctx, sizeof(ExpectCtx));

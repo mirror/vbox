@@ -196,41 +196,45 @@ BS3_PROC_END_CMN   bs3CpuInstr2_wrgsbase_ebx_ud2
 
 BS3_PROC_BEGIN_CMN bs3CpuInstr2_wrfsbase_rbx_rdfsbase_rcx_ud2, BS3_PBC_NEAR
         wrfsbase rbx
+        xor      rbx, rbx
         rdfsbase rcx
 .again:
         ud2
         jmp     .again
-AssertCompile(.again - BS3_LAST_LABEL == 10)
+AssertCompile(.again - BS3_LAST_LABEL == 13)
 BS3_PROC_END_CMN   bs3CpuInstr2_wrfsbase_rbx_rdfsbase_rcx_ud2
 
 
 BS3_PROC_BEGIN_CMN bs3CpuInstr2_wrfsbase_ebx_rdfsbase_ecx_ud2, BS3_PBC_NEAR
         wrfsbase ebx
+        xor      ebx, ebx
         rdfsbase ecx
 .again:
         ud2
         jmp     .again
-AssertCompile(.again - BS3_LAST_LABEL == 8)
+AssertCompile(.again - BS3_LAST_LABEL == 10)
 BS3_PROC_END_CMN   bs3CpuInstr2_wrfsbase_ebx_rdfsbase_ecx_ud2
 
 
 BS3_PROC_BEGIN_CMN bs3CpuInstr2_wrgsbase_rbx_rdgsbase_rcx_ud2, BS3_PBC_NEAR
         wrgsbase rbx
+        xor      rbx, rbx
         rdgsbase rcx
 .again:
         ud2
         jmp     .again
-AssertCompile(.again - BS3_LAST_LABEL == 10)
+AssertCompile(.again - BS3_LAST_LABEL == 13)
 BS3_PROC_END_CMN   bs3CpuInstr2_wrgsbase_rbx_rdgsbase_rcx_ud2
 
 
 BS3_PROC_BEGIN_CMN bs3CpuInstr2_wrgsbase_ebx_rdgsbase_ecx_ud2, BS3_PBC_NEAR
         wrgsbase ebx
+        xor      ebx, ebx
         rdgsbase ecx
 .again:
         ud2
         jmp     .again
-AssertCompile(.again - BS3_LAST_LABEL == 8)
+AssertCompile(.again - BS3_LAST_LABEL == 10)
 BS3_PROC_END_CMN   bs3CpuInstr2_wrfgbase_ebx_rdgsbase_ecx_ud2
 
 
