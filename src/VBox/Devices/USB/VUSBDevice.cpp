@@ -308,6 +308,7 @@ static bool vusbDevStdReqSetConfig(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, 
         vusbDevSetState(pDev, VUSB_DEVICE_STATE_CONFIGURED);
     if (pDev->pUsbIns->pReg->pfnUsbSetConfiguration)
     {
+        RTCritSectEnter(&pDev->pHub->pRootHub->CritSectDevices);
         int rc = vusbDevIoThreadExecSync(pDev, (PFNRT)pDev->pUsbIns->pReg->pfnUsbSetConfiguration, 5,
                                          pDev->pUsbIns, pNewCfgDesc->Core.bConfigurationValue,
                                          pDev->pCurCfgDesc, pDev->paIfStates, pNewCfgDesc);
@@ -316,6 +317,7 @@ static bool vusbDevStdReqSetConfig(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, 
             Log(("vusb: error: %s: failed to set config %i (%Rrc) !!!\n", pDev->pUsbIns->pszName, iCfg, rc));
             return false;
         }
+        RTCritSectLeave(&pDev->pHub->pRootHub->CritSectDevices);
     }
     Log(("vusb: %p[%s]: SET_CONFIGURATION: Selected config %u\n", pDev, pDev->pUsbIns->pszName, iCfg));
     return vusbDevDoSelectConfig(pDev, pNewCfgDesc);
@@ -456,12 +458,14 @@ static bool vusbDevStdReqSetInterface(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetu
 
     if (pDev->pUsbIns->pReg->pfnUsbSetInterface)
     {
+        RTCritSectEnter(&pDev->pHub->pRootHub->CritSectDevices);
         int rc = vusbDevIoThreadExecSync(pDev, (PFNRT)pDev->pUsbIns->pReg->pfnUsbSetInterface, 3, pDev->pUsbIns, iIf, iAlt);
         if (RT_FAILURE(rc))
         {
             LogFlow(("vusbDevStdReqSetInterface: error: %s: couldn't find alt interface %u.%u (%Rrc)\n", pDev->pUsbIns->pszName, iIf, iAlt, rc));
             return false;
         }
+        RTCritSectLeave(&pDev->pHub->pRootHub->CritSectDevices);
     }
 
     for (unsigned i = 0; i < pIfState->pCurIfDesc->Core.bNumEndpoints; i++)
@@ -528,8 +532,10 @@ static bool vusbDevStdReqClearFeature(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetu
                 &&  pSetup->wValue == 0 /* ENDPOINT_HALT */
                 &&  pDev->pUsbIns->pReg->pfnUsbClearHaltedEndpoint)
             {
+                RTCritSectEnter(&pDev->pHub->pRootHub->CritSectDevices);
                 int rc = vusbDevIoThreadExecSync(pDev, (PFNRT)pDev->pUsbIns->pReg->pfnUsbClearHaltedEndpoint,
                                                  2, pDev->pUsbIns, pSetup->wIndex);
+                RTCritSectLeave(&pDev->pHub->pRootHub->CritSectDevices);
                 return RT_SUCCESS(rc);
             }
             break;
