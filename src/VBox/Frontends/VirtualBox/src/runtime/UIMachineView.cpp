@@ -254,9 +254,17 @@ void UIMachineView::applyMachineViewScaleFactor()
     /* Propagate the scale-factor related attributes to 3D service if necessary: */
     if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
     {
+        double dScaleFactorFor3D = dScaleFactor;
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+        // WORKAROUND:
+        // On Windows and Linux opposing to macOS it's only Qt which can auto scale up,
+        // not 3D overlay itself, so for auto scale-up mode we have to take that into account.
+        if (!fUseUnscaledHiDPIOutput)
+            dScaleFactorFor3D *= frameBuffer()->devicePixelRatio();
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
         display().NotifyScaleFactorChange(m_uScreenId,
-                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+                                          (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                          (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
         display().NotifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
     }
 
@@ -486,13 +494,22 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
 
     /* Take the scale-factor into account: */
     const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
     frameBuffer()->setScaleFactor(dScaleFactor);
     /* Propagate the scale-factor to 3D service if necessary: */
     if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
     {
+        double dScaleFactorFor3D = dScaleFactor;
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+        // WORKAROUND:
+        // On Windows and Linux opposing to macOS it's only Qt which can auto scale up,
+        // not 3D overlay itself, so for auto scale-up mode we have to take that into account.
+        if (!fUseUnscaledHiDPIOutput)
+            dScaleFactorFor3D *= frameBuffer()->devicePixelRatio();
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
         display().NotifyScaleFactorChange(m_uScreenId,
-                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+                                          (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                          (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
     }
 
     /* Handle scale attributes change: */
@@ -704,20 +721,27 @@ void UIMachineView::prepareFrameBuffer()
         /* Take scaling optimization type into account: */
         m_pFrameBuffer->setScalingOptimizationType(gEDataManager->scalingOptimizationType(vboxGlobal().managedVMUuid()));
 
-        /* Take device-pixel-ratio into account: */
-        m_pFrameBuffer->setDevicePixelRatio(gpDesktop->devicePixelRatio(machineWindow()));
-
         /* Take the scale-factor related attributes into account: */
+        const double dDevicePixelRatio = gpDesktop->devicePixelRatio(machineWindow());
         const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
         const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
+        m_pFrameBuffer->setDevicePixelRatio(dDevicePixelRatio);
         m_pFrameBuffer->setScaleFactor(dScaleFactor);
         m_pFrameBuffer->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
         /* Propagate the scale-factor related attributes to 3D service if necessary: */
         if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
         {
+            double dScaleFactorFor3D = dScaleFactor;
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+            // WORKAROUND:
+            // On Windows and Linux opposing to macOS it's only Qt which can auto scale up,
+            // not 3D overlay itself, so for auto scale-up mode we have to take that into account.
+            if (!fUseUnscaledHiDPIOutput)
+                dScaleFactorFor3D *= dDevicePixelRatio;
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
             display().NotifyScaleFactorChange(m_uScreenId,
-                                              (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                              (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+                                              (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                              (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
             display().NotifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
         }
 
