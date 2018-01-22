@@ -1272,6 +1272,9 @@ static void sb16UpdateVolume(PSB16STATE pThis)
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
+        if (!pDrv->Out.pStream)
+            continue;
+
         int rc2 = pDrv->pConnector->pfnStreamSetVolume(pDrv->pConnector, pDrv->Out.pStream, &VolCombined);
         AssertRC(rc2);
     }
@@ -1809,6 +1812,9 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
         PSB16DRIVER pDrv;
         RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
         {
+            if (!pDrv->Out.pStream)
+                continue;
+
             uint32_t cbWrittenToStream = 0;
             rc2 = pDrv->pConnector->pfnStreamWrite(pDrv->pConnector, pDrv->Out.pStream, tmpbuf, cbRead, &cbWrittenToStream);
 
@@ -1860,6 +1866,9 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
+        if (!pDrv->Out.pStream)
+            continue;
+
         uint32_t cbOut = pDrv->pConnector->pfnStreamGetWritable(pDrv->pConnector, pDrv->Out.pStream);
 
         if (cbOut < cbOutMin)
@@ -2643,6 +2652,10 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         AssertPtr(pCon);
 
         /** @todo No input streams available for SB16 yet. */
+
+        if (!pDrv->Out.pStream)
+            continue;
+
         bool fValidOut = pCon->pfnStreamGetStatus(pCon, pDrv->Out.pStream) & PDMAUDIOSTREAMSTS_FLAG_INITIALIZED;
         if (!fValidOut)
         {
