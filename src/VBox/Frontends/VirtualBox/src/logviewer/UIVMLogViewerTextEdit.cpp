@@ -274,13 +274,15 @@ void UIVMLogViewerTextEdit::setBackground()
        the text has been filtered */
     if (m_bShownTextIsFiltered)
     {
-        QImage image(300, 100, QImage::Format_ARGB32_Premultiplied);
+        /* For 100% scale PM_LargeIconSize is 32px, and since we want ~300x~100 pixmap we take it 9x3: */
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+        QImage image(9 * iIconMetric, 3 * iIconMetric, QImage::Format_ARGB32_Premultiplied);
         QColor fillColor(QPalette::Light);
         fillColor.setAlpha(0);
         image.fill(fillColor);
         QPainter painter(&image);
 
-        /* Configure the font size and color. */
+        /* Configure the font size and color: */
         QFont pfont = painter.font();
         QColor fontColor(QPalette::Dark);
         fontColor.setAlpha(22);
