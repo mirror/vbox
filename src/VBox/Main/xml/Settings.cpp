@@ -2779,6 +2779,7 @@ Hardware::Hardware() :
     fX2APIC(false),
     fIBPBOnVMExit(false),
     fIBPBOnVMEntry(false),
+    fNestedHWVirt(false),
     enmLongMode(HC_ARCH_BITS == 64 ? Hardware::LongMode_Enabled : Hardware::LongMode_Disabled),
     cCPUs(1),
     fCpuHotPlug(false),
@@ -2934,6 +2935,7 @@ bool Hardware::operator==(const Hardware& h) const
             && fX2APIC                   == h.fX2APIC
             && fIBPBOnVMExit             == h.fIBPBOnVMExit
             && fIBPBOnVMEntry            == h.fIBPBOnVMEntry
+            && fNestedHWVirt             == h.fNestedHWVirt
             && cCPUs                     == h.cCPUs
             && fCpuHotPlug               == h.fCpuHotPlug
             && ulCpuExecutionCap         == h.ulCpuExecutionCap
@@ -3942,6 +3944,9 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmCPUChild->getAttributeValue("vmexit", hw.fIBPBOnVMExit);
                 pelmCPUChild->getAttributeValue("vmentry", hw.fIBPBOnVMEntry);
             }
+            pelmCPUChild = pelmHwChild->findChildElement("NestedHWVirt");
+            if (pelmCPUChild)
+                pelmCPUChild->getAttributeValue("enabled", hw.fNestedHWVirt);
 
             if ((pelmCPUChild = pelmHwChild->findChildElement("CpuIdTree")))
                 readCpuIdTree(*pelmCPUChild, hw.llCpuIdLeafs);
@@ -5277,6 +5282,9 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                 pelmChild->setAttribute("vmentry", hw.fIBPBOnVMEntry);
         }
     }
+    if (m->sv >= SettingsVersion_v1_17 && hw.fNestedHWVirt)
+        pelmCPU->createChild("NestedHWVirt")->setAttribute("enabled", hw.fNestedHWVirt);
+
     if (m->sv >= SettingsVersion_v1_14 && hw.enmLongMode != Hardware::LongMode_Legacy)
     {
         // LongMode has too crazy default handling, must always save this setting.
@@ -6938,6 +6946,16 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
+    if (m->sv < SettingsVersion_v1_17)
+    {
+        // VirtualBox 6.0 adds nested hardware virtualization.
+        if (hardwareMachine.fNestedHWVirt)
+        {
+            m->sv = SettingsVersion_v1_17;
+            return;
+        }
+    }
+
     if (m->sv < SettingsVersion_v1_16)
     {
         // VirtualBox 5.1 adds a NVMe storage controller, paravirt debug

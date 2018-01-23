@@ -1021,6 +1021,11 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             LogRel(("Limiting the firmware APIC level from APIC to Disabled\n"));
         }
 
+        /* Nested VT-x / AMD-V. */
+        BOOL fNestedHWVirt = FALSE;
+        hrc = pMachine->GetCPUProperty(CPUPropertyType_HWVirt, &fNestedHWVirt);      H();
+        InsertConfigInteger(pCPUM, "NestedHWVirt", fNestedHWVirt ? true : false);
+
         /*
          * Hardware virtualization extensions.
          */

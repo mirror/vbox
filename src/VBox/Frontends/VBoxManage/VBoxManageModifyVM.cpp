@@ -76,6 +76,7 @@ enum
     MODIFYVM_VTXUX,
     MODIFYVM_IBPB_ON_VM_EXIT,
     MODIFYVM_IBPB_ON_VM_ENTRY,
+    MODIFYVM_NESTED_HW_VIRT,
     MODIFYVM_CPUS,
     MODIFYVM_CPUHOTPLUG,
     MODIFYVM_CPU_PROFILE,
@@ -258,6 +259,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vtxux",                    MODIFYVM_VTXUX,                     RTGETOPT_REQ_BOOL_ONOFF },
     { "--ibpb-on-vm-exit",          MODIFYVM_IBPB_ON_VM_EXIT,           RTGETOPT_REQ_BOOL_ONOFF },
     { "--ibpb-on-vm-entry",         MODIFYVM_IBPB_ON_VM_ENTRY,          RTGETOPT_REQ_BOOL_ONOFF },
+    { "--nested-hw-virt",           MODIFYVM_NESTED_HW_VIRT,             RTGETOPT_REQ_BOOL_ONOFF },
     { "--cpuid-set",                MODIFYVM_SETCPUID,                  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX },
     { "--cpuid-remove",             MODIFYVM_DELCPUID,                  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX },
     { "--cpuidset",                 MODIFYVM_SETCPUID_OLD,              RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX },
@@ -803,6 +805,10 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_IBPB_ON_VM_ENTRY:
                 CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_IBPBOnVMEntry, ValueUnion.f));
+                break;
+
+            case MODIFYVM_NESTED_HW_VIRT:
+                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_HWVirt, ValueUnion.f));
                 break;
 
             case MODIFYVM_CPUS:

@@ -906,6 +906,7 @@ struct Hardware
                         fX2APIC;                // requires settings version 1.16 (VirtualBox 5.1)
     bool                fIBPBOnVMExit;          //< added out of cycle, after 1.16 was out.
     bool                fIBPBOnVMEntry;         //< added out of cycle, after 1.16 was out.
+    bool                fNestedHWVirt;          //< requires settings version 1.17 (VirtualBox 6.0)
     typedef enum LongModeType { LongMode_Enabled, LongMode_Disabled, LongMode_Legacy } LongModeType;
     LongModeType        enmLongMode;
     uint32_t            cCPUs;

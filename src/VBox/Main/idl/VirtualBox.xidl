@@ -578,9 +578,9 @@
       -->
     </const>
     <const name="v1_17" value="19">
-      <desc>Settings version "1.17", written by VirtualBox 5.2.x.</desc>
+      <desc>Settings version "1.17", written by VirtualBox 6.0.x.</desc>
       <!--
-          So far absolutely no change to v1_16.
+          Machine changes: nested hardware virtualization.
       -->
     </const>
 
@@ -961,7 +961,7 @@
 
   <enum
     name="CPUPropertyType"
-    uuid="cc6ecdad-a07c-4e81-9c0e-d767e0678d5a"
+    uuid="3fcfe589-ca66-468f-e313-656f9d0b2eb6"
     >
     <desc>
       Virtual CPU property type. This enumeration represents possible values of the
@@ -1017,6 +1017,12 @@
         host CPU supports it.  This setting will significantly slow down workloads
         causing many VM exits, so it is only recommended for situation where there
         real need to be paranoid.
+      </desc>
+    </const>
+    <const name="HWVirt"                value="8">
+      <desc>
+        Enabled the hardware virtualization (AMD-V/VT-x) feature on the guest CPU.
+        This requires hardware virtualization on the host CPU.
       </desc>
     </const>
   </enum>
