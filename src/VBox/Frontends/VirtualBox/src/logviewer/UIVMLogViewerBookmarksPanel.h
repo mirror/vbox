@@ -23,6 +23,7 @@
 
 /* Forward declarations: */
 class QComboBox;
+class QFrame;
 class QIToolButton;
 class UIRoundRectSegmentedButton;
 
@@ -64,7 +65,8 @@ private slots:
 
     void sltDeleteCurrentBookmark();
     void sltBookmarkSelected(int index);
-    void sltGotoNextPreviousBookmark(int buttonIndex);
+    void sltGotoNextBookmark();
+    void sltGotoPreviousBookmark();
     void sltGotoSelectedBookmark();
 
 private:
@@ -77,7 +79,9 @@ private:
     QIToolButton *m_pGotoSelectedBookmark;
     QIToolButton *m_pDeleteAllButton;
     QIToolButton *m_pDeleteCurrentButton;
-    UIRoundRectSegmentedButton *m_pNextPrevButtons;
+    QIToolButton *m_pNextButton;
+    QIToolButton *m_pPreviousButton;
+    QFrame       *m_pNextPreviousButtonContainer;
 };
 
 #endif /* !___UIVMLogViewerBookmarksPanel_h___ */

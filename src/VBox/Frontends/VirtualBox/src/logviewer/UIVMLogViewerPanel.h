@@ -28,7 +28,7 @@
 class QHBoxLayout;
 class QPlainTextEdit;
 class QTextDocument;
-class UIMiniCancelButton;
+class QIToolButton;
 class UIVMLogViewerWidget;
 
 
@@ -74,7 +74,7 @@ private:
     /** Holds the instance of main-layout we create. */
     QHBoxLayout         *m_pMainLayout;
     /** Holds the instance of close-button we create. */
-    UIMiniCancelButton  *m_pCloseButton;
+    QIToolButton        *m_pCloseButton;
 };
 
 #endif /* !___UIVMLogViewerPanel!_h___ */

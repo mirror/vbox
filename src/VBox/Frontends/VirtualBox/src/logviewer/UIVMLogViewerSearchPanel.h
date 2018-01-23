@@ -30,6 +30,7 @@ class QHBoxLayout;
 class QLabel;
 class UIRoundRectSegmentedButton;
 class UISearchField;
+class UIVMLogViewerSearchField;
 class UIVMLogViewerWidget;
 
 /** QWidget extension
@@ -103,7 +104,7 @@ private:
     /** Holds the instance of search-label we create. */
     QLabel *m_pSearchLabel;
     /** Holds the instance of search-editor we create. */
-    UISearchField *m_pSearchEditor;
+    UIVMLogViewerSearchField *m_pSearchEditor;
     /** Holds the instance of next/back button-box we create. */
     UIRoundRectSegmentedButton *m_pNextPrevButtons;
     /** Holds the instance of case-sensitive checkbox we create. */

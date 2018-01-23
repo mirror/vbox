@@ -28,6 +28,7 @@
 # endif
 # include <QHBoxLayout>
 # include <QLabel>
+# include <QLineEdit>
 # include <QPlainTextEdit>
 # include <QTextBlock>
 
@@ -42,6 +43,39 @@
 # endif
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+class UIVMLogViewerSearchField: public QLineEdit
+{
+    Q_OBJECT;
+
+public:
+
+    UIVMLogViewerSearchField(QWidget *pParent)
+        : QLineEdit(pParent)
+    {
+        m_baseBrush = palette().base();
+    }
+
+    void markError()
+    {
+        QPalette pal = palette();
+        QColor c(Qt::red);
+        c.setAlphaF(0.3);
+        pal.setBrush(QPalette::Base, c);
+        setPalette(pal);
+    }
+
+    void unmarkError()
+    {
+        QPalette pal = palette();
+        pal.setBrush(QPalette::Base, m_baseBrush);
+        setPalette(pal);
+    }
+
+private:
+    /* Private member vars */
+    QBrush m_baseBrush;
+};
 
 UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
     : UIVMLogViewerPanel(pParent, pViewer)
@@ -181,9 +215,9 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
 {
     if (!mainLayout())
         return;
-    
+
     /* Create search-editor: */
-    m_pSearchEditor = new UISearchField(0 /* parent */);
+    m_pSearchEditor = new UIVMLogViewerSearchField(0 /* parent */);
     if (m_pSearchEditor)
     {
         /* Configure search-editor: */
@@ -191,7 +225,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
         /* Add search-editor to main-layout: */
         mainLayout()->addWidget(m_pSearchEditor);
     }
-    
+
     /* Create search-label: */
     m_pSearchLabel = new QLabel;
     if (m_pSearchLabel)
@@ -298,7 +332,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
 
 void UIVMLogViewerSearchPanel::prepareConnections()
 {
-    connect(m_pSearchEditor, &UISearchField::textChanged, this, &UIVMLogViewerSearchPanel::sltSearchTextChanged);
+    connect(m_pSearchEditor, &UIVMLogViewerSearchField::textChanged, this, &UIVMLogViewerSearchPanel::sltSearchTextChanged);
     connect(m_pNextPrevButtons, &UIRoundRectSegmentedButton::clicked, this, &UIVMLogViewerSearchPanel::find);
     connect(m_pHighlightAllCheckBox, &QCheckBox::stateChanged,
             this, &UIVMLogViewerSearchPanel::sltHighlightAllCheckBox);
@@ -321,25 +355,25 @@ void UIVMLogViewerSearchPanel::retranslateUi()
         m_pNextPrevButtons->setToolTip(0, UIVMLogViewerWidget::tr("Search for the previous occurrence of the string"));
         m_pNextPrevButtons->setToolTip(1, UIVMLogViewerWidget::tr("Search for the next occurrence of the string"));
     }
-    
+
     if (m_pCaseSensitiveCheckBox)
     {
         m_pCaseSensitiveCheckBox->setText(UIVMLogViewerWidget::tr("C&ase Sensitive"));
         m_pCaseSensitiveCheckBox->setToolTip(UIVMLogViewerWidget::tr("Perform case sensitive search (when checked)"));
     }
-    
+
     if (m_pMatchWholeWordCheckBox)
     {
         m_pMatchWholeWordCheckBox->setText(UIVMLogViewerWidget::tr("Ma&tch Whole Word"));
         m_pMatchWholeWordCheckBox->setToolTip(UIVMLogViewerWidget::tr("Search matches only complete words when checked"));
     }
-    
+
     if (m_pHighlightAllCheckBox)
     {
         m_pHighlightAllCheckBox->setText(UIVMLogViewerWidget::tr("&Highlight All"));
         m_pHighlightAllCheckBox->setToolTip(UIVMLogViewerWidget::tr("All occurence of the search text are highlighted"));
     }
-    
+
     if (m_iMatchCount == 0)
         m_pInfoLabel->setText(UIVMLogViewerWidget::tr("String not found"));
     else if (m_iMatchCount > 0)
@@ -457,7 +491,7 @@ void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
         return;
     if(!m_pSearchEditor)
         return;
-    
+
     const QString &searchString = m_pSearchEditor->text();
     if (searchString.isEmpty())
         return;
@@ -579,7 +613,7 @@ void UIVMLogViewerSearchPanel::configureInfoLabels()
 {
     if (!m_pSearchEditor || !m_pWarningIcon || !m_pInfoLabel)
         return;
-    
+
     /* If no match has been found, mark the search editor: */
     if (m_iMatchCount == 0)
     {
@@ -614,3 +648,5 @@ QTextDocument::FindFlags UIVMLogViewerSearchPanel::constructFindFlags(SearchDire
        findFlags = findFlags | QTextDocument::FindWholeWords;
    return findFlags;
 }
+
+#include "UIVMLogViewerSearchPanel.moc"

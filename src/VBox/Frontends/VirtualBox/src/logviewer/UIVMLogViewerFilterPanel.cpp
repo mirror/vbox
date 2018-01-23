@@ -38,7 +38,6 @@
 /* GUI includes: */
 # include "QIToolButton.h"
 # include "UIIconPool.h"
-# include "UISpecialControls.h"
 # include "UIVMLogPage.h"
 # include "UIVMLogViewerFilterPanel.h"
 # include "UIVMLogViewerWidget.h"
