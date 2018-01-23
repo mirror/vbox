@@ -217,6 +217,7 @@ static void rtmpLinuxWrapper(void *pvInfo)
 }
 
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
 /**
  * Wrapper between the native linux per-cpu callbacks and PFNRTWORKER, does hit
  * increment after calling the worker.
@@ -229,6 +230,7 @@ static void rtmpLinuxWrapperPostInc(void *pvInfo)
     pArgs->pfnWorker(RTMpCpuId(), pArgs->pvUser1, pArgs->pvUser2);
     ASMAtomicIncU32(&pArgs->cHits);
 }
+#endif
 
 
 /**
