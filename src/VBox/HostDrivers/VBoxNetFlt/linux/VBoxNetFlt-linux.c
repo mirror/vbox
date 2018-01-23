@@ -1870,38 +1870,16 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
     RTSpinlockRelease(pThis->hSpinlock);
 
     /*
-     * If the above succeeded report GSO capabilities,  if not undo and
-     * release the device.
+     * Report GSO capabilities
      */
-    if (!pDev)
+    Assert(pThis->pSwitchPort);
+    if (vboxNetFltTryRetainBusyNotDisconnected(pThis))
     {
-        Assert(pThis->pSwitchPort);
-        if (vboxNetFltTryRetainBusyNotDisconnected(pThis))
-        {
-            vboxNetFltLinuxReportNicGsoCapabilities(pThis);
-            pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
-            pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, vboxNetFltLinuxPromiscuous(pThis));
-            pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
-            vboxNetFltRelease(pThis, true /*fBusy*/);
-        }
-    }
-    else
-    {
-#ifdef VBOXNETFLT_WITH_HOST2WIRE_FILTER
-        vboxNetFltLinuxUnhookDev(pThis, pDev);
-#endif
-        RTSpinlockAcquire(pThis->hSpinlock);
-        ASMAtomicUoWriteNullPtr(&pThis->u.s.pDev);
-        RTSpinlockRelease(pThis->hSpinlock);
-        dev_put(pDev);
-        Log(("vboxNetFltLinuxAttachToInterface: Device %p(%s) released. ref=%d\n",
-             pDev, pDev->name,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
-             netdev_refcnt_read(pDev)
-#else
-             atomic_read(&pDev->refcnt)
-#endif
-             ));
+        vboxNetFltLinuxReportNicGsoCapabilities(pThis);
+        pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
+        pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, vboxNetFltLinuxPromiscuous(pThis));
+        pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+        vboxNetFltRelease(pThis, true /*fBusy*/);
     }
 
     LogRel(("VBoxNetFlt: attached to '%s' / %RTmac\n", pThis->szName, &pThis->u.s.MacAddr));
