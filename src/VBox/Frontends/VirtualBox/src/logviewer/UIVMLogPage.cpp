@@ -300,6 +300,7 @@ void UIVMLogPage::setShowLineNumbers(bool bShowLineNumbers)
     if (m_bShowLineNumbers == bShowLineNumbers)
         return;
     m_bShowLineNumbers = bShowLineNumbers;
+    applySettings();
 }
 
 void UIVMLogPage::setWrapLines(bool bWrapLines)
