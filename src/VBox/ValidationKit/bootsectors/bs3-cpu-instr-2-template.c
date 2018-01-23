@@ -876,14 +876,13 @@ static void bs3CpuInstr2_rdfsbase_rdgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE 
         Bs3RegCtxSetRipCsFromCurPtr(&Ctx, paFsGsBaseWorkers[iWorker].pfnWorker);
         if (fSupportsFsGsBase)
         {
-            uint64_t uBaseAddr;
+            uint64_t const uBaseAddr = ASMRdMsr(idxFsGsBaseMsr);
 
             /* CR4.FSGSBASE disabled -> #UD. */
             Ctx.cr4.u &= ~X86_CR4_FSGSBASE;
             bs3CpuInstr2_fsgsbase_ExpectUD(bMode, &Ctx, &ExpectCtx, &TrapFrame);
 
             /* Read and verify existing base address. */
-            uBaseAddr  = ASMRdMsr(idxFsGsBaseMsr);
             Ctx.rbx.u  = 0;
             Ctx.cr4.u |= X86_CR4_FSGSBASE;
             Bs3MemCpy(&ExpectCtx, &Ctx, sizeof(ExpectCtx));
@@ -904,6 +903,9 @@ static void bs3CpuInstr2_rdfsbase_rdgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE 
                 ASMHalt();
             }
 
+            /* Restore original base address. */
+            ASMWrMsr(idxFsGsBaseMsr, uBaseAddr);
+
             /* Clean used GPRs. */
             Ctx.rbx.u = 0;
             Ctx.rcx.u = 0;
@@ -919,7 +921,7 @@ static void bs3CpuInstr2_rdfsbase_rdgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE 
 
 
 static void bs3CpuInstr2_wrfsbase_wrgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE const *paFsGsBaseWorkers,
-                                                  unsigned cFsGsBaseWorkers)
+                                                  unsigned cFsGsBaseWorkers, uint32_t idxFsGsBaseMsr)
 {
     BS3REGCTX         Ctx;
     BS3REGCTX         ExpectCtx;
@@ -948,6 +950,8 @@ static void bs3CpuInstr2_wrfsbase_wrgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE 
         Bs3RegCtxSetRipCsFromCurPtr(&Ctx, paFsGsBaseWorkers[iWorker].pfnWorker);
         if (fSupportsFsGsBase)
         {
+            uint64_t const uBaseAddr = ASMRdMsr(idxFsGsBaseMsr);
+
             /* CR4.FSGSBASE disabled -> #UD. */
             Ctx.cr4.u &= ~X86_CR4_FSGSBASE;
             bs3CpuInstr2_fsgsbase_ExpectUD(bMode, &Ctx, &ExpectCtx, &TrapFrame);
@@ -972,6 +976,9 @@ static void bs3CpuInstr2_wrfsbase_wrgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE 
                 ASMHalt();
             }
 
+            /* Restore original base address. */
+            ASMWrMsr(idxFsGsBaseMsr, uBaseAddr);
+
             /* Clean used GPRs. */
             Ctx.rbx.u = 0;
             Ctx.rcx.u = 0;
@@ -988,14 +995,14 @@ static void bs3CpuInstr2_wrfsbase_wrgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE 
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_wrfsbase)(uint8_t bMode)
 {
-    bs3CpuInstr2_wrfsbase_wrgsbase_Common(bMode, s_aWrFsBaseWorkers, RT_ELEMENTS(s_aWrFsBaseWorkers));
+    bs3CpuInstr2_wrfsbase_wrgsbase_Common(bMode, s_aWrFsBaseWorkers, RT_ELEMENTS(s_aWrFsBaseWorkers), MSR_K8_FS_BASE);
     return 0;
 }
 
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_wrgsbase)(uint8_t bMode)
 {
-    bs3CpuInstr2_wrfsbase_wrgsbase_Common(bMode, s_aWrGsBaseWorkers, RT_ELEMENTS(s_aWrGsBaseWorkers));
+    bs3CpuInstr2_wrfsbase_wrgsbase_Common(bMode, s_aWrGsBaseWorkers, RT_ELEMENTS(s_aWrGsBaseWorkers), MSR_K8_FS_BASE);
     return 0;
 }
 
