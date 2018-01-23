@@ -33,8 +33,8 @@
 # include <QTextBlock>
 
 /* GUI includes: */
+# include "QIToolButton.h"
 # include "UIIconPool.h"
-# include "UISpecialControls.h"
 # include "UIVMLogPage.h"
 # include "UIVMLogViewerSearchPanel.h"
 # include "UIVMLogViewerWidget.h"
@@ -81,7 +81,9 @@ UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogView
     : UIVMLogViewerPanel(pParent, pViewer)
     , m_pSearchLabel(0)
     , m_pSearchEditor(0)
-    , m_pNextPrevButtons(0)
+    , m_pNextButton(0)
+    , m_pPreviousButton(0)
+    , m_pNextPreviousButtonContainer(0)
     , m_pCaseSensitiveCheckBox(0)
     , m_pMatchWholeWordCheckBox(0)
     , m_pHighlightAllCheckBox(0)
@@ -128,21 +130,12 @@ void UIVMLogViewerSearchPanel::hideEvent(QHideEvent *pEvent)
     reset();
 }
 
-void UIVMLogViewerSearchPanel::find(int iButton)
-{
-    /* If button-id is 1, findNext: */
-    if (iButton)
-        findNext();
-    /* If button-id is 0, findBack: */
-    else
-        findBack();
-}
-
 void UIVMLogViewerSearchPanel::sltSearchTextChanged(const QString &strSearchString)
 {
     /* Enable/disable Next-Previous buttons as per search-string validity: */
-    m_pNextPrevButtons->setEnabled(0, strSearchString.length());
-    m_pNextPrevButtons->setEnabled(1, strSearchString.length());
+    m_pNextButton->setEnabled(!strSearchString.isEmpty());
+    m_pPreviousButton->setEnabled(!strSearchString.isEmpty());
+
 
     /* If search-string is not empty: */
     if (!strSearchString.isEmpty())
@@ -242,20 +235,33 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
         mainLayout()->addWidget(m_pSearchLabel);
     }
 
-    /* Create Next/Prev button-box: */
-    m_pNextPrevButtons = new UIRoundRectSegmentedButton(0 /* parent */, 2);
-    if (m_pNextPrevButtons)
+    /* Create Next/Previous buttons: */
+    m_pNextPreviousButtonContainer = new QFrame;
+    if (m_pNextPreviousButtonContainer)
     {
-        /* Configure Next/Prev button-box: */
-        m_pNextPrevButtons->setEnabled(0, false);
-        m_pNextPrevButtons->setEnabled(1, false);
-#ifndef VBOX_WS_MAC
-        /* No icons on the Mac: */
-        m_pNextPrevButtons->setIcon(0, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
-        m_pNextPrevButtons->setIcon(1, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
-#endif /* !VBOX_WS_MAC */
-        /* Add Next/Prev button-box to main-layout: */
-        mainLayout()->addWidget(m_pNextPrevButtons);
+        mainLayout()->addWidget(m_pNextPreviousButtonContainer);
+        QHBoxLayout *pContainerLayout = new QHBoxLayout(m_pNextPreviousButtonContainer);
+        /* Configure layout: */
+#ifdef VBOX_WS_MAC
+            pContainerLayout->setContentsMargins(5, 0, 0, 5);
+            pContainerLayout->setSpacing(5);
+#else
+            pContainerLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2, 0,
+                                                 qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2, 0);
+            pContainerLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+#endif
+       m_pPreviousButton = new QIToolButton;
+       if (m_pPreviousButton)
+       {
+           pContainerLayout->addWidget(m_pPreviousButton);
+           m_pPreviousButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
+       }
+
+       m_pNextButton = new QIToolButton;
+       if (m_pNextButton){
+           pContainerLayout->addWidget(m_pNextButton);
+           m_pNextButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
+       }
     }
 
     /* Create case-sensitive checkbox: */
@@ -333,7 +339,9 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
 void UIVMLogViewerSearchPanel::prepareConnections()
 {
     connect(m_pSearchEditor, &UIVMLogViewerSearchField::textChanged, this, &UIVMLogViewerSearchPanel::sltSearchTextChanged);
-    connect(m_pNextPrevButtons, &UIRoundRectSegmentedButton::clicked, this, &UIVMLogViewerSearchPanel::find);
+    connect(m_pNextButton, &QIToolButton::clicked, this, &UIVMLogViewerSearchPanel::findNext);
+    connect(m_pPreviousButton, &QIToolButton::clicked, this, &UIVMLogViewerSearchPanel::findPrevious);
+
     connect(m_pHighlightAllCheckBox, &QCheckBox::stateChanged,
             this, &UIVMLogViewerSearchPanel::sltHighlightAllCheckBox);
     connect(m_pCaseSensitiveCheckBox, &QCheckBox::stateChanged,
@@ -350,11 +358,12 @@ void UIVMLogViewerSearchPanel::retranslateUi()
     if (m_pSearchEditor)
         m_pSearchEditor->setToolTip(UIVMLogViewerWidget::tr("Enter a search string here"));
 
-    if (m_pNextPrevButtons)
-    {
-        m_pNextPrevButtons->setToolTip(0, UIVMLogViewerWidget::tr("Search for the previous occurrence of the string"));
-        m_pNextPrevButtons->setToolTip(1, UIVMLogViewerWidget::tr("Search for the next occurrence of the string"));
-    }
+    if (m_pNextButton)
+        m_pNextButton->setToolTip(UIVMLogViewerWidget::tr("Search for the previous occurrence of the string"));
+
+    if (m_pPreviousButton)
+        m_pPreviousButton->setToolTip(UIVMLogViewerWidget::tr("Search for the previous occurrence of the string"));
+
 
     if (m_pCaseSensitiveCheckBox)
     {
@@ -393,7 +402,7 @@ void UIVMLogViewerSearchPanel::keyPressEvent(QKeyEvent *pEvent)
                     pEvent->modifiers() & Qt::KeypadModifier)
                 {
                     /* Animate click on 'Next' button: */
-                m_pNextPrevButtons->animateClick(1);
+                m_pNextButton->animateClick();
                 return;
                 }
                 break;
@@ -424,14 +433,14 @@ bool UIVMLogViewerSearchPanel::eventFilter(QObject *pObject, QEvent *pEvent)
                 if (pKeyEvent->QInputEvent::modifiers() == 0)
                 {
                     /* Animate click on 'Next' button: */
-                    m_pNextPrevButtons->animateClick(1);
+                    m_pNextButton->animateClick();
                     return true;
                 }
                 /* If there is 'ShiftModifier' 'Shift + Key-F3' is pressed: */
                 else if (pKeyEvent->QInputEvent::modifiers() == Qt::ShiftModifier)
                 {
                     /* Animate click on 'Prev' button: */
-                    m_pNextPrevButtons->animateClick(0);
+                    m_pPreviousButton->animateClick();
                     return true;
                 }
             }
@@ -472,7 +481,7 @@ void UIVMLogViewerSearchPanel::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
     UIVMLogViewerPanel::showEvent(pEvent);
-    if(m_pSearchEditor)
+    if (m_pSearchEditor)
     {
         /* Set focus on search-editor: */
         m_pSearchEditor->setFocus();
@@ -489,7 +498,7 @@ void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
     QTextDocument *pDocument = textDocument();
     if (!pDocument)
         return;
-    if(!m_pSearchEditor)
+    if (!m_pSearchEditor)
         return;
 
     const QString &searchString = m_pSearchEditor->text();
@@ -556,7 +565,7 @@ void UIVMLogViewerSearchPanel::findNext()
     search(ForwardSearch, false);
 }
 
-void UIVMLogViewerSearchPanel::findBack()
+void UIVMLogViewerSearchPanel::findPrevious()
 {
     search(BackwardSearch, false);
 }

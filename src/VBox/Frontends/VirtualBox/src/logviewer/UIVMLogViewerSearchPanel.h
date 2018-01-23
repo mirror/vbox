@@ -26,9 +26,10 @@
 
 /* Forward declarations: */
 class QCheckBox;
+class QFrame;
 class QHBoxLayout;
 class QLabel;
-class UIRoundRectSegmentedButton;
+class QIToolButton;
 class UISearchField;
 class UIVMLogViewerSearchField;
 class UIVMLogViewerWidget;
@@ -67,15 +68,16 @@ protected:
 
 private slots:
 
-    /** Handles find next/back action triggering.
-      * @param  iButton  Specifies id of next/back button. */
-    void find(int iButton);
     /** Handles textchanged signal from search-editor.
       * @param  strSearchString  Specifies search-string. */
     void sltSearchTextChanged(const QString &strSearchString);
     void sltHighlightAllCheckBox();
     void sltCaseSentitiveCheckBox();
     void sltMatchWholeWordCheckBox();
+    /** Forward search routine wrapper. */
+    void findNext();
+    /** Backward search routine wrapper. */
+    void findPrevious();
 
 private:
 
@@ -90,10 +92,6 @@ private:
       * @param  highlight      if false highlight function is not called
                                thus we avoid calling highlighting for the same string repeatedly. */
     void search(SearchDirection eDirection, bool highlight);
-    /** Forward search routine wrapper. */
-    void findNext();
-    /** Backward search routine wrapper. */
-    void findBack();
     void highlightAll(QTextDocument *pDocument, const QString &searchString);
     /** Controls the visibility of the warning icon and info labels.
      Also marks the search editor in case of no match.*/
@@ -105,12 +103,14 @@ private:
     QLabel *m_pSearchLabel;
     /** Holds the instance of search-editor we create. */
     UIVMLogViewerSearchField *m_pSearchEditor;
-    /** Holds the instance of next/back button-box we create. */
-    UIRoundRectSegmentedButton *m_pNextPrevButtons;
+
+    QIToolButton *m_pNextButton;
+    QIToolButton *m_pPreviousButton;
+    QFrame       *m_pNextPreviousButtonContainer;
     /** Holds the instance of case-sensitive checkbox we create. */
-    QCheckBox   *m_pCaseSensitiveCheckBox;
-    QCheckBox   *m_pMatchWholeWordCheckBox;
-    QCheckBox   *m_pHighlightAllCheckBox;
+    QCheckBox    *m_pCaseSensitiveCheckBox;
+    QCheckBox    *m_pMatchWholeWordCheckBox;
+    QCheckBox    *m_pHighlightAllCheckBox;
 
     /** Holds the instance of warning icon we create. */
     QLabel      *m_pWarningIcon;

@@ -133,14 +133,14 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
             pContainerLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
 #endif
        m_pPreviousButton = new QIToolButton;
-       if(m_pPreviousButton)
+       if (m_pPreviousButton)
        {
            pContainerLayout->addWidget(m_pPreviousButton);
            m_pPreviousButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
        }
 
        m_pNextButton = new QIToolButton;
-       if(m_pNextButton){
+       if (m_pNextButton){
            pContainerLayout->addWidget(m_pNextButton);
            m_pNextButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
        }
