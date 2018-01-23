@@ -2325,6 +2325,7 @@ typedef struct CPUMCPUIDCONFIG
     bool            fNt4LeafLimit;
     bool            fInvariantTsc;
     bool            fForceVme;
+    bool            fNestedHWVirt;
 
     CPUMISAEXTCFG   enmCmpXchg16b;
     CPUMISAEXTCFG   enmMonitor;
@@ -2350,7 +2351,6 @@ typedef struct CPUMCPUIDCONFIG
     CPUMISAEXTCFG   enmMisAlnSse;
     CPUMISAEXTCFG   enm3dNowPrf;
     CPUMISAEXTCFG   enmAmdExtMmx;
-    CPUMISAEXTCFG   enmSvm;
 
     uint32_t        uMaxStdLeaf;
     uint32_t        uMaxExtLeaf;
@@ -2879,7 +2879,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                ;
         pExtFeatureLeaf->uEcx &= X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF
                                //| X86_CPUID_AMD_FEATURE_ECX_CMPL   - set below if applicable.
-                               | (pConfig->enmSvm       ? X86_CPUID_AMD_FEATURE_ECX_SVM : 0)
+                               | (pConfig->fNestedHWVirt ? X86_CPUID_AMD_FEATURE_ECX_SVM : 0)
                                //| X86_CPUID_AMD_FEATURE_ECX_EXT_APIC
                                /* Note: This could prevent teleporting from AMD to Intel CPUs! */
                                | X86_CPUID_AMD_FEATURE_ECX_CR8L         /* expose lock mov cr0 = mov cr8 hack for guests that can use this feature to access the TPR. */
@@ -2919,8 +2919,9 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
 
         if (pCpum->u8PortableCpuIdLevel > 0)
         {
+            CPUMISAEXTCFG enmSvm = pConfig->fNestedHWVirt ? CPUMISAEXTCFG_ENABLED_SUPPORTED : CPUMISAEXTCFG_DISABLED;
             PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEcx, CR8L,       X86_CPUID_AMD_FEATURE_ECX_CR8L);
-            PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, SVM,        X86_CPUID_AMD_FEATURE_ECX_SVM,       pConfig->enmSvm);
+            PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, SVM,        X86_CPUID_AMD_FEATURE_ECX_SVM,       enmSvm);
             PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, ABM,        X86_CPUID_AMD_FEATURE_ECX_ABM,       pConfig->enmAbm);
             PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, SSE4A,      X86_CPUID_AMD_FEATURE_ECX_SSE4A,     pConfig->enmSse4A);
             PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, MISALNSSE,  X86_CPUID_AMD_FEATURE_ECX_MISALNSSE, pConfig->enmMisAlnSse);
@@ -2963,16 +2964,12 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
             pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_ABM;
         if (pConfig->enmSse4A     == CPUMISAEXTCFG_ENABLED_ALWAYS)
             pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_SSE4A;
-        if (pConfig->enmSvm       == CPUMISAEXTCFG_ENABLED_ALWAYS)
-            pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_SVM;
         if (pConfig->enmMisAlnSse == CPUMISAEXTCFG_ENABLED_ALWAYS)
             pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_MISALNSSE;
         if (pConfig->enm3dNowPrf  == CPUMISAEXTCFG_ENABLED_ALWAYS)
             pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF;
         if (pConfig->enmAmdExtMmx  == CPUMISAEXTCFG_ENABLED_ALWAYS)
             pExtFeatureLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_AXMMX;
-        if (pConfig->enmSvm        == CPUMISAEXTCFG_ENABLED_ALWAYS)
-            pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_SVM;
     }
     pExtFeatureLeaf = NULL; /* Must refetch! */
 
@@ -3928,6 +3925,16 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = CFGMR3QueryU32Def(pCpumCfg, "MaxCentaurLeaf", &pConfig->uMaxCentaurLeaf, UINT32_C(0xc0000004));
     AssertLogRelRCReturn(rc, rc);
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    /** @cfgm{/CPUM/NestedHWVirt, bool, false}
+     * Whether to expose the hardware virtualization (VMX/SVM) feature to the guest.
+     * The default is false, and when enabled requires nested paging and AMD-V or
+     * unrestricted guest mode.
+     */
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedHWVirt", &pConfig->fNestedHWVirt, false);
+    AssertLogRelRCReturn(rc, rc);
+    pConfig->fNestedHWVirt &= fNestedPagingAndFullGuestExec;
+#endif
 
     /*
      * Instruction Set Architecture (ISA) Extensions.
@@ -3959,7 +3966,6 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
                                   "|MISALNSSE"
                                   "|3DNOWPRF"
                                   "|AXMMX"
-                                  "|SVM"
                                   , "" /*pszValidNodes*/, "CPUM" /*pszWho*/, 0 /*uInstance*/);
         if (RT_FAILURE(rc))
             return rc;
@@ -4151,16 +4157,6 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
      */
     rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "AXMMX", &pConfig->enmAmdExtMmx, fNestedPagingAndFullGuestExec);
     AssertLogRelRCReturn(rc, rc);
-
-#ifdef VBOX_WITH_NESTED_HWVIRT
-    /** @cfgm{/CPUM/IsaExts/SVM, isaextcfg, depends}
-     * Whether to expose the AMD's hardware virtualization (SVM) instructions to the
-     * guest. For the time being, the default is to only do this for VMs with nested
-     * paging and AMD-V.
-     */
-    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "SVM", &pConfig->enmSvm, fNestedPagingAndFullGuestExec);
-    AssertLogRelRCReturn(rc, rc);
-#endif
 
     return VINF_SUCCESS;
 }
