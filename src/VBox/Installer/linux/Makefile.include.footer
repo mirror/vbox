@@ -37,7 +37,9 @@ ifndef INCL
 endif
 KFLAGS   := -D__KERNEL__ -DMODULE $(MOD_DEFS)
 ifeq ($(BUILD_TYPE),debug)
- KFLAGS  += -DDEBUG -DDEBUG_$(subst $(subst _, ,_),_,$(USERNAME)) -DDEBUG_USERNAME=$(subst $(subst _, ,_),_,$(USERNAME)) -Werror -Wall
+# The -Wno-array-bounds is because of a bug in gcc 4.something, see
+# https://sourceware.org/bugzilla/show_bug.cgi?id=10001
+ KFLAGS  += -DDEBUG -DDEBUG_$(subst $(subst _, ,_),_,$(USERNAME)) -DDEBUG_USERNAME=$(subst $(subst _, ,_),_,$(USERNAME)) -Werror -Wall -Wno-array-bounds
 endif
 
 ifeq ($(KERN_VERSION), 24)
