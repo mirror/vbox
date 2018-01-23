@@ -1855,7 +1855,7 @@ def unpackZipFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
 ## Set if we've replaced tarfile.copyfileobj with __mytarfilecopyfileobj already.
 g_fTarCopyFileObjOverriddend = False;
 
-def __mytarfilecopyfileobj(src, dst, length = None, exception = OSError):
+def __mytarfilecopyfileobj(src, dst, length = None, exception = OSError, bufsize = None):
     """ tarfile.copyfileobj with different buffer size (16384 is slow on windows). """
     if length is None:
         __myshutilcopyfileobj(src, dst, g_cbGoodBufferSize);
@@ -1895,6 +1895,7 @@ def unpackTarFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
         global g_fTarCopyFileObjOverriddend;
         if g_fTarCopyFileObjOverriddend is False:
             g_fTarCopyFileObjOverriddend = True;
+            #if sys.hexversion < 0x03060000:
             tarfile.copyfileobj = __mytarfilecopyfileobj;
 
     #
@@ -1903,7 +1904,11 @@ def unpackTarFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
     # Note! We not using 'r:*' because we cannot allow seeking compressed files!
     #       That's how we got a 13 min unpack time for VBoxAll on windows (hardlinked pdb).
     #
-    try: oTarFile = tarfile.open(sArchive, 'r|*', bufsize = g_cbGoodBufferSize);
+    try:
+        if sys.hexversion >= 0x03060000:
+            oTarFile = tarfile.open(sArchive, 'r|*', bufsize = g_cbGoodBufferSize, copybufsize = g_cbGoodBufferSize);
+        else:
+            oTarFile = tarfile.open(sArchive, 'r|*', bufsize = g_cbGoodBufferSize);
     except Exception as oXcpt:
         fnError('Error opening "%s" for unpacking into "%s": %s' % (sArchive, sDstDir, oXcpt,));
         return None;
