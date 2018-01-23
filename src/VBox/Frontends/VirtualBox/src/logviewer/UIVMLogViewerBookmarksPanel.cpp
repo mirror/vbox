@@ -156,10 +156,10 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
     m_pDeleteAllButton = new QIToolButton(this);
     if (m_pDeleteAllButton)
     {
-        mainLayout()->addWidget(m_pDeleteAllButton, 0);
+        mainLayout()->addWidget(m_pDeleteAllButton, 2);
     }
 
-    mainLayout()->addStretch(4);
+    mainLayout()->addStretch(3);
 }
 
 void UIVMLogViewerBookmarksPanel::prepareConnections()

@@ -75,8 +75,14 @@ void UIVMLogViewerPanel::prepareWidgets()
     m_pMainLayout = new QHBoxLayout(this);
     if (m_pMainLayout)
     {
-        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
-        m_pMainLayout->setSpacing(2);
+#ifdef VBOX_WS_MAC
+        m_pMainLayout->setContentsMargins(5, 0, 0, 5);
+        m_pMainLayout->setSpacing(5);
+#else
+        m_pMainLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2, 0,
+                                             qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2, 0);
+        m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+#endif
     }
     m_pCloseButton = new QIToolButton;
     if (m_pCloseButton)
