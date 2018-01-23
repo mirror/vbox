@@ -1857,6 +1857,7 @@ g_fTarCopyFileObjOverriddend = False;
 
 def __mytarfilecopyfileobj(src, dst, length = None, exception = OSError, bufsize = None):
     """ tarfile.copyfileobj with different buffer size (16384 is slow on windows). """
+    _ = bufsize;
     if length is None:
         __myshutilcopyfileobj(src, dst, g_cbGoodBufferSize);
     elif length > 0:
