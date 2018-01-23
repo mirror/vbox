@@ -910,9 +910,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                     {
                         CreateWordField (CRS, \_SB.PCI0.LPT0._Y18._MIN, PMI0)
                         CreateWordField (CRS, \_SB.PCI0.LPT0._Y18._MAX, PMA0)
+                        CreateWordField (CRS, \_SB.PCI0.LPT0._Y18._ALN, PAL0)
+                        CreateWordField (CRS, \_SB.PCI0.LPT0._Y18._LEN, PLE0)
                         CreateWordField (CRS, \_SB.PCI0.LPT0._Y19._INT, PIQ0)
                         Store (PP0B, PMI0)
                         Store (PP0B, PMA0)
+                        If (LEqual (0x3BC, PP0B)) {
+                            Store (0x04, PAL0)
+                            Store (0x04, PLE0)
+                        }
                         ShiftLeft (0x01, PP0I, PIQ0)
                         Return (CRS)
                     }
@@ -943,9 +949,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                     {
                         CreateWordField (CRS, \_SB.PCI0.LPT1._Y20._MIN, PMI1)
                         CreateWordField (CRS, \_SB.PCI0.LPT1._Y20._MAX, PMA1)
+                        CreateWordField (CRS, \_SB.PCI0.LPT1._Y20._ALN, PAL1)
+                        CreateWordField (CRS, \_SB.PCI0.LPT1._Y20._LEN, PLE1)
                         CreateWordField (CRS, \_SB.PCI0.LPT1._Y21._INT, PIQ1)
                         Store (PP1B, PMI1)
                         Store (PP1B, PMA1)
+                        If (LEqual (0x3BC, PP1B)) {
+                            Store (0x04, PAL1)
+                            Store (0x04, PLE1)
+                        }
                         ShiftLeft (0x01, PP1I, PIQ1)
                         Return (CRS)
                     }
