@@ -847,7 +847,7 @@ static bool bs3CpuInstr2_fsgsbase_VerifyWorker(uint8_t bMode, PBS3REGCTX pCtx, P
 
 
 static void bs3CpuInstr2_rdfsbase_rdgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE const *paFsGsBaseWorkers,
-                                                  unsigned cFsGsBaseWorkers)
+                                                  unsigned cFsGsBaseWorkers, uint32_t idxFsGsBaseMsr)
 {
     BS3REGCTX         Ctx;
     BS3REGCTX         ExpectCtx;
@@ -876,17 +876,20 @@ static void bs3CpuInstr2_rdfsbase_rdgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE 
         Bs3RegCtxSetRipCsFromCurPtr(&Ctx, paFsGsBaseWorkers[iWorker].pfnWorker);
         if (fSupportsFsGsBase)
         {
+            uint64_t uBaseAddr;
+
             /* CR4.FSGSBASE disabled -> #UD. */
             Ctx.cr4.u &= ~X86_CR4_FSGSBASE;
             bs3CpuInstr2_fsgsbase_ExpectUD(bMode, &Ctx, &ExpectCtx, &TrapFrame);
 
-            /* Read any existing base address. */
-            Ctx.rbx.u  = 0xa0000;
+            /* Read and verify existing base address. */
+            uBaseAddr  = ASMRdMsr(idxFsGsBaseMsr);
+            Ctx.rbx.u  = 0;
             Ctx.cr4.u |= X86_CR4_FSGSBASE;
             Bs3MemCpy(&ExpectCtx, &Ctx, sizeof(ExpectCtx));
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
             ExpectCtx.rip.u       = Ctx.rip.u + paFsGsBaseWorkers[iWorker].offWorkerUd2;
-            ExpectCtx.rbx.u       = TrapFrame.Ctx.rbx.u;
+            ExpectCtx.rbx.u       = uBaseAddr;
             ExpectCtx.rflags.u32 |= X86_EFL_RF;
             if (!Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, &ExpectCtx, 0 /*cbPcAdjust*/, 0 /*cbSpAdjust*/, 0 /*fExtraEfl*/, "lm64",
                                       0 /*idTestStep*/))
@@ -894,7 +897,7 @@ static void bs3CpuInstr2_rdfsbase_rdgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE 
                 ASMHalt();
             }
 
-            /* Write and read back the address. */
+            /* Write, read and verify series of base addresses. */
             if (!bs3CpuInstr2_fsgsbase_VerifyWorker(bMode, &Ctx, &ExpectCtx, &TrapFrame, &paFsGsBaseWorkers[iWorker], &iIter))
             {
                 Bs3TestFailedF("^^^ %s: iWorker=%u iIter=%u\n", paFsGsBaseWorkers[iWorker].pszDesc, iWorker, iIter);
@@ -949,7 +952,7 @@ static void bs3CpuInstr2_wrfsbase_wrgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE 
             Ctx.cr4.u &= ~X86_CR4_FSGSBASE;
             bs3CpuInstr2_fsgsbase_ExpectUD(bMode, &Ctx, &ExpectCtx, &TrapFrame);
 
-            /* Write the base address. */
+            /* Write a base address. */
             Ctx.rbx.u  = 0xa0000;
             Ctx.cr4.u |= X86_CR4_FSGSBASE;
             Bs3MemCpy(&ExpectCtx, &Ctx, sizeof(ExpectCtx));
@@ -962,7 +965,7 @@ static void bs3CpuInstr2_wrfsbase_wrgsbase_Common(uint8_t bMode, BS3CI2FSGSBASE 
                 ASMHalt();
             }
 
-            /* Write and read back the address. */
+            /* Write and read back series of base addresses. */
             if (!bs3CpuInstr2_fsgsbase_VerifyWorker(bMode, &Ctx, &ExpectCtx, &TrapFrame, &paFsGsBaseWorkers[iWorker], &iIter))
             {
                 Bs3TestFailedF("^^^ %s: iWorker=%u iIter=%u\n", paFsGsBaseWorkers[iWorker].pszDesc, iWorker, iIter);
@@ -999,14 +1002,14 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_wrgsbase)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_rdfsbase)(uint8_t bMode)
 {
-    bs3CpuInstr2_rdfsbase_rdgsbase_Common(bMode, s_aRdFsBaseWorkers, RT_ELEMENTS(s_aRdFsBaseWorkers));
+    bs3CpuInstr2_rdfsbase_rdgsbase_Common(bMode, s_aRdFsBaseWorkers, RT_ELEMENTS(s_aRdFsBaseWorkers), MSR_K8_FS_BASE);
     return 0;
 }
 
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_rdgsbase)(uint8_t bMode)
 {
-    bs3CpuInstr2_rdfsbase_rdgsbase_Common(bMode, s_aRdGsBaseWorkers, RT_ELEMENTS(s_aRdGsBaseWorkers));
+    bs3CpuInstr2_rdfsbase_rdgsbase_Common(bMode, s_aRdGsBaseWorkers, RT_ELEMENTS(s_aRdGsBaseWorkers), MSR_K8_GS_BASE);
     return 0;
 }
 # endif /* ARCH_BITS == 64 */
