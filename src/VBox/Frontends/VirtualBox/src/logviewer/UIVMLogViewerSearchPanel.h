@@ -28,7 +28,6 @@
 class QCheckBox;
 class QHBoxLayout;
 class QLabel;
-class UIMiniCancelButton;
 class UIRoundRectSegmentedButton;
 class UISearchField;
 class UIVMLogViewerWidget;

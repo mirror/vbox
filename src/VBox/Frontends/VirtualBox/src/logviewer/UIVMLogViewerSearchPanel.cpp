@@ -181,7 +181,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
 {
     if (!mainLayout())
         return;
-
+    
     /* Create search-editor: */
     m_pSearchEditor = new UISearchField(0 /* parent */);
     if (m_pSearchEditor)
@@ -191,7 +191,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
         /* Add search-editor to main-layout: */
         mainLayout()->addWidget(m_pSearchEditor);
     }
-
+    
     /* Create search-label: */
     m_pSearchLabel = new QLabel;
     if (m_pSearchLabel)
@@ -310,21 +310,36 @@ void UIVMLogViewerSearchPanel::prepareConnections()
 
 void UIVMLogViewerSearchPanel::retranslateUi()
 {
-    m_pSearchLabel->setText(QString("%1 ").arg(UIVMLogViewerWidget::tr("&Find")));
-    m_pSearchEditor->setToolTip(UIVMLogViewerWidget::tr("Enter a search string here"));
+    if (m_pSearchLabel)
+        m_pSearchLabel->setText(QString("%1 ").arg(UIVMLogViewerWidget::tr("&Find")));
 
-    m_pNextPrevButtons->setToolTip(0, UIVMLogViewerWidget::tr("Search for the previous occurrence of the string"));
-    m_pNextPrevButtons->setToolTip(1, UIVMLogViewerWidget::tr("Search for the next occurrence of the string"));
+    if (m_pSearchEditor)
+        m_pSearchEditor->setToolTip(UIVMLogViewerWidget::tr("Enter a search string here"));
 
-    m_pCaseSensitiveCheckBox->setText(UIVMLogViewerWidget::tr("C&ase Sensitive"));
-    m_pCaseSensitiveCheckBox->setToolTip(UIVMLogViewerWidget::tr("Perform case sensitive search (when checked)"));
-
-    m_pMatchWholeWordCheckBox->setText(UIVMLogViewerWidget::tr("Ma&tch Whole Word"));
-    m_pMatchWholeWordCheckBox->setToolTip(UIVMLogViewerWidget::tr("Search matches only complete words when checked"));
-
-    m_pHighlightAllCheckBox->setText(UIVMLogViewerWidget::tr("&Highlight All"));
-    m_pHighlightAllCheckBox->setToolTip(UIVMLogViewerWidget::tr("All occurence of the search text are highlighted"));
-
+    if (m_pNextPrevButtons)
+    {
+        m_pNextPrevButtons->setToolTip(0, UIVMLogViewerWidget::tr("Search for the previous occurrence of the string"));
+        m_pNextPrevButtons->setToolTip(1, UIVMLogViewerWidget::tr("Search for the next occurrence of the string"));
+    }
+    
+    if (m_pCaseSensitiveCheckBox)
+    {
+        m_pCaseSensitiveCheckBox->setText(UIVMLogViewerWidget::tr("C&ase Sensitive"));
+        m_pCaseSensitiveCheckBox->setToolTip(UIVMLogViewerWidget::tr("Perform case sensitive search (when checked)"));
+    }
+    
+    if (m_pMatchWholeWordCheckBox)
+    {
+        m_pMatchWholeWordCheckBox->setText(UIVMLogViewerWidget::tr("Ma&tch Whole Word"));
+        m_pMatchWholeWordCheckBox->setToolTip(UIVMLogViewerWidget::tr("Search matches only complete words when checked"));
+    }
+    
+    if (m_pHighlightAllCheckBox)
+    {
+        m_pHighlightAllCheckBox->setText(UIVMLogViewerWidget::tr("&Highlight All"));
+        m_pHighlightAllCheckBox->setToolTip(UIVMLogViewerWidget::tr("All occurence of the search text are highlighted"));
+    }
+    
     if (m_iMatchCount == 0)
         m_pInfoLabel->setText(UIVMLogViewerWidget::tr("String not found"));
     else if (m_iMatchCount > 0)
@@ -423,10 +438,13 @@ void UIVMLogViewerSearchPanel::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
     UIVMLogViewerPanel::showEvent(pEvent);
-    /* Set focus on search-editor: */
-    m_pSearchEditor->setFocus();
-    /* Select all the text: */
-    m_pSearchEditor->selectAll();
+    if(m_pSearchEditor)
+    {
+        /* Set focus on search-editor: */
+        m_pSearchEditor->setFocus();
+        /* Select all the text: */
+        m_pSearchEditor->selectAll();
+    }
 }
 
 void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
@@ -437,7 +455,9 @@ void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
     QTextDocument *pDocument = textDocument();
     if (!pDocument)
         return;
-
+    if(!m_pSearchEditor)
+        return;
+    
     const QString &searchString = m_pSearchEditor->text();
     if (searchString.isEmpty())
         return;
@@ -557,6 +577,9 @@ void UIVMLogViewerSearchPanel::highlightAll(QTextDocument *pDocument,
 
 void UIVMLogViewerSearchPanel::configureInfoLabels()
 {
+    if (!m_pSearchEditor || !m_pWarningIcon || !m_pInfoLabel)
+        return;
+    
     /* If no match has been found, mark the search editor: */
     if (m_iMatchCount == 0)
     {
