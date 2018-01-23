@@ -170,6 +170,17 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
         pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt           = pNstGstVmcbCache->u1LbrVirt;
         pCtx->hwvirt.svm.fHMCachedVmcb = false;
     }
+
+    /*
+     * Currently, VMRUN, #VMEXIT transitions involves trips to ring-3 that would flag a full
+     * CPU state change. However, if we exit to ring-3 in response to receiving a physical
+     * interrupt, we skip signaling any CPU state change as normally no change
+     * is done to the execution state (see VINF_EM_RAW_INTERRUPT handling in hmR0SvmExitToRing3).
+     * However, with nested-guests, the state can change for e.g., we might perform a
+     * SVM_EXIT_INTR #VMEXIT for the nested-guest in ring-3. Hence we signal a full CPU
+     * state change here.
+     */
+    HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 }
 
 
