@@ -3632,8 +3632,8 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmc
     Assert(!TRPMHasTrap(pVCpu));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-#ifdef VBOX_STRICT
     bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu, pCtx);
+#ifdef VBOX_STRICT
     bool const fGif       = pCtx->hwvirt.svm.fGif;
     bool       fAllowInt  = fGif;
     if (fGif)
@@ -5479,7 +5479,7 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
         case SVM_EXIT_WRITE_CR8:
         {
             uint8_t const uCr = uExitCode - SVM_EXIT_WRITE_CR0;
-            Log4(("hmR0SvmHandleExitNested: Write CR%u\n", uCr));
+            Log4(("hmR0SvmHandleExitNested: Write CR%u\n", uCr)); NOREF(uCr);
             return hmR0SvmExitWriteCRx(pVCpu, pCtx, pSvmTransient);
         }
 
