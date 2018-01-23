@@ -3,12 +3,15 @@ $Id$
 
 Preparations:
 
-1. Install Python 2.7.x from python.org to C:\Python27.  Matching bit count as
-   the host windows version.
+0. Make sure the computer name (what hostname prints) is the same as the DNS 
+   returns (sans domain) for the host IP.
+
+1. Install Python 2.7.x from python.org to C:\Python27 or Python 3.y.x to 
+   C:\Python3%y%,  where y >= 5.  Matching bit count as the host windows version.
 
 2. Install the win32 extension for python.
 
-3. Append C:\Python27 to the system PATH (tail).
+3. Append C:\Python27 or C:\Python3%y% to the system PATH (tail).
 
 4. Disable UAC.
 
