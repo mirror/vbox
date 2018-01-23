@@ -451,6 +451,7 @@ static void hmR0SvmLogState(PVMCPU pVCpu, PCSVMVMCB pVmcb, PCPUMCTX pCtx, const 
         Log4(("%s: br_from=%#RX64 br_to=%#RX64 lastxcpt_from=%#RX64 lastxcpt_to=%#RX64\n", pszPrefix, pVmcbGuest->u64BR_FROM,
               pVmcbGuest->u64BR_TO, pVmcbGuest->u64LASTEXCPFROM, pVmcbGuest->u64LASTEXCPTO));
     }
+    NOREF(pVmcbGuest);
 }
 #endif
 
