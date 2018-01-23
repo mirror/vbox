@@ -220,22 +220,22 @@ const char *facilityStateToName(AdditionsFacilityStatus_T faStatus, bool fShort)
  * contain.
  *
  * @param   pszName             The variable name.
- * @param   pbstrValue          The value.
+ * @param   pszValue            The value.
  */
-static void outputMachineReadableString(const char *pszName, Bstr const *pbstrValue)
+static void outputMachineReadableString(const char *pszName, const char *pszValue)
 {
     Assert(strpbrk(pszName, "\"\\") == NULL);
 
-    com::Utf8Str strValue(*pbstrValue);
-    if (    strValue.isEmpty()
-        || (   !strValue.count('"')
-            && !strValue.count('\\')))
-        RTPrintf("%s=\"%s\"\n", pszName, strValue.c_str());
+    if (   !pszValue
+        || !*pszValue
+        || (   strchr(pszValue, '"') == NULL
+            && strchr(pszValue, '\\') == NULL) )
+        RTPrintf("%s=\"%s\"\n", pszName, pszValue);
     else
     {
         /* The value needs escaping. */
         RTPrintf("%s=\"", pszName);
-        const char *psz = strValue.c_str();
+        const char *psz = pszValue;
         for (;;)
         {
             const char *pszNext = strpbrk(psz, "\"\\");
@@ -249,6 +249,20 @@ static void outputMachineReadableString(const char *pszName, Bstr const *pbstrVa
         }
         RTPrintf("\"\n");
     }
+}
+
+
+/**
+ * This takes care of escaping double quotes and slashes that the string might
+ * contain.
+ *
+ * @param   pszName             The variable name.
+ * @param   pbstrValue          The value.
+ */
+static void outputMachineReadableString(const char *pszName, Bstr const *pbstrValue)
+{
+    com::Utf8Str strValue(*pbstrValue);
+    outputMachineReadableString(pszName, strValue.c_str());
 }
 
 /**
@@ -391,6 +405,18 @@ static const char *paravirtProviderToString(ParavirtProvider_T provider, VMINFO_
     }
 }
 
+/**
+ * Helper for formatting an indexed name or some such thing.
+ */
+static const char *FmtNm(char psz[80], const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTStrPrintfV(psz, 80, pszFormat, va);
+    va_end(va);
+    return psz;
+}
+
 
 /* Disable global optimizations for MSC 8.0/64 to make it compile in reasonable
    time. MSC 7.1/32 doesn't have quite as much trouble with it, but still
@@ -414,59 +440,126 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     if (pSession)
         pSession->COMGETTER(Console)(pConsole.asOutParam());
 
-#define SHOW_BOOLEAN_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman) \
-    SHOW_BOOLEAN_PROP_EX(a_pObj, a_Prop, a_szMachine, a_szHuman, "on", "off")
+    char szNm[80];
+    char szValue[256];
 
-#define SHOW_BOOLEAN_PROP_EX(a_pObj, a_Prop, a_szMachine, a_szHuman, a_szTrue, a_szFalse) \
+#define SHOW_UTF8_STRING(a_pszMachine, a_pszHuman, a_szValue) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            outputMachineReadableString(a_pszMachine, a_szValue); \
+        else \
+            RTPrintf("%-28s %s\n", a_pszHuman, a_szValue); \
+    } while (0)
+
+#define SHOW_BSTR_STRING(a_pszMachine, a_pszHuman, a_bstrValue) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            outputMachineReadableString(a_pszMachine, &a_bstrValue); \
+        else \
+            RTPrintf("%-28s %ls\n", a_pszHuman, a_bstrValue.raw()); \
+    } while (0)
+
+#define SHOW_BOOL_VALUE_EX(a_pszMachine, a_pszHuman, a_fValue, a_szTrue, a_szFalse) \
+    do \
+    { \
+        if (details == VMINFO_MACHINEREADABLE) \
+            outputMachineReadableString(a_pszMachine, a_fValue ? "on" : "off"); \
+        else \
+            RTPrintf("%-28s %s\n", a_pszHuman, a_fValue ? a_szTrue: a_szFalse); \
+    } while (0)
+
+#define SHOW_BOOL_VALUE(a_pszMachine, a_pszHuman, a_fValue) \
+    SHOW_BOOL_VALUE_EX(a_pszMachine, a_pszHuman, a_fValue, "enabled", "disabled")
+
+#define SHOW_ULONG_VALUE(a_pszMachine, a_pszHuman, a_uValue, a_pszUnit) \
+    do \
+    { \
+        if (details == VMINFO_MACHINEREADABLE) \
+            RTPrintf("%s=%u\n", a_pszMachine, a_uValue); \
+        else \
+            RTPrintf("%-28s %u%s\n", a_pszHuman, a_uValue, a_pszUnit); \
+    } while (0)
+
+#define SHOW_LONG64_VALUE(a_pszMachine, a_pszHuman, a_llValue, a_pszUnit) \
+    do \
+    { \
+        if (details == VMINFO_MACHINEREADABLE) \
+            RTPrintf("%s=%lld\n", a_pszMachine, a_llValue); \
+        else \
+            RTPrintf("%-28s %lld%s\n", a_pszHuman, a_llValue, a_pszUnit); \
+    } while (0)
+
+#define SHOW_BOOLEAN_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
+    SHOW_BOOLEAN_PROP_EX(a_pObj, a_Prop, a_pszMachine, a_pszHuman, "enabled", "disabled")
+
+#define SHOW_BOOLEAN_PROP_EX(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_szTrue, a_szFalse) \
     do \
     { \
         BOOL f; \
         CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&f), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
-            RTPrintf( a_szMachine "=\"%s\"\n", f ? "on" : "off"); \
+            outputMachineReadableString(a_pszMachine, f ? "on" : "off"); \
         else \
-            RTPrintf("%-16s %s\n", a_szHuman ":", f ? a_szTrue : a_szFalse); \
+            RTPrintf("%-28s %s\n", a_pszHuman, f ? a_szTrue : a_szFalse); \
     } while (0)
 
-#define SHOW_BOOLEAN_METHOD(a_pObj, a_Invocation, a_szMachine, a_szHuman) \
+#define SHOW_BOOLEAN_METHOD(a_pObj, a_Invocation, a_pszMachine, a_pszHuman) \
     do \
     { \
         BOOL f; \
         CHECK_ERROR2I_RET(a_pObj, a_Invocation, hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
-            RTPrintf( a_szMachine "=\"%s\"\n", f ? "on" : "off"); \
+            outputMachineReadableString(a_pszMachine, f ? "on" : "off"); \
         else \
-            RTPrintf("%-16s %s\n", a_szHuman ":", f ? "on" : "off"); \
+            RTPrintf("%-28s %s\n", a_pszHuman, f ? "enabled" : "disabled"); \
     } while (0)
 
-#define SHOW_STRING_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman) \
+#define SHOW_STRING_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
     do \
     { \
         Bstr bstr; \
         CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
-            outputMachineReadableString(a_szMachine, &bstr); \
+            outputMachineReadableString(a_pszMachine, &bstr); \
         else \
-            RTPrintf("%-16s %ls\n", a_szHuman ":", bstr.raw()); \
+            RTPrintf("%-28s %ls\n", a_pszHuman, bstr.raw()); \
     } while (0)
 
-    /** @def SHOW_STRING_PROP_MAJ
-     * For not breaking the output in a dot release we don't show default values. */
-#define SHOW_STRING_PROP_MAJ(a_pObj, a_Prop, a_szMachine, a_szHuman, a_szUnless, a_uMajorVer) \
+#define SHOW_STRING_PROP_NOT_EMPTY(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
     do \
     { \
         Bstr bstr; \
         CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
-        if ((a_uMajorVer) <= VBOX_VERSION_MAJOR || !bstr.equals(a_szUnless)) \
+        if (bstr.isNotEmpty()) \
         { \
-            if (details == VMINFO_MACHINEREADABLE)\
-                outputMachineReadableString(a_szMachine, &bstr); \
+            if (details == VMINFO_MACHINEREADABLE) \
+                outputMachineReadableString(a_pszMachine, &bstr); \
             else \
-                RTPrintf("%-16s %ls\n", a_szHuman ":", bstr.raw()); \
+                RTPrintf("%-28s %ls\n", a_pszHuman, bstr.raw()); \
         } \
     } while (0)
 
-#define SHOW_STRINGARRAY_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman) \
+    /** @def SHOW_STRING_PROP_MAJ
+     * For not breaking the output in a dot release we don't show default values. */
+#define SHOW_STRING_PROP_MAJ(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnless, a_uMajorVer) \
+    do \
+    { \
+        Bstr bstr; \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
+        if ((a_uMajorVer) <= VBOX_VERSION_MAJOR || !bstr.equals(a_pszUnless)) \
+        { \
+            if (details == VMINFO_MACHINEREADABLE)\
+                outputMachineReadableString(a_pszMachine, &bstr); \
+            else \
+                RTPrintf("%-28s %ls\n", a_pszHuman, bstr.raw()); \
+        } \
+    } while (0)
+
+#define SHOW_STRINGARRAY_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
     do \
     { \
         SafeArray<BSTR> array; \
@@ -480,34 +573,45 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         } \
         Bstr bstr(str); \
         if (details == VMINFO_MACHINEREADABLE) \
-            outputMachineReadableString(a_szMachine, &bstr); \
+            outputMachineReadableString(a_pszMachine, &bstr); \
         else \
-            RTPrintf("%-16s %ls\n", a_szHuman ":", bstr.raw()); \
+            RTPrintf("%-28s %ls\n", a_pszHuman, bstr.raw()); \
     } while (0)
 
-#define SHOW_UUID_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman) \
-    SHOW_STRING_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman)
+#define SHOW_UUID_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
+    SHOW_STRING_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman)
 
-#define SHOW_ULONG_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman, a_szUnit) \
+#define SHOW_USHORT_PROP_EX2(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnit, a_szFmtMachine, a_szFmtHuman) \
     do \
     { \
-        ULONG u32; \
+        USHORT u16 = 0; \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&u16), hrcCheck); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            RTPrintf("%s=" a_szFmtMachine "\n", a_pszMachine, u16); \
+        else \
+            RTPrintf("%-28s " a_szFmtHuman "%s\n", a_pszHuman, u16, u16, a_pszUnit); \
+    } while (0)
+
+#define SHOW_ULONG_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnit) \
+    do \
+    { \
+        ULONG u32 = 0; \
         CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&u32), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
-            RTPrintf(a_szMachine "=%u\n", u32); \
+            RTPrintf("%s=%u\n", a_pszMachine, u32); \
         else \
-            RTPrintf("%-16s %u" a_szUnit "\n", a_szHuman ":", u32); \
+            RTPrintf("%-28s %u%s\n", a_pszHuman, u32, a_pszUnit); \
     } while (0)
 
-#define SHOW_LONG64_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman, a_szUnit) \
+#define SHOW_LONG64_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnit) \
     do \
     { \
-        LONG64 i64; \
+        LONG64 i64 = 0; \
         CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&i64), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
-            RTPrintf(a_szMachine "=%lld\n", i64); \
+            RTPrintf("%s=%lld\n", a_pszMachine, i64); \
         else \
-            RTPrintf("%-16s %'lld" a_szUnit "\n", a_szHuman ":", i64); \
+            RTPrintf("%-28s %'lld%s\n", a_pszHuman, i64, a_pszUnit); \
     } while (0)
 
     /*
@@ -567,25 +671,25 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         return S_OK;
     }
 
-    SHOW_STRING_PROP(      machine, Name,                       "name",                 "Name");
+    SHOW_STRING_PROP(      machine, Name,                       "name",                 "Name:");
 
     Bstr osTypeId;
     CHECK_ERROR2I_RET(machine, COMGETTER(OSTypeId)(osTypeId.asOutParam()), hrcCheck);
     ComPtr<IGuestOSType> osType;
     CHECK_ERROR2I_RET(pVirtualBox, GetGuestOSType(osTypeId.raw(), osType.asOutParam()), hrcCheck);
-    SHOW_STRINGARRAY_PROP( machine, Groups,                     "groups",               "Groups");
-    SHOW_STRING_PROP(       osType, Description,                "ostype",               "Guest OS");
-    SHOW_UUID_PROP(        machine, Id,                         "UUID",                 "UUID");
-    SHOW_STRING_PROP(      machine, SettingsFilePath,           "CfgFile",              "Config file");
-    SHOW_STRING_PROP(      machine, SnapshotFolder,             "SnapFldr",             "Snapshot folder");
-    SHOW_STRING_PROP(      machine, LogFolder,                  "LogFldr",              "Log folder");
-    SHOW_UUID_PROP(        machine, HardwareUUID,               "hardwareuuid",         "Hardware UUID");
+    SHOW_STRINGARRAY_PROP( machine, Groups,                     "groups",               "Groups:");
+    SHOW_STRING_PROP(       osType, Description,                "ostype",               "Guest OS:");
+    SHOW_UUID_PROP(        machine, Id,                         "UUID",                 "UUID:");
+    SHOW_STRING_PROP(      machine, SettingsFilePath,           "CfgFile",              "Config file:");
+    SHOW_STRING_PROP(      machine, SnapshotFolder,             "SnapFldr",             "Snapshot folder:");
+    SHOW_STRING_PROP(      machine, LogFolder,                  "LogFldr",              "Log folder:");
+    SHOW_UUID_PROP(        machine, HardwareUUID,               "hardwareuuid",         "Hardware UUID:");
     SHOW_ULONG_PROP(       machine, MemorySize,                 "memory",               "Memory size",      "MB");
-    SHOW_BOOLEAN_PROP(     machine, PageFusionEnabled,          "pagefusion",           "Page Fusion");
-    SHOW_ULONG_PROP(       machine, VRAMSize,                   "vram",                 "VRAM size",        "MB");
-    SHOW_ULONG_PROP(       machine, CPUExecutionCap,            "cpuexecutioncap",      "CPU exec cap",     "%%");
-    SHOW_BOOLEAN_PROP(     machine, HPETEnabled,                "hpet",                 "HPET");
-    SHOW_STRING_PROP_MAJ(  machine, CPUProfile,                 "cpu-profile",          "CPUProfile",       "host", 6);
+    SHOW_BOOLEAN_PROP(     machine, PageFusionEnabled,          "pagefusion",           "Page Fusion:");
+    SHOW_ULONG_PROP(       machine, VRAMSize,                   "vram",                 "VRAM size:",        "MB");
+    SHOW_ULONG_PROP(       machine, CPUExecutionCap,            "cpuexecutioncap",      "CPU exec cap:",     "%");
+    SHOW_BOOLEAN_PROP(     machine, HPETEnabled,                "hpet",                 "HPET:");
+    SHOW_STRING_PROP_MAJ(  machine, CPUProfile,                 "cpu-profile",          "CPUProfile:",       "host", 6);
 
     ChipsetType_T chipsetType;
     CHECK_ERROR2I_RET(machine, COMGETTER(ChipsetType)(&chipsetType), hrcCheck);
@@ -597,10 +701,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         case ChipsetType_ICH9:  pszChipsetType = "ich9"; break;
         default:                AssertFailed(); pszChipsetType = "unknown"; break;
     }
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("chipset=\"%s\"\n", pszChipsetType);
-    else
-        RTPrintf("Chipset:         %s\n", pszChipsetType);
+    SHOW_UTF8_STRING("chipset", "Chipset:", pszChipsetType);
 
     FirmwareType_T firmwareType;
     CHECK_ERROR2I_RET(machine, COMGETTER(FirmwareType)(&firmwareType), hrcCheck);
@@ -614,21 +715,19 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         case FirmwareType_EFIDUAL:  pszFirmwareType = "EFIDUAL"; break;
         default:                    AssertFailed(); pszFirmwareType = "unknown"; break;
     }
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("firmware=\"%s\"\n", pszFirmwareType);
-    else
-        RTPrintf("Firmware:        %s\n", pszFirmwareType);
+    SHOW_UTF8_STRING("firmware", "Firmware:", pszFirmwareType);
 
-    SHOW_ULONG_PROP(       machine, CPUCount,                   "cpus",                 "Number of CPUs", "");
-    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_PAE, &f), "pae", "PAE");
-    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_LongMode, &f), "longmode", "Long Mode");
-    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_TripleFaultReset, &f), "triplefaultreset", "Triple Fault Reset");
-    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_APIC, &f), "apic", "APIC");
-    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_X2APIC, &f), "x2apic", "X2APIC");
-    SHOW_ULONG_PROP(       machine, CPUIDPortabilityLevel, "cpuid-portability-level",   "CPUID Portability Level", "");
+    SHOW_ULONG_PROP(       machine, CPUCount,                   "cpus",                 "Number of CPUs:", "");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_PAE, &f), "pae", "PAE:");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_LongMode, &f), "longmode", "Long Mode:");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_TripleFaultReset, &f), "triplefaultreset", "Triple Fault Reset:");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_APIC, &f), "apic", "APIC:");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_X2APIC, &f), "x2apic", "X2APIC:");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_X2APIC, &f), "nested-hw-virt", "Nested VT-x/AMD-V:");
+    SHOW_ULONG_PROP(       machine, CPUIDPortabilityLevel, "cpuid-portability-level",   "CPUID Portability Level:", "");
 
     if (details != VMINFO_MACHINEREADABLE)
-        RTPrintf("CPUID overrides: ");
+        RTPrintf("%-28s ", "CPUID overrides:");
     ULONG uOrdinal = 0;
     for (uOrdinal = 0; uOrdinal < _4K; uOrdinal++)
     {
@@ -641,8 +740,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             else
             {
                 if (!uOrdinal)
-                    RTPrintf("Leaf no.       EAX      EBX      ECX      EDX\n");
-                RTPrintf("                 %08x/%03x  %08x %08x %08x %08x\n", uLeaf, uSubLeaf, uEAX, uEBX, uECX, uEDX);
+                    RTPrintf("Leaf no.      EAX      EBX      ECX      EDX\n");
+                RTPrintf("%-28s %08x/%03x  %08x %08x %08x %08x\n", "", uLeaf, uSubLeaf, uEAX, uEBX, uECX, uEDX);
             }
         }
         else
@@ -652,7 +751,6 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             break;
         }
     }
-
     if (!uOrdinal && details != VMINFO_MACHINEREADABLE)
         RTPrintf("None\n");
 
@@ -679,10 +777,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             else
                 pszBootMenu = "message and menu";
     }
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("bootmenu=\"%s\"\n", pszBootMenu);
-    else
-        RTPrintf("Boot menu mode:  %s\n", pszBootMenu);
+    SHOW_UTF8_STRING("bootmenu", "Boot menu mode:", pszBootMenu);
 
     ComPtr<ISystemProperties> systemProperties;
     CHECK_ERROR2I_RET(pVirtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), hrcCheck);
@@ -692,59 +787,26 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     {
         DeviceType_T bootOrder;
         CHECK_ERROR2I_RET(machine, GetBootOrder(i, &bootOrder), hrcCheck);
+        const char *pszDevice;
         if (bootOrder == DeviceType_Floppy)
-        {
-            if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("boot%d=\"floppy\"\n", i);
-            else
-                RTPrintf("Boot Device (%d): Floppy\n", i);
-        }
+            pszDevice = details == VMINFO_MACHINEREADABLE ? "floppy"        : "Floppy";
         else if (bootOrder == DeviceType_DVD)
-        {
-            if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("boot%d=\"dvd\"\n", i);
-            else
-                RTPrintf("Boot Device (%d): DVD\n", i);
-        }
+            pszDevice = details == VMINFO_MACHINEREADABLE ? "dvd"           : "DVD";
         else if (bootOrder == DeviceType_HardDisk)
-        {
-            if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("boot%d=\"disk\"\n", i);
-            else
-                RTPrintf("Boot Device (%d): HardDisk\n", i);
-        }
+            pszDevice = details == VMINFO_MACHINEREADABLE ? "disk"          : "HardDisk";
         else if (bootOrder == DeviceType_Network)
-        {
-            if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("boot%d=\"net\"\n", i);
-            else
-                RTPrintf("Boot Device (%d): Network\n", i);
-        }
+            pszDevice = details == VMINFO_MACHINEREADABLE ? "net"           : "Network";
         else if (bootOrder == DeviceType_USB)
-        {
-            if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("boot%d=\"usb\"\n", i);
-            else
-                RTPrintf("Boot Device (%d): USB\n", i);
-        }
+            pszDevice = details == VMINFO_MACHINEREADABLE ? "usb"           : "USB";
         else if (bootOrder == DeviceType_SharedFolder)
-        {
-            if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("boot%d=\"sharedfolder\"\n", i);
-            else
-                RTPrintf("Boot Device (%d): Shared Folder\n", i);
-        }
+            pszDevice = details == VMINFO_MACHINEREADABLE ? "sharedfolder"  : "Shared Folder";
         else
-        {
-            if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("boot%d=\"none\"\n", i);
-            else
-                RTPrintf("Boot Device (%d): Not Assigned\n", i);
-        }
+            pszDevice = details == VMINFO_MACHINEREADABLE ? "none"          : "Not Assigned";
+        SHOW_UTF8_STRING(FmtNm(szNm, "boot%u", i), FmtNm(szNm, "Boot Device %u:", i), pszDevice);
     }
 
-    SHOW_BOOLEAN_PROP(biosSettings, ACPIEnabled,                "acpi",                 "ACPI");
-    SHOW_BOOLEAN_PROP(biosSettings, IOAPICEnabled,              "ioapic",               "IOAPIC");
+    SHOW_BOOLEAN_PROP(biosSettings, ACPIEnabled,                "acpi",                 "ACPI:");
+    SHOW_BOOLEAN_PROP(biosSettings, IOAPICEnabled,              "ioapic",               "IOAPIC:");
 
     APICMode_T apicMode;
     CHECK_ERROR2I_RET(biosSettings, COMGETTER(APICMode)(&apicMode), hrcCheck);
@@ -768,44 +830,30 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 pszAPIC = "x2APIC";
             break;
     }
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("biosapic=\"%s\"\n", pszAPIC);
-    else
-        RTPrintf("BIOS APIC mode:  %s\n", pszAPIC);
+    SHOW_UTF8_STRING("biosapic", "BIOS APIC mode:", pszAPIC);
 
-    SHOW_LONG64_PROP(biosSettings,  TimeOffset,                 "biossystemtimeoffset", "Time offset",  "ms");
-    SHOW_BOOLEAN_PROP_EX(machine,   RTCUseUTC,                  "rtcuseutc",            "RTC",          "UTC", "local time");
-    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_Enabled,   &f),   "hwvirtex",     "Hardw. virt.ext");
-    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, &f),"nestedpaging", "Nested Paging");
-    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_LargePages, &f),  "largepages",   "Large Pages");
-    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_VPID, &f),        "vtxvpid",      "VT-x VPID");
-    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, &f), "vtxux", "VT-x unr. exec.");
+    SHOW_LONG64_PROP(biosSettings,  TimeOffset,                 "biossystemtimeoffset", "Time offset:",  "ms");
+    SHOW_BOOLEAN_PROP_EX(machine,   RTCUseUTC,                  "rtcuseutc",            "RTC:",         "UTC", "local time");
+    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_Enabled,   &f),   "hwvirtex",     "Hardw. virt.ext:");
+    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, &f),"nestedpaging", "Nested Paging:");
+    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_LargePages, &f),  "largepages",   "Large Pages:");
+    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_VPID, &f),        "vtxvpid",      "VT-x VPID:");
+    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, &f), "vtxux", "VT-x unr. exec.:");
 
     ParavirtProvider_T paravirtProvider;
     CHECK_ERROR2I_RET(machine, COMGETTER(ParavirtProvider)(&paravirtProvider), hrcCheck);
     const char *pszParavirtProvider = paravirtProviderToString(paravirtProvider, details);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("paravirtprovider=\"%s\"\n", pszParavirtProvider);
-    else
-        RTPrintf("Paravirt. Provider: %s\n", pszParavirtProvider);
+    SHOW_UTF8_STRING("paravirtprovider", "Paravirt. Provider:", pszParavirtProvider);
 
     ParavirtProvider_T effParavirtProvider;
     CHECK_ERROR2I_RET(machine, GetEffectiveParavirtProvider(&effParavirtProvider), hrcCheck);
     const char *pszEffParavirtProvider = paravirtProviderToString(effParavirtProvider, details);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("effparavirtprovider=\"%s\"\n", pszEffParavirtProvider);
-    else
-        RTPrintf("Effective Paravirt. Provider: %s\n", pszEffParavirtProvider);
+    SHOW_UTF8_STRING("effparavirtprovider", "Effective Paravirt. Prov.:", pszEffParavirtProvider);
 
     Bstr paravirtDebug;
     CHECK_ERROR2I_RET(machine, COMGETTER(ParavirtDebug)(paravirtDebug.asOutParam()), hrcCheck);
     if (paravirtDebug.isNotEmpty())
-    {
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("paravirtdebug=\"%ls\"\n", paravirtDebug.raw());
-        else
-            RTPrintf("Paravirt. Debug: %ls\n", paravirtDebug.raw());
-    }
+        SHOW_BSTR_STRING("paravirtdebug", "Paravirt. Debug:", paravirtDebug);
 
     MachineState_T machineState;
     CHECK_ERROR2I_RET(machine, COMGETTER(State)(&machineState), hrcCheck);
@@ -828,23 +876,23 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             RTPrintf("VMStateFile=\"%ls\"\n", stateFile.raw());
     }
     else
-        RTPrintf("State:           %s (since %s)\n", pszState, pszTime);
+        RTPrintf("%-28s %s (since %s)\n", "State:", pszState, pszTime);
 
-    SHOW_ULONG_PROP(      machine,  MonitorCount,               "monitorcount",             "Monitor count", "");
-    SHOW_BOOLEAN_PROP(    machine,  Accelerate3DEnabled,        "accelerate3d",             "3D Acceleration");
+    SHOW_ULONG_PROP(      machine,  MonitorCount,               "monitorcount",             "Monitor count:", "");
+    SHOW_BOOLEAN_PROP(    machine,  Accelerate3DEnabled,        "accelerate3d",             "3D Acceleration:");
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    SHOW_BOOLEAN_PROP(    machine,  Accelerate2DVideoEnabled,   "accelerate2dvideo",        "2D Video Acceleration");
+    SHOW_BOOLEAN_PROP(    machine,  Accelerate2DVideoEnabled,   "accelerate2dvideo",        "2D Video Acceleration:");
 #endif
-    SHOW_BOOLEAN_PROP(    machine,  TeleporterEnabled,          "teleporterenabled",        "Teleporter Enabled");
-    SHOW_ULONG_PROP(      machine,  TeleporterPort,             "teleporterport",           "Teleporter Port", "");
-    SHOW_STRING_PROP(     machine,  TeleporterAddress,          "teleporteraddress",        "Teleporter Address");
-    SHOW_STRING_PROP(     machine,  TeleporterPassword,         "teleporterpassword",       "Teleporter Password");
-    SHOW_BOOLEAN_PROP(    machine,  TracingEnabled,             "tracing-enabled",          "Tracing Enabled");
-    SHOW_BOOLEAN_PROP(    machine,  AllowTracingToAccessVM,     "tracing-allow-vm-access",  "Allow Tracing to Access VM");
-    SHOW_STRING_PROP(     machine,  TracingConfig,              "tracing-config",           "Tracing Configuration");
-    SHOW_BOOLEAN_PROP(    machine,  AutostartEnabled,           "autostart-enabled",        "Autostart Enabled");
-    SHOW_ULONG_PROP(      machine,  AutostartDelay,             "autostart-delay",          "Autostart Delay", "");
-    SHOW_STRING_PROP(     machine,  DefaultFrontend,            "defaultfrontend",          "Default Frontend");
+    SHOW_BOOLEAN_PROP(    machine,  TeleporterEnabled,          "teleporterenabled",        "Teleporter Enabled:");
+    SHOW_ULONG_PROP(      machine,  TeleporterPort,             "teleporterport",           "Teleporter Port:", "");
+    SHOW_STRING_PROP(     machine,  TeleporterAddress,          "teleporteraddress",        "Teleporter Address:");
+    SHOW_STRING_PROP(     machine,  TeleporterPassword,         "teleporterpassword",       "Teleporter Password:");
+    SHOW_BOOLEAN_PROP(    machine,  TracingEnabled,             "tracing-enabled",          "Tracing Enabled:");
+    SHOW_BOOLEAN_PROP(    machine,  AllowTracingToAccessVM,     "tracing-allow-vm-access",  "Allow Tracing to Access VM:");
+    SHOW_STRING_PROP(     machine,  TracingConfig,              "tracing-config",           "Tracing Configuration:");
+    SHOW_BOOLEAN_PROP(    machine,  AutostartEnabled,           "autostart-enabled",        "Autostart Enabled:");
+    SHOW_ULONG_PROP(      machine,  AutostartDelay,             "autostart-delay",          "Autostart Delay:", "");
+    SHOW_STRING_PROP(     machine,  DefaultFrontend,            "defaultfrontend",          "Default Frontend:");
 
 /** @todo Convert the remainder of the function to SHOW_XXX macros and add error
  *        checking where missing. */
@@ -1043,14 +1091,16 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         rc = machine->GetNetworkAdapter(currentNIC, nic.asOutParam());
         if (SUCCEEDED(rc) && nic)
         {
+            FmtNm(szNm, details == VMINFO_MACHINEREADABLE ? "nic%u" : "NIC %u:", currentNIC + 1);
+
             BOOL fEnabled;
             nic->COMGETTER(Enabled)(&fEnabled);
             if (!fEnabled)
             {
                 if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("nic%d=\"none\"\n", currentNIC + 1);
+                    RTPrintf("%s=\"none\"\n", szNm);
                 else
-                    RTPrintf("NIC %d:           disabled\n", currentNIC + 1);
+                    RTPrintf("%-28s disabled\n", szNm);
             }
             else
             {
@@ -1325,8 +1375,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     RTPrintf("nicspeed%d=\"%d\"\n", currentNIC + 1, ulLineSpeed);
                 }
                 else
-                    RTPrintf("NIC %u:           MAC: %ls, Attachment: %s, Cable connected: %s, Trace: %s (file: %ls), Type: %s, Reported speed: %d Mbps, Boot priority: %d, Promisc Policy: %s, Bandwidth group: %ls\n",
-                             currentNIC + 1, strMACAddress.raw(), strAttachment.c_str(),
+                    RTPrintf("%-28s MAC: %ls, Attachment: %s, Cable connected: %s, Trace: %s (file: %ls), Type: %s, Reported speed: %d Mbps, Boot priority: %d, Promisc Policy: %s, Bandwidth group: %ls\n",
+                             szNm, strMACAddress.raw(), strAttachment.c_str(),
                              fConnected ? "on" : "off",
                              fTraceEnabled ? "on" : "off",
                              traceFile.isEmpty() ? Bstr("none").raw() : traceFile.raw(),
@@ -1377,10 +1427,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         default:
             break;
     }
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("hidpointing=\"%s\"\n", pszMrHID);
-    else
-        RTPrintf("Pointing Device: %s\n", pszHID);
+    SHOW_UTF8_STRING("hidpointing", "Pointing Device:", details == VMINFO_MACHINEREADABLE ? pszMrHID : pszHID);
 
     /* Keyboard device information */
     KeyboardHIDType_T aKeyboardHID;
@@ -1408,10 +1455,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         default:
             break;
     }
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("hidkeyboard=\"%s\"\n", pszMrHID);
-    else
-        RTPrintf("Keyboard Device: %s\n", pszHID);
+    SHOW_UTF8_STRING("hidkeyboard", "Keyboard Device:", details == VMINFO_MACHINEREADABLE ? pszMrHID : pszHID);
 
     ComPtr<ISystemProperties> sysProps;
     pVirtualBox->COMGETTER(SystemProperties)(sysProps.asOutParam());
@@ -1425,15 +1469,17 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         rc = machine->GetSerialPort(currentUART, uart.asOutParam());
         if (SUCCEEDED(rc) && uart)
         {
+            FmtNm(szNm, details == VMINFO_MACHINEREADABLE ? "uart%u" : "UART %u:", currentUART + 1);
+
             /* show the config of this UART */
             BOOL fEnabled;
             uart->COMGETTER(Enabled)(&fEnabled);
             if (!fEnabled)
             {
                 if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("uart%d=\"off\"\n", currentUART + 1);
+                    RTPrintf("%s=\"off\"\n", szNm);
                 else
-                    RTPrintf("UART %d:          disabled\n", currentUART + 1);
+                    RTPrintf("%-28s disabled\n", szNm);
             }
             else
             {
@@ -1448,11 +1494,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 uart->COMGETTER(HostMode)(&HostMode);
 
                 if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("uart%d=\"%#06x,%d\"\n", currentUART + 1,
-                             ulIOBase, ulIRQ);
+                    RTPrintf("%s=\"%#06x,%d\"\n", szNm, ulIOBase, ulIRQ);
                 else
-                    RTPrintf("UART %d:          I/O base: %#06x, IRQ: %d",
-                             currentUART + 1, ulIOBase, ulIRQ);
+                    RTPrintf("%-28s I/O base: %#06x, IRQ: %d", szNm, ulIOBase, ulIRQ);
                 switch (HostMode)
                 {
                     default:
@@ -1507,15 +1551,17 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         rc = machine->GetParallelPort(currentLPT, lpt.asOutParam());
         if (SUCCEEDED(rc) && lpt)
         {
+            FmtNm(szNm, details == VMINFO_MACHINEREADABLE ? "lpt%u" : "LPT %u:", currentLPT + 1);
+
             /* show the config of this LPT */
             BOOL fEnabled;
             lpt->COMGETTER(Enabled)(&fEnabled);
             if (!fEnabled)
             {
                 if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("lpt%d=\"off\"\n", currentLPT + 1);
+                    RTPrintf("%s=\"off\"\n", szNm);
                 else
-                    RTPrintf("LPT %d:           disabled\n", currentLPT + 1);
+                    RTPrintf("%-28s disabled\n", szNm);
             }
             else
             {
@@ -1526,14 +1572,11 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 lpt->COMGETTER(Path)(path.asOutParam());
 
                 if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("lpt%d=\"%#06x,%d\"\n", currentLPT + 1,
-                             ulIOBase, ulIRQ);
+                    RTPrintf("%s=\"%#06x,%d\"\n", szNm, ulIOBase, ulIRQ);
                 else
-                    RTPrintf("LPT %d:           I/O base: %#06x, IRQ: %d",
-                             currentLPT + 1, ulIOBase, ulIRQ);
+                    RTPrintf("%-28s I/O base: %#06x, IRQ: %d", szNm, ulIOBase, ulIRQ);
                 if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("lptmode%d=\"%ls\"\n", currentLPT + 1,
-                            path.raw());
+                    RTPrintf("lptmode%d=\"%ls\"\n", currentLPT + 1, path.raw());
                 else
                     RTPrintf(", attached to device '%ls'\n", path.raw());
             }
@@ -1656,118 +1699,69 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         else
             fEnabled = FALSE;
 
-        BOOL fEnabledIn = false;
-        CHECK_ERROR(AudioAdapter, COMGETTER(EnabledIn)(&fEnabledIn));
-
-        BOOL fEnabledOut = false;
-        CHECK_ERROR(AudioAdapter,  COMGETTER(EnabledOut)(&fEnabledOut));
-
         if (details == VMINFO_MACHINEREADABLE)
-        {
-            if (fEnabled)
-                RTPrintf("audio=\"%s\"\n", pszDrv);
-            else
-                RTPrintf("audio=\"none\"\n");
-
-            RTPrintf("audio_in=\"%s\"\n",  fEnabledIn  ? "true" : "false");
-            RTPrintf("audio_out=\"%s\"\n", fEnabledOut ? "true" : "false");
-        }
+            RTPrintf("audio=\"%s\"\n", fEnabled ? pszDrv : "none");
         else
         {
-            RTPrintf("Audio:           %s",
-                    fEnabled ? "enabled" : "disabled");
+            RTPrintf("%-28s %s", "Audio:", fEnabled ? "enabled" : "disabled");
             if (fEnabled)
-                RTPrintf(" (Driver: %s, Controller: %s, Codec: %s)",
-                    pszDrv, pszCtrl, pszCodec);
+                RTPrintf(" (Driver: %s, Controller: %s, Codec: %s)", pszDrv, pszCtrl, pszCodec);
             RTPrintf("\n");
-
-            RTPrintf("Audio playback:  %s\n", fEnabledIn  ? "enabled" : "disabled");
-            RTPrintf("Audio capture: %s\n", fEnabledOut ? "enabled" : "disabled");
         }
+        SHOW_BOOLEAN_PROP(AudioAdapter, EnabledIn,  "audio_in",  "Audio playback:");
+        SHOW_BOOLEAN_PROP(AudioAdapter, EnabledOut, "audio_out", "Audio capture:");
     }
 
     /* Shared clipboard */
     {
-        const char *psz = "Unknown";
-        ClipboardMode_T enmMode;
+        const char *psz;
+        ClipboardMode_T enmMode = (ClipboardMode_T)0;
         rc = machine->COMGETTER(ClipboardMode)(&enmMode);
         switch (enmMode)
         {
             case ClipboardMode_Disabled:
-                if (details == VMINFO_MACHINEREADABLE)
-                    psz = "disabled";
-                else
-                    psz = "disabled";
+                psz = "disabled";
                 break;
             case ClipboardMode_HostToGuest:
-                if (details == VMINFO_MACHINEREADABLE)
-                    psz = "hosttoguest";
-                else
-                    psz = "HostToGuest";
+                psz = details == VMINFO_MACHINEREADABLE ? "hosttoguest" : "HostToGuest";
                 break;
             case ClipboardMode_GuestToHost:
-                if (details == VMINFO_MACHINEREADABLE)
-                    psz = "guesttohost";
-                else
-                    psz = "GuestToHost";
+                psz = details == VMINFO_MACHINEREADABLE ? "guesttohost" : "GuestToHost";
                 break;
             case ClipboardMode_Bidirectional:
-                if (details == VMINFO_MACHINEREADABLE)
-                    psz = "bidirectional";
-                else
-                    psz = "Bidirectional";
+                psz = details == VMINFO_MACHINEREADABLE ? "bidirectional" : "Bidirectional";
                 break;
             default:
-                if (details == VMINFO_MACHINEREADABLE)
-                    psz = "unknown";
+                psz = details == VMINFO_MACHINEREADABLE ? "unknown" : "Unknown";
                 break;
         }
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("clipboard=\"%s\"\n", psz);
-        else
-            RTPrintf("Clipboard Mode:  %s\n", psz);
+        SHOW_UTF8_STRING("clipboard", "Clipboard Mode:", psz);
     }
 
     /* Drag and drop */
     {
-        const char *psz = "Unknown";
+        const char *psz;
         DnDMode_T enmMode;
         rc = machine->COMGETTER(DnDMode)(&enmMode);
         switch (enmMode)
         {
             case DnDMode_Disabled:
-                if (details == VMINFO_MACHINEREADABLE)
-                    psz = "disabled";
-                else
-                    psz = "disabled";
+                psz = "disabled";
                 break;
             case DnDMode_HostToGuest:
-                if (details == VMINFO_MACHINEREADABLE)
-                    psz = "hosttoguest";
-                else
-                    psz = "HostToGuest";
+                psz = details == VMINFO_MACHINEREADABLE ? "hosttoguest" : "HostToGuest";
                 break;
             case DnDMode_GuestToHost:
-                if (details == VMINFO_MACHINEREADABLE)
-                    psz = "guesttohost";
-                else
-                    psz = "GuestToHost";
+                psz = details == VMINFO_MACHINEREADABLE ? "guesttohost" : "GuestToHost";
                 break;
             case DnDMode_Bidirectional:
-                if (details == VMINFO_MACHINEREADABLE)
-                    psz = "bidirectional";
-                else
-                    psz = "Bidirectional";
+                psz = details == VMINFO_MACHINEREADABLE ? "bidirectional" : "Bidirectional";
                 break;
             default:
-                if (details == VMINFO_MACHINEREADABLE)
-                    psz = "unknown";
+                psz = details == VMINFO_MACHINEREADABLE ? "unknown" : "Unknown";
                 break;
         }
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("draganddrop=\"%s\"\n", psz);
-        else
-            RTPrintf("Drag and drop Mode: %s\n", psz);
+        SHOW_UTF8_STRING("draganddrop", "Drag and drop Mode:", psz);
     }
 
     {
@@ -1778,12 +1772,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             Bstr sessName;
             rc = machine->COMGETTER(SessionName)(sessName.asOutParam());
             if (SUCCEEDED(rc) && !sessName.isEmpty())
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("SessionName=\"%ls\"\n", sessName.raw());
-                else
-                    RTPrintf("Session name:    %ls\n", sessName.raw());
-            }
+                SHOW_BSTR_STRING("SessionName", "Session name:", sessName);
         }
     }
 
@@ -1824,7 +1813,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     case GuestMonitorStatus_Disabled: pszMonitorStatus = "disabled"; break;
                     default: break;
                 }
-                RTPrintf("Video mode:      %dx%dx%d at %d,%d %s\n", xRes, yRes, bpp, xOrigin, yOrigin, pszMonitorStatus);
+                RTPrintf("%-28s %dx%dx%d at %d,%d %s\n", "Video mode:", xRes, yRes, bpp, xOrigin, yOrigin, pszMonitorStatus);
             }
         }
         while (0);
@@ -1910,13 +1899,14 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             {
                 if (address.isEmpty())
                     address = "0.0.0.0";
-                RTPrintf("VRDE:            enabled (Address %ls, Ports %ls, MultiConn: %s, ReuseSingleConn: %s, Authentication type: %s)\n", address.raw(), ports.raw(), fMultiCon ? "on" : "off", fReuseCon ? "on" : "off", strAuthType);
+                RTPrintf("%-28s enabled (Address %ls, Ports %ls, MultiConn: %s, ReuseSingleConn: %s, Authentication type: %s)\n",
+                         "VRDE:", address.raw(), ports.raw(), fMultiCon ? "on" : "off", fReuseCon ? "on" : "off", strAuthType);
                 if (pConsole && currentPort != -1 && currentPort != 0)
-                   RTPrintf("VRDE port:       %d\n", currentPort);
+                   RTPrintf("%-28s %d\n", "VRDE port:", currentPort);
                 if (fVideoChannel)
-                    RTPrintf("Video redirection: enabled (Quality %ls)\n", videoChannelQuality.raw());
+                    RTPrintf("%-28s enabled (Quality %ls)\n", "Video redirection:", videoChannelQuality.raw());
                 else
-                    RTPrintf("Video redirection: disabled\n");
+                    RTPrintf("%-28s disabled\n", "Video redirection:");
             }
             com::SafeArray<BSTR> aProperties;
             if (SUCCEEDED(vrdeServer->COMGETTER(VRDEProperties)(ComSafeArrayAsOutParam(aProperties))))
@@ -1936,9 +1926,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     else
                     {
                         if (value.isEmpty())
-                            RTPrintf("VRDE property: %-10lS = <not set>\n", aProperties[i]);
+                            RTPrintf("%-28s: %-10lS = <not set>\n", "VRDE property", aProperties[i]);
                         else
-                            RTPrintf("VRDE property: %-10lS = \"%ls\"\n", aProperties[i], value.raw());
+                            RTPrintf("%-28s: %-10lS = \"%ls\"\n", "VRDE property", aProperties[i], value.raw());
                     }
                 }
             }
@@ -1948,7 +1938,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             if (details == VMINFO_MACHINEREADABLE)
                 RTPrintf("vrde=\"off\"\n");
             else
-                RTPrintf("VRDE:            disabled\n");
+                RTPrintf("%-28s disabled\n", "VRDE:");
         }
     }
 
@@ -1987,20 +1977,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             }
         }
 
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("usb=\"%s\"\n", fOhciEnabled ? "on" : "off");
-        else
-            RTPrintf("OHCI USB:        %s\n", fOhciEnabled ? "enabled" : "disabled");
-
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("ehci=\"%s\"\n", fEhciEnabled ? "on" : "off");
-        else
-            RTPrintf("EHCI USB:        %s\n", fEhciEnabled ? "enabled" : "disabled");
-
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("xhci=\"%s\"\n", fXhciEnabled ? "on" : "off");
-        else
-            RTPrintf("xHCI USB:        %s\n", fXhciEnabled ? "enabled" : "disabled");
+        SHOW_BOOL_VALUE("usb",  "OHCI USB:", fOhciEnabled);
+        SHOW_BOOL_VALUE("ehci", "EHCI USB:", fEhciEnabled);
+        SHOW_BOOL_VALUE("xhci", "xHCI USB:", fXhciEnabled);
     }
 
     ComPtr<IUSBDeviceFilters> USBFlts;
@@ -2025,65 +2004,23 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 {
                     ComPtr<IUSBDeviceFilter> DevPtr = Coll[index];
 
-                    /* Query info. */
-
                     if (details != VMINFO_MACHINEREADABLE)
-                        RTPrintf("Index:            %zu\n", index);
-
-                    BOOL bActive = FALSE;
-                    CHECK_ERROR_RET(DevPtr, COMGETTER(Active)(&bActive), rc);
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("USBFilterActive%zu=\"%s\"\n", index + 1, bActive ? "on" : "off");
-                    else
-                        RTPrintf("Active:           %s\n", bActive ? "yes" : "no");
-
-                    Bstr bstr;
-                    CHECK_ERROR_RET(DevPtr, COMGETTER(Name)(bstr.asOutParam()), rc);
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("USBFilterName%zu=\"%ls\"\n", index + 1, bstr.raw());
-                    else
-                        RTPrintf("Name:             %ls\n", bstr.raw());
-                    CHECK_ERROR_RET(DevPtr, COMGETTER(VendorId)(bstr.asOutParam()), rc);
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("USBFilterVendorId%zu=\"%ls\"\n", index + 1, bstr.raw());
-                    else
-                        RTPrintf("VendorId:         %ls\n", bstr.raw());
-                    CHECK_ERROR_RET(DevPtr, COMGETTER(ProductId)(bstr.asOutParam()), rc);
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("USBFilterProductId%zu=\"%ls\"\n", index + 1, bstr.raw());
-                    else
-                        RTPrintf("ProductId:        %ls\n", bstr.raw());
-                    CHECK_ERROR_RET(DevPtr, COMGETTER(Revision)(bstr.asOutParam()), rc);
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("USBFilterRevision%zu=\"%ls\"\n", index + 1, bstr.raw());
-                    else
-                        RTPrintf("Revision:         %ls\n", bstr.raw());
-                    CHECK_ERROR_RET(DevPtr, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("USBFilterManufacturer%zu=\"%ls\"\n", index + 1, bstr.raw());
-                    else
-                        RTPrintf("Manufacturer:     %ls\n", bstr.raw());
-                    CHECK_ERROR_RET(DevPtr, COMGETTER(Product)(bstr.asOutParam()), rc);
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("USBFilterProduct%zu=\"%ls\"\n", index + 1, bstr.raw());
-                    else
-                        RTPrintf("Product:          %ls\n", bstr.raw());
-                    CHECK_ERROR_RET(DevPtr, COMGETTER(Remote)(bstr.asOutParam()), rc);
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("USBFilterRemote%zu=\"%ls\"\n", index + 1, bstr.raw());
-                    else
-                        RTPrintf("Remote:           %ls\n", bstr.raw());
-                    CHECK_ERROR_RET(DevPtr, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("USBFilterSerialNumber%zu=\"%ls\"\n", index + 1, bstr.raw());
-                    else
-                        RTPrintf("Serial Number:    %ls\n", bstr.raw());
+                        SHOW_UTF8_STRING("index", "Index:", FmtNm(szNm, "%zu", index));
+                    SHOW_BOOLEAN_PROP_EX(DevPtr, Active,   FmtNm(szNm, "USBFilterActive%zu", index + 1),       "Active:", "yes", "no");
+                    SHOW_STRING_PROP(DevPtr, Name,         FmtNm(szNm, "USBFilterName%zu", index + 1),         "Name:");
+                    SHOW_STRING_PROP(DevPtr, VendorId,     FmtNm(szNm, "USBFilterVendorId%zu", index + 1),     "VendorId:");
+                    SHOW_STRING_PROP(DevPtr, ProductId,    FmtNm(szNm, "USBFilterProductId%zu", index + 1),    "ProductId:");
+                    SHOW_STRING_PROP(DevPtr, Revision,     FmtNm(szNm, "USBFilterRevision%zu", index + 1),     "Revision:");
+                    SHOW_STRING_PROP(DevPtr, Manufacturer, FmtNm(szNm, "USBFilterManufacturer%zu", index + 1), "Manufacturer:");
+                    SHOW_STRING_PROP(DevPtr, Product,      FmtNm(szNm, "USBFilterProduct%zu", index + 1),      "Product:");
+                    SHOW_STRING_PROP(DevPtr, Remote,       FmtNm(szNm, "USBFilterRemote%zu", index + 1),       "Remote:");
+                    SHOW_STRING_PROP(DevPtr, SerialNumber, FmtNm(szNm, "USBFilterSerialNumber%zu", index + 1),       "Serial Number:");
                     if (details != VMINFO_MACHINEREADABLE)
                     {
                         ULONG fMaskedIfs;
                         CHECK_ERROR_RET(DevPtr, COMGETTER(MaskedInterfaces)(&fMaskedIfs), rc);
                         if (fMaskedIfs)
-                            RTPrintf("Masked Interfaces: %#010x\n", fMaskedIfs);
+                            RTPrintf("%-28s %#010x\n", "Masked Interfaces:", fMaskedIfs);
                         RTPrintf("\n");
                     }
                 }
@@ -2107,73 +2044,29 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 }
                 else
                 {
-                    for (size_t index = 0; index < coll.size(); ++index)
+                    /* This code is duplicated below, with USBAttach as prefix. */
+                    const char *pszPfx = "USBRemote";
+                    for (size_t i = 0; i < coll.size(); ++i)
                     {
-                        ComPtr<IHostUSBDevice> dev = coll[index];
+                        ComPtr<IHostUSBDevice> dev = coll[i];
 
-                        /* Query info. */
-                        Bstr id;
-                        CHECK_ERROR_RET(dev, COMGETTER(Id)(id.asOutParam()), rc);
-                        USHORT usVendorId;
-                        CHECK_ERROR_RET(dev, COMGETTER(VendorId)(&usVendorId), rc);
-                        USHORT usProductId;
-                        CHECK_ERROR_RET(dev, COMGETTER(ProductId)(&usProductId), rc);
+                        SHOW_STRING_PROP(dev, Id, FmtNm(szNm, "%sActive%zu", pszPfx, i + 1), "UUID:");
+                        SHOW_USHORT_PROP_EX2(dev, VendorId,  FmtNm(szNm, "%sVendorId%zu", pszPfx, i + 1),  "VendorId:",  "", "%#06x", "%#06x (%04X)");
+                        SHOW_USHORT_PROP_EX2(dev, ProductId, FmtNm(szNm, "%sProductId%zu", pszPfx, i + 1), "ProductId:", "", "%#06x", "%#06x (%04X)");
+
                         USHORT bcdRevision;
                         CHECK_ERROR_RET(dev, COMGETTER(Revision)(&bcdRevision), rc);
-
                         if (details == VMINFO_MACHINEREADABLE)
-                            RTPrintf("USBRemoteUUID%zu=\"%s\"\n"
-                                     "USBRemoteVendorId%zu=\"%#06x\"\n"
-                                     "USBRemoteProductId%zu=\"%#06x\"\n"
-                                     "USBRemoteRevision%zu=\"%#04x%02x\"\n",
-                                     index + 1, Utf8Str(id).c_str(),
-                                     index + 1, usVendorId,
-                                     index + 1, usProductId,
-                                     index + 1, bcdRevision >> 8, bcdRevision & 0xff);
+                            RTStrPrintf(szValue, sizeof(szValue), "%#04x%02x", bcdRevision >> 8, bcdRevision & 0xff);
                         else
-                            RTPrintf("UUID:               %s\n"
-                                     "VendorId:           %#06x (%04X)\n"
-                                     "ProductId:          %#06x (%04X)\n"
-                                     "Revision:           %u.%u (%02u%02u)\n",
-                                     Utf8Str(id).c_str(),
-                                     usVendorId, usVendorId, usProductId, usProductId,
-                                     bcdRevision >> 8, bcdRevision & 0xff,
-                                     bcdRevision >> 8, bcdRevision & 0xff);
+                            RTStrPrintf(szValue, sizeof(szValue), "%u.%u (%02u%02u)\n",
+                                        bcdRevision >> 8, bcdRevision & 0xff, bcdRevision >> 8, bcdRevision & 0xff);
+                        SHOW_UTF8_STRING(FmtNm(szNm, "%sRevision%zu", pszPfx, i + 1), "Revision:", szValue);
 
-                        /* optional stuff. */
-                        Bstr bstr;
-                        CHECK_ERROR_RET(dev, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
-                        if (!bstr.isEmpty())
-                        {
-                            if (details == VMINFO_MACHINEREADABLE)
-                                RTPrintf("USBRemoteManufacturer%zu=\"%ls\"\n", index + 1, bstr.raw());
-                            else
-                                RTPrintf("Manufacturer:       %ls\n", bstr.raw());
-                        }
-                        CHECK_ERROR_RET(dev, COMGETTER(Product)(bstr.asOutParam()), rc);
-                        if (!bstr.isEmpty())
-                        {
-                            if (details == VMINFO_MACHINEREADABLE)
-                                RTPrintf("USBRemoteProduct%zu=\"%ls\"\n", index + 1, bstr.raw());
-                            else
-                                RTPrintf("Product:            %ls\n", bstr.raw());
-                        }
-                        CHECK_ERROR_RET(dev, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
-                        if (!bstr.isEmpty())
-                        {
-                            if (details == VMINFO_MACHINEREADABLE)
-                                RTPrintf("USBRemoteSerialNumber%zu=\"%ls\"\n", index + 1, bstr.raw());
-                            else
-                                RTPrintf("SerialNumber:       %ls\n", bstr.raw());
-                        }
-                        CHECK_ERROR_RET(dev, COMGETTER(Address)(bstr.asOutParam()), rc);
-                        if (!bstr.isEmpty())
-                        {
-                            if (details == VMINFO_MACHINEREADABLE)
-                                RTPrintf("USBRemoteAddress%zu=\"%ls\"\n", index + 1, bstr.raw());
-                            else
-                                RTPrintf("Address:            %ls\n", bstr.raw());
-                        }
+                        SHOW_STRING_PROP_NOT_EMPTY(dev, Manufacturer, FmtNm(szNm, "%sManufacturer%zu", pszPfx, i + 1), "Manufacturer:");
+                        SHOW_STRING_PROP_NOT_EMPTY(dev, Product,      FmtNm(szNm, "%sProduct%zu", pszPfx, i + 1),      "Product:");
+                        SHOW_STRING_PROP_NOT_EMPTY(dev, SerialNumber, FmtNm(szNm, "%sSerialNumber%zu", pszPfx, i + 1), "SerialNumber:");
+                        SHOW_STRING_PROP_NOT_EMPTY(dev, Address,      FmtNm(szNm, "%sAddress%zu", pszPfx, i + 1),      "Address:");
 
                         if (details != VMINFO_MACHINEREADABLE)
                             RTPrintf("\n");
@@ -2196,73 +2089,29 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 }
                 else
                 {
-                    for (size_t index = 0; index < coll.size(); ++index)
+                    /* This code is duplicated below, with USBAttach as prefix. */
+                    const char *pszPfx = "USBAttach";
+                    for (size_t i = 0; i < coll.size(); ++i)
                     {
-                        ComPtr<IUSBDevice> dev = coll[index];
+                        ComPtr<IHostUSBDevice> dev = coll[i];
 
-                        /* Query info. */
-                        Bstr id;
-                        CHECK_ERROR_RET(dev, COMGETTER(Id)(id.asOutParam()), rc);
-                        USHORT usVendorId;
-                        CHECK_ERROR_RET(dev, COMGETTER(VendorId)(&usVendorId), rc);
-                        USHORT usProductId;
-                        CHECK_ERROR_RET(dev, COMGETTER(ProductId)(&usProductId), rc);
+                        SHOW_STRING_PROP(dev, Id, FmtNm(szNm, "%sActive%zu", pszPfx, i + 1), "UUID:");
+                        SHOW_USHORT_PROP_EX2(dev, VendorId,  FmtNm(szNm, "%sVendorId%zu", pszPfx, i + 1),  "VendorId:",  "", "%#06x", "%#06x (%04X)");
+                        SHOW_USHORT_PROP_EX2(dev, ProductId, FmtNm(szNm, "%sProductId%zu", pszPfx, i + 1), "ProductId:", "", "%#06x", "%#06x (%04X)");
+
                         USHORT bcdRevision;
                         CHECK_ERROR_RET(dev, COMGETTER(Revision)(&bcdRevision), rc);
-
                         if (details == VMINFO_MACHINEREADABLE)
-                            RTPrintf("USBAttachedUUID%zu=\"%s\"\n"
-                                     "USBAttachedVendorId%zu=\"%#06x\"\n"
-                                     "USBAttachedProductId%zu=\"%#06x\"\n"
-                                     "USBAttachedRevision%zu=\"%#04x%02x\"\n",
-                                     index + 1, Utf8Str(id).c_str(),
-                                     index + 1, usVendorId,
-                                     index + 1, usProductId,
-                                     index + 1, bcdRevision >> 8, bcdRevision & 0xff);
+                            RTStrPrintf(szValue, sizeof(szValue), "%#04x%02x", bcdRevision >> 8, bcdRevision & 0xff);
                         else
-                            RTPrintf("UUID:               %s\n"
-                                     "VendorId:           %#06x (%04X)\n"
-                                     "ProductId:          %#06x (%04X)\n"
-                                     "Revision:           %u.%u (%02u%02u)\n",
-                                     Utf8Str(id).c_str(),
-                                     usVendorId, usVendorId, usProductId, usProductId,
-                                     bcdRevision >> 8, bcdRevision & 0xff,
-                                     bcdRevision >> 8, bcdRevision & 0xff);
+                            RTStrPrintf(szValue, sizeof(szValue), "%u.%u (%02u%02u)\n",
+                                        bcdRevision >> 8, bcdRevision & 0xff, bcdRevision >> 8, bcdRevision & 0xff);
+                        SHOW_UTF8_STRING(FmtNm(szNm, "%sRevision%zu", pszPfx, i + 1), "Revision:", szValue);
 
-                        /* optional stuff. */
-                        Bstr bstr;
-                        CHECK_ERROR_RET(dev, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
-                        if (!bstr.isEmpty())
-                        {
-                            if (details == VMINFO_MACHINEREADABLE)
-                                RTPrintf("USBAttachedManufacturer%zu=\"%ls\"\n", index + 1, bstr.raw());
-                            else
-                                RTPrintf("Manufacturer:       %ls\n", bstr.raw());
-                        }
-                        CHECK_ERROR_RET(dev, COMGETTER(Product)(bstr.asOutParam()), rc);
-                        if (!bstr.isEmpty())
-                        {
-                            if (details == VMINFO_MACHINEREADABLE)
-                                RTPrintf("USBAttachedProduct%zu=\"%ls\"\n", index + 1, bstr.raw());
-                            else
-                                RTPrintf("Product:            %ls\n", bstr.raw());
-                        }
-                        CHECK_ERROR_RET(dev, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
-                        if (!bstr.isEmpty())
-                        {
-                            if (details == VMINFO_MACHINEREADABLE)
-                                RTPrintf("USBAttachedSerialNumber%zu=\"%ls\"\n", index + 1, bstr.raw());
-                            else
-                                RTPrintf("SerialNumber:       %ls\n", bstr.raw());
-                        }
-                        CHECK_ERROR_RET(dev, COMGETTER(Address)(bstr.asOutParam()), rc);
-                        if (!bstr.isEmpty())
-                        {
-                            if (details == VMINFO_MACHINEREADABLE)
-                                RTPrintf("USBAttachedAddress%zu=\"%ls\"\n", index + 1, bstr.raw());
-                            else
-                                RTPrintf("Address:            %ls\n", bstr.raw());
-                        }
+                        SHOW_STRING_PROP_NOT_EMPTY(dev, Manufacturer, FmtNm(szNm, "%sManufacturer%zu", pszPfx, i + 1), "Manufacturer:");
+                        SHOW_STRING_PROP_NOT_EMPTY(dev, Product,      FmtNm(szNm, "%sProduct%zu", pszPfx, i + 1),      "Product:");
+                        SHOW_STRING_PROP_NOT_EMPTY(dev, SerialNumber, FmtNm(szNm, "%sSerialNumber%zu", pszPfx, i + 1), "SerialNumber:");
+                        SHOW_STRING_PROP_NOT_EMPTY(dev, Address,      FmtNm(szNm, "%sAddress%zu", pszPfx, i + 1),      "Address:");
 
                         if (details != VMINFO_MACHINEREADABLE)
                             RTPrintf("\n");
@@ -2329,7 +2178,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
      * Shared folders
      */
     if (details != VMINFO_MACHINEREADABLE)
-        RTPrintf("Shared folders:  ");
+        RTPrintf("Shared folders:");
     uint32_t numSharedFolders = 0;
 #if 0 // not yet implemented
     /* globally shared folders first */
@@ -2366,10 +2215,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 RTPrintf("\n\n");
             if (details == VMINFO_MACHINEREADABLE)
             {
-                RTPrintf("SharedFolderNameMachineMapping%zu=\"%ls\"\n", i + 1,
-                         name.raw());
-                RTPrintf("SharedFolderPathMachineMapping%zu=\"%ls\"\n", i + 1,
-                         hostPath.raw());
+                outputMachineReadableString(FmtNm(szNm, "SharedFolderNameMachineMapping%zu", i + 1), &name);
+                outputMachineReadableString(FmtNm(szNm, "SharedFolderPathMachineMapping%zu", i + 1), &hostPath);
             }
             else
                 RTPrintf("Name: '%ls', Host path: '%ls' (machine mapping), %s\n",
@@ -2395,10 +2242,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 RTPrintf("\n\n");
             if (details == VMINFO_MACHINEREADABLE)
             {
-                RTPrintf("SharedFolderNameTransientMapping%zu=\"%ls\"\n", i + 1,
-                         name.raw());
-                RTPrintf("SharedFolderPathTransientMapping%zu=\"%ls\"\n", i + 1,
-                         hostPath.raw());
+                outputMachineReadableString(FmtNm(szNm, "SharedFolderNameTransientMapping%zu", i + 1), &name);
+                outputMachineReadableString(FmtNm(szNm, "SharedFolderPathTransientMapping%zu", i + 1), &hostPath);
             }
             else
                 RTPrintf("Name: '%ls', Host path: '%ls' (transient mapping)\n", name.raw(), hostPath.raw());
@@ -2417,8 +2262,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
          */
         ComPtr<IVRDEServerInfo> vrdeServerInfo;
         CHECK_ERROR_RET(pConsole, COMGETTER(VRDEServerInfo)(vrdeServerInfo.asOutParam()), rc);
-        BOOL    Active = FALSE;
-        ULONG   NumberOfClients = 0;
+        BOOL    fActive = FALSE;
+        ULONG   cNumberOfClients = 0;
         LONG64  BeginTime = 0;
         LONG64  EndTime = 0;
         LONG64  BytesSent = 0;
@@ -2434,8 +2279,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
         if (!vrdeServerInfo.isNull())
         {
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(Active)(&Active), rc);
-            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(NumberOfClients)(&NumberOfClients), rc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(Active)(&fActive), rc);
+            CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(NumberOfClients)(&cNumberOfClients), rc);
             CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BeginTime)(&BeginTime), rc);
             CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(EndTime)(&EndTime), rc);
             CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BytesSent)(&BytesSent), rc);
@@ -2450,40 +2295,20 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(EncryptionStyle)(&EncryptionStyle), rc);
         }
 
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("VRDEActiveConnection=\"%s\"\n", Active ? "on": "off");
-        else
-            RTPrintf("VRDE Connection:    %s\n", Active? "active": "not active");
+        SHOW_BOOL_VALUE_EX("VRDEActiveConnection", "VRDE Connection:", fActive, "active", "not active");
+        SHOW_ULONG_VALUE("VRDEClients=", "Clients so far:", cNumberOfClients, "");
 
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("VRDEClients=%d\n", NumberOfClients);
-        else
-            RTPrintf("Clients so far:     %d\n", NumberOfClients);
-
-        if (NumberOfClients > 0)
+        if (cNumberOfClients > 0)
         {
-            char timestr[128];
-
-            if (Active)
-            {
-                makeTimeStr(timestr, sizeof(timestr), BeginTime);
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("VRDEStartTime=\"%s\"\n", timestr);
-                else
-                    RTPrintf("Start time:         %s\n", timestr);
-            }
+            char szTimeValue[128];
+            makeTimeStr(szTimeValue, sizeof(szTimeValue), BeginTime);
+            if (fActive)
+                SHOW_UTF8_STRING("VRDEStartTime", "Start time:", szTimeValue);
             else
             {
-                makeTimeStr(timestr, sizeof(timestr), BeginTime);
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("VRDELastStartTime=\"%s\"\n", timestr);
-                else
-                    RTPrintf("Last started:       %s\n", timestr);
-                makeTimeStr(timestr, sizeof(timestr), EndTime);
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("VRDELastEndTime=\"%s\"\n", timestr);
-                else
-                    RTPrintf("Last ended:         %s\n", timestr);
+                SHOW_UTF8_STRING("VRDELastStartTime", "Last started:", szTimeValue);
+                makeTimeStr(szTimeValue, sizeof(szTimeValue), EndTime);
+                SHOW_UTF8_STRING("VRDELastEndTime", "Last ended:", szTimeValue);
             }
 
             int64_t ThroughputSend = 0;
@@ -2493,48 +2318,22 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 ThroughputSend = (BytesSent * 1000) / (EndTime - BeginTime);
                 ThroughputReceive = (BytesReceived * 1000) / (EndTime - BeginTime);
             }
+            SHOW_LONG64_VALUE("VRDEBytesSent", "Sent:", BytesSent, "Bytes");
+            SHOW_LONG64_VALUE("VRDEThroughputSend", "Average speed:", ThroughputSend, "B/s");
+            SHOW_LONG64_VALUE("VRDEBytesSentTotal", "Sent total:", BytesSentTotal, "Bytes");
 
-            if (details == VMINFO_MACHINEREADABLE)
+            SHOW_LONG64_VALUE("VRDEBytesReceived", "Received:", BytesReceived, "Bytes");
+            SHOW_LONG64_VALUE("VRDEThroughputReceive", "Speed:", ThroughputReceive, "B/s");
+            SHOW_LONG64_VALUE("VRDEBytesReceivedTotal", "Received total:", BytesReceivedTotal, "Bytes");
+
+            if (fActive)
             {
-                RTPrintf("VRDEBytesSent=%lld\n", BytesSent);
-                RTPrintf("VRDEThroughputSend=%lld\n", ThroughputSend);
-                RTPrintf("VRDEBytesSentTotal=%lld\n", BytesSentTotal);
-
-                RTPrintf("VRDEBytesReceived=%lld\n", BytesReceived);
-                RTPrintf("VRDEThroughputReceive=%lld\n", ThroughputReceive);
-                RTPrintf("VRDEBytesReceivedTotal=%lld\n", BytesReceivedTotal);
-            }
-            else
-            {
-                RTPrintf("Sent:               %lld Bytes\n", BytesSent);
-                RTPrintf("Average speed:      %lld B/s\n", ThroughputSend);
-                RTPrintf("Sent total:         %lld Bytes\n", BytesSentTotal);
-
-                RTPrintf("Received:           %lld Bytes\n", BytesReceived);
-                RTPrintf("Speed:              %lld B/s\n", ThroughputReceive);
-                RTPrintf("Received total:     %lld Bytes\n", BytesReceivedTotal);
-            }
-
-            if (Active)
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                {
-                    RTPrintf("VRDEUserName=\"%ls\"\n", User.raw());
-                    RTPrintf("VRDEDomain=\"%ls\"\n", Domain.raw());
-                    RTPrintf("VRDEClientName=\"%ls\"\n", ClientName.raw());
-                    RTPrintf("VRDEClientIP=\"%ls\"\n", ClientIP.raw());
-                    RTPrintf("VRDEClientVersion=%d\n",  ClientVersion);
-                    RTPrintf("VRDEEncryption=\"%s\"\n", EncryptionStyle == 0? "RDP4": "RDP5 (X.509)");
-                }
-                else
-                {
-                    RTPrintf("User name:          %ls\n", User.raw());
-                    RTPrintf("Domain:             %ls\n", Domain.raw());
-                    RTPrintf("Client name:        %ls\n", ClientName.raw());
-                    RTPrintf("Client IP:          %ls\n", ClientIP.raw());
-                    RTPrintf("Client version:     %d\n",  ClientVersion);
-                    RTPrintf("Encryption:         %s\n", EncryptionStyle == 0? "RDP4": "RDP5 (X.509)");
-                }
+                SHOW_BSTR_STRING("VRDEUserName", "User name:", User);
+                SHOW_BSTR_STRING("VRDEDomain", "Domain:", Domain);
+                SHOW_BSTR_STRING("VRDEClientName", "Client name:", ClientName);
+                SHOW_BSTR_STRING("VRDEClientIP", "Client IP:", ClientIP);
+                SHOW_ULONG_VALUE("VRDEClientVersion", "Client version:", ClientVersion, "");
+                SHOW_UTF8_STRING("VRDEEncryption", "Encryption:", EncryptionStyle == 0 ? "RDP4" : "RDP5 (X.509)");
             }
         }
 
@@ -2583,51 +2382,25 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             }
         }
 
-        if (details == VMINFO_MACHINEREADABLE)
-        {
-            RTPrintf("videocap=\"%s\"\n",       fCaptureVideo ? "on" : "off");
+        SHOW_BOOL_VALUE_EX("videocap", "Capturing:", fCaptureVideo, "active", "not active");
 # ifdef VBOX_WITH_AUDIO_VIDEOREC
-            RTPrintf("videocap_audio=\"%s\"\n", fCaptureAudio ? "on" : "off");
+        SHOW_BOOL_VALUE_EX("videocapaudio", "Capture audio:", fCaptureAudio, "active", "not active");
 # endif
-            RTPrintf("videocapscreens=");
-            bool fComma = false;
-            for (unsigned i = 0; i < screens.size(); i++)
-                if (screens[i])
-                {
-                    RTPrintf("%s%u", fComma ? "," : "", i);
-                    fComma = true;
-                }
-            RTPrintf("\n");
-            RTPrintf("videocapfile=\"%ls\"\n", bstrFile.raw());
-            RTPrintf("videocapres=%ux%u\n", (unsigned)Width, (unsigned)Height);
-            RTPrintf("videocaprate=%u\n", (unsigned)Rate);
-            RTPrintf("videocapfps=%u\n", (unsigned)Fps);
-            RTPrintf("videocapopts=%ls\n", bstrOptions.raw());
-        }
-        else
-        {
-            RTPrintf("Capturing:          %s\n", fCaptureVideo ? "active" : "not active");
-# ifdef VBOX_WITH_AUDIO_VIDEOREC
-            RTPrintf("Capture audio:      %s\n", fCaptureAudio ? "active" : "not active");
-# endif
-            RTPrintf("Capture screens:    ");
-            bool fComma = false;
-            for (unsigned i = 0; i < screens.size(); i++)
-                if (screens[i])
-                {
-                    RTPrintf("%s%u", fComma ? "," : "", i);
-                    fComma = true;
-                }
-            RTPrintf("\n");
-            RTPrintf("Capture file:       %ls\n", bstrFile.raw());
-            RTPrintf("Capture dimensions: %ux%u\n", Width, Height);
-            RTPrintf("Capture rate:       %u kbps\n", Rate);
-            RTPrintf("Capture FPS:        %u\n", Fps);
-            RTPrintf("Capture options:    %ls\n", bstrOptions.raw());
-            RTPrintf("\n");
+        szValue[0] = '\0';
+        for (size_t i = 0, off = 0; i < screens.size(); i++)
+            if (screens[i] && off < sizeof(szValue) - 3)
+                off += RTStrPrintf(&szValue[off], sizeof(szValue) - off, off ? ",%zu" : "%zu", i);
+        SHOW_UTF8_STRING("videocapscreens", "Capture screens:", szValue);
+        SHOW_BSTR_STRING("videocapfile", "Capture file:", bstrFile);
+        RTStrPrintf(szValue, sizeof(szValue), "%ux%u", Width, Height);
+        SHOW_UTF8_STRING("videocapres", "Capture dimensions:", szValue);
+        SHOW_ULONG_VALUE("videocaprate", "Capture rate:", Rate, "kbps");
+        SHOW_ULONG_VALUE("videocapfps", "Capture FPS:", Fps, "kbps");
+        SHOW_BSTR_STRING("videocapopts", "Capture options:", bstrOptions);
 
-            /** @todo Add more audio capturing profile / information here. */
-        }
+        if (details != VMINFO_MACHINEREADABLE)
+            RTPrintf("\n");
+        /** @todo Add more audio capturing profile / information here. */
     }
 #endif /* VBOX_WITH_VIDEOREC */
 
@@ -2649,15 +2422,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("Guest:\n\n");
 
-    ULONG guestVal;
-    rc = machine->COMGETTER(MemoryBalloonSize)(&guestVal);
-    if (SUCCEEDED(rc))
-    {
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("GuestMemoryBalloon=%d\n", guestVal);
-        else
-            RTPrintf("Configured memory balloon size:      %d MB\n", guestVal);
-    }
+    SHOW_ULONG_PROP(machine, MemoryBalloonSize, "GuestMemoryBalloon", "Configured memory balloon size:", "MB");
 
     if (pConsole)
     {
@@ -2665,27 +2430,14 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         rc = pConsole->COMGETTER(Guest)(guest.asOutParam());
         if (SUCCEEDED(rc) && !guest.isNull())
         {
-            Bstr guestString;
-            rc = guest->COMGETTER(OSTypeId)(guestString.asOutParam());
-            if (   SUCCEEDED(rc)
-                && !guestString.isEmpty())
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("GuestOSType=\"%ls\"\n", guestString.raw());
-                else
-                    RTPrintf("OS type:                             %ls\n", guestString.raw());
-            }
+            SHOW_STRING_PROP_NOT_EMPTY(guest, OSTypeId, "GuestOSType", "OS type:");
 
             AdditionsRunLevelType_T guestRunLevel; /** @todo Add a runlevel-to-string (e.g. 0 = "None") method? */
             rc = guest->COMGETTER(AdditionsRunLevel)(&guestRunLevel);
             if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("GuestAdditionsRunLevel=%u\n", guestRunLevel);
-                else
-                    RTPrintf("Additions run level:                 %u\n", guestRunLevel);
-            }
+                SHOW_ULONG_VALUE("GuestAdditionsRunLevel", "Additions run level:", (ULONG)guestRunLevel, "");
 
+            Bstr guestString;
             rc = guest->COMGETTER(AdditionsVersion)(guestString.asOutParam());
             if (   SUCCEEDED(rc)
                 && !guestString.isEmpty())
@@ -2694,11 +2446,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 rc = guest->COMGETTER(AdditionsRevision)(&uRevision);
                 if (FAILED(rc))
                     uRevision = 0;
-
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("GuestAdditionsVersion=\"%ls r%u\"\n", guestString.raw(), uRevision);
-                else
-                    RTPrintf("Additions version:                   %ls r%u\n\n", guestString.raw(), uRevision);
+                RTStrPrintf(szValue, sizeof(szValue), "%ls r%u", guestString.raw(), uRevision);
+                SHOW_UTF8_STRING("GuestAdditionsVersion", "Additions version", szValue);
             }
 
             if (details != VMINFO_MACHINEREADABLE)
