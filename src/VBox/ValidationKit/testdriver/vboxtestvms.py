@@ -34,11 +34,13 @@ import os;
 import re;
 import random;
 import socket;
+import string;
 
 # Validation Kit imports.
 from testdriver import base;
 from testdriver import reporter;
 from testdriver import vboxcon;
+from common import utils;
 
 
 # All virtualization modes.
@@ -52,6 +54,18 @@ g_dsVirtModeDescs  = {
     'hwvirt'    : 'HwVirt',
     'hwvirt-np' : 'NestedPaging'
 };
+
+## @name VM grouping flags
+## @{
+g_kfGrpSmoke     = 0x0001;                          ##< Smoke test VM.
+g_kfGrpStandard  = 0x0002;                          ##< Standard test VM.
+g_kfGrpStdSmoke  = g_kfGrpSmoke | g_kfGrpStandard;  ##< shorthand.
+g_kfGrpWithGAs   = 0x0004;                          ##< The VM has guest additions installed.
+g_kfGrpNoTxs     = 0x0008;                          ##< The VM lacks test execution service.
+g_kfGrpAncient   = 0x1000;                          ##< Ancient OS.
+g_kfGrpExotic    = 0x2000;                          ##< Exotic OS.
+## @}
+
 
 ## @name Flags.
 ## @{
@@ -106,13 +120,15 @@ g_aaNameToDetails = \
     [ 'Solaris',        'Solaris',               g_k32,    1, 256, ['sol10',  'sol10u[0-9]']],
     [ 'Solaris_64',     'Solaris_64',            g_k64,    1, 256, ['sol10-64', 'sol10u-64[0-9]']],
     [ 'Solaris_64',     'Solaris11_64',          g_k64,    1, 256, ['sol11u1']],
-    [ 'BSD',            'FreeBSD_64',            g_k32_64, 1, 1, ['bs-.*']], # boot sectors, wanted 64-bit type.
+    [ 'BSD',            'FreeBSD_64',            g_k32_64, 1, 1,   ['bs-.*']], # boot sectors, wanted 64-bit type.
+    [ 'DOS',            'DOS',                   g_k32,    1, 1,   ['bs-.*']],
 ];
 
 
 ## @name Guest OS type string constants.
 ## @{
 g_ksGuestOsTypeDarwin  = 'darwin';
+g_ksGuestOsTypeDOS     = 'dos';
 g_ksGuestOsTypeFreeBSD = 'freebsd';
 g_ksGuestOsTypeLinux   = 'linux';
 g_ksGuestOsTypeOS2     = 'os2';
@@ -149,6 +165,7 @@ g_kasParavirtProviders = ( g_ksParavirtProviderNone, g_ksParavirtProviderDefault
 #   during independent test runs when paravirt provider is taken randomly.
 g_kdaParavirtProvidersSupported = {
     g_ksGuestOsTypeDarwin  : ( g_ksParavirtProviderMinimal, ),
+    g_ksGuestOsTypeDOS     : ( g_ksParavirtProviderNone, ),
     g_ksGuestOsTypeFreeBSD : ( g_ksParavirtProviderNone, ),
     g_ksGuestOsTypeLinux   : ( g_ksParavirtProviderNone, g_ksParavirtProviderHyperV, g_ksParavirtProviderKVM),
     g_ksGuestOsTypeOS2     : ( g_ksParavirtProviderNone, ),
@@ -221,10 +238,12 @@ class TestVm(object):
         self.fVmmDevTestingMmio      = fVmmDevTestingMmio;
         self.sFirmwareType           = sFirmwareType;
         self.sChipsetType            = sChipsetType;
+        self.fCom1RawFile            = False;
 
         self.fSnapshotRestoreCurrent = False;        # Whether to restore execution on the current snapshot.
         self.fSkip                   = False;        # All VMs are included in the configured set by default.
         self.aInfo                   = None;
+        self.sCom1RawFile            = None;         # Set by createVmInner and getReconfiguredVm if fCom1RawFile is set.
         self._guessStuff(fRandomPvPMode);
 
     def _mkCanonicalGuestOSType(self, sType):
@@ -236,6 +255,8 @@ class TestVm(object):
             return g_ksGuestOsTypeDarwin
         if sType.lower().startswith('bsd'):
             return g_ksGuestOsTypeFreeBSD
+        if sType.lower().startswith('dos'):
+            return g_ksGuestOsTypeDOS
         if sType.lower().startswith('linux'):
             return g_ksGuestOsTypeLinux
         if sType.lower().startswith('os2'):
@@ -287,6 +308,8 @@ class TestVm(object):
                 self.sGuestOsType = g_ksGuestOsTypeLinux;
             elif self.sKind.find("Solaris") >= 0:
                 self.sGuestOsType = g_ksGuestOsTypeSolaris;
+            elif self.sKind.find("DOS") >= 0:
+                self.sGuestOsType = g_ksGuestOsTypeDOS;
             else:
                 reporter.fatal('The OS of test VM "%s", sKind="%s" cannot be guessed' % (self.sVmName, self.sKind));
 
@@ -361,6 +384,12 @@ class TestVm(object):
 
         return self.createVmInner(oTestDrv, eMyNic0AttachType, sMyDvdImage);
 
+    def _generateRawPortFilename(self, oTestDrv, sInfix, sSuffix):
+        """ Generates a raw port filename. """
+        random.seed();
+        sRandom = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10));
+        return os.path.join(oTestDrv.sScratchPath, self.sVmName + sInfix + sRandom + sSuffix);
+
     def createVmInner(self, oTestDrv, eNic0AttachType, sDvdImage):
         """
         Same as createVm but parameters resolved.
@@ -369,6 +398,8 @@ class TestVm(object):
         """
         reporter.log2('');
         reporter.log2('Calling createTestVM on %s...' % (self.sVmName,))
+        if self.fCom1RawFile:
+            self.sCom1RawFile = self._generateRawPortFilename(oTestDrv, '-com1-', '.out');
         return oTestDrv.createTestVM(self.sVmName,
                                      1,                 # iGroup
                                      sHd                = self.sHd,
@@ -383,7 +414,9 @@ class TestVm(object):
                                      fVmmDevTestingPart = self.fVmmDevTestingPart,
                                      fVmmDevTestingMmio = self.fVmmDevTestingPart,
                                      sFirmwareType      = self.sFirmwareType,
-                                     sChipsetType       = self.sChipsetType);
+                                     sChipsetType       = self.sChipsetType,
+                                     sCom1RawFile       = self.sCom1RawFile if self.fCom1RawFile else None
+                                     );
 
     def getReconfiguredVm(self, oTestDrv, cCpus, sVirtMode, sParavirtMode = None):
         """
@@ -437,6 +470,16 @@ class TestVm(object):
                                 elif not oOsType.is64Bit and sVirtMode != 'raw':
                                     fRc = fRc and oSession.setOsType(oOsType.id + '_64');
 
+                        # New serial raw file.
+                        if fRc and self.fCom1RawFile:
+                            self.sCom1RawFile = self._generateRawPortFilename(oTestDrv, '-com1-', '.out');
+                            utils.noxcptDeleteFile(self.sCom1RawFile);
+                            fRc = oSession.setupSerialToRawFile(0, self.sCom1RawFile);
+
+                        # Make life simpler for child classes.
+                        if fRc:
+                            fRc = self._childVmReconfig(oTestDrv, oVM, oSession);
+
                         fRc = fRc and oSession.saveSettings();
                         if not oSession.close():
                             fRc = False;
@@ -444,6 +487,10 @@ class TestVm(object):
                 return (True, oVM);
         return (fRc, None);
 
+    def _childVmReconfig(self, oTestDrv, oVM, oSession):
+        """ Hook into getReconfiguredVm() for children. """
+        _ = oTestDrv; _ = oVM; _ = oSession;
+        return True;
 
     def isWindows(self):
         """ Checks if it's a Windows VM. """
@@ -544,19 +591,62 @@ class BootSectorTestVm(TestVm):
         return self.f64BitRequired;
 
 
+class AncientTestVm(TestVm):
+    """
+    A ancient Test VM, using the serial port for communicating results.
 
-#class AncientTestVm(object):
-#    """
-#    A ancient Test VM, using the serial port for communicating results.
-#
-#    We're looking for 'PASSED' and 'FAILED' lines in the COM1 output.
-#    """
-#
-#    def __init__(self, oSet, sVmName, fGrouping = , sHd = None, sKind = None, acCpusSup = None, asVirtModesSup = None, # pylint: disable=R0913
-#                 fIoApic = None, fPae = None, sNic0AttachType = None, sFloppy = None, sFirmwareType = 'bios',
-#                 sChipsetType = 'piix3', sHddControllerType = 'IDE Controller', sDvdControllerType = 'IDE Controller'):
-#        TestVm.__init__(self, oSet, sVmName,
-#
+    We're looking for 'PASSED' and 'FAILED' lines in the COM1 output.
+    """
+
+
+    def __init__(self, # pylint: disable=R0913
+                 sVmName,                                   # type: str
+                 fGrouping = g_kfGrpAncient | g_kfGrpNoTxs, # type: int
+                 sHd = None,                                # type: str
+                 sKind = None,                              # type: str
+                 acCpusSup = None,                          # type: List[int]
+                 asVirtModesSup = None,                     # type: List[str]
+                 sNic0AttachType = None,                    # type: str
+                 sFloppy = None,                            # type: str
+                 sFirmwareType = 'bios',                    # type: str
+                 sChipsetType = 'piix3',                    # type: str
+                 sHddControllerName = 'IDE Controller',     # type: str
+                 sDvdControllerName = 'IDE Controller',     # type: str
+                 cMBRamMax = None,                          # type: int
+                 ):
+        TestVm.__init__(self,
+                        sVmName,
+                        fGrouping = fGrouping,
+                        sHd = sHd,
+                        sKind = sKind,
+                        acCpusSup = [1] if acCpusSup is None else acCpusSup,
+                        asVirtModesSup = asVirtModesSup,
+                        sNic0AttachType = sNic0AttachType,
+                        sFloppy = sFloppy,
+                        sFirmwareType = sFirmwareType,
+                        sChipsetType = sChipsetType,
+                        sHddControllerType = sHddControllerName,
+                        sDvdControllerType = sDvdControllerName,
+                        asParavirtModesSup = (g_ksParavirtProviderNone,)
+                        );
+        self.fCom1RawFile = True;
+        self.cMBRamMax= cMBRamMax;
+
+
+    def _childVmReconfig(self, oTestDrv, oVM, oSession):
+        _ = oVM; _ = oTestDrv;
+        fRc = True;
+
+        # DOS 4.01 doesn't like the default 32MB of memory.
+        if fRc and self.cMBRamMax is not None:
+            try:
+                cMBRam = oSession.o.machine.memorySize;
+            except:
+                cMBRam = self.cMBRamMax + 4;
+            if self.cMBRamMax < cMBRam:
+                fRc = oSession.setRamSize(self.cMBRamMax);
+
+        return fRc;
 
 
 class TestVmSet(object):
@@ -925,13 +1015,13 @@ class TestVmManager(object):
 
     ## @name VM grouping flags
     ## @{
-    kfGrpSmoke     = 0x0001;               ##< Smoke test VM.
-    kfGrpStandard  = 0x0002;               ##< Standard test VM.
-    kfGrpStdSmoke  = kfGrpSmoke | kfGrpStandard;  ##< shorthand.
-    kfGrpWithGAs   = 0x0004;               ##< The VM has guest additions installed.
-    kfGrpNoTxs     = 0x0008;               ##< The VM lacks test execution service.
-    kfGrpAncient   = 0x1000;               ##< Ancient OS.
-    kfGrpExotic    = 0x2000;               ##< Exotic OS.
+    kfGrpSmoke     = g_kfGrpSmoke;
+    kfGrpStandard  = g_kfGrpStandard;
+    kfGrpStdSmoke  = g_kfGrpStdSmoke;
+    kfGrpWithGAs   = g_kfGrpWithGAs;
+    kfGrpNoTxs     = g_kfGrpNoTxs;
+    kfGrpAncient   = g_kfGrpAncient;
+    kfGrpExotic    = g_kfGrpExotic;
     ## @}
 
     kaTestVMs = (
@@ -961,7 +1051,7 @@ class TestVmManager(object):
         TestVm('tst-nt350',                 kfGrpAncient,               sHd = '5.2/great-old-ones/t-nt350/t-nt350.vdi',
                sKind = 'WindowsNT3x', acCpusSup = [1], sHddControllerType = 'BusLogic SCSI Controller',
                sDvdControllerType = 'BusLogic SCSI Controller'),
-        TestVm('tst-nt351',                 kfGrpAncient,               sHd = '5.2/great-old-ones/t-nt350/t-nt350.vdi',
+        TestVm('tst-nt351',                 kfGrpAncient,               sHd = '5.2/great-old-ones/t-nt350/t-nt351.vdi',
                sKind = 'WindowsNT3x', acCpusSup = [1], sHddControllerType = 'BusLogic SCSI Controller',
                sDvdControllerType = 'BusLogic SCSI Controller'),
 
@@ -1015,7 +1105,13 @@ class TestVmManager(object):
         #       sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi', sChipsetType = 'ich9'),
 
         # DOS and Old Windows.
-        # todo ...
+        AncientTestVm('tst-dos20',              sKind = 'DOS',  sHd = '5.2/great-old-ones/t-dos20/t-dos20.vdi'),
+        AncientTestVm('tst-dos71',              sKind = 'DOS',  sHd = '5.2/great-old-ones/t-dos71/t-dos71.vdi'),
+        AncientTestVm('tst-dos401-win30me',     sKind = 'DOS',  sHd = '5.2/great-old-ones/t-dos401-win30me/t-dos401-win30me.vdi',
+                      cMBRamMax = 4),
+        AncientTestVm('tst-dos5-win311a',       sKind = 'DOS',  sHd = '5.2/great-old-ones/t-dos5-win311a/t-dos5-win311a.vdi'),
+        AncientTestVm('tst-dos622',             sKind = 'DOS',  sHd = '5.2/great-old-ones/t-dos622/t-dos622.vdi'),
+        AncientTestVm('tst-dos622-emm386',      sKind = 'DOS',  sHd = '5.2/great-old-ones/t-dos622-emm386/t-dos622-emm386.vdi'),
     );
 
 

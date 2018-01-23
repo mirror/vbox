@@ -2114,6 +2114,23 @@ class TestDriver(base.TestDriver):                                              
             if oNic.traceEnabled:
                 reporter.log("    traceFile:      %s" % (oNic.traceFile));
             self.processPendingEvents();
+
+        reporter.log("  Serial ports:");
+        for iSlot in range(0, 8):
+            try:    oPort = oVM.getSerialPort(iSlot)
+            except: break;
+            if oPort is not None and oPort.enabled:
+                enmHostMode = oPort.hostMode;
+                if   enmHostMode == vboxcon.PortMode_Disconnected:      sType = "Disconnected";
+                elif enmHostMode == vboxcon.PortMode_HostPipe:          sType = "HostPipe";
+                elif enmHostMode == vboxcon.PortMode_HostDevice:        sType = "HostDevice";
+                elif enmHostMode == vboxcon.PortMode_RawFile:           sType = "RawFile";
+                elif enmHostMode == vboxcon.PortMode_TCP:               sType = "TCP";
+                else: sType = "unknown %s" % (enmHostMode);
+                reporter.log("    slot #%d: hostMode: %s (%s)  I/O port: %s  IRQ: %s  server: %s  path: %s" %
+                             (iSlot, sType, enmHostMode, oPort.IOBase, oPort.IRQ, oPort.server, oPort.path,) );
+                self.processPendingEvents();
+
         return True;
 
     def logVmInfo(self, oVM):                                                   # pylint: disable=R0915,R0912
@@ -2178,12 +2195,32 @@ class TestDriver(base.TestDriver):                                              
     #
 
     # pylint: disable=R0913,R0914,R0915
-    def createTestVM(self, sName, iGroup, sHd = None, cMbRam = None, cCpus = 1, fVirtEx = None, fNestedPaging = None, \
-                     sDvdImage = None, sKind = "Other", fIoApic = None, fPae = None, fFastBootLogo = True, \
-                     eNic0Type = None, eNic0AttachType = None, sNic0NetName = 'default', sNic0MacAddr = 'grouped', \
-                     sFloppy = None, fNatForwardingForTxs = None, sHddControllerType = 'IDE Controller', \
-                     fVmmDevTestingPart = None, fVmmDevTestingMmio = False, sFirmwareType = 'bios', sChipsetType = 'piix3', \
-                     sDvdControllerType = 'IDE Controller',):
+    def createTestVM(self,
+                     sName,
+                     iGroup,
+                     sHd = None,
+                     cMbRam = None,
+                     cCpus = 1,
+                     fVirtEx = None,
+                     fNestedPaging = None,
+                     sDvdImage = None,
+                     sKind = "Other",
+                     fIoApic = None,
+                     fPae = None,
+                     fFastBootLogo = True,
+                     eNic0Type = None,
+                     eNic0AttachType = None,
+                     sNic0NetName = 'default',
+                     sNic0MacAddr = 'grouped',
+                     sFloppy = None,
+                     fNatForwardingForTxs = None,
+                     sHddControllerType = 'IDE Controller',
+                     fVmmDevTestingPart = None,
+                     fVmmDevTestingMmio = False,
+                     sFirmwareType = 'bios',
+                     sChipsetType = 'piix3',
+                     sDvdControllerType = 'IDE Controller',
+                     sCom1RawFile = None):
         """
         Creates a test VM with a immutable HD from the test resources.
         """
@@ -2275,6 +2312,8 @@ class TestDriver(base.TestDriver):                                              
                 fRc = oSession.setChipsetType(vboxcon.ChipsetType_PIIX3);
             elif sChipsetType == 'ich9':
                 fRc = oSession.setChipsetType(vboxcon.ChipsetType_ICH9);
+            if fRc and sCom1RawFile:
+                fRc = oSession.setupSerialToRawFile(0, sCom1RawFile);
 
             if fRc: fRc = oSession.saveSettings();
             if not fRc:   oSession.discardSettings(True);
