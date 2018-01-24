@@ -60,18 +60,35 @@ UIDownloaderExtensionPack::UIDownloaderExtensionPack()
     if (!m_spInstance)
         m_spInstance = this;
 
-    /* Prepare source/target: */
+    /* Get version number and adjust it for test and trunk builds,
+     * both have odd build numbers. The server only has official releases. */
     QString strVersion = vboxGlobal().vboxVersionStringNormalized();
-    QString strExtPackUnderscoredName(QString(GUI_ExtPackName).replace(' ', '_'));
-    QString strTemplateSourcePath("http://download.virtualbox.org/virtualbox/%1/");
-    QString strTemplateSourceName(QString("%1-%2.vbox-extpack").arg(strExtPackUnderscoredName));
-    QString strSourcePath(strTemplateSourcePath.arg(strVersion));
-    QString strSourceName(strTemplateSourceName.arg(strVersion));
-    QString strSource(strSourcePath + strSourceName);
-    QString strPathSHA256SumsFile = QString("https://www.virtualbox.org/download/hashes/%1/SHA256SUMS").arg(strVersion);
-    QString strTargetPath(vboxGlobal().homeFolder());
-    QString strTargetName(strSourceName);
-    QString strTarget(QDir(strTargetPath).absoluteFilePath(strTargetName));
+    const QChar qchLastDigit = strVersion[strVersion.length() - 1];
+    if (   qchLastDigit == '1'
+        || qchLastDigit == '3'
+        || qchLastDigit == '5'
+        || qchLastDigit == '7'
+        || qchLastDigit == '9')
+    {
+        if (   !strVersion.endsWith(".51")
+            && !strVersion.endsWith(".53")
+            && !strVersion.endsWith(".97")
+            && !strVersion.endsWith(".99"))
+            strVersion[strVersion.length() - 1] = qchLastDigit.toLatin1() - 1;
+        else
+        {
+            strVersion.chop(2);
+            strVersion += "6"; /* Current for 5.2.x */
+        }
+    }
+
+    /* Prepare source/target: */
+    const QString strUnderscoredName = QString(GUI_ExtPackName).replace(' ', '_');
+    const QString strSourceName = QString("%1-%2.vbox-extpack").arg(strUnderscoredName, strVersion);
+    const QString strSourcePath = QString("https://download.virtualbox.org/virtualbox/%1/").arg(strVersion);
+    const QString strSource = strSourcePath + strSourceName;
+    const QString strPathSHA256SumsFile = QString("https://www.virtualbox.org/download/hashes/%1/SHA256SUMS").arg(strVersion);
+    const QString strTarget = QDir(vboxGlobal().homeFolder()).absoluteFilePath(strSourceName);
 
     /* Set source/target: */
     setSource(strSource);
