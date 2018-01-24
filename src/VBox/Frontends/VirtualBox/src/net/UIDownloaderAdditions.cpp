@@ -60,10 +60,10 @@ UIDownloaderAdditions::UIDownloaderAdditions()
     if (!m_spInstance)
         m_spInstance = this;
 
-    /* Get version number and adjust it for test and trunk builds, both have
-       odd build numbers.  The server only has official releases. */
+    /* Get version number and adjust it for test and trunk builds,
+     * both have odd build numbers. The server only has official releases. */
     QString strVersion = vboxGlobal().vboxVersionStringNormalized();
-    QChar qchLastDigit = strVersion[strVersion.length() - 1];
+    const QChar qchLastDigit = strVersion[strVersion.length() - 1];
     if (   qchLastDigit == '1'
         || qchLastDigit == '3'
         || qchLastDigit == '5'
@@ -78,14 +78,14 @@ UIDownloaderAdditions::UIDownloaderAdditions()
         else
         {
             strVersion.chop(2);
-            strVersion += "10"; /* Current for 5.0.x */
+            strVersion += "6"; /* Current for 5.2.x */
         }
     }
 
     /* Prepare source/target: */
     const QString strSourceName = QString("%1_%2.iso").arg(GUI_GuestAdditionsName, strVersion);
-    const QString strSourceFolder = QString("http://download.virtualbox.org/virtualbox/%1/").arg(strVersion);
-    const QString strSource = strSourceFolder + strSourceName;
+    const QString strSourcePath = QString("https://download.virtualbox.org/virtualbox/%1/").arg(strVersion);
+    const QString strSource = strSourcePath + strSourceName;
     const QString strPathSHA256SumsFile = QString("https://www.virtualbox.org/download/hashes/%1/SHA256SUMS").arg(strVersion);
     const QString strTarget = QDir(vboxGlobal().homeFolder()).absoluteFilePath(strSourceName);
 
