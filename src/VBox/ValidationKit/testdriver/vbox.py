@@ -31,13 +31,14 @@ __version__ = "$Revision$"
 
 
 # Standard Python imports.
+import datetime
 import os
 import platform
+import re;
 import sys
 import threading
 import time
 import traceback
-import datetime
 
 # Figure out where the validation kit lives and make sure it's in the path.
 try:    __file__
@@ -395,7 +396,6 @@ class Build(object): # pylint: disable=R0903
                 else:
                     s = oFile.readline();
                     oFile.close();
-                    import re;
                     oMatch = re.search("VBOX_SVN_REV=(\\d+)", s);
                     if oMatch is not None:
                         self.sDesignation = oMatch.group(1);
@@ -3679,4 +3679,122 @@ class TestDriver(base.TestDriver):                                              
         return fRc;
 
     # pylint: enable=R0914,R0913
+
+
+    #
+    # Working with test results via serial port.
+    #
+
+    class TxsMonitorComFile(base.TdTaskBase):
+        """
+        Class that monitors a COM output file.
+        """
+
+        def __init__(self, sComRawFile, asStopWords = None):
+            base.TdTaskBase.__init__(self, utils.getCallerName());
+            self.sComRawFile    = sComRawFile;
+            self.oStopRegExp    = re.compile('\\b(' + '|'.join(asStopWords if asStopWords else ('PASSED', 'FAILED',)) + ')\\b');
+            self.sResult        = None; ##< The result.
+            self.cchDisplayed   = 0;    ##< Offset into the file string of what we've already fed to the logger.
+
+        def toString(self):
+            return '<%s sComRawFile=%s oStopRegExp=%s sResult=%s cchDisplayed=%s>' \
+                  % (base.TdTaskBase.toString(self), self.sComRawFile, self.oStopRegExp, self.sResult, self.cchDisplayed,);
+
+        def pollTask(self, fLocked = False):
+            """
+            Overrides TdTaskBase.pollTask() for the purpose of polling the file.
+            """
+            if not fLocked:
+                self.lockTask();
+
+            sFile = utils.noxcptReadFile(self.sComRawFile, '', 'rU');
+            if len(sFile) > self.cchDisplayed:
+                sNew = sFile[self.cchDisplayed:];
+                oMatch = self.oStopRegExp.search(sNew);
+                if oMatch:
+                    # Done! Get result, flush all the output and signal the task.
+                    self.sResult = oMatch.group(1);
+                    for sLine in sNew.split('\n'):
+                        reporter.log('COM OUTPUT: %s' % (sLine,));
+                    self.cchDisplayed = len(sFile);
+                    self.signalTaskLocked();
+                else:
+                    # Output whole lines only.
+                    offNewline = sFile.find('\n', self.cchDisplayed);
+                    while offNewline >= 0:
+                        reporter.log('COM OUTPUT: %s' % (sFile[self.cchDisplayed:offNewline]))
+                        self.cchDisplayed = offNewline + 1;
+                        offNewline = sFile.find('\n', self.cchDisplayed);
+
+            fRet = self.fSignalled;
+            if not fLocked:
+                self.unlockTask();
+            return fRet;
+
+        # Our stuff.
+        def getResult(self):
+            """
+            Returns the connected TXS session object on success.
+            Returns None on failure or if the task has not yet completed.
+            """
+            self.oCv.acquire();
+            sResult = self.sResult;
+            self.oCv.release();
+            return sResult;
+
+        def cancelTask(self):
+            """ Cancels the task. """
+            self.signalTask();
+            return True;
+
+
+    def monitorComRawFile(self, oSession, sComRawFile, cMsTimeout = 15*60000, asStopWords = None):
+        """
+        Monitors the COM output file for stop words (PASSED and FAILED by default).
+
+        Returns the stop word.
+        Returns None on VM error and timeout.
+        """
+
+        reporter.log2('monitorComRawFile: oSession=%s, cMsTimeout=%s, sComRawFile=%s' % (oSession, cMsTimeout, sComRawFile));
+
+        oMonitorTask = self.TxsMonitorComFile(sComRawFile, asStopWords);
+        self.addTask(oMonitorTask);
+
+        cMsTimeout = self.adjustTimeoutMs(cMsTimeout);
+        oTask = self.waitForTasks(cMsTimeout + 1);
+        reporter.log2('monitorComRawFile: waitForTasks returned %s' % (oTask,));
+
+        if oTask is not oMonitorTask:
+            oMonitorTask.cancelTask();
+        self.removeTask(oMonitorTask);
+
+        oMonitorTask.pollTask();
+        return oMonitorTask.getResult();
+
+
+    def runVmAndMonitorComRawFile(self, sVmName, sComRawFile, cMsTimeout = 15*60000, asStopWords = None):
+        """
+        Runs the specified VM and monitors the given COM output file for stop
+        words (PASSED and FAILED by default).
+
+        The caller is assumed to have configured the VM to use the given
+        file. The method will take no action to verify this.
+
+        Returns the stop word.
+        Returns None on VM error and timeout.
+        """
+
+        # Start the VM.
+        reporter.log('runVmAndMonitorComRawFile: Starting(/preparing) "%s" (timeout %s s)...' % (sVmName, cMsTimeout / 1000));
+        reporter.flushall();
+        oSession = self.startVmByName(sVmName);
+        if oSession is not None:
+            # Let it run and then terminate it.
+            sRet = self.monitorComRawFile(oSession, sComRawFile, cMsTimeout, asStopWords);
+            self.terminateVmBySession(oSession);
+        else:
+            sRet = None;
+        return sRet;
 

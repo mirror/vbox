@@ -101,13 +101,12 @@ class tdExoticOrAncient1(vbox.TestDriver):
         # Simple test.
         self.logVmInfo(oVM);
         if oTestVm.fGrouping & self.oTestVmManager.kfGrpNoTxs:
-            pass;   ## @todo serial port VMs.
-        else:
-            oSession, _ = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True);
-            if oSession is not None:
-                self.terminateVmBySession(oSession)
-                return True;
-        return None;
+            sResult = self.runVmAndMonitorComRawFile(oTestVm.sVmName, oTestVm.sCom1RawFile);
+            return sResult == 'PASSED';
+        oSession, _ = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True);
+        if oSession is not None:
+            return self.terminateVmBySession(oSession);
+        return False;
 
 if __name__ == '__main__':
     sys.exit(tdExoticOrAncient1().main(sys.argv));
