@@ -3933,7 +3933,12 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
      */
     rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedHWVirt", &pConfig->fNestedHWVirt, false);
     AssertLogRelRCReturn(rc, rc);
-    pConfig->fNestedHWVirt &= fNestedPagingAndFullGuestExec;
+    if (   pConfig->fNestedHWVirt
+        && !fNestedPagingAndFullGuestExec)
+    {
+        LogRel(("CPUM: Warning! Can't turn on nested VT-x/AMD-V without nested-paging and unrestricted guest execution!\n"));
+        pConfig->fNestedHWVirt = false;
+    }
 #endif
 
     /*
