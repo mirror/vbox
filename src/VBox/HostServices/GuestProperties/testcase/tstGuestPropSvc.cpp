@@ -463,6 +463,10 @@ static void testSetProp(VBOXHGCMSVCFNTABLE *pTable)
         { "TEST NAME", "test", "", true, true, false },
         { "Green", "gone out...", "", false, false, false },
         { "Green", "gone out...", "", true, false, false },
+        { "/VirtualBox/GuestAdd/SharedFolders/MountDir", "test", "", false, true, false },
+        { "/VirtualBox/HostInfo/VRDP/Client/1/Name", "test", "", false, false, false },
+        { "/VirtualBox/GuestAdd/SharedFolders/MountDir", "test", "", true, true, true },
+        { "/VirtualBox/HostInfo/VRDP/Client/1/Name", "test", "TRANSRESET", true, true, true },
     };
 
     for (unsigned i = 0; i < RT_ELEMENTS(s_aSetProperties); ++i)
@@ -661,6 +665,10 @@ g_aGetNotifications[] =
     { "Amber\0Caution!\0", sizeof("Amber\0Caution!\0") },
     { "Green\0Go!\0READONLY", sizeof("Green\0Go!\0READONLY") },
     { "Blue\0What on earth...?\0", sizeof("Blue\0What on earth...?\0") },
+    { "/VirtualBox/GuestAdd/SharedFolders/MountDir\0test\0RDONLYGUEST",
+      sizeof("/VirtualBox/GuestAdd/SharedFolders/MountDir\0test\0RDONLYGUEST") },
+    { "/VirtualBox/HostInfo/VRDP/Client/1/Name\0test\0TRANSIENT, RDONLYGUEST, TRANSRESET",
+      sizeof("/VirtualBox/HostInfo/VRDP/Client/1/Name\0test\0TRANSIENT, RDONLYGUEST, TRANSRESET") },
     { "Red\0\0", sizeof("Red\0\0") },
     { "Amber\0\0", sizeof("Amber\0\0") },
 };
