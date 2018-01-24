@@ -723,7 +723,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_TripleFaultReset, &f), "triplefaultreset", "Triple Fault Reset:");
     SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_APIC, &f), "apic", "APIC:");
     SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_X2APIC, &f), "x2apic", "X2APIC:");
-    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_X2APIC, &f), "nested-hw-virt", "Nested VT-x/AMD-V:");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_HWVirt, &f), "nested-hw-virt", "Nested VT-x/AMD-V:");
     SHOW_ULONG_PROP(       machine, CPUIDPortabilityLevel, "cpuid-portability-level",   "CPUID Portability Level:", "");
 
     if (details != VMINFO_MACHINEREADABLE)
