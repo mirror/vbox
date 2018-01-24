@@ -25,7 +25,8 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/* Extension-pack definitions: */
+/* File name definitions: */
+const char* UIDefs::GUI_GuestAdditionsName = "VBoxGuestAdditions";
 const char* UIDefs::GUI_ExtPackName = "Oracle VM VirtualBox Extension Pack";
 
 /* File extensions definitions: */

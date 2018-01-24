@@ -79,7 +79,8 @@ namespace UIDefs
         FormatSize_RoundUp
     };
 
-    /* Extension-pack declarations: */
+    /* File name declarations: */
+    extern const char* GUI_GuestAdditionsName;
     extern const char* GUI_ExtPackName;
 
     /* File extensions declarations: */

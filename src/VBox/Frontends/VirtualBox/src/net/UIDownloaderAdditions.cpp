@@ -83,7 +83,7 @@ UIDownloaderAdditions::UIDownloaderAdditions()
     }
 
     /* Prepare source/target: */
-    const QString strSourceName = QString("VBoxGuestAdditions_%1.iso").arg(strVersion);
+    const QString strSourceName = QString("%1_%2.iso").arg(GUI_GuestAdditionsName, strVersion);
     const QString strSourceFolder = QString("http://download.virtualbox.org/virtualbox/%1/").arg(strVersion);
     const QString strSource = strSourceFolder + strSourceName;
     const QString strPathSHA256SumsFile = QString("https://www.virtualbox.org/download/hashes/%1/SHA256SUMS").arg(strVersion);
