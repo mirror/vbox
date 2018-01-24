@@ -1978,9 +1978,8 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
 {
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS))
     {
-        /* First, load the guest intercepts into the guest VMCB. */
+        /* First, load the guest exception intercepts into the guest VMCB. */
         PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
-        Assert(!(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR));
         hmR0SvmLoadGuestXcptIntercepts(pVCpu, pVmcb, pCtx);
 
         /* Next, merge the intercepts into the nested-guest VMCB. */
@@ -2003,8 +2002,10 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
         pVmcbNstGst->ctrl.u16InterceptRdDRx |= 0xffff;
         pVmcbNstGst->ctrl.u16InterceptWrDRx |= 0xffff;
 
+        /* Exclude the VINTR intercept of the outer guest as we don't need to cause VINTR #VMEXITs
+           that belong to the nested-guest to the outer guest. */
         pVmcbNstGst->ctrl.u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt;
-        pVmcbNstGst->ctrl.u64InterceptCtrl  |= pVmcb->ctrl.u64InterceptCtrl
+        pVmcbNstGst->ctrl.u64InterceptCtrl  |= (pVmcb->ctrl.u64InterceptCtrl & ~SVM_CTRL_INTERCEPT_VINTR)
                                             |  HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS;
 
         /*
