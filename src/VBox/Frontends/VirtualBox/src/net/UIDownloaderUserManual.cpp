@@ -57,13 +57,37 @@ UIDownloaderUserManual::UIDownloaderUserManual()
     if (!m_spInstance)
         m_spInstance = this;
 
+    /* Get version number and adjust it for test and trunk builds,
+     * both have odd build numbers. The server only has official releases. */
+    QString strVersion = vboxGlobal().vboxVersionStringNormalized();
+    const QChar qchLastDigit = strVersion[strVersion.length() - 1];
+    if (   qchLastDigit == '1'
+        || qchLastDigit == '3'
+        || qchLastDigit == '5'
+        || qchLastDigit == '7'
+        || qchLastDigit == '9')
+    {
+        if (   !strVersion.endsWith(".51")
+            && !strVersion.endsWith(".53")
+            && !strVersion.endsWith(".97")
+            && !strVersion.endsWith(".99"))
+            strVersion[strVersion.length() - 1] = qchLastDigit.toLatin1() - 1;
+        else
+        {
+            strVersion.chop(2);
+            strVersion += "6"; /* Current for 5.2.x */
+        }
+    }
+
     /* Compose User Manual filename: */
     QString strUserManualFullFileName = vboxGlobal().helpFile();
     QString strUserManualShortFileName = QFileInfo(strUserManualFullFileName).fileName();
 
     /* Add sources: */
-    addSource(QString("http://download.virtualbox.org/virtualbox/%1/").arg(vboxGlobal().vboxVersionStringNormalized()) + strUserManualShortFileName);
-    addSource(QString("http://download.virtualbox.org/virtualbox/") + strUserManualShortFileName);
+    QString strSource1 = QString("https://download.virtualbox.org/virtualbox/%1/").arg(strVersion) + strUserManualShortFileName;
+    QString strSource2 = QString("https://download.virtualbox.org/virtualbox/") + strUserManualShortFileName;
+    addSource(strSource1);
+    addSource(strSource2);
 
     /* Set target: */
     QString strUserManualDestination = QDir(vboxGlobal().homeFolder()).absoluteFilePath(strUserManualShortFileName);
