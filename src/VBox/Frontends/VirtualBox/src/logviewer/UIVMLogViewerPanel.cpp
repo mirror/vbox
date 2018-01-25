@@ -106,7 +106,8 @@ void UIVMLogViewerPanel::retranslateUi()
 
 bool UIVMLogViewerPanel::eventFilter(QObject *pObject, QEvent *pEvent)
 {
-    return QWidget::eventFilter(pObject, pEvent);
+    /* Dont consume this event. Pass it back to Qt's event system: */
+    return false;
 }
 
 void UIVMLogViewerPanel::showEvent(QShowEvent *pEvent)

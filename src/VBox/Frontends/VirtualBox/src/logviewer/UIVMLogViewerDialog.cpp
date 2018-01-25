@@ -63,7 +63,6 @@ UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, const CMachine 
 void UIVMLogViewerDialog::retranslateUi()
 {
     button(ButtonType_Close)->setText(UIVMLogViewerWidget::tr("Close"));
-    button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
     /* Setup a dialog caption: */
     if (!m_comMachine.isNull())
         setWindowTitle(tr("%1 - Log Viewer").arg(m_comMachine.GetName()));

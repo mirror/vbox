@@ -483,7 +483,7 @@ void UIVMLogViewerFilterPanel::retranslateUi()
 {
     UIVMLogViewerPanel::retranslateUi();
     m_pFilterComboBox->setToolTip(UIVMLogViewerWidget::tr("Enter filtering string here."));
-    m_pAddFilterTermButton->setToolTip(UIVMLogViewerWidget::tr("Add filter term."));
+    m_pAddFilterTermButton->setToolTip(UIVMLogViewerWidget::tr("Add filter term. (Enter"));
     m_pResultLabel->setText(UIVMLogViewerWidget::tr("Showing %1/%2").arg(m_iFilteredLineCount).arg(m_iUnfilteredLineCount));
     m_pFilterTermsLineEdit->setToolTip(UIVMLogViewerWidget::tr("The filter terms list. Select one to remove or click the button on the right side to remove them all."));
     m_pRadioButtonContainer->setToolTip(UIVMLogViewerWidget::tr("The type of boolean operator for filter operation."));

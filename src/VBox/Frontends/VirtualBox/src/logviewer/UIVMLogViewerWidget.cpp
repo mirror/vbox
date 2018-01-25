@@ -426,7 +426,6 @@ void UIVMLogViewerWidget::prepareWidgets()
     m_pBookmarksPanel = new UIVMLogViewerBookmarksPanel(0, this);
     if (m_pBookmarksPanel)
     {
-        installEventFilter(m_pBookmarksPanel);
         m_pBookmarksPanel->hide();
         m_pMainLayout->addWidget(m_pBookmarksPanel);
         connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteBookmark,
@@ -440,7 +439,6 @@ void UIVMLogViewerWidget::prepareWidgets()
     m_pSettingsPanel = new UIVMLogViewerSettingsPanel(0, this);
     if (m_pSettingsPanel)
     {
-        installEventFilter(m_pSettingsPanel);
         m_pSettingsPanel->hide();
         /* Initialize settings' panel checkboxes and input fields: */
         m_pSettingsPanel->setShowLineNumbers(m_bShowLineNumbers);
@@ -489,10 +487,10 @@ void UIVMLogViewerWidget::prepareActions()
     m_pActionSettings = new QAction(this);
     if (m_pActionSettings)
     {
+        m_pActionSettings->setShortcut(QKeySequence("Ctrl+P"));
         m_pActionSettings->setCheckable(true);
         connect(m_pActionSettings, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionTriggered);
     }
-
 
     /* Create and configure 'Refresh' action: */
     m_pActionRefresh = new QAction(this);
@@ -626,43 +624,59 @@ void UIVMLogViewerWidget::retranslateUi()
     if (m_pActionFind)
     {
         m_pActionFind->setText(tr("&Find"));
-        m_pActionFind->setToolTip(tr("Find a string within the log"));
-        m_pActionFind->setStatusTip(tr("Find a string within the log"));
+        m_pActionFind->setToolTip(tr("Show/Hide 'Find' Panel (Ctrl+F)"));
+        m_pActionFind->setStatusTip(tr("Show/Hide 'Find' Panel (Ctrl+F)"));
     }
 
     if (m_pActionFilter)
     {
         m_pActionFilter->setText(tr("&Filter"));
-        m_pActionFilter->setToolTip(tr("Filter the log wrt. the given string"));
-        m_pActionFilter->setStatusTip(tr("Filter the log wrt. the given string"));
+        m_pActionFilter->setToolTip(tr("Show/Hide 'Filter' Panel (Ctrl+T)"));
+        m_pActionFilter->setStatusTip(tr("Show/Hide 'Filter' Panel (Ctrl+T)"));
     }
 
     if (m_pActionRefresh)
     {
         m_pActionRefresh->setText(tr("&Refresh"));
-        m_pActionRefresh->setToolTip(tr("Reload the log"));
-        m_pActionRefresh->setStatusTip(tr("Reload the log"));
+        m_pActionRefresh->setToolTip(tr("Reload the log (F5)"));
+        m_pActionRefresh->setStatusTip(tr("Reload the log (F5)"));
     }
 
     if (m_pActionSave)
     {
         m_pActionSave->setText(tr("&Save..."));
-        m_pActionSave->setToolTip(tr("Save the log"));
-        m_pActionSave->setStatusTip(tr("Save the log"));
+        if (m_enmEmbedding == EmbedTo_Dialog)
+        {
+            m_pActionSave->setToolTip(tr("Save the log (Ctrl+S)"));
+            m_pActionSave->setStatusTip(tr("Save the log (Ctrl+S)"));
+        }
+        else
+        {
+            m_pActionSave->setToolTip(tr("Save the log"));
+            m_pActionSave->setStatusTip(tr("Save the log"));
+        }
     }
 
     if (m_pActionBookmark)
     {
         m_pActionBookmark->setText(tr("&Bookmarks"));
-        m_pActionBookmark->setToolTip(tr("Bookmark the line"));
-        m_pActionBookmark->setStatusTip(tr("Bookmark the line"));
+        if (m_enmEmbedding == EmbedTo_Dialog)
+        {
+            m_pActionBookmark->setToolTip(tr("Show/Hide 'Bookmarks' Panel (Ctrl+D)"));
+            m_pActionBookmark->setStatusTip(tr("Show/Hide 'Bookmarks' Panel (Ctrl+D)"));
+        }
+        else
+        {
+            m_pActionBookmark->setToolTip(tr("Show/Hide 'Bookmarks' Panel"));
+            m_pActionBookmark->setStatusTip(tr("Show/Hide 'Bookmarks' Panel"));
+        }
     }
 
     if (m_pActionSettings)
     {
         m_pActionSettings->setText(tr("&Settings"));
-        m_pActionSettings->setToolTip(tr("LogViewer Settings"));
-        m_pActionSettings->setStatusTip(tr("LogViewer Settings"));
+        m_pActionSettings->setToolTip(tr("Show/Hide 'Settings' Panel (Ctrl+P)"));
+        m_pActionSettings->setStatusTip(tr("Show/Hide 'Settings' Panel (Ctrl+P)"));
     }
 
     /* Translate toolbar: */
@@ -698,11 +712,6 @@ void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
     /* Depending on key pressed: */
     switch (pEvent->key())
     {
-        /* Process key escape as VM Log Viewer close: */
-        case Qt::Key_Escape:
-        {
-            return;
-        }
         /* Process Back key as switch to previous tab: */
         case Qt::Key_Back:
         {
@@ -726,7 +735,7 @@ void UIVMLogViewerWidget::keyPressEvent(QKeyEvent *pEvent)
         default:
             break;
     }
-    QWidget::keyReleaseEvent(pEvent);
+    QWidget::keyPressEvent(pEvent);
 }
 
 const UIVMLogPage *UIVMLogViewerWidget::currentLogPage() const
