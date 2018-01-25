@@ -235,6 +235,7 @@ static DECLCALLBACK(int) pcarchInitComplete(PPDMDEVINS pDevIns)
                                            pcarchReservedMemoryWrite, pcarchReservedMemoryRead,
                                            MMR3HeapAPrintf(pVM, MM_TAG_PGM_PHYS /* bad bird*/, "PC Arch Reserved #%u", iRegion));
             AssertLogRelRCReturn(rc, rc);
+            iRegion++;
         }
     } while (GCPhysCur < GCPhysEnd);
 
