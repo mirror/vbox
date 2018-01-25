@@ -506,7 +506,21 @@ static void usbTestExec(const char *pszDevice)
                 }
 
                 if (rcPosix < 0)
-                    RTTestFailed(g_hTest, "Test failed with %Rrc\n", RTErrConvertFromErrno(errno));
+                {
+                    /*
+                     * The error status code of the unlink testcase is
+                     * offset by 2000 for the sync and 1000 for the sync code path
+                     * (see drivers/usb/misc/usbtest.c in the Linux kernel sources).
+                     *
+                     * Adjust to the actual status code so converting doesn't assert.
+                     */
+                    int iTmpErrno = errno;
+                    if (iTmpErrno >= 2000)
+                        iTmpErrno -= 2000;
+                    else if (iTmpErrno >= 1000)
+                        iTmpErrno -= 1000;
+                    RTTestFailed(g_hTest, "Test failed with %Rrc\n", RTErrConvertFromErrno(iTmpErrno));
+                }
                 else
                 {
                     uint64_t u64Ns = Params.TimeTest.tv_sec * RT_NS_1SEC + Params.TimeTest.tv_usec * RT_NS_1US;
