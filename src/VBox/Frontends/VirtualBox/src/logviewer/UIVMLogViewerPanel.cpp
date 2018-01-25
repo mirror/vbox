@@ -106,7 +106,8 @@ void UIVMLogViewerPanel::retranslateUi()
 
 bool UIVMLogViewerPanel::eventFilter(QObject *pObject, QEvent *pEvent)
 {
-    Q_UNUSED(tabIndex);
+    Q_UNUSED(pObject);
+    Q_UNUSED(pEvent);
     /* Dont consume this event. Pass it back to Qt's event system: */
     return false;
 }
