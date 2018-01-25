@@ -141,15 +141,6 @@ class tdSmokeTest1(vbox.TestDriver):
         Runs the specified VM thru test #1.
         """
 
-        oSession = self.openSession(oVM);
-
-        # Enable audio adapter
-        oSession.o.machine.audioAdapter.enabled = True;
-
-        fRc = oSession.saveSettings();
-        fRc = fRc and oSession.close();
-        assert fRc is True;
-
         # Simple test.
         self.logVmInfo(oVM);
         oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True);

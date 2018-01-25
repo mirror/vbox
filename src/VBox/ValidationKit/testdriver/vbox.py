@@ -2013,13 +2013,13 @@ class TestDriver(base.TestDriver):                                              
         elif oAudioAdapter.audioController == vboxcon.AudioControllerType_SB16: sType = "SB16";
         elif oAudioAdapter.audioController == vboxcon.AudioControllerType_HDA:  sType = "HDA";
         else: sType = "unknown %s" % (oAudioAdapter.audioController);
-        reporter.log("    AudioController: %s" % (sType));
-        reporter.log("    AudioEnabled: %s" % (oAudioAdapter.enabled));
-        if   oAudioAdapter.audioDriver == vboxcon.AudioDriverType_CoreAudio: sType = "CoreAudio";
-        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_DirectSound: sType = "DirectSound";
-        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_Pulse: sType = "PulseAudio";
-        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_OSS: sType = "OSS";
-        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_Null: sType = "NULL";
+        reporter.log("    AudioController:  %s" % (sType));
+        reporter.log("    AudioEnabled:     %s" % (oAudioAdapter.enabled));
+        if   oAudioAdapter.audioDriver == vboxcon.AudioDriverType_CoreAudio:    sType = "CoreAudio";
+        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_DirectSound:  sType = "DirectSound";
+        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_Pulse:        sType = "PulseAudio";
+        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_OSS:          sType = "OSS";
+        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_Null:         sType = "NULL";
         else: sType = "unknown %s" % (oAudioAdapter.audioDriver);
         reporter.log("    Host AudioDriver: %s" % (sType));
 

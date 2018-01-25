@@ -2047,7 +2047,7 @@ class SessionWrapper(TdTaskBase):
 
     def setupNic(self, sType, sXXX):
         """
-        Attaches a HD to a VM.
+        Sets up a NIC to a VM.
         Returns True on success and False on failure.  Error information is logged.
         """
         if sType == "PCNet":        enmType = vboxcon.NetworkAdapterType_Am79C973;
@@ -2063,35 +2063,41 @@ class SessionWrapper(TdTaskBase):
         if enmType is not None: pass
         return True;
 
-    def setupAudio(self, eAudioCtlType):
+    def setupAudio(self, eAudioControllerType, fEnable = True, eAudioDriverType = None):
         """
-        Set guest audio controller type and host audio adapter to null
-        @param eAudioCtlType device type (vboxcon.AudioControllerType_SB16,
-                             vboxcon.AudioControllerType_AC97, vboxcon.AudioControllerType_HDA)
+        Sets up audio.
+
+        :param eAudioControllerType:    The audio controller type (vboxcon.AudioControllerType_XXX).
+        :param fEnable:                 Whether to enable or disable the audio controller (default enable).
+        :param eAudioDriverType:        The audio driver type (vboxcon.AudioDriverType_XXX), picks something suitable
+                                        if None is passed (default).
         """
-        try:
-            oAudioAdapter = self.o.machine.audioAdapter;
+        try:    oAudioAdapter = self.o.machine.audioAdapter;
+        except: return reporter.errorXcpt('Failed to get the audio adapter.');
 
-            oAudioAdapter.audioController = eAudioCtlType;
+        try:    oAudioAdapter.audioController = eAudioControllerType;
+        except: return reporter.errorXcpt('Failed to set the audio controller to %s.' % (eAudioControllerType,));
 
+        if eAudioDriverType is None:
             sHost = utils.getHostOs()
-            if   sHost == 'darwin':    oAudioAdapter.audioDriver = vboxcon.AudioDriverType_CoreAudio;
-            elif sHost == 'win':       oAudioAdapter.audioDriver = vboxcon.AudioDriverType_DirectSound;
-            elif sHost == 'linux':     oAudioAdapter.audioDriver = vboxcon.AudioDriverType_Pulse;
-            elif sHost == 'solaris':   oAudioAdapter.audioDriver = vboxcon.AudioDriverType_OSS;
+            if   sHost == 'darwin':    eAudioDriverType = vboxcon.AudioDriverType_CoreAudio;
+            elif sHost == 'win':       eAudioDriverType = vboxcon.AudioDriverType_DirectSound;
+            elif sHost == 'linux':     eAudioDriverType = vboxcon.AudioDriverType_Pulse;
+            elif sHost == 'solaris':   eAudioDriverType = vboxcon.AudioDriverType_OSS;
             else:
-                reporter.error('Unsupported host "%s".' % (sHost,));
-                oAudioAdapter.audioDriver = vboxcon.AudioDriverType_Null;
+                reporter.error('PORTME: Do not know which audio driver to pick for: %s!' % (sHost,));
+                eAudioDriverType = vboxcon.AudioDriverType_Null;
 
-            # Disable by default
-            oAudioAdapter.enabled = False;
-        except:
-            return reporter.errorXcpt('Unable to set audio adapter.')
+        try:    oAudioAdapter.audioDriver = eAudioDriverType;
+        except: return reporter.errorXcpt('Failed to set the audio driver to %s.' % (eAudioDriverType,))
 
-        reporter.log('set audio adapter type to %d' % (eAudioCtlType))
+        try:    oAudioAdapter.enabled = fEnable;
+        except: return reporter.errorXcpt('Failed to set the "enabled" property to %s.' % (fEnable,));
+
+        reporter.log('set audio adapter type to %d, driver to %d, and enabled to %s'
+                     % (eAudioControllerType, eAudioDriverType, fEnable,));
         self.oTstDrv.processPendingEvents();
-
-        return True
+        return True;
 
     def setupPreferredConfig(self):                                             # pylint: disable=R0914
         """
@@ -2164,7 +2170,7 @@ class SessionWrapper(TdTaskBase):
             if not self.setStorageControllerType(eStorCtlType, "IDE Controller"):
                 fRc = False;
         if self.fpApiVer >= 4.0:
-            if not self.setupAudio(eAudioCtlType): fRc = False;
+            if not self.setupAudio(eAudioCtlType):      fRc = False;
 
         return fRc;
 
