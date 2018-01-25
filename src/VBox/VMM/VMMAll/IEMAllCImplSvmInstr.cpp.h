@@ -674,12 +674,32 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
              */
             pVmcbCtrl->ExitIntInfo.n.u1Valid = 0;
 
+            /*
+             * Clear the event injection valid bit here. While the AMD spec. mentions that the CPU
+             * clears this bit from the VMCB unconditionally on #VMEXIT, internally the CPU could be
+             * clearing it at any time, most likely before/after injecting the event. Since VirtualBox
+             * doesn't have any virtual-CPU internal representation of this bit, we clear/update the
+             * VMCB here. This also has the added benefit that we avoid the risk of injecting the event
+             * twice if we fallback to executing the nesteed-guest using hardware-assisted SVM after
+             * injecting the event through IEM here.
+             */
+            pVmcbCtrl->EventInject.n.u1Valid = 0;
+
             /** @todo NRIP: Software interrupts can only be pushed properly if we support
              *        NRIP for the nested-guest to calculate the instruction length
              *        below. */
             LogFlow(("iemSvmVmrun: Injecting event: %04x:%08RX64 vec=%#x type=%d uErr=%u cr2=%#RX64 cr3=%#RX64 efer=%#RX64\n",
                      pCtx->cs.Sel, pCtx->rip, uVector, enmType, uErrorCode, pCtx->cr2, pCtx->cr3, pCtx->msrEFER));
+#if 0
             rcStrict = IEMInjectTrap(pVCpu, uVector, enmType, uErrorCode, pCtx->cr2, 0 /* cbInstr */);
+#else
+            TRPMAssertTrap(pVCpu, uVector, enmType);
+            if (pEventInject->n.u1ErrorCodeValid)
+                TRPMSetErrorCode(pVCpu, uErrorCode);
+            if (   enmType == TRPM_TRAP
+                && uVector == X86_XCPT_PF)
+                TRPMSetFaultAddress(pVCpu, pCtx->cr2);
+#endif
         }
         else
             LogFlow(("iemSvmVmrun: Entering nested-guest: %04x:%08RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64 efer=%#RX64 efl=%#x\n",
