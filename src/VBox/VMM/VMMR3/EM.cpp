@@ -1959,7 +1959,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 && !TRPMHasTrap(pVCpu)) /* an interrupt could already be scheduled for dispatching in the recompiler. */
             {
                 PCPUMCTX pCtx = pVCpu->em.s.pCtx;
-                bool fGif     = pCtx->hwvirt.svm.fGif;
+                bool fGif     = pCtx->hwvirt.fGif;
 #ifdef VBOX_WITH_RAW_MODE
                 /* We cannot just inspect EFLAGS when nested hw.virt is enabled (see e.g. CPUMCanSvmNstGstTakePhysIntr). */
                 fGif &= !PATMIsPatchGCAddr(pVM, pCtx->eip);

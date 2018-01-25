@@ -136,7 +136,6 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.pVmcbR0);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.pVmcbR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.HostState);
-    GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.fGif);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.cPauseFilter);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.cPauseFilterThreshold);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.fInterceptEvents);
@@ -147,6 +146,7 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.pvIoBitmapR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.HCPhysVmcb);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fLocalForcedActions);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.fGif);
     /** @todo add rest of hwvirt fields when code is more
      *        finalized. */
     GEN_CHECK_OFF(CPUMCTX, pXStateR0);

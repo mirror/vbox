@@ -2564,7 +2564,7 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
     AssertReleaseFailedReturn(false);
 #else
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
-    Assert(pCtx->hwvirt.svm.fGif);
+    Assert(pCtx->hwvirt.fGif);
 
     if (!pCtx->hwvirt.svm.fHMCachedVmcb)
     {
@@ -2599,7 +2599,7 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PCCPUMCTX pCtx)
     AssertReleaseFailedReturn(false);
 #else
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
-    Assert(pCtx->hwvirt.svm.fGif);
+    Assert(pCtx->hwvirt.fGif);
 
     PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
     if (   !pVmcbCtrl->IntCtrl.n.u1IgnoreTPR

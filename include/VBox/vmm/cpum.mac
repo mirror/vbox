@@ -265,8 +265,7 @@ struc CPUMCTX
     .hwvirt.svm.abPadding0             resb          8
 %endif
     .hwvirt.svm.HostState              resb        184
-    .hwvirt.svm.fGif                   resb          1
-    .hwvirt.svm.u8Padding0             resb          1
+    .hwvirt.svm.u16Padding0            resw          1
     .hwvirt.svm.cPauseFilter           resw          1
     .hwvirt.svm.cPauseFilterThreshold  resw          1
     .hwvirt.svm.fInterceptEvents       resb          1
@@ -280,6 +279,7 @@ struc CPUMCTX
     .hwvirt.svm.abPadding2             resb          16
 %endif
     .hwvirt.fLocalForcedActions        resd          1
+    .hwvirt.fGif                       resb          1
     alignb 64
 endstruc
 

@@ -751,11 +751,11 @@ static void cpumR3CheckLeakyFpu(PVM pVM)
 
 
 /**
- * Frees memory allocated by cpumR3AllocHwVirtState().
+ * Frees memory allocated for the SVM hardware virtualization state.
  *
  * @param   pVM     The cross context VM structure.
  */
-static void cpumR3FreeHwVirtState(PVM pVM)
+static void cpumR3FreeSvmHwVirtState(PVM pVM)
 {
     Assert(pVM->cpum.ro.GuestFeatures.fSvm);
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
@@ -784,12 +784,12 @@ static void cpumR3FreeHwVirtState(PVM pVM)
 
 
 /**
- * Allocates memory required by the hardware virtualization state.
+ * Allocates memory for the SVM hardware virtualization state.
  *
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
  */
-static int cpumR3AllocHwVirtState(PVM pVM)
+static int cpumR3AllocSvmHwVirtState(PVM pVM)
 {
     Assert(pVM->cpum.ro.GuestFeatures.fSvm);
 
@@ -849,7 +849,7 @@ static int cpumR3AllocHwVirtState(PVM pVM)
 
     /* On any failure, cleanup. */
     if (RT_FAILURE(rc))
-        cpumR3FreeHwVirtState(pVM);
+        cpumR3FreeSvmHwVirtState(pVM);
 
     return rc;
 }
@@ -1038,7 +1038,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
      */
     if (pVM->cpum.ro.GuestFeatures.fSvm)
     {
-        rc = cpumR3AllocHwVirtState(pVM);
+        rc = cpumR3AllocSvmHwVirtState(pVM);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1125,7 +1125,7 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
 #endif
 
     if (pVM->cpum.ro.GuestFeatures.fSvm)
-        cpumR3FreeHwVirtState(pVM);
+        cpumR3FreeSvmHwVirtState(pVM);
     return VINF_SUCCESS;
 }
 
@@ -1281,12 +1281,15 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
     /*
      * Hardware virtualization state.
      */
+    pCtx->hwvirt.fGif = 1;
+
     /* SVM. */
     if (pCtx->hwvirt.svm.CTX_SUFF(pVmcb))
+    {
         memset(pCtx->hwvirt.svm.CTX_SUFF(pVmcb), 0, SVM_VMCB_PAGES << PAGE_SHIFT);
-    pCtx->hwvirt.svm.uMsrHSavePa = 0;
-    pCtx->hwvirt.svm.GCPhysVmcb = 0;
-    pCtx->hwvirt.svm.fGif = 1;
+        pCtx->hwvirt.svm.uMsrHSavePa = 0;
+        pCtx->hwvirt.svm.GCPhysVmcb = 0;
+    }
 }
 
 
@@ -2455,7 +2458,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
                         pCtx->hwvirt.svm.HostState.gdtr.cbGdt);
         pHlp->pfnPrintf(pHlp, "    idtr                       = %016RX64:%04x\n", pCtx->hwvirt.svm.HostState.idtr.pIdt,
                         pCtx->hwvirt.svm.HostState.idtr.cbIdt);
-        pHlp->pfnPrintf(pHlp, "  fGif                       = %u\n",        pCtx->hwvirt.svm.fGif);
+        pHlp->pfnPrintf(pHlp, "  fGif                       = %u\n",        pCtx->hwvirt.fGif);
         pHlp->pfnPrintf(pHlp, "  cPauseFilter               = %RU16\n",     pCtx->hwvirt.svm.cPauseFilter);
         pHlp->pfnPrintf(pHlp, "  cPauseFilterThreshold      = %RU32\n",     pCtx->hwvirt.svm.cPauseFilterThreshold);
         pHlp->pfnPrintf(pHlp, "  fInterceptEvents           = %u\n",        pCtx->hwvirt.svm.fInterceptEvents);

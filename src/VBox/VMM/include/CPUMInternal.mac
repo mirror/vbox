@@ -238,8 +238,7 @@ struc CPUMCPU
     .Guest.hwvirt.svm.abPadding0             resb         8
 %endif
     .Guest.hwvirt.svm.HostState              resb         184
-    .Guest.hwvirt.svm.fGif                   resb         1
-    .Guest.hwvirt.svm.u8Padding0             resb         1
+    .Guest.hwvirt.svm.u16Padding0            resw         1
     .Guest.hwvirt.svm.cPauseFilter           resw         1
     .Guest.hwvirt.svm.cPauseFilterThreshold  resw         1
     .Guest.hwvirt.svm.fInterceptEvents       resb         1
@@ -253,6 +252,7 @@ struc CPUMCPU
     .Guest.hwvirt.svm.abPadding2             resb         16
 %endif
     .Guest.hwvirt.fLocalForcedActions        resd         1
+    .Guest.hwvirt.fGif                       resb         1
     alignb 64
 
     .GuestMsrs                resq    0
@@ -524,8 +524,7 @@ struc CPUMCPU
     .Hyper.hwvirt.svm.abPadding0             resb         8
 %endif
     .Hyper.hwvirt.svm.HostState              resb         184
-    .Hyper.hwvirt.svm.fGif                   resb         1
-    .Hyper.hwvirt.svm.u8Padding0             resb         1
+    .Hyper.hwvirt.svm.u16Padding0            resw         1
     .Hyper.hwvirt.svm.cPauseFilter           resw         1
     .Hyper.hwvirt.svm.cPauseFilterThreshold  resw         1
     .Hyper.hwvirt.svm.fInterceptEvents       resb         1
@@ -539,6 +538,7 @@ struc CPUMCPU
     .Hyper.hwvirt.svm.abPadding2             resb         16
 %endif
     .Hyper.hwvirt.fLocalForcedActions        resd         1
+    .Hyper.hwvirt.fGif                       resb         1
     alignb 64
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC

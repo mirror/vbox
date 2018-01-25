@@ -2233,7 +2233,7 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (pVmcb->ctrl.IntCtrl.n.u1VGifEnable == 1)
     {
         Assert(pVM->hm.s.svm.fVGif);
-        pVmcb->ctrl.IntCtrl.n.u1VGif = pCtx->hwvirt.svm.fGif;
+        pVmcb->ctrl.IntCtrl.n.u1VGif = pCtx->hwvirt.fGif;
     }
 #endif
 
@@ -2527,7 +2527,7 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pV
         && !CPUMIsGuestInSvmNestedHwVirtMode(pMixedCtx))
     {
         Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.fVGif);
-        pMixedCtx->hwvirt.svm.fGif = pVmcb->ctrl.IntCtrl.n.u1VGif;
+        pMixedCtx->hwvirt.fGif = pVmcb->ctrl.IntCtrl.n.u1VGif;
     }
 #endif
 
@@ -3407,7 +3407,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCt
 
     Assert(!pVCpu->hm.s.Event.fPending);
 
-    bool const fGif = pCtx->hwvirt.svm.fGif;
+    bool const fGif = pCtx->hwvirt.fGif;
     if (fGif)
     {
         PSVMVMCB pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
@@ -3537,7 +3537,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!pVCpu->hm.s.Event.fPending);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
-    bool const fGif = pCtx->hwvirt.svm.fGif;
+    bool const fGif = pCtx->hwvirt.fGif;
 #else
     bool const fGif = true;
 #endif
@@ -3636,7 +3636,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmc
 
     bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu, pCtx);
 #ifdef VBOX_STRICT
-    bool const fGif       = pCtx->hwvirt.svm.fGif;
+    bool const fGif       = pCtx->hwvirt.fGif;
     bool       fAllowInt  = fGif;
     if (fGif)
     {
