@@ -1510,7 +1510,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
                                    "Dumps all the entries in the top level paging table. No arguments.",
                                    pgmR3InfoCr3);
         DBGFR3InfoRegisterInternal(pVM, "phys",
-                                   "Dumps all the physical address ranges. No arguments.",
+                                   "Dumps all the physical address ranges. Pass 'verbose' to get more details.",
                                    pgmR3PhysInfo);
         DBGFR3InfoRegisterInternal(pVM, "handlers",
                                    "Dumps physical, virtual and hyper virtual handlers. "
@@ -2796,7 +2796,8 @@ static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char 
  */
 static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    NOREF(pszArgs);
+    bool const fVerbose = pszArgs && strstr(pszArgs, "verbose") != NULL;
+
     pHlp->pfnPrintf(pHlp,
                     "RAM ranges (pVM=%p)\n"
                     "%.*s %.*s\n",
@@ -2805,12 +2806,91 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                     sizeof(RTHCPTR) * 2,      "pvHC            ");
 
     for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesXR3; pCur; pCur = pCur->pNextR3)
+    {
         pHlp->pfnPrintf(pHlp,
                         "%RGp-%RGp %RHv %s\n",
                         pCur->GCPhys,
                         pCur->GCPhysLast,
                         pCur->pvR3,
                         pCur->pszDesc);
+        if (fVerbose)
+        {
+            RTGCPHYS const cPages = pCur->cb >> X86_PAGE_SHIFT;
+            RTGCPHYS iPage = 0;
+            while (iPage < cPages)
+            {
+                RTGCPHYS const    iFirstPage = iPage;
+                PGMPAGETYPE const enmType    = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]);
+                do
+                    iPage++;
+                while (iPage < cPages && (PGMPAGETYPE)PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == enmType);
+                const char *pszType;
+                const char *pszMore = NULL;
+                switch (enmType)
+                {
+                    case PGMPAGETYPE_RAM:
+                        pszType = "RAM";
+                        break;
+
+                    case PGMPAGETYPE_MMIO2:
+                        pszType = "MMIO2";
+                        break;
+
+                    case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+                        pszType = "MMIO2-alias-MMIO";
+                        break;
+
+                    case PGMPAGETYPE_SPECIAL_ALIAS_MMIO:
+                        pszType = "special-alias-MMIO";
+                        break;
+
+                    case PGMPAGETYPE_ROM_SHADOW:
+                    case PGMPAGETYPE_ROM:
+                    {
+                        pszType = enmType == PGMPAGETYPE_ROM_SHADOW ? "ROM-shadowed" : "ROM";
+
+                        RTGCPHYS const  GCPhysFirstPg = iFirstPage * X86_PAGE_SIZE;
+                        PPGMROMRANGE    pRom          = pVM->pgm.s.pRomRangesR3;
+                        while (pRom && GCPhysFirstPg > pRom->GCPhysLast)
+                            pRom = pRom->pNextR3;
+                        if (pRom && GCPhysFirstPg - pRom->GCPhys < pRom->cb)
+                            pszMore = pRom->pszDesc;
+                        break;
+                    }
+
+                    case PGMPAGETYPE_MMIO:
+                    {
+                        pszType = "MMIO";
+                        pgmLock(pVM);
+                        PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, iFirstPage * X86_PAGE_SIZE);
+                        if (pCur)
+                            pszMore = pCur->pszDesc;
+                        pgmUnlock(pVM);
+                        break;
+                    }
+
+                    case PGMPAGETYPE_INVALID:
+                        pszType = "invalid";
+                        break;
+
+                    default:
+                        pszType = "bad";
+                        break;
+                }
+                if (pszMore)
+                    pHlp->pfnPrintf(pHlp, "    %RGp-%RGp %-20s %s\n",
+                                    pCur->GCPhys + iFirstPage * X86_PAGE_SIZE,
+                                    pCur->GCPhys + iPage      * X86_PAGE_SIZE,
+                                    pszType, pszMore);
+                else
+                    pHlp->pfnPrintf(pHlp, "    %RGp-%RGp %s\n",
+                                    pCur->GCPhys + iFirstPage * X86_PAGE_SIZE,
+                                    pCur->GCPhys + iPage      * X86_PAGE_SIZE,
+                                    pszType);
+
+            }
+        }
+    }
 }
 
 
