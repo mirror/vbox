@@ -179,9 +179,6 @@ class InstallTestVm(vboxtestvms.TestVm):
                     reporter.log('Set extradata: %s => %s' % (sKey, sValue))
                     fRc = fRc and oSession.setExtraData(sKey, sValue)
 
-                # Enable audio adapter
-                oSession.o.machine.audioAdapter.enabled = True;
-
                 # Other variations?
 
                 # Save the settings.
