@@ -111,7 +111,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         /*
          * Disable the global interrupt flag to prevent interrupts during the 'atomic' world switch.
          */
-        pCtx->hwvirt.svm.fGif = false;
+        pCtx->hwvirt.fGif = false;
 
         Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->es));
         Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs));
@@ -631,7 +631,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         /*
          * Clear global interrupt flags to allow interrupts in the guest.
          */
-        pCtx->hwvirt.svm.fGif = true;
+        pCtx->hwvirt.fGif = true;
 
         /*
          * Event injection.
@@ -677,8 +677,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
             /** @todo NRIP: Software interrupts can only be pushed properly if we support
              *        NRIP for the nested-guest to calculate the instruction length
              *        below. */
-            LogFlow(("iemSvmVmrun: Injecting event: %04x:%08RX64 uVector=%#x enmType=%d uErrorCode=%u cr2=%#RX64 efer=%#RX64\n",
-                     pCtx->cs.Sel, pCtx->rip, uVector, enmType, uErrorCode, pCtx->cr2, pCtx->msrEFER));
+            LogFlow(("iemSvmVmrun: Injecting event: %04x:%08RX64 vec=%#x type=%d uErr=%u cr2=%#RX64 cr3=%#RX64 efer=%#RX64\n",
+                     pCtx->cs.Sel, pCtx->rip, uVector, enmType, uErrorCode, pCtx->cr2, pCtx->cr3, pCtx->msrEFER));
             rcStrict = IEMInjectTrap(pVCpu, uVector, enmType, uErrorCode, pCtx->cr2, 0 /* cbInstr */);
         }
         else
@@ -1273,7 +1273,7 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_CLGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
-    pCtx->hwvirt.svm.fGif = false;
+    pCtx->hwvirt.fGif = false;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
@@ -1303,7 +1303,7 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_STGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
-    pCtx->hwvirt.svm.fGif = true;
+    pCtx->hwvirt.fGif = true;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
