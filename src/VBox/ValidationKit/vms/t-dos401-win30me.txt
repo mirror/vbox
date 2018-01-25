@@ -1,0 +1,19 @@
+
+Test VM - t-dos401-win30me - DOS 4.01 /w patch and Windows 3.0 Multimedia Edition
+=================================================================================
+
+Setup:
+ - Create a default DOS VM 't-dos401-win30me', but restrict the memory to 4MB.
+ - Install DOS (single partition, etc).
+ - Install CDROM driver (e.g. OAK).
+ - Install Window 3.0 multimedia edition into C:\MWINDOWS.
+     - Select tandy soundblaster driver, make sure to configure
+       them correctly (port 220, irq 5, dma 5/7) or they will hang
+       the system.
+     - Disable the tandy welcome screen.
+ - Edit win.ini changing the REC file association to:
+       rec=RECORDER.EXE -H +F7  ^.REC
+   This allows us to load .REC with Shift-F7 macros inside them at startup and
+   execute them.  (Windows 3.0 didn't have a startup folder.)
+ - Copy DosSleep.exe, DosVmOff.com, and WinExit.exe onto the disk.
+ - ... more later.
