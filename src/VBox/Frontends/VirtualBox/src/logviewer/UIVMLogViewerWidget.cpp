@@ -69,7 +69,7 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent 
     , m_pActionFilter(0)
     , m_pActionRefresh(0)
     , m_pActionSave(0)
-    , m_pActionBookmark(0)
+    , m_pActionBookmarks(0)
     , m_pActionSettings(0)
     , m_pMenu(0)
     , m_bShowLineNumbers(true)
@@ -209,8 +209,8 @@ void UIVMLogViewerWidget::sltRefresh()
         m_pActionFilter->setEnabled(!noLogsToShow);
     if (m_pActionSave)
         m_pActionSave->setEnabled(!noLogsToShow);
-    if (m_pActionBookmark)
-        m_pActionBookmark->setEnabled(!noLogsToShow);
+    if (m_pActionBookmarks)
+        m_pActionBookmarks->setEnabled(!noLogsToShow);
     //m_pTabWidget->setEnabled(!noLogsToShow);
     if (m_pActionSettings)
         m_pActionSettings->setEnabled(!noLogsToShow);
@@ -373,7 +373,7 @@ void UIVMLogViewerWidget::prepare()
     /* Loading language constants: */
     retranslateUi();
 
-    m_panelActionMap.insert(m_pBookmarksPanel, m_pActionBookmark);
+    m_panelActionMap.insert(m_pBookmarksPanel, m_pActionBookmarks);
     m_panelActionMap.insert(m_pSearchPanel, m_pActionFind);
     m_panelActionMap.insert(m_pFilterPanel, m_pActionFilter);
     m_panelActionMap.insert(m_pSettingsPanel, m_pActionSettings);
@@ -472,15 +472,15 @@ void UIVMLogViewerWidget::prepareActions()
         connect(m_pActionFilter, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionTriggered);
     }
     /* Create and configure 'Bookmark' action: */
-    m_pActionBookmark = new QAction(this);
-    if (m_pActionBookmark)
+    m_pActionBookmarks = new QAction(this);
+    if (m_pActionBookmarks)
     {
         /* tie Ctrl+D to save only if we show this in a dialog since Ctrl+D is
            already assigned to another action in the selector UI: */
         if (m_enmEmbedding == EmbedTo_Dialog)
-            m_pActionBookmark->setShortcut(QKeySequence("Ctrl+D"));
-        m_pActionBookmark->setCheckable(true);
-        connect(m_pActionBookmark, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionTriggered);
+            m_pActionBookmarks->setShortcut(QKeySequence("Ctrl+D"));
+        m_pActionBookmarks->setCheckable(true);
+        connect(m_pActionBookmarks, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionTriggered);
     }
 
     /* Create and configure 'Settings' action: */
@@ -537,8 +537,8 @@ void UIVMLogViewerWidget::prepareActionIcons()
         m_pActionSave->setIcon(UIIconPool::iconSet(QString(":/%1_save_24px.png").arg(strPrefix),
                                                        QString(":/%1_save_disabled_24px.png").arg(strPrefix)));
 
-    if (m_pActionBookmark)
-        m_pActionBookmark->setIcon(UIIconPool::iconSet(QString(":/%1_bookmark_24px.png").arg(strPrefix),
+    if (m_pActionBookmarks)
+        m_pActionBookmarks->setIcon(UIIconPool::iconSet(QString(":/%1_bookmark_24px.png").arg(strPrefix),
                                                        QString(":/%1_bookmark_disabled_24px.png").arg(strPrefix)));
 
     if (m_pActionSettings)
@@ -557,23 +557,24 @@ void UIVMLogViewerWidget::prepareToolBar()
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         /* Add toolbar actions: */
+        if (m_pActionSave)
+        {
+            m_pToolBar->addAction(m_pActionSave);
+            m_pToolBar->addSeparator();
+        }
         if (m_pActionFind)
             m_pToolBar->addAction(m_pActionFind);
-
         if (m_pActionFilter)
             m_pToolBar->addAction(m_pActionFilter);
-
-        if (m_pActionRefresh)
-            m_pToolBar->addAction(m_pActionRefresh);
-
-        if (m_pActionSave)
-            m_pToolBar->addAction(m_pActionSave);
-
-        if (m_pActionBookmark)
-            m_pToolBar->addAction(m_pActionBookmark);
-
+        if (m_pActionBookmarks)
+            m_pToolBar->addAction(m_pActionBookmarks);
         if (m_pActionSettings)
             m_pToolBar->addAction(m_pActionSettings);
+        if (m_pActionRefresh)
+        {
+            m_pToolBar->addSeparator();
+            m_pToolBar->addAction(m_pActionRefresh);
+        }
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -595,18 +596,24 @@ void UIVMLogViewerWidget::prepareMenu()
     m_pMenu = new QMenu(this);
     if (m_pMenu)
     {
+        if (m_pActionSave)
+        {
+            m_pMenu->addAction(m_pActionSave);
+            m_pMenu->addSeparator();
+        }
         if (m_pActionFind)
             m_pMenu->addAction(m_pActionFind);
         if (m_pActionFilter)
             m_pMenu->addAction(m_pActionFilter);
-        if (m_pActionRefresh)
-            m_pMenu->addAction(m_pActionRefresh);
-        if (m_pActionSave)
-            m_pMenu->addAction(m_pActionSave);
-        if (m_pActionBookmark)
-            m_pMenu->addAction(m_pActionBookmark);
+        if (m_pActionBookmarks)
+            m_pMenu->addAction(m_pActionBookmarks);
         if (m_pActionSettings)
             m_pMenu->addAction(m_pActionSettings);
+        if (m_pActionRefresh)
+        {
+            m_pMenu->addSeparator();
+            m_pMenu->addAction(m_pActionRefresh);
+        }
     }
 }
 
@@ -657,18 +664,18 @@ void UIVMLogViewerWidget::retranslateUi()
         }
     }
 
-    if (m_pActionBookmark)
+    if (m_pActionBookmarks)
     {
-        m_pActionBookmark->setText(tr("&Bookmarks"));
+        m_pActionBookmarks->setText(tr("&Bookmarks"));
         if (m_enmEmbedding == EmbedTo_Dialog)
         {
-            m_pActionBookmark->setToolTip(tr("Show/Hide 'Bookmarks' Panel (Ctrl+D)"));
-            m_pActionBookmark->setStatusTip(tr("Show/Hide 'Bookmarks' Panel (Ctrl+D)"));
+            m_pActionBookmarks->setToolTip(tr("Show/Hide 'Bookmarks' Panel (Ctrl+D)"));
+            m_pActionBookmarks->setStatusTip(tr("Show/Hide 'Bookmarks' Panel (Ctrl+D)"));
         }
         else
         {
-            m_pActionBookmark->setToolTip(tr("Show/Hide 'Bookmarks' Panel"));
-            m_pActionBookmark->setStatusTip(tr("Show/Hide 'Bookmarks' Panel"));
+            m_pActionBookmarks->setToolTip(tr("Show/Hide 'Bookmarks' Panel"));
+            m_pActionBookmarks->setStatusTip(tr("Show/Hide 'Bookmarks' Panel"));
         }
     }
 

@@ -193,7 +193,7 @@ private:
         QAction   *m_pActionFilter;
         QAction   *m_pActionRefresh;
         QAction   *m_pActionSave;
-        QAction   *m_pActionBookmark;
+        QAction   *m_pActionBookmarks;
         QAction   *m_pActionSettings;
         QMenu     *m_pMenu;
     /** @} */
