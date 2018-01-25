@@ -2862,9 +2862,9 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                     {
                         pszType = "MMIO";
                         pgmLock(pVM);
-                        PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, iFirstPage * X86_PAGE_SIZE);
-                        if (pCur)
-                            pszMore = pCur->pszDesc;
+                        PPGMPHYSHANDLER pHandler = pgmHandlerPhysicalLookup(pVM, iFirstPage * X86_PAGE_SIZE);
+                        if (pHandler)
+                            pszMore = pHandler->pszDesc;
                         pgmUnlock(pVM);
                         break;
                     }
