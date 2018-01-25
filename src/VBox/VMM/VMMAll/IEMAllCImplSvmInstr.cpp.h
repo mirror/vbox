@@ -680,7 +680,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
              * clearing it at any time, most likely before/after injecting the event. Since VirtualBox
              * doesn't have any virtual-CPU internal representation of this bit, we clear/update the
              * VMCB here. This also has the added benefit that we avoid the risk of injecting the event
-             * twice if we fallback to executing the nesteed-guest using hardware-assisted SVM after
+             * twice if we fallback to executing the nested-guest using hardware-assisted SVM after
              * injecting the event through IEM here.
              */
             pVmcbCtrl->EventInject.n.u1Valid = 0;
