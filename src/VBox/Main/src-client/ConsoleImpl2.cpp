@@ -5841,6 +5841,8 @@ int Console::i_configNetwork(const char *pszDevice,
  * @param   pInst               The instance CFGM node.
  * @param   ePortMode           The port mode to sue.
  * @param   pszPath             The serial port path.
+ * @param   fServer             Flag whether the port should act as a server
+ *                              for the pipe and TCP mode or connect as a client.
  */
 int Console::i_configSerialPort(PCFGMNODE pInst, PortMode_T ePortMode, const char *pszPath, bool fServer)
 {
