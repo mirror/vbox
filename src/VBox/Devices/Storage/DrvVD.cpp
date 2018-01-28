@@ -3077,7 +3077,7 @@ static int drvvdMediaExIoReqCompleteWorker(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
             || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
         {
             /* Adjust the remaining amount to transfer. */
-            Assert(pIoReq->ReadWrite.cbIoBuf > 0);
+            Assert(pIoReq->ReadWrite.cbIoBuf > 0 || rcReq == VERR_PDM_MEDIAEX_IOREQ_CANCELED);
 
             size_t cbReqIo = RT_MIN(pIoReq->ReadWrite.cbReqLeft, pIoReq->ReadWrite.cbIoBuf);
             pIoReq->ReadWrite.offStart  += cbReqIo;
