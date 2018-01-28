@@ -5187,7 +5187,7 @@ HRESULT Console::i_onSerialPortChange(ISerialPort *aSerialPort)
     if (ptrVM.isOk())
     {
         ULONG ulSlot;
-        BOOL fEnabled;
+        BOOL fEnabled = FALSE;
         hrc = aSerialPort->COMGETTER(Slot)(&ulSlot);
         if (SUCCEEDED(hrc))
             hrc = aSerialPort->COMGETTER(Enabled)(&fEnabled);
