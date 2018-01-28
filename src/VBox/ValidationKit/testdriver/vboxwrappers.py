@@ -2376,7 +2376,7 @@ class SessionWrapper(TdTaskBase):
         Returns the True on success, False on failure (logged).
         """
         try:
-            oPort = self.o.machine.GetSerialPort(iSerialPort);
+            oPort = self.o.machine.getSerialPort(iSerialPort);
         except:
             fRc = reporter.errorXcpt('failed to get serial port #%u' % (iSerialPort,));
         else:
