@@ -4729,6 +4729,7 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
             att.fDiscard = false;
             att.fNonRotational = false;
             att.fHotPluggable = false;
+            att.fPassThrough = false;
 
             if (strTemp == "HardDisk")
             {
