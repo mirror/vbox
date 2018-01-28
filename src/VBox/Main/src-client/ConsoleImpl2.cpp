@@ -5840,7 +5840,7 @@ int Console::i_configNetwork(const char *pszDevice,
  * @returns VBox status code.
  * @param   pInst               The instance CFGM node.
  * @param   ePortMode           The port mode to sue.
- * @param   pszPath             The 
+ * @param   pszPath             The serial port path.
  */
 int Console::i_configSerialPort(PCFGMNODE pInst, PortMode_T ePortMode, const char *pszPath, bool fServer)
 {
