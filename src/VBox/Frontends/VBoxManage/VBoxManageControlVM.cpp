@@ -2110,6 +2110,94 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         {
             CHECK_ERROR_BREAK(console, ClearAllDiskEncryptionPasswords());
         }
+        else if (!strncmp(a->argv[1], "changeuartmode", 14))
+        {
+            unsigned n = parseNum(&a->argv[1][14], 4, "UART");
+            if (!n)
+            {
+                rc = E_FAIL;
+                break;
+            }
+            if (a->argc < 3)
+            {
+                errorArgument("Missing argument to '%s'", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            ComPtr<ISerialPort> uart;
+
+            CHECK_ERROR_BREAK(sessionMachine, GetSerialPort(n - 1, uart.asOutParam()));
+            ASSERT(uart);
+
+            if (!RTStrICmp(a->argv[2], "disconnected"))
+            {
+                if (a->argc != 3)
+                {
+                    errorArgument("Incorrect arguments to '%s'", a->argv[1]);
+                    rc = E_FAIL;
+                    break;
+                }
+                CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_Disconnected));
+            }
+            else if (   !RTStrICmp(a->argv[2], "server")
+                     || !RTStrICmp(a->argv[2], "client")
+                     || !RTStrICmp(a->argv[2], "tcpserver")
+                     || !RTStrICmp(a->argv[2], "tcpclient")
+                     || !RTStrICmp(a->argv[2], "file"))
+            {
+                const char *pszMode = a->argv[2];
+                if (a->argc != 4)
+                {
+                    errorArgument("Incorrect arguments to '%s'", a->argv[1]);
+                    rc = E_FAIL;
+                    break;
+                }
+
+                CHECK_ERROR(uart, COMSETTER(Path)(Bstr(a->argv[3]).raw()));
+
+                /*
+                 * Change to disconnected first to get changes in just a parameter causing
+                 * the correct changes later on.
+                 */
+                CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_Disconnected));
+                if (!RTStrICmp(pszMode, "server"))
+                {
+                    CHECK_ERROR(uart, COMSETTER(Server)(TRUE));
+                    CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_HostPipe));
+                }
+                else if (!RTStrICmp(pszMode, "client"))
+                {
+                    CHECK_ERROR(uart, COMSETTER(Server)(FALSE));
+                    CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_HostPipe));
+                }
+                else if (!RTStrICmp(pszMode, "tcpserver"))
+                {
+                    CHECK_ERROR(uart, COMSETTER(Server)(TRUE));
+                    CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_TCP));
+                }
+                else if (!RTStrICmp(pszMode, "tcpclient"))
+                {
+                    CHECK_ERROR(uart, COMSETTER(Server)(FALSE));
+                    CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_TCP));
+                }
+                else if (!RTStrICmp(pszMode, "file"))
+                {
+                    CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_RawFile));
+                }
+            }
+            else
+            {
+                if (a->argc != 3)
+                {
+                    errorArgument("Incorrect arguments to '%s'", a->argv[1]);
+                    rc = E_FAIL;
+                    break;
+                }
+                CHECK_ERROR(uart, COMSETTER(Path)(Bstr(a->argv[2]).raw()));
+                CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_HostDevice));
+            }
+        }
         else
         {
             errorSyntax(USAGE_CONTROLVM, "Invalid parameter '%s'", a->argv[1]);

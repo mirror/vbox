@@ -249,7 +249,7 @@ HRESULT SerialPort::getHostMode(PortMode_T *aHostMode)
 HRESULT SerialPort::setHostMode(PortMode_T aHostMode)
 {
     /* the machine needs to be mutable */
-    AutoMutableOrSavedStateDependency adep(m->pMachine);
+    AutoMutableOrSavedOrRunningStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -423,7 +423,7 @@ HRESULT SerialPort::getPath(com::Utf8Str &aPath)
 HRESULT SerialPort::setPath(const com::Utf8Str &aPath)
 {
     /* the machine needs to be mutable */
-    AutoMutableOrSavedStateDependency adep(m->pMachine);
+    AutoMutableOrSavedOrRunningStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -462,7 +462,7 @@ HRESULT SerialPort::getServer(BOOL *aServer)
 HRESULT SerialPort::setServer(BOOL aServer)
 {
     /* the machine needs to be mutable */
-    AutoMutableOrSavedStateDependency adep(m->pMachine);
+    AutoMutableOrSavedOrRunningStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);

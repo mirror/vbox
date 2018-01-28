@@ -712,7 +712,7 @@ private:
                         INetworkAdapter *aNetworkAdapter, PCFGMNODE pCfg,
                         PCFGMNODE pLunL0, PCFGMNODE pInst,
                         bool fAttachDetach, bool fIgnoreConnectFailure);
-
+    int i_configSerialPort(PCFGMNODE pInst, PortMode_T ePortMode, const char *pszPath, bool fServer);
     static DECLCALLBACK(int) i_configGuestProperties(void *pvConsole, PUVM pUVM);
     static DECLCALLBACK(int) i_configGuestControl(void *pvConsole);
     static DECLCALLBACK(void) i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
@@ -727,6 +727,8 @@ private:
     static DECLCALLBACK(int) i_changeNetworkAttachment(Console *pThis, PUVM pUVM, const char *pszDevice,
                                                        unsigned uInstance, unsigned uLun,
                                                        INetworkAdapter *aNetworkAdapter);
+    static DECLCALLBACK(int) i_changeSerialPortAttachment(Console *pThis, PUVM pUVM,
+                                                          ISerialPort *pSerialPort);
 
     void i_changeClipboardMode(ClipboardMode_T aClipboardMode);
     int i_changeDnDMode(DnDMode_T aDnDMode);
@@ -972,6 +974,9 @@ private:
     unsigned               m_cDisksEncrypted;
     /** Number of disks which have the key in the map. */
     unsigned               m_cDisksPwProvided;
+
+    /** Current active port modes of the supported serial ports. */
+    PortMode_T             m_aeSerialPortMode[4];
 
     /** Pointer to the key consumer -> provider (that's us) callbacks. */
     struct MYPDMISECKEY : public PDMISECKEY

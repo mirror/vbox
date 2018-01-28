@@ -1383,7 +1383,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         PCFGMNODE pCfg = NULL;          /* /Devices/Dev/.../Config/ */
         PCFGMNODE pLunL0 = NULL;        /* /Devices/Dev/0/LUN#0/ */
         PCFGMNODE pLunL1 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/ */
-        PCFGMNODE pLunL2 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/Config/ */
         PCFGMNODE pBiosCfg = NULL;      /* /Devices/pcbios/0/Config/ */
         PCFGMNODE pNetBootCfg = NULL;   /* /Devices/pcbios/0/Config/NetBoot/ */
 
@@ -2660,7 +2659,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 hrc = serialPort->COMGETTER(Enabled)(&fEnabledSerPort);                     H();
             }
             if (!fEnabledSerPort)
+            {
+                m_aeSerialPortMode[ulInstance] = PortMode_Disconnected;
                 continue;
+            }
 
             InsertConfigNode(pDev, Utf8StrFmt("%u", ulInstance).c_str(), &pInst);
             InsertConfigNode(pInst, "Config", &pCfg);
@@ -2680,41 +2682,13 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             hrc = serialPort->COMGETTER(Path)(bstr.asOutParam());                           H();
             PortMode_T eHostMode;
             hrc = serialPort->COMGETTER(HostMode)(&eHostMode);                              H();
+
+            m_aeSerialPortMode[ulInstance] = eHostMode;
             if (eHostMode != PortMode_Disconnected)
             {
-                InsertConfigNode(pInst,     "LUN#0", &pLunL0);
-                if (eHostMode == PortMode_HostPipe)
-                {
-                    InsertConfigString(pLunL0,  "Driver", "Char");
-                    InsertConfigNode(pLunL0,    "AttachedDriver", &pLunL1);
-                    InsertConfigString(pLunL1,  "Driver", "NamedPipe");
-                    InsertConfigNode(pLunL1,    "Config", &pLunL2);
-                    InsertConfigString(pLunL2,  "Location", bstr);
-                    InsertConfigInteger(pLunL2, "IsServer", fServer);
-                }
-                else if (eHostMode == PortMode_HostDevice)
-                {
-                    InsertConfigString(pLunL0,  "Driver", "Host Serial");
-                    InsertConfigNode(pLunL0,    "Config", &pLunL1);
-                    InsertConfigString(pLunL1,  "DevicePath", bstr);
-                }
-                else if (eHostMode == PortMode_TCP)
-                {
-                    InsertConfigString(pLunL0,  "Driver", "Char");
-                    InsertConfigNode(pLunL0,    "AttachedDriver", &pLunL1);
-                    InsertConfigString(pLunL1,  "Driver", "TCP");
-                    InsertConfigNode(pLunL1,    "Config", &pLunL2);
-                    InsertConfigString(pLunL2,  "Location", bstr);
-                    InsertConfigInteger(pLunL2, "IsServer", fServer);
-                }
-                else if (eHostMode == PortMode_RawFile)
-                {
-                    InsertConfigString(pLunL0,  "Driver", "Char");
-                    InsertConfigNode(pLunL0,    "AttachedDriver", &pLunL1);
-                    InsertConfigString(pLunL1,  "Driver", "RawFile");
-                    InsertConfigNode(pLunL1,    "Config", &pLunL2);
-                    InsertConfigString(pLunL2,  "Location", bstr);
-                }
+                rc = i_configSerialPort(pInst, eHostMode, Utf8Str(bstr).c_str(), RT_BOOL(fServer));
+                if (RT_FAILURE(rc))
+                    return rc;
             }
         }
 
@@ -5855,6 +5829,67 @@ int Console::i_configNetwork(const char *pszDevice,
 
     return VINF_SUCCESS;
 }
+
+
+/**
+ * Configures the serial port at the given CFGM node with the supplied parameters.
+ *
+ * @returns VBox status code.
+ * @param   pInst               The instance CFGM node.
+ * @param   ePortMode           The port mode to sue.
+ * @param   pszPath             The 
+ */
+int Console::i_configSerialPort(PCFGMNODE pInst, PortMode_T ePortMode, const char *pszPath, bool fServer)
+{
+    PCFGMNODE pLunL0 = NULL;        /* /Devices/Dev/0/LUN#0/ */
+    PCFGMNODE pLunL1 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/ */
+    PCFGMNODE pLunL1Cfg = NULL;     /* /Devices/Dev/0/LUN#0/AttachedDriver/Config */
+
+    try
+    {
+        InsertConfigNode(pInst, "LUN#0", &pLunL0);
+        if (ePortMode == PortMode_HostPipe)
+        {
+            InsertConfigString(pLunL0,     "Driver", "Char");
+            InsertConfigNode(pLunL0,       "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1,     "Driver", "NamedPipe");
+            InsertConfigNode(pLunL1,       "Config", &pLunL1Cfg);
+            InsertConfigString(pLunL1Cfg,  "Location", pszPath);
+            InsertConfigInteger(pLunL1Cfg, "IsServer", fServer);
+        }
+        else if (ePortMode == PortMode_HostDevice)
+        {
+            InsertConfigString(pLunL0,     "Driver", "Host Serial");
+            InsertConfigNode(pLunL0,       "Config", &pLunL1);
+            InsertConfigString(pLunL1,     "DevicePath", pszPath);
+        }
+        else if (ePortMode == PortMode_TCP)
+        {
+            InsertConfigString(pLunL0,     "Driver", "Char");
+            InsertConfigNode(pLunL0,       "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1,     "Driver", "TCP");
+            InsertConfigNode(pLunL1,       "Config", &pLunL1Cfg);
+            InsertConfigString(pLunL1Cfg,  "Location", pszPath);
+            InsertConfigInteger(pLunL1Cfg, "IsServer", fServer);
+        }
+        else if (ePortMode == PortMode_RawFile)
+        {
+            InsertConfigString(pLunL0,     "Driver", "Char");
+            InsertConfigNode(pLunL0,       "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1,     "Driver", "RawFile");
+            InsertConfigNode(pLunL1,       "Config", &pLunL1Cfg);
+            InsertConfigString(pLunL1Cfg,  "Location", pszPath);
+        }
+    }
+    catch (ConfigError &x)
+    {
+        /* InsertConfig threw something */
+        return x.m_vrc;
+    }
+
+    return VINF_SUCCESS;
+}
+
 
 #ifdef VBOX_WITH_GUEST_PROPS
 

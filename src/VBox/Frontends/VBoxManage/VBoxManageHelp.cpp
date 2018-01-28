@@ -849,6 +849,13 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                                           [--removeonsuspend <yes|no>]\n"
                      "                            removeencpassword <id>\n"
                      "                            removeallencpasswords\n"
+                     "                            changeuartmode<1-N> disconnected|\n"
+                     "                                                server <pipe>|\n"
+                     "                                                client <pipe>|\n"
+                     "                                                tcpserver <port>|\n"
+                     "                                                tcpclient <hostname:port>|\n"
+                     "                                                file <file>|\n"
+                     "                                                <devicename>]\n"
                      "\n", SEP);
     }
 
