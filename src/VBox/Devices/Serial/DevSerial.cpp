@@ -1143,6 +1143,52 @@ static DECLCALLBACK(void) serialReset(PPDMDEVINS pDevIns)
 
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnAttach}
+ */
+static DECLCALLBACK(int) serialR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    RT_NOREF(iLUN, fFlags);
+    PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
+
+    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Serial Char");
+    if (RT_SUCCESS(rc))
+    {
+        pThis->pDrvChar = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMICHARCONNECTOR);
+        if (!pThis->pDrvChar)
+        {
+            AssertLogRelMsgFailed(("Configuration error: instance %d has no char interface!\n", pDevIns->iInstance));
+            return VERR_PDM_MISSING_INTERFACE;
+        }
+    }
+    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+    {
+        pThis->pDrvBase = NULL;
+        pThis->pDrvChar = NULL;
+        rc = VINF_SUCCESS;
+        LogRel(("Serial%d: no unit\n", pDevIns->iInstance));
+    }
+    else /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
+        LogRel(("Serial%d: Failed to attach to char driver. rc=%Rrc\n", pDevIns->iInstance, rc));
+
+   return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnDetach}
+ */
+static DECLCALLBACK(void) serialR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    RT_NOREF(iLUN, fFlags);
+    PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
+
+    /* Zero out important members. */
+    pThis->pDrvBase = NULL;
+    pThis->pDrvChar = NULL;
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
 static DECLCALLBACK(int) serialDestruct(PPDMDEVINS pDevIns)
@@ -1361,7 +1407,6 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     /*
      * Attach the char driver and get the interfaces.
-     * For now no run-time changes are supported.
      */
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Serial Char");
     if (RT_SUCCESS(rc))
@@ -1432,9 +1477,9 @@ const PDMDEVREG g_DeviceSerialPort =
     /* pfnResume */
     NULL,
     /* pfnAttach */
-    NULL,
+    serialR3Attach,
     /* pfnDetach */
-    NULL,
+    serialR3Detach,
     /* pfnQueryInterface. */
     NULL,
     /* pfnInitComplete */
