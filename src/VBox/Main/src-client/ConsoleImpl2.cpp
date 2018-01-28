@@ -4296,6 +4296,9 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         BOOL fDiscard;
         hrc = pMediumAtt->COMGETTER(Discard)(&fDiscard);                                    H();
 
+        if (lType == DeviceType_DVD)
+            fInsertDiskIntegrityDrv = false;
+
         unsigned uLUN;
         PCFGMNODE pLunL0 = NULL;
         hrc = Console::i_storageBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);                H();
