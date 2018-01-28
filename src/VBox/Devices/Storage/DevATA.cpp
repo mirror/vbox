@@ -3224,6 +3224,38 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
             cbMax = scsiBE2H_U16(pbPacket + 7);
             ataR3StartTransfer(s, RT_MIN(cbMax, 8), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_EVENT_STATUS_NOTIFICATION, true);
             break;
+        case SCSI_MODE_SENSE_6:
+        {
+            uint8_t uPageControl, uPageCode;
+            cbMax = pbPacket[4];
+            uPageControl = pbPacket[2] >> 6;
+            uPageCode = pbPacket[2] & 0x3f;
+            switch (uPageControl)
+            {
+                case SCSI_PAGECONTROL_CURRENT:
+                    switch (uPageCode)
+                    {
+                        case SCSI_MODEPAGE_ERROR_RECOVERY:
+                            ataR3StartTransfer(s, RT_MIN(cbMax, 16), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_MODE_SENSE_ERROR_RECOVERY, true);
+                            break;
+                        case SCSI_MODEPAGE_CD_STATUS:
+                            ataR3StartTransfer(s, RT_MIN(cbMax, 40), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_MODE_SENSE_CD_STATUS, true);
+                            break;
+                        default:
+                            goto error_cmd;
+                    }
+                    break;
+                case SCSI_PAGECONTROL_CHANGEABLE:
+                    goto error_cmd;
+                case SCSI_PAGECONTROL_DEFAULT:
+                    goto error_cmd;
+                default:
+                case SCSI_PAGECONTROL_SAVED:
+                    atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_SAVING_PARAMETERS_NOT_SUPPORTED);
+                    break;
+            }
+            break;
+        }
         case SCSI_MODE_SENSE_10:
         {
             uint8_t uPageControl, uPageCode;
