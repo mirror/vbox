@@ -39,7 +39,7 @@ else:
 import matplotlib;                              # pylint: disable=F0401
 matplotlib.use('Agg'); # Force backend.
 import matplotlib.pyplot;                       # pylint: disable=F0401
-from numpy import arange as numpy_arange;       # pylint: disable=E0611,E0401
+from numpy import arange as numpy_arange;       # pylint: disable=E0611,E0401,wrong-import-order
 
 # Validation Kit imports.
 from testmanager.webui.wuihlpgraphbase  import WuiHlpGraphBase;

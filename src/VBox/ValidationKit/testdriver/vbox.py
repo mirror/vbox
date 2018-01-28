@@ -2642,7 +2642,7 @@ class TestDriver(base.TestDriver):                                              
                       or (self.fpApiVer == 5.2 and hasattr(self.oVBoxMgr, 'vbox')):
                         oSession = self.oVBoxMgr.getSessionObject(self.oVBox);      # pylint: disable=E1101
                     else:
-                        oSession = self.oVBoxMgr.getSessionObject();                # pylint: disable=E1101
+                        oSession = self.oVBoxMgr.getSessionObject();                # pylint: disable=E1101,E1120
                     if self.fpApiVer < 3.3:
                         oProgress = self.oVBox.openRemoteSession(oSession, sUuid, sType, sEnv);
                     else:
