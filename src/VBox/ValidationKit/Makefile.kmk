@@ -188,11 +188,13 @@ $(foreach os, darwin freebsd linux solaris,$(foreach arch, x86 amd64, \
 # OS specific files - Linux
 ifdef VBOX_WITH_VALIDATIONKIT_PACKING.linux.x86
  VBOX_VALIDATIONKIT_FILESPEC += \
- 	$(VBOX_PATH_VALIDATIONKIT.linux.x86)/UsbTest
+ 	$(VBOX_PATH_VALIDATIONKIT.linux.x86)/UsbTest \
+ 	$(VBOX_PATH_VALIDATIONKIT.linux.x86)/SerialTest
 endif
 ifdef VBOX_WITH_VALIDATIONKIT_PACKING.linux.amd64
  VBOX_VALIDATIONKIT_FILESPEC += \
- 	$(VBOX_PATH_VALIDATIONKIT.linux.amd64)/UsbTest
+ 	$(VBOX_PATH_VALIDATIONKIT.linux.amd64)/UsbTest \
+ 	$(VBOX_PATH_VALIDATIONKIT.linux.amd64)/SerialTest
 endif
 ifdef VBOX_WITH_VALIDATIONKIT_PACKING.linux.x86
  VBOX_VALIDATIONKIT_FILESPEC += $(abspath $(VBOX_PATH_VALIDATIONKIT.linux.x86)/../vboxtxs)
@@ -219,6 +221,14 @@ endif
 
 # OS specific files - Solaris
 ifdef VBOX_WITH_VALIDATIONKIT_PACKING.solaris.x86
+ VBOX_VALIDATIONKIT_FILESPEC += \
+ 	$(VBOX_PATH_VALIDATIONKIT.solaris.x86)/SerialTest
+endif
+ifdef VBOX_WITH_VALIDATIONKIT_PACKING.solaris.amd64
+ VBOX_VALIDATIONKIT_FILESPEC += \
+ 	$(VBOX_PATH_VALIDATIONKIT.solaris.amd64)/SerialTest
+endif
+ifdef VBOX_WITH_VALIDATIONKIT_PACKING.solaris.x86
  VBOX_VALIDATIONKIT_FILESPEC += $(abspath $(VBOX_PATH_VALIDATIONKIT.solaris.x86)/../vboxtxs.sh)
  VBOX_VALIDATIONKIT_FILESPEC += $(abspath $(VBOX_PATH_VALIDATIONKIT.solaris.x86)/../vboxtxs.xml)
  VBOX_VALIDATIONKIT_FILESPEC += $(abspath $(VBOX_PATH_VALIDATIONKIT.solaris.x86)/../vboxtxs-sol10.xml)
@@ -232,7 +242,8 @@ endif
 ifdef VBOX_WITH_VALIDATIONKIT_PACKING.win.x86
  VBOX_VALIDATIONKIT_FILESPEC += \
  	$(VBOX_PATH_VALIDATIONKIT.win.x86)/ntSetFreq.exe \
- 	$(VBOX_PATH_VALIDATIONKIT.win.x86)/ntTimeSources.exe
+ 	$(VBOX_PATH_VALIDATIONKIT.win.x86)/ntTimeSources.exe \
+ 	$(VBOX_PATH_VALIDATIONKIT.win.x86)/SerialTest.exe
     ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
      	VBOX_VALIDATIONKIT_FILESPEC += \
      	$(VBOX_PATH_VALIDATIONKIT.win.x86)/ntPlayToneWaveX.exe
@@ -241,7 +252,8 @@ endif
 ifdef VBOX_WITH_VALIDATIONKIT_PACKING.win.amd64
  VBOX_VALIDATIONKIT_FILESPEC += \
  	$(VBOX_PATH_VALIDATIONKIT.win.amd64)/ntSetFreq.exe \
- 	$(VBOX_PATH_VALIDATIONKIT.win.amd64)/ntTimeSources.exe
+ 	$(VBOX_PATH_VALIDATIONKIT.win.amd64)/ntTimeSources.exe \
+ 	$(VBOX_PATH_VALIDATIONKIT.win.amd64)/SerialTest.exe
     ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
      	VBOX_VALIDATIONKIT_FILESPEC += \
      	$(VBOX_PATH_VALIDATIONKIT.win.amd64)/ntPlayToneWaveX.exe
