@@ -262,6 +262,7 @@ static DECLCALLBACK(int) vdScriptHandlerShowStatistics(PVDSCRIPTARG paScriptArgs
 static DECLCALLBACK(int) vdScriptHandlerResetStatistics(PVDSCRIPTARG paScriptArgs, void *pvUser);
 static DECLCALLBACK(int) vdScriptHandlerResize(PVDSCRIPTARG paScriptArgs, void *pvUser);
 static DECLCALLBACK(int) vdScriptHandlerSetFileBackend(PVDSCRIPTARG paScriptArgs, void *pvUser);
+static DECLCALLBACK(int) vdScriptHandlerLoadPlugin(PVDSCRIPTARG paScriptArgs, void *pvUser);
 
 #ifdef VBOX_TSTVDIO_WITH_LOG_REPLAY
 static DECLCALLBACK(int) vdScriptHandlerIoLogReplay(PVDSCRIPTARG paScriptArgs, void *pvUser);
@@ -476,6 +477,12 @@ const VDSCRIPTTYPE g_aArgSetFileBackend[] =
     VDSCRIPTTYPE_STRING /* new file backend */
 };
 
+/* Load plugin. */
+const VDSCRIPTTYPE g_aArgLoadPlugin[] =
+{
+    VDSCRIPTTYPE_STRING /* plugin name */
+};
+
 const VDSCRIPTCALLBACK g_aScriptActions[] =
 {
     /* pcszFnName                  enmTypeReturn      paArgDesc                          cArgDescs                                      pfnHandler */
@@ -508,6 +515,7 @@ const VDSCRIPTCALLBACK g_aScriptActions[] =
     {"resetstatistics",            VDSCRIPTTYPE_VOID, g_aArgResetStatistics,             RT_ELEMENTS(g_aArgResetStatistics),            vdScriptHandlerResetStatistics},
     {"resize",                     VDSCRIPTTYPE_VOID, g_aArgResize,                      RT_ELEMENTS(g_aArgResize),                     vdScriptHandlerResize},
     {"setfilebackend",             VDSCRIPTTYPE_VOID, g_aArgSetFileBackend,              RT_ELEMENTS(g_aArgSetFileBackend),             vdScriptHandlerSetFileBackend},
+    {"loadplugin",                 VDSCRIPTTYPE_VOID, g_aArgLoadPlugin,                  RT_ELEMENTS(g_aArgLoadPlugin),                 vdScriptHandlerLoadPlugin}
 };
 
 const unsigned g_cScriptActions = RT_ELEMENTS(g_aScriptActions);
@@ -2039,6 +2047,14 @@ static DECLCALLBACK(int) vdScriptHandlerSetFileBackend(PVDSCRIPTARG paScriptArgs
         rc = VERR_NO_MEMORY;
 
     return rc;
+}
+
+static DECLCALLBACK(int) vdScriptHandlerLoadPlugin(PVDSCRIPTARG paScriptArgs, void *pvUser)
+{
+    RT_NOREF(pvUser);
+    const char *pcszPlugin = paScriptArgs[0].psz;
+
+    return VDPluginLoadFromFilename(pcszPlugin);
 }
 
 static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
