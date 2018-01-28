@@ -29,6 +29,7 @@
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/trace.h>
 #include <VBox/log.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/uvm.h>
@@ -66,6 +67,8 @@
 
 #define PDM_BLK_CACHE_SAVED_STATE_VERSION 1
 
+/* Enable to enable some tracing in the block cache code for investigating issues. */
+/*#define VBOX_BLKCACHE_TRACING 1*/
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -74,6 +77,27 @@
 static PPDMBLKCACHEENTRY pdmBlkCacheEntryAlloc(PPDMBLKCACHE pBlkCache,
                                                uint64_t off, size_t cbData, uint8_t *pbBuffer);
 static bool pdmBlkCacheAddDirtyEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEENTRY pEntry);
+
+
+/**
+ * Add message to the VM trace buffer.
+ *
+ * @returns nothing.
+ * @param   pBlkCache     The block cache.
+ * @param   pszFmt        The format string.
+ * @param   ...           Additional parameters for the string formatter.
+ */
+DECLINLINE(void) pdmBlkCacheR3TraceMsgF(PPDMBLKCACHE pBlkCache, const char *pszFmt, ...)
+{
+#if defined(VBOX_BLKCACHE_TRACING)
+    va_list va;
+    va_start(va, pszFmt);
+    RTTraceBufAddMsgV(pBlkCache->pCache->pVM->CTX_SUFF(hTraceBuf), pszFmt, va);
+    va_end(va);
+#else
+    RT_NOREF2(pBlkCache, pszFmt);
+#endif
+}
 
 /**
  * Decrement the reference counter of the given cache entry.
@@ -491,6 +515,10 @@ DECLINLINE(int) pdmBlkCacheEnqueue(PPDMBLKCACHE pBlkCache, uint64_t off, size_t 
     LogFlowFunc(("%s: Enqueuing hIoXfer=%#p enmXferDir=%d\n",
                  __FUNCTION__, pIoXfer, pIoXfer->enmXferDir));
 
+    ASMAtomicIncU32(&pBlkCache->cIoXfersActive);
+    pdmBlkCacheR3TraceMsgF(pBlkCache, "BlkCache: I/O req %#p (%RTbool , %d) queued (%u now active)",
+                           pIoXfer, pIoXfer->fIoCache, pIoXfer->enmXferDir, pBlkCache->cIoXfersActive);
+
     switch (pBlkCache->enmType)
     {
         case PDMBLKCACHETYPE_DEV:
@@ -527,6 +555,12 @@ DECLINLINE(int) pdmBlkCacheEnqueue(PPDMBLKCACHE pBlkCache, uint64_t off, size_t 
         }
         default:
             AssertMsgFailed(("Unknown block cache type!\n"));
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        pdmBlkCacheR3TraceMsgF(pBlkCache, "BlkCache: Queueing I/O req %#p failed %Rrc", pIoXfer, rc);
+        ASMAtomicDecU32(&pBlkCache->cIoXfersActive);
     }
 
     LogFlowFunc(("%s: returns rc=%Rrc\n", __FUNCTION__, rc));
@@ -1217,6 +1251,7 @@ static int pdmR3BlkCacheRetain(PVM pVM, PPPDMBLKCACHE ppBlkCache, const char *pc
             && pBlkCache->pszId)
         {
             pBlkCache->fSuspended = false;
+            pBlkCache->cIoXfersActive = 0;
             pBlkCache->pCache = pBlkCacheGlobal;
             RTListInit(&pBlkCache->ListDirtyNotCommitted);
 
@@ -2675,6 +2710,10 @@ VMMR3DECL(void) PDMR3BlkCacheIoXferComplete(PPDMBLKCACHE pBlkCache, PPDMBLKCACHE
         pdmBlkCacheIoXferCompleteEntry(pBlkCache, hIoXfer, rcIoXfer);
     else
         pdmBlkCacheReqUpdate(pBlkCache, hIoXfer->pReq, rcIoXfer, true);
+
+    ASMAtomicDecU32(&pBlkCache->cIoXfersActive);
+    pdmBlkCacheR3TraceMsgF(pBlkCache, "BlkCache: I/O req %#p (%RTbool) completed (%u now active)",
+                           hIoXfer, hIoXfer->fIoCache, pBlkCache->cIoXfersActive);
     RTMemFree(hIoXfer);
 }
 

@@ -262,6 +262,8 @@ typedef struct PDMBLKCACHE
 
     /** Flag whether the cache was suspended. */
     volatile bool                 fSuspended;
+    /** Number of outstanding I/O transfers. */
+    volatile uint32_t             cIoXfersActive;
 
 } PDMBLKCACHE, *PPDMBLKCACHE;
 #ifdef VBOX_WITH_STATISTICS
