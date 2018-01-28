@@ -933,7 +933,7 @@ RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, uint32_t fEvtMask, uin
         if (aPollFds[0].revents != 0)
         {
             fEvtsPending |= (aPollFds[0].revents & POLLIN) ? RTSERIALPORT_EVT_F_DATA_RX : 0;
-            fEvtsPending |= (aPollFds[0].revents & POLLIN) ? RTSERIALPORT_EVT_F_DATA_TX : 0;
+            fEvtsPending |= (aPollFds[0].revents & POLLOUT) ? RTSERIALPORT_EVT_F_DATA_TX : 0;
             /** @todo BREAK condition detection. */
         }
 
