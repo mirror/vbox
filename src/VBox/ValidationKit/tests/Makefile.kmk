@@ -43,6 +43,7 @@ include $(PATH_SUB_CURRENT)/teleportation/Makefile.kmk
 include $(PATH_SUB_CURRENT)/unittests/Makefile.kmk
 include $(PATH_SUB_CURRENT)/installation/Makefile.kmk
 include $(PATH_SUB_CURRENT)/usb/Makefile.kmk
+include $(PATH_SUB_CURRENT)/serial/Makefile.kmk
 
 $(evalcall def_vbox_validationkit_process_python_sources)
 include $(FILE_KBUILD_SUB_FOOTER)
