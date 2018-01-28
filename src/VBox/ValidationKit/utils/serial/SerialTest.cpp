@@ -137,11 +137,13 @@ static const RTGETOPTDEF g_aCmdOptions[] =
 
 
 static DECLCALLBACK(int) serialTestRunReadWrite(PSERIALTEST pSerialTest);
+static DECLCALLBACK(int) serialTestRunWrite(PSERIALTEST pSerialTest);
 
 /** Implemented tests. */
 static const SERIALTESTDESC g_aSerialTests[] =
 {
-    {"readwrite", "Simple Read/Write test", serialTestRunReadWrite }
+    {"readwrite", "Simple Read/Write test on the same serial port",       serialTestRunReadWrite },
+    {"write",     "Simple write test (verification done somewhere else)", serialTestRunWrite },
 };
 
 /** The test handle. */
@@ -363,6 +365,41 @@ static DECLCALLBACK(int) serialTestRunReadWrite(PSERIALTEST pSerialTest)
         }
         if (   RT_SUCCESS(rc)
             && (fEvts & RTSERIALPORT_EVT_F_DATA_TX))
+            rc = serialTestTxBufSend(pSerialTest->hSerialPort, &SerBufTx);
+    }
+
+    uint64_t tsRuntime = RTTimeMilliTS() - tsStart;
+    tsRuntime /= 1000; /* Seconds */
+    RTTestValue(pSerialTest->hTest, "Throughput", g_cbTx / tsRuntime, RTTESTUNIT_BYTES_PER_SEC);
+
+    return rc;
+}
+
+
+/**
+ * Runs a simple write test without doing any verification.
+ *
+ * @returns IPRT status code.
+ * @param   pSerialTest         The serial test configuration.
+ */
+static DECLCALLBACK(int) serialTestRunWrite(PSERIALTEST pSerialTest)
+{
+    uint64_t tsStart = RTTimeMilliTS();
+    SERIALTESTTXRXBUFCNT SerBufTx;
+
+    serialTestTxBufInit(&SerBufTx, g_cbTx);
+
+    int rc = serialTestTxBufSend(pSerialTest->hSerialPort, &SerBufTx);
+    while (   RT_SUCCESS(rc)
+           && SerBufTx.cbTxRxLeft)
+    {
+        uint32_t fEvts = 0;
+
+        rc = RTSerialPortEvtPoll(pSerialTest->hSerialPort, RTSERIALPORT_EVT_F_DATA_TX, &fEvts, RT_INDEFINITE_WAIT);
+        if (RT_FAILURE(rc))
+            break;
+
+        if (fEvts & RTSERIALPORT_EVT_F_DATA_TX)
             rc = serialTestTxBufSend(pSerialTest->hSerialPort, &SerBufTx);
     }
 
@@ -644,7 +681,7 @@ int main(int argc, char *argv[])
                     if (pszDeviceLoopback)
                     {
                         RTTestSub(g_hTest, "Setting serial port configuration for loopback device");
-                        rc = RTSerialPortCfgSet(g_hSerialPortLoopback,&g_SerialPortCfg ,NULL);
+                        rc = RTSerialPortCfgSet(g_hSerialPortLoopback, &g_SerialPortCfg, NULL);
                         if (RT_FAILURE(rc))
                             RTTestFailed(g_hTest, "Setting configuration of loopback device \"%s\" failed with %Rrc\n", pszDevice, rc);
                     }
