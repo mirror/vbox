@@ -364,6 +364,7 @@ QString UINetworkReplyPrivateThread::header(UINetworkReply::KnownHeader type) co
         case UINetworkReply::ContentTypeHeader:   return m_headers.value("Content-Type");
         case UINetworkReply::ContentLengthHeader: return m_headers.value("Content-Length");
         case UINetworkReply::LastModifiedHeader:  return m_headers.value("Last-Modified");
+        case UINetworkReply::LocationHeader:      return m_headers.value("Location");
         default: break;
     }
     /* Return null-string by default: */
@@ -544,6 +545,17 @@ int UINetworkReplyPrivateThread::performMainRequest()
                 const QStringList values = strHeader.split(": ", QString::SkipEmptyParts);
                 if (values.size() > 1)
                     m_headers[values.at(0)] = values.at(1);
+            }
+
+            /* Special handling of redirection header: */
+            if (rc == VERR_HTTP_REDIRECTED)
+            {
+                char *pszBuf = 0;
+                const int rrc = RTHttpGetRedirLocation(m_hHttp, &pszBuf);
+                if (RT_SUCCESS(rrc))
+                    m_headers["Location"] = QString(pszBuf);
+                if (pszBuf)
+                    RTMemFree(pszBuf);
             }
 
             break;

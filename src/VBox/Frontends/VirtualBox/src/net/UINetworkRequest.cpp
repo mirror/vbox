@@ -77,42 +77,76 @@ void UINetworkRequest::sltHandleNetworkReplyFinish()
     if (!m_pReply)
         return;
 
-    /* If network-request was canceled: */
-    if (m_pReply->error() == UINetworkReply::OperationCanceledError)
-    {
-        /* Notify network-manager: */
-        emit sigCanceled(m_uuid);
-    }
     /* If network-reply has no errors: */
-    else if (m_pReply->error() == UINetworkReply::NoError)
+    if (m_pReply->error() == UINetworkReply::NoError)
     {
         /* Notify own network-request listeners: */
         emit sigFinished();
         /* Notify common network-request listeners: */
         emit sigFinished(m_uuid);
     }
+    /* If network-request was canceled: */
+    else if (m_pReply->error() == UINetworkReply::OperationCanceledError)
+    {
+        /* Notify network-manager: */
+        emit sigCanceled(m_uuid);
+    }
     /* If some other error occured: */
     else
     {
-        /* Check if we have other urls in queue: */
-        if (m_iUrlIndex < m_urls.size() - 1)
+        /* Check if we are able to handle error: */
+        bool fErrorHandled = false;
+
+        /* Handle redirection: */
+        switch (m_pReply->error())
         {
-            /* Cleanup current network-reply first: */
-            cleanupNetworkReply();
+            case UINetworkReply::ContentReSendError:
+            {
+                /* Check whether redirection link was acquired: */
+                const QString strRedirect = m_pReply->header(UINetworkReply::LocationHeader).toString();
+                if (!strRedirect.isEmpty())
+                {
+                    /* Cleanup current network-reply first: */
+                    cleanupNetworkReply();
 
-            /* Choose next url as current: */
-            ++m_iUrlIndex;
-            m_url = m_urls.at(m_iUrlIndex);
+                    /* Choose redirect-source as current url: */
+                    m_url = strRedirect;
 
-            /* Create new network-reply finally: */
-            prepareNetworkReply();
+                    /* Create new network-reply finally: */
+                    prepareNetworkReply();
+
+                    /* Mark this error handled: */
+                    fErrorHandled = true;
+                }
+                break;
+            }
+            default:
+                break;
         }
-        else
+
+        /* If error still unhandled: */
+        if (!fErrorHandled)
         {
-            /* Notify own network-request listeners: */
-            emit sigFailed(m_pReply->errorString());
-            /* Notify common network-request listeners: */
-            emit sigFailed(m_uuid, m_pReply->errorString());
+            /* Check if we have other urls in queue: */
+            if (m_iUrlIndex < m_urls.size() - 1)
+            {
+                /* Cleanup current network-reply first: */
+                cleanupNetworkReply();
+
+                /* Choose next url as current: */
+                ++m_iUrlIndex;
+                m_url = m_urls.at(m_iUrlIndex);
+
+                /* Create new network-reply finally: */
+                prepareNetworkReply();
+            }
+            else
+            {
+                /* Notify own network-request listeners: */
+                emit sigFailed(m_pReply->errorString());
+                /* Notify common network-request listeners: */
+                emit sigFailed(m_uuid, m_pReply->errorString());
+            }
         }
     }
 }

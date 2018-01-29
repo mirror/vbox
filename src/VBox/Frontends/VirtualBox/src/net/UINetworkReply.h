@@ -74,6 +74,7 @@ public:
         ContentTypeHeader,
         ContentLengthHeader,
         LastModifiedHeader,
+        LocationHeader,
     };
 
     /** Constructs network-reply of the passed @a type for the passed @a url and @a requestHeaders. */
