@@ -32,7 +32,8 @@ INSTALLS += ValidationKitTestsSerial
 ValidationKitTestsSerial_TEMPLATE = VBoxValidationKitR3
 ValidationKitTestsSerial_INST = $(INST_VALIDATIONKIT)tests/serial/
 ValidationKitTestsSerial_EXEC_SOURCES := \
-	$(PATH_SUB_CURRENT)/tdSerial1.py
+	$(PATH_SUB_CURRENT)/tdSerial1.py \
+	$(PATH_SUB_CURRENT)/loopback.py
 
 VBOX_VALIDATIONKIT_PYTHON_SOURCES += $(ValidationKitTestsSerial_EXEC_SOURCES)
 

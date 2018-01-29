@@ -47,7 +47,9 @@ sys.path.append(g_ksValidationKitDir);
 from testdriver import base;
 from testdriver import reporter;
 from testdriver import vbox;
+from testdriver import vboxcon;
 
+import loopback;
 
 class tdSerial1(vbox.TestDriver):
     """
@@ -58,10 +60,12 @@ class tdSerial1(vbox.TestDriver):
         vbox.TestDriver.__init__(self);
         self.asRsrcs          = None;
         self.oTestVmSet       = self.oTestVmManager.selectSet(self.oTestVmManager.kfGrpStdSmoke);
-        self.asSerialModesDef = ['RawFile']; # @todo: Add Tcp, TcpServ, Pipe, PipeServ, HostDev
+        self.asSerialModesDef = ['RawFile', 'Tcp', 'TcpServ', 'NamedPipe', 'NamedPipeServ', 'HostDev'];
         self.asSerialModes    = self.asSerialModesDef;
-        self.asSerialTestsDef = ['Write']; # @todo: Add read write and modem line control
+        self.asSerialTestsDef = ['Write', 'ReadWrite'];
         self.asSerialTests    = self.asSerialTestsDef;
+        self.oLoopback        = None;
+        self.sLocation        = None;
 
     #
     # Overridden methods.
@@ -131,7 +135,54 @@ class tdSerial1(vbox.TestDriver):
         sRandom = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10));
         return os.path.join(oTestDrv.sScratchPath, oTestVm.sVmName + sInfix + sRandom + sSuffix);
 
-    def testWrite(self, oSession, oTxsSession, sCom1RawFile, oTestVm):
+    def setupSerialMode(self, oSession, oTestVm, sMode):
+        """
+        Sets up the serial mode.
+        """
+        fRc = True;
+        fServer = False;
+        sLocation = None;
+        ePortMode = vboxcon.PortMode_Disconnected;
+        if sMode == 'RawFile':
+            sLocation = self._generateRawPortFilename(self, oTestVm, '-com1-', '.out');
+            ePortMode = vboxcon.PortMode_RawFile;
+        elif sMode == 'Tcp':
+            sLocation = '127.0.0.1:1234';
+            self.oLoopback = loopback.SerialLoopback(loopback.g_ksLoopbackTcpServ, sLocation);
+            ePortMode = vboxcon.PortMode_TCP;
+        elif sMode == 'TcpServ':
+            fServer   = True;
+            sLocation = '1234';
+            ePortMode = vboxcon.PortMode_TCP;
+            self.oLoopback = loopback.SerialLoopback(loopback.g_ksLoopbackTcpClient, '127.0.0.1:1234');
+        elif sMode == 'NamedPipe':
+            sLocation = self._generateRawPortFilename(self, oTestVm, '-com1-', '.out');
+            ePortMode = vboxcon.PortMode_HostPipe;
+            self.oLoopback = loopback.SerialLoopback(loopback.g_ksLoopbackNamedPipeServ, sLocation);
+        elif sMode == 'NamedPipeServ':
+            fServer   = True;
+            sLocation = self._generateRawPortFilename(self, oTestVm, '-com1-', '.out');
+            ePortMode = vboxcon.PortMode_HostPipe;
+            self.oLoopback = loopback.SerialLoopback(loopback.g_ksLoopbackNamedPipeClient, sLocation);
+        elif sMode == 'HostDev':
+            sLocation = '/dev/ttyUSB0';
+            ePortMode = vboxcon.PortMode_HostDevice;
+        else:
+            reporter.log('warning, invalid mode %s given' % (sMode, ));
+            fRc = False;
+
+        if fRc:
+            fRc = oSession.changeSerialPortAttachment(0, ePortMode, sLocation, fServer);
+            if fRc and (sMode == 'TcpServ' or sMode == 'NamedPipeServ'):
+                self.sleep(2); # Fudge to allow the TCP server to get started.
+                fRc = self.oLoopback.connect();
+                if not fRc:
+                    reporter.log('Failed to connect to %s' % (sLocation, ));
+            self.sLocation = sLocation;
+
+        return fRc;
+
+    def testWrite(self, oSession, oTxsSession, oTestVm, sMode):
         """
         Does a simple write test verifying the output.
         """
@@ -148,11 +199,11 @@ class tdSerial1(vbox.TestDriver):
             '${CDROM}/${OS/ARCH}/SerialTest${EXESUFF}', tupCmdLine);
         if not fRc:
             reporter.testFailure('Running serial test utility failed');
-        else:
+        elif sMode == 'RawFile':
             # Open serial port and verify
             cLast = 0;
             try:
-                oFile = open(sCom1RawFile, 'rb');
+                oFile = open(self.sLocation, 'rb');
                 sFmt = '=I';
                 cBytes = 4;
                 for i in xrange(1048576 / 4):
@@ -168,6 +219,40 @@ class tdSerial1(vbox.TestDriver):
             except:
                 reporter.testFailure('Verifying the written data failed');
         reporter.testDone();
+        return fRc;
+
+    def testReadWrite(self, oSession, oTxsSession, oTestVm):
+        """
+        Does a simple write test verifying the output.
+        """
+        _ = oSession;
+
+        reporter.testStart('ReadWrite');
+        tupCmdLine = ('SerialTest', '--tests', 'readwrite', '--txbytes', '1048576', '--device');
+        if oTestVm.isWindows():
+            tupCmdLine += (r'\\.\COM1',);
+        elif oTestVm.isLinux():
+            tupCmdLine += (r'/dev/ttyS0',);
+
+        fRc = self.txsRunTest(oTxsSession, 'SerialTest', 600 * 1000, \
+            '${CDROM}/${OS/ARCH}/SerialTest${EXESUFF}', tupCmdLine);
+        if not fRc:
+            reporter.testFailure('Running serial test utility failed');
+
+        reporter.testDone();
+        return fRc;
+
+    def isModeCompatibleWithTest(self, sMode, sTest):
+        """
+        Returns whether the given port mode and test combination is
+        supported for testing.
+        """
+        if sMode == 'RawFile' and sTest == 'ReadWrite':
+            return False;
+        elif sMode != 'RawFile' and sTest == 'Write':
+            return False;
+
+        return True;
 
     def testOneVmConfig(self, oVM, oTestVm):
         """
@@ -176,10 +261,9 @@ class tdSerial1(vbox.TestDriver):
 
         # Reconfigure the VM
         fRc = True;
-        sCom1RawFile = self._generateRawPortFilename(self, oTestVm, '-com1-', '.out');
         oSession = self.openSession(oVM);
         if oSession is not None:
-            fRc = oSession.setupSerialToRawFile(0, sCom1RawFile)
+            fRc = oSession.enableSerialPort(0);
 
             fRc = fRc and oSession.saveSettings();
             fRc = oSession.close() and fRc;
@@ -193,9 +277,22 @@ class tdSerial1(vbox.TestDriver):
             if oSession is not None:
                 self.addTask(oTxsSession);
 
-                for sTest in self.asSerialTests:
-                    if sTest == 'Write':
-                        fRc = self.testWrite(oSession, oTxsSession, sCom1RawFile, oTestVm);
+                for sMode in self.asSerialModes:
+                    reporter.testStart(sMode);
+                    fRc = self.setupSerialMode(oSession, oTestVm, sMode);
+                    if fRc:
+                        for sTest in self.asSerialTests:
+                            # Skip tests which don't work with the current mode.
+                            if self.isModeCompatibleWithTest(sMode, sTest):
+                                if sTest == 'Write':
+                                    fRc = self.testWrite(oSession, oTxsSession, oTestVm, sMode);
+                                if sTest == 'ReadWrite':
+                                    fRc = self.testReadWrite(oSession, oTxsSession, oTestVm);
+                        if self.oLoopback is not None:
+                            self.oLoopback.shutdown();
+                            self.oLoopback = None;
+
+                    reporter.testDone();
 
                 self.removeTask(oTxsSession);
                 self.terminateVmBySession(oSession);
