@@ -1223,10 +1223,12 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
     }
 
     /* set the window pointer data at the last step to ensure our WM_PAINT callback does not do anything until we are fully initialized */
+#ifdef RT_STRICT
+    SetLastError(NO_ERROR);
+#endif
     {
         LONG_PTR oldVal = SetWindowLongPtr(window->hWnd, GWLP_USERDATA, (LONG_PTR)window);
-        DWORD winEr = GetLastError();
-        Assert(!oldVal && winEr == NO_ERROR);
+        Assert(!oldVal && GetLastError() == NO_ERROR); RT_NOREF_PV(oldVal);
     }
 
     return GL_TRUE;
