@@ -86,28 +86,12 @@ void UINetworkRequest::sltHandleNetworkReplyFinish()
     /* If network-reply has no errors: */
     else if (m_pReply->error() == UINetworkReply::NoError)
     {
-        /* Check if redirection required: */
-        QUrl redirect = m_pReply->attribute(UINetworkReply::RedirectionTargetAttribute).toUrl();
-        if (redirect.isValid())
-        {
-            /* Cleanup current network-reply first: */
-            cleanupNetworkReply();
-
-            /* Choose redirect-source as current url: */
-            m_url = redirect;
-
-            /* Create new network-reply finally: */
-            prepareNetworkReply();
-        }
-        else
-        {
-            /* Notify own network-request listeners: */
-            emit sigFinished();
-            /* Notify common network-request listeners: */
-            emit sigFinished(m_uuid);
-        }
+        /* Notify own network-request listeners: */
+        emit sigFinished();
+        /* Notify common network-request listeners: */
+        emit sigFinished(m_uuid);
     }
-    /* If some error occured: */
+    /* If some other error occured: */
     else
     {
         /* Check if we have other urls in queue: */

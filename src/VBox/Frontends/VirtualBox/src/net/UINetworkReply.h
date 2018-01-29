@@ -76,14 +76,6 @@ public:
         LastModifiedHeader,
     };
 
-    /** Known attribute types.
-      * Came from QtNetwork module.
-      * More to go on demand when necessary. */
-    enum KnownAttribute
-    {
-        RedirectionTargetAttribute,
-    };
-
     /** Constructs network-reply of the passed @a type for the passed @a url and @a requestHeaders. */
     UINetworkReply(UINetworkRequestType type, const QUrl &url, const UserDictionary &requestHeaders);
     /** Destructs reply. */
@@ -104,8 +96,6 @@ public:
     QByteArray readAll() const;
     /** Returns value for the cached reply header of the passed @a type. */
     QVariant header(UINetworkReply::KnownHeader header) const;
-    /** Returns value for the cached reply attribute of the passed @a code. */
-    QVariant attribute(UINetworkReply::KnownAttribute code) const;
 
 private:
 

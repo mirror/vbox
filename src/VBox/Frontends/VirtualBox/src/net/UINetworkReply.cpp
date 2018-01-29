@@ -89,8 +89,6 @@ public:
         const QByteArray& readAll() const { return m_reply; }
         /** Returns value for the cached reply header of the passed @a type. */
         QString header(UINetworkReply::KnownHeader type) const;
-        /** Returns value for the cached reply attribute of the passed @a code. */
-        QVariant attribute(UINetworkReply::KnownAttribute code) const { /** @todo r=dsen: Fix that. */ Q_UNUSED(code); return QVariant(); }
 
         /** Returns short descriptive context of thread's current operation. */
         const QString context() const { return m_strContext; }
@@ -264,8 +262,6 @@ public:
     QByteArray readAll() const { return m_pThread->readAll(); }
     /** Returns value for the cached reply header of the passed @a type. */
     QString header(UINetworkReply::KnownHeader type) const { return m_pThread->header(type); }
-    /** Returns value for the cached reply attribute of the passed @a code. */
-    QVariant attribute(UINetworkReply::KnownAttribute code) const { return m_pThread->attribute(code); }
 
 private slots:
 
@@ -1043,11 +1039,6 @@ QByteArray UINetworkReply::readAll() const
 QVariant UINetworkReply::header(UINetworkReply::KnownHeader header) const
 {
     return m_pReply->header(header);
-}
-
-QVariant UINetworkReply::attribute(UINetworkReply::KnownAttribute code) const
-{
-    return m_pReply->attribute(code);
 }
 
 #include "UINetworkReply.moc"
