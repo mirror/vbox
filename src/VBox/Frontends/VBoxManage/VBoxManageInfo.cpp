@@ -1845,7 +1845,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                                  || (videoChannel == "1");
             Bstr videoChannelQuality;
             vrdeServer->GetVRDEProperty(Bstr("VideoChannel/Quality").raw(), videoChannelQuality.asOutParam());
-            AuthType_T authType;
+            AuthType_T authType = (AuthType_T)0;
             const char *strAuthType;
             vrdeServer->COMGETTER(AuthType)(&authType);
             switch (authType)
