@@ -134,14 +134,14 @@ const QString& UIVMLogPage::logString() const
     return m_strLog;
 }
 
-void UIVMLogPage::setFileName(const QString &strFileName)
+void UIVMLogPage::setLogFileName(const QString &strLogFileName)
 {
-    m_strFileName = strFileName;
+    m_strLogFileName = strLogFileName;
 }
 
-const QString& UIVMLogPage::fileName() const
+const QString& UIVMLogPage::logFileName() const
 {
-    return m_strFileName;
+    return m_strLogFileName;
 }
 
 void UIVMLogPage::setTextEditText(const QString &strText)

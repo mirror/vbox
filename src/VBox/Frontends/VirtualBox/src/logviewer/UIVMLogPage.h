@@ -51,8 +51,8 @@ signals:
 public:
 
     UIVMLogPage(QWidget *pParent = 0, int tabIndex = -1);
-    /** Destructs the VM Log-Viewer. */
     ~UIVMLogPage();
+
     /** Returns the width of the current log page. return 0 if there is no current log page: */
     int defaultLogPageWidth() const;
 
@@ -66,10 +66,10 @@ public:
     void setLogString(const QString &strLog);
     const QString& logString() const;
 
-    void setFileName(const QString &strFileName);
-    const QString& fileName() const;
+    void setLogFileName(const QString &strFileName);
+    const QString& logFileName() const;
 
-    /** Ses plaintextEdit's text. Note that the text we
+    /** Set plaintextEdit's text. Note that the text we
         show currently might be different than
         m_strLog. For example during filtering. */
     void setTextEditText(const QString &strText);
@@ -128,9 +128,8 @@ private:
     void retranslateUi();
     void updateTextEditBookmarkLineSet();
     void deleteBookmark(LogBookmark bookmark);
-    /** When settings for this changed, they are applied immediately
-        only if this is visible, if not they are applied when this becomes
-        visible. */
+    /** When settings for this UILogPage instance changed, they are applied immediately
+        only if this is visible, if not they are applied when this becomes visible. */
     void applySettings();
 
     QHBoxLayout    *m_pMainLayout;
@@ -138,7 +137,7 @@ private:
     /** Stores the log file (unmodified) content. */
     QString         m_strLog;
     /** Stores full path and name of the log file. */
-    QString         m_strFileName;
+    QString         m_strLogFileName;
     /** This is the index of the tab containing this widget in UIVMLogViewerWidget. */
     int             m_tabIndex;
     /** Stores the bookmarks of the logpage. All other bookmark related containers are updated wrt. this one. */

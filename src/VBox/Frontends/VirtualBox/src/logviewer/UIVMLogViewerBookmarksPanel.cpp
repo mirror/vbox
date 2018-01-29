@@ -110,7 +110,6 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
         mainLayout()->addWidget(m_pBookmarksComboBox, 2);
     }
 
-
     m_pGotoSelectedBookmark = new QIToolButton(this);
     if (m_pGotoSelectedBookmark)
     {
@@ -132,18 +131,19 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
                                                  qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2, 0);
             pContainerLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
 #endif
-       m_pPreviousButton = new QIToolButton;
-       if (m_pPreviousButton)
-       {
-           pContainerLayout->addWidget(m_pPreviousButton);
-           m_pPreviousButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
-       }
 
-       m_pNextButton = new QIToolButton;
-       if (m_pNextButton){
-           pContainerLayout->addWidget(m_pNextButton);
-           m_pNextButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
-       }
+    m_pPreviousButton = new QIToolButton;
+    if (m_pPreviousButton)
+    {
+        pContainerLayout->addWidget(m_pPreviousButton);
+        m_pPreviousButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
+    }
+
+    m_pNextButton = new QIToolButton;
+    if (m_pNextButton){
+        pContainerLayout->addWidget(m_pNextButton);
+        m_pNextButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
+    }
     }
 
     m_pDeleteCurrentButton = new QIToolButton(this);

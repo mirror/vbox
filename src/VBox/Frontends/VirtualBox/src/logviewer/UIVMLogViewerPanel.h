@@ -71,9 +71,7 @@ private:
 
     /** Holds the reference to VM Log-Viewer this panel belongs to. */
     UIVMLogViewerWidget *m_pViewer;
-    /** Holds the instance of main-layout we create. */
     QHBoxLayout         *m_pMainLayout;
-    /** Holds the instance of close-button we create. */
     QIToolButton        *m_pCloseButton;
 };
 

@@ -228,7 +228,7 @@ void UIVMLogViewerWidget::sltSave()
     if (!logPage)
         return;
 
-    const QString& fileName = logPage->fileName();
+    const QString& fileName = logPage->logFileName();
     if (fileName.isEmpty())
         return;
     /* Prepare "save as" dialog: */
@@ -872,7 +872,7 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
 
         /* Set the file name only if we really have log file to read. */
         if (!noLogsToShow)
-            pLogPage->setFileName(strFileName);
+            pLogPage->setLogFileName(strFileName);
 
         /* Add page-container to viewer-container: */
         int tabIndex = m_pTabWidget->insertTab(m_pTabWidget->count(), pLogPage, QFileInfo(strFileName).fileName());

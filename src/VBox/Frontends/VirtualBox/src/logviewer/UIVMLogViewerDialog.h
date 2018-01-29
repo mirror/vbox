@@ -76,9 +76,7 @@ protected:
 private:
 
     void retranslateUi();
-
     CMachine m_comMachine;
 };
 
 #endif /* !___UIVMLogViewerDialog_h___ */
-

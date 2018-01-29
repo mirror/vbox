@@ -26,8 +26,9 @@
 #include <QPair>
 
 
-/* QPlainTextEdit extension for some addtional context menu items,
-   a special scrollbar, line number area, and bookmarking support: */
+/* QPlainTextEdit extension with some addtional context menu items,
+   a special scrollbar, line number area, bookmarking support,
+   background watermarking etc.: */
 class UIVMLogViewerTextEdit : public QIWithRetranslateUI<QPlainTextEdit>
 {
     Q_OBJECT;

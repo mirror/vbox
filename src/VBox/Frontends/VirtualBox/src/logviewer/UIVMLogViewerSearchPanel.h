@@ -34,7 +34,7 @@ class UISearchField;
 class UIVMLogViewerSearchField;
 class UIVMLogViewerWidget;
 
-/** QWidget extension
+/** UIVMLogViewerPanel extension
   * providing GUI for search-panel in VM Log-Viewer. */
 class UIVMLogViewerSearchPanel : public UIVMLogViewerPanel
 {
