@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2017 Oracle Corporation
+# Copyright (C) 2006-2018 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -83,7 +83,7 @@ if defined(VBOX_WITH_MAIN) \
  if defined(VBOX_WITH_LIBVPX) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK) \
    && ("$(SDK_VBOX_VPX_INCS)" == "$(SDK_VBOX_VPX_DEFAULT_INCS)")
   if1of ($(KBUILD_TARGET), darwin linux solaris win)
-   include $(PATH_SUB_CURRENT)/libvpx-1.1.0/Makefile.kmk
+   include $(PATH_SUB_CURRENT)/libvpx-1.6.1/Makefile.kmk
   endif
  endif
 
