@@ -2601,7 +2601,6 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
 #else
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
     Assert(pCtx->hwvirt.fGif);
-    Assert(pCtx->hwvirt.fGif);
 
     /*
      * Although at present, the V_TPR and V_INTR_PRIO fields are not modified
