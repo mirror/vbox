@@ -1281,7 +1281,7 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
     /*
      * Hardware virtualization state.
      */
-    pCtx->hwvirt.fGif = 1;
+    pCtx->hwvirt.fGif = true;
 
     /* SVM. */
     if (pCtx->hwvirt.svm.CTX_SUFF(pVmcb))
