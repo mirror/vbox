@@ -23,7 +23,7 @@
 
 /**
  * @note Anyone wishing to make changes here might wish to take a look at
- *  http://www.atnf.csiro.au/people/rgooch/linux/vfs.txt
+ *  https://github.com/torvalds/linux/blob/master/Documentation/filesystems/vfs.txt
  * which seems to be the closest there is to official documentation on
  * writing filesystem drivers for Linux.
  */
